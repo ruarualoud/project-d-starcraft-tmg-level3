@@ -140,6 +140,17 @@ import {
   OFFICIAL_RESERVE_DEPLOY_V2_TRANSITION_SCHEMA,
 } from "./official-reserve-deploy-executor-v2.mjs";
 import {
+  applyOfficialReserveDeployV3,
+  enumerateOfficialReserveDeployV3,
+  instantiateOfficialReserveDeployV3,
+  OFFICIAL_RESERVE_DEPLOY_V3_ACTION_ATOM_IDS,
+  OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_ATOM_IDS,
+  OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_ID,
+  OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_VERSION,
+  OFFICIAL_RESERVE_DEPLOY_V3_PARAMETER_KIND,
+  OFFICIAL_RESERVE_DEPLOY_V3_TRANSITION_SCHEMA,
+} from "./official-reserve-deploy-executor-v3.mjs";
+import {
   applyOfficialStandardMoveV1,
   enumerateOfficialStandardMoveV1,
   instantiateOfficialStandardMoveV1,
@@ -161,6 +172,17 @@ import {
   OFFICIAL_STANDARD_MOVE_V2_PARAMETER_KIND,
   OFFICIAL_STANDARD_MOVE_V2_TRANSITION_SCHEMA,
 } from "./official-standard-move-executor-v2.mjs";
+import {
+  applyOfficialStandardMoveV3,
+  enumerateOfficialStandardMoveV3,
+  instantiateOfficialStandardMoveV3,
+  OFFICIAL_STANDARD_MOVE_V3_ACTION_ATOM_IDS,
+  OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_ATOM_IDS,
+  OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_ID,
+  OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_VERSION,
+  OFFICIAL_STANDARD_MOVE_V3_PARAMETER_KIND,
+  OFFICIAL_STANDARD_MOVE_V3_TRANSITION_SCHEMA,
+} from "./official-standard-move-executor-v3.mjs";
 import {
   applyOfficialDisengageV1,
   enumerateOfficialDisengageV1,
@@ -184,6 +206,17 @@ import {
   OFFICIAL_DISENGAGE_CASUALTY_PARAMETER_KIND,
   OFFICIAL_DISENGAGE_CASUALTY_TRANSITION_SCHEMA,
 } from "./official-disengage-casualty-executor-v1.mjs";
+import {
+  applyOfficialDisengageV3,
+  enumerateOfficialDisengageV3,
+  instantiateOfficialDisengageV3,
+  OFFICIAL_DISENGAGE_V3_ACTION_ATOM_IDS,
+  OFFICIAL_DISENGAGE_V3_EXECUTOR_ATOM_IDS,
+  OFFICIAL_DISENGAGE_V3_EXECUTOR_ID,
+  OFFICIAL_DISENGAGE_V3_EXECUTOR_VERSION,
+  OFFICIAL_DISENGAGE_V3_PARAMETER_KIND,
+  OFFICIAL_DISENGAGE_V3_TRANSITION_SCHEMA,
+} from "./official-disengage-executor-v3.mjs";
 import {
   applyOfficialEndOfRoundEffectsV1,
   enumerateOfficialEndOfRoundEffectsActionsV1,
@@ -258,6 +291,15 @@ import {
   OFFICIAL_START_OF_ROUND_V2_EXECUTOR_VERSION,
   OFFICIAL_START_OF_ROUND_V2_TRANSITION_SCHEMA,
 } from "./official-start-of-round-executor-v2.mjs";
+import {
+  applyOfficialStartOfRoundV3,
+  enumerateOfficialStartOfRoundActionsV3,
+  OFFICIAL_START_OF_ROUND_V3_ACTION_TYPE,
+  OFFICIAL_START_OF_ROUND_V3_EXECUTOR_ATOM_IDS,
+  OFFICIAL_START_OF_ROUND_V3_EXECUTOR_ID,
+  OFFICIAL_START_OF_ROUND_V3_EXECUTOR_VERSION,
+  OFFICIAL_START_OF_ROUND_V3_TRANSITION_SCHEMA,
+} from "./official-start-of-round-executor-v3.mjs";
 import {
   applyOfficialHoldPositionEndGameV1,
   enumerateOfficialHoldPositionEndGameActionsV1,
@@ -928,6 +970,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_START_OF_ROUND_V2_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_START_OF_ROUND_V3_EXECUTOR_ID,
+    executorVersion: OFFICIAL_START_OF_ROUND_V3_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_START_OF_ROUND_V3_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_START_OF_ROUND_V3_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_HOLD_POSITION_END_GAME_EXECUTOR_ID,
     executorVersion: OFFICIAL_HOLD_POSITION_END_GAME_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_HOLD_POSITION_END_GAME_ACTION_TYPE]),
@@ -958,6 +1006,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_RESERVE_DEPLOY_V2_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_ID,
+    executorVersion: OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_VERSION,
+    actionTypes: Object.freeze(["deploy"]),
+    transitionSchema: OFFICIAL_RESERVE_DEPLOY_V3_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_STANDARD_MOVE_EXECUTOR_ID,
     executorVersion: OFFICIAL_STANDARD_MOVE_EXECUTOR_VERSION,
     actionTypes: Object.freeze(["move"]),
@@ -970,6 +1024,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_STANDARD_MOVE_V2_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_ID,
+    executorVersion: OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_VERSION,
+    actionTypes: Object.freeze(["move"]),
+    transitionSchema: OFFICIAL_STANDARD_MOVE_V3_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_DISENGAGE_EXECUTOR_ID,
     executorVersion: OFFICIAL_DISENGAGE_EXECUTOR_VERSION,
     actionTypes: Object.freeze(["disengage"]),
@@ -980,6 +1040,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     executorVersion: OFFICIAL_DISENGAGE_CASUALTY_EXECUTOR_VERSION,
     actionTypes: Object.freeze(["disengage"]),
     transitionSchema: OFFICIAL_DISENGAGE_CASUALTY_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
+    executorId: OFFICIAL_DISENGAGE_V3_EXECUTOR_ID,
+    executorVersion: OFFICIAL_DISENGAGE_V3_EXECUTOR_VERSION,
+    actionTypes: Object.freeze(["disengage"]),
+    transitionSchema: OFFICIAL_DISENGAGE_V3_TRANSITION_SCHEMA,
   }),
   Object.freeze({
     executorId: OFFICIAL_MISSION_MARKER_CONTROL_EXECUTOR_ID,
@@ -1355,11 +1421,17 @@ const EXECUTOR_ATOM_IDS = new Map([
     OFFICIAL_START_OF_ROUND_V2_EXECUTOR_ID,
     OFFICIAL_START_OF_ROUND_V2_EXECUTOR_ATOM_IDS,
   ],
+  [
+    OFFICIAL_START_OF_ROUND_V3_EXECUTOR_ID,
+    OFFICIAL_START_OF_ROUND_V3_EXECUTOR_ATOM_IDS,
+  ],
   [OFFICIAL_MOVEMENT_HOLD_EXECUTOR_ID, OFFICIAL_MOVEMENT_HOLD_ATOM_IDS],
   [OFFICIAL_RESERVE_DEPLOY_EXECUTOR_ID, OFFICIAL_RESERVE_DEPLOY_NEW_ATOM_IDS],
   [OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ID, OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ATOM_IDS],
+  [OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_ID, OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STANDARD_MOVE_EXECUTOR_ID, OFFICIAL_STANDARD_MOVE_NEW_ATOM_IDS],
   [OFFICIAL_STANDARD_MOVE_V2_EXECUTOR_ID, OFFICIAL_STANDARD_MOVE_V2_EXECUTOR_ATOM_IDS],
+  [OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_ID, OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_ATOM_IDS],
   [OFFICIAL_MARINE_CHARGE_EXECUTOR_ID, OFFICIAL_MARINE_CHARGE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [
@@ -1371,6 +1443,7 @@ const EXECUTOR_ATOM_IDS = new Map([
     OFFICIAL_DISENGAGE_CASUALTY_EXECUTOR_ID,
     OFFICIAL_DISENGAGE_CASUALTY_EXECUTOR_ATOM_IDS,
   ],
+  [OFFICIAL_DISENGAGE_V3_EXECUTOR_ID, OFFICIAL_DISENGAGE_V3_EXECUTOR_ATOM_IDS],
   [OFFICIAL_MISSION_MARKER_CONTROL_EXECUTOR_ID, OFFICIAL_MISSION_MARKER_CONTROL_ATOM_IDS],
   [OFFICIAL_SUPPLY_LOSS_COMBAT_EXECUTOR_ID, OFFICIAL_SUPPLY_LOSS_COMBAT_EXECUTOR_ATOM_IDS],
   [
@@ -1839,17 +1912,26 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const startOfRoundV2Enabled = enabledExecutorIds.has(
     OFFICIAL_START_OF_ROUND_V2_EXECUTOR_ID,
   );
+  const startOfRoundV3Enabled = enabledExecutorIds.has(
+    OFFICIAL_START_OF_ROUND_V3_EXECUTOR_ID,
+  );
   const reserveDeployEnabled = enabledExecutorIds.has(
     OFFICIAL_RESERVE_DEPLOY_EXECUTOR_ID,
   );
   const reserveDeployV2Enabled = enabledExecutorIds.has(
     OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ID,
   );
+  const reserveDeployV3Enabled = enabledExecutorIds.has(
+    OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_ID,
+  );
   const standardMoveEnabled = enabledExecutorIds.has(
     OFFICIAL_STANDARD_MOVE_EXECUTOR_ID,
   );
   const standardMoveV2Enabled = enabledExecutorIds.has(
     OFFICIAL_STANDARD_MOVE_V2_EXECUTOR_ID,
+  );
+  const standardMoveV3Enabled = enabledExecutorIds.has(
+    OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_ID,
   );
   const stimpackMoveEnabled = enabledExecutorIds.has(
     OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID,
@@ -1865,6 +1947,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   );
   const disengageCasualtyEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_CASUALTY_EXECUTOR_ID,
+  );
+  const disengageV3Enabled = enabledExecutorIds.has(
+    OFFICIAL_DISENGAGE_V3_EXECUTOR_ID,
   );
   const assaultHoldV2Enabled = enabledExecutorIds.has(
     OFFICIAL_ASSAULT_HOLD_V2_EXECUTOR_ID,
@@ -1996,13 +2081,16 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       || closeRanksCombatEnabled
       || reserveDeployEnabled
       || reserveDeployV2Enabled
+      || reserveDeployV3Enabled
       || standardMoveEnabled
       || standardMoveV2Enabled
+      || standardMoveV3Enabled
       || stimpackMoveEnabled
       || optionalStimpackMoveV2Enabled
       || marineChargeEnabled
       || disengageEnabled
-      || disengageCasualtyEnabled ? {
+      || disengageCasualtyEnabled
+      || disengageV3Enabled ? {
       parameterDomainKinds: [
         ...(closeCombatAttackV8Enabled
           || closeCombatAttackV7Enabled
@@ -2030,13 +2118,17 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           : closeRanksCombatEnabled
             ? [OFFICIAL_CLOSE_RANKS_PARAMETER_KIND]
             : []),
-        ...(reserveDeployV2Enabled
-          ? [OFFICIAL_RESERVE_DEPLOY_V2_PARAMETER_KIND]
+        ...(reserveDeployV3Enabled
+          ? [OFFICIAL_RESERVE_DEPLOY_V3_PARAMETER_KIND]
+          : reserveDeployV2Enabled
+            ? [OFFICIAL_RESERVE_DEPLOY_V2_PARAMETER_KIND]
           : reserveDeployEnabled
             ? [OFFICIAL_RESERVE_DEPLOY_PARAMETER_KIND]
             : []),
-        ...(standardMoveV2Enabled
-          ? [OFFICIAL_STANDARD_MOVE_V2_PARAMETER_KIND]
+        ...(standardMoveV3Enabled
+          ? [OFFICIAL_STANDARD_MOVE_V3_PARAMETER_KIND]
+          : standardMoveV2Enabled
+            ? [OFFICIAL_STANDARD_MOVE_V2_PARAMETER_KIND]
           : standardMoveEnabled
             ? [OFFICIAL_STANDARD_MOVE_PARAMETER_KIND]
             : []),
@@ -2048,8 +2140,13 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           OFFICIAL_MARINE_CHARGE_DECLARATION_PARAMETER_KIND,
           OFFICIAL_MARINE_CHARGE_RESOLUTION_PARAMETER_KIND,
         ] : []),
-        ...(disengageEnabled ? [OFFICIAL_DISENGAGE_PARAMETER_KIND] : []),
-        ...(disengageCasualtyEnabled ? [OFFICIAL_DISENGAGE_CASUALTY_PARAMETER_KIND] : []),
+        ...(disengageV3Enabled
+          ? [OFFICIAL_DISENGAGE_V3_PARAMETER_KIND]
+          : disengageCasualtyEnabled
+            ? [OFFICIAL_DISENGAGE_CASUALTY_PARAMETER_KIND]
+            : disengageEnabled
+              ? [OFFICIAL_DISENGAGE_PARAMETER_KIND]
+              : []),
         ...(specialistLoadoutEnabled ? [OFFICIAL_SPECIALIST_LOADOUT_PARAMETER_KIND] : []),
       ],
     } : {}),
@@ -2484,9 +2581,15 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     }
     if (!initiativePending
       && state.phase === "movement"
-      && (reserveDeployEnabled || reserveDeployV2Enabled)) {
-      const deploy = reserveDeployV2Enabled
-        ? enumerateOfficialReserveDeployV2(state, {
+      && (reserveDeployEnabled || reserveDeployV2Enabled || reserveDeployV3Enabled)) {
+      const deploy = reserveDeployV3Enabled
+        ? enumerateOfficialReserveDeployV3(state, {
+          sideKey,
+          includeDisabled,
+          matchBinding: options.matchBinding,
+        })
+        : reserveDeployV2Enabled
+          ? enumerateOfficialReserveDeployV2(state, {
           sideKey,
           includeDisabled,
           matchBinding: options.matchBinding,
@@ -2500,9 +2603,15 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       parameterDomains.push(...deploy.parameterDomains);
     }
     if (!initiativePending && state.phase === "movement"
-      && (standardMoveV2Enabled || standardMoveEnabled)) {
-      const move = standardMoveV2Enabled
-        ? enumerateOfficialStandardMoveV2(state, {
+      && (standardMoveV3Enabled || standardMoveV2Enabled || standardMoveEnabled)) {
+      const move = standardMoveV3Enabled
+        ? enumerateOfficialStandardMoveV3(state, {
+          sideKey,
+          includeDisabled,
+          matchBinding: options.matchBinding,
+        })
+        : standardMoveV2Enabled
+          ? enumerateOfficialStandardMoveV2(state, {
           sideKey,
           includeDisabled,
           matchBinding: options.matchBinding,
@@ -2533,21 +2642,26 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       candidates.push(...move.candidates);
       parameterDomains.push(...move.parameterDomains);
     }
-    if (!initiativePending && state.phase === "movement" && disengageEnabled) {
-      const disengage = enumerateOfficialDisengageV1(state, {
-        sideKey,
-        includeDisabled,
-        matchBinding: options.matchBinding,
-      });
-      candidates.push(...disengage.candidates);
-      parameterDomains.push(...disengage.parameterDomains);
-    }
-    if (!initiativePending && state.phase === "movement" && disengageCasualtyEnabled) {
-      const disengage = enumerateOfficialDisengageCasualtyV1(state, {
-        sideKey,
-        includeDisabled,
-        matchBinding: options.matchBinding,
-      });
+    if (!initiativePending
+      && state.phase === "movement"
+      && (disengageV3Enabled || disengageCasualtyEnabled || disengageEnabled)) {
+      const disengage = disengageV3Enabled
+        ? enumerateOfficialDisengageV3(state, {
+          sideKey,
+          includeDisabled,
+          matchBinding: options.matchBinding,
+        })
+        : disengageCasualtyEnabled
+          ? enumerateOfficialDisengageCasualtyV1(state, {
+            sideKey,
+            includeDisabled,
+            matchBinding: options.matchBinding,
+          })
+          : enumerateOfficialDisengageV1(state, {
+            sideKey,
+            includeDisabled,
+            matchBinding: options.matchBinding,
+          });
       candidates.push(...disengage.candidates);
       parameterDomains.push(...disengage.parameterDomains);
     }
@@ -3001,7 +3115,13 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         matchBinding: options.matchBinding,
       }));
     }
-    if (state.phase === "start_of_round" && startOfRoundV2Enabled) {
+    if (state.phase === "start_of_round" && startOfRoundV3Enabled) {
+      candidates.push(...enumerateOfficialStartOfRoundActionsV3(state, {
+        sideKey,
+        includeDisabled,
+        matchBinding: options.matchBinding,
+      }));
+    } else if (state.phase === "start_of_round" && startOfRoundV2Enabled) {
       candidates.push(...enumerateOfficialStartOfRoundActionsV2(state, {
         sideKey,
         includeDisabled,
@@ -4214,6 +4334,21 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       };
     }
     if (action.actionType === OFFICIAL_START_OF_ROUND_ACTION_TYPE) {
+      if (startOfRoundV3Enabled
+        && action.executorId === OFFICIAL_START_OF_ROUND_V3_EXECUTOR_ID
+        && action.executorVersion === OFFICIAL_START_OF_ROUND_V3_EXECUTOR_VERSION) {
+        assertActionLineage(action, OFFICIAL_START_OF_ROUND_V3_EXECUTOR_ATOM_IDS);
+        const applied = applyOfficialStartOfRoundV3(state, action, {
+          postRevision: Number(options.postRevision || 0),
+          matchBinding: options.matchBinding,
+        });
+        return {
+          ...applied,
+          action: clone(action),
+          rulesTruth: descriptor.rulesTruth,
+          trainingTruth: false,
+        };
+      }
       if (startOfRoundV2Enabled
         && action.executorId === OFFICIAL_START_OF_ROUND_V2_EXECUTOR_ID
         && action.executorVersion === OFFICIAL_START_OF_ROUND_V2_EXECUTOR_VERSION) {
@@ -4739,8 +4874,12 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       };
     }
     if (action.actionType === "deploy") {
+      const currentV3 = action.executorId === OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_ID;
       const currentV2 = action.executorId === OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ID;
-      if (currentV2
+      if (currentV3
+        ? (!reserveDeployV3Enabled
+          || action.executorVersion !== OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_VERSION)
+        : currentV2
         ? (!reserveDeployV2Enabled
           || action.executorVersion !== OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_VERSION)
         : (!reserveDeployEnabled
@@ -4750,15 +4889,22 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       }
       assertActionLineage(
         action,
-        currentV2
-          ? OFFICIAL_RESERVE_DEPLOY_V2_ACTION_ATOM_IDS
+        currentV3
+          ? OFFICIAL_RESERVE_DEPLOY_V3_ACTION_ATOM_IDS
+          : currentV2
+            ? OFFICIAL_RESERVE_DEPLOY_V2_ACTION_ATOM_IDS
           : OFFICIAL_RESERVE_DEPLOY_ACTION_ATOM_IDS,
       );
-      const applied = currentV2
-        ? applyOfficialReserveDeployV2(state, action, {
+      const applied = currentV3
+        ? applyOfficialReserveDeployV3(state, action, {
           postRevision: Number(options.postRevision || 0),
           matchBinding: options.matchBinding,
         })
+        : currentV2
+          ? applyOfficialReserveDeployV2(state, action, {
+            postRevision: Number(options.postRevision || 0),
+            matchBinding: options.matchBinding,
+          })
         : applyOfficialReserveDeployV1(state, action, {
           postRevision: Number(options.postRevision || 0),
           matchBinding: options.matchBinding,
@@ -4868,6 +5014,43 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       };
     }
     if (action.actionType === "move"
+      && action.executorId === OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_ID) {
+      if (!standardMoveV3Enabled
+        || action.executorVersion !== OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action, OFFICIAL_STANDARD_MOVE_V3_ACTION_ATOM_IDS);
+      const applied = applyOfficialStandardMoveV3(state, action, {
+        postRevision: Number(options.postRevision || 0),
+        matchBinding: options.matchBinding,
+      });
+      const settled = settleOfficialAlternatingPhaseAfterActivationV1(applied.state, {
+        phase: "movement",
+        actingSideKey: action.sideKey,
+        sideHasAvailableActivation: hasOfficialPhaseActivationPrerequisite,
+      });
+      const resolvedAction = clone(action);
+      const events = [...(applied.events || []), ...settled.events];
+      const phaseAdvanced = events.find((event) => event.type === "phase_advanced");
+      if (phaseInitiativeEnabled && phaseAdvanced) {
+        phaseAdvanced.phaseInitiativePending = true;
+        phaseAdvanced.initiativeChooserSideKey = settled.state.firstPlayerSideKey;
+      }
+      const lastLog = settled.state.log?.at(-1);
+      if (lastLog) {
+        lastLog.action = clone(resolvedAction);
+        lastLog.events = clone(events);
+      }
+      return {
+        ...applied,
+        state: settled.state,
+        events,
+        action: resolvedAction,
+        rulesTruth: descriptor.rulesTruth,
+        trainingTruth: false,
+      };
+    }
+    if (action.actionType === "move"
       && action.executorId === OFFICIAL_STANDARD_MOVE_V2_EXECUTOR_ID) {
       if (!standardMoveV2Enabled
         || action.executorVersion !== OFFICIAL_STANDARD_MOVE_V2_EXECUTOR_VERSION) {
@@ -4912,6 +5095,43 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       }
       assertActionLineage(action, OFFICIAL_STANDARD_MOVE_ACTION_ATOM_IDS);
       const applied = applyOfficialStandardMoveV1(state, action, {
+        postRevision: Number(options.postRevision || 0),
+        matchBinding: options.matchBinding,
+      });
+      const settled = settleOfficialAlternatingPhaseAfterActivationV1(applied.state, {
+        phase: "movement",
+        actingSideKey: action.sideKey,
+        sideHasAvailableActivation: hasOfficialPhaseActivationPrerequisite,
+      });
+      const resolvedAction = clone(action);
+      const events = [...(applied.events || []), ...settled.events];
+      const phaseAdvanced = events.find((event) => event.type === "phase_advanced");
+      if (phaseInitiativeEnabled && phaseAdvanced) {
+        phaseAdvanced.phaseInitiativePending = true;
+        phaseAdvanced.initiativeChooserSideKey = settled.state.firstPlayerSideKey;
+      }
+      const lastLog = settled.state.log?.at(-1);
+      if (lastLog) {
+        lastLog.action = clone(resolvedAction);
+        lastLog.events = clone(events);
+      }
+      return {
+        ...applied,
+        state: settled.state,
+        events,
+        action: resolvedAction,
+        rulesTruth: descriptor.rulesTruth,
+        trainingTruth: false,
+      };
+    }
+    if (action.actionType === "disengage"
+      && action.executorId === OFFICIAL_DISENGAGE_V3_EXECUTOR_ID) {
+      if (!disengageV3Enabled
+        || action.executorVersion !== OFFICIAL_DISENGAGE_V3_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action, OFFICIAL_DISENGAGE_V3_ACTION_ATOM_IDS);
+      const applied = applyOfficialDisengageV3(state, action, {
         postRevision: Number(options.postRevision || 0),
         matchBinding: options.matchBinding,
       });
@@ -5235,6 +5455,17 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         matchBinding: options.matchBinding,
       });
     }
+    if (domain.parameterKind === OFFICIAL_DISENGAGE_V3_PARAMETER_KIND) {
+      if (!disengageV3Enabled
+        || domain.executorId !== OFFICIAL_DISENGAGE_V3_EXECUTOR_ID
+        || domain.executorVersion !== OFFICIAL_DISENGAGE_V3_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain, OFFICIAL_DISENGAGE_V3_ACTION_ATOM_IDS);
+      return instantiateOfficialDisengageV3(state, domain, parameters, {
+        matchBinding: options.matchBinding,
+      });
+    }
     if (domain.parameterKind === OFFICIAL_DISENGAGE_CASUALTY_PARAMETER_KIND) {
       if (!disengageCasualtyEnabled
         || domain.executorId !== OFFICIAL_DISENGAGE_CASUALTY_EXECUTOR_ID
@@ -5286,6 +5517,17 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         { matchBinding: options.matchBinding },
       );
     }
+    if (domain.parameterKind === OFFICIAL_STANDARD_MOVE_V3_PARAMETER_KIND) {
+      if (!standardMoveV3Enabled
+        || domain.executorId !== OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_ID
+        || domain.executorVersion !== OFFICIAL_STANDARD_MOVE_V3_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain, OFFICIAL_STANDARD_MOVE_V3_ACTION_ATOM_IDS);
+      return instantiateOfficialStandardMoveV3(state, domain, parameters, {
+        matchBinding: options.matchBinding,
+      });
+    }
     if (domain.parameterKind === OFFICIAL_STANDARD_MOVE_V2_PARAMETER_KIND) {
       if (!standardMoveV2Enabled
         || domain.executorId !== OFFICIAL_STANDARD_MOVE_V2_EXECUTOR_ID
@@ -5305,6 +5547,17 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       }
       assertActionLineage(domain, OFFICIAL_STANDARD_MOVE_ACTION_ATOM_IDS);
       return instantiateOfficialStandardMoveV1(state, domain, parameters, {
+        matchBinding: options.matchBinding,
+      });
+    }
+    if (domain.parameterKind === OFFICIAL_RESERVE_DEPLOY_V3_PARAMETER_KIND) {
+      if (!reserveDeployV3Enabled
+        || domain.executorId !== OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_ID
+        || domain.executorVersion !== OFFICIAL_RESERVE_DEPLOY_V3_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain, OFFICIAL_RESERVE_DEPLOY_V3_ACTION_ATOM_IDS);
+      return instantiateOfficialReserveDeployV3(state, domain, parameters, {
         matchBinding: options.matchBinding,
       });
     }

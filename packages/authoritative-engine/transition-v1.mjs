@@ -639,7 +639,9 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry.executorId,
     entry,
   ]));
-  const actionSchemaVersion = runtimeExecutors.has("authority.standard-move-v2")
+  const actionSchemaVersion = runtimeExecutors.has("authority.disengage-v3")
+    ? "hybrid_legal_space_v22"
+    : runtimeExecutors.has("authority.standard-move-v2")
     ? "hybrid_legal_space_v21"
     : runtimeExecutors.has("authority.reserve-deploy-v2")
     ? "hybrid_legal_space_v20"
