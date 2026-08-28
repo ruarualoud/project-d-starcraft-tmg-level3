@@ -210,10 +210,17 @@ const historicalDetermineInitiativeSliceReport = JSON.parse(await readFile(
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalStartOfRoundSliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-existing-start-of-round-contract-closure-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-existing-reserve-deploy-contract-closure-v1-report.json",
   ),
   "utf8",
 ));
@@ -477,8 +484,11 @@ const historicalVictoryPointSlice = historicalVictoryPointSliceReport.slice;
 const historicalHoldPositionEndGameSlice = historicalHoldPositionEndGameSliceReport.slice;
 const historicalCleanupRefreshSlice = historicalCleanupRefreshSliceReport.slice;
 const historicalDetermineInitiativeSlice = historicalDetermineInitiativeSliceReport.slice;
+const historicalStartOfRoundSlice = historicalStartOfRoundSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalStartOfRoundSlice.sliceHash);
+assert.equal(historicalStartOfRoundSlice.previousSliceHash,
   historicalDetermineInitiativeSlice.sliceHash);
 assert.equal(historicalDetermineInitiativeSlice.previousSliceHash,
   historicalCleanupRefreshSlice.sliceHash);
@@ -594,20 +604,20 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     executableRuleAtoms: 421,
     reviewRequiredRuleAtoms: 491,
     displayOnlyRuleAtoms: 114,
-    changedAtoms: 13,
+    changedAtoms: 30,
     changedNonTargetAtoms: 0,
     newlyExecutableRuleAtoms: 0,
-    versionReassignedRuleAtoms: 13,
-    declaredStateContractExecutors: 25,
-    stateContractMissingExecutors: 17,
-    strictCompleteAtoms: 186,
-    partialContractAtoms: 78,
-    noContractAtoms: 157,
+    versionReassignedRuleAtoms: 30,
+    declaredStateContractExecutors: 26,
+    stateContractMissingExecutors: 16,
+    strictCompleteAtoms: 216,
+    partialContractAtoms: 67,
+    noContractAtoms: 138,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "b4a63b98baebc6fc74f43356d94b4e61f1456c3c561ef9c771083644a29c1a99",
+    "f8cae053d340153b166c12c69e25f719e2b79b6abce78ba05a59f978248bb27c",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -801,6 +811,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     manifestById.get("authority.start-of-round-v2").actionTypes,
     ["resolve_start_of_round"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.reserve-deploy-v2").actionTypes,
+    ["deploy"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -823,7 +837,7 @@ await check("authority_health_and_match_binding_expose_the_runtime_identity", ()
     envelope.matchBinding.dependencies.actionSchema.contentHash,
     hashStarcraftTmgContract({
       kind: "action-schema",
-      schemaVersion: "hybrid_legal_space_v19",
+      schemaVersion: "hybrid_legal_space_v20",
     }),
   );
   assert.equal(envelope.matchBinding.productionReady, false);

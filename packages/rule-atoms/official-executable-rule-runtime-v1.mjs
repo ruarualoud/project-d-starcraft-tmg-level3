@@ -129,6 +129,17 @@ import {
   OFFICIAL_RESERVE_DEPLOY_TRANSITION_SCHEMA,
 } from "./official-reserve-deploy-executor-v1.mjs";
 import {
+  applyOfficialReserveDeployV2,
+  enumerateOfficialReserveDeployV2,
+  instantiateOfficialReserveDeployV2,
+  OFFICIAL_RESERVE_DEPLOY_V2_ACTION_ATOM_IDS,
+  OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ATOM_IDS,
+  OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ID,
+  OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_VERSION,
+  OFFICIAL_RESERVE_DEPLOY_V2_PARAMETER_KIND,
+  OFFICIAL_RESERVE_DEPLOY_V2_TRANSITION_SCHEMA,
+} from "./official-reserve-deploy-executor-v2.mjs";
+import {
   applyOfficialStandardMoveV1,
   enumerateOfficialStandardMoveV1,
   instantiateOfficialStandardMoveV1,
@@ -930,6 +941,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_RESERVE_DEPLOY_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ID,
+    executorVersion: OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_VERSION,
+    actionTypes: Object.freeze(["deploy"]),
+    transitionSchema: OFFICIAL_RESERVE_DEPLOY_V2_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_STANDARD_MOVE_EXECUTOR_ID,
     executorVersion: OFFICIAL_STANDARD_MOVE_EXECUTOR_VERSION,
     actionTypes: Object.freeze(["move"]),
@@ -1323,6 +1340,7 @@ const EXECUTOR_ATOM_IDS = new Map([
   ],
   [OFFICIAL_MOVEMENT_HOLD_EXECUTOR_ID, OFFICIAL_MOVEMENT_HOLD_ATOM_IDS],
   [OFFICIAL_RESERVE_DEPLOY_EXECUTOR_ID, OFFICIAL_RESERVE_DEPLOY_NEW_ATOM_IDS],
+  [OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ID, OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STANDARD_MOVE_EXECUTOR_ID, OFFICIAL_STANDARD_MOVE_NEW_ATOM_IDS],
   [OFFICIAL_MARINE_CHARGE_EXECUTOR_ID, OFFICIAL_MARINE_CHARGE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
@@ -1806,6 +1824,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const reserveDeployEnabled = enabledExecutorIds.has(
     OFFICIAL_RESERVE_DEPLOY_EXECUTOR_ID,
   );
+  const reserveDeployV2Enabled = enabledExecutorIds.has(
+    OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ID,
+  );
   const standardMoveEnabled = enabledExecutorIds.has(
     OFFICIAL_STANDARD_MOVE_EXECUTOR_ID,
   );
@@ -1953,6 +1974,7 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       || multiModelCloseRanksEnabled
       || closeRanksCombatEnabled
       || reserveDeployEnabled
+      || reserveDeployV2Enabled
       || standardMoveEnabled
       || stimpackMoveEnabled
       || optionalStimpackMoveV2Enabled
@@ -1986,7 +2008,11 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           : closeRanksCombatEnabled
             ? [OFFICIAL_CLOSE_RANKS_PARAMETER_KIND]
             : []),
-        ...(reserveDeployEnabled ? [OFFICIAL_RESERVE_DEPLOY_PARAMETER_KIND] : []),
+        ...(reserveDeployV2Enabled
+          ? [OFFICIAL_RESERVE_DEPLOY_V2_PARAMETER_KIND]
+          : reserveDeployEnabled
+            ? [OFFICIAL_RESERVE_DEPLOY_PARAMETER_KIND]
+            : []),
         ...(standardMoveEnabled ? [OFFICIAL_STANDARD_MOVE_PARAMETER_KIND] : []),
         ...(stimpackMoveEnabled ? [OFFICIAL_STIMPACK_MOVE_PARAMETER_KIND] : []),
         ...(optionalStimpackMoveV2Enabled
@@ -2430,12 +2456,20 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         passAtomIdsForPhase("movement"),
       )));
     }
-    if (!initiativePending && state.phase === "movement" && reserveDeployEnabled) {
-      const deploy = enumerateOfficialReserveDeployV1(state, {
-        sideKey,
-        includeDisabled,
-        matchBinding: options.matchBinding,
-      });
+    if (!initiativePending
+      && state.phase === "movement"
+      && (reserveDeployEnabled || reserveDeployV2Enabled)) {
+      const deploy = reserveDeployV2Enabled
+        ? enumerateOfficialReserveDeployV2(state, {
+          sideKey,
+          includeDisabled,
+          matchBinding: options.matchBinding,
+        })
+        : enumerateOfficialReserveDeployV1(state, {
+          sideKey,
+          includeDisabled,
+          matchBinding: options.matchBinding,
+        });
       candidates.push(...deploy.candidates);
       parameterDomains.push(...deploy.parameterDomains);
     }
@@ -4672,16 +4706,30 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       };
     }
     if (action.actionType === "deploy") {
-      if (!reserveDeployEnabled
-        || action.executorId !== OFFICIAL_RESERVE_DEPLOY_EXECUTOR_ID
-        || action.executorVersion !== OFFICIAL_RESERVE_DEPLOY_EXECUTOR_VERSION) {
+      const currentV2 = action.executorId === OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ID;
+      if (currentV2
+        ? (!reserveDeployV2Enabled
+          || action.executorVersion !== OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_VERSION)
+        : (!reserveDeployEnabled
+          || action.executorId !== OFFICIAL_RESERVE_DEPLOY_EXECUTOR_ID
+          || action.executorVersion !== OFFICIAL_RESERVE_DEPLOY_EXECUTOR_VERSION)) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
-      assertActionLineage(action, OFFICIAL_RESERVE_DEPLOY_ACTION_ATOM_IDS);
-      const applied = applyOfficialReserveDeployV1(state, action, {
-        postRevision: Number(options.postRevision || 0),
-        matchBinding: options.matchBinding,
-      });
+      assertActionLineage(
+        action,
+        currentV2
+          ? OFFICIAL_RESERVE_DEPLOY_V2_ACTION_ATOM_IDS
+          : OFFICIAL_RESERVE_DEPLOY_ACTION_ATOM_IDS,
+      );
+      const applied = currentV2
+        ? applyOfficialReserveDeployV2(state, action, {
+          postRevision: Number(options.postRevision || 0),
+          matchBinding: options.matchBinding,
+        })
+        : applyOfficialReserveDeployV1(state, action, {
+          postRevision: Number(options.postRevision || 0),
+          matchBinding: options.matchBinding,
+        });
       const settled = settleOfficialAlternatingPhaseAfterActivationV1(applied.state, {
         phase: "movement",
         actingSideKey: action.sideKey,
@@ -5176,6 +5224,17 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       }
       assertActionLineage(domain, OFFICIAL_STANDARD_MOVE_ACTION_ATOM_IDS);
       return instantiateOfficialStandardMoveV1(state, domain, parameters, {
+        matchBinding: options.matchBinding,
+      });
+    }
+    if (domain.parameterKind === OFFICIAL_RESERVE_DEPLOY_V2_PARAMETER_KIND) {
+      if (!reserveDeployV2Enabled
+        || domain.executorId !== OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_ID
+        || domain.executorVersion !== OFFICIAL_RESERVE_DEPLOY_V2_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain, OFFICIAL_RESERVE_DEPLOY_V2_ACTION_ATOM_IDS);
+      return instantiateOfficialReserveDeployV2(state, domain, parameters, {
         matchBinding: options.matchBinding,
       });
     }

@@ -10,22 +10,27 @@ const ROOT = path.resolve(HERE, "..");
 const OUTPUT_DIR = path.join(ROOT, "build", "ticket-11-rule-atoms-v1");
 const REPORT_NAME = "ticket-11-rule-atom-foundation-aggregate-v1-report.json";
 
-const EXPECTED_BASE_REPORTS = 123;
-const EXPECTED_BASE_ASSERTIONS = 1285;
+const EXPECTED_BASE_REPORTS = 124;
+const EXPECTED_BASE_ASSERTIONS = 1298;
 const EXPECTED_CURRENT = Object.freeze({
-  sliceHash: "3a81f7d6c7d5b61fd443d63521a05d20336950f59ae68f0e4839d2dcc89b012b",
-  catalogueHash: "70f8a9b7e69c45f788aa3d967417a04898dfeff2855e64760bd5ae397a318529",
-  runtimeHash: "b4a63b98baebc6fc74f43356d94b4e61f1456c3c561ef9c771083644a29c1a99",
+  sliceHash: "95d7d170e04ea331949f75dc50709c3e7e4da42a166f71a6096794299967f378",
+  catalogueHash: "702434b35a0f0af64acd03b706993f02153e1c6c1e4533fa6b65be6f3da7d4e1",
+  runtimeHash: "f8cae053d340153b166c12c69e25f719e2b79b6abce78ba05a59f978248bb27c",
   relationshipGraphHash:
-    "62e894083bdf2d4e52601f9bc3d17da857d7954b40033ac3d481498dfaa4ee5e",
+    "afd540544a397b5c1a55c305477d57a2c2bf713fcadb8fd6834e5e1358e9a2f8",
   executableRuleAtoms: 421,
   reviewRequiredRuleAtoms: 491,
   displayOnlyRuleAtoms: 114,
-  strictCompleteAtoms: 186,
-  partialContractAtoms: 78,
-  noContractAtoms: 157,
-  declaredStateContractExecutors: 25,
-  stateContractMissingExecutors: 17,
+  strictCompleteAtoms: 216,
+  partialContractAtoms: 67,
+  noContractAtoms: 138,
+  declaredStateContractExecutors: 26,
+  stateContractMissingExecutors: 16,
+});
+const EXPECTED_HISTORICAL_START_OF_ROUND = Object.freeze({
+  sliceHash: "3a81f7d6c7d5b61fd443d63521a05d20336950f59ae68f0e4839d2dcc89b012b",
+  catalogueHash: "70f8a9b7e69c45f788aa3d967417a04898dfeff2855e64760bd5ae397a318529",
+  runtimeHash: "b4a63b98baebc6fc74f43356d94b4e61f1456c3c561ef9c771083644a29c1a99",
 });
 const EXPECTED_HISTORICAL_DETERMINE_INITIATIVE = Object.freeze({
   sliceHash: "54170af6469649848bbacc19743c4ba0952441d8fa510a1892100a58bfb55448",
@@ -369,7 +374,7 @@ const EXPECTED_EXECUTORS = Object.freeze([
   "authority.optical-flare-ranged-consumer-v1@1.0.0",
   "authority.phase-initiative-v1@1.0.0",
   "authority.ranged-attack-v6@6.0.0",
-  "authority.reserve-deploy-v1@1.0.0",
+  "authority.reserve-deploy-v2@2.0.0",
   "authority.sidearm-pinpoint-ranged-batch-v1@1.0.0",
   "authority.specialist-loadout-v1@1.0.0",
   "authority.specialist-ranged-batch-v1@1.0.0",
@@ -495,8 +500,11 @@ const historicalCleanupRefresh = byName.get(
 const historicalDetermineInitiative = byName.get(
   "official-existing-determine-initiative-contract-closure-v1-report.json",
 );
-const current = byName.get(
+const historicalStartOfRound = byName.get(
   "official-existing-start-of-round-contract-closure-v1-report.json",
+);
+const current = byName.get(
+  "official-existing-reserve-deploy-contract-closure-v1-report.json",
 );
 const historicalV4 = byName.get("official-out-of-coherency-close-ranks-rule-slice-v1-report.json");
 const denominator = byName.get("official-canonical-rule-atom-denominator-v1-report.json");
@@ -558,10 +566,10 @@ await check("canonical_denominator_and_current_dispositions_partition_exactly", 
     executableRuleAtoms: EXPECTED_CURRENT.executableRuleAtoms,
     reviewRequiredRuleAtoms: EXPECTED_CURRENT.reviewRequiredRuleAtoms,
     displayOnlyRuleAtoms: EXPECTED_CURRENT.displayOnlyRuleAtoms,
-    changedAtoms: 13,
+    changedAtoms: 30,
     changedNonTargetAtoms: 0,
     newlyExecutableRuleAtoms: 0,
-    versionReassignedRuleAtoms: 13,
+    versionReassignedRuleAtoms: 30,
     declaredStateContractExecutors: EXPECTED_CURRENT.declaredStateContractExecutors,
     stateContractMissingExecutors: EXPECTED_CURRENT.stateContractMissingExecutors,
     strictCompleteAtoms: EXPECTED_CURRENT.strictCompleteAtoms,
@@ -577,10 +585,19 @@ await check("current_slice_catalogue_runtime_and_lineage_are_exact", () => {
   assert.equal(current.runtimeHash, EXPECTED_CURRENT.runtimeHash);
   assert.equal(
     current.slice.previousSliceHash,
-    EXPECTED_HISTORICAL_DETERMINE_INITIATIVE.sliceHash,
+    EXPECTED_HISTORICAL_START_OF_ROUND.sliceHash,
   );
   assert.equal(
     current.slice.previousCatalogueHash,
+    EXPECTED_HISTORICAL_START_OF_ROUND.catalogueHash,
+  );
+  assert.equal(historicalStartOfRound.runtimeHash, EXPECTED_HISTORICAL_START_OF_ROUND.runtimeHash);
+  assert.equal(
+    historicalStartOfRound.slice.previousSliceHash,
+    EXPECTED_HISTORICAL_DETERMINE_INITIATIVE.sliceHash,
+  );
+  assert.equal(
+    historicalStartOfRound.slice.previousCatalogueHash,
     EXPECTED_HISTORICAL_DETERMINE_INITIATIVE.catalogueHash,
   );
   assert.equal(
@@ -1022,10 +1039,16 @@ await check("historical_v4_catalogue_runtime_and_rules_display_remain_frozen", (
   assert.equal(historicalDetermineInitiative.slice.historicalCompatibility
     .silentCompatibilityAllowed, false);
   assert.equal(current.historicalSliceHash,
-    EXPECTED_HISTORICAL_DETERMINE_INITIATIVE.sliceHash);
+    EXPECTED_HISTORICAL_START_OF_ROUND.sliceHash);
   assert.equal(current.historicalCatalogueHash,
-    EXPECTED_HISTORICAL_DETERMINE_INITIATIVE.catalogueHash);
+    EXPECTED_HISTORICAL_START_OF_ROUND.catalogueHash);
   assert.equal(current.historicalRuntimeHash,
+    EXPECTED_HISTORICAL_START_OF_ROUND.runtimeHash);
+  assert.equal(historicalStartOfRound.historicalSliceHash,
+    EXPECTED_HISTORICAL_DETERMINE_INITIATIVE.sliceHash);
+  assert.equal(historicalStartOfRound.historicalCatalogueHash,
+    EXPECTED_HISTORICAL_DETERMINE_INITIATIVE.catalogueHash);
+  assert.equal(historicalStartOfRound.historicalRuntimeHash,
     EXPECTED_HISTORICAL_DETERMINE_INITIATIVE.runtimeHash);
   assert.equal(startOfRound.historicalSliceHash, EXPECTED_HISTORICAL_DETERMINE.sliceHash);
   assert.equal(startOfRound.historicalCatalogueHash, EXPECTED_HISTORICAL_DETERMINE.catalogueHash);
@@ -1066,15 +1089,15 @@ await check("historical_v4_catalogue_runtime_and_rules_display_remain_frozen", (
   );
   assert.equal(
     current.slice.historicalCompatibility.previousSliceHash,
-    EXPECTED_HISTORICAL_DETERMINE_INITIATIVE.sliceHash,
+    EXPECTED_HISTORICAL_START_OF_ROUND.sliceHash,
   );
   assert.equal(
     current.slice.historicalCompatibility.previousCatalogueHash,
-    EXPECTED_HISTORICAL_DETERMINE_INITIATIVE.catalogueHash,
+    EXPECTED_HISTORICAL_START_OF_ROUND.catalogueHash,
   );
   assert.equal(
     current.slice.historicalCompatibility.previousRuntimeHash,
-    EXPECTED_HISTORICAL_DETERMINE_INITIATIVE.runtimeHash,
+    EXPECTED_HISTORICAL_START_OF_ROUND.runtimeHash,
   );
   assert.equal(
     historicalVictoryPoint.slice.historicalCompatibility.previousSliceHash,
@@ -1341,8 +1364,8 @@ await check("relationship_graph_declared_scope_is_closed_without_claiming_global
   const relationshipAudit = current.graphAudit;
   assert.equal(relationshipAudit.valid, true);
   assert.equal(relationshipAudit.declaredScopesValid, true);
-  assert.equal(relationshipAudit.counts.nodes, 6122);
-  assert.equal(relationshipAudit.counts.edges, 22043);
+  assert.equal(relationshipAudit.counts.nodes, 6328);
+  assert.equal(relationshipAudit.counts.edges, 22319);
   assert.equal(
     relationshipAudit.counts.declaredStateContractExecutors,
     EXPECTED_CURRENT.declaredStateContractExecutors,
@@ -1377,7 +1400,7 @@ await check("rule_skill_harness_and_training_promotion_remain_closed", () => {
   );
   assert.equal(
     current.slice.historicalCompatibility.actionSchemaVersion,
-    "hybrid_legal_space_v19",
+    "hybrid_legal_space_v20",
   );
   assert.equal(runtimeGate.runtimeDescriptor.ctx2skillPromotionEligible, false);
   assert.equal(runtimeGate.runtimeDescriptor.trainingTruth, false);

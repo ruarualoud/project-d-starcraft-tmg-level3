@@ -639,10 +639,12 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry.executorId,
     entry,
   ]));
-  const actionSchemaVersion = runtimeExecutors.has("authority.cleanup-refresh-v5")
-    ? "hybrid_legal_space_v19"
-    : runtimeExecutors.has("authority.end-of-round-effects-v5")
-    ? "hybrid_legal_space_v18"
+  const actionSchemaVersion = runtimeExecutors.has("authority.reserve-deploy-v2")
+    ? "hybrid_legal_space_v20"
+    : runtimeExecutors.has("authority.cleanup-refresh-v5")
+      ? "hybrid_legal_space_v19"
+      : runtimeExecutors.has("authority.end-of-round-effects-v5")
+        ? "hybrid_legal_space_v18"
     : runtimeExecutors.has("authority.marine-charge-v1")
     ? "hybrid_legal_space_v18"
     : runtimeExecutors.has(
