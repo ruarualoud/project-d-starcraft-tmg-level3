@@ -10,22 +10,27 @@ const ROOT = path.resolve(HERE, "..");
 const OUTPUT_DIR = path.join(ROOT, "build", "ticket-11-rule-atoms-v1");
 const REPORT_NAME = "ticket-11-rule-atom-foundation-aggregate-v1-report.json";
 
-const EXPECTED_BASE_REPORTS = 128;
-const EXPECTED_BASE_ASSERTIONS = 1328;
+const EXPECTED_BASE_REPORTS = 129;
+const EXPECTED_BASE_ASSERTIONS = 1334;
 const EXPECTED_CURRENT = Object.freeze({
-  sliceHash: "7d0fcef7965258264378de98b0bb1820be94638700b55975fa69ed8a440e210b",
+  sliceHash: "17733ad254b5c934673c137966a24e18ddaf7ac679a4754bffb8fb25a2c42c07",
   catalogueHash: "43b6f2f3ff71598e0c797e0e51157ec01cb5b110dbc340f417c1c805b747679b",
   runtimeHash: "dfd340291dc958a0c9600fbe20c6a70a3e0cd21d2a4902f29197c92848280d41",
   relationshipGraphHash:
-    "488194f777c1b6c00b601b02d07a7aa28c11537bd4535266e465ee687562d23f",
+    "306ec6a496ff0201f13a155e02872c0305b726853e59e92c7364421b30f7f363",
   executableRuleAtoms: 421,
   reviewRequiredRuleAtoms: 491,
   displayOnlyRuleAtoms: 114,
-  strictCompleteAtoms: 265,
-  partialContractAtoms: 40,
-  noContractAtoms: 116,
-  declaredStateContractExecutors: 30,
-  stateContractMissingExecutors: 12,
+  strictCompleteAtoms: 288,
+  partialContractAtoms: 79,
+  noContractAtoms: 54,
+  declaredStateContractExecutors: 31,
+  stateContractMissingExecutors: 11,
+});
+const EXPECTED_HISTORICAL_MEDPACK_V2_CONTRACT = Object.freeze({
+  sliceHash: "7d0fcef7965258264378de98b0bb1820be94638700b55975fa69ed8a440e210b",
+  catalogueHash: "43b6f2f3ff71598e0c797e0e51157ec01cb5b110dbc340f417c1c805b747679b",
+  runtimeHash: "dfd340291dc958a0c9600fbe20c6a70a3e0cd21d2a4902f29197c92848280d41",
 });
 const EXPECTED_HISTORICAL_MOVEMENT_V4_CONTRACT = Object.freeze({
   sliceHash: "4f92a8afde13bf27cbe8a32c3df1cfd1c02d4b1ca1894969a55eb7722c360b35",
@@ -535,8 +540,11 @@ const historicalMovementV3Contract = byName.get(
 const historicalMovementV4Contract = byName.get(
   "official-existing-stimpack-move-v2-contract-closure-v1-report.json",
 );
-const current = byName.get(
+const historicalMedicMedpackV2Contract = byName.get(
   "official-existing-medic-medpack-v2-contract-closure-v1-report.json",
+);
+const current = byName.get(
+  "official-existing-ranged-attack-v6-contract-closure-v1-report.json",
 );
 const historicalV4 = byName.get("official-out-of-coherency-close-ranks-rule-slice-v1-report.json");
 const denominator = byName.get("official-canonical-rule-atom-denominator-v1-report.json");
@@ -598,15 +606,12 @@ await check("canonical_denominator_and_current_dispositions_partition_exactly", 
     executableRuleAtoms: EXPECTED_CURRENT.executableRuleAtoms,
     reviewRequiredRuleAtoms: EXPECTED_CURRENT.reviewRequiredRuleAtoms,
     displayOnlyRuleAtoms: EXPECTED_CURRENT.displayOnlyRuleAtoms,
-    changedAtoms: 93,
-    changedNonTargetAtoms: 0,
-    newlyExecutableRuleAtoms: 0,
-    versionReassignedRuleAtoms: 93,
-    declaredStateContractExecutors: EXPECTED_CURRENT.declaredStateContractExecutors,
-    stateContractMissingExecutors: EXPECTED_CURRENT.stateContractMissingExecutors,
+    changedAtoms: 0,
     strictCompleteAtoms: EXPECTED_CURRENT.strictCompleteAtoms,
     partialContractAtoms: EXPECTED_CURRENT.partialContractAtoms,
     noContractAtoms: EXPECTED_CURRENT.noContractAtoms,
+    declaredStateContractExecutors: EXPECTED_CURRENT.declaredStateContractExecutors,
+    missingStateContractExecutors: EXPECTED_CURRENT.stateContractMissingExecutors,
   });
 });
 
@@ -617,10 +622,19 @@ await check("current_slice_catalogue_runtime_and_lineage_are_exact", () => {
   assert.equal(current.runtimeHash, EXPECTED_CURRENT.runtimeHash);
   assert.equal(
     current.slice.previousSliceHash,
-    EXPECTED_HISTORICAL_MOVEMENT_V4_CONTRACT.sliceHash,
+    EXPECTED_HISTORICAL_MEDPACK_V2_CONTRACT.sliceHash,
   );
   assert.equal(
     current.slice.previousCatalogueHash,
+    EXPECTED_HISTORICAL_MEDPACK_V2_CONTRACT.catalogueHash,
+  );
+  assert.equal(historicalMedicMedpackV2Contract.runtimeHash,
+    EXPECTED_HISTORICAL_MEDPACK_V2_CONTRACT.runtimeHash);
+  assert.equal(historicalMedicMedpackV2Contract.slice.previousSliceHash,
+    EXPECTED_HISTORICAL_MOVEMENT_V4_CONTRACT.sliceHash,
+  );
+  assert.equal(
+    historicalMedicMedpackV2Contract.slice.previousCatalogueHash,
     EXPECTED_HISTORICAL_MOVEMENT_V4_CONTRACT.catalogueHash,
   );
   assert.equal(historicalMovementV4Contract.runtimeHash,
@@ -1145,14 +1159,26 @@ await check("historical_v4_catalogue_runtime_and_rules_display_remain_frozen", (
   );
   assert.equal(
     current.slice.historicalCompatibility.previousSliceHash,
-    EXPECTED_HISTORICAL_MOVEMENT_V4_CONTRACT.sliceHash,
+    EXPECTED_HISTORICAL_MEDPACK_V2_CONTRACT.sliceHash,
   );
   assert.equal(
     current.slice.historicalCompatibility.previousCatalogueHash,
-    EXPECTED_HISTORICAL_MOVEMENT_V4_CONTRACT.catalogueHash,
+    EXPECTED_HISTORICAL_MEDPACK_V2_CONTRACT.catalogueHash,
   );
   assert.equal(
     current.slice.historicalCompatibility.previousRuntimeHash,
+    EXPECTED_HISTORICAL_MEDPACK_V2_CONTRACT.runtimeHash,
+  );
+  assert.equal(
+    historicalMedicMedpackV2Contract.slice.historicalCompatibility.previousSliceHash,
+    EXPECTED_HISTORICAL_MOVEMENT_V4_CONTRACT.sliceHash,
+  );
+  assert.equal(
+    historicalMedicMedpackV2Contract.slice.historicalCompatibility.previousCatalogueHash,
+    EXPECTED_HISTORICAL_MOVEMENT_V4_CONTRACT.catalogueHash,
+  );
+  assert.equal(
+    historicalMedicMedpackV2Contract.slice.historicalCompatibility.previousRuntimeHash,
     EXPECTED_HISTORICAL_MOVEMENT_V4_CONTRACT.runtimeHash,
   );
   assert.equal(
@@ -1420,8 +1446,8 @@ await check("relationship_graph_declared_scope_is_closed_without_claiming_global
   const relationshipAudit = current.graphAudit;
   assert.equal(relationshipAudit.valid, true);
   assert.equal(relationshipAudit.declaredScopesValid, true);
-  assert.equal(relationshipAudit.counts.nodes, 7847);
-  assert.equal(relationshipAudit.counts.edges, 24939);
+  assert.equal(relationshipAudit.counts.nodes, 7866);
+  assert.equal(relationshipAudit.counts.edges, 25020);
   assert.equal(
     relationshipAudit.counts.declaredStateContractExecutors,
     EXPECTED_CURRENT.declaredStateContractExecutors,

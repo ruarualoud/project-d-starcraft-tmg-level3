@@ -245,10 +245,17 @@ const historicalMovementV4SliceReport = JSON.parse(await readFile(
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalMedicMedpackV2SliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-existing-medic-medpack-v2-contract-closure-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-existing-ranged-attack-v6-contract-closure-v1-report.json",
   ),
   "utf8",
 ));
@@ -517,8 +524,11 @@ const historicalReserveDeploySlice = historicalReserveDeploySliceReport.slice;
 const historicalStandardMoveSlice = historicalStandardMoveSliceReport.slice;
 const historicalMovementV3Slice = historicalMovementV3SliceReport.slice;
 const historicalMovementV4Slice = historicalMovementV4SliceReport.slice;
+const historicalMedicMedpackV2Slice = historicalMedicMedpackV2SliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalMedicMedpackV2Slice.sliceHash);
+assert.equal(historicalMedicMedpackV2Slice.previousSliceHash,
   historicalMovementV4Slice.sliceHash);
 assert.equal(historicalMovementV4Slice.previousSliceHash,
   historicalMovementV3Slice.sliceHash);
@@ -644,15 +654,12 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     executableRuleAtoms: 421,
     reviewRequiredRuleAtoms: 491,
     displayOnlyRuleAtoms: 114,
-    changedAtoms: 93,
-    changedNonTargetAtoms: 0,
-    newlyExecutableRuleAtoms: 0,
-    versionReassignedRuleAtoms: 93,
-    declaredStateContractExecutors: 30,
-    stateContractMissingExecutors: 12,
-    strictCompleteAtoms: 265,
-    partialContractAtoms: 40,
-    noContractAtoms: 116,
+    changedAtoms: 0,
+    strictCompleteAtoms: 288,
+    partialContractAtoms: 79,
+    noContractAtoms: 54,
+    declaredStateContractExecutors: 31,
+    missingStateContractExecutors: 11,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
