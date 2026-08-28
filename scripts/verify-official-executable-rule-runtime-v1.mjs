@@ -252,10 +252,17 @@ const historicalMedicMedpackV2SliceReport = JSON.parse(await readFile(
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalRangedAttackV6ContractSliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-existing-ranged-attack-v6-contract-closure-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-existing-academy-medic-v2-contract-closure-v1-report.json",
   ),
   "utf8",
 ));
@@ -525,8 +532,11 @@ const historicalStandardMoveSlice = historicalStandardMoveSliceReport.slice;
 const historicalMovementV3Slice = historicalMovementV3SliceReport.slice;
 const historicalMovementV4Slice = historicalMovementV4SliceReport.slice;
 const historicalMedicMedpackV2Slice = historicalMedicMedpackV2SliceReport.slice;
+const historicalRangedAttackV6ContractSlice = historicalRangedAttackV6ContractSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalRangedAttackV6ContractSlice.sliceHash);
+assert.equal(historicalRangedAttackV6ContractSlice.previousSliceHash,
   historicalMedicMedpackV2Slice.sliceHash);
 assert.equal(historicalMedicMedpackV2Slice.previousSliceHash,
   historicalMovementV4Slice.sliceHash);
@@ -654,17 +664,17 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     executableRuleAtoms: 421,
     reviewRequiredRuleAtoms: 491,
     displayOnlyRuleAtoms: 114,
-    changedAtoms: 0,
-    strictCompleteAtoms: 288,
-    partialContractAtoms: 79,
-    noContractAtoms: 54,
-    declaredStateContractExecutors: 31,
-    missingStateContractExecutors: 11,
+    changedAtoms: 12,
+    strictCompleteAtoms: 372,
+    partialContractAtoms: 4,
+    noContractAtoms: 45,
+    declaredStateContractExecutors: 34,
+    missingStateContractExecutors: 8,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "dfd340291dc958a0c9600fbe20c6a70a3e0cd21d2a4902f29197c92848280d41",
+    "0e94d259842feec3fb872bb01ed3e6ba0729f2c53e572c76c6e30578a81f4e6e",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -797,15 +807,15 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     ["use_ability"],
   );
   assert.deepEqual(
-    manifestById.get("authority.academy-medic-ability-v1").actionTypes,
+    manifestById.get("authority.academy-medic-ability-v2").actionTypes,
     ["declare_ability", "pass_ability_reaction", "resolve_ability", "use_ability_reaction"],
   );
   assert.deepEqual(
-    manifestById.get("authority.medic-restoration-reaction-v1").actionTypes,
+    manifestById.get("authority.medic-restoration-reaction-v2").actionTypes,
     ["pass_restoration_reaction", "use_restoration_reaction"],
   );
   assert.deepEqual(
-    manifestById.get("authority.optical-flare-ranged-consumer-v1").actionTypes,
+    manifestById.get("authority.optical-flare-ranged-consumer-v2").actionTypes,
     ["ranged_attack"],
   );
   assert.deepEqual(
@@ -892,7 +902,7 @@ await check("authority_health_and_match_binding_expose_the_runtime_identity", ()
     envelope.matchBinding.dependencies.actionSchema.contentHash,
     hashStarcraftTmgContract({
       kind: "action-schema",
-      schemaVersion: "hybrid_legal_space_v24",
+      schemaVersion: "hybrid_legal_space_v25",
     }),
   );
   assert.equal(envelope.matchBinding.productionReady, false);

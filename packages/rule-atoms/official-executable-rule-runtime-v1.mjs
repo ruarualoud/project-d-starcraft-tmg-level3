@@ -674,6 +674,16 @@ import {
   OFFICIAL_USE_ABILITY_REACTION_ACTION_TYPE,
 } from "./official-academy-medic-ability-executor-v1.mjs";
 import {
+  applyOfficialAcademyMedicAbilityV2,
+  enumerateOfficialAcademyMedicAbilityV2,
+  isOfficialAcademyMedicAbilityPendingV2,
+  OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_ACTION_ATOM_IDS,
+  OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_ATOM_IDS,
+  OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_ID,
+  OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_VERSION,
+  OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_TRANSITION_SCHEMA,
+} from "./official-academy-medic-ability-executor-v2.mjs";
+import {
   applyOfficialMedicRestorationV1,
   enumerateOfficialMedicRestorationV1,
   isOfficialMedicRestorationPendingV1,
@@ -688,6 +698,17 @@ import {
   OFFICIAL_USE_RESTORATION_REACTION_ACTION_TYPE,
 } from "./official-medic-restoration-reaction-executor-v1.mjs";
 import {
+  applyOfficialMedicRestorationV2,
+  enumerateOfficialMedicRestorationV2,
+  isOfficialMedicRestorationPendingV2,
+  openOfficialMedicRestorationWindowV2,
+  OFFICIAL_MEDIC_RESTORATION_V2_ACTION_ATOM_IDS,
+  OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_ATOM_IDS,
+  OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_ID,
+  OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_VERSION,
+  OFFICIAL_MEDIC_RESTORATION_V2_TRANSITION_SCHEMA,
+} from "./official-medic-restoration-reaction-executor-v2.mjs";
+import {
   applyOfficialOpticalFlareRangedConsumerV1,
   enumerateOfficialOpticalFlareRangedConsumerV1,
   OFFICIAL_OPTICAL_FLARE_RANGED_ACTION_ATOM_IDS,
@@ -697,6 +718,16 @@ import {
   OFFICIAL_OPTICAL_FLARE_RANGED_EXECUTOR_VERSION,
   OFFICIAL_OPTICAL_FLARE_RANGED_TRANSITION_SCHEMA,
 } from "./official-optical-flare-ranged-consumer-executor-v1.mjs";
+import {
+  applyOfficialOpticalFlareRangedConsumerV2,
+  enumerateOfficialOpticalFlareRangedConsumerV2,
+  OFFICIAL_OPTICAL_FLARE_RANGED_V2_ACTION_ATOM_IDS,
+  OFFICIAL_OPTICAL_FLARE_RANGED_V2_ACTION_TYPE,
+  OFFICIAL_OPTICAL_FLARE_RANGED_V2_EXECUTOR_ATOM_IDS,
+  OFFICIAL_OPTICAL_FLARE_RANGED_V2_EXECUTOR_ID,
+  OFFICIAL_OPTICAL_FLARE_RANGED_V2_EXECUTOR_VERSION,
+  OFFICIAL_OPTICAL_FLARE_RANGED_V2_TRANSITION_SCHEMA,
+} from "./official-optical-flare-ranged-consumer-executor-v2.mjs";
 import {
   applyOfficialMedicLifeSupportV1,
   enumerateOfficialMedicLifeSupportV1,
@@ -1337,6 +1368,17 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_ACADEMY_MEDIC_ABILITY_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_ID,
+    executorVersion: OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([
+      OFFICIAL_DECLARE_ABILITY_ACTION_TYPE,
+      OFFICIAL_PASS_ABILITY_REACTION_ACTION_TYPE,
+      OFFICIAL_RESOLVE_ABILITY_ACTION_TYPE,
+      OFFICIAL_USE_ABILITY_REACTION_ACTION_TYPE,
+    ].sort()),
+    transitionSchema: OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_MEDIC_RESTORATION_EXECUTOR_ID,
     executorVersion: OFFICIAL_MEDIC_RESTORATION_EXECUTOR_VERSION,
     actionTypes: Object.freeze([
@@ -1346,10 +1388,25 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_MEDIC_RESTORATION_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_ID,
+    executorVersion: OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([
+      OFFICIAL_PASS_RESTORATION_REACTION_ACTION_TYPE,
+      OFFICIAL_USE_RESTORATION_REACTION_ACTION_TYPE,
+    ].sort()),
+    transitionSchema: OFFICIAL_MEDIC_RESTORATION_V2_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_OPTICAL_FLARE_RANGED_EXECUTOR_ID,
     executorVersion: OFFICIAL_OPTICAL_FLARE_RANGED_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_OPTICAL_FLARE_RANGED_ACTION_TYPE]),
     transitionSchema: OFFICIAL_OPTICAL_FLARE_RANGED_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
+    executorId: OFFICIAL_OPTICAL_FLARE_RANGED_V2_EXECUTOR_ID,
+    executorVersion: OFFICIAL_OPTICAL_FLARE_RANGED_V2_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_OPTICAL_FLARE_RANGED_V2_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_OPTICAL_FLARE_RANGED_V2_TRANSITION_SCHEMA,
   }),
   Object.freeze({
     executorId: OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_ID,
@@ -1694,12 +1751,24 @@ const EXECUTOR_ATOM_IDS = new Map([
     OFFICIAL_ACADEMY_MEDIC_ABILITY_EXECUTOR_ATOM_IDS,
   ],
   [
+    OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_ID,
+    OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_ATOM_IDS,
+  ],
+  [
     OFFICIAL_MEDIC_RESTORATION_EXECUTOR_ID,
     OFFICIAL_MEDIC_RESTORATION_EXECUTOR_ATOM_IDS,
   ],
   [
+    OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_ID,
+    OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_ATOM_IDS,
+  ],
+  [
     OFFICIAL_OPTICAL_FLARE_RANGED_EXECUTOR_ID,
     OFFICIAL_OPTICAL_FLARE_RANGED_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_OPTICAL_FLARE_RANGED_V2_EXECUTOR_ID,
+    OFFICIAL_OPTICAL_FLARE_RANGED_V2_EXECUTOR_ATOM_IDS,
   ],
   [
     OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_ID,
@@ -2225,11 +2294,20 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const academyMedicAbilityEnabled = enabledExecutorIds.has(
     OFFICIAL_ACADEMY_MEDIC_ABILITY_EXECUTOR_ID,
   );
+  const academyMedicAbilityV2Enabled = enabledExecutorIds.has(
+    OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_ID,
+  );
   const medicRestorationEnabled = enabledExecutorIds.has(
     OFFICIAL_MEDIC_RESTORATION_EXECUTOR_ID,
   );
+  const medicRestorationV2Enabled = enabledExecutorIds.has(
+    OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_ID,
+  );
   const opticalFlareRangedEnabled = enabledExecutorIds.has(
     OFFICIAL_OPTICAL_FLARE_RANGED_EXECUTOR_ID,
+  );
+  const opticalFlareRangedV2Enabled = enabledExecutorIds.has(
+    OFFICIAL_OPTICAL_FLARE_RANGED_V2_EXECUTOR_ID,
   );
   const medicLifeSupportEnabled = enabledExecutorIds.has(
     OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_ID,
@@ -2680,9 +2758,16 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         trainingTruth: false,
       });
     }
-    if (medicRestorationEnabled
-      && isOfficialMedicRestorationPendingV1(state)) {
-      const staged = enumerateOfficialMedicRestorationV1(state, {
+    if ((medicRestorationV2Enabled || medicRestorationEnabled)
+      && (isOfficialMedicRestorationPendingV2(state)
+        || isOfficialMedicRestorationPendingV1(state))) {
+      const staged = medicRestorationV2Enabled
+        ? enumerateOfficialMedicRestorationV2(state, {
+          sideKey,
+          includeDisabled,
+          matchBinding: options.matchBinding,
+        })
+        : enumerateOfficialMedicRestorationV1(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -2699,9 +2784,16 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         trainingTruth: false,
       });
     }
-    if (academyMedicAbilityEnabled
-      && isOfficialAcademyMedicAbilityPendingV1(state)) {
-      const staged = enumerateOfficialAcademyMedicAbilityV1(state, {
+    if ((academyMedicAbilityV2Enabled || academyMedicAbilityEnabled)
+      && (isOfficialAcademyMedicAbilityPendingV2(state)
+        || isOfficialAcademyMedicAbilityPendingV1(state))) {
+      const staged = academyMedicAbilityV2Enabled
+        ? enumerateOfficialAcademyMedicAbilityV2(state, {
+          sideKey,
+          includeDisabled,
+          matchBinding: options.matchBinding,
+        })
+        : enumerateOfficialAcademyMedicAbilityV1(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -2772,12 +2864,19 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         passAtomIdsForPhase("movement"),
       )));
     }
-    if (!initiativePending && state.phase === "movement" && academyMedicAbilityEnabled) {
-      candidates.push(...enumerateOfficialAcademyMedicAbilityV1(state, {
+    if (!initiativePending && state.phase === "movement"
+      && (academyMedicAbilityV2Enabled || academyMedicAbilityEnabled)) {
+      candidates.push(...(academyMedicAbilityV2Enabled
+        ? enumerateOfficialAcademyMedicAbilityV2(state, {
+          sideKey,
+          includeDisabled,
+          matchBinding: options.matchBinding,
+        })
+        : enumerateOfficialAcademyMedicAbilityV1(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
-      }));
+      })));
     }
     if (!initiativePending && state.phase === "movement"
       && medicMedpackActiveV2Enabled) {
@@ -2792,7 +2891,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         passAtomIdsForPhase("movement"),
       )));
     } else if (!initiativePending && state.phase === "movement"
-      && medicMedpackActiveEnabled && !academyMedicAbilityEnabled) {
+      && medicMedpackActiveEnabled
+      && !academyMedicAbilityV2Enabled
+      && !academyMedicAbilityEnabled) {
       candidates.push(...enumerateOfficialMedicMedpackActiveV1(state, {
         sideKey,
         includeDisabled,
@@ -3030,12 +3131,18 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     }
     if (!initiativePending
       && state.phase === "assault"
-      && opticalFlareRangedEnabled) {
-      candidates.push(...enumerateOfficialOpticalFlareRangedConsumerV1(state, {
+      && (opticalFlareRangedV2Enabled || opticalFlareRangedEnabled)) {
+      candidates.push(...(opticalFlareRangedV2Enabled
+        ? enumerateOfficialOpticalFlareRangedConsumerV2(state, {
+          sideKey,
+          includeDisabled,
+          matchBinding: options.matchBinding,
+        })
+        : enumerateOfficialOpticalFlareRangedConsumerV1(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
-      }).map((candidate) => withPassSettlementLineage(
+      })).map((candidate) => withPassSettlementLineage(
         candidate,
         state,
         "assault",
@@ -3536,12 +3643,18 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       && action.executorId !== OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_ID) {
       fail("RULE_RUNTIME_PENDING_MEDIC_LIFE_SUPPORT_REQUIRED");
     }
-    if (isOfficialMedicRestorationPendingV1(state)
-      && action.executorId !== OFFICIAL_MEDIC_RESTORATION_EXECUTOR_ID) {
+    if ((isOfficialMedicRestorationPendingV2(state)
+      || isOfficialMedicRestorationPendingV1(state))
+      && action.executorId !== (medicRestorationV2Enabled
+        ? OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_ID
+        : OFFICIAL_MEDIC_RESTORATION_EXECUTOR_ID)) {
       fail("RULE_RUNTIME_PENDING_MEDIC_RESTORATION_REQUIRED");
     }
-    if (isOfficialAcademyMedicAbilityPendingV1(state)
-      && action.executorId !== OFFICIAL_ACADEMY_MEDIC_ABILITY_EXECUTOR_ID) {
+    if ((isOfficialAcademyMedicAbilityPendingV2(state)
+      || isOfficialAcademyMedicAbilityPendingV1(state))
+      && action.executorId !== (academyMedicAbilityV2Enabled
+        ? OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_ID
+        : OFFICIAL_ACADEMY_MEDIC_ABILITY_EXECUTOR_ID)) {
       fail("RULE_RUNTIME_PENDING_ACADEMY_MEDIC_ABILITY_REQUIRED");
     }
     if (isOfficialGoliathScatterRangedSequencePendingV1(state)
@@ -3602,16 +3715,31 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       OFFICIAL_USE_RESTORATION_REACTION_ACTION_TYPE,
       OFFICIAL_PASS_RESTORATION_REACTION_ACTION_TYPE,
     ].includes(action.actionType)
-      && action.executorId === OFFICIAL_MEDIC_RESTORATION_EXECUTOR_ID) {
-      if (!medicRestorationEnabled
-        || action.executorVersion !== OFFICIAL_MEDIC_RESTORATION_EXECUTOR_VERSION) {
+      && [
+        OFFICIAL_MEDIC_RESTORATION_EXECUTOR_ID,
+        OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_ID,
+      ].includes(action.executorId)) {
+      const currentV2 = action.executorId === OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_ID;
+      if ((currentV2
+        && (!medicRestorationV2Enabled
+          || action.executorVersion !== OFFICIAL_MEDIC_RESTORATION_V2_EXECUTOR_VERSION))
+        || (!currentV2
+          && (!medicRestorationEnabled
+            || action.executorVersion !== OFFICIAL_MEDIC_RESTORATION_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
-      assertActionLineage(action, OFFICIAL_MEDIC_RESTORATION_ACTION_ATOM_IDS);
-      const applied = applyOfficialMedicRestorationV1(state, action, {
-        postRevision: Number(options.postRevision || 0),
-        matchBinding: options.matchBinding,
-      });
+      assertActionLineage(action, currentV2
+        ? OFFICIAL_MEDIC_RESTORATION_V2_ACTION_ATOM_IDS
+        : OFFICIAL_MEDIC_RESTORATION_ACTION_ATOM_IDS);
+      const applied = currentV2
+        ? applyOfficialMedicRestorationV2(state, action, {
+          postRevision: Number(options.postRevision || 0),
+          matchBinding: options.matchBinding,
+        })
+        : applyOfficialMedicRestorationV1(state, action, {
+          postRevision: Number(options.postRevision || 0),
+          matchBinding: options.matchBinding,
+        });
       const settled = settleOfficialAlternatingPhaseAfterActivationV1(applied.state, {
         phase: "movement",
         actingSideKey: applied.settlementSideKey,
@@ -3643,24 +3771,46 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       OFFICIAL_PASS_ABILITY_REACTION_ACTION_TYPE,
       OFFICIAL_RESOLVE_ABILITY_ACTION_TYPE,
     ].includes(action.actionType)
-      && action.executorId === OFFICIAL_ACADEMY_MEDIC_ABILITY_EXECUTOR_ID) {
-      if (!academyMedicAbilityEnabled
-        || action.executorVersion !== OFFICIAL_ACADEMY_MEDIC_ABILITY_EXECUTOR_VERSION) {
+      && [
+        OFFICIAL_ACADEMY_MEDIC_ABILITY_EXECUTOR_ID,
+        OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_ID,
+      ].includes(action.executorId)) {
+      const currentV2 = action.executorId === OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_ID;
+      if ((currentV2
+        && (!academyMedicAbilityV2Enabled
+          || action.executorVersion !== OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_EXECUTOR_VERSION))
+        || (!currentV2
+          && (!academyMedicAbilityEnabled
+            || action.executorVersion !== OFFICIAL_ACADEMY_MEDIC_ABILITY_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
-      assertActionLineage(action, OFFICIAL_ACADEMY_MEDIC_ABILITY_ACTION_ATOM_IDS);
-      const applied = applyOfficialAcademyMedicAbilityV1(state, action, {
-        postRevision: Number(options.postRevision || 0),
-        matchBinding: options.matchBinding,
-      });
-      if (action.actionType === OFFICIAL_RESOLVE_ABILITY_ACTION_TYPE
-        && medicRestorationEnabled) {
-        const restoration = openOfficialMedicRestorationWindowV1(applied.state, {
-          action,
-          effect: applied.effect,
-          abilityResolutionHash: applied.abilityResolutionHash,
+      assertActionLineage(action, currentV2
+        ? OFFICIAL_ACADEMY_MEDIC_ABILITY_V2_ACTION_ATOM_IDS
+        : OFFICIAL_ACADEMY_MEDIC_ABILITY_ACTION_ATOM_IDS);
+      const applied = currentV2
+        ? applyOfficialAcademyMedicAbilityV2(state, action, {
+          postRevision: Number(options.postRevision || 0),
+          matchBinding: options.matchBinding,
+        })
+        : applyOfficialAcademyMedicAbilityV1(state, action, {
+          postRevision: Number(options.postRevision || 0),
           matchBinding: options.matchBinding,
         });
+      if (action.actionType === OFFICIAL_RESOLVE_ABILITY_ACTION_TYPE
+        && (medicRestorationV2Enabled || medicRestorationEnabled)) {
+        const restoration = medicRestorationV2Enabled
+          ? openOfficialMedicRestorationWindowV2(applied.state, {
+            action,
+            effect: applied.effect,
+            abilityResolutionHash: applied.abilityResolutionHash,
+            matchBinding: options.matchBinding,
+          })
+          : openOfficialMedicRestorationWindowV1(applied.state, {
+            action,
+            effect: applied.effect,
+            abilityResolutionHash: applied.abilityResolutionHash,
+            matchBinding: options.matchBinding,
+          });
         if (restoration.opened) {
           const events = [...(applied.events || []), {
             type: "restoration_reaction_window_opened",
@@ -4034,33 +4184,48 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       };
     }
     if (action.actionType === OFFICIAL_OPTICAL_FLARE_RANGED_ACTION_TYPE
-      && action.executorId === OFFICIAL_OPTICAL_FLARE_RANGED_EXECUTOR_ID) {
-      if (!opticalFlareRangedEnabled
-        || action.executorVersion !== OFFICIAL_OPTICAL_FLARE_RANGED_EXECUTOR_VERSION) {
+      && [
+        OFFICIAL_OPTICAL_FLARE_RANGED_EXECUTOR_ID,
+        OFFICIAL_OPTICAL_FLARE_RANGED_V2_EXECUTOR_ID,
+      ].includes(action.executorId)) {
+      const currentV2 = action.executorId === OFFICIAL_OPTICAL_FLARE_RANGED_V2_EXECUTOR_ID;
+      if ((currentV2
+        && (!opticalFlareRangedV2Enabled
+          || action.executorVersion !== OFFICIAL_OPTICAL_FLARE_RANGED_V2_EXECUTOR_VERSION))
+        || (!currentV2
+          && (!opticalFlareRangedEnabled
+            || action.executorVersion !== OFFICIAL_OPTICAL_FLARE_RANGED_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
       const expectedLineage = expectedHoldLineage(
         state,
         action,
         "assault",
-        OFFICIAL_OPTICAL_FLARE_RANGED_ACTION_ATOM_IDS,
+        currentV2
+          ? OFFICIAL_OPTICAL_FLARE_RANGED_V2_ACTION_ATOM_IDS
+          : OFFICIAL_OPTICAL_FLARE_RANGED_ACTION_ATOM_IDS,
         passAtomIdsForPhase("assault"),
       );
       assertActionLineage(action, expectedLineage);
       const executorAction = {
         ...clone(action),
-        ruleAtomIds: [...OFFICIAL_OPTICAL_FLARE_RANGED_ACTION_ATOM_IDS],
+        ruleAtomIds: [...(currentV2
+          ? OFFICIAL_OPTICAL_FLARE_RANGED_V2_ACTION_ATOM_IDS
+          : OFFICIAL_OPTICAL_FLARE_RANGED_ACTION_ATOM_IDS)],
       };
-      const applied = applyOfficialOpticalFlareRangedConsumerV1(
-        state,
-        executorAction,
-        {
+      const applied = currentV2
+        ? applyOfficialOpticalFlareRangedConsumerV2(state, executorAction, {
           postRevision: Number(options.postRevision || 0),
           matchBinding: options.matchBinding,
           chanceReveals: options.chanceReveals,
           deferDamageAllocation: medicLifeSupportEnabled,
-        },
-      );
+        })
+        : applyOfficialOpticalFlareRangedConsumerV1(state, executorAction, {
+          postRevision: Number(options.postRevision || 0),
+          matchBinding: options.matchBinding,
+          chanceReveals: options.chanceReveals,
+          deferDamageAllocation: medicLifeSupportEnabled,
+        });
       let appliedState = applied.state;
       let appliedEvents = [...(applied.events || [])];
       if (medicLifeSupportEnabled) {

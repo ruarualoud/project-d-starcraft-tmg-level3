@@ -546,3 +546,16 @@ tamperedJournal[2].events.push({ type: "forged_slice_66_event" });
 const tamperedReplay = replayEngine.replay({ initialEnvelope, journal: tamperedJournal });
 assert.equal(tamperedReplay.ok, false);
 assert.equal(tamperedReplay.reason, "SIGNATURE_INVALID");
+
+export {
+  currentSlice,
+  dataset,
+  gameplayDataBundle,
+  liveReport,
+  matchBinding,
+  model,
+  resourceRecord,
+  runtime,
+  state,
+  unit,
+};

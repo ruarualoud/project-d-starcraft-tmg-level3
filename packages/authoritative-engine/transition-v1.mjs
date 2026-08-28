@@ -71,6 +71,7 @@ const ACTION_FIELDS = Object.freeze([
   "shieldedBefore", "targetAuthorizationHash", "shieldStateHash",
   "abilityWindow", "resourceType", "resourceCost", "targetRangeMilliInches",
   "targetDistanceMilliInches", "abilityPlanHash", "authorityLineageHash",
+  "dataAdapterReceiptHash",
   "pendingAbilityHash",
   "originalResourceCost", "modifiedResourceCost", "costReduction",
   "sourcePieceId", "pendingReactionHash", "triggerAbilityResolutionHash",
@@ -640,7 +641,9 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry.executorId,
     entry,
   ]));
-  const actionSchemaVersion = runtimeExecutors.has("authority.medic-medpack-active-v2")
+  const actionSchemaVersion = runtimeExecutors.has("authority.academy-medic-ability-v2")
+    ? "hybrid_legal_space_v25"
+    : runtimeExecutors.has("authority.medic-medpack-active-v2")
     ? "hybrid_legal_space_v24"
     : runtimeExecutors.has("authority.stimpack-move-consumer-v2")
     ? "hybrid_legal_space_v23"
