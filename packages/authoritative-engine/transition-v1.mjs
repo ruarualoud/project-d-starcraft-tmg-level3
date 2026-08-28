@@ -70,7 +70,8 @@ const ACTION_FIELDS = Object.freeze([
   "printedHitPoints", "shieldValue", "effectiveFirstModelHitPoints",
   "shieldedBefore", "targetAuthorizationHash", "shieldStateHash",
   "abilityWindow", "resourceType", "resourceCost", "targetRangeMilliInches",
-  "targetDistanceMilliInches", "abilityPlanHash", "pendingAbilityHash",
+  "targetDistanceMilliInches", "abilityPlanHash", "authorityLineageHash",
+  "pendingAbilityHash",
   "originalResourceCost", "modifiedResourceCost", "costReduction",
   "sourcePieceId", "pendingReactionHash", "triggerAbilityResolutionHash",
   "triggerStatusEffectHashes", "statusEffectHash", "effectMarkerId",
@@ -639,7 +640,9 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry.executorId,
     entry,
   ]));
-  const actionSchemaVersion = runtimeExecutors.has("authority.stimpack-move-consumer-v2")
+  const actionSchemaVersion = runtimeExecutors.has("authority.medic-medpack-active-v2")
+    ? "hybrid_legal_space_v24"
+    : runtimeExecutors.has("authority.stimpack-move-consumer-v2")
     ? "hybrid_legal_space_v23"
     : runtimeExecutors.has("authority.disengage-v3")
     ? "hybrid_legal_space_v22"
