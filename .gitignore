@@ -1,0 +1,16 @@
+.DS_Store
+node_modules/
+
+# Generated verification reports, captured source caches, and ephemeral room stores.
+build/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Read-only adapter inputs retain their own upstream Git history.
+imports/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

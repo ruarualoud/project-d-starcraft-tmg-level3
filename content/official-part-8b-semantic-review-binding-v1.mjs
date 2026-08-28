@@ -1,0 +1,133 @@
+function reviewed(
+  clauseId,
+  anchorId,
+  candidateOrdinalStart,
+  candidateOrdinalEnd,
+  semanticClass,
+  title,
+  reasonCode = "rule_atom_mapping_pending",
+) {
+  return Object.freeze({
+    clauseId,
+    anchorId,
+    candidateOrdinalStart,
+    candidateOrdinalEnd,
+    semanticClass,
+    title,
+    disposition: "review_required",
+    reasonCode,
+  });
+}
+
+function display(
+  clauseId,
+  anchorId,
+  candidateOrdinalStart,
+  candidateOrdinalEnd,
+  semanticClass,
+  title,
+  reasonCode,
+) {
+  return Object.freeze({
+    clauseId,
+    anchorId,
+    candidateOrdinalStart,
+    candidateOrdinalEnd,
+    semanticClass,
+    title,
+    disposition: "display_only",
+    reasonCode,
+  });
+}
+
+const ANCHOR_IDS = Object.freeze([
+  "core:numbered:8.5",
+  "core:numbered:8.5.1",
+  "core:numbered:8.5.2",
+  "core:numbered:8.5.3",
+  "core:numbered:8.5.4",
+  "core:numbered:8.5.5",
+  "core:numbered:8.6",
+  "core:numbered:8.6.1",
+  "core:numbered:8.6.2",
+]);
+
+export const OFFICIAL_PART_8B_SEMANTIC_REVIEW_BINDING_V1 = Object.freeze({
+  schema: "starcraft_tmg_part_semantic_clause_batch_review_binding_v1",
+  sourcePart: "8",
+  batchId: "part-8b",
+  coreClauseCandidateDenominatorHash: "64cf70a7af278cdc603cd05a2a2a997c7658ef27a7705ff91ed3afdbc86905aa",
+  reviewPacketHash: "072caf7f883672611ddea74d9f22df573a835c23a4326a975a04d4752f52c6aa",
+  batchPlanHash: "6ffb8d4fbbac87990c74aa8acca787dc772517c0c993a109e3174919fbfad74b",
+  anchorIds: ANCHOR_IDS,
+  reviewMethod: "semantic_review_against_gitignored_official_source_packet",
+  reviewAuthority: "development_evidence_only",
+  clauses: Object.freeze([
+    reviewed("core:8.5.1:hold-no-action", "core:numbered:8.5.1", 1, 1, "definition", "Hold performs no action"),
+    reviewed("core:8.5.1:hold-activation-state", "core:numbered:8.5.1", 2, 3, "timing", "Hold activation marker and phase state"),
+
+    reviewed("core:8.5.2:move-action-definition", "core:numbered:8.5.2", 1, 1, "definition", "Move action definition"),
+
+    reviewed("core:8.5.3:leading-model-standard-move", "core:numbered:8.5.3", 1, 1, "definition", "Leading-model standard move"),
+    reviewed("core:8.5.3:actual-path-measurement", "core:numbered:8.5.3", 2, 2, "constraint", "Actual path measurement"),
+    reviewed("core:8.5.3:pass-same-unit-models", "core:numbered:8.5.3", 3, 3, "permission", "Movement through same-unit models"),
+    reviewed("core:8.5.3:other-model-path-blocking", "core:numbered:8.5.3", 4, 4, "constraint", "Other-unit model path blocking"),
+    reviewed("core:8.5.3:ground-flying-base-passage", "core:numbered:8.5.3", 5, 5, "permission", "Ground and flying base passage"),
+    reviewed("core:8.5.3:leading-model-terrain-size", "core:numbered:8.5.3", 6, 6, "constraint", "Leading-model terrain-size restriction"),
+    reviewed("core:8.5.3:gap-clearance-reference", "core:numbered:8.5.3", 7, 7, "cross_reference", "Gap-clearance reference"),
+    reviewed("core:8.5.3:elevation-access-point", "core:numbered:8.5.3", 8, 8, "constraint", "Elevation change through access point"),
+    reviewed("core:8.5.3:end-position-overlap", "core:numbered:8.5.3", 9, 9, "constraint", "Movement endpoint overlap restriction"),
+    reviewed("core:8.5.3:end-position-on-battlefield", "core:numbered:8.5.3", 10, 10, "constraint", "Movement endpoint battlefield containment"),
+    reviewed("core:8.5.3:end-position-engagement", "core:numbered:8.5.3", 11, 11, "constraint", "Movement endpoint engagement restriction"),
+    reviewed("core:8.5.3:per-base-speed-cap", "core:numbered:8.5.3", 12, 12, "constraint", "Per-base speed cap"),
+    display("core:8.5.3:movement-pass-strategy", "core:numbered:8.5.3", 13, 15, "rationale", "Movement-phase pass strategy", "non_normative_strategy_advice"),
+    reviewed("core:8.5.3:other-model-coherency-placement", "core:numbered:8.5.3", 16, 16, "constraint", "Other-model coherency placement"),
+    reviewed("core:8.5.3:other-models-set-not-moved", "core:numbered:8.5.3", 17, 17, "permission", "Other models are set rather than moved"),
+    reviewed("core:8.5.3:other-model-legal-endpoint", "core:numbered:8.5.3", 18, 18, "constraint", "Other-model legal endpoint"),
+    reviewed("core:8.5.3:small-terrain-interaction", "core:numbered:8.5.3", 19, 20, "constraint", "Small-terrain movement interaction"),
+    reviewed("core:8.5.3:grass-interaction", "core:numbered:8.5.3", 21, 23, "constraint", "Grass movement, sight and removal interaction"),
+    reviewed("core:8.5.3:flying-grass-interaction", "core:numbered:8.5.3", 24, 26, "constraint", "Flying interaction with grass"),
+    reviewed("core:8.5.3:large-terrain-blocking", "core:numbered:8.5.3", 27, 27, "constraint", "Large-terrain movement blocking"),
+    reviewed("core:8.5.3:elevation-bands", "core:numbered:8.5.3", 28, 30, "definition", "Battlefield elevation bands"),
+    reviewed("core:8.5.3:model-elevation-determination", "core:numbered:8.5.3", 31, 32, "definition", "Model elevation determination"),
+    reviewed("core:8.5.3:access-point-definition", "core:numbered:8.5.3", 33, 35, "definition", "Access-point movement and coherency"),
+    reviewed("core:8.5.3:ramp-movement", "core:numbered:8.5.3", 36, 38, "constraint", "Ramp elevation and movement"),
+    display("core:8.5.3:leading-model-move-example", "core:numbered:8.5.3", 39, 40, "example", "Leading-model move example", "non_normative_example"),
+    reviewed("core:8.5.3:flying-move", "core:numbered:8.5.3", 41, 43, "permission", "Flying movement path permissions"),
+    reviewed("core:8.5.3:flying-engagement-endpoint", "core:numbered:8.5.3", 44, 46, "constraint", "Flying engagement and endpoint restriction"),
+
+    display("core:8.5.4:disengage-flavour", "core:numbered:8.5.4", 1, 2, "rationale", "Disengage flavour", "non_normative_flavour"),
+    reviewed("core:8.5.4:disengage-definition", "core:numbered:8.5.4", 3, 3, "definition", "Disengage action definition"),
+    reviewed("core:8.5.4:standard-move-resolution", "core:numbered:8.5.4", 4, 4, "cross_reference", "Disengage standard-move resolution"),
+    reviewed("core:8.5.4:failed-models-destroyed", "core:numbered:8.5.4", 5, 5, "constraint", "Disengaging model removal"),
+    reviewed("core:8.5.4:leading-model-disengage-failure", "core:numbered:8.5.4", 6, 7, "constraint", "Leading-model disengage failure"),
+    reviewed("core:8.5.4:post-disengage-assault-restriction", "core:numbered:8.5.4", 8, 8, "constraint", "Post-disengage assault restriction and mass exception"),
+
+    display("core:8.5.5:deploy-flavour", "core:numbered:8.5.5", 1, 2, "rationale", "Deployment timing flavour", "non_normative_flavour"),
+    reviewed("core:8.5.5:deploy-definition", "core:numbered:8.5.5", 3, 3, "definition", "Deploy action definition"),
+    reviewed("core:8.5.5:deploy-supply-check", "core:numbered:8.5.5", 4, 4, "constraint", "Deploy supply check"),
+    reviewed("core:8.5.5:entry-edge-movement", "core:numbered:8.5.5", 5, 6, "constraint", "Entry-edge deployment movement", "mixed_layout_rule_atom_mapping_pending"),
+    reviewed("core:8.5.5:leading-first-and-coherency", "core:numbered:8.5.5", 7, 8, "constraint", "Leading-model entry and unit coherency"),
+    reviewed("core:8.5.5:enemy-influence-endpoint", "core:numbered:8.5.5", 9, 9, "constraint", "Enemy influence deployment endpoint"),
+    reviewed("core:8.5.5:deploy-coherency", "core:numbered:8.5.5", 10, 11, "constraint", "Deployment coherency requirement"),
+    display("core:8.5.5:tactical-mass-designer-note", "core:numbered:8.5.5", 12, 14, "rationale", "Tactical-mass disengage designer note", "designer_commentary"),
+    reviewed("core:8.5.5:return-to-reserves-definition", "core:numbered:8.5.5", 15, 16, "definition", "Return-to-reserves state"),
+    reviewed("core:8.5.5:reserve-supply-release", "core:numbered:8.5.5", 17, 17, "timing", "Returned unit releases supply"),
+    reviewed("core:8.5.5:reserve-equipment-retained", "core:numbered:8.5.5", 18, 18, "constraint", "Returned unit retains equipment"),
+    reviewed("core:8.5.5:reserve-damage-retained", "core:numbered:8.5.5", 19, 20, "constraint", "Returned unit retains damage"),
+    reviewed("core:8.5.5:reserve-timed-effects-continue", "core:numbered:8.5.5", 21, 22, "timing", "Timed effects continue in reserves"),
+    reviewed("core:8.5.5:reserve-abilities-inactive", "core:numbered:8.5.5", 23, 25, "constraint", "Abilities inactive in reserves"),
+    reviewed("core:8.5.5:redeploy-abilities-resume", "core:numbered:8.5.5", 26, 26, "timing", "Abilities resume on redeploy"),
+    reviewed("core:8.5.5:left-token-removal", "core:numbered:8.5.5", 27, 27, "timing", "Left token removal and stay-in-play exception"),
+    reviewed("core:8.5.5:reserve-activation-retained", "core:numbered:8.5.5", 28, 28, "constraint", "Activation state retained in reserves"),
+
+    display("core:8.6:assault-phase-flavour", "core:numbered:8.6", 1, 3, "rule_summary", "Assault-phase flavour summary", "non_normative_flavour"),
+
+    reviewed("core:8.6.1:assault-action-choice", "core:numbered:8.6.1", 1, 1, "permission", "Assault-phase action choice"),
+    reviewed("core:8.6.1:assault-activation-marker", "core:numbered:8.6.1", 2, 2, "timing", "Assault activation marker placement"),
+    reviewed("core:8.6.1:reserves-cannot-assault", "core:numbered:8.6.1", 3, 3, "constraint", "Reserve units cannot act in assault"),
+
+    reviewed("core:8.6.2:first-passer-phase-three-marker", "core:numbered:8.6.2", 1, 1, "timing", "First passer takes phase-three marker"),
+    reviewed("core:8.6.2:unactivated-assault-markers", "core:numbered:8.6.2", 2, 2, "timing", "Unactivated unit assault markers"),
+  ]),
+});

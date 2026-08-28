@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "starcraft_tmg_ticket_10_expo_baseline_inventory_v1",
+  "observedDate": "2026-08-24",
+  "ticket": "Inventory and recover the Expo product source",
+  "verificationScope": "static_inventory_only",
+  "sourceLock": {
+    "status": "recovered_exact_commit",
+    "repository": "git@github.com:ruarualoud/sc-tmg-app.git",
+    "branch": "codex/starcraft-classic-army-builder",
+    "remoteBranchHead": "f07b3cb78ce6bf119bdc529cde41dbe91e00a61d",
+    "commit": "f07b3cb78ce6bf119bdc529cde41dbe91e00a61d",
+    "commitDate": "2026-06-03T22:00:46+08:00",
+    "commitSubject": "Show StarCraft app ability timing costs",
+    "localPath": "starcraft-tmg-level3/imports/sc-tmg-app",
+    "checkoutClean": true,
+    "trackedFileCount": 116,
+    "trackedBlobBytes": 2650442,
+    "parentRepositoryPolicy": "ignored_read_only_adapter_input"
+  },
+  "expoBaseline": {
+    "runtime": {
+      "expo": "~54.0.29",
+      "reactNative": "0.81.5",
+      "react": "19.1.0",
+      "router": "expo-router~6.0.19",
+      "packageManager": "pnpm@9.12.0"
+    },
+    "productIdentity": {
+      "name": "SC TMG 军表助手",
+      "slug": "sc-tmg-app",
+      "version": "1.0.0",
+      "androidPackage": "space.manus.sc.tmg.app.t20260420025112",
+      "webOutput": "static",
+      "webBundler": "metro"
+    },
+    "routes": [
+      "app/(tabs)/index.tsx",
+      "app/(tabs)/army.tsx",
+      "app/(tabs)/tools.tsx",
+      "app/(tabs)/match.tsx",
+      "app/(tabs)/settings.tsx",
+      "app/dev/theme-lab.tsx"
+    ],
+    "missingHistoricalRoutes": [
+      "app/(tabs)/ai.tsx"
+    ],
+    "data": {
+      "bundledVersion": 65,
+      "bundledUnits": 26,
+      "bundledCards": 37,
+      "bundledGameCards": 165,
+      "bundledDataSha256": "8b98a638a5ef1fd5f9fca08796f7fb154ca83547c9a4a197b63a9b204c5242ed",
+      "liveTransport": "direct_firestore_rest",
+      "localStore": "async_storage",
+      "canonicalRisk": "client_can_replace_local_normalized_dataset"
+    },
+    "stateOwnership": {
+      "match": "client_owned_whole_match_record",
+      "army": "client_owned_whole_army_record",
+      "battleMutation": "react_component_local_object_updates",
+      "roomIntegration": "type_placeholders_only",
+      "authoritativeRulesService": false,
+      "revisionCas": false,
+      "appendOnlyJournal": false,
+      "deterministicReplay": false
+    },
+    "nativeCapabilities": [
+      "async_storage",
+      "clipboard",
+      "haptics",
+      "deep_links",
+      "web_browser",
+      "sharing_dependency",
+      "expo_image"
+    ],
+    "presentProductFeatures": [
+      "unit_card_and_mission_browser",
+      "army_builder_and_text_import_export",
+      "combat_and_roster_analysis_tools",
+      "manual_match_round_unit_building_supply_timeline_tracker",
+      "editable_english_chinese_display_dictionary",
+      "bundled_data_and_offline_import"
+    ],
+    "missingHistoricalIntegrationFiles": [
+      "lib/battle-ai.ts",
+      "lib/room-service.ts",
+      "app/(tabs)/ai.tsx",
+      "assets/images/starcraft/maps/*",
+      "assets/images/starcraft/terrain/*"
+    ]
+  },
+  "battleLabBaseline": {
+    "uiRoot": "starcraft-tmg-local",
+    "rulesKernel": "scripts/starcraft-tmg-rules-v0.mjs",
+    "rulesService": "scripts/starcraft-tmg-rules-service-v0.mjs",
+    "roomServer": "scripts/serve-starcraft-tmg-local.mjs",
+    "dataVersion": 67,
+    "dataSha256": "cc1384f61a224be72c6dac8475766a6307985b3c8516d79b01bdf5750e89a695",
+    "dataCounts": {
+      "units": 26,
+      "cards": 37,
+      "gameCards": 171,
+      "scenarioMaps": 8,
+      "terrainCatalog": 9
+    },
+    "presentFeatures": [
+      "battle_table",
+      "scenario_maps_and_terrain",
+      "rules_and_threat_diagnostics",
+      "simple_ai_preview_and_apply",
+      "coach_and_observer_surface",
+      "in_memory_room_sync"
+    ],
+    "authorityDefects": [
+      "rules_apply_action_accepts_client_supplied_whole_state",
+      "room_state_endpoint_accepts_whole_state_replacement",
+      "no_expected_revision_or_compare_and_swap",
+      "room_store_is_process_memory_map",
+      "no_append_only_public_private_journal",
+      "browser_drag_mutates_coordinates_before_authoritative_transition"
+    ]
+  },
+  "apkArtifact": {
+    "path": "starcraft-tmg-local/downloads/sc-tmg-app-public-beta-20260526-fix15-upgrade-advisory-arm64-release.apk",
+    "aliasPath": "starcraft-tmg-local/downloads/sc-tmg-app-latest-arm64-release.apk",
+    "sha256": "cdba3698d4ef54ca2b313b8e7704e6a998b6fcaf06c535b8faeb64026f14320f",
+    "sizeBytes": 44942967,
+    "package": "space.manus.sc.tmg.app.t20260420025112",
+    "versionCode": 1,
+    "versionName": "1.0.0",
+    "minSdk": 24,
+    "targetSdk": 36,
+    "nativeAbis": [
+      "arm64-v8a"
+    ],
+    "embeddedBundle": "assets/index.android.bundle",
+    "staticMarkersPresent": [
+      "sc-drag-debug-20260526-fix15-upgrade-advisory",
+      "starcraft-tmg-rooms/api/v1",
+      "battleTable",
+      "Copy Invite",
+      "Apply AI",
+      "StarCraft AI",
+      "Battle Initialization",
+      "Mission Overlay",
+      "Publish Room",
+      "Pull Room",
+      "remoteRoomId"
+    ],
+    "sourceParity": false,
+    "sourceParityReason": "the APK contains the historical Battle/AI/room integration while the locked remote branch contains only placeholders for several of those paths"
+  },
+  "webArtifact": {
+    "localStaticExportPresent": false,
+    "historicalPublicUrl": "http://192.144.128.100/match",
+    "historicalPublicUrlStatusOnObservedDate": 404,
+    "recoverability": "historical documentation only; no current local dist or live public export"
+  },
+  "parityVerdict": {
+    "expoShellRecovered": true,
+    "historicalPublicProductSourceFullyRecovered": false,
+    "battleLabIsProductShell": false,
+    "battleLabIsAuthoritative": false,
+    "apkContainsUnrecoveredSourceDelta": true,
+    "ticket10InventoryComplete": true,
+    "nextDecisionTicket": "Choose the authoritative transition and journal contract",
+    "sharedClientBoundaryTicket": "Choose the shared Web/App domain boundary"
+  },
+  "unexecutedEvidence": [
+    "dependency_install",
+    "typecheck",
+    "unit_tests",
+    "expo_web_export",
+    "android_build",
+    "device_e2e"
+  ]
+}
