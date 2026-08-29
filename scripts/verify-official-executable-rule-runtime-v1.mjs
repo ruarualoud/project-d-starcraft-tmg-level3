@@ -259,10 +259,17 @@ const historicalRangedAttackV6ContractSliceReport = JSON.parse(await readFile(
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalAcademyMedicV2ContractSliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-existing-academy-medic-v2-contract-closure-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-existing-life-support-v2-contract-closure-v1-report.json",
   ),
   "utf8",
 ));
@@ -533,8 +540,11 @@ const historicalMovementV3Slice = historicalMovementV3SliceReport.slice;
 const historicalMovementV4Slice = historicalMovementV4SliceReport.slice;
 const historicalMedicMedpackV2Slice = historicalMedicMedpackV2SliceReport.slice;
 const historicalRangedAttackV6ContractSlice = historicalRangedAttackV6ContractSliceReport.slice;
+const historicalAcademyMedicV2ContractSlice = historicalAcademyMedicV2ContractSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalAcademyMedicV2ContractSlice.sliceHash);
+assert.equal(historicalAcademyMedicV2ContractSlice.previousSliceHash,
   historicalRangedAttackV6ContractSlice.sliceHash);
 assert.equal(historicalRangedAttackV6ContractSlice.previousSliceHash,
   historicalMedicMedpackV2Slice.sliceHash);
@@ -664,17 +674,17 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     executableRuleAtoms: 421,
     reviewRequiredRuleAtoms: 491,
     displayOnlyRuleAtoms: 114,
-    changedAtoms: 12,
-    strictCompleteAtoms: 372,
+    changedAtoms: 7,
+    strictCompleteAtoms: 379,
     partialContractAtoms: 4,
-    noContractAtoms: 45,
-    declaredStateContractExecutors: 34,
-    missingStateContractExecutors: 8,
+    noContractAtoms: 38,
+    declaredStateContractExecutors: 35,
+    missingStateContractExecutors: 7,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "0e94d259842feec3fb872bb01ed3e6ba0729f2c53e572c76c6e30578a81f4e6e",
+    "fd1c0889ac76848f3d20ebe943f8467e363c0cf6139697ba72046c7968fa05c8",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -819,7 +829,7 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     ["ranged_attack"],
   );
   assert.deepEqual(
-    manifestById.get("authority.medic-life-support-reaction-v1").actionTypes,
+    manifestById.get("authority.medic-life-support-reaction-v2").actionTypes,
     ["pass_life_support_reaction", "use_life_support_reaction"],
   );
   assert.deepEqual(

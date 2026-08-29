@@ -743,6 +743,17 @@ import {
   OFFICIAL_USE_LIFE_SUPPORT_REACTION_ACTION_TYPE,
 } from "./official-medic-life-support-reaction-executor-v1.mjs";
 import {
+  applyOfficialMedicLifeSupportV2,
+  enumerateOfficialMedicLifeSupportV2,
+  isOfficialMedicLifeSupportPendingV2,
+  openOfficialMedicLifeSupportWindowV2,
+  OFFICIAL_MEDIC_LIFE_SUPPORT_V2_ACTION_ATOM_IDS,
+  OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_ATOM_IDS,
+  OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_ID,
+  OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_VERSION,
+  OFFICIAL_MEDIC_LIFE_SUPPORT_V2_TRANSITION_SCHEMA,
+} from "./official-medic-life-support-reaction-executor-v2.mjs";
+import {
   applyOfficialCleanupRefreshV3,
   applyOfficialEndOfRoundEffectsV3,
   enumerateOfficialCleanupRefreshActionsV3,
@@ -1418,6 +1429,15 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_MEDIC_LIFE_SUPPORT_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_ID,
+    executorVersion: OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([
+      OFFICIAL_PASS_LIFE_SUPPORT_REACTION_ACTION_TYPE,
+      OFFICIAL_USE_LIFE_SUPPORT_REACTION_ACTION_TYPE,
+    ].sort()),
+    transitionSchema: OFFICIAL_MEDIC_LIFE_SUPPORT_V2_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V3_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V3_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -1773,6 +1793,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_ID,
     OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_ID,
+    OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_ATOM_IDS,
   ],
   [
     OFFICIAL_END_OF_ROUND_EFFECTS_V3_EXECUTOR_ID,
@@ -2312,6 +2336,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const medicLifeSupportEnabled = enabledExecutorIds.has(
     OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_ID,
   );
+  const medicLifeSupportV2Enabled = enabledExecutorIds.has(
+    OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_ID,
+  );
   const endOfRoundEffectsV3Enabled = enabledExecutorIds.has(
     OFFICIAL_END_OF_ROUND_EFFECTS_V3_EXECUTOR_ID,
   );
@@ -2739,13 +2766,20 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         trainingTruth: false,
       });
     }
-    if (medicLifeSupportEnabled
-      && isOfficialMedicLifeSupportPendingV1(state)) {
-      const staged = enumerateOfficialMedicLifeSupportV1(state, {
-        sideKey,
-        includeDisabled,
-        matchBinding: options.matchBinding,
-      });
+    if ((medicLifeSupportV2Enabled || medicLifeSupportEnabled)
+      && (isOfficialMedicLifeSupportPendingV2(state)
+        || isOfficialMedicLifeSupportPendingV1(state))) {
+      const staged = medicLifeSupportV2Enabled
+        ? enumerateOfficialMedicLifeSupportV2(state, {
+          sideKey,
+          includeDisabled,
+          matchBinding: options.matchBinding,
+        })
+        : enumerateOfficialMedicLifeSupportV1(state, {
+          sideKey,
+          includeDisabled,
+          matchBinding: options.matchBinding,
+        });
       return freezeDeep({
         schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
         rulesRuntimeHash: descriptor.runtimeHash,
@@ -3639,8 +3673,11 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       && action.executorId !== OFFICIAL_STIMPACK_CLOSE_COMBAT_EXECUTOR_ID) {
       fail("RULE_RUNTIME_PENDING_STIMPACK_CLOSE_COMBAT_PRECISION_REQUIRED");
     }
-    if (isOfficialMedicLifeSupportPendingV1(state)
-      && action.executorId !== OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_ID) {
+    if ((isOfficialMedicLifeSupportPendingV2(state)
+      || isOfficialMedicLifeSupportPendingV1(state))
+      && action.executorId !== (medicLifeSupportV2Enabled
+        ? OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_ID
+        : OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_ID)) {
       fail("RULE_RUNTIME_PENDING_MEDIC_LIFE_SUPPORT_REQUIRED");
     }
     if ((isOfficialMedicRestorationPendingV2(state)
@@ -3676,16 +3713,31 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       OFFICIAL_USE_LIFE_SUPPORT_REACTION_ACTION_TYPE,
       OFFICIAL_PASS_LIFE_SUPPORT_REACTION_ACTION_TYPE,
     ].includes(action.actionType)
-      && action.executorId === OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_ID) {
-      if (!medicLifeSupportEnabled
-        || action.executorVersion !== OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_VERSION) {
+      && [
+        OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_ID,
+        OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_ID,
+      ].includes(action.executorId)) {
+      const currentV2 = action.executorId === OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_ID;
+      if ((currentV2
+        && (!medicLifeSupportV2Enabled
+          || action.executorVersion !== OFFICIAL_MEDIC_LIFE_SUPPORT_V2_EXECUTOR_VERSION))
+        || (!currentV2
+          && (!medicLifeSupportEnabled
+            || action.executorVersion !== OFFICIAL_MEDIC_LIFE_SUPPORT_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
-      assertActionLineage(action, OFFICIAL_MEDIC_LIFE_SUPPORT_ACTION_ATOM_IDS);
-      const applied = applyOfficialMedicLifeSupportV1(state, action, {
-        postRevision: Number(options.postRevision || 0),
-        matchBinding: options.matchBinding,
-      });
+      assertActionLineage(action, currentV2
+        ? OFFICIAL_MEDIC_LIFE_SUPPORT_V2_ACTION_ATOM_IDS
+        : OFFICIAL_MEDIC_LIFE_SUPPORT_ACTION_ATOM_IDS);
+      const applied = currentV2
+        ? applyOfficialMedicLifeSupportV2(state, action, {
+          postRevision: Number(options.postRevision || 0),
+          matchBinding: options.matchBinding,
+        })
+        : applyOfficialMedicLifeSupportV1(state, action, {
+          postRevision: Number(options.postRevision || 0),
+          matchBinding: options.matchBinding,
+        });
       const settled = settleOfficialAlternatingPhaseAfterActivationV1(applied.state, {
         phase: "assault",
         actingSideKey: applied.settlementSideKey,
@@ -4218,25 +4270,31 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           postRevision: Number(options.postRevision || 0),
           matchBinding: options.matchBinding,
           chanceReveals: options.chanceReveals,
-          deferDamageAllocation: medicLifeSupportEnabled,
+          deferDamageAllocation: medicLifeSupportV2Enabled || medicLifeSupportEnabled,
         })
         : applyOfficialOpticalFlareRangedConsumerV1(state, executorAction, {
           postRevision: Number(options.postRevision || 0),
           matchBinding: options.matchBinding,
           chanceReveals: options.chanceReveals,
-          deferDamageAllocation: medicLifeSupportEnabled,
+          deferDamageAllocation: medicLifeSupportV2Enabled || medicLifeSupportEnabled,
         });
       let appliedState = applied.state;
       let appliedEvents = [...(applied.events || [])];
-      if (medicLifeSupportEnabled) {
+      if (medicLifeSupportV2Enabled || medicLifeSupportEnabled) {
         if (!applied.damageAllocationDeferred || !applied.totalDamageReactionPlan) {
           fail("RULE_RUNTIME_LIFE_SUPPORT_DAMAGE_DEFER_REQUIRED");
         }
-        const lifeSupport = openOfficialMedicLifeSupportWindowV1(applied.state, {
-          attackAction: action,
-          totalDamageReactionPlan: applied.totalDamageReactionPlan,
-          matchBinding: options.matchBinding,
-        });
+        const lifeSupport = medicLifeSupportV2Enabled
+          ? openOfficialMedicLifeSupportWindowV2(applied.state, {
+            attackAction: action,
+            totalDamageReactionPlan: applied.totalDamageReactionPlan,
+            matchBinding: options.matchBinding,
+          })
+          : openOfficialMedicLifeSupportWindowV1(applied.state, {
+            attackAction: action,
+            totalDamageReactionPlan: applied.totalDamageReactionPlan,
+            matchBinding: options.matchBinding,
+          });
         appliedState = lifeSupport.state;
         appliedEvents = [...appliedEvents, ...(lifeSupport.events || [])];
         const lastAttackLog = appliedState.log?.at(-1);
