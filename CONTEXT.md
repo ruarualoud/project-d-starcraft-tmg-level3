@@ -14,6 +14,10 @@ The newest successfully captured and contract-verified official Command Center s
 
 Every current product record may carry hash-bound P2P page aliases for provenance and historical display. Those aliases contain no gameplay payload and cannot override or replace the Command Center record. A difference keeps the frozen Command Center value and records drift; a missing current record quarantines instead of reading P2P or repository data.
 
+### DevelopmentTrancheSourceLock
+
+The one-time official source capture shared by a declared development tranche. For Ticket 11 Slices 75–111, development first captures and verifies the latest official source once, then seals its snapshot IDs, content hashes, normalized dataset hash and `unitsVersion / cardsVersion / rulesVersion`. Ordinary slice work and gates read this sealed lock offline. They do not poll, refresh, use a repository fallback, or silently substitute another source. Only an explicit user-directed refresh may create a new versioned lock and impact review; prior locks and room MatchBindings remain immutable.
+
 ### StateEnvelope
 
 The private normalized rules state together with its `MatchBinding`, state revision, state hash, and private journal head. It is the only state accepted by `AuthorityEngine`.
