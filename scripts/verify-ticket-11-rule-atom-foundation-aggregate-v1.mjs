@@ -10,23 +10,28 @@ const ROOT = path.resolve(HERE, "..");
 const OUTPUT_DIR = path.join(ROOT, "build", "ticket-11-rule-atoms-v1");
 const REPORT_NAME = "ticket-11-rule-atom-foundation-aggregate-v1-report.json";
 
-const EXPECTED_BASE_REPORTS = 131;
-const EXPECTED_BASE_ASSERTIONS = 1352;
+const EXPECTED_BASE_REPORTS = 132;
+const EXPECTED_BASE_ASSERTIONS = 1359;
 const EXPECTED_CURRENT = Object.freeze({
-  sliceHash: "f40b9709b700518a15eebaa5594a8620d7d6fc77ee07ea7c27aa6ac4725d7971",
-  catalogueHash: "48f9f27cf603ce6f183e16ee66d4e7cc4b2d0108c4352302ec13eadf6c49a4b7",
-  runtimeHash: "fd1c0889ac76848f3d20ebe943f8467e363c0cf6139697ba72046c7968fa05c8",
+  sliceHash: "32597443e0c9e6ef31ea2097f47c01e7d7e98ace48ee341d8d120c833097a54f",
+  catalogueHash: "bb6df07837fb7a56a420a541292c41d1b05efb8c37ebf55afa0f34851bfef0d7",
+  runtimeHash: "3694d34c2e8c7df4b87cdb9a3dafb6222552f577731b86fa786c24c5a9fb619e",
   relationshipGraphHash:
-    "9c6060ead883517424891970a4f8071525691f6f85b49dc5f2519ee7decfe766",
+    "a93a88de4648711176b341e117da8123e0a164e955e57de9a5dfb50831a80e73",
   executableRuleAtoms: 421,
   reviewRequiredRuleAtoms: 491,
   displayOnlyRuleAtoms: 114,
-  changedAtoms: 7,
-  strictCompleteAtoms: 379,
-  partialContractAtoms: 4,
-  noContractAtoms: 38,
-  declaredStateContractExecutors: 35,
-  stateContractMissingExecutors: 7,
+  changedAtoms: 12,
+  strictCompleteAtoms: 391,
+  partialContractAtoms: 15,
+  noContractAtoms: 15,
+  declaredStateContractExecutors: 36,
+  stateContractMissingExecutors: 6,
+});
+const EXPECTED_HISTORICAL_LIFE_SUPPORT_V2_CONTRACT = Object.freeze({
+  sliceHash: "f40b9709b700518a15eebaa5594a8620d7d6fc77ee07ea7c27aa6ac4725d7971",
+  catalogueHash: "48f9f27cf603ce6f183e16ee66d4e7cc4b2d0108c4352302ec13eadf6c49a4b7",
+  runtimeHash: "fd1c0889ac76848f3d20ebe943f8467e363c0cf6139697ba72046c7968fa05c8",
 });
 const EXPECTED_HISTORICAL_ACADEMY_MEDIC_V2_CONTRACT = Object.freeze({
   sliceHash: "18d162941b3f83c7efed2e52c4dea1b3ec57854878139ed34e3e55723f77efca",
@@ -392,7 +397,7 @@ const EXPECTED_EXECUTORS = Object.freeze([
   "authority.end-of-round-effects-v2@2.0.0",
   "authority.end-of-round-effects-v3@3.0.0",
   "authority.end-of-round-effects-v5@5.0.0",
-  "authority.goliath-scatter-ranged-batch-v1@1.0.0",
+  "authority.goliath-scatter-ranged-batch-v2@2.0.0",
   "authority.hold-position-end-game-check-v2@2.0.0",
   "authority.marine-multi-enemy-casualty-close-combat-v4@4.0.0",
   "authority.marine-multi-enemy-stimpack-casualty-close-combat-v5@5.0.0",
@@ -560,8 +565,11 @@ const historicalRangedAttackV6Contract = byName.get(
 const historicalAcademyMedicV2Contract = byName.get(
   "official-existing-academy-medic-v2-contract-closure-v1-report.json",
 );
-const current = byName.get(
+const historicalLifeSupportV2Contract = byName.get(
   "official-existing-life-support-v2-contract-closure-v1-report.json",
+);
+const current = byName.get(
+  "official-existing-goliath-scatter-v2-contract-closure-v1-report.json",
 );
 const historicalV4 = byName.get("official-out-of-coherency-close-ranks-rule-slice-v1-report.json");
 const denominator = byName.get("official-canonical-rule-atom-denominator-v1-report.json");
@@ -639,12 +647,18 @@ await check("current_slice_catalogue_runtime_and_lineage_are_exact", () => {
   assert.equal(current.runtimeHash, EXPECTED_CURRENT.runtimeHash);
   assert.equal(
     current.slice.previousSliceHash,
-    EXPECTED_HISTORICAL_ACADEMY_MEDIC_V2_CONTRACT.sliceHash,
+    EXPECTED_HISTORICAL_LIFE_SUPPORT_V2_CONTRACT.sliceHash,
   );
   assert.equal(
     current.slice.previousCatalogueHash,
-    EXPECTED_HISTORICAL_ACADEMY_MEDIC_V2_CONTRACT.catalogueHash,
+    EXPECTED_HISTORICAL_LIFE_SUPPORT_V2_CONTRACT.catalogueHash,
   );
+  assert.equal(historicalLifeSupportV2Contract.runtimeHash,
+    EXPECTED_HISTORICAL_LIFE_SUPPORT_V2_CONTRACT.runtimeHash);
+  assert.equal(historicalLifeSupportV2Contract.slice.previousSliceHash,
+    EXPECTED_HISTORICAL_ACADEMY_MEDIC_V2_CONTRACT.sliceHash);
+  assert.equal(historicalLifeSupportV2Contract.slice.previousCatalogueHash,
+    EXPECTED_HISTORICAL_ACADEMY_MEDIC_V2_CONTRACT.catalogueHash);
   assert.equal(historicalAcademyMedicV2Contract.runtimeHash,
     EXPECTED_HISTORICAL_ACADEMY_MEDIC_V2_CONTRACT.runtimeHash);
   assert.equal(historicalAcademyMedicV2Contract.slice.previousSliceHash,
@@ -1188,15 +1202,15 @@ await check("historical_v4_catalogue_runtime_and_rules_display_remain_frozen", (
   );
   assert.equal(
     current.slice.historicalCompatibility.previousSliceHash,
-    EXPECTED_HISTORICAL_ACADEMY_MEDIC_V2_CONTRACT.sliceHash,
+    EXPECTED_HISTORICAL_LIFE_SUPPORT_V2_CONTRACT.sliceHash,
   );
   assert.equal(
     current.slice.historicalCompatibility.previousCatalogueHash,
-    EXPECTED_HISTORICAL_ACADEMY_MEDIC_V2_CONTRACT.catalogueHash,
+    EXPECTED_HISTORICAL_LIFE_SUPPORT_V2_CONTRACT.catalogueHash,
   );
   assert.equal(
     current.slice.historicalCompatibility.previousRuntimeHash,
-    EXPECTED_HISTORICAL_ACADEMY_MEDIC_V2_CONTRACT.runtimeHash,
+    EXPECTED_HISTORICAL_LIFE_SUPPORT_V2_CONTRACT.runtimeHash,
   );
   assert.equal(
     historicalMedicMedpackV2Contract.slice.historicalCompatibility.previousSliceHash,
@@ -1475,8 +1489,8 @@ await check("relationship_graph_declared_scope_is_closed_without_claiming_global
   const relationshipAudit = current.graphAudit;
   assert.equal(relationshipAudit.valid, true);
   assert.equal(relationshipAudit.declaredScopesValid, true);
-  assert.equal(relationshipAudit.counts.nodes, 8029);
-  assert.equal(relationshipAudit.counts.edges, 25632);
+  assert.equal(relationshipAudit.counts.nodes, 8119);
+  assert.equal(relationshipAudit.counts.edges, 25854);
   assert.equal(
     relationshipAudit.counts.declaredStateContractExecutors,
     EXPECTED_CURRENT.declaredStateContractExecutors,

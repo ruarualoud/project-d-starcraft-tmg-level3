@@ -627,6 +627,16 @@ import {
   OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_TRANSITION_SCHEMA,
 } from "./official-goliath-scatter-ranged-batch-executor-v1.mjs";
 import {
+  applyOfficialGoliathScatterRangedBatchV2,
+  enumerateOfficialGoliathScatterRangedBatchV2,
+  isOfficialGoliathScatterRangedSequencePendingV2,
+  OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_ACTION_ATOM_IDS,
+  OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_ATOM_IDS,
+  OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_ID,
+  OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_VERSION,
+  OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_TRANSITION_SCHEMA,
+} from "./official-goliath-scatter-ranged-batch-executor-v2.mjs";
+import {
   applyOfficialCombatTagShieldedRangedV1,
   enumerateOfficialCombatTagShieldedRangedV1,
   OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_ACTION_ATOM_IDS,
@@ -1350,6 +1360,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_ID,
+    executorVersion: OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_EXECUTOR_ID,
     executorVersion: OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_ACTION_TYPE]),
@@ -1753,6 +1769,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_ID,
     OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_ID,
+    OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_ATOM_IDS,
   ],
   [
     OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_EXECUTOR_ID,
@@ -2306,6 +2326,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const goliathScatterRangedBatchEnabled = enabledExecutorIds.has(
     OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_ID,
   );
+  const goliathScatterRangedBatchV2Enabled = enabledExecutorIds.has(
+    OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_ID,
+  );
   const combatTagShieldedRangedEnabled = enabledExecutorIds.has(
     OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_EXECUTOR_ID,
   );
@@ -2688,9 +2711,13 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       candidates.push(...specialist.candidates);
       parameterDomains.push(...specialist.parameterDomains);
     }
-    if (goliathScatterRangedBatchEnabled
-      && isOfficialGoliathScatterRangedSequencePendingV1(state)) {
-      const staged = enumerateOfficialGoliathScatterRangedBatchV1(state, {
+    if ((goliathScatterRangedBatchV2Enabled || goliathScatterRangedBatchEnabled)
+      && (isOfficialGoliathScatterRangedSequencePendingV2(state)
+        || isOfficialGoliathScatterRangedSequencePendingV1(state))) {
+      const enumerateGoliath = goliathScatterRangedBatchV2Enabled
+        ? enumerateOfficialGoliathScatterRangedBatchV2
+        : enumerateOfficialGoliathScatterRangedBatchV1;
+      const staged = enumerateGoliath(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -3211,8 +3238,11 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     }
     if (!initiativePending
       && state.phase === "assault"
-      && goliathScatterRangedBatchEnabled) {
-      candidates.push(...enumerateOfficialGoliathScatterRangedBatchV1(state, {
+      && (goliathScatterRangedBatchV2Enabled || goliathScatterRangedBatchEnabled)) {
+      const enumerateGoliath = goliathScatterRangedBatchV2Enabled
+        ? enumerateOfficialGoliathScatterRangedBatchV2
+        : enumerateOfficialGoliathScatterRangedBatchV1;
+      candidates.push(...enumerateGoliath(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -3694,8 +3724,11 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         : OFFICIAL_ACADEMY_MEDIC_ABILITY_EXECUTOR_ID)) {
       fail("RULE_RUNTIME_PENDING_ACADEMY_MEDIC_ABILITY_REQUIRED");
     }
-    if (isOfficialGoliathScatterRangedSequencePendingV1(state)
-      && action.executorId !== OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_ID) {
+    if ((isOfficialGoliathScatterRangedSequencePendingV2(state)
+      || isOfficialGoliathScatterRangedSequencePendingV1(state))
+      && action.executorId !== (goliathScatterRangedBatchV2Enabled
+        ? OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_ID
+        : OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_ID)) {
       fail("RULE_RUNTIME_PENDING_GOLIATH_SCATTER_BATCH_REQUIRED");
     }
     if (!isOfficialGoliathScatterRangedSequencePendingV1(state)
@@ -4391,27 +4424,41 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       };
     }
     if (action.actionType === OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_ACTION_TYPE
-      && action.executorId === OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_ID) {
-      if (!goliathScatterRangedBatchEnabled
+      && [
+        OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_ID,
+        OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_ID,
+      ].includes(action.executorId)) {
+      const currentV2 = action.executorId
+        === OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_ID;
+      if ((currentV2 && (!goliathScatterRangedBatchV2Enabled
         || action.executorVersion
-          !== OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_VERSION) {
+          !== OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_EXECUTOR_VERSION))
+        || (!currentV2 && (!goliathScatterRangedBatchEnabled
+          || action.executorVersion
+            !== OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
+      const actionAtomIds = currentV2
+        ? OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_V2_ACTION_ATOM_IDS
+        : OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_ACTION_ATOM_IDS;
       const expectedLineage = action.sequenceFinalBatch
         ? expectedHoldLineage(
             state,
             action,
             "assault",
-            OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_ACTION_ATOM_IDS,
+            actionAtomIds,
             passAtomIdsForPhase("assault"),
           )
-        : OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_ACTION_ATOM_IDS;
+        : actionAtomIds;
       assertActionLineage(action, expectedLineage);
       const executorAction = {
         ...clone(action),
-        ruleAtomIds: [...OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_ACTION_ATOM_IDS],
+        ruleAtomIds: [...actionAtomIds],
       };
-      const applied = applyOfficialGoliathScatterRangedBatchV1(
+      const applyGoliath = currentV2
+        ? applyOfficialGoliathScatterRangedBatchV2
+        : applyOfficialGoliathScatterRangedBatchV1;
+      const applied = applyGoliath(
         state,
         executorAction,
         {
