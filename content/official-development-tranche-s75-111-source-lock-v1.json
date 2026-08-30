@@ -1,0 +1,261 @@
+{
+  "schema": "starcraft_tmg_official_development_tranche_source_lock_v1",
+  "gameId": "starcraft-tmg",
+  "trancheId": "ticket-11-slices-75-111",
+  "captureId": "official-development-tranche-s75-111-v1",
+  "capturedAt": "2026-08-30T06:18:09.287Z",
+  "sourceAuthority": "official_primary_and_official_product_backend_candidate",
+  "dataVersions": {
+    "unitsVersion": "71",
+    "cardsVersion": "69",
+    "rulesVersion": "48"
+  },
+  "firestore": {
+    "army_units": {
+      "sourceId": "army_units",
+      "requestedUrl": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units?pageSize=1000",
+      "finalUrl": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units?pageSize=1000",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/firestore/army_units.json",
+      "byteLength": 265800,
+      "byteHash": "0a2ce76023a34267ea6ea906d3db8280a5532a827d3d2377316d4cd7742bb922",
+      "contentType": "application/json; charset=UTF-8",
+      "etag": null,
+      "lastModified": null,
+      "canonicalHash": "6fdb83d6d3eaecf8561f64f56bdfc9e0a8639ece6f9a0850b315fb2747a4525d",
+      "documentCount": 26
+    },
+    "tactical_cards": {
+      "sourceId": "tactical_cards",
+      "requestedUrl": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards?pageSize=1000",
+      "finalUrl": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards?pageSize=1000",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/firestore/tactical_cards.json",
+      "byteLength": 91977,
+      "byteHash": "bbf6d31dd0763e5e6bc06d02737c43619f3df9a22c91a13a94d01520b382ecf3",
+      "contentType": "application/json; charset=UTF-8",
+      "etag": null,
+      "lastModified": null,
+      "canonicalHash": "18ab67fb67cf94100bdd1c9250c250e83f3e16a76d74e9a46d1545229a6ca455",
+      "documentCount": 37
+    },
+    "faction_cards": {
+      "sourceId": "faction_cards",
+      "requestedUrl": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/faction_cards?pageSize=1000",
+      "finalUrl": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/faction_cards?pageSize=1000",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/firestore/faction_cards.json",
+      "byteLength": 381837,
+      "byteHash": "867db838de495d34b8c0921f85fa94e7401b8e8f3556db2fabeef0aad6de947f",
+      "contentType": "application/json; charset=UTF-8",
+      "etag": null,
+      "lastModified": null,
+      "canonicalHash": "97ba28d27893b9b1c21489a90bf1f764cce73a48818eaca9d6b34f73a3e46123",
+      "documentCount": 193
+    },
+    "rules_sections": {
+      "sourceId": "rules_sections",
+      "requestedUrl": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/rules_sections?pageSize=1000",
+      "finalUrl": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/rules_sections?pageSize=1000",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/firestore/rules_sections.json",
+      "byteLength": 730087,
+      "byteHash": "d2cfa332a098ad14223d10cf9aa0c1d69c5d4c21e3f3eddb02f4aa403086a2e1",
+      "contentType": "application/json; charset=UTF-8",
+      "etag": null,
+      "lastModified": null,
+      "canonicalHash": "24ab27652f49439cec87be672f22474121984b2107cb510c8a16e93fb714d973",
+      "documentCount": 15
+    },
+    "system_metadata_versions": {
+      "sourceId": "system_metadata_versions",
+      "requestedUrl": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_metadata/versions",
+      "finalUrl": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_metadata/versions",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/firestore/system_metadata_versions.json",
+      "byteLength": 384,
+      "byteHash": "80310c5508cf3d74482fa7e8d4e1dc16c23ef27a78c81d7db149ed21e28f9d7b",
+      "contentType": "application/json; charset=UTF-8",
+      "etag": null,
+      "lastModified": null,
+      "canonicalHash": "35b3c26bb9c82bce1efba3e48697b41e512b0be7d7e4bacb9452d224fd62c733"
+    }
+  },
+  "binaries": {
+    "core_rulebook": {
+      "sourceId": "core_rulebook",
+      "requestedUrl": "https://starcraft-tmg.com/files/downloads/StarCraft-TMG_EN.pdf",
+      "finalUrl": "https://starcraft-tmg.com/files/downloads/StarCraft-TMG_EN.pdf",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/StarCraft-TMG_EN.pdf",
+      "byteLength": 15688406,
+      "byteHash": "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54",
+      "contentType": "application/pdf",
+      "etag": "\"6a281077-ef62d6\"",
+      "lastModified": "Tue, 09 Jun 2026 13:09:11 GMT"
+    },
+    "protoss_p2p": {
+      "sourceId": "protoss_p2p",
+      "requestedUrl": "https://starcraft-tmg.com/files/downloads/StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf",
+      "finalUrl": "https://starcraft-tmg.com/files/downloads/StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/StarCraft-Protoss-P2P-Card-Sheets-A4_EN.pdf",
+      "byteLength": 3233470,
+      "byteHash": "4e8547b2df8d545df3d0ebb7d7821521a888dc0437d6f4dde21d82145337a212",
+      "contentType": "application/pdf",
+      "etag": "\"69fc86d2-3156be\"",
+      "lastModified": "Thu, 07 May 2026 12:34:26 GMT"
+    },
+    "terran_p2p": {
+      "sourceId": "terran_p2p",
+      "requestedUrl": "https://starcraft-tmg.com/files/downloads/StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf",
+      "finalUrl": "https://starcraft-tmg.com/files/downloads/StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/StarCraft-Terran-P2P-Card-Sheets-A4_EN.pdf",
+      "byteLength": 2609994,
+      "byteHash": "afa3f229db61444d0673dea35e31772530a4c39dadaa0e281ba1bae0d271109c",
+      "contentType": "application/pdf",
+      "etag": "\"69fc86d2-27d34a\"",
+      "lastModified": "Thu, 07 May 2026 12:34:26 GMT"
+    },
+    "zerg_p2p": {
+      "sourceId": "zerg_p2p",
+      "requestedUrl": "https://starcraft-tmg.com/files/downloads/StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "finalUrl": "https://starcraft-tmg.com/files/downloads/StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/StarCraft-Zerg-P2P-Card-Sheets-A4_EN.pdf",
+      "byteLength": 3465781,
+      "byteHash": "6810f46ee422ac5d8f3cc169c3eda3ccb9551f01ab71a1f7e4ac8c266817b364",
+      "contentType": "application/pdf",
+      "etag": "\"69fc86d2-34e235\"",
+      "lastModified": "Thu, 07 May 2026 12:34:26 GMT"
+    }
+  },
+  "texts": {
+    "command_center_shell": {
+      "sourceId": "command_center_shell",
+      "requestedUrl": "https://sc.starcraft-tmg.com/",
+      "finalUrl": "https://sc.starcraft-tmg.com/",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/command-center.html",
+      "byteLength": 18118,
+      "byteHash": "340bacd589e88e9b02e7d99ff8a2966c1dd2621a22d5a76494a462ce0d170bc7",
+      "contentType": "text/html; charset=utf-8",
+      "etag": null,
+      "lastModified": "Mon, 16 Mar 2026 22:16:02 GMT"
+    },
+    "command_center_script": {
+      "sourceId": "command_center_script",
+      "requestedUrl": "https://sc.starcraft-tmg.com/script.js",
+      "finalUrl": "https://sc.starcraft-tmg.com/script.js",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/command-center/script.js",
+      "byteLength": 20788,
+      "byteHash": "5b35d5645991f9f2fd13a1d3a3a7668590129a98fc73f8efb95c994c70d8fbca",
+      "contentType": "text/javascript; charset=utf-8",
+      "etag": "\"47c136f411cfd4f5bd311816519766c121fb438621a6bc5a2fc78f90e59d73bd-br\"",
+      "lastModified": "Mon, 16 Mar 2026 22:16:02 GMT"
+    },
+    "command_center_firebase_init": {
+      "sourceId": "command_center_firebase_init",
+      "requestedUrl": "https://sc.starcraft-tmg.com/modules/firebase-init.js",
+      "finalUrl": "https://sc.starcraft-tmg.com/modules/firebase-init.js",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/command-center/modules/firebase-init.js",
+      "byteLength": 1064,
+      "byteHash": "2f6b2432228d22d5e6ec6e0c6e7794f98297dd29b941eb7239be02d0d8c7edc4",
+      "contentType": "text/javascript; charset=utf-8",
+      "etag": "\"d91c41a58a4dc819c6a96662dd86f4a2b9478041e082cb3aa2fbbeeb63b002ec-br\"",
+      "lastModified": "Mon, 16 Mar 2026 22:16:02 GMT"
+    },
+    "command_center_factions": {
+      "sourceId": "command_center_factions",
+      "requestedUrl": "https://sc.starcraft-tmg.com/modules/factions.js",
+      "finalUrl": "https://sc.starcraft-tmg.com/modules/factions.js",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/command-center/modules/factions.js",
+      "byteLength": 47461,
+      "byteHash": "3b67bd5f04279ce77e0556a27be41340897156763ffd099a4c208cce9355946d",
+      "contentType": "text/javascript; charset=utf-8",
+      "etag": "\"7d4a5fc8cbd8a94bb77af3ff1485f76fc3171a7988baa0b8096d159ef98a8e9a-br\"",
+      "lastModified": "Mon, 16 Mar 2026 22:16:02 GMT"
+    },
+    "command_center_rules": {
+      "sourceId": "command_center_rules",
+      "requestedUrl": "https://sc.starcraft-tmg.com/modules/rules.js",
+      "finalUrl": "https://sc.starcraft-tmg.com/modules/rules.js",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/command-center/modules/rules.js",
+      "byteLength": 52489,
+      "byteHash": "d52fb38e1c33c342e12c1da2e81c7e4c1241bc1b9dd39af17fc01e489842cc06",
+      "contentType": "text/javascript; charset=utf-8",
+      "etag": "\"2f2cb4915bb5eeccd4618df42a30062aa4c72357d9bfc20575f040bc7b0ae4b4-br\"",
+      "lastModified": "Mon, 16 Mar 2026 22:16:02 GMT"
+    },
+    "command_center_army_builder": {
+      "sourceId": "command_center_army_builder",
+      "requestedUrl": "https://sc.starcraft-tmg.com/modules/army_builder.js",
+      "finalUrl": "https://sc.starcraft-tmg.com/modules/army_builder.js",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/command-center/modules/army_builder.js",
+      "byteLength": 61745,
+      "byteHash": "5c3514eaa8c7d07a93f69a80516facd65abbcc02259aafbcc62cb28457e0c00d",
+      "contentType": "text/javascript; charset=utf-8",
+      "etag": "\"89ce44b6964acbd775c6549ced48400ba3141c420b40ba4bb264a411a43a5762-br\"",
+      "lastModified": "Mon, 16 Mar 2026 22:16:02 GMT"
+    },
+    "command_center_rules_checker": {
+      "sourceId": "command_center_rules_checker",
+      "requestedUrl": "https://sc.starcraft-tmg.com/modules/rules_checker.js",
+      "finalUrl": "https://sc.starcraft-tmg.com/modules/rules_checker.js",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/command-center/modules/rules_checker.js",
+      "byteLength": 18946,
+      "byteHash": "aa9bc25abc285e53501c5b60b68d2eb0b86171acc9561efcc0ce34bb8534bee0",
+      "contentType": "text/javascript; charset=utf-8",
+      "etag": "\"e614a8adc902bf845e1c6b93708a1d9b7cc7c36a9e06064b08e95b1691b203a0-br\"",
+      "lastModified": "Mon, 16 Mar 2026 22:16:02 GMT"
+    },
+    "command_center_mission_cards": {
+      "sourceId": "command_center_mission_cards",
+      "requestedUrl": "https://sc.starcraft-tmg.com/modules/mission_cards.js",
+      "finalUrl": "https://sc.starcraft-tmg.com/modules/mission_cards.js",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/command-center/modules/mission_cards.js",
+      "byteLength": 27568,
+      "byteHash": "a55dcb073c0e62b93b9a8e9c25a47208ef733d5a617f75c093f430e752c4a0ca",
+      "contentType": "text/javascript; charset=utf-8",
+      "etag": "\"84aa74c7384375dcf1c2eef735addecfebaba05754c7ddfbd42a2d60e7d52b08-br\"",
+      "lastModified": "Mon, 16 Mar 2026 22:16:02 GMT"
+    },
+    "command_center_deployment_maps": {
+      "sourceId": "command_center_deployment_maps",
+      "requestedUrl": "https://sc.starcraft-tmg.com/modules/deployment_maps.js",
+      "finalUrl": "https://sc.starcraft-tmg.com/modules/deployment_maps.js",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/command-center/modules/deployment_maps.js",
+      "byteLength": 22642,
+      "byteHash": "232c2f8ee1a9df2fde3cb9ee7d4a9821901dbe8c362313434b0832054249e613",
+      "contentType": "text/javascript; charset=utf-8",
+      "etag": "\"54fa48f97105be8233eec8394082cae17f436643515e06f2c6cb3ed0a08450da-br\"",
+      "lastModified": "Mon, 16 Mar 2026 22:16:02 GMT"
+    },
+    "gameplay_faq": {
+      "sourceId": "gameplay_faq",
+      "requestedUrl": "https://starcraft-tmg.com/faq",
+      "finalUrl": "https://starcraft-tmg.com/pl/faq",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/gameplay-faq.html",
+      "byteLength": 185937,
+      "byteHash": "349319ecb03e5364a25ea6c828ca2b898ab9d8c399df76a8a30e34d74ecd2650",
+      "contentType": "text/html; charset=UTF-8",
+      "etag": null,
+      "lastModified": null
+    },
+    "rules_news": {
+      "sourceId": "rules_news",
+      "requestedUrl": "https://starcraft-tmg.com/news/rules",
+      "finalUrl": "https://starcraft-tmg.com/pl/newsy/zasady",
+      "cachePath": "build/source-intake/official-rules/development-tranches/official-development-tranche-s75-111-v1/rules-news.html",
+      "byteLength": 178873,
+      "byteHash": "18b08354c5f0425c2d33356339d65d1bcc95b3303a08930553d6fb7d208e8635",
+      "contentType": "text/html; charset=UTF-8",
+      "etag": null,
+      "lastModified": null
+    }
+  },
+  "policy": {
+    "automaticRefreshAllowed": false,
+    "networkVerificationDuringSliceDevelopmentAllowed": false,
+    "explicitUserCommandRequiredForNewCapture": true,
+    "repositoryFallbackAllowed": false,
+    "silentSourceReplacementAllowed": false,
+    "priorLockMutationAllowed": false,
+    "roomBindingsRemainSnapshotPinned": true
+  },
+  "rulesEligible": false,
+  "productionRoomEligible": false,
+  "trainingTruth": false,
+  "lockHash": "1adbdb652fafc09d01887981a3ae86f69e65e1f1480d804156a8da1d4d1757a1"
+}

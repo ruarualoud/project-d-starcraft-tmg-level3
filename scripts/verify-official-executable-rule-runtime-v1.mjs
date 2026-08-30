@@ -301,10 +301,17 @@ const historicalSpecialistV2ContractSliceReport = JSON.parse(await readFile(
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalStimpackCurrentV2ContractSliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-existing-stimpack-current-v2-contract-closure-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-marine-charge-v2-rule-slice-v1-report.json",
   ),
   "utf8",
 ));
@@ -585,8 +592,12 @@ const historicalSidearmPinpointV2ContractSlice =
   historicalSidearmPinpointV2ContractSliceReport.slice;
 const historicalSpecialistV2ContractSlice =
   historicalSpecialistV2ContractSliceReport.slice;
+const historicalStimpackCurrentV2ContractSlice =
+  historicalStimpackCurrentV2ContractSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalStimpackCurrentV2ContractSlice.sliceHash);
+assert.equal(historicalStimpackCurrentV2ContractSlice.previousSliceHash,
   historicalSpecialistV2ContractSlice.sliceHash);
 assert.equal(historicalSpecialistV2ContractSlice.previousSliceHash,
   historicalSidearmPinpointV2ContractSlice.sliceHash);
@@ -719,26 +730,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 421);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 605);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 445);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 581);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 421,
-    reviewRequiredRuleAtoms: 491,
+    executableRuleAtoms: 445,
+    newlyExecutableRuleAtoms: 24,
+    reviewRequiredRuleAtoms: 467,
     displayOnlyRuleAtoms: 114,
-    changedAtoms: 4,
-    strictCompleteAtoms: 421,
+    strictCompleteAtoms: 445,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 42,
+    declaredStateContractExecutors: 43,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "5365803f73cc500f3c39089fdeae592e620cdd980e3c59b38134cb28ea87a33d",
+    "0d794f82236ed4486a7c8405a3eb46775a84299ce36d2d8dc2a7a4b164562161",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -952,6 +963,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     manifestById.get("authority.disengage-v5").actionTypes,
     ["disengage"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.marine-charge-v2").actionTypes,
+    ["charge", "resolve_charge"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -1163,11 +1178,11 @@ const report = {
     crossTimeReplayResult: failures.length ? "failed" : "official_runtime_receipt_replay_passed",
     promotions: [],
     blocks: [
-      "remaining_491_actionable_rule_atoms_not_executable",
+      "remaining_467_actionable_rule_atoms_not_executable",
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 491,
+    remainingRuleGaps: 467,
   },
   harness: {
     harnessLoopUsed: true,

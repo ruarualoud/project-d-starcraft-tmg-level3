@@ -13,6 +13,8 @@ This roadmap partitions the current Slice 74 denominator exactly:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
+Execution status on 2026-08-30: Slice 75 is complete for its declared bounded denominator. The current ledger is `445` executable, `467` review-required, and `114` retained display-only RuleAtoms; `36` planned slices, Slice 76 through Slice 111, remain.
+
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
 ## Frozen historical code does not mean discarded code
@@ -30,7 +32,7 @@ Slice 75 will preserve v1 as historical evidence and migrate the reviewed pure g
 
 ## One-time source capture policy
 
-Before Slice 75 implementation begins, run one explicit online official-source capture. Seal its source snapshot ID, content hashes, normalized dataset hash, and `unitsVersion/cardsVersion/rulesVersion` as the development-tranche source lock for Slices 75–111.
+The one explicit online official-source capture was completed before Slice 75 implementation. The sealed development-tranche lock is `1adbdb652fafc09d01887981a3ae86f69e65e1f1480d804156a8da1d4d1757a1`, its source snapshot is `8828471846f5befa2e7eb464d64dfebf834e7aba5c1908381a44b29f5529e105`, its normalized dataset is `b2579b83bb9a77b6119730009725a34d4e828d92d302248243bab33863551067`, and its official versions are `71/69/48` (`units/cards/rules`). Two same-version additions are isolated as community display-only records; official product and official rule-prose denominators did not change.
 
 After that capture:
 
@@ -41,13 +43,13 @@ After that capture:
 - missing or hash-mismatched sealed inputs fail closed;
 - room MatchBindings remain pinned to the exact snapshot with which they were created.
 
-The local `71/69/48` checkpoint is the current verified development baseline, but it is not claimed to still be the newest official state until the one-time pre-Slice-75 capture runs.
+The lock is now the sole development source for Slices 75–111 until the user explicitly orders a refresh. No ordinary verifier performs a network read.
 
 ## Exact slice route
 
 | Slice | Rule cluster | Atoms promoted | Executable after | Review-required after |
 | ---: | --- | ---: | ---: | ---: |
-| 75 | Marine Charge v2: Core 8.7.7 plus the seven Charge steps in Quick Reference 12.4 | 24 | 445 | 467 |
+| 75 | **Complete:** Marine Charge v2: Core 8.7.7 plus the seven Charge steps in Quick Reference 12.4 | 24 | 445 | 467 |
 | 76 | Impact after a successful Charge: allocation, per-target rolls, armour transfer, no-Surge Damage 1 | 6 | 451 | 461 |
 | 77 | Run action and Assault choice: Run procedure/restrictions, Quick Reference Run, unengaged permission | 6 | 457 | 455 |
 | 78 | Blast/Flamer template weapon pipeline and Spillover batches | 23 | 480 | 432 |
@@ -97,5 +99,7 @@ Slice 75 completion target is therefore:
 - declaration and resolution both have complete Preview→Confirm→Apply and replay evidence;
 - success and failure both settle the Assault activation correctly;
 - the Charge executor and every relationship/state contract introduced by the slice close in the same commit.
+
+Slice 75 closes those claims only for its declared GAUNTLET Standard / round 32mm Ground Marine / no-terrain denominator. Rules-owned failure certificates currently prove straight-line distance shortfall and mutually incompatible declared-target spread; unsupported obstacle, terrain, base, elevation, Flying, placement-priority, and general continuous-geometry cases remain fail-closed for the later geometry slices rather than accepting a client-authored failure. The slice report is `docs/ticket-11-slice-75-marine-charge-v2-2026-08-30.md`.
 
 No Skill, DSH, MuZero, self-play, memory, or training-truth promotion is part of these RuleAtom slices.
