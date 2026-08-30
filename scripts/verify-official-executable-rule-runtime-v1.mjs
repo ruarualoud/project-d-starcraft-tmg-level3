@@ -280,10 +280,17 @@ const historicalGoliathScatterV2ContractSliceReport = JSON.parse(await readFile(
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalCombatTagShieldedV2ContractSliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-existing-combat-tag-shielded-v2-contract-closure-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-existing-sidearm-pinpoint-v2-contract-closure-v1-report.json",
   ),
   "utf8",
 ));
@@ -558,8 +565,12 @@ const historicalAcademyMedicV2ContractSlice = historicalAcademyMedicV2ContractSl
 const historicalLifeSupportV2ContractSlice = historicalLifeSupportV2ContractSliceReport.slice;
 const historicalGoliathScatterV2ContractSlice =
   historicalGoliathScatterV2ContractSliceReport.slice;
+const historicalCombatTagShieldedV2ContractSlice =
+  historicalCombatTagShieldedV2ContractSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalCombatTagShieldedV2ContractSlice.sliceHash);
+assert.equal(historicalCombatTagShieldedV2ContractSlice.previousSliceHash,
   historicalGoliathScatterV2ContractSlice.sliceHash);
 assert.equal(historicalGoliathScatterV2ContractSlice.previousSliceHash,
   historicalLifeSupportV2ContractSlice.sliceHash);
@@ -695,17 +706,17 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     executableRuleAtoms: 421,
     reviewRequiredRuleAtoms: 491,
     displayOnlyRuleAtoms: 114,
-    changedAtoms: 10,
-    strictCompleteAtoms: 401,
-    partialContractAtoms: 15,
+    changedAtoms: 6,
+    strictCompleteAtoms: 407,
+    partialContractAtoms: 9,
     noContractAtoms: 5,
-    declaredStateContractExecutors: 37,
-    missingStateContractExecutors: 5,
+    declaredStateContractExecutors: 38,
+    missingStateContractExecutors: 4,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "fe8427b55b74ebb99bd40ab6517f35ff85e2194040f76e4049c4d8116f673b00",
+    "7a5431f81b5a2917d26d1f8646ab5c9253063d0562ab4b27f7909f0ae4a39b0e",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -822,7 +833,7 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     "resolve_end_of_round_effects",
   ]);
   assert.deepEqual(
-    manifestById.get("authority.sidearm-pinpoint-ranged-batch-v1").actionTypes,
+    manifestById.get("authority.sidearm-pinpoint-ranged-batch-v2").actionTypes,
     ["ranged_attack"],
   );
   assert.deepEqual(

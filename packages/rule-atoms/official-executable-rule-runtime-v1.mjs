@@ -615,6 +615,16 @@ import {
   OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_TRANSITION_SCHEMA,
 } from "./official-sidearm-pinpoint-ranged-batch-executor-v1.mjs";
 import {
+  applyOfficialSidearmPinpointRangedBatchV2,
+  enumerateOfficialSidearmPinpointRangedBatchV2,
+  isOfficialSidearmRangedSequencePendingV2,
+  OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_ACTION_ATOM_IDS,
+  OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_ATOM_IDS,
+  OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_ID,
+  OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_VERSION,
+  OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_TRANSITION_SCHEMA,
+} from "./official-sidearm-pinpoint-ranged-batch-executor-v2.mjs";
+import {
   applyOfficialGoliathScatterRangedBatchV1,
   enumerateOfficialGoliathScatterRangedBatchV1,
   isOfficialGoliathScatterRangedSequencePendingV1,
@@ -1363,6 +1373,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_ID,
+    executorVersion: OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_ID,
     executorVersion: OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_ACTION_TYPE]),
@@ -1780,6 +1796,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_ID,
     OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_ID,
+    OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_ATOM_IDS,
   ],
   [
     OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_ID,
@@ -2342,6 +2362,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const sidearmPinpointRangedBatchEnabled = enabledExecutorIds.has(
     OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_ID,
   );
+  const sidearmPinpointRangedBatchV2Enabled = enabledExecutorIds.has(
+    OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_ID,
+  );
   const goliathScatterRangedBatchEnabled = enabledExecutorIds.has(
     OFFICIAL_GOLIATH_SCATTER_RANGED_BATCH_EXECUTOR_ID,
   );
@@ -2763,9 +2786,13 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         trainingTruth: false,
       });
     }
-    if (sidearmPinpointRangedBatchEnabled
-      && isOfficialSidearmRangedSequencePendingV1(state)) {
-      const staged = enumerateOfficialSidearmPinpointRangedBatchV1(state, {
+    if ((sidearmPinpointRangedBatchV2Enabled || sidearmPinpointRangedBatchEnabled)
+      && (isOfficialSidearmRangedSequencePendingV2(state)
+        || isOfficialSidearmRangedSequencePendingV1(state))) {
+      const enumerateSidearm = sidearmPinpointRangedBatchV2Enabled
+        ? enumerateOfficialSidearmPinpointRangedBatchV2
+        : enumerateOfficialSidearmPinpointRangedBatchV1;
+      const staged = enumerateSidearm(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -3282,8 +3309,11 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     }
     if (!initiativePending
       && state.phase === "assault"
-      && sidearmPinpointRangedBatchEnabled) {
-      candidates.push(...enumerateOfficialSidearmPinpointRangedBatchV1(state, {
+      && (sidearmPinpointRangedBatchV2Enabled || sidearmPinpointRangedBatchEnabled)) {
+      const enumerateSidearm = sidearmPinpointRangedBatchV2Enabled
+        ? enumerateOfficialSidearmPinpointRangedBatchV2
+        : enumerateOfficialSidearmPinpointRangedBatchV1;
+      candidates.push(...enumerateSidearm(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -3757,8 +3787,11 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       fail("RULE_RUNTIME_PENDING_GOLIATH_SCATTER_BATCH_REQUIRED");
     }
     if (!isOfficialGoliathScatterRangedSequencePendingV1(state)
-      && isOfficialSidearmRangedSequencePendingV1(state)
-      && action.executorId !== OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_ID) {
+      && (isOfficialSidearmRangedSequencePendingV2(state)
+        || isOfficialSidearmRangedSequencePendingV1(state))
+      && action.executorId !== (sidearmPinpointRangedBatchV2Enabled
+        ? OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_ID
+        : OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_ID)) {
       fail("RULE_RUNTIME_PENDING_SIDEARM_BATCH_REQUIRED");
     }
     if (!isOfficialGoliathScatterRangedSequencePendingV1(state)
@@ -4542,27 +4575,41 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       };
     }
     if (action.actionType === OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_ACTION_TYPE
-      && action.executorId === OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_ID) {
-      if (!sidearmPinpointRangedBatchEnabled
+      && [
+        OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_ID,
+        OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_ID,
+      ].includes(action.executorId)) {
+      const currentV2 = action.executorId
+        === OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_ID;
+      if ((currentV2 && (!sidearmPinpointRangedBatchV2Enabled
         || action.executorVersion
-          !== OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_VERSION) {
+          !== OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_EXECUTOR_VERSION))
+        || (!currentV2 && (!sidearmPinpointRangedBatchEnabled
+        || action.executorVersion
+          !== OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
+      const actionAtomIds = currentV2
+        ? OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_V2_ACTION_ATOM_IDS
+        : OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_ACTION_ATOM_IDS;
       const expectedLineage = action.sequenceFinalBatch
         ? expectedHoldLineage(
             state,
             action,
             "assault",
-            OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_ACTION_ATOM_IDS,
+            actionAtomIds,
             passAtomIdsForPhase("assault"),
           )
-        : OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_ACTION_ATOM_IDS;
+        : actionAtomIds;
       assertActionLineage(action, expectedLineage);
       const executorAction = {
         ...clone(action),
-        ruleAtomIds: [...OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_ACTION_ATOM_IDS],
+        ruleAtomIds: [...actionAtomIds],
       };
-      const applied = applyOfficialSidearmPinpointRangedBatchV1(
+      const applySidearm = currentV2
+        ? applyOfficialSidearmPinpointRangedBatchV2
+        : applyOfficialSidearmPinpointRangedBatchV1;
+      const applied = applySidearm(
         state,
         executorAction,
         {
