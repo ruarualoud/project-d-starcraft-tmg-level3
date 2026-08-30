@@ -322,10 +322,17 @@ const historicalImpactSliceReport = JSON.parse(await readFile(
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalAssaultRunSliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-assault-run-rule-slice-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-template-weapon-rule-slice-v1-report.json",
   ),
   "utf8",
 ));
@@ -610,8 +617,11 @@ const historicalStimpackCurrentV2ContractSlice =
   historicalStimpackCurrentV2ContractSliceReport.slice;
 const historicalMarineChargeV2Slice = historicalMarineChargeV2SliceReport.slice;
 const historicalImpactSlice = historicalImpactSliceReport.slice;
+const historicalAssaultRunSlice = historicalAssaultRunSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalAssaultRunSlice.sliceHash);
+assert.equal(historicalAssaultRunSlice.previousSliceHash,
   historicalImpactSlice.sliceHash);
 assert.equal(historicalImpactSlice.previousSliceHash,
   historicalMarineChargeV2Slice.sliceHash);
@@ -750,26 +760,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 457);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 569);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 480);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 546);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 457,
-    newlyExecutableRuleAtoms: 6,
-    reviewRequiredRuleAtoms: 455,
+    executableRuleAtoms: 480,
+    newlyExecutableRuleAtoms: 23,
+    reviewRequiredRuleAtoms: 432,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 457,
+    strictCompleteAtoms: 480,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 46,
+    declaredStateContractExecutors: 47,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "f5ee9e1257369765fc33979491904eecb5f8dd41e67fedd413c8ff8c8973bad0",
+    "d21b5fb901e8b50a9f9e327b3968e7d8340473c158a04c8c628f1d93c16e1e17",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -998,6 +1008,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
   assert.deepEqual(
     manifestById.get("authority.assault-run-v1").actionTypes,
     ["run"],
+  );
+  assert.deepEqual(
+    manifestById.get("authority.template-weapon-v1").actionTypes,
+    ["resolve_template_weapon_procedure"],
   );
 });
 

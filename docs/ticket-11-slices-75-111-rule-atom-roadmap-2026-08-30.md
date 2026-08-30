@@ -13,7 +13,7 @@ This roadmap partitions the current Slice 74 denominator exactly:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-08-30: Slices 75–77 are complete for their declared bounded denominators. The current ledger is `457` executable, `455` review-required, and `114` retained display-only RuleAtoms; `34` planned slices, Slice 78 through Slice 111, remain.
+Execution status on 2026-08-30: Slices 75–78 are complete for their declared bounded denominators. The current ledger is `480` executable, `432` review-required, and `114` retained display-only RuleAtoms; `33` planned slices, Slice 79 through Slice 111, remain.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -52,7 +52,7 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 75 | **Complete:** Marine Charge v2: Core 8.7.7 plus the seven Charge steps in Quick Reference 12.4 | 24 | 445 | 467 |
 | 76 | **Complete:** Impact after a successful Charge: allocation, per-target rolls, armour transfer, no-Surge Damage 1 | 6 | 451 | 461 |
 | 77 | **Complete:** Run action and Assault choice: Run procedure/restrictions, Quick Reference Run, unengaged permission | 6 | 457 | 455 |
-| 78 | Blast/Flamer template weapon pipeline and Spillover batches | 23 | 480 | 432 |
+| 78 | **Complete:** Blast/Flamer template procedure and Spillover batches; current official carrier/physical geometry asset quarantined | 23 | 480 | 432 |
 | 79 | Attack-pool edge cases: reduced dice, mixed modifiers, Hits X, Long Range batches, Concentrated Fire, Tough, visible-casualty caps | 13 | 493 | 419 |
 | 80 | Remaining Close Combat lifecycle: marker removal, Evade, freed-unit state, Surge target, multiple enemies, engagement range | 8 | 501 | 411 |
 | 81 | Direct movement and Displacement | 9 | 510 | 402 |
@@ -109,5 +109,9 @@ The relationship graph proved that Marine Charge cannot reach Impact because Mar
 ## Slice 77 Run closure
 
 Slice 77 adds `authority.assault-run-v1@1.0.0` and promotes the exact six Core 8.6.1/8.7.1/11 plus Quick Reference 12.4 atoms. The current executor requires a Movement-side marker, forbids an existing Assault-side marker and engagement, then explicitly adapts the current Assault state into the byte-frozen Standard Move v1 kernel. Single-model Marine Run uses Speed 7; every supported multi-model count uses Speed 4, independent of UI slots. Apply restores current state, preserves Movement activation, writes Assault activation and settles alternation. Source, marker, actor-position, geometry and action drift fail closed. Focused `13/13`, current runtime `10/10` and aggregate `10/10` pass; the graph has 8,627 nodes / 27,165 edges and 46/46 declared executor state contracts. The report is `docs/ticket-11-slice-77-assault-run-2026-08-30.md`.
+
+## Slice 78 Template/Spillover closure
+
+Slice 78 adds `authority.template-weapon-v1@1.0.0` and promotes the exact 23 Core 8.7.6, Core 11 Spillover and Quick Reference atoms. Rules own BT/FT placement from a content-hashed local template polygon, round-base coverage, elevation/Flying/target-tag and Size 2+ terrain filtering, main-pool Rate modifiers, affected-model Surge Result and Friendly/Enemy per-Unit Spillover batches without Rate modifiers or Surge. The sealed latest official data has no current BT/FT carrier and no physical template geometry asset, so production carrier enumeration is explicitly quarantined instead of using a legacy or invented profile. Focused `16/16`, runtime `10/10`, aggregate `10/10`, graph 8,783/27,405 and contracts 47/47 pass. The report is `docs/ticket-11-slice-78-template-weapon-spillover-2026-08-30.md`.
 
 No Skill, DSH, MuZero, self-play, memory, or training-truth promotion is part of these RuleAtom slices.
