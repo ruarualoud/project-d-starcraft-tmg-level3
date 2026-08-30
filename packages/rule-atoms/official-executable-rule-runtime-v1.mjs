@@ -648,6 +648,15 @@ import {
   OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_TRANSITION_SCHEMA,
 } from "./official-combat-tag-shielded-ranged-executor-v1.mjs";
 import {
+  applyOfficialCombatTagShieldedRangedV2,
+  enumerateOfficialCombatTagShieldedRangedV2,
+  OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_ACTION_ATOM_IDS,
+  OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_EXECUTOR_ATOM_IDS,
+  OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_EXECUTOR_ID,
+  OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_EXECUTOR_VERSION,
+  OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_TRANSITION_SCHEMA,
+} from "./official-combat-tag-shielded-ranged-executor-v2.mjs";
+import {
   applyOfficialMedicMedpackActiveV1,
   enumerateOfficialMedicMedpackActiveV1,
   OFFICIAL_MEDIC_MEDPACK_ACTIVE_ACTION_ATOM_IDS,
@@ -1372,6 +1381,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_EXECUTOR_ID,
+    executorVersion: OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_MEDIC_MEDPACK_ACTIVE_EXECUTOR_ID,
     executorVersion: OFFICIAL_MEDIC_MEDPACK_ACTIVE_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_MEDIC_MEDPACK_ACTIVE_ACTION_TYPE]),
@@ -1777,6 +1792,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_EXECUTOR_ID,
     OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_EXECUTOR_ID,
+    OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_EXECUTOR_ATOM_IDS,
   ],
   [
     OFFICIAL_MEDIC_MEDPACK_ACTIVE_EXECUTOR_ID,
@@ -2331,6 +2350,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   );
   const combatTagShieldedRangedEnabled = enabledExecutorIds.has(
     OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_EXECUTOR_ID,
+  );
+  const combatTagShieldedRangedV2Enabled = enabledExecutorIds.has(
+    OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_EXECUTOR_ID,
   );
   const medicMedpackActiveEnabled = enabledExecutorIds.has(
     OFFICIAL_MEDIC_MEDPACK_ACTIVE_EXECUTOR_ID,
@@ -3224,8 +3246,11 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     }
     if (!initiativePending
       && state.phase === "assault"
-      && combatTagShieldedRangedEnabled) {
-      candidates.push(...enumerateOfficialCombatTagShieldedRangedV1(state, {
+      && (combatTagShieldedRangedV2Enabled || combatTagShieldedRangedEnabled)) {
+      const enumerateShielded = combatTagShieldedRangedV2Enabled
+        ? enumerateOfficialCombatTagShieldedRangedV2
+        : enumerateOfficialCombatTagShieldedRangedV1;
+      candidates.push(...enumerateShielded(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -4371,25 +4396,39 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       };
     }
     if (action.actionType === OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_ACTION_TYPE
-      && action.executorId === OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_EXECUTOR_ID) {
-      if (!combatTagShieldedRangedEnabled
+      && [
+        OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_EXECUTOR_ID,
+        OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_EXECUTOR_ID,
+      ].includes(action.executorId)) {
+      const currentV2 = action.executorId
+        === OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_EXECUTOR_ID;
+      if ((currentV2 && (!combatTagShieldedRangedV2Enabled
         || action.executorVersion
-          !== OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_EXECUTOR_VERSION) {
+          !== OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_EXECUTOR_VERSION))
+        || (!currentV2 && (!combatTagShieldedRangedEnabled
+          || action.executorVersion
+            !== OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
+      const actionAtomIds = currentV2
+        ? OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_V2_ACTION_ATOM_IDS
+        : OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_ACTION_ATOM_IDS;
       const expectedLineage = expectedHoldLineage(
         state,
         action,
         "assault",
-        OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_ACTION_ATOM_IDS,
+        actionAtomIds,
         passAtomIdsForPhase("assault"),
       );
       assertActionLineage(action, expectedLineage);
       const executorAction = {
         ...clone(action),
-        ruleAtomIds: [...OFFICIAL_COMBAT_TAG_SHIELDED_RANGED_ACTION_ATOM_IDS],
+        ruleAtomIds: [...actionAtomIds],
       };
-      const applied = applyOfficialCombatTagShieldedRangedV1(
+      const applyShielded = currentV2
+        ? applyOfficialCombatTagShieldedRangedV2
+        : applyOfficialCombatTagShieldedRangedV1;
+      const applied = applyShielded(
         state,
         executorAction,
         {
