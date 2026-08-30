@@ -188,6 +188,12 @@ A hash-bound compilation of one current official weapon row into identity, phase
 
 A stable effect identifier plus validated parameters compiled from Surge or a weapon keyword. Recognition and execution are separate: the current catalogue recognizes twelve direct keyword kinds plus Surge, while attack kernel v2 implements only Surge armour bypass, LONG RANGE and `Pierce [Tag] X`. An unknown syntax quarantines catalogue creation; a known effect without a handler remains displayable but fails closed when a Profile tries to enter LegalSpace. Kernel v2 uses the official fixed stage order declaration, hit, effects, armour, evade and damage; frozen kernel v1 retains its historical descriptor unchanged. This lets later handlers be added without duplicating complete weapon executors or silently changing historical games.
 
+### AssaultRun
+
+A Rules-owned Assault activation for an unengaged current official Marine whose Movement-side marker is present and Assault-side marker is absent. The current bounded executor explicitly adapts the state into the byte-frozen Standard Move v1 geometry kernel, so path length uses the official live model-count split (`7` inches for one Marine model, `4` inches for multiple models), not a UI slot count or client value. Standard path, collision, coherency, battlefield and enemy-engagement restrictions remain authoritative.
+
+Apply exact-matches the current parameter domain, restores the current state after the frozen semantic call, preserves the Movement marker, writes the Assault marker, records the Run plan and settles alternating Assault activation. Source-lock, mission, Supply, initiative, model/status/activation and board drift invalidate the action. The exact denominator is GAUNTLET Standard, round 32mm Ground Marine, no terrain/Access Points/elevation/other movement modifiers. Unsupported compositions fail closed; frozen Standard Move and old-rules display identities remain required.
+
 ### GameClock
 
 Rules-owned logical time stored in state. Host wall time is audit metadata only and never participates in deterministic state identity.

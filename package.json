@@ -7,6 +7,7 @@
     "verify:official-development-tranche-source-lock": "node scripts/verify-official-development-tranche-source-lock-v1.mjs",
     "verify:official-marine-charge-v2-rule-slice": "node scripts/verify-official-marine-charge-v2-rule-slice-v1.mjs",
     "verify:official-impact-after-charge-rule-slice": "node scripts/verify-official-impact-after-charge-rule-slice-v1.mjs",
+    "verify:official-assault-run-rule-slice": "node scripts/verify-official-assault-run-rule-slice-v1.mjs",
     "verify:ticket-11-authority": "node scripts/verify-ticket-11-authority-v2.mjs",
     "verify:rule-atom-contract": "node scripts/verify-rule-atom-catalogue-contract-v1.mjs",
     "verify:official-rule-source-denominator": "node scripts/verify-official-rule-source-denominator-v1.mjs",
