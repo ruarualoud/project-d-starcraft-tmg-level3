@@ -13,7 +13,7 @@ This roadmap partitions the current Slice 74 denominator exactly:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-08-30: Slices 75–79 are complete for their declared bounded denominators. The current ledger is `493` executable, `419` review-required, and `114` retained display-only RuleAtoms; `32` planned slices, Slice 80 through Slice 111, remain.
+Execution status on 2026-08-30: Slices 75–80 are complete for their declared bounded denominators. The current ledger is `501` executable, `411` review-required, and `114` retained display-only RuleAtoms; `31` planned slices, Slice 81 through Slice 111, remain.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -54,7 +54,7 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 77 | **Complete:** Run action and Assault choice: Run procedure/restrictions, Quick Reference Run, unengaged permission | 6 | 457 | 455 |
 | 78 | **Complete:** Blast/Flamer template procedure and Spillover batches; current official carrier/physical geometry asset quarantined | 23 | 480 | 432 |
 | 79 | **Complete:** attack-pool edges: reduced dice, mixed modifiers/range batches, Hits X, three-pool/bypass/Surge mismatch, Concentrated Fire, Tough, visible-casualty caps | 13 | 493 | 419 |
-| 80 | Remaining Close Combat lifecycle: marker removal, Evade, freed-unit state, Surge target, multiple enemies, engagement range | 8 | 501 | 411 |
+| 80 | **Complete:** Close Combat lifecycle: marker removal, Evade, freed-unit state/Reaction exception, Surge target, multiple enemies, engagement range | 8 | 501 | 411 |
 | 81 | Direct movement and Displacement | 9 | 510 | 402 |
 | 82 | Gap clearance and Place geometry | 15 | 525 | 387 |
 | 83 | Flying movement/combat, flight-stand measurement, and flying coherency | 24 | 549 | 363 |
@@ -117,5 +117,9 @@ Slice 78 adds `authority.template-weapon-v1@1.0.0` and promotes the exact 23 Cor
 ## Slice 79 attack-pool correction and closure
 
 Three Long Range atoms originally counted as new were already executable in Ranged Attack v2. Slice 79 therefore retains them only as dependencies and replaces them with three previously unassigned atoms from the same attack procedure: three-pool overview, Armour-roll bypass and Surge mismatch. `authority.attack-pool-edge-v1@1.0.0` promotes 13 distinct current review atoms and executes controller-owned reduced-die selection, mixed modifier/range groups, Hits X, Surge match/mismatch, Tough and Visible/Concentrated Fire caps. Focused `18/18`, runtime `10/10`, aggregate `10/10`, graph 8,878/27,552 and contracts 48/48 pass. The report is `docs/ticket-11-slice-79-attack-pool-edges-2026-08-30.md`.
+
+## Slice 80 Close Combat lifecycle closure
+
+Slice 80 adds `authority.close-combat-lifecycle-v1@1.0.0` and promotes the exact eight remaining lifecycle atoms. The parameter domain exposes every Enemy Unit that the acting Unit may legally attack, deriving Fighting and Supporting Ranks separately for each target; Melee `E` binds to the one-inch Engagement Range. Apply resolves target-tag Surge and only explicitly granted Close Combat Evade, removes the Combat Activation Marker, recomputes engagement after casualties, and distinguishes an unactivated freed Unit's effective Pass from its retained Reaction/specific-trigger exception. Rules-relevant geometry drift invalidates the action, while Authority-added display defaults do not. Focused `20/20`, runtime `10/10`, aggregate `10/10`, graph 8,944/27,655 and contracts 49/49 pass. The report is `docs/ticket-11-slice-80-close-combat-lifecycle-2026-08-30.md`.
 
 No Skill, DSH, MuZero, self-play, memory, or training-truth promotion is part of these RuleAtom slices.
