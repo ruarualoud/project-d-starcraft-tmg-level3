@@ -152,6 +152,14 @@ The current v5 domain requires the exact Start v5 selected-loadout binding and a
 
 A two-stage Rules-owned Assault activation in which every intended Ground target is declared before the hidden Speed-plus-D6 distance is revealed; success requires a legal Leading Model position wholly within that distance and within Engagement Range of every declared target, while failure moves no model and ends the Unit's activation. The current exact subset is GAUNTLET Standard with 32mm round Ground Marines and no terrain, while broader geometry remains fail-closed and frozen Charge v1 is historical evidence rather than current authority.
 
+### GoliathCharge
+
+The current official Impact carrier used to make the successful-Charge trigger reachable. Its bounded denominator is an unmodified, unhurt, single-model Ground Goliath on the pinned Ø80mm base with Speed 7 and no terrain. It consumes the already executable Charge lineage and promotes no additional Charge atom. Success marks the Assault activation but deliberately defers alternating settlement until mandatory Impact resolves; failure settles immediately. Marine Charge v1/v2 remain frozen and independently displayable.
+
+### Impact
+
+A mandatory Rules-owned pending window immediately after a qualifying successful Charge. `IMPACT (X) Y+` allocates all X dice to the only enemy Unit or an exact integer split across multiple eligible Units, then rolls each target's Y+ Hit pool and immediately resolves that target's Armour Pool before continuing. Impact has no Surge and each unsaved die causes Damage 1. Slice 76 supports only unhurt single-model Goliath targets, so casualty handling, Hidden immunity, other carriers and broader geometry remain fail-closed.
+
 ### StimpackMove
 
 A Rules-owned single-model Marine Movement activation that consumes the exact official selected `Stimpack` loadout. The current v3 bounded executor supports the same exact two live single-model Marines on the official GAUNTLET Standard battlefield, with 32mm round Ground bases, no terrain or other movement modifiers, while preserving an optional current Medic in the shared state. Only a ready Terran Armed Forces card with at least one Command Point and an unused Stimpack ability produces the domain.

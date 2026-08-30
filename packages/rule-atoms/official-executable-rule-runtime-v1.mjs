@@ -1060,6 +1060,35 @@ import {
   OFFICIAL_MARINE_CHARGE_V2_TRANSITION_SCHEMA,
   OFFICIAL_RESOLVE_MARINE_CHARGE_V2_ACTION_TYPE,
 } from "./official-marine-charge-executor-v2.mjs";
+import {
+  applyOfficialGoliathChargeV1,
+  enumerateOfficialGoliathChargeV1,
+  instantiateOfficialGoliathChargeV1,
+  isOfficialGoliathChargePendingV1,
+  OFFICIAL_GOLIATH_CHARGE_ACTION_ATOM_IDS,
+  OFFICIAL_GOLIATH_CHARGE_ACTION_TYPE,
+  OFFICIAL_GOLIATH_CHARGE_DECLARATION_PARAMETER_KIND,
+  OFFICIAL_GOLIATH_CHARGE_EXECUTOR_ATOM_IDS,
+  OFFICIAL_GOLIATH_CHARGE_EXECUTOR_ID,
+  OFFICIAL_GOLIATH_CHARGE_EXECUTOR_VERSION,
+  OFFICIAL_GOLIATH_CHARGE_RESOLUTION_PARAMETER_KIND,
+  OFFICIAL_GOLIATH_CHARGE_TRANSITION_SCHEMA,
+  OFFICIAL_RESOLVE_GOLIATH_CHARGE_ACTION_TYPE,
+} from "./official-goliath-charge-executor-v1.mjs";
+import {
+  applyOfficialImpactV1,
+  enumerateOfficialImpactV1,
+  instantiateOfficialImpactV1,
+  isOfficialImpactPendingV1,
+  OFFICIAL_IMPACT_ACTION_ATOM_IDS,
+  OFFICIAL_IMPACT_ACTION_TYPE,
+  OFFICIAL_IMPACT_EXECUTOR_ATOM_IDS,
+  OFFICIAL_IMPACT_EXECUTOR_ID,
+  OFFICIAL_IMPACT_EXECUTOR_VERSION,
+  OFFICIAL_IMPACT_NEW_ATOM_IDS,
+  OFFICIAL_IMPACT_PARAMETER_KIND,
+  OFFICIAL_IMPACT_TRANSITION_SCHEMA,
+} from "./official-impact-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -1704,6 +1733,21 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_MARINE_CHARGE_V2_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_GOLIATH_CHARGE_EXECUTOR_ID,
+    executorVersion: OFFICIAL_GOLIATH_CHARGE_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([
+      OFFICIAL_GOLIATH_CHARGE_ACTION_TYPE,
+      OFFICIAL_RESOLVE_GOLIATH_CHARGE_ACTION_TYPE,
+    ].sort()),
+    transitionSchema: OFFICIAL_GOLIATH_CHARGE_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
+    executorId: OFFICIAL_IMPACT_EXECUTOR_ID,
+    executorVersion: OFFICIAL_IMPACT_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_IMPACT_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_IMPACT_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -1781,6 +1825,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_STIMPACK_MOVE_NEW_ATOM_IDS,
   ...OFFICIAL_MARINE_CHARGE_NEW_ATOM_IDS,
   ...OFFICIAL_MARINE_CHARGE_V2_NEW_ATOM_IDS,
+  ...OFFICIAL_IMPACT_NEW_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -1838,6 +1883,8 @@ const EXECUTOR_ATOM_IDS = new Map([
   [OFFICIAL_STANDARD_MOVE_V5_EXECUTOR_ID, OFFICIAL_STANDARD_MOVE_V5_EXECUTOR_ATOM_IDS],
   [OFFICIAL_MARINE_CHARGE_EXECUTOR_ID, OFFICIAL_MARINE_CHARGE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_MARINE_CHARGE_V2_EXECUTOR_ID, OFFICIAL_MARINE_CHARGE_V2_EXECUTOR_ATOM_IDS],
+  [OFFICIAL_GOLIATH_CHARGE_EXECUTOR_ID, OFFICIAL_GOLIATH_CHARGE_EXECUTOR_ATOM_IDS],
+  [OFFICIAL_IMPACT_EXECUTOR_ID, OFFICIAL_IMPACT_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V3_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V3_EXECUTOR_ATOM_IDS],
@@ -2436,6 +2483,10 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const marineChargeV2Enabled = enabledExecutorIds.has(
     OFFICIAL_MARINE_CHARGE_V2_EXECUTOR_ID,
   );
+  const goliathChargeEnabled = enabledExecutorIds.has(
+    OFFICIAL_GOLIATH_CHARGE_EXECUTOR_ID,
+  );
+  const impactEnabled = enabledExecutorIds.has(OFFICIAL_IMPACT_EXECUTOR_ID);
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -2631,6 +2682,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       || stimpackMoveV3Enabled
       || optionalStimpackMoveV2Enabled
       || marineChargeEnabled
+      || marineChargeV2Enabled
+      || goliathChargeEnabled
+      || impactEnabled
       || disengageEnabled
       || disengageCasualtyEnabled
       || disengageV3Enabled
@@ -2699,6 +2753,11 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           OFFICIAL_MARINE_CHARGE_V2_DECLARATION_PARAMETER_KIND,
           OFFICIAL_MARINE_CHARGE_V2_RESOLUTION_PARAMETER_KIND,
         ] : []),
+        ...(goliathChargeEnabled ? [
+          OFFICIAL_GOLIATH_CHARGE_DECLARATION_PARAMETER_KIND,
+          OFFICIAL_GOLIATH_CHARGE_RESOLUTION_PARAMETER_KIND,
+        ] : []),
+        ...(impactEnabled ? [OFFICIAL_IMPACT_PARAMETER_KIND] : []),
         ...(disengageV5Enabled
           ? [OFFICIAL_DISENGAGE_V5_PARAMETER_KIND]
           : disengageV4Enabled
@@ -2752,6 +2811,42 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     const includeDisabled = options.includeDisabled === true;
     const candidates = [];
     const parameterDomains = [];
+    if (impactEnabled && isOfficialImpactPendingV1(state)) {
+      const staged = enumerateOfficialImpactV1(state, {
+        sideKey,
+        includeDisabled,
+        matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state),
+        terminal: null,
+        candidates: staged.candidates,
+        parameterDomains: staged.parameterDomains,
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete,
+        trainingTruth: false,
+      });
+    }
+    if (goliathChargeEnabled && isOfficialGoliathChargePendingV1(state)) {
+      const staged = enumerateOfficialGoliathChargeV1(state, {
+        sideKey,
+        includeDisabled,
+        matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state),
+        terminal: null,
+        candidates: staged.candidates,
+        parameterDomains: staged.parameterDomains,
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete,
+        trainingTruth: false,
+      });
+    }
     if (marineChargeV2Enabled && isOfficialMarineChargePendingV2(state)) {
       const staged = enumerateOfficialMarineChargeV2(state, {
         sideKey,
@@ -3396,6 +3491,15 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       candidates.push(...charge.candidates);
       parameterDomains.push(...charge.parameterDomains);
     }
+    if (!initiativePending && state.phase === "assault" && goliathChargeEnabled) {
+      const charge = enumerateOfficialGoliathChargeV1(state, {
+        sideKey,
+        includeDisabled,
+        matchBinding: options.matchBinding,
+      });
+      candidates.push(...charge.candidates);
+      parameterDomains.push(...charge.parameterDomains);
+    }
     if (!initiativePending
       && state.phase === "assault"
       && assaultHoldV2Enabled) {
@@ -3910,6 +4014,81 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function apply(state, action, options = {}) {
     if (!object(state) || !object(action)) fail("RULE_RUNTIME_ACTION_INVALID");
+    if (action.actionType === OFFICIAL_IMPACT_ACTION_TYPE
+      && action.executorId === OFFICIAL_IMPACT_EXECUTOR_ID) {
+      if (!impactEnabled || action.executorVersion !== OFFICIAL_IMPACT_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action, OFFICIAL_IMPACT_ACTION_ATOM_IDS);
+      const applied = applyOfficialImpactV1(state, action, {
+        postRevision: Number(options.postRevision || 0),
+        matchBinding: options.matchBinding,
+        chanceReveals: options.chanceReveals,
+      });
+      const settled = settleOfficialAlternatingPhaseAfterActivationV1(applied.state, {
+        phase: "assault",
+        actingSideKey: action.sideKey,
+        sideHasAvailableActivation: hasOfficialPhaseActivationPrerequisite,
+      });
+      const events = [...(applied.events || []), ...settled.events];
+      const lastLog = settled.state.log?.at(-1);
+      if (lastLog) {
+        lastLog.action = clone(action);
+        lastLog.events = clone(events);
+      }
+      return {
+        ...applied,
+        state: settled.state,
+        events,
+        settlementRequired: false,
+        rulesTruth: descriptor.rulesTruth,
+        trainingTruth: false,
+      };
+    }
+    if ([
+      OFFICIAL_GOLIATH_CHARGE_ACTION_TYPE,
+      OFFICIAL_RESOLVE_GOLIATH_CHARGE_ACTION_TYPE,
+    ].includes(action.actionType)
+      && action.executorId === OFFICIAL_GOLIATH_CHARGE_EXECUTOR_ID) {
+      if (!goliathChargeEnabled
+        || action.executorVersion !== OFFICIAL_GOLIATH_CHARGE_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action, OFFICIAL_GOLIATH_CHARGE_ACTION_ATOM_IDS);
+      const applied = applyOfficialGoliathChargeV1(state, action, {
+        postRevision: Number(options.postRevision || 0),
+        matchBinding: options.matchBinding,
+        chanceReveals: options.chanceReveals,
+      });
+      if (applied.settlementRequired !== true) return applied;
+      const settled = settleOfficialAlternatingPhaseAfterActivationV1(applied.state, {
+        phase: "assault",
+        actingSideKey: action.sideKey,
+        sideHasAvailableActivation: hasOfficialPhaseActivationPrerequisite,
+      });
+      const events = [...(applied.events || []), ...settled.events];
+      const lastLog = settled.state.log?.at(-1);
+      if (lastLog) {
+        lastLog.action = clone(action);
+        lastLog.events = clone(events);
+      }
+      return {
+        ...applied,
+        state: settled.state,
+        events,
+        settlementRequired: false,
+        rulesTruth: descriptor.rulesTruth,
+        trainingTruth: false,
+      };
+    }
+    if (isOfficialImpactPendingV1(state)
+      && action.executorId !== OFFICIAL_IMPACT_EXECUTOR_ID) {
+      fail("RULE_RUNTIME_PENDING_IMPACT_REQUIRED");
+    }
+    if (isOfficialGoliathChargePendingV1(state)
+      && action.executorId !== OFFICIAL_GOLIATH_CHARGE_EXECUTOR_ID) {
+      fail("RULE_RUNTIME_PENDING_GOLIATH_CHARGE_REQUIRED");
+    }
     if ([
       OFFICIAL_MARINE_CHARGE_V2_ACTION_TYPE,
       OFFICIAL_RESOLVE_MARINE_CHARGE_V2_ACTION_TYPE,
@@ -6712,6 +6891,31 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function instantiate(state, domain, parameters, options = {}) {
     if (!object(state) || !object(domain)) fail("RULE_RUNTIME_PARAMETER_DOMAIN_INVALID");
+    if (domain.parameterKind === OFFICIAL_IMPACT_PARAMETER_KIND) {
+      if (!impactEnabled
+        || domain.executorId !== OFFICIAL_IMPACT_EXECUTOR_ID
+        || domain.executorVersion !== OFFICIAL_IMPACT_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain, OFFICIAL_IMPACT_ACTION_ATOM_IDS);
+      return instantiateOfficialImpactV1(state, domain, parameters, {
+        matchBinding: options.matchBinding,
+      });
+    }
+    if ([
+      OFFICIAL_GOLIATH_CHARGE_DECLARATION_PARAMETER_KIND,
+      OFFICIAL_GOLIATH_CHARGE_RESOLUTION_PARAMETER_KIND,
+    ].includes(domain.parameterKind)) {
+      if (!goliathChargeEnabled
+        || domain.executorId !== OFFICIAL_GOLIATH_CHARGE_EXECUTOR_ID
+        || domain.executorVersion !== OFFICIAL_GOLIATH_CHARGE_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain, OFFICIAL_GOLIATH_CHARGE_ACTION_ATOM_IDS);
+      return instantiateOfficialGoliathChargeV1(state, domain, parameters, {
+        matchBinding: options.matchBinding,
+      });
+    }
     if ([
       OFFICIAL_MARINE_CHARGE_V2_RESOLUTION_PARAMETER_KIND,
       OFFICIAL_MARINE_CHARGE_V2_DECLARATION_PARAMETER_KIND,

@@ -13,7 +13,7 @@ This roadmap partitions the current Slice 74 denominator exactly:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-08-30: Slice 75 is complete for its declared bounded denominator. The current ledger is `445` executable, `467` review-required, and `114` retained display-only RuleAtoms; `36` planned slices, Slice 76 through Slice 111, remain.
+Execution status on 2026-08-30: Slices 75–76 are complete for their declared bounded denominators. The current ledger is `451` executable, `461` review-required, and `114` retained display-only RuleAtoms; `35` planned slices, Slice 77 through Slice 111, remain.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -50,7 +50,7 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | Slice | Rule cluster | Atoms promoted | Executable after | Review-required after |
 | ---: | --- | ---: | ---: | ---: |
 | 75 | **Complete:** Marine Charge v2: Core 8.7.7 plus the seven Charge steps in Quick Reference 12.4 | 24 | 445 | 467 |
-| 76 | Impact after a successful Charge: allocation, per-target rolls, armour transfer, no-Surge Damage 1 | 6 | 451 | 461 |
+| 76 | **Complete:** Impact after a successful Charge: allocation, per-target rolls, armour transfer, no-Surge Damage 1 | 6 | 451 | 461 |
 | 77 | Run action and Assault choice: Run procedure/restrictions, Quick Reference Run, unengaged permission | 6 | 457 | 455 |
 | 78 | Blast/Flamer template weapon pipeline and Spillover batches | 23 | 480 | 432 |
 | 79 | Attack-pool edge cases: reduced dice, mixed modifiers, Hits X, Long Range batches, Concentrated Fire, Tough, visible-casualty caps | 13 | 493 | 419 |
@@ -101,5 +101,9 @@ Slice 75 completion target is therefore:
 - the Charge executor and every relationship/state contract introduced by the slice close in the same commit.
 
 Slice 75 closes those claims only for its declared GAUNTLET Standard / round 32mm Ground Marine / no-terrain denominator. Rules-owned failure certificates currently prove straight-line distance shortfall and mutually incompatible declared-target spread; unsupported obstacle, terrain, base, elevation, Flying, placement-priority, and general continuous-geometry cases remain fail-closed for the later geometry slices rather than accepting a client-authored failure. The slice report is `docs/ticket-11-slice-75-marine-charge-v2-2026-08-30.md`.
+
+## Slice 76 reachability closure
+
+The relationship graph proved that Marine Charge cannot reach Impact because Marine has no official Impact ability. Slice 76 therefore adds current official Goliath as the first bounded carrier without re-promoting any Charge atom. The source-locked profile binds Speed 7, Ø80mm, Armour 4+, HP 10 and Devastating Charge `IMPACT (4) 3+`. A successful Goliath Charge opens mandatory Impact; single-target allocation is forced to all four dice, multiple targets accept any exact integer split summing to four, and each target resolves Hit then Armour separately with no Surge and Damage 1. Injured/casualty states, Hidden immunity, other carriers and wider geometry remain fail-closed. The report is `docs/ticket-11-slice-76-impact-after-charge-2026-08-30.md`.
 
 No Skill, DSH, MuZero, self-play, memory, or training-truth promotion is part of these RuleAtom slices.
