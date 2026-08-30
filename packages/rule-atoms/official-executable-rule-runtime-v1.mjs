@@ -840,6 +840,15 @@ import {
   OFFICIAL_MARINE_STIMPACK_ACTIVE_V2_TRANSITION_SCHEMA,
 } from "./official-marine-stimpack-active-executor-v2.mjs";
 import {
+  applyOfficialMarineStimpackActiveV3,
+  enumerateOfficialMarineStimpackActiveV3,
+  OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_ACTION_ATOM_IDS,
+  OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_EXECUTOR_ATOM_IDS,
+  OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_EXECUTOR_ID,
+  OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_EXECUTOR_VERSION,
+  OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_TRANSITION_SCHEMA,
+} from "./official-marine-stimpack-active-executor-v3.mjs";
+import {
   applyOfficialMarineMultiModelStimpackActiveV3,
   enumerateOfficialMarineMultiModelStimpackActiveV3,
   OFFICIAL_MARINE_MULTI_MODEL_STIMPACK_ACTIVE_ACTION_ATOM_IDS,
@@ -894,6 +903,15 @@ import {
   OFFICIAL_STIMPACK_RANGED_EXECUTOR_VERSION,
   OFFICIAL_STIMPACK_RANGED_TRANSITION_SCHEMA,
 } from "./official-stimpack-ranged-consumer-executor-v1.mjs";
+import {
+  applyOfficialStimpackRangedConsumerV2,
+  enumerateOfficialStimpackRangedConsumerV2,
+  OFFICIAL_STIMPACK_RANGED_V2_ACTION_ATOM_IDS,
+  OFFICIAL_STIMPACK_RANGED_V2_EXECUTOR_ATOM_IDS,
+  OFFICIAL_STIMPACK_RANGED_V2_EXECUTOR_ID,
+  OFFICIAL_STIMPACK_RANGED_V2_EXECUTOR_VERSION,
+  OFFICIAL_STIMPACK_RANGED_V2_TRANSITION_SCHEMA,
+} from "./official-stimpack-ranged-consumer-executor-v2.mjs";
 import {
   applyOfficialStimpackCloseCombatConsumerV1,
   enumerateOfficialStimpackCloseCombatConsumerV1,
@@ -1535,6 +1553,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_MARINE_STIMPACK_ACTIVE_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_EXECUTOR_ID,
+    executorVersion: OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_MARINE_STIMPACK_ACTIVE_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_MARINE_STIMPACK_ACTIVE_V2_EXECUTOR_ID,
     executorVersion: OFFICIAL_MARINE_STIMPACK_ACTIVE_V2_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_MARINE_STIMPACK_ACTIVE_ACTION_TYPE]),
@@ -1554,6 +1578,15 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
       OFFICIAL_STIMPACK_RANGED_ATTACK_ACTION_TYPE,
     ].sort()),
     transitionSchema: OFFICIAL_STIMPACK_RANGED_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
+    executorId: OFFICIAL_STIMPACK_RANGED_V2_EXECUTOR_ID,
+    executorVersion: OFFICIAL_STIMPACK_RANGED_V2_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([
+      OFFICIAL_RESOLVE_STIMPACK_PRECISION_ACTION_TYPE,
+      OFFICIAL_STIMPACK_RANGED_ATTACK_ACTION_TYPE,
+    ].sort()),
+    transitionSchema: OFFICIAL_STIMPACK_RANGED_V2_TRANSITION_SCHEMA,
   }),
   Object.freeze({
     executorId: OFFICIAL_STIMPACK_CLOSE_COMBAT_EXECUTOR_ID,
@@ -1910,6 +1943,10 @@ const EXECUTOR_ATOM_IDS = new Map([
     OFFICIAL_MARINE_STIMPACK_ACTIVE_EXECUTOR_ATOM_IDS,
   ],
   [
+    OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_EXECUTOR_ID,
+    OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_EXECUTOR_ATOM_IDS,
+  ],
+  [
     OFFICIAL_MARINE_STIMPACK_ACTIVE_V2_EXECUTOR_ID,
     OFFICIAL_MARINE_STIMPACK_ACTIVE_V2_EXECUTOR_ATOM_IDS,
   ],
@@ -1920,6 +1957,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_STIMPACK_RANGED_EXECUTOR_ID,
     OFFICIAL_STIMPACK_RANGED_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_STIMPACK_RANGED_V2_EXECUTOR_ID,
+    OFFICIAL_STIMPACK_RANGED_V2_EXECUTOR_ATOM_IDS,
   ],
   [
     OFFICIAL_STIMPACK_CLOSE_COMBAT_EXECUTOR_ID,
@@ -2462,6 +2503,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const marineStimpackActiveEnabled = enabledExecutorIds.has(
     OFFICIAL_MARINE_STIMPACK_ACTIVE_EXECUTOR_ID,
   );
+  const marineStimpackActiveV3Enabled = enabledExecutorIds.has(
+    OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_EXECUTOR_ID,
+  );
   const marineStimpackActiveV2Enabled = enabledExecutorIds.has(
     OFFICIAL_MARINE_STIMPACK_ACTIVE_V2_EXECUTOR_ID,
   );
@@ -2470,6 +2514,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   );
   const stimpackRangedEnabled = enabledExecutorIds.has(
     OFFICIAL_STIMPACK_RANGED_EXECUTOR_ID,
+  );
+  const stimpackRangedV2Enabled = enabledExecutorIds.has(
+    OFFICIAL_STIMPACK_RANGED_V2_EXECUTOR_ID,
   );
   const stimpackCloseCombatEnabled = enabledExecutorIds.has(
     OFFICIAL_STIMPACK_CLOSE_COMBAT_EXECUTOR_ID,
@@ -2700,9 +2747,12 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         trainingTruth: false,
       });
     }
-    if (stimpackRangedEnabled
+    if ((stimpackRangedV2Enabled || stimpackRangedEnabled)
       && state.pendingAction?.schema === OFFICIAL_STIMPACK_PRECISION_PENDING_SCHEMA) {
-      const staged = enumerateOfficialStimpackRangedConsumerV1(state, {
+      const enumerateStimpackRanged = stimpackRangedV2Enabled
+        ? enumerateOfficialStimpackRangedConsumerV2
+        : enumerateOfficialStimpackRangedConsumerV1;
+      const staged = enumerateStimpackRanged(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -3071,8 +3121,12 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         passAtomIdsForPhase("movement"),
       )));
     }
-    if (!initiativePending && state.phase === "movement" && marineStimpackActiveEnabled) {
-      candidates.push(...enumerateOfficialMarineStimpackActiveV1(state, {
+    if (!initiativePending && state.phase === "movement"
+      && (marineStimpackActiveV3Enabled || marineStimpackActiveEnabled)) {
+      const enumerateStimpackActive = marineStimpackActiveV3Enabled
+        ? enumerateOfficialMarineStimpackActiveV3
+        : enumerateOfficialMarineStimpackActiveV1;
+      candidates.push(...enumerateStimpackActive(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -3315,8 +3369,12 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         passAtomIdsForPhase("assault"),
       )));
     }
-    if (!initiativePending && state.phase === "assault" && stimpackRangedEnabled) {
-      candidates.push(...enumerateOfficialStimpackRangedConsumerV1(state, {
+    if (!initiativePending && state.phase === "assault"
+      && (stimpackRangedV2Enabled || stimpackRangedEnabled)) {
+      const enumerateStimpackRanged = stimpackRangedV2Enabled
+        ? enumerateOfficialStimpackRangedConsumerV2
+        : enumerateOfficialStimpackRangedConsumerV1;
+      candidates.push(...enumerateStimpackRanged(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -4261,23 +4319,35 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       };
     }
     if (action.actionType === OFFICIAL_MARINE_STIMPACK_ACTIVE_ACTION_TYPE
-      && action.executorId === OFFICIAL_MARINE_STIMPACK_ACTIVE_EXECUTOR_ID) {
-      if (!marineStimpackActiveEnabled
-        || action.executorVersion !== OFFICIAL_MARINE_STIMPACK_ACTIVE_EXECUTOR_VERSION) {
+      && [
+        OFFICIAL_MARINE_STIMPACK_ACTIVE_EXECUTOR_ID,
+        OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_EXECUTOR_ID,
+      ].includes(action.executorId)) {
+      const currentV3 = action.executorId === OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_EXECUTOR_ID;
+      if ((currentV3 && (!marineStimpackActiveV3Enabled
+        || action.executorVersion !== OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_EXECUTOR_VERSION))
+        || (!currentV3 && (!marineStimpackActiveEnabled
+          || action.executorVersion !== OFFICIAL_MARINE_STIMPACK_ACTIVE_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
+      const activeAtomIds = currentV3
+        ? OFFICIAL_MARINE_STIMPACK_ACTIVE_V3_ACTION_ATOM_IDS
+        : OFFICIAL_MARINE_STIMPACK_ACTIVE_ACTION_ATOM_IDS;
       assertActionLineage(action, expectedHoldLineage(
         state,
         action,
         "movement",
-        OFFICIAL_MARINE_STIMPACK_ACTIVE_ACTION_ATOM_IDS,
+        activeAtomIds,
         passAtomIdsForPhase("movement"),
       ));
       const executorAction = {
         ...clone(action),
-        ruleAtomIds: [...OFFICIAL_MARINE_STIMPACK_ACTIVE_ACTION_ATOM_IDS],
+        ruleAtomIds: [...activeAtomIds],
       };
-      const applied = applyOfficialMarineStimpackActiveV1(state, executorAction, {
+      const applyStimpackActive = currentV3
+        ? applyOfficialMarineStimpackActiveV3
+        : applyOfficialMarineStimpackActiveV1;
+      const applied = applyStimpackActive(state, executorAction, {
         postRevision: Number(options.postRevision || 0),
         matchBinding: options.matchBinding,
       });
@@ -4336,27 +4406,39 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       OFFICIAL_STIMPACK_RANGED_ATTACK_ACTION_TYPE,
       OFFICIAL_RESOLVE_STIMPACK_PRECISION_ACTION_TYPE,
     ].includes(action.actionType)
-      && action.executorId === OFFICIAL_STIMPACK_RANGED_EXECUTOR_ID) {
-      if (!stimpackRangedEnabled
-        || action.executorVersion !== OFFICIAL_STIMPACK_RANGED_EXECUTOR_VERSION) {
+      && [
+        OFFICIAL_STIMPACK_RANGED_EXECUTOR_ID,
+        OFFICIAL_STIMPACK_RANGED_V2_EXECUTOR_ID,
+      ].includes(action.executorId)) {
+      const currentV2 = action.executorId === OFFICIAL_STIMPACK_RANGED_V2_EXECUTOR_ID;
+      if ((currentV2 && (!stimpackRangedV2Enabled
+        || action.executorVersion !== OFFICIAL_STIMPACK_RANGED_V2_EXECUTOR_VERSION))
+        || (!currentV2 && (!stimpackRangedEnabled
+          || action.executorVersion !== OFFICIAL_STIMPACK_RANGED_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
+      const rangedAtomIds = currentV2
+        ? OFFICIAL_STIMPACK_RANGED_V2_ACTION_ATOM_IDS
+        : OFFICIAL_STIMPACK_RANGED_ACTION_ATOM_IDS;
       const choicePending = action.actionType === OFFICIAL_RESOLVE_STIMPACK_PRECISION_ACTION_TYPE;
       const expectedLineage = choicePending
-        ? OFFICIAL_STIMPACK_RANGED_ACTION_ATOM_IDS
+        ? rangedAtomIds
         : expectedHoldLineage(
             state,
             action,
             "assault",
-            OFFICIAL_STIMPACK_RANGED_ACTION_ATOM_IDS,
+            rangedAtomIds,
             passAtomIdsForPhase("assault"),
           );
       assertActionLineage(action, expectedLineage);
       const executorAction = {
         ...clone(action),
-        ruleAtomIds: [...OFFICIAL_STIMPACK_RANGED_ACTION_ATOM_IDS],
+        ruleAtomIds: [...rangedAtomIds],
       };
-      const applied = applyOfficialStimpackRangedConsumerV1(state, executorAction, {
+      const applyStimpackRanged = currentV2
+        ? applyOfficialStimpackRangedConsumerV2
+        : applyOfficialStimpackRangedConsumerV1;
+      const applied = applyStimpackRanged(state, executorAction, {
         postRevision: Number(options.postRevision || 0),
         matchBinding: options.matchBinding,
         chanceReveals: options.chanceReveals,

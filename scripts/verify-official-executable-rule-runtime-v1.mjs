@@ -294,10 +294,17 @@ const historicalSidearmPinpointV2ContractSliceReport = JSON.parse(await readFile
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalSpecialistV2ContractSliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-existing-specialist-v2-contract-closure-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-existing-stimpack-current-v2-contract-closure-v1-report.json",
   ),
   "utf8",
 ));
@@ -576,8 +583,12 @@ const historicalCombatTagShieldedV2ContractSlice =
   historicalCombatTagShieldedV2ContractSliceReport.slice;
 const historicalSidearmPinpointV2ContractSlice =
   historicalSidearmPinpointV2ContractSliceReport.slice;
+const historicalSpecialistV2ContractSlice =
+  historicalSpecialistV2ContractSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalSpecialistV2ContractSlice.sliceHash);
+assert.equal(historicalSpecialistV2ContractSlice.previousSliceHash,
   historicalSidearmPinpointV2ContractSlice.sliceHash);
 assert.equal(historicalSidearmPinpointV2ContractSlice.previousSliceHash,
   historicalCombatTagShieldedV2ContractSlice.sliceHash);
@@ -717,17 +728,17 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     executableRuleAtoms: 421,
     reviewRequiredRuleAtoms: 491,
     displayOnlyRuleAtoms: 114,
-    changedAtoms: 10,
-    strictCompleteAtoms: 417,
-    partialContractAtoms: 4,
+    changedAtoms: 4,
+    strictCompleteAtoms: 421,
+    partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 40,
-    missingStateContractExecutors: 2,
+    declaredStateContractExecutors: 42,
+    missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "1ca94b751948b8ae21a46f519177433327b1b18cd1065ef14323b38ffbbaa6e6",
+    "5365803f73cc500f3c39089fdeae592e620cdd980e3c59b38134cb28ea87a33d",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -884,11 +895,11 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     ["pass_life_support_reaction", "use_life_support_reaction"],
   );
   assert.deepEqual(
-    manifestById.get("authority.marine-stimpack-active-v1").actionTypes,
+    manifestById.get("authority.marine-stimpack-active-v3").actionTypes,
     ["use_ability"],
   );
   assert.deepEqual(
-    manifestById.get("authority.stimpack-ranged-consumer-v1").actionTypes,
+    manifestById.get("authority.stimpack-ranged-consumer-v2").actionTypes,
     ["ranged_attack", "resolve_precision"],
   );
   assert.deepEqual(
