@@ -13,7 +13,7 @@ This roadmap partitions the current Slice 74 denominator exactly:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-08-30: Slices 75–78 are complete for their declared bounded denominators. The current ledger is `480` executable, `432` review-required, and `114` retained display-only RuleAtoms; `33` planned slices, Slice 79 through Slice 111, remain.
+Execution status on 2026-08-30: Slices 75–79 are complete for their declared bounded denominators. The current ledger is `493` executable, `419` review-required, and `114` retained display-only RuleAtoms; `32` planned slices, Slice 80 through Slice 111, remain.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -53,7 +53,7 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 76 | **Complete:** Impact after a successful Charge: allocation, per-target rolls, armour transfer, no-Surge Damage 1 | 6 | 451 | 461 |
 | 77 | **Complete:** Run action and Assault choice: Run procedure/restrictions, Quick Reference Run, unengaged permission | 6 | 457 | 455 |
 | 78 | **Complete:** Blast/Flamer template procedure and Spillover batches; current official carrier/physical geometry asset quarantined | 23 | 480 | 432 |
-| 79 | Attack-pool edge cases: reduced dice, mixed modifiers, Hits X, Long Range batches, Concentrated Fire, Tough, visible-casualty caps | 13 | 493 | 419 |
+| 79 | **Complete:** attack-pool edges: reduced dice, mixed modifiers/range batches, Hits X, three-pool/bypass/Surge mismatch, Concentrated Fire, Tough, visible-casualty caps | 13 | 493 | 419 |
 | 80 | Remaining Close Combat lifecycle: marker removal, Evade, freed-unit state, Surge target, multiple enemies, engagement range | 8 | 501 | 411 |
 | 81 | Direct movement and Displacement | 9 | 510 | 402 |
 | 82 | Gap clearance and Place geometry | 15 | 525 | 387 |
@@ -113,5 +113,9 @@ Slice 77 adds `authority.assault-run-v1@1.0.0` and promotes the exact six Core 8
 ## Slice 78 Template/Spillover closure
 
 Slice 78 adds `authority.template-weapon-v1@1.0.0` and promotes the exact 23 Core 8.7.6, Core 11 Spillover and Quick Reference atoms. Rules own BT/FT placement from a content-hashed local template polygon, round-base coverage, elevation/Flying/target-tag and Size 2+ terrain filtering, main-pool Rate modifiers, affected-model Surge Result and Friendly/Enemy per-Unit Spillover batches without Rate modifiers or Surge. The sealed latest official data has no current BT/FT carrier and no physical template geometry asset, so production carrier enumeration is explicitly quarantined instead of using a legacy or invented profile. Focused `16/16`, runtime `10/10`, aggregate `10/10`, graph 8,783/27,405 and contracts 47/47 pass. The report is `docs/ticket-11-slice-78-template-weapon-spillover-2026-08-30.md`.
+
+## Slice 79 attack-pool correction and closure
+
+Three Long Range atoms originally counted as new were already executable in Ranged Attack v2. Slice 79 therefore retains them only as dependencies and replaces them with three previously unassigned atoms from the same attack procedure: three-pool overview, Armour-roll bypass and Surge mismatch. `authority.attack-pool-edge-v1@1.0.0` promotes 13 distinct current review atoms and executes controller-owned reduced-die selection, mixed modifier/range groups, Hits X, Surge match/mismatch, Tough and Visible/Concentrated Fire caps. Focused `18/18`, runtime `10/10`, aggregate `10/10`, graph 8,878/27,552 and contracts 48/48 pass. The report is `docs/ticket-11-slice-79-attack-pool-edges-2026-08-30.md`.
 
 No Skill, DSH, MuZero, self-play, memory, or training-truth promotion is part of these RuleAtom slices.
