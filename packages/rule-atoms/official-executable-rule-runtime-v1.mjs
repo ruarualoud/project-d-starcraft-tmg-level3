@@ -591,6 +591,16 @@ import {
   OFFICIAL_SPECIALIST_LOADOUT_TRANSITION_SCHEMA,
 } from "./official-specialist-loadout-executor-v1.mjs";
 import {
+  applyOfficialSpecialistLoadoutV2,
+  enumerateOfficialSpecialistLoadoutV2,
+  instantiateOfficialSpecialistLoadoutV2,
+  OFFICIAL_SPECIALIST_LOADOUT_V2_ACTION_ATOM_IDS,
+  OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_ATOM_IDS,
+  OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_ID,
+  OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_VERSION,
+  OFFICIAL_SPECIALIST_LOADOUT_V2_TRANSITION_SCHEMA,
+} from "./official-specialist-loadout-executor-v2.mjs";
+import {
   applyOfficialSpecialistRangedBatchV1,
   enumerateOfficialSpecialistRangedBatchV1,
   isOfficialSpecialistRangedSequencePendingV1,
@@ -602,6 +612,16 @@ import {
   OFFICIAL_SPECIALIST_RANGED_BATCH_NEW_ATOM_IDS,
   OFFICIAL_SPECIALIST_RANGED_BATCH_TRANSITION_SCHEMA,
 } from "./official-specialist-ranged-batch-executor-v1.mjs";
+import {
+  applyOfficialSpecialistRangedBatchV2,
+  enumerateOfficialSpecialistRangedBatchV2,
+  isOfficialSpecialistRangedSequencePendingV2,
+  OFFICIAL_SPECIALIST_RANGED_BATCH_V2_ACTION_ATOM_IDS,
+  OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_ATOM_IDS,
+  OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_ID,
+  OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_VERSION,
+  OFFICIAL_SPECIALIST_RANGED_BATCH_V2_TRANSITION_SCHEMA,
+} from "./official-specialist-ranged-batch-executor-v2.mjs";
 import {
   applyOfficialSidearmPinpointRangedBatchV1,
   enumerateOfficialSidearmPinpointRangedBatchV1,
@@ -1361,10 +1381,22 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_SPECIALIST_LOADOUT_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_ID,
+    executorVersion: OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_SPECIALIST_LOADOUT_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_SPECIALIST_LOADOUT_V2_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_SPECIALIST_RANGED_BATCH_EXECUTOR_ID,
     executorVersion: OFFICIAL_SPECIALIST_RANGED_BATCH_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_SPECIALIST_RANGED_BATCH_ACTION_TYPE]),
     transitionSchema: OFFICIAL_SPECIALIST_RANGED_BATCH_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
+    executorId: OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_ID,
+    executorVersion: OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_SPECIALIST_RANGED_BATCH_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_SPECIALIST_RANGED_BATCH_V2_TRANSITION_SCHEMA,
   }),
   Object.freeze({
     executorId: OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_ID,
@@ -1790,8 +1822,16 @@ const EXECUTOR_ATOM_IDS = new Map([
   [OFFICIAL_RANGED_ATTACK_V6_EXECUTOR_ID, OFFICIAL_RANGED_ATTACK_V6_EXECUTOR_ATOM_IDS],
   [OFFICIAL_SPECIALIST_LOADOUT_EXECUTOR_ID, OFFICIAL_SPECIALIST_LOADOUT_EXECUTOR_ATOM_IDS],
   [
+    OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_ID,
+    OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_ATOM_IDS,
+  ],
+  [
     OFFICIAL_SPECIALIST_RANGED_BATCH_EXECUTOR_ID,
     OFFICIAL_SPECIALIST_RANGED_BATCH_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_ID,
+    OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_ATOM_IDS,
   ],
   [
     OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_ID,
@@ -2356,8 +2396,14 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const specialistLoadoutEnabled = enabledExecutorIds.has(
     OFFICIAL_SPECIALIST_LOADOUT_EXECUTOR_ID,
   );
+  const specialistLoadoutV2Enabled = enabledExecutorIds.has(
+    OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_ID,
+  );
   const specialistRangedBatchEnabled = enabledExecutorIds.has(
     OFFICIAL_SPECIALIST_RANGED_BATCH_EXECUTOR_ID,
+  );
+  const specialistRangedBatchV2Enabled = enabledExecutorIds.has(
+    OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_ID,
   );
   const sidearmPinpointRangedBatchEnabled = enabledExecutorIds.has(
     OFFICIAL_SIDEARM_PINPOINT_RANGED_BATCH_EXECUTOR_ID,
@@ -2473,7 +2519,8 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     legacyCompatibilityUsed: false,
     productionRoomEligible: nonExecutableRuleAtomCount === 0,
     ctx2skillPromotionEligible: false,
-    ...(specialistLoadoutEnabled
+    ...(specialistLoadoutV2Enabled
+      || specialistLoadoutEnabled
       || closeCombatAttackV8Enabled
       || closeCombatAttackV7Enabled
       || closeCombatAttackV6Enabled
@@ -2571,7 +2618,8 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
             : disengageEnabled
               ? [OFFICIAL_DISENGAGE_PARAMETER_KIND]
               : []),
-        ...(specialistLoadoutEnabled ? [OFFICIAL_SPECIALIST_LOADOUT_PARAMETER_KIND] : []),
+        ...(specialistLoadoutV2Enabled || specialistLoadoutEnabled
+          ? [OFFICIAL_SPECIALIST_LOADOUT_PARAMETER_KIND] : []),
       ],
     } : {}),
     rulesTruth: "catalogue_promoted_actions_only",
@@ -2747,8 +2795,12 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         trainingTruth: false,
       });
     }
-    if (state.phase === "army_building" && specialistLoadoutEnabled) {
-      const specialist = enumerateOfficialSpecialistLoadoutV1(state, {
+    if (state.phase === "army_building"
+      && (specialistLoadoutV2Enabled || specialistLoadoutEnabled)) {
+      const enumerateSpecialistLoadout = specialistLoadoutV2Enabled
+        ? enumerateOfficialSpecialistLoadoutV2
+        : enumerateOfficialSpecialistLoadoutV1;
+      const specialist = enumerateSpecialistLoadout(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -2816,9 +2868,13 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         trainingTruth: false,
       });
     }
-    if (specialistRangedBatchEnabled
-      && isOfficialSpecialistRangedSequencePendingV1(state)) {
-      const staged = enumerateOfficialSpecialistRangedBatchV1(state, {
+    if ((specialistRangedBatchV2Enabled || specialistRangedBatchEnabled)
+      && (isOfficialSpecialistRangedSequencePendingV2(state)
+        || isOfficialSpecialistRangedSequencePendingV1(state))) {
+      const enumerateSpecialistBatch = specialistRangedBatchV2Enabled
+        ? enumerateOfficialSpecialistRangedBatchV2
+        : enumerateOfficialSpecialistRangedBatchV1;
+      const staged = enumerateSpecialistBatch(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -3328,8 +3384,11 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     }
     if (!initiativePending
       && state.phase === "assault"
-      && specialistRangedBatchEnabled) {
-      candidates.push(...enumerateOfficialSpecialistRangedBatchV1(state, {
+      && (specialistRangedBatchV2Enabled || specialistRangedBatchEnabled)) {
+      const enumerateSpecialistBatch = specialistRangedBatchV2Enabled
+        ? enumerateOfficialSpecialistRangedBatchV2
+        : enumerateOfficialSpecialistRangedBatchV1;
+      candidates.push(...enumerateSpecialistBatch(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
@@ -3796,8 +3855,11 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     }
     if (!isOfficialGoliathScatterRangedSequencePendingV1(state)
       && !isOfficialSidearmRangedSequencePendingV1(state)
-      && isOfficialSpecialistRangedSequencePendingV1(state)
-      && action.executorId !== OFFICIAL_SPECIALIST_RANGED_BATCH_EXECUTOR_ID) {
+      && (isOfficialSpecialistRangedSequencePendingV2(state)
+        || isOfficialSpecialistRangedSequencePendingV1(state))
+      && action.executorId !== (specialistRangedBatchV2Enabled
+        ? OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_ID
+        : OFFICIAL_SPECIALIST_RANGED_BATCH_EXECUTOR_ID)) {
       fail("RULE_RUNTIME_PENDING_SPECIALIST_BATCH_REQUIRED");
     }
     if ([
@@ -4245,13 +4307,21 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       };
     }
     if (action.actionType === OFFICIAL_SPECIALIST_LOADOUT_ACTION_TYPE) {
-      if (!specialistLoadoutEnabled
-        || action.executorId !== OFFICIAL_SPECIALIST_LOADOUT_EXECUTOR_ID
-        || action.executorVersion !== OFFICIAL_SPECIALIST_LOADOUT_EXECUTOR_VERSION) {
+      const currentV2 = action.executorId === OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_ID;
+      if ((currentV2 && (!specialistLoadoutV2Enabled
+        || action.executorVersion !== OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_VERSION))
+        || (!currentV2 && (!specialistLoadoutEnabled
+          || action.executorId !== OFFICIAL_SPECIALIST_LOADOUT_EXECUTOR_ID
+          || action.executorVersion !== OFFICIAL_SPECIALIST_LOADOUT_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
-      assertActionLineage(action, OFFICIAL_SPECIALIST_LOADOUT_ACTION_ATOM_IDS);
-      const applied = applyOfficialSpecialistLoadoutV1(state, action, {
+      assertActionLineage(action, currentV2
+        ? OFFICIAL_SPECIALIST_LOADOUT_V2_ACTION_ATOM_IDS
+        : OFFICIAL_SPECIALIST_LOADOUT_ACTION_ATOM_IDS);
+      const applyLoadout = currentV2
+        ? applyOfficialSpecialistLoadoutV2
+        : applyOfficialSpecialistLoadoutV1;
+      const applied = applyLoadout(state, action, {
         postRevision: Number(options.postRevision || 0),
         matchBinding: options.matchBinding,
       });
@@ -4654,26 +4724,39 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       };
     }
     if (action.actionType === OFFICIAL_SPECIALIST_RANGED_BATCH_ACTION_TYPE
-      && action.executorId === OFFICIAL_SPECIALIST_RANGED_BATCH_EXECUTOR_ID) {
-      if (!specialistRangedBatchEnabled
-        || action.executorVersion !== OFFICIAL_SPECIALIST_RANGED_BATCH_EXECUTOR_VERSION) {
+      && [
+        OFFICIAL_SPECIALIST_RANGED_BATCH_EXECUTOR_ID,
+        OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_ID,
+      ].includes(action.executorId)) {
+      const currentV2 = action.executorId
+        === OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_ID;
+      if ((currentV2 && (!specialistRangedBatchV2Enabled
+        || action.executorVersion !== OFFICIAL_SPECIALIST_RANGED_BATCH_V2_EXECUTOR_VERSION))
+        || (!currentV2 && (!specialistRangedBatchEnabled
+          || action.executorVersion !== OFFICIAL_SPECIALIST_RANGED_BATCH_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
+      const specialistActionAtomIds = currentV2
+        ? OFFICIAL_SPECIALIST_RANGED_BATCH_V2_ACTION_ATOM_IDS
+        : OFFICIAL_SPECIALIST_RANGED_BATCH_ACTION_ATOM_IDS;
       const expectedLineage = action.sequenceFinalBatch
         ? expectedHoldLineage(
             state,
             action,
             "assault",
-            OFFICIAL_SPECIALIST_RANGED_BATCH_ACTION_ATOM_IDS,
+            specialistActionAtomIds,
             passAtomIdsForPhase("assault"),
           )
-        : OFFICIAL_SPECIALIST_RANGED_BATCH_ACTION_ATOM_IDS;
+        : specialistActionAtomIds;
       assertActionLineage(action, expectedLineage);
       const executorAction = {
         ...clone(action),
-        ruleAtomIds: [...OFFICIAL_SPECIALIST_RANGED_BATCH_ACTION_ATOM_IDS],
+        ruleAtomIds: [...specialistActionAtomIds],
       };
-      const applied = applyOfficialSpecialistRangedBatchV1(state, executorAction, {
+      const applySpecialistBatch = currentV2
+        ? applyOfficialSpecialistRangedBatchV2
+        : applyOfficialSpecialistRangedBatchV1;
+      const applied = applySpecialistBatch(state, executorAction, {
         postRevision: Number(options.postRevision || 0),
         matchBinding: options.matchBinding,
         chanceReveals: options.chanceReveals,
@@ -6462,13 +6545,21 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       });
     }
     if (domain.parameterKind === OFFICIAL_SPECIALIST_LOADOUT_PARAMETER_KIND) {
-      if (!specialistLoadoutEnabled
-        || domain.executorId !== OFFICIAL_SPECIALIST_LOADOUT_EXECUTOR_ID
-        || domain.executorVersion !== OFFICIAL_SPECIALIST_LOADOUT_EXECUTOR_VERSION) {
+      const currentV2 = domain.executorId === OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_ID;
+      if ((currentV2 && (!specialistLoadoutV2Enabled
+        || domain.executorVersion !== OFFICIAL_SPECIALIST_LOADOUT_V2_EXECUTOR_VERSION))
+        || (!currentV2 && (!specialistLoadoutEnabled
+          || domain.executorId !== OFFICIAL_SPECIALIST_LOADOUT_EXECUTOR_ID
+          || domain.executorVersion !== OFFICIAL_SPECIALIST_LOADOUT_EXECUTOR_VERSION))) {
         fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
       }
-      assertActionLineage(domain, OFFICIAL_SPECIALIST_LOADOUT_ACTION_ATOM_IDS);
-      return instantiateOfficialSpecialistLoadoutV1(state, domain, parameters, {
+      assertActionLineage(domain, currentV2
+        ? OFFICIAL_SPECIALIST_LOADOUT_V2_ACTION_ATOM_IDS
+        : OFFICIAL_SPECIALIST_LOADOUT_ACTION_ATOM_IDS);
+      const instantiateLoadout = currentV2
+        ? instantiateOfficialSpecialistLoadoutV2
+        : instantiateOfficialSpecialistLoadoutV1;
+      return instantiateLoadout(state, domain, parameters, {
         matchBinding: options.matchBinding,
       });
     }
