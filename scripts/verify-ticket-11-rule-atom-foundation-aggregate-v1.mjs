@@ -10,23 +10,28 @@ const ROOT = path.resolve(HERE, "..");
 const OUTPUT_DIR = path.join(ROOT, "build", "ticket-11-rule-atoms-v1");
 const REPORT_NAME = "ticket-11-rule-atom-foundation-aggregate-v1-report.json";
 
-const EXPECTED_BASE_REPORTS = 156;
-const EXPECTED_BASE_ASSERTIONS = 1909;
+const EXPECTED_BASE_REPORTS = 157;
+const EXPECTED_BASE_ASSERTIONS = 1955;
 const EXPECTED_CURRENT = Object.freeze({
+  sliceHash: "26a3b14ee8d24a3c0ec6a85581194f902913ce5c9fecf012fb98b867e42f459a",
+  catalogueHash: "c3a18341468a9ff2936321fb71fac7105eafb8b31d6899af937a937f24f0208f",
+  runtimeHash: "80867a2d2074171b014d08f0bad820a3bfd812d268a5588fda253a474f28b51d",
+  relationshipGraphHash:
+    "8d19eb21e3883f734aa2104c0c28eb763b6b2c57db1348523132b02673fab8cb",
+  executableRuleAtoms: 683,
+  reviewRequiredRuleAtoms: 229,
+  displayOnlyRuleAtoms: 114,
+  newlyExecutableRuleAtoms: 12,
+  strictCompleteAtoms: 683,
+  partialContractAtoms: 0,
+  noContractAtoms: 0,
+  declaredStateContractExecutors: 62,
+  stateContractMissingExecutors: 0,
+});
+const EXPECTED_HISTORICAL_CARD_BUILD_PAYMENT_RULES = Object.freeze({
   sliceHash: "c1bfa98df9199b722b3a279637934e69146654a429fa18b83a3eceab373cc432",
   catalogueHash: "672759bd456ea330af46131709716b1418d646dd1b9d405a0acce8a7101e4e74",
   runtimeHash: "0d11e5569f1eb6b3e62ac50b1bad9930d30cd7bef8b6db1b4cf39bd2bcf3627d",
-  relationshipGraphHash:
-    "61c194dce1c9b67e05b67a63722680081f6a434e8fb7ecf0d1e48f859df0007b",
-  executableRuleAtoms: 671,
-  reviewRequiredRuleAtoms: 241,
-  displayOnlyRuleAtoms: 114,
-  newlyExecutableRuleAtoms: 7,
-  strictCompleteAtoms: 671,
-  partialContractAtoms: 0,
-  noContractAtoms: 0,
-  declaredStateContractExecutors: 61,
-  stateContractMissingExecutors: 0,
 });
 const EXPECTED_HISTORICAL_ABILITY_TIMING_PRIORITY_RULES = Object.freeze({
   sliceHash: "57476aacab986ace2b95d8feb2f02444a6578f79222202bac93b9ba2c0aed82c",
@@ -553,6 +558,7 @@ const EXPECTED_EXECUTORS = Object.freeze([
   "authority.stimpack-ranged-consumer-v2@2.0.0",
   "authority.template-weapon-v1@1.0.0",
   "authority.terrain-los-rules-v1@1.0.0",
+  "authority.unit-card-supply-rules-v1@1.0.0",
   "authority.victory-point-scoring-v2@2.0.0",
 ]);
 
@@ -754,8 +760,11 @@ const historicalKeywordSpecialAbilityRules = byName.get(
 const historicalAbilityTimingPriorityRules = byName.get(
   "official-ability-timing-priority-rules-rule-slice-v1-report.json",
 );
-const current = byName.get(
+const historicalCardBuildPaymentRules = byName.get(
   "official-card-build-payment-rules-rule-slice-v1-report.json",
+);
+const current = byName.get(
+  "official-unit-card-supply-rules-rule-slice-v1-report.json",
 );
 const developmentTranche = byName.get(
   "official-development-tranche-source-lock-report.json",
@@ -836,12 +845,18 @@ await check("current_slice_catalogue_runtime_and_lineage_are_exact", () => {
   assert.equal(current.runtimeHash, EXPECTED_CURRENT.runtimeHash);
   assert.equal(
     current.slice.previousSliceHash,
-    EXPECTED_HISTORICAL_ABILITY_TIMING_PRIORITY_RULES.sliceHash,
+    EXPECTED_HISTORICAL_CARD_BUILD_PAYMENT_RULES.sliceHash,
   );
   assert.equal(
     current.slice.previousCatalogueHash,
-    EXPECTED_HISTORICAL_ABILITY_TIMING_PRIORITY_RULES.catalogueHash,
+    EXPECTED_HISTORICAL_CARD_BUILD_PAYMENT_RULES.catalogueHash,
   );
+  assert.equal(historicalCardBuildPaymentRules.runtimeHash,
+    EXPECTED_HISTORICAL_CARD_BUILD_PAYMENT_RULES.runtimeHash);
+  assert.equal(historicalCardBuildPaymentRules.slice.previousSliceHash,
+    EXPECTED_HISTORICAL_ABILITY_TIMING_PRIORITY_RULES.sliceHash);
+  assert.equal(historicalCardBuildPaymentRules.slice.previousCatalogueHash,
+    EXPECTED_HISTORICAL_ABILITY_TIMING_PRIORITY_RULES.catalogueHash);
   assert.equal(historicalAbilityTimingPriorityRules.runtimeHash,
     EXPECTED_HISTORICAL_ABILITY_TIMING_PRIORITY_RULES.runtimeHash);
   assert.equal(historicalAbilityTimingPriorityRules.slice.previousSliceHash,
@@ -1531,15 +1546,15 @@ await check("historical_v4_catalogue_runtime_and_rules_display_remain_frozen", (
   );
   assert.equal(
     current.slice.historicalCompatibility.previousSliceHash,
-    EXPECTED_HISTORICAL_ABILITY_TIMING_PRIORITY_RULES.sliceHash,
+    EXPECTED_HISTORICAL_CARD_BUILD_PAYMENT_RULES.sliceHash,
   );
   assert.equal(
     current.slice.historicalCompatibility.previousCatalogueHash,
-    EXPECTED_HISTORICAL_ABILITY_TIMING_PRIORITY_RULES.catalogueHash,
+    EXPECTED_HISTORICAL_CARD_BUILD_PAYMENT_RULES.catalogueHash,
   );
   assert.equal(
     current.slice.historicalCompatibility.previousRuntimeHash,
-    EXPECTED_HISTORICAL_ABILITY_TIMING_PRIORITY_RULES.runtimeHash,
+    EXPECTED_HISTORICAL_CARD_BUILD_PAYMENT_RULES.runtimeHash,
   );
   assert.equal(
     historicalMedicMedpackV2Contract.slice.historicalCompatibility.previousSliceHash,
@@ -1802,7 +1817,7 @@ await check("generic_runtime_gate_targets_the_current_catalogue_and_executor_man
   assert.equal(runtimeGate.runtimeDescriptor.catalogueHash, current.catalogueHash);
   assert.equal(runtimeGate.runtimeDescriptor.runtimeHash, current.runtimeHash);
   assert.equal(runtimeGate.runtimeDescriptor.executableRuleAtomCount, EXPECTED_CURRENT.executableRuleAtoms);
-  assert.equal(runtimeGate.runtimeDescriptor.nonExecutableRuleAtomCount, 355);
+  assert.equal(runtimeGate.runtimeDescriptor.nonExecutableRuleAtomCount, 343);
   assert.deepEqual(runtimeGate.runtimeDescriptor.executorManifest.map((entry) => (
     `${entry.executorId}@${entry.executorVersion}`
   )), EXPECTED_EXECUTORS);
@@ -1818,8 +1833,8 @@ await check("relationship_graph_declared_scope_is_closed_without_claiming_global
   const relationshipAudit = current.graphAudit;
   assert.equal(relationshipAudit.valid, true);
   assert.equal(relationshipAudit.declaredScopesValid, true);
-  assert.equal(relationshipAudit.counts.nodes, 10285);
-  assert.equal(relationshipAudit.counts.edges, 29847);
+  assert.equal(relationshipAudit.counts.nodes, 10386);
+  assert.equal(relationshipAudit.counts.edges, 30010);
   assert.equal(
     relationshipAudit.counts.declaredStateContractExecutors,
     EXPECTED_CURRENT.declaredStateContractExecutors,
@@ -1853,7 +1868,7 @@ await check("rule_skill_harness_and_training_promotion_remain_closed", () => {
   );
   assert.equal(
     current.slice.historicalCompatibility.actionSchemaVersion,
-    "hybrid_legal_space_v30",
+    "hybrid_legal_space_v31",
   );
   assert.equal(runtimeGate.runtimeDescriptor.ctx2skillPromotionEligible, false);
   assert.equal(runtimeGate.runtimeDescriptor.trainingTruth, false);
@@ -1899,8 +1914,8 @@ const report = {
     judgeTestsRun: acceptance.length,
     crossTimeReplayResult: failures.length ? "aggregate_gate_failed" : "current_and_historical_reports_cross_checked",
     promotions: [],
-    blocks: ["remaining_241_actionable_rule_atoms_not_executable"],
-    remainingRuleGaps: 241,
+    blocks: ["remaining_229_actionable_rule_atoms_not_executable"],
+    remainingRuleGaps: 229,
   },
   harness: {
     harnessLoopUsed: true,

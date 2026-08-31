@@ -61,7 +61,7 @@ const ACTION_FIELDS = Object.freeze([
     "startOfRoundResolutionHash", "startOfRoundResolution", "pendingAttackHash",
   "deployPlan", "movePlan", "disengagePlan", "flyingRulesPlan", "terrainLosRulesPlan",
   "playerControlRelationshipPlan", "diceTestModifierPlan", "keywordSpecialAbilityPlan",
-  "abilityTimingPriorityPlan", "cardBuildPaymentPlan",
+  "abilityTimingPriorityPlan", "cardBuildPaymentPlan", "unitCardSupplyPlan",
   "domainId",
   "specialistLoadoutPlan",
   "attackProfileKey", "attackProfileHash", "attackProfileV2Hash",
@@ -645,7 +645,9 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry.executorId,
     entry,
   ]));
-  const actionSchemaVersion = runtimeExecutors.has("authority.card-build-payment-rules-v1")
+  const actionSchemaVersion = runtimeExecutors.has("authority.unit-card-supply-rules-v1")
+    ? "hybrid_legal_space_v31"
+    : runtimeExecutors.has("authority.card-build-payment-rules-v1")
     ? "hybrid_legal_space_v30"
     : runtimeExecutors.has("authority.ability-timing-priority-rules-v1")
     ? "hybrid_legal_space_v29"

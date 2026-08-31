@@ -427,9 +427,12 @@ const historicalAbilityTimingPriorityRulesSliceReport = JSON.parse(await readFil
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalCardBuildPaymentRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-card-build-payment-rules-rule-slice-v1-report.json"), "utf8"));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(OUTPUT_DIR,
+    "official-unit-card-supply-rules-rule-slice-v1-report.json"), "utf8"));
 
 function clone(value) {
   return structuredClone(value);
@@ -732,8 +735,12 @@ const historicalKeywordSpecialAbilityRulesSlice =
   historicalKeywordSpecialAbilityRulesSliceReport.slice;
 const historicalAbilityTimingPriorityRulesSlice =
   historicalAbilityTimingPriorityRulesSliceReport.slice;
+const historicalCardBuildPaymentRulesSlice =
+  historicalCardBuildPaymentRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalCardBuildPaymentRulesSlice.sliceHash);
+assert.equal(historicalCardBuildPaymentRulesSlice.previousSliceHash,
   historicalAbilityTimingPriorityRulesSlice.sliceHash);
 assert.equal(historicalAbilityTimingPriorityRulesSlice.previousSliceHash,
   historicalKeywordSpecialAbilityRulesSlice.sliceHash);
@@ -902,26 +909,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 671);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 355);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 683);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 343);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 671,
-    newlyExecutableRuleAtoms: 7,
-    reviewRequiredRuleAtoms: 241,
+    executableRuleAtoms: 683,
+    newlyExecutableRuleAtoms: 12,
+    reviewRequiredRuleAtoms: 229,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 671,
+    strictCompleteAtoms: 683,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 61,
+    declaredStateContractExecutors: 62,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "0d11e5569f1eb6b3e62ac50b1bad9930d30cd7bef8b6db1b4cf39bd2bcf3627d",
+    "80867a2d2074171b014d08f0bad820a3bfd812d268a5588fda253a474f28b51d",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1203,6 +1210,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     manifestById.get("authority.card-build-payment-rules-v1").actionTypes,
     ["resolve_card_build_payment_rules_procedure"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.unit-card-supply-rules-v1").actionTypes,
+    ["resolve_unit_card_supply_rules_procedure"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -1225,7 +1236,7 @@ await check("authority_health_and_match_binding_expose_the_runtime_identity", ()
     envelope.matchBinding.dependencies.actionSchema.contentHash,
     hashStarcraftTmgContract({
       kind: "action-schema",
-      schemaVersion: "hybrid_legal_space_v30",
+      schemaVersion: "hybrid_legal_space_v31",
     }),
   );
   assert.equal(envelope.matchBinding.productionReady, false);
@@ -1414,11 +1425,11 @@ const report = {
     crossTimeReplayResult: failures.length ? "failed" : "official_runtime_receipt_replay_passed",
     promotions: [],
     blocks: [
-      "remaining_241_actionable_rule_atoms_not_executable",
+      "remaining_229_actionable_rule_atoms_not_executable",
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 241,
+    remainingRuleGaps: 229,
   },
   harness: {
     harnessLoopUsed: true,
