@@ -230,8 +230,9 @@ export function createOfficialRuleSliceReleaseV1(config, input = {}) {
       silentCompatibilityAllowed: false,
       historicalRuntimeStillSupported: true,
       historicalRulesDisplayRetained: true,
-      actionSchemaVersion: "hybrid_legal_space_v25",
-      previousActionSchemaVersion: "hybrid_legal_space_v25",
+      actionSchemaVersion: c.actionSchemaVersion || "hybrid_legal_space_v25",
+      previousActionSchemaVersion: c.previousActionSchemaVersion
+        || "hybrid_legal_space_v25",
     },
     ctx2skill: {
       ctx2skillLoopUsed: true, targetGames: ["starcraft-tmg"],

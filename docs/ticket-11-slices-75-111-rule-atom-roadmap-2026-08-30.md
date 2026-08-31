@@ -18,7 +18,7 @@ This roadmap started from the Slice 74 denominator:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-09-01: Slices 75–87 are complete for their exact bounded denominators. The current ledger is `612` executable, `300` review-required, and `114` retained display-only RuleAtoms; `24` planned slices, Slice 88 through Slice 111, remain. The machine-verifiable v2 partition closes at `912/0/114`, with zero missing, duplicate, or unknown atom IDs. Any future regrouping must version this route and preserve the exact denominator rather than editing counts silently.
+Execution status on 2026-09-01: Slices 75–88 are complete for their exact bounded denominators. The current ledger is `627` executable, `285` review-required, and `114` retained display-only RuleAtoms; `23` planned slices, Slice 89 through Slice 111, remain. The machine-verifiable v2 partition closes at `912/0/114`, with zero missing, duplicate, or unknown atom IDs. Any future regrouping must version this route and preserve the exact denominator rather than editing counts silently.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -66,8 +66,8 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 84 | **Complete:** Terrain footprint, blocking/direct/full cover, dead zones, leading-model LoS, visibility | 19 | 568 | 344 |
 | 85 | **Complete, corrected:** elevation, terrain stacking, high/mid ground, effective Size; five Flying-cover dependencies reused from Slice 83 without re-promotion | 10 | 578 | 334 |
 | 86 | **Complete:** Grass, impassable terrain, Access Point, Ramp, and residual Gap primitives | 13 | 591 | 321 |
-| 87 | Model/base geometry, measurement, coherency placement, Within and Wholly Within | 21 | 612 | 300 |
-| 88 | Player/Unit ownership, active/controller authority, friendly/enemy/team identity, specific-over-general | 15 | 627 | 285 |
+| 87 | **Complete:** Model/base geometry, measurement, coherency placement, Within and Wholly Within | 21 | 612 | 300 |
+| 88 | **Complete:** Player/Unit ownership, active/controller authority, friendly/enemy/team identity, specific-over-general | 15 | 627 | 285 |
 | 89 | Dice, re-rolls, tests, generated values, modifiers, Buff and Debuff arithmetic | 18 | 645 | 267 |
 | 90 | Keyword and Special Ability primitives, non-stacking, targeting structure, Repeatable | 13 | 658 | 254 |
 | 91 | Passive/Reaction timing, simultaneous priority, and end-of-round effect order | 6 | 664 | 248 |
@@ -162,6 +162,12 @@ Removed Grass stays in the immutable setup denominator but leaves active battle 
 Slice 87 consumes the exact 21-atom route-v2 assignment and adds `authority.model-base-geometry-rules-v1@1.0.0`. The locked P2P denominator binds all 26 current official Units to their base geometry: 25 round bases and Hydralisk's sole rectangular `40×100MM` base. Rules geometry uses the base only, ignores miniature overhang and scenic basing, and uses the bottom of a flight stand.
 
 The kernel measures nearest physical base/token/marker edges in inches, allows unrestricted premeasurement, and distinguishes any-part `Within` from complete-base `Wholly Within`. It validates full multi-model placements, board containment, overlap, Enemy separation and connected Coherency Links, including declared Access Point links. Placement casualty requires a content-bound complete zero-legal-position certificate; out-of-coherency Units lose ordinary mission control/contest capability. Wobbly positions require all-player agreement and a visible marker, and Leading Model nomination expires when repositioning resolves. Focused `34/34`, runtime `10/10`, aggregate `10/10`, graph 9,790/29,031 and contracts 56/56 pass. Counts advance `591/321/114 → 612/300/114`; 24 slices and 300 actionable atoms remain. The report is `docs/ticket-11-slice-87-model-base-geometry-rules-2026-09-01.md`.
+
+## Slice 88 player/control relationship closure
+
+Slice 88 consumes the exact 15-atom route-v2 assignment and adds `authority.player-control-relationship-rules-v1@1.0.0`. A rules-owned registry separates legal ownership from current control across Player, Team, Army, Unit, Model, Token and Card identities. The kernel derives Active Player and Controlling Player authority, assigns decisions and dice to the current controller, preserves legal ownership during transferred control, and computes Friendly/Enemy/team relationships for arbitrary player and team counts.
+
+The same relationship result feeds Friendly rule use, Enemy targeting, mission consumers and the general Friendly-attack prohibition. A content-hashed Unit Card, Mission Card or Special Ability claim can override the Core rule only as an explicit contradictory specific rule; disagreeing equal-specificity claims fail closed. Client-supplied controller, relationship and precedence truth are rejected. Focused `35/35`, runtime `10/10`, aggregate `10/10`, graph 9,910/29,232 and contracts 57/57 pass. Counts advance `612/300/114 → 627/285/114`; 23 slices and 285 actionable atoms remain. The report is `docs/ticket-11-slice-88-player-control-relationship-rules-2026-09-01.md`.
 
 ## Remaining route v2 ID-level closure
 

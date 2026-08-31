@@ -1227,6 +1227,18 @@ import {
   OFFICIAL_MODEL_BASE_GEOMETRY_RULES_PARAMETER_KIND,
   OFFICIAL_MODEL_BASE_GEOMETRY_RULES_TRANSITION_SCHEMA,
 } from "./official-model-base-geometry-rules-executor-v1.mjs";
+import {
+  applyOfficialPlayerControlRelationshipRulesV1,
+  enumerateOfficialPlayerControlRelationshipRulesV1,
+  instantiateOfficialPlayerControlRelationshipRulesV1,
+  OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_ACTION_ATOM_IDS,
+  OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_ACTION_TYPE,
+  OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ATOM_IDS,
+  OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ID,
+  OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_VERSION,
+  OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_PARAMETER_KIND,
+  OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_TRANSITION_SCHEMA,
+} from "./official-player-control-relationship-rules-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -1952,6 +1964,14 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_MODEL_BASE_GEOMETRY_RULES_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ID,
+    executorVersion: OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([
+      OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_ACTION_TYPE,
+    ]),
+    transitionSchema: OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -2041,6 +2061,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_ELEVATION_EFFECTIVE_SIZE_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_SPECIAL_TERRAIN_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_MODEL_BASE_GEOMETRY_RULES_EXECUTOR_ATOM_IDS,
+  ...OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -2131,6 +2152,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_MODEL_BASE_GEOMETRY_RULES_EXECUTOR_ID,
     OFFICIAL_MODEL_BASE_GEOMETRY_RULES_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ID,
+    OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ATOM_IDS,
   ],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
@@ -2759,6 +2784,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const modelBaseGeometryRulesEnabled = enabledExecutorIds.has(
     OFFICIAL_MODEL_BASE_GEOMETRY_RULES_EXECUTOR_ID,
   );
+  const playerControlRelationshipRulesEnabled = enabledExecutorIds.has(
+    OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ID,
+  );
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -2968,6 +2996,7 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       || elevationEffectiveSizeRulesEnabled
       || specialTerrainRulesEnabled
       || modelBaseGeometryRulesEnabled
+      || playerControlRelationshipRulesEnabled
       || disengageEnabled
       || disengageCasualtyEnabled
       || disengageV3Enabled
@@ -3058,6 +3087,8 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           ? [OFFICIAL_SPECIAL_TERRAIN_RULES_PARAMETER_KIND] : []),
         ...(modelBaseGeometryRulesEnabled
           ? [OFFICIAL_MODEL_BASE_GEOMETRY_RULES_PARAMETER_KIND] : []),
+        ...(playerControlRelationshipRulesEnabled
+          ? [OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_PARAMETER_KIND] : []),
         ...(disengageV5Enabled
           ? [OFFICIAL_DISENGAGE_V5_PARAMETER_KIND]
           : disengageV4Enabled
@@ -3111,6 +3142,21 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     const includeDisabled = options.includeDisabled === true;
     const candidates = [];
     const parameterDomains = [];
+    if (playerControlRelationshipRulesEnabled
+      && state.pendingAction?.schema
+        === "starcraft_tmg_official_player_control_relationship_rules_pending_v1") {
+      const staged = enumerateOfficialPlayerControlRelationshipRulesV1(state, {
+        sideKey, includeDisabled, matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state), terminal: null,
+        candidates: staged.candidates, parameterDomains: staged.parameterDomains,
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
+      });
+    }
     if (modelBaseGeometryRulesEnabled
       && state.pendingAction?.schema
         === "starcraft_tmg_official_model_base_geometry_rules_pending_v1") {
@@ -4470,6 +4516,19 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function apply(state, action, options = {}) {
     if (!object(state) || !object(action)) fail("RULE_RUNTIME_ACTION_INVALID");
+    if (action.actionType === OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_ACTION_TYPE
+      && action.executorId === OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ID) {
+      if (!playerControlRelationshipRulesEnabled
+        || action.executorVersion
+          !== OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action,
+        OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_ACTION_ATOM_IDS);
+      return applyOfficialPlayerControlRelationshipRulesV1(state, action, {
+        matchBinding: options.matchBinding,
+      });
+    }
     if (action.actionType === OFFICIAL_MODEL_BASE_GEOMETRY_RULES_ACTION_TYPE
       && action.executorId === OFFICIAL_MODEL_BASE_GEOMETRY_RULES_EXECUTOR_ID) {
       if (!modelBaseGeometryRulesEnabled
@@ -7492,6 +7551,20 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function instantiate(state, domain, parameters, options = {}) {
     if (!object(state) || !object(domain)) fail("RULE_RUNTIME_PARAMETER_DOMAIN_INVALID");
+    if (domain.parameterKind
+      === OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_PARAMETER_KIND) {
+      if (!playerControlRelationshipRulesEnabled
+        || domain.executorId !== OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ID
+        || domain.executorVersion
+          !== OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain,
+        OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_ACTION_ATOM_IDS);
+      return instantiateOfficialPlayerControlRelationshipRulesV1(
+        state, domain, parameters, { matchBinding: options.matchBinding },
+      );
+    }
     if (domain.parameterKind === OFFICIAL_MODEL_BASE_GEOMETRY_RULES_PARAMETER_KIND) {
       if (!modelBaseGeometryRulesEnabled
         || domain.executorId !== OFFICIAL_MODEL_BASE_GEOMETRY_RULES_EXECUTOR_ID
