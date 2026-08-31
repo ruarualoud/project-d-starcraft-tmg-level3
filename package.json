@@ -12,6 +12,8 @@
     "verify:official-attack-pool-edge-rule-slice": "node scripts/verify-official-attack-pool-edge-rule-slice-v1.mjs",
     "verify:official-flying-rules-rule-slice": "node scripts/verify-official-flying-rules-rule-slice-v1.mjs",
     "verify:official-terrain-los-rules-rule-slice": "node scripts/verify-official-terrain-los-rules-rule-slice-v1.mjs",
+    "verify:official-remaining-rule-atom-route-v2": "node scripts/verify-official-remaining-rule-atom-route-v2.mjs",
+    "verify:official-special-terrain-rules-rule-slice": "node scripts/verify-official-special-terrain-rules-rule-slice-v1.mjs",
     "verify:ticket-11-authority": "node scripts/verify-ticket-11-authority-v2.mjs",
     "verify:rule-atom-contract": "node scripts/verify-rule-atom-catalogue-contract-v1.mjs",
     "verify:official-rule-source-denominator": "node scripts/verify-official-rule-source-denominator-v1.mjs",

@@ -18,7 +18,7 @@ This roadmap started from the Slice 74 denominator:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-09-01: Slices 75–85 are complete for their corrected bounded denominators. The current ledger is `578` executable, `334` review-required, and `114` retained display-only RuleAtoms; `26` planned slices, Slice 86 through Slice 111, remain. The machine-verifiable v2 partition closes at `912/0/114`, with zero missing, duplicate, or unknown atom IDs. Any future regrouping must version this route and preserve the exact denominator rather than editing counts silently.
+Execution status on 2026-09-01: Slices 75–86 are complete for their exact bounded denominators. The current ledger is `591` executable, `321` review-required, and `114` retained display-only RuleAtoms; `25` planned slices, Slice 87 through Slice 111, remain. The machine-verifiable v2 partition closes at `912/0/114`, with zero missing, duplicate, or unknown atom IDs. Any future regrouping must version this route and preserve the exact denominator rather than editing counts silently.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -65,7 +65,7 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 83 | **Complete:** Flying movement/combat, flight-stand measurement, and flying coherency | 24 | 549 | 363 |
 | 84 | **Complete:** Terrain footprint, blocking/direct/full cover, dead zones, leading-model LoS, visibility | 19 | 568 | 344 |
 | 85 | **Complete, corrected:** elevation, terrain stacking, high/mid ground, effective Size; five Flying-cover dependencies reused from Slice 83 without re-promotion | 10 | 578 | 334 |
-| 86 | Grass, impassable terrain, Access Point, Ramp, and residual Gap primitives | 13 | 591 | 321 |
+| 86 | **Complete:** Grass, impassable terrain, Access Point, Ramp, and residual Gap primitives | 13 | 591 | 321 |
 | 87 | Model/base geometry, measurement, coherency placement, Within and Wholly Within | 21 | 612 | 300 |
 | 88 | Player/Unit ownership, active/controller authority, friendly/enemy/team identity, specific-over-general | 15 | 627 | 285 |
 | 89 | Dice, re-rolls, tests, generated values, modifiers, Buff and Debuff arithmetic | 18 | 645 | 267 |
@@ -150,6 +150,12 @@ Slice 85's pre-implementation catalogue audit found that its planned `15` counte
 `authority.elevation-effective-size-rules-v1@1.0.0` verifies a content-hashed, complete acyclic terrain-support graph, derives terrain Size recursively, adds the direct supporting terrain's Effective Size to a non-Flying model, and derives ground/mid/high bands rather than trusting a client label. Cross-elevation Range, Engagement Range, and ability range use horizontal nearest-base distance with zero vertical contribution. The new LoS path explicitly adapts the frozen Slice 84 geometry result, then recalculates Full/Direct Cover, Dead Zone, lower-origin and Evade with effective Sizes; it also invokes the frozen Slice 83 Flying-cover kernel without mutating or re-promoting it. Point Defense Drone's official null printed Size uses a receipt-visible geometry-only profile substitution because Slice 84 correctly rejects null Size before geometry; the substitute never supplies cover Size or game identity.
 
 Focused `30/30`, runtime `10/10`, aggregate `10/10`, graph 9,526/28,591 and contracts 54/54 pass. Counts advance `568/344/114 → 578/334/114`. The report is `docs/ticket-11-slice-85-elevation-effective-size-rules-2026-09-01.md`.
+
+## Slice 86 special-terrain closure
+
+Slice 86 consumes the exact 13-atom route-v2 assignment and adds `authority.special-terrain-rules-v1@1.0.0`. A content-hashed battlefield agreement declares every terrain piece, adjacent elevation pair and globally unique Access Point. The kernel executes Access Point elevation changes and coherency links, Size 1 Mid Ground Ramps with base/top entry, derived Impassable Terrain, ordinary Size 0–1 transit, Size 2 Grass movement/standard-Cover LoS/permanent removal, and Leading Model Gap checks through the frozen Slice 82 kernel. Frozen Slice 83 distinguishes Flying overflight from Flying endpoints; frozen Slice 84 owns ordinary transit and Cover geometry.
+
+Removed Grass stays in the immutable setup denominator but leaves active battle geometry. Model placement, setup, source and MatchBinding drift fail closed; the Authority path mutates model position/elevation/support and Grass lifecycle only after explicit plan choice. Round bases and axis-aligned rectangles remain the bounded geometry authority until Slice 87. Focused `30/30`, runtime `10/10`, aggregate `10/10`, graph 9,634/28,774 and contracts 55/55 pass. Counts advance `578/334/114 → 591/321/114`; 25 slices and 321 actionable atoms remain. The report is `docs/ticket-11-slice-86-special-terrain-rules-2026-09-01.md`.
 
 ## Remaining route v2 ID-level closure
 

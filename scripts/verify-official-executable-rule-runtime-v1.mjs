@@ -378,10 +378,17 @@ const historicalTerrainLosRulesSliceReport = JSON.parse(await readFile(
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalElevationEffectiveSizeRulesSliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-elevation-effective-size-rules-rule-slice-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-special-terrain-rules-rule-slice-v1-report.json",
   ),
   "utf8",
 ));
@@ -675,8 +682,12 @@ const historicalDirectMovementDisplacementSlice =
 const historicalGapPlaceGeometrySlice = historicalGapPlaceGeometrySliceReport.slice;
 const historicalFlyingRulesSlice = historicalFlyingRulesSliceReport.slice;
 const historicalTerrainLosRulesSlice = historicalTerrainLosRulesSliceReport.slice;
+const historicalElevationEffectiveSizeRulesSlice =
+  historicalElevationEffectiveSizeRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalElevationEffectiveSizeRulesSlice.sliceHash);
+assert.equal(historicalElevationEffectiveSizeRulesSlice.previousSliceHash,
   historicalTerrainLosRulesSlice.sliceHash);
 assert.equal(historicalTerrainLosRulesSlice.previousSliceHash,
   historicalFlyingRulesSlice.sliceHash);
@@ -831,26 +842,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 578);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 448);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 591);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 435);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 578,
-    newlyExecutableRuleAtoms: 10,
-    reviewRequiredRuleAtoms: 334,
+    executableRuleAtoms: 591,
+    newlyExecutableRuleAtoms: 13,
+    reviewRequiredRuleAtoms: 321,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 578,
+    strictCompleteAtoms: 591,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 54,
+    declaredStateContractExecutors: 55,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "52229d04183d64ce4fe34e79cf51e4275cc6c905ab4603b057c5c29b08c348e3",
+    "f429e97622753e125229d60ce8c45fc7b77a3f542b31166b0a5383b9cd14e016",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1104,6 +1115,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     manifestById.get("authority.elevation-effective-size-rules-v1").actionTypes,
     ["resolve_elevation_effective_size_rules_procedure"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.special-terrain-rules-v1").actionTypes,
+    ["resolve_special_terrain_rules_procedure"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -1315,11 +1330,11 @@ const report = {
     crossTimeReplayResult: failures.length ? "failed" : "official_runtime_receipt_replay_passed",
     promotions: [],
     blocks: [
-      "remaining_344_actionable_rule_atoms_not_executable",
+      "remaining_321_actionable_rule_atoms_not_executable",
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 344,
+    remainingRuleGaps: 321,
   },
   harness: {
     harnessLoopUsed: true,
