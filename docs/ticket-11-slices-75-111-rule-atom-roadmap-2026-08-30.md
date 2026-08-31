@@ -11,13 +11,14 @@ This roadmap started from the Slice 74 denominator:
 - the original table claimed `491/491` assignments with no duplicates;
 - Slice 85 denominator audit disproved that claim: five canonical Flying-cover atoms
   were counted in Slice 85 after already being promoted by Slice 83;
-- the corrected verified ledger is authoritative, while the remaining route currently
-  assigns `329/334` review-required atoms and carries an explicit five-atom
-  assignment debt that must be reallocated before Slice 86 starts.
+- the ID-level v2 route audit recovered the five omitted atoms, rebalanced ambiguous
+  cluster boundaries, and now assigns `334/334` current review-required atoms exactly
+  once across Slices 86–111;
+- route v2 is frozen as `3b0f0b0a75d6a07b807a037941c1246736a69b35b8898ec7309295316bacacc2`.
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-09-01: Slices 75–85 are complete for their corrected bounded denominators. The current ledger is `578` executable, `334` review-required, and `114` retained display-only RuleAtoms; `26` planned slices, Slice 86 through Slice 111, remain. Their existing row counts close only to `907/5/114`; the missing five assignments are a visible planning debt, not permission to promote convenient atoms or add an invented compatibility path.
+Execution status on 2026-09-01: Slices 75–85 are complete for their corrected bounded denominators. The current ledger is `578` executable, `334` review-required, and `114` retained display-only RuleAtoms; `26` planned slices, Slice 86 through Slice 111, remain. The machine-verifiable v2 partition closes at `912/0/114`, with zero missing, duplicate, or unknown atom IDs. Any future regrouping must version this route and preserve the exact denominator rather than editing counts silently.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -64,32 +65,32 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 83 | **Complete:** Flying movement/combat, flight-stand measurement, and flying coherency | 24 | 549 | 363 |
 | 84 | **Complete:** Terrain footprint, blocking/direct/full cover, dead zones, leading-model LoS, visibility | 19 | 568 | 344 |
 | 85 | **Complete, corrected:** elevation, terrain stacking, high/mid ground, effective Size; five Flying-cover dependencies reused from Slice 83 without re-promotion | 10 | 578 | 334 |
-| 86 | Grass, impassable terrain, and Access Point primitives | 9 | 587 | 325 |
-| 87 | Model/base geometry, measurement, coherency placement, Within and Wholly Within | 21 | 608 | 304 |
-| 88 | Player/Unit ownership, active/controller authority, friendly/enemy/team identity, specific-over-general | 17 | 625 | 287 |
-| 89 | Dice, re-rolls, tests, generated values, modifiers, Buff and Debuff arithmetic | 18 | 643 | 269 |
-| 90 | Keyword and Special Ability primitives, non-stacking, targeting structure, Repeatable | 13 | 656 | 256 |
-| 91 | Passive/Reaction timing, simultaneous priority, and end-of-round effect order | 6 | 662 | 250 |
-| 92 | Faction/Tactical card layout, uniqueness, purchase resource, and excess-resource loss | 7 | 669 | 243 |
-| 93 | Unit-card fields, phase boxes, Speed-null, base/range/upgrade fields, and Supply Value projection | 11 | 680 | 232 |
-| 94 | Round/phase order, alternating Unit activation, one action per activation, on-table Movement choice | 7 | 687 | 225 |
-| 95 | Supply pool, round escalation, casualty release, deployment reference, and available-supply verification | 6 | 693 | 219 |
-| 96 | Reserve return lifecycle, retained state, target restrictions, final-round Reserve destruction, arrival influence-zone rule | 16 | 709 | 203 |
-| 97 | Unit destruction lifecycle, token/effect cleanup, outward effects, and return boundary | 5 | 714 | 198 |
-| 98 | Status/Stay-in-Play framework, Shielded dependency, Siege Mode, and On Creep | 12 | 726 | 186 |
-| 99 | Hidden and Burrowed complete state/action/targeting lifecycle | 17 | 743 | 169 |
-| 100 | Summon lifecycle: army-list exclusions, Supply, placement, activation linkage, score and Reserve distinctions | 13 | 756 | 156 |
-| 101 | Respawn and Morph placement/Supply/activation lifecycle | 9 | 765 | 147 |
-| 102 | Faction, race/sub-faction tags, faction-card schema, Army Slots, engagement scale, and eligibility | 23 | 788 | 124 |
-| 103 | Army resource budgets and Tactical-card purchase/open-information rules | 11 | 799 | 113 |
-| 104 | Unit composition options, model counts, starting Supply, upgrades, Specialist default, and costs | 15 | 814 | 98 |
-| 105 | Team rosters, open/closed lists, equipment representation, disclosure, and inspection | 14 | 828 | 84 |
-| 106 | Mission/deployment-card draft, colour/control choice, elimination/selection, and card contract | 21 | 849 | 63 |
-| 107 | Battlefield dimensions, entry edges, mission-marker placement/elevation, influence corners, and two official FAQ constraints | 14 | 863 | 49 |
-| 108 | Balanced terrain construction: counts, sizes, lanes, quadrants, centre, scaling, and alternating placement | 15 | 878 | 34 |
-| 109 | Battlefield Tokens and Markers: expiry, movement, activation/mode/faction/first-player marker primitives | 11 | 889 | 23 |
-| 110 | First-player assignment, mission control totals, army elimination, final scoring, tiebreak and draw | 14 | 903 | 9 |
-| 111 | Unresolved rules dispute protocol and post-match verification | 4 | 907 | 5 |
+| 86 | Grass, impassable terrain, Access Point, Ramp, and residual Gap primitives | 13 | 591 | 321 |
+| 87 | Model/base geometry, measurement, coherency placement, Within and Wholly Within | 21 | 612 | 300 |
+| 88 | Player/Unit ownership, active/controller authority, friendly/enemy/team identity, specific-over-general | 15 | 627 | 285 |
+| 89 | Dice, re-rolls, tests, generated values, modifiers, Buff and Debuff arithmetic | 18 | 645 | 267 |
+| 90 | Keyword and Special Ability primitives, non-stacking, targeting structure, Repeatable | 13 | 658 | 254 |
+| 91 | Passive/Reaction timing, simultaneous priority, and end-of-round effect order | 6 | 664 | 248 |
+| 92 | Faction/Tactical card layout, uniqueness, purchase resource, and excess-resource loss | 7 | 671 | 241 |
+| 93 | Unit-card fields, phase boxes, Speed-null, base/range/upgrade fields, and Supply Value projection | 12 | 683 | 229 |
+| 94 | Round/phase order, alternating Unit activation, one action per activation, on-table Movement choice | 7 | 690 | 222 |
+| 95 | Supply pool, round escalation, casualty release, deployment reference, and available-supply verification | 5 | 695 | 217 |
+| 96 | Reserve return lifecycle, retained state, target restrictions, final-round Reserve destruction, arrival influence-zone rule | 17 | 712 | 200 |
+| 97 | Unit destruction lifecycle, token/effect cleanup, outward effects, and return boundary | 5 | 717 | 195 |
+| 98 | Status/Stay-in-Play framework, Shielded dependency, Siege Mode, and On Creep | 12 | 729 | 183 |
+| 99 | Hidden and Burrowed complete state/action/targeting lifecycle | 18 | 747 | 165 |
+| 100 | Summon lifecycle: army-list exclusions, Supply, placement, activation linkage, score and Reserve distinctions | 13 | 760 | 152 |
+| 101 | Respawn and Morph placement/Supply/activation lifecycle | 9 | 769 | 143 |
+| 102 | Faction, race/sub-faction tags, faction-card schema, Army Slots, engagement scale, and eligibility | 24 | 793 | 119 |
+| 103 | Army resource budgets and Tactical-card purchase/open-information rules | 11 | 804 | 108 |
+| 104 | Unit composition options, model counts, starting Supply, upgrades, Specialist default, and costs | 16 | 820 | 92 |
+| 105 | Team rosters, open/closed lists, equipment representation, disclosure, and inspection | 13 | 833 | 79 |
+| 106 | Mission/deployment-card draft, colour/control choice, elimination/selection, and card contract | 21 | 854 | 58 |
+| 107 | Battlefield dimensions, entry edges, mission-marker placement/elevation, influence corners, and two official FAQ constraints | 12 | 866 | 46 |
+| 108 | Balanced terrain construction: counts, sizes, lanes, quadrants, centre, scaling, and alternating placement | 17 | 883 | 29 |
+| 109 | Battlefield Tokens and Markers: expiry, movement, activation/mode/faction/first-player marker primitives | 11 | 894 | 18 |
+| 110 | First-player assignment, mission control totals, army elimination, final scoring, tiebreak and draw | 14 | 908 | 4 |
+| 111 | Unresolved rules dispute protocol and post-match verification | 4 | 912 | 0 |
 
 ## Slice 75 correction after full-denominator research
 
@@ -148,6 +149,12 @@ Slice 85's pre-implementation catalogue audit found that its planned `15` counte
 
 `authority.elevation-effective-size-rules-v1@1.0.0` verifies a content-hashed, complete acyclic terrain-support graph, derives terrain Size recursively, adds the direct supporting terrain's Effective Size to a non-Flying model, and derives ground/mid/high bands rather than trusting a client label. Cross-elevation Range, Engagement Range, and ability range use horizontal nearest-base distance with zero vertical contribution. The new LoS path explicitly adapts the frozen Slice 84 geometry result, then recalculates Full/Direct Cover, Dead Zone, lower-origin and Evade with effective Sizes; it also invokes the frozen Slice 83 Flying-cover kernel without mutating or re-promoting it. Point Defense Drone's official null printed Size uses a receipt-visible geometry-only profile substitution because Slice 84 correctly rejects null Size before geometry; the substitute never supplies cover Size or game identity.
 
-Focused `30/30`, runtime `10/10`, aggregate `10/10`, graph 9,526/28,591 and contracts 54/54 pass. Counts advance `568/344/114 → 578/334/114`. Five atoms remain an explicit route-assignment debt and must be regrouped from the actual review catalogue before Slice 86 begins. The report is `docs/ticket-11-slice-85-elevation-effective-size-rules-2026-09-01.md`.
+Focused `30/30`, runtime `10/10`, aggregate `10/10`, graph 9,526/28,591 and contracts 54/54 pass. Counts advance `568/344/114 → 578/334/114`. The report is `docs/ticket-11-slice-85-elevation-effective-size-rules-2026-09-01.md`.
+
+## Remaining route v2 ID-level closure
+
+The post-Slice85 audit no longer relies on prose labels plus arithmetic. `packages/rule-atoms/official-remaining-rule-atom-route-v2.mjs` binds the exact Slice85 catalogue hash and emits the resolved atom IDs for every Slice86–111 assignment. Its `334/334` partition has zero missing, duplicate, or unknown IDs and projects exactly `912/0/114` after Slice111.
+
+The five recovered debt atoms are the Core 11 Leading Model Gap rule, Leading Model nomination duration, the Core 11 Size0/1 terrain-pass rule, the Core 8.5.3 Gap-clearance reference, and Ramp movement. Four are now in Slice86 and nomination duration is in Slice87. The wider count changes in the table are explicit semantic-boundary corrections made while constructing the ID-level partition; they do not change the current catalogue or promote any rule. Route verifier `10/10` passes with hash `3b0f0b0a75d6a07b807a037941c1246736a69b35b8898ec7309295316bacacc2`. The audit report is `docs/ticket-11-slices-86-111-route-v2-audit-2026-09-01.md`.
 
 No Skill, DSH, MuZero, self-play, memory, or training-truth promotion is part of these RuleAtom slices.

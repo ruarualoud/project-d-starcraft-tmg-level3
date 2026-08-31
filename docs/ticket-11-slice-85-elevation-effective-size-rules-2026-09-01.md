@@ -67,4 +67,4 @@ Repository fallback remains forbidden. Preview → Confirm → Apply uses conten
 - runtime: `52229d04183d64ce4fe34e79cf51e4275cc6c905ab4603b057c5c29b08c348e3`;
 - graph: `af362cb2997a1bbc5b4790794a2434aa3e86a2df646671d7a9b4f3961d485ea0`.
 
-No Skill was generated or promoted, DSH was not run, and no MuZero, self-play, memory, or training truth was produced. Grass, Impassable Terrain, Ramps, and Access Points remain Slice 86; arbitrary model/base shapes remain Slice 87. Before Slice 86 implementation, the actual 334 review-required atoms must be regrouped so the five-atom planning debt is assigned exactly once.
+No Skill was generated or promoted, DSH was not run, and no MuZero, self-play, memory, or training truth was produced. Grass, Impassable Terrain, Ramps, and Access Points remain Slice 86; arbitrary model/base shapes remain Slice 87. The subsequent route-v2 audit assigned all `334/334` review-required atoms exactly once and closed the five-atom planning debt before Slice 86 implementation; see `docs/ticket-11-slices-86-111-route-v2-audit-2026-09-01.md`.
