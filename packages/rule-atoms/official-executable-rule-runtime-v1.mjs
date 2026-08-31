@@ -1141,6 +1141,19 @@ import {
   OFFICIAL_CLOSE_COMBAT_LIFECYCLE_PARAMETER_KIND,
   OFFICIAL_CLOSE_COMBAT_LIFECYCLE_TRANSITION_SCHEMA,
 } from "./official-close-combat-lifecycle-executor-v1.mjs";
+import {
+  applyOfficialDirectMovementDisplacementV1,
+  enumerateOfficialDirectMovementDisplacementV1,
+  instantiateOfficialDirectMovementDisplacementV1,
+  OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_ACTION_ATOM_IDS,
+  OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_ACTION_TYPE,
+  OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_ATOM_IDS,
+  OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_ID,
+  OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_VERSION,
+  OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_NEW_ATOM_IDS,
+  OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_PARAMETER_KIND,
+  OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_TRANSITION_SCHEMA,
+} from "./official-direct-movement-displacement-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -1824,6 +1837,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_CLOSE_COMBAT_LIFECYCLE_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_ID,
+    executorVersion: OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -1906,6 +1925,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_TEMPLATE_WEAPON_NEW_ATOM_IDS,
   ...OFFICIAL_ATTACK_POOL_EDGE_NEW_ATOM_IDS,
   ...OFFICIAL_CLOSE_COMBAT_LIFECYCLE_NEW_ATOM_IDS,
+  ...OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_NEW_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -1971,6 +1991,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_CLOSE_COMBAT_LIFECYCLE_EXECUTOR_ID,
     OFFICIAL_CLOSE_COMBAT_LIFECYCLE_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_ID,
+    OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_ATOM_IDS,
   ],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
@@ -2580,6 +2604,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const closeCombatLifecycleEnabled = enabledExecutorIds.has(
     OFFICIAL_CLOSE_COMBAT_LIFECYCLE_EXECUTOR_ID,
   );
+  const directMovementDisplacementEnabled = enabledExecutorIds.has(
+    OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_ID,
+  );
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -2859,6 +2886,8 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         ...(attackPoolEdgeEnabled ? [OFFICIAL_ATTACK_POOL_EDGE_PARAMETER_KIND] : []),
         ...(closeCombatLifecycleEnabled
           ? [OFFICIAL_CLOSE_COMBAT_LIFECYCLE_PARAMETER_KIND] : []),
+        ...(directMovementDisplacementEnabled
+          ? [OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_PARAMETER_KIND] : []),
         ...(disengageV5Enabled
           ? [OFFICIAL_DISENGAGE_V5_PARAMETER_KIND]
           : disengageV4Enabled
@@ -2912,6 +2941,21 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     const includeDisabled = options.includeDisabled === true;
     const candidates = [];
     const parameterDomains = [];
+    if (directMovementDisplacementEnabled
+      && state.pendingAction?.schema
+        === "starcraft_tmg_official_direct_movement_displacement_pending_v1") {
+      const staged = enumerateOfficialDirectMovementDisplacementV1(state, {
+        sideKey, includeDisabled, matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state), terminal: null,
+        candidates: staged.candidates, parameterDomains: staged.parameterDomains,
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
+      });
+    }
     if (closeCombatLifecycleEnabled
       && state.pendingAction?.schema
         === "starcraft_tmg_official_close_combat_lifecycle_pending_v1") {
@@ -4167,6 +4211,18 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function apply(state, action, options = {}) {
     if (!object(state) || !object(action)) fail("RULE_RUNTIME_ACTION_INVALID");
+    if (action.actionType === OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_ACTION_TYPE
+      && action.executorId === OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_ID) {
+      if (!directMovementDisplacementEnabled
+        || action.executorVersion
+          !== OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action, OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_ACTION_ATOM_IDS);
+      return applyOfficialDirectMovementDisplacementV1(state, action, {
+        matchBinding: options.matchBinding,
+      });
+    }
     if (action.actionType === OFFICIAL_CLOSE_COMBAT_LIFECYCLE_ACTION_TYPE
       && action.executorId === OFFICIAL_CLOSE_COMBAT_LIFECYCLE_EXECUTOR_ID) {
       if (!closeCombatLifecycleEnabled
@@ -7109,6 +7165,18 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function instantiate(state, domain, parameters, options = {}) {
     if (!object(state) || !object(domain)) fail("RULE_RUNTIME_PARAMETER_DOMAIN_INVALID");
+    if (domain.parameterKind === OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_PARAMETER_KIND) {
+      if (!directMovementDisplacementEnabled
+        || domain.executorId !== OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_ID
+        || domain.executorVersion
+          !== OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain, OFFICIAL_DIRECT_MOVEMENT_DISPLACEMENT_ACTION_ATOM_IDS);
+      return instantiateOfficialDirectMovementDisplacementV1(state, domain, parameters, {
+        matchBinding: options.matchBinding,
+      });
+    }
     if (domain.parameterKind === OFFICIAL_CLOSE_COMBAT_LIFECYCLE_PARAMETER_KIND) {
       if (!closeCombatLifecycleEnabled
         || domain.executorId !== OFFICIAL_CLOSE_COMBAT_LIFECYCLE_EXECUTOR_ID

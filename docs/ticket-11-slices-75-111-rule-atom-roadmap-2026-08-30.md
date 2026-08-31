@@ -13,7 +13,7 @@ This roadmap partitions the current Slice 74 denominator exactly:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-08-30: Slices 75–80 are complete for their declared bounded denominators. The current ledger is `501` executable, `411` review-required, and `114` retained display-only RuleAtoms; `31` planned slices, Slice 81 through Slice 111, remain.
+Execution status on 2026-08-31: Slices 75–81 are complete for their declared bounded denominators. The current ledger is `510` executable, `402` review-required, and `114` retained display-only RuleAtoms; `30` planned slices, Slice 82 through Slice 111, remain.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -55,7 +55,7 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 78 | **Complete:** Blast/Flamer template procedure and Spillover batches; current official carrier/physical geometry asset quarantined | 23 | 480 | 432 |
 | 79 | **Complete:** attack-pool edges: reduced dice, mixed modifiers/range batches, Hits X, three-pool/bypass/Surge mismatch, Concentrated Fire, Tough, visible-casualty caps | 13 | 493 | 419 |
 | 80 | **Complete:** Close Combat lifecycle: marker removal, Evade, freed-unit state/Reaction exception, Surge target, multiple enemies, engagement range | 8 | 501 | 411 |
-| 81 | Direct movement and Displacement | 9 | 510 | 402 |
+| 81 | **Complete:** Direct movement and Displacement | 9 | 510 | 402 |
 | 82 | Gap clearance and Place geometry | 15 | 525 | 387 |
 | 83 | Flying movement/combat, flight-stand measurement, and flying coherency | 24 | 549 | 363 |
 | 84 | Terrain footprint, blocking/direct/full cover, dead zones, leading-model LoS, visibility | 19 | 568 | 344 |

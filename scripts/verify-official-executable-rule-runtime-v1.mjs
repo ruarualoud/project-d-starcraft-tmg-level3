@@ -343,10 +343,17 @@ const historicalAttackPoolEdgeSliceReport = JSON.parse(await readFile(
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalCloseCombatLifecycleSliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-close-combat-lifecycle-rule-slice-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-direct-movement-displacement-rule-slice-v1-report.json",
   ),
   "utf8",
 ));
@@ -634,8 +641,11 @@ const historicalImpactSlice = historicalImpactSliceReport.slice;
 const historicalAssaultRunSlice = historicalAssaultRunSliceReport.slice;
 const historicalTemplateWeaponSlice = historicalTemplateWeaponSliceReport.slice;
 const historicalAttackPoolEdgeSlice = historicalAttackPoolEdgeSliceReport.slice;
+const historicalCloseCombatLifecycleSlice = historicalCloseCombatLifecycleSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalCloseCombatLifecycleSlice.sliceHash);
+assert.equal(historicalCloseCombatLifecycleSlice.previousSliceHash,
   historicalAttackPoolEdgeSlice.sliceHash);
 assert.equal(historicalAttackPoolEdgeSlice.previousSliceHash,
   historicalTemplateWeaponSlice.sliceHash);
@@ -780,26 +790,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 501);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 525);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 510);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 516);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 501,
-    newlyExecutableRuleAtoms: 8,
-    reviewRequiredRuleAtoms: 411,
+    executableRuleAtoms: 510,
+    newlyExecutableRuleAtoms: 9,
+    reviewRequiredRuleAtoms: 402,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 501,
+    strictCompleteAtoms: 510,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 49,
+    declaredStateContractExecutors: 50,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "c860bc9305abbdc615e8d4aab6b6a23ad54624f5effbe42863756f1b911cf270",
+    "f312f141d77dcb6415aca3f78db455e9fb11e76495b815253f87c18a4af1af11",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
