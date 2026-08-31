@@ -357,10 +357,17 @@ const historicalDirectMovementDisplacementSliceReport = JSON.parse(await readFil
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalGapPlaceGeometrySliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-gap-place-geometry-rule-slice-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-flying-rules-rule-slice-v1-report.json",
   ),
   "utf8",
 ));
@@ -651,8 +658,11 @@ const historicalAttackPoolEdgeSlice = historicalAttackPoolEdgeSliceReport.slice;
 const historicalCloseCombatLifecycleSlice = historicalCloseCombatLifecycleSliceReport.slice;
 const historicalDirectMovementDisplacementSlice =
   historicalDirectMovementDisplacementSliceReport.slice;
+const historicalGapPlaceGeometrySlice = historicalGapPlaceGeometrySliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalGapPlaceGeometrySlice.sliceHash);
+assert.equal(historicalGapPlaceGeometrySlice.previousSliceHash,
   historicalDirectMovementDisplacementSlice.sliceHash);
 assert.equal(historicalDirectMovementDisplacementSlice.previousSliceHash,
   historicalCloseCombatLifecycleSlice.sliceHash);
@@ -801,26 +811,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 525);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 501);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 549);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 477);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 525,
-    newlyExecutableRuleAtoms: 15,
-    reviewRequiredRuleAtoms: 387,
+    executableRuleAtoms: 549,
+    newlyExecutableRuleAtoms: 24,
+    reviewRequiredRuleAtoms: 363,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 525,
+    strictCompleteAtoms: 549,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 51,
+    declaredStateContractExecutors: 52,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "1eedc98e0a0b21ef1a078dadc5ef10b150415bdb410561eb46528d15d9cae979",
+    "63ca12125a43107126093177a93eb678dc42a0d710264dc64f351227c7af5f72",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1062,6 +1072,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     manifestById.get("authority.gap-place-geometry-v1").actionTypes,
     ["resolve_gap_place_geometry_procedure"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.flying-rules-v1").actionTypes,
+    ["resolve_flying_rules_procedure"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -1273,11 +1287,11 @@ const report = {
     crossTimeReplayResult: failures.length ? "failed" : "official_runtime_receipt_replay_passed",
     promotions: [],
     blocks: [
-      "remaining_387_actionable_rule_atoms_not_executable",
+      "remaining_363_actionable_rule_atoms_not_executable",
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 387,
+    remainingRuleGaps: 363,
   },
   harness: {
     harnessLoopUsed: true,

@@ -13,7 +13,7 @@ This roadmap partitions the current Slice 74 denominator exactly:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-08-31: Slices 75–82 are complete for their declared bounded denominators. The current ledger is `525` executable, `387` review-required, and `114` retained display-only RuleAtoms; `29` planned slices, Slice 83 through Slice 111, remain.
+Execution status on 2026-08-31: Slices 75–83 are complete for their declared bounded denominators. The current ledger is `549` executable, `363` review-required, and `114` retained display-only RuleAtoms; `28` planned slices, Slice 84 through Slice 111, remain.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -57,7 +57,7 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 80 | **Complete:** Close Combat lifecycle: marker removal, Evade, freed-unit state/Reaction exception, Surge target, multiple enemies, engagement range | 8 | 501 | 411 |
 | 81 | **Complete:** Direct movement and Displacement | 9 | 510 | 402 |
 | 82 | **Complete:** Gap clearance and Place geometry | 15 | 525 | 387 |
-| 83 | Flying movement/combat, flight-stand measurement, and flying coherency | 24 | 549 | 363 |
+| 83 | **Complete:** Flying movement/combat, flight-stand measurement, and flying coherency | 24 | 549 | 363 |
 | 84 | Terrain footprint, blocking/direct/full cover, dead zones, leading-model LoS, visibility | 19 | 568 | 344 |
 | 85 | Elevation, terrain stacking, high/mid ground, effective Size, and flying cover | 15 | 583 | 329 |
 | 86 | Grass, impassable terrain, and Access Point primitives | 9 | 592 | 320 |
@@ -129,5 +129,9 @@ Slice 81 adds `authority.direct-movement-displacement-v1@1.0.0` and promotes the
 ## Slice 82 Gap clearance and Place geometry closure
 
 Slice 82 adds `authority.gap-place-geometry-v1@1.0.0` plus a reusable pure geometry kernel and promotes the exact nine Core 4.6 Gap atoms and six Core 11 `PLACE (X)` atoms. Gap width is derived from physical model/terrain boundary points crossed by the actual path; Size 0–2 uses the one-inch threshold, Size 3+ uses three inches, terrain openings require the setup agreement, and Flying ignores transit clearance but never endpoint fit. Place nominates the Leading Model, enforces its distance, resets every remaining model with a valid coherency link, ignores transit path/Gap/elevation requirements, enforces legal enemy-separated endpoints, and applies the Assault engagement exception. Focused `25/25`, runtime `10/10`, aggregate `10/10`, graph 9,125/27,939 and contracts 51/51 pass. General terrain/elevation, arbitrary model/base shapes, and general Unit-card geometry bindings remain production-quarantined for Slices 84, 85, 87 and 93. The report is `docs/ticket-11-slice-82-gap-place-geometry-2026-08-31.md`.
+
+## Slice 83 Flying rules closure
+
+Slice 83 adds `authority.flying-rules-v1@1.0.0` and promotes the exact 24 Flying atoms. Flight-stand bottoms own measurement, the Leading Model moves horizontally point-to-point through terrain/models/elevation, endpoints retain whole-base/nonoverlap/Enemy-Flying separation rules, Flying coherency links ignore terrain and other Units, and grass is preserved on overflight but removed at the endpoint. Flying cannot charge, be charged, engage, enter Combat/Close Ranks, make or receive Close Combat attacks, or control/contest mission markers. Full Cover is ignored to/from Flying, while direct cover and elevation dead zones that apply to the non-Flying model remain. The sealed current dataset identifies Point Defense Drone as the only Flying Unit but gives it Speed `-`; generic movement evidence is therefore rules-procedure-only and production-quarantined rather than inventing a current carrier. Focused `28/28`, runtime `10/10`, aggregate `10/10`, graph 9,293/28,204 and contracts 52/52 pass. The report is `docs/ticket-11-slice-83-flying-rules-2026-08-31.md`.
 
 No Skill, DSH, MuZero, self-play, memory, or training-truth promotion is part of these RuleAtom slices.
