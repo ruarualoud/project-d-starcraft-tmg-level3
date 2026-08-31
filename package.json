@@ -16,6 +16,7 @@
     "verify:official-special-terrain-rules-rule-slice": "node scripts/verify-official-special-terrain-rules-rule-slice-v1.mjs",
     "verify:official-model-base-geometry-rules-rule-slice": "node scripts/verify-official-model-base-geometry-rules-rule-slice-v1.mjs",
     "verify:official-player-control-relationship-rules-rule-slice": "node scripts/verify-official-player-control-relationship-rules-rule-slice-v1.mjs",
+    "verify:official-dice-test-modifier-rules-rule-slice": "node scripts/verify-official-dice-test-modifier-rules-rule-slice-v1.mjs",
     "verify:ticket-11-authority": "node scripts/verify-ticket-11-authority-v2.mjs",
     "verify:rule-atom-contract": "node scripts/verify-rule-atom-catalogue-contract-v1.mjs",
     "verify:official-rule-source-denominator": "node scripts/verify-official-rule-source-denominator-v1.mjs",

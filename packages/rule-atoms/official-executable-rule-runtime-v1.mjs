@@ -1239,6 +1239,18 @@ import {
   OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_PARAMETER_KIND,
   OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_TRANSITION_SCHEMA,
 } from "./official-player-control-relationship-rules-executor-v1.mjs";
+import {
+  applyOfficialDiceTestModifierRulesV1,
+  enumerateOfficialDiceTestModifierRulesV1,
+  instantiateOfficialDiceTestModifierRulesV1,
+  OFFICIAL_DICE_TEST_MODIFIER_RULES_ACTION_ATOM_IDS,
+  OFFICIAL_DICE_TEST_MODIFIER_RULES_ACTION_TYPE,
+  OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_ATOM_IDS,
+  OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_ID,
+  OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_VERSION,
+  OFFICIAL_DICE_TEST_MODIFIER_RULES_PARAMETER_KIND,
+  OFFICIAL_DICE_TEST_MODIFIER_RULES_TRANSITION_SCHEMA,
+} from "./official-dice-test-modifier-rules-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -1972,6 +1984,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_ID,
+    executorVersion: OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_DICE_TEST_MODIFIER_RULES_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_DICE_TEST_MODIFIER_RULES_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -2062,6 +2080,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_SPECIAL_TERRAIN_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_MODEL_BASE_GEOMETRY_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ATOM_IDS,
+  ...OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -2156,6 +2175,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ID,
     OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_ID,
+    OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_ATOM_IDS,
   ],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
@@ -2787,6 +2810,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const playerControlRelationshipRulesEnabled = enabledExecutorIds.has(
     OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ID,
   );
+  const diceTestModifierRulesEnabled = enabledExecutorIds.has(
+    OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_ID,
+  );
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -2997,6 +3023,7 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       || specialTerrainRulesEnabled
       || modelBaseGeometryRulesEnabled
       || playerControlRelationshipRulesEnabled
+      || diceTestModifierRulesEnabled
       || disengageEnabled
       || disengageCasualtyEnabled
       || disengageV3Enabled
@@ -3089,6 +3116,8 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           ? [OFFICIAL_MODEL_BASE_GEOMETRY_RULES_PARAMETER_KIND] : []),
         ...(playerControlRelationshipRulesEnabled
           ? [OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_PARAMETER_KIND] : []),
+        ...(diceTestModifierRulesEnabled
+          ? [OFFICIAL_DICE_TEST_MODIFIER_RULES_PARAMETER_KIND] : []),
         ...(disengageV5Enabled
           ? [OFFICIAL_DISENGAGE_V5_PARAMETER_KIND]
           : disengageV4Enabled
@@ -3142,6 +3171,21 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     const includeDisabled = options.includeDisabled === true;
     const candidates = [];
     const parameterDomains = [];
+    if (diceTestModifierRulesEnabled
+      && state.pendingAction?.schema
+        === "starcraft_tmg_official_dice_test_modifier_rules_pending_v1") {
+      const staged = enumerateOfficialDiceTestModifierRulesV1(state, {
+        sideKey, includeDisabled, matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state), terminal: null,
+        candidates: staged.candidates, parameterDomains: staged.parameterDomains,
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
+      });
+    }
     if (playerControlRelationshipRulesEnabled
       && state.pendingAction?.schema
         === "starcraft_tmg_official_player_control_relationship_rules_pending_v1") {
@@ -4516,6 +4560,18 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function apply(state, action, options = {}) {
     if (!object(state) || !object(action)) fail("RULE_RUNTIME_ACTION_INVALID");
+    if (action.actionType === OFFICIAL_DICE_TEST_MODIFIER_RULES_ACTION_TYPE
+      && action.executorId === OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_ID) {
+      if (!diceTestModifierRulesEnabled
+        || action.executorVersion !== OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action, OFFICIAL_DICE_TEST_MODIFIER_RULES_ACTION_ATOM_IDS);
+      return applyOfficialDiceTestModifierRulesV1(state, action, {
+        matchBinding: options.matchBinding,
+        chanceReveals: options.chanceReveals,
+      });
+    }
     if (action.actionType === OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_ACTION_TYPE
       && action.executorId === OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_EXECUTOR_ID) {
       if (!playerControlRelationshipRulesEnabled
@@ -7551,6 +7607,17 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function instantiate(state, domain, parameters, options = {}) {
     if (!object(state) || !object(domain)) fail("RULE_RUNTIME_PARAMETER_DOMAIN_INVALID");
+    if (domain.parameterKind === OFFICIAL_DICE_TEST_MODIFIER_RULES_PARAMETER_KIND) {
+      if (!diceTestModifierRulesEnabled
+        || domain.executorId !== OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_ID
+        || domain.executorVersion !== OFFICIAL_DICE_TEST_MODIFIER_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain, OFFICIAL_DICE_TEST_MODIFIER_RULES_ACTION_ATOM_IDS);
+      return instantiateOfficialDiceTestModifierRulesV1(
+        state, domain, parameters, { matchBinding: options.matchBinding },
+      );
+    }
     if (domain.parameterKind
       === OFFICIAL_PLAYER_CONTROL_RELATIONSHIP_RULES_PARAMETER_KIND) {
       if (!playerControlRelationshipRulesEnabled

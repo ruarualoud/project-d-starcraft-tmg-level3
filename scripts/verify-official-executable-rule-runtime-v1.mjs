@@ -399,10 +399,17 @@ const historicalModelBaseGeometryRulesSliceReport = JSON.parse(await readFile(
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalPlayerControlRelationshipRulesSliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-player-control-relationship-rules-rule-slice-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-dice-test-modifier-rules-rule-slice-v1-report.json",
   ),
   "utf8",
 ));
@@ -700,8 +707,12 @@ const historicalElevationEffectiveSizeRulesSlice =
   historicalElevationEffectiveSizeRulesSliceReport.slice;
 const historicalSpecialTerrainRulesSlice = historicalSpecialTerrainRulesSliceReport.slice;
 const historicalModelBaseGeometryRulesSlice = historicalModelBaseGeometryRulesSliceReport.slice;
+const historicalPlayerControlRelationshipRulesSlice =
+  historicalPlayerControlRelationshipRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalPlayerControlRelationshipRulesSlice.sliceHash);
+assert.equal(historicalPlayerControlRelationshipRulesSlice.previousSliceHash,
   historicalModelBaseGeometryRulesSlice.sliceHash);
 assert.equal(historicalModelBaseGeometryRulesSlice.previousSliceHash,
   historicalSpecialTerrainRulesSlice.sliceHash);
@@ -862,26 +873,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 627);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 399);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 645);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 381);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 627,
-    newlyExecutableRuleAtoms: 15,
-    reviewRequiredRuleAtoms: 285,
+    executableRuleAtoms: 645,
+    newlyExecutableRuleAtoms: 18,
+    reviewRequiredRuleAtoms: 267,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 627,
+    strictCompleteAtoms: 645,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 57,
+    declaredStateContractExecutors: 58,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "b3e9b3984e81b98da204e8fc75b046c6bd4329c8758a0b4063365213d7cd901f",
+    "81fce5be2083d1c54375f1c358b7c2653b7c62af6226c9dc5808616c8b828df4",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1147,6 +1158,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     manifestById.get("authority.player-control-relationship-rules-v1").actionTypes,
     ["resolve_player_control_relationship_rules_procedure"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.dice-test-modifier-rules-v1").actionTypes,
+    ["resolve_dice_test_modifier_rules_procedure"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -1358,11 +1373,11 @@ const report = {
     crossTimeReplayResult: failures.length ? "failed" : "official_runtime_receipt_replay_passed",
     promotions: [],
     blocks: [
-      "remaining_285_actionable_rule_atoms_not_executable",
+      "remaining_267_actionable_rule_atoms_not_executable",
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 285,
+    remainingRuleGaps: 267,
   },
   harness: {
     harnessLoopUsed: true,

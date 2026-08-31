@@ -60,7 +60,7 @@ const ACTION_FIELDS = Object.freeze([
   "initiativeResolutionHash", "initiativeResolution",
     "startOfRoundResolutionHash", "startOfRoundResolution", "pendingAttackHash",
   "deployPlan", "movePlan", "disengagePlan", "flyingRulesPlan", "terrainLosRulesPlan",
-  "playerControlRelationshipPlan",
+  "playerControlRelationshipPlan", "diceTestModifierPlan",
   "domainId",
   "specialistLoadoutPlan",
   "attackProfileKey", "attackProfileHash", "attackProfileV2Hash",
@@ -1403,7 +1403,12 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     const indirectFireKeys = [...legacyKeys, "indirectFireEvade"];
     const initiativeKeys = ["initiativePlayer1", "initiativePlayer2"];
     const chargeKeys = ["charge"];
+    const diceRulesKeys = [
+      "testInitial", "testReroll", "generatedValue", "invalidDieReroll",
+    ];
     const observedKeys = Object.keys(chance.layout);
+    const diceRulesLayout = observedKeys.length === diceRulesKeys.length
+      && diceRulesKeys.every((key) => observedKeys.includes(key));
     const chargeLayout = observedKeys.length === chargeKeys.length
       && chargeKeys.every((key) => observedKeys.includes(key));
     const initiativeLayout = observedKeys.length === initiativeKeys.length
@@ -1411,10 +1416,13 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     const indirectFireLayout = observedKeys.includes("indirectFireEvade")
       && observedKeys.every((key) => indirectFireKeys.includes(key));
     const legacyLayout = observedKeys.every((key) => legacyKeys.includes(key));
-    if (!chargeLayout && !initiativeLayout && !indirectFireLayout && !legacyLayout) {
+    if (!diceRulesLayout && !chargeLayout && !initiativeLayout
+      && !indirectFireLayout && !legacyLayout) {
       throw new AuthorityError("CHANCE_SPEC_INVALID", "chance layout kind is invalid");
     }
-    const layoutKeys = chargeLayout
+    const layoutKeys = diceRulesLayout
+      ? diceRulesKeys
+      : chargeLayout
       ? chargeKeys
       : initiativeLayout
         ? initiativeKeys

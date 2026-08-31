@@ -18,7 +18,7 @@ This roadmap started from the Slice 74 denominator:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-09-01: Slices 75–88 are complete for their exact bounded denominators. The current ledger is `627` executable, `285` review-required, and `114` retained display-only RuleAtoms; `23` planned slices, Slice 89 through Slice 111, remain. The machine-verifiable v2 partition closes at `912/0/114`, with zero missing, duplicate, or unknown atom IDs. Any future regrouping must version this route and preserve the exact denominator rather than editing counts silently.
+Execution status on 2026-09-01: Slices 75–89 are complete for their exact bounded denominators. The current ledger is `645` executable, `267` review-required, and `114` retained display-only RuleAtoms; `22` planned slices, Slice 90 through Slice 111, remain. The machine-verifiable v2 partition closes at `912/0/114`, with zero missing, duplicate, or unknown atom IDs. Any future regrouping must version this route and preserve the exact denominator rather than editing counts silently.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -68,7 +68,7 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 86 | **Complete:** Grass, impassable terrain, Access Point, Ramp, and residual Gap primitives | 13 | 591 | 321 |
 | 87 | **Complete:** Model/base geometry, measurement, coherency placement, Within and Wholly Within | 21 | 612 | 300 |
 | 88 | **Complete:** Player/Unit ownership, active/controller authority, friendly/enemy/team identity, specific-over-general | 15 | 627 | 285 |
-| 89 | Dice, re-rolls, tests, generated values, modifiers, Buff and Debuff arithmetic | 18 | 645 | 267 |
+| 89 | **Complete:** Dice, re-rolls, tests, generated values, modifiers, Buff and Debuff arithmetic | 18 | 645 | 267 |
 | 90 | Keyword and Special Ability primitives, non-stacking, targeting structure, Repeatable | 13 | 658 | 254 |
 | 91 | Passive/Reaction timing, simultaneous priority, and end-of-round effect order | 6 | 664 | 248 |
 | 92 | Faction/Tactical card layout, uniqueness, purchase resource, and excess-resource loss | 7 | 671 | 241 |
@@ -168,6 +168,12 @@ The kernel measures nearest physical base/token/marker edges in inches, allows u
 Slice 88 consumes the exact 15-atom route-v2 assignment and adds `authority.player-control-relationship-rules-v1@1.0.0`. A rules-owned registry separates legal ownership from current control across Player, Team, Army, Unit, Model, Token and Card identities. The kernel derives Active Player and Controlling Player authority, assigns decisions and dice to the current controller, preserves legal ownership during transferred control, and computes Friendly/Enemy/team relationships for arbitrary player and team counts.
 
 The same relationship result feeds Friendly rule use, Enemy targeting, mission consumers and the general Friendly-attack prohibition. A content-hashed Unit Card, Mission Card or Special Ability claim can override the Core rule only as an explicit contradictory specific rule; disagreeing equal-specificity claims fail closed. Client-supplied controller, relationship and precedence truth are rejected. Focused `35/35`, runtime `10/10`, aggregate `10/10`, graph 9,910/29,232 and contracts 57/57 pass. Counts advance `612/300/114 → 627/285/114`; 23 slices and 285 actionable atoms remain. The report is `docs/ticket-11-slice-88-player-control-relationship-rules-2026-09-01.md`.
+
+## Slice 89 dice/test/modifier closure
+
+Slice 89 consumes the exact 18-atom route-v2 assignment and adds `authority.dice-test-modifier-rules-v1@1.0.0`. A rules-owned modifier registry applies positive/Buff reductions and negative/Debuff increases before a test, clamps the result to `2+..6+`, accumulates different named sources and rejects unproven same-name implicit stacking. Null capabilities cannot roll. Characteristic and Attribute tests remain distinct, while generated `D3`/`D6` values with fixed additions are explicitly not tests or target-number modifiers.
+
+The Authority path commits the initial roll before opening a keep/reroll pending choice. A reroll has an independent chance commitment and must replace the original even when worse. Physical invalid-die agreement/replacement is represented without pretending a digital referee die can be cocked. Client-supplied totals, results and validity truth fail closed. Focused `49/49`, runtime `10/10`, aggregate `10/10`, graph 10,052/29,464 and contracts 58/58 pass. Counts advance `627/285/114 → 645/267/114`; 22 slices and 267 actionable atoms remain. The report is `docs/ticket-11-slice-89-dice-test-modifier-rules-2026-09-01.md`.
 
 ## Remaining route v2 ID-level closure
 
