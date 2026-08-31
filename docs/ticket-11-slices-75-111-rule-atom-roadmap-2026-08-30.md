@@ -13,7 +13,7 @@ This roadmap partitions the current Slice 74 denominator exactly:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-08-31: Slices 75–81 are complete for their declared bounded denominators. The current ledger is `510` executable, `402` review-required, and `114` retained display-only RuleAtoms; `30` planned slices, Slice 82 through Slice 111, remain.
+Execution status on 2026-08-31: Slices 75–82 are complete for their declared bounded denominators. The current ledger is `525` executable, `387` review-required, and `114` retained display-only RuleAtoms; `29` planned slices, Slice 83 through Slice 111, remain.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -56,7 +56,7 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 79 | **Complete:** attack-pool edges: reduced dice, mixed modifiers/range batches, Hits X, three-pool/bypass/Surge mismatch, Concentrated Fire, Tough, visible-casualty caps | 13 | 493 | 419 |
 | 80 | **Complete:** Close Combat lifecycle: marker removal, Evade, freed-unit state/Reaction exception, Surge target, multiple enemies, engagement range | 8 | 501 | 411 |
 | 81 | **Complete:** Direct movement and Displacement | 9 | 510 | 402 |
-| 82 | Gap clearance and Place geometry | 15 | 525 | 387 |
+| 82 | **Complete:** Gap clearance and Place geometry | 15 | 525 | 387 |
 | 83 | Flying movement/combat, flight-stand measurement, and flying coherency | 24 | 549 | 363 |
 | 84 | Terrain footprint, blocking/direct/full cover, dead zones, leading-model LoS, visibility | 19 | 568 | 344 |
 | 85 | Elevation, terrain stacking, high/mid ground, effective Size, and flying cover | 15 | 583 | 329 |
@@ -121,5 +121,13 @@ Three Long Range atoms originally counted as new were already executable in Rang
 ## Slice 80 Close Combat lifecycle closure
 
 Slice 80 adds `authority.close-combat-lifecycle-v1@1.0.0` and promotes the exact eight remaining lifecycle atoms. The parameter domain exposes every Enemy Unit that the acting Unit may legally attack, deriving Fighting and Supporting Ranks separately for each target; Melee `E` binds to the one-inch Engagement Range. Apply resolves target-tag Surge and only explicitly granted Close Combat Evade, removes the Combat Activation Marker, recomputes engagement after casualties, and distinguishes an unactivated freed Unit's effective Pass from its retained Reaction/specific-trigger exception. Rules-relevant geometry drift invalidates the action, while Authority-added display defaults do not. Focused `20/20`, runtime `10/10`, aggregate `10/10`, graph 8,944/27,655 and contracts 49/49 pass. The report is `docs/ticket-11-slice-80-close-combat-lifecycle-2026-08-30.md`.
+
+## Slice 81 Direct movement and Displacement closure
+
+Slice 81 adds `authority.direct-movement-displacement-v1@1.0.0` and promotes the exact nine Core 4.5 / Core 11 atoms. It resolves the Rules-owned leading/reference model, direct vector, shortest certified bypass, non-strict Towards/Away endpoint, battlefield-edge stop, arbitrary remaining-model plan, and DISPLACEMENT contact-before-nearest result. Focused `20/20`, runtime `10/10`, aggregate `10/10`, graph 9,017/27,770 and contracts 50/50 pass. The report is `docs/ticket-11-slice-81-direct-movement-displacement-2026-08-31.md`.
+
+## Slice 82 Gap clearance and Place geometry closure
+
+Slice 82 adds `authority.gap-place-geometry-v1@1.0.0` plus a reusable pure geometry kernel and promotes the exact nine Core 4.6 Gap atoms and six Core 11 `PLACE (X)` atoms. Gap width is derived from physical model/terrain boundary points crossed by the actual path; Size 0–2 uses the one-inch threshold, Size 3+ uses three inches, terrain openings require the setup agreement, and Flying ignores transit clearance but never endpoint fit. Place nominates the Leading Model, enforces its distance, resets every remaining model with a valid coherency link, ignores transit path/Gap/elevation requirements, enforces legal enemy-separated endpoints, and applies the Assault engagement exception. Focused `25/25`, runtime `10/10`, aggregate `10/10`, graph 9,125/27,939 and contracts 51/51 pass. General terrain/elevation, arbitrary model/base shapes, and general Unit-card geometry bindings remain production-quarantined for Slices 84, 85, 87 and 93. The report is `docs/ticket-11-slice-82-gap-place-geometry-2026-08-31.md`.
 
 No Skill, DSH, MuZero, self-play, memory, or training-truth promotion is part of these RuleAtom slices.
