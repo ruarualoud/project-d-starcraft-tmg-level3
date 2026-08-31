@@ -406,10 +406,17 @@ const historicalPlayerControlRelationshipRulesSliceReport = JSON.parse(await rea
   ),
   "utf8",
 ));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalDiceTestModifierRulesSliceReport = JSON.parse(await readFile(
   path.join(
     OUTPUT_DIR,
     "official-dice-test-modifier-rules-rule-slice-v1-report.json",
+  ),
+  "utf8",
+));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(
+    OUTPUT_DIR,
+    "official-keyword-special-ability-rules-rule-slice-v1-report.json",
   ),
   "utf8",
 ));
@@ -709,8 +716,12 @@ const historicalSpecialTerrainRulesSlice = historicalSpecialTerrainRulesSliceRep
 const historicalModelBaseGeometryRulesSlice = historicalModelBaseGeometryRulesSliceReport.slice;
 const historicalPlayerControlRelationshipRulesSlice =
   historicalPlayerControlRelationshipRulesSliceReport.slice;
+const historicalDiceTestModifierRulesSlice =
+  historicalDiceTestModifierRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalDiceTestModifierRulesSlice.sliceHash);
+assert.equal(historicalDiceTestModifierRulesSlice.previousSliceHash,
   historicalPlayerControlRelationshipRulesSlice.sliceHash);
 assert.equal(historicalPlayerControlRelationshipRulesSlice.previousSliceHash,
   historicalModelBaseGeometryRulesSlice.sliceHash);
@@ -873,26 +884,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 645);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 381);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 658);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 368);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 645,
-    newlyExecutableRuleAtoms: 18,
-    reviewRequiredRuleAtoms: 267,
+    executableRuleAtoms: 658,
+    newlyExecutableRuleAtoms: 13,
+    reviewRequiredRuleAtoms: 254,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 645,
+    strictCompleteAtoms: 658,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 58,
+    declaredStateContractExecutors: 59,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "81fce5be2083d1c54375f1c358b7c2653b7c62af6226c9dc5808616c8b828df4",
+    "a4fa8535bdc155f645cc1fe1fecf645794c493f7a566500a9543726473067916",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1162,6 +1173,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     manifestById.get("authority.dice-test-modifier-rules-v1").actionTypes,
     ["resolve_dice_test_modifier_rules_procedure"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.keyword-special-ability-rules-v1").actionTypes,
+    ["resolve_keyword_special_ability_rules_procedure"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -1373,11 +1388,11 @@ const report = {
     crossTimeReplayResult: failures.length ? "failed" : "official_runtime_receipt_replay_passed",
     promotions: [],
     blocks: [
-      "remaining_267_actionable_rule_atoms_not_executable",
+      "remaining_254_actionable_rule_atoms_not_executable",
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 267,
+    remainingRuleGaps: 254,
   },
   harness: {
     harnessLoopUsed: true,

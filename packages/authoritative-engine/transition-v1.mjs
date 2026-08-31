@@ -60,7 +60,7 @@ const ACTION_FIELDS = Object.freeze([
   "initiativeResolutionHash", "initiativeResolution",
     "startOfRoundResolutionHash", "startOfRoundResolution", "pendingAttackHash",
   "deployPlan", "movePlan", "disengagePlan", "flyingRulesPlan", "terrainLosRulesPlan",
-  "playerControlRelationshipPlan", "diceTestModifierPlan",
+  "playerControlRelationshipPlan", "diceTestModifierPlan", "keywordSpecialAbilityPlan",
   "domainId",
   "specialistLoadoutPlan",
   "attackProfileKey", "attackProfileHash", "attackProfileV2Hash",

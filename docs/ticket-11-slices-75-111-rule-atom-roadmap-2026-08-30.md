@@ -175,6 +175,12 @@ Slice 89 consumes the exact 18-atom route-v2 assignment and adds `authority.dice
 
 The Authority path commits the initial roll before opening a keep/reroll pending choice. A reroll has an independent chance commitment and must replace the original even when worse. Physical invalid-die agreement/replacement is represented without pretending a digital referee die can be cocked. Client-supplied totals, results and validity truth fail closed. Focused `49/49`, runtime `10/10`, aggregate `10/10`, graph 10,052/29,464 and contracts 58/58 pass. Counts advance `627/285/114 → 645/267/114`; 22 slices and 267 actionable atoms remain. The report is `docs/ticket-11-slice-89-dice-test-modifier-rules-2026-09-01.md`.
 
+## Slice 90 keyword/special-ability primitive closure
+
+Slice 90 consumes the exact 13-atom route-v2 assignment and adds `authority.keyword-special-ability-rules-v1@1.0.0`. The unchanged official lock compiles 76 glossary definitions and 201 current Special Ability instances across Unit, Tactical and Faction cards. Keyword uses bind official meaning, bold-capitals format, same-keyword non-stacking and numeric-highest selection. Special Abilities bind an official Active/Passive/Reaction category, targeted versus untargeted versus Token/Marker placement semantics, and one effective identical-definition same-name effect; different-definition name conflicts fail closed.
+
+Repeatable is derived from official ability text rather than a client flag and still requires every Cost and trigger. The Authority path exposes only complete certified primitive resolutions and retains individual ability effects and detailed Passive/Reaction timing for their own atomic slices. Focused `45/45`, runtime `10/10`, aggregate `10/10`, graph 10,158/29,632 and contracts 59/59 pass. Counts advance `645/267/114 → 658/254/114`; 21 slices and 254 actionable atoms remain. The report is `docs/ticket-11-slice-90-keyword-special-ability-rules-2026-09-01.md`.
+
 ## Remaining route v2 ID-level closure
 
 The post-Slice85 audit no longer relies on prose labels plus arithmetic. `packages/rule-atoms/official-remaining-rule-atom-route-v2.mjs` binds the exact Slice85 catalogue hash and emits the resolved atom IDs for every Slice86–111 assignment. Its `334/334` partition has zero missing, duplicate, or unknown IDs and projects exactly `912/0/114` after Slice111.
