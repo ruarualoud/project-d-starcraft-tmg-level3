@@ -187,6 +187,12 @@ Slice 91 consumes the exact six-atom route-v2 assignment and adds `authority.abi
 
 End of Round order resolves every First Player effect before the opponent group, preserves each player's exact order and requires a full prior-effect receipt before advancing. This is an ordering certificate, not a claim that arbitrary card effects are implemented; frozen End of Round v1–v5 executors remain unchanged. Focused `40/40`, runtime `10/10`, aggregate `10/10`, graph 10,220/29,740 and contracts 60/60 pass. Counts advance `658/254/114 → 664/248/114`; 20 slices and 248 actionable atoms remain. The report is `docs/ticket-11-slice-91-ability-timing-priority-rules-2026-09-01.md`.
 
+## Slice 92 card build and ability payment closure
+
+Slice 92 consumes the exact seven-atom route-v2 assignment and adds `authority.card-build-payment-rules-v1@1.0.0`. The unchanged official lock compiles all 37 current Faction/Tactical records into Rules-owned names, types, Unique markings, Race/Sub-Faction tags, Army slots, CP/BM/PE values, Vespene costs and ability-definition hashes. Malignant Creep resolves through the Kerrigan's Swarm Faction relationship to Zerg/BM. Tactical purchase uses exact Vespene cost and slots while full Faction eligibility and total budget remain explicitly deferred to Slices 102 and 103.
+
+Complete army-card sets enforce one copy of each Unique card and allow non-Unique duplicates. Complete ability-payment sets require Ready matching CP/BM/PE cards and full Cost; over-generation is lost with zero retained and cannot fund another ability. The certificate marks exhaustion without executing arbitrary effects, and old ability executors remain frozen. Focused `42/42`, runtime `10/10`, aggregate `10/10`, graph 10,285/29,847 and contracts 61/61 pass. Counts advance `664/248/114 → 671/241/114`; 19 slices and 241 actionable atoms remain. The report is `docs/ticket-11-slice-92-card-build-payment-rules-2026-09-01.md`.
+
 ## Remaining route v2 ID-level closure
 
 The post-Slice85 audit no longer relies on prose labels plus arithmetic. `packages/rule-atoms/official-remaining-rule-atom-route-v2.mjs` binds the exact Slice85 catalogue hash and emits the resolved atom IDs for every Slice86–111 assignment. Its `334/334` partition has zero missing, duplicate, or unknown IDs and projects exactly `912/0/114` after Slice111.

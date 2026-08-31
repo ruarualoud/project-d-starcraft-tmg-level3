@@ -61,7 +61,7 @@ const ACTION_FIELDS = Object.freeze([
     "startOfRoundResolutionHash", "startOfRoundResolution", "pendingAttackHash",
   "deployPlan", "movePlan", "disengagePlan", "flyingRulesPlan", "terrainLosRulesPlan",
   "playerControlRelationshipPlan", "diceTestModifierPlan", "keywordSpecialAbilityPlan",
-  "abilityTimingPriorityPlan",
+  "abilityTimingPriorityPlan", "cardBuildPaymentPlan",
   "domainId",
   "specialistLoadoutPlan",
   "attackProfileKey", "attackProfileHash", "attackProfileV2Hash",
@@ -645,7 +645,17 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry.executorId,
     entry,
   ]));
-  const actionSchemaVersion = runtimeExecutors.has("authority.academy-medic-ability-v2")
+  const actionSchemaVersion = runtimeExecutors.has("authority.card-build-payment-rules-v1")
+    ? "hybrid_legal_space_v30"
+    : runtimeExecutors.has("authority.ability-timing-priority-rules-v1")
+    ? "hybrid_legal_space_v29"
+    : runtimeExecutors.has("authority.keyword-special-ability-rules-v1")
+    ? "hybrid_legal_space_v28"
+    : runtimeExecutors.has("authority.dice-test-modifier-rules-v1")
+    ? "hybrid_legal_space_v27"
+    : runtimeExecutors.has("authority.player-control-relationship-rules-v1")
+    ? "hybrid_legal_space_v26"
+    : runtimeExecutors.has("authority.academy-medic-ability-v2")
     ? "hybrid_legal_space_v25"
     : runtimeExecutors.has("authority.medic-medpack-active-v2")
     ? "hybrid_legal_space_v24"

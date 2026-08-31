@@ -78,5 +78,6 @@ Hashes:
 
 Slice 92 contains seven exact atoms for Faction/Tactical Card name/layout,
 Faction Tags, Army slots, purchase, the Unique single-copy limit and loss of
-excess resources after purchase. Its target is
+excess resources generated while paying an ability Cost. Excess-resource loss
+is not a Tactical Card purchase rule. Its target is
 `671 executable / 241 review / 114 display-only`.
