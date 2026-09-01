@@ -1299,6 +1299,18 @@ import {
   OFFICIAL_UNIT_CARD_SUPPLY_RULES_PARAMETER_KIND,
   OFFICIAL_UNIT_CARD_SUPPLY_RULES_TRANSITION_SCHEMA,
 } from "./official-unit-card-supply-rules-executor-v1.mjs";
+import {
+  applyOfficialRoundPhaseActivationRulesV1,
+  enumerateOfficialRoundPhaseActivationRulesV1,
+  instantiateOfficialRoundPhaseActivationRulesV1,
+  OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_ACTION_ATOM_IDS,
+  OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_ACTION_TYPE,
+  OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_ATOM_IDS,
+  OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_ID,
+  OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_VERSION,
+  OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_PARAMETER_KIND,
+  OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_TRANSITION_SCHEMA,
+} from "./official-round-phase-activation-rules-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -2066,6 +2078,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_UNIT_CARD_SUPPLY_RULES_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_ID,
+    executorVersion: OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -2161,6 +2179,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_ABILITY_TIMING_PRIORITY_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_CARD_BUILD_PAYMENT_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_UNIT_CARD_SUPPLY_RULES_EXECUTOR_ATOM_IDS,
+  ...OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -2275,6 +2294,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_UNIT_CARD_SUPPLY_RULES_EXECUTOR_ID,
     OFFICIAL_UNIT_CARD_SUPPLY_RULES_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_ID,
+    OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_ATOM_IDS,
   ],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
@@ -2921,6 +2944,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const unitCardSupplyRulesEnabled = enabledExecutorIds.has(
     OFFICIAL_UNIT_CARD_SUPPLY_RULES_EXECUTOR_ID,
   );
+  const roundPhaseActivationRulesEnabled = enabledExecutorIds.has(
+    OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_ID,
+  );
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -3237,6 +3263,8 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           ? [OFFICIAL_CARD_BUILD_PAYMENT_RULES_PARAMETER_KIND] : []),
         ...(unitCardSupplyRulesEnabled
           ? [OFFICIAL_UNIT_CARD_SUPPLY_RULES_PARAMETER_KIND] : []),
+        ...(roundPhaseActivationRulesEnabled
+          ? [OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_PARAMETER_KIND] : []),
         ...(disengageV5Enabled
           ? [OFFICIAL_DISENGAGE_V5_PARAMETER_KIND]
           : disengageV4Enabled
@@ -3290,6 +3318,21 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     const includeDisabled = options.includeDisabled === true;
     const candidates = [];
     const parameterDomains = [];
+    if (roundPhaseActivationRulesEnabled
+      && state.pendingAction?.schema
+        === "starcraft_tmg_official_round_phase_activation_rules_pending_v1") {
+      const staged = enumerateOfficialRoundPhaseActivationRulesV1(state, {
+        sideKey, includeDisabled, matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state), terminal: null,
+        candidates: staged.candidates, parameterDomains: staged.parameterDomains,
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
+      });
+    }
     if (unitCardSupplyRulesEnabled
       && state.pendingAction?.schema
         === "starcraft_tmg_official_unit_card_supply_rules_pending_v1") {
@@ -4739,6 +4782,19 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function apply(state, action, options = {}) {
     if (!object(state) || !object(action)) fail("RULE_RUNTIME_ACTION_INVALID");
+    if (action.actionType === OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_ACTION_TYPE
+      && action.executorId === OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_ID) {
+      if (!roundPhaseActivationRulesEnabled
+        || action.executorVersion
+          !== OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action,
+        OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_ACTION_ATOM_IDS);
+      return applyOfficialRoundPhaseActivationRulesV1(state, action, {
+        matchBinding: options.matchBinding,
+      });
+    }
     if (action.actionType === OFFICIAL_UNIT_CARD_SUPPLY_RULES_ACTION_TYPE
       && action.executorId === OFFICIAL_UNIT_CARD_SUPPLY_RULES_EXECUTOR_ID) {
       if (!unitCardSupplyRulesEnabled
@@ -7834,6 +7890,20 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function instantiate(state, domain, parameters, options = {}) {
     if (!object(state) || !object(domain)) fail("RULE_RUNTIME_PARAMETER_DOMAIN_INVALID");
+    if (domain.parameterKind
+      === OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_PARAMETER_KIND) {
+      if (!roundPhaseActivationRulesEnabled
+        || domain.executorId !== OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_ID
+        || domain.executorVersion
+          !== OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain,
+        OFFICIAL_ROUND_PHASE_ACTIVATION_RULES_ACTION_ATOM_IDS);
+      return instantiateOfficialRoundPhaseActivationRulesV1(
+        state, domain, parameters, { matchBinding: options.matchBinding },
+      );
+    }
     if (domain.parameterKind === OFFICIAL_UNIT_CARD_SUPPLY_RULES_PARAMETER_KIND) {
       if (!unitCardSupplyRulesEnabled
         || domain.executorId !== OFFICIAL_UNIT_CARD_SUPPLY_RULES_EXECUTOR_ID

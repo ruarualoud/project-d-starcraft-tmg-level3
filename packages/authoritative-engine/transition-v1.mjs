@@ -645,7 +645,9 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry.executorId,
     entry,
   ]));
-  const actionSchemaVersion = runtimeExecutors.has("authority.unit-card-supply-rules-v1")
+  const actionSchemaVersion = runtimeExecutors.has("authority.round-phase-activation-rules-v1")
+    ? "hybrid_legal_space_v32"
+    : runtimeExecutors.has("authority.unit-card-supply-rules-v1")
     ? "hybrid_legal_space_v31"
     : runtimeExecutors.has("authority.card-build-payment-rules-v1")
     ? "hybrid_legal_space_v30"
