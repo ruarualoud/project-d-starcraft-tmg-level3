@@ -1479,6 +1479,17 @@ import {
   OFFICIAL_BALANCED_TERRAIN_RULES_PARAMETER_KIND,
   OFFICIAL_BALANCED_TERRAIN_RULES_TRANSITION_SCHEMA,
 } from "./official-balanced-terrain-rules-executor-v1.mjs";
+import {
+  applyOfficialBattlefieldTokenMarkerRulesV1,
+  enumerateOfficialBattlefieldTokenMarkerRulesV1,
+  OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_ACTION_ATOM_IDS,
+  OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_ACTION_TYPE,
+  OFFICIAL_BATTLEFIELD_TOKEN_MARKER_CLEANUP_ACTION_TYPE,
+  OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ATOM_IDS,
+  OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ID,
+  OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_VERSION,
+  OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_TRANSITION_SCHEMA,
+} from "./official-battlefield-token-marker-rules-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -2340,6 +2351,15 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_BALANCED_TERRAIN_RULES_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ID,
+    executorVersion: OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([
+      OFFICIAL_BATTLEFIELD_TOKEN_MARKER_CLEANUP_ACTION_TYPE,
+      OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_ACTION_TYPE,
+    ].sort()),
+    transitionSchema: OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -2450,6 +2470,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_DEPLOYMENT_GEOMETRY_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ATOM_IDS,
+  ...OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -2624,6 +2645,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ID,
     OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ID,
+    OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ATOM_IDS,
   ],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
@@ -3315,6 +3340,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const balancedTerrainRulesEnabled = enabledExecutorIds.has(
     OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ID,
   );
+  const battlefieldTokenMarkerRulesEnabled = enabledExecutorIds.has(
+    OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ID,
+  );
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -3764,6 +3792,42 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         rulesRuntimeHash: descriptor.runtimeHash,
         stateSummary: stateSummary(state), terminal: null,
         candidates: staged.candidates, parameterDomains: staged.parameterDomains,
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
+      });
+    }
+    if (battlefieldTokenMarkerRulesEnabled
+      && state.rulesProcedureMode === true
+      && state.phase === "pre_game"
+      && state.officialBattlefieldSetup?.stage
+        === "terrain_and_mission_markers_complete_ticket_11_slice_109_pending"
+      && state.officialBattlefieldTokenMarkerRulesDataBundle
+      && state.officialDeploymentGeometryBinding
+      && !state.officialBattlefieldTokenMarkerRegistry) {
+      const staged = enumerateOfficialBattlefieldTokenMarkerRulesV1(state, {
+        sideKey, includeDisabled, matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state), terminal: null,
+        candidates: staged, parameterDomains: [],
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
+      });
+    }
+    if (battlefieldTokenMarkerRulesEnabled
+      && state.phase === "cleanup"
+      && state.officialBattlefieldTokenMarkerRegistry
+      && Number(state.lastBattlefieldTokenMarkerCleanupRound) !== Number(state.round)) {
+      const staged = enumerateOfficialBattlefieldTokenMarkerRulesV1(state, {
+        sideKey, includeDisabled, matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state), terminal: null,
+        candidates: staged, parameterDomains: [],
         legalSpaceComplete: descriptor.legalSpaceComplete,
         developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
       });
@@ -5444,6 +5508,21 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       }
       assertActionLineage(action, OFFICIAL_BALANCED_TERRAIN_RULES_ACTION_ATOM_IDS);
       return applyOfficialBalancedTerrainRulesV1(state, action, {
+        matchBinding: options.matchBinding,
+      });
+    }
+    if ([OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_ACTION_TYPE,
+      OFFICIAL_BATTLEFIELD_TOKEN_MARKER_CLEANUP_ACTION_TYPE]
+      .includes(action.actionType)
+      && action.executorId === OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ID) {
+      if (!battlefieldTokenMarkerRulesEnabled
+        || action.executorVersion
+          !== OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action,
+        OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_ACTION_ATOM_IDS);
+      return applyOfficialBattlefieldTokenMarkerRulesV1(state, action, {
         matchBinding: options.matchBinding,
       });
     }

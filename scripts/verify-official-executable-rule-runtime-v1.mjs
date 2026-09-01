@@ -475,9 +475,12 @@ const historicalMissionDeploymentDraftRulesSliceReport = JSON.parse(await readFi
 const historicalDeploymentGeometryRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-deployment-geometry-rules-rule-slice-v1-report.json"), "utf8"));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalBalancedTerrainRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-balanced-terrain-rules-rule-slice-v1-report.json"), "utf8"));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(OUTPUT_DIR,
+    "official-battlefield-token-marker-rules-rule-slice-v1-report.json"), "utf8"));
 
 function clone(value) {
   return structuredClone(value);
@@ -809,8 +812,12 @@ const historicalMissionDeploymentDraftRulesSlice =
   historicalMissionDeploymentDraftRulesSliceReport.slice;
 const historicalDeploymentGeometryRulesSlice =
   historicalDeploymentGeometryRulesSliceReport.slice;
+const historicalBalancedTerrainRulesSlice =
+  historicalBalancedTerrainRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalBalancedTerrainRulesSlice.sliceHash);
+assert.equal(historicalBalancedTerrainRulesSlice.previousSliceHash,
   historicalDeploymentGeometryRulesSlice.sliceHash);
 assert.equal(historicalDeploymentGeometryRulesSlice.previousSliceHash,
   historicalMissionDeploymentDraftRulesSlice.sliceHash);
@@ -1011,26 +1018,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 883);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 143);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 894);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 132);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 883,
-    newlyExecutableRuleAtoms: 17,
-    reviewRequiredRuleAtoms: 29,
+    executableRuleAtoms: 894,
+    newlyExecutableRuleAtoms: 11,
+    reviewRequiredRuleAtoms: 18,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 883,
+    strictCompleteAtoms: 894,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 77,
+    declaredStateContractExecutors: 78,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "06b7599333f098daa7741e8607ec57ceb562d1af5194661b2d18b42d5b62d1ce",
+    "1b59d0467d49145fa81f2ffb7de70a33f1db033d76078f439dbdef64775579c8",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1344,6 +1351,11 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     manifestById.get("authority.balanced-terrain-rules-v1").actionTypes,
     ["materialize_balanced_terrain_setup"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.battlefield-token-marker-rules-v1").actionTypes,
+    ["cleanup_battlefield_tokens_and_markers",
+      "materialize_battlefield_token_marker_registry"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -1366,7 +1378,7 @@ await check("authority_health_and_match_binding_expose_the_runtime_identity", ()
     envelope.matchBinding.dependencies.actionSchema.contentHash,
     hashStarcraftTmgContract({
       kind: "action-schema",
-      schemaVersion: "hybrid_legal_space_v46",
+      schemaVersion: "hybrid_legal_space_v47",
     }),
   );
   assert.equal(envelope.matchBinding.productionReady, false);
