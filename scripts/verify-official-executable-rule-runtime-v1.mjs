@@ -445,9 +445,12 @@ const historicalReserveLifecycleRulesSliceReport = JSON.parse(await readFile(
 const historicalUnitDestructionLifecycleRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-unit-destruction-lifecycle-rules-rule-slice-v1-report.json"), "utf8"));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalStatusStayInPlayRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-status-stay-in-play-rules-rule-slice-v1-report.json"), "utf8"));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(OUTPUT_DIR,
+    "official-hidden-burrowed-rules-rule-slice-v1-report.json"), "utf8"));
 
 function clone(value) {
   return structuredClone(value);
@@ -761,8 +764,12 @@ const historicalReserveLifecycleRulesSlice =
   historicalReserveLifecycleRulesSliceReport.slice;
 const historicalUnitDestructionLifecycleRulesSlice =
   historicalUnitDestructionLifecycleRulesSliceReport.slice;
+const historicalStatusStayInPlayRulesSlice =
+  historicalStatusStayInPlayRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalStatusStayInPlayRulesSlice.sliceHash);
+assert.equal(historicalStatusStayInPlayRulesSlice.previousSliceHash,
   historicalUnitDestructionLifecycleRulesSlice.sliceHash);
 assert.equal(historicalUnitDestructionLifecycleRulesSlice.previousSliceHash,
   historicalReserveLifecycleRulesSlice.sliceHash);
@@ -943,26 +950,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 729);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 297);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 747);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 279);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 729,
-    newlyExecutableRuleAtoms: 12,
-    reviewRequiredRuleAtoms: 183,
+    executableRuleAtoms: 747,
+    newlyExecutableRuleAtoms: 18,
+    reviewRequiredRuleAtoms: 165,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 729,
+    strictCompleteAtoms: 747,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 67,
+    declaredStateContractExecutors: 68,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "1f646eb170278090bfc7ac77e35d579fb7a13cb148ac90c53ed72fa9d90d69b9",
+    "f27befcc6168ce08c8f192f5b1a6364cfff47e8d9c419e61470afd3fa7c5ded0",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1286,7 +1293,7 @@ await check("authority_health_and_match_binding_expose_the_runtime_identity", ()
     envelope.matchBinding.dependencies.actionSchema.contentHash,
     hashStarcraftTmgContract({
       kind: "action-schema",
-      schemaVersion: "hybrid_legal_space_v36",
+      schemaVersion: "hybrid_legal_space_v37",
     }),
   );
   assert.equal(envelope.matchBinding.productionReady, false);
@@ -1475,11 +1482,11 @@ const report = {
     crossTimeReplayResult: failures.length ? "failed" : "official_runtime_receipt_replay_passed",
     promotions: [],
     blocks: [
-      "remaining_183_actionable_rule_atoms_not_executable",
+      "remaining_165_actionable_rule_atoms_not_executable",
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 183,
+    remainingRuleGaps: 165,
   },
   harness: {
     harnessLoopUsed: true,

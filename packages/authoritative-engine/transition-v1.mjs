@@ -93,6 +93,7 @@ const ACTION_FIELDS = Object.freeze([
   "nonLethalDamage", "speedBuff", "precision",
   "moveMode", "abilityChoice", "underlyingAction",
   "chargePlan", "chargePlanHash",
+  "hiddenBurrowedPlan",
 ]);
 
 class AuthorityError extends Error {
@@ -646,8 +647,10 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry,
   ]));
   const actionSchemaVersion = runtimeExecutors.has(
-    "authority.status-stay-in-play-rules-v1",
+    "authority.hidden-burrowed-rules-v1",
   )
+    ? "hybrid_legal_space_v37"
+    : runtimeExecutors.has("authority.status-stay-in-play-rules-v1")
     ? "hybrid_legal_space_v36"
     : runtimeExecutors.has(
     "authority.unit-destruction-lifecycle-rules-v1",
