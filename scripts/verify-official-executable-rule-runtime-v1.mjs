@@ -448,9 +448,12 @@ const historicalUnitDestructionLifecycleRulesSliceReport = JSON.parse(await read
 const historicalStatusStayInPlayRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-status-stay-in-play-rules-rule-slice-v1-report.json"), "utf8"));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalHiddenBurrowedRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-hidden-burrowed-rules-rule-slice-v1-report.json"), "utf8"));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(OUTPUT_DIR,
+    "official-summon-rules-rule-slice-v1-report.json"), "utf8"));
 
 function clone(value) {
   return structuredClone(value);
@@ -766,8 +769,12 @@ const historicalUnitDestructionLifecycleRulesSlice =
   historicalUnitDestructionLifecycleRulesSliceReport.slice;
 const historicalStatusStayInPlayRulesSlice =
   historicalStatusStayInPlayRulesSliceReport.slice;
+const historicalHiddenBurrowedRulesSlice =
+  historicalHiddenBurrowedRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalHiddenBurrowedRulesSlice.sliceHash);
+assert.equal(historicalHiddenBurrowedRulesSlice.previousSliceHash,
   historicalStatusStayInPlayRulesSlice.sliceHash);
 assert.equal(historicalStatusStayInPlayRulesSlice.previousSliceHash,
   historicalUnitDestructionLifecycleRulesSlice.sliceHash);
@@ -950,26 +957,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 747);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 279);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 760);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 266);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 747,
-    newlyExecutableRuleAtoms: 18,
-    reviewRequiredRuleAtoms: 165,
+    executableRuleAtoms: 760,
+    newlyExecutableRuleAtoms: 13,
+    reviewRequiredRuleAtoms: 152,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 747,
+    strictCompleteAtoms: 760,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 68,
+    declaredStateContractExecutors: 69,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "f27befcc6168ce08c8f192f5b1a6364cfff47e8d9c419e61470afd3fa7c5ded0",
+    "b09612c0d0978fee0e28782f0a64af0bc527375714d957f62a80388739aacd63",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1482,11 +1489,11 @@ const report = {
     crossTimeReplayResult: failures.length ? "failed" : "official_runtime_receipt_replay_passed",
     promotions: [],
     blocks: [
-      "remaining_165_actionable_rule_atoms_not_executable",
+      "remaining_152_actionable_rule_atoms_not_executable",
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 165,
+    remainingRuleGaps: 152,
   },
   harness: {
     harnessLoopUsed: true,
