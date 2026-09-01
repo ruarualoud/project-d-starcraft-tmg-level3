@@ -97,6 +97,7 @@ const ACTION_FIELDS = Object.freeze([
   "summonRulesPlan",
   "respawnMorphRulesPlan",
   "factionArmyEligibilityPlan",
+  "armyResourceBudgetPlan",
 ]);
 
 class AuthorityError extends Error {
@@ -650,8 +651,16 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry,
   ]));
   const actionSchemaVersion = runtimeExecutors.has(
-    "authority.hidden-burrowed-rules-v1",
+    "authority.army-resource-budget-rules-v1",
   )
+    ? "hybrid_legal_space_v41"
+    : runtimeExecutors.has("authority.faction-army-eligibility-rules-v1")
+    ? "hybrid_legal_space_v40"
+    : runtimeExecutors.has("authority.respawn-morph-rules-v1")
+    ? "hybrid_legal_space_v39"
+    : runtimeExecutors.has("authority.summon-rules-v1")
+    ? "hybrid_legal_space_v38"
+    : runtimeExecutors.has("authority.hidden-burrowed-rules-v1")
     ? "hybrid_legal_space_v37"
     : runtimeExecutors.has("authority.status-stay-in-play-rules-v1")
     ? "hybrid_legal_space_v36"
