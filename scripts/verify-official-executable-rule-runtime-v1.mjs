@@ -469,9 +469,12 @@ const historicalUnitCompositionUpgradeRulesSliceReport = JSON.parse(await readFi
 const historicalRosterDisclosureRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-roster-disclosure-rules-rule-slice-v1-report.json"), "utf8"));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalMissionDeploymentDraftRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-mission-deployment-draft-rules-rule-slice-v1-report.json"), "utf8"));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(OUTPUT_DIR,
+    "official-deployment-geometry-rules-rule-slice-v1-report.json"), "utf8"));
 
 function clone(value) {
   return structuredClone(value);
@@ -799,8 +802,12 @@ const historicalUnitCompositionUpgradeRulesSlice =
   historicalUnitCompositionUpgradeRulesSliceReport.slice;
 const historicalRosterDisclosureRulesSlice =
   historicalRosterDisclosureRulesSliceReport.slice;
+const historicalMissionDeploymentDraftRulesSlice =
+  historicalMissionDeploymentDraftRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalMissionDeploymentDraftRulesSlice.sliceHash);
+assert.equal(historicalMissionDeploymentDraftRulesSlice.previousSliceHash,
   historicalRosterDisclosureRulesSlice.sliceHash);
 assert.equal(historicalRosterDisclosureRulesSlice.previousSliceHash,
   historicalUnitCompositionUpgradeRulesSlice.sliceHash);
@@ -997,26 +1004,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 854);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 172);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 866);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 160);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 854,
-    newlyExecutableRuleAtoms: 21,
-    reviewRequiredRuleAtoms: 58,
+    executableRuleAtoms: 866,
+    newlyExecutableRuleAtoms: 12,
+    reviewRequiredRuleAtoms: 46,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 854,
+    strictCompleteAtoms: 866,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 75,
+    declaredStateContractExecutors: 76,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "d6beaea09a6426c523ae9d35ac1c83824fce26288f9ea257b32d92a1d1fcf23b",
+    "80a2723a52530b63c9d169dc2064b6bb009cccfce46550e0438e99cfa6bd98d8",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1348,7 +1355,7 @@ await check("authority_health_and_match_binding_expose_the_runtime_identity", ()
     envelope.matchBinding.dependencies.actionSchema.contentHash,
     hashStarcraftTmgContract({
       kind: "action-schema",
-      schemaVersion: "hybrid_legal_space_v44",
+      schemaVersion: "hybrid_legal_space_v45",
     }),
   );
   assert.equal(envelope.matchBinding.productionReady, false);

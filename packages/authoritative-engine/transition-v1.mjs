@@ -101,6 +101,7 @@ const ACTION_FIELDS = Object.freeze([
   "unitCompositionUpgradePlan",
   "rosterDisclosurePlan",
   "missionDeploymentDraftPlan",
+  "deploymentGeometryPlan",
 ]);
 
 class AuthorityError extends Error {
@@ -219,10 +220,11 @@ function cleanLogEntry(entry, logicalSequence) {
 function normalizeAuthorityState(input, stateRevision = 0) {
   const state = normalizeStarcraftTmgState(input || {});
   // The legacy v0 normalizer knows only its historical `scoring` label and
-  // otherwise rewrites unknown phases to Movement. Official Core 8.9 names
-  // the post-Combat phase Cleanup, so the authority seam must preserve that
-  // exact Rules-owned state instead of silently translating it.
-  if (["army_building", "cleanup", "start_of_round"].includes(input?.phase)) {
+  // otherwise rewrites unknown phases to Movement. Official pre-game setup,
+  // Core 8.9 Cleanup, and start-of-round procedures are all Rules-owned
+  // phases, so the authority seam must preserve them instead of silently
+  // translating them to Movement.
+  if (["army_building", "pre_game", "cleanup", "start_of_round"].includes(input?.phase)) {
     state.phase = input.phase;
     state.activeSideKey = input.activeSideKey === null ? null : state.activeSideKey;
   }
@@ -654,6 +656,10 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry,
   ]));
   const actionSchemaVersion = runtimeExecutors.has(
+    "authority.deployment-geometry-rules-v1",
+  )
+    ? "hybrid_legal_space_v45"
+    : runtimeExecutors.has(
     "authority.mission-deployment-draft-rules-v1",
   )
     ? "hybrid_legal_space_v44"

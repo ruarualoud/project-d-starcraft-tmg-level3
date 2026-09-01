@@ -240,3 +240,28 @@ pass. Evidence is 170 base reports/2,619 assertions and 171/2,629 including the
 aggregate. Counts advance `833/79/114 → 854/58/114`; graph size is
 11,796/32,744 with 75/75 state-contract executors. The report is
 `docs/ticket-11-slice-106-mission-deployment-draft-rules-2026-09-01.md`.
+
+## Slice 107 Deployment geometry closure
+
+Slice 107 consumes the exact 12-atom route-v2 assignment and adds
+`authority.deployment-geometry-rules-v1@1.0.0`. The unchanged official lock
+binds all ten current Deployment Card geometries: exact `54×36` Standard or
+`36×36` Skirmish dimensions, red/blue Entry Edge segments, six-inch Zones of
+Influence and exact Mission Marker targets. Skirmish uses markers `1`, `2` and
+`5`; Standard uses all five.
+
+Core PDF page 78 owns the five-step setup order and wins over conflicting
+frozen Command Center 9.3 prose, which remains historical display rather than
+silent compatibility. FAQ 9.46 produces a complete terrain-height ledger
+contract; physical marker placement and derived elevation remain fail-closed
+until Slice 108 supplies terrain. A shared Web/App projection keeps rules in
+world inches, converts physical millimetres at `25.4 mm/in`, preserves map
+aspect ratio with uniform X/Y scale and prevents DPR, zoom, pan or touch-target
+size from changing collisions or measurements.
+
+Focused `42/42`, Slice 106 regression `70/70`, runtime `10/10`, aggregate
+`10/10`, Ticket 11 authority v2 `15/15`, authoritative-transition `7/7` and
+authoritative-room `7/7` gates pass. Counts advance
+`854/58/114 → 866/46/114`; graph size is
+11,896/32,922 with 76/76 state-contract executors. The report is
+`docs/ticket-11-slice-107-deployment-geometry-rules-2026-09-01.md`.

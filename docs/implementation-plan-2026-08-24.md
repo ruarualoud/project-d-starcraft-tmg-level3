@@ -456,3 +456,11 @@ npm --prefix starcraft-tmg-level3 run verify:ticket-11-authority
 ```
 
 This command covers the fixed 15-item Ticket 11A authority-kernel denominator plus the HTTP authority boundary and passed `15/15`. It does not close Ticket 11B's full source-derived RuleAtom coverage gate. Legacy regression, Expo/Battle Lab parity, browser, and device gates are added only when their bounded integration increment begins. No production schema migration, public server, APK, Provider, DSH runtime, or training pipeline was changed by this verification.
+
+Ticket 11B Slice 107 adds the exact selected-Deployment geometry binding and
+shared Web/App world-to-viewport contract. Rules remain in inches, physical
+tokens and bases use exact `mm / 25.4`, and uniform viewport scaling preserves
+map/model proportions independently of DPR, zoom, pan and touch affordances.
+The slice advances to `866/46/114`, executor `76/76`, action schema v45 and
+leaves four slices / 46 actionable atoms. Source refresh and every
+Skill/DSH/MuZero/training promotion remain off.
