@@ -104,6 +104,7 @@ const ACTION_FIELDS = Object.freeze([
   "missionDeploymentDraftPlan",
   "deploymentGeometryPlan",
   "expectedRegistryHash", "expectedMarkerViewHash", "expectedTokenMarkerCleanupHash",
+  "scoringFinalizationPlan",
 ]);
 
 class AuthorityError extends Error {
@@ -658,6 +659,10 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry,
   ]));
   const actionSchemaVersion = runtimeExecutors.has(
+    "authority.scoring-finalization-rules-v1",
+  )
+    ? "hybrid_legal_space_v48"
+    : runtimeExecutors.has(
     "authority.battlefield-token-marker-rules-v1",
   )
     ? "hybrid_legal_space_v47"

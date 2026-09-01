@@ -478,9 +478,12 @@ const historicalDeploymentGeometryRulesSliceReport = JSON.parse(await readFile(
 const historicalBalancedTerrainRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-balanced-terrain-rules-rule-slice-v1-report.json"), "utf8"));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalBattlefieldTokenMarkerRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-battlefield-token-marker-rules-rule-slice-v1-report.json"), "utf8"));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(OUTPUT_DIR,
+    "official-scoring-finalization-rules-rule-slice-v1-report.json"), "utf8"));
 
 function clone(value) {
   return structuredClone(value);
@@ -814,8 +817,12 @@ const historicalDeploymentGeometryRulesSlice =
   historicalDeploymentGeometryRulesSliceReport.slice;
 const historicalBalancedTerrainRulesSlice =
   historicalBalancedTerrainRulesSliceReport.slice;
+const historicalBattlefieldTokenMarkerRulesSlice =
+  historicalBattlefieldTokenMarkerRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalBattlefieldTokenMarkerRulesSlice.sliceHash);
+assert.equal(historicalBattlefieldTokenMarkerRulesSlice.previousSliceHash,
   historicalBalancedTerrainRulesSlice.sliceHash);
 assert.equal(historicalBalancedTerrainRulesSlice.previousSliceHash,
   historicalDeploymentGeometryRulesSlice.sliceHash);
@@ -1018,26 +1025,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 894);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 132);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 908);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 118);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 894,
-    newlyExecutableRuleAtoms: 11,
-    reviewRequiredRuleAtoms: 18,
+    executableRuleAtoms: 908,
+    newlyExecutableRuleAtoms: 14,
+    reviewRequiredRuleAtoms: 4,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 894,
+    strictCompleteAtoms: 908,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 78,
+    declaredStateContractExecutors: 79,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "1b59d0467d49145fa81f2ffb7de70a33f1db033d76078f439dbdef64775579c8",
+    "d0aebfd5de012a3eb7821a3cb5c698304551c641d38b6ce9ef8a0cbc4481c413",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1356,6 +1363,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     ["cleanup_battlefield_tokens_and_markers",
       "materialize_battlefield_token_marker_registry"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.scoring-finalization-rules-v1").actionTypes,
+    ["resolve_scoring_finalization_rules_procedure"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -1378,7 +1389,7 @@ await check("authority_health_and_match_binding_expose_the_runtime_identity", ()
     envelope.matchBinding.dependencies.actionSchema.contentHash,
     hashStarcraftTmgContract({
       kind: "action-schema",
-      schemaVersion: "hybrid_legal_space_v47",
+      schemaVersion: "hybrid_legal_space_v48",
     }),
   );
   assert.equal(envelope.matchBinding.productionReady, false);

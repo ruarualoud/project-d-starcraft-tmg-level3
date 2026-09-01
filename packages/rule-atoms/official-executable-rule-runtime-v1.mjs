@@ -1490,6 +1490,16 @@ import {
   OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_VERSION,
   OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_TRANSITION_SCHEMA,
 } from "./official-battlefield-token-marker-rules-executor-v1.mjs";
+import {
+  applyOfficialScoringFinalizationRulesV1,
+  enumerateOfficialScoringFinalizationRulesV1,
+  OFFICIAL_SCORING_FINALIZATION_RULES_ACTION_ATOM_IDS,
+  OFFICIAL_SCORING_FINALIZATION_RULES_ACTION_TYPE,
+  OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ATOM_IDS,
+  OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ID,
+  OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_VERSION,
+  OFFICIAL_SCORING_FINALIZATION_RULES_TRANSITION_SCHEMA,
+} from "./official-scoring-finalization-rules-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -2360,6 +2370,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ID,
+    executorVersion: OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_SCORING_FINALIZATION_RULES_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_SCORING_FINALIZATION_RULES_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -2471,6 +2487,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_DEPLOYMENT_GEOMETRY_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ATOM_IDS,
+  ...OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -2649,6 +2666,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ID,
     OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ID,
+    OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ATOM_IDS,
   ],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
@@ -3343,6 +3364,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const battlefieldTokenMarkerRulesEnabled = enabledExecutorIds.has(
     OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ID,
   );
+  const scoringFinalizationRulesEnabled = enabledExecutorIds.has(
+    OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ID,
+  );
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -3821,6 +3845,25 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       && state.officialBattlefieldTokenMarkerRegistry
       && Number(state.lastBattlefieldTokenMarkerCleanupRound) !== Number(state.round)) {
       const staged = enumerateOfficialBattlefieldTokenMarkerRulesV1(state, {
+        sideKey, includeDisabled, matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state), terminal: null,
+        candidates: staged, parameterDomains: [],
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
+      });
+    }
+    if (scoringFinalizationRulesEnabled
+      && state.rulesProcedureMode === true
+      && state.phase === "pre_game"
+      && ["battlefield_token_marker_registry_complete_ticket_11_slice_110_pending",
+        "initial_first_player_roll_off_complete_assignment_pending"]
+        .includes(state.officialBattlefieldSetup?.stage)
+      && state.officialScoringFinalizationRulesDataBundle) {
+      const staged = enumerateOfficialScoringFinalizationRulesV1(state, {
         sideKey, includeDisabled, matchBinding: options.matchBinding,
       });
       return freezeDeep({
@@ -5321,13 +5364,25 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         matchBinding: options.matchBinding,
       }));
     }
-    if (state.phase === "cleanup" && holdPositionEndGameV2Enabled) {
+    const scoringFinalizationProbe = state.phase === "cleanup"
+      && scoringFinalizationRulesEnabled
+      ? enumerateOfficialScoringFinalizationRulesV1(state, {
+        sideKey, includeDisabled: true, matchBinding: options.matchBinding,
+      }) : [];
+    const scoringFinalizationCandidates = includeDisabled
+      ? scoringFinalizationProbe
+      : scoringFinalizationProbe.filter((entry) => entry.isEnabled !== false);
+    candidates.push(...scoringFinalizationCandidates);
+    const scoringFinalizationOwnsCurrentWindow = scoringFinalizationProbe.length > 0;
+    if (state.phase === "cleanup" && !scoringFinalizationOwnsCurrentWindow
+      && holdPositionEndGameV2Enabled) {
       candidates.push(...enumerateOfficialHoldPositionEndGameActionsV2(state, {
         sideKey,
         includeDisabled,
         matchBinding: options.matchBinding,
       }));
-    } else if (state.phase === "cleanup" && holdPositionEndGameEnabled) {
+    } else if (state.phase === "cleanup" && !scoringFinalizationOwnsCurrentWindow
+      && holdPositionEndGameEnabled) {
       candidates.push(...enumerateOfficialHoldPositionEndGameActionsV1(state, {
         sideKey,
         includeDisabled,
@@ -5524,6 +5579,20 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_ACTION_ATOM_IDS);
       return applyOfficialBattlefieldTokenMarkerRulesV1(state, action, {
         matchBinding: options.matchBinding,
+      });
+    }
+    if (action.actionType === OFFICIAL_SCORING_FINALIZATION_RULES_ACTION_TYPE
+      && action.executorId === OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ID) {
+      if (!scoringFinalizationRulesEnabled
+        || action.executorVersion
+          !== OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action,
+        OFFICIAL_SCORING_FINALIZATION_RULES_ACTION_ATOM_IDS);
+      return applyOfficialScoringFinalizationRulesV1(state, action, {
+        matchBinding: options.matchBinding,
+        chanceReveals: options.chanceReveals,
       });
     }
     if (action.actionType === OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_ACTION_TYPE
