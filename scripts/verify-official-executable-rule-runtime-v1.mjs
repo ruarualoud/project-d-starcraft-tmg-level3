@@ -433,9 +433,12 @@ const historicalCardBuildPaymentRulesSliceReport = JSON.parse(await readFile(
 const historicalUnitCardSupplyRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-unit-card-supply-rules-rule-slice-v1-report.json"), "utf8"));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalRoundPhaseActivationRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-round-phase-activation-rules-rule-slice-v1-report.json"), "utf8"));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(OUTPUT_DIR,
+    "official-supply-pool-rules-rule-slice-v1-report.json"), "utf8"));
 
 function clone(value) {
   return structuredClone(value);
@@ -742,8 +745,12 @@ const historicalCardBuildPaymentRulesSlice =
   historicalCardBuildPaymentRulesSliceReport.slice;
 const historicalUnitCardSupplyRulesSlice =
   historicalUnitCardSupplyRulesSliceReport.slice;
+const historicalRoundPhaseActivationRulesSlice =
+  historicalRoundPhaseActivationRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalRoundPhaseActivationRulesSlice.sliceHash);
+assert.equal(historicalRoundPhaseActivationRulesSlice.previousSliceHash,
   historicalUnitCardSupplyRulesSlice.sliceHash);
 assert.equal(historicalUnitCardSupplyRulesSlice.previousSliceHash,
   historicalCardBuildPaymentRulesSlice.sliceHash);
@@ -916,26 +923,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 690);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 336);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 695);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 331);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 690,
-    newlyExecutableRuleAtoms: 7,
-    reviewRequiredRuleAtoms: 222,
+    executableRuleAtoms: 695,
+    newlyExecutableRuleAtoms: 5,
+    reviewRequiredRuleAtoms: 217,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 690,
+    strictCompleteAtoms: 695,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 63,
+    declaredStateContractExecutors: 64,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "f1f9d2e237917d97415cd7222697d736ef55c1abcacdcc540384f5f03706ebe0",
+    "d6e9fafe69135694c925ac726ff2d7a1dd8523964a7d96a04cb34aa146745ed4",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1225,6 +1232,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     manifestById.get("authority.round-phase-activation-rules-v1").actionTypes,
     ["resolve_round_phase_activation_rules_procedure"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.supply-pool-rules-v1").actionTypes,
+    ["resolve_supply_pool_rules_procedure"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -1247,7 +1258,7 @@ await check("authority_health_and_match_binding_expose_the_runtime_identity", ()
     envelope.matchBinding.dependencies.actionSchema.contentHash,
     hashStarcraftTmgContract({
       kind: "action-schema",
-      schemaVersion: "hybrid_legal_space_v32",
+      schemaVersion: "hybrid_legal_space_v33",
     }),
   );
   assert.equal(envelope.matchBinding.productionReady, false);
@@ -1436,11 +1447,11 @@ const report = {
     crossTimeReplayResult: failures.length ? "failed" : "official_runtime_receipt_replay_passed",
     promotions: [],
     blocks: [
-      "remaining_222_actionable_rule_atoms_not_executable",
+      "remaining_217_actionable_rule_atoms_not_executable",
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 222,
+    remainingRuleGaps: 217,
   },
   harness: {
     harnessLoopUsed: true,

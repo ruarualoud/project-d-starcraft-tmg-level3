@@ -22,6 +22,7 @@
     "verify:official-card-build-payment-rules-rule-slice": "node scripts/verify-official-card-build-payment-rules-rule-slice-v1.mjs",
     "verify:official-unit-card-supply-rules-rule-slice": "node scripts/verify-official-unit-card-supply-rules-rule-slice-v1.mjs",
     "verify:official-round-phase-activation-rules-rule-slice": "node scripts/verify-official-round-phase-activation-rules-rule-slice-v1.mjs",
+    "verify:official-supply-pool-rules-rule-slice": "node scripts/verify-official-supply-pool-rules-rule-slice-v1.mjs",
     "verify:ticket-11-authority": "node scripts/verify-ticket-11-authority-v2.mjs",
     "verify:rule-atom-contract": "node scripts/verify-rule-atom-catalogue-contract-v1.mjs",
     "verify:official-rule-source-denominator": "node scripts/verify-official-rule-source-denominator-v1.mjs",
