@@ -1347,6 +1347,18 @@ import {
   OFFICIAL_UNIT_DESTRUCTION_LIFECYCLE_RULES_PARAMETER_KIND,
   OFFICIAL_UNIT_DESTRUCTION_LIFECYCLE_RULES_TRANSITION_SCHEMA,
 } from "./official-unit-destruction-lifecycle-rules-executor-v1.mjs";
+import {
+  applyOfficialStatusStayInPlayRulesV1,
+  enumerateOfficialStatusStayInPlayRulesV1,
+  instantiateOfficialStatusStayInPlayRulesV1,
+  OFFICIAL_STATUS_STAY_IN_PLAY_RULES_ACTION_ATOM_IDS,
+  OFFICIAL_STATUS_STAY_IN_PLAY_RULES_ACTION_TYPE,
+  OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_ATOM_IDS,
+  OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_ID,
+  OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_VERSION,
+  OFFICIAL_STATUS_STAY_IN_PLAY_RULES_PARAMETER_KIND,
+  OFFICIAL_STATUS_STAY_IN_PLAY_RULES_TRANSITION_SCHEMA,
+} from "./official-status-stay-in-play-rules-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -2140,6 +2152,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_UNIT_DESTRUCTION_LIFECYCLE_RULES_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_ID,
+    executorVersion: OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_STATUS_STAY_IN_PLAY_RULES_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_STATUS_STAY_IN_PLAY_RULES_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -2239,6 +2257,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_SUPPLY_POOL_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_RESERVE_LIFECYCLE_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_UNIT_DESTRUCTION_LIFECYCLE_RULES_EXECUTOR_ATOM_IDS,
+  ...OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -2369,6 +2388,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_UNIT_DESTRUCTION_LIFECYCLE_RULES_EXECUTOR_ID,
     OFFICIAL_UNIT_DESTRUCTION_LIFECYCLE_RULES_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_ID,
+    OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_ATOM_IDS,
   ],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
@@ -3027,6 +3050,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const unitDestructionLifecycleRulesEnabled = enabledExecutorIds.has(
     OFFICIAL_UNIT_DESTRUCTION_LIFECYCLE_RULES_EXECUTOR_ID,
   );
+  const statusStayInPlayRulesEnabled = enabledExecutorIds.has(
+    OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_ID,
+  );
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -3351,6 +3377,8 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           ? [OFFICIAL_RESERVE_LIFECYCLE_RULES_PARAMETER_KIND] : []),
         ...(unitDestructionLifecycleRulesEnabled
           ? [OFFICIAL_UNIT_DESTRUCTION_LIFECYCLE_RULES_PARAMETER_KIND] : []),
+        ...(statusStayInPlayRulesEnabled
+          ? [OFFICIAL_STATUS_STAY_IN_PLAY_RULES_PARAMETER_KIND] : []),
         ...(disengageV5Enabled
           ? [OFFICIAL_DISENGAGE_V5_PARAMETER_KIND]
           : disengageV4Enabled
@@ -3404,6 +3432,21 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     const includeDisabled = options.includeDisabled === true;
     const candidates = [];
     const parameterDomains = [];
+    if (statusStayInPlayRulesEnabled
+      && state.pendingAction?.schema
+        === "starcraft_tmg_official_status_stay_in_play_pending_v1") {
+      const staged = enumerateOfficialStatusStayInPlayRulesV1(state, {
+        sideKey, includeDisabled, matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state), terminal: null,
+        candidates: staged.candidates, parameterDomains: staged.parameterDomains,
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
+      });
+    }
     if (unitDestructionLifecycleRulesEnabled
       && state.pendingAction?.schema
         === "starcraft_tmg_official_unit_destruction_lifecycle_pending_v1") {
@@ -4913,6 +4956,18 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function apply(state, action, options = {}) {
     if (!object(state) || !object(action)) fail("RULE_RUNTIME_ACTION_INVALID");
+    if (action.actionType === OFFICIAL_STATUS_STAY_IN_PLAY_RULES_ACTION_TYPE
+      && action.executorId === OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_ID) {
+      if (!statusStayInPlayRulesEnabled
+        || action.executorVersion
+          !== OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action, OFFICIAL_STATUS_STAY_IN_PLAY_RULES_ACTION_ATOM_IDS);
+      return applyOfficialStatusStayInPlayRulesV1(state, action, {
+        matchBinding: options.matchBinding,
+      });
+    }
     if (action.actionType
       === OFFICIAL_UNIT_DESTRUCTION_LIFECYCLE_RULES_ACTION_TYPE
       && action.executorId
@@ -8059,6 +8114,18 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function instantiate(state, domain, parameters, options = {}) {
     if (!object(state) || !object(domain)) fail("RULE_RUNTIME_PARAMETER_DOMAIN_INVALID");
+    if (domain.parameterKind === OFFICIAL_STATUS_STAY_IN_PLAY_RULES_PARAMETER_KIND) {
+      if (!statusStayInPlayRulesEnabled
+        || domain.executorId !== OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_ID
+        || domain.executorVersion
+          !== OFFICIAL_STATUS_STAY_IN_PLAY_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain, OFFICIAL_STATUS_STAY_IN_PLAY_RULES_ACTION_ATOM_IDS);
+      return instantiateOfficialStatusStayInPlayRulesV1(
+        state, domain, parameters, { matchBinding: options.matchBinding },
+      );
+    }
     if (domain.parameterKind
       === OFFICIAL_UNIT_DESTRUCTION_LIFECYCLE_RULES_PARAMETER_KIND) {
       if (!unitDestructionLifecycleRulesEnabled

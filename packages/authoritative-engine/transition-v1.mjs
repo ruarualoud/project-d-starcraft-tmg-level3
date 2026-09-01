@@ -646,6 +646,10 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry,
   ]));
   const actionSchemaVersion = runtimeExecutors.has(
+    "authority.status-stay-in-play-rules-v1",
+  )
+    ? "hybrid_legal_space_v36"
+    : runtimeExecutors.has(
     "authority.unit-destruction-lifecycle-rules-v1",
   )
     ? "hybrid_legal_space_v35"
