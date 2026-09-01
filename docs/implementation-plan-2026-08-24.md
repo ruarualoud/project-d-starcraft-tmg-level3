@@ -464,3 +464,18 @@ map/model proportions independently of DPR, zoom, pan and touch affordances.
 The slice advances to `866/46/114`, executor `76/76`, action schema v45 and
 leaves four slices / 46 actionable atoms. Source refresh and every
 Skill/DSH/MuZero/training promotion remain off.
+
+Ticket 11B Slice 108 adds the exact 17-atom balanced-terrain setup contract.
+`authority.balanced-terrain-rules-v1@1.0.0` derives Standard and Skirmish
+count envelopes, treats Grass as a Size 2/total subset, validates full
+terrain-footprint quarter distribution, centre terrain, two six-inch fire
+lanes, three-inch major separation, current 100 mm-base manoeuvre witnesses,
+large standable Access Points and nearest impassable-marker relocation. It
+then materializes the frozen Slice 84/86 terrain adapters, Slice 107 height
+ledger and final Mission Marker placement. Standard and Skirmish fixtures
+prove `54×36` and `36×36` world dimensions. Terrain, model bases and markers
+share one uniform px/inch projection; DPR, zoom, pan and touch targets cannot
+alter rules geometry. The slice advances to `883/29/114`, executor `77/77`,
+action schema v46 and leaves three slices / 29 actionable atoms. Focused
+`57/57`, Slice107 regression `42/42` and runtime aggregate `10/10` pass.
+Source refresh and every Skill/DSH/MuZero/training promotion remain off.

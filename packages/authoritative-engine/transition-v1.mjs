@@ -58,8 +58,9 @@ const ACTION_FIELDS = Object.freeze([
   "effectQueueProofHash", "effectQueueProof",
   "cleanupResolutionHash", "cleanupResolution",
   "initiativeResolutionHash", "initiativeResolution",
-    "startOfRoundResolutionHash", "startOfRoundResolution", "pendingAttackHash",
+  "startOfRoundResolutionHash", "startOfRoundResolution", "pendingAttackHash",
   "deployPlan", "movePlan", "disengagePlan", "flyingRulesPlan", "terrainLosRulesPlan",
+  "balancedTerrainPlan",
   "playerControlRelationshipPlan", "diceTestModifierPlan", "keywordSpecialAbilityPlan",
   "abilityTimingPriorityPlan", "cardBuildPaymentPlan", "unitCardSupplyPlan",
   "domainId",
@@ -656,6 +657,10 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry,
   ]));
   const actionSchemaVersion = runtimeExecutors.has(
+    "authority.balanced-terrain-rules-v1",
+  )
+    ? "hybrid_legal_space_v46"
+    : runtimeExecutors.has(
     "authority.deployment-geometry-rules-v1",
   )
     ? "hybrid_legal_space_v45"

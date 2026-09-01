@@ -1467,6 +1467,18 @@ import {
   OFFICIAL_DEPLOYMENT_GEOMETRY_RULES_EXECUTOR_VERSION,
   OFFICIAL_DEPLOYMENT_GEOMETRY_RULES_TRANSITION_SCHEMA,
 } from "./official-deployment-geometry-rules-executor-v1.mjs";
+import {
+  applyOfficialBalancedTerrainRulesV1,
+  enumerateOfficialBalancedTerrainRulesV1,
+  instantiateOfficialBalancedTerrainRulesV1,
+  OFFICIAL_BALANCED_TERRAIN_RULES_ACTION_ATOM_IDS,
+  OFFICIAL_BALANCED_TERRAIN_RULES_ACTION_TYPE,
+  OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ATOM_IDS,
+  OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ID,
+  OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_VERSION,
+  OFFICIAL_BALANCED_TERRAIN_RULES_PARAMETER_KIND,
+  OFFICIAL_BALANCED_TERRAIN_RULES_TRANSITION_SCHEMA,
+} from "./official-balanced-terrain-rules-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -2322,6 +2334,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_DEPLOYMENT_GEOMETRY_RULES_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ID,
+    executorVersion: OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_BALANCED_TERRAIN_RULES_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_BALANCED_TERRAIN_RULES_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -2431,6 +2449,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_DEPLOYMENT_GEOMETRY_RULES_EXECUTOR_ATOM_IDS,
+  ...OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -2601,6 +2620,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_DEPLOYMENT_GEOMETRY_RULES_EXECUTOR_ID,
     OFFICIAL_DEPLOYMENT_GEOMETRY_RULES_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ID,
+    OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ATOM_IDS,
   ],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
@@ -3289,6 +3312,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const deploymentGeometryRulesEnabled = enabledExecutorIds.has(
     OFFICIAL_DEPLOYMENT_GEOMETRY_RULES_EXECUTOR_ID,
   );
+  const balancedTerrainRulesEnabled = enabledExecutorIds.has(
+    OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ID,
+  );
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -3503,6 +3529,7 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       || keywordSpecialAbilityRulesEnabled
       || abilityTimingPriorityRulesEnabled
       || cardBuildPaymentRulesEnabled
+      || balancedTerrainRulesEnabled
       || disengageEnabled
       || disengageCasualtyEnabled
       || disengageV3Enabled
@@ -3630,6 +3657,8 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           ? [OFFICIAL_ROSTER_DISCLOSURE_RULES_PARAMETER_KIND] : []),
         ...(missionDeploymentDraftRulesEnabled
           ? [OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_PARAMETER_KIND] : []),
+        ...(balancedTerrainRulesEnabled
+          ? [OFFICIAL_BALANCED_TERRAIN_RULES_PARAMETER_KIND] : []),
         ...(disengageV5Enabled
           ? [OFFICIAL_DISENGAGE_V5_PARAMETER_KIND]
           : disengageV4Enabled
@@ -3715,6 +3744,26 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
         rulesRuntimeHash: descriptor.runtimeHash,
         stateSummary: stateSummary(state), terminal: null,
         candidates: staged, parameterDomains: [],
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
+      });
+    }
+    if (balancedTerrainRulesEnabled
+      && state.rulesProcedureMode === true
+      && state.phase === "pre_game"
+      && state.officialBattlefieldSetup?.stage
+        === "terrain_pending_ticket_11_slice_108"
+      && state.officialBalancedTerrainRulesDataBundle
+      && state.officialDeploymentGeometryBinding
+      && !state.officialBalancedTerrainSetupCertificate) {
+      const staged = enumerateOfficialBalancedTerrainRulesV1(state, {
+        sideKey, includeDisabled, matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state), terminal: null,
+        candidates: staged.candidates, parameterDomains: staged.parameterDomains,
         legalSpaceComplete: descriptor.legalSpaceComplete,
         developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
       });
@@ -5384,6 +5433,17 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       }
       assertActionLineage(action, OFFICIAL_DEPLOYMENT_GEOMETRY_RULES_ACTION_ATOM_IDS);
       return applyOfficialDeploymentGeometryRulesV1(state, action, {
+        matchBinding: options.matchBinding,
+      });
+    }
+    if (action.actionType === OFFICIAL_BALANCED_TERRAIN_RULES_ACTION_TYPE
+      && action.executorId === OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ID) {
+      if (!balancedTerrainRulesEnabled
+        || action.executorVersion !== OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action, OFFICIAL_BALANCED_TERRAIN_RULES_ACTION_ATOM_IDS);
+      return applyOfficialBalancedTerrainRulesV1(state, action, {
         matchBinding: options.matchBinding,
       });
     }
@@ -8615,6 +8675,17 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function instantiate(state, domain, parameters, options = {}) {
     if (!object(state) || !object(domain)) fail("RULE_RUNTIME_PARAMETER_DOMAIN_INVALID");
+    if (domain.parameterKind === OFFICIAL_BALANCED_TERRAIN_RULES_PARAMETER_KIND) {
+      if (!balancedTerrainRulesEnabled
+        || domain.executorId !== OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ID
+        || domain.executorVersion !== OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain, OFFICIAL_BALANCED_TERRAIN_RULES_ACTION_ATOM_IDS);
+      return instantiateOfficialBalancedTerrainRulesV1(
+        state, domain, parameters, { matchBinding: options.matchBinding },
+      );
+    }
     if (domain.parameterKind
       === OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_PARAMETER_KIND) {
       if (!missionDeploymentDraftRulesEnabled

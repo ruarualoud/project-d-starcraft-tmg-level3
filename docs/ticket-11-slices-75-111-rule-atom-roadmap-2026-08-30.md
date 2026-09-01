@@ -18,7 +18,7 @@ This roadmap started from the Slice 74 denominator:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-09-01: Slices 75–106 are complete for their exact bounded denominators. The current ledger is `854` executable, `58` review-required, and `114` retained display-only RuleAtoms; five planned slices, Slice 107 through Slice 111, remain. The machine-verifiable v2 partition closes at `912/0/114`, with zero missing, duplicate, or unknown atom IDs. Any future regrouping must version this route and preserve the exact denominator rather than editing counts silently.
+Execution status on 2026-09-02: Slices 75–108 are complete for their exact bounded denominators. The current ledger is `883` executable, `29` review-required, and `114` retained display-only RuleAtoms; three planned slices, Slice 109 through Slice 111, remain. The machine-verifiable v2 partition closes at `912/0/114`, with zero missing, duplicate, or unknown atom IDs. Any future regrouping must version this route and preserve the exact denominator rather than editing counts silently.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -86,8 +86,8 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 104 | **Complete:** Unit composition options, model counts, starting Supply, upgrades, Specialist default, and costs | 16 | 820 | 92 |
 | 105 | **Complete:** Team rosters, open/closed lists, equipment representation, disclosure, and inspection | 13 | 833 | 79 |
 | 106 | **Complete:** Mission/deployment-card draft, colour/control choice, elimination/selection, and card contract | 21 | 854 | 58 |
-| 107 | Battlefield dimensions, entry edges, mission-marker placement/elevation, influence corners, and two official FAQ constraints | 12 | 866 | 46 |
-| 108 | Balanced terrain construction: counts, sizes, lanes, quadrants, centre, scaling, and alternating placement | 17 | 883 | 29 |
+| 107 | **Complete:** Battlefield dimensions, entry edges, mission-marker placement/elevation, influence corners, and two official FAQ constraints | 12 | 866 | 46 |
+| 108 | **Complete:** Balanced terrain construction: counts, sizes, lanes, quadrants, centre, scaling, and alternating placement | 17 | 883 | 29 |
 | 109 | Battlefield Tokens and Markers: expiry, movement, activation/mode/faction/first-player marker primitives | 11 | 894 | 18 |
 | 110 | First-player assignment, mission control totals, army elimination, final scoring, tiebreak and draw | 14 | 908 | 4 |
 | 111 | Unresolved rules dispute protocol and post-match verification | 4 | 912 | 0 |
@@ -265,3 +265,21 @@ authoritative-room `7/7` gates pass. Counts advance
 `854/58/114 → 866/46/114`; graph size is
 11,896/32,922 with 76/76 state-contract executors. The report is
 `docs/ticket-11-slice-107-deployment-geometry-rules-2026-09-01.md`.
+
+## Slice 108 Balanced terrain closure
+
+Slice 108 consumes the exact 17-atom route-v2 assignment and adds
+`authority.balanced-terrain-rules-v1@1.0.0`. It derives count ranges from the
+selected battlefield area, counts Grass inside Size 2 and total, validates
+terrain-footprint intersections with all four quarters, centre terrain, clear
+fire lanes, major separation, 100 mm-base manoeuvre witnesses, large-terrain
+Access Points and nearest impassable relocation. It materializes complete
+terrain, special-terrain agreement, height ledger and Mission Marker placement.
+
+Rules remain in world inches and physical bases use `mm/25.4`. Terrain, model
+bases and markers share the Slice 107 uniform X/Y viewport scale; DPR, zoom,
+pan, viewport shape and touch targets cannot alter rules footprints. Focused
+`57/57`, Slice 107 regression `42/42` and current runtime aggregate `10/10`
+pass. Counts advance `866/46/114 → 883/29/114`; graph size is
+12,029/33,138 with 77/77 state-contract executors. The report is
+`docs/ticket-11-slice-108-balanced-terrain-rules-2026-09-02.md`.

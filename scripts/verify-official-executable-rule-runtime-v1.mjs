@@ -472,9 +472,12 @@ const historicalRosterDisclosureRulesSliceReport = JSON.parse(await readFile(
 const historicalMissionDeploymentDraftRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-mission-deployment-draft-rules-rule-slice-v1-report.json"), "utf8"));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalDeploymentGeometryRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-deployment-geometry-rules-rule-slice-v1-report.json"), "utf8"));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(OUTPUT_DIR,
+    "official-balanced-terrain-rules-rule-slice-v1-report.json"), "utf8"));
 
 function clone(value) {
   return structuredClone(value);
@@ -804,8 +807,12 @@ const historicalRosterDisclosureRulesSlice =
   historicalRosterDisclosureRulesSliceReport.slice;
 const historicalMissionDeploymentDraftRulesSlice =
   historicalMissionDeploymentDraftRulesSliceReport.slice;
+const historicalDeploymentGeometryRulesSlice =
+  historicalDeploymentGeometryRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalDeploymentGeometryRulesSlice.sliceHash);
+assert.equal(historicalDeploymentGeometryRulesSlice.previousSliceHash,
   historicalMissionDeploymentDraftRulesSlice.sliceHash);
 assert.equal(historicalMissionDeploymentDraftRulesSlice.previousSliceHash,
   historicalRosterDisclosureRulesSlice.sliceHash);
@@ -1004,26 +1011,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 866);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 160);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 883);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 143);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 866,
-    newlyExecutableRuleAtoms: 12,
-    reviewRequiredRuleAtoms: 46,
+    executableRuleAtoms: 883,
+    newlyExecutableRuleAtoms: 17,
+    reviewRequiredRuleAtoms: 29,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 866,
+    strictCompleteAtoms: 883,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 76,
+    declaredStateContractExecutors: 77,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "80a2723a52530b63c9d169dc2064b6bb009cccfce46550e0438e99cfa6bd98d8",
+    "06b7599333f098daa7741e8607ec57ceb562d1af5194661b2d18b42d5b62d1ce",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1333,6 +1340,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     manifestById.get("authority.roster-disclosure-rules-v1").actionTypes,
     ["resolve_roster_disclosure_rules_procedure"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.balanced-terrain-rules-v1").actionTypes,
+    ["materialize_balanced_terrain_setup"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -1355,7 +1366,7 @@ await check("authority_health_and_match_binding_expose_the_runtime_identity", ()
     envelope.matchBinding.dependencies.actionSchema.contentHash,
     hashStarcraftTmgContract({
       kind: "action-schema",
-      schemaVersion: "hybrid_legal_space_v45",
+      schemaVersion: "hybrid_legal_space_v46",
     }),
   );
   assert.equal(envelope.matchBinding.productionReady, false);
@@ -1544,11 +1555,11 @@ const report = {
     crossTimeReplayResult: failures.length ? "failed" : "official_runtime_receipt_replay_passed",
     promotions: [],
     blocks: [
-      "remaining_58_actionable_rule_atoms_not_executable",
+      "remaining_29_actionable_rule_atoms_not_executable",
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 58,
+    remainingRuleGaps: 29,
   },
   harness: {
     harnessLoopUsed: true,
