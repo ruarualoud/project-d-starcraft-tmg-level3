@@ -466,9 +466,12 @@ const historicalArmyResourceBudgetRulesSliceReport = JSON.parse(await readFile(
 const historicalUnitCompositionUpgradeRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-unit-composition-upgrade-rules-rule-slice-v1-report.json"), "utf8"));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalRosterDisclosureRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-roster-disclosure-rules-rule-slice-v1-report.json"), "utf8"));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(OUTPUT_DIR,
+    "official-mission-deployment-draft-rules-rule-slice-v1-report.json"), "utf8"));
 
 function clone(value) {
   return structuredClone(value);
@@ -794,8 +797,12 @@ const historicalArmyResourceBudgetRulesSlice =
   historicalArmyResourceBudgetRulesSliceReport.slice;
 const historicalUnitCompositionUpgradeRulesSlice =
   historicalUnitCompositionUpgradeRulesSliceReport.slice;
+const historicalRosterDisclosureRulesSlice =
+  historicalRosterDisclosureRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalRosterDisclosureRulesSlice.sliceHash);
+assert.equal(historicalRosterDisclosureRulesSlice.previousSliceHash,
   historicalUnitCompositionUpgradeRulesSlice.sliceHash);
 assert.equal(historicalUnitCompositionUpgradeRulesSlice.previousSliceHash,
   historicalArmyResourceBudgetRulesSlice.sliceHash);
@@ -990,26 +997,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 833);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 193);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 854);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 172);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 833,
-    newlyExecutableRuleAtoms: 13,
-    reviewRequiredRuleAtoms: 79,
+    executableRuleAtoms: 854,
+    newlyExecutableRuleAtoms: 21,
+    reviewRequiredRuleAtoms: 58,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 833,
+    strictCompleteAtoms: 854,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 74,
+    declaredStateContractExecutors: 75,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "82e6a48ff5531fd0b67821195d02a522210db3b4d5d343e94236b620773bd3ba",
+    "d6beaea09a6426c523ae9d35ac1c83824fce26288f9ea257b32d92a1d1fcf23b",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1341,7 +1348,7 @@ await check("authority_health_and_match_binding_expose_the_runtime_identity", ()
     envelope.matchBinding.dependencies.actionSchema.contentHash,
     hashStarcraftTmgContract({
       kind: "action-schema",
-      schemaVersion: "hybrid_legal_space_v43",
+      schemaVersion: "hybrid_legal_space_v44",
     }),
   );
   assert.equal(envelope.matchBinding.productionReady, false);
@@ -1530,11 +1537,11 @@ const report = {
     crossTimeReplayResult: failures.length ? "failed" : "official_runtime_receipt_replay_passed",
     promotions: [],
     blocks: [
-      "remaining_92_actionable_rule_atoms_not_executable",
+      "remaining_58_actionable_rule_atoms_not_executable",
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 79,
+    remainingRuleGaps: 58,
   },
   harness: {
     harnessLoopUsed: true,

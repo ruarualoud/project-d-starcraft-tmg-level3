@@ -18,7 +18,7 @@ This roadmap started from the Slice 74 denominator:
 
 The count is a source- and dependency-derived implementation plan, not the earlier rolling-average forecast of roughly 54 slices. A cluster may be subdivided if its Judge surface cannot close safely in one commit, but atoms may not be silently moved, dropped, or promoted. Any subdivision must preserve the same cluster denominator and be reported before implementation continues.
 
-Execution status on 2026-09-01: Slices 75–91 are complete for their exact bounded denominators. The current ledger is `664` executable, `248` review-required, and `114` retained display-only RuleAtoms; `20` planned slices, Slice 92 through Slice 111, remain. The machine-verifiable v2 partition closes at `912/0/114`, with zero missing, duplicate, or unknown atom IDs. Any future regrouping must version this route and preserve the exact denominator rather than editing counts silently.
+Execution status on 2026-09-01: Slices 75–106 are complete for their exact bounded denominators. The current ledger is `854` executable, `58` review-required, and `114` retained display-only RuleAtoms; five planned slices, Slice 107 through Slice 111, remain. The machine-verifiable v2 partition closes at `912/0/114`, with zero missing, duplicate, or unknown atom IDs. Any future regrouping must version this route and preserve the exact denominator rather than editing counts silently.
 
 Every slice must land its current executor implementation, public LegalSpace/Apply contract, state read/write/invalidation contract, relationship-graph edges, source-drift gate, Authority Preview→Confirm→Apply evidence, Ed25519 replay after HMAC rotation, historical-display preservation, and focused regression gate together. A slice cannot promote atoms while leaving a new executor contract partial.
 
@@ -69,23 +69,23 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 87 | **Complete:** Model/base geometry, measurement, coherency placement, Within and Wholly Within | 21 | 612 | 300 |
 | 88 | **Complete:** Player/Unit ownership, active/controller authority, friendly/enemy/team identity, specific-over-general | 15 | 627 | 285 |
 | 89 | **Complete:** Dice, re-rolls, tests, generated values, modifiers, Buff and Debuff arithmetic | 18 | 645 | 267 |
-| 90 | Keyword and Special Ability primitives, non-stacking, targeting structure, Repeatable | 13 | 658 | 254 |
-| 91 | Passive/Reaction timing, simultaneous priority, and end-of-round effect order | 6 | 664 | 248 |
-| 92 | Faction/Tactical card layout, uniqueness, purchase resource, and excess-resource loss | 7 | 671 | 241 |
-| 93 | Unit-card fields, phase boxes, Speed-null, base/range/upgrade fields, and Supply Value projection | 12 | 683 | 229 |
-| 94 | Round/phase order, alternating Unit activation, one action per activation, on-table Movement choice | 7 | 690 | 222 |
-| 95 | Supply pool, round escalation, casualty release, deployment reference, and available-supply verification | 5 | 695 | 217 |
-| 96 | Reserve return lifecycle, retained state, target restrictions, final-round Reserve destruction, arrival influence-zone rule | 17 | 712 | 200 |
-| 97 | Unit destruction lifecycle, token/effect cleanup, outward effects, and return boundary | 5 | 717 | 195 |
-| 98 | Status/Stay-in-Play framework, Shielded dependency, Siege Mode, and On Creep | 12 | 729 | 183 |
-| 99 | Hidden and Burrowed complete state/action/targeting lifecycle | 18 | 747 | 165 |
-| 100 | Summon lifecycle: army-list exclusions, Supply, placement, activation linkage, score and Reserve distinctions | 13 | 760 | 152 |
-| 101 | Respawn and Morph placement/Supply/activation lifecycle | 9 | 769 | 143 |
-| 102 | Faction, race/sub-faction tags, faction-card schema, Army Slots, engagement scale, and eligibility | 24 | 793 | 119 |
-| 103 | Army resource budgets and Tactical-card purchase/open-information rules | 11 | 804 | 108 |
+| 90 | **Complete:** Keyword and Special Ability primitives, non-stacking, targeting structure, Repeatable | 13 | 658 | 254 |
+| 91 | **Complete:** Passive/Reaction timing, simultaneous priority, and end-of-round effect order | 6 | 664 | 248 |
+| 92 | **Complete:** Faction/Tactical card layout, uniqueness, purchase resource, and excess-resource loss | 7 | 671 | 241 |
+| 93 | **Complete:** Unit-card fields, phase boxes, Speed-null, base/range/upgrade fields, and Supply Value projection | 12 | 683 | 229 |
+| 94 | **Complete:** Round/phase order, alternating Unit activation, one action per activation, on-table Movement choice | 7 | 690 | 222 |
+| 95 | **Complete:** Supply pool, round escalation, casualty release, deployment reference, and available-supply verification | 5 | 695 | 217 |
+| 96 | **Complete:** Reserve return lifecycle, retained state, target restrictions, final-round Reserve destruction, arrival influence-zone rule | 17 | 712 | 200 |
+| 97 | **Complete:** Unit destruction lifecycle, token/effect cleanup, outward effects, and return boundary | 5 | 717 | 195 |
+| 98 | **Complete:** Status/Stay-in-Play framework, Shielded dependency, Siege Mode, and On Creep | 12 | 729 | 183 |
+| 99 | **Complete:** Hidden and Burrowed complete state/action/targeting lifecycle | 18 | 747 | 165 |
+| 100 | **Complete:** Summon lifecycle: army-list exclusions, Supply, placement, activation linkage, score and Reserve distinctions | 13 | 760 | 152 |
+| 101 | **Complete:** Respawn and Morph placement/Supply/activation lifecycle | 9 | 769 | 143 |
+| 102 | **Complete:** Faction, race/sub-faction tags, faction-card schema, Army Slots, engagement scale, and eligibility | 24 | 793 | 119 |
+| 103 | **Complete:** Army resource budgets and Tactical-card purchase/open-information rules | 11 | 804 | 108 |
 | 104 | **Complete:** Unit composition options, model counts, starting Supply, upgrades, Specialist default, and costs | 16 | 820 | 92 |
 | 105 | **Complete:** Team rosters, open/closed lists, equipment representation, disclosure, and inspection | 13 | 833 | 79 |
-| 106 | Mission/deployment-card draft, colour/control choice, elimination/selection, and card contract | 21 | 854 | 58 |
+| 106 | **Complete:** Mission/deployment-card draft, colour/control choice, elimination/selection, and card contract | 21 | 854 | 58 |
 | 107 | Battlefield dimensions, entry edges, mission-marker placement/elevation, influence corners, and two official FAQ constraints | 12 | 866 | 46 |
 | 108 | Balanced terrain construction: counts, sizes, lanes, quadrants, centre, scaling, and alternating placement | 17 | 883 | 29 |
 | 109 | Battlefield Tokens and Markers: expiry, movement, activation/mode/faction/first-player marker primitives | 11 | 894 | 18 |
@@ -220,3 +220,23 @@ hash. Focused `64/64`, Slice 104 regression `56/56`, runtime `10/10`, aggregate
 advance `820/92/114 → 833/79/114`; graph size is 11,635/32,472 with 74/74
 state-contract executors. The report is
 `docs/ticket-11-slice-105-roster-disclosure-rules-2026-09-01.md`.
+
+## Slice 106 Mission and Deployment Card draft closure
+
+Slice 106 consumes the exact 21-atom route-v2 assignment and adds
+`authority.mission-deployment-draft-rules-v1@1.0.0`. The unchanged official
+lock compiles five Standard and five Skirmish Mission profiles plus five
+Standard and five Skirmish Deployment profiles. Each participant submits two
+distinct cards of each kind; opposing overlaps remain distinct face-up
+occurrences. Authority owns the 2d6-per-player roll-off and tied retry. The
+winner chooses colour and one draft to control, the opponent controls the
+other, and non-controller-eliminate-two/controller-select-one runs for each
+row. The final content-hash binding includes selected field contracts and
+marker affinities but explicitly defers Deployment geometry to Slice 107.
+
+Focused `70/70`, Slice 105 regression `64/64`, runtime `10/10`, aggregate
+`10/10`, authoritative-transition 7-check and authoritative-room 7-check gates
+pass. Evidence is 170 base reports/2,619 assertions and 171/2,629 including the
+aggregate. Counts advance `833/79/114 → 854/58/114`; graph size is
+11,796/32,744 with 75/75 state-contract executors. The report is
+`docs/ticket-11-slice-106-mission-deployment-draft-rules-2026-09-01.md`.

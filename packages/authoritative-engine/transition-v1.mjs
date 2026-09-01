@@ -100,6 +100,7 @@ const ACTION_FIELDS = Object.freeze([
   "armyResourceBudgetPlan",
   "unitCompositionUpgradePlan",
   "rosterDisclosurePlan",
+  "missionDeploymentDraftPlan",
 ]);
 
 class AuthorityError extends Error {
@@ -653,6 +654,10 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry,
   ]));
   const actionSchemaVersion = runtimeExecutors.has(
+    "authority.mission-deployment-draft-rules-v1",
+  )
+    ? "hybrid_legal_space_v44"
+    : runtimeExecutors.has(
     "authority.roster-disclosure-rules-v1",
   )
     ? "hybrid_legal_space_v43"

@@ -1445,6 +1445,18 @@ import {
 } from "./official-roster-disclosure-rules-executor-v1.mjs";
 import { assertOfficialEquipmentRelevantActionReminderV1 } from
   "./official-roster-disclosure-rules-kernel-v1.mjs";
+import {
+  applyOfficialMissionDeploymentDraftRulesV1,
+  enumerateOfficialMissionDeploymentDraftRulesV1,
+  instantiateOfficialMissionDeploymentDraftRulesV1,
+  OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_ACTION_ATOM_IDS,
+  OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_ACTION_TYPE,
+  OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_ATOM_IDS,
+  OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_ID,
+  OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_VERSION,
+  OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_PARAMETER_KIND,
+  OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_TRANSITION_SCHEMA,
+} from "./official-mission-deployment-draft-rules-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -2286,6 +2298,14 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_ROSTER_DISCLOSURE_RULES_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_ID,
+    executorVersion: OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([
+      OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_ACTION_TYPE,
+    ]),
+    transitionSchema: OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -2393,6 +2413,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ATOM_IDS,
+  ...OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -2555,6 +2576,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ID,
     OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_ID,
+    OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_ATOM_IDS,
   ],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
@@ -3237,6 +3262,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const rosterDisclosureRulesEnabled = enabledExecutorIds.has(
     OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ID,
   );
+  const missionDeploymentDraftRulesEnabled = enabledExecutorIds.has(
+    OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_ID,
+  );
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -3576,6 +3604,8 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           ? [OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_PARAMETER_KIND] : []),
         ...(rosterDisclosureRulesEnabled
           ? [OFFICIAL_ROSTER_DISCLOSURE_RULES_PARAMETER_KIND] : []),
+        ...(missionDeploymentDraftRulesEnabled
+          ? [OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_PARAMETER_KIND] : []),
         ...(disengageV5Enabled
           ? [OFFICIAL_DISENGAGE_V5_PARAMETER_KIND]
           : disengageV4Enabled
@@ -3629,6 +3659,24 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     const includeDisabled = options.includeDisabled === true;
     const candidates = [];
     const parameterDomains = [];
+    if (missionDeploymentDraftRulesEnabled
+      && state.rulesProcedureMode === true
+      && state.officialMissionDeploymentDraftDataBundle
+      && state.armyBuildingEngagementScale
+      && ["army_building", "pre_game"].includes(String(state.phase || ""))
+      && state.officialMissionDeploymentDraft?.stage !== "complete") {
+      const staged = enumerateOfficialMissionDeploymentDraftRulesV1(state, {
+        sideKey, includeDisabled, matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state), terminal: null,
+        candidates: staged.candidates, parameterDomains: staged.parameterDomains,
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
+      });
+    }
     if (unitCompositionUpgradeRulesEnabled
       && state.pendingAction?.schema
         === "starcraft_tmg_official_unit_composition_upgrade_rules_pending_v1") {
@@ -5269,6 +5317,20 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       assertActionLineage(action, OFFICIAL_ROSTER_DISCLOSURE_RULES_ACTION_ATOM_IDS);
       return applyOfficialRosterDisclosureRulesV1(state, action, {
         matchBinding: options.matchBinding,
+      });
+    }
+    if (action.actionType === OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_ACTION_TYPE
+      && action.executorId === OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_ID) {
+      if (!missionDeploymentDraftRulesEnabled
+        || action.executorVersion
+          !== OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action,
+        OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_ACTION_ATOM_IDS);
+      return applyOfficialMissionDeploymentDraftRulesV1(state, action, {
+        matchBinding: options.matchBinding,
+        chanceReveals: options.chanceReveals,
       });
     }
     if (action.actionType === OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_ACTION_TYPE
@@ -8499,6 +8561,20 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function instantiate(state, domain, parameters, options = {}) {
     if (!object(state) || !object(domain)) fail("RULE_RUNTIME_PARAMETER_DOMAIN_INVALID");
+    if (domain.parameterKind
+      === OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_PARAMETER_KIND) {
+      if (!missionDeploymentDraftRulesEnabled
+        || domain.executorId !== OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_ID
+        || domain.executorVersion
+          !== OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain,
+        OFFICIAL_MISSION_DEPLOYMENT_DRAFT_RULES_ACTION_ATOM_IDS);
+      return instantiateOfficialMissionDeploymentDraftRulesV1(
+        state, domain, parameters, { matchBinding: options.matchBinding },
+      );
+    }
     if (domain.parameterKind === OFFICIAL_ROSTER_DISCLOSURE_RULES_PARAMETER_KIND) {
       if (!rosterDisclosureRulesEnabled
         || domain.executorId !== OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ID
