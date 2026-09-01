@@ -463,9 +463,12 @@ const historicalFactionArmyEligibilityRulesSliceReport = JSON.parse(await readFi
 const historicalArmyResourceBudgetRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-army-resource-budget-rules-rule-slice-v1-report.json"), "utf8"));
-const latestSliceReport = JSON.parse(await readFile(
+const historicalUnitCompositionUpgradeRulesSliceReport = JSON.parse(await readFile(
   path.join(OUTPUT_DIR,
     "official-unit-composition-upgrade-rules-rule-slice-v1-report.json"), "utf8"));
+const latestSliceReport = JSON.parse(await readFile(
+  path.join(OUTPUT_DIR,
+    "official-roster-disclosure-rules-rule-slice-v1-report.json"), "utf8"));
 
 function clone(value) {
   return structuredClone(value);
@@ -789,8 +792,12 @@ const historicalFactionArmyEligibilityRulesSlice =
   historicalFactionArmyEligibilityRulesSliceReport.slice;
 const historicalArmyResourceBudgetRulesSlice =
   historicalArmyResourceBudgetRulesSliceReport.slice;
+const historicalUnitCompositionUpgradeRulesSlice =
+  historicalUnitCompositionUpgradeRulesSliceReport.slice;
 const latestSlice = latestSliceReport.slice;
 assert.equal(latestSlice.previousSliceHash,
+  historicalUnitCompositionUpgradeRulesSlice.sliceHash);
+assert.equal(historicalUnitCompositionUpgradeRulesSlice.previousSliceHash,
   historicalArmyResourceBudgetRulesSlice.sliceHash);
 assert.equal(historicalArmyResourceBudgetRulesSlice.previousSliceHash,
   historicalFactionArmyEligibilityRulesSlice.sliceHash);
@@ -983,26 +990,26 @@ async function check(id, fn) {
 await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", () => {
   assert.equal(rulesRuntime.descriptor.catalogueHash, latestSlice.catalogueHash);
   assert.equal(rulesRuntime.descriptor.rulesVersion, latestSlice.catalogue.rulesVersion);
-  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 820);
-  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 206);
+  assert.equal(rulesRuntime.descriptor.executableRuleAtomCount, 833);
+  assert.equal(rulesRuntime.descriptor.nonExecutableRuleAtomCount, 193);
   assert.equal(rulesRuntime.descriptor.legalSpaceComplete, false);
   assert.equal(rulesRuntime.descriptor.legacyCompatibilityUsed, false);
   assert.equal(rulesRuntime.descriptor.productionRoomEligible, false);
   assert.deepEqual(latestSliceReport.sliceAudit.counts, {
-    executableRuleAtoms: 820,
-    newlyExecutableRuleAtoms: 16,
-    reviewRequiredRuleAtoms: 92,
+    executableRuleAtoms: 833,
+    newlyExecutableRuleAtoms: 13,
+    reviewRequiredRuleAtoms: 79,
     displayOnlyRuleAtoms: 114,
-    strictCompleteAtoms: 820,
+    strictCompleteAtoms: 833,
     partialContractAtoms: 0,
     noContractAtoms: 0,
-    declaredStateContractExecutors: 73,
+    declaredStateContractExecutors: 74,
     missingStateContractExecutors: 0,
   });
   assert.match(rulesRuntime.descriptor.runtimeHash, /^[a-f0-9]{64}$/u);
   assert.equal(
     rulesRuntime.descriptor.runtimeHash,
-    "634bcc281480f6bcb297b940b295e18a3e2324e3a12dc58162455243d548f738",
+    "82e6a48ff5531fd0b67821195d02a522210db3b4d5d343e94236b620773bd3ba",
   );
   assert.equal(
     historicalVictoryPointRuntime.descriptor.runtimeHash,
@@ -1308,6 +1315,10 @@ await check("runtime_binds_the_exact_cumulative_catalogue_and_known_executors", 
     manifestById.get("authority.unit-composition-upgrade-rules-v1").actionTypes,
     ["resolve_unit_composition_upgrade_rules_procedure"],
   );
+  assert.deepEqual(
+    manifestById.get("authority.roster-disclosure-rules-v1").actionTypes,
+    ["resolve_roster_disclosure_rules_procedure"],
+  );
 });
 
 await check("authority_health_and_match_binding_expose_the_runtime_identity", () => {
@@ -1330,7 +1341,7 @@ await check("authority_health_and_match_binding_expose_the_runtime_identity", ()
     envelope.matchBinding.dependencies.actionSchema.contentHash,
     hashStarcraftTmgContract({
       kind: "action-schema",
-      schemaVersion: "hybrid_legal_space_v42",
+      schemaVersion: "hybrid_legal_space_v43",
     }),
   );
   assert.equal(envelope.matchBinding.productionReady, false);
@@ -1523,7 +1534,7 @@ const report = {
       "114_display_only_rule_atoms_preserved",
       "production_room_runtime_incomplete",
     ],
-    remainingRuleGaps: 92,
+    remainingRuleGaps: 79,
   },
   harness: {
     harnessLoopUsed: true,

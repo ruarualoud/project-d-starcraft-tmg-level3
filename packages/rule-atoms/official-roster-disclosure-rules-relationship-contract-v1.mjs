@@ -1,0 +1,225 @@
+import {
+  OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ATOM_IDS,
+  OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ID,
+  OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_VERSION,
+} from "./official-roster-disclosure-rules-executor-v1.mjs";
+import { createOfficialUnitCompositionUpgradeRulesRelationshipExtensionV1 } from
+  "./official-unit-composition-upgrade-rules-relationship-contract-v1.mjs";
+
+export const OFFICIAL_ROSTER_DISCLOSURE_RULES_RELATIONSHIP_SCOPE_ID =
+  "ticket-11-slice-105-roster-disclosure-rules";
+
+const ID = Object.freeze({
+  source: "state_field:officialDevelopmentTrancheSourceLockAudit",
+  gameplay: "state_field:officialGameplayDataBundle",
+  data: "state_field:officialRosterDisclosureDataBundle",
+  mode: "state_field:rulesProcedureMode", round: "state_field:round",
+  phase: "state_field:phase", active: "state_field:activeSideKey",
+  players: "state_field:players", teamGame: "state_field:teamGame",
+  teamBudget: "state_field:teamMineralBudgetAgreement",
+  compositionAudits: "state_field:armyCompositionUpgradeAuditsBySide",
+  registry: "state_field:authoritativeRosterRegistry",
+  registrySummary: "state_field:rosterRegistryResolution",
+  agreements: "state_field:rosterVisibilityAgreementsByPlayer",
+  override: "state_field:verifiedTournamentRosterVisibilityOverride",
+  visibility: "state_field:rosterVisibilityResolution",
+  publicProjection: "state_field:publicRosterDisclosureBySide",
+  equipment: "state_field:equipmentDisclosureByUnit",
+  reminderPermits: "state_field:equipmentReminderPermitsByActionHash",
+  inspections: "state_field:onTableUnitInspectionsBySide",
+  conduct: "state_field:privateRosterDisclosureConductIncidents",
+  pending: "state_field:pendingAction.rosterDisclosureRules",
+  history: "state_field:rosterDisclosureRulesHistory",
+  last: "state_field:lastRosterDisclosureRulesResolution",
+  log: "state_field:log",
+  choose: "action_variant:rosterDisclosureRulesV1.chooseCertifiedPlan",
+  part9: "derived_value:rosterDisclosureV1.exactPart9ClauseDenominator",
+  independent: "derived_value:rosterDisclosureV1.independentTeamRosters",
+  tournament: "derived_value:rosterDisclosureV1.tournamentOverride",
+  unanimous: "derived_value:rosterDisclosureV1.unanimousClosedAgreement",
+  open: "derived_value:rosterDisclosureV1.defaultOpenLists",
+  secrecy: "derived_value:rosterDisclosureV1.closedUndeployedSecrecy",
+  faceUp: "derived_value:rosterDisclosureV1.faceUpFactionTacticalCards",
+  deployment: "derived_value:rosterDisclosureV1.deployedUnitDisclosure",
+  inspection: "derived_value:rosterDisclosureV1.onTableInspection",
+  loadout: "derived_value:rosterDisclosureV1.rulesOwnedExpectedEquipment",
+  modelling: "derived_value:rosterDisclosureV1.accurateRepresentation",
+  conductRule: "derived_value:rosterDisclosureV1.nondisclosureConduct",
+  reminder: "derived_value:rosterDisclosureV1.relevantActionReminderPermit",
+  noLeak: "semantic_projection:room.rosterDisclosureViewerNoLeakV2",
+  actionGate: "semantic_projection:runtime.equipmentReminderActionGateV1",
+  event: "state_event:roster_disclosure_rules_resolved",
+  compositionExecutor: "executor:authority.unit-composition-upgrade-rules-v1@1.0.0",
+  budgetExecutor: "executor:authority.army-resource-budget-rules-v1@1.0.0",
+  sourceTest: "judge_test:roster-disclosure-v1-source",
+  registryTest: "judge_test:roster-disclosure-v1-registry",
+  visibilityTest: "judge_test:roster-disclosure-v1-visibility",
+  equipmentTest: "judge_test:roster-disclosure-v1-equipment",
+  reminderTest: "judge_test:roster-disclosure-v1-reminder-gate",
+  privacyTest: "judge_test:roster-disclosure-v1-viewer-no-leak",
+  authorityTest: "judge_test:roster-disclosure-v1-authority-replay",
+  graphTest: "judge_test:roster-disclosure-v1-relationship-negative-gap",
+});
+
+function fail(code) { throw new Error(code); }
+function node(nodeId, kind, label) {
+  return { nodeId, kind, label, provenance: "ticket-11-slice-105" };
+}
+function edge(from, relationship, to, provenance) {
+  return { scopeId: OFFICIAL_ROSTER_DISCLOSURE_RULES_RELATIONSHIP_SCOPE_ID,
+    from, relationship, to, provenance };
+}
+
+export function createOfficialRosterDisclosureRulesRelationshipExtensionV1(
+  input = {}) {
+  const catalogueHash = String(input.catalogueHash || "");
+  const runtimeHash = String(input.runtimeHash || "");
+  if (!/^[a-f0-9]{64}$/u.test(catalogueHash) || !/^[a-f0-9]{64}$/u.test(runtimeHash)) {
+    fail("ROSTER_DISCLOSURE_RELEASE_INVALID");
+  }
+  const previous = createOfficialUnitCompositionUpgradeRulesRelationshipExtensionV1({
+    catalogueHash, runtimeHash });
+  const executor = `executor:${OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ID}`
+    + `@${OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_VERSION}`;
+  const reads = [ID.source, ID.gameplay, ID.data, ID.mode, ID.round, ID.phase,
+    ID.active, ID.players, ID.teamGame, ID.teamBudget, ID.compositionAudits,
+    ID.registry, ID.registrySummary, ID.agreements, ID.override, ID.visibility,
+    ID.publicProjection, ID.equipment, ID.reminderPermits, ID.inspections,
+    ID.conduct, ID.pending, ID.history, ID.last, ID.log];
+  const writes = [ID.registry, ID.registrySummary, ID.agreements, ID.visibility,
+    ID.publicProjection, ID.equipment, ID.reminderPermits, ID.inspections,
+    ID.conduct, ID.pending, ID.history, ID.last, ID.log];
+  const derived = [ID.part9, ID.independent, ID.tournament, ID.unanimous,
+    ID.open, ID.secrecy, ID.faceUp, ID.deployment, ID.inspection, ID.loadout,
+    ID.modelling, ID.conductRule, ID.reminder];
+  const tests = [ID.sourceTest, ID.registryTest, ID.visibilityTest,
+    ID.equipmentTest, ID.reminderTest, ID.privacyTest, ID.authorityTest,
+    ID.graphTest];
+  const edges = [
+    ...reads.map((target) => edge(executor, "reads", target,
+      "roster_disclosure:state_contract")),
+    edge(executor, "exposes", ID.choose,
+      "roster_disclosure:certified_plan_choice"),
+    edge(ID.data, "derives", ID.part9,
+      "roster_disclosure:thirteen_exact_part9_clauses"),
+    edge(ID.compositionExecutor, "consumed_by", ID.independent,
+      "roster_disclosure:frozen_slice104_complete_rosters"),
+    edge(ID.budgetExecutor, "consumed_by", ID.independent,
+      "roster_disclosure:frozen_slice103_team_partition"),
+    edge(ID.part9, "defines", ID.tournament,
+      "roster_disclosure:tournament_pack_precedence"),
+    edge(ID.part9, "defines", ID.unanimous,
+      "roster_disclosure:each_player_personal_agreement"),
+    edge(ID.unanimous, "gates", ID.secrecy,
+      "roster_disclosure:all_players_must_agree"),
+    edge(ID.unanimous, "derives", ID.open,
+      "roster_disclosure:any_decline_defaults_open"),
+    edge(ID.tournament, "gates", ID.visibility,
+      "roster_disclosure:organizer_override"),
+    edge(ID.open, "derives", ID.publicProjection,
+      "roster_disclosure:pregame_full_roster"),
+    edge(ID.secrecy, "derives", ID.publicProjection,
+      "roster_disclosure:undeployed_opponents_hidden"),
+    edge(ID.faceUp, "derives", ID.publicProjection,
+      "roster_disclosure:cards_always_public"),
+    edge(ID.independent, "derives", ID.registry,
+      "roster_disclosure:one_authoritative_roster_per_player"),
+    edge(ID.registry, "projects_to", ID.noLeak,
+      "roster_disclosure:private_authoritative_to_viewer_projection"),
+    edge(ID.publicProjection, "projects_to", ID.noLeak,
+      "roster_disclosure:public_rows_only"),
+    edge(ID.secrecy, "constrains", ID.noLeak,
+      "roster_disclosure:closed_list_redaction"),
+    edge(ID.loadout, "derives", ID.modelling,
+      "roster_disclosure:expected_per_model_equipment"),
+    edge(ID.modelling, "gates", ID.deployment,
+      "roster_disclosure:unrepresented_equipment_declaration"),
+    edge(ID.deployment, "derives", ID.publicProjection,
+      "roster_disclosure:on_table_unit_now_public"),
+    edge(ID.deployment, "gates", ID.inspection,
+      "roster_disclosure:on_table_only"),
+    edge(ID.equipment, "derives", ID.reminder,
+      "roster_disclosure:repeat_unrepresented_equipment"),
+    edge(ID.reminder, "gates", ID.actionGate,
+      "roster_disclosure:exact_action_hash_permit"),
+    edge(ID.conductRule, "derives", ID.conduct,
+      "roster_disclosure:missing_declaration_or_reminder"),
+    edge(ID.choose, "derives", ID.event,
+      "roster_disclosure:confirmed_resolution"),
+    ...derived.map((source) => edge(source, "derives", ID.event,
+      "roster_disclosure:procedure_result")),
+    ...writes.map((target) => edge(ID.event, "writes", target,
+      "roster_disclosure:rules_owned_commit")),
+    edge(ID.data, "verified_by", ID.sourceTest,
+      "roster_disclosure:source_judge"),
+    edge(ID.independent, "verified_by", ID.registryTest,
+      "roster_disclosure:registry_judge"),
+    edge(ID.secrecy, "verified_by", ID.visibilityTest,
+      "roster_disclosure:visibility_judge"),
+    edge(ID.loadout, "verified_by", ID.equipmentTest,
+      "roster_disclosure:equipment_judge"),
+    edge(ID.actionGate, "verified_by", ID.reminderTest,
+      "roster_disclosure:reminder_judge"),
+    edge(ID.noLeak, "verified_by", ID.privacyTest,
+      "roster_disclosure:viewer_projection_judge"),
+    edge(executor, "verified_by", ID.authorityTest,
+      "roster_disclosure:authority"),
+    edge(executor, "verified_by", ID.graphTest,
+      "roster_disclosure:relationship"),
+    ...reads.map((source) => edge(source, "invalidates", ID.choose,
+      "roster_disclosure:stale")),
+  ];
+  const additions = [
+    node(ID.data, "state_field", "Official roster disclosure data bundle"),
+    node(ID.teamGame, "state_field", "Team-game mode"),
+    node(ID.registry, "state_field", "Private authoritative roster registry"),
+    node(ID.registrySummary, "state_field", "Public roster registry summary"),
+    node(ID.agreements, "state_field", "Per-player closed-list agreements"),
+    node(ID.override, "state_field", "Verified tournament visibility override"),
+    node(ID.visibility, "state_field", "Roster visibility resolution"),
+    node(ID.publicProjection, "state_field", "Public roster disclosure by side"),
+    node(ID.equipment, "state_field", "On-table equipment disclosures"),
+    node(ID.reminderPermits, "state_field", "Equipment reminder action permits"),
+    node(ID.inspections, "state_field", "On-table unit inspections by side"),
+    node(ID.conduct, "state_field", "Private nondisclosure conduct incidents"),
+    node(ID.pending, "state_field", "Roster disclosure pending"),
+    node(ID.history, "state_field", "Roster disclosure history"),
+    node(ID.last, "state_field", "Last roster disclosure resolution"),
+    node(ID.choose, "action_variant", "Choose certified roster disclosure plan"),
+    ...derived.map((id) => node(id, "derived_value", id.replace(/^derived_value:/u, ""))),
+    node(ID.noLeak, "semantic_projection", "Viewer-specific closed-list no-leak projection"),
+    node(ID.actionGate, "semantic_projection", "Exact action equipment reminder gate"),
+    node(ID.event, "state_event", "Roster disclosure rules resolved"),
+    ...tests.map((id) => node(id, "judge_test", id.replace(/^judge_test:/u, ""))),
+  ];
+  const previousIds = new Set(previous.nodes.map((entry) => entry.nodeId));
+  return { nodes: [...previous.nodes,
+    ...additions.filter((entry) => !previousIds.has(entry.nodeId))],
+  edges: [...previous.edges, ...edges],
+  executorLineages: [...previous.executorLineages, {
+    executorId: OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ID,
+    ruleAtomIds: [...OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ATOM_IDS],
+    provenance: "runtime_action_lineage:roster_disclosure_rules_v1" }],
+  declaredStateContractExecutorIds: [...previous.declaredStateContractExecutorIds,
+    OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ID],
+  coverageScopes: [...previous.coverageScopes, {
+    scopeId: OFFICIAL_ROSTER_DISCLOSURE_RULES_RELATIONSHIP_SCOPE_ID,
+    executorId: OFFICIAL_ROSTER_DISCLOSURE_RULES_EXECUTOR_ID,
+    requiredNodeIds: [...new Set([executor, ...reads, ...writes, ID.choose,
+      ...derived, ID.noLeak, ID.actionGate, ID.compositionExecutor,
+      ID.budgetExecutor, ID.event, ...tests])], requiredEdges: edges,
+    requiredPaths: [
+      { from: ID.compositionExecutor, to: ID.registry,
+        relationships: ["consumed_by", "derives"], maxDepth: 3 },
+      { from: ID.unanimous, to: ID.publicProjection,
+        relationships: ["gates", "derives"], maxDepth: 4 },
+      { from: ID.secrecy, to: ID.noLeak,
+        relationships: ["constrains"], maxDepth: 2 },
+      { from: ID.loadout, to: ID.publicProjection,
+        relationships: ["derives", "gates"], maxDepth: 5 },
+      { from: ID.equipment, to: ID.actionGate,
+        relationships: ["derives", "gates"], maxDepth: 4 },
+    ], forbiddenPaths: [{ from: ID.registry, to: ID.publicProjection,
+      relationships: ["writes"], maxDepth: 3 }], evidenceTestNodeIds: tests,
+  }] };
+}

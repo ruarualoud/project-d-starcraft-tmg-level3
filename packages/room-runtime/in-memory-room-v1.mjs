@@ -91,16 +91,68 @@ function publicMatchBinding(binding) {
   };
 }
 
-function projectState(state, seatKey = null) {
+function filteredBySide(value, allowedSideKeys) {
+  if (!object(value)) return {};
+  return Object.fromEntries(Object.entries(value).filter(([sideKey]) => (
+    allowedSideKeys.has(sideKey))).map(([sideKey, row]) => [sideKey, clone(row)]));
+}
+
+export function projectStarcraftTmgStateForViewerV2(state, seatKey = null) {
   const projection = clone(state);
   if (!seatKey) projection.cardResources = {};
   else projection.cardResources = { [seatKey]: clone(state.cardResources?.[seatKey] || []) };
+  const visibility = state.rosterVisibilityResolution?.rosterVisibility;
+  const teamId = state.rosterRegistryResolution?.teamMembershipByPlayer?.[seatKey];
+  const alliedSideKeys = new Set(seatKey ? [seatKey] : []);
+  if (teamId) {
+    for (const [playerId, playerTeamId] of Object.entries(
+      state.rosterRegistryResolution?.teamMembershipByPlayer || {})) {
+      if (playerTeamId === teamId) alliedSideKeys.add(playerId);
+    }
+  }
+  const revealAllRosters = visibility === "open";
+  const visiblePrivateSideKeys = revealAllRosters
+    ? new Set(Object.keys(state.players || {})) : alliedSideKeys;
+  for (const field of ["armyBuildingConfigurationBySide",
+    "armyResourceBudgetsBySide", "unitCompositionSelectionsBySide",
+    "unitUpgradeSelectionsBySide", "armyCompositionUpgradeAuditsBySide"]) {
+    if (field in projection) {
+      projection[field] = filteredBySide(state[field], visiblePrivateSideKeys);
+    }
+  }
+  delete projection.authoritativeRosterRegistry;
+  delete projection.authoritativeArmyRostersBySide;
+  projection.ownTeamArmyRostersBySide = filteredBySide(
+    state.authoritativeArmyRostersBySide, alliedSideKeys);
+  if (projection.pendingAction?.schema
+    === "starcraft_tmg_official_roster_disclosure_rules_pending_v1") {
+    projection.pendingAction.choices = (projection.pendingAction.choices || [])
+      .map((entry) => withoutPrivateRosterChoice(entry));
+  }
+  projection.equipmentReminderPermitsByActionHash = Object.fromEntries(
+    Object.entries(state.equipmentReminderPermitsByActionHash || {})
+      .filter(([, permit]) => alliedSideKeys.has(String(permit?.playerId || "")))
+      .map(([key, permit]) => [key, clone(permit)]));
+  projection.privateRosterDisclosureConductIncidents = (
+    state.privateRosterDisclosureConductIncidents || [])
+    .filter((entry) => alliedSideKeys.has(String(entry?.playerId || "")))
+    .map((entry) => clone(entry));
   projection.log = (projection.log || []).map((entry) => {
     if (entry.action?.actionType !== "use_card_resource") return entry;
     if (entry.action.sideKey === seatKey) return entry;
     return { ...entry, action: { actionType: "use_card_resource", sideKey: entry.action.sideKey }, events: [{ type: "card_resource_used", sideKey: entry.action.sideKey }] };
   });
   return projection;
+}
+
+function withoutPrivateRosterChoice(entry) {
+  const value = clone(entry);
+  delete value.result;
+  return value;
+}
+
+function projectState(state, seatKey = null) {
+  return projectStarcraftTmgStateForViewerV2(state, seatKey);
 }
 
 function publicReceipt(receipt) {

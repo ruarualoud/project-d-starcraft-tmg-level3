@@ -84,7 +84,7 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 102 | Faction, race/sub-faction tags, faction-card schema, Army Slots, engagement scale, and eligibility | 24 | 793 | 119 |
 | 103 | Army resource budgets and Tactical-card purchase/open-information rules | 11 | 804 | 108 |
 | 104 | **Complete:** Unit composition options, model counts, starting Supply, upgrades, Specialist default, and costs | 16 | 820 | 92 |
-| 105 | Team rosters, open/closed lists, equipment representation, disclosure, and inspection | 13 | 833 | 79 |
+| 105 | **Complete:** Team rosters, open/closed lists, equipment representation, disclosure, and inspection | 13 | 833 | 79 |
 | 106 | Mission/deployment-card draft, colour/control choice, elimination/selection, and card contract | 21 | 854 | 58 |
 | 107 | Battlefield dimensions, entry edges, mission-marker placement/elevation, influence corners, and two official FAQ constraints | 12 | 866 | 46 |
 | 108 | Balanced terrain construction: counts, sizes, lanes, quadrants, centre, scaling, and alternating placement | 17 | 883 | 29 |
@@ -200,3 +200,23 @@ The post-Slice85 audit no longer relies on prose labels plus arithmetic. `packag
 The five recovered debt atoms are the Core 11 Leading Model Gap rule, Leading Model nomination duration, the Core 11 Size0/1 terrain-pass rule, the Core 8.5.3 Gap-clearance reference, and Ramp movement. Four are now in Slice86 and nomination duration is in Slice87. The wider count changes in the table are explicit semantic-boundary corrections made while constructing the ID-level partition; they do not change the current catalogue or promote any rule. Route verifier `10/10` passes with hash `3b0f0b0a75d6a07b807a037941c1246736a69b35b8898ec7309295316bacacc2`. The audit report is `docs/ticket-11-slices-86-111-route-v2-audit-2026-09-01.md`.
 
 No Skill, DSH, MuZero, self-play, memory, or training-truth promotion is part of these RuleAtom slices.
+
+## Slice 105 roster visibility and equipment disclosure closure
+
+Slice 105 consumes the exact 13-atom route-v2 assignment and adds
+`authority.roster-disclosure-rules-v1@1.0.0`. The Rules-owned roster registry
+binds every player to an independent army while viewer projection keeps closed
+opposing rosters private. A verified tournament rules-pack override takes
+precedence; otherwise lists are open unless every player independently agrees
+to closed lists. Faction/Tactical Cards remain visible, deployed Unit Upgrades
+and weapon swaps are disclosed, and on-table Unit/Card inspection is executable.
+
+Per-model equipment is derived from the current official default weapon
+profiles plus frozen Slice 104 purchases and replacement links. Every
+non-represented item must be disclosed at deployment and reminded before a
+relevant action; the reminder permit is bound to that exact action-contract
+hash. Focused `64/64`, Slice 104 regression `56/56`, runtime `10/10`, aggregate
+`10/10`, authoritative-room 7-check and HTTP-adapter 4-check gates pass. Counts
+advance `820/92/114 → 833/79/114`; graph size is 11,635/32,472 with 74/74
+state-contract executors. The report is
+`docs/ticket-11-slice-105-roster-disclosure-rules-2026-09-01.md`.
