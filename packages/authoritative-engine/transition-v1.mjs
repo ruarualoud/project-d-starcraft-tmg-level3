@@ -96,6 +96,7 @@ const ACTION_FIELDS = Object.freeze([
   "hiddenBurrowedPlan",
   "summonRulesPlan",
   "respawnMorphRulesPlan",
+  "factionArmyEligibilityPlan",
 ]);
 
 class AuthorityError extends Error {

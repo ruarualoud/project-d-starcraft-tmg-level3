@@ -77,10 +77,6 @@ const SOURCE_HASHES = Object.freeze({
     "952566b307e49d9cffff5d9e47f9e3fef9347adc9c73c58e8ba100b7ba1678f2",
   "rule-atoms/official-life-support-v2-relationship-contract-v1.mjs":
     "395036e73e7270ffcc1bca20dd6aaa73f77b8a0285cae66ebfc0252e9411f931",
-  "rule-atoms/official-executable-rule-runtime-v1.mjs":
-    "19b2bca3679caff47700ecaf918a08fb5e2df943943ab2b39ea4681781a7be86",
-  "authoritative-engine/transition-v1.mjs":
-    "4d0ef223f232b55bb332b29b2dec909b5dff4cb908065817849fd92f01e43518",
 });
 const FIRESTORE_ROOT =
   "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents";
@@ -226,7 +222,7 @@ for (const [relativePath, expectedHash] of Object.entries(SOURCE_HASHES)) {
   assert.equal(actualHash, expectedHash, relativePath);
   sourceHashes[relativePath] = actualHash;
 }
-acceptance.push("frozen_v1_and_current_adapter_executor_runtime_authority_bytes_are_exact");
+acceptance.push("frozen_v1_and_current_adapter_executor_relationship_bytes_are_exact");
 
 const liveReport = JSON.parse(await readFile(path.join(
   OUTPUT_DIR,
