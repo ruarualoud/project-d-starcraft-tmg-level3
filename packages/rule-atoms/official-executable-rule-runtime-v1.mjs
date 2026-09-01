@@ -1419,6 +1419,18 @@ import {
   OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_PARAMETER_KIND,
   OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_TRANSITION_SCHEMA,
 } from "./official-army-resource-budget-rules-executor-v1.mjs";
+import {
+  applyOfficialUnitCompositionUpgradeRulesV1,
+  enumerateOfficialUnitCompositionUpgradeRulesV1,
+  instantiateOfficialUnitCompositionUpgradeRulesV1,
+  OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_ACTION_ATOM_IDS,
+  OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_ACTION_TYPE,
+  OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_ATOM_IDS,
+  OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_ID,
+  OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_VERSION,
+  OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_PARAMETER_KIND,
+  OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_TRANSITION_SCHEMA,
+} from "./official-unit-composition-upgrade-rules-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -2248,6 +2260,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_ID,
+    executorVersion: OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -2353,6 +2371,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_RESPAWN_MORPH_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_FACTION_ARMY_ELIGIBILITY_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_EXECUTOR_ATOM_IDS,
+  ...OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -2507,6 +2526,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_EXECUTOR_ID,
     OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_ID,
+    OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_ATOM_IDS,
   ],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
@@ -3183,6 +3206,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const armyResourceBudgetRulesEnabled = enabledExecutorIds.has(
     OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_EXECUTOR_ID,
   );
+  const unitCompositionUpgradeRulesEnabled = enabledExecutorIds.has(
+    OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_ID,
+  );
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -3518,6 +3544,8 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
           ? [OFFICIAL_FACTION_ARMY_ELIGIBILITY_RULES_PARAMETER_KIND] : []),
         ...(armyResourceBudgetRulesEnabled
           ? [OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_PARAMETER_KIND] : []),
+        ...(unitCompositionUpgradeRulesEnabled
+          ? [OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_PARAMETER_KIND] : []),
         ...(disengageV5Enabled
           ? [OFFICIAL_DISENGAGE_V5_PARAMETER_KIND]
           : disengageV4Enabled
@@ -3571,6 +3599,21 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
     const includeDisabled = options.includeDisabled === true;
     const candidates = [];
     const parameterDomains = [];
+    if (unitCompositionUpgradeRulesEnabled
+      && state.pendingAction?.schema
+        === "starcraft_tmg_official_unit_composition_upgrade_rules_pending_v1") {
+      const staged = enumerateOfficialUnitCompositionUpgradeRulesV1(state, {
+        sideKey, includeDisabled, matchBinding: options.matchBinding,
+      });
+      return freezeDeep({
+        schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+        rulesRuntimeHash: descriptor.runtimeHash,
+        stateSummary: stateSummary(state), terminal: null,
+        candidates: staged.candidates, parameterDomains: staged.parameterDomains,
+        legalSpaceComplete: descriptor.legalSpaceComplete,
+        developmentSubset: !descriptor.legalSpaceComplete, trainingTruth: false,
+      });
+    }
     if (armyResourceBudgetRulesEnabled
       && state.pendingAction?.schema
         === "starcraft_tmg_official_army_resource_budget_rules_pending_v1") {
@@ -5169,6 +5212,19 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function apply(state, action, options = {}) {
     if (!object(state) || !object(action)) fail("RULE_RUNTIME_ACTION_INVALID");
+    if (action.actionType === OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_ACTION_TYPE
+      && action.executorId === OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_ID) {
+      if (!unitCompositionUpgradeRulesEnabled
+        || action.executorVersion
+          !== OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action,
+        OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_ACTION_ATOM_IDS);
+      return applyOfficialUnitCompositionUpgradeRulesV1(state, action, {
+        matchBinding: options.matchBinding,
+      });
+    }
     if (action.actionType === OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_ACTION_TYPE
       && action.executorId === OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_EXECUTOR_ID) {
       if (!armyResourceBudgetRulesEnabled
@@ -8384,6 +8440,19 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
 
   function instantiate(state, domain, parameters, options = {}) {
     if (!object(state) || !object(domain)) fail("RULE_RUNTIME_PARAMETER_DOMAIN_INVALID");
+    if (domain.parameterKind === OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_PARAMETER_KIND) {
+      if (!unitCompositionUpgradeRulesEnabled
+        || domain.executorId !== OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_ID
+        || domain.executorVersion
+          !== OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(domain,
+        OFFICIAL_UNIT_COMPOSITION_UPGRADE_RULES_ACTION_ATOM_IDS);
+      return instantiateOfficialUnitCompositionUpgradeRulesV1(
+        state, domain, parameters, { matchBinding: options.matchBinding },
+      );
+    }
     if (domain.parameterKind === OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_PARAMETER_KIND) {
       if (!armyResourceBudgetRulesEnabled
         || domain.executorId !== OFFICIAL_ARMY_RESOURCE_BUDGET_RULES_EXECUTOR_ID

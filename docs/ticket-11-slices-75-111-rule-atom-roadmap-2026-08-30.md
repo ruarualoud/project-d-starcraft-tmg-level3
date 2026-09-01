@@ -83,7 +83,7 @@ The lock is now the sole development source for Slices 75–111 until the user e
 | 101 | Respawn and Morph placement/Supply/activation lifecycle | 9 | 769 | 143 |
 | 102 | Faction, race/sub-faction tags, faction-card schema, Army Slots, engagement scale, and eligibility | 24 | 793 | 119 |
 | 103 | Army resource budgets and Tactical-card purchase/open-information rules | 11 | 804 | 108 |
-| 104 | Unit composition options, model counts, starting Supply, upgrades, Specialist default, and costs | 16 | 820 | 92 |
+| 104 | **Complete:** Unit composition options, model counts, starting Supply, upgrades, Specialist default, and costs | 16 | 820 | 92 |
 | 105 | Team rosters, open/closed lists, equipment representation, disclosure, and inspection | 13 | 833 | 79 |
 | 106 | Mission/deployment-card draft, colour/control choice, elimination/selection, and card contract | 21 | 854 | 58 |
 | 107 | Battlefield dimensions, entry edges, mission-marker placement/elevation, influence corners, and two official FAQ constraints | 12 | 866 | 46 |
