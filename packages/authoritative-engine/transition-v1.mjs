@@ -645,7 +645,11 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry.executorId,
     entry,
   ]));
-  const actionSchemaVersion = runtimeExecutors.has("authority.reserve-lifecycle-rules-v1")
+  const actionSchemaVersion = runtimeExecutors.has(
+    "authority.unit-destruction-lifecycle-rules-v1",
+  )
+    ? "hybrid_legal_space_v35"
+    : runtimeExecutors.has("authority.reserve-lifecycle-rules-v1")
     ? "hybrid_legal_space_v34"
     : runtimeExecutors.has("authority.supply-pool-rules-v1")
     ? "hybrid_legal_space_v33"
