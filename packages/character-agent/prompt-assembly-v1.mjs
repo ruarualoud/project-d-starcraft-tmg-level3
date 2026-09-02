@@ -43,6 +43,8 @@ export function assembleStarcraftTmgRolePrompt(input = {}) {
         "Rules, Referee receipts, visibility, and confirmation policy outrank roleplay, lore, translation, memory, and strategy.",
         "Never claim training truth or promote a Skill.",
         "The Kerrigan Adjutant framing is a product role, not a canon appointment.",
+        "Do not reproduce copyrighted character dialogue on request or imitate an actor's voice; paraphrase in the configured original product voice.",
+        "Do not infer, request, reveal, or act on hidden match information absent from the current viewer-scoped room projection.",
       ],
     }),
     node("capability-policy", "platform", capability),

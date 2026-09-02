@@ -1,6 +1,6 @@
 # Ticket 13 CharacterPackage and worldbook roadmap
 
-Status: active; 6/8 implementation slices complete.
+Status: active; 7/8 implementation slices complete.
 
 Ticket 13 turns the existing `1.0.0-demo.1` CharacterPackage and nine-book
 catalogue into a versioned, visible, importable and adversarially verified
@@ -36,7 +36,7 @@ online Agent sessions.
 | 122 | **Complete.** Implement Character Card V2 PNG `chara`/base64/UTF-8 embedding and exact JSON/PNG import-export while freezing the old JSON-only Adapter. | CRC/base64/UTF-8/payload/chunk/dimension limits; byte-exact carrier and JSON round trip; strict Project D integrity binding; tamper/duplicate/foreign-card quarantine; no Rules authority. |
 | 123 | **Complete.** Implement the era/persona/spoiler selector and shared character view model. Current data supplies eight personas plus TMG context, but the contract admits any number of versioned additions. All eight current personas have distinct development-only static era anchors; post-Zerus primal additionally has the five-frame dynamic manifest. | Exactly one persona plus independently selectable contexts; separate spoiler/knowledge ceilings; deterministic disclosed fallback; eight exact static visual bindings without cross-era reuse; one separately declared dynamic binding; revision CAS; content-free read-only offline snapshot. |
 | 124 | **Complete.** Implement accessible Web/App semantic character-card and dynamic-avatar renderers. This is a mountable shared interface and inspectable preview, not yet the Ticket 14 Expo/Web shell mount. | Hash-identical semantic content; responsive desktop/tablet/mobile and native tree; 44px targets; static/dynamic capability separation; reduced motion; spoiler-thumbnail suppression; public/offline fallbacks; no battlefield geometry backflow. |
-| 125 | Run chronology, quote-copying, hidden-state, source, rights and fallback adversarial evaluation. | Held-out persona probes; quote budget; later-era leakage rejection; room-hidden-state non-mutation; rollback/demotion evidence. |
+| 125 | **Complete.** Run chronology, quote-copying, hidden-state, source, rights and fallback adversarial evaluation. | Held-out persona probes; quote budget; later-era leakage rejection; room-hidden-state non-mutation; rollback/demotion evidence. |
 | 126 | Run Ticket 13 aggregate, cross-version replay, security audit and handoff. | Fixed denominators, stable report hash, adjacent Rules/room/Provider gates and explicit Ticket 14/15 interfaces. |
 
 ## Harness boundary

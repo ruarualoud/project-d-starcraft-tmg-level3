@@ -210,6 +210,19 @@ Project D-original fallback. Focused 12/12 and cumulative Ticket 13 foundations
 The preview/native-tree artifacts are inspectable, but framework mounting remains
 Ticket 14 work; no Provider, Skill, DSH, MuZero, self-play or training run occurred.
 
+Slice 125 adds a sealed held-out adversarial suite across all eight timeline
+personas plus seven authority and safety boundaries. Each era is activated at
+its exact spoiler/knowledge ceiling and is proven not to receive later persona
+IDs or fact summaries. Prompt policy rejects long canonical-dialogue copying,
+actor-voice imitation, hidden-state inference and lore-based Rules overrides;
+external Character Card prompts stay quarantined, public and production paths
+fail closed on incomplete visual rights, and hash drift triggers monotonic
+package/persona demotion. The evaluation is deterministic and structural rather
+than a live-model claim. Focused 10/10 and cumulative Ticket 13 foundations
+79/79 pass at suite `e25fb18f...430c`, chronology evidence
+`a7da4b68...4c4` and report `65ef3a1d...3787`; no Provider, Skill, DSH,
+MuZero, self-play or training run occurred.
+
 ## Direct Provider increment
 
 Ticket 16 now has a concrete OpenAI-compatible direct-Provider Adapter and Harness receipt path:
