@@ -15,12 +15,16 @@ export const STARCRAFT_TMG_CLIENT_DOMAIN_INTERFACE = Object.freeze([
 ]);
 
 const SURFACES = new Set(["expo_web", "expo_native", "battle_lab", "verifier"]);
+const ACCESS_KINDS = new Set(["invite", "recovery"]);
 const INTENT_KEYS = Object.freeze({
   refresh: ["type"],
   load_legal_space: ["type"],
   preview_finite: ["type", "actionKey"],
   preview_parameterized: ["type", "domainId", "parameters"],
   confirm_and_apply_preview: ["type", "previewId"],
+  claim_control: ["type"],
+  issue_invite: ["type"],
+  issue_recovery: ["type"],
   read_replay: ["type"],
 });
 const FORBIDDEN_INPUT_KEYS = new Set([
@@ -42,10 +46,44 @@ const FORBIDDEN_INPUT_KEYS = new Set([
   "providerapikey",
   "apikey",
   "modelcredential",
+  "baseurl",
+  "revision",
+  "staterevision",
+  "roomrevision",
+  "expectedrevision",
+  "expectedroomrevision",
+  "sessionid",
+  "seat",
+  "seatkey",
+  "ttl",
+  "ttlms",
 ]);
 const RECOVERABLE_TRANSPORT_CODES = new Set(["NETWORK_UNAVAILABLE", "TRANSPORT_TIMEOUT"]);
-const AUTHENTICATION_CODES = new Set(["AUTHENTICATION_REQUIRED", "SEAT_GRANT_INVALID", "CAPABILITY_DENIED"]);
+const AUTHENTICATION_CODES = new Set(["AUTHENTICATION_REQUIRED", "SEAT_GRANT_INVALID"]);
+const ACCESS_SECRET_KEYS = new Set([
+  "token",
+  "seattoken",
+  "invitetoken",
+  "recoverytoken",
+  "credential",
+  "credentials",
+  "seatgrant",
+]);
+const PROJECTION_SECRET_KEYS = new Set([
+  "seattoken",
+  "invitetoken",
+  "recoverytoken",
+  "credential",
+  "credentials",
+  "seatgrant",
+  "bearertoken",
+  "leaseid",
+  "leaseseal",
+  "authorityseal",
+  "sessionid",
+]);
 const MAX_INPUT_BYTES = 256 * 1024;
+const ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
 let fallbackOperationalIdCounter = 0;
 
 function object(value) {
@@ -94,6 +132,22 @@ function assertExactKeys(value, allowed, path) {
   }
 }
 
+function hasExactKeys(value, expected) {
+  return object(value)
+    && Object.keys(value).sort().join("\u0000") === [...expected].sort().join("\u0000");
+}
+
+function validAccessRevisions(value) {
+  const keys = [
+    "roomRevision",
+    "stateRevision",
+    "privateJournalSequence",
+    "seatRecoveryRevision",
+  ];
+  return hasExactKeys(value, keys)
+    && keys.every((key) => Number.isSafeInteger(value[key]) && value[key] >= 0);
+}
+
 function utf8Length(value) {
   let bytes = 0;
   for (const character of String(value)) {
@@ -107,6 +161,28 @@ function nonEmpty(value, field, maxLength = 4096) {
   const normalized = String(value || "").trim();
   if (!normalized || normalized.length > maxLength) {
     throw Object.assign(new Error(`${field} is required and bounded`), { code: "CLIENT_INPUT_INVALID", details: { field } });
+  }
+  return normalized;
+}
+
+function accessToken(value, field) {
+  const normalized = nonEmpty(value, field, 43);
+  if (!ACCESS_TOKEN_PATTERN.test(normalized)) {
+    throw Object.assign(new Error(`${field} must be a 256-bit base64url capability`), {
+      code: "CLIENT_INPUT_INVALID",
+      details: { field },
+    });
+  }
+  return normalized;
+}
+
+function roomIdentifier(value, field) {
+  const normalized = nonEmpty(value, field, 128);
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/u.test(normalized)) {
+    throw Object.assign(new Error(`${field} must be a bounded URL-safe identifier`), {
+      code: "CLIENT_INPUT_INVALID",
+      details: { field },
+    });
   }
   return normalized;
 }
@@ -127,12 +203,30 @@ function validateBootstrap(input) {
   assertNoAuthorityFields(input);
   assertExactKeys(input, ["route", "principal", "surface", "locale"], "bootstrap");
   assertExactKeys(input.route, ["roomId"], "bootstrap.route");
-  assertExactKeys(input.principal || {}, ["seatToken"], "bootstrap.principal");
+  const principal = input.principal || {};
+  assertExactKeys(principal, ["seatToken", "access"], "bootstrap.principal");
+  const hasSeatToken = Object.prototype.hasOwnProperty.call(principal, "seatToken");
+  const hasAccess = Object.prototype.hasOwnProperty.call(principal, "access");
+  if (hasSeatToken && hasAccess) {
+    throw Object.assign(new Error("bootstrap principal must use one credential variant"), {
+      code: "CLIENT_PRINCIPAL_AMBIGUOUS",
+    });
+  }
+  let access = null;
+  if (hasAccess) {
+    assertExactKeys(principal.access, ["kind", "token"], "bootstrap.principal.access");
+    const kind = String(principal.access.kind || "").trim();
+    if (!ACCESS_KINDS.has(kind)) {
+      throw Object.assign(new Error("bootstrap access kind is unsupported"), { code: "CLIENT_INPUT_INVALID" });
+    }
+    access = { kind, token: accessToken(principal.access.token, "bootstrap.principal.access.token") };
+  }
   const surface = String(input.surface || "expo_web");
   if (!SURFACES.has(surface)) throw Object.assign(new Error("unsupported client surface"), { code: "CLIENT_INPUT_INVALID" });
   const normalized = {
-    roomId: nonEmpty(input.route.roomId, "bootstrap.route.roomId", 256),
-    seatToken: input.principal?.seatToken ? nonEmpty(input.principal.seatToken, "bootstrap.principal.seatToken") : "",
+    roomId: roomIdentifier(input.route.roomId, "bootstrap.route.roomId"),
+    seatToken: hasSeatToken ? nonEmpty(principal.seatToken, "bootstrap.principal.seatToken") : "",
+    access,
     surface,
     locale: String(input.locale || "en").slice(0, 32),
   };
@@ -162,8 +256,35 @@ function operationalLifecycle(snapshot) {
   return snapshot.online === true && snapshot.visibility === "active";
 }
 
-function safeErrorDetails(error) {
-  return error?.details && object(error.details) ? clone(error.details) : {};
+function scrubCredentialMaterial(value, sensitiveValues = new Set()) {
+  if (Array.isArray(value)) return value.map((entry) => scrubCredentialMaterial(entry, sensitiveValues));
+  if (!object(value)) {
+    if (typeof value !== "string") return clone(value);
+    for (const secret of sensitiveValues) {
+      if (secret && value.includes(secret)) return "[credential-redacted]";
+    }
+    return value;
+  }
+  const safe = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (ACCESS_SECRET_KEYS.has(normalizedKey(key))) continue;
+    safe[key] = scrubCredentialMaterial(entry, sensitiveValues);
+  }
+  return safe;
+}
+
+function containsProjectionSecretKey(value) {
+  if (Array.isArray(value)) return value.some(containsProjectionSecretKey);
+  if (!object(value)) return false;
+  return Object.entries(value).some(([key, entry]) => (
+    PROJECTION_SECRET_KEYS.has(normalizedKey(key)) || containsProjectionSecretKey(entry)
+  ));
+}
+
+function safeErrorDetails(error, sensitiveValues = new Set()) {
+  return error?.details && object(error.details)
+    ? scrubCredentialMaterial(error.details, sensitiveValues)
+    : {};
 }
 
 function receiptReference(receipt) {
@@ -194,6 +315,141 @@ function replayReference(replayResult) {
   };
 }
 
+function accessReceiptReference(receipt, kind) {
+  if (!object(receipt)) return null;
+  const safe = scrubCredentialMaterial(receipt);
+  return {
+    ...safe,
+    schemaVersion: "starcraft_tmg_client_access_receipt_reference_v1",
+    authoritySchemaVersion: String(receipt.schemaVersion || ""),
+    kind,
+    clientVerification: {
+      schemaVersion: "starcraft_tmg_client_access_receipt_verification_scope_v1",
+      scope: "structure_hash_and_session_binding_only",
+      ed25519SignatureStructureBound: true,
+      hmacSealStructureBound: true,
+      trustedPublicKeyCryptographicallyVerified: false,
+      serverHmacCryptographicallyVerified: false,
+      authoritativeVerificationRequired: true,
+      trainingTruth: false,
+    },
+    trainingTruth: false,
+  };
+}
+
+// The portable client has neither a trusted referee public-key resolver nor the
+// server HMAC secret. This therefore validates canonical structure, hashes and
+// session bindings only; it must never be described as Ed25519/HMAC proof
+// verification. The authoritative service remains responsible for crypto.verify.
+function structurallyValidAuthorityAccessReceipt(receipt, {
+  kind,
+  operation,
+  roomId,
+  matchBinding = null,
+}) {
+  if (!object(receipt)) return false;
+  const { receiptHash, refereeSignature, accessSeal, ...content } = receipt;
+  const expectedTokenKind = kind === "invite" ? "invite" : "seat_recovery";
+  const sealBasis = { content, receiptHash, refereeSignature };
+  const signatureKeys = [
+    "schemaVersion",
+    "purpose",
+    "keyId",
+    "canonicalization",
+    "hashAlgorithm",
+    "signatureAlgorithm",
+    "contentHash",
+    "signature",
+  ];
+  const sealKeys = [
+    "schemaVersion",
+    "purpose",
+    "keyId",
+    "hashAlgorithm",
+    "sealAlgorithm",
+    "contentHash",
+    "mac",
+  ];
+  const structureValid = receipt.schemaVersion === "starcraft_tmg_room_access_receipt_v1"
+    && receipt.operation === operation
+    && receipt.roomId === roomId
+    && receipt.tokenKind === expectedTokenKind
+    && /^[a-f0-9]{64}$/u.test(String(receipt.matchBindingHash || ""))
+    && String(receipt.refereeKeyId || "").length > 0
+    && String(receipt.refereeKeyId || "").length <= 256
+    && validAccessRevisions(receipt.preRevisions)
+    && validAccessRevisions(receipt.postRevisions)
+    && receipt.postRevisions.roomRevision === receipt.preRevisions.roomRevision + 1
+    && receipt.postRevisions.stateRevision === receipt.preRevisions.stateRevision
+    && receipt.postRevisions.privateJournalSequence === receipt.preRevisions.privateJournalSequence + 1
+    && receipt.postRevisions.seatRecoveryRevision === receipt.preRevisions.seatRecoveryRevision + 1
+    && /^[a-f0-9]{64}$/.test(String(receiptHash || ""))
+    && receiptHash === hashStarcraftTmgClientContract({ content, refereeSignature })
+    && hasExactKeys(refereeSignature, signatureKeys)
+    && refereeSignature?.schemaVersion === "starcraft_tmg_referee_signature_v1"
+    && refereeSignature?.purpose === "room_access_receipt"
+    && refereeSignature?.canonicalization === "RFC8785"
+    && refereeSignature?.hashAlgorithm === "sha256"
+    && refereeSignature?.signatureAlgorithm === "ed25519"
+    && refereeSignature?.keyId === receipt.refereeKeyId
+    && refereeSignature?.contentHash === hashStarcraftTmgClientContract(content)
+    && /^[A-Za-z0-9_-]{86}$/u.test(String(refereeSignature?.signature || ""))
+    && hasExactKeys(accessSeal, sealKeys)
+    && accessSeal?.schemaVersion === "starcraft_tmg_referee_seal_v1"
+    && accessSeal?.purpose === "room_access_receipt"
+    && accessSeal?.hashAlgorithm === "sha256"
+    && accessSeal?.sealAlgorithm === "hmac-sha256"
+    && accessSeal?.keyId === receipt.refereeKeyId
+    && accessSeal?.contentHash === hashStarcraftTmgClientContract(sealBasis)
+    && /^[A-Za-z0-9_-]{43}$/u.test(String(accessSeal?.mac || ""))
+    && /^[a-f0-9]{64}$/.test(String(receipt.refereePublicKeyFingerprint || ""))
+    && receipt.trainingTruth === false;
+  if (!structureValid) return false;
+  if (!matchBinding) return true;
+  return matchBinding.roomId === roomId
+    && matchBinding.bindingHash === receipt.matchBindingHash
+    && matchBinding.refereeKeyId === receipt.refereeKeyId
+    && matchBinding.refereePublicKeyFingerprint === receipt.refereePublicKeyFingerprint;
+}
+
+function roomBoundTokenDigest(roomId, rawToken, tokenKind) {
+  if (tokenKind === "seat_grant") {
+    return hashStarcraftTmgClientContract({
+      schemaVersion: "starcraft_tmg_seat_token_digest_v1",
+      roomId,
+      token: rawToken,
+    });
+  }
+  return hashStarcraftTmgClientContract({
+    schemaVersion: "starcraft_tmg_room_bound_token_digest_v1",
+    roomId,
+    tokenKind,
+    token: rawToken,
+  });
+}
+
+function unclaimedControl(status = "unclaimed") {
+  return {
+    schemaVersion: "starcraft_tmg_client_control_summary_v1",
+    status,
+    claimedAt: null,
+    roomRevision: null,
+    trainingTruth: false,
+  };
+}
+
+function claimedControl(result, claimedAt) {
+  return {
+    schemaVersion: "starcraft_tmg_client_control_summary_v1",
+    status: "claimed",
+    claimedAt,
+    roomRevision: Number.isInteger(Number(result?.room?.roomRevision))
+      ? Number(result.room.roomRevision)
+      : null,
+    trainingTruth: false,
+  };
+}
+
 function randomOperationalId(prefix) {
   if (globalThis.crypto?.randomUUID) return `${prefix}-${globalThis.crypto.randomUUID()}`;
   const bytes = new Uint8Array(16);
@@ -213,8 +469,12 @@ export function createStarcraftTmgClientDomain(options = {}) {
   const lifecycle = assertStarcraftTmgLifecyclePort(options.lifecycle);
   const now = typeof options.now === "function" ? options.now : () => new Date().toISOString();
   const createId = typeof options.createId === "function" ? options.createId : randomOperationalId;
+  const clientSessionId = createId("sc-client-session");
   const listeners = new Set();
+  const sensitiveValues = new Set();
   let binding = null;
+  let bindingCredential = "";
+  let controlLeaseReference = null;
   let lifecycleUnsubscribe = null;
   let operationQueue = Promise.resolve();
   let internal = {
@@ -230,6 +490,8 @@ export function createStarcraftTmgClientDomain(options = {}) {
     pendingPreview: null,
     lastReceipt: null,
     replay: null,
+    control: unclaimedControl(),
+    accessReceipt: null,
     rejection: null,
     recovery: {
       cacheStatus: "not_checked",
@@ -255,6 +517,8 @@ export function createStarcraftTmgClientDomain(options = {}) {
       pendingPreview: clone(internal.pendingPreview),
       lastReceipt: clone(internal.lastReceipt),
       replay: clone(internal.replay),
+      control: clone(internal.control),
+      accessReceipt: clone(internal.accessReceipt),
       rejection: clone(internal.rejection),
       recovery: clone(internal.recovery),
       capabilities: {
@@ -328,12 +592,40 @@ export function createStarcraftTmgClientDomain(options = {}) {
     }
   }
 
+  function containsSensitiveValue(value) {
+    const serialized = JSON.stringify(value);
+    for (const secret of sensitiveValues) {
+      if (secret && serialized.includes(secret)) return true;
+    }
+    return false;
+  }
+
   function validateProjection(projection) {
     if (!object(projection) || !object(projection.room) || projection.room.roomId !== binding.roomId) {
       throw Object.assign(new Error("viewer projection is invalid or cross-room"), { code: "PROJECTION_INVALID" });
     }
     if (!Number.isInteger(Number(projection.room.stateRevision)) || !projection.room.stateHash) {
       throw Object.assign(new Error("viewer projection revision identity is missing"), { code: "PROJECTION_INVALID" });
+    }
+    if (containsProjectionSecretKey(projection) || containsSensitiveValue(projection)) {
+      throw Object.assign(new Error("viewer projection contained credential material"), { code: "PROJECTION_CREDENTIAL_LEAK_REJECTED" });
+    }
+    if (binding.expectedViewer) {
+      const viewer = projection.viewer || {};
+      const matchBinding = projection.matchBinding || {};
+      if (viewer.grantId !== binding.expectedViewer.grantId
+        || viewer.seatKey !== binding.expectedViewer.seatKey
+        || viewer.roleMode !== binding.expectedViewer.roleMode
+        || viewer.grantRecoveryRevision !== binding.expectedViewer.grantRecoveryRevision
+        || projection.room.matchBindingHash !== binding.expectedViewer.matchBindingHash
+        || matchBinding.roomId !== binding.roomId
+        || matchBinding.bindingHash !== binding.expectedViewer.matchBindingHash
+        || matchBinding.refereeKeyId !== binding.expectedViewer.refereeKeyId
+        || matchBinding.refereePublicKeyFingerprint !== binding.expectedViewer.refereePublicKeyFingerprint) {
+        throw Object.assign(new Error("access exchange credential does not match its viewer projection"), {
+          code: "ACCESS_EXCHANGE_BINDING_INVALID",
+        });
+      }
     }
     return clone(projection);
   }
@@ -391,9 +683,60 @@ export function createStarcraftTmgClientDomain(options = {}) {
     return transport.execute({
       operation,
       roomId: binding.roomId,
-      seatToken: binding.seatToken,
+      seatToken: bindingCredential,
       payload,
     });
+  }
+
+  async function rejectAuthentication(code, details = {}) {
+    const staleCacheKey = binding?.cacheKey || "";
+    if (staleCacheKey) await projectionStore.remove(staleCacheKey).catch(() => {});
+    const rejectedCredential = bindingCredential;
+    const scrubbedDetails = scrubCredentialMaterial(details, sensitiveValues);
+    bindingCredential = "";
+    if (rejectedCredential) sensitiveValues.delete(rejectedCredential);
+    controlLeaseReference = null;
+    if (binding) {
+      const principalScopeHash = hashStarcraftTmgClientContract({
+        schemaVersion: "starcraft_tmg_client_principal_scope_v1",
+        roomId: binding.roomId,
+        seatToken: "public",
+      });
+      binding = {
+        ...binding,
+        principalScopeHash,
+        expectedViewer: null,
+        cacheKey: hashStarcraftTmgClientContract({
+          schemaVersion: "starcraft_tmg_client_projection_cache_key_v1",
+          roomId: binding.roomId,
+          principalScopeHash,
+        }),
+      };
+    }
+    const record = {
+      schemaVersion: `${STARCRAFT_TMG_CLIENT_DOMAIN_VERSION}.rejection`,
+      code: String(code || "AUTHENTICATION_REQUIRED"),
+      details: { ...scrubbedDetails, credentialCleared: true },
+      occurredAt: now(),
+      trainingTruth: false,
+    };
+    const view = publish({
+      phase: "authentication_required",
+      principalScopeHash: binding?.principalScopeHash || null,
+      roomProjection: null,
+      legalSpace: null,
+      pendingPreview: null,
+      control: unclaimedControl("cleared"),
+      accessReceipt: null,
+      rejection: record,
+      recovery: {
+        ...internal.recovery,
+        cacheStatus: staleCacheKey ? "credential_cache_erased" : "not_checked",
+        source: "credential_rejected",
+        authoritativeOutcomeUncertain: false,
+      },
+    });
+    return deepFreeze({ ok: false, rejection: record, view });
   }
 
   async function refreshProjection(reason = "explicit_refresh") {
@@ -408,16 +751,35 @@ export function createStarcraftTmgClientDomain(options = {}) {
       const result = await request("read_room", { includeJournal: false });
       if (!result?.ok) {
         if (AUTHENTICATION_CODES.has(result?.reason)) {
-          await projectionStore.remove(binding.cacheKey).catch(() => {});
-          return rejection(result.reason, { authorityRejected: true }, "blocked");
+          return rejectAuthentication(result.reason, { authorityRejected: true });
         }
         return rejection(result?.reason || "PROJECTION_REQUEST_REJECTED", {}, internal.roomProjection ? "ready" : "blocked");
       }
       const projection = validateProjection(result.projection);
+      let control = internal.control;
+      if (controlLeaseReference) {
+        const projectedFence = Number(projection.control?.currentLeaseFence);
+        const leaseStillCurrent = projection.control?.ownedByViewer === true
+          && Number.isInteger(projectedFence)
+          && projectedFence === controlLeaseReference.leaseFence;
+        if (!leaseStillCurrent) {
+          controlLeaseReference = null;
+          control = unclaimedControl("fenced");
+        } else {
+          control = {
+            ...internal.control,
+            status: "claimed",
+            roomRevision: Number.isInteger(Number(projection.room.roomRevision))
+              ? Number(projection.room.roomRevision)
+              : internal.control.roomRevision,
+          };
+        }
+      }
       const cacheStatus = await saveProjection(projection);
       const view = publish({
         phase: "ready",
         roomProjection: projection,
+        control,
         legalSpace: null,
         pendingPreview: null,
         rejection: null,
@@ -432,6 +794,9 @@ export function createStarcraftTmgClientDomain(options = {}) {
       return deepFreeze({ ok: true, outcome: "projection_refreshed", view });
     } catch (error) {
       const code = error instanceof StarcraftTmgClientTransportError ? error.code : String(error?.code || "TRANSPORT_FAILED");
+      if (["ACCESS_EXCHANGE_BINDING_INVALID", "PROJECTION_CREDENTIAL_LEAK_REJECTED"].includes(code)) {
+        return rejectAuthentication(code, { projectionRejected: true });
+      }
       if (RECOVERABLE_TRANSPORT_CODES.has(code)) return recoverFromCache(code);
       return rejection(code, safeErrorDetails(error), internal.roomProjection ? "ready" : "unavailable");
     }
@@ -449,12 +814,19 @@ export function createStarcraftTmgClientDomain(options = {}) {
     return Number(internal.roomProjection?.room?.stateRevision);
   }
 
+  function currentRoomRevision() {
+    return Number(internal.roomProjection?.room?.roomRevision);
+  }
+
   async function loadLegalSpace() {
     const blocked = ensureOperational();
     if (blocked) return rejection(blocked, { mutationAllowed: false });
     try {
       const result = await request("read_legal_space");
-      if (!result?.ok) return rejection(result?.reason || "LEGAL_SPACE_REQUEST_REJECTED");
+      if (!result?.ok) {
+        if (AUTHENTICATION_CODES.has(result?.reason)) return rejectAuthentication(result.reason, { operation: "read_legal_space" });
+        return rejection(result?.reason || "LEGAL_SPACE_REQUEST_REJECTED");
+      }
       const legalSpace = result.legalSpace;
       if (!object(legalSpace)
         || !Array.isArray(legalSpace.finiteActions)
@@ -498,6 +870,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
     try {
       const result = await request("preview_action", { proposal });
       if (!result?.ok) {
+        if (AUTHENTICATION_CODES.has(result?.reason)) return rejectAuthentication(result.reason, { operation: "preview_action" });
         if (["LEGAL_SPACE_STALE", "REVISION_CONFLICT"].includes(result?.reason)) await refreshProjection("preview_revision_rejected");
         return rejection(result?.reason || "PREVIEW_REJECTED");
       }
@@ -516,6 +889,151 @@ export function createStarcraftTmgClientDomain(options = {}) {
     }
   }
 
+  async function obtainControlLease({ force = false, refreshAfterClaim = false } = {}) {
+    const blocked = ensureOperational();
+    if (blocked) return rejection(blocked, { mutationAllowed: false });
+    if (!force && controlLeaseReference) {
+      return success("control_lease_available", { control: clone(internal.control), reusedPrivateReference: true });
+    }
+    try {
+      const result = await request("claim_control", { sessionId: clientSessionId });
+      if (!result?.ok) {
+        if (AUTHENTICATION_CODES.has(result?.reason)) return rejectAuthentication(result.reason, { operation: "claim_control" });
+        if (["REVISION_CONFLICT", "CONTROL_LEASE_FENCED"].includes(result?.reason)) {
+          controlLeaseReference = null;
+          publish({ control: unclaimedControl("fenced") });
+          await refreshProjection("control_claim_rejected");
+        }
+        return rejection(result?.reason || "CONTROL_LEASE_REJECTED");
+      }
+      const lease = result.controlLease;
+      const leaseId = String(lease?.leaseId || "").trim();
+      if (!object(lease) || !leaseId
+        || !Number.isInteger(Number(lease.leaseFence)) || Number(lease.leaseFence) < 1) {
+        controlLeaseReference = null;
+        return rejection("CONTROL_LEASE_RESPONSE_INVALID");
+      }
+      controlLeaseReference = {
+        leaseId,
+        leaseFence: Number(lease.leaseFence),
+      };
+      const control = claimedControl(result, now());
+      publish({ control, rejection: null });
+      if (refreshAfterClaim) {
+        const refreshed = await refreshProjection("control_claimed");
+        if (!refreshed.ok) return refreshed;
+        if (internal.control.status !== "claimed") {
+          return rejection("CONTROL_LEASE_FENCED", { refreshed: true });
+        }
+      }
+      return success("control_claimed", { control: clone(internal.control), reusedPrivateReference: false });
+    } catch (error) {
+      return handleTransportFailure(error, "claim_control");
+    }
+  }
+
+  function accessCredentialFromResult(result, kind) {
+    const artifact = kind === "invite" ? result?.invite : result?.recovery;
+    const tokenField = kind === "invite" ? "inviteToken" : "recoveryToken";
+    const idField = kind === "invite" ? "inviteId" : "recoveryTicketId";
+    const token = accessToken(artifact?.[tokenField], `${kind}.${tokenField}`);
+    const id = nonEmpty(artifact?.[idField], `${kind}.${idField}`);
+    return {
+      artifact: {
+        schemaVersion: "starcraft_tmg_client_access_artifact_summary_v1",
+        kind,
+        id,
+        expiresAtAudit: String(artifact?.expiresAtAudit || ""),
+        trainingTruth: false,
+      },
+      credential: {
+        schemaVersion: "starcraft_tmg_client_ephemeral_access_credential_v1",
+        kind,
+        token,
+        ephemeral: true,
+        persistenceAllowed: false,
+        trainingTruth: false,
+      },
+    };
+  }
+
+  async function issueAccess(kind) {
+    const blocked = ensureOperational();
+    if (blocked) return rejection(blocked, { mutationAllowed: false });
+    const operation = kind === "invite" ? "issue_invite" : "issue_recovery";
+    let ephemeralToken = "";
+    try {
+      let result = await request(operation, { expectedRoomRevision: currentRoomRevision() });
+      if (result?.reason === "REVISION_CONFLICT") {
+        const refreshed = await refreshProjection(`${operation}_revision_rejected`);
+        if (!refreshed.ok) return refreshed;
+        result = await request(operation, { expectedRoomRevision: currentRoomRevision() });
+      }
+      if (!result?.ok) {
+        if (AUTHENTICATION_CODES.has(result?.reason)) return rejectAuthentication(result.reason, { operation });
+        return rejection(result?.reason || "ACCESS_ISSUE_REJECTED", { kind });
+      }
+      let issued;
+      try {
+        issued = accessCredentialFromResult(result, kind);
+      } catch {
+        return rejection("ACCESS_ISSUE_RESPONSE_INVALID", { kind });
+      }
+      ephemeralToken = issued.credential.token;
+      sensitiveValues.add(ephemeralToken);
+      const authorityOperation = kind === "invite" ? "issue_invite" : "issue_seat_recovery";
+      if (!structurallyValidAuthorityAccessReceipt(result.receipt, {
+        kind,
+        operation: authorityOperation,
+        roomId: binding.roomId,
+        matchBinding: internal.roomProjection?.matchBinding,
+      })) {
+        return rejection("ACCESS_RECEIPT_INVALID", { kind });
+      }
+      const expectedDigest = roomBoundTokenDigest(
+        binding.roomId,
+        issued.credential.token,
+        kind === "invite" ? "invite" : "seat_recovery",
+      );
+      const projectedRoom = internal.roomProjection?.room || {};
+      const projectedViewer = internal.roomProjection?.viewer || {};
+      const preRevisions = result.receipt.preRevisions || {};
+      const postRevisions = result.receipt.postRevisions || {};
+      if (result.receipt.subjectId !== issued.artifact.id
+        || result.receipt.tokenDigest !== expectedDigest
+        || result.receipt.status !== "active"
+        || result.receipt.actorGrantId !== projectedViewer.grantId
+        || !String(result.receipt.seatKey || "").trim()
+        || (kind === "recovery" && result.receipt.seatKey !== projectedViewer.seatKey)
+        || result.receipt.expiresAtAudit !== issued.artifact.expiresAtAudit
+        || Number(preRevisions.roomRevision) !== Number(projectedRoom.roomRevision)
+        || Number(preRevisions.stateRevision) !== Number(projectedRoom.stateRevision)
+        || Number(preRevisions.seatRecoveryRevision) !== Number(projectedRoom.seatRecoveryRevision)
+        || Number(postRevisions.roomRevision) !== Number(preRevisions.roomRevision) + 1
+        || Number(postRevisions.stateRevision) !== Number(preRevisions.stateRevision)
+        || Number(postRevisions.seatRecoveryRevision) !== Number(preRevisions.seatRecoveryRevision) + 1) {
+        return rejection("ACCESS_RECEIPT_INVALID", { kind, capabilityBindingMismatch: true });
+      }
+      const receipt = accessReceiptReference(result.receipt, kind);
+      publish({ accessReceipt: receipt, rejection: null });
+      await refreshProjection(`${operation}_accepted`);
+      return deepFreeze({
+        ok: true,
+        outcome: `${kind}_issued`,
+        access: issued.artifact,
+        credential: issued.credential,
+        receipt,
+        view: read(),
+      });
+    } catch (error) {
+      return handleTransportFailure(error, operation);
+    } finally {
+      if (ephemeralToken && ephemeralToken !== bindingCredential) {
+        sensitiveValues.delete(ephemeralToken);
+      }
+    }
+  }
+
   async function confirmAndApply(intent) {
     const blocked = ensureOperational();
     if (blocked) return rejection(blocked, { mutationAllowed: false });
@@ -526,31 +1044,38 @@ export function createStarcraftTmgClientDomain(options = {}) {
     const attempt = {
       previewId: intent.previewId,
       expectedStateRevision,
-      sessionId: createId("sc-client-session"),
       idempotencyKey: createId("sc-client-apply"),
     };
-    publish({ phase: "applying", rejection: null });
     try {
       const confirmed = await request("confirm_preview", { previewId: attempt.previewId });
       if (!confirmed?.ok) {
-        publish({ phase: "ready" });
+        if (AUTHENTICATION_CODES.has(confirmed?.reason)) return rejectAuthentication(confirmed.reason, { operation: "confirm_preview" });
+        if (["REVISION_CONFLICT", "LEGAL_SPACE_STALE", "PREVIEW_NOT_FOUND"].includes(confirmed?.reason)) {
+          const refreshed = await refreshProjection("confirmation_revision_rejected");
+          if (!refreshed.ok) return refreshed;
+        }
         return rejection(confirmed?.reason || "CONFIRMATION_REJECTED");
       }
-      const control = await request("claim_control", { sessionId: attempt.sessionId });
+      const control = await obtainControlLease({ force: false, refreshAfterClaim: false });
       if (!control?.ok) {
-        publish({ phase: "ready" });
-        return rejection(control?.reason || "CONTROL_LEASE_REJECTED");
+        return control;
       }
+      publish({ phase: "applying", rejection: null });
       const applied = await request("apply_action", {
         previewId: attempt.previewId,
         confirmationId: confirmed.confirmation?.confirmationId,
-        leaseId: control.controlLease?.leaseId,
-        leaseFence: control.controlLease?.leaseFence,
+        leaseId: controlLeaseReference?.leaseId,
+        leaseFence: controlLeaseReference?.leaseFence,
         expectedStateRevision,
         idempotencyKey: attempt.idempotencyKey,
       });
       if (!applied?.ok) {
+        if (AUTHENTICATION_CODES.has(applied?.reason)) return rejectAuthentication(applied.reason, { operation: "apply_action" });
         if (["REVISION_CONFLICT", "LEGAL_SPACE_STALE", "CONTROL_LEASE_FENCED"].includes(applied?.reason)) {
+          if (applied.reason === "CONTROL_LEASE_FENCED") {
+            controlLeaseReference = null;
+            publish({ control: unclaimedControl("fenced") });
+          }
           await refreshProjection("apply_revision_rejected");
         } else publish({ phase: "ready" });
         return rejection(applied?.reason || "APPLY_REJECTED");
@@ -592,6 +1117,9 @@ export function createStarcraftTmgClientDomain(options = {}) {
 
   async function handleTransportFailure(error, operation, outcomeUncertain = false) {
     const code = error instanceof StarcraftTmgClientTransportError ? error.code : String(error?.code || "TRANSPORT_FAILED");
+    if (AUTHENTICATION_CODES.has(code)) {
+      return rejectAuthentication(code, { operation, ...safeErrorDetails(error, sensitiveValues) });
+    }
     if (RECOVERABLE_TRANSPORT_CODES.has(code)) {
       const cached = await recoverFromCache(code);
       if (outcomeUncertain) {
@@ -599,7 +1127,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
       }
       return cached.ok ? deepFreeze({ ...cached, operation }) : cached;
     }
-    return rejection(code, { operation, ...safeErrorDetails(error) });
+    return rejection(code, { operation, ...safeErrorDetails(error, sensitiveValues) });
   }
 
   async function performDispatch(intentInput) {
@@ -613,6 +1141,9 @@ export function createStarcraftTmgClientDomain(options = {}) {
     if (intent.type === "load_legal_space") return loadLegalSpace();
     if (intent.type === "preview_finite" || intent.type === "preview_parameterized") return previewIntent(intent);
     if (intent.type === "confirm_and_apply_preview") return confirmAndApply(intent);
+    if (intent.type === "claim_control") return obtainControlLease({ force: true, refreshAfterClaim: true });
+    if (intent.type === "issue_invite") return issueAccess("invite");
+    if (intent.type === "issue_recovery") return issueAccess("recovery");
     return readReplay();
   }
 
@@ -652,24 +1183,155 @@ export function createStarcraftTmgClientDomain(options = {}) {
     });
   }
 
+  async function exchangeBootstrapAccess(roomId, access) {
+    const operation = access.kind === "invite" ? "exchange_invite" : "exchange_recovery";
+    const tokenField = access.kind === "invite" ? "inviteToken" : "recoveryToken";
+    const accessAlreadyTracked = sensitiveValues.has(access.token);
+    let exchangedSeatToken = "";
+    sensitiveValues.add(access.token);
+    try {
+      const result = await transport.execute({
+        operation,
+        roomId,
+        seatToken: "",
+        payload: { [tokenField]: access.token },
+      });
+      if (!result?.ok) {
+        return { ok: false, reason: result?.reason || "ACCESS_EXCHANGE_REJECTED" };
+      }
+      const seatToken = String(result.credential?.seatToken || "").trim();
+      if (!hasExactKeys(result.credential, ["grantId", "seatKey", "roleMode", "seatToken"])
+        || !ACCESS_TOKEN_PATTERN.test(seatToken)
+        || !String(result.credential?.grantId || "").trim()
+        || !String(result.credential?.seatKey || "").trim()
+        || !String(result.credential?.roleMode || "").trim()) {
+        return { ok: false, reason: "ACCESS_EXCHANGE_RESPONSE_INVALID" };
+      }
+      exchangedSeatToken = seatToken;
+      const authorityOperation = access.kind === "invite" ? "exchange_invite" : "recover_seat";
+      if (!structurallyValidAuthorityAccessReceipt(result.receipt, {
+        kind: access.kind,
+        operation: authorityOperation,
+        roomId,
+      })) {
+        return { ok: false, reason: "ACCESS_EXCHANGE_RECEIPT_INVALID" };
+      }
+      const expectedAccessDigest = roomBoundTokenDigest(
+        roomId,
+        access.token,
+        access.kind === "invite" ? "invite" : "seat_recovery",
+      );
+      const expectedSeatTokenDigest = roomBoundTokenDigest(roomId, seatToken, "seat_grant");
+      if (result.receipt.tokenDigest !== expectedAccessDigest
+        || result.receipt.issuedSeatTokenDigest !== expectedSeatTokenDigest
+        || result.receipt.status !== "used"
+        || !String(result.receipt.subjectId || "").trim()
+        || result.credential?.grantId !== result.receipt.issuedGrantId
+        || result.credential?.seatKey !== result.receipt.seatKey
+        || result.credential?.roleMode !== result.receipt.issuedRoleMode) {
+        return { ok: false, reason: "ACCESS_EXCHANGE_BINDING_INVALID" };
+      }
+      sensitiveValues.add(seatToken);
+      return {
+        ok: true,
+        seatToken,
+        accessReceipt: accessReceiptReference(result.receipt, access.kind),
+        expectedViewer: {
+          grantId: result.credential.grantId,
+          seatKey: result.credential.seatKey,
+          roleMode: result.credential.roleMode,
+          grantRecoveryRevision: result.receipt.postRevisions.seatRecoveryRevision,
+          matchBindingHash: result.receipt.matchBindingHash,
+          refereeKeyId: result.receipt.refereeKeyId,
+          refereePublicKeyFingerprint: result.receipt.refereePublicKeyFingerprint,
+        },
+      };
+    } finally {
+      if (!accessAlreadyTracked
+        && access.token !== bindingCredential
+        && access.token !== exchangedSeatToken) {
+        sensitiveValues.delete(access.token);
+      }
+    }
+  }
+
   async function performBootstrap(input) {
     let normalized;
     try {
       normalized = validateBootstrap(input);
     } catch (error) {
-      return rejection(error.code || "CLIENT_INPUT_INVALID", safeErrorDetails(error), internal.phase);
+      return rejection(error.code || "CLIENT_INPUT_INVALID", safeErrorDetails(error, sensitiveValues), internal.phase);
     }
+    if (bindingCredential && !normalized.seatToken && !normalized.access) {
+      return rejection(
+        "CLIENT_PRINCIPAL_DOWNGRADE_REQUIRES_EXPLICIT_CLEAR",
+        { requestedRoomId: normalized.roomId },
+        internal.phase,
+      );
+    }
+    let seatToken = normalized.seatToken;
+    let bootstrapAccessReceipt = null;
+    let expectedViewer = null;
+    if (normalized.access) {
+      if (!binding) {
+        publish({
+          phase: "exchanging_access",
+          locator: { roomId: normalized.roomId },
+          surface: normalized.surface,
+          locale: normalized.locale,
+          rejection: null,
+        });
+      }
+      try {
+        const exchanged = await exchangeBootstrapAccess(normalized.roomId, normalized.access);
+        if (!exchanged.ok) {
+          return rejection(
+            exchanged.reason,
+            { kind: normalized.access.kind },
+            binding ? internal.phase : "blocked",
+          );
+        }
+        seatToken = exchanged.seatToken;
+        bootstrapAccessReceipt = exchanged.accessReceipt;
+        expectedViewer = exchanged.expectedViewer;
+      } catch (error) {
+        const code = error instanceof StarcraftTmgClientTransportError
+          ? error.code
+          : String(error?.code || "TRANSPORT_FAILED");
+        return rejection(
+          code,
+          { operation: `exchange_${normalized.access.kind}`, ...safeErrorDetails(error, sensitiveValues) },
+          binding
+            ? internal.phase
+            : RECOVERABLE_TRANSPORT_CODES.has(code) ? "unavailable" : "blocked",
+        );
+      }
+    }
+    if (seatToken) sensitiveValues.add(seatToken);
     const principalScopeHash = hashStarcraftTmgClientContract({
       schemaVersion: "starcraft_tmg_client_principal_scope_v1",
       roomId: normalized.roomId,
-      seatToken: normalized.seatToken || "public",
+      seatToken: seatToken || "public",
     });
     const cacheKey = hashStarcraftTmgClientContract({
       schemaVersion: "starcraft_tmg_client_projection_cache_key_v1",
       roomId: normalized.roomId,
       principalScopeHash,
     });
-    binding = { ...normalized, principalScopeHash, cacheKey };
+    binding = {
+      roomId: normalized.roomId,
+      surface: normalized.surface,
+      locale: normalized.locale,
+      principalScopeHash,
+      cacheKey,
+      expectedViewer,
+    };
+    const previousBindingCredential = bindingCredential;
+    bindingCredential = seatToken;
+    if (previousBindingCredential && previousBindingCredential !== seatToken) {
+      sensitiveValues.delete(previousBindingCredential);
+    }
+    controlLeaseReference = null;
     internal = {
       clientRevision: internal.clientRevision,
       phase: "binding",
@@ -683,6 +1345,8 @@ export function createStarcraftTmgClientDomain(options = {}) {
       pendingPreview: null,
       lastReceipt: null,
       replay: null,
+      control: unclaimedControl(),
+      accessReceipt: bootstrapAccessReceipt,
       rejection: null,
       recovery: {
         cacheStatus: "not_checked",

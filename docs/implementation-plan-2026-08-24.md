@@ -641,3 +641,16 @@ Ticket 12 at 7/7 and advances the project to 12/22 without claiming production:
 FAQ re-review, rights/signature, external Provider smoke, live PostgreSQL, and
 actual Web/native shell evidence remain explicit later gates. No source refresh,
 Skill generation, DSH, MuZero, self-play, memory, or training promotion ran.
+
+Ticket 14 Slice 131 makes room ingress and same-seat recovery executable across
+the shared Client Domain and tracked Expo product. Room locators and URL claims
+remain non-authoritative; one-time invite/recovery capabilities are room-bound,
+audit-expiring and CAS-consumed through both memory and SQLite contracts. Every
+access transition emits a content hash + Ed25519 long-term signature + HMAC
+current seal and persists the full credential-free receipt in encrypted private
+and recovery ledgers. Same-seat devices retain read access while the latest
+explicit ControlLease claim fences earlier mutation. Production bearer links
+require configured HTTPS Universal/App Links; custom schemes remain development
+only. Focused 18/18 and cumulative Ticket 14 84/84 pass, advancing Ticket 14 to
+4/11 with Slice 132 next. No source refresh, Provider, Skill, DSH, MuZero,
+self-play or training promotion ran.

@@ -59,33 +59,34 @@ async function main() {
     now: () => OCCURRED_AT,
   });
   const roomIds = [JOIN_ROOM_ID, ROOM_ID];
+  const createInitialStateAuthority = ({ setupId }) => {
+    const state = createStarcraftTmgSampleState(data);
+    state.board.terrain = [];
+    const opponentFixture = setupId === "opponent-fixture";
+    if (opponentFixture) state.activeSideKey = "player2";
+    const serverSeatPlan = opponentFixture ? [
+      { label: "host", seatKey: "player1", roleMode: "player", principalType: "human" },
+      { label: "opponent", seatKey: "player2", roleMode: "opponent", principalType: "model" },
+      { label: "opponentSupervisor", seatKey: "player2", roleMode: "supervisor", principalType: "human" },
+    ] : [
+      { label: "host", seatKey: "player1", roleMode: "player", principalType: "human" },
+    ];
+    return {
+      source: "server_factory",
+      state,
+      dataVersion: data.version,
+      receiptHash: hashStarcraftTmgContract({
+        source: "http-adapter-compatibility-verifier-v2",
+        setupId,
+        state,
+      }),
+      serverSeatPlan,
+    };
+  };
   const adapter = createStarcraftTmgLevel3HttpAdapter({
     roomRuntime: runtime,
     createRoomId: () => roomIds.shift() || `unexpected-room-${roomIds.length}`,
-    initialStateFactory: ({ setupId }) => {
-      const state = createStarcraftTmgSampleState(data);
-      state.board.terrain = [];
-      const opponentFixture = setupId === "opponent-fixture";
-      if (opponentFixture) state.activeSideKey = "player2";
-      const serverSeatPlan = opponentFixture ? [
-        { label: "host", seatKey: "player1", roleMode: "player", principalType: "human" },
-        { label: "opponent", seatKey: "player2", roleMode: "opponent", principalType: "model" },
-        { label: "opponentSupervisor", seatKey: "player2", roleMode: "supervisor", principalType: "human" },
-      ] : [
-        { label: "host", seatKey: "player1", roleMode: "player", principalType: "human" },
-      ];
-      return {
-        source: "server_factory",
-        state,
-        dataVersion: data.version,
-        receiptHash: hashStarcraftTmgContract({
-          source: "http-adapter-compatibility-verifier-v2",
-          setupId,
-          state,
-        }),
-        serverSeatPlan,
-      };
-    },
+    initialStateFactory: createInitialStateAuthority,
   });
   const checks = [];
   const failures = [];
@@ -132,12 +133,31 @@ async function main() {
       body: { setupId: "join-fixture", surfaceMode: "classic" },
     });
     assert(created.status === 200 && created.response.result.roomId === JOIN_ROOM_ID, "join fixture room create failed");
-    const joined = await adapter.handle({
+    assert(created.response.result.credential?.seatKey === "player1"
+      && created.response.result.credentials === undefined,
+    "HTTP room create did not return exactly the host credential");
+    const unsafeJoined = await adapter.handle({
       method: "POST",
       pathname: `${STARCRAFT_TMG_LEVEL3_API_PREFIX}/rooms/${JOIN_ROOM_ID}/join`,
       body: {},
     });
-    assert(joined.status === 200 && joined.response.result.credential.seatKey === "player2", "server-selected room join failed");
+    assert(unsafeJoined.status === 401 && unsafeJoined.response.error === "INVITE_REQUIRED",
+      "roomId-only join minted a SeatGrant");
+    const invited = await adapter.handle({
+      method: "POST",
+      pathname: `${STARCRAFT_TMG_LEVEL3_API_PREFIX}/rooms/${JOIN_ROOM_ID}/invites`,
+      headers: bearer(created.response.result.credential.seatToken),
+      body: { expectedRoomRevision: created.response.result.room.roomRevision },
+    });
+    assert(invited.status === 200 && invited.response.result.invite?.inviteToken,
+      `host invite failed: ${invited.response.error || "unknown"}`);
+    const joined = await adapter.handle({
+      method: "POST",
+      pathname: `${STARCRAFT_TMG_LEVEL3_API_PREFIX}/rooms/${JOIN_ROOM_ID}/invite-exchange`,
+      body: { inviteToken: invited.response.result.invite.inviteToken },
+    });
+    assert(joined.status === 200 && joined.response.result.credential.seatKey === "player2",
+      "server-selected invite exchange failed");
     const projected = await adapter.handle({
       method: "GET",
       pathname: `${STARCRAFT_TMG_LEVEL3_API_PREFIX}/rooms/${JOIN_ROOM_ID}`,
@@ -145,13 +165,16 @@ async function main() {
     });
     assert(projected.status === 200 && projected.response.result.projection.viewer.seatKey === "player2", "SeatGrant projection mismatch");
 
-    const opponentRoom = await adapter.handle({
-      method: "POST",
-      pathname: `${STARCRAFT_TMG_LEVEL3_API_PREFIX}/rooms`,
-      body: { setupId: "opponent-fixture", surfaceMode: "classic" },
+    const opponentAuthority = createInitialStateAuthority({ setupId: "opponent-fixture" });
+    const opponentRoom = await runtime.createRoom({
+      roomId: ROOM_ID,
+      gameId: "starcraft-tmg",
+      surfaceMode: "classic",
+      initialStateAuthority: opponentAuthority,
+      serverSeatPlan: opponentAuthority.serverSeatPlan,
     });
-    assert(opponentRoom.status === 200 && opponentRoom.response.result.roomId === ROOM_ID, "Opponent fixture room create failed");
-    credentials = opponentRoom.response.result.credentials;
+    assert(opponentRoom.ok && opponentRoom.room.roomId === ROOM_ID, "Opponent fixture room create failed");
+    credentials = opponentRoom.credentials;
   });
 
   await check("http_opponent_preview_confirm_apply_and_replay_are_receipt_bound", async () => {

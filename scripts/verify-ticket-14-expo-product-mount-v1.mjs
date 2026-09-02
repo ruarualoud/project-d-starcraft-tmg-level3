@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { access, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -17,6 +18,7 @@ const MIGRATION_PATH = path.join(ROOT, "content/client/expo-product-migration-v1
 const BUILD_ROOT = path.join(ROOT, "build/ticket-14-slice-130-expo-product-mount-v1");
 const REPORT_PATH = path.join(BUILD_ROOT, "report.json");
 const OCCURRED_AT = "2026-09-03T07:00:00.000Z";
+const SLICE_130_COMMIT = "ba00c7205803cea1741775f5bee94b6c2338d3f7";
 const EXPECTED_TABS = ["index", "army", "tools", "match", "settings"];
 const CODE_EXTENSIONS = ["", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".json", ".css"];
 
@@ -65,6 +67,36 @@ async function fileManifest(root) {
     });
   }
   return files;
+}
+
+function gitFileManifest(commit, prefix) {
+  const listing = execFileSync(
+    "git",
+    ["ls-tree", "-r", "-z", "--full-tree", commit, "--", prefix],
+    { cwd: ROOT, maxBuffer: 16 * 1024 * 1024 },
+  ).toString("utf8");
+  return listing.split("\0").filter(Boolean).map((line) => {
+    const match = /^(\d+)\s+blob\s+[0-9a-f]+\t(.+)$/u.exec(line);
+    assert(match, `unexpected git tree entry: ${line}`);
+    const [, mode, repoPath] = match;
+    const bytes = execFileSync("git", ["show", `${commit}:${repoPath}`], {
+      cwd: ROOT,
+      maxBuffer: 16 * 1024 * 1024,
+    });
+    return {
+      path: repoPath.slice(`${prefix}/`.length),
+      byteLength: bytes.length,
+      sha256: sha256(bytes),
+      executable: mode === "100755",
+    };
+  }).sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
+}
+
+function readGitFile(commit, repoPath) {
+  return execFileSync("git", ["show", `${commit}:${repoPath}`], {
+    cwd: ROOT,
+    maxBuffer: 16 * 1024 * 1024,
+  });
 }
 
 function manifestDelta(sourceFiles, targetFiles) {
@@ -207,7 +239,9 @@ await check("derived_expo_product_candidate_exists_outside_the_read_only_vendor_
     ...EXPECTED_TABS.map((tab) => `app/(tabs)/${tab}.tsx`),
   ];
   assert(path.resolve(EXPO_ROOT) !== path.resolve(BASELINE_ROOT), "derived product aliases the frozen baseline");
-  targetFiles = await fileManifest(EXPO_ROOT);
+  // Slice receipts are immutable evidence. Later slices may extend the tracked
+  // Expo product, so the Slice 130 denominator must be read from its commit.
+  targetFiles = gitFileManifest(SLICE_130_COMMIT, "apps/starcraft-tmg-expo");
   targetManifestHash = hashStarcraftTmgContract(targetFiles);
   delta = manifestDelta(sourceFiles, targetFiles);
   for (const name of required) assert(await fileExists(path.join(EXPO_ROOT, name)), `derived product missing ${name}`);
@@ -457,7 +491,10 @@ await check("migration_harness_record_contains_hash_evidence_gaps_and_demotion_s
     "app/_layout.tsx",
     "lib/level3/client-domain-provider.tsx",
     "lib/level3/client-domain-mount-runtime.mjs",
-  ].map(async (name) => sha256(await readFile(path.join(EXPO_ROOT, name)))));
+  ].map(async (name) => sha256(readGitFile(
+    SLICE_130_COMMIT,
+    `apps/starcraft-tmg-expo/${name}`,
+  ))));
   assert(mountedArtifactHashes.every((hash) => harness.artifactHashes.includes(hash)),
     "Harness artifact hashes do not bind root layout, Provider, and mount runtime bytes");
   assert(harness.knownGaps.includes("real_browser_build_and_acceptance_reserved_for_slice_136")
@@ -487,6 +524,7 @@ const reportUnsigned = {
   },
   targetProduct: {
     path: "apps/starcraft-tmg-expo",
+    snapshotCommit: SLICE_130_COMMIT,
     fileCount: targetFiles.length,
     byteLength: targetFiles.reduce((sum, entry) => sum + entry.byteLength, 0),
     fileManifestHash: targetManifestHash,

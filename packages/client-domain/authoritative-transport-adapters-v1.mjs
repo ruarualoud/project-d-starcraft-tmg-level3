@@ -7,6 +7,10 @@ const OPERATIONS = new Set([
   "preview_action",
   "confirm_preview",
   "claim_control",
+  "issue_invite",
+  "exchange_invite",
+  "issue_recovery",
+  "exchange_recovery",
   "apply_action",
   "read_replay",
 ]);
@@ -54,6 +58,10 @@ export function createInMemoryStarcraftTmgAuthoritativeTransportAdapter(options 
     if (request.operation === "preview_action") return runtime.previewAction({ ...shared, proposal: payload.proposal, candidateId: payload.candidateId });
     if (request.operation === "confirm_preview") return runtime.confirmPreview({ ...shared, previewId: payload.previewId });
     if (request.operation === "claim_control") return runtime.claimControl({ ...shared, sessionId: payload.sessionId });
+    if (request.operation === "issue_invite") return runtime.issueInvite({ ...shared, expectedRoomRevision: payload.expectedRoomRevision });
+    if (request.operation === "exchange_invite") return runtime.exchangeInvite({ roomId: request.roomId, inviteToken: payload.inviteToken });
+    if (request.operation === "issue_recovery") return runtime.issueSeatRecovery({ ...shared, expectedRoomRevision: payload.expectedRoomRevision });
+    if (request.operation === "exchange_recovery") return runtime.recoverSeat({ roomId: request.roomId, recoveryToken: payload.recoveryToken });
     if (request.operation === "apply_action") return runtime.applyAction({ ...shared, ...payload });
     return runtime.replayRoom({ roomId: request.roomId });
   }
@@ -63,11 +71,15 @@ export function createInMemoryStarcraftTmgAuthoritativeTransportAdapter(options 
 function endpointFor(request) {
   const room = `rooms/${encodeURIComponent(request.roomId)}`;
   return {
-    read_room: { method: "GET", path: room },
+    read_room: { method: "GET", path: `${room}?includeJournal=false` },
     read_legal_space: { method: "POST", path: `${room}/legal-space` },
     preview_action: { method: "POST", path: `${room}/preview` },
     confirm_preview: { method: "POST", path: `${room}/confirm` },
     claim_control: { method: "POST", path: `${room}/control-lease` },
+    issue_invite: { method: "POST", path: `${room}/invites` },
+    exchange_invite: { method: "POST", path: `${room}/invite-exchange` },
+    issue_recovery: { method: "POST", path: `${room}/recovery-tickets` },
+    exchange_recovery: { method: "POST", path: `${room}/recovery-exchange` },
     apply_action: { method: "POST", path: `${room}/apply` },
     read_replay: { method: "GET", path: `${room}/replay` },
   }[request.operation];

@@ -14,6 +14,9 @@ export const STARCRAFT_TMG_ROOM_RUNTIME_VERSION = "starcraft_tmg_room_runtime_v2
 
 const ROLE_MODES = new Set(["player", "tutor", "opponent", "commentator", "companion", "supervisor"]);
 const APPLY_CAPABILITIES = Object.freeze(["read_room", "read_legal_space", "preview", "confirm", "apply", "read_own_private"]);
+const HUMAN_ACCESS_CAPABILITIES = Object.freeze(["manage_invites", "create_recovery_ticket"]);
+const MAX_ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
+const ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -42,7 +45,11 @@ function roleMode(value) {
 }
 
 function capabilitiesForRole(mode, principalType) {
-  if (mode === "player" || mode === "supervisor") return [...APPLY_CAPABILITIES];
+  if (mode === "player" || mode === "supervisor") {
+    return principalType === "human"
+      ? [...APPLY_CAPABILITIES, ...HUMAN_ACCESS_CAPABILITIES]
+      : [...APPLY_CAPABILITIES];
+  }
   if (mode === "opponent") return ["read_room", "read_legal_space", "preview", "submit_decision"];
   if (mode === "tutor") return ["read_room", "read_legal_space"];
   if (mode === "commentator" || mode === "companion") return ["read_room"];
@@ -62,8 +69,76 @@ function token() {
   return randomBytes(32).toString("base64url");
 }
 
-function tokenHash(roomId, rawToken) {
-  return hashStarcraftTmgContract({ schemaVersion: "starcraft_tmg_seat_token_digest_v1", roomId, token: rawToken });
+function tokenHash(roomId, rawToken, tokenKind = "seat_grant") {
+  if (tokenKind === "seat_grant") {
+    return hashStarcraftTmgContract({
+      schemaVersion: "starcraft_tmg_seat_token_digest_v1",
+      roomId,
+      token: rawToken,
+    });
+  }
+  return hashStarcraftTmgContract({
+    schemaVersion: "starcraft_tmg_room_bound_token_digest_v1",
+    roomId,
+    tokenKind,
+    token: rawToken,
+  });
+}
+
+function boundedTtl(value, fallback, field) {
+  const normalized = value === undefined ? fallback : Number(value);
+  if (!Number.isSafeInteger(normalized) || normalized < 1_000 || normalized > MAX_ACCESS_TOKEN_TTL_MS) {
+    throw new TypeError(`${field} must be between 1000 and ${MAX_ACCESS_TOKEN_TTL_MS} milliseconds`);
+  }
+  return normalized;
+}
+
+function auditInstant(value, field = "audit time") {
+  const milliseconds = Date.parse(String(value || ""));
+  if (!Number.isFinite(milliseconds)) throw new TypeError(`${field} must be an ISO-8601 instant`);
+  return milliseconds;
+}
+
+function accessRevisions(aggregate) {
+  return {
+    roomRevision: aggregate.roomRevision,
+    stateRevision: aggregate.stateRevision,
+    privateJournalSequence: aggregate.privateJournalSequence,
+    seatRecoveryRevision: aggregate.seatRecoveryRevision,
+  };
+}
+
+function accessReceipt(authorityEngine, operation, aggregate, next, fields = {}) {
+  const content = {
+    schemaVersion: "starcraft_tmg_room_access_receipt_v1",
+    operation,
+    roomId: aggregate.roomId,
+    matchBindingHash: aggregate.envelope.matchBindingHash,
+    refereeKeyId: aggregate.envelope.matchBinding.refereeKeyId,
+    refereePublicKeyFingerprint: aggregate.envelope.matchBinding.refereePublicKeyFingerprint,
+    preRevisions: accessRevisions(aggregate),
+    postRevisions: accessRevisions(next),
+    ...clone(fields),
+    trainingTruth: false,
+  };
+  return authorityEngine.attestRoomAccessReceipt(content);
+}
+
+function explicitRevisionConflict(input, aggregate) {
+  if (input.expectedRoomRevision === undefined) return null;
+  const expected = input.expectedRoomRevision;
+  if (!Number.isSafeInteger(expected) || expected < 0) {
+    return rejection("REVISION_INVALID", { field: "expectedRoomRevision" });
+  }
+  return expected === aggregate.roomRevision ? null : rejection("REVISION_CONFLICT", {
+    expectedRoomRevision: expected,
+    observedRoomRevision: aggregate.roomRevision,
+  });
+}
+
+function rejectedAuthorityFields(input) {
+  return ["seatKey", "sideKey", "roleMode", "principalType", "visibilityScope", "capabilities"]
+    .filter((field) => input[field] !== undefined);
 }
 
 function publicMatchBinding(binding) {
@@ -216,7 +291,13 @@ function createGrant(authorityEngine, envelope, spec, recoveryRevision) {
   const mode = roleMode(spec.roleMode || "player");
   const principalType = String(spec.principalType || (mode === "opponent" ? "model" : "human"));
   const grantId = String(spec.grantId || `sc-grant-${hashStarcraftTmgContract({ roomId: envelope.roomId, seatKey: spec.seatKey, mode, nonce: seatToken })}`);
-  const capabilities = Array.isArray(spec.capabilities) ? spec.capabilities : capabilitiesForRole(mode, principalType);
+  const capabilities = Array.isArray(spec.capabilities)
+    ? [...new Set([
+      ...spec.capabilities,
+      ...((principalType === "human" && (mode === "player" || mode === "supervisor"))
+        ? HUMAN_ACCESS_CAPABILITIES : []),
+    ])]
+    : capabilitiesForRole(mode, principalType);
   const authority = authorityEngine.issueSeatAuthority({
     grantId,
     roomId: envelope.roomId,
@@ -235,7 +316,7 @@ function createGrant(authorityEngine, envelope, spec, recoveryRevision) {
       roleMode: mode,
       principalType,
       label: String(spec.label || mode),
-      tokenHash: tokenHash(envelope.roomId, seatToken),
+      tokenHash: tokenHash(envelope.roomId, seatToken, "seat_grant"),
       authority,
       revoked: false,
     },
@@ -248,6 +329,8 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
   const roomStore = assertStarcraftTmgRoomStore(options.roomStore || createInMemoryStarcraftTmgRoomStore());
   const now = typeof options.now === "function" ? options.now : () => new Date().toISOString();
   const checkpointInterval = Math.max(1, Number(options.checkpointInterval || 16));
+  const inviteTtlMs = boundedTtl(options.inviteTtlMs, 15 * 60 * 1000, "inviteTtlMs");
+  const recoveryTtlMs = boundedTtl(options.recoveryTtlMs, 10 * 60 * 1000, "recoveryTtlMs");
 
   async function load(roomId) {
     return roomStore.loadRoom(String(roomId || ""));
@@ -364,6 +447,8 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
         acceptedReceiptCount: 0,
         envelope,
         grants,
+        invites: {},
+        recoveryTickets: {},
         leases: {},
         leaseFences: {},
         previews: {},
@@ -398,30 +483,451 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     }
   }
 
-  async function joinRoom(input = {}) {
-    const aggregate = await load(input.roomId);
-    if (!aggregate) return rejection("ROOM_NOT_FOUND", { roomId: input.roomId || "" });
-    const occupied = new Set(Object.values(aggregate.grants).filter((grant) => !grant.revoked).map((grant) => grant.seatKey));
-    const seatKey = ["player1", "player2"].find((candidate) => !occupied.has(candidate));
-    if (!seatKey) return rejection("ROOM_FULL");
-    const issued = createGrant(authorityEngine, aggregate.envelope, { label: "guest", seatKey, roleMode: "player", principalType: "human" }, aggregate.seatRecoveryRevision + 1);
+  function playerSeatKeys(aggregate) {
+    const fromState = Object.keys(aggregate.envelope.state?.players || {}).sort();
+    return fromState.length ? fromState : ["player1", "player2"];
+  }
+
+  function unoccupiedPlayerSeat(aggregate, atAudit) {
+    const at = auditInstant(atAudit);
+    const occupied = new Set(Object.values(aggregate.grants || {})
+      .filter((grant) => !grant.revoked)
+      .map((grant) => grant.seatKey));
+    for (const invite of Object.values(aggregate.invites || {})) {
+      if (invite.status === "active" && auditInstant(invite.expiresAtAudit, "invite expiry") > at) {
+        occupied.add(invite.seatKey);
+      }
+    }
+    return playerSeatKeys(aggregate).find((candidate) => !occupied.has(candidate)) || null;
+  }
+
+  async function commitExpiredAccessToken({
+    aggregate,
+    collection,
+    recordId,
+    record,
+    tokenKind,
+    operation,
+    reason,
+    atAudit,
+  }) {
     const next = clone(aggregate);
-    next.grants[issued.record.grantId] = issued.record;
+    next[collection] ||= {};
+    next[collection][recordId].status = "expired";
+    next[collection][recordId].expiredAtAudit = atAudit;
     next.roomRevision += 1;
     next.privateJournalSequence += 1;
     next.seatRecoveryRevision += 1;
-    next.updatedAtAudit = now();
+    next.updatedAtAudit = atAudit;
+    const receipt = accessReceipt(authorityEngine, operation, aggregate, next, {
+      tokenKind,
+      subjectId: recordId,
+      seatKey: record.seatKey,
+      status: "expired",
+      expiresAtAudit: record.expiresAtAudit,
+      occurredAtAudit: atAudit,
+    });
+    next[collection][recordId].expiryReceiptHash = receipt.receiptHash;
     try {
-      await roomStore.commit(aggregate.roomId, { roomRevision: aggregate.roomRevision, stateRevision: aggregate.stateRevision }, {
+      await roomStore.commit(aggregate.roomId, {
+        roomRevision: aggregate.roomRevision,
+        stateRevision: aggregate.stateRevision,
+      }, {
         nextAggregate: next,
-        privateEvents: [journalEvent("seat_grant_issued", { grantId: issued.record.grantId, seatKey, roleMode: "player" })],
+        privateEvents: [journalEvent(`${tokenKind}_expired`, {
+          subjectId: recordId,
+          seatKey: record.seatKey,
+          receiptHash: receipt.receiptHash,
+          receipt: clone(receipt),
+        })],
         publicEvents: [],
-        recoveryUpdates: [{ seatKey, grantId: issued.record.grantId, tokenHash: issued.record.tokenHash, roleMode: "player", revoked: false }],
+        recoveryUpdates: [{
+          schemaVersion: "starcraft_tmg_seat_access_update_v1",
+          tokenKind,
+          subjectId: recordId,
+          seatKey: record.seatKey,
+          status: "expired",
+          receiptHash: receipt.receiptHash,
+          receipt: clone(receipt),
+        }],
       });
-      return deepFreeze({ ok: true, room: roomSummary(next), credential: issued.credential });
+      return rejection(reason, { receipt, room: roomSummary(next) });
     } catch (error) {
       return rejection(error.code || "ROOM_COMMIT_FAILED", { message: error.message });
     }
+  }
+
+  async function issueInvite(input = {}) {
+    const authorityFields = rejectedAuthorityFields(input);
+    if (authorityFields.length) return rejection("CLIENT_AUTHORITY_FIELD_REJECTED", { rejectedFields: authorityFields });
+    const aggregate = await load(input.roomId);
+    if (!aggregate) return rejection("ROOM_NOT_FOUND", { roomId: input.roomId || "" });
+    let issuer;
+    try { issuer = authenticate(aggregate, input.seatToken, "manage_invites"); } catch (error) {
+      return rejection(error.code || "INVITE_ISSUE_FAILED", { message: error.message });
+    }
+    const conflict = explicitRevisionConflict(input, aggregate);
+    if (conflict) return conflict;
+    const issuedAtAudit = now();
+    const seatKey = unoccupiedPlayerSeat(aggregate, issuedAtAudit);
+    if (!seatKey) return rejection("ROOM_FULL");
+    const inviteToken = token();
+    const digest = tokenHash(aggregate.roomId, inviteToken, "invite");
+    const inviteId = `sc-invite-${hashStarcraftTmgContract({ roomId: aggregate.roomId, tokenDigest: digest })}`;
+    const expiresAtAudit = new Date(auditInstant(issuedAtAudit) + inviteTtlMs).toISOString();
+    const next = clone(aggregate);
+    next.invites ||= {};
+    next.invites[inviteId] = {
+      schemaVersion: "starcraft_tmg_room_invite_record_v1",
+      inviteId,
+      seatKey,
+      tokenDigest: digest,
+      status: "active",
+      issuedByGrantId: issuer.grantId,
+      issuedAtAudit,
+      expiresAtAudit,
+    };
+    next.roomRevision += 1;
+    next.privateJournalSequence += 1;
+    next.seatRecoveryRevision += 1;
+    next.updatedAtAudit = issuedAtAudit;
+    const receipt = accessReceipt(authorityEngine, "issue_invite", aggregate, next, {
+      tokenKind: "invite",
+      subjectId: inviteId,
+      seatKey,
+      tokenDigest: digest,
+      status: "active",
+      actorGrantId: issuer.grantId,
+      issuedAtAudit,
+      expiresAtAudit,
+    });
+    next.invites[inviteId].issueReceiptHash = receipt.receiptHash;
+    try {
+      await roomStore.commit(aggregate.roomId, {
+        roomRevision: aggregate.roomRevision,
+        stateRevision: aggregate.stateRevision,
+      }, {
+        nextAggregate: next,
+        privateEvents: [journalEvent("invite_issued", {
+          inviteId,
+          seatKey,
+          actorGrantId: issuer.grantId,
+          expiresAtAudit,
+          receiptHash: receipt.receiptHash,
+          receipt: clone(receipt),
+        }, `actor:${issuer.grantId}|referee`)],
+        publicEvents: [],
+        recoveryUpdates: [{
+          schemaVersion: "starcraft_tmg_seat_access_update_v1",
+          tokenKind: "invite",
+          subjectId: inviteId,
+          seatKey,
+          tokenDigest: digest,
+          status: "active",
+          receiptHash: receipt.receiptHash,
+          receipt: clone(receipt),
+        }],
+      });
+      return deepFreeze({
+        ok: true,
+        invite: { inviteId, inviteToken, expiresAtAudit },
+        receipt,
+        room: roomSummary(next),
+      });
+    } catch (error) {
+      return rejection(error.code || "ROOM_COMMIT_FAILED", { message: error.message });
+    }
+  }
+
+  async function exchangeInvite(input = {}) {
+    const authorityFields = rejectedAuthorityFields(input);
+    if (authorityFields.length || input.expectedRoomRevision !== undefined || input.seatToken !== undefined) {
+      return rejection("CLIENT_AUTHORITY_FIELD_REJECTED", {
+        rejectedFields: [
+          ...authorityFields,
+          ...(input.expectedRoomRevision !== undefined ? ["expectedRoomRevision"] : []),
+          ...(input.seatToken !== undefined ? ["seatToken"] : []),
+        ],
+      });
+    }
+    const aggregate = await load(input.roomId);
+    if (!aggregate) return rejection("ROOM_NOT_FOUND", { roomId: input.roomId || "" });
+    const inviteToken = String(input.inviteToken || "").trim();
+    if (!inviteToken) return rejection("INVITE_REQUIRED");
+    if (!ACCESS_TOKEN_PATTERN.test(inviteToken)) return rejection("INVITE_INVALID");
+    const digest = tokenHash(aggregate.roomId, inviteToken, "invite");
+    const record = Object.values(aggregate.invites || {}).find((entry) => entry.tokenDigest === digest);
+    if (!record) return rejection("INVITE_INVALID");
+    if (record.status !== "active") {
+      return rejection(record.status === "used" ? "INVITE_ALREADY_USED" : "INVITE_EXPIRED", {
+        inviteId: record.inviteId,
+      });
+    }
+    const exchangedAtAudit = now();
+    if (auditInstant(record.expiresAtAudit, "invite expiry") <= auditInstant(exchangedAtAudit)) {
+      return commitExpiredAccessToken({
+        aggregate,
+        collection: "invites",
+        recordId: record.inviteId,
+        record,
+        tokenKind: "invite",
+        operation: "exchange_invite",
+        reason: "INVITE_EXPIRED",
+        atAudit: exchangedAtAudit,
+      });
+    }
+    const occupied = Object.values(aggregate.grants || {})
+      .some((grant) => !grant.revoked && grant.seatKey === record.seatKey);
+    if (occupied) return rejection("INVITED_SEAT_UNAVAILABLE", { inviteId: record.inviteId });
+    const issued = createGrant(authorityEngine, aggregate.envelope, {
+      label: "guest",
+      seatKey: record.seatKey,
+      roleMode: "player",
+      principalType: "human",
+    }, aggregate.seatRecoveryRevision + 1);
+    const next = clone(aggregate);
+    next.grants[issued.record.grantId] = issued.record;
+    next.invites[record.inviteId].status = "used";
+    next.invites[record.inviteId].usedAtAudit = exchangedAtAudit;
+    next.invites[record.inviteId].usedByGrantId = issued.record.grantId;
+    next.roomRevision += 1;
+    next.privateJournalSequence += 1;
+    next.seatRecoveryRevision += 1;
+    next.updatedAtAudit = exchangedAtAudit;
+    const receipt = accessReceipt(authorityEngine, "exchange_invite", aggregate, next, {
+      tokenKind: "invite",
+      subjectId: record.inviteId,
+      seatKey: record.seatKey,
+      tokenDigest: digest,
+      status: "used",
+      issuedGrantId: issued.record.grantId,
+      issuedRoleMode: issued.record.roleMode,
+      issuedSeatTokenDigest: issued.record.tokenHash,
+      occurredAtAudit: exchangedAtAudit,
+    });
+    next.invites[record.inviteId].exchangeReceiptHash = receipt.receiptHash;
+    try {
+      await roomStore.commit(aggregate.roomId, {
+        roomRevision: aggregate.roomRevision,
+        stateRevision: aggregate.stateRevision,
+      }, {
+        nextAggregate: next,
+        privateEvents: [journalEvent("invite_exchanged", {
+          inviteId: record.inviteId,
+          seatKey: record.seatKey,
+          grantId: issued.record.grantId,
+          receiptHash: receipt.receiptHash,
+          receipt: clone(receipt),
+        })],
+        publicEvents: [],
+        recoveryUpdates: [{
+          schemaVersion: "starcraft_tmg_seat_access_update_v1",
+          tokenKind: "invite",
+          subjectId: record.inviteId,
+          seatKey: record.seatKey,
+          grantId: issued.record.grantId,
+          tokenHash: issued.record.tokenHash,
+          status: "used",
+          receiptHash: receipt.receiptHash,
+          receipt: clone(receipt),
+        }],
+      });
+      return deepFreeze({ ok: true, credential: issued.credential, receipt, room: roomSummary(next) });
+    } catch (error) {
+      return rejection(error.code || "ROOM_COMMIT_FAILED", { message: error.message });
+    }
+  }
+
+  async function issueSeatRecovery(input = {}) {
+    const authorityFields = rejectedAuthorityFields(input);
+    if (authorityFields.length) return rejection("CLIENT_AUTHORITY_FIELD_REJECTED", { rejectedFields: authorityFields });
+    const aggregate = await load(input.roomId);
+    if (!aggregate) return rejection("ROOM_NOT_FOUND", { roomId: input.roomId || "" });
+    let issuer;
+    try { issuer = authenticate(aggregate, input.seatToken, "create_recovery_ticket"); } catch (error) {
+      return rejection(error.code || "RECOVERY_ISSUE_FAILED", { message: error.message });
+    }
+    const conflict = explicitRevisionConflict(input, aggregate);
+    if (conflict) return conflict;
+    const issuedAtAudit = now();
+    const recoveryToken = token();
+    const digest = tokenHash(aggregate.roomId, recoveryToken, "seat_recovery");
+    const recoveryTicketId = `sc-recovery-${hashStarcraftTmgContract({ roomId: aggregate.roomId, tokenDigest: digest })}`;
+    const expiresAtAudit = new Date(auditInstant(issuedAtAudit) + recoveryTtlMs).toISOString();
+    const next = clone(aggregate);
+    next.recoveryTickets ||= {};
+    next.recoveryTickets[recoveryTicketId] = {
+      schemaVersion: "starcraft_tmg_seat_recovery_ticket_record_v1",
+      recoveryTicketId,
+      seatKey: issuer.seatKey,
+      tokenDigest: digest,
+      status: "active",
+      issuedByGrantId: issuer.grantId,
+      boundAuthority: {
+        seatKey: issuer.authority.seatKey,
+        roleMode: issuer.authority.roleMode,
+        principalType: issuer.authority.principalType,
+        visibilityScope: issuer.authority.visibilityScope,
+        capabilities: clone(issuer.authority.capabilities),
+      },
+      label: issuer.label,
+      issuedAtAudit,
+      expiresAtAudit,
+    };
+    next.roomRevision += 1;
+    next.privateJournalSequence += 1;
+    next.seatRecoveryRevision += 1;
+    next.updatedAtAudit = issuedAtAudit;
+    const receipt = accessReceipt(authorityEngine, "issue_seat_recovery", aggregate, next, {
+      tokenKind: "seat_recovery",
+      subjectId: recoveryTicketId,
+      seatKey: issuer.seatKey,
+      tokenDigest: digest,
+      status: "active",
+      actorGrantId: issuer.grantId,
+      issuedAtAudit,
+      expiresAtAudit,
+    });
+    next.recoveryTickets[recoveryTicketId].issueReceiptHash = receipt.receiptHash;
+    try {
+      await roomStore.commit(aggregate.roomId, {
+        roomRevision: aggregate.roomRevision,
+        stateRevision: aggregate.stateRevision,
+      }, {
+        nextAggregate: next,
+        privateEvents: [journalEvent("seat_recovery_issued", {
+          recoveryTicketId,
+          seatKey: issuer.seatKey,
+          actorGrantId: issuer.grantId,
+          expiresAtAudit,
+          receiptHash: receipt.receiptHash,
+          receipt: clone(receipt),
+        }, `actor:${issuer.grantId}|referee`)],
+        publicEvents: [],
+        recoveryUpdates: [{
+          schemaVersion: "starcraft_tmg_seat_access_update_v1",
+          tokenKind: "seat_recovery",
+          subjectId: recoveryTicketId,
+          seatKey: issuer.seatKey,
+          tokenDigest: digest,
+          status: "active",
+          receiptHash: receipt.receiptHash,
+          receipt: clone(receipt),
+        }],
+      });
+      return deepFreeze({
+        ok: true,
+        recovery: { recoveryTicketId, recoveryToken, expiresAtAudit },
+        receipt,
+        room: roomSummary(next),
+      });
+    } catch (error) {
+      return rejection(error.code || "ROOM_COMMIT_FAILED", { message: error.message });
+    }
+  }
+
+  async function recoverSeat(input = {}) {
+    const authorityFields = rejectedAuthorityFields(input);
+    if (authorityFields.length || input.expectedRoomRevision !== undefined || input.seatToken !== undefined) {
+      return rejection("CLIENT_AUTHORITY_FIELD_REJECTED", {
+        rejectedFields: [
+          ...authorityFields,
+          ...(input.expectedRoomRevision !== undefined ? ["expectedRoomRevision"] : []),
+          ...(input.seatToken !== undefined ? ["seatToken"] : []),
+        ],
+      });
+    }
+    const aggregate = await load(input.roomId);
+    if (!aggregate) return rejection("ROOM_NOT_FOUND", { roomId: input.roomId || "" });
+    const recoveryToken = String(input.recoveryToken || "").trim();
+    if (!recoveryToken) return rejection("RECOVERY_TOKEN_REQUIRED");
+    if (!ACCESS_TOKEN_PATTERN.test(recoveryToken)) return rejection("RECOVERY_TOKEN_INVALID");
+    const digest = tokenHash(aggregate.roomId, recoveryToken, "seat_recovery");
+    const record = Object.values(aggregate.recoveryTickets || {})
+      .find((entry) => entry.tokenDigest === digest);
+    if (!record) return rejection("RECOVERY_TOKEN_INVALID");
+    if (record.status !== "active") {
+      return rejection(record.status === "used" ? "RECOVERY_TOKEN_ALREADY_USED" : "RECOVERY_TOKEN_EXPIRED", {
+        recoveryTicketId: record.recoveryTicketId,
+      });
+    }
+    const recoveredAtAudit = now();
+    if (auditInstant(record.expiresAtAudit, "recovery expiry") <= auditInstant(recoveredAtAudit)) {
+      return commitExpiredAccessToken({
+        aggregate,
+        collection: "recoveryTickets",
+        recordId: record.recoveryTicketId,
+        record,
+        tokenKind: "seat_recovery",
+        operation: "recover_seat",
+        reason: "RECOVERY_TOKEN_EXPIRED",
+        atAudit: recoveredAtAudit,
+      });
+    }
+    const issued = createGrant(authorityEngine, aggregate.envelope, {
+      label: record.label,
+      seatKey: record.boundAuthority.seatKey,
+      roleMode: record.boundAuthority.roleMode,
+      principalType: record.boundAuthority.principalType,
+      visibilityScope: record.boundAuthority.visibilityScope,
+      capabilities: record.boundAuthority.capabilities,
+    }, aggregate.seatRecoveryRevision + 1);
+    const next = clone(aggregate);
+    next.grants[issued.record.grantId] = issued.record;
+    next.recoveryTickets[record.recoveryTicketId].status = "used";
+    next.recoveryTickets[record.recoveryTicketId].usedAtAudit = recoveredAtAudit;
+    next.recoveryTickets[record.recoveryTicketId].usedByGrantId = issued.record.grantId;
+    next.roomRevision += 1;
+    next.privateJournalSequence += 1;
+    next.seatRecoveryRevision += 1;
+    next.updatedAtAudit = recoveredAtAudit;
+    const receipt = accessReceipt(authorityEngine, "recover_seat", aggregate, next, {
+      tokenKind: "seat_recovery",
+      subjectId: record.recoveryTicketId,
+      seatKey: record.seatKey,
+      tokenDigest: digest,
+      status: "used",
+      issuedGrantId: issued.record.grantId,
+      issuedRoleMode: issued.record.roleMode,
+      issuedSeatTokenDigest: issued.record.tokenHash,
+      occurredAtAudit: recoveredAtAudit,
+    });
+    next.recoveryTickets[record.recoveryTicketId].exchangeReceiptHash = receipt.receiptHash;
+    try {
+      await roomStore.commit(aggregate.roomId, {
+        roomRevision: aggregate.roomRevision,
+        stateRevision: aggregate.stateRevision,
+      }, {
+        nextAggregate: next,
+        privateEvents: [journalEvent("seat_recovered", {
+          recoveryTicketId: record.recoveryTicketId,
+          seatKey: record.seatKey,
+          grantId: issued.record.grantId,
+          receiptHash: receipt.receiptHash,
+          receipt: clone(receipt),
+        })],
+        publicEvents: [],
+        recoveryUpdates: [{
+          schemaVersion: "starcraft_tmg_seat_access_update_v1",
+          tokenKind: "seat_recovery",
+          subjectId: record.recoveryTicketId,
+          seatKey: record.seatKey,
+          grantId: issued.record.grantId,
+          tokenHash: issued.record.tokenHash,
+          status: "used",
+          receiptHash: receipt.receiptHash,
+          receipt: clone(receipt),
+        }],
+      });
+      return deepFreeze({ ok: true, credential: issued.credential, receipt, room: roomSummary(next) });
+    } catch (error) {
+      return rejection(error.code || "ROOM_COMMIT_FAILED", { message: error.message });
+    }
+  }
+
+  async function joinRoom(input = {}) {
+    if (!String(input.inviteToken || "").trim()) return rejection("INVITE_REQUIRED");
+    return exchangeInvite(input);
   }
 
   async function readRoom(input = {}) {
@@ -431,6 +937,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     if (input.seatToken) {
       try { grant = authenticate(aggregate, input.seatToken, "read_room"); } catch (error) { return rejection(error.code, { message: error.message }); }
     }
+    const currentLease = grant ? aggregate.leases?.[grant.seatKey] || null : null;
     const projection = {
       schemaVersion: `${STARCRAFT_TMG_ROOM_RUNTIME_VERSION}.room-projection`,
       room: roomSummary(aggregate),
@@ -440,7 +947,20 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
         roleMode: grant.roleMode,
         visibilityScope: grant.authority.visibilityScope,
         capabilities: clone(grant.authority.capabilities),
+        grantRecoveryRevision: grant.authority.recoveryRevision,
       } : { roleMode: "public_observer", visibilityScope: "public", capabilities: ["read_public"] },
+      control: grant ? {
+        visible: true,
+        seatKey: grant.seatKey,
+        currentLeaseFence: Number(aggregate.leaseFences?.[grant.seatKey] || 0),
+        ownedByViewer: Boolean(currentLease && currentLease.grantId === grant.grantId),
+        hasActiveLease: Boolean(currentLease),
+      } : {
+        visible: false,
+        currentLeaseFence: null,
+        ownedByViewer: false,
+        hasActiveLease: false,
+      },
       matchBinding: publicMatchBinding(aggregate.envelope.matchBinding),
       authorityVersion: STARCRAFT_TMG_AUTHORITY_VERSION,
       state: projectState(aggregate.envelope.state, grant?.seatKey || null),
@@ -695,6 +1215,10 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
 
   return Object.freeze({
     createRoom,
+    issueInvite,
+    exchangeInvite,
+    issueSeatRecovery,
+    recoverSeat,
     joinRoom,
     readRoom,
     legalSpace,

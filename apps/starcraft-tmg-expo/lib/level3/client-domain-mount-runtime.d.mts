@@ -1,3 +1,11 @@
+export interface StarcraftTmgClientControlView {
+  schemaVersion: string;
+  status: "unclaimed" | "claimed" | "fenced" | "cleared";
+  claimedAt: string | null;
+  roomRevision: number | null;
+  trainingTruth: false;
+}
+
 export interface StarcraftTmgClientView {
   schemaVersion: string;
   clientRevision: number;
@@ -11,13 +19,7 @@ export interface StarcraftTmgClientView {
   pendingPreview: Record<string, any> | null;
   lastReceipt: Record<string, any> | null;
   replay: Record<string, any> | null;
-  control: {
-    schemaVersion: string;
-    status: "unclaimed" | "claimed" | "fenced" | "cleared";
-    claimedAt: string | null;
-    roomRevision: number | null;
-    trainingTruth: false;
-  };
+  control: StarcraftTmgClientControlView;
   accessReceipt: Record<string, any> | null;
   rejection: { code: string; details?: Record<string, any> } | null;
   recovery: {
@@ -32,11 +34,7 @@ export type StarcraftTmgClientIntent =
   | { type: "refresh" }
   | { type: "load_legal_space" }
   | { type: "preview_finite"; actionKey: string }
-  | {
-      type: "preview_parameterized";
-      domainId: string;
-      parameters: Record<string, unknown>;
-    }
+  | { type: "preview_parameterized"; domainId: string; parameters: Record<string, unknown> }
   | { type: "confirm_and_apply_preview"; previewId: string }
   | { type: "claim_control" }
   | { type: "issue_invite" }
@@ -102,39 +100,12 @@ export interface StarcraftTmgExpoClientRuntime {
 }
 
 export const STARCRAFT_TMG_EXPO_CLIENT_MOUNT_VERSION: string;
-
-export function projectStarcraftTmgExpoConnection(
-  view: StarcraftTmgClientView,
-): StarcraftTmgExpoConnection;
-
+export function projectStarcraftTmgExpoConnection(view: StarcraftTmgClientView): StarcraftTmgExpoConnection;
 export function projectStarcraftTmgExpoMountStatus(input: {
   surface: "expo_web" | "expo_native";
   route?: { roomId?: string };
-  lifecycle?: {
-    online?: boolean;
-    visibility?: "active" | "inactive" | "background";
-  };
-}): {
-  schemaVersion: string;
-  surface: "expo_web" | "expo_native";
-  routeRequired: boolean;
-  clientDomainInterface: readonly [
-    "bootstrap",
-    "read",
-    "dispatch",
-    "subscribe",
-  ];
-  connection: StarcraftTmgExpoConnection;
-  authority: {
-    clientOwnsRules: false;
-    clientOwnsRoomState: false;
-    clientCreatesSeatGrant: false;
-    projectionCacheIsAuthority: false;
-    trainingTruth: false;
-  };
-  trainingTruth: false;
-};
-
+  lifecycle?: { online?: boolean; visibility?: "active" | "inactive" | "background" };
+}): Record<string, unknown>;
 export function createStarcraftTmgExpoClientRuntime(options: {
   platform: "web" | "native";
   asyncStorage: {
@@ -144,9 +115,7 @@ export function createStarcraftTmgExpoClientRuntime(options: {
   };
   appState?: {
     currentState: string;
-    addEventListener(type: "change", listener: (state: string) => void): {
-      remove(): void;
-    };
+    addEventListener(type: "change", listener: (state: string) => void): { remove(): void };
   };
   documentRef?: Document;
   windowRef?: Window;

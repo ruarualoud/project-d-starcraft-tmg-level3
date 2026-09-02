@@ -10,6 +10,10 @@ const ENDPOINTS = Object.freeze([
   "GET /starcraft-tmg-level3/api/v1/metadata",
   "POST /starcraft-tmg-level3/api/v1/rooms",
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/join",
+  "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/invites",
+  "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/invite-exchange",
+  "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/recovery-tickets",
+  "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/recovery-exchange",
   "GET /starcraft-tmg-level3/api/v1/rooms/:roomId",
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/legal-space",
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/preview",
@@ -61,8 +65,8 @@ function failure(status, endpoint, reason, details = {}) {
 function statusFor(result) {
   if (result.ok) return 200;
   if (result.reason === "ROOM_NOT_FOUND") return 404;
-  if (result.reason === "AUTHENTICATION_REQUIRED") return 401;
-  if (["SEAT_GRANT_INVALID", "CAPABILITY_DENIED"].includes(result.reason)) return 403;
+  if (["AUTHENTICATION_REQUIRED", "INVITE_REQUIRED", "RECOVERY_TOKEN_REQUIRED"].includes(result.reason)) return 401;
+  if (["SEAT_GRANT_INVALID", "CAPABILITY_DENIED", "INVITE_INVALID", "RECOVERY_TOKEN_INVALID"].includes(result.reason)) return 403;
   if ([
     "ROOM_ALREADY_EXISTS",
     "REVISION_CONFLICT",
@@ -70,7 +74,12 @@ function statusFor(result) {
     "PREVIEW_NOT_FOUND",
     "CONTROL_LEASE_FENCED",
     "IDEMPOTENCY_CONFLICT",
+    "ROOM_FULL",
+    "INVITED_SEAT_UNAVAILABLE",
+    "INVITE_ALREADY_USED",
+    "RECOVERY_TOKEN_ALREADY_USED",
   ].includes(result.reason)) return 409;
+  if (["INVITE_EXPIRED", "RECOVERY_TOKEN_EXPIRED"].includes(result.reason)) return 410;
   if (result.reason === "PAYLOAD_TOO_LARGE") return 413;
   if (result.reason === "DEPENDENCY_QUARANTINED") return 422;
   return 400;
@@ -78,7 +87,8 @@ function statusFor(result) {
 
 function decodeRoomId(value) {
   try {
-    return decodeURIComponent(value);
+    const decoded = decodeURIComponent(value);
+    return /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/u.test(decoded) ? decoded : "";
   } catch {
     return "";
   }
@@ -88,6 +98,11 @@ function bodySize(input, body) {
   if (Number.isFinite(Number(input.bodyBytes))) return Number(input.bodyBytes);
   if (typeof input.rawBody === "string") return Buffer.byteLength(input.rawBody, "utf8");
   return Buffer.byteLength(JSON.stringify(body || {}), "utf8");
+}
+
+function unexpectedBodyFields(body, allowed) {
+  const allow = new Set(allowed);
+  return Object.keys(body || {}).filter((field) => !allow.has(field));
 }
 
 export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
@@ -120,9 +135,13 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
         endpoints: ENDPOINTS,
         maxBodyBytes: STARCRAFT_TMG_LEVEL3_MAX_BODY_BYTES,
         roomStoreContract: health.store?.atomicCasContract,
-        serverOwnedFields: ["roomId", "initialState", "sideKey", "roleMode", "MatchBinding", "SeatGrant"],
+        serverOwnedFields: ["roomId", "initialState", "sideKey", "roleMode", "MatchBinding", "SeatGrant", "inviteSeat"],
         clientInitialStateAccepted: false,
         clientRoleOrSideAccepted: false,
+        accessSequence: ["issueInvite", "exchangeInvite", "issueSeatRecovery", "recoverSeat"],
+        issueEndpointsRequireBearer: true,
+        exchangeEndpointsRequireBearer: false,
+        accessTokensPersistedAsRoomBoundDigestOnly: true,
         durability: health.durability,
         productionReady: health.productionReady,
         trainingTruth: false,
@@ -161,10 +180,17 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
         initialStateAuthority,
         serverSeatPlan: initialStateAuthority.serverSeatPlan,
       });
-      return response(statusFor(created), endpoint, created.ok ? { ...created, roomId } : created);
+      if (!created.ok) return response(statusFor(created), endpoint, created);
+      const { credentials: serverCredentials, ...safeCreated } = created;
+      const hostCredential = serverCredentials?.host || null;
+      return response(200, endpoint, {
+        ...safeCreated,
+        roomId,
+        ...(hostCredential ? { credential: hostCredential } : {}),
+      });
     }
 
-    const roomMatch = endpoint.match(/^rooms\/([^/]+)(?:\/(join|legal-space|preview|confirm|control-lease|apply|replay|historical-rules))?$/);
+    const roomMatch = endpoint.match(/^rooms\/([^/]+)(?:\/(join|invites|invite-exchange|recovery-tickets|recovery-exchange|legal-space|preview|confirm|control-lease|apply|replay|historical-rules))?$/);
     if (!roomMatch) return failure(404, endpoint, "NOT_FOUND");
     const roomId = decodeRoomId(roomMatch[1]);
     if (!roomId) return failure(400, endpoint, "INVALID_ROOM_ID");
@@ -173,8 +199,33 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
     let result;
 
     if (operation === "join" && method === "POST") {
-      if (body.sideKey !== undefined || body.roleMode !== undefined) return failure(400, endpoint, "CLIENT_AUTHORITY_FIELD_REJECTED");
-      result = await runtime.joinRoom({ roomId });
+      const rejectedFields = unexpectedBodyFields(body, ["inviteToken"]);
+      if (rejectedFields.length) return failure(400, endpoint, "CLIENT_AUTHORITY_FIELD_REJECTED", { rejectedFields });
+      result = await runtime.joinRoom({ roomId, inviteToken: body.inviteToken });
+    } else if (operation === "invites" && method === "POST") {
+      const rejectedFields = unexpectedBodyFields(body, ["expectedRoomRevision"]);
+      if (rejectedFields.length) return failure(400, endpoint, "CLIENT_AUTHORITY_FIELD_REJECTED", { rejectedFields });
+      result = await runtime.issueInvite({
+        roomId,
+        seatToken,
+        expectedRoomRevision: body.expectedRoomRevision,
+      });
+    } else if (operation === "invite-exchange" && method === "POST") {
+      const rejectedFields = unexpectedBodyFields(body, ["inviteToken"]);
+      if (rejectedFields.length) return failure(400, endpoint, "CLIENT_AUTHORITY_FIELD_REJECTED", { rejectedFields });
+      result = await runtime.exchangeInvite({ roomId, inviteToken: body.inviteToken });
+    } else if (operation === "recovery-tickets" && method === "POST") {
+      const rejectedFields = unexpectedBodyFields(body, ["expectedRoomRevision"]);
+      if (rejectedFields.length) return failure(400, endpoint, "CLIENT_AUTHORITY_FIELD_REJECTED", { rejectedFields });
+      result = await runtime.issueSeatRecovery({
+        roomId,
+        seatToken,
+        expectedRoomRevision: body.expectedRoomRevision,
+      });
+    } else if (operation === "recovery-exchange" && method === "POST") {
+      const rejectedFields = unexpectedBodyFields(body, ["recoveryToken"]);
+      if (rejectedFields.length) return failure(400, endpoint, "CLIENT_AUTHORITY_FIELD_REJECTED", { rejectedFields });
+      result = await runtime.recoverSeat({ roomId, recoveryToken: body.recoveryToken });
     } else if (operation === "projection" && method === "GET") {
       result = await runtime.readRoom({
         roomId,
@@ -215,4 +266,3 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
 
   return Object.freeze({ handle, runtime });
 }
-

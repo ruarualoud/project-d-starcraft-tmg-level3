@@ -20,11 +20,13 @@ export const STARCRAFT_TMG_EXPO_CLIENT_MOUNT_VERSION =
 const PHASE_TO_STATUS = Object.freeze({
   unbound: "room_required",
   binding: "connecting",
+  exchanging_access: "connecting",
   loading: "connecting",
   ready: "connected",
   applying: "applying",
   recovering: "recovering",
   offline_read_only: "offline_read_only",
+  authentication_required: "authentication_required",
   blocked: "blocked",
   unavailable: "unavailable",
 });

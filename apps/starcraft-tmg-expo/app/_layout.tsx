@@ -40,6 +40,7 @@ export default function RootLayout() {
           <DataProvider>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="room/[roomId]" />
             </Stack>
           </DataProvider>
         </Level3ClientDomainProvider>

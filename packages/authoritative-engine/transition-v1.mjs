@@ -2018,6 +2018,46 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     });
   }
 
+  function attestRoomAccessReceipt(contentInput = {}) {
+    try {
+      const content = clone(contentInput);
+      if (!object(content)
+        || content.schemaVersion !== "starcraft_tmg_room_access_receipt_v1"
+        || !String(content.roomId || "").trim()) {
+        throw new AuthorityError("ACCESS_RECEIPT_INVALID", "room access receipt content is invalid");
+      }
+      const refereeSignature = crypto.sign(content, "room_access_receipt");
+      const receiptHash = hashStarcraftTmgContract({ content, refereeSignature });
+      const sealBasis = { content, receiptHash, refereeSignature };
+      const accessSeal = crypto.seal(sealBasis, "room_access_receipt");
+      return deepFreeze({ ...content, receiptHash, refereeSignature, accessSeal });
+    } catch (error) {
+      throw error instanceof AuthorityError
+        ? error
+        : new AuthorityError("ACCESS_RECEIPT_INVALID", error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  function verifyRoomAccessReceipt(receipt = {}, options = {}) {
+    const {
+      receiptHash,
+      refereeSignature,
+      accessSeal,
+      ...content
+    } = clone(receipt);
+    const sealBasis = { content, receiptHash, refereeSignature };
+    const longTermValid = receiptHash === hashStarcraftTmgContract({ content, refereeSignature })
+      && crypto.verify(content, refereeSignature, "room_access_receipt");
+    const shortTermValid = crypto.verifySeal(sealBasis, accessSeal, "room_access_receipt");
+    return deepFreeze({
+      ok: longTermValid && (options.requireCurrentSeal === false || shortTermValid),
+      longTermValid,
+      shortTermValid,
+      receiptHash: String(receiptHash || ""),
+      trainingTruth: false,
+    });
+  }
+
   return Object.freeze({
     createMatchBinding,
     createEnvelope,
@@ -2035,6 +2075,8 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     createCheckpoint,
     verifyCheckpoint,
     attestVerificationReport,
+    attestRoomAccessReceipt,
+    verifyRoomAccessReceipt,
     replay,
     health,
   });

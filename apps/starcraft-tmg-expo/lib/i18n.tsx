@@ -1060,6 +1060,7 @@ interface I18nContextType {
   lang: Language;
   setLang: (lang: Language) => void;
   t: (key: TextKey) => string;
+  rulesText: (sourceText: string) => string;
   unitName: (englishName: string) => string;
   factionName: (faction: string) => string;
   unitTranslations: Record<string, string>;
@@ -1121,6 +1122,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     return unitTranslations[englishName] || englishName;
   }, [lang, unitTranslations]);
 
+  // Official/localized rules projections are mounted in Slice 134. Until
+  // then, preserve the exact source text instead of fabricating a translation.
+  const rulesText = useCallback((sourceText: string): string => sourceText, []);
+
   const factionName = useCallback((faction: string): string => {
     return FACTION_NAMES[lang]?.[faction] || faction;
   }, [lang]);
@@ -1128,7 +1133,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   if (!loaded) return null;
 
   return (
-    <I18nContext.Provider value={{ lang, setLang, t, unitName, factionName, unitTranslations, setUnitTranslations, resetUnitTranslations }}>
+    <I18nContext.Provider value={{ lang, setLang, t, rulesText, unitName, factionName, unitTranslations, setUnitTranslations, resetUnitTranslations }}>
       {children}
     </I18nContext.Provider>
   );
