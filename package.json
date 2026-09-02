@@ -218,7 +218,8 @@
     "verify:character-worldbook": "node scripts/verify-character-worldbook-v1.mjs",
     "verify:source-translation": "node scripts/verify-source-translation-v1.mjs",
     "verify:source-localization-runtime": "node scripts/verify-source-localization-runtime-v1.mjs",
+    "verify:official-source-localization-binding": "node scripts/verify-official-source-localization-binding-v2.mjs",
     "verify:offline-skill-arms": "node scripts/verify-offline-skill-arms-v1.mjs",
-    "verify:all": "npm run verify:authoritative-transition && npm run verify:authoritative-room && npm run verify:http-adapter && npm run verify:kerrigan-role-agent && npm run verify:direct-provider && npm run verify:character-worldbook && npm run verify:source-translation && npm run verify:source-localization-runtime && npm run verify:offline-skill-arms"
+    "verify:all": "npm run verify:authoritative-transition && npm run verify:authoritative-room && npm run verify:http-adapter && npm run verify:kerrigan-role-agent && npm run verify:direct-provider && npm run verify:character-worldbook && npm run verify:source-translation && npm run verify:source-localization-runtime && npm run verify:official-source-localization-binding && npm run verify:offline-skill-arms"
   }
 }
