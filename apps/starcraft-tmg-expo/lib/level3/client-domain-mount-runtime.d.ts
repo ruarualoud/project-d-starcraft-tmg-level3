@@ -10,12 +10,97 @@ export interface StarcraftTmgClientView {
   lifecycle: { schemaVersion: string; online: boolean; visibility: string };
   roomProjection: Record<string, any> | null;
   characterPresentation: StarcraftTmgCharacterProjection | null;
+  characterOfflineSnapshot: {
+    releaseChannel: "development_internal" | "public";
+    fallbackLabel: string | null;
+    selectedPersona: {
+      title: string;
+      timeline: { start: string; end: string };
+      [key: string]: any;
+    } | null;
+    [key: string]: any;
+  } | null;
   characterStatus: {
     schemaVersion: "starcraft_tmg_client_character_status_v2";
     status: string;
     rejectionCode: string | null;
     lastSynchronizedAt: string | null;
     readOnly: boolean;
+    trainingTruth: false;
+  };
+  sourceLocalization: {
+    schemaVersion: "starcraft_tmg_client_source_localization_projection_v1";
+    releaseChannel: "metadata_only_rights_pending";
+    source: {
+      sourceLockHash: string;
+      sourceSnapshotHash: string;
+      officialDatasetHash: string;
+      roomSourceDependencyContentHash: string;
+      roomOfficialDatasetDependencyContentHash: string;
+      localizationDatasetHash: string;
+      sourceBindingHash: string;
+      evidenceCatalogueHash: string;
+      dataVersions: {
+        unitsVersion: string;
+        cardsVersion: string;
+        rulesVersion: string;
+      };
+      capturedAt: string;
+    };
+    coverage: {
+      records: number;
+      fields: number;
+      quarantinedFaqEntries: number;
+    };
+    freshness: {
+      completeLatestOfficialRulesCorpus: false;
+      officialFaqV1IncludedInFrozenLock: false;
+      requiresExplicitSourceRefreshAndReview: true;
+      [key: string]: unknown;
+    };
+    rights: { publicReleaseGatePassed: false };
+    projectionHash: string;
+    productionReady: false;
+    trainingTruth: false;
+  } | null;
+  sourceLocalizationStatus: {
+    schemaVersion: "starcraft_tmg_client_source_localization_status_v1";
+    status: string;
+    rejectionCode: string | null;
+    source: string;
+    roomBinding: string;
+    lastSynchronizedAt: string | null;
+    readOnly: true;
+    rawContentAvailable: false;
+    legacyFallbackUsed: false;
+    trainingTruth: false;
+  };
+  historicalRulesDisplay: {
+    schemaVersion: "starcraft_tmg_client_historical_rules_display_v1";
+    roomId: string;
+    matchBindingHash: string;
+    binding: {
+      artifactId: string;
+      artifactHash: string;
+      mediaType: "text/markdown" | "text/plain";
+      locale: string;
+      rulesVersion: string;
+      [key: string]: unknown;
+    };
+    content: string;
+    readOnly: true;
+    silentCompatibilityUsed: false;
+    mayAffectRules: false;
+    trainingTruth: false;
+    displayHash: string;
+  } | null;
+  historicalRulesStatus: {
+    schemaVersion: "starcraft_tmg_client_historical_rules_status_v1";
+    status: string;
+    rejectionCode: string | null;
+    artifactHash: string | null;
+    readOnly: true;
+    silentCompatibilityUsed: false;
     trainingTruth: false;
   };
   legalSpace: Record<string, any> | null;
@@ -63,7 +148,9 @@ export type StarcraftTmgClientIntent =
   | { type: "read_replay" }
   | { type: "revalidate_authority" }
   | { type: "select_character_persona"; personaWorldbookId: string }
-  | { type: "set_character_spoiler_access"; enabled: boolean };
+  | { type: "set_character_spoiler_access"; enabled: boolean }
+  | { type: "refresh_source_localization" }
+  | { type: "read_historical_rules" };
 
 export interface StarcraftTmgClientResult {
   ok: boolean;
@@ -118,6 +205,7 @@ export interface StarcraftTmgExpoClientRuntime {
   transportConfigured: boolean;
   transportKind: string;
   projectionStoreKind: string;
+  sourceProjectionKind: string;
   lifecycleKind: string;
   clientDomain: StarcraftTmgClientDomain;
   trainingTruth: false;
@@ -183,6 +271,7 @@ export function createStarcraftTmgExpoClientRuntime(options: {
   maxProjectionBytes?: number;
   allowHeadlessFallback?: boolean;
   enableCharacterPresentation?: boolean;
+  enableSourceLocalization?: boolean;
   now?: () => string;
   createId?: (prefix: string) => string;
 }): StarcraftTmgExpoClientRuntime;

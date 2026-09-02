@@ -334,7 +334,14 @@ function MissionDetail({ card, onClose }: { card: GameCard; onClose: () => void 
 /* ──── Main Screen ──── */
 
 export default function DatabaseScreen() {
-  const { units, cards, gameCards, isLoading } = useData();
+  const {
+    units,
+    cards,
+    gameCards,
+    isLoading,
+    officialCatalogueAvailable,
+    officialSourceMetadataVerified,
+  } = useData();
   const { t, unitName, lang } = useI18n();
   const factionLabel = (f: Faction) => lang === 'zh' ? FACTION_CN[f] : FACTION_EN[f];
   const [browseTab, setBrowseTab] = useState<BrowseTab>('factions');
@@ -376,6 +383,25 @@ export default function DatabaseScreen() {
     if (q) list = list.filter(c => c.name.toLowerCase().includes(q) || (c.authorName || '').toLowerCase().includes(q));
     return list;
   }, [gameCards, search, missionFilter]);
+
+  if (!officialCatalogueAvailable) {
+    return (
+      <ScreenContainer containerClassName="bg-background">
+        <View style={s.header}>
+          <Text style={s.headerTitle}>{t('database')}</Text>
+          <Text style={s.headerSub}>Project D · official source metadata only</Text>
+        </View>
+        <View style={s.unavailableCard}>
+          <Text style={s.emptyText}>Official catalogue body unavailable</Text>
+          <Text style={s.emptyHint}>
+            {officialSourceMetadataVerified
+              ? 'The verified source projection exposes versions and provenance only while redistribution review is pending. No legacy package is used as a fallback.'
+              : 'Source metadata is not verified on this device. Refresh it explicitly in Settings; no legacy package is used as a fallback.'}
+          </Text>
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   // Detail views
   if (selectedUnit) {
@@ -675,6 +701,7 @@ const s = StyleSheet.create({
   loadingText: { color: '#38bdf8', fontSize: 16 },
   emptyText: { color: '#64748b', fontSize: 16, marginBottom: 8 },
   emptyHint: { color: '#475569', fontSize: 13 },
+  unavailableCard: { margin: 16, padding: 18, borderRadius: 12, borderWidth: 1, borderColor: '#92400e', backgroundColor: '#1c1917' },
 
   // Mission/Deployment list items
   missionItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1e293b' },

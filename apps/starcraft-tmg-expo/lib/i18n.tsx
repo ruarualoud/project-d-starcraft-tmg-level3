@@ -1,5 +1,9 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  readStarcraftTmgLocalPreferencesV1,
+  writeStarcraftTmgLocalPreferencesV1,
+} from '../../../packages/client-domain/device-data-migration-v1.mjs';
 
 export type Language = 'en' | 'zh';
 
@@ -1070,28 +1074,23 @@ interface I18nContextType {
 
 const I18nContext = createContext<I18nContextType | null>(null);
 
-const LANG_KEY = 'sc_tmg_language';
-const UNIT_TRANS_KEY = 'sc_tmg_unit_translations';
-
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Language>('zh');
-  const [unitTranslations, setUnitTransState] = useState<Record<string, string>>(DEFAULT_UNIT_NAMES_ZH);
+  const [unitLabelOverrides, setUnitLabelOverrides] = useState<Record<string, string>>({});
   const [loaded, setLoaded] = useState(false);
+  const unitTranslations = useMemo(
+    () => ({ ...DEFAULT_UNIT_NAMES_ZH, ...unitLabelOverrides }),
+    [unitLabelOverrides],
+  );
 
   // Load saved preferences
   useEffect(() => {
     (async () => {
       try {
-        const [savedLang, savedTrans] = await Promise.all([
-          AsyncStorage.getItem(LANG_KEY),
-          AsyncStorage.getItem(UNIT_TRANS_KEY),
-        ]);
-        if (savedLang === 'en' || savedLang === 'zh') setLangState(savedLang);
-        if (savedTrans) {
-          try {
-            const parsed = JSON.parse(savedTrans);
-            setUnitTransState({ ...DEFAULT_UNIT_NAMES_ZH, ...parsed });
-          } catch {}
+        const preferences = await readStarcraftTmgLocalPreferencesV1({ storage: AsyncStorage });
+        if (preferences) {
+          setLangState(preferences.language);
+          setUnitLabelOverrides(preferences.unitLabelOverrides);
         }
       } catch {}
       setLoaded(true);
@@ -1100,18 +1099,33 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   const setLang = useCallback(async (newLang: Language) => {
     setLangState(newLang);
-    await AsyncStorage.setItem(LANG_KEY, newLang);
-  }, []);
+    await writeStarcraftTmgLocalPreferencesV1({
+      storage: AsyncStorage,
+      language: newLang,
+      unitLabelOverrides,
+    });
+  }, [unitLabelOverrides]);
 
   const setUnitTranslations = useCallback(async (translations: Record<string, string>) => {
-    setUnitTransState(translations);
-    await AsyncStorage.setItem(UNIT_TRANS_KEY, JSON.stringify(translations));
-  }, []);
+    const overrides = Object.fromEntries(Object.entries(translations).filter(([name, label]) => (
+      Boolean(label.trim()) && DEFAULT_UNIT_NAMES_ZH[name] !== label
+    )));
+    setUnitLabelOverrides(overrides);
+    await writeStarcraftTmgLocalPreferencesV1({
+      storage: AsyncStorage,
+      language: lang,
+      unitLabelOverrides: overrides,
+    });
+  }, [lang]);
 
   const resetUnitTranslations = useCallback(async () => {
-    setUnitTransState(DEFAULT_UNIT_NAMES_ZH);
-    await AsyncStorage.setItem(UNIT_TRANS_KEY, JSON.stringify(DEFAULT_UNIT_NAMES_ZH));
-  }, []);
+    setUnitLabelOverrides({});
+    await writeStarcraftTmgLocalPreferencesV1({
+      storage: AsyncStorage,
+      language: lang,
+      unitLabelOverrides: {},
+    });
+  }, [lang]);
 
   const t = useCallback((key: TextKey): string => {
     return (UI_TEXT[lang] as any)?.[key] || UI_TEXT.en[key] || key;
@@ -1122,8 +1136,9 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     return unitTranslations[englishName] || englishName;
   }, [lang, unitTranslations]);
 
-  // Official/localized rules projections are mounted in Slice 134. Until
-  // then, preserve the exact source text instead of fabricating a translation.
+  // Metadata provenance is mounted, but unreleased official/localized bodies
+  // are not delivered to this client. Never fabricate a translation or use a
+  // legacy bundle as a source fallback.
   const rulesText = useCallback((sourceText: string): string => sourceText, []);
 
   const factionName = useCallback((faction: string): string => {

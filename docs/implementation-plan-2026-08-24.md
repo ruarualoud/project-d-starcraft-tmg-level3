@@ -669,3 +669,18 @@ sealed snapshot plus local static neutral portrait offline. Focused 65/65 plus
 TypeScript and cumulative 218/218 pass, advancing Ticket 14 to 6/11 with Slice
 134 next. No source refresh, Provider, Skill, DSH, MuZero, self-play or training
 promotion ran.
+
+Ticket 14 Slice 134 replaces recovered Expo bundled/Firestore data ownership
+with an opt-in metadata-only official-source/localization projection shared by
+Web and App. Refresh remains an explicit intent and the frozen Ticket 12 v3
+identity is exact. A read-only audit found Command Center gameplay still at
+`71/69/48`, while a new official FAQ V1.0 with 68 questions is not present in
+the lock; no refresh was performed and the corpus is explicitly not claimed as
+complete-latest. Historical rooms display only their exact hash-bound rules
+artifact, with missing/tampered dependencies quarantined and no fallback. The
+device migration scans nine fixed keys only on demand, requires a scan-hash
+bound second confirmation, preserves all originals, publishes a verified
+immutable sanitized generation manifest last, and permits only identity-free
+historical summaries. Focused 49/49 plus TypeScript and cumulative 267/267
+pass, advancing Ticket 14 to 7/11 with Slice 135 next. No source refresh,
+Provider, Skill, DSH, MuZero, self-play, memory or training promotion ran.

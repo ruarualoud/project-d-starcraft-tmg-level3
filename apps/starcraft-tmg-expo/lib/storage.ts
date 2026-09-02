@@ -1,106 +1,70 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { UnitCard, TacticalCard, GameCard, ArmyList, DiceRoll, DataPackage } from './types';
-import { normalizeDataPackage, normalizeUnitCards } from './weapon-profile';
+import type { DiceRoll } from './types';
+import { STARCRAFT_TMG_DEVICE_STORAGE_KEYS_V1 } from
+  '../../../packages/client-domain/device-data-migration-v1.mjs';
 
-const KEYS = {
-  UNITS: 'sc_tmg_units',
-  CARDS: 'sc_tmg_cards',
-  GAME_CARDS: 'sc_tmg_game_cards',
-  DATA_VERSION: 'sc_tmg_data_version',
-  ARMY_LISTS: 'sc_tmg_army_lists',
-  DICE_HISTORY: 'sc_tmg_dice_history',
-};
+const MAX_DICE_HISTORY = 100;
 
-// --- Generic helpers ---
-async function getJSON<T>(key: string, fallback: T): Promise<T> {
+interface DiceHistoryEnvelope {
+  schemaVersion: 'starcraft_tmg_local_dice_history_v1';
+  entries: DiceRoll[];
+  rngAuthority: false;
+  trainingTruth: false;
+}
+
+function safeDiceHistory(value: unknown): DiceRoll[] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+  const envelope = value as Partial<DiceHistoryEnvelope>;
+  if (envelope.schemaVersion !== 'starcraft_tmg_local_dice_history_v1'
+    || envelope.rngAuthority !== false
+    || envelope.trainingTruth !== false
+    || !Array.isArray(envelope.entries)) return [];
+  return envelope.entries.slice(0, MAX_DICE_HISTORY).filter((entry): entry is DiceRoll => (
+    Boolean(entry)
+    && typeof entry.id === 'string'
+    && Array.isArray(entry.dice)
+    && Number.isFinite(entry.total)
+    && Number.isFinite(entry.timestamp)
+  ));
+}
+
+export async function getDiceHistory(): Promise<DiceRoll[]> {
+  const raw = await AsyncStorage.getItem(STARCRAFT_TMG_DEVICE_STORAGE_KEYS_V1.diceHistory);
+  if (!raw || raw.length > 1024 * 1024) return [];
   try {
-    const raw = await AsyncStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    return safeDiceHistory(JSON.parse(raw));
   } catch {
-    return fallback;
+    return [];
   }
 }
 
-async function setJSON(key: string, value: unknown): Promise<void> {
-  await AsyncStorage.setItem(key, JSON.stringify(value));
+async function setDiceHistory(entries: DiceRoll[]): Promise<void> {
+  const envelope: DiceHistoryEnvelope = {
+    schemaVersion: 'starcraft_tmg_local_dice_history_v1',
+    entries: entries.slice(0, MAX_DICE_HISTORY).map((entry) => ({
+      ...entry,
+      label: entry.label?.slice(0, 80),
+      dice: entry.dice.slice(0, 100),
+    })),
+    rngAuthority: false,
+    trainingTruth: false,
+  };
+  await AsyncStorage.setItem(
+    STARCRAFT_TMG_DEVICE_STORAGE_KEYS_V1.diceHistory,
+    JSON.stringify(envelope),
+  );
 }
 
-// --- Units ---
-export async function getUnits(): Promise<UnitCard[]> {
-  const units = await getJSON<UnitCard[]>(KEYS.UNITS, []);
-  return normalizeUnitCards(units);
-}
-export async function setUnits(units: UnitCard[]): Promise<void> {
-  await setJSON(KEYS.UNITS, normalizeUnitCards(units));
-}
-
-// --- Cards ---
-export async function getCards(): Promise<TacticalCard[]> {
-  return getJSON<TacticalCard[]>(KEYS.CARDS, []);
-}
-export async function setCards(cards: TacticalCard[]): Promise<void> {
-  await setJSON(KEYS.CARDS, cards);
-}
-
-// --- Game Cards ---
-export async function getGameCards(): Promise<GameCard[]> {
-  return getJSON<GameCard[]>(KEYS.GAME_CARDS, []);
-}
-export async function setGameCards(cards: GameCard[]): Promise<void> {
-  await setJSON(KEYS.GAME_CARDS, cards);
-}
-
-// --- Data Version ---
-export async function getDataVersion(): Promise<number> {
-  return getJSON<number>(KEYS.DATA_VERSION, 0);
-}
-export async function setDataVersion(v: number): Promise<void> {
-  await setJSON(KEYS.DATA_VERSION, v);
-}
-
-// --- Army Lists ---
-export async function getArmyLists(): Promise<ArmyList[]> {
-  return getJSON<ArmyList[]>(KEYS.ARMY_LISTS, []);
-}
-export async function setArmyLists(lists: ArmyList[]): Promise<void> {
-  await setJSON(KEYS.ARMY_LISTS, lists);
-}
-export async function saveArmyList(army: ArmyList): Promise<void> {
-  const lists = await getArmyLists();
-  const idx = lists.findIndex(l => l.id === army.id);
-  if (idx >= 0) lists[idx] = army;
-  else lists.push(army);
-  await setArmyLists(lists);
-}
-export async function deleteArmyList(id: string): Promise<void> {
-  const lists = await getArmyLists();
-  await setArmyLists(lists.filter(l => l.id !== id));
-}
-
-// --- Dice History ---
-export async function getDiceHistory(): Promise<DiceRoll[]> {
-  return getJSON<DiceRoll[]>(KEYS.DICE_HISTORY, []);
-}
 export async function addDiceRoll(roll: DiceRoll): Promise<void> {
   const history = await getDiceHistory();
-  history.unshift(roll);
-  if (history.length > 100) history.length = 100;
-  await setJSON(KEYS.DICE_HISTORY, history);
+  await setDiceHistory([roll, ...history]);
 }
+
 export async function clearDiceHistory(): Promise<void> {
-  await setJSON(KEYS.DICE_HISTORY, []);
+  await setDiceHistory([]);
 }
 
-// --- Data Package Import ---
-export async function importDataPackage(pkg: DataPackage): Promise<void> {
-  const normalized = normalizeDataPackage(pkg);
-  await setUnits(normalized.units);
-  await setCards(normalized.cards);
-  await setGameCards(normalized.gameCards);
-  await setDataVersion(normalized.version);
-}
-
-// Historical match values from the recovered product are deliberately
-// not read, changed, or exported here. They are compatibility material awaiting
-// the explicit quarantine/migration flow in Ticket 14 / Slice 134, never a room
-// state store. Army lists remain local, user-owned drafts.
+// Official catalogue, army drafts, and historical matches deliberately do not
+// live in this generic storage module. Source metadata is owned by the Client
+// Domain source extension; compatibility imports use the explicit migration
+// module and can never become room or Rules authority.

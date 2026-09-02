@@ -144,12 +144,42 @@ type BuilderStep = 'list' | 'edit' | 'addUnit' | 'import';
 
 export default function ArmyScreen() {
   const { t, factionName } = useI18n();
-  const { units, cards, gameCards, armyLists, saveArmy, deleteArmy } = useData();
+  const {
+    units,
+    cards,
+    gameCards,
+    armyLists,
+    saveArmy,
+    deleteArmy,
+    officialCatalogueAvailable,
+    officialSourceMetadataVerified,
+  } = useData();
   const [step, setStep] = useState<BuilderStep>('list');
   const [currentArmy, setCurrentArmy] = useState<ArmyList | null>(null);
   const [importText, setImportText] = useState('');
   // Track which tab to show in edit view (persists across addUnit navigation)
   const [editTab, setEditTab] = useState<'command' | 'roster'>('command');
+
+  if (!officialCatalogueAvailable) {
+    return (
+      <ScreenContainer containerClassName="bg-background">
+        <View style={s.header}>
+          <Text style={s.headerTitle}>{t('armyManage')}</Text>
+          <Text style={s.headerSub}>Project D · official source gate</Text>
+        </View>
+        <View style={{ flex: 1, padding: 16 }}>
+          <View style={s.emptyBox}>
+            <Text style={s.emptyText}>Official catalogue body unavailable</Text>
+            <Text style={s.emptyHint}>
+              {officialSourceMetadataVerified
+                ? 'Source hashes and versions are verified, but card text and images are withheld until redistribution review passes. Legacy drafts can be explicitly sanitized in Settings; they remain quarantined and cannot seed a room.'
+                : 'Source metadata is not verified on this device. Refresh it explicitly in Settings. No legacy catalogue or draft can be used as a fallback.'}
+            </Text>
+          </View>
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   // --- Army List View ---
   if (step === 'list') {

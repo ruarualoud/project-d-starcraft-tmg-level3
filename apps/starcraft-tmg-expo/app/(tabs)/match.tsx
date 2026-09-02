@@ -32,7 +32,7 @@ const STATUS_COLOR: Record<string, string> = {
   unavailable: "#ef4444",
 };
 
-type AccessAction = "claim_control" | "issue_invite" | "issue_recovery";
+type AccessAction = "claim_control" | "issue_invite" | "issue_recovery" | "historical_rules";
 
 interface EphemeralLink {
   kind: StarcraftTmgRoomAccessKind;
@@ -103,6 +103,8 @@ export default function MatchScreen() {
   const room = projection.room || {};
   const viewer = projection.viewer || {};
   const projectedControl = projection.control || {};
+  const historicalRules = view.historicalRulesDisplay;
+  const historicalRulesStatus = view.historicalRulesStatus;
   const privateControl = view.control || {};
   const linkConfiguration = sharingLinkConfiguration();
   const capabilities = new Set<string>(
@@ -176,6 +178,20 @@ export default function MatchScreen() {
         setNotice(zh ? "本设备已取得控制权。" : "This device now holds control.");
       } else {
         setActionError(result.rejection?.code || "CONTROL_CLAIM_REJECTED");
+      }
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const loadHistoricalRules = async () => {
+    if (!connectedAndOperational) return;
+    setPendingAction("historical_rules");
+    setActionError(null);
+    try {
+      const result = await dispatch({ type: "read_historical_rules" });
+      if (!result.ok) {
+        setActionError(result.rejection?.code || "HISTORICAL_RULES_DISPLAY_REJECTED");
       }
     } finally {
       setPendingAction(null);
@@ -261,7 +277,7 @@ export default function MatchScreen() {
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={styles.headerTitle}>{zh ? "对战房间" : "Battle Room"}</Text>
-          <Text style={styles.headerSub}>Project D Level-3 · Ticket 14 / Slice 133</Text>
+          <Text style={styles.headerSub}>Project D Level-3 · Ticket 14 / Slice 134</Text>
         </View>
         <View style={[styles.statusPill, { borderColor: statusColor }]}>
           <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
@@ -395,6 +411,45 @@ export default function MatchScreen() {
 
         <TacticalAdjutantPanel />
 
+        {connection.roomId && (
+          <View style={styles.historicalRulesCard}>
+            <Text style={styles.cardTitle}>
+              {zh ? "房间冻结规则展示" : "Room-pinned historical rules"}
+            </Text>
+            <Text style={styles.historicalRulesMeta}>
+              {zh
+                ? "只读取房间 MatchBinding 指向的原始规则展示物；缺依赖即隔离，绝不回退到当前或旧客户端规则。"
+                : "Reads only the display artifact pinned by this room's MatchBinding. Missing dependencies are quarantined; current or legacy client rules are never substituted."}
+            </Text>
+            <View style={styles.actionRow}>
+              <ActionButton
+                label={pendingAction === "historical_rules"
+                  ? (zh ? "读取中…" : "Loading…")
+                  : (zh ? "读取冻结规则" : "Load pinned rules")}
+                disabled={!connectedAndOperational}
+                onPress={loadHistoricalRules}
+                kind="secondary"
+              />
+            </View>
+            <Text selectable style={styles.mono}>
+              status: {historicalRulesStatus?.status || "not_loaded"}
+            </Text>
+            <Text selectable style={styles.mono}>
+              artifact: {historicalRulesStatus?.artifactHash || "—"}
+            </Text>
+            {historicalRules && (
+              <View style={styles.historicalRulesBody}>
+                <Text selectable style={styles.historicalRulesContent}>
+                  {historicalRules.content}
+                </Text>
+                <Text selectable style={styles.mono}>
+                  read-only · silent compatibility false · training truth false
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
         <AuthoritativeBattleWorkspace />
 
         <View style={styles.grid}>
@@ -517,6 +572,10 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingTop: 6, paddingBottom: 48, gap: 14 },
   warningCard: { borderRadius: 12, padding: 14, backgroundColor: "#422006", borderWidth: 1, borderColor: "#f59e0b" },
   controlWarning: { borderRadius: 12, padding: 14, backgroundColor: "#3f1515", borderWidth: 1, borderColor: "#ef4444" },
+  historicalRulesCard: { borderRadius: 14, padding: 16, gap: 10, backgroundColor: "#0b1c27", borderWidth: 1, borderColor: "#28566a" },
+  historicalRulesMeta: { color: "#94a3b8", fontSize: 12, lineHeight: 18 },
+  historicalRulesBody: { padding: 12, gap: 10, borderRadius: 10, backgroundColor: "#07131d", borderWidth: 1, borderColor: "#1e3a4a" },
+  historicalRulesContent: { color: "#dbeafe", fontSize: 13, lineHeight: 20 },
   warningTitle: { color: "#fef3c7", fontSize: 13, fontWeight: "900" },
   warningBody: { color: "#fde68a", fontSize: 12, lineHeight: 19, marginTop: 5 },
   heroCard: { borderRadius: 16, padding: 20, backgroundColor: "#0c1e33", borderWidth: 1, borderColor: "#0ea5e9" },

@@ -1,6 +1,6 @@
 # Ticket 14 — shared Web/App client roadmap
 
-Status: active; 6/11 implementation slices complete, 5 remaining.
+Status: active; 7/11 implementation slices complete, 4 remaining.
 
 Ticket 14 restores the recovered Expo source as the Web/App product baseline,
 mounts the Level-3 room/source/character interfaces into a real tracked product,
@@ -33,7 +33,7 @@ client a Rules, Referee, source, Agent-session, or training authority.
 | 131 | **Complete.** Implement room locator, SeatGrant, ControlLease, reconnect, viewer projection, invite/deep-link and seat-recovery flows. | URL claims cannot create authority; one-time memory/SQLite CAS; hash + Ed25519 + HMAC receipts; two-device read vs fenced-controller behavior; production verified HTTPS links; offline read-only projection. |
 | 132 | **Complete.** Mount the authoritative battlefield flow and scale-safe rendering. | LegalSpace → proposal → preview → human confirmation → apply → replay; strict response binding and viewer-scoped Apply/Replay; no drag mutation; arbitrary model counts; map/token/base scale parity across viewports; focused 69/69 plus TypeScript 0 errors and cumulative 153/153. |
 | 133 | **Complete.** Mount CharacterPackage/persona selection, eight-era dynamic portrait and Adjutant panel. | Exact opt-in extension; Web/App React render; opaque short HMAC asset grants; visible/onLoad-only animation; cold-offline local neutral portrait; focused 65/65 plus TypeScript and cumulative 218/218; no live Provider call. |
-| 134 | Replace client source ownership with official-source/localization projections and migrate settings, army drafts and historical match records. | Provenance UI; version-frozen room data; AsyncStorage classification/quarantine; offline cache; no legacy/source fallback. |
+| 134 | **Complete.** Replace client source ownership with official-source/localization projections and migrate settings, army drafts and historical match records. | Metadata-only provenance/freshness UI; exact room-pinned historical rules display; explicit refresh only; fixed-key, two-confirmation, immutable AsyncStorage classification/quarantine; focused 49/49 and cumulative 267/267; official FAQ V1 gap recorded without refreshing the frozen lock. |
 | 135 | Move Battle Lab room, board, Referee and Agent trace views onto the same Client Domain Module. | No whole-state replace/client drag authority; observer/referee projections; Expo/Battle Lab same hashes for shared views; legacy sandbox isolated. |
 | 136 | Produce the pinned Web static build and real browser acceptance evidence. | Reproducible build receipt; desktop/tablet/mobile; accessibility; deep links; offline/reconnect; screenshot/video traces; no horizontal/geometry drift. |
 | 137 | Produce native Android/iOS build and real-device evidence. | Pinned dependency/build receipt; Android plus iOS where build environment allows; app lifecycle, deep link, storage, haptics/sharing; real-device action/reconnect trace. |

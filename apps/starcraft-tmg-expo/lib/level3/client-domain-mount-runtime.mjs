@@ -13,6 +13,9 @@ import {
 import {
   createAsyncStorageStarcraftTmgProjectionStoreAdapter,
 } from "../../../../packages/client-domain/projection-store-adapters-v1.mjs";
+import {
+  createHttpStarcraftTmgSourceProjectionAdapterV1,
+} from "../../../../packages/client-domain/source-projection-adapters-v1.mjs";
 
 export const STARCRAFT_TMG_EXPO_CLIENT_MOUNT_VERSION =
   "starcraft_tmg_expo_client_mount_v1";
@@ -176,6 +179,14 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
     timeoutMs: options.timeoutMs,
     enableCharacterPresentation: options.enableCharacterPresentation === true,
   });
+  const sourceLocalizationEnabled = options.enableSourceLocalization === true;
+  const sourceProjectionPort = sourceLocalizationEnabled
+    ? createHttpStarcraftTmgSourceProjectionAdapterV1({
+      baseUrl,
+      fetchImpl: options.fetchImpl,
+      timeoutMs: options.timeoutMs,
+    })
+    : null;
   const projectionStore = createAsyncStorageStarcraftTmgProjectionStoreAdapter({
     asyncStorage: options.asyncStorage,
     namespace: options.projectionNamespace,
@@ -186,6 +197,8 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
     projectionStore,
     lifecycle: lifecycleMount.lifecycle,
     enableCharacterPresentation: options.enableCharacterPresentation === true,
+    enableSourceLocalization: sourceLocalizationEnabled,
+    ...(sourceProjectionPort ? { sourceProjectionPort } : {}),
     now: options.now,
     createId: options.createId,
   });
@@ -201,6 +214,9 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
         ? "configured_authoritative_http"
         : "native_origin_configuration_required",
     projectionStoreKind: "async_storage_viewer_projection_only",
+    sourceProjectionKind: sourceLocalizationEnabled
+      ? "http_metadata_only_with_async_storage_offline_cache"
+      : "not_mounted",
     lifecycleKind: lifecycleMount.lifecycleKind,
     clientDomain,
     trainingTruth: false,

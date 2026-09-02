@@ -15,6 +15,7 @@ const BASE_OPERATIONS = new Set([
   "exchange_recovery",
   "apply_action",
   "read_replay",
+  "read_historical_rules",
 ]);
 const CHARACTER_OPERATIONS = new Set([
   "read_character_presentation",
@@ -77,6 +78,9 @@ export function createInMemoryStarcraftTmgAuthoritativeTransportAdapter(options 
     if (request.operation === "issue_recovery") return runtime.issueSeatRecovery({ ...shared, expectedRoomRevision: payload.expectedRoomRevision });
     if (request.operation === "exchange_recovery") return runtime.recoverSeat({ roomId: request.roomId, recoveryToken: payload.recoveryToken });
     if (request.operation === "apply_action") return runtime.applyAction({ ...shared, ...payload });
+    if (request.operation === "read_historical_rules") {
+      return runtime.readHistoricalRules({ roomId: request.roomId });
+    }
     if (request.operation === "read_character_presentation") {
       return runtime.readCharacterPresentation(shared);
     }
@@ -113,6 +117,7 @@ function endpointFor(request) {
     exchange_recovery: { method: "POST", path: `${room}/recovery-exchange` },
     apply_action: { method: "POST", path: `${room}/apply` },
     read_replay: { method: "GET", path: `${room}/replay` },
+    read_historical_rules: { method: "GET", path: `${room}/historical-rules` },
     read_character_presentation: { method: "GET", path: `${room}/character-presentation` },
     select_character_persona: { method: "POST", path: `${room}/character-persona` },
     set_character_spoiler_access: { method: "POST", path: `${room}/character-spoiler-access` },

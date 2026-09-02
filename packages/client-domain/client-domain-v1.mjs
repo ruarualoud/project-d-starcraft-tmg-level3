@@ -11,10 +11,21 @@ import {
 } from "./viewer-projection-v3.mjs";
 import { assertStarcraftTmgClientCharacterProjectionV2 } from
   "./character-presentation-projection-v2.mjs";
+import { assertStarcraftTmgSourceProjectionPort } from
+  "./source-projection-adapters-v1.mjs";
+import {
+  assertStarcraftTmgClientSourceLocalizationProjectionV1,
+  classifyStarcraftTmgSourceRoomBindingV1,
+  starcraftTmgClientSourceLocalizationCacheKeyV1,
+} from "./source-localization-projection-v1.mjs";
 
 export const STARCRAFT_TMG_CLIENT_DOMAIN_VERSION = "starcraft_tmg_client_domain_v1";
 export const STARCRAFT_TMG_CLIENT_CHARACTER_EXTENSION_VERSION =
   "starcraft_tmg_client_domain_v1.character_presentation_v2";
+export const STARCRAFT_TMG_CLIENT_SOURCE_EXTENSION_VERSION =
+  "starcraft_tmg_client_domain_v1.source_localization_v1";
+export const STARCRAFT_TMG_CLIENT_CHARACTER_SOURCE_EXTENSION_VERSION =
+  "starcraft_tmg_client_domain_v1.character_presentation_v2.source_localization_v1";
 export const STARCRAFT_TMG_CLIENT_DOMAIN_INTERFACE = Object.freeze([
   "bootstrap",
   "read",
@@ -37,10 +48,16 @@ const INTENT_KEYS = Object.freeze({
   read_replay: ["type"],
   select_character_persona: ["type", "personaWorldbookId"],
   set_character_spoiler_access: ["type", "enabled"],
+  refresh_source_localization: ["type"],
+  read_historical_rules: ["type"],
 });
 const CHARACTER_INTENT_TYPES = new Set([
   "select_character_persona",
   "set_character_spoiler_access",
+]);
+const SOURCE_INTENT_TYPES = new Set([
+  "refresh_source_localization",
+  "read_historical_rules",
 ]);
 const CHARACTER_SELECTOR_RECEIPT_VERSION =
   "starcraft_tmg_character_persona_selector_v1.event-receipt";
@@ -959,11 +976,16 @@ function validateBootstrap(input) {
   return normalized;
 }
 
-function validateIntent(input, characterPresentationEnabled = false) {
+function validateIntent(
+  input,
+  characterPresentationEnabled = false,
+  sourceLocalizationEnabled = false,
+) {
   assertNoAuthorityFields(input);
   if (!object(input)
     || !INTENT_KEYS[input.type]
-    || (!characterPresentationEnabled && CHARACTER_INTENT_TYPES.has(input.type))) {
+    || (!characterPresentationEnabled && CHARACTER_INTENT_TYPES.has(input.type))
+    || (!sourceLocalizationEnabled && SOURCE_INTENT_TYPES.has(input.type))) {
     throw Object.assign(new Error(`unsupported client intent: ${input?.type || ""}`), { code: "CLIENT_INTENT_UNSUPPORTED" });
   }
   assertExactKeys(input, INTENT_KEYS[input.type], "intent");
@@ -1340,6 +1362,63 @@ function characterStatus(status = "unbound", details = {}) {
   };
 }
 
+function sourceLocalizationStatus(status = "not_loaded", details = {}) {
+  return {
+    schemaVersion: "starcraft_tmg_client_source_localization_status_v1",
+    status,
+    rejectionCode: details.rejectionCode || null,
+    source: details.source || "none",
+    roomBinding: details.roomBinding || "not_bound",
+    lastSynchronizedAt: details.lastSynchronizedAt || null,
+    readOnly: true,
+    rawContentAvailable: false,
+    legacyFallbackUsed: false,
+    trainingTruth: false,
+  };
+}
+
+function historicalRulesStatus(status = "not_loaded", details = {}) {
+  return {
+    schemaVersion: "starcraft_tmg_client_historical_rules_status_v1",
+    status,
+    rejectionCode: details.rejectionCode || null,
+    artifactHash: details.artifactHash || null,
+    readOnly: true,
+    silentCompatibilityUsed: false,
+    trainingTruth: false,
+  };
+}
+
+function validatedHistoricalRulesDisplay(result, roomProjection) {
+  const expected = roomProjection?.matchBinding?.rulesDisplayBinding;
+  if (!hasExactKeys(result, ["ok", "binding", "content", "trainingTruth"])
+    || result.ok !== true
+    || result.trainingTruth !== false
+    || !hasExactKeys(result.binding, RULES_DISPLAY_BINDING_KEYS)
+    || !sameContract(result.binding, expected)
+    || !["text/markdown", "text/plain"].includes(result.binding.mediaType)
+    || typeof result.content !== "string"
+    || utf8Length(result.content) > MAX_INPUT_BYTES
+    || hashStarcraftTmgClientContract(result.content) !== result.binding.artifactHash) {
+    return null;
+  }
+  const body = {
+    schemaVersion: "starcraft_tmg_client_historical_rules_display_v1",
+    roomId: roomProjection.room.roomId,
+    matchBindingHash: roomProjection.matchBinding.bindingHash,
+    binding: clone(result.binding),
+    content: result.content,
+    readOnly: true,
+    silentCompatibilityUsed: false,
+    mayAffectRules: false,
+    trainingTruth: false,
+  };
+  return deepFreeze({
+    ...body,
+    displayHash: hashStarcraftTmgClientContract(body),
+  });
+}
+
 function validateCharacterSelectionResponseV3(result, context) {
   const responseKeys = [
     "ok",
@@ -1520,6 +1599,10 @@ export function createStarcraftTmgClientDomain(options = {}) {
   const projectionStore = assertStarcraftTmgProjectionStorePort(options.projectionStore);
   const lifecycle = assertStarcraftTmgLifecyclePort(options.lifecycle);
   const characterPresentationEnabled = options.enableCharacterPresentation === true;
+  const sourceLocalizationEnabled = options.enableSourceLocalization === true;
+  const sourceProjectionPort = sourceLocalizationEnabled
+    ? assertStarcraftTmgSourceProjectionPort(options.sourceProjectionPort)
+    : null;
   const now = typeof options.now === "function" ? options.now : () => new Date().toISOString();
   const createId = typeof options.createId === "function" ? options.createId : randomOperationalId;
   const clientSessionId = createId("sc-client-session");
@@ -1546,6 +1629,10 @@ export function createStarcraftTmgClientDomain(options = {}) {
     characterPresentation: null,
     characterOfflineSnapshot: null,
     characterStatus: characterStatus(),
+    sourceLocalization: null,
+    sourceLocalizationStatus: sourceLocalizationStatus(),
+    historicalRulesDisplay: null,
+    historicalRulesStatus: historicalRulesStatus(),
     legalSpace: null,
     pendingPreview: null,
     lastReceipt: null,
@@ -1572,10 +1659,15 @@ export function createStarcraftTmgClientDomain(options = {}) {
   let currentView = null;
 
   function buildView() {
+    const schemaVersion = characterPresentationEnabled && sourceLocalizationEnabled
+      ? STARCRAFT_TMG_CLIENT_CHARACTER_SOURCE_EXTENSION_VERSION
+      : characterPresentationEnabled
+        ? STARCRAFT_TMG_CLIENT_CHARACTER_EXTENSION_VERSION
+        : sourceLocalizationEnabled
+          ? STARCRAFT_TMG_CLIENT_SOURCE_EXTENSION_VERSION
+          : STARCRAFT_TMG_CLIENT_DOMAIN_VERSION;
     const core = {
-      schemaVersion: characterPresentationEnabled
-        ? `${STARCRAFT_TMG_CLIENT_CHARACTER_EXTENSION_VERSION}.view`
-        : `${STARCRAFT_TMG_CLIENT_DOMAIN_VERSION}.view`,
+      schemaVersion: `${schemaVersion}.view`,
       clientRevision: internal.clientRevision,
       phase: internal.phase,
       locator: clone(internal.locator),
@@ -1587,6 +1679,12 @@ export function createStarcraftTmgClientDomain(options = {}) {
         characterPresentation: clone(internal.characterPresentation),
         characterOfflineSnapshot: clone(internal.characterOfflineSnapshot),
         characterStatus: clone(internal.characterStatus),
+      } : {}),
+      ...(sourceLocalizationEnabled ? {
+        sourceLocalization: clone(internal.sourceLocalization),
+        sourceLocalizationStatus: clone(internal.sourceLocalizationStatus),
+        historicalRulesDisplay: clone(internal.historicalRulesDisplay),
+        historicalRulesStatus: clone(internal.historicalRulesStatus),
       } : {}),
       legalSpace: clone(internal.legalSpace),
       pendingPreview: clone(internal.pendingPreview),
@@ -1601,6 +1699,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
         authoritativeMutation: false,
         rulesEvaluation: false,
         sourceAuthority: false,
+        ...(sourceLocalizationEnabled ? { sourceMetadataProjection: true } : {}),
         providerExecution: false,
         skillGeneration: false,
         trainingTruth: false,
@@ -1665,6 +1764,236 @@ export function createStarcraftTmgClientDomain(options = {}) {
       return "verified_write";
     } catch {
       return "write_failed";
+    }
+  }
+
+  function sourceRoomBinding(
+    projection = internal.sourceLocalization,
+    roomProjection = internal.roomProjection,
+  ) {
+    return classifyStarcraftTmgSourceRoomBindingV1(projection, roomProjection);
+  }
+
+  function sourceCacheCore(projection) {
+    return {
+      schemaVersion: "starcraft_tmg_client_source_localization_cache_record_v1",
+      cacheKey: starcraftTmgClientSourceLocalizationCacheKeyV1(),
+      projection: clone(projection),
+      savedAt: now(),
+      authority: false,
+      metadataOnly: true,
+      trainingTruth: false,
+    };
+  }
+
+  async function saveSourceLocalizationProjection(projection) {
+    const core = sourceCacheCore(projection);
+    const record = { ...core, integrityHash: hashStarcraftTmgClientContract(core) };
+    try {
+      await projectionStore.save(core.cacheKey, record);
+      return "verified_write";
+    } catch {
+      return "write_failed";
+    }
+  }
+
+  async function loadSourceLocalizationProjection() {
+    const cacheKey = starcraftTmgClientSourceLocalizationCacheKeyV1();
+    try {
+      const record = await projectionStore.load(cacheKey);
+      if (!record) return { ok: false, code: "SOURCE_PROJECTION_CACHE_MISS" };
+      const { integrityHash, ...core } = record;
+      if (!hasExactKeys(record, [
+        "schemaVersion",
+        "cacheKey",
+        "projection",
+        "savedAt",
+        "authority",
+        "metadataOnly",
+        "trainingTruth",
+        "integrityHash",
+      ])
+        || record.schemaVersion !== "starcraft_tmg_client_source_localization_cache_record_v1"
+        || record.cacheKey !== cacheKey
+        || record.authority !== false
+        || record.metadataOnly !== true
+        || record.trainingTruth !== false
+        || integrityHash !== hashStarcraftTmgClientContract(core)) {
+        await projectionStore.remove(cacheKey).catch(() => {});
+        return { ok: false, code: "SOURCE_PROJECTION_CACHE_INTEGRITY_FAILED" };
+      }
+      return {
+        ok: true,
+        projection: assertStarcraftTmgClientSourceLocalizationProjectionV1(
+          record.projection,
+        ),
+      };
+    } catch {
+      await projectionStore.remove(cacheKey).catch(() => {});
+      return { ok: false, code: "SOURCE_PROJECTION_CACHE_INVALIDATED" };
+    }
+  }
+
+  function sourceFailure(code, status = "unavailable") {
+    const record = {
+      schemaVersion: `${STARCRAFT_TMG_CLIENT_SOURCE_EXTENSION_VERSION}.rejection`,
+      code,
+      details: {
+        metadataOnly: true,
+        legacyFallbackUsed: false,
+        roomMutationAffected: false,
+      },
+      occurredAt: now(),
+      trainingTruth: false,
+    };
+    const view = publish({
+      sourceLocalizationStatus: sourceLocalizationStatus(status, {
+        rejectionCode: code,
+        source: "none",
+        roomBinding: sourceRoomBinding(),
+        lastSynchronizedAt: internal.sourceLocalizationStatus?.lastSynchronizedAt,
+      }),
+    });
+    return deepFreeze({ ok: false, rejection: record, view });
+  }
+
+  async function recoverSourceLocalizationFromCache(networkCode) {
+    const cached = await loadSourceLocalizationProjection();
+    if (!cached.ok) {
+      return sourceFailure(
+        cached.code === "SOURCE_PROJECTION_CACHE_MISS" ? networkCode : cached.code,
+        "unavailable",
+      );
+    }
+    const view = publish({
+      sourceLocalization: cached.projection,
+      sourceLocalizationStatus: sourceLocalizationStatus("offline_verified", {
+        rejectionCode: networkCode,
+        source: "device_local_metadata_cache",
+        roomBinding: sourceRoomBinding(cached.projection),
+        lastSynchronizedAt: internal.sourceLocalizationStatus?.lastSynchronizedAt,
+      }),
+    });
+    return deepFreeze({
+      ok: true,
+      outcome: "source_localization_metadata_cache_recovered",
+      offline: true,
+      view,
+    });
+  }
+
+  async function refreshSourceLocalization(reason = "explicit_refresh") {
+    if (!sourceLocalizationEnabled) {
+      return sourceFailure("SOURCE_LOCALIZATION_EXTENSION_NOT_ENABLED");
+    }
+    const snapshot = lifecycle.read();
+    if (!operationalLifecycle(snapshot)) {
+      return recoverSourceLocalizationFromCache(
+        snapshot.online === false
+          ? "SOURCE_PROJECTION_NETWORK_UNAVAILABLE"
+          : "SOURCE_PROJECTION_BACKGROUND_READ_ONLY",
+      );
+    }
+    publish({
+      sourceLocalizationStatus: sourceLocalizationStatus("loading", {
+        source: "authoritative_source_projection_port",
+        roomBinding: sourceRoomBinding(),
+        lastSynchronizedAt: internal.sourceLocalizationStatus?.lastSynchronizedAt,
+      }),
+    });
+    try {
+      const projection = assertStarcraftTmgClientSourceLocalizationProjectionV1(
+        await sourceProjectionPort.read(),
+      );
+      const cacheStatus = await saveSourceLocalizationProjection(projection);
+      const synchronizedAt = now();
+      const view = publish({
+        sourceLocalization: projection,
+        sourceLocalizationStatus: sourceLocalizationStatus("network_fresh", {
+          source: cacheStatus === "verified_write"
+            ? "authoritative_source_projection_and_verified_cache"
+            : "authoritative_source_projection_cache_write_failed",
+          roomBinding: sourceRoomBinding(projection),
+          lastSynchronizedAt: synchronizedAt,
+        }),
+      });
+      return deepFreeze({
+        ok: true,
+        outcome: "source_localization_projection_refreshed",
+        reason,
+        view,
+      });
+    } catch (error) {
+      return recoverSourceLocalizationFromCache(
+        String(error?.code || "SOURCE_PROJECTION_INVALID"),
+      );
+    }
+  }
+
+  async function readHistoricalRulesDisplay() {
+    if (!sourceLocalizationEnabled) {
+      return rejection("SOURCE_LOCALIZATION_EXTENSION_NOT_ENABLED");
+    }
+    const blocked = ensureOperational();
+    if (blocked) return rejection(blocked, { historicalRulesReadOnly: true });
+    const expected = internal.roomProjection?.matchBinding?.rulesDisplayBinding;
+    if (!expected) return rejection("HISTORICAL_RULES_DISPLAY_BINDING_MISSING");
+    publish({
+      historicalRulesStatus: historicalRulesStatus("loading", {
+        artifactHash: expected.artifactHash,
+      }),
+    });
+    try {
+      const result = await request("read_historical_rules");
+      if (!result?.ok) {
+        const code = result?.reason || "HISTORICAL_RULES_DISPLAY_MISSING";
+        publish({
+          historicalRulesDisplay: null,
+          historicalRulesStatus: historicalRulesStatus("quarantined", {
+            rejectionCode: code,
+            artifactHash: expected.artifactHash,
+          }),
+        });
+        return rejection(code, {
+          silentCompatibilityUsed: false,
+          historicalRulesReadOnly: true,
+        });
+      }
+      const display = validatedHistoricalRulesDisplay(
+        result,
+        internal.roomProjection,
+      );
+      if (!display) {
+        publish({
+          historicalRulesDisplay: null,
+          historicalRulesStatus: historicalRulesStatus("quarantined", {
+            rejectionCode: "HISTORICAL_RULES_DISPLAY_RESPONSE_INVALID",
+            artifactHash: expected.artifactHash,
+          }),
+        });
+        return rejection("HISTORICAL_RULES_DISPLAY_RESPONSE_INVALID");
+      }
+      const view = publish({
+        historicalRulesDisplay: display,
+        historicalRulesStatus: historicalRulesStatus("available", {
+          artifactHash: display.binding.artifactHash,
+        }),
+        rejection: null,
+      });
+      return deepFreeze({
+        ok: true,
+        outcome: "historical_rules_display_loaded_read_only",
+        view,
+      });
+    } catch (error) {
+      publish({
+        historicalRulesDisplay: null,
+        historicalRulesStatus: historicalRulesStatus("unavailable", {
+          rejectionCode: String(error?.code || "TRANSPORT_FAILED"),
+          artifactHash: expected.artifactHash,
+        }),
+      });
+      return handleTransportFailure(error, "read_historical_rules");
     }
   }
 
@@ -2042,6 +2371,8 @@ export function createStarcraftTmgClientDomain(options = {}) {
         rejectionCode: String(code || "AUTHENTICATION_REQUIRED"),
         readOnly: true,
       }),
+      historicalRulesDisplay: null,
+      historicalRulesStatus: historicalRulesStatus("not_loaded"),
       legalSpace: null,
       pendingPreview: null,
       control: unclaimedControl("cleared"),
@@ -2100,12 +2431,21 @@ export function createStarcraftTmgClientDomain(options = {}) {
         }
       }
       const cacheStatus = await saveProjection(projection);
+      const sourceStatus = internal.sourceLocalizationStatus;
       const view = publish({
         phase: "ready",
         roomProjection: projection,
         characterPresentation: character.projection,
         characterOfflineSnapshot,
         characterStatus: character.status,
+        ...(sourceLocalizationEnabled ? {
+          sourceLocalizationStatus: sourceLocalizationStatus(sourceStatus.status, {
+            rejectionCode: sourceStatus.rejectionCode,
+            source: sourceStatus.source,
+            roomBinding: sourceRoomBinding(internal.sourceLocalization, projection),
+            lastSynchronizedAt: sourceStatus.lastSynchronizedAt,
+          }),
+        } : {}),
         control,
         legalSpace: null,
         pendingPreview: null,
@@ -2717,9 +3057,19 @@ export function createStarcraftTmgClientDomain(options = {}) {
   async function performDispatch(intentInput) {
     let intent;
     try {
-      intent = validateIntent(intentInput, characterPresentationEnabled);
+      intent = validateIntent(
+        intentInput,
+        characterPresentationEnabled,
+        sourceLocalizationEnabled,
+      );
     } catch (error) {
       return rejection(error.code || "CLIENT_INPUT_INVALID", safeErrorDetails(error));
+    }
+    if (intent.type === "refresh_source_localization") {
+      return refreshSourceLocalization("explicit_dispatch");
+    }
+    if (intent.type === "read_historical_rules") {
+      return readHistoricalRulesDisplay();
     }
     if (intent.type === "refresh") return refreshProjection("explicit_dispatch");
     if (intent.type === "revalidate_authority") return revalidateAuthority();
@@ -2968,6 +3318,10 @@ export function createStarcraftTmgClientDomain(options = {}) {
       characterPresentation: null,
       characterOfflineSnapshot: null,
       characterStatus: characterStatus("loading"),
+      sourceLocalization: internal.sourceLocalization,
+      sourceLocalizationStatus: internal.sourceLocalizationStatus,
+      historicalRulesDisplay: null,
+      historicalRulesStatus: historicalRulesStatus("not_loaded"),
       legalSpace: null,
       pendingPreview: null,
       lastReceipt: null,
@@ -2993,6 +3347,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
     return enqueue(() => performBootstrap(input));
   }
 
+  if (sourceLocalizationEnabled) bindLifecycle();
   currentView = buildView();
   return Object.freeze({ bootstrap, read, dispatch, subscribe });
 }

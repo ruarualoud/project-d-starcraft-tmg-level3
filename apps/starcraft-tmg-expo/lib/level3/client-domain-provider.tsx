@@ -163,6 +163,7 @@ function createProductRuntime(): StarcraftTmgExpoClientRuntime {
     fetchImpl: globalThis.fetch,
     baseUrl: process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || "",
     enableCharacterPresentation: true,
+    enableSourceLocalization: true,
     allowHeadlessFallback: true,
   });
 }

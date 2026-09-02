@@ -3,6 +3,10 @@ import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createStarcraftTmgRoomRuntime } from "../room-runtime/in-memory-room-v1.mjs";
+import {
+  STARCRAFT_TMG_SOURCE_PROJECTION_HTTP_PREFIX,
+  createStarcraftTmgSourceProjectionHttpHandlerV1,
+} from "../client-domain/source-projection-adapters-v1.mjs";
 
 export const STARCRAFT_TMG_LEVEL3_HTTP_VERSION = "starcraft_tmg_level3_http_v2";
 export const STARCRAFT_TMG_LEVEL3_API_PREFIX = "/starcraft-tmg-level3/api/v1";
@@ -34,6 +38,9 @@ const CHARACTER_ENDPOINTS = Object.freeze([
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/character-persona",
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/character-spoiler-access",
   "GET /starcraft-tmg-level3/assets/v1/character/:contentHash",
+]);
+const SOURCE_PROJECTION_ENDPOINTS = Object.freeze([
+  `GET ${STARCRAFT_TMG_SOURCE_PROJECTION_HTTP_PREFIX}/projection`,
 ]);
 
 function valueFromQuery(query, key, fallback = undefined) {
@@ -131,9 +138,15 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
     && typeof runtime.selectCharacterPersona === "function"
     && typeof runtime.setCharacterSpoilerAccess === "function"
     && typeof runtime.readCharacterAsset === "function";
+  const sourceProjectionHttp = options.sourceProjectionPort
+    ? createStarcraftTmgSourceProjectionHttpHandlerV1({
+      sourcePort: options.sourceProjectionPort,
+    })
+    : null;
   const endpoints = Object.freeze([
     ...BASE_ENDPOINTS,
     ...(characterPresentationEnabled ? CHARACTER_ENDPOINTS : []),
+    ...(sourceProjectionHttp ? SOURCE_PROJECTION_ENDPOINTS : []),
   ]);
   const assetRoot = path.resolve(options.assetRoot || path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -149,6 +162,10 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
     const pathname = String(input.pathname || "");
     const body = input.body && typeof input.body === "object" ? input.body : {};
     const query = input.query || {};
+    if (pathname.startsWith(STARCRAFT_TMG_SOURCE_PROJECTION_HTTP_PREFIX)) {
+      if (!sourceProjectionHttp) return failure(404, "source-projection", "NOT_FOUND");
+      return sourceProjectionHttp.handle(input);
+    }
     const assetMatch = pathname.match(/^\/starcraft-tmg-level3\/assets\/v1\/character\/([a-f0-9]{64})$/u);
     if (assetMatch) {
       if (!characterPresentationEnabled) {

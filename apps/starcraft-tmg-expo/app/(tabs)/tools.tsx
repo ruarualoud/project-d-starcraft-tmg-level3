@@ -13,6 +13,7 @@ import type { DiceRoll } from '@/lib/types';
 import { RosterAnalysisPanel } from '@/components/roster-analysis-panel';
 
 type ToolTab = 'dice' | 'damage' | 'matchup' | 'versus' | 'roster';
+const LEGACY_CALCULATOR_EXECUTION_ENABLED = false;
 
 
 // ============================================================
@@ -1467,12 +1468,12 @@ function stepColor(step: string): string {
 
 // --- Main ---
 export default function ToolsScreen() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const params = useLocalSearchParams<{ tab?: string; armyAId?: string; armyBId?: string }>();
-  const [tab, setTab] = useState<ToolTab>(params.tab === 'roster' ? 'roster' : 'dice');
+  const [tab, setTab] = useState<ToolTab>('dice');
 
   useEffect(() => {
-    if (params.tab === 'roster') setTab('roster');
+    if (LEGACY_CALCULATOR_EXECUTION_ENABLED && params.tab === 'roster') setTab('roster');
   }, [params.tab]);
 
   return (
@@ -1490,18 +1491,34 @@ export default function ToolsScreen() {
         ] as [ToolTab, string][]).map(([key, label]) => (
           <Pressable
             key={key}
-            onPress={() => setTab(key)}
-            style={({ pressed }) => [st.tabBtn, tab === key && st.tabBtnActive, pressed && { opacity: 0.7 }]}
+            accessibilityState={{ disabled: key !== 'dice' }}
+            disabled={key !== 'dice'}
+            onPress={() => {
+              if (key === 'dice') setTab(key);
+            }}
+            style={({ pressed }) => [
+              st.tabBtn,
+              tab === key && st.tabBtnActive,
+              key !== 'dice' && st.tabBtnDisabled,
+              pressed && { opacity: 0.7 },
+            ]}
           >
             <Text style={[st.tabBtnText, tab === key && st.tabBtnTextActive]}>{label}</Text>
           </Pressable>
         ))}
       </View>
+      <View accessibilityRole="alert" style={st.legacyToolNotice}>
+        <Text style={st.legacyToolNoticeText}>
+          {lang === 'zh'
+            ? '伤害、对位、VS 与军表分析仍绑定旧 beta 规则，仅保留为历史界面证据，当前不可执行。骰子是本地非权威工具，可继续使用。'
+            : 'Damage, Matchup, Versus, and Roster Analysis remain bound to legacy beta rules. Their historical UI is retained but execution is isolated. Dice remains available as a local, non-authoritative tool.'}
+        </Text>
+      </View>
       {tab === 'dice' && <DicePanel />}
-      {tab === 'damage' && <DamagePanel />}
-      {tab === 'matchup' && <MatchupPanel />}
-      {tab === 'versus' && <VersusPanel />}
-      {tab === 'roster' && <RosterAnalysisPanel initialArmyAId={typeof params.armyAId === 'string' ? params.armyAId : undefined} initialArmyBId={typeof params.armyBId === 'string' ? params.armyBId : undefined} />}
+      {LEGACY_CALCULATOR_EXECUTION_ENABLED && tab === 'damage' && <DamagePanel />}
+      {LEGACY_CALCULATOR_EXECUTION_ENABLED && tab === 'matchup' && <MatchupPanel />}
+      {LEGACY_CALCULATOR_EXECUTION_ENABLED && tab === 'versus' && <VersusPanel />}
+      {LEGACY_CALCULATOR_EXECUTION_ENABLED && tab === 'roster' && <RosterAnalysisPanel initialArmyAId={typeof params.armyAId === 'string' ? params.armyAId : undefined} initialArmyBId={typeof params.armyBId === 'string' ? params.armyBId : undefined} />}
     </ScreenContainer>
   );
 }
@@ -1514,6 +1531,9 @@ const st = StyleSheet.create({
   tabBtnActive: { borderBottomColor: '#38bdf8' },
   tabBtnText: { fontSize: 12, fontWeight: '700', color: '#64748b' },
   tabBtnTextActive: { color: '#38bdf8' },
+  tabBtnDisabled: { opacity: 0.35 },
+  legacyToolNotice: { margin: 12, marginBottom: 0, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#475569', backgroundColor: '#111827' },
+  legacyToolNoticeText: { fontSize: 12, lineHeight: 18, color: '#cbd5e1' },
 
   // Dice
   configRow: { gap: 16, marginBottom: 16 },

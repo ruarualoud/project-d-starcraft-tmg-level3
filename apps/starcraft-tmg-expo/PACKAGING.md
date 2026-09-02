@@ -28,20 +28,10 @@ pnpm qr
 
 ## 数据准备
 
-应用内置了预打包的数据文件 `assets/data/bundled-data.json`。如需更新数据：
-
-```bash
-# 从 Firebase 拉取最新数据并写入 bundled-data.json
-node tools/export-data-pack.js --embed
-```
-
-该命令会从 Firebase Firestore（项目 `starcrafttmgbeta`，命名数据库 `starcrafttmgbeta`）拉取以下集合：
-
-| 集合 | 内容 | 数量 |
-|------|------|------|
-| `army_units` | 单位卡（含属性、武器、能力） | 26 |
-| `tactical_cards` | 战术卡和阵营卡 | 37 |
-| `faction_cards` | 任务卡和部署卡（含社区内容） | 165 |
+客户端构建不联网刷新、不内置旧数据，也不直接读取 Firestore。它只消费
+Project D 来源服务生成的、hash 固定且不含正文的来源/本地化投影。当前冻结
+版本为 units 71、cards 69、rules 48；更新只能由仓库根目录的显式来源捕获
+流程在用户命令下执行，普通 Web/App 构建不得触发更新。
 
 ## 构建 APK（推荐方式）
 
@@ -148,10 +138,8 @@ echo "=== StarCraft TMG 军表助手 打包脚本 ==="
 echo "[1/4] 安装依赖..."
 pnpm install
 
-# 2. 更新内置数据
-echo "[2/4] 更新内置数据..."
-node tools/export-data-pack.js --embed
-echo "数据更新完成"
+# 2. 来源元数据由服务端提供；构建不得联网刷新数据
+echo "[2/4] 验证无客户端来源刷新..."
 
 # 3. 类型检查
 echo "[3/4] 类型检查..."
@@ -173,7 +161,6 @@ echo ""
 
 | 问题 | 解决方案 |
 |------|---------|
-| Firebase 数据拉取 404 | 确认使用命名数据库 `starcrafttmgbeta`，不是 `(default)` |
-| 国内网络无法访问 Firebase | 使用 VPN 或通过 PC 导出工具离线导入 |
+| 来源元数据不可用 | 检查 Project D 来源服务；客户端不会回退旧数据 |
 | APK 构建失败 | 检查 `app.config.ts` 中的包名格式是否正确 |
-| 内置数据为空 | 运行 `node tools/export-data-pack.js --embed` 重新生成 |
+| 资料正文为空 | 当前 rights gate 未放行；只显示来源元数据属于预期行为 |

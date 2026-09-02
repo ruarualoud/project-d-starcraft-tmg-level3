@@ -26,14 +26,10 @@ echo ""
 echo "━━━ [1/5] 安装依赖 ━━━"
 pnpm install
 
-# 2. 更新内置数据
+# 2. 验证来源策略
 echo ""
-echo "━━━ [2/5] 更新内置数据 ━━━"
-if node tools/export-data-pack.js --embed 2>/dev/null; then
-    echo "✅ 内置数据已更新"
-else
-    echo "⚠️  数据更新失败（可能是网络问题），将使用现有内置数据"
-fi
+echo "━━━ [2/5] 验证来源策略 ━━━"
+echo "✅ 构建不会联网刷新或内置旧数据；客户端只读取服务端来源元数据投影"
 
 # 3. 运行测试
 echo ""
