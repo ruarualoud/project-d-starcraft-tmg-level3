@@ -123,7 +123,7 @@ The mature-worldbook follow-up adds eight timeline persona editions plus one TMG
 
 This is not yet the required M1 live demo. Its verifier uses an injected fake Provider transport, and no Web/App screen, real Provider response, browser trace, or device evidence has been run.
 
-Ticket 13 is now split into Slices 119–125. Slice 119 freezes a content-hashed
+Ticket 13 is now split into Slices 119–126. Slice 119 freezes a content-hashed
 visual source/rights/transformation plan before acquisition: the user permits
 network capture and AI editing inside the provenance-bearing development
 workspace, while public release remains independently rights-gated. Three
@@ -135,6 +135,22 @@ explicit placeholder or the Project D-original tactical Adjutant. The slice
 does not download or generate images, call DSH, generate Skills, mutate rooms,
 or create training truth. Large-scale Skill production remains an explicit
 future user-confirmation gate.
+
+Slice 120 realizes the two runtime development visuals with built-in image
+generation. One official publisher image is captured only into ignored local
+evidence and hash-bound as a reference; Git stores the generated square avatar
+and 2:3 card portrait plus their exact prompts, ordered identity lineage,
+dimensions, bytes, output hashes and generation receipts. Manual inspection
+confirms consistent identity/material/palette and
+no embedded text, logo or watermark. The derivatives remain development-only
+and public selection still fails closed to the first-party fallback. No DSH,
+Skill, model credential, memory, room, Rules, MuZero or training mutation ran.
+The exploratory full-body output is preserved only in ignored local design
+evidence and is quarantined from product selection. Slice 121 adds an SC1-style
+dynamic dialogue portrait: four server-owned role modes, finite conversation
+phases, allowlisted semantic visual cues and deterministic shared Web/App
+animation tokens. The model may suggest a cue but cannot choose asset paths,
+session roles, room state or Rules effects.
 
 ## Direct Provider increment
 
