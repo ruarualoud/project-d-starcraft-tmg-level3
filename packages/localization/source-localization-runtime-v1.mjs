@@ -254,7 +254,11 @@ export function createStarcraftTmgSourceLocalizationRuntime(options = {}) {
       }));
     } catch (error) {
       const failureClass = /^[A-Z][A-Z0-9_]{1,63}$/.test(String(error?.code || "")) ? String(error.code) : "TRANSLATION_ADAPTER_ERROR";
-      return safeFailure("translation_provider_failed", { failureClass, intentHash: intent.intentHash });
+      return safeFailure("translation_provider_failed", {
+        failureClass,
+        intentHash: intent.intentHash,
+        providerFailureReceipt: clone(error?.safeReceipt || null),
+      });
     }
     let candidate;
     try {
