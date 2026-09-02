@@ -218,7 +218,8 @@
     "verify:character-worldbook": "node scripts/verify-character-worldbook-v1.mjs",
     "verify:character-visual-asset-plan": "node scripts/verify-character-visual-asset-plan-v1.mjs",
     "verify:character-visual-assets": "node scripts/verify-character-visual-assets-v2.mjs",
-    "verify:ticket-13-foundations": "npm run verify:character-visual-asset-plan && npm run verify:character-visual-assets",
+    "verify:kerrigan-dynamic-dialogue-portrait": "node scripts/verify-kerrigan-dynamic-dialogue-portrait-v1.mjs",
+    "verify:ticket-13-foundations": "npm run verify:character-visual-asset-plan && npm run verify:character-visual-assets && npm run verify:kerrigan-dynamic-dialogue-portrait",
     "verify:source-translation": "node scripts/verify-source-translation-v1.mjs",
     "verify:source-localization-runtime": "node scripts/verify-source-localization-runtime-v1.mjs",
     "verify:official-source-localization-binding": "node scripts/verify-official-source-localization-binding-v2.mjs",
@@ -230,6 +231,6 @@
     "verify:ticket-12-foundations": "npm run verify:official-source-localization-binding && npm run verify:official-source-evidence-precedence && npm run verify:official-source-import-workflow && npm run verify:direct-translation-provider && npm run verify:translation-review-store-adapters && npm run verify:source-review-ui-offline-cache",
     "verify:ticket-12-closure": "npm run verify:ticket-12-foundations && node scripts/verify-ticket-12-closure-v1.mjs",
     "verify:offline-skill-arms": "node scripts/verify-offline-skill-arms-v1.mjs",
-    "verify:all": "npm run verify:authoritative-transition && npm run verify:authoritative-room && npm run verify:http-adapter && npm run verify:kerrigan-role-agent && npm run verify:direct-provider && npm run verify:character-worldbook && npm run verify:character-visual-asset-plan && npm run verify:character-visual-assets && npm run verify:source-translation && npm run verify:source-localization-runtime && npm run verify:official-source-localization-binding && npm run verify:official-source-evidence-precedence && npm run verify:official-source-import-workflow && npm run verify:direct-translation-provider && npm run verify:translation-review-store-adapters && npm run verify:source-review-ui-offline-cache && node scripts/verify-ticket-12-closure-v1.mjs && npm run verify:offline-skill-arms"
+    "verify:all": "npm run verify:authoritative-transition && npm run verify:authoritative-room && npm run verify:http-adapter && npm run verify:kerrigan-role-agent && npm run verify:direct-provider && npm run verify:character-worldbook && npm run verify:character-visual-asset-plan && npm run verify:character-visual-assets && npm run verify:kerrigan-dynamic-dialogue-portrait && npm run verify:source-translation && npm run verify:source-localization-runtime && npm run verify:official-source-localization-binding && npm run verify:official-source-evidence-precedence && npm run verify:official-source-import-workflow && npm run verify:direct-translation-provider && npm run verify:translation-review-store-adapters && npm run verify:source-review-ui-offline-cache && node scripts/verify-ticket-12-closure-v1.mjs && npm run verify:offline-skill-arms"
   }
 }

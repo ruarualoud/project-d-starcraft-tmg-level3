@@ -1,6 +1,6 @@
 # Ticket 13 CharacterPackage and worldbook roadmap
 
-Status: active; 2/8 implementation slices complete.
+Status: active; 3/8 implementation slices complete.
 
 Ticket 13 turns the existing `1.0.0-demo.1` CharacterPackage and nine-book
 catalogue into a versioned, visible, importable and adversarially verified
@@ -13,10 +13,12 @@ online Agent sessions.
 - Network image acquisition and AI image transformation are authorized for
   this workspace when every source, raw byte hash, prompt, output and rights
   status remains explicit.
-- The visual direction is a high-end Japanese cinematic science-fiction RPG
-  finish. It may use the polish target named by the user as an intent reference,
-  but must not copy another franchise's characters, costumes, props, logos or
-  exact compositions.
+- The approved development direction uses StarCraft II Kerrigan modeling and
+  upper-body anatomy as the identity/structure reference, StarCraft I analogue
+  communication-portrait composition and mood, and high-resolution Western 2D
+  science-fiction painting. Anime facial construction, horror deformation,
+  low-resolution pixel enlargement, giant pauldrons and detached metal-bustier
+  chest shapes are explicitly rejected.
 - Rights-gated Kerrigan derivatives may be used in development evidence. They
   may not be represented as public-release-cleared without independent rights
   evidence. The Project D-original Vesper package is the public fallback.
@@ -30,7 +32,7 @@ online Agent sessions.
 | --- | --- | --- |
 | 119 | **Complete.** Freeze visual source, rights, transformation, output-role and fallback contracts. | Sealed manifest; HTTPS/source/rights checks; planned-vs-realized truth; public fail-closed selection; Harness trace. |
 | 120 | **Complete.** Capture one selected official reference and generate the dialogue avatar plus card portrait development assets. The generated full-body study is retained only as an ignored local design reference and is not product-selectable. | Immutable raw hashes; two prompts and generation receipts; dimensions/file hashes; visual inspection; full-body quarantine; development-only rights labels. |
-| 121 | Implement an SC1-style dynamic dialogue-portrait state machine, mode/cue variants and shared Web/App animation contract. | Server-owned mode/phase; finite model `visualCue`; identity-bound portraits; deterministic reducer; no room/Rules authority. |
+| 121 | **Complete.** Implement an SC1-style dynamic dialogue-portrait state machine, five identity-bound keyframes, mode/cue variants and shared Web/App animation contract. | Server-owned mode/phase; finite model `visualCue`; deterministic reducer; actual local six-phase preview; public-rights fallback; no room/Rules authority. |
 | 122 | Implement Character Card V2 PNG embedding and exact JSON/PNG import-export. | Payload/chunk limits; round trip; integrity binding; tamper and foreign-card quarantine; no Rules authority. |
 | 123 | Implement the era/persona/spoiler selector and shared character view model. | Eight mutually exclusive personas plus TMG context; spoiler/knowledge ceilings; deterministic fallback and offline-safe state. |
 | 124 | Implement accessible Web/App semantic character-card and dynamic-avatar renderers. | Hash-identical semantic content; responsive desktop/tablet/mobile and native tree; 44px targets; portrait animation semantics; no battlefield geometry backflow. |

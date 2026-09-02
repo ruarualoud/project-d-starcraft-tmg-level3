@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 import {
   createKerriganPrimalProductBundleV1,
 } from "../content/characters/kerrigan-primal-v1.mjs";
+import { KERRIGAN_DYNAMIC_DIALOGUE_PORTRAIT_V1 } from
+  "../content/characters/kerrigan-dynamic-dialogue-portrait-v1.mjs";
 import {
   createProviderProfile,
   exportStarcraftTmgCharacterContract,
@@ -70,6 +72,7 @@ async function main() {
         credentialReceived: request.apiKey === API_KEY_SENTINEL,
         promptPack: request.promptPack,
         allowedChannels: [...request.responseContract.allowedChannels],
+        allowedVisualCues: [...request.responseContract.allowedVisualCues],
         hasRoomProjection: Boolean(request.toolContext.roomProjection),
         legalSpaceHash: request.toolContext.legalSpace?.legalSpaceHash || null,
       });
@@ -80,6 +83,7 @@ async function main() {
         const enabled = request.toolContext.legalSpace.candidates.filter((candidate) => candidate.isEnabled);
         return {
           output: {
+            visualCue: "challenge",
             channels: {
               decision: {
                 candidateId: enabled.find((candidate) => candidate.action.actionType === "move")?.candidateId || enabled[0].candidateId,
@@ -91,14 +95,20 @@ async function main() {
           },
         };
       }
-      if (request.promptPack === "novice_teacher_prompt") return { output: { channels: { teaching: { text: "先比较当前合法候选；我不会替你提交动作。" } } } };
-      if (request.promptPack === "referee_prompt") return { output: { channels: { speech: { text: "当前只解说公开局面与已提交事件。" } } } };
-      return { output: { channels: { speech: { text: "我会陪你复盘，但不会替你操作棋局。" }, teaching: { text: "需要时我可以解释公开信息。" } } } };
+      if (request.promptPack === "novice_teacher_prompt") return { output: { visualCue: "explain", channels: { teaching: { text: "先比较当前合法候选；我不会替你提交动作。" } } } };
+      if (request.promptPack === "referee_prompt") return { output: { visualCue: "announce", channels: { speech: { text: "当前只解说公开局面与已提交事件。" } } } };
+      return { output: { visualCue: "reflect", channels: { speech: { text: "我会陪你复盘，但不会替你操作棋局。" }, teaching: { text: "需要时我可以解释公开信息。" } } } };
     },
   };
 
   const bundle = createKerriganPrimalProductBundleV1();
-  const characterRuntime = createStarcraftTmgCharacterSessionRuntime({ roomRuntime, providerTransport, now: () => OCCURRED_AT });
+  const characterRuntime = createStarcraftTmgCharacterSessionRuntime({
+    roomRuntime,
+    providerTransport,
+    now: () => OCCURRED_AT,
+    dialoguePortraitManifest: KERRIGAN_DYNAMIC_DIALOGUE_PORTRAIT_V1,
+    dialoguePortraitEnvironment: "development",
+  });
   const configuredCharacterFactory = createStarcraftTmgConfiguredCharacterSessionFactory({
     allowRightsGatedDemo: true,
     productionMode: false,
@@ -118,6 +128,8 @@ async function main() {
   let opponentInvocation = null;
   let applied = null;
   let tutorInvocation = null;
+  let commentatorInvocation = null;
+  let companionInvocation = null;
 
   async function check(id, fn) {
     try {
@@ -180,6 +192,8 @@ async function main() {
       assert(created.session.binding.mode === mode, `${mode} binding mismatch`);
       assert(created.session.capability.mayApply === false, `${mode} was granted model-owned apply`);
       assert(created.session.capability.mayPreview === (mode === "opponent"), `${mode} preview capability mismatch`);
+      assert(created.session.dialoguePortrait?.state.mode === mode, `${mode} portrait binding mismatch`);
+      assert(created.session.dialoguePortrait?.state.phase === "idle", `${mode} portrait did not begin idle`);
       const bound = characterRuntime.bindByok({ sessionId, apiKey: API_KEY_SENTINEL, boundAt: OCCURRED_AT });
       assert(bound.ok && bound.credentialBound, `${mode} BYOK binding failed`);
     }
@@ -206,6 +220,8 @@ async function main() {
     tutorInvocation = await characterRuntime.invoke({ sessionId: sessionIds.tutor, userMessage: "请解释当前回合", intent: "chat", occurredAt: OCCURRED_AT });
     assert(tutorInvocation.ok && tutorInvocation.output.channels.teaching, "Tutor teaching invocation failed");
     assert(tutorInvocation.preview === null && tutorInvocation.confirmationRequired === false, "Tutor created a preview");
+    assert(tutorInvocation.portraitState.phase === "speaking" && tutorInvocation.portraitState.visualCue === "explain", "Tutor portrait cue mismatch");
+    assert(tutorInvocation.portraitView.ok && tutorInvocation.portraitView.frameSequence.includes("speaking"), "Tutor speaking portrait view missing");
     const rejected = await characterRuntime.invoke({ sessionId: sessionIds.tutor, userMessage: "forbidden-decision", intent: "chat", occurredAt: OCCURRED_AT });
     assert(!rejected.ok && rejected.reason === "provider_output_rejected", "Tutor decision channel was not rejected");
     const current = await roomRuntime.readRoom({ roomId: ROOM_ID });
@@ -224,6 +240,9 @@ async function main() {
     assert(opponentInvocation.trace.promptPack === "opponent_prompt", "Opponent prompt route mismatch");
     assert(opponentInvocation.trace.harnessToolsCalled.join("/") === "read_board_state/list_legal_actions/read_character_worldbook/preview_action", "Opponent harness tool trace mismatch");
     assert(opponentInvocation.trace.promptAssemblyReceipt.worldbookActivationHash, "Opponent prompt receipt missed worldbook activation binding");
+    assert(opponentInvocation.portraitState.phase === "waiting_confirmation" && opponentInvocation.portraitState.visualCue === "challenge", "Opponent portrait did not enter challenge confirmation state");
+    assert(opponentInvocation.portraitView.primaryFrame.role === "warning", "Opponent confirmation portrait did not hold warning frame");
+    assert(opponentInvocation.trace.portraitStateHash && opponentInvocation.trace.portraitViewHash, "Opponent trace lost portrait hashes");
     const beforeApply = await roomRuntime.readRoom({ roomId: ROOM_ID });
     assert(beforeApply.projection.room.stateRevision === 0, "Provider preview applied itself");
     const confirmed = await roomRuntime.confirmPreview({
@@ -256,10 +275,12 @@ async function main() {
   });
 
   await check("commentator_and_companion_remain_non_mutating", async () => {
-    const commentator = await characterRuntime.invoke({ sessionId: sessionIds.commentator, userMessage: "解说局面", intent: "chat", occurredAt: OCCURRED_AT });
-    const companion = await characterRuntime.invoke({ sessionId: sessionIds.companion, userMessage: "陪我复盘", intent: "chat", occurredAt: OCCURRED_AT });
-    assert(commentator.ok && companion.ok, "read-only role invocation failed");
-    assert(commentator.preview === null && companion.preview === null, "read-only role created a preview");
+    commentatorInvocation = await characterRuntime.invoke({ sessionId: sessionIds.commentator, userMessage: "解说局面", intent: "chat", occurredAt: OCCURRED_AT });
+    companionInvocation = await characterRuntime.invoke({ sessionId: sessionIds.companion, userMessage: "陪我复盘", intent: "chat", occurredAt: OCCURRED_AT });
+    assert(commentatorInvocation.ok && companionInvocation.ok, "read-only role invocation failed");
+    assert(commentatorInvocation.preview === null && companionInvocation.preview === null, "read-only role created a preview");
+    assert(commentatorInvocation.portraitState.phase === "speaking" && commentatorInvocation.portraitState.visualCue === "announce", "Commentator portrait cue mismatch");
+    assert(companionInvocation.portraitState.phase === "speaking" && companionInvocation.portraitState.visualCue === "reflect", "Companion portrait cue mismatch");
     const current = await roomRuntime.readRoom({ roomId: ROOM_ID });
     assert(current.projection.room.stateRevision === 1 && current.projection.room.acceptedReceiptCount === 1, "read-only role mutated room");
   });
@@ -272,6 +293,7 @@ async function main() {
       assert(!JSON.stringify(traces).includes(API_KEY_SENTINEL), "harness trace leaked BYOK material");
     }
     assert(transportAudits.every((entry) => entry.credentialReceived), "direct Provider transport did not receive the session credential");
+    assert(transportAudits.every((entry) => entry.allowedVisualCues.length >= 4), "Provider response contract lost finite visual cue allowlist");
     const detached = characterRuntime.unbindByok({ sessionId: sessionIds.companion, unboundAt: OCCURRED_AT });
     assert(detached.ok && detached.credentialBound === false, "BYOK detach failed");
     const rejected = await characterRuntime.invoke({ sessionId: sessionIds.companion, userMessage: "再次对话", intent: "chat" });
@@ -337,6 +359,13 @@ async function main() {
       opponentPreviewToken: opponentInvocation?.preview?.preview?.previewToken || null,
       roomReceiptHash: applied?.receipt?.journalHash || null,
       roomTraceId: opponentInvocation?.trace?.traceId || null,
+      dialoguePortraitManifestHash: KERRIGAN_DYNAMIC_DIALOGUE_PORTRAIT_V1.manifestHash,
+      roleVisualCues: {
+        tutor: tutorInvocation?.portraitState?.visualCue || null,
+        opponent: opponentInvocation?.portraitState?.visualCue || null,
+        commentator: commentatorInvocation?.portraitState?.visualCue || null,
+        companion: companionInvocation?.portraitState?.visualCue || null,
+      },
       directProviderEvidence: "injected_fake_transport_only_not_real_provider",
       agentHttpSecureByokGate: "command_verified_with_injected_provider_transport",
       rightsGatePassed: false,
@@ -348,7 +377,10 @@ async function main() {
       targetGames: ["starcraft-tmg"],
       promptPackRoutes: [...new Set(allCharacterTraces.map((trace) => trace.promptPack))],
       harnessToolsCalled: [...new Set(allCharacterTraces.flatMap((trace) => trace.harnessToolsCalled || []))],
-      uiTraceEvidence: "not_run",
+      uiTraceEvidence: [
+        "actual_runtime_portrait_state_and_view_returned_for_four_role_modes",
+        "interactive_local_dynamic_preview_verified_by_slice_121_gate",
+      ],
       agentDecisionEvidence: opponentInvocation?.trace?.decision || null,
       memoryTraceEvidence: {
         opponentRefs: opponentInvocation?.trace?.memoryRefs || [],
@@ -361,7 +393,11 @@ async function main() {
         "disable a role capability when it emits a forbidden channel or tool",
         "reject and replay-audit any opponent trace whose LegalSpace or receipt binding no longer matches",
       ],
-      userVisibleChecks: "not_run",
+      userVisibleChecks: [
+        "tutor_explain_speaking_sequence",
+        "opponent_challenge_waiting_confirmation_sequence",
+        "commentator_announce_and_companion_reflect_sequences",
+      ],
     },
   };
   await mkdir(path.dirname(REPORT_PATH), { recursive: true });

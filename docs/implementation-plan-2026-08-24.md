@@ -127,10 +127,13 @@ Ticket 13 is now split into Slices 119–126. Slice 119 freezes a content-hashed
 visual source/rights/transformation plan before acquisition: the user permits
 network capture and AI editing inside the provenance-bearing development
 workspace, while public release remains independently rights-gated. Three
-Kerrigan roles (square avatar, card portrait and full-body reference) use a
-normalized high-end Japanese cinematic science-fiction RPG direction and
-explicitly exclude copying another franchise's characters, costumes, props,
-logos or exact compositions. Missing or non-releasable art fails closed to an
+Kerrigan roles (square avatar, card portrait and full-body reference) initially
+froze a generic cinematic science-fiction direction. The later approved target
+uses official StarCraft II Kerrigan modeling and upper-body anatomy with a
+StarCraft I analogue communication-portrait mood and high-resolution Western
+2D painting; anime facial construction, horror deformation, pixel enlargement,
+giant pauldrons and detached metal-bustier chest forms are rejected. Missing or
+non-releasable art fails closed to an
 explicit placeholder or the Project D-original tactical Adjutant. The slice
 does not download or generate images, call DSH, generate Skills, mutate rooms,
 or create training truth. Large-scale Skill production remains an explicit
@@ -149,8 +152,15 @@ The exploratory full-body output is preserved only in ignored local design
 evidence and is quarantined from product selection. Slice 121 adds an SC1-style
 dynamic dialogue portrait: four server-owned role modes, finite conversation
 phases, allowlisted semantic visual cues and deterministic shared Web/App
-animation tokens. The model may suggest a cue but cannot choose asset paths,
-session roles, room state or Rules effects.
+animation tokens. Five 1254×1254 identity-bound PNG keyframes cover neutral,
+blink, speaking, warning and reflection, while six deterministic phases cover
+idle through error and reduced-motion single-frame fallback. The actual local
+preview and all four Character Agent modes are verified. The model may suggest
+a mode-allowlisted cue but cannot choose asset paths, frame timing, session
+roles, room state or Rules effects. The selected derivatives remain
+development-only and public rendering resolves to the Project D-original
+fallback. Slice 121 passes 11/11 focused assertions and 9/9 integrated role
+checks at manifest `5d117d...2f36`.
 
 ## Direct Provider increment
 

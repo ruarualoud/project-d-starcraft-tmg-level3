@@ -10,6 +10,14 @@ import {
 } from "./mode-capability-v1.mjs";
 import { assembleStarcraftTmgRolePrompt } from "./prompt-assembly-v1.mjs";
 import { createStarcraftTmgWorldbookRegistry } from "./worldbook-registry-v1.mjs";
+import {
+  assertStarcraftTmgDynamicDialoguePortraitManifestV1,
+  createStarcraftTmgDynamicDialoguePortraitStateV1,
+  listStarcraftTmgDialogueVisualCuesV1,
+  reduceStarcraftTmgDynamicDialoguePortraitStateV1,
+  resolveStarcraftTmgDynamicDialoguePortraitV1,
+  validateStarcraftTmgDialogueVisualCueV1,
+} from "./dynamic-dialogue-portrait-v1.mjs";
 
 export const STARCRAFT_TMG_CHARACTER_SESSION_VERSION = "starcraft_tmg_character_session_v1";
 
@@ -77,6 +85,9 @@ function safeProviderFailure(error) {
 
 function validateOutput(output, capability, legalSpace, requireDecision) {
   if (!output || typeof output !== "object" || Array.isArray(output)) throw new Error("Provider output must be an object");
+  for (const key of Object.keys(output)) {
+    if (!["channels", "visualCue"].includes(key)) throw new Error(`Provider output cannot set server-owned field: ${key}`);
+  }
   const channels = output.channels;
   if (!channels || typeof channels !== "object" || Array.isArray(channels)) throw new Error("Provider output.channels must be an object");
   const normalizedChannels = {};
@@ -102,7 +113,8 @@ function validateOutput(output, capability, legalSpace, requireDecision) {
   }
   if (requireDecision && !normalizedChannels.decision) throw new Error("opponent take_turn requires a decision channel");
   if (Object.keys(normalizedChannels).length === 0) throw new Error("Provider output contains no allowed channel");
-  return deepFreeze({ channels: normalizedChannels });
+  const visualCue = validateStarcraftTmgDialogueVisualCueV1(capability.mode, output.visualCue || "neutral");
+  return deepFreeze({ channels: normalizedChannels, visualCue });
 }
 
 export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
@@ -111,6 +123,13 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
   const providerTransport = options.providerTransport;
   if (!providerTransport || typeof providerTransport.complete !== "function") throw new Error("direct providerTransport.complete is required");
   const now = typeof options.now === "function" ? options.now : () => new Date().toISOString();
+  const dialoguePortraitManifest = options.dialoguePortraitManifest
+    ? assertStarcraftTmgDynamicDialoguePortraitManifestV1(options.dialoguePortraitManifest)
+    : null;
+  const dialoguePortraitEnvironment = options.dialoguePortraitEnvironment || "development";
+  if (!["development", "public"].includes(dialoguePortraitEnvironment)) {
+    throw new Error(`unsupported dialoguePortraitEnvironment: ${dialoguePortraitEnvironment}`);
+  }
   const sessions = new Map();
   const byokCredentials = new Map();
   const seatCredentials = new Map();
@@ -120,6 +139,13 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
   }
 
   function summary(session) {
+    const portraitView = session.dialoguePortraitState && dialoguePortraitManifest
+      ? resolveStarcraftTmgDynamicDialoguePortraitV1(
+        dialoguePortraitManifest,
+        session.dialoguePortraitState,
+        { environment: dialoguePortraitEnvironment },
+      )
+      : null;
     return deepFreeze({
       schemaVersion: `${STARCRAFT_TMG_CHARACTER_SESSION_VERSION}.summary`,
       sessionId: session.sessionId,
@@ -147,6 +173,15 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
       traceCount: session.traces.length,
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
+      dialoguePortrait: session.dialoguePortraitState ? {
+        manifestRef: {
+          id: dialoguePortraitManifest.manifestId,
+          version: dialoguePortraitManifest.version,
+          hash: dialoguePortraitManifest.manifestHash,
+        },
+        state: session.dialoguePortraitState,
+        view: portraitView,
+      } : null,
       durability: "process_memory_v0",
       productionReady: false,
       trainingTruth: false,
@@ -194,6 +229,9 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
       const worldbooks = worldbookSelection.worldbooks;
       const memoryRefs = validateStarcraftTmgMemoryRefs(input.mode, input.memoryRefs || []);
       const createdAt = new Date(input.createdAt || now()).toISOString();
+      if (dialoguePortraitManifest && dialoguePortraitManifest.characterId !== characterPackage.characterId) {
+        throw new Error("dialogue portrait manifest character mismatch");
+      }
       const binding = createGameRoleBinding({
         bindingId: input.bindingId || `${sessionId}.binding`,
         version: "1.0.0",
@@ -242,6 +280,12 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
         binding,
         history: [],
         traces: [],
+        dialoguePortraitState: dialoguePortraitManifest
+          ? createStarcraftTmgDynamicDialoguePortraitStateV1(dialoguePortraitManifest, {
+            mode: capability.mode,
+            updatedAt: createdAt,
+          })
+          : null,
         createdAt,
         updatedAt: createdAt,
       };
@@ -284,6 +328,39 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
     return trace;
   }
 
+  function transitionDialoguePortrait(session, event) {
+    if (!dialoguePortraitManifest || !session.dialoguePortraitState) return null;
+    session.dialoguePortraitState = reduceStarcraftTmgDynamicDialoguePortraitStateV1(
+      dialoguePortraitManifest,
+      session.dialoguePortraitState,
+      event,
+    );
+    return resolveStarcraftTmgDynamicDialoguePortraitV1(
+      dialoguePortraitManifest,
+      session.dialoguePortraitState,
+      { environment: dialoguePortraitEnvironment },
+    );
+  }
+
+  function readDialoguePortrait(input = {}) {
+    const session = getSession(input.sessionId);
+    if (!session) return rejection("session_not_found", { sessionId: input.sessionId || "" });
+    if (!dialoguePortraitManifest || !session.dialoguePortraitState) {
+      return rejection("dialogue_portrait_not_configured", { sessionId: session.sessionId });
+    }
+    return deepFreeze({
+      ok: true,
+      sessionId: session.sessionId,
+      state: session.dialoguePortraitState,
+      view: resolveStarcraftTmgDynamicDialoguePortraitV1(
+        dialoguePortraitManifest,
+        session.dialoguePortraitState,
+        { environment: dialoguePortraitEnvironment },
+      ),
+      trainingTruth: false,
+    });
+  }
+
   async function invoke(input = {}) {
     const session = getSession(input.sessionId);
     if (!session) return rejection("session_not_found", { sessionId: input.sessionId || "" });
@@ -298,6 +375,9 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
     } catch (error) {
       return rejection("invalid_user_message", { message: error instanceof Error ? error.message : String(error) });
     }
+    const portraitOccurredAt = new Date(input.occurredAt || now()).toISOString();
+    transitionDialoguePortrait(session, { type: "user_message_received", occurredAt: portraitOccurredAt });
+    transitionDialoguePortrait(session, { type: "planning_started", occurredAt: portraitOccurredAt });
     const toolCalls = [];
     assertStarcraftTmgModeToolAllowed(session.binding.mode, "read_board_state");
     const room = await roomRuntime.readRoom({
@@ -348,11 +428,14 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
         toolContext: { roomProjection: room.projection, legalSpace },
         responseContract: {
           allowedChannels: session.capability.outputChannels,
+          allowedVisualCues: listStarcraftTmgDialogueVisualCuesV1(session.binding.mode),
           decisionCandidateSource: session.capability.maySelectDecision ? "current_legal_space_only" : "forbidden",
+          visualCueAuthority: "validated_model_suggestion_only_mode_phase_and_asset_are_server_owned",
         },
       });
     } catch (error) {
       const occurredAt = new Date(now()).toISOString();
+      const portraitView = transitionDialoguePortrait(session, { type: "provider_failed", occurredAt });
       const providerFailure = safeProviderFailure(error);
       const trace = appendTrace(session, {
         schemaVersion: `${STARCRAFT_TMG_CHARACTER_SESSION_VERSION}.harness-trace`,
@@ -376,7 +459,12 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
         reviewStatus: "rejected",
         trainingTruth: false,
       });
-      return rejection("provider_transport_failed", { traceId: trace.traceId, providerFailure });
+      return rejection("provider_transport_failed", {
+        traceId: trace.traceId,
+        providerFailure,
+        portraitState: session.dialoguePortraitState,
+        portraitView,
+      });
     }
 
     let output;
@@ -395,6 +483,7 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
       output = validateOutput(providerResult?.output, session.capability, legalSpace, intent === "take_turn" && session.binding.mode === "opponent");
     } catch (error) {
       const occurredAt = new Date(input.occurredAt || now()).toISOString();
+      const portraitView = transitionDialoguePortrait(session, { type: "provider_failed", occurredAt });
       const message = error instanceof Error ? error.message : String(error);
       const trace = appendTrace(session, {
         schemaVersion: `${STARCRAFT_TMG_CHARACTER_SESSION_VERSION}.harness-trace`,
@@ -419,7 +508,12 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
         reviewStatus: "rejected",
         trainingTruth: false,
       });
-      return rejection("provider_output_rejected", { message, traceId: trace.traceId });
+      return rejection("provider_output_rejected", {
+        message,
+        traceId: trace.traceId,
+        portraitState: session.dialoguePortraitState,
+        portraitView,
+      });
     }
 
     let preview = null;
@@ -434,6 +528,7 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
       toolCalls.push("preview_action");
       if (!preview.ok) {
         const occurredAt = new Date(input.occurredAt || now()).toISOString();
+        const portraitView = transitionDialoguePortrait(session, { type: "provider_failed", occurredAt });
         const trace = appendTrace(session, {
           schemaVersion: `${STARCRAFT_TMG_CHARACTER_SESSION_VERSION}.harness-trace`,
           gameId: session.binding.gameId,
@@ -457,11 +552,23 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
           reviewStatus: "rejected",
           trainingTruth: false,
         });
-        return rejection(preview.reason || "preview_failed", { traceId: trace.traceId });
+        return rejection(preview.reason || "preview_failed", {
+          traceId: trace.traceId,
+          portraitState: session.dialoguePortraitState,
+          portraitView,
+        });
       }
     }
 
     const occurredAt = new Date(input.occurredAt || now()).toISOString();
+    let portraitView = transitionDialoguePortrait(session, {
+      type: "provider_output_accepted",
+      visualCue: output.visualCue,
+      occurredAt,
+    });
+    if (preview) {
+      portraitView = transitionDialoguePortrait(session, { type: "confirmation_requested", occurredAt });
+    }
     const traceUnsigned = {
       schemaVersion: `${STARCRAFT_TMG_CHARACTER_SESSION_VERSION}.harness-trace`,
       gameId: session.binding.gameId,
@@ -492,6 +599,8 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
         previewToken: preview.preview.previewToken,
       } : null,
       confirmationRequired: Boolean(preview),
+      portraitStateHash: session.dialoguePortraitState?.stateHash || null,
+      portraitViewHash: portraitView?.viewHash || null,
       occurredAt,
       eligibleForTraining: false,
       reviewStatus: "raw",
@@ -511,6 +620,8 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
       confirmationRequired: Boolean(preview),
       promptAssemblyReceipt: assembly.receipt,
       trace,
+      portraitState: session.dialoguePortraitState,
+      portraitView,
       session: summary(session),
     });
   }
@@ -530,5 +641,14 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
     return deepFreeze({ ok: true, sessionId: session.sessionId, credentialCleared: true });
   }
 
-  return Object.freeze({ createSession, bindByok, unbindByok, inspectSession, invoke, listTraces, destroySession });
+  return Object.freeze({
+    createSession,
+    bindByok,
+    unbindByok,
+    inspectSession,
+    invoke,
+    readDialoguePortrait,
+    listTraces,
+    destroySession,
+  });
 }
