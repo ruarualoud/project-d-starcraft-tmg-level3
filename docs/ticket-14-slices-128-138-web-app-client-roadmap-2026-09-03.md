@@ -1,6 +1,6 @@
 # Ticket 14 — shared Web/App client roadmap
 
-Status: active; 2/11 implementation slices complete, 9 remaining.
+Status: active; 3/11 implementation slices complete, 8 remaining.
 
 Ticket 14 restores the recovered Expo source as the Web/App product baseline,
 mounts the Level-3 room/source/character interfaces into a real tracked product,
@@ -29,7 +29,7 @@ client a Rules, Referee, source, Agent-session, or training authority.
 | --- | --- | --- |
 | 128 | **Complete.** Freeze the exact recovered Expo source as a tracked read-only baseline and decide the shared seam, ownership, platform Adapters, compatibility policy, Capacitor decision, and implementation route. | 116 files / 2,650,442 bytes / Git tree and extracted-manifest hashes; no credentials; ADR; hash-sealed boundary; old import untouched; product mount still false. |
 | 129 | **Complete.** Implement the deep Client Domain Module and its HTTP/in-memory transport, projection-store and lifecycle Adapters. | `bootstrap/read/dispatch/subscribe`; typed intents/views/rejections; revision/reconnect handling; no whole-state input; 17/17 interface-level tests. |
-| 130 | Create the tracked Expo product worktree from the frozen baseline and mount the Client Domain Module into routing, providers and shell status. | Preserved five-tab UX; explicit migration receipt; no direct Firestore or authoritative match write on mounted paths; Web/App shared semantic smoke. |
+| 130 | **Complete.** Create the tracked Expo product worktree from the frozen baseline and mount the Client Domain Module into routing, providers and shell status. | Preserved five-tab UX; explicit migration receipt; no direct Firestore or authoritative match write on mounted paths; Web/App shared semantic smoke. |
 | 131 | Implement room locator, SeatGrant, ControlLease, reconnect, viewer projection, invite/deep-link and seat-recovery flows. | URL claims cannot create authority; CAS/recovery receipts; two-device read vs fenced-controller behavior; offline read-only projection. |
 | 132 | Mount the authoritative battlefield flow and scale-safe rendering. | LegalSpace → proposal → preview → human confirmation → apply → replay; no drag mutation; arbitrary model counts; map/token/base scale parity across viewports. |
 | 133 | Mount CharacterPackage/persona selection, eight-era dynamic portrait and Adjutant panel. | Web/App actual rendered evidence; visible-only animation; offline/reduced-motion/public-rights fallbacks; no live Provider call. |

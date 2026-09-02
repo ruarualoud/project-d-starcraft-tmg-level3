@@ -1,0 +1,37 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "types": [
+      "node",
+      "nativewind/types"
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@shared/*": [
+        "./shared/*"
+      ],
+      "@project-d/client-domain/*": [
+        "../../packages/client-domain/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts",
+    "../../packages/client-domain/**/*.mjs"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "server",
+    "tools",
+    "drizzle",
+    "drizzle.config.ts"
+  ]
+}
