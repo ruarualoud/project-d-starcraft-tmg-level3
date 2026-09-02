@@ -654,3 +654,18 @@ require configured HTTPS Universal/App Links; custom schemes remain development
 only. Focused 18/18 and cumulative Ticket 14 84/84 pass, advancing Ticket 14 to
 4/11 with Slice 132 next. No source refresh, Provider, Skill, DSH, MuZero,
 self-play or training promotion ran.
+
+Ticket 14 Slice 133 mounts the frozen Ticket 13 CharacterPackage through
+explicit RoomRuntime, HTTP, Client Domain and Expo extension contracts. The
+default rank-60 view exposes six named eras plus two identity-free locked slots;
+explicit rank-80 spoiler opt-in exposes all eight, with no fixed eight-persona
+capacity branch. One selected persona resolves one exact five-frame manifest.
+Development assets require a short opaque handle + expiry + HMAC whose complete
+room/SeatGrant/scope/selector/rights/manifest/content binding stays server-side;
+public and anonymous paths remain identity- and asset-free. Expo loads the
+current frame without prefetch, schedules only after `onLoad`, bounds failure
+recovery to one refresh per failed binding/content pair, and uses a content-free
+sealed snapshot plus local static neutral portrait offline. Focused 65/65 plus
+TypeScript and cumulative 218/218 pass, advancing Ticket 14 to 6/11 with Slice
+134 next. No source refresh, Provider, Skill, DSH, MuZero, self-play or training
+promotion ran.

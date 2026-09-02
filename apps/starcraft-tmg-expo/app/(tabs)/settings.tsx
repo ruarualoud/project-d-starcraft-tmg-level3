@@ -4,6 +4,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useData } from '@/lib/data-context';
 import { useI18n } from '@/lib/i18n';
 import type { Language } from '@/lib/i18n';
+import { CharacterPersonaSettingsPanel } from '@/components/character/character-persona-settings-panel';
 
 export default function SettingsScreen() {
   const { dataVersion, dataClassification, units, cards, gameCards, armyLists } = useData();
@@ -110,6 +111,8 @@ export default function SettingsScreen() {
         <Text style={styles.headerTitle}>{t('settings')}</Text>
       </View>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        <CharacterPersonaSettingsPanel />
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('language')}</Text>
           <Text style={styles.hint}>{t('languageHint')}</Text>

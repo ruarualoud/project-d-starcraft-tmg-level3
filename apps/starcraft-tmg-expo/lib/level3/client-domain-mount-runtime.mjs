@@ -174,6 +174,7 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
     fetchImpl: options.fetchImpl,
     apiPrefix: options.apiPrefix,
     timeoutMs: options.timeoutMs,
+    enableCharacterPresentation: options.enableCharacterPresentation === true,
   });
   const projectionStore = createAsyncStorageStarcraftTmgProjectionStoreAdapter({
     asyncStorage: options.asyncStorage,
@@ -184,6 +185,7 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
     transport,
     projectionStore,
     lifecycle: lifecycleMount.lifecycle,
+    enableCharacterPresentation: options.enableCharacterPresentation === true,
     now: options.now,
     createId: options.createId,
   });

@@ -13,8 +13,14 @@ import {
   projectStarcraftTmgViewerStateShapeV3,
   STARCRAFT_TMG_VIEWER_STATE_V3_FIELDS,
 } from "../client-domain/viewer-projection-v3.mjs";
+import { createStarcraftTmgClientCharacterPresentationRuntimeV2 } from
+  "../character-agent/client-character-presentation-runtime-v2.mjs";
+import { createStarcraftTmgCharacterAssetGrantAuthorityV1 } from
+  "../character-agent/character-asset-grant-v1.mjs";
 
 export const STARCRAFT_TMG_ROOM_RUNTIME_VERSION = "starcraft_tmg_room_runtime_v2";
+export const STARCRAFT_TMG_ROOM_CHARACTER_EXTENSION_VERSION =
+  "starcraft_tmg_room_runtime_v2.character_presentation_v2";
 export const STARCRAFT_TMG_VIEWER_ROOM_PROJECTION_VERSION = "starcraft_tmg_viewer_room_projection_v3";
 export const STARCRAFT_TMG_VIEWER_APPLY_RESPONSE_VERSION = "starcraft_tmg_viewer_apply_response_v2";
 export const STARCRAFT_TMG_VIEWER_REPLAY_RESPONSE_VERSION = "starcraft_tmg_viewer_replay_response_v3";
@@ -105,6 +111,14 @@ function tokenHash(roomId, rawToken, tokenKind = "seat_grant") {
     roomId,
     tokenKind,
     token: rawToken,
+  });
+}
+
+function clientPrincipalScopeHash(roomId, rawToken = "") {
+  return hashStarcraftTmgContract({
+    schemaVersion: "starcraft_tmg_client_principal_scope_v1",
+    roomId,
+    seatToken: rawToken || "public",
   });
 }
 
@@ -431,6 +445,27 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
   const authorityEngine = options.authorityEngine || createStarcraftTmgAuthoritativeEngine();
   const roomStore = assertStarcraftTmgRoomStore(options.roomStore || createInMemoryStarcraftTmgRoomStore());
   const now = typeof options.now === "function" ? options.now : () => new Date().toISOString();
+  const characterPresentationRequested = options.characterPresentationRuntime !== undefined
+    ? options.characterPresentationRuntime !== false
+    : options.enableCharacterPresentation === true
+      || options.characterReleaseChannel === "development_internal"
+      || options.characterReleaseChannel === "public";
+  const characterPresentationRuntime = !characterPresentationRequested
+    ? null
+    : options.characterPresentationRuntime
+      || createStarcraftTmgClientCharacterPresentationRuntimeV2({
+        releaseChannel: options.characterReleaseChannel,
+      });
+  const characterAssetGrantAuthority = characterPresentationRuntime
+    ? options.characterAssetGrantAuthority
+      || createStarcraftTmgCharacterAssetGrantAuthorityV1({
+        secret: options.characterAssetGrantSecret,
+        keyId: options.characterAssetGrantKeyId,
+        ttlMs: options.characterAssetGrantTtlMs,
+        createNonce: options.createCharacterAssetGrantNonce,
+        now,
+      })
+    : null;
   const checkpointInterval = Math.max(1, Number(options.checkpointInterval || 16));
   const inviteTtlMs = boundedTtl(options.inviteTtlMs, 15 * 60 * 1000, "inviteTtlMs");
   const recoveryTtlMs = boundedTtl(options.recoveryTtlMs, 10 * 60 * 1000, "recoveryTtlMs");
@@ -448,6 +483,24 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       throw Object.assign(new Error(`SeatGrant lacks ${capability}`), { code: "CAPABILITY_DENIED" });
     }
     return grant;
+  }
+
+  function projectCharacter(aggregate, state, grant = null, seatToken = "") {
+    const scopeHash = clientPrincipalScopeHash(aggregate.roomId, seatToken);
+    return characterPresentationRuntime.project(state, {
+      principalScopeHash: scopeHash,
+      authenticated: Boolean(grant),
+      updatedAt: aggregate.createdAtAudit,
+      ...(grant && characterPresentationRuntime.releaseChannel === "development_internal" ? {
+        issueAssetDelivery: (fields) => characterAssetGrantAuthority.issue({
+          ...fields,
+          roomId: aggregate.roomId,
+          seatGrantId: grant.grantId,
+          seatKey: grant.seatKey,
+          principalScopeHash: scopeHash,
+        }),
+      } : {}),
+    });
   }
 
   async function commitRejection(aggregate, grant, operation, rejected) {
@@ -534,8 +587,20 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       }, "public");
       const storeHealth = await roomStore.health();
       const createdAtAudit = now();
+      const characterSelections = {};
+      if (characterPresentationRuntime) {
+        for (const spec of plan) {
+          if (!characterSelections[spec.seatKey]) {
+            characterSelections[spec.seatKey] = characterPresentationRuntime.createInitialState({
+              updatedAt: createdAtAudit,
+            });
+          }
+        }
+      }
       const aggregate = {
-        schemaVersion: `${STARCRAFT_TMG_ROOM_RUNTIME_VERSION}.aggregate`,
+        schemaVersion: characterPresentationRuntime
+          ? `${STARCRAFT_TMG_ROOM_CHARACTER_EXTENSION_VERSION}.aggregate`
+          : `${STARCRAFT_TMG_ROOM_RUNTIME_VERSION}.aggregate`,
         roomId,
         gameId: envelope.gameId,
         title: String(input.title || "StarCraft TMG authoritative room"),
@@ -558,6 +623,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
         confirmations: {},
         idempotency: {},
         traces: [],
+        ...(characterPresentationRuntime ? { characterSelections } : {}),
         durability: storeHealth.durability,
         rulesRuntimeBinding: clone(envelope.matchBinding.rulesRuntimeBinding),
         productionReady: Boolean(
@@ -1324,6 +1390,212 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     return authorityEngine.readHistoricalRules(aggregate.envelope.matchBinding);
   }
 
+  async function readCharacterPresentation(input = {}) {
+    const aggregate = await load(input.roomId);
+    if (!aggregate) return rejection("ROOM_NOT_FOUND", { roomId: input.roomId || "" });
+    if (!characterPresentationRuntime) return rejection("CHARACTER_PRESENTATION_UNAVAILABLE");
+    if (aggregate.schemaVersion !== `${STARCRAFT_TMG_ROOM_CHARACTER_EXTENSION_VERSION}.aggregate`
+      || !object(aggregate.characterSelections)) {
+      return rejection("CHARACTER_PRESENTATION_AGGREGATE_VERSION_MISMATCH");
+    }
+    let grant = null;
+    if (input.seatToken) {
+      try {
+        grant = authenticate(aggregate, input.seatToken, "read_room");
+      } catch (error) {
+        return rejection(error.code, { message: error.message });
+      }
+    }
+    const state = grant ? aggregate.characterSelections[grant.seatKey] : null;
+    if (grant && !state) return rejection("CHARACTER_PRESENTATION_STATE_MISSING");
+    try {
+      return deepFreeze({
+        ok: true,
+        schemaVersion: "starcraft_tmg_character_presentation_response_v2",
+        projection: projectCharacter(aggregate, state, grant, input.seatToken),
+        trainingTruth: false,
+      });
+    } catch (error) {
+      return rejection(error.code || "CHARACTER_PRESENTATION_FAILED", {
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  async function updateCharacterSelection(input, operation) {
+    const aggregate = await load(input.roomId);
+    if (!aggregate) return rejection("ROOM_NOT_FOUND", { roomId: input.roomId || "" });
+    if (!characterPresentationRuntime) return rejection("CHARACTER_PRESENTATION_UNAVAILABLE");
+    if (aggregate.schemaVersion !== `${STARCRAFT_TMG_ROOM_CHARACTER_EXTENSION_VERSION}.aggregate`
+      || !object(aggregate.characterSelections)) {
+      return rejection("CHARACTER_PRESENTATION_AGGREGATE_VERSION_MISMATCH");
+    }
+    let grant;
+    try {
+      grant = authenticate(aggregate, input.seatToken, "read_room");
+    } catch (error) {
+      return rejection(error.code, { message: error.message });
+    }
+    if (grant.principalType !== "human") {
+      return rejection("CHARACTER_SELECTION_HUMAN_PRINCIPAL_REQUIRED");
+    }
+    const state = aggregate.characterSelections[grant.seatKey];
+    if (!state) return rejection("CHARACTER_PRESENTATION_STATE_MISSING");
+    if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0) {
+      return rejection("REVISION_INVALID", { field: "expectedRevision" });
+    }
+    const principalScopeHash = clientPrincipalScopeHash(aggregate.roomId, input.seatToken);
+    const requestCore = {
+      schemaVersion: "starcraft_tmg_character_selection_request_binding_v1",
+      roomId: aggregate.roomId,
+      principalScopeHash,
+      operation,
+      expectedRevision: input.expectedRevision,
+      previousStateHash: state.stateHash,
+      requestedPersonaWorldbookId: operation === "select_persona"
+        ? String(input.personaWorldbookId || "")
+        : null,
+      enabled: operation === "set_spoiler_access" ? input.enabled === true : null,
+    };
+    const requestBinding = {
+      ...requestCore,
+      requestHash: hashStarcraftTmgContract(requestCore),
+    };
+    const occurredAt = now();
+    const updated = operation === "select_persona"
+      ? characterPresentationRuntime.selectPersona(state, {
+        personaWorldbookId: input.personaWorldbookId,
+        expectedRevision: input.expectedRevision,
+        occurredAt,
+      })
+      : characterPresentationRuntime.setFullSpoilerAccess(state, {
+        enabled: input.enabled,
+        expectedRevision: input.expectedRevision,
+        occurredAt,
+      });
+    if (!updated.ok) return rejection(updated.reason, clone(updated));
+    const next = clone(aggregate);
+    next.characterSelections ||= {};
+    next.characterSelections[grant.seatKey] = clone(updated.state);
+    next.roomRevision += 1;
+    next.privateJournalSequence += 1;
+    next.updatedAtAudit = occurredAt;
+    try {
+      await roomStore.commit(aggregate.roomId, {
+        roomRevision: aggregate.roomRevision,
+        stateRevision: aggregate.stateRevision,
+      }, {
+        nextAggregate: next,
+        privateEvents: [journalEvent("character_selection_updated", {
+          operation,
+          actorGrantId: grant.grantId,
+          seatKey: grant.seatKey,
+          previousStateHash: state.stateHash,
+          nextStateHash: updated.state.stateHash,
+          selectorEventReceiptHash: updated.eventReceipt.receiptHash,
+        }, `actor:${grant.grantId}|referee`)],
+        publicEvents: [],
+        recoveryUpdates: [],
+      });
+      const transitionCore = {
+        schemaVersion: "starcraft_tmg_character_selection_transition_v1",
+        previousRevision: state.revision,
+        previousStateHash: state.stateHash,
+        nextRevision: updated.state.revision,
+        nextStateHash: updated.state.stateHash,
+        selectorEventReceiptHash: updated.eventReceipt.receiptHash,
+        selectorEvent: operation === "select_persona"
+          ? {
+            type: "select_persona",
+            personaWorldbookId: String(input.personaWorldbookId || ""),
+            expectedRevision: input.expectedRevision,
+            occurredAt,
+          }
+          : {
+            type: "set_ceilings",
+            spoilerCeilingRank: input.enabled === true ? 80 : 60,
+            knowledgeCeilingRank: input.enabled === true ? 80 : 60,
+            expectedRevision: input.expectedRevision,
+            occurredAt,
+          },
+        ceilingPolicy: operation === "set_spoiler_access"
+          ? (input.enabled === true ? "full" : "default")
+          : null,
+      };
+      const transition = {
+        ...transitionCore,
+        transitionHash: hashStarcraftTmgContract(transitionCore),
+      };
+      const responseCore = {
+        ok: true,
+        schemaVersion: "starcraft_tmg_character_selection_response_v3",
+        operation,
+        requestBinding,
+        transition,
+        projection: projectCharacter(next, updated.state, grant, input.seatToken),
+        eventReceipt: updated.eventReceipt,
+        room: roomSummary(next),
+        trainingTruth: false,
+      };
+      return deepFreeze({
+        ...responseCore,
+        responseHash: hashStarcraftTmgContract(responseCore),
+      });
+    } catch (error) {
+      return rejection(error.code || "ROOM_COMMIT_FAILED", {
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  async function selectCharacterPersona(input = {}) {
+    return updateCharacterSelection(input, "select_persona");
+  }
+
+  async function setCharacterSpoilerAccess(input = {}) {
+    if (typeof input.enabled !== "boolean") return rejection("CHARACTER_SPOILER_ACCESS_INVALID");
+    return updateCharacterSelection(input, "set_spoiler_access");
+  }
+
+  async function readCharacterAsset(input = {}) {
+    if (!characterPresentationRuntime) return rejection("CHARACTER_PRESENTATION_UNAVAILABLE");
+    if (!characterAssetGrantAuthority) return rejection("CHARACTER_ASSET_NOT_RELEASED");
+    const verified = characterAssetGrantAuthority.verify({
+      grantToken: input.grantToken,
+      contentHash: input.contentHash,
+    });
+    if (!verified.ok) return rejection(verified.reason);
+    const payload = verified.payload;
+    const aggregate = await load(payload.roomId);
+    if (!aggregate) return rejection("CHARACTER_ASSET_GRANT_INVALID");
+    if (aggregate.schemaVersion !== `${STARCRAFT_TMG_ROOM_CHARACTER_EXTENSION_VERSION}.aggregate`
+      || !object(aggregate.characterSelections)) {
+      return rejection("CHARACTER_ASSET_GRANT_SCOPE_MISMATCH");
+    }
+    const grant = aggregate.grants?.[payload.seatGrantId];
+    const state = aggregate.characterSelections?.[payload.seatKey];
+    if (!grant
+      || grant.revoked === true
+      || grant.seatKey !== payload.seatKey
+      || !grant.authority?.capabilities?.includes("read_room")
+      || !state
+      || state.stateHash !== payload.selectorStateHash
+      || state.revision !== payload.selectorRevision) {
+      return rejection("CHARACTER_ASSET_GRANT_SCOPE_MISMATCH");
+    }
+    return characterPresentationRuntime.resolveAsset({
+      contentHash: input.contentHash,
+      state,
+      manifestHash: payload.manifestHash,
+      rightsDecisionHash: payload.rightsDecisionHash,
+      characterPackageHash: payload.characterPackageHash,
+      visualBindingHash: payload.visualBindingHash,
+      selectorStateHash: payload.selectorStateHash,
+      selectorRevision: payload.selectorRevision,
+      selectedPersonaWorldbookId: payload.selectedPersonaWorldbookId,
+    });
+  }
+
   async function health() {
     const store = await roomStore.health();
     return deepFreeze({
@@ -1352,6 +1624,12 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     applyAction,
     replayRoom,
     readHistoricalRules,
+    ...(characterPresentationRuntime ? {
+      readCharacterPresentation,
+      selectCharacterPersona,
+      setCharacterSpoilerAccess,
+      readCharacterAsset,
+    } : {}),
     health,
     roomStore,
   });

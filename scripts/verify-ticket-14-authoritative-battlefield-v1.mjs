@@ -87,7 +87,7 @@ check(
 check(
   "expo_match_mounts_the_authoritative_workspace_without_replacing_room_access",
   sources.match.includes("<AuthoritativeBattleWorkspace />")
-    && sources.match.includes("Project D Level-3 · Ticket 14 / Slice 132")
+    && sources.match.includes("Project D Level-3 · Ticket 14 / Slice")
     && sources.match.includes("issueAccess")
     && sources.match.includes("claimControl"),
 );

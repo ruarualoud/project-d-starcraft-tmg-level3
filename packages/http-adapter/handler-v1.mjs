@@ -1,12 +1,17 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { readFile, realpath } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createStarcraftTmgRoomRuntime } from "../room-runtime/in-memory-room-v1.mjs";
 
 export const STARCRAFT_TMG_LEVEL3_HTTP_VERSION = "starcraft_tmg_level3_http_v2";
 export const STARCRAFT_TMG_LEVEL3_API_PREFIX = "/starcraft-tmg-level3/api/v1";
+export const STARCRAFT_TMG_LEVEL3_CHARACTER_ASSET_PREFIX =
+  "/starcraft-tmg-level3/assets/v1/character";
 export const STARCRAFT_TMG_LEVEL3_MAX_BODY_BYTES = 256 * 1024;
 const BEARER_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
 
-const ENDPOINTS = Object.freeze([
+const BASE_ENDPOINTS = Object.freeze([
   "GET /starcraft-tmg-level3/api/v1/health",
   "GET /starcraft-tmg-level3/api/v1/metadata",
   "POST /starcraft-tmg-level3/api/v1/rooms",
@@ -24,6 +29,12 @@ const ENDPOINTS = Object.freeze([
   "GET /starcraft-tmg-level3/api/v1/rooms/:roomId/replay",
   "GET /starcraft-tmg-level3/api/v1/rooms/:roomId/historical-rules",
 ]);
+const CHARACTER_ENDPOINTS = Object.freeze([
+  "GET /starcraft-tmg-level3/api/v1/rooms/:roomId/character-presentation",
+  "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/character-persona",
+  "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/character-spoiler-access",
+  "GET /starcraft-tmg-level3/assets/v1/character/:contentHash",
+]);
 
 function valueFromQuery(query, key, fallback = undefined) {
   if (query && typeof query.get === "function") return query.get(key) ?? fallback;
@@ -32,6 +43,12 @@ function valueFromQuery(query, key, fallback = undefined) {
 
 function booleanFromQuery(query, key) {
   return valueFromQuery(query, key, "false") === "true";
+}
+
+function queryEntries(query) {
+  if (query && typeof query.entries === "function") return [...query.entries()];
+  return Object.entries(query || {}).flatMap(([key, value]) =>
+    Array.isArray(value) ? value.map((entry) => [key, entry]) : [[key, value]]);
 }
 
 function headerValue(headers, key) {
@@ -80,6 +97,7 @@ function statusFor(result) {
     "INVITED_SEAT_UNAVAILABLE",
     "INVITE_ALREADY_USED",
     "RECOVERY_TOKEN_ALREADY_USED",
+    "stale_selector_revision",
   ].includes(result.reason)) return 409;
   if (["INVITE_EXPIRED", "RECOVERY_TOKEN_EXPIRED"].includes(result.reason)) return 410;
   if (result.reason === "PAYLOAD_TOO_LARGE") return 413;
@@ -109,6 +127,18 @@ function unexpectedBodyFields(body, allowed) {
 
 export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
   const runtime = options.roomRuntime || createStarcraftTmgRoomRuntime(options.roomRuntimeOptions);
+  const characterPresentationEnabled = typeof runtime.readCharacterPresentation === "function"
+    && typeof runtime.selectCharacterPersona === "function"
+    && typeof runtime.setCharacterSpoilerAccess === "function"
+    && typeof runtime.readCharacterAsset === "function";
+  const endpoints = Object.freeze([
+    ...BASE_ENDPOINTS,
+    ...(characterPresentationEnabled ? CHARACTER_ENDPOINTS : []),
+  ]);
+  const assetRoot = path.resolve(options.assetRoot || path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../..",
+  ));
   const initialStateFactory = typeof options.initialStateFactory === "function" ? options.initialStateFactory : null;
   const createRoomId = typeof options.createRoomId === "function"
     ? options.createRoomId
@@ -119,6 +149,66 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
     const pathname = String(input.pathname || "");
     const body = input.body && typeof input.body === "object" ? input.body : {};
     const query = input.query || {};
+    const assetMatch = pathname.match(/^\/starcraft-tmg-level3\/assets\/v1\/character\/([a-f0-9]{64})$/u);
+    if (assetMatch) {
+      if (!characterPresentationEnabled) {
+        return failure(404, "unknown", "NOT_FOUND");
+      }
+      if (method !== "GET") return failure(405, "character-asset", "METHOD_NOT_ALLOWED");
+      const entries = queryEntries(query);
+      if (entries.length !== 1 || entries[0][0] !== "grant"
+        || typeof entries[0][1] !== "string" || !entries[0][1]) {
+        return failure(401, "character-asset", "CHARACTER_ASSET_GRANT_REQUIRED");
+      }
+      const descriptor = await runtime.readCharacterAsset({
+        contentHash: assetMatch[1],
+        grantToken: entries[0][1],
+      });
+      if (!descriptor.ok) {
+        return failure(
+          403,
+          "character-asset",
+          "CHARACTER_ASSET_ACCESS_DENIED",
+        );
+      }
+      const characterRoot = path.join(assetRoot, "assets", "characters");
+      const filename = path.resolve(assetRoot, descriptor.outputPath);
+      if (!filename.startsWith(`${characterRoot}${path.sep}`)) {
+        return failure(403, "character-asset", "CHARACTER_ASSET_PATH_REJECTED");
+      }
+      try {
+        const [realCharacterRoot, realFilename] = await Promise.all([
+          realpath(characterRoot),
+          realpath(filename),
+        ]);
+        if (!realFilename.startsWith(`${realCharacterRoot}${path.sep}`)) {
+          return failure(403, "character-asset", "CHARACTER_ASSET_PATH_REJECTED");
+        }
+        const body = await readFile(realFilename);
+        const observedHash = createHash("sha256").update(body).digest("hex");
+        if (observedHash !== descriptor.contentHash
+          || descriptor.mimeType !== "image/png"
+          || body.byteLength !== descriptor.byteLength) {
+          return failure(409, "character-asset", "CHARACTER_ASSET_INTEGRITY_FAILED");
+        }
+        return {
+          status: 200,
+          headers: {
+            "content-type": "image/png",
+            "content-length": String(body.byteLength),
+            "cache-control": "private, no-store, max-age=0",
+            pragma: "no-cache",
+            "referrer-policy": "no-referrer",
+            "x-content-type-options": "nosniff",
+            "x-content-sha256": observedHash,
+          },
+          body,
+          binary: true,
+        };
+      } catch {
+        return failure(404, "character-asset", "CHARACTER_ASSET_NOT_FOUND");
+      }
+    }
     const endpoint = pathname.startsWith(STARCRAFT_TMG_LEVEL3_API_PREFIX)
       ? pathname.slice(STARCRAFT_TMG_LEVEL3_API_PREFIX.length).replace(/^\/+/, "") || "health"
       : "unknown";
@@ -134,7 +224,7 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
       return response(200, endpoint, {
         ok: true,
         authoritySequence: ["createEnvelope", "legalSpace", "preview", "confirm", "apply", "replay"],
-        endpoints: ENDPOINTS,
+        endpoints,
         maxBodyBytes: STARCRAFT_TMG_LEVEL3_MAX_BODY_BYTES,
         roomStoreContract: health.store?.atomicCasContract,
         serverOwnedFields: ["roomId", "initialState", "sideKey", "roleMode", "MatchBinding", "SeatGrant", "inviteSeat"],
@@ -192,14 +282,14 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
       });
     }
 
-    const roomMatch = endpoint.match(/^rooms\/([^/]+)(?:\/(join|invites|invite-exchange|recovery-tickets|recovery-exchange|legal-space|preview|confirm|control-lease|apply|replay|historical-rules))?$/);
+    const roomMatch = endpoint.match(/^rooms\/([^/]+)(?:\/(join|invites|invite-exchange|recovery-tickets|recovery-exchange|legal-space|preview|confirm|control-lease|apply|replay|historical-rules|character-presentation|character-persona|character-spoiler-access))?$/);
     if (!roomMatch) return failure(404, endpoint, "NOT_FOUND");
     const roomId = decodeRoomId(roomMatch[1]);
     if (!roomId) return failure(400, endpoint, "INVALID_ROOM_ID");
     const operation = roomMatch[2] || "projection";
     const authorizationHeader = headerValue(input.headers, "authorization");
     const seatToken = bearerToken(input.headers);
-    if (["projection", "replay"].includes(operation)
+    if (["projection", "replay", "character-presentation"].includes(operation)
       && authorizationHeader
       && !seatToken) {
       return failure(401, endpoint, "AUTHENTICATION_INVALID");
@@ -277,6 +367,38 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
       result = await runtime.replayRoom({ roomId, seatToken });
     } else if (operation === "historical-rules" && method === "GET") {
       result = await runtime.readHistoricalRules({ roomId });
+    } else if (operation === "character-presentation" && method === "GET") {
+      if (!characterPresentationEnabled) {
+        return failure(404, endpoint, "CHARACTER_PRESENTATION_EXTENSION_NOT_ENABLED");
+      }
+      result = await runtime.readCharacterPresentation({ roomId, seatToken });
+    } else if (operation === "character-persona" && method === "POST") {
+      if (!characterPresentationEnabled) {
+        return failure(404, endpoint, "CHARACTER_PRESENTATION_EXTENSION_NOT_ENABLED");
+      }
+      const rejectedFields = unexpectedBodyFields(body, [
+        "personaWorldbookId",
+        "expectedRevision",
+      ]);
+      if (rejectedFields.length) return failure(400, endpoint, "CLIENT_AUTHORITY_FIELD_REJECTED", { rejectedFields });
+      result = await runtime.selectCharacterPersona({
+        roomId,
+        seatToken,
+        personaWorldbookId: body.personaWorldbookId,
+        expectedRevision: body.expectedRevision,
+      });
+    } else if (operation === "character-spoiler-access" && method === "POST") {
+      if (!characterPresentationEnabled) {
+        return failure(404, endpoint, "CHARACTER_PRESENTATION_EXTENSION_NOT_ENABLED");
+      }
+      const rejectedFields = unexpectedBodyFields(body, ["enabled", "expectedRevision"]);
+      if (rejectedFields.length) return failure(400, endpoint, "CLIENT_AUTHORITY_FIELD_REJECTED", { rejectedFields });
+      result = await runtime.setCharacterSpoilerAccess({
+        roomId,
+        seatToken,
+        enabled: body.enabled,
+        expectedRevision: body.expectedRevision,
+      });
     } else {
       return failure(405, endpoint, "METHOD_NOT_ALLOWED");
     }

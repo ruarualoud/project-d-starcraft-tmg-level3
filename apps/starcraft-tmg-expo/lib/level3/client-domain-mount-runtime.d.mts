@@ -1,3 +1,5 @@
+import type { StarcraftTmgCharacterProjection } from "./character-presentation-mount-runtime.mjs";
+
 export interface StarcraftTmgClientControlView {
   schemaVersion: string;
   status: "unclaimed" | "claimed" | "fenced" | "cleared";
@@ -15,6 +17,37 @@ export interface StarcraftTmgClientView {
   locale: string | null;
   lifecycle: { schemaVersion: string; online: boolean; visibility: string };
   roomProjection: Record<string, any> | null;
+  characterPresentation: StarcraftTmgCharacterProjection | null;
+  characterOfflineSnapshot: {
+    schemaVersion: "starcraft_tmg_client_character_offline_snapshot_v1";
+    releaseChannel: "development_internal" | "public";
+    fallbackLabel: string | null;
+    selectedPersona: {
+      worldbookId: string;
+      title: string;
+      personaState: string;
+      timeline: { start: string; end: string };
+      neutralFrame: {
+        frameId: string;
+        role: "neutral";
+        contentHash: string;
+        width: number;
+        height: number;
+        mimeType: "image/png";
+      };
+    } | null;
+    readOnly: true;
+    snapshotHash: string;
+    trainingTruth: false;
+  } | null;
+  characterStatus: {
+    schemaVersion: "starcraft_tmg_client_character_status_v2";
+    status: string;
+    rejectionCode: string | null;
+    lastSynchronizedAt: string | null;
+    readOnly: boolean;
+    trainingTruth: false;
+  };
   legalSpace: Record<string, any> | null;
   pendingPreview: Record<string, any> | null;
   lastReceipt: Record<string, any> | null;
@@ -48,7 +81,9 @@ export type StarcraftTmgClientIntent =
   | { type: "issue_invite" }
   | { type: "issue_recovery" }
   | { type: "read_replay" }
-  | { type: "revalidate_authority" };
+  | { type: "revalidate_authority" }
+  | { type: "select_character_persona"; personaWorldbookId: string }
+  | { type: "set_character_spoiler_access"; enabled: boolean };
 
 export interface StarcraftTmgClientResult {
   ok: boolean;
@@ -138,6 +173,7 @@ export function createStarcraftTmgExpoClientRuntime(options: {
   projectionNamespace?: string;
   maxProjectionBytes?: number;
   allowHeadlessFallback?: boolean;
+  enableCharacterPresentation?: boolean;
   now?: () => string;
   createId?: (prefix: string) => string;
 }): StarcraftTmgExpoClientRuntime;

@@ -9,8 +9,12 @@ import {
   isExactStarcraftTmgViewerStateShapeV3,
   STARCRAFT_TMG_VIEWER_PROJECTION_V3_TOP_LEVEL_KEYS,
 } from "./viewer-projection-v3.mjs";
+import { assertStarcraftTmgClientCharacterProjectionV2 } from
+  "./character-presentation-projection-v2.mjs";
 
 export const STARCRAFT_TMG_CLIENT_DOMAIN_VERSION = "starcraft_tmg_client_domain_v1";
+export const STARCRAFT_TMG_CLIENT_CHARACTER_EXTENSION_VERSION =
+  "starcraft_tmg_client_domain_v1.character_presentation_v2";
 export const STARCRAFT_TMG_CLIENT_DOMAIN_INTERFACE = Object.freeze([
   "bootstrap",
   "read",
@@ -31,7 +35,17 @@ const INTENT_KEYS = Object.freeze({
   issue_invite: ["type"],
   issue_recovery: ["type"],
   read_replay: ["type"],
+  select_character_persona: ["type", "personaWorldbookId"],
+  set_character_spoiler_access: ["type", "enabled"],
 });
+const CHARACTER_INTENT_TYPES = new Set([
+  "select_character_persona",
+  "set_character_spoiler_access",
+]);
+const CHARACTER_SELECTOR_RECEIPT_VERSION =
+  "starcraft_tmg_character_persona_selector_v1.event-receipt";
+const CHARACTER_DEFAULT_CEILING_RANK = 60;
+const CHARACTER_FULL_CEILING_RANK = 80;
 const FORBIDDEN_INPUT_KEYS = new Set([
   "state",
   "gamestate",
@@ -64,6 +78,10 @@ const FORBIDDEN_INPUT_KEYS = new Set([
   "ttlms",
 ]);
 const RECOVERABLE_TRANSPORT_CODES = new Set(["NETWORK_UNAVAILABLE", "TRANSPORT_TIMEOUT"]);
+const RETAIN_CHARACTER_SNAPSHOT_CODES = new Set([
+  ...RECOVERABLE_TRANSPORT_CODES,
+  "CHARACTER_TEMPORARILY_UNAVAILABLE",
+]);
 const AUTHENTICATION_CODES = new Set(["AUTHENTICATION_REQUIRED", "SEAT_GRANT_INVALID"]);
 const ACCESS_SECRET_KEYS = new Set([
   "token",
@@ -941,9 +959,11 @@ function validateBootstrap(input) {
   return normalized;
 }
 
-function validateIntent(input) {
+function validateIntent(input, characterPresentationEnabled = false) {
   assertNoAuthorityFields(input);
-  if (!object(input) || !INTENT_KEYS[input.type]) {
+  if (!object(input)
+    || !INTENT_KEYS[input.type]
+    || (!characterPresentationEnabled && CHARACTER_INTENT_TYPES.has(input.type))) {
     throw Object.assign(new Error(`unsupported client intent: ${input?.type || ""}`), { code: "CLIENT_INTENT_UNSUPPORTED" });
   }
   assertExactKeys(input, INTENT_KEYS[input.type], "intent");
@@ -955,6 +975,20 @@ function validateIntent(input) {
     intent.parameters = clone(input.parameters);
   }
   if (input.type === "confirm_and_apply_preview") intent.previewId = nonEmpty(input.previewId, "intent.previewId");
+  if (input.type === "select_character_persona") {
+    intent.personaWorldbookId = nonEmpty(
+      input.personaWorldbookId,
+      "intent.personaWorldbookId",
+    );
+  }
+  if (input.type === "set_character_spoiler_access") {
+    if (typeof input.enabled !== "boolean") {
+      throw Object.assign(new Error("intent.enabled must be boolean"), {
+        code: "CLIENT_INPUT_INVALID",
+      });
+    }
+    intent.enabled = input.enabled;
+  }
   assertBoundedJson(intent);
   return intent;
 }
@@ -1295,6 +1329,167 @@ function unclaimedControl(status = "unclaimed") {
   };
 }
 
+function characterStatus(status = "unbound", details = {}) {
+  return {
+    schemaVersion: "starcraft_tmg_client_character_status_v2",
+    status,
+    rejectionCode: details.rejectionCode || null,
+    lastSynchronizedAt: details.lastSynchronizedAt || null,
+    readOnly: details.readOnly === true,
+    trainingTruth: false,
+  };
+}
+
+function validateCharacterSelectionResponseV3(result, context) {
+  const responseKeys = [
+    "ok",
+    "schemaVersion",
+    "operation",
+    "requestBinding",
+    "transition",
+    "projection",
+    "eventReceipt",
+    "room",
+    "trainingTruth",
+    "responseHash",
+  ];
+  const requestKeys = [
+    "schemaVersion",
+    "roomId",
+    "principalScopeHash",
+    "operation",
+    "expectedRevision",
+    "previousStateHash",
+    "requestedPersonaWorldbookId",
+    "enabled",
+    "requestHash",
+  ];
+  const transitionKeys = [
+    "schemaVersion",
+    "previousRevision",
+    "previousStateHash",
+    "nextRevision",
+    "nextStateHash",
+    "selectorEventReceiptHash",
+    "selectorEvent",
+    "ceilingPolicy",
+    "transitionHash",
+  ];
+  const receiptKeys = [
+    "schemaVersion",
+    "previousStateHash",
+    "nextStateHash",
+    "eventHash",
+    "rulesAuthority",
+    "roomMutationAuthority",
+    "trainingTruth",
+    "receiptHash",
+  ];
+  if (!hasExactKeys(result, responseKeys)
+    || result.ok !== true
+    || result.schemaVersion !== "starcraft_tmg_character_selection_response_v3"
+    || result.operation !== context.operation
+    || result.trainingTruth !== false) return null;
+  const { responseHash, ...responseCore } = result;
+  if (!validContractHash(responseHash)
+    || responseHash !== hashStarcraftTmgClientContract(responseCore)) return null;
+  const requestBinding = result.requestBinding;
+  if (!hasExactKeys(requestBinding, requestKeys)) return null;
+  const { requestHash, ...requestCore } = requestBinding;
+  const personaIntent = context.operation === "select_persona";
+  if (requestBinding.schemaVersion !== "starcraft_tmg_character_selection_request_binding_v1"
+    || requestBinding.roomId !== context.roomId
+    || requestBinding.principalScopeHash !== context.principalScopeHash
+    || requestBinding.operation !== context.operation
+    || requestBinding.expectedRevision !== context.expectedRevision
+    || requestBinding.previousStateHash !== context.previousStateHash
+    || requestBinding.requestedPersonaWorldbookId !== (personaIntent ? context.personaWorldbookId : null)
+    || requestBinding.enabled !== (personaIntent ? null : context.enabled)
+    || requestHash !== hashStarcraftTmgClientContract(requestCore)) return null;
+  const transition = result.transition;
+  if (!hasExactKeys(transition, transitionKeys)) return null;
+  const { transitionHash, ...transitionCore } = transition;
+  if (transition.schemaVersion !== "starcraft_tmg_character_selection_transition_v1"
+    || transition.previousRevision !== context.expectedRevision
+    || transition.previousStateHash !== context.previousStateHash
+    || transition.nextRevision !== context.expectedRevision + 1
+    || !validContractHash(transition.nextStateHash)
+    || !validContractHash(transition.selectorEventReceiptHash)
+    || transition.ceilingPolicy !== (personaIntent ? null : (context.enabled ? "full" : "default"))
+    || transitionHash !== hashStarcraftTmgClientContract(transitionCore)) return null;
+  const receipt = result.eventReceipt;
+  if (!hasExactKeys(receipt, receiptKeys)) return null;
+  const { receiptHash, ...receiptCore } = receipt;
+  const expectedSelectorEvent = personaIntent
+    ? {
+      type: "select_persona",
+      personaWorldbookId: context.personaWorldbookId,
+      expectedRevision: context.expectedRevision,
+      occurredAt: transition.selectorEvent?.occurredAt,
+    }
+    : {
+      type: "set_ceilings",
+      spoilerCeilingRank: context.enabled
+        ? CHARACTER_FULL_CEILING_RANK
+        : CHARACTER_DEFAULT_CEILING_RANK,
+      knowledgeCeilingRank: context.enabled
+        ? CHARACTER_FULL_CEILING_RANK
+        : CHARACTER_DEFAULT_CEILING_RANK,
+      expectedRevision: context.expectedRevision,
+      occurredAt: transition.selectorEvent?.occurredAt,
+    };
+  if (!hasExactKeys(transition.selectorEvent, Object.keys(expectedSelectorEvent))
+    || !Number.isFinite(Date.parse(String(transition.selectorEvent.occurredAt || "")))
+    || hashStarcraftTmgClientContract(transition.selectorEvent)
+      !== hashStarcraftTmgClientContract(expectedSelectorEvent)
+    || receipt.schemaVersion !== CHARACTER_SELECTOR_RECEIPT_VERSION
+    || receipt.previousStateHash !== context.previousStateHash
+    || receipt.nextStateHash !== transition.nextStateHash
+    || receipt.rulesAuthority !== "external_rules_service"
+    || receipt.roomMutationAuthority !== false
+    || receipt.trainingTruth !== false
+    || receipt.eventHash !== hashStarcraftTmgClientContract(expectedSelectorEvent)
+    || receiptHash !== hashStarcraftTmgClientContract(receiptCore)
+    || receiptHash !== transition.selectorEventReceiptHash) return null;
+  if (!object(result.room)
+    || result.room.roomId !== context.roomId
+    || !Number.isSafeInteger(result.room.roomRevision)
+    || result.room.roomRevision <= context.previousRoomRevision) return null;
+  let projection;
+  try {
+    projection = assertStarcraftTmgClientCharacterProjectionV2(
+      result.projection,
+      context.principalScopeHash,
+    );
+  } catch {
+    return null;
+  }
+  if (projection.releaseChannel !== "development_internal"
+    || projection.selector.revision !== transition.nextRevision
+    || projection.selector.stateHash !== transition.nextStateHash
+    || projection.bindings.selectorRevision !== transition.nextRevision
+    || projection.bindings.selectorStateHash !== transition.nextStateHash
+    || (personaIntent
+      && projection.selector.selectedPersonaWorldbookId !== context.personaWorldbookId)
+    || (!personaIntent && context.enabled === true
+      && projection.selector.fullCatalogueRevealed !== true)
+    || (!personaIntent && context.enabled === false
+      && projection.selector.fullCatalogueRevealed !== false)
+    || (!personaIntent
+      && projection.selector.spoilerCeilingRank !== (context.enabled
+        ? CHARACTER_FULL_CEILING_RANK
+        : CHARACTER_DEFAULT_CEILING_RANK))
+    || (!personaIntent
+      && projection.selector.knowledgeCeilingRank !== (context.enabled
+        ? CHARACTER_FULL_CEILING_RANK
+        : CHARACTER_DEFAULT_CEILING_RANK))
+    || (personaIntent
+      && (projection.selector.spoilerCeilingRank !== context.previousSpoilerCeilingRank
+        || projection.selector.knowledgeCeilingRank !== context.previousKnowledgeCeilingRank
+        || projection.selector.fullCatalogueRevealed !== context.previousFullCatalogueRevealed))) return null;
+  return { projection, transition, roomRevision: result.room.roomRevision };
+}
+
 function claimedControl(result, claimedAt) {
   return {
     schemaVersion: "starcraft_tmg_client_control_summary_v1",
@@ -1324,6 +1519,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
   const transport = assertStarcraftTmgAuthoritativeTransportPort(options.transport);
   const projectionStore = assertStarcraftTmgProjectionStorePort(options.projectionStore);
   const lifecycle = assertStarcraftTmgLifecyclePort(options.lifecycle);
+  const characterPresentationEnabled = options.enableCharacterPresentation === true;
   const now = typeof options.now === "function" ? options.now : () => new Date().toISOString();
   const createId = typeof options.createId === "function" ? options.createId : randomOperationalId;
   const clientSessionId = createId("sc-client-session");
@@ -1347,6 +1543,9 @@ export function createStarcraftTmgClientDomain(options = {}) {
     locale: null,
     lifecycle: clone(lifecycle.read()),
     roomProjection: null,
+    characterPresentation: null,
+    characterOfflineSnapshot: null,
+    characterStatus: characterStatus(),
     legalSpace: null,
     pendingPreview: null,
     lastReceipt: null,
@@ -1374,7 +1573,9 @@ export function createStarcraftTmgClientDomain(options = {}) {
 
   function buildView() {
     const core = {
-      schemaVersion: `${STARCRAFT_TMG_CLIENT_DOMAIN_VERSION}.view`,
+      schemaVersion: characterPresentationEnabled
+        ? `${STARCRAFT_TMG_CLIENT_CHARACTER_EXTENSION_VERSION}.view`
+        : `${STARCRAFT_TMG_CLIENT_DOMAIN_VERSION}.view`,
       clientRevision: internal.clientRevision,
       phase: internal.phase,
       locator: clone(internal.locator),
@@ -1382,6 +1583,11 @@ export function createStarcraftTmgClientDomain(options = {}) {
       locale: internal.locale,
       lifecycle: clone(internal.lifecycle),
       roomProjection: clone(internal.roomProjection),
+      ...(characterPresentationEnabled ? {
+        characterPresentation: clone(internal.characterPresentation),
+        characterOfflineSnapshot: clone(internal.characterOfflineSnapshot),
+        characterStatus: clone(internal.characterStatus),
+      } : {}),
       legalSpace: clone(internal.legalSpace),
       pendingPreview: clone(internal.pendingPreview),
       lastReceipt: clone(internal.lastReceipt),
@@ -1460,6 +1666,136 @@ export function createStarcraftTmgClientDomain(options = {}) {
     } catch {
       return "write_failed";
     }
+  }
+
+  function characterSnapshotCacheKey() {
+    return hashStarcraftTmgClientContract({
+      schemaVersion: "starcraft_tmg_client_character_snapshot_cache_key_v1",
+      roomId: binding.roomId,
+      principalScopeHash: binding.principalScopeHash,
+    });
+  }
+
+  function createCharacterOfflineSnapshot(projection) {
+    const development = projection.releaseChannel === "development_internal";
+    const selected = development
+      ? projection.selector.options.find((entry) => entry.kind === "persona" && entry.selected)
+      : null;
+    const core = {
+      schemaVersion: "starcraft_tmg_client_character_offline_snapshot_v1",
+      cacheKey: characterSnapshotCacheKey(),
+      roomId: binding.roomId,
+      principalScopeHash: binding.principalScopeHash,
+      releaseChannel: projection.releaseChannel,
+      fallbackLabel: development ? null : projection.fallback.label,
+      selectedPersona: selected ? {
+        worldbookId: selected.worldbookId,
+        title: selected.title,
+        personaState: selected.personaState,
+        timeline: clone(selected.timeline),
+        neutralFrame: clone(selected.thumbnailFrame),
+      } : null,
+      selectorState: development ? {
+        catalogueHash: projection.selector.catalogueHash,
+        stateHash: projection.selector.stateHash,
+        revision: projection.selector.revision,
+        spoilerCeilingRank: projection.selector.spoilerCeilingRank,
+        knowledgeCeilingRank: projection.selector.knowledgeCeilingRank,
+        fullCatalogueRevealed: projection.selector.fullCatalogueRevealed,
+      } : null,
+      rightsDecisionHash: projection.rights.rightsDecisionHash,
+      bindingHash: development ? projection.bindings.bindingHash : null,
+      savedAt: now(),
+      readOnly: true,
+      trainingTruth: false,
+    };
+    return deepFreeze({ ...core, snapshotHash: hashStarcraftTmgClientContract(core) });
+  }
+
+  function validCharacterOfflineSnapshot(record) {
+    const keys = [
+      "schemaVersion",
+      "cacheKey",
+      "roomId",
+      "principalScopeHash",
+      "releaseChannel",
+      "fallbackLabel",
+      "selectedPersona",
+      "selectorState",
+      "rightsDecisionHash",
+      "bindingHash",
+      "savedAt",
+      "readOnly",
+      "trainingTruth",
+      "snapshotHash",
+    ];
+    if (!hasExactKeys(record, keys)
+      || record.schemaVersion !== "starcraft_tmg_client_character_offline_snapshot_v1"
+      || record.cacheKey !== characterSnapshotCacheKey()
+      || record.roomId !== binding.roomId
+      || record.principalScopeHash !== binding.principalScopeHash
+      || !["development_internal", "public"].includes(record.releaseChannel)
+      || record.readOnly !== true
+      || record.trainingTruth !== false) return null;
+    const { snapshotHash, ...core } = record;
+    if (snapshotHash !== hashStarcraftTmgClientContract(core)
+      || !validContractHash(record.rightsDecisionHash)) return null;
+    if (record.releaseChannel === "public") {
+      return record.selectedPersona === null
+        && record.selectorState === null
+        && record.bindingHash === null
+        && record.fallbackLabel === "Project D Tactical Adjutant"
+        ? clone(record)
+        : null;
+    }
+    const selectedKeys = ["worldbookId", "title", "personaState", "timeline", "neutralFrame"];
+    const selectorKeys = [
+      "catalogueHash",
+      "stateHash",
+      "revision",
+      "spoilerCeilingRank",
+      "knowledgeCeilingRank",
+      "fullCatalogueRevealed",
+    ];
+    return hasExactKeys(record.selectedPersona, selectedKeys)
+      && hasExactKeys(record.selectedPersona.timeline, ["start", "end"])
+      && hasExactKeys(record.selectedPersona.neutralFrame, [
+        "frameId", "role", "contentHash", "width", "height", "mimeType",
+      ])
+      && hasExactKeys(record.selectorState, selectorKeys)
+      && record.selectedPersona.neutralFrame.role === "neutral"
+      && validContractHash(record.selectedPersona.neutralFrame.contentHash)
+      && validContractHash(record.selectorState.catalogueHash)
+      && validContractHash(record.selectorState.stateHash)
+      && validContractHash(record.bindingHash)
+      && Number.isSafeInteger(record.selectorState.revision)
+      && record.selectorState.revision >= 0
+      ? clone(record)
+      : null;
+  }
+
+  async function saveCharacterOfflineSnapshot(projection) {
+    const snapshot = createCharacterOfflineSnapshot(projection);
+    try {
+      await projectionStore.save(snapshot.cacheKey, snapshot);
+      return snapshot;
+    } catch {
+      return null;
+    }
+  }
+
+  async function loadCharacterOfflineSnapshot() {
+    try {
+      const record = await projectionStore.load(characterSnapshotCacheKey());
+      return record ? validCharacterOfflineSnapshot(record) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function removeCharacterOfflineSnapshot() {
+    if (!binding) return;
+    await projectionStore.remove(characterSnapshotCacheKey()).catch(() => {});
   }
 
   function containsSensitiveValue(value) {
@@ -1565,9 +1901,21 @@ export function createStarcraftTmgClientDomain(options = {}) {
     if (!cached.ok) {
       return rejection(cached.code, { transportCode, cacheAccepted: false }, "unavailable");
     }
+    const cachedCharacter = await loadCharacterOfflineSnapshot();
     const view = publish({
       phase: "offline_read_only",
       roomProjection: cached.projection,
+      characterOfflineSnapshot: cachedCharacter,
+      characterStatus: characterStatus(
+        internal.characterPresentation || cachedCharacter ? "offline_read_only" : "unavailable",
+        {
+          rejectionCode: internal.characterPresentation || cachedCharacter
+            ? null
+            : "CHARACTER_OFFLINE_CACHE_UNAVAILABLE",
+          lastSynchronizedAt: internal.characterStatus?.lastSynchronizedAt,
+          readOnly: true,
+        },
+      ),
       legalSpace: null,
       pendingPreview: null,
       rejection: {
@@ -1595,9 +1943,66 @@ export function createStarcraftTmgClientDomain(options = {}) {
     });
   }
 
+  async function fetchCharacterPresentation() {
+    if (!characterPresentationEnabled) {
+      return {
+        projection: null,
+        status: characterStatus("unavailable", {
+          rejectionCode: "CHARACTER_PRESENTATION_NOT_MOUNTED",
+          readOnly: true,
+        }),
+      };
+    }
+    try {
+      const result = await request("read_character_presentation");
+      if (!result?.ok) {
+        const purgeSnapshot = !RETAIN_CHARACTER_SNAPSHOT_CODES.has(result?.reason);
+        if (purgeSnapshot) await removeCharacterOfflineSnapshot();
+        return {
+          projection: null,
+          snapshotDisposition: purgeSnapshot ? "purge" : "retain",
+          status: characterStatus("unavailable", {
+            rejectionCode: result?.reason || "CHARACTER_PRESENTATION_REJECTED",
+            readOnly: true,
+          }),
+        };
+      }
+      const projection = assertStarcraftTmgClientCharacterProjectionV2(
+        result.projection,
+        binding.principalScopeHash,
+      );
+      return {
+        projection,
+        snapshotDisposition: "replace",
+        status: characterStatus(
+          projection.releaseChannel === "public" ? "public_fallback" : "ready",
+          {
+            lastSynchronizedAt: now(),
+            readOnly: projection.releaseChannel === "public",
+          },
+        ),
+      };
+    } catch (error) {
+      const code = error instanceof StarcraftTmgClientTransportError
+        ? error.code
+        : String(error?.code || "CHARACTER_PROJECTION_INVALID");
+      const purgeSnapshot = !RETAIN_CHARACTER_SNAPSHOT_CODES.has(code);
+      if (purgeSnapshot) await removeCharacterOfflineSnapshot();
+      return {
+        projection: null,
+        snapshotDisposition: purgeSnapshot ? "purge" : "retain",
+        status: characterStatus("unavailable", {
+          rejectionCode: code,
+          readOnly: true,
+        }),
+      };
+    }
+  }
+
   async function rejectAuthentication(code, details = {}) {
     const staleCacheKey = binding?.cacheKey || "";
     if (staleCacheKey) await projectionStore.remove(staleCacheKey).catch(() => {});
+    if (binding) await removeCharacterOfflineSnapshot();
     const rejectedCredential = bindingCredential;
     const scrubbedDetails = scrubCredentialMaterial(details, sensitiveValues);
     bindingCredential = "";
@@ -1631,6 +2036,12 @@ export function createStarcraftTmgClientDomain(options = {}) {
       phase: "authentication_required",
       principalScopeHash: binding?.principalScopeHash || null,
       roomProjection: null,
+      characterPresentation: null,
+      characterOfflineSnapshot: null,
+      characterStatus: characterStatus("unavailable", {
+        rejectionCode: String(code || "AUTHENTICATION_REQUIRED"),
+        readOnly: true,
+      }),
       legalSpace: null,
       pendingPreview: null,
       control: unclaimedControl("cleared"),
@@ -1663,6 +2074,12 @@ export function createStarcraftTmgClientDomain(options = {}) {
         return rejection(result?.reason || "PROJECTION_REQUEST_REJECTED", {}, internal.roomProjection ? "ready" : "blocked");
       }
       const projection = validateProjection(result.projection);
+      const character = await fetchCharacterPresentation();
+      const characterOfflineSnapshot = character.projection
+        ? await saveCharacterOfflineSnapshot(character.projection)
+        : character.snapshotDisposition === "retain"
+          ? internal.characterOfflineSnapshot || await loadCharacterOfflineSnapshot()
+          : null;
       let control = internal.control;
       if (controlLeaseReference) {
         const projectedFence = Number(projection.control?.currentLeaseFence);
@@ -1686,6 +2103,9 @@ export function createStarcraftTmgClientDomain(options = {}) {
       const view = publish({
         phase: "ready",
         roomProjection: projection,
+        characterPresentation: character.projection,
+        characterOfflineSnapshot,
+        characterStatus: character.status,
         control,
         legalSpace: null,
         pendingPreview: null,
@@ -2167,10 +2587,137 @@ export function createStarcraftTmgClientDomain(options = {}) {
     return rejection(code, { operation, ...safeErrorDetails(error, sensitiveValues) });
   }
 
+  async function updateCharacterPresentation(intent) {
+    const operationalError = ensureOperational();
+    if (operationalError) return rejection(operationalError);
+    const current = internal.characterPresentation;
+    if (!current
+      || current.releaseChannel !== "development_internal"
+      || current.capabilities?.selectPersona !== true) {
+      return rejection("CHARACTER_SELECTION_UNAVAILABLE");
+    }
+    const expectedRevision = current.selector?.revision;
+    if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
+      publish({
+        characterPresentation: null,
+        characterOfflineSnapshot: null,
+        characterStatus: characterStatus("unavailable", {
+          rejectionCode: "CHARACTER_PROJECTION_INVALID",
+          readOnly: true,
+        }),
+      });
+      return rejection("CHARACTER_PROJECTION_INVALID");
+    }
+    const spoilerIntent = intent.type === "set_character_spoiler_access";
+    const operation = spoilerIntent
+      ? "set_character_spoiler_access"
+      : "select_character_persona";
+    const payload = spoilerIntent
+      ? { enabled: intent.enabled, expectedRevision }
+      : { personaWorldbookId: intent.personaWorldbookId, expectedRevision };
+    const responseContext = {
+      operation: spoilerIntent ? "set_spoiler_access" : "select_persona",
+      roomId: binding.roomId,
+      principalScopeHash: binding.principalScopeHash,
+      expectedRevision,
+      previousStateHash: current.selector.stateHash,
+      previousRoomRevision: currentRoomRevision(),
+      previousSpoilerCeilingRank: current.selector.spoilerCeilingRank,
+      previousKnowledgeCeilingRank: current.selector.knowledgeCeilingRank,
+      previousFullCatalogueRevealed: current.selector.fullCatalogueRevealed,
+      personaWorldbookId: spoilerIntent ? null : intent.personaWorldbookId,
+      enabled: spoilerIntent ? intent.enabled : null,
+    };
+    if (spoilerIntent && intent.enabled === false) {
+      await removeCharacterOfflineSnapshot();
+    }
+    publish({
+      ...(spoilerIntent && intent.enabled === false
+        ? { characterPresentation: null }
+        : {}),
+      characterStatus: characterStatus("updating", {
+        lastSynchronizedAt: internal.characterStatus?.lastSynchronizedAt,
+      }),
+      rejection: null,
+    });
+    try {
+      const result = await request(operation, payload);
+      if (!result?.ok) {
+        if (result?.reason === "stale_selector_revision") {
+          await refreshProjection("character_selector_revision_conflict");
+        }
+        return rejection(result?.reason || "CHARACTER_SELECTION_REJECTED");
+      }
+      const validatedResponse = validateCharacterSelectionResponseV3(
+        result,
+        responseContext,
+      );
+      if (!validatedResponse) {
+        await removeCharacterOfflineSnapshot();
+        publish({
+          characterPresentation: null,
+          characterOfflineSnapshot: null,
+          characterStatus: characterStatus("unavailable", {
+            rejectionCode: "CHARACTER_SELECTION_RESPONSE_INVALID",
+            readOnly: true,
+          }),
+        });
+        return rejection("CHARACTER_SELECTION_RESPONSE_INVALID");
+      }
+      const refreshed = await refreshProjection("character_selection_applied");
+      const refreshedCharacter = internal.characterPresentation;
+      const refreshBound = refreshed.ok === true
+        && internal.roomProjection?.room?.roomRevision === validatedResponse.roomRevision
+        && refreshedCharacter?.releaseChannel === "development_internal"
+        && refreshedCharacter.selector.revision === validatedResponse.transition.nextRevision
+        && refreshedCharacter.selector.stateHash === validatedResponse.transition.nextStateHash
+        && refreshedCharacter.selector.selectedPersonaWorldbookId
+          === validatedResponse.projection.selector.selectedPersonaWorldbookId
+        && refreshedCharacter.bindings.bindingHash
+          === validatedResponse.projection.bindings.bindingHash;
+      if (!refreshBound) {
+        await removeCharacterOfflineSnapshot();
+        publish({
+          characterPresentation: null,
+          characterOfflineSnapshot: null,
+          characterStatus: characterStatus("unavailable", {
+            rejectionCode: "CHARACTER_SELECTION_READBACK_MISMATCH",
+            readOnly: true,
+          }),
+        });
+        return rejection("CHARACTER_SELECTION_READBACK_MISMATCH", {
+          refreshConfirmed: false,
+        });
+      }
+      return deepFreeze({
+        ok: true,
+        outcome: spoilerIntent
+          ? "character_spoiler_access_updated"
+          : "character_persona_selected",
+        refreshConfirmed: true,
+        view: read(),
+      });
+    } catch (error) {
+      if (String(error?.code || "") === "CHARACTER_PROJECTION_INVALID") {
+        await removeCharacterOfflineSnapshot();
+        publish({
+          characterPresentation: null,
+          characterOfflineSnapshot: null,
+          characterStatus: characterStatus("unavailable", {
+            rejectionCode: "CHARACTER_PROJECTION_INVALID",
+            readOnly: true,
+          }),
+        });
+        return rejection("CHARACTER_PROJECTION_INVALID");
+      }
+      return handleTransportFailure(error, operation, true);
+    }
+  }
+
   async function performDispatch(intentInput) {
     let intent;
     try {
-      intent = validateIntent(intentInput);
+      intent = validateIntent(intentInput, characterPresentationEnabled);
     } catch (error) {
       return rejection(error.code || "CLIENT_INPUT_INVALID", safeErrorDetails(error));
     }
@@ -2182,6 +2729,13 @@ export function createStarcraftTmgClientDomain(options = {}) {
     if (intent.type === "claim_control") return obtainControlLease({ force: true, refreshAfterClaim: true });
     if (intent.type === "issue_invite") return issueAccess("invite");
     if (intent.type === "issue_recovery") return issueAccess("recovery");
+    if (intent.type === "select_character_persona"
+      || intent.type === "set_character_spoiler_access") {
+      if (!characterPresentationEnabled) {
+        return rejection("CHARACTER_PRESENTATION_EXTENSION_NOT_ENABLED");
+      }
+      return updateCharacterPresentation(intent);
+    }
     return readReplay();
   }
 
@@ -2411,6 +2965,9 @@ export function createStarcraftTmgClientDomain(options = {}) {
       locale: normalized.locale,
       lifecycle: clone(lifecycle.read()),
       roomProjection: null,
+      characterPresentation: null,
+      characterOfflineSnapshot: null,
+      characterStatus: characterStatus("loading"),
       legalSpace: null,
       pendingPreview: null,
       lastReceipt: null,

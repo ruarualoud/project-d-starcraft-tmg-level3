@@ -1,7 +1,9 @@
 export const STARCRAFT_TMG_CLIENT_TRANSPORT_VERSION = "starcraft_tmg_client_transport_v1";
+export const STARCRAFT_TMG_CLIENT_CHARACTER_TRANSPORT_EXTENSION_VERSION =
+  "starcraft_tmg_client_transport_v1.character_presentation_v2";
 export const STARCRAFT_TMG_CLIENT_HTTP_API_PREFIX = "/starcraft-tmg-level3/api/v1";
 
-const OPERATIONS = new Set([
+const BASE_OPERATIONS = new Set([
   "read_room",
   "read_legal_space",
   "preview_action",
@@ -13,6 +15,11 @@ const OPERATIONS = new Set([
   "exchange_recovery",
   "apply_action",
   "read_replay",
+]);
+const CHARACTER_OPERATIONS = new Set([
+  "read_character_presentation",
+  "select_character_persona",
+  "set_character_spoiler_access",
 ]);
 
 export class StarcraftTmgClientTransportError extends Error {
@@ -30,11 +37,12 @@ function required(value, field) {
   return normalized;
 }
 
-function assertRequest(request) {
+function assertRequest(request, characterPresentationEnabled = false) {
   if (!request || typeof request !== "object" || Array.isArray(request)) {
     throw new StarcraftTmgClientTransportError("TRANSPORT_REQUEST_INVALID", "transport request must be an object");
   }
-  if (!OPERATIONS.has(request.operation)) {
+  if (!BASE_OPERATIONS.has(request.operation)
+    && !(characterPresentationEnabled && CHARACTER_OPERATIONS.has(request.operation))) {
     throw new StarcraftTmgClientTransportError("TRANSPORT_OPERATION_UNSUPPORTED", `unsupported operation: ${request.operation || ""}`);
   }
   required(request.roomId, "roomId");
@@ -49,8 +57,9 @@ export function assertStarcraftTmgAuthoritativeTransportPort(port) {
 export function createInMemoryStarcraftTmgAuthoritativeTransportAdapter(options = {}) {
   const runtime = options.roomRuntime;
   if (!runtime) throw new TypeError("roomRuntime is required");
+  const characterPresentationEnabled = options.enableCharacterPresentation === true;
   async function execute(input = {}) {
-    const request = assertRequest(input);
+    const request = assertRequest(input, characterPresentationEnabled);
     const shared = { roomId: request.roomId, seatToken: request.seatToken || "" };
     const payload = request.payload || {};
     if (request.operation === "read_room") return runtime.readRoom({ ...shared, ...payload });
@@ -68,6 +77,23 @@ export function createInMemoryStarcraftTmgAuthoritativeTransportAdapter(options 
     if (request.operation === "issue_recovery") return runtime.issueSeatRecovery({ ...shared, expectedRoomRevision: payload.expectedRoomRevision });
     if (request.operation === "exchange_recovery") return runtime.recoverSeat({ roomId: request.roomId, recoveryToken: payload.recoveryToken });
     if (request.operation === "apply_action") return runtime.applyAction({ ...shared, ...payload });
+    if (request.operation === "read_character_presentation") {
+      return runtime.readCharacterPresentation(shared);
+    }
+    if (request.operation === "select_character_persona") {
+      return runtime.selectCharacterPersona({
+        ...shared,
+        personaWorldbookId: payload.personaWorldbookId,
+        expectedRevision: payload.expectedRevision,
+      });
+    }
+    if (request.operation === "set_character_spoiler_access") {
+      return runtime.setCharacterSpoilerAccess({
+        ...shared,
+        enabled: payload.enabled,
+        expectedRevision: payload.expectedRevision,
+      });
+    }
     return runtime.replayRoom(shared);
   }
   return Object.freeze({ execute });
@@ -87,6 +113,9 @@ function endpointFor(request) {
     exchange_recovery: { method: "POST", path: `${room}/recovery-exchange` },
     apply_action: { method: "POST", path: `${room}/apply` },
     read_replay: { method: "GET", path: `${room}/replay` },
+    read_character_presentation: { method: "GET", path: `${room}/character-presentation` },
+    select_character_persona: { method: "POST", path: `${room}/character-persona` },
+    set_character_spoiler_access: { method: "POST", path: `${room}/character-spoiler-access` },
   }[request.operation];
 }
 
@@ -117,9 +146,10 @@ export function createHttpStarcraftTmgAuthoritativeTransportAdapter(options = {}
   const apiPrefix = String(options.apiPrefix || STARCRAFT_TMG_CLIENT_HTTP_API_PREFIX).replace(/\/+$/, "");
   const maxResponseBytes = Math.max(1024, Number(options.maxResponseBytes || 4 * 1024 * 1024));
   const timeoutMs = Math.max(250, Number(options.timeoutMs || 15_000));
+  const characterPresentationEnabled = options.enableCharacterPresentation === true;
 
   async function execute(input = {}) {
-    const request = assertRequest(input);
+    const request = assertRequest(input, characterPresentationEnabled);
     const endpoint = endpointFor(request);
     const headers = { accept: "application/json" };
     if (request.seatToken) headers.authorization = `Bearer ${request.seatToken}`;
