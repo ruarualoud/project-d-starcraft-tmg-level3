@@ -479,3 +479,22 @@ alter rules geometry. The slice advances to `883/29/114`, executor `77/77`,
 action schema v46 and leaves three slices / 29 actionable atoms. Focused
 `57/57`, Slice107 regression `42/42` and runtime aggregate `10/10` pass.
 Source refresh and every Skill/DSH/MuZero/training promotion remain off.
+
+Ticket 12 Slice 112 replaces the runtime source/localization candidate with a
+strict v2 projection of the already frozen Command Center `71/69/48` chain.
+It covers 271 records and 1,440 display fields while retaining v1 only for
+historical display; legacy/repository fallback, canonical translation writes,
+DSH translation use and training authority are rejected.
+
+Ticket 12 Slice 113 adds an immutable v3 evidence/precedence layer without
+rewriting v2. It binds 271 current records, 617 product fields to 123 P2P page
+locators, 269 rule-prose fields to 15 Core page ranges/192 anchors, and keeps
+554 community fields display-only. The current frozen FAQ differs semantically
+from its reviewed predecessor in all seven entries, so it is quarantined while
+the old version remains historical-display and pinned-replay evidence. Current
+Command Center values beat P2P history; pinned Rules/Core beat FAQ and rule
+prose; missing current data never falls back. Public provenance is limited to
+hash/locator/status metadata and all source-body redistribution stays blocked
+pending independent rights review. Focused 13/13 and adjacent source/FAQ/Ticket
+11 gates pass. No network refresh, Skill generation, DSH, MuZero, self-play,
+memory, or training promotion ran.
