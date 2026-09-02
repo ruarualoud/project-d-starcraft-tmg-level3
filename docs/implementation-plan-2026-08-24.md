@@ -162,6 +162,18 @@ development-only and public rendering resolves to the Project D-original
 fallback. Slice 121 passes 11/11 focused assertions and 9/9 integrated role
 checks at manifest `5d117d...2f36`.
 
+Slice 122 adds the explicitly versioned Character Card V2 PNG Adapter while
+keeping the old JSON v1 Adapter hash-frozen. It follows the current interoperable
+`tEXt`/`chara`/base64/UTF-8 carriage, verifies all PNG CRCs and applies bounded
+file/chunk/text/payload/dimension/pixel limits. Project D exports bind every card
+field and the embedded CharacterPackage under a strict v2 transport hash; even a
+valid-CRC field edit fails. Unknown ancillary chunks, image bytes and exact JSON
+serialization survive extraction/re-embedding byte-for-byte. External cards
+retain unknown fields for round-trip but their prompts remain quarantined and
+their derived package is untrusted Companion-only. The 12/12 verifier produces
+an actual local PNG card at hash `7b327c...05b1`; public rights, Rules, room,
+Provider, Skill, DSH, MuZero and training authority remain false.
+
 ## Direct Provider increment
 
 Ticket 16 now has a concrete OpenAI-compatible direct-Provider Adapter and Harness receipt path:
