@@ -142,6 +142,8 @@ async function main() {
       roomId,
       seatToken: supervisor.seatToken,
       previewId: firstPreview.preview.previewId,
+      previewToken: firstPreview.preview.previewToken,
+      previewContentHash: firstPreview.preview.previewSeal.contentHash,
       occurredAt: OCCURRED_AT,
     });
     assert(confirmation.ok, `human supervisor confirmation rejected: ${confirmation.reason || "unknown"}`);

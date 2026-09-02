@@ -1,6 +1,6 @@
 # Ticket 14 — shared Web/App client roadmap
 
-Status: active; 4/11 implementation slices complete, 7 remaining.
+Status: active; 5/11 implementation slices complete, 6 remaining.
 
 Ticket 14 restores the recovered Expo source as the Web/App product baseline,
 mounts the Level-3 room/source/character interfaces into a real tracked product,
@@ -31,7 +31,7 @@ client a Rules, Referee, source, Agent-session, or training authority.
 | 129 | **Complete.** Implement the deep Client Domain Module and its HTTP/in-memory transport, projection-store and lifecycle Adapters. | `bootstrap/read/dispatch/subscribe`; typed intents/views/rejections; revision/reconnect handling; no whole-state input; 17/17 interface-level tests. |
 | 130 | **Complete.** Create the tracked Expo product worktree from the frozen baseline and mount the Client Domain Module into routing, providers and shell status. | Preserved five-tab UX; explicit migration receipt; no direct Firestore or authoritative match write on mounted paths; Web/App shared semantic smoke. |
 | 131 | **Complete.** Implement room locator, SeatGrant, ControlLease, reconnect, viewer projection, invite/deep-link and seat-recovery flows. | URL claims cannot create authority; one-time memory/SQLite CAS; hash + Ed25519 + HMAC receipts; two-device read vs fenced-controller behavior; production verified HTTPS links; offline read-only projection. |
-| 132 | Mount the authoritative battlefield flow and scale-safe rendering. | LegalSpace → proposal → preview → human confirmation → apply → replay; no drag mutation; arbitrary model counts; map/token/base scale parity across viewports. |
+| 132 | **Complete.** Mount the authoritative battlefield flow and scale-safe rendering. | LegalSpace → proposal → preview → human confirmation → apply → replay; strict response binding and viewer-scoped Apply/Replay; no drag mutation; arbitrary model counts; map/token/base scale parity across viewports; focused 69/69 plus TypeScript 0 errors and cumulative 153/153. |
 | 133 | Mount CharacterPackage/persona selection, eight-era dynamic portrait and Adjutant panel. | Web/App actual rendered evidence; visible-only animation; offline/reduced-motion/public-rights fallbacks; no live Provider call. |
 | 134 | Replace client source ownership with official-source/localization projections and migrate settings, army drafts and historical match records. | Provenance UI; version-frozen room data; AsyncStorage classification/quarantine; offline cache; no legacy/source fallback. |
 | 135 | Move Battle Lab room, board, Referee and Agent trace views onto the same Client Domain Module. | No whole-state replace/client drag authority; observer/referee projections; Expo/Battle Lab same hashes for shared views; legacy sandbox isolated. |

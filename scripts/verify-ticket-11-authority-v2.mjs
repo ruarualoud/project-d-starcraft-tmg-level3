@@ -205,9 +205,21 @@ async function main() {
     const domain = opponentLegal.legalSpace.parameterDomains.find((entry) => entry.actionType === "move");
     const opponentPreview = await runtime.previewAction({ roomId, seatToken: opponent.seatToken, proposal: pathProposal(domain) });
     assert(opponentPreview.ok && opponentPreview.confirmationRequired, "Opponent proposal did not require explicit human confirmation");
-    const modelConfirmation = await runtime.confirmPreview({ roomId, seatToken: opponent.seatToken, previewId: opponentPreview.preview.previewId });
+    const modelConfirmation = await runtime.confirmPreview({
+      roomId,
+      seatToken: opponent.seatToken,
+      previewId: opponentPreview.preview.previewId,
+      previewToken: opponentPreview.preview.previewToken,
+      previewContentHash: opponentPreview.preview.previewSeal.contentHash,
+    });
     assert(!modelConfirmation.ok && modelConfirmation.reason === "CAPABILITY_DENIED", "model grant confirmed its own action");
-    const humanConfirmation = await runtime.confirmPreview({ roomId, seatToken: supervisor.seatToken, previewId: opponentPreview.preview.previewId });
+    const humanConfirmation = await runtime.confirmPreview({
+      roomId,
+      seatToken: supervisor.seatToken,
+      previewId: opponentPreview.preview.previewId,
+      previewToken: opponentPreview.preview.previewToken,
+      previewContentHash: opponentPreview.preview.previewSeal.contentHash,
+    });
     assert(humanConfirmation.ok, `human supervisor confirmation failed: ${humanConfirmation.reason}`);
     const supervisorLease = (await runtime.claimControl({ roomId, seatToken: supervisor.seatToken, sessionId: "supervisor-web" })).controlLease;
     opponentApply = await runtime.applyAction({

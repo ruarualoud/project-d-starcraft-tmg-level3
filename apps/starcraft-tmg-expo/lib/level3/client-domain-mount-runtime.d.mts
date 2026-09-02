@@ -19,6 +19,14 @@ export interface StarcraftTmgClientView {
   pendingPreview: Record<string, any> | null;
   lastReceipt: Record<string, any> | null;
   replay: Record<string, any> | null;
+  integrity: {
+    schemaVersion: "starcraft_tmg_client_replay_integrity_latch_v1";
+    replayBlocked: boolean;
+    reason: string | null;
+    blockedAtStateRevision: number | null;
+    recoveryPhase: string;
+    trainingTruth: false;
+  };
   control: StarcraftTmgClientControlView;
   accessReceipt: Record<string, any> | null;
   rejection: { code: string; details?: Record<string, any> } | null;
@@ -39,7 +47,8 @@ export type StarcraftTmgClientIntent =
   | { type: "claim_control" }
   | { type: "issue_invite" }
   | { type: "issue_recovery" }
-  | { type: "read_replay" };
+  | { type: "read_replay" }
+  | { type: "revalidate_authority" };
 
 export interface StarcraftTmgClientResult {
   ok: boolean;

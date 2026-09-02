@@ -454,29 +454,38 @@ async function main() {
   });
 
   await check("an_interrupted_apply_never_retries_silently_and_marks_the_authoritative_outcome_uncertain", async () => {
-    const legalHash = "b".repeat(64);
-    const projection = {
-      room: { roomId: "uncertain-room", stateRevision: 0, stateHash: "c".repeat(64) },
-      viewer: { capabilities: ["read_room", "read_legal_space", "preview", "confirm", "apply"] },
-      state: {},
-      training: { trainingTruth: false },
-    };
+    const uncertainState = createStarcraftTmgSampleState(data);
+    uncertainState.board.terrain = [];
+    uncertainState.activeSideKey = "player1";
+    const uncertainRoom = await runtime.createRoom({
+      roomId: "uncertain-room",
+      gameId: "starcraft-tmg",
+      surfaceMode: "classic",
+      initialStateAuthority: {
+        source: "server_factory",
+        state: uncertainState,
+        dataVersion: data.version,
+        receiptHash: hashStarcraftTmgContract({
+          source: "ticket-14-slice-129-uncertain",
+          state: uncertainState,
+        }),
+      },
+      serverSeatPlan: [
+        { label: "host", seatKey: "player1", roleMode: "player", principalType: "human" },
+      ],
+    });
+    assert(uncertainRoom.ok, `uncertain fixture room failed: ${uncertainRoom.reason || "unknown"}`);
+    const interruptedBase = createInMemoryStarcraftTmgAuthoritativeTransportAdapter({ roomRuntime: runtime });
     let applyCalls = 0;
     const interruptedTransport = {
       async execute(request) {
-        if (request.operation === "read_room") return { ok: true, projection };
-        if (request.operation === "read_legal_space") return {
-          ok: true,
-          legalSpace: { stateRevision: 0, legalSpaceHash: legalHash, finiteActions: [{ actionKey: "finite-1" }], parameterDomains: [] },
-        };
-        if (request.operation === "preview_action") return {
-          ok: true,
-          preview: { previewId: "preview-1", previewToken: "sc-preview-1.seal", core: { expectedStateRevision: 0, legalSpaceHash: legalHash } },
-        };
-        if (request.operation === "confirm_preview") return { ok: true, confirmation: { confirmationId: "confirmation-1" } };
-        if (request.operation === "claim_control") return { ok: true, controlLease: { leaseId: "lease-1", leaseFence: 1 } };
+        const result = await interruptedBase.execute(request);
+        if (request.operation !== "apply_action") return result;
         applyCalls += 1;
-        throw new StarcraftTmgClientTransportError("NETWORK_UNAVAILABLE", "connection dropped after send");
+        throw new StarcraftTmgClientTransportError(
+          "NETWORK_UNAVAILABLE",
+          "connection dropped after authoritative commit",
+        );
       },
     };
     const interrupted = createStarcraftTmgClientDomain({
@@ -486,10 +495,26 @@ async function main() {
       now: () => OCCURRED_AT,
       createId: deterministicIdFactory("uncertain"),
     });
-    await interrupted.bootstrap({ route: { roomId: "uncertain-room" }, principal: { seatToken: "uncertain-seat-token" } });
-    await interrupted.dispatch({ type: "load_legal_space" });
-    await interrupted.dispatch({ type: "preview_finite", actionKey: "finite-1" });
-    const result = await interrupted.dispatch({ type: "confirm_and_apply_preview", previewId: "preview-1" });
+    const interruptedSeatToken = uncertainRoom.credentials.host.seatToken;
+    const bootstrapped = await interrupted.bootstrap({
+      route: { roomId: "uncertain-room" },
+      principal: { seatToken: interruptedSeatToken },
+    });
+    assert(bootstrapped.ok, "interrupted fixture bootstrap failed");
+    const loaded = await interrupted.dispatch({ type: "load_legal_space" });
+    assert(loaded.ok, "interrupted fixture LegalSpace failed strict response binding");
+    const finiteAction = interrupted.read().legalSpace.finiteActions[0];
+    assert(finiteAction, "interrupted fixture has no finite action");
+    const previewed = await interrupted.dispatch({
+      type: "preview_finite",
+      actionKey: finiteAction.actionKey,
+    });
+    assert(previewed.ok, "interrupted fixture preview failed strict response binding");
+    const previewId = interrupted.read().pendingPreview.previewId;
+    const result = await interrupted.dispatch({
+      type: "confirm_and_apply_preview",
+      previewId,
+    });
     assert(result.ok && result.offline === true, "interrupted apply did not recover its viewer projection");
     assert(applyCalls === 1, "interrupted apply was silently retried");
     assert(interrupted.read().recovery.authoritativeOutcomeUncertain === true, "uncertain authoritative outcome was hidden");
@@ -512,6 +537,7 @@ async function main() {
     "packages/client-domain/projection-store-adapters-v1.mjs",
     "packages/client-domain/lifecycle-adapters-v1.mjs",
     "packages/client-domain/portable-contract-hash-v1.mjs",
+    "packages/client-domain/viewer-projection-v3.mjs",
   ];
   const moduleFileHashes = {};
   for (const relative of moduleFiles) moduleFileHashes[relative] = sha256(await readFile(path.join(LEVEL3_ROOT, relative)));

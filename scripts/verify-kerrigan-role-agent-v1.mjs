@@ -249,6 +249,8 @@ async function main() {
       roomId: ROOM_ID,
       seatToken: room.credentials.opponentSupervisor.seatToken,
       previewId: opponentInvocation.preview.preview.previewId,
+      previewToken: opponentInvocation.preview.preview.previewToken,
+      previewContentHash: opponentInvocation.preview.preview.previewSeal.contentHash,
       occurredAt: OCCURRED_AT,
     });
     assert(confirmed.ok, `human confirmation failed: ${confirmed.reason || "unknown"}`);

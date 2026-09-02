@@ -4,6 +4,7 @@ import { createStarcraftTmgRoomRuntime } from "../room-runtime/in-memory-room-v1
 export const STARCRAFT_TMG_LEVEL3_HTTP_VERSION = "starcraft_tmg_level3_http_v2";
 export const STARCRAFT_TMG_LEVEL3_API_PREFIX = "/starcraft-tmg-level3/api/v1";
 export const STARCRAFT_TMG_LEVEL3_MAX_BODY_BYTES = 256 * 1024;
+const BEARER_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
 
 const ENDPOINTS = Object.freeze([
   "GET /starcraft-tmg-level3/api/v1/health",
@@ -42,7 +43,7 @@ function headerValue(headers, key) {
 function bearerToken(headers) {
   const authorization = headerValue(headers, "authorization");
   const match = authorization.match(/^Bearer\s+([^\s]+)$/i);
-  return match?.[1] || "";
+  return match && BEARER_TOKEN_PATTERN.test(match[1]) ? match[1] : "";
 }
 
 function response(status, endpoint, result) {
@@ -72,6 +73,7 @@ function statusFor(result) {
     "REVISION_CONFLICT",
     "LEGAL_SPACE_STALE",
     "PREVIEW_NOT_FOUND",
+    "PREVIEW_BINDING_MISMATCH",
     "CONTROL_LEASE_FENCED",
     "IDEMPOTENCY_CONFLICT",
     "ROOM_FULL",
@@ -195,7 +197,13 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
     const roomId = decodeRoomId(roomMatch[1]);
     if (!roomId) return failure(400, endpoint, "INVALID_ROOM_ID");
     const operation = roomMatch[2] || "projection";
+    const authorizationHeader = headerValue(input.headers, "authorization");
     const seatToken = bearerToken(input.headers);
+    if (["projection", "replay"].includes(operation)
+      && authorizationHeader
+      && !seatToken) {
+      return failure(401, endpoint, "AUTHENTICATION_INVALID");
+    }
     let result;
 
     if (operation === "join" && method === "POST") {
@@ -239,7 +247,19 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
     } else if (operation === "preview" && method === "POST") {
       result = await runtime.previewAction({ roomId, seatToken, proposal: body.proposal, candidateId: body.candidateId });
     } else if (operation === "confirm" && method === "POST") {
-      result = await runtime.confirmPreview({ roomId, seatToken, previewId: body.previewId });
+      const rejectedFields = unexpectedBodyFields(body, [
+        "previewId",
+        "previewToken",
+        "previewContentHash",
+      ]);
+      if (rejectedFields.length) return failure(400, endpoint, "CLIENT_AUTHORITY_FIELD_REJECTED", { rejectedFields });
+      result = await runtime.confirmPreview({
+        roomId,
+        seatToken,
+        previewId: body.previewId,
+        previewToken: body.previewToken,
+        previewContentHash: body.previewContentHash,
+      });
     } else if (operation === "control-lease" && method === "POST") {
       result = await runtime.claimControl({ roomId, seatToken, sessionId: body.sessionId });
     } else if (operation === "apply" && method === "POST") {
@@ -254,7 +274,7 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
         idempotencyKey: headerValue(input.headers, "idempotency-key") || body.idempotencyKey,
       });
     } else if (operation === "replay" && method === "GET") {
-      result = await runtime.replayRoom({ roomId });
+      result = await runtime.replayRoom({ roomId, seatToken });
     } else if (operation === "historical-rules" && method === "GET") {
       result = await runtime.readHistoricalRules({ roomId });
     } else {

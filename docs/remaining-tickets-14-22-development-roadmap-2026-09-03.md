@@ -1,6 +1,6 @@
 # Remaining StarCraft TMG Level-3 development tickets
 
-Status after Ticket 14 Slice 131: 13/22 Tickets complete; Ticket 14 is 4/11 and
+Status after Ticket 14 Slice 132: 13/22 Tickets complete; Ticket 14 is 5/11 and
 Tickets 14–22 remain.
 
 | Ticket | Purpose | Completion evidence |

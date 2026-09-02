@@ -8,8 +8,17 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 
 import { STARCRAFT_TMG_SHARED_WEB_APP_BOUNDARY_V1 as boundary } from
   "../content/client/shared-web-app-boundary-v1.mjs";
-import { hashStarcraftTmgContract } from
+import {
+  createStarcraftTmgAuthoritativeEngine,
+  hashStarcraftTmgContract,
+} from
   "../packages/authoritative-engine/transition-v1.mjs";
+import { createStarcraftTmgRoomRuntime } from
+  "../packages/room-runtime/in-memory-room-v1.mjs";
+import {
+  createStarcraftTmgSampleState,
+  loadStarcraftTmgData,
+} from "../../scripts/starcraft-tmg-rules-v0.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BASELINE_ROOT = path.join(ROOT, "vendor/sc-tmg-expo-baseline-f07b3cb");
@@ -18,6 +27,7 @@ const MIGRATION_PATH = path.join(ROOT, "content/client/expo-product-migration-v1
 const BUILD_ROOT = path.join(ROOT, "build/ticket-14-slice-130-expo-product-mount-v1");
 const REPORT_PATH = path.join(BUILD_ROOT, "report.json");
 const OCCURRED_AT = "2026-09-03T07:00:00.000Z";
+const PROJECT_ROOT = new URL("../../", import.meta.url).pathname;
 const SLICE_130_COMMIT = "ba00c7205803cea1741775f5bee94b6c2338d3f7";
 const EXPECTED_TABS = ["index", "army", "tools", "match", "settings"];
 const CODE_EXTENSIONS = ["", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".json", ".css"];
@@ -391,20 +401,39 @@ await check("node_semantic_smoke_proves_web_and_native_mount_status_parity", asy
     };
   };
   const roomId = "slice-130-semantic-room";
-  const seatToken = "slice-130-seat-token-must-not-persist";
-  const projection = {
-    room: { roomId, stateRevision: 0, stateHash: "a".repeat(64) },
-    viewer: { capabilities: ["read_room"] },
-    state: {},
-    training: { trainingTruth: false },
-  };
+  const data = await loadStarcraftTmgData(PROJECT_ROOT);
+  const authorityEngine = createStarcraftTmgAuthoritativeEngine({ now: () => OCCURRED_AT });
+  const semanticRoomRuntime = createStarcraftTmgRoomRuntime({
+    authorityEngine,
+    now: () => OCCURRED_AT,
+  });
+  const initialState = createStarcraftTmgSampleState(data);
+  const created = await semanticRoomRuntime.createRoom({
+    roomId,
+    gameId: "starcraft-tmg",
+    surfaceMode: "classic",
+    initialStateAuthority: {
+      source: "server_factory",
+      state: initialState,
+      dataVersion: data.version,
+      receiptHash: hashStarcraftTmgContract({ roomId, initialState }),
+    },
+    serverSeatPlan: [
+      { label: "host", seatKey: "player1", roleMode: "player", principalType: "human" },
+      { label: "guest", seatKey: "player2", roleMode: "player", principalType: "human" },
+    ],
+  });
+  assert(created.ok === true, "semantic mount room fixture could not be created");
+  const seatToken = created.credentials.host.seatToken;
   let requestCount = 0;
   const fetchImpl = async () => {
     requestCount += 1;
+    const roomRead = await semanticRoomRuntime.readRoom({ roomId, seatToken });
+    assert(roomRead.ok === true, "semantic mount room projection could not be read");
     return {
       text: async () => JSON.stringify({
         schemaVersion: "starcraft_tmg_level3_http_v2",
-        result: { ok: true, projection },
+        result: roomRead,
       }),
     };
   };
@@ -426,7 +455,11 @@ await check("node_semantic_smoke_proves_web_and_native_mount_status_parity", asy
       locale: "en",
     });
     assert(result.ok === true && runtime.clientDomain.read().phase === "ready",
-      `${platform} runtime did not reach the shared ready projection`);
+      `${platform} runtime did not reach the shared ready projection: ${JSON.stringify({
+        ok: result.ok,
+        phase: runtime.clientDomain.read().phase,
+        rejectionCode: result.rejection?.code || null,
+      })}`);
     runtimeResults.push({
       platform,
       surface: runtime.surface,

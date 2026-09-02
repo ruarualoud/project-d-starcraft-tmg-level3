@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 
+import { AuthoritativeBattleWorkspace } from "@/components/battlefield/authoritative-battle-workspace";
 import { ScreenContainer } from "@/components/screen-container";
 import { useI18n } from "@/lib/i18n";
 import { useLevel3ClientDomain } from "@/lib/level3/client-domain-provider";
@@ -259,7 +260,7 @@ export default function MatchScreen() {
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={styles.headerTitle}>{zh ? "对战房间" : "Battle Room"}</Text>
-          <Text style={styles.headerSub}>Project D Level-3 · Ticket 14 / Slice 131</Text>
+          <Text style={styles.headerSub}>Project D Level-3 · Ticket 14 / Slice 132</Text>
         </View>
         <View style={[styles.statusPill, { borderColor: statusColor }]}>
           <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
@@ -390,6 +391,8 @@ export default function MatchScreen() {
             {actionError && <Text selectable style={styles.errorText}>error: {actionError}</Text>}
           </View>
         )}
+
+        <AuthoritativeBattleWorkspace />
 
         <View style={styles.grid}>
           <InfoCard

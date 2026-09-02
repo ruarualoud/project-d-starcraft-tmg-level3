@@ -9,8 +9,31 @@ import {
   cloneRoomStoreValue,
   createInMemoryStarcraftTmgRoomStore,
 } from "../room-store/room-store-v1.mjs";
+import {
+  projectStarcraftTmgViewerStateShapeV3,
+  STARCRAFT_TMG_VIEWER_STATE_V3_FIELDS,
+} from "../client-domain/viewer-projection-v3.mjs";
 
 export const STARCRAFT_TMG_ROOM_RUNTIME_VERSION = "starcraft_tmg_room_runtime_v2";
+export const STARCRAFT_TMG_VIEWER_ROOM_PROJECTION_VERSION = "starcraft_tmg_viewer_room_projection_v3";
+export const STARCRAFT_TMG_VIEWER_APPLY_RESPONSE_VERSION = "starcraft_tmg_viewer_apply_response_v2";
+export const STARCRAFT_TMG_VIEWER_REPLAY_RESPONSE_VERSION = "starcraft_tmg_viewer_replay_response_v3";
+export const STARCRAFT_TMG_VIEWER_REPLAY_BUNDLE_VERSION = "starcraft_tmg_viewer_replay_bundle_v2";
+export const STARCRAFT_TMG_REPLAY_FINAL_PROJECTION_VERSION = "starcraft_tmg_replay_final_projection_v2";
+export const STARCRAFT_TMG_VIEWER_RESPONSE_CONTRACT_CATALOG = Object.freeze({
+  roomProjection: Object.freeze({
+    current: STARCRAFT_TMG_VIEWER_ROOM_PROJECTION_VERSION,
+    retired: Object.freeze(["starcraft_tmg_room_runtime_v2.room-projection"]),
+  }),
+  apply: Object.freeze({
+    current: STARCRAFT_TMG_VIEWER_APPLY_RESPONSE_VERSION,
+    retired: Object.freeze(["implicit_unversioned_viewer_apply_response_v1"]),
+  }),
+  replay: Object.freeze({
+    current: STARCRAFT_TMG_VIEWER_REPLAY_RESPONSE_VERSION,
+    retired: Object.freeze(["starcraft_tmg_room_runtime_v2.viewer-replay"]),
+  }),
+});
 
 const ROLE_MODES = new Set(["player", "tutor", "opponent", "commentator", "companion", "supervisor"]);
 const APPLY_CAPABILITIES = Object.freeze(["read_room", "read_legal_space", "preview", "confirm", "apply", "read_own_private"]);
@@ -220,6 +243,28 @@ export function projectStarcraftTmgStateForViewerV2(state, seatKey = null) {
   return projection;
 }
 
+// The shared V3 catalogue owns every viewer-visible field. These two
+// authority-only inputs are admitted solely so frozen V2 seat privacy can
+// derive ownTeamArmyRostersBySide before the shared final projection.
+const VIEWER_STATE_V3_INPUT_FIELDS = Object.freeze([
+  ...STARCRAFT_TMG_VIEWER_STATE_V3_FIELDS,
+  "authoritativeRosterRegistry",
+  "authoritativeArmyRostersBySide",
+]);
+
+
+export function projectStarcraftTmgStateForViewerV3(state, seatKey = null) {
+  const bounded = Object.fromEntries(VIEWER_STATE_V3_INPUT_FIELDS
+    .filter((field) => Object.prototype.hasOwnProperty.call(state || {}, field))
+    .map((field) => [field, clone(state[field])]));
+  // V2 owns the frozen seat/private-field semantics. The browser-safe shared
+  // V3 shape is the final network boundary and recursively drops any field
+  // that has not been explicitly reviewed for viewer visibility.
+  return projectStarcraftTmgViewerStateShapeV3(
+    projectStarcraftTmgStateForViewerV2(bounded, seatKey),
+  );
+}
+
 function withoutPrivateRosterChoice(entry) {
   const value = clone(entry);
   delete value.result;
@@ -227,7 +272,65 @@ function withoutPrivateRosterChoice(entry) {
 }
 
 function projectState(state, seatKey = null) {
-  return projectStarcraftTmgStateForViewerV2(state, seatKey);
+  return projectStarcraftTmgStateForViewerV3(state, seatKey);
+}
+
+function publicStateSummary(state = {}) {
+  return {
+    schemaVersion: "starcraft_tmg_public_state_summary_v1",
+    round: Number.isSafeInteger(state.round) ? state.round : null,
+    phase: String(state.phase || ""),
+    activeSideKey: state.activeSideKey === undefined ? null : state.activeSideKey,
+    terminal: state.terminal === true,
+    gameOver: state.gameOver === true,
+    winner: state.winner === undefined ? null : state.winner,
+    trainingTruth: false,
+  };
+}
+
+function safeEnvelopeSummary(envelope = {}) {
+  const stateRevision = Number(envelope.stateRevision ?? envelope.revision ?? 0);
+  return {
+    schemaVersion: "starcraft_tmg_viewer_envelope_summary_v1",
+    gameId: String(envelope.gameId || ""),
+    roomId: String(envelope.roomId || ""),
+    matchBindingHash: String(envelope.matchBindingHash || ""),
+    stateRevision,
+    revision: stateRevision,
+    stateHash: String(envelope.stateHash || ""),
+    journalHeadHash: String(envelope.journalHeadHash || ""),
+    state: publicStateSummary(envelope.state),
+    trainingTruth: false,
+  };
+}
+
+function safeApplyResult(result = {}) {
+  return {
+    schemaVersion: STARCRAFT_TMG_VIEWER_APPLY_RESPONSE_VERSION,
+    ok: result.ok === true,
+    receipt: clone(result.receipt),
+    envelope: safeEnvelopeSummary(result.envelope),
+    trainingTruth: false,
+  };
+}
+
+function replayFinalProjection(envelope, grant = null) {
+  return {
+    schemaVersion: STARCRAFT_TMG_REPLAY_FINAL_PROJECTION_VERSION,
+    viewer: grant ? {
+      seatKey: grant.seatKey,
+      roleMode: grant.roleMode,
+      visibilityScope: grant.authority.visibilityScope,
+    } : {
+      roleMode: "public_observer",
+      visibilityScope: "public",
+    },
+    room: safeEnvelopeSummary(envelope),
+    matchBinding: publicMatchBinding(envelope.matchBinding),
+    authorityVersion: STARCRAFT_TMG_AUTHORITY_VERSION,
+    state: projectState(envelope.state, grant?.seatKey || null),
+    training: { eligibleForTraining: false, trainingTruth: false, reviewStatus: "raw" },
+  };
 }
 
 function publicReceipt(receipt) {
@@ -939,7 +1042,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     }
     const currentLease = grant ? aggregate.leases?.[grant.seatKey] || null : null;
     const projection = {
-      schemaVersion: `${STARCRAFT_TMG_ROOM_RUNTIME_VERSION}.room-projection`,
+      schemaVersion: STARCRAFT_TMG_VIEWER_ROOM_PROJECTION_VERSION,
       room: roomSummary(aggregate),
       viewer: grant ? {
         grantId: grant.grantId,
@@ -1039,6 +1142,13 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     try { grant = authenticate(aggregate, input.seatToken, "confirm"); } catch (error) { return rejection(error.code, { message: error.message }); }
     const previewRecord = aggregate.previews[input.previewId];
     if (!previewRecord || previewRecord.status !== "open") return rejection("PREVIEW_NOT_FOUND", { previewId: input.previewId || "" });
+    if (input.previewToken !== previewRecord.preview.previewToken
+      || input.previewContentHash !== previewRecord.preview.previewSeal?.contentHash) {
+      return rejection("PREVIEW_BINDING_MISMATCH", {
+        previewId: input.previewId || "",
+        stateRevisionUnchanged: aggregate.stateRevision,
+      });
+    }
     const result = authorityEngine.confirmPreview({ envelope: aggregate.envelope, preview: previewRecord.preview, seatAuthority: grant.authority, occurredAt: input.occurredAt || now() });
     if (!result.ok) return commitRejection(aggregate, grant, "confirm", result);
     const next = clone(aggregate);
@@ -1109,7 +1219,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     const existing = aggregate.idempotency[idempotencyHash];
     if (existing) {
       if (existing.requestHash !== requestHash) return rejection("IDEMPOTENCY_CONFLICT");
-      return deepFreeze({ ...clone(existing.result), idempotentReplay: true });
+      return deepFreeze({ ...safeApplyResult(existing.result), idempotentReplay: true });
     }
     const previewRecord = aggregate.previews[input.previewId];
     if (!previewRecord || previewRecord.status !== "open") return rejection("PREVIEW_NOT_FOUND", { previewId: input.previewId || "" });
@@ -1125,12 +1235,12 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       occurredAt: input.occurredAt || now(),
     });
     if (!applied.ok) return commitRejection(aggregate, grant, "apply", applied);
-    const responseResult = {
+    const responseResult = safeApplyResult({
       ok: true,
       receipt: applied.receipt,
       envelope: applied.envelope,
       trainingTruth: false,
-    };
+    });
     const next = clone(aggregate);
     next.envelope = applied.envelope;
     next.stateRevision = applied.envelope.stateRevision;
@@ -1164,6 +1274,10 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
   async function replayRoom(input = {}) {
     const aggregate = await load(input.roomId);
     if (!aggregate) return rejection("ROOM_NOT_FOUND", { roomId: input.roomId || "" });
+    let grant = null;
+    if (input.seatToken) {
+      try { grant = authenticate(aggregate, input.seatToken, "read_room"); } catch (error) { return rejection(error.code, { message: error.message }); }
+    }
     const bundle = await roomStore.loadReplayBundle(aggregate.roomId);
     if (bundle.latestCheckpoint) {
       const checkpointVerification = authorityEngine.verifyCheckpoint(bundle.latestCheckpoint, aggregate.envelope.matchBinding);
@@ -1181,9 +1295,19 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       journal: tailReceipts,
     });
     if (!replay.ok) return replay;
+    const safeReplay = {
+      schemaVersion: STARCRAFT_TMG_VIEWER_REPLAY_BUNDLE_VERSION,
+      appliedCount: replay.appliedCount,
+      checkpointStateRevision: replay.checkpointStateRevision,
+      envelope: safeEnvelopeSummary(replay.envelope),
+      finalProjection: replayFinalProjection(replay.envelope, grant),
+      silentCompatibilityUsed: replay.silentCompatibilityUsed === true,
+      trainingTruth: false,
+    };
     return deepFreeze({
+      schemaVersion: STARCRAFT_TMG_VIEWER_REPLAY_RESPONSE_VERSION,
       ok: true,
-      replay,
+      replay: safeReplay,
       matchesCurrent: replay.envelope.stateHash === aggregate.envelope.stateHash
         && replay.envelope.stateRevision === aggregate.envelope.stateRevision
         && replay.envelope.journalHeadHash === aggregate.envelope.journalHeadHash,

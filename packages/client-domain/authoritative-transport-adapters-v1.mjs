@@ -56,14 +56,19 @@ export function createInMemoryStarcraftTmgAuthoritativeTransportAdapter(options 
     if (request.operation === "read_room") return runtime.readRoom({ ...shared, ...payload });
     if (request.operation === "read_legal_space") return runtime.legalSpace(shared);
     if (request.operation === "preview_action") return runtime.previewAction({ ...shared, proposal: payload.proposal, candidateId: payload.candidateId });
-    if (request.operation === "confirm_preview") return runtime.confirmPreview({ ...shared, previewId: payload.previewId });
+    if (request.operation === "confirm_preview") return runtime.confirmPreview({
+      ...shared,
+      previewId: payload.previewId,
+      previewToken: payload.previewToken,
+      previewContentHash: payload.previewContentHash,
+    });
     if (request.operation === "claim_control") return runtime.claimControl({ ...shared, sessionId: payload.sessionId });
     if (request.operation === "issue_invite") return runtime.issueInvite({ ...shared, expectedRoomRevision: payload.expectedRoomRevision });
     if (request.operation === "exchange_invite") return runtime.exchangeInvite({ roomId: request.roomId, inviteToken: payload.inviteToken });
     if (request.operation === "issue_recovery") return runtime.issueSeatRecovery({ ...shared, expectedRoomRevision: payload.expectedRoomRevision });
     if (request.operation === "exchange_recovery") return runtime.recoverSeat({ roomId: request.roomId, recoveryToken: payload.recoveryToken });
     if (request.operation === "apply_action") return runtime.applyAction({ ...shared, ...payload });
-    return runtime.replayRoom({ roomId: request.roomId });
+    return runtime.replayRoom(shared);
   }
   return Object.freeze({ execute });
 }

@@ -209,7 +209,11 @@ async function main() {
       method: "POST",
       pathname: `${STARCRAFT_TMG_LEVEL3_API_PREFIX}/rooms/${ROOM_ID}/confirm`,
       headers: bearer(credentials.opponent.seatToken),
-      body: { previewId: preview.preview.previewId },
+      body: {
+        previewId: preview.preview.previewId,
+        previewToken: preview.preview.previewToken,
+        previewContentHash: preview.preview.previewSeal.contentHash,
+      },
     });
     assert(modelConfirmation.status === 403 && modelConfirmation.response.error === "CAPABILITY_DENIED", "model-facing grant confirmed its own preview");
 
@@ -217,7 +221,11 @@ async function main() {
       method: "POST",
       pathname: `${STARCRAFT_TMG_LEVEL3_API_PREFIX}/rooms/${ROOM_ID}/confirm`,
       headers: bearer(credentials.opponentSupervisor.seatToken),
-      body: { previewId: preview.preview.previewId },
+      body: {
+        previewId: preview.preview.previewId,
+        previewToken: preview.preview.previewToken,
+        previewContentHash: preview.preview.previewSeal.contentHash,
+      },
     });
     assert(confirmed.status === 200, `human confirmation failed: ${confirmed.response.error || "unknown"}`);
     const lease = await adapter.handle({

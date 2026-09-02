@@ -5,6 +5,10 @@ import {
 import { assertStarcraftTmgLifecyclePort } from "./lifecycle-adapters-v1.mjs";
 import { assertStarcraftTmgProjectionStorePort } from "./projection-store-adapters-v1.mjs";
 import { hashStarcraftTmgClientContract } from "./portable-contract-hash-v1.mjs";
+import {
+  isExactStarcraftTmgViewerStateShapeV3,
+  STARCRAFT_TMG_VIEWER_PROJECTION_V3_TOP_LEVEL_KEYS,
+} from "./viewer-projection-v3.mjs";
 
 export const STARCRAFT_TMG_CLIENT_DOMAIN_VERSION = "starcraft_tmg_client_domain_v1";
 export const STARCRAFT_TMG_CLIENT_DOMAIN_INTERFACE = Object.freeze([
@@ -18,6 +22,7 @@ const SURFACES = new Set(["expo_web", "expo_native", "battle_lab", "verifier"]);
 const ACCESS_KINDS = new Set(["invite", "recovery"]);
 const INTENT_KEYS = Object.freeze({
   refresh: ["type"],
+  revalidate_authority: ["type"],
   load_legal_space: ["type"],
   preview_finite: ["type", "actionKey"],
   preview_parameterized: ["type", "domainId", "parameters"],
@@ -84,6 +89,115 @@ const PROJECTION_SECRET_KEYS = new Set([
 ]);
 const MAX_INPUT_BYTES = 256 * 1024;
 const ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
+const PUBLIC_VIEWER_KEYS = Object.freeze(["roleMode", "visibilityScope", "capabilities"]);
+const SEAT_VIEWER_KEYS = Object.freeze([
+  "grantId", "seatKey", "roleMode", "visibilityScope", "capabilities",
+  "grantRecoveryRevision",
+]);
+const VIEWER_PRIVATE_STATE_FIELDS = Object.freeze([
+  "cardResources", "armyBuildingConfigurationBySide", "armyResourceBudgetsBySide",
+  "unitCompositionSelectionsBySide", "unitUpgradeSelectionsBySide",
+  "armyCompositionUpgradeAuditsBySide", "ownTeamArmyRostersBySide",
+  "equipmentReminderPermitsByActionHash", "privateRosterDisclosureConductIncidents",
+]);
+const MAX_REPLAY_INTEGRITY_SCOPES = 16;
+const VIEWER_ROOM_SUMMARY_KEYS = Object.freeze([
+  "schemaVersion", "roomId", "gameId", "title", "surfaceMode",
+  "matchBindingHash", "roomRevision", "stateRevision", "revision", "stateHash",
+  "journalHeadHash", "privateJournalSequence", "publicJournalSequence",
+  "seatRecoveryRevision", "previewCount", "acceptedReceiptCount", "durability",
+  "rulesRuntimeBinding", "productionReady", "trainingTruth",
+]);
+const PUBLIC_MATCH_BINDING_KEYS = Object.freeze([
+  "schemaVersion", "matchId", "gameId", "roomId", "rulesVersion", "dataVersion",
+  "rngSchemeId", "sourceSnapshotHash", "dataSnapshotHash", "rulesArtifactHash",
+  "executorArtifactHash", "geometryArtifactHash", "actionSchemaHash", "refereeKeyId",
+  "refereePublicKeyFingerprint", "rulesRuntimeBinding", "rulesDisplayBinding",
+  "productionReady", "bindingHash", "refereeSignature",
+]);
+const RULES_RUNTIME_BINDING_KEYS = Object.freeze([
+  "schemaVersion", "mode", "runtimeId", "runtimeVersion", "runtimeHash",
+  "catalogueHash", "executableRuleAtomCount", "nonExecutableRuleAtomCount",
+  "legalSpaceComplete", "developmentSubset", "legacyCompatibilityUsed",
+  "productionRoomEligible", "ctx2skillPromotionEligible", "trainingTruth",
+]);
+const RULES_DISPLAY_BINDING_KEYS = Object.freeze([
+  "schemaVersion", "artifactId", "artifactHash", "mediaType", "locale",
+  "rulesVersion", "availability",
+]);
+const PUBLIC_CONTROL_KEYS = Object.freeze([
+  "visible", "currentLeaseFence", "ownedByViewer", "hasActiveLease",
+]);
+const SEAT_CONTROL_KEYS = Object.freeze([
+  "visible", "seatKey", "currentLeaseFence", "ownedByViewer", "hasActiveLease",
+]);
+const VIEWER_TRAINING_KEYS = Object.freeze([
+  "eligibleForTraining", "trainingTruth", "reviewStatus",
+]);
+const CONTRACT_HASH_PATTERN = /^[a-f0-9]{64}$/u;
+const SEAL_MAC_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
+const ED25519_SIGNATURE_PATTERN = /^[A-Za-z0-9_-]{86}$/u;
+const VIEWER_ROOM_PROJECTION_VERSION = "starcraft_tmg_viewer_room_projection_v3";
+const VIEWER_APPLY_RESPONSE_VERSION = "starcraft_tmg_viewer_apply_response_v2";
+const VIEWER_REPLAY_RESPONSE_VERSION = "starcraft_tmg_viewer_replay_response_v3";
+const VIEWER_REPLAY_BUNDLE_VERSION = "starcraft_tmg_viewer_replay_bundle_v2";
+const REPLAY_FINAL_PROJECTION_VERSION = "starcraft_tmg_replay_final_projection_v2";
+const LEGAL_SPACE_KEYS = Object.freeze([
+  "schemaVersion",
+  "gameId",
+  "roomId",
+  "matchBindingHash",
+  "stateRevision",
+  "revision",
+  "stateHash",
+  "sideKey",
+  "phase",
+  "terminal",
+  "rulesRuntimeBinding",
+  "finiteActions",
+  "parameterDomains",
+  "legalSpaceHash",
+  "searchSuggestions",
+  "disabledDiagnostics",
+  "candidates",
+  "disabledCount",
+  "searchAndStrategyExcludedFromAuthority",
+]);
+const PREVIEW_KEYS = Object.freeze([
+  "schemaVersion",
+  "previewId",
+  "previewToken",
+  "core",
+  "previewSeal",
+  "audit",
+]);
+const PREVIEW_CORE_KEYS = Object.freeze([
+  "schemaVersion",
+  "gameId",
+  "roomId",
+  "matchBindingHash",
+  "expectedStateRevision",
+  "expectedRevision",
+  "preStateHash",
+  "legalSpaceHash",
+  "seatKey",
+  "proposal",
+  "proposalHash",
+  "action",
+  "confirmationPolicy",
+  "chanceTicket",
+  "result",
+  "trainingTruth",
+]);
+const REFEREE_SEAL_KEYS = Object.freeze([
+  "schemaVersion",
+  "purpose",
+  "keyId",
+  "hashAlgorithm",
+  "sealAlgorithm",
+  "contentHash",
+  "mac",
+]);
 let fallbackOperationalIdCounter = 0;
 
 function object(value) {
@@ -146,6 +260,599 @@ function validAccessRevisions(value) {
   ];
   return hasExactKeys(value, keys)
     && keys.every((key) => Number.isSafeInteger(value[key]) && value[key] >= 0);
+}
+
+function contractHash(value) {
+  try {
+    return hashStarcraftTmgClientContract(value);
+  } catch {
+    return "";
+  }
+}
+
+function sameContract(left, right) {
+  const leftHash = contractHash(left);
+  return Boolean(leftHash) && leftHash === contractHash(right);
+}
+
+function replayIntegrityRegistryKey(roomId, principalScopeHash) {
+  return `${String(roomId || "")}\u0000${String(principalScopeHash || "")}`;
+}
+
+function objectKeysWithin(value, allowed) {
+  return object(value) && Object.keys(value).every((key) => allowed.has(String(key)));
+}
+
+function viewerPrivateStateMatches(state, viewer, publicAccess) {
+  if (publicAccess) {
+    return VIEWER_PRIVATE_STATE_FIELDS.every((field) => {
+      const value = state[field];
+      return value === undefined
+        || (Array.isArray(value)
+          ? value.length === 0
+          : object(value) && Object.keys(value).length === 0);
+    });
+  }
+  const seatKey = String(viewer.seatKey || "");
+  const ownSeat = new Set([seatKey]);
+  const teams = state.rosterRegistryResolution?.teamMembershipByPlayer;
+  const ownTeam = object(teams) ? teams[seatKey] : undefined;
+  const allied = new Set([seatKey]);
+  if (ownTeam !== undefined) {
+    for (const [playerId, teamId] of Object.entries(teams)) {
+      if (teamId === ownTeam) allied.add(String(playerId));
+    }
+  }
+  const rosterVisibility = state.rosterVisibilityResolution?.rosterVisibility;
+  const rosterPrivateSides = rosterVisibility === "open"
+    ? new Set(Object.keys(state.players || {}).map(String))
+    : allied;
+  const rosterMaps = [
+    "armyBuildingConfigurationBySide", "armyResourceBudgetsBySide",
+    "unitCompositionSelectionsBySide", "unitUpgradeSelectionsBySide",
+    "armyCompositionUpgradeAuditsBySide",
+  ];
+  return objectKeysWithin(state.cardResources || {}, ownSeat)
+    && objectKeysWithin(state.ownTeamArmyRostersBySide || {}, allied)
+    && rosterMaps.every((field) => objectKeysWithin(state[field] || {}, rosterPrivateSides))
+    && Object.values(state.equipmentReminderPermitsByActionHash || {})
+      .every((permit) => object(permit) && allied.has(String(permit.playerId || "")))
+    && (state.privateRosterDisclosureConductIncidents || [])
+      .every((incident) => object(incident) && allied.has(String(incident.playerId || "")));
+}
+
+function viewerProjectionSubcontractsMatch(projection, publicAccess) {
+  const room = projection.room;
+  const viewer = projection.viewer;
+  const control = projection.control;
+  const matchBinding = projection.matchBinding;
+  const runtime = matchBinding?.rulesRuntimeBinding;
+  const display = matchBinding?.rulesDisplayBinding;
+  const signature = matchBinding?.refereeSignature;
+  const training = projection.training;
+  const integerFields = [
+    "roomRevision", "stateRevision", "revision", "privateJournalSequence",
+    "publicJournalSequence", "seatRecoveryRevision", "previewCount",
+    "acceptedReceiptCount",
+  ];
+  const publicControl = hasExactKeys(control, PUBLIC_CONTROL_KEYS)
+    && control.visible === false
+    && control.currentLeaseFence === null
+    && control.ownedByViewer === false
+    && control.hasActiveLease === false;
+  const seatControl = hasExactKeys(control, SEAT_CONTROL_KEYS)
+    && control.visible === true
+    && control.seatKey === viewer.seatKey
+    && Number.isSafeInteger(control.currentLeaseFence)
+    && control.currentLeaseFence >= 0
+    && typeof control.ownedByViewer === "boolean"
+    && typeof control.hasActiveLease === "boolean";
+  return hasExactKeys(room, VIEWER_ROOM_SUMMARY_KEYS)
+    && room.schemaVersion === "starcraft_tmg_room_runtime_v2.summary"
+    && integerFields.every((field) => Number.isSafeInteger(room[field]) && room[field] >= 0)
+    && room.revision === room.stateRevision
+    && validContractHash(room.stateHash)
+    && validContractHash(room.journalHeadHash)
+    && room.trainingTruth === false
+    && typeof room.productionReady === "boolean"
+    && hasExactKeys(matchBinding, PUBLIC_MATCH_BINDING_KEYS)
+    && matchBinding.schemaVersion === `${projection.authorityVersion}.match-binding`
+    && matchBinding.roomId === room.roomId
+    && matchBinding.gameId === room.gameId
+    && matchBinding.bindingHash === room.matchBindingHash
+    && validContractHash(matchBinding.bindingHash)
+    && matchBinding.productionReady === room.productionReady
+    && hasExactKeys(runtime, RULES_RUNTIME_BINDING_KEYS)
+    && runtime.schemaVersion === "starcraft_tmg_rules_runtime_binding_v1"
+    && validContractHash(runtime.runtimeHash)
+    && runtime.trainingTruth === false
+    && sameContract(runtime, room.rulesRuntimeBinding)
+    && hasExactKeys(display, RULES_DISPLAY_BINDING_KEYS)
+    && display.schemaVersion === "starcraft_tmg_rules_display_binding_v1"
+    && validContractHash(display.artifactHash)
+    && display.rulesVersion === matchBinding.rulesVersion
+    && hasExactKeys(signature, REFEREE_SIGNATURE_KEYS)
+    && signature.contentHash === matchBinding.bindingHash
+    && validContractHash(signature.contentHash)
+    && (publicAccess ? publicControl : seatControl)
+    && hasExactKeys(training, VIEWER_TRAINING_KEYS)
+    && training.eligibleForTraining === false
+    && training.trainingTruth === false
+    && training.reviewStatus === "raw";
+}
+
+function validContractHash(value) {
+  return CONTRACT_HASH_PATTERN.test(String(value || ""));
+}
+
+function nonNegativeSafeInteger(value) {
+  return Number.isSafeInteger(value) && value >= 0;
+}
+
+function exactOrOptionalKeys(value, required, optional = []) {
+  if (!object(value)) return false;
+  const keys = Object.keys(value);
+  return required.every((key) => Object.prototype.hasOwnProperty.call(value, key))
+    && keys.every((key) => required.includes(key) || optional.includes(key));
+}
+
+function projectionAuthorityIdentity(projection, roomId, options = {}) {
+  if (!object(projection)
+    || projection.schemaVersion !== VIEWER_ROOM_PROJECTION_VERSION
+    || !object(projection.room)
+    || !object(projection.matchBinding) || !object(projection.viewer)
+    || !object(projection.state)) return null;
+  const identity = {
+    authorityVersion: String(projection.authorityVersion || ""),
+    gameId: String(projection.room.gameId || ""),
+    roomId: String(projection.room.roomId || ""),
+    matchBindingHash: String(projection.room.matchBindingHash || ""),
+    stateRevision: Number(projection.room.stateRevision),
+    stateHash: String(projection.room.stateHash || ""),
+    journalHeadHash: String(projection.room.journalHeadHash || ""),
+    sideKey: String(projection.viewer.seatKey || ""),
+    phase: String(projection.state.phase || ""),
+    refereeKeyId: String(projection.matchBinding.refereeKeyId || ""),
+    refereePublicKeyFingerprint: String(
+      projection.matchBinding.refereePublicKeyFingerprint || "",
+    ),
+    rulesRuntimeMode: String(projection.room.rulesRuntimeBinding?.mode || ""),
+  };
+  if (!identity.authorityVersion
+    || !identity.gameId
+    || identity.roomId !== roomId
+    || !validContractHash(identity.matchBindingHash)
+    || projection.matchBinding.bindingHash !== identity.matchBindingHash
+    || !nonNegativeSafeInteger(identity.stateRevision)
+    || !validContractHash(identity.stateHash)
+    || !validContractHash(identity.journalHeadHash)
+    || (options.requireSeat !== false && !identity.sideKey)
+    || !identity.phase
+    || !identity.refereeKeyId
+    || !validContractHash(identity.refereePublicKeyFingerprint)
+    || !identity.rulesRuntimeMode) return null;
+  return identity;
+}
+
+function legalSpaceCore(legalSpace) {
+  return {
+    schemaVersion: legalSpace.schemaVersion,
+    gameId: legalSpace.gameId,
+    roomId: legalSpace.roomId,
+    matchBindingHash: legalSpace.matchBindingHash,
+    stateRevision: legalSpace.stateRevision,
+    revision: legalSpace.revision,
+    stateHash: legalSpace.stateHash,
+    sideKey: legalSpace.sideKey,
+    phase: legalSpace.phase,
+    terminal: clone(legalSpace.terminal),
+    rulesRuntimeBinding: clone(legalSpace.rulesRuntimeBinding),
+    finiteActions: clone(legalSpace.finiteActions),
+    parameterDomains: clone(legalSpace.parameterDomains),
+  };
+}
+
+function validFiniteActions(actions, identity) {
+  if (!Array.isArray(actions)) return false;
+  const seen = new Set();
+  return actions.every((entry) => {
+    if (!hasExactKeys(entry, ["actionKey", "action", "confirmationClass"])
+      || !object(entry.action)
+      || typeof entry.action.actionType !== "string"
+      || entry.action.sideKey !== identity.sideKey
+      || !new Set(["direct_gesture", "explicit_human"]).has(entry.confirmationClass)) return false;
+    const expectedKey = `sc-finite-${contractHash({
+      matchBindingHash: identity.matchBindingHash,
+      stateHash: identity.stateHash,
+      stateRevision: identity.stateRevision,
+      sideKey: identity.sideKey,
+      action: entry.action,
+    })}`;
+    if (entry.actionKey !== expectedKey || seen.has(entry.actionKey)) return false;
+    seen.add(entry.actionKey);
+    return true;
+  });
+}
+
+function validParameterDomains(domains, identity) {
+  if (!Array.isArray(domains)) return false;
+  const seen = new Set();
+  return domains.every((domain) => {
+    if (!object(domain)
+      || !/^sc-domain-[a-f0-9]{64}$/u.test(String(domain.domainId || ""))
+      || typeof domain.actionType !== "string"
+      || !domain.actionType
+      || domain.sideKey !== identity.sideKey
+      || !object(domain.constraints)
+      || (domain.parameterSchema !== undefined && !object(domain.parameterSchema))) return false;
+    const { domainId, ...domainCore } = domain;
+    const domainIdentity = identity.rulesRuntimeMode === "legacy_compatibility_fixture"
+      ? {
+        matchBindingHash: identity.matchBindingHash,
+        stateHash: identity.stateHash,
+        stateRevision: identity.stateRevision,
+        sideKey: identity.sideKey,
+        actionType: domain.actionType,
+        pieceId: domain.pieceId,
+      }
+      : domainCore;
+    if (domainId !== `sc-domain-${contractHash(domainIdentity)}` || seen.has(domainId)) return false;
+    seen.add(domainId);
+    return true;
+  });
+}
+
+function validSearchSuggestions(suggestions, domains) {
+  if (!Array.isArray(suggestions)) return false;
+  const domainIds = new Set(domains.map((domain) => domain.domainId));
+  const seen = new Set();
+  return suggestions.every((entry) => {
+    if (!hasExactKeys(entry, [
+      "suggestionId",
+      "candidateId",
+      "kind",
+      "authoritativeIdentity",
+      "proposal",
+      "action",
+      "isEnabled",
+      "score",
+      "details",
+    ])
+      || !/^sc-suggestion-[a-f0-9]{64}$/u.test(String(entry.suggestionId || ""))
+      || entry.candidateId !== entry.suggestionId
+      || entry.kind !== "parameter_sample"
+      || entry.authoritativeIdentity !== false
+      || entry.isEnabled !== true
+      || !Number.isFinite(entry.score)
+      || !object(entry.details)
+      || !object(entry.action)
+      || !object(entry.proposal)
+      || entry.proposal.kind !== "parameterized"
+      || !domainIds.has(entry.proposal.domainId)
+      || !object(entry.proposal.parameters)
+      || seen.has(entry.suggestionId)) return false;
+    seen.add(entry.suggestionId);
+    return true;
+  });
+}
+
+function validDisabledDiagnostics(diagnostics) {
+  return Array.isArray(diagnostics) && diagnostics.every((entry) => (
+    exactOrOptionalKeys(entry, ["action", "disabledReason"], ["details"])
+      && object(entry.action)
+      && typeof entry.disabledReason === "string"
+      && (entry.details === undefined || object(entry.details))
+  ));
+}
+
+function validLegalSpaceResponse(legalSpace, projection, roomId) {
+  const identity = projectionAuthorityIdentity(projection, roomId);
+  if (!identity
+    || !hasExactKeys(legalSpace, LEGAL_SPACE_KEYS)
+    || legalSpace.schemaVersion !== `${identity.authorityVersion}.legal-space`
+    || legalSpace.gameId !== identity.gameId
+    || legalSpace.roomId !== identity.roomId
+    || legalSpace.matchBindingHash !== identity.matchBindingHash
+    || legalSpace.stateRevision !== identity.stateRevision
+    || legalSpace.revision !== identity.stateRevision
+    || legalSpace.stateHash !== identity.stateHash
+    || legalSpace.sideKey !== identity.sideKey
+    || legalSpace.phase !== identity.phase
+    || (legalSpace.terminal !== null && !object(legalSpace.terminal))
+    || !sameContract(
+      legalSpace.rulesRuntimeBinding,
+      projection.room.rulesRuntimeBinding,
+    )
+    || !validFiniteActions(legalSpace.finiteActions, identity)
+    || !validParameterDomains(legalSpace.parameterDomains, identity)
+    || !validSearchSuggestions(
+      legalSpace.searchSuggestions,
+      legalSpace.parameterDomains,
+    )
+    || !validDisabledDiagnostics(legalSpace.disabledDiagnostics)
+    || legalSpace.disabledCount !== legalSpace.disabledDiagnostics.length
+    || legalSpace.searchAndStrategyExcludedFromAuthority !== true
+    || !Array.isArray(legalSpace.candidates)
+    || !validContractHash(legalSpace.legalSpaceHash)
+    || legalSpace.legalSpaceHash !== contractHash(legalSpaceCore(legalSpace))) return false;
+  const expectedCandidates = [
+    ...legalSpace.finiteActions.map((entry) => ({
+      candidateId: entry.actionKey,
+      action: clone(entry.action),
+      isEnabled: true,
+      score: 0,
+      details: {},
+      authoritativeIdentity: true,
+    })),
+    ...clone(legalSpace.searchSuggestions),
+  ];
+  return sameContract(legalSpace.candidates, expectedCandidates);
+}
+
+function validChanceTicketBundle(bundle, core) {
+  if (!object(bundle)
+    || !exactOrOptionalKeys(bundle, [
+      "schemaVersion",
+      "matchBindingHash",
+      "stateHash",
+      "stateRevision",
+      "proposalHash",
+      "spec",
+      "tickets",
+      "outcomesHidden",
+      "bundleHash",
+    ])
+    || bundle.schemaVersion !== "starcraft_tmg_chance_bundle_v1"
+    || bundle.matchBindingHash !== core.matchBindingHash
+    || bundle.stateHash !== core.preStateHash
+    || bundle.stateRevision !== core.expectedStateRevision
+    || bundle.proposalHash !== core.proposalHash
+    || bundle.outcomesHidden !== true
+    || !object(bundle.spec)
+    || !Array.isArray(bundle.tickets)
+    || !nonNegativeSafeInteger(bundle.spec.count)
+    || bundle.tickets.length !== bundle.spec.count) return false;
+  const { bundleHash, ...body } = bundle;
+  if (!validContractHash(bundleHash) || bundleHash !== contractHash(body)) return false;
+  return bundle.tickets.every((ticket, index) => (
+    object(ticket)
+      && ticket.schemaVersion === "starcraft_tmg_chance_ticket_v1"
+      && object(ticket.basis)
+      && ticket.basis.matchBindingHash === core.matchBindingHash
+      && ticket.basis.stateHash === core.preStateHash
+      && ticket.basis.stateRevision === core.expectedStateRevision
+      && ticket.basis.proposalHash === core.proposalHash
+      && ticket.basis.counter === index
+      && validContractHash(ticket.commitment)
+      && ticket.outcomeHidden === true
+  ));
+}
+
+function validPreviewResult(core) {
+  if (!object(core.result)) return false;
+  if (core.chanceTicket === null) {
+    return hasExactKeys(core.result, [
+      "postStateHash",
+      "eventsHash",
+      "events",
+      "postGameClock",
+    ])
+      && validContractHash(core.result.postStateHash)
+      && validContractHash(core.result.eventsHash)
+      && Array.isArray(core.result.events)
+      && core.result.eventsHash === contractHash(core.result.events)
+      && object(core.result.postGameClock)
+      && core.result.postGameClock.transition === core.expectedStateRevision + 1;
+  }
+  return validChanceTicketBundle(core.chanceTicket, core)
+    && hasExactKeys(core.result, [
+      "chancePending",
+      "postStateHash",
+      "eventsHash",
+      "events",
+      "postGameClock",
+    ])
+    && core.result.chancePending === true
+    && core.result.postStateHash === null
+    && core.result.eventsHash === null
+    && Array.isArray(core.result.events)
+    && core.result.events.length === 0
+    && core.result.postGameClock === null;
+}
+
+function expectedPreviewEntry(legalSpace, proposal) {
+  if (proposal.kind === "finite") {
+    return legalSpace.finiteActions.find((entry) => (
+      entry.actionKey === proposal.actionKey
+    )) || null;
+  }
+  return legalSpace.parameterDomains.find((entry) => (
+    entry.domainId === proposal.domainId
+  )) || null;
+}
+
+function validPreviewResponse(preview, proposal, legalSpace, projection, roomId) {
+  const identity = projectionAuthorityIdentity(projection, roomId);
+  const expectedEntry = expectedPreviewEntry(legalSpace, proposal);
+  const core = preview?.core;
+  const seal = preview?.previewSeal;
+  if (!identity
+    || !expectedEntry
+    || !hasExactKeys(preview, PREVIEW_KEYS)
+    || preview.schemaVersion !== `${identity.authorityVersion}.preview`
+    || !/^sc-preview-[A-Za-z0-9-]{8,128}$/u.test(String(preview.previewId || ""))
+    || !hasExactKeys(core, PREVIEW_CORE_KEYS)
+    || core.schemaVersion !== `${identity.authorityVersion}.preview-core`
+    || core.gameId !== identity.gameId
+    || core.roomId !== identity.roomId
+    || core.matchBindingHash !== identity.matchBindingHash
+    || core.expectedStateRevision !== identity.stateRevision
+    || core.expectedRevision !== identity.stateRevision
+    || core.preStateHash !== identity.stateHash
+    || core.legalSpaceHash !== legalSpace.legalSpaceHash
+    || core.seatKey !== identity.sideKey
+    || !object(core.proposal)
+    || !object(core.action)
+    || core.trainingTruth !== false
+    || !validContractHash(core.proposalHash)
+    || core.proposalHash !== contractHash(core.proposal)
+    || !object(core.confirmationPolicy)
+    || !new Set(["direct_gesture", "explicit_human"]).has(
+      core.confirmationPolicy.baseClass,
+    )
+    || typeof core.confirmationPolicy.requiresExplicitHuman !== "boolean"
+    || !validPreviewResult(core)
+    || !hasExactKeys(seal, REFEREE_SEAL_KEYS)
+    || seal.schemaVersion !== "starcraft_tmg_referee_seal_v1"
+    || seal.purpose !== "preview"
+    || seal.keyId !== identity.refereeKeyId
+    || seal.hashAlgorithm !== "sha256"
+    || seal.sealAlgorithm !== "hmac-sha256"
+    || seal.contentHash !== contractHash({ previewId: preview.previewId, core })
+    || !SEAL_MAC_PATTERN.test(String(seal.mac || ""))
+    || preview.previewToken !== `${preview.previewId}.${seal.mac}`
+    || !hasExactKeys(preview.audit, ["occurredAt"])
+    || !Number.isFinite(Date.parse(String(preview.audit.occurredAt || "")))) return false;
+  if (proposal.kind === "finite") {
+    return core.proposal.kind === "finite"
+      && core.proposal.actionKey === proposal.actionKey
+      && sameContract(core.action, expectedEntry.action)
+      && core.confirmationPolicy.baseClass === expectedEntry.confirmationClass;
+  }
+  return core.proposal.kind === "parameterized"
+    && core.proposal.domainId === proposal.domainId
+    && object(core.proposal.parameters)
+    && core.action.actionType === expectedEntry.actionType
+    && core.action.sideKey === identity.sideKey
+    && (expectedEntry.pieceId === undefined
+      || core.action.pieceId === expectedEntry.pieceId)
+    && (expectedEntry.confirmationClass === undefined
+      || core.confirmationPolicy.baseClass === expectedEntry.confirmationClass);
+}
+
+function validReplayResponse(result, projection, roomId) {
+  const identity = projectionAuthorityIdentity(projection, roomId, {
+    requireSeat: false,
+  });
+  const replay = result?.replay;
+  const envelope = replay?.envelope;
+  const finalProjection = replay?.finalProjection;
+  const publicFinalViewer = hasExactKeys(finalProjection?.viewer, [
+    "roleMode",
+    "visibilityScope",
+  ])
+    && !identity?.sideKey
+    && projection?.viewer?.roleMode === "public_observer"
+    && projection?.viewer?.visibilityScope === "public"
+    && finalProjection.viewer.roleMode === "public_observer"
+    && finalProjection.viewer.visibilityScope === "public";
+  const seatFinalViewer = hasExactKeys(finalProjection?.viewer, [
+    "seatKey",
+    "roleMode",
+    "visibilityScope",
+  ])
+    && finalProjection.viewer.seatKey === identity?.sideKey
+    && finalProjection.viewer.roleMode === projection?.viewer?.roleMode
+    && finalProjection.viewer.visibilityScope
+      === projection?.viewer?.visibilityScope;
+  const expectedPublicState = {
+    schemaVersion: "starcraft_tmg_public_state_summary_v1",
+    round: Number.isSafeInteger(projection?.state?.round)
+      ? projection.state.round
+      : null,
+    phase: String(projection?.state?.phase || ""),
+    activeSideKey: projection?.state?.activeSideKey === undefined
+      ? null
+      : projection.state.activeSideKey,
+    terminal: projection?.state?.terminal === true,
+    gameOver: projection?.state?.gameOver === true,
+    winner: projection?.state?.winner === undefined
+      ? null
+      : projection.state.winner,
+    trainingTruth: false,
+  };
+  if (!identity
+    || !exactOrOptionalKeys(result, [
+      "schemaVersion",
+      "ok",
+      "replay",
+      "matchesCurrent",
+      "receiptCount",
+      "checkpointUsedForVerification",
+      "replayedTailReceiptCount",
+      "trainingTruth",
+    ])
+    || result.schemaVersion !== VIEWER_REPLAY_RESPONSE_VERSION
+    || result.ok !== true
+    || result.matchesCurrent !== true
+    || result.trainingTruth !== false
+    || !nonNegativeSafeInteger(result.receiptCount)
+    || !nonNegativeSafeInteger(result.replayedTailReceiptCount)
+    || result.replayedTailReceiptCount > result.receiptCount
+    || typeof result.checkpointUsedForVerification !== "boolean"
+    || !object(replay)
+    || !hasExactKeys(replay, [
+      "schemaVersion",
+      "appliedCount",
+      "checkpointStateRevision",
+      "envelope",
+      "finalProjection",
+      "silentCompatibilityUsed",
+      "trainingTruth",
+    ])
+    || replay.schemaVersion !== VIEWER_REPLAY_BUNDLE_VERSION
+    || !nonNegativeSafeInteger(replay.appliedCount)
+    || !nonNegativeSafeInteger(replay.checkpointStateRevision)
+    || replay.appliedCount !== result.replayedTailReceiptCount
+    || replay.checkpointStateRevision + replay.appliedCount
+      !== identity.stateRevision
+    || result.receiptCount !== identity.stateRevision
+    || result.checkpointUsedForVerification
+      !== (replay.checkpointStateRevision > 0)
+    || replay.silentCompatibilityUsed !== false
+    || replay.trainingTruth !== false
+    || !object(envelope)
+    || !hasExactKeys(envelope, [
+      "schemaVersion",
+      "gameId",
+      "roomId",
+      "matchBindingHash",
+      "stateRevision",
+      "revision",
+      "stateHash",
+      "journalHeadHash",
+      "state",
+      "trainingTruth",
+    ])
+    || envelope.schemaVersion !== "starcraft_tmg_viewer_envelope_summary_v1"
+    || envelope.gameId !== identity.gameId
+    || envelope.roomId !== identity.roomId
+    || envelope.matchBindingHash !== identity.matchBindingHash
+    || envelope.stateRevision !== identity.stateRevision
+    || envelope.revision !== identity.stateRevision
+    || envelope.stateHash !== identity.stateHash
+    || envelope.journalHeadHash !== identity.journalHeadHash
+    || envelope.trainingTruth !== false
+    || !sameContract(envelope.state, expectedPublicState)
+    || !hasExactKeys(finalProjection, [
+      "schemaVersion",
+      "viewer",
+      "room",
+      "matchBinding",
+      "authorityVersion",
+      "state",
+      "training",
+    ])
+    || finalProjection.schemaVersion
+      !== REPLAY_FINAL_PROJECTION_VERSION
+    || finalProjection.authorityVersion !== identity.authorityVersion
+    || (!seatFinalViewer && !publicFinalViewer)
+    || !sameContract(finalProjection.room, envelope)
+    || !sameContract(finalProjection.matchBinding, projection.matchBinding)
+    || !sameContract(finalProjection.state, projection.state)
+    || containsProjectionSecretKey(finalProjection.state)
+    || !sameContract(finalProjection.training, projection.training)) return false;
+  return true;
 }
 
 function utf8Length(value) {
@@ -299,6 +1006,156 @@ function receiptReference(receipt) {
     refereeSignature: clone(receipt.refereeSignature || null),
     trainingTruth: false,
   };
+}
+
+const TRANSITION_RECEIPT_KEYS = Object.freeze([
+  "schemaVersion", "gameId", "roomId", "matchBindingHash",
+  "previousJournalHash", "privateJournalSequence", "preStateRevision",
+  "postStateRevision", "preRevision", "postRevision", "preStateHash",
+  "postStateHash", "legalSpaceHash", "proposal", "proposalHash", "action",
+  "previewContentHash", "confirmationPolicy", "confirmationProofHash",
+  "applyingSeatKey", "applyingGrantId", "controlLeaseId", "leaseFence",
+  "idempotencyKeyHash", "preGameClock", "postGameClock", "chanceReveal",
+  "eventsHash", "events", "manualAdjudication", "eligibleForTraining",
+  "trainingTruth", "refereeSignature", "journalHash", "audit",
+]);
+const REFEREE_SIGNATURE_KEYS = Object.freeze([
+  "schemaVersion", "purpose", "keyId", "canonicalization", "hashAlgorithm",
+  "signatureAlgorithm", "contentHash", "signature",
+]);
+const VIEWER_ENVELOPE_KEYS = Object.freeze([
+  "schemaVersion", "gameId", "roomId", "matchBindingHash", "stateRevision",
+  "revision", "stateHash", "journalHeadHash", "state", "trainingTruth",
+]);
+
+function publicStateSummaryFromProjection(state = {}) {
+  return {
+    schemaVersion: "starcraft_tmg_public_state_summary_v1",
+    round: Number.isSafeInteger(state.round) ? state.round : null,
+    phase: String(state.phase || ""),
+    activeSideKey: state.activeSideKey === undefined ? null : state.activeSideKey,
+    terminal: state.terminal === true,
+    gameOver: state.gameOver === true,
+    winner: state.winner === undefined ? null : state.winner,
+    trainingTruth: false,
+  };
+}
+
+function structurallyValidTransitionReceipt(receipt, {
+  projection,
+  pendingPreview,
+  controlLease,
+  idempotencyKey,
+}) {
+  const identity = projectionAuthorityIdentity(projection, projection?.room?.roomId);
+  if (!identity || !hasExactKeys(receipt, TRANSITION_RECEIPT_KEYS)) return false;
+  const { journalHash, refereeSignature, audit, ...core } = receipt;
+  return receipt.schemaVersion === `${identity.authorityVersion}.receipt`
+    && receipt.gameId === identity.gameId
+    && receipt.roomId === identity.roomId
+    && receipt.matchBindingHash === identity.matchBindingHash
+    && receipt.previousJournalHash === identity.journalHeadHash
+    && receipt.privateJournalSequence === receipt.postStateRevision
+    && receipt.preStateRevision === identity.stateRevision
+    && receipt.postStateRevision === identity.stateRevision + 1
+    && receipt.preRevision === identity.stateRevision
+    && receipt.postRevision === identity.stateRevision + 1
+    && receipt.preStateHash === identity.stateHash
+    && validContractHash(receipt.postStateHash)
+    && receipt.legalSpaceHash === pendingPreview?.core?.legalSpaceHash
+    && sameContract(receipt.proposal, pendingPreview?.core?.proposal)
+    && receipt.proposalHash === pendingPreview?.core?.proposalHash
+    && receipt.proposalHash === contractHash(receipt.proposal)
+    && sameContract(receipt.action, pendingPreview?.core?.action)
+    && receipt.previewContentHash === pendingPreview?.previewSeal?.contentHash
+    && sameContract(receipt.confirmationPolicy, pendingPreview?.core?.confirmationPolicy)
+    && (receipt.confirmationProofHash === null || validContractHash(receipt.confirmationProofHash))
+    && receipt.applyingSeatKey === identity.sideKey
+    && receipt.applyingGrantId === projection.viewer.grantId
+    && receipt.controlLeaseId === controlLease?.leaseId
+    && receipt.leaseFence === controlLease?.leaseFence
+    && receipt.idempotencyKeyHash === contractHash({
+      roomId: identity.roomId,
+      idempotencyKey,
+    })
+    && sameContract(receipt.preGameClock, projection.state.gameClock)
+    && validContractHash(receipt.eventsHash)
+    && receipt.eventsHash === contractHash(receipt.events)
+    && typeof receipt.manualAdjudication === "boolean"
+    && receipt.eligibleForTraining === false
+    && receipt.trainingTruth === false
+    && hasExactKeys(refereeSignature, REFEREE_SIGNATURE_KEYS)
+    && refereeSignature.schemaVersion === "starcraft_tmg_referee_signature_v1"
+    && refereeSignature.purpose === "accepted_receipt"
+    && refereeSignature.keyId === identity.refereeKeyId
+    && refereeSignature.canonicalization === "RFC8785"
+    && refereeSignature.hashAlgorithm === "sha256"
+    && refereeSignature.signatureAlgorithm === "ed25519"
+    && refereeSignature.contentHash === contractHash(core)
+    && ED25519_SIGNATURE_PATTERN.test(String(refereeSignature.signature || ""))
+    && journalHash === contractHash({ receipt: core, refereeSignature })
+    && hasExactKeys(audit, ["occurredAt"])
+    && Number.isFinite(Date.parse(String(audit.occurredAt || "")));
+}
+
+function validViewerEnvelopeSummary(envelope, expected) {
+  return hasExactKeys(envelope, VIEWER_ENVELOPE_KEYS)
+    && envelope.schemaVersion === "starcraft_tmg_viewer_envelope_summary_v1"
+    && envelope.gameId === expected.gameId
+    && envelope.roomId === expected.roomId
+    && envelope.matchBindingHash === expected.matchBindingHash
+    && envelope.stateRevision === expected.stateRevision
+    && envelope.revision === expected.stateRevision
+    && envelope.stateHash === expected.stateHash
+    && envelope.journalHeadHash === expected.journalHeadHash
+    && envelope.trainingTruth === false
+    && object(envelope.state);
+}
+
+function validApplyResponseBeforeRefresh(result, context) {
+  const receipt = result?.receipt;
+  return exactOrOptionalKeys(result, [
+    "schemaVersion", "ok", "receipt", "envelope", "trainingTruth",
+  ], ["room", "checkpoint", "idempotentReplay"])
+    && result.schemaVersion === VIEWER_APPLY_RESPONSE_VERSION
+    && result.ok === true
+    && result.trainingTruth === false
+    && (result.idempotentReplay === undefined
+      || typeof result.idempotentReplay === "boolean")
+    && (result.room === undefined || (object(result.room)
+      && result.room.roomId === receipt?.roomId
+      && result.room.matchBindingHash === receipt?.matchBindingHash
+      && result.room.stateRevision === receipt?.postStateRevision
+      && result.room.stateHash === receipt?.postStateHash
+      && result.room.journalHeadHash === receipt?.journalHash
+      && result.room.trainingTruth === false))
+    && (result.checkpoint === null || result.checkpoint === undefined
+      || (hasExactKeys(result.checkpoint, ["checkpointHash", "stateRevision"])
+        && validContractHash(result.checkpoint.checkpointHash)
+        && result.checkpoint.stateRevision === receipt?.postStateRevision))
+    && structurallyValidTransitionReceipt(receipt, context)
+    && validViewerEnvelopeSummary(result.envelope, {
+      gameId: receipt.gameId,
+      roomId: receipt.roomId,
+      matchBindingHash: receipt.matchBindingHash,
+      stateRevision: receipt.postStateRevision,
+      stateHash: receipt.postStateHash,
+      journalHeadHash: receipt.journalHash,
+    });
+}
+
+function applyResponseMatchesRefreshedProjection(result, projection) {
+  const receipt = result.receipt;
+  const identity = projectionAuthorityIdentity(projection, receipt.roomId);
+  return Boolean(identity)
+    && identity.stateRevision === receipt.postStateRevision
+    && identity.stateHash === receipt.postStateHash
+    && identity.journalHeadHash === receipt.journalHash
+    && sameContract(receipt.postGameClock, projection.state.gameClock)
+    && sameContract(
+      result.envelope.state,
+      publicStateSummaryFromProjection(projection.state),
+    );
 }
 
 function replayReference(replayResult) {
@@ -472,6 +1329,10 @@ export function createStarcraftTmgClientDomain(options = {}) {
   const clientSessionId = createId("sc-client-session");
   const listeners = new Set();
   const sensitiveValues = new Set();
+  // This bounded registry contains blocked scopes only. Entries are never
+  // evicted: once full, binding a new scope fails closed until one of the
+  // recorded scopes completes authoritative refresh -> Replay revalidation.
+  const replayIntegrityByScope = new Map();
   let binding = null;
   let bindingCredential = "";
   let controlLeaseReference = null;
@@ -492,6 +1353,14 @@ export function createStarcraftTmgClientDomain(options = {}) {
     replay: null,
     control: unclaimedControl(),
     accessReceipt: null,
+    integrity: {
+      schemaVersion: "starcraft_tmg_client_replay_integrity_latch_v1",
+      replayBlocked: false,
+      reason: null,
+      blockedAtStateRevision: null,
+      recoveryPhase: "clear",
+      trainingTruth: false,
+    },
     rejection: null,
     recovery: {
       cacheStatus: "not_checked",
@@ -519,6 +1388,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
       replay: clone(internal.replay),
       control: clone(internal.control),
       accessReceipt: clone(internal.accessReceipt),
+      integrity: clone(internal.integrity),
       rejection: clone(internal.rejection),
       recovery: clone(internal.recovery),
       capabilities: {
@@ -601,17 +1471,48 @@ export function createStarcraftTmgClientDomain(options = {}) {
   }
 
   function validateProjection(projection) {
-    if (!object(projection) || !object(projection.room) || projection.room.roomId !== binding.roomId) {
+    if (!object(projection)) {
+      throw Object.assign(new Error("viewer projection is invalid or cross-room"), { code: "PROJECTION_INVALID" });
+    }
+    if (containsProjectionSecretKey(projection) || containsSensitiveValue(projection)) {
+      throw Object.assign(new Error("viewer projection contained credential material"), { code: "PROJECTION_CREDENTIAL_LEAK_REJECTED" });
+    }
+    if (projection.schemaVersion !== VIEWER_ROOM_PROJECTION_VERSION
+      || !hasExactKeys(projection, STARCRAFT_TMG_VIEWER_PROJECTION_V3_TOP_LEVEL_KEYS)
+      || !object(projection.room)
+      || projection.room.roomId !== binding.roomId) {
       throw Object.assign(new Error("viewer projection is invalid or cross-room"), { code: "PROJECTION_INVALID" });
     }
     if (!Number.isInteger(Number(projection.room.stateRevision)) || !projection.room.stateHash) {
       throw Object.assign(new Error("viewer projection revision identity is missing"), { code: "PROJECTION_INVALID" });
     }
-    if (containsProjectionSecretKey(projection) || containsSensitiveValue(projection)) {
-      throw Object.assign(new Error("viewer projection contained credential material"), { code: "PROJECTION_CREDENTIAL_LEAK_REJECTED" });
+    if (!isExactStarcraftTmgViewerStateShapeV3(projection.state)) {
+      throw Object.assign(new Error("viewer state does not match the exact V3 visibility schema"), {
+        code: "PROJECTION_INVALID",
+      });
+    }
+    const viewer = projection.viewer || {};
+    const publicAccess = !bindingCredential;
+    const viewerClassMatches = publicAccess
+      ? hasExactKeys(viewer, PUBLIC_VIEWER_KEYS)
+        && viewer.roleMode === "public_observer"
+        && viewer.visibilityScope === "public"
+        && sameContract(viewer.capabilities, ["read_public"])
+      : hasExactKeys(viewer, SEAT_VIEWER_KEYS)
+        && Boolean(String(viewer.grantId || "").trim())
+        && Boolean(String(viewer.seatKey || "").trim())
+        && viewer.roleMode !== "public_observer"
+        && viewer.visibilityScope !== "public"
+        && Array.isArray(viewer.capabilities)
+        && viewer.capabilities.includes("read_room")
+        && Number.isSafeInteger(viewer.grantRecoveryRevision)
+        && viewer.grantRecoveryRevision >= 0;
+    if (!viewerClassMatches) {
+      throw Object.assign(new Error("viewer projection does not match bootstrap credential class"), {
+        code: "PROJECTION_VIEWER_CLASS_INVALID",
+      });
     }
     if (binding.expectedViewer) {
-      const viewer = projection.viewer || {};
       const matchBinding = projection.matchBinding || {};
       if (viewer.grantId !== binding.expectedViewer.grantId
         || viewer.seatKey !== binding.expectedViewer.seatKey
@@ -626,6 +1527,12 @@ export function createStarcraftTmgClientDomain(options = {}) {
           code: "ACCESS_EXCHANGE_BINDING_INVALID",
         });
       }
+    }
+    if (!viewerProjectionSubcontractsMatch(projection, publicAccess)
+      || !viewerPrivateStateMatches(projection.state, viewer, publicAccess)) {
+      throw Object.assign(new Error("viewer projection violates its exact scoped subcontracts"), {
+        code: "PROJECTION_VIEWER_CLASS_INVALID",
+      });
     }
     return clone(projection);
   }
@@ -802,12 +1709,44 @@ export function createStarcraftTmgClientDomain(options = {}) {
     }
   }
 
-  function ensureOperational() {
+  function ensureOperational(options = {}) {
     if (!binding) return "CLIENT_NOT_BOOTSTRAPPED";
     const snapshot = lifecycle.read();
     if (!operationalLifecycle(snapshot) || internal.phase === "offline_read_only") return "OFFLINE_READ_ONLY";
     if (!internal.roomProjection || internal.phase !== "ready") return "CLIENT_NOT_READY";
+    if (options.mutation === true && internal.integrity.replayBlocked === true) {
+      return "REPLAY_INTEGRITY_BLOCKED";
+    }
     return null;
+  }
+
+  function latchReplayIntegrity(reason) {
+    if (!internal.roomProjection) return null;
+    const observedRevision = currentStateRevision();
+    const integrity = {
+      schemaVersion: "starcraft_tmg_client_replay_integrity_latch_v1",
+      replayBlocked: true,
+      reason: String(reason || "REPLAY_RESPONSE_INVALID"),
+      blockedAtStateRevision: Number.isSafeInteger(observedRevision)
+        && observedRevision >= 0 ? observedRevision : null,
+      recoveryPhase: "refresh_required",
+      trainingTruth: false,
+    };
+    const roomId = String(binding?.roomId || internal.roomProjection?.room?.roomId || "");
+    if (roomId) {
+      const scopeKey = replayIntegrityRegistryKey(roomId, binding?.principalScopeHash);
+      if (replayIntegrityByScope.has(scopeKey)) {
+        replayIntegrityByScope.set(scopeKey, clone(integrity));
+      } else if (replayIntegrityByScope.size < MAX_REPLAY_INTEGRITY_SCOPES) {
+        replayIntegrityByScope.set(scopeKey, clone(integrity));
+      }
+    }
+    publish({
+      integrity,
+      legalSpace: null,
+      pendingPreview: null,
+    });
+    return integrity;
   }
 
   function currentStateRevision() {
@@ -829,13 +1768,15 @@ export function createStarcraftTmgClientDomain(options = {}) {
       }
       const legalSpace = result.legalSpace;
       if (!object(legalSpace)
-        || !Array.isArray(legalSpace.finiteActions)
-        || !Array.isArray(legalSpace.parameterDomains)
-        || Number(legalSpace.stateRevision) !== currentStateRevision()
-        || !/^[a-f0-9]{64}$/.test(String(legalSpace.legalSpaceHash || ""))) {
+        || Number(legalSpace.stateRevision) !== currentStateRevision()) {
         await refreshProjection("legal_space_revision_mismatch");
         return rejection("LEGAL_SPACE_STALE", { refreshed: true });
       }
+      if (!validLegalSpaceResponse(
+        legalSpace,
+        internal.roomProjection,
+        binding.roomId,
+      )) return rejection("LEGAL_SPACE_RESPONSE_INVALID");
       const view = publish({ legalSpace: clone(legalSpace), pendingPreview: null, rejection: null });
       return deepFreeze({ ok: true, outcome: "legal_space_loaded", view });
     } catch (error) {
@@ -859,7 +1800,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
   }
 
   async function previewIntent(intent) {
-    const blocked = ensureOperational();
+    const blocked = ensureOperational({ mutation: true });
     if (blocked) return rejection(blocked, { mutationAllowed: false });
     let proposal;
     try {
@@ -876,12 +1817,18 @@ export function createStarcraftTmgClientDomain(options = {}) {
       }
       const preview = result.preview;
       if (!object(preview)
-        || !preview.previewId
-        || !preview.previewToken
         || Number(preview.core?.expectedStateRevision) !== currentStateRevision()
         || preview.core?.legalSpaceHash !== internal.legalSpace.legalSpaceHash) {
-        return rejection("PREVIEW_RESPONSE_INVALID");
+        await refreshProjection("preview_response_revision_mismatch");
+        return rejection("LEGAL_SPACE_STALE", { refreshed: true });
       }
+      if (!validPreviewResponse(
+        preview,
+        proposal,
+        internal.legalSpace,
+        internal.roomProjection,
+        binding.roomId,
+      )) return rejection("PREVIEW_RESPONSE_INVALID");
       const view = publish({ pendingPreview: clone(preview), rejection: null });
       return deepFreeze({ ok: true, outcome: "preview_ready_for_human_confirmation", confirmationRequired: true, view });
     } catch (error) {
@@ -890,7 +1837,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
   }
 
   async function obtainControlLease({ force = false, refreshAfterClaim = false } = {}) {
-    const blocked = ensureOperational();
+    const blocked = ensureOperational({ mutation: true });
     if (blocked) return rejection(blocked, { mutationAllowed: false });
     if (!force && controlLeaseReference) {
       return success("control_lease_available", { control: clone(internal.control), reusedPrivateReference: true });
@@ -958,7 +1905,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
   }
 
   async function issueAccess(kind) {
-    const blocked = ensureOperational();
+    const blocked = ensureOperational({ mutation: true });
     if (blocked) return rejection(blocked, { mutationAllowed: false });
     const operation = kind === "invite" ? "issue_invite" : "issue_recovery";
     let ephemeralToken = "";
@@ -1035,7 +1982,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
   }
 
   async function confirmAndApply(intent) {
-    const blocked = ensureOperational();
+    const blocked = ensureOperational({ mutation: true });
     if (blocked) return rejection(blocked, { mutationAllowed: false });
     if (!internal.pendingPreview || internal.pendingPreview.previewId !== intent.previewId) {
       return rejection("PREVIEW_NOT_CURRENT", { previewId: intent.previewId });
@@ -1043,14 +1990,20 @@ export function createStarcraftTmgClientDomain(options = {}) {
     const expectedStateRevision = currentStateRevision();
     const attempt = {
       previewId: intent.previewId,
+      previewToken: internal.pendingPreview.previewToken,
+      previewContentHash: internal.pendingPreview.previewSeal.contentHash,
       expectedStateRevision,
       idempotencyKey: createId("sc-client-apply"),
     };
     try {
-      const confirmed = await request("confirm_preview", { previewId: attempt.previewId });
+      const confirmed = await request("confirm_preview", {
+        previewId: attempt.previewId,
+        previewToken: attempt.previewToken,
+        previewContentHash: attempt.previewContentHash,
+      });
       if (!confirmed?.ok) {
         if (AUTHENTICATION_CODES.has(confirmed?.reason)) return rejectAuthentication(confirmed.reason, { operation: "confirm_preview" });
-        if (["REVISION_CONFLICT", "LEGAL_SPACE_STALE", "PREVIEW_NOT_FOUND"].includes(confirmed?.reason)) {
+        if (["REVISION_CONFLICT", "LEGAL_SPACE_STALE", "PREVIEW_NOT_FOUND", "PREVIEW_BINDING_MISMATCH"].includes(confirmed?.reason)) {
           const refreshed = await refreshProjection("confirmation_revision_rejected");
           if (!refreshed.ok) return refreshed;
         }
@@ -1080,16 +2033,24 @@ export function createStarcraftTmgClientDomain(options = {}) {
         } else publish({ phase: "ready" });
         return rejection(applied?.reason || "APPLY_REJECTED");
       }
-      const reference = receiptReference(applied.receipt);
-      if (!reference?.journalHash
-        || reference.preStateRevision !== expectedStateRevision
-        || reference.postStateRevision !== expectedStateRevision + 1
-        || reference.refereeSignature?.signatureAlgorithm !== "ed25519") {
+      if (!validApplyResponseBeforeRefresh(applied, {
+        projection: internal.roomProjection,
+        pendingPreview: internal.pendingPreview,
+        controlLease: controlLeaseReference,
+        idempotencyKey: attempt.idempotencyKey,
+      })) {
+        await refreshProjection("invalid_apply_response_recovery");
         return rejection("RECEIPT_RESPONSE_INVALID", { authoritativeOutcomeUncertain: true }, "recovering");
       }
-      internal.lastReceipt = reference;
       const refreshed = await refreshProjection("accepted_receipt");
       if (!refreshed.ok) return refreshed;
+      if (!applyResponseMatchesRefreshedProjection(applied, internal.roomProjection)) {
+        return rejection("RECEIPT_RESPONSE_INVALID", {
+          authoritativeOutcomeUncertain: true,
+          postApplyProjectionMismatch: true,
+        }, "recovering");
+      }
+      const reference = receiptReference(applied.receipt);
       const view = publish({ lastReceipt: reference, pendingPreview: null, rejection: null });
       return deepFreeze({ ok: true, outcome: "authoritative_receipt_applied", receipt: reference, view });
     } catch (error) {
@@ -1103,15 +2064,91 @@ export function createStarcraftTmgClientDomain(options = {}) {
 
   async function readReplay() {
     const blocked = ensureOperational();
-    if (blocked) return rejection(blocked, { mutationAllowed: false });
+    if (blocked) {
+      if (internal.roomProjection) latchReplayIntegrity(blocked);
+      return rejection(blocked, { mutationAllowed: false, integrityBlocked: Boolean(internal.roomProjection) });
+    }
     try {
       const result = await request("read_replay");
-      if (!result?.ok || result.matchesCurrent !== true) return rejection(result?.reason || "REPLAY_MISMATCH");
+      if (!result?.ok || result.matchesCurrent !== true) {
+        const code = result?.reason || "REPLAY_MISMATCH";
+        latchReplayIntegrity(code);
+        return rejection(code, { integrityBlocked: true });
+      }
+      if (!validReplayResponse(
+        result,
+        internal.roomProjection,
+        binding.roomId,
+      )) {
+        latchReplayIntegrity("REPLAY_RESPONSE_INVALID");
+        return rejection("REPLAY_RESPONSE_INVALID", { integrityBlocked: true });
+      }
       const replay = replayReference(result);
       const view = publish({ replay, rejection: null });
       return deepFreeze({ ok: true, outcome: "replay_verified", replay, view });
     } catch (error) {
-      return handleTransportFailure(error, "read_replay");
+      const failed = await handleTransportFailure(error, "read_replay");
+      if (internal.roomProjection) {
+        latchReplayIntegrity(
+          failed.rejection?.code || String(error?.code || "REPLAY_TRANSPORT_FAILED"),
+        );
+      }
+      return failed;
+    }
+  }
+
+  async function revalidateAuthority() {
+    const blocked = ensureOperational();
+    if (blocked) return rejection(blocked, { mutationAllowed: false });
+    const refreshed = await refreshProjection("replay_integrity_revalidation");
+    if (!refreshed.ok) {
+      latchReplayIntegrity(refreshed.rejection?.code || "AUTHORITY_REFRESH_FAILED");
+      return refreshed;
+    }
+    if (internal.integrity.replayBlocked === true) {
+      publish({
+        integrity: {
+          ...internal.integrity,
+          recoveryPhase: "replay_required",
+        },
+      });
+    }
+    try {
+      const result = await request("read_replay");
+      if (!result?.ok || result.matchesCurrent !== true || !validReplayResponse(
+        result,
+        internal.roomProjection,
+        binding.roomId,
+      )) {
+        const code = result?.reason || (result?.matchesCurrent === false
+          ? "REPLAY_MISMATCH" : "REPLAY_RESPONSE_INVALID");
+        latchReplayIntegrity(code);
+        return rejection(code, { integrityBlocked: true, revalidationFailed: true });
+      }
+      const replay = replayReference(result);
+      const integrity = {
+        schemaVersion: "starcraft_tmg_client_replay_integrity_latch_v1",
+        replayBlocked: false,
+        reason: null,
+        blockedAtStateRevision: null,
+        recoveryPhase: "clear",
+        trainingTruth: false,
+      };
+      replayIntegrityByScope.delete(replayIntegrityRegistryKey(
+        binding.roomId,
+        binding.principalScopeHash,
+      ));
+      const view = publish({ integrity, replay, rejection: null });
+      return deepFreeze({
+        ok: true,
+        outcome: "authority_revalidated",
+        replay,
+        view,
+      });
+    } catch (error) {
+      const failed = await handleTransportFailure(error, "revalidate_authority");
+      latchReplayIntegrity(failed.rejection?.code || "TRANSPORT_FAILED");
+      return failed;
     }
   }
 
@@ -1138,6 +2175,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
       return rejection(error.code || "CLIENT_INPUT_INVALID", safeErrorDetails(error));
     }
     if (intent.type === "refresh") return refreshProjection("explicit_dispatch");
+    if (intent.type === "revalidate_authority") return revalidateAuthority();
     if (intent.type === "load_legal_space") return loadLegalSpace();
     if (intent.type === "preview_finite" || intent.type === "preview_parameterized") return previewIntent(intent);
     if (intent.type === "confirm_and_apply_preview") return confirmAndApply(intent);
@@ -1272,6 +2310,16 @@ export function createStarcraftTmgClientDomain(options = {}) {
     let seatToken = normalized.seatToken;
     let bootstrapAccessReceipt = null;
     let expectedViewer = null;
+    if (normalized.access
+      && replayIntegrityByScope.size >= MAX_REPLAY_INTEGRITY_SCOPES) {
+      return rejection("REPLAY_INTEGRITY_REGISTRY_SATURATED", {
+        blockedScopeCount: replayIntegrityByScope.size,
+        requestedRoomId: normalized.roomId,
+        accessKind: normalized.access.kind,
+        accessExchangeAttempted: false,
+        mutationAllowed: false,
+      }, internal.phase);
+    }
     if (normalized.access) {
       if (!binding) {
         publish({
@@ -1318,6 +2366,20 @@ export function createStarcraftTmgClientDomain(options = {}) {
       roomId: normalized.roomId,
       principalScopeHash,
     });
+    const integrityScopeKey = replayIntegrityRegistryKey(normalized.roomId, principalScopeHash);
+    const currentIntegrityScopeKey = binding
+      ? replayIntegrityRegistryKey(binding.roomId, binding.principalScopeHash)
+      : null;
+    if (integrityScopeKey !== currentIntegrityScopeKey
+      && !replayIntegrityByScope.has(integrityScopeKey)
+      && replayIntegrityByScope.size >= MAX_REPLAY_INTEGRITY_SCOPES) {
+      if (seatToken && seatToken !== bindingCredential) sensitiveValues.delete(seatToken);
+      return rejection("REPLAY_INTEGRITY_REGISTRY_SATURATED", {
+        blockedScopeCount: replayIntegrityByScope.size,
+        requestedRoomId: normalized.roomId,
+        mutationAllowed: false,
+      }, internal.phase);
+    }
     binding = {
       roomId: normalized.roomId,
       surface: normalized.surface,
@@ -1332,6 +2394,14 @@ export function createStarcraftTmgClientDomain(options = {}) {
       sensitiveValues.delete(previousBindingCredential);
     }
     controlLeaseReference = null;
+    const restoredIntegrity = clone(replayIntegrityByScope.get(integrityScopeKey) || {
+      schemaVersion: "starcraft_tmg_client_replay_integrity_latch_v1",
+      replayBlocked: false,
+      reason: null,
+      blockedAtStateRevision: null,
+      recoveryPhase: "clear",
+      trainingTruth: false,
+    });
     internal = {
       clientRevision: internal.clientRevision,
       phase: "binding",
@@ -1347,6 +2417,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
       replay: null,
       control: unclaimedControl(),
       accessReceipt: bootstrapAccessReceipt,
+      integrity: restoredIntegrity,
       rejection: null,
       recovery: {
         cacheStatus: "not_checked",
