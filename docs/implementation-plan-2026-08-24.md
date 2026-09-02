@@ -123,7 +123,21 @@ The mature-worldbook follow-up's current data adds eight timeline persona editio
 
 This is not yet the required M1 live demo. Its verifier uses an injected fake Provider transport, and no Web/App screen, real Provider response, browser trace, or device evidence has been run.
 
-Ticket 13 is now split into Slices 119–126. Slice 119 freezes a content-hashed
+After the original Ticket 13 closure, Slice 127 extends the character visual
+product from one dynamic persona to all eight current persona editions. One
+shared server-owned state machine drives eight distinct five-frame manifests
+(`neutral`, `blink`, `speaking`, `warning`, `reflect`), for 40 frames total.
+Twenty-eight adjacent frames were generated from the seven existing static era
+anchors and sealed with prompt, input/output and visual-review receipts. Only
+the visible selected persona animates; background/offscreen views suspend,
+reduced-motion and offline modes use one static frame, missing art never crosses
+eras, and public rights failure still uses the Project D-original fallback.
+The original Slice 126 closure remains frozen; the extension gate replays it
+before Ticket 13 is reclosed at 9/9. Actual client-shell mounting stays Ticket
+14 and live BYOK Provider use stays Ticket 15.
+
+The original Ticket 13 scope was split into Slices 119–126; the later approved
+dynamic-all-eras extension is Slice 127. Slice 119 freezes a content-hashed
 visual source/rights/transformation plan before acquisition: the user permits
 network capture and AI editing inside the provenance-bearing development
 workspace, while public release remains independently rights-gated. Three
@@ -186,9 +200,10 @@ The shared view emits the existing Character Session factory input unchanged.
 Following the user's expanded visual decision, all eight current personas bind
 distinct 1254-square development-only static era anchors. Seven new generated
 anchors carry exact ImageGen prompts, input/output hashes, dimensions, rights
-status and manual visual reviews; post-Zerus primal retains its existing static
-anchor and is the only persona that additionally advertises the five-frame
-dynamic manifest. The comparison view never reuses another era's portrait.
+status and manual visual reviews. At Slice 123, post-Zerus primal retained its
+existing static anchor and was the only persona advertising the five-frame
+dynamic manifest; Slice 127 later extended that capability without rewriting
+this historical v1 binding. The comparison view never reuses another era's portrait.
 Focused verification passes 13/13 at catalogue `f4dad5c9...3f81`, visual binding
 `7188cf46...67ea`, era plan `2e59aaf0...02ba` and report `7778c391...8275`;
 no official-source refresh or Rules/room/Provider/memory/Skill/DSH/MuZero/
@@ -234,7 +249,8 @@ regenerate session evidence leaves the closure hash stable at
 browser/native-device evidence and selection-intent transport; Ticket 15 owns
 explicit per-session BYOK, credential isolation and an authorized live-model
 receipt. Neither owns Rules legality, hidden state, unconfirmed room apply,
-Skill/DSH or training truth. Ticket 13 is 8/8 and the project is 13/22; current
+Skill/DSH or training truth. This original closure was 8/8; Slice 127 later
+reclosed Ticket 13 at 9/9 while the project remained 13/22. Current
 Kerrigan-derived visuals remain development-only and production readiness stays
 false.
 

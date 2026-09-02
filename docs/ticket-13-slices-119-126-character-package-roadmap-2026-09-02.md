@@ -1,6 +1,6 @@
 # Ticket 13 CharacterPackage and worldbook roadmap
 
-Status: complete; 8/8 implementation slices complete.
+Status: complete; original closure 8/8 remains frozen, post-closure extension complete at 9/9.
 
 Ticket 13 turns the existing `1.0.0-demo.1` CharacterPackage and nine-book
 catalogue into a versioned, visible, importable and adversarially verified
@@ -38,6 +38,12 @@ online Agent sessions.
 | 124 | **Complete.** Implement accessible Web/App semantic character-card and dynamic-avatar renderers. This is a mountable shared interface and inspectable preview, not yet the Ticket 14 Expo/Web shell mount. | Hash-identical semantic content; responsive desktop/tablet/mobile and native tree; 44px targets; static/dynamic capability separation; reduced motion; spoiler-thumbnail suppression; public/offline fallbacks; no battlefield geometry backflow. |
 | 125 | **Complete.** Run chronology, quote-copying, hidden-state, source, rights and fallback adversarial evaluation. | Held-out persona probes; quote budget; later-era leakage rejection; room-hidden-state non-mutation; rollback/demotion evidence. |
 | 126 | **Complete.** Run Ticket 13 aggregate, cross-version replay, security audit and handoff. | Fixed denominators, stable report hash, adjacent Rules/room/Provider gates and explicit Ticket 14/15 interfaces. |
+| 127 | **Complete extension.** Give all eight current Kerrigan personas independent five-frame dynamic communications portraits while retaining one shared server-owned state machine. | 8 manifests / 40 frames; 28 new hash-bound PNG receipts; 48 phase-persona and 32 mode-persona views; Web/App parity; reduced-motion/offline/public fallbacks; no cross-era visual reuse. |
+
+Slice 126 remains the reproducible original Ticket 13 closure and is not
+rewritten. Slice 127 records the later user-approved scope extension. The
+Ticket is reclosed at 9/9 only after both the original closure gate and the
+extension gate pass.
 
 ## Harness boundary
 
