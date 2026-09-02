@@ -123,6 +123,19 @@ The mature-worldbook follow-up adds eight timeline persona editions plus one TMG
 
 This is not yet the required M1 live demo. Its verifier uses an injected fake Provider transport, and no Web/App screen, real Provider response, browser trace, or device evidence has been run.
 
+Ticket 13 is now split into Slices 119–125. Slice 119 freezes a content-hashed
+visual source/rights/transformation plan before acquisition: the user permits
+network capture and AI editing inside the provenance-bearing development
+workspace, while public release remains independently rights-gated. Three
+Kerrigan roles (square avatar, card portrait and full-body reference) use a
+normalized high-end Japanese cinematic science-fiction RPG direction and
+explicitly exclude copying another franchise's characters, costumes, props,
+logos or exact compositions. Missing or non-releasable art fails closed to an
+explicit placeholder or the Project D-original tactical Adjutant. The slice
+does not download or generate images, call DSH, generate Skills, mutate rooms,
+or create training truth. Large-scale Skill production remains an explicit
+future user-confirmation gate.
+
 ## Direct Provider increment
 
 Ticket 16 now has a concrete OpenAI-compatible direct-Provider Adapter and Harness receipt path:
