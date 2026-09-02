@@ -1,6 +1,6 @@
 # Ticket 12 source registry and translation roadmap
 
-Status: Slices 112–117 complete; Ticket 12 open at 6/7 planned slices.
+Status: Slices 112–118 complete; Ticket 12 closed at 7/7 planned slices.
 
 The source capture is frozen for this development period. No slice may contact
 the upstream Command Center, rulebook, FAQ, or P2P endpoints unless the user
@@ -20,7 +20,7 @@ and Command Center versions `71/69/48`.
 | 115 | **Complete.** Implement the direct translation Provider Adapter and bounded prompt/glossary/cost/attempt receipts. DSH remains forbidden outside Skill generation. External paid smoke stays a deployment gate until a user supplies credentials. | Credential isolation, egress/model/profile binding, deterministic real-Adapter wire smoke, failure and retry accounting, canonical non-mutation; no false production claim. |
 | 116 | **Complete.** Add the SQLite M1 and PostgreSQL production Adapter under one translation-review store contract. Live PostgreSQL integration remains a deployment gate until a DSN/server is supplied. | Candidate/review/correction lifecycle, CAS/idempotency, audit lineage, SQLite file restart, PostgreSQL protocol restart, cross-Adapter hash-identical contract tests. |
 | 117 | **Complete.** Add shared Web/App provenance, machine-draft review/correction UI, locale fallback, and content-free offline cache. Framework-shell integration remains a later deployment task. | Hash-identical Web/App model, desktop/tablet/mobile evidence, stale-source fallback, offline/reconnect behavior, cache invalidation, accessibility, rights and board-geometry isolation. |
-| 118 | Run the Ticket 12 aggregate, source/translation security audit, cross-version replay, and handoff gate. | All prior slice reports plus Ticket closure report; production claims remain limited to gates actually passed. |
+| 118 | **Complete.** Run the Ticket 12 aggregate, source/translation security audit, cross-version replay, and handoff gate. | Six base slice reports / 66 assertions plus 12 closure assertions; production claims remain limited to gates actually passed. |
 
 ## Authority boundaries
 

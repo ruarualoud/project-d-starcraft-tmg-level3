@@ -498,3 +498,15 @@ hash/locator/status metadata and all source-body redistribution stays blocked
 pending independent rights review. Focused 13/13 and adjacent source/FAQ/Ticket
 11 gates pass. No network refresh, Skill generation, DSH, MuZero, self-play,
 memory, or training promotion ran.
+
+Ticket 12 Slices 114–118 close the bounded M4 source/translation implementation:
+explicit-command immutable import/diff/review/rollback with exact room pins;
+an HTTPS direct translation Provider with isolated secrets and bounded
+prompt/glossary/model/cost/attempt receipts; hash-identical SQLite/PostgreSQL
+review-store semantics with CAS and audit replay; and one accessible Web/App
+review model with content-free offline provenance caching and board-geometry
+isolation. The final aggregate covers 7 reports / 78 assertions. It closes
+Ticket 12 at 7/7 and advances the project to 12/22 without claiming production:
+FAQ re-review, rights/signature, external Provider smoke, live PostgreSQL, and
+actual Web/native shell evidence remain explicit later gates. No source refresh,
+Skill generation, DSH, MuZero, self-play, memory, or training promotion ran.
