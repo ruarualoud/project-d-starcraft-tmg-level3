@@ -105,6 +105,7 @@ const ACTION_FIELDS = Object.freeze([
   "deploymentGeometryPlan",
   "expectedRegistryHash", "expectedMarkerViewHash", "expectedTokenMarkerCleanupHash",
   "scoringFinalizationPlan",
+  "disputeResolutionPlan",
 ]);
 
 class AuthorityError extends Error {
@@ -659,6 +660,10 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     entry,
   ]));
   const actionSchemaVersion = runtimeExecutors.has(
+    "authority.dispute-resolution-rules-v1",
+  )
+    ? "hybrid_legal_space_v49"
+    : runtimeExecutors.has(
     "authority.scoring-finalization-rules-v1",
   )
     ? "hybrid_legal_space_v48"
@@ -1826,7 +1831,7 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
         chanceReveal: clone(calculated.chanceRevealBundle),
         eventsHash: hashStarcraftTmgContract(calculated.events),
         events: clone(calculated.events),
-        manualAdjudication: false,
+        manualAdjudication: calculated.nextState.manualAdjudicationUsed === true,
         eligibleForTraining: false,
         trainingTruth: false,
       };

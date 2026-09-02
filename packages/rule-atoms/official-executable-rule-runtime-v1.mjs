@@ -1500,6 +1500,16 @@ import {
   OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_VERSION,
   OFFICIAL_SCORING_FINALIZATION_RULES_TRANSITION_SCHEMA,
 } from "./official-scoring-finalization-rules-executor-v1.mjs";
+import {
+  applyOfficialDisputeResolutionRulesV1,
+  enumerateOfficialDisputeResolutionRulesV1,
+  OFFICIAL_DISPUTE_RESOLUTION_RULES_ACTION_ATOM_IDS,
+  OFFICIAL_DISPUTE_RESOLUTION_RULES_ACTION_TYPE,
+  OFFICIAL_DISPUTE_RESOLUTION_RULES_EXECUTOR_ATOM_IDS,
+  OFFICIAL_DISPUTE_RESOLUTION_RULES_EXECUTOR_ID,
+  OFFICIAL_DISPUTE_RESOLUTION_RULES_EXECUTOR_VERSION,
+  OFFICIAL_DISPUTE_RESOLUTION_RULES_TRANSITION_SCHEMA,
+} from "./official-dispute-resolution-rules-executor-v1.mjs";
 
 export const OFFICIAL_EXECUTABLE_RULE_RUNTIME_SCHEMA =
   "starcraft_tmg_official_executable_rule_runtime_v1";
@@ -2376,6 +2386,12 @@ const KNOWN_EXECUTOR_MANIFEST = Object.freeze([
     transitionSchema: OFFICIAL_SCORING_FINALIZATION_RULES_TRANSITION_SCHEMA,
   }),
   Object.freeze({
+    executorId: OFFICIAL_DISPUTE_RESOLUTION_RULES_EXECUTOR_ID,
+    executorVersion: OFFICIAL_DISPUTE_RESOLUTION_RULES_EXECUTOR_VERSION,
+    actionTypes: Object.freeze([OFFICIAL_DISPUTE_RESOLUTION_RULES_ACTION_TYPE]),
+    transitionSchema: OFFICIAL_DISPUTE_RESOLUTION_RULES_TRANSITION_SCHEMA,
+  }),
+  Object.freeze({
     executorId: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_ID,
     executorVersion: OFFICIAL_END_OF_ROUND_EFFECTS_V4_EXECUTOR_VERSION,
     actionTypes: Object.freeze([OFFICIAL_END_OF_ROUND_EFFECTS_ACTION_TYPE]),
@@ -2488,6 +2504,7 @@ const KNOWN_EXECUTABLE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_BALANCED_TERRAIN_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_BATTLEFIELD_TOKEN_MARKER_RULES_EXECUTOR_ATOM_IDS,
   ...OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ATOM_IDS,
+  ...OFFICIAL_DISPUTE_RESOLUTION_RULES_EXECUTOR_ATOM_IDS,
 ])].sort((left, right) => left.localeCompare(right)));
 
 const EXECUTOR_ATOM_IDS = new Map([
@@ -2670,6 +2687,10 @@ const EXECUTOR_ATOM_IDS = new Map([
   [
     OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ID,
     OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ATOM_IDS,
+  ],
+  [
+    OFFICIAL_DISPUTE_RESOLUTION_RULES_EXECUTOR_ID,
+    OFFICIAL_DISPUTE_RESOLUTION_RULES_EXECUTOR_ATOM_IDS,
   ],
   [OFFICIAL_STIMPACK_MOVE_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_EXECUTOR_ATOM_IDS],
   [OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ID, OFFICIAL_STIMPACK_MOVE_V2_EXECUTOR_ATOM_IDS],
@@ -3367,6 +3388,9 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   const scoringFinalizationRulesEnabled = enabledExecutorIds.has(
     OFFICIAL_SCORING_FINALIZATION_RULES_EXECUTOR_ID,
   );
+  const disputeResolutionRulesEnabled = enabledExecutorIds.has(
+    OFFICIAL_DISPUTE_RESOLUTION_RULES_EXECUTOR_ID,
+  );
   const disengageEnabled = enabledExecutorIds.has(
     OFFICIAL_DISENGAGE_EXECUTOR_ID,
   );
@@ -3737,6 +3761,41 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
   function enumerate(state, options = {}) {
     if (!object(state) || !Array.isArray(state.pieces) || !object(state.players)) {
       fail("RULE_RUNTIME_STATE_INVALID");
+    }
+    const disputeResolutionStaged = disputeResolutionRulesEnabled
+      && state.officialDisputeResolutionRulesDataBundle
+      && (state.pendingRulesDispute
+        || state.pendingProvisionalRuling
+        || (state.provisionalRulings || []).some((entry) => !entry.verificationHash)
+        || (state.phase === "cleanup"
+          && state.scoringCleanupProgress?.currentStep === "check_end_game_conditions"));
+    if (disputeResolutionStaged) {
+      const sideKey = String(options.sideKey || state.activeSideKey
+        || state.firstPlayerSideKey || "").trim();
+      if (!sideKey) fail("RULE_RUNTIME_SIDE_REQUIRED");
+      const staged = enumerateOfficialDisputeResolutionRulesV1(state, {
+        sideKey, includeDisabled: options.includeDisabled === true,
+        matchBinding: options.matchBinding,
+      });
+      if (staged.length > 0 || state.pendingRulesDispute
+        || state.pendingProvisionalRuling
+        || (state.provisionalRulings || []).some((entry) => !entry.verificationHash)) {
+        return freezeDeep({
+          schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+          rulesRuntimeHash: descriptor.runtimeHash,
+          stateSummary: stateSummary(state),
+          terminal: state.gameOver === true || state.terminal === true
+            ? { gameOver: true, winner: String(state.winner || ""),
+              reason: String(state.terminalReason || ""),
+              provisionalRulingVerificationPending:
+                (state.provisionalRulings || []).some((entry) => !entry.verificationHash) }
+            : null,
+          candidates: staged, parameterDomains: [],
+          legalSpaceComplete: descriptor.legalSpaceComplete,
+          developmentSubset: !descriptor.legalSpaceComplete,
+          trainingTruth: false,
+        });
+      }
     }
     const isTerminal = (holdPositionEndGameV2Enabled || holdPositionEndGameEnabled)
       && (state.gameOver === true || state.terminal === true);
@@ -5591,6 +5650,20 @@ export function createOfficialExecutableRuleRuntimeV1(input = {}) {
       assertActionLineage(action,
         OFFICIAL_SCORING_FINALIZATION_RULES_ACTION_ATOM_IDS);
       return applyOfficialScoringFinalizationRulesV1(state, action, {
+        matchBinding: options.matchBinding,
+        chanceReveals: options.chanceReveals,
+      });
+    }
+    if (action.actionType === OFFICIAL_DISPUTE_RESOLUTION_RULES_ACTION_TYPE
+      && action.executorId === OFFICIAL_DISPUTE_RESOLUTION_RULES_EXECUTOR_ID) {
+      if (!disputeResolutionRulesEnabled
+        || action.executorVersion
+          !== OFFICIAL_DISPUTE_RESOLUTION_RULES_EXECUTOR_VERSION) {
+        fail("RULE_RUNTIME_EXECUTOR_MISMATCH");
+      }
+      assertActionLineage(action,
+        OFFICIAL_DISPUTE_RESOLUTION_RULES_ACTION_ATOM_IDS);
+      return applyOfficialDisputeResolutionRulesV1(state, action, {
         matchBinding: options.matchBinding,
         chanceReveals: options.chanceReveals,
       });
