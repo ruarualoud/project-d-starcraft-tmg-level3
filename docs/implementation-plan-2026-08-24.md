@@ -119,7 +119,7 @@ The fixed root now contains the contract-first Kerrigan Adjutant slice:
 - Opponent preview followed by external human confirmation; no model-facing mode owns apply;
 - rights, era, rules-authority and training-truth gates that remain explicitly unpassed.
 
-The mature-worldbook follow-up adds eight timeline persona editions plus one TMG context book, a single-persona selection invariant, spoiler and knowledge rank ceilings, deterministic entry budgets and activation receipts. It also adds a Character Card V2 JSON Adapter: sealed Project D cards round-trip by integrity hash, while external prompts are quarantined and imported cards default to untrusted Companion-only mode. PNG embedding remains an explicit gap. A Project D-original `Vesper` fallback now proves the same four role/session contracts, but its visual/voice asset gate remains open.
+The mature-worldbook follow-up's current data adds eight timeline persona editions plus one TMG context book; the later selector supports arbitrary versioned additions rather than fixing capacity at eight. It enforces a single active persona, spoiler and knowledge rank ceilings, deterministic entry budgets and activation receipts. Character Card V2 now has both the frozen historical JSON Adapter and a strict PNG `chara` transport: sealed Project D cards round-trip by integrity hash, while external prompts are quarantined and imported cards default to untrusted Companion-only mode. A Project D-original `Vesper` fallback proves the same four role/session contracts, but its visual/voice asset gate remains open.
 
 This is not yet the required M1 live demo. Its verifier uses an injected fake Provider transport, and no Web/App screen, real Provider response, browser trace, or device evidence has been run.
 
@@ -173,6 +173,26 @@ retain unknown fields for round-trip but their prompts remain quarantined and
 their derived package is untrusted Companion-only. The 12/12 verifier produces
 an actual local PNG card at hash `7b327c...05b1`; public rights, Rules, room,
 Provider, Skill, DSH, MuZero and training authority remain false.
+
+Slice 123 adds a shared content-hashed persona selector. The current source
+catalogue has eight timeline personas and one TMG context, but eight is not a
+capacity limit: a versioned CharacterPackage may add arbitrary persona books,
+and the 24-persona probe remains complete. Exactly one persona is active while
+contexts are independently selected. Spoiler and knowledge ceilings produce
+typed disabled reasons; ceiling reduction deterministically falls back to the
+latest safe persona and records why. Revision CAS, catalogue/package hashes and
+a content-free read-only offline snapshot prevent stale or cross-version state.
+The shared view emits the existing Character Session factory input unchanged.
+Following the user's expanded visual decision, all eight current personas bind
+distinct 1254-square development-only static era anchors. Seven new generated
+anchors carry exact ImageGen prompts, input/output hashes, dimensions, rights
+status and manual visual reviews; post-Zerus primal retains its existing static
+anchor and is the only persona that additionally advertises the five-frame
+dynamic manifest. The comparison view never reuses another era's portrait.
+Focused verification passes 13/13 at catalogue `f4dad5c9...3f81`, visual binding
+`7188cf46...67ea`, era plan `2e59aaf0...02ba` and report `7778c391...8275`;
+no official-source refresh or Rules/room/Provider/memory/Skill/DSH/MuZero/
+training mutation ran.
 
 ## Direct Provider increment
 

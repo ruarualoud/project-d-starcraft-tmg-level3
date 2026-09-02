@@ -1,6 +1,6 @@
 # Ticket 13 CharacterPackage and worldbook roadmap
 
-Status: active; 4/8 implementation slices complete.
+Status: active; 5/8 implementation slices complete.
 
 Ticket 13 turns the existing `1.0.0-demo.1` CharacterPackage and nine-book
 catalogue into a versioned, visible, importable and adversarially verified
@@ -34,7 +34,7 @@ online Agent sessions.
 | 120 | **Complete.** Capture one selected official reference and generate the dialogue avatar plus card portrait development assets. The generated full-body study is retained only as an ignored local design reference and is not product-selectable. | Immutable raw hashes; two prompts and generation receipts; dimensions/file hashes; visual inspection; full-body quarantine; development-only rights labels. |
 | 121 | **Complete.** Implement an SC1-style dynamic dialogue-portrait state machine, five identity-bound keyframes, mode/cue variants and shared Web/App animation contract. | Server-owned mode/phase; finite model `visualCue`; deterministic reducer; actual local six-phase preview; public-rights fallback; no room/Rules authority. |
 | 122 | **Complete.** Implement Character Card V2 PNG `chara`/base64/UTF-8 embedding and exact JSON/PNG import-export while freezing the old JSON-only Adapter. | CRC/base64/UTF-8/payload/chunk/dimension limits; byte-exact carrier and JSON round trip; strict Project D integrity binding; tamper/duplicate/foreign-card quarantine; no Rules authority. |
-| 123 | Implement the era/persona/spoiler selector and shared character view model. | Eight mutually exclusive personas plus TMG context; spoiler/knowledge ceilings; deterministic fallback and offline-safe state. |
+| 123 | **Complete.** Implement the era/persona/spoiler selector and shared character view model. Current data supplies eight personas plus TMG context, but the contract admits any number of versioned additions. All eight current personas have distinct development-only static era anchors; post-Zerus primal additionally has the five-frame dynamic manifest. | Exactly one persona plus independently selectable contexts; separate spoiler/knowledge ceilings; deterministic disclosed fallback; eight exact static visual bindings without cross-era reuse; one separately declared dynamic binding; revision CAS; content-free read-only offline snapshot. |
 | 124 | Implement accessible Web/App semantic character-card and dynamic-avatar renderers. | Hash-identical semantic content; responsive desktop/tablet/mobile and native tree; 44px targets; portrait animation semantics; no battlefield geometry backflow. |
 | 125 | Run chronology, quote-copying, hidden-state, source, rights and fallback adversarial evaluation. | Held-out persona probes; quote budget; later-era leakage rejection; room-hidden-state non-mutation; rollback/demotion evidence. |
 | 126 | Run Ticket 13 aggregate, cross-version replay, security audit and handoff. | Fixed denominators, stable report hash, adjacent Rules/room/Provider gates and explicit Ticket 14/15 interfaces. |
