@@ -223,6 +223,21 @@ than a live-model claim. Focused 10/10 and cumulative Ticket 13 foundations
 `a7da4b68...4c4` and report `65ef3a1d...3787`; no Provider, Skill, DSH,
 MuZero, self-play or training run occurred.
 
+Slice 126 closes Ticket 13 with a hash-sealed handoff and repeatable aggregate.
+Seven implementation reports pass a fixed 79/79 assertions; the 12/12 closure
+raises the eight-report total to 91/91, while 36 adjacent Rules, room, Provider,
+role-Agent and worldbook checks pass without widening authority. Cross-version
+replay freezes the historical JSON Adapter source and retains explicit PNG v2,
+selector, presentation and adversarial hashes. Re-running adjacent gates that
+regenerate session evidence leaves the closure hash stable at
+`7994370f...df0f`. The Ticket 14 interface owns actual Web/App framework mounts,
+browser/native-device evidence and selection-intent transport; Ticket 15 owns
+explicit per-session BYOK, credential isolation and an authorized live-model
+receipt. Neither owns Rules legality, hidden state, unconfirmed room apply,
+Skill/DSH or training truth. Ticket 13 is 8/8 and the project is 13/22; current
+Kerrigan-derived visuals remain development-only and production readiness stays
+false.
+
 ## Direct Provider increment
 
 Ticket 16 now has a concrete OpenAI-compatible direct-Provider Adapter and Harness receipt path:
