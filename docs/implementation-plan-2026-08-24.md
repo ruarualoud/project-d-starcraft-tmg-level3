@@ -194,6 +194,22 @@ Focused verification passes 13/13 at catalogue `f4dad5c9...3f81`, visual binding
 no official-source refresh or Rules/room/Provider/memory/Skill/DSH/MuZero/
 training mutation ran.
 
+Slice 124 projects the sealed CharacterPackage, selector view and optional
+server-owned dialogue-portrait view into one hash-identical semantic content
+model for Web and App. Web receives accessible HTML/CSS plus a bounded frame
+scheduler; App receives an accessibility-labelled native tree with the same
+portrait and selection semantics. Desktop, tablet and mobile contracts keep a
+square `cover` portrait, automatic high-quality scaling, 44px controls and zero
+changes to battlefield fit/zoom/pan/base/collision geometry. Static-only eras
+cannot accept a foreign dynamic view, reduced motion collapses to one
+server-selected frame, offline state makes every selector intent read-only,
+and later-era thumbnails stay hidden below the active spoiler/knowledge ceiling.
+Public rendering removes every rights-gated Kerrigan path and uses the labeled
+Project D-original fallback. Focused 12/12 and cumulative Ticket 13 foundations
+69/69 pass; shared content `5567f51a...63cc`, report `475c3904...480c`.
+The preview/native-tree artifacts are inspectable, but framework mounting remains
+Ticket 14 work; no Provider, Skill, DSH, MuZero, self-play or training run occurred.
+
 ## Direct Provider increment
 
 Ticket 16 now has a concrete OpenAI-compatible direct-Provider Adapter and Harness receipt path:
