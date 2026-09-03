@@ -1,7 +1,7 @@
 # Ticket 16 — secure BYOK and direct Provider roadmap
 
 Date: 2026-09-03  
-Status: active; Slices 153–154 complete, 2/10
+Status: active; Slices 153–155 complete, 3/10
 Project progress before this Ticket: 14/22 Tickets complete; Ticket 14 device
 acceptance remains deferred  
 Source refresh: not performed
@@ -63,6 +63,13 @@ Ticket 16 instead plugs into Ticket 15's four online role modes, permits no
 automatic retry, uses one credential Worker per attachment, and implements the
 chosen SQLite-M1/PostgreSQL-production storage contract.
 
+This lineage is required for every later StarCraft Agent scheduling mode:
+online role sessions, offline Skill generation, durable Skill jobs and
+self-play orchestration must pin the MTL scheduling inputs they adopt and state
+their StarCraft authority differences. Online modes retain the four-role,
+human-confirmation and no-DSH boundaries; later offline modes cannot silently
+inherit online authority or publish generated output.
+
 ## Target deep module
 
 `packages/secure-provider-runtime` will expose a small control plane plus one
@@ -100,7 +107,7 @@ call needs a new same-user approval and a reattached credential.
 | --- | --- | --- |
 | 153 | **Complete.** Audit/freeze the old implementation, compare MTL and fix the 10-Slice denominator. | Hash-sealed boundary `241c8a35...6cbe5`; exact old-file hashes; MTL commit and adapted principles; focused 15/15, report `8c03cff4...57e7e`; no key or call. |
 | 154 | **Complete.** Authenticated consent, attachment lifecycle and dedicated secure ingress. | Principal/session/profile/budget binding; one-use expiry nonce; Buffer-only synthetic-key path with zeroing; status/detach/revocation/concurrency tests; focused 27/27, report `30bf5825...c0fd`; no user key or Provider call. |
-| 155 | Child-process credential Worker and IPC isolation. | Scrubbed environment/stdio; parent buffer zeroing; per-attachment process; crash/detach kill; Agent/Rules/room/DSH denial. |
+| 155 | **Complete.** Child-process credential Worker and IPC isolation. | Scrubbed environment/stdio; parent and child buffer zeroing; per-attachment process; crash/detach kill; no restart; MTL scheduling lineage; focused 25/25 with 14 actual children, report `8749348f...faf5`; no user key or Provider call. |
 | 156 | Provider registry, egress allowlist and bounded transport. | Exact host/path/model; public DNS/TLS/no redirect; body/time bounds; one attempt; typed failures; no arbitrary endpoint. |
 | 157 | Common attempt-store contract and SQLite WAL Adapter. | Non-secret schema; intent-before-egress; atomic budget reservation/settlement; idempotency/CAS; restart replay. |
 | 158 | PostgreSQL Adapter parity and ambiguous-attempt recovery. | Same conformance suite; concurrent reservations; crash windows; explicit retry approval; lost-key reattach. |
@@ -162,3 +169,25 @@ never retries without explicit same-user approval.
 - Only a byte-array synthetic sentinel crossed the injected port. No user API
   key was accepted, no external Provider was called and the port is not yet a
   child process; Slice 155 owns that isolation step.
+
+## Slice 155 fixed evidence
+
+- A real fixed child process now owns each attached synthetic credential in
+  session memory; the parent and received IPC buffers are zeroed.
+- Child launch uses no shell, ignored stdin/stdout/stderr, one IPC channel and
+  a scrubbed environment. The child imports no Provider, Rules, room, Agent,
+  Skill, Memory or DSH capability.
+- Detach waits for exit with SIGKILL fallback. Unexpected exit is observable,
+  never automatically restarted and cannot reuse the old Worker reference.
+- The contract pins five exact MTL scheduling inputs at commit
+  `50ef5c29c655c015335d76e78fb4a0ecb442252f` and freezes both adopted flow and
+  StarCraft-specific authority differences.
+- Behavior verifier: 25/25 assertions with 14 actual child-process launches;
+  focused Slice 154, Slice 153 and Provider-supervisor regressions pass.
+- Fixed cumulative denominator: 234 predecessor assertions + 25 Slice 155
+  assertions = 259 assertions.
+- Contract hash: `e4aa950759f896d14223206f371225526efa728e80a38254ed248c4f03350b3a`.
+- Slice report hash: `8749348f18774bd374c9015fdb1458f745fd12e23a3946e663f3afe3c5ddfaf5`.
+- Only synthetic bytes ran. No user key, external Provider call, source refresh,
+  Skill/DSH/MuZero/self-play/Memory/training work occurred. Slice 156 owns the
+  exact allowlisted Provider transport.
