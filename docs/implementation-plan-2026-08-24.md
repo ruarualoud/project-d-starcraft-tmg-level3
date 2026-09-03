@@ -762,3 +762,20 @@ references. Focused 18/18, write-palette 16/16, workbench 10/10, Battle Lab
 23/23 and TypeScript pass. Ticket 14 advances to 14/16 with native/device Slice
 142 next. No source refresh, Provider, Skill, DSH, MuZero, self-play, memory or
 training promotion ran.
+
+Ticket 15 Slice 152 closes all nine online role-Agent slices. A real Chromium
+run uses the actual Battle Lab Client Domain, same-origin room and authenticated
+Agent HTTP, RoomRuntime, lifecycle, Provider supervisor and strict role-output
+runtime with only a deterministic injected Gateway. Tutor, Opponent,
+Commentator and Companion, three Provider failure paths, AbortSignal cancel,
+background-to-explicit-reconnect and Opponent LegalSpace → sealed Preview →
+human Confirm → fenced Apply → signed Receipt → Replay all pass. The browser
+gate found and repaired server-only imports in the client dependency graph, an
+async mode-selector reset and a foreground reconnect-control dead end. Trace,
+HTTP and saved-artifact privacy are scoped and separately verified. Fixed
+evidence is 170 prior assertions + 11 browser + 11 closure = 192; contract
+`d4f3e56c...377e`, browser report `b76b3af4...f4a2`, closure
+`51bdc550...d13c`. Ticket 15 is 9/9 and project progress is 14/22. Ticket 16
+owns secure BYOK and the first user-authorized live external-model call; no API
+key, source refresh, native device run, Skill/DSH/MuZero/self-play, memory write
+or training promotion occurred here.

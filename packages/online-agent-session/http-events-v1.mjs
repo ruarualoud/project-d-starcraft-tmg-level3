@@ -2,12 +2,17 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import { containsStarcraftTmgOnlineContextCredentialMaterialV1 } from
   "./role-context-contracts-v1.mjs";
+import {
+  STARCRAFT_TMG_ONLINE_AGENT_API_PREFIX,
+  STARCRAFT_TMG_ONLINE_AGENT_HTTP_VERSION,
+  STARCRAFT_TMG_ONLINE_AGENT_MAX_BODY_BYTES,
+} from "./portable-http-wire-v1.mjs";
 
-export const STARCRAFT_TMG_ONLINE_AGENT_HTTP_VERSION =
-  "starcraft_tmg_online_agent_http_v1";
-export const STARCRAFT_TMG_ONLINE_AGENT_API_PREFIX =
-  "/starcraft-tmg-level3/agent/api/v2";
-export const STARCRAFT_TMG_ONLINE_AGENT_MAX_BODY_BYTES = 64 * 1024;
+export {
+  STARCRAFT_TMG_ONLINE_AGENT_API_PREFIX,
+  STARCRAFT_TMG_ONLINE_AGENT_HTTP_VERSION,
+  STARCRAFT_TMG_ONLINE_AGENT_MAX_BODY_BYTES,
+} from "./portable-http-wire-v1.mjs";
 
 const HASH_PATTERN = /^[a-f0-9]{64}$/u;
 const SESSION_ID_PATTERN = /^[A-Za-z0-9._:-]{8,160}$/u;

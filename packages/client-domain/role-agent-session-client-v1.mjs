@@ -7,8 +7,8 @@ import {
   assertStarcraftTmgOnlineAgentClientTransportPort,
   StarcraftTmgOnlineAgentClientTransportError,
 } from "./online-agent-transport-adapters-v1.mjs";
-import { containsStarcraftTmgOnlineContextCredentialMaterialV1 } from
-  "../online-agent-session/role-context-contracts-v1.mjs";
+import { containsStarcraftTmgOnlineCredentialMaterialV1 } from
+  "../online-agent-session/portable-credential-material-v1.mjs";
 
 export const STARCRAFT_TMG_ROLE_AGENT_CLIENT_EXTENSION_VERSION =
   "starcraft_tmg_client_domain_v1.role_agent_session_v1";
@@ -216,7 +216,8 @@ export function createStarcraftTmgRoleAgentSessionClientV1(options = {}) {
       trace: clone(state.trace),
       rejection: clone(state.rejection),
       readOnly,
-      requiresExplicitReconnect: Boolean(privateSession && readOnly),
+      requiresExplicitReconnect: Boolean(privateSession
+        && (readOnly || state.status === "reconnect_required")),
       capabilities: {
         modes: Object.keys(MODE_INTENTS),
         intentsByMode: clone(MODE_INTENTS),
@@ -294,7 +295,7 @@ export function createStarcraftTmgRoleAgentSessionClientV1(options = {}) {
     const fields = AGENT_INTENT_FIELDS[input?.type];
     if (!fields) throw new TypeError("unsupported role-Agent client intent");
     exactFields(input, fields, "role-Agent client intent");
-    if (containsStarcraftTmgOnlineContextCredentialMaterialV1(input)) {
+    if (containsStarcraftTmgOnlineCredentialMaterialV1(input)) {
       throw Object.assign(new TypeError("credential-shaped Agent input is forbidden"), {
         code: "AGENT_CREDENTIAL_MATERIAL_FORBIDDEN",
       });

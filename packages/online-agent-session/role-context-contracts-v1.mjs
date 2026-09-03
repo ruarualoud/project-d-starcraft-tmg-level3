@@ -2,6 +2,8 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import { getStarcraftTmgModeCapability } from
   "../character-agent/mode-capability-v1.mjs";
+import { containsStarcraftTmgOnlineCredentialMaterialV1 } from
+  "./portable-credential-material-v1.mjs";
 
 export const STARCRAFT_TMG_ONLINE_ROLE_CONTEXT_CONTRACT_VERSION =
   "starcraft_tmg_online_role_context_contract_v1";
@@ -9,8 +11,6 @@ export const STARCRAFT_TMG_ONLINE_ROLE_CONTEXT_CONTRACT_VERSION =
 const HASH_PATTERN = /^[a-f0-9]{64}$/u;
 const ACCEPTED_SKILL_STATUSES = new Set(["replay_passed", "human_reviewed"]);
 const ACCEPTED_MEMORY_STATUSES = new Set(["accepted", "curated"]);
-const SENSITIVE_VALUE_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]{8,}|\bsk-[A-Za-z0-9_-]{12,}|(?:api[_-]?key|authorization|credential|secret)\s*[:=]\s*[^\s,;}]{6,}/iu;
-const SENSITIVE_KEY_PATTERN = /(?:api.?key|authorization|cookie|credential|secret|access.?token|refresh.?token)/iu;
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -40,18 +40,9 @@ function hash(value, field) {
   return normalized;
 }
 
-function containsSensitiveMaterial(value, seen = new Set()) {
-  if (typeof value === "string") return SENSITIVE_VALUE_PATTERN.test(value);
-  if (!value || typeof value !== "object" || seen.has(value)) return false;
-  seen.add(value);
-  if (Array.isArray(value)) return value.some((entry) => containsSensitiveMaterial(entry, seen));
-  return Object.entries(value).some(([key, child]) =>
-    SENSITIVE_KEY_PATTERN.test(key) || containsSensitiveMaterial(child, seen));
-}
-
 function seal(value, hashField) {
   const unsigned = clone(value);
-  if (containsSensitiveMaterial(unsigned)) {
+  if (containsStarcraftTmgOnlineCredentialMaterialV1(unsigned)) {
     throw new TypeError("online role context contains credential material");
   }
   return deepFreeze({ ...unsigned, [hashField]: hashStarcraftTmgContract(unsigned) });
@@ -241,5 +232,5 @@ export function assertStarcraftTmgOnlineMemorySnapshotV1(value, binding) {
 }
 
 export function containsStarcraftTmgOnlineContextCredentialMaterialV1(value) {
-  return containsSensitiveMaterial(value);
+  return containsStarcraftTmgOnlineCredentialMaterialV1(value);
 }

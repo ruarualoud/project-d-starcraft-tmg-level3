@@ -387,8 +387,13 @@ function renderFacts(referee) {
 
 function renderAgent(agent, controls) {
   el["agent-status"].textContent = `${agent.status} · ${agent.traces.length}`;
-  const mode = controls?.mode || el["agent-mode"].value || "companion";
-  if (AGENT_MODE_INTENTS[mode]) el["agent-mode"].value = mode;
+  const sessionActive = controls?.lifecycleState === "active";
+  // Before a session is active, the select is a user-owned draft. Async room
+  // and trace refreshes must not reset it to the last server-projected mode.
+  const mode = sessionActive
+    ? controls?.mode || "companion"
+    : el["agent-mode"].value || controls?.mode || "companion";
+  if (sessionActive && AGENT_MODE_INTENTS[mode]) el["agent-mode"].value = mode;
   const selectedIntent = el["agent-intent"].value;
   replaceChildren(el["agent-intent"], (AGENT_MODE_INTENTS[mode] || []).map((intent) => (
     htmlElement("option", { value: intent, textContent: intent })
@@ -396,7 +401,6 @@ function renderAgent(agent, controls) {
   if ((AGENT_MODE_INTENTS[mode] || []).includes(selectedIntent)) {
     el["agent-intent"].value = selectedIntent;
   }
-  const sessionActive = controls?.lifecycleState === "active";
   const busy = controls?.status === "sending"
     || controls?.currentTurn?.state === "waiting_provider";
   const readOnly = controls?.readOnly !== false;

@@ -1,9 +1,9 @@
-import { containsStarcraftTmgOnlineContextCredentialMaterialV1 } from
-  "../online-agent-session/role-context-contracts-v1.mjs";
+import { containsStarcraftTmgOnlineCredentialMaterialV1 } from
+  "../online-agent-session/portable-credential-material-v1.mjs";
 import {
   STARCRAFT_TMG_ONLINE_AGENT_API_PREFIX,
   STARCRAFT_TMG_ONLINE_AGENT_HTTP_VERSION,
-} from "../online-agent-session/http-events-v1.mjs";
+} from "../online-agent-session/portable-http-wire-v1.mjs";
 
 export const STARCRAFT_TMG_ONLINE_AGENT_CLIENT_TRANSPORT_VERSION =
   "starcraft_tmg_online_agent_client_transport_v1";
@@ -45,7 +45,7 @@ function assertRequest(input) {
       "online Agent transport request is invalid",
     );
   }
-  if (containsStarcraftTmgOnlineContextCredentialMaterialV1(input)) {
+  if (containsStarcraftTmgOnlineCredentialMaterialV1(input)) {
     throw new StarcraftTmgOnlineAgentClientTransportError(
       "AGENT_CREDENTIAL_MATERIAL_FORBIDDEN",
       "online Agent transport never accepts Provider credentials",

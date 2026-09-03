@@ -1,8 +1,8 @@
 # Ticket 15 — online role-Agent session roadmap
 
 Date: 2026-09-03
-Status: active; Slices 144–151 complete, 8/9 complete
-Project progress: 13/22 Tickets complete; Ticket 14 is 15/16 with device evidence deferred
+Status: complete; Slices 144–152 complete, 9/9 complete
+Project progress: 14/22 Tickets complete; Ticket 14 is 15/16 with device evidence deferred
 Source refresh: not performed
 
 ## Outcome
@@ -55,11 +55,11 @@ behavior, but does not claim a real external model call.
 | 149 | **Complete.** Mount authenticated Agent HTTP and event projection. | External principal authentication; exact 64-KiB request boundary; create/read/send/cancel/reconnect/end/events; exact concurrent idempotent replay; capacity-reserved hash-chain events; redacted safe projections and no credential endpoint; 26/26 focused and full prior aggregate green. |
 | 150 | **Complete.** Add the opt-in Client Domain extension and Expo Web Adjutant controls. | Existing four client operations unchanged; separate room/Agent queues; mode/status/budget/chat/cancel/reconnect/end/confirmation UX; safe Harness trace; offline/background read-only; actual human Confirm→fenced Apply; no local Agent authority; 15/15 focused, component render 6/6, historical Client Domain 17/17 and Expo mount 10/10. |
 | 151 | **Complete.** Replace Battle Lab's `not_mounted_ticket_15` with live safe TraceProjection. | Exact V2 identity and six-state projection; real `waiting_provider` before settlement; catalogued tools and hash-only evidence; strict privacy quarantine; same Role-Agent Client source as Expo; 21/21 focused and full prior aggregate green. |
-| 152 | Run real Chromium end-to-end and Ticket 15 aggregate. | Four modes, failure/reconnect/cancel/budget paths, Opponent Preview and external confirm, privacy scan, fixed denominators and Ticket 16 handoff. |
+| 152 | **Complete.** Run real Chromium end-to-end and Ticket 15 aggregate. | Actual room/Agent HTTP and role runtime; four modes; three Provider failure paths; AbortSignal cancel; background/explicit reconnect; Opponent LegalSpace→Preview→human Confirm→Apply→Receipt→Replay; scoped privacy scans; 11/11 browser plus 11/11 closure, 192 Ticket assertions including closure. |
 
 ## Completion boundary
 
-Ticket 15 completes only when the Web and backend online-session behavior is
+Ticket 15 is complete because the Web and backend online-session behavior is
 proven through real browser traces. Native package rebuild and physical-device
 acceptance remain in the deferred final-device batch. Real external model and
 BYOK evidence belong to Ticket 16.
