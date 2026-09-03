@@ -1,7 +1,7 @@
 # Ticket 15 — online role-Agent session roadmap
 
 Date: 2026-09-03
-Status: active; Slices 144–150 complete, 7/9 complete
+Status: active; Slices 144–151 complete, 8/9 complete
 Project progress: 13/22 Tickets complete; Ticket 14 is 15/16 with device evidence deferred
 Source refresh: not performed
 
@@ -54,7 +54,7 @@ behavior, but does not claim a real external model call.
 | 148 | **Complete.** Close role behavior and Opponent Preview handoff. | Exact role/intent output schema and server-catalogued evidence; Tutor/Commentator/Companion plus Opponent chat are read-only; Opponent `take_turn` selects one enabled current candidate with alternative/value/risk/Memory evidence; MatchBinding+LegalSpace+revision+state precondition; sealed Preview only and external human confirmation; 28/28 focused with full prior aggregate green. |
 | 149 | **Complete.** Mount authenticated Agent HTTP and event projection. | External principal authentication; exact 64-KiB request boundary; create/read/send/cancel/reconnect/end/events; exact concurrent idempotent replay; capacity-reserved hash-chain events; redacted safe projections and no credential endpoint; 26/26 focused and full prior aggregate green. |
 | 150 | **Complete.** Add the opt-in Client Domain extension and Expo Web Adjutant controls. | Existing four client operations unchanged; separate room/Agent queues; mode/status/budget/chat/cancel/reconnect/end/confirmation UX; safe Harness trace; offline/background read-only; actual human Confirm→fenced Apply; no local Agent authority; 15/15 focused, component render 6/6, historical Client Domain 17/17 and Expo mount 10/10. |
-| 151 | Replace Battle Lab's `not_mounted_ticket_15` with live safe TraceProjection. | Real session/turn/tool/decision/failure states; no raw prompt/output/Provider receipt/credential; Expo/Battle Lab identity parity. |
+| 151 | **Complete.** Replace Battle Lab's `not_mounted_ticket_15` with live safe TraceProjection. | Exact V2 identity and six-state projection; real `waiting_provider` before settlement; catalogued tools and hash-only evidence; strict privacy quarantine; same Role-Agent Client source as Expo; 21/21 focused and full prior aggregate green. |
 | 152 | Run real Chromium end-to-end and Ticket 15 aggregate. | Four modes, failure/reconnect/cancel/budget paths, Opponent Preview and external confirm, privacy scan, fixed denominators and Ticket 16 handoff. |
 
 ## Completion boundary

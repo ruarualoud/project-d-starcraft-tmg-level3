@@ -684,7 +684,8 @@ def run_battle_lab(
                 require("state 1" in body_text(page), "BATTLE_LAB_STATE_REVISION_NOT_ADVANCED")
                 require("verified view" in body_text(page), "BATTLE_LAB_REPLAY_NOT_RENDERED")
                 page.locator('[data-detail-tab="agent"]').click()
-                require("not_mounted_ticket_15" in body_text(page), "BATTLE_LAB_AGENT_BOUNDARY_DRIFT")
+                require("not_started" in body_text(page), "BATTLE_LAB_LIVE_AGENT_TRACE_NOT_MOUNTED")
+                require("not_mounted_ticket_15" not in body_text(page), "BATTLE_LAB_AGENT_PLACEHOLDER_REMAINED")
                 page.locator('[data-detail-tab="referee"]').click()
                 page.locator("[data-threat-toggle]").uncheck()
                 require(board.locator(THREAT_LAYER_SELECTOR).count() == 0,

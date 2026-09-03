@@ -142,6 +142,26 @@
 
           <section class="panel detail-panel" data-detail-panel="agent" aria-label="Agent trace projection" hidden>
             <div class="panel-head"><div><p class="eyebrow">AGENT HARNESS</p><h2>Trace</h2></div><span data-agent-status>not mounted</span></div>
+            <div class="agent-console" aria-label="Online Adjutant trace controls">
+              <div class="agent-control-grid">
+                <label><span>Mode</span><select data-agent-mode><option value="tutor">Tutor</option><option value="opponent">Opponent</option><option value="commentator">Commentator</option><option value="companion" selected>Companion</option></select></label>
+                <label><span>Intent</span><select data-agent-intent><option value="reflect">Reflect</option><option value="chat">Chat</option></select></label>
+              </div>
+              <label><span>Message · sent to the online Agent, never copied into TraceProjection</span><textarea data-agent-message spellcheck="false" maxlength="8192" placeholder="Ask the Adjutant about this viewer-scoped position"></textarea></label>
+              <div class="agent-command-row">
+                <button data-command="agent-open">Open session</button>
+                <button class="primary" data-command="agent-send">Send</button>
+                <button data-command="agent-cancel">Cancel turn</button>
+                <button data-command="agent-reconnect">Reconnect</button>
+                <button data-command="agent-end">End</button>
+              </div>
+              <div class="preview-card" data-agent-confirmation>
+                <strong>No Agent Preview awaiting a human</strong>
+                <p>The model cannot Confirm or Apply.</p>
+              </div>
+              <button class="danger" data-command="agent-confirm" disabled>Human confirm and apply Agent Preview</button>
+              <p class="boundary" data-agent-identity>Session identity not established. Raw prompt/output, Provider receipts, credentials and session IDs are excluded from this trace lane.</p>
+            </div>
             <div class="trace-list" data-agent-traces></div>
           </section>
 

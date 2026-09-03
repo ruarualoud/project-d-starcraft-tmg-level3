@@ -14,6 +14,15 @@ import {
 import {
   createInMemoryStarcraftTmgProjectionStoreAdapter,
 } from "../../packages/client-domain/projection-store-adapters-v1.mjs";
+import {
+  createHttpStarcraftTmgOnlineAgentClientTransportV1,
+} from "../../packages/client-domain/online-agent-transport-adapters-v1.mjs";
+import {
+  createStarcraftTmgRoleAgentSessionClientV1,
+} from "../../packages/client-domain/role-agent-session-client-v1.mjs";
+import {
+  createStarcraftTmgRoleAgentTraceProjectionPortV2,
+} from "../../packages/client-domain/role-agent-trace-projection-v2.mjs";
 
 export const STARCRAFT_TMG_BATTLE_LAB_MOUNT_VERSION =
   "starcraft_tmg_battle_lab_mount_v1";
@@ -54,30 +63,59 @@ export function createStarcraftTmgBattleLabRuntime(options = {}) {
     windowRef,
     navigatorRef,
   });
+  const roleAgentSessionEnabled = options.enableRoleAgentSession === true;
   const transport = options.transport || createHttpStarcraftTmgAuthoritativeTransportAdapter({
     baseUrl: String(options.baseUrl || "").replace(/\/+$/u, ""),
     fetchImpl: options.fetchImpl || globalThis.fetch,
     apiPrefix: options.apiPrefix,
     timeoutMs: options.timeoutMs,
+    enableCharacterPresentation: roleAgentSessionEnabled,
   });
   const projectionStore = options.projectionStore
     || createInMemoryStarcraftTmgProjectionStoreAdapter();
-  const clientDomain = createStarcraftTmgClientDomain({
+  const baseClientDomain = createStarcraftTmgClientDomain({
     transport,
     projectionStore,
     lifecycle,
+    enableCharacterPresentation: roleAgentSessionEnabled,
     now: options.now,
     createId: options.createId,
   });
-  const traceProjectionPort = options.traceProjectionPort || null;
+  const agentTransport = roleAgentSessionEnabled
+    ? options.agentTransport || createHttpStarcraftTmgOnlineAgentClientTransportV1({
+      baseUrl: String(options.baseUrl || "").replace(/\/+$/u, ""),
+      fetchImpl: options.fetchImpl || globalThis.fetch,
+      apiPrefix: options.agentApiPrefix,
+      timeoutMs: options.agentTimeoutMs,
+    })
+    : null;
+  const clientDomain = roleAgentSessionEnabled
+    ? createStarcraftTmgRoleAgentSessionClientV1({
+      clientDomain: baseClientDomain,
+      transport: agentTransport,
+      now: options.now,
+      createId: options.createId,
+    })
+    : baseClientDomain;
+  const traceProjectionIsLiveClientBound = !options.traceProjectionPort
+    && roleAgentSessionEnabled;
+  const traceProjectionPort = options.traceProjectionPort
+    || (roleAgentSessionEnabled
+      ? createStarcraftTmgRoleAgentTraceProjectionPortV2({
+        clientDomain,
+        now: options.now,
+      })
+      : null);
   if (traceProjectionPort && typeof traceProjectionPort.read !== "function") {
     throw new TypeError("TraceProjectionPort.read is required");
   }
   const listeners = new Set();
   let agentTraceProjection = null;
+  let traceRefreshGeneration = 0;
   let surfaceView = projectStarcraftTmgBattleLabObservabilityV1({
     clientView: clientDomain.read(),
   });
+  let pendingTraceRefresh = Promise.resolve(surfaceView);
 
   function publish() {
     surfaceView = projectStarcraftTmgBattleLabObservabilityV1({
@@ -92,9 +130,8 @@ export function createStarcraftTmgBattleLabRuntime(options = {}) {
     return surfaceView;
   }
 
-  const unsubscribeDomain = clientDomain.subscribe(() => publish());
-
   async function refreshTraceProjection() {
+    const refreshGeneration = traceRefreshGeneration += 1;
     const roomId = clientDomain.read().roomProjection?.room?.roomId || null;
     if (!roomId || !traceProjectionPort) {
       agentTraceProjection = null;
@@ -104,6 +141,10 @@ export function createStarcraftTmgBattleLabRuntime(options = {}) {
       // This port deliberately receives a room locator and no credentials.
       // Its server implementation owns access checks and returns safe hashes.
       const candidate = await traceProjectionPort.read({ roomId });
+      if (refreshGeneration !== traceRefreshGeneration
+        || clientDomain.read().roomProjection?.room?.roomId !== roomId) {
+        return surfaceView;
+      }
       // Validate before publication. A broken observability Adapter must not
       // turn a successful authoritative operation into a UI-level failure.
       projectStarcraftTmgBattleLabObservabilityV1({
@@ -116,6 +157,17 @@ export function createStarcraftTmgBattleLabRuntime(options = {}) {
     }
     return publish();
   }
+
+  const unsubscribeDomain = clientDomain.subscribe(() => {
+    publish();
+    // Intermediate states such as waiting_provider are published before the
+    // dispatch Promise settles. Refresh asynchronously so the Battle Lab sees
+    // them without allowing observability latency to block domain progress.
+    if (traceProjectionIsLiveClientBound) {
+      pendingTraceRefresh = refreshTraceProjection();
+      void pendingTraceRefresh;
+    }
+  });
 
   async function bootstrap(input = {}) {
     try {
@@ -137,7 +189,8 @@ export function createStarcraftTmgBattleLabRuntime(options = {}) {
       surface: "battle_lab",
       locale: input.locale || "en",
     });
-    await refreshTraceProjection();
+    if (traceProjectionIsLiveClientBound) await pendingTraceRefresh;
+    else await refreshTraceProjection();
     return result;
   }
 
@@ -147,7 +200,8 @@ export function createStarcraftTmgBattleLabRuntime(options = {}) {
 
   async function dispatch(intent) {
     const result = await clientDomain.dispatch(intent);
-    await refreshTraceProjection();
+    if (traceProjectionIsLiveClientBound) await pendingTraceRefresh;
+    else await refreshTraceProjection();
     return result;
   }
 

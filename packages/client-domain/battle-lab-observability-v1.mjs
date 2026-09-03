@@ -1,6 +1,10 @@
 import { projectStarcraftTmgBattlefieldPresentationV1 } from
   "./battlefield-presentation-v1.mjs";
 import { hashStarcraftTmgClientContract } from "./portable-contract-hash-v1.mjs";
+import {
+  assertStarcraftTmgRoleAgentTraceProjectionV2,
+  STARCRAFT_TMG_ROLE_AGENT_TRACE_PROJECTION_VERSION,
+} from "./role-agent-trace-projection-v2.mjs";
 
 export const STARCRAFT_TMG_BATTLE_LAB_OBSERVABILITY_VERSION =
   "starcraft_tmg_battle_lab_observability_v1";
@@ -20,6 +24,12 @@ const SECRET_KEY_PATTERN =
   /api[_-]?key|authorization|bearer|credential|secret|cookie|seat[_-]?token|provider[_-]?receipt|session[_-]?id|user[_-]?message|raw[_-]?output/iu;
 const SECRET_VALUE_PATTERN = /(?:\bBearer\s+|\bsk-[A-Za-z0-9_-]{8,}|api[_-]?key\s*[:=])/iu;
 const HASH_PATTERN = /^[a-f0-9]{64}$/u;
+const AGENT_MODE_INTENTS = Object.freeze({
+  tutor: Object.freeze(["chat", "explain"]),
+  opponent: Object.freeze(["chat", "take_turn"]),
+  commentator: Object.freeze(["commentate"]),
+  companion: Object.freeze(["chat", "reflect"]),
+});
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -159,6 +169,9 @@ function normalizedAgentProjection(value, roomId) {
     };
     return deepFreeze({ ...core, projectionHash: hashStarcraftTmgClientContract(core) });
   }
+  if (value?.schemaVersion === STARCRAFT_TMG_ROLE_AGENT_TRACE_PROJECTION_VERSION) {
+    return assertStarcraftTmgRoleAgentTraceProjectionV2(value, roomId);
+  }
   exactKeys(
     value,
     ["schemaVersion", "roomId", "status", "generatedAt", "traces", "trainingTruth"],
@@ -188,6 +201,57 @@ function normalizedAgentProjection(value, roomId) {
     traces,
     trainingTruth: false,
   };
+  assertNoSecrets(core);
+  return deepFreeze({ ...core, projectionHash: hashStarcraftTmgClientContract(core) });
+}
+
+function agentControlProjection(clientView) {
+  const role = object(clientView.roleAgentSession)
+    ? clientView.roleAgentSession : null;
+  if (!role) return null;
+  const preview = object(role.pendingConfirmation)
+    ? role.pendingConfirmation : null;
+  const turn = object(role.currentTurn) ? role.currentTurn : null;
+  const rejection = object(role.rejection) ? role.rejection : null;
+  const core = {
+    schemaVersion: "starcraft_tmg_battle_lab_agent_controls_v1",
+    status: safeText(role.status, 128) || "unavailable",
+    mode: safeText(role.mode, 128) || "companion",
+    lifecycleState: safeText(role.lifecycleState, 128) || null,
+    connectionEpoch: Number.isSafeInteger(Number(role.connectionEpoch))
+      ? Number(role.connectionEpoch) : null,
+    providerState: safeText(role.provider?.state, 128) || "unknown",
+    budget: object(role.budget) ? {
+      remainingUnits: Number.isSafeInteger(Number(role.budget.remainingUnits))
+        ? Number(role.budget.remainingUnits) : null,
+      maxTotalUnits: Number.isSafeInteger(Number(role.budget.policy?.maxTotalUnits))
+        ? Number(role.budget.policy.maxTotalUnits) : null,
+      turnCount: Number.isSafeInteger(Number(role.budget.turnCount))
+        ? Number(role.budget.turnCount) : null,
+    } : null,
+    currentTurn: turn ? {
+      state: safeText(turn.state, 128) || "unknown",
+      intent: safeText(turn.intent, 128) || null,
+      failureCode: safeText(turn.failureCode, 256) || null,
+    } : null,
+    pendingConfirmation: preview ? {
+      previewId: safeText(preview.previewId, 256),
+      candidateId: safeText(preview.candidateId, 256),
+      actionType: safeText(preview.actionType, 128),
+      confirmationRequired: preview.confirmationRequired === true,
+      modelMayConfirm: false,
+      modelMayApply: false,
+    } : null,
+    rejectionCode: safeText(rejection?.code, 256) || null,
+    readOnly: role.readOnly !== false,
+    requiresExplicitReconnect: role.requiresExplicitReconnect === true,
+    modes: Object.keys(AGENT_MODE_INTENTS),
+    intentsByMode: clone(AGENT_MODE_INTENTS),
+    sourceAgentProjectionHash: safeHash(role.projectionHash),
+    rawConversationProjected: false,
+    trainingTruth: false,
+  };
+  assertNoSecrets(core);
   return deepFreeze({ ...core, projectionHash: hashStarcraftTmgClientContract(core) });
 }
 
@@ -264,6 +328,7 @@ export function projectStarcraftTmgBattleLabObservabilityV1(input = {}) {
     selectedModelId: safeText(input.selectedModelId) || null,
   });
   const agent = normalizedAgentProjection(input.agentTraceProjection, shared.roomId);
+  const agentControls = agentControlProjection(clientView);
   const referee = refereeProjection(shared);
   const observer = deepFreeze({
     schemaVersion: "starcraft_tmg_battle_lab_observer_projection_v1",
@@ -300,6 +365,7 @@ export function projectStarcraftTmgBattleLabObservabilityV1(input = {}) {
     battlefield,
     referee,
     agent,
+    agentControls,
     harness: {
       harnessLoopUsed: true,
       targetGames: ["starcraft-tmg"],
@@ -307,6 +373,8 @@ export function projectStarcraftTmgBattleLabObservabilityV1(input = {}) {
       harnessToolsCalled: [...new Set(agent.traces.flatMap((trace) => trace.harnessToolsCalled))],
       uiTraceEvidence: "battle_lab_server_projected_trace_view",
       agentDecisionEvidence: agent.traces.filter((trace) => trace.decision).map((trace) => trace.traceId),
+      agentFailureEvidence: agent.traces.filter((trace) => trace.failureCode).map((trace) => trace.traceId),
+      agentIdentityEvidence: agent.identity || null,
       memoryTraceEvidence: "hash_references_only",
       trainingTraceCandidates: [],
       rollbackOrDemotionRules: [
@@ -317,7 +385,9 @@ export function projectStarcraftTmgBattleLabObservabilityV1(input = {}) {
       userVisibleChecks: [
         "room_board_referee_and_agent_panels_are_distinct",
         "preview_requires_a_separate_human_confirmation",
-        "agent_trace_unavailable_state_is_explicit_until_ticket_15",
+        agent.schemaVersion === STARCRAFT_TMG_ROLE_AGENT_TRACE_PROJECTION_VERSION
+          ? "live_agent_trace_identity_and_privacy_are_visible"
+          : "agent_trace_unavailable_state_is_explicit_until_ticket_15",
       ],
     },
     trainingTruth: false,

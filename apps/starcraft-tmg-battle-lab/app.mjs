@@ -7,6 +7,13 @@ import {
 const NS = "http://www.w3.org/2000/svg";
 const runtime = createStarcraftTmgBattleLabRuntime({
   baseUrl: globalThis.BATTLE_LAB_API_ORIGIN || "",
+  enableRoleAgentSession: true,
+});
+const AGENT_MODE_INTENTS = Object.freeze({
+  tutor: Object.freeze(["explain", "chat"]),
+  opponent: Object.freeze(["take_turn", "chat"]),
+  commentator: Object.freeze(["commentate"]),
+  companion: Object.freeze(["reflect", "chat"]),
 });
 let selectedModelId = null;
 let toastTimer = null;
@@ -35,6 +42,8 @@ const el = Object.fromEntries([
   "unit-coverage", "threat-coverage", "status-coverage", "marker-coverage",
   "workbench-unit", "workbench-threat", "workbench-status", "workbench-markers",
   "threat-mode", "threat-weapon",
+  "agent-mode", "agent-intent", "agent-message", "agent-confirmation",
+  "agent-identity",
 ].map((name) => [name, document.querySelector(`[data-${name}]`)]));
 
 voiceAudio.addEventListener("playing", () => {
@@ -376,21 +385,64 @@ function renderFacts(referee) {
     : "";
 }
 
-function renderAgent(agent) {
+function renderAgent(agent, controls) {
   el["agent-status"].textContent = `${agent.status} · ${agent.traces.length}`;
+  const mode = controls?.mode || el["agent-mode"].value || "companion";
+  if (AGENT_MODE_INTENTS[mode]) el["agent-mode"].value = mode;
+  const selectedIntent = el["agent-intent"].value;
+  replaceChildren(el["agent-intent"], (AGENT_MODE_INTENTS[mode] || []).map((intent) => (
+    htmlElement("option", { value: intent, textContent: intent })
+  )));
+  if ((AGENT_MODE_INTENTS[mode] || []).includes(selectedIntent)) {
+    el["agent-intent"].value = selectedIntent;
+  }
+  const sessionActive = controls?.lifecycleState === "active";
+  const busy = controls?.status === "sending"
+    || controls?.currentTurn?.state === "waiting_provider";
+  const readOnly = controls?.readOnly !== false;
+  document.querySelector('[data-command="agent-open"]').disabled =
+    !controls || sessionActive || busy || readOnly;
+  document.querySelector('[data-command="agent-send"]').disabled =
+    !sessionActive || busy || readOnly;
+  document.querySelector('[data-command="agent-cancel"]').disabled =
+    !sessionActive || !busy || readOnly;
+  document.querySelector('[data-command="agent-reconnect"]').disabled =
+    !controls?.requiresExplicitReconnect || readOnly;
+  document.querySelector('[data-command="agent-end"]').disabled =
+    !sessionActive || busy || readOnly;
+  el["agent-mode"].disabled = sessionActive || busy || readOnly;
+  el["agent-intent"].disabled = !sessionActive || busy || readOnly;
+  el["agent-message"].disabled = !sessionActive || busy || readOnly;
+  const pending = controls?.pendingConfirmation;
+  replaceChildren(el["agent-confirmation"], pending ? [
+    htmlElement("strong", { textContent: "Waiting for explicit human confirmation" }),
+    htmlElement("p", { textContent: `${pending.candidateId} · ${pending.actionType}` }),
+  ] : [
+    htmlElement("strong", { textContent: "No Agent Preview awaiting a human" }),
+    htmlElement("p", { textContent: "The model cannot Confirm or Apply." }),
+  ]);
+  document.querySelector('[data-command="agent-confirm"]').disabled =
+    !pending || busy || readOnly;
+  const identity = agent.identity;
+  el["agent-identity"].textContent = identity
+    ? `session ${shortHash(identity.sessionRef)} · binding ${shortHash(identity.sessionBindingHash)} · source ${shortHash(identity.sourceAgentProjectionHash)} · epoch ${text(identity.connectionEpoch)}. Raw prompt/output, Provider receipts, credentials and session IDs are excluded.`
+    : "Session identity not established. Raw prompt/output, Provider receipts, credentials and session IDs are excluded from this trace lane.";
   if (!agent.traces.length) {
     replaceChildren(el["agent-traces"], [htmlElement("article", { className: "trace" }, [
       htmlElement("strong", { textContent: "No server-projected trace" }),
-      htmlElement("p", { textContent: "The view contract is mounted. Ticket 15 will connect real room-bound Agent sessions; no client trace injection is accepted." }),
+      htmlElement("p", { textContent: "The live trace contract is waiting for a verified room-bound Agent projection; no client trace injection is accepted." }),
     ])]);
     return;
   }
   replaceChildren(el["agent-traces"], agent.traces.map((trace) => htmlElement("article", { className: "trace" }, [
-    htmlElement("strong", { textContent: `${trace.roleMode || trace.mode} · ${trace.promptPack}` }),
+    htmlElement("strong", { textContent: `${trace.kind || "trace"} · ${trace.state || trace.roleMode || trace.mode}` }),
+    htmlElement("p", { textContent: `${trace.roleMode || trace.mode} · ${trace.promptPack} · provider ${trace.providerStatus || "not invoked"}` }),
     htmlElement("p", { textContent: `tools ${trace.harnessToolsCalled.join(" → ") || "none"}` }),
-    htmlElement("p", { textContent: trace.decision
-      ? `decision ${trace.decision.actionType} · ${shortHash(trace.decision.legalSpaceHash)} · confirmation ${trace.confirmationRequired ? "required" : "not requested"}`
-      : `provider ${trace.providerStatus || "not invoked"} · no decision channel` }),
+    htmlElement("p", { textContent: trace.failureCode
+      ? `failure ${trace.failureCode}`
+      : trace.decision
+        ? `decision ${trace.decision.actionType} · receipt ${shortHash(trace.decision.decisionReceiptHash || trace.decision.legalSpaceHash)} · confirmation ${trace.confirmationRequired ? "required" : "not requested"}`
+        : "no decision channel" }),
   ])));
 }
 
@@ -617,7 +669,7 @@ function render(view) {
   el["state-revision"].textContent = `state ${text(view.referee.stateRevision)}`;
   renderBoard(view);
   renderFacts(view.referee);
-  renderAgent(view.agent);
+  renderAgent(view.agent, view.agentControls);
   renderActions(view);
   renderWorkbench(view);
   renderHarness(view.harness);
@@ -641,6 +693,13 @@ el["threat-weapon"].addEventListener("change", () => {
   showThreatReference = true;
   el["threat-toggle"].checked = true;
   render(runtime.read());
+});
+
+el["agent-mode"].addEventListener("change", () => {
+  const mode = el["agent-mode"].value;
+  replaceChildren(el["agent-intent"], (AGENT_MODE_INTENTS[mode] || []).map((intent) => (
+    htmlElement("option", { value: intent, textContent: intent })
+  )));
 });
 
 el["bgm-file"].addEventListener("change", () => {
@@ -720,6 +779,32 @@ document.addEventListener("click", async (event) => {
         event.target.textContent = "Play BGM";
       }
       render(runtime.read());
+    } else if (command === "agent-open") {
+      await invoke({
+        type: "open_agent_session",
+        mode: el["agent-mode"].value,
+      }, "Online Adjutant session opened");
+    } else if (command === "agent-send") {
+      const message = el["agent-message"].value.trim();
+      if (!message) return;
+      const result = await invoke({
+        type: "send_agent_message",
+        intent: el["agent-intent"].value,
+        message,
+      }, "Agent turn completed; safe trace refreshed");
+      if (result.ok) el["agent-message"].value = "";
+    } else if (command === "agent-cancel") {
+      await invoke({ type: "cancel_agent_turn" }, "Agent turn cancelled");
+    } else if (command === "agent-reconnect") {
+      await invoke({ type: "reconnect_agent_session" }, "Agent session reconnected");
+    } else if (command === "agent-end") {
+      await invoke({ type: "end_agent_session" }, "Agent session ended");
+    } else if (command === "agent-confirm") {
+      const previewId = runtime.read().agentControls?.pendingConfirmation?.previewId;
+      if (previewId) {
+        await invoke({ type: "confirm_agent_preview", previewId },
+          "Human confirmed Agent Preview; room receipt refreshed");
+      }
     }
   } catch (error) {
     notify(`Blocked: ${error?.code || error?.message || "operation failed"}`);

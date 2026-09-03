@@ -91,15 +91,20 @@ function messageText(output) {
     .join("\n\n");
 }
 
-function publicDecision(decision) {
+function publicDecision(decision, preview, trace) {
   if (!object(decision)) return null;
   return {
     candidateId: String(decision.candidateId || ""),
+    candidateHash: decision.candidateHash || null,
     selectedReason: String(decision.selectedReason || ""),
     scoreOrPositionValue: String(decision.scoreOrPositionValue || ""),
     risk: String(decision.risk || ""),
     rejectedAlternatives: clone(decision.rejectedAlternatives || []),
     memoryInfluence: clone(decision.memoryInfluence || null),
+    legalSpaceHash: preview?.legalSpaceHash || null,
+    decisionReceiptHash: trace?.decisionReceiptHash || null,
+    previewProjectionHash: preview?.previewProjectionHash
+      || trace?.previewProjectionHash || null,
   };
 }
 
@@ -125,15 +130,21 @@ function publicTrace(result, context) {
   if (!object(trace)) return null;
   return {
     traceId: String(trace.traceId || ""),
+    gameId: String(trace.gameId || "starcraft-tmg"),
+    roleMode: String(trace.roleMode || trace.mode || ""),
     mode: String(trace.mode || trace.roleMode || ""),
     intent: String(trace.intent || ""),
     promptPack: clone(trace.promptPack || context?.promptPack || null),
+    harnessVersion: String(trace.harnessVersion || "role_agent_session_v1"),
+    agentVersion: String(trace.agentVersion || "server_owned_provider_profile"),
     toolCalls: clone(trace.harnessToolsCalled || []),
     ruleSkillRefs: clone(context?.ruleSkillRefs || []),
     memoryRefs: clone(context?.memoryRefs || []),
     memoryInfluence: clone(result?.decision?.memoryInfluence || null),
     decisionReceiptHash: trace.decisionReceiptHash || null,
     previewProjectionHash: trace.previewProjectionHash || null,
+    confirmationRequired: trace.confirmationRequired === true,
+    occurredAt: trace.occurredAt || null,
     reviewStatus: trace.reviewStatus || "raw",
     rawPromptExposed: false,
     rawProviderOutputExposed: false,
@@ -330,8 +341,12 @@ export function createStarcraftTmgRoleAgentSessionClientV1(options = {}) {
     if (providerState.provider) state.provider = clone(providerState.provider);
     state.currentTurn = providerState.currentTurn ? {
         turnId: providerState.currentTurn.turnId,
+        turnSequence: providerState.currentTurn.turnSequence,
         state: providerState.currentTurn.state,
+        connectionEpoch: providerState.currentTurn.connectionEpoch,
         intent: providerState.currentTurn.intent,
+        outputHash: providerState.currentTurn.outputHash || null,
+        failureCode: providerState.currentTurn.failure?.code || null,
         startedAt: providerState.currentTurn.startedAt,
         terminalAt: providerState.currentTurn.terminalAt,
       } : null;
@@ -456,6 +471,11 @@ export function createStarcraftTmgRoleAgentSessionClientV1(options = {}) {
         });
       }
       if (!response?.ok) {
+        // Recover the server-projected failed/cancelled turn when available so
+        // observability can show a real state without exposing failure text.
+        try { await readServerSession({ publishResult: false }); } catch {
+          // The original safe rejection remains the authoritative outcome.
+        }
         return reject(response?.reason || "AGENT_TURN_REJECTED", {
           turnId: response?.turnId || null,
         }, { status: "ready" });
@@ -476,14 +496,24 @@ export function createStarcraftTmgRoleAgentSessionClientV1(options = {}) {
         intent: intent.intent,
         terminalAt: now(),
       } : null;
-      state.budget = clone(response.budget || state.budget);
+      const terminalBudget = clone(response.budget || state.budget);
+      state.budget = terminalBudget;
+      state.trace = publicTrace(response, null);
+      // The turn result intentionally omits retained Rule-Skill/Memory
+      // context. Re-read the safe server projection once so the observable
+      // trace carries those hash refs and the terminal Provider state.
+      try { await readServerSession({ publishResult: false }); } catch {
+        // A successful turn stays successful; the last safe result projection
+        // remains available if the enrichment read is interrupted.
+      }
+      state.budget = terminalBudget;
       publish({
         status: privatePreview ? "waiting_confirmation" : "ready",
         messages: state.messages,
         currentTurn: state.currentTurn,
-        decision: publicDecision(response.decision),
+        decision: publicDecision(response.decision, response.preview, response.trace),
         pendingConfirmation: publicPreview(privatePreview),
-        trace: publicTrace(response, null),
+        trace: state.trace,
         budget: state.budget,
         rejection: null,
       });
