@@ -22,9 +22,9 @@ export const OFFICIAL_FAQ_F4_RELEASE_SCHEMA =
 export const OFFICIAL_FAQ_F4_GRAPH_SCHEMA =
   "starcraft_tmg_official_faq_rule_overlay_graph_v1";
 export const OFFICIAL_FAQ_F4_RELEASE_HASH =
-  "e6b20568a5dd801221ab0b8343279641fd1b99dc33edb174def757a4e25a9eac";
+  "fff6ddea41340e1f12de86fcb1b688865ca704fbbb8b8fc845815b0780d17c67";
 export const OFFICIAL_FAQ_F4_GRAPH_HASH =
-  "4b475a6a38ad69cb66431f23d9cd0c9d6f3d47363293d572eae00190a47ece1b";
+  "cd150943d06181ea5b0d3daf7e1306ea0c280be5b473073ad10794d4eb88ea42";
 
 const HASH_PATTERN = /^[a-f0-9]{64}$/u;
 
@@ -54,7 +54,8 @@ function graphFor({ sourceLockHash, reconciliationHash, baseGraphHash,
     edges.set(edge.edgeId, edge);
   };
   addNode(`source_lock:${sourceLockHash}`, "source_lock", "Official FAQ V1.0 source lock");
-  addNode(`reconciliation:${reconciliationHash}`, "reconciliation", "FAQ V1.0 reconciliation");
+  addNode(`reconciliation:${reconciliationHash}`, "reconciliation",
+    "FAQ V1.0 68-entry reconciliation");
   addNode(`base_graph:${baseGraphHash}`, "base_graph", "Frozen Ticket 11 relationship graph");
   addNode(`previous_overlay_graph:${previousOverlayGraphHash}`, "previous_overlay_graph",
     "FAQ F3 relationship overlay");

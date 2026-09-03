@@ -39,9 +39,9 @@ edge.
 The F4 graph contains 233 nodes and 367 edges and explicitly extends the
 immutable F3 overlay graph. F4 verification passes 16/16 with 27 positive, 21
 negative/boundary and six interaction groups. Release hash:
-`e6b20568a5dd801221ab0b8343279641fd1b99dc33edb174def757a4e25a9eac`.
+`fff6ddea41340e1f12de86fcb1b688865ca704fbbb8b8fc845815b0780d17c67`.
 Graph hash:
-`4b475a6a38ad69cb66431f23d9cd0c9d6f3d47363293d572eae00190a47ece1b`.
+`cd150943d06181ea5b0d3daf7e1306ea0c280be5b473073ad10794d4eb88ea42`.
 
 The immutable Ticket 11 runtime and F3 release remain available by exact hash.
 F4 cannot become the aggregate current room runtime until F5 closes the last
