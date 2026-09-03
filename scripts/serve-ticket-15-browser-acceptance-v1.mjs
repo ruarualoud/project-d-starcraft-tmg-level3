@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import http from "node:http";
+import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
@@ -8,6 +9,8 @@ import { fileURLToPath } from "node:url";
 
 import { createKerriganPrimalProductBundleV1 } from
   "../content/characters/kerrigan-primal-v1.mjs";
+import { createProviderProfile } from
+  "../packages/character-agent/contracts-v1.mjs";
 import {
   createStarcraftTmgAuthoritativeEngine,
   hashStarcraftTmgContract,
@@ -39,6 +42,17 @@ import {
   createStarcraftTmgOnlineAgentSessionLifecycleV1,
   createStarcraftTmgOnlinePrincipalBindingV1,
 } from "../packages/online-agent-session/session-lifecycle-v1.mjs";
+import {
+  createStarcraftTmgSecureProviderAttachmentControlV1,
+} from "../packages/secure-provider-runtime/credential-attachment-control-v1.mjs";
+import { createStarcraftTmgCredentialWorkerPortV1 } from
+  "../packages/secure-provider-runtime/credential-worker-port-v1.mjs";
+import {
+  createStarcraftTmgSecureProviderHttpControlV1,
+  STARCRAFT_TMG_SECURE_PROVIDER_API_PREFIX,
+} from "../packages/secure-provider-runtime/http-control-v1.mjs";
+import { createStarcraftTmgProviderProfileRegistryV1 } from
+  "../packages/secure-provider-runtime/provider-profile-registry-v1.mjs";
 import { createStarcraftTmgRoomRuntime } from
   "../packages/room-runtime/in-memory-room-v1.mjs";
 import {
@@ -53,6 +67,8 @@ const OCCURRED_AT = "2026-09-04T12:00:00.000Z";
 const COOKIE_NAME = "starcraft_tmg_agent_acceptance";
 const RAW_PROVIDER_SENTINEL = "RAW_PROVIDER_OUTPUT_152_MUST_NOT_REACH_TRACE";
 const USER_MESSAGE_SENTINEL = "USER_CONVERSATION_152_MUST_NOT_REACH_TRACE";
+const PROVIDER_SECRET_SENTINEL = "t16x_browser_valid_7Qm2k9P4";
+const PROVIDER_FAILURE_SENTINEL = "t16x_browser_fail_8Rx3m0Q5";
 const bundle = createKerriganPrimalProductBundleV1();
 const characterPackage = bundle.characterPackage;
 
@@ -157,7 +173,15 @@ async function readRequestBody(request) {
     if (bodyBytes > 256 * 1024) throw new Error("PAYLOAD_TOO_LARGE");
     chunks.push(chunk);
   }
-  const rawBody = Buffer.concat(chunks).toString("utf8");
+  const joined = Buffer.concat(chunks);
+  for (const chunk of chunks) chunk.fill(0);
+  const contentType = String(request.headers["content-type"] || "")
+    .split(";", 1)[0].trim().toLowerCase();
+  if (contentType === "application/octet-stream") {
+    return { rawBody: joined, bodyBytes };
+  }
+  const rawBody = joined.toString("utf8");
+  joined.fill(0);
   return { rawBody, body: rawBody ? JSON.parse(rawBody) : {}, bodyBytes };
 }
 
@@ -378,6 +402,16 @@ async function createFixture() {
     gatewayCalls: { configured: 0, noProvider: 0, lowBudget: 0 },
     modes: { tutor: 0, opponent: 0, commentator: 0, companion: 0 },
     cancelledGatewayCalls: 0,
+    providerLifecycle: {
+      httpRequests: 0,
+      workerAttachAttempts: 0,
+      workerAttachFailures: 0,
+      workerAttachSuccesses: 0,
+      workerDetachCalls: 0,
+      expectedFailureSecretObserved: false,
+      expectedValidSecretObserved: false,
+      unexpectedWorkerExits: 0,
+    },
   };
   const modeCredential = {
     tutor: createdRoom.credentials.tutor.seatToken,
@@ -594,20 +628,114 @@ async function createFixture() {
         };
       },
     };
-    return createStarcraftTmgOnlineAgentHttpEventsV1({
+    const httpEvents = createStarcraftTmgOnlineAgentHttpEventsV1({
       sessionLifecycle: lifecycle,
       roleTurnRuntime,
       providerSupervisor,
       principalAuthenticator,
       now: () => OCCURRED_AT,
     });
+    return {
+      httpEvents,
+      lifecycle,
+      providerSupervisor,
+      principalAuthenticator,
+    };
   }
 
-  const agentHttp = {
+  const pipelines = {
     configured: createPipeline("configured"),
     noProvider: createPipeline("noProvider", { providerConfigured: false }),
     lowBudget: createPipeline("lowBudget", { lowBudget: true }),
   };
+  const secureProviderProfile = createProviderProfile({
+    providerProfileId: "starcraft-tmg.browser-acceptance.slice-161.v1",
+    version: "1.0.0",
+    provider: "openai-compatible-direct",
+    baseUrl: "https://api.openai.com/v1",
+    model: "deterministic-browser-fixture-model",
+    contextBudget: 65_536,
+    outputBudget: 256,
+    timeoutMs: 5_000,
+    retryPolicy: {
+      maxAttempts: 1,
+      owner: "session_supervisor",
+      internalRetry: false,
+    },
+  });
+  const providerRegistry = createStarcraftTmgProviderProfileRegistryV1({
+    entries: [{
+      providerProfile: secureProviderProfile,
+      completionPath: "/chat/completions",
+    }],
+  });
+  let providerIdSequence = 0;
+  const credentialWorker = createStarcraftTmgCredentialWorkerPortV1({
+    spawnProcess(childPath) {
+      return spawn(process.execPath, [childPath], {
+        shell: false,
+        windowsHide: true,
+        stdio: ["ignore", "ignore", "ignore", "ipc"],
+        serialization: "advanced",
+        env: { NODE_NO_WARNINGS: "1" },
+      });
+    },
+    createId(prefix) {
+      providerIdSequence += 1;
+      return `slice161-${prefix}-${String(providerIdSequence).padStart(4, "0")}`;
+    },
+    onWorkerExit() {
+      metrics.providerLifecycle.unexpectedWorkerExits += 1;
+    },
+    maxCredentialBytes: 256,
+  });
+  const credentialPort = {
+    async attachCredential(input) {
+      metrics.providerLifecycle.workerAttachAttempts += 1;
+      const text = input.credentialBytes.toString("utf8");
+      if (text === PROVIDER_FAILURE_SENTINEL) {
+        metrics.providerLifecycle.expectedFailureSecretObserved = true;
+        metrics.providerLifecycle.workerAttachFailures += 1;
+        input.credentialBytes.fill(0);
+        throw new Error("deterministic credential Worker attach failure");
+      }
+      if (text === PROVIDER_SECRET_SENTINEL) {
+        metrics.providerLifecycle.expectedValidSecretObserved = true;
+      }
+      const result = await credentialWorker.attachCredential(input);
+      if (result.ok) metrics.providerLifecycle.workerAttachSuccesses += 1;
+      return result;
+    },
+    async detachCredential(input) {
+      metrics.providerLifecycle.workerDetachCalls += 1;
+      return credentialWorker.detachCredential(input);
+    },
+    readWorkerState(input) {
+      return credentialWorker.readWorkerState(input);
+    },
+  };
+  const providerControl = createStarcraftTmgSecureProviderAttachmentControlV1({
+    sessionLifecycle: pipelines.configured.lifecycle,
+    providerSupervisor: pipelines.configured.providerSupervisor,
+    providerProfileRegistry: providerRegistry,
+    credentialAttachmentPort: credentialPort,
+    createId() {
+      providerIdSequence += 1;
+      return `slice-161-attachment-${String(providerIdSequence).padStart(4, "0")}`;
+    },
+    createNonce() {
+      return randomBytes(32).toString("base64url");
+    },
+    maxCredentialBytes: 256,
+    attachmentTtlMs: 60_000,
+  });
+  const providerHttp = createStarcraftTmgSecureProviderHttpControlV1({
+    controlPlane: providerControl,
+    principalAuthenticator: pipelines.configured.principalAuthenticator,
+    providerProfileRegistry: providerRegistry,
+    allowInsecureLoopbackDevelopment: true,
+    maxSecretBodyBytes: 256,
+  });
   const cookieToPipeline = new Map(Object.entries(cookies)
     .map(([name, value]) => [value, name]));
   return {
@@ -621,7 +749,15 @@ async function createFixture() {
     metrics,
     async handleAgent(input) {
       const name = cookieToPipeline.get(cookieValue(input.headers)) || "configured";
-      return agentHttp[name].handle(input);
+      return pipelines[name].httpEvents.handle(input);
+    },
+    async handleProvider(input) {
+      metrics.providerLifecycle.httpRequests += 1;
+      return providerHttp.handle(input);
+    },
+    async close() {
+      await providerControl.close();
+      await credentialWorker.close();
     },
   };
 }
@@ -660,6 +796,24 @@ async function main() {
         sendJson(response, result);
         return;
       }
+      if (url.pathname.startsWith(STARCRAFT_TMG_SECURE_PROVIDER_API_PREFIX)) {
+        const providerBody = !hasBody
+          ? {}
+          : Buffer.isBuffer(requestBody.rawBody)
+            ? requestBody
+            : { body: requestBody.body, bodyBytes: requestBody.bodyBytes };
+        const result = await fixture.handleProvider({
+          method: request.method,
+          pathname: url.pathname,
+          query: url.searchParams,
+          headers: request.headers,
+          secureTransport: false,
+          remoteAddress: request.socket.remoteAddress,
+          ...providerBody,
+        });
+        sendJson(response, result);
+        return;
+      }
       if (url.pathname.startsWith(STARCRAFT_TMG_LEVEL3_API_PREFIX)
         || url.pathname.startsWith("/starcraft-tmg-level3/assets/v1/character/")) {
         const result = await fixture.roomAdapter.handle({
@@ -688,6 +842,7 @@ async function main() {
             deterministicGateway: true,
             liveProviderCalled: false,
             apiKeyAccepted: false,
+            providerLifecycle: fixture.metrics.providerLifecycle,
           },
         });
         return;
@@ -730,9 +885,17 @@ async function main() {
     sentinels: {
       rawProviderOutput: RAW_PROVIDER_SENTINEL,
       userConversation: USER_MESSAGE_SENTINEL,
+      providerSecret: PROVIDER_SECRET_SENTINEL,
+      providerFailureSecret: PROVIDER_FAILURE_SENTINEL,
     },
   })}\n`);
-  const close = () => server.close(() => process.exit(0));
+  let closing = false;
+  const close = async () => {
+    if (closing) return;
+    closing = true;
+    try { await fixture.close(); } catch {}
+    server.close(() => process.exit(0));
+  };
   process.once("SIGINT", close);
   process.once("SIGTERM", close);
 }

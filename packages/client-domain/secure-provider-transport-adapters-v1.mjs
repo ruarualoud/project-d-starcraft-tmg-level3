@@ -1,4 +1,7 @@
-import { containsStarcraftTmgOnlineCredentialMaterialV1 } from
+import {
+  containsStarcraftTmgKnownCredentialEchoV1,
+  containsStarcraftTmgOnlineCredentialMaterialV1,
+} from
   "../online-agent-session/portable-credential-material-v1.mjs";
 
 export const STARCRAFT_TMG_SECURE_PROVIDER_CLIENT_TRANSPORT_VERSION =
@@ -153,6 +156,11 @@ export function createHttpStarcraftTmgSecureProviderClientTransportV1(
       if (utf8Length(raw) > maxResponseBytes) {
         throw new StarcraftTmgSecureProviderClientTransportError(
           "PROVIDER_CLIENT_RESPONSE_TOO_LARGE");
+      }
+      if (ownedSecret
+        && containsStarcraftTmgKnownCredentialEchoV1(raw, ownedSecret)) {
+        throw new StarcraftTmgSecureProviderClientTransportError(
+          "PROVIDER_CLIENT_RESPONSE_UNSAFE");
       }
       let body;
       try { body = JSON.parse(raw); } catch {

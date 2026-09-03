@@ -20,12 +20,22 @@ export function readStarcraftTmgTrustedRoleAgentSessionV1(clientDomain) {
   if (!readPrivateSession) return null;
   const session = readPrivateSession();
   if (!session) return null;
+  const roomId = session.roomId || session.binding?.roomId;
+  const sessionBindingHash = session.sessionBindingHash
+    || session.binding?.sessionBindingHash;
+  const principalScopeHash = session.principalScopeHash
+    || session.binding?.principalScopeHash || null;
+  const connectionEpoch = session.connection?.epoch;
+  if (!roomId || !session.sessionId || !sessionBindingHash
+    || !Number.isSafeInteger(connectionEpoch) || connectionEpoch < 1) {
+    return null;
+  }
   return deepFreeze({
-    roomId: session.binding.roomId,
+    roomId,
     sessionId: session.sessionId,
-    sessionBindingHash: session.binding.sessionBindingHash,
-    principalScopeHash: session.binding.principalScopeHash,
-    connectionEpoch: session.connection.epoch,
+    sessionBindingHash,
+    principalScopeHash,
+    connectionEpoch,
     lifecycleState: session.lifecycleState,
     trainingTruth: false,
   });

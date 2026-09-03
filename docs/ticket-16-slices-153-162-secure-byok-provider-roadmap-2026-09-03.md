@@ -1,7 +1,7 @@
 # Ticket 16 — secure BYOK and direct Provider roadmap
 
 Date: 2026-09-03  
-Status: active; Slices 153–160 complete, 8/10
+Status: active; Slices 153–161 complete, 9/10
 Project progress before this Ticket: 14/22 Tickets complete; Ticket 14 device
 acceptance remains deferred  
 Source refresh: not performed
@@ -16,7 +16,7 @@ user-authorized live call. It owns no Rules, room, RNG, Confirm/Apply, Skill,
 DSH, Memory-promotion or training authority.
 
 A real API key is not needed for Slices 153–161. Slice 162 requires the user to
-configure a key locally through the secure ingress or process environment. The
+configure a rotated key locally through the secure product ingress. The
 key must not be pasted into chat. Without that call, all implementation may be
 complete but Ticket 16 remains open at 9/10.
 
@@ -113,7 +113,7 @@ call needs a new same-user approval and a reattached credential.
 | 158 | **Complete.** PostgreSQL Adapter parity and ambiguous-attempt recovery. | Same semantic lifecycle as SQLite; SERIALIZABLE row locks/CAS; two-connection contention; rollback and commit-ack-loss recovery; Ed25519 + HMAC same-user approval; fresh credential reattach; focused 42/42, report `b55d0703...34a7`; no real Provider or PostgreSQL server. |
 | 159 | **Complete.** Ticket 15 Gateway/Prompt/Worker/store/receipt integration. | Frozen credential-free Gateway source/request preserved; ephemeral server execution scope; authenticated internal authority; exact MTL persist/dispatch/execute/receipt/recover sequence; durable actual/zero/full settlement; commit-ack replay; four modes; focused 36/36 across 18 SQLite files and nine deterministic Worker calls, report `349f798d...ee3c`; no live call. |
 | 160 | **Complete.** Web and Battle Lab BYOK product flow. | Server-listed Provider/model and consent-time maximum budget envelope; explicit disclosure/consent; password input cleared before network await; binary buffers zeroed; attached/missing/error/detached states; no cache/log persistence; focused 37/37, report `f1a68378...767c`; no live call. |
-| 161 | Redaction fuzz, real-browser and Worker-failure aggregate. | Credential echo/error/encoding corpus; HTTP/DOM/artifact scans; cancel/timeout/crash/recovery; four role modes with deterministic Provider. |
+| 161 | **Complete.** Redaction fuzz, real-browser and Worker-failure aggregate. | Ten credential echo encodings; code-only exceptions; Node 20/20 and real Chromium 16/16 through seven Provider HTTP requests, one safe attach failure, one real child attach/detach, four role modes and cancel; durable cancel/timeout/crash/recovery rerun; cumulative 495; no live call. |
 | 162 | One user-authorized minimal live call and Ticket closure. | Local-only key injection; reported Provider/model/version, usage/cost, response fingerprint, browser-visible safe state and full aggregate. |
 
 ## Non-negotiable gates
@@ -316,4 +316,27 @@ never retries without explicit same-user approval.
 - Slice report hash: `f1a683780b0fe1aa1c9b8dfb569dabc4b25db1c00b17ea8bbdb0ef7a1d18767c`.
 - No user key or external Provider call occurred. No source refresh, Skill,
   DSH, MuZero, self-play, Memory write or training operation occurred. Slice
-  161 owns redaction fuzz, real-browser and Worker-failure aggregate evidence.
+  161 subsequently closes redaction fuzz, real-browser and Worker-failure
+  aggregate evidence below.
+
+## Slice 161 fixed evidence
+
+- A portable known-secret guard rejects raw, URL/double-URL, Base64,
+  Base64URL, hex, JSON and Unicode-escaped echoes before a response can enter
+  the client projection. Unexpected server exceptions and client transport
+  codes are reduced to fixed safe codes.
+- Real Chromium passes 16/16 across seven secure Provider HTTP requests: one
+  deterministic attach failure, one real isolated credential-child attach,
+  refresh/detach, four role modes and one cancellation path. Three screenshots,
+  HTTP responses, DOM and reports pass private-value scans.
+- The browser gate found and fixed the flat authenticated HTTP Agent-session
+  versus internal binding-shape mismatch in the trusted composition reader.
+- Node redaction/Worker aggregate passes 20/20; durable Gateway 36/36 and egress
+  40/40 re-prove one-attempt cancellation, timeout, crash and recovery behavior.
+- Fixed cumulative denominator is 495. Contract hash is
+  `118b1e5440c134be4d206d7f3854c89df20f2434a4fd444008ae4a57c212f980`;
+  Node report is `bba1d661...195522`; Chromium report is
+  `b057f6cd...d14b59`.
+- No user key or external Provider call occurred. No source refresh, Skill,
+  DSH, MuZero, self-play, Memory write or training operation occurred. Slice
+  162 owns the separately authorized minimal live call and Ticket closure.

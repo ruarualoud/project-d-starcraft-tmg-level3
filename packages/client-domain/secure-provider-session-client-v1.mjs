@@ -26,6 +26,63 @@ const ATTACHMENT_STATES = new Set([
   "awaiting_ingress", "attaching", "attached", "detaching",
   "detach_failed", "attach_failed", "detached", "expired",
 ]);
+const SAFE_REJECTION_CODES = new Set([
+  "PROVIDER_AGENT_SESSION_REQUIRED",
+  "PROVIDER_ATTACH_REJECTED",
+  "PROVIDER_ATTACHMENT_READ_REJECTED",
+  "PROVIDER_CLIENT_NETWORK_UNAVAILABLE",
+  "PROVIDER_CLIENT_OPERATION_FAILED",
+  "PROVIDER_CLIENT_REQUEST_INVALID",
+  "PROVIDER_CLIENT_RESPONSE_INVALID",
+  "PROVIDER_CLIENT_RESPONSE_TOO_LARGE",
+  "PROVIDER_CLIENT_RESPONSE_UNSAFE",
+  "PROVIDER_CLIENT_SECRET_BYTES_REQUIRED",
+  "PROVIDER_CLIENT_SECRET_OUTSIDE_BINARY_INGRESS",
+  "PROVIDER_CLIENT_SECRET_TOO_LARGE",
+  "PROVIDER_CLIENT_TIMEOUT",
+  "PROVIDER_DETACH_REJECTED",
+  "PROVIDER_EXPLICIT_CONSENT_REQUIRED",
+  "PROVIDER_PREPARE_REJECTED",
+  "PROVIDER_PROFILE_CATALOGUE_UNAVAILABLE",
+  "PROVIDER_PROFILE_NOT_LISTED",
+  "PROVIDER_SECRET_INGRESS_NOT_READY",
+  "authentication_failed",
+  "authentication_required",
+  "credential_worker_attach_failed",
+  "credential_worker_detach_failed",
+  "online_dsh_forbidden",
+  "provider_attachment_already_active",
+  "provider_attachment_binding_mismatch",
+  "provider_attachment_capacity_exceeded",
+  "provider_attachment_not_attached",
+  "provider_attachment_not_found",
+  "provider_attachment_profile_mismatch",
+  "provider_attachment_scope_mismatch",
+  "provider_budget_unavailable",
+  "provider_control_closed",
+  "provider_control_failed",
+  "provider_disclosure_consent_required",
+  "provider_disclosure_notice_mismatch",
+  "provider_ingress_already_consumed",
+  "provider_ingress_expired",
+  "provider_ingress_rejected",
+  "provider_model_not_configured",
+  "provider_profile_invalid",
+  "provider_profile_not_available",
+  "provider_profile_ref_mismatch",
+  "provider_profile_registry_failed",
+  "provider_request_rejected",
+  "provider_revoke_reason_invalid",
+  "provider_secret_buffer_required",
+  "provider_secret_bytes_invalid",
+  "provider_session_binding_mismatch",
+  "provider_worker_not_attached",
+  "provider_worker_state_unavailable",
+  "session_authentication_failed",
+  "session_ended",
+  "stale_connection",
+  "unsafe_provider_response_projection",
+]);
 const INTENT_FIELDS = Object.freeze({
   load_profiles: Object.freeze(["type"]),
   prepare_attachment: Object.freeze(["type", "providerProfileRef", "consentAccepted"]),
@@ -216,10 +273,11 @@ function internalIngress(value) {
 }
 
 function errorCode(error) {
-  if (error instanceof StarcraftTmgSecureProviderClientTransportError) {
-    return error.code;
-  }
-  return String(error?.code || "PROVIDER_CLIENT_OPERATION_FAILED");
+  const candidate = error instanceof StarcraftTmgSecureProviderClientTransportError
+    ? error.code : error?.code;
+  const normalized = String(candidate || "");
+  return SAFE_REJECTION_CODES.has(normalized)
+    ? normalized : "PROVIDER_CLIENT_OPERATION_FAILED";
 }
 
 export function createStarcraftTmgSecureProviderSessionClientV1(options = {}) {

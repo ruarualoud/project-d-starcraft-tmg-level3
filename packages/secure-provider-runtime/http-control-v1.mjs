@@ -1,4 +1,7 @@
-import { containsStarcraftTmgOnlineCredentialMaterialV1 } from
+import {
+  containsStarcraftTmgKnownCredentialEchoV1,
+  containsStarcraftTmgOnlineCredentialMaterialV1,
+} from
   "../online-agent-session/portable-credential-material-v1.mjs";
 import {
   STARCRAFT_TMG_PROVIDER_CREDENTIAL_MEDIA_TYPE,
@@ -225,7 +228,7 @@ function publicResult(operation, result) {
   };
 }
 
-function response(status, endpoint, result) {
+function response(status, endpoint, result, sensitiveBytes = null) {
   const body = {
     ok: result.ok !== false,
     schemaVersion: STARCRAFT_TMG_SECURE_PROVIDER_HTTP_VERSION,
@@ -233,7 +236,8 @@ function response(status, endpoint, result) {
     ...(result.ok === false ? { error: result.reason } : {}),
     result: clone(result),
   };
-  if (containsStarcraftTmgOnlineCredentialMaterialV1(body)) {
+  if (containsStarcraftTmgOnlineCredentialMaterialV1(body)
+    || containsStarcraftTmgKnownCredentialEchoV1(body, sensitiveBytes)) {
     return deepFreeze({
       status: 500,
       headers: securityHeaders(),
@@ -383,10 +387,11 @@ export function createStarcraftTmgSecureProviderHttpControlV1(options = {}) {
 
   async function handle(input = {}) {
     const ownedRawBody = Buffer.isBuffer(input.rawBody) ? input.rawBody : null;
+    let endpoint = "unknown";
     try {
       const method = String(input.method || "GET").toUpperCase();
       const pathname = String(input.pathname || "");
-      const endpoint = pathname.startsWith(STARCRAFT_TMG_SECURE_PROVIDER_API_PREFIX)
+      endpoint = pathname.startsWith(STARCRAFT_TMG_SECURE_PROVIDER_API_PREFIX)
         ? pathname.slice(STARCRAFT_TMG_SECURE_PROVIDER_API_PREFIX.length)
           .replace(/^\/+/, "") || "health"
         : "unknown";
@@ -480,7 +485,8 @@ export function createStarcraftTmgSecureProviderHttpControlV1(options = {}) {
           ingressNonce,
           credentialBytes: raw,
         }, auth.context);
-        return response(statusFor(result), endpoint, publicResult("attach", result));
+        return response(statusFor(result), endpoint,
+          publicResult("attach", result), raw);
       }
 
       if (match[2] === "secret") return failure(405, endpoint, "method_not_allowed");
@@ -496,6 +502,8 @@ export function createStarcraftTmgSecureProviderHttpControlV1(options = {}) {
         return response(statusFor(result), endpoint, publicResult("detach", result));
       }
       return failure(405, endpoint, "method_not_allowed");
+    } catch {
+      return failure(500, endpoint, "provider_control_failed");
     } finally {
       ownedRawBody?.fill(0);
     }
