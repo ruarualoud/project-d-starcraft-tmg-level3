@@ -1,7 +1,7 @@
 # Ticket 16 — secure BYOK and direct Provider roadmap
 
 Date: 2026-09-03  
-Status: active; Slices 153–155 complete, 3/10
+Status: active; Slices 153–156 complete, 4/10
 Project progress before this Ticket: 14/22 Tickets complete; Ticket 14 device
 acceptance remains deferred  
 Source refresh: not performed
@@ -108,7 +108,7 @@ call needs a new same-user approval and a reattached credential.
 | 153 | **Complete.** Audit/freeze the old implementation, compare MTL and fix the 10-Slice denominator. | Hash-sealed boundary `241c8a35...6cbe5`; exact old-file hashes; MTL commit and adapted principles; focused 15/15, report `8c03cff4...57e7e`; no key or call. |
 | 154 | **Complete.** Authenticated consent, attachment lifecycle and dedicated secure ingress. | Principal/session/profile/budget binding; one-use expiry nonce; Buffer-only synthetic-key path with zeroing; status/detach/revocation/concurrency tests; focused 27/27, report `30bf5825...c0fd`; no user key or Provider call. |
 | 155 | **Complete.** Child-process credential Worker and IPC isolation. | Scrubbed environment/stdio; parent and child buffer zeroing; per-attachment process; crash/detach kill; no restart; MTL scheduling lineage; focused 25/25 with 14 actual children, report `8749348f...faf5`; no user key or Provider call. |
-| 156 | Provider registry, egress allowlist and bounded transport. | Exact host/path/model; public DNS/TLS/no redirect; body/time bounds; one attempt; typed failures; no arbitrary endpoint. |
+| 156 | **Complete.** Provider registry, egress allowlist and bounded transport. | Server-owned exact host/port/path/model; all-answer public DNS check plus connection pin; verified TLS/no redirect/proxy/compression; body/header/time bounds; one attempt; combined credential/egress child; focused 40/40, report `732d3a59...801e`; no live call. |
 | 157 | Common attempt-store contract and SQLite WAL Adapter. | Non-secret schema; intent-before-egress; atomic budget reservation/settlement; idempotency/CAS; restart replay. |
 | 158 | PostgreSQL Adapter parity and ambiguous-attempt recovery. | Same conformance suite; concurrent reservations; crash windows; explicit retry approval; lost-key reattach. |
 | 159 | Ticket 15 Gateway/prompt/provider receipt integration. | Real Worker behind `complete`; current prompt/profile resolution; abort/budget/fence semantics; safe model/usage/cost receipt. |
@@ -191,3 +191,26 @@ never retries without explicit same-user approval.
 - Only synthetic bytes ran. No user key, external Provider call, source refresh,
   Skill/DSH/MuZero/self-play/Memory/training work occurred. Slice 156 owns the
   exact allowlisted Provider transport.
+
+## Slice 156 fixed evidence
+
+- The server registry compiles an exact hash-bound Provider/Profile egress
+  policy; clients cannot submit endpoint, model, header or retry authority.
+- DNS resolves all answers, rejects the full set if any address is non-global,
+  and pins one verified address while preserving the registered hostname for
+  HTTP authority, TLS SNI and certificate verification.
+- The HTTPS path forbids redirects, proxy configuration, custom client auth
+  headers and compressed responses; request/response/header/time limits and
+  exactly one physical attempt are fixed.
+- Only the combined credential/egress child imports DNS/HTTPS transport. Its
+  trusted parent validates safe hash-bound success/failure IPC and retains no
+  Provider transport.
+- Behavior verifier: 40/40, four actual credential children and 17 injected
+  HTTPS attempts. Slice 155, Slice 154 and Ticket 15 Provider regressions pass.
+- Fixed cumulative denominator: 259 predecessor assertions + 40 Slice 156
+  assertions = 299 assertions.
+- Contract hash: `642425b38dbd6dd4041d2a17e21ad95cc2324a905c0ccb5c800cf786f35df817`.
+- Slice report hash: `732d3a59344fed858253c4bf47c9f6b7058a978e585c428861be5c205b4d801e`.
+- No actual child performed DNS/HTTPS. No user key, live Provider call, game
+  source refresh, Skill/DSH/MuZero/self-play/Memory/training work occurred.
+  Slice 157 owns the common attempt-store contract and SQLite WAL Adapter.
