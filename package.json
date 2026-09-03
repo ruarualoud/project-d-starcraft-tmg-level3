@@ -5,6 +5,7 @@
   "scripts": {
     "verify:faq-f1-source-lock": "node scripts/verify-official-faq-v1-source-lock-v1.mjs",
     "verify:faq-f2-rule-reconciliation": "node scripts/verify-faq-f2-rule-reconciliation-v1.mjs",
+    "verify:faq-f3-movement-battlefield-deployment": "node scripts/verify-faq-f3-movement-battlefield-deployment-v1.mjs",
     "capture:official-development-tranche-source-lock": "node scripts/capture-official-development-tranche-source-lock-v1.mjs",
     "verify:official-development-tranche-source-lock": "node scripts/verify-official-development-tranche-source-lock-v1.mjs",
     "verify:official-marine-charge-v2-rule-slice": "node scripts/verify-official-marine-charge-v2-rule-slice-v1.mjs",
