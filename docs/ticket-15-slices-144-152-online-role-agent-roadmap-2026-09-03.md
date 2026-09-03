@@ -1,7 +1,7 @@
 # Ticket 15 — online role-Agent session roadmap
 
 Date: 2026-09-03
-Status: active; Slices 144–148 complete, 5/9 complete
+Status: active; Slices 144–149 complete, 6/9 complete
 Project progress: 13/22 Tickets complete; Ticket 14 is 15/16 with device evidence deferred
 Source refresh: not performed
 
@@ -52,7 +52,7 @@ behavior, but does not claim a real external model call.
 | 146 | **Complete.** Implement the credential-free Provider Gateway supervisor. | Per-session single-flight without a global lock; reservation/verified-usage budgets; server timeout/cancel and AbortSignal; no automatic retry; late-result hash quarantine and reconnect fencing; honest `provider_not_configured`; 24/24 with deterministic injected Gateway only. |
 | 147 | **Complete.** Bind prompt, tool, history and Memory flows to mode and reconnect identity. | Four exact prompt routes and capability-prefetched tools; ephemeral prompt refs; bounded per-session history; same-game/rules/source accepted Rule Skills as hash refs; advisory same-scope Memory; reconnect continuity plus cross-mode/cross-room/credential rejection; 24/24 focused and full prior aggregate green. |
 | 148 | **Complete.** Close role behavior and Opponent Preview handoff. | Exact role/intent output schema and server-catalogued evidence; Tutor/Commentator/Companion plus Opponent chat are read-only; Opponent `take_turn` selects one enabled current candidate with alternative/value/risk/Memory evidence; MatchBinding+LegalSpace+revision+state precondition; sealed Preview only and external human confirmation; 28/28 focused with full prior aggregate green. |
-| 149 | Mount authenticated Agent HTTP and event projection. | Session capability authentication; bounded request schema; create/read/send/cancel/reconnect/end/events; redacted errors; idempotency and no credential endpoints. |
+| 149 | **Complete.** Mount authenticated Agent HTTP and event projection. | External principal authentication; exact 64-KiB request boundary; create/read/send/cancel/reconnect/end/events; exact concurrent idempotent replay; capacity-reserved hash-chain events; redacted safe projections and no credential endpoint; 26/26 focused and full prior aggregate green. |
 | 150 | Add the opt-in Client Domain extension and Expo Web Adjutant controls. | Existing four client operations unchanged; mode/status/budget/chat/cancel/confirmation UX; offline/background read-only; no local Agent authority. |
 | 151 | Replace Battle Lab's `not_mounted_ticket_15` with live safe TraceProjection. | Real session/turn/tool/decision/failure states; no raw prompt/output/Provider receipt/credential; Expo/Battle Lab identity parity. |
 | 152 | Run real Chromium end-to-end and Ticket 15 aggregate. | Four modes, failure/reconnect/cancel/budget paths, Opponent Preview and external confirm, privacy scan, fixed denominators and Ticket 16 handoff. |
