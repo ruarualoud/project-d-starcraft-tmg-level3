@@ -19,13 +19,38 @@ import {
 } from "../../packages/client-domain/online-agent-transport-adapters-v1.mjs";
 import {
   createStarcraftTmgRoleAgentSessionClientV1,
+  readStarcraftTmgTrustedRoleAgentSessionV1,
 } from "../../packages/client-domain/role-agent-session-client-v1.mjs";
 import {
   createStarcraftTmgRoleAgentTraceProjectionPortV2,
 } from "../../packages/client-domain/role-agent-trace-projection-v2.mjs";
+import {
+  createHttpStarcraftTmgSecureProviderClientTransportV1,
+} from "../../packages/client-domain/secure-provider-transport-adapters-v1.mjs";
+import {
+  createStarcraftTmgSecureProviderSessionClientV1,
+} from "../../packages/client-domain/secure-provider-session-client-v1.mjs";
 
 export const STARCRAFT_TMG_BATTLE_LAB_MOUNT_VERSION =
   "starcraft_tmg_battle_lab_mount_v1";
+
+const BATTLE_LAB_SECURE_PROVIDER_CLIENTS = new WeakMap();
+
+export function readStarcraftTmgTrustedBattleLabProviderV1(runtime) {
+  return BATTLE_LAB_SECURE_PROVIDER_CLIENTS.get(runtime)?.read() || null;
+}
+
+export function dispatchStarcraftTmgTrustedBattleLabProviderV1(runtime, intent) {
+  const client = BATTLE_LAB_SECURE_PROVIDER_CLIENTS.get(runtime);
+  if (!client) throw new Error("BATTLE_LAB_SECURE_PROVIDER_NOT_MOUNTED");
+  return client.dispatch(intent);
+}
+
+export function subscribeStarcraftTmgTrustedBattleLabProviderV1(runtime, listener) {
+  const client = BATTLE_LAB_SECURE_PROVIDER_CLIENTS.get(runtime);
+  if (!client) return () => {};
+  return client.subscribe(listener);
+}
 
 function exactKeys(value, allowed, code) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -97,6 +122,26 @@ export function createStarcraftTmgBattleLabRuntime(options = {}) {
       createId: options.createId,
     })
     : baseClientDomain;
+  const secureProviderSessionEnabled = roleAgentSessionEnabled
+    && options.enableSecureProviderSession === true;
+  const secureProviderTransport = secureProviderSessionEnabled
+    ? options.secureProviderTransport
+      || createHttpStarcraftTmgSecureProviderClientTransportV1({
+        baseUrl: String(options.baseUrl || "").replace(/\/+$/u, ""),
+        fetchImpl: options.fetchImpl || globalThis.fetch,
+        apiPrefix: options.secureProviderApiPrefix,
+        timeoutMs: options.secureProviderTimeoutMs,
+      })
+    : null;
+  const secureProviderSession = secureProviderSessionEnabled
+    ? createStarcraftTmgSecureProviderSessionClientV1({
+      transport: secureProviderTransport,
+      sessionSource: {
+        read: () => readStarcraftTmgTrustedRoleAgentSessionV1(clientDomain),
+        subscribe: (listener) => clientDomain.subscribe(() => listener()),
+      },
+    })
+    : null;
   const traceProjectionIsLiveClientBound = !options.traceProjectionPort
     && roleAgentSessionEnabled;
   const traceProjectionPort = options.traceProjectionPort
@@ -220,5 +265,9 @@ export function createStarcraftTmgBattleLabRuntime(options = {}) {
     !== [...STARCRAFT_TMG_CLIENT_DOMAIN_INTERFACE].sort().join("/")) {
     throw new Error("BATTLE_LAB_CLIENT_DOMAIN_INTERFACE_DRIFT");
   }
-  return Object.freeze(runtime);
+  const publicRuntime = Object.freeze(runtime);
+  if (secureProviderSession) {
+    BATTLE_LAB_SECURE_PROVIDER_CLIENTS.set(publicRuntime, secureProviderSession);
+  }
+  return publicRuntime;
 }

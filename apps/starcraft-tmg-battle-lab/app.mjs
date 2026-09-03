@@ -1,4 +1,9 @@
-import { createStarcraftTmgBattleLabRuntime } from "./battle-lab-runtime-v1.mjs";
+import {
+  createStarcraftTmgBattleLabRuntime,
+  dispatchStarcraftTmgTrustedBattleLabProviderV1,
+  readStarcraftTmgTrustedBattleLabProviderV1,
+  subscribeStarcraftTmgTrustedBattleLabProviderV1,
+} from "./battle-lab-runtime-v1.mjs";
 import {
   resolveStarcraftTmgBattlefieldUnitMediaV1,
   starcraftTmgBattlefieldMapMediaV1,
@@ -8,6 +13,7 @@ const NS = "http://www.w3.org/2000/svg";
 const runtime = createStarcraftTmgBattleLabRuntime({
   baseUrl: globalThis.BATTLE_LAB_API_ORIGIN || "",
   enableRoleAgentSession: true,
+  enableSecureProviderSession: true,
 });
 const AGENT_MODE_INTENTS = Object.freeze({
   tutor: Object.freeze(["explain", "chat"]),
@@ -30,6 +36,7 @@ bgmAudio.volume = 0.45;
 voiceAudio.volume = 0.7;
 const mapMedia = starcraftTmgBattlefieldMapMediaV1();
 let activeDetailPanel = "unit";
+let providerView = readStarcraftTmgTrustedBattleLabProviderV1(runtime);
 
 const el = Object.fromEntries([
   "connection", "shared-hash", "room-id", "seat-token", "room-title",
@@ -44,6 +51,9 @@ const el = Object.fromEntries([
   "threat-mode", "threat-weapon",
   "agent-mode", "agent-intent", "agent-message", "agent-confirmation",
   "agent-identity",
+  "provider-console", "provider-status", "provider-profile",
+  "provider-profile-summary", "provider-consent", "provider-secret-row",
+  "provider-secret", "provider-safe-state", "provider-error",
 ].map((name) => [name, document.querySelector(`[data-${name}]`)]));
 
 voiceAudio.addEventListener("playing", () => {
@@ -450,6 +460,66 @@ function renderAgent(agent, controls) {
   ])));
 }
 
+function selectedProviderProfile(view = providerView) {
+  const selectedHash = el["provider-profile"]?.value || "";
+  return view?.profiles?.find((profile) => profile.profileRef.hash === selectedHash)
+    || view?.profiles?.[0] || null;
+}
+
+function renderProvider(view) {
+  providerView = view;
+  if (!view) {
+    el["provider-status"].textContent = "not mounted";
+    el["provider-profile-summary"].textContent = "Secure Provider client not mounted.";
+    return;
+  }
+  el["provider-status"].textContent = view.status;
+  const previousHash = el["provider-profile"].value;
+  replaceChildren(el["provider-profile"], view.profiles.map((profile) => htmlElement("option", {
+    value: profile.profileRef.hash,
+    textContent: `${profile.providerId} · ${profile.model}`,
+  })));
+  if (view.profiles.some((profile) => profile.profileRef.hash === previousHash)) {
+    el["provider-profile"].value = previousHash;
+  }
+  const profile = selectedProviderProfile(view);
+  const envelope = view.attachment?.budgetEnvelope;
+  el["provider-profile-summary"].textContent = profile
+    ? `${profile.providerId} · ${profile.model} · input max ${profile.maxContextUnits} · output max ${profile.maxOutputUnits}${envelope ? ` · session maximum envelope ${envelope.maxTotalUnits} ${envelope.currency} (not live spend; exact ledger stays server-side)` : ""}`
+    : "Profile catalogue not loaded.";
+  const busy = ["loading_profiles", "preparing", "attaching", "refreshing", "detaching"]
+    .includes(view.status);
+  const attached = view.attachment?.state === "attached";
+  const awaitingSecret = view.status === "awaiting_secret";
+  const prepare = document.querySelector('[data-command="provider-prepare"]');
+  const load = document.querySelector('[data-command="provider-load"]');
+  const attach = document.querySelector('[data-command="provider-attach"]');
+  const refresh = document.querySelector('[data-command="provider-refresh"]');
+  const detach = document.querySelector('[data-command="provider-detach"]');
+  load.disabled = busy || view.profiles.length > 0;
+  prepare.disabled = busy || attached || awaitingSecret || !view.sessionBound
+    || !profile || !el["provider-consent"].checked || !view.capabilities.prepare;
+  attach.disabled = busy || !awaitingSecret || !el["provider-secret"].value
+    || !view.capabilities.attach;
+  refresh.disabled = busy || !view.attachment;
+  detach.disabled = busy || !view.capabilities.detach;
+  el["provider-profile"].disabled = busy || attached || awaitingSecret;
+  el["provider-consent"].disabled = busy || attached || awaitingSecret;
+  el["provider-secret-row"].hidden = !awaitingSecret;
+  el["provider-secret"].disabled = busy || !awaitingSecret;
+  const attachmentState = view.attachment?.state || "missing";
+  el["provider-safe-state"].textContent = `Attachment ${attachmentState}${view.attachment?.detachReason ? ` · ${view.attachment.detachReason}` : ""}. Identifiers, nonce and credential bytes are excluded; credential persisted: no; automatic retry: no.`;
+  el["provider-error"].textContent = view.rejection?.code || "";
+}
+
+async function invokeProvider(intent, successLabel) {
+  const result = await dispatchStarcraftTmgTrustedBattleLabProviderV1(runtime, intent);
+  providerView = result.view;
+  renderProvider(providerView);
+  notify(result.ok ? successLabel : `Blocked: ${result.rejection?.code || "Provider request rejected"}`);
+  return result;
+}
+
 function workbenchCard(title, lines = []) {
   return htmlElement("article", { className: "trace" }, [
     htmlElement("strong", { textContent: title }),
@@ -706,6 +776,14 @@ el["agent-mode"].addEventListener("change", () => {
   )));
 });
 
+el["provider-profile"].addEventListener("change", () => {
+  el["provider-consent"].checked = false;
+  renderProvider(providerView);
+});
+
+el["provider-consent"].addEventListener("change", () => renderProvider(providerView));
+el["provider-secret"].addEventListener("input", () => renderProvider(providerView));
+
 el["bgm-file"].addEventListener("change", () => {
   const file = el["bgm-file"].files?.[0];
   if (!file) return;
@@ -783,6 +861,35 @@ document.addEventListener("click", async (event) => {
         event.target.textContent = "Play BGM";
       }
       render(runtime.read());
+    } else if (command === "provider-load") {
+      await invokeProvider({ type: "load_profiles" }, "Provider catalogue loaded");
+    } else if (command === "provider-prepare") {
+      const profile = selectedProviderProfile();
+      if (!profile || !el["provider-consent"].checked) return;
+      await invokeProvider({
+        type: "prepare_attachment",
+        providerProfileRef: profile.profileRef,
+        consentAccepted: true,
+      }, "One-time Provider credential ingress prepared");
+    } else if (command === "provider-attach") {
+      const draft = el["provider-secret"].value;
+      if (!draft) return;
+      const credentialBytes = new TextEncoder().encode(draft);
+      el["provider-secret"].value = "";
+      renderProvider(providerView);
+      try {
+        await invokeProvider({ type: "attach_secret", credentialBytes },
+          "Provider attached in isolated session memory");
+      } finally {
+        credentialBytes.fill(0);
+      }
+    } else if (command === "provider-refresh") {
+      await invokeProvider({ type: "refresh_attachment" },
+        "Safe Provider attachment status refreshed");
+    } else if (command === "provider-detach") {
+      const result = await invokeProvider({ type: "detach_attachment" },
+        "Provider detached and credential Worker destroyed");
+      if (result.ok) el["provider-consent"].checked = false;
     } else if (command === "agent-open") {
       await invoke({
         type: "open_agent_session",
@@ -816,8 +923,10 @@ document.addEventListener("click", async (event) => {
 });
 
 runtime.subscribe(render);
+subscribeStarcraftTmgTrustedBattleLabProviderV1(runtime, renderProvider);
 setDetailPanel(activeDetailPanel);
 render(runtime.read());
+renderProvider(providerView);
 
 const initialRoom = new URL(globalThis.location.href).searchParams.get("room");
 if (initialRoom) el["room-id"].value = initialRoom;

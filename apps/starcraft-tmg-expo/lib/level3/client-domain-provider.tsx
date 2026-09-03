@@ -22,6 +22,9 @@ import {
   type StarcraftTmgClientView,
   type StarcraftTmgExpoClientRuntime,
   type StarcraftTmgExpoConnection,
+  type StarcraftTmgSecureProviderIntent,
+  type StarcraftTmgSecureProviderResult,
+  type StarcraftTmgSecureProviderView,
 } from "./client-domain-mount-runtime.mjs";
 import {
   isStarcraftTmgRoomAccessCandidate,
@@ -72,14 +75,21 @@ interface Level3ClientDomainContextValue {
   connection: StarcraftTmgExpoConnection;
   roomAccess: RoomAccessIngressView;
   initialRoomUrl: InitialRoomUrlView;
+  secureProvider: StarcraftTmgSecureProviderView | null;
   bindRoom(input: BindRoomInput): Promise<StarcraftTmgClientResult>;
   ingestRoomUrl(url: string): Promise<RoomAccessIngressResult>;
   dispatch(intent: StarcraftTmgClientIntent): Promise<StarcraftTmgClientResult>;
+  dispatchProvider(
+    intent: StarcraftTmgSecureProviderIntent,
+  ): Promise<StarcraftTmgSecureProviderResult>;
   refresh(): Promise<StarcraftTmgClientResult>;
 }
 
 const Level3ClientDomainContext =
   createContext<Level3ClientDomainContextValue | null>(null);
+
+const readUnmountedSecureProvider = () => null;
+const subscribeUnmountedSecureProvider = () => () => {};
 
 function browserLanguage() {
   if (Platform.OS !== "web") return "en";
@@ -167,6 +177,7 @@ function createProductRuntime(): StarcraftTmgExpoClientRuntime {
     // Slice 150 proves the Web session. Native cookie/auth persistence and
     // device lifecycle acceptance remain intentionally deferred.
     enableRoleAgentSession: web,
+    enableSecureProviderSession: web,
     allowHeadlessFallback: true,
   });
 }
@@ -177,6 +188,7 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
 
   const runtime = runtimeRef.current;
   const clientDomain = runtime.clientDomain;
+  const secureProviderSession = runtime.secureProviderSession;
   const [roomAccess, setRoomAccess] =
     useState<RoomAccessIngressView>(INITIAL_ROOM_ACCESS);
   const [initialRoomUrl, setInitialRoomUrl] = useState<InitialRoomUrlView>({
@@ -453,9 +465,23 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
     (intent: StarcraftTmgClientIntent) => clientDomain.dispatch(intent),
     [clientDomain],
   );
+  const secureProvider = useSyncExternalStore<StarcraftTmgSecureProviderView | null>(
+    secureProviderSession?.subscribe || subscribeUnmountedSecureProvider,
+    secureProviderSession?.read || readUnmountedSecureProvider,
+    secureProviderSession?.read || readUnmountedSecureProvider,
+  );
   const refresh = useCallback(
     () => clientDomain.dispatch({ type: "refresh" }),
     [clientDomain],
+  );
+  const dispatchProvider = useCallback(
+    (intent: StarcraftTmgSecureProviderIntent) => {
+      if (!secureProviderSession) {
+        throw new Error("secure Provider session is not mounted");
+      }
+      return secureProviderSession.dispatch(intent);
+    },
+    [secureProviderSession],
   );
 
   const value = useMemo<Level3ClientDomainContextValue>(
@@ -464,9 +490,11 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
       connection,
       roomAccess,
       initialRoomUrl,
+      secureProvider,
       bindRoom,
       ingestRoomUrl,
       dispatch,
+      dispatchProvider,
       refresh,
     }),
     [
@@ -474,9 +502,11 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
       connection,
       roomAccess,
       initialRoomUrl,
+      secureProvider,
       bindRoom,
       ingestRoomUrl,
       dispatch,
+      dispatchProvider,
       refresh,
     ],
   );
@@ -508,4 +538,6 @@ export type {
   StarcraftTmgClientIntent,
   StarcraftTmgClientView,
   StarcraftTmgExpoConnection,
+  StarcraftTmgSecureProviderIntent,
+  StarcraftTmgSecureProviderView,
 };

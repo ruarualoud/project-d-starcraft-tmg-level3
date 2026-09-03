@@ -147,6 +147,28 @@
                 <label><span>Mode</span><select data-agent-mode><option value="tutor">Tutor</option><option value="opponent">Opponent</option><option value="commentator">Commentator</option><option value="companion" selected>Companion</option></select></label>
                 <label><span>Intent</span><select data-agent-intent><option value="reflect">Reflect</option><option value="chat">Chat</option></select></label>
               </div>
+              <section class="provider-console" data-provider-console aria-label="Secure BYOK Provider controls">
+                <div class="provider-head">
+                  <strong>Secure BYOK Provider</strong>
+                  <span data-provider-status>not mounted</span>
+                </div>
+                <label><span>Server-approved Provider / model</span><select data-provider-profile></select></label>
+                <p class="provider-profile-summary" data-provider-profile-summary>Profile catalogue not loaded.</p>
+                <p class="provider-disclosure">The selected Provider receives each turn Prompt and response contract. The app clears this password field before awaiting the network and zeroes mutable bytes afterward; neither browser nor server writes it to persistent storage. An isolated Worker holds it only in session memory until detach. There is no automatic retry.</p>
+                <label class="toggle provider-consent"><input data-provider-consent type="checkbox" /> <span>I consent to this disclosure and one physical Provider attempt per turn.</span></label>
+                <div class="agent-command-row">
+                  <button data-command="provider-load">Load Provider catalogue</button>
+                  <button data-command="provider-prepare">Prepare one-time key ingress</button>
+                  <button data-command="provider-refresh">Refresh safe status</button>
+                  <button class="danger-inline" data-command="provider-detach">Detach and destroy key</button>
+                </div>
+                <div class="provider-secret-row" data-provider-secret-row hidden>
+                  <label><span>Provider API key · one ingress only</span><input data-provider-secret type="password" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="8192" placeholder="Never persisted" /></label>
+                  <button class="primary" data-command="provider-attach">Attach to isolated Worker</button>
+                </div>
+                <p class="provider-safe-state" data-provider-safe-state>No attachment. Identifiers, nonce and credential bytes never enter this panel.</p>
+                <p class="provider-error" data-provider-error role="alert"></p>
+              </section>
               <label><span>Message · sent to the online Agent, never copied into TraceProjection</span><textarea data-agent-message spellcheck="false" maxlength="8192" placeholder="Ask the Adjutant about this viewer-scoped position"></textarea></label>
               <div class="agent-command-row">
                 <button data-command="agent-open">Open session</button>

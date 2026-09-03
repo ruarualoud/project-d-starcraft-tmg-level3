@@ -37,7 +37,14 @@ function configuredAssetOrigin() {
 
 export function TacticalAdjutantPanel() {
   const { lang } = useI18n();
-  const { view, connection, dispatch, refresh } = useLevel3ClientDomain();
+  const {
+    view,
+    connection,
+    secureProvider,
+    dispatch,
+    dispatchProvider,
+    refresh,
+  } = useLevel3ClientDomain();
   const routeFocused = useIsFocused();
   const reducedMotion = useReducedMotion();
   const [expanded, setExpanded] = useState(true);
@@ -47,6 +54,10 @@ export function TacticalAdjutantPanel() {
   const [selectedIntent, setSelectedIntent] = useState<string>("reflect");
   const [draft, setDraft] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [selectedProviderHash, setSelectedProviderHash] = useState("");
+  const [providerConsent, setProviderConsent] = useState(false);
+  const [providerKeyDraft, setProviderKeyDraft] = useState("");
+  const [providerSubmitting, setProviderSubmitting] = useState(false);
   const playerRef = useRef(createStarcraftTmgVisiblePortraitPlayerV2());
   const assetRecoveryAttempt = useRef<{
     bindingHash: string;
@@ -63,6 +74,13 @@ export function TacticalAdjutantPanel() {
   const agentSessionActive = roleAgent?.lifecycleState === "active";
   const agentBusy = roleAgent?.status === "sending" || submitting;
   const agentReadOnly = roleAgent?.readOnly !== false;
+  const selectedProvider = secureProvider?.profiles.find(
+    (profile) => profile.profileRef.hash === selectedProviderHash,
+  ) || secureProvider?.profiles[0] || null;
+  const providerBusy = providerSubmitting || [
+    "loading_profiles", "preparing", "attaching", "refreshing", "detaching",
+  ].includes(secureProvider?.status || "");
+  const providerAttached = secureProvider?.attachment?.state === "attached";
 
   useEffect(() => {
     if (roleAgent?.mode && AGENT_MODES.includes(roleAgent.mode)) {
@@ -70,12 +88,49 @@ export function TacticalAdjutantPanel() {
     }
   }, [roleAgent?.mode]);
 
+  useEffect(() => {
+    if (!selectedProviderHash && secureProvider?.profiles[0]) {
+      setSelectedProviderHash(secureProvider.profiles[0].profileRef.hash);
+    }
+  }, [secureProvider?.profiles, selectedProviderHash]);
+
   async function runAgentIntent(intent: Parameters<typeof dispatch>[0]) {
     setSubmitting(true);
     try {
       return await dispatch(intent);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function runProviderIntent(
+    intent: Parameters<typeof dispatchProvider>[0],
+  ) {
+    setProviderSubmitting(true);
+    try {
+      return await dispatchProvider(intent);
+    } finally {
+      setProviderSubmitting(false);
+    }
+  }
+
+  async function prepareProviderAttachment() {
+    if (!selectedProvider || !providerConsent || !agentSessionActive) return;
+    await runProviderIntent({
+      type: "prepare_attachment",
+      providerProfileRef: selectedProvider.profileRef,
+      consentAccepted: true,
+    });
+  }
+
+  async function attachProviderSecret() {
+    if (!providerKeyDraft || secureProvider?.status !== "awaiting_secret") return;
+    const credentialBytes = new TextEncoder().encode(providerKeyDraft);
+    setProviderKeyDraft("");
+    try {
+      await runProviderIntent({ type: "attach_secret", credentialBytes });
+    } finally {
+      credentialBytes.fill(0);
     }
   }
 
@@ -323,6 +378,162 @@ export function TacticalAdjutantPanel() {
               />
             </View>
 
+            <View style={styles.providerCard} testID="secure-provider-console">
+              <View style={styles.providerHeader}>
+                <View style={styles.headerCopy}>
+                  <Text style={styles.providerTitle}>
+                    {zh ? "安全 BYOK Provider" : "Secure BYOK Provider"}
+                  </Text>
+                  <Text style={styles.providerMeta} testID="secure-provider-status">
+                    {zh
+                      ? `状态 ${secureProvider?.status || "未挂载"}`
+                      : `Status ${secureProvider?.status || "not mounted"}`}
+                  </Text>
+                </View>
+                {providerBusy && <ActivityIndicator color="#d2ae59" size="small" />}
+              </View>
+
+              <Text style={styles.providerDisclosure}>
+                {zh
+                  ? "所选 Provider 会收到本轮 Prompt 与响应合同。应用会在等待网络前清空密码输入，并在结束时清零可变字节；浏览器与服务端都不写持久存储。隔离 Worker 仅在绑定期间以内存持有密钥；没有自动重试。"
+                  : "The selected Provider receives the turn Prompt and response contract. The app clears this password field before awaiting the network and zeroes mutable bytes afterward; neither browser nor server writes it to persistent storage. An isolated Worker holds it only in session memory until detach, with no automatic retry."}
+              </Text>
+
+              {secureProvider?.profiles.length ? (
+                <>
+                  <Text style={styles.fieldLabel}>
+                    {zh ? "服务端许可的 Provider / 模型" : "Server-approved Provider / model"}
+                  </Text>
+                  <View style={styles.choiceRow}>
+                    {secureProvider.profiles.map((profile) => (
+                      <ChoiceButton
+                        key={`${profile.profileRef.id}:${profile.profileRef.version}:${profile.profileRef.hash}`}
+                        active={selectedProvider?.profileRef.hash === profile.profileRef.hash}
+                        disabled={providerBusy || providerAttached}
+                        label={`${profile.providerId} · ${profile.model}`}
+                        onPress={() => {
+                          setSelectedProviderHash(profile.profileRef.hash);
+                          setProviderConsent(false);
+                        }}
+                      />
+                    ))}
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.providerMeta}>
+                    {zh ? "Provider 清单尚未载入；加载动作不会调用模型。" : "Provider catalogue is not loaded; loading it does not call a model."}
+                  </Text>
+                  <ActionButton
+                    disabled={providerBusy || !secureProvider}
+                    label={zh ? "加载 Provider 清单" : "Load Provider catalogue"}
+                    onPress={() => void runProviderIntent({ type: "load_profiles" })}
+                  />
+                </>
+              )}
+
+              {selectedProvider && (
+                <Text style={styles.providerMeta} testID="secure-provider-profile-budget">
+                  {selectedProvider.providerId} · {selectedProvider.model}
+                  {" · "}{zh ? "每轮输入上限" : "input max"} {selectedProvider.maxContextUnits}
+                  {" · "}{zh ? "输出上限" : "output max"} {selectedProvider.maxOutputUnits}
+                </Text>
+              )}
+              {secureProvider?.attachment?.budgetEnvelope && (
+                <Text style={styles.providerMeta}>
+                  {zh ? "会话最大额度（非实时消费）" : "Session maximum envelope (not live spend)"}
+                  {" "}{secureProvider.attachment.budgetEnvelope.maxTotalUnits}
+                  {" · "}{zh ? "精确账本在服务端" : "exact ledger stays server-side"}
+                </Text>
+              )}
+
+              {!providerAttached && secureProvider?.status !== "awaiting_secret" && (
+                <>
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: providerConsent, disabled: providerBusy }}
+                    disabled={providerBusy}
+                    onPress={() => setProviderConsent((accepted) => !accepted)}
+                    style={styles.consentRow}
+                    testID="secure-provider-consent"
+                  >
+                    <Text style={styles.consentMark}>{providerConsent ? "☑" : "☐"}</Text>
+                    <Text style={styles.consentText}>
+                      {zh
+                        ? "我同意把本轮 Prompt/响应合同发送给上述 Provider，并接受单次物理尝试。"
+                        : "I consent to sending each turn Prompt/response contract to this Provider and accept one physical attempt."}
+                    </Text>
+                  </Pressable>
+                  <ActionButton
+                    disabled={!agentSessionActive || !selectedProvider
+                      || !providerConsent || providerBusy || !secureProvider?.capabilities.prepare}
+                    label={agentSessionActive
+                      ? (zh ? "准备一次性密钥交接" : "Prepare one-time key ingress")
+                      : (zh ? "先接通副官会话" : "Open the Adjutant session first")}
+                    onPress={() => void prepareProviderAttachment()}
+                  />
+                </>
+              )}
+
+              {secureProvider?.status === "awaiting_secret" && (
+                <>
+                  <TextInput
+                    accessibilityLabel={zh ? "Provider API 密钥" : "Provider API key"}
+                    autoCapitalize="none"
+                    autoComplete="off"
+                    autoCorrect={false}
+                    editable={!providerBusy}
+                    maxLength={8192}
+                    onChangeText={setProviderKeyDraft}
+                    onSubmitEditing={() => void attachProviderSecret()}
+                    placeholder={zh ? "仅本次交接；不会保存" : "One ingress only; never persisted"}
+                    placeholderTextColor="#73806e"
+                    secureTextEntry
+                    spellCheck={false}
+                    style={styles.secretInput}
+                    textContentType="none"
+                    testID="secure-provider-secret-input"
+                    value={providerKeyDraft}
+                  />
+                  <ActionButton
+                    disabled={!providerKeyDraft || providerBusy
+                      || !secureProvider.capabilities.attach}
+                    label={zh ? "交给隔离 Worker" : "Attach to isolated Worker"}
+                    onPress={() => void attachProviderSecret()}
+                  />
+                </>
+              )}
+
+              {providerAttached && (
+                <View style={styles.actionRow}>
+                  <ActionButton
+                    disabled={providerBusy}
+                    label={zh ? "刷新安全状态" : "Refresh safe status"}
+                    onPress={() => void runProviderIntent({ type: "refresh_attachment" })}
+                  />
+                  <ActionButton
+                    danger
+                    disabled={providerBusy || !secureProvider?.capabilities.detach}
+                    label={zh ? "解绑并销毁密钥" : "Detach and destroy key"}
+                    onPress={() => void runProviderIntent({ type: "detach_attachment" })}
+                  />
+                </View>
+              )}
+
+              {secureProvider?.attachment && (
+                <Text style={styles.providerMeta}>
+                  {zh ? "附件状态" : "Attachment"}: {secureProvider.attachment.state}
+                  {secureProvider.attachment.detachReason
+                    ? ` · ${secureProvider.attachment.detachReason}` : ""}
+                </Text>
+              )}
+              {secureProvider?.rejection && (
+                <Text accessibilityRole="alert" style={styles.errorText}>
+                  {secureProvider.rejection.code}
+                </Text>
+              )}
+            </View>
+
             {!agentSessionActive ? (
               <>
                 <Text style={styles.fieldLabel}>{zh ? "副官模式" : "Adjutant mode"}</Text>
@@ -480,8 +691,8 @@ export function TacticalAdjutantPanel() {
               <Text accessibilityRole="alert" style={styles.errorText}>
                 {roleAgent.rejection.code === "provider_not_configured"
                   ? (zh
-                    ? "尚未配置真实模型 Provider；Ticket 16 接入 BYOK 后即可调用。"
-                    : "No live Provider is configured. Ticket 16 will add secure BYOK execution.")
+                    ? "尚未附加真实模型 Provider；请在上方同意披露并安全交接 BYOK。"
+                    : "No live Provider is attached. Accept the disclosure above and attach BYOK securely.")
                   : roleAgent.rejection.code}
               </Text>
             )}
@@ -595,6 +806,15 @@ const styles = StyleSheet.create({
   agentConsoleHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   agentConsoleTitle: { color: "#f5f2df", fontSize: 15, fontWeight: "900" },
   agentMeta: { color: "#9da994", fontSize: 10, marginTop: 3 },
+  providerCard: { gap: 9, padding: 11, borderWidth: 1, borderColor: "#66562d", borderRadius: 10, backgroundColor: "#15150d" },
+  providerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  providerTitle: { color: "#f6dda0", fontSize: 13, fontWeight: "900" },
+  providerMeta: { color: "#a8ad98", fontSize: 10, lineHeight: 15 },
+  providerDisclosure: { color: "#d4ceb3", fontSize: 11, lineHeight: 17 },
+  consentRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 9, borderRadius: 8, borderWidth: 1, borderColor: "#4f4930", backgroundColor: "#0d110b" },
+  consentMark: { color: "#d2ae59", fontSize: 16, lineHeight: 18 },
+  consentText: { flex: 1, color: "#c8c5b2", fontSize: 10, lineHeight: 16 },
+  secretInput: { minHeight: 44, borderWidth: 1, borderColor: "#806b35", borderRadius: 8, padding: 10, color: "#eef4df", backgroundColor: "#080b07", fontSize: 12 },
   fieldLabel: { color: "#a8bd7d", fontSize: 10, fontWeight: "900", letterSpacing: 0.8, marginTop: 2 },
   choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
   choiceButton: { minHeight: 34, justifyContent: "center", borderRadius: 8, paddingHorizontal: 11, borderWidth: 1, borderColor: "#4c6147", backgroundColor: "#101912" },

@@ -1,7 +1,7 @@
 # Ticket 16 — secure BYOK and direct Provider roadmap
 
 Date: 2026-09-03  
-Status: active; Slices 153–159 complete, 7/10
+Status: active; Slices 153–160 complete, 8/10
 Project progress before this Ticket: 14/22 Tickets complete; Ticket 14 device
 acceptance remains deferred  
 Source refresh: not performed
@@ -112,7 +112,7 @@ call needs a new same-user approval and a reattached credential.
 | 157 | **Complete.** Common attempt-store contract and SQLite WAL Adapter. | Non-secret hash-only identities; intent/reservation/committed-dispatch before egress; atomic budget settlement; stable idempotency/CAS; restart replay; focused 45/45 across 43 real SQLite files and three reopens, report `84e579bc...264a5`; no Provider call. |
 | 158 | **Complete.** PostgreSQL Adapter parity and ambiguous-attempt recovery. | Same semantic lifecycle as SQLite; SERIALIZABLE row locks/CAS; two-connection contention; rollback and commit-ack-loss recovery; Ed25519 + HMAC same-user approval; fresh credential reattach; focused 42/42, report `b55d0703...34a7`; no real Provider or PostgreSQL server. |
 | 159 | **Complete.** Ticket 15 Gateway/Prompt/Worker/store/receipt integration. | Frozen credential-free Gateway source/request preserved; ephemeral server execution scope; authenticated internal authority; exact MTL persist/dispatch/execute/receipt/recover sequence; durable actual/zero/full settlement; commit-ack replay; four modes; focused 36/36 across 18 SQLite files and nine deterministic Worker calls, report `349f798d...ee3c`; no live call. |
-| 160 | Web and Battle Lab BYOK product flow. | Consent disclosure; Provider/model/budget selection; password input; attached/missing/error/detached states; no cache/log persistence. |
+| 160 | **Complete.** Web and Battle Lab BYOK product flow. | Server-listed Provider/model and consent-time maximum budget envelope; explicit disclosure/consent; password input cleared before network await; binary buffers zeroed; attached/missing/error/detached states; no cache/log persistence; focused 37/37, report `f1a68378...767c`; no live call. |
 | 161 | Redaction fuzz, real-browser and Worker-failure aggregate. | Credential echo/error/encoding corpus; HTTP/DOM/artifact scans; cancel/timeout/crash/recovery; four role modes with deterministic Provider. |
 | 162 | One user-authorized minimal live call and Ticket closure. | Local-only key injection; reported Provider/model/version, usage/cost, response fingerprint, browser-visible safe state and full aggregate. |
 
@@ -296,3 +296,24 @@ never retries without explicit same-user approval.
 - Slice report hash: `349f798dae547c2e0b6b32314966d7089cb29b1578fc056dd98fc403f7deee3c`.
 - No Provider network, user key, source refresh, Skill, DSH, MuZero, self-play,
   Memory write or training operation occurred. Slice 160 owns user-visible BYOK.
+
+## Slice 160 fixed evidence
+
+- Expo Web and Battle Lab mount a separate three-operation secure Provider
+  client without widening the exact four-operation game Client Domain.
+- A current active Agent session and explicit disclosure consent precede the
+  one-use binary ingress. Provider/model come only from the server registry;
+  arbitrary endpoint, header, budget and retry authority remain forbidden.
+- Password input state is cleared before awaiting the request and mutable
+  client/transport/server buffers are zeroed. No browser/server persistent
+  storage or UI/log projection receives sensitive input.
+- The UI shows safe missing, awaiting, attached, error and detached states. Its
+  budget is explicitly a consent-time maximum envelope, while exact current
+  accounting remains in the durable server store.
+- Behavior verifier: 37/37 across nine deterministic HTTP requests using the
+  real HTTP control and browser Adapter. Fixed cumulative denominator is 459.
+- Contract hash: `e7ed2a0a83b8f9b52d7738d2224ffad6cab596f36d50328ef50c3e84c89d9a96`.
+- Slice report hash: `f1a683780b0fe1aa1c9b8dfb569dabc4b25db1c00b17ea8bbdb0ef7a1d18767c`.
+- No user key or external Provider call occurred. No source refresh, Skill,
+  DSH, MuZero, self-play, Memory write or training operation occurred. Slice
+  161 owns redaction fuzz, real-browser and Worker-failure aggregate evidence.

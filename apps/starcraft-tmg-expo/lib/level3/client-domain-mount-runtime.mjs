@@ -21,7 +21,14 @@ import {
 } from "../../../../packages/client-domain/online-agent-transport-adapters-v1.mjs";
 import {
   createStarcraftTmgRoleAgentSessionClientV1,
+  readStarcraftTmgTrustedRoleAgentSessionV1,
 } from "../../../../packages/client-domain/role-agent-session-client-v1.mjs";
+import {
+  createHttpStarcraftTmgSecureProviderClientTransportV1,
+} from "../../../../packages/client-domain/secure-provider-transport-adapters-v1.mjs";
+import {
+  createStarcraftTmgSecureProviderSessionClientV1,
+} from "../../../../packages/client-domain/secure-provider-session-client-v1.mjs";
 
 export const STARCRAFT_TMG_EXPO_CLIENT_MOUNT_VERSION =
   "starcraft_tmg_expo_client_mount_v1";
@@ -225,6 +232,26 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
       createId: options.createId,
     })
     : baseClientDomain;
+  const secureProviderSessionEnabled = roleAgentSessionEnabled
+    && options.enableSecureProviderSession === true;
+  const secureProviderTransport = secureProviderSessionEnabled
+    ? options.secureProviderTransport
+      || createHttpStarcraftTmgSecureProviderClientTransportV1({
+        baseUrl,
+        fetchImpl: options.fetchImpl,
+        apiPrefix: options.secureProviderApiPrefix,
+        timeoutMs: options.secureProviderTimeoutMs,
+      })
+    : null;
+  const secureProviderSession = secureProviderSessionEnabled
+    ? createStarcraftTmgSecureProviderSessionClientV1({
+      transport: secureProviderTransport,
+      sessionSource: {
+        read: () => readStarcraftTmgTrustedRoleAgentSessionV1(clientDomain),
+        subscribe: (listener) => clientDomain.subscribe(() => listener()),
+      },
+    })
+    : null;
 
   return Object.freeze({
     schemaVersion: STARCRAFT_TMG_EXPO_CLIENT_MOUNT_VERSION,
@@ -243,8 +270,12 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
     roleAgentSessionKind: roleAgentSessionEnabled
       ? "authenticated_http_opt_in"
       : "not_mounted",
+    secureProviderSessionKind: secureProviderSessionEnabled
+      ? "authenticated_binary_ingress_session_memory_only"
+      : "not_mounted",
     lifecycleKind: lifecycleMount.lifecycleKind,
     clientDomain,
+    secureProviderSession,
     trainingTruth: false,
   });
 }

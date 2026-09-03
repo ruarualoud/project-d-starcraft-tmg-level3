@@ -25,6 +25,11 @@ const QUERY_FIELDS = new Set([
   "sessionId",
   "expectedConnectionEpoch",
 ]);
+const PUBLIC_PROFILE_FIELDS = new Set([
+  "profileRef", "providerId", "model", "maxContextUnits",
+  "maxOutputUnits", "timeoutMs", "trainingTruth",
+]);
+const PROFILE_REF_FIELDS = new Set(["id", "version", "hash"]);
 const ENDPOINTS = Object.freeze([
   `GET ${STARCRAFT_TMG_SECURE_PROVIDER_API_PREFIX}/health`,
   `GET ${STARCRAFT_TMG_SECURE_PROVIDER_API_PREFIX}/metadata`,
@@ -136,6 +141,41 @@ function statusFor(result) {
   if (["credential_worker_attach_failed", "credential_worker_detach_failed",
     "provider_profile_registry_failed"].includes(result?.reason)) return 502;
   return 400;
+}
+
+function publicProfiles(registry) {
+  if (registry === undefined) return [];
+  if (typeof registry?.listPublic !== "function") {
+    throw new TypeError("providerProfileRegistry.listPublic is required");
+  }
+  const result = registry.listPublic();
+  if (result?.ok !== true || !Array.isArray(result.profiles)) {
+    throw new TypeError("providerProfileRegistry.listPublic failed");
+  }
+  return result.profiles.map((profile, index) => {
+    exactFields(profile, PUBLIC_PROFILE_FIELDS, `public profile ${index}`);
+    exactFields(profile.profileRef, PROFILE_REF_FIELDS,
+      `public profile ${index}.profileRef`);
+    const normalized = {
+      profileRef: {
+        id: requiredString(profile.profileRef.id, "profileRef.id"),
+        version: requiredString(profile.profileRef.version, "profileRef.version", 120),
+        hash: String(profile.profileRef.hash || "").toLowerCase(),
+      },
+      providerId: requiredString(profile.providerId, "providerId", 120),
+      model: requiredString(profile.model, "model", 200),
+      maxContextUnits: integer(profile.maxContextUnits, "maxContextUnits"),
+      maxOutputUnits: integer(profile.maxOutputUnits, "maxOutputUnits"),
+      timeoutMs: integer(profile.timeoutMs, "timeoutMs"),
+      trainingTruth: false,
+    };
+    if (!HASH_PATTERN.test(normalized.profileRef.hash)
+      || profile.trainingTruth !== false
+      || containsStarcraftTmgOnlineCredentialMaterialV1(normalized)) {
+      throw new TypeError("public Provider profile is unsafe");
+    }
+    return deepFreeze(normalized);
+  });
 }
 
 function publicResult(operation, result) {
@@ -264,6 +304,7 @@ export function createStarcraftTmgSecureProviderHttpControlV1(options = {}) {
   if (maxSecretBodyBytes > controlMaxCredentialBytes) {
     throw new TypeError("maxSecretBodyBytes exceeds control-plane maximum");
   }
+  const profiles = deepFreeze(publicProfiles(options.providerProfileRegistry));
 
   function metadata() {
     return deepFreeze({
@@ -281,6 +322,7 @@ export function createStarcraftTmgSecureProviderHttpControlV1(options = {}) {
         maxBytes: maxSecretBodyBytes,
       },
       maxJsonBodyBytes,
+      profiles,
       responseCache: "no_store",
       controlVersion: STARCRAFT_TMG_SECURE_PROVIDER_ATTACHMENT_CONTROL_VERSION,
       liveProviderCallAllowed: false,

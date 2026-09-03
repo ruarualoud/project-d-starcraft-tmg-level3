@@ -41,8 +41,9 @@ schema repair remain forbidden.
 - A typed failure proving that no request was sent settles at zero units.
 - The frozen Ticket 15 supervisor remains a conservative secondary envelope:
   it charges a full reservation for any rejected Gateway result. The durable
-  store is the exact accounting authority and Slice 160 must project it; the
-  compatibility envelope cannot undercharge or authorize egress.
+  store is the exact accounting authority; Slice 160 labels its user-visible
+  consent-time budget as a maximum envelope rather than current durable spend.
+  The compatibility envelope cannot undercharge or authorize egress.
 - A Worker exit, cancellation, timeout or unsafe result after committed
   dispatch consumes the full reservation when usage is unknown.
 - Raw Prompt nodes, Provider output, headers, credential bytes and error text

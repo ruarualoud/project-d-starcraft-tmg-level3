@@ -250,6 +250,105 @@ export interface StarcraftTmgExpoConnection {
   trainingTruth: false;
 }
 
+export interface StarcraftTmgSecureProviderProfile {
+  profileRef: { id: string; version: string; hash: string };
+  providerId: string;
+  model: string;
+  maxContextUnits: number;
+  maxOutputUnits: number;
+  timeoutMs: number;
+  trainingTruth: false;
+}
+
+export interface StarcraftTmgSecureProviderView {
+  schemaVersion: string;
+  enabled: true;
+  revision: number;
+  status: string;
+  sessionBound: boolean;
+  profiles: ReadonlyArray<StarcraftTmgSecureProviderProfile>;
+  attachment: {
+    state: string;
+    provider: {
+      profileRef: { id: string; version: string; hash: string } | null;
+      providerId: string;
+      requestedModel: string;
+    };
+    budgetEnvelope: {
+      policyHash: string;
+      maxTotalUnits: number;
+      maxTurns: number;
+      maxInputUnitsPerTurn: number;
+      maxOutputUnitsPerTurn: number;
+      currency: string;
+      accountingAuthority: "durable_server_store";
+      projectionMeaning: "consent_time_maximum_envelope_not_live_spend";
+    };
+    consentedAt: string | null;
+    ingressExpiresAt: string | null;
+    attachmentExpiresAt: string | null;
+    attachedAt: string | null;
+    detachedAt: string | null;
+    detachReason: string | null;
+    automaticRetryAllowed: false;
+    sensitiveMaterialPersisted: false;
+    trainingTruth: false;
+  } | null;
+  ingress: {
+    expiresAt: string;
+    mediaType: string;
+    minBytes: number;
+    maxBytes: number;
+    singleUse: true;
+  } | null;
+  disclosure: {
+    noticeVersion: string;
+    providerReceivesPromptAndResponseContract: true;
+    noAutomaticRetry: true;
+    browserPersistence: false;
+    applicationInputClearedBeforeNetworkAwait: true;
+    mutableRequestBytesZeroed: true;
+    serverPersistence: false;
+    isolatedWorkerSessionMemory: true;
+  };
+  rejection: { code: string } | null;
+  capabilities: { prepare: boolean; attach: boolean; detach: boolean };
+  publicProjectionContainsSensitiveInput: false;
+  cachePersisted: false;
+  automaticRetryAllowed: false;
+  liveProviderCalled: false;
+  projectionHash: string;
+  trainingTruth: false;
+}
+
+export type StarcraftTmgSecureProviderIntent =
+  | { type: "load_profiles" }
+  | {
+      type: "prepare_attachment";
+      providerProfileRef: { id: string; version: string; hash: string };
+      consentAccepted: true;
+    }
+  | { type: "attach_secret"; credentialBytes: Uint8Array }
+  | { type: "refresh_attachment" }
+  | { type: "detach_attachment" };
+
+export interface StarcraftTmgSecureProviderResult {
+  ok: boolean;
+  rejection?: { code: string };
+  view: StarcraftTmgSecureProviderView;
+  trainingTruth: false;
+}
+
+export interface StarcraftTmgSecureProviderSession {
+  read(): StarcraftTmgSecureProviderView;
+  dispatch(
+    intent: StarcraftTmgSecureProviderIntent,
+  ): Promise<StarcraftTmgSecureProviderResult>;
+  subscribe(
+    listener: (view: StarcraftTmgSecureProviderView) => void,
+  ): () => void;
+}
+
 export interface StarcraftTmgExpoClientRuntime {
   schemaVersion: string;
   platform: "web" | "native";
@@ -259,8 +358,10 @@ export interface StarcraftTmgExpoClientRuntime {
   projectionStoreKind: string;
   sourceProjectionKind: string;
   roleAgentSessionKind: string;
+  secureProviderSessionKind: string;
   lifecycleKind: string;
   clientDomain: StarcraftTmgClientDomain;
+  secureProviderSession: StarcraftTmgSecureProviderSession | null;
   trainingTruth: false;
 }
 
@@ -326,8 +427,14 @@ export function createStarcraftTmgExpoClientRuntime(options: {
   enableCharacterPresentation?: boolean;
   enableSourceLocalization?: boolean;
   enableRoleAgentSession?: boolean;
+  enableSecureProviderSession?: boolean;
   agentApiPrefix?: string;
   agentTimeoutMs?: number;
+  secureProviderApiPrefix?: string;
+  secureProviderTimeoutMs?: number;
+  secureProviderTransport?: {
+    execute(input: Record<string, unknown>): Promise<Record<string, unknown>>;
+  };
   now?: () => string;
   createId?: (prefix: string) => string;
 }): StarcraftTmgExpoClientRuntime;

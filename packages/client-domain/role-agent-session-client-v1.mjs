@@ -13,6 +13,24 @@ import { containsStarcraftTmgOnlineCredentialMaterialV1 } from
 export const STARCRAFT_TMG_ROLE_AGENT_CLIENT_EXTENSION_VERSION =
   "starcraft_tmg_client_domain_v1.role_agent_session_v1";
 
+const ROLE_AGENT_PRIVATE_SESSION_READERS = new WeakMap();
+
+export function readStarcraftTmgTrustedRoleAgentSessionV1(clientDomain) {
+  const readPrivateSession = ROLE_AGENT_PRIVATE_SESSION_READERS.get(clientDomain);
+  if (!readPrivateSession) return null;
+  const session = readPrivateSession();
+  if (!session) return null;
+  return deepFreeze({
+    roomId: session.binding.roomId,
+    sessionId: session.sessionId,
+    sessionBindingHash: session.binding.sessionBindingHash,
+    principalScopeHash: session.binding.principalScopeHash,
+    connectionEpoch: session.connection.epoch,
+    lifecycleState: session.lifecycleState,
+    trainingTruth: false,
+  });
+}
+
 const MODE_INTENTS = Object.freeze({
   tutor: Object.freeze(["chat", "explain"]),
   opponent: Object.freeze(["chat", "take_turn"]),
@@ -738,5 +756,6 @@ export function createStarcraftTmgRoleAgentSessionClientV1(options = {}) {
   });
 
   const client = Object.freeze({ bootstrap, read, dispatch, subscribe });
+  ROLE_AGENT_PRIVATE_SESSION_READERS.set(client, () => privateSession);
   return client;
 }
