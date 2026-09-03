@@ -33,6 +33,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 type AccessAction = "claim_control" | "issue_invite" | "issue_recovery" | "historical_rules";
+type MatchSurface = "battle" | "adjutant" | "room";
 
 interface EphemeralLink {
   kind: StarcraftTmgRoomAccessKind;
@@ -96,6 +97,7 @@ export default function MatchScreen() {
   const [ephemeralLink, setEphemeralLink] = useState<EphemeralLink | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [surface, setSurface] = useState<MatchSurface>("battle");
   const accessContextRef = useRef({ key: "", generation: 0 });
   const zh = lang === "zh";
 
@@ -277,7 +279,7 @@ export default function MatchScreen() {
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={styles.headerTitle}>{zh ? "对战房间" : "Battle Room"}</Text>
-          <Text style={styles.headerSub}>Project D Level-3 · Ticket 14 / Slice 134</Text>
+          <Text style={styles.headerSub}>Project D Level-3 · Ticket 14 / Slice 136</Text>
         </View>
         <View style={[styles.statusPill, { borderColor: statusColor }]}>
           <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
@@ -325,6 +327,28 @@ export default function MatchScreen() {
           </View>
         )}
 
+        <View accessibilityRole="tablist" style={styles.surfaceTabs}>
+          <ActionButton
+            label={zh ? "战桌" : "Battlefield"}
+            onPress={() => setSurface("battle")}
+            kind={surface === "battle" ? "primary" : "secondary"}
+          />
+          <ActionButton
+            label={zh ? "副官" : "Adjutant"}
+            onPress={() => setSurface("adjutant")}
+            kind={surface === "adjutant" ? "primary" : "secondary"}
+          />
+          <ActionButton
+            label={zh ? "房间与规则" : "Room & rules"}
+            onPress={() => setSurface("room")}
+            kind={surface === "room" ? "primary" : "secondary"}
+          />
+        </View>
+
+        {surface === "battle" && <AuthoritativeBattleWorkspace />}
+        {surface === "adjutant" && <TacticalAdjutantPanel />}
+        {surface === "room" && (
+          <>
         <View accessibilityRole="summary" accessibilityLiveRegion="polite" style={styles.heroCard}>
           <Text style={styles.eyebrow}>{zh ? "权威房间入口" : "AUTHORITATIVE ROOM ACCESS"}</Text>
           <Text style={styles.heroTitle}>
@@ -409,8 +433,6 @@ export default function MatchScreen() {
           </View>
         )}
 
-        <TacticalAdjutantPanel />
-
         {connection.roomId && (
           <View style={styles.historicalRulesCard}>
             <Text style={styles.cardTitle}>
@@ -449,8 +471,6 @@ export default function MatchScreen() {
             )}
           </View>
         )}
-
-        <AuthoritativeBattleWorkspace />
 
         <View style={styles.grid}>
           <InfoCard
@@ -502,6 +522,8 @@ export default function MatchScreen() {
           <Text selectable style={styles.mono}>clientRevision: {view.clientRevision}</Text>
           <Text selectable style={styles.mono}>viewHash: {view.viewHash}</Text>
         </View>
+          </>
+        )}
       </ScrollView>
     </ScreenContainer>
   );
@@ -570,6 +592,7 @@ const styles = StyleSheet.create({
   statusPillText: { flexShrink: 1, fontSize: 11, fontWeight: "800" },
   scroll: { flex: 1 },
   content: { padding: 16, paddingTop: 6, paddingBottom: 48, gap: 14 },
+  surfaceTabs: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 8, borderRadius: 12, backgroundColor: "#07111f", borderWidth: 1, borderColor: "#164e63" },
   warningCard: { borderRadius: 12, padding: 14, backgroundColor: "#422006", borderWidth: 1, borderColor: "#f59e0b" },
   controlWarning: { borderRadius: 12, padding: 14, backgroundColor: "#3f1515", borderWidth: 1, borderColor: "#ef4444" },
   historicalRulesCard: { borderRadius: 14, padding: 16, gap: 10, backgroundColor: "#0b1c27", borderWidth: 1, borderColor: "#28566a" },

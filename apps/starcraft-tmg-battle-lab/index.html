@@ -46,6 +46,7 @@
             <div class="metrics">
               <span data-state-revision>state —</span>
               <span data-model-count>0 models</span>
+              <label class="toggle"><input data-threat-toggle type="checkbox" /> Threat reference</label>
             </div>
           </div>
           <div class="board-shell">
@@ -57,50 +58,73 @@
             <span><i class="p2"></i>Player 2</span>
             <span><i class="preview"></i>Sealed preview</span>
             <span>No drag mutation · physical scale preserved</span>
+            <span>Threat reference defaults off · printed range only</span>
+          </div>
+          <div class="battle-media" aria-label="Battlefield media controls">
+            <img data-selected-portrait alt="Selected unit communication portrait" />
+            <div class="battle-media-copy">
+              <strong data-selected-unit>No unit selected</strong>
+              <span data-media-status>Voice muted · BGM not loaded</span>
+              <span>Original game media is development-internal; media never changes rules or training truth.</span>
+            </div>
+            <button data-command="voice-toggle">Enable voices</button>
+            <label class="file-button">
+              Load owned BGM
+              <input data-bgm-file type="file" accept="audio/*" />
+            </label>
+            <button data-command="bgm-toggle" disabled>Play BGM</button>
+            <label class="volume-control">Volume <input data-volume type="range" min="0" max="1" step="0.05" value="0.45" /></label>
           </div>
         </section>
 
         <aside class="right-rail">
-          <section class="panel" aria-label="Referee projection">
+          <nav class="detail-tabs" aria-label="Battle workspace panels" role="tablist">
+            <button class="detail-tab is-active" data-detail-tab="referee" role="tab" aria-selected="true">Referee</button>
+            <button class="detail-tab" data-detail-tab="actions" role="tab" aria-selected="false">Actions</button>
+            <button class="detail-tab" data-detail-tab="agent" role="tab" aria-selected="false">Adjutant</button>
+            <button class="detail-tab" data-detail-tab="harness" role="tab" aria-selected="false">Harness</button>
+          </nav>
+
+          <section class="panel detail-panel" data-detail-panel="referee" aria-label="Referee projection">
             <div class="panel-head"><div><p class="eyebrow">REFEREE</p><h2>Integrity</h2></div><span data-replay-state>not checked</span></div>
             <dl class="facts" data-referee-facts></dl>
             <div class="alert" data-integrity-alert hidden></div>
             <button data-command="revalidate">Refresh authority and revalidate</button>
           </section>
 
-          <section class="panel" aria-label="Agent trace projection">
+          <section class="actions-panel panel detail-panel" data-detail-panel="actions" aria-label="Legal actions and preview" hidden>
+            <div class="panel-head"><div><p class="eyebrow">LEGALSPACE</p><h2>Actions</h2></div><span data-action-count>0</span></div>
+            <div class="action-list" data-actions></div>
+            <details class="parameter-editor">
+              <summary>Parameterized action inspector</summary>
+              <label>
+                <span>Domain</span>
+                <select data-domain></select>
+              </label>
+              <label>
+                <span>Parameters JSON</span>
+                <textarea data-parameters spellcheck="false" placeholder='{"path":[...]}'></textarea>
+              </label>
+              <button data-command="preview-parameterized">Request sealed preview</button>
+            </details>
+            <div class="preview-card" data-preview>
+              <strong>No sealed preview</strong>
+              <p>A pointer selection or JSON draft has no authority until the server returns a sealed preview.</p>
+            </div>
+            <button class="danger" data-command="confirm" disabled>Confirm and apply current sealed preview</button>
+          </section>
+
+          <section class="panel detail-panel" data-detail-panel="agent" aria-label="Agent trace projection" hidden>
             <div class="panel-head"><div><p class="eyebrow">AGENT HARNESS</p><h2>Trace</h2></div><span data-agent-status>not mounted</span></div>
             <div class="trace-list" data-agent-traces></div>
           </section>
+
+          <section class="panel audit-panel detail-panel" data-detail-panel="harness" aria-label="Harness contract" hidden>
+            <div class="panel-head"><div><p class="eyebrow">HARNESS CONTRACT</p><h2>Observable lanes</h2></div><span>training false</span></div>
+            <div class="audit-grid" data-harness></div>
+            <p class="boundary">This surface calls only <code>bootstrap · read · dispatch · subscribe</code>. Legacy Battle Lab remains an isolated sandbox and cannot produce Level-3 receipts or training evidence.</p>
+          </section>
         </aside>
-
-        <section class="actions-panel panel" aria-label="Legal actions and preview">
-          <div class="panel-head"><div><p class="eyebrow">LEGALSPACE</p><h2>Actions</h2></div><span data-action-count>0</span></div>
-          <div class="action-list" data-actions></div>
-          <details class="parameter-editor">
-            <summary>Parameterized action inspector</summary>
-            <label>
-              <span>Domain</span>
-              <select data-domain></select>
-            </label>
-            <label>
-              <span>Parameters JSON</span>
-              <textarea data-parameters spellcheck="false" placeholder='{"path":[...]}'></textarea>
-            </label>
-            <button data-command="preview-parameterized">Request sealed preview</button>
-          </details>
-          <div class="preview-card" data-preview>
-            <strong>No sealed preview</strong>
-            <p>A pointer selection or JSON draft has no authority until the server returns a sealed preview.</p>
-          </div>
-          <button class="danger" data-command="confirm" disabled>Confirm and apply current sealed preview</button>
-        </section>
-
-        <section class="panel audit-panel" aria-label="Harness contract">
-          <div class="panel-head"><div><p class="eyebrow">HARNESS CONTRACT</p><h2>Observable lanes</h2></div><span>training false</span></div>
-          <div class="audit-grid" data-harness></div>
-          <p class="boundary">This surface calls only <code>bootstrap · read · dispatch · subscribe</code>. Legacy Battle Lab remains an isolated sandbox and cannot produce Level-3 receipts or training evidence.</p>
-        </section>
       </main>
       <div class="toast" data-toast role="status" aria-live="polite"></div>
     </div>

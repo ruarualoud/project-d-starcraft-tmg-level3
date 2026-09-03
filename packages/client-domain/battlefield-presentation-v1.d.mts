@@ -2,15 +2,29 @@ export type BattlefieldBaseShape = "round" | "oval" | "rectangle";
 
 export interface BattlefieldPointV1 { xMilliInches: number; yMilliInches: number; }
 export interface BattlefieldModelV1 extends BattlefieldPointV1 {
-  kind: "model"; id: string; pieceId: string; label: string; sideKey: string;
+  kind: "model"; id: string; pieceId: string; unitId: string | null;
+  label: string; sideKey: string;
   baseShape: BattlefieldBaseShape | null; baseWidthMilliInches: number | null;
   baseDepthMilliInches: number | null; baseRotationDegrees: number;
+  baseBounds: BattlefieldBaseBoundsV1 | null; withinBoard: boolean;
   geometryRenderable: boolean; selected: boolean; destroyed: boolean;
   statuses: readonly string[];
+  weaponRangeReferences: readonly BattlefieldWeaponRangeReferenceV1[];
+  maxProjectedWeaponRangeMilliInches: number | null;
 }
 export interface BattlefieldUnitAnchorV1 extends BattlefieldPointV1 {
-  kind: "unit_anchor"; id: string; pieceId: string; label: string; sideKey: string;
+  kind: "unit_anchor"; id: string; pieceId: string; unitId: string | null;
+  label: string; sideKey: string;
   currentModels: number | null; selected: boolean; geometryRenderable: false;
+}
+export interface BattlefieldBaseBoundsV1 {
+  minXMilliInches: number; maxXMilliInches: number;
+  minYMilliInches: number; maxYMilliInches: number;
+  extentXMilliInches: number; extentYMilliInches: number;
+}
+export interface BattlefieldWeaponRangeReferenceV1 {
+  weaponName: string; printedRange: string | null;
+  projectedRangeMilliInches: number | null;
 }
 export interface BattlefieldAreaV1 extends BattlefieldPointV1 {
   id: string; kind: "terrain" | "marker" | "token"; label: string;
@@ -39,7 +53,9 @@ export interface BattlefieldParameterDomainV1 {
 export interface BattlefieldSceneV1 {
   schemaVersion: "starcraft_tmg_battlefield_presentation_v1";
   roomId: string | null; stateRevision: number | null; stateHash: string | null;
-  board: { widthMilliInches: number; heightMilliInches: number };
+  board: { widthMilliInches: number; heightMilliInches: number;
+    scenarioMapId: string | null; scenarioMapName: string | null;
+    displayMapAssetKey: "alien_temple_local_v1" | null };
   widthMilliInches: number; heightMilliInches: number;
   models: readonly BattlefieldModelV1[]; unitAnchors: readonly BattlefieldUnitAnchorV1[];
   terrain: readonly BattlefieldAreaV1[]; markers: readonly BattlefieldAreaV1[];
@@ -51,8 +67,21 @@ export interface BattlefieldSceneV1 {
     placements: readonly BattlefieldPlacementV1[] } | null;
   actions: { finite: readonly BattlefieldActionV1[];
     parameterDomains: readonly BattlefieldParameterDomainV1[] };
-  diagnostics: readonly string[]; trainingTruth: false;
+  diagnostics: readonly string[];
+  threatReference: { defaultVisible: false;
+    authority: "projected_printed_weapon_range_reference_only";
+    excludes: readonly string[] };
+  trainingTruth: false;
 }
+export function projectRotatedBaseBoundsV1(input: BattlefieldPointV1 & {
+  baseShape: BattlefieldBaseShape; baseWidthMilliInches: number;
+  baseDepthMilliInches: number; baseRotationDegrees?: number;
+}): BattlefieldBaseBoundsV1 | null;
+export function isBattlefieldBaseWithinBoardV1(input: BattlefieldPointV1 & {
+  baseShape: BattlefieldBaseShape; baseWidthMilliInches: number;
+  baseDepthMilliInches: number; baseRotationDegrees?: number;
+  boardWidthMilliInches: number; boardHeightMilliInches: number;
+}): boolean;
 export interface BattlefieldViewportV1 {
   schemaVersion: "starcraft_tmg_battlefield_viewport_v1";
   pixelsPerMilliInch: number; fitPixelsPerMilliInch: number;

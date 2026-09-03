@@ -184,6 +184,29 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
   const ingressQueueRef = useRef<Promise<RoomAccessIngressResult>>(
     Promise.resolve({ ok: true, outcome: "room_access_idle" }),
   );
+  // RNLinking.web resolves getInitialURL() asynchronously from the *current*
+  // location. Expo Router may normalize that location before the promise
+  // settles, including moving search text behind an access fragment. Capture
+  // the original browser URL synchronously, then clear the ref when consumed.
+  const initialWebRoomUrlRef = useRef<string | null | undefined>(undefined);
+  if (initialWebRoomUrlRef.current === undefined) {
+    if (Platform.OS === "web") {
+      const webWindow = globalThis.window as typeof globalThis.window & {
+        __PROJECT_D_INITIAL_ROOM_URL__?: unknown;
+      };
+      const captured = webWindow?.__PROJECT_D_INITIAL_ROOM_URL__;
+      try {
+        delete webWindow.__PROJECT_D_INITIAL_ROOM_URL__;
+      } catch {
+        webWindow.__PROJECT_D_INITIAL_ROOM_URL__ = undefined;
+      }
+      initialWebRoomUrlRef.current = typeof captured === "string"
+        ? captured
+        : webWindow?.location?.href || null;
+    } else {
+      initialWebRoomUrlRef.current = null;
+    }
+  }
   const view = useSyncExternalStore(
     clientDomain.subscribe,
     clientDomain.read,
@@ -367,7 +390,7 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
         void ingestRoomUrl(url);
       }
     };
-    void Linking.getInitialURL().then((url) => {
+    const settleInitialUrl = (url: string | null) => {
       if (!active) return;
       if (url && isStarcraftTmgRoomAccessCandidate(url)) {
         void ingestRoomUrl(url).then((result) => {
@@ -393,7 +416,8 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
         return;
       }
       setInitialRoomUrl({ checked: true, errorCode: null });
-    }).catch(() => {
+    };
+    const rejectInitialUrl = () => {
       if (!active) return;
       const errorCode = "LINKING_INITIAL_URL_UNAVAILABLE";
       setInitialRoomUrl({ checked: true, errorCode });
@@ -406,7 +430,14 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
         duplicateIgnored: false,
         credentialPersisted: false,
       });
-    });
+    };
+    if (Platform.OS === "web") {
+      const captured = initialWebRoomUrlRef.current;
+      initialWebRoomUrlRef.current = null;
+      settleInitialUrl(captured || null);
+    } else {
+      void Linking.getInitialURL().then(settleInitialUrl).catch(rejectInitialUrl);
+    }
     const subscription = Linking.addEventListener("url", ({ url }) => {
       acceptIfRoomUrl(url);
     });

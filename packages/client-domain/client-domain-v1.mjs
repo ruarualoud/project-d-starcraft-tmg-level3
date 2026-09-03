@@ -18,6 +18,8 @@ import {
   classifyStarcraftTmgSourceRoomBindingV1,
   starcraftTmgClientSourceLocalizationCacheKeyV1,
 } from "./source-localization-projection-v1.mjs";
+import { projectStarcraftTmgValidatedReceiptCuesV1 } from
+  "./presentation-cues-v1.mjs";
 
 export const STARCRAFT_TMG_CLIENT_DOMAIN_VERSION = "starcraft_tmg_client_domain_v1";
 export const STARCRAFT_TMG_CLIENT_CHARACTER_EXTENSION_VERSION =
@@ -1060,6 +1062,7 @@ function receiptReference(receipt) {
     postStateHash: String(receipt.postStateHash || ""),
     matchBindingHash: String(receipt.matchBindingHash || ""),
     refereeSignature: clone(receipt.refereeSignature || null),
+    presentationCueBatch: projectStarcraftTmgValidatedReceiptCuesV1(receipt),
     trainingTruth: false,
   };
 }

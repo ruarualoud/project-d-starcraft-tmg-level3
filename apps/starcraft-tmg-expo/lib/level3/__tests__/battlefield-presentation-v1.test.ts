@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isBattlefieldBaseWithinBoardV1,
   projectStarcraftTmgBattlefieldPresentationV1,
+  projectRotatedBaseBoundsV1,
   projectStarcraftTmgBattlefieldViewportV1,
 } from "../battlefield-presentation-v1";
 
@@ -40,6 +42,8 @@ function fixture() {
         board: {
           widthInches: 54,
           heightInches: 36,
+          scenarioMapId: "lost-temple-standard",
+          scenarioMapName: "Lost Temple",
           terrain: [{
             id: "official-wall",
             shape: "axis_aligned_rectangle",
@@ -76,10 +80,15 @@ function fixture() {
         pieces: [
           {
             id: "marine-unit",
+            unitId: "marine",
             name: "Marine",
             sideKey: "player1",
             currentModels: models.length,
             models,
+            weapons: [
+              { name: "C-14 rifle", range: "12" },
+              { name: "Strike", range: "E" },
+            ],
           },
           {
             id: "legacy-unit",
@@ -220,6 +229,9 @@ describe("Slice 132 authoritative battlefield presentation", () => {
     expect(scene.board).toEqual({
       widthMilliInches: 54_000,
       heightMilliInches: 36_000,
+      scenarioMapId: "lost-temple-standard",
+      scenarioMapName: "Lost Temple",
+      displayMapAssetKey: "alien_temple_local_v1",
     });
     expect(scene.models.slice(0, 3).map((entry) => entry.baseWidthMilliInches))
       .toEqual([1260, 1575, 3150]);
@@ -289,6 +301,64 @@ describe("Slice 132 authoritative battlefield presentation", () => {
         geometryRenderable: true,
       }),
     ]);
+  });
+
+  it("keeps portraits and threat overlays presentation-only while projecting identity and printed range", () => {
+    const scene = projectStarcraftTmgBattlefieldPresentationV1(fixture());
+    expect(scene.models[0]).toMatchObject({
+      unitId: "marine",
+      withinBoard: true,
+      maxProjectedWeaponRangeMilliInches: 12_000,
+      weaponRangeReferences: [
+        { weaponName: "C-14 rifle", printedRange: "12", projectedRangeMilliInches: 12_000 },
+        { weaponName: "Strike", printedRange: "E", projectedRangeMilliInches: null },
+      ],
+    });
+    expect(scene.threatReference).toEqual({
+      defaultVisible: false,
+      authority: "projected_printed_weapon_range_reference_only",
+      excludes: [
+        "movement",
+        "line_of_sight",
+        "weapon_keyword_modifiers",
+        "abilities",
+        "legal_space",
+      ],
+    });
+    expect(scene.trainingTruth).toBe(false);
+  });
+
+  it("measures board legality from the rotated base edge rather than the centre", () => {
+    const bounds = projectRotatedBaseBoundsV1({
+      xMilliInches: 2_000,
+      yMilliInches: 2_000,
+      baseShape: "rectangle",
+      baseWidthMilliInches: 4_000,
+      baseDepthMilliInches: 2_000,
+      baseRotationDegrees: 45,
+    });
+    expect(bounds?.extentXMilliInches).toBeCloseTo(2_121.3203436, 6);
+    expect(bounds?.extentYMilliInches).toBeCloseTo(2_121.3203436, 6);
+    expect(isBattlefieldBaseWithinBoardV1({
+      xMilliInches: 2_000,
+      yMilliInches: 2_000,
+      baseShape: "rectangle",
+      baseWidthMilliInches: 4_000,
+      baseDepthMilliInches: 2_000,
+      baseRotationDegrees: 45,
+      boardWidthMilliInches: 54_000,
+      boardHeightMilliInches: 36_000,
+    })).toBe(false);
+    expect(isBattlefieldBaseWithinBoardV1({
+      xMilliInches: 2_122,
+      yMilliInches: 2_122,
+      baseShape: "rectangle",
+      baseWidthMilliInches: 4_000,
+      baseDepthMilliInches: 2_000,
+      baseRotationDegrees: 45,
+      boardWidthMilliInches: 54_000,
+      boardHeightMilliInches: 36_000,
+    })).toBe(true);
   });
 
   it("uses a parameter registry and fails closed for unknown kinds", () => {

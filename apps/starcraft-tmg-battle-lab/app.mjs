@@ -1,4 +1,8 @@
 import { createStarcraftTmgBattleLabRuntime } from "./battle-lab-runtime-v1.mjs";
+import {
+  resolveStarcraftTmgBattlefieldUnitMediaV1,
+  starcraftTmgBattlefieldMapMediaV1,
+} from "../../packages/client-domain/battlefield-media-catalog-v1.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 const runtime = createStarcraftTmgBattleLabRuntime({
@@ -6,6 +10,17 @@ const runtime = createStarcraftTmgBattleLabRuntime({
 });
 let selectedModelId = null;
 let toastTimer = null;
+let showThreatReference = false;
+let voicesEnabled = false;
+let lastPlayedCueBatchHash = null;
+let bgmObjectUrl = null;
+const voiceAudio = new Audio();
+const bgmAudio = new Audio();
+bgmAudio.loop = true;
+bgmAudio.volume = 0.45;
+voiceAudio.volume = 0.7;
+const mapMedia = starcraftTmgBattlefieldMapMediaV1();
+let activeDetailPanel = "referee";
 
 const el = Object.fromEntries([
   "connection", "shared-hash", "room-id", "seat-token", "room-title",
@@ -13,7 +28,64 @@ const el = Object.fromEntries([
   "referee-facts", "integrity-alert", "agent-status", "agent-traces",
   "action-count", "actions", "domain", "parameters", "preview", "harness",
   "toast",
+  "threat-toggle", "selected-portrait", "selected-unit", "media-status",
+  "bgm-file", "volume",
 ].map((name) => [name, document.querySelector(`[data-${name}]`)]));
+
+voiceAudio.addEventListener("playing", () => {
+  el["media-status"].dataset.voicePlayback = "playing";
+});
+voiceAudio.addEventListener("error", () => {
+  el["media-status"].dataset.voicePlayback = "error";
+});
+bgmAudio.addEventListener("playing", () => {
+  el["media-status"].dataset.bgmPlayback = "playing";
+});
+bgmAudio.addEventListener("pause", () => {
+  el["media-status"].dataset.bgmPlayback = bgmAudio.src ? "paused" : "unloaded";
+});
+
+function unitMedia(unitId) {
+  return resolveStarcraftTmgBattlefieldUnitMediaV1(unitId, {
+    releaseChannel: "development_internal",
+  });
+}
+
+function randomEntry(values) {
+  return values?.length ? values[Math.floor(Math.random() * values.length)] : null;
+}
+
+function modelForPiece(scene, pieceId) {
+  return scene.models.find((model) => model.pieceId === pieceId) || null;
+}
+
+async function playUnitVoice(model, intent = "selected") {
+  if (!voicesEnabled || !model) return;
+  const media = unitMedia(model.unitId);
+  const source = randomEntry(media?.voice?.[intent]);
+  if (!source) return;
+  voiceAudio.pause();
+  voiceAudio.src = source;
+  voiceAudio.currentTime = 0;
+  try {
+    await voiceAudio.play();
+  } catch {
+    el["media-status"].textContent = "Browser blocked audio; press Enable voices again.";
+  }
+}
+
+function playValidatedReceiptCues(view) {
+  const batch = view.shared.lastReceipt?.presentationCueBatch;
+  if (!voicesEnabled || !batch?.cueBatchHash
+    || batch.cueBatchHash === lastPlayedCueBatchHash) return;
+  lastPlayedCueBatchHash = batch.cueBatchHash;
+  const cue = [...(batch.cues || [])].reverse().find((entry) => (
+    ["confirm", "damaged", "destroyed"].includes(entry.voiceIntent)
+  ));
+  if (!cue) return;
+  const pieceId = cue.voiceIntent === "confirm" ? cue.actorPieceId : cue.targetPieceId;
+  void playUnitVoice(modelForPiece(view.battlefield, pieceId), cue.voiceIntent);
+}
 
 function text(value, fallback = "—") {
   return value === null || value === undefined || value === "" ? fallback : String(value);
@@ -53,12 +125,30 @@ function notify(message) {
   toastTimer = setTimeout(() => el.toast.classList.remove("visible"), 2400);
 }
 
+function setDetailPanel(panelName) {
+  const requested = document.querySelector(`[data-detail-panel="${panelName}"]`)
+    ? panelName
+    : "referee";
+  activeDetailPanel = requested;
+  for (const panel of document.querySelectorAll("[data-detail-panel]")) {
+    panel.hidden = panel.dataset.detailPanel !== requested;
+  }
+  for (const tab of document.querySelectorAll("[data-detail-tab]")) {
+    const selected = tab.dataset.detailTab === requested;
+    tab.classList.toggle("is-active", selected);
+    tab.setAttribute("aria-selected", String(selected));
+  }
+  document.querySelector(".right-rail").dataset.activePanel = requested;
+}
+
 function glyphForArea(area) {
   if (!area.geometryRenderable || !area.widthMilliInches || !area.depthMilliInches) return null;
   const common = {
     fill: area.kind === "terrain" ? "#33415588" : area.kind === "marker" ? "#fbbf2440" : "#22d3ee40",
     stroke: area.kind === "terrain" ? "#64748b" : area.kind === "marker" ? "#fbbf24" : "#22d3ee",
     "stroke-width": 110,
+    "data-area-kind": area.kind,
+    "data-area-id": area.id,
   };
   if (area.shape === "rectangle") {
     return svgElement("rect", {
@@ -99,16 +189,77 @@ function glyphForModel(model, preview = false) {
   node.setAttribute("stroke", selected ? "#ffffff" : color);
   node.setAttribute("stroke-width", selected ? "190" : "115");
   if (preview) node.setAttribute("stroke-dasharray", "260 150");
+  const group = svgElement("g", {
+    "data-model-id": model.id,
+    "data-base-edge-valid": String(model.withinBoard !== false),
+    "data-base-min-x": model.baseBounds?.minXMilliInches ?? "",
+    "data-base-max-x": model.baseBounds?.maxXMilliInches ?? "",
+    "data-base-min-y": model.baseBounds?.minYMilliInches ?? "",
+    "data-base-max-y": model.baseBounds?.maxYMilliInches ?? "",
+  });
+  group.append(node);
   if (!preview) {
+    const media = unitMedia(model.unitId);
+    if (media) {
+      const portraitWidth = width * 0.84;
+      const portraitDepth = depth * 0.84;
+      const clipId = `model-portrait-clip-${String(model.id).replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+      const definitions = svgElement("defs");
+      const clipPath = svgElement("clipPath", {
+        id: clipId,
+        clipPathUnits: "userSpaceOnUse",
+      });
+      const clipShape = model.baseShape === "rectangle"
+        ? svgElement("rect", {
+          x: model.xMilliInches - (portraitWidth / 2),
+          y: model.yMilliInches - (portraitDepth / 2),
+          width: portraitWidth,
+          height: portraitDepth,
+          rx: Math.min(portraitWidth, portraitDepth) * 0.08,
+          transform: `rotate(${model.baseRotationDegrees || 0} ${model.xMilliInches} ${model.yMilliInches})`,
+        })
+        : svgElement("ellipse", {
+          cx: model.xMilliInches,
+          cy: model.yMilliInches,
+          rx: portraitWidth / 2,
+          ry: portraitDepth / 2,
+          transform: `rotate(${model.baseRotationDegrees || 0} ${model.xMilliInches} ${model.yMilliInches})`,
+        });
+      clipPath.append(clipShape);
+      definitions.append(clipPath);
+      const image = svgElement("image", {
+        href: media.neutralPortraitPath,
+        x: model.xMilliInches - (portraitWidth / 2),
+        y: model.yMilliInches - (portraitDepth / 2),
+        width: portraitWidth,
+        height: portraitDepth,
+        preserveAspectRatio: "xMidYMid slice",
+        opacity: model.destroyed ? 0.35 : 0.92,
+        transform: `translate(0 ${2 * model.yMilliInches}) scale(1 -1)`,
+        "clip-path": `url(#${clipId})`,
+        "data-portrait-fit": "shape-clipped-cover",
+        "pointer-events": "none",
+      });
+      group.append(definitions);
+      group.append(image);
+    }
+    group.append(svgElement("circle", {
+      cx: model.xMilliInches,
+      cy: model.yMilliInches,
+      r: 90,
+      fill: color,
+      "pointer-events": "none",
+    }));
     node.setAttribute("tabindex", "0");
     node.setAttribute("role", "button");
     node.setAttribute("aria-label", `${model.label}; ${model.sideKey}; select for inspection only`);
     node.addEventListener("click", () => {
       selectedModelId = model.id;
       render(runtime.read());
+      void playUnitVoice(model, "selected");
     });
   }
-  return node;
+  return group;
 }
 
 function renderBoard(scene) {
@@ -118,12 +269,36 @@ function renderBoard(scene) {
     x: 0, y: 0, width: scene.widthMilliInches, height: scene.heightMilliInches,
     fill: "#07121b", stroke: "#47677a", "stroke-width": 120,
   });
+  const map = svgElement("image", {
+    href: mapMedia.path,
+    x: 0,
+    y: 0,
+    width: scene.widthMilliInches,
+    height: scene.heightMilliInches,
+    preserveAspectRatio: "xMidYMid slice",
+    opacity: 0.72,
+    "data-display-only-map": "true",
+  });
   const world = svgElement("g", {
     transform: `translate(0 ${scene.heightMilliInches}) scale(1 -1)`,
   });
   for (const area of [...scene.terrain, ...scene.markers, ...scene.tokens]) {
     const glyph = glyphForArea(area);
     if (glyph) world.append(glyph);
+  }
+  const selected = scene.models.find((model) => model.id === selectedModelId);
+  if (showThreatReference && selected?.maxProjectedWeaponRangeMilliInches) {
+    world.append(svgElement("circle", {
+      cx: selected.xMilliInches,
+      cy: selected.yMilliInches,
+      r: selected.maxProjectedWeaponRangeMilliInches
+        + (Math.max(selected.baseWidthMilliInches || 0, selected.baseDepthMilliInches || 0) / 2),
+      fill: "#22d3ee0c",
+      stroke: "#67e8f9",
+      "stroke-width": 120,
+      "stroke-dasharray": "420 260",
+      "data-threat-reference": "printed-range-only",
+    }));
   }
   if (scene.previewPath.length > 1) {
     world.append(svgElement("polyline", {
@@ -135,9 +310,14 @@ function renderBoard(scene) {
   for (const placement of scene.previewPlacements) {
     world.append(glyphForModel({ ...placement, id: `preview:${placement.modelId}`, label: placement.modelId }, true));
   }
-  board.replaceChildren(background, world);
+  board.replaceChildren(background, map, world);
   el["board-empty"].hidden = Boolean(scene.roomId);
   el["model-count"].textContent = `${scene.models.length} models · ${scene.unitAnchors.length} anchors`;
+  const selectedMedia = unitMedia(selected?.unitId);
+  el["selected-portrait"].hidden = !selectedMedia;
+  if (selectedMedia) el["selected-portrait"].src = selectedMedia.activePortraitPath;
+  el["selected-unit"].textContent = selected ? `${selected.label} · ${selected.sideKey}` : "No unit selected";
+  el["media-status"].textContent = `${voicesEnabled ? "Voices enabled" : "Voice muted"} · ${bgmAudio.src ? (bgmAudio.paused ? "BGM paused" : "BGM playing") : "BGM not loaded"}`;
 }
 
 function renderFacts(referee) {
@@ -246,9 +426,36 @@ function render(view) {
   renderAgent(view.agent);
   renderActions(view);
   renderHarness(view.harness);
+  playValidatedReceiptCues(view);
 }
 
+el["threat-toggle"].addEventListener("change", () => {
+  showThreatReference = el["threat-toggle"].checked;
+  render(runtime.read());
+});
+
+el["bgm-file"].addEventListener("change", () => {
+  const file = el["bgm-file"].files?.[0];
+  if (!file) return;
+  if (bgmObjectUrl) URL.revokeObjectURL(bgmObjectUrl);
+  bgmObjectUrl = URL.createObjectURL(file);
+  bgmAudio.src = bgmObjectUrl;
+  document.querySelector('[data-command="bgm-toggle"]').disabled = false;
+  render(runtime.read());
+});
+
+el.volume.addEventListener("input", () => {
+  const volume = Number(el.volume.value);
+  bgmAudio.volume = volume;
+  voiceAudio.volume = Math.min(1, volume + 0.25);
+});
+
 document.addEventListener("click", async (event) => {
+  const detailTab = event.target.closest("[data-detail-tab]")?.dataset.detailTab;
+  if (detailTab) {
+    setDetailPanel(detailTab);
+    return;
+  }
   const command = event.target.closest("[data-command]")?.dataset.command;
   if (!command) return;
   try {
@@ -263,16 +470,43 @@ document.addEventListener("click", async (event) => {
       });
       notify(result.ok ? "Authoritative room projection bound" : `Blocked: ${result.rejection?.code || "bind failed"}`);
     } else if (command === "refresh") await invoke({ type: "refresh" }, "Projection refreshed");
-    else if (command === "legal") await invoke({ type: "load_legal_space" }, "LegalSpace loaded");
-    else if (command === "replay") await invoke({ type: "read_replay" }, "Replay projection verified");
-    else if (command === "revalidate") await invoke({ type: "revalidate_authority" }, "Authority revalidated");
+    else if (command === "legal") {
+      const result = await invoke({ type: "load_legal_space" }, "LegalSpace loaded");
+      if (result.ok) setDetailPanel("actions");
+    }
+    else if (command === "replay") {
+      const result = await invoke({ type: "read_replay" }, "Replay projection verified");
+      if (result.ok) setDetailPanel("referee");
+    } else if (command === "revalidate") {
+      const result = await invoke({ type: "revalidate_authority" }, "Authority revalidated");
+      if (result.ok) setDetailPanel("referee");
+    }
     else if (command === "confirm") {
       const previewId = runtime.read().shared.pendingPreview?.previewId;
-      if (previewId) await invoke({ type: "confirm_and_apply_preview", previewId }, "Confirmed action applied and replay checked");
+      if (previewId) {
+        const result = await invoke({ type: "confirm_and_apply_preview", previewId }, "Confirmed action applied and replay checked");
+        if (result.ok) setDetailPanel("referee");
+      }
     } else if (command === "preview-parameterized") {
       const domainId = el.domain.value;
       const parameters = JSON.parse(el.parameters.value || "{}");
       await invoke({ type: "preview_parameterized", domainId, parameters }, "Parameterized sealed preview received");
+    } else if (command === "voice-toggle") {
+      voicesEnabled = !voicesEnabled;
+      event.target.textContent = voicesEnabled ? "Mute voices" : "Enable voices";
+      render(runtime.read());
+      const selected = runtime.read().battlefield.models.find((model) => model.id === selectedModelId);
+      if (voicesEnabled) await playUnitVoice(selected, "selected");
+    } else if (command === "bgm-toggle") {
+      if (!bgmAudio.src) return;
+      if (bgmAudio.paused) {
+        await bgmAudio.play();
+        event.target.textContent = "Pause BGM";
+      } else {
+        bgmAudio.pause();
+        event.target.textContent = "Play BGM";
+      }
+      render(runtime.read());
     }
   } catch (error) {
     notify(`Blocked: ${error?.code || error?.message || "operation failed"}`);
@@ -280,6 +514,7 @@ document.addEventListener("click", async (event) => {
 });
 
 runtime.subscribe(render);
+setDetailPanel(activeDetailPanel);
 render(runtime.read());
 
 const initialRoom = new URL(globalThis.location.href).searchParams.get("room");

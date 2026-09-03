@@ -330,14 +330,26 @@ await check("mounted_route_graph_contains_no_firestore_or_client_owned_match_aut
   ];
   for (const absolute of graph.files) {
     if (!/\.(?:[cm]?[jt]sx?)$/u.test(absolute)) continue;
+    const relative = normalizeRelative(absolute);
     const source = await readFile(absolute, "utf8");
     for (const rule of forbidden) {
       assert(!rule.pattern.test(source), `${rule.reason} is reachable at ${normalizeRelative(absolute)}`);
     }
-    if (normalizeRelative(absolute).includes("app/(tabs)/match.tsx")
-      || normalizeRelative(absolute).includes("apps/starcraft-tmg-expo/lib/level3/")) {
-      assert(!/Math\.random\s*\(/u.test(source),
-        `client-generated room authority or RNG is reachable at ${normalizeRelative(absolute)}`);
+    if (relative.includes("app/(tabs)/match.tsx")
+      || relative.includes("apps/starcraft-tmg-expo/lib/level3/")) {
+      const randomCalls = source.match(/Math\.random\s*\(/gu) || [];
+      const isQuarantinedMediaRandomness = relative
+        === "apps/starcraft-tmg-expo/lib/level3/battlefield-media-assets-v1.ts";
+      if (isQuarantinedMediaRandomness) {
+        assert(randomCalls.length === 1
+          && source.includes("randomStarcraftTmgPresentationMediaEntryV1")
+          && source.includes("never enters a")
+          && !/dispatch\s*\(|pendingPreview|stateRevision|receiptHash/iu.test(source),
+        `presentation RNG quarantine drifted at ${relative}`);
+      } else {
+        assert(randomCalls.length === 0,
+          `client-generated room authority or RNG is reachable at ${relative}`);
+      }
     }
   }
   assert(migration.authority?.directFirestoreOnMountedPaths === false

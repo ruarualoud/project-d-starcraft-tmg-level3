@@ -1,11 +1,11 @@
 # Remaining StarCraft TMG Level-3 development tickets
 
-Status after Ticket 14 Slice 135: 13/22 Tickets complete; Ticket 14 is 8/11 and
+Status after Ticket 14 Slice 136: 13/22 Tickets complete; Ticket 14 is 9/16 and
 Tickets 14–22 remain.
 
 | Ticket | Purpose | Completion evidence |
 | --- | --- | --- |
-| 14 | Shared Web/App client: restore the Expo product, implement one Client Domain Module, mount authoritative rooms/board/source/character flows, migrate Battle Lab, and prove browser plus real-device behavior. | 11 slices (128–138), Web/App/Battle Lab parity, no second state authority, pinned builds, browser/native traces. |
+| 14 | Shared Web/App client: restore the Expo product, implement one Client Domain Module, mount authoritative rooms/board/source/character flows, migrate Battle Lab, add the complete battle workbench, and prove browser plus real-device behavior. | 16 slices (128–143), Web/App/Battle Lab parity, unit/scenario/deploy/score inspection, multi-mode threat, rules-bound probability, complete Token/Marker action surface, score forecast/rules quick view, no second state authority, pinned builds and browser/native traces. |
 | 15 | Online role-Agent sessions: make Tutor, Opponent, Commentator and Companion real room-connected product modes with isolated tools, visibility, prompts and memory. | Real UI/Harness traces, reconnect/budget behavior, read-only proofs, legal Opponent preview and human-confirmed apply. |
 | 16 | Direct Provider and secure BYOK: move the current injected Adapter into isolated, budgeted, recoverable production execution. | Explicit consent/detach, isolated credential Worker, egress allowlist, WAL/attempt/budget recovery, redaction fuzzing and user-authorized live model/version receipt. |
 | 17 | DSH Skill-generation Adapter: install and run the pinned DSH execution arm only for offline Skill candidates, alongside the DSH-off control. | Disposable isolation, real DSH session log, exact config/plugin/model/tool/cost receipt and proof that it cannot publish or reach online/Rules paths. |
@@ -23,7 +23,7 @@ Skill, trajectory and production contracts and cannot be truthfully closed by
 scaffolds alone.
 
 The user-frozen execution order is stricter than those dependency options:
-finish Ticket 14 Slices 136–138, then complete FAQ F1–F5 as one explicit
+finish Ticket 14 Slices 137–143, then complete FAQ F1–F5 as one explicit
 official-source refresh/review lane, then begin Ticket 15. Development does not
 pull source updates again unless explicitly commanded. Large-scale Skill
 generation remains behind a separate user confirmation.

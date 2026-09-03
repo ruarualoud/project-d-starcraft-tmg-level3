@@ -13,9 +13,26 @@ config.resolver.nodeModulesPaths = [
 ];
 config.resolver.unstable_enableSymlinks = true;
 
-module.exports = withNativeWind(config, {
-  input: "./global.css",
-  // Force write CSS to file system instead of virtual modules
-  // This fixes iOS styling issues in development mode
-  forceWriteFileSystem: true,
-});
+const staticWebCssInput = process.env.PROJECT_D_STATIC_WEB_CSS_INPUT;
+if (staticWebCssInput) {
+  const sourceCss = path.resolve(__dirname, "global.css");
+  const compiledCss = path.resolve(staticWebCssInput);
+  if (!compiledCss.startsWith(`${workspaceRoot}${path.sep}`)) {
+    throw new Error("PROJECT_D_STATIC_WEB_CSS_OUTSIDE_WORKSPACE");
+  }
+  const originalResolver = config.resolver.resolveRequest;
+  config.resolver.resolveRequest = (context, moduleName, platform) => {
+    const resolver = originalResolver ?? context.resolveRequest;
+    const resolved = resolver(context, moduleName, platform);
+    return "filePath" in resolved && path.resolve(resolved.filePath) === sourceCss
+      ? { ...resolved, filePath: compiledCss }
+      : resolved;
+  };
+  module.exports = config;
+} else {
+  module.exports = withNativeWind(config, {
+    input: "./global.css",
+    // Native development and device builds retain filesystem-backed styles.
+    forceWriteFileSystem: true,
+  });
+}

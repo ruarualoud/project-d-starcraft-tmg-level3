@@ -99,6 +99,9 @@ describe("Slice 134 room-pinned historical rules display", () => {
     await act(async () => {
       renderer = create(<MatchScreen />);
     });
+    await act(async () => {
+      buttonByText(renderer!, "房间与规则").props.onPress();
+    });
     const text = allText(renderer!.toJSON());
     expect(text).toContain("房间冻结规则展示");
     expect(text).toContain("Exact MatchBinding display artifact.");
@@ -120,6 +123,9 @@ describe("Slice 134 room-pinned historical rules display", () => {
     let renderer: ReactTestRenderer;
     await act(async () => {
       renderer = create(<MatchScreen />);
+    });
+    await act(async () => {
+      buttonByText(renderer!, "房间与规则").props.onPress();
     });
     const text = allText(renderer!.toJSON());
     expect(text).toMatch(/status:\s+quarantined/u);

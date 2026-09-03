@@ -106,6 +106,60 @@ function dimensionsFrom(source) {
         rotation,
     };
 }
+export function projectRotatedBaseBoundsV1(input) {
+    const shape = shapeFrom(input?.baseShape);
+    const width = positiveInteger(input?.baseWidthMilliInches);
+    const depth = positiveInteger(input?.baseDepthMilliInches);
+    const x = safeInteger(input?.xMilliInches);
+    const y = safeInteger(input?.yMilliInches);
+    const rotation = safeNumber(input?.baseRotationDegrees) ?? 0;
+    if (!shape || !width || !depth || x === null || y === null)
+        return null;
+    const radians = (rotation * Math.PI) / 180;
+    const cos = Math.cos(radians);
+    const sin = Math.sin(radians);
+    const halfWidth = width / 2;
+    const halfDepth = depth / 2;
+    const extentX = shape === "rectangle"
+        ? (Math.abs(halfWidth * cos) + Math.abs(halfDepth * sin))
+        : Math.sqrt(((halfWidth * cos) ** 2) + ((halfDepth * sin) ** 2));
+    const extentY = shape === "rectangle"
+        ? (Math.abs(halfWidth * sin) + Math.abs(halfDepth * cos))
+        : Math.sqrt(((halfWidth * sin) ** 2) + ((halfDepth * cos) ** 2));
+    return Object.freeze({
+        minXMilliInches: x - extentX,
+        maxXMilliInches: x + extentX,
+        minYMilliInches: y - extentY,
+        maxYMilliInches: y + extentY,
+        extentXMilliInches: extentX,
+        extentYMilliInches: extentY,
+    });
+}
+export function isBattlefieldBaseWithinBoardV1(input) {
+    const bounds = projectRotatedBaseBoundsV1(input);
+    const width = positiveInteger(input?.boardWidthMilliInches);
+    const height = positiveInteger(input?.boardHeightMilliInches);
+    return Boolean(bounds && width && height
+        && bounds.minXMilliInches >= 0
+        && bounds.maxXMilliInches <= width
+        && bounds.minYMilliInches >= 0
+        && bounds.maxYMilliInches <= height);
+}
+function projectedWeaponRangeReferences(piece) {
+    return rows(piece.weapons).map((weapon) => {
+        const rangeText = text(weapon.range);
+        const numericRange = /^\d+(?:\.\d+)?$/u.test(rangeText)
+            ? safeNumber(rangeText)
+            : null;
+        return {
+            weaponName: text(weapon.name ?? weapon.weaponName) || "weapon",
+            printedRange: rangeText || null,
+            projectedRangeMilliInches: numericRange !== null && numericRange > 0
+                ? Math.round(numericRange * 1000)
+                : null,
+        };
+    });
+}
 function statusLabels(piece, model) {
     const values = [
         ...(Array.isArray(piece.statuses) ? piece.statuses : []),
@@ -152,7 +206,7 @@ function areaFrom(value, index, kind, diagnostics) {
         ?? milliFrom(value, "diameterMilliInches", "diameterInches", "diameterMillimeters");
     const shape = geometry.shape
         ?? shapeFrom(record(value.rulesFootprint)?.shape)
-        ?? shapeFrom(footprint?.shape ?? value.shape);
+        ?? shapeFrom(footprint?.shape ?? value.shape ?? value.footprint);
     const geometryRenderable = Boolean(point && shape && width && depth);
     if (!point)
         diagnostics.push(`${kind}:${id}:coordinate_missing`);
@@ -296,8 +350,13 @@ export function projectStarcraftTmgBattlefieldPresentationV1(input) {
     const unitAnchors = [];
     for (const [pieceIndex, piece] of rows(state?.pieces).entries()) {
         const pieceId = text(piece.id) || `piece-${pieceIndex + 1}`;
+        const unitId = text(piece.unitId) || null;
         const label = text(piece.name) || text(piece.unitName) || pieceId;
         const sideKey = text(piece.sideKey) || "unknown_side";
+        const weaponRangeReferences = projectedWeaponRangeReferences(piece);
+        const maxProjectedWeaponRangeMilliInches = weaponRangeReferences.reduce((maximum, weapon) => (
+            Math.max(maximum, weapon.projectedRangeMilliInches ?? 0)
+        ), 0) || null;
         if (Array.isArray(piece.models)) {
             for (const [modelIndex, model] of rows(piece.models).entries()) {
                 if (model.isRemoved === true || model.isOnField === false)
@@ -312,10 +371,33 @@ export function projectStarcraftTmgBattlefieldPresentationV1(input) {
                 const geometryRenderable = Boolean(geometry.shape && geometry.width && geometry.depth);
                 if (!geometryRenderable)
                     diagnostics.push(`model:${id}:geometry_unknown_fail_closed`);
+                const baseBounds = geometryRenderable
+                    ? projectRotatedBaseBoundsV1({
+                        ...point,
+                        baseShape: geometry.shape,
+                        baseWidthMilliInches: geometry.width,
+                        baseDepthMilliInches: geometry.depth,
+                        baseRotationDegrees: geometry.rotation,
+                    })
+                    : null;
+                const withinBoard = geometryRenderable
+                    ? isBattlefieldBaseWithinBoardV1({
+                        ...point,
+                        baseShape: geometry.shape,
+                        baseWidthMilliInches: geometry.width,
+                        baseDepthMilliInches: geometry.depth,
+                        baseRotationDegrees: geometry.rotation,
+                        boardWidthMilliInches: widthMilliInches,
+                        boardHeightMilliInches: heightMilliInches,
+                    })
+                    : false;
+                if (geometryRenderable && !withinBoard)
+                    diagnostics.push(`model:${id}:base_edge_outside_board`);
                 models.push({
                     kind: "model",
                     id,
                     pieceId,
+                    unitId,
                     label: piece.models.length > 1 ? `${label} ${modelIndex + 1}` : label,
                     sideKey,
                     ...point,
@@ -323,10 +405,14 @@ export function projectStarcraftTmgBattlefieldPresentationV1(input) {
                     baseWidthMilliInches: geometry.width,
                     baseDepthMilliInches: geometry.depth,
                     baseRotationDegrees: geometry.rotation,
+                    baseBounds,
+                    withinBoard,
                     geometryRenderable,
                     selected: input.selectedModelId === id,
                     destroyed: model.isDestroyed === true,
                     statuses: statusLabels(piece, model),
+                    weaponRangeReferences: Object.freeze(weaponRangeReferences),
+                    maxProjectedWeaponRangeMilliInches,
                 });
             }
             continue;
@@ -340,6 +426,7 @@ export function projectStarcraftTmgBattlefieldPresentationV1(input) {
             kind: "unit_anchor",
             id: `${pieceId}:unit-anchor`,
             pieceId,
+            unitId,
             label: `${label} · unit anchor`,
             sideKey,
             ...anchorPoint,
@@ -386,7 +473,13 @@ export function projectStarcraftTmgBattlefieldPresentationV1(input) {
         roomId: text(room?.roomId) || null,
         stateRevision: safeInteger(room?.stateRevision),
         stateHash: text(room?.stateHash) || null,
-        board: Object.freeze({ widthMilliInches, heightMilliInches }),
+        board: Object.freeze({
+            widthMilliInches,
+            heightMilliInches,
+            scenarioMapId: text(board?.scenarioMapId) || null,
+            scenarioMapName: text(board?.scenarioMapName) || null,
+            displayMapAssetKey: text(board?.scenarioMapId) ? "alien_temple_local_v1" : null,
+        }),
         widthMilliInches,
         heightMilliInches,
         models: Object.freeze(models),
@@ -411,6 +504,17 @@ export function projectStarcraftTmgBattlefieldPresentationV1(input) {
             parameterDomains: Object.freeze(parameterDomains),
         }),
         diagnostics: Object.freeze(diagnostics),
+        threatReference: Object.freeze({
+            defaultVisible: false,
+            authority: "projected_printed_weapon_range_reference_only",
+            excludes: Object.freeze([
+                "movement",
+                "line_of_sight",
+                "weapon_keyword_modifiers",
+                "abilities",
+                "legal_space",
+            ]),
+        }),
         trainingTruth: false,
     });
 }

@@ -701,3 +701,32 @@ adjacent Room 7/7, and HTTP 4/4 pass; Ticket 14 cumulative is 290/290. Ticket 14
 advances to 8/11 with Slices 136–138 remaining, then FAQ F1–F5 runs before
 Ticket 15. No source refresh, Provider, Skill, DSH, MuZero, self-play, memory,
 or training promotion ran.
+
+Ticket 14 Slice 136 produces a pinned offline Expo Web export and real Chromium
+acceptance against the actual RoomRuntime and HTTP Adapter. Two clean
+production builds are manifest-identical at 54 files / 4,226,632 bytes and
+tree `caa75c59...f8e8`. A reproduced NativeWind Web/SSR shared-CSS race is
+removed by precompiling one hash-bound stylesheet before Metro and making both
+static graphs read it through a workspace-confined resolver. One production
+public observer, three authenticated
+Expo viewports and two Battle Lab viewports prove deep-link scrubbing,
+memory-only capability exchange, 44px targets, keyboard operation, offline
+read-only reconnect, two authoritative Apply/Replay paths, no horizontal
+overflow and uniform `54×36` world/base scaling with 30 portrait-bearing model
+bases. Complete rotated-base bounds stay inside the board, sample formations
+have zero overlaps, irregular portraits use footprint-matched cover clips,
+and mutually exclusive workbench tabs prevent every tool stacking below the
+table. Public builds contain only generated map/portrait media; original
+animated portraits/voices remain development-internal and BGM is user-owned.
+The run found and fixed an Expo Router/RNLinking initial-URL race by capturing
+the App Link before the Router bundle and deleting it at Provider first render;
+it also removed invalid SVG Web attributes and closed Battle Lab mobile grid
+min-content overflow. Browser 7/7, artifact secret scans 10/10, static/security
+contract 18/18, focused regressions and prior Ticket14 cumulative 290/290 pass.
+The workbench audit expands Ticket 14 to 16 slices: Slice 137 adds the shared
+Unit/Scenario/Deployment/Reserve/score read model, 138 multi-mode threat, 139
+current-rules probability, 140 complete LegalSpace-classified Token/Marker
+actions, 141 score forecast/contextual rules, 142 native builds/devices and 143
+aggregate closure. Ticket 14 is therefore 9/16, followed by FAQ F1–F5 and
+Ticket 15. No source refresh, Provider,
+Skill, DSH, MuZero, self-play, memory or training promotion ran.

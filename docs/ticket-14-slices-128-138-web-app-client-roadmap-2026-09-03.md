@@ -1,6 +1,7 @@
 # Ticket 14 — shared Web/App client roadmap
 
-Status: active; 8/11 implementation slices complete, 3 remaining.
+Status: active; 9/16 implementation slices complete, 7 remaining. The route
+was expanded on 2026-09-03 after the battle-workbench capability audit.
 
 Ticket 14 restores the recovered Expo source as the Web/App product baseline,
 mounts the Level-3 room/source/character interfaces into a real tracked product,
@@ -35,13 +36,18 @@ client a Rules, Referee, source, Agent-session, or training authority.
 | 133 | **Complete.** Mount CharacterPackage/persona selection, eight-era dynamic portrait and Adjutant panel. | Exact opt-in extension; Web/App React render; opaque short HMAC asset grants; visible/onLoad-only animation; cold-offline local neutral portrait; focused 65/65 plus TypeScript and cumulative 218/218; no live Provider call. |
 | 134 | **Complete.** Replace client source ownership with official-source/localization projections and migrate settings, army drafts and historical match records. | Metadata-only provenance/freshness UI; exact room-pinned historical rules display; explicit refresh only; fixed-key, two-confirmation, immutable AsyncStorage classification/quarantine; focused 49/49 and cumulative 267/267; official FAQ V1 gap recorded without refreshing the frozen lock. |
 | 135 | **Complete.** Move Battle Lab room, board, Referee and Agent trace views onto the same Client Domain Module. | No whole-state replace/client drag authority; observer/referee projections; Expo/Battle Lab same hashes for shared views; legacy sandbox isolated; focused 23/23 and cumulative 290/290. |
-| 136 | Produce the pinned Web static build and real browser acceptance evidence. | Reproducible build receipt; desktop/tablet/mobile; accessibility; deep links; offline/reconnect; screenshot/video traces; no horizontal/geometry drift. |
-| 137 | Produce native Android/iOS build and real-device evidence. | Pinned dependency/build receipt; Android plus iOS where build environment allows; app lifecycle, deep link, storage, haptics/sharing; real-device action/reconnect trace. |
-| 138 | Run cross-surface migration/security aggregate and close Ticket 14. | Fixed denominators; original Ticket 10/11/12/13 replay; Web/App/Battle Lab parity; credential/path/privacy scan; production blockers; Ticket 15 handoff. |
+| 136 | **Complete.** Produce the pinned Web static build and real browser acceptance evidence. | Precompiled hash-bound CSS removes the Web/SSR NativeWind cache race; two clean production builds are manifest-identical at 54 files / 4,226,632 bytes and tree `caa75c59...f8e8`; real Chromium checks production observer plus authenticated Expo desktop/tablet/mobile and Battle Lab desktop/mobile; 7/7 browser, 10/10 secret-scanned artifacts, 18/18 static/security contract, uniform 54×36 physical scale, 30/30 portraits, full rotated-base containment and zero sample-formation overlap. |
+| 137 | Implement the BattleWorkbenchSnapshot and six-panel shell, then mount Unit, Scenario, Deployment/Reserve and current-score inspection. | One revision/viewer/MatchBinding-bound read model through the existing four-operation Client Domain interface; Expo/Battle Lab parity; no catalogue fallback or client authority; explicit missing/private/unknown states. |
+| 138 | Implement rules-owned multi-mode threat queries and map layers. | Stationary fire, move+fire, charge/engagement, per-weapon, one-to-many, many-to-one and own/enemy aggregate layers; model-count movement, LOS, terrain, elevation, status and upgrade coverage labelled exact/partial/unknown. |
+| 139 | Implement the current-rules matchup probability query and contextual sheet. | One-to-one/one-to-many/many-to-one/matrix distributions bound to ChanceTickets and frozen rule/data identities; every assumption visible; legacy beta calculator remains disabled. |
+| 140 | Implement the complete LegalSpace-classified Token/Marker action palette. | Generated rule-graph denominator across all create/place/move/consume/remove actions; source, legal geometry, controller, duration, stack/unique, trigger and cleanup shown; no unit-specific hard-coded whitelist. |
+| 141 | Implement if-the-round-ended-now scoring forecast and contextual rules quick view. | Server-owned non-mutating forecast with exact/conditional/unknown branches; current score and scenario objectives; selected unit/action/keyword links into exact room-pinned rules with no compatibility fallback. |
+| 142 | Produce native Android/iOS build and real-device evidence. | Pinned dependency/build receipt; Android plus iOS where build environment allows; app lifecycle, deep link, storage, haptics/sharing; real-device action/reconnect trace. |
+| 143 | Run cross-surface migration/security aggregate and close Ticket 14. | Fixed denominators; original Ticket 10/11/12/13 replay; Web/App/Battle Lab/workbench parity; credential/path/privacy scan; production blockers; Ticket 15 handoff. |
 
 ## Completion rule
 
-Ticket 14 is complete only at 11/11. A local HTML preview, a native semantic
+Ticket 14 is complete only at 16/16. A local HTML preview, a native semantic
 tree, a copied Expo source tree, or a passing static test cannot substitute for
 real browser and real-device evidence. Unsupported iOS build infrastructure is
 reported explicitly but does not weaken the Android real-device requirement or
