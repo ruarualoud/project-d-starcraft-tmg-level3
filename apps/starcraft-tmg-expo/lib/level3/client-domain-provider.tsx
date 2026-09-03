@@ -164,6 +164,9 @@ function createProductRuntime(): StarcraftTmgExpoClientRuntime {
     baseUrl: process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || "",
     enableCharacterPresentation: true,
     enableSourceLocalization: true,
+    // Slice 150 proves the Web session. Native cookie/auth persistence and
+    // device lifecycle acceptance remain intentionally deferred.
+    enableRoleAgentSession: web,
     allowHeadlessFallback: true,
   });
 }

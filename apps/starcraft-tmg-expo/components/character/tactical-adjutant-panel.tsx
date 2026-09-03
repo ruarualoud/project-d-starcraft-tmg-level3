@@ -1,11 +1,13 @@
 import { useIsFocused } from "@react-navigation/native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
@@ -18,6 +20,14 @@ import {
 } from "@/lib/level3/character-presentation-mount-runtime.mjs";
 import { useReducedMotion } from "@/lib/level3/use-reduced-motion";
 
+const AGENT_MODES = ["tutor", "opponent", "commentator", "companion"] as const;
+const MODE_INTENTS = {
+  tutor: ["explain", "chat"],
+  opponent: ["take_turn", "chat"],
+  commentator: ["commentate"],
+  companion: ["reflect", "chat"],
+} as const;
+
 function configuredAssetOrigin() {
   const configured = process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || "";
   if (configured) return configured;
@@ -27,12 +37,16 @@ function configuredAssetOrigin() {
 
 export function TacticalAdjutantPanel() {
   const { lang } = useI18n();
-  const { view, connection, refresh } = useLevel3ClientDomain();
+  const { view, connection, dispatch, refresh } = useLevel3ClientDomain();
   const routeFocused = useIsFocused();
   const reducedMotion = useReducedMotion();
   const [expanded, setExpanded] = useState(true);
   const [frame, setFrame] = useState<StarcraftTmgVisibleCharacterFrame | null>(null);
   const [assetFailedFor, setAssetFailedFor] = useState<string | null>(null);
+  const [selectedMode, setSelectedMode] = useState<(typeof AGENT_MODES)[number]>("companion");
+  const [selectedIntent, setSelectedIntent] = useState<string>("reflect");
+  const [draft, setDraft] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const playerRef = useRef(createStarcraftTmgVisiblePortraitPlayerV2());
   const assetRecoveryAttempt = useRef<{
     bindingHash: string;
@@ -40,11 +54,46 @@ export function TacticalAdjutantPanel() {
   } | null>(null);
   const projection = view.characterPresentation;
   const offlineSnapshot = view.characterOfflineSnapshot;
+  const roleAgent = view.roleAgentSession;
   const zh = lang === "zh";
   const active = routeFocused
     && expanded
     && connection.visible
     && connection.online;
+  const agentSessionActive = roleAgent?.lifecycleState === "active";
+  const agentBusy = roleAgent?.status === "sending" || submitting;
+  const agentReadOnly = roleAgent?.readOnly !== false;
+
+  useEffect(() => {
+    if (roleAgent?.mode && AGENT_MODES.includes(roleAgent.mode)) {
+      setSelectedMode(roleAgent.mode);
+    }
+  }, [roleAgent?.mode]);
+
+  async function runAgentIntent(intent: Parameters<typeof dispatch>[0]) {
+    setSubmitting(true);
+    try {
+      return await dispatch(intent);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function chooseMode(mode: (typeof AGENT_MODES)[number]) {
+    setSelectedMode(mode);
+    setSelectedIntent(MODE_INTENTS[mode][0]);
+  }
+
+  async function sendAgentMessage() {
+    const message = draft.trim();
+    if (!message || agentBusy || agentReadOnly) return;
+    const response = await dispatch({
+      type: "send_agent_message",
+      intent: selectedIntent as "chat" | "explain" | "take_turn" | "commentate" | "reflect",
+      message,
+    });
+    if (response.ok) setDraft("");
+  }
 
   useEffect(() => {
     const player = playerRef.current;
@@ -229,14 +278,211 @@ export function TacticalAdjutantPanel() {
             </View>
             <Text style={styles.boundary}>
               {zh
-                ? "当前仅播放服务端许可的 idle 帧；不调用模型、不改变规则或对战动作。"
-                : "Only the server-approved idle sequence plays here. No model call, Rules change, or gameplay action occurs."}
+                ? "头像只播放服务端许可帧；Agent 可请求建议或密封 Preview，但规则、确认与对战状态仍归房间服务。"
+                : "The portrait uses server-approved frames. The Agent may advise or request a sealed Preview; Rules, confirmation, and match state stay with the room service."}
             </Text>
             {projection?.releaseChannel === "development_internal" && (
               <Text style={styles.rights}>
                 {zh
                   ? "内部开发预览；衍生视觉尚未获准公开发布。"
                   : "Internal development preview; derived visuals are not cleared for public release."}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.agentConsole} testID="online-agent-console">
+            <View style={styles.agentConsoleHeader}>
+              <View style={styles.headerCopy}>
+                <Text style={styles.agentConsoleTitle}>
+                  {zh ? "在线副官会话" : "Online Adjutant session"}
+                </Text>
+                <Text style={styles.agentMeta}>
+                  {zh
+                    ? `状态 ${roleAgent?.status || "未挂载"} · Provider ${roleAgent?.provider?.state || "未知"}`
+                    : `Status ${roleAgent?.status || "not mounted"} · Provider ${roleAgent?.provider?.state || "unknown"}`}
+                </Text>
+              </View>
+              {(agentBusy || roleAgent?.status === "connecting") && (
+                <ActivityIndicator color="#d2ae59" size="small" />
+              )}
+            </View>
+
+            <View style={styles.statusRow}>
+              <StatusChip label={selectedMode} />
+              <StatusChip
+                label={roleAgent?.budget
+                  ? (zh
+                    ? `余量 ${roleAgent.budget.remainingUnits}/${roleAgent.budget.policy?.maxTotalUnits}`
+                    : `budget ${roleAgent.budget.remainingUnits}/${roleAgent.budget.policy?.maxTotalUnits}`)
+                  : (zh ? "预算待同步" : "budget pending")}
+              />
+              <StatusChip
+                label={roleAgent?.connectionEpoch
+                  ? `epoch ${roleAgent.connectionEpoch}`
+                  : (zh ? "未连接" : "disconnected")}
+              />
+            </View>
+
+            {!agentSessionActive ? (
+              <>
+                <Text style={styles.fieldLabel}>{zh ? "副官模式" : "Adjutant mode"}</Text>
+                <View style={styles.choiceRow}>
+                  {AGENT_MODES.map((mode) => (
+                    <ChoiceButton
+                      key={mode}
+                      active={selectedMode === mode}
+                      disabled={agentBusy || agentReadOnly}
+                      label={mode}
+                      onPress={() => chooseMode(mode)}
+                    />
+                  ))}
+                </View>
+                <ActionButton
+                  disabled={agentBusy || agentReadOnly || !roleAgent}
+                  label={zh ? "接通副官" : "Open session"}
+                  onPress={() => void runAgentIntent({
+                    type: "open_agent_session",
+                    mode: selectedMode,
+                  })}
+                />
+              </>
+            ) : (
+              <>
+                <Text style={styles.fieldLabel}>{zh ? "本轮意图" : "Turn intent"}</Text>
+                <View style={styles.choiceRow}>
+                  {MODE_INTENTS[selectedMode].map((intent) => (
+                    <ChoiceButton
+                      key={intent}
+                      active={selectedIntent === intent}
+                      disabled={agentBusy || agentReadOnly}
+                      label={intent}
+                      onPress={() => setSelectedIntent(intent)}
+                    />
+                  ))}
+                </View>
+
+                <View style={styles.transcript}>
+                  {roleAgent.messages.length ? roleAgent.messages.slice(-8).map((message) => (
+                    <View
+                      key={message.id}
+                      style={message.author === "agent"
+                        ? styles.agentMessage
+                        : styles.humanMessage}
+                    >
+                      <Text style={styles.messageAuthor}>
+                        {message.author === "agent"
+                          ? (zh ? "副官" : "ADJUTANT")
+                          : (zh ? "你" : "YOU")}
+                      </Text>
+                      <Text style={styles.messageText}>{message.text}</Text>
+                    </View>
+                  )) : (
+                    <Text style={styles.emptyTranscript}>
+                      {zh ? "会话已建立，发送第一个请求。" : "Session ready. Send the first request."}
+                    </Text>
+                  )}
+                </View>
+
+                {roleAgent.decision && (
+                  <View style={styles.decisionCard} testID="agent-decision-card">
+                    <Text style={styles.decisionTitle}>
+                      {zh ? "建议动作" : "Suggested action"} · {roleAgent.decision.candidateId}
+                    </Text>
+                    <Text style={styles.decisionText}>{roleAgent.decision.selectedReason}</Text>
+                    <Text style={styles.decisionRisk}>
+                      {zh ? "风险" : "Risk"}: {roleAgent.decision.risk}
+                    </Text>
+                    {roleAgent.decision.rejectedAlternatives?.slice(0, 3).map((alternative: Record<string, any>) => (
+                      <Text key={alternative.candidateId} style={styles.alternativeText}>
+                        ↳ {alternative.candidateId}: {alternative.reason}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+
+                {roleAgent.pendingConfirmation && (
+                  <View style={styles.confirmCard} testID="agent-human-confirmation">
+                    <Text style={styles.confirmTitle}>
+                      {zh ? "等待真人确认" : "Waiting for human confirmation"}
+                    </Text>
+                    <Text style={styles.confirmText}>
+                      {roleAgent.pendingConfirmation.candidateId} · {roleAgent.pendingConfirmation.actionType}
+                    </Text>
+                    <ActionButton
+                      disabled={agentBusy || agentReadOnly}
+                      label={zh ? "确认并提交房间" : "Confirm and apply"}
+                      onPress={() => void runAgentIntent({
+                        type: "confirm_agent_preview",
+                        previewId: roleAgent.pendingConfirmation?.previewId || "",
+                      })}
+                    />
+                  </View>
+                )}
+
+                <TextInput
+                  accessibilityLabel={zh ? "副官消息" : "Adjutant message"}
+                  editable={!agentBusy && !agentReadOnly}
+                  maxLength={8192}
+                  multiline
+                  onChangeText={setDraft}
+                  onSubmitEditing={() => void sendAgentMessage()}
+                  placeholder={zh ? "询问规则、局势，或让对手提出动作…" : "Ask about rules, position, or request an opponent move…"}
+                  placeholderTextColor="#73806e"
+                  style={styles.input}
+                  value={draft}
+                />
+                <View style={styles.actionRow}>
+                  <ActionButton
+                    disabled={!draft.trim() || agentBusy || agentReadOnly}
+                    label={zh ? "发送" : "Send"}
+                    onPress={() => void sendAgentMessage()}
+                  />
+                  {roleAgent.status === "sending" && (
+                    <ActionButton
+                      danger
+                      disabled={submitting || agentReadOnly}
+                      label={zh ? "取消生成" : "Cancel turn"}
+                      onPress={() => void runAgentIntent({ type: "cancel_agent_turn" })}
+                    />
+                  )}
+                  {roleAgent.status === "reconnect_required" && (
+                    <ActionButton
+                      disabled={submitting || agentReadOnly}
+                      label={zh ? "重新连接" : "Reconnect"}
+                      onPress={() => void runAgentIntent({ type: "reconnect_agent_session" })}
+                    />
+                  )}
+                  <ActionButton
+                    danger
+                    disabled={agentBusy || agentReadOnly}
+                    label={zh ? "结束会话" : "End session"}
+                    onPress={() => void runAgentIntent({ type: "end_agent_session" })}
+                  />
+                </View>
+              </>
+            )}
+
+            {roleAgent?.trace && (
+              <View style={styles.traceCard} testID="agent-harness-trace">
+                <Text style={styles.traceTitle}>HARNESS TRACE</Text>
+                <Text style={styles.traceText}>
+                  {roleAgent.trace.promptPack?.id || roleAgent.trace.promptPack?.name || "prompt-pack"}
+                  {" · "}{roleAgent.trace.toolCalls?.join(" → ") || "no tools"}
+                </Text>
+                <Text style={styles.traceText}>
+                  {zh ? "规则 Skill 引用" : "Rule Skill refs"}: {roleAgent.trace.ruleSkillRefs?.length || 0}
+                  {" · "}{zh ? "记忆引用" : "Memory refs"}: {roleAgent.trace.memoryRefs?.length || 0}
+                </Text>
+              </View>
+            )}
+
+            {roleAgent?.rejection && (
+              <Text accessibilityRole="alert" style={styles.errorText}>
+                {roleAgent.rejection.code === "provider_not_configured"
+                  ? (zh
+                    ? "尚未配置真实模型 Provider；Ticket 16 接入 BYOK 后即可调用。"
+                    : "No live Provider is configured. Ticket 16 will add secure BYOK execution.")
+                  : roleAgent.rejection.code}
               </Text>
             )}
           </View>
@@ -270,6 +516,54 @@ function StatusChip({ label }: { label: string }) {
   );
 }
 
+function ChoiceButton({
+  active,
+  disabled,
+  label,
+  onPress,
+}: {
+  active: boolean;
+  disabled: boolean;
+  label: string;
+  onPress(): void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active, disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={[styles.choiceButton, active && styles.choiceButtonActive, disabled && styles.disabled]}
+    >
+      <Text style={[styles.choiceText, active && styles.choiceTextActive]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function ActionButton({
+  danger = false,
+  disabled,
+  label,
+  onPress,
+}: {
+  danger?: boolean;
+  disabled: boolean;
+  label: string;
+  onPress(): void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={[styles.actionButton, danger && styles.dangerButton, disabled && styles.disabled]}
+    >
+      <Text style={styles.actionButtonText}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   panel: { borderRadius: 14, overflow: "hidden", backgroundColor: "#080f0b", borderWidth: 1, borderColor: "#52624a" },
   header: { minHeight: 52, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: "#101912" },
@@ -297,4 +591,38 @@ const styles = StyleSheet.create({
   chipText: { color: "#c8d7b7", fontSize: 10, fontWeight: "800" },
   boundary: { color: "#aeb9a4", fontSize: 11, lineHeight: 18, marginTop: 11 },
   rights: { color: "#d2ae59", fontSize: 10, lineHeight: 16, marginTop: 7 },
+  agentConsole: { width: "100%", borderTopWidth: 1, borderTopColor: "#354232", paddingTop: 14, gap: 10 },
+  agentConsoleHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  agentConsoleTitle: { color: "#f5f2df", fontSize: 15, fontWeight: "900" },
+  agentMeta: { color: "#9da994", fontSize: 10, marginTop: 3 },
+  fieldLabel: { color: "#a8bd7d", fontSize: 10, fontWeight: "900", letterSpacing: 0.8, marginTop: 2 },
+  choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  choiceButton: { minHeight: 34, justifyContent: "center", borderRadius: 8, paddingHorizontal: 11, borderWidth: 1, borderColor: "#4c6147", backgroundColor: "#101912" },
+  choiceButtonActive: { borderColor: "#d2ae59", backgroundColor: "#31301b" },
+  choiceText: { color: "#aeb9a4", fontSize: 11, fontWeight: "800" },
+  choiceTextActive: { color: "#f6dda0" },
+  transcript: { minHeight: 96, maxHeight: 320, padding: 10, gap: 8, borderWidth: 1, borderColor: "#354232", borderRadius: 10, backgroundColor: "#060b08" },
+  humanMessage: { alignSelf: "flex-end", maxWidth: "88%", padding: 9, borderRadius: 10, backgroundColor: "#243222" },
+  agentMessage: { alignSelf: "flex-start", maxWidth: "92%", padding: 9, borderRadius: 10, borderWidth: 1, borderColor: "#57664d", backgroundColor: "#111912" },
+  messageAuthor: { color: "#d2ae59", fontSize: 9, fontWeight: "900", marginBottom: 4 },
+  messageText: { color: "#e3ead8", fontSize: 12, lineHeight: 18 },
+  emptyTranscript: { color: "#73806e", fontSize: 11, textAlign: "center", marginVertical: 28 },
+  decisionCard: { gap: 5, borderLeftWidth: 3, borderLeftColor: "#6f9364", padding: 10, backgroundColor: "#101912" },
+  decisionTitle: { color: "#e6efd8", fontSize: 12, fontWeight: "900" },
+  decisionText: { color: "#c4d0ba", fontSize: 11, lineHeight: 17 },
+  decisionRisk: { color: "#e5bd6a", fontSize: 11, lineHeight: 17 },
+  alternativeText: { color: "#8e9c87", fontSize: 10, lineHeight: 15 },
+  confirmCard: { gap: 7, borderWidth: 1, borderColor: "#d2ae59", borderRadius: 10, padding: 11, backgroundColor: "#282313" },
+  confirmTitle: { color: "#f6dda0", fontSize: 12, fontWeight: "900" },
+  confirmText: { color: "#d8ceb0", fontSize: 11 },
+  input: { minHeight: 72, maxHeight: 150, borderWidth: 1, borderColor: "#52624a", borderRadius: 10, padding: 10, color: "#eef4df", backgroundColor: "#0b120d", textAlignVertical: "top", fontSize: 12, lineHeight: 18 },
+  actionRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  actionButton: { minHeight: 38, justifyContent: "center", alignItems: "center", borderRadius: 8, paddingHorizontal: 14, backgroundColor: "#40563b", borderWidth: 1, borderColor: "#70805e" },
+  dangerButton: { backgroundColor: "#4b2925", borderColor: "#8a5049" },
+  actionButtonText: { color: "#f5f2df", fontSize: 11, fontWeight: "900" },
+  disabled: { opacity: 0.42 },
+  traceCard: { gap: 4, padding: 9, borderRadius: 8, backgroundColor: "#0d1410", borderWidth: 1, borderColor: "#2d3a2b" },
+  traceTitle: { color: "#829b76", fontSize: 9, fontWeight: "900", letterSpacing: 1.1 },
+  traceText: { color: "#92a08c", fontSize: 10, lineHeight: 15 },
+  errorText: { color: "#ef9a8c", fontSize: 11, lineHeight: 17 },
 });

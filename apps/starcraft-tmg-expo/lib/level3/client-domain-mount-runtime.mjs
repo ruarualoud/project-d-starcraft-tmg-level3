@@ -16,6 +16,12 @@ import {
 import {
   createHttpStarcraftTmgSourceProjectionAdapterV1,
 } from "../../../../packages/client-domain/source-projection-adapters-v1.mjs";
+import {
+  createHttpStarcraftTmgOnlineAgentClientTransportV1,
+} from "../../../../packages/client-domain/online-agent-transport-adapters-v1.mjs";
+import {
+  createStarcraftTmgRoleAgentSessionClientV1,
+} from "../../../../packages/client-domain/role-agent-session-client-v1.mjs";
 
 export const STARCRAFT_TMG_EXPO_CLIENT_MOUNT_VERSION =
   "starcraft_tmg_expo_client_mount_v1";
@@ -192,7 +198,7 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
     namespace: options.projectionNamespace,
     maxBytes: options.maxProjectionBytes,
   });
-  const clientDomain = createStarcraftTmgClientDomain({
+  const baseClientDomain = createStarcraftTmgClientDomain({
     transport,
     projectionStore,
     lifecycle: lifecycleMount.lifecycle,
@@ -202,6 +208,23 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
     now: options.now,
     createId: options.createId,
   });
+  const roleAgentSessionEnabled = options.enableRoleAgentSession === true;
+  const roleAgentTransport = roleAgentSessionEnabled
+    ? createHttpStarcraftTmgOnlineAgentClientTransportV1({
+      baseUrl,
+      fetchImpl: options.fetchImpl,
+      apiPrefix: options.agentApiPrefix,
+      timeoutMs: options.agentTimeoutMs,
+    })
+    : null;
+  const clientDomain = roleAgentSessionEnabled
+    ? createStarcraftTmgRoleAgentSessionClientV1({
+      clientDomain: baseClientDomain,
+      transport: roleAgentTransport,
+      now: options.now,
+      createId: options.createId,
+    })
+    : baseClientDomain;
 
   return Object.freeze({
     schemaVersion: STARCRAFT_TMG_EXPO_CLIENT_MOUNT_VERSION,
@@ -216,6 +239,9 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
     projectionStoreKind: "async_storage_viewer_projection_only",
     sourceProjectionKind: sourceLocalizationEnabled
       ? "http_metadata_only_with_async_storage_offline_cache"
+      : "not_mounted",
+    roleAgentSessionKind: roleAgentSessionEnabled
+      ? "authenticated_http_opt_in"
       : "not_mounted",
     lifecycleKind: lifecycleMount.lifecycleKind,
     clientDomain,

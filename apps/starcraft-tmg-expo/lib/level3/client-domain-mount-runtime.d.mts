@@ -143,6 +143,42 @@ export interface StarcraftTmgClientView {
     authoritativeOutcomeUncertain: boolean;
     [key: string]: any;
   };
+  hostViewHash?: string;
+  roleAgentSession?: {
+    schemaVersion: string;
+    enabled: true;
+    agentRevision: number;
+    status: string;
+    mode: "tutor" | "opponent" | "commentator" | "companion";
+    sessionRef: string | null;
+    sessionBindingHash: string | null;
+    lifecycleState: string | null;
+    connectionEpoch: number | null;
+    provider: { state?: string; liveProviderClaim?: boolean; [key: string]: unknown } | null;
+    budget: Record<string, any> | null;
+    currentTurn: Record<string, any> | null;
+    messages: ReadonlyArray<{
+      id: string;
+      author: "human" | "agent";
+      text: string;
+      visualCue?: string | null;
+      occurredAt: string;
+    }>;
+    decision: Record<string, any> | null;
+    pendingConfirmation: Record<string, any> | null;
+    trace: Record<string, any> | null;
+    rejection: { code: string; details?: Record<string, any> } | null;
+    readOnly: boolean;
+    requiresExplicitReconnect: boolean;
+    capabilities: {
+      modes: ReadonlyArray<"tutor" | "opponent" | "commentator" | "companion">;
+      intentsByMode: Record<string, ReadonlyArray<string>>;
+      [key: string]: unknown;
+    };
+    projectionHash: string;
+    trainingTruth: false;
+    [key: string]: any;
+  };
   viewHash: string;
   trainingTruth: false;
 }
@@ -162,7 +198,14 @@ export type StarcraftTmgClientIntent =
   | { type: "select_character_persona"; personaWorldbookId: string }
   | { type: "set_character_spoiler_access"; enabled: boolean }
   | { type: "refresh_source_localization" }
-  | { type: "read_historical_rules" };
+  | { type: "read_historical_rules" }
+  | { type: "open_agent_session"; mode: "tutor" | "opponent" | "commentator" | "companion" }
+  | { type: "refresh_agent_session" }
+  | { type: "send_agent_message"; intent: "chat" | "explain" | "take_turn" | "commentate" | "reflect"; message: string }
+  | { type: "cancel_agent_turn" }
+  | { type: "reconnect_agent_session" }
+  | { type: "end_agent_session" }
+  | { type: "confirm_agent_preview"; previewId: string };
 
 export interface StarcraftTmgClientResult {
   ok: boolean;
@@ -218,6 +261,7 @@ export interface StarcraftTmgExpoClientRuntime {
   transportKind: string;
   projectionStoreKind: string;
   sourceProjectionKind: string;
+  roleAgentSessionKind: string;
   lifecycleKind: string;
   clientDomain: StarcraftTmgClientDomain;
   trainingTruth: false;
@@ -255,6 +299,9 @@ export function createStarcraftTmgExpoClientRuntime(options: {
   allowHeadlessFallback?: boolean;
   enableCharacterPresentation?: boolean;
   enableSourceLocalization?: boolean;
+  enableRoleAgentSession?: boolean;
+  agentApiPrefix?: string;
+  agentTimeoutMs?: number;
   now?: () => string;
   createId?: (prefix: string) => string;
 }): StarcraftTmgExpoClientRuntime;

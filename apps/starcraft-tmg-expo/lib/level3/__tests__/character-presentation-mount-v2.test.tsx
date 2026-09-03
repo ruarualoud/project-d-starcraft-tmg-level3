@@ -24,6 +24,8 @@ vi.mock("react-native-web", () => ({
   Text: "Text",
   Pressable: "Pressable",
   Image: "Image",
+  ActivityIndicator: "ActivityIndicator",
+  TextInput: "TextInput",
   Platform: { OS: "web" },
   StyleSheet: {
     absoluteFillObject: {},
@@ -122,6 +124,53 @@ describe("Slice 133 tracked Expo character mount", () => {
     expect(text).toContain("Sarah Kerrigan");
     expect(text).toContain("减少动态");
     expect(renderer!.root.findAllByType("Image" as any)).toHaveLength(1);
+    await act(async () => renderer!.unmount());
+  });
+
+  it("renders online Agent status, budget, decision, human confirmation and safe Harness trace", async () => {
+    context.view.roleAgentSession = {
+      status: "waiting_confirmation",
+      mode: "opponent",
+      lifecycleState: "active",
+      connectionEpoch: 3,
+      provider: { state: "configured", liveProviderClaim: false },
+      budget: { remainingUnits: 720, policy: { maxTotalUnits: 1000 } },
+      messages: [
+        { id: "human-1", author: "human", text: "提出一个合法动作" },
+        { id: "agent-1", author: "agent", text: "我建议推进当前单位。" },
+      ],
+      decision: {
+        candidateId: "candidate-1",
+        selectedReason: "保持主动权。",
+        risk: "可能受到反击。",
+        rejectedAlternatives: [{ candidateId: "candidate-2", reason: "位置较差。" }],
+      },
+      pendingConfirmation: {
+        previewId: "sc-preview-test-0001",
+        candidateId: "candidate-1",
+        actionType: "move",
+      },
+      trace: {
+        promptPack: { id: "starcraft-tmg.opponent.v1" },
+        toolCalls: ["read_board_state", "preview_action"],
+        ruleSkillRefs: [{ id: "turn-flow" }],
+        memoryRefs: [],
+      },
+      rejection: null,
+      readOnly: false,
+    };
+    let renderer: ReactTestRenderer;
+    await act(async () => {
+      renderer = create(<TacticalAdjutantPanel />);
+    });
+    const text = allText(renderer!.toJSON());
+    expect(text).toContain("在线副官会话");
+    expect(text).toContain("余量 720/1000");
+    expect(text).toContain("等待真人确认");
+    expect(text).toContain("可能受到反击");
+    expect(text).toContain("HARNESS TRACE");
+    expect(renderer!.root.findAllByProps({ testID: "agent-human-confirmation" })).toHaveLength(1);
+    expect(renderer!.root.findAllByProps({ testID: "agent-harness-trace" })).toHaveLength(1);
     await act(async () => renderer!.unmount());
   });
 

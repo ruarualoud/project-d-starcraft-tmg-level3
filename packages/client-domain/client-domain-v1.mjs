@@ -37,6 +37,31 @@ export const STARCRAFT_TMG_CLIENT_DOMAIN_INTERFACE = Object.freeze([
   "subscribe",
 ]);
 
+// The role-Agent extension deliberately preserves the four-operation Client
+// Domain interface. Its one privileged handoff is kept out of the returned
+// object and is reachable only by module identity. The Room Runtime still
+// authenticates the opaque Preview token and owns Confirm/Apply authority.
+const ROLE_AGENT_PREVIEW_INGRESS = new WeakMap();
+const ROLE_AGENT_PREVIEW_KEYS = Object.freeze([
+  "schemaVersion", "previewId", "previewToken", "previewContentHash",
+  "roomId", "matchBindingHash", "expectedStateRevision", "preStateHash",
+  "legalSpaceHash", "candidateId", "candidateHash", "proposal",
+  "proposalHash", "action", "result", "confirmationPolicy",
+  "confirmationRequired", "confirmationOwner", "modelMayConfirm",
+  "modelMayApply", "trainingTruth", "previewProjectionHash",
+]);
+
+export function confirmStarcraftTmgTrustedRoleAgentPreviewV1(
+  clientDomain,
+  input = {},
+) {
+  const ingress = ROLE_AGENT_PREVIEW_INGRESS.get(clientDomain);
+  if (!ingress) {
+    throw new TypeError("Client Domain does not expose the trusted role-Agent Preview ingress");
+  }
+  return ingress(input);
+}
+
 const SURFACES = new Set(["expo_web", "expo_native", "battle_lab", "verifier"]);
 const ACCESS_KINDS = new Set(["invite", "recovery"]);
 const INTENT_KEYS = Object.freeze({
@@ -2856,6 +2881,103 @@ export function createStarcraftTmgClientDomain(options = {}) {
     }
   }
 
+  async function confirmTrustedRoleAgentPreview(input = {}) {
+    const blocked = ensureOperational({ mutation: true });
+    if (blocked) return rejection(blocked, { mutationAllowed: false });
+    if (!object(input)) return rejection("AGENT_PREVIEW_INPUT_INVALID");
+    try {
+      assertExactKeys(input, ["preview", "expectedPreviewId"],
+        "role agent preview ingress");
+    } catch (error) {
+      return rejection(error.code || "AGENT_PREVIEW_INPUT_INVALID");
+    }
+    const preview = input.preview;
+    const expectedPreviewId = String(input.expectedPreviewId || "").trim();
+    if (!object(preview)
+      || !hasExactKeys(preview, ROLE_AGENT_PREVIEW_KEYS)
+      || !expectedPreviewId
+      || preview.previewId !== expectedPreviewId) {
+      return rejection("AGENT_PREVIEW_NOT_CURRENT");
+    }
+    if (!internal.legalSpace
+      || Number(internal.legalSpace.stateRevision) !== currentStateRevision()
+      || internal.legalSpace.legalSpaceHash !== preview.legalSpaceHash) {
+      const loaded = await loadLegalSpace();
+      if (!loaded.ok) return loaded;
+    }
+    const identity = projectionAuthorityIdentity(
+      internal.roomProjection,
+      binding?.roomId,
+    );
+    const { previewProjectionHash, ...projectionCore } = preview;
+    const expectedEntry = expectedPreviewEntry(
+      internal.legalSpace,
+      preview.proposal,
+    );
+    const token = String(preview.previewToken || "");
+    const contentHash = String(preview.previewContentHash || "");
+    const projectionValid = identity
+      && expectedEntry
+      && preview.schemaVersion
+        === "starcraft_tmg_online_role_turn_runtime_v1.preview-projection"
+      && previewProjectionHash === contractHash(projectionCore)
+      && /^sc-preview-[A-Za-z0-9-]{8,128}$/u.test(String(preview.previewId || ""))
+      && token.startsWith(`${preview.previewId}.`)
+      && validContractHash(contentHash)
+      && preview.roomId === identity.roomId
+      && preview.matchBindingHash === identity.matchBindingHash
+      && preview.expectedStateRevision === identity.stateRevision
+      && preview.preStateHash === identity.stateHash
+      && preview.legalSpaceHash === internal.legalSpace.legalSpaceHash
+      && validContractHash(String(preview.candidateHash || ""))
+      && preview.proposalHash === contractHash(preview.proposal)
+      && (preview.proposal.kind !== "finite"
+        || sameContract(preview.action, expectedEntry.action))
+      && object(preview.result)
+      && object(preview.confirmationPolicy)
+      && preview.confirmationPolicy.requiresExplicitHuman === true
+      && preview.confirmationRequired === true
+      && preview.confirmationOwner === "human_outside_agent_runtime"
+      && preview.modelMayConfirm === false
+      && preview.modelMayApply === false
+      && preview.trainingTruth === false;
+    if (!projectionValid) {
+      return rejection("AGENT_PREVIEW_RESPONSE_INVALID");
+    }
+    if (preview.proposal.kind === "finite"
+      && preview.confirmationPolicy.baseClass !== expectedEntry.confirmationClass) {
+      return rejection("AGENT_PREVIEW_RESPONSE_INVALID");
+    }
+    if (preview.proposal.kind === "parameterized"
+      && (preview.action.actionType !== expectedEntry.actionType
+        || preview.action.sideKey !== identity.sideKey
+        || (expectedEntry.pieceId !== undefined
+          && preview.action.pieceId !== expectedEntry.pieceId))) {
+      return rejection("AGENT_PREVIEW_RESPONSE_INVALID");
+    }
+
+    // This private shape contains only the values needed by the existing
+    // Confirm -> fenced Apply receipt verifier. It is never accepted as room
+    // authority; the server verifies the opaque token and content hash again.
+    internal.pendingPreview = clone({
+      previewId: preview.previewId,
+      previewToken: token,
+      previewSeal: { contentHash },
+      core: {
+        legalSpaceHash: preview.legalSpaceHash,
+        proposal: preview.proposal,
+        proposalHash: preview.proposalHash,
+        action: preview.action,
+        result: preview.result,
+        confirmationPolicy: preview.confirmationPolicy,
+      },
+    });
+    return confirmAndApply({
+      type: "confirm_and_apply_preview",
+      previewId: preview.previewId,
+    });
+  }
+
   async function readReplay() {
     const blocked = ensureOperational();
     if (blocked) {
@@ -3386,5 +3508,8 @@ export function createStarcraftTmgClientDomain(options = {}) {
 
   if (sourceLocalizationEnabled) bindLifecycle();
   currentView = buildView();
-  return Object.freeze({ bootstrap, read, dispatch, subscribe });
+  const clientDomain = Object.freeze({ bootstrap, read, dispatch, subscribe });
+  ROLE_AGENT_PREVIEW_INGRESS.set(clientDomain, (input) =>
+    enqueue(() => confirmTrustedRoleAgentPreview(input)));
+  return clientDomain;
 }
