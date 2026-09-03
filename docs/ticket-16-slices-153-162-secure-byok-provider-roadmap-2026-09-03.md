@@ -1,7 +1,7 @@
 # Ticket 16 — secure BYOK and direct Provider roadmap
 
 Date: 2026-09-03  
-Status: active; Slices 153–156 complete, 4/10
+Status: active; Slices 153–157 complete, 5/10
 Project progress before this Ticket: 14/22 Tickets complete; Ticket 14 device
 acceptance remains deferred  
 Source refresh: not performed
@@ -109,7 +109,7 @@ call needs a new same-user approval and a reattached credential.
 | 154 | **Complete.** Authenticated consent, attachment lifecycle and dedicated secure ingress. | Principal/session/profile/budget binding; one-use expiry nonce; Buffer-only synthetic-key path with zeroing; status/detach/revocation/concurrency tests; focused 27/27, report `30bf5825...c0fd`; no user key or Provider call. |
 | 155 | **Complete.** Child-process credential Worker and IPC isolation. | Scrubbed environment/stdio; parent and child buffer zeroing; per-attachment process; crash/detach kill; no restart; MTL scheduling lineage; focused 25/25 with 14 actual children, report `8749348f...faf5`; no user key or Provider call. |
 | 156 | **Complete.** Provider registry, egress allowlist and bounded transport. | Server-owned exact host/port/path/model; all-answer public DNS check plus connection pin; verified TLS/no redirect/proxy/compression; body/header/time bounds; one attempt; combined credential/egress child; focused 40/40, report `732d3a59...801e`; no live call. |
-| 157 | Common attempt-store contract and SQLite WAL Adapter. | Non-secret schema; intent-before-egress; atomic budget reservation/settlement; idempotency/CAS; restart replay. |
+| 157 | **Complete.** Common attempt-store contract and SQLite WAL Adapter. | Non-secret hash-only identities; intent/reservation/committed-dispatch before egress; atomic budget settlement; stable idempotency/CAS; restart replay; focused 45/45 across 43 real SQLite files and three reopens, report `84e579bc...264a5`; no Provider call. |
 | 158 | PostgreSQL Adapter parity and ambiguous-attempt recovery. | Same conformance suite; concurrent reservations; crash windows; explicit retry approval; lost-key reattach. |
 | 159 | Ticket 15 Gateway/prompt/provider receipt integration. | Real Worker behind `complete`; current prompt/profile resolution; abort/budget/fence semantics; safe model/usage/cost receipt. |
 | 160 | Web and Battle Lab BYOK product flow. | Consent disclosure; Provider/model/budget selection; password input; attached/missing/error/detached states; no cache/log persistence. |
@@ -214,3 +214,26 @@ never retries without explicit same-user approval.
 - No actual child performed DNS/HTTPS. No user key, live Provider call, game
   source refresh, Skill/DSH/MuZero/self-play/Memory/training work occurred.
   Slice 157 owns the common attempt-store contract and SQLite WAL Adapter.
+
+## Slice 157 fixed evidence
+
+- The common twelve-method `starcraft_tmg_provider_attempt_store_v1` contract
+  freezes budget/attempt revision CAS and original-result idempotency for both
+  SQLite and the Slice 158 PostgreSQL Adapter.
+- File-backed SQLite requires WAL, FULL synchronous writes, foreign keys,
+  strict tables, `BEGIN IMMEDIATE` and startup integrity checks.
+- Consent, bounded intent and maximum budget reservation commit before a
+  separate dispatch commit grants egress authority. Terminal usage, charge,
+  remaining budget, safe receipt hash and audit event settle atomically.
+- Restart turns reserved-only work into zero-charge
+  `abandoned_before_egress`; dispatched work becomes full-reservation-charge
+  `ambiguous`, blocks unrelated work and requires a trusted service-validated
+  same-user approval hash plus a fresh credential attachment for its one
+  explicit retry lineage; this store binds but does not issue those receipts.
+- Behavior verifier: 45/45 using 43 real temporary SQLite files and three
+  close/reopen sequences. Fixed cumulative denominator is 344 assertions.
+- Contract hash: `f86c53aac9c132f9acd4c70bcf4c5294d8b9be5cc9c48f60c40d85ad4b8e491f`.
+- Slice report hash: `84e579bcd924de42ec2e7be2a2a130561ee2d718782ff8b08623f403274264a5`.
+- No Provider transport, user credential, source refresh, PostgreSQL, Skill,
+  DSH, MuZero, self-play, Memory write or training operation occurred. Slice
+  158 owns PostgreSQL parity and full concurrent recovery composition.
