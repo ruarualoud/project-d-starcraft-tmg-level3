@@ -55,6 +55,7 @@ export function BattleWorkbenchReadPanel({
   onThreatMode?: (mode: WorkbenchThreatMode) => void;
   onThreatWeapon?: (weaponId: string | null) => void;
 }) {
+  const [probabilityOpen, setProbabilityOpen] = React.useState(false);
   if (!snapshot) {
     return <Text style={styles.empty}>{zh ? "正在读取当前修订的作战工作台…" : "Loading the current-revision battle workbench…"}</Text>;
   }
@@ -68,6 +69,7 @@ export function BattleWorkbenchReadPanel({
       || snapshot.units?.find((unit: any) => unit.id === entry.unitId)
         ?.models?.some((model: any) => model.id === selectedPieceId)
     ));
+    const probabilityRows = snapshot.probability?.rows?.filter((entry: any) => entry.attackerUnitId === selectedUnit?.unitId) || [];
     const modes: Array<[WorkbenchThreatMode, string]> = [
       ["stationary_fire", zh ? "原地射击" : "Stationary"],
       ["move_then_fire", zh ? "走打" : "Move + fire"],
@@ -104,6 +106,10 @@ export function BattleWorkbenchReadPanel({
           <Text style={styles.subtitle}>{zh ? "覆盖依赖" : "Coverage dependencies"}</Text>
           {Object.entries(threat.dependencies || {}).map(([key, entry]) => <Text key={key} style={styles.row}>• {key}: {value(entry)}</Text>)}
         </View>
+        <Pressable onPress={() => setProbabilityOpen((value) => !value)} style={styles.sheetButton}>
+          <Text style={styles.choiceText}>{zh ? "对抗概率" : "Matchup probability"}</Text>
+        </Pressable>
+        {probabilityOpen && <ProbabilitySheet rows={probabilityRows} snapshot={snapshot} zh={zh} />}
       </ScrollView>
     );
   }
@@ -141,6 +147,16 @@ export function BattleWorkbenchReadPanel({
           {(unit.weapons || []).map((entry: any) => <Text key={entry.id} style={styles.row}>• {entry.name} · range {value(entry.range)} · hit {value(entry.hit)} · dmg {value(entry.dmg)}</Text>)}
           {(unit.abilities || []).map((entry: any, index: number) => <Text key={entry.id || index} style={styles.row}>• {value(entry.name || entry.id || entry.effect)}</Text>)}
         </View>
+        <Pressable onPress={() => setProbabilityOpen((value) => !value)} style={styles.sheetButton}>
+          <Text style={styles.choiceText}>{zh ? "打开对抗概率" : "Open matchup probability"}</Text>
+        </Pressable>
+        {probabilityOpen && (
+          <ProbabilitySheet
+            rows={(snapshot.probability?.rows || []).filter((entry: any) => entry.attackerUnitId === unit.id)}
+            snapshot={snapshot}
+            zh={zh}
+          />
+        )}
         <Text style={styles.boundary}>Viewer-scoped authoritative projection · r{value(snapshot.stateRevision)} · client mutation disabled</Text>
       </ScrollView>
     );
@@ -173,6 +189,26 @@ export function BattleWorkbenchReadPanel({
   );
 }
 
+function ProbabilitySheet({ rows, snapshot, zh }: { rows: any[]; snapshot: Record<string, any>; zh: boolean }) {
+  const unitNames = new Map((snapshot.units || []).map((unit: any) => [unit.id, unit.name]));
+  return (
+    <View style={styles.sheet}>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{zh ? "当前规则概率" : "Current-rules probability"}</Text>
+        <StatusPill status={value(snapshot.probability?.coverage, "not_loaded")} />
+      </View>
+      {rows.slice(0, 16).map((entry: any) => (
+        <View key={entry.queryId} style={styles.probabilityRow}>
+          <Text style={styles.row}>{entry.weaponName} → {value(unitNames.get(entry.targetUnitId), entry.targetUnitId)}</Text>
+          <Text style={styles.meta}>E[dmg] {Number(entry.result.expectedDamage || 0).toFixed(2)} · P(dmg) {(100 * Number(entry.result.probabilityAtLeastOneDamage || 0)).toFixed(1)}% · casualty {entry.result.casualtyProbability === null ? "conditional" : `${(100 * entry.result.casualtyProbability).toFixed(1)}%`} · {entry.coverage}</Text>
+        </View>
+      ))}
+      {!rows.length && <Text style={styles.muted}>{zh ? "当前选择没有兼容目标/武器分布。" : "No compatible target/weapon distribution for this selection."}</Text>}
+      <Text style={styles.boundary}>Exact finite D6 math under listed assumptions; unresolved effects remain partial. No dice are rolled.</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   scroll: { maxHeight: 610 },
   card: { borderRadius: 10, padding: 11, marginBottom: 8, backgroundColor: "#0f172a", borderWidth: 1, borderColor: "#334155", gap: 7 },
@@ -192,5 +228,8 @@ const styles = StyleSheet.create({
   choice: { minHeight: 40, justifyContent: "center", paddingHorizontal: 9, borderRadius: 7, borderWidth: 1, borderColor: "#475569", backgroundColor: "#172554" },
   choiceActive: { borderColor: "#22d3ee", backgroundColor: "#164e63" },
   choiceText: { color: "#f8fafc", fontSize: 10, fontWeight: "800" },
+  sheetButton: { minHeight: 44, justifyContent: "center", alignItems: "center", marginBottom: 8, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: "#a78bfa", backgroundColor: "#312e81" },
+  sheet: { borderRadius: 10, padding: 11, marginBottom: 8, backgroundColor: "#1e1b4b", borderWidth: 1, borderColor: "#a78bfa", gap: 7 },
+  probabilityRow: { borderTopWidth: 1, borderTopColor: "#3730a3", paddingTop: 7, gap: 3 },
   boundary: { color: "#94a3b8", fontSize: 10, lineHeight: 16 },
 });

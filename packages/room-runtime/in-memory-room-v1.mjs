@@ -1205,6 +1205,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       roomProjection: projection,
       legalSpace: currentLegalSpace,
       includeThreat: true,
+      includeProbability: true,
     });
     return deepFreeze({ ok: true, snapshot });
   }

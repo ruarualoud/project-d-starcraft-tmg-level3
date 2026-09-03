@@ -400,6 +400,19 @@ function workbenchCard(title, lines = []) {
   ]);
 }
 
+function probabilityCards(workbench, unitId) {
+  const names = new Map((workbench?.units || []).map((unit) => [unit.id, unit.name]));
+  const rows = (workbench?.probability?.rows || []).filter((entry) => entry.attackerUnitId === unitId);
+  return rows.slice(0, 16).map((entry) => workbenchCard(
+    `${entry.weaponName} → ${names.get(entry.targetUnitId) || entry.targetUnitId}`,
+    [
+      `E[dmg] ${Number(entry.result.expectedDamage || 0).toFixed(2)} · P(dmg) ${(100 * Number(entry.result.probabilityAtLeastOneDamage || 0)).toFixed(1)}%`,
+      `casualty ${entry.result.casualtyProbability === null ? "conditional" : `${(100 * entry.result.casualtyProbability).toFixed(1)}%`} · ${entry.coverage}`,
+      `ChanceTicket ${entry.result.chanceTicket.totalDice}D6 · math ${entry.result.mathematicalCoverage} · no roll`,
+    ],
+  ));
+}
+
 function renderWorkbench(view) {
   const workbench = view.workbench;
   const selectedModel = view.battlefield.models.find((model) => model.id === selectedModelId);
@@ -426,6 +439,11 @@ function renderWorkbench(view) {
       `weapons ${(unit.weapons || []).map((entry) => `${entry.name} R${text(entry.range)}`).join(", ") || "not projected"}`,
       `upgrades ${(unit.upgrades || []).filter((entry) => entry.selected).map((entry) => entry.name).join(", ") || "none projected"}`,
     ]),
+    workbenchCard("Current-rules matchup probability", [
+      `${workbench?.probability?.coverage || "not loaded"} · ${(workbench?.probability?.rows || []).length} matrix rows`,
+      "Finite D6 distributions only; unresolved effects stay partial and no chance is rolled.",
+    ]),
+    ...probabilityCards(workbench, unit.id),
   ] : [workbenchCard("No unit selected", ["Select a visible model to inspect its viewer-scoped live characteristics."])]);
   const scenario = workbench?.scenario;
   replaceChildren(el["workbench-status"], workbench ? [

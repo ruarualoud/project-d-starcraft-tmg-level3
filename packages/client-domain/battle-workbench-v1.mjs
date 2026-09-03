@@ -1,5 +1,6 @@
 import { hashStarcraftTmgClientContract } from "./portable-contract-hash-v1.mjs";
 import { projectStarcraftTmgThreatWorkbenchV1 } from "./battle-workbench-threat-v1.mjs";
+import { projectStarcraftTmgProbabilityWorkbenchV1 } from "./battle-workbench-probability-v1.mjs";
 
 export const STARCRAFT_TMG_BATTLE_WORKBENCH_VERSION =
   "starcraft_tmg_battle_workbench_snapshot_v1";
@@ -38,6 +39,11 @@ function stringRows(value) {
     ? value.map((entry) => text(object(entry) ? entry.name ?? entry.id ?? entry.effect : entry))
       .filter(Boolean)
     : [];
+}
+
+function tokenRows(value) {
+  const entries = Array.isArray(value) ? stringRows(value) : [text(value)].filter(Boolean);
+  return [...new Set(entries.flatMap((entry) => entry.split(",").map((token) => token.trim()).filter(Boolean)))];
 }
 
 function weaponRows(piece) {
@@ -143,8 +149,8 @@ function unitRows(state) {
       totalDurability,
       remainingDurability: totalDurability === null ? null : Math.max(0, totalDurability - damage),
       stats: object(piece.stats) ? clone(piece.stats) : {},
-      tags: stringRows(piece.tags).concat(text(piece.tags) && !Array.isArray(piece.tags) ? [text(piece.tags)] : []),
-      keywords: stringRows(piece.keywords).concat(text(piece.keywords) && !Array.isArray(piece.keywords) ? [text(piece.keywords)] : []),
+      tags: tokenRows(piece.tags),
+      keywords: tokenRows(piece.keywords),
       statuses: stringRows(piece.statuses),
       upgrades: upgradeRows(piece),
       selectedUpgrades: rows(piece.selectedUpgrades).map((entry) => clone(entry)),
@@ -231,6 +237,9 @@ function snapshotCore(input) {
         legalSpace: input.legalSpace,
       })
     : placeholder("starcraft_tmg_threat_workbench_v1", "slice_138_not_loaded"));
+  const probability = clone(input.probability) || (input.includeProbability === true
+    ? projectStarcraftTmgProbabilityWorkbenchV1({ roomProjection: projection, units })
+    : placeholder("starcraft_tmg_probability_workbench_v1", "slice_139_not_loaded"));
   return {
     schemaVersion: STARCRAFT_TMG_BATTLE_WORKBENCH_VERSION,
     roomId: text(room.roomId) || null,
@@ -244,7 +253,7 @@ function snapshotCore(input) {
     deployment,
     scoreboard: scoreView(state),
     threat,
-    probability: clone(input.probability) || placeholder("starcraft_tmg_probability_workbench_v1", "slice_139_not_loaded"),
+    probability,
     tokenMarkerActions: clone(input.tokenMarkerActions)
       || placeholder("starcraft_tmg_token_marker_palette_v1", "slice_140_not_loaded"),
     scoreForecast: clone(input.scoreForecast)
@@ -257,7 +266,7 @@ function snapshotCore(input) {
       deployment: coverageEntry("exact", ["viewer_projection.pieces.location"]),
       score: coverageEntry("exact", ["viewer_projection.scores"]),
       threat: coverageEntry(threat.coverage || "not_loaded", threat.sourceActionRefs || []),
-      probability: coverageEntry(input.probability?.coverage || "not_loaded"),
+      probability: coverageEntry(probability.coverage || "not_loaded", probability.matrix || []),
       markers: coverageEntry(input.tokenMarkerActions?.coverage || "not_loaded"),
       rules: coverageEntry(input.rulesQuickView?.coverage || "not_loaded"),
     },
