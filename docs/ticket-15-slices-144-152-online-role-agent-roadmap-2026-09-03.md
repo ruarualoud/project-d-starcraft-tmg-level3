@@ -1,0 +1,68 @@
+# Ticket 15 — online role-Agent session roadmap
+
+Date: 2026-09-03
+Status: active; Slice 144 complete, 1/9 complete
+Project progress: 13/22 Tickets complete; Ticket 14 is 15/16 with device evidence deferred
+Source refresh: not performed
+
+## Outcome
+
+Ticket 15 turns the Ticket 13 character/session contracts and Ticket 14 Web
+surfaces into real room-connected online Agent sessions. It does not own
+Provider credentials, Rules, room state, human confirmation, Skill generation
+or training truth.
+
+The four initial modes are Tutor, Opponent, Commentator and Companion. They are
+four fixed security profiles, not four copies of one permissive chat session.
+New modes require a future versioned capability profile; arbitrary client mode
+names fail closed.
+
+## Existing baseline and migration
+
+The repository already contains reusable CharacterPackage, worldbook,
+RoleSkillPack, prompt assembly, capability, dynamic portrait, process-memory
+session, HTTP and injected OpenAI-compatible transport code. Those files are
+Ticket 13 evidence, not a Ticket 15 product runtime.
+
+The V1 session currently receives raw BYOK material, keeps credentials and seat
+tokens in process maps, has no supervisor budget/cancel/single-flight state and
+is not mounted in Client Domain, Expo or Battle Lab. Ticket 15 therefore wraps
+the stable character contracts behind a new versioned online supervisor. It
+does not silently relabel the V1 runtime as production-ready or rewrite its
+historical verifier.
+
+## Provider boundary
+
+Ticket 15 calls only an opaque Provider Gateway port. The port accepts bounded
+prompt/response-contract references, a budget reservation and an abort signal;
+it never accepts or returns credentials. A deterministic injected gateway is
+valid verification evidence, and the Web product must show an honest
+`provider_not_configured` state when no gateway exists.
+
+Ticket 16 supplies the isolated secure BYOK/live-Provider implementation behind
+that port. Therefore Ticket 15 proves real online orchestration and browser
+behavior, but does not claim a real external model call.
+
+## Planned slices
+
+| Slice | Scope | Closure evidence |
+| --- | --- | --- |
+| 144 | **Complete.** Freeze the existing implementation audit, target deep-module boundary and migration route. | Hash-sealed predecessor/boundary; exact reusable files and gaps; four-mode authority matrix; nine-slice denominator; 11/11 focused plus historical Agent 9/9, Provider 5/5 and Ticket 14 handoff 13/13. |
+| 145 | Implement room/principal/seat/role-isolated online session lifecycle. | Server-created identity; viewer-safe session projection; stale/cross-room/cross-seat rejection; explicit create/read/reconnect/end; no credential or room authority. |
+| 146 | Implement the credential-free Provider Gateway supervisor. | One in-flight turn; reservation/usage budgets; timeout/cancel; no automatic retry; late completion fencing; `provider_not_configured`; injected gateway receipts. |
+| 147 | Bind prompt, tool, history and Memory flows to mode and reconnect identity. | Exact prompt/tool allowlists; bounded histories; namespace isolation; hash-only Skill refs; reconnect snapshot; cross-mode/cross-room/adversarial rejection. |
+| 148 | Close role behavior and Opponent preview handoff. | Tutor/Commentator/Companion read-only; Opponent selects one enabled current LegalSpace candidate; sealed Preview only; non-model human confirmation remains external. |
+| 149 | Mount authenticated Agent HTTP and event projection. | Session capability authentication; bounded request schema; create/read/send/cancel/reconnect/end/events; redacted errors; idempotency and no credential endpoints. |
+| 150 | Add the opt-in Client Domain extension and Expo Web Adjutant controls. | Existing four client operations unchanged; mode/status/budget/chat/cancel/confirmation UX; offline/background read-only; no local Agent authority. |
+| 151 | Replace Battle Lab's `not_mounted_ticket_15` with live safe TraceProjection. | Real session/turn/tool/decision/failure states; no raw prompt/output/Provider receipt/credential; Expo/Battle Lab identity parity. |
+| 152 | Run real Chromium end-to-end and Ticket 15 aggregate. | Four modes, failure/reconnect/cancel/budget paths, Opponent Preview and external confirm, privacy scan, fixed denominators and Ticket 16 handoff. |
+
+## Completion boundary
+
+Ticket 15 completes only when the Web and backend online-session behavior is
+proven through real browser traces. Native package rebuild and physical-device
+acceptance remain in the deferred final-device batch. Real external model and
+BYOK evidence belong to Ticket 16.
+
+No source refresh, live Provider call, Skill generation, DSH, MuZero export,
+self-play or training promotion is authorized by this roadmap.
