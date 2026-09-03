@@ -56,6 +56,10 @@ const MIME_TYPES = Object.freeze({
   ".woff": "font/woff",
   ".woff2": "font/woff2",
 });
+const PUBLIC_BROWSER_CONTENT_MODULES = new Set([
+  "official-faq-f3-movement-battlefield-deployment-binding-v1.mjs",
+  "official-faq-f4-ability-tactical-keyword-binding-v1.mjs",
+]);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -86,6 +90,11 @@ function staticCandidate(pathname) {
   }
   if (pathname.startsWith("/packages/")) {
     return { root: path.join(ROOT, "packages"), relativePath: pathname.slice("/packages/".length) };
+  }
+  if (pathname.startsWith("/content/")) {
+    const relativePath = pathname.slice("/content/".length);
+    if (!PUBLIC_BROWSER_CONTENT_MODULES.has(relativePath)) return null;
+    return { root: path.join(ROOT, "content"), relativePath };
   }
   if (pathname.startsWith("/assets/client/")) {
     return { root: path.join(ROOT, "assets/client"), relativePath: pathname.slice("/assets/client/".length) };

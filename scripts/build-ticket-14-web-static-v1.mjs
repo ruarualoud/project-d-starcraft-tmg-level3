@@ -13,7 +13,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const EXPO_ROOT = path.join(ROOT, "apps/starcraft-tmg-expo");
 const BUILD_ROOT = path.join(ROOT, "build/ticket-14-slice-136-web-static-v1");
 const PRODUCTION_ORIGIN = "https://starcraft-tmg.project-d.example";
-const LOCK_HASH = "3a1bab78341514ea04c995c5b71630dc2001e81a2509c4435b82397a2d4c2089";
+const LOCK_HASH = "6a60cdbb9639a8ba9de3f0660e7151e1fc1c7cd4cf7eb5a0768c69071b919458";
 const MODE = process.argv.includes("--acceptance") ? "acceptance" : "production";
 const OUTPUT_ROOT = path.join(BUILD_ROOT, MODE === "production"
   ? "export-production"

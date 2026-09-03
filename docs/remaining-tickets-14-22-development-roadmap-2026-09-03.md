@@ -1,8 +1,9 @@
 # Remaining StarCraft TMG Level-3 development tickets
 
-Status during Ticket 14 Slice 142: 13/22 Tickets complete; Ticket 14 remains
-14/16 because the Android build is ready but user-deferred physical-device
-acceptance remains open. Tickets 14–22 remain.
+Status after Ticket 14 Slice 143: 13/22 Tickets complete; Ticket 14 is 15/16.
+All planned Web/backend/client development is complete, while the explicitly
+deferred physical-device acceptance remains open. Ticket 15 is the active next
+development target; Tickets 14–22 remain formally open.
 
 | Ticket | Purpose | Completion evidence |
 | --- | --- | --- |
@@ -23,9 +24,8 @@ user's explicit confirmation gate. Tickets 20–22 depend on the earlier Agent,
 Skill, trajectory and production contracts and cannot be truthfully closed by
 scaffolds alone.
 
-The FAQ F1–F5 refresh/review lane is complete and was intentionally moved before
-Token/Marker Slice 140. Finish Slice 142's build record and Slice 143's Web and
-security aggregate, then begin Ticket 15 without waiting for the user-deferred
+The FAQ F1–F5 review lane, Slice 142 build record and Slice 143 Web/security
+aggregate are complete. Begin Ticket 15 without waiting for the user-deferred
 physical-device batch. Ticket 14 remains formally open until that evidence is
 later collected.
 Development does not pull source updates again unless explicitly commanded.

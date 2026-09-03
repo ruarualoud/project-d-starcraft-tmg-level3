@@ -1,7 +1,8 @@
 # Ticket 14 — shared Web/App client roadmap
 
-Status: active; 13/16 implementation slices complete, 3 remaining. The route
-was expanded on 2026-09-03 after the battle-workbench capability audit.
+Status: development-complete/device-deferred; 15/16 slices complete. The only
+open slice is the physical-device portion of Slice 142. Slice 143 is complete,
+and Ticket 15 may begin before the deferred final-device batch.
 
 Ticket 14 restores the recovered Expo source as the Web/App product baseline,
 mounts the Level-3 room/source/character interfaces into a real tracked product,
@@ -43,11 +44,13 @@ client a Rules, Referee, source, Agent-session, or training authority.
 | 140 | **Complete.** Implement the complete LegalSpace-classified Token/Marker action palette and authoritative write-sheet entry points. | Current FAQ 12-entry/27-atom handoff plus separate 69 named-base/11 generic-base evidence; current/historical/quarantined binding classifier; create/place/move/consume/remove metadata; seven write-sheet families route to Preview/Confirm/Apply/Receipt/Replay; focused 16/16, FAQ F5 17/17, Slice 137 regression 10/10, Battle Lab 23/23 and TypeScript pass. |
 | 141 | **Complete.** Implement if-the-round-ended-now scoring forecast, score write entry and contextual rules quick view. | Server-owned non-mutating forecast with exact/conditional/unknown branches; current score and scenario objectives; scoring changes use Preview/Confirm/Apply; selected unit/action/keyword links into exact room-pinned rules with no compatibility fallback; focused 18/18 plus related regressions and TypeScript pass. |
 | 142 | **Build-ready; device gate deferred.** Produce native Android/iOS build and real-device evidence. | Android debug and standalone internal-preview packages, pinned dependency/build receipt, 16/16 build contract and Expo Doctor 18/18 are complete. Physical Android lifecycle/deep-link/storage/media/action/reconnect evidence is deferred by user; full Xcode is unavailable, so iOS build remains unclaimed. |
-| 143 | Run cross-surface migration/security aggregate and close Ticket 14. | Fixed denominators; original Ticket 10/11/12/13 replay; Web/App/Battle Lab/workbench parity; credential/path/privacy scan; production blockers; Ticket 15 handoff. |
+| 143 | **Complete.** Run the cross-surface migration/security aggregate and prepare the downstream handoff. | 15 prior reports / 241 prior assertions plus 13/13 aggregate checks = 254; current FAQ 68/137 and 1,163/1,049/114; real browser 7/7 and 10 secret-scanned artifacts; Web/App/Battle Lab/workbench parity; Android artifact scan; Ticket 15–18 boundaries; final report `e9ffce31...79fc4`. |
 
 ## Completion rule
 
-Ticket 14 is complete only at 16/16. A local HTML preview, a native semantic
+Ticket 14 is complete only at 16/16. Slice 143 establishes that all planned
+Web/backend/client development gates are closed, but it does not convert the
+deferred Slice 142 device work into a pass. A local HTML preview, a native semantic
 tree, a copied Expo source tree, or a passing static test cannot substitute for
 real browser and real-device evidence. Unsupported iOS build infrastructure is
 reported explicitly but does not weaken the Android real-device requirement or

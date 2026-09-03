@@ -9,6 +9,8 @@ import { hashStarcraftTmgContract } from
   "../packages/authoritative-engine/transition-v1.mjs";
 import { STARCRAFT_TMG_WEB_STATIC_BROWSER_ACCEPTANCE_V1 as binding } from
   "../content/client/web-static-browser-acceptance-v1.mjs";
+import { STARCRAFT_TMG_WEB_STATIC_BROWSER_ACCEPTANCE_AMENDMENT_V1 as amendment } from
+  "../content/client/web-static-browser-acceptance-amendment-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BUILD_ROOT = path.join(ROOT, "build/ticket-14-slice-136-web-static-v1");
@@ -80,13 +82,22 @@ async function main() {
     const { bindingHash, ...unsigned } = binding;
     assert(bindingHash === hashStarcraftTmgContract(unsigned), "binding hash drifted");
     assert(Object.values(binding.promotion).every((value) => value === false), "future promotion lane widened");
+    const { amendmentHash, ...amendmentBody } = amendment;
+    assert(amendmentHash === hashStarcraftTmgContract(amendmentBody), "amendment hash drifted");
+    assert(amendment.previousBindingHash === binding.bindingHash,
+      "amendment is not bound to the frozen Slice 136 contract");
+    assert(amendment.dependencyLockTransition.fromLockHash === binding.build.lockHash
+      && amendment.dependencyLockTransition.oldBuildEvidenceRetained === true
+      && amendment.dependencyLockTransition.silentCompatibilityUsed === false,
+    "dependency lock transition did not preserve strict history");
   });
 
   await check("production_and_acceptance_receipts_are_hash_sealed", () => {
     for (const receipt of [production, acceptance]) {
       const { receiptHash, ...core } = receipt;
       assert(receiptHash === hashStarcraftTmgContract(core), `${receipt.mode} receipt hash drifted`);
-      assert(receipt.lockHash === binding.build.lockHash, `${receipt.mode} lock hash drifted`);
+      assert(receipt.lockHash === amendment.dependencyLockTransition.toLockHash,
+        `${receipt.mode} lock hash drifted`);
       assert(receipt.offlineDependencyResolution === true, `${receipt.mode} dependency resolution is not offline`);
       assert(receipt.staticWebCssPrecompiledBeforeMetro === true,
         `${receipt.mode} static CSS precompile missing`);
@@ -219,7 +230,9 @@ async function main() {
       `${name} Battle Lab portrait clipping policy drifted`);
       assert(observed.battlefield.overlappingBasePairs.length === 0,
         `${name} Battle Lab model formations overlap`);
-      assert(observed.battlefield.detailTabCount === 4
+      assert(observed.battlefield.detailTabCount === amendment.battleLabEvolution.detailPanels.length
+        && stableJson(observed.battlefield.detailTabNames)
+          === stableJson([...amendment.battleLabEvolution.detailPanels].sort())
         && observed.battlefield.visibleDetailPanelCount === 1,
       `${name} Battle Lab detail workspace stacking drifted`);
       assert(observed.battlefield.threatReferenceCount === 0,
@@ -243,8 +256,12 @@ async function main() {
     "validated Apply cue boundary missing");
     assert(sources.mediaCatalog.includes("bundledClassicBgm: false")
       && sources.mediaCatalog.includes('options.releaseChannel === "development_internal"')
-      && sources.mediaCatalog.includes('releaseChannel: developmentInternal ? "development_internal" : "public"')
-      && sources.mediaProvenance.includes("publicDistributionAllowed: false"),
+      && sources.mediaCatalog.includes('options.releaseChannel === "public_user_authorized"')
+      && sources.mediaCatalog.includes('? "development_internal" : userAuthorizedPublic ? "public_user_authorized" : "public"')
+      && sources.mediaProvenance.includes("publicDistributionAllowed: false")
+      && sources.mediaProvenance.includes('releaseChannel: "public_user_authorized"')
+      && sources.mediaProvenance.includes("independentThirdPartyRightsReviewCompleted: false")
+      && sources.mediaProvenance.includes("legalLicenseDeterminationMadeByProject: false"),
     "media release-channel boundary drifted");
   });
 
@@ -288,6 +305,12 @@ async function main() {
     assert(sources.server.includes('server.listen(0, "127.0.0.1"'), "fixture is not loopback-only");
     assert(sources.server.includes("createStarcraftTmgLevel3HttpAdapter")
       && sources.server.includes("createStarcraftTmgRoomRuntime"), "fixture uses mock authority");
+    for (const moduleName of amendment.battleLabEvolution.publicBrowserContentModules) {
+      assert(sources.server.includes(`"${moduleName}"`),
+        `public browser content module is not allowlisted: ${moduleName}`);
+    }
+    assert(sources.server.includes("PUBLIC_BROWSER_CONTENT_MODULES.has(relativePath)"),
+      "fixture broadly exposes the content directory");
   });
 
   await check("browser_verifier_never_records_authenticated_network_trace", () => {

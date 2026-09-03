@@ -1,18 +1,18 @@
 # Ticket 14 — battle workbench panel design
 
 Date: 2026-09-03
-Status: active; Slices 137–141 complete, Slice 142 build-ready with device
-acceptance deferred, and Slice 143 pending
+Status: implemented; Slices 137–141 and 143 complete. Slice 142 is build-ready
+with physical-device acceptance deferred.
 Source refresh: not performed
 
 ## Outcome
 
-The current authoritative battlefield is not yet a complete tabletop battle
-workbench. It has scale-safe model/map rendering, a selected-model shell,
-LegalSpace → Preview → Confirm → Apply → Replay, existing Token/Marker
-rendering, and a default-hidden selected-unit printed-range reference. It does
-not yet provide the complete unit, scenario, threat, probability, score,
-deployment, or Token/Marker action surfaces required for normal play.
+The authoritative battlefield now implements the planned tabletop battle
+workbench: scale-safe model/map rendering; unit, upgrade, scenario, deployment,
+reserve, score and rules inspection; multi-mode rules-projected threat;
+rules-bound probability; complete current-FAQ Token/Marker classification; and
+the authoritative write sheet. All writes remain
+LegalSpace → Preview → explicit human confirmation → Apply → Receipt/Replay.
 
 Recovered legacy screens are visual/reference material only. Their catalogue
 is intentionally empty in the mounted product and their beta probability
@@ -23,18 +23,14 @@ features.
 
 | Capability | Rules/state support | Current mounted client | Delivery verdict |
 | --- | --- | --- | --- |
-| Unit data, weapons and abilities | Current viewer projection contains bounded live piece/model fields; the frozen official catalogue remains separately rights-gated. | Selected communication portrait and label only. | Partial. |
-| Installed upgrades | Viewer-scoped room state carries selected upgrades where visible. | No battle inspector projection. | Interface only. |
-| Current HP, damage, shields, model count and statuses | Authority owns damage, casualties and status writes. | Destroyed/current-model hints only; no numeric ledger or legal manual correction action. | Partial. |
-| Scenario and deployment | MatchBinding, selected mission/deployment, map, terrain and setup state exist. | Map and terrain render; no complete scenario card, objective summary or deployment inspector. | Partial. |
-| Remaining deployment/reserves | Authority contains roster, deployed/reserve and setup state. | No deployment tray. | Not mounted. |
-| Current score | Authority contains player score and scoring resolution state. | No persistent score strip. | Not mounted. |
-| If-the-round-ended-now score forecast | No complete revision-bound read-only query is exposed. | None. | Not implemented. |
-| Contextual rules quick view | Exact room-pinned historical rule artifact can be displayed read-only. | Full artifact only; no selected-unit/action/keyword index. | Partial. |
-| Matchup probability | Legacy visual calculators exist but beta execution is disabled. | No current-rules estimator. | Not implemented. |
-| Existing Token/Marker display | Slice 109 owns Token/Marker primitive registry, geometry, derived markers and cleanup classes. | Existing projected Token/Marker state renders. | Partial. |
-| Legal Token/Marker actions | Ability-specific authority is distributed across its owning RuleAtoms and LegalSpace. | No generic classified action palette or placement workflow. | Not mounted. |
-| Threat display | Printed numeric weapon range can be projected for the selected unit. | One maximum printed-range reference, opt-in and default off. | Intentionally incomplete. |
+| Unit data, weapons, abilities and upgrades | Viewer-scoped, revision-bound BattleWorkbench projection. | Unit inspector with visibility/provenance labels. | Complete. |
+| HP, shields, damage, model count and statuses | Authority owns values and all correction actions. | Read ledger plus LegalSpace-derived write sheet; no direct numeric mutation. | Complete. |
+| Scenario, deployment and reserves | MatchBinding/state projection with explicit unknown/private states. | Battle status panel and reserve/deployment tray. | Complete. |
+| Score and if-end-now forecast | RoomRuntime read query with exact/conditional/unknown branches. | Persistent current score, forecast and LegalSpace score proposal entry. | Complete. |
+| Contextual rules quick view | Explicit current or exact historical room-pinned identities. | Unit/action/ability/keyword links; missing links stay unknown. | Complete. |
+| Matchup probability | Current-rules finite-D6 query with visible coverage and assumptions. | Contextual one/many/matrix sheet; legacy beta execution remains disabled. | Complete. |
+| Token/Marker display and legal actions | Current FAQ + RuleGraph + LegalSpace classify all supported lifecycle verbs. | Marker panel plus create/place/move/consume/remove proposal editors. | Complete. |
+| Threat display | Rules-projected stationary, move+attack, charge, selected and aggregate regions. | Default-hidden opt-in layers with weapon/mode selection and coverage labels. | Complete. |
 
 ## Player information architecture
 
@@ -166,13 +162,14 @@ Ticket 14 expands from Slices 128–138 to Slices 128–143:
 - Slice 142 — **build-ready/device-deferred:** pinned Android development and
   standalone internal-preview packages; physical Android and iOS evidence stays
   open until the final device-test batch;
-- Slice 143 — cross-surface migration/security aggregate and Ticket 14 close.
+- Slice 143 — **complete:** cross-surface migration/security aggregate and
+  Ticket 15–18 handoff; 13/13 aggregate checks and 254 fixed assertions.
 
-After FAQ F1–F5 and Slices 140–141 close, Ticket 14 is `14/16`, with Slices
-142–143 remaining. The FAQ was intentionally completed before Token/Marker
-work so the palette and subsequent score/rules queries bind the latest locked
-rules. The development source snapshot is not refreshed again unless the user
-issues a new explicit refresh command.
+After Slice 143, Ticket 14 is `15/16`. Only the user-deferred physical-device
+portion of Slice 142 remains. The FAQ was intentionally completed before
+Token/Marker work so the palette and subsequent score/rules queries bind the
+latest locked rules. The development source snapshot is not refreshed again
+unless the user issues a new explicit refresh command.
 
 ## Closure evidence
 

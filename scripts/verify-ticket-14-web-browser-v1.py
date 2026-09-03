@@ -28,6 +28,10 @@ VIEWPORTS = {
     "tablet": {"width": 1024, "height": 1366},
     "mobile": {"width": 390, "height": 844},
 }
+THREAT_LAYER_SELECTOR = "[data-authoritative-threat-layer], [data-threat-reference]"
+BATTLE_LAB_DETAIL_PANELS = (
+    "unit", "actions", "threat", "status", "markers", "referee", "agent", "harness",
+)
 
 
 def require(condition: bool, code: str) -> None:
@@ -152,6 +156,15 @@ def wait_connected(page: Page) -> None:
         raise AssertionError(
             f"AUTHORITATIVE_CONNECTION_TIMEOUT:{json.dumps(diagnostic, ensure_ascii=False)}"
         ) from error
+
+
+def open_authoritative_actions(page: Page) -> None:
+    page.get_by_role(
+        "button", name=re.compile(r"^(Actions|行动)$"), exact=True
+    ).click()
+    page.get_by_role(
+        "button", name="Load LegalSpace", exact=True
+    ).wait_for(state="visible", timeout=30_000)
 
 
 def body_text(page: Page) -> str:
@@ -302,6 +315,7 @@ def run_production_observer(browser: Browser, checks: list[dict[str, Any]]) -> l
         )
         require("Seat\n—" in text or "席位\n—" in text, "PUBLIC_OBSERVER_GAINED_SEAT")
         page.get_by_role("button", name=re.compile(r"^(Battlefield|战桌)$")).click()
+        open_authoritative_actions(page)
         require(page.get_by_role("button", name="Load LegalSpace", exact=True).is_disabled(), "PUBLIC_OBSERVER_MUTATION_ENABLED")
         require(urlparse(page.url).fragment == "", "PRODUCTION_FRAGMENT_NOT_EMPTY")
         require(not errors, f"PRODUCTION_BROWSER_ERRORS:{errors}")
@@ -370,6 +384,7 @@ def run_expo_viewport(
         )
         wait_connected(page)
         scrubbed = scrub_metrics(page, token)
+        open_authoritative_actions(page)
         metrics = viewport_metrics(page)
         page.get_by_role("button", name=re.compile(r"^(Adjutant|副官)$")).click()
         require(page.get_by_label(re.compile(r"^(Tactical Adjutant|战术副官)$")).is_visible(),
@@ -389,6 +404,7 @@ def run_expo_viewport(
         page.locator(
             '[aria-label^="Battlefield;"], [aria-label^="战场；"]'
         ).first.wait_for(state="visible", timeout=30_000)
+        open_authoritative_actions(page)
 
         if viewport_name == "desktop":
             load = page.get_by_role("button", name="Load LegalSpace", exact=True)
@@ -529,7 +545,10 @@ def battle_lab_metrics(page: Page) -> dict[str, Any]:
             shapeClippedCoverPortraitCount: node.querySelectorAll('[data-portrait-fit="shape-clipped-cover"]').length,
             portraitClipPathCount: node.querySelectorAll('clipPath[id^="model-portrait-clip-"]').length,
             threatReferenceCount: node.querySelectorAll('[data-threat-reference]').length,
+            authoritativeThreatLayerCount: node.querySelectorAll('[data-authoritative-threat-layer]').length,
             detailTabCount: document.querySelectorAll('[data-detail-tab]').length,
+            detailTabNames: [...document.querySelectorAll('[data-detail-tab]')]
+              .map((tab) => tab.dataset.detailTab).sort(),
             visibleDetailPanelCount: visibleDetailPanels.length,
             activeDetailPanel: document.querySelector('.right-rail')?.dataset.activePanel || null,
             pageScrollHeight: document.documentElement.scrollHeight,
@@ -555,15 +574,30 @@ def battle_lab_metrics(page: Page) -> dict[str, Any]:
     )
 
 
-def bind_battle_lab(page: Page, fixture: FixtureServer) -> str:
+def bind_battle_lab(
+    page: Page,
+    fixture: FixtureServer,
+    errors: list[str],
+) -> str:
     room_id = fixture.startup["roomIds"]["battleLab"]
     seat_token = fixture.startup["credentials"][room_id]["seatToken"]
     page.get_by_label("Room ID").fill(room_id)
     page.get_by_label("Seat token · memory only").fill(seat_token)
     page.get_by_role("button", name="Bind room", exact=True).click()
-    page.locator("[data-room-title]").filter(has_text=room_id).wait_for(
-        state="visible", timeout=60_000
-    )
+    try:
+        page.locator("[data-room-title]").filter(has_text=room_id).wait_for(
+            state="visible", timeout=60_000
+        )
+    except Exception as error:
+        diagnostic = {
+            "title": page.locator("[data-room-title]").inner_text(timeout=5_000),
+            "toast": page.locator("[data-toast]").inner_text(timeout=5_000),
+            "connection": page.locator("[data-connection]").inner_text(timeout=5_000),
+            "errors": errors,
+        }
+        raise AssertionError(
+            f"BATTLE_LAB_BIND_TIMEOUT:{json.dumps(diagnostic, ensure_ascii=False)}"
+        ) from error
     require(page.get_by_label("Seat token · memory only").input_value() == "", "BATTLE_LAB_TOKEN_INPUT_NOT_CLEARED")
     require(seat_token not in body_text(page), "BATTLE_LAB_TOKEN_RENDERED")
     return seat_token
@@ -593,11 +627,11 @@ def run_battle_lab(
                 wait_until="domcontentloaded",
                 timeout=60_000,
             )
-            token = bind_battle_lab(page, fixture)
+            token = bind_battle_lab(page, fixture, errors)
             observed_tokens.append(token)
             require(page.locator('[data-detail-panel]:visible').count() == 1,
                     "BATTLE_LAB_DETAIL_PANELS_STACKED")
-            for panel_name in ("actions", "agent", "harness", "referee"):
+            for panel_name in BATTLE_LAB_DETAIL_PANELS:
                 page.locator(f'[data-detail-tab="{panel_name}"]').click()
                 require(page.locator(f'[data-detail-panel="{panel_name}"]').is_visible(),
                         f"BATTLE_LAB_DETAIL_PANEL_UNREACHABLE:{panel_name}")
@@ -605,8 +639,8 @@ def run_battle_lab(
                 board = page.locator("[data-board]")
                 require(page.locator("[data-threat-toggle]").is_checked() is False,
                         "THREAT_REFERENCE_MUST_DEFAULT_OFF")
-                require(board.locator("[data-threat-reference]").count() == 0,
-                        "THREAT_REFERENCE_RENDERED_BY_DEFAULT")
+                require(board.locator(THREAT_LAYER_SELECTOR).count() == 0,
+                        "THREAT_LAYER_RENDERED_BY_DEFAULT")
                 first_model = board.locator("[data-model-id] [role=button]").first
                 first_model.click()
                 selected_portrait = page.locator("[data-selected-portrait]")
@@ -615,8 +649,8 @@ def run_battle_lab(
                     "(image) => image.complete && image.naturalWidth > 0"
                 ), "DYNAMIC_UNIT_PORTRAIT_DID_NOT_LOAD")
                 page.locator("[data-threat-toggle]").check()
-                require(board.locator("[data-threat-reference]").count() == 1,
-                        "SELECTED_PRINTED_RANGE_REFERENCE_NOT_RENDERED")
+                require(board.locator("[data-authoritative-threat-layer]").count() >= 1,
+                        "SELECTED_AUTHORITATIVE_THREAT_LAYER_NOT_RENDERED")
                 threat_opt_in_proven = True
                 page.get_by_role("button", name="Enable voices", exact=True).click()
                 first_model.click()
@@ -653,8 +687,8 @@ def run_battle_lab(
                 require("not_mounted_ticket_15" in body_text(page), "BATTLE_LAB_AGENT_BOUNDARY_DRIFT")
                 page.locator('[data-detail-tab="referee"]').click()
                 page.locator("[data-threat-toggle]").uncheck()
-                require(board.locator("[data-threat-reference]").count() == 0,
-                        "THREAT_REFERENCE_DID_NOT_RETURN_TO_HIDDEN")
+                require(board.locator(THREAT_LAYER_SELECTOR).count() == 0,
+                        "THREAT_LAYER_DID_NOT_RETURN_TO_HIDDEN")
             metrics = battle_lab_metrics(page)
             require(metrics["viewBox"] == "0 0 54000 36000", "BATTLE_LAB_VIEWBOX_DRIFT")
             require(metrics["preserveAspectRatio"] == "xMidYMid meet", "BATTLE_LAB_ASPECT_POLICY_DRIFT")
@@ -679,7 +713,12 @@ def run_battle_lab(
                     "BATTLE_LAB_PORTRAIT_CLIP_DENOMINATOR_MISMATCH")
             require(metrics["threatReferenceCount"] == 0,
                     "BATTLE_LAB_THREAT_REFERENCE_NOT_HIDDEN_AT_REST")
-            require(metrics["detailTabCount"] == 4, "BATTLE_LAB_DETAIL_TAB_DENOMINATOR_DRIFT")
+            require(metrics["authoritativeThreatLayerCount"] == 0,
+                    "BATTLE_LAB_AUTHORITATIVE_THREAT_NOT_HIDDEN_AT_REST")
+            require(metrics["detailTabCount"] == len(BATTLE_LAB_DETAIL_PANELS),
+                    "BATTLE_LAB_DETAIL_TAB_DENOMINATOR_DRIFT")
+            require(metrics["detailTabNames"] == sorted(BATTLE_LAB_DETAIL_PANELS),
+                    f"BATTLE_LAB_DETAIL_TAB_IDENTITY_DRIFT:{metrics['detailTabNames']}")
             require(metrics["visibleDetailPanelCount"] == 1, "BATTLE_LAB_DETAIL_PANELS_STACKED")
             require(metrics["minimumButtonHeight"] >= 43.5, "BATTLE_LAB_TOUCH_TARGET_HEIGHT_BELOW_44PX")
             require(metrics["minimumButtonWidth"] >= 43.5, "BATTLE_LAB_TOUCH_TARGET_WIDTH_BELOW_44PX")
