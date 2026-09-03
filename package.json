@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "verify:faq-f1-source-lock": "node scripts/verify-official-faq-v1-source-lock-v1.mjs",
     "capture:official-development-tranche-source-lock": "node scripts/capture-official-development-tranche-source-lock-v1.mjs",
     "verify:official-development-tranche-source-lock": "node scripts/verify-official-development-tranche-source-lock-v1.mjs",
     "verify:official-marine-charge-v2-rule-slice": "node scripts/verify-official-marine-charge-v2-rule-slice-v1.mjs",
