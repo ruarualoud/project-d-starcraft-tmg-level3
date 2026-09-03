@@ -1,7 +1,7 @@
 # Ticket 16 — secure BYOK and direct Provider roadmap
 
 Date: 2026-09-03  
-Status: active; Slices 153–157 complete, 5/10
+Status: active; Slices 153–158 complete, 6/10
 Project progress before this Ticket: 14/22 Tickets complete; Ticket 14 device
 acceptance remains deferred  
 Source refresh: not performed
@@ -110,7 +110,7 @@ call needs a new same-user approval and a reattached credential.
 | 155 | **Complete.** Child-process credential Worker and IPC isolation. | Scrubbed environment/stdio; parent and child buffer zeroing; per-attachment process; crash/detach kill; no restart; MTL scheduling lineage; focused 25/25 with 14 actual children, report `8749348f...faf5`; no user key or Provider call. |
 | 156 | **Complete.** Provider registry, egress allowlist and bounded transport. | Server-owned exact host/port/path/model; all-answer public DNS check plus connection pin; verified TLS/no redirect/proxy/compression; body/header/time bounds; one attempt; combined credential/egress child; focused 40/40, report `732d3a59...801e`; no live call. |
 | 157 | **Complete.** Common attempt-store contract and SQLite WAL Adapter. | Non-secret hash-only identities; intent/reservation/committed-dispatch before egress; atomic budget settlement; stable idempotency/CAS; restart replay; focused 45/45 across 43 real SQLite files and three reopens, report `84e579bc...264a5`; no Provider call. |
-| 158 | PostgreSQL Adapter parity and ambiguous-attempt recovery. | Same conformance suite; concurrent reservations; crash windows; explicit retry approval; lost-key reattach. |
+| 158 | **Complete.** PostgreSQL Adapter parity and ambiguous-attempt recovery. | Same semantic lifecycle as SQLite; SERIALIZABLE row locks/CAS; two-connection contention; rollback and commit-ack-loss recovery; Ed25519 + HMAC same-user approval; fresh credential reattach; focused 42/42, report `b55d0703...34a7`; no real Provider or PostgreSQL server. |
 | 159 | Ticket 15 Gateway/prompt/provider receipt integration. | Real Worker behind `complete`; current prompt/profile resolution; abort/budget/fence semantics; safe model/usage/cost receipt. |
 | 160 | Web and Battle Lab BYOK product flow. | Consent disclosure; Provider/model/budget selection; password input; attached/missing/error/detached states; no cache/log persistence. |
 | 161 | Redaction fuzz, real-browser and Worker-failure aggregate. | Credential echo/error/encoding corpus; HTTP/DOM/artifact scans; cancel/timeout/crash/recovery; four role modes with deterministic Provider. |
@@ -237,3 +237,32 @@ never retries without explicit same-user approval.
 - No Provider transport, user credential, source refresh, PostgreSQL, Skill,
   DSH, MuZero, self-play, Memory write or training operation occurred. Slice
   158 owns PostgreSQL parity and full concurrent recovery composition.
+
+## Slice 158 fixed evidence
+
+- The production PostgreSQL Adapter implements the same exact twelve-method
+  store contract with JSONB/TIMESTAMPTZ/BIGINT/BOOLEAN schema, an advisory
+  migration lock, exact column-layout fingerprint, SERIALIZABLE transactions,
+  budget/attempt/audit-head `FOR UPDATE` locks and revision CAS.
+- The SQLite and deterministic PostgreSQL transaction-protocol runs produce
+  hash-identical lifecycle state, operation results, audit chain and replay.
+- A two-connection same-revision reservation race has one winner and no
+  overspend. Serialization conflicts are typed and never automatically retried.
+- Injected audit failure rolls back attempt, budget and audit together. A lost
+  COMMIT acknowledgement for reserve, dispatch or recovery is resolved by the
+  original idempotent request without duplicate attempt, egress or charge.
+- Ambiguous retry approval binds the same user, session, budget, original
+  attempt and new idempotency key using content hash, Ed25519 long-term
+  signature and HMAC-SHA256 short seal. Execution additionally requires a fresh
+  authenticated attached-credential projection and the exact original request.
+- Old HMAC seals cannot authorize execution after rotation; the Ed25519 proof
+  remains valid for historical audit. Only approval and attachment hashes enter
+  the store, and the one old attempt can link only one retry child.
+- Behavior verifier: 42/42 with eleven deterministic PostgreSQL connections
+  in the parity lifecycle and two temporary real SQLite files. Fixed cumulative
+  denominator is 386 assertions.
+- Contract hash: `246b3e81dc75518b6182d1d6eeeffdd1abec6d08856827155c16b4d43882cc48`.
+- Slice report hash: `b55d070304dc96a7f39afc839a33dedfcbad8bcecd1e6645ce55043fdba834a7`.
+- No actual PostgreSQL server, Provider call, user key, source refresh, Skill,
+  DSH, MuZero, self-play, Memory write or training operation occurred. Slice
+  159 owns production Gateway/prompt/Worker/store composition.
