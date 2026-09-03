@@ -1,7 +1,7 @@
 # Ticket 16 — secure BYOK and direct Provider roadmap
 
 Date: 2026-09-03  
-Status: active; Slices 153–158 complete, 6/10
+Status: active; Slices 153–159 complete, 7/10
 Project progress before this Ticket: 14/22 Tickets complete; Ticket 14 device
 acceptance remains deferred  
 Source refresh: not performed
@@ -111,7 +111,7 @@ call needs a new same-user approval and a reattached credential.
 | 156 | **Complete.** Provider registry, egress allowlist and bounded transport. | Server-owned exact host/port/path/model; all-answer public DNS check plus connection pin; verified TLS/no redirect/proxy/compression; body/header/time bounds; one attempt; combined credential/egress child; focused 40/40, report `732d3a59...801e`; no live call. |
 | 157 | **Complete.** Common attempt-store contract and SQLite WAL Adapter. | Non-secret hash-only identities; intent/reservation/committed-dispatch before egress; atomic budget settlement; stable idempotency/CAS; restart replay; focused 45/45 across 43 real SQLite files and three reopens, report `84e579bc...264a5`; no Provider call. |
 | 158 | **Complete.** PostgreSQL Adapter parity and ambiguous-attempt recovery. | Same semantic lifecycle as SQLite; SERIALIZABLE row locks/CAS; two-connection contention; rollback and commit-ack-loss recovery; Ed25519 + HMAC same-user approval; fresh credential reattach; focused 42/42, report `b55d0703...34a7`; no real Provider or PostgreSQL server. |
-| 159 | Ticket 15 Gateway/prompt/provider receipt integration. | Real Worker behind `complete`; current prompt/profile resolution; abort/budget/fence semantics; safe model/usage/cost receipt. |
+| 159 | **Complete.** Ticket 15 Gateway/Prompt/Worker/store/receipt integration. | Frozen credential-free Gateway source/request preserved; ephemeral server execution scope; authenticated internal authority; exact MTL persist/dispatch/execute/receipt/recover sequence; durable actual/zero/full settlement; commit-ack replay; four modes; focused 36/36 across 18 SQLite files and nine deterministic Worker calls, report `349f798d...ee3c`; no live call. |
 | 160 | Web and Battle Lab BYOK product flow. | Consent disclosure; Provider/model/budget selection; password input; attached/missing/error/detached states; no cache/log persistence. |
 | 161 | Redaction fuzz, real-browser and Worker-failure aggregate. | Credential echo/error/encoding corpus; HTTP/DOM/artifact scans; cancel/timeout/crash/recovery; four role modes with deterministic Provider. |
 | 162 | One user-authorized minimal live call and Ticket closure. | Local-only key injection; reported Provider/model/version, usage/cost, response fingerprint, browser-visible safe state and full aggregate. |
@@ -266,3 +266,33 @@ never retries without explicit same-user approval.
 - No actual PostgreSQL server, Provider call, user key, source refresh, Skill,
   DSH, MuZero, self-play, Memory write or training operation occurred. Slice
   159 owns production Gateway/prompt/Worker/store composition.
+
+## Slice 159 fixed evidence
+
+- Ticket 15's exact supervisor source and model-facing Gateway input remain
+  frozen. A Ticket 16 asynchronous server-call scope revalidates the current
+  lifecycle session and waiting supervisor turn, then derives a separate
+  internal authority binding room, session, principal, epoch, budget policy
+  and original budget-open time without exposing or persisting credentials.
+- Prompt artifact/ref/response hashes and current authenticated
+  attachment/profile/Worker bindings are checked before budget reservation.
+- The durable path is `open/replay budget -> reserve intent -> commit dispatch
+  -> one Worker call -> commit safe receipt hash and settlement -> return`.
+- Successful use charges reported units; definitely-not-sent failures charge
+  zero in the durable authority; post-dispatch unknown usage charges the full
+  reservation. The frozen Ticket 15 failure envelope remains conservatively
+  full-charge and is not the exact durable accounting projection.
+- One exact store-operation replay resolves a lost COMMIT acknowledgement for
+  open, reserve, dispatch or settlement. It never repeats Provider execution.
+- Startup recovery abandons pre-egress reservations at zero and marks open
+  dispatches ambiguous at full reservation; replanning remains explicitly
+  approved and reattached under Slice 158.
+- Tutor, Opponent, Commentator and Companion all traverse the same scheduling
+  sequence while retaining their existing prompt/tool/action authorities.
+- Behavior verifier: 36/36 across eighteen real temporary SQLite files and
+  nine deterministic isolated Worker calls. Fixed cumulative denominator is
+  422 assertions.
+- Contract hash: `c640fc717e62efaa9b68d7508f60bb3080deb71df041bbf5495c5df2144ad431`.
+- Slice report hash: `349f798dae547c2e0b6b32314966d7089cb29b1578fc056dd98fc403f7deee3c`.
+- No Provider network, user key, source refresh, Skill, DSH, MuZero, self-play,
+  Memory write or training operation occurred. Slice 160 owns user-visible BYOK.

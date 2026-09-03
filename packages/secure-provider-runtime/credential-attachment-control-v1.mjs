@@ -45,6 +45,9 @@ const SCOPED_FIELDS = new Set([
   "expectedConnectionEpoch",
   "attachmentId",
 ]);
+const EXECUTION_FIELDS = new Set([
+  "roomId", "sessionId", "expectedConnectionEpoch", "providerProfileRef",
+]);
 const REVOKE_FIELDS = new Set(["sessionId", "reason"]);
 const ATTACH_RESULT_FIELDS = new Set(["ok", "workerRef"]);
 const DETACH_RESULT_FIELDS = new Set(["ok"]);
@@ -749,6 +752,80 @@ export function createStarcraftTmgSecureProviderAttachmentControlV1(options = {}
     }
   }
 
+  async function resolveExecutionAttachment(input = {}, context = {}) {
+    try {
+      if (closed) return rejection("provider_control_closed");
+      exactFields(input, EXECUTION_FIELDS,
+        "resolveExecutionAttachment input");
+      const scoped = scopedInput(input, EXECUTION_FIELDS);
+      const providerProfileRef = normalizeRef(input.providerProfileRef);
+      const sessionResult = await authenticatedSession(scoped, context, true);
+      if (sessionResult.rejection) return sessionResult.rejection;
+      const attachmentId = activeBySession.get(scoped.sessionId);
+      const record = attachmentId ? records.get(attachmentId) : null;
+      if (!record || record.roomId !== scoped.roomId) {
+        return rejection("provider_attachment_not_found");
+      }
+      if (sessionResult.session.binding.sessionBindingHash
+          !== record.sessionBindingHash
+        || sessionResult.session.binding.principalScopeHash
+          !== record.principalScopeHash) {
+        return rejection("provider_attachment_binding_mismatch");
+      }
+      await expireRecord(record);
+      if (record.state !== "attached" || !record.workerRef) {
+        return rejection("provider_attachment_not_attached", {
+          attachment: attachmentProjection(record),
+        });
+      }
+      if (record.providerProfileRef.id !== providerProfileRef.id
+        || record.providerProfileRef.version !== providerProfileRef.version
+        || record.providerProfileRef.hash !== providerProfileRef.hash) {
+        return rejection("provider_attachment_profile_mismatch");
+      }
+      if (typeof attachmentPort.readWorkerState !== "function") {
+        return rejection("provider_worker_state_unavailable");
+      }
+      const stateResult = await attachmentPort.readWorkerState({
+        workerRef: record.workerRef,
+      });
+      const worker = stateResult?.worker;
+      if (stateResult?.ok !== true || worker?.state !== "attached"
+        || worker.attachmentId !== record.attachmentId
+        || worker.providerProfileHash !== record.providerProfileRef.hash
+        || !HASH_PATTERN.test(String(worker.egressPolicyHash || ""))) {
+        return rejection("provider_worker_not_attached");
+      }
+      const projection = attachmentProjection(record);
+      const binding = seal({
+        schemaVersion:
+          `${STARCRAFT_TMG_SECURE_PROVIDER_ATTACHMENT_CONTROL_VERSION}.execution-binding`,
+        attachmentId: record.attachmentId,
+        roomId: record.roomId,
+        sessionId: record.sessionId,
+        sessionBindingHash: record.sessionBindingHash,
+        principalScopeHash: record.principalScopeHash,
+        connectionEpoch: sessionResult.session.connection.epoch,
+        providerProfileRef: record.providerProfileRef,
+        consentReceiptHash: record.consentReceipt.receiptHash,
+        attachmentProjectionHash: projection.projectionHash,
+        workerRef: record.workerRef,
+        egressPolicyHash: worker.egressPolicyHash,
+        attachedAt: record.attachedAt,
+        attachmentExpiresAt: record.attachmentExpiresAt,
+        automaticRetryAllowed: false,
+        sensitiveMaterialPersisted: false,
+        trainingTruth: false,
+      }, "bindingHash");
+      return deepFreeze({ ok: true, binding, trainingTruth: false });
+    } catch (error) {
+      return rejection(error?.code || "invalid_provider_execution_attachment", {
+        ...(Array.isArray(error?.forbiddenFields)
+          ? { forbiddenFields: error.forbiddenFields } : {}),
+      });
+    }
+  }
+
   async function detachAttachment(input = {}, context = {}) {
     try {
       if (closed) return rejection("provider_control_closed");
@@ -844,6 +921,7 @@ export function createStarcraftTmgSecureProviderAttachmentControlV1(options = {}
     prepareAttachment,
     attachCredentialBytes,
     readAttachment,
+    resolveExecutionAttachment,
     detachAttachment,
     revokeSession,
     sweepExpired,
