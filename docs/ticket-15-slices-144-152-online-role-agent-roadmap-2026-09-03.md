@@ -1,7 +1,7 @@
 # Ticket 15 — online role-Agent session roadmap
 
 Date: 2026-09-03
-Status: active; Slice 144 complete, 1/9 complete
+Status: active; Slices 144–145 complete, 2/9 complete
 Project progress: 13/22 Tickets complete; Ticket 14 is 15/16 with device evidence deferred
 Source refresh: not performed
 
@@ -48,7 +48,7 @@ behavior, but does not claim a real external model call.
 | Slice | Scope | Closure evidence |
 | --- | --- | --- |
 | 144 | **Complete.** Freeze the existing implementation audit, target deep-module boundary and migration route. | Hash-sealed predecessor/boundary; exact reusable files and gaps; four-mode authority matrix; nine-slice denominator; 11/11 focused plus historical Agent 9/9, Provider 5/5 and Ticket 14 handoff 13/13. |
-| 145 | Implement room/principal/seat/role-isolated online session lifecycle. | Server-created identity; viewer-safe session projection; stale/cross-room/cross-seat rejection; explicit create/read/reconnect/end; no credential or room authority. |
+| 145 | **Complete.** Implement room/principal/seat/role-isolated online session lifecycle. | Server-created session identity and connection fence; hash-sealed viewer projection and receipts; exact room/principal/seat/role/character/rules binding; stale/cross-room/cross-seat rejection; explicit create/read/reconnect/end; 21/21 focused and full prior aggregate green; no credential or room authority retained. |
 | 146 | Implement the credential-free Provider Gateway supervisor. | One in-flight turn; reservation/usage budgets; timeout/cancel; no automatic retry; late completion fencing; `provider_not_configured`; injected gateway receipts. |
 | 147 | Bind prompt, tool, history and Memory flows to mode and reconnect identity. | Exact prompt/tool allowlists; bounded histories; namespace isolation; hash-only Skill refs; reconnect snapshot; cross-mode/cross-room/adversarial rejection. |
 | 148 | Close role behavior and Opponent preview handoff. | Tutor/Commentator/Companion read-only; Opponent selects one enabled current LegalSpace candidate; sealed Preview only; non-model human confirmation remains external. |
