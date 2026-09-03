@@ -50,9 +50,9 @@ Focused F3 verification passes 15/15 and exercises 23 positive plus 23
 negative/boundary witnesses and five interaction groups. F2 passes 14/14;
 the historical Standard Move and Reserve Deploy regressions pass 12/12 and
 13/13. Release hash:
-`39e4e2010a08a56a17f056a59fefd283e68ba659561b8e864e204ae56a858d61`.
+`ca9d1bdc610a9869e5af76f3ee652073b4e67f95a38d48db552310ce34bb14dd`.
 Overlay graph hash:
-`018984d4b707204d5b90224a41757ecee2c457772621701b52c0e8fba2e866a8`.
+`1eef1396afb057bf9ea47353bd41ee9003d185b0f378ccbb6bac844a89910ab7`.
 
 No new source refresh, Provider, Skill generation, DSH, MuZero export,
 self-play, memory promotion or training promotion ran in F3.

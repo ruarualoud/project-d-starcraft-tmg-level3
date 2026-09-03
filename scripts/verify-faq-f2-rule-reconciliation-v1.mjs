@@ -65,8 +65,8 @@ accept("source_question_and_answer_hashes_are_joined_without_source_prose", () =
 accept("disposition_denominator_is_exact", () => {
   assert.deepEqual(reconciliation.byDisposition, {
     confirm: 23,
-    refine: 25,
-    supersede: 1,
+    refine: 26,
+    supersede: 0,
     conflict: 0,
     new: 19,
   });
@@ -113,10 +113,11 @@ accept("pre_faq_catalogue_runtime_and_graph_are_frozen", () => {
   });
   assert.equal(baseReport.slice.catalogue.catalogueHash, OFFICIAL_FAQ_V1_BASE_CATALOGUE_HASH);
 });
-accept("indirect_fire_evade_is_the_only_explicit_supersede", () => {
-  assert.deepEqual(reconciliation.supersededBaseBehaviorEntryIds, ["faq-v1:56"]);
+accept("no_entry_silently_supersedes_the_pre_faq_runtime", () => {
+  assert.deepEqual(reconciliation.supersededBaseBehaviorEntryIds, []);
   assert.deepEqual(reconciliation.conflictEntryIds, []);
   const entry = reconciliation.entries[55];
+  assert.equal(entry.disposition, "refine");
   assert(entry.atomIds.includes(
     "rule-atom:singleton:core-11-indirect-fire-off-los-evade:8de63a970f7f"));
 });

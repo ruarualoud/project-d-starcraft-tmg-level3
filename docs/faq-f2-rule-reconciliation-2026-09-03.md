@@ -14,16 +14,16 @@ Token/Marker behavior. The tracked ledger does not embed the source FAQ prose.
 | Disposition | Entries | Meaning |
 | --- | ---: | --- |
 | `confirm` | 23 | Existing behavior matches, but must be reverified under the new source version |
-| `refine` | 25 | Existing RuleAtoms are related but need a stricter or broader contract |
-| `supersede` | 1 | New FAQ behavior must replace the current behavior only in a new version |
+| `refine` | 26 | Existing RuleAtoms are related but need a stricter or broader contract |
+| `supersede` | 0 | No current behavior is silently replaced |
 | `conflict` | 0 | No unresolved same-version authority conflict was found |
 | `new` | 19 | No current executable RuleAtom fully owns the clarification |
 
-The single explicit supersede is FAQ 56. The frozen Core-derived atom says an
-off-line-of-sight Indirect Fire target may Evade; FAQ V1.0 says the unseen
-target does not receive Evade. F4 will introduce a new source-versioned
-behavior while leaving the pre-FAQ runtime available to historical rooms and
-Replay.
+FAQ 56 is a refinement, not a supersede. A target unit with at least one
+visible model is in line of sight and therefore receives no off-line-of-sight
+Indirect Fire Evade, while its non-visible models may still be casualties. The
+frozen rule that a completely unseen Indirect Fire target may Evade remains
+valid. F4 must prove both sides of that visibility boundary.
 
 ## Implementation routing
 
@@ -49,4 +49,6 @@ cross-time replay the new version before it can become current.
 
 Focused evidence: `npm run verify:faq-f2-rule-reconciliation` passes 14/14;
 the adjacent F1 source-lock regression passes 10/10. Reconciliation hash:
-`3cc2da9532c43dfbbf85cf831b7f4a9fb4f89555658af27d1687fe72b555f85b`.
+Corrected reconciliation hash:
+`081f95c49917d8545a36b74a0f4e5479754453349d288ef369d53170195eac68`.
+Downstream F3–F5 releases pin it exactly.

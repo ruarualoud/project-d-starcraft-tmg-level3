@@ -164,7 +164,7 @@ export const OFFICIAL_FAQ_V1_RULE_RECONCILIATION_BINDING_V1 = Object.freeze([
   row(55, "confirm", "F4", false, "LOCKED IN checks whether the target is Stationary", [
     "rule-atom:singleton:core-11-locked-in-stationary-roa:615deb544566",
   ]),
-  row(56, "supersede", "F4", false, "An unseen Indirect Fire target receives no Evade and casualty selection may include unseen models", [
+  row(56, "refine", "F4", false, "A partially visible Indirect Fire target unit receives no Evade and casualty selection may include unseen models", [
     "rule-atom:singleton:core-11-indirect-fire-off-los-evade:8de63a970f7f",
     "rule-atom:singleton:core-11-indirect-fire-los-ignore:06c39713e53e",
   ]),
