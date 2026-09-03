@@ -60,6 +60,7 @@ const USAGE_FIELDS = new Set([
 ]);
 const GATEWAY_RESULT_FIELDS = new Set(["output", "usageReceipt"]);
 const SENSITIVE_KEY_PATTERN = /(?:api.?key|authorization|bearer|cookie|credential|secret|access.?token|refresh.?token)/iu;
+const SENSITIVE_VALUE_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]{8,}|\bsk-[A-Za-z0-9_-]{12,}|(?:api[_-]?key|authorization|credential|secret)\s*[:=]\s*[^\s,;}]{6,}/iu;
 const MAX_SAFE_OUTPUT_BYTES = 64 * 1024;
 
 function object(value) {
@@ -144,14 +145,17 @@ function rejection(reason, details = {}) {
   });
 }
 
-function containsSensitiveKey(value, seen = new Set()) {
+function containsSensitiveMaterial(value, seen = new Set()) {
+  if (typeof value === "string") return SENSITIVE_VALUE_PATTERN.test(value);
   if (!value || typeof value !== "object") return false;
   if (seen.has(value)) return false;
   seen.add(value);
-  if (Array.isArray(value)) return value.some((entry) => containsSensitiveKey(entry, seen));
+  if (Array.isArray(value)) {
+    return value.some((entry) => containsSensitiveMaterial(entry, seen));
+  }
   for (const [key, child] of Object.entries(value)) {
     if (SENSITIVE_KEY_PATTERN.test(key)) return true;
-    if (containsSensitiveKey(child, seen)) return true;
+    if (containsSensitiveMaterial(child, seen)) return true;
   }
   return false;
 }
@@ -211,7 +215,7 @@ function normalizeBudgetPolicy(value = {}) {
 
 function normalizeSafeOutput(value) {
   if (!object(value)) throw new TypeError("Provider Gateway output must be an object");
-  if (containsSensitiveKey(value)) {
+  if (containsSensitiveMaterial(value)) {
     throw new TypeError("Provider Gateway output contains credential-shaped fields");
   }
   const serialized = JSON.stringify(value);

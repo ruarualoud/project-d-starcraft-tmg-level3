@@ -1,7 +1,7 @@
 # Ticket 15 — online role-Agent session roadmap
 
 Date: 2026-09-03
-Status: active; Slices 144–146 complete, 3/9 complete
+Status: active; Slices 144–147 complete, 4/9 complete
 Project progress: 13/22 Tickets complete; Ticket 14 is 15/16 with device evidence deferred
 Source refresh: not performed
 
@@ -50,7 +50,7 @@ behavior, but does not claim a real external model call.
 | 144 | **Complete.** Freeze the existing implementation audit, target deep-module boundary and migration route. | Hash-sealed predecessor/boundary; exact reusable files and gaps; four-mode authority matrix; nine-slice denominator; 11/11 focused plus historical Agent 9/9, Provider 5/5 and Ticket 14 handoff 13/13. |
 | 145 | **Complete.** Implement room/principal/seat/role-isolated online session lifecycle. | Server-created session identity and connection fence; hash-sealed viewer projection and receipts; exact room/principal/seat/role/character/rules binding; stale/cross-room/cross-seat rejection; explicit create/read/reconnect/end; 21/21 focused and full prior aggregate green; no credential or room authority retained. |
 | 146 | **Complete.** Implement the credential-free Provider Gateway supervisor. | Per-session single-flight without a global lock; reservation/verified-usage budgets; server timeout/cancel and AbortSignal; no automatic retry; late-result hash quarantine and reconnect fencing; honest `provider_not_configured`; 24/24 with deterministic injected Gateway only. |
-| 147 | Bind prompt, tool, history and Memory flows to mode and reconnect identity. | Exact prompt/tool allowlists; bounded histories; namespace isolation; hash-only Skill refs; reconnect snapshot; cross-mode/cross-room/adversarial rejection. |
+| 147 | **Complete.** Bind prompt, tool, history and Memory flows to mode and reconnect identity. | Four exact prompt routes and capability-prefetched tools; ephemeral prompt refs; bounded per-session history; same-game/rules/source accepted Rule Skills as hash refs; advisory same-scope Memory; reconnect continuity plus cross-mode/cross-room/credential rejection; 24/24 focused and full prior aggregate green. |
 | 148 | Close role behavior and Opponent preview handoff. | Tutor/Commentator/Companion read-only; Opponent selects one enabled current LegalSpace candidate; sealed Preview only; non-model human confirmation remains external. |
 | 149 | Mount authenticated Agent HTTP and event projection. | Session capability authentication; bounded request schema; create/read/send/cancel/reconnect/end/events; redacted errors; idempotency and no credential endpoints. |
 | 150 | Add the opt-in Client Domain extension and Expo Web Adjutant controls. | Existing four client operations unchanged; mode/status/budget/chat/cancel/confirmation UX; offline/background read-only; no local Agent authority. |
