@@ -1,7 +1,10 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 type Panel = "unit" | "threat" | "status" | "markers";
+export type WorkbenchThreatMode =
+  | "stationary_fire" | "move_then_fire" | "charge_engagement"
+  | "friendly_aggregate" | "enemy_aggregate";
 
 function value(input: unknown, fallback = "—") {
   return input === null || input === undefined || input === "" ? fallback : String(input);
@@ -38,17 +41,71 @@ export function BattleWorkbenchReadPanel({
   snapshot,
   selectedPieceId,
   zh,
+  threatMode = "stationary_fire",
+  selectedThreatWeaponId = null,
+  onThreatMode,
+  onThreatWeapon,
 }: {
   panel: Panel;
   snapshot: Record<string, any> | null;
   selectedPieceId: string | null;
   zh: boolean;
+  threatMode?: WorkbenchThreatMode;
+  selectedThreatWeaponId?: string | null;
+  onThreatMode?: (mode: WorkbenchThreatMode) => void;
+  onThreatWeapon?: (weaponId: string | null) => void;
 }) {
   if (!snapshot) {
     return <Text style={styles.empty}>{zh ? "正在读取当前修订的作战工作台…" : "Loading the current-revision battle workbench…"}</Text>;
   }
   if (panel === "threat") {
-    return <Placeholder title={zh ? "威胁图层" : "Threat layers"} snapshot={snapshot} section="threat" />;
+    const threat = snapshot.threat;
+    if (!threat || threat.coverage === "not_loaded") {
+      return <Placeholder title={zh ? "威胁图层" : "Threat layers"} snapshot={snapshot} section="threat" />;
+    }
+    const selectedUnit = threat.perUnit?.find((entry: any) => (
+      entry.unitId === selectedPieceId
+      || snapshot.units?.find((unit: any) => unit.id === entry.unitId)
+        ?.models?.some((model: any) => model.id === selectedPieceId)
+    ));
+    const modes: Array<[WorkbenchThreatMode, string]> = [
+      ["stationary_fire", zh ? "原地射击" : "Stationary"],
+      ["move_then_fire", zh ? "走打" : "Move + fire"],
+      ["charge_engagement", zh ? "冲锋" : "Charge"],
+      ["friendly_aggregate", zh ? "我方叠加" : "Friendly union"],
+      ["enemy_aggregate", zh ? "敌方叠加" : "Enemy union"],
+    ];
+    return (
+      <ScrollView style={styles.scroll} nestedScrollEnabled>
+        <View style={styles.card}>
+          <View style={styles.titleRow}><Text style={styles.title}>{zh ? "威胁图层" : "Threat layers"}</Text><StatusPill status={threat.coverage} /></View>
+          <View style={styles.grid}>{modes.map(([mode, label]) => (
+            <Pressable key={mode} onPress={() => onThreatMode?.(mode)} style={[styles.choice, threatMode === mode && styles.choiceActive]}>
+              <Text style={styles.choiceText}>{label}</Text>
+            </Pressable>
+          ))}</View>
+          <Text style={styles.boundary}>{threat.coverageReason}</Text>
+        </View>
+        {selectedUnit && !threatMode.includes("aggregate") && (
+          <View style={styles.card}>
+            <Text style={styles.subtitle}>{zh ? "武器图层" : "Weapon layer"}</Text>
+            <View style={styles.grid}>
+              <Pressable onPress={() => onThreatWeapon?.(null)} style={[styles.choice, selectedThreatWeaponId === null && styles.choiceActive]}><Text style={styles.choiceText}>All</Text></Pressable>
+              {(selectedUnit.weapons || []).map((weapon: any) => (
+                <Pressable key={weapon.weaponId} onPress={() => onThreatWeapon?.(weapon.weaponId)} style={[styles.choice, selectedThreatWeaponId === weapon.weaponId && styles.choiceActive]}>
+                  <Text style={styles.choiceText}>{weapon.weaponName}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.meta}>speed {selectedUnit.speed?.printed} → {selectedUnit.speed?.speedInches} in ({selectedUnit.speed?.branch}) · models {selectedUnit.currentModels}</Text>
+          </View>
+        )}
+        <View style={styles.card}>
+          <Text style={styles.subtitle}>{zh ? "覆盖依赖" : "Coverage dependencies"}</Text>
+          {Object.entries(threat.dependencies || {}).map(([key, entry]) => <Text key={key} style={styles.row}>• {key}: {value(entry)}</Text>)}
+        </View>
+      </ScrollView>
+    );
   }
   if (panel === "markers") {
     return <Placeholder title={zh ? "Token / Marker" : "Token / Marker"} snapshot={snapshot} section="tokenMarkerActions" />;
@@ -132,5 +189,8 @@ const styles = StyleSheet.create({
   score: { color: "#67e8f9", fontSize: 15, fontWeight: "900" },
   pill: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: "#22d3ee" },
   pillText: { color: "#67e8f9", fontSize: 9, fontWeight: "900" },
+  choice: { minHeight: 40, justifyContent: "center", paddingHorizontal: 9, borderRadius: 7, borderWidth: 1, borderColor: "#475569", backgroundColor: "#172554" },
+  choiceActive: { borderColor: "#22d3ee", backgroundColor: "#164e63" },
+  choiceText: { color: "#f8fafc", fontSize: 10, fontWeight: "800" },
   boundary: { color: "#94a3b8", fontSize: 10, lineHeight: 16 },
 });

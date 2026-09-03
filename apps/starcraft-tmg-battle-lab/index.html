@@ -96,6 +96,8 @@
 
           <section class="panel detail-panel" data-detail-panel="threat" aria-label="Threat layers" hidden>
             <div class="panel-head"><div><p class="eyebrow">RULES QUERY</p><h2>Threat</h2></div><span data-threat-coverage>not loaded</span></div>
+            <label><span>Mode</span><select data-threat-mode><option value="stationary_fire">Stationary fire</option><option value="move_then_fire">Move + fire</option><option value="charge_engagement">Charge / engagement</option><option value="friendly_aggregate">Friendly aggregate</option><option value="enemy_aggregate">Enemy aggregate</option></select></label>
+            <label><span>Weapon</span><select data-threat-weapon><option value="">All weapons</option></select></label>
             <div class="workbench-content" data-workbench-threat></div>
           </section>
 

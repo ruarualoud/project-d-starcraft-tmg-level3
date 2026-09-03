@@ -1204,6 +1204,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     const snapshot = projectStarcraftTmgBattleWorkbenchV1({
       roomProjection: projection,
       legalSpace: currentLegalSpace,
+      includeThreat: true,
     });
     return deepFreeze({ ok: true, snapshot });
   }

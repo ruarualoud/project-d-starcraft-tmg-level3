@@ -1,4 +1,5 @@
 import { hashStarcraftTmgClientContract } from "./portable-contract-hash-v1.mjs";
+import { projectStarcraftTmgThreatWorkbenchV1 } from "./battle-workbench-threat-v1.mjs";
 
 export const STARCRAFT_TMG_BATTLE_WORKBENCH_VERSION =
   "starcraft_tmg_battle_workbench_snapshot_v1";
@@ -223,6 +224,13 @@ function snapshotCore(input) {
   };
   const unitCoverage = units.length > 0 && units.every((unit) => unit.inspectionCoverage === "exact")
     ? "exact" : units.length > 0 ? "partial" : "unknown";
+  const threat = clone(input.threat) || (input.includeThreat === true
+    ? projectStarcraftTmgThreatWorkbenchV1({
+        roomProjection: projection,
+        units,
+        legalSpace: input.legalSpace,
+      })
+    : placeholder("starcraft_tmg_threat_workbench_v1", "slice_138_not_loaded"));
   return {
     schemaVersion: STARCRAFT_TMG_BATTLE_WORKBENCH_VERSION,
     roomId: text(room.roomId) || null,
@@ -235,7 +243,7 @@ function snapshotCore(input) {
     units,
     deployment,
     scoreboard: scoreView(state),
-    threat: clone(input.threat) || placeholder("starcraft_tmg_threat_workbench_v1", "slice_138_not_loaded"),
+    threat,
     probability: clone(input.probability) || placeholder("starcraft_tmg_probability_workbench_v1", "slice_139_not_loaded"),
     tokenMarkerActions: clone(input.tokenMarkerActions)
       || placeholder("starcraft_tmg_token_marker_palette_v1", "slice_140_not_loaded"),
@@ -248,7 +256,7 @@ function snapshotCore(input) {
       scenario: coverageEntry(state.mission || state.selectedMission ? "exact" : "partial", ["viewer_projection.mission", "viewer_projection.board"]),
       deployment: coverageEntry("exact", ["viewer_projection.pieces.location"]),
       score: coverageEntry("exact", ["viewer_projection.scores"]),
-      threat: coverageEntry(input.threat?.coverage || "not_loaded"),
+      threat: coverageEntry(threat.coverage || "not_loaded", threat.sourceActionRefs || []),
       probability: coverageEntry(input.probability?.coverage || "not_loaded"),
       markers: coverageEntry(input.tokenMarkerActions?.coverage || "not_loaded"),
       rules: coverageEntry(input.rulesQuickView?.coverage || "not_loaded"),

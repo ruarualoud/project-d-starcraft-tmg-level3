@@ -11,6 +11,8 @@ const runtime = createStarcraftTmgBattleLabRuntime({
 let selectedModelId = null;
 let toastTimer = null;
 let showThreatReference = false;
+let activeThreatMode = "stationary_fire";
+let selectedThreatWeaponId = "";
 let voicesEnabled = false;
 let lastPlayedCueBatchHash = null;
 let bgmObjectUrl = null;
@@ -32,6 +34,7 @@ const el = Object.fromEntries([
   "bgm-file", "volume",
   "unit-coverage", "threat-coverage", "status-coverage", "marker-coverage",
   "workbench-unit", "workbench-threat", "workbench-status", "workbench-markers",
+  "threat-mode", "threat-weapon",
 ].map((name) => [name, document.querySelector(`[data-${name}]`)]));
 
 voiceAudio.addEventListener("playing", () => {
@@ -264,7 +267,8 @@ function glyphForModel(model, preview = false) {
   return group;
 }
 
-function renderBoard(scene) {
+function renderBoard(view) {
+  const scene = view.battlefield;
   const board = el.board;
   board.setAttribute("viewBox", `0 0 ${scene.widthMilliInches} ${scene.heightMilliInches}`);
   const background = svgElement("rect", {
@@ -289,7 +293,32 @@ function renderBoard(scene) {
     if (glyph) world.append(glyph);
   }
   const selected = scene.models.find((model) => model.id === selectedModelId);
-  if (showThreatReference && selected?.maxProjectedWeaponRangeMilliInches) {
+  const selectedUnit = view.workbench?.threat?.perUnit?.find((entry) => entry.unitId === selected?.pieceId);
+  const threatRegions = !showThreatReference ? []
+    : activeThreatMode === "friendly_aggregate"
+      ? (view.workbench?.threat?.aggregates?.friendly?.regions || [])
+      : activeThreatMode === "enemy_aggregate"
+        ? (view.workbench?.threat?.aggregates?.enemy?.regions || [])
+        : activeThreatMode === "charge_engagement"
+          ? (selectedUnit?.charge?.regions || [])
+          : (selectedUnit?.weapons || [])
+            .filter((weapon) => !selectedThreatWeaponId || weapon.weaponId === selectedThreatWeaponId)
+            .flatMap((weapon) => activeThreatMode === "stationary_fire"
+              ? weapon.stationaryRegions : weapon.moveThenAttackRegions);
+  for (const [index, region] of threatRegions.entries()) {
+    world.append(svgElement("circle", {
+      cx: region.centerXMilliInches,
+      cy: region.centerYMilliInches,
+      r: region.radiusMilliInches,
+      fill: region.sideKey === "player1" ? "#38bdf80b" : "#ef44440b",
+      stroke: region.mode === "charge_engagement" ? "#fbbf24"
+        : region.sideKey === "player1" ? "#38bdf8" : "#ef4444",
+      "stroke-width": 100,
+      "stroke-dasharray": region.coverage === "exact" ? "" : "420 260",
+      "data-authoritative-threat-layer": `${activeThreatMode}:${index}`,
+    }));
+  }
+  if (showThreatReference && threatRegions.length === 0 && selected?.maxProjectedWeaponRangeMilliInches) {
     world.append(svgElement("circle", {
       cx: selected.xMilliInches,
       cy: selected.yMilliInches,
@@ -382,6 +411,14 @@ function renderWorkbench(view) {
   el["threat-coverage"].textContent = workbench?.threat?.coverage || "not loaded";
   el["status-coverage"].textContent = workbench?.coverage?.score?.status || "not loaded";
   el["marker-coverage"].textContent = workbench?.tokenMarkerActions?.coverage || "not loaded";
+  el["threat-mode"].value = activeThreatMode;
+  const weapons = unit ? (workbench?.threat?.perUnit?.find((entry) => entry.unitId === unit.id)?.weapons || []) : [];
+  const weaponOptions = [htmlElement("option", { value: "", textContent: "All weapons" }), ...weapons.map((weapon) => (
+    htmlElement("option", { value: weapon.weaponId, textContent: weapon.weaponName })
+  ))];
+  replaceChildren(el["threat-weapon"], weaponOptions);
+  if (weapons.some((weapon) => weapon.weaponId === selectedThreatWeaponId)) el["threat-weapon"].value = selectedThreatWeaponId;
+  else selectedThreatWeaponId = "";
   replaceChildren(el["workbench-unit"], unit ? [
     workbenchCard(unit.name, [
       `${unit.faction || "unknown faction"} · ${unit.location} · ${unit.currentModels}/${unit.maxModels} models`,
@@ -470,7 +507,7 @@ function render(view) {
   el["shared-hash"].textContent = `shared view ${shortHash(view.shared.sharedViewHash)}`;
   el["room-title"].textContent = view.shared.roomProjection?.room?.title || "No room bound";
   el["state-revision"].textContent = `state ${text(view.referee.stateRevision)}`;
-  renderBoard(view.battlefield);
+  renderBoard(view);
   renderFacts(view.referee);
   renderAgent(view.agent);
   renderActions(view);
@@ -481,6 +518,20 @@ function render(view) {
 
 el["threat-toggle"].addEventListener("change", () => {
   showThreatReference = el["threat-toggle"].checked;
+  render(runtime.read());
+});
+
+el["threat-mode"].addEventListener("change", () => {
+  activeThreatMode = el["threat-mode"].value;
+  showThreatReference = true;
+  el["threat-toggle"].checked = true;
+  render(runtime.read());
+});
+
+el["threat-weapon"].addEventListener("change", () => {
+  selectedThreatWeaponId = el["threat-weapon"].value;
+  showThreatReference = true;
+  el["threat-toggle"].checked = true;
   render(runtime.read());
 });
 

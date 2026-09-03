@@ -116,7 +116,7 @@ async function main() {
   });
 
   await check("future_sections_fail_visible_as_not_loaded_instead_of_guessing", () => {
-    for (const key of ["threat", "probability", "tokenMarkerActions", "scoreForecast", "rulesQuickView"]) {
+    for (const key of ["probability", "tokenMarkerActions", "scoreForecast", "rulesQuickView"]) {
       assert(snapshot[key]?.coverage === "not_loaded", `${key} did not fail visibly`);
     }
   });

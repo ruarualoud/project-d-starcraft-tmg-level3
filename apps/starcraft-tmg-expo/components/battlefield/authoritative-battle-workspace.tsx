@@ -42,7 +42,10 @@ import {
   randomStarcraftTmgPresentationMediaEntryV1,
   starcraftTmgBattlefieldUnitMediaAssetsV1,
 } from "@/lib/level3/battlefield-media-assets-v1";
-import { BattleWorkbenchReadPanel } from "./battle-workbench-read-panels";
+import {
+  BattleWorkbenchReadPanel,
+  type WorkbenchThreatMode,
+} from "./battle-workbench-read-panels";
 
 type PendingOperation = "legal" | "workbench" | "preview" | "apply" | "replay" | null;
 type DraftMode = "path" | "placements";
@@ -339,6 +342,8 @@ export function AuthoritativeBattleWorkspace() {
   const [bgmPlaying, setBgmPlaying] = useState(false);
   const [mediaVolume, setMediaVolume] = useState(0.45);
   const [detailPanel, setDetailPanel] = useState<WorkspaceDetailPanel>("unit");
+  const [threatMode, setThreatMode] = useState<WorkbenchThreatMode>("stationary_fire");
+  const [selectedThreatWeaponId, setSelectedThreatWeaponId] = useState<string | null>(null);
   const lastPlayedCueBatchHash = useRef<string | null>(null);
   const requestedWorkbenchKey = useRef<string | null>(null);
   const voicePlayer = useAudioPlayer(null, { updateInterval: 1000 });
@@ -397,6 +402,21 @@ export function AuthoritativeBattleWorkspace() {
     [scene.models],
   );
   const selectedModel = selectedModelId ? modelsById.get(selectedModelId) || null : null;
+  const selectedPieceId = selectedModel?.pieceId || selectedModelId;
+  const selectedUnitThreat = view.battleWorkbench?.threat?.perUnit?.find((entry: any) => (
+    entry.unitId === selectedPieceId
+  ));
+  const threatRegions: any[] = !showThreatReference ? []
+    : threatMode === "friendly_aggregate"
+      ? (view.battleWorkbench?.threat?.aggregates?.friendly?.regions || [])
+      : threatMode === "enemy_aggregate"
+        ? (view.battleWorkbench?.threat?.aggregates?.enemy?.regions || [])
+        : threatMode === "charge_engagement"
+          ? (selectedUnitThreat?.charge?.regions || [])
+          : (selectedUnitThreat?.weapons || [])
+            .filter((weapon: any) => !selectedThreatWeaponId || weapon.weaponId === selectedThreatWeaponId)
+            .flatMap((weapon: any) => threatMode === "stationary_fire"
+              ? weapon.stationaryRegions : weapon.moveThenAttackRegions);
 
   useEffect(() => {
     const roomId = view.roomProjection?.room?.roomId;
@@ -442,6 +462,7 @@ export function AuthoritativeBattleWorkspace() {
 
   const selectModel = (model: BattlefieldModelV1) => {
     setSelectedModelId(model.id);
+    setSelectedThreatWeaponId(null);
     setDetailPanel("unit");
     void playUnitVoice(model, "selected");
   };
@@ -907,7 +928,20 @@ export function AuthoritativeBattleWorkspace() {
                 {scene.terrain.map(areaGlyph)}
                 {scene.markers.map(areaGlyph)}
                 {scene.tokens.map(areaGlyph)}
-                {showThreatReference && selectedModel?.maxProjectedWeaponRangeMilliInches && (
+                {threatRegions.map((region, index) => (
+                  <Circle
+                    key={`threat:${region.mode}:${region.modelId}:${region.weaponId || "none"}:${index}`}
+                    id={`battlefield-authoritative-threat-${index}`}
+                    cx={region.centerXMilliInches}
+                    cy={region.centerYMilliInches}
+                    r={region.radiusMilliInches}
+                    fill={region.sideKey === "player1" ? "#38bdf80b" : "#ef44440b"}
+                    stroke={region.mode === "charge_engagement" ? "#fbbf24" : sideColor(region.sideKey)}
+                    strokeWidth={100}
+                    strokeDasharray={region.coverage === "exact" ? undefined : "420 260"}
+                  />
+                ))}
+                {showThreatReference && threatRegions.length === 0 && selectedModel?.maxProjectedWeaponRangeMilliInches && (
                   <Circle
                     id="battlefield-threat-reference-v1"
                     cx={selectedModel.xMilliInches}
@@ -1045,8 +1079,12 @@ export function AuthoritativeBattleWorkspace() {
             <BattleWorkbenchReadPanel
               panel={detailPanel as "unit" | "threat" | "status" | "markers"}
               snapshot={view.battleWorkbench}
-              selectedPieceId={selectedModel?.pieceId || selectedModelId}
+              selectedPieceId={selectedPieceId}
               zh={zh}
+              threatMode={threatMode}
+              selectedThreatWeaponId={selectedThreatWeaponId}
+              onThreatMode={(mode) => { setThreatMode(mode); setShowThreatReference(true); }}
+              onThreatWeapon={setSelectedThreatWeaponId}
             />
           ) : detailPanel === "actions" ? (
             <>

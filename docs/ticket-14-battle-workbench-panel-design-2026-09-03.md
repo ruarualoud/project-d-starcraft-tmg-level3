@@ -1,7 +1,7 @@
 # Ticket 14 — battle workbench panel design
 
 Date: 2026-09-03
-Status: active; Slice 137 complete, Slices 138–143 pending
+Status: active; Slices 137–138 complete, Slices 139–143 pending
 Source refresh: not performed
 
 ## Outcome
@@ -155,14 +155,14 @@ Ticket 14 expands from Slices 128–138 to Slices 128–143:
 
 - Slice 137 — **complete:** BattleWorkbenchSnapshot, six-panel shell, Unit inspector,
   scenario/deployment/reserve and current-score views;
-- Slice 138 — authoritative multi-mode threat query and map layers;
+- Slice 138 — **complete:** authoritative multi-mode threat query and map layers;
 - Slice 139 — rules-bound matchup probability query and contextual sheet;
 - Slice 140 — complete LegalSpace-classified Token/Marker action palette;
 - Slice 141 — score forecast and contextual rules quick view;
 - Slice 142 — pinned Android/iOS build and real-device evidence;
 - Slice 143 — cross-surface migration/security aggregate and Ticket 14 close.
 
-After Slice 137 closes, Ticket 14 is `10/16`, with six slices remaining. FAQ
+After Slice 138 closes, Ticket 14 is `11/16`, with five slices remaining. FAQ
 F1–F5 still runs after Ticket 14 and before Ticket 15. The
 development source snapshot is not refreshed during these slices unless the
 user issues a new explicit refresh command.
