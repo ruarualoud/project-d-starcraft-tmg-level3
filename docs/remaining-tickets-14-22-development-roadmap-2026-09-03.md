@@ -1,15 +1,17 @@
 # Remaining StarCraft TMG Level-3 development tickets
 
-Status after Ticket 15 Slice 152: 14/22 Tickets complete; Ticket 14 is 15/16.
+Status after Ticket 16 Slice 153 planning: 14/22 Tickets complete; Ticket 16 is
+1/10 and Ticket 14 is 15/16.
 All planned Web/backend/client development and Ticket 15 online role-Agent work
 are complete, while the explicitly deferred physical-device acceptance remains
-open. Ticket 16 is the active next development target.
+open. Ticket 16 is the active development target with a fixed 10-Slice
+denominator, Slices 153–162.
 
 | Ticket | Purpose | Completion evidence |
 | --- | --- | --- |
 | 14 | Shared Web/App client: restore the Expo product, implement one Client Domain Module, mount authoritative rooms/board/source/character flows, migrate Battle Lab, add the complete battle workbench, and prove browser plus real-device behavior. | 16 slices (128–143), Web/App/Battle Lab parity, unit/scenario/deploy/score inspection, multi-mode threat, rules-bound probability, complete Token/Marker action surface, score forecast/rules quick view, no second state authority, pinned builds and browser/native traces. |
 | 15 | **Complete.** Online role-Agent sessions: Tutor, Opponent, Commentator and Companion are real room-connected product modes with isolated tools, visibility, prompts and memory. | Nine slices (144–152); authenticated HTTP; real Chromium four-mode/failure/cancel/reconnect/budget evidence; legal Opponent Preview and human-confirmed Apply/Receipt/Replay; 192 fixed assertions including closure. |
-| 16 | Direct Provider and secure BYOK: move the current injected Adapter into isolated, budgeted, recoverable production execution. | Explicit consent/detach, isolated credential Worker, egress allowlist, WAL/attempt/budget recovery, redaction fuzzing and user-authorized live model/version receipt. |
+| 16 | **Active, 1/10.** Direct Provider and secure BYOK: move the current injected Adapter into isolated, budgeted, recoverable production execution. | Slices 153–162: explicit consent/detach, isolated credential Worker, egress allowlist, SQLite/PostgreSQL WAL/attempt/budget recovery, redaction fuzzing and user-authorized live model/version receipt. |
 | 17 | DSH Skill-generation Adapter: install and run the pinned DSH execution arm only for offline Skill candidates, alongside the DSH-off control. | Disposable isolation, real DSH session log, exact config/plugin/model/tool/cost receipt and proof that it cannot publish or reach online/Rules paths. |
 | 18 | Skill scheduler, evaluation and promotion: turn candidate generation into durable DAG jobs with leases/fencing/WAL, Judge/Cross-Time/held-out/A-B gates and administrator promotion/rollback. | SQLite/PostgreSQL scheduler parity, crash recovery, fixed evaluation denominators, quarantined candidates, approved versioned Skill snapshot. |
 | 19 | MuZero player-view trajectory contract and export: define observation/action/reward/discount/chance/recurrent-state lineage from the authoritative journal. | Viewer-leakage tests, terminal/version binding, NDJSON/MuZero/RLDS round trips; eligibility remains separately gated and no learner is trained. |

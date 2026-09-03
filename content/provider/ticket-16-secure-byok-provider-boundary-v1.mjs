@@ -1,0 +1,310 @@
+import { hashStarcraftTmgContract } from
+  "../../packages/authoritative-engine/transition-v1.mjs";
+import { STARCRAFT_TMG_TICKET_15_ONLINE_ROLE_AGENT_BOUNDARY_V1 } from
+  "../agent/ticket-15-online-role-agent-boundary-v1.mjs";
+
+function freeze(value) {
+  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
+  for (const child of Object.values(value)) freeze(child);
+  return Object.freeze(value);
+}
+
+const body = {
+  schemaVersion: "starcraft_tmg_ticket_16_secure_byok_provider_boundary_v1",
+  ticket: 16,
+  slice: 153,
+  preparedAt: "2026-09-03T14:00:00.000Z",
+  predecessorBoundaryHash:
+    STARCRAFT_TMG_TICKET_15_ONLINE_ROLE_AGENT_BOUNDARY_V1.boundaryHash,
+  objective:
+    "isolated_consent_bound_recoverable_direct_provider_execution_behind_the_ticket_15_credential_free_gateway",
+  existingImplementationAudit: {
+    frozenHistoricalInputs: [
+      {
+        path: "packages/character-agent/openai-compatible-provider-v1.mjs",
+        sha256: "202afa56305b6cc0da2334d1aba6c61c3f211f91326ba94948fb236a30c92087",
+        status: "ticket_13_injected_transport_evidence_only",
+      },
+      {
+        path: "packages/character-agent/session-runtime-v1.mjs",
+        sha256: "febcb557b92ca8528755c30530b23edce883fa4e2722d1b19546600ad3b3aa85",
+        status: "ticket_13_process_memory_byok_evidence_only",
+      },
+      {
+        path: "packages/character-agent/http-handler-v1.mjs",
+        sha256: "b97cc9d7dba14804417d51f2c9dee893bf42e8ca4748d81f77709f77e46bb5b8",
+        status: "ticket_13_historical_byok_http_only",
+      },
+      {
+        path: "packages/online-agent-session/provider-gateway-supervisor-v1.mjs",
+        sha256: "c2356cc0e76f59c4cfe352e06ecb31de39e53b06ac3ce4098a40ca48c04b0f94",
+        status: "ticket_15_credential_free_supervision_input",
+      },
+      {
+        path: "packages/online-agent-session/prompt-artifact-store-v1.mjs",
+        sha256: "77f8a8a1d94d7afaff952f1e43b2bebeaaea5827b8e35c662d4912dda2607f8b",
+        status: "ticket_15_ephemeral_prompt_resolver_input",
+      },
+    ],
+    reusable: [
+      "provider_profile_contract_without_credentials_or_dsh",
+      "one_physical_attempt_bounded_openai_compatible_request_shape",
+      "ticket_15_abort_budget_single_flight_and_late_result_fencing",
+      "credential_free_provider_gateway_request_and_usage_receipt",
+      "ephemeral_prompt_artifact_reference_and_release",
+    ],
+    blockers: [
+      "historical_v1_keeps_raw_byok_in_the_web_process_map",
+      "historical_v1_provider_transport_receives_the_raw_key_in_process",
+      "historical_v1_byok_http_route_is_not_a_dedicated_consent_ingress",
+      "ticket_15_budget_and_turn_attempts_are_process_memory_only",
+      "no_isolated_credential_worker_or_egress_allowlist",
+      "no_persistent_attempt_intent_or_ambiguous_crash_recovery",
+      "no_browser_attach_detach_consent_or_redaction_fuzz_gate",
+      "no_user_authorized_live_provider_model_receipt",
+    ],
+    migrationPolicy: {
+      modifyHistoricalV1Files: false,
+      silentCompatibilityAllowed: false,
+      historicalDisplayAndVerificationRetained: true,
+      newPackageOwner: "packages/secure-provider-runtime",
+    },
+  },
+  mtlComparison: {
+    repository: "https://github.com/ruarualoud/project-d-maze-tower-league",
+    branch: "codex/mtl-character-agent-repair",
+    commit: "50ef5c29c655c015335d76e78fb4a0ecb442252f",
+    standardDocument:
+      "docs/project-d-level3-wargame-platform-standard-template-v1.md",
+    inspectedImplementations: [
+      "packages/maze-tower-league-selfplay/byok-session-broker-v1.mjs",
+      "packages/maze-tower-league-selfplay/provider-isolation-supervisor-v1.mjs",
+      "packages/maze-tower-league-selfplay/provider-step-wal-v1.mjs",
+    ],
+    adoptedPrinciples: [
+      "credential_broker_is_a_scrubbed_child_process",
+      "credential_is_session_memory_only_and_never_enters_agent_ipc",
+      "non_secret_attempt_intent_is_durable_before_a_billable_call",
+      "crash_ambiguity_never_triggers_an_automatic_billable_retry",
+      "provider_model_harness_and_budget_identity_are_frozen_and_receipted",
+      "raw_provider_material_is_excluded_from_public_replay_and_training",
+    ],
+    starcraftSpecificChanges: [
+      "compose_behind_ticket_15_four_mode_gateway_instead_of_selfplay_seat_actor",
+      "retain_zero_automatic_retry_instead_of_the_mtl_bounded_retry_policy",
+      "use_one_credential_worker_per_attachment_without_a_rules_tool_bridge",
+      "use_sqlite_m1_and_postgresql_production_adapters_under_one_store_contract",
+      "keep_all_model_outputs_read_only_except_current_legalspace_opponent_preview",
+    ],
+    codeCopied: false,
+  },
+  deepModule: {
+    owner: "packages/secure-provider-runtime",
+    controlPlaneOperations: [
+      "prepareAttachment",
+      "attachCredentialBytes",
+      "readAttachment",
+      "detachAttachment",
+      "approveAmbiguousRetry",
+      "recover",
+      "close",
+    ],
+    providerGatewayOperation: "complete",
+    gatewayInputCredentialFields: [],
+    dependencies: [
+      "authenticated_principal_authority",
+      "ticket_15_session_lifecycle",
+      "server_provider_profile_registry",
+      "ticket_15_prompt_artifact_resolver",
+      "provider_attempt_store",
+      "isolated_credential_worker_factory",
+    ],
+    owns: [
+      "credential_attachment_lifecycle",
+      "provider_egress_policy",
+      "billable_attempt_and_budget_recovery",
+      "safe_provider_receipts",
+    ],
+    cannotOwn: [
+      "rules_legality",
+      "room_state",
+      "rng",
+      "human_confirmation",
+      "skill_generation_or_dsh",
+      "memory_promotion",
+      "training_truth",
+    ],
+  },
+  credentialLifecycle: {
+    attachProtocol: [
+      "authenticated_client_creates_a_non_secret_consent_intent",
+      "server_returns_a_single_use_short_lived_ingress_nonce",
+      "client_posts_only_raw_credential_bytes_to_the_dedicated_secure_ingress",
+      "web_process_forwards_a_bounded_buffer_and_zeroes_it_after_child_acknowledgement",
+      "credential_worker_returns_only_an_opaque_attachment_reference_and_safe_status",
+    ],
+    consentBinds: [
+      "principal_scope_hash",
+      "room_id",
+      "online_session_binding_hash",
+      "provider_profile_hash",
+      "provider_id",
+      "requested_model",
+      "session_budget_policy_hash",
+      "provider_data_disclosure_notice_version",
+      "no_automatic_retry",
+    ],
+    rawCredentialPersistence: "never",
+    workerCredentialLifetime: "bounded_session_memory_until_detach_expiry_end_or_process_loss",
+    parentCredentialRepresentation: "bounded_buffer_only_during_ingress_handoff",
+    clientCredentialRepresentation: "password_input_only_until_submit_settles",
+    reconnectPolicy: "same_authenticated_session_binding_may_keep_attachment",
+    detachTriggers: [
+      "explicit_user_detach",
+      "online_session_end",
+      "principal_logout_or_revocation",
+      "attachment_expiry",
+      "credential_worker_exit",
+    ],
+    serverRestartPolicy:
+      "credential_is_lost_and_must_be_explicitly_reattached_without_automatic_provider_retry",
+  },
+  workerIsolation: {
+    kind: "node_child_process_credential_worker",
+    granularity: "one_worker_per_credential_attachment",
+    inheritedEnvironment: false,
+    stdio: "closed_except_bounded_ipc",
+    rawCredentialVisibleToAgentRuntime: false,
+    rawCredentialVisibleToRulesOrRoomRuntime: false,
+    allowedInputsAfterAttach: [
+      "opaque_attempt_capability",
+      "sealed_provider_profile",
+      "bounded_provider_request",
+      "abort_signal_projection",
+    ],
+    allowedOutputs: [
+      "validated_structured_output",
+      "safe_usage_and_model_receipt",
+      "typed_redacted_failure",
+    ],
+    roomRulesToolOrDshCapabilities: [],
+  },
+  egressPolicy: {
+    policySource: "server_owned_hash_sealed_provider_profile_registry",
+    userSuppliedBaseUrlAllowed: false,
+    requirements: [
+      "remote_https_only",
+      "exact_provider_host_port_path_and_model_allowlist",
+      "dns_results_must_all_be_globally_routable",
+      "redirects_disabled",
+      "tls_certificate_verification_enabled",
+      "proxy_and_custom_authorization_headers_forbidden",
+      "request_response_and_time_bounds",
+      "one_physical_attempt_only",
+    ],
+    onlineDshAllowed: false,
+  },
+  durableAttempts: {
+    storeContract: "starcraft_tmg_provider_attempt_store_v1",
+    adapters: {
+      m1: "sqlite_wal",
+      production: "postgresql_transactional",
+    },
+    parityRequired: true,
+    persistedSecretFields: [],
+    writeBeforeEgress: [
+      "consent_receipt",
+      "attempt_intent",
+      "budget_reservation",
+    ],
+    atomicTerminalSettlement: [
+      "attempt_outcome",
+      "usage_or_conservative_charge",
+      "remaining_budget",
+      "safe_provider_receipt_hash",
+    ],
+    ambiguousRecovery:
+      "provider_cost_may_have_occurred_no_automatic_retry_explicit_same_user_approval_required",
+    credentialAfterRecovery: "missing_until_explicit_reattach",
+  },
+  liveAcceptance: {
+    apiKeyRequiredBeforeSlice: 162,
+    keyDelivery: "local_secure_ingress_or_process_environment_never_chat",
+    callCountDefault: 1,
+    minimumBudget: true,
+    requiredReceiptFields: [
+      "provider_profile_hash",
+      "provider_id",
+      "requested_model",
+      "reported_model",
+      "adapter_version",
+      "attempt_id",
+      "provider_request_id_hash",
+      "input_output_total_units",
+      "cost_or_explicitly_unavailable_cost",
+      "response_fingerprint",
+      "started_and_finished_at",
+    ],
+    userAuthorizationRequired: true,
+    absencePolicy: "ticket_remains_open_at_9_of_10",
+  },
+  slices: [
+    { slice: 153, scope: "baseline_mtl_comparison_boundary_and_fixed_denominator" },
+    { slice: 154, scope: "authenticated_consent_attachment_and_secure_ingress" },
+    { slice: 155, scope: "child_process_credential_worker_and_ipc_isolation" },
+    { slice: 156, scope: "provider_registry_egress_allowlist_and_bounded_transport" },
+    { slice: 157, scope: "attempt_store_contract_and_sqlite_wal_adapter" },
+    { slice: 158, scope: "postgresql_adapter_parity_budget_and_crash_recovery" },
+    { slice: 159, scope: "ticket_15_gateway_prompt_and_provider_receipt_integration" },
+    { slice: 160, scope: "web_battle_lab_byok_consent_status_and_detach" },
+    { slice: 161, scope: "redaction_fuzz_real_browser_and_worker_failure_aggregate" },
+    { slice: 162, scope: "user_authorized_live_provider_receipt_and_ticket_closure" },
+  ],
+  authority: {
+    rulesOwner: "rules_service",
+    roomOwner: "room_runtime",
+    humanConfirmationOwner: "non_model_controller",
+    providerMaySelectCurrentOpponentCandidate: true,
+    providerMayConfirmOrApply: false,
+    providerMayGenerateSkills: false,
+    dshAllowed: false,
+    trainingTruth: false,
+  },
+  harnessEvidence: {
+    harnessLoopUsed: true,
+    targetGames: ["starcraft-tmg"],
+    promptPackRoutes: [],
+    harnessToolsCalled: [],
+    uiTraceEvidence: "not_run_boundary_only",
+    agentDecisionEvidence: null,
+    memoryTraceEvidence: {
+      refs: [],
+      writes: 0,
+      crossModeIsolationChecked: false,
+    },
+    trainingTraceCandidates: 0,
+    rollbackOrDemotionRules: [
+      "keep_ticket_15_injected_gateway_as_the_safe_fallback_until_live_acceptance",
+      "detach_and_disable_a_provider_profile_after_any_credential_or_egress_boundary_failure",
+      "never_retry_an_ambiguous_billable_attempt_without_explicit_same_user_approval",
+    ],
+    userVisibleChecks: "not_run_until_slice_160",
+  },
+  runTruth: {
+    sourceRefreshPerformed: false,
+    providerCalled: false,
+    byokCredentialAccepted: false,
+    networkComparisonReadOnly: true,
+    skillGenerated: false,
+    dshRun: false,
+    muzeroDataGenerated: false,
+    selfPlayRun: false,
+    trainingTruth: false,
+    productionReady: false,
+  },
+};
+
+export const STARCRAFT_TMG_TICKET_16_SECURE_BYOK_PROVIDER_BOUNDARY_V1 = freeze({
+  ...body,
+  boundaryHash: hashStarcraftTmgContract(body),
+});
