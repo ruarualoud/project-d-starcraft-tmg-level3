@@ -1,7 +1,7 @@
 # Ticket 16 — secure BYOK and direct Provider roadmap
 
 Date: 2026-09-03  
-Status: active; Slice 153 complete, 1/10  
+Status: active; Slices 153–154 complete, 2/10
 Project progress before this Ticket: 14/22 Tickets complete; Ticket 14 device
 acceptance remains deferred  
 Source refresh: not performed
@@ -99,7 +99,7 @@ call needs a new same-user approval and a reattached credential.
 | Slice | Scope | Closure evidence |
 | --- | --- | --- |
 | 153 | **Complete.** Audit/freeze the old implementation, compare MTL and fix the 10-Slice denominator. | Hash-sealed boundary `241c8a35...6cbe5`; exact old-file hashes; MTL commit and adapted principles; focused 15/15, report `8c03cff4...57e7e`; no key or call. |
-| 154 | Authenticated consent, attachment lifecycle and dedicated secure ingress. | Principal/session/profile/budget binding; one-use expiry nonce; Buffer-only key path; status/detach/revocation tests. |
+| 154 | **Complete.** Authenticated consent, attachment lifecycle and dedicated secure ingress. | Principal/session/profile/budget binding; one-use expiry nonce; Buffer-only synthetic-key path with zeroing; status/detach/revocation/concurrency tests; focused 27/27, report `30bf5825...c0fd`; no user key or Provider call. |
 | 155 | Child-process credential Worker and IPC isolation. | Scrubbed environment/stdio; parent buffer zeroing; per-attachment process; crash/detach kill; Agent/Rules/room/DSH denial. |
 | 156 | Provider registry, egress allowlist and bounded transport. | Exact host/path/model; public DNS/TLS/no redirect; body/time bounds; one attempt; typed failures; no arbitrary endpoint. |
 | 157 | Common attempt-store contract and SQLite WAL Adapter. | Non-secret schema; intent-before-egress; atomic budget reservation/settlement; idempotency/CAS; restart replay. |
@@ -139,3 +139,26 @@ never retries without explicit same-user approval.
   assertions = 207 assertions.
 - Boundary hash: `241c8a35fef6cc0a4e851070d891b0deda7f273557b061a1e266a184b576cbe5`.
 - Slice report hash: `8c03cff43ba3b5c9a32e852014767eda47f5406107db1068c9cf468d76257e7e`.
+
+## Slice 154 fixed evidence
+
+- New deep control module: authenticated explicit consent, a 32-byte
+  single-use nonce stored only as a digest, bounded Buffer handoff, safe status,
+  explicit detach, session/principal revocation, expiry sweep and close.
+- Dedicated HTTP module: TLS by default, explicit loopback development only,
+  exact JSON consent and `application/octet-stream` ingress, strict body
+  length/size/encoding gates, no-store security headers and credential-safe
+  response projections.
+- Behavior verifier: 27/27 assertions, including cross-principal/room/session
+  denial, stale/current reconnect fencing, expiry, replay, wrong nonce,
+  client-authority rejection, unsafe Worker acknowledgement cleanup, detach
+  failure retry, detach-during-ingress and capacity fail-closed behavior.
+- Focused adjacent gates: Slice 153 15/15, Ticket 15 session lifecycle 21/21
+  and Provider supervisor 24/24.
+- Fixed cumulative denominator: 207 predecessor assertions + 27 Slice 154
+  assertions = 234 assertions.
+- Contract hash: `6e7d243bcbd766b2f7eb52dbf3b46fbe1dc0f0cf6e5bef823c1d68cd5f03027f`.
+- Slice report hash: `30bf5825dbb6aaec7ceb7d04d6f1701e596e492cdd6da34624370929a88bc0fd`.
+- Only a byte-array synthetic sentinel crossed the injected port. No user API
+  key was accepted, no external Provider was called and the port is not yet a
+  child process; Slice 155 owns that isolation step.
