@@ -1,5 +1,8 @@
 import { hashStarcraftTmgClientContract } from "./portable-contract-hash-v1.mjs";
-import { STARCRAFT_TMG_OFFICIAL_FAQ_CURRENT_CLIENT_CONTRACT_V1 } from
+import {
+  classifyStarcraftTmgCurrentFaqRoomBindingV1,
+  STARCRAFT_TMG_OFFICIAL_FAQ_CURRENT_CLIENT_CONTRACT_V1,
+} from
   "./official-faq-current-client-contract-v1.mjs";
 
 export const STARCRAFT_TMG_WRITE_PALETTE_VERSION =
@@ -333,33 +336,22 @@ function writeSheetProjection(entries) {
   };
 }
 
-function bindingMatches(observed, expected) {
-  return observed.catalogueHash === expected.catalogueHash
-    && observed.runtimeHash === expected.runtimeHash
-    && observed.executableRuleAtomCount === expected.executableRuleAtomCount
-    && observed.nonExecutableRuleAtomCount === expected.nonExecutableRuleAtomCount
-    && observed.legacyCompatibilityUsed === false;
-}
-
 function graphBinding(legalSpace) {
-  const binding = object(legalSpace?.rulesRuntimeBinding) ? legalSpace.rulesRuntimeBinding : {};
-  const current = bindingMatches(binding, CURRENT.roomBindings.current);
-  const historical = bindingMatches(binding, CURRENT.roomBindings.historicalPreFaq);
-  const status = current ? "current_faq_v1"
-    : historical ? "historical_pre_faq" : "quarantined";
+  const binding = classifyStarcraftTmgCurrentFaqRoomBindingV1(
+    legalSpace?.rulesRuntimeBinding,
+  );
   return {
-    status,
-    executable: current,
-    historical,
-    mutationAllowed: current,
-    observedCatalogueHash: text(binding.catalogueHash) || null,
-    observedRuntimeHash: text(binding.runtimeHash) || null,
-    observedExecutableRuleAtomCount: Number.isSafeInteger(binding.executableRuleAtomCount)
-      ? binding.executableRuleAtomCount : null,
-    legalSpaceComplete: binding.legalSpaceComplete === true,
-    legacyCompatibilityUsed: binding.legacyCompatibilityUsed === true,
-    actionsRemainBoundToObservedLegalSpace: current,
-    reasonCode: current || historical ? null : "ROOM_RULE_BINDING_HASH_MISMATCH",
+    status: binding.status,
+    executable: binding.executable,
+    historical: binding.historical,
+    mutationAllowed: binding.mutationAllowed,
+    observedCatalogueHash: binding.observedCatalogueHash,
+    observedRuntimeHash: binding.observedRuntimeHash,
+    observedExecutableRuleAtomCount: binding.observedExecutableRuleAtomCount,
+    legalSpaceComplete: binding.legalSpaceComplete,
+    legacyCompatibilityUsed: binding.legacyCompatibilityUsed,
+    actionsRemainBoundToObservedLegalSpace: binding.current,
+    reasonCode: binding.reasonCode,
   };
 }
 

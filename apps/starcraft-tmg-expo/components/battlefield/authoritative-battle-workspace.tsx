@@ -320,7 +320,9 @@ function Button({
   );
 }
 
-export function AuthoritativeBattleWorkspace() {
+export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
+  onOpenRoomRules?: () => void;
+} = {}) {
   const { lang } = useI18n();
   const zh = lang === "zh";
   const { width: windowWidth } = useWindowDimensions();
@@ -1086,6 +1088,7 @@ export function AuthoritativeBattleWorkspace() {
               onThreatMode={(mode) => { setThreatMode(mode); setShowThreatReference(true); }}
               onThreatWeapon={setSelectedThreatWeaponId}
               onOpenActions={() => setDetailPanel("actions")}
+              onOpenRules={onOpenRoomRules}
               onPreviewFinite={previewFinite}
               canPreview={canPreview && !Boolean(visiblePreview)}
             />

@@ -47,6 +47,7 @@ export function BattleWorkbenchReadPanel({
   onThreatMode,
   onThreatWeapon,
   onOpenActions,
+  onOpenRules,
   onPreviewFinite,
   canPreview = false,
 }: {
@@ -59,6 +60,7 @@ export function BattleWorkbenchReadPanel({
   onThreatMode?: (mode: WorkbenchThreatMode) => void;
   onThreatWeapon?: (weaponId: string | null) => void;
   onOpenActions?: () => void;
+  onOpenRules?: () => void;
   onPreviewFinite?: (actionKey: string) => void;
   canPreview?: boolean;
 }) {
@@ -214,6 +216,8 @@ export function BattleWorkbenchReadPanel({
             zh={zh}
           />
         )}
+        <RulesQuickViewCard snapshot={snapshot} selectedPieceId={selectedPieceId}
+          zh={zh} onOpenRules={onOpenRules} />
         <WriteSheetCard snapshot={snapshot} zh={zh} onOpenActions={onOpenActions} />
         <Text style={styles.boundary}>Viewer-scoped authoritative projection · r{value(snapshot.stateRevision)} · client mutation disabled</Text>
       </ScrollView>
@@ -242,9 +246,100 @@ export function BattleWorkbenchReadPanel({
         <Text style={styles.row}>Undeployed: {(deployment.undeployed || []).join(", ") || "—"}</Text>
         <Text style={styles.row}>Destroyed: {(deployment.destroyed || []).join(", ") || "—"}</Text>
       </View>
+      <ScoreForecastCard snapshot={snapshot} zh={zh} onOpenActions={onOpenActions}
+        onPreviewFinite={onPreviewFinite} canPreview={canPreview} />
+      <RulesQuickViewCard snapshot={snapshot} selectedPieceId={selectedPieceId}
+        zh={zh} onOpenRules={onOpenRules} />
       <WriteSheetCard snapshot={snapshot} zh={zh} onOpenActions={onOpenActions} />
-      <Text style={styles.boundary}>The end-of-round forecast remains unavailable until its rules-owned Slice 141 query is loaded.</Text>
+      <Text style={styles.boundary}>Server-owned forecast and exact room-pinned rules · no client scoring calculation or compatibility fallback</Text>
     </ScrollView>
+  );
+}
+
+function ScoreForecastCard({ snapshot, zh, onOpenActions, onPreviewFinite, canPreview }: {
+  snapshot: Record<string, any>;
+  zh: boolean;
+  onOpenActions?: () => void;
+  onPreviewFinite?: (actionKey: string) => void;
+  canPreview: boolean;
+}) {
+  const forecast = snapshot.scoreForecast;
+  if (!forecast || forecast.coverage === "not_loaded") return null;
+  const projected = forecast.projectedScores || {};
+  const entry = forecast.scoreWriteEntry;
+  return (
+    <View style={styles.card}>
+      <View style={styles.titleRow}>
+        <Text style={styles.subtitle}>{zh ? "若现在结束本回合" : "If the round ended now"}</Text>
+        <StatusPill status={`${forecast.forecastMode} / ${forecast.coverage}`} />
+      </View>
+      {(forecast.currentScores || []).map((score: any) => (
+        <Text key={score.sideKey} style={styles.score}>
+          {score.sideKey}: {score.score} → {value(projected[score.sideKey], "?")}
+        </Text>
+      ))}
+      {(forecast.branches || []).slice(0, 2).map((branch: any) => (
+        <Text key={branch.branchId} style={styles.row}>• {branch.classification}: {branch.label}</Text>
+      ))}
+      {!!forecast.unresolved?.length && (
+        <Text style={styles.meta}>{zh ? "未决" : "Unresolved"}: {forecast.unresolved.join(", ")}</Text>
+      )}
+      <Text style={styles.boundary}>{zh
+        ? "预测只读，不掷骰、不推进阶段；分数变更必须由当前 LegalSpace 动作写回。"
+        : "Forecast is read-only: it rolls no dice and advances no phase. Score changes require the current LegalSpace action."}</Text>
+      {entry && (
+        <Pressable
+          disabled={entry.entryKind === "finite"
+            ? entry.enabledForProposal !== true || !canPreview : false}
+          onPress={() => entry.entryKind === "finite"
+            ? onPreviewFinite?.(entry.actionKey) : onOpenActions?.()}
+          style={[styles.sheetButton, entry.entryKind === "finite"
+            && (entry.enabledForProposal !== true || !canPreview) && styles.disabled]}
+        >
+          <Text style={styles.choiceText}>{entry.entryKind === "finite"
+            ? (zh ? "生成计分 Preview" : "Preview scoring action")
+            : (zh ? "在 Actions 填写计分参数" : "Edit scoring action")}</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+function RulesQuickViewCard({ snapshot, selectedPieceId, zh, onOpenRules }: {
+  snapshot: Record<string, any>;
+  selectedPieceId: string | null;
+  zh: boolean;
+  onOpenRules?: () => void;
+}) {
+  const quick = snapshot.rulesQuickView;
+  if (!quick || quick.coverage === "not_loaded") return null;
+  const unit = (quick.unitContexts || []).find((entry: any) => (
+    entry.pieceId === selectedPieceId || entry.unitId === selectedPieceId
+      || snapshot.units?.find((candidate: any) => candidate.id === entry.pieceId)
+        ?.models?.some((model: any) => model.id === selectedPieceId)
+  ));
+  const rows = unit?.actionRefs || quick.actionContexts || [];
+  return (
+    <View style={styles.card}>
+      <View style={styles.titleRow}>
+        <Text style={styles.subtitle}>{zh ? "上下文规则速览" : "Contextual rules quick view"}</Text>
+        <StatusPill status={quick.coverage} />
+      </View>
+      <Text style={styles.row}>{unit?.name || (zh ? "当前局面" : "Current position")} · {rows.length} {zh ? "个合法动作关联" : "legal action links"}</Text>
+      {rows.slice(0, 4).map((entry: any) => (
+        <Text key={entry.entryId} style={styles.meta}>• {entry.actionType || entry.entryId} · {entry.ruleAtomIds?.length || 0} atoms</Text>
+      ))}
+      {(unit?.keywords || []).slice(0, 5).map((entry: any) => (
+        <Text key={entry.name} style={styles.meta}>• {entry.name}: {entry.coverage}</Text>
+      ))}
+      <Text style={styles.boundary}>{quick.coverageReason} · {quick.binding?.status}</Text>
+      <Pressable disabled={!quick.rulesIdentity?.rulesDisplayRef || !onOpenRules}
+        onPress={onOpenRules}
+        style={[styles.sheetButton, (!quick.rulesIdentity?.rulesDisplayRef || !onOpenRules)
+          && styles.disabled]}>
+        <Text style={styles.choiceText}>{zh ? "打开房间锁定规则" : "Open room-pinned rules"}</Text>
+      </Pressable>
+    </View>
   );
 }
 

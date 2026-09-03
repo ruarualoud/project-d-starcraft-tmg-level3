@@ -748,3 +748,17 @@ numeric or client mutation is absent. Focused 16/16, FAQ F5 17/17, Slice 137
 10/10 and TypeScript pass. Ticket 14 advances to 13/16 with Slice 141 next. No
 source refresh, Provider, Skill, DSH, MuZero, self-play, memory or training
 promotion ran.
+
+Ticket 14 Slice 141 adds two server-owned BattleWorkbench queries after the FAQ
+and Token/Marker contract are frozen. A score forecast exposes exact,
+conditional or unknown branches: exact requires a hash-valid scoring action in
+the current LegalSpace, while a pre-scoring Marker snapshot lists its
+assumptions and never includes unresolved supply/final-reserve VP. Mixed
+binding or forged resolution hashes quarantine the result. The contextual
+rules view binds units/actions/keywords only to explicit room-pinned LegalSpace
+RuleAtom lineage; missing links remain unknown and no compatibility fallback
+is allowed. Expo and Battle Lab mount the same score Preview route and rules
+references. Focused 18/18, write-palette 16/16, workbench 10/10, Battle Lab
+23/23 and TypeScript pass. Ticket 14 advances to 14/16 with native/device Slice
+142 next. No source refresh, Provider, Skill, DSH, MuZero, self-play, memory or
+training promotion ran.

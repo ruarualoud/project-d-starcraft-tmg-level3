@@ -19,6 +19,10 @@ import { createStarcraftTmgCharacterAssetGrantAuthorityV1 } from
   "../character-agent/character-asset-grant-v1.mjs";
 import { projectStarcraftTmgBattleWorkbenchV1 } from
   "../client-domain/battle-workbench-v1.mjs";
+import {
+  projectStarcraftTmgRulesQuickViewV1,
+  projectStarcraftTmgScoreForecastV1,
+} from "./battle-workbench-score-rules-query-v1.mjs";
 
 export const STARCRAFT_TMG_ROOM_RUNTIME_VERSION = "starcraft_tmg_room_runtime_v2";
 export const STARCRAFT_TMG_ROOM_CHARACTER_EXTENSION_VERSION =
@@ -1201,12 +1205,22 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       state: projectState(aggregate.envelope.state, grant?.seatKey || null),
       training: { eligibleForTraining: false, trainingTruth: false, reviewStatus: "raw" },
     };
+    const scoreForecast = projectStarcraftTmgScoreForecastV1({
+      roomProjection: projection,
+      legalSpace: currentLegalSpace,
+    });
+    const rulesQuickView = projectStarcraftTmgRulesQuickViewV1({
+      roomProjection: projection,
+      legalSpace: currentLegalSpace,
+    });
     const snapshot = projectStarcraftTmgBattleWorkbenchV1({
       roomProjection: projection,
       legalSpace: currentLegalSpace,
       includeThreat: true,
       includeProbability: true,
       includeWritePalette: true,
+      scoreForecast,
+      rulesQuickView,
     });
     return deepFreeze({ ok: true, snapshot });
   }

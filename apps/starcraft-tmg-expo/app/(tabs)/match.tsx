@@ -345,7 +345,9 @@ export default function MatchScreen() {
           />
         </View>
 
-        {surface === "battle" && <AuthoritativeBattleWorkspace />}
+        {surface === "battle" && (
+          <AuthoritativeBattleWorkspace onOpenRoomRules={() => setSurface("room")} />
+        )}
         {surface === "adjutant" && <TacticalAdjutantPanel />}
         {surface === "room" && (
           <>

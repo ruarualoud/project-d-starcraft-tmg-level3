@@ -13,6 +13,22 @@ function freeze(value) {
   return Object.freeze(value);
 }
 
+function object(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function text(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function identityMatches(observed, expected) {
+  return object(observed)
+    && observed.catalogueHash === expected.catalogueHash
+    && observed.runtimeHash === expected.runtimeHash
+    && observed.executableRuleAtomCount === expected.executableRuleAtomCount
+    && observed.nonExecutableRuleAtomCount === expected.nonExecutableRuleAtomCount;
+}
+
 const tokenMarkerAtoms = [...OFFICIAL_FAQ_F3_ATOM_BINDING_V1,
   ...OFFICIAL_FAQ_F4_ATOM_BINDING_V1]
   .filter((atom) => atom.tokenMarkerImpact === true)
@@ -97,3 +113,34 @@ export const STARCRAFT_TMG_OFFICIAL_FAQ_CURRENT_CLIENT_CONTRACT_V1 = freeze({
   ...body,
   clientContractHash: hashStarcraftTmgClientContract(body),
 });
+
+export function classifyStarcraftTmgCurrentFaqRoomBindingV1(input) {
+  const observed = object(input?.rulesRuntimeBinding) ? input.rulesRuntimeBinding
+    : object(input) ? input : {};
+  const current = identityMatches(observed, body.roomBindings.current)
+    && observed.legacyCompatibilityUsed === false;
+  const historical = identityMatches(observed, body.roomBindings.historicalPreFaq);
+  const status = current ? "current_faq_v1"
+    : historical ? "historical_pre_faq" : "quarantined";
+  return freeze({
+    status,
+    current,
+    historical,
+    executable: current,
+    mutationAllowed: current,
+    displayAllowed: current || historical,
+    replayAllowed: current || historical,
+    observedCatalogueHash: text(observed.catalogueHash) || null,
+    observedRuntimeHash: text(observed.runtimeHash) || null,
+    observedExecutableRuleAtomCount: Number.isSafeInteger(observed.executableRuleAtomCount)
+      ? observed.executableRuleAtomCount : null,
+    observedNonExecutableRuleAtomCount:
+      Number.isSafeInteger(observed.nonExecutableRuleAtomCount)
+        ? observed.nonExecutableRuleAtomCount : null,
+    legalSpaceComplete: observed.legalSpaceComplete === true,
+    legacyCompatibilityUsed: observed.legacyCompatibilityUsed === true,
+    actionsRemainBoundToObservedLegalSpace: current || historical,
+    reasonCode: current || historical ? null : "ROOM_RULE_BINDING_HASH_MISMATCH",
+    trainingTruth: false,
+  });
+}

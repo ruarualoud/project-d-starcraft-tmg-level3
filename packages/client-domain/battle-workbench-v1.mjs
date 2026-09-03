@@ -297,6 +297,7 @@ export function isStarcraftTmgBattleWorkbenchSnapshotV1(value, expected = {}) {
     || typeof value.snapshotHash !== "string" || !/^[a-f0-9]{64}$/u.test(value.snapshotHash)
     || !Array.isArray(value.units) || !object(value.deployment) || !Array.isArray(value.scoreboard)
     || !object(value.scenario) || !object(value.writeSheet)
+    || !object(value.scoreForecast) || !object(value.rulesQuickView)
     || !object(value.coverage) || !object(value.authority)
     || value.authority.readOnly !== true || value.authority.clientMutationAllowed !== false
     || value.trainingTruth !== false || value.eligibleForTraining !== false) return false;

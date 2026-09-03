@@ -445,6 +445,50 @@ function markerActionCards(workbench, canDispatch) {
   return [...cards, ...unsupported];
 }
 
+function scoreForecastCard(workbench, canDispatch) {
+  const forecast = workbench?.scoreForecast;
+  if (!forecast) return workbenchCard("If the round ended now", ["Forecast not loaded."]);
+  const lines = (forecast.currentScores || []).map((entry) => (
+    `${entry.sideKey}: ${entry.score} → ${text(forecast.projectedScores?.[entry.sideKey], "?")}`));
+  lines.push(...(forecast.branches || []).slice(0, 2)
+    .map((branch) => `${branch.classification}: ${branch.label}`));
+  if (forecast.unresolved?.length) lines.push(`Unresolved: ${forecast.unresolved.join(", ")}`);
+  lines.push("Read-only server query; score writes require Preview → Confirm → Apply → Receipt/Replay.");
+  const action = forecast.scoreWriteEntry;
+  const button = htmlElement("button", {
+    textContent: action?.entryKind === "finite" ? "Preview scoring action" : "Open Actions",
+  });
+  button.disabled = !action || (action.entryKind === "finite"
+    ? action.enabledForProposal !== true || !canDispatch : false);
+  button.addEventListener("click", () => {
+    if (action.entryKind === "finite") {
+      invoke({ type: "preview_finite", actionKey: action.actionKey },
+        "Sealed scoring preview received");
+    } else setDetailPanel("actions");
+  });
+  return htmlElement("article", { className: "trace" }, [
+    htmlElement("strong", { textContent: `If the round ended now · ${forecast.forecastMode} / ${forecast.coverage}` }),
+    ...lines.map((line) => htmlElement("p", { textContent: line })),
+    button,
+  ]);
+}
+
+function rulesQuickViewCard(workbench, unit) {
+  const quick = workbench?.rulesQuickView;
+  if (!quick) return workbenchCard("Contextual rules", ["Rules quick view not loaded."]);
+  const context = (quick.unitContexts || []).find((entry) => entry.pieceId === unit?.id);
+  const refs = context?.actionRefs || quick.actionContexts || [];
+  const display = quick.rulesIdentity?.rulesDisplayRef;
+  return workbenchCard(`Contextual rules · ${quick.coverage}`, [
+    `${context?.name || "Current position"} · ${refs.length} legal action links`,
+    ...refs.slice(0, 4).map((entry) => `${entry.actionType || entry.entryId} · ${(entry.ruleAtomIds || []).length} atoms`),
+    ...((context?.keywords || []).slice(0, 5).map((entry) => `${entry.name}: ${entry.coverage}`)),
+    display ? `Room-pinned ${display.artifactId} · ${shortHash(display.artifactHash)}`
+      : "Room-pinned rules artifact unavailable",
+    `${quick.coverageReason} · no compatibility fallback`,
+  ]);
+}
+
 function renderWorkbench(view) {
   const workbench = view.workbench;
   const selectedModel = view.battlefield.models.find((model) => model.id === selectedModelId);
@@ -476,10 +520,12 @@ function renderWorkbench(view) {
       "Finite D6 distributions only; unresolved effects stay partial and no chance is rolled.",
     ]),
     ...probabilityCards(workbench, unit.id),
+    rulesQuickViewCard(workbench, unit),
   ] : [workbenchCard("No unit selected", ["Select a visible model to inspect its viewer-scoped live characteristics."])]);
   const scenario = workbench?.scenario;
   replaceChildren(el["workbench-status"], workbench ? [
     workbenchCard("Current score", (workbench.scoreboard || []).map((entry) => `${entry.playerName}: ${entry.score}`)),
+    scoreForecastCard(workbench, view.connection.canDispatchAuthoritativeIntent),
     workbenchCard("Scenario", [
       `${text(scenario?.mission?.name || scenario?.mission?.id, "Mission not projected")} · round ${text(scenario?.round)} · ${text(scenario?.phase)}`,
       `Deployment ${text(scenario?.deployment?.name || scenario?.deployment?.id, "not projected")}`,
@@ -487,6 +533,7 @@ function renderWorkbench(view) {
       `Reserve ${(workbench.deployment?.reserve || []).join(", ") || "—"}`,
       `Undeployed ${(workbench.deployment?.undeployed || []).join(", ") || "—"}`,
     ]),
+    rulesQuickViewCard(workbench, unit),
   ] : [workbenchCard("Workbench not loaded", ["Bind a room to load the current authoritative revision."])]);
   replaceChildren(el["workbench-threat"], [workbenchCard("Threat layers", [
     workbench?.threat?.reason || "Authoritative threat query not loaded.",

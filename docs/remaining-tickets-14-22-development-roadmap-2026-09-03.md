@@ -1,6 +1,6 @@
 # Remaining StarCraft TMG Level-3 development tickets
 
-Status after Ticket 14 Slice 139: 13/22 Tickets complete; Ticket 14 is 12/16 and
+Status after Ticket 14 Slice 141: 13/22 Tickets complete; Ticket 14 is 14/16 and
 Tickets 14–22 remain.
 
 | Ticket | Purpose | Completion evidence |
@@ -22,8 +22,7 @@ user's explicit confirmation gate. Tickets 20–22 depend on the earlier Agent,
 Skill, trajectory and production contracts and cannot be truthfully closed by
 scaffolds alone.
 
-The user-frozen execution order is stricter than those dependency options:
-finish Ticket 14 Slices 137–143, then complete FAQ F1–F5 as one explicit
-official-source refresh/review lane, then begin Ticket 15. Development does not
-pull source updates again unless explicitly commanded. Large-scale Skill
-generation remains behind a separate user confirmation.
+The FAQ F1–F5 refresh/review lane is complete and was intentionally moved before
+Token/Marker Slice 140. Finish Ticket 14 Slices 142–143, then begin Ticket 15.
+Development does not pull source updates again unless explicitly commanded.
+Large-scale Skill generation remains behind a separate user confirmation.
