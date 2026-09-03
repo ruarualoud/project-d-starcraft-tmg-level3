@@ -1085,6 +1085,9 @@ export function AuthoritativeBattleWorkspace() {
               selectedThreatWeaponId={selectedThreatWeaponId}
               onThreatMode={(mode) => { setThreatMode(mode); setShowThreatReference(true); }}
               onThreatWeapon={setSelectedThreatWeaponId}
+              onOpenActions={() => setDetailPanel("actions")}
+              onPreviewFinite={previewFinite}
+              canPreview={canPreview && !Boolean(visiblePreview)}
             />
           ) : detailPanel === "actions" ? (
             <>

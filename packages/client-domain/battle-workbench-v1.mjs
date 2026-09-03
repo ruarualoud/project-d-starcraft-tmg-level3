@@ -1,6 +1,7 @@
 import { hashStarcraftTmgClientContract } from "./portable-contract-hash-v1.mjs";
 import { projectStarcraftTmgThreatWorkbenchV1 } from "./battle-workbench-threat-v1.mjs";
 import { projectStarcraftTmgProbabilityWorkbenchV1 } from "./battle-workbench-probability-v1.mjs";
+import { projectStarcraftTmgWritePaletteV1 } from "./battle-workbench-write-palette-v1.mjs";
 
 export const STARCRAFT_TMG_BATTLE_WORKBENCH_VERSION =
   "starcraft_tmg_battle_workbench_snapshot_v1";
@@ -240,6 +241,9 @@ function snapshotCore(input) {
   const probability = clone(input.probability) || (input.includeProbability === true
     ? projectStarcraftTmgProbabilityWorkbenchV1({ roomProjection: projection, units })
     : placeholder("starcraft_tmg_probability_workbench_v1", "slice_139_not_loaded"));
+  const writePalette = clone(input.tokenMarkerActions) || (input.includeWritePalette === true
+    ? projectStarcraftTmgWritePaletteV1({ legalSpace: input.legalSpace })
+    : placeholder("starcraft_tmg_battle_workbench_write_palette_v1", "slice_140_not_loaded"));
   return {
     schemaVersion: STARCRAFT_TMG_BATTLE_WORKBENCH_VERSION,
     roomId: text(room.roomId) || null,
@@ -254,8 +258,9 @@ function snapshotCore(input) {
     scoreboard: scoreView(state),
     threat,
     probability,
-    tokenMarkerActions: clone(input.tokenMarkerActions)
-      || placeholder("starcraft_tmg_token_marker_palette_v1", "slice_140_not_loaded"),
+    tokenMarkerActions: writePalette,
+    writeSheet: clone(writePalette.writeSheet)
+      || placeholder("starcraft_tmg_authoritative_battle_write_sheet_v1", "slice_140_not_loaded"),
     scoreForecast: clone(input.scoreForecast)
       || placeholder("starcraft_tmg_score_forecast_v1", "slice_141_not_loaded"),
     rulesQuickView: clone(input.rulesQuickView)
@@ -267,7 +272,7 @@ function snapshotCore(input) {
       score: coverageEntry("exact", ["viewer_projection.scores"]),
       threat: coverageEntry(threat.coverage || "not_loaded", threat.sourceActionRefs || []),
       probability: coverageEntry(probability.coverage || "not_loaded", probability.matrix || []),
-      markers: coverageEntry(input.tokenMarkerActions?.coverage || "not_loaded"),
+      markers: coverageEntry(writePalette.coverage || "not_loaded", [writePalette.paletteHash].filter(Boolean)),
       rules: coverageEntry(input.rulesQuickView?.coverage || "not_loaded"),
     },
     authority: {
@@ -291,7 +296,8 @@ export function isStarcraftTmgBattleWorkbenchSnapshotV1(value, expected = {}) {
   if (!object(value) || value.schemaVersion !== STARCRAFT_TMG_BATTLE_WORKBENCH_VERSION
     || typeof value.snapshotHash !== "string" || !/^[a-f0-9]{64}$/u.test(value.snapshotHash)
     || !Array.isArray(value.units) || !object(value.deployment) || !Array.isArray(value.scoreboard)
-    || !object(value.scenario) || !object(value.coverage) || !object(value.authority)
+    || !object(value.scenario) || !object(value.writeSheet)
+    || !object(value.coverage) || !object(value.authority)
     || value.authority.readOnly !== true || value.authority.clientMutationAllowed !== false
     || value.trainingTruth !== false || value.eligibleForTraining !== false) return false;
   const { snapshotHash, ...core } = value;

@@ -7,7 +7,8 @@ export type WorkbenchThreatMode =
   | "friendly_aggregate" | "enemy_aggregate";
 
 function value(input: unknown, fallback = "—") {
-  return input === null || input === undefined || input === "" ? fallback : String(input);
+  if (input === null || input === undefined || input === "") return fallback;
+  return typeof input === "object" ? JSON.stringify(input) : String(input);
 }
 
 function StatusPill({ status }: { status: string }) {
@@ -45,6 +46,9 @@ export function BattleWorkbenchReadPanel({
   selectedThreatWeaponId = null,
   onThreatMode,
   onThreatWeapon,
+  onOpenActions,
+  onPreviewFinite,
+  canPreview = false,
 }: {
   panel: Panel;
   snapshot: Record<string, any> | null;
@@ -54,6 +58,9 @@ export function BattleWorkbenchReadPanel({
   selectedThreatWeaponId?: string | null;
   onThreatMode?: (mode: WorkbenchThreatMode) => void;
   onThreatWeapon?: (weaponId: string | null) => void;
+  onOpenActions?: () => void;
+  onPreviewFinite?: (actionKey: string) => void;
+  canPreview?: boolean;
 }) {
   const [probabilityOpen, setProbabilityOpen] = React.useState(false);
   if (!snapshot) {
@@ -114,7 +121,57 @@ export function BattleWorkbenchReadPanel({
     );
   }
   if (panel === "markers") {
-    return <Placeholder title={zh ? "Token / Marker" : "Token / Marker"} snapshot={snapshot} section="tokenMarkerActions" />;
+    const palette = snapshot.tokenMarkerActions;
+    if (!palette || palette.coverage === "not_loaded") {
+      return <Placeholder title={zh ? "Token / Marker" : "Token / Marker"} snapshot={snapshot} section="tokenMarkerActions" />;
+    }
+    const denominator = palette.ruleGraphIndex || {};
+    const current = palette.currentLegalSpace || {};
+    return (
+      <ScrollView style={styles.scroll} nestedScrollEnabled>
+        <View style={styles.card}>
+          <View style={styles.titleRow}><Text style={styles.title}>Token / Marker</Text><StatusPill status={palette.coverage} /></View>
+          <Text style={styles.meta}>FAQ graph {denominator.nodeCount || 0} nodes / {denominator.edgeCount || 0} edges · base graph {denominator.referencedBaseNodeCount || 0} / {denominator.referencedBaseEdgeCount || 0}</Text>
+          <Text style={styles.row}>{denominator.faqTokenMarkerEntryCount || 0} FAQ entries / {denominator.faqTokenMarkerAtomCount || 0} FAQ atoms · {denominator.directlyNamedTokenMarkerAtomCount || 0} base named atoms · {denominator.genericTokenMarkerPrimitiveAtomCount || 0} base primitives</Text>
+          <Text style={styles.meta}>{zh ? "这些规则集合会重叠，不会相加当作可点击动作。" : "These overlapping rule sets are not summed as clickable actions."}</Text>
+          <Text style={styles.row}>{zh ? "当前局面" : "Current position"}: {current.classifiedCount || 0} {zh ? "可分类" : "classified"} · {current.enabledForProposalCount || 0} {zh ? "可发起" : "enabled"} · {current.unclassifiedCount || 0} {zh ? "未分类/禁用" : "unclassified/disabled"} · {current.nonTokenMarkerEntryCount || 0} {zh ? "其他合法动作" : "other legal actions"}</Text>
+          <Text style={styles.boundary}>{palette.coverageReason} · {denominator.binding?.status || "unknown binding"}</Text>
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.subtitle}>{zh ? "完整生命周期动作类型" : "Complete lifecycle verbs"}</Text>
+          {(palette.lifecycle || []).map((entry: any) => <Text key={entry.verb} style={styles.row}>• {entry.verb} — {entry.description}</Text>)}
+        </View>
+        {(palette.actions || []).map((entry: any) => (
+          <View key={entry.entryId} style={styles.card}>
+            <View style={styles.titleRow}><Text style={styles.subtitle}>{entry.verb} · {entry.type}</Text><StatusPill status={entry.coverage} /></View>
+            <Text style={styles.row}>{entry.label}</Text>
+            <Text style={styles.meta}>source {value(entry.source?.ability || entry.source?.cardId || entry.source?.unitId || entry.source?.pieceId || entry.source?.executorId, "rules")}</Text>
+            <Text style={styles.meta}>controller {value(entry.controller)} · duration {value(entry.duration, "not projected")} · stack {value(entry.stackPolicy, entry.unique === true ? "unique" : "not projected")}</Text>
+            <Text style={styles.meta}>trigger {value(entry.trigger, "not projected")} · cleanup {value(entry.cleanupTiming, "not projected")}</Text>
+            <Pressable
+              disabled={entry.enabledForProposal !== true
+                || (entry.entryKind === "finite" && !canPreview)}
+              onPress={() => entry.entryKind === "finite" ? onPreviewFinite?.(entry.actionKey) : onOpenActions?.()}
+              style={[styles.sheetButton, (entry.enabledForProposal !== true
+                || (entry.entryKind === "finite" && !canPreview)) && styles.disabled]}
+            >
+              <Text style={styles.choiceText}>{entry.entryKind === "finite" ? (zh ? "生成权威 Preview" : "Authoritative Preview") : (zh ? "在 Actions 编辑参数" : "Edit parameters in Actions")}</Text>
+            </Pressable>
+            <Text style={styles.meta}>{entry.bindingStatus} · {entry.enabledForProposal ? "proposal enabled" : "display only"}</Text>
+          </View>
+        ))}
+        {(palette.unsupported || []).map((entry: any) => (
+          <View key={entry.entryId} style={styles.unsupported}>
+            <Text style={styles.row}>{entry.actionType || entry.entryId}</Text>
+            <Text style={styles.meta}>{zh ? "缺少" : "Missing"}: {(entry.missingFields || []).join(", ")}; fail-closed</Text>
+          </View>
+        ))}
+        {!(palette.actions || []).length && !(palette.unsupported || []).length && (
+          <Text style={styles.empty}>{zh ? "当前修订没有 Token/Marker 合法动作；规则生命周期类型仍完整列于上方。" : "No Token/Marker action is legal at this revision; the complete lifecycle verb set remains listed above."}</Text>
+        )}
+        <WriteSheetCard snapshot={snapshot} zh={zh} onOpenActions={onOpenActions} />
+      </ScrollView>
+    );
   }
   if (panel === "unit") {
     const unit = snapshot.units?.find((entry: any) => (
@@ -157,6 +214,7 @@ export function BattleWorkbenchReadPanel({
             zh={zh}
           />
         )}
+        <WriteSheetCard snapshot={snapshot} zh={zh} onOpenActions={onOpenActions} />
         <Text style={styles.boundary}>Viewer-scoped authoritative projection · r{value(snapshot.stateRevision)} · client mutation disabled</Text>
       </ScrollView>
     );
@@ -184,8 +242,40 @@ export function BattleWorkbenchReadPanel({
         <Text style={styles.row}>Undeployed: {(deployment.undeployed || []).join(", ") || "—"}</Text>
         <Text style={styles.row}>Destroyed: {(deployment.destroyed || []).join(", ") || "—"}</Text>
       </View>
+      <WriteSheetCard snapshot={snapshot} zh={zh} onOpenActions={onOpenActions} />
       <Text style={styles.boundary}>The end-of-round forecast remains unavailable until its rules-owned Slice 141 query is loaded.</Text>
     </ScrollView>
+  );
+}
+
+function WriteSheetCard({ snapshot, zh, onOpenActions }: {
+  snapshot: Record<string, any>;
+  zh: boolean;
+  onOpenActions?: () => void;
+}) {
+  const sheet = snapshot.writeSheet;
+  if (!sheet || sheet.coverage === "not_loaded") return null;
+  const fields = Object.values(sheet.fields || {}) as any[];
+  return (
+    <View style={styles.card}>
+      <View style={styles.titleRow}>
+        <Text style={styles.subtitle}>{zh ? "权威对战写表" : "Authoritative battle sheet"}</Text>
+        <StatusPill status="LegalSpace" />
+      </View>
+      <View style={styles.grid}>
+        {fields.map((entry) => (
+          <View key={entry.field} style={styles.writeCell}>
+            <Text style={styles.fact}>{entry.field}</Text>
+            <Text style={styles.meta}>{entry.currentLegalActionCount} current actions</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={styles.boundary}>{zh ? "伤害、护盾、伤亡、状态、部署、计分和 Token/Marker 都由规则动作写回；禁止直接改数字。" : "Damage, shields, casualties, status, deployment, score and Token/Marker are written by rules actions; direct number edits are disabled."}</Text>
+      <Pressable disabled={sheet.coverage === "quarantined"} onPress={onOpenActions}
+        style={[styles.sheetButton, sheet.coverage === "quarantined" && styles.disabled]}>
+        <Text style={styles.choiceText}>{zh ? "打开权威 Actions" : "Open authoritative Actions"}</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -231,5 +321,8 @@ const styles = StyleSheet.create({
   sheetButton: { minHeight: 44, justifyContent: "center", alignItems: "center", marginBottom: 8, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: "#a78bfa", backgroundColor: "#312e81" },
   sheet: { borderRadius: 10, padding: 11, marginBottom: 8, backgroundColor: "#1e1b4b", borderWidth: 1, borderColor: "#a78bfa", gap: 7 },
   probabilityRow: { borderTopWidth: 1, borderTopColor: "#3730a3", paddingTop: 7, gap: 3 },
+  writeCell: { minWidth: 100, padding: 6, borderRadius: 6, backgroundColor: "#020617" },
+  unsupported: { borderRadius: 10, padding: 11, marginBottom: 8, borderWidth: 1, borderColor: "#ef4444", backgroundColor: "#450a0a", gap: 5 },
+  disabled: { opacity: 0.45 },
   boundary: { color: "#94a3b8", fontSize: 10, lineHeight: 16 },
 });

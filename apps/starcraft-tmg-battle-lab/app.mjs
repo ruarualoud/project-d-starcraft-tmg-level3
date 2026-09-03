@@ -93,7 +93,8 @@ function playValidatedReceiptCues(view) {
 }
 
 function text(value, fallback = "—") {
-  return value === null || value === undefined || value === "" ? fallback : String(value);
+  if (value === null || value === undefined || value === "") return fallback;
+  return typeof value === "object" ? JSON.stringify(value) : String(value);
 }
 
 function shortHash(value) {
@@ -413,6 +414,37 @@ function probabilityCards(workbench, unitId) {
   ));
 }
 
+function markerActionCards(workbench, canDispatch) {
+  const palette = workbench?.tokenMarkerActions;
+  const cards = (palette?.actions || []).map((entry) => {
+    const button = htmlElement("button", {
+      textContent: entry.entryKind === "finite" ? "Authoritative Preview" : "Open Actions",
+    });
+    button.disabled = entry.enabledForProposal !== true
+      || (entry.entryKind === "finite" && !canDispatch);
+    button.addEventListener("click", () => {
+      if (entry.entryKind === "finite") {
+        invoke({ type: "preview_finite", actionKey: entry.actionKey },
+          "Sealed Token/Marker preview received");
+      } else {
+        setDetailPanel("actions");
+      }
+    });
+    return htmlElement("article", { className: "action" }, [
+      htmlElement("strong", { textContent: `${entry.verb} · ${entry.type}` }),
+      htmlElement("p", { textContent: `${entry.label} · ${entry.bindingStatus}` }),
+      htmlElement("p", { textContent: `controller ${text(entry.controller)} · duration ${text(entry.duration)} · stack ${text(entry.stackPolicy)}` }),
+      htmlElement("p", { textContent: `trigger ${text(entry.trigger)} · cleanup ${text(entry.cleanupTiming)}` }),
+      button,
+    ]);
+  });
+  const unsupported = (palette?.unsupported || []).map((entry) => workbenchCard(
+    `${entry.actionType || entry.entryId} · fail-closed`,
+    [`Missing ${(entry.missingFields || []).join(", ") || "rules metadata"}`],
+  ));
+  return [...cards, ...unsupported];
+}
+
 function renderWorkbench(view) {
   const workbench = view.workbench;
   const selectedModel = view.battlefield.models.find((model) => model.id === selectedModelId);
@@ -460,10 +492,21 @@ function renderWorkbench(view) {
     workbench?.threat?.reason || "Authoritative threat query not loaded.",
     "The printed-range reference is presentation-only and is never labelled move-and-fire or charge threat.",
   ])]);
-  replaceChildren(el["workbench-markers"], [workbenchCard("Token / Marker actions", [
-    workbench?.tokenMarkerActions?.reason || "LegalSpace-classified action palette not loaded.",
-    "No client-side token or marker mutation is permitted.",
-  ])]);
+  const palette = workbench?.tokenMarkerActions;
+  const denominator = palette?.ruleGraphIndex;
+  replaceChildren(el["workbench-markers"], [
+    workbenchCard("Current FAQ Token / Marker contract", [
+      palette?.coverageReason || "LegalSpace-classified action palette not loaded.",
+      `binding ${denominator?.binding?.status || "not loaded"}`,
+      `${denominator?.faqTokenMarkerEntryCount || 0} FAQ entries / ${denominator?.faqTokenMarkerAtomCount || 0} FAQ atoms`,
+      `${denominator?.directlyNamedTokenMarkerAtomCount || 0} base named atoms / ${denominator?.genericTokenMarkerPrimitiveAtomCount || 0} base primitives (overlap; not action count)`,
+      `${palette?.currentLegalSpace?.classifiedCount || 0} classified / ${palette?.currentLegalSpace?.enabledForProposalCount || 0} enabled / ${palette?.currentLegalSpace?.unclassifiedCount || 0} fail-closed`,
+      "No client-side token, marker, damage, shield, casualty, status, deployment or score mutation is permitted.",
+    ]),
+    workbenchCard("Authoritative battle sheet", Object.values(workbench?.writeSheet?.fields || {})
+      .map((entry) => `${entry.field}: ${entry.currentLegalActionCount} current actions`)),
+    ...markerActionCards(workbench, view.connection.canDispatchAuthoritativeIntent),
+  ]);
 }
 
 async function invoke(intent, label) {

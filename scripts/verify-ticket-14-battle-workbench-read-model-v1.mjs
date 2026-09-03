@@ -115,8 +115,12 @@ async function main() {
     assert(snapshot.scoreboard.length === 2 && snapshot.scoreboard.every((entry) => entry.score === 0), "scoreboard drifted");
   });
 
-  await check("future_sections_fail_visible_as_not_loaded_instead_of_guessing", () => {
-    for (const key of ["tokenMarkerActions", "scoreForecast", "rulesQuickView"]) {
+  await check("later_sections_fail_visible_as_not_loaded_instead_of_guessing", () => {
+    assert(snapshot.tokenMarkerActions?.coverage === "quarantined",
+      "Slice 140 palette did not expose the legacy fixture binding boundary");
+    assert(snapshot.writeSheet?.directClientMutationAllowed === false,
+      "Slice 140 write boundary missing");
+    for (const key of ["scoreForecast", "rulesQuickView"]) {
       assert(snapshot[key]?.coverage === "not_loaded", `${key} did not fail visibly`);
     }
   });

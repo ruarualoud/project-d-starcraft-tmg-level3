@@ -730,3 +730,21 @@ actions, 141 score forecast/contextual rules, 142 native builds/devices and 143
 aggregate closure. Ticket 14 is therefore 9/16, followed by FAQ F1–F5 and
 Ticket 15. No source refresh, Provider,
 Skill, DSH, MuZero, self-play, memory or training promotion ran.
+
+Ticket 14 Slice 140 consumes the completed official FAQ V1.0 aggregate before
+implementing Token/Marker UI. The portable client contract pins the latest
+source/reconciliation/catalogue/runtime/graph and the 12-entry/27-atom FAQ
+Token/Marker handoff. Ticket 11's 69 directly named atoms and 11 generic
+primitives remain separate overlapping evidence sets and are never presented
+as action counts. Only the exact viewer/revision LegalSpace supplies current
+actions; every candidate projects source, owner, lifecycle, geometry and FAQ
+lineage, while missing metadata fails closed. Current FAQ, historical pre-FAQ
+and mixed/unknown bindings are distinct; mixed hashes quarantine all proposal
+buttons and old-rule display/Replay remain retained. Expo and Battle Lab share
+the same create/place/move/consume/remove palette and the same seven-family
+damage/shield/casualty/status/deployment/score/Token write sheet. All writes use
+LegalSpace → Preview → explicit confirmation → Apply → Receipt/Replay; direct
+numeric or client mutation is absent. Focused 16/16, FAQ F5 17/17, Slice 137
+10/10 and TypeScript pass. Ticket 14 advances to 13/16 with Slice 141 next. No
+source refresh, Provider, Skill, DSH, MuZero, self-play, memory or training
+promotion ran.

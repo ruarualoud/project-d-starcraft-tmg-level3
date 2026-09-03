@@ -157,15 +157,16 @@ Ticket 14 expands from Slices 128–138 to Slices 128–143:
   scenario/deployment/reserve and current-score views;
 - Slice 138 — **complete:** authoritative multi-mode threat query and map layers;
 - Slice 139 — **complete:** rules-bound matchup probability query and contextual sheet;
-- Slice 140 — complete LegalSpace-classified Token/Marker action palette;
+- Slice 140 — **complete:** latest-FAQ LegalSpace-classified Token/Marker action
+  palette and seven-family authoritative write sheet;
 - Slice 141 — score forecast and contextual rules quick view;
 - Slice 142 — pinned Android/iOS build and real-device evidence;
 - Slice 143 — cross-surface migration/security aggregate and Ticket 14 close.
 
-After Slice 139 closes, Ticket 14 is `12/16`, with four slices remaining. FAQ
-F1–F5 still runs after Ticket 14 and before Ticket 15. The
-development source snapshot is not refreshed during these slices unless the
-user issues a new explicit refresh command.
+After FAQ F1–F5 and Slice 140 close, Ticket 14 is `13/16`, with three slices
+remaining. The FAQ was intentionally completed before Token/Marker work so the
+palette binds the latest locked rules. The development source snapshot is not
+refreshed again unless the user issues a new explicit refresh command.
 
 ## Closure evidence
 

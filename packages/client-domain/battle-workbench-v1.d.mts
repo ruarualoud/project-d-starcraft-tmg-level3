@@ -21,6 +21,7 @@ export interface StarcraftTmgBattleWorkbenchSnapshotV1 {
   threat: Record<string, any>;
   probability: Record<string, any>;
   tokenMarkerActions: Record<string, any>;
+  writeSheet: Record<string, any>;
   scoreForecast: Record<string, any>;
   rulesQuickView: Record<string, any>;
   coverage: Record<string, { status: StarcraftTmgWorkbenchCoverageV1; evidence: readonly string[] }>;
