@@ -18,6 +18,7 @@ const BUILD_ROOT = path.join(
 const REPORT_PATH = path.join(BUILD_ROOT, "report.json");
 const PATHS = {
   presentation: "apps/starcraft-tmg-expo/lib/level3/battlefield-presentation-v1.ts",
+  sharedPresentation: "packages/client-domain/battlefield-presentation-v1.mjs",
   presentationTest:
     "apps/starcraft-tmg-expo/lib/level3/__tests__/battlefield-presentation-v1.test.ts",
   workspace:
@@ -54,6 +55,7 @@ const sources = Object.fromEntries(await Promise.all(
     await readFile(path.join(ROOT, relativePath), "utf8"),
   ]),
 ));
+const presentationSource = sources.sharedPresentation;
 
 const checks = [];
 function check(id, condition, evidence = "") {
@@ -114,8 +116,11 @@ check(
 );
 check(
   "battlefield_is_viewer_projection_only_and_never_a_local_rules_store",
-  sources.presentation.includes("roomProjection?: unknown")
-    && sources.presentation.includes("rows(state?.pieces)")
+  sources.presentation.includes(
+    'from "../../../../packages/client-domain/battlefield-presentation-v1.mjs"',
+  )
+    && presentationSource.includes("record(input.roomProjection)")
+    && presentationSource.includes("rows(state?.pieces)")
     && !sources.workspace.includes("saveMatchRecord")
     && !sources.workspace.includes("updateUnit")
     && !sources.workspace.includes("switchPhase")
@@ -123,42 +128,42 @@ check(
 );
 check(
   "arbitrary_model_counts_are_flattened_without_fixed_slots",
-  sources.presentation.includes("for (const [modelIndex, model] of rows(piece.models).entries())")
+  presentationSource.includes("for (const [modelIndex, model] of rows(piece.models).entries())")
     && sources.workspace.includes("scene.models.map")
     && sources.presentationTest.includes("length: 13")
     && sources.presentationTest.includes("currentModels: 29")
     && !/models\.(?:slice|splice)\(0,\s*8\)/u.test(
-      `${sources.presentation}\n${sources.workspace}`,
+      `${presentationSource}\n${sources.workspace}`,
     ),
 );
 check(
   "unit_anchor_fallback_cannot_claim_individual_model_geometry",
-  sources.presentation.includes('kind: "unit_anchor"')
-    && sources.presentation.includes("geometryRenderable: false")
-    && sources.presentation.includes("model_coordinates_unavailable")
+  presentationSource.includes('kind: "unit_anchor"')
+    && presentationSource.includes("geometryRenderable: false")
+    && presentationSource.includes("model_coordinates_unavailable")
     && contract.models.unitAnchorMayImplyIndividualModelPositions === false,
 );
 check(
   "physical_base_units_and_all_marker_layers_are_projected",
-  sources.presentation.includes("Number(millimetres) / 25.4")
-    && sources.presentation.includes('"baseWidthMm"')
-    && sources.presentation.includes('"baseDepthMm"')
-    && sources.presentation.includes("board?.centerMarkers")
-    && sources.presentation.includes("board?.missionMarkers")
-    && sources.presentation.includes("board?.effectMarkers")
-    && sources.presentation.includes("officialMissionMarkerPlacement")
-    && sources.presentation.includes("officialBattlefieldMarkers")
-    && sources.presentation.includes("officialBattlefieldTokens")
-    && sources.presentation.includes('"diameterMillimeters"')
-    && sources.presentation.includes("minXMilliInches")
-    && sources.presentation.includes('shape === "axis_aligned_rectangle"')
+  presentationSource.includes("Number(millimetres) / 25.4")
+    && presentationSource.includes('"baseWidthMm"')
+    && presentationSource.includes('"baseDepthMm"')
+    && presentationSource.includes("board?.centerMarkers")
+    && presentationSource.includes("board?.missionMarkers")
+    && presentationSource.includes("board?.effectMarkers")
+    && presentationSource.includes("officialMissionMarkerPlacement")
+    && presentationSource.includes("officialBattlefieldMarkers")
+    && presentationSource.includes("officialBattlefieldTokens")
+    && presentationSource.includes('"diameterMillimeters"')
+    && presentationSource.includes("minXMilliInches")
+    && presentationSource.includes('shape === "axis_aligned_rectangle"')
     && sources.presentationTest.includes("[1260, 1575, 3150]"),
 );
 check(
   "real_standard_move_preview_path_and_final_bases_are_rendered",
-  sources.presentation.includes("movePlan?.canonicalPath")
-    && sources.presentation.includes("movePlan?.finalModelPositions")
-    && sources.presentation.includes("previewPlacements")
+  presentationSource.includes("movePlan?.canonicalPath")
+    && presentationSource.includes("movePlan?.finalModelPositions")
+    && presentationSource.includes("previewPlacements")
     && sources.workspace.includes('placementGlyph(placement, "sealed")')
     && sources.presentationTest.includes("starcraft_tmg_official_standard_move_plan_v1")
     && sources.presentationTest.includes("finalModelPositions"),
@@ -167,8 +172,8 @@ check(
   "viewport_is_uniform_letterboxed_and_bottom_left_world_is_reversible",
   sources.workspace.includes('preserveAspectRatio="xMidYMid meet"')
     && sources.workspace.includes("scale(1 -1)")
-    && sources.presentation.includes("Math.min(")
-    && sources.presentation.includes("boardHeight - point.yMilliInches")
+    && presentationSource.includes("Math.min(")
+    && presentationSource.includes("boardHeight - point.yMilliInches")
     && sources.presentationTest.includes("letterboxOffsetYPixels")
     && contract.battlefield.xAndYScaleEqual === true,
 );
@@ -176,13 +181,13 @@ check(
   "touch_target_expansion_never_changes_rendered_or_submitted_geometry",
   sources.workspace.includes("const minimumRadius = 22 / pixelsPerWorld")
     && sources.workspace.includes("Math.max(physicalRadius, minimumRadius)")
-    && !sources.presentation.includes("minimumTouch")
+    && !presentationSource.includes("minimumTouch")
     && contract.battlefield.touchTargetAffectsRulesCollision === false,
 );
 check(
   "parameter_editor_registry_fails_closed_and_supports_exact_standard_move_counts",
-  sources.presentation.includes('return "unsupported"')
-    && sources.presentation.includes("official_standard_move_path_v")
+  presentationSource.includes('return "unsupported"')
+    && presentationSource.includes("official_standard_move_path_v")
     && sources.workspace.includes("Unsupported by this parameter registry; submission is disabled.")
     && sources.workspace.includes("activeRemainingModelIds.length")
     && sources.workspace.includes("leadingModelId")

@@ -684,3 +684,20 @@ immutable sanitized generation manifest last, and permits only identity-free
 historical summaries. Focused 49/49 plus TypeScript and cumulative 267/267
 pass, advancing Ticket 14 to 7/11 with Slice 135 next. No source refresh,
 Provider, Skill, DSH, MuZero, self-play, memory or training promotion ran.
+
+Ticket 14 Slice 135 replaces the legacy Battle Lab path with a tracked Level-3
+developer surface that composes the same four-operation Client Domain and the
+same executable battlefield projector as Expo. Cross-surface shared hashes bind
+the exact viewer room projection and LegalSpace while local preview, receipt,
+replay, control, and integrity state stays surface-local. Separate Room, Board,
+Referee, Agent trace, LegalSpace, and Harness panels consume read-only
+projections; only typed intents reach authority, and a sealed Preview still
+requires separate human confirmation. The optional trace port receives only
+roomId and rejects secrets, cross-room data, duplicate IDs, malformed hashes,
+and training claims; Ticket 15 still owns live Agent execution. The old
+process-local whole-state/drag Battle Lab remains an unmounted compatibility
+sandbox. Focused 23/23, shared board 4/4, Client Domain 17/17, TypeScript 0,
+adjacent Room 7/7, and HTTP 4/4 pass; Ticket 14 cumulative is 290/290. Ticket 14
+advances to 8/11 with Slices 136–138 remaining, then FAQ F1–F5 runs before
+Ticket 15. No source refresh, Provider, Skill, DSH, MuZero, self-play, memory,
+or training promotion ran.

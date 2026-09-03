@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>StarCraft TMG · Level-3 Battle Lab</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">PROJECT D · LEVEL-3</p>
+          <h1>StarCraft TMG Battle Lab</h1>
+          <p class="subhead">Authoritative room · Referee receipts · Agent observability</p>
+        </div>
+        <div class="status-stack" aria-live="polite">
+          <span class="status-pill" data-connection>room required</span>
+          <code data-shared-hash>shared view —</code>
+        </div>
+      </header>
+
+      <section class="bind-bar" aria-label="Room connection">
+        <label>
+          <span>Room ID</span>
+          <input data-room-id autocomplete="off" spellcheck="false" />
+        </label>
+        <label>
+          <span>Seat token · memory only</span>
+          <input data-seat-token type="password" autocomplete="off" spellcheck="false" />
+        </label>
+        <button class="primary" data-command="bind">Bind room</button>
+        <button data-command="refresh">Refresh projection</button>
+        <button data-command="legal">Load LegalSpace</button>
+        <button data-command="replay">Verify replay</button>
+      </section>
+
+      <main class="layout">
+        <section class="battle-panel panel" aria-label="Authoritative battlefield">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">OBSERVER PROJECTION</p>
+              <h2 data-room-title>No room bound</h2>
+            </div>
+            <div class="metrics">
+              <span data-state-revision>state —</span>
+              <span data-model-count>0 models</span>
+            </div>
+          </div>
+          <div class="board-shell">
+            <svg data-board role="img" aria-label="Viewer-scoped StarCraft TMG battlefield" preserveAspectRatio="xMidYMid meet"></svg>
+            <div class="board-empty" data-board-empty>Bind an authoritative room to inspect its board.</div>
+          </div>
+          <div class="legend">
+            <span><i class="p1"></i>Player 1</span>
+            <span><i class="p2"></i>Player 2</span>
+            <span><i class="preview"></i>Sealed preview</span>
+            <span>No drag mutation · physical scale preserved</span>
+          </div>
+        </section>
+
+        <aside class="right-rail">
+          <section class="panel" aria-label="Referee projection">
+            <div class="panel-head"><div><p class="eyebrow">REFEREE</p><h2>Integrity</h2></div><span data-replay-state>not checked</span></div>
+            <dl class="facts" data-referee-facts></dl>
+            <div class="alert" data-integrity-alert hidden></div>
+            <button data-command="revalidate">Refresh authority and revalidate</button>
+          </section>
+
+          <section class="panel" aria-label="Agent trace projection">
+            <div class="panel-head"><div><p class="eyebrow">AGENT HARNESS</p><h2>Trace</h2></div><span data-agent-status>not mounted</span></div>
+            <div class="trace-list" data-agent-traces></div>
+          </section>
+        </aside>
+
+        <section class="actions-panel panel" aria-label="Legal actions and preview">
+          <div class="panel-head"><div><p class="eyebrow">LEGALSPACE</p><h2>Actions</h2></div><span data-action-count>0</span></div>
+          <div class="action-list" data-actions></div>
+          <details class="parameter-editor">
+            <summary>Parameterized action inspector</summary>
+            <label>
+              <span>Domain</span>
+              <select data-domain></select>
+            </label>
+            <label>
+              <span>Parameters JSON</span>
+              <textarea data-parameters spellcheck="false" placeholder='{"path":[...]}'></textarea>
+            </label>
+            <button data-command="preview-parameterized">Request sealed preview</button>
+          </details>
+          <div class="preview-card" data-preview>
+            <strong>No sealed preview</strong>
+            <p>A pointer selection or JSON draft has no authority until the server returns a sealed preview.</p>
+          </div>
+          <button class="danger" data-command="confirm" disabled>Confirm and apply current sealed preview</button>
+        </section>
+
+        <section class="panel audit-panel" aria-label="Harness contract">
+          <div class="panel-head"><div><p class="eyebrow">HARNESS CONTRACT</p><h2>Observable lanes</h2></div><span>training false</span></div>
+          <div class="audit-grid" data-harness></div>
+          <p class="boundary">This surface calls only <code>bootstrap · read · dispatch · subscribe</code>. Legacy Battle Lab remains an isolated sandbox and cannot produce Level-3 receipts or training evidence.</p>
+        </section>
+      </main>
+      <div class="toast" data-toast role="status" aria-live="polite"></div>
+    </div>
+    <script type="module" src="./app.mjs"></script>
+  </body>
+</html>
