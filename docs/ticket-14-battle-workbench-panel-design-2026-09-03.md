@@ -1,7 +1,8 @@
 # Ticket 14 — battle workbench panel design
 
 Date: 2026-09-03
-Status: active; Slices 137–139 complete, Slices 140–143 pending
+Status: active; Slices 137–141 complete, Slice 142 build-ready with device
+acceptance deferred, and Slice 143 pending
 Source refresh: not performed
 
 ## Outcome
@@ -162,7 +163,9 @@ Ticket 14 expands from Slices 128–138 to Slices 128–143:
 - Slice 141 — **complete:** server-owned exact/conditional/unknown score
   forecast, authoritative score Preview entry and exact room-pinned contextual
   rule lineage without compatibility fallback;
-- Slice 142 — pinned Android/iOS build and real-device evidence;
+- Slice 142 — **build-ready/device-deferred:** pinned Android development and
+  standalone internal-preview packages; physical Android and iOS evidence stays
+  open until the final device-test batch;
 - Slice 143 — cross-surface migration/security aggregate and Ticket 14 close.
 
 After FAQ F1–F5 and Slices 140–141 close, Ticket 14 is `14/16`, with Slices

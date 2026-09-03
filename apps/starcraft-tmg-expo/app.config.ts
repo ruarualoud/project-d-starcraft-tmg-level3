@@ -90,6 +90,11 @@ const config: ExpoConfig = {
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: bundleId,
+    blockedPermissions: [
+      "android.permission.RECORD_AUDIO",
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.WRITE_EXTERNAL_STORAGE",
+    ],
     intentFilters: [appLinkIntent, developmentSchemeIntent].filter(
       (intent): intent is NonNullable<typeof intent> => intent !== null,
     ),
@@ -101,6 +106,15 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-router",
+    "expo-font",
+    "expo-web-browser",
+    [
+      "expo-audio",
+      {
+        microphonePermission: false,
+        recordAudioAndroid: false,
+      },
+    ],
     [
       "expo-splash-screen",
       {
