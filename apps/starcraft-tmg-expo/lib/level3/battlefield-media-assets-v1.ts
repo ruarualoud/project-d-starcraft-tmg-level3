@@ -47,10 +47,10 @@ export const STARCRAFT_TMG_BATTLEFIELD_MAP_SOURCE =
   require("../../../../assets/client/battlefield/alien-temple-map-v1.webp") as number;
 
 function releaseChannel(): StarcraftTmgBattlefieldMediaReleaseChannelV1 {
-  return process.env.EXPO_PUBLIC_STARCRAFT_TMG_MEDIA_RELEASE_CHANNEL ===
-    "development_internal"
-    ? "development_internal"
-    : "public";
+  const configured = process.env.EXPO_PUBLIC_STARCRAFT_TMG_MEDIA_RELEASE_CHANNEL;
+  if (configured === "development_internal") return "development_internal";
+  if (configured === "public") return "public";
+  return "public_user_authorized";
 }
 
 function mediaOrigin() {
@@ -99,21 +99,21 @@ export function starcraftTmgBattlefieldUnitMediaAssetsV1(unitId: unknown): {
   if (!media) return null;
   const fallback = PUBLIC_PORTRAITS[media.unitKey];
   if (!fallback) return null;
-  const internalNeutral = selectedChannel === "development_internal"
+  const originalNeutral = selectedChannel !== "public"
     ? mediaUri(media.neutralPortraitPath)
     : null;
-  const internalActive = selectedChannel === "development_internal"
+  const originalActive = selectedChannel !== "public"
     ? mediaUri(media.activePortraitPath)
     : null;
   return {
     unitKey: media.unitKey,
-    neutralPortrait: internalNeutral ? { uri: internalNeutral } : fallback.neutral,
-    activePortrait: internalActive ? { uri: internalActive } : fallback.active,
-    portraitAnimated: Boolean(internalActive && media.portraitAnimated),
-    voice: selectedChannel === "development_internal"
+    neutralPortrait: originalNeutral ? { uri: originalNeutral } : fallback.neutral,
+    activePortrait: originalActive ? { uri: originalActive } : fallback.active,
+    portraitAnimated: Boolean(originalActive && media.portraitAnimated),
+    voice: selectedChannel !== "public"
       ? resolvedVoicePaths(media.voice)
       : null,
-    releaseChannel: internalActive ? "development_internal" : "public",
+    releaseChannel: originalActive ? selectedChannel : "public",
   };
 }
 

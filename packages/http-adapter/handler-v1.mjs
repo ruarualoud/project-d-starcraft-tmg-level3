@@ -26,6 +26,7 @@ const BASE_ENDPOINTS = Object.freeze([
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/recovery-exchange",
   "GET /starcraft-tmg-level3/api/v1/rooms/:roomId",
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/legal-space",
+  "GET /starcraft-tmg-level3/api/v1/rooms/:roomId/workbench",
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/preview",
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/confirm",
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/control-lease",
@@ -299,14 +300,14 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
       });
     }
 
-    const roomMatch = endpoint.match(/^rooms\/([^/]+)(?:\/(join|invites|invite-exchange|recovery-tickets|recovery-exchange|legal-space|preview|confirm|control-lease|apply|replay|historical-rules|character-presentation|character-persona|character-spoiler-access))?$/);
+    const roomMatch = endpoint.match(/^rooms\/([^/]+)(?:\/(join|invites|invite-exchange|recovery-tickets|recovery-exchange|legal-space|workbench|preview|confirm|control-lease|apply|replay|historical-rules|character-presentation|character-persona|character-spoiler-access))?$/);
     if (!roomMatch) return failure(404, endpoint, "NOT_FOUND");
     const roomId = decodeRoomId(roomMatch[1]);
     if (!roomId) return failure(400, endpoint, "INVALID_ROOM_ID");
     const operation = roomMatch[2] || "projection";
     const authorizationHeader = headerValue(input.headers, "authorization");
     const seatToken = bearerToken(input.headers);
-    if (["projection", "replay", "character-presentation"].includes(operation)
+    if (["projection", "workbench", "replay", "character-presentation"].includes(operation)
       && authorizationHeader
       && !seatToken) {
       return failure(401, endpoint, "AUTHENTICATION_INVALID");
@@ -351,6 +352,8 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
       });
     } else if (operation === "legal-space" && method === "POST") {
       result = await runtime.legalSpace({ roomId, seatToken });
+    } else if (operation === "workbench" && method === "GET") {
+      result = await runtime.readBattleWorkbench({ roomId, seatToken });
     } else if (operation === "preview" && method === "POST") {
       result = await runtime.previewAction({ roomId, seatToken, proposal: body.proposal, candidateId: body.candidateId });
     } else if (operation === "confirm" && method === "POST") {

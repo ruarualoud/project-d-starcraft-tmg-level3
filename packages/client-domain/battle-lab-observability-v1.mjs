@@ -294,6 +294,8 @@ export function projectStarcraftTmgBattleLabObservabilityV1(input = {}) {
     surface: "battle_lab",
     connection,
     shared,
+    workbench: object(clientView.battleWorkbench)
+      ? clone(clientView.battleWorkbench) : null,
     observer,
     battlefield,
     referee,

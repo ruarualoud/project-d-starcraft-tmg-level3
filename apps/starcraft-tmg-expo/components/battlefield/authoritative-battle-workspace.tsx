@@ -42,10 +42,11 @@ import {
   randomStarcraftTmgPresentationMediaEntryV1,
   starcraftTmgBattlefieldUnitMediaAssetsV1,
 } from "@/lib/level3/battlefield-media-assets-v1";
+import { BattleWorkbenchReadPanel } from "./battle-workbench-read-panels";
 
-type PendingOperation = "legal" | "preview" | "apply" | "replay" | null;
+type PendingOperation = "legal" | "workbench" | "preview" | "apply" | "replay" | null;
 type DraftMode = "path" | "placements";
-type WorkspaceDetailPanel = "actions" | "referee";
+type WorkspaceDetailPanel = "unit" | "actions" | "threat" | "status" | "markers" | "referee";
 
 interface StandardMoveDraft {
   domainId: string;
@@ -337,8 +338,9 @@ export function AuthoritativeBattleWorkspace() {
   const [bgmLoaded, setBgmLoaded] = useState(false);
   const [bgmPlaying, setBgmPlaying] = useState(false);
   const [mediaVolume, setMediaVolume] = useState(0.45);
-  const [detailPanel, setDetailPanel] = useState<WorkspaceDetailPanel>("actions");
+  const [detailPanel, setDetailPanel] = useState<WorkspaceDetailPanel>("unit");
   const lastPlayedCueBatchHash = useRef<string | null>(null);
+  const requestedWorkbenchKey = useRef<string | null>(null);
   const voicePlayer = useAudioPlayer(null, { updateInterval: 1000 });
   const bgmPlayer = useAudioPlayer(null, { updateInterval: 1000 });
 
@@ -397,6 +399,25 @@ export function AuthoritativeBattleWorkspace() {
   const selectedModel = selectedModelId ? modelsById.get(selectedModelId) || null : null;
 
   useEffect(() => {
+    const roomId = view.roomProjection?.room?.roomId;
+    const stateRevision = view.roomProjection?.room?.stateRevision;
+    if (!roomId || !Number.isSafeInteger(stateRevision)
+      || !connection.visible || !connection.online || view.phase !== "ready") return;
+    const key = `${roomId}:${stateRevision}`;
+    if (view.battleWorkbench?.stateRevision === stateRevision
+      || requestedWorkbenchKey.current === key) return;
+    requestedWorkbenchKey.current = key;
+    setPending("workbench");
+    void dispatch({ type: "load_battle_workbench" }).then((result: any) => {
+      if (!result.ok) {
+        requestedWorkbenchKey.current = null;
+        setErrorCode(result.rejection?.code || "BATTLE_WORKBENCH_REJECTED");
+      }
+    }).finally(() => setPending(null));
+  }, [connection.online, connection.visible, dispatch, view.battleWorkbench?.stateRevision,
+    view.phase, view.roomProjection?.room?.roomId, view.roomProjection?.room?.stateRevision]);
+
+  useEffect(() => {
     bgmPlayer.loop = true;
     bgmPlayer.volume = mediaVolume;
     voicePlayer.volume = Math.min(1, mediaVolume + 0.25);
@@ -421,6 +442,7 @@ export function AuthoritativeBattleWorkspace() {
 
   const selectModel = (model: BattlefieldModelV1) => {
     setSelectedModelId(model.id);
+    setDetailPanel("unit");
     void playUnitVoice(model, "selected");
   };
 
@@ -1002,12 +1024,16 @@ export function AuthoritativeBattleWorkspace() {
 
         <View style={[styles.sidePanel, desktop && styles.sidePanelDesktop]}>
           <View accessibilityRole="tablist" style={styles.detailTabs}>
+            <Button compact active={detailPanel === "unit"} label={zh ? "单位" : "Unit"} onPress={() => setDetailPanel("unit")} />
             <Button
               compact
               active={detailPanel === "actions"}
               label={zh ? "行动" : "Actions"}
               onPress={() => setDetailPanel("actions")}
             />
+            <Button compact active={detailPanel === "threat"} label={zh ? "威胁" : "Threat"} onPress={() => setDetailPanel("threat")} />
+            <Button compact active={detailPanel === "status"} label={zh ? "战局" : "Battle status"} onPress={() => setDetailPanel("status")} />
+            <Button compact active={detailPanel === "markers"} label={zh ? "标记" : "Markers"} onPress={() => setDetailPanel("markers")} />
             <Button
               compact
               active={detailPanel === "referee"}
@@ -1015,7 +1041,14 @@ export function AuthoritativeBattleWorkspace() {
               onPress={() => setDetailPanel("referee")}
             />
           </View>
-          {detailPanel === "actions" ? (
+          {(["unit", "threat", "status", "markers"] as WorkspaceDetailPanel[]).includes(detailPanel) ? (
+            <BattleWorkbenchReadPanel
+              panel={detailPanel as "unit" | "threat" | "status" | "markers"}
+              snapshot={view.battleWorkbench}
+              selectedPieceId={selectedModel?.pieceId || selectedModelId}
+              zh={zh}
+            />
+          ) : detailPanel === "actions" ? (
             <>
           <View style={styles.panelHeader}>
             <Text style={styles.panelTitle}>{zh ? "权威动作" : "Authoritative actions"}</Text>

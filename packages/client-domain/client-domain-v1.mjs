@@ -20,6 +20,8 @@ import {
 } from "./source-localization-projection-v1.mjs";
 import { projectStarcraftTmgValidatedReceiptCuesV1 } from
   "./presentation-cues-v1.mjs";
+import { isStarcraftTmgBattleWorkbenchSnapshotV1 } from
+  "./battle-workbench-v1.mjs";
 
 export const STARCRAFT_TMG_CLIENT_DOMAIN_VERSION = "starcraft_tmg_client_domain_v1";
 export const STARCRAFT_TMG_CLIENT_CHARACTER_EXTENSION_VERSION =
@@ -41,6 +43,7 @@ const INTENT_KEYS = Object.freeze({
   refresh: ["type"],
   revalidate_authority: ["type"],
   load_legal_space: ["type"],
+  load_battle_workbench: ["type"],
   preview_finite: ["type", "actionKey"],
   preview_parameterized: ["type", "domainId", "parameters"],
   confirm_and_apply_preview: ["type", "previewId"],
@@ -1637,6 +1640,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
     historicalRulesDisplay: null,
     historicalRulesStatus: historicalRulesStatus(),
     legalSpace: null,
+    battleWorkbench: null,
     pendingPreview: null,
     lastReceipt: null,
     replay: null,
@@ -1690,6 +1694,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
         historicalRulesStatus: clone(internal.historicalRulesStatus),
       } : {}),
       legalSpace: clone(internal.legalSpace),
+      battleWorkbench: clone(internal.battleWorkbench),
       pendingPreview: clone(internal.pendingPreview),
       lastReceipt: clone(internal.lastReceipt),
       replay: clone(internal.replay),
@@ -2249,6 +2254,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
         },
       ),
       legalSpace: null,
+      battleWorkbench: null,
       pendingPreview: null,
       rejection: {
         schemaVersion: `${STARCRAFT_TMG_CLIENT_DOMAIN_VERSION}.rejection`,
@@ -2377,6 +2383,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
       historicalRulesDisplay: null,
       historicalRulesStatus: historicalRulesStatus("not_loaded"),
       legalSpace: null,
+      battleWorkbench: null,
       pendingPreview: null,
       control: unclaimedControl("cleared"),
       accessReceipt: null,
@@ -2451,6 +2458,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
         } : {}),
         control,
         legalSpace: null,
+        battleWorkbench: null,
         pendingPreview: null,
         rejection: null,
         recovery: {
@@ -2507,6 +2515,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
     publish({
       integrity,
       legalSpace: null,
+      battleWorkbench: null,
       pendingPreview: null,
     });
     return integrity;
@@ -2544,6 +2553,28 @@ export function createStarcraftTmgClientDomain(options = {}) {
       return deepFreeze({ ok: true, outcome: "legal_space_loaded", view });
     } catch (error) {
       return handleTransportFailure(error, "read_legal_space");
+    }
+  }
+
+  async function loadBattleWorkbench() {
+    const blocked = ensureOperational();
+    if (blocked) return rejection(blocked, { mutationAllowed: false });
+    try {
+      const result = await request("read_battle_workbench");
+      const projection = internal.roomProjection;
+      const snapshot = result?.snapshot;
+      if (!result?.ok || !isStarcraftTmgBattleWorkbenchSnapshotV1(snapshot, {
+        roomId: binding.roomId,
+        matchBindingHash: projection?.matchBinding?.bindingHash,
+        stateRevision: currentStateRevision(),
+        stateHash: projection?.room?.stateHash,
+      })) {
+        return rejection(result?.reason || "BATTLE_WORKBENCH_RESPONSE_INVALID");
+      }
+      const view = publish({ battleWorkbench: clone(snapshot), rejection: null });
+      return deepFreeze({ ok: true, outcome: "battle_workbench_loaded", view });
+    } catch (error) {
+      return handleTransportFailure(error, "read_battle_workbench");
     }
   }
 
@@ -3077,6 +3108,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
     if (intent.type === "refresh") return refreshProjection("explicit_dispatch");
     if (intent.type === "revalidate_authority") return revalidateAuthority();
     if (intent.type === "load_legal_space") return loadLegalSpace();
+    if (intent.type === "load_battle_workbench") return loadBattleWorkbench();
     if (intent.type === "preview_finite" || intent.type === "preview_parameterized") return previewIntent(intent);
     if (intent.type === "confirm_and_apply_preview") return confirmAndApply(intent);
     if (intent.type === "claim_control") return obtainControlLease({ force: true, refreshAfterClaim: true });
@@ -3119,6 +3151,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
         ...(isOperational ? {} : {
           phase: internal.roomProjection ? "offline_read_only" : "unavailable",
           legalSpace: null,
+          battleWorkbench: null,
           pendingPreview: null,
         }),
       });
@@ -3326,6 +3359,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
       historicalRulesDisplay: null,
       historicalRulesStatus: historicalRulesStatus("not_loaded"),
       legalSpace: null,
+      battleWorkbench: null,
       pendingPreview: null,
       lastReceipt: null,
       replay: null,

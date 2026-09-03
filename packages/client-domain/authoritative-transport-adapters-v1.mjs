@@ -6,6 +6,7 @@ export const STARCRAFT_TMG_CLIENT_HTTP_API_PREFIX = "/starcraft-tmg-level3/api/v
 const BASE_OPERATIONS = new Set([
   "read_room",
   "read_legal_space",
+  "read_battle_workbench",
   "preview_action",
   "confirm_preview",
   "claim_control",
@@ -65,6 +66,7 @@ export function createInMemoryStarcraftTmgAuthoritativeTransportAdapter(options 
     const payload = request.payload || {};
     if (request.operation === "read_room") return runtime.readRoom({ ...shared, ...payload });
     if (request.operation === "read_legal_space") return runtime.legalSpace(shared);
+    if (request.operation === "read_battle_workbench") return runtime.readBattleWorkbench(shared);
     if (request.operation === "preview_action") return runtime.previewAction({ ...shared, proposal: payload.proposal, candidateId: payload.candidateId });
     if (request.operation === "confirm_preview") return runtime.confirmPreview({
       ...shared,
@@ -108,6 +110,7 @@ function endpointFor(request) {
   return {
     read_room: { method: "GET", path: `${room}?includeJournal=false` },
     read_legal_space: { method: "POST", path: `${room}/legal-space` },
+    read_battle_workbench: { method: "GET", path: `${room}/workbench` },
     preview_action: { method: "POST", path: `${room}/preview` },
     confirm_preview: { method: "POST", path: `${room}/confirm` },
     claim_control: { method: "POST", path: `${room}/control-lease` },

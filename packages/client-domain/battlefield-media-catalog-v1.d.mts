@@ -1,5 +1,6 @@
 export type StarcraftTmgBattlefieldMediaReleaseChannelV1 =
   | "public"
+  | "public_user_authorized"
   | "development_internal";
 export interface StarcraftTmgBattlefieldVoicePathsV1 {
   selected: readonly string[];
@@ -16,6 +17,8 @@ export interface StarcraftTmgBattlefieldUnitMediaV1 {
   voice: StarcraftTmgBattlefieldVoicePathsV1 | null;
   releaseChannel: StarcraftTmgBattlefieldMediaReleaseChannelV1;
   rightsGatePassedForPublicDistribution: boolean;
+  authorizationBasis: string;
+  independentThirdPartyRightsReviewCompleted: false;
   fallbackGeneratedOriginal: boolean;
   trainingTruth: false;
 }
@@ -28,6 +31,8 @@ export const STARCRAFT_TMG_BATTLEFIELD_MEDIA_POLICY_V1: Readonly<{
   officialMusicInformationUrl: string;
   mediaAffectsAuthority: false;
   mediaAffectsTraining: false;
+  userAuthorizedPublicProjectUseRecordedAt: "2026-09-03";
+  independentThirdPartyRightsReviewCompleted: false;
   trainingTruth: false;
 }>;
 export function resolveStarcraftTmgBattlefieldUnitMediaV1(

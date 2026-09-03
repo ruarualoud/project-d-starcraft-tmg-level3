@@ -104,6 +104,7 @@ export interface StarcraftTmgClientView {
     trainingTruth: false;
   };
   legalSpace: Record<string, any> | null;
+  battleWorkbench: Record<string, any> | null;
   pendingPreview: Record<string, any> | null;
   lastReceipt: Record<string, any> | null;
   replay: Record<string, any> | null;
@@ -135,6 +136,7 @@ export interface StarcraftTmgClientView {
 export type StarcraftTmgClientIntent =
   | { type: "refresh" }
   | { type: "load_legal_space" }
+  | { type: "load_battle_workbench" }
   | { type: "preview_finite"; actionKey: string }
   | {
       type: "preview_parameterized";

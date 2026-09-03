@@ -49,6 +49,16 @@ export const STARCRAFT_TMG_BATTLEFIELD_MEDIA_PROVENANCE_V1 = Object.freeze({
     }),
     rightsStatus: "rights_review_required_before_public_distribution",
   }),
+  userAuthorizedPublicProjectUse: Object.freeze({
+    releaseChannel: "public_user_authorized",
+    recordedAt: "2026-09-03",
+    scope: "current_battlefield_unit_portraits_and_voice_cues",
+    authorizationBasis: "explicit_user_instruction_to_treat_material_as_public_project_material",
+    sourceProvenancePreserved: true,
+    independentThirdPartyRightsReviewCompleted: false,
+    legalLicenseDeterminationMadeByProject: false,
+    fallbackForMissingOriginals: "generated_original_public_fallback",
+  }),
   bgm: Object.freeze({
     bundledClassicTracks: false,
     input: "user_selected_local_audio",
@@ -67,4 +77,3 @@ export const STARCRAFT_TMG_BATTLEFIELD_MEDIA_PROVENANCE_V1 = Object.freeze({
   }),
   trainingTruth: false,
 });
-

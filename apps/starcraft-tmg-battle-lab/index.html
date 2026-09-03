@@ -79,13 +79,37 @@
 
         <aside class="right-rail">
           <nav class="detail-tabs" aria-label="Battle workspace panels" role="tablist">
-            <button class="detail-tab is-active" data-detail-tab="referee" role="tab" aria-selected="true">Referee</button>
+            <button class="detail-tab is-active" data-detail-tab="unit" role="tab" aria-selected="true">Unit</button>
             <button class="detail-tab" data-detail-tab="actions" role="tab" aria-selected="false">Actions</button>
+            <button class="detail-tab" data-detail-tab="threat" role="tab" aria-selected="false">Threat</button>
+            <button class="detail-tab" data-detail-tab="status" role="tab" aria-selected="false">Battle status</button>
+            <button class="detail-tab" data-detail-tab="markers" role="tab" aria-selected="false">Markers</button>
+            <button class="detail-tab" data-detail-tab="referee" role="tab" aria-selected="false">Referee</button>
             <button class="detail-tab" data-detail-tab="agent" role="tab" aria-selected="false">Adjutant</button>
             <button class="detail-tab" data-detail-tab="harness" role="tab" aria-selected="false">Harness</button>
           </nav>
 
-          <section class="panel detail-panel" data-detail-panel="referee" aria-label="Referee projection">
+          <section class="panel detail-panel" data-detail-panel="unit" aria-label="Unit inspector">
+            <div class="panel-head"><div><p class="eyebrow">WORKBENCH</p><h2>Unit</h2></div><span data-unit-coverage>not loaded</span></div>
+            <div class="workbench-content" data-workbench-unit></div>
+          </section>
+
+          <section class="panel detail-panel" data-detail-panel="threat" aria-label="Threat layers" hidden>
+            <div class="panel-head"><div><p class="eyebrow">RULES QUERY</p><h2>Threat</h2></div><span data-threat-coverage>not loaded</span></div>
+            <div class="workbench-content" data-workbench-threat></div>
+          </section>
+
+          <section class="panel detail-panel" data-detail-panel="status" aria-label="Battle status" hidden>
+            <div class="panel-head"><div><p class="eyebrow">WORKBENCH</p><h2>Battle status</h2></div><span data-status-coverage>not loaded</span></div>
+            <div class="workbench-content" data-workbench-status></div>
+          </section>
+
+          <section class="panel detail-panel" data-detail-panel="markers" aria-label="Token and marker actions" hidden>
+            <div class="panel-head"><div><p class="eyebrow">LEGALSPACE</p><h2>Markers</h2></div><span data-marker-coverage>not loaded</span></div>
+            <div class="workbench-content" data-workbench-markers></div>
+          </section>
+
+          <section class="panel detail-panel" data-detail-panel="referee" aria-label="Referee projection" hidden>
             <div class="panel-head"><div><p class="eyebrow">REFEREE</p><h2>Integrity</h2></div><span data-replay-state>not checked</span></div>
             <dl class="facts" data-referee-facts></dl>
             <div class="alert" data-integrity-alert hidden></div>

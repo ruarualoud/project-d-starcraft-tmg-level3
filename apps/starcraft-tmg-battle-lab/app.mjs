@@ -20,7 +20,7 @@ bgmAudio.loop = true;
 bgmAudio.volume = 0.45;
 voiceAudio.volume = 0.7;
 const mapMedia = starcraftTmgBattlefieldMapMediaV1();
-let activeDetailPanel = "referee";
+let activeDetailPanel = "unit";
 
 const el = Object.fromEntries([
   "connection", "shared-hash", "room-id", "seat-token", "room-title",
@@ -30,6 +30,8 @@ const el = Object.fromEntries([
   "toast",
   "threat-toggle", "selected-portrait", "selected-unit", "media-status",
   "bgm-file", "volume",
+  "unit-coverage", "threat-coverage", "status-coverage", "marker-coverage",
+  "workbench-unit", "workbench-threat", "workbench-status", "workbench-markers",
 ].map((name) => [name, document.querySelector(`[data-${name}]`)]));
 
 voiceAudio.addEventListener("playing", () => {
@@ -47,7 +49,7 @@ bgmAudio.addEventListener("pause", () => {
 
 function unitMedia(unitId) {
   return resolveStarcraftTmgBattlefieldUnitMediaV1(unitId, {
-    releaseChannel: "development_internal",
+    releaseChannel: "public_user_authorized",
   });
 }
 
@@ -362,6 +364,53 @@ function renderAgent(agent) {
   ])));
 }
 
+function workbenchCard(title, lines = []) {
+  return htmlElement("article", { className: "trace" }, [
+    htmlElement("strong", { textContent: title }),
+    ...lines.map((line) => htmlElement("p", { textContent: line })),
+  ]);
+}
+
+function renderWorkbench(view) {
+  const workbench = view.workbench;
+  const selectedModel = view.battlefield.models.find((model) => model.id === selectedModelId);
+  const unit = workbench?.units?.find((entry) => (
+    entry.id === selectedModel?.pieceId
+      || entry.models?.some((model) => model.id === selectedModelId)
+  ));
+  el["unit-coverage"].textContent = workbench?.coverage?.unit?.status || "not loaded";
+  el["threat-coverage"].textContent = workbench?.threat?.coverage || "not loaded";
+  el["status-coverage"].textContent = workbench?.coverage?.score?.status || "not loaded";
+  el["marker-coverage"].textContent = workbench?.tokenMarkerActions?.coverage || "not loaded";
+  replaceChildren(el["workbench-unit"], unit ? [
+    workbenchCard(unit.name, [
+      `${unit.faction || "unknown faction"} · ${unit.location} · ${unit.currentModels}/${unit.maxModels} models`,
+      `HP/model ${text(unit.hpPerModel)} · shield/model ${text(unit.shieldPerModel)} · damage ${unit.damage} · remaining ${text(unit.remainingDurability)}`,
+      `weapons ${(unit.weapons || []).map((entry) => `${entry.name} R${text(entry.range)}`).join(", ") || "not projected"}`,
+      `upgrades ${(unit.upgrades || []).filter((entry) => entry.selected).map((entry) => entry.name).join(", ") || "none projected"}`,
+    ]),
+  ] : [workbenchCard("No unit selected", ["Select a visible model to inspect its viewer-scoped live characteristics."])]);
+  const scenario = workbench?.scenario;
+  replaceChildren(el["workbench-status"], workbench ? [
+    workbenchCard("Current score", (workbench.scoreboard || []).map((entry) => `${entry.playerName}: ${entry.score}`)),
+    workbenchCard("Scenario", [
+      `${text(scenario?.mission?.name || scenario?.mission?.id, "Mission not projected")} · round ${text(scenario?.round)} · ${text(scenario?.phase)}`,
+      `Deployment ${text(scenario?.deployment?.name || scenario?.deployment?.id, "not projected")}`,
+      `Battlefield ${(workbench.deployment?.battlefield || []).join(", ") || "—"}`,
+      `Reserve ${(workbench.deployment?.reserve || []).join(", ") || "—"}`,
+      `Undeployed ${(workbench.deployment?.undeployed || []).join(", ") || "—"}`,
+    ]),
+  ] : [workbenchCard("Workbench not loaded", ["Bind a room to load the current authoritative revision."])]);
+  replaceChildren(el["workbench-threat"], [workbenchCard("Threat layers", [
+    workbench?.threat?.reason || "Authoritative threat query not loaded.",
+    "The printed-range reference is presentation-only and is never labelled move-and-fire or charge threat.",
+  ])]);
+  replaceChildren(el["workbench-markers"], [workbenchCard("Token / Marker actions", [
+    workbench?.tokenMarkerActions?.reason || "LegalSpace-classified action palette not loaded.",
+    "No client-side token or marker mutation is permitted.",
+  ])]);
+}
+
 async function invoke(intent, label) {
   const result = await runtime.dispatch(intent);
   notify(result.ok ? label : `Blocked: ${result.rejection?.code || "request rejected"}`);
@@ -425,6 +474,7 @@ function render(view) {
   renderFacts(view.referee);
   renderAgent(view.agent);
   renderActions(view);
+  renderWorkbench(view);
   renderHarness(view.harness);
   playValidatedReceiptCues(view);
 }
@@ -469,7 +519,11 @@ document.addEventListener("click", async (event) => {
         locale: navigator.language || "en",
       });
       notify(result.ok ? "Authoritative room projection bound" : `Blocked: ${result.rejection?.code || "bind failed"}`);
-    } else if (command === "refresh") await invoke({ type: "refresh" }, "Projection refreshed");
+      if (result.ok) await invoke({ type: "load_battle_workbench" }, "Battle workbench loaded");
+    } else if (command === "refresh") {
+      const result = await invoke({ type: "refresh" }, "Projection refreshed");
+      if (result.ok) await invoke({ type: "load_battle_workbench" }, "Battle workbench refreshed");
+    }
     else if (command === "legal") {
       const result = await invoke({ type: "load_legal_space" }, "LegalSpace loaded");
       if (result.ok) setDetailPanel("actions");

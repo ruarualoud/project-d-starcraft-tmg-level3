@@ -48,6 +48,8 @@ export const STARCRAFT_TMG_BATTLEFIELD_MEDIA_POLICY_V1 = Object.freeze({
     "https://news.blizzard.com/en-us/article/20722027/the-sounds-of-koprulu",
   mediaAffectsAuthority: false,
   mediaAffectsTraining: false,
+  userAuthorizedPublicProjectUseRecordedAt: "2026-09-03",
+  independentThirdPartyRightsReviewCompleted: false,
   trainingTruth: false,
 });
 
@@ -55,21 +57,28 @@ export function resolveStarcraftTmgBattlefieldUnitMediaV1(unitId, options = {}) 
   const unitKey = normalizeUnitKey(unitId);
   if (!unitKey) return null;
   const developmentInternal = options.releaseChannel === "development_internal";
+  const userAuthorizedPublic = options.releaseChannel === "public_user_authorized";
+  const originalMedia = developmentInternal || userAuthorizedPublic;
   const internalPrefix = INTERNAL_PREFIXES[unitKey];
   return Object.freeze({
     schemaVersion: "starcraft_tmg_battlefield_unit_media_v1",
     unitKey,
-    neutralPortraitPath: developmentInternal && internalPrefix
+    neutralPortraitPath: originalMedia && internalPrefix
       ? `${INTERNAL_PORTRAIT_ROOT}/${unitKey}-animated.webp`
       : `${PUBLIC_ROOT}/${unitKey}-neutral.webp`,
-    activePortraitPath: developmentInternal && internalPrefix
+    activePortraitPath: originalMedia && internalPrefix
       ? `${INTERNAL_PORTRAIT_ROOT}/${unitKey}-animated.webp`
       : `${PUBLIC_ROOT}/${unitKey}-active.webp`,
-    portraitAnimated: Boolean(developmentInternal && internalPrefix),
-    voice: developmentInternal ? voicePaths(unitKey) : null,
-    releaseChannel: developmentInternal ? "development_internal" : "public",
+    portraitAnimated: Boolean(originalMedia && internalPrefix),
+    voice: originalMedia ? voicePaths(unitKey) : null,
+    releaseChannel: developmentInternal
+      ? "development_internal" : userAuthorizedPublic ? "public_user_authorized" : "public",
     rightsGatePassedForPublicDistribution: !developmentInternal,
-    fallbackGeneratedOriginal: !(developmentInternal && internalPrefix),
+    authorizationBasis: userAuthorizedPublic
+      ? "user_authorized_project_publication_2026-09-03"
+      : developmentInternal ? "development_internal_only" : "generated_original_public_fallback",
+    independentThirdPartyRightsReviewCompleted: false,
+    fallbackGeneratedOriginal: !(originalMedia && internalPrefix),
     trainingTruth: false,
   });
 }
@@ -85,4 +94,3 @@ export function starcraftTmgBattlefieldMapMediaV1() {
     trainingTruth: false,
   });
 }
-

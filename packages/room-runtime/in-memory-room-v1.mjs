@@ -17,6 +17,8 @@ import { createStarcraftTmgClientCharacterPresentationRuntimeV2 } from
   "../character-agent/client-character-presentation-runtime-v2.mjs";
 import { createStarcraftTmgCharacterAssetGrantAuthorityV1 } from
   "../character-agent/character-asset-grant-v1.mjs";
+import { projectStarcraftTmgBattleWorkbenchV1 } from
+  "../client-domain/battle-workbench-v1.mjs";
 
 export const STARCRAFT_TMG_ROOM_RUNTIME_VERSION = "starcraft_tmg_room_runtime_v2";
 export const STARCRAFT_TMG_ROOM_CHARACTER_EXTENSION_VERSION =
@@ -1159,6 +1161,53 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     }
   }
 
+  async function readBattleWorkbench(input = {}) {
+    const aggregate = await load(input.roomId);
+    if (!aggregate) return rejection("ROOM_NOT_FOUND", { roomId: input.roomId || "" });
+    let grant = null;
+    if (input.seatToken) {
+      try {
+        grant = authenticate(aggregate, input.seatToken, "read_room");
+      } catch (error) {
+        return rejection(error.code || "AUTHENTICATION_REQUIRED", { message: error.message });
+      }
+    }
+    let currentLegalSpace = null;
+    if (grant?.authority.capabilities.includes("read_legal_space")) {
+      try {
+        currentLegalSpace = authorityEngine.legalSpace(aggregate.envelope, {
+          seatAuthority: grant.authority,
+        });
+      } catch (error) {
+        return rejection(error.code || "BATTLE_WORKBENCH_LEGAL_SPACE_FAILED", {
+          message: error.message,
+        });
+      }
+    }
+    const projection = {
+      schemaVersion: STARCRAFT_TMG_VIEWER_ROOM_PROJECTION_VERSION,
+      room: roomSummary(aggregate),
+      viewer: grant ? {
+        grantId: grant.grantId,
+        seatKey: grant.seatKey,
+        roleMode: grant.roleMode,
+        visibilityScope: grant.authority.visibilityScope,
+        capabilities: clone(grant.authority.capabilities),
+        grantRecoveryRevision: grant.authority.recoveryRevision,
+      } : { roleMode: "public_observer", visibilityScope: "public", capabilities: ["read_public"] },
+      control: { visible: Boolean(grant) },
+      matchBinding: publicMatchBinding(aggregate.envelope.matchBinding),
+      authorityVersion: STARCRAFT_TMG_AUTHORITY_VERSION,
+      state: projectState(aggregate.envelope.state, grant?.seatKey || null),
+      training: { eligibleForTraining: false, trainingTruth: false, reviewStatus: "raw" },
+    };
+    const snapshot = projectStarcraftTmgBattleWorkbenchV1({
+      roomProjection: projection,
+      legalSpace: currentLegalSpace,
+    });
+    return deepFreeze({ ok: true, snapshot });
+  }
+
   async function previewAction(input = {}) {
     const aggregate = await load(input.roomId);
     if (!aggregate) return rejection("ROOM_NOT_FOUND", { roomId: input.roomId || "" });
@@ -1618,6 +1667,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     joinRoom,
     readRoom,
     legalSpace,
+    readBattleWorkbench,
     previewAction,
     confirmPreview,
     claimControl,
