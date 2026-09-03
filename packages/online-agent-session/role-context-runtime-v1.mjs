@@ -263,6 +263,7 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
   const roomTools = options.roomTools;
   const memoryStore = options.memoryStore;
   const promptArtifactStore = options.promptArtifactStore;
+  const roleOutputPolicy = options.roleOutputPolicy || null;
   if (typeof sessionLifecycle?.readSession !== "function") {
     throw new TypeError("sessionLifecycle.readSession is required");
   }
@@ -290,6 +291,12 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
     if (typeof promptArtifactStore?.[method] !== "function") {
       throw new TypeError(`promptArtifactStore.${method} is required`);
     }
+  }
+  if (roleOutputPolicy !== null
+    && (typeof roleOutputPolicy.createResponseContract !== "function"
+      || typeof roleOutputPolicy.process !== "function")) {
+    throw new TypeError(
+      "roleOutputPolicy createResponseContract/process are required when configured");
   }
   const now = typeof options.now === "function" ? options.now : () => new Date().toISOString();
   const historyPolicy = normalizeHistoryPolicy(options.historyPolicy);
@@ -605,7 +612,14 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       legalSpace: gathered.legalSpace,
       worldbookActivation: gathered.worldbookActivation,
     });
-    const response = responseContract(materials.capability);
+    const response = roleOutputPolicy
+      ? roleOutputPolicy.createResponseContract({
+        session,
+        capability: materials.capability,
+        gathered,
+        intent,
+      })
+      : responseContract(materials.capability);
     const nodes = [
       ...base.nodes,
       node("runtime-rule-skills", "rules-advisory", {
@@ -795,16 +809,48 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         promptArtifactStore.release(stored.ref);
       }
       const occurredAt = new Date(now()).toISOString();
+      let roleOutcome = null;
+      if (roleOutputPolicy && providerResult.ok) {
+        try {
+          roleOutcome = await roleOutputPolicy.process({
+            session,
+            capability: materials.capability,
+            intent,
+            output: providerResult.output,
+            providerOutputHash: providerResult.turn?.outputHash || null,
+            gathered,
+            responseContract: prompt.response.contract,
+            occurredAt,
+          });
+        } catch (error) {
+          roleOutcome = rejection(error?.code || "provider_output_rejected");
+        }
+      }
+      const roleAccepted = providerResult.ok
+        && (!roleOutputPolicy || roleOutcome?.ok === true);
+      const acceptedOutput = roleOutputPolicy
+        ? roleOutcome?.output
+        : providerResult.output;
+      const acceptedOutputHash = roleOutputPolicy
+        ? roleOutcome?.outputHash || null
+        : providerResult.turn?.outputHash || null;
+      const effectiveFailureCode = providerResult.ok
+        ? roleOutcome?.reason || null
+        : providerResult.reason;
+      const additionalToolCalls = roleOutputPolicy
+        ? roleOutcome?.harnessToolsCalled || []
+        : [];
+      const allToolCalls = [...gathered.receipt.calls, ...additionalToolCalls];
       const history = historyFor(session.sessionId);
       const entry = appendHistory(history, historyPolicy, {
         turnId: providerResult.turn?.turnId || null,
         mode: session.binding.mode,
         intent,
         userMessage,
-        output: providerResult.ok ? providerResult.output : undefined,
-        outputHash: providerResult.turn?.outputHash || null,
-        status: providerResult.ok ? "completed" : "failed",
-        failureCode: providerResult.ok ? null : providerResult.reason,
+        output: roleAccepted ? acceptedOutput : undefined,
+        outputHash: roleAccepted ? acceptedOutputHash : null,
+        status: roleAccepted ? "completed" : "failed",
+        failureCode: effectiveFailureCode,
         promptReceiptHash: prompt.receipt.receiptHash,
         occurredAt,
       });
@@ -826,16 +872,32 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         harnessVersion: STARCRAFT_TMG_ONLINE_ROLE_CONTEXT_RUNTIME_VERSION,
         agentVersion: materials.providerProfile.model,
         rulesVersion: session.binding.roomBinding.rulesVersion,
-        harnessToolsCalled: gathered.receipt.calls,
+        harnessToolsCalled: allToolCalls,
         toolContextReceiptHash: gathered.receipt.receiptHash,
         providerTurnReceiptHash: providerResult.receipt?.receiptHash || null,
         userMessageHash: hashStarcraftTmgContract(userMessage),
-        outputHash: providerResult.turn?.outputHash || null,
+        outputHash: roleAccepted
+          ? acceptedOutputHash
+          : providerResult.turn?.outputHash || null,
         historyEntryHash: entry.entryHash,
+        ...(roleOutputPolicy ? {
+          providerOutputHash: providerResult.turn?.outputHash || null,
+          roleOutputReceiptHash: roleOutcome?.receipt?.receiptHash || null,
+          roleOutputStatus: roleAccepted ? "accepted" : "rejected",
+          decision: roleOutcome?.decision || null,
+          decisionReceiptHash: roleOutcome?.decisionReceipt?.receiptHash || null,
+          previewProjectionHash: roleOutcome?.preview?.previewProjectionHash || null,
+          confirmationRequired: roleOutcome?.confirmationRequired === true,
+          confirmationOwner: roleOutcome?.confirmationRequired
+            ? "human_outside_agent_runtime"
+            : null,
+          modelConfirmCalls: 0,
+          modelApplyCalls: 0,
+        } : {}),
         memoryWrites: 0,
         skillGenerationRuns: 0,
         eligibleForTraining: false,
-        reviewStatus: providerResult.ok ? "raw" : "rejected",
+        reviewStatus: roleAccepted ? "raw" : "rejected",
         occurredAt,
         trainingTruth: false,
       }, "traceId");
@@ -843,12 +905,33 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         promptPack: materials.capability.promptPack,
         ruleSkillRefs: gathered.ruleSkills.skillRefs,
         memoryRefs: gathered.memorySnapshot.refs,
-        harnessToolsCalled: gathered.receipt.calls,
+        harnessToolsCalled: allToolCalls,
         lastTrace: trace,
       }));
       const contextView = contextProjection(session, providerResult.state);
+      const publicResult = roleOutputPolicy
+        ? roleAccepted
+          ? {
+            ...providerResult,
+            output: acceptedOutput,
+            roleOutputReceipt: roleOutcome.receipt,
+            decision: roleOutcome.decision || null,
+            decisionReceipt: roleOutcome.decisionReceipt || null,
+            preview: roleOutcome.preview || null,
+            confirmationRequired: roleOutcome.confirmationRequired === true,
+            confirmationOwner: roleOutcome.confirmationRequired
+              ? "human_outside_agent_runtime"
+              : null,
+          }
+          : rejection(effectiveFailureCode || "provider_output_rejected", {
+            providerTurn: providerResult.turn || null,
+            providerTurnReceipt: providerResult.receipt || null,
+            providerState: providerResult.state || null,
+            roleOutputReceipt: roleOutcome?.receipt || null,
+          })
+        : providerResult;
       return deepFreeze({
-        ...providerResult,
+        ...publicResult,
         promptReceipt: prompt.receipt,
         toolContextReceipt: gathered.receipt,
         trace,

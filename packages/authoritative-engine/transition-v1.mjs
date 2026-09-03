@@ -1690,6 +1690,32 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       if (READ_ONLY_ROLE_MODES.has(authority.roleMode)) throw new AuthorityError("CAPABILITY_DENIED", `${authority.roleMode} is read-only`);
       const calculated = calculatePreviewCore(envelope, authority.seatKey, input);
       const core = clone(calculated.core);
+      const expectedBindingFields = [
+        "expectedMatchBindingHash",
+        "expectedLegalSpaceHash",
+        "expectedStateRevision",
+        "expectedStateHash",
+      ];
+      const suppliedBindingFields = expectedBindingFields.filter((field) =>
+        input[field] !== undefined);
+      if (suppliedBindingFields.length > 0
+        && suppliedBindingFields.length !== expectedBindingFields.length) {
+        throw new AuthorityError("LEGAL_SPACE_STALE",
+          "preview expected LegalSpace binding must be complete");
+      }
+      if (suppliedBindingFields.length === expectedBindingFields.length
+        && (input.expectedMatchBindingHash !== core.matchBindingHash
+          || input.expectedLegalSpaceHash !== core.legalSpaceHash
+          || input.expectedStateRevision !== core.expectedStateRevision
+          || input.expectedStateHash !== core.preStateHash)) {
+        throw new AuthorityError("LEGAL_SPACE_STALE",
+          "preview no longer matches the observed LegalSpace", {
+            observedMatchBindingHash: core.matchBindingHash,
+            observedLegalSpaceHash: core.legalSpaceHash,
+            observedStateRevision: core.expectedStateRevision,
+            observedStateHash: core.preStateHash,
+          });
+      }
       if (authority.roleMode === "opponent" || authority.principalType === "model") {
         core.confirmationPolicy = { baseClass: core.confirmationPolicy.baseClass, requiresExplicitHuman: true, reason: "opponent_requires_human_confirmation" };
       }

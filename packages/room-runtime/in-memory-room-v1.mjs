@@ -1235,6 +1235,10 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       seatAuthority: grant.authority,
       proposal: input.proposal,
       candidateId: input.candidateId,
+      expectedMatchBindingHash: input.expectedMatchBindingHash,
+      expectedLegalSpaceHash: input.expectedLegalSpaceHash,
+      expectedStateRevision: input.expectedStateRevision,
+      expectedStateHash: input.expectedStateHash,
       occurredAt: input.occurredAt || now(),
     });
     if (!result.ok) return commitRejection(aggregate, grant, "preview", result);
