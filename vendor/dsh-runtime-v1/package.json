@@ -1,0 +1,10 @@
+{
+  "name": "@project-d/starcraft-tmg-dsh-runtime-v1",
+  "version": "0.0.0-private",
+  "private": true,
+  "description": "Integrity-locked offline DSH runtime for Ticket 17 Skill candidate generation only.",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.1.1-rc.2"
+  }
+}

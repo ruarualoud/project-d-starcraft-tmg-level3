@@ -3,12 +3,17 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   access,
   chmod,
+  link,
+  lstat,
   mkdir,
   mkdtemp,
+  readdir,
   readFile,
+  readlink,
   realpath,
   rm,
   stat,
+  symlink,
   writeFile,
 } from "node:fs/promises";
 import { createServer } from "node:net";
@@ -34,6 +39,8 @@ const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$/u;
 const MAX_ENTRY_BYTES = 4 * 1024 * 1024;
 const MAX_STAGED_INPUT_BYTES = 16 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 256 * 1024;
+const MAX_RUNTIME_TREE_BYTES = 512 * 1024 * 1024;
+const MAX_RUNTIME_TREE_ENTRIES = 100_000;
 const DEFAULT_TIMEOUT_MS = 15_000;
 const MAX_TIMEOUT_MS = 60_000;
 const DETACHED_KEY_PATTERN = /\b(?:sk|jsk)-[A-Za-z0-9_-]{12,}/iu;
@@ -225,6 +232,138 @@ async function sha256File(target) {
   const bytes = await readFile(target);
   digest.update(bytes);
   return digest.digest("hex");
+}
+
+function withinRoot(root, target) {
+  return target === root || target.startsWith(`${root}${path.sep}`);
+}
+
+async function inspectRuntimeTree(sourceRoot, repositoryRoot) {
+  const requested = assertAbsoluteSafePath(
+    sourceRoot, "ISOLATION_RUNTIME_TREE_ROOT_INVALID");
+  const canonical = await realpath(requested)
+    .catch(() => fail("ISOLATION_RUNTIME_TREE_ROOT_INVALID"));
+  if (canonical !== requested
+    || !withinRoot(path.join(repositoryRoot, "vendor"), canonical)) {
+    fail("ISOLATION_RUNTIME_TREE_ROOT_INVALID");
+  }
+  const rootMetadata = await lstat(canonical)
+    .catch(() => fail("ISOLATION_RUNTIME_TREE_ROOT_INVALID"));
+  if (!rootMetadata.isDirectory() || (rootMetadata.mode & 0o022) !== 0) {
+    fail("ISOLATION_RUNTIME_TREE_MODE_INVALID", ".");
+  }
+
+  const entries = [];
+  const files = [];
+  let totalBytes = 0;
+  async function walk(absolute, relative) {
+    const names = (await readdir(absolute)).sort((left, right) =>
+      left.localeCompare(right, "en"));
+    for (const name of names) {
+      if (name === ".DS_Store") fail("ISOLATION_RUNTIME_TREE_ENTRY_INVALID", name);
+      const childAbsolute = path.join(absolute, name);
+      const childRelative = relative ? `${relative}/${name}` : name;
+      const metadata = await lstat(childAbsolute);
+      if ((metadata.mode & 0o022) !== 0 && !metadata.isSymbolicLink()) {
+        fail("ISOLATION_RUNTIME_TREE_MODE_INVALID", childRelative);
+      }
+      if (metadata.isDirectory()) {
+        entries.push({ path: childRelative, type: "directory" });
+        await walk(childAbsolute, childRelative);
+      } else if (metadata.isFile()) {
+        totalBytes += metadata.size;
+        if (totalBytes > MAX_RUNTIME_TREE_BYTES) {
+          fail("ISOLATION_RUNTIME_TREE_SIZE_INVALID");
+        }
+        const entry = {
+          path: childRelative,
+          type: "file",
+          sizeBytes: metadata.size,
+          sha256: null,
+        };
+        entries.push(entry);
+        files.push({ entry, absolute: childAbsolute });
+      } else if (metadata.isSymbolicLink()) {
+        const target = await readlink(childAbsolute);
+        if (path.isAbsolute(target) || /[\r\n\0]/u.test(target)) {
+          fail("ISOLATION_RUNTIME_TREE_SYMLINK_INVALID", childRelative);
+        }
+        const resolved = path.resolve(path.dirname(childAbsolute), target);
+        if (!withinRoot(canonical, resolved)) {
+          fail("ISOLATION_RUNTIME_TREE_SYMLINK_INVALID", childRelative);
+        }
+        const canonicalTarget = await realpath(childAbsolute)
+          .catch(() => fail("ISOLATION_RUNTIME_TREE_SYMLINK_INVALID", childRelative));
+        if (!withinRoot(canonical, canonicalTarget)) {
+          fail("ISOLATION_RUNTIME_TREE_SYMLINK_INVALID", childRelative);
+        }
+        entries.push({ path: childRelative, type: "symlink", target });
+      } else {
+        fail("ISOLATION_RUNTIME_TREE_ENTRY_INVALID", childRelative);
+      }
+      if (entries.length > MAX_RUNTIME_TREE_ENTRIES) {
+        fail("ISOLATION_RUNTIME_TREE_ENTRY_COUNT_INVALID");
+      }
+    }
+  }
+  await walk(canonical, "");
+  await mapLimited(files, 32, async ({ entry, absolute }) => {
+    entry.sha256 = await sha256File(absolute);
+  });
+  const manifest = freeze({
+    schemaVersion: "starcraft_tmg_disposable_runtime_tree_manifest_v1",
+    entries,
+    entryCount: entries.length,
+    totalBytes,
+  });
+  return freeze({
+    sourceRoot: canonical,
+    manifest,
+    manifestHash: hashStarcraftTmgContract(manifest),
+  });
+}
+
+export async function inspectDisposableRuntimeTreeV1({
+  sourceRoot,
+  repositoryRoot,
+}) {
+  const canonicalRepositoryRoot = await realpath(assertAbsoluteSafePath(
+    repositoryRoot, "ISOLATION_REPOSITORY_ROOT_INVALID"))
+    .catch(() => fail("ISOLATION_REPOSITORY_ROOT_INVALID"));
+  return inspectRuntimeTree(sourceRoot, canonicalRepositoryRoot);
+}
+
+async function mapLimited(values, limit, operation) {
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, values.length) },
+    async () => {
+      while (next < values.length) {
+        const index = next;
+        next += 1;
+        await operation(values[index]);
+      }
+    }));
+}
+
+async function stageRuntimeTree(runtimeTree, targetRoot) {
+  await mkdir(targetRoot, { recursive: false, mode: 0o700 });
+  const directories = runtimeTree.manifest.entries
+    .filter((entry) => entry.type === "directory");
+  const leaves = runtimeTree.manifest.entries
+    .filter((entry) => entry.type !== "directory");
+  await mapLimited(directories, 64, async (entry) => {
+    await mkdir(path.join(targetRoot, entry.path), {
+      recursive: true,
+      mode: 0o755,
+    });
+  });
+  await mapLimited(leaves, 64, async (entry) => {
+    const source = path.join(runtimeTree.sourceRoot, entry.path);
+    const target = path.join(targetRoot, entry.path);
+    if (entry.type === "file") await link(source, target);
+    else if (entry.type === "symlink") await symlink(entry.target, target);
+    else fail("ISOLATION_RUNTIME_TREE_ENTRY_INVALID", entry.path);
+  });
 }
 
 function assertAbsoluteSafePath(value, code) {
@@ -424,6 +563,7 @@ async function executeOnce({
   nodeExecutable,
   repositoryRoot,
   protectedReadTargets = [],
+  runtimeTree,
 }) {
   const entryBytes = Buffer.from(entrySource, "utf8");
   const stagedBytes = Buffer.from(`${JSON.stringify(stagedInput)}\n`, "utf8");
@@ -459,6 +599,11 @@ async function executeOnce({
     await mkdir(tmpRoot, { recursive: true, mode: 0o700 });
     await writeFile(entryPath, entryBytes, { mode: 0o400 });
     await writeFile(hostDataPath, randomUUID(), { mode: 0o600 });
+
+    if (runtimeTree) {
+      const runtimeTreeRoot = path.join(runtimeRoot, "vendor");
+      await stageRuntimeTree(runtimeTree, runtimeTreeRoot);
+    }
 
     const stagedInputPath = path.join(inputRoot, "staged-input.json");
     await writeFile(stagedInputPath, stagedBytes, { mode: 0o400 });
@@ -806,7 +951,7 @@ export function createDisposableOsSkillRunnerV1({ repositoryRoot }) {
   async function run(input) {
     exactKeys(input, [
       "jobId", "attestationHash", "entrySource", "stagedInput",
-    ], ["timeoutMs"], "ISOLATION_JOB_REQUEST_INVALID");
+    ], ["timeoutMs", "runtimeTree"], "ISOLATION_JOB_REQUEST_INVALID");
     if (!attestation) fail("ISOLATION_ATTESTATION_REQUIRED");
     verifyDisposableOsIsolationAttestationV1(attestation);
     if (input.attestationHash !== attestation.attestationHash) {
@@ -821,6 +966,21 @@ export function createDisposableOsSkillRunnerV1({ repositoryRoot }) {
       || containsCredentialMaterial(input.stagedInput)) {
       fail("ISOLATION_JOB_PAYLOAD_INVALID");
     }
+    let runtimeTree;
+    if (input.runtimeTree !== undefined) {
+      exactKeys(input.runtimeTree, ["sourceRoot", "expectedManifestHash"], [],
+        "ISOLATION_RUNTIME_TREE_REQUEST_INVALID");
+      if (!HASH_PATTERN.test(input.runtimeTree.expectedManifestHash)
+        || input.stagedInput.runtimeTreeHash
+          !== input.runtimeTree.expectedManifestHash) {
+        fail("ISOLATION_RUNTIME_TREE_REQUEST_INVALID");
+      }
+      runtimeTree = await inspectRuntimeTree(
+        input.runtimeTree.sourceRoot, requestedRoot);
+      if (runtimeTree.manifestHash !== input.runtimeTree.expectedManifestHash) {
+        fail("ISOLATION_RUNTIME_TREE_HASH_MISMATCH");
+      }
+    }
     const execution = await executeOnce({
       jobId,
       entrySource: input.entrySource,
@@ -828,6 +988,7 @@ export function createDisposableOsSkillRunnerV1({ repositoryRoot }) {
       timeoutMs,
       nodeExecutable: binding.node.path,
       repositoryRoot: requestedRoot,
+      runtimeTree,
     });
     const receiptBody = {
       schemaVersion: DISPOSABLE_OS_JOB_RECEIPT_SCHEMA,

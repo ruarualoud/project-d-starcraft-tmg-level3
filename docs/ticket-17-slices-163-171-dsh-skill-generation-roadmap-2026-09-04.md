@@ -1,7 +1,7 @@
 # Ticket 17 — DSH offline Skill-generation Adapter roadmap
 
 Date: 2026-09-04
-Status: Slices 163–166 complete; Ticket 17 is 4/9
+Status: Slices 163–167 complete; Ticket 17 is 5/9
 Project status: 15/22 Tickets complete; Ticket 14 physical-device acceptance remains deferred and unwaived
 Source refresh: not performed
 
@@ -73,7 +73,7 @@ containment.
 | 164 | **Complete.** Build the minimal current-official staged-evidence pack and registry-driven four-family curriculum/question-tree denominator. | 83 source records + 1,163 current RuleAtoms; 1,215 tasks / 1,101 eligible / 114 visible-blocked; 1,220 tree nodes; complete 6×6 directed archetype matchups; content/locator/current-Rules hashes; 15/15 focused and full predecessor aggregate pass. |
 | 165 | **Complete.** Implement the Teach + Ctx2Skill role graph and the unique typed candidate-emission contract. | Nine hash-sealed role receipts; seven bounded model-role ports plus independent Fact Judge/Cross-Time gates; explicit failure→revision→superseding-claim lineage; consumer reconstruction; exactly-one post-gate candidate tool; 20/20 focused and full predecessor aggregate pass. |
 | 166 | **Complete.** Implement disposable OS isolation and the capability firewall. | A content-bound macOS M1 backend behaviorally denies host/repository/Room/Rules/Skill reads, outside writes, unapproved process creation and direct loopback network; staged result/cleanup/tamper gates pass 17/17, with no unsandboxed fallback. |
-| 167 | Install the exact DSH package in the isolated runtime and freeze profile, plugin lock, effective config and Session parser. | Tarball integrity and commit/tag match; lifecycle smoke; config dump and append-only Session events are parsed; no Provider call. |
+| 167 | **Complete.** Install the exact DSH package in the isolated runtime and freeze profile, plugin lock, effective config and Session parser. | Exact `0.1.1-rc.2` npm/tag/commit; 35,962-entry runtime tree; 81 config rows; 78-package plugin lock; real five-event DSH Session; 23/23 focused; no Provider call. |
 | 168 | Implement the common credential/Provider broker and the real DSH-off control executor. | Same model/prompt/tools/budgets as DSH; one physical attempt per role; Ticket16-grade secret handling, input/output/cache/total-token and cost receipts; cumulative CNY forecast notifications before every crossed ¥100 tier; deterministic no-retry Provider tests. |
 | 169 | Implement the real DSH executor, candidate tool bridge, Session redaction and RunReceipt. | DSH process uses only staged reads plus exactly one candidate emission; safe event/usage/tool/config evidence; crash/timeout/cardinality/secret/authority adversarial gates. |
 | 170 | Run one bounded real DSH-on/direct-control pair and blind quality evaluation. | One frozen `how_to_play` task, same Provider/model/input/tool/budget, one candidate per arm, actual Session/usage/cost receipts and predeclared blind metrics; both remain unreviewed. |
@@ -82,9 +82,11 @@ containment.
 Slice 165 performs no model call. Its one candidate is a deterministic verifier
 artifact accepted by an in-memory test port, remains unreviewed and
 non-authoritative, and is not persisted in a production Skill registry. Slice
-166 proves the disposable M1 isolation boundary without installing or running
-DSH. Slice 167 is next: stage the exact pinned package, profile, plugin lock and
-Session parser inside that boundary without a Provider call.
+166 proves the disposable M1 isolation boundary. Slice 167 installs and runs
+the exact pinned package inside it, composes a fail-closed 15-active /
+66-disabled profile, freezes its 78-package plugin lock, and parses a real DSH
+Session without a Provider call. Slice 168 is next: one common Provider broker
+and the actual DSH-off control arm.
 
 ## Isolation and Provider boundary
 
