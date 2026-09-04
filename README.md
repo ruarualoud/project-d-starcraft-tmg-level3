@@ -22,7 +22,7 @@ The character-Agent stack includes a rights-gated Primal Queen CharacterPackage,
 
 The source/translation slice now includes an eight-source registry, immutable raw-snapshot receipts, a normalized-dataset lineage manifest, a read-only Adapter for the legacy data pack, a provisional zh-CN glossary, and display-only translation sidecars. One deep source/localization runtime plus a transport-neutral HTTP Adapter lets Web/App read the same provenance, request administrator-gated machine drafts, and publish authenticated human reviews without reimplementing authority rules. Product Firestore records remain unreviewed official-data candidates; community records and Project D-derived presets remain separate. Machine translations cannot target numeric/rules fields, never overwrite canonical data, and fall back to canonical text when stale. Live official-source recovery, rights review, real provider integration, persistent review storage, and UI evidence remain open.
 
-The historical offline Skill scaffold defines sealed job/candidate/run-receipt shapes and two injected fake execution arms. Ticket 17 now has a fixed nine-Slice delivery plan for a pinned DSH arm and a DSH-off direct-Provider control. Slice 163 freezes current official source/FAQ/Rules identities, the audited DSH package, MTL Teach/Ctx2Skill lineage, four registry-driven Skill families and strict candidate-only authority. DSH is not installed until the isolated runner and capability firewall are proved; no Skill is promoted or loaded at runtime, and full-catalogue production still requires separate user confirmation.
+The historical offline Skill scaffold defines sealed job/candidate/run-receipt shapes and two injected fake execution arms. Ticket 17 has a fixed nine-Slice delivery plan for a pinned DSH arm and a DSH-off direct-Provider control. Slices 163–164 freeze current official source/FAQ/Rules identities, the audited DSH package, MTL Teach/Ctx2Skill lineage, 83 source + 1,163 RuleAtom evidence rows, and a registry-driven 1,215-task/1,220-node curriculum across four Skill families. DSH is not installed until the isolated runner and capability firewall are proved; no Skill is promoted or loaded at runtime, and full-catalogue production still requires separate user confirmation. Future paid arms record exact token classes and notify before each cumulative estimated ¥100 tier.
 
 All runtimes deliberately report `process_memory_v0`, `productionReady: false`, and `trainingTruth: false`.
 
@@ -35,6 +35,7 @@ Key references:
 - [DeepSeek Harness research](../docs/deepseek-harness-skill-generation-primary-research-2026-08-24.md)
 - [Ticket 17 DSH roadmap](docs/ticket-17-slices-163-171-dsh-skill-generation-roadmap-2026-09-04.md)
 - [Ticket 17 Slice 163 boundary](docs/ticket-17-slice-163-dsh-boundary-source-denominator-2026-09-04.md)
+- [Ticket 17 Slice 164 evidence/curriculum](docs/ticket-17-slice-164-current-official-skill-evidence-curriculum-2026-09-04.md)
 - [Source registry](content/source-registry-v1.mjs)
 - [Translation sidecar contract](packages/localization/translation-sidecar-v1.mjs)
 - [Source/localization runtime](packages/localization/source-localization-runtime-v1.mjs)

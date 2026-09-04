@@ -1,7 +1,7 @@
 # Ticket 17 — DSH offline Skill-generation Adapter roadmap
 
 Date: 2026-09-04
-Status: Slice 163 complete; Ticket 17 is 1/9
+Status: Slices 163–164 complete; Ticket 17 is 2/9
 Project status: 15/22 Tickets complete; Ticket 14 physical-device acceptance remains deferred and unwaived
 Source refresh: not performed
 
@@ -70,11 +70,11 @@ containment.
 | Slice | Scope | Closure evidence |
 | --- | --- | --- |
 | 163 | **Complete.** Freeze the audited source/runtime/MTL boundary and the nine-Slice denominator. | Hash-sealed boundary; exact current source and six scaffold file hashes; exact MTL commit/file hashes; DSH registry/integrity snapshot; 15 focused checks; no install, model call or candidate. |
-| 164 | Build the minimal current-official staged-evidence pack and registry-driven four-family curriculum/question-tree denominator. | Every staged byte has a source/rules/locator hash; historical/current separation; no raw registry or mutable Rules mount; complete family/node accounting. |
+| 164 | **Complete.** Build the minimal current-official staged-evidence pack and registry-driven four-family curriculum/question-tree denominator. | 83 source records + 1,163 current RuleAtoms; 1,215 tasks / 1,101 eligible / 114 visible-blocked; 1,220 tree nodes; complete 6×6 directed archetype matchups; content/locator/current-Rules hashes; 15/15 focused and full predecessor aggregate pass. |
 | 165 | Implement the Teach + Ctx2Skill role graph and the unique typed candidate-emission contract. | Planner/Tutor/Student/Challenger/Reasoner/Fact Judge/Proposer/Generator/Cross-Time contracts, parent/revision links and deterministic hostile-output tests. |
 | 166 | Implement disposable OS isolation and the capability firewall. | Behavioral proof that the worker cannot read the repository/host secrets, spawn unapproved processes, reach Room/Rules/Skill registry, or use network outside the broker; fail closed without a supported backend. |
 | 167 | Install the exact DSH package in the isolated runtime and freeze profile, plugin lock, effective config and Session parser. | Tarball integrity and commit/tag match; lifecycle smoke; config dump and append-only Session events are parsed; no Provider call. |
-| 168 | Implement the common credential/Provider broker and the real DSH-off control executor. | Same model/prompt/tools/budgets as DSH; one physical attempt per role; Ticket16-grade secret handling, usage/cost and no-retry receipts; deterministic Provider tests. |
+| 168 | Implement the common credential/Provider broker and the real DSH-off control executor. | Same model/prompt/tools/budgets as DSH; one physical attempt per role; Ticket16-grade secret handling, input/output/cache/total-token and cost receipts; cumulative CNY forecast notifications before every crossed ¥100 tier; deterministic no-retry Provider tests. |
 | 169 | Implement the real DSH executor, candidate tool bridge, Session redaction and RunReceipt. | DSH process uses only staged reads plus exactly one candidate emission; safe event/usage/tool/config evidence; crash/timeout/cardinality/secret/authority adversarial gates. |
 | 170 | Run one bounded real DSH-on/direct-control pair and blind quality evaluation. | One frozen `how_to_play` task, same Provider/model/input/tool/budget, one candidate per arm, actual Session/usage/cost receipts and predeclared blind metrics; both remain unreviewed. |
 | 171 | Run the predecessor→current adversarial aggregate and close Ticket 17. | Re-run Ticket16 closure and all Ticket17 gates; secret and authority audit; frozen handoff to Ticket18; no publication, Memory, self-play, MuZero or training truth. |
@@ -92,6 +92,14 @@ registry, Memory, MuZero or training capabilities. It also cannot reuse the
 detached Ticket16 credential. Slice 170 accepts a fresh credential only through
 a local secure ingress and emits no raw Prompt, response, reasoning or secret
 into committed evidence.
+
+Every real paid arm reports input, output, cache-hit/cache-miss and total token
+counts, plus estimated and Provider-reported cost where available. Slice 168
+must pin the pricing and USD/CNY conversion evidence used for forecasts and
+emit a user notification before cumulative estimated spend crosses each
+`¥100` tier (`¥100`, `¥200`, and so on). This is an observability threshold,
+not hidden permission for large-scale generation; full production still needs
+the separate approval above.
 
 ## Ticket 18 boundary
 
