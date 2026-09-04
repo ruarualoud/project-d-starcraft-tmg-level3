@@ -1,17 +1,17 @@
 # Remaining StarCraft TMG Level-3 development tickets
 
-Status after Ticket 16 Slice 161: 14/22 Tickets complete; Ticket 16 is 9/10 and
+Status after Ticket 16 Slice 162: 15/22 Tickets complete; Ticket 16 is 10/10 and
 Ticket 14 is 15/16.
 All planned Web/backend/client development and Ticket 15 online role-Agent work
 are complete, while the explicitly deferred physical-device acceptance remains
-open. Ticket 16 is the active development target with a fixed 10-Slice
-denominator, Slices 153–162.
+open. Ticket 17 is the next active development target; large-scale Skill
+production remains behind the user's separate confirmation gate.
 
 | Ticket | Purpose | Completion evidence |
 | --- | --- | --- |
 | 14 | Shared Web/App client: restore the Expo product, implement one Client Domain Module, mount authoritative rooms/board/source/character flows, migrate Battle Lab, add the complete battle workbench, and prove browser plus real-device behavior. | 16 slices (128–143), Web/App/Battle Lab parity, unit/scenario/deploy/score inspection, multi-mode threat, rules-bound probability, complete Token/Marker action surface, score forecast/rules quick view, no second state authority, pinned builds and browser/native traces. |
 | 15 | **Complete.** Online role-Agent sessions: Tutor, Opponent, Commentator and Companion are real room-connected product modes with isolated tools, visibility, prompts and memory. | Nine slices (144–152); authenticated HTTP; real Chromium four-mode/failure/cancel/reconnect/budget evidence; legal Opponent Preview and human-confirmed Apply/Receipt/Replay; 192 fixed assertions including closure. |
-| 16 | **Active, 9/10.** Direct Provider and secure BYOK: move the current injected Adapter into isolated, budgeted, recoverable production execution. | Slices 153–161 complete: frozen boundary, consent/ingress, isolated credential Worker, allowlisted HTTPS, SQLite/PostgreSQL attempt stores, signed recovery, durable Gateway composition, Web/Battle Lab BYOK flow, encoded-echo redaction, real Chromium and Worker-failure/recovery aggregate. Slice 162 retains one user-authorized live model/version receipt and closure. |
+| 16 | **Complete, 10/10.** Direct Provider and secure BYOK: move the current injected Adapter into isolated, budgeted, recoverable production execution. | Slices 153–162 complete; isolated credential/egress child, SQLite/PostgreSQL store contract, durable Gateway, Web flow and redaction/browser aggregate; one authorized DeepSeek HTTP 200 attempt with zero retry; 20/20 preflight, 16/16 live closure and 531 cumulative fixed assertions. |
 | 17 | DSH Skill-generation Adapter: install and run the pinned DSH execution arm only for offline Skill candidates, alongside the DSH-off control. | Disposable isolation, real DSH session log, exact config/plugin/model/tool/cost receipt and proof that it cannot publish or reach online/Rules paths. |
 | 18 | Skill scheduler, evaluation and promotion: turn candidate generation into durable DAG jobs with leases/fencing/WAL, Judge/Cross-Time/held-out/A-B gates and administrator promotion/rollback. | SQLite/PostgreSQL scheduler parity, crash recovery, fixed evaluation denominators, quarantined candidates, approved versioned Skill snapshot. |
 | 19 | MuZero player-view trajectory contract and export: define observation/action/reward/discount/chance/recurrent-state lineage from the authoritative journal. | Viewer-leakage tests, terminal/version binding, NDJSON/MuZero/RLDS round trips; eligibility remains separately gated and no learner is trained. |
@@ -27,9 +27,8 @@ Skill, trajectory and production contracts and cannot be truthfully closed by
 scaffolds alone.
 
 The FAQ F1–F5 review lane, Slice 142 build record, Slice 143 Web/security
-aggregate and Ticket 15 are complete. Continue Ticket 16 without waiting for
-the user-deferred physical-device batch; Slice 162's single live Provider call
-still needs a separately configured local BYOK secret. Ticket 14 remains
+aggregate, Ticket 15 and Ticket 16 are complete. Continue with Ticket 17
+without waiting for the user-deferred physical-device batch. Ticket 14 remains
 formally open until device evidence is later collected.
 Development does not pull source updates again unless explicitly commanded.
 Large-scale Skill generation remains behind a separate user confirmation.

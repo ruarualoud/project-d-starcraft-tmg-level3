@@ -53,12 +53,16 @@ const SUCCESS_FIELDS = new Set(["output", "usageReceipt"]);
 const SUCCESS_RECEIPT_FIELDS = new Set([
   "schemaVersion", "requestId", "providerProfileRef", "egressPolicyHash",
   "providerId", "requestedModel", "reportedModel", "providerRequestIdHash",
-  "status", "usage", "responseFingerprint", "dnsAddressSetHash",
+  "providerSystemFingerprintHash", "status", "usage", "responseFingerprint",
+  "dnsAddressSetHash",
   "tlsServerName", "tlsCertificateVerificationDisabled", "redirectFollowed",
   "proxyUsed", "physicalAttempts", "automaticRetries", "startedAt",
   "finishedAt", "trainingTruth", "receiptHash",
 ]);
-const USAGE_FIELDS = new Set(["inputUnits", "outputUnits", "totalUnits"]);
+const USAGE_FIELDS = new Set([
+  "inputUnits", "outputUnits", "totalUnits", "inputCacheHitUnits",
+  "inputCacheMissUnits", "reasoningOutputUnits",
+]);
 const FAILURE_RECEIPT_FIELDS = new Set([
   "schemaVersion", "code", "requestDefinitelyNotSent", "requestMayHaveBeenSent",
   "status", "physicalAttempts", "automaticRetries", "trainingTruth",
@@ -355,6 +359,21 @@ export function createStarcraftTmgProviderEgressWorkerPortV1(options = {}) {
       const { receiptHash, ...receiptBody } = message.value.usageReceipt;
       const usage = message.value.usageReceipt.usage;
       const reportedModel = message.value.usageReceipt.reportedModel;
+      const fingerprintHash =
+        message.value.usageReceipt.providerSystemFingerprintHash;
+      const cacheBreakdownPresent = usage.inputCacheHitUnits !== undefined
+        || usage.inputCacheMissUnits !== undefined;
+      const cacheBreakdownValid = !cacheBreakdownPresent
+        || Number.isSafeInteger(usage.inputCacheHitUnits)
+          && usage.inputCacheHitUnits >= 0
+          && Number.isSafeInteger(usage.inputCacheMissUnits)
+          && usage.inputCacheMissUnits >= 0
+          && usage.inputCacheHitUnits + usage.inputCacheMissUnits
+            === usage.inputUnits;
+      const reasoningUnitsValid = usage.reasoningOutputUnits === undefined
+        || Number.isSafeInteger(usage.reasoningOutputUnits)
+          && usage.reasoningOutputUnits >= 0
+          && usage.reasoningOutputUnits <= usage.outputUnits;
       if (!object(message.value.output) || !object(message.value.usageReceipt)
         || Buffer.byteLength(JSON.stringify(message.value.output), "utf8")
           > maxOutputBytes
@@ -373,6 +392,9 @@ export function createStarcraftTmgProviderEgressWorkerPortV1(options = {}) {
         || !(reportedModel === null || MODEL.test(reportedModel))
         || !(message.value.usageReceipt.providerRequestIdHash === null
           || HASH.test(message.value.usageReceipt.providerRequestIdHash))
+        || !(fingerprintHash === undefined || HASH.test(fingerprintHash))
+        || !cacheBreakdownValid
+        || !reasoningUnitsValid
         || !HASH.test(message.value.usageReceipt.responseFingerprint)
         || !HASH.test(message.value.usageReceipt.dnsAddressSetHash)
         || !Number.isInteger(message.value.usageReceipt.status)

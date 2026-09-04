@@ -10,6 +10,8 @@ import {
   StarcraftTmgProviderEgressError,
   STARCRAFT_TMG_PROVIDER_EGRESS_TRANSPORT_VERSION,
 } from "./provider-egress-contract-v1.mjs";
+import { containsStarcraftTmgKnownCredentialEchoV1 } from
+  "../online-agent-session/portable-credential-material-v1.mjs";
 
 export {
   StarcraftTmgProviderEgressError,
@@ -276,6 +278,10 @@ function requestBody(request, binding) {
     top_p: binding.topP,
     [binding.maxOutputField]: request.maxOutputUnits,
   };
+  if (binding.providerId === "deepseek-openai-compatible-direct") {
+    body.thinking = { type: "disabled" };
+    body.reasoning_effort = "low";
+  }
   if (binding.responseFormatMode !== "prompt_only") {
     body.response_format = { type: "json_object" };
   }
@@ -315,7 +321,24 @@ function safeUsage(value = {}) {
   const outputUnits = integer(value.completion_tokens ?? value.output_tokens);
   const totalUnits = Math.max(integer(value.total_tokens),
     inputUnits + outputUnits);
-  return freeze({ inputUnits, outputUnits, totalUnits });
+  const cacheHit = Number(value.prompt_cache_hit_tokens);
+  const cacheMiss = Number(value.prompt_cache_miss_tokens);
+  const cacheBreakdownValid = Number.isSafeInteger(cacheHit) && cacheHit >= 0
+    && Number.isSafeInteger(cacheMiss) && cacheMiss >= 0
+    && cacheHit + cacheMiss === inputUnits;
+  const reasoning = Number(value.completion_tokens_details?.reasoning_tokens);
+  const reasoningValid = Number.isSafeInteger(reasoning) && reasoning >= 0
+    && reasoning <= outputUnits;
+  return freeze({
+    inputUnits,
+    outputUnits,
+    totalUnits,
+    ...(cacheBreakdownValid ? {
+      inputCacheHitUnits: cacheHit,
+      inputCacheMissUnits: cacheMiss,
+    } : {}),
+    ...(reasoningValid ? { reasoningOutputUnits: reasoning } : {}),
+  });
 }
 
 function sameNetworkAddress(left, right) {
@@ -542,14 +565,26 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
           response.on("end", () => {
             if (settled) return;
             let payload;
+            const rawPayload = Buffer.concat(chunks);
             try {
-              payload = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-            } catch {
-              fail(new StarcraftTmgProviderEgressError(
-                "PROVIDER_RESPONSE_CONTRACT_REJECTED", {
-                  requestMayHaveBeenSent: true, physicalAttempts,
-                }));
+              if (containsStarcraftTmgKnownCredentialEchoV1(
+                rawPayload.toString("utf8"), input.credentialBytes)) {
+                throw new StarcraftTmgProviderEgressError(
+                  "PROVIDER_RESPONSE_SENSITIVE_MATERIAL_REJECTED", {
+                    requestMayHaveBeenSent: true, physicalAttempts,
+                  });
+              }
+              payload = JSON.parse(rawPayload.toString("utf8"));
+            } catch (error) {
+              fail(error instanceof StarcraftTmgProviderEgressError
+                ? error : new StarcraftTmgProviderEgressError(
+                  "PROVIDER_RESPONSE_CONTRACT_REJECTED", {
+                    requestMayHaveBeenSent: true, physicalAttempts,
+                  }));
               return;
+            } finally {
+              rawPayload.fill(0);
+              for (const chunk of chunks) chunk.fill(0);
             }
             let output;
             try {
@@ -567,6 +602,8 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
             }
             const reportedModel = SAFE_MODEL.test(String(payload?.model || ""))
               ? String(payload.model) : null;
+            const providerSystemFingerprint = String(
+              payload?.system_fingerprint || "");
             const rawRequestId = String(response.headers?.["x-request-id"] || "");
             const receiptBody = {
               schemaVersion:
@@ -577,6 +614,11 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
               providerId: binding.providerId,
               requestedModel: binding.model,
               reportedModel,
+              ...(providerSystemFingerprint
+                && providerSystemFingerprint.length <= 240 ? {
+                  providerSystemFingerprintHash:
+                    sha256(providerSystemFingerprint),
+                } : {}),
               providerRequestIdHash: SAFE_ID.test(rawRequestId)
                 ? sha256(rawRequestId) : null,
               status,

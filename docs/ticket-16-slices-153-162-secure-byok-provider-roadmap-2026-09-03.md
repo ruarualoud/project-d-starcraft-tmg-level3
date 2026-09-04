@@ -1,9 +1,9 @@
 # Ticket 16 — secure BYOK and direct Provider roadmap
 
 Date: 2026-09-03  
-Status: active; Slices 153–161 complete, 9/10
-Project progress before this Ticket: 14/22 Tickets complete; Ticket 14 device
-acceptance remains deferred  
+Status: complete; Slices 153–162 complete, 10/10
+Project progress after this Ticket: 15/22 Tickets complete; Ticket 14 device
+acceptance remains deferred and unwaived
 Source refresh: not performed
 
 ## Outcome
@@ -15,10 +15,10 @@ durable attempt and budget recovery, safe receipts, Web controls and one
 user-authorized live call. It owns no Rules, room, RNG, Confirm/Apply, Skill,
 DSH, Memory-promotion or training authority.
 
-A real API key is not needed for Slices 153–161. Slice 162 requires the user to
-configure a rotated key locally through the secure product ingress. The
-key must not be pasted into chat. Without that call, all implementation may be
-complete but Ticket 16 remains open at 9/10.
+A real API key was not needed for Slices 153–161. For Slice 162 the user
+configured a rotated key locally through the secure product ingress and
+authorized one bounded call. The credential was not accepted from chat and was
+zeroed and detached after that call.
 
 ## Existing-code audit
 
@@ -114,7 +114,7 @@ call needs a new same-user approval and a reattached credential.
 | 159 | **Complete.** Ticket 15 Gateway/Prompt/Worker/store/receipt integration. | Frozen credential-free Gateway source/request preserved; ephemeral server execution scope; authenticated internal authority; exact MTL persist/dispatch/execute/receipt/recover sequence; durable actual/zero/full settlement; commit-ack replay; four modes; focused 36/36 across 18 SQLite files and nine deterministic Worker calls, report `349f798d...ee3c`; no live call. |
 | 160 | **Complete.** Web and Battle Lab BYOK product flow. | Server-listed Provider/model and consent-time maximum budget envelope; explicit disclosure/consent; password input cleared before network await; binary buffers zeroed; attached/missing/error/detached states; no cache/log persistence; focused 37/37, report `f1a68378...767c`; no live call. |
 | 161 | **Complete.** Redaction fuzz, real-browser and Worker-failure aggregate. | Ten credential echo encodings; code-only exceptions; Node 20/20 and real Chromium 16/16 through seven Provider HTTP requests, one safe attach failure, one real child attach/detach, four role modes and cancel; durable cancel/timeout/crash/recovery rerun; cumulative 495; no live call. |
-| 162 | One user-authorized minimal live call and Ticket closure. | Local-only key injection; reported Provider/model/version, usage/cost, response fingerprint, browser-visible safe state and full aggregate. |
+| 162 | **Complete.** One user-authorized minimal live call and Ticket closure. | DeepSeek V4 Flash official profile/pricing, anonymous stdin byte ingress, dual authorization, one-call lock, isolated child and durable SQLite path; one HTTP 200 attempt, zero retries, 2,424 input/44 output tokens, calculated `$0.00056232`; preflight 20/20, live closure 16/16, cumulative 531 and full predecessor aggregate pass. |
 
 ## Non-negotiable gates
 
@@ -340,3 +340,30 @@ never retries without explicit same-user approval.
 - No user key or external Provider call occurred. No source refresh, Skill,
   DSH, MuZero, self-play, Memory write or training operation occurred. Slice
   162 owns the separately authorized minimal live call and Ticket closure.
+
+## Slice 162 fixed evidence
+
+- The server-owned direct profile targets only
+  `https://api.deepseek.com/chat/completions`, requests
+  `deepseek-v4-flash` in non-thinking JSON mode and permits one physical
+  attempt with zero automatic retries. Online DSH remains rejected.
+- Credential ingress requires two explicit authorization flags and anonymous
+  stdin bytes. It rejects an existing attempt before reading stdin, atomically
+  claims the one-call lock before runtime composition and stores neither the
+  credential nor its hash.
+- The actual call returned HTTP 200 and reported `deepseek-v4-flash`, mapped to
+  `DeepSeek-V4-Flash-0731`. Usage was 2,424 input and 44 output tokens; the
+  official snapshot calculation was off-peak `$0.00056232` and is not labelled
+  as an invoice.
+- The durable attempt settled once with known usage and 2,468 charged units.
+  TLS verification remained enabled; redirects, proxies and retry were absent.
+- Live report `196cea02...5e01`, safe Provider receipt `00046a49...5b65c`,
+  response fingerprint `c4813381...1c4061` and system-fingerprint hash
+  `c4414aee...f3859` contain no prompt, response, reasoning or credential.
+- Preflight is 20/20 and live closure is 16/16. The final full Ticket 15 through
+  Ticket 16 aggregate exits successfully; fixed cumulative denominator is 531.
+- The closure regression now treats the live-time raster-dependent browser
+  report hash as audit evidence, uses semantic hash `be6435cb...714452` for
+  cross-run identity and re-hashes each current screenshot independently.
+- No StarCraft source refresh, Skill, DSH, MuZero, self-play, Memory write or
+  training promotion occurred. Ticket 16 is complete; Ticket 17 is next.
