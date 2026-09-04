@@ -11,6 +11,7 @@ import {
   readFile,
   readlink,
   realpath,
+  rename,
   rm,
   stat,
   symlink,
@@ -29,6 +30,8 @@ export const DISPOSABLE_OS_ISOLATION_ATTESTATION_SCHEMA =
   "starcraft_tmg_disposable_os_isolation_attestation_v1";
 export const DISPOSABLE_OS_JOB_RECEIPT_SCHEMA =
   "starcraft_tmg_disposable_os_job_receipt_v1";
+export const DISPOSABLE_OS_MEDIATED_JOB_RECEIPT_SCHEMA =
+  "starcraft_tmg_disposable_os_mediated_job_receipt_v1";
 export const DISPOSABLE_OS_RUNNER_VERSION =
   "starcraft_tmg_disposable_os_runner_v1";
 
@@ -39,6 +42,8 @@ const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$/u;
 const MAX_ENTRY_BYTES = 4 * 1024 * 1024;
 const MAX_STAGED_INPUT_BYTES = 16 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 256 * 1024;
+const MAX_BRIDGE_BYTES = 16 * 1024 * 1024;
+const MAX_BRIDGE_REQUESTS = 16;
 const MAX_RUNTIME_TREE_BYTES = 512 * 1024 * 1024;
 const MAX_RUNTIME_TREE_ENTRIES = 100_000;
 const DEFAULT_TIMEOUT_MS = 15_000;
@@ -555,6 +560,97 @@ function containsCredentialMaterial(value) {
     || DETACHED_KEY_PATTERN.test(serialized);
 }
 
+function parseBridgeValue(bytes, code) {
+  if (bytes.byteLength < 2 || bytes.byteLength > MAX_BRIDGE_BYTES) fail(code);
+  let value;
+  try {
+    value = JSON.parse(bytes.toString("utf8"));
+  } catch {
+    fail(code);
+  }
+  if (!object(value) || containsCredentialMaterial(value)) fail(code);
+  return value;
+}
+
+function bridgeFilename(kind, ordinal) {
+  return `${kind}-${String(ordinal).padStart(6, "0")}.json`;
+}
+
+async function mediateBridge({
+  bridgeRoot,
+  handler,
+  maximumRequests,
+  childCompletion,
+  abortController,
+}) {
+  let childDone = false;
+  childCompletion.finally(() => {
+    childDone = true;
+    abortController.abort(new Error("ISOLATION_BRIDGE_CHILD_SETTLED"));
+  }).catch(() => {});
+  const requestHashes = [];
+  const responseHashes = [];
+  let ordinal = 1;
+  while (true) {
+    const requestPath = path.join(
+      bridgeRoot,
+      bridgeFilename("request", ordinal),
+    );
+    let requestBytes;
+    try {
+      requestBytes = await readFile(requestPath);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+      if (childDone) break;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      continue;
+    }
+    if (ordinal > maximumRequests) fail("ISOLATION_BRIDGE_CARDINALITY_EXCEEDED");
+    const request = parseBridgeValue(
+      requestBytes,
+      "ISOLATION_BRIDGE_REQUEST_INVALID",
+    );
+    const response = await handler(freeze(request), Object.freeze({
+      ordinal,
+      signal: abortController.signal,
+    }));
+    if (!object(response) || containsCredentialMaterial(response)) {
+      fail("ISOLATION_BRIDGE_RESPONSE_INVALID");
+    }
+    const responseBytes = Buffer.from(`${JSON.stringify(response)}\n`, "utf8");
+    if (responseBytes.byteLength > MAX_BRIDGE_BYTES) {
+      fail("ISOLATION_BRIDGE_RESPONSE_INVALID");
+    }
+    const responseName = bridgeFilename("response", ordinal);
+    const responsePath = path.join(bridgeRoot, responseName);
+    const temporaryPath = path.join(bridgeRoot, `.${responseName}.tmp`);
+    await writeFile(temporaryPath, responseBytes, { mode: 0o600 });
+    await rename(temporaryPath, responsePath);
+    requestHashes.push(sha256(requestBytes));
+    responseHashes.push(sha256(responseBytes));
+    ordinal += 1;
+  }
+  const entries = (await readdir(bridgeRoot)).sort();
+  const expected = requestHashes.flatMap((_, index) => [
+    bridgeFilename("request", index + 1),
+    bridgeFilename("response", index + 1),
+  ]).sort();
+  if (JSON.stringify(entries) !== JSON.stringify(expected)) {
+    fail("ISOLATION_BRIDGE_TRANSCRIPT_INVALID");
+  }
+  const body = {
+    protocolVersion: "starcraft_tmg_host_file_relay_v1",
+    maximumRequests,
+    requestCount: requestHashes.length,
+    requestHashes,
+    responseHashes,
+  };
+  return freeze({
+    ...body,
+    transcriptHash: hashStarcraftTmgContract(body),
+  });
+}
+
 async function executeOnce({
   jobId,
   entrySource,
@@ -564,6 +660,7 @@ async function executeOnce({
   repositoryRoot,
   protectedReadTargets = [],
   runtimeTree,
+  bridge,
 }) {
   const entryBytes = Buffer.from(entrySource, "utf8");
   const stagedBytes = Buffer.from(`${JSON.stringify(stagedInput)}\n`, "utf8");
@@ -583,6 +680,7 @@ async function executeOnce({
   const entryPath = path.join(runtimeRoot, "worker.mjs");
   const requestPath = path.join(inputRoot, "request.json");
   const responsePath = path.join(outputRoot, "response.json");
+  const bridgeRoot = path.join(outputRoot, "bridge");
   const profilePath = path.join(outerRoot, "sandbox.sb");
   const hostDataPath = path.join(outerRoot, "host-data.bin");
   const outsideWritePath = path.join(outerRoot, "escape.bin");
@@ -590,12 +688,14 @@ async function executeOnce({
   let execution;
   let parsedOutput;
   let profileHash;
+  let bridgeTranscript;
   const startedAt = Date.now();
 
   try {
     await mkdir(runtimeRoot, { recursive: true, mode: 0o700 });
     await mkdir(inputRoot, { recursive: true, mode: 0o700 });
     await mkdir(outputRoot, { recursive: true, mode: 0o700 });
+    if (bridge) await mkdir(bridgeRoot, { recursive: true, mode: 0o700 });
     await mkdir(tmpRoot, { recursive: true, mode: 0o700 });
     await writeFile(entryPath, entryBytes, { mode: 0o400 });
     await writeFile(hostDataPath, randomUUID(), { mode: 0o600 });
@@ -658,7 +758,32 @@ async function executeOnce({
       shell: false,
       stdio: "ignore",
     });
-    execution = await waitForChild(child, timeoutMs);
+    const childCompletion = waitForChild(child, timeoutMs);
+    const bridgeAbort = new AbortController();
+    const bridgeCompletion = bridge
+      ? mediateBridge({
+          bridgeRoot,
+          handler: bridge.handler,
+          maximumRequests: bridge.maximumRequests,
+          childCompletion,
+          abortController: bridgeAbort,
+        })
+      : Promise.resolve(undefined);
+    try {
+      [execution, bridgeTranscript] = await Promise.all([
+        childCompletion,
+        bridgeCompletion,
+      ]);
+    } catch (error) {
+      bridgeAbort.abort(error);
+      try {
+        process.kill(-child.pid, "SIGKILL");
+      } catch {
+        child.kill("SIGKILL");
+      }
+      await childCompletion.catch(() => {});
+      throw error;
+    }
     if (execution.timedOut) fail("ISOLATION_WORKER_TIMEOUT");
     if (execution.code !== 0 || execution.signal !== null) {
       fail("ISOLATION_WORKER_EXIT_INVALID",
@@ -697,6 +822,7 @@ async function executeOnce({
     timedOut: execution.timedOut,
     elapsedMs: Date.now() - startedAt,
     cleanupVerified,
+    bridgeTranscript,
   });
 }
 
@@ -815,11 +941,97 @@ export function verifyDisposableOsJobReceiptV1(value, attestation) {
   return value;
 }
 
+export function verifyDisposableOsMediatedJobReceiptV1(value, attestation) {
+  verifyDisposableOsIsolationAttestationV1(attestation);
+  exactKeys(value, [
+    "schemaVersion", "runnerVersion", "jobId", "backend",
+    "attestationHash", "profileTemplateHash", "profileHash", "entryHash",
+    "stagedInputHash", "outputHash", "execution", "bridge",
+    "capabilities", "authority", "receiptHash",
+  ], [], "ISOLATION_MEDIATED_JOB_RECEIPT_SHAPE_INVALID");
+  const { receiptHash, ...body } = value;
+  if (value.schemaVersion !== DISPOSABLE_OS_MEDIATED_JOB_RECEIPT_SCHEMA
+    || value.runnerVersion !== DISPOSABLE_OS_RUNNER_VERSION
+    || value.backend !== BACKEND
+    || value.attestationHash !== attestation.attestationHash
+    || value.profileTemplateHash !== DISPOSABLE_OS_PROFILE_TEMPLATE_HASH
+    || !HASH_PATTERN.test(value.profileHash) || !HASH_PATTERN.test(value.entryHash)
+    || !HASH_PATTERN.test(value.stagedInputHash) || !HASH_PATTERN.test(value.outputHash)
+    || receiptHash !== hashStarcraftTmgContract(body)) {
+    fail("ISOLATION_MEDIATED_JOB_RECEIPT_IDENTITY_INVALID");
+  }
+  exactKeys(value.execution, [
+    "exitCode", "signal", "timedOut", "elapsedMs", "cleanupVerified",
+  ], [], "ISOLATION_MEDIATED_JOB_EXECUTION_INVALID");
+  if (value.execution.exitCode !== 0 || value.execution.signal !== null
+    || value.execution.timedOut !== false
+    || value.execution.cleanupVerified !== true
+    || !Number.isSafeInteger(value.execution.elapsedMs)
+    || value.execution.elapsedMs < 0) {
+    fail("ISOLATION_MEDIATED_JOB_EXECUTION_INVALID");
+  }
+  exactKeys(value.bridge, [
+    "protocolVersion", "maximumRequests", "requestCount", "requestHashes",
+    "responseHashes", "transcriptHash",
+  ], [], "ISOLATION_BRIDGE_RECEIPT_INVALID");
+  const { transcriptHash, ...bridgeBody } = value.bridge;
+  if (value.bridge.protocolVersion !== "starcraft_tmg_host_file_relay_v1"
+    || !Number.isSafeInteger(value.bridge.maximumRequests)
+    || value.bridge.maximumRequests < 1
+    || value.bridge.maximumRequests > MAX_BRIDGE_REQUESTS
+    || !Number.isSafeInteger(value.bridge.requestCount)
+    || value.bridge.requestCount < 0
+    || value.bridge.requestCount > value.bridge.maximumRequests
+    || !Array.isArray(value.bridge.requestHashes)
+    || !Array.isArray(value.bridge.responseHashes)
+    || value.bridge.requestHashes.length !== value.bridge.requestCount
+    || value.bridge.responseHashes.length !== value.bridge.requestCount
+    || [...value.bridge.requestHashes, ...value.bridge.responseHashes]
+      .some((hash) => !HASH_PATTERN.test(hash))
+    || transcriptHash !== hashStarcraftTmgContract(bridgeBody)) {
+    fail("ISOLATION_BRIDGE_RECEIPT_INVALID");
+  }
+  exactKeys(value.capabilities, [
+    "providerBrokerMounted", "hostMediatedProviderBridge",
+    "directNetworkAllowed", "repositoryMounted", "writableRoots",
+  ], [], "ISOLATION_MEDIATED_JOB_CAPABILITIES_INVALID");
+  if (value.capabilities.providerBrokerMounted !== false
+    || value.capabilities.hostMediatedProviderBridge !== true
+    || value.capabilities.directNetworkAllowed !== false
+    || value.capabilities.repositoryMounted !== false
+    || JSON.stringify(value.capabilities.writableRoots)
+      !== JSON.stringify(["ephemeral_output", "ephemeral_tmp"])) {
+    fail("ISOLATION_MEDIATED_JOB_CAPABILITIES_INVALID");
+  }
+  assertNoAuthority(value.authority, "ISOLATION_MEDIATED_JOB_AUTHORITY_INVALID");
+  return value;
+}
+
 export function createDisposableOsSkillRunnerV1({ repositoryRoot }) {
   const requestedRoot = assertAbsoluteSafePath(repositoryRoot,
     "ISOLATION_REPOSITORY_ROOT_INVALID");
   let attestation;
   let backendBinding;
+  const verifiedRuntimeTrees = new Map();
+
+  async function resolveRuntimeTree(request, stagedInput) {
+    exactKeys(request, ["sourceRoot", "expectedManifestHash"], [],
+      "ISOLATION_RUNTIME_TREE_REQUEST_INVALID");
+    if (!HASH_PATTERN.test(request.expectedManifestHash)
+      || stagedInput.runtimeTreeHash !== request.expectedManifestHash) {
+      fail("ISOLATION_RUNTIME_TREE_REQUEST_INVALID");
+    }
+    const cacheKey = `${request.sourceRoot}\0${request.expectedManifestHash}`;
+    let runtimeTree = verifiedRuntimeTrees.get(cacheKey);
+    if (!runtimeTree) {
+      runtimeTree = await inspectRuntimeTree(request.sourceRoot, requestedRoot);
+      if (runtimeTree.manifestHash !== request.expectedManifestHash) {
+        fail("ISOLATION_RUNTIME_TREE_HASH_MISMATCH");
+      }
+      verifiedRuntimeTrees.set(cacheKey, runtimeTree);
+    }
+    return runtimeTree;
+  }
 
   async function qualify() {
     if (backendBinding) return backendBinding;
@@ -968,18 +1180,7 @@ export function createDisposableOsSkillRunnerV1({ repositoryRoot }) {
     }
     let runtimeTree;
     if (input.runtimeTree !== undefined) {
-      exactKeys(input.runtimeTree, ["sourceRoot", "expectedManifestHash"], [],
-        "ISOLATION_RUNTIME_TREE_REQUEST_INVALID");
-      if (!HASH_PATTERN.test(input.runtimeTree.expectedManifestHash)
-        || input.stagedInput.runtimeTreeHash
-          !== input.runtimeTree.expectedManifestHash) {
-        fail("ISOLATION_RUNTIME_TREE_REQUEST_INVALID");
-      }
-      runtimeTree = await inspectRuntimeTree(
-        input.runtimeTree.sourceRoot, requestedRoot);
-      if (runtimeTree.manifestHash !== input.runtimeTree.expectedManifestHash) {
-        fail("ISOLATION_RUNTIME_TREE_HASH_MISMATCH");
-      }
+      runtimeTree = await resolveRuntimeTree(input.runtimeTree, input.stagedInput);
     }
     const execution = await executeOnce({
       jobId,
@@ -1032,5 +1233,87 @@ export function createDisposableOsSkillRunnerV1({ repositoryRoot }) {
     return freeze({ output: execution.output, receipt });
   }
 
-  return freeze({ attest, run });
+  async function runMediated(input) {
+    exactKeys(input, [
+      "jobId", "attestationHash", "entrySource", "stagedInput", "bridge",
+    ], ["timeoutMs", "runtimeTree"], "ISOLATION_MEDIATED_JOB_REQUEST_INVALID");
+    if (!attestation) fail("ISOLATION_ATTESTATION_REQUIRED");
+    verifyDisposableOsIsolationAttestationV1(attestation);
+    if (input.attestationHash !== attestation.attestationHash) {
+      fail("ISOLATION_ATTESTATION_MISMATCH");
+    }
+    exactKeys(input.bridge, ["maximumRequests", "handler"], [],
+      "ISOLATION_BRIDGE_REQUEST_INVALID");
+    const maximumRequests = integer(input.bridge.maximumRequests,
+      "ISOLATION_BRIDGE_CARDINALITY_INVALID", 1, MAX_BRIDGE_REQUESTS);
+    if (typeof input.bridge.handler !== "function") {
+      fail("ISOLATION_BRIDGE_HANDLER_INVALID");
+    }
+    const binding = await qualify();
+    const jobId = safeId(input.jobId, "ISOLATION_JOB_ID_INVALID");
+    const timeoutMs = integer(input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      "ISOLATION_TIMEOUT_INVALID", 50, MAX_TIMEOUT_MS);
+    if (typeof input.entrySource !== "string" || !object(input.stagedInput)
+      || containsCredentialMaterial(input.entrySource)
+      || containsCredentialMaterial(input.stagedInput)) {
+      fail("ISOLATION_JOB_PAYLOAD_INVALID");
+    }
+    let runtimeTree;
+    if (input.runtimeTree !== undefined) {
+      runtimeTree = await resolveRuntimeTree(input.runtimeTree, input.stagedInput);
+    }
+    const execution = await executeOnce({
+      jobId,
+      entrySource: input.entrySource,
+      stagedInput: input.stagedInput,
+      timeoutMs,
+      nodeExecutable: binding.node.path,
+      repositoryRoot: requestedRoot,
+      runtimeTree,
+      bridge: { maximumRequests, handler: input.bridge.handler },
+    });
+    const receiptBody = {
+      schemaVersion: DISPOSABLE_OS_MEDIATED_JOB_RECEIPT_SCHEMA,
+      runnerVersion: DISPOSABLE_OS_RUNNER_VERSION,
+      jobId,
+      backend: BACKEND,
+      attestationHash: attestation.attestationHash,
+      profileTemplateHash: DISPOSABLE_OS_PROFILE_TEMPLATE_HASH,
+      profileHash: execution.profileHash,
+      entryHash: execution.entryHash,
+      stagedInputHash: execution.stagedInputHash,
+      outputHash: execution.outputHash,
+      execution: {
+        exitCode: execution.exitCode,
+        signal: execution.signal,
+        timedOut: execution.timedOut,
+        elapsedMs: execution.elapsedMs,
+        cleanupVerified: execution.cleanupVerified,
+      },
+      bridge: execution.bridgeTranscript,
+      capabilities: {
+        providerBrokerMounted: false,
+        hostMediatedProviderBridge: true,
+        directNetworkAllowed: false,
+        repositoryMounted: false,
+        writableRoots: ["ephemeral_output", "ephemeral_tmp"],
+      },
+      authority: {
+        canAffectRules: false,
+        canOperateRoom: false,
+        canReadSkillRegistry: false,
+        canPublishSkill: false,
+        canWriteMemory: false,
+        canCreateTrainingTruth: false,
+      },
+    };
+    const receipt = freeze({
+      ...receiptBody,
+      receiptHash: hashStarcraftTmgContract(receiptBody),
+    });
+    verifyDisposableOsMediatedJobReceiptV1(receipt, attestation);
+    return freeze({ output: execution.output, receipt });
+  }
+
+  return freeze({ attest, run, runMediated });
 }

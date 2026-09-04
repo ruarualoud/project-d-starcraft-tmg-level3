@@ -1,7 +1,7 @@
 # Ticket 17 — DSH offline Skill-generation Adapter roadmap
 
 Date: 2026-09-04
-Status: Slices 163–168 complete; Ticket 17 is 6/9
+Status: Slices 163–169 complete; Ticket 17 is 7/9
 Project status: 15/22 Tickets complete; Ticket 14 physical-device acceptance remains deferred and unwaived
 Source refresh: not performed
 
@@ -75,7 +75,7 @@ containment.
 | 166 | **Complete.** Implement disposable OS isolation and the capability firewall. | A content-bound macOS M1 backend behaviorally denies host/repository/Room/Rules/Skill reads, outside writes, unapproved process creation and direct loopback network; staged result/cleanup/tamper gates pass 17/17, with no unsandboxed fallback. |
 | 167 | **Complete.** Install the exact DSH package in the isolated runtime and freeze profile, plugin lock, effective config and Session parser. | Exact `0.1.1-rc.2` npm/tag/commit; 35,962-entry runtime tree; 81 config rows; 78-package plugin lock; real five-event DSH Session; 23/23 focused; no Provider call. |
 | 168 | **Complete.** Implement the common credential/Provider broker and the real DSH-off control executor. | Same arm-neutral prompt compiler/model/tools/budgets as DSH; one physical attempt per role; Ticket16 isolated Worker reuse; independently reconstructable input/output/cache/total-token and cost receipts; pre-egress notification for every crossed ¥100 tier; 33/33 deterministic checks. |
-| 169 | Implement the real DSH executor, candidate tool bridge, Session redaction and RunReceipt. | DSH process uses only staged reads plus exactly one candidate emission; safe event/usage/tool/config evidence; crash/timeout/cardinality/secret/authority adversarial gates. |
+| 169 | **Complete.** Implement the real DSH executor, candidate tool bridge, Session redaction and RunReceipt. | Seven real DSH role Sessions plus one candidate-tool Session; seven bounded host Broker relays; hash-only safe transcript; complete usage/cost/lineage receipt; 19/19 crash/timeout/cardinality/secret/authority checks. |
 | 170 | Run one bounded real DSH-on/direct-control pair and blind quality evaluation. | One frozen `how_to_play` task, same Provider/model/input/tool/budget, one candidate per arm, actual Session/usage/cost receipts and predeclared blind metrics; both remain unreviewed. |
 | 171 | Run the predecessor→current adversarial aggregate and close Ticket 17. | Re-run Ticket16 closure and all Ticket17 gates; secret and authority audit; frozen handoff to Ticket18; no publication, Memory, self-play, MuZero or training truth. |
 
@@ -87,8 +87,14 @@ the exact pinned package inside it, composes a fail-closed 15-active /
 66-disabled profile, freezes its 78-package plugin lock, and parses a real DSH
 Session without a Provider call. Slice 168 adds one common credential-free
 Provider broker, conservative ¥100-tier cost guard and the actual seven-role
-DSH-off control arm. Slice 169 is next: the real DSH executor, candidate bridge,
-Session redaction and complete RunReceipt.
+DSH-off control arm. Slice 169 adds the real DSH executor: seven isolated Agent
+and Session role runs, seven host-mediated Broker relays, one exactly-once
+candidate tool run, redacted Session evidence and a complete hash-sealed
+RunReceipt. Its deterministic verifier passes 19/19 with no external Provider
+call. The measured local verification baseline is 337 seconds after caching
+the already-verified immutable runtime manifest; repeated disposable directory
+staging remains an explicit Slice 171 operational-efficiency gate. Slice 170 is
+next: one bounded, paid DSH-on/direct-control pair under the same frozen job.
 
 ## Isolation and Provider boundary
 
