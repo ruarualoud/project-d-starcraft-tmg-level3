@@ -9,19 +9,20 @@ Current tracer bullet:
 ```text
 legacy normalized state (read-only input)
   -> authoritative-engine
-  -> in-memory room runtime
+  -> authenticated room runtime
   -> Level-3 HTTP Adapter
   -> isolated Kerrigan Tutor/Opponent/Commentator/Companion sessions
-  -> future Expo Web/App and Battle Lab clients
+  -> shared Expo Web/App and Battle Lab clients
+  -> secure direct-Provider worker and durable attempt store
 ```
 
 The Expo product baseline is now recovered as a read-only checkout at `imports/sc-tmg-app/`, locked to `ruarualoud/sc-tmg-app` `codex/starcraft-classic-army-builder@f07b3cb78ce6bf119bdc529cde41dbe91e00a61d`. Its five-tab mobile/Web shell is the product UX baseline, while the Battle Lab remains the developer/referee/Agent-observability surface. The retained fix15 APK contains a richer Battle/AI/room delta that is absent from both remote source branches; it is parity evidence, not editable or authoritative source. See the [Ticket 10 parity inventory](docs/ticket-10-expo-baseline-parity-inventory-2026-08-24.md).
 
-The character-Agent slice includes a rights-gated Primal Queen CharacterPackage, a nine-entry provenance-bearing Kerrigan era/context catalogue, a spoiler/knowledge-cutoff selector, bounded worldbook activation receipts, a Project D-original fallback, Character Card V2 JSON import/export, per-mode RoleSkillPacks, prompt-assembly receipts, an OpenAI-compatible direct-Provider Adapter, and session-memory-only BYOK. The Adapter enforces remote HTTPS, configured models, bounded JSON, full-body timeouts, zero internal retry, safe failure classes, and receipt-to-output/profile binding in the Harness trace. PNG card embedding remains unsupported. It currently has only injected-fetch verifiers; no live Provider or UI evidence exists yet.
+The character-Agent stack includes a rights-gated Primal Queen CharacterPackage, a nine-entry provenance-bearing Kerrigan era/context catalogue, a spoiler/knowledge-cutoff selector, bounded worldbook activation receipts, a Project D-original fallback, Character Card V2 JSON/PNG import/export, per-mode RoleSkillPacks and prompt-assembly receipts. Tutor/Opponent/Commentator/Companion are mounted through the shared Expo Web/Battle Lab client boundary. Secure BYOK uses a detached credential/egress worker plus durable SQLite attempt accounting; one separately authorized direct-Provider acceptance call is sealed as Ticket 16 evidence. Public release still falls back when character-asset rights are incomplete, and native-device acceptance remains deferred rather than waived.
 
 The source/translation slice now includes an eight-source registry, immutable raw-snapshot receipts, a normalized-dataset lineage manifest, a read-only Adapter for the legacy data pack, a provisional zh-CN glossary, and display-only translation sidecars. One deep source/localization runtime plus a transport-neutral HTTP Adapter lets Web/App read the same provenance, request administrator-gated machine drafts, and publish authenticated human reviews without reimplementing authority rules. Product Firestore records remain unreviewed official-data candidates; community records and Project D-derived presets remain separate. Machine translations cannot target numeric/rules fields, never overwrite canonical data, and fall back to canonical text when stale. Live official-source recovery, rights review, real provider integration, persistent review storage, and UI evidence remain open.
 
-The offline Skill slice now defines one sealed job/candidate/run-receipt interface with two replaceable execution Adapters: pinned DSH and a DSH-off direct-Provider control. Both receive the same staged input/model/tool/budget contract, expose only read-only evidence plus exactly one `emit_candidate_skill`, retain usage/session-log lineage, and can produce only unreviewed candidates with Judge tests and explicit promotion blockers. DSH is not installed or executed by this slice; no Skill is promoted or loaded at runtime.
+The historical offline Skill scaffold defines sealed job/candidate/run-receipt shapes and two injected fake execution arms. Ticket 17 now has a fixed nine-Slice delivery plan for a pinned DSH arm and a DSH-off direct-Provider control. Slice 163 freezes current official source/FAQ/Rules identities, the audited DSH package, MTL Teach/Ctx2Skill lineage, four registry-driven Skill families and strict candidate-only authority. DSH is not installed until the isolated runner and capability firewall are proved; no Skill is promoted or loaded at runtime, and full-catalogue production still requires separate user confirmation.
 
 All runtimes deliberately report `process_memory_v0`, `productionReady: false`, and `trainingTruth: false`.
 
@@ -32,6 +33,8 @@ Key references:
 - [Wayfinder map](../.scratch/starcraft-tmg-level3-platform/map.md)
 - [Kerrigan primary-source research](../docs/starcraft-kerrigan-adjutant-primary-source-research-2026-08-24.md)
 - [DeepSeek Harness research](../docs/deepseek-harness-skill-generation-primary-research-2026-08-24.md)
+- [Ticket 17 DSH roadmap](docs/ticket-17-slices-163-171-dsh-skill-generation-roadmap-2026-09-04.md)
+- [Ticket 17 Slice 163 boundary](docs/ticket-17-slice-163-dsh-boundary-source-denominator-2026-09-04.md)
 - [Source registry](content/source-registry-v1.mjs)
 - [Translation sidecar contract](packages/localization/translation-sidecar-v1.mjs)
 - [Source/localization runtime](packages/localization/source-localization-runtime-v1.mjs)
