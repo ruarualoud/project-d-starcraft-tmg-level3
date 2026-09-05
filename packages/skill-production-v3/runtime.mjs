@@ -19,6 +19,7 @@ Keep reasons concise (normally under 100 Chinese characters) without dropping ma
 const EDIT_INSTRUCTION = `Repair only the recorded issues using their evidence and the full sources. Diagnoses are hypotheses, not authority.
 Preserve all unaffected claims byte-for-byte. Fix conditions in exactly flagged claims; add omitted conditions only where an issue identifies the missing passage.
 If content is already correct and only a citation is absent, use citationAdditions without changing text. Do not duplicate rules merely to satisfy citation counting.
+The resulting draft must still have 1..24 claims, each at most 1500 characters and 1..4 TOTAL evidence addresses, counting existing plus added citations. Do not add every address to every claim or discard existing evidence to evade this cap. If several existing claims cover a source, associate it only with a supported claim that has capacity.
 Return {"parentHash":"copy exact hash","replacements":[{"claimId":"claims.N","value":{"kind":"rule","text":"corrected claim","evidence":[{"ref":"source ID","spanId":"p1"}]}}],"additions":[],"citationAdditions":[{"claimId":"claims.N","evidence":[{"ref":"source ID","spanId":"p1"}]}]}.
 Remove unused example entries. Replacements allowed only for claim issues or claims explicitly linked to a source omission/disagreement. Additions must cite an issue's missing passage.
 If no justified edit exists, return empty arrays. That triggers recorded diagnosis/recheck or quarantine, never a format retry or silent success.`;
@@ -156,7 +157,7 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
       rounds.push({ inventory, reviews, combined, journalHash: journal.hash });
       onProgress({ packet: packet.id, revision, state: 'reviewed', issues: combined.issues.length, passed: combined.passed });
       if (combined.passed || revision === maxRevisions) break;
-      const addressBound = planAddressBoundCitationRepair(draft, combined, { reader, context });
+      const addressBound = planAddressBoundCitationRepair(draft, combined, { reader, context, reviews });
       if (addressBound) {
         if (seenDrafts.has(addressBound.resultHash)) { repairStops.push({ revision, code: 'REPAIR_CYCLE_DETECTED' }); break; }
         seenDrafts.add(addressBound.resultHash);
