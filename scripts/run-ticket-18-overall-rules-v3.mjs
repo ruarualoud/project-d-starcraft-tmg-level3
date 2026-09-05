@@ -14,6 +14,8 @@ import { seal, verifySeal, sha256, fail, hash } from '../packages/skill-producti
 import { createGlobalProductionContext } from '../packages/skill-production-v3/context.mjs';
 import { readLegacyPacketSeeds } from '../packages/skill-production-v3/seeds.mjs';
 import { createProductionRuntimeV3 } from '../packages/skill-production-v3/runtime.mjs';
+import { inspectV3Continuation } from '../packages/skill-production-v3/continuation.mjs';
+import { withCheckpointContinuation } from '../packages/skill-production/continuation.mjs';
 import { createStarcraftTmgProviderProfileRegistryV1 } from '../packages/secure-provider-runtime/provider-profile-registry-v1.mjs';
 import { createStarcraftTmgProviderEgressWorkerPortV2 } from '../packages/secure-provider-runtime/provider-egress-worker-port-v2.mjs';
 import { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } from '../packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs';
@@ -22,7 +24,8 @@ import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../c
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = path.join(ROOT, 'build/ticket-18-production-v3');
 const args = process.argv.slice(2);
-if (args.length && !(args.length === 1 && args[0] === '--live')) fail('V3_RUN_ARGUMENTS_INVALID');
+if (args.length && !(['--live', '--preflight'].includes(args[0]) && (args.length === 1
+  || args.length === 3 && args[1] === '--continue' && /^rules-v3-[a-f0-9]{20}$/.test(args[2])))) fail('V3_RUN_ARGUMENTS_INVALID');
 const catalogue = await loadFrozenSkillEvidence(ROOT), plan = createFirstFivePlan(catalogue);
 verifyFirstFivePlan(plan, catalogue);
 const context = createGlobalProductionContext(catalogue);
@@ -47,7 +50,7 @@ const limits = { maxCalls: 140, maxCostMicros: 10_000_000, maxTokens: 8_000_000,
 const codeFiles = ['scripts/run-ticket-18-overall-rules-v3.mjs', 'packages/skill-evaluation/production-drills-v1.mjs',
   'packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs'];
 const codeHashes = await Promise.all(codeFiles.map(async file => ({ file, hash: sha256(await readFile(path.join(ROOT, file))) })));
-const recipe = seal({ version: 'overall-rules-production-v3-repair-five', planHash: plan.hash,
+const baseRecipe = seal({ version: 'overall-rules-production-v3-repair-five', planHash: plan.hash,
   sourceBinding: catalogue.sourceBinding, catalogueHash: catalogue.hash, contextHash: context.hash,
   sourceRefreshPerformed: false, modelHash: profile.integrity.hash,
   mainReadinessHash: mainReadiness.hash, contractReadinessHash: contract.hash, capacityReadinessHash: capacity.hash,
@@ -55,17 +58,41 @@ const recipe = seal({ version: 'overall-rules-production-v3-repair-five', planHa
   limits, targetedPacketIds: plan.packets.slice(0, 5).map(p => p.id), allPackets: plan.packets.length,
   validationStage: 'repair_real_failures_before_remaining_mass_production',
   publication: 'candidate_only_pending_independent_drills_arena_registry', trainingTruth: false });
-if (!args.length) {
+let continuation = null;
+if (args[2]) {
+  const parent = verifySeal(JSON.parse(await readFile(path.join(BASE, args[2], 'recipe.json'), 'utf8')));
+  async function boundReport(file, expected) {
+    const current = verifySeal(JSON.parse(await readFile(path.join(ROOT, file), 'utf8')));
+    if (current.hash === expected) return current;
+    const old = verifySeal(JSON.parse(await readFile(path.join(ROOT, file.replace('.json', '-' + expected + '.json')), 'utf8')));
+    if (old.hash !== expected) fail('V3_ARCHIVED_READINESS_DRIFT'); return old;
+  }
+  const parentReports = await Promise.all([
+    boundReport('build/ticket-17-production-redesign-v1/readiness.json', parent.mainReadinessHash),
+    boundReport('build/ticket-18-production-v3/contract-readiness.json', parent.contractReadinessHash),
+    boundReport('build/ticket-18-production-v3/dsh-context-readiness.json', parent.capacityReadinessHash),
+  ]);
+  continuation = inspectV3Continuation({ filename, parentRunId: args[2], parent, next: baseRecipe,
+    parentReports, nextReports: [mainReadiness, contract, capacity] });
+}
+const { hash: ignoredBase, ...baseBody } = baseRecipe;
+const recipe = continuation ? seal({ ...baseBody, continuation: continuation.manifest }) : baseRecipe;
+if (!args.length || args[0] === '--preflight') {
   console.log(JSON.stringify({ ready: true, paidCalls: 0, recipeHash: recipe.hash, fullSourceBytes: Buffer.byteLength(JSON.stringify(context.prompt)),
-    importedDrafts: seeds.length, targetPackets: 5, allPackets: plan.packets.length, limits })); process.exit(0);
+    importedDrafts: seeds.length, targetPackets: 5, allPackets: plan.packets.length, limits,
+    reusableRoles: continuation?.manifest.reusable.length || 0, inheritedAccounting: continuation?.manifest.accounting || null })); process.exit(0);
 }
 const runId = 'rules-v3-' + recipe.hash.slice(0, 20), OUT = path.join(BASE, runId);
 await mkdir(OUT, { recursive: true });
-const store = openProductionStore(filename, { runId, recipeHash: recipe.hash, ...limits });
+const inherited = continuation?.manifest.accounting || { calls: 0, tokens: 0, costMicros: 0 };
+const localStore = openProductionStore(filename, { runId, recipeHash: recipe.hash, ...limits,
+  maxCalls: limits.maxCalls - inherited.calls, maxTokens: limits.maxTokens - inherited.tokens,
+  maxCostMicros: limits.maxCostMicros - inherited.costMicros });
+const store = continuation ? withCheckpointContinuation(localStore, continuation) : localStore;
 const historicalKnownTokens = 2_864_424, historicalKnownMicros = 5_052_393, historicalReserveMicros = 28_961_350;
 const historicalMicros = historicalKnownMicros + historicalReserveMicros;
 const start = store.acquire('production-start', { recipeHash: recipe.hash });
-const began = start.cached ? start.artifact.began : store.finish(start, { began: Date.now() }).began;
+const began = start.cached ? start.artifact.began : store.finish(start, { began: continuation?.manifest.parentStart || Date.now() }).began;
 let worker, attached, failure = null; const results = [];
 try {
   if (store.globalSummary().attempts.some(a => a.code === 'PROVIDER_PAYMENT_REQUIRED')) fail('API_BALANCE_EXHAUSTED_STOP_ALL_WORK');
@@ -109,7 +136,7 @@ try {
   const report = seal({ recipeHash: recipe.hash, runId, planHash: plan.hash, contextHash: context.hash,
     processedPackets: results.length, repairTargetPackets: 5, overallPackets: plan.packets.length,
     semanticallyPassedPackets: results.filter(r => r.semanticPassed).length, resultHashes: results.map(r => r.hash),
-    failure, ledger, cumulativeKnownTokensLowerBound: historicalKnownTokens + global.knownTokens,
+    failure, ledger, continuation: continuation?.manifest || null, cumulativeKnownTokensLowerBound: historicalKnownTokens + global.knownTokens,
     cumulativeEstimateOrReserveCny: (historicalMicros + global.reservedOrSettledMicros) / 1e6,
     ctx2skillLoopUsed: true, harnessLoopUsed: true, targetGames: ['starcraft-tmg'],
     roleRoutes: ['fresh_supportive', 'fresh_adversarial', 'typed_diagnosis', 'local_editor'],

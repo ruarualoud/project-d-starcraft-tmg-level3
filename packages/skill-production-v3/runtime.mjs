@@ -4,6 +4,7 @@ import { modelEvidence } from '../skill-production/spans.mjs';
 import { compileGlobalTask } from './context.mjs';
 import { DRAFT_SHAPE, inspectDraft, validateReview, reconcileReviews, applyIssuePatch } from './contracts.mjs';
 import { DIAGNOSIS_KINDS, validateDiagnosis, advanceIssueJournal, persistIssueJournal } from './issues.mjs';
+import { planAddressBoundCitationRepair } from './citation-repair.mjs';
 
 const REVIEW_INSTRUCTION = `Independently inspect EVERY claim and EVERY assigned passage against the complete official source background.
 Check subjects, timing, dependencies, costs, boundaries, quantities, exceptions and FAQ precedence. Do not accept citation existence as proof.
@@ -148,6 +149,18 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
       rounds.push({ inventory, reviews, combined, journalHash: journal.hash });
       onProgress({ packet: packet.id, revision, state: 'reviewed', issues: combined.issues.length, passed: combined.passed });
       if (combined.passed || revision === maxRevisions) break;
+      const addressBound = planAddressBoundCitationRepair(draft, combined, { reader, context });
+      if (addressBound) {
+        if (seenDrafts.has(addressBound.resultHash)) { repairStops.push({ revision, code: 'REPAIR_CYCLE_DETECTED' }); break; }
+        seenDrafts.add(addressBound.resultHash);
+        transition = { kind: 'host_address_bound_citation_patch', parentDraftHash: hash(draft),
+          resultHash: addressBound.resultHash, patchHash: hash(addressBound.patch), evidenceHash: addressBound.hash };
+        revisions.push({ ...transition, patch: addressBound.patch, resolvedSourceEvidence: addressBound.evidence });
+        draft = addressBound.draft; inventory = inspectDraft(draft, { packet, context, reader }); recheck = null;
+        onProgress({ packet: packet.id, revision, state: 'citation_metadata_repaired', changedProse: false,
+          correctedAddresses: addressBound.evidence.length, semanticReReviewStillRequired: true });
+        continue;
+      }
       const diagnosis = await checkedRole({ packet, roleId: 'diagnosis.' + revision, maxOutput: 3072,
         instruction: 'Diagnose every recorded issue against the complete sources. Distinguish content mistakes, citation-only mistakes, missing dependencies, verifier/reviewer mistakes and uncertain source. Do not silently dismiss negative judgments or rewrite the draft. Return {"issues":[{"fingerprint":"exact issue fingerprint","kind":"one enum","reason":"specific evidence-based cause","repairPlan":"localized repair or specific recheck question","evidence":[{"ref":"source ID","spanId":"p1"}]}]}. Exactly one entry per issue; kind enum: ' + DIAGNOSIS_KINDS.join(', ') + '. Diagnostics cannot authorize promotion.',
         workspace: { ...assignment, draft, issues: combined.issues } }, output => validateDiagnosis(output, combined, { reader, context }));

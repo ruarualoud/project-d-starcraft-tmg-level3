@@ -101,3 +101,35 @@ v2 and v3 pass, including all 105 injected answer cases, retaining wrong answers
 without score-based retries, schema-only repair, restart reuse, incomplete/
 tampered packet rejection, full-context bounds and no expected-answer leakage.
 These are still engineering fixtures, not actual model exam scores.
+
+## Address repair failure and bounded continuation
+
+The first v3 run stopped safely after packet 003's editor twice requested
+`p1` while the recorded missing passage was `p2`. The diagnostic itself had
+misread the address, and a schema-only retry repeated it. Both unauthorized
+patches were rejected. Terminal parent report:
+`a9c8871edfa4f53f8d99729777a9029752c4f5b7e0bf20ae8aa2ec2e6972e475`.
+Parent: 17 calls, 2,149,748 tokens, estimated ¥0.530999; global known lower
+bound 7,531,371 tokens and estimate/reserve ¥38.146728. No balance error.
+
+`citation-repair.mjs` now resolves already-addressed citation-only gaps from
+the issue record and the reviewers' single identified claim. It materializes
+the exact missing source, leaves all prose intact and requires a new review
+round. It does not let an LLM retype source addresses or waive semantic gates.
+Unknown target claims/content disagreements still enter the bounded diagnostic
+workflow; no citation is invented to force a pass.
+
+Nine focused checks include both saved rejected outputs, exact `p2` repair,
+unchanged prose, source/context/stale rejection and injected replay of the
+actual reviews through the runtime without any editor/diagnoser call. Twelve
+continuation checks enforce source/model/budget/code binding, exact-input role
+reuse, original start time and cumulative cost, no final acceptance/attempt
+copy, rejection of running/ambiguous parents and stop-all on a payment error.
+The ten broader v3 workflow groups and two actual full-context DSH sessions
+pass after this change. These remain engineering tests, not fresh live scores.
+
+Continuation recipe `1dc2feb6d351a65c83be73fa75a8969868ce804c4711ce058cb6b00ab4e2b253`
+is approved by the current preflight: 17 raw roles can be reused only on exact
+inputs, while inventories, issue journals and final acceptance are recomputed.
+The inherited 17 calls/2,149,748 tokens/¥0.530999 are subtracted from the same
+140-call/8M-token/¥10 cap; the original three-hour start time remains.

@@ -7,7 +7,7 @@ import { loadFrozenSkillEvidence, createEvidenceReader } from '../packages/skill
 import { prepareDshLoop } from '../packages/skill-production/loops.mjs';
 import { createAccountedModel } from '../packages/skill-production/model.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
-import { hash, seal, sha256 } from '../packages/skill-production/common.mjs';
+import { hash, seal, sha256, verifySeal } from '../packages/skill-production/common.mjs';
 import { createGlobalProductionContext, compileGlobalTask } from '../packages/skill-production-v3/context.mjs';
 import { createGlobalTools } from '../packages/skill-production-v3/runtime.mjs';
 import { createStarcraftTmgProviderEgressTransportV1 } from '../packages/secure-provider-runtime/provider-egress-transport-v1.mjs';
@@ -15,6 +15,10 @@ import { createStarcraftTmgProviderProfileRegistryV1 } from '../packages/secure-
 import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../content/skill-generation/offline-provider-profile-v1.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'build/ticket-18-production-v3'); await mkdir(OUT, { recursive: true });
+try {
+  const previous = verifySeal(JSON.parse(await readFile(path.join(OUT, 'dsh-context-readiness.json'), 'utf8')));
+  await writeFile(path.join(OUT, 'dsh-context-readiness-' + previous.hash + '.json'), JSON.stringify(previous, null, 2), { flag: 'wx' });
+} catch (error) { if (!['ENOENT', 'EEXIST'].includes(error.code)) throw error; }
 const temp = await mkdtemp(path.join(OUT, 'capacity-'));
 const catalogue = await loadFrozenSkillEvidence(ROOT), reader = createEvidenceReader(catalogue);
 const context = createGlobalProductionContext(catalogue);

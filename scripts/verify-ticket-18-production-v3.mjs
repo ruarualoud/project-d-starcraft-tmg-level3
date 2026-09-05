@@ -9,6 +9,10 @@ import { verifySeal, seal, hash, sha256 } from '../packages/skill-production/com
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'build/ticket-18-production-v3');
 await mkdir(OUT, { recursive: true });
+try {
+  const previous = verifySeal(JSON.parse(await readFile(path.join(OUT, 'contract-readiness.json'), 'utf8')));
+  await writeFile(path.join(OUT, 'contract-readiness-' + previous.hash + '.json'), JSON.stringify(previous, null, 2), { flag: 'wx' });
+} catch (error) { if (!['ENOENT', 'EEXIST'].includes(error.code)) throw error; }
 const catalogue = await loadFrozenSkillEvidence(ROOT), reader = createEvidenceReader(catalogue), plan = createFirstFivePlan(catalogue);
 const db = new DatabaseSync(path.join(ROOT, 'build/ticket-17-production-redesign-v1/production.sqlite'), { readOnly: true });
 const priorRun = 'rules-v2-441e39a97d937df7327c';
@@ -158,6 +162,7 @@ for (const mode of ['no_progress', 'source_uncertain', 'verifier_recheck']) {
 }
 const files = ['packages/skill-production-v3/context.mjs', 'packages/skill-production-v3/contracts.mjs',
   'packages/skill-production-v3/issues.mjs', 'packages/skill-production-v3/seeds.mjs', 'packages/skill-production-v3/runtime.mjs',
+  'packages/skill-production-v3/citation-repair.mjs', 'packages/skill-production-v3/continuation.mjs',
   'packages/skill-production/model.mjs', 'scripts/verify-ticket-18-production-v3.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(ROOT, file))) })));
 const report = seal({ passed: true, checkGroups: 10, codeHashes, catalogueHash: catalogue.hash, planHash: plan.hash,
