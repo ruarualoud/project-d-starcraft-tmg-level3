@@ -56,10 +56,30 @@ The new complete-Skill local-repair workflow binds the exact original candidate 
 
 Engineering checks: diagnostic12, reader command policy8, complete-source repair10 (injected workflow, using actual parent material), plus adjacent output-capacity8, context-cap5, production-v3 ten groups, full-DSH-context two actual local sessions with zero Provider calls, and production accounting/readiness18. These are engineering checks, not paid model-quality results.
 
-Actual complete-source repair started as `overall-repair-05a5ac464028e464918e` (recipe `05a5ac464028e464918e0bdadb2f3c0a83db1fefe5e6a3f24fde011cb680e27a`), bounded80calls/8Mtokens/¥5/1hour. At this checkpoint it is running; do not restart or claim that its two corrections or127 post-edit cases have already passed.
+Actual complete-source repair **finished** as `overall-repair-05a5ac464028e464918e` (recipe `05a5ac464028e464918e0bdadb2f3c0a83db1fefe5e6a3f24fde011cb680e27a`), bounded80calls/8Mtokens/¥5/1hour. It made20 physical calls /1,656,971 tokens /estimated¥0.575406. Editor plus two independent fresh source reviews passed on the first round. Packet018 is now `a27243260bd22add721f4c129a6080369f9fb584f54cbcd8b276de8c7a53b16f`; complete candidate `11a025d1267c99a985471ca6479f7bee5719fc5cc13f4b35a63627b746bec2bd`. Actual source-bound changes are precisely18.0 and18.5;520 other claims and36 other packets are unchanged. Repair receipt `9b3558f8185662371dfb9c579c184e206ed94610b7b5c6ff75cdc0f9ecccfba2`.
+
+Post-edit actual results:
+
+| Suite | Original complete candidate | Locally corrected candidate |
+| --- | --- | --- |
+| Known source controls |14/14|14/14|
+| Additional boundary controls |5/8|8/8|
+| Raw rule comprehension |99/105 (64/69+35/36)|**96/105 (61/69+35/36), failed**|
+
+The change fixed the two demonstrated omissions and all8 additional checks passed in this run. It did **not** make the reader reliably apply all conditions. Do not describe this as overall quality passing, or claim the raw-score decrease proves a source regression: the answer protocol and full prompt changed, and those nine failed cases do not concern the two edited clauses.
+
+Retained failures: enemy_link.4/.8/.13/.14/.15, direct_move.1/.4, target_number.7, abilities.1. The new numeric failure has `baseTargetNumber=6, modifier=-3`; frozen FAQ29 limits the modified value to2–6, so the expected3 follows from the original input and source, whereas the reader returned2. Directly-towards/away and explicit-self-exclusion still fail exactly as diagnosed. No test expectation, input, source or Rule kernel was changed.
+
+Main report `708811c7046ccedb29040b88db18133d5c97ec5861f8809ee26ec9895c11606b`, terminal failure `COMPLETE_REPAIR_EVALUATION_NOT_PASSED`. Source14 result `423595c91c821845c5b680d649495d7e641252b2b5115eea51f209eac0e19ca5`; additional8 `1c9e8180ffbdcbab98283f6531af905a76c7d99d997652f26f8b2c64f465f3e0`;105-case exam `374ad87c90a33be872263d12cfe5b84d3362444c08f41faa86f60d515f094a7f`.
+
+The read-only inspection script has now reconstructed the complete repair from retained old/new packets, findings, editor/review receipts and SQLite artifacts; checked all520 unflagged claims remain identical; and independently rescored all127 actual answers from their paid Provider receipts. Verified evidence `826e5f3e183aba88d21c18a35c5c4132cc7292f60db0fd5b05163aacc46147ed`, `evidenceVerified=true`, **`qualityPassed=false`**. No Provider call was made by this inspection, and it grants no publication or runtime admission.
+
+Next bounded task: improve explicit-input/exception/mandatory-distance/numeric condition handling and verify it without answer leakage or blind regeneration. Keep raw Skill-reader accuracy distinct from deterministic Rules-guarded action correctness; the latter is essential for actual Room safety but cannot retroactively erase the raw failures. A source-backed operational condition index or typed consistency check must retain the complete Skill, preserve the original tests and be assessed with counterexamples outside the repair feedback. Do not spend more calls on an unchanged candidate/reader. Subsequent faction/matchup production and actual Room/reflection/upgrade acceptance remain unfinished.
+
+Read-only configuration observation for a possible later reader-capability change: the current frozen profile intentionally disables thinking, and the existing secure transport also explicitly serializes `thinking=disabled, reasoning_effort=low`. The registry's egress binding does not carry those profile fields. Merely editing a profile to say otherwise would not change the transmitted mode. No Provider mode/model/transport change was made here; any such experiment requires an explicit versioned binding, matching wire tests and actual receipts, not a configuration-only claim.
 
 ## Work and cost state
 
-Original live handles ended (`5695` main and `90817` supplemental). Main continuation used98 new calls /11,544,494 tokens /estimated¥2.013756; supplemental used1/74,960/¥0.015944. After both diagnostics, known cumulative lower bound30,011,725 Provider tokens, estimated cost plus historical reserve¥42.078220, before the new local repair's further usage. No402 was observed. Original main ancestry was66 calls /8,321,604 tokens /¥1.274291 and its six-hour start was not reset; the new local repair is a separately bounded changed task with all global cost retained.
+All paid handles are terminal, including both diagnostics and local repair (`39832`). Final read-only ledger check: **31,668,696 known Provider tokens; estimated cost plus historical reserve¥42.653626;0 open intents;0 payment-required outcomes**. This diagnostic/repair round added25 physical calls /2,033,365 tokens /estimated¥0.874807. These are Provider usage/cost estimates, not Codex goal tokens or an invoice. Original main ancestry was66 calls /8,321,604 tokens /¥1.274291 and its six-hour start was not reset; the new local repair was a separately bounded changed task with all global cost retained.
 
 Ticket18 stays1/8, project16/22. Generated complete candidate1 (overall), formal first-five accepted0/5. Still required: verified corrected overall Skill, two factions, directed matchups, actual Room use, real replay/reflection/versioned local upgrade and regression/rollback, and scheduler/store conformance. This long goal is active, not complete or blocked.
