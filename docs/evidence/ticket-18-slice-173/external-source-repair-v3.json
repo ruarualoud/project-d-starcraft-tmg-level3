@@ -1,0 +1,553 @@
+{
+  "schema": "starcraft_external_source_repair_public_evidence_v3",
+  "runId": "rules-v3-bec9cf9b355232b92d8c",
+  "catalogueHash": "156df2e36ca53ae0ff1af9874f7ff39684e50cf43de29909413ab33fca6dbd19",
+  "contextHash": "57614d965ae5633550630f6beea5cbab43a149d740e591194c1eea9a3bf350fd",
+  "reportHash": "402396a96a968abc0bff02dd1dbba8317df05f2e5a951f13dfc161a11a12747b",
+  "inspection": {
+    "parentRunId": "rules-v3-bec9cf9b355232b92d8c",
+    "parentRecipeHash": "bec9cf9b355232b92d8c6e6052a5b40f3ed39127cba859a1a9a3398640d2e062",
+    "parentReportHash": "402396a96a968abc0bff02dd1dbba8317df05f2e5a951f13dfc161a11a12747b",
+    "planHash": "606908432148f7ef2ac22c1846dfafe1c2c9b469ca6cb3df971d30bd9e79b986",
+    "contextHash": "57614d965ae5633550630f6beea5cbab43a149d740e591194c1eea9a3bf350fd",
+    "packetHashes": [
+      "aa2f50bc2a808035cc2b208824f324f4976810133623ab00a33cf3a645461218",
+      "e98039983b258914512b554dfc72815902f40591899f0fdc60cdcb33bcbeebdd",
+      "0aba75f4c5374e492b548598095210aadc9e61fedce56030610cf9b835adcfc0",
+      "68b6a68be83302b08ad7144b52685962c434097b1dc872b6d0316147a06c5f0c",
+      "b706b5dbbb6c135c008b9508f9187764c07d8c75b7200c4f4eeece3426a93f12"
+    ],
+    "verification": "host_revalidated_full_source_inventory_two_reviews_and_issue_journal",
+    "repairedPackets": 5,
+    "remainingPackets": 32,
+    "externalAudit": {
+      "probesHash": "092959fa172ed09bc91edd320d1cbd2b234e99eba1b8054b28186c48d4dd7b31",
+      "beforeHash": "5a71f093ed6c219e8967714f1486ef820799b53b9e5aa998d0c24fc48639b8f9",
+      "afterHash": "2a71cc7399a493f6a3b49f05fb2dcb05d743ae3ac653b439af5e3b8e02cb97f7",
+      "detectedKnownDefects": 5,
+      "passedAfterCases": 14
+    },
+    "independentContextsNotIndependentModels": true,
+    "actualRoomReplayPerformed": false,
+    "formalSkillsAccepted": 0,
+    "runtimeAccepted": false,
+    "trainingTruth": false,
+    "hash": "1af662d1a8171a650983eed151f1fcc1e5e5404d8181d3787602f4098cac49c9"
+  },
+  "before": {
+    "schema": "starcraft_source_audit_probe_result_v3",
+    "inputHash": "77f7c5cec1282dc402c3e49517badc9aa1ecfcb1f590df5ffb8cc1fee5b23f70",
+    "packetHashes": [
+      "aa2f50bc2a808035cc2b208824f324f4976810133623ab00a33cf3a645461218",
+      "dac755292d23126783f8d3f5a281cee10d8ae0bb1c79545239e05fd48f1c9093",
+      "2f1106d2a97b2d3b555729b170c67aa85dab8e519167235c1430811363430d1c",
+      "68b6a68be83302b08ad7144b52685962c434097b1dc872b6d0316147a06c5f0c",
+      "db193dd12bcda19d8b67959e7c71045f6b2caa6c2c6dafce48dace54386f6ea4"
+    ],
+    "probesHash": "092959fa172ed09bc91edd320d1cbd2b234e99eba1b8054b28186c48d4dd7b31",
+    "label": "before",
+    "answers": [
+      {
+        "id": "q01",
+        "answer": true,
+        "group": "literal",
+        "expected": false,
+        "passed": false
+      },
+      {
+        "id": "q02",
+        "answer": true,
+        "group": "literal",
+        "expected": false,
+        "passed": false
+      },
+      {
+        "id": "q03",
+        "answer": true,
+        "group": "literal",
+        "expected": false,
+        "passed": false
+      },
+      {
+        "id": "q04",
+        "answer": false,
+        "group": "literal",
+        "expected": true,
+        "passed": false
+      },
+      {
+        "id": "q05",
+        "answer": false,
+        "group": "literal",
+        "expected": true,
+        "passed": false
+      },
+      {
+        "id": "q06",
+        "answer": [],
+        "group": "literal",
+        "expected": [
+          "move",
+          "deploy",
+          "run",
+          "charge",
+          "disengage",
+          "close_ranks",
+          "special_ability_move"
+        ],
+        "passed": false
+      },
+      {
+        "id": "q07",
+        "answer": "unclear",
+        "group": "literal",
+        "expected": "overlapped_token_or_model",
+        "passed": false
+      },
+      {
+        "id": "q08",
+        "answer": "unspecified",
+        "group": "literal",
+        "expected": "leading_model_controller",
+        "passed": false
+      },
+      {
+        "id": "q09",
+        "answer": false,
+        "group": "comprehension",
+        "expected": false,
+        "passed": true
+      },
+      {
+        "id": "q10",
+        "answer": false,
+        "group": "comprehension",
+        "expected": false,
+        "passed": true
+      },
+      {
+        "id": "q11",
+        "answer": false,
+        "group": "comprehension",
+        "expected": false,
+        "passed": true
+      },
+      {
+        "id": "q12",
+        "answer": false,
+        "group": "comprehension",
+        "expected": false,
+        "passed": true
+      },
+      {
+        "id": "q13",
+        "answer": false,
+        "group": "comprehension",
+        "expected": true,
+        "passed": false
+      },
+      {
+        "id": "q14",
+        "answer": true,
+        "group": "comprehension",
+        "expected": true,
+        "passed": true
+      }
+    ],
+    "correct": 5,
+    "total": 14,
+    "passed": false,
+    "calibrationPassed": true,
+    "receiptHash": "e0046c1188ac0e627cdcc7497fcf79d6fcc8c396e8bc8d1cb215875c3f1cf7f8",
+    "schemaRepairs": 0,
+    "expectedAnswersExposed": false,
+    "actualRoomReplayPerformed": false,
+    "strategyEffectivenessProven": false,
+    "trainingTruth": false,
+    "hash": "5a71f093ed6c219e8967714f1486ef820799b53b9e5aa998d0c24fc48639b8f9"
+  },
+  "after": {
+    "schema": "starcraft_source_audit_probe_result_v3",
+    "inputHash": "9100eee5b024cff7f40dc310616949bfdf18eddc631204e2b54c16b551d619c8",
+    "packetHashes": [
+      "aa2f50bc2a808035cc2b208824f324f4976810133623ab00a33cf3a645461218",
+      "e98039983b258914512b554dfc72815902f40591899f0fdc60cdcb33bcbeebdd",
+      "0aba75f4c5374e492b548598095210aadc9e61fedce56030610cf9b835adcfc0",
+      "68b6a68be83302b08ad7144b52685962c434097b1dc872b6d0316147a06c5f0c",
+      "b706b5dbbb6c135c008b9508f9187764c07d8c75b7200c4f4eeece3426a93f12"
+    ],
+    "probesHash": "092959fa172ed09bc91edd320d1cbd2b234e99eba1b8054b28186c48d4dd7b31",
+    "label": "after",
+    "answers": [
+      {
+        "id": "q01",
+        "answer": false,
+        "group": "literal",
+        "expected": false,
+        "passed": true
+      },
+      {
+        "id": "q02",
+        "answer": false,
+        "group": "literal",
+        "expected": false,
+        "passed": true
+      },
+      {
+        "id": "q03",
+        "answer": false,
+        "group": "literal",
+        "expected": false,
+        "passed": true
+      },
+      {
+        "id": "q04",
+        "answer": true,
+        "group": "literal",
+        "expected": true,
+        "passed": true
+      },
+      {
+        "id": "q05",
+        "answer": true,
+        "group": "literal",
+        "expected": true,
+        "passed": true
+      },
+      {
+        "id": "q06",
+        "answer": [
+          "move",
+          "deploy",
+          "run",
+          "charge",
+          "disengage",
+          "close_ranks",
+          "special_ability_move"
+        ],
+        "group": "literal",
+        "expected": [
+          "move",
+          "deploy",
+          "run",
+          "charge",
+          "disengage",
+          "close_ranks",
+          "special_ability_move"
+        ],
+        "passed": true
+      },
+      {
+        "id": "q07",
+        "answer": "overlapped_token_or_model",
+        "group": "literal",
+        "expected": "overlapped_token_or_model",
+        "passed": true
+      },
+      {
+        "id": "q08",
+        "answer": "leading_model_controller",
+        "group": "literal",
+        "expected": "leading_model_controller",
+        "passed": true
+      },
+      {
+        "id": "q09",
+        "answer": false,
+        "group": "comprehension",
+        "expected": false,
+        "passed": true
+      },
+      {
+        "id": "q10",
+        "answer": false,
+        "group": "comprehension",
+        "expected": false,
+        "passed": true
+      },
+      {
+        "id": "q11",
+        "answer": false,
+        "group": "comprehension",
+        "expected": false,
+        "passed": true
+      },
+      {
+        "id": "q12",
+        "answer": false,
+        "group": "comprehension",
+        "expected": false,
+        "passed": true
+      },
+      {
+        "id": "q13",
+        "answer": true,
+        "group": "comprehension",
+        "expected": true,
+        "passed": true
+      },
+      {
+        "id": "q14",
+        "answer": true,
+        "group": "comprehension",
+        "expected": true,
+        "passed": true
+      }
+    ],
+    "correct": 14,
+    "total": 14,
+    "passed": true,
+    "calibrationPassed": null,
+    "receiptHash": "3be04d5caa8a272f3f66bd1ea672c76488a22b58b7b51b17377306d3738a6799",
+    "schemaRepairs": 0,
+    "expectedAnswersExposed": false,
+    "actualRoomReplayPerformed": false,
+    "strategyEffectivenessProven": false,
+    "trainingTruth": false,
+    "hash": "2a71cc7399a493f6a3b49f05fb2dcb05d743ae3ac653b439af5e3b8e02cb97f7"
+  },
+  "actualRepairs": [
+    {
+      "schema": "starcraft_external_correction_receipt_v3",
+      "packetId": "rules-reading-002",
+      "parentCandidateHash": "dac755292d23126783f8d3f5a281cee10d8ae0bb1c79545239e05fd48f1c9093",
+      "candidateHash": "e98039983b258914512b554dfc72815902f40591899f0fdc60cdcb33bcbeebdd",
+      "findingHashes": [
+        "ffef9b4c02235fc8eb1fcf94b08a4194354c1ece56c7f3d9e92da212b1a80cd4",
+        "b4f2277afb279ecbe53ba0c92d2bffb23a6f6ed8cda53000686eec3281c827cf"
+      ],
+      "editorArtifactHash": "7cd47e8d04a7300124abcba5bbc20fd37ed8a04e3785244477c293d4b544f2be",
+      "patch": {
+        "parentHash": "02a1b9e7ca5f7d20c71badd40d59fd1831f28cf613797733608dc0894bee8a5c",
+        "replacements": [
+          {
+            "claimId": "claims.8",
+            "value": {
+              "kind": "rule",
+              "text": "检查飞行模型的视线时，忽略完全掩护规则；直接掩护和海拔死区规则仍然适用。就掩护而言，飞行模型的有效尺寸被视为高于战场上任何地形片的有效尺寸，因此地形永远不能对飞行模型提供完全掩护，也不能作为位于地形1英寸内的模型为飞行模型提供直接掩护。但飞行模型仍须遵守适用于攻击中另一模型的直接掩护或海拔死区规则。",
+              "evidence": [
+                {
+                  "ref": "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.3",
+                  "spanId": "p1"
+                }
+              ]
+            }
+          },
+          {
+            "claimId": "claims.12",
+            "value": {
+              "kind": "caution",
+              "text": "注意：HIGH GROUND掩护的授予条件在正文（7.1.3）与决策表之间存在措辞冲突：正文要求“所有模型以底座任意部分站立”，而决策表要求“完全位于”。在边缘情形（如模型底座部分悬空或部分超出地形）下，两种表述可能得出不同结论；本来源未授予决策表优先于正文的权限，此未解决的边缘情形应提交给有约束力的规则/裁判处理。",
+              "evidence": [
+                {
+                  "ref": "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.2",
+                  "spanId": "p1"
+                },
+                {
+                  "ref": "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.5",
+                  "spanId": "p2"
+                }
+              ]
+            }
+          }
+        ],
+        "additions": [],
+        "citationAdditions": []
+      },
+      "seedHash": "330f87fc85829a8ca484cd194c70f7498bcb1a85049ab5c1a289f4920604ee75",
+      "noProgressResponses": [],
+      "sourceReviewPassed": true,
+      "externalProbePassed": false,
+      "actualRoomReplayPerformed": false,
+      "formalSkillAcceptance": false,
+      "trainingTruth": false,
+      "hash": "49f106bc69db2aec3718f4745656dd39d0ddd527dc8ed86491533a6f0de230e6"
+    },
+    {
+      "schema": "starcraft_external_correction_receipt_v3",
+      "packetId": "rules-reading-003",
+      "parentCandidateHash": "2f1106d2a97b2d3b555729b170c67aa85dab8e519167235c1430811363430d1c",
+      "candidateHash": "0aba75f4c5374e492b548598095210aadc9e61fedce56030610cf9b835adcfc0",
+      "findingHashes": [
+        "5bc24c5689b3917add98f1a8370279ce5a3b7d9e3697d209c80c181274863f86",
+        "9fbe731b5e034129a98ac6e719343a8a6856cda31c91a34de209926b9ab82b5f"
+      ],
+      "editorArtifactHash": "05441134116af7a7be87cbcbe5e80c172185bc3be1223045ac1613d61cbe5b4c",
+      "patch": {
+        "parentHash": "bd57638b34212b12cce98c2aabcc8de33489da8c32d4f662594770e63edb62dd",
+        "replacements": [
+          {
+            "claimId": "claims.4",
+            "value": {
+              "kind": "rule",
+              "text": "ACCESS POINT是地形中连接不同海拔高度的部分，模型只有穿过ACCESS POINT才能改变海拔（移动层面）。FAQ明确：当单位执行移动时，只有被指定的Leading Model沿物理路径测量并移动，其余模型通过Coherency Links放置，且Coherency Links被明确允许穿过ACCESS POINT以连接不同海拔的模型——这属于移动与Coherency规则，不授予任何视线穿透权限。视线层面独立判定：Blocking Terrain（Effective Size为1或以上的任何地形）按Cover规则（7.1.1）阻挡视线；是否可穿过某地形由移动规则、地形Size、ACCESS POINT、Gap Clearance及相关地形关键词单独决定。除非玩家在战场设置时另有约定，地形footprint内的间隙、窗户、门口和开放内部默认阻挡视线；地形开口可能对移动可通行，但不同时视为对视线开放。因此，ACCESS POINT或Coherency Links的存在本身不使视线穿过该地形或开口，视线仍须按标准2D视线与Cover规则判定。",
+              "evidence": [
+                {
+                  "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.0",
+                  "spanId": "p1"
+                },
+                {
+                  "ref": "faq-v1:09",
+                  "spanId": "p1"
+                },
+                {
+                  "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.5",
+                  "spanId": "p1"
+                },
+                {
+                  "ref": "core.cB7X7UfOMHh3Wxn79ASF.items.1",
+                  "spanId": "p2"
+                }
+              ]
+            }
+          },
+          {
+            "claimId": "claims.6",
+            "value": {
+              "kind": "rule",
+              "text": "Army Slots决定一个军队可包含哪些类型及多少单位。每个Army Slot有特定类型：Core、Elite、Support、Air或Hero。每个单位按其起始Supply Value占用其指定类型的Army Slot数量。Faction Card提供初始的Army Slot池；在军队构建期间（Part 9.1.5），玩家用Vespene Gas购买Tactical Cards来解锁额外的Army Slot。未使用的Army Slot会失去——它们不能被转换、交换或结转。",
+              "evidence": [
+                {
+                  "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+                  "spanId": "p1"
+                }
+              ]
+            }
+          }
+        ],
+        "additions": [],
+        "citationAdditions": []
+      },
+      "seedHash": "aa59f205b451cabafb015292d5afb7f91476dbe62a6bc2463bc2344d280c08bd",
+      "noProgressResponses": [
+        {
+          "artifactHash": "d61a1e7a36bae686b7a6de9d0b83dd80f25cf8fb18d55b07ac904b4c86fe4341",
+          "code": "EXTERNAL_PATCH_NO_PROGRESS",
+          "unchangedClaimIds": [
+            "claims.4",
+            "claims.6"
+          ],
+          "diagnosis": "host_exact_text_comparison_proves_flagged_bad_text_unchanged_not_a_schema_error"
+        },
+        {
+          "artifactHash": "baf6fa0957535d2dbfd827fbcb7b341ee74753809a60689b9bc52042c2cebc2f",
+          "code": "EXTERNAL_PATCH_NO_PROGRESS",
+          "diagnosis": "second_unchanged_response_escalated_to_source_first_reconstruction_without_bad_draft"
+        }
+      ],
+      "sourceReviewPassed": true,
+      "externalProbePassed": false,
+      "actualRoomReplayPerformed": false,
+      "formalSkillAcceptance": false,
+      "trainingTruth": false,
+      "hash": "a8669b063a1db3ebf0587e6f0aad4aa1fff2f4d5616c03b1aaceeb0ee2596905"
+    },
+    {
+      "schema": "starcraft_external_correction_receipt_v3",
+      "packetId": "rules-reading-005",
+      "parentCandidateHash": "db193dd12bcda19d8b67959e7c71045f6b2caa6c2c6dafce48dace54386f6ea4",
+      "candidateHash": "b706b5dbbb6c135c008b9508f9187764c07d8c75b7200c4f4eeece3426a93f12",
+      "findingHashes": [
+        "7f0bf19f4f4f6001d7ab7441740994edf544f0865053c4ecb0eae9261a33cacb"
+      ],
+      "editorArtifactHash": "3923dcd52b7312bc01a1d836cd180a143a084894e0a9e524f079983d02432d30",
+      "patch": {
+        "parentHash": "25af09f1741909578de956d4b2d99175dde350f776ce12ce24f73370938fb7c7",
+        "replacements": [
+          {
+            "claimId": "claims.2",
+            "value": {
+              "kind": "rule",
+              "text": "DISPLACEMENT 允许领队模型（Leading Model）在移动结束时与一个指示物或单位重叠（覆盖第 7.3.1 条）。若领队模型以 Move、Deploy、Run、Charge、Disengage、Close Ranks 或特殊能力移动结束并重叠该指示物或模型，则该领队模型的控制玩家立即将被重叠的指示物或模型放置为与领队模型底基接触（base-to-base contact）；若无法接触则尽可能靠近。",
+              "evidence": [
+                {
+                  "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.16",
+                  "spanId": "p1"
+                }
+              ]
+            }
+          }
+        ],
+        "additions": [],
+        "citationAdditions": []
+      },
+      "seedHash": "c3d9925599e22fe854567ee7802e66c357aef310bf43369935c36131725a3d20",
+      "noProgressResponses": [],
+      "sourceReviewPassed": true,
+      "externalProbePassed": false,
+      "actualRoomReplayPerformed": false,
+      "formalSkillAcceptance": false,
+      "trainingTruth": false,
+      "hash": "b38d8b68aec96c9a2aa9eb38421691ab2b530a143f3c951b439fa33b6e62eef3"
+    }
+  ],
+  "packetHashes": [
+    {
+      "id": "rules-reading-001",
+      "hash": "aa2f50bc2a808035cc2b208824f324f4976810133623ab00a33cf3a645461218",
+      "claims": 18
+    },
+    {
+      "id": "rules-reading-002",
+      "hash": "e98039983b258914512b554dfc72815902f40591899f0fdc60cdcb33bcbeebdd",
+      "claims": 16
+    },
+    {
+      "id": "rules-reading-003",
+      "hash": "0aba75f4c5374e492b548598095210aadc9e61fedce56030610cf9b835adcfc0",
+      "claims": 13
+    },
+    {
+      "id": "rules-reading-004",
+      "hash": "68b6a68be83302b08ad7144b52685962c434097b1dc872b6d0316147a06c5f0c",
+      "claims": 10
+    },
+    {
+      "id": "rules-reading-005",
+      "hash": "b706b5dbbb6c135c008b9508f9187764c07d8c75b7200c4f4eeece3426a93f12",
+      "claims": 10
+    }
+  ],
+  "runs": [
+    {
+      "runId": "rules-v3-45543327938bde810be5",
+      "reportHash": "7d6b842ee056f854d9e161ef5d32084ca823198bca4ba754d176293c94cca998",
+      "failure": {
+        "code": "EXTERNAL_PATCH_NO_PROGRESS",
+        "diagnosticHash": "e8fd38f2f112267df642402bbc7b064d285c8fac5eee79025689017dfa62846e"
+      },
+      "calls": 5,
+      "knownTokens": 518601,
+      "estimatedCostMicros": 90621
+    },
+    {
+      "runId": "rules-v3-6854c9dc1f754556dafd",
+      "reportHash": "0e16cdeb3d6eefff1b728175cea8502ad28babca91442e1d9e923e3d35842b70",
+      "failure": {
+        "code": "EXTERNAL_PATCH_NO_PROGRESS",
+        "diagnosticHash": "e8fd38f2f112267df642402bbc7b064d285c8fac5eee79025689017dfa62846e"
+      },
+      "calls": 1,
+      "knownTokens": 126520,
+      "estimatedCostMicros": 15340
+    },
+    {
+      "runId": "rules-v3-bec9cf9b355232b92d8c",
+      "reportHash": "402396a96a968abc0bff02dd1dbba8317df05f2e5a951f13dfc161a11a12747b",
+      "failure": null,
+      "calls": 7,
+      "knownTokens": 763462,
+      "estimatedCostMicros": 115378
+    }
+  ],
+  "totalCalls": 13,
+  "totalKnownTokens": 1408583,
+  "totalEstimateCny": 0.221339,
+  "cumulativeKnownTokensLowerBound": 9694273,
+  "cumulativeEstimateOrReserveCny": 38.474828,
+  "formalSkillsAccepted": 0,
+  "actualRoomReplayPerformed": false,
+  "strategyEffectivenessProven": false,
+  "trainingTruth": false,
+  "hash": "06d92c3c8d459367b04230a1b795e1ad4ec4f1ad2aec930b78c33dcda89df00e"
+}

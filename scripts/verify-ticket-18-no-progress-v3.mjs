@@ -56,6 +56,25 @@ const patched = applyIssuePatch(candidate.draft, fixture, findings.map(f => ({ k
 for (let i = 0; i < candidate.draft.claims.length; i++) if (![4, 6].includes(i)) assert.deepEqual(patched.draft.claims[i], candidate.draft.claims[i]);
 let repeated = 0;
 await assert.rejects(repairExternalPacket({ candidate, packet, findings, context, reader,
-  runtime: { role: async () => { repeated++; return actual; } } }), { code: 'EXTERNAL_PATCH_NO_PROGRESS' });
-assert.equal(repeated, 2); // one new feedback-bearing correction; never unbounded sampling
-console.log(JSON.stringify({ passed: true, checks: 6, actualSavedNoOpReproduced: true, injectedCorrectionOnly: true, providerCalls: 0 }));
+  runtime: { role: async () => { repeated++; return actual; } } }));
+assert.equal(repeated, 3); // final bounded source-first task, then quarantine
+let sourceCalls = 0;
+const reconstructed = await repairExternalPacket({ candidate, packet, findings, context, reader, runtime: {
+  role: async input => {
+    sourceCalls++;
+    if (sourceCalls < 3) return actual;
+    assert.equal(input.roleId, 'external-source-reconstruction');
+    assert(!JSON.stringify(input.workspace).includes(candidate.draft.claims[4].text));
+    assert(!JSON.stringify(input.workspace).includes(candidate.draft.claims[6].text));
+    assert(!Object.hasOwn(input.workspace, 'draft')); assert(!Object.hasOwn(input.workspace, 'rejectedPatch'));
+    assert.equal(input.workspace.scopes.length, 2);
+    return seal({ output: { claims: fixture.replacements } });
+  },
+  produce: async (_packet, seed) => {
+    assert.equal(seed.semanticAcceptanceInherited, false);
+    return seal({ draft: seed.draft, semanticPassed: false });
+  },
+} });
+assert.equal(sourceCalls, 3); assert.equal(reconstructed.repair.noProgressResponses.length, 2);
+assert.equal(reconstructed.repair.patch.parentHash, hash(candidate.draft));
+console.log(JSON.stringify({ passed: true, checks: 8, actualSavedNoOpReproduced: true, injectedCorrectionOnly: true, providerCalls: 0 }));

@@ -1,4 +1,4 @@
-import { verifySeal, seal, hash, fail } from '../skill-production/common.mjs';
+import { verifySeal, seal, hash, fail, exact } from '../skill-production/common.mjs';
 import { applyIssuePatch, inspectDraft } from './contracts.mjs';
 
 // Source audits, evaluator failures and later replay critique enter through an
@@ -46,7 +46,30 @@ export async function repairExternalPacket({ runtime, packet, candidate, finding
     } else edited = await runtime.role({ packet, roleId: 'external-source-editor.schema',
       instruction: instruction + '\nFix only the declared shape/address/path violation. Do not expand edit scope.',
       workspace: { ...workspace, rejectedPatch: edited.output, failure: error.code || 'OUTPUT_SCHEMA_INVALID' } });
-    draft = validate(edited.output);
+    try { draft = validate(edited.output); }
+    catch (nextError) {
+      if (error.code !== 'EXTERNAL_PATCH_NO_PROGRESS' || nextError.code !== 'EXTERNAL_PATCH_NO_PROGRESS') throw nextError;
+      noProgressResponses.push({ artifactHash: edited.hash, code: nextError.code,
+        diagnosis: 'second_unchanged_response_escalated_to_source_first_reconstruction_without_bad_draft' });
+      // A distinct bounded task: reconstruct only the flagged source topics.
+      // Full global sources remain. Do not show the incorrect draft or either
+      // failed replacement: these are stored in the journal, not a copy target.
+      const rebuilt = await runtime.role({ packet, roleId: 'external-source-reconstruction',
+        instruction: '从完整冻结官方来源重建指定规则说明。你没有旧稿；不得引用记忆中的电子游戏规则。每个scope输出一条完整中文陈述，保留主体、时机、条件、枚举与例外，并明确原文不支持的推论；真实来源冲突不得自行裁定优先级。输出 {"claims":[{"claimId":"指定地址","value":{"kind":"rule或caution","text":"依据原文写出的完整新陈述","evidence":[{"ref":"精确来源ID","spanId":"段落ID"}]}}]}。每个指定claimId恰好一次，不能增加其它项。返回finish。',
+        workspace: { scopes: findings.map(f => ({ claimId: f.claimId, issueType: f.kind,
+          sourceQuestion: f.reason, exactSourceEvidence: f.evidence })),
+          sourceBinding: context.sourceBinding, recoveryMode: 'source_first_no_bad_draft_or_previous_answers',
+          priorFailureArtifactHashes: noProgressResponses.map(r => r.artifactHash) } });
+      exact(rebuilt.output, ['claims']);
+      if (!Array.isArray(rebuilt.output.claims) || rebuilt.output.claims.length !== findings.length
+        || new Set(rebuilt.output.claims.map(c => c.claimId)).size !== findings.length
+        || rebuilt.output.claims.some(c => !findings.some(f => f.claimId === c.claimId))) fail('EXTERNAL_RECONSTRUCTION_SCOPE_INVALID');
+      rebuilt.output.claims.forEach(c => exact(c, ['claimId', 'value']));
+      const patch = { parentHash: hash(candidate.draft), replacements: rebuilt.output.claims, additions: [], citationAdditions: [] };
+      draft = validate(patch);
+      // Bind the real role artifact, while host binds the patch's parent hash.
+      edited = { hash: rebuilt.hash, output: patch };
+    }
   }
   const seed = seal({ schema: 'starcraft_external_correction_seed_v3', packetId: packet.id, packetHash: packet.hash,
     catalogueHash: context.catalogueHash, sourceBinding: context.sourceBinding,

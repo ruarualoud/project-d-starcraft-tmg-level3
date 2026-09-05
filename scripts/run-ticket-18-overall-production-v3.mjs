@@ -9,6 +9,8 @@ import { createSemanticDrills } from '../packages/skill-evaluation/semantic-dril
 import { createProductionDrills } from '../packages/skill-evaluation/production-drills-v1.mjs';
 import { assembleOverallRulesCandidateV3, renderOverallRulesCandidateV3 } from '../packages/skill-evaluation/overall-rules-package-v3.mjs';
 import { evaluateOverallRulesCandidate } from '../packages/skill-evaluation/evaluate-overall-rules-v2.mjs';
+import { evaluateOverallSourceRegressionV3 } from '../packages/skill-evaluation/evaluate-overall-source-regression-v3.mjs';
+import { createSourceAuditProbesV3 } from '../packages/skill-evaluation/source-audit-probes-v3.mjs';
 import { prepareDshLoop } from '../packages/skill-production/loops.mjs';
 import { verifyProductionReadiness } from '../packages/skill-production/recipe.mjs';
 import { createAccountedModel } from '../packages/skill-production/model.mjs';
@@ -44,10 +46,14 @@ const parentReport = verifySeal(JSON.parse(await readFile(path.join(BASE, args[2
 const repair = inspectCompletedRepair({ filename, recipe: parent, report: parentReport, plan, catalogue, context });
 const drills = await createProductionDrills(catalogue), verifier = await createMechanicsVerifier(catalogue);
 const legacyDrills = createSemanticDrills(verifier);
+const sourceProbes = createSourceAuditProbesV3({ catalogue, reader: createEvidenceReader(catalogue) });
+const sourceRegressionGate = await readiness('overall-source-regression-readiness');
+if (sourceRegressionGate.probesHash !== sourceProbes.hash) fail('V3_OVERALL_SOURCE_PROBE_DRIFT');
 const limits = { maxCalls: 600, maxCostMicros: 20_000_000, maxTokens: 30_000_000,
   maxWallMs: 6 * 60 * 60 * 1000, maxInputBytes: 786432, maxRevisions: 3 };
 const extraFiles = ['scripts/run-ticket-18-overall-production-v3.mjs', 'packages/skill-production-v3/repair-gate.mjs',
   'packages/skill-production-v3/external-findings.mjs',
+  'packages/skill-evaluation/source-audit-probes-v3.mjs', 'packages/skill-evaluation/evaluate-overall-source-regression-v3.mjs',
   'packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs'];
 const codeHashes = await Promise.all(extraFiles.map(async file => ({ file, hash: sha256(await readFile(path.join(ROOT, file))) })));
 const recipe = seal({ version: 'overall-rules-production-v3-complete-and-exam',
@@ -55,11 +61,13 @@ const recipe = seal({ version: 'overall-rules-production-v3-complete-and-exam',
   modelHash: profile.integrity.hash, mainReadinessHash: main.hash, contractReadinessHash: contract.hash,
   capacityReadinessHash: capacity.hash, evaluationReadinessHash: evaluationGate.hash, codeHashes,
   repairManifest: repair.manifest, drillManifestHash: drills.manifest.hash, regressionManifestHash: legacyDrills.manifest.hash,
+  sourceProbeManifestHash: sourceProbes.hash, sourceRegressionReadinessHash: sourceRegressionGate.hash,
   limits, target: 'complete_remaining_32_packets_then_lossless_overall_skill_and_actual_105_case_exam',
   publication: 'candidate_only_pending_arena_and_registry', trainingTruth: false });
 if (args[0] === '--preflight') {
   console.log(JSON.stringify({ ready: true, paidCalls: 0, recipeHash: recipe.hash, validatedRepairPackets: repair.packets.length,
-    remainingPackets: repair.manifest.remainingPackets, examCases: drills.manifest.cases + legacyDrills.manifest.cases, limits })); process.exit(0);
+    remainingPackets: repair.manifest.remainingPackets, examCases: drills.manifest.cases + legacyDrills.manifest.cases,
+    knownSourceRegressionCases: sourceProbes.cases.length, limits })); process.exit(0);
 }
 const runId = 'overall-v3-' + recipe.hash.slice(0, 20), OUT = path.join(BASE, runId);
 await mkdir(OUT, { recursive: true });
@@ -67,7 +75,7 @@ const store = openProductionStore(filename, { runId, recipeHash: recipe.hash, ..
 const historyTokens = 2_864_424, historyMicros = 5_052_393 + 28_961_350;
 const started = store.acquire('production-start', { recipeHash: recipe.hash });
 const began = started.cached ? started.artifact.began : store.finish(started, { began: Date.now() }).began;
-let worker, attached, failure = null, candidate = null, exam = null; const results = [];
+let worker, attached, failure = null, candidate = null, exam = null, sourceRegression = null; const results = [];
 try {
   if (store.globalSummary().attempts.some(a => a.code === 'PROVIDER_PAYMENT_REQUIRED')) fail('API_BALANCE_EXHAUSTED_STOP_ALL_WORK');
   if (historyMicros + store.globalSummary().reservedOrSettledMicros + limits.maxCostMicros >= 100_000_000) fail('CNY_100_NOTIFICATION_REQUIRED');
@@ -110,8 +118,11 @@ try {
   await writeFile(path.join(OUT, 'overall-rules-candidate.json'), JSON.stringify(candidate, null, 2));
   await writeFile(path.join(OUT, 'overall-rules-candidate.md'), renderOverallRulesCandidateV3(candidate));
   console.log(JSON.stringify({ event: 'candidate-compiled', hash: candidate.hash, claims: candidate.coverage.claims, formalSkillsAccepted: 0 }));
+  sourceRegression = await evaluateOverallSourceRegressionV3({ candidate, probes: sourceProbes, store, model });
+  await writeFile(path.join(OUT, 'actual-source-regression.json'), JSON.stringify(sourceRegression, null, 2));
   exam = await evaluateOverallRulesCandidate({ candidate, drills, legacyDrills, store, model });
   await writeFile(path.join(OUT, 'actual-model-exam.json'), JSON.stringify(exam, null, 2));
+  if (!exam.passed || !sourceRegression.passed) fail('V3_OVERALL_EVALUATION_REQUIRES_TARGETED_REPAIR');
 } catch (error) {
   failure = { code: /^[A-Z0-9_]{3,100}$/.test(error.code || '') ? error.code : 'V3_OVERALL_PRODUCTION_FAILURE', diagnosticHash: hash(String(error.message)) };
 } finally {
@@ -122,7 +133,8 @@ try {
     reusedRepairPackets: repair.packets.length, processedPackets: results.length, plannedPackets: plan.packets.length,
     semanticallyPassedPackets: results.filter(r => r.semanticPassed).length, resultHashes: results.map(r => r.hash),
     candidateHash: candidate?.hash || null, actualExamHash: exam?.hash || null, actualExamSummary: exam?.summary || null,
-    actualExamPassed: exam?.passed || false, failure, ledger,
+    actualExamPassed: exam?.passed || false, sourceRegressionHash: sourceRegression?.hash || null,
+    sourceRegressionPassed: sourceRegression?.passed || false, overallEvaluationPassed: !!exam?.passed && !!sourceRegression?.passed, failure, ledger,
     cumulativeKnownTokensLowerBound: historyTokens + global.knownTokens,
     cumulativeEstimateOrReserveCny: (historyMicros + global.reservedOrSettledMicros) / 1e6,
     ctx2skillLoopUsed: true, harnessLoopUsed: true, targetGames: ['starcraft-tmg'],

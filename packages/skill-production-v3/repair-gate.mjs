@@ -55,8 +55,22 @@ export function inspectCompletedRepair({ filename, recipe, report, plan, catalog
             || db.prepare('SELECT recipe FROM runs WHERE id=?').get(continuation.parentRunId)?.recipe !== continuation.parentRecipeHash) fail('V3_EXTERNAL_PROBE_INHERITANCE_INVALID');
           const inheritedValue = verifySeal(JSON.parse(inherited.artifact)).value;
           if (inheritedValue.parentRecipeHash !== continuation.parentRecipeHash || inheritedValue.artifactHash !== permit.artifactHash) fail('V3_EXTERNAL_PROBE_INHERITANCE_INVALID');
-          receipt = db.prepare("SELECT response FROM attempts WHERE run=? AND state='received'").all(continuation.parentRunId)
-            .map(r => verifySeal(JSON.parse(r.response)).value).find(r => r.usageReceipt.receiptHash === result.receiptHash);
+          let origin = continuation.parentRunId;
+          const visited = new Set([runId]);
+          for (let depth = 0; depth < 16 && !receipt; depth++) {
+            if (visited.has(origin)) fail('V3_EXTERNAL_PROBE_INHERITANCE_CYCLE'); visited.add(origin);
+            receipt = db.prepare("SELECT response FROM attempts WHERE run=? AND state='received'").all(origin)
+              .map(r => verifySeal(JSON.parse(r.response)).value).find(r => r.usageReceipt.receiptHash === result.receiptHash);
+            if (receipt) break;
+            const linkRow = db.prepare("SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'").get(origin, 'inherited.' + id);
+            if (!linkRow) break;
+            const link = verifySeal(JSON.parse(linkRow.artifact)).value;
+            const source = db.prepare("SELECT artifact,input_hash FROM steps WHERE run=? AND id=? AND state='complete'").get(link.parentRunId, id);
+            if (!source || source.input_hash !== permit.inputHash || link.inputHash !== permit.inputHash
+              || link.artifactHash !== permit.artifactHash || hash(verifySeal(JSON.parse(source.artifact)).value) !== permit.artifactHash
+              || db.prepare('SELECT recipe FROM runs WHERE id=?').get(link.parentRunId)?.recipe !== link.parentRecipeHash) fail('V3_EXTERNAL_PROBE_INHERITANCE_INVALID');
+            origin = link.parentRunId;
+          }
         }
         if (!receipt || hash(receipt.output.channels.skill.content) !== hash({ answers: result.answers.map(({ id, answer }) => ({ id, answer })) })) fail('V3_EXTERNAL_PROBE_RECEIPT_MISSING');
         return result;

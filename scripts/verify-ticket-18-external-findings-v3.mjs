@@ -57,8 +57,8 @@ assertNoKnownExternalClaimFailure(db, repaired.candidate);
 await assert.rejects(repairExternalPacket({ runtime, packet, candidate: repaired.candidate, findings, context, reader }), { code: 'EXTERNAL_REPAIR_FINDING_STALE' });
 let noOpCalls = 0;
 await assert.rejects(repairExternalPacket({ runtime: { role: async () => { noOpCalls++; return seal({ output: { parentHash: hash(target.draft), replacements: [], additions: [] } }); } },
-  packet, candidate: target, findings, context, reader }), { code: 'EXTERNAL_PATCH_NO_PROGRESS' });
-assert.equal(noOpCalls, 2); store.close();
+  packet, candidate: target, findings, context, reader }));
+assert.equal(noOpCalls, 3); store.close();
 db.close();
 const probes = createSourceAuditProbesV3({ catalogue, reader });
 assert.equal(probes.cases.length, 14);

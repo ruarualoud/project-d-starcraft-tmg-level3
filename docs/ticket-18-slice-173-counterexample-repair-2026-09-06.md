@@ -3,6 +3,58 @@
 Ticket18 remains 1/8, project16/22, formal five-piece set0/5. This is work
 inside Slice173, not another Slice. No official-source refresh or Codex agents.
 
+## Latest: actual five-defect repair verified; next Tutor capacity issue isolated
+
+Run `rules-v3-bec9cf9b355232b92d8c` completed5/5 packets. The independent
+reader scored **14/14**, against the original5/14. Exactly5 claims changed;
+the other62 remain byte-identical. These are bounded source regressions, not
+whole-game or strategy proof. The first five packets are now dependency-ready;
+the formal five-Skill set is still0/5.
+
+The feedback-only continuation below also copied003's bad text unchanged.
+Its failure is retained:1 call,126,520 tokens,¥0.015340. The next explicit
+workflow correction used source-first reconstruction: complete global
+sources plus the flagged source topics, without the bad draft or prior
+answers as a copy target. This actually rebuilt003's two claims, followed
+by fresh reviews. Packet005's original scoped edit succeeded directly.
+This demonstrates recovery on this case, not that source-first always works.
+The bounded pipeline now tries an edit, one concrete no-progress feedback,
+then one distinct source-first reconstruction; failure still quarantines.
+
+Latest run:7 new calls,763,462 tokens,¥0.115378. Across the three actual
+external-repair runs:13 calls,1,408,583 tokens,¥0.221339. Global lower
+bound9,694,273 tokens; estimate plus historical reserve¥38.474828.
+The original¥5/100-call/8M-token/three-hour budget and all prior costs survive
+the continuation chain. No successful prior call was repeated.
+
+The real SQLite gate revalidated source inventories/reviews, recomputed
+before/after scores and resolved the original Provider receipt across two
+continuation links. Nine gate checks pass, plus8 no-progress checks and6
+full37-section evaluation-delivery checks. The actual report is
+`402396a96a968abc0bff02dd1dbba8317df05f2e5a951f13dfc161a11a12747b`;
+gate report `93816b1a15604a28589762bc45b6a5df2d20e78aa1f7d91e8e75523bd3773074`.
+Portable output/patches/results: [evidence](evidence/ticket-18-slice-173/external-source-repair-v3.json).
+
+Full run `overall-v3-58ddd1273138b8da321f` started for the remaining32
+packets, lossless overall Skill, all-section14 known-error regressions and
+105-case rule exam. Its cap is¥20/30M tokens/600 calls/six hours. The14
+regressions do not replace or get counted as new held-out cases. Final
+evaluation requires both groups to pass. No completed overall Skill yet.
+
+That run safely stopped at packet006 Tutor: both actual responses reached
+the1,400-output-token limit and returned `PROVIDER_RESPONSE_OUTPUT_TRUNCATED`.
+The current common model loop treated truncation as format repair but kept
+the same limit, so its second call could not address this capacity problem.
+Two calls added248,153 tokens/¥0.029576; current global lower bound is
+9,942,426 tokens and estimate/reserve¥38.504404. Terminal report:
+`e02448239e7e6d5b11e8d0f0bcbdc039f7781ee5439aecc163028cefb8e08664`.
+No running steps, ambiguous intents or payment-stop records remain.
+The five repaired packets stay valid; packet006 has no accepted new content.
+Next: source-sized Tutor output and bounded capacity-specific handling,
+retaining paid failures and the original full-run budget, then resume32.
+
+The sections below retain the preceding checkpoints chronologically.
+
 ## Frozen comparison and first actual result
 
 The five independently identified source defects have 14 source-grounded
