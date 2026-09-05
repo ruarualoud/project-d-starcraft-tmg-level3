@@ -12,6 +12,7 @@ import { createSourceAuditProbesV3 } from '../packages/skill-evaluation/source-a
 import { createSupplementalSourceProbesV1 } from '../packages/skill-evaluation/supplemental-source-probes-v1.mjs';
 import { inspectCompletedOverallProductionV3 } from '../packages/skill-production-v3/overall-evidence-gate.mjs';
 import { evaluateOverallSourceRegressionV3 } from '../packages/skill-evaluation/evaluate-overall-source-regression-v3.mjs';
+import { createComprehensionDiagnosticV1, evaluateComprehensionDiagnosticV1 } from '../packages/skill-evaluation/comprehension-diagnostic-v1.mjs';
 import { verifyProductionReadiness } from '../packages/skill-production/recipe.mjs';
 import { createAccountedModel } from '../packages/skill-production/model.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
@@ -23,7 +24,8 @@ import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../c
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = path.join(ROOT, 'build/ticket-18-production-v3'), args = process.argv.slice(2);
-if (args.length !== 3 || !['--preflight', '--live'].includes(args[0]) || args[1] !== '--overall-run'
+if (![3, 4].includes(args.length) || args.length === 4 && args[3] !== '--diagnose'
+  || !['--preflight', '--live'].includes(args[0]) || args[1] !== '--overall-run'
   || !/^overall-v3-[a-f0-9]{20}$/.test(args[2])) fail('SUPPLEMENTAL_AUDIT_ARGUMENTS_INVALID');
 const json = async filename => verifySeal(JSON.parse(await readFile(filename, 'utf8')));
 const parentDir = path.join(BASE, args[2]);
@@ -40,27 +42,34 @@ const probes = createSourceAuditProbesV3({ catalogue, reader }), supplemental = 
 const filename = path.join(ROOT, 'build/ticket-17-production-redesign-v1/production.sqlite');
 const parentEvidence = inspectCompletedOverallProductionV3({ filename, recipe: parent, report: parentReport,
   candidate, exam, regression, plan, catalogue, context, drills, legacyDrills, probes, purpose: 'diagnostic_audit' });
+const diagnostic = args[3] === '--diagnose';
+const diagnosticManifest = diagnostic ? createComprehensionDiagnosticV1({ candidate, drills, legacyDrills, supplemental }) : null;
 const main = await verifyProductionReadiness(ROOT, catalogue), readiness = [];
-for (const name of ['overall-evidence-readiness', 'supplemental-source-readiness']) {
+for (const name of ['overall-evidence-readiness', 'supplemental-source-readiness',
+  ...(diagnostic ? ['comprehension-diagnostic-readiness', 'reader-command-policy-readiness'] : [])]) {
   const report = await json(path.join(BASE, name + '.json'));
   if (!report.passed) fail('SUPPLEMENTAL_AUDIT_READINESS_FAILED');
   for (const row of report.codeHashes) if (sha256(await readFile(path.join(ROOT, row.file))) !== row.hash) fail('SUPPLEMENTAL_AUDIT_CODE_DRIFT');
   readiness.push(report);
 }
 const files = ['scripts/run-ticket-18-supplemental-source-audit-v1.mjs',
+  'packages/skill-evaluation/comprehension-diagnostic-v1.mjs',
   'packages/skill-production-v3/overall-evidence-gate.mjs', 'packages/skill-evaluation/supplemental-source-probes-v1.mjs',
   'packages/skill-evaluation/evaluate-overall-source-regression-v3.mjs', 'packages/skill-production/model.mjs',
   'packages/skill-production/store.mjs', 'packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(ROOT, file))) })));
 const limits = { maxCalls: 6, maxCostMicros: 5_000_000, maxTokens: 3_000_000, maxWallMs: 600000, maxInputBytes: 786432 };
-const recipe = seal({ version: 'overall-supplemental-source-audit-v1', parentRunId: args[2], parentRecipeHash: parent.hash,
+const recipe = seal({ version: diagnostic ? 'overall-comprehension-diagnostic-v1' : 'overall-supplemental-source-audit-v1',
+  diagnosticManifestHash: diagnosticManifest?.hash || null, parentRunId: args[2], parentRecipeHash: parent.hash,
+  readerCommandPolicy: diagnostic ? 'finish_only' : 'production_tools',
   parentEvidenceHash: parentEvidence.hash, candidateHash: candidate.hash, catalogueHash: catalogue.hash,
   sourceBinding: catalogue.sourceBinding, probesHash: supplemental.hash, modelHash: profile.integrity.hash,
   mainReadinessHash: main.hash, readinessHashes: readiness.map(r => r.hash), codeHashes, limits,
   sourceRefreshPerformed: false, independentReaderNotProductionRetry: true, trainingTruth: false });
 if (args[0] === '--preflight') {
   console.log(JSON.stringify({ ready: true, recipeHash: recipe.hash, candidateHash: candidate.hash,
-    verifiedParentPackets: parentEvidence.packetHashes.length, rescoredParentCases: 119, supplementalCases: 8,
+    verifiedParentPackets: parentEvidence.packetHashes.length, rescoredParentCases: 119,
+    diagnostic, evaluationCases: diagnosticManifest?.cases || supplemental.cases.length,
     paidCalls: 0, limits })); process.exit(0);
 }
 const runId = 'overall-audit-' + recipe.hash.slice(0, 20), OUT = path.join(BASE, runId);
@@ -77,6 +86,7 @@ try {
   await writeFile(path.join(OUT, 'recipe.json'), JSON.stringify(recipe, null, 2));
   await writeFile(path.join(OUT, 'parent-evidence.json'), JSON.stringify(parentEvidence, null, 2));
   await writeFile(path.join(OUT, 'probes.json'), JSON.stringify(supplemental, null, 2));
+  if (diagnostic) await writeFile(path.join(OUT, 'diagnostic-manifest.json'), JSON.stringify(diagnosticManifest, null, 2));
   const registry = createStarcraftTmgProviderProfileRegistryV1({ entries: [{ providerProfile: profile, completionPath: '/chat/completions' }],
     allowedProviders: ['deepseek-openai-compatible-direct'] });
   worker = createStarcraftTmgProviderEgressWorkerPortV2({ providerProfileRegistry: registry, maxWorkers: 1, maxOutputBytes: 256 * 1024 });
@@ -85,16 +95,19 @@ try {
   finally { ingress.credentialBytes.fill(0); }
   if (!attached.ok) fail('PROVIDER_ATTACHMENT_FAILED');
   const model = createAccountedModel({ store, maxInputBytes: limits.maxInputBytes, outputRecoveryLimit: 4096,
+    commandPolicy: diagnostic ? 'finish_only' : 'production_tools',
     complete: (providerRequest, { signal } = {}) => {
       if (Date.now() - began >= limits.maxWallMs) fail('SUPPLEMENTAL_AUDIT_WALL_EXHAUSTED');
       return worker.complete({ workerRef: attached.workerRef, providerRequest, signal });
     }, onUsage: ledger => console.log(JSON.stringify({ event: 'usage', calls: ledger.calls, tokens: ledger.knownTokens,
       runEstimateOrReserveCny: ledger.reservedOrSettledMicros / 1e6,
       cumulativeEstimateOrReserveCny: (historyMicros + store.globalSummary().reservedOrSettledMicros) / 1e6 })) });
-  result = await evaluateOverallSourceRegressionV3({ candidate, probes: supplemental, store, model });
-  await writeFile(path.join(OUT, 'actual-supplemental-source-audit.json'), JSON.stringify(result, null, 2));
-  if (!result.passed) fail('SUPPLEMENTAL_SOURCE_CASES_FAILED');
-  if (!parentEvidence.exams.qualityPassed) fail('SUPPLEMENTAL_PARENT_QUALITY_NOT_PASSED');
+  result = diagnostic ? await evaluateComprehensionDiagnosticV1({ candidate, drills, legacyDrills, supplemental, store, model,
+    onProgress: row => console.log(JSON.stringify({ event: 'diagnostic-group', ticket: 18, slice: 173, ...row })) })
+    : await evaluateOverallSourceRegressionV3({ candidate, probes: supplemental, store, model });
+  await writeFile(path.join(OUT, diagnostic ? 'actual-comprehension-diagnostic.json' : 'actual-supplemental-source-audit.json'), JSON.stringify(result, null, 2));
+  if (!diagnostic && !result.passed) fail('SUPPLEMENTAL_SOURCE_CASES_FAILED');
+  if (!diagnostic && !parentEvidence.exams.qualityPassed) fail('SUPPLEMENTAL_PARENT_QUALITY_NOT_PASSED');
 } catch (error) {
   failure = { code: /^[A-Z0-9_]{3,100}$/.test(error.code || '') ? error.code : 'SUPPLEMENTAL_SOURCE_AUDIT_FAILED', diagnosticHash: hash(String(error.message)) };
 } finally {
@@ -102,7 +115,9 @@ try {
   await worker?.close().catch(() => {});
   const ledger = store.summary(), global = store.globalSummary();
   const report = seal({ runId, recipeHash: recipe.hash, parentEvidenceHash: parentEvidence.hash,
-    candidateHash: candidate.hash, resultHash: result?.hash || null, correct: result?.correct || 0, total: supplemental.cases.length,
+    candidateHash: candidate.hash, resultHash: result?.hash || null, correct: result?.correct || 0,
+    total: diagnosticManifest?.cases || supplemental.cases.length, diagnostic,
+    diagnosticCompleted: diagnostic && !!result?.diagnosticCompleted && !failure, baselineOverwritten: false,
     baseExamsPassed: parentEvidence.exams.qualityPassed, additionalCasesPassed: !!result?.passed,
     passed: !!result?.passed && !failure, failure, ledger, knownRiskNotFreshHeldout: true,
     cumulativeKnownTokensLowerBound: historyTokens + global.knownTokens,
