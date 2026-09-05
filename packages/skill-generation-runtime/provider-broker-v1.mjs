@@ -613,6 +613,16 @@ function expectedCurrentBinding(stagedInput) {
   };
 }
 
+function modelFacingRoleRequest(request) {
+  const projected = clone(request);
+  // The host validates this denied capability before projection. Do not send
+  // credential/secret-shaped field names across the generic Provider
+  // transport boundary, whose scanner intentionally rejects them regardless
+  // of their value.
+  delete projected.capabilities.readHostSecrets;
+  return freeze(projected);
+}
+
 export function compileStarcraftTmgOfflineSkillRoleProviderRequestV1(input = {}) {
   exactFields(input, new Set(["jobManifest", "rolePacket", "requestId"]),
     "role Provider compile input");
@@ -673,7 +683,7 @@ export function compileStarcraftTmgOfflineSkillRoleProviderRequestV1(input = {})
       schemaHash: job.toolContract.schemaHash,
       candidateEmissionAvailableToModelRole: false,
     },
-    roleRequest: clone(packet.request),
+    roleRequest: modelFacingRoleRequest(packet.request),
     stagedInput: clone(packet.stagedInput),
     contextReceipts: clone(packet.contextReceipts),
     outputChannel: "skill_generation_role_output",
@@ -711,12 +721,30 @@ export function compileStarcraftTmgOfflineSkillRoleProviderRequestV1(input = {})
   });
 }
 
+function providerResultRejection(reason) {
+  const error = new TypeError("Provider broker result is invalid");
+  error.rejectionClass = reason;
+  throw error;
+}
+
+function hasExactFieldSubset(value, allowed) {
+  return object(value) && Object.keys(value).every((key) => allowed.has(key));
+}
+
 function normalizeProviderSuccess(result, compiled, job) {
-  exactFields(result, PROVIDER_RESULT_FIELDS, "Provider broker result");
-  exactFields(result.output, PROVIDER_OUTPUT_FIELDS, "Provider broker output");
-  exactFields(result.usageReceipt, PROVIDER_USAGE_RECEIPT_FIELDS,
-    "Provider usage receipt");
-  exactFields(result.usageReceipt.usage, USAGE_FIELDS, "Provider usage");
+  if (!hasExactFieldSubset(result, PROVIDER_RESULT_FIELDS)) {
+    providerResultRejection("result_envelope_fields");
+  }
+  if (!hasExactFieldSubset(result.output, PROVIDER_OUTPUT_FIELDS)) {
+    providerResultRejection("output_envelope_fields");
+  }
+  if (!hasExactFieldSubset(result.usageReceipt,
+    PROVIDER_USAGE_RECEIPT_FIELDS)) {
+    providerResultRejection("usage_receipt_fields");
+  }
+  if (!hasExactFieldSubset(result.usageReceipt.usage, USAGE_FIELDS)) {
+    providerResultRejection("usage_fields");
+  }
   const output = result.output;
   const receipt = result.usageReceipt;
   const channelKeys = object(output.channels) ? Object.keys(output.channels) : [];
@@ -725,26 +753,38 @@ function normalizeProviderSuccess(result, compiled, job) {
   if (output.schemaVersion !== "starcraft_tmg_offline_skill_role_output_v1"
     || channelKeys.length !== 1
     || channelKeys[0] !== "skill_generation_role_output"
-    || !object(output.channels.skill_generation_role_output)
-    || receiptHash !== hashStarcraftTmgContract(receiptBody)
-    || receipt.schemaVersion
+    || !object(output.channels.skill_generation_role_output)) {
+    providerResultRejection("output_channel_contract");
+  }
+  if (receiptHash !== hashStarcraftTmgContract(receiptBody)) {
+    providerResultRejection("usage_receipt_hash");
+  }
+  if (receipt.schemaVersion
       !== "starcraft_tmg_provider_egress_transport_v1.success"
-    || receipt.requestId !== compiled.providerRequest.requestId
-    || receipt.providerProfileRef?.id !== job.providerProfileRef.id
+    || receipt.requestId !== compiled.providerRequest.requestId) {
+    providerResultRejection("usage_receipt_request_binding");
+  }
+  if (receipt.providerProfileRef?.id !== job.providerProfileRef.id
     || receipt.providerProfileRef?.version !== job.providerProfileRef.version
-    || receipt.providerProfileRef?.hash !== job.providerProfileRef.hash
-    || receipt.providerId !== STARCRAFT_TMG_SKILL_COST_POLICY_V1.providerId
+    || receipt.providerProfileRef?.hash !== job.providerProfileRef.hash) {
+    providerResultRejection("usage_receipt_profile_binding");
+  }
+  if (receipt.providerId !== STARCRAFT_TMG_SKILL_COST_POLICY_V1.providerId
     || receipt.requestedModel !== job.providerProfileRef.model
-    || receipt.reportedModel !== job.providerProfileRef.model
-    || !HASH.test(receipt.egressPolicyHash)
+    || receipt.reportedModel !== job.providerProfileRef.model) {
+    providerResultRejection("usage_receipt_provider_model_binding");
+  }
+  if (!HASH.test(receipt.egressPolicyHash)
     || !(receipt.providerRequestIdHash === null
       || HASH.test(receipt.providerRequestIdHash))
     || !(receipt.providerSystemFingerprintHash === undefined
       || receipt.providerSystemFingerprintHash === null
       || HASH.test(receipt.providerSystemFingerprintHash))
     || !HASH.test(receipt.responseFingerprint)
-    || !HASH.test(receipt.dnsAddressSetHash)
-    || !Number.isSafeInteger(receipt.status)
+    || !HASH.test(receipt.dnsAddressSetHash)) {
+    providerResultRejection("usage_receipt_identity_fields");
+  }
+  if (!Number.isSafeInteger(receipt.status)
     || receipt.status < 200 || receipt.status >= 300
     || receipt.tlsServerName !== "api.deepseek.com"
     || receipt.tlsCertificateVerificationDisabled !== false
@@ -754,18 +794,28 @@ function normalizeProviderSuccess(result, compiled, job) {
     || receipt.automaticRetries !== 0
     || receipt.trainingTruth !== false
     || !Number.isFinite(Date.parse(receipt.startedAt))
-    || !Number.isFinite(Date.parse(receipt.finishedAt))
-    || ![usage.inputUnits, usage.outputUnits, usage.totalUnits,
-      usage.inputCacheHitUnits, usage.inputCacheMissUnits,
-      usage.reasoningOutputUnits]
+    || !Number.isFinite(Date.parse(receipt.finishedAt))) {
+    providerResultRejection("usage_receipt_transport_fields");
+  }
+  if (![usage.inputUnits, usage.outputUnits, usage.totalUnits,
+    usage.inputCacheHitUnits, usage.inputCacheMissUnits]
       .every((value) => Number.isSafeInteger(value) && value >= 0)
     || usage.inputCacheHitUnits + usage.inputCacheMissUnits !== usage.inputUnits
-    || usage.totalUnits < usage.inputUnits + usage.outputUnits
-    || usage.reasoningOutputUnits > usage.outputUnits
-    || usage.inputUnits > compiled.budget.maxInputTokens
-    || usage.outputUnits > compiled.budget.maxOutputTokens
-    || containsStarcraftTmgOnlineCredentialMaterialV1(result)) {
-    throw new TypeError("Provider broker result is invalid");
+    || usage.totalUnits < usage.inputUnits + usage.outputUnits) {
+    providerResultRejection("usage_required_totals");
+  }
+  if (usage.reasoningOutputUnits !== undefined
+    && (!Number.isSafeInteger(usage.reasoningOutputUnits)
+      || usage.reasoningOutputUnits < 0
+      || usage.reasoningOutputUnits > usage.outputUnits)) {
+    providerResultRejection("usage_optional_reasoning");
+  }
+  if (usage.inputUnits > compiled.budget.maxInputTokens
+    || usage.outputUnits > compiled.budget.maxOutputTokens) {
+    providerResultRejection("usage_budget");
+  }
+  if (containsStarcraftTmgOnlineCredentialMaterialV1(result)) {
+    providerResultRejection("result_sensitive_material");
   }
   return freeze(clone(result));
 }
@@ -891,7 +941,7 @@ export function createStarcraftTmgOfflineSkillProviderBrokerV1(options = {}) {
     let safeResult;
     try {
       safeResult = normalizeProviderSuccess(result, compiled, job);
-    } catch {
+    } catch (error) {
       const localFailureHash = hashStarcraftTmgContract({
         code: "OFFLINE_PROVIDER_RESULT_REJECTED",
         providerRequestHash: compiled.providerRequestHash,
@@ -907,6 +957,8 @@ export function createStarcraftTmgOfflineSkillProviderBrokerV1(options = {}) {
           role: compiled.role,
           providerRequestHash: compiled.providerRequestHash,
           costSettlementHash: settlement.settlementHash,
+          resultRejectionClass:
+            error?.rejectionClass || "unclassified_result_rejection",
           requestDefinitelyNotSent: false,
           requestMayHaveBeenSent: true,
           physicalAttempts: 1,

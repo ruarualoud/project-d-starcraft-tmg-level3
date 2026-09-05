@@ -350,9 +350,7 @@ function evidenceRef(row) {
     kind: row.kind,
     contentHash: row.contentHash,
     locatorHash: row.locator.locatorHash,
-    rulesReceiptHash: row.kind === "current_rule_atom"
-      ? row.rulesReceipt.receiptHash
-      : null,
+    rulesReceiptHash: row.rulesReceipt?.receiptHash || null,
   });
 }
 
@@ -373,7 +371,7 @@ function normalizeClaim(input, context) {
   const rows = evidenceIds.map((id) => context.evidenceById.get(id));
   if (rows.some((row) => !row)) fail("TEACH_CTX2SKILL_CLAIM_EVIDENCE_UNSTAGED", claimId);
   if (claimType === "legality" && !rows.some((row) => (
-    row.kind === "current_rule_atom"
+    ["current_rule_atom", "current_rule_index"].includes(row.kind)
     && row.rulesReceipt?.receiptHash === context.currentBinding.rulesReceiptHash
   ))) {
     fail("TEACH_CTX2SKILL_LEGALITY_CLAIM_RULES_RECEIPT_REQUIRED", claimId);
@@ -1218,7 +1216,7 @@ function assertCandidateClaim(claim, stagedInput) {
     }
   }
   if (claim.claimType === "legality" && !claim.evidenceRefs.some((ref) => (
-    ref.kind === "current_rule_atom"
+    ["current_rule_atom", "current_rule_index"].includes(ref.kind)
     && ref.rulesReceiptHash === stagedInput.bindings.rules.receiptHash
   ))) fail("TEACH_CTX2SKILL_CANDIDATE_RULES_RECEIPT_REQUIRED", claim.claimId);
 }

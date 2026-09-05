@@ -655,6 +655,31 @@ await check("invalid_json_and_credential_shaped_output_are_rejected", async () =
   const invalid = await fixtureTransport({ plans: [{ payload: "not-json" }] });
   await assert.rejects(completeFixture(invalid),
     /PROVIDER_RESPONSE_CONTRACT_REJECTED/u);
+  for (const [payload, expectedCode] of [
+    [successPayload({
+      choices: [{ message: { content: "not-json" }, finish_reason: "stop" }],
+    }), "PROVIDER_RESPONSE_JSON_INVALID"],
+    [successPayload({
+      choices: [{ message: {}, finish_reason: "stop" }],
+    }), "PROVIDER_RESPONSE_EMPTY_CONTENT"],
+    [successPayload({
+      choices: [{ message: { content: "{\"partial\":" },
+        finish_reason: "length" }],
+    }), "PROVIDER_RESPONSE_OUTPUT_TRUNCATED"],
+  ]) {
+    const malformed = await fixtureTransport({ plans: [{ payload }] });
+    await assert.rejects(completeFixture(malformed), (error) => {
+      assert.equal(error.code, expectedCode);
+      assert.equal(error.safeReceipt.requestDefinitelyNotSent, false);
+      assert.equal(error.safeReceipt.requestMayHaveBeenSent, true);
+      assert.equal(error.safeReceipt.physicalAttempts, 1);
+      assert.equal(error.safeReceipt.automaticRetries, 0);
+      const { receiptHash, ...body } = error.safeReceipt;
+      assert.equal(receiptHash, hashStarcraftTmgContract(body));
+      return true;
+    });
+    assert.equal(malformed.fixture.count(), 1);
+  }
   const unsafe = await fixtureTransport({ plans: [{ payload: successPayload({
     choices: [{ message: { content: JSON.stringify({
       channels: { reply: { authorization: "Bearer syntheticpollution123" } },

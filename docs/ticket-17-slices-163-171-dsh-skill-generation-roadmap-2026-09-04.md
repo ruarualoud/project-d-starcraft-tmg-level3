@@ -1,9 +1,37 @@
 # Ticket 17 — DSH offline Skill-generation Adapter roadmap
 
 Date: 2026-09-04
-Status: Slices 163–169 complete; Ticket 17 is 7/9
+Status: Slices 163–170 complete; Ticket 17 is 8/9; Slice171 remains
 Project status: 15/22 Tickets complete; Ticket 14 physical-device acceptance remains deferred and unwaived
 Source refresh: not performed
+
+## 2026-09-05 execution amendment — takes precedence
+
+Implementation closure: 170-B/C/D/E are implemented and the 20/20 chapter
+pilot is complete. Engineering gates:18; supplementary-question assertions:87;
+known-miss quarantine:9; Provider safety:40; legacy hold audit:9.
+Raw DSH/direct drills:28/36 versus23/36; supplementary clarified questions:
+35/36 each. A confirmed numeric-boundary reviewer miss is explicitly recorded;
+both candidates remain quarantined. No causal DSH-benefit claim is made.
+See [the results and costs](ticket-17-slice-170-production-results-2026-09-05.md).
+See [the implementation record](ticket-17-slice-170-four-step-implementation-2026-09-05.md).
+Legacy paid entrypoints below remain held. No full-game or publication claim
+is inferred from mechanism drills or model semantic agreement.
+
+Historical audit decision (superseded only by the reviewed new pilot above):
+paid legacy Slice170 generation was paused after the end-to-end design audit.
+Follow [the production/play/evolution redesign](skill-production-play-evolution-redesign-2026-09-05.md)
+instead of retrying Attempt11. Slice170 now contains five work points:
+170-A audit/hold (complete), 170-B real evidence and semantic/mechanics checks,
+170-C durable checkpoints/accounting/bounded repair, 170-D actual DSH tool loop,
+170-E bounded production-target pilot. These are not five new global Slices.
+At that audit point Ticket17 was 7/9; scope increased by moving minimum production-critical
+recovery/correction/evaluation from Ticket18 into Slice170.
+The old Fact Judge proves reference binding only, Cross-Time does not execute
+fixtures, and the blind score measures keywords rather than strategy quality.
+Their prior checks remain historical engineering evidence, not quality proof.
+User authorization for future production is retained, but cannot substitute
+for readiness. No game-source refresh or new paid call occurred in this audit.
 
 ## Outcome required
 
@@ -18,7 +46,8 @@ The four Skill families are `how_to_play`, `mission`, `faction` and `matchup`.
 Their job counts are derived from the current official registries and can grow
 with versioned data; they are not capped by a handwritten small number. This
 Ticket proves one bounded `how_to_play` pair. Producing the full four-family
-catalogue remains behind the user's separate large-scale-production approval.
+catalogue remains behind readiness, cost and priority gates; the user's later
+standing authorization for Skill generation is retained, without repeated key entry.
 
 ## Source and version freeze
 
@@ -76,7 +105,7 @@ containment.
 | 167 | **Complete.** Install the exact DSH package in the isolated runtime and freeze profile, plugin lock, effective config and Session parser. | Exact `0.1.1-rc.2` npm/tag/commit; 35,962-entry runtime tree; 81 config rows; 78-package plugin lock; real five-event DSH Session; 23/23 focused; no Provider call. |
 | 168 | **Complete.** Implement the common credential/Provider broker and the real DSH-off control executor. | Same arm-neutral prompt compiler/model/tools/budgets as DSH; one physical attempt per role; Ticket16 isolated Worker reuse; independently reconstructable input/output/cache/total-token and cost receipts; pre-egress notification for every crossed ¥100 tier; 33/33 deterministic checks. |
 | 169 | **Complete.** Implement the real DSH executor, candidate tool bridge, Session redaction and RunReceipt. | Seven real DSH role Sessions plus one candidate-tool Session; seven bounded host Broker relays; hash-only safe transcript; complete usage/cost/lineage receipt; 19/19 crash/timeout/cardinality/secret/authority checks. |
-| 170 | Run one bounded real DSH-on/direct-control pair and blind quality evaluation. | One frozen `how_to_play` task, same Provider/model/input/tool/budget, one candidate per arm, actual Session/usage/cost receipts and predeclared blind metrics; both remain unreviewed. |
+| 170 | **Complete.** Bounded real DSH/direct pair with source/mechanics evaluation and durable correction. | 20/20 chapters, original metrics28/36 versus23/36, supplementary35/36 each; exact source-bound reviewer miss preserved; both candidates quarantined, not published. Detailed results and immutable recipes are linked above. |
 | 171 | Run the predecessor→current adversarial aggregate and close Ticket 17. | Re-run Ticket16 closure and all Ticket17 gates; secret and authority audit; frozen handoff to Ticket18; no publication, Memory, self-play, MuZero or training truth. |
 
 Slice 165 performs no model call. Its one candidate is a deterministic verifier
@@ -118,13 +147,15 @@ counts, plus estimated and Provider-reported cost where available. Slice 168
 must pin the pricing and USD/CNY conversion evidence used for forecasts and
 emit a user notification before cumulative estimated spend crosses each
 `¥100` tier (`¥100`, `¥200`, and so on). This is an observability threshold,
-not hidden permission for large-scale generation; full production still needs
-the separate approval above.
+not a waiver of readiness. The user's standing generation authorization
+does not bypass budget, source, quality or publication gates.
 
 ## Ticket 18 boundary
 
-Ticket 18, not Ticket 17, owns the durable SQLite/PostgreSQL Skill scheduler,
-leases/fencing/WAL recovery, multi-round correction and stopping policy,
-independent Fact/Semantic/Held-out/Cross-Time/A-B gates, administrator
-promotion, registry pointer CAS and rollback. The existing in-memory scheduler
-and promotion files remain scaffold evidence until that work is completed.
+The 2026-09-05 amendment moved the minimum local SQLite checkpoints, usage
+ledger, bounded correction and real semantic/mechanics evaluation into
+Slice170. Ticket18 extends this working foundation into the multi-worker
+SQLite/PostgreSQL Skill scheduler, independent held-out/arena evaluation,
+administrator promotion, registry pointer CAS and rollback. It also delivers
+the first five usable Skills. Earlier in-memory scheduler and promotion files
+remain scaffold evidence; the new local pilot does not waive those gates.

@@ -688,6 +688,47 @@ function renderCandidateMarkdown(candidate) {
   ].join("\n");
 }
 
+function candidateEvidenceProvenance(candidate) {
+  const claimRefs = candidate.skillArtifact.claims.map((claim) => ({
+    claimId: claim.claimId,
+    claimHash: claim.claimHash,
+    evidenceRefs: clone(claim.evidenceRefs),
+  }));
+  const evidenceByHash = new Map();
+  for (const claim of claimRefs) {
+    for (const ref of claim.evidenceRefs) {
+      evidenceByHash.set(hashStarcraftTmgContract(ref), ref);
+    }
+  }
+  return freeze({
+    taskRef: clone(candidate.taskRef),
+    claimRefs,
+    evidenceRefs: [...evidenceByHash.values()],
+  });
+}
+
+function candidateRuleBinding(job, candidate) {
+  if (job.skillType === "turn_flow") return freeze({
+    appRuleEndpoints: [
+      "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/legal-space",
+      "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/preview",
+      "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/apply",
+      "GET /starcraft-tmg-level3/api/v1/rooms/:roomId/replay",
+    ],
+    phase: "multi_phase",
+  });
+  if (job.skillType === "movement") return freeze({
+    appRuleEndpoints: [
+      "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/legal-space",
+    ],
+    phase: "movement",
+  });
+  return freeze({
+    appRuleEndpoints: [],
+    phase: candidate.skillArtifact.skillType,
+  });
+}
+
 export function verifyStarcraftTmgDshExecutionSessionV1(
   value,
   jobManifest,
@@ -787,6 +828,15 @@ export async function createStarcraftTmgDshSkillExecutorV1(options = {}) {
   const now = typeof options.now === "function"
     ? options.now : () => new Date().toISOString();
   const startedAt = new Date(options.startedAt || now()).toISOString();
+  const roleTimeoutMs = Number(options.roleTimeoutMs ?? ROLE_TIMEOUT_MS);
+  if (!Number.isSafeInteger(roleTimeoutMs)
+    || roleTimeoutMs < 1_000 || roleTimeoutMs > 180_000) {
+    throw new TypeError("DSH role timeout is invalid");
+  }
+  const isolationJobPrefix = safeId(
+    options.isolationJobPrefix || "ticket17-slice169",
+    "isolationJobPrefix",
+  );
   const roleExecutions = [];
   let candidateEmission;
   let state = "open";
@@ -820,7 +870,7 @@ export async function createStarcraftTmgDshSkillExecutorV1(options = {}) {
     let brokerResult;
     try {
       const execution = await runner.runMediated({
-        jobId: `ticket17-slice169-${expectedRole}`,
+        jobId: `${isolationJobPrefix}-${expectedRole}`,
         attestationHash: isolationAttestation.attestationHash,
         entrySource: STARCRAFT_TMG_DSH_EXECUTOR_WORKER_SOURCE,
         stagedInput: workerInput({
@@ -869,7 +919,7 @@ export async function createStarcraftTmgDshSkillExecutorV1(options = {}) {
             };
           },
         },
-        timeoutMs: ROLE_TIMEOUT_MS,
+        timeoutMs: roleTimeoutMs,
       });
       const output = execution.output;
       if (output.schemaVersion === "starcraft_tmg_dsh_executor_error_v1") {
@@ -941,7 +991,7 @@ export async function createStarcraftTmgDshSkillExecutorV1(options = {}) {
     );
     try {
       const execution = await runner.run({
-        jobId: "ticket17-slice169-candidate-emission",
+        jobId: `${isolationJobPrefix}-candidate-emission`,
         attestationHash: isolationAttestation.attestationHash,
         entrySource: STARCRAFT_TMG_DSH_EXECUTOR_WORKER_SOURCE,
         stagedInput: workerInput({
@@ -960,7 +1010,7 @@ export async function createStarcraftTmgDshSkillExecutorV1(options = {}) {
           sourceRoot: pinned.runtimeRoot,
           expectedManifestHash: pinned.receipt.runtimeTreeHash,
         },
-        timeoutMs: ROLE_TIMEOUT_MS,
+        timeoutMs: roleTimeoutMs,
       });
       const output = execution.output;
       if (output.schemaVersion === "starcraft_tmg_dsh_executor_error_v1") {
@@ -1076,6 +1126,7 @@ export async function createStarcraftTmgDshSkillExecutorV1(options = {}) {
       isolationAttestation,
     );
     const candidate = roleGraphResult.candidate;
+    const ruleBinding = candidateRuleBinding(job, candidate);
     const candidateBundle = createStarcraftTmgCandidateSkillBundle({
       jobManifest: job,
       skillArtifact: {
@@ -1083,8 +1134,8 @@ export async function createStarcraftTmgDshSkillExecutorV1(options = {}) {
         version: candidate.skillArtifact.version,
         skillType: candidate.skillArtifact.skillType,
         sourceRefs: job.sourceSnapshotRefs,
-        appRuleEndpoints: [],
-        phase: "multi_phase",
+        appRuleEndpoints: ruleBinding.appRuleEndpoints,
+        phase: ruleBinding.phase,
         preconditions: [],
         procedure: candidate.skillArtifact.procedure,
         legalityChecks: candidate.skillArtifact.legalityChecks,
@@ -1100,6 +1151,7 @@ export async function createStarcraftTmgDshSkillExecutorV1(options = {}) {
         roleGraphCandidateHash: candidate.candidateHash,
         dshExecutionSessionHash: session.sessionHash,
         currentBinding: candidate.currentBinding,
+        ...candidateEvidenceProvenance(candidate),
       },
       unresolvedClaims: candidate.skillArtifact.unresolvedClaims,
       promotionBlockers: [

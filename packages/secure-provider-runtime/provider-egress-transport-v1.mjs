@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { lookup as dnsLookup } from "node:dns/promises";
 import https from "node:https";
 import net from "node:net";
+import { captureProviderResponseOutcomeV1, normalizeProviderJsonDocumentV1 } from "./provider-response-outcome-v1.mjs";
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -297,20 +298,33 @@ function contentText(content) {
   return parts.length ? parts.join("") : null;
 }
 
-function outputFromPayload(payload) {
-  const message = payload?.choices?.[0]?.message;
+function outputFromPayload(payload, physicalAttempts, allowSingleFence = false) {
+  const choice = payload?.choices?.[0];
+  const message = choice?.message;
+  const finishReason = String(choice?.finish_reason || "");
+  if (finishReason === "length") throw new StarcraftTmgProviderEgressError(
+    "PROVIDER_RESPONSE_OUTPUT_TRUNCATED", { requestMayHaveBeenSent: true, physicalAttempts });
   if (object(message?.parsed)) return clone(message.parsed);
   if (object(message?.content)) return clone(message.content);
-  const text = contentText(message?.content);
+  const rawText = contentText(message?.content);
+  const text = allowSingleFence ? normalizeProviderJsonDocumentV1(rawText).text : rawText;
   if (!text) throw new StarcraftTmgProviderEgressError(
-    "PROVIDER_RESPONSE_CONTRACT_REJECTED", { requestMayHaveBeenSent: true });
+    finishReason === "length" ? "PROVIDER_RESPONSE_OUTPUT_TRUNCATED"
+      : "PROVIDER_RESPONSE_EMPTY_CONTENT", {
+      requestMayHaveBeenSent: true,
+      physicalAttempts,
+    });
   try {
     const parsed = JSON.parse(text);
     if (!object(parsed)) throw new Error("not an object");
     return parsed;
   } catch {
     throw new StarcraftTmgProviderEgressError(
-      "PROVIDER_RESPONSE_CONTRACT_REJECTED", { requestMayHaveBeenSent: true });
+      finishReason === "length" ? "PROVIDER_RESPONSE_OUTPUT_TRUNCATED"
+        : "PROVIDER_RESPONSE_JSON_INVALID", {
+        requestMayHaveBeenSent: true,
+        physicalAttempts,
+      });
   }
 }
 
@@ -586,11 +600,17 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
               rawPayload.fill(0);
               for (const chunk of chunks) chunk.fill(0);
             }
+            const responseOutcome = options.captureResponseOutcome === true
+              ? captureProviderResponseOutcomeV1(payload, request, binding, now) : null;
             let output;
             try {
-              output = outputFromPayload(payload);
+              if (responseOutcome && !responseOutcome.usageKnown) throw new StarcraftTmgProviderEgressError(
+                "PROVIDER_RESPONSE_USAGE_UNKNOWN", { requestMayHaveBeenSent: true, physicalAttempts });
+              output = outputFromPayload(payload, physicalAttempts, options.captureResponseOutcome === true);
             } catch (error) {
-              fail(error);
+              fail(responseOutcome ? new StarcraftTmgProviderEgressError(error.code, {
+                requestMayHaveBeenSent: true, physicalAttempts, status, responseOutcome,
+              }) : error);
               return;
             }
             if (containsSensitiveMaterial(output)) {
@@ -623,6 +643,7 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
                 ? sha256(rawRequestId) : null,
               status,
               usage: safeUsage(payload?.usage),
+              ...(responseOutcome ? { responseNormalization: normalizeProviderJsonDocumentV1(contentText(payload?.choices?.[0]?.message?.content)).kind } : {}),
               responseFingerprint: sha256(JSON.stringify(output)),
               dnsAddressSetHash: addressSetHash,
               tlsServerName: binding.endpoint.hostname,

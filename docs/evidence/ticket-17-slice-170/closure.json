@@ -1,0 +1,681 @@
+{
+  "passed": true,
+  "ticket": 17,
+  "slice": 170,
+  "workPoints": [
+    "B",
+    "C",
+    "D",
+    "E"
+  ],
+  "verificationCodeHashes": [
+    {
+      "file": "scripts/verify-ticket-17-production-pilot-closure-v1.mjs",
+      "hash": "c71ace89a59f7b7fed456be3f1fad9210e4779e5d6f0147b069482e3b2865c12"
+    },
+    {
+      "file": "packages/skill-evaluation/candidate-disposition.mjs",
+      "hash": "07f02449b1bd15b849ebb2221d3fcd8b2e4cd807eef3a9b6f7ed9704c9e29100"
+    },
+    {
+      "file": "content/skill-generation/ticket-17-slice-170-post-pilot-findings-v1.mjs",
+      "hash": "167ccacbbcf567e925b8de243f3a7bf842a0c8b0ce54394015a25ac67897ee91"
+    },
+    {
+      "file": "scripts/verify-ticket-17-candidate-disposition-v1.mjs",
+      "hash": "5d6cafc0ed23c6fc9fe5c462cab343fe01fc08176c17fe0696a0b32c0ef7c3b5"
+    }
+  ],
+  "pilotId": "pilot-36ae8c6e1ade134e35f8",
+  "evaluationId": "evaluation-43f34b63b51c60ae529b",
+  "recipeHash": "36ae8c6e1ade134e35f8c56ca9a27f64031d9e204cd4d0cf00a0b778799489e6",
+  "pilotHash": "c00ffb58f437d6f56d61011f61672dcf576fc288fcc99a661273cfd60044c3de",
+  "evaluationHash": "cbc410e37b30c934ac10745c9f5741eee9feec7798c90fd4f6676c057573c446",
+  "catalogueHash": "156df2e36ca53ae0ff1af9874f7ff39684e50cf43de29909413ab33fca6dbd19",
+  "chapters": [
+    {
+      "arm": "dsh",
+      "chapterId": "setup",
+      "candidateHash": "d68e63385866caf1a49f42b7b8ea4245292db508fcb109779e05c6d2ddfe5f06",
+      "claims": 13,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "d68e63385866caf1a49f42b7b8ea4245292db508fcb109779e05c6d2ddfe5f06",
+        "supplementalHash": "135d5efbe13e18d5df5d10da2236091bec8338b4a0bf91c18f1b25938bbfe4c3",
+        "knownFindingHashes": [],
+        "reasons": [
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "3d45a1d46ab0eed7ba73355c0c1f61b1268e4aed16d8f28e5a273ec3e5f62f6c"
+      },
+      "rawCorrect": 4,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 109
+    },
+    {
+      "arm": "direct",
+      "chapterId": "setup",
+      "candidateHash": "f8d388d05f06e799d74eece2b1ad5d42086049f7bb6316cca78d4f73c2452227",
+      "claims": 15,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "f8d388d05f06e799d74eece2b1ad5d42086049f7bb6316cca78d4f73c2452227",
+        "supplementalHash": "5d0edc86137b7219d0013f46a97c087eea0507467e21e32257d539f6de2c227a",
+        "knownFindingHashes": [],
+        "reasons": [
+          "ORIGINAL_HELDOUT_NOT_PASSED",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "34c0f18c32748ff6c70f426c57bd182b7b1cd196ade69835160097694162d2c9"
+      },
+      "rawCorrect": 2,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 109
+    },
+    {
+      "arm": "direct",
+      "chapterId": "round",
+      "candidateHash": "de7032b0592c3dbff0cb657b1a608128d03c1a8b53be2c727f9200fdcb8006f9",
+      "claims": 16,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "de7032b0592c3dbff0cb657b1a608128d03c1a8b53be2c727f9200fdcb8006f9",
+        "supplementalHash": "44689e4f451ae41746d7180d7554c6128d82dbb7cfa8f1f826f9d1d45463192b",
+        "knownFindingHashes": [],
+        "reasons": [
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "d74f13ef592d6d6e3f5cb1e9fd8b5fd6a622f6b63ff737f6cd6c019928334bc0"
+      },
+      "rawCorrect": 4,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 40
+    },
+    {
+      "arm": "dsh",
+      "chapterId": "round",
+      "candidateHash": "9bef18e0788c09c97eb96cdc3a7b839c122ca78bb8b8351a9d47fe02ec8ea3b4",
+      "claims": 18,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "9bef18e0788c09c97eb96cdc3a7b839c122ca78bb8b8351a9d47fe02ec8ea3b4",
+        "supplementalHash": "7bb88346e1d337f5891b70fa1b0a1a1212a12989b9aaaae3d40bab842ba83a62",
+        "knownFindingHashes": [],
+        "reasons": [
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "c6641603b3fbf7e914e0d3e6985791d62d50c8237bb3be81b5f91734adfaacbc"
+      },
+      "rawCorrect": 4,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 40
+    },
+    {
+      "arm": "dsh",
+      "chapterId": "movement",
+      "candidateHash": "3c2d4127a604e86150527a08667b0db705888b6d96d2599bd4dd99de289fbb5d",
+      "claims": 17,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "3c2d4127a604e86150527a08667b0db705888b6d96d2599bd4dd99de289fbb5d",
+        "supplementalHash": "e62c83690c9c59c58785d2d4bab2cfae7844b0491d15546637d014ab41555a67",
+        "knownFindingHashes": [],
+        "reasons": [
+          "SUPPLEMENTARY_HELDOUT_NOT_PASSED",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "3f6e2268c25af833971c7f66cd6ac219d83b8c0b769fe082305698dd9fba1dae"
+      },
+      "rawCorrect": 4,
+      "clarifiedCorrect": 3,
+      "cases": 4,
+      "requiredSourceRefs": 5,
+      "remainingSourceRefs": 24
+    },
+    {
+      "arm": "direct",
+      "chapterId": "movement",
+      "candidateHash": "647ec4352ee62dbd033a0dab23b34af4ee700ef5ebb49880ac328bfbafc763d2",
+      "claims": 17,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "647ec4352ee62dbd033a0dab23b34af4ee700ef5ebb49880ac328bfbafc763d2",
+        "supplementalHash": "e31359ee9600f728178567816a644db9df56b7cb438ad8bffca84756a2645608",
+        "knownFindingHashes": [
+          "aba5ab588c31af9776d6250d22b5b5415c63fbf70f9fd12dbc262936bb70652e"
+        ],
+        "reasons": [
+          "SUPPLEMENTARY_HELDOUT_NOT_PASSED",
+          "KNOWN_REVIEWER_MISS",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "fe2d4b8329cfb95e6453dcbd7ec504cbf019229c29c38aed1322b54322a83c3b"
+      },
+      "rawCorrect": 4,
+      "clarifiedCorrect": 3,
+      "cases": 4,
+      "requiredSourceRefs": 5,
+      "remainingSourceRefs": 24
+    },
+    {
+      "arm": "direct",
+      "chapterId": "assault",
+      "candidateHash": "1609977418b44097114f481df7acdbcf00450845413560ed3a7398a148887f24",
+      "claims": 16,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "1609977418b44097114f481df7acdbcf00450845413560ed3a7398a148887f24",
+        "supplementalHash": "e55045663550b5834d55cc7cf07a77c1e457d0d886d9385088bc76f39bd99e9a",
+        "knownFindingHashes": [],
+        "reasons": [
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "b77ea6db6f4a99e0aff2e0c4821c3a7ac39b35b61ab743f6c6f9c1dd5f7174a5"
+      },
+      "rawCorrect": 4,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 11
+    },
+    {
+      "arm": "dsh",
+      "chapterId": "assault",
+      "candidateHash": "3aa940cbf62236f815ffcaa672565ca79fa3fce113c21f93fb558d0cca881047",
+      "claims": 16,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "3aa940cbf62236f815ffcaa672565ca79fa3fce113c21f93fb558d0cca881047",
+        "supplementalHash": "ee48cf0b8412027db913c19260826fe7db999361e54a7c019cbfb360ce0caf62",
+        "knownFindingHashes": [],
+        "reasons": [
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "aa37362a074683c752b16f050e20a6969f4cac9dba21d18fdea9fb969930ff27"
+      },
+      "rawCorrect": 4,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 11
+    },
+    {
+      "arm": "dsh",
+      "chapterId": "combat",
+      "candidateHash": "18517ebd6c73e03e5dec1af0c539e5ad97ccbf8b422855c8098366e5d5ace958",
+      "claims": 17,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "18517ebd6c73e03e5dec1af0c539e5ad97ccbf8b422855c8098366e5d5ace958",
+        "supplementalHash": "4919ad9611a4d20a95932b6abadc9c67b541336225d05817dee4f70fd8f95d71",
+        "knownFindingHashes": [],
+        "reasons": [
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "5cdac57929c053ec8417aead15bfb127b8c7f82dd3693ffc865ef6fbe4f8630d"
+      },
+      "rawCorrect": 4,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 21
+    },
+    {
+      "arm": "direct",
+      "chapterId": "combat",
+      "candidateHash": "87caa7c538ad087d9f3c7773dd8b292762b8929f37785f56b10e80dbba70eebf",
+      "claims": 15,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "87caa7c538ad087d9f3c7773dd8b292762b8929f37785f56b10e80dbba70eebf",
+        "supplementalHash": "63b637b2aa281a5a96235815064af3c304fb50637e7a2301d1cd33f4330b6ac0",
+        "knownFindingHashes": [],
+        "reasons": [
+          "ORIGINAL_HELDOUT_NOT_PASSED",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "0e3df824aaec641014a9c2a3b2190fdd1fcec2a4d35470fdc8a696ac01384a68"
+      },
+      "rawCorrect": 1,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 21
+    },
+    {
+      "arm": "direct",
+      "chapterId": "terrain",
+      "candidateHash": "7c178b10d207dbabff7e9995f8c7235ba479396eb081df3ff157c48222b083a9",
+      "claims": 12,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "7c178b10d207dbabff7e9995f8c7235ba479396eb081df3ff157c48222b083a9",
+        "supplementalHash": "1733d21e92ace003aea5594b3a3c9c7aaa98be9ae430c5677b1f3610747b8e7e",
+        "knownFindingHashes": [],
+        "reasons": [
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "977a2e2d1a59fc23019e09611a879fa97d92ae6aba603d50ad82e47cd041c8b9"
+      },
+      "rawCorrect": 4,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 19
+    },
+    {
+      "arm": "dsh",
+      "chapterId": "terrain",
+      "candidateHash": "8b7a227430708679128f653f8b9c1cb8af7d2db8723a0192b0294d2f76001f39",
+      "claims": 16,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "8b7a227430708679128f653f8b9c1cb8af7d2db8723a0192b0294d2f76001f39",
+        "supplementalHash": "23bcd5b2001a40dcb404aeb323b9642b80be1773391092b9e439961026d66d55",
+        "knownFindingHashes": [],
+        "reasons": [
+          "ORIGINAL_HELDOUT_NOT_PASSED",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "b54fab327dc6db534ab9a9faadf8af7bda658c943515567a312cacc2ca000779"
+      },
+      "rawCorrect": 3,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 19
+    },
+    {
+      "arm": "dsh",
+      "chapterId": "abilities",
+      "candidateHash": "7297f6b6887da854b370e3d1f09c32fd16189d25fc206b5ec17e99186d531ce1",
+      "claims": 18,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "7297f6b6887da854b370e3d1f09c32fd16189d25fc206b5ec17e99186d531ce1",
+        "supplementalHash": "c2d08b3fef243eb1b055c32cb73ad279d4f3cace406241e292fa5160c03a7900",
+        "knownFindingHashes": [],
+        "reasons": [
+          "ORIGINAL_HELDOUT_NOT_PASSED",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "6757892a93a1fa575214930d47381588e95cb03d36090343a664ca255f41d56a"
+      },
+      "rawCorrect": 0,
+      "clarifiedCorrect": 2,
+      "cases": 2,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 185
+    },
+    {
+      "arm": "direct",
+      "chapterId": "abilities",
+      "candidateHash": "c4d40b9c9a7aed70ed418ae2504fcc46aaee426953fa2c3da16e7a2c40e4b292",
+      "claims": 14,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "c4d40b9c9a7aed70ed418ae2504fcc46aaee426953fa2c3da16e7a2c40e4b292",
+        "supplementalHash": "934238623e4e20dfb2920b24a67b53dd9c13717cb67287923556abfcccb3f60f",
+        "knownFindingHashes": [],
+        "reasons": [
+          "ORIGINAL_HELDOUT_NOT_PASSED",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "543ed24c89ca9a86d35b12abd86f1d04c349cf0558b61dce16a417d13264af37"
+      },
+      "rawCorrect": 0,
+      "clarifiedCorrect": 2,
+      "cases": 2,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 185
+    },
+    {
+      "arm": "direct",
+      "chapterId": "tokens",
+      "candidateHash": "e64ffc9272f6a7fc5e2be7766fedc2b7df05b1b1666b5fddc0b0931ddf6013b6",
+      "claims": 16,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "e64ffc9272f6a7fc5e2be7766fedc2b7df05b1b1666b5fddc0b0931ddf6013b6",
+        "supplementalHash": "313b8390a39f5ac18bc21dcaead6f198abee32c53010099ff150537cc48d5451",
+        "knownFindingHashes": [],
+        "reasons": [
+          "ORIGINAL_HELDOUT_NOT_PASSED",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "0c9f3889746b30f7f8fdc68b092bd3aa8484c5b008ad07a352cab4e2b5b78904"
+      },
+      "rawCorrect": 3,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 5,
+      "remainingSourceRefs": 109
+    },
+    {
+      "arm": "dsh",
+      "chapterId": "tokens",
+      "candidateHash": "a3f2c0f10120ca2366a46b50a860ef8cc137cbad19d7114357bf2fa3092181dc",
+      "claims": 17,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "a3f2c0f10120ca2366a46b50a860ef8cc137cbad19d7114357bf2fa3092181dc",
+        "supplementalHash": "6301226d71ea190dae644f55530df6b5345a7f45db47d13031d96ca6aec9e487",
+        "knownFindingHashes": [],
+        "reasons": [
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "29d33213f047a695f864d33189e06a105d2c009b3542e78ba9fffd4f080124a3"
+      },
+      "rawCorrect": 4,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 5,
+      "remainingSourceRefs": 109
+    },
+    {
+      "arm": "dsh",
+      "chapterId": "scoring",
+      "candidateHash": "ac06f1609f3a856f3f203cb23707db7839f2613c87e917b57dd114cdce51451b",
+      "claims": 20,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "ac06f1609f3a856f3f203cb23707db7839f2613c87e917b57dd114cdce51451b",
+        "supplementalHash": "cb6779939aceaca82a27ae0004ecbef23abbd5e3246dca511038020ad42881af",
+        "knownFindingHashes": [],
+        "reasons": [
+          "ORIGINAL_HELDOUT_NOT_PASSED",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "52716a5d35ee6168504409d1089b0cbf8889d560241c74b0a4b8733860aff31c"
+      },
+      "rawCorrect": 0,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 107
+    },
+    {
+      "arm": "direct",
+      "chapterId": "scoring",
+      "candidateHash": "e1d971c985476208e2f8c94f6124ac586a0d47033eb39cdbe07d1c6bb4b8254e",
+      "claims": 16,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "e1d971c985476208e2f8c94f6124ac586a0d47033eb39cdbe07d1c6bb4b8254e",
+        "supplementalHash": "c0cafbe75a6e5c41ca7c2056180c9a4a15271d80539e07bdb3161b381e8385ae",
+        "knownFindingHashes": [],
+        "reasons": [
+          "ORIGINAL_HELDOUT_NOT_PASSED",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "e8d98337d812ceef0e9ee0cb4b5ef0e9300273c257f171a584795d238aba4721"
+      },
+      "rawCorrect": 0,
+      "clarifiedCorrect": 4,
+      "cases": 4,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 107
+    },
+    {
+      "arm": "direct",
+      "chapterId": "exceptions",
+      "candidateHash": "057416bf8d2f36c18d1526c4bc1d9e972f39a6c121e9a550e601097e836e90eb",
+      "claims": 16,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "057416bf8d2f36c18d1526c4bc1d9e972f39a6c121e9a550e601097e836e90eb",
+        "supplementalHash": "975bdf830ffadf5059554c94c565c0402ca0c3db30adda422a7eee5ff1d649b7",
+        "knownFindingHashes": [],
+        "reasons": [
+          "ORIGINAL_HELDOUT_NOT_PASSED",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "0359109d5cef5fc6bdc0b57e1f19a46aea19831e8ef1e37cfcd3792942714071"
+      },
+      "rawCorrect": 1,
+      "clarifiedCorrect": 2,
+      "cases": 2,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 107
+    },
+    {
+      "arm": "dsh",
+      "chapterId": "exceptions",
+      "candidateHash": "e2995adce9e763e28958281160591c243232c42c125b9f8de71b378c1623021b",
+      "claims": 14,
+      "semanticPassed": true,
+      "semanticRevisions": 0,
+      "semanticFindings": [],
+      "disposition": {
+        "candidateHash": "e2995adce9e763e28958281160591c243232c42c125b9f8de71b378c1623021b",
+        "supplementalHash": "08293df3e4626bbf761cfb66f50aa3324ef66b642eb4d4c56f063913779c69fd",
+        "knownFindingHashes": [],
+        "reasons": [
+          "ORIGINAL_HELDOUT_NOT_PASSED",
+          "INCOMPLETE_SOURCE_SCOPE",
+          "ROOM_ARENA_AND_REGISTRY_APPROVAL_NOT_PERFORMED"
+        ],
+        "status": "quarantined_candidate",
+        "automaticQualityAccepted": false,
+        "published": false,
+        "trainingTruth": false,
+        "hash": "13b87a0227a3df7b669407678fac2918823fb42b562c32f4073e7c26797601d3"
+      },
+      "rawCorrect": 1,
+      "clarifiedCorrect": 2,
+      "cases": 2,
+      "requiredSourceRefs": 4,
+      "remainingSourceRefs": 107
+    }
+  ],
+  "armStats": [
+    {
+      "arm": "dsh",
+      "chapters": 10,
+      "claims": 166,
+      "semanticPassed": 10,
+      "rawCorrect": 28,
+      "clarifiedCorrect": 35,
+      "cases": 36,
+      "semanticRevisions": 0,
+      "modelStages": 53,
+      "toolCalls": 33,
+      "inheritedStages": 47,
+      "actualDshSessions": 53
+    },
+    {
+      "arm": "direct",
+      "chapters": 10,
+      "claims": 153,
+      "semanticPassed": 10,
+      "rawCorrect": 23,
+      "clarifiedCorrect": 35,
+      "cases": 36,
+      "semanticRevisions": 0,
+      "modelStages": 53,
+      "toolCalls": 31,
+      "inheritedStages": 43,
+      "actualDshSessions": 0
+    }
+  ],
+  "knownReviewerMisses": [
+    {
+      "candidateHash": "647ec4352ee62dbd033a0dab23b34af4ee700ef5ebb49880ac328bfbafc763d2",
+      "claimId": "cautions.3",
+      "code": "INCLUSIVE_MINIMUM_MISLABELLED_AS_UNSPECIFIED",
+      "source": {
+        "ref": "core.I03mzBYujgXw6xN2qXhH.items.6",
+        "spanId": "p1"
+      },
+      "expectedSourceHash": "b470136ba1537aaca0c44797dfbf7599b6beb42ed892e1a92b0a1adb665ee6d9",
+      "explanation": "The source says at least 3 inches for Size 3 or larger. Exactly 3 satisfies this clearance constraint; this does not assert complete movement or endpoint legality.",
+      "counterexampleId": "heldout.movement.3",
+      "reviewKind": "codex_engineering_review_not_human_approval",
+      "evidenceHash": "b470136ba1537aaca0c44797dfbf7599b6beb42ed892e1a92b0a1adb665ee6d9",
+      "sourceQuote": "Not every gap in the terrain is wide enough to squeeze through, and a Siege Tank does not thread the same needle as a Zergling.\n\nA gap is any physical space between terrain pieces or models, through which a model's path of movement passes.\n\n>\n\nThe Leading Model can pass through gaps depending on the Unit’s Size:\n\n• Size 2 or lower: May pass through gaps at least 1\" wide. Infantry and smaller creatures exploit narrow corridors that larger Units cannot.\n\n• Size 3 or larger: Requires a gap at least 3\" wide.\n\nRegardless of clearance, a model cannot be set where its base doesn’t physically fit. Clearance governs movement through a space, not stopping inside one.\n\nOpenings in terrain pieces - such as archways, doorways, and breaches - are treated as gaps for the purpose of Gap Clearance, even if the surrounding terrain piece is Size 2 or larger. The gap must be wide enough for the model’s Size category. Players should agree on which terrain openings are passable during Battlefield Setup.\n\n",
+      "counterexampleReceiptHash": "3aef2567e2a1672d4fe058b330b27bf98997e32cca5a7715ee1e63bc0d945f2e",
+      "authority": "quarantine_only",
+      "hash": "aba5ab588c31af9776d6250d22b5b5415c63fbf70f9fd12dbc262936bb70652e"
+    }
+  ],
+  "newKnownTokens": 1691903,
+  "newKnownUsageEstimatedCny": 2.482751,
+  "newEstimatedOrReservedCny": 2.482751,
+  "totalKnownTokensLowerBound": 4556327,
+  "totalKnownUsageEstimateCny": 7.535144,
+  "totalEstimateWithHistoricalReservesCny": 36.496494,
+  "historicalUnknownReserveCny": 28.96135,
+  "newUnknownCalls": 0,
+  "cnyPerUsdFrozen": 8,
+  "invoice": false,
+  "validation": "chapter_source_bindings_reviews_and_both_kernel_metrics_reexecuted",
+  "scope": "bounded_candidate_pipeline_acceptance_not_all_rules_or_play_effectiveness",
+  "fullRuleCoverage": false,
+  "dshBenefitProven": false,
+  "roomReplayPerformed": false,
+  "formalSkillsPublished": 0,
+  "trainingTruth": false,
+  "paidCallsByThisVerifier": 0,
+  "hash": "82557af070d05f8cf82c5dd1f8be30740969154206d335b8572f61847fe2d5d1"
+}

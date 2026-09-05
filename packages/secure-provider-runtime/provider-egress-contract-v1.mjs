@@ -1,4 +1,5 @@
 import net from "node:net";
+import { assertProviderResponseOutcomeV1 } from "./provider-response-outcome-v1.mjs";
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -171,6 +172,8 @@ export class StarcraftTmgProviderEgressError extends Error {
         ? details.physicalAttempts : 0,
       automaticRetries: 0,
       trainingTruth: false,
+      ...(details.responseOutcome && assertProviderResponseOutcomeV1(details.responseOutcome)
+        ? { responseOutcome: clone(details.responseOutcome) } : {}),
     };
     this.safeReceipt = freeze({
       ...receiptBody,
