@@ -47,3 +47,15 @@ Checkpoint **20/37, 17 remaining**, 021 in progress. At 14 settled new calls: 1,
 Eight supplementary probes are now source-bound in `packages/skill-evaluation/supplemental-source-probes-v1.mjs`: Flying endpoint versus path distance, Ground passage through Flying bases, every base point's Speed limit, timed effects while in Reserves, no extra same-phase activation from returning to Reserves, sticky control on ties, and the two partial-visibility Indirect Fire exceptions. These were written after early-packet inspection and are explicitly **development/known-risk regressions, not fresh held-out cases**. They do not assert that the complete Skill has already failed or passed them.
 
 `verify-ticket-18-supplemental-source-probes-v1.mjs` passes 10 engineering checks, with the full 37-section synthetic input, no source/expected-answer leakage to the reader, persisted reuse, negative results retained without repeated answer attempts, and source/expected-answer drift rejection. Manifest `79bdf24b66a2c4c2ba1f4acc214dd70cb7852e60246fcc3efbbd15d4cac74ca7`; readiness `fc71a055a66af30f9d346570635b40eb942787f2c2dc6eb036285b2302256cda`. Zero Provider calls; actual complete-Skill evaluation remains pending. Run these in addition to—not in place of—the existing 14 + 105 cases after complete assembly. No running-production code or recipe was changed to add this separate preparation.
+
+## Latest live checkpoint: 23/37
+
+The same `overall-v3-cdf99e843cad9297a084` process continues. Packets 021–023 all passed their first two actual source reviews, without a schema or semantic repair:
+
+- 021: `29d4d32ed3ef9b33d695d3bc4687dba75609040a06fccb5972b72c7400c3e1a0`;
+- 022: `6d33183b7242745d1543c34696e5df780cc952f856103980c54f7fb5d3e2d54a`;
+- 023: `d9723f6e2f39d6c52e804f2c9a14708cf2a67c978f2624545a024bc77ff07abc`.
+
+**23/37 complete, 14 remaining; 024 Tutor in progress.** At 25 settled new calls: 3,187,850 new tokens / ¥0.554828; global known Provider tokens **21,203,727**, estimated cost plus historical reserve **¥40.303947**, no payment-required outcome. This is a live checkpoint, not the terminal run report. Original ancestry and six-hour start remain unchanged. Supplementary-probe code and earlier 20/37 checkpoint were pushed in `982758e`; no other game files were committed.
+
+Ticket 18 remains 1/8, project16/22, first-five formal acceptance0/5. Complete assembly and actual 14 + 105 + 8 evaluation results, faction/matchup production, Room use and reflection/regression/rollback are still pending.
