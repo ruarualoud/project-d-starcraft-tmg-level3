@@ -4,12 +4,10 @@ import { createGlobalProductionContext } from '../skill-production-v3/context.mj
 import { inspectDraft, validateReview, reconcileReviews } from '../skill-production-v3/contracts.mjs';
 import { seal, verifySeal, hash, fail, clone, integer } from '../skill-production/common.mjs';
 
-export function assembleOverallRulesCandidateV3({ catalogue, plan, packets }) {
-  verifyFirstFivePlan(plan, catalogue);
-  if (!Array.isArray(packets) || packets.length !== plan.packets.length) fail('OVERALL_PACKET_DENOMINATOR_INVALID');
-  const context = createGlobalProductionContext(catalogue), reader = createEvidenceReader(catalogue);
-  const sections = plan.packets.map((packet, index) => {
-    const result = verifySeal(packets[index]);
+export function inspectOverallPacketCandidateV3({ catalogue, packet, result, context }) {
+    verifySeal(catalogue); verifySeal(context); verifySeal(result);
+    if (context.catalogueHash !== catalogue.hash) fail('OVERALL_V3_CONTEXT_SOURCE_DRIFT');
+    const reader = createEvidenceReader(catalogue);
     if (result.schema !== 'starcraft_production_packet_candidate_v3' || result.packetHash !== packet.hash
       || result.packetId !== packet.id || result.contextHash !== context.hash
       || hash(result.sourceBinding) !== hash(catalogue.sourceBinding)) fail('OVERALL_V3_PACKET_BINDING_INVALID');
@@ -39,7 +37,13 @@ export function assembleOverallRulesCandidateV3({ catalogue, plan, packets }) {
       topics: [...new Set(sourceRefs.flatMap(ref => catalogue.rows.find(r => r.id === ref).chapterIds))],
       sourceDispositions: combined.dispositions,
       claims: result.draft.claims.map((claim, n) => ({ id: packet.id + '.claims.' + n, ...clone(claim) })) };
-  });
+}
+
+export function assembleOverallRulesCandidateV3({ catalogue, plan, packets }) {
+  verifyFirstFivePlan(plan, catalogue);
+  if (!Array.isArray(packets) || packets.length !== plan.packets.length) fail('OVERALL_PACKET_DENOMINATOR_INVALID');
+  const context = createGlobalProductionContext(catalogue);
+  const sections = plan.packets.map((packet, index) => inspectOverallPacketCandidateV3({ catalogue, packet, result: packets[index], context }));
   const dispositions = sections.flatMap(s => s.sourceDispositions);
   if (dispositions.length !== plan.counts.passages) fail('OVERALL_V3_SOURCE_DENOMINATOR_INVALID');
   return seal({ schema: 'starcraft_overall_rules_candidate_v3', gameId: 'starcraft-tmg',
