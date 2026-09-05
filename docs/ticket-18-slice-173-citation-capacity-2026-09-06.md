@@ -1,7 +1,7 @@
 # Slice 173 — bounded multi-claim citation recovery
 
 Ticket18 remains1/8, project16/22, formal first-five acceptance0/5.
-The overall Skill has12/37 source-reviewed reading packets,25 remaining.
+The latest overall Skill checkpoint has13/37 source-reviewed reading packets,24 remaining.
 Reading packets are not separate Skills.
 
 ## Actual failure and diagnosis
@@ -54,6 +54,33 @@ The editor also receives the complete post-patch size/citation limits.
   output-capacity report is
   `d5a8ae695a651ffde89647e61ca797444c2d8c5a4f36d66a341821072ae4f62d`.
   Paid exact-input continuation is next.
+
+## Actual recovery checkpoint
+
+Continuation `overall-v3-d3b0b227f5464ead27ff` reused001–012 without new
+Provider calls. Packet013 reused its original draft/reviews, added exactly four
+source associations, and passed two NEW real Provider source reviews. All24
+claim texts remain byte-identical. It has zero open issues, one metadata patch,
+two review rounds, and no new model editor/diagnosis call. Candidate hash:
+`60653da42e0ae39011d01b7943bf8ce0debd32a8ea389fa9d9c3dab9929308bb`.
+The new review hashes are
+`3e1926a475a0355d62003402e87114a8be7a762a4a051474b81e8f1342c5515a`
+and `733e1ff64d29f5b6c369b7c173c14cd68b8157b90892e4d2906d1870c5215503`.
+
+At this checkpoint014 Tutor and Generator had also returned:4 new calls,
+507,513 known tokens; cumulative14,982,813 known tokens and¥39.258233
+estimate/historical reserve. No payment-stop records. The live process is
+continuing, not restarting; the continuation retains38 ancestor calls,
+4,781,027 tokens,¥0.691860 and the original six-hour start.
+
+Independent reading of006–012 also identified *questions to test*, not yet
+proven additional failures: distinguish Flying path proximity from endpoint
+separation; retained marker ownership when supply is tied; Spillover secondary
+affected Units versus a declared primary target; and the INDIRECT FIRE/FAQ56
+casualty exception versus the quick reference's ordinary visible-casualty cap.
+These must be evaluated using the complete assembled Skill. The original
+rule/source distinctions and any ambiguity must remain visible; do not invent
+source precedence or label unrun probes as independent passing evidence.
 
 The prior run is immutable. Continuation must reuse only exact-input raw roles,
 recompute final acceptance, preserve the original start/budget and retain all
