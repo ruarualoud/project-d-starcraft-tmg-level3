@@ -164,6 +164,7 @@ const files = ['packages/skill-production-v3/context.mjs', 'packages/skill-produ
   'packages/skill-production-v3/issues.mjs', 'packages/skill-production-v3/seeds.mjs', 'packages/skill-production-v3/runtime.mjs',
   'packages/skill-production-v3/citation-repair.mjs', 'packages/skill-production-v3/continuation.mjs',
   'packages/skill-production-v3/structure-repair.mjs', 'scripts/verify-ticket-18-claim-packing-v3.mjs',
+  'packages/skill-production-v3/address-repair.mjs', 'scripts/verify-ticket-18-address-repair-v3.mjs',
   'packages/skill-production/model.mjs', 'scripts/verify-ticket-18-production-v3.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(ROOT, file))) })));
 const report = seal({ passed: true, checkGroups: 10, codeHashes, catalogueHash: catalogue.hash, planHash: plan.hash,

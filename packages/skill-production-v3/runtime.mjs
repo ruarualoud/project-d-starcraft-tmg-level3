@@ -6,6 +6,7 @@ import { DRAFT_SHAPE, inspectDraft, validateReview, reconcileReviews, applyIssue
 import { DIAGNOSIS_KINDS, validateDiagnosis, advanceIssueJournal, persistIssueJournal } from './issues.mjs';
 import { planAddressBoundCitationRepair } from './citation-repair.mjs';
 import { planLosslessClaimPackingV3 } from './structure-repair.mjs';
+import { planDraftAddressRepairV3, applyDraftAddressRepairV3 } from './address-repair.mjs';
 
 const REVIEW_INSTRUCTION = `Independently inspect EVERY claim and EVERY assigned passage against the complete official source background.
 Check subjects, timing, dependencies, costs, boundaries, quantities, exceptions and FAQ precedence. Do not accept citation existence as proof.
@@ -90,6 +91,17 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
     let result = await role(input);
     try { return { artifact: result, validated: validate(result.output, result) }; }
     catch (error) {
+      const addressPlan = input.roleId === 'generator' && error.code === 'V3_EVIDENCE_ADDRESS_INVALID'
+        ? planDraftAddressRepairV3(result.output, { packet: input.packet, context, reader }) : null;
+      if (addressPlan) {
+        const selected = await checkedRole({ packet: input.packet, roleId: input.roleId + '.address-repair',
+          instruction: 'Repair ONLY the listed unknown citation addresses. Read the complete official sources to choose a supporting passage for each flagged claim. Do not guess a nearby ID. Select addressId from the complete address table; never write a source ID, alter prose, remove a claim or touch a valid citation. A selection is an untrusted citation proposal and will be independently re-reviewed against full sources. Return {"parentHash":"exact parentHash","corrections":[{"path":"exact issue path","addressId":0,"reason":"why this precise source supports the unchanged claim"}]}. Exactly one correction per issue. If no supporting source exists, return corrections:[]; this will stop, not authorize invented evidence.',
+          workspace: { ...input.workspace, rejectedDraft: result.output, addressRepair: addressPlan } },
+        output => applyDraftAddressRepairV3(result.output, addressPlan, output, { packet: input.packet, context, reader }));
+        return { artifact: result, validated: validate(selected.validated.draft, result), repairedDraft: selected.validated.draft,
+          addressRepair: seal({ generatorArtifactHash: result.hash, selectionArtifactHash: selected.artifact.hash,
+            plan: addressPlan, receipt: selected.validated, providerOutputRewritten: false, trainingTruth: false }) };
+      }
       // Only structural/address repair. A negative valid judgment never enters
       // this branch, and a no-op edit is a typed outcome, not invalid syntax.
       if (!/^(V3_|OUTPUT_|TEXT_|REVIEW_|EVIDENCE_|SOURCE_SPAN)/.test(error.code || '')) throw error;
@@ -116,7 +128,7 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
     }
     const assignment = { packetId: packet.id, assignedPassages: packet.passages.map(p => ({ ref: p.ref, spanId: p.spanId })),
       writingScope: 'One packet of the overall rules Skill, not a separate Skill. All global sources remain readable.' };
-    let draft, seedReceipt = null, generationStructureRepair = null;
+    let draft, seedReceipt = null, generationStructureRepair = null, generationAddressRepair = null;
     if (seed) {
       const lease = store.acquire(packet.id + '.imported-seed', { seedHash: seed.hash });
       seedReceipt = lease.cached ? lease.artifact : store.finish(lease, seed);
@@ -131,7 +143,14 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
           const packing = planLosslessClaimPackingV3(output, { packet, context, reader });
           return { packing, inventory: inspectDraft(packing?.draft || output, { packet, context, reader }) };
         });
-      draft = generated.validated.packing?.draft || generated.artifact.output;
+      draft = generated.validated.packing?.draft || generated.repairedDraft || generated.artifact.output;
+      if (generated.addressRepair) {
+        const lease = store.acquire(packet.id + '.generator-address-repair', { receiptHash: generated.addressRepair.hash });
+        generationAddressRepair = lease.cached ? lease.artifact : store.finish(lease, generated.addressRepair);
+        onProgress({ packet: packet.id, state: 'unknown_citation_address_repaired',
+          correctedAddresses: generationAddressRepair.receipt.resolved.length, proseBytesChanged: 0,
+          semanticReReviewStillRequired: true });
+      }
       if (generated.validated.packing) {
         const packing = generated.validated.packing;
         const lease = store.acquire(packet.id + '.generator-structure-repair', {
@@ -153,7 +172,8 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
     const rounds = [], revisions = [], diagnostics = [], repairStops = [];
     let journal = null, recheck = null, recheckUsed = false, transition = generationStructureRepair
       ? { kind: 'lossless_generation_structure_repair', receiptHash: generationStructureRepair.hash }
-      : { kind: seed ? 'imported_untrusted_draft' : 'generated_draft' };
+      : generationAddressRepair ? { kind: 'unknown_generation_address_repair', receiptHash: generationAddressRepair.hash }
+        : { kind: seed ? 'imported_untrusted_draft' : 'generated_draft' };
     const seenDrafts = new Set([hash(draft)]);
     for (let revision = 0; revision <= maxRevisions; revision += 1) {
       const reviews = [];
@@ -223,6 +243,7 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
       packetId: packet.id, packetHash: packet.hash, contextHash: context.hash, seedHash: seedReceipt?.hash || null,
       draft, rounds, revisions, diagnostics, repairStops, issueJournal: journal,
       ...(generationStructureRepair ? { generationStructureRepair } : {}),
+      ...(generationAddressRepair ? { generationAddressRepair } : {}),
       semanticPassed: rounds.at(-1).combined.passed && journal.openIssues === 0,
       sourceBinding: packet.sourceBinding, actualRoomReplayPerformed: false, heldoutPassed: false,
       independentContextsNotIndependentModels: true, candidateOnly: true, runtimeAccepted: false, trainingTruth: false }));
