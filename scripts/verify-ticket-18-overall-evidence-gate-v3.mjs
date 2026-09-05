@@ -85,8 +85,13 @@ assert.throws(() => inspectOverallExamsV3({ ...deps, regression: forgedRegressio
 const wrong = await fixture('wrong', true);
 assert.equal(wrong.exam.summary[0].correct, 68); assert.equal(wrong.calls, 16);
 assert.throws(() => inspectOverallExamsV3({ ...deps, ...wrong }), { code: 'OVERALL_EVIDENCE_QUALITY_NOT_PASSED' });
+const negativeInspection = inspectOverallExamsV3({ ...deps, ...wrong, requirePassing: false });
+assert(negativeInspection.diagnosticOnly && !negativeInspection.qualityPassed && !negativeInspection.runtimeAccepted);
+assert.equal(negativeInspection.summaries[0].correct, 68);
+assert.throws(() => inspectOverallExamsV3({ ...deps, requirePassing: 'false' }), { code: 'OVERALL_EVIDENCE_PURPOSE_INVALID' });
 assert.throws(() => inspectOverallExamsV3({ ...deps, candidate: reseal(candidate, r => { r.runtimeAccepted = true; }) }), { code: 'OVERALL_EVIDENCE_BINDING_INVALID' });
 const files = ['packages/skill-production-v3/overall-evidence-gate.mjs', 'scripts/verify-ticket-18-overall-evidence-gate-v3.mjs',
+  'packages/skill-production-v3/external-findings.mjs',
   'packages/skill-evaluation/evaluate-overall-rules-v2.mjs', 'packages/skill-evaluation/evaluate-overall-source-regression-v3.mjs',
   'packages/skill-evaluation/overall-rules-package-v3.mjs', 'packages/skill-evaluation/production-drills-v1.mjs',
   'packages/skill-evaluation/semantic-drills.mjs', 'packages/skill-evaluation/source-audit-probes-v3.mjs'];

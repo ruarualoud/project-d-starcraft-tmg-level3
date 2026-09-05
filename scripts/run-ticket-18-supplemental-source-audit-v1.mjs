@@ -39,7 +39,7 @@ const drills = await createProductionDrills(catalogue), legacyDrills = createSem
 const probes = createSourceAuditProbesV3({ catalogue, reader }), supplemental = createSupplementalSourceProbesV1({ catalogue, reader });
 const filename = path.join(ROOT, 'build/ticket-17-production-redesign-v1/production.sqlite');
 const parentEvidence = inspectCompletedOverallProductionV3({ filename, recipe: parent, report: parentReport,
-  candidate, exam, regression, plan, catalogue, context, drills, legacyDrills, probes });
+  candidate, exam, regression, plan, catalogue, context, drills, legacyDrills, probes, purpose: 'diagnostic_audit' });
 const main = await verifyProductionReadiness(ROOT, catalogue), readiness = [];
 for (const name of ['overall-evidence-readiness', 'supplemental-source-readiness']) {
   const report = await json(path.join(BASE, name + '.json'));
@@ -94,6 +94,7 @@ try {
   result = await evaluateOverallSourceRegressionV3({ candidate, probes: supplemental, store, model });
   await writeFile(path.join(OUT, 'actual-supplemental-source-audit.json'), JSON.stringify(result, null, 2));
   if (!result.passed) fail('SUPPLEMENTAL_SOURCE_CASES_FAILED');
+  if (!parentEvidence.exams.qualityPassed) fail('SUPPLEMENTAL_PARENT_QUALITY_NOT_PASSED');
 } catch (error) {
   failure = { code: /^[A-Z0-9_]{3,100}$/.test(error.code || '') ? error.code : 'SUPPLEMENTAL_SOURCE_AUDIT_FAILED', diagnosticHash: hash(String(error.message)) };
 } finally {
@@ -102,6 +103,7 @@ try {
   const ledger = store.summary(), global = store.globalSummary();
   const report = seal({ runId, recipeHash: recipe.hash, parentEvidenceHash: parentEvidence.hash,
     candidateHash: candidate.hash, resultHash: result?.hash || null, correct: result?.correct || 0, total: supplemental.cases.length,
+    baseExamsPassed: parentEvidence.exams.qualityPassed, additionalCasesPassed: !!result?.passed,
     passed: !!result?.passed && !failure, failure, ledger, knownRiskNotFreshHeldout: true,
     cumulativeKnownTokensLowerBound: historyTokens + global.knownTokens,
     cumulativeEstimateOrReserveCny: (historyMicros + global.reservedOrSettledMicros) / 1e6,
