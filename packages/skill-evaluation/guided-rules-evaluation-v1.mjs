@@ -6,7 +6,7 @@ import { validateSourceAuditAnswers } from './source-audit-probes-v3.mjs';
 export async function evaluateGuidedRulesV1({ candidate, teacher, context, originalDrills, legacyDrills, independentDrills, sourceProbes, supplemental,
   store, model, onProgress = () => {} }) {
   [candidate, teacher, context, originalDrills.manifest, legacyDrills.manifest, independentDrills.manifest, sourceProbes, supplemental].forEach(verifySeal);
-  if (teacher.schema !== 'starcraft_rules_backed_answer_repair_v1' || teacher.candidateHash !== candidate.hash
+  if (!['starcraft_rules_backed_answer_repair_v1', 'starcraft_operational_guide_repair_v1'].includes(teacher.schema) || teacher.candidateHash !== candidate.hash
     || context.catalogueHash !== candidate.catalogueHash || teacher.contextHash !== context.hash
     || teacher.independentConditionCasesExposed || independentDrills.manifest.catalogueHash !== candidate.catalogueHash
     || sourceProbes.catalogueHash !== candidate.catalogueHash || supplemental.catalogueHash !== candidate.catalogueHash) fail('GUIDED_RULES_BINDING_INVALID');
