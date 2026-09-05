@@ -28,3 +28,22 @@ This is narrower than semantic correction: any incorrect movement, deployment or
 Production-v3: 10 groups, `845ea4bdb50bae60fdb70abae55ce2bdea83f9cbeda57f12f2f2b65563cba82e`. Overall continuation: 12 checks. Claim-packing: 12 checks. DSH full-source delivery: two isolated Sessions, injected transport, zero Provider calls, `6112a69d46a047c517982d8c7900dd452af00c40c6fe4f166487cabe6270a932`. All pass on the changed runtime. Read-only production ledger check finds no running steps, ambiguous intents or payment-required outcomes before resumption.
 
 Actual whole-Skill 14 source probes + 105 rule cases, two faction Skills, directed matchups, actual Room use, reflection/versioned improvement and rollback remain incomplete. No official data refresh or Codex subagent was used.
+
+## Actual recovery checkpoint
+
+Commit `99f55b2` was pushed. Continuation `overall-v3-cdf99e843cad9297a084` (recipe `cdf99e843cad9297a084b992405570624371feaa52ed3231f704f8c3ef868397`) reused 001–017 without new Provider calls. The dedicated address-selection role selected the actual Movement Passing source `.items.4.subItems.1/p1` with a source-specific rationale. Host inspection confirms all 12 original texts and the original Generator artifact were preserved. Address receipt: `3f296948dda4ff19a3d2a5fe4ef93a4ab6a2f0c7cf006803e421ca095dc7079b`.
+
+Fresh reviews then found a distinct missing Assault Phase citation, which was locally added to claim 6 without prose changes. Two further actual reviews passed with zero open issues:
+
+- candidate 018: `a34640408ed103e13b5a93e17a1d17e34f6eb34c701bab71e8e4e43c88d4c2b8`;
+- reviews: `3665b3d9291726706ba38928d002563619bffd56490d9809371c65c43ee827f4`, `50283347e6796fd79e5886b35923d81f2a148cb494714a92d16d5d0d953fe367`;
+- candidate 019: `ef3702d8500efcb6befa51ff266b3b727783a6b2995cc013cccc699031858a7d`;
+- candidate 020: `10350b9d780ad9dadb91188dafe0535fcbbd52347244ec9c1b2a7ecb2e0bec81`. The general lossless packing mechanism also handled its 25 claims without a repeated Generator call, then both actual reviews passed.
+
+Checkpoint **20/37, 17 remaining**, 021 in progress. At 14 settled new calls: 1,805,027 new Provider tokens / ¥0.352627, cumulative known 19,820,904 / ¥40.101746 estimated cost plus historical reserve. An in-flight request temporarily adds its own conservative reserve; do not confuse that higher figure with settled charges. No payment-required outcome. The running process must not be restarted.
+
+## Additional independent known-risk controls
+
+Eight supplementary probes are now source-bound in `packages/skill-evaluation/supplemental-source-probes-v1.mjs`: Flying endpoint versus path distance, Ground passage through Flying bases, every base point's Speed limit, timed effects while in Reserves, no extra same-phase activation from returning to Reserves, sticky control on ties, and the two partial-visibility Indirect Fire exceptions. These were written after early-packet inspection and are explicitly **development/known-risk regressions, not fresh held-out cases**. They do not assert that the complete Skill has already failed or passed them.
+
+`verify-ticket-18-supplemental-source-probes-v1.mjs` passes 10 engineering checks, with the full 37-section synthetic input, no source/expected-answer leakage to the reader, persisted reuse, negative results retained without repeated answer attempts, and source/expected-answer drift rejection. Manifest `79bdf24b66a2c4c2ba1f4acc214dd70cb7852e60246fcc3efbbd15d4cac74ca7`; readiness `fc71a055a66af30f9d346570635b40eb942787f2c2dc6eb036285b2302256cda`. Zero Provider calls; actual complete-Skill evaluation remains pending. Run these in addition to—not in place of—the existing 14 + 105 cases after complete assembly. No running-production code or recipe was changed to add this separate preparation.
