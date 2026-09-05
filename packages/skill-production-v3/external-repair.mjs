@@ -29,11 +29,21 @@ export async function repairExternalPacket({ runtime, packet, candidate, finding
     if (patched.draft.claims.length !== candidate.draft.claims.length) fail('EXTERNAL_PATCH_DENOMINATOR_CHANGED');
     inspectDraft(patched.draft, { packet, context, reader }); return patched.draft;
   }
-  let draft;
+  let draft; const noProgressResponses = [];
   try { draft = validate(edited.output); }
   catch (error) {
-    if (error.code === 'EXTERNAL_PATCH_NO_PROGRESS') throw error;
-    edited = await runtime.role({ packet, roleId: 'external-source-editor.schema',
+    if (error.code === 'EXTERNAL_PATCH_NO_PROGRESS') {
+      const unchangedClaimIds = findings.filter(f => {
+        const replacement = edited.output.replacements.find(p => p.claimId === f.claimId);
+        return !replacement || hash(replacement.value.text) === f.claimTextHash;
+      }).map(f => f.claimId);
+      noProgressResponses.push({ artifactHash: edited.hash, code: error.code, unchangedClaimIds,
+        diagnosis: 'host_exact_text_comparison_proves_flagged_bad_text_unchanged_not_a_schema_error' });
+      edited = await runtime.role({ packet, roleId: 'external-source-editor.no-progress',
+        instruction: instruction + '\n确定性检查发现你没有执行正文修改：下列 unchangedClaimIds 仍逐字保留已证实的问题。不是引用不足或格式问题。请逐项对照末尾 sourceAudit 的原文，纠正错误许可、补齐缺失条件；不能复制原句再补引用。仅一次带此具体失败反馈的纠正机会，不得自行宣称验证通过。',
+        workspace: { ...workspace, priorArtifactHash: edited.hash, rejectedPatch: edited.output,
+          failure: error.code, unchangedClaimIds, sourceAudit: workspace.sourceAudit } });
+    } else edited = await runtime.role({ packet, roleId: 'external-source-editor.schema',
       instruction: instruction + '\nFix only the declared shape/address/path violation. Do not expand edit scope.',
       workspace: { ...workspace, rejectedPatch: edited.output, failure: error.code || 'OUTPUT_SCHEMA_INVALID' } });
     draft = validate(edited.output);
@@ -46,7 +56,7 @@ export async function repairExternalPacket({ runtime, packet, candidate, finding
   const corrected = await runtime.produce(packet, seed);
   return { candidate: corrected, seed, repair: seal({ schema: 'starcraft_external_correction_receipt_v3',
     packetId: packet.id, parentCandidateHash: candidate.hash, candidateHash: corrected.hash,
-    findingHashes: findings.map(f => f.hash), editorArtifactHash: edited.hash, patch: edited.output, seedHash: seed.hash,
+    findingHashes: findings.map(f => f.hash), editorArtifactHash: edited.hash, patch: edited.output, seedHash: seed.hash, noProgressResponses,
     sourceReviewPassed: corrected.semanticPassed, externalProbePassed: false, actualRoomReplayPerformed: false,
     formalSkillAcceptance: false, trainingTruth: false }) };
 }

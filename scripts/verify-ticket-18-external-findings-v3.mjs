@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
-import { readFile, mkdtemp } from 'node:fs/promises';
+import { readFile, mkdtemp, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadFrozenSkillEvidence, createEvidenceReader } from '../packages/skill-production/evidence.mjs';
@@ -11,7 +11,8 @@ import { externalBlockersForCandidate, assertNoKnownExternalClaimFailure } from 
 import { repairExternalPacket } from '../packages/skill-production-v3/external-repair.mjs';
 import { createProductionRuntimeV3 } from '../packages/skill-production-v3/runtime.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
-import { seal, hash } from '../packages/skill-production/common.mjs';
+import { seal, hash, sha256, verifySeal } from '../packages/skill-production/common.mjs';
+import { createSourceAuditProbesV3, validateSourceAuditAnswers, evaluateSourceAuditProbesV3, inspectSourceAuditProbeResultV3 } from '../packages/skill-evaluation/source-audit-probes-v3.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.join(root, 'build/ticket-18-production-v3'), run = 'rules-v3-1dc2feb6d351a65c83be';
 const filename = path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite');
@@ -57,7 +58,60 @@ await assert.rejects(repairExternalPacket({ runtime, packet, candidate: repaired
 let noOpCalls = 0;
 await assert.rejects(repairExternalPacket({ runtime: { role: async () => { noOpCalls++; return seal({ output: { parentHash: hash(target.draft), replacements: [], additions: [] } }); } },
   packet, candidate: target, findings, context, reader }), { code: 'EXTERNAL_PATCH_NO_PROGRESS' });
-assert.equal(noOpCalls, 1); store.close();
+assert.equal(noOpCalls, 2); store.close();
 db.close();
-console.log(JSON.stringify({ passed: true, checks: 10, blockedPackets: 3, openFindings: 5,
-  injectedCorrectionWorkflowPassed: true, readyForNextProductionPhase: false, providerCalls: 0 }));
+const probes = createSourceAuditProbesV3({ catalogue, reader });
+assert.equal(probes.cases.length, 14);
+const goodAnswers = { answers: probes.cases.map(({ id, expected }) => ({ id, answer: expected })) };
+assert(validateSourceAuditAnswers(goodAnswers, probes).every(a => a.passed));
+assert.throws(() => validateSourceAuditAnswers({ answers: goodAnswers.answers.slice(1) }, probes));
+assert.throws(() => validateSourceAuditAnswers({ answers: goodAnswers.answers.map((r, i) => i === 1 ? goodAnswers.answers[0] : r) }, probes));
+assert.throws(() => validateSourceAuditAnswers({ answers: goodAnswers.answers.map((r, i) => i === 0 ? { ...r, answer: 'false' } : r) }, probes));
+const beforeAnswers = { answers: goodAnswers.answers.map(r => ({ ...r,
+  answer: Object.hasOwn(probes.expectedBeforeAnswers, r.id) ? probes.expectedBeforeAnswers[r.id] : r.answer })) };
+const probeStore = openProductionStore(path.join(temp, 'probes.sqlite'), { runId: 'external-probe-fixture', recipeHash: hash('probes') });
+let probeCalls = 0;
+const beforeModel = async ({ observed }) => {
+  probeCalls++; const prompt = observed.messages[0].content;
+  assert(!prompt.includes('"expected"')); assert(!prompt.includes('expectedBeforeAnswers'));
+  assert(!prompt.includes('exactSourceEvidence')); assert.deepEqual(observed.tools, []);
+  const body = JSON.parse(prompt.slice(prompt.indexOf('\n') + 1));
+  assert.equal(body.packets.reduce((n, p) => n + p.claims.length, 0), 67);
+  assert.equal(body.questions.length, 14);
+  return { command: { action: 'finish', content: beforeAnswers }, receiptHash: hash('injected-before') };
+};
+const before = await evaluateSourceAuditProbesV3({ packets: candidates, probes, store: probeStore, model: beforeModel, label: 'before' });
+assert(before.calibrationPassed); assert.equal(before.passed, false);
+const beforeInput = { probes, packetHashes: candidates.map(c => c.hash), label: 'before' };
+inspectSourceAuditProbeResultV3(before, beforeInput);
+await evaluateSourceAuditProbesV3({ packets: candidates, probes, store: probeStore, model: beforeModel, label: 'before' });
+assert.equal(probeCalls, 1);
+const wrongAfter = await evaluateSourceAuditProbesV3({ packets: candidates, probes, store: probeStore, model: beforeModel, label: 'after' });
+assert.equal(probeCalls, 2); assert(!wrongAfter.passed); // semantic failure does not trigger answer fishing
+assert.throws(() => inspectSourceAuditProbeResultV3(wrongAfter, { ...beforeInput, label: 'after' }), { code: 'AUDIT_PROBE_ACCEPTANCE_FAILED' });
+const { hash: wrongHash, ...wrongBody } = wrongAfter;
+assert.throws(() => inspectSourceAuditProbeResultV3(seal({ ...wrongBody, passed: true }), { ...beforeInput, label: 'after' }), { code: 'AUDIT_PROBE_SCORE_INVALID' });
+const positiveStore = openProductionStore(path.join(temp, 'positive.sqlite'), { runId: 'positive-probe-fixture', recipeHash: hash('positive') });
+let formatCalls = 0;
+const after = await evaluateSourceAuditProbesV3({ packets: candidates, probes, store: positiveStore, label: 'after',
+  model: async () => ({ command: { action: 'finish', content: ++formatCalls === 1 ? { answers: [] } : goodAnswers }, receiptHash: hash('injected-after') }) });
+assert.equal(formatCalls, 2); assert.equal(after.schemaRepairs, 1);
+inspectSourceAuditProbeResultV3(after, { ...beforeInput, label: 'after' });
+assert.throws(() => inspectSourceAuditProbeResultV3(after, { ...beforeInput, packetHashes: [hash('stale')], label: 'after' }), { code: 'AUDIT_PROBE_RESULT_BINDING_INVALID' });
+probeStore.close(); positiveStore.close();
+const files = ['packages/skill-production-v3/external-findings.mjs', 'packages/skill-production-v3/external-repair.mjs',
+  'packages/skill-production-v3/repair-gate.mjs', 'packages/skill-evaluation/source-audit-probes-v3.mjs',
+  'scripts/run-ticket-18-external-repair-v3.mjs', 'scripts/verify-ticket-18-external-findings-v3.mjs',
+  'scripts/verify-ticket-18-no-progress-v3.mjs'];
+const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
+const readiness = seal({ passed: true, checks: 20, contextHash: context.hash, probesHash: probes.hash, codeHashes,
+  blockedPackets: 3, openFindings: 5, probeCases: 14, negativeControls: 5,
+  injectedCorrectionWorkflowPassed: true, injectedEvaluationWorkflowPassed: true,
+  actualProviderQualityProven: false, readyForNextProductionPhase: false, providerCalls: 0, trainingTruth: false });
+try {
+  const old = verifySeal(JSON.parse(await readFile(path.join(out, 'external-repair-readiness.json'), 'utf8')));
+  await writeFile(path.join(out, 'external-repair-readiness-' + old.hash + '.json'), JSON.stringify(old, null, 2), { flag: 'wx' });
+} catch (error) { if (!['ENOENT', 'EEXIST'].includes(error.code)) throw error; }
+await writeFile(path.join(out, 'external-repair-readiness.json'), JSON.stringify(readiness, null, 2));
+console.log(JSON.stringify({ passed: true, checks: 20, blockedPackets: 3, openFindings: 5, probeCases: 14,
+  injectedOnly: true, readyForNextProductionPhase: false, providerCalls: 0, hash: readiness.hash }));
