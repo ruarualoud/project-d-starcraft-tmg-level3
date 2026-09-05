@@ -1,5 +1,11 @@
 # Remaining StarCraft TMG Level-3 development tickets
 
+Current amendment, 2026-09-06: Ticket17 is complete9/9 after Slice171;
+project16/22. Remaining Tickets:14,18,19,20,21,22 (six, including deferred
+physical-device acceptance). Ticket18 is active on the fixed
+[172–179 first-five/evolution plan](ticket-18-slices-172-179-first-five-and-evolution-2026-09-05.md).
+The historical progress below is retained, not the current counter.
+
 Execution amendment, 2026-09-05: follow the
 [Skill production / play / evolution redesign](skill-production-play-evolution-redesign-2026-09-05.md).
 The seven remaining Tickets are 14, 17, 18, 19, 20, 21 and 22.
