@@ -38,3 +38,30 @@ reused, never final acceptance or fabricated Provider attempts. The original
 The remaining21 packets, complete-Skill14 known-error plus105 rule-case exam,
 two faction/two matchup Skills, actual Room and replay/reflection/upgrade/
 rollback proofs remain open. No official source refresh or Codex subagents.
+
+## Subsequent real Generator count failure
+
+Continuation `overall-v3-ee2da227d2f35bcc3c56` did reuse the21-point Tutor
+without a new Tutor call. Generator then produced25 otherwise structurally
+valid claims against its explicit24-claim limit. Its one schema correction
+copied all25 claims byte-for-byte. Both outputs remain stored; no claim was
+removed to force acceptance. This continuation stopped after2 paid calls,
+255,233 tokens and¥0.047964. Cumulative known usage became17,258,958 tokens
+and¥39.628838 estimate/historical reserve. Its report hash is
+`2093066c5c5ec098ccedbaeb02059dd39fb01d921160ca7596b5d2a5304cdda7`.
+
+The structural repair now packs only adjacent claims with the same kind and
+identical ordered citations, joining their exact text with paragraph breaks.
+Every original fragment, order and citation survives in a hash-bound mapping.
+It never crosses types/source associations, exceeds1500 characters, removes
+content or loosens the24-claim/four-citation limits. Unpackable output remains
+rejected. The original Provider artifact stays immutable; a separate host
+normalization receipt precedes two fresh source reviews. This is not a model
+correction, factual validation, or inherited acceptance.
+
+Twelve saved-output/negative/runtime-boundary tests reproduce the failure and
+prove25→24 losslessly reaches review with one injected Generator invocation;
+no candidate exists at that boundary. Ten v3 groups and12 continuation checks
+pass. Next continuation retains60 ancestor calls,7,564,685 tokens,¥1.154010
+and the original six-hour start. Formal production and whole-Skill/Room/
+strategy acceptance remain unproven.

@@ -3,6 +3,7 @@ import { hash, seal, verifySeal, fail } from '../skill-production/common.mjs';
 
 const WORKFLOW_FILES = new Set(['packages/skill-production-v3/runtime.mjs',
   'packages/skill-production-v3/citation-repair.mjs', 'packages/skill-production-v3/continuation.mjs',
+  'packages/skill-production-v3/structure-repair.mjs', 'scripts/verify-ticket-18-claim-packing-v3.mjs',
   'scripts/run-ticket-18-overall-rules-v3.mjs', 'scripts/verify-ticket-18-production-v3.mjs',
   'scripts/verify-ticket-18-dsh-full-context-v3.mjs', 'scripts/verify-ticket-18-citation-repair-v3.mjs',
   'scripts/verify-ticket-18-continuation-v3.mjs', 'packages/skill-production-v3/external-repair.mjs',

@@ -5,6 +5,7 @@ import { compileGlobalTask } from './context.mjs';
 import { DRAFT_SHAPE, inspectDraft, validateReview, reconcileReviews, applyIssuePatch } from './contracts.mjs';
 import { DIAGNOSIS_KINDS, validateDiagnosis, advanceIssueJournal, persistIssueJournal } from './issues.mjs';
 import { planAddressBoundCitationRepair } from './citation-repair.mjs';
+import { planLosslessClaimPackingV3 } from './structure-repair.mjs';
 
 const REVIEW_INSTRUCTION = `Independently inspect EVERY claim and EVERY assigned passage against the complete official source background.
 Check subjects, timing, dependencies, costs, boundaries, quantities, exceptions and FAQ precedence. Do not accept citation existence as proof.
@@ -115,7 +116,7 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
     }
     const assignment = { packetId: packet.id, assignedPassages: packet.passages.map(p => ({ ref: p.ref, spanId: p.spanId })),
       writingScope: 'One packet of the overall rules Skill, not a separate Skill. All global sources remain readable.' };
-    let draft, seedReceipt = null;
+    let draft, seedReceipt = null, generationStructureRepair = null;
     if (seed) {
       const lease = store.acquire(packet.id + '.imported-seed', { seedHash: seed.hash });
       seedReceipt = lease.cached ? lease.artifact : store.finish(lease, seed);
@@ -126,8 +127,20 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
         workspace: assignment }, validateTutorLessonV3);
       const generated = await checkedRole({ packet, roleId: 'generator',
         instruction: 'Student/Generator: write this assigned part of ONE overall rules Skill in Chinese using the complete sources. Preserve every material condition, dependency and exception; do not reduce a rule to its heading. Cite exact ref/spanId from any global source as needed (1..4 each). 1..24 claims, each at most 1500 characters; kind rule/strategy/caution. Do not force a fixed number of strategies or cautions. Non-normative rationale needs no invented rule claim. Never invent quotation text, results or rule authority. Return ' + JSON.stringify(DRAFT_SHAPE),
-        workspace: { ...assignment, unverifiedTutor: tutor.validated } }, output => inspectDraft(output, { packet, context, reader }));
-      draft = generated.artifact.output;
+        workspace: { ...assignment, unverifiedTutor: tutor.validated } }, output => {
+          const packing = planLosslessClaimPackingV3(output, { packet, context, reader });
+          return { packing, inventory: inspectDraft(packing?.draft || output, { packet, context, reader }) };
+        });
+      draft = generated.validated.packing?.draft || generated.artifact.output;
+      if (generated.validated.packing) {
+        const packing = generated.validated.packing;
+        const lease = store.acquire(packet.id + '.generator-structure-repair', {
+          generatorArtifactHash: generated.artifact.hash, packingHash: packing.hash });
+        generationStructureRepair = lease.cached ? lease.artifact : store.finish(lease, seal({
+          generatorArtifactHash: generated.artifact.hash, packing, providerOutputRewritten: false, trainingTruth: false }));
+        onProgress({ packet: packet.id, state: 'lossless_claim_packing', originalClaims: packing.originalClaimCount,
+          packedClaims: packing.resultClaimCount, textBytesRemoved: 0, semanticReReviewStillRequired: true });
+      }
     }
     let inventory;
     try { inventory = inspectDraft(draft, { packet, context, reader }); }
@@ -138,7 +151,9 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
       draft = fixed.artifact.output; inventory = fixed.validated;
     }
     const rounds = [], revisions = [], diagnostics = [], repairStops = [];
-    let journal = null, recheck = null, recheckUsed = false, transition = { kind: seed ? 'imported_untrusted_draft' : 'generated_draft' };
+    let journal = null, recheck = null, recheckUsed = false, transition = generationStructureRepair
+      ? { kind: 'lossless_generation_structure_repair', receiptHash: generationStructureRepair.hash }
+      : { kind: seed ? 'imported_untrusted_draft' : 'generated_draft' };
     const seenDrafts = new Set([hash(draft)]);
     for (let revision = 0; revision <= maxRevisions; revision += 1) {
       const reviews = [];
@@ -207,6 +222,7 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
     const result = seal(safe({ schema: 'starcraft_production_packet_candidate_v3', inputHash: hash(finalInput),
       packetId: packet.id, packetHash: packet.hash, contextHash: context.hash, seedHash: seedReceipt?.hash || null,
       draft, rounds, revisions, diagnostics, repairStops, issueJournal: journal,
+      ...(generationStructureRepair ? { generationStructureRepair } : {}),
       semanticPassed: rounds.at(-1).combined.passed && journal.openIssues === 0,
       sourceBinding: packet.sourceBinding, actualRoomReplayPerformed: false, heldoutPassed: false,
       independentContextsNotIndependentModels: true, candidateOnly: true, runtimeAccepted: false, trainingTruth: false }));
