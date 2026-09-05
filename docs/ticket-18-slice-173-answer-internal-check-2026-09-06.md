@@ -36,6 +36,35 @@ The enemy-link four-boolean space was already exhausted by the16 old cases. Rena
 - Independent-drill8 checks exercise all30 actual source-bound kernels, wrong predictions, input isolation and output projection. No Provider call.
 - Rules-feedback10 checks exercise the actual nine mismatches, no unrelated answer changes, no-op/case-memorization/fabricated-source rejection, full-source transport sizing, saved-answer reuse and separation from the independent suite. The correction model is injected; no quality claim.
 
-Live Rules-feedback preflight passed for recipe `48ec57ad20532aa343ce74ecc7442b0c99b843b757e476ffe32d60b7ca58f95d`: complete522 claims,105 development cases,9 targeted corrections,30 separately frozen checks. At this checkpoint the actual Rules-backed Teach call has not yet run. Do not report105/105 or accepted lessons based on engineering fixtures.
+## Actual Rules-backed Teach result
+
+`answer-review-48ec57ad20532aa343ce` completed one real call with all frozen sources and522 claims. The editor changed precisely the9 flagged answers, preserved the other96, and the independent host rescored the corrected development set at **105/105**. Four procedural lesson candidates were produced: enemy-link placement, mandatory maximum distance, target-number arithmetic/clamping, and explicit self-range exclusion. This is a development correction, not unseen evaluation or formal Skill acceptance.
+
+Teacher artifact `9d25fda96f6758d165da57b86f247467efdf3ba6113dd652f7b5e98ca96d41c9`; paid receipt `2a15f64d24a8110235834126cd574c013ddf5e05b71ccc25a1ceff53f2c12663`; report `bc5ad074ab9b11b3cc1eeadaca7939bb8b899d30c5b560a798c3a57e0d40dbfb`. Usage250,565 tokens /estimated¥0.443744. The30 separately frozen inputs were not exposed to this call.
+
+## Actual guide evaluation, with no prior answers in the reader
+
+`guided-rules-9299efdcb03d2e803b7f` evaluated the four lessons alongside all522 unchanged base claims. No old answer vectors, kernel verdicts or expected test answers entered these reader requests. Source-review requests had complete official sources but no test questions; answer requests had the complete Skill/guide and current questions but no original source corpus or previous answers.
+
+| Evidence | Actual result |
+| --- | --- |
+| Two independent guide-source reviews |24/24 steps supported in each|
+| Original14 + additional8 source controls with guide present |22/22|
+| Old development cases freshly answered from Skill+guide |103/105 =67/69+36/36|
+| Independent inputs not used in Teach |30/30 =26 numeric/resource +4 labelled identity controls|
+
+The original raw96/105 remains unchanged in its own run. The new103/105 is a fresh reader result using the taught guide, not the explicitly corrected answer vector scored105/105 in Teach. It demonstrates improvement on seven old errors and successful application to the independent input set, but **does not yet pass the full gate**. Model-only consensus previously missed9/9 errors; the Rules-backed feedback and separate evaluation must remain distinct.
+
+Two old cases still fail: `production-heldout.enemy_link.4` and `.8`, both predictedfalse where the bound Rules receipt says true. Both have `linkCrossesEnemy=false`, `landingOpen=true`, `landingCoherent=true`; the engagement flag differs. The current enemy-link lesson says crossing must be permitted “or not needed”, but does not bind that branch explicitly to the `linkCrossesEnemy` input. The source/kernel already handles non-crossing correctly. Next scoped correction is the first guide's input-condition binding, not a rewrite of the37 packets, the other three lessons, the sources or the oracle. Keep the independent inputs out of that correction feedback.
+
+Actual guide hash `caa853e1c1b5d4a2e29361db1c4172ef48e2bda67a9240c16ae25c51f07a0fdd`; evaluation `aa1cdfaa77f2fd8f22614504e5c3709614c768a8b9f7231c2b5adfaf6a0ccedc`; terminal report `03ee1e365b01eca707eb250944d936d9df177828581703f7d35f20143f0e5eab`, failure `GUIDED_RULES_EVALUATION_NOT_PASSED`. Usage23 calls /2,042,095 tokens /estimated¥1.341597. The guide is an unaccepted advisory supplement to the one overall Skill, not four additional formal Skills.
+
+## Actual request reconstruction and negative controls
+
+The new read-only production-replay port opens SQLite with `readOnly:true`, reconstructs each exact request through the same Model adapter, compares the entire request hash with its paid attempt, validates Provider profile/receipt/response fingerprints, and re-executes the pure normalization/scoring program against cached raw responses. No credential or live-egress capability exists on this path. Missing attempts, altered source/guide inputs and settlement attempts are rejected.
+
+Actual replay matched the Teach request and all23 guide-review/evaluation requests, rebuilt the exact Teacher/evaluation artifact hashes, and independently rescored all157 evaluation answers. Evidence `6341fd1134be1ea176d178bb7802e1c71db5933778d2fbb7aa0c8c508748f026`: `evidenceVerified=true`, **`qualityPassed=false`**, zero new Provider calls. This verifies actual context delivery instead of trusting an `answersExposed=false` flag. Three negative lineage/mutation checks passed against the same real read-only store. The guide-evaluation workflow also passed8 engineering groups using explicitly injected answers; those injected scores are not presented as real performance.
+
+All paid handles are terminal. Final ledger check:0 open intents,0 payment-required outcomes, **34,053,262 known Provider tokens; estimated cumulative cost including historical reserve¥44.601131**. This round added25 paid calls /2,384,566 tokens /estimated¥1.947505. These are Provider estimates, not Codex goal-token accounting or a billing invoice. Code commits `a728298` and `db234b8` were pushed; the remaining targeted guide repair is not started at this checkpoint.
 
 Project16/22 Tickets; Ticket18 1/8, Slice173 active; formal first-five acceptance0/5. Required afterward: source-checked operational lessons and independent evaluation, two faction Skills, directed matchups, actual Room loading/play, real replay→reflection→versioned local update→regression/rollback, scheduler/store conformance. Goal remains active.
