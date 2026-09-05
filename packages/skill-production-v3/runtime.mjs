@@ -25,12 +25,12 @@ Remove unused example entries. Replacements allowed only for claim issues or cla
 If no justified edit exists, return empty arrays. That triggers recorded diagnosis/recheck or quarantine, never a format retry or silent success.`;
 
 // Tutor notes are unverified context, not publishable rule claims. Bound the
-// whole artifact instead of rejecting a complete long definition by an
-// arbitrary, undisclosed per-paragraph limit. Preserve every byte for Student.
+// whole artifact instead of rejecting complete notes by undisclosed paragraph
+// length/count limits. The byte cap bounds both arrays; preserve every byte
+// for Student. Final claim/source/evaluation limits remain separate.
 export function validateTutorLessonV3(output) {
   exact(output, ['lesson', 'uncertainties']);
-  if (![output.lesson, output.uncertainties].every(Array.isArray) || !output.lesson.length
-    || output.lesson.length > 20 || output.uncertainties.length > 20) fail('V3_TUTOR_SCHEMA_INVALID');
+  if (![output.lesson, output.uncertainties].every(Array.isArray) || !output.lesson.length) fail('V3_TUTOR_SCHEMA_INVALID');
   if (Buffer.byteLength(JSON.stringify(output)) > 65536) fail('V3_TUTOR_ARTIFACT_BUDGET_EXCEEDED');
   [...output.lesson, ...output.uncertainties].forEach(t => text(t, 65536));
   return output;
