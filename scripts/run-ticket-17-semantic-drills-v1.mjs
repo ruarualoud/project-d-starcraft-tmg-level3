@@ -54,9 +54,9 @@ try {
   try { attached = await worker.attachCredential({ attachmentId: "semantic-eval-" + randomUUID(), providerProfile: profile, credentialBytes: ingress.credentialBytes }); }
   finally { ingress.credentialBytes.fill(0); }
   if (!attached.ok) fail("PROVIDER_ATTACHMENT_FAILED");
-  const model = createAccountedModel({ store, complete: (providerRequest) => {
+  const model = createAccountedModel({ store, complete: (providerRequest, { signal } = {}) => {
     if (Date.now() - began > 60 * 60 * 1000) fail("EVALUATION_WALL_TIME_EXHAUSTED");
-    return worker.complete({ workerRef: attached.workerRef, providerRequest });
+    return worker.complete({ workerRef: attached.workerRef, providerRequest, signal });
   } });
   for (const artifact of parent.chapters) {
     const result = await evaluateFrozenChapter({ artifact, drills, store, model });

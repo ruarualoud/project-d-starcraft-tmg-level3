@@ -67,9 +67,9 @@ try {
   } finally { ingress.credentialBytes.fill(0); }
   if (!attached.ok) fail("PROVIDER_ATTACHMENT_FAILED");
   const model = createAccountedModel({ store,
-    complete: (providerRequest) => {
+    complete: (providerRequest, { signal } = {}) => {
       if (Date.now() - began > PILOT_LIMITS.maxWallMs) fail("PILOT_WALL_TIME_EXHAUSTED");
-      return worker.complete({ workerRef: attached.workerRef, providerRequest });
+      return worker.complete({ workerRef: attached.workerRef, providerRequest, signal });
     },
     onUsage: (totals) => console.log(JSON.stringify({ event: "usage", calls: totals.calls, knownTokens: totals.knownTokens,
       currentCnyEstimatedOrReserved: totals.reservedOrSettledMicros / 1e6,

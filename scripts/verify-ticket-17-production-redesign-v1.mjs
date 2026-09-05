@@ -327,7 +327,7 @@ try {
   const previous = verifySeal(JSON.parse(await readFile(path.join(OUT, "readiness.json"), "utf8")));
   await writeFile(path.join(OUT, "readiness-" + previous.hash + ".json"), JSON.stringify(previous, null, 2), { flag: "wx" })
     .catch((error) => { if (error.code !== "EEXIST") throw error; });
-  const dependencies = ["common", "evidence", "spans", "mechanics", "validation", "store", "model", "loops", "dsh-worker"].map((name) => "packages/skill-production/" + name + ".mjs");
+  const dependencies = ["common", "evidence", "spans", "mechanics", "validation", "store", "model", "loops", "deadline", "runtime-projection", "dsh-worker"].map((name) => "packages/skill-production/" + name + ".mjs");
   const bound = await Promise.all(dependencies.map(async (file) => {
     const observed = sha256(await readFile(path.join(ROOT, file)));
     return previous.codeHashes.some((r) => r.file === file && r.hash === observed);

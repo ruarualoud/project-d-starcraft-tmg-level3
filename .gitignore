@@ -4,6 +4,7 @@ __pycache__/
 
 # Generated verification reports, captured source caches, and ephemeral room stores.
 build/
+vendor/dsh-execution-projections-v1/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal

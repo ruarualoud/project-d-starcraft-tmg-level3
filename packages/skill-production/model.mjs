@@ -35,9 +35,10 @@ function cost(usage, receipt) {
   }
 }
 export function createAccountedModel({ store, complete, onUsage = () => {}, maxOutput = 4096 }) {
-  return async function callModel({ stageId, call, observed, maxOutput: roleOutput = maxOutput }) {
+  return async function callModel({ stageId, call, observed, signal, maxOutput: roleOutput = maxOutput }) {
     const normalized = safe(normalizedObserved(observed));
     for (let format = 0; format <= 1; format += 1) {
+      if (signal?.aborted) fail("SESSION_WALL_TIME_EXHAUSTED");
       const id = stageId + ".call-" + call + ".format-" + format;
       const request = { schemaVersion: "starcraft_tmg_direct_provider_request_v1",
         requestId: "production-" + hash({ id }).slice(0, 40), intent: "reflect",
@@ -63,7 +64,7 @@ export function createAccountedModel({ store, complete, onUsage = () => {}, maxO
       if (reservation.cached) response = reservation.response;
       else {
         try {
-          response = await complete(request);
+          response = await complete(request, { signal });
         } catch (error) {
           const receipt = error.safeReceipt, outcome = receipt?.responseOutcome;
           store.settle(id, { usage: outcome?.usageKnown ? outcome.usage : null,

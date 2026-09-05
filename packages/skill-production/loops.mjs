@@ -5,6 +5,8 @@ import { createDisposableOsSkillRunnerV1, verifyDisposableOsMediatedJobReceiptV1
 import { STARCRAFT_TMG_DSH_EXECUTOR_CONFIG_V1 as baseConfig } from "../skill-generation-runtime/dsh-skill-executor-v1.mjs";
 import { exact, safe, seal, fail, hash } from "./common.mjs";
 import { modelEvidence } from "./spans.mjs";
+import { withSessionDeadline } from "./deadline.mjs";
+import { prepareExecutionProjection } from "./runtime-projection.mjs";
 
 export const LOOP_LIMITS = Object.freeze({ maxCalls: 6, maxTools: 5, maxOutput: 4096, maxWallMs: 180000 });
 const config = { ...baseConfig, rows: baseConfig.rows.map((row) => row.id === "system-prompt"
@@ -45,55 +47,68 @@ export function createToolPort(reader, verifier, chapterId) {
   };
 }
 export async function runDirectLoop({ task, callModel, toolPort, limits = LOOP_LIMITS }) {
+  const result = await withSessionDeadline(limits.maxWallMs, async ({ signal, guard }) => {
+    const boundedModel = guard((request) => callModel({ ...request, signal }));
+    const boundedTool = guard((name, args) => toolPort.execute(name, args));
   const messages = [{ role: "user", content: task }], transcript = [];
   for (let call = 1; call <= limits.maxCalls; call += 1) {
     const observed = { system: config.rows.find((r) => r.id === "system-prompt").config.persona,
       messages, tools: ["query", "read", "probe"].map((name) => ({ name })) };
-    const response = await callModel({ call, observed });
+    const response = await boundedModel({ call, observed });
     const command = validateCommand(response.command);
     transcript.push({ call, observedHash: hash(observed), commandHash: hash(command),
       action: command.action, receiptHash: response.receiptHash });
-    if (command.action === "finish") return seal({ final: command.content, transcript, calls: call,
-      toolTrace: toolPort.trace(), directNetworkUsed: false, trainingTruth: false });
+    if (command.action === "finish") return { final: command.content, transcript, calls: call,
+      toolTrace: toolPort.trace(), directNetworkUsed: false, trainingTruth: false };
     if (call >= limits.maxCalls || toolPort.trace().length >= limits.maxTools) fail("MODEL_CALL_LIMIT");
     messages.push({ role: "assistant", content: JSON.stringify(command) });
-    const result = await toolPort.execute(command.action, command.args);
+    const result = await boundedTool(command.action, command.args);
     messages.push({ role: "tool", name: command.action, content: JSON.stringify(result) });
   }
   fail("MODEL_CALL_LIMIT");
+  });
+  return seal(result);
 }
 export async function prepareDshLoop(root) {
   const pinned = await attestPinnedDshRuntimeV1({ repositoryRoot: root });
+  const projection = await prepareExecutionProjection(root, pinned);
   const runner = createDisposableOsSkillRunnerV1({ repositoryRoot: root });
   const attestation = await runner.attest();
   const entrySource = await readFile(new URL("./dsh-worker.mjs", import.meta.url), "utf8");
   return {
-    binding: seal({ runtimeTreeHash: pinned.receipt.runtimeTreeHash, entryHash: hash(entrySource), configHash: hash(config) }),
+    binding: seal({ runtimeTreeHash: pinned.receipt.runtimeTreeHash, executionProjection: projection.receipt,
+      entryHash: hash(entrySource), configHash: hash(config) }),
     async run({ task, callModel, toolPort, limits = LOOP_LIMITS }) {
+      const completed = await withSessionDeadline(limits.maxWallMs, async ({ signal, guard, check }) => {
+      const boundedModel = guard((request) => callModel({ ...request, signal }));
+      const boundedTool = guard((name, args) => toolPort.execute(name, args));
       let calls = 0;
       const result = await runner.runMediated({
         jobId: "production-" + randomUUID(), attestationHash: attestation.attestationHash,
         entrySource,
-        stagedInput: { task, config, runtimeTreeHash: pinned.receipt.runtimeTreeHash,
+        stagedInput: { task, config, runtimeTreeHash: projection.manifestHash,
           sessionId: "production-" + randomUUID(), maxCalls: limits.maxCalls, maxOutput: limits.maxOutput },
-        runtimeTree: { sourceRoot: pinned.runtimeRoot, expectedManifestHash: pinned.receipt.runtimeTreeHash },
+        runtimeTree: { sourceRoot: projection.sourceRoot, expectedManifestHash: projection.manifestHash },
         timeoutMs: limits.maxWallMs,
         bridge: { maximumRequests: limits.maxCalls + limits.maxTools, async handler(request) {
+          check();
           if (request.kind === "model") {
             exact(request, ["kind", "call", "observed"]);
             if (request.call !== ++calls || calls > limits.maxCalls) fail("MODEL_CALL_LIMIT");
-            const response = await callModel(request); validateCommand(response.command); return response;
+            const response = await boundedModel(request); validateCommand(response.command); return response;
           }
           exact(request, ["kind", "name", "args"]);
           if (request.kind !== "tool" || toolPort.trace().length >= limits.maxTools) fail("TOOL_CALL_LIMIT");
-          return toolPort.execute(request.name, request.args);
+          return boundedTool(request.name, request.args);
         } },
       });
       verifyDisposableOsMediatedJobReceiptV1(result.receipt, attestation);
       if (result.output.error || !result.output.final || result.output.calls !== calls) fail(result.output.error || "DSH_FINAL_MISSING",
         { diagnostic: result.output.diagnostic || null });
       if (result.output.toolTrace.length !== toolPort.trace().length) fail("DSH_TOOL_TRACE_MISMATCH");
-      return seal({ ...result.output, sandboxReceipt: result.receipt, toolTrace: toolPort.trace(), runtimeBinding: this.binding });
+      return { ...result.output, sandboxReceipt: result.receipt, toolTrace: toolPort.trace(), runtimeBinding: this.binding };
+      });
+      return seal(completed);
     },
   };
 }

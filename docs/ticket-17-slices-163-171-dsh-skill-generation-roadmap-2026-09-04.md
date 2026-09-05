@@ -1,9 +1,13 @@
 # Ticket 17 — DSH offline Skill-generation Adapter roadmap
 
 Date: 2026-09-04
-Status: Slices 163–170 complete; Ticket 17 is 8/9; Slice171 remains
-Project status: 15/22 Tickets complete; Ticket 14 physical-device acceptance remains deferred and unwaived
+Status: Slices 163–171 complete; Ticket 17 is 9/9
+Project status: 16/22 Tickets complete; Ticket 14 physical-device acceptance remains deferred and unwaived
 Source refresh: not performed
+
+2026-09-06 closure: [Slice171 operational acceptance](ticket-17-slice-171-operational-closure-2026-09-06.md).
+Original pilot metrics/quarantine below remain frozen. First-five acceptance
+and stable postgame evolution proceed in Ticket18 Slices172–179.
 
 ## 2026-09-05 execution amendment — takes precedence
 
@@ -106,7 +110,7 @@ containment.
 | 168 | **Complete.** Implement the common credential/Provider broker and the real DSH-off control executor. | Same arm-neutral prompt compiler/model/tools/budgets as DSH; one physical attempt per role; Ticket16 isolated Worker reuse; independently reconstructable input/output/cache/total-token and cost receipts; pre-egress notification for every crossed ¥100 tier; 33/33 deterministic checks. |
 | 169 | **Complete.** Implement the real DSH executor, candidate tool bridge, Session redaction and RunReceipt. | Seven real DSH role Sessions plus one candidate-tool Session; seven bounded host Broker relays; hash-only safe transcript; complete usage/cost/lineage receipt; 19/19 crash/timeout/cardinality/secret/authority checks. |
 | 170 | **Complete.** Bounded real DSH/direct pair with source/mechanics evaluation and durable correction. | 20/20 chapters, original metrics28/36 versus23/36, supplementary35/36 each; exact source-bound reviewer miss preserved; both candidates quarantined, not published. Detailed results and immutable recipes are linked above. |
-| 171 | Run the predecessor→current adversarial aggregate and close Ticket 17. | Re-run Ticket16 closure and all Ticket17 gates; secret and authority audit; frozen handoff to Ticket18; no publication, Memory, self-play, MuZero or training truth. |
+| 171 | **Complete.** Predecessor/current aggregate, common abort/accounting deadline and pinned execution projection. | Full aggregate and 18 focused groups pass; actual DSH tool session48.265s→23.917s in one local pair; original installation/isolation unchanged; first-five/arena/registry remain Ticket18. |
 
 Slice 165 performs no model call. Its one candidate is a deterministic verifier
 artifact accepted by an in-memory test port, remains unreviewed and
