@@ -12,7 +12,7 @@ strategy is conditional advisory material, never Rules or training truth.
 | Slice | Deliverable | Acceptance |
 | --- | --- | --- |
 | 172 | Complete frozen-source reading plan, reusable bounded role/revision jobs | Every eligible core/FAQ span assigned exactly once; excluded placeholders visible; omissions, fabricated citations, drift and empty repairs rejected |
-| 173 | Overall-rules v2 generation and evaluation | Full declared source coverage; independent semantic review; old failures become development regressions, new held-out cases frozen before generation; real model results retained |
+| 173 | Overall-rules generation, evidence-driven v3 repair and evaluation | Full declared source context; persistent typed issues/local repair; independent semantic review; old failures become development regressions, new held-out cases frozen before generation; real model results retained |
 | 174 | Terran Armed Forces and Zerg Swarm Skills | Bind accepted overall-rules dependency and exact official faction/unit/card data; distinguish eligibility from strategic recommendations |
 | 175 | Terran→Zerg and Zerg→Terran | Bind both faction packages; conditional plans/counters, supported scenario and actual legal-action choices; never promise wins |
 | 176 | Isolated arena, version registry and online loader | Actual room preview/confirmation-policy/apply/replay; authentic evaluation receipts; candidate/accepted separation; exact dependency routing, CAS, rollback |

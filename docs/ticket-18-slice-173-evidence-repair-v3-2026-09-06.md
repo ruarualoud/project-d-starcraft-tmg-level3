@@ -77,3 +77,27 @@ Required loop reporting: ctx2skillLoopUsed=true; harnessLoopUsed=true;
 targetGames=[starcraft-tmg]; role routes=Tutor/Generator/fresh supportive/fresh
 adversarial/diagnosis/local editor; tools=read/query/development-only probe;
 promotions=[]; actual room replay pending; trainingTruth=false.
+
+## Live checkpoint after the first two repairs
+
+Run `rules-v3-fb7f372f592ee9b558c8` is active. Packets 001 and 002 both
+completed a localized citation repair followed by two fresh reviews, with zero
+remaining recorded issues. The original drafts were imported, not regenerated.
+001 added exactly one evidence address to claim 0, preserving all prose; the
+designer-note address remains visible. Its `covered` reviewer classification
+is not counted as a new normative rule or an executable atom.
+
+At this checkpoint: 2/5 old packets repaired; 003 reviewing; total planned
+overall-rules packets remain 37. Twelve physical calls / 1,522,104 tokens /
+estimated ¥0.455336 this run. Global known-token lower bound 6,903,727;
+combined known estimate and historical unknown-call reserve ¥38.071065.
+These are checkpoint figures, not the final run ledger.
+
+The complete Skill compiler now validates the v3 source/inventory/review/
+issue-journal bindings and preserves every claim. Its coverage labels avoid
+equating a model's `covered` disposition with an atomic rule count. Evaluation
+receives the entire Skill, not question-selected excerpts. Six groups each for
+v2 and v3 pass, including all 105 injected answer cases, retaining wrong answers
+without score-based retries, schema-only repair, restart reuse, incomplete/
+tampered packet rejection, full-context bounds and no expected-answer leakage.
+These are still engineering fixtures, not actual model exam scores.
