@@ -1,4 +1,4 @@
-import { hash, seal, fail, safe } from "./common.mjs";
+import { hash, seal, fail, safe, integer } from "./common.mjs";
 import { validateCommand } from "./loops.mjs";
 import { priceStarcraftTmgDeepSeekV4FlashUsageV1 } from "../secure-provider-runtime/provider-pricing-v1.mjs";
 
@@ -34,7 +34,10 @@ function cost(usage, receipt) {
     return Math.ceil((usage.inputUnits * 440 + usage.outputUnits * 1320) * 8 / 1000);
   }
 }
-export function createAccountedModel({ store, complete, onUsage = () => {}, maxOutput = 4096 }) {
+export function createAccountedModel({ store, complete, onUsage = () => {}, maxOutput = 4096, maxInputBytes = 180000 }) {
+  // Preserve the old recipe's limit. Full-source workflows must opt into a
+  // concrete bounded capacity and bind that choice into their own recipe.
+  integer(maxInputBytes, 8192, 1_000_000);
   return async function callModel({ stageId, call, observed, signal, maxOutput: roleOutput = maxOutput }) {
     const normalized = safe(normalizedObserved(observed));
     for (let format = 0; format <= 1; format += 1) {
@@ -52,7 +55,7 @@ export function createAccountedModel({ store, complete, onUsage = () => {}, maxO
       // UTF-8 bytes are a conservative tokenizer bound plus envelope allowance,
       // not the configured million-token context window used by the old estimate.
       const inputUpper = Buffer.byteLength(JSON.stringify(request)) + 4096;
-      if (inputUpper > 180000) fail("PROMPT_SIZE_LIMIT");
+      if (inputUpper > maxInputBytes) fail("PROMPT_SIZE_LIMIT");
       const forecast = Math.ceil((inputUpper * 440 + roleOutput * 1320) * 8 / 1000);
       const reservation = store.reserve(id, request, forecast, inputUpper + roleOutput);
       if (reservation.failed) {
