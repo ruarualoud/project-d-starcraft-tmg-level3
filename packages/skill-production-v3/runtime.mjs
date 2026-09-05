@@ -23,6 +23,18 @@ Return {"parentHash":"copy exact hash","replacements":[{"claimId":"claims.N","va
 Remove unused example entries. Replacements allowed only for claim issues or claims explicitly linked to a source omission/disagreement. Additions must cite an issue's missing passage.
 If no justified edit exists, return empty arrays. That triggers recorded diagnosis/recheck or quarantine, never a format retry or silent success.`;
 
+// Tutor notes are unverified context, not publishable rule claims. Bound the
+// whole artifact instead of rejecting a complete long definition by an
+// arbitrary, undisclosed per-paragraph limit. Preserve every byte for Student.
+export function validateTutorLessonV3(output) {
+  exact(output, ['lesson', 'uncertainties']);
+  if (![output.lesson, output.uncertainties].every(Array.isArray) || !output.lesson.length
+    || output.lesson.length > 20 || output.uncertainties.length > 20) fail('V3_TUTOR_SCHEMA_INVALID');
+  if (Buffer.byteLength(JSON.stringify(output)) > 65536) fail('V3_TUTOR_ARTIFACT_BUDGET_EXCEEDED');
+  [...output.lesson, ...output.uncertainties].forEach(t => text(t, 65536));
+  return output;
+}
+
 export function createGlobalTools({ reader, context, verifier, developmentProbeIds = [] }) {
   verifySeal(context);
   const sources = new Map(context.prompt.sources.map(s => [s.ref, s])), reads = new Set(), trace = [];
@@ -108,14 +120,9 @@ export function createProductionRuntimeV3({ store, reader, context, verifier, mo
       seedReceipt = lease.cached ? lease.artifact : store.finish(lease, seed);
       draft = seedReceipt.draft;
     } else {
-      const tutor = await checkedRole({ packet, roleId: 'tutor', maxOutput: 1400,
+      const tutor = await checkedRole({ packet, roleId: 'tutor', maxOutput: 4096,
         instruction: 'Tutor: use the complete official source background to teach the assigned passage decision procedures, dependencies, exceptions and FAQ overrides. Sources are already delivered; use read/query only if useful. Return {"lesson":["source-grounded teaching point"],"uncertainties":[]}. No invented rules or tests.',
-        workspace: assignment }, output => {
-        exact(output, ['lesson', 'uncertainties']);
-        if (![output.lesson, output.uncertainties].every(Array.isArray) || !output.lesson.length
-          || output.lesson.length > 20 || output.uncertainties.length > 20) fail('V3_TUTOR_SCHEMA_INVALID');
-        [...output.lesson, ...output.uncertainties].forEach(t => text(t, 1000)); return output;
-      });
+        workspace: assignment }, validateTutorLessonV3);
       const generated = await checkedRole({ packet, roleId: 'generator',
         instruction: 'Student/Generator: write this assigned part of ONE overall rules Skill in Chinese using the complete sources. Preserve every material condition, dependency and exception; do not reduce a rule to its heading. Cite exact ref/spanId from any global source as needed (1..4 each). 1..24 claims, each at most 1500 characters; kind rule/strategy/caution. Do not force a fixed number of strategies or cautions. Non-normative rationale needs no invented rule claim. Never invent quotation text, results or rule authority. Return ' + JSON.stringify(DRAFT_SHAPE),
         workspace: { ...assignment, unverifiedTutor: tutor.validated } }, output => inspectDraft(output, { packet, context, reader }));

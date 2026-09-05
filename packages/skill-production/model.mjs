@@ -34,12 +34,26 @@ function cost(usage, receipt) {
     return Math.ceil((usage.inputUnits * 440 + usage.outputUnits * 1320) * 8 / 1000);
   }
 }
-export function createAccountedModel({ store, complete, onUsage = () => {}, maxOutput = 4096, maxInputBytes = 180000 }) {
+export function createAccountedModel({ store, complete, onUsage = () => {}, maxOutput = 4096, maxInputBytes = 180000,
+  outputRecoveryLimit = null }) {
   // Preserve the old recipe's limit. Full-source workflows must opt into a
   // concrete bounded capacity and bind that choice into their own recipe.
   integer(maxInputBytes, 8192, 1_000_000);
+  // Opt-in, recipe-bound policy. Historical callers retain their frozen
+  // behavior; current production distinguishes output capacity from syntax.
+  if (outputRecoveryLimit !== null) integer(outputRecoveryLimit, 1, 4096);
   return async function callModel({ stageId, call, observed, signal, maxOutput: roleOutput = maxOutput }) {
     const normalized = safe(normalizedObserved(observed));
+    let outputUnits = roleOutput, recoveryKind = 'format';
+    if (outputRecoveryLimit !== null) integer(roleOutput, 1, outputRecoveryLimit);
+    function canRecover(code, usageKnown, format) {
+      if (format !== 0 || !usageKnown) return false;
+      if (code === 'PROVIDER_RESPONSE_OUTPUT_TRUNCATED' && outputRecoveryLimit !== null) {
+        if (outputUnits >= outputRecoveryLimit) return false;
+        outputUnits = outputRecoveryLimit; recoveryKind = 'capacity'; return true;
+      }
+      return ['PROVIDER_RESPONSE_JSON_INVALID', 'PROVIDER_RESPONSE_EMPTY_CONTENT', 'PROVIDER_RESPONSE_OUTPUT_TRUNCATED'].includes(code);
+    }
     for (let format = 0; format <= 1; format += 1) {
       if (signal?.aborted) fail("SESSION_WALL_TIME_EXHAUSTED");
       const id = stageId + ".call-" + call + ".format-" + format;
@@ -48,19 +62,20 @@ export function createAccountedModel({ store, complete, onUsage = () => {}, maxO
         promptPack: "starcraft.skill-production.v1",
         promptNodes: [{ type: "production_protocol", text: MODEL_PROTOCOL },
           { type: "actual_agent_conversation", value: normalized }],
-        userMessage: format ? "Repair output formatting only. Follow the task and command schema; do not add commentary. JSON only."
+        userMessage: format ? recoveryKind === 'capacity'
+          ? "The prior response reached its output capacity. Produce the complete response with the increased bounded output capacity. Preserve source conditions and the same task; do not omit material to fit the old limit. JSON only."
+          : "Repair output formatting only. Follow the task and command schema; do not add commentary. JSON only."
           : "Continue the actual agent conversation. Return the next JSON command.",
         responseContract: { allowedChannels: ["skill"], decisionCandidateSource: "offline-candidate-only" },
-        maxOutputUnits: roleOutput };
+        maxOutputUnits: outputUnits };
       // UTF-8 bytes are a conservative tokenizer bound plus envelope allowance,
       // not the configured million-token context window used by the old estimate.
       const inputUpper = Buffer.byteLength(JSON.stringify(request)) + 4096;
       if (inputUpper > maxInputBytes) fail("PROMPT_SIZE_LIMIT");
-      const forecast = Math.ceil((inputUpper * 440 + roleOutput * 1320) * 8 / 1000);
-      const reservation = store.reserve(id, request, forecast, inputUpper + roleOutput);
+      const forecast = Math.ceil((inputUpper * 440 + outputUnits * 1320) * 8 / 1000);
+      const reservation = store.reserve(id, request, forecast, inputUpper + outputUnits);
       if (reservation.failed) {
-        if (format === 0 && reservation.usageKnown
-          && ["PROVIDER_RESPONSE_JSON_INVALID", "PROVIDER_RESPONSE_EMPTY_CONTENT", "PROVIDER_RESPONSE_OUTPUT_TRUNCATED"].includes(reservation.code)) continue;
+        if (canRecover(reservation.code, reservation.usageKnown, format)) continue;
         fail(reservation.code || "ATTEMPT_ALREADY_SETTLED");
       }
       let response;
@@ -77,8 +92,7 @@ export function createAccountedModel({ store, complete, onUsage = () => {}, maxO
             definitelyNotSent: receipt?.requestDefinitelyNotSent === true });
           onUsage(store.summary());
           if (error.code === "PROVIDER_PAYMENT_REQUIRED") fail("API_BALANCE_EXHAUSTED_STOP_ALL_WORK");
-          if (format === 0 && outcome?.usageKnown
-            && ["PROVIDER_RESPONSE_JSON_INVALID", "PROVIDER_RESPONSE_EMPTY_CONTENT", "PROVIDER_RESPONSE_OUTPUT_TRUNCATED"].includes(error.code)) continue;
+          if (canRecover(error.code, outcome?.usageKnown, format)) continue;
           throw error;
         }
         // Durable usage and normalized response BEFORE chapter/role validation.

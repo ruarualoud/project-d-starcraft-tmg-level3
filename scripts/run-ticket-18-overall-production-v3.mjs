@@ -19,6 +19,8 @@ import { seal, verifySeal, sha256, fail, hash } from '../packages/skill-producti
 import { createGlobalProductionContext } from '../packages/skill-production-v3/context.mjs';
 import { createProductionRuntimeV3 } from '../packages/skill-production-v3/runtime.mjs';
 import { inspectCompletedRepair } from '../packages/skill-production-v3/repair-gate.mjs';
+import { inspectV3Continuation } from '../packages/skill-production-v3/continuation.mjs';
+import { withCheckpointContinuation } from '../packages/skill-production/continuation.mjs';
 import { createStarcraftTmgProviderProfileRegistryV1 } from '../packages/secure-provider-runtime/provider-profile-registry-v1.mjs';
 import { createStarcraftTmgProviderEgressWorkerPortV2 } from '../packages/secure-provider-runtime/provider-egress-worker-port-v2.mjs';
 import { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } from '../packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs';
@@ -26,8 +28,9 @@ import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../c
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = path.join(ROOT, 'build/ticket-18-production-v3'), args = process.argv.slice(2);
-if (args.length !== 3 || !['--live', '--preflight'].includes(args[0]) || args[1] !== '--repair-run'
-  || !/^rules-v3-[a-f0-9]{20}$/.test(args[2])) fail('V3_OVERALL_ARGUMENTS_INVALID');
+if (![3, 5].includes(args.length) || !['--live', '--preflight'].includes(args[0]) || args[1] !== '--repair-run'
+  || !/^rules-v3-[a-f0-9]{20}$/.test(args[2]) || args.length === 5
+  && (args[3] !== '--continue-from' || !/^overall-v3-[a-f0-9]{20}$/.test(args[4]))) fail('V3_OVERALL_ARGUMENTS_INVALID');
 const catalogue = await loadFrozenSkillEvidence(ROOT), plan = createFirstFivePlan(catalogue);
 verifyFirstFivePlan(plan, catalogue);
 const context = createGlobalProductionContext(catalogue), filename = path.join(ROOT, 'build/ticket-17-production-redesign-v1/production.sqlite');
@@ -48,6 +51,7 @@ const drills = await createProductionDrills(catalogue), verifier = await createM
 const legacyDrills = createSemanticDrills(verifier);
 const sourceProbes = createSourceAuditProbesV3({ catalogue, reader: createEvidenceReader(catalogue) });
 const sourceRegressionGate = await readiness('overall-source-regression-readiness');
+const outputCapacityGate = await readiness('output-capacity-readiness');
 if (sourceRegressionGate.probesHash !== sourceProbes.hash) fail('V3_OVERALL_SOURCE_PROBE_DRIFT');
 const limits = { maxCalls: 600, maxCostMicros: 20_000_000, maxTokens: 30_000_000,
   maxWallMs: 6 * 60 * 60 * 1000, maxInputBytes: 786432, maxRevisions: 3 };
@@ -56,25 +60,51 @@ const extraFiles = ['scripts/run-ticket-18-overall-production-v3.mjs', 'packages
   'packages/skill-evaluation/source-audit-probes-v3.mjs', 'packages/skill-evaluation/evaluate-overall-source-regression-v3.mjs',
   'packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs'];
 const codeHashes = await Promise.all(extraFiles.map(async file => ({ file, hash: sha256(await readFile(path.join(ROOT, file))) })));
-const recipe = seal({ version: 'overall-rules-production-v3-complete-and-exam',
+const baseRecipe = seal({ version: 'overall-rules-production-v3-complete-and-exam',
   planHash: plan.hash, catalogueHash: catalogue.hash, sourceBinding: catalogue.sourceBinding, contextHash: context.hash,
   modelHash: profile.integrity.hash, mainReadinessHash: main.hash, contractReadinessHash: contract.hash,
   capacityReadinessHash: capacity.hash, evaluationReadinessHash: evaluationGate.hash, codeHashes,
   repairManifest: repair.manifest, drillManifestHash: drills.manifest.hash, regressionManifestHash: legacyDrills.manifest.hash,
   sourceProbeManifestHash: sourceProbes.hash, sourceRegressionReadinessHash: sourceRegressionGate.hash,
+  outputCapacityReadinessHash: outputCapacityGate.hash,
   limits, target: 'complete_remaining_32_packets_then_lossless_overall_skill_and_actual_105_case_exam',
   publication: 'candidate_only_pending_arena_and_registry', trainingTruth: false });
+let continuation = null;
+if (args[4]) {
+  const previous = verifySeal(JSON.parse(await readFile(path.join(BASE, args[4], 'recipe.json'), 'utf8')));
+  async function archived(file, expected) {
+    const current = verifySeal(JSON.parse(await readFile(path.join(ROOT, file), 'utf8')));
+    if (current.hash === expected) return current;
+    const old = verifySeal(JSON.parse(await readFile(path.join(ROOT, file.replace('.json', '-' + expected + '.json')), 'utf8')));
+    if (old.hash !== expected) fail('V3_OVERALL_ARCHIVED_READINESS_DRIFT'); return old;
+  }
+  const parentReports = await Promise.all([
+    archived('build/ticket-17-production-redesign-v1/readiness.json', previous.mainReadinessHash),
+    archived('build/ticket-18-production-v3/contract-readiness.json', previous.contractReadinessHash),
+    archived('build/ticket-18-production-v3/dsh-context-readiness.json', previous.capacityReadinessHash),
+    ...(previous.outputCapacityReadinessHash ? [archived('build/ticket-18-production-v3/output-capacity-readiness.json', previous.outputCapacityReadinessHash)] : []),
+  ]);
+  continuation = inspectV3Continuation({ filename, parentRunId: args[4], parent: previous, next: baseRecipe,
+    parentReports, nextReports: [main, contract, capacity, outputCapacityGate] });
+}
+const { hash: baseHash, ...baseBody } = baseRecipe;
+const recipe = continuation ? seal({ ...baseBody, continuation: continuation.manifest }) : baseRecipe;
 if (args[0] === '--preflight') {
   console.log(JSON.stringify({ ready: true, paidCalls: 0, recipeHash: recipe.hash, validatedRepairPackets: repair.packets.length,
     remainingPackets: repair.manifest.remainingPackets, examCases: drills.manifest.cases + legacyDrills.manifest.cases,
-    knownSourceRegressionCases: sourceProbes.cases.length, limits })); process.exit(0);
+    knownSourceRegressionCases: sourceProbes.cases.length, limits,
+    reusableRoles: continuation?.manifest.reusable.length || 0, inheritedAccounting: continuation?.manifest.accounting || null })); process.exit(0);
 }
 const runId = 'overall-v3-' + recipe.hash.slice(0, 20), OUT = path.join(BASE, runId);
 await mkdir(OUT, { recursive: true });
-const store = openProductionStore(filename, { runId, recipeHash: recipe.hash, ...limits });
+const inherited = continuation?.manifest.accounting || { calls: 0, tokens: 0, costMicros: 0 };
+const localStore = openProductionStore(filename, { runId, recipeHash: recipe.hash, ...limits,
+  maxCalls: limits.maxCalls - inherited.calls, maxCostMicros: limits.maxCostMicros - inherited.costMicros,
+  maxTokens: limits.maxTokens - inherited.tokens });
+const store = continuation ? withCheckpointContinuation(localStore, continuation) : localStore;
 const historyTokens = 2_864_424, historyMicros = 5_052_393 + 28_961_350;
 const started = store.acquire('production-start', { recipeHash: recipe.hash });
-const began = started.cached ? started.artifact.began : store.finish(started, { began: Date.now() }).began;
+const began = started.cached ? started.artifact.began : store.finish(started, { began: continuation?.manifest.parentStart || Date.now() }).began;
 let worker, attached, failure = null, candidate = null, exam = null, sourceRegression = null; const results = [];
 try {
   if (store.globalSummary().attempts.some(a => a.code === 'PROVIDER_PAYMENT_REQUIRED')) fail('API_BALANCE_EXHAUSTED_STOP_ALL_WORK');
@@ -92,7 +122,7 @@ try {
   try { attached = await worker.attachCredential({ attachmentId: 'overall-v3-' + randomUUID(), providerProfile: profile, credentialBytes: ingress.credentialBytes }); }
   finally { ingress.credentialBytes.fill(0); }
   if (!attached.ok) fail('PROVIDER_ATTACHMENT_FAILED');
-  const model = createAccountedModel({ store, maxInputBytes: limits.maxInputBytes,
+  const model = createAccountedModel({ store, maxInputBytes: limits.maxInputBytes, outputRecoveryLimit: 4096,
     complete: (providerRequest, { signal } = {}) => {
       if (Date.now() - began >= limits.maxWallMs) fail('V3_OVERALL_WALL_EXHAUSTED');
       return worker.complete({ workerRef: attached.workerRef, providerRequest, signal });
@@ -134,7 +164,8 @@ try {
     semanticallyPassedPackets: results.filter(r => r.semanticPassed).length, resultHashes: results.map(r => r.hash),
     candidateHash: candidate?.hash || null, actualExamHash: exam?.hash || null, actualExamSummary: exam?.summary || null,
     actualExamPassed: exam?.passed || false, sourceRegressionHash: sourceRegression?.hash || null,
-    sourceRegressionPassed: sourceRegression?.passed || false, overallEvaluationPassed: !!exam?.passed && !!sourceRegression?.passed, failure, ledger,
+    sourceRegressionPassed: sourceRegression?.passed || false, overallEvaluationPassed: !!exam?.passed && !!sourceRegression?.passed,
+    failure, ledger, continuation: continuation?.manifest || null,
     cumulativeKnownTokensLowerBound: historyTokens + global.knownTokens,
     cumulativeEstimateOrReserveCny: (historyMicros + global.reservedOrSettledMicros) / 1e6,
     ctx2skillLoopUsed: true, harnessLoopUsed: true, targetGames: ['starcraft-tmg'],

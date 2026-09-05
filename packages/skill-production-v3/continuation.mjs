@@ -9,17 +9,23 @@ const WORKFLOW_FILES = new Set(['packages/skill-production-v3/runtime.mjs',
   'scripts/run-ticket-18-external-repair-v3.mjs', 'scripts/verify-ticket-18-external-findings-v3.mjs',
   'scripts/verify-ticket-18-no-progress-v3.mjs']);
 const EXTERNAL_ONLY_FILES = new Set(['packages/skill-production-v3/repair-gate.mjs']);
+const OVERALL_VERSION = 'overall-rules-production-v3-complete-and-exam';
+const OVERALL_ONLY_FILES = new Set(['packages/skill-production/model.mjs', 'scripts/run-ticket-18-overall-production-v3.mjs',
+  'scripts/verify-ticket-18-output-capacity-v3.mjs', 'scripts/verify-ticket-18-tutor-artifact-v3.mjs']);
 
 export function inspectV3Continuation({ filename, parentRunId, parent, next, parentReports, nextReports }) {
   [parent, next, ...parentReports, ...nextReports].forEach(verifySeal);
-  if (parentRunId !== 'rules-v3-' + parent.hash.slice(0, 20)) fail('V3_CONTINUATION_PARENT_INVALID');
+  const overall = parent.version === OVERALL_VERSION;
+  if (parentRunId !== (overall ? 'overall-v3-' : 'rules-v3-') + parent.hash.slice(0, 20)) fail('V3_CONTINUATION_PARENT_INVALID');
   const identity = recipe => {
-    const { hash: h, mainReadinessHash, contractReadinessHash, capacityReadinessHash, auditReadinessHash, codeHashes, continuation, ...body } = recipe;
+    const { hash: h, mainReadinessHash, contractReadinessHash, capacityReadinessHash, auditReadinessHash, outputCapacityReadinessHash, codeHashes, continuation, ...body } = recipe;
     return body;
   };
   if (hash(identity(parent)) !== hash(identity(next))) fail('V3_CONTINUATION_IDENTITY_DRIFT');
   for (const [recipe, reports] of [[parent, parentReports], [next, nextReports]]) {
-    for (const field of ['mainReadinessHash', 'contractReadinessHash', 'capacityReadinessHash', ...(recipe.version === 'v3-external-source-repair' ? ['auditReadinessHash'] : [])]) {
+    for (const field of ['mainReadinessHash', 'contractReadinessHash', 'capacityReadinessHash',
+      ...(recipe.version === 'v3-external-source-repair' ? ['auditReadinessHash'] : []),
+      ...(recipe.outputCapacityReadinessHash ? ['outputCapacityReadinessHash'] : [])]) {
       if (!reports.some(r => r.hash === recipe[field] && r.passed)) fail('V3_CONTINUATION_READINESS_MISSING');
     }
   }
@@ -34,7 +40,8 @@ export function inspectV3Continuation({ filename, parentRunId, parent, next, par
   const oldCodes = codes(parent, parentReports), newCodes = codes(next, nextReports);
   const changes = [...new Set([...oldCodes.keys(), ...newCodes.keys()])].filter(file => oldCodes.get(file) !== newCodes.get(file));
   if (changes.some(file => !WORKFLOW_FILES.has(file)
-    && !(parent.version === 'v3-external-source-repair' && EXTERNAL_ONLY_FILES.has(file)))) fail('V3_CONTINUATION_UNAPPROVED_DEPENDENCY_DRIFT');
+    && !(parent.version === 'v3-external-source-repair' && EXTERNAL_ONLY_FILES.has(file))
+    && !(overall && OVERALL_ONLY_FILES.has(file)))) fail('V3_CONTINUATION_UNAPPROVED_DEPENDENCY_DRIFT');
   const db = new DatabaseSync(filename, { readOnly: true });
   try {
     if (db.prepare('SELECT recipe FROM runs WHERE id=?').get(parentRunId)?.recipe !== parent.hash) fail('V3_CONTINUATION_STORED_RECIPE_DRIFT');
