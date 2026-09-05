@@ -67,9 +67,18 @@ export function validatePacketReview(output, inventory, { packet, reader, review
   const remaining = new Set(packet.passages.map(p => p.ref + '/' + p.spanId));
   if (!Array.isArray(output.passageCoverage) || output.passageCoverage.length !== remaining.size) fail('PASSAGE_REVIEW_DENOMINATOR_INVALID');
   const passageCoverage = output.passageCoverage.map(row => {
-    exact(row, ['ref', 'spanId', 'verdict', 'reason']);
+    exact(row, ['ref', 'spanId', 'verdict', 'reason', ...(Object.hasOwn(row, 'evidence') ? ['evidence'] : [])]);
     if (!remaining.delete(row.ref + '/' + row.spanId) || !['covered', 'omission', 'unknown'].includes(row.verdict)) fail('PASSAGE_REVIEW_INVALID');
-    text(row.reason, 900); return clone(row);
+    text(row.reason, 900);
+    // Preserve optional supporting citations, rather than dropping unknown
+    // fields or rejecting useful non-authoritative data. They must resolve to
+    // this exact assigned passage; verdict/reason are never rewritten.
+    if (Object.hasOwn(row, 'evidence')) {
+      if (!Array.isArray(row.evidence) || row.evidence.length !== 1) fail('PASSAGE_REVIEW_CITATION_INVALID');
+      const citation = resolveSpan(reader, row.evidence[0]);
+      if (citation.ref !== row.ref || citation.spanId !== row.spanId) fail('PASSAGE_REVIEW_CITATION_INVALID');
+    }
+    return clone(row);
   });
   const { hash: ignored, ...body } = review;
   return seal({ ...body, packetHash: packet.hash, passageCoverage });

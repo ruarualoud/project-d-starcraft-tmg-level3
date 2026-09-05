@@ -50,6 +50,17 @@ check('true_claims_do_not_hide_missing_rules_from_source', () => {
   const output = { verdicts: claims.map((c, i) => ({ claimId: 'claims.' + i, verdict: 'supported', reason: 'Fixture', evidence: c.evidence })),
     passageCoverage: coverage };
   const a = validatePacketReview(output, inventory, { packet, reader, reviewId: 'A', role: 'supportive_reviewer' });
+  // Actual live failure: the reviewer supplied useful source citations on
+  // passageCoverage as well as verdicts. This is not a changed judgement.
+  const cited = { ...output, passageCoverage: coverage.map(c => ({ ...c,
+    evidence: [{ ref: c.ref, spanId: c.spanId }] })) };
+  assert.equal(validatePacketReview(cited, inventory, { packet, reader, reviewId: 'cited', role: 'supportive_reviewer' }).passageCoverage.length, coverage.length);
+  for (const bad of [
+    { ...cited.passageCoverage[0], evidence: [{ ref: coverage[1].ref, spanId: coverage[1].spanId }] },
+    { ...cited.passageCoverage[0], evidence: [] },
+    { ...cited.passageCoverage[0], approve: true },
+  ]) assert.throws(() => validatePacketReview({ ...cited, passageCoverage: [bad, ...cited.passageCoverage.slice(1)] }, inventory,
+    { packet, reader, reviewId: 'bad-citation', role: 'supportive_reviewer' }));
   const b = validatePacketReview({ ...output, passageCoverage: coverage.map((c, i) => i === 0 ? { ...c, verdict: 'omission' } : c) },
     inventory, { packet, reader, reviewId: 'B', role: 'adversarial_reviewer' });
   assert(!combinePacketReviews(inventory, packet, [a, b]).passed);
@@ -109,6 +120,22 @@ const resumed = await createPacketRuntime({ store, reader, model: () => assert.f
   dsh: { run: runDirectLoop } }).produce(packet);
 assert.equal(resumed.hash, result.hash); assert.equal(before, calls); store.close();
 checks.push({ id: 'teach_generate_review_local_repair_re_review_and_durable_resume', passed: true });
+// A reviewer/editor dispute must not be converted to a success, nor paid for
+// again as a JSON problem. The next packet remains independently executable.
+const stalledStore = openProductionStore(path.join(temp, 'stalled.sqlite'), { runId: 'packet-stall', recipeHash: hash('stall') });
+let emptyPatchCalls = 0;
+const stalledModel = async request => {
+  if (request.stageId.includes('semantic-editor')) {
+    emptyPatchCalls++;
+    return { command: { action: 'finish', content: { parentHash: hash(short), replacements: [], additions: [] } }, receiptHash: hash('empty') };
+  }
+  return model(request);
+};
+const stalled = await createPacketRuntime({ store: stalledStore, reader, model: stalledModel, dsh: { run: runDirectLoop } }).produce(packet);
+assert.equal(emptyPatchCalls, 1); assert.equal(stalled.semanticPassed, false);
+assert.equal(stalled.repairStops[0].code, 'PACKET_PATCH_EMPTY'); assert.equal(stalled.revisions.length, 0);
+assert.equal(stalled.rounds.length, 1); assert.equal(stalled.runtimeAccepted, false); stalledStore.close();
+checks.push({ id: 'empty_semantic_patch_quarantines_without_schema_retry_or_false_acceptance', passed: true });
 const files = ['coverage-plan', 'packet-contract', 'packet-runtime', 'deadline', 'runtime-projection', 'loops', 'dsh-worker', 'model', 'store', 'validation', 'evidence', 'spans', 'common']
   .map(n => 'packages/skill-production/' + n + '.mjs');
 files.push('scripts/verify-ticket-18-packet-production-v1.mjs');

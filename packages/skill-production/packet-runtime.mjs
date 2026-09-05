@@ -72,7 +72,7 @@ export function createPacketRuntime({ store, reader, verifier, model, dsh, onPro
       task: 'Tutor: read the assigned source refs using the tool, then identify the decision procedure, dependencies and fragile conditions. Finish with {"lesson":["concise source-grounded teaching point"],"uncertainties":[]}. No invented rule or gameplay result.\n' + JSON.stringify(context) });
     let draft = await role({ packet, roleId: 'generator', promptReadRefs: faqRefs,
       task: 'Student/Generator: produce this part of ONE overall-rules Skill in Chinese. Read assigned refs yourself. Each assigned passage must support at least one substantive claim. Cover all decision-relevant conditions, not merely headings. Claims may combine related passages (maximum 4 citations each). Do not force a fixed number of cautions or strategies; omit them if not supported. 1..24 claims, each at most 1500 characters. Do not invent quotation text, facts, numbers, tests or success guarantees. Finish with ' + JSON.stringify(PACKET_OUTPUT_SHAPE) + '. kind enum: rule, strategy, caution.\n' + JSON.stringify({ ...context, unverifiedTutor: tutor.output }) });
-    const revisions = [], rounds = [];
+    const revisions = [], rounds = [], repairStops = [];
     const inspect = () => inspectPacket(draft.output, { packet, reader, readRefs: draft.readRefs });
     let inventory;
     try { inventory = inspect(); }
@@ -88,7 +88,7 @@ export function createPacketRuntime({ store, reader, verifier, model, dsh, onPro
     for (let revision = 0; revision <= 2; revision += 1) {
       const reviews = [];
       for (const route of ['supportive_reviewer', 'adversarial_reviewer']) {
-        const task = `Role ${route}. Independently verify EVERY claim against the full source, not citation existence. Check conditions, quantities, inclusive boundaries, omissions, timing and exceptions. ALSO inspect every assigned passage for missing decision-relevant rules/conditions, even if all existing claims are true. Conditional strategy is inference, not an established win. Unknown is valid. Do not approve merely to finish. Return exactly {"verdicts":[{"claimId":"claims.0","verdict":"supported|unsupported|unknown","reason":"specific reason","evidence":[{"ref":"source ID","spanId":"p1"}]}],"passageCoverage":[{"ref":"assigned source ID","spanId":"p1","verdict":"covered|omission|unknown","reason":"all material conditions present or identify specific omission"}]}; select one verdict enum, not the pipe string. Cover each claim and assigned passage exactly once; context-only FAQ need no coverage row.\n` +
+        const task = `Role ${route}. Independently verify EVERY claim against the full source, not citation existence. Check conditions, quantities, inclusive boundaries, omissions, timing and exceptions. ALSO inspect every assigned passage for missing decision-relevant rules/conditions, even if all existing claims are true. Read adjacent passages in fullSource when a span is a sentence fragment. A designer's explanation, cinematic preference, or rationale alone is not a missing game rule: mark covered with that explicit reason when no decision-relevant condition is missing. Never demand a new normative claim for non-normative prose. If an actual rule is missing, identify its subject, condition and consequence, not just a missing heading or note. Conditional strategy is inference, not an established win. Unknown is valid. Do not approve merely to finish. Return exactly {"verdicts":[{"claimId":"claims.0","verdict":"supported|unsupported|unknown","reason":"specific reason","evidence":[{"ref":"source ID","spanId":"p1"}]}],"passageCoverage":[{"ref":"assigned source ID","spanId":"p1","verdict":"covered|omission|unknown","reason":"all material conditions present or identify specific omission"}]}; select one verdict enum, not the pipe string. Cover each claim and assigned passage exactly once; context-only FAQ need no coverage row.\n` +
           JSON.stringify({ context, claims: inventory.claims.map(c => ({ claimId: c.claimId, kind: c.field, text: c.text,
             evidence: c.evidence.map(e => ({ ref: e.ref, spanId: e.spanId })) })), fullSource: source });
         let attempt = await role({ packet, roleId: route + '.' + revision, task, promptReadRefs: [...refs, ...faqRefs] });
@@ -120,16 +120,30 @@ export function createPacketRuntime({ store, reader, verifier, model, dsh, onPro
       };
       try { patched = validatePatch(); }
       catch (error) {
+        // An empty/no-op patch is a semantic stall, not malformed JSON. Do not
+        // pay for a format retry that cannot resolve a reviewer/editor dispute.
+        // Preserve the negative review and quarantine this packet, never waive it.
+        if (['PACKET_PATCH_EMPTY', 'PACKET_PATCH_NO_CHANGE'].includes(error.code)) {
+          repairStops.push({ code: error.code, stageId: edit.roleId, outputHash: hash(edit.output), revision });
+          break;
+        }
         edit = await role({ packet, roleId: 'semantic-editor.' + revision + '.schema', promptReadRefs: [...refs, ...faqRefs],
           task: editTask + '\nYour prior patch was rejected. Fix only its declared paths/schema/citations; never change unflagged claims or invent source. The parent hash above must be copied exactly. ' +
             JSON.stringify({ rejectedPatch: edit.output, failure: error.code || 'PATCH_INVALID' }) });
-        patched = validatePatch();
+        try { patched = validatePatch(); }
+        catch (repairError) {
+          if (['PACKET_PATCH_EMPTY', 'PACKET_PATCH_NO_CHANGE'].includes(repairError.code)) {
+            repairStops.push({ code: repairError.code, stageId: edit.roleId, outputHash: hash(edit.output), revision });
+            break;
+          }
+          throw repairError;
+        }
       }
       revisions.push({ type: 'semantic', parentHash: hash(draft.output), patch: edit.output, resultHash: hash(patched) });
       draft = { ...draft, output: patched, readRefs: [...new Set([...draft.readRefs, ...refs, ...faqRefs, ...edit.readRefs])] };
       inventory = inspect();
     }
-    const result = seal(safe({ packetHash: packet.hash, packetId: packet.id, draft: draft.output, revisions, rounds,
+    const result = seal(safe({ packetHash: packet.hash, packetId: packet.id, draft: draft.output, revisions, rounds, repairStops,
       semanticPassed: rounds.at(-1).combined.passed, sourceBinding: packet.sourceBinding,
       roomReplayPerformed: false, heldoutPassed: false, runtimeAccepted: false,
       candidateOnly: true, trainingTruth: false }));

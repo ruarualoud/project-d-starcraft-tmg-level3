@@ -1,0 +1,82 @@
+import assert from 'node:assert/strict';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { DatabaseSync } from 'node:sqlite';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { openProductionStore } from '../packages/skill-production/store.mjs';
+import { inspectPacketContinuation } from '../packages/skill-production/packet-continuation.mjs';
+import { withCheckpointContinuation } from '../packages/skill-production/continuation.mjs';
+import { hash, seal, sha256 } from '../packages/skill-production/common.mjs';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const OUT = path.join(ROOT, 'build/ticket-18-first-five-v1');
+await mkdir(OUT, { recursive: true });
+const dir = await mkdtemp(path.join(OUT, 'continuation-tests-')), filename = path.join(dir, 'state.sqlite');
+const source = { file: 'packages/skill-production/evidence.mjs', hash: hash('unchanged source') };
+const contract = 'packages/skill-production/packet-contract.mjs';
+const readiness = version => seal({ passed: true, codeHashes: [source, { file: contract, hash: hash(version) }] });
+const oldGate = readiness('before'), newGate = readiness('after');
+const semanticIdentity = { sourceBinding: hash('source'), modelHash: hash('model'), planHash: hash('plan'),
+  drillManifestHash: hash('drills'), limits: { maxCalls: 10, maxTokens: 10000, maxCostMicros: 1000000, maxWallMs: 300000 } };
+const parent = seal({ ...semanticIdentity, readinessHash: oldGate.hash, productionReadinessHash: oldGate.hash });
+const next = seal({ ...semanticIdentity, readinessHash: newGate.hash, productionReadinessHash: newGate.hash });
+const parentRunId = 'rules-v2-' + parent.hash.slice(0, 20);
+const db = openProductionStore(filename, { runId: parentRunId, recipeHash: parent.hash });
+db.finish(db.acquire('production-start', {}), { began: 10000 });
+const input = { task: 'unchanged prompt', packetHash: hash('packet') };
+const stage = 'rules-reading-001.generator', output = seal({ roleId: stage, output: { claims: [] }, readRefs: ['source'] });
+db.finish(db.acquire(stage, input), output);
+db.finish(db.acquire('rules-reading-001.candidate', { packetHash: hash('packet') }), seal({ semanticPassed: true }));
+db.reserve('sent', {}, 500, 100); db.settle('sent', { usage: { inputUnits: 10, outputUnits: 2, totalUnits: 12 }, costMicros: 20, response: { ok: true } });
+db.reserve('unknown', {}, 500, 100); db.settle('unknown', { code: 'PROVIDER_TIMEOUT' });
+db.reserve('unsent', {}, 500, 100); db.settle('unsent', { code: 'PROVIDER_NOT_SENT', definitelyNotSent: true });
+db.close();
+const args = { filename, parentRunId, parent, next, parentReadiness: oldGate, nextReadiness: newGate,
+  parentExecutionReadiness: oldGate, nextExecutionReadiness: newGate };
+let assertions = 0;
+const yes = condition => { assert(condition); assertions++; };
+const rejects = (fn, code) => { assert.throws(fn, error => error.code === code); assertions++; };
+const result = inspectPacketContinuation(args);
+yes(result.manifest.reusable.length === 1 && result.manifest.reusable[0].id === stage);
+yes(result.manifest.parentStart === 10000);
+assert.deepEqual(result.manifest.accounting, { calls: 3, tokens: 112, costMicros: 520 }); assertions++;
+for (const field of ['sourceBinding', 'modelHash', 'planHash', 'drillManifestHash', 'limits']) {
+  const { hash: omitted, ...body } = next;
+  rejects(() => inspectPacketContinuation({ ...args, next: seal({ ...body, [field]: hash('drift') }) }), 'PACKET_CONTINUATION_SEMANTIC_DEPENDENCY_DRIFT');
+}
+const driftGate = seal({ passed: true, codeHashes: [{ ...source, hash: hash('drift') }, { file: contract, hash: hash('after') }] });
+const { hash: omitted, ...nextBody } = next;
+rejects(() => inspectPacketContinuation({ ...args, next: seal({ ...nextBody, readinessHash: driftGate.hash,
+  productionReadinessHash: driftGate.hash }), nextReadiness: driftGate, nextExecutionReadiness: driftGate }), 'PACKET_CONTINUATION_UNREVIEWED_CODE_DRIFT');
+rejects(() => inspectPacketContinuation({ ...args, parentRunId: 'rules-v2-' + '0'.repeat(20) }), 'PACKET_CONTINUATION_PARENT_INVALID');
+let nextStore = openProductionStore(filename, { runId: 'test-child-exact', recipeHash: next.hash });
+let continued = withCheckpointContinuation(nextStore, result);
+const hit = continued.acquire(stage, input);
+yes(hit.cached && hash(hit.artifact) === hash(output));
+yes(continued.summary().calls === 0);
+yes(continued.artifact('inherited.' + stage).parentRunId === parentRunId);
+const finalLease = continued.acquire('rules-reading-001.candidate', { packetHash: hash('packet') });
+yes(!finalLease.cached); continued.release(finalLease); continued.close();
+nextStore = openProductionStore(filename, { runId: 'test-child-different', recipeHash: next.hash });
+continued = withCheckpointContinuation(nextStore, result);
+const miss = continued.acquire(stage, { ...input, task: 'different prompt' });
+yes(!miss.cached); continued.release(miss); continued.close();
+const tampered = structuredClone(result); tampered.steps.find(s => s.id === stage).artifact.output.claims.push({ text: 'tampered' });
+nextStore = openProductionStore(filename, { runId: 'test-child-tampered', recipeHash: next.hash });
+continued = withCheckpointContinuation(nextStore, tampered);
+rejects(() => continued.acquire(stage, input), 'CONTINUATION_ARTIFACT_TAMPERED'); continued.close();
+const raw = new DatabaseSync(filename);
+raw.prepare("UPDATE steps SET state='running' WHERE run=? AND id=?").run(parentRunId, stage);
+rejects(() => inspectPacketContinuation(args), 'PACKET_CONTINUATION_PARENT_RUNNING');
+raw.prepare("UPDATE steps SET state='complete' WHERE run=? AND id=?").run(parentRunId, stage);
+raw.prepare("UPDATE attempts SET state='intent' WHERE run=? AND id='unknown'").run(parentRunId);
+rejects(() => inspectPacketContinuation(args), 'AMBIGUOUS_EGRESS_NO_RETRY');
+raw.prepare("UPDATE attempts SET state='failed',code='PROVIDER_PAYMENT_REQUIRED' WHERE run=? AND id='unknown'").run(parentRunId);
+rejects(() => inspectPacketContinuation(args), 'API_BALANCE_EXHAUSTED_STOP_ALL_WORK');
+raw.close();
+const files = ['packages/skill-production/packet-continuation.mjs', 'packages/skill-production/continuation.mjs',
+  'packages/skill-production/store.mjs', 'scripts/verify-ticket-18-packet-continuation-v1.mjs'];
+const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(ROOT, file))) })));
+const report = seal({ passed: true, assertions, codeHashes, providerCalls: 0, trainingTruth: false });
+await writeFile(path.join(OUT, 'continuation-readiness.json'), JSON.stringify(report, null, 2));
+console.log(JSON.stringify({ passed: true, assertions, hash: report.hash, providerCalls: 0 }));
