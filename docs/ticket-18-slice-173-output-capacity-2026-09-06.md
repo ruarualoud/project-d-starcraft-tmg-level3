@@ -1,8 +1,29 @@
 # Slice173 — output capacity and complete Tutor artifacts
 
-Ticket18 remains1/8; project16/22; overall rules5/37 packets; formal Skills0/5.
+Ticket18 remains1/8; project16/22; overall rules7/37 packets; formal Skills0/5.
 The five previously repaired source defects and14/14 known-error regression
 remain valid. This work fixes production mechanics, not source truth.
+
+## Actual recovery checkpoint
+
+`overall-v3-993702fcad1780fb75d7` is running. It reused006's complete saved
+Tutor, generated the actual Chinese draft and passed both source reviews.
+Then007 completed Tutor→Generator→both reviews without either capacity
+failure.008's Generator has returned; no complete008 candidate at this
+checkpoint. Thus **7/37 source-reviewed packets,30 remaining**, not7 Skills.
+
+-006 candidate: `d8b5a90a820c8022f5c02fa3a143707b6aed3ad368c64b8fa63f993b4ddb0013`.
+-007 candidate: `fff1031f004143c15168f6f8ca8e99ec4d37f4d618c829a909f70f797181de84`.
+- Nine new calls/1,131,785 tokens/¥0.166889 at the checkpoint. Global known
+  lower bound11,324,098 tokens; estimate/reserve¥38.704611. These counts can
+  advance while the same confirmed-live process continues.
+- Four ancestor calls/498,040 tokens/¥0.062894 remain charged against the
+  original overall run's budget and wall-clock start.
+- Final DSH transport recheck passed2/2 sessions, hash
+  `e672f780b1f6094629e91f5ea1eeddac6e90eb5d441242fded5e3ee48b01159a`;
+  contract gate `e5e763c618633228250dddae0a83d178f5aea8c63bedd0dd6f0d057c8f683038`.
+- Code checkpoint `ce7d1dd` is pushed. No full105-case exam, overall Skill,
+  faction/matchup package or actual Room/strategy acceptance yet.
 
 ## Two observed, separately diagnosed failures
 
@@ -53,8 +74,8 @@ or ambiguous attempts were present after these terminal runs.
 - Eighteen affected legacy groups including real isolated DSH tool execution.
 - Two real DSH full-source sessions with injected HTTPS show470128/471743-byte
   wire requests and successful exact request reuse; no Provider fees for tests.
-- After the Tutor contract adjustment, the affected DSH transport binding is
-  being rechecked before the next paid continuation. No overall exam yet.
+- After the Tutor contract adjustment, the affected DSH transport binding was
+  rechecked before the paid continuation. No overall exam yet.
 
 Skills used: offline Skill evolution and ctx2skill require preserved source
 context and independent acceptance; the Harness loop requires actual transport
