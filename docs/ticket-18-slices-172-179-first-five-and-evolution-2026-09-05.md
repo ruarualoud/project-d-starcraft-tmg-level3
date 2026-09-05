@@ -9,6 +9,15 @@ Selection: Terran Armed Forces and Zerg Swarm, the two generic official
 archetypes. Do not conflate these with all Terran/Zerg subfactions. All generated
 strategy is conditional advisory material, never Rules or training truth.
 
+Current checkpoint (2026-09-06):172 and173 complete;174 active;175–179 pending.
+Ticket18 **2/8 complete,6 remaining**; project16/22. Overall offline production
+dependency1/5, formal/runtime first-five acceptance0/5. Actual composed overall
+Skill+guide passed22/22 source controls,105/105 development and30/30 repeated
+independent inputs, with exact Provider-request replay and Rules rescoring.
+See [Slice173 closure](ticket-18-slice-173-guide-local-repair-2026-09-06.md).
+This closes the offline overall prerequisite, not the Room/strategy acceptance
+reserved for176–178. Frozen official sources have not been refreshed.
+
 | Slice | Deliverable | Acceptance |
 | --- | --- | --- |
 | 172 | Complete frozen-source reading plan, reusable bounded role/revision jobs | Every eligible core/FAQ span assigned exactly once; excluded placeholders visible; omissions, fabricated citations, drift and empty repairs rejected |

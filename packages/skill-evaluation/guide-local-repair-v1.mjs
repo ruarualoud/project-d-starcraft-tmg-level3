@@ -36,10 +36,14 @@ export function applyGuideLocalPatchV1(output, { teacher, feedback }) {
   if (!Array.isArray(output.replacements) || output.replacements.length !== feedback.allowedLessons.length) fail('GUIDE_PATCH_DENOMINATOR');
   const pending = new Map(feedback.allowedLessons.map(l => [l.id, l.oldLessonHash])), lessons = clone(teacher.lessons);
   for (const replacement of output.replacements) {
-    exact(replacement, ['lessonId', 'procedure']);
+    const repeatedRefs = Object.hasOwn(replacement, 'sourceRefs');
+    exact(replacement, repeatedRefs ? ['lessonId', 'procedure', 'sourceRefs'] : ['lessonId', 'procedure']);
     if (!pending.has(replacement.lessonId)) fail('GUIDE_PATCH_SCOPE_INVALID');
     const lesson = lessons.find(l => l.id === replacement.lessonId);
     if (!lesson || hash(lesson) !== pending.get(replacement.lessonId)) fail('GUIDE_PATCH_PARENT_DRIFT');
+    // Lossless projection of redundant immutable metadata, not source editing.
+    // Exact ordered identity is required; raw Provider output is retained.
+    if (repeatedRefs && hash(replacement.sourceRefs) !== hash(lesson.sourceRefs)) fail('GUIDE_PATCH_SOURCE_REF_DRIFT');
     pending.delete(replacement.lessonId);
     if (!Array.isArray(replacement.procedure) || !replacement.procedure.length || replacement.procedure.length > 8) fail('GUIDE_PATCH_PROCEDURE_INVALID');
     replacement.procedure.forEach(s => text(s, 400));
@@ -84,7 +88,11 @@ export async function repairGuideFromRulesV1({ candidate, teacher, feedback, con
           tools: [], messages: [{ role: 'user', content: task }, ...(recovery ? [{ role: 'user', content:
             '现在按末尾scope和Rules反例生成新procedure。必须明确说明每个相关输入字段为false/true的分支与累积条件，并用普通输入名表达通用判断；不要写case编号或记忆答案。只输出所要求的finish/replacements。' }] : [])] } }))();
       if (response.command.action !== 'finish') fail('GUIDE_REPAIR_TOOLS_FORBIDDEN');
-      return { lessons: applyGuideLocalPatchV1(response.command.content, { teacher, feedback }), receiptHash: response.receiptHash };
+      const lessons = applyGuideLocalPatchV1(response.command.content, { teacher, feedback });
+      const repeated = response.command.content.replacements.filter(r => Object.hasOwn(r, 'sourceRefs'));
+      return { lessons, receiptHash: response.receiptHash,
+        ...(repeated.length ? { losslessProjection: { kind: 'identical_source_refs_omitted_from_patch_only',
+          lessonIds: repeated.map(r => r.lessonId), rawOutputHash: hash(response.command.content), procedureTextUnchanged: true } } : {}) };
     });
     return store.finish(lease, seal({ schema: 'starcraft_operational_guide_repair_v1', ...input, ...result,
       ...(recovery ? { sourceReconstruction: true, noProgressEvidenceHash: recovery.hash } : {}),

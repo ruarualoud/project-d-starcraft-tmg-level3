@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadGuideRepairInputsV1 } from './ticket-18-guide-repair-inputs-v1.mjs';
 import { inspectGuideNoProgressV1 } from './ticket-18-guide-no-progress-evidence-v1.mjs';
+import { replayGuideReconstructionV1, materializeReusedGuideV1 } from './ticket-18-guide-reconstruction-reuse-v1.mjs';
 import { repairGuideFromRulesV1 } from '../packages/skill-evaluation/guide-local-repair-v1.mjs';
 import { evaluateGuidedRulesV1 } from '../packages/skill-evaluation/guided-rules-evaluation-v1.mjs';
 import { verifyProductionReadiness } from '../packages/skill-production/recipe.mjs';
@@ -17,8 +18,9 @@ import { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } from '../packages/se
 import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../content/skill-generation/offline-provider-profile-v1.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), args = process.argv.slice(2);
-if (![3, 5].includes(args.length) || !['--preflight', '--live'].includes(args[0]) || args[1] !== '--parent-run'
-  || args.length === 5 && args[3] !== '--recover-no-progress-run') fail('GUIDE_REPAIR_ARGUMENTS_INVALID');
+if (![3, 5, 7].includes(args.length) || !['--preflight', '--live'].includes(args[0]) || args[1] !== '--parent-run'
+  || args.length >= 5 && args[3] !== '--recover-no-progress-run'
+  || args.length === 7 && args[5] !== '--reuse-reconstruction-run') fail('GUIDE_REPAIR_ARGUMENTS_INVALID');
 const filename = path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite');
 const db = new DatabaseSync(filename, { readOnly: true });
 try {
@@ -27,7 +29,8 @@ try {
 } finally { db.close(); }
 const deps = await loadGuideRepairInputsV1(root, args[2]);
 const { base, parent, parentEvidence, baseRunId, candidate, teacher, context, catalogue, feedback, independentDrills } = deps;
-const recovery = args.length === 5 ? await inspectGuideNoProgressV1(root, args[4], deps) : null;
+const recovery = args.length >= 5 ? await inspectGuideNoProgressV1(root, args[4], deps) : null;
+const reuse = args.length === 7 ? await replayGuideReconstructionV1(root, args[6], deps, recovery) : null;
 if (parent.modelHash !== profile.integrity.hash) fail('GUIDE_REPAIR_PROFILE_DRIFT');
 const main = await verifyProductionReadiness(root, catalogue), gates = [];
 for (const name of ['guide-local-repair', 'guided-rules-evaluation', 'independent-condition', 'reader-command-policy']) {
@@ -38,6 +41,7 @@ for (const name of ['guide-local-repair', 'guided-rules-evaluation', 'independen
 }
 const files = ['scripts/run-ticket-18-guide-local-repair-v1.mjs', 'scripts/ticket-18-guide-repair-inputs-v1.mjs',
   'scripts/ticket-18-guide-no-progress-evidence-v1.mjs',
+  'scripts/ticket-18-guide-reconstruction-reuse-v1.mjs',
   'scripts/inspect-ticket-18-guide-local-repair-evidence-v1.mjs', 'packages/skill-evaluation/guide-local-repair-v1.mjs',
   'packages/skill-evaluation/guided-rules-evaluation-v1.mjs', 'packages/skill-production/model.mjs',
   'packages/skill-production/store.mjs', 'packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs'];
@@ -47,6 +51,7 @@ const recipe = seal({ version: 'guide_local_repair_and_evaluation_v1', revision:
   parentRunId: args[2], parentRecipeHash: parent.hash, parentEvidenceHash: parentEvidence.hash, baseRunId,
   teacherHash: teacher.hash, feedbackHash: feedback.hash, candidateHash: candidate.hash, contextHash: context.hash,
   ...(recovery ? { recoveryHash: recovery.hash, recoveryRunId: args[4] } : {}),
+  ...(reuse ? { reuseHash: reuse.hash, reuseRunId: args[6] } : {}),
   catalogueHash: catalogue.hash, sourceBinding: catalogue.sourceBinding, modelHash: profile.integrity.hash,
   independentManifestHash: independentDrills.manifest.hash, originalManifestHash: deps.originalDrills.manifest.hash,
   legacyManifestHash: deps.legacyDrills.manifest.hash, sourceProbesHash: deps.sourceProbes.hash, supplementalHash: deps.supplemental.hash,
@@ -74,6 +79,7 @@ try {
   if (Date.now() - began >= limits.maxWallMs) fail('GUIDE_REPAIR_WALL_EXHAUSTED');
   await put('recipe', recipe); await put('feedback', feedback); await put('parent-teacher', teacher);
   if (recovery) await put('no-progress-evidence', recovery);
+  if (reuse) await put('reconstruction-reuse', reuse);
   const registry = createStarcraftTmgProviderProfileRegistryV1({ entries: [{ providerProfile: profile, completionPath: '/chat/completions' }], allowedProviders: ['deepseek-openai-compatible-direct'] });
   worker = createStarcraftTmgProviderEgressWorkerPortV2({ providerProfileRegistry: registry, maxWorkers: 1, maxOutputBytes: 256 * 1024 });
   const ingress = await readStarcraftTmgDeepSeekCredentialFromKeychainV1();
@@ -87,7 +93,8 @@ try {
     }, onUsage: ledger => console.log(JSON.stringify({ event: 'usage', calls: ledger.calls, tokens: ledger.knownTokens,
       runEstimateOrReserveCny: ledger.reservedOrSettledMicros / 1e6,
       cumulativeEstimateOrReserveCny: (historyMicros + store.globalSummary().reservedOrSettledMicros) / 1e6 })) });
-  repaired = await repairGuideFromRulesV1({ candidate, teacher, feedback, context, store, model, recovery });
+  repaired = reuse ? materializeReusedGuideV1(store, reuse)
+    : await repairGuideFromRulesV1({ candidate, teacher, feedback, context, store, model, recovery });
   await put('actual-guide-repair', repaired);
   console.log(JSON.stringify({ event: 'guide-repaired', changedLessons: repaired.changedLessons, hash: repaired.hash }));
   result = await evaluateGuidedRulesV1({ ...deps, teacher: repaired, store, model,

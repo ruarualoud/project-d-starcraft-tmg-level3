@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { DatabaseSync } from 'node:sqlite';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,7 +39,7 @@ rejects({ replacements: [{ lessonId: teacher.lessons[0].id, procedure: teacher.l
 rejects({ replacements: [{ ...output.replacements[0], lessonId: teacher.lessons[1].id }] }, 'GUIDE_PATCH_SCOPE_INVALID');
 rejects({ replacements: [] }, 'GUIDE_PATCH_DENOMINATOR');
 rejects({ replacements: [output.replacements[0], output.replacements[0]] }, 'GUIDE_PATCH_DENOMINATOR');
-rejects({ replacements: [{ ...output.replacements[0], sourceRefs: ['invented'] }] }, 'OUTPUT_SCHEMA_INVALID');
+rejects({ replacements: [{ ...output.replacements[0], sourceRefs: ['invented'] }] }, 'GUIDE_PATCH_SOURCE_REF_DRIFT');
 rejects({ replacements: [{ ...output.replacements[0], procedure: ['production-heldout.enemy_link.4 is always true'] }] }, 'GUIDE_PATCH_CASE_MEMORIZATION_REJECTED');
 const altered = seal({ ...Object.fromEntries(Object.entries(teacher).filter(([k]) => k !== 'hash')), lessons: teacher.lessons.slice(1) });
 assert.throws(() => applyGuideLocalPatchV1(output, { teacher: altered, feedback }), { code: 'GUIDE_PATCH_PARENT_DRIFT' });
@@ -46,6 +47,17 @@ const raw = Object.fromEntries(Object.entries(evaluation).filter(([k]) => k !== 
 const changed = structuredClone(raw); const changedPrediction = changed.results.find(r => r.kind === 'development_fresh_original').predictions[0].prediction;
 changedPrediction.answer = !changedPrediction.answer;
 assert.throws(() => createGuideRepairFeedbackV1({ ...deps, evaluation: seal(changed) }), { code: 'ARTIFACT_HASH_MISMATCH' });
+const db = new DatabaseSync(path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite'), { readOnly: true });
+try {
+  const row = db.prepare("SELECT response FROM attempts WHERE run=? AND state='received'").get('guide-repair-1190b257ffa5d310e4e0');
+  const actualOutput = verifySeal(JSON.parse(row.response)).value.output.channels.skill.content;
+  const actualProjection = applyGuideLocalPatchV1(actualOutput, { teacher, feedback });
+  assert.deepEqual(actualProjection[0].procedure, actualOutput.replacements[0].procedure);
+  assert.deepEqual(actualProjection[0].sourceRefs, teacher.lessons[0].sourceRefs);
+  assert.deepEqual(actualProjection.slice(1), teacher.lessons.slice(1));
+  const badExtra = structuredClone(actualOutput); badExtra.replacements[0].extra = 'unapproved';
+  rejects(badExtra, 'OUTPUT_SCHEMA_INVALID');
+} finally { db.close(); }
 const directory = await mkdtemp(path.join(base, 'guide-local-test-'));
 const store = openProductionStore(path.join(directory, 'production.sqlite'), { runId: 'injected-local', recipeHash: hash('injected-local') });
 let calls = 0;
@@ -88,7 +100,7 @@ try {
 const files = ['packages/skill-evaluation/guide-local-repair-v1.mjs', 'scripts/verify-ticket-18-guide-local-repair-v1.mjs',
   'packages/skill-evaluation/rules-backed-answer-repair-v1.mjs', 'packages/skill-evaluation/answer-internal-review-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 14, candidateHash: candidate.hash, teacherHash: teacher.hash, evaluationHash: evaluation.hash,
+const report = seal({ passed: true, checks: 16, candidateHash: candidate.hash, teacherHash: teacher.hash, evaluationHash: evaluation.hash,
   feedbackHash: feedback.hash, codeHashes, providerCalls: 0, injectedEditorOnly: true, actualQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'guide-local-repair-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 14, sourceBoundFailures: 2, editableLessons: 1, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 16, sourceBoundFailures: 2, editableLessons: 1, providerCalls: 0, hash: report.hash }));

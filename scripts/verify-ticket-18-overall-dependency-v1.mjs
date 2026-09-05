@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { qualifyOverallProductionDependencyV1 } from '../packages/skill-evaluation/overall-production-dependency-v1.mjs';
+import { seal, verifySeal, hash, sha256 } from '../packages/skill-production/common.mjs';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), base = path.join(root, 'build/ticket-18-production-v3');
+const runId = 'guide-repair-bab46109030e9073f739';
+const json = async (run, name) => verifySeal(JSON.parse(await readFile(path.join(base, run, name + '.json'), 'utf8')));
+const candidate = await json('overall-repair-05a5ac464028e464918e', 'overall-rules-candidate');
+const evaluation = await json(runId, 'actual-guided-evaluation'), deliveryEvidence = await json(runId, 'verified-guide-repair-evidence');
+const dependency = await json(runId, 'overall-production-dependency');
+const deps = { candidate, evaluation, deliveryEvidence };
+assert.equal(qualifyOverallProductionDependencyV1(deps).hash, dependency.hash);
+assert(dependency.qualifiedForDependentGeneration && !dependency.formalAcceptance && !dependency.runtimeAccepted && !dependency.trainingTruth);
+assert.equal(dependency.completeSkill.sections.flatMap(s => s.claims).length, 522);
+assert.equal(dependency.operationalGuide.lessons.length, 4);
+const body = value => Object.fromEntries(Object.entries(structuredClone(value)).filter(([k]) => k !== 'hash'));
+let bad = body(deliveryEvidence); bad.evaluationHash = hash('foreign');
+assert.throws(() => qualifyOverallProductionDependencyV1({ ...deps, deliveryEvidence: seal(bad) }), { code: 'OVERALL_DEPENDENCY_EVIDENCE_DRIFT' });
+bad = body(deliveryEvidence); bad.qualityPassed = false;
+assert.throws(() => qualifyOverallProductionDependencyV1({ ...deps, deliveryEvidence: seal(bad) }), { code: 'OVERALL_DEPENDENCY_QUALITY_NOT_PASSED' });
+bad = body(deliveryEvidence); bad.exactActualRequestsReconstructed = false;
+assert.throws(() => qualifyOverallProductionDependencyV1({ ...deps, deliveryEvidence: seal(bad) }), { code: 'OVERALL_DEPENDENCY_QUALITY_NOT_PASSED' });
+bad = body(evaluation); bad.summary[0].correct = 68;
+const changed = seal(bad), evidence = seal({ ...body(deliveryEvidence), evaluationHash: changed.hash, summary: changed.summary });
+assert.throws(() => qualifyOverallProductionDependencyV1({ ...deps, evaluation: changed, deliveryEvidence: evidence }), { code: 'OVERALL_DEPENDENCY_DENOMINATOR_INVALID' });
+bad = body(evaluation); bad.results[0].predictions[0].passed = false;
+const failed = seal(bad), forgedSummary = seal({ ...body(deliveryEvidence), evaluationHash: failed.hash });
+assert.throws(() => qualifyOverallProductionDependencyV1({ ...deps, evaluation: failed, deliveryEvidence: forgedSummary }), { code: 'OVERALL_DEPENDENCY_DENOMINATOR_INVALID' });
+bad = body(deliveryEvidence); bad.runtimeAccepted = true;
+assert.throws(() => qualifyOverallProductionDependencyV1({ ...deps, deliveryEvidence: seal(bad) }), { code: 'OVERALL_DEPENDENCY_AUTHORITY_INVALID' });
+const files = ['packages/skill-evaluation/overall-production-dependency-v1.mjs', 'scripts/qualify-ticket-18-overall-dependency-v1.mjs',
+  'scripts/verify-ticket-18-overall-dependency-v1.mjs'];
+const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
+const report = seal({ passed: true, checks: 8, actualDependencyHash: dependency.hash, actualEvidenceHash: deliveryEvidence.hash,
+  codeHashes, providerCalls: 0, formalSkillsAccepted: 0, trainingTruth: false });
+await writeFile(path.join(base, 'overall-dependency-readiness.json'), JSON.stringify(report, null, 2));
+console.log(JSON.stringify({ passed: true, checks: 8, dependencyHash: dependency.hash, providerCalls: 0, hash: report.hash }));

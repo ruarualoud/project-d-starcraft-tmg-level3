@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadGuideRepairInputsV1 } from './ticket-18-guide-repair-inputs-v1.mjs';
 import { inspectGuideNoProgressV1 } from './ticket-18-guide-no-progress-evidence-v1.mjs';
+import { replayGuideReconstructionV1, materializeReusedGuideV1 } from './ticket-18-guide-reconstruction-reuse-v1.mjs';
 import { repairGuideFromRulesV1 } from '../packages/skill-evaluation/guide-local-repair-v1.mjs';
 import { evaluateGuidedRulesV1 } from '../packages/skill-evaluation/guided-rules-evaluation-v1.mjs';
 import { openReadOnlyProductionReplayV1 } from '../packages/skill-evaluation/read-only-production-replay-v1.mjs';
@@ -22,6 +23,8 @@ if (recipe.version !== 'guide_local_repair_and_evaluation_v1' || runId !== 'guid
 const deps = await loadGuideRepairInputsV1(root, recipe.parentRunId);
 const recovery = recipe.recoveryRunId ? await inspectGuideNoProgressV1(root, recipe.recoveryRunId, deps) : null;
 if ((recovery?.hash || null) !== (recipe.recoveryHash || null)) fail('GUIDE_REPAIR_RECOVERY_DRIFT');
+const reuse = recipe.reuseRunId ? await replayGuideReconstructionV1(root, recipe.reuseRunId, deps, recovery) : null;
+if ((reuse?.hash || null) !== (recipe.reuseHash || null)) fail('GUIDE_REPAIR_REUSE_DRIFT');
 if (recipe.revision !== (deps.parent.revision ?? 0) + 1 || recipe.parentEvidenceHash !== deps.parentEvidence.hash
   || recipe.parentRecipeHash !== deps.parent.hash || recipe.teacherHash !== deps.teacher.hash || recipe.feedbackHash !== deps.feedback.hash
   || recipe.candidateHash !== deps.candidate.hash || recipe.contextHash !== deps.context.hash
@@ -30,17 +33,18 @@ const filename = path.join(root, 'build/ticket-17-production-redesign-v1/product
 const replay = openReadOnlyProductionReplayV1({ filename, runId, recipe });
 let rebuilt, delivery;
 try {
-  const repaired = await repairGuideFromRulesV1({ ...deps, ...replay, recovery });
+  const repaired = reuse ? materializeReusedGuideV1(replay.store, reuse) : await repairGuideFromRulesV1({ ...deps, ...replay, recovery });
   assert.equal(repaired.hash, savedRepair.hash);
   rebuilt = await evaluateGuidedRulesV1({ ...deps, teacher: repaired, ...replay });
   assert.equal(rebuilt.hash, actual.hash); assert.deepEqual(rebuilt.summary, report.summary);
   assert.equal(rebuilt.sourceControl.correct, report.sourceCorrect); assert.equal(rebuilt.passed, report.passed);
-  delivery = replay.evidence(); assert.equal(delivery.receiptHashes.length, 24); assert.equal(delivery.matchedStepIds.length, 24);
+  delivery = replay.evidence(); assert.equal(delivery.receiptHashes.length, reuse ? 23 : 24); assert.equal(delivery.matchedStepIds.length, 24);
   assert.throws(() => replay.store.settle('anything', {}), { code: 'READ_ONLY_REPLAY_MUTATION_FORBIDDEN' });
 } finally { replay.close(); }
 const result = seal({ schema: 'starcraft_guide_local_repair_actual_evidence_v1', runId, recipeHash: recipe.hash,
   parentEvidenceHash: deps.parentEvidence.hash, candidateHash: deps.candidate.hash, repairedTeacherHash: savedRepair.hash,
   evaluationHash: rebuilt.hash, delivery, sourceCorrect: rebuilt.sourceControl.correct, summary: rebuilt.summary,
+  ...(reuse ? { reusedDelivery: reuse.delivery, reuseHash: reuse.hash } : {}),
   rawAnswerScoresRecomputed: true, exactActualRequestsReconstructed: true, oldScoresOverwritten: false,
   independentSuiteRepeated: true, independentCasesExposedToRepair: false, newProviderCalls: 0,
   qualityPassed: rebuilt.passed, formalAcceptance: false, runtimeAccepted: false, trainingTruth: false });
