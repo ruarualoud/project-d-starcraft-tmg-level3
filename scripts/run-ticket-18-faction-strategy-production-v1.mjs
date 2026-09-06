@@ -59,7 +59,7 @@ const drills = await createFactionRosterChoiceDrillsV1({ catalogue, dataset });
 const knownRulePolicies = inputs.map(input => createFactionKnownRulePolicyV1({ input, drills }));
 const main = await verifyProductionReadiness(root, catalogue);
 const gates = [];
-for (const name of ['input-readiness', 'workflow-readiness', 'dsh-context-readiness', 'continuation-readiness', 'json-recovery-readiness', 'targeted-corrections-readiness']) {
+for (const name of ['input-readiness', 'workflow-readiness', 'dsh-context-readiness', 'continuation-readiness', 'json-recovery-readiness', 'targeted-corrections-readiness', 'review-evidence-readiness']) {
   const gate = await json('build/ticket-18-faction-production-v1/' + name + '.json');
   if (!gate.passed) fail('FACTION_READINESS_FAILED');
   for (const r of gate.codeHashes) if (sha256(await readFile(path.join(root, r.file))) !== r.hash) fail('FACTION_READINESS_CODE_DRIFT');
@@ -152,6 +152,7 @@ finally {
   await worker?.close().catch(() => {});
   const ledger = store.summary(), global = store.globalSummary();
   const report = seal({ runId, recipeHash: recipe.hash, overallDependencyHash: overallDependency.hash,
+    readinessHashes: gates.map(g => g.hash),
     candidateHashes: candidates.map(c => c.hash), factionsGenerated: candidates.length,
     sourceReviewPassed: !failure && candidates.length === 2 && candidates.every(c => c.semanticReviewPassed), failure, ledger,
     continuation: continuation?.manifest || null, cumulativeKnownTokensLowerBound: historyTokens + global.knownTokens,

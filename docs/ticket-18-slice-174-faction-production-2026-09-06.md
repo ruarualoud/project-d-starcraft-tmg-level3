@@ -5,7 +5,40 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: explicit targets, empty-patch recovery, calibrated fact correction
+## Current checkpoint: preserve mixed source/target evidence without misattribution
+
+Code `2518343` was pushed. Actual run `faction-v1-bcba77c39b85d99b5dbd`
+reused all eight recommendations and applied the one calibrated cost correction.
+The first two target-bound review batches completed. The third returned correct
+target IDs/titles, several exact target quotes, and exact English source quotes
+under candidate field paths; one verdict also provided four focus rows rather
+than the requested maximum three. The validator rejected it and the schema
+repair returned byte-identical output, stopping with
+`FACTION_SCHEMA_REPAIR_NO_PROGRESS`. No completed dual review or local model
+repair round was accepted. Some positive judgments still missed the independently
+recorded Core/reaction errors; those findings remain mandatory blockers.
+
+A real red/green ten-check regression now preserves this response without
+rewriting its judgments. Up to sixteen focus rows are bounded and retained.
+Every verdict still needs an exact host target ID/title and at least one exact
+quote from that target's specified field. A non-target quote is accepted ONLY
+when it exactly occurs in a declared, target-cited frozen original source
+passage; it is labelled `source_quote_not_target_quote`, not falsely labelled
+as candidate text. Wrong-neighbour, undeclared-source, invented, source-only
+and excessive-count controls fail. This is evidence typing, not semantic proof.
+
+Run4 calls /1,067,038 tokens /estimated ¥0.606799. Authoritative all-history
+total46,048,440 known tokens /estimated-or-reserved ¥51.362262, no402. Report
+`61c5c604528864fa6fc74989cc99d8e33af7b7692bbd9ad54e29789e6c17a667`.
+Handle72583 is terminal exit1. Do not restart it unchanged. Updated related
+gates passed: mixed-evidence10, actual-correction22, workflow34, continuation20,
+and two actual DSH full-context injected-response sessions. The next continuation
+will reuse paid raw review output and retype its evidence under the new validator;
+it will not inherit a completed source-review or quality verdict.
+Source-reviewed sections0/15, faction candidates0/2; Ticket18 2/8, project16/22,
+formal/runtime five-piece acceptance0/5.
+
+## Earlier checkpoint: explicit targets, empty-patch recovery, calibrated fact correction
 
 The three observed defects now have production-path changes, not just a report:
 

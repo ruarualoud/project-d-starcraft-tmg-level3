@@ -27,13 +27,21 @@ export function validateTargetedFactionReviewV1(output, targets) {
     const target = pending.get(v.targetId);
     if (!target || target.title !== v.title) fail('FACTION_REVIEW_TARGET_IDENTITY_MISMATCH');
     pending.delete(v.targetId);
-    if (!Array.isArray(v.focus) || !v.focus.length || v.focus.length > 3) fail('FACTION_REVIEW_TARGET_FOCUS_REQUIRED');
+    if (!Array.isArray(v.focus) || !v.focus.length || v.focus.length > 16) fail('FACTION_REVIEW_TARGET_FOCUS_REQUIRED');
     const evidence = v.focus.map(f => {
       exact(f, ['path', 'quote']); text(f.quote, 240);
       const field = target.fields.find(field => field.path === f.path);
-      if (!field || f.quote.length < Math.min(8, field.text.length) || !field.text.includes(f.quote)) fail('FACTION_REVIEW_TARGET_QUOTE_MISMATCH');
-      return { path: f.path, quote: f.quote, fieldHash: hash(field.text) };
+      if (!field || f.quote.length < Math.min(8, field.text.length)) fail('FACTION_REVIEW_TARGET_QUOTE_MISMATCH');
+      if (field.text.includes(f.quote)) return { kind: 'target_field_quote', path: f.path, quote: f.quote, fieldHash: hash(field.text) };
+      // Observed output mixed exact original source passages with its exact
+      // target quotes. Preserve them as SOURCE evidence, never pretend that
+      // the English source text appeared in the candidate's Chinese field.
+      const sources = targets.focusedSources.filter(s => Array.isArray(v.sourceRefs) && v.sourceRefs.includes(s.ref))
+        .flatMap(s => s.passages.filter(p => p.text.includes(f.quote)).map(p => ({ ref: s.ref, spanId: p.spanId, passageHash: hash(p.text) })));
+      if (!sources.length) fail('FACTION_REVIEW_TARGET_QUOTE_MISMATCH');
+      return { kind: 'source_quote_not_target_quote', claimedPath: f.path, quote: f.quote, sources };
     });
+    if (!evidence.some(e => e.kind === 'target_field_quote')) fail('FACTION_REVIEW_TARGET_QUOTE_REQUIRED');
     bindings.push({ targetId: target.targetId, index: target.index, recommendationHash: target.recommendationHash, evidence });
     return { index: target.index, verdict: v.verdict, reason: v.reason, sourceRefs: v.sourceRefs };
   });
