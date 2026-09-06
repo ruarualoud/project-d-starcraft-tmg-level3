@@ -58,6 +58,18 @@ try {
   const part = { verdicts: review.verdicts.slice(2, 4), coverage: [] };
   validateFactionReviewV1(part, { input: inputs[0], section, draft: actualDraft, reviewIndices: [2, 3], requiredSourceRefs: [] });
   assert.throws(() => validateFactionReviewV1(part, { input: inputs[0], section, draft: actualDraft, reviewIndices: [4, 5], requiredSourceRefs: [] }), { code: 'FACTION_REVIEW_SCOPE_INVALID' });
+  const aliasedArtifact = suffix => verifySeal(JSON.parse(evidenceDb.prepare("SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'").get(
+    'faction-v1-f8c57661dd395f069591', 'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.review-batch.supportive.0.0' + suffix).artifact)).value;
+  const aliased = aliasedArtifact('').output;
+  assert.equal(hash(aliased), hash(aliasedArtifact('.schema').output));
+  assert.deepEqual(aliased.coverage[0].sourceRefs, [aliased.coverage[0].sourceRef]);
+  const aliasParams = { input: inputs[0], section, draft: actualDraft, reviewIndices: [0, 1] };
+  assert.equal(hash(validateFactionReviewV1(aliased, aliasParams)), hash(aliased));
+  assert.equal(aliased.verdicts[0].verdict, 'unsupported');
+  const conflict = structuredClone(aliased); conflict.coverage[0].sourceRefs = ['source:army_units:marine'];
+  assert.throws(() => validateFactionReviewV1(conflict, aliasParams), { code: 'FACTION_REVIEW_COVERAGE_ALIAS_CONFLICT' });
+  const extraField = structuredClone(aliased); extraField.coverage[0].verdictOverride = 'supported';
+  assert.throws(() => validateFactionReviewV1(extraField, aliasParams), { code: 'OUTPUT_SCHEMA_INVALID' });
 } finally { evidenceDb.close(); }
 const temp = await mkdtemp(path.join(base, 'workflow-test-'));
 const stores = [], makeStore = name => { const s = openProductionStore(path.join(temp, name + '.sqlite'), { runId: name, recipeHash: hash(name) }); stores.push(s); return s; };
@@ -157,8 +169,8 @@ try {
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/runtime.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 29, inputHashes: inputs.map(i => i.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 33, inputHashes: inputs.map(i => i.hash), codeHashes, maxTaskBytes,
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 29, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 33, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));

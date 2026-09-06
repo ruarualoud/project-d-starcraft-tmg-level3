@@ -5,7 +5,26 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: source-review output partition
+## Current checkpoint: strict redundant source alias preservation
+
+Run `faction-v1-f8c57661dd395f069591` is terminal, report
+`1925cc0aaf7d6963adf373367a1016dcf946418515280746417891cb8063a33e`.
+The first two-verdict source-review batch returned exactly the requested
+indices and a negative judgment. Its coverage row additionally included
+`sourceRefs:[sourceRef]`; the schema retry was identical. Old exact-field
+validation rejected that redundant alias. The new validator retains it only
+when it equals the single canonical sourceRef exactly; conflicting aliases,
+unknown extra fields and changed judgments cannot be normalized away. Raw
+Provider outputs remain unchanged and negative findings still block review.
+Thirty-three workflow checks passed, including the actual original/retry pair,
+conflicting alias/unknown-field controls and negative-verdict preservation.
+
+Actual run2 calls /515,235 tokens /estimated ¥0.493565; cumulative42,662,621
+known tokens /estimated-or-reserved ¥50.111504, no402. All first-section8/8
+recommendations remain saved. Complete dual-source-reviewed sections0/15;
+faction candidates0/2. Engineering preflight precedes the next paid continuation.
+
+## Earlier checkpoint: source-review output partition
 
 Run `faction-v1-ed39f02a84aaff066af0` is terminal, report
 `40cee7539bcbbd56098ed96e1915127609f71c3a6ccbbe0b067613b2e4666116`.

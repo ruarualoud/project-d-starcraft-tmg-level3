@@ -117,7 +117,14 @@ export function validateFactionReviewV1(output, { input, section, draft,
   // global material. No verdict/negative finding is discarded or rewritten.
   const sources = new Set([...required, ...draft.recommendations.flatMap(r => r.sourceRefs)]);
   for (const c of output.coverage) {
-    exact(c, ['sourceRef', 'verdict', 'recommendationIndices', 'reason']); text(c.reason, 1200);
+    const keys = ['sourceRef', 'verdict', 'recommendationIndices', 'reason'];
+    if (c && Object.hasOwn(c, 'sourceRefs')) {
+      keys.push('sourceRefs');
+      // Observed redundant alias, retained byte-for-byte rather than asking
+      // the model to rewrite a negative review. Conflicting aliases fail.
+      if (hash(c.sourceRefs) !== hash([c.sourceRef])) fail('FACTION_REVIEW_COVERAGE_ALIAS_CONFLICT');
+    }
+    exact(c, keys); text(c.reason, 1200);
     if (!sources.delete(c.sourceRef) || !['covered', 'omitted', 'uncertain'].includes(c.verdict)
       || !Array.isArray(c.recommendationIndices) || new Set(c.recommendationIndices).size !== c.recommendationIndices.length
       || c.recommendationIndices.some(i => !Number.isInteger(i) || !draft.recommendations[i]?.sourceRefs.includes(c.sourceRef))
