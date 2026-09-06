@@ -33,6 +33,14 @@ export function validateTargetedFactionReviewV1(output, targets) {
       const field = target.fields.find(field => field.path === f.path);
       if (!field || f.quote.length < Math.min(8, field.text.length)) fail('FACTION_REVIEW_TARGET_QUOTE_MISMATCH');
       if (field.text.includes(f.quote)) return { kind: 'target_field_quote', path: f.path, quote: f.quote, fieldHash: hash(field.text) };
+      // The observed review copied the COMPLETE field and appended one Chinese
+      // sentence stop. This is not an exact quote: preserve both strings and
+      // mark the single addition. No substring/fuzzy/word normalization, and
+      // the verdict still requires a separate strictly exact target quote.
+      if (!/[。.!?！？]$/u.test(field.text) && f.quote === field.text + '。') {
+        return { kind: 'target_field_quote_added_terminal_stop_v1', path: f.path, quote: f.quote,
+          matchedText: field.text, fieldHash: hash(field.text), addedTerminalStop: '。', rawQuoteExact: false };
+      }
       // Observed output mixed exact original source passages with its exact
       // target quotes. Preserve them as SOURCE evidence, never pretend that
       // the English source text appeared in the candidate's Chinese field.

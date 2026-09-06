@@ -12,11 +12,15 @@ const actual = verifySeal(JSON.parse(await readFile(path.join(base, 'targeted-co
 const draft = actual.knownRuleCorrection.draft, section = createFactionWritingPlanV1(input).sections[0];
 const targets = createFactionReviewTargetsV1({ input, section, draft, indices: [4, 5] });
 const db = new DatabaseSync(path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite'), { readOnly: true });
-let output, retry;
+let output, retry, repairedReview, repairedRetry;
 try {
   const id = 'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.review-target-batch-v1.supportive.0.4';
   const get = suffix => verifySeal(JSON.parse(db.prepare('SELECT artifact FROM steps WHERE run=? AND id=?').get('faction-v1-bcba77c39b85d99b5dbd', id + suffix).artifact)).value.output;
   output = get(''); retry = get('.schema');
+  const repairedId = 'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.review-target-batch-v1.supportive.1.2';
+  const repaired = suffix => verifySeal(JSON.parse(db.prepare('SELECT artifact FROM steps WHERE run=? AND id=?')
+    .get('faction-v1-9d47758f9f7f7625a1af', repairedId + suffix).artifact)).value.output;
+  repairedReview = repaired(''); repairedRetry = repaired('.schema');
 } finally { db.close(); }
 assert.equal(hash(output), hash(retry));
 // RED on the actual four-focus response before the typed evidence recovery.
@@ -38,9 +42,37 @@ const negative = structuredClone(output); negative.verdicts[0].verdict = 'unsupp
 assert.equal(validateTargetedFactionReviewV1(negative, targets).review.verdicts[0].verdict, 'unsupported');
 const overflow = structuredClone(output); overflow.verdicts[0].focus = Array(17).fill(overflow.verdicts[0].focus[0]);
 assert.throws(() => validateTargetedFactionReviewV1(overflow, targets), { code: 'FACTION_REVIEW_TARGET_FOCUS_REQUIRED' });
+// Actual post-repair review appended exactly one Chinese full stop to the
+// complete risk field. Keep the original quote and disclose the non-exact
+// punctuation; never fuzzy-match words, amounts, negation or another field.
+const inspection = verifySeal(JSON.parse(await readFile(path.join(base, 'faction-v1-9d47758f9f7f7625a1af/first-repair-inspection.json'), 'utf8')));
+const repairedDraft = inspection.after;
+assert.equal(hash(repairedReview), hash(repairedRetry));
+const repairedTargets = createFactionReviewTargetsV1({ input, section, draft: repairedDraft, indices: [2, 3] });
+const punctuationBound = validateTargetedFactionReviewV1(repairedReview, repairedTargets);
+validateFactionReviewV1(punctuationBound.review, { input, section, draft: repairedDraft, reviewIndices: [2, 3], requiredSourceRefs: [] });
+const punctuation = punctuationBound.bindings[0].evidence.find(e => e.kind === 'target_field_quote_added_terminal_stop_v1');
+assert(punctuation); assert.equal(punctuation.quote, repairedDraft.recommendations[2].risk + '。');
+assert.equal(punctuation.matchedText, repairedDraft.recommendations[2].risk);
+assert.equal(punctuation.addedTerminalStop, '。'); assert.equal(punctuation.rawQuoteExact, false);
+assert.equal(punctuation.fieldHash, hash(repairedDraft.recommendations[2].risk));
+assert.equal(punctuationBound.rawOutputHash, hash(repairedReview));
+assert.deepEqual(punctuationBound.review.verdicts.map(v => v.verdict), repairedReview.verdicts.map(v => v.verdict));
+assert.equal(punctuationBound.semanticCorrectnessProven, false);
+for (const quote of [punctuation.quote + '。', punctuation.matchedText + '！', punctuation.matchedText + '?',
+  punctuation.matchedText.replace('10瓦斯', '20瓦斯') + '。', punctuation.matchedText.replace('不能', '能') + '。',
+  punctuation.matchedText.slice(5) + '。']) {
+  const bad = structuredClone(repairedReview); bad.verdicts[0].focus[2].quote = quote;
+  assert.throws(() => validateTargetedFactionReviewV1(bad, repairedTargets), { code: 'FACTION_REVIEW_TARGET_QUOTE_MISMATCH' });
+}
+const punctuationOnly = structuredClone(repairedReview); punctuationOnly.verdicts[0].focus = [punctuationOnly.verdicts[0].focus[2]];
+assert.throws(() => validateTargetedFactionReviewV1(punctuationOnly, repairedTargets), { code: 'FACTION_REVIEW_TARGET_QUOTE_REQUIRED' });
+const punctuationNegative = structuredClone(repairedReview); punctuationNegative.verdicts[0].verdict = 'unsupported';
+assert.equal(validateTargetedFactionReviewV1(punctuationNegative, repairedTargets).review.verdicts[0].verdict, 'unsupported');
 const files = ['packages/skill-production-v3/faction-review-targets-v1.mjs', 'scripts/verify-ticket-18-faction-review-evidence-binding-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 10, codeHashes, actualOutputHash: hash(output), bindingReceipt: bound,
+const report = seal({ passed: true, checks: 20, codeHashes, actualOutputHash: hash(output), bindingReceipt: bound,
+  actualPostRepairOutputHash: hash(repairedReview), punctuationBindingReceipt: punctuationBound,
   policy: 'typed_original_source_quotes_require_independent_exact_target_quote', providerCalls: 0, trainingTruth: false });
 await writeFile(path.join(base, 'review-evidence-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 10, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 20, providerCalls: 0, hash: report.hash }));

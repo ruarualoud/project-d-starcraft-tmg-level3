@@ -5,7 +5,45 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: source-scope no-change and authority calibration defect
+## Current checkpoint: actual four-advice repair; post-review quote punctuation
+
+Run `faction-v1-9d47758f9f7f7625a1af` is terminal, handle45336 exit1.
+The exact source-scope adjudication kept the one no-change recommendation;
+four actual Editor outputs replaced recommendations2/4/6/7 atomically, leaving
+0/1/3/5 byte-for-byte unchanged. The read-only first-repair inspector verifies
+all four actual Provider receipts, output hashes and aggregate patch replay.
+The six known bad phrases are absent; this is NOT proof of complete semantic
+correctness. Inspection hash
+`e9564f9994111e921a7df88317ee45f1c5f7cfb33f3be8c86f2ab913c40ed7f0`;
+repaired draft hash
+`4daa6b4903e5e9057ba905e7f5c8fe3374bfc0f8abbff1c2b83f3360a10e8aa9`.
+
+The first post-repair review batch passed structural validation. The second
+copied the complete risk field but added one Chinese full stop. Exact matching
+rejected it, and the schema call repeated the identical response. The saved
+actual sample reproduced RED. The bounded recovery now records that one
+punctuation addition as NON-exact evidence, retaining raw quote and exact field
+text/hash. It permits no fuzzy words, altered numbers/negation, truncated fields,
+other punctuation or repeated stops, and still requires another strictly exact
+target-field quote in that verdict. All verdicts/reasons remain unchanged.
+Related gates passed with zero Provider calls: evidence-binding20, actual
+targeted-correction28, full workflow41 (397 injected roles), paired-consumer12,
+and two real isolated DSH transport sessions with injected HTTPS responses.
+Complete wire sizes remain1,029,954/1,049,171 bytes. Evidence readiness
+`53155b9a109eeb5071784630e238082603716c6eba86c2013b95e25e72398b1a`,
+workflow `2096fd9dc928bbbc693c0eafc7743a43832d9be6c529597fdadbb98343be85a3`,
+DSH `35352c8f7e387f0a37daf2117b9526e327a32b092bba8c85085b0ece807fe07a`.
+
+Run7 calls /1,938,483 tokens /estimated ¥0.424366. All-history50,124,685 known
+tokens /estimated-or-reserved ¥52.781523. Faction chain51 calls /13,541,369
+tokens /¥7.083069. No402 or ambiguous intent, no paid process running. Terminal
+report `85143e63c829cc1fd83dc66b6f9d9725557268d5d68d971c769f269f4aa00b79`.
+Continue from9d477 only under validated new code, preserving ancestor accounting,
+start time and limits. Source-reviewed sections0/15, faction candidates0/2;
+Ticket18 2/8, project16/22, overall offline1/5, formal/runtime0/5.
+FAQ46 explicit current release/Room adoption remains mandatory before runtime.
+
+## Earlier checkpoint: source-scope no-change and authority calibration defect
 
 Run `faction-v1-dede855c43844b970012` is terminal, handle69989 exit1. All eight
 target-bound review batches completed, producing five recommendation issues:
