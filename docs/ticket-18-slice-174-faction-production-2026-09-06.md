@@ -7,22 +7,54 @@ formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
 ## Latest terminal and repair-ready checkpoint
 
-Live successor `faction-v1-ba2a32dd31a97f909ac4` /76659 (pushed `c319282`)
-has actually repaired the remaining four fields in two bounded output batches:
+`faction-v1-ba2a32dd31a97f909ac4` /76659 is TERMINAL (exit1), not a network
+wait. The third section completed five actual edits and a fresh full review;
+two issues remain. Its next editor returned unchanged prose; the subsequent
+source-reconstruction produced a complete replacement but omitted `additions`.
+The old exact schema rejected it. Run35 new calls /9,272,564 tokens /¥1.478895;
+all-history78,299,875 known tokens /estimated-or-reserved ¥57.782108. No402 or
+in-flight request. Report `82543b3dc14bb5ed0d15fa1e3997f5e5bbcc8ee9b671580e4ae3d095e2066285`.
+
+The actual output reproduces the failure; adding only an empty additions list
+passes the unchanged parent/target/prose validator. A new host-scoped envelope
+adapter permits this exact two-key shape only when every host issue is an
+existing-recommendation correction, never when source omissions need additions.
+It preserves all authored values, original unsupported judgments and paid raw
+output, and writes a separate normalization receipt. Fourteen checks include
+actual saved-role workflow replay through the failure to the next unrequested
+editor, with0 new Provider calls (`4e8fe8fd…`). This is not exact DSH request
+replay or semantic acceptance. Related workflow44, targeted-correction28,
+continuation38, first-field20, unit-field16/integration8, registered-field20/
+integration8, consumer14 and provenance15 regressions pass with0 Provider calls.
+Full-source DSH2, unit-repair DSH1 and registered-repair DSH3 also pass; original
+review-command recovery DSH1 is finishing. Continuation preflight is next.
+
+Independent rule-application drills now cover22 scoped inputs:8 single-survivor
+Marine damage sequences,8 REPEATABLE Reaction-cap cases,6 named Active/payment
+cases. Four frozen source rows calibrate independently specified expectations
+against actual repeated kernels before scoring; source drift blocks evaluation.
+Fourteen engineering checks pass (`3eecdce8…`), zero Provider calls. These probes
+have not been given to production or a real consumer and claim0 new held-out
+cases. They do not prove complete action legality, strategy or Room operation.
+The third section's current risk text still incorrectly claims immediate
+casualties from NON-LETHAL DAMAGE; format recovery cannot waive that known debt.
+
+The same run actually repaired the second section's remaining four fields in two bounded output batches:
 524,295 tokens /estimated ¥0.281572. Raw-role outputs and both paid receipts
 reapply to the exact prior complete section, inspection
-`38903c033baac11b779aadf936849d5e3648bf2d97ce425f2e9d48ed186015f3`.
+`4f606ae07a028765d36447d152692e88ae5d10a17328e699d4d68b36c6c55eb1`.
 Receipts `f7feb969…` and `ab822f6b…`; unflagged fields and recommendations1/3/6
 are unchanged. The Rocket Launcher versus AGG-12 tradeoff now separates the
 additional SIDEARM/no-Surge profile from replacing C-14; both INSTANT cases
 explicitly disallow Infantry Armor and Life Support responses. Whole-section
-revision2 review is running, not yet accepted. This limited inspection is not
+revision2 review has completed. This limited inspection is not
 general semantic or strategy validation, nor exact replay of every DSH request.
 
 Continuation inherited121 calls /32,183,224 tokens /¥10.353550,87 exact raw
 roles and the original00:21:55UTC start. Limits remain400 calls /60M tokens /
-¥20 /8h; no reset or extension. Last settled all-history69,551,606 known tokens /
-estimated ¥56.584785; no402. Do not restart live76659. Ten additional injected
+¥20 /8h; no reset or extension. At terminal state the chain has156 calls /
+41,455,788 tokens /¥11.832445; the remainder may require an explicitly audited
+budget extension preserving all prior usage and the start time. Ten additional injected
 fast checks prove that a new bare review is normalized after its first settled
 response without resampling, invalid target output retains usage and remains
 blocked, and a changed prior request cannot send (`e90a1e69…`,0 Provider).
@@ -58,7 +90,7 @@ Consumer provenance now distinguishes explicitly recorded command-envelope
 recovery from raw commands and verifies DSH wire hashes; the existing15 lineage
 checks pass. Actual complete-candidate consumer verification is still pending.
 
-Next: commit/push and continue907961 with the new bound policy; no new faction
+Next: finish patch-envelope regression gates, commit/push and continueba2a with the new bound policy; no new faction
 qualification is claimed. Original ancestor limits and start remain unchanged.
 
 ## Three-field repair integration checkpoint

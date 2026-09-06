@@ -237,6 +237,26 @@ export function applyFactionStrategyPatchV1(output, { input, draft, issues }) {
   return validateFactionDraftV1(next, input);
 }
 
+// Optional empty channels belong to the host's edit scope, not to model
+// semantics. Recover only this complete two-key shape when there are no source
+// omissions; preserve all authored text and keep the strict patch validator.
+export function normalizeFactionStrategyPatchEnvelopeV1(output, args) {
+  verifySeal(args.issues);
+  let normalized = output, receipt = null;
+  if (output && typeof output === 'object' && !Array.isArray(output)
+    && Object.keys(output).length === 2 && Object.hasOwn(output, 'parentHash')
+    && Object.hasOwn(output, 'replacements') && args.issues.issues.length > 0
+    && args.issues.issues.every(issue => issue.kind === 'recommendation_source_or_condition')) {
+    normalized = { ...clone(output), additions: [] };
+    receipt = seal({ version: 'faction_patch_empty_additions_envelope_v1', originalOutputHash: hash(output),
+      normalizedOutputHash: hash(normalized), issuesHash: args.issues.hash, parentHash: hash(args.draft),
+      sourceOmissions: 0, inferredEmptyChannel: 'additions', authoredValuesPreserved: true,
+      semanticAcceptanceInherited: false, freshWholeSectionReviewRequired: true, trainingTruth: false });
+  }
+  applyFactionStrategyPatchV1(normalized, args);
+  return { output: normalized, receipt };
+}
+
 export async function produceFactionStrategyV1({ input, runtime, store, knownRulePolicy, fieldRepairSeed = null,
   registeredSourceFieldRepair = false, onProgress = () => {} }) {
   if (typeof registeredSourceFieldRepair !== 'boolean') fail('FACTION_SOURCE_FIELD_POLICY_INVALID');
@@ -426,13 +446,22 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
       // draft/issues/source context. Apply the aggregate atomically afterward.
       for (const [ordinal, issue] of issues.issues.entries()) {
         const localIssues = seal({ ...Object.fromEntries(Object.entries(issues).filter(([k]) => k !== 'hash')), issues: [issue], openIssues: 1 });
-        const validatePatch = out => { applyFactionStrategyPatchV1(out, { input, draft, issues: localIssues }); return out; };
+        const validatePatch = edit => {
+          const normalized = normalizeFactionStrategyPatchEnvelopeV1(edit.value, { input, draft, issues: localIssues });
+          if (normalized.receipt) {
+            const lease = store.acquire(edit.artifact.roleId + '.patch-envelope-v1', {
+              artifactHash: edit.artifact.hash, normalizationHash: normalized.receipt.hash });
+            if (!lease.cached) store.finish(lease, seal({ rawArtifactHash: edit.artifact.hash,
+              normalization: normalized.receipt, rawProviderOutputOverwritten: false, trainingTruth: false }));
+          }
+          return { ...edit, value: normalized.output };
+        };
         let edit = await role(section.id + '.editor.' + revision + '.' + ordinal, instruction + '\n本次仅输出localIssue这一项的替换或补充，其余问题会分别处理；完整draft及allIssues保留供一致性核对。',
           { section, draft, parentHash: hash(draft), localIssue: issue, issues: localIssues, allIssues: issues,
             editTargetAtEnd: { parentHash: hash(draft), localIssue: issue,
               target: issue.index === undefined ? null : { index: issue.index, title: draft.recommendations[issue.index].title,
                 recommendationHash: hash(draft.recommendations[issue.index]), recommendation: draft.recommendations[issue.index] } } }, out => out);
-        try { validatePatch(edit.value); }
+        try { edit = validatePatch(edit); }
         catch (error) {
           if (error.code !== 'FACTION_PATCH_NO_PROGRESS') throw error;
           const repairScopes = [issue.kind === 'assigned_source_omission' ? issue : {
@@ -443,7 +472,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
             { section, parentHash: hash(draft), repairScopes, noProgressArtifactHash: edit.artifact.hash,
               preservedRecommendations: draft.recommendations.flatMap((r, index) => index === issue.index ? [] : [{ index, recommendation: r }]),
               repairRequestAtEnd: { parentHash: hash(draft), repairScopes } }, out => out);
-          validatePatch(edit.value);
+          edit = validatePatch(edit);
         }
         collected.replacements.push(...edit.value.replacements); collected.additions.push(...edit.value.additions); editorHashes.push(edit.artifact.hash);
       }
