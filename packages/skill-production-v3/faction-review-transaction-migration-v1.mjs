@@ -29,6 +29,7 @@ export function validateFactionReviewTransactionMigrationV1({ parent, next, read
     || !readiness.fullOldWorkflowReplayed || !readiness.oldRequestsUnchangedBeforeIntervention
     || !readiness.newReviewNamespaces || !readiness.badEditBlockedBeforeApplicationAndBeforeNextReview
     || !readiness.blockedRawEditAndReceiptPersisted || !readiness.modelReviewAcceptanceNotInherited
+    || !readiness.hostScopeMaterializationGuardedBeforeApplication || readiness.modelAuthoredEditorIdentifiers !== false
     || !readiness.originalRevisionBudgetPreserved || readiness.newProviderCalls !== 0
     || actualEvidence.version !== 'actual_faction_dependency_recheck_evidence_v1'
     || actualEvidence.inputHash !== next.inputHashes[0] || !actualEvidence.actualProviderRequestsMatched

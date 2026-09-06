@@ -14,7 +14,7 @@ const filename = path.join(root, 'build/ticket-17-production-redesign-v1/product
 const json = async n => verifySeal(JSON.parse(await readFile(path.join(base, n + '.json'), 'utf8')));
 const externalJson = async file => verifySeal(JSON.parse(await readFile(path.join(root, file), 'utf8')));
 const reseal = (v, fields) => { const { hash: ignored, ...body } = v; return seal({ ...body, ...fields }); };
-const parentRunId = process.argv[2] || 'faction-v1-6792c09dcce21eeff6c4';
+const parentRunId = process.argv[2] || 'faction-v1-70baa40b53f141b3dabb';
 assert.match(parentRunId, /^faction-v1-[a-f0-9]{20}$/);
 const parent = await json(parentRunId + '/recipe'), parentReport = await json(parentRunId + '/report');
 const phaseRun = parent.phaseFieldBinding.runId;
@@ -73,6 +73,7 @@ rejects({ next: seal(withoutReviewBody) }, 'FACTION_REVIEW_TRANSACTION_BINDINGS_
 for (const fields of [{ passed: false }, { fullOldWorkflowReplayed: false }, { oldRequestsUnchangedBeforeIntervention: false },
   { newReviewNamespaces: false }, { badEditBlockedBeforeApplicationAndBeforeNextReview: false },
   { blockedRawEditAndReceiptPersisted: false }, { modelReviewAcceptanceNotInherited: false },
+  { hostScopeMaterializationGuardedBeforeApplication: false }, { modelAuthoredEditorIdentifiers: true },
   { originalRevisionBudgetPreserved: false }, { newProviderCalls: 1 }, { inputHashes: [hash('foreign')] },
   { bindingHashes: [hash('foreign')] }]) {
   const changed = reseal(readiness, fields);

@@ -18,8 +18,7 @@ export const FACTION_JSON_OUTPUT_EXAMPLES_V1 = Object.freeze({
   judge: JSON.stringify({ judgments: [{ index: 0, verdict: 'supported', reason: '具体依据，最多1200字符',
     sourceRefs: ['官方来源ID，1至8个'] }] }),
   generatorItems: JSON.stringify({ items: [{ index: 0, value: ADVICE_SHAPE.recommendations[0] }] }),
-  editor: JSON.stringify({ parentHash: '从任务末尾复制精确父hash', replacements: [{ index: 0,
-    value: ADVICE_SHAPE.recommendations[0] }], additions: [] }),
+  editor: JSON.stringify(ADVICE_SHAPE.recommendations[0]),
 });
 const LEGACY_JSON_PROMPT_V1 = Object.freeze({
   reasoner: 'Reasoner：根据完整来源、总规则和本节指定来源回答每个question index，只讨论本阵营及本节范围。区分官方事实、条件策略与待验证效果，说明对手回应/替代方案，不声称完整行动合法或胜率已证明。返回{"answers":[{"index":整数,"answer":"完整简洁推理，最多1600字符","sourceRefs":["官方来源ID，1至8"]}],"uncertainties":["未证明事项"]}，每个index一次。',
@@ -261,7 +260,24 @@ export function applyFactionStrategyPatchV1(output, { input, draft, issues }) {
 export function normalizeFactionStrategyPatchEnvelopeV1(output, args) {
   verifySeal(args.issues);
   let normalized = output, receipt = null;
-  if (output && typeof output === 'object' && !Array.isArray(output)
+  const adviceFields = Object.keys(ADVICE_SHAPE.recommendations[0]).sort();
+  const directAdvice = output && typeof output === 'object' && !Array.isArray(output)
+    && Object.keys(output).sort().join(',') === adviceFields.join(',');
+  if (directAdvice) {
+    const [issue] = args.issues.issues;
+    if (args.issues.issues.length !== 1 || !['recommendation_source_or_condition', 'assigned_source_omission'].includes(issue?.kind))
+      fail('FACTION_LOCAL_EDITOR_SCOPE_INVALID');
+    validateFactionDraftV1({ recommendations: [output] }, args.input);
+    normalized = issue.kind === 'recommendation_source_or_condition'
+      ? { parentHash: hash(args.draft), replacements: [{ index: issue.index, value: clone(output) }], additions: [] }
+      : { parentHash: hash(args.draft), replacements: [], additions: [clone(output)] };
+    receipt = seal({ version: 'faction_local_editor_host_scope_materialization_v1', rawOutputHash: hash(output),
+      normalizedOutputHash: hash(normalized), issuesHash: args.issues.hash, parentHash: hash(args.draft),
+      route: issue.kind === 'recommendation_source_or_condition' ? 'replacement' : 'addition',
+      materializedIndex: issue.kind === 'recommendation_source_or_condition' ? issue.index : null,
+      modelAuthoredIdentifiers: false, adviceTextChanged: false, semanticAcceptanceInherited: false,
+      freshWholeSectionReviewRequired: true, trainingTruth: false });
+  } else if (output && typeof output === 'object' && !Array.isArray(output)
     && Object.keys(output).length === 2 && Object.hasOwn(output, 'parentHash')
     && Object.hasOwn(output, 'replacements') && args.issues.issues.length > 0
     && args.issues.issues.every(issue => issue.kind === 'recommendation_source_or_condition')) {
@@ -489,8 +505,8 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
         passed = true; break;
       }
       if (revision === 3) break;
-      const currentInstruction = '按实际来源问题只改被指出的recommendation，其他条目逐字不变。原建议哈希已绑定；source omission只可新增直接引用该遗漏来源的有条件建议。不能把审查意见当新规则；如不确定保留阻断，不编造。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.editor
-        + '。index必须是从editTargetAtEnd.target.index复制的JSON整数；parentHash必须复制editTargetAtEnd.parentHash。所有被标记index恰好一次；无关不改。source omission才可在additions放完整recommendation对象。';
+      const currentInstruction = '按实际来源问题只改被指出的recommendation，其他条目逐字不变。原建议哈希已绑定；source omission只可新增直接引用该遗漏来源的有条件建议。不能把审查意见当新规则；如不确定保留阻断，不编造。只返回一个完整recommendation对象本身，例如' + FACTION_JSON_OUTPUT_EXAMPLES_V1.editor
+        + '。不返回index、parentHash、replacements、additions或其他包装字段；host将从localIssue绑定目标并记录回执。';
       const collected = { parentHash: hash(draft), replacements: [], additions: [] }, editorHashes = [];
       // Output each issue's bounded patch separately, but retain the entire
       // draft/issues/source context. Apply the aggregate atomically afterward.

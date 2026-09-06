@@ -2,6 +2,41 @@
 
 ## Latest checkpoint: source-dependency recheck and pre-apply repair guard
 
+### Host-owned local editor scope
+
+Live run `faction-v1-70baa40b53f141b3dabb` proved the exact-prompt cutover:
+all inherited roles were reused and only objectives editor0.1 called the
+Provider. The two formats nevertheless failed with complete `stop` responses
+at the first replacement scalar: offsets709 and685, outcome hashes
+`44b8062fd68886064028ce6d50bca5613b43f50f89b71326c1626dd6cd9705ce`
+and `896c252906ad2975b04ad8c7f09580b768cb30c941510ce7b8fb57ba9486fc87`.
+The run added2 calls/545,023 tokens/estimated¥0.292743. Global cumulative use
+is96,833,799 known tokens and estimated cost plus historical reserve¥61.396182;
+there is no402, intent or running step.
+
+The new contract removes unstable and unnecessary identifiers from model
+authority. A local editor now returns only the complete eight-field
+recommendation object. The host derives replacement/addition routing, index
+and parent hash from the single sealed `localIssue`; it never guesses malformed
+model text. `faction_local_editor_host_scope_materialization_v1` binds the raw
+advice hash, normalized patch hash, issue hash, parent hash, route and index,
+and declares both `modelAuthoredIdentifiers=false` and
+`adviceTextChanged=false`. The same materialization runs inside the review
+transaction before the pre-apply repair guard, and its receipt is nested in
+the guard evidence. Extra model-authored wrapper or identifier fields remain
+schema failures.
+
+Workflow gate `336b2742963ff569cc3e1f904fc1cc9b569831d31b3c0a775e3dd37fba1c70a0`
+passes64 checks/472 injected roles/0 Provider; patch-envelope14 and the actual
+transaction replay also pass. Latest-parent migration
+`7d0f4b8de465e5786482e48d714d382ad6e8bc090fa09c6e01ff0f7a8e3dcb56`
+passes43 checks and retains217 accepted-lineage calls/58,081,669 tokens/
+¥14.759175,156 roles and the original start. Final zero-egress first-miss
+preflight passed with recipe
+`9a88d1a1008f0bb079bab87c58a06d19b35f72c115003991d9e70216b9c26598`.
+The next live run must still prove a valid direct advice object, host
+materialization, pre-apply guard passage and fresh whole-section review.
+
 ### Exact inherited-prompt cutover and zero-egress first-miss proof
 
 The first live attempt under recipe `8388ab1b741d281ef946…` exposed an

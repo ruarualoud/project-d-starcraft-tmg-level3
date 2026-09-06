@@ -10,7 +10,8 @@ import { runDirectLoop } from '../packages/skill-production/loops.mjs';
 import { createFactionReviewTargetsV1, validateTargetedFactionReviewV1 } from '../packages/skill-production-v3/faction-review-targets-v1.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
 import { FACTION_AXES_V1, FACTION_JSON_OUTPUT_EXAMPLES_V1, createFactionWritingPlanV1, validateFactionDraftV1, applyFactionStrategyPatchV1, validateFactionDraftBatchV1, inspectFactionBatchScopeV1, validateFactionReviewV1, createFactionRepairIssuesV1,
-  produceFactionStrategyV1, inspectFactionCoverageLinksV1, createFactionReviewBatchPlanV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
+  produceFactionStrategyV1, inspectFactionCoverageLinksV1, createFactionReviewBatchPlanV1,
+  normalizeFactionStrategyPatchEnvelopeV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { seal, verifySeal, hash, sha256, fail } from '../packages/skill-production/common.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), base = path.join(root, 'build/ticket-18-faction-production-v1');
@@ -25,21 +26,24 @@ for (const [name, example] of Object.entries(FACTION_JSON_OUTPUT_EXAMPLES_V1)) {
 assert.equal(JSON.parse(FACTION_JSON_OUTPUT_EXAMPLES_V1.reasoner).answers[0].index, 0);
 assert.equal(JSON.parse(FACTION_JSON_OUTPUT_EXAMPLES_V1.judge).judgments[0].index, 0);
 assert.equal(JSON.parse(FACTION_JSON_OUTPUT_EXAMPLES_V1.generatorItems).items[0].index, 0);
-assert.equal(JSON.parse(FACTION_JSON_OUTPUT_EXAMPLES_V1.editor).replacements[0].index, 0);
+assert.deepEqual(Object.keys(JSON.parse(FACTION_JSON_OUTPUT_EXAMPLES_V1.editor)).sort(),
+  ['alternatives', 'procedure', 'reviseIf', 'risk', 'sourceRefs', 'title', 'unproven', 'when']);
 const evidenceDb = new DatabaseSync(path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite'), { readOnly: true });
 let actualPromptFailureEvidence;
 try {
-  const promptFailureRows = evidenceDb.prepare("SELECT id,response FROM attempts WHERE run=? AND code='PROVIDER_RESPONSE_JSON_INVALID' ORDER BY id")
-    .all('faction-v1-6792c09dcce21eeff6c4');
-  assert.equal(promptFailureRows.length, 2);
+  const promptFailureRuns = ['faction-v1-6792c09dcce21eeff6c4', 'faction-v1-70baa40b53f141b3dabb'];
+  const promptFailureRows = promptFailureRuns.flatMap(runId => evidenceDb.prepare(
+    "SELECT id,response FROM attempts WHERE run=? AND code='PROVIDER_RESPONSE_JSON_INVALID' ORDER BY id").all(runId)
+    .map(row => ({ ...row, runId })));
+  assert.equal(promptFailureRows.length, 4);
   const promptFailureOutcomes = promptFailureRows.map(row => verifySeal(JSON.parse(row.response)).value.responseOutcome);
   assert(promptFailureRows.every(row => row.id.includes('.objectives.1.editor.0.1.')));
   assert(promptFailureOutcomes.every(outcome => outcome.finishReason === 'stop' && outcome.syntaxIssue === 'separator'));
-  assert.deepEqual([...new Set(promptFailureOutcomes.map(outcome => outcome.parseErrorOffset))], [685]);
+  assert.deepEqual([...new Set(promptFailureOutcomes.map(outcome => outcome.parseErrorOffset))].sort(), [685, 709]);
   assert(promptFailureOutcomes.every(outcome => outcome.structure.includes('_')));
-  actualPromptFailureEvidence = { runId: 'faction-v1-6792c09dcce21eeff6c4',
-    outcomeHashes: promptFailureOutcomes.map(outcome => outcome.hash), formats: 2, parseErrorUtf16Offset: 685,
-    sameEditorScalarPosition: true, outputNotStoredOrReclassified: true };
+  actualPromptFailureEvidence = { runIds: promptFailureRuns,
+    outcomeHashes: promptFailureOutcomes.map(outcome => outcome.hash), formats: 4, parseErrorUtf16Offsets: [685, 709],
+    firstReplacementScalarRemainedFailureSite: true, outputNotStoredOrReclassified: true };
   const row = evidenceDb.prepare("SELECT response,usage FROM attempts WHERE run=? AND code='PROVIDER_RESPONSE_OUTPUT_TRUNCATED'").get('faction-v1-c05262b66b5603afecbb');
   const receipt = verifySeal(JSON.parse(row.response)).value.responseOutcome;
   assert.equal(receipt.finishReason, 'length'); assert.equal(receipt.syntaxIssue, 'incomplete');
@@ -202,13 +206,14 @@ function modelFor(input, mode = 'positive', expectedLegacyRoles = []) {
     } else if (stageId.includes('.editor.')) {
       const edited = structuredClone(w.draft.recommendations[0]);
       if (mode !== 'no_progress') edited.when.push('Injected missing condition now made explicit');
-      out = { parentHash: w.parentHash, replacements: [{ index: 0, value: edited }], additions: [] };
-      if (mode === 'empty_patch') out.replacements = [];
+      out = legacy.has(stageId) || mode === 'empty_patch'
+        ? { parentHash: w.parentHash, replacements: mode === 'empty_patch' ? [] : [{ index: 0, value: edited }], additions: [] }
+        : edited;
     } else if (stageId.includes('.source-reconstruction.')) {
       assert(!w.draft && w.repairScopes.length === 1);
       assert(w.preservedRecommendations.every(r => r.index !== w.repairScopes[0].index));
       const rebuilt = recommendation(w.repairScopes[0].sourceRefs[0]); rebuilt.when.push('Injected source-first corrected condition');
-      out = { parentHash: w.parentHash, replacements: [{ index: w.repairScopes[0].index, value: rebuilt }], additions: [] };
+      out = rebuilt;
     } else fail('UNEXPECTED_INJECTED_ROLE');
     return { command: { action: 'finish', content: out }, receiptHash: hash({ fixture: true, stageId, out }) };
   };
@@ -221,7 +226,8 @@ try {
     const legacyPromptRoleIds = i ? [] : [
       'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.reasoner',
       'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.judge',
-      'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.generator-items.0'];
+      'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.generator-items.0',
+      'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.editor.0.0'];
     const store = makeStore('positive-' + i), runtime = createProductionRuntimeV3({ store, reader, context, verifier: {},
       model: modelFor(input, i ? 'positive' : 'repair', legacyPromptRoleIds), dsh: { run: runDirectLoop } });
     const candidate = await produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownPolicy(input), legacyPromptRoleIds });
@@ -258,6 +264,13 @@ try {
     } else { assert(r.semanticReviewPassed); assert(r.roleArtifacts.some(a => a.id.includes(mode === 'wrong_target' ? '.target-reconstruction.' : '.source-reconstruction.'))); }
   }
   const issues = seal({ parentHash: hash(draft), issues: [{ kind: 'recommendation_source_or_condition', index: 0, oldHash: hash(draft.recommendations[0]) }] });
+  const directAdvice = structuredClone(draft.recommendations[0]); directAdvice.when.push('Host-bound local correction');
+  const materialized = normalizeFactionStrategyPatchEnvelopeV1(directAdvice, { input, draft, issues });
+  assert.equal(materialized.output.parentHash, hash(draft)); assert.equal(materialized.output.replacements[0].index, 0);
+  assert.equal(materialized.receipt.version, 'faction_local_editor_host_scope_materialization_v1');
+  assert.equal(materialized.receipt.modelAuthoredIdentifiers, false); assert.equal(materialized.receipt.adviceTextChanged, false);
+  assert.throws(() => normalizeFactionStrategyPatchEnvelopeV1({ ...directAdvice, index: 0 }, { input, draft, issues }),
+    { code: 'OUTPUT_SCHEMA_INVALID' });
   assert.throws(() => applyFactionStrategyPatchV1({ parentHash: hash(draft), replacements: [{ index: 1, value: draft.recommendations[1] }], additions: [] }, { input, draft, issues }), { code: 'FACTION_PATCH_SCOPE_INVALID' });
   assert.throws(() => applyFactionStrategyPatchV1({ parentHash: hash(draft), replacements: [{ index: 0, value: draft.recommendations[0] }], additions: [] }, { input, draft, issues }), { code: 'FACTION_PATCH_NO_PROGRESS' });
   const unknown = structuredClone(draft); unknown.recommendations[0].sourceRefs = ['source:invented'];
@@ -265,17 +278,18 @@ try {
   const payStore = makeStore('payment'), payRuntime = createProductionRuntimeV3({ store: payStore, reader, context, verifier: {}, model: modelFor(input, 'payment'), dsh: { run: runDirectLoop } });
   await assert.rejects(() => produceFactionStrategyV1({ input, runtime: payRuntime, store: payStore, knownRulePolicy: knownPolicy(input) }), { code: 'API_BALANCE_EXHAUSTED_STOP_ALL_WORK' });
 } finally { for (const store of stores) store.close(); }
-assert.equal(legacyPromptCalls, 3);
+assert.equal(legacyPromptCalls, 4);
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/runtime.mjs', 'packages/skill-production-v3/faction-review-targets-v1.mjs',
   'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 files.push('packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs');
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 58, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 64, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
   modelInstructionJsonExamples: Object.keys(FACTION_JSON_OUTPUT_EXAMPLES_V1).length, invalidBarePlaceholderExamples: 0,
   actualPromptFailureEvidence, validJsonExamplesReplaceBareNaturalLanguageIndexPlaceholders: true,
-  exactInheritedLegacyPromptRoleBindingsTested: 3, legacyPromptCalls,
+  exactInheritedLegacyPromptRoleBindingsTested: 4, legacyPromptCalls,
+  localEditorHostScopeMaterializationTested: true, modelAuthoredEditorIdentifiers: false,
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 58, maxTaskBytes, injectedModelCalls: calls, legacyPromptCalls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 64, maxTaskBytes, injectedModelCalls: calls, legacyPromptCalls, providerCalls: 0, hash: report.hash }));

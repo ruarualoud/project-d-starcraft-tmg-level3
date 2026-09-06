@@ -65,7 +65,13 @@ async function exercise(negative) {
       if (/\.[0-9]+$/u.test(originalId)) freshReviews++; else reviewBindingRepairs++;
       const route = id.includes('.supportive.') ? 'supportive' : 'adversarial';
       if (!negative && originalId.endsWith('.0')) output = freshFirst.get(route).output;
-    } else { assert(id.includes('.editor.')); editors++; }
+    } else {
+      assert(id.includes('.editor.')); editors++;
+      if (negative) {
+        assert.equal(output.replacements.length, 1);
+        output = output.replacements[0].value;
+      }
+    }
     const artifact = seal({ roleId: id, output, actualSourceArtifactHash: raw.hash,
       fixtureReplayNotNewModelJudgment: true, trainingTruth: false });
     const lease = store.acquire(id, { requestHash: hash(request) });
@@ -87,6 +93,8 @@ async function exercise(negative) {
       const guardStep = journal.steps.find(s => s.id.endsWith('.repair-checkpoint-guard'));
       const receipt = store.artifact(guardStep.id);
       assert.equal(receipt.inspection.changes.length, 3); assert.equal(receipt.applied, false);
+      assert.equal(receipt.scopeMaterialization.version, 'faction_local_editor_host_scope_materialization_v1');
+      assert.equal(receipt.scopeMaterialization.modelAuthoredIdentifiers, false);
       assert.equal(store.artifact(guardStep.id.replace('.repair-checkpoint-guard', '')).hash, receipt.rawArtifactHash);
     } else {
       assert.equal(editors, 0); assert(resultCaptured); assert.equal(guardWrites, 0);
@@ -109,6 +117,7 @@ const report = seal({ passed: true, inputHashes: [input.hash, zerg.hash], bindin
   actualBadEditCaptureHash: diagnosis.hash, fullOldWorkflowReplayed: true,
   oldRequestsUnchangedBeforeIntervention: true, newReviewNamespaces: true,
   badEditBlockedBeforeApplicationAndBeforeNextReview: true, blockedRawEditAndReceiptPersisted: true,
+  hostScopeMaterializationGuardedBeforeApplication: true, modelAuthoredEditorIdentifiers: false,
   modelReviewAcceptanceNotInherited: true, originalRevisionBudgetPreserved: true,
   runs, injectedRoles, reusedHistoricalRoles, maxTaskBytes,
   codeHashes: await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) }))),

@@ -76,14 +76,15 @@ export function createFactionReviewTransactionRuntimeV1({ input, runtime, store,
         } : {}) } };
     const artifact = await runtime.role(transformed);
     if (isEditor && guard && sectionIndex === binding.startSectionIndex) {
-      let normalized;
-      try { normalized = normalizeFactionStrategyPatchEnvelopeV1(artifact.output, { input, ...editContext }).output; }
+      let normalization;
+      try { normalization = normalizeFactionStrategyPatchEnvelopeV1(artifact.output, { input, ...editContext }); }
       catch { return artifact; } // Old workflow retains its exact schema/no-progress handling.
-      const proposed = applyFactionStrategyPatchV1(normalized, { input, ...editContext });
+      const proposed = applyFactionStrategyPatchV1(normalization.output, { input, ...editContext });
       const inspection = inspectFactionRepairRegressionV1({ input, guard, draft: proposed });
       const receipt = seal({ version: 'faction_review_transaction_patch_guard_v1', bindingHash: binding.hash,
         rawArtifactHash: artifact.hash, originalRoleId: request.roleId, actualRoleId: transformed.roleId,
         parentDraftHash: hash(editContext.draft), inspection, rawProviderOutputPreserved: true,
+        scopeMaterialization: normalization.receipt,
         applied: false, trainingTruth: false });
       const lease = store.acquire(artifact.roleId + '.repair-checkpoint-guard', { receiptHash: receipt.hash });
       if (!lease.cached) store.finish(lease, receipt);
