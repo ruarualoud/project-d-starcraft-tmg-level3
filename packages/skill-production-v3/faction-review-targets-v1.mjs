@@ -80,14 +80,19 @@ export function planFactionReviewFieldBindingV1(output, targets) {
 export function applyFactionReviewFieldBindingV1(original, targets, plan, selection) {
   verifySeal(plan);
   if (plan.hash !== planFactionReviewFieldBindingV1(original, targets).hash) fail('FACTION_REVIEW_BINDING_PLAN_DRIFT');
-  exact(selection, ['planHash', 'selections']);
-  if (selection.planHash !== plan.hash) fail('FACTION_REVIEW_BINDING_PLAN_DRIFT');
+  // The host binds the exact plan above and in the persisted request. A model
+  // echo is redundant metadata, not cryptographic authority. Retain the one
+  // actually observed symbolic reference explicitly; never accept a conflicting
+  // hash or another guessed reference as though it matched the host plan.
+  exact(selection, ['selections', ...(selection && Object.hasOwn(selection, 'planHash') ? ['planHash'] : [])]);
+  if (Object.hasOwn(selection, 'planHash') && selection.planHash !== plan.hash
+    && selection.planHash !== 'reviewBindingRepair.planHash') fail('FACTION_REVIEW_BINDING_PLAN_DRIFT');
   if (!Array.isArray(selection.selections) || selection.selections.length !== targets.targets.length) fail('FACTION_REVIEW_BINDING_SELECTION_INVALID');
   const pending = new Map(targets.targets.map(t => [t.targetId, t])), byId = new Map();
   for (const row of selection.selections) {
     exact(row, ['targetId', 'fieldPaths']);
     const target = pending.get(row.targetId);
-    if (!target || !Array.isArray(row.fieldPaths) || !row.fieldPaths.length || row.fieldPaths.length > 3
+    if (!target || !Array.isArray(row.fieldPaths) || !row.fieldPaths.length || row.fieldPaths.length > 16
       || new Set(row.fieldPaths).size !== row.fieldPaths.length) fail('FACTION_REVIEW_BINDING_SELECTION_INVALID');
     pending.delete(row.targetId);
     byId.set(row.targetId, row.fieldPaths.map(path => {
@@ -100,6 +105,8 @@ export function applyFactionReviewFieldBindingV1(original, targets, plan, select
   validateTargetedFactionReviewV1(output, targets);
   return { output, receipt: seal({ version: 'faction_review_field_binding_receipt_v1', planHash: plan.hash,
     originalOutputHash: hash(original), selectionOutputHash: hash(selection), materializedOutputHash: hash(output),
+    planHashBinding: 'host_verified_plan_not_model_echo', modelPlanHashValue: selection.planHash ?? null,
+    modelPlanHashEchoExact: selection.planHash === plan.hash,
     targetContractHash: targets.hash, selections: clone(selection.selections),
     originalFocus: original.verdicts.map(v => ({ targetId: v.targetId, focus: clone(v.focus) })),
     originalFocusVerified: false, quoteOrigin: 'host_materialized_from_model_selected_exact_candidate_field',

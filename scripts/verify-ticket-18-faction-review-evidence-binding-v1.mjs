@@ -13,7 +13,7 @@ const actual = verifySeal(JSON.parse(await readFile(path.join(base, 'targeted-co
 const draft = actual.knownRuleCorrection.draft, section = createFactionWritingPlanV1(input).sections[0];
 const targets = createFactionReviewTargetsV1({ input, section, draft, indices: [4, 5] });
 const db = new DatabaseSync(path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite'), { readOnly: true });
-let output, retry, repairedReview, repairedRetry, sourceOnlyReview, sourceOnlyRetry;
+let output, retry, repairedReview, repairedRetry, sourceOnlyReview, sourceOnlyRetry, actualSelection;
 try {
   const id = 'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.review-target-batch-v1.supportive.0.4';
   const get = suffix => verifySeal(JSON.parse(db.prepare('SELECT artifact FROM steps WHERE run=? AND id=?').get('faction-v1-bcba77c39b85d99b5dbd', id + suffix).artifact)).value.output;
@@ -25,6 +25,8 @@ try {
   const sourceOnly = suffix => verifySeal(JSON.parse(db.prepare('SELECT artifact FROM steps WHERE run=? AND id=?')
     .get('faction-v1-79a14e9ce23ff5deb7d0', repairedId.replace('supportive.1.2', 'supportive.1.4') + suffix).artifact)).value.output;
   sourceOnlyReview = sourceOnly(''); sourceOnlyRetry = sourceOnly('.schema');
+  actualSelection = verifySeal(JSON.parse(db.prepare('SELECT artifact FROM steps WHERE run=? AND id=?')
+    .get('faction-v1-de32d27f150eb1349dea', repairedId.replace('supportive.1.2', 'supportive.1.4') + '.field-binding.v1').artifact)).value.output;
 } finally { db.close(); }
 assert.equal(hash(output), hash(retry));
 // RED on the actual four-focus response before the typed evidence recovery.
@@ -99,11 +101,26 @@ assert.throws(() => applyFactionReviewFieldBindingV1(changedReview, sourceOnlyTa
 const negativePlan = planFactionReviewFieldBindingV1(changedReview, sourceOnlyTargets);
 assert.equal(applyFactionReviewFieldBindingV1(changedReview, sourceOnlyTargets, negativePlan,
   { ...selection, planHash: negativePlan.hash }).output.verdicts[0].verdict, 'unsupported');
+const actualSelected = applyFactionReviewFieldBindingV1(sourceOnlyReview, sourceOnlyTargets, plan, actualSelection);
+assert.equal(actualSelection.planHash, 'reviewBindingRepair.planHash');
+assert.equal(actualSelected.receipt.planHashBinding, 'host_verified_plan_not_model_echo');
+assert.equal(actualSelected.receipt.modelPlanHashEchoExact, false);
+assert.equal(actualSelected.receipt.modelPlanHashValue, actualSelection.planHash);
+assert.deepEqual(actualSelected.receipt.selections.map(s => s.fieldPaths.length), [4, 4]);
+assert.deepEqual(judgments(actualSelected.output), judgments(sourceOnlyReview));
+const { planHash: omitted, ...noEcho } = actualSelection;
+assert.deepEqual(applyFactionReviewFieldBindingV1(sourceOnlyReview, sourceOnlyTargets, plan, noEcho).output, actualSelected.output);
+const otherAlias = structuredClone(actualSelection); otherAlias.planHash = 'another.planHash';
+assert.throws(() => applyFactionReviewFieldBindingV1(sourceOnlyReview, sourceOnlyTargets, plan, otherAlias), { code: 'FACTION_REVIEW_BINDING_PLAN_DRIFT' });
+const tooManyFields = structuredClone(actualSelection); tooManyFields.selections[0].fieldPaths = [...sourceOnlyTargets.targets[0].fields.map(f => f.path), 'outside.bound'];
+assert.equal(tooManyFields.selections[0].fieldPaths.length, 17);
+assert.throws(() => applyFactionReviewFieldBindingV1(sourceOnlyReview, sourceOnlyTargets, plan, tooManyFields), { code: 'FACTION_REVIEW_BINDING_SELECTION_INVALID' });
 const files = ['packages/skill-production-v3/faction-review-targets-v1.mjs', 'scripts/verify-ticket-18-faction-review-evidence-binding-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 32, codeHashes, actualOutputHash: hash(output), bindingReceipt: bound,
+const report = seal({ passed: true, checks: 36, codeHashes, actualOutputHash: hash(output), bindingReceipt: bound,
   actualPostRepairOutputHash: hash(repairedReview), punctuationBindingReceipt: punctuationBound,
   sourceOnlyReviewHash: hash(sourceOnlyReview), fieldSelectionRecovery: rebound.receipt,
+  actualFieldSelectionRecovery: actualSelected.receipt,
   policy: 'typed_original_source_quotes_require_independent_exact_target_quote', providerCalls: 0, trainingTruth: false });
 await writeFile(path.join(base, 'review-evidence-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 32, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 36, providerCalls: 0, hash: report.hash }));

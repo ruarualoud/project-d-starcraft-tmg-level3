@@ -5,7 +5,32 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: field-selection recovery instead of repeated quote rewriting
+## Current checkpoint: actual field selection and host-owned plan binding
+
+Run `faction-v1-de32d27f150eb1349dea` is terminal, handle2824 exit1. The actual
+model selected four valid candidate fields per target, but copied the prompt
+example's literal `reviewBindingRepair.planHash` as its planHash. The old gate
+required a cryptographic echo and capped selections at3; it rejected the output.
+One call /264,392 tokens /¥0.257607. All-history50,918,360 known tokens /
+estimated-or-reserved ¥53.107033, no402 and no paid process. Terminal report
+`f13828529d73d2388a457284d805131d0e850ca94afd528093ee87c6a4c78e0a`.
+
+Plan integrity now belongs to the host's exact recomputed plan and persisted
+request binding, not a model-authored hash echo. The one observed symbolic
+reference is retained explicitly as a NON-exact echo; absent echo is also fine,
+but a conflicting actual hash or other alias fails. Four valid field choices
+are preserved, with the same16-item bound as the target-quote validator, no
+unknown/duplicate field permitted. The raw Provider response remains unchanged.
+The36-case saved-sample/negative gate passes, including direct reuse of this
+actual selection. Related correction28, workflow42 (472 injected roles), and
+two real DSH full-context sessions passed with zero Provider calls. Readiness:
+binding `dcc6965fa7cf80b2d873edf71ad64185140891fe76eaf3897456b653f542f32f`,
+workflow `6e03bcd99c10bdd2d11847dabf5a5585ba9be9b9ee82669b2b28dbf9a5716b8a`,
+DSH `8ff29f9231927218a5d25a3c61c8957ea0c921a373ecca2c42eb305d2ed64f4e`.
+Continuation must be fromde32d, retaining all ancestor accounting and time.
+No additional semantic review or Skill acceptance is implied.
+
+## Earlier checkpoint: field-selection recovery instead of repeated quote rewriting
 
 Run `faction-v1-79a14e9ce23ff5deb7d0` is terminal, handle55556 exit1. It reused
 28 saved roles and passed the previous punctuation failure. Post-repair
