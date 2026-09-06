@@ -2,6 +2,34 @@
 
 ## Latest checkpoint: source-dependency recheck and pre-apply repair guard
 
+### Structured-generation stop-loss and redesign
+
+Live continuation `faction-v1-9a88d1a1008f0bb079ba` is terminal exit1. The
+host-owned direct-advice contract removed model-authored target identifiers, but
+both formats still returned complete `stop` responses with595 output tokens,
+2,183-byte invalid JSON and the same parse offset1347. The run added2 calls/
+544,805 tokens/estimated¥0.291916. Global cumulative use is97,378,604 known
+tokens and estimated cost plus historical reserve¥61.688098. There is no402,
+intent or running step; objectives and the3/15 source-review denominator did
+not advance.
+
+Across the same objectives editor0.1, eight failed paid attempts now total
+2,179,721 tokens/estimated¥0.695443. This is sufficient evidence to stop generic
+full-context formatting retries. The architecture audit found that the role
+schema exists only in prompt prose: the Provider request carries allowed channel
+names, the profile supports only prompt/json-object modes, transport sends only
+`response_format=json_object`, and format1 resends roughly272K input tokens
+without receiving the failed payload. DSH scheduling, durable accounting and
+source locks are not the failing seam.
+
+The approved direction is a schema-first staged durable generation module:
+Provider capability probe, end-to-end output-contract hash, Responses JSON
+Schema/strict adapter, host-owned control plane, typed retry classifier,
+proof-carrying local context capsules, external semantic evaluation and
+versioned promotion/rollback. No further full-context paid faction run starts
+before the zero-cost contracts/fault matrix and tiny paid canaries pass. See the
+[reliability optimization guide](ticket-18-slice-174-structured-generation-reliability-guide-v1-2026-09-06.md).
+
 ### Host-owned local editor scope
 
 Live run `faction-v1-70baa40b53f141b3dabb` proved the exact-prompt cutover:
