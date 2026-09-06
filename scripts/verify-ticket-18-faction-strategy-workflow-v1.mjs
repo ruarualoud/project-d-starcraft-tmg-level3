@@ -52,6 +52,12 @@ try {
   assert.throws(() => validateFactionReviewV1(missing, { input: inputs[0], section, draft: actualDraft }), { code: 'FACTION_REVIEW_DENOMINATOR' });
   const uncited = structuredClone(review); uncited.coverage[1].sourceRef = 'source:army_units:zergling';
   assert.throws(() => validateFactionReviewV1(uncited, { input: inputs[0], section, draft: actualDraft }), { code: 'FACTION_REVIEW_COVERAGE_INVALID' });
+  const truncated = verifySeal(JSON.parse(evidenceDb.prepare("SELECT response FROM attempts WHERE run=? AND code='PROVIDER_RESPONSE_OUTPUT_TRUNCATED'")
+    .get('faction-v1-ed39f02a84aaff066af0').response)).value.responseOutcome;
+  assert.equal(truncated.finishReason, 'length'); assert.equal(truncated.usage.outputUnits, 4096);
+  const part = { verdicts: review.verdicts.slice(2, 4), coverage: [] };
+  validateFactionReviewV1(part, { input: inputs[0], section, draft: actualDraft, reviewIndices: [2, 3], requiredSourceRefs: [] });
+  assert.throws(() => validateFactionReviewV1(part, { input: inputs[0], section, draft: actualDraft, reviewIndices: [4, 5], requiredSourceRefs: [] }), { code: 'FACTION_REVIEW_SCOPE_INVALID' });
 } finally { evidenceDb.close(); }
 const temp = await mkdtemp(path.join(base, 'workflow-test-'));
 const stores = [], makeStore = name => { const s = openProductionStore(path.join(temp, name + '.sqlite'), { runId: name, recipeHash: hash(name) }); stores.push(s); return s; };
@@ -93,11 +99,13 @@ function modelFor(input, mode = 'positive') {
         assert(!w.rejectedOutput);
       }
     }
-    else if (stageId.includes('.review.')) {
-      const negative = mode === 'blocked' || ['repair', 'no_progress'].includes(mode) && w.section.id.endsWith('army_resources.1') && stageId.endsWith('.0');
-      out = { verdicts: w.draft.recommendations.map((r, index) => ({ index, verdict: negative && index === 0 ? 'unsupported' : 'supported',
-        reason: negative ? 'Injected missing condition requiring local repair' : 'Injected review only', sourceRefs: r.sourceRefs })),
-      coverage: w.section.requiredSourceRefs.map(sourceRef => ({ sourceRef, verdict: 'covered', reason: 'Injected coverage only',
+    else if (stageId.includes('.review-batch.')) {
+      assert(w.reviewIndices.length <= 2); assert.equal(w.draft.recommendations.length, w.section.requiredSourceRefs.length);
+      assert.deepEqual(w.outputRequestAtEnd.reviewOnlyIndices, w.reviewIndices);
+      const negative = mode === 'blocked' || ['repair', 'no_progress'].includes(mode) && w.section.id.endsWith('army_resources.1') && /\.(supportive|adversarial)\.0\./.test(stageId);
+      out = { verdicts: w.reviewIndices.map(index => ({ index, verdict: negative && index === 0 ? 'unsupported' : 'supported',
+        reason: negative ? 'Injected missing condition requiring local repair' : 'Injected review only', sourceRefs: w.draft.recommendations[index].sourceRefs })),
+      coverage: w.coverageRequiredSourceRefs.map(sourceRef => ({ sourceRef, verdict: 'covered', reason: 'Injected coverage only',
         recommendationIndices: w.draft.recommendations.flatMap((r, i) => r.sourceRefs.includes(sourceRef) ? [i] : []) })) };
     } else if (stageId.includes('.editor.')) {
       const edited = structuredClone(w.draft.recommendations[0]);
@@ -122,6 +130,10 @@ try {
     assert(candidate.semanticReviewPassed); assert.equal(candidate.sections.length, plan.sections.length);
     assert.equal(candidate.skillId, 'skill.starcraft-tmg.faction.tactical-cards-' + input.factionRecordKey.split(':')[1].replaceAll('_', '-'));
     assert(!candidate.independentEvaluationPassed && !candidate.runtimeAccepted && !candidate.trainingTruth);
+    for (const s of candidate.sections) for (const round of s.rounds) for (const route of ['supportive', 'adversarial']) {
+      assert.deepEqual(round.reviewPartition.filter(p => p.route === route).flatMap(p => p.reviewIndices), s.draft.recommendations.map((_, n) => n));
+      assert.deepEqual(round.reviewPartition.filter(p => p.route === route).flatMap(p => p.requiredSourceRefs), s.section.requiredSourceRefs);
+    }
     if (!i) { assert.equal(candidate.sections[0].edits.length, 1); assert.equal(candidate.sections[0].rounds.length, 2); }
     const before = calls;
     assert.equal((await produceFactionStrategyV1({ input, runtime, store })).hash, candidate.hash); assert.equal(calls, before);
@@ -145,8 +157,8 @@ try {
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/runtime.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 25, inputHashes: inputs.map(i => i.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 29, inputHashes: inputs.map(i => i.hash), codeHashes, maxTaskBytes,
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 25, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 29, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));

@@ -5,7 +5,41 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: all eight first-section items, review coverage repair
+## Current checkpoint: source-review output partition
+
+Run `faction-v1-ed39f02a84aaff066af0` is terminal, report
+`40cee7539bcbbd56098ed96e1915127609f71c3a6ccbbe0b067613b2e4666116`.
+Its adversarial review reached4096 output tokens and was rejected as truncated.
+The complete first-section draft remains8/8 recommendations; no partial review
+was accepted. This run1 call /260,891 tokens /estimated ¥0.265508, cumulative
+42,147,386 known tokens /estimated-or-reserved ¥49.617939, no402.
+
+Independent review now outputs at most two global recommendation verdicts per
+call, while every call retains the complete frozen sources, overall Skill and
+entire section draft. First batch per route also covers the assigned sources;
+later batches explicitly request no additional coverage output. Any actual
+additional cited-source review remains preserved under the existing validator.
+The host records the partition and requires exact per-route global-index/source
+coverage. All negative judgments enter the common typed issue journal.
+Earlier complete whole reviews and the truncated failure remain historical;
+the new partitioned review is a new task and is not claimed to reuse their
+acceptance. All completed production roles retain exact-input reuse.
+
+Twenty-nine workflow checks passed (including the actual truncated outcome,
+global-index controls and all route/index/source partitions),323 injected role
+calls,0 paid calls. Workflow readiness
+`41a944f84cb24f2205341c52cd60b09f567c1c91b211256a3d7c8bce2a46df83`.
+Two actual DSH full-context injected-response sessions also passed. This is
+engineering readiness, not actual source or strategy acceptance. First section
+still awaits completed dual review; Terran0/7 and Zerg0/8.
+
+Capacity planning note: every actual full-context call has roughly260–270K
+input tokens. With output partitioning and correction, the existing inherited
+60M-token cap may stop both-faction production before completion. Any future
+capacity amendment must be explicit/audited, retain all ancestor usage/start,
+and preserve monetary/call/time controls; no cap has been reset or raised here.
+
+## Earlier checkpoint: all eight first-section items, review coverage repair
 
 Run `faction-v1-f93c0c1ba85b7c32f4b3` is terminal. Two actual target-specific
 reconstructions produced items4–7, completing8/8 first-section recommendations.

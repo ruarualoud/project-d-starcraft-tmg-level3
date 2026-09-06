@@ -101,16 +101,17 @@ export function validateFactionDraftBatchV1(output, { input, outline, indices, c
   return items.sort((a, b) => a.index - b.index);
 }
 
-export function validateFactionReviewV1(output, { input, section, draft }) {
+export function validateFactionReviewV1(output, { input, section, draft,
+  reviewIndices = draft.recommendations.map((_, i) => i), requiredSourceRefs = section.requiredSourceRefs }) {
   exact(output, ['verdicts', 'coverage']);
-  if (!Array.isArray(output.verdicts) || output.verdicts.length !== draft.recommendations.length
-    || !Array.isArray(output.coverage) || output.coverage.length < section.requiredSourceRefs.length) fail('FACTION_REVIEW_DENOMINATOR');
-  const pending = new Set(draft.recommendations.map((_, i) => i));
+  if (!Array.isArray(output.verdicts) || output.verdicts.length !== reviewIndices.length
+    || !Array.isArray(output.coverage) || output.coverage.length < requiredSourceRefs.length) fail('FACTION_REVIEW_DENOMINATOR');
+  const pending = new Set(reviewIndices);
   for (const v of output.verdicts) {
     exact(v, ['index', 'verdict', 'reason', 'sourceRefs']); text(v.reason, 1200); refs(v.sourceRefs, input);
     if (!pending.delete(v.index) || !['supported', 'unsupported', 'uncertain'].includes(v.verdict)) fail('FACTION_REVIEW_SCOPE_INVALID');
   }
-  const required = new Set(section.requiredSourceRefs);
+  const required = new Set(requiredSourceRefs);
   // Required sources are a minimum coverage denominator. Preserve additional
   // coverage only for evidence actually cited by this draft, not arbitrary
   // global material. No verdict/negative finding is discarded or rewritten.
@@ -251,15 +252,23 @@ export async function produceFactionStrategyV1({ input, runtime, store, onProgre
     let draft = validateFactionDraftV1({ recommendations }, input); const rounds = [], edits = [], seen = new Set([hash(draft)]);
     let passed = false;
     for (let revision = 0; revision <= 3; revision++) {
-      const reviews = [], reviewHashes = [];
+      const reviews = [], reviewHashes = [], reviewPartition = [];
       for (const route of ['supportive', 'adversarial']) {
-        const reviewed = await role(section.id + '.review.' + route + '.' + revision,
-          '这是独立来源审查，角色' + route + '。只给完整来源、总规则和候选建议，没有其他审查结果或生成历史。核对每条建议的全部字段，特别是when、支付/时机/例外、步骤、替代与reviseIf是否误导；有条件策略可以supported但不能证明赢面。逐一检查每个指定来源是否被实际讨论而不是只挂引用。返回{"verdicts":[{"index":从0起,"verdict":"supported|unsupported|uncertain","reason":"具体依据，最多1200字符","sourceRefs":["官方来源ID，1至8"]}],"coverage":[{"sourceRef":"每个指定来源一次","verdict":"covered|omitted|uncertain","recommendationIndices":[直接引用此来源的建议序号],"reason":"具体覆盖/遗漏依据"}]}。所有建议和指定来源各一次；不为通过而忽略问题。',
-          { section, draft }, out => validateFactionReviewV1(out, { input, section, draft }));
-        reviews.push(reviewed.value); reviewHashes.push(reviewed.artifact.hash);
+        for (let first = 0; first < draft.recommendations.length; first += 2) {
+          const reviewIndices = draft.recommendations.slice(first, first + 2).map((_, n) => first + n);
+          const requiredSourceRefs = first === 0 ? section.requiredSourceRefs : [];
+          const reviewed = await role(section.id + '.review-batch.' + route + '.' + revision + '.' + first,
+            '独立来源审查，角色' + route + '。每次仍读取完整官方来源、完整总规则和整节候选，无其他审查意见或生成历史；只输出reviewIndices指定的1至2条判断。核对其全部字段、数值算术、when、支付/时机/例外、步骤、替代和reviseIf。条件性建议也不能夹带不真实的确定性断言或保证最优/胜率。另核对coverageRequiredSourceRefs是否在整节实际讨论，不只是挂引用。返回{"verdicts":[{"index":指定全局序号,"verdict":"supported|unsupported|uncertain","reason":"具体问题及依据，最多400字符","sourceRefs":["实际官方来源ID，1至8"]}],"coverage":[{"sourceRef":"指定覆盖来源","verdict":"covered|omitted|uncertain","recommendationIndices":[整节直接引用此来源的建议序号],"reason":"具体覆盖依据，最多400字符"}]}。reviewIndices每项一次，coverageRequiredSourceRefs每项一次；后者为空时输出coverage:[]。不输出整节全部verdicts/引用清单，不忽略不确定或否定问题。',
+            { section, draft, reviewIndices, coverageRequiredSourceRefs: requiredSourceRefs,
+              outputRequestAtEnd: { reviewOnlyIndices: reviewIndices, coverageOnlySourceRefs: requiredSourceRefs,
+                note: 'Whole-section context remains available. Limit output only; do not repeat other recommendations or other reviews.' } },
+            out => validateFactionReviewV1(out, { input, section, draft, reviewIndices, requiredSourceRefs }));
+          reviews.push(reviewed.value); reviewHashes.push(reviewed.artifact.hash);
+          reviewPartition.push({ route, reviewIndices, requiredSourceRefs, artifactHash: reviewed.artifact.hash });
+        }
       }
       const issues = createFactionRepairIssuesV1(section, draft, reviews);
-      const round = seal({ sectionId: section.id, revision, draftHash: hash(draft), reviewHashes, reviews, issues,
+      const round = seal({ sectionId: section.id, revision, draftHash: hash(draft), reviewHashes, reviews, reviewPartition, issues,
         priorRoundHash: rounds.at(-1)?.hash || null, oldFailuresRetained: true, trainingTruth: false });
       const lease = store.acquire(section.id + '.issue-journal.' + revision, { roundHash: round.hash });
       const saved = lease.cached ? verifySeal(lease.artifact) : store.finish(lease, round); rounds.push(saved);
