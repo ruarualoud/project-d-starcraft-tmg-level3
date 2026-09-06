@@ -2,6 +2,20 @@
 
 ## Latest checkpoint: source-dependency recheck and pre-apply repair guard
 
+Independent consumer evidence is now prepared while the main live entrypoint
+performs its safety recheck. `inspect-ticket-18-faction-consumer-evidence-v1`
+reconstructs candidate production evidence, the two roster requests and six
+repeated rule-application requests, then regrades all140 answers from retained
+responses through a read-only SQLite connection. It preserves failed scores
+and checks the terminal report instead of trusting its acceptance booleans.
+Ten checks passed with16 injected transport calls in a separate fixture DB:
+`cb13f3194ab81bc3639fb2619849831884b2cb0e11af02a7f94c2c57f25bbeb6`.
+The negative augmented arm stays63/66; tampered requests/responses/scores,
+hidden failure and invented strategy/runtime authority are rejected. These
+are zero-Provider engineering tests. No complete faction has yet received an
+actual independent consumer score; this tool proves neither unseen-test
+generalization nor full-game strategy strength.
+
 The actual bounded recheck `dependency-recheck-521bfe25f3aa939e802e` finished
 with two Provider calls,555,929 tokens and estimated ¥0.085433. Both routes
 supported recommendations0/1 using the complete original draft plus exact
@@ -41,7 +55,10 @@ code changes. Receipt:
 The18-check original command recovery and17-check additional metadata recovery
 each passed one exact DSH session with no Provider call. Pre-existing38-check
 continuation and25-check budget gates passed. The real main-entry preflight is
-running; no paid main restart is claimed here.
+now passed with recipe
+`3ff195438798f5218836e1babff98f5b05ba75c378e6081c397a1644a1152255`.
+Commit `dcd7f82` is pushed. The live entrypoint has started its safety recheck;
+no new paid request or completed phase review is claimed at this checkpoint.
 
 Current cumulative known Provider usage85,797,505 tokens; estimated cost plus
 historical unknown reserve ¥59.055584, not an invoice. Project16/22,
