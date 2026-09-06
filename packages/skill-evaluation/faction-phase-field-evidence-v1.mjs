@@ -23,7 +23,9 @@ export async function inspectFactionPhaseFieldEvidenceV1({ root, runId }) {
     || candidate.sourceReviewPassed !== false || candidate.runtimeAccepted !== false || candidate.trainingTruth !== false)
     fail('FACTION_PHASE_EVIDENCE_BINDING_DRIFT');
   const originalCapture = await json(recipe.sourceRunId + '/failed-review-role-input');
-  const priorEvidence = await json(recipe.sourceRunId + '/review-metadata-recovery-readiness');
+  let priorEvidence;
+  try { priorEvidence = await json(runId + '/source-review-evidence'); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; priorEvidence = await json(recipe.sourceRunId + '/review-metadata-recovery-readiness'); }
   if (originalCapture.hash !== capture.hash || priorEvidence.hash !== recipe.priorRequestEvidenceHash
     || priorEvidence.capturedRoleHash !== capture.hash || !priorEvidence.exactPriorProviderRequestsMatched
     || !priorEvidence.passed || capture.recipeHash !== recipe.sourceRecipeHash)
@@ -67,5 +69,5 @@ export async function inspectFactionPhaseFieldEvidenceV1({ root, runId }) {
     changedFields: candidate.patch.changes, unchangedRecommendationIndices: candidate.patch.unchangedRecommendationIndices,
     independentSourceReviewPassed: false, actualRoomReplayPerformed: false, runtimeAccepted: false,
     newProviderCalls: 0, trainingTruth: false });
-  return { input, sourceSection, candidate, evidence };
+  return { input, sourceSection, candidate, evidence, capture };
 }

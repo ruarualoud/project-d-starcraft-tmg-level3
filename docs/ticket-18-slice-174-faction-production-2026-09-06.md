@@ -5,7 +5,63 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Latest terminal and repair-ready checkpoint
+## Latest actual phase repair and new-review integration
+
+`phase-repair-bd58d5270d852324f694` /91599 completed successfully. Four actual
+calls produced11 exact-field changes in3/3/3/2 batches:1,090,851 tokens and
+estimated¥0.341662. All-history80,183,744 known tokens /estimated-or-reserved
+¥58.222971, no402 and no paid request in flight. The producer is committed and
+pushed as `d96455b`; the preceding recovery/veto increment is `3184317`.
+
+The actual replacement text resolves the identified NON-LETHAL casualty,
+split-Speed, Orders/Goliath and Active-window errors in10 target fields. One
+field still hedges own-Pass legality with opponent confirmation. A separately
+recorded exact-source host clarification (`7408d993…`) replaces only that
+observed caveat; it does not claim model authorship, change the raw response,
+or waive review. All11 target fields are now changed, but the complete section
+has **not** undergone actual fresh review and neither faction is qualified.
+
+Four actual DSH sessions replay all original Provider requests, paid receipts,
+commands/tools/stable events and atomic application with0 new Provider calls.
+Latest evidence is `5752e9e0…`; the earlier `ea99adbb…` differs only by a redundant
+stageId property, while the exact original capture remains hash-bound. The
+original9fb… review-recovery evidence is archived byte-for-byte under the phase
+run, so refreshing a current verifier cannot replace a paid run's dependency.
+
+The phase seed hook reproduces the exact revision2 parent, applies the actual
+patch plus disclosed host clarification and starts a distinct review-request
+epoch. Old paid pending judgments remain in evidence, never reused for the new
+draft. The existing revision3 ceiling is unchanged. Twenty seed checks include
+16 injected whole-section reviews and a negative-review blocking branch;
+13 migration checks reject changed lineage/proof/code or weakened review gates.
+Main production and consumer provenance now accept this explicit seed contract.
+
+Final seed20 gate is `874ef07f…`, migration13 `cb00c2ae…`, complete DSH-context2
+`3bb3d458…`; the metadata17 gate is `79cddc35…`. All have finished. Main
+zero-egress preflight is currently session62674 /process23919; poll it before
+starting another entry. A proposed audited cumulative extension is800 calls /
+180M tokens /¥35 /24h, keeping1M input bytes and3 model-repair revisions; this
+proposal is not implemented or active. It must preserve the original start,
+159 inherited faction calls /42,248,806 tokens /¥11.931646 and all global usage.
+
+Historical role replay caught an additional regression: empty-metadata
+normalization rejected the old valid identity alias `sourceRefs:[sourceRef]`.
+It now preserves that exact alias unchanged, while conflicting supplemental
+references still fail. This was an implementation regression, not a new model
+failure. Workflow44, targeted28, continuation38, old-seed20, unit-field16,
+unit-integration8, registered-integration8, review-binding38 and provenance15
+pass; metadata recovery17 includes a real DSH session with0 paid calls.
+
+Next entry: main producer with `--continue-from faction-v1-228b8989edaaba791753`
+and `--phase-repair-run phase-repair-bd58d5270d852324f694`. No live successor
+has started. The old d914 preflight is stale. Original faction400-call/60M-token/
+¥20/8h limits and00:21:55UTC start remain; the time ceiling is approaching and
+the remaining13 sections need an explicitly audited cumulative extension,
+not a reset. Budget extension is not implemented yet. Counts remain Ticket18
+2/8, project16/22, source-review workflow2/15, independently qualified factions
+0/2, overall offline first-five dependency1/5 and formal/runtime0/5.
+
+## Previous terminal and repair-ready checkpoint
 
 Recovery/veto increment `3184317` is pushed. The next separate phase-field-v1
 producer preserves the old v2 contracts and paid role hashes. It binds the

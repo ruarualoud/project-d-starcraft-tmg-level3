@@ -52,6 +52,10 @@ check('real target references and complete downstream review validation pass', (
   assert.equal(bound.review.verdicts[0].reason, output.verdicts[0].reason);
 });
 check('projection is idempotent and returns no extra receipt for standard rows', () => assert.deepEqual(normalizeFactionCoverageMetadataV1(bound.review.coverage).repairs, []));
+check('preexisting identical source alias stays byte-for-byte without a new receipt', () => {
+  const row = { ...bound.review.coverage[0], sourceRefs: [bound.review.coverage[0].sourceRef] };
+  assert.deepEqual(normalizeFactionCoverageMetadataV1([row]), { coverage: [row], repairs: [] });
+});
 for (const sourceRefs of [['source:invented'], null, {}, '']) check('nonempty or malformed metadata rejected', () => {
   const coverage = output.coverage.map((row, n) => n ? row : { ...row, sourceRefs });
   assert.throws(() => normalizeFactionCoverageMetadataV1(coverage), { code: 'FACTION_REVIEW_COVERAGE_METADATA_INVALID' });

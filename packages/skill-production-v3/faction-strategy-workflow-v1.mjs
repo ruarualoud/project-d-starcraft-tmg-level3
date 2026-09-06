@@ -258,13 +258,16 @@ export function normalizeFactionStrategyPatchEnvelopeV1(output, args) {
 }
 
 export async function produceFactionStrategyV1({ input, runtime, store, knownRulePolicy, fieldRepairSeed = null,
-  registeredSourceFieldRepair = false, onProgress = () => {} }) {
+  phaseFieldSeed = null, registeredSourceFieldRepair = false, onProgress = () => {} }) {
   if (typeof registeredSourceFieldRepair !== 'boolean') fail('FACTION_SOURCE_FIELD_POLICY_INVALID');
   verifySeal(knownRulePolicy);
   if (knownRulePolicy.inputHash !== input.hash) fail('FACTION_KNOWN_RULE_POLICY_DRIFT');
   const fieldRepairBinding = fieldRepairSeed ? (await import('./faction-field-repair-seed-v1.mjs')).validateFactionFieldRepairSeedV1({
     input, knownRulePolicy, seed: fieldRepairSeed }) : null;
   let fieldRepairConsumed = false;
+  const phaseSeed = phaseFieldSeed ? (await import('./faction-phase-field-seed-v1.mjs')).materializeFactionPhaseFieldSeedV1({
+    input, seed: phaseFieldSeed }) : null;
+  let phaseSeedConsumed = false;
   const { inspectFactionUnitRoleDebtV1 } = await import('../skill-evaluation/faction-unit-role-debt-v1.mjs');
   const { repairKnownFactionUnitRoleFieldsV1 } = await import('./faction-unit-role-field-repair-v1.mjs');
   const registeredRepair = registeredSourceFieldRepair ? await import('./faction-source-field-repair-v2.mjs') : null;
@@ -373,14 +376,31 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     let draft = validateFactionDraftV1(knownRuleCorrection.draft, input); const rounds = [], edits = [], seen = new Set([hash(draft)]);
     if (knownRuleCorrection.patches.length) onProgress({ section: section.id, stage: 'known_rule_fact_corrected',
       correctedFields: knownRuleCorrection.patches.length, correctionHash: knownRuleCorrection.hash });
-    let passed = false;
+    let passed = false, reviewEpoch = '';
     for (let revision = 0; revision <= 3; revision++) {
+      if (phaseSeed?.binding.sectionId === section.id && !phaseSeedConsumed && revision === phaseSeed.binding.importBeforeRevision) {
+        if (hash(draft) !== phaseSeed.binding.parentDraftHash) fail('FACTION_PHASE_SEED_BASE_NOT_REPRODUCED');
+        const next = validateFactionDraftV1(phaseSeed.draft, input);
+        assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: next });
+        if (seen.has(hash(next))) fail('FACTION_REPAIR_CYCLE');
+        edits.push(seal({ version: 'verified_phase_field_import_v1', parentHash: hash(draft), resultHash: hash(next),
+          binding: phaseSeed.binding, actualPatch: phaseFieldSeed.candidate.patch, hostClarification: phaseSeed.clarification,
+          oldProviderOutputOverwritten: false, oldReviewAcceptanceInherited: false,
+          priorPendingReviewPreservedInEvidence: true, freshWholeSectionReviewRequired: true, trainingTruth: false }));
+        draft = next; seen.add(hash(draft)); phaseSeedConsumed = true;
+        // The already-paid old review remains in its evidence. A changed draft
+        // must never reuse its exact request ID or either old judgment.
+        reviewEpoch = '.phase-seed-v1.' + phaseSeed.binding.hash.slice(0, 20);
+        onProgress({ section: section.id, revision, stage: 'actual_phase_field_repair_imported',
+          changedFields: phaseFieldSeed.candidate.patch.changes.length, hostClarifications: phaseSeed.clarification.changes.length,
+          freshReviewPending: true });
+      }
       const reviews = [], reviewHashes = [], reviewPartition = [];
       const coverageAssignmentPlan = createFactionReviewBatchPlanV1({ section, draft });
       for (const route of ['supportive', 'adversarial']) {
         for (const { first, reviewIndices, requiredSourceRefs } of coverageAssignmentPlan.batches) {
           const targets = createFactionReviewTargetsV1({ input, section, draft, indices: reviewIndices });
-          const reviewed = await role(section.id + '.review-target-batch-v1.' + route + '.' + revision + '.' + first,
+          const reviewed = await role(section.id + '.review-target-batch-v1.' + route + '.' + revision + reviewEpoch + '.' + first,
             '独立来源审查，角色' + route + '。完整来源、总规则、整节候选仍在；本次只审查末尾targetContract明确给出的1至2个对象。不要自行数数组位置。以targetId和完整title标识对象，focus引用该对象fields中具体path及原文片段（8至240字符）；不能引用邻近建议代替。核对所有when/procedure/alternatives/risk/reviseIf/unproven字段、算术、支付/时机/例外。区分事实、条件策略、未验证效果；不能因为建议有条件就忽略不真实的确定性断言。focusedSources是同一冻结来源原文，非另一个模型的摘要。返回{"verdicts":[{"targetId":"给定ID","title":"给定完整标题","focus":[{"path":"给定字段路径","quote":"该字段原文片段"}],"verdict":"supported|unsupported|uncertain","reason":"针对此对象的具体依据，最多400字符","sourceRefs":["实际官方来源ID，1至8"]}],"coverage":[{"sourceRef":"指定覆盖来源","verdict":"covered|omitted|uncertain","recommendationIndices":[整节直接引用此来源的建议序号],"reason":"具体覆盖依据，最多400字符"}]}。每个targetId及coverageRequiredSourceRefs一次，coverageRequiredSourceRefs为空则coverage:[]。不要输出其他对象或数字index；否定/不确定判断必须指出对象内具体问题，规则来源优先于候选措辞。',
             { section, draft, reviewIndices, coverageRequiredSourceRefs: requiredSourceRefs,
               outputRequestAtEnd: { targetContract: targets, coverageOnlySourceRefs: requiredSourceRefs } }, out => {
@@ -398,8 +418,9 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
       const adjudication = adjudicateFactionSourceScopesV1({ input, draft, issues: rawIssues }), issues = adjudication.openIssues;
       const round = seal({ sectionId: section.id, revision, draftHash: hash(draft), reviewHashes, reviews, reviewPartition, coverageAssignmentPlan, issues,
         rawIssues, adjudication,
-        priorRoundHash: rounds.at(-1)?.hash || null, oldFailuresRetained: true, trainingTruth: false });
-      const lease = store.acquire(section.id + '.issue-journal.' + revision, { roundHash: round.hash });
+        priorRoundHash: rounds.at(-1)?.hash || null, oldFailuresRetained: true,
+        ...(reviewEpoch ? { phaseFieldBindingHash: phaseSeed.binding.hash } : {}), trainingTruth: false });
+      const lease = store.acquire(section.id + '.issue-journal.' + revision + reviewEpoch, { roundHash: round.hash });
       const saved = lease.cached ? verifySeal(lease.artifact) : store.finish(lease, round); rounds.push(saved);
       onProgress({ section: section.id, revision, stage: 'reviewed', openIssues: issues.openIssues });
       if (!issues.openIssues) {
@@ -456,7 +477,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
           }
           return { ...edit, value: normalized.output };
         };
-        let edit = await role(section.id + '.editor.' + revision + '.' + ordinal, instruction + '\n本次仅输出localIssue这一项的替换或补充，其余问题会分别处理；完整draft及allIssues保留供一致性核对。',
+        let edit = await role(section.id + '.editor.' + revision + reviewEpoch + '.' + ordinal, instruction + '\n本次仅输出localIssue这一项的替换或补充，其余问题会分别处理；完整draft及allIssues保留供一致性核对。',
           { section, draft, parentHash: hash(draft), localIssue: issue, issues: localIssues, allIssues: issues,
             editTargetAtEnd: { parentHash: hash(draft), localIssue: issue,
               target: issue.index === undefined ? null : { index: issue.index, title: draft.recommendations[issue.index].title,
@@ -467,7 +488,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
           const repairScopes = [issue.kind === 'assigned_source_omission' ? issue : {
             kind: issue.kind, index: issue.index, title: draft.recommendations[issue.index].title,
             findings: issue.findings, sourceRefs: draft.recommendations[issue.index].sourceRefs }];
-          edit = await role(section.id + '.source-reconstruction.' + revision + '.' + ordinal,
+          edit = await role(section.id + '.source-reconstruction.' + revision + reviewEpoch + '.' + ordinal,
             instruction + '\n旧编辑为空或未改变被标记内容，已记录为语义无进展而非JSON错误。现不给被标记的旧正文，从完整官方来源与repairScopes重建这一项；其他建议完整保留为上下文。保留父hash和index，不改其他建议。如果来源不能支持修改，保持阻断，不编造。',
             { section, parentHash: hash(draft), repairScopes, noProgressArtifactHash: edit.artifact.hash,
               preservedRecommendations: draft.recommendations.flatMap((r, index) => index === issue.index ? [] : [{ index, recommendation: r }]),
@@ -494,12 +515,14 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     if (!passed) break;
   }
   if (fieldRepairBinding && !fieldRepairConsumed) fail('FACTION_FIELD_SEED_NOT_CONSUMED');
+  if (phaseSeed && !phaseSeedConsumed) fail('FACTION_PHASE_SEED_NOT_CONSUMED');
   const candidate = seal({ schema: 'starcraft_faction_strategy_candidate_v1', gameId: 'starcraft-tmg',
     skillId: 'skill.starcraft-tmg.faction.tactical-cards-' + input.factionRecordKey.split(':')[1].replaceAll('_', '-'), factionRecordKey: input.factionRecordKey,
     inputHash: input.hash, planHash: plan.hash, sourceBinding: input.sourceBinding, overallDependencyHash: input.overallDependencyHash,
     knownRulePolicyHash: knownRulePolicy.hash, knownUnchangedRuleFailuresBlocked: true,
     tutorArtifactHash: tutor.artifact.hash, questionTree: tree.value, challengerTree: challenger.value,
     sections, roleArtifacts, ...(fieldRepairBinding ? { fieldRepairBinding } : {}),
+    ...(phaseSeed ? { phaseFieldBinding: phaseSeed.binding } : {}),
     ...(registeredSourceFieldRepair ? { registeredSourceFieldRepair: true } : {}),
     semanticReviewPassed: sections.length === plan.sections.length && sections.every(s => s.semanticReviewPassed),
     scope: 'conditional_faction_strategy_with_all_assigned_unit_and_card_sources_not_proven_complete_game_strength',

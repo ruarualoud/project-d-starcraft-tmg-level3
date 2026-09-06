@@ -13,6 +13,9 @@ export function normalizeFactionCoverageMetadataV1(coverage) {
     const extra = row && Object.hasOwn(row, 'sourceRefs');
     exact(row, [...keys, ...(extra ? ['sourceRefs'] : [])]);
     if (!extra) return clone(row);
+    // Existing review contracts already allow this identical alias. It is not
+    // new metadata and must remain unchanged so paid review hashes still replay.
+    if (hash(row.sourceRefs) === hash([row.sourceRef])) return clone(row);
     if (!Array.isArray(row.sourceRefs) || row.sourceRefs.length) fail('FACTION_REVIEW_COVERAGE_METADATA_INVALID');
     const { sourceRefs, ...normalized } = row;
     repairs.push(seal({ index, originalRowHash: hash(row), normalizedRowHash: hash(normalized),

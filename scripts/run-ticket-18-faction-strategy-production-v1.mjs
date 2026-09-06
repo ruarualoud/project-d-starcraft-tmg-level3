@@ -13,6 +13,8 @@ import { compileFactionProductionInputV1 } from '../packages/skill-production-v3
 import { inspectFactionContinuationV1 } from '../packages/skill-production-v3/faction-continuation-v1.mjs';
 import { inspectFactionFieldRepairEvidenceV1 } from '../packages/skill-evaluation/faction-field-repair-evidence-v1.mjs';
 import { validateFactionFieldRepairSeedV1 } from '../packages/skill-production-v3/faction-field-repair-seed-v1.mjs';
+import { inspectFactionPhaseFieldEvidenceV1 } from '../packages/skill-evaluation/faction-phase-field-evidence-v1.mjs';
+import { validateFactionPhaseFieldSeedV1 } from '../packages/skill-production-v3/faction-phase-field-seed-v1.mjs';
 import { createFactionKnownRulePolicyV1 } from '../packages/skill-production-v3/faction-known-rule-findings-v1.mjs';
 import { createFactionRosterChoiceDrillsV1 } from '../packages/skill-evaluation/faction-roster-choice-drills-v1.mjs';
 import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/official-development-tranche-source-lock-fixture-v1.mjs';
@@ -31,7 +33,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), a
 if (![3, 5, 7].includes(args.length) || !['--preflight', '--live'].includes(args[0]) || args[1] !== '--overall-run'
   || !/^guide-repair-[a-f0-9]{20}$/.test(args[2]) || args.length >= 5 && (args[3] !== '--continue-from' || !/^faction-v1-[a-f0-9]{20}$/.test(args[4]))
   || args.length === 7 && !(args[5] === '--field-repair-run' && /^field-repair-[a-f0-9]{20}$/.test(args[6])
-    || args[5] === '--review-recovery-run' && /^faction-v1-[a-f0-9]{20}$/.test(args[6]))) fail('FACTION_RUN_ARGUMENTS_INVALID');
+    || args[5] === '--review-recovery-run' && /^faction-v1-[a-f0-9]{20}$/.test(args[6])
+    || args[5] === '--phase-repair-run' && /^phase-repair-[a-f0-9]{20}$/.test(args[6]))) fail('FACTION_RUN_ARGUMENTS_INVALID');
 const base = path.join(root, 'build/ticket-18-faction-production-v1'), filename = path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite');
 const json = async file => verifySeal(JSON.parse(await readFile(path.join(root, file), 'utf8')));
 const db = new DatabaseSync(filename, { readOnly: true });
@@ -117,6 +120,16 @@ for (const parentRunId of additionalRecoveryRunIds) {
   additionalRecoveries.push(recovery); additionalRecoveryGates.push(gate);
 }
 gates.push(...additionalRecoveryGates);
+const phaseRunId = (args[5] === '--phase-repair-run' ? args[6] : null) || parentRecipe?.phaseFieldBinding?.runId;
+const phaseFieldSeed = phaseRunId ? await inspectFactionPhaseFieldEvidenceV1({ root, runId: phaseRunId }) : null;
+const phaseFieldBinding = phaseFieldSeed ? validateFactionPhaseFieldSeedV1({ input: inputs[0], seed: phaseFieldSeed }) : null;
+const phaseFieldReadiness = phaseFieldBinding ? await json('build/ticket-18-faction-production-v1/phase-field-seed-readiness.json') : null;
+if (phaseFieldReadiness) {
+  if (!phaseFieldReadiness.passed || phaseFieldReadiness.bindingHash !== phaseFieldBinding.hash) fail('FACTION_PHASE_SEED_READINESS_DRIFT');
+  for (const row of phaseFieldReadiness.codeHashes) if (sha256(await readFile(path.join(root, row.file))) !== row.hash)
+    fail('FACTION_PHASE_SEED_READINESS_CODE_DRIFT');
+  gates.push(phaseFieldReadiness);
+}
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/faction-review-targets-v1.mjs', 'packages/skill-production-v3/faction-known-rule-findings-v1.mjs',
   'packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs',
@@ -132,6 +145,9 @@ const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 
 if (fieldRepairBinding) files.push('packages/skill-production-v3/faction-field-repair-seed-v1.mjs',
   'packages/skill-production-v3/faction-field-repair-v1.mjs', 'packages/skill-evaluation/faction-field-repair-evidence-v1.mjs',
   'packages/skill-evaluation/faction-semantic-debt-v1.mjs', 'packages/skill-evaluation/read-only-production-replay-v1.mjs');
+if (phaseFieldBinding) files.push('packages/skill-production-v3/faction-phase-field-seed-v1.mjs',
+  'packages/skill-production-v3/faction-phase-seed-clarification-v1.mjs', 'packages/skill-production-v3/faction-phase-field-repair-v1.mjs',
+  'packages/skill-evaluation/faction-phase-field-evidence-v1.mjs', 'packages/skill-evaluation/faction-phase-source-debt-v1.mjs');
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
 const limits = { maxCalls: 400, maxCostMicros: 20_000_000, maxTokens: 60_000_000, maxWallMs: 8 * 60 * 60 * 1000, maxInputBytes: 1_000_000, maxRevisions: 3 };
 const next = seal({ version: 'faction_strategy_production_v1', overallRunId: args[2], overallDependencyHash: overallDependency.hash,
@@ -143,6 +159,7 @@ const next = seal({ version: 'faction_strategy_production_v1', overallRunId: arg
   unitRoleRepairReadinessHashes: unitRoleRepairGates.map(g => g.hash),
   registeredSourceFieldRepair: true, commandRecoveryBinding: commandRecovery.manifest,
   sourceCorrectionReadinessHashes: sourceCorrectionGates.map(g => g.hash),
+  ...(phaseFieldBinding ? { phaseFieldBinding, phaseFieldReadinessHash: phaseFieldReadiness.hash } : {}),
   ...(additionalRecoveries.length ? { additionalCommandRecoveryBindings: additionalRecoveries.map(row => row.manifest),
     additionalCommandRecoveryReadinessHashes: additionalRecoveryGates.map(gate => gate.hash) } : {}),
   target: 'two_complete_conditional_faction_strategy_candidates_with_source_review_not_runtime_promotion',
@@ -156,7 +173,8 @@ if (args[4]) {
     normalizationMigration: { before, after: main, recovery: gates[4] }, correctionMigration: gates[5],
     fieldRepairMigration: fieldRepairBinding ? { binding: fieldRepairBinding, readiness: fieldRepairReadiness } : null,
     unitRoleRepairMigration: unitRoleRepairGates, sourceCorrectionMigration: sourceCorrectionGates,
-    additionalCommandRecoveryMigration: additionalRecoveryGates });
+    additionalCommandRecoveryMigration: additionalRecoveryGates,
+    phaseSeedMigration: phaseFieldBinding ? { binding: phaseFieldBinding, readiness: phaseFieldReadiness } : null });
 }
 const { hash: ignored, ...nextBody } = next;
 const recipe = continuation ? seal({ ...nextBody, continuation: continuation.manifest }) : next;
@@ -206,6 +224,7 @@ try {
     const candidate = await produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownRulePolicies[index],
       registeredSourceFieldRepair: true,
       fieldRepairSeed: index === 0 ? fieldRepairSeed : null,
+      phaseFieldSeed: index === 0 ? phaseFieldSeed : null,
       onProgress: row => console.log(JSON.stringify({ event: 'faction-progress', ticket: 18, slice: 174, faction: name, ...row })) });
     candidates.push(candidate); await put(name + '-candidate', candidate);
     await writeFile(path.join(out, name + '-candidate.md'), renderFactionStrategyV1(candidate));

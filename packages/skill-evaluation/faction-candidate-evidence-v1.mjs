@@ -6,6 +6,8 @@ import { createEvidenceReader } from '../skill-production/evidence.mjs';
 import { openFactionProductionReplayV1 } from './faction-production-replay-v1.mjs';
 import { inspectFactionFieldRepairEvidenceV1 } from './faction-field-repair-evidence-v1.mjs';
 import { validateFactionFieldRepairSeedV1 } from '../skill-production-v3/faction-field-repair-seed-v1.mjs';
+import { inspectFactionPhaseFieldEvidenceV1 } from './faction-phase-field-evidence-v1.mjs';
+import { validateFactionPhaseFieldSeedV1 } from '../skill-production-v3/faction-phase-field-seed-v1.mjs';
 import { factionConsumerContextV1 } from './faction-roster-use-evaluation-v1.mjs';
 import { inspectFactionUnitRoleDebtV1 } from './faction-unit-role-debt-v1.mjs';
 import { assertNoFactionCrossFieldSourceDebtV1 } from './faction-cross-field-source-audit-v1.mjs';
@@ -43,17 +45,22 @@ export async function inspectFactionCandidateEvidenceV1({ root, runId, input, kn
     parentId = parent.continuation?.parentRunId;
   }
   const replay = openFactionProductionReplayV1({ filename: path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite'), runId, recipe, ancestors });
-  let rebuilt, delivery, fieldRepairSeed = null;
+  let rebuilt, delivery, fieldRepairSeed = null, phaseFieldSeed = null;
   try {
     if (recipe.fieldRepairBinding?.inputHash === input.hash) {
       fieldRepairSeed = await inspectFactionFieldRepairEvidenceV1({ root, runId: recipe.fieldRepairBinding.runId });
       if (validateFactionFieldRepairSeedV1({ input, knownRulePolicy, seed: fieldRepairSeed }).hash !== recipe.fieldRepairBinding.hash)
         fail('FACTION_CANDIDATE_EVIDENCE_FIELD_REPAIR_DRIFT');
     }
+    if (recipe.phaseFieldBinding?.inputHash === input.hash) {
+      phaseFieldSeed = await inspectFactionPhaseFieldEvidenceV1({ root, runId: recipe.phaseFieldBinding.runId });
+      if (validateFactionPhaseFieldSeedV1({ input, seed: phaseFieldSeed }).hash !== recipe.phaseFieldBinding.hash)
+        fail('FACTION_CANDIDATE_EVIDENCE_PHASE_REPAIR_DRIFT');
+    }
     const runtime = createProductionRuntimeV3({ store: replay.store, reader: createEvidenceReader(catalogue), context,
       verifier: {}, model: () => fail('FACTION_CANDIDATE_EVIDENCE_EGRESS_FORBIDDEN'),
       dsh: { run: () => fail('FACTION_CANDIDATE_EVIDENCE_UNSAVED_ROLE') } });
-    rebuilt = await produceFactionStrategyV1({ input, knownRulePolicy, fieldRepairSeed, runtime, store: replay.store,
+    rebuilt = await produceFactionStrategyV1({ input, knownRulePolicy, fieldRepairSeed, phaseFieldSeed, runtime, store: replay.store,
       registeredSourceFieldRepair: recipe.registeredSourceFieldRepair === true });
     if (rebuilt.hash !== candidate.hash) fail('FACTION_CANDIDATE_EVIDENCE_REBUILD_DRIFT');
     factionConsumerContextV1({ input, candidate: rebuilt, knownRulePolicy });
@@ -62,6 +69,7 @@ export async function inspectFactionCandidateEvidenceV1({ root, runId, input, kn
   const evidence = seal({ version: 'faction_candidate_production_evidence_v1', runId, recipeHash: recipe.hash,
     inputHash: input.hash, candidateHash: candidate.hash, knownRulePolicyHash: knownRulePolicy.hash,
     fieldRepairEvidenceHash: fieldRepairSeed?.evidence.hash || null, delivery, sourceReviewWorkflowRebuilt: true,
+    ...(phaseFieldSeed ? { phaseFieldEvidenceHash: phaseFieldSeed.evidence.hash } : {}),
     independentSemanticReviewPerformed: false, independentConsumerEvaluationPerformed: false,
     strategyEffectivenessProven: false, runtimeAccepted: false, newProviderCalls: 0, trainingTruth: false });
   return { candidate: rebuilt, evidence };

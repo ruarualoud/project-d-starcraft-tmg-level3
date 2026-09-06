@@ -1,6 +1,37 @@
 import { DatabaseSync } from 'node:sqlite';
 import { seal, verifySeal, hash, fail } from '../skill-production/common.mjs';
 
+export function validateFactionPhaseSeedMigrationV1({ parent, next, migration }) {
+  [parent, next].forEach(verifySeal);
+  if (parent.phaseFieldBinding && hash(parent.phaseFieldBinding) !== hash(next.phaseFieldBinding || null))
+    fail('FACTION_PHASE_SEED_BINDING_DRIFT');
+  if (!next.phaseFieldBinding) {
+    if (migration || next.phaseFieldReadinessHash) fail('FACTION_PHASE_SEED_POLICY_INVALID');
+    return null;
+  }
+  const { binding, readiness } = migration || {};
+  if (!binding || !readiness) fail('FACTION_PHASE_SEED_MIGRATION_PROOF_MISSING');
+  [binding, readiness, next.phaseFieldBinding].forEach(verifySeal);
+  const files = ['packages/skill-production-v3/faction-phase-field-seed-v1.mjs',
+    'packages/skill-production-v3/faction-phase-seed-clarification-v1.mjs',
+    'packages/skill-production-v3/faction-phase-field-repair-v1.mjs',
+    'packages/skill-evaluation/faction-phase-field-evidence-v1.mjs', 'packages/skill-evaluation/faction-phase-source-debt-v1.mjs'];
+  if (binding.hash !== next.phaseFieldBinding.hash || !next.inputHashes.includes(binding.inputHash)
+    || !parent.phaseFieldBinding && binding.sourceRecipeHash !== parent.hash
+    || readiness.hash !== next.phaseFieldReadinessHash || !readiness.passed || readiness.bindingHash !== binding.hash
+    || readiness.evidenceHash !== binding.evidenceHash || !readiness.actualRepairReapplied
+    || !readiness.freshReviewRequired || !readiness.freshNegativeRetained || !readiness.freshRequestNamespace
+    || !readiness.previousRawRolesRetained || readiness.injectedReviews !== 16 || readiness.importedFields !== 11
+    || readiness.disclosedHostClarifications !== 1 || readiness.providerCalls !== 0
+    || binding.semanticAcceptanceInherited !== false || binding.importBeforeRevision >= next.limits.maxRevisions
+    || [...files, 'packages/skill-production-v3/faction-strategy-workflow-v1.mjs'].some(file =>
+      !next.codeHashes.find(row => row.file === file)
+      || next.codeHashes.find(row => row.file === file)?.hash !== readiness.codeHashes.find(row => row.file === file)?.hash))
+    fail('FACTION_PHASE_SEED_MIGRATION_PROOF_INVALID');
+  return seal({ files, bindingHash: binding.hash, readinessHash: readiness.hash, evidenceHash: binding.evidenceHash,
+    policy: 'reproduce_exact_parent_import_actual_patch_disclose_host_clarification_use_fresh_review_epoch_no_budget_reset', trainingTruth: false });
+}
+
 export function validateAdditionalFactionCommandRecoveryV1({ parent, next, gates = [] }) {
   [parent, next].forEach(verifySeal);
   const before = parent.additionalCommandRecoveryBindings || [], after = next.additionalCommandRecoveryBindings || [];
@@ -71,18 +102,20 @@ export function validateFactionSourceCorrectionMigrationV1({ parent, next, sourc
     policy: 'registered_source_fields_then_fresh_review_and_exact_paid_request_bare_review_envelope_no_judgment_change', trainingTruth: false });
 }
 
-export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration }) {
+export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration, phaseSeedMigration }) {
   [parent, parentReport, next].forEach(verifySeal);
   if (parent.version !== 'faction_strategy_production_v1' || parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20)
     || parentReport.runId !== parentRunId || parentReport.recipeHash !== parent.hash || !parentReport.failure) fail('FACTION_CONTINUATION_PARENT_INVALID');
   const strip = r => { const { hash: ignored, codeHashes, workflowReadinessHash, dshContextReadinessHash, mainReadinessHash, jsonRecoveryReadinessHash,
     targetedCorrectionsReadinessHash, knownRulePolicyHashes, fieldRepairBinding, unitRoleRepairReadinessHashes,
     registeredSourceFieldRepair, commandRecoveryBinding, sourceCorrectionReadinessHashes,
-    additionalCommandRecoveryBindings, additionalCommandRecoveryReadinessHashes, continuation, ...body } = r; return body; };
+    additionalCommandRecoveryBindings, additionalCommandRecoveryReadinessHashes, phaseFieldBinding, phaseFieldReadinessHash, continuation, ...body } = r; return body; };
   if (hash(strip(parent)) !== hash(strip(next))) fail('FACTION_CONTINUATION_CONTRACT_DRIFT');
   const additionalRecoveryProof = validateAdditionalFactionCommandRecoveryV1({ parent, next, gates: additionalCommandRecoveryMigration });
   const allowed = new Set(['packages/skill-production-v3/faction-strategy-workflow-v1.mjs',
     'packages/skill-production-v3/faction-continuation-v1.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs']);
+  const phaseSeedProof = validateFactionPhaseSeedMigrationV1({ parent, next, migration: phaseSeedMigration });
+  phaseSeedProof?.files.forEach(file => allowed.add(file));
   const sourceCorrectionProof = validateFactionSourceCorrectionMigrationV1({ parent, next, sourceCorrectionMigration });
   sourceCorrectionProof?.files.forEach(file => allowed.add(file));
   let unitRoleRepairProof = null;
@@ -194,6 +227,7 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
       ...(unitRoleRepairProof ? { unitRoleRepairMigration: unitRoleRepairProof } : {}),
       ...(sourceCorrectionProof ? { sourceCorrectionMigration: sourceCorrectionProof } : {}),
       ...(additionalRecoveryProof ? { additionalCommandRecoveryMigration: additionalRecoveryProof } : {}),
+      ...(phaseSeedProof ? { phaseSeedMigration: phaseSeedProof } : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
       policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
     return { manifest, steps };
