@@ -7,6 +7,19 @@ formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
 ## Latest terminal and repair-ready checkpoint
 
+Recovery/veto increment `3184317` is pushed. The next separate phase-field-v1
+producer preserves the old v2 contracts and paid role hashes. It binds the
+actual captured revision2 parent and11 source-backed fields, produces3/3/3/2
+bounded output batches with the whole source/522-claim overall Skill/draft/all
+findings in every request, and applies only when all batches are present.
+Twenty contract checks and4 actual DSH sessions with injected model responses
+pass (`e3799faf…`, maximum model-request866,201bytes,0 paid calls). This is the
+DSH-to-accounted-model boundary, not an HTTPS transport test or actual repair.
+The separate live repair has8-call/4M-token/¥5/30-minute ceilings and shares the
+global invoice ledger; original faction ancestor accounting is not reset.
+Read-only replay code checks all4 original requests, responses and loop traces
+before any future seed import. No phase patch has been produced or imported yet.
+
 Latest run `faction-v1-228b8989edaaba791753` /13236 is TERMINAL (exit1).
 The prior patch envelope was successfully reused and the next editor actually
 completed. A new supportive revision2 review had one paid JSON failure then a
