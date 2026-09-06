@@ -10,7 +10,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), b
 const temp = await mkdtemp(path.join(base, 'continuation-test-')), filename = path.join(temp, 'fixture.sqlite');
 const parent = seal({ version: 'faction_strategy_production_v1', codeHashes: [{ file: 'packages/skill-production-v3/faction-strategy-workflow-v1.mjs', hash: hash('old') }],
   workflowReadinessHash: hash('old readiness'), dshContextReadinessHash: hash('old capacity'), inputHashes: [hash('full input')],
-  limits: { maxCalls: 20, maxCostMicros: 5000000, maxTokens: 1000000 }, sourceBinding: hash('frozen') });
+  limits: { maxCalls: 20, maxCostMicros: 5000000, maxTokens: 1000000 }, sourceBinding: hash('frozen'), dshBindingHash: hash('pinned dsh') });
 const parentRunId = 'faction-v1-' + parent.hash.slice(0, 20);
 const parentStore = openProductionStore(filename, { runId: parentRunId, recipeHash: parent.hash });
 const put = (s, id, input, artifact) => { const l = s.acquire(id, input); return s.finish(l, artifact); };
@@ -29,6 +29,32 @@ const deps = { filename, parentRunId, parent, parentReport, next };
 const continuation = inspectFactionContinuationV1(deps);
 assert.equal(continuation.manifest.reusable.length, 1); assert.equal(continuation.manifest.parentStart, 1000);
 assert.deepEqual(continuation.manifest.accounting, { calls: 1, costMicros: 10, tokens: 12 });
+const unitFiles = ['packages/skill-production-v3/faction-unit-role-field-repair-v1.mjs', 'packages/skill-evaluation/faction-unit-role-debt-v1.mjs'];
+const unitCode = [...next.codeHashes, ...unitFiles.map(file => ({ file, hash: hash('unit repair ' + file) }))];
+const unitGates = [seal({ passed: true, inputHash: parent.inputHashes[0], codeHashes: unitCode, actualKnownCounterexamples: 3,
+  unaffectedFieldsPreserved: true, freshReviewRequired: true }),
+seal({ passed: true, inputHash: parent.inputHashes[0], codeHashes: unitCode, repairsIntegrated: true, freshNegativeRetained: true, freshWholeSectionReviews: 16 }),
+seal({ passed: true, inputHash: parent.inputHashes[0], codeHashes: unitCode, fullSourceDeliveryVerified: true,
+  actualDshSessions: 1, providerCalls: 0, dshBinding: { hash: parent.dshBindingHash } })];
+const unitNext = seal({ ...bFor(parent), codeHashes: unitCode, unitRoleRepairReadinessHashes: unitGates.map(g => g.hash) });
+const unitDeps = { ...deps, next: unitNext, unitRoleRepairMigration: unitGates };
+assert.throws(() => inspectFactionContinuationV1({ ...deps, next: unitNext }), { code: 'FACTION_UNIT_REPAIR_MIGRATION_PROOF_MISSING' });
+const unitContinuation = inspectFactionContinuationV1(unitDeps);
+assert.deepEqual(unitContinuation.manifest.accounting, continuation.manifest.accounting);
+assert.equal(unitContinuation.manifest.parentStart, continuation.manifest.parentStart);
+for (const [position, fields] of [[0, { unaffectedFieldsPreserved: false }], [1, { freshNegativeRetained: false }],
+  [2, { fullSourceDeliveryVerified: false }], [2, { dshBinding: { hash: hash('other dsh') } }]]) {
+  const changed = unitGates.map((g, n) => n === position ? seal({ ...bFor(g), ...fields }) : g);
+  assert.throws(() => inspectFactionContinuationV1({ ...unitDeps,
+    next: seal({ ...bFor(unitNext), unitRoleRepairReadinessHashes: changed.map(g => g.hash) }), unitRoleRepairMigration: changed }),
+  { code: 'FACTION_UNIT_REPAIR_MIGRATION_PROOF_INVALID' });
+}
+assert.throws(() => inspectFactionContinuationV1({ ...unitDeps,
+  next: seal({ ...bFor(unitNext), limits: { ...parent.limits, maxTokens: 2000000 } }) }), { code: 'FACTION_CONTINUATION_CONTRACT_DRIFT' });
+const unitParentId = 'faction-v1-' + unitNext.hash.slice(0, 20);
+assert.throws(() => inspectFactionContinuationV1({ ...unitDeps, parent: unitNext, parentRunId: unitParentId,
+  parentReport: seal({ runId: unitParentId, recipeHash: unitNext.hash, failure: { code: 'INJECTED' } }), next }),
+  { code: 'FACTION_CONTINUATION_UNIT_REPAIR_REMOVED' });
 const fieldFiles = ['packages/skill-production-v3/faction-field-repair-seed-v1.mjs',
   'packages/skill-production-v3/faction-field-repair-v1.mjs', 'packages/skill-evaluation/faction-field-repair-evidence-v1.mjs',
   'packages/skill-evaluation/faction-semantic-debt-v1.mjs', 'packages/skill-evaluation/read-only-production-replay-v1.mjs'];
@@ -114,6 +140,6 @@ assert.throws(() => inspectFactionContinuationV1(deps), { code: 'API_BALANCE_EXH
 nextStore.close(); parentStore.close();
 const files = ['packages/skill-production-v3/faction-continuation-v1.mjs', 'packages/skill-production/continuation.mjs', 'scripts/verify-ticket-18-faction-continuation-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 29, codeHashes, providerCalls: 0, fixtureOnly: true, trainingTruth: false });
+const report = seal({ passed: true, checks: 38, codeHashes, providerCalls: 0, fixtureOnly: true, trainingTruth: false });
 await writeFile(path.join(base, 'continuation-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 29, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 38, providerCalls: 0, hash: report.hash }));

@@ -1,15 +1,37 @@
 import { DatabaseSync } from 'node:sqlite';
 import { seal, verifySeal, hash, fail } from '../skill-production/common.mjs';
 
-export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration }) {
+export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration }) {
   [parent, parentReport, next].forEach(verifySeal);
   if (parent.version !== 'faction_strategy_production_v1' || parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20)
     || parentReport.runId !== parentRunId || parentReport.recipeHash !== parent.hash || !parentReport.failure) fail('FACTION_CONTINUATION_PARENT_INVALID');
   const strip = r => { const { hash: ignored, codeHashes, workflowReadinessHash, dshContextReadinessHash, mainReadinessHash, jsonRecoveryReadinessHash,
-    targetedCorrectionsReadinessHash, knownRulePolicyHashes, fieldRepairBinding, continuation, ...body } = r; return body; };
+    targetedCorrectionsReadinessHash, knownRulePolicyHashes, fieldRepairBinding, unitRoleRepairReadinessHashes, continuation, ...body } = r; return body; };
   if (hash(strip(parent)) !== hash(strip(next))) fail('FACTION_CONTINUATION_CONTRACT_DRIFT');
   const allowed = new Set(['packages/skill-production-v3/faction-strategy-workflow-v1.mjs',
     'packages/skill-production-v3/faction-continuation-v1.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs']);
+  let unitRoleRepairProof = null;
+  if (parent.unitRoleRepairReadinessHashes && !next.unitRoleRepairReadinessHashes) fail('FACTION_CONTINUATION_UNIT_REPAIR_REMOVED');
+  if (next.unitRoleRepairReadinessHashes) {
+    const gates = unitRoleRepairMigration;
+    if (!Array.isArray(gates) || gates.length !== 3) fail('FACTION_UNIT_REPAIR_MIGRATION_PROOF_MISSING');
+    gates.forEach(verifySeal);
+    const [unit, workflow, dsh] = gates;
+    const files = ['packages/skill-production-v3/faction-unit-role-field-repair-v1.mjs', 'packages/skill-evaluation/faction-unit-role-debt-v1.mjs'];
+    if (hash(gates.map(g => g.hash)) !== hash(next.unitRoleRepairReadinessHashes)
+      || gates.some(g => !g.passed || g.inputHash !== next.inputHashes[0])
+      || unit.actualKnownCounterexamples !== 3 || !unit.unaffectedFieldsPreserved || !unit.freshReviewRequired
+      || !workflow.repairsIntegrated || !workflow.freshNegativeRetained || workflow.freshWholeSectionReviews !== 16
+      || !dsh.fullSourceDeliveryVerified || dsh.actualDshSessions !== 1 || dsh.providerCalls !== 0
+      || dsh.dshBinding.hash !== next.dshBindingHash
+      || [...files, 'packages/skill-production-v3/faction-strategy-workflow-v1.mjs'].some(file =>
+        !next.codeHashes.find(r => r.file === file) || [unit, workflow].some(g =>
+          g.codeHashes.find(r => r.file === file)?.hash !== next.codeHashes.find(r => r.file === file)?.hash)))
+      fail('FACTION_UNIT_REPAIR_MIGRATION_PROOF_INVALID');
+    files.forEach(file => allowed.add(file));
+    unitRoleRepairProof = { readinessHashes: next.unitRoleRepairReadinessHashes,
+      policy: 'independent_known_source_fields_repair_then_fresh_whole_section_review_no_source_model_budget_reset' };
+  }
   let fieldRepairProof = null;
   if (parent.fieldRepairBinding && hash(parent.fieldRepairBinding) !== hash(next.fieldRepairBinding || null))
     fail('FACTION_CONTINUATION_FIELD_REPAIR_DRIFT');
@@ -94,6 +116,7 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
       parentStart: began, accounting, changes, ...(migrationProof ? { normalizationMigration: migrationProof } : {}),
       ...(correctionProof ? { correctionMigration: correctionProof } : {}),
       ...(fieldRepairProof ? { fieldRepairMigration: fieldRepairProof } : {}),
+      ...(unitRoleRepairProof ? { unitRoleRepairMigration: unitRoleRepairProof } : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
       policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
     return { manifest, steps };

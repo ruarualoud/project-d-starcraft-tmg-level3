@@ -60,6 +60,12 @@ for (const name of ['terran_armed_forces', 'zerg_swarm']) {
 const { dataset } = await loadOfficialDevelopmentTrancheSourceLockFixtureV1({ root });
 const drills = await createFactionRosterChoiceDrillsV1({ catalogue, dataset });
 const knownRulePolicies = inputs.map(input => createFactionKnownRulePolicyV1({ input, drills }));
+const unitRoleRepairGates = await Promise.all(['unit-role-field-repair-readiness', 'unit-role-repair-workflow-readiness', 'unit-role-field-dsh-readiness']
+  .map(name => json('build/ticket-18-faction-production-v1/' + name + '.json')));
+for (const gate of unitRoleRepairGates) {
+  if (!gate.passed || gate.inputHash !== inputs[0].hash) fail('FACTION_UNIT_REPAIR_READINESS_FAILED');
+  for (const r of gate.codeHashes) if (sha256(await readFile(path.join(root, r.file))) !== r.hash) fail('FACTION_UNIT_REPAIR_READINESS_CODE_DRIFT');
+}
 const parentRecipe = args[4] ? await json('build/ticket-18-faction-production-v1/' + args[4] + '/recipe.json') : null;
 const fieldRepairRunId = args[6] || parentRecipe?.fieldRepairBinding?.runId;
 const fieldRepairSeed = fieldRepairRunId ? await inspectFactionFieldRepairEvidenceV1({ root, runId: fieldRepairRunId }) : null;
@@ -87,6 +93,7 @@ if (fieldRepairBinding) {
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/faction-review-targets-v1.mjs', 'packages/skill-production-v3/faction-known-rule-findings-v1.mjs',
   'packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs',
+  'packages/skill-production-v3/faction-unit-role-field-repair-v1.mjs', 'packages/skill-evaluation/faction-unit-role-debt-v1.mjs',
   'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs',
   'packages/skill-production-v3/faction-continuation-v1.mjs', 'packages/skill-production-v3/runtime.mjs',
   'packages/skill-production-v3/context.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs',
@@ -104,6 +111,7 @@ const next = seal({ version: 'faction_strategy_production_v1', overallRunId: arg
   mainReadinessHash: main.hash, workflowReadinessHash: gates[1].hash, dshContextReadinessHash: gates[2].hash, jsonRecoveryReadinessHash: gates[4].hash,
   targetedCorrectionsReadinessHash: gates[5].hash, knownRulePolicyHashes: knownRulePolicies.map(p => p.hash),
   dshBindingHash: gates[2].dshBinding.hash, codeHashes, limits, ...(fieldRepairBinding ? { fieldRepairBinding } : {}),
+  unitRoleRepairReadinessHashes: unitRoleRepairGates.map(g => g.hash),
   target: 'two_complete_conditional_faction_strategy_candidates_with_source_review_not_runtime_promotion',
   independentEvaluationAnswersExposed: false, sourceRefreshPerformed: false, trainingTruth: false });
 let continuation = null;
@@ -113,7 +121,8 @@ if (args[4]) {
   const before = await json('build/ticket-17-production-redesign-v1/readiness-' + parent.mainReadinessHash + '.json');
   continuation = inspectFactionContinuationV1({ filename, parentRunId: args[4], parent, parentReport, next,
     normalizationMigration: { before, after: main, recovery: gates[4] }, correctionMigration: gates[5],
-    fieldRepairMigration: fieldRepairBinding ? { binding: fieldRepairBinding, readiness: fieldRepairReadiness } : null });
+    fieldRepairMigration: fieldRepairBinding ? { binding: fieldRepairBinding, readiness: fieldRepairReadiness } : null,
+    unitRoleRepairMigration: unitRoleRepairGates });
 }
 const { hash: ignored, ...nextBody } = next;
 const recipe = continuation ? seal({ ...nextBody, continuation: continuation.manifest }) : next;
@@ -172,7 +181,7 @@ finally {
   await worker?.close().catch(() => {});
   const ledger = store.summary(), global = store.globalSummary();
   const report = seal({ runId, recipeHash: recipe.hash, overallDependencyHash: overallDependency.hash,
-    readinessHashes: gates.map(g => g.hash),
+    readinessHashes: [...gates, ...unitRoleRepairGates].map(g => g.hash),
     candidateHashes: candidates.map(c => c.hash), factionsGenerated: candidates.length,
     sourceReviewPassed: !failure && candidates.length === 2 && candidates.every(c => c.semanticReviewPassed), failure, ledger,
     continuation: continuation?.manifest || null, cumulativeKnownTokensLowerBound: historyTokens + global.knownTokens,

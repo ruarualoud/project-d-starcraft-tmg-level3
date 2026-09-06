@@ -5,6 +5,30 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
+## Three-field repair integration checkpoint
+
+The second-section independent counterexamples now enter a host-bound repair
+plan before another section can start. One complete-source DSH role returns
+only the three target IDs and replacement texts; application preserves every
+unflagged field atomically. The workflow then repeats both review routes over
+all seven recommendations. A fresh negative cannot inherit the old pass.
+Raw outputs, original debt, patch and review history remain separately stored.
+Known-text disappearance remains only a regression check, not semantic proof.
+
+Current gates pass: field repair16 (`354b1671…`), workflow integration8
+(`66fc8ec5…`), one actual isolated DSH session with injected Provider transport
+(`e073bb5c…`, 959,574 bytes), continuation38 (`f7c5bd49…`), existing workflow44,
+targeted corrections28, consumer14, first-field seed20, two existing full-context
+DSH sessions and flat-envelope13 (`9729e090…`). All are zero paid Provider calls.
+The continuation explicitly binds the new repair gates/code while preserving
+the entire ancestor usage, original limits and start time. A read-only inspector
+has been added to reapply the forthcoming actual raw response and bind its paid
+receipt to the exact ancestor section; it has not yet inspected a paid repair.
+
+Next: continue terminal `faction-v1-c27e73d05132d0b01a17`, actually repair the
+three fields, independently inspect them, freshly review the whole section,
+then continue the third section. No new faction/section qualification is claimed.
+
 ## Current checkpoint: two reviewed sections; unit-role source debt and flat envelope
 
 Run `faction-v1-c27e73d05132d0b01a17` is TERMINAL (59795 exit1). The first

@@ -243,6 +243,8 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
   const fieldRepairBinding = fieldRepairSeed ? (await import('./faction-field-repair-seed-v1.mjs')).validateFactionFieldRepairSeedV1({
     input, knownRulePolicy, seed: fieldRepairSeed }) : null;
   let fieldRepairConsumed = false;
+  const { inspectFactionUnitRoleDebtV1 } = await import('../skill-evaluation/faction-unit-role-debt-v1.mjs');
+  const { repairKnownFactionUnitRoleFieldsV1 } = await import('./faction-unit-role-field-repair-v1.mjs');
   const plan = createFactionWritingPlanV1(input), common = factionRoleWorkspaceV1(input);
   const packet = seal({ id: 'faction.' + input.factionRecordKey.split(':')[1], inputHash: input.hash, sourceBinding: input.sourceBinding });
   const roleArtifacts = [];
@@ -391,6 +393,17 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
             changedFields: fieldRepairSeed.candidate.patch.changes.length, freshReviewPending: true });
           continue;
         }
+        const unitDebt = inspectFactionUnitRoleDebtV1({ input, draft });
+        if (unitDebt.findings.length) {
+          if (revision === 3) fail('FACTION_UNIT_FIELD_FRESH_REVIEW_REQUIRED');
+          const repair = await repairKnownFactionUnitRoleFieldsV1({ input, section, draft, runtime, store });
+          assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: repair.patch.draft });
+          if (seen.has(repair.patch.draftHash)) fail('FACTION_REPAIR_CYCLE');
+          edits.push(repair); draft = repair.patch.draft; seen.add(hash(draft));
+          onProgress({ section: section.id, revision, stage: 'known_unit_role_fields_repaired',
+            changedFields: repair.patch.changes.length, freshReviewPending: true });
+          continue;
+        }
         passed = true; break;
       }
       if (revision === 3) break;
@@ -428,6 +441,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
       draft = next;
     }
     assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft });
+    if (inspectFactionUnitRoleDebtV1({ input, draft }).findings.length) fail('FACTION_UNIT_FIELDS_UNREPAIRED');
     const result = seal({ section, outline: outline.value, outlineArtifactHash: outline.artifact.hash, draft, rounds, edits, knownRuleCorrection, semanticReviewPassed: passed,
       ...(generationEnvelopeRepairs.length ? { generationEnvelopeRepairs } : {}),
       rulesApplicationPassed: false, strategyEffectivenessProven: false, runtimeAccepted: false, trainingTruth: false });
