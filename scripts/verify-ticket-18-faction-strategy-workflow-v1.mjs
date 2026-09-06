@@ -1,0 +1,98 @@
+import assert from 'node:assert/strict';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadFrozenSkillEvidence, createEvidenceReader } from '../packages/skill-production/evidence.mjs';
+import { createGlobalProductionContext } from '../packages/skill-production-v3/context.mjs';
+import { createProductionRuntimeV3 } from '../packages/skill-production-v3/runtime.mjs';
+import { runDirectLoop } from '../packages/skill-production/loops.mjs';
+import { openProductionStore } from '../packages/skill-production/store.mjs';
+import { FACTION_AXES_V1, createFactionWritingPlanV1, validateFactionDraftV1, applyFactionStrategyPatchV1,
+  produceFactionStrategyV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
+import { seal, verifySeal, hash, sha256, fail } from '../packages/skill-production/common.mjs';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), base = path.join(root, 'build/ticket-18-faction-production-v1');
+const catalogue = await loadFrozenSkillEvidence(root), context = createGlobalProductionContext(catalogue), reader = createEvidenceReader(catalogue);
+const inputs = await Promise.all(['terran_armed_forces', 'zerg_swarm'].map(async name => verifySeal(JSON.parse(await readFile(path.join(base, name + '-input.json'), 'utf8')))));
+const temp = await mkdtemp(path.join(base, 'workflow-test-'));
+const stores = [], makeStore = name => { const s = openProductionStore(path.join(temp, name + '.sqlite'), { runId: name, recipeHash: hash(name) }); stores.push(s); return s; };
+const recommendation = ref => ({ title: 'Injected conditional strategy fixture', when: ['Only in the stated legal scope'],
+  procedure: ['Compare enabled legal alternatives before preview'], alternatives: ['Conserve resources if the condition changes'],
+  risk: 'Fixture only, not a measured battle strategy', reviseIf: ['The stated condition changes'], sourceRefs: [ref], unproven: ['Real match strength is not evaluated here'] });
+const resultHashes = []; let calls = 0, maxTaskBytes = 0;
+function modelFor(input, mode = 'positive') {
+  return async ({ stageId, observed }) => {
+    calls++;
+    if (mode === 'payment') fail('API_BALANCE_EXHAUSTED_STOP_ALL_WORK');
+    const task = observed.messages[0].content, w = JSON.parse(task.slice(task.indexOf('\nLOCAL WORKSPACE\n') + 17));
+    assert(task.startsWith('FROZEN GLOBAL SOURCE CONTEXT\n' + JSON.stringify(context.prompt)));
+    assert.equal(w.overallSkill.sections.flatMap(s => s.claims).length, 522);
+    assert.equal(w.operationalGuide.hash, input.operationalGuide.hash);
+    assert.equal(w.factionEvidence.hash, input.factionEvidence.hash);
+    assert(!task.includes('production-heldout.') && !task.includes('independent-condition.'));
+    maxTaskBytes = Math.max(maxTaskBytes, Buffer.byteLength(task));
+    let out;
+    if (stageId.endsWith('.tutor') || stageId.includes('.proposer')) out = { lesson: ['Injected lesson for engineering only'], uncertainties: [] };
+    else if (stageId.endsWith('.question-tree') || stageId.endsWith('.challenger')) {
+      const field = stageId.endsWith('.challenger') ? 'probes' : 'questions';
+      out = { branches: FACTION_AXES_V1.map(axis => ({ axis, [field]: [0, 1].map(n => ({ question: 'Injected question ' + n,
+        sourceRefs: [input.factionEvidence.primarySource.ref] })) })) };
+    } else if (stageId.includes('.reasoner')) out = { answers: w.questions.map(q => ({ index: q.index, answer: 'Injected answer, no quality claim', sourceRefs: q.sourceRefs })), uncertainties: [] };
+    else if (stageId.includes('.judge')) out = { judgments: w.questions.map(q => ({ index: q.index, verdict: 'supported', reason: 'Injected judge', sourceRefs: q.sourceRefs })) };
+    else if (stageId.includes('.generator')) out = { recommendations: w.section.requiredSourceRefs.map(recommendation) };
+    else if (stageId.includes('.review.')) {
+      const negative = mode === 'blocked' || ['repair', 'no_progress'].includes(mode) && w.section.id.endsWith('army_resources.1') && stageId.endsWith('.0');
+      out = { verdicts: w.draft.recommendations.map((r, index) => ({ index, verdict: negative && index === 0 ? 'unsupported' : 'supported',
+        reason: negative ? 'Injected missing condition requiring local repair' : 'Injected review only', sourceRefs: r.sourceRefs })),
+      coverage: w.section.requiredSourceRefs.map(sourceRef => ({ sourceRef, verdict: 'covered', reason: 'Injected coverage only',
+        recommendationIndices: w.draft.recommendations.flatMap((r, i) => r.sourceRefs.includes(sourceRef) ? [i] : []) })) };
+    } else if (stageId.includes('.editor.')) {
+      const edited = structuredClone(w.draft.recommendations[0]);
+      if (mode !== 'no_progress') edited.when.push('Injected missing condition now made explicit');
+      out = { parentHash: w.parentHash, replacements: [{ index: 0, value: edited }], additions: [] };
+    } else if (stageId.includes('.source-reconstruction.')) {
+      assert(!w.draft && w.repairScopes.length === 1);
+      const rebuilt = recommendation(w.repairScopes[0].sourceRefs[0]); rebuilt.when.push('Injected source-first corrected condition');
+      out = { parentHash: w.parentHash, replacements: [{ index: w.repairScopes[0].index, value: rebuilt }], additions: [] };
+    } else fail('UNEXPECTED_INJECTED_ROLE');
+    return { command: { action: 'finish', content: out }, receiptHash: hash({ fixture: true, stageId, out }) };
+  };
+}
+try {
+  for (const [i, input] of inputs.entries()) {
+    const plan = createFactionWritingPlanV1(input); assert.equal(plan.sections.length, i ? 8 : 7);
+    const assigned = plan.sections.filter(s => ['unit_roles', 'card_packages'].includes(s.axis)).flatMap(s => s.requiredSourceRefs);
+    assert.deepEqual(assigned.sort(), input.factionEvidence.armyPool.map(p => p.source.ref).sort());
+    const store = makeStore('positive-' + i), runtime = createProductionRuntimeV3({ store, reader, context, verifier: {},
+      model: modelFor(input, i ? 'positive' : 'repair'), dsh: { run: runDirectLoop } });
+    const candidate = await produceFactionStrategyV1({ input, runtime, store });
+    assert(candidate.semanticReviewPassed); assert.equal(candidate.sections.length, plan.sections.length);
+    assert(!candidate.independentEvaluationPassed && !candidate.runtimeAccepted && !candidate.trainingTruth);
+    if (!i) { assert.equal(candidate.sections[0].edits.length, 1); assert.equal(candidate.sections[0].rounds.length, 2); }
+    const before = calls;
+    assert.equal((await produceFactionStrategyV1({ input, runtime, store })).hash, candidate.hash); assert.equal(calls, before);
+    resultHashes.push(candidate.hash);
+  }
+  const input = inputs[0], draft = { recommendations: [recommendation(input.factionEvidence.primarySource.ref), recommendation(input.factionEvidence.armyPool[0].source.ref)] };
+  for (const mode of ['blocked', 'no_progress']) {
+    const store = makeStore(mode), runtime = createProductionRuntimeV3({ store, reader, context, verifier: {}, model: modelFor(input, mode), dsh: { run: runDirectLoop } });
+    const r = await produceFactionStrategyV1({ input, runtime, store });
+    if (mode === 'blocked') { assert(!r.semanticReviewPassed); assert.equal(r.sections.length, 1); assert.equal(r.sections[0].rounds.length, 4); }
+    else { assert(r.semanticReviewPassed); assert(r.roleArtifacts.some(a => a.id.includes('.source-reconstruction.'))); }
+  }
+  const issues = seal({ parentHash: hash(draft), issues: [{ kind: 'recommendation_source_or_condition', index: 0, oldHash: hash(draft.recommendations[0]) }] });
+  assert.throws(() => applyFactionStrategyPatchV1({ parentHash: hash(draft), replacements: [{ index: 1, value: draft.recommendations[1] }], additions: [] }, { input, draft, issues }), { code: 'FACTION_PATCH_SCOPE_INVALID' });
+  assert.throws(() => applyFactionStrategyPatchV1({ parentHash: hash(draft), replacements: [{ index: 0, value: draft.recommendations[0] }], additions: [] }, { input, draft, issues }), { code: 'FACTION_PATCH_NO_PROGRESS' });
+  const unknown = structuredClone(draft); unknown.recommendations[0].sourceRefs = ['source:invented'];
+  assert.throws(() => validateFactionDraftV1(unknown, input), { code: 'FACTION_SOURCE_REFERENCE_INVALID' });
+  const payStore = makeStore('payment'), payRuntime = createProductionRuntimeV3({ store: payStore, reader, context, verifier: {}, model: modelFor(input, 'payment'), dsh: { run: runDirectLoop } });
+  await assert.rejects(() => produceFactionStrategyV1({ input, runtime: payRuntime, store: payStore }), { code: 'API_BALANCE_EXHAUSTED_STOP_ALL_WORK' });
+} finally { for (const store of stores) store.close(); }
+const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
+  'packages/skill-production-v3/runtime.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
+const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
+const report = seal({ passed: true, checks: 14, inputHashes: inputs.map(i => i.hash), codeHashes, maxTaskBytes,
+  injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
+  actualStrategyQualityProven: false, trainingTruth: false });
+await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
+console.log(JSON.stringify({ passed: true, checks: 14, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
