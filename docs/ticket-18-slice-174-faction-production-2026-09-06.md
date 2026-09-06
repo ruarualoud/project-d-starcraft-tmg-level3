@@ -5,7 +5,66 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: actual field repair and mandatory fresh review import
+## Current checkpoint: two reviewed sections; unit-role source debt and flat envelope
+
+Run `faction-v1-c27e73d05132d0b01a17` is TERMINAL (59795 exit1). The first
+section reproduced its parent, imported the actual field repair, then completed
+all eight fresh review batches; an additional binding-recovery call preserved
+the judgment. Independent exact-debt inspection now finds0, report
+`b0c776e572a4be10256991e725d19ebc34acf6df04d4cf70fa518d71554ca408`.
+The second section also completed source-review workflow under corrected
+coverage allocation. Review workflow2/15 is not independent qualification2/15.
+
+Independent inspection of the complete second-section prose confirmed three
+further source counterexamples missed by both model review routes:
+
+- `1.alternatives.2`: Haywire Missiles targets Ground, not a Flying-target
+  replacement for Hellfire Missiles.
+- `3.procedure.2`: Orders requires another Friendly Biological Unit; Goliath
+  is Armoured/Mechanical/Ground and cannot be its target.
+- `5.procedure.5`: Restoration and Life Support have separate named-Reaction
+  per-round limits; they share the per-player/per-activation Reaction limit.
+
+Exact old fields and original source predicates are preserved in
+`73a3271000f5861d38572aad28514671802280689eb5824e36d02e24c39a3f1f`.
+Eight saved-sample/source-drift checks passed; the actual consumer launcher
+rejects this known debt before credentials or a model call. These three fields
+have NOT yet been actually repaired. Known-text absence is not a general
+semantic detector. The next repair must retain the complete sources/overall/
+whole section, change only flagged fields, then freshly review the section.
+
+Production stopped at the third section's first2 generated items: the model
+placed the complete advice fields beside `index`, omitting only the `value`
+wrapper. Its schema response kept the same flat structure. The new envelope
+normalizer moves the exact known complete field set without changing values;
+it persists an explicit raw-output/per-field receipt. Unknown/missing/mixed
+fields, wrong/duplicate indices, source omissions and duplicate advice remain
+blocked. Thirteen actual-output/negative checks pass, zero Provider calls.
+Readiness `877b0dcb0e1e1b0ea508d785d263657d8ac821d949c4a26a52126fc390a5be39`.
+Related seed20, workflow44, correction28, consumer14 and two actual DSH full-
+context transport checks also pass, zero Provider calls. No revised prose or
+semantic acceptance is claimed by this structural normalization.
+
+This run20 actual calls /5,330,079 tokens /estimated ¥0.830040. All-history
+63,426,794 known tokens /estimated-or-reserved ¥55.309143; no402/in-flight call.
+Terminal report `c4f7c9a000f63b51875081f4299c4164bb8b97319fc0e0c078601bbb09c48dee`.
+Faction ancestry100 calls /26,582,707 tokens /¥9.359480. Original60M tokens,
+¥20,400 calls,8h and00:21:55UTC start remain unchanged. The remaining13
+sections may exceed the original token cap; any extension must be explicitly
+audited, never reset the old usage/start. Ticket18 2/8, project16/22, factions
+independently qualified0/2, overall offline1/5, formal/runtime0/5.
+
+Also prepared: a read-only faction production artifact/response-lineage
+replayer (15 injected checks) and a bounded paid consumer launcher comparing
+overall-only vs overall+faction on the four declared roster choices. It checks
+complete candidate reconstruction and known source debt before Keychain use.
+Its provenance scope is exact host-role input/derived-artifact replay plus raw
+paid response/ancestor-role identity, NOT exact DSH Provider-request replay for
+every production role. No complete faction has been inspected or consumed yet;
+the actual end-to-end launcher remains to be validated when a qualified
+candidate exists. This preparation is not an additional closed slice.
+
+## Earlier checkpoint: actual field repair and mandatory fresh review import
 
 `field-repair-d393a7c3884ae5104f96` is terminal successfully (4014 exit0).
 One real DSH/Provider call used260,771 tokens, estimated ¥0.251209. The model

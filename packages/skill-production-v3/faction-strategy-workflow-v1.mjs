@@ -102,18 +102,35 @@ function adviceBodyHash(r) {
   const { sourceRefs: ignored, ...body } = r;
   return hash(body);
 }
+export function normalizeFactionBatchEnvelopeV1(output) {
+  exact(output, ['items']);
+  if (!Array.isArray(output.items)) fail('FACTION_BATCH_DENOMINATOR');
+  const moved = [], fields = ['title', 'when', 'procedure', 'alternatives', 'risk', 'reviseIf', 'sourceRefs', 'unproven'];
+  const items = output.items.map(item => {
+    if (Object.hasOwn(item || {}, 'value')) { exact(item, ['index', 'value']); return item; }
+    exact(item, ['index', ...fields]);
+    const { index, ...value } = item;
+    moved.push({ index, fieldHashes: fields.map(field => ({ field, hash: hash(value[field]) })) });
+    return { index, value };
+  });
+  const normalized = { items };
+  return { output: normalized, receipt: seal({ version: 'faction_flat_advice_envelope_v1', rawOutputHash: hash(output),
+    normalizedOutputHash: hash(normalized), moved, fieldValuesChanged: false,
+    sourceReviewPassed: false, trainingTruth: false }) };
+}
 export function inspectFactionBatchScopeV1(output, { outline, indices, completedRecommendations = [] }) {
+  const normalized = normalizeFactionBatchEnvelopeV1(output).output;
   return seal({ version: 'faction_batch_target_issues_v1', rejectedOutputHash: hash(output),
     completedRecommendationHashes: completedRecommendations.map(hash),
     targets: indices.map(index => {
-      const value = output.items?.find(item => item.index === index)?.value;
+      const value = normalized.items.find(item => item.index === index)?.value;
       return { index, focus: outline[index].focus, requiredSourceRefs: outline[index].sourceRefs,
         missingSourceRefs: outline[index].sourceRefs.filter(ref => !value?.sourceRefs?.includes(ref)),
         duplicatesCompletedIndices: value ? completedRecommendations.flatMap((r, n) => adviceBodyHash(r) === adviceBodyHash(value) ? [n] : []) : [] };
     }), sourceReviewStillRequired: true, trainingTruth: false });
 }
 export function validateFactionDraftBatchV1(output, { input, outline, indices, completedRecommendations = [] }) {
-  exact(output, ['items']);
+  output = normalizeFactionBatchEnvelopeV1(output).output;
   if (!Array.isArray(output.items) || output.items.length !== indices.length) fail('FACTION_BATCH_DENOMINATOR');
   const pending = new Set(indices), items = [];
   for (const item of output.items) {
@@ -305,7 +322,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
       { ...scope, answers: answers.value, judge: judge.value }, validateTutorLessonV3);
     const outline = await role(section.id + '.generator-outline', 'Generator提纲：本节最终会有1至8条有条件建议。这里只给简短完整提纲，不写完整正文；覆盖每个指定来源和Proposer中全部关键决策，不删除叶问题。每项focus最多600字符，引用1至8个官方ID。返回{"outline":[{"focus":"建议的决策主题与范围","sourceRefs":["实际来源ID"]}]}。每个section.requiredSourceRefs至少关联一项提纲。随后会给完整共同上下文逐批输出正文。',
       { ...scope, proposals: proposer.value, judge: judge.value }, out => validateFactionOutlineV1(out, { input, section }));
-    const recommendations = [];
+    const recommendations = [], generationEnvelopeRepairs = [];
     for (let first = 0; first < outline.value.outline.length; first += 2) {
       const indices = outline.value.outline.slice(first, first + 2).map((_, n) => first + n);
       const generated = await role(section.id + '.generator-items.' + first,
@@ -314,6 +331,13 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
         { ...scope, proposals: proposer.value, judge: judge.value, outline: outline.value.outline, indices, completedRecommendations: recommendations },
         out => validateFactionDraftBatchV1(out, { input, outline: outline.value.outline, indices, completedRecommendations: recommendations }),
         { outline: outline.value.outline, indices, completedRecommendations: recommendations });
+      const envelope = normalizeFactionBatchEnvelopeV1(generated.artifact.output);
+      if (envelope.receipt.moved.length) {
+        const receipt = seal({ artifactHash: generated.artifact.hash, receipt: envelope.receipt, oldProviderOutputOverwritten: false, trainingTruth: false });
+        const lease = store.acquire(section.id + '.generation-envelope.' + first, { receiptHash: receipt.hash });
+        generationEnvelopeRepairs.push(lease.cached ? verifySeal(lease.artifact) : store.finish(lease, receipt));
+        onProgress({ section: section.id, stage: 'generation_envelope_normalized', items: envelope.receipt.moved.length, proseChanged: false });
+      }
       recommendations.push(...generated.value.map(item => item.value));
       onProgress({ section: section.id, stage: 'generated_items', completedItems: recommendations.length, plannedItems: outline.value.outline.length });
     }
@@ -405,6 +429,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     }
     assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft });
     const result = seal({ section, outline: outline.value, outlineArtifactHash: outline.artifact.hash, draft, rounds, edits, knownRuleCorrection, semanticReviewPassed: passed,
+      ...(generationEnvelopeRepairs.length ? { generationEnvelopeRepairs } : {}),
       rulesApplicationPassed: false, strategyEffectivenessProven: false, runtimeAccepted: false, trainingTruth: false });
     const lease = store.acquire(section.id + '.result', { resultHash: result.hash });
     sections.push(lease.cached ? verifySeal(lease.artifact) : store.finish(lease, result));
