@@ -42,6 +42,17 @@ recalibration are mandatory before FAQ46 grading or runtime acceptance.
 Evidence: `build/ticket-18-faction-production-v1/faq46-authority-calibration.json`,
 hash `a106d348b16bd1645f139f86ff5fd29b18172db5d49dc656a79fe090acb89efe`.
 
+An explicit new `official-faq46-force-field-size-correction-v2.mjs` now binds
+that exact frozen FAQ text and source lock, blocks Size1/2 and does not apply
+this size prohibition to the counterfactual Size3 boundary. Twelve tests pass,
+including all three corrected boundaries, non-crossing, strict scope/input and
+source-drift controls; the old kernel's exact hash/output remains unchanged.
+It deliberately reports only this size restriction, NOT full movement legality,
+Force Field destruction or a Room mutation. The default current router and
+release have not adopted it; that explicit versioned adoption and downstream
+recalibration remain mandatory before runtime acceptance. Readiness
+`650911e90df6f99d398f9cc029bb8ddac11106210a73c85f4491815dec919efd`.
+
 Current source-reviewed sections0/15, faction candidates0/2; Ticket18 2/8,
 project16/22, overall offline dependency1/5, formal/runtime acceptance0/5.
 No paid process is running at this checkpoint; continue from dede855… only
