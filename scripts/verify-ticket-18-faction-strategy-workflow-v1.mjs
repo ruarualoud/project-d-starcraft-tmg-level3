@@ -11,7 +11,8 @@ import { createFactionReviewTargetsV1, validateTargetedFactionReviewV1 } from '.
 import { openProductionStore } from '../packages/skill-production/store.mjs';
 import { FACTION_AXES_V1, FACTION_JSON_OUTPUT_EXAMPLES_V1, createFactionWritingPlanV1, validateFactionDraftV1, applyFactionStrategyPatchV1, validateFactionDraftBatchV1, inspectFactionBatchScopeV1, validateFactionReviewV1, createFactionRepairIssuesV1,
   produceFactionStrategyV1, inspectFactionCoverageLinksV1, createFactionReviewBatchPlanV1,
-  normalizeFactionStrategyPatchEnvelopeV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
+  normalizeFactionStrategyPatchEnvelopeV1,
+  resolveFactionReviewReasonMaximumV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { seal, verifySeal, hash, sha256, fail } from '../packages/skill-production/common.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), base = path.join(root, 'build/ticket-18-faction-production-v1');
@@ -118,6 +119,35 @@ try {
   const keptNegative = createFactionRepairIssuesV1(section, correctedDraft, [indirectNegative]);
   assert(keptNegative.issues.some(i => i.index === 1 && i.findings.some(f => f.verdict === 'uncertain')));
   assert(!keptNegative.issues.some(i => i.kind === 'assigned_source_omission'), 'Edit already represented sources, do not demand a ninth advice item');
+  const actualV4Artifact = verifySeal(JSON.parse(evidenceDb.prepare(
+    "SELECT artifact FROM steps WHERE run=? AND id LIKE ? AND state='complete'").get(
+      'faction-v1-179a94c5c002c9eeabf6',
+      '%objectives.1.review-target-batch-v1.supportive.2.2.source-evidence-v1.%').artifact)).value;
+  const actualV4ReasonMaximum = Math.max(
+    ...actualV4Artifact.output.verdicts.map(row => row.reason.length),
+    ...actualV4Artifact.output.coverage.map(row => row.reason.length));
+  assert.equal(actualV4Artifact.structuredDecodePassed, true);
+  assert.equal(actualV4Artifact.outputContractRef.version, '2026.09.07.4');
+  assert.equal(actualV4ReasonMaximum, 1875);
+  const actualV4ValidationBinding = seal({
+    version: 'faction_review_validation_binding_v1',
+    outputContractRef: actualV4Artifact.outputContractRef,
+    reviewReasonMaximum: 16_384, legacyReasonMaximum: 1200,
+    trainingTruth: false,
+  });
+  assert.equal(resolveFactionReviewReasonMaximumV1(
+    actualV4Artifact, actualV4ValidationBinding), 16_384);
+  assert.equal(resolveFactionReviewReasonMaximumV1(
+    { ...actualV4Artifact, structuredDecodePassed: false,
+      outputContractRef: actualV4Artifact.outputContractRef },
+    actualV4ValidationBinding), 1200);
+  const { hash: ignoredActualBindingHash, ...actualV4ValidationBody } =
+    actualV4ValidationBinding;
+  assert.throws(() => resolveFactionReviewReasonMaximumV1(actualV4Artifact,
+    seal({ ...actualV4ValidationBody,
+      outputContractRef: { ...actualV4Artifact.outputContractRef,
+        version: 'mismatched' } })),
+  { code: 'FACTION_REVIEW_VALIDATION_BINDING_INVALID' });
   const unitPrefix = 'faction.terran_armed_forces.faction.terran_armed_forces.unit_roles.1.';
   const unitArtifact = suffix => verifySeal(JSON.parse(evidenceDb.prepare("SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'")
     .get('faction-v1-18f0b5e3b20fc4909d08', unitPrefix + suffix).artifact)).value.output;
@@ -284,7 +314,7 @@ const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 
   'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 files.push('packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs');
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 64, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 68, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
   modelInstructionJsonExamples: Object.keys(FACTION_JSON_OUTPUT_EXAMPLES_V1).length, invalidBarePlaceholderExamples: 0,
   actualPromptFailureEvidence, validJsonExamplesReplaceBareNaturalLanguageIndexPlaceholders: true,
   exactInheritedLegacyPromptRoleBindingsTested: 4, legacyPromptCalls,
@@ -292,4 +322,4 @@ const report = seal({ passed: true, checks: 64, inputHashes: inputs.map(i => i.h
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 64, maxTaskBytes, injectedModelCalls: calls, legacyPromptCalls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 68, maxTaskBytes, injectedModelCalls: calls, legacyPromptCalls, providerCalls: 0, hash: report.hash }));

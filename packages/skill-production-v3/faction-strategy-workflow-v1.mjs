@@ -200,6 +200,25 @@ export function validateFactionReviewV1(output, { input, section, draft,
   return output;
 }
 
+export function resolveFactionReviewReasonMaximumV1(artifact,
+  structuredReviewValidationBinding = null) {
+  if (artifact?.structuredDecodePassed !== true) return 1200;
+  verifySeal(artifact);
+  verifySeal(structuredReviewValidationBinding);
+  const { hash: ignoredBindingHash, ...binding } =
+    structuredReviewValidationBinding;
+  exact(binding, ['version', 'outputContractRef', 'reviewReasonMaximum',
+    'legacyReasonMaximum', 'trainingTruth']);
+  if (binding.version !== 'faction_review_validation_binding_v1'
+    || binding.legacyReasonMaximum !== 1200
+    || ![1200, 16_384].includes(binding.reviewReasonMaximum)
+    || binding.trainingTruth !== false
+    || hash(artifact.outputContractRef) !== hash(binding.outputContractRef)) {
+    fail('FACTION_REVIEW_VALIDATION_BINDING_INVALID');
+  }
+  return binding.reviewReasonMaximum;
+}
+
 // Preserve a model's claimed semantic relationship, but derive direct citation
 // membership from the actual draft. Indirect claims never satisfy coverage by
 // themselves and are not silently converted into citations.
@@ -297,7 +316,8 @@ export function normalizeFactionStrategyPatchEnvelopeV1(output, args) {
 }
 
 export async function produceFactionStrategyV1({ input, runtime, store, knownRulePolicy, fieldRepairSeed = null,
-  phaseFieldSeed = null, registeredSourceFieldRepair = false, legacyPromptRoleIds = [], onProgress = () => {} }) {
+  phaseFieldSeed = null, registeredSourceFieldRepair = false, legacyPromptRoleIds = [],
+  structuredReviewValidationBinding = null, onProgress = () => {} }) {
   if (typeof registeredSourceFieldRepair !== 'boolean') fail('FACTION_SOURCE_FIELD_POLICY_INVALID');
   if (!Array.isArray(legacyPromptRoleIds) || new Set(legacyPromptRoleIds).size !== legacyPromptRoleIds.length
     || legacyPromptRoleIds.some(id => typeof id !== 'string' || !/^faction\.[a-z_]+\.faction\.[a-z_]+\.[a-z_]+\.[1-9][0-9]*\.(?:reasoner|judge|generator-items\.[0-9]+|editor\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+|source-reconstruction\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+)$/.test(id)))
@@ -321,7 +341,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
   async function role(id, instruction, workspace, validate, batchScope = null) {
     const request = { packet, roleId: id, instruction, workspace: { ...common, ...workspace }, maxOutput: 4096 };
     let result = await runtime.role(request); roleArtifacts.push({ id, hash: result.hash });
-    try { return { artifact: result, value: validate(result.output) }; }
+    try { return { artifact: result, value: validate(result.output, result) }; }
     catch (error) {
       const targets = request.workspace.outputRequestAtEnd?.targetContract;
       if (targets && ['FACTION_REVIEW_TARGET_QUOTE_REQUIRED', 'FACTION_REVIEW_TARGET_QUOTE_MISMATCH'].includes(error.code)) {
@@ -452,9 +472,12 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
           const reviewed = await role(section.id + '.review-target-batch-v1.' + route + '.' + revision + reviewEpoch + '.' + first,
             '独立来源审查，角色' + route + '。完整来源、总规则、整节候选仍在；本次只审查末尾targetContract明确给出的1至2个对象。不要自行数数组位置。以targetId和完整title标识对象，focus引用该对象fields中具体path及原文片段（8至240字符）；不能引用邻近建议代替。核对所有when/procedure/alternatives/risk/reviseIf/unproven字段、算术、支付/时机/例外。区分事实、条件策略、未验证效果；不能因为建议有条件就忽略不真实的确定性断言。focusedSources是同一冻结来源原文，非另一个模型的摘要。返回{"verdicts":[{"targetId":"给定ID","title":"给定完整标题","focus":[{"path":"给定字段路径","quote":"该字段原文片段"}],"verdict":"supported|unsupported|uncertain","reason":"针对此对象的具体依据，最多400字符","sourceRefs":["实际官方来源ID，1至8"]}],"coverage":[{"sourceRef":"指定覆盖来源","verdict":"covered|omitted|uncertain","recommendationIndices":[整节直接引用此来源的建议序号],"reason":"具体覆盖依据，最多400字符"}]}。每个targetId及coverageRequiredSourceRefs一次，coverageRequiredSourceRefs为空则coverage:[]。不要输出其他对象或数字index；否定/不确定判断必须指出对象内具体问题，规则来源优先于候选措辞。',
             { section, draft, reviewIndices, coverageRequiredSourceRefs: requiredSourceRefs,
-              outputRequestAtEnd: { targetContract: targets, coverageOnlySourceRefs: requiredSourceRefs } }, out => {
+              outputRequestAtEnd: { targetContract: targets, coverageOnlySourceRefs: requiredSourceRefs } }, (out, artifact) => {
               const bound = validateTargetedFactionReviewV1(out, targets);
-              validateFactionReviewV1(bound.review, { input, section, draft, reviewIndices, requiredSourceRefs }); return bound;
+              validateFactionReviewV1(bound.review, { input, section, draft,
+                reviewIndices, requiredSourceRefs,
+                reviewReasonMaximum: resolveFactionReviewReasonMaximumV1(
+                  artifact, structuredReviewValidationBinding) }); return bound;
             });
           reviews.push(reviewed.value.review); reviewHashes.push(reviewed.artifact.hash);
           reviewPartition.push({ route, reviewIndices, requiredSourceRefs, artifactHash: reviewed.artifact.hash,

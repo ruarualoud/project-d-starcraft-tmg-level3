@@ -182,6 +182,17 @@ const structuredReviewBinding = seal({
   semanticAcceptanceInherited: false,
   trainingTruth: false,
 });
+const structuredReviewValidationBinding = seal({
+  version: 'faction_review_validation_binding_v1',
+  outputContractRef: structuredReviewBinding.outputContractRef,
+  reviewReasonMaximum: Math.max(
+    structuredReviewContract.providerSchema.properties.verdicts.items
+      .properties.reason.maxLength,
+    structuredReviewContract.providerSchema.properties.coverage.items
+      .properties.reason.maxLength),
+  legacyReasonMaximum: 1200,
+  trainingTruth: false,
+});
 const structuredReviewCapabilityCurrent =
   verifyStarcraftTmgProviderCapabilityCurrentV1({
     receipt: structuredReviewCapabilityReceipt,
@@ -480,7 +491,7 @@ if (args[0] === '--preflight') {
       store: dryStore, phaseFieldSeed }) : dryStructuredReviewRuntime;
     await produceFactionStrategyV1({ input: inputs[0], runtime: dryFactionRuntime, store: dryStore,
       knownRulePolicy: knownRulePolicies[0], registeredSourceFieldRepair: true, fieldRepairSeed, phaseFieldSeed,
-      legacyPromptRoleIds });
+      legacyPromptRoleIds, structuredReviewValidationBinding });
     fail('FACTION_PREFLIGHT_CUTOVER_MISSING');
   } catch (error) {
     if (!['STRUCTURED_DSH_MODEL_OUTCOME_NOT_ACCEPTED',
@@ -623,6 +634,7 @@ try {
     const candidate = await produceFactionStrategyV1({ input, runtime: factionRuntime, store, knownRulePolicy: knownRulePolicies[index],
       registeredSourceFieldRepair: true,
       legacyPromptRoleIds,
+      structuredReviewValidationBinding,
       fieldRepairSeed: index === 0 ? fieldRepairSeed : null,
       phaseFieldSeed: index === 0 ? phaseFieldSeed : null,
       onProgress: row => console.log(JSON.stringify({ event: 'faction-progress', ticket: 18, slice: 174, faction: name, ...row })) });

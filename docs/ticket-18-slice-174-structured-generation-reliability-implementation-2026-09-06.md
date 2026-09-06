@@ -1,6 +1,6 @@
 # Ticket 18 / Slice 174：结构化生成可靠性实施记录（2026-09-06）
 
-状态：R0-R5 已完成；R6 已完成零付费集成预检并持续从已修复的最新谱系继续 faction 生产。本文记录机制和证据，不把工程门禁、模型审查或离线候选声明为 Rules 真值、正式发布 Skill 或训练真值。
+状态：R0-R5 已完成；R6 已完成 V4 跨层验证绑定修复及零付费续线预检，继续从已修复的最新谱系生产 faction。本文记录机制和证据，不把工程门禁、模型审查或离线候选声明为 Rules 真值、正式发布 Skill 或训练真值。
 
 ## 实施结果
 
@@ -18,6 +18,7 @@
 12. 累计费用通知使用“当前全局实际或预留 + 当前生产链剩余额度”，不得把已经包含继承费用的整条链上限再次相加。投影同时绑定历史保留、全局账本、继承费用、本 run 费用和链上限；继承费用只计一次。达到真实下一档 ¥100 前仍必须通知，但错误重复计数不得阻断 Provider。
 13. reviewer 传输 reason 上限必须与已有最终审查器的 1,200 字上限一致。V1 400、V2 800 均严格冻结；V3 只把 verdict reason 800→1,200，coverage reason 仍 400，focus/source slots、host mapper 和 semantic validator 均不变。合同变化使同 role ID 的 input hash 变化，旧 V2 成功产物不得伪装成精确复用；预检显式报告 `structuredReviewContractChanged` 并从首个 V3 role 重新执行。
 14. Provider 的 JSON Schema capability 不等于可靠执行 `maxLength`；真实 V3 修复仍只把 1546 字 reason 缩到 1401，并保留 1237/459 字的其他超限字段。V4 不再按样本逐级追长度：结构化 reviewer 的 verdict/coverage reason 使用 16,384 字符安全上限，实际紧凑性由 4,096-token 整体响应上限约束；legacy prompt validator 仍保持 1,200。structured semantic validator 显式升版，focus/source/coverage identity、host mapper、来源与语义判断均不放宽。
+15. 结构化合同必须贯穿到调用方二次语义校验，不能只在 adapter/materializer 生效。工作流现在接收由当前 `outputContractRef` 派生的密封 validation binding；只有 `structuredDecodePassed=true` 且 contract ref 完全一致的产物使用 V4 16,384 上限，legacy/旧式修复仍使用 1,200，合同错配封闭失败。实际 1,875 字 reason 样本覆盖了此前 adapter 通过、旧工作流误报 `TEXT_INVALID` 的跨层错位。
 
 ## 证据
 
@@ -47,8 +48,10 @@
 - reviewer V3：V1 hash `ac4f185c…`、V2 hash `00acc1f9…` 原样冻结；V3 hash `3f94f7ca…` 只把 verdict reason 800→1200。精确 V3 capability probe `structured-review-probe-73784160f7f2234fb0b31028f9e00ad5` 一次通过，706 tokens / ¥0.001036。review13/13、continuation40/40、adapter15/15、editor5/5、budget29/29均0Provider通过。最终 preflight recipe `540b0fa661c00b3d3bdc6ce93375d0241f8224dfbd8b03e992701ff1a75385d2` 复用175 roles，继承251 calls / 64,466,422 tokens / ¥22.325484，确认合同变化并从V3 supportive2.0开始，0 Provider。
 - `faction-v1-540b0fa661c00b3d3bdc` 的 V3 supportive 四批全部完成，2.4 的 array 超限经一次定点修复收敛；adversarial 2.0 初稿 reasons 1546/1237、coverage reason459，修复后为1401/1237/459，证明 Provider 未可靠遵守 maxLength。本 run 7 calls / 876,914 tokens；累计104,121,133tokens / ¥71.269488，无402、在途或自动重试。
 - reviewer V4：V1/V2/V3全部冻结；V4 hash `4f85334c…`，structured reasons 用16,384安全上限并保留4096-token整体容量，legacy仍1200。精确 probe `structured-review-probe-0470c698b2be3d948ebc2da22034033d` 一次通过，706tokens / ¥0.001032。依赖扇出后 workflow64/64、targeted28/28、unit-field16/16、unit/source workflow各8/8、field/phase seed各20/20、review13/13、continuation40/40、adapter15/15、editor5/5、budget29/29及review-transaction/DSH-context全部0Provider通过。最终 preflight recipe `179a94c5c002c9eeabf65fccdf285d82e2bf3fa09f8930a70a3eeb5f0161e88b` 复用173roles，继承258calls / 65,343,336tokens / ¥24.584017，从V4 supportive2.0开始。
+- `faction-v1-179a94c5c002c9eeabf6` 的 V4 结构化传输成功越过旧长度失败并把 `objectives` 首轮 3 个问题收敛到 1 个；随后一个 1,875 字的合法 V4 reason 被旧工作流默认 1,200 上限二次拒绝，误触发 legacy `.schema` 后以 `TEXT_INVALID` 停止。本 run 3 calls / 537,696 tokens / ¥0.538876；累计 104,659,535 tokens / ¥71.809396，无 402、在途或自动重试。
+- 跨层 validation binding 修复后，真实 1,875 字样本、legacy 1,200 冻结和 contract mismatch fail-closed 均纳入 workflow 68/68；structured review 13/13、editor 5/5、完整依赖门 8/8 全部 0 Provider。续线 preflight recipe `f037c375d47fc41a51211f3957eb9248ced45fbddc69fcc49091aac533595daa` 通过，复用 172 roles，继承 261 calls / 65,881,032 tokens / ¥25.122893，首个未缓存角色为 `objectives.1.review-target-batch-v1.supportive.2.4`，路由 `responses_json_schema`；已付费的 2.0/2.2 直接复用，误触发的 `.schema` 不进入正确路径。
 
-最新已知累计用量为 104,121,839 tokens，估算或历史预留合计 ¥71.270520，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
+最新已知累计用量为 104,659,535 tokens，估算或历史预留合计 ¥71.809396，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
 
 ## 仍未完成
 
@@ -59,4 +62,4 @@
 
 ## 下一步
 
-从 `faction-v1-540b0fa661c00b3d3bdc` 按上述 V4 recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。
+从 `faction-v1-179a94c5c002c9eeabf6` 按上述 `f037c375…` recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。
