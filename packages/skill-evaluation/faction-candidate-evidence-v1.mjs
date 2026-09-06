@@ -8,6 +8,7 @@ import { inspectFactionFieldRepairEvidenceV1 } from './faction-field-repair-evid
 import { validateFactionFieldRepairSeedV1 } from '../skill-production-v3/faction-field-repair-seed-v1.mjs';
 import { inspectFactionPhaseFieldEvidenceV1 } from './faction-phase-field-evidence-v1.mjs';
 import { validateFactionPhaseFieldSeedV1 } from '../skill-production-v3/faction-phase-field-seed-v1.mjs';
+import { createFactionReviewTransactionRuntimeV1 } from '../skill-production-v3/faction-review-transaction-runtime-v1.mjs';
 import { factionConsumerContextV1 } from './faction-roster-use-evaluation-v1.mjs';
 import { inspectFactionUnitRoleDebtV1 } from './faction-unit-role-debt-v1.mjs';
 import { assertNoFactionCrossFieldSourceDebtV1 } from './faction-cross-field-source-audit-v1.mjs';
@@ -60,7 +61,10 @@ export async function inspectFactionCandidateEvidenceV1({ root, runId, input, kn
     const runtime = createProductionRuntimeV3({ store: replay.store, reader: createEvidenceReader(catalogue), context,
       verifier: {}, model: () => fail('FACTION_CANDIDATE_EVIDENCE_EGRESS_FORBIDDEN'),
       dsh: { run: () => fail('FACTION_CANDIDATE_EVIDENCE_UNSAVED_ROLE') } });
-    rebuilt = await produceFactionStrategyV1({ input, knownRulePolicy, fieldRepairSeed, phaseFieldSeed, runtime, store: replay.store,
+    const wrapped = recipe.reviewTransactionBindings ? createFactionReviewTransactionRuntimeV1({ input, phaseFieldSeed, runtime, store: replay.store }) : runtime;
+    if (recipe.reviewTransactionBindings && wrapped.binding.hash !== recipe.reviewTransactionBindings.find(b => b.inputHash === input.hash)?.hash)
+      fail('FACTION_CANDIDATE_EVIDENCE_REVIEW_TRANSACTION_DRIFT');
+    rebuilt = await produceFactionStrategyV1({ input, knownRulePolicy, fieldRepairSeed, phaseFieldSeed, runtime: wrapped, store: replay.store,
       registeredSourceFieldRepair: recipe.registeredSourceFieldRepair === true });
     if (rebuilt.hash !== candidate.hash) fail('FACTION_CANDIDATE_EVIDENCE_REBUILD_DRIFT');
     factionConsumerContextV1({ input, candidate: rebuilt, knownRulePolicy });

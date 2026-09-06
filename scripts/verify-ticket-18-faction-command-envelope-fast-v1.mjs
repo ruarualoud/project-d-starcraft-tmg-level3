@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, mkdtemp, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { inspectFactionCommandRecoveryV1, createFactionAccountedModelV1 } from '../packages/skill-production-v3/faction-command-envelope-v1.mjs';
+import { inspectFactionCommandRecoveryV1, createFactionAccountedModelV1, normalizeFactionReviewCommandEnvelopeV1 } from '../packages/skill-production-v3/faction-command-envelope-v1.mjs';
 import { loadFrozenSkillEvidence } from '../packages/skill-production/evidence.mjs';
 import { createGlobalProductionContext, compileGlobalTask } from '../packages/skill-production-v3/context.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
@@ -46,9 +46,35 @@ try {
   await assert.rejects(() => drift.model(request), { code: 'FACTION_COMMAND_RECOVERY_REQUEST_DRIFT' });
   assert.equal(drift.sends(), 0); assert.equal(drift.store.summary().calls, 0);
 } finally { drift.store.close(); }
+// Only the role namespace changes. Reuse the same real bare review and full
+// task, so a rejection here cannot be explained by prose or target changes.
+const phaseId = captured.stageId.replace(/(\.[0-3])(\.[0-9]+)$/, '$1.phase-seed-v1.' + 'a'.repeat(20) + '$2');
+const sourceSuffix = '.source-evidence-v1.' + 'b'.repeat(20);
+const stages = [phaseId, captured.stageId + sourceSuffix, phaseId + sourceSuffix];
+let namespaceChecks = 0;
+for (const stageId of stages) {
+  const f = await fixture();
+  try {
+    const result = await f.model({ ...request, stageId });
+    assert.equal(hash(result.command.content), hash(recovery.attempts[1].response.output));
+    assert.equal(f.sends(), 1);
+    assert.equal(f.store.summary().calls, 1);
+    assert.equal(hash((await f.model({ ...request, stageId })).command), hash(result.command));
+    assert.equal(f.sends(), 1); namespaceChecks += 5;
+  } finally { f.store.close(); }
+}
+for (const stageId of [phaseId + sourceSuffix + '.field-binding', phaseId + sourceSuffix + '.schema-repair',
+  phaseId.replace(/review-target-batch-v1\.(supportive|adversarial)/, 'editor'), phaseId + sourceSuffix.slice(0, -1),
+  phaseId + sourceSuffix + 'a', phaseId.replace('.phase-seed-v1.', '.unknown-epoch.'),
+  'faction.terran.generator' + sourceSuffix]) {
+  assert.throws(() => normalizeFactionReviewCommandEnvelopeV1({ stageId, observed,
+    output: recovery.attempts[1].response.output }), { code: 'FACTION_COMMAND_ENVELOPE_SCOPE' });
+  namespaceChecks++;
+}
 const files = ['packages/skill-production-v3/faction-command-envelope-v1.mjs', 'scripts/verify-ticket-18-faction-command-envelope-fast-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 10, codeHashes, firstBareResponseNormalizedWithoutResampling: true,
+const report = seal({ passed: true, checks: 10 + namespaceChecks, codeHashes, firstBareResponseNormalizedWithoutResampling: true,
+  phaseAndSourceReviewNamespacesVerified: stages, unrelatedOrMalformedRolesRejected: true,
   invalidTargetsRetainSettledUsage: true, requestDriftBeforeSend: true, providerCalls: 0, trainingTruth: false });
 await writeFile(path.join(base, 'command-envelope-fast-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 10, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: report.checks, providerCalls: 0, hash: report.hash }));

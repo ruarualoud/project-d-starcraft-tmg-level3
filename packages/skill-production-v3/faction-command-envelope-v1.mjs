@@ -2,7 +2,9 @@ import { DatabaseSync } from 'node:sqlite';
 import { createAccountedModel } from '../skill-production/model.mjs';
 import { seal, verifySeal, hash, exact, sha256, fail } from '../skill-production/common.mjs';
 
-const reviewStage = id => /^faction\.[a-z_]+\.faction\.[a-z_]+\.[a-z_]+\.[1-9][0-9]*\.review-target-batch-v1\.(supportive|adversarial)\.[0-3]\.[0-9]+$/.test(id);
+// Epochs change source/revision context, not the review content contract.
+// Schema/field repairs, editors and unknown suffixes remain out of scope.
+const reviewStage = id => /^faction\.[a-z_]+\.faction\.[a-z_]+\.[a-z_]+\.[1-9][0-9]*\.review-target-batch-v1\.(supportive|adversarial)\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+(?:\.source-evidence-v1\.[a-f0-9]{20})?$/.test(id);
 const bare = output => output && typeof output === 'object' && !Array.isArray(output)
   && Object.keys(output).sort().join(',') === 'coverage,verdicts';
 function taskWorkspace(observed) {

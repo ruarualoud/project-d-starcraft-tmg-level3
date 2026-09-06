@@ -1,5 +1,62 @@
 # Ticket18 / Slice174 — two source-bound faction strategy Skills
 
+## Latest checkpoint: source-dependency recheck and pre-apply repair guard
+
+The actual bounded recheck `dependency-recheck-521bfe25f3aa939e802e` finished
+with two Provider calls,555,929 tokens and estimated ¥0.085433. Both routes
+supported recommendations0/1 using the complete original draft plus exact
+source-dependency passages. This covers only2/8 recommendations, edits nothing,
+and does not qualify the whole phase section or any complete faction Skill.
+Exact two-request DSH/receipt replay passed with no new Provider call:
+`8550fe9cc074ee67b8f9a2a4bb6fe6c712aa9afec705849a1b6bb36994eb6755`.
+Review agreement is evidence about this probe, not formal rule truth or a
+statistical demonstration of reliable production.
+
+The production `runtime.role` Adapter now appends the original-source reading
+closure to new reviews/editors without changing old pre-intervention requests.
+An explicit physical role namespace prevents reuse of obsolete-context reviews.
+The raw edit is persisted before a checkpoint guard inspects its proposed
+result; a changed source-repaired field is held for revalidation before patch
+application or another review. No accepted model verdict bypasses this guard.
+The consumer's read-only replay is wired through the same Adapter.
+
+Full historical-workflow positive/negative regression passed:
+`da2971440c5346060ef49aaa6a93a3cf448cf4d3a88260bbfdc82e692a91c227`.
+Its21 injected roles and246 reused historical roles are engineering evidence,
+not21 new Provider calls. The real bad editor proposal is rejected before
+application, with the raw artifact and guard receipt retained. The positive
+fixture preserves the repaired phase draft; it is not a new full source review.
+
+A separate zero-egress regression reproduced `CHANNEL_SHAPE_INVALID` when only
+the review role's phase epoch changed. The lossless command-envelope Adapter
+now accepts the explicit phase/source review epochs but still rejects editors,
+schema/field-repair roles and malformed suffixes. The32-check fast regression
+preserves the real review content, negative judgments and single-settlement
+accounting. The41-check migration verifier now checks the actual latest parent
+journal read-only, retaining178 calls/47,306,638 tokens/¥12.678826 and original
+start1788654115763, with140 reusable raw roles. It rejects missing guard/proof,
+waived negative judgments, foreign sources/model, budget changes and unrelated
+code changes. Receipt:
+`3b818b2d0754fc29f34df0b367deef52c1ba9cdc9ddc2f88cc14653882142177`.
+The18-check original command recovery and17-check additional metadata recovery
+each passed one exact DSH session with no Provider call. Pre-existing38-check
+continuation and25-check budget gates passed. The real main-entry preflight is
+running; no paid main restart is claimed here.
+
+Current cumulative known Provider usage85,797,505 tokens; estimated cost plus
+historical unknown reserve ¥59.055584, not an invoice. Project16/22,
+Ticket18 2/8; source-review workflow2/15, complete faction qualification0/2,
+overall offline prerequisite1/5 and formal/runtime first-five0/5.
+Next: continue from the latest terminal `faction-v1-182042133d7ba5b21c2a`,
+retaining all ancestral calls/costs and the original start, after migration
+validation. No source refresh, Codex subagent, Room action or promotion.
+
+Round routing: `ctx2skillLoopUsed=true`, `harnessLoopUsed=true`,
+targetGames=`[starcraft-tmg]`, roles=`[rule_skill_builder,harness_optimizer]`;
+crossTimeReplayResult=`historical bad edit blocked before apply; positive
+fixture preserved`, promotions=`[]`, blocks=`[complete_faction_qualification,
+actual_room_use,strategy_effectiveness,training_truth]`.
+
 Status: active; complete input/role/continuation gates passed and actual
 DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;

@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { seal, verifySeal, hash, fail } from '../skill-production/common.mjs';
 import { validateFactionBudgetExtensionV1 } from './faction-budget-extension-v1.mjs';
+import { validateFactionReviewTransactionMigrationV1 } from './faction-review-transaction-migration-v1.mjs';
 
 export function validateFactionPhaseSeedMigrationV1({ parent, next, migration }) {
   [parent, next].forEach(verifySeal);
@@ -103,7 +104,7 @@ export function validateFactionSourceCorrectionMigrationV1({ parent, next, sourc
     policy: 'registered_source_fields_then_fresh_review_and_exact_paid_request_bare_review_envelope_no_judgment_change', trainingTruth: false });
 }
 
-export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration, phaseSeedMigration, budgetExtensionReadiness }) {
+export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration, phaseSeedMigration, budgetExtensionReadiness, reviewTransactionMigration }) {
   [parent, parentReport, next].forEach(verifySeal);
   if (parent.version !== 'faction_strategy_production_v1' || parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20)
     || parentReport.runId !== parentRunId || parentReport.recipeHash !== parent.hash || !parentReport.failure) fail('FACTION_CONTINUATION_PARENT_INVALID');
@@ -121,13 +122,16 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
     targetedCorrectionsReadinessHash, knownRulePolicyHashes, fieldRepairBinding, unitRoleRepairReadinessHashes,
     registeredSourceFieldRepair, commandRecoveryBinding, sourceCorrectionReadinessHashes,
     additionalCommandRecoveryBindings, additionalCommandRecoveryReadinessHashes, phaseFieldBinding, phaseFieldReadinessHash,
-    budgetExtension, budgetExtensionReadinessHash, limits, continuation, ...body } = r;
+    budgetExtension, budgetExtensionReadinessHash, reviewTransactionBindings, reviewTransactionReadinessHash,
+    reviewTransactionEvidenceHash, limits, continuation, ...body } = r;
     return budgetProof ? body : { ...body, limits }; };
   if (hash(strip(parent)) !== hash(strip(next))) fail('FACTION_CONTINUATION_CONTRACT_DRIFT');
   const additionalRecoveryProof = validateAdditionalFactionCommandRecoveryV1({ parent, next, gates: additionalCommandRecoveryMigration });
   const allowed = new Set(['packages/skill-production-v3/faction-strategy-workflow-v1.mjs',
     'packages/skill-production-v3/faction-continuation-v1.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs']);
   if (budgetProof) allowed.add(budgetFile);
+  const reviewTransactionProof = validateFactionReviewTransactionMigrationV1({ parent, next, ...reviewTransactionMigration });
+  reviewTransactionProof?.files.forEach(file => allowed.add(file));
   const phaseSeedProof = validateFactionPhaseSeedMigrationV1({ parent, next, migration: phaseSeedMigration });
   phaseSeedProof?.files.forEach(file => allowed.add(file));
   const sourceCorrectionProof = validateFactionSourceCorrectionMigrationV1({ parent, next, sourceCorrectionMigration });
@@ -243,6 +247,7 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
       ...(additionalRecoveryProof ? { additionalCommandRecoveryMigration: additionalRecoveryProof } : {}),
       ...(phaseSeedProof ? { phaseSeedMigration: phaseSeedProof } : {}),
       ...(budgetProof ? { budgetExtensionProof: budgetProof } : {}),
+      ...(reviewTransactionProof ? { reviewTransactionMigration: reviewTransactionProof } : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
       policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
     return { manifest, steps };

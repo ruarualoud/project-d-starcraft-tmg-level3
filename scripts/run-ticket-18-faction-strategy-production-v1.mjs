@@ -16,6 +16,7 @@ import { validateFactionFieldRepairSeedV1 } from '../packages/skill-production-v
 import { inspectFactionPhaseFieldEvidenceV1 } from '../packages/skill-evaluation/faction-phase-field-evidence-v1.mjs';
 import { validateFactionPhaseFieldSeedV1 } from '../packages/skill-production-v3/faction-phase-field-seed-v1.mjs';
 import { createFactionBudgetExtensionV1 } from '../packages/skill-production-v3/faction-budget-extension-v1.mjs';
+import { createFactionReviewTransactionBindingV1, createFactionReviewTransactionRuntimeV1 } from '../packages/skill-production-v3/faction-review-transaction-runtime-v1.mjs';
 import { createFactionKnownRulePolicyV1 } from '../packages/skill-production-v3/faction-known-rule-findings-v1.mjs';
 import { createFactionRosterChoiceDrillsV1 } from '../packages/skill-evaluation/faction-roster-choice-drills-v1.mjs';
 import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/official-development-tranche-source-lock-fixture-v1.mjs';
@@ -31,6 +32,8 @@ import { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } from '../packages/se
 import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../content/skill-generation/offline-provider-profile-v1.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), args = process.argv.slice(2);
+const requestReviewTransaction = args.at(-1) === '--review-transaction-v1';
+if (requestReviewTransaction) args.pop();
 if (![3, 5, 7, 8].includes(args.length) || !['--preflight', '--live'].includes(args[0]) || args[1] !== '--overall-run'
   || !/^guide-repair-[a-f0-9]{20}$/.test(args[2]) || args.length >= 5 && (args[3] !== '--continue-from' || !/^faction-v1-[a-f0-9]{20}$/.test(args[4]))
   || args.length >= 7 && !(args[5] === '--field-repair-run' && /^field-repair-[a-f0-9]{20}$/.test(args[6])
@@ -139,6 +142,21 @@ if (phaseFieldReadiness) {
     fail('FACTION_PHASE_SEED_READINESS_CODE_DRIFT');
   gates.push(phaseFieldReadiness);
 }
+const useReviewTransaction = requestReviewTransaction || !!parentRecipe?.reviewTransactionBindings;
+const reviewTransactionBindings = useReviewTransaction ? inputs.map((input, index) =>
+  createFactionReviewTransactionBindingV1({ input, phaseFieldSeed: index === 0 ? phaseFieldSeed : null })) : null;
+const reviewTransactionReadiness = useReviewTransaction ? await json('build/ticket-18-faction-production-v1/review-transaction-readiness.json') : null;
+const reviewTransactionEvidence = useReviewTransaction ? await json('build/ticket-18-faction-production-v1/'
+  + reviewTransactionReadiness.actualRecheckRunId + '/verified-evidence.json') : null;
+if (useReviewTransaction) {
+  if (!args[4] || !reviewTransactionReadiness.passed
+    || hash(reviewTransactionReadiness.bindingHashes) !== hash(reviewTransactionBindings.map(b => b.hash))
+    || reviewTransactionReadiness.actualRecheckEvidenceHash !== reviewTransactionEvidence.hash)
+    fail('FACTION_REVIEW_TRANSACTION_READINESS_DRIFT');
+  for (const row of reviewTransactionReadiness.codeHashes)
+    if (sha256(await readFile(path.join(root, row.file))) !== row.hash) fail('FACTION_REVIEW_TRANSACTION_CODE_DRIFT');
+  gates.push(reviewTransactionReadiness);
+}
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/faction-review-targets-v1.mjs', 'packages/skill-production-v3/faction-known-rule-findings-v1.mjs',
   'packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs',
@@ -158,6 +176,10 @@ if (phaseFieldBinding) files.push('packages/skill-production-v3/faction-phase-fi
   'packages/skill-production-v3/faction-phase-seed-clarification-v1.mjs', 'packages/skill-production-v3/faction-phase-field-repair-v1.mjs',
   'packages/skill-evaluation/faction-phase-field-evidence-v1.mjs', 'packages/skill-evaluation/faction-phase-source-debt-v1.mjs');
 if (budgetExtension) files.push('packages/skill-production-v3/faction-budget-extension-v1.mjs');
+if (useReviewTransaction) files.push('packages/skill-production-v3/faction-review-transaction-runtime-v1.mjs',
+  'packages/skill-production-v3/faction-review-transaction-migration-v1.mjs',
+  'packages/skill-production-v3/faction-source-dependency-context-v1.mjs',
+  'packages/skill-production-v3/faction-repair-regression-guard-v1.mjs');
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
 const limits = budgetExtension?.nextLimits || { maxCalls: 400, maxCostMicros: 20_000_000, maxTokens: 60_000_000, maxWallMs: 8 * 60 * 60 * 1000, maxInputBytes: 1_000_000, maxRevisions: 3 };
 const next = seal({ version: 'faction_strategy_production_v1', overallRunId: args[2], overallDependencyHash: overallDependency.hash,
@@ -171,6 +193,8 @@ const next = seal({ version: 'faction_strategy_production_v1', overallRunId: arg
   sourceCorrectionReadinessHashes: sourceCorrectionGates.map(g => g.hash),
   ...(phaseFieldBinding ? { phaseFieldBinding, phaseFieldReadinessHash: phaseFieldReadiness.hash } : {}),
   ...(budgetExtension ? { budgetExtension, budgetExtensionReadinessHash: budgetReadiness.hash } : {}),
+  ...(useReviewTransaction ? { reviewTransactionBindings, reviewTransactionReadinessHash: reviewTransactionReadiness.hash,
+    reviewTransactionEvidenceHash: reviewTransactionEvidence.hash } : {}),
   ...(additionalRecoveries.length ? { additionalCommandRecoveryBindings: additionalRecoveries.map(row => row.manifest),
     additionalCommandRecoveryReadinessHashes: additionalRecoveryGates.map(gate => gate.hash) } : {}),
   target: 'two_complete_conditional_faction_strategy_candidates_with_source_review_not_runtime_promotion',
@@ -186,7 +210,8 @@ if (args[4]) {
     unitRoleRepairMigration: unitRoleRepairGates, sourceCorrectionMigration: sourceCorrectionGates,
     additionalCommandRecoveryMigration: additionalRecoveryGates,
     phaseSeedMigration: phaseFieldBinding ? { binding: phaseFieldBinding, readiness: phaseFieldReadiness } : null,
-    budgetExtensionReadiness: budgetReadiness });
+    budgetExtensionReadiness: budgetReadiness,
+    reviewTransactionMigration: useReviewTransaction ? { readiness: reviewTransactionReadiness, actualEvidence: reviewTransactionEvidence } : null });
 }
 const { hash: ignored, ...nextBody } = next;
 const recipe = continuation ? seal({ ...nextBody, continuation: continuation.manifest }) : next;
@@ -233,7 +258,11 @@ try {
     onProgress: row => console.log(JSON.stringify({ event: 'role', ticket: 18, slice: 174, ...row })) });
   for (const [index, input] of inputs.entries()) {
     const name = input.factionRecordKey.split(':')[1]; await put(name + '-input', input);
-    const candidate = await produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownRulePolicies[index],
+    const factionRuntime = useReviewTransaction ? createFactionReviewTransactionRuntimeV1({ input, runtime, store,
+      phaseFieldSeed: index === 0 ? phaseFieldSeed : null }) : runtime;
+    if (useReviewTransaction && factionRuntime.binding.hash !== reviewTransactionBindings[index].hash)
+      fail('FACTION_REVIEW_TRANSACTION_RUNTIME_DRIFT');
+    const candidate = await produceFactionStrategyV1({ input, runtime: factionRuntime, store, knownRulePolicy: knownRulePolicies[index],
       registeredSourceFieldRepair: true,
       fieldRepairSeed: index === 0 ? fieldRepairSeed : null,
       phaseFieldSeed: index === 0 ? phaseFieldSeed : null,
