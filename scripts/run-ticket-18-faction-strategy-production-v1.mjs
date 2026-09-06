@@ -19,6 +19,8 @@ import { createFactionBudgetExtensionV1 } from '../packages/skill-production-v3/
 import { createFactionReviewTransactionBindingV1, createFactionReviewTransactionRuntimeV1 } from '../packages/skill-production-v3/faction-review-transaction-runtime-v1.mjs';
 import { createFactionStructuredLocalEditorImportV1, createFactionStructuredLocalEditorRuntimeV1,
   deriveFactionLegacyPromptRoleIdsV1 } from '../packages/skill-production-v3/faction-structured-local-editor-runtime-v1.mjs';
+import { createFactionStructuredReviewRuntimeV1,
+  deriveFactionLegacyStructuredReviewRoleIdsV1 } from '../packages/skill-production-v3/faction-structured-review-runtime-v1.mjs';
 import { createFactionKnownRulePolicyV1 } from '../packages/skill-production-v3/faction-known-rule-findings-v1.mjs';
 import { createFactionRosterChoiceDrillsV1 } from '../packages/skill-evaluation/faction-roster-choice-drills-v1.mjs';
 import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/official-development-tranche-source-lock-fixture-v1.mjs';
@@ -36,6 +38,7 @@ import { priceStarcraftTmgDeepSeekV4FlashUsageV1 } from '../packages/secure-prov
 import { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } from '../packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs';
 import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../content/skill-generation/offline-provider-profile-v1.mjs';
 import { STARCRAFT_TMG_FACTION_ADVICE_EDITOR_OUTPUT_CONTRACT_V1 as structuredEditorContract } from '../content/skill-generation/ticket-18-faction-advice-editor-output-contract-v1.mjs';
+import { STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V1 as structuredReviewContract } from '../content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs';
 import { createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1 } from '../packages/structured-generation/adapters/deepseek-responses-json-schema-v1.mjs';
 import { verifyStarcraftTmgProviderCapabilityCurrentV1 } from '../packages/structured-generation/provider-capability-receipt-v1.mjs';
 
@@ -143,6 +146,56 @@ const structuredCapabilityCurrent = verifyStarcraftTmgProviderCapabilityCurrentV
   now: new Date().toISOString(),
 });
 if (!structuredCapabilityCurrent.ok) fail('FACTION_STRUCTURED_CAPABILITY_NOT_CURRENT');
+const structuredReviewCapabilityReport = await json(
+  'build/ticket-18-structured-generation-v1/r6-structured-review-capability-report.json');
+if (!structuredReviewCapabilityReport.passed
+  || structuredReviewCapabilityReport.paidCallsThisExecution !== 1
+  || structuredReviewCapabilityReport.automaticRetries !== 0) {
+  fail('FACTION_STRUCTURED_REVIEW_CAPABILITY_NOT_READY');
+}
+const structuredReviewCapabilityBase = 'build/ticket-18-structured-generation-v1/'
+  + structuredReviewCapabilityReport.runId + '/';
+const structuredReviewCapabilityReceipt = await rawJson(
+  structuredReviewCapabilityBase + 'capability-receipt.json');
+const structuredReviewReadiness = await json(
+  'build/ticket-18-structured-generation-v1/r6-structured-review-runtime-readiness.json');
+if (!structuredReviewReadiness.passed
+  || structuredReviewReadiness.actualCapabilityReportHash
+    !== structuredReviewCapabilityReport.hash
+  || structuredReviewReadiness.actualCapabilityReceiptHash
+    !== structuredReviewCapabilityReceipt.receiptHash) {
+  fail('FACTION_STRUCTURED_REVIEW_READINESS_DRIFT');
+}
+for (const row of structuredReviewReadiness.codeHashes) {
+  if (sha256(await readFile(path.join(root, row.file))) !== row.hash) {
+    fail('FACTION_STRUCTURED_REVIEW_CODE_DRIFT');
+  }
+}
+const structuredReviewBinding = seal({
+  version: 'faction_structured_review_binding_v1',
+  capabilityRunId: structuredReviewCapabilityReport.runId,
+  capabilityReportHash: structuredReviewCapabilityReport.hash,
+  capabilityReceiptHash: structuredReviewCapabilityReceipt.receiptHash,
+  outputContractRef: structuredReviewReadiness.outputContractRef,
+  providerPath: 'responses_json_schema_only',
+  modelAuthoredIdentityFields: false,
+  semanticAcceptanceInherited: false,
+  trainingTruth: false,
+});
+const structuredReviewCapabilityCurrent =
+  verifyStarcraftTmgProviderCapabilityCurrentV1({
+    receipt: structuredReviewCapabilityReceipt,
+    providerProfileRef: structuredEgressBinding.providerProfileRef,
+    endpointPath: structuredEgressBinding.endpoint.path,
+    endpointDialect: structuredEgressBinding.endpointDialect,
+    model: structuredEgressBinding.model,
+    capability: 'responses_json_schema',
+    outputContractRef: structuredReviewBinding.outputContractRef,
+    now: new Date().toISOString(),
+  });
+if (!structuredReviewCapabilityCurrent.ok) {
+  fail('FACTION_STRUCTURED_REVIEW_CAPABILITY_NOT_CURRENT');
+}
 const priceStructuredUsage = (usage, receipt = {}) => {
   try {
     const priced = priceStarcraftTmgDeepSeekV4FlashUsageV1({
@@ -159,6 +212,10 @@ const priceStructuredUsage = (usage, receipt = {}) => {
 };
 const structuredEditorPolicy = Object.freeze({ maxOutputUnits: 2048,
   attemptEstimateMicros: 500000, attemptTokenReserve: 90000,
+  allowDefinitelyNotSentRetry: false, allowOneCapacityRetry: false,
+  idempotentRetrySupported: false, encryptedRawQuarantineAvailable: false });
+const structuredReviewPolicy = Object.freeze({ maxOutputUnits: 2048,
+  attemptEstimateMicros: 800000, attemptTokenReserve: 500000,
   allowDefinitelyNotSentRetry: false, allowOneCapacityRetry: false,
   idempotentRetrySupported: false, encryptedRawQuarantineAvailable: false });
 // Recompute the calibrated kernel finding, never trust a saved model verdict or
@@ -282,7 +339,12 @@ const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 
   'packages/secure-provider-runtime/structured-provider-worker-port-v1.mjs',
   'content/skill-generation/ticket-18-faction-advice-editor-output-contract-v1.mjs',
   'scripts/verify-ticket-18-faction-structured-local-editor-runtime-v1.mjs',
-  'scripts/verify-ticket-18-faction-review-focus-normalization-v1.mjs'];
+  'scripts/verify-ticket-18-faction-review-focus-normalization-v1.mjs',
+  'content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs',
+  'packages/skill-production-v3/faction-review-context-capsule-v1.mjs',
+  'packages/skill-production-v3/faction-structured-review-runtime-v1.mjs',
+  'scripts/run-ticket-18-structured-review-capability-canary-v1.mjs',
+  'scripts/verify-ticket-18-faction-structured-review-runtime-v1.mjs'];
 if (fieldRepairBinding) files.push('packages/skill-production-v3/faction-field-repair-seed-v1.mjs',
   'packages/skill-production-v3/faction-field-repair-v1.mjs', 'packages/skill-evaluation/faction-field-repair-evidence-v1.mjs',
   'packages/skill-evaluation/faction-semantic-debt-v1.mjs', 'packages/skill-evaluation/read-only-production-replay-v1.mjs');
@@ -308,6 +370,8 @@ const next = seal({ version: 'faction_strategy_production_v1', overallRunId: arg
   structuredGenerationBinding,
   structuredGenerationReadinessHash: structuredGenerationReadiness.hash,
   reviewFocusNormalizationReadinessHash: reviewFocusNormalizationReadiness.hash,
+  structuredReviewBinding,
+  structuredReviewReadinessHash: structuredReviewReadiness.hash,
   ...(phaseFieldBinding ? { phaseFieldBinding, phaseFieldReadinessHash: phaseFieldReadiness.hash } : {}),
   ...(budgetExtension ? { budgetExtension, budgetExtensionReadinessHash: budgetReadiness.hash } : {}),
   ...(useReviewTransaction ? { reviewTransactionBindings, reviewTransactionReadinessHash: reviewTransactionReadiness.hash,
@@ -331,6 +395,8 @@ if (args[4]) {
     structuredGenerationMigration: { readiness: structuredGenerationReadiness,
       imported: structuredEditorImport },
     reviewFocusNormalizationMigration: reviewFocusNormalizationReadiness,
+    structuredReviewMigration: { readiness: structuredReviewReadiness,
+      capabilityReport: structuredReviewCapabilityReport },
     reviewTransactionMigration: useReviewTransaction ? { readiness: reviewTransactionReadiness, actualEvidence: reviewTransactionEvidence } : null });
 }
 const { hash: ignored, ...nextBody } = next;
@@ -338,6 +404,8 @@ const recipe = continuation ? seal({ ...nextBody, continuation: continuation.man
 const canonicalPromptRoleId = id => id.replace(/\.source-evidence-v1\.[a-f0-9]{20}$/u, '');
 const legacyPromptRoleIds = continuation
   ? deriveFactionLegacyPromptRoleIdsV1(continuation.steps) : [];
+const legacyStructuredReviewRoleIds = continuation
+  ? deriveFactionLegacyStructuredReviewRoleIdsV1(continuation.steps) : [];
 if (args[0] === '--preflight') {
   // Exercise exact inherited role input hashes without credentials or egress.
   // Initial cutover has one exact expected editor. Later continuations derive
@@ -373,8 +441,27 @@ if (args[0] === '--preflight') {
       imports: [structuredEditorImport],
       legacyPromptRoleIds,
     });
-    const dryFactionRuntime = useReviewTransaction ? createFactionReviewTransactionRuntimeV1({ input: inputs[0], runtime: dryStructuredRuntime,
-      store: dryStore, phaseFieldSeed }) : dryStructuredRuntime;
+    const dryStructuredReviewRuntime = createFactionStructuredReviewRuntimeV1({
+      input: inputs[0], runtime: dryStructuredRuntime, store: dryStore,
+      dsh: { run: runDirectLoop },
+      providerAdapter: { complete: async ({ providerRequest }) => {
+        firstUncachedRole = providerRequest.roleRef.id;
+        firstUncachedRoute = 'responses_json_schema';
+        const error = new Error('FACTION_PREFLIGHT_FIRST_STRUCTURED_UNCACHED_ROLE');
+        error.code = 'FACTION_PREFLIGHT_FIRST_STRUCTURED_UNCACHED_ROLE';
+        error.safeReceipt = { requestDefinitelyNotSent: true,
+          requestMayHaveBeenSent: false, usageKnown: false, physicalAttempts: 0 };
+        throw error;
+      } },
+      egressBinding: structuredEgressBinding,
+      capabilityReceipt: structuredReviewCapabilityReceipt,
+      outputContract: structuredReviewContract,
+      executionPolicy: structuredReviewPolicy,
+      priceUsage: priceStructuredUsage,
+      legacyStructuredReviewRoleIds,
+    });
+    const dryFactionRuntime = useReviewTransaction ? createFactionReviewTransactionRuntimeV1({ input: inputs[0], runtime: dryStructuredReviewRuntime,
+      store: dryStore, phaseFieldSeed }) : dryStructuredReviewRuntime;
     await produceFactionStrategyV1({ input: inputs[0], runtime: dryFactionRuntime, store: dryStore,
       knownRulePolicy: knownRulePolicies[0], registeredSourceFieldRepair: true, fieldRepairSeed, phaseFieldSeed,
       legacyPromptRoleIds });
@@ -390,18 +477,25 @@ if (args[0] === '--preflight') {
   const reusableRoleIds = new Set((continuation?.manifest.reusable || [])
     .map(row => canonicalPromptRoleId(row.id)));
   const initialStructuredCutover = !parentRecipe.structuredGenerationBinding;
+  const initialStructuredReviewCutover = !parentRecipe.structuredReviewBinding;
   if (!firstUncachedRole || !fullUncachedRole.startsWith(factionPrefix + '.' + factionPrefix + '.')
     || !/^[a-z0-9._-]+$/u.test(fullUncachedRole)
     || reusableRoleIds.has(fullUncachedRole)
     || initialStructuredCutover && (firstUncachedRoute !== 'responses_json_schema'
-      || firstUncachedRole !== 'faction.terran_armed_forces.objectives.1.editor.0.2')) {
+      || firstUncachedRole !== 'faction.terran_armed_forces.objectives.1.editor.0.2')
+    || initialStructuredReviewCutover
+      && (firstUncachedRoute !== 'responses_json_schema'
+        || firstUncachedRole !== 'faction.terran_armed_forces.objectives.1.review-target-batch-v1.supportive.2.0')) {
     fail('FACTION_PREFLIGHT_CUTOVER_DRIFT', { firstUncachedRole, firstUncachedRoute });
   }
   console.log(JSON.stringify({ ready: true, recipeHash: recipe.hash, providerCalls: 0, factions: inputs.map(i => i.factionRecordKey),
     sections: inputs.map(i => createFactionWritingPlanV1(i).sections.length), overallQualified: true, limits,
     reusableRoles: continuation?.manifest.reusable.length || 0, inheritedAccounting: continuation?.manifest.accounting || null,
     legacyPromptRoles: legacyPromptRoleIds.length, structuredCanaryImport: structuredEditorImport.hash,
+    legacyStructuredReviewRoles: legacyStructuredReviewRoleIds.length,
+    structuredReviewCapabilityRunId: structuredReviewCapabilityReport.runId,
     firstUncachedRole, firstUncachedRoute, initialStructuredCutover,
+    initialStructuredReviewCutover,
     additionalCommandRecoveries: additionalRecoveries.length })); process.exit(0);
 }
 const runId = 'faction-v1-' + recipe.hash.slice(0, 20), out = path.join(base, runId); await mkdir(out, { recursive: true });
@@ -475,8 +569,22 @@ try {
         cumulativeEstimateOrReserveCny: (historyMicros
           + store.globalSummary().reservedOrSettledMicros) / 1e6 })),
     });
-    const factionRuntime = useReviewTransaction ? createFactionReviewTransactionRuntimeV1({ input, runtime: structuredRuntime, store,
-      phaseFieldSeed: index === 0 ? phaseFieldSeed : null }) : structuredRuntime;
+    const structuredReviewRuntime = createFactionStructuredReviewRuntimeV1({
+      input, runtime: structuredRuntime, store, dsh,
+      providerAdapter: structuredProviderAdapter,
+      egressBinding: structuredEgressBinding,
+      capabilityReceipt: structuredReviewCapabilityReceipt,
+      outputContract: structuredReviewContract,
+      executionPolicy: structuredReviewPolicy,
+      priceUsage: priceStructuredUsage,
+      legacyStructuredReviewRoleIds,
+      onProgress: row => console.log(JSON.stringify({ event: 'structured-role',
+        ticket: 18, slice: 174, faction: name, ...row,
+        cumulativeEstimateOrReserveCny: (historyMicros
+          + store.globalSummary().reservedOrSettledMicros) / 1e6 })),
+    });
+    const factionRuntime = useReviewTransaction ? createFactionReviewTransactionRuntimeV1({ input, runtime: structuredReviewRuntime, store,
+      phaseFieldSeed: index === 0 ? phaseFieldSeed : null }) : structuredReviewRuntime;
     if (useReviewTransaction && factionRuntime.binding.hash !== reviewTransactionBindings[index].hash)
       fail('FACTION_REVIEW_TRANSACTION_RUNTIME_DRIFT');
     const candidate = await produceFactionStrategyV1({ input, runtime: factionRuntime, store, knownRulePolicy: knownRulePolicies[index],
@@ -499,6 +607,7 @@ finally {
   const ledger = store.summary(), global = store.globalSummary();
   const report = seal({ runId, recipeHash: recipe.hash, overallDependencyHash: overallDependency.hash,
     readinessHashes: [structuredGenerationReadiness,
+      structuredReviewReadiness,
       reviewFocusNormalizationReadiness, ...gates,
       ...unitRoleRepairGates, ...sourceCorrectionGates].map(g => g.hash),
     candidateHashes: candidates.map(c => c.hash), factionsGenerated: candidates.length,
@@ -506,7 +615,7 @@ finally {
     continuation: continuation?.manifest || null, cumulativeKnownTokensLowerBound: historyTokens + global.knownTokens,
     cumulativeEstimateOrReserveCny: (historyMicros + global.reservedOrSettledMicros) / 1e6,
     ctx2skillLoopUsed: true, harnessLoopUsed: true, targetGames: ['starcraft-tmg'],
-    roleRoutes: ['Teach', 'Ctx2Skill', 'Challenger', 'Reasoner', 'Judge', 'Proposer', 'Generator', 'source_reviewer', 'structured_local_editor'],
+    roleRoutes: ['Teach', 'Ctx2Skill', 'Challenger', 'Reasoner', 'Judge', 'Proposer', 'Generator', 'structured_source_reviewer', 'structured_local_editor'],
     independentEvaluationPerformed: false, actualRoomReplayPerformed: false, strategyEffectivenessProven: false,
     formalSkillsAccepted: 0, promotions: [], sourceRefreshPerformed: false, trainingTruth: false, elapsedMs: Date.now() - began });
   await put('report', report);

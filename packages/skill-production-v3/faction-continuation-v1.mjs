@@ -47,6 +47,66 @@ export function validateFactionReviewFocusNormalizationMigrationV1({
     trainingTruth: false });
 }
 
+export function validateFactionStructuredReviewMigrationV1({
+  parentRunId, parent, parentReport, next, migration,
+}) {
+  [parent, parentReport, next].forEach(verifySeal);
+  if (parent.structuredReviewBinding
+    && hash(parent.structuredReviewBinding)
+      !== hash(next.structuredReviewBinding || null)) {
+    fail('FACTION_STRUCTURED_REVIEW_BINDING_DRIFT');
+  }
+  if (!next.structuredReviewBinding) {
+    if (migration || next.structuredReviewReadinessHash) {
+      fail('FACTION_STRUCTURED_REVIEW_MIGRATION_UNSCOPED');
+    }
+    return null;
+  }
+  const { readiness, capabilityReport } = migration || {};
+  [next.structuredReviewBinding, readiness, capabilityReport].forEach(verifySeal);
+  const binding = next.structuredReviewBinding;
+  const introduced = !parent.structuredReviewBinding;
+  if (!readiness.passed || readiness.checks.length !== 7
+    || readiness.hash !== next.structuredReviewReadinessHash
+    || readiness.providerCalls !== 0
+    || readiness.actualCapabilityRunId !== binding.capabilityRunId
+    || readiness.actualCapabilityReportHash !== binding.capabilityReportHash
+    || readiness.actualCapabilityReceiptHash !== binding.capabilityReceiptHash
+    || readiness.outputContractRef.hash !== binding.outputContractRef.hash
+    || capabilityReport.hash !== binding.capabilityReportHash
+    || capabilityReport.runId !== binding.capabilityRunId
+    || capabilityReport.capabilityReceiptHash !== binding.capabilityReceiptHash
+    || capabilityReport.outputContractRef.hash !== binding.outputContractRef.hash
+    || !capabilityReport.passed || capabilityReport.paidCallsThisExecution !== 1
+    || capabilityReport.automaticRetries !== 0
+    || capabilityReport.ledger.knownTokens > capabilityReport.limits.maxTokens
+    || capabilityReport.ledger.reservedOrSettledMicros
+      > capabilityReport.limits.maxCostMicros
+    || !readiness.completeCoreFaqIncluded
+    || !readiness.completeCurrentFactionProductsIncluded
+    || !readiness.hostOwnedIdentityMaterialization
+    || !readiness.onePhysicalAttemptPerInvocation
+    || introduced && (readiness.actualFailureRunId !== parentRunId
+      || readiness.actualFailureCode !== parentReport.failure?.code
+      || readiness.actualFailureDiagnosticHash
+        !== parentReport.failure?.diagnosticHash
+      || parentReport.failure?.code !== 'PROVIDER_RESPONSE_JSON_INVALID')) {
+    fail('FACTION_STRUCTURED_REVIEW_MIGRATION_INVALID');
+  }
+  const files = readiness.codeHashes.map((row) => row.file);
+  for (const row of readiness.codeHashes) {
+    if (next.codeHashes.find((entry) => entry.file === row.file)?.hash
+      !== row.hash) fail('FACTION_STRUCTURED_REVIEW_CODE_DRIFT');
+  }
+  return seal({ files, readinessHash: readiness.hash,
+    capabilityRunId: binding.capabilityRunId,
+    capabilityReceiptHash: binding.capabilityReceiptHash,
+    outputContractHash: binding.outputContractRef.hash,
+    originFailureRunId: readiness.actualFailureRunId,
+    policy: 'all_new_target_reviews_use_schema_slots_then_host_identity_materialization_and_existing_semantic_validation',
+    trainingTruth: false });
+}
+
 export function validateFactionPhaseSeedMigrationV1({ parent, next, migration }) {
   [parent, next].forEach(verifySeal);
   if (parent.phaseFieldBinding && hash(parent.phaseFieldBinding) !== hash(next.phaseFieldBinding || null))
@@ -148,7 +208,7 @@ export function validateFactionSourceCorrectionMigrationV1({ parent, next, sourc
     policy: 'registered_source_fields_then_fresh_review_and_exact_paid_request_bare_review_envelope_no_judgment_change', trainingTruth: false });
 }
 
-export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration, phaseSeedMigration, budgetExtensionReadiness, reviewTransactionMigration, structuredGenerationMigration, reviewFocusNormalizationMigration }) {
+export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration, phaseSeedMigration, budgetExtensionReadiness, reviewTransactionMigration, structuredGenerationMigration, reviewFocusNormalizationMigration, structuredReviewMigration }) {
   [parent, parentReport, next].forEach(verifySeal);
   if (parent.version !== 'faction_strategy_production_v1' || parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20)
     || parentReport.runId !== parentRunId || parentReport.recipeHash !== parent.hash || !parentReport.failure) fail('FACTION_CONTINUATION_PARENT_INVALID');
@@ -169,7 +229,8 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
     budgetExtension, budgetExtensionReadinessHash, reviewTransactionBindings, reviewTransactionReadinessHash,
     reviewTransactionEvidenceHash, structuredGenerationBinding,
     reviewFocusNormalizationReadinessHash,
-    structuredGenerationReadinessHash, limits, continuation, ...body } = r;
+    structuredGenerationReadinessHash, structuredReviewBinding,
+    structuredReviewReadinessHash, limits, continuation, ...body } = r;
     return budgetProof ? body : { ...body, limits }; };
   if (hash(strip(parent)) !== hash(strip(next))) fail('FACTION_CONTINUATION_CONTRACT_DRIFT');
   const additionalRecoveryProof = validateAdditionalFactionCommandRecoveryV1({ parent, next, gates: additionalCommandRecoveryMigration });
@@ -221,6 +282,11 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
       parent, parentReport, next,
       readiness: reviewFocusNormalizationMigration });
   reviewFocusNormalizationProof?.files.forEach(file => allowed.add(file));
+  const structuredReviewProof = validateFactionStructuredReviewMigrationV1({
+    parentRunId, parent, parentReport, next,
+    migration: structuredReviewMigration,
+  });
+  structuredReviewProof?.files.forEach(file => allowed.add(file));
   if (budgetProof) allowed.add(budgetFile);
   const reviewTransactionProof = validateFactionReviewTransactionMigrationV1({ parent, next, ...reviewTransactionMigration });
   reviewTransactionProof?.files.forEach(file => allowed.add(file));
@@ -347,6 +413,8 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
       ...(reviewFocusNormalizationProof
         ? { reviewFocusNormalizationMigration: reviewFocusNormalizationProof }
         : {}),
+      ...(structuredReviewProof
+        ? { structuredReviewMigration: structuredReviewProof } : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
       policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
     return { manifest, steps };
