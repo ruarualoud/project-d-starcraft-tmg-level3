@@ -21,7 +21,7 @@ import { createFactionKnownRulePolicyV1 } from '../packages/skill-production-v3/
 import { createFactionRosterChoiceDrillsV1 } from '../packages/skill-evaluation/faction-roster-choice-drills-v1.mjs';
 import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/official-development-tranche-source-lock-fixture-v1.mjs';
 import { withCheckpointContinuation } from '../packages/skill-production/continuation.mjs';
-import { prepareDshLoop } from '../packages/skill-production/loops.mjs';
+import { prepareDshLoop, runDirectLoop } from '../packages/skill-production/loops.mjs';
 import { verifyProductionReadiness } from '../packages/skill-production/recipe.mjs';
 import { createFactionAccountedModelV1, inspectFactionCommandRecoveryV1 } from '../packages/skill-production-v3/faction-command-envelope-v1.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
@@ -215,11 +215,39 @@ if (args[4]) {
 }
 const { hash: ignored, ...nextBody } = next;
 const recipe = continuation ? seal({ ...nextBody, continuation: continuation.manifest }) : next;
+const canonicalPromptRoleId = id => id.replace(/\.source-evidence-v1\.[a-f0-9]{20}$/u, '');
+const legacyPromptRoleIds = continuation ? [...new Set(continuation.manifest.reusable.map(row => canonicalPromptRoleId(row.id))
+  .filter(id => /\.(?:reasoner|judge|generator-items\.[0-9]+|editor\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+|source-reconstruction\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+)$/u.test(id)))] : [];
 if (args[0] === '--preflight') {
+  // Exercise exact inherited role input hashes without credentials or egress.
+  // The first cache miss must be the known failed editor, never an already
+  // completed reasoner/generator whose frozen prompt is intentionally retained.
+  let firstUncachedRole = null;
+  const dryLocal = openProductionStore(':memory:', { runId: 'faction-cutover-' + recipe.hash.slice(0, 20), recipeHash: recipe.hash,
+    maxCalls: limits.maxCalls - (continuation?.manifest.accounting.calls || 0),
+    maxTokens: limits.maxTokens - (continuation?.manifest.accounting.tokens || 0),
+    maxCostMicros: limits.maxCostMicros - (continuation?.manifest.accounting.costMicros || 0) });
+  const dryStore = continuation ? withCheckpointContinuation(dryLocal, continuation) : dryLocal;
+  try {
+    const dryRuntime = createProductionRuntimeV3({ store: dryStore, reader: createEvidenceReader(catalogue), context, verifier: {},
+      model: async request => { firstUncachedRole = request.stageId; fail('FACTION_PREFLIGHT_FIRST_UNCACHED_ROLE'); },
+      dsh: { run: runDirectLoop } });
+    const dryFactionRuntime = useReviewTransaction ? createFactionReviewTransactionRuntimeV1({ input: inputs[0], runtime: dryRuntime,
+      store: dryStore, phaseFieldSeed }) : dryRuntime;
+    await produceFactionStrategyV1({ input: inputs[0], runtime: dryFactionRuntime, store: dryStore,
+      knownRulePolicy: knownRulePolicies[0], registeredSourceFieldRepair: true, fieldRepairSeed, phaseFieldSeed,
+      legacyPromptRoleIds });
+    fail('FACTION_PREFLIGHT_CUTOVER_MISSING');
+  } catch (error) {
+    if (error.code !== 'FACTION_PREFLIGHT_FIRST_UNCACHED_ROLE') throw error;
+  } finally { dryLocal.close(); }
+  const expectedFirstUncachedRole = 'faction.terran_armed_forces.faction.terran_armed_forces.objectives.1.editor.0.1.source-evidence-v1.'
+    + reviewTransactionBindings[0].hash.slice(0, 20);
+  if (firstUncachedRole !== expectedFirstUncachedRole) fail('FACTION_PREFLIGHT_CUTOVER_DRIFT', { firstUncachedRole });
   console.log(JSON.stringify({ ready: true, recipeHash: recipe.hash, providerCalls: 0, factions: inputs.map(i => i.factionRecordKey),
     sections: inputs.map(i => createFactionWritingPlanV1(i).sections.length), overallQualified: true, limits,
     reusableRoles: continuation?.manifest.reusable.length || 0, inheritedAccounting: continuation?.manifest.accounting || null,
-    additionalCommandRecoveries: additionalRecoveries.length })); process.exit(0);
+    legacyPromptRoles: legacyPromptRoleIds.length, firstUncachedRole, additionalCommandRecoveries: additionalRecoveries.length })); process.exit(0);
 }
 const runId = 'faction-v1-' + recipe.hash.slice(0, 20), out = path.join(base, runId); await mkdir(out, { recursive: true });
 const inherited = continuation?.manifest.accounting || { calls: 0, tokens: 0, costMicros: 0 };
@@ -264,6 +292,7 @@ try {
       fail('FACTION_REVIEW_TRANSACTION_RUNTIME_DRIFT');
     const candidate = await produceFactionStrategyV1({ input, runtime: factionRuntime, store, knownRulePolicy: knownRulePolicies[index],
       registeredSourceFieldRepair: true,
+      legacyPromptRoleIds,
       fieldRepairSeed: index === 0 ? fieldRepairSeed : null,
       phaseFieldSeed: index === 0 ? phaseFieldSeed : null,
       onProgress: row => console.log(JSON.stringify({ event: 'faction-progress', ticket: 18, slice: 174, faction: name, ...row })) });

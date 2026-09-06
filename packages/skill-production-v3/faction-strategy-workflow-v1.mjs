@@ -21,6 +21,12 @@ export const FACTION_JSON_OUTPUT_EXAMPLES_V1 = Object.freeze({
   editor: JSON.stringify({ parentHash: '从任务末尾复制精确父hash', replacements: [{ index: 0,
     value: ADVICE_SHAPE.recommendations[0] }], additions: [] }),
 });
+const LEGACY_JSON_PROMPT_V1 = Object.freeze({
+  reasoner: 'Reasoner：根据完整来源、总规则和本节指定来源回答每个question index，只讨论本阵营及本节范围。区分官方事实、条件策略与待验证效果，说明对手回应/替代方案，不声称完整行动合法或胜率已证明。返回{"answers":[{"index":整数,"answer":"完整简洁推理，最多1600字符","sourceRefs":["官方来源ID，1至8"]}],"uncertainties":["未证明事项"]}，每个index一次。',
+  judge: 'Judge：独立按完整来源检查每个推理回答的事实、条件、时机、成本、例外与建议范围；策略可以是有条件假设，不得当作已赢对战。正确引用不等于正确结论。返回{"judgments":[{"index":整数,"verdict":"supported|unsupported|uncertain","reason":"具体依据，最多1200字符","sourceRefs":["官方来源ID，1至8"]}]}；每个回答一次。判断是模型审查而非Rules真值。',
+  generatorItems: 'Generator：仅为indices指定的1至2项提纲写完整中文策略建议。全部官方来源、总规则、整节提纲和已完成建议均在输入中；分批只限制输出，不限制阅读。逐项保留适用条件、支付/时机/例外、步骤、替代、风险、reviseIf和未证明效果。对于单位考虑装备/规模/任务条件；卡牌保留次数限制和资源替代用途。不保证胜利，不复制题号。返回{"items":[{"index":指定序号,"value":完整建议对象}]}，每个index一次；value字段为' + JSON.stringify(ADVICE_SHAPE.recommendations[0]) + '。每项文本不超过1600字符，sourceRefs保留提纲所引来源，可补真实来源至最多8个。不要输出其他index、整份Skill或提纲。',
+  editor: '按实际来源问题只改被指出的recommendation，其他条目逐字不变。原建议哈希已绑定；source omission只可新增直接引用该遗漏来源的有条件建议。不能把审查意见当新规则；如不确定保留阻断，不编造。返回{"parentHash":"精确父hash","replacements":[{"index":被标记序号,"value":完整recommendation对象}],"additions":[仅补遗漏来源的完整recommendation对象]}。所有被标记index恰好一次；无关不改。对象字段遵循' + JSON.stringify(ADVICE_SHAPE.recommendations[0]) + '。',
+});
 
 export function createFactionWritingPlanV1(input) {
   verifySeal(input);
@@ -270,8 +276,11 @@ export function normalizeFactionStrategyPatchEnvelopeV1(output, args) {
 }
 
 export async function produceFactionStrategyV1({ input, runtime, store, knownRulePolicy, fieldRepairSeed = null,
-  phaseFieldSeed = null, registeredSourceFieldRepair = false, onProgress = () => {} }) {
+  phaseFieldSeed = null, registeredSourceFieldRepair = false, legacyPromptRoleIds = [], onProgress = () => {} }) {
   if (typeof registeredSourceFieldRepair !== 'boolean') fail('FACTION_SOURCE_FIELD_POLICY_INVALID');
+  if (!Array.isArray(legacyPromptRoleIds) || new Set(legacyPromptRoleIds).size !== legacyPromptRoleIds.length
+    || legacyPromptRoleIds.some(id => typeof id !== 'string' || !/^faction\.[a-z_]+\.faction\.[a-z_]+\.[a-z_]+\.[1-9][0-9]*\.(?:reasoner|judge|generator-items\.[0-9]+|editor\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+|source-reconstruction\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+)$/.test(id)))
+    fail('FACTION_LEGACY_PROMPT_BINDING_INVALID');
   verifySeal(knownRulePolicy);
   if (knownRulePolicy.inputHash !== input.hash) fail('FACTION_KNOWN_RULE_POLICY_DRIFT');
   const fieldRepairBinding = fieldRepairSeed ? (await import('./faction-field-repair-seed-v1.mjs')).validateFactionFieldRepairSeedV1({
@@ -285,6 +294,8 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
   const registeredRepair = registeredSourceFieldRepair ? await import('./faction-source-field-repair-v2.mjs') : null;
   const plan = createFactionWritingPlanV1(input), common = factionRoleWorkspaceV1(input);
   const packet = seal({ id: 'faction.' + input.factionRecordKey.split(':')[1], inputHash: input.hash, sourceBinding: input.sourceBinding });
+  const legacyPrompts = new Set(legacyPromptRoleIds), fullRoleId = id => packet.id + '.' + id;
+  const prompt = (id, current, legacy) => legacyPrompts.has(fullRoleId(id)) ? legacy : current;
   const roleArtifacts = [];
   async function role(id, instruction, workspace, validate, batchScope = null) {
     const request = { packet, roleId: id, instruction, workspace: { ...common, ...workspace }, maxOutput: 4096 };
@@ -342,14 +353,18 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     const questions = [...tree.value.branches.find(b => b.axis === section.axis).questions,
       ...challenger.value.branches.find(b => b.axis === section.axis).probes].map((q, index) => ({ index, ...q }));
     const scope = { section, questionTree: tree.value, questions, unverifiedTutor: tutor.value };
-    const answers = await role(section.id + '.reasoner', 'Reasoner：根据完整来源、总规则和本节指定来源回答每个question index，只讨论本阵营及本节范围。区分官方事实、条件策略与待验证效果，说明对手回应/替代方案，不声称完整行动合法或胜率已证明。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.reasoner + '，index必须是从questions复制的JSON整数，每个index一次。', scope, out => {
+    const reasonerId = section.id + '.reasoner';
+    const answers = await role(reasonerId, prompt(reasonerId,
+      'Reasoner：根据完整来源、总规则和本节指定来源回答每个question index，只讨论本阵营及本节范围。区分官方事实、条件策略与待验证效果，说明对手回应/替代方案，不声称完整行动合法或胜率已证明。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.reasoner + '，index必须是从questions复制的JSON整数，每个index一次。', LEGACY_JSON_PROMPT_V1.reasoner), scope, out => {
       exact(out, ['answers', 'uncertainties']); strings(out.uncertainties, { empty: true });
       if (!Array.isArray(out.answers) || out.answers.length !== questions.length) fail('FACTION_ANSWER_DENOMINATOR');
       const pending = new Set(questions.map(q => q.index));
       for (const a of out.answers) { exact(a, ['index', 'answer', 'sourceRefs']); text(a.answer, 1600); refs(a.sourceRefs, input); if (!pending.delete(a.index)) fail('FACTION_ANSWER_SCOPE_INVALID'); }
       return out;
     });
-    const judge = await role(section.id + '.judge', 'Judge：独立按完整来源检查每个推理回答的事实、条件、时机、成本、例外与建议范围；策略可以是有条件假设，不得当作已赢对战。正确引用不等于正确结论。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.judge + '；index必须是从answers复制的JSON整数，每个回答一次。判断是模型审查而非Rules真值。',
+    const judgeId = section.id + '.judge';
+    const judge = await role(judgeId, prompt(judgeId,
+      'Judge：独立按完整来源检查每个推理回答的事实、条件、时机、成本、例外与建议范围；策略可以是有条件假设，不得当作已赢对战。正确引用不等于正确结论。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.judge + '；index必须是从answers复制的JSON整数，每个回答一次。判断是模型审查而非Rules真值。', LEGACY_JSON_PROMPT_V1.judge),
       { ...scope, answers: answers.value }, out => {
         exact(out, ['judgments']);
         if (!Array.isArray(out.judgments) || out.judgments.length !== questions.length) fail('FACTION_REVIEW_DENOMINATOR');
@@ -365,9 +380,10 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     const recommendations = [], generationEnvelopeRepairs = [];
     for (let first = 0; first < outline.value.outline.length; first += 2) {
       const indices = outline.value.outline.slice(first, first + 2).map((_, n) => first + n);
-      const generated = await role(section.id + '.generator-items.' + first,
+      const generatorId = section.id + '.generator-items.' + first;
+      const generated = await role(generatorId, prompt(generatorId,
         'Generator：仅为indices指定的1至2项提纲写完整中文策略建议。全部官方来源、总规则、整节提纲和已完成建议均在输入中；分批只限制输出，不限制阅读。逐项保留适用条件、支付/时机/例外、步骤、替代、风险、reviseIf和未证明效果。对于单位考虑装备/规模/任务条件；卡牌保留次数限制和资源替代用途。不保证胜利，不复制题号。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.generatorItems
-          + '，index必须是从indices复制的JSON整数，每个index一次。每项文本不超过1600字符，sourceRefs保留提纲所引来源，可补真实来源至最多8个。不要输出其他index、整份Skill或提纲。',
+          + '，index必须是从indices复制的JSON整数，每个index一次。每项文本不超过1600字符，sourceRefs保留提纲所引来源，可补真实来源至最多8个。不要输出其他index、整份Skill或提纲。', LEGACY_JSON_PROMPT_V1.generatorItems),
         { ...scope, proposals: proposer.value, judge: judge.value, outline: outline.value.outline, indices, completedRecommendations: recommendations },
         out => validateFactionDraftBatchV1(out, { input, outline: outline.value.outline, indices, completedRecommendations: recommendations }),
         { outline: outline.value.outline, indices, completedRecommendations: recommendations });
@@ -473,12 +489,14 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
         passed = true; break;
       }
       if (revision === 3) break;
-      const instruction = '按实际来源问题只改被指出的recommendation，其他条目逐字不变。原建议哈希已绑定；source omission只可新增直接引用该遗漏来源的有条件建议。不能把审查意见当新规则；如不确定保留阻断，不编造。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.editor
+      const currentInstruction = '按实际来源问题只改被指出的recommendation，其他条目逐字不变。原建议哈希已绑定；source omission只可新增直接引用该遗漏来源的有条件建议。不能把审查意见当新规则；如不确定保留阻断，不编造。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.editor
         + '。index必须是从editTargetAtEnd.target.index复制的JSON整数；parentHash必须复制editTargetAtEnd.parentHash。所有被标记index恰好一次；无关不改。source omission才可在additions放完整recommendation对象。';
       const collected = { parentHash: hash(draft), replacements: [], additions: [] }, editorHashes = [];
       // Output each issue's bounded patch separately, but retain the entire
       // draft/issues/source context. Apply the aggregate atomically afterward.
       for (const [ordinal, issue] of issues.issues.entries()) {
+        const editorId = section.id + '.editor.' + revision + reviewEpoch + '.' + ordinal;
+        const instruction = prompt(editorId, currentInstruction, LEGACY_JSON_PROMPT_V1.editor);
         const localIssues = seal({ ...Object.fromEntries(Object.entries(issues).filter(([k]) => k !== 'hash')), issues: [issue], openIssues: 1 });
         const validatePatch = edit => {
           const normalized = normalizeFactionStrategyPatchEnvelopeV1(edit.value, { input, draft, issues: localIssues });
@@ -490,7 +508,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
           }
           return { ...edit, value: normalized.output };
         };
-        let edit = await role(section.id + '.editor.' + revision + reviewEpoch + '.' + ordinal, instruction + '\n本次仅输出localIssue这一项的替换或补充，其余问题会分别处理；完整draft及allIssues保留供一致性核对。',
+        let edit = await role(editorId, instruction + '\n本次仅输出localIssue这一项的替换或补充，其余问题会分别处理；完整draft及allIssues保留供一致性核对。',
           { section, draft, parentHash: hash(draft), localIssue: issue, issues: localIssues, allIssues: issues,
             editTargetAtEnd: { parentHash: hash(draft), localIssue: issue,
               target: issue.index === undefined ? null : { index: issue.index, title: draft.recommendations[issue.index].title,
@@ -501,8 +519,9 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
           const repairScopes = [issue.kind === 'assigned_source_omission' ? issue : {
             kind: issue.kind, index: issue.index, title: draft.recommendations[issue.index].title,
             findings: issue.findings, sourceRefs: draft.recommendations[issue.index].sourceRefs }];
-          edit = await role(section.id + '.source-reconstruction.' + revision + reviewEpoch + '.' + ordinal,
-            instruction + '\n旧编辑为空或未改变被标记内容，已记录为语义无进展而非JSON错误。现不给被标记的旧正文，从完整官方来源与repairScopes重建这一项；其他建议完整保留为上下文。保留父hash和index，不改其他建议。如果来源不能支持修改，保持阻断，不编造。',
+          const reconstructionId = section.id + '.source-reconstruction.' + revision + reviewEpoch + '.' + ordinal;
+          edit = await role(reconstructionId,
+            prompt(reconstructionId, currentInstruction, LEGACY_JSON_PROMPT_V1.editor) + '\n旧编辑为空或未改变被标记内容，已记录为语义无进展而非JSON错误。现不给被标记的旧正文，从完整官方来源与repairScopes重建这一项；其他建议完整保留为上下文。保留父hash和index，不改其他建议。如果来源不能支持修改，保持阻断，不编造。',
             { section, parentHash: hash(draft), repairScopes, noProgressArtifactHash: edit.artifact.hash,
               preservedRecommendations: draft.recommendations.flatMap((r, index) => index === issue.index ? [] : [{ index, recommendation: r }]),
               repairRequestAtEnd: { parentHash: hash(draft), repairScopes } }, out => out);

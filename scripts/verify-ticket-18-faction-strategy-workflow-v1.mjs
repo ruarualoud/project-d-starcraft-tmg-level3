@@ -142,13 +142,17 @@ const stores = [], makeStore = name => { const s = openProductionStore(path.join
 const recommendation = ref => ({ title: 'Injected conditional strategy fixture ' + ref, when: ['Only in the stated legal scope'],
   procedure: ['Compare enabled legal alternatives before preview'], alternatives: ['Conserve resources if the condition changes'],
   risk: 'Fixture only, not a measured battle strategy', reviseIf: ['The stated condition changes'], sourceRefs: [ref], unproven: ['Real match strength is not evaluated here'] });
-const resultHashes = []; let calls = 0, maxTaskBytes = 0;
-function modelFor(input, mode = 'positive') {
+const resultHashes = []; let calls = 0, maxTaskBytes = 0, legacyPromptCalls = 0;
+function modelFor(input, mode = 'positive', expectedLegacyRoles = []) {
+  const legacy = new Set(expectedLegacyRoles);
   return async ({ stageId, observed }) => {
     calls++;
     if (mode === 'payment') fail('API_BALANCE_EXHAUSTED_STOP_ALL_WORK');
     const task = observed.messages[0].content, w = JSON.parse(task.slice(task.indexOf('\nLOCAL WORKSPACE\n') + 17));
-    for (const invalid of ['"index":整数', '"index":指定序号', '"index":被标记序号', '"value":完整建议对象']) assert(!task.includes(invalid));
+    const fullRoleId = stageId;
+    const invalidExamples = ['"index":整数', '"index":指定序号', '"index":被标记序号', '"value":完整建议对象'];
+    if (legacy.has(fullRoleId)) { assert(invalidExamples.some(example => task.includes(example))); legacyPromptCalls++; }
+    else for (const invalid of invalidExamples) assert(!task.includes(invalid), stageId + ' unexpectedly contained ' + invalid);
     assert(task.startsWith('FROZEN GLOBAL SOURCE CONTEXT\n' + JSON.stringify(context.prompt)));
     assert.equal(w.overallSkill.sections.flatMap(s => s.claims).length, 522);
     assert.equal(w.operationalGuide.hash, input.operationalGuide.hash);
@@ -214,9 +218,13 @@ try {
     const plan = createFactionWritingPlanV1(input); assert.equal(plan.sections.length, i ? 8 : 7);
     const assigned = plan.sections.filter(s => ['unit_roles', 'card_packages'].includes(s.axis)).flatMap(s => s.requiredSourceRefs);
     assert.deepEqual(assigned.sort(), input.factionEvidence.armyPool.map(p => p.source.ref).sort());
+    const legacyPromptRoleIds = i ? [] : [
+      'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.reasoner',
+      'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.judge',
+      'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.generator-items.0'];
     const store = makeStore('positive-' + i), runtime = createProductionRuntimeV3({ store, reader, context, verifier: {},
-      model: modelFor(input, i ? 'positive' : 'repair'), dsh: { run: runDirectLoop } });
-    const candidate = await produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownPolicy(input) });
+      model: modelFor(input, i ? 'positive' : 'repair', legacyPromptRoleIds), dsh: { run: runDirectLoop } });
+    const candidate = await produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownPolicy(input), legacyPromptRoleIds });
     assert(candidate.semanticReviewPassed); assert.equal(candidate.sections.length, plan.sections.length);
     assert.equal(candidate.skillId, 'skill.starcraft-tmg.faction.tactical-cards-' + input.factionRecordKey.split(':')[1].replaceAll('_', '-'));
     assert(!candidate.independentEvaluationPassed && !candidate.runtimeAccepted && !candidate.trainingTruth);
@@ -229,7 +237,9 @@ try {
     }
     if (!i) { assert.equal(candidate.sections[0].edits.length, 1); assert.equal(candidate.sections[0].rounds.length, 2); }
     const before = calls;
-    assert.equal((await produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownPolicy(input) })).hash, candidate.hash); assert.equal(calls, before);
+    assert.equal((await produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownPolicy(input), legacyPromptRoleIds })).hash, candidate.hash); assert.equal(calls, before);
+    if (!i) await assert.rejects(() => produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownPolicy(input),
+      legacyPromptRoleIds: ['foreign.role'] }), { code: 'FACTION_LEGACY_PROMPT_BINDING_INVALID' });
     resultHashes.push(candidate.hash);
   }
   const input = inputs[0], draft = { recommendations: [recommendation(input.factionEvidence.primarySource.ref), recommendation(input.factionEvidence.armyPool[0].source.ref)] };
@@ -255,15 +265,17 @@ try {
   const payStore = makeStore('payment'), payRuntime = createProductionRuntimeV3({ store: payStore, reader, context, verifier: {}, model: modelFor(input, 'payment'), dsh: { run: runDirectLoop } });
   await assert.rejects(() => produceFactionStrategyV1({ input, runtime: payRuntime, store: payStore, knownRulePolicy: knownPolicy(input) }), { code: 'API_BALANCE_EXHAUSTED_STOP_ALL_WORK' });
 } finally { for (const store of stores) store.close(); }
+assert.equal(legacyPromptCalls, 3);
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/runtime.mjs', 'packages/skill-production-v3/faction-review-targets-v1.mjs',
   'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 files.push('packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs');
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 54, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 58, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
   modelInstructionJsonExamples: Object.keys(FACTION_JSON_OUTPUT_EXAMPLES_V1).length, invalidBarePlaceholderExamples: 0,
   actualPromptFailureEvidence, validJsonExamplesReplaceBareNaturalLanguageIndexPlaceholders: true,
+  exactInheritedLegacyPromptRoleBindingsTested: 3, legacyPromptCalls,
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 54, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 58, maxTaskBytes, injectedModelCalls: calls, legacyPromptCalls, providerCalls: 0, hash: report.hash }));

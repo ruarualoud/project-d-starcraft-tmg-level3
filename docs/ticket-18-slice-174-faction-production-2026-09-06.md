@@ -2,6 +2,36 @@
 
 ## Latest checkpoint: source-dependency recheck and pre-apply repair guard
 
+### Exact inherited-prompt cutover and zero-egress first-miss proof
+
+The first live attempt under recipe `8388ab1b741d281ef946…` exposed an
+efficiency regression before the intended editor: changing all four JSON
+examples changed already-complete Reasoner/Judge/Generator task hashes, so the
+first Terran reasoner became a cache miss. The process was stopped before a
+second request. One response had already settled:261,263 tokens and estimated
+¥0.260249. Its received response and cost remain in the journal. The exact
+owner/generation lease was released from `running` to `pending`; nothing was
+deleted, rewritten or made ambiguous. Global cumulative use is now96,288,776
+known tokens and estimated cost plus historical reserve¥61.103439, with0
+intent,0 running steps and0 payment-required outcomes.
+
+The corrected cutover derives37 legacy prompt role IDs only from the sealed
+continuation manifest's156 reusable role artifacts. Those exact completed role
+inputs retain their frozen legacy prompt bytes. Every cache miss, including
+the pending objectives editor0.1 and every future Terran/Zerg role, receives
+the valid JSON example. Fresh production has no legacy bindings by default;
+foreign, duplicate or malformed bindings fail before a model call.
+
+Workflow gate `c23ba38bc8d41ed780ff2819b2ed53e358cb9419b4dc29195c94f555ea25a228`
+passes58 checks/472 injected roles/0 Provider. The main `--preflight` now runs
+the actual workflow over an in-memory continuation store with a local egress
+sentinel. Recipe `70baa40b53f141b3dabbfe76a4329198d7a404761f6f9b4d4a28bc413afad1c2`
+proved all156 inherited roles reusable and the first cache miss exactly
+`faction.terran_armed_forces.faction.terran_armed_forces.objectives.1.editor.0.1.source-evidence-v1.3f8eeb087607ebe8f490`.
+This proof used0 credentials and0 Provider calls. The next live run may now
+request only that pending editor before proceeding to its remaining sibling
+editor and fresh whole-section review.
+
 ### Stable editor prompt-contract failure and valid JSON examples
 
 The first continuation from `faction-v1-3ff195438798f5218836` produced run
