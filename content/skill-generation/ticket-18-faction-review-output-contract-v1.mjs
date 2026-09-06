@@ -341,3 +341,89 @@ export const STARCRAFT_TMG_FACTION_REVIEW_CONTRACT_MIGRATION_V2_TO_V3 = seal({
   semanticAcceptanceInherited: false,
   trainingTruth: false,
 });
+
+function schemaWithReasonLimits(value, verdictMaximum, coverageMaximum) {
+  const copy = structuredClone(value);
+  copy.properties.verdicts.items.properties.reason.maxLength = verdictMaximum;
+  copy.properties.coverage.items.properties.reason.maxLength = coverageMaximum;
+  return copy;
+}
+
+// DeepSeek's schema capability proves the response shape but actual calls show
+// maxLength is not reliably enforced. V4 therefore relies on the 4,096-token
+// whole-response envelope for compactness and keeps a 16,384-character
+// per-string safety bound. Legacy prompt reviews retain their existing 1,200
+// character validator; this contract selects the structured validator V2.
+export const STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V4 =
+  createStarcraftTmgOutputContractV1({
+    id: "starcraft-tmg.faction-target-review",
+    version: "2026.09.07.4",
+    schemaName: "faction_target_review_v4",
+    providerSchema: schemaWithReasonLimits(
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3.providerSchema,
+      16_384, 16_384),
+    modelOwnedFields:
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3.modelOwnedFields,
+    hostOwnedFields:
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3.hostOwnedFields,
+    mapperRef: STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3.mapperRef,
+    semanticValidatorRef: {
+      id: "validateTargetedFactionReviewV1",
+      version: "v2",
+      hash: hashStarcraftTmgContract(
+        "validateTargetedFactionReviewV1-after-host-slot-materialization-structured-reason-whole-response-bound-v2"),
+    },
+    description: "V4 target-bound faction verdicts use the bounded whole response for explanation capacity; target/source identities remain host-owned and semantic acceptance remains downstream.",
+  });
+
+export const STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V4 =
+  outputContractRefStarcraftTmgV1(
+    STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V4);
+
+if (STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V3.hash
+    !== "3f94f7ca7e348d92d2f17f23136e708012171277be664d33e03fd226835b9023"
+  || hashStarcraftTmgContract(
+    STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3.hostOwnedFields)
+    !== hashStarcraftTmgContract(
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V4.hostOwnedFields)
+  || hashStarcraftTmgContract(
+    STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3.mapperRef)
+    !== hashStarcraftTmgContract(
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V4.mapperRef)
+  || hashStarcraftTmgContract(
+    STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3.providerSchema)
+    !== hashStarcraftTmgContract(schemaWithReasonLimits(
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V4.providerSchema,
+      1_200, 400))) {
+  throw new TypeError("Faction review V3 to V4 contract migration drift");
+}
+
+export const STARCRAFT_TMG_FACTION_REVIEW_CONTRACT_MIGRATION_V3_TO_V4 = seal({
+  version: "faction_review_output_contract_migration_v3_to_v4",
+  from: STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V3,
+  to: STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V4,
+  changes: [{
+    path: "$.properties.verdicts.items.properties.reason.maxLength",
+    before: 1_200,
+    after: 16_384,
+    kind: "whole_response_bounded_string_safety_envelope",
+  }, {
+    path: "$.properties.coverage.items.properties.reason.maxLength",
+    before: 400,
+    after: 16_384,
+    kind: "whole_response_bounded_string_safety_envelope",
+  }],
+  observedCompleteReasonLengths: [1_546, 1_401, 1_237, 459],
+  wholeResponseMaxOutputUnits: 4_096,
+  legacyPromptReasonMaximumUnchanged: 1_200,
+  unchangedSchemaHashAfterReset: hashStarcraftTmgContract(
+    schemaWithReasonLimits(
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V4.providerSchema,
+      1_200, 400)),
+  hostOwnedFieldsChanged: false,
+  semanticValidatorChanged: true,
+  mapperChanged: false,
+  oldContractFrozen: true,
+  semanticAcceptanceInherited: false,
+  trainingTruth: false,
+});

@@ -179,7 +179,7 @@ export function verifyFactionStructuredReviewSchemaRepairScopeV1({
 
 export function materializeFactionStructuredReviewV1({
   providerOutput, capsule, input, section, draft, reviewIndices,
-  requiredSourceRefs, targets,
+  requiredSourceRefs, targets, reviewReasonMaximum = 1200,
 }) {
   verifySeal(capsule);
   exactSlotSet(providerOutput?.verdicts, "targetSlot",
@@ -212,6 +212,7 @@ export function materializeFactionStructuredReviewV1({
   const bound = validateTargetedFactionReviewV1(output, targets);
   validateFactionReviewV1(bound.review, {
     input, section, draft, reviewIndices, requiredSourceRefs,
+    reviewReasonMaximum,
   });
   return { output, bound, receipt: seal({
     version: "faction_structured_review_host_materialization_v1",
@@ -241,6 +242,14 @@ export function createFactionStructuredReviewRuntimeV1(options = {}) {
   const outputContractRef = outputContractRefStarcraftTmgV1(outputContract);
   if (capabilityReceipt.outputContractRef.hash !== outputContractRef.hash) {
     fail("FACTION_STRUCTURED_REVIEW_CAPABILITY_DRIFT");
+  }
+  const reviewReasonMaximum = Math.max(
+    outputContract.providerSchema.properties.verdicts.items.properties.reason
+      .maxLength,
+    outputContract.providerSchema.properties.coverage.items.properties.reason
+      .maxLength);
+  if (![1200, 16_384].includes(reviewReasonMaximum)) {
+    fail("FACTION_STRUCTURED_REVIEW_REASON_BOUND_INVALID");
   }
   const schemaRepairImports = new Map();
   for (const candidate of options.schemaRepairImports || []) {
@@ -426,7 +435,7 @@ export function createFactionStructuredReviewRuntimeV1(options = {}) {
           providerOutput: active.loop.final, capsule: activeCapsule,
           input, section, draft,
           reviewIndices, requiredSourceRefs: coverageRequiredSourceRefs,
-          targets,
+          targets, reviewReasonMaximum,
         });
         options.onProgress?.({ role: request.roleId,
           state: "structured_target_review_complete",

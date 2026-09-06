@@ -162,13 +162,18 @@ export function validateFactionDraftBatchV1(output, { input, outline, indices, c
 }
 
 export function validateFactionReviewV1(output, { input, section, draft,
-  reviewIndices = draft.recommendations.map((_, i) => i), requiredSourceRefs = section.requiredSourceRefs }) {
+  reviewIndices = draft.recommendations.map((_, i) => i),
+  requiredSourceRefs = section.requiredSourceRefs,
+  reviewReasonMaximum = 1200 }) {
+  if (![1200, 16_384].includes(reviewReasonMaximum))
+    fail('FACTION_REVIEW_REASON_BOUND_INVALID');
   exact(output, ['verdicts', 'coverage']);
   if (!Array.isArray(output.verdicts) || output.verdicts.length !== reviewIndices.length
     || !Array.isArray(output.coverage) || output.coverage.length < requiredSourceRefs.length) fail('FACTION_REVIEW_DENOMINATOR');
   const pending = new Set(reviewIndices);
   for (const v of output.verdicts) {
-    exact(v, ['index', 'verdict', 'reason', 'sourceRefs']); text(v.reason, 1200); refs(v.sourceRefs, input);
+    exact(v, ['index', 'verdict', 'reason', 'sourceRefs']);
+    text(v.reason, reviewReasonMaximum); refs(v.sourceRefs, input);
     if (!pending.delete(v.index) || !['supported', 'unsupported', 'uncertain'].includes(v.verdict)) fail('FACTION_REVIEW_SCOPE_INVALID');
   }
   const required = new Set(requiredSourceRefs);
@@ -184,7 +189,7 @@ export function validateFactionReviewV1(output, { input, section, draft,
       // the model to rewrite a negative review. Conflicting aliases fail.
       if (hash(c.sourceRefs) !== hash([c.sourceRef])) fail('FACTION_REVIEW_COVERAGE_ALIAS_CONFLICT');
     }
-    exact(c, keys); text(c.reason, 1200);
+    exact(c, keys); text(c.reason, reviewReasonMaximum);
     if (!sources.delete(c.sourceRef) || !['covered', 'omitted', 'uncertain'].includes(c.verdict)
       || !Array.isArray(c.recommendationIndices) || new Set(c.recommendationIndices).size !== c.recommendationIndices.length
       || c.recommendationIndices.some(i => !Number.isInteger(i) || !draft.recommendations[i])

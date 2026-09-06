@@ -116,20 +116,26 @@ export function validateFactionStructuredReviewMigrationV1({
       || contractMigration.from?.hash
         !== parent.structuredReviewBinding.outputContractRef.hash
       || contractMigration.to?.hash !== binding.outputContractRef.hash
-      || contractMigration.changes?.length !== 1
+      || contractMigration.changes?.length !== 2
       || contractMigration.changes[0].path
         !== '$.properties.verdicts.items.properties.reason.maxLength'
-      || contractMigration.changes[0].before !== 800
-      || contractMigration.changes[0].after !== 1200
+      || contractMigration.changes[0].before !== 1200
+      || contractMigration.changes[0].after !== 16384
+      || contractMigration.changes[1].path
+        !== '$.properties.coverage.items.properties.reason.maxLength'
+      || contractMigration.changes[1].before !== 400
+      || contractMigration.changes[1].after !== 16384
+      || contractMigration.wholeResponseMaxOutputUnits !== 4096
+      || contractMigration.legacyPromptReasonMaximumUnchanged !== 1200
       || contractMigration.oldContractFrozen !== true
       || contractMigration.hostOwnedFieldsChanged !== false
-      || contractMigration.semanticValidatorChanged !== false
+      || contractMigration.semanticValidatorChanged !== true
       || contractMigration.mapperChanged !== false
       || contractMigration.semanticAcceptanceInherited !== false
       || readiness.previousOutputContractRef?.hash
         !== parent.structuredReviewBinding.outputContractRef.hash
       || readiness.actualBoundaryFailureRunId
-        !== 'faction-v1-3d2d9aba32a329115cbc'
+        !== 'faction-v1-540b0fa661c00b3d3bdc'
       || !readiness.actualBoundaryRejectedCandidateHash)
     || introduced && (readiness.actualFailureRunId !== parentRunId
       || readiness.actualFailureCode !== parentReport.failure?.code

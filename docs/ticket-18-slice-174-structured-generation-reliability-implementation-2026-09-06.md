@@ -17,6 +17,7 @@
 11. 对 HTTP200 但 wire JSON 非法的响应先执行唯一可证明的无损归一化，再进入同一 JSON Schema 门。允许集合仅为缺失最外层对象闭合、单一 JSON fence、二者组合、已证明的冗余数组/对象闭合和唯一可恢复的单个未转义引号；回执绑定原文/归一化文本/恢复证据哈希，不保存原始敏感传输体，也不继承任何语义接受。无法唯一恢复仍隔离，禁止 prompt-only 盲重试。
 12. 累计费用通知使用“当前全局实际或预留 + 当前生产链剩余额度”，不得把已经包含继承费用的整条链上限再次相加。投影同时绑定历史保留、全局账本、继承费用、本 run 费用和链上限；继承费用只计一次。达到真实下一档 ¥100 前仍必须通知，但错误重复计数不得阻断 Provider。
 13. reviewer 传输 reason 上限必须与已有最终审查器的 1,200 字上限一致。V1 400、V2 800 均严格冻结；V3 只把 verdict reason 800→1,200，coverage reason 仍 400，focus/source slots、host mapper 和 semantic validator 均不变。合同变化使同 role ID 的 input hash 变化，旧 V2 成功产物不得伪装成精确复用；预检显式报告 `structuredReviewContractChanged` 并从首个 V3 role 重新执行。
+14. Provider 的 JSON Schema capability 不等于可靠执行 `maxLength`；真实 V3 修复仍只把 1546 字 reason 缩到 1401，并保留 1237/459 字的其他超限字段。V4 不再按样本逐级追长度：结构化 reviewer 的 verdict/coverage reason 使用 16,384 字符安全上限，实际紧凑性由 4,096-token 整体响应上限约束；legacy prompt validator 仍保持 1,200。structured semantic validator 显式升版，focus/source/coverage identity、host mapper、来源与语义判断均不放宽。
 
 ## 证据
 
@@ -44,8 +45,10 @@
 - 首次按 `1d413de3…` 正式启动在出网前被 `CNY_100_NOTIFICATION_REQUIRED` 停止，0 Provider/0 token。诊断证明旧公式把当前全局 ¥67.185895 与整链 ¥35 上限直接相加，重复计算其中已继承的 ¥20.501460。修复后 budget 29/29、review 13/13、editor 5/5 均 0 Provider；真实剩余链额度 ¥14.498540，最坏累计 ¥81.684435。最终 preflight recipe `3d2d9aba32a329115cbc22a0e0a17eb664bcc212d3c4b1ff8559470014cf6575` 仍复用 173 roles、保持同一 first miss 和 0 Provider。
 - `faction-v1-3d2d9aba32a329115cbc` 实际完成 adversarial 2.0（一次定点修复）及 2.2；随后 2.4 的首候选只在 verdict reasons 1022/854、focus 19>16、sourceSlots 9>8 处失败，定点修复正确收敛数组但原样保留 1022/854 reasons，因此隔离停止。本 run 5 calls / 628,254 tokens；累计 103,243,513 tokens / ¥69.009919，无 402、在途或自动重试。另一个实际完整候选的 reasons 达 1265/954，证明 V2 的 800 与最终 validator 1200 不一致。
 - reviewer V3：V1 hash `ac4f185c…`、V2 hash `00acc1f9…` 原样冻结；V3 hash `3f94f7ca…` 只把 verdict reason 800→1200。精确 V3 capability probe `structured-review-probe-73784160f7f2234fb0b31028f9e00ad5` 一次通过，706 tokens / ¥0.001036。review13/13、continuation40/40、adapter15/15、editor5/5、budget29/29均0Provider通过。最终 preflight recipe `540b0fa661c00b3d3bdc6ce93375d0241f8224dfbd8b03e992701ff1a75385d2` 复用175 roles，继承251 calls / 64,466,422 tokens / ¥22.325484，确认合同变化并从V3 supportive2.0开始，0 Provider。
+- `faction-v1-540b0fa661c00b3d3bdc` 的 V3 supportive 四批全部完成，2.4 的 array 超限经一次定点修复收敛；adversarial 2.0 初稿 reasons 1546/1237、coverage reason459，修复后为1401/1237/459，证明 Provider 未可靠遵守 maxLength。本 run 7 calls / 876,914 tokens；累计104,121,133tokens / ¥71.269488，无402、在途或自动重试。
+- reviewer V4：V1/V2/V3全部冻结；V4 hash `4f85334c…`，structured reasons 用16,384安全上限并保留4096-token整体容量，legacy仍1200。精确 probe `structured-review-probe-0470c698b2be3d948ebc2da22034033d` 一次通过，706tokens / ¥0.001032。依赖扇出后 workflow64/64、targeted28/28、unit-field16/16、unit/source workflow各8/8、field/phase seed各20/20、review13/13、continuation40/40、adapter15/15、editor5/5、budget29/29及review-transaction/DSH-context全部0Provider通过。最终 preflight recipe `179a94c5c002c9eeabf65fccdf285d82e2bf3fa09f8930a70a3eeb5f0161e88b` 复用173roles，继承258calls / 65,343,336tokens / ¥24.584017，从V4 supportive2.0开始。
 
-最新已知累计用量为 103,244,219 tokens，估算或历史预留合计 ¥69.010955，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
+最新已知累计用量为 104,121,839 tokens，估算或历史预留合计 ¥71.270520，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
 
 ## 仍未完成
 
@@ -56,4 +59,4 @@
 
 ## 下一步
 
-从 `faction-v1-3d2d9aba32a329115cbc` 按上述 V3 recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。
+从 `faction-v1-540b0fa661c00b3d3bdc` 按上述 V4 recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。
