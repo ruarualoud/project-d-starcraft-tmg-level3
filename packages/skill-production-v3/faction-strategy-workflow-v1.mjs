@@ -5,7 +5,6 @@ export const FACTION_AXES_V1 = ['army_resources', 'unit_roles', 'phase_tempo', '
 const ADVICE_SHAPE = { recommendations: [{ title: '标题', when: ['适用的可观察条件'], procedure: ['步骤'],
   alternatives: ['不同条件下的替代行动及取舍'], risk: '代价/失败风险', reviseIf: ['何时改变计划'],
   sourceRefs: ['完整官方来源ID'], unproven: ['尚需实际局面/对战检验的效果'] }] };
-const body = value => Object.fromEntries(Object.entries(clone(value)).filter(([k]) => k !== 'hash'));
 
 export function createFactionWritingPlanV1(input) {
   verifySeal(input);
@@ -63,6 +62,28 @@ export function validateFactionDraftV1(output, input) {
     if (/production-heldout\.|heldout\.|independent-condition\./.test(JSON.stringify(r))) fail('FACTION_TEST_MEMORIZATION_REJECTED');
   }
   return output;
+}
+
+export function validateFactionOutlineV1(output, { input, section }) {
+  exact(output, ['outline']);
+  if (!Array.isArray(output.outline) || !output.outline.length || output.outline.length > 8) fail('FACTION_OUTLINE_DENOMINATOR');
+  for (const item of output.outline) { exact(item, ['focus', 'sourceRefs']); text(item.focus, 600); refs(item.sourceRefs, input); }
+  if (section.requiredSourceRefs.some(ref => !output.outline.some(item => item.sourceRefs.includes(ref)))) fail('FACTION_OUTLINE_SOURCE_OMISSION');
+  return output;
+}
+
+export function validateFactionDraftBatchV1(output, { input, outline, indices }) {
+  exact(output, ['items']);
+  if (!Array.isArray(output.items) || output.items.length !== indices.length) fail('FACTION_BATCH_DENOMINATOR');
+  const pending = new Set(indices), items = [];
+  for (const item of output.items) {
+    exact(item, ['index', 'value']);
+    if (!pending.delete(item.index)) fail('FACTION_BATCH_SCOPE_INVALID');
+    validateFactionDraftV1({ recommendations: [item.value] }, input);
+    if (outline[item.index].sourceRefs.some(ref => !item.value.sourceRefs.includes(ref))) fail('FACTION_BATCH_SOURCE_OMISSION');
+    items.push(item);
+  }
+  return items.sort((a, b) => a.index - b.index);
 }
 
 export function validateFactionReviewV1(output, { input, section, draft }) {
@@ -132,7 +153,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, onProgre
     let result = await runtime.role(request); roleArtifacts.push({ id, hash: result.hash });
     try { return { artifact: result, value: validate(result.output) }; }
     catch (error) {
-      if (!/^(OUTPUT_SCHEMA_INVALID|TEXT_INVALID|FACTION_(SOURCE_REFERENCE_INVALID|STRING_ARRAY_INVALID|TREE_|DRAFT_|REVIEW_|ANSWER_))/.test(error.code || '')) throw error;
+      if (!/^(OUTPUT_SCHEMA_INVALID|TEXT_INVALID|FACTION_(SOURCE_REFERENCE_INVALID|STRING_ARRAY_INVALID|TREE_|DRAFT_|REVIEW_|ANSWER_|OUTLINE_|BATCH_))/.test(error.code || '')) throw error;
       const repaired = await runtime.role({ ...request, roleId: id + '.schema',
         instruction: instruction + '\n只纠正下面记录的结构/地址错误，不改变否定判断，不删掉上下文或材料，不扩大语义修改范围。',
         workspace: { ...request.workspace, rejectedOutput: result.output, structuralFailure: error.code } });
@@ -170,10 +191,20 @@ export async function produceFactionStrategyV1({ input, runtime, store, onProgre
       });
     const proposer = await role(section.id + '.proposer', 'Proposer：依据来源、推理和Judge的具体问题，为本节生成最小且完整的策略编写方案。明确保留、纠正与尚不能下结论的事项，不照抄错误回答或自行推翻规则。所有指定单位/卡牌都要有有条件决策用法，不把可选项推荐成必选，不把标签池写成已合法阵容。返回{"lesson":["拟采用的策略结构与修正"],"uncertainties":["保留未证实事项"]}，整份不超过64KB。',
       { ...scope, answers: answers.value, judge: judge.value }, validateTutorLessonV3);
-    const generated = await role(section.id + '.generator', 'Generator：写这一节的中文策略建议，构成一份完整阵营Skill的一部分。每条必须有适用条件、具体步骤、替代行动、风险、改变计划的条件、真实来源，以及未证明的效果。每个section.requiredSourceRefs至少在一条对应建议中得到实际讨论并直接引用；可把确有关联的来源合并，但不可只堆引用。对于单位须考虑装备/规模/任务条件；卡牌须保留支付、时机、次数限制与替代资源用途。不要保证胜利或复制题号/答案。返回1至8条recommendations，字段固定为' + JSON.stringify(ADVICE_SHAPE)
-      + '。数组字段每项不超过1600字符，sourceRefs为1至8个官方ID。文字精炼但不省略关键条件。',
-      { ...scope, proposals: proposer.value, judge: judge.value }, out => validateFactionDraftV1(out, input));
-    let draft = generated.value; const rounds = [], edits = [], seen = new Set([hash(draft)]);
+    const outline = await role(section.id + '.generator-outline', 'Generator提纲：本节最终会有1至8条有条件建议。这里只给简短完整提纲，不写完整正文；覆盖每个指定来源和Proposer中全部关键决策，不删除叶问题。每项focus最多600字符，引用1至8个官方ID。返回{"outline":[{"focus":"建议的决策主题与范围","sourceRefs":["实际来源ID"]}]}。每个section.requiredSourceRefs至少关联一项提纲。随后会给完整共同上下文逐批输出正文。',
+      { ...scope, proposals: proposer.value, judge: judge.value }, out => validateFactionOutlineV1(out, { input, section }));
+    const recommendations = [];
+    for (let first = 0; first < outline.value.outline.length; first += 2) {
+      const indices = outline.value.outline.slice(first, first + 2).map((_, n) => first + n);
+      const generated = await role(section.id + '.generator-items.' + first,
+        'Generator：仅为indices指定的1至2项提纲写完整中文策略建议。全部官方来源、总规则、整节提纲和已完成建议均在输入中；分批只限制输出，不限制阅读。逐项保留适用条件、支付/时机/例外、步骤、替代、风险、reviseIf和未证明效果。对于单位考虑装备/规模/任务条件；卡牌保留次数限制和资源替代用途。不保证胜利，不复制题号。返回{"items":[{"index":指定序号,"value":完整建议对象}]}，每个index一次；value字段为'
+          + JSON.stringify(ADVICE_SHAPE.recommendations[0]) + '。每项文本不超过1600字符，sourceRefs保留提纲所引来源，可补真实来源至最多8个。不要输出其他index、整份Skill或提纲。',
+        { ...scope, proposals: proposer.value, judge: judge.value, outline: outline.value.outline, indices, completedRecommendations: recommendations },
+        out => validateFactionDraftBatchV1(out, { input, outline: outline.value.outline, indices }));
+      recommendations.push(...generated.value.map(item => item.value));
+      onProgress({ section: section.id, stage: 'generated_items', completedItems: recommendations.length, plannedItems: outline.value.outline.length });
+    }
+    let draft = validateFactionDraftV1({ recommendations }, input); const rounds = [], edits = [], seen = new Set([hash(draft)]);
     let passed = false;
     for (let revision = 0; revision <= 3; revision++) {
       const reviews = [], reviewHashes = [];
@@ -192,26 +223,32 @@ export async function produceFactionStrategyV1({ input, runtime, store, onProgre
       if (!issues.openIssues) { passed = true; break; }
       if (revision === 3) break;
       const instruction = '按实际来源问题只改被指出的recommendation，其他条目逐字不变。原建议哈希已绑定；source omission只可新增直接引用该遗漏来源的有条件建议。不能把审查意见当新规则；如不确定保留阻断，不编造。返回{"parentHash":"精确父hash","replacements":[{"index":被标记序号,"value":完整recommendation对象}],"additions":[仅补遗漏来源的完整recommendation对象]}。所有被标记index恰好一次；无关不改。对象字段遵循' + JSON.stringify(ADVICE_SHAPE.recommendations[0]) + '。';
-      let edit = await role(section.id + '.editor.' + revision, instruction,
-        { section, draft, parentHash: hash(draft), issues }, out => out);
-      let next;
-      try { next = applyFactionStrategyPatchV1(edit.value, { input, draft, issues }); }
-      catch (error) {
-        if (error.code !== 'FACTION_PATCH_NO_PROGRESS') throw error;
-        // Distinct once-only source-first task; preserve the bad draft in the
-        // journal, not as a copy target. All official/global context remains.
-        const repairScopes = issues.issues.map(i => i.kind === 'assigned_source_omission' ? i : {
-          kind: i.kind, index: i.index, findings: i.findings, sourceRefs: draft.recommendations[i.index].sourceRefs });
-        const rebuilt = await role(section.id + '.source-reconstruction.' + revision,
-          instruction + '\n旧编辑原样复制已被拦。现不给错误原稿，仅从完整官方来源与repairScopes重建这些指定建议。保留父hash和index，未标记正文由主机保留，不要输出它们。',
-          { section, parentHash: hash(draft), repairScopes, noProgressArtifactHash: edit.artifact.hash }, out => out);
-        next = applyFactionStrategyPatchV1(rebuilt.value, { input, draft, issues }); edit = rebuilt;
+      const collected = { parentHash: hash(draft), replacements: [], additions: [] }, editorHashes = [];
+      // Output each issue's bounded patch separately, but retain the entire
+      // draft/issues/source context. Apply the aggregate atomically afterward.
+      for (const [ordinal, issue] of issues.issues.entries()) {
+        const localIssues = seal({ ...Object.fromEntries(Object.entries(issues).filter(([k]) => k !== 'hash')), issues: [issue], openIssues: 1 });
+        const validatePatch = out => { applyFactionStrategyPatchV1(out, { input, draft, issues: localIssues }); return out; };
+        let edit = await role(section.id + '.editor.' + revision + '.' + ordinal, instruction + '\n本次仅输出localIssue这一项的替换或补充，其余问题会分别处理；完整draft及allIssues保留供一致性核对。',
+          { section, draft, parentHash: hash(draft), localIssue: issue, issues: localIssues, allIssues: issues }, out => out);
+        try { validatePatch(edit.value); }
+        catch (error) {
+          if (error.code !== 'FACTION_PATCH_NO_PROGRESS') throw error;
+          const repairScopes = [issue.kind === 'assigned_source_omission' ? issue : {
+            kind: issue.kind, index: issue.index, findings: issue.findings, sourceRefs: draft.recommendations[issue.index].sourceRefs }];
+          edit = await role(section.id + '.source-reconstruction.' + revision + '.' + ordinal,
+            instruction + '\n旧编辑原样复制已被拦。现不给错误原稿，仅从完整官方来源与repairScopes重建这一项。保留父hash和index，未标记正文由主机保留，不输出它们。',
+            { section, parentHash: hash(draft), repairScopes, noProgressArtifactHash: edit.artifact.hash }, out => out);
+          validatePatch(edit.value);
+        }
+        collected.replacements.push(...edit.value.replacements); collected.additions.push(...edit.value.additions); editorHashes.push(edit.artifact.hash);
       }
+      const next = applyFactionStrategyPatchV1(collected, { input, draft, issues });
       if (seen.has(hash(next))) fail('FACTION_REPAIR_CYCLE'); seen.add(hash(next));
-      edits.push(seal({ parentHash: hash(draft), resultHash: hash(next), artifactHash: edit.artifact.hash, patch: edit.value, trainingTruth: false }));
+      edits.push(seal({ parentHash: hash(draft), resultHash: hash(next), artifactHashes: editorHashes, patch: collected, trainingTruth: false }));
       draft = next;
     }
-    const result = seal({ section, draft, rounds, edits, semanticReviewPassed: passed,
+    const result = seal({ section, outline: outline.value, outlineArtifactHash: outline.artifact.hash, draft, rounds, edits, semanticReviewPassed: passed,
       rulesApplicationPassed: false, strategyEffectivenessProven: false, runtimeAccepted: false, trainingTruth: false });
     const lease = store.acquire(section.id + '.result', { resultHash: result.hash });
     sections.push(lease.cached ? verifySeal(lease.artifact) : store.finish(lease, result));
@@ -219,7 +256,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, onProgre
     if (!passed) break;
   }
   const candidate = seal({ schema: 'starcraft_faction_strategy_candidate_v1', gameId: 'starcraft-tmg',
-    skillId: 'skill.starcraft-tmg.faction.' + input.factionRecordKey.split(':')[1], factionRecordKey: input.factionRecordKey,
+    skillId: 'skill.starcraft-tmg.faction.tactical-cards-' + input.factionRecordKey.split(':')[1].replaceAll('_', '-'), factionRecordKey: input.factionRecordKey,
     inputHash: input.hash, planHash: plan.hash, sourceBinding: input.sourceBinding, overallDependencyHash: input.overallDependencyHash,
     tutorArtifactHash: tutor.artifact.hash, questionTree: tree.value, challengerTree: challenger.value,
     sections, roleArtifacts, semanticReviewPassed: sections.length === plan.sections.length && sections.every(s => s.semanticReviewPassed),

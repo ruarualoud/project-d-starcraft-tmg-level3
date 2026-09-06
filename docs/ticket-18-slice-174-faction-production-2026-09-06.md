@@ -112,7 +112,57 @@ source/strategy/application evaluation is still pending; no faction or runtime
 Skill has been promoted. Actual Room, directed-matchup and reflection/upgrade
 evidence remains175–178 work.
 
-The candidate's internal faction label must be explicitly mapped to the stable
-first-five plan's canonical skillId when materializing the evaluated package;
-do not silently rename an existing runtime publication. These are still
-unpublished source-review candidates, not registry records.
+## Actual output-capacity failure and complete-context continuation
+
+The initial run is now terminal, not disconnected. It completed six actual
+roles:32 Teach notes, a24-leaf question tree, Challenger, and the first section's
+Reasoner/Judge/Proposer. The question tree required one known-usage JSON-format
+repair; its original failed response remains charged. The first full-section
+Generator then reached exactly4096 output tokens, with Provider
+`finishReason=length`,15,301 content bytes and an incomplete JSON tail.
+This is insufficient single-response output capacity, not lost input context,
+network interruption, or an accepted partial Skill.
+
+Original terminal report
+`39bca00e9384e5c60cef592ef9d89336c8d9dceaafbd1b3917ed62e5fc626c07`:
+8 calls/2,089,469 tokens/estimated¥1.879873,0 faction candidates. Cumulative
+38,672,785 known Provider tokens/estimated¥47.578327 including historical
+reserve; no402. No part of the truncated eighth recommendation was promoted.
+
+The corrected output contract preserves the entire input but generates a short
+complete outline first, then at most two complete recommendations per request.
+Each batch sees all official sources, full overall Skill, whole section
+outline, questions/proposals and previously completed recommendations. Host
+indices bind exactly the requested entries; none may be skipped or reordered
+silently. The final section still contains all planned recommendations and
+must undergo two complete source reviews. This is output partitioning, not
+context truncation or creation of extra independent Skills.
+
+Local revisions likewise generate one issue's patch at a time while retaining
+the complete source/draft/issue background. The aggregate is validated and
+applied atomically, preserving unflagged text. A no-op can trigger one bounded
+source-first reconstruction for that issue; original outputs remain immutable.
+The final candidate uses the canonical first-five faction skillId directly;
+there is no pre-existing runtime publication to rename.
+
+Updated16 workflow checks use the actual truncated outcome as a negative
+capacity control, exercise batched output and previous-item delivery, retain
+source-scope/no-op/quarantine/resume controls and verify canonical IDs. The209
+injected calls are engineering fixtures, not real strategy results. Readiness
+`feedce47c995a978b6c1d5fa960f269041d0defe23ec4191d9b14f4af23215d2`.
+Two more actual disposable DSH context sessions passed with injected transport
+responses and unchanged wire sizes; gate
+`f655786b0f1878bf85de72030262f2e5efb35085829f8e7b0d616e899d176098`.
+
+Actual continuation **`faction-v1-3825f0d84367c95c6d13`** is active at this
+checkpoint. It demonstrably reused all six prior complete roles through
+exact-input SQLite receipts, generated the new first-section outline, and
+started `generator-items.0`. It inherits the previous8 calls/2,089,469 tokens/
+¥1.879873 and the original8-hour start; it does not reset the¥20/60M/400-call
+envelope. Do not restart this process (live tool handle55175).
+
+No section has yet completed both source reviews and no faction Skill has
+passed independent strategy/application evaluation. Remaining scopes remain
+Terran7/Zerg8 internal sections, two actual faction candidates, independent
+evaluation, and175–179. Whole Ticket18 stays2/8; overall offline dependency1/5;
+formal/runtime five-Skill acceptance0/5. Long goal remains active.
