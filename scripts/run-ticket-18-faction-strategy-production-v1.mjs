@@ -17,6 +17,7 @@ import { inspectFactionPhaseFieldEvidenceV1 } from '../packages/skill-evaluation
 import { validateFactionPhaseFieldSeedV1 } from '../packages/skill-production-v3/faction-phase-field-seed-v1.mjs';
 import { createFactionBudgetExtensionV1 } from '../packages/skill-production-v3/faction-budget-extension-v1.mjs';
 import { createFactionReviewTransactionBindingV1, createFactionReviewTransactionRuntimeV1 } from '../packages/skill-production-v3/faction-review-transaction-runtime-v1.mjs';
+import { createFactionStructuredLocalEditorImportV1, createFactionStructuredLocalEditorRuntimeV1 } from '../packages/skill-production-v3/faction-structured-local-editor-runtime-v1.mjs';
 import { createFactionKnownRulePolicyV1 } from '../packages/skill-production-v3/faction-known-rule-findings-v1.mjs';
 import { createFactionRosterChoiceDrillsV1 } from '../packages/skill-evaluation/faction-roster-choice-drills-v1.mjs';
 import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/official-development-tranche-source-lock-fixture-v1.mjs';
@@ -27,9 +28,15 @@ import { createFactionAccountedModelV1, inspectFactionCommandRecoveryV1 } from '
 import { openProductionStore } from '../packages/skill-production/store.mjs';
 import { seal, verifySeal, hash, sha256, fail } from '../packages/skill-production/common.mjs';
 import { createStarcraftTmgProviderProfileRegistryV1 } from '../packages/secure-provider-runtime/provider-profile-registry-v1.mjs';
+import { createStarcraftTmgProviderProfileRegistryV2 } from '../packages/secure-provider-runtime/provider-profile-registry-v2.mjs';
 import { createStarcraftTmgProviderEgressWorkerPortV2 } from '../packages/secure-provider-runtime/provider-egress-worker-port-v2.mjs';
+import { createStarcraftTmgStructuredProviderWorkerPortV1 } from '../packages/secure-provider-runtime/structured-provider-worker-port-v1.mjs';
+import { priceStarcraftTmgDeepSeekV4FlashUsageV1 } from '../packages/secure-provider-runtime/provider-pricing-v1.mjs';
 import { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } from '../packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs';
 import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../content/skill-generation/offline-provider-profile-v1.mjs';
+import { STARCRAFT_TMG_FACTION_ADVICE_EDITOR_OUTPUT_CONTRACT_V1 as structuredEditorContract } from '../content/skill-generation/ticket-18-faction-advice-editor-output-contract-v1.mjs';
+import { createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1 } from '../packages/structured-generation/adapters/deepseek-responses-json-schema-v1.mjs';
+import { verifyStarcraftTmgProviderCapabilityCurrentV1 } from '../packages/structured-generation/provider-capability-receipt-v1.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), args = process.argv.slice(2);
 const requestReviewTransaction = args.at(-1) === '--review-transaction-v1';
@@ -42,6 +49,7 @@ if (![3, 5, 7, 8].includes(args.length) || !['--preflight', '--live'].includes(a
   || args.length === 8 && args[7] !== '--extend-faction-budget-v1') fail('FACTION_RUN_ARGUMENTS_INVALID');
 const base = path.join(root, 'build/ticket-18-faction-production-v1'), filename = path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite');
 const json = async file => verifySeal(JSON.parse(await readFile(path.join(root, file), 'utf8')));
+const rawJson = async file => JSON.parse(await readFile(path.join(root, file), 'utf8'));
 const db = new DatabaseSync(filename, { readOnly: true });
 try {
   if (db.prepare("SELECT count(*) n FROM attempts WHERE code='PROVIDER_PAYMENT_REQUIRED'").get().n) fail('API_BALANCE_EXHAUSTED_STOP_ALL_WORK');
@@ -64,6 +72,83 @@ for (const name of ['terran_armed_forces', 'zerg_swarm']) {
   const saved = await json('build/ticket-18-faction-production-v1/' + name + '-input.json');
   if (input.hash !== saved.hash) fail('FACTION_SAVED_INPUT_DRIFT'); inputs.push(input);
 }
+const structuredCanaryReport = await json('build/ticket-18-structured-generation-v1/r5-live-canary-report.json');
+if (!structuredCanaryReport.passed
+  || !/^structured-canary-[a-f0-9]{32}$/u.test(structuredCanaryReport.runId))
+  fail('FACTION_STRUCTURED_CANARY_NOT_READY');
+const structuredCanaryBase = 'build/ticket-18-structured-generation-v1/' + structuredCanaryReport.runId + '/';
+const [structuredCanaryRecipe, structuredCanaryCapsule,
+  structuredCanaryHost, structuredCanaryRaw, structuredCapabilityReceipt,
+  structuredGenerationReadiness] = await Promise.all([
+  json(structuredCanaryBase + 'recipe.json'),
+  json(structuredCanaryBase + 'context-capsule.json'),
+  json(structuredCanaryBase + 'host-materialization.json'),
+  rawJson(structuredCanaryBase + 'raw-structured-advice.json'),
+  rawJson(structuredCanaryBase + 'capability-receipt.json'),
+  json('build/ticket-18-structured-generation-v1/r6-structured-local-editor-runtime-readiness.json'),
+]);
+const structuredEditorImport = createFactionStructuredLocalEditorImportV1({
+  recipeRunId: structuredCanaryReport.runId,
+  recipe: structuredCanaryRecipe,
+  report: structuredCanaryReport,
+  capsule: structuredCanaryCapsule,
+  hostMaterialization: structuredCanaryHost,
+  rawAdvice: structuredCanaryRaw,
+  outputContract: structuredEditorContract,
+});
+if (!structuredGenerationReadiness.passed
+  || structuredGenerationReadiness.actualImportHash !== structuredEditorImport.hash)
+  fail('FACTION_STRUCTURED_GENERATION_READINESS_DRIFT');
+const structuredGenerationBinding = seal({
+  version: 'faction_structured_generation_binding_v1',
+  canaryRunId: structuredCanaryReport.runId,
+  canaryReportHash: structuredCanaryReport.hash,
+  capabilityReceiptHash: structuredCapabilityReceipt.receiptHash,
+  outputContractRef: structuredEditorImport.outputContractRef,
+  contextCapsuleHash: structuredEditorImport.contextCapsuleHash,
+  importHash: structuredEditorImport.hash,
+  localEditorProviderPath: 'responses_json_schema_only',
+  legacyWireSyntaxRetryAllowedForNewCalls: false,
+  semanticAcceptanceInherited: false,
+  trainingTruth: false,
+});
+const structuredProviderRegistry = createStarcraftTmgProviderProfileRegistryV2({
+  entries: [{ providerProfile: profile, responsePath: '/responses' }],
+  allowedProviders: ['deepseek-openai-compatible-direct'],
+});
+const structuredEgressBinding = structuredProviderRegistry.resolveEgressBinding({
+  profileRef: { id: profile.providerProfileId, version: profile.version,
+    hash: profile.integrity.hash },
+}).egressBinding;
+const structuredCapabilityCurrent = verifyStarcraftTmgProviderCapabilityCurrentV1({
+  receipt: structuredCapabilityReceipt,
+  providerProfileRef: structuredEgressBinding.providerProfileRef,
+  endpointPath: structuredEgressBinding.endpoint.path,
+  endpointDialect: structuredEgressBinding.endpointDialect,
+  model: structuredEgressBinding.model,
+  capability: 'responses_json_schema',
+  outputContractRef: structuredEditorImport.outputContractRef,
+  now: new Date().toISOString(),
+});
+if (!structuredCapabilityCurrent.ok) fail('FACTION_STRUCTURED_CAPABILITY_NOT_CURRENT');
+const priceStructuredUsage = (usage, receipt = {}) => {
+  try {
+    const priced = priceStarcraftTmgDeepSeekV4FlashUsageV1({
+      providerId: 'deepseek-openai-compatible-direct',
+      requestedModel: receipt.requestedModel || profile.model,
+      reportedModel: receipt.reportedModel || profile.model,
+      startedAt: receipt.startedAt,
+      usage,
+    });
+    return Math.ceil(priced.calculatedCostNanoUsd * 8 / 1000);
+  } catch {
+    return Math.ceil((usage.inputUnits * 440 + usage.outputUnits * 1320) * 8 / 1000);
+  }
+};
+const structuredEditorPolicy = Object.freeze({ maxOutputUnits: 2048,
+  attemptEstimateMicros: 500000, attemptTokenReserve: 90000,
+  allowDefinitelyNotSentRetry: false, allowOneCapacityRetry: false,
+  idempotentRetrySupported: false, encryptedRawQuarantineAvailable: false });
 // Recompute the calibrated kernel finding, never trust a saved model verdict or
 // a readiness flag as rule truth. Only the already-known diagnostic is exposed.
 const { dataset } = await loadOfficialDevelopmentTrancheSourceLockFixtureV1({ root });
@@ -168,7 +253,23 @@ const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 
   'packages/skill-production-v3/context.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs',
   'packages/skill-production/loops.mjs', 'packages/skill-production/model.mjs', 'packages/skill-production/store.mjs',
   'packages/secure-provider-runtime/provider-response-outcome-v1.mjs', 'packages/secure-provider-runtime/provider-egress-transport-v1.mjs',
-  'packages/secure-provider-runtime/provider-worker-success-classifier-v1.mjs'];
+  'packages/secure-provider-runtime/provider-worker-success-classifier-v1.mjs',
+  'packages/skill-production-v3/faction-local-editor-context-capsule-v1.mjs',
+  'packages/skill-production-v3/faction-structured-local-editor-runtime-v1.mjs',
+  'packages/structured-generation/output-contract-registry-v1.mjs',
+  'packages/structured-generation/provider-capability-receipt-v1.mjs',
+  'packages/structured-generation/adapters/deepseek-responses-json-schema-v1.mjs',
+  'packages/structured-generation/structured-generation-runtime-v1.mjs',
+  'packages/structured-generation/dsh-command-mapper-v1.mjs',
+  'packages/structured-generation/context-capsule-v1.mjs',
+  'packages/structured-generation/failure-classifier-v1.mjs',
+  'packages/secure-provider-runtime/provider-egress-contract-v2.mjs',
+  'packages/secure-provider-runtime/provider-profile-registry-v2.mjs',
+  'packages/secure-provider-runtime/structured-provider-egress-transport-v1.mjs',
+  'packages/secure-provider-runtime/structured-provider-worker-child-v1.mjs',
+  'packages/secure-provider-runtime/structured-provider-worker-port-v1.mjs',
+  'content/skill-generation/ticket-18-faction-advice-editor-output-contract-v1.mjs',
+  'scripts/verify-ticket-18-faction-structured-local-editor-runtime-v1.mjs'];
 if (fieldRepairBinding) files.push('packages/skill-production-v3/faction-field-repair-seed-v1.mjs',
   'packages/skill-production-v3/faction-field-repair-v1.mjs', 'packages/skill-evaluation/faction-field-repair-evidence-v1.mjs',
   'packages/skill-evaluation/faction-semantic-debt-v1.mjs', 'packages/skill-evaluation/read-only-production-replay-v1.mjs');
@@ -191,6 +292,8 @@ const next = seal({ version: 'faction_strategy_production_v1', overallRunId: arg
   unitRoleRepairReadinessHashes: unitRoleRepairGates.map(g => g.hash),
   registeredSourceFieldRepair: true, commandRecoveryBinding: commandRecovery.manifest,
   sourceCorrectionReadinessHashes: sourceCorrectionGates.map(g => g.hash),
+  structuredGenerationBinding,
+  structuredGenerationReadinessHash: structuredGenerationReadiness.hash,
   ...(phaseFieldBinding ? { phaseFieldBinding, phaseFieldReadinessHash: phaseFieldReadiness.hash } : {}),
   ...(budgetExtension ? { budgetExtension, budgetExtensionReadinessHash: budgetReadiness.hash } : {}),
   ...(useReviewTransaction ? { reviewTransactionBindings, reviewTransactionReadinessHash: reviewTransactionReadiness.hash,
@@ -211,6 +314,8 @@ if (args[4]) {
     additionalCommandRecoveryMigration: additionalRecoveryGates,
     phaseSeedMigration: phaseFieldBinding ? { binding: phaseFieldBinding, readiness: phaseFieldReadiness } : null,
     budgetExtensionReadiness: budgetReadiness,
+    structuredGenerationMigration: { readiness: structuredGenerationReadiness,
+      imported: structuredEditorImport },
     reviewTransactionMigration: useReviewTransaction ? { readiness: reviewTransactionReadiness, actualEvidence: reviewTransactionEvidence } : null });
 }
 const { hash: ignored, ...nextBody } = next;
@@ -230,24 +335,43 @@ if (args[0] === '--preflight') {
   const dryStore = continuation ? withCheckpointContinuation(dryLocal, continuation) : dryLocal;
   try {
     const dryRuntime = createProductionRuntimeV3({ store: dryStore, reader: createEvidenceReader(catalogue), context, verifier: {},
-      model: async request => { firstUncachedRole = request.stageId; fail('FACTION_PREFLIGHT_FIRST_UNCACHED_ROLE'); },
+      model: async request => { firstUncachedRole = request.stageId; fail('FACTION_PREFLIGHT_LEGACY_ROLE_REACHED'); },
       dsh: { run: runDirectLoop } });
-    const dryFactionRuntime = useReviewTransaction ? createFactionReviewTransactionRuntimeV1({ input: inputs[0], runtime: dryRuntime,
-      store: dryStore, phaseFieldSeed }) : dryRuntime;
+    const dryStructuredRuntime = createFactionStructuredLocalEditorRuntimeV1({
+      input: inputs[0], runtime: dryRuntime, store: dryStore,
+      dsh: { run: runDirectLoop },
+      providerAdapter: { complete: async ({ providerRequest }) => {
+        firstUncachedRole = providerRequest.roleRef.id;
+        const error = new Error('FACTION_PREFLIGHT_FIRST_STRUCTURED_UNCACHED_ROLE');
+        error.code = 'FACTION_PREFLIGHT_FIRST_STRUCTURED_UNCACHED_ROLE';
+        error.safeReceipt = { requestDefinitelyNotSent: true,
+          requestMayHaveBeenSent: false, usageKnown: false, physicalAttempts: 0 };
+        throw error;
+      } },
+      egressBinding: structuredEgressBinding,
+      capabilityReceipt: structuredCapabilityReceipt,
+      outputContract: structuredEditorContract,
+      executionPolicy: structuredEditorPolicy,
+      priceUsage: priceStructuredUsage,
+      imports: [structuredEditorImport],
+      legacyPromptRoleIds,
+    });
+    const dryFactionRuntime = useReviewTransaction ? createFactionReviewTransactionRuntimeV1({ input: inputs[0], runtime: dryStructuredRuntime,
+      store: dryStore, phaseFieldSeed }) : dryStructuredRuntime;
     await produceFactionStrategyV1({ input: inputs[0], runtime: dryFactionRuntime, store: dryStore,
       knownRulePolicy: knownRulePolicies[0], registeredSourceFieldRepair: true, fieldRepairSeed, phaseFieldSeed,
       legacyPromptRoleIds });
     fail('FACTION_PREFLIGHT_CUTOVER_MISSING');
   } catch (error) {
-    if (error.code !== 'FACTION_PREFLIGHT_FIRST_UNCACHED_ROLE') throw error;
+    if (error.code !== 'STRUCTURED_DSH_MODEL_OUTCOME_NOT_ACCEPTED') throw error;
   } finally { dryLocal.close(); }
-  const expectedFirstUncachedRole = 'faction.terran_armed_forces.faction.terran_armed_forces.objectives.1.editor.0.1.source-evidence-v1.'
-    + reviewTransactionBindings[0].hash.slice(0, 20);
+  const expectedFirstUncachedRole = 'faction.terran_armed_forces.objectives.1.editor.0.2';
   if (firstUncachedRole !== expectedFirstUncachedRole) fail('FACTION_PREFLIGHT_CUTOVER_DRIFT', { firstUncachedRole });
   console.log(JSON.stringify({ ready: true, recipeHash: recipe.hash, providerCalls: 0, factions: inputs.map(i => i.factionRecordKey),
     sections: inputs.map(i => createFactionWritingPlanV1(i).sections.length), overallQualified: true, limits,
     reusableRoles: continuation?.manifest.reusable.length || 0, inheritedAccounting: continuation?.manifest.accounting || null,
-    legacyPromptRoles: legacyPromptRoleIds.length, firstUncachedRole, additionalCommandRecoveries: additionalRecoveries.length })); process.exit(0);
+    legacyPromptRoles: legacyPromptRoleIds.length, structuredCanaryImport: structuredEditorImport.hash,
+    firstUncachedRole, additionalCommandRecoveries: additionalRecoveries.length })); process.exit(0);
 }
 const runId = 'faction-v1-' + recipe.hash.slice(0, 20), out = path.join(base, runId); await mkdir(out, { recursive: true });
 const inherited = continuation?.manifest.accounting || { calls: 0, tokens: 0, costMicros: 0 };
@@ -258,7 +382,8 @@ const start = store.acquire('production-start', { recipeHash: recipe.hash });
 const began = start.cached ? start.artifact.began : store.finish(start, { began: continuation?.manifest.parentStart || Date.now() }).began;
 const historyTokens = 2_864_424, historyMicros = 5_052_393 + 28_961_350;
 const put = (name, value) => writeFile(path.join(out, name + '.json'), JSON.stringify(value, null, 2));
-let worker, attached, failure = null; const candidates = [];
+let worker, attached, structuredWorker, structuredAttached, failure = null;
+const candidates = [];
 try {
   const global = store.globalSummary();
   if (global.attempts.some(a => a.code === 'PROVIDER_PAYMENT_REQUIRED')) fail('API_BALANCE_EXHAUSTED_STOP_ALL_WORK');
@@ -274,8 +399,27 @@ try {
   try { attached = await worker.attachCredential({ attachmentId: 'faction-' + randomUUID(), providerProfile: profile, credentialBytes: ingress.credentialBytes }); }
   finally { ingress.credentialBytes.fill(0); }
   if (!attached.ok) fail('PROVIDER_ATTACHMENT_FAILED');
+  structuredWorker = createStarcraftTmgStructuredProviderWorkerPortV1({
+    providerProfileRegistry: structuredProviderRegistry,
+  });
+  const structuredIngress = await readStarcraftTmgDeepSeekCredentialFromKeychainV1();
+  try {
+    structuredAttached = await structuredWorker.attachCredential({
+      attachmentId: 'faction-structured-' + randomUUID(),
+      providerProfile: profile,
+      credentialBytes: structuredIngress.credentialBytes,
+    });
+  } finally { structuredIngress.credentialBytes.fill(0); }
+  if (!structuredAttached.ok) fail('STRUCTURED_PROVIDER_ATTACHMENT_FAILED');
+  const structuredProviderAdapter = createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1({
+    send: request => structuredWorker.send({
+      workerRef: structuredAttached.workerRef,
+      ...request,
+    }),
+  });
   const model = createFactionAccountedModelV1({ store, recovery: commandRecovery, additionalRecoveries,
     maxInputBytes: limits.maxInputBytes, outputRecoveryLimit: 4096,
+    wireSyntaxRetryAllowed: false,
     complete: (providerRequest, { signal } = {}) => {
       if (Date.now() - began >= limits.maxWallMs) fail('FACTION_RUN_WALL_EXHAUSTED');
       return worker.complete({ workerRef: attached.workerRef, providerRequest, signal });
@@ -286,8 +430,22 @@ try {
     onProgress: row => console.log(JSON.stringify({ event: 'role', ticket: 18, slice: 174, ...row })) });
   for (const [index, input] of inputs.entries()) {
     const name = input.factionRecordKey.split(':')[1]; await put(name + '-input', input);
-    const factionRuntime = useReviewTransaction ? createFactionReviewTransactionRuntimeV1({ input, runtime, store,
-      phaseFieldSeed: index === 0 ? phaseFieldSeed : null }) : runtime;
+    const structuredRuntime = createFactionStructuredLocalEditorRuntimeV1({
+      input, runtime, store, dsh, providerAdapter: structuredProviderAdapter,
+      egressBinding: structuredEgressBinding,
+      capabilityReceipt: structuredCapabilityReceipt,
+      outputContract: structuredEditorContract,
+      executionPolicy: structuredEditorPolicy,
+      priceUsage: priceStructuredUsage,
+      imports: index === 0 ? [structuredEditorImport] : [],
+      legacyPromptRoleIds,
+      onProgress: row => console.log(JSON.stringify({ event: 'structured-role',
+        ticket: 18, slice: 174, faction: name, ...row,
+        cumulativeEstimateOrReserveCny: (historyMicros
+          + store.globalSummary().reservedOrSettledMicros) / 1e6 })),
+    });
+    const factionRuntime = useReviewTransaction ? createFactionReviewTransactionRuntimeV1({ input, runtime: structuredRuntime, store,
+      phaseFieldSeed: index === 0 ? phaseFieldSeed : null }) : structuredRuntime;
     if (useReviewTransaction && factionRuntime.binding.hash !== reviewTransactionBindings[index].hash)
       fail('FACTION_REVIEW_TRANSACTION_RUNTIME_DRIFT');
     const candidate = await produceFactionStrategyV1({ input, runtime: factionRuntime, store, knownRulePolicy: knownRulePolicies[index],
@@ -303,6 +461,8 @@ try {
   }
 } catch (error) { failure = { code: /^[A-Z0-9_]{3,100}$/.test(error.code || '') ? error.code : 'FACTION_RUN_FAILURE', diagnosticHash: hash(String(error.message)) }; }
 finally {
+  if (structuredAttached?.workerRef) await structuredWorker.detachCredential({ workerRef: structuredAttached.workerRef, reason: 'faction_structured_production_finished' }).catch(() => {});
+  await structuredWorker?.close().catch(() => {});
   if (attached?.workerRef) await worker.detachCredential({ workerRef: attached.workerRef, reason: 'faction_production_finished' }).catch(() => {});
   await worker?.close().catch(() => {});
   const ledger = store.summary(), global = store.globalSummary();
@@ -313,7 +473,7 @@ finally {
     continuation: continuation?.manifest || null, cumulativeKnownTokensLowerBound: historyTokens + global.knownTokens,
     cumulativeEstimateOrReserveCny: (historyMicros + global.reservedOrSettledMicros) / 1e6,
     ctx2skillLoopUsed: true, harnessLoopUsed: true, targetGames: ['starcraft-tmg'],
-    roleRoutes: ['Teach', 'Ctx2Skill', 'Challenger', 'Reasoner', 'Judge', 'Proposer', 'Generator', 'source_reviewer', 'local_editor'],
+    roleRoutes: ['Teach', 'Ctx2Skill', 'Challenger', 'Reasoner', 'Judge', 'Proposer', 'Generator', 'source_reviewer', 'structured_local_editor'],
     independentEvaluationPerformed: false, actualRoomReplayPerformed: false, strategyEffectivenessProven: false,
     formalSkillsAccepted: 0, promotions: [], sourceRefreshPerformed: false, trainingTruth: false, elapsedMs: Date.now() - began });
   await put('report', report);

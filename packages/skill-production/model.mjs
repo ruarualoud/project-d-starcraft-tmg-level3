@@ -43,8 +43,10 @@ function cost(usage, receipt) {
   }
 }
 export function createAccountedModel({ store, complete, onUsage = () => {}, maxOutput = 4096, maxInputBytes = 180000,
-  outputRecoveryLimit = null, commandPolicy = 'production_tools' }) {
+  outputRecoveryLimit = null, commandPolicy = 'production_tools',
+  wireSyntaxRetryAllowed = true }) {
   if (!['production_tools', 'finish_only'].includes(commandPolicy)) fail('MODEL_COMMAND_POLICY_INVALID');
+  if (typeof wireSyntaxRetryAllowed !== 'boolean') fail('MODEL_WIRE_RETRY_POLICY_INVALID');
   // Preserve the old recipe's limit. Full-source workflows must opt into a
   // concrete bounded capacity and bind that choice into their own recipe.
   integer(maxInputBytes, 8192, 1_000_000);
@@ -62,7 +64,9 @@ export function createAccountedModel({ store, complete, onUsage = () => {}, maxO
         if (outputUnits >= outputRecoveryLimit) return false;
         outputUnits = outputRecoveryLimit; recoveryKind = 'capacity'; return true;
       }
-      return ['PROVIDER_RESPONSE_JSON_INVALID', 'PROVIDER_RESPONSE_EMPTY_CONTENT', 'PROVIDER_RESPONSE_OUTPUT_TRUNCATED'].includes(code);
+      if (code === 'PROVIDER_RESPONSE_OUTPUT_TRUNCATED') return true;
+      return wireSyntaxRetryAllowed
+        && ['PROVIDER_RESPONSE_JSON_INVALID', 'PROVIDER_RESPONSE_EMPTY_CONTENT'].includes(code);
     }
     for (let format = 0; format <= 1; format += 1) {
       if (signal?.aborted) fail("SESSION_WALL_TIME_EXHAUSTED");

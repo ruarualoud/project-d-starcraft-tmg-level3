@@ -104,7 +104,7 @@ export function validateFactionSourceCorrectionMigrationV1({ parent, next, sourc
     policy: 'registered_source_fields_then_fresh_review_and_exact_paid_request_bare_review_envelope_no_judgment_change', trainingTruth: false });
 }
 
-export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration, phaseSeedMigration, budgetExtensionReadiness, reviewTransactionMigration }) {
+export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration, phaseSeedMigration, budgetExtensionReadiness, reviewTransactionMigration, structuredGenerationMigration }) {
   [parent, parentReport, next].forEach(verifySeal);
   if (parent.version !== 'faction_strategy_production_v1' || parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20)
     || parentReport.runId !== parentRunId || parentReport.recipeHash !== parent.hash || !parentReport.failure) fail('FACTION_CONTINUATION_PARENT_INVALID');
@@ -123,12 +123,54 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
     registeredSourceFieldRepair, commandRecoveryBinding, sourceCorrectionReadinessHashes,
     additionalCommandRecoveryBindings, additionalCommandRecoveryReadinessHashes, phaseFieldBinding, phaseFieldReadinessHash,
     budgetExtension, budgetExtensionReadinessHash, reviewTransactionBindings, reviewTransactionReadinessHash,
-    reviewTransactionEvidenceHash, limits, continuation, ...body } = r;
+    reviewTransactionEvidenceHash, structuredGenerationBinding,
+    structuredGenerationReadinessHash, limits, continuation, ...body } = r;
     return budgetProof ? body : { ...body, limits }; };
   if (hash(strip(parent)) !== hash(strip(next))) fail('FACTION_CONTINUATION_CONTRACT_DRIFT');
   const additionalRecoveryProof = validateAdditionalFactionCommandRecoveryV1({ parent, next, gates: additionalCommandRecoveryMigration });
   const allowed = new Set(['packages/skill-production-v3/faction-strategy-workflow-v1.mjs',
     'packages/skill-production-v3/faction-continuation-v1.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs']);
+  let structuredGenerationProof = null;
+  if (parent.structuredGenerationBinding
+    && hash(parent.structuredGenerationBinding)
+      !== hash(next.structuredGenerationBinding || null)) {
+    fail('FACTION_STRUCTURED_GENERATION_BINDING_DRIFT');
+  }
+  if (next.structuredGenerationBinding) {
+    const { readiness, imported } = structuredGenerationMigration || {};
+    [next.structuredGenerationBinding, readiness, imported].forEach(verifySeal);
+    const binding = next.structuredGenerationBinding;
+    if (!readiness.passed
+      || readiness.hash !== next.structuredGenerationReadinessHash
+      || readiness.actualImportHash !== imported.hash
+      || readiness.actualCanaryRunId !== binding.canaryRunId
+      || readiness.actualCanaryReportHash !== binding.canaryReportHash
+      || readiness.actualCapabilityReceiptHash !== binding.capabilityReceiptHash
+      || readiness.outputContractRef.hash !== binding.outputContractRef.hash
+      || imported.hash !== binding.importHash
+      || imported.contextCapsuleHash !== binding.contextCapsuleHash
+      || imported.outputContractRef.hash !== binding.outputContractRef.hash
+      || imported.semanticAcceptanceInherited !== false
+      || imported.freshWholeSectionReviewRequired !== true
+      || readiness.providerCalls !== 0) {
+      fail('FACTION_STRUCTURED_GENERATION_MIGRATION_INVALID');
+    }
+    for (const row of readiness.codeHashes) {
+      if (next.codeHashes.find((entry) => entry.file === row.file)?.hash
+        !== row.hash) fail('FACTION_STRUCTURED_GENERATION_CODE_DRIFT');
+      allowed.add(row.file);
+    }
+    structuredGenerationProof = {
+      readinessHash: readiness.hash,
+      importHash: imported.hash,
+      canaryRunId: binding.canaryRunId,
+      outputContractHash: binding.outputContractRef.hash,
+      policy: 'exact_r5_canary_import_then_all_new_local_editors_cross_structured_runtime_and_fresh_review',
+    };
+  } else if (structuredGenerationMigration
+    || next.structuredGenerationReadinessHash) {
+    fail('FACTION_STRUCTURED_GENERATION_MIGRATION_UNSCOPED');
+  }
   if (budgetProof) allowed.add(budgetFile);
   const reviewTransactionProof = validateFactionReviewTransactionMigrationV1({ parent, next, ...reviewTransactionMigration });
   reviewTransactionProof?.files.forEach(file => allowed.add(file));
@@ -209,6 +251,7 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
     const providerFiles = ['packages/secure-provider-runtime/provider-response-outcome-v1.mjs',
       'packages/secure-provider-runtime/provider-egress-transport-v1.mjs', 'packages/secure-provider-runtime/provider-worker-success-classifier-v1.mjs'];
     const migrationAllowed = new Set([...providerFiles, 'scripts/verify-ticket-17-production-redesign-v1.mjs']);
+    if (structuredGenerationProof) migrationAllowed.add('packages/skill-production/model.mjs');
     const mainChanges = [...new Set([...before.codeHashes, ...after.codeHashes].map(r => r.file))].filter(file =>
       before.codeHashes.find(r => r.file === file)?.hash !== after.codeHashes.find(r => r.file === file)?.hash);
     if (mainChanges.some(file => !migrationAllowed.has(file)) || providerFiles.some(file =>
@@ -249,6 +292,8 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
       ...(phaseSeedProof ? { phaseSeedMigration: phaseSeedProof } : {}),
       ...(budgetProof ? { budgetExtensionProof: budgetProof } : {}),
       ...(reviewTransactionProof ? { reviewTransactionMigration: reviewTransactionProof } : {}),
+      ...(structuredGenerationProof
+        ? { structuredGenerationMigration: structuredGenerationProof } : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
       policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
     return { manifest, steps };
