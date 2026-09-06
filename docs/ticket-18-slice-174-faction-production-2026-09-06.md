@@ -5,7 +5,49 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: distinguish direct citations from claimed indirect relationships
+## Current checkpoint: source-scope no-change and authority calibration defect
+
+Run `faction-v1-dede855c43844b970012` is terminal, handle69989 exit1. All eight
+target-bound review batches completed, producing five recommendation issues:
+one model doubt on Medic/Raynor scope and the four recommendations carrying
+six independent factual errors. Both the Editor and the bounded source-first
+reconstruction returned empty arrays for the scope doubt. It stopped before
+editing the four genuine-error recommendations; no aggregate patch was applied.
+Run5 calls /1,329,660 tokens /estimated ¥0.416542. Cumulative48,186,202 known
+tokens /estimated-or-reserved ¥52.357157, no402. Report
+`8328105cde839b699283d93841c9e2c6d75e63cde441885ad669d157e93f3ded`.
+
+`faction-source-scope-adjudication-v1.mjs` now supplies a deliberately narrow
+evidence-backed no-change disposition for this exact advice hash and exact
+uncertain finding. It verifies the two official ability descriptions verbatim:
+Medic's zero applies to Supply Pool calculation; Freedom Fighters' floor applies
+to contesting/objective calculation. Their predicates have no common calculation
+scope, so a special precedence rule is not needed to distinguish them. This
+host source-scope inference does not claim actual Rules execution, general
+semantic correctness, strategy strength or Room use. It retains the original
+finding/resolution and cannot waive unsupported, changed-advice, changed-source,
+additional or independent source findings. The four genuine-error recommendations
+remain open. Updated gates passed: actual-sample28, workflow41, continuation20,
+mixed-evidence10 and two actual DSH full-context injected-response sessions.
+
+Independent verifier calibration also found a REAL rule-kernel defect, not a
+Skill error: FAQ46 forbids Size<=2 Raptors crossing Force Fields, but the v1
+FAQ F4 handler permits Size1/2 and blocks Size3. Its original F4 test encoded
+the same inversion. The new read-only calibration report compares frozen source
+and actual kernel at all three boundaries and intentionally fails0/3. Old kernel
+and official data remain unchanged. The generated overall Skill's
+`rules-reading-035.claims.1` states the correct Size1 prohibition; do not teach
+the incorrect kernel result back into the Skill. Versioned correction and
+recalibration are mandatory before FAQ46 grading or runtime acceptance.
+Evidence: `build/ticket-18-faction-production-v1/faq46-authority-calibration.json`,
+hash `a106d348b16bd1645f139f86ff5fd29b18172db5d49dc656a79fe090acb89efe`.
+
+Current source-reviewed sections0/15, faction candidates0/2; Ticket18 2/8,
+project16/22, overall offline dependency1/5, formal/runtime acceptance0/5.
+No paid process is running at this checkpoint; continue from dede855… only
+under the new source-scope adjudication code.
+
+## Earlier checkpoint: distinguish direct citations from claimed indirect relationships
 
 `faction-v1-c89720ec563c3f2ecc1f` is terminal, handle56915 exit1. It reused
 the saved target reviews, then generated supportive items6/7 and adversarial

@@ -7,6 +7,7 @@ import { applyFactionStrategyPatchV1, createFactionWritingPlanV1, createFactionR
 import { createFactionReviewTargetsV1, validateTargetedFactionReviewV1 } from '../packages/skill-production-v3/faction-review-targets-v1.mjs';
 import { createFactionKnownRulePolicyV1, correctKnownFactionRuleFailuresV1, assertNoKnownFactionRuleFailureV1, mergeFactionKnownSourceIssuesV1 } from '../packages/skill-production-v3/faction-known-rule-findings-v1.mjs';
 import { createFactionRosterChoiceDrillsV1 } from '../packages/skill-evaluation/faction-roster-choice-drills-v1.mjs';
+import { adjudicateFactionSourceScopesV1 } from '../packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs';
 import { loadFrozenSkillEvidence } from '../packages/skill-production/evidence.mjs';
 import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/official-development-tranche-source-lock-fixture-v1.mjs';
 import { seal, verifySeal, hash, sha256 } from '../packages/skill-production/common.mjs';
@@ -14,7 +15,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const base = path.join(root, 'build/ticket-18-faction-production-v1');
 const input = verifySeal(JSON.parse(await readFile(path.join(base, 'terran_armed_forces-input.json'), 'utf8')));
 const db = new DatabaseSync(path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite'), { readOnly: true });
-let draft, emptyPatch, localIssues, shifted;
+let draft, emptyPatch, localIssues, shifted, scopeIssues;
 try {
   const run = 'faction-v1-c6b855593093fd3f6ecb', sectionId = 'faction.terran_armed_forces.army_resources.1';
   const artifact = id => verifySeal(JSON.parse(db.prepare("SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'").get(run, id).artifact)).value;
@@ -27,6 +28,8 @@ try {
   const { hash: ignored, ...body } = issues;
   localIssues = seal({ ...body, issues: [issues.issues.find(i => i.index === 3)], openIssues: 1 });
   shifted = artifact(prefix + 'review-batch.supportive.0.4').output;
+  scopeIssues = verifySeal(JSON.parse(db.prepare('SELECT artifact FROM steps WHERE run=? AND id=?').get(
+    'faction-v1-dede855c43844b970012', sectionId + '.issue-journal.0').artifact)).value.issues;
 } finally { db.close(); }
 // Red on the actual call-site failure before the classifier fix.
 assert.throws(() => applyFactionStrategyPatchV1(emptyPatch, { input, draft, issues: localIssues }), { code: 'FACTION_PATCH_NO_PROGRESS' });
@@ -65,6 +68,21 @@ const supportedModel = { verdicts: correction.draft.recommendations.map((r, inde
 assert.equal(mergeFactionKnownSourceIssuesV1({ input, policy, draft: correction.draft,
   issues: createFactionRepairIssuesV1(section, correction.draft, [supportedModel]) }).hash, sourceIssues.hash,
   'Model consensus cannot erase independently found source errors');
+const adjudication = adjudicateFactionSourceScopesV1({ input, draft: correction.draft, issues: scopeIssues });
+assert.equal(adjudication.resolutions.length, 1); assert.equal(adjudication.openIssues.openIssues, 4);
+assert.deepEqual(adjudication.openIssues.issues.map(i => i.index), [2, 4, 6, 7]);
+assert.equal(adjudication.resolutions[0].issueHash, hash(scopeIssues.issues[0]));
+assert.equal(adjudication.resolutions[0].actualRulesExecution, false);
+const { hash: ignoredScope, ...scopeBody } = scopeIssues;
+const changedVerdict = structuredClone(scopeBody); changedVerdict.issues[0].findings[0].verdict = 'unsupported';
+assert.equal(adjudicateFactionSourceScopesV1({ input, draft: correction.draft, issues: seal(changedVerdict) }).resolutions.length, 0);
+const extraFinding = structuredClone(scopeBody); extraFinding.issues[0].findings.push({ kind: 'independent_source_counterexample', verdict: 'unsupported' });
+assert.equal(adjudicateFactionSourceScopesV1({ input, draft: correction.draft, issues: seal(extraFinding) }).resolutions.length, 0);
+const changedAdvice = structuredClone(correction.draft); changedAdvice.recommendations[3].procedure.push('Injected different advice');
+assert.equal(adjudicateFactionSourceScopesV1({ input, draft: changedAdvice, issues: seal({ ...scopeBody, parentHash: hash(changedAdvice) }) }).resolutions.length, 0);
+const changedInput = structuredClone(input); delete changedInput.hash;
+changedInput.factionEvidence.armyPool.find(p => p.source.recordKey === 'army_units:medic').source.content.upgrades.find(a => a.name === 'Advanced Medic Facilities').description += ' changed';
+assert.throws(() => adjudicateFactionSourceScopesV1({ input: seal(changedInput), draft: correction.draft, issues: scopeIssues }), { code: 'FACTION_SCOPE_ADJUDICATION_SOURCE_DRIFT' });
 assert(correction.draft.recommendations[2].procedure[1].includes('Armory（30瓦斯'));
 assert(correction.draft.recommendations[2].procedure[1].includes('不证明更便宜的选择实战更强'));
 assert.equal(correction.draft.recommendations[2].sourceRefs.at(-1), 'source:tactical_cards:armory');
@@ -81,10 +99,12 @@ const zergInput = verifySeal(JSON.parse(await readFile(path.join(base, 'zerg_swa
 policies.push(createFactionKnownRulePolicyV1({ input: zergInput, drills })); assert.equal(policies[1].findings.length, 0);
 for (const [n, p] of policies.entries()) await writeFile(path.join(base, (n ? 'zerg_swarm' : 'terran_armed_forces') + '-known-rule-policy.json'), JSON.stringify(p, null, 2));
 const files = ['packages/skill-production-v3/faction-review-targets-v1.mjs', 'packages/skill-production-v3/faction-known-rule-findings-v1.mjs',
+  'packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs',
   'packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs', 'scripts/verify-ticket-18-faction-targeted-corrections-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 22, codeHashes, inputHashes: [input.hash, zergInput.hash], policyHashes: policies.map(p => p.hash),
+const report = seal({ passed: true, checks: 28, codeHashes, inputHashes: [input.hash, zergInput.hash], policyHashes: policies.map(p => p.hash),
+  actualScopeAdjudication: adjudication,
   actualEmptyPatchHash: hash(emptyPatch), actualShiftedReviewHash: hash(shifted), actualDraftHash: hash(draft), knownRuleCorrection: correction,
   actualShiftedQuotesRejected: true, rawHistoricalFailurePreserved: true, actualProviderCalls: 0, semanticEffectivenessProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'targeted-corrections-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 22, hash: report.hash, providerCalls: 0, policyHashes: policies.map(p => p.hash) }));
+console.log(JSON.stringify({ passed: true, checks: 28, hash: report.hash, providerCalls: 0, policyHashes: policies.map(p => p.hash) }));

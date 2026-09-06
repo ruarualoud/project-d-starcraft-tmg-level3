@@ -72,6 +72,7 @@ if (hash(gates[5].inputHashes) !== hash(inputs.map(i => i.hash))
   || hash(gates[1].policyHashes) !== hash(knownRulePolicies.map(p => p.hash))) fail('FACTION_KNOWN_RULE_READINESS_DRIFT');
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/faction-review-targets-v1.mjs', 'packages/skill-production-v3/faction-known-rule-findings-v1.mjs',
+  'packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs',
   'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs',
   'packages/skill-production-v3/faction-continuation-v1.mjs', 'packages/skill-production-v3/runtime.mjs',
   'packages/skill-production-v3/context.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs',

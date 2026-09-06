@@ -11,7 +11,8 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
   const allowed = new Set(['packages/skill-production-v3/faction-strategy-workflow-v1.mjs',
     'packages/skill-production-v3/faction-continuation-v1.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs']);
   const correctionFiles = ['packages/skill-production-v3/faction-review-targets-v1.mjs',
-    'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs'];
+    'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs',
+    'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs'];
   let correctionProof = null;
   if (parent.knownRulePolicyHashes && hash(parent.knownRulePolicyHashes) !== hash(next.knownRulePolicyHashes || null)) fail('FACTION_CONTINUATION_KNOWN_RULE_POLICY_DRIFT');
   if (next.knownRulePolicyHashes || parent.targetedCorrectionsReadinessHash || next.targetedCorrectionsReadinessHash) {

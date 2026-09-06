@@ -2,6 +2,7 @@ import { seal, verifySeal, hash, exact, text, clone, fail } from '../skill-produ
 import { validateTutorLessonV3 } from './runtime.mjs';
 import { createFactionReviewTargetsV1, validateTargetedFactionReviewV1 } from './faction-review-targets-v1.mjs';
 import { correctKnownFactionRuleFailuresV1, assertNoKnownFactionRuleFailureV1, mergeFactionKnownSourceIssuesV1 } from './faction-known-rule-findings-v1.mjs';
+import { adjudicateFactionSourceScopesV1 } from './faction-source-scope-adjudication-v1.mjs';
 
 export const FACTION_AXES_V1 = ['army_resources', 'unit_roles', 'phase_tempo', 'objectives', 'threat_tradeoffs', 'card_packages'];
 const ADVICE_SHAPE = { recommendations: [{ title: '标题', when: ['适用的可观察条件'], procedure: ['步骤'],
@@ -304,9 +305,11 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
             coverageLinks: inspectFactionCoverageLinksV1(reviewed.value.review, draft) });
         }
       }
-      const issues = mergeFactionKnownSourceIssuesV1({ input, policy: knownRulePolicy, draft,
+      const rawIssues = mergeFactionKnownSourceIssuesV1({ input, policy: knownRulePolicy, draft,
         issues: createFactionRepairIssuesV1(section, draft, reviews) });
+      const adjudication = adjudicateFactionSourceScopesV1({ input, draft, issues: rawIssues }), issues = adjudication.openIssues;
       const round = seal({ sectionId: section.id, revision, draftHash: hash(draft), reviewHashes, reviews, reviewPartition, issues,
+        rawIssues, adjudication,
         priorRoundHash: rounds.at(-1)?.hash || null, oldFailuresRetained: true, trainingTruth: false });
       const lease = store.acquire(section.id + '.issue-journal.' + revision, { roundHash: round.hash });
       const saved = lease.cached ? verifySeal(lease.artifact) : store.finish(lease, round); rounds.push(saved);

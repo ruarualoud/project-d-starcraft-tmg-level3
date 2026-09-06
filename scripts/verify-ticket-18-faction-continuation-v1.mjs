@@ -38,7 +38,8 @@ assert.throws(() => inspectFactionContinuationV1({ ...deps, next: drift }), { co
 const foreign = seal({ ...b, codeHashes: [{ file: 'packages/skill-production/model.mjs', hash: hash('different model') }] });
 assert.throws(() => inspectFactionContinuationV1({ ...deps, next: foreign }), { code: 'FACTION_CONTINUATION_DEPENDENCY_DRIFT' });
 const correctionFiles = ['packages/skill-production-v3/faction-review-targets-v1.mjs',
-  'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs'];
+  'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs',
+  'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs'];
 const correctionCode = [...next.codeHashes, ...correctionFiles.map(file => ({ file, hash: hash('correction ' + file) }))];
 const correctionMigration = seal({ passed: true, inputHashes: parent.inputHashes, policyHashes: [hash('calibrated policy')],
   codeHashes: correctionCode, actualShiftedQuotesRejected: true, rawHistoricalFailurePreserved: true });
