@@ -119,6 +119,7 @@ export function assertStarcraftTmgProviderWorkerSuccessV1(
     fail("PROVIDER_SUCCESS_ATTEMPT_PROOF_REJECTED");
   }
   const recovered = receipt.responseNormalization === 'redundant_array_object_closers_v1';
+  const quoteRecovered = receipt.responseNormalization === 'single_unescaped_quote_v1';
   const evidence = receipt.responseNormalizationEvidence;
   if (recovered ? !exactFields(evidence, new Set(['schemaVersion', 'originalTextHash', 'normalizedTextHash', 'removedUtf16Offsets', 'appendedOuterObjectClose']))
       || evidence.schemaVersion !== 'provider_json_delimiter_recovery_v1'
@@ -127,9 +128,19 @@ export function assertStarcraftTmgProviderWorkerSuccessV1(
       || evidence.originalTextHash === evidence.normalizedTextHash
       || !Array.isArray(evidence.removedUtf16Offsets) || evidence.removedUtf16Offsets.length < 1 || evidence.removedUtf16Offsets.length > 8
       || evidence.removedUtf16Offsets.some((n, i, a) => !Number.isSafeInteger(n) || n < 1 || n >= 16 * 1024 * 1024 || i > 0 && n <= a[i - 1])
+    : quoteRecovered ? !exactFields(evidence, new Set(['schemaVersion', 'originalTextHash', 'normalizedTextHash',
+      'insertedEscapeUtf16Offset', 'parseErrorUtf16Offset']))
+      || evidence.schemaVersion !== 'provider_json_single_escape_recovery_v1'
+      || !HASH.test(evidence.originalTextHash) || !HASH.test(evidence.normalizedTextHash)
+      || evidence.originalTextHash === evidence.normalizedTextHash
+      || !Number.isSafeInteger(evidence.insertedEscapeUtf16Offset) || evidence.insertedEscapeUtf16Offset < 1
+      || evidence.insertedEscapeUtf16Offset >= 16 * 1024 * 1024
+      || !Number.isSafeInteger(evidence.parseErrorUtf16Offset) || evidence.parseErrorUtf16Offset < 1
+      || evidence.parseErrorUtf16Offset >= 16 * 1024 * 1024
+      || Math.abs(evidence.parseErrorUtf16Offset - evidence.insertedEscapeUtf16Offset) > 96
     : evidence !== undefined) fail('PROVIDER_SUCCESS_SAFETY_REJECTED');
   if (receipt.trainingTruth !== false
-    || receipt.responseNormalization !== undefined && !["none", "single_json_fence", "outer_object_close", "single_json_fence_and_outer_object_close", 'redundant_array_object_closers_v1'].includes(receipt.responseNormalization)
+    || receipt.responseNormalization !== undefined && !["none", "single_json_fence", "outer_object_close", "single_json_fence_and_outer_object_close", 'redundant_array_object_closers_v1', 'single_unescaped_quote_v1'].includes(receipt.responseNormalization)
     || containsStarcraftTmgOnlineCredentialMaterialV1(value)) {
     fail("PROVIDER_SUCCESS_SAFETY_REJECTED");
   }

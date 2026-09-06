@@ -114,7 +114,7 @@ assert.throws(() => inspectFactionContinuationV1({ ...deps, parent: correctionNe
 const providerFiles = ['provider-response-outcome-v1.mjs', 'provider-egress-transport-v1.mjs', 'provider-worker-success-classifier-v1.mjs'].map(n => 'packages/secure-provider-runtime/' + n);
 const before = seal({ passed: true, catalogueHash: hash('frozen'), dshBinding: { hash: hash('dsh') }, codeHashes: providerFiles.map(file => ({ file, hash: hash('old ' + file) })) });
 const after = seal({ passed: true, catalogueHash: before.catalogueHash, dshBinding: before.dshBinding, codeHashes: providerFiles.map(file => ({ file, hash: hash('new ' + file) })) });
-const recovery = seal({ passed: true, policy: 'redundant_array_object_closers_v1', codeHashes: after.codeHashes });
+const recovery = seal({ passed: true, policy: 'bounded_grammar_recovery_v2', codeHashes: after.codeHashes });
 // Migration proof is checked before journal access, and must not admit model,
 // source, profile, budget or arbitrary readiness changes.
 const migrationParent = seal({ ...b, mainReadinessHash: before.hash });

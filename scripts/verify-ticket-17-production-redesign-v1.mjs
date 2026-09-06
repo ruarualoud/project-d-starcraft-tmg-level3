@@ -215,6 +215,33 @@ await check("C_redundant_array_closer_recovery_preserves_usage_and_rejects_lengt
     db.close();
   }
 });
+await check("C_unique_single_quote_escape_recovery_is_receipted_and_tamper_evident", async () => {
+  const expected = { channels: { skill: { action: "finish", content: { patch: {
+    parentHash: "fixture", procedure: ['Move 6" toward the marker.'], additions: [],
+  } } } } };
+  const valid = JSON.stringify(expected), broken = valid.replace('6\\" toward', '6" toward');
+  const transport = fakeTransport({ model: profile.model,
+    choices: [{ message: { content: broken }, finish_reason: "stop" }],
+    usage: { prompt_tokens: 10, completion_tokens: 2, total_tokens: 12 } });
+  const db = openProductionStore(path.join(temporary, "single-quote-escape.sqlite"), storeArgs);
+  const model = createAccountedModel({ store: db, complete: async request => {
+    const result = await transport.complete({ egressBinding, credentialBytes: Buffer.from("fixture-nonlive-only"), providerRequest: request });
+    assertStarcraftTmgProviderWorkerSuccessV1(result, { egressBinding, providerRequestId: request.requestId });
+    assert.deepEqual(result.output, expected);
+    assert.equal(result.usageReceipt.responseNormalization, "single_unescaped_quote_v1");
+    const evidence = result.usageReceipt.responseNormalizationEvidence;
+    assert.equal(evidence.originalTextHash, hash(broken)); assert.equal(evidence.normalizedTextHash, hash(valid));
+    const tampered = structuredClone(result);
+    tampered.usageReceipt.responseNormalizationEvidence.insertedEscapeUtf16Offset += 200;
+    const { receiptHash: ignored, ...body } = tampered.usageReceipt;
+    tampered.usageReceipt.receiptHash = hash(body);
+    assert.throws(() => assertStarcraftTmgProviderWorkerSuccessV1(tampered, { egressBinding, providerRequestId: request.requestId }));
+    return result;
+  } });
+  const result = await model({ stageId: "single-quote-escape", call: 1, observed: { system: "", messages: [], tools: [] } });
+  assert.deepEqual(result.command.content, expected.channels.skill.content);
+  assert.equal(db.summary().calls, 1); assert.equal(db.summary().knownTokens, 12); db.close();
+});
 await check("C_success_usage_is_committed_before_output_schema_rejection", async () => {
   const db = openProductionStore(path.join(temporary, "shape.sqlite"), storeArgs);
   const model = createAccountedModel({ store: db, complete: async () => ({ output: { bad: true }, usageReceipt: {

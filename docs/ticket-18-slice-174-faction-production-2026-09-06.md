@@ -2,8 +2,48 @@
 
 ## Latest checkpoint: source-dependency recheck and pre-apply repair guard
 
-Independent consumer evidence is now prepared while the main live entrypoint
-performs its safety recheck. `inspect-ticket-18-faction-consumer-evidence-v1`
+### Actual objectives-section JSON failure and bounded grammar recovery
+
+Live run `faction-v1-3ff195438798f5218836` is terminal. It completed the whole
+fresh phase-tempo review, moving Terran to3/7 and the combined denominator to
+3/15 source-reviewed sections. The objectives section generated all8 planned
+recommendations and completed its first two-route review with3 open issues.
+Editor0.0 succeeded; both paid formats for editor0.1 returned invalid JSON at
+the same UTF-16 offset685. Both outcomes were complete `finishReason=stop`,
+`separator` syntax failures, not truncation or a network disconnect. The run
+added35 calls/9,685,061 tokens/estimated¥1.750096. Cumulative known usage is
+95,482,566 tokens and cost plus historical reserve is estimated¥60.805680.
+There is no402, intent or running lease.
+
+The invalid prose was intentionally absent from the safe failure receipt, so
+those two actual responses cannot be reconstructed or relabelled successful.
+Their immutable outcome/usage hashes remain negative evidence. The transport
+now implements `bounded_grammar_recovery_v2`: near the parser's exact failure
+offset it may insert one JSON escape character only when exactly one candidate
+makes the complete document one object. The visible scalar text is unchanged.
+The receipt binds original/normalized hashes and both insertion/error offsets.
+No candidate, multiple candidates, multiple defects, missing commas, trailing
+text and documents over64KiB remain hard failures.
+
+The new fixture evidence is not presented as recovery of the lost real prose.
+Grammar gate `96e9f099023dfadb90f40842921ade32553a7faaf2a099551cc887c606c6daae`
+and the full20-check Provider/accounting gate
+`3a3fd187398279af4d85f5e78a20f53aef02133462be194947d6f58f9ba664d8`
+passed with0 Provider calls. The38-check continuation gate remains
+`c00a33ac44bc13f31c18e5327bf0ac0f6487001a0c292dbdb3a52ede6d9d360c`
+and the25-check budget gate remains
+`64dbe9d8e0d812b68a30c85cd647f204a586e0054d57569af5a9f8ea9b153ceb`.
+The latest-parent migration gate
+`c662d5eb183e5e1892daefebde320564d17aa09eecd5d2c493bb0f14c8761197`
+retains213 ancestral calls/56,991,699 tokens/¥14.428922,156 reusable roles and
+the original start. Final zero-egress main-entry preflight passed with recipe
+`6792c09dcce21eeff6c43a60cd4e706086c1d301a34d1f946159399f53e3c42f`,
+the same limits and0 Provider calls. A real continuation must show whether the
+next actual response exercises or bypasses the new grammar recovery before
+this defect is called fixed in production.
+
+Independent consumer evidence is now prepared before the next live continuation.
+`inspect-ticket-18-faction-consumer-evidence-v1`
 reconstructs candidate production evidence, the two roster requests and six
 repeated rule-application requests, then regrades all140 answers from retained
 responses through a read-only SQLite connection. It preserves failed scores

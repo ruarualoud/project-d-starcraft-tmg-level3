@@ -203,7 +203,8 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
     if (!before || !after || !recovery) fail('FACTION_NORMALIZATION_MIGRATION_PROOF_MISSING');
     [before, after, recovery].forEach(verifySeal);
     if (before.hash !== parent.mainReadinessHash || after.hash !== next.mainReadinessHash || recovery.hash !== next.jsonRecoveryReadinessHash
-      || !before.passed || !after.passed || !recovery.passed || recovery.policy !== 'redundant_array_object_closers_v1'
+      || !before.passed || !after.passed || !recovery.passed
+      || !['redundant_array_object_closers_v1', 'bounded_grammar_recovery_v2'].includes(recovery.policy)
       || before.catalogueHash !== after.catalogueHash || hash(before.dshBinding) !== hash(after.dshBinding)) fail('FACTION_NORMALIZATION_MIGRATION_PROOF_INVALID');
     const providerFiles = ['packages/secure-provider-runtime/provider-response-outcome-v1.mjs',
       'packages/secure-provider-runtime/provider-egress-transport-v1.mjs', 'packages/secure-provider-runtime/provider-worker-success-classifier-v1.mjs'];

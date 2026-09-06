@@ -37,14 +37,53 @@ function normalizeLegacyDocument(value) {
     return { text: text + "}", kind: fenced.changed ? "single_json_fence_and_outer_object_close" : "outer_object_close" };
   } catch { return base; }
 }
-// Grammar-only recovery for the observed completed array-item defect. Never
-// infer fields or alter scalar bytes. The established single missing OUTER
-// delimiter recovery may follow it; no missing inner structure is completed.
+function normalizeSingleUnescapedQuote(text) {
+  // A common JSON-mode defect is one unescaped quote inside a string (for
+  // example an inch mark written as 6"). Insert no content: try one escape
+  // character near the parser's exact failure offset and accept only when a
+  // single candidate makes the entire document one valid object. Ambiguous,
+  // multi-error and long documents remain failures.
+  let parseOffset = null;
+  try { JSON.parse(text); return null; }
+  catch (error) { parseOffset = Number(/position (\d+)/u.exec(error.message)?.[1] ?? -1); }
+  if (!Number.isSafeInteger(parseOffset) || parseOffset < 0 || text.length > 64 * 1024) return null;
+  const isEscapedQuote = index => {
+    let slashes = 0;
+    for (let i = index - 1; i >= 0 && text[i] === '\\'; i--) slashes++;
+    return slashes % 2 === 1;
+  };
+  const candidates = [];
+  for (let i = Math.max(1, parseOffset - 96); i <= Math.min(text.length - 2, parseOffset + 16); i++) {
+    if (text[i] !== '"' || isEscapedQuote(i)) continue;
+    let following = i + 1;
+    while (/\s/u.test(text[following] || '') && following < text.length) following++;
+    // A real JSON string/key delimiter is followed by structure. Only quotes
+    // visibly embedded in scalar text are candidates for escaping.
+    if (!text[following] || ',]}:'.includes(text[following])) continue;
+    const candidate = text.slice(0, i) + '\\' + text.slice(i);
+    try {
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) candidates.push({ text: candidate, offset: i });
+    } catch {}
+  }
+  if (candidates.length !== 1) return null;
+  const candidate = candidates[0];
+  return { text: candidate.text, kind: 'single_unescaped_quote_v1', evidence: {
+    schemaVersion: 'provider_json_single_escape_recovery_v1', originalTextHash: hash(text),
+    normalizedTextHash: hash(candidate.text), insertedEscapeUtf16Offset: candidate.offset,
+    parseErrorUtf16Offset: parseOffset,
+  } };
+}
+// Grammar-only recovery for observed, completed JSON defects. Never infer
+// fields or alter visible scalar content. Missing-inner-structure repair is
+// forbidden; every accepted result must parse as one complete object.
 export function normalizeProviderJsonDocumentV1(value) {
   const legacy = normalizeLegacyDocument(value);
   try { JSON.parse(legacy.text); return legacy; } catch {}
   const text = normalizeSingleJsonFenceV1(value).text;
   if (typeof text !== 'string' || !text.trimStart().startsWith('{') || !text.trimEnd().endsWith('}')) return legacy;
+  const quoteRecovered = normalizeSingleUnescapedQuote(text);
+  if (quoteRecovered) return quoteRecovered;
   const stack = [], removed = []; let quoted = false, escaped = false, previous = '';
   for (let i = 0; i < text.length; i++) {
     const c = text[i];

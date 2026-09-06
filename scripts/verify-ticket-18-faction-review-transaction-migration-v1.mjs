@@ -12,9 +12,12 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const base = path.join(root, 'build/ticket-18-faction-production-v1');
 const filename = path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite');
 const json = async n => verifySeal(JSON.parse(await readFile(path.join(base, n + '.json'), 'utf8')));
+const externalJson = async file => verifySeal(JSON.parse(await readFile(path.join(root, file), 'utf8')));
 const reseal = (v, fields) => { const { hash: ignored, ...body } = v; return seal({ ...body, ...fields }); };
-const parentRunId = 'faction-v1-182042133d7ba5b21c2a', phaseRun = 'phase-repair-bd58d5270d852324f694';
+const parentRunId = process.argv[2] || 'faction-v1-3ff195438798f5218836';
+assert.match(parentRunId, /^faction-v1-[a-f0-9]{20}$/);
 const parent = await json(parentRunId + '/recipe'), parentReport = await json(parentRunId + '/report');
+const phaseRun = parent.phaseFieldBinding.runId;
 const inputs = await Promise.all(['terran_armed_forces', 'zerg_swarm'].map(n => json(n + '-input')));
 const phaseFieldSeed = { sourceSection: await json(phaseRun + '/source-section'), candidate: await json(phaseRun + '/candidate'),
   evidence: await json(phaseRun + '/verified-evidence'), capture: await json(phaseRun + '/source-capture') };
@@ -32,11 +35,14 @@ const unitRoleRepairMigration = await Promise.all(['unit-role-field-repair-readi
 const additionalCommandRecoveryMigration = await Promise.all((parent.additionalCommandRecoveryBindings || [])
   .map(b => json(b.parentRunId + '/review-metadata-recovery-readiness')));
 const budgetExtensionReadiness = await json('budget-extension-readiness');
+const mainAfter = await externalJson('build/ticket-17-production-redesign-v1/readiness.json');
+const mainBefore = await externalJson('build/ticket-17-production-redesign-v1/readiness-' + parent.mainReadinessHash + '.json');
+const jsonRecovery = await json('json-recovery-readiness');
 const files = [...new Set([...parent.codeHashes.map(c => c.file), ...newFiles])];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
 const next = reseal(parent, { codeHashes, reviewTransactionBindings: bindings,
   reviewTransactionReadinessHash: readiness.hash, reviewTransactionEvidenceHash: actualEvidence.hash,
-  sourceCorrectionReadinessHashes: sourceCorrectionMigration.map(g => g.hash),
+  mainReadinessHash: mainAfter.hash, jsonRecoveryReadinessHash: jsonRecovery.hash,
   ...(additionalCommandRecoveryMigration.length ? { additionalCommandRecoveryReadinessHashes: additionalCommandRecoveryMigration.map(g => g.hash) } : {}),
   budgetExtensionReadinessHash: budgetExtensionReadiness.hash });
 const args = { parent, next, readiness, actualEvidence };
@@ -44,12 +50,15 @@ let checks = 0;
 function check(fn) { fn(); checks++; }
 function rejects(fields, code) { check(() => assert.throws(() => validateFactionReviewTransactionMigrationV1({ ...args, ...fields }), { code })); }
 const invalid = 'FACTION_REVIEW_TRANSACTION_MIGRATION_PROOF_INVALID';
-check(() => assert.equal(validateFactionReviewTransactionMigrationV1({ parent, next: parent }), null));
+check(() => assert.deepEqual(validateFactionReviewTransactionMigrationV1({ parent, next: parent, readiness, actualEvidence }).bindingHashes,
+  bindings.map(b => b.hash)));
 const proof = validateFactionReviewTransactionMigrationV1(args);
 check(() => assert.deepEqual(proof.bindingHashes, bindings.map(b => b.hash)));
 rejects({ readiness: null }, 'FACTION_REVIEW_TRANSACTION_PROOF_MISSING');
 rejects({ actualEvidence: null }, 'FACTION_REVIEW_TRANSACTION_PROOF_MISSING');
-rejects({ parent: next, next: parent }, 'FACTION_REVIEW_TRANSACTION_BINDINGS_CHANGED');
+const { reviewTransactionBindings: ignoredBindings, reviewTransactionReadinessHash: ignoredReadiness,
+  reviewTransactionEvidenceHash: ignoredEvidence, hash: ignoredParentHash, ...withoutReviewBody } = parent;
+rejects({ next: seal(withoutReviewBody) }, 'FACTION_REVIEW_TRANSACTION_BINDINGS_CHANGED');
 for (const fields of [{ passed: false }, { fullOldWorkflowReplayed: false }, { oldRequestsUnchangedBeforeIntervention: false },
   { newReviewNamespaces: false }, { badEditBlockedBeforeApplicationAndBeforeNextReview: false },
   { blockedRawEditAndReceiptPersisted: false }, { modelReviewAcceptanceNotInherited: false },
@@ -71,12 +80,14 @@ for (const fields of [{ guardBeforePatchApplication: false }, { revisionBudgetRe
   { modelNegativeJudgmentWaived: true }, { contextHash: hash('foreign') }]) {
   const changed = bindings.map((b, n) => n ? b : reseal(b, fields));
   const gate = reseal(readiness, { bindingHashes: changed.map(b => b.hash) });
-  rejects({ readiness: gate, next: reseal(next, { reviewTransactionBindings: changed, reviewTransactionReadinessHash: gate.hash }) }, invalid);
+  rejects({ readiness: gate, next: reseal(next, { reviewTransactionBindings: changed,
+    reviewTransactionReadinessHash: gate.hash }) }, 'FACTION_REVIEW_TRANSACTION_BINDINGS_CHANGED');
 }
 rejects({ next: reseal(next, { codeHashes: codeHashes.map(c => c.file === newFiles[0] ? { ...c, hash: hash('foreign') } : c) }) }, invalid);
 // Real terminal parent, read-only journal: all older migrations are still
 // checked. This proof never copies attempts or alters the original start.
 const continuationArgs = { filename, parentRunId, parent, parentReport, next,
+  normalizationMigration: { before: mainBefore, after: mainAfter, recovery: jsonRecovery },
   correctionMigration: await json('targeted-corrections-readiness'),
   fieldRepairMigration: { binding: parent.fieldRepairBinding, readiness: await json('field-seed-readiness') },
   phaseSeedMigration: { binding: parent.phaseFieldBinding, readiness: await json('phase-field-seed-readiness') },
