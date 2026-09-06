@@ -236,6 +236,10 @@ export function createStarcraftTmgStructuredGenerationRuntimeV1(options = {}) {
       } catch (error) {
         const safeReceipt = object(error?.safeReceipt)
           ? error.safeReceipt : null;
+        const parsedRejectedCandidate = object(error?.transientCandidate)
+          ? clone(error.transientCandidate) : null;
+        const rejectedValidation = object(error?.transientValidation)
+          ? clone(error.transientValidation) : null;
         const knownUsage = safeReceipt?.usageKnown === true
           ? safeReceipt.usage : null;
         const costMicros = knownUsage ? nonNegativeInteger(
@@ -254,6 +258,42 @@ export function createStarcraftTmgStructuredGenerationRuntimeV1(options = {}) {
           || classification.status === "accepted") {
           throw new TypeError("Structured failure classification is invalid");
         }
+        let rejectedCandidateRef = null;
+        if (parsedRejectedCandidate) {
+          if (String(error.code || "") !== "STRUCTURED_PROVIDER_SCHEMA_INVALID"
+            || !rejectedValidation
+            || rejectedValidation.valueHash
+              !== hashStarcraftTmgContract(parsedRejectedCandidate)
+            || !Array.isArray(rejectedValidation.issues)
+            || !rejectedValidation.issues.length) {
+            throw new TypeError("Structured rejected candidate evidence is invalid");
+          }
+          const rejectedCandidate = seal({
+            version:
+              `${STARCRAFT_TMG_STRUCTURED_GENERATION_RUNTIME_VERSION}.rejected-candidate`,
+            invocationHash,
+            roleRef: roleReference,
+            contextManifestRef: contextReference,
+            outputContractRef: outputReference,
+            providerValue: parsedRejectedCandidate,
+            validation: rejectedValidation,
+            safeReceiptHash: safeReceipt?.receiptHash || null,
+            semanticAcceptanceInherited: false,
+            published: false,
+            runtimeAccepted: false,
+            trainingTruth: false,
+          });
+          const rejectedId = `${attemptId}.rejected-candidate`;
+          const rejectedLease = store.acquire(rejectedId, {
+            rejectedCandidateHash: rejectedCandidate.hash,
+          });
+          const storedRejected = rejectedLease.cached
+            ? rejectedLease.artifact : store.finish(rejectedLease,
+              rejectedCandidate);
+          verifySeal(storedRejected);
+          rejectedCandidateRef = { id: rejectedId,
+            hash: storedRejected.hash };
+        }
         const issue = seal({
           version: `${STARCRAFT_TMG_STRUCTURED_GENERATION_RUNTIME_VERSION}.issue`,
           invocationHash,
@@ -262,6 +302,7 @@ export function createStarcraftTmgStructuredGenerationRuntimeV1(options = {}) {
           code: String(error.code || "STRUCTURED_PROVIDER_FAILURE_UNKNOWN"),
           retryRoute: classification.retryRoute || null,
           safeReceiptHash: safeReceipt?.receiptHash || null,
+          rejectedCandidateRef,
           rawPayloadPersisted: false,
           trainingTruth: false,
         });
@@ -291,7 +332,8 @@ export function createStarcraftTmgStructuredGenerationRuntimeV1(options = {}) {
         return outcome({
           status: classification.status,
           candidateRef: null,
-          issueRef: { hash: storedIssue.hash, class: storedIssue.class },
+          issueRef: { hash: storedIssue.hash, class: storedIssue.class,
+            rejectedCandidateRef },
           receiptRef: { hash: storedReceipt.hash },
           usage: normalizedUsage(knownUsage, costMicros || 0),
         });

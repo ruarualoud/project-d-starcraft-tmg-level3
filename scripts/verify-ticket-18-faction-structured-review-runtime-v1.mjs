@@ -25,7 +25,8 @@ import { createFactionWritingPlanV1 } from
   "../packages/skill-production-v3/faction-strategy-workflow-v1.mjs";
 import { createFactionStructuredReviewRuntimeV1,
   deriveFactionLegacyStructuredReviewRoleIdsV1,
-  materializeFactionStructuredReviewV1 } from
+  materializeFactionStructuredReviewV1,
+  verifyFactionStructuredReviewSchemaRepairScopeV1 } from
   "../packages/skill-production-v3/faction-structured-review-runtime-v1.mjs";
 import { createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1 } from
   "../packages/structured-generation/adapters/deepseek-responses-json-schema-v1.mjs";
@@ -45,6 +46,8 @@ const CODE_FILES = [
   "content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs",
   "packages/skill-production-v3/faction-review-context-capsule-v1.mjs",
   "packages/skill-production-v3/faction-structured-review-runtime-v1.mjs",
+  "packages/structured-generation/adapters/deepseek-responses-json-schema-v1.mjs",
+  "packages/structured-generation/structured-generation-runtime-v1.mjs",
   "scripts/run-ticket-18-structured-review-capability-canary-v1.mjs",
   "scripts/verify-ticket-18-faction-structured-review-runtime-v1.mjs",
 ];
@@ -199,6 +202,61 @@ await check("review.one-structured-attempt-no-prompt-fallback", async () => {
     assert.equal(result.loop.calls, 1);
     assert.equal(fault.inspect().calls.length, 1);
   } finally { store.close(); }
+});
+
+await check("review.one-bounded-schema-instance-repair-preserves-other-values", async () => {
+  const rejected = structuredClone(providerOutput);
+  rejected.verdicts[0].reason = "R".repeat(401);
+  rejected.verdicts[0].sourceSlots = capsule.localIssue.reviewTask
+    .includedSourceSlots.slice(0, 9);
+  const repaired = structuredClone(rejected);
+  repaired.verdicts[0].reason = "Condensed without changing the judgment.";
+  repaired.verdicts[0].sourceSlots = rejected.verdicts[0].sourceSlots.slice(0, 8);
+  const fault = createStarcraftTmgInMemoryStructuredFaultAdapterV1({
+    steps: [{ kind: "success", output: rejected },
+      { kind: "success", output: repaired }],
+  });
+  const store = openProductionStore(":memory:", {
+    runId: "structured-review-repair-test",
+    recipeHash: hash("structured-review-repair-test"),
+    maxCalls: 3, maxCostMicros: 500_000, maxTokens: 600_000,
+  });
+  try {
+    const runtime = createFactionStructuredReviewRuntimeV1({ input,
+      runtime: { role: async () => assert.fail("fallback invoked") },
+      store, dsh: { run: runDirectLoop },
+      providerAdapter: createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1({
+        send: fault.send,
+      }),
+      egressBinding: binding, capabilityReceipt, outputContract: contract,
+      executionPolicy: policy, priceUsage: (usage) => usage.totalUnits,
+    });
+    const result = await runtime.role(request);
+    assert.equal(result.structuredDecodePassed, true);
+    assert.equal(result.schemaRepairScope.allOtherValuesHashEqual, true);
+    assert.deepEqual(result.schemaRepairScope.allowedChangedPaths,
+      ["$.verdicts[0].reason", "$.verdicts[0].sourceSlots"]);
+    assert.equal(fault.inspect().calls.length, 2);
+    assert.equal(store.summary().attempts.filter((row) =>
+      row.code === "STRUCTURED_PROVIDER_SCHEMA_INVALID").length, 1);
+  } finally { store.close(); }
+});
+
+await check("review.schema-repair-cannot-change-unflagged-verdict", async () => {
+  const rejectedValue = structuredClone(providerOutput);
+  rejectedValue.verdicts[0].reason = "R".repeat(401);
+  const rejectedCandidate = seal({
+    version: "fixture.rejected-candidate",
+    providerValue: rejectedValue,
+    validation: { issues: [{ path: "$.verdicts[0].reason",
+      code: "string_too_long" }] },
+  });
+  const changed = structuredClone(rejectedValue);
+  changed.verdicts[0].reason = "Short reason.";
+  changed.verdicts[0].verdict = "uncertain";
+  assert.throws(() => verifyFactionStructuredReviewSchemaRepairScopeV1({
+    rejectedCandidate, repairedOutput: changed,
+  }), { code: "FACTION_STRUCTURED_REVIEW_SCHEMA_REPAIR_SCOPE_INVALID" });
 });
 
 await check("review.duplicate-target-slot-fails-closed", async () => {

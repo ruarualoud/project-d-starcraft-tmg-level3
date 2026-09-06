@@ -66,7 +66,7 @@ export function validateFactionStructuredReviewMigrationV1({
   [next.structuredReviewBinding, readiness, capabilityReport].forEach(verifySeal);
   const binding = next.structuredReviewBinding;
   const introduced = !parent.structuredReviewBinding;
-  if (!readiness.passed || readiness.checks.length !== 7
+  if (!readiness.passed || readiness.checks.length !== 9
     || readiness.hash !== next.structuredReviewReadinessHash
     || readiness.providerCalls !== 0
     || readiness.actualCapabilityRunId !== binding.capabilityRunId

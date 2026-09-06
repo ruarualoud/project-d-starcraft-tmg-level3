@@ -13,6 +13,7 @@
 7. 续跑保留历史产物。37 个密封 legacy prompt role 继续使用原合同，不重做；R5 的失败点修复按 role + capsule + contract 的精确哈希导入；只有其后的新 local editors 进入结构化运行时。legacy 集合从续跑产物的实际协议元数据派生，已结构化的产物永不会因 role ID 相似而重回旧 prompt 路由。
 8. 审阅引用的布局差异有专用恢复边界。只有当超长引用在仅归一项目符和空白后能完整、顺序精确绑定到本次密封官方来源时，才把其 240 字前缀用作传输元数据；原引用/新引用哈希、长度、段落与布局证明全部记录。不改原 Provider 输出、不改判断、不新增来源证据；无法精确绑定时仍封闭失败。
 9. 目标化 reviewer 也进入 Responses JSON Schema。模型只能输出最多两个 target slot、focus、判断、理由和 source slot；targetId、完整标题、sourceRef 和 coverage source 都由 host 从密封目录映射。胶囊为 408,572 bytes，包含完整 Core/FAQ、当前阵营全部产品来源、完整当前章节和总规则 Skill 哈希/资格；不再同时重复携带 236KB 派生 Skill 正文。结构解码后仍必须通过原 target quote、来源、coverage 和语义验证。
+10. 对可解析但违反本地 schema 的 reviewer 候选增加一次定点修复。Adapter 只把 parsed domain value 和精确 validation paths 交给 durable runtime；安全回执仍不保存原始传输体。修复调用必须返回完整对象，但只能改变失败路径，其他解析后值逐项哈希相同；仍需再次通过同一 schema、host materialization 和原语义门。最多一次，不截断、不猜测、不循环重生。
 
 ## 证据
 
@@ -27,9 +28,11 @@
 - 完整工作流回放：64 项通过、0 Provider，报告哈希 `e3dd3f457876d4183045be25ce7503856236ca2b0e7f8075cc0a2934ddb58f20`。最新 CLI 预检 recipe `f0e6c2aa6d65daad62c6c6e1da7b2f9985a0a4210d17f784b441e57f2c446ec6`；162 个角色复用、37 个旧 prompt role 冻结、R5 import hash `5f59201d6b0caabd1280b68412d2ea80ea83de90c10523cb073c5826b891e1e8`；首个新角色已推进到 `objectives.1.review-target-batch-v1.supportive.1.6`，路由为 `legacy_typed_validation`；Provider 调用 0。
 - 第二次 R6 正式续跑：`faction-v1-f0e6c2aa6d65daad62c6`。成功完成前一轮剩余新审、字段绑定和第二个真实结构化 editor（22,088 input / 973 output / 约 ¥0.043140）；首个修改后整节新审仍走旧 `json_object + prompt` reviewer，正常 stop 但在 offset 2024 返回 separator 型非法 JSON。本 run 新增 9 calls / 2,283,906 tokens / 约 ¥0.570221，无 402/在途/自动重试。
 - reviewer 精确 schema 能力探针：`structured-review-probe-4a6eee856a4ddceab7e20b3ee2753974`，1 call / 702 tokens / 约 ¥0.001454，0 重试。其前一个 512-output 配置在出网前被 256 探针上限拒绝，0 token / ¥0，失败记录保留。
-- reviewer 结构化本地门：7 项通过、0 Provider；胶囊 408,572 bytes，target/source 身份均由 host 映射，重复/越界 slot 封闭失败。最新 CLI 预检 recipe `bac6bf97cd50325f0d775e31f12dd708562ba76c23ace03bec4c8649f5312440`；复用 169 roles、冻结 37 个旧 prompt roles 和 88 个旧 reviewer roles，首一 miss 精确为 `objectives.1.review-target-batch-v1.supportive.2.0`，路由 `responses_json_schema`，0 Provider。
+- reviewer 结构化本地门：初版 7 项通过、0 Provider；胶囊 408,572 bytes，target/source 身份均由 host 映射，重复/越界 slot 封闭失败。CLI 预检 recipe `bac6bf97cd50325f0d775e31f12dd708562ba76c23ace03bec4c8649f5312440`；复用 169 roles、冻结 37 个旧 prompt roles 和 88 个旧 reviewer roles，首一 miss 精确为 `objectives.1.review-target-batch-v1.supportive.2.0`，路由 `responses_json_schema`，0 Provider。
+- 第一次真实结构 reviewer：`faction-v1-bac6bf97cd50325f0d77` 的 Provider 返回 HTTP 200 且 JSON 可解析，但本地门发现 `$.verdicts[0].reason`、`$.verdicts[1].reason` 超长及 `$.verdicts[0].sourceSlots` 超量，因此隔离失败而未进入 Skill。本轮 1 call / 123,444 tokens / 约 ¥0.441606，无重试、402 或在途请求。
+- schema-instance 定点修复门：adapter 12 项、structured runtime 6 项、structured reviewer 9 项、local editor 5 项、continuation 38 项、budget 25 项全部通过，0 Provider。正例证明两次调用内只缩短被点名理由及 sourceSlots；反例证明任何未点名 verdict 改动封闭失败。最新零付费预检 recipe `a9ebe04ed3442c97cb2c24da5bc97b3577866afb5ca57805ae489b5c84581904`，复用 169 roles，仍精确从 supportive.2.0 进入 Responses JSON Schema。
 
-最新已知累计用量为 101,117,723 tokens，估算或历史预留合计 ¥62.703950，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
+最新已知累计用量为 101,241,167 tokens，估算或历史预留合计 ¥63.145556，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
 
 ## 仍未完成
 
@@ -40,4 +43,4 @@
 
 ## 下一步
 
-从 `faction-v1-f0e6c2aa6d65daad62c6` 按上述最新 recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。
+从 `faction-v1-bac6bf97cd50325f0d77` 按上述最新 recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。

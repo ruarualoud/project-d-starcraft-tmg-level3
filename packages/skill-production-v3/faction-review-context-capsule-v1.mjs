@@ -146,3 +146,50 @@ export function createFactionReviewContextCapsuleV1(input = {}) {
     ].join("\n"),
   });
 }
+
+export function createFactionReviewSchemaRepairContextCapsuleV1(input = {}) {
+  const { capsule, rejectedCandidate, roleRef } = input;
+  [capsule, rejectedCandidate].forEach(verifySeal);
+  if (capsule.kind !== "whole_section_review_context"
+    || rejectedCandidate.outputContractRef.hash
+      !== capsule.outputContractRef.hash
+    || rejectedCandidate.contextManifestRef.hash !== capsule.hash
+    || rejectedCandidate.validation.valueHash
+      !== hash(rejectedCandidate.providerValue)
+    || !Array.isArray(rejectedCandidate.validation.issues)
+    || !rejectedCandidate.validation.issues.length) {
+    fail("FACTION_STRUCTURED_REVIEW_SCHEMA_REPAIR_CONTEXT_INVALID");
+  }
+  return createStarcraftTmgContextCapsuleV1({
+    kind: "whole_section_review_context",
+    roleRef,
+    outputContractRef: capsule.outputContractRef,
+    immutableBase: capsule.immutableBase,
+    section: capsule.section,
+    localIssue: {
+      ...capsule.localIssue,
+      schemaRepair: {
+        rejectedCandidateHash: rejectedCandidate.hash,
+        providerValue: rejectedCandidate.providerValue,
+        validationIssues: rejectedCandidate.validation.issues,
+        allowedChanges: rejectedCandidate.validation.issues.map((row) =>
+          row.path),
+        policy: "change_only_exact_invalid_paths_preserve_every_other_value",
+      },
+    },
+    protectedFields: [...capsule.protectedFields,
+      { path: "schemaRepair.rejectedCandidate",
+        hash: rejectedCandidate.hash }],
+    dependencyGraph: capsule.dependencyGraph,
+    sourceIndexRef: capsule.sourceIndexRef,
+    expansionToolRef: capsule.expansionToolRef,
+    omittedDomains: capsule.omittedDomains,
+    instructions: [
+      capsule.instructions,
+      "The prior value was valid JSON but failed the listed local schema constraints.",
+      "Return the complete corrected schema object. Change only the exact validationIssues paths; every other value must remain byte-for-byte equivalent after JSON parsing.",
+      "Shorten overlong reason text without changing its verdict or factual meaning. Select at most eight most direct supplied sourceSlots; do not invent or renumber slots.",
+      "This is one bounded schema-instance correction, not a new review. If it cannot be done without changing another field, preserve uncertainty and still obey the exact schema.",
+    ].join("\n"),
+  });
+}

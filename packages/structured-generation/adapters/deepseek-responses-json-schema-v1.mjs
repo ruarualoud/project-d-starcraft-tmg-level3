@@ -311,11 +311,20 @@ function parseResponse(result, contract, request, capabilityReceiptHash = null) 
   const validation = validateStarcraftTmgProviderJsonSchemaValueV1(
     contract.providerSchema, output);
   if (!validation.ok) {
-    throw new StarcraftTmgStructuredProviderAdapterError(
+    const failure = new StarcraftTmgStructuredProviderAdapterError(
       "STRUCTURED_PROVIDER_SCHEMA_INVALID", {
         ...base, outputTextHash: hashStarcraftTmgContract(extracted.text),
         schemaIssues: validation.issues,
       });
+    // The parsed schema-invalid value is safe domain data, not a credential or
+    // raw transport payload. Keep it transient and non-enumerable so the
+    // durable runtime can seal it explicitly while safe receipts remain
+    // metadata-only. Callers must never guess it from the response skeleton.
+    Object.defineProperties(failure, {
+      transientCandidate: { value: clone(output), enumerable: false },
+      transientValidation: { value: clone(validation), enumerable: false },
+    });
+    throw failure;
   }
   const receiptBody = {
     schemaVersion:
