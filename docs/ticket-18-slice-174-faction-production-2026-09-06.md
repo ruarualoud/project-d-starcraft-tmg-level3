@@ -42,6 +42,17 @@ source-review recheck using the complete corpus plus the dependency context,
 then scoped correction/revalidation. Do not blindly resume the rejected edit
 or treat these engineering checks as a completed faction.
 
+The dependency recheck now has a bounded executable entry. Five injected
+review calls prove full original workspace/522-claim preservation, negative
+retention, cached-role reuse, malformed-target rejection and no partial-review
+promotion (`301a7ded…`). Largest task820,774 UTF-8 bytes. Read-only preflight
+31283 exited0 with recipe `d1479aa5…`: two planned review calls on targets0/1,
+8-call/4M-token/¥2/30-minute hard cap,1M input bytes. It compares the captured
+original request to the actual production step hash before credentials. The
+new packet changes only the source-derived reading context and neither edits
+the draft nor resets the main production revision budget. Actual results are
+pending; do not equate a supported local result with complete section review.
+
 ## Historical: cumulative budget extension and live entry
 
 Budget increment `1bbc9ca` is pushed. Live session52952 /process31993 is
