@@ -5,7 +5,48 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: actual grammar success, wrong-target recovery
+## Current checkpoint: all eight first-section items, review coverage repair
+
+Run `faction-v1-f93c0c1ba85b7c32f4b3` is terminal. Two actual target-specific
+reconstructions produced items4–7, completing8/8 first-section recommendations.
+The supportive source reader returned26 coverage entries for actually cited
+sources; its schema retry returned the identical review. The validator required
+exactly one assigned source entry, causing a structural rejection. New review
+validation keeps all original entries and verdicts unchanged: assigned sources
+must all appear exactly once; extra entries must be unique, actually cited by
+the draft and validly linked. Extra negative coverage becomes a typed issue on
+every affected recommendation, not ignored. Raw review still has an uncertain
+verdict on item3 and is not evidence of source or strategy acceptance.
+
+Current cumulative use:41,886,495 tokens /estimated-or-reserved ¥49.352431.
+This run5 calls /1,337,726 tokens /estimated ¥0.869473; no402. Terran0/7 and
+Zerg0/8 sections have completed whole-section dual review. Source-reviewed
+faction candidates0/2, formal first-five0/5.
+
+### Independent roster-choice checks
+
+`packages/skill-evaluation/faction-roster-choice-drills-v1.mjs` adds eight
+source-bound decision inputs with30 offered card packages. Actual faction/slot/
+Unique/resource kernel results must agree with separately specified expected
+eligible options, minimum cost and all ties. Evaluation questions contain no
+expected answers or kernel verdicts, and are not supplied to production. There
+is one known-error diagnostic (the generated Factory-minimum-cost assertion)
+and seven independent inputs in the same bounded army-building domain.
+
+Concrete known draft defect: first section item2 says Factory35 is the cheapest
+way to fill the single missing Elite slot for small Marauders plus a Goliath.
+Armory30 also fills it and is cheaper. The eight-case verifier actually rejects
+the Factory-is-cheapest answer against the kernel-backed cost/slot controls.
+This factual/optimization-scope defect must be resolved before faction
+qualification even if a source reviewer calls the paragraph supported.
+
+The objective explicitly ignores card special-ability value and compares only
+the offered choices. These checks do NOT claim cheapest is best battlefield
+strategy, validate deployment/complete composition, prove model performance,
+or perform Room actions. Eight engineering checks passed,0 Provider calls;
+readiness `26a12fc56e6537d36de0b3f3b49055b0b8e7fd51a1a8d02c2589af251c0ff0b7`.
+
+## Earlier checkpoint: actual grammar success, wrong-target recovery
 
 Run `faction-v1-66102d1817842a896f0b` is terminal. Actual Provider responses used
 the new delimiter normalizer with validated normalization evidence; items2–3

@@ -8,7 +8,7 @@ import { createGlobalProductionContext } from '../packages/skill-production-v3/c
 import { createProductionRuntimeV3 } from '../packages/skill-production-v3/runtime.mjs';
 import { runDirectLoop } from '../packages/skill-production/loops.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
-import { FACTION_AXES_V1, createFactionWritingPlanV1, validateFactionDraftV1, applyFactionStrategyPatchV1, validateFactionDraftBatchV1, inspectFactionBatchScopeV1,
+import { FACTION_AXES_V1, createFactionWritingPlanV1, validateFactionDraftV1, applyFactionStrategyPatchV1, validateFactionDraftBatchV1, inspectFactionBatchScopeV1, validateFactionReviewV1, createFactionRepairIssuesV1,
   produceFactionStrategyV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { seal, verifySeal, hash, sha256, fail } from '../packages/skill-production/common.mjs';
 
@@ -34,6 +34,24 @@ try {
   const relabelled = structuredClone(rejected);
   relabelled.items.forEach(item => { item.value.sourceRefs = outline[item.index].sourceRefs; });
   assert.throws(() => validateFactionDraftBatchV1(relabelled, params), { code: 'FACTION_BATCH_DUPLICATE_RECOMMENDATION' });
+  const currentArtifact = suffix => verifySeal(JSON.parse(evidenceDb.prepare("SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'").get(
+    'faction-v1-f93c0c1ba85b7c32f4b3', 'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.' + suffix).artifact)).value;
+  const actualDraft = { recommendations: [0, 2, '4.target-reconstruction.v1', '6.target-reconstruction.v1']
+    .flatMap(n => currentArtifact('generator-items.' + n).output.items.map(item => item.value)) };
+  const section = createFactionWritingPlanV1(inputs[0]).sections[0], review = currentArtifact('review.supportive.0').output;
+  assert.equal(hash(review), hash(currentArtifact('review.supportive.0.schema').output));
+  assert.equal(review.coverage.length, 26); assert.equal(section.requiredSourceRefs.length, 1);
+  assert.equal(hash(validateFactionReviewV1(review, { input: inputs[0], section, draft: actualDraft })), hash(review));
+  assert.equal(createFactionRepairIssuesV1(section, actualDraft, [review]).issues[0].index, 3);
+  const additionalNegative = structuredClone(review); additionalNegative.coverage.find(c => c.sourceRef === 'source:tactical_cards:factory').verdict = 'uncertain';
+  validateFactionReviewV1(additionalNegative, { input: inputs[0], section, draft: actualDraft });
+  const negativeIssues = createFactionRepairIssuesV1(section, actualDraft, [additionalNegative]);
+  assert(negativeIssues.issues.some(i => i.index === 0 && i.findings.some(f => f.kind === 'additional_cited_source_coverage')));
+  assert(negativeIssues.issues.some(i => i.index === 2 && i.findings.some(f => f.kind === 'additional_cited_source_coverage')));
+  const missing = structuredClone(review); missing.coverage.shift();
+  assert.throws(() => validateFactionReviewV1(missing, { input: inputs[0], section, draft: actualDraft }), { code: 'FACTION_REVIEW_DENOMINATOR' });
+  const uncited = structuredClone(review); uncited.coverage[1].sourceRef = 'source:army_units:zergling';
+  assert.throws(() => validateFactionReviewV1(uncited, { input: inputs[0], section, draft: actualDraft }), { code: 'FACTION_REVIEW_COVERAGE_INVALID' });
 } finally { evidenceDb.close(); }
 const temp = await mkdtemp(path.join(base, 'workflow-test-'));
 const stores = [], makeStore = name => { const s = openProductionStore(path.join(temp, name + '.sqlite'), { runId: name, recipeHash: hash(name) }); stores.push(s); return s; };
@@ -127,8 +145,8 @@ try {
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/runtime.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 20, inputHashes: inputs.map(i => i.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 25, inputHashes: inputs.map(i => i.hash), codeHashes, maxTaskBytes,
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 20, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 25, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));

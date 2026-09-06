@@ -104,27 +104,38 @@ export function validateFactionDraftBatchV1(output, { input, outline, indices, c
 export function validateFactionReviewV1(output, { input, section, draft }) {
   exact(output, ['verdicts', 'coverage']);
   if (!Array.isArray(output.verdicts) || output.verdicts.length !== draft.recommendations.length
-    || !Array.isArray(output.coverage) || output.coverage.length !== section.requiredSourceRefs.length) fail('FACTION_REVIEW_DENOMINATOR');
+    || !Array.isArray(output.coverage) || output.coverage.length < section.requiredSourceRefs.length) fail('FACTION_REVIEW_DENOMINATOR');
   const pending = new Set(draft.recommendations.map((_, i) => i));
   for (const v of output.verdicts) {
     exact(v, ['index', 'verdict', 'reason', 'sourceRefs']); text(v.reason, 1200); refs(v.sourceRefs, input);
     if (!pending.delete(v.index) || !['supported', 'unsupported', 'uncertain'].includes(v.verdict)) fail('FACTION_REVIEW_SCOPE_INVALID');
   }
-  const sources = new Set(section.requiredSourceRefs);
+  const required = new Set(section.requiredSourceRefs);
+  // Required sources are a minimum coverage denominator. Preserve additional
+  // coverage only for evidence actually cited by this draft, not arbitrary
+  // global material. No verdict/negative finding is discarded or rewritten.
+  const sources = new Set([...required, ...draft.recommendations.flatMap(r => r.sourceRefs)]);
   for (const c of output.coverage) {
     exact(c, ['sourceRef', 'verdict', 'recommendationIndices', 'reason']); text(c.reason, 1200);
     if (!sources.delete(c.sourceRef) || !['covered', 'omitted', 'uncertain'].includes(c.verdict)
       || !Array.isArray(c.recommendationIndices) || new Set(c.recommendationIndices).size !== c.recommendationIndices.length
       || c.recommendationIndices.some(i => !Number.isInteger(i) || !draft.recommendations[i]?.sourceRefs.includes(c.sourceRef))
       || c.verdict === 'covered' && !c.recommendationIndices.length) fail('FACTION_REVIEW_COVERAGE_INVALID');
+    required.delete(c.sourceRef);
   }
+  if (required.size) fail('FACTION_REVIEW_DENOMINATOR');
   return output;
 }
 
 export function createFactionRepairIssuesV1(section, draft, reviews) {
   const issues = [];
   for (const [index, r] of draft.recommendations.entries()) {
-    const findings = reviews.flatMap(v => v.verdicts.filter(c => c.index === index && c.verdict !== 'supported'));
+    const findings = reviews.flatMap(v => [
+      ...v.verdicts.filter(c => c.index === index && c.verdict !== 'supported'),
+      ...v.coverage.filter(c => !section.requiredSourceRefs.includes(c.sourceRef)
+        && c.verdict !== 'covered' && r.sourceRefs.includes(c.sourceRef))
+        .map(c => ({ kind: 'additional_cited_source_coverage', ...c })),
+    ]);
     if (findings.length) issues.push({ kind: 'recommendation_source_or_condition', index, oldHash: hash(r), findings });
   }
   for (const sourceRef of section.requiredSourceRefs) {
