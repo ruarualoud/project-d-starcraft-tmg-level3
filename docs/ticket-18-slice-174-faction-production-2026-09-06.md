@@ -7,6 +7,31 @@ formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
 ## Latest cumulative budget extension and live entry
 
+Budget increment `1bbc9ca` is pushed. Live session52952 /process31993 is
+`faction-v1-182042133d7ba5b21c2a`; do not restart it or modify its producing
+dependencies. The existing first two sections and prior third-section work
+were replayed from cached raw roles, not paid again. The actual11-field repair
+and one disclosed host clarification are imported. Fresh revision2 reviews
+are at the final adversarial batch;9 new calls /2,407,253 tokens /¥0.382759,
+all-history82,590,997 known tokens /estimated-or-reserved¥58.605730, no402.
+Fresh negative findings remain blocking. Some repeat a source-calibrated
+reviewer error about10.5→10.2 applicability; do not remove correct rules just
+to appease that judgment. Source-review workflow remains2/15, faction
+independent qualification0/2 and formal/runtime0/5.
+
+The independent consumer runner now also evaluates22 calibrated local rule
+probes using3 isolated repetitions in each of overall-only and overall-plus-
+faction arms (66 answers per arm). Damage timing, Reaction caps and named
+Active/payment limits remain scoped tests, with0 claimed new held-out cases
+and no battle-strength claim. Ten consumer checks (`22b4b689…`,27 injected
+model calls) cover full Skill inputs, no keys/production history/previous
+answers in prompts, retained wrong answers, source/debt vetoes, forbidden
+tools, malformed outputs and resume after three completed baseline calls.
+The old roster14 and rule-oracle14 also pass with0 Provider calls. Future
+consumer v2 runs plan8 calls per faction (2 roster+6 application), capped at20
+calls/10M tokens/¥8/1h to allow accounted structural recovery. No actual
+complete faction consumer evaluation has run; these are engineering gates.
+
 The original-limit preflight62674 exited0 with recipe `aa1c0fea…`:123 reusable
 raw roles,159 inherited calls /42,248,806 tokens /¥11.931646. No Provider calls.
 The explicit `--extend-faction-budget-v1` now records a single immutable
