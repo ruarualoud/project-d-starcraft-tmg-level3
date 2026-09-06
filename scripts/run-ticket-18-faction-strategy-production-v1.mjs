@@ -30,7 +30,8 @@ import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../c
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), args = process.argv.slice(2);
 if (![3, 5, 7].includes(args.length) || !['--preflight', '--live'].includes(args[0]) || args[1] !== '--overall-run'
   || !/^guide-repair-[a-f0-9]{20}$/.test(args[2]) || args.length >= 5 && (args[3] !== '--continue-from' || !/^faction-v1-[a-f0-9]{20}$/.test(args[4]))
-  || args.length === 7 && (args[5] !== '--field-repair-run' || !/^field-repair-[a-f0-9]{20}$/.test(args[6]))) fail('FACTION_RUN_ARGUMENTS_INVALID');
+  || args.length === 7 && !(args[5] === '--field-repair-run' && /^field-repair-[a-f0-9]{20}$/.test(args[6])
+    || args[5] === '--review-recovery-run' && /^faction-v1-[a-f0-9]{20}$/.test(args[6]))) fail('FACTION_RUN_ARGUMENTS_INVALID');
 const base = path.join(root, 'build/ticket-18-faction-production-v1'), filename = path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite');
 const json = async file => verifySeal(JSON.parse(await readFile(path.join(root, file), 'utf8')));
 const db = new DatabaseSync(filename, { readOnly: true });
@@ -77,7 +78,7 @@ for (const gate of sourceCorrectionGates) {
   if (!gate.passed || gate.inputHash !== inputs[0].hash) fail('FACTION_SOURCE_CORRECTION_READINESS_FAILED');
   for (const row of gate.codeHashes) if (sha256(await readFile(path.join(root, row.file))) !== row.hash) fail('FACTION_SOURCE_CORRECTION_READINESS_CODE_DRIFT');
 }
-const fieldRepairRunId = args[6] || parentRecipe?.fieldRepairBinding?.runId;
+const fieldRepairRunId = (args[5] === '--field-repair-run' ? args[6] : null) || parentRecipe?.fieldRepairBinding?.runId;
 const fieldRepairSeed = fieldRepairRunId ? await inspectFactionFieldRepairEvidenceV1({ root, runId: fieldRepairRunId }) : null;
 const fieldRepairBinding = fieldRepairSeed ? validateFactionFieldRepairSeedV1({ input: inputs[0], knownRulePolicy: knownRulePolicies[0], seed: fieldRepairSeed }) : null;
 const main = await verifyProductionReadiness(root, catalogue);
@@ -100,6 +101,22 @@ if (fieldRepairBinding) {
   for (const r of fieldRepairReadiness.codeHashes) if (sha256(await readFile(path.join(root, r.file))) !== r.hash) fail('FACTION_FIELD_SEED_READINESS_CODE_DRIFT');
   gates.push(fieldRepairReadiness);
 }
+const additionalRecoveryRunIds = (parentRecipe.additionalCommandRecoveryBindings || []).map(binding => binding.parentRunId);
+if (args[5] === '--review-recovery-run') {
+  if (args[6] !== args[4] || additionalRecoveryRunIds.includes(args[6])) fail('FACTION_ADDITIONAL_COMMAND_RECOVERY_SCOPE');
+  additionalRecoveryRunIds.push(args[6]);
+}
+const additionalRecoveries = [], additionalRecoveryGates = [];
+for (const parentRunId of additionalRecoveryRunIds) {
+  const parent = await json('build/ticket-18-faction-production-v1/' + parentRunId + '/recipe.json');
+  const recovery = inspectFactionCommandRecoveryV1({ filename, parentRunId, parent });
+  const gate = await json('build/ticket-18-faction-production-v1/' + parentRunId + '/review-metadata-recovery-readiness.json');
+  if (!gate.passed || gate.recoveryManifest.hash !== recovery.manifest.hash) fail('FACTION_ADDITIONAL_COMMAND_RECOVERY_PROOF_INVALID');
+  for (const row of gate.codeHashes) if (sha256(await readFile(path.join(root, row.file))) !== row.hash)
+    fail('FACTION_ADDITIONAL_COMMAND_RECOVERY_CODE_DRIFT');
+  additionalRecoveries.push(recovery); additionalRecoveryGates.push(gate);
+}
+gates.push(...additionalRecoveryGates);
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/faction-review-targets-v1.mjs', 'packages/skill-production-v3/faction-known-rule-findings-v1.mjs',
   'packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs',
@@ -126,6 +143,8 @@ const next = seal({ version: 'faction_strategy_production_v1', overallRunId: arg
   unitRoleRepairReadinessHashes: unitRoleRepairGates.map(g => g.hash),
   registeredSourceFieldRepair: true, commandRecoveryBinding: commandRecovery.manifest,
   sourceCorrectionReadinessHashes: sourceCorrectionGates.map(g => g.hash),
+  ...(additionalRecoveries.length ? { additionalCommandRecoveryBindings: additionalRecoveries.map(row => row.manifest),
+    additionalCommandRecoveryReadinessHashes: additionalRecoveryGates.map(gate => gate.hash) } : {}),
   target: 'two_complete_conditional_faction_strategy_candidates_with_source_review_not_runtime_promotion',
   independentEvaluationAnswersExposed: false, sourceRefreshPerformed: false, trainingTruth: false });
 let continuation = null;
@@ -136,14 +155,16 @@ if (args[4]) {
   continuation = inspectFactionContinuationV1({ filename, parentRunId: args[4], parent, parentReport, next,
     normalizationMigration: { before, after: main, recovery: gates[4] }, correctionMigration: gates[5],
     fieldRepairMigration: fieldRepairBinding ? { binding: fieldRepairBinding, readiness: fieldRepairReadiness } : null,
-    unitRoleRepairMigration: unitRoleRepairGates, sourceCorrectionMigration: sourceCorrectionGates });
+    unitRoleRepairMigration: unitRoleRepairGates, sourceCorrectionMigration: sourceCorrectionGates,
+    additionalCommandRecoveryMigration: additionalRecoveryGates });
 }
 const { hash: ignored, ...nextBody } = next;
 const recipe = continuation ? seal({ ...nextBody, continuation: continuation.manifest }) : next;
 if (args[0] === '--preflight') {
   console.log(JSON.stringify({ ready: true, recipeHash: recipe.hash, providerCalls: 0, factions: inputs.map(i => i.factionRecordKey),
     sections: inputs.map(i => createFactionWritingPlanV1(i).sections.length), overallQualified: true, limits,
-    reusableRoles: continuation?.manifest.reusable.length || 0, inheritedAccounting: continuation?.manifest.accounting || null })); process.exit(0);
+    reusableRoles: continuation?.manifest.reusable.length || 0, inheritedAccounting: continuation?.manifest.accounting || null,
+    additionalCommandRecoveries: additionalRecoveries.length })); process.exit(0);
 }
 const runId = 'faction-v1-' + recipe.hash.slice(0, 20), out = path.join(base, runId); await mkdir(out, { recursive: true });
 const inherited = continuation?.manifest.accounting || { calls: 0, tokens: 0, costMicros: 0 };
@@ -170,7 +191,8 @@ try {
   try { attached = await worker.attachCredential({ attachmentId: 'faction-' + randomUUID(), providerProfile: profile, credentialBytes: ingress.credentialBytes }); }
   finally { ingress.credentialBytes.fill(0); }
   if (!attached.ok) fail('PROVIDER_ATTACHMENT_FAILED');
-  const model = createFactionAccountedModelV1({ store, recovery: commandRecovery, maxInputBytes: limits.maxInputBytes, outputRecoveryLimit: 4096,
+  const model = createFactionAccountedModelV1({ store, recovery: commandRecovery, additionalRecoveries,
+    maxInputBytes: limits.maxInputBytes, outputRecoveryLimit: 4096,
     complete: (providerRequest, { signal } = {}) => {
       if (Date.now() - began >= limits.maxWallMs) fail('FACTION_RUN_WALL_EXHAUSTED');
       return worker.complete({ workerRef: attached.workerRef, providerRequest, signal });

@@ -25,7 +25,10 @@ export function normalizeFactionReviewCommandEnvelopeV1({ output, stageId, obser
     if (!target || v.title !== target.title || !['supported', 'unsupported', 'uncertain'].includes(v.verdict)) fail('FACTION_COMMAND_ENVELOPE_TARGETS');
     pending.delete(v.targetId);
   }
-  for (const c of output.coverage) exact(c, ['sourceRef', 'verdict', 'recommendationIndices', 'reason']);
+  for (const c of output.coverage) {
+    const emptyReferences = c && Array.isArray(c.sourceRefs) && c.sourceRefs.length === 0;
+    exact(c, ['sourceRef', 'verdict', 'recommendationIndices', 'reason', ...(emptyReferences ? ['sourceRefs'] : [])]);
+  }
   const command = { action: 'finish', content: output };
   return seal({ version: 'faction_review_command_envelope_v1', stageId, rawOutputHash: hash(output), command,
     normalizedCommandHash: hash(command), normalizedCommandWireHash: sha256(JSON.stringify(command)),
@@ -72,12 +75,20 @@ export function inspectFactionCommandRecoveryV1({ filename, parentRunId, parent 
   } finally { db.close(); }
 }
 
-export function createFactionAccountedModelV1({ store, recovery = null, ...options }) {
-  if (recovery) verifySeal(recovery.manifest);
+export function createFactionAccountedModelV1({ store, recovery = null, additionalRecoveries = [], ...options }) {
+  if (!Array.isArray(additionalRecoveries)) fail('FACTION_COMMAND_RECOVERY_SET_INVALID');
+  const recoveries = [...(recovery ? [recovery] : []), ...additionalRecoveries];
+  for (const row of recoveries) {
+    verifySeal(row.manifest);
+    if (hash([row.manifest.sourceBinding, row.manifest.contextHash, row.manifest.modelHash])
+      !== hash([recoveries[0].manifest.sourceBinding, recoveries[0].manifest.contextHash, recoveries[0].manifest.modelHash]))
+      fail('FACTION_COMMAND_RECOVERY_SET_DRIFT');
+  }
+  if (new Set(recoveries.map(row => row.manifest.hash)).size !== recoveries.length) fail('FACTION_COMMAND_RECOVERY_SET_DUPLICATE');
   return async request => {
     let received = null;
-    const capture = (id, requestHash, response, originRunId = null) => {
-      received = { id, requestHash, response, originRunId };
+    const capture = (id, requestHash, response, originRunId = null, recoveryManifestHash = null) => {
+      received = { id, requestHash, response, originRunId, recoveryManifestHash };
       if (reviewStage(request.stageId) && bare(response.output)) {
         if (response.usageReceipt?.reportedModel !== 'deepseek-v4-flash') fail('PROVIDER_MODEL_DRIFT');
         fail('FACTION_BARE_REVIEW_CAPTURED');
@@ -85,14 +96,18 @@ export function createFactionAccountedModelV1({ store, recovery = null, ...optio
     };
     const proxy = { ...store,
       reserve(id, providerRequest, ...limits) {
-        const requestHash = hash(providerRequest), old = recovery?.attempts.find(a => a.id === id);
-        if (old) {
-          const permit = recovery.manifest.attempts.find(a => a.id === id);
+        const requestHash = hash(providerRequest);
+        const optionsForId = recoveries.flatMap(source => source.attempts.filter(a => a.id === id).map(old => ({ source, old })));
+        const matching = optionsForId.filter(row => row.old.requestHash === requestHash);
+        if (optionsForId.length && matching.length !== 1) fail('FACTION_COMMAND_RECOVERY_REQUEST_DRIFT');
+        if (matching.length) {
+          const { source, old } = matching[0];
+          const permit = source.manifest.attempts.find(a => a.id === id && a.requestHash === requestHash);
           if (!permit || old.requestHash !== requestHash || permit.requestHash !== requestHash
             || old.state !== permit.state || old.code !== permit.code || old.receiptHash !== permit.receiptHash
             || hash(old.response) !== permit.responseHash) fail('FACTION_COMMAND_RECOVERY_REQUEST_DRIFT');
           if (old.state === 'failed') return { failed: true, code: old.code, usageKnown: true };
-          capture(id, requestHash, old.response, recovery.manifest.parentRunId);
+          capture(id, requestHash, old.response, source.manifest.parentRunId, source.manifest.hash);
           return { cached: true, response: old.response };
         }
         const lease = store.reserve(id, providerRequest, ...limits);
@@ -117,7 +132,7 @@ export function createFactionAccountedModelV1({ store, recovery = null, ...optio
       const receipt = seal({ version: 'faction_command_envelope_receipt_v1', stageId: request.stageId, call: request.call,
         attemptId: received.id, requestHash: received.requestHash, rawReceiptHash: received.response.usageReceipt.receiptHash,
         rawResponseHash: hash(received.response), originRunId: received.originRunId,
-        recoveryManifestHash: received.originRunId ? recovery.manifest.hash : null, normalized, trainingTruth: false });
+        recoveryManifestHash: received.recoveryManifestHash, normalized, trainingTruth: false });
       const lease = store.acquire(request.stageId + '.command-envelope.call-' + request.call, { receiptHash: receipt.hash });
       if (!lease.cached) store.finish(lease, receipt);
       return { command: normalized.command, usage: received.response.usageReceipt.usage, receiptHash: received.response.usageReceipt.receiptHash };

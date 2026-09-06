@@ -7,6 +7,49 @@ formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
 ## Latest terminal and repair-ready checkpoint
 
+Latest run `faction-v1-228b8989edaaba791753` /13236 is TERMINAL (exit1).
+The prior patch envelope was successfully reused and the next editor actually
+completed. A new supportive revision2 review had one paid JSON failure then a
+complete bare review whose coverage row carried an extra empty `sourceRefs`.
+That unknown key caused the stop. Three calls /793,018 tokens /¥0.099201;
+all-history79,092,893 known tokens /estimated-or-reserved ¥57.881309; no402 or
+in-flight attempt. Terminal report `2920b29d…`. Old21-character run pointers
+were a documentation typo; the identifier above is the actual20-character ID.
+
+Command wrapping now preserves the complete raw review, including that empty
+metadata. The target-review projection removes only this exact empty field,
+with original/normalized row hashes and an ignored-metadata receipt; nonempty
+references, unknown fields, judgment drift and wrong target identities remain
+errors. Append-only recovery declarations preserve the original907961 paid pair
+and add228b's pair, routing by exact request hash to its original invoice rather
+than copying attempts or rewriting the first recovery's origin. Actual new DSH
+replay16 checks (`9fb8916b…`) matched both original requests and retained the
+unsupported verdict with0 Provider sends. Original DSH18, fast10, append-migration14,
+continuation38, provenance15, workflow44, correction28, binding38, context DSH2
+and original migration12 also pass.
+
+Preflight `d914b990856f7c4d120fe8a53172a4e64ddf3993cdce86ec6d6e908863110203`
+passed:123 reusable raw roles,159 inherited calls /42,248,806 tokens /¥11.931646,
+same00:21:55UTC start and400 calls/60M tokens/¥20/8h limits. No live successor
+has been started. Continuation needs `--review-recovery-run faction-v1-228b8989edaaba791753`.
+The remaining13 sections exceed the likely remaining token/time capacity;
+any extension must be explicit, cumulative and auditable, never a reset.
+
+Independent source audit now finds11 exact current third-section field errors:
+6 Tenacity Active/Pass assertions,3 immediate-NON-LETHAL-casualty assertions,
+1 Orders-for-Goliath recommendation and1 unqualified10-inch split-Speed claim.
+The10-check gate `f0d9ef19…` binds original field hashes and whole frozen source
+passages; the consumer evidence entry rejects these before any paid evaluation.
+These fields are **not actually repaired yet**, and this exact-text catalogue
+does not prove that other wording is correct. The next implementation priority
+is full-context actual field repair plus fresh whole-section review, not blind
+continuation of a known-inaccurate candidate. The22 application probes still
+need consumer wiring and actual scoring. Source calibration also confirms that
+Faction Card exhaustion (10.5.2) and highest-value numeric keywords (2.6.1/11)
+are real rules, not errors to remove because a reviewer missed them.
+
+## Previous patch-envelope checkpoint
+
 `faction-v1-ba2a32dd31a97f909ac4` /76659 is TERMINAL (exit1), not a network
 wait. The third section completed five actual edits and a fresh full review;
 two issues remain. Its next editor returned unchanged prose; the subsequent

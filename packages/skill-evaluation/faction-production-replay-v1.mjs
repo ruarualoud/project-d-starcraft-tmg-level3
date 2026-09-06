@@ -73,7 +73,9 @@ export function openFactionProductionReplayV1({ filename, runId, recipe, ancesto
           || envelope.rawResponseHash !== hash(response) || originalAttempt?.request_hash !== envelope.requestHash
           || (envelope.originRunId || ownerRunId) !== origin.originRunId) fail('FACTION_REPLAY_COMMAND_ENVELOPE_DRIFT');
         if (envelope.originRunId) {
-          const binding = recipes.get(ownerRunId)?.commandRecoveryBinding;
+          const owner = recipes.get(ownerRunId);
+          const binding = [owner?.commandRecoveryBinding, ...(owner?.additionalCommandRecoveryBindings || [])]
+            .find(row => row?.hash === envelope.recoveryManifestHash);
           if (!binding || binding.hash !== envelope.recoveryManifestHash || binding.parentRunId !== origin.originRunId
             || !binding.attempts.some(a => a.id === envelope.attemptId && a.requestHash === envelope.requestHash && a.receiptHash === t.receiptHash))
             fail('FACTION_REPLAY_COMMAND_RECOVERY_BINDING_DRIFT');

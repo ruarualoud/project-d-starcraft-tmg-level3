@@ -1,6 +1,26 @@
 import { seal, verifySeal, hash, exact, text, clone, fail } from '../skill-production/common.mjs';
 
 const FIELDS = ['when', 'procedure', 'alternatives', 'risk', 'reviseIf', 'unproven'];
+
+// An observed provider copied the verdicts' sourceRefs field onto a coverage
+// row as an empty array. It adds no evidence; retain it in a receipt rather
+// than granting an unknown field authority or paying to rewrite the review.
+export function normalizeFactionCoverageMetadataV1(coverage) {
+  if (!Array.isArray(coverage)) fail('OUTPUT_SCHEMA_INVALID');
+  const repairs = [];
+  const rows = coverage.map((row, index) => {
+    const keys = ['sourceRef', 'verdict', 'recommendationIndices', 'reason'];
+    const extra = row && Object.hasOwn(row, 'sourceRefs');
+    exact(row, [...keys, ...(extra ? ['sourceRefs'] : [])]);
+    if (!extra) return clone(row);
+    if (!Array.isArray(row.sourceRefs) || row.sourceRefs.length) fail('FACTION_REVIEW_COVERAGE_METADATA_INVALID');
+    const { sourceRefs, ...normalized } = row;
+    repairs.push(seal({ index, originalRowHash: hash(row), normalizedRowHash: hash(normalized),
+      ignoredEmptyMetadata: { sourceRefs: [] }, coverageJudgmentChanged: false, sourceEvidenceAdded: false, trainingTruth: false }));
+    return clone(normalized);
+  });
+  return { coverage: rows, repairs };
+}
 export function createFactionReviewTargetsV1({ input, section, draft, indices }) {
   verifySeal(input);
   const targets = indices.map(index => {
@@ -20,6 +40,7 @@ export function createFactionReviewTargetsV1({ input, section, draft, indices })
 // target and quote a field of that target; they never count the whole array.
 export function validateTargetedFactionReviewV1(output, targets) {
   verifySeal(targets); exact(output, ['verdicts', 'coverage']);
+  const coverageMetadata = normalizeFactionCoverageMetadataV1(output.coverage);
   if (!Array.isArray(output.verdicts) || output.verdicts.length !== targets.targets.length) fail('FACTION_REVIEW_TARGET_DENOMINATOR');
   const pending = new Map(targets.targets.map(t => [t.targetId, t])), bindings = [];
   const verdicts = output.verdicts.map(v => {
@@ -55,7 +76,8 @@ export function validateTargetedFactionReviewV1(output, targets) {
     bindings.push({ targetId: target.targetId, index: target.index, recommendationHash: target.recommendationHash, evidence });
     return { index: target.index, verdict: v.verdict, reason: v.reason, sourceRefs: v.sourceRefs };
   });
-  return seal({ review: { verdicts, coverage: clone(output.coverage) }, targetContractHash: targets.hash, bindings,
+  return seal({ review: { verdicts, coverage: coverageMetadata.coverage }, targetContractHash: targets.hash, bindings,
+    ...(coverageMetadata.repairs.length ? { coverageMetadataRepairs: coverageMetadata.repairs } : {}),
     rawOutputHash: hash(output), targetIdentityChecked: true, semanticCorrectnessProven: false, trainingTruth: false });
 }
 

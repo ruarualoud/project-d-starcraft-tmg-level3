@@ -1,6 +1,43 @@
 import { DatabaseSync } from 'node:sqlite';
 import { seal, verifySeal, hash, fail } from '../skill-production/common.mjs';
 
+export function validateAdditionalFactionCommandRecoveryV1({ parent, next, gates = [] }) {
+  [parent, next].forEach(verifySeal);
+  const before = parent.additionalCommandRecoveryBindings || [], after = next.additionalCommandRecoveryBindings || [];
+  if (!Array.isArray(before) || !Array.isArray(after) || !Array.isArray(gates)
+    || after.length < before.length || after.length > before.length + 1)
+    fail('FACTION_ADDITIONAL_COMMAND_RECOVERY_SCOPE');
+  if (!after.length) {
+    if (next.additionalCommandRecoveryReadinessHashes || gates.length) fail('FACTION_ADDITIONAL_COMMAND_RECOVERY_SCOPE');
+    return null;
+  }
+  if (gates.length !== after.length || new Set(after.map(row => row.hash)).size !== after.length)
+    fail('FACTION_ADDITIONAL_COMMAND_RECOVERY_PROOF_MISSING');
+  [...before, ...after, ...gates].forEach(verifySeal);
+  if (before.some((row, index) => row.hash !== after[index].hash)) fail('FACTION_ADDITIONAL_COMMAND_RECOVERY_PREFIX_DRIFT');
+  if (hash(gates.map(gate => gate.hash)) !== hash(next.additionalCommandRecoveryReadinessHashes))
+    fail('FACTION_ADDITIONAL_COMMAND_RECOVERY_PROOF_DRIFT');
+  for (const [index, binding] of after.entries()) {
+    const gate = gates[index];
+    if (binding.modelHash !== next.modelHash || binding.contextHash !== next.contextHash
+      || hash(binding.sourceBinding) !== hash(next.sourceBinding)
+      || index >= before.length && (binding.parentRecipeHash !== parent.hash || binding.parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20))
+      || !gate.passed || gate.recoveryManifest?.hash !== binding.hash
+      || gate.primaryRecoveryManifestHash !== next.commandRecoveryBinding?.hash
+      || !next.inputHashes.includes(gate.inputHash) || gate.dshBinding?.hash !== next.dshBindingHash
+      || gate.actualDshSessions !== 1 || gate.providerCalls !== 0 || !gate.exactPriorProviderRequestsMatched
+      || !gate.rawOutputPreserved || !gate.originalNegativeJudgmentsPreserved || !gate.nonemptyMetadataRejected
+      || !gate.prefixRecoveryRetained || gate.attemptsCopied !== 0
+      || ['packages/skill-production-v3/faction-command-envelope-v1.mjs', 'packages/skill-production-v3/faction-review-targets-v1.mjs']
+        .some(file => !next.codeHashes.find(row => row.file === file)
+          || next.codeHashes.find(row => row.file === file)?.hash !== gate.codeHashes?.find(row => row.file === file)?.hash))
+      fail('FACTION_ADDITIONAL_COMMAND_RECOVERY_PROOF_INVALID');
+  }
+  return seal({ priorBindings: before.map(row => row.hash), bindings: after.map(row => row.hash),
+    readinessHashes: gates.map(gate => gate.hash), originalPrimaryBindingPreserved: true,
+    policy: 'append_source_bound_exact_paid_request_recoveries_no_attempt_copy_no_judgment_change', trainingTruth: false });
+}
+
 export function validateFactionSourceCorrectionMigrationV1({ parent, next, sourceCorrectionMigration }) {
   [parent, next].forEach(verifySeal);
   if (parent.registeredSourceFieldRepair && !next.registeredSourceFieldRepair) fail('FACTION_SOURCE_CORRECTION_REMOVED');
@@ -34,14 +71,16 @@ export function validateFactionSourceCorrectionMigrationV1({ parent, next, sourc
     policy: 'registered_source_fields_then_fresh_review_and_exact_paid_request_bare_review_envelope_no_judgment_change', trainingTruth: false });
 }
 
-export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration }) {
+export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration }) {
   [parent, parentReport, next].forEach(verifySeal);
   if (parent.version !== 'faction_strategy_production_v1' || parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20)
     || parentReport.runId !== parentRunId || parentReport.recipeHash !== parent.hash || !parentReport.failure) fail('FACTION_CONTINUATION_PARENT_INVALID');
   const strip = r => { const { hash: ignored, codeHashes, workflowReadinessHash, dshContextReadinessHash, mainReadinessHash, jsonRecoveryReadinessHash,
     targetedCorrectionsReadinessHash, knownRulePolicyHashes, fieldRepairBinding, unitRoleRepairReadinessHashes,
-    registeredSourceFieldRepair, commandRecoveryBinding, sourceCorrectionReadinessHashes, continuation, ...body } = r; return body; };
+    registeredSourceFieldRepair, commandRecoveryBinding, sourceCorrectionReadinessHashes,
+    additionalCommandRecoveryBindings, additionalCommandRecoveryReadinessHashes, continuation, ...body } = r; return body; };
   if (hash(strip(parent)) !== hash(strip(next))) fail('FACTION_CONTINUATION_CONTRACT_DRIFT');
+  const additionalRecoveryProof = validateAdditionalFactionCommandRecoveryV1({ parent, next, gates: additionalCommandRecoveryMigration });
   const allowed = new Set(['packages/skill-production-v3/faction-strategy-workflow-v1.mjs',
     'packages/skill-production-v3/faction-continuation-v1.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs']);
   const sourceCorrectionProof = validateFactionSourceCorrectionMigrationV1({ parent, next, sourceCorrectionMigration });
@@ -154,6 +193,7 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
       ...(fieldRepairProof ? { fieldRepairMigration: fieldRepairProof } : {}),
       ...(unitRoleRepairProof ? { unitRoleRepairMigration: unitRoleRepairProof } : {}),
       ...(sourceCorrectionProof ? { sourceCorrectionMigration: sourceCorrectionProof } : {}),
+      ...(additionalRecoveryProof ? { additionalCommandRecoveryMigration: additionalRecoveryProof } : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
       policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
     return { manifest, steps };
