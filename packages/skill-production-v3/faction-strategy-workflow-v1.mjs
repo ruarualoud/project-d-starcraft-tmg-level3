@@ -26,6 +26,28 @@ export function createFactionWritingPlanV1(input) {
     sections, axes: FACTION_AXES_V1, skillsToProduce: 1, sourceRefreshPerformed: false, trainingTruth: false });
 }
 
+export function createFactionReviewBatchPlanV1({ section, draft }) {
+  if (!Array.isArray(draft?.recommendations) || !draft.recommendations.length
+    || !Array.isArray(section?.requiredSourceRefs) || new Set(section.requiredSourceRefs).size !== section.requiredSourceRefs.length)
+    fail('FACTION_REVIEW_BATCH_PLAN_INVALID');
+  const batches = [];
+  for (let first = 0; first < draft.recommendations.length; first += 2) {
+    batches.push({ first, reviewIndices: draft.recommendations.slice(first, first + 2).map((_, n) => first + n), requiredSourceRefs: [] });
+  }
+  const sourceAssignments = section.requiredSourceRefs.map(sourceRef => {
+    const firstCitingIndex = draft.recommendations.findIndex(r => r.sourceRefs.includes(sourceRef));
+    // Source coverage belongs with an actual citing target, not automatically
+    // with targets0/1. A genuinely absent source remains assigned to batch0
+    // so the missing-content verdict cannot disappear from the denominator.
+    const batchStart = firstCitingIndex < 0 ? 0 : Math.floor(firstCitingIndex / 2) * 2;
+    batches.find(b => b.first === batchStart).requiredSourceRefs.push(sourceRef);
+    return { sourceRef, firstCitingIndex, batchStart, missingFromDraft: firstCitingIndex < 0 };
+  });
+  return seal({ version: 'faction_review_batch_plan_v1', sectionId: section.id, draftHash: hash(draft), batches, sourceAssignments,
+    policy: 'each_required_source_once_per_route_at_first_citing_target_batch_absence_stays_visible',
+    citationPlacementNotSemanticProof: true, trainingTruth: false });
+}
+
 // Global sources are supplied by runtime.role's stable full-source prefix.
 // Do not duplicate them or trim the qualified overall dependency to a summary.
 export function factionRoleWorkspaceV1(input) {
@@ -302,10 +324,9 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     let passed = false;
     for (let revision = 0; revision <= 3; revision++) {
       const reviews = [], reviewHashes = [], reviewPartition = [];
+      const coverageAssignmentPlan = createFactionReviewBatchPlanV1({ section, draft });
       for (const route of ['supportive', 'adversarial']) {
-        for (let first = 0; first < draft.recommendations.length; first += 2) {
-          const reviewIndices = draft.recommendations.slice(first, first + 2).map((_, n) => first + n);
-          const requiredSourceRefs = first === 0 ? section.requiredSourceRefs : [];
+        for (const { first, reviewIndices, requiredSourceRefs } of coverageAssignmentPlan.batches) {
           const targets = createFactionReviewTargetsV1({ input, section, draft, indices: reviewIndices });
           const reviewed = await role(section.id + '.review-target-batch-v1.' + route + '.' + revision + '.' + first,
             '独立来源审查，角色' + route + '。完整来源、总规则、整节候选仍在；本次只审查末尾targetContract明确给出的1至2个对象。不要自行数数组位置。以targetId和完整title标识对象，focus引用该对象fields中具体path及原文片段（8至240字符）；不能引用邻近建议代替。核对所有when/procedure/alternatives/risk/reviseIf/unproven字段、算术、支付/时机/例外。区分事实、条件策略、未验证效果；不能因为建议有条件就忽略不真实的确定性断言。focusedSources是同一冻结来源原文，非另一个模型的摘要。返回{"verdicts":[{"targetId":"给定ID","title":"给定完整标题","focus":[{"path":"给定字段路径","quote":"该字段原文片段"}],"verdict":"supported|unsupported|uncertain","reason":"针对此对象的具体依据，最多400字符","sourceRefs":["实际官方来源ID，1至8"]}],"coverage":[{"sourceRef":"指定覆盖来源","verdict":"covered|omitted|uncertain","recommendationIndices":[整节直接引用此来源的建议序号],"reason":"具体覆盖依据，最多400字符"}]}。每个targetId及coverageRequiredSourceRefs一次，coverageRequiredSourceRefs为空则coverage:[]。不要输出其他对象或数字index；否定/不确定判断必须指出对象内具体问题，规则来源优先于候选措辞。',
@@ -323,7 +344,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
       const rawIssues = mergeFactionKnownSourceIssuesV1({ input, policy: knownRulePolicy, draft,
         issues: createFactionRepairIssuesV1(section, draft, reviews) });
       const adjudication = adjudicateFactionSourceScopesV1({ input, draft, issues: rawIssues }), issues = adjudication.openIssues;
-      const round = seal({ sectionId: section.id, revision, draftHash: hash(draft), reviewHashes, reviews, reviewPartition, issues,
+      const round = seal({ sectionId: section.id, revision, draftHash: hash(draft), reviewHashes, reviews, reviewPartition, coverageAssignmentPlan, issues,
         rawIssues, adjudication,
         priorRoundHash: rounds.at(-1)?.hash || null, oldFailuresRetained: true, trainingTruth: false });
       const lease = store.acquire(section.id + '.issue-journal.' + revision, { roundHash: round.hash });

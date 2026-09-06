@@ -5,7 +5,42 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: full field-catalogue selection, no arbitrary subset cap
+## Current checkpoint: source coverage task scope and exact semantic field repair
+
+Run `faction-v1-18f0b5e3b20fc4909d08` is TERMINAL (97220 exit1), not running.
+It reused the valid21-field choice and completed the second section's eight
+review batches. Four coverage complaints all originated from assigning Medic
+and Raynor coverage to targets0/1 while those sources are actually cited by
+2/5 and3/6. An empty Editor followed by an addition-only reconstruction failed
+the replacement denominator; no partial edit was applied. Six actual calls,
+1,580,082 tokens, estimated ¥0.244461. All-history57,835,944 known tokens /
+estimated-or-reserved ¥54.227894; no402 or unresolved intent. Terminal report
+`96c9f6b69e0e0c5848ae0cbb7feac891d678efd26d498db0a0043177a16fc18c`.
+
+The host now assigns each required source once per route to its first actual
+citing target batch. Truly absent sources stay explicitly assigned to batch0.
+This corrects the review task, not its saved judgment or semantic score. Fresh
+coverage review is required; original negative outputs remain in the journal.
+Workflow44, targeted-correction28, consumer14 and two actual DSH full-context
+transport checks passed, zero Provider calls. Workflow readiness
+`8c620c15d49dc8514fcf80e7f79e12372023cef347de3a109a3a0dc9d814c5d9`.
+
+Separately, the first section's independent Academy/Life Support debt is now
+addressable by an exact field-level repair candidate. The complete sources,
+522 overall claims, entire8-advice section and three original source predicates
+remain in the DSH request. Only the flagged `4.reviseIf.1` may change; all
+other fields and seven other recommendations must remain identical. The old
+Provider output is immutable and no old review acceptance is inherited.
+Twelve actual-sample/injected checks passed, readiness
+`0eb04c36f70efcf9106aaf8feb1bc79dd8ac358891eae1a659d4d622fa8eda8e`.
+One actual isolated DSH session with injected HTTPS response verified948,961
+wire bytes/full-source delivery, zero Provider calls, readiness
+`0a95d674fecde0d60d563255ff9bccb358e14f580076fcb51dcbbe220cd55d70`.
+The bounded paid runner is ready; actual model repair and fresh whole-section
+review remain required. Review workflow completion1/15 is NOT qualification:
+one known debt remains, factions0/2, Ticket18 2/8, formal/runtime0/5.
+
+## Earlier checkpoint: full field-catalogue selection, no arbitrary subset cap
 
 Run `faction-v1-1c95d67afe4e20b85ef0` is now TERMINAL, handle4444 exit1.
 After the first section's review cycle completed, unit_roles.1 generated all

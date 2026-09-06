@@ -10,7 +10,7 @@ import { runDirectLoop } from '../packages/skill-production/loops.mjs';
 import { createFactionReviewTargetsV1, validateTargetedFactionReviewV1 } from '../packages/skill-production-v3/faction-review-targets-v1.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
 import { FACTION_AXES_V1, createFactionWritingPlanV1, validateFactionDraftV1, applyFactionStrategyPatchV1, validateFactionDraftBatchV1, inspectFactionBatchScopeV1, validateFactionReviewV1, createFactionRepairIssuesV1,
-  produceFactionStrategyV1, inspectFactionCoverageLinksV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
+  produceFactionStrategyV1, inspectFactionCoverageLinksV1, createFactionReviewBatchPlanV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { seal, verifySeal, hash, sha256, fail } from '../packages/skill-production/common.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), base = path.join(root, 'build/ticket-18-faction-production-v1');
@@ -94,6 +94,28 @@ try {
   const keptNegative = createFactionRepairIssuesV1(section, correctedDraft, [indirectNegative]);
   assert(keptNegative.issues.some(i => i.index === 1 && i.findings.some(f => f.verdict === 'uncertain')));
   assert(!keptNegative.issues.some(i => i.kind === 'assigned_source_omission'), 'Edit already represented sources, do not demand a ninth advice item');
+  const unitPrefix = 'faction.terran_armed_forces.faction.terran_armed_forces.unit_roles.1.';
+  const unitArtifact = suffix => verifySeal(JSON.parse(evidenceDb.prepare("SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'")
+    .get('faction-v1-18f0b5e3b20fc4909d08', unitPrefix + suffix).artifact)).value.output;
+  const unitDraft = { recommendations: ['0', '2', '4.target-reconstruction.v1', '6.target-reconstruction.v1']
+    .flatMap(n => unitArtifact('generator-items.' + n).items.map(i => i.value)) };
+  const unitSection = createFactionWritingPlanV1(inputs[0]).sections[1];
+  const unitPlan = createFactionReviewBatchPlanV1({ section: unitSection, draft: unitDraft });
+  const oldCoverage = unitArtifact('review-target-batch-v1.supportive.0.0').coverage;
+  assert(oldCoverage.some(c => c.sourceRef === 'source:army_units:medic' && c.verdict === 'omitted'));
+  for (const ref of ['source:army_units:medic', 'source:army_units:jim_raynor']) {
+    const assignment = unitPlan.sourceAssignments.find(a => a.sourceRef === ref);
+    assert.equal(assignment.firstCitingIndex, ref.endsWith('medic') ? 2 : 3);
+    assert.equal(assignment.batchStart, 2); assert.equal(assignment.missingFromDraft, false);
+    assert(!unitPlan.batches[0].requiredSourceRefs.includes(ref));
+  }
+  assert.deepEqual([...unitPlan.batches.flatMap(b => b.requiredSourceRefs)].sort(), [...unitSection.requiredSourceRefs].sort());
+  assert.deepEqual(unitPlan.batches.flatMap(b => b.reviewIndices), unitDraft.recommendations.map((_, n) => n));
+  const genuinelyMissing = structuredClone(unitDraft);
+  genuinelyMissing.recommendations.forEach(r => { r.sourceRefs = r.sourceRefs.filter(ref => ref !== 'source:army_units:medic'); });
+  const missingPlan = createFactionReviewBatchPlanV1({ section: unitSection, draft: genuinelyMissing });
+  assert(missingPlan.batches[0].requiredSourceRefs.includes('source:army_units:medic'));
+  assert.equal(missingPlan.sourceAssignments.find(a => a.sourceRef === 'source:army_units:medic').missingFromDraft, true);
 } finally { evidenceDb.close(); }
 const temp = await mkdtemp(path.join(base, 'workflow-test-'));
 const stores = [], makeStore = name => { const s = openProductionStore(path.join(temp, name + '.sqlite'), { runId: name, recipeHash: hash(name) }); stores.push(s); return s; };
@@ -179,7 +201,10 @@ try {
     assert(!candidate.independentEvaluationPassed && !candidate.runtimeAccepted && !candidate.trainingTruth);
     for (const s of candidate.sections) for (const round of s.rounds) for (const route of ['supportive', 'adversarial']) {
       assert.deepEqual(round.reviewPartition.filter(p => p.route === route).flatMap(p => p.reviewIndices), s.draft.recommendations.map((_, n) => n));
-      assert.deepEqual(round.reviewPartition.filter(p => p.route === route).flatMap(p => p.requiredSourceRefs), s.section.requiredSourceRefs);
+      assert.deepEqual([...round.reviewPartition.filter(p => p.route === route).flatMap(p => p.requiredSourceRefs)].sort(), [...s.section.requiredSourceRefs].sort());
+      for (const batch of round.reviewPartition.filter(p => p.route === route)) for (const ref of batch.requiredSourceRefs) {
+        assert(batch.reviewIndices.some(i => s.draft.recommendations[i].sourceRefs.includes(ref)));
+      }
     }
     if (!i) { assert.equal(candidate.sections[0].edits.length, 1); assert.equal(candidate.sections[0].rounds.length, 2); }
     const before = calls;
@@ -214,8 +239,8 @@ const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 
   'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 files.push('packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs');
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 42, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 44, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 42, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 44, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
