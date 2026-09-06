@@ -7,6 +7,26 @@ formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
 ## Latest terminal and repair-ready checkpoint
 
+Live successor `faction-v1-ba2a32dd31a97f909ac4` /76659 (pushed `c319282`)
+has actually repaired the remaining four fields in two bounded output batches:
+524,295 tokens /estimated ¥0.281572. Raw-role outputs and both paid receipts
+reapply to the exact prior complete section, inspection
+`38903c033baac11b779aadf936849d5e3648bf2d97ce425f2e9d48ed186015f3`.
+Receipts `f7feb969…` and `ab822f6b…`; unflagged fields and recommendations1/3/6
+are unchanged. The Rocket Launcher versus AGG-12 tradeoff now separates the
+additional SIDEARM/no-Surge profile from replacing C-14; both INSTANT cases
+explicitly disallow Infantry Armor and Life Support responses. Whole-section
+revision2 review is running, not yet accepted. This limited inspection is not
+general semantic or strategy validation, nor exact replay of every DSH request.
+
+Continuation inherited121 calls /32,183,224 tokens /¥10.353550,87 exact raw
+roles and the original00:21:55UTC start. Limits remain400 calls /60M tokens /
+¥20 /8h; no reset or extension. Last settled all-history69,551,606 known tokens /
+estimated ¥56.584785; no402. Do not restart live76659. Ten additional injected
+fast checks prove that a new bare review is normalized after its first settled
+response without resampling, invalid target output retains usage and remains
+blocked, and a changed prior request cannot send (`e90a1e69…`,0 Provider).
+
 `faction-v1-907961cf3b449dd64c64` /80048 is now TERMINAL (exit1), not waiting
 on the network. It generated all8 phase-tempo recommendations and completed
 the supportive route. The first adversarial batch had a settled JSON separator
