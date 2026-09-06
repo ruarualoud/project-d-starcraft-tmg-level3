@@ -9,6 +9,18 @@ export const FACTION_AXES_V1 = ['army_resources', 'unit_roles', 'phase_tempo', '
 const ADVICE_SHAPE = { recommendations: [{ title: '标题', when: ['适用的可观察条件'], procedure: ['步骤'],
   alternatives: ['不同条件下的替代行动及取舍'], risk: '代价/失败风险', reviseIf: ['何时改变计划'],
   sourceRefs: ['完整官方来源ID'], unproven: ['尚需实际局面/对战检验的效果'] }] };
+// Every example placed in a model instruction must itself be valid JSON.
+// Natural-language placeholders outside string values caused the model to
+// reproduce syntactically invalid index fields at a stable byte offset.
+export const FACTION_JSON_OUTPUT_EXAMPLES_V1 = Object.freeze({
+  reasoner: JSON.stringify({ answers: [{ index: 0, answer: '完整简洁推理，最多1600字符', sourceRefs: ['官方来源ID，1至8个'] }],
+    uncertainties: ['未证明事项'] }),
+  judge: JSON.stringify({ judgments: [{ index: 0, verdict: 'supported', reason: '具体依据，最多1200字符',
+    sourceRefs: ['官方来源ID，1至8个'] }] }),
+  generatorItems: JSON.stringify({ items: [{ index: 0, value: ADVICE_SHAPE.recommendations[0] }] }),
+  editor: JSON.stringify({ parentHash: '从任务末尾复制精确父hash', replacements: [{ index: 0,
+    value: ADVICE_SHAPE.recommendations[0] }], additions: [] }),
+});
 
 export function createFactionWritingPlanV1(input) {
   verifySeal(input);
@@ -330,14 +342,14 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     const questions = [...tree.value.branches.find(b => b.axis === section.axis).questions,
       ...challenger.value.branches.find(b => b.axis === section.axis).probes].map((q, index) => ({ index, ...q }));
     const scope = { section, questionTree: tree.value, questions, unverifiedTutor: tutor.value };
-    const answers = await role(section.id + '.reasoner', 'Reasoner：根据完整来源、总规则和本节指定来源回答每个question index，只讨论本阵营及本节范围。区分官方事实、条件策略与待验证效果，说明对手回应/替代方案，不声称完整行动合法或胜率已证明。返回{"answers":[{"index":整数,"answer":"完整简洁推理，最多1600字符","sourceRefs":["官方来源ID，1至8"]}],"uncertainties":["未证明事项"]}，每个index一次。', scope, out => {
+    const answers = await role(section.id + '.reasoner', 'Reasoner：根据完整来源、总规则和本节指定来源回答每个question index，只讨论本阵营及本节范围。区分官方事实、条件策略与待验证效果，说明对手回应/替代方案，不声称完整行动合法或胜率已证明。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.reasoner + '，index必须是从questions复制的JSON整数，每个index一次。', scope, out => {
       exact(out, ['answers', 'uncertainties']); strings(out.uncertainties, { empty: true });
       if (!Array.isArray(out.answers) || out.answers.length !== questions.length) fail('FACTION_ANSWER_DENOMINATOR');
       const pending = new Set(questions.map(q => q.index));
       for (const a of out.answers) { exact(a, ['index', 'answer', 'sourceRefs']); text(a.answer, 1600); refs(a.sourceRefs, input); if (!pending.delete(a.index)) fail('FACTION_ANSWER_SCOPE_INVALID'); }
       return out;
     });
-    const judge = await role(section.id + '.judge', 'Judge：独立按完整来源检查每个推理回答的事实、条件、时机、成本、例外与建议范围；策略可以是有条件假设，不得当作已赢对战。正确引用不等于正确结论。返回{"judgments":[{"index":整数,"verdict":"supported|unsupported|uncertain","reason":"具体依据，最多1200字符","sourceRefs":["官方来源ID，1至8"]}]}；每个回答一次。判断是模型审查而非Rules真值。',
+    const judge = await role(section.id + '.judge', 'Judge：独立按完整来源检查每个推理回答的事实、条件、时机、成本、例外与建议范围；策略可以是有条件假设，不得当作已赢对战。正确引用不等于正确结论。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.judge + '；index必须是从answers复制的JSON整数，每个回答一次。判断是模型审查而非Rules真值。',
       { ...scope, answers: answers.value }, out => {
         exact(out, ['judgments']);
         if (!Array.isArray(out.judgments) || out.judgments.length !== questions.length) fail('FACTION_REVIEW_DENOMINATOR');
@@ -354,8 +366,8 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     for (let first = 0; first < outline.value.outline.length; first += 2) {
       const indices = outline.value.outline.slice(first, first + 2).map((_, n) => first + n);
       const generated = await role(section.id + '.generator-items.' + first,
-        'Generator：仅为indices指定的1至2项提纲写完整中文策略建议。全部官方来源、总规则、整节提纲和已完成建议均在输入中；分批只限制输出，不限制阅读。逐项保留适用条件、支付/时机/例外、步骤、替代、风险、reviseIf和未证明效果。对于单位考虑装备/规模/任务条件；卡牌保留次数限制和资源替代用途。不保证胜利，不复制题号。返回{"items":[{"index":指定序号,"value":完整建议对象}]}，每个index一次；value字段为'
-          + JSON.stringify(ADVICE_SHAPE.recommendations[0]) + '。每项文本不超过1600字符，sourceRefs保留提纲所引来源，可补真实来源至最多8个。不要输出其他index、整份Skill或提纲。',
+        'Generator：仅为indices指定的1至2项提纲写完整中文策略建议。全部官方来源、总规则、整节提纲和已完成建议均在输入中；分批只限制输出，不限制阅读。逐项保留适用条件、支付/时机/例外、步骤、替代、风险、reviseIf和未证明效果。对于单位考虑装备/规模/任务条件；卡牌保留次数限制和资源替代用途。不保证胜利，不复制题号。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.generatorItems
+          + '，index必须是从indices复制的JSON整数，每个index一次。每项文本不超过1600字符，sourceRefs保留提纲所引来源，可补真实来源至最多8个。不要输出其他index、整份Skill或提纲。',
         { ...scope, proposals: proposer.value, judge: judge.value, outline: outline.value.outline, indices, completedRecommendations: recommendations },
         out => validateFactionDraftBatchV1(out, { input, outline: outline.value.outline, indices, completedRecommendations: recommendations }),
         { outline: outline.value.outline, indices, completedRecommendations: recommendations });
@@ -461,7 +473,8 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
         passed = true; break;
       }
       if (revision === 3) break;
-      const instruction = '按实际来源问题只改被指出的recommendation，其他条目逐字不变。原建议哈希已绑定；source omission只可新增直接引用该遗漏来源的有条件建议。不能把审查意见当新规则；如不确定保留阻断，不编造。返回{"parentHash":"精确父hash","replacements":[{"index":被标记序号,"value":完整recommendation对象}],"additions":[仅补遗漏来源的完整recommendation对象]}。所有被标记index恰好一次；无关不改。对象字段遵循' + JSON.stringify(ADVICE_SHAPE.recommendations[0]) + '。';
+      const instruction = '按实际来源问题只改被指出的recommendation，其他条目逐字不变。原建议哈希已绑定；source omission只可新增直接引用该遗漏来源的有条件建议。不能把审查意见当新规则；如不确定保留阻断，不编造。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.editor
+        + '。index必须是从editTargetAtEnd.target.index复制的JSON整数；parentHash必须复制editTargetAtEnd.parentHash。所有被标记index恰好一次；无关不改。source omission才可在additions放完整recommendation对象。';
       const collected = { parentHash: hash(draft), replacements: [], additions: [] }, editorHashes = [];
       // Output each issue's bounded patch separately, but retain the entire
       // draft/issues/source context. Apply the aggregate atomically afterward.

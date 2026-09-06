@@ -2,6 +2,40 @@
 
 ## Latest checkpoint: source-dependency recheck and pre-apply repair guard
 
+### Stable editor prompt-contract failure and valid JSON examples
+
+The first continuation from `faction-v1-3ff195438798f5218836` produced run
+`faction-v1-6792c09dcce21eeff6c4`. It routed to only the pending objectives
+editor0.1 after replaying156 exact raw roles. Both output formats again failed
+with `finishReason=stop`, `syntaxIssue=separator` and UTF-16 offset685. Their
+safe outcome hashes are `92a237d3040cda728c64a4409c36f28faf7a6f65bf8eb85f6c4413b8d515fc9d`
+and `1ca03d7fbfa8c70b105a99aa7a90854e3c6aa1f11199b561c1daebfdd13be167`.
+The run added2 calls/544,947 tokens/estimated¥0.037510. Cumulative known use is
+96,027,513 tokens and estimated cost plus historical reserve is¥60.843190;
+there is no402 or in-flight request.
+
+The repeat at the same first scalar position exposed a deterministic prompt
+contract defect instead of evidence for broader parser guessing. The editor
+example itself contained the invalid JSON placeholder `"index":被标记序号`.
+Reasoner, Judge and Generator had equivalent bare natural-language index/value
+placeholders. All four examples are now generated with `JSON.stringify`, use
+numeric index0, and explicitly require copying the integer from the final task
+target. The parser recovery remains narrow; no unquoted semantic value is
+invented or recovered.
+
+Workflow gate `988e2529a8c718195f2932a5cb98ac27e7c0f9825378c0db114a4fc9bafa9f88`
+passes54 checks/472 injected roles/0 Provider and binds the two actual negative
+receipts without storing or reclassifying their prose. All dependent field,
+phase, source, context and transaction gates were refreshed with0 Provider.
+Latest-parent migration
+`f2945734246bf22c53ed4942c053b2d3eb34dbb6c274e77ee7ceb6879354afdd`
+retains215 calls/57,536,646 tokens/¥14.466432,156 roles and the original start.
+Final main-entry preflight passed with recipe
+`8388ab1b741d281ef9463e6cde75d095ce2c2722d9a6a716cfa384aabb42966e`.
+Actual production still must prove that editor0.1 now returns valid JSON and
+that the resulting edit survives the pre-apply guard and fresh whole-section
+review.
+
 ### Actual objectives-section JSON failure and bounded grammar recovery
 
 Live run `faction-v1-3ff195438798f5218836` is terminal. It completed the whole

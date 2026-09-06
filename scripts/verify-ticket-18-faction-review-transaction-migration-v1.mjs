@@ -14,7 +14,7 @@ const filename = path.join(root, 'build/ticket-17-production-redesign-v1/product
 const json = async n => verifySeal(JSON.parse(await readFile(path.join(base, n + '.json'), 'utf8')));
 const externalJson = async file => verifySeal(JSON.parse(await readFile(path.join(root, file), 'utf8')));
 const reseal = (v, fields) => { const { hash: ignored, ...body } = v; return seal({ ...body, ...fields }); };
-const parentRunId = process.argv[2] || 'faction-v1-3ff195438798f5218836';
+const parentRunId = process.argv[2] || 'faction-v1-6792c09dcce21eeff6c4';
 assert.match(parentRunId, /^faction-v1-[a-f0-9]{20}$/);
 const parent = await json(parentRunId + '/recipe'), parentReport = await json(parentRunId + '/report');
 const phaseRun = parent.phaseFieldBinding.runId;
@@ -38,11 +38,19 @@ const budgetExtensionReadiness = await json('budget-extension-readiness');
 const mainAfter = await externalJson('build/ticket-17-production-redesign-v1/readiness.json');
 const mainBefore = await externalJson('build/ticket-17-production-redesign-v1/readiness-' + parent.mainReadinessHash + '.json');
 const jsonRecovery = await json('json-recovery-readiness');
+const workflowReadiness = await json('workflow-readiness'), dshContextReadiness = await json('dsh-context-readiness');
+const targetedCorrectionsReadiness = await json('targeted-corrections-readiness');
+const fieldSeedReadiness = await json('field-seed-readiness'), phaseFieldSeedReadiness = await json('phase-field-seed-readiness');
 const files = [...new Set([...parent.codeHashes.map(c => c.file), ...newFiles])];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
 const next = reseal(parent, { codeHashes, reviewTransactionBindings: bindings,
   reviewTransactionReadinessHash: readiness.hash, reviewTransactionEvidenceHash: actualEvidence.hash,
   mainReadinessHash: mainAfter.hash, jsonRecoveryReadinessHash: jsonRecovery.hash,
+  workflowReadinessHash: workflowReadiness.hash, dshContextReadinessHash: dshContextReadiness.hash,
+  targetedCorrectionsReadinessHash: targetedCorrectionsReadiness.hash,
+  unitRoleRepairReadinessHashes: unitRoleRepairMigration.map(g => g.hash),
+  sourceCorrectionReadinessHashes: sourceCorrectionMigration.map(g => g.hash),
+  phaseFieldReadinessHash: phaseFieldSeedReadiness.hash,
   ...(additionalCommandRecoveryMigration.length ? { additionalCommandRecoveryReadinessHashes: additionalCommandRecoveryMigration.map(g => g.hash) } : {}),
   budgetExtensionReadinessHash: budgetExtensionReadiness.hash });
 const args = { parent, next, readiness, actualEvidence };
@@ -50,8 +58,11 @@ let checks = 0;
 function check(fn) { fn(); checks++; }
 function rejects(fields, code) { check(() => assert.throws(() => validateFactionReviewTransactionMigrationV1({ ...args, ...fields }), { code })); }
 const invalid = 'FACTION_REVIEW_TRANSACTION_MIGRATION_PROOF_INVALID';
-check(() => assert.deepEqual(validateFactionReviewTransactionMigrationV1({ parent, next: parent, readiness, actualEvidence }).bindingHashes,
-  bindings.map(b => b.hash)));
+// The transaction bindings are immutable, but a workflow-only prompt change
+// deliberately refreshes the readiness receipt. Do not pretend the new receipt
+// was already present on the terminal parent.
+check(() => { assert.deepEqual(parent.reviewTransactionBindings.map(b => b.hash), bindings.map(b => b.hash));
+  assert.notEqual(parent.reviewTransactionReadinessHash, readiness.hash); });
 const proof = validateFactionReviewTransactionMigrationV1(args);
 check(() => assert.deepEqual(proof.bindingHashes, bindings.map(b => b.hash)));
 rejects({ readiness: null }, 'FACTION_REVIEW_TRANSACTION_PROOF_MISSING');
@@ -88,9 +99,9 @@ rejects({ next: reseal(next, { codeHashes: codeHashes.map(c => c.file === newFil
 // checked. This proof never copies attempts or alters the original start.
 const continuationArgs = { filename, parentRunId, parent, parentReport, next,
   normalizationMigration: { before: mainBefore, after: mainAfter, recovery: jsonRecovery },
-  correctionMigration: await json('targeted-corrections-readiness'),
-  fieldRepairMigration: { binding: parent.fieldRepairBinding, readiness: await json('field-seed-readiness') },
-  phaseSeedMigration: { binding: parent.phaseFieldBinding, readiness: await json('phase-field-seed-readiness') },
+  correctionMigration: targetedCorrectionsReadiness,
+  fieldRepairMigration: { binding: parent.fieldRepairBinding, readiness: fieldSeedReadiness },
+  phaseSeedMigration: { binding: parent.phaseFieldBinding, readiness: phaseFieldSeedReadiness },
   unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration,
   budgetExtensionReadiness, reviewTransactionMigration: { readiness, actualEvidence } };
 const continuation = inspectFactionContinuationV1(continuationArgs);

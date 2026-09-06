@@ -9,7 +9,7 @@ import { createProductionRuntimeV3 } from '../packages/skill-production-v3/runti
 import { runDirectLoop } from '../packages/skill-production/loops.mjs';
 import { createFactionReviewTargetsV1, validateTargetedFactionReviewV1 } from '../packages/skill-production-v3/faction-review-targets-v1.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
-import { FACTION_AXES_V1, createFactionWritingPlanV1, validateFactionDraftV1, applyFactionStrategyPatchV1, validateFactionDraftBatchV1, inspectFactionBatchScopeV1, validateFactionReviewV1, createFactionRepairIssuesV1,
+import { FACTION_AXES_V1, FACTION_JSON_OUTPUT_EXAMPLES_V1, createFactionWritingPlanV1, validateFactionDraftV1, applyFactionStrategyPatchV1, validateFactionDraftBatchV1, inspectFactionBatchScopeV1, validateFactionReviewV1, createFactionRepairIssuesV1,
   produceFactionStrategyV1, inspectFactionCoverageLinksV1, createFactionReviewBatchPlanV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { seal, verifySeal, hash, sha256, fail } from '../packages/skill-production/common.mjs';
 
@@ -18,8 +18,28 @@ const catalogue = await loadFrozenSkillEvidence(root), context = createGlobalPro
 const inputs = await Promise.all(['terran_armed_forces', 'zerg_swarm'].map(async name => verifySeal(JSON.parse(await readFile(path.join(base, name + '-input.json'), 'utf8')))));
 const policies = await Promise.all(['terran_armed_forces', 'zerg_swarm'].map(async name => verifySeal(JSON.parse(await readFile(path.join(base, name + '-known-rule-policy.json'), 'utf8')))));
 const knownPolicy = input => policies.find(p => p.inputHash === input.hash);
+for (const [name, example] of Object.entries(FACTION_JSON_OUTPUT_EXAMPLES_V1)) {
+  const parsed = JSON.parse(example);
+  assert(parsed && typeof parsed === 'object' && !Array.isArray(parsed), name);
+}
+assert.equal(JSON.parse(FACTION_JSON_OUTPUT_EXAMPLES_V1.reasoner).answers[0].index, 0);
+assert.equal(JSON.parse(FACTION_JSON_OUTPUT_EXAMPLES_V1.judge).judgments[0].index, 0);
+assert.equal(JSON.parse(FACTION_JSON_OUTPUT_EXAMPLES_V1.generatorItems).items[0].index, 0);
+assert.equal(JSON.parse(FACTION_JSON_OUTPUT_EXAMPLES_V1.editor).replacements[0].index, 0);
 const evidenceDb = new DatabaseSync(path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite'), { readOnly: true });
+let actualPromptFailureEvidence;
 try {
+  const promptFailureRows = evidenceDb.prepare("SELECT id,response FROM attempts WHERE run=? AND code='PROVIDER_RESPONSE_JSON_INVALID' ORDER BY id")
+    .all('faction-v1-6792c09dcce21eeff6c4');
+  assert.equal(promptFailureRows.length, 2);
+  const promptFailureOutcomes = promptFailureRows.map(row => verifySeal(JSON.parse(row.response)).value.responseOutcome);
+  assert(promptFailureRows.every(row => row.id.includes('.objectives.1.editor.0.1.')));
+  assert(promptFailureOutcomes.every(outcome => outcome.finishReason === 'stop' && outcome.syntaxIssue === 'separator'));
+  assert.deepEqual([...new Set(promptFailureOutcomes.map(outcome => outcome.parseErrorOffset))], [685]);
+  assert(promptFailureOutcomes.every(outcome => outcome.structure.includes('_')));
+  actualPromptFailureEvidence = { runId: 'faction-v1-6792c09dcce21eeff6c4',
+    outcomeHashes: promptFailureOutcomes.map(outcome => outcome.hash), formats: 2, parseErrorUtf16Offset: 685,
+    sameEditorScalarPosition: true, outputNotStoredOrReclassified: true };
   const row = evidenceDb.prepare("SELECT response,usage FROM attempts WHERE run=? AND code='PROVIDER_RESPONSE_OUTPUT_TRUNCATED'").get('faction-v1-c05262b66b5603afecbb');
   const receipt = verifySeal(JSON.parse(row.response)).value.responseOutcome;
   assert.equal(receipt.finishReason, 'length'); assert.equal(receipt.syntaxIssue, 'incomplete');
@@ -128,6 +148,7 @@ function modelFor(input, mode = 'positive') {
     calls++;
     if (mode === 'payment') fail('API_BALANCE_EXHAUSTED_STOP_ALL_WORK');
     const task = observed.messages[0].content, w = JSON.parse(task.slice(task.indexOf('\nLOCAL WORKSPACE\n') + 17));
+    for (const invalid of ['"index":整数', '"index":指定序号', '"index":被标记序号', '"value":完整建议对象']) assert(!task.includes(invalid));
     assert(task.startsWith('FROZEN GLOBAL SOURCE CONTEXT\n' + JSON.stringify(context.prompt)));
     assert.equal(w.overallSkill.sections.flatMap(s => s.claims).length, 522);
     assert.equal(w.operationalGuide.hash, input.operationalGuide.hash);
@@ -239,8 +260,10 @@ const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 
   'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 files.push('packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs');
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 44, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 54, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
+  modelInstructionJsonExamples: Object.keys(FACTION_JSON_OUTPUT_EXAMPLES_V1).length, invalidBarePlaceholderExamples: 0,
+  actualPromptFailureEvidence, validJsonExamplesReplaceBareNaturalLanguageIndexPlaceholders: true,
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 44, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 54, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
