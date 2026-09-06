@@ -5,7 +5,32 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: first review cycle complete, independent semantic veto
+## Current checkpoint: full field-catalogue selection, no arbitrary subset cap
+
+Run `faction-v1-1c95d67afe4e20b85ef0` is now TERMINAL, handle4444 exit1.
+After the first section's review cycle completed, unit_roles.1 generated all
+7 advice items and reached its last supportive review target. Its actual
+field-binding response selected all21 existing fields, with no duplicate or
+unknown address. The fixed16 cap rejected that legitimate complete selection.
+The gate now bounds selections by the host target's existing field catalogue;
+quote evidence can also contain the full catalogue. Unknown/duplicate/out-of-
+catalogue selections remain rejected. All original judgments and choices are
+preserved. Thirty-eight actual-sample/negative checks, correction28,
+workflow42 and two actual DSH full-context sessions passed with zero Provider
+calls. Binding readiness
+`dacf39444b3ed78ad68d7688f1ca18c71657869cb73c9201d528ad5e0e8074a5`,
+workflow `debd0034d7902d75eb2ba6d4b9543c5b5c999c48d36e320c0ebb40467571daee`,
+DSH `a76f1896b0c9751d2a15399a4cc016fc63ee97e2b3cad775f15d8c030902f3c8`.
+
+This run20 calls /5,337,502 tokens /¥0.876400. All-history56,255,862 known
+tokens /estimated-or-reserved ¥53.983433; no402 or in-flight intent. Terminal
+report `f01d095c964beaa71ef4db2ab1f28766ac843b2e8e6c3e4fbba6a13fd8adf0ff`.
+Continue only from1c95 under audited new code, preserving all ancestor usage,
+limits and start time. Review workflow complete1/15, with one known semantic
+debt still blocking independent qualification; faction Skills0/2,Ticket18 2/8,
+project16/22,formal/runtime0/5. The following running checkpoint is historical.
+
+## Earlier checkpoint: first review cycle complete, independent semantic veto
 
 Run `faction-v1-1c95d67afe4e20b85ef0`, handle4444, is running. It reused the
 actual4+4 field selections without another binding call. The first section's

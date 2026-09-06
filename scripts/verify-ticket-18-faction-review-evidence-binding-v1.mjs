@@ -13,7 +13,7 @@ const actual = verifySeal(JSON.parse(await readFile(path.join(base, 'targeted-co
 const draft = actual.knownRuleCorrection.draft, section = createFactionWritingPlanV1(input).sections[0];
 const targets = createFactionReviewTargetsV1({ input, section, draft, indices: [4, 5] });
 const db = new DatabaseSync(path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite'), { readOnly: true });
-let output, retry, repairedReview, repairedRetry, sourceOnlyReview, sourceOnlyRetry, actualSelection;
+let output, retry, repairedReview, repairedRetry, sourceOnlyReview, sourceOnlyRetry, actualSelection, unitReview, unitSelection, unitDraft;
 try {
   const id = 'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.review-target-batch-v1.supportive.0.4';
   const get = suffix => verifySeal(JSON.parse(db.prepare('SELECT artifact FROM steps WHERE run=? AND id=?').get('faction-v1-bcba77c39b85d99b5dbd', id + suffix).artifact)).value.output;
@@ -27,6 +27,12 @@ try {
   sourceOnlyReview = sourceOnly(''); sourceOnlyRetry = sourceOnly('.schema');
   actualSelection = verifySeal(JSON.parse(db.prepare('SELECT artifact FROM steps WHERE run=? AND id=?')
     .get('faction-v1-de32d27f150eb1349dea', repairedId.replace('supportive.1.2', 'supportive.1.4') + '.field-binding.v1').artifact)).value.output;
+  const unitPrefix = 'faction.terran_armed_forces.faction.terran_armed_forces.unit_roles.1.';
+  const unit = suffix => verifySeal(JSON.parse(db.prepare('SELECT artifact FROM steps WHERE run=? AND id=?')
+    .get('faction-v1-1c95d67afe4e20b85ef0', unitPrefix + suffix).artifact)).value.output;
+  unitReview = unit('review-target-batch-v1.supportive.0.6'); unitSelection = unit('review-target-batch-v1.supportive.0.6.field-binding.v1');
+  unitDraft = { recommendations: ['0', '2', '4.target-reconstruction.v1', '6.target-reconstruction.v1']
+    .flatMap(n => unit('generator-items.' + n).items.map(i => i.value)) };
 } finally { db.close(); }
 assert.equal(hash(output), hash(retry));
 // RED on the actual four-focus response before the typed evidence recovery.
@@ -46,7 +52,7 @@ const invented = structuredClone(output); invented.verdicts[0].focus[0].quote +=
 assert.throws(() => validateTargetedFactionReviewV1(invented, targets), { code: 'FACTION_REVIEW_TARGET_QUOTE_MISMATCH' });
 const negative = structuredClone(output); negative.verdicts[0].verdict = 'unsupported'; negative.verdicts[0].reason = 'Injected negative must remain negative';
 assert.equal(validateTargetedFactionReviewV1(negative, targets).review.verdicts[0].verdict, 'unsupported');
-const overflow = structuredClone(output); overflow.verdicts[0].focus = Array(17).fill(overflow.verdicts[0].focus[0]);
+const overflow = structuredClone(output); overflow.verdicts[0].focus = Array(Math.max(16, targets.targets[0].fields.length) + 1).fill(overflow.verdicts[0].focus[0]);
 assert.throws(() => validateTargetedFactionReviewV1(overflow, targets), { code: 'FACTION_REVIEW_TARGET_FOCUS_REQUIRED' });
 // Actual post-repair review appended exactly one Chinese full stop to the
 // complete risk field. Keep the original quote and disclose the non-exact
@@ -115,12 +121,24 @@ assert.throws(() => applyFactionReviewFieldBindingV1(sourceOnlyReview, sourceOnl
 const tooManyFields = structuredClone(actualSelection); tooManyFields.selections[0].fieldPaths = [...sourceOnlyTargets.targets[0].fields.map(f => f.path), 'outside.bound'];
 assert.equal(tooManyFields.selections[0].fieldPaths.length, 17);
 assert.throws(() => applyFactionReviewFieldBindingV1(sourceOnlyReview, sourceOnlyTargets, plan, tooManyFields), { code: 'FACTION_REVIEW_BINDING_SELECTION_INVALID' });
+const unitSection = createFactionWritingPlanV1(input).sections[1];
+const unitTargets = createFactionReviewTargetsV1({ input, section: unitSection, draft: unitDraft, indices: [6] });
+const unitPlan = planFactionReviewFieldBindingV1(unitReview, unitTargets);
+assert.equal(unitSelection.selections[0].fieldPaths.length, 21); assert.equal(unitTargets.targets[0].fields.length, 21);
+const unitRebound = applyFactionReviewFieldBindingV1(unitReview, unitTargets, unitPlan, unitSelection);
+assert.equal(unitRebound.output.verdicts[0].focus.length, 21);
+assert.deepEqual(judgments(unitRebound.output), judgments(unitReview));
+validateFactionReviewV1(validateTargetedFactionReviewV1(unitRebound.output, unitTargets).review,
+  { input, section: unitSection, draft: unitDraft, reviewIndices: [6], requiredSourceRefs: [] });
+const unitOverflow = structuredClone(unitSelection); unitOverflow.selections[0].fieldPaths.push('outside.bound');
+assert.throws(() => applyFactionReviewFieldBindingV1(unitReview, unitTargets, unitPlan, unitOverflow), { code: 'FACTION_REVIEW_BINDING_SELECTION_INVALID' });
 const files = ['packages/skill-production-v3/faction-review-targets-v1.mjs', 'scripts/verify-ticket-18-faction-review-evidence-binding-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 36, codeHashes, actualOutputHash: hash(output), bindingReceipt: bound,
+const report = seal({ passed: true, checks: 38, codeHashes, actualOutputHash: hash(output), bindingReceipt: bound,
   actualPostRepairOutputHash: hash(repairedReview), punctuationBindingReceipt: punctuationBound,
   sourceOnlyReviewHash: hash(sourceOnlyReview), fieldSelectionRecovery: rebound.receipt,
   actualFieldSelectionRecovery: actualSelected.receipt,
+  actualCompleteFieldSelectionRecovery: unitRebound.receipt,
   policy: 'typed_original_source_quotes_require_independent_exact_target_quote', providerCalls: 0, trainingTruth: false });
 await writeFile(path.join(base, 'review-evidence-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 36, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 38, providerCalls: 0, hash: report.hash }));

@@ -27,7 +27,9 @@ export function validateTargetedFactionReviewV1(output, targets) {
     const target = pending.get(v.targetId);
     if (!target || target.title !== v.title) fail('FACTION_REVIEW_TARGET_IDENTITY_MISMATCH');
     pending.delete(v.targetId);
-    if (!Array.isArray(v.focus) || !v.focus.length || v.focus.length > 16) fail('FACTION_REVIEW_TARGET_FOCUS_REQUIRED');
+    // A host-materialized selection may legitimately cover EVERY existing
+    // field. Bound by that finite catalogue, not an unrelated fixed count.
+    if (!Array.isArray(v.focus) || !v.focus.length || v.focus.length > Math.max(16, target.fields.length)) fail('FACTION_REVIEW_TARGET_FOCUS_REQUIRED');
     const evidence = v.focus.map(f => {
       exact(f, ['path', 'quote']); text(f.quote, 240);
       const field = target.fields.find(field => field.path === f.path);
@@ -92,7 +94,7 @@ export function applyFactionReviewFieldBindingV1(original, targets, plan, select
   for (const row of selection.selections) {
     exact(row, ['targetId', 'fieldPaths']);
     const target = pending.get(row.targetId);
-    if (!target || !Array.isArray(row.fieldPaths) || !row.fieldPaths.length || row.fieldPaths.length > 16
+    if (!target || !Array.isArray(row.fieldPaths) || !row.fieldPaths.length || row.fieldPaths.length > target.fields.length
       || new Set(row.fieldPaths).size !== row.fieldPaths.length) fail('FACTION_REVIEW_BINDING_SELECTION_INVALID');
     pending.delete(row.targetId);
     byId.set(row.targetId, row.fieldPaths.map(path => {
