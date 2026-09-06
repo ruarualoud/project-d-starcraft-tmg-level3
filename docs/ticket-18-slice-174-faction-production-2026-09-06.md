@@ -38,6 +38,25 @@ it will not inherit a completed source-review or quality verdict.
 Source-reviewed sections0/15, faction candidates0/2; Ticket18 2/8, project16/22,
 formal/runtime five-piece acceptance0/5.
 
+### Independent consumer evaluation prepared, not yet run with a real model
+
+`faction-roster-use-evaluation-v1.mjs` compares two fresh contexts per faction:
+complete overall Skill/guide alone versus the same overall plus every section
+of the faction Skill. It exposes no production dialogue, model review verdicts,
+original source context, kernel outputs or expected answers. The four declared
+card-package questions for each faction are graded by the calibrated Rules
+drills (one known cost diagnostic and seven independent inputs across both).
+All legal alternatives and tied cheapest packages must be returned. Exact
+requests, Provider receipt hashes, old negative results and checkpoint reuse
+are retained. Source-failed/drifted/known-bad candidates cannot enter this test.
+
+Twelve engineering checks passed with eight injected model responses and zero
+Provider calls, including negative scores, duplicate answers, forbidden tools,
+source/candidate drift and known-error rejection. No actual faction Skill has
+yet been evaluated by this module. It has no paid launcher yet and cannot
+publish or promote anything. A positive paired result will only establish this
+bounded roster-decision behavior, not statistical strategy gains or Room play.
+
 ## Earlier checkpoint: explicit targets, empty-patch recovery, calibrated fact correction
 
 The three observed defects now have production-path changes, not just a report:
