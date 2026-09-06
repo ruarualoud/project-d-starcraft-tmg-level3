@@ -53,6 +53,19 @@ new packet changes only the source-derived reading context and neither edits
 the draft nor resets the main production revision budget. Actual results are
 pending; do not equate a supported local result with complete section review.
 
+Update: `dependency-recheck-d1479aa57de19d2c2ed8` /53729 exited1 before any
+attempt or Provider request. `INTEGER_INVALID` came from a¥2 run ceiling below
+one full-prompt conservative reservation, not another LLM failure. The initial
+preflight had omitted this cross-limit check. A new budget preflight checks
+the configured whole-request ceiling:¥3.563254 per request,¥7.126508 for the
+two planned reviews. The revised audit ceiling is¥8, with8 calls/4M tokens/
+30 minutes unchanged. It explicitly retains the unsent run's original clock,
+checks its zero attempts, and preserves its journal. Main production revisions
+are not reset. Boundary/negative tests and5 injected review calls pass
+(`c547bbbd…`). No revised live run has started, so all-history costs remain
+¥58.970151. The new read-only actual-review inspector is syntax-checked only;
+there is no actual new review result to replay yet.
+
 ## Historical: cumulative budget extension and live entry
 
 Budget increment `1bbc9ca` is pushed. Live session52952 /process31993 is
