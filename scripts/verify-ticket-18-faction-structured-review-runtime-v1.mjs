@@ -8,8 +8,11 @@ import { fileURLToPath } from "node:url";
 
 import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from
   "../content/skill-generation/offline-provider-profile-v1.mjs";
-import { STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V1 as contract,
-  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V1 as contractRef } from
+import { STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V1 as contractV1,
+  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V1 as contractRefV1,
+  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2 as contract,
+  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V2 as contractRef,
+  STARCRAFT_TMG_FACTION_REVIEW_CONTRACT_MIGRATION_V1_TO_V2 as contractMigration } from
   "../content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs";
 import { createStarcraftTmgProviderProfileRegistryV2 } from
   "../packages/secure-provider-runtime/provider-profile-registry-v2.mjs";
@@ -75,13 +78,17 @@ const input = verifySeal(JSON.parse(await readFile(path.join(ROOT,
 const db = new DatabaseSync(path.join(ROOT,
   "build/ticket-17-production-redesign-v1/production.sqlite"),
 { readOnly: true });
-let corrected;
+let corrected, actualBoundaryCandidate;
 try {
   corrected = verifySeal(JSON.parse(db.prepare(
     "SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'",
   ).get("faction-v1-9a88d1a1008f0bb079ba",
     "faction.terran_armed_forces.objectives.1.known-rule-correction")
     .artifact)).value;
+  actualBoundaryCandidate = verifySeal(JSON.parse(db.prepare(
+    "SELECT artifact FROM steps WHERE run=? AND id LIKE ? AND state='complete'",
+  ).get("faction-v1-38cff03b5a47b54b6573",
+    "structured-%.rejected-candidate").artifact)).value;
 } finally { db.close(); }
 const section = createFactionWritingPlanV1(input).sections.find((row) =>
   row.id === "faction.terran_armed_forces.objectives.1");
@@ -145,6 +152,28 @@ const request = { packet, roleId,
     coverageRequiredSourceRefs: requiredSourceRefs,
     outputRequestAtEnd: { targetContract: targets,
       coverageOnlySourceRefs: requiredSourceRefs } } };
+
+await check("review.v1-frozen-v2-only-relaxes-verdict-reason-envelope", async () => {
+  assert.equal(contractRefV1.hash,
+    "ac4f185c7c8dc7ae13f49036dc771939a5e321687b19ef93506ec76febbef5a8");
+  assert.equal(contractMigration.from.hash, contractRefV1.hash);
+  assert.equal(contractMigration.to.hash, contractRef.hash);
+  assert.deepEqual(contractMigration.changes, [{
+    path: "$.properties.verdicts.items.properties.reason.maxLength",
+    before: 400, after: 800,
+    kind: "bounded_string_envelope_relaxation",
+  }]);
+  assert.equal(actualBoundaryCandidate.outputContractRef.hash,
+    contractRefV1.hash);
+  assert.equal(actualBoundaryCandidate.providerValue.verdicts[1].reason.length,
+    403);
+  assert.equal(validateStarcraftTmgProviderJsonSchemaValueV1(
+    contractV1.providerSchema,
+    actualBoundaryCandidate.providerValue).ok, false);
+  assert.equal(validateStarcraftTmgProviderJsonSchemaValueV1(
+    contract.providerSchema,
+    actualBoundaryCandidate.providerValue).ok, true);
+});
 
 await check("review.actual-contract-capability-probe", async () => {
   assert.equal(capabilityReport.passed, true);
@@ -210,7 +239,7 @@ await check("review.one-structured-attempt-no-prompt-fallback", async () => {
 
 await check("review.one-bounded-schema-instance-repair-preserves-other-values", async () => {
   const rejected = structuredClone(providerOutput);
-  rejected.verdicts[0].reason = "R".repeat(401);
+  rejected.verdicts[0].reason = "R".repeat(801);
   rejected.verdicts[0].sourceSlots = capsule.localIssue.reviewTask
     .includedSourceSlots.slice(0, 9);
   rejected.verdicts[0].unexpectedField = "delete only this field";
@@ -251,12 +280,12 @@ await check("review.one-bounded-schema-instance-repair-preserves-other-values", 
 
 await check("review.exact-rejected-candidate-import-skips-initial-provider-call", async () => {
   const rejectedValue = structuredClone(providerOutput);
-  rejectedValue.verdicts[1].reason = "R".repeat(403);
+  rejectedValue.verdicts[1].reason = "R".repeat(803);
   const validation = validateStarcraftTmgProviderJsonSchemaValueV1(
     contract.providerSchema, rejectedValue);
   assert.deepEqual(validation.issues[0], {
     path: "$.verdicts[1].reason", code: "string_too_long",
-    actualLength: 403, minLength: 1, maxLength: 400,
+    actualLength: 803, minLength: 1, maxLength: 800,
   });
   const imported = seal({
     version:
@@ -272,7 +301,7 @@ await check("review.exact-rejected-candidate-import-skips-initial-provider-call"
     runtimeAccepted: false, trainingTruth: false,
   });
   const repaired = structuredClone(rejectedValue);
-  repaired.verdicts[1].reason = "R".repeat(399);
+  repaired.verdicts[1].reason = "R".repeat(799);
   const fault = createStarcraftTmgInMemoryStructuredFaultAdapterV1({
     steps: [{ kind: "success", output: repaired }],
   });
@@ -376,6 +405,10 @@ const report = seal({
   actualCapabilityReportHash: capabilityReport.hash,
   actualCapabilityReceiptHash: actualCapabilityReceipt.receiptHash,
   outputContractRef: contractRef,
+  previousOutputContractRef: contractRefV1,
+  contractMigration,
+  actualBoundaryFailureRunId: "faction-v1-38cff03b5a47b54b6573",
+  actualBoundaryRejectedCandidateHash: actualBoundaryCandidate.hash,
   contextCapsuleBytes: capsule.compiledInputBytes,
   completeCoreFaqIncluded: true,
   completeCurrentFactionProductsIncluded: true,

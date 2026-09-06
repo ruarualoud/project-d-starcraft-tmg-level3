@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url";
 
 import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from
   "../content/skill-generation/offline-provider-profile-v1.mjs";
-import { STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V1 as contract,
-  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V1 as contractRef } from
+import { STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2 as contract,
+  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V2 as contractRef } from
   "../content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs";
 import { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } from
   "../packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs";

@@ -51,11 +51,9 @@ export function validateFactionStructuredReviewMigrationV1({
   parentRunId, parent, parentReport, next, migration,
 }) {
   [parent, parentReport, next].forEach(verifySeal);
-  if (parent.structuredReviewBinding
+  const bindingChanged = Boolean(parent.structuredReviewBinding
     && hash(parent.structuredReviewBinding)
-      !== hash(next.structuredReviewBinding || null)) {
-    fail('FACTION_STRUCTURED_REVIEW_BINDING_DRIFT');
-  }
+      !== hash(next.structuredReviewBinding || null));
   if (!next.structuredReviewBinding) {
     if (migration || next.structuredReviewReadinessHash) {
       fail('FACTION_STRUCTURED_REVIEW_MIGRATION_UNSCOPED');
@@ -66,7 +64,8 @@ export function validateFactionStructuredReviewMigrationV1({
   [next.structuredReviewBinding, readiness, capabilityReport].forEach(verifySeal);
   const binding = next.structuredReviewBinding;
   const introduced = !parent.structuredReviewBinding;
-  if (!readiness.passed || readiness.checks.length !== 10
+  const contractMigration = readiness.contractMigration;
+  if (!readiness.passed || readiness.checks.length !== 11
     || readiness.hash !== next.structuredReviewReadinessHash
     || readiness.providerCalls !== 0
     || readiness.actualCapabilityRunId !== binding.capabilityRunId
@@ -86,6 +85,25 @@ export function validateFactionStructuredReviewMigrationV1({
     || !readiness.completeCurrentFactionProductsIncluded
     || !readiness.hostOwnedIdentityMaterialization
     || !readiness.onePhysicalAttemptPerInvocation
+    || bindingChanged && (!contractMigration
+      || contractMigration.from?.hash
+        !== parent.structuredReviewBinding.outputContractRef.hash
+      || contractMigration.to?.hash !== binding.outputContractRef.hash
+      || contractMigration.changes?.length !== 1
+      || contractMigration.changes[0].path
+        !== '$.properties.verdicts.items.properties.reason.maxLength'
+      || contractMigration.changes[0].before !== 400
+      || contractMigration.changes[0].after !== 800
+      || contractMigration.oldContractFrozen !== true
+      || contractMigration.hostOwnedFieldsChanged !== false
+      || contractMigration.semanticValidatorChanged !== false
+      || contractMigration.mapperChanged !== false
+      || contractMigration.semanticAcceptanceInherited !== false
+      || readiness.previousOutputContractRef?.hash
+        !== parent.structuredReviewBinding.outputContractRef.hash
+      || readiness.actualBoundaryFailureRunId
+        !== 'faction-v1-38cff03b5a47b54b6573'
+      || !readiness.actualBoundaryRejectedCandidateHash)
     || introduced && (readiness.actualFailureRunId !== parentRunId
       || readiness.actualFailureCode !== parentReport.failure?.code
       || readiness.actualFailureDiagnosticHash
@@ -103,7 +121,8 @@ export function validateFactionStructuredReviewMigrationV1({
     capabilityReceiptHash: binding.capabilityReceiptHash,
     outputContractHash: binding.outputContractRef.hash,
     originFailureRunId: readiness.actualFailureRunId,
-    policy: 'all_new_target_reviews_use_schema_slots_then_host_identity_materialization_and_existing_semantic_validation',
+    ...(bindingChanged ? { contractMigrationHash: contractMigration.hash } : {}),
+    policy: 'all_new_target_reviews_use_schema_slots_then_host_identity_materialization_and_existing_semantic_validation_with_explicit_bounded_contract_migration',
     trainingTruth: false });
 }
 
