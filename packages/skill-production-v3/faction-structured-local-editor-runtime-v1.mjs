@@ -26,6 +26,18 @@ function canonicalRoleId(value) {
   return String(value || "").replace(SOURCE_EPOCH, "");
 }
 
+export function deriveFactionLegacyPromptRoleIdsV1(steps = []) {
+  if (!Array.isArray(steps)) throw new TypeError("Continuation steps are invalid");
+  const roles = steps.filter((row) => row?.artifact?.structuredDecodePassed !== true
+    && row?.artifact?.structuredImportHash === undefined)
+    .map((row) => canonicalRoleId(row.id))
+    .filter((id) => /\.(?:reasoner|judge|generator-items\.[0-9]+|editor\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+|source-reconstruction\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+)$/u.test(id));
+  if (new Set(roles).size !== roles.length) {
+    fail("FACTION_STRUCTURED_EDITOR_LEGACY_ROLE_DUPLICATE");
+  }
+  return roles;
+}
+
 function eligibleRole(value) {
   return /\.editor\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+(?:\.source-evidence-v1\.[a-f0-9]{20})?$/u
     .test(String(value || ""));

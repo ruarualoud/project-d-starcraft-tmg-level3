@@ -2,6 +2,22 @@ import { seal, verifySeal, hash, exact, text, clone, fail } from '../skill-produ
 
 const FIELDS = ['when', 'procedure', 'alternatives', 'risk', 'reviseIf', 'unproven'];
 
+function layoutText(value) {
+  return String(value).replace(/\s*•\s*/gu, ' ').replace(/\s+/gu, ' ').trim();
+}
+
+function focusedSourceQuoteMatches(targets, sourceRefs, quote) {
+  return targets.focusedSources.filter(source => Array.isArray(sourceRefs) && sourceRefs.includes(source.ref))
+    .flatMap(source => source.passages.flatMap(passage => {
+      if (passage.text.includes(quote)) return [{ ref: source.ref, spanId: passage.spanId,
+        passageHash: hash(passage.text), layoutNormalized: false }];
+      return layoutText(passage.text).includes(layoutText(quote))
+        ? [{ ref: source.ref, spanId: passage.spanId,
+          passageHash: hash(passage.text), layoutNormalized: true }]
+        : [];
+    }));
+}
+
 // An observed provider copied the verdicts' sourceRefs field onto a coverage
 // row as an empty array. It adds no evidence; retain it in a receipt rather
 // than granting an unknown field authority or paying to rewrite the review.
@@ -45,7 +61,7 @@ export function validateTargetedFactionReviewV1(output, targets) {
   verifySeal(targets); exact(output, ['verdicts', 'coverage']);
   const coverageMetadata = normalizeFactionCoverageMetadataV1(output.coverage);
   if (!Array.isArray(output.verdicts) || output.verdicts.length !== targets.targets.length) fail('FACTION_REVIEW_TARGET_DENOMINATOR');
-  const pending = new Map(targets.targets.map(t => [t.targetId, t])), bindings = [];
+  const pending = new Map(targets.targets.map(t => [t.targetId, t])), bindings = [], focusMetadataRepairs = [];
   const verdicts = output.verdicts.map(v => {
     exact(v, ['targetId', 'title', 'focus', 'verdict', 'reason', 'sourceRefs']);
     const target = pending.get(v.targetId);
@@ -55,25 +71,46 @@ export function validateTargetedFactionReviewV1(output, targets) {
     // field. Bound by that finite catalogue, not an unrelated fixed count.
     if (!Array.isArray(v.focus) || !v.focus.length || v.focus.length > Math.max(16, target.fields.length)) fail('FACTION_REVIEW_TARGET_FOCUS_REQUIRED');
     const evidence = v.focus.map(f => {
-      exact(f, ['path', 'quote']); text(f.quote, 240);
+      exact(f, ['path', 'quote']);
       const field = target.fields.find(field => field.path === f.path);
-      if (!field || f.quote.length < Math.min(8, field.text.length)) fail('FACTION_REVIEW_TARGET_QUOTE_MISMATCH');
-      if (field.text.includes(f.quote)) return { kind: 'target_field_quote', path: f.path, quote: f.quote, fieldHash: hash(field.text) };
+      if (!field || typeof f.quote !== 'string' || f.quote.length < Math.min(8, field.text.length)) fail('FACTION_REVIEW_TARGET_QUOTE_MISMATCH');
+      const originalQuote = f.quote;
+      const originalSourceMatches = focusedSourceQuoteMatches(targets, v.sourceRefs, originalQuote);
+      const originalTargetMatch = field.text.includes(originalQuote);
+      let quote = originalQuote;
+      if (quote.length > 240) {
+        if (!originalTargetMatch && !originalSourceMatches.length) fail('FACTION_REVIEW_FOCUS_OVERFLOW_UNBOUND');
+        quote = quote.slice(0, 240);
+        focusMetadataRepairs.push(seal({ targetId: target.targetId, path: f.path,
+          originalQuoteHash: hash(originalQuote), originalLength: originalQuote.length,
+          normalizedQuoteHash: hash(quote), normalizedLength: quote.length,
+          exactOriginalBindingVerified: true,
+          originalBindingKind: originalTargetMatch ? 'target_field_quote'
+            : originalSourceMatches.some(row => row.layoutNormalized)
+              ? 'focused_source_quote_layout_normalized' : 'focused_source_quote',
+          originalSourceMatches,
+          operation: 'bounded_exact_quote_prefix_for_transport_metadata_only',
+          rawProviderOutputOverwritten: false, judgmentChanged: false,
+          sourceEvidenceAdded: false, trainingTruth: false }));
+      }
+      text(quote, 240);
+      if (field.text.includes(quote)) return { kind: 'target_field_quote', path: f.path, quote, fieldHash: hash(field.text) };
       // The observed review copied the COMPLETE field and appended one Chinese
       // sentence stop. This is not an exact quote: preserve both strings and
       // mark the single addition. No substring/fuzzy/word normalization, and
       // the verdict still requires a separate strictly exact target quote.
-      if (!/[。.!?！？]$/u.test(field.text) && f.quote === field.text + '。') {
-        return { kind: 'target_field_quote_added_terminal_stop_v1', path: f.path, quote: f.quote,
+      if (!/[。.!?！？]$/u.test(field.text) && quote === field.text + '。') {
+        return { kind: 'target_field_quote_added_terminal_stop_v1', path: f.path, quote,
           matchedText: field.text, fieldHash: hash(field.text), addedTerminalStop: '。', rawQuoteExact: false };
       }
       // Observed output mixed exact original source passages with its exact
       // target quotes. Preserve them as SOURCE evidence, never pretend that
       // the English source text appeared in the candidate's Chinese field.
-      const sources = targets.focusedSources.filter(s => Array.isArray(v.sourceRefs) && v.sourceRefs.includes(s.ref))
-        .flatMap(s => s.passages.filter(p => p.text.includes(f.quote)).map(p => ({ ref: s.ref, spanId: p.spanId, passageHash: hash(p.text) })));
+      const sources = focusedSourceQuoteMatches(targets, v.sourceRefs, quote);
       if (!sources.length) fail('FACTION_REVIEW_TARGET_QUOTE_MISMATCH');
-      return { kind: 'source_quote_not_target_quote', claimedPath: f.path, quote: f.quote, sources };
+      return { kind: sources.some(row => row.layoutNormalized)
+        ? 'source_quote_layout_normalized_not_target_quote_v1'
+        : 'source_quote_not_target_quote', claimedPath: f.path, quote, sources };
     });
     if (!evidence.some(e => e.kind === 'target_field_quote')) fail('FACTION_REVIEW_TARGET_QUOTE_REQUIRED');
     bindings.push({ targetId: target.targetId, index: target.index, recommendationHash: target.recommendationHash, evidence });
@@ -81,6 +118,7 @@ export function validateTargetedFactionReviewV1(output, targets) {
   });
   return seal({ review: { verdicts, coverage: coverageMetadata.coverage }, targetContractHash: targets.hash, bindings,
     ...(coverageMetadata.repairs.length ? { coverageMetadataRepairs: coverageMetadata.repairs } : {}),
+    ...(focusMetadataRepairs.length ? { focusMetadataRepairs } : {}),
     rawOutputHash: hash(output), targetIdentityChecked: true, semanticCorrectnessProven: false, trainingTruth: false });
 }
 

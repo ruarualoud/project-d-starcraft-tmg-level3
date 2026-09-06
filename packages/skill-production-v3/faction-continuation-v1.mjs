@@ -3,6 +3,50 @@ import { seal, verifySeal, hash, fail } from '../skill-production/common.mjs';
 import { validateFactionBudgetExtensionV1 } from './faction-budget-extension-v1.mjs';
 import { validateFactionReviewTransactionMigrationV1 } from './faction-review-transaction-migration-v1.mjs';
 
+export function validateFactionReviewFocusNormalizationMigrationV1({
+  parentRunId, parent, parentReport, next, readiness,
+}) {
+  [parent, parentReport, next].forEach(verifySeal);
+  if (parent.reviewFocusNormalizationReadinessHash
+    && parent.reviewFocusNormalizationReadinessHash
+      !== next.reviewFocusNormalizationReadinessHash) {
+    fail('FACTION_REVIEW_FOCUS_NORMALIZATION_REMOVED');
+  }
+  if (!next.reviewFocusNormalizationReadinessHash) {
+    if (readiness) fail('FACTION_REVIEW_FOCUS_NORMALIZATION_UNSCOPED');
+    return null;
+  }
+  verifySeal(readiness);
+  const introduced = !parent.reviewFocusNormalizationReadinessHash;
+  const files = [
+    'packages/skill-production-v3/faction-review-targets-v1.mjs',
+    'scripts/verify-ticket-18-faction-review-focus-normalization-v1.mjs',
+  ];
+  if (readiness.hash !== next.reviewFocusNormalizationReadinessHash
+    || !readiness.passed || readiness.checks !== 7 || readiness.providerCalls !== 0
+    || readiness.focusRepairs !== 2
+    || readiness.originalReviewHash !== readiness.redundantSchemaRepairHash
+    || hash(readiness.originalLengths) !== hash([333, 254])
+    || hash(readiness.normalizedLengths) !== hash([240, 240])
+    || !readiness.exactOriginalBindingsVerified || !readiness.judgmentsUnchanged
+    || readiness.rawProviderOutputOverwritten !== false
+    || readiness.sourceRefreshPerformed !== false
+    || readiness.semanticCorrectnessProven !== false
+    || readiness.trainingTruth !== false
+    || introduced && (readiness.parentRunId !== parentRunId
+      || readiness.parentFailureCode !== parentReport.failure?.code
+      || parentReport.failure?.code !== 'FACTION_SCHEMA_REPAIR_NO_PROGRESS')
+    || files.some(file => next.codeHashes.find(row => row.file === file)?.hash
+      !== readiness.codeHashes.find(row => row.file === file)?.hash)) {
+    fail('FACTION_REVIEW_FOCUS_NORMALIZATION_PROOF_INVALID');
+  }
+  return seal({ files, readinessHash: readiness.hash,
+    originRunId: readiness.parentRunId,
+    originalReviewHash: readiness.originalReviewHash,
+    policy: 'layout_only_exact_source_binding_then_bounded_quote_metadata_no_judgment_change',
+    trainingTruth: false });
+}
+
 export function validateFactionPhaseSeedMigrationV1({ parent, next, migration }) {
   [parent, next].forEach(verifySeal);
   if (parent.phaseFieldBinding && hash(parent.phaseFieldBinding) !== hash(next.phaseFieldBinding || null))
@@ -104,7 +148,7 @@ export function validateFactionSourceCorrectionMigrationV1({ parent, next, sourc
     policy: 'registered_source_fields_then_fresh_review_and_exact_paid_request_bare_review_envelope_no_judgment_change', trainingTruth: false });
 }
 
-export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration, phaseSeedMigration, budgetExtensionReadiness, reviewTransactionMigration, structuredGenerationMigration }) {
+export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration, additionalCommandRecoveryMigration, phaseSeedMigration, budgetExtensionReadiness, reviewTransactionMigration, structuredGenerationMigration, reviewFocusNormalizationMigration }) {
   [parent, parentReport, next].forEach(verifySeal);
   if (parent.version !== 'faction_strategy_production_v1' || parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20)
     || parentReport.runId !== parentRunId || parentReport.recipeHash !== parent.hash || !parentReport.failure) fail('FACTION_CONTINUATION_PARENT_INVALID');
@@ -124,6 +168,7 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
     additionalCommandRecoveryBindings, additionalCommandRecoveryReadinessHashes, phaseFieldBinding, phaseFieldReadinessHash,
     budgetExtension, budgetExtensionReadinessHash, reviewTransactionBindings, reviewTransactionReadinessHash,
     reviewTransactionEvidenceHash, structuredGenerationBinding,
+    reviewFocusNormalizationReadinessHash,
     structuredGenerationReadinessHash, limits, continuation, ...body } = r;
     return budgetProof ? body : { ...body, limits }; };
   if (hash(strip(parent)) !== hash(strip(next))) fail('FACTION_CONTINUATION_CONTRACT_DRIFT');
@@ -171,6 +216,11 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
     || next.structuredGenerationReadinessHash) {
     fail('FACTION_STRUCTURED_GENERATION_MIGRATION_UNSCOPED');
   }
+  const reviewFocusNormalizationProof =
+    validateFactionReviewFocusNormalizationMigrationV1({ parentRunId,
+      parent, parentReport, next,
+      readiness: reviewFocusNormalizationMigration });
+  reviewFocusNormalizationProof?.files.forEach(file => allowed.add(file));
   if (budgetProof) allowed.add(budgetFile);
   const reviewTransactionProof = validateFactionReviewTransactionMigrationV1({ parent, next, ...reviewTransactionMigration });
   reviewTransactionProof?.files.forEach(file => allowed.add(file));
@@ -294,6 +344,9 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
       ...(reviewTransactionProof ? { reviewTransactionMigration: reviewTransactionProof } : {}),
       ...(structuredGenerationProof
         ? { structuredGenerationMigration: structuredGenerationProof } : {}),
+      ...(reviewFocusNormalizationProof
+        ? { reviewFocusNormalizationMigration: reviewFocusNormalizationProof }
+        : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
       policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
     return { manifest, steps };

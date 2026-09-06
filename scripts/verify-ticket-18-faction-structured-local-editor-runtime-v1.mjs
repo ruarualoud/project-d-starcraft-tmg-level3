@@ -24,6 +24,7 @@ import { isolateFactionLocalEditorIssueV1 } from
 import {
   createFactionStructuredLocalEditorImportV1,
   createFactionStructuredLocalEditorRuntimeV1,
+  deriveFactionLegacyPromptRoleIdsV1,
 } from "../packages/skill-production-v3/faction-structured-local-editor-runtime-v1.mjs";
 import { createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1 } from
   "../packages/structured-generation/adapters/deepseek-responses-json-schema-v1.mjs";
@@ -230,6 +231,18 @@ await check("r6.sealed-legacy-editor-delegates-before-structured-cutover", async
     assert.equal(await runtime.role(request), "legacy");
     assert.equal(delegated, 1);
   } finally { store.close(); }
+});
+
+await check("r6.structured-artifact-never-reenters-legacy-prompt-route", async () => {
+  const epoch = ".source-evidence-v1.3f8eeb087607ebe8f490";
+  const legacyId = "faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.editor.0.0" + epoch;
+  const structuredId = "faction.terran_armed_forces.faction.terran_armed_forces.objectives.1.editor.0.2" + epoch;
+  const roles = deriveFactionLegacyPromptRoleIdsV1([
+    { id: legacyId, artifact: { structuredDecodePassed: false } },
+    { id: structuredId, artifact: { structuredDecodePassed: true } },
+  ]);
+  assert.deepEqual(roles, [legacyId.replace(epoch, "")]);
+  assert(!roles.includes(structuredId.replace(epoch, "")));
 });
 
 const readiness = seal({

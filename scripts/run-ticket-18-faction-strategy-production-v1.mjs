@@ -17,7 +17,8 @@ import { inspectFactionPhaseFieldEvidenceV1 } from '../packages/skill-evaluation
 import { validateFactionPhaseFieldSeedV1 } from '../packages/skill-production-v3/faction-phase-field-seed-v1.mjs';
 import { createFactionBudgetExtensionV1 } from '../packages/skill-production-v3/faction-budget-extension-v1.mjs';
 import { createFactionReviewTransactionBindingV1, createFactionReviewTransactionRuntimeV1 } from '../packages/skill-production-v3/faction-review-transaction-runtime-v1.mjs';
-import { createFactionStructuredLocalEditorImportV1, createFactionStructuredLocalEditorRuntimeV1 } from '../packages/skill-production-v3/faction-structured-local-editor-runtime-v1.mjs';
+import { createFactionStructuredLocalEditorImportV1, createFactionStructuredLocalEditorRuntimeV1,
+  deriveFactionLegacyPromptRoleIdsV1 } from '../packages/skill-production-v3/faction-structured-local-editor-runtime-v1.mjs';
 import { createFactionKnownRulePolicyV1 } from '../packages/skill-production-v3/faction-known-rule-findings-v1.mjs';
 import { createFactionRosterChoiceDrillsV1 } from '../packages/skill-evaluation/faction-roster-choice-drills-v1.mjs';
 import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/official-development-tranche-source-lock-fixture-v1.mjs';
@@ -99,6 +100,17 @@ const structuredEditorImport = createFactionStructuredLocalEditorImportV1({
 if (!structuredGenerationReadiness.passed
   || structuredGenerationReadiness.actualImportHash !== structuredEditorImport.hash)
   fail('FACTION_STRUCTURED_GENERATION_READINESS_DRIFT');
+const reviewFocusNormalizationReadiness = await json(
+  'build/ticket-18-faction-production-v1/review-focus-normalization-readiness.json');
+if (!reviewFocusNormalizationReadiness.passed
+  || reviewFocusNormalizationReadiness.providerCalls !== 0) {
+  fail('FACTION_REVIEW_FOCUS_NORMALIZATION_READINESS_DRIFT');
+}
+for (const row of reviewFocusNormalizationReadiness.codeHashes) {
+  if (sha256(await readFile(path.join(root, row.file))) !== row.hash) {
+    fail('FACTION_REVIEW_FOCUS_NORMALIZATION_CODE_DRIFT');
+  }
+}
 const structuredGenerationBinding = seal({
   version: 'faction_structured_generation_binding_v1',
   canaryRunId: structuredCanaryReport.runId,
@@ -269,7 +281,8 @@ const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 
   'packages/secure-provider-runtime/structured-provider-worker-child-v1.mjs',
   'packages/secure-provider-runtime/structured-provider-worker-port-v1.mjs',
   'content/skill-generation/ticket-18-faction-advice-editor-output-contract-v1.mjs',
-  'scripts/verify-ticket-18-faction-structured-local-editor-runtime-v1.mjs'];
+  'scripts/verify-ticket-18-faction-structured-local-editor-runtime-v1.mjs',
+  'scripts/verify-ticket-18-faction-review-focus-normalization-v1.mjs'];
 if (fieldRepairBinding) files.push('packages/skill-production-v3/faction-field-repair-seed-v1.mjs',
   'packages/skill-production-v3/faction-field-repair-v1.mjs', 'packages/skill-evaluation/faction-field-repair-evidence-v1.mjs',
   'packages/skill-evaluation/faction-semantic-debt-v1.mjs', 'packages/skill-evaluation/read-only-production-replay-v1.mjs');
@@ -294,6 +307,7 @@ const next = seal({ version: 'faction_strategy_production_v1', overallRunId: arg
   sourceCorrectionReadinessHashes: sourceCorrectionGates.map(g => g.hash),
   structuredGenerationBinding,
   structuredGenerationReadinessHash: structuredGenerationReadiness.hash,
+  reviewFocusNormalizationReadinessHash: reviewFocusNormalizationReadiness.hash,
   ...(phaseFieldBinding ? { phaseFieldBinding, phaseFieldReadinessHash: phaseFieldReadiness.hash } : {}),
   ...(budgetExtension ? { budgetExtension, budgetExtensionReadinessHash: budgetReadiness.hash } : {}),
   ...(useReviewTransaction ? { reviewTransactionBindings, reviewTransactionReadinessHash: reviewTransactionReadiness.hash,
@@ -316,18 +330,19 @@ if (args[4]) {
     budgetExtensionReadiness: budgetReadiness,
     structuredGenerationMigration: { readiness: structuredGenerationReadiness,
       imported: structuredEditorImport },
+    reviewFocusNormalizationMigration: reviewFocusNormalizationReadiness,
     reviewTransactionMigration: useReviewTransaction ? { readiness: reviewTransactionReadiness, actualEvidence: reviewTransactionEvidence } : null });
 }
 const { hash: ignored, ...nextBody } = next;
 const recipe = continuation ? seal({ ...nextBody, continuation: continuation.manifest }) : next;
 const canonicalPromptRoleId = id => id.replace(/\.source-evidence-v1\.[a-f0-9]{20}$/u, '');
-const legacyPromptRoleIds = continuation ? [...new Set(continuation.manifest.reusable.map(row => canonicalPromptRoleId(row.id))
-  .filter(id => /\.(?:reasoner|judge|generator-items\.[0-9]+|editor\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+|source-reconstruction\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+)$/u.test(id)))] : [];
+const legacyPromptRoleIds = continuation
+  ? deriveFactionLegacyPromptRoleIdsV1(continuation.steps) : [];
 if (args[0] === '--preflight') {
   // Exercise exact inherited role input hashes without credentials or egress.
-  // The first cache miss must be the known failed editor, never an already
-  // completed reasoner/generator whose frozen prompt is intentionally retained.
-  let firstUncachedRole = null;
+  // Initial cutover has one exact expected editor. Later continuations derive
+  // the next miss from the sealed lineage and must never reissue a reusable role.
+  let firstUncachedRole = null, firstUncachedRoute = null;
   const dryLocal = openProductionStore(':memory:', { runId: 'faction-cutover-' + recipe.hash.slice(0, 20), recipeHash: recipe.hash,
     maxCalls: limits.maxCalls - (continuation?.manifest.accounting.calls || 0),
     maxTokens: limits.maxTokens - (continuation?.manifest.accounting.tokens || 0),
@@ -335,13 +350,15 @@ if (args[0] === '--preflight') {
   const dryStore = continuation ? withCheckpointContinuation(dryLocal, continuation) : dryLocal;
   try {
     const dryRuntime = createProductionRuntimeV3({ store: dryStore, reader: createEvidenceReader(catalogue), context, verifier: {},
-      model: async request => { firstUncachedRole = request.stageId; fail('FACTION_PREFLIGHT_LEGACY_ROLE_REACHED'); },
+      model: async request => { firstUncachedRole = request.stageId; firstUncachedRoute = 'legacy_typed_validation';
+        fail('FACTION_PREFLIGHT_FIRST_LEGACY_UNCACHED_ROLE'); },
       dsh: { run: runDirectLoop } });
     const dryStructuredRuntime = createFactionStructuredLocalEditorRuntimeV1({
       input: inputs[0], runtime: dryRuntime, store: dryStore,
       dsh: { run: runDirectLoop },
       providerAdapter: { complete: async ({ providerRequest }) => {
         firstUncachedRole = providerRequest.roleRef.id;
+        firstUncachedRoute = 'responses_json_schema';
         const error = new Error('FACTION_PREFLIGHT_FIRST_STRUCTURED_UNCACHED_ROLE');
         error.code = 'FACTION_PREFLIGHT_FIRST_STRUCTURED_UNCACHED_ROLE';
         error.safeReceipt = { requestDefinitelyNotSent: true,
@@ -363,15 +380,29 @@ if (args[0] === '--preflight') {
       legacyPromptRoleIds });
     fail('FACTION_PREFLIGHT_CUTOVER_MISSING');
   } catch (error) {
-    if (error.code !== 'STRUCTURED_DSH_MODEL_OUTCOME_NOT_ACCEPTED') throw error;
+    if (!['STRUCTURED_DSH_MODEL_OUTCOME_NOT_ACCEPTED',
+      'FACTION_PREFLIGHT_FIRST_LEGACY_UNCACHED_ROLE'].includes(error.code)) throw error;
   } finally { dryLocal.close(); }
-  const expectedFirstUncachedRole = 'faction.terran_armed_forces.objectives.1.editor.0.2';
-  if (firstUncachedRole !== expectedFirstUncachedRole) fail('FACTION_PREFLIGHT_CUTOVER_DRIFT', { firstUncachedRole });
+  const factionPrefix = 'faction.terran_armed_forces';
+  const canonicalUncachedRole = canonicalPromptRoleId(firstUncachedRole || '');
+  const fullUncachedRole = canonicalUncachedRole.startsWith(factionPrefix + '.' + factionPrefix + '.')
+    ? canonicalUncachedRole : factionPrefix + '.' + canonicalUncachedRole;
+  const reusableRoleIds = new Set((continuation?.manifest.reusable || [])
+    .map(row => canonicalPromptRoleId(row.id)));
+  const initialStructuredCutover = !parentRecipe.structuredGenerationBinding;
+  if (!firstUncachedRole || !fullUncachedRole.startsWith(factionPrefix + '.' + factionPrefix + '.')
+    || !/^[a-z0-9._-]+$/u.test(fullUncachedRole)
+    || reusableRoleIds.has(fullUncachedRole)
+    || initialStructuredCutover && (firstUncachedRoute !== 'responses_json_schema'
+      || firstUncachedRole !== 'faction.terran_armed_forces.objectives.1.editor.0.2')) {
+    fail('FACTION_PREFLIGHT_CUTOVER_DRIFT', { firstUncachedRole, firstUncachedRoute });
+  }
   console.log(JSON.stringify({ ready: true, recipeHash: recipe.hash, providerCalls: 0, factions: inputs.map(i => i.factionRecordKey),
     sections: inputs.map(i => createFactionWritingPlanV1(i).sections.length), overallQualified: true, limits,
     reusableRoles: continuation?.manifest.reusable.length || 0, inheritedAccounting: continuation?.manifest.accounting || null,
     legacyPromptRoles: legacyPromptRoleIds.length, structuredCanaryImport: structuredEditorImport.hash,
-    firstUncachedRole, additionalCommandRecoveries: additionalRecoveries.length })); process.exit(0);
+    firstUncachedRole, firstUncachedRoute, initialStructuredCutover,
+    additionalCommandRecoveries: additionalRecoveries.length })); process.exit(0);
 }
 const runId = 'faction-v1-' + recipe.hash.slice(0, 20), out = path.join(base, runId); await mkdir(out, { recursive: true });
 const inherited = continuation?.manifest.accounting || { calls: 0, tokens: 0, costMicros: 0 };
@@ -467,7 +498,9 @@ finally {
   await worker?.close().catch(() => {});
   const ledger = store.summary(), global = store.globalSummary();
   const report = seal({ runId, recipeHash: recipe.hash, overallDependencyHash: overallDependency.hash,
-    readinessHashes: [...gates, ...unitRoleRepairGates, ...sourceCorrectionGates].map(g => g.hash),
+    readinessHashes: [structuredGenerationReadiness,
+      reviewFocusNormalizationReadiness, ...gates,
+      ...unitRoleRepairGates, ...sourceCorrectionGates].map(g => g.hash),
     candidateHashes: candidates.map(c => c.hash), factionsGenerated: candidates.length,
     sourceReviewPassed: !failure && candidates.length === 2 && candidates.every(c => c.semanticReviewPassed), failure, ledger,
     continuation: continuation?.manifest || null, cumulativeKnownTokensLowerBound: historyTokens + global.knownTokens,
