@@ -19,7 +19,7 @@ import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/off
 import { withCheckpointContinuation } from '../packages/skill-production/continuation.mjs';
 import { prepareDshLoop } from '../packages/skill-production/loops.mjs';
 import { verifyProductionReadiness } from '../packages/skill-production/recipe.mjs';
-import { createAccountedModel } from '../packages/skill-production/model.mjs';
+import { createFactionAccountedModelV1, inspectFactionCommandRecoveryV1 } from '../packages/skill-production-v3/faction-command-envelope-v1.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
 import { seal, verifySeal, hash, sha256, fail } from '../packages/skill-production/common.mjs';
 import { createStarcraftTmgProviderProfileRegistryV1 } from '../packages/secure-provider-runtime/provider-profile-registry-v1.mjs';
@@ -67,6 +67,16 @@ for (const gate of unitRoleRepairGates) {
   for (const r of gate.codeHashes) if (sha256(await readFile(path.join(root, r.file))) !== r.hash) fail('FACTION_UNIT_REPAIR_READINESS_CODE_DRIFT');
 }
 const parentRecipe = args[4] ? await json('build/ticket-18-faction-production-v1/' + args[4] + '/recipe.json') : null;
+if (!parentRecipe) fail('FACTION_SOURCE_CORRECTION_PARENT_REQUIRED');
+const recoveryParentRunId = parentRecipe.commandRecoveryBinding?.parentRunId || args[4];
+const recoveryParent = recoveryParentRunId === args[4] ? parentRecipe : await json('build/ticket-18-faction-production-v1/' + recoveryParentRunId + '/recipe.json');
+const commandRecovery = inspectFactionCommandRecoveryV1({ filename, parentRunId: recoveryParentRunId, parent: recoveryParent });
+const sourceCorrectionGates = await Promise.all(['source-field-repair-v2-readiness', 'source-field-dsh-v2-readiness',
+  'source-repair-workflow-v2-readiness', 'command-envelope-readiness'].map(name => json('build/ticket-18-faction-production-v1/' + name + '.json')));
+for (const gate of sourceCorrectionGates) {
+  if (!gate.passed || gate.inputHash !== inputs[0].hash) fail('FACTION_SOURCE_CORRECTION_READINESS_FAILED');
+  for (const row of gate.codeHashes) if (sha256(await readFile(path.join(root, row.file))) !== row.hash) fail('FACTION_SOURCE_CORRECTION_READINESS_CODE_DRIFT');
+}
 const fieldRepairRunId = args[6] || parentRecipe?.fieldRepairBinding?.runId;
 const fieldRepairSeed = fieldRepairRunId ? await inspectFactionFieldRepairEvidenceV1({ root, runId: fieldRepairRunId }) : null;
 const fieldRepairBinding = fieldRepairSeed ? validateFactionFieldRepairSeedV1({ input: inputs[0], knownRulePolicy: knownRulePolicies[0], seed: fieldRepairSeed }) : null;
@@ -94,6 +104,8 @@ const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 
   'packages/skill-production-v3/faction-review-targets-v1.mjs', 'packages/skill-production-v3/faction-known-rule-findings-v1.mjs',
   'packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs',
   'packages/skill-production-v3/faction-unit-role-field-repair-v1.mjs', 'packages/skill-evaluation/faction-unit-role-debt-v1.mjs',
+  'packages/skill-production-v3/faction-source-field-repair-v2.mjs', 'packages/skill-evaluation/faction-cross-field-source-audit-v1.mjs',
+  'packages/skill-production-v3/faction-command-envelope-v1.mjs',
   'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs',
   'packages/skill-production-v3/faction-continuation-v1.mjs', 'packages/skill-production-v3/runtime.mjs',
   'packages/skill-production-v3/context.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs',
@@ -112,6 +124,8 @@ const next = seal({ version: 'faction_strategy_production_v1', overallRunId: arg
   targetedCorrectionsReadinessHash: gates[5].hash, knownRulePolicyHashes: knownRulePolicies.map(p => p.hash),
   dshBindingHash: gates[2].dshBinding.hash, codeHashes, limits, ...(fieldRepairBinding ? { fieldRepairBinding } : {}),
   unitRoleRepairReadinessHashes: unitRoleRepairGates.map(g => g.hash),
+  registeredSourceFieldRepair: true, commandRecoveryBinding: commandRecovery.manifest,
+  sourceCorrectionReadinessHashes: sourceCorrectionGates.map(g => g.hash),
   target: 'two_complete_conditional_faction_strategy_candidates_with_source_review_not_runtime_promotion',
   independentEvaluationAnswersExposed: false, sourceRefreshPerformed: false, trainingTruth: false });
 let continuation = null;
@@ -122,7 +136,7 @@ if (args[4]) {
   continuation = inspectFactionContinuationV1({ filename, parentRunId: args[4], parent, parentReport, next,
     normalizationMigration: { before, after: main, recovery: gates[4] }, correctionMigration: gates[5],
     fieldRepairMigration: fieldRepairBinding ? { binding: fieldRepairBinding, readiness: fieldRepairReadiness } : null,
-    unitRoleRepairMigration: unitRoleRepairGates });
+    unitRoleRepairMigration: unitRoleRepairGates, sourceCorrectionMigration: sourceCorrectionGates });
 }
 const { hash: ignored, ...nextBody } = next;
 const recipe = continuation ? seal({ ...nextBody, continuation: continuation.manifest }) : next;
@@ -156,7 +170,7 @@ try {
   try { attached = await worker.attachCredential({ attachmentId: 'faction-' + randomUUID(), providerProfile: profile, credentialBytes: ingress.credentialBytes }); }
   finally { ingress.credentialBytes.fill(0); }
   if (!attached.ok) fail('PROVIDER_ATTACHMENT_FAILED');
-  const model = createAccountedModel({ store, maxInputBytes: limits.maxInputBytes, outputRecoveryLimit: 4096,
+  const model = createFactionAccountedModelV1({ store, recovery: commandRecovery, maxInputBytes: limits.maxInputBytes, outputRecoveryLimit: 4096,
     complete: (providerRequest, { signal } = {}) => {
       if (Date.now() - began >= limits.maxWallMs) fail('FACTION_RUN_WALL_EXHAUSTED');
       return worker.complete({ workerRef: attached.workerRef, providerRequest, signal });
@@ -168,6 +182,7 @@ try {
   for (const [index, input] of inputs.entries()) {
     const name = input.factionRecordKey.split(':')[1]; await put(name + '-input', input);
     const candidate = await produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownRulePolicies[index],
+      registeredSourceFieldRepair: true,
       fieldRepairSeed: index === 0 ? fieldRepairSeed : null,
       onProgress: row => console.log(JSON.stringify({ event: 'faction-progress', ticket: 18, slice: 174, faction: name, ...row })) });
     candidates.push(candidate); await put(name + '-candidate', candidate);
@@ -181,7 +196,7 @@ finally {
   await worker?.close().catch(() => {});
   const ledger = store.summary(), global = store.globalSummary();
   const report = seal({ runId, recipeHash: recipe.hash, overallDependencyHash: overallDependency.hash,
-    readinessHashes: [...gates, ...unitRoleRepairGates].map(g => g.hash),
+    readinessHashes: [...gates, ...unitRoleRepairGates, ...sourceCorrectionGates].map(g => g.hash),
     candidateHashes: candidates.map(c => c.hash), factionsGenerated: candidates.length,
     sourceReviewPassed: !failure && candidates.length === 2 && candidates.every(c => c.semanticReviewPassed), failure, ledger,
     continuation: continuation?.manifest || null, cumulativeKnownTokensLowerBound: historyTokens + global.knownTokens,

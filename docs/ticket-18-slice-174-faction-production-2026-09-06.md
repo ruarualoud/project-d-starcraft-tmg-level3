@@ -5,6 +5,42 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
+## Latest terminal and repair-ready checkpoint
+
+`faction-v1-907961cf3b449dd64c64` /80048 is now TERMINAL (exit1), not waiting
+on the network. It generated all8 phase-tempo recommendations and completed
+the supportive route. The first adversarial batch had a settled JSON separator
+failure (format0); format1 returned complete bare `verdicts/coverage`, without
+the command envelope, causing `CHANNEL_SHAPE_INVALID`. Both paid responses and
+their negative judgments remain preserved. Run21 calls /5,600,517 tokens /
+estimated ¥0.994070; all-history69,027,311 known tokens /estimated-or-reserved
+¥56.303213, no402 or in-flight attempt. Report `20414e68…`.
+
+The new faction-specific model adapter leaves the shared/older model untouched.
+Only a bare complete review matching the host's exact review targets can gain
+the missing finish envelope; neither prose nor judgments change. Response/usage
+settles first. An explicit recovery manifest binds the original failed/received
+pair to exact Provider request hashes, profile and parent recipe; attempts and
+costs are not copied. A real isolated DSH session matched both original requests,
+retained both unsupported judgments and made zero Provider calls (18 checks,
+`3a76ef8f…`). Canonical artifact hashes and DSH's JSON-wire command hashes are
+recorded separately; original DSH/runtime code remains unchanged.
+
+Registered source-field repair is now an explicitly enabled production policy.
+It follows the actual original three-field repair, changes the four remaining
+fields in at-most-three-target output batches, then freshly reviews all7 advice
+items. The new integration8 checks include16 fresh injected review batches and
+a retained-negative branch (`3c05ddad…`). The migration12 checks bind those gates,
+full-source DSH3, original request replay and immutable source/model/budget/
+ancestor time. Existing workflow44, correction28, continuation38, first-field
+seed20, unit-field16/integration8, envelope13 and DSH2 pass (all zero Provider).
+Consumer provenance now distinguishes explicitly recorded command-envelope
+recovery from raw commands and verifies DSH wire hashes; the existing15 lineage
+checks pass. Actual complete-candidate consumer verification is still pending.
+
+Next: commit/push and continue907961 with the new bound policy; no new faction
+qualification is claimed. Original ancestor limits and start remain unchanged.
+
 ## Three-field repair integration checkpoint
 
 Live successor is `faction-v1-907961cf3b449dd64c64` (handle80048), produced

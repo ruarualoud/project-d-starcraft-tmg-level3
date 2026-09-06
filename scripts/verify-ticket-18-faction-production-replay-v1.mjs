@@ -18,7 +18,7 @@ const receipt = { ...receiptBody, receiptHash: hash(receiptBody) };
 const role = seal({ roleId, contextHash: recipeBody.contextHash, sourceDelivery: 'host_materialized_in_every_role_prompt',
   output: output.channels.skill.content, loop: seal({ runtimeBinding: { hash: recipeBody.dshBindingHash }, sandboxReceipt: { fixtureOnly: true },
     final: output.channels.skill.content, calls: 1, directNetworkUsed: false, trainingTruth: false,
-    transcript: [{ call: 1, action: 'finish', commandHash: hash(output.channels.skill), receiptHash: receipt.receiptHash }] }), trainingTruth: false });
+    transcript: [{ call: 1, action: 'finish', commandHash: sha256(JSON.stringify(output.channels.skill)), receiptHash: receipt.receiptHash }] }), trainingTruth: false });
 const reseal = (v, fields) => { const { hash: ignored, ...body } = v; return seal({ ...body, ...fields }); };
 let serial = 0;
 function setup({ roleValue = role, paid = true, profileDrift = false, originInputDrift = false } = {}) {

@@ -51,7 +51,8 @@ export async function inspectFactionCandidateEvidenceV1({ root, runId, input, kn
     const runtime = createProductionRuntimeV3({ store: replay.store, reader: createEvidenceReader(catalogue), context,
       verifier: {}, model: () => fail('FACTION_CANDIDATE_EVIDENCE_EGRESS_FORBIDDEN'),
       dsh: { run: () => fail('FACTION_CANDIDATE_EVIDENCE_UNSAVED_ROLE') } });
-    rebuilt = await produceFactionStrategyV1({ input, knownRulePolicy, fieldRepairSeed, runtime, store: replay.store });
+    rebuilt = await produceFactionStrategyV1({ input, knownRulePolicy, fieldRepairSeed, runtime, store: replay.store,
+      registeredSourceFieldRepair: recipe.registeredSourceFieldRepair === true });
     if (rebuilt.hash !== candidate.hash) fail('FACTION_CANDIDATE_EVIDENCE_REBUILD_DRIFT');
     factionConsumerContextV1({ input, candidate: rebuilt, knownRulePolicy });
     delivery = replay.evidence();

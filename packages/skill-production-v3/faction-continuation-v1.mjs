@@ -1,15 +1,51 @@
 import { DatabaseSync } from 'node:sqlite';
 import { seal, verifySeal, hash, fail } from '../skill-production/common.mjs';
 
-export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration }) {
+export function validateFactionSourceCorrectionMigrationV1({ parent, next, sourceCorrectionMigration }) {
+  [parent, next].forEach(verifySeal);
+  if (parent.registeredSourceFieldRepair && !next.registeredSourceFieldRepair) fail('FACTION_SOURCE_CORRECTION_REMOVED');
+  if (parent.commandRecoveryBinding && hash(parent.commandRecoveryBinding) !== hash(next.commandRecoveryBinding || null)) fail('FACTION_COMMAND_RECOVERY_BINDING_DRIFT');
+  if (!next.registeredSourceFieldRepair) {
+    if (next.commandRecoveryBinding || next.sourceCorrectionReadinessHashes) fail('FACTION_SOURCE_CORRECTION_POLICY_INVALID');
+    return null;
+  }
+  const gates = sourceCorrectionMigration;
+  if (!Array.isArray(gates) || gates.length !== 4) fail('FACTION_SOURCE_CORRECTION_PROOF_MISSING');
+  gates.forEach(verifySeal); verifySeal(next.commandRecoveryBinding);
+  const [unit, dsh, workflow, command] = gates;
+  const files = ['packages/skill-production-v3/faction-source-field-repair-v2.mjs',
+    'packages/skill-evaluation/faction-cross-field-source-audit-v1.mjs', 'packages/skill-production-v3/faction-command-envelope-v1.mjs'];
+  if (next.registeredSourceFieldRepair !== true || hash(gates.map(g => g.hash)) !== hash(next.sourceCorrectionReadinessHashes)
+    || gates.some(g => !g.passed || g.inputHash !== next.inputHashes[0])
+    || unit.actualKnownCounterexamples !== 7 || !unit.atomicApplicationAcrossBatches || !unit.fullDraftEachBatch || !unit.completedBatchReused
+    || !dsh.fullSourceDeliveryVerified || dsh.actualDshSessions !== 3 || dsh.providerCalls !== 0 || dsh.dshBinding.hash !== next.dshBindingHash
+    || workflow.knownCounterexamples !== 4 || !workflow.repairsIntegrated || !workflow.freshNegativeRetained || workflow.freshWholeSectionReviews !== 16
+    || command.actualDshSessions !== 1 || !command.exactPriorProviderRequestsMatched || command.originalNegativeJudgmentsPreserved !== 2
+    || command.providerCalls !== 0 || command.dshBinding.hash !== next.dshBindingHash
+    || command.recoveryManifest.hash !== next.commandRecoveryBinding.hash
+    || next.commandRecoveryBinding.modelHash !== next.modelHash || next.commandRecoveryBinding.contextHash !== next.contextHash
+    || hash(next.commandRecoveryBinding.sourceBinding) !== hash(next.sourceBinding)
+    || [...files, 'packages/skill-production-v3/faction-strategy-workflow-v1.mjs'].some(file => {
+      const target = next.codeHashes.find(r => r.file === file);
+      const matches = gates.flatMap(g => g.codeHashes || []).filter(r => r.file === file);
+      return !target || !matches.length || matches.some(r => r.hash !== target.hash);
+    })) fail('FACTION_SOURCE_CORRECTION_PROOF_INVALID');
+  return seal({ files, readinessHashes: gates.map(g => g.hash), commandRecoveryBindingHash: next.commandRecoveryBinding.hash,
+    policy: 'registered_source_fields_then_fresh_review_and_exact_paid_request_bare_review_envelope_no_judgment_change', trainingTruth: false });
+}
+
+export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration, unitRoleRepairMigration, sourceCorrectionMigration }) {
   [parent, parentReport, next].forEach(verifySeal);
   if (parent.version !== 'faction_strategy_production_v1' || parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20)
     || parentReport.runId !== parentRunId || parentReport.recipeHash !== parent.hash || !parentReport.failure) fail('FACTION_CONTINUATION_PARENT_INVALID');
   const strip = r => { const { hash: ignored, codeHashes, workflowReadinessHash, dshContextReadinessHash, mainReadinessHash, jsonRecoveryReadinessHash,
-    targetedCorrectionsReadinessHash, knownRulePolicyHashes, fieldRepairBinding, unitRoleRepairReadinessHashes, continuation, ...body } = r; return body; };
+    targetedCorrectionsReadinessHash, knownRulePolicyHashes, fieldRepairBinding, unitRoleRepairReadinessHashes,
+    registeredSourceFieldRepair, commandRecoveryBinding, sourceCorrectionReadinessHashes, continuation, ...body } = r; return body; };
   if (hash(strip(parent)) !== hash(strip(next))) fail('FACTION_CONTINUATION_CONTRACT_DRIFT');
   const allowed = new Set(['packages/skill-production-v3/faction-strategy-workflow-v1.mjs',
     'packages/skill-production-v3/faction-continuation-v1.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs']);
+  const sourceCorrectionProof = validateFactionSourceCorrectionMigrationV1({ parent, next, sourceCorrectionMigration });
+  sourceCorrectionProof?.files.forEach(file => allowed.add(file));
   let unitRoleRepairProof = null;
   if (parent.unitRoleRepairReadinessHashes && !next.unitRoleRepairReadinessHashes) fail('FACTION_CONTINUATION_UNIT_REPAIR_REMOVED');
   if (next.unitRoleRepairReadinessHashes) {
@@ -117,6 +153,7 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
       ...(correctionProof ? { correctionMigration: correctionProof } : {}),
       ...(fieldRepairProof ? { fieldRepairMigration: fieldRepairProof } : {}),
       ...(unitRoleRepairProof ? { unitRoleRepairMigration: unitRoleRepairProof } : {}),
+      ...(sourceCorrectionProof ? { sourceCorrectionMigration: sourceCorrectionProof } : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
       policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
     return { manifest, steps };

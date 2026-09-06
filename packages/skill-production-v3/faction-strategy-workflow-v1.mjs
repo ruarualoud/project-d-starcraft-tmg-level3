@@ -237,7 +237,9 @@ export function applyFactionStrategyPatchV1(output, { input, draft, issues }) {
   return validateFactionDraftV1(next, input);
 }
 
-export async function produceFactionStrategyV1({ input, runtime, store, knownRulePolicy, fieldRepairSeed = null, onProgress = () => {} }) {
+export async function produceFactionStrategyV1({ input, runtime, store, knownRulePolicy, fieldRepairSeed = null,
+  registeredSourceFieldRepair = false, onProgress = () => {} }) {
+  if (typeof registeredSourceFieldRepair !== 'boolean') fail('FACTION_SOURCE_FIELD_POLICY_INVALID');
   verifySeal(knownRulePolicy);
   if (knownRulePolicy.inputHash !== input.hash) fail('FACTION_KNOWN_RULE_POLICY_DRIFT');
   const fieldRepairBinding = fieldRepairSeed ? (await import('./faction-field-repair-seed-v1.mjs')).validateFactionFieldRepairSeedV1({
@@ -245,6 +247,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
   let fieldRepairConsumed = false;
   const { inspectFactionUnitRoleDebtV1 } = await import('../skill-evaluation/faction-unit-role-debt-v1.mjs');
   const { repairKnownFactionUnitRoleFieldsV1 } = await import('./faction-unit-role-field-repair-v1.mjs');
+  const registeredRepair = registeredSourceFieldRepair ? await import('./faction-source-field-repair-v2.mjs') : null;
   const plan = createFactionWritingPlanV1(input), common = factionRoleWorkspaceV1(input);
   const packet = seal({ id: 'faction.' + input.factionRecordKey.split(':')[1], inputHash: input.hash, sourceBinding: input.sourceBinding });
   const roleArtifacts = [];
@@ -404,6 +407,16 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
             changedFields: repair.patch.changes.length, freshReviewPending: true });
           continue;
         }
+        if (registeredRepair?.inspectFactionRegisteredSourceDebtV2({ input, draft }).findings.length) {
+          if (revision === 3) fail('FACTION_SOURCE_FIELD_FRESH_REVIEW_REQUIRED');
+          const repair = await registeredRepair.repairFactionSourceFieldsV2({ input, section, draft, runtime, store });
+          assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: repair.patch.draft });
+          if (seen.has(repair.patch.draftHash)) fail('FACTION_REPAIR_CYCLE');
+          edits.push(repair); draft = repair.patch.draft; seen.add(hash(draft));
+          onProgress({ section: section.id, revision, stage: 'registered_source_fields_repaired',
+            changedFields: repair.patch.changes.length, freshReviewPending: true });
+          continue;
+        }
         passed = true; break;
       }
       if (revision === 3) break;
@@ -442,6 +455,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     }
     assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft });
     if (inspectFactionUnitRoleDebtV1({ input, draft }).findings.length) fail('FACTION_UNIT_FIELDS_UNREPAIRED');
+    if (registeredRepair?.inspectFactionRegisteredSourceDebtV2({ input, draft }).findings.length) fail('FACTION_SOURCE_FIELDS_UNREPAIRED');
     const result = seal({ section, outline: outline.value, outlineArtifactHash: outline.artifact.hash, draft, rounds, edits, knownRuleCorrection, semanticReviewPassed: passed,
       ...(generationEnvelopeRepairs.length ? { generationEnvelopeRepairs } : {}),
       rulesApplicationPassed: false, strategyEffectivenessProven: false, runtimeAccepted: false, trainingTruth: false });
@@ -457,6 +471,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     knownRulePolicyHash: knownRulePolicy.hash, knownUnchangedRuleFailuresBlocked: true,
     tutorArtifactHash: tutor.artifact.hash, questionTree: tree.value, challengerTree: challenger.value,
     sections, roleArtifacts, ...(fieldRepairBinding ? { fieldRepairBinding } : {}),
+    ...(registeredSourceFieldRepair ? { registeredSourceFieldRepair: true } : {}),
     semanticReviewPassed: sections.length === plan.sections.length && sections.every(s => s.semanticReviewPassed),
     scope: 'conditional_faction_strategy_with_all_assigned_unit_and_card_sources_not_proven_complete_game_strength',
     candidateOnly: true, independentEvaluationPassed: false, actualRoomReplayPerformed: false,
