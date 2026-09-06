@@ -5,7 +5,44 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: strict redundant source alias preservation
+## Current checkpoint: actual review round and repair stop
+
+Run `faction-v1-c6b855593093fd3f6ecb` is terminal; handle80045 exited1, no paid
+process remains. Report
+`b9750dc12f50a78f810fbd360e6f538d04682b3fbd5500a883134c2553fcad5f`.
+The first8/8 recommendations and first review batch were reused. Seven new
+review batches completed the two routes and produced three typed issues. The
+first Editor returned a nonempty replacement; the second returned
+`replacements:[], additions:[]`, triggering `FACTION_PATCH_DENOMINATOR` before
+the no-progress branch. The collected multi-issue patch was never applied,
+so the draft was not partially mutated.
+
+Independent inspection additionally found wrong-target review reasons:
+supportive.0.4's index4 described index3's Medic/Freedom Fighters advice, and
+index5 described index4's Academy advice. supportive.0.6 similarly described
+adjacent earlier topics. Returning the right numeric indices did not prove the
+right text was reviewed. Model verdicts also continued to miss the known
+Factory35-vs-Armory30 minimum-cost defect documented below. No faction
+qualification may treat these reviews as sufficient evidence.
+
+Next implementation must precede another paid continuation:
+
+1. Explicit host-indexed review target content/hash bindings, preserving full
+   source/overall/whole-section context, with regressions on the actual shifted
+   review outputs. Mere index echo is not semantic proof.
+2. Empty patches classified as no-progress or evidence-backed no-change, with
+   bounded source-backed correction; do not route them through blind schema
+   resampling or erase original findings.
+3. Machine-enforced qualification veto and local repair for known independent
+   Rules/source counterexamples, including the actual minimum-cost defect.
+
+This run9 calls /2,318,781 tokens /estimated ¥0.643959. Actual cumulative
+44,981,402 known tokens /estimated-or-reserved ¥50.755463, no402. One first-section
+review round was executed, but reviewed-and-qualified sections remain0/15;
+faction candidates0/2, Ticket18 2/8, project16/22, formal/runtime first-five0/5.
+Do not restart the unchanged failed recipe or mark the long goal complete.
+
+## Earlier checkpoint: strict redundant source alias preservation
 
 Run `faction-v1-f8c57661dd395f069591` is terminal, report
 `1925cc0aaf7d6963adf373367a1016dcf946418515280746417891cb8063a33e`.
