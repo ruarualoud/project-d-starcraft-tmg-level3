@@ -15,6 +15,7 @@
 9. 目标化 reviewer 也进入 Responses JSON Schema。模型只能输出最多两个 target slot、focus、判断、理由和 source slot；targetId、完整标题、sourceRef 和 coverage source 都由 host 从密封目录映射。胶囊为 408,572 bytes，包含完整 Core/FAQ、当前阵营全部产品来源、完整当前章节和总规则 Skill 哈希/资格；不再同时重复携带 236KB 派生 Skill 正文。结构解码后仍必须通过原 target quote、来源、coverage 和语义验证。
 10. 对可解析但违反本地 schema 的 reviewer 候选增加一次定点修复。Adapter 只把 parsed domain value 和精确 validation paths 交给 durable runtime；安全回执仍不保存原始传输体。修复调用必须返回完整对象，但只能改变失败路径，其他解析后值逐项哈希相同；仍需再次通过同一 schema、host materialization 和原语义门。最多一次，不截断、不猜测、不循环重生。
 11. 对 HTTP200 但 wire JSON 非法的响应先执行唯一可证明的无损归一化，再进入同一 JSON Schema 门。允许集合仅为缺失最外层对象闭合、单一 JSON fence、二者组合、已证明的冗余数组/对象闭合和唯一可恢复的单个未转义引号；回执绑定原文/归一化文本/恢复证据哈希，不保存原始敏感传输体，也不继承任何语义接受。无法唯一恢复仍隔离，禁止 prompt-only 盲重试。
+12. 累计费用通知使用“当前全局实际或预留 + 当前生产链剩余额度”，不得把已经包含继承费用的整条链上限再次相加。投影同时绑定历史保留、全局账本、继承费用、本 run 费用和链上限；继承费用只计一次。达到真实下一档 ¥100 前仍必须通知，但错误重复计数不得阻断 Provider。
 
 ## 证据
 
@@ -39,6 +40,7 @@
 - V2 首次正式审阅 `faction-v1-ad5d16565e2b118d830a` 没有 schema 候选：HTTP200 输出正好达到 2,048 tokens，并以 `max_output_tokens` incomplete 结束；1 call / 124,487 tokens / 约 ¥0.452613，0 自动重试。按 recovery ladder 单独授权一次同合同、同上下文、同任务的 4,096-token 容量续跑，仍关闭运行内自动重试；若再次截断则改 reviewer 分批。review12、continuation40、editor5、budget25 均0Provider通过；preflight recipe `58dc727c7ae7ce8cece50b62cde7a6396c576971fb7c5c21f50db0e25ce7036a` 复用169 roles，首个miss仍为V2 supportive2.0。
 - 4,096-token 正式续跑 `faction-v1-58dc727c7ae7ce8cece5` 新增 7 calls / 876,363 tokens。四个 supportive 批次均完成：2.0 与 2.4 的首候选被本地 schema 拒绝后，各通过一次定点修复；2.2 与 2.6 一次通过。随后 `objectives.1` 的首个 adversarial 批次返回 HTTP200/正常结束，但正文不是合法 JSON；安全回执保留错误分类、输出哈希和用量，原始正文按策略不落盘，因此该历史输出不能事后恢复。本 run 没有自动重试、402 或在途请求。
 - wire 无损恢复门：主生产 readiness 20/20、adapter 15/15、structured runtime 6/6、review 13/13、continuation 40/40、editor 5/5、budget 25/25，均 0 Provider。实际旧失败只能证明错误类型，不能伪称已恢复；恢复策略只对未来响应在内存中执行。最新 CLI preflight recipe `1d413de35d44f10ab32ad2c6b7cf529264ce54cf2afb428108e7495ba3ea51fb` 通过，复用 173 roles，继承 246 calls / 63,838,168 tokens / ¥20.501460 的生产链账本；首个未缓存角色精确为 `faction.terran_armed_forces.objectives.1.review-target-batch-v1.adversarial.2.0`，路由 `responses_json_schema`，Provider 调用 0。
+- 首次按 `1d413de3…` 正式启动在出网前被 `CNY_100_NOTIFICATION_REQUIRED` 停止，0 Provider/0 token。诊断证明旧公式把当前全局 ¥67.185895 与整链 ¥35 上限直接相加，重复计算其中已继承的 ¥20.501460。修复后 budget 29/29、review 13/13、editor 5/5 均 0 Provider；真实剩余链额度 ¥14.498540，最坏累计 ¥81.684435。最终 preflight recipe `3d2d9aba32a329115cbc22a0e0a17eb664bcc212d3c4b1ff8559470014cf6575` 仍复用 173 roles、保持同一 first miss 和 0 Provider。
 
 最新已知累计用量为 102,615,259 tokens，估算或历史预留合计 ¥67.185895，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
 

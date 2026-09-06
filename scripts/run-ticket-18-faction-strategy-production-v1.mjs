@@ -15,7 +15,7 @@ import { inspectFactionFieldRepairEvidenceV1 } from '../packages/skill-evaluatio
 import { validateFactionFieldRepairSeedV1 } from '../packages/skill-production-v3/faction-field-repair-seed-v1.mjs';
 import { inspectFactionPhaseFieldEvidenceV1 } from '../packages/skill-evaluation/faction-phase-field-evidence-v1.mjs';
 import { validateFactionPhaseFieldSeedV1 } from '../packages/skill-production-v3/faction-phase-field-seed-v1.mjs';
-import { createFactionBudgetExtensionV1 } from '../packages/skill-production-v3/faction-budget-extension-v1.mjs';
+import { createFactionBudgetExtensionV1, projectFactionCumulativeCostV1 } from '../packages/skill-production-v3/faction-budget-extension-v1.mjs';
 import { createFactionReviewTransactionBindingV1, createFactionReviewTransactionRuntimeV1 } from '../packages/skill-production-v3/faction-review-transaction-runtime-v1.mjs';
 import { createFactionStructuredLocalEditorImportV1, createFactionStructuredLocalEditorRuntimeV1,
   deriveFactionLegacyPromptRoleIdsV1 } from '../packages/skill-production-v3/faction-structured-local-editor-runtime-v1.mjs';
@@ -529,9 +529,16 @@ let worker, attached, structuredWorker, structuredAttached, failure = null;
 const candidates = [];
 try {
   const global = store.globalSummary();
+  const local = store.summary();
   if (global.attempts.some(a => a.code === 'PROVIDER_PAYMENT_REQUIRED')) fail('API_BALANCE_EXHAUSTED_STOP_ALL_WORK');
   if (global.attempts.some(a => a.state === 'intent')) fail('AMBIGUOUS_EGRESS_NO_RETRY');
-  if (historyMicros + global.reservedOrSettledMicros + limits.maxCostMicros >= 100_000_000) fail('CNY_100_NOTIFICATION_REQUIRED');
+  const costProjection = projectFactionCumulativeCostV1({ historyMicros,
+    globalSpentMicros: global.reservedOrSettledMicros,
+    inheritedCostMicros: inherited.costMicros,
+    currentRunCostMicros: local.reservedOrSettledMicros,
+    chainLimitMicros: limits.maxCostMicros });
+  if (costProjection.projectedMaximumCumulativeMicros >= 100_000_000)
+    fail('CNY_100_NOTIFICATION_REQUIRED');
   if (Date.now() - began >= limits.maxWallMs) fail('FACTION_RUN_WALL_EXHAUSTED');
   await put('recipe', recipe);
   const dsh = await prepareDshLoop(root);

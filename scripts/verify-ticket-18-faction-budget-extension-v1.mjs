@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdtemp } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createFactionBudgetExtensionV1, validateFactionBudgetExtensionV1 } from '../packages/skill-production-v3/faction-budget-extension-v1.mjs';
+import { createFactionBudgetExtensionV1, projectFactionCumulativeCostV1,
+  validateFactionBudgetExtensionV1 } from '../packages/skill-production-v3/faction-budget-extension-v1.mjs';
 import { inspectFactionContinuationV1 } from '../packages/skill-production-v3/faction-continuation-v1.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
 import { withCheckpointContinuation } from '../packages/skill-production/continuation.mjs';
@@ -27,6 +28,21 @@ for (const fields of [{ parentRecipeHash: hash('foreign') }, { originalClockPres
     { code: 'FACTION_BUDGET_EXTENSION_INVALID' });
 assert.throws(() => validateFactionBudgetExtensionV1({ parent: next, next: reseal(next, {
   budgetExtension: reseal(extension, { reason: 'renewed without inherited spending' }) }) }), { code: 'FACTION_BUDGET_EXTENSION_IMMUTABLE' });
+const firstProjection = projectFactionCumulativeCostV1({ historyMicros: 34_013_743,
+  globalSpentMicros: 33_172_152, inheritedCostMicros: 20_501_460,
+  currentRunCostMicros: 0, chainLimitMicros: 35_000_000 });
+assert.equal(firstProjection.currentCumulativeMicros, 67_185_895);
+assert.equal(firstProjection.remainingChainMicros, 14_498_540);
+assert.equal(firstProjection.projectedMaximumCumulativeMicros, 81_684_435);
+const afterLocalSpend = projectFactionCumulativeCostV1({ historyMicros: 34_013_743,
+  globalSpentMicros: 35_172_152, inheritedCostMicros: 20_501_460,
+  currentRunCostMicros: 2_000_000, chainLimitMicros: 35_000_000 });
+assert.equal(afterLocalSpend.projectedMaximumCumulativeMicros,
+  firstProjection.projectedMaximumCumulativeMicros);
+assert.throws(() => projectFactionCumulativeCostV1({ historyMicros: 0,
+  globalSpentMicros: 0, inheritedCostMicros: 35_000_001,
+  currentRunCostMicros: 0, chainLimitMicros: 35_000_000 }),
+{ code: 'FACTION_COST_PROJECTION_INVALID' });
 const files = ['packages/skill-production-v3/faction-budget-extension-v1.mjs', 'packages/skill-production-v3/faction-continuation-v1.mjs',
   'scripts/verify-ticket-18-faction-budget-extension-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
@@ -66,9 +82,9 @@ try {
   assert.throws(() => inspectFactionContinuationV1({ ...deps, next: reseal(fixtureNext, { inputHashes: [hash('changed source')] }) }),
     { code: 'FACTION_CONTINUATION_CONTRACT_DRIFT' });
 } finally { local?.close(); sourceStore.close(); }
-const report = seal({ passed: true, checks: 25, codeHashes, originalParentRecipeHash: parent.hash,
+const report = seal({ passed: true, checks: 29, codeHashes, originalParentRecipeHash: parent.hash,
   sqliteAncestorUsageAndUnknownReservePreserved: true, originalClockPreserved: true, copiedProviderAttempts: 0,
   extension, proof, productionJournalMutationPerformed: false, fixtureJournalMutated: true,
   actualContinuationPreflightPerformed: false, providerCalls: 0, trainingTruth: false });
 await writeFile(path.join(base, 'budget-extension-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 25, limits: extension.nextLimits, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 29, limits: extension.nextLimits, providerCalls: 0, hash: report.hash }));

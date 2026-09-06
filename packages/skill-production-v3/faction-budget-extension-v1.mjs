@@ -5,6 +5,25 @@ const original = Object.freeze({ maxCalls: 400, maxCostMicros: 20_000_000, maxTo
 const expanded = Object.freeze({ ...original, maxCalls: 800, maxCostMicros: 35_000_000,
   maxTokens: 180_000_000, maxWallMs: 24 * 60 * 60 * 1000 });
 
+export function projectFactionCumulativeCostV1({ historyMicros,
+  globalSpentMicros, inheritedCostMicros, currentRunCostMicros,
+  chainLimitMicros }) {
+  const values = [historyMicros, globalSpentMicros, inheritedCostMicros,
+    currentRunCostMicros, chainLimitMicros];
+  if (values.some(value => !Number.isSafeInteger(value) || value < 0)
+    || inheritedCostMicros + currentRunCostMicros > chainLimitMicros) {
+    fail('FACTION_COST_PROJECTION_INVALID');
+  }
+  const remainingChainMicros = chainLimitMicros - inheritedCostMicros
+    - currentRunCostMicros;
+  return seal({ version: 'faction_cumulative_cost_projection_v1',
+    currentCumulativeMicros: historyMicros + globalSpentMicros,
+    remainingChainMicros,
+    projectedMaximumCumulativeMicros: historyMicros + globalSpentMicros
+      + remainingChainMicros,
+    inheritedCostCountedOnce: true, invoice: false, trainingTruth: false });
+}
+
 // One named, bounded extension for the already-authorized complete two-faction
 // production. This cannot reset the journal clock, prior usage, or per-role
 // safety limits. The continuation inspector still derives those from SQLite.
