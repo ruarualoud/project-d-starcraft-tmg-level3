@@ -7,6 +7,27 @@ formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
 ## Three-field repair integration checkpoint
 
+Live successor is `faction-v1-907961cf3b449dd64c64` (handle80048), produced
+by pushed commit `8282607`. The actual three-field edit completed in one call:
+264,415 tokens / estimated ¥0.258323. Read-only raw-response/receipt reapplication
+passed, inspection `2c16952585c478482ae34f0a37fb483dc1de665994711f61662d6baa4627ad90`,
+receipt `cf44e2f829fb5990535639ed70f29a4437517393673d608d1a220d7fec059be5`.
+Manual inspection confirms the replacements distinguish Ground/Flying targets,
+Biological Orders eligibility and the two named per-round Reaction limits.
+The other four recommendations and all unflagged fields remain identical.
+Fresh whole-section review is still running; do not restart this live run.
+
+Further independent source comparison finds four additional exact fields:
+`0.alternatives.1` wrongly groups Rocket Launcher with AGG-12 as Armoured Surge;
+`4.alternatives.0` claims the additional SIDEARM sacrifices retained C-14 Light
+Surge; `2.alternatives.1` and `5.alternatives.0` propose Infantry Armor Reaction
+against INSTANT, which prohibits enemy Reactions. New cross-field audit11 and
+existing unit-debt8 gates pass without Provider calls. The consumer entrypoint
+now vetoes these findings before credentials. They are not yet actually fixed.
+Separately, Goliath's null Evade concern is cleared by exact Core5.1, which
+explicitly says a granted roll does not override null Evade. No false repair.
+Production code/inputs remain unchanged while the paid run is active.
+
 The second-section independent counterexamples now enter a host-bound repair
 plan before another section can start. One complete-source DSH role returns
 only the three target IDs and replacement texts; application preserves every

@@ -8,6 +8,7 @@ import { inspectFactionFieldRepairEvidenceV1 } from './faction-field-repair-evid
 import { validateFactionFieldRepairSeedV1 } from '../skill-production-v3/faction-field-repair-seed-v1.mjs';
 import { factionConsumerContextV1 } from './faction-roster-use-evaluation-v1.mjs';
 import { inspectFactionUnitRoleDebtV1 } from './faction-unit-role-debt-v1.mjs';
+import { assertNoFactionCrossFieldSourceDebtV1 } from './faction-cross-field-source-audit-v1.mjs';
 import { seal, verifySeal, sha256, fail } from '../skill-production/common.mjs';
 
 export async function inspectFactionCandidateEvidenceV1({ root, runId, input, knownRulePolicy, catalogue, context }) {
@@ -24,6 +25,7 @@ export async function inspectFactionCandidateEvidenceV1({ root, runId, input, kn
     || recipe.contextHash !== context.hash || recipe.catalogueHash !== catalogue.hash
     || !report.candidateHashes.includes(candidate.hash) || !candidate.semanticReviewPassed)
     fail('FACTION_CANDIDATE_EVIDENCE_BINDING_DRIFT');
+  assertNoFactionCrossFieldSourceDebtV1({ input, candidate });
   for (const section of candidate.sections) {
     const debt = inspectFactionUnitRoleDebtV1({ input, draft: section.draft });
     if (debt.knownSemanticDebtBlocksIndependentQualification) fail('FACTION_CANDIDATE_KNOWN_UNIT_ROLE_DEBT', { debtHash: debt.hash });

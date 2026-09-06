@@ -35,7 +35,7 @@ const { dataset } = await loadOfficialDevelopmentTrancheSourceLockFixtureV1({ ro
 const drills = await createFactionRosterChoiceDrillsV1({ catalogue, dataset });
 const knownRulePolicy = createFactionKnownRulePolicyV1({ input, drills });
 const { candidate, evidence } = await inspectFactionCandidateEvidenceV1({ root, runId: args[2], input, knownRulePolicy, catalogue, context });
-const gates = await Promise.all(['production-replay-readiness', 'consumer-evaluation-readiness', 'unit-role-debt-readiness'].map(json));
+const gates = await Promise.all(['production-replay-readiness', 'consumer-evaluation-readiness', 'unit-role-debt-readiness', 'cross-field-source-audit-readiness'].map(json));
 for (const gate of gates) {
   if (!gate.passed) fail('FACTION_CONSUMER_READINESS_FAILED');
   for (const c of gate.codeHashes) if (sha256(await readFile(path.join(root, c.file))) !== c.hash) fail('FACTION_CONSUMER_READINESS_CODE_DRIFT');
@@ -44,6 +44,7 @@ if (!gates[1].inputHashes.includes(input.hash) || gates[1].drillManifestHash !==
 const files = ['scripts/run-ticket-18-faction-consumer-evaluation-v1.mjs', 'packages/skill-evaluation/faction-candidate-evidence-v1.mjs',
   'packages/skill-evaluation/faction-production-replay-v1.mjs', 'packages/skill-evaluation/faction-roster-use-evaluation-v1.mjs',
   'packages/skill-evaluation/faction-unit-role-debt-v1.mjs',
+  'packages/skill-evaluation/faction-cross-field-source-audit-v1.mjs',
   'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs', 'packages/skill-production/model.mjs', 'packages/skill-production/store.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
 const limits = { maxCalls: 8, maxCostMicros: 5_000_000, maxTokens: 4_000_000, maxWallMs: 30 * 60 * 1000, maxInputBytes: 1_000_000 };
