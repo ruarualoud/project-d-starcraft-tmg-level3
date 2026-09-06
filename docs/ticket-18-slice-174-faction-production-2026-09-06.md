@@ -5,7 +5,26 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Latest actual phase repair and new-review integration
+## Latest cumulative budget extension and live entry
+
+The original-limit preflight62674 exited0 with recipe `aa1c0fea…`:123 reusable
+raw roles,159 inherited calls /42,248,806 tokens /¥11.931646. No Provider calls.
+The explicit `--extend-faction-budget-v1` now records a single immutable
+extension from400 calls/60M tokens/¥20/8h to800/180M/¥35/24h. The clock remains
+anchored to00:21:55UTC; no usage or unknown-cost reserve is reset/copied.
+The1M input-byte ceiling and3 model-repair revisions are unchanged. Removing,
+altering or repeating the extension, or changing sources with it, fails closed.
+
+Budget25 (`830f832c…`) includes an actual isolated SQLite parent/child journal
+with ancestor usage and an unknown-cost failure: both remain in inherited
+accounting, the original clock remains1000 in that fixture, and cached role
+reuse adds0 Provider attempts. Existing continuation38, phase migration13,
+source migration12 and additional-recovery14 pass. These tests do not qualify
+any Skill. The next live entry uses the actual phase seed plus this explicit
+extension and runs its source/request safety preflight before credentials.
+All-history remains80,183,744 known tokens /estimated-or-reserved¥58.222971.
+
+## Actual phase repair and new-review integration
 
 `phase-repair-bd58d5270d852324f694` /91599 completed successfully. Four actual
 calls produced11 exact-field changes in3/3/3/2 batches:1,090,851 tokens and

@@ -15,6 +15,7 @@ import { inspectFactionFieldRepairEvidenceV1 } from '../packages/skill-evaluatio
 import { validateFactionFieldRepairSeedV1 } from '../packages/skill-production-v3/faction-field-repair-seed-v1.mjs';
 import { inspectFactionPhaseFieldEvidenceV1 } from '../packages/skill-evaluation/faction-phase-field-evidence-v1.mjs';
 import { validateFactionPhaseFieldSeedV1 } from '../packages/skill-production-v3/faction-phase-field-seed-v1.mjs';
+import { createFactionBudgetExtensionV1 } from '../packages/skill-production-v3/faction-budget-extension-v1.mjs';
 import { createFactionKnownRulePolicyV1 } from '../packages/skill-production-v3/faction-known-rule-findings-v1.mjs';
 import { createFactionRosterChoiceDrillsV1 } from '../packages/skill-evaluation/faction-roster-choice-drills-v1.mjs';
 import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/official-development-tranche-source-lock-fixture-v1.mjs';
@@ -30,11 +31,12 @@ import { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } from '../packages/se
 import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../content/skill-generation/offline-provider-profile-v1.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), args = process.argv.slice(2);
-if (![3, 5, 7].includes(args.length) || !['--preflight', '--live'].includes(args[0]) || args[1] !== '--overall-run'
+if (![3, 5, 7, 8].includes(args.length) || !['--preflight', '--live'].includes(args[0]) || args[1] !== '--overall-run'
   || !/^guide-repair-[a-f0-9]{20}$/.test(args[2]) || args.length >= 5 && (args[3] !== '--continue-from' || !/^faction-v1-[a-f0-9]{20}$/.test(args[4]))
-  || args.length === 7 && !(args[5] === '--field-repair-run' && /^field-repair-[a-f0-9]{20}$/.test(args[6])
+  || args.length >= 7 && !(args[5] === '--field-repair-run' && /^field-repair-[a-f0-9]{20}$/.test(args[6])
     || args[5] === '--review-recovery-run' && /^faction-v1-[a-f0-9]{20}$/.test(args[6])
-    || args[5] === '--phase-repair-run' && /^phase-repair-[a-f0-9]{20}$/.test(args[6]))) fail('FACTION_RUN_ARGUMENTS_INVALID');
+    || args[5] === '--phase-repair-run' && /^phase-repair-[a-f0-9]{20}$/.test(args[6]))
+  || args.length === 8 && args[7] !== '--extend-faction-budget-v1') fail('FACTION_RUN_ARGUMENTS_INVALID');
 const base = path.join(root, 'build/ticket-18-faction-production-v1'), filename = path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite');
 const json = async file => verifySeal(JSON.parse(await readFile(path.join(root, file), 'utf8')));
 const db = new DatabaseSync(filename, { readOnly: true });
@@ -72,6 +74,13 @@ for (const gate of unitRoleRepairGates) {
 }
 const parentRecipe = args[4] ? await json('build/ticket-18-faction-production-v1/' + args[4] + '/recipe.json') : null;
 if (!parentRecipe) fail('FACTION_SOURCE_CORRECTION_PARENT_REQUIRED');
+const budgetExtension = args[7] ? createFactionBudgetExtensionV1(parentRecipe) : parentRecipe.budgetExtension || null;
+const budgetReadiness = budgetExtension ? await json('build/ticket-18-faction-production-v1/budget-extension-readiness.json') : null;
+if (budgetReadiness) {
+  if (!budgetReadiness.passed || budgetReadiness.providerCalls !== 0) fail('FACTION_BUDGET_READINESS_INVALID');
+  for (const row of budgetReadiness.codeHashes) if (sha256(await readFile(path.join(root, row.file))) !== row.hash)
+    fail('FACTION_BUDGET_READINESS_CODE_DRIFT');
+}
 const recoveryParentRunId = parentRecipe.commandRecoveryBinding?.parentRunId || args[4];
 const recoveryParent = recoveryParentRunId === args[4] ? parentRecipe : await json('build/ticket-18-faction-production-v1/' + recoveryParentRunId + '/recipe.json');
 const commandRecovery = inspectFactionCommandRecoveryV1({ filename, parentRunId: recoveryParentRunId, parent: recoveryParent });
@@ -148,8 +157,9 @@ if (fieldRepairBinding) files.push('packages/skill-production-v3/faction-field-r
 if (phaseFieldBinding) files.push('packages/skill-production-v3/faction-phase-field-seed-v1.mjs',
   'packages/skill-production-v3/faction-phase-seed-clarification-v1.mjs', 'packages/skill-production-v3/faction-phase-field-repair-v1.mjs',
   'packages/skill-evaluation/faction-phase-field-evidence-v1.mjs', 'packages/skill-evaluation/faction-phase-source-debt-v1.mjs');
+if (budgetExtension) files.push('packages/skill-production-v3/faction-budget-extension-v1.mjs');
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const limits = { maxCalls: 400, maxCostMicros: 20_000_000, maxTokens: 60_000_000, maxWallMs: 8 * 60 * 60 * 1000, maxInputBytes: 1_000_000, maxRevisions: 3 };
+const limits = budgetExtension?.nextLimits || { maxCalls: 400, maxCostMicros: 20_000_000, maxTokens: 60_000_000, maxWallMs: 8 * 60 * 60 * 1000, maxInputBytes: 1_000_000, maxRevisions: 3 };
 const next = seal({ version: 'faction_strategy_production_v1', overallRunId: args[2], overallDependencyHash: overallDependency.hash,
   qualificationReceiptHash: qualificationReceipt.hash, inputHashes: inputs.map(i => i.hash), planHashes: inputs.map(i => createFactionWritingPlanV1(i).hash),
   catalogueHash: catalogue.hash, sourceBinding: catalogue.sourceBinding, contextHash: context.hash, modelHash: profile.integrity.hash,
@@ -160,6 +170,7 @@ const next = seal({ version: 'faction_strategy_production_v1', overallRunId: arg
   registeredSourceFieldRepair: true, commandRecoveryBinding: commandRecovery.manifest,
   sourceCorrectionReadinessHashes: sourceCorrectionGates.map(g => g.hash),
   ...(phaseFieldBinding ? { phaseFieldBinding, phaseFieldReadinessHash: phaseFieldReadiness.hash } : {}),
+  ...(budgetExtension ? { budgetExtension, budgetExtensionReadinessHash: budgetReadiness.hash } : {}),
   ...(additionalRecoveries.length ? { additionalCommandRecoveryBindings: additionalRecoveries.map(row => row.manifest),
     additionalCommandRecoveryReadinessHashes: additionalRecoveryGates.map(gate => gate.hash) } : {}),
   target: 'two_complete_conditional_faction_strategy_candidates_with_source_review_not_runtime_promotion',
@@ -174,7 +185,8 @@ if (args[4]) {
     fieldRepairMigration: fieldRepairBinding ? { binding: fieldRepairBinding, readiness: fieldRepairReadiness } : null,
     unitRoleRepairMigration: unitRoleRepairGates, sourceCorrectionMigration: sourceCorrectionGates,
     additionalCommandRecoveryMigration: additionalRecoveryGates,
-    phaseSeedMigration: phaseFieldBinding ? { binding: phaseFieldBinding, readiness: phaseFieldReadiness } : null });
+    phaseSeedMigration: phaseFieldBinding ? { binding: phaseFieldBinding, readiness: phaseFieldReadiness } : null,
+    budgetExtensionReadiness: budgetReadiness });
 }
 const { hash: ignored, ...nextBody } = next;
 const recipe = continuation ? seal({ ...nextBody, continuation: continuation.manifest }) : next;
