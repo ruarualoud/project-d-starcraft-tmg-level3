@@ -2,6 +2,8 @@ import { hashStarcraftTmgContract } from
   "../../authoritative-engine/referee-crypto-v1.mjs";
 import { assertStarcraftTmgProviderEgressBindingV2 } from
   "../../secure-provider-runtime/provider-egress-contract-v2.mjs";
+import { normalizeProviderJsonDocumentV1 } from
+  "../../secure-provider-runtime/provider-response-outcome-v1.mjs";
 import {
   assertStarcraftTmgOutputContractV1,
   normalizeStarcraftTmgOutputContractRefV1,
@@ -222,6 +224,12 @@ export class StarcraftTmgStructuredProviderAdapterError extends Error {
         ? safeHash(details.outputTextHash, "outputTextHash") : null,
       schemaIssues: Array.isArray(details.schemaIssues)
         ? clone(details.schemaIssues).slice(0, 32) : [],
+      responseNormalization: details.responseNormalization
+        ? String(details.responseNormalization).slice(0, 120) : null,
+      responseNormalizationReceiptHash:
+        details.responseNormalizationReceiptHash
+          ? safeHash(details.responseNormalizationReceiptHash,
+            "responseNormalizationReceiptHash") : null,
       automaticRetries: 0,
       trainingTruth: false,
     };
@@ -298,14 +306,31 @@ function parseResponse(result, contract, request, capabilityReceiptHash = null) 
     throw new StarcraftTmgStructuredProviderAdapterError(
       "STRUCTURED_PROVIDER_OUTPUT_MISSING", base);
   }
+  const normalized = normalizeProviderJsonDocumentV1(extracted.text);
+  const normalizationBody = {
+    version: "structured_provider_lossless_json_normalization_v1",
+    kind: normalized.kind,
+    changed: normalized.text !== extracted.text,
+    originalTextHash: hashStarcraftTmgContract(extracted.text),
+    normalizedTextHash: hashStarcraftTmgContract(normalized.text),
+    evidenceHash: normalized.evidence
+      ? hashStarcraftTmgContract(normalized.evidence) : null,
+    visibleScalarContentAcceptedByNormalization: false,
+    semanticAcceptanceInherited: false,
+    trainingTruth: false,
+  };
+  const normalizationReceipt = freeze({ ...normalizationBody,
+    hash: hashStarcraftTmgContract(normalizationBody) });
   let output;
   try {
-    output = JSON.parse(extracted.text);
+    output = JSON.parse(normalized.text);
   } catch {
     throw new StarcraftTmgStructuredProviderAdapterError(
       "STRUCTURED_PROVIDER_SCHEMA_INVALID", {
         ...base, outputTextHash: hashStarcraftTmgContract(extracted.text),
         schemaIssues: [{ path: "$", code: "provider_json_not_parseable" }],
+        responseNormalization: normalized.kind,
+        responseNormalizationReceiptHash: normalizationReceipt.hash,
       });
   }
   const validation = validateStarcraftTmgProviderJsonSchemaValueV1(
@@ -315,6 +340,8 @@ function parseResponse(result, contract, request, capabilityReceiptHash = null) 
       "STRUCTURED_PROVIDER_SCHEMA_INVALID", {
         ...base, outputTextHash: hashStarcraftTmgContract(extracted.text),
         schemaIssues: validation.issues,
+        responseNormalization: normalized.kind,
+        responseNormalizationReceiptHash: normalizationReceipt.hash,
       });
     // The parsed schema-invalid value is safe domain data, not a credential or
     // raw transport payload. Keep it transient and non-enumerable so the
@@ -343,6 +370,7 @@ function parseResponse(result, contract, request, capabilityReceiptHash = null) 
     transportReceiptHash: result.transportReceipt.receiptHash,
     responseFingerprint: hashStarcraftTmgContract(output),
     localSchemaValidationHash: hashStarcraftTmgContract(validation),
+    responseNormalization: normalizationReceipt,
     usage: providerUsage,
     physicalAttempts: 1,
     automaticRetries: 0,
@@ -357,6 +385,7 @@ function parseResponse(result, contract, request, capabilityReceiptHash = null) 
       outputContractRef: contractRef,
       valueHash: validation.valueHash,
       schemaHash: validation.schemaHash,
+      responseNormalizationHash: normalizationReceipt.hash,
       valid: true,
       trainingTruth: false,
     },

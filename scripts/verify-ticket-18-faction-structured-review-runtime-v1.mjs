@@ -52,6 +52,7 @@ const CODE_FILES = [
   "content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs",
   "packages/skill-production-v3/faction-review-context-capsule-v1.mjs",
   "packages/skill-production-v3/faction-structured-review-runtime-v1.mjs",
+  "packages/secure-provider-runtime/provider-response-outcome-v1.mjs",
   "packages/structured-generation/output-contract-registry-v1.mjs",
   "packages/structured-generation/adapters/deepseek-responses-json-schema-v1.mjs",
   "packages/structured-generation/structured-generation-runtime-v1.mjs",
@@ -80,7 +81,7 @@ const db = new DatabaseSync(path.join(ROOT,
   "build/ticket-17-production-redesign-v1/production.sqlite"),
 { readOnly: true });
 let corrected, actualBoundaryCandidate, actualCapacityUsage,
-  actualCapacityFailure;
+  actualCapacityFailure, actualWireFailure;
 try {
   corrected = verifySeal(JSON.parse(db.prepare(
     "SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'",
@@ -97,6 +98,11 @@ try {
     "STRUCTURED_PROVIDER_INCOMPLETE");
   actualCapacityUsage = verifySeal(JSON.parse(capacityRow.usage)).value;
   actualCapacityFailure = verifySeal(JSON.parse(capacityRow.response)).value;
+  const wireRow = db.prepare(
+    "SELECT response FROM attempts WHERE run=? AND response LIKE ?",
+  ).get("faction-v1-58dc727c7ae7ce8cece5",
+    "%provider_json_not_parseable%");
+  actualWireFailure = verifySeal(JSON.parse(wireRow.response)).value;
 } finally { db.close(); }
 const section = createFactionWritingPlanV1(input).sections.find((row) =>
   row.id === "faction.terran_armed_forces.objectives.1");
@@ -195,6 +201,17 @@ await check("review.actual-2048-incomplete-authorizes-one-4096-continuation", as
   assert.match(await readFile(path.join(ROOT,
     "scripts/run-ticket-18-faction-strategy-production-v1.mjs"), "utf8"),
   /structuredReviewPolicy = Object\.freeze\(\{ maxOutputUnits: 4096,/u);
+});
+
+await check("review.actual-wire-failure-enables-lossless-normalizer-not-prompt-retry", async () => {
+  assert.equal(actualWireFailure.code,
+    "STRUCTURED_PROVIDER_SCHEMA_INVALID");
+  assert.equal(actualWireFailure.status, 200);
+  assert.deepEqual(actualWireFailure.schemaIssues,
+    [{ path: "$", code: "provider_json_not_parseable" }]);
+  assert.match(actualWireFailure.outputTextHash, /^[a-f0-9]{64}$/u);
+  assert.equal(actualWireFailure.automaticRetries, 0);
+  assert.equal(actualWireFailure.outputContractRef.hash, contractRef.hash);
 });
 
 await check("review.actual-contract-capability-probe", async () => {
@@ -441,6 +458,18 @@ const report = seal({
     exactOutputContractRetained: true,
     oneExplicitContinuationOnly: true,
     automaticRetries: 0,
+  },
+  actualWireFailureRunId: "faction-v1-58dc727c7ae7ce8cece5",
+  actualWireFailureReceiptHash: actualWireFailure.receiptHash,
+  wireSyntaxRecovery: {
+    policy: "lossless_unique_json_normalization_before_schema_validation",
+    allowedKinds: ["outer_object_close", "single_json_fence",
+      "single_json_fence_and_outer_object_close",
+      "redundant_array_object_closers_v1", "single_unescaped_quote_v1"],
+    originalActualTextRecoverable: false,
+    promptOnlyRetryAllowed: false,
+    schemaValidationAfterNormalization: true,
+    semanticAcceptanceInherited: false,
   },
   contextCapsuleBytes: capsule.compiledInputBytes,
   completeCoreFaqIncluded: true,

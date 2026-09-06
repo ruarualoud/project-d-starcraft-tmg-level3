@@ -66,7 +66,8 @@ export function validateFactionStructuredReviewMigrationV1({
   const introduced = !parent.structuredReviewBinding;
   const contractMigration = readiness.contractMigration;
   const capacityMigration = readiness.capacityMigration;
-  if (!readiness.passed || readiness.checks.length !== 12
+  const wireSyntaxRecovery = readiness.wireSyntaxRecovery;
+  if (!readiness.passed || readiness.checks.length !== 13
     || readiness.hash !== next.structuredReviewReadinessHash
     || readiness.providerCalls !== 0
     || readiness.actualCapabilityRunId !== binding.capabilityRunId
@@ -97,6 +98,20 @@ export function validateFactionStructuredReviewMigrationV1({
     || readiness.actualCapacityFailureRunId
       !== 'faction-v1-ad5d16565e2b118d830a'
     || !readiness.actualCapacityFailureReceiptHash
+    || !wireSyntaxRecovery
+    || wireSyntaxRecovery.policy
+      !== 'lossless_unique_json_normalization_before_schema_validation'
+    || hash(wireSyntaxRecovery.allowedKinds) !== hash([
+      'outer_object_close', 'single_json_fence',
+      'single_json_fence_and_outer_object_close',
+      'redundant_array_object_closers_v1', 'single_unescaped_quote_v1'])
+    || wireSyntaxRecovery.originalActualTextRecoverable !== false
+    || wireSyntaxRecovery.promptOnlyRetryAllowed !== false
+    || wireSyntaxRecovery.schemaValidationAfterNormalization !== true
+    || wireSyntaxRecovery.semanticAcceptanceInherited !== false
+    || readiness.actualWireFailureRunId
+      !== 'faction-v1-58dc727c7ae7ce8cece5'
+    || !readiness.actualWireFailureReceiptHash
     || bindingChanged && (!contractMigration
       || contractMigration.from?.hash
         !== parent.structuredReviewBinding.outputContractRef.hash

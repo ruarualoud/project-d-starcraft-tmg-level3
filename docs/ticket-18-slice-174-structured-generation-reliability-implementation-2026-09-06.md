@@ -1,6 +1,6 @@
 # Ticket 18 / Slice 174：结构化生成可靠性实施记录（2026-09-06）
 
-状态：R0-R5 已完成；R6 已完成零付费集成预检和首次正式续跑诊断，正在从已修复的最新谱系继续 faction 生产。本文记录机制和证据，不把工程门禁、模型审查或离线候选声明为 Rules 真值、正式发布 Skill 或训练真值。
+状态：R0-R5 已完成；R6 已完成零付费集成预检并持续从已修复的最新谱系继续 faction 生产。本文记录机制和证据，不把工程门禁、模型审查或离线候选声明为 Rules 真值、正式发布 Skill 或训练真值。
 
 ## 实施结果
 
@@ -14,6 +14,7 @@
 8. 审阅引用的布局差异有专用恢复边界。只有当超长引用在仅归一项目符和空白后能完整、顺序精确绑定到本次密封官方来源时，才把其 240 字前缀用作传输元数据；原引用/新引用哈希、长度、段落与布局证明全部记录。不改原 Provider 输出、不改判断、不新增来源证据；无法精确绑定时仍封闭失败。
 9. 目标化 reviewer 也进入 Responses JSON Schema。模型只能输出最多两个 target slot、focus、判断、理由和 source slot；targetId、完整标题、sourceRef 和 coverage source 都由 host 从密封目录映射。胶囊为 408,572 bytes，包含完整 Core/FAQ、当前阵营全部产品来源、完整当前章节和总规则 Skill 哈希/资格；不再同时重复携带 236KB 派生 Skill 正文。结构解码后仍必须通过原 target quote、来源、coverage 和语义验证。
 10. 对可解析但违反本地 schema 的 reviewer 候选增加一次定点修复。Adapter 只把 parsed domain value 和精确 validation paths 交给 durable runtime；安全回执仍不保存原始传输体。修复调用必须返回完整对象，但只能改变失败路径，其他解析后值逐项哈希相同；仍需再次通过同一 schema、host materialization 和原语义门。最多一次，不截断、不猜测、不循环重生。
+11. 对 HTTP200 但 wire JSON 非法的响应先执行唯一可证明的无损归一化，再进入同一 JSON Schema 门。允许集合仅为缺失最外层对象闭合、单一 JSON fence、二者组合、已证明的冗余数组/对象闭合和唯一可恢复的单个未转义引号；回执绑定原文/归一化文本/恢复证据哈希，不保存原始敏感传输体，也不继承任何语义接受。无法唯一恢复仍隔离，禁止 prompt-only 盲重试。
 
 ## 证据
 
@@ -36,8 +37,10 @@
 - actual/max 修复实跑 `faction-v1-38cff03b5a47b54b6573` 证明导入生效且只调用修复角色：1 call / 124,619 tokens / 约 ¥0.445411。但模型在明确 403/400 后仍逐字返回同一 403 字 reason；本地门再次隔离且没有第二次修复。三次实际 Provider 输出一致，故停止把不合理字符边界当模型服从问题。
 - reviewer 合同 V2：V1 哈希 `ac4f185c…` 原样冻结并可展示；V2 哈希 `00acc1f9…` 仅把 verdict reason 的 maxLength 400→800，coverage reason 仍400，host fields/mapper/semantic validator不变。真实403字候选在V1失败、V2通过结构门，但不继承语义接受。V2 capability canary `structured-review-probe-b7791c9a70d07662279e289fdec8f03a` 通过，1 call / 702 tokens / 约 ¥0.001454。review11、continuation40、editor5、budget25及基础合同/adapter/runtime门均0Provider通过；preflight recipe `ad5d16565e2b118d830a4ef5186b2d4e2804fe2ef066dd03de63d79b152f4b76` 复用169 roles、V1候选跨合同导入0、首个miss为V2 supportive2.0。
 - V2 首次正式审阅 `faction-v1-ad5d16565e2b118d830a` 没有 schema 候选：HTTP200 输出正好达到 2,048 tokens，并以 `max_output_tokens` incomplete 结束；1 call / 124,487 tokens / 约 ¥0.452613，0 自动重试。按 recovery ladder 单独授权一次同合同、同上下文、同任务的 4,096-token 容量续跑，仍关闭运行内自动重试；若再次截断则改 reviewer 分批。review12、continuation40、editor5、budget25 均0Provider通过；preflight recipe `58dc727c7ae7ce8cece50b62cde7a6396c576971fb7c5c21f50db0e25ce7036a` 复用169 roles，首个miss仍为V2 supportive2.0。
+- 4,096-token 正式续跑 `faction-v1-58dc727c7ae7ce8cece5` 新增 7 calls / 876,363 tokens。四个 supportive 批次均完成：2.0 与 2.4 的首候选被本地 schema 拒绝后，各通过一次定点修复；2.2 与 2.6 一次通过。随后 `objectives.1` 的首个 adversarial 批次返回 HTTP200/正常结束，但正文不是合法 JSON；安全回执保留错误分类、输出哈希和用量，原始正文按策略不落盘，因此该历史输出不能事后恢复。本 run 没有自动重试、402 或在途请求。
+- wire 无损恢复门：主生产 readiness 20/20、adapter 15/15、structured runtime 6/6、review 13/13、continuation 40/40、editor 5/5、budget 25/25，均 0 Provider。实际旧失败只能证明错误类型，不能伪称已恢复；恢复策略只对未来响应在内存中执行。最新 CLI preflight recipe `1d413de35d44f10ab32ad2c6b7cf529264ce54cf2afb428108e7495ba3ea51fb` 通过，复用 173 roles，继承 246 calls / 63,838,168 tokens / ¥20.501460 的生产链账本；首个未缓存角色精确为 `faction.terran_armed_forces.objectives.1.review-target-batch-v1.adversarial.2.0`，路由 `responses_json_schema`，Provider 调用 0。
 
-最新已知累计用量为 101,738,896 tokens，估算或历史预留合计 ¥64.931367，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
+最新已知累计用量为 102,615,259 tokens，估算或历史预留合计 ¥67.185895，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
 
 ## 仍未完成
 
@@ -48,4 +51,4 @@
 
 ## 下一步
 
-从 `faction-v1-ad5d16565e2b118d830a` 按上述 V2 4,096-token recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。
+从 `faction-v1-58dc727c7ae7ce8cece5` 按上述无损 wire 归一化 recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。

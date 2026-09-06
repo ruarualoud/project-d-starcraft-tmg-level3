@@ -118,6 +118,25 @@ await check("r2.responses-json-schema-request-and-success", async () => {
   assert.equal(run.inspection.networkUsed, false);
 });
 
+for (const [id, text, expected, kind] of [
+  ["missing-outer-object-close",
+    JSON.stringify(advice).slice(0, -1), advice, "outer_object_close"],
+  ["single-json-fence", `\`\`\`json\n${JSON.stringify(advice)}\n\`\`\``,
+    advice, "single_json_fence"],
+  ["single-unescaped-quote",
+    JSON.stringify({ ...advice, risk: 'Move 6" then hold.' })
+      .replace('6\\" then', '6" then'),
+    { ...advice, risk: 'Move 6" then hold.' }, "single_unescaped_quote_v1"],
+]) {
+  await check(`r2.lossless-${id}`, async () => {
+    const run = await runStep({ kind: "invalid_json", text });
+    assert.deepEqual(run.result.output, expected);
+    assert.equal(run.result.usageReceipt.responseNormalization.kind, kind);
+    assert.equal(run.result.usageReceipt.responseNormalization.changed, true);
+    assert.equal(run.result.localValidationReceipt.valid, true);
+  });
+}
+
 for (const [id, step, code] of [
   ["refusal", { kind: "refusal" }, "STRUCTURED_PROVIDER_REFUSAL"],
   ["incomplete", { kind: "incomplete" }, "STRUCTURED_PROVIDER_INCOMPLETE"],

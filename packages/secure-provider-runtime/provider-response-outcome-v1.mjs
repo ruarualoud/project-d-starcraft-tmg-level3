@@ -18,7 +18,7 @@ function normalizeLegacyDocument(value) {
   const base = { text, kind: fenced.changed ? "single_json_fence" : "none" };
   if (typeof text !== "string") return base;
   try { JSON.parse(text); return base; } catch {}
-  if (!text.trimStart().startsWith("{") || !text.trimEnd().endsWith("}")) return base;
+  if (!text.trimStart().startsWith("{")) return base;
   const stack = []; let quoted = false, escaped = false;
   for (const char of text) {
     if (quoted) {
