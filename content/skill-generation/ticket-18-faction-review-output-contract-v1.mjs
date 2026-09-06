@@ -234,7 +234,7 @@ export const STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V2 =
   outputContractRefStarcraftTmgV1(
     STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2);
 
-function schemaWithV2VerdictLimitReset(value, maximum) {
+function schemaWithVerdictLimit(value, maximum) {
   const copy = structuredClone(value);
   copy.properties.verdicts.items.properties.reason.maxLength = maximum;
   return copy;
@@ -254,7 +254,7 @@ if (STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V1.hash
       STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2))
   || hashStarcraftTmgContract(
     STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V1.providerSchema)
-    !== hashStarcraftTmgContract(schemaWithV2VerdictLimitReset(
+    !== hashStarcraftTmgContract(schemaWithVerdictLimit(
       STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2.providerSchema, 400))) {
   throw new TypeError("Faction review V1 to V2 contract migration drift");
 }
@@ -270,8 +270,70 @@ export const STARCRAFT_TMG_FACTION_REVIEW_CONTRACT_MIGRATION_V1_TO_V2 = seal({
     kind: "bounded_string_envelope_relaxation",
   }],
   unchangedSchemaHashAfterReset: hashStarcraftTmgContract(
-    schemaWithV2VerdictLimitReset(
+    schemaWithVerdictLimit(
       STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2.providerSchema, 400)),
+  hostOwnedFieldsChanged: false,
+  semanticValidatorChanged: false,
+  mapperChanged: false,
+  oldContractFrozen: true,
+  semanticAcceptanceInherited: false,
+  trainingTruth: false,
+});
+
+// V2 also remains immutable for historical replay. V3 aligns the transport
+// envelope with validateFactionReviewV1's existing 1,200-character reason
+// boundary after actual complete reasons measured 1,265/1,022/954/854 chars.
+// All identity, focus, source, coverage and semantic-validation contracts stay
+// unchanged; the 4,096-token response policy remains the outer capacity bound.
+export const STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3 =
+  createStarcraftTmgOutputContractV1({
+    id: "starcraft-tmg.faction-target-review",
+    version: "2026.09.07.3",
+    schemaName: "faction_target_review_v3",
+    providerSchema: schemaWithVerdictLimit(
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2.providerSchema, 1_200),
+    modelOwnedFields:
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2.modelOwnedFields,
+    hostOwnedFields:
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2.hostOwnedFields,
+    mapperRef: STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2.mapperRef,
+    semanticValidatorRef:
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2.semanticValidatorRef,
+    description: "V3 target-bound faction verdicts aligned to the existing final 1,200-character review-reason boundary; target/source identities remain host-owned and semantic acceptance remains downstream.",
+  });
+
+export const STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V3 =
+  outputContractRefStarcraftTmgV1(
+    STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3);
+
+if (STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V2.hash
+    !== "00acc1f9562701e799e4e4056a5f30feb772b30bd34b0b146f815281c4a20315"
+  || hashStarcraftTmgContract(stableContractBody(
+    STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2))
+    !== hashStarcraftTmgContract(stableContractBody(
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3))
+  || hashStarcraftTmgContract(
+    STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2.providerSchema)
+    !== hashStarcraftTmgContract(schemaWithVerdictLimit(
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3.providerSchema, 800))) {
+  throw new TypeError("Faction review V2 to V3 contract migration drift");
+}
+
+export const STARCRAFT_TMG_FACTION_REVIEW_CONTRACT_MIGRATION_V2_TO_V3 = seal({
+  version: "faction_review_output_contract_migration_v2_to_v3",
+  from: STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V2,
+  to: STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V3,
+  changes: [{
+    path: "$.properties.verdicts.items.properties.reason.maxLength",
+    before: 800,
+    after: 1_200,
+    kind: "bounded_string_envelope_alignment",
+  }],
+  observedCompleteReasonLengths: [1_265, 1_022, 954, 854],
+  downstreamReasonMaximum: 1_200,
+  unchangedSchemaHashAfterReset: hashStarcraftTmgContract(
+    schemaWithVerdictLimit(
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3.providerSchema, 800)),
   hostOwnedFieldsChanged: false,
   semanticValidatorChanged: false,
   mapperChanged: false,

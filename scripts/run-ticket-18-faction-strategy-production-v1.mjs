@@ -38,7 +38,7 @@ import { priceStarcraftTmgDeepSeekV4FlashUsageV1 } from '../packages/secure-prov
 import { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } from '../packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs';
 import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../content/skill-generation/offline-provider-profile-v1.mjs';
 import { STARCRAFT_TMG_FACTION_ADVICE_EDITOR_OUTPUT_CONTRACT_V1 as structuredEditorContract } from '../content/skill-generation/ticket-18-faction-advice-editor-output-contract-v1.mjs';
-import { STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2 as structuredReviewContract } from '../content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs';
+import { STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3 as structuredReviewContract } from '../content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs';
 import { createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1 } from '../packages/structured-generation/adapters/deepseek-responses-json-schema-v1.mjs';
 import { verifyStarcraftTmgProviderCapabilityCurrentV1 } from '../packages/structured-generation/provider-capability-receipt-v1.mjs';
 
@@ -494,14 +494,21 @@ if (args[0] === '--preflight') {
     .map(row => canonicalPromptRoleId(row.id)));
   const initialStructuredCutover = !parentRecipe.structuredGenerationBinding;
   const initialStructuredReviewCutover = !parentRecipe.structuredReviewBinding;
+  const structuredReviewContractChanged = Boolean(
+    parentRecipe.structuredReviewBinding
+      && hash(parentRecipe.structuredReviewBinding.outputContractRef)
+        !== hash(structuredReviewBinding.outputContractRef));
   if (!firstUncachedRole || !fullUncachedRole.startsWith(factionPrefix + '.' + factionPrefix + '.')
     || !/^[a-z0-9._-]+$/u.test(fullUncachedRole)
     || reusableRoleIds.has(fullUncachedRole)
+      && !structuredReviewContractChanged
     || initialStructuredCutover && (firstUncachedRoute !== 'responses_json_schema'
       || firstUncachedRole !== 'faction.terran_armed_forces.objectives.1.editor.0.2')
     || initialStructuredReviewCutover
       && (firstUncachedRoute !== 'responses_json_schema'
-        || firstUncachedRole !== 'faction.terran_armed_forces.objectives.1.review-target-batch-v1.supportive.2.0')) {
+        || firstUncachedRole !== 'faction.terran_armed_forces.objectives.1.review-target-batch-v1.supportive.2.0')
+    || structuredReviewContractChanged
+      && firstUncachedRoute !== 'responses_json_schema') {
     fail('FACTION_PREFLIGHT_CUTOVER_DRIFT', { firstUncachedRole, firstUncachedRoute });
   }
   console.log(JSON.stringify({ ready: true, recipeHash: recipe.hash, providerCalls: 0, factions: inputs.map(i => i.factionRecordKey),
@@ -513,7 +520,7 @@ if (args[0] === '--preflight') {
       structuredReviewSchemaRepairImports.length,
     structuredReviewCapabilityRunId: structuredReviewCapabilityReport.runId,
     firstUncachedRole, firstUncachedRoute, initialStructuredCutover,
-    initialStructuredReviewCutover,
+    initialStructuredReviewCutover, structuredReviewContractChanged,
     additionalCommandRecoveries: additionalRecoveries.length })); process.exit(0);
 }
 const runId = 'faction-v1-' + recipe.hash.slice(0, 20), out = path.join(base, runId); await mkdir(out, { recursive: true });

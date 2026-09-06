@@ -16,6 +16,7 @@
 10. 对可解析但违反本地 schema 的 reviewer 候选增加一次定点修复。Adapter 只把 parsed domain value 和精确 validation paths 交给 durable runtime；安全回执仍不保存原始传输体。修复调用必须返回完整对象，但只能改变失败路径，其他解析后值逐项哈希相同；仍需再次通过同一 schema、host materialization 和原语义门。最多一次，不截断、不猜测、不循环重生。
 11. 对 HTTP200 但 wire JSON 非法的响应先执行唯一可证明的无损归一化，再进入同一 JSON Schema 门。允许集合仅为缺失最外层对象闭合、单一 JSON fence、二者组合、已证明的冗余数组/对象闭合和唯一可恢复的单个未转义引号；回执绑定原文/归一化文本/恢复证据哈希，不保存原始敏感传输体，也不继承任何语义接受。无法唯一恢复仍隔离，禁止 prompt-only 盲重试。
 12. 累计费用通知使用“当前全局实际或预留 + 当前生产链剩余额度”，不得把已经包含继承费用的整条链上限再次相加。投影同时绑定历史保留、全局账本、继承费用、本 run 费用和链上限；继承费用只计一次。达到真实下一档 ¥100 前仍必须通知，但错误重复计数不得阻断 Provider。
+13. reviewer 传输 reason 上限必须与已有最终审查器的 1,200 字上限一致。V1 400、V2 800 均严格冻结；V3 只把 verdict reason 800→1,200，coverage reason 仍 400，focus/source slots、host mapper 和 semantic validator 均不变。合同变化使同 role ID 的 input hash 变化，旧 V2 成功产物不得伪装成精确复用；预检显式报告 `structuredReviewContractChanged` 并从首个 V3 role 重新执行。
 
 ## 证据
 
@@ -41,8 +42,10 @@
 - 4,096-token 正式续跑 `faction-v1-58dc727c7ae7ce8cece5` 新增 7 calls / 876,363 tokens。四个 supportive 批次均完成：2.0 与 2.4 的首候选被本地 schema 拒绝后，各通过一次定点修复；2.2 与 2.6 一次通过。随后 `objectives.1` 的首个 adversarial 批次返回 HTTP200/正常结束，但正文不是合法 JSON；安全回执保留错误分类、输出哈希和用量，原始正文按策略不落盘，因此该历史输出不能事后恢复。本 run 没有自动重试、402 或在途请求。
 - wire 无损恢复门：主生产 readiness 20/20、adapter 15/15、structured runtime 6/6、review 13/13、continuation 40/40、editor 5/5、budget 25/25，均 0 Provider。实际旧失败只能证明错误类型，不能伪称已恢复；恢复策略只对未来响应在内存中执行。最新 CLI preflight recipe `1d413de35d44f10ab32ad2c6b7cf529264ce54cf2afb428108e7495ba3ea51fb` 通过，复用 173 roles，继承 246 calls / 63,838,168 tokens / ¥20.501460 的生产链账本；首个未缓存角色精确为 `faction.terran_armed_forces.objectives.1.review-target-batch-v1.adversarial.2.0`，路由 `responses_json_schema`，Provider 调用 0。
 - 首次按 `1d413de3…` 正式启动在出网前被 `CNY_100_NOTIFICATION_REQUIRED` 停止，0 Provider/0 token。诊断证明旧公式把当前全局 ¥67.185895 与整链 ¥35 上限直接相加，重复计算其中已继承的 ¥20.501460。修复后 budget 29/29、review 13/13、editor 5/5 均 0 Provider；真实剩余链额度 ¥14.498540，最坏累计 ¥81.684435。最终 preflight recipe `3d2d9aba32a329115cbc22a0e0a17eb664bcc212d3c4b1ff8559470014cf6575` 仍复用 173 roles、保持同一 first miss 和 0 Provider。
+- `faction-v1-3d2d9aba32a329115cbc` 实际完成 adversarial 2.0（一次定点修复）及 2.2；随后 2.4 的首候选只在 verdict reasons 1022/854、focus 19>16、sourceSlots 9>8 处失败，定点修复正确收敛数组但原样保留 1022/854 reasons，因此隔离停止。本 run 5 calls / 628,254 tokens；累计 103,243,513 tokens / ¥69.009919，无 402、在途或自动重试。另一个实际完整候选的 reasons 达 1265/954，证明 V2 的 800 与最终 validator 1200 不一致。
+- reviewer V3：V1 hash `ac4f185c…`、V2 hash `00acc1f9…` 原样冻结；V3 hash `3f94f7ca…` 只把 verdict reason 800→1200。精确 V3 capability probe `structured-review-probe-73784160f7f2234fb0b31028f9e00ad5` 一次通过，706 tokens / ¥0.001036。review13/13、continuation40/40、adapter15/15、editor5/5、budget29/29均0Provider通过。最终 preflight recipe `540b0fa661c00b3d3bdc6ce93375d0241f8224dfbd8b03e992701ff1a75385d2` 复用175 roles，继承251 calls / 64,466,422 tokens / ¥22.325484，确认合同变化并从V3 supportive2.0开始，0 Provider。
 
-最新已知累计用量为 102,615,259 tokens，估算或历史预留合计 ¥67.185895，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
+最新已知累计用量为 103,244,219 tokens，估算或历史预留合计 ¥69.010955，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
 
 ## 仍未完成
 
@@ -53,4 +56,4 @@
 
 ## 下一步
 
-从 `faction-v1-58dc727c7ae7ce8cece5` 按上述无损 wire 归一化 recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。
+从 `faction-v1-3d2d9aba32a329115cbc` 按上述 V3 recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。

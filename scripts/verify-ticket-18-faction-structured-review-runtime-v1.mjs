@@ -10,9 +10,12 @@ import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from
   "../content/skill-generation/offline-provider-profile-v1.mjs";
 import { STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V1 as contractV1,
   STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V1 as contractRefV1,
-  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2 as contract,
-  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V2 as contractRef,
-  STARCRAFT_TMG_FACTION_REVIEW_CONTRACT_MIGRATION_V1_TO_V2 as contractMigration } from
+  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V2 as contractV2,
+  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V2 as contractRefV2,
+  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V3 as contract,
+  STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V3 as contractRef,
+  STARCRAFT_TMG_FACTION_REVIEW_CONTRACT_MIGRATION_V1_TO_V2 as historicalContractMigration,
+  STARCRAFT_TMG_FACTION_REVIEW_CONTRACT_MIGRATION_V2_TO_V3 as contractMigration } from
   "../content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs";
 import { createStarcraftTmgProviderProfileRegistryV2 } from
   "../packages/secure-provider-runtime/provider-profile-registry-v2.mjs";
@@ -80,7 +83,8 @@ const input = verifySeal(JSON.parse(await readFile(path.join(ROOT,
 const db = new DatabaseSync(path.join(ROOT,
   "build/ticket-17-production-redesign-v1/production.sqlite"),
 { readOnly: true });
-let corrected, actualBoundaryCandidate, actualCapacityUsage,
+let corrected, actualBoundaryCandidate, actualV2BoundaryCandidate,
+  actualCapacityUsage,
   actualCapacityFailure, actualWireFailure;
 try {
   corrected = verifySeal(JSON.parse(db.prepare(
@@ -92,6 +96,11 @@ try {
     "SELECT artifact FROM steps WHERE run=? AND id LIKE ? AND state='complete'",
   ).get("faction-v1-38cff03b5a47b54b6573",
     "structured-%.rejected-candidate").artifact)).value;
+  actualV2BoundaryCandidate = verifySeal(JSON.parse(db.prepare(
+    "SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'",
+  ).get("faction-v1-3d2d9aba32a329115cbc",
+    "structured-da764e78ec169cce7cc14c2837db1f6e8856bd845610933c.rejected-candidate")
+    .artifact)).value;
   const capacityRow = db.prepare(
     "SELECT usage,response FROM attempts WHERE run=? AND code=?",
   ).get("faction-v1-ad5d16565e2b118d830a",
@@ -167,15 +176,19 @@ const request = { packet, roleId,
     outputRequestAtEnd: { targetContract: targets,
       coverageOnlySourceRefs: requiredSourceRefs } } };
 
-await check("review.v1-frozen-v2-only-relaxes-verdict-reason-envelope", async () => {
+await check("review.v1-v2-frozen-v3-aligns-final-reason-envelope", async () => {
   assert.equal(contractRefV1.hash,
     "ac4f185c7c8dc7ae13f49036dc771939a5e321687b19ef93506ec76febbef5a8");
-  assert.equal(contractMigration.from.hash, contractRefV1.hash);
+  assert.equal(contractRefV2.hash,
+    "00acc1f9562701e799e4e4056a5f30feb772b30bd34b0b146f815281c4a20315");
+  assert.equal(historicalContractMigration.from.hash, contractRefV1.hash);
+  assert.equal(historicalContractMigration.to.hash, contractRefV2.hash);
+  assert.equal(contractMigration.from.hash, contractRefV2.hash);
   assert.equal(contractMigration.to.hash, contractRef.hash);
   assert.deepEqual(contractMigration.changes, [{
     path: "$.properties.verdicts.items.properties.reason.maxLength",
-    before: 400, after: 800,
-    kind: "bounded_string_envelope_relaxation",
+    before: 800, after: 1_200,
+    kind: "bounded_string_envelope_alignment",
   }]);
   assert.equal(actualBoundaryCandidate.outputContractRef.hash,
     contractRefV1.hash);
@@ -185,15 +198,24 @@ await check("review.v1-frozen-v2-only-relaxes-verdict-reason-envelope", async ()
     contractV1.providerSchema,
     actualBoundaryCandidate.providerValue).ok, false);
   assert.equal(validateStarcraftTmgProviderJsonSchemaValueV1(
-    contract.providerSchema,
+    contractV2.providerSchema,
     actualBoundaryCandidate.providerValue).ok, true);
+  assert.deepEqual(actualV2BoundaryCandidate.providerValue.verdicts
+    .map((row) => row.reason.length), [1_022, 854]);
+  assert.equal(validateStarcraftTmgProviderJsonSchemaValueV1(
+    contractV2.providerSchema,
+    actualV2BoundaryCandidate.providerValue).ok, false);
+  assert.equal(validateStarcraftTmgProviderJsonSchemaValueV1(
+    contract.providerSchema,
+    actualV2BoundaryCandidate.providerValue).ok, true);
 });
 
 await check("review.actual-2048-incomplete-authorizes-one-4096-continuation", async () => {
   assert.equal(actualCapacityFailure.code,
     "STRUCTURED_PROVIDER_INCOMPLETE");
   assert.equal(actualCapacityFailure.incompleteReason, "max_output_tokens");
-  assert.equal(actualCapacityFailure.outputContractRef.hash, contractRef.hash);
+  assert.equal(actualCapacityFailure.outputContractRef.hash,
+    contractRefV2.hash);
   assert.equal(actualCapacityFailure.automaticRetries, 0);
   assert.equal(actualCapacityUsage.outputUnits, 2_048);
   assert.equal(policy.maxOutputUnits, 4_096);
@@ -211,7 +233,7 @@ await check("review.actual-wire-failure-enables-lossless-normalizer-not-prompt-r
     [{ path: "$", code: "provider_json_not_parseable" }]);
   assert.match(actualWireFailure.outputTextHash, /^[a-f0-9]{64}$/u);
   assert.equal(actualWireFailure.automaticRetries, 0);
-  assert.equal(actualWireFailure.outputContractRef.hash, contractRef.hash);
+  assert.equal(actualWireFailure.outputContractRef.hash, contractRefV2.hash);
 });
 
 await check("review.actual-contract-capability-probe", async () => {
@@ -278,7 +300,7 @@ await check("review.one-structured-attempt-no-prompt-fallback", async () => {
 
 await check("review.one-bounded-schema-instance-repair-preserves-other-values", async () => {
   const rejected = structuredClone(providerOutput);
-  rejected.verdicts[0].reason = "R".repeat(801);
+  rejected.verdicts[0].reason = "R".repeat(1_201);
   rejected.verdicts[0].sourceSlots = capsule.localIssue.reviewTask
     .includedSourceSlots.slice(0, 9);
   rejected.verdicts[0].unexpectedField = "delete only this field";
@@ -319,12 +341,12 @@ await check("review.one-bounded-schema-instance-repair-preserves-other-values", 
 
 await check("review.exact-rejected-candidate-import-skips-initial-provider-call", async () => {
   const rejectedValue = structuredClone(providerOutput);
-  rejectedValue.verdicts[1].reason = "R".repeat(803);
+  rejectedValue.verdicts[1].reason = "R".repeat(1_203);
   const validation = validateStarcraftTmgProviderJsonSchemaValueV1(
     contract.providerSchema, rejectedValue);
   assert.deepEqual(validation.issues[0], {
     path: "$.verdicts[1].reason", code: "string_too_long",
-    actualLength: 803, minLength: 1, maxLength: 800,
+    actualLength: 1_203, minLength: 1, maxLength: 1_200,
   });
   const imported = seal({
     version:
@@ -340,7 +362,7 @@ await check("review.exact-rejected-candidate-import-skips-initial-provider-call"
     runtimeAccepted: false, trainingTruth: false,
   });
   const repaired = structuredClone(rejectedValue);
-  repaired.verdicts[1].reason = "R".repeat(799);
+  repaired.verdicts[1].reason = "R".repeat(1_199);
   const fault = createStarcraftTmgInMemoryStructuredFaultAdapterV1({
     steps: [{ kind: "success", output: repaired }],
   });
@@ -371,7 +393,7 @@ await check("review.exact-rejected-candidate-import-skips-initial-provider-call"
 
 await check("review.schema-repair-cannot-change-unflagged-verdict", async () => {
   const rejectedValue = structuredClone(providerOutput);
-  rejectedValue.verdicts[0].reason = "R".repeat(401);
+  rejectedValue.verdicts[0].reason = "R".repeat(1_201);
   const rejectedCandidate = seal({
     version: "fixture.rejected-candidate",
     providerValue: rejectedValue,
@@ -444,10 +466,12 @@ const report = seal({
   actualCapabilityReportHash: capabilityReport.hash,
   actualCapabilityReceiptHash: actualCapabilityReceipt.receiptHash,
   outputContractRef: contractRef,
-  previousOutputContractRef: contractRefV1,
+  previousOutputContractRef: contractRefV2,
   contractMigration,
-  actualBoundaryFailureRunId: "faction-v1-38cff03b5a47b54b6573",
-  actualBoundaryRejectedCandidateHash: actualBoundaryCandidate.hash,
+  historicalOutputContractRef: contractRefV1,
+  historicalContractMigration,
+  actualBoundaryFailureRunId: "faction-v1-3d2d9aba32a329115cbc",
+  actualBoundaryRejectedCandidateHash: actualV2BoundaryCandidate.hash,
   actualCapacityFailureRunId: "faction-v1-ad5d16565e2b118d830a",
   actualCapacityFailureReceiptHash: actualCapacityFailure.receiptHash,
   capacityMigration: {

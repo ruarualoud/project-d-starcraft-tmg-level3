@@ -119,8 +119,8 @@ export function validateFactionStructuredReviewMigrationV1({
       || contractMigration.changes?.length !== 1
       || contractMigration.changes[0].path
         !== '$.properties.verdicts.items.properties.reason.maxLength'
-      || contractMigration.changes[0].before !== 400
-      || contractMigration.changes[0].after !== 800
+      || contractMigration.changes[0].before !== 800
+      || contractMigration.changes[0].after !== 1200
       || contractMigration.oldContractFrozen !== true
       || contractMigration.hostOwnedFieldsChanged !== false
       || contractMigration.semanticValidatorChanged !== false
@@ -129,7 +129,7 @@ export function validateFactionStructuredReviewMigrationV1({
       || readiness.previousOutputContractRef?.hash
         !== parent.structuredReviewBinding.outputContractRef.hash
       || readiness.actualBoundaryFailureRunId
-        !== 'faction-v1-38cff03b5a47b54b6573'
+        !== 'faction-v1-3d2d9aba32a329115cbc'
       || !readiness.actualBoundaryRejectedCandidateHash)
     || introduced && (readiness.actualFailureRunId !== parentRunId
       || readiness.actualFailureCode !== parentReport.failure?.code
