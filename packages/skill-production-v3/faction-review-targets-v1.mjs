@@ -56,3 +56,52 @@ export function validateTargetedFactionReviewV1(output, targets) {
   return seal({ review: { verdicts, coverage: clone(output.coverage) }, targetContractHash: targets.hash, bindings,
     rawOutputHash: hash(output), targetIdentityChecked: true, semanticCorrectnessProven: false, trainingTruth: false });
 }
+
+// Recovery changes only the reference representation. The model selects
+// host-owned fields, never rewrites judgments or supplies replacement quotes.
+// Original invalid/source-only focus remains explicit UNVERIFIED evidence.
+export function planFactionReviewFieldBindingV1(output, targets) {
+  verifySeal(targets); exact(output, ['verdicts', 'coverage']);
+  if (!Array.isArray(output.verdicts) || output.verdicts.length !== targets.targets.length) fail('FACTION_REVIEW_TARGET_DENOMINATOR');
+  const pending = new Map(targets.targets.map(t => [t.targetId, t]));
+  const preservedJudgments = output.verdicts.map(v => {
+    exact(v, ['targetId', 'title', 'focus', 'verdict', 'reason', 'sourceRefs']);
+    const target = pending.get(v.targetId);
+    if (!target || target.title !== v.title) fail('FACTION_REVIEW_TARGET_IDENTITY_MISMATCH');
+    pending.delete(v.targetId);
+    const { focus, ...judgment } = v; return clone(judgment);
+  });
+  return seal({ version: 'faction_review_field_binding_plan_v1', originalOutputHash: hash(output),
+    targetContractHash: targets.hash, preservedJudgments,
+    targetChoices: targets.targets.map(t => ({ targetId: t.targetId, title: t.title, fieldPaths: t.fields.map(f => f.path) })),
+    operation: 'select_candidate_fields_only_no_verdict_reason_source_or_coverage_edit', trainingTruth: false });
+}
+
+export function applyFactionReviewFieldBindingV1(original, targets, plan, selection) {
+  verifySeal(plan);
+  if (plan.hash !== planFactionReviewFieldBindingV1(original, targets).hash) fail('FACTION_REVIEW_BINDING_PLAN_DRIFT');
+  exact(selection, ['planHash', 'selections']);
+  if (selection.planHash !== plan.hash) fail('FACTION_REVIEW_BINDING_PLAN_DRIFT');
+  if (!Array.isArray(selection.selections) || selection.selections.length !== targets.targets.length) fail('FACTION_REVIEW_BINDING_SELECTION_INVALID');
+  const pending = new Map(targets.targets.map(t => [t.targetId, t])), byId = new Map();
+  for (const row of selection.selections) {
+    exact(row, ['targetId', 'fieldPaths']);
+    const target = pending.get(row.targetId);
+    if (!target || !Array.isArray(row.fieldPaths) || !row.fieldPaths.length || row.fieldPaths.length > 3
+      || new Set(row.fieldPaths).size !== row.fieldPaths.length) fail('FACTION_REVIEW_BINDING_SELECTION_INVALID');
+    pending.delete(row.targetId);
+    byId.set(row.targetId, row.fieldPaths.map(path => {
+      const field = target.fields.find(f => f.path === path);
+      if (!field) fail('FACTION_REVIEW_BINDING_SELECTION_INVALID');
+      return { path, quote: field.text.slice(0, 240) };
+    }));
+  }
+  const output = { verdicts: original.verdicts.map(v => ({ ...clone(v), focus: byId.get(v.targetId) })), coverage: clone(original.coverage) };
+  validateTargetedFactionReviewV1(output, targets);
+  return { output, receipt: seal({ version: 'faction_review_field_binding_receipt_v1', planHash: plan.hash,
+    originalOutputHash: hash(original), selectionOutputHash: hash(selection), materializedOutputHash: hash(output),
+    targetContractHash: targets.hash, selections: clone(selection.selections),
+    originalFocus: original.verdicts.map(v => ({ targetId: v.targetId, focus: clone(v.focus) })),
+    originalFocusVerified: false, quoteOrigin: 'host_materialized_from_model_selected_exact_candidate_field',
+    verdictReasonSourceRefsAndCoverageUnchanged: true, semanticCorrectnessProven: false, trainingTruth: false }) };
+}

@@ -1,6 +1,7 @@
 import { seal, verifySeal, hash, exact, text, clone, fail } from '../skill-production/common.mjs';
 import { validateTutorLessonV3 } from './runtime.mjs';
-import { createFactionReviewTargetsV1, validateTargetedFactionReviewV1 } from './faction-review-targets-v1.mjs';
+import { createFactionReviewTargetsV1, validateTargetedFactionReviewV1, planFactionReviewFieldBindingV1,
+  applyFactionReviewFieldBindingV1 } from './faction-review-targets-v1.mjs';
 import { correctKnownFactionRuleFailuresV1, assertNoKnownFactionRuleFailureV1, mergeFactionKnownSourceIssuesV1 } from './faction-known-rule-findings-v1.mjs';
 import { adjudicateFactionSourceScopesV1 } from './faction-source-scope-adjudication-v1.mjs';
 
@@ -208,6 +209,20 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     let result = await runtime.role(request); roleArtifacts.push({ id, hash: result.hash });
     try { return { artifact: result, value: validate(result.output) }; }
     catch (error) {
+      const targets = request.workspace.outputRequestAtEnd?.targetContract;
+      if (targets && ['FACTION_REVIEW_TARGET_QUOTE_REQUIRED', 'FACTION_REVIEW_TARGET_QUOTE_MISMATCH'].includes(error.code)) {
+        const plan = planFactionReviewFieldBindingV1(result.output, targets);
+        const selection = await runtime.role({ ...request, roleId: id + '.field-binding.v1',
+          instruction: '上一份审查的对象ID和判断保留，但focus引用无法绑定到候选字段。仅恢复字段引用，不重新审判或改写建议。完整来源、总规则、整节draft及targetContract仍在；逐个阅读preservedJudgments和对应目标所有fields，选择最能定位该判断的1至3个fieldPaths。只返回{"planHash":"reviewBindingRepair.planHash","selections":[{"targetId":"给定ID","fieldPaths":["给定字段路径"]}]}。每个目标一次。不要返回引文、索引、判断、理由、来源或coverage；程序将按所选路径提取候选原文，原始不合法引文保留为未验证证据。字段绑定不是来源真实性或策略有效性的证明。',
+          workspace: { ...request.workspace, reviewBindingRepair: { planHash: plan.hash,
+            preservedJudgments: plan.preservedJudgments, targetChoices: plan.targetChoices,
+            rejectedArtifactHash: result.hash, structuralFailure: error.code } } });
+        roleArtifacts.push({ id: id + '.field-binding.v1', hash: selection.hash });
+        const rebound = applyFactionReviewFieldBindingV1(result.output, targets, plan, selection.output);
+        const value = validate(rebound.output), { hash: ignoredBindingHash, ...body } = value;
+        return { artifact: result, value: seal({ ...body, reviewOutputOrigin: 'host_materialized_field_binding',
+          fieldBindingRecovery: { receipt: rebound.receipt, originalArtifactHash: result.hash, selectionArtifactHash: selection.hash } }) };
+      }
       if (batchScope && ['FACTION_BATCH_SOURCE_OMISSION', 'FACTION_BATCH_DUPLICATE_RECOMMENDATION'].includes(error.code)) {
         const { hash: ignoredIssueHash, ...issueBody } = inspectFactionBatchScopeV1(result.output, batchScope);
         const issue = seal({ ...issueBody, rejectedArtifactHash: result.hash, failureCode: error.code });

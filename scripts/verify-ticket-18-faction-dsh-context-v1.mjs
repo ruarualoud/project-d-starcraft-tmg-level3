@@ -47,6 +47,8 @@ const transport = createStarcraftTmgProviderEgressTransportV1({ captureResponseO
       assert.equal(workspace.draft.recommendations.length, 8);
       assert.equal(workspace.outputRequestAtEnd.targetContract.targets.length, 2);
       assert(workspace.outputRequestAtEnd.targetContract.focusedSources.length > 0);
+      assert.equal(workspace.reviewBindingRepair.targetChoices.length, 2);
+      assert(workspace.reviewBindingRepair.preservedJudgments.every(j => j.reason.length === 400));
       const payload = { model: profile.model, choices: [{ message: { content: JSON.stringify({ channels: { skill: { action: 'finish', content: { fixtureOnly: true, fullContextTransported: true } } } }) }, finish_reason: 'stop' }],
         usage: { prompt_tokens: 10, completion_tokens: 2, total_tokens: 12, prompt_cache_hit_tokens: 0, prompt_cache_miss_tokens: 10 } };
       queueMicrotask(() => { const response = new EventEmitter(); response.statusCode = 200;
@@ -71,6 +73,10 @@ try {
     const workspace = { ...factionRoleWorkspaceV1(input), section, draft: sampleDraft,
       reviewIndices: targetContract.targets.map(t => t.index), coverageRequiredSourceRefs: section.requiredSourceRefs,
       repairEvidenceCapacityProbe: sampleIssues,
+      reviewBindingRepair: { planHash: hash('capacity-only'), targetChoices: targetContract.targets.map(t => ({
+        targetId: t.targetId, title: t.title, fieldPaths: t.fields.map(f => f.path) })),
+      preservedJudgments: targetContract.targets.map(t => ({ targetId: t.targetId, title: t.title,
+        verdict: 'unsupported', reason: '容量测试'.repeat(100), sourceRefs: input.frozenSources.prompt.sources.slice(0, 8).map(s => s.ref) })) },
       instructionCapacityProbe: '完整来源审查容量占位。'.repeat(150),
       outputRequestAtEnd: { targetContract, coverageOnlySourceRefs: section.requiredSourceRefs } };
     const result = await runtime.role({ packet, roleId: 'delivery', instruction: 'Injected full faction context delivery test. Finish with the fixture receipt only.',
@@ -91,6 +97,7 @@ const report = seal({ passed: true, inputHashes: inputs.map(i => i.hash), contex
   actualDshSessions: 2, injectedHttpsResponses: sends, wireBodyBytes: sizes, fullSourceAndOverallDeliveryVerified: true,
   actualDraftAndLargestTargetPairTransported: true, actualDraftHash: hash(sampleDraft),
   knownSourceRepairEvidenceTransported: true, repairEvidenceHash: sampleIssues.hash,
+  reviewFieldBindingRepairCapacityTransported: true,
   actualProviderCalls: 0, actualStrategyQualityProven: false, proofs, trainingTruth: false });
 await writeFile(path.join(base, 'dsh-context-readiness.json'), JSON.stringify(report, null, 2));
 console.log(JSON.stringify({ passed: true, actualDshSessions: 2, providerCalls: 0, wireBodyBytes: sizes, hash: report.hash }));

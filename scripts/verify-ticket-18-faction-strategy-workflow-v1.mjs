@@ -135,15 +135,23 @@ function modelFor(input, mode = 'positive') {
         assert(!w.rejectedOutput);
       }
     }
+    else if (stageId.endsWith('.field-binding.v1')) {
+      assert.equal(Object.keys(w).at(-1), 'reviewBindingRepair');
+      assert(w.draft && w.outputRequestAtEnd.targetContract && !w.rejectedOutput);
+      assert(w.reviewBindingRepair.preservedJudgments.every(j => !Object.hasOwn(j, 'focus')));
+      out = { planHash: w.reviewBindingRepair.planHash, selections: w.reviewBindingRepair.targetChoices.map(t => ({
+        targetId: t.targetId, fieldPaths: [t.fieldPaths[0]] })) };
+    }
     else if (stageId.includes('.review-target-batch-v1.')) {
       assert(w.reviewIndices.length <= 2); assert.equal(w.draft.recommendations.length, w.section.requiredSourceRefs.length);
       assert.deepEqual(w.outputRequestAtEnd.targetContract.targets.map(t => t.index), w.reviewIndices);
-      const negative = mode === 'blocked' || ['repair', 'no_progress', 'empty_patch'].includes(mode) && w.section.id.endsWith('army_resources.1') && /\.(supportive|adversarial)\.0\./.test(stageId);
+      const negative = mode === 'blocked' || ['repair', 'no_progress', 'empty_patch', 'field_binding'].includes(mode) && w.section.id.endsWith('army_resources.1') && /\.(supportive|adversarial)\.0\./.test(stageId);
       out = { verdicts: w.outputRequestAtEnd.targetContract.targets.map(t => ({ targetId: t.targetId, title: t.title,
         focus: [{ path: t.fields[0].path, quote: t.fields[0].text }], verdict: negative && t.index === 0 ? 'unsupported' : 'supported',
         reason: negative ? 'Injected missing condition requiring local repair' : 'Injected review only', sourceRefs: t.recommendation.sourceRefs })),
       coverage: w.coverageRequiredSourceRefs.map(sourceRef => ({ sourceRef, verdict: 'covered', reason: 'Injected coverage only',
         recommendationIndices: w.draft.recommendations.flatMap((r, i) => r.sourceRefs.includes(sourceRef) ? [i] : []) })) };
+      if (mode === 'field_binding' && negative) out.verdicts.forEach(v => { v.focus[0].quote = 'Unbound source quotation instead of the candidate field'; });
     } else if (stageId.includes('.editor.')) {
       const edited = structuredClone(w.draft.recommendations[0]);
       if (mode !== 'no_progress') edited.when.push('Injected missing condition now made explicit');
@@ -179,11 +187,19 @@ try {
     resultHashes.push(candidate.hash);
   }
   const input = inputs[0], draft = { recommendations: [recommendation(input.factionEvidence.primarySource.ref), recommendation(input.factionEvidence.armyPool[0].source.ref)] };
-  for (const mode of ['blocked', 'no_progress', 'empty_patch', 'wrong_target']) {
+  for (const mode of ['blocked', 'no_progress', 'empty_patch', 'wrong_target', 'field_binding']) {
     const store = makeStore(mode), runtime = createProductionRuntimeV3({ store, reader, context, verifier: {}, model: modelFor(input, mode), dsh: { run: runDirectLoop } });
     const r = await produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownPolicy(input) });
     if (mode === 'blocked') { assert(!r.semanticReviewPassed); assert.equal(r.sections.length, 1); assert.equal(r.sections[0].rounds.length, 4); }
-    else { assert(r.semanticReviewPassed); assert(r.roleArtifacts.some(a => a.id.includes(mode === 'wrong_target' ? '.target-reconstruction.' : '.source-reconstruction.'))); }
+    else if (mode === 'field_binding') {
+      assert(r.semanticReviewPassed); assert.equal(r.sections[0].edits.length, 1);
+      assert(r.sections[0].rounds[0].issues.openIssues > 0, 'Binding repair cannot erase a negative judgment');
+      const binding = r.sections[0].rounds[0].reviewPartition[0].bindingReceipt;
+      assert.equal(binding.reviewOutputOrigin, 'host_materialized_field_binding');
+      assert.equal(binding.fieldBindingRecovery.receipt.originalFocusVerified, false);
+      assert(r.roleArtifacts.some(a => a.id.endsWith('.field-binding.v1')));
+      assert(!r.roleArtifacts.some(a => a.id.endsWith('.schema')), 'No uninformative whole-review schema retry');
+    } else { assert(r.semanticReviewPassed); assert(r.roleArtifacts.some(a => a.id.includes(mode === 'wrong_target' ? '.target-reconstruction.' : '.source-reconstruction.'))); }
   }
   const issues = seal({ parentHash: hash(draft), issues: [{ kind: 'recommendation_source_or_condition', index: 0, oldHash: hash(draft.recommendations[0]) }] });
   assert.throws(() => applyFactionStrategyPatchV1({ parentHash: hash(draft), replacements: [{ index: 1, value: draft.recommendations[1] }], additions: [] }, { input, draft, issues }), { code: 'FACTION_PATCH_SCOPE_INVALID' });
@@ -198,8 +214,8 @@ const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 
   'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 files.push('packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs');
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 41, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 42, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 41, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 42, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));

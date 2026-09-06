@@ -5,7 +5,40 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: actual four-advice repair; post-review quote punctuation
+## Current checkpoint: field-selection recovery instead of repeated quote rewriting
+
+Run `faction-v1-79a14e9ce23ff5deb7d0` is terminal, handle55556 exit1. It reused
+28 saved roles and passed the previous punctuation failure. Post-repair
+supportive targets4/5 then cited only official-source text (including one
+ellipsis paraphrase), not candidate fields. The existing schema call returned
+the identical output; no review or Skill was accepted. Two calls /529,283
+tokens /¥0.067903. All-history50,653,968 known tokens /estimated-or-reserved
+¥52.849426; no402, no paid process. Report
+`1e417a8363bba86b8921050ab7d1161d9e2e436237d8a010a6a499caad17f748`.
+
+For quote-only binding failures, the new bounded recovery asks the model only
+to select1–3 existing field paths for each exact target. Host code materializes
+those fields' exact excerpts; it NEVER relabels old source/paraphrase quotations
+as exact candidate quotes. The receipt preserves original focus as unverified,
+original/selection/materialized hashes, target/draft identity and actual role
+artifact links. Verdicts, reasons, sourceRefs and coverage are unchanged; a
+negative finding still enters the normal semantic correction path. Wrong
+identities/paths, empty/duplicate selections, stale plans and semantic extra
+fields fail closed. No whole-review resampling or schema retry is added here.
+The complete source/overall/draft context remains in the selection call.
+This binding is NOT an independent new semantic judgment or quality proof.
+
+Gates passed with zero Provider calls: actual-sample binding32, targeted
+correction28, workflow42 (472 injected roles, including retained negative
+findings through field binding), consumer12 and two actual DSH full-context
+sessions including recovery workspace (wire1,034,891/1,054,108 bytes). Binding
+readiness `7817817f4fedb7abf1e00c4ac3bb5e97ee0b51d1a886ff665e4508ed736c630e`,
+workflow `9c02f485774028b2a0f09da33f0b2adde4d34ece242cadc3d50781848a8957f2`,
+DSH `975ffca1b45a169e136460a6947080d70472ff9ed0f25f3bd5d95b0039467ce5`.
+Ready for audited paid continuation from79a14. Counters remain0/15
+source-reviewed sections,0/2 factions,Ticket18 2/8,project16/22,formal/runtime0/5.
+
+## Earlier checkpoint: actual four-advice repair; post-review quote punctuation
 
 Run `faction-v1-9d47758f9f7f7625a1af` is terminal, handle45336 exit1.
 The exact source-scope adjudication kept the one no-change recommendation;
