@@ -307,7 +307,8 @@ function outputFromPayload(payload, physicalAttempts, allowSingleFence = false) 
   if (object(message?.parsed)) return clone(message.parsed);
   if (object(message?.content)) return clone(message.content);
   const rawText = contentText(message?.content);
-  const text = allowSingleFence ? normalizeProviderJsonDocumentV1(rawText).text : rawText;
+  const normalization = allowSingleFence ? normalizeProviderJsonDocumentV1(rawText) : { text: rawText };
+  const text = normalization.kind === 'redundant_array_object_closers_v1' && finishReason !== 'stop' ? rawText : normalization.text;
   if (!text) throw new StarcraftTmgProviderEgressError(
     finishReason === "length" ? "PROVIDER_RESPONSE_OUTPUT_TRUNCATED"
       : "PROVIDER_RESPONSE_EMPTY_CONTENT", {
@@ -643,7 +644,11 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
                 ? sha256(rawRequestId) : null,
               status,
               usage: safeUsage(payload?.usage),
-              ...(responseOutcome ? { responseNormalization: normalizeProviderJsonDocumentV1(contentText(payload?.choices?.[0]?.message?.content)).kind } : {}),
+              ...(responseOutcome ? (() => {
+                const normalization = normalizeProviderJsonDocumentV1(contentText(payload?.choices?.[0]?.message?.content));
+                return { responseNormalization: normalization.kind,
+                  ...(normalization.evidence ? { responseNormalizationEvidence: normalization.evidence } : {}) };
+              })() : {}),
               responseFingerprint: sha256(JSON.stringify(output)),
               dnsAddressSetHash: addressSetHash,
               tlsServerName: binding.endpoint.hostname,

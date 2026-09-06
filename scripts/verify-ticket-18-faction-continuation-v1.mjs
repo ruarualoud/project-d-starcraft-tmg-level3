@@ -37,6 +37,26 @@ const drift = seal({ ...b, inputHashes: [hash('different input')] });
 assert.throws(() => inspectFactionContinuationV1({ ...deps, next: drift }), { code: 'FACTION_CONTINUATION_CONTRACT_DRIFT' });
 const foreign = seal({ ...b, codeHashes: [{ file: 'packages/skill-production/model.mjs', hash: hash('different model') }] });
 assert.throws(() => inspectFactionContinuationV1({ ...deps, next: foreign }), { code: 'FACTION_CONTINUATION_DEPENDENCY_DRIFT' });
+const providerFiles = ['provider-response-outcome-v1.mjs', 'provider-egress-transport-v1.mjs', 'provider-worker-success-classifier-v1.mjs'].map(n => 'packages/secure-provider-runtime/' + n);
+const before = seal({ passed: true, catalogueHash: hash('frozen'), dshBinding: { hash: hash('dsh') }, codeHashes: providerFiles.map(file => ({ file, hash: hash('old ' + file) })) });
+const after = seal({ passed: true, catalogueHash: before.catalogueHash, dshBinding: before.dshBinding, codeHashes: providerFiles.map(file => ({ file, hash: hash('new ' + file) })) });
+const recovery = seal({ passed: true, policy: 'redundant_array_object_closers_v1', codeHashes: after.codeHashes });
+// Migration proof is checked before journal access, and must not admit model,
+// source, profile, budget or arbitrary readiness changes.
+const migrationParent = seal({ ...b, mainReadinessHash: before.hash });
+const migrationNext = seal({ ...b, mainReadinessHash: after.hash, jsonRecoveryReadinessHash: recovery.hash });
+const migrationDeps = { ...deps, parent: migrationParent, parentRunId: 'faction-v1-' + migrationParent.hash.slice(0, 20), next: migrationNext,
+  parentReport: seal({ runId: 'faction-v1-' + migrationParent.hash.slice(0, 20), recipeHash: migrationParent.hash, failure: { code: 'PROVIDER_RESPONSE_JSON_INVALID' } }) };
+assert.throws(() => inspectFactionContinuationV1(migrationDeps), { code: 'FACTION_NORMALIZATION_MIGRATION_PROOF_MISSING' });
+assert.throws(() => inspectFactionContinuationV1({ ...migrationDeps, normalizationMigration: { before, after, recovery } }), { code: 'FACTION_CONTINUATION_JOURNAL_DRIFT' });
+const badAfter = seal({ ...after, codeHashes: [...after.codeHashes, { file: 'packages/skill-production/model.mjs', hash: hash('drift') }], hash: undefined });
+const { hash: ignoredNext, ...migrationBody } = migrationNext;
+assert.throws(() => inspectFactionContinuationV1({ ...migrationDeps, next: seal({ ...migrationBody, mainReadinessHash: badAfter.hash }),
+  normalizationMigration: { before, after: badAfter, recovery } }), { code: 'FACTION_NORMALIZATION_DEPENDENCY_DRIFT' });
+const { hash: ignoredAfter, ...afterBody } = after;
+const wrongSource = seal({ ...afterBody, catalogueHash: hash('other source') });
+assert.throws(() => inspectFactionContinuationV1({ ...migrationDeps, next: seal({ ...migrationBody, mainReadinessHash: wrongSource.hash }),
+  normalizationMigration: { before, after: wrongSource, recovery } }), { code: 'FACTION_NORMALIZATION_MIGRATION_PROOF_INVALID' });
 const busy = parentStore.acquire('unsettled-work', {});
 assert.throws(() => inspectFactionContinuationV1(deps), { code: 'FACTION_CONTINUATION_PARENT_RUNNING' }); parentStore.release(busy);
 parentStore.reserve('ambiguous', {}, 100, 30);
@@ -46,6 +66,6 @@ assert.throws(() => inspectFactionContinuationV1(deps), { code: 'API_BALANCE_EXH
 nextStore.close(); parentStore.close();
 const files = ['packages/skill-production-v3/faction-continuation-v1.mjs', 'packages/skill-production/continuation.mjs', 'scripts/verify-ticket-18-faction-continuation-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 9, codeHashes, providerCalls: 0, fixtureOnly: true, trainingTruth: false });
+const report = seal({ passed: true, checks: 13, codeHashes, providerCalls: 0, fixtureOnly: true, trainingTruth: false });
 await writeFile(path.join(base, 'continuation-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 9, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 13, providerCalls: 0, hash: report.hash }));

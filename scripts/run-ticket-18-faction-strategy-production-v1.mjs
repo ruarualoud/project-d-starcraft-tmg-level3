@@ -51,7 +51,7 @@ for (const name of ['terran_armed_forces', 'zerg_swarm']) {
 }
 const main = await verifyProductionReadiness(root, catalogue);
 const gates = [];
-for (const name of ['input-readiness', 'workflow-readiness', 'dsh-context-readiness', 'continuation-readiness']) {
+for (const name of ['input-readiness', 'workflow-readiness', 'dsh-context-readiness', 'continuation-readiness', 'json-recovery-readiness']) {
   const gate = await json('build/ticket-18-faction-production-v1/' + name + '.json');
   if (!gate.passed) fail('FACTION_READINESS_FAILED');
   for (const r of gate.codeHashes) if (sha256(await readFile(path.join(root, r.file))) !== r.hash) fail('FACTION_READINESS_CODE_DRIFT');
@@ -62,13 +62,15 @@ if (hash(gates[1].inputHashes) !== hash(inputs.map(i => i.hash)) || hash(gates[2
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/faction-continuation-v1.mjs', 'packages/skill-production-v3/runtime.mjs',
   'packages/skill-production-v3/context.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs',
-  'packages/skill-production/loops.mjs', 'packages/skill-production/model.mjs', 'packages/skill-production/store.mjs'];
+  'packages/skill-production/loops.mjs', 'packages/skill-production/model.mjs', 'packages/skill-production/store.mjs',
+  'packages/secure-provider-runtime/provider-response-outcome-v1.mjs', 'packages/secure-provider-runtime/provider-egress-transport-v1.mjs',
+  'packages/secure-provider-runtime/provider-worker-success-classifier-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
 const limits = { maxCalls: 400, maxCostMicros: 20_000_000, maxTokens: 60_000_000, maxWallMs: 8 * 60 * 60 * 1000, maxInputBytes: 1_000_000, maxRevisions: 3 };
 const next = seal({ version: 'faction_strategy_production_v1', overallRunId: args[2], overallDependencyHash: overallDependency.hash,
   qualificationReceiptHash: qualificationReceipt.hash, inputHashes: inputs.map(i => i.hash), planHashes: inputs.map(i => createFactionWritingPlanV1(i).hash),
   catalogueHash: catalogue.hash, sourceBinding: catalogue.sourceBinding, contextHash: context.hash, modelHash: profile.integrity.hash,
-  mainReadinessHash: main.hash, workflowReadinessHash: gates[1].hash, dshContextReadinessHash: gates[2].hash,
+  mainReadinessHash: main.hash, workflowReadinessHash: gates[1].hash, dshContextReadinessHash: gates[2].hash, jsonRecoveryReadinessHash: gates[4].hash,
   dshBindingHash: gates[2].dshBinding.hash, codeHashes, limits,
   target: 'two_complete_conditional_faction_strategy_candidates_with_source_review_not_runtime_promotion',
   independentEvaluationAnswersExposed: false, sourceRefreshPerformed: false, trainingTruth: false });
@@ -76,7 +78,9 @@ let continuation = null;
 if (args[4]) {
   const parent = await json('build/ticket-18-faction-production-v1/' + args[4] + '/recipe.json');
   const parentReport = await json('build/ticket-18-faction-production-v1/' + args[4] + '/report.json');
-  continuation = inspectFactionContinuationV1({ filename, parentRunId: args[4], parent, parentReport, next });
+  const before = await json('build/ticket-17-production-redesign-v1/readiness-' + parent.mainReadinessHash + '.json');
+  continuation = inspectFactionContinuationV1({ filename, parentRunId: args[4], parent, parentReport, next,
+    normalizationMigration: { before, after: main, recovery: gates[4] } });
 }
 const { hash: ignored, ...nextBody } = next;
 const recipe = continuation ? seal({ ...nextBody, continuation: continuation.manifest }) : next;

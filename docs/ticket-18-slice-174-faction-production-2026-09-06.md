@@ -5,6 +5,43 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
+## Current checkpoint: completed-response JSON delimiter recovery
+
+`faction-v1-3825f0d84367c95c6d13` is terminal, not still generating. It reused six
+prior roles, generated an eight-item outline and two complete recommendations,
+then two responses for items2–3 failed JSON parsing. Both had finishReason=stop
+and output1625/1345 tokens, not4096-cap truncation. Their actual redacted shapes
+contain two redundant object closers after array items and one missing final
+outer closer. Original prose was not retained, so these records cannot recover
+the old recommendation text.
+
+The new `redundant_array_object_closers_v1` normalizer removes at most eight
+unmatched `}` only immediately after a completed array object, before comma or
+end-array. It may compose the existing single missing OUTER object close; all
+remaining structure must balance and strict JSON.parse must succeed. Strings,
+keys, numbers, ordering and citations remain byte-for-byte unchanged. A normal
+stop is required; length, missing inner fields/arrays, commas, strings and other
+errors remain rejected. Usage receipts bind original/normalized text hashes,
+exact UTF-16 removal offsets and whether an outer delimiter was appended. This
+is grammar recovery, not source, strategy, Rules or publication acceptance.
+
+Verification: two actual failure-shape replays (not reconstructed prose), two
+scalar-preservation cases,11 rejection controls;19 production integration checks
+including actual transport/accounting with injected HTTPS and length rejection;
+13 continuation controls; two actual disposable DSH full-context sessions with
+injected Provider responses. No paid calls for these gates. Main readiness is
+`6eca55ecea34666bbe97ed0761ac68c88860f7bf94e953cf9ed846e820af97c9`;
+JSON recovery readiness is
+`cdaf3bfa5786505131ee8945b00ab9011b82772cff01da65cdc4372ceeec27f6`.
+
+Continuation checks before/after main readiness and allows only the three
+Provider normalization modules plus their regression script to change. Model,
+DSH, official sources, full source/overall/faction input and original budgets
+are unchanged. Preflight found eight reusable completed roles and inherited
+12 calls /3,157,018 tokens /estimated ¥2.460464. Actual cumulative ledger remains
+39,740,334 known tokens /estimated-or-reserved ¥48.158918. No402 observed.
+Terran0/7 and Zerg0/8 sections have yet completed whole-section source review.
+
 ## Qualified prerequisite
 
 Actual overall dependency `d086ae7f69e48716b9bae7a8adb4db2d1f013b98e02b17c314b10cbe95e14292`

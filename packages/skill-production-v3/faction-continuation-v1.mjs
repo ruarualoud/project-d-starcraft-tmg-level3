@@ -1,14 +1,32 @@
 import { DatabaseSync } from 'node:sqlite';
 import { seal, verifySeal, hash, fail } from '../skill-production/common.mjs';
 
-export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next }) {
+export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration }) {
   [parent, parentReport, next].forEach(verifySeal);
   if (parent.version !== 'faction_strategy_production_v1' || parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20)
     || parentReport.runId !== parentRunId || parentReport.recipeHash !== parent.hash || !parentReport.failure) fail('FACTION_CONTINUATION_PARENT_INVALID');
-  const strip = r => { const { hash: ignored, codeHashes, workflowReadinessHash, dshContextReadinessHash, continuation, ...body } = r; return body; };
+  const strip = r => { const { hash: ignored, codeHashes, workflowReadinessHash, dshContextReadinessHash, mainReadinessHash, jsonRecoveryReadinessHash, continuation, ...body } = r; return body; };
   if (hash(strip(parent)) !== hash(strip(next))) fail('FACTION_CONTINUATION_CONTRACT_DRIFT');
   const allowed = new Set(['packages/skill-production-v3/faction-strategy-workflow-v1.mjs',
     'packages/skill-production-v3/faction-continuation-v1.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs']);
+  let migrationProof = null;
+  if (parent.mainReadinessHash !== next.mainReadinessHash || parent.jsonRecoveryReadinessHash !== next.jsonRecoveryReadinessHash) {
+    const { before, after, recovery } = normalizationMigration || {};
+    if (!before || !after || !recovery) fail('FACTION_NORMALIZATION_MIGRATION_PROOF_MISSING');
+    [before, after, recovery].forEach(verifySeal);
+    if (before.hash !== parent.mainReadinessHash || after.hash !== next.mainReadinessHash || recovery.hash !== next.jsonRecoveryReadinessHash
+      || !before.passed || !after.passed || !recovery.passed || recovery.policy !== 'redundant_array_object_closers_v1'
+      || before.catalogueHash !== after.catalogueHash || hash(before.dshBinding) !== hash(after.dshBinding)) fail('FACTION_NORMALIZATION_MIGRATION_PROOF_INVALID');
+    const providerFiles = ['packages/secure-provider-runtime/provider-response-outcome-v1.mjs',
+      'packages/secure-provider-runtime/provider-egress-transport-v1.mjs', 'packages/secure-provider-runtime/provider-worker-success-classifier-v1.mjs'];
+    const migrationAllowed = new Set([...providerFiles, 'scripts/verify-ticket-17-production-redesign-v1.mjs']);
+    const mainChanges = [...new Set([...before.codeHashes, ...after.codeHashes].map(r => r.file))].filter(file =>
+      before.codeHashes.find(r => r.file === file)?.hash !== after.codeHashes.find(r => r.file === file)?.hash);
+    if (mainChanges.some(file => !migrationAllowed.has(file)) || providerFiles.some(file =>
+      after.codeHashes.find(r => r.file === file)?.hash !== recovery.codeHashes.find(r => r.file === file)?.hash)) fail('FACTION_NORMALIZATION_DEPENDENCY_DRIFT');
+    providerFiles.forEach(file => allowed.add(file));
+    migrationProof = { policy: recovery.policy, beforeHash: before.hash, afterHash: after.hash, recoveryHash: recovery.hash, changes: mainChanges };
+  }
   const changes = [...new Set([...parent.codeHashes, ...next.codeHashes].map(r => r.file))].filter(file =>
     parent.codeHashes.find(r => r.file === file)?.hash !== next.codeHashes.find(r => r.file === file)?.hash);
   if (changes.some(f => !allowed.has(f))) fail('FACTION_CONTINUATION_DEPENDENCY_DRIFT');
@@ -33,7 +51,7 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
     // issue journals are reconstructed under the current validators.
     const steps = rows.filter(r => r.artifact?.roleId === r.id && r.artifact?.loop?.transcript);
     const manifest = seal({ parentRunId, parentRecipeHash: parent.hash, nextBaseRecipeHash: next.hash,
-      parentStart: began, accounting, changes,
+      parentStart: began, accounting, changes, ...(migrationProof ? { normalizationMigration: migrationProof } : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
       policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
     return { manifest, steps };

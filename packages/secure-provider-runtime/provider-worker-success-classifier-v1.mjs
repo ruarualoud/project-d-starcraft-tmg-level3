@@ -20,7 +20,7 @@ const RECEIPT_FIELDS = new Set([
   "dnsAddressSetHash", "tlsServerName",
   "tlsCertificateVerificationDisabled", "redirectFollowed", "proxyUsed",
   "physicalAttempts", "automaticRetries", "startedAt", "finishedAt",
-  "trainingTruth", "receiptHash", "responseNormalization",
+  "trainingTruth", "receiptHash", "responseNormalization", "responseNormalizationEvidence",
 ]);
 const USAGE_FIELDS = new Set([
   "inputUnits", "outputUnits", "totalUnits", "inputCacheHitUnits",
@@ -118,8 +118,18 @@ export function assertStarcraftTmgProviderWorkerSuccessV1(
     || !Number.isFinite(Date.parse(receipt.finishedAt))) {
     fail("PROVIDER_SUCCESS_ATTEMPT_PROOF_REJECTED");
   }
+  const recovered = receipt.responseNormalization === 'redundant_array_object_closers_v1';
+  const evidence = receipt.responseNormalizationEvidence;
+  if (recovered ? !exactFields(evidence, new Set(['schemaVersion', 'originalTextHash', 'normalizedTextHash', 'removedUtf16Offsets', 'appendedOuterObjectClose']))
+      || evidence.schemaVersion !== 'provider_json_delimiter_recovery_v1'
+      || typeof evidence.appendedOuterObjectClose !== 'boolean'
+      || !HASH.test(evidence.originalTextHash) || !HASH.test(evidence.normalizedTextHash)
+      || evidence.originalTextHash === evidence.normalizedTextHash
+      || !Array.isArray(evidence.removedUtf16Offsets) || evidence.removedUtf16Offsets.length < 1 || evidence.removedUtf16Offsets.length > 8
+      || evidence.removedUtf16Offsets.some((n, i, a) => !Number.isSafeInteger(n) || n < 1 || n >= 16 * 1024 * 1024 || i > 0 && n <= a[i - 1])
+    : evidence !== undefined) fail('PROVIDER_SUCCESS_SAFETY_REJECTED');
   if (receipt.trainingTruth !== false
-    || receipt.responseNormalization !== undefined && !["none", "single_json_fence", "outer_object_close", "single_json_fence_and_outer_object_close"].includes(receipt.responseNormalization)
+    || receipt.responseNormalization !== undefined && !["none", "single_json_fence", "outer_object_close", "single_json_fence_and_outer_object_close", 'redundant_array_object_closers_v1'].includes(receipt.responseNormalization)
     || containsStarcraftTmgOnlineCredentialMaterialV1(value)) {
     fail("PROVIDER_SUCCESS_SAFETY_REJECTED");
   }

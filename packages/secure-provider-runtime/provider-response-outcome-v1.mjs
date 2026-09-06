@@ -12,7 +12,7 @@ export function normalizeSingleJsonFenceV1(text) {
 // The observed model defect is a missing final OUTER object delimiter.
 // Never repair inner commas, strings, numbers, keys or missing array members.
 // The entire original document is preserved as a byte-for-byte prefix.
-export function normalizeProviderJsonDocumentV1(value) {
+function normalizeLegacyDocument(value) {
   const fenced = normalizeSingleJsonFenceV1(value);
   const text = fenced.text;
   const base = { text, kind: fenced.changed ? "single_json_fence" : "none" };
@@ -36,6 +36,48 @@ export function normalizeProviderJsonDocumentV1(value) {
     JSON.parse(text + "}");
     return { text: text + "}", kind: fenced.changed ? "single_json_fence_and_outer_object_close" : "outer_object_close" };
   } catch { return base; }
+}
+// Grammar-only recovery for the observed completed array-item defect. Never
+// infer fields or alter scalar bytes. The established single missing OUTER
+// delimiter recovery may follow it; no missing inner structure is completed.
+export function normalizeProviderJsonDocumentV1(value) {
+  const legacy = normalizeLegacyDocument(value);
+  try { JSON.parse(legacy.text); return legacy; } catch {}
+  const text = normalizeSingleJsonFenceV1(value).text;
+  if (typeof text !== 'string' || !text.trimStart().startsWith('{') || !text.trimEnd().endsWith('}')) return legacy;
+  const stack = [], removed = []; let quoted = false, escaped = false, previous = '';
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (escaped) escaped = false;
+      else if (c === '\\') escaped = true;
+      else if (c === '"') quoted = false;
+    } else if (c === '"') quoted = true;
+    else if (c === '{' || c === '[') stack.push(c);
+    else if (c === '}' || c === ']') {
+      if (c === '}' && stack.at(-1) === '[' && previous === '}') {
+        let next = i + 1; while (/\s/.test(text[next] || '') && next < text.length) next++;
+        if (![',', ']'].includes(text[next]) || removed.length >= 8) return legacy;
+        removed.push(i); continue;
+      }
+      if (stack.pop() !== (c === '}' ? '{' : '[')) return legacy;
+    }
+    if (!/\s/.test(c)) previous = c;
+  }
+  if (quoted || !removed.length || stack.length && !(stack.length === 1 && stack[0] === '{')) return legacy;
+  let start = 0; const pieces = [];
+  for (const offset of removed) { pieces.push(text.slice(start, offset)); start = offset + 1; }
+  const filtered = pieces.join('') + text.slice(start);
+  const normalized = normalizeLegacyDocument(filtered).text;
+  try {
+    const parsed = JSON.parse(normalized);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return legacy;
+    return { text: normalized, kind: 'redundant_array_object_closers_v1', evidence: {
+      schemaVersion: 'provider_json_delimiter_recovery_v1',
+      originalTextHash: hash(text), normalizedTextHash: hash(normalized),
+      removedUtf16Offsets: removed, appendedOuterObjectClose: normalized !== filtered,
+    } };
+  } catch { return legacy; }
 }
 function jsonStructure(text) {
   let quoted = false, escaped = false, result = "";

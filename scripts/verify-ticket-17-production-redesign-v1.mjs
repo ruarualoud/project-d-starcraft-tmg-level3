@@ -189,6 +189,32 @@ await check("C_observed_missing_outer_brace_repaired_without_changing_content", 
   assert.equal(result.command.content.verdicts[0].text, "a literal } stays unchanged");
   assert.equal(db.summary().calls, 1); db.close();
 });
+await check("C_redundant_array_closer_recovery_preserves_usage_and_rejects_length", async () => {
+  const original = JSON.stringify({ channels: { skill: { action: 'finish', content: { items: [{ index: 2, value: { text: 'unchanged } quoted' } }] } } } });
+  const broken = original.replace('}}]', '}}}]').slice(0, -1);
+  for (const finish of ['stop', 'length']) {
+    const transport = fakeTransport({ model: profile.model,
+      choices: [{ message: { content: broken }, finish_reason: finish }],
+      usage: { prompt_tokens: 10, completion_tokens: 2, total_tokens: 12 } });
+    const db = openProductionStore(path.join(temporary, 'redundant-closer-' + finish + '.sqlite'), storeArgs);
+    const model = createAccountedModel({ store: db, complete: async request => {
+      const result = await transport.complete({ egressBinding, credentialBytes: Buffer.from('fixture-nonlive-only'), providerRequest: request });
+      assertStarcraftTmgProviderWorkerSuccessV1(result, { egressBinding, providerRequestId: request.requestId });
+      assert.equal(result.usageReceipt.responseNormalization, 'redundant_array_object_closers_v1');
+      assert.equal(result.usageReceipt.responseNormalizationEvidence.appendedOuterObjectClose, true);
+      assert.deepEqual(result.output, JSON.parse(original));
+      const bad = structuredClone(result); delete bad.usageReceipt.responseNormalizationEvidence;
+      const { receiptHash, ...body } = bad.usageReceipt; bad.usageReceipt.receiptHash = hash(body);
+      assert.throws(() => assertStarcraftTmgProviderWorkerSuccessV1(bad, { egressBinding, providerRequestId: request.requestId }));
+      return result;
+    } });
+    if (finish === 'stop') {
+      await model({ stageId: 'delimiter-recovery', call: 1, observed: { system: '', messages: [], tools: [] } });
+      assert.equal(db.summary().calls, 1); assert.equal(db.summary().knownTokens, 12);
+    } else await assert.rejects(model({ stageId: 'delimiter-length', call: 1, observed: { system: '', messages: [], tools: [] } }), { code: 'PROVIDER_RESPONSE_OUTPUT_TRUNCATED' });
+    db.close();
+  }
+});
 await check("C_success_usage_is_committed_before_output_schema_rejection", async () => {
   const db = openProductionStore(path.join(temporary, "shape.sqlite"), storeArgs);
   const model = createAccountedModel({ store: db, complete: async () => ({ output: { bad: true }, usageReceipt: {
