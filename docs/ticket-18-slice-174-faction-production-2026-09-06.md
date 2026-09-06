@@ -5,7 +5,34 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: completed-response JSON delimiter recovery
+## Current checkpoint: actual grammar success, wrong-target recovery
+
+Run `faction-v1-66102d1817842a896f0b` is terminal. Actual Provider responses used
+the new delimiter normalizer with validated normalization evidence; items2–3
+were saved, reaching4/8 items in the first Terran section. The next response
+relabelled items0–1 as4–5, and generic schema feedback returned exactly the same
+output. It was rejected, not accepted as two new recommendations. Actual targets
+were Academy/Support ability-cost reduction and Terran Tenacity/first-player
+timing; copied content instead concerned Hero-slot unlocking and Stimpack/Medic.
+
+New target-scope checking detects duplicate recommendation bodies independently
+of citation metadata. A persisted typed issue binds the rejected artifact,
+complete outline targets, missing citations and which accepted indices were
+copied. One distinct reconstruction retains the full official context, overall
+Skill, whole section outline and all accepted prior recommendations; it omits
+only rejected wrong-target prose. Host target instructions are restated at the
+end of the workspace. Repeating old prose with changed indices/citations fails.
+Correct citation membership alone still does not prove the new prose covers
+the target or is factually true: whole-section source review remains mandatory.
+
+Twenty workflow checks passed, including real original/schema no-progress
+outputs, citation-only evasion rejection, injected full recovery and durable
+resume. The273 injected role calls prove mechanics, not model quality. Current
+paid run had3 calls /808,435 tokens /estimated ¥0.324040; all-history cumulative
+40,548,769 known tokens /estimated-or-reserved ¥48.482958. No402 observed.
+Still Terran0/7 and Zerg0/8 source-reviewed sections;0/2 faction candidates.
+
+## Earlier checkpoint: completed-response JSON delimiter recovery
 
 `faction-v1-3825f0d84367c95c6d13` is terminal, not still generating. It reused six
 prior roles, generated an eight-item outline and two complete recommendations,

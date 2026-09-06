@@ -72,7 +72,21 @@ export function validateFactionOutlineV1(output, { input, section }) {
   return output;
 }
 
-export function validateFactionDraftBatchV1(output, { input, outline, indices }) {
+function adviceBodyHash(r) {
+  const { sourceRefs: ignored, ...body } = r;
+  return hash(body);
+}
+export function inspectFactionBatchScopeV1(output, { outline, indices, completedRecommendations = [] }) {
+  return seal({ version: 'faction_batch_target_issues_v1', rejectedOutputHash: hash(output),
+    completedRecommendationHashes: completedRecommendations.map(hash),
+    targets: indices.map(index => {
+      const value = output.items?.find(item => item.index === index)?.value;
+      return { index, focus: outline[index].focus, requiredSourceRefs: outline[index].sourceRefs,
+        missingSourceRefs: outline[index].sourceRefs.filter(ref => !value?.sourceRefs?.includes(ref)),
+        duplicatesCompletedIndices: value ? completedRecommendations.flatMap((r, n) => adviceBodyHash(r) === adviceBodyHash(value) ? [n] : []) : [] };
+    }), sourceReviewStillRequired: true, trainingTruth: false });
+}
+export function validateFactionDraftBatchV1(output, { input, outline, indices, completedRecommendations = [] }) {
   exact(output, ['items']);
   if (!Array.isArray(output.items) || output.items.length !== indices.length) fail('FACTION_BATCH_DENOMINATOR');
   const pending = new Set(indices), items = [];
@@ -80,6 +94,7 @@ export function validateFactionDraftBatchV1(output, { input, outline, indices })
     exact(item, ['index', 'value']);
     if (!pending.delete(item.index)) fail('FACTION_BATCH_SCOPE_INVALID');
     validateFactionDraftV1({ recommendations: [item.value] }, input);
+    if ([...completedRecommendations, ...items.map(r => r.value)].some(r => adviceBodyHash(r) === adviceBodyHash(item.value))) fail('FACTION_BATCH_DUPLICATE_RECOMMENDATION');
     if (outline[item.index].sourceRefs.some(ref => !item.value.sourceRefs.includes(ref))) fail('FACTION_BATCH_SOURCE_OMISSION');
     items.push(item);
   }
@@ -148,11 +163,28 @@ export async function produceFactionStrategyV1({ input, runtime, store, onProgre
   const plan = createFactionWritingPlanV1(input), common = factionRoleWorkspaceV1(input);
   const packet = seal({ id: 'faction.' + input.factionRecordKey.split(':')[1], inputHash: input.hash, sourceBinding: input.sourceBinding });
   const roleArtifacts = [];
-  async function role(id, instruction, workspace, validate) {
+  async function role(id, instruction, workspace, validate, batchScope = null) {
     const request = { packet, roleId: id, instruction, workspace: { ...common, ...workspace }, maxOutput: 4096 };
     let result = await runtime.role(request); roleArtifacts.push({ id, hash: result.hash });
     try { return { artifact: result, value: validate(result.output) }; }
     catch (error) {
+      if (batchScope && ['FACTION_BATCH_SOURCE_OMISSION', 'FACTION_BATCH_DUPLICATE_RECOMMENDATION'].includes(error.code)) {
+        const { hash: ignoredIssueHash, ...issueBody } = inspectFactionBatchScopeV1(result.output, batchScope);
+        const issue = seal({ ...issueBody, rejectedArtifactHash: result.hash, failureCode: error.code });
+        const lease = store.acquire(packet.id + '.' + id + '.target-issue-v1', { issueHash: issue.hash });
+        if (!lease.cached) store.finish(lease, issue);
+        // Keep all official material, overall guidance, complete outline and
+        // accepted prior advice. Omit only the rejected wrong-target prose.
+        const recovered = await runtime.role({ ...request, roleId: id + '.target-reconstruction.v1',
+          instruction: instruction + '\n这是已确认写错提纲项后的定点重建，不是只换index/引用。不得复制completedRecommendations；必须从来源独立编写outputRequestAtEnd指定focus。旧错误正文不提供；整个来源/整节提纲/成功前文仍在。',
+          workspace: { ...request.workspace, targetIssue: issue,
+            outputRequestAtEnd: { action: 'write_only_these_new_outline_items', targets: issue.targets,
+              forbidden: 'Do not copy completedRecommendations or merely relabel their indices/citations.',
+              expectedShape: { items: batchScope.indices.map(index => ({ index, value: ADVICE_SHAPE.recommendations[0] })) } } } });
+        roleArtifacts.push({ id: id + '.target-reconstruction.v1', hash: recovered.hash });
+        if (hash(recovered.output) === hash(result.output)) fail('FACTION_BATCH_RECONSTRUCTION_NO_PROGRESS');
+        return { artifact: recovered, value: validate(recovered.output) };
+      }
       if (!/^(OUTPUT_SCHEMA_INVALID|TEXT_INVALID|FACTION_(SOURCE_REFERENCE_INVALID|STRING_ARRAY_INVALID|TREE_|DRAFT_|REVIEW_|ANSWER_|OUTLINE_|BATCH_))/.test(error.code || '')) throw error;
       const repaired = await runtime.role({ ...request, roleId: id + '.schema',
         instruction: instruction + '\n只纠正下面记录的结构/地址错误，不改变否定判断，不删掉上下文或材料，不扩大语义修改范围。',
@@ -200,7 +232,8 @@ export async function produceFactionStrategyV1({ input, runtime, store, onProgre
         'Generator：仅为indices指定的1至2项提纲写完整中文策略建议。全部官方来源、总规则、整节提纲和已完成建议均在输入中；分批只限制输出，不限制阅读。逐项保留适用条件、支付/时机/例外、步骤、替代、风险、reviseIf和未证明效果。对于单位考虑装备/规模/任务条件；卡牌保留次数限制和资源替代用途。不保证胜利，不复制题号。返回{"items":[{"index":指定序号,"value":完整建议对象}]}，每个index一次；value字段为'
           + JSON.stringify(ADVICE_SHAPE.recommendations[0]) + '。每项文本不超过1600字符，sourceRefs保留提纲所引来源，可补真实来源至最多8个。不要输出其他index、整份Skill或提纲。',
         { ...scope, proposals: proposer.value, judge: judge.value, outline: outline.value.outline, indices, completedRecommendations: recommendations },
-        out => validateFactionDraftBatchV1(out, { input, outline: outline.value.outline, indices }));
+        out => validateFactionDraftBatchV1(out, { input, outline: outline.value.outline, indices, completedRecommendations: recommendations }),
+        { outline: outline.value.outline, indices, completedRecommendations: recommendations });
       recommendations.push(...generated.value.map(item => item.value));
       onProgress({ section: section.id, stage: 'generated_items', completedItems: recommendations.length, plannedItems: outline.value.outline.length });
     }

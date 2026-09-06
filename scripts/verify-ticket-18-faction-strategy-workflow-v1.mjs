@@ -8,7 +8,7 @@ import { createGlobalProductionContext } from '../packages/skill-production-v3/c
 import { createProductionRuntimeV3 } from '../packages/skill-production-v3/runtime.mjs';
 import { runDirectLoop } from '../packages/skill-production/loops.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
-import { FACTION_AXES_V1, createFactionWritingPlanV1, validateFactionDraftV1, applyFactionStrategyPatchV1,
+import { FACTION_AXES_V1, createFactionWritingPlanV1, validateFactionDraftV1, applyFactionStrategyPatchV1, validateFactionDraftBatchV1, inspectFactionBatchScopeV1,
   produceFactionStrategyV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { seal, verifySeal, hash, sha256, fail } from '../packages/skill-production/common.mjs';
 
@@ -21,10 +21,23 @@ try {
   const receipt = verifySeal(JSON.parse(row.response)).value.responseOutcome;
   assert.equal(receipt.finishReason, 'length'); assert.equal(receipt.syntaxIssue, 'incomplete');
   assert.equal(verifySeal(JSON.parse(row.usage)).value.outputUnits, 4096);
+  const artifact = suffix => verifySeal(JSON.parse(evidenceDb.prepare("SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'").get(
+    'faction-v1-66102d1817842a896f0b', 'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.' + suffix).artifact)).value;
+  const outline = artifact('generator-outline').output.outline;
+  const completedRecommendations = [0, 2].flatMap(n => artifact('generator-items.' + n).output.items.map(item => item.value));
+  const rejected = artifact('generator-items.4').output, params = { input: inputs[0], outline, indices: [4, 5], completedRecommendations };
+  assert.equal(hash(rejected), hash(artifact('generator-items.4.schema').output));
+  assert.throws(() => validateFactionDraftBatchV1(rejected, params), { code: 'FACTION_BATCH_DUPLICATE_RECOMMENDATION' });
+  const issues = inspectFactionBatchScopeV1(rejected, params);
+  assert.deepEqual(issues.targets.map(t => t.duplicatesCompletedIndices), [[0], [1]]);
+  assert(issues.targets.some(t => t.missingSourceRefs.length));
+  const relabelled = structuredClone(rejected);
+  relabelled.items.forEach(item => { item.value.sourceRefs = outline[item.index].sourceRefs; });
+  assert.throws(() => validateFactionDraftBatchV1(relabelled, params), { code: 'FACTION_BATCH_DUPLICATE_RECOMMENDATION' });
 } finally { evidenceDb.close(); }
 const temp = await mkdtemp(path.join(base, 'workflow-test-'));
 const stores = [], makeStore = name => { const s = openProductionStore(path.join(temp, name + '.sqlite'), { runId: name, recipeHash: hash(name) }); stores.push(s); return s; };
-const recommendation = ref => ({ title: 'Injected conditional strategy fixture', when: ['Only in the stated legal scope'],
+const recommendation = ref => ({ title: 'Injected conditional strategy fixture ' + ref, when: ['Only in the stated legal scope'],
   procedure: ['Compare enabled legal alternatives before preview'], alternatives: ['Conserve resources if the condition changes'],
   risk: 'Fixture only, not a measured battle strategy', reviseIf: ['The stated condition changes'], sourceRefs: [ref], unproven: ['Real match strength is not evaluated here'] });
 const resultHashes = []; let calls = 0, maxTaskBytes = 0;
@@ -51,6 +64,16 @@ function modelFor(input, mode = 'positive') {
     else if (stageId.includes('.generator-items.')) {
       assert(w.indices.length <= 2); assert.equal(w.completedRecommendations.length, w.indices[0]);
       out = { items: w.indices.map(index => ({ index, value: recommendation(w.outline[index].sourceRefs[0]) })) };
+      if (mode === 'wrong_target' && w.indices[0] > 0 && !stageId.includes('.target-reconstruction.')) {
+        out = { items: w.indices.map((index, n) => ({ index, value: structuredClone(w.completedRecommendations[n]) })) };
+      }
+      if (stageId.includes('.target-reconstruction.')) {
+        assert.equal(Object.keys(w).at(-1), 'outputRequestAtEnd');
+        assert.equal(w.outputRequestAtEnd.action, 'write_only_these_new_outline_items');
+        assert.deepEqual(w.outputRequestAtEnd.targets.map(t => t.index), w.indices);
+        assert(w.targetIssue.targets.every(t => t.duplicatesCompletedIndices.length));
+        assert(!w.rejectedOutput);
+      }
     }
     else if (stageId.includes('.review.')) {
       const negative = mode === 'blocked' || ['repair', 'no_progress'].includes(mode) && w.section.id.endsWith('army_resources.1') && stageId.endsWith('.0');
@@ -87,11 +110,11 @@ try {
     resultHashes.push(candidate.hash);
   }
   const input = inputs[0], draft = { recommendations: [recommendation(input.factionEvidence.primarySource.ref), recommendation(input.factionEvidence.armyPool[0].source.ref)] };
-  for (const mode of ['blocked', 'no_progress']) {
+  for (const mode of ['blocked', 'no_progress', 'wrong_target']) {
     const store = makeStore(mode), runtime = createProductionRuntimeV3({ store, reader, context, verifier: {}, model: modelFor(input, mode), dsh: { run: runDirectLoop } });
     const r = await produceFactionStrategyV1({ input, runtime, store });
     if (mode === 'blocked') { assert(!r.semanticReviewPassed); assert.equal(r.sections.length, 1); assert.equal(r.sections[0].rounds.length, 4); }
-    else { assert(r.semanticReviewPassed); assert(r.roleArtifacts.some(a => a.id.includes('.source-reconstruction.'))); }
+    else { assert(r.semanticReviewPassed); assert(r.roleArtifacts.some(a => a.id.includes(mode === 'wrong_target' ? '.target-reconstruction.' : '.source-reconstruction.'))); }
   }
   const issues = seal({ parentHash: hash(draft), issues: [{ kind: 'recommendation_source_or_condition', index: 0, oldHash: hash(draft.recommendations[0]) }] });
   assert.throws(() => applyFactionStrategyPatchV1({ parentHash: hash(draft), replacements: [{ index: 1, value: draft.recommendations[1] }], additions: [] }, { input, draft, issues }), { code: 'FACTION_PATCH_SCOPE_INVALID' });
@@ -104,8 +127,8 @@ try {
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/runtime.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 16, inputHashes: inputs.map(i => i.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 20, inputHashes: inputs.map(i => i.hash), codeHashes, maxTaskBytes,
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 16, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 20, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
