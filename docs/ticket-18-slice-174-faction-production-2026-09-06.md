@@ -28,6 +28,27 @@ Separately, Goliath's null Evade concern is cleared by exact Core5.1, which
 explicitly says a granted roll does not override null Evade. No false repair.
 Production code/inputs remain unchanged while the paid run is active.
 
+The three-field repair's fresh whole-section reviews subsequently completed;
+updated actual inspection `5a8f51720803954d7aeaf3e1825fdd5c8123672521b81b9af94c35a076bab000`
+binds the final section draft to the actual patch. This does not clear the four
+additional findings. Phase-tempo now has8/8 generated recommendations and its
+source reviews are running. Last settled usage17 calls /4,536,967 tokens /
+¥0.860850 for this run; all-history67,963,761 known tokens /estimated ¥56.169993.
+
+Prepared next correction mechanism: `faction-source-field-repair-v2.mjs`
+registers both independently checked audit catalogues, groups findings by exact
+field, preserves the complete issue list/whole section in each at-most-three-
+target output batch, and applies the combined patch only after all batches pass.
+Twenty injected checks cover the seven original observed fields, source/target
+binding, no-op/duplicate/missing output, failed second batch without partial
+application, and exact cached first-batch reuse. Three actual isolated DSH
+sessions delivered complete context through injected HTTPS (last request970,845
+bytes); no Provider calls, gate `f498d41c…`. This v2 helper is NOT yet integrated
+into live production or freshly reviewed by an actual model. Integrate it only
+after the current paid run settles, preserving the three-field actual repair,
+all completed raw roles and the original usage clock; then fix the four remaining
+fields and rerun complete-section reviews. Do not restart the active80048 process.
+
 The second-section independent counterexamples now enter a host-bound repair
 plan before another section can start. One complete-source DSH role returns
 only the three target IDs and replacement texts; application preserves every
