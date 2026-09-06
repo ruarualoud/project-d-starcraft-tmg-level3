@@ -2,6 +2,7 @@ import { seal, verifySeal, hash, exact, fail } from '../skill-production/common.
 import { withSessionDeadline } from '../skill-production/deadline.mjs';
 import { createFactionWritingPlanV1 } from '../skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { assertNoKnownFactionRuleFailureV1 } from '../skill-production-v3/faction-known-rule-findings-v1.mjs';
+import { inspectFactionSemanticDebtV1 } from './faction-semantic-debt-v1.mjs';
 
 // Consumer-side comparison, deliberately excluding production dialogue, source
 // reviewer verdicts, known-failure proofs and expected test answers. This is a
@@ -15,7 +16,11 @@ export function factionConsumerContextV1({ input, candidate, knownRulePolicy }) 
     || candidate.knownRulePolicyHash !== knownRulePolicy.hash || !candidate.semanticReviewPassed
     || candidate.runtimeAccepted || candidate.trainingTruth || candidate.sections.length !== plan.sections.length
     || candidate.sections.some((s, n) => !s.semanticReviewPassed || hash(s.section) !== hash(plan.sections[n]))) fail('FACTION_CONSUMER_CANDIDATE_NOT_READY');
-  for (const section of candidate.sections) assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: section.draft });
+  for (const section of candidate.sections) {
+    assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: section.draft });
+    const debt = inspectFactionSemanticDebtV1({ input, draft: section.draft });
+    if (debt.knownSemanticDebtBlocksIndependentQualification) fail('FACTION_CONSUMER_KNOWN_SEMANTIC_DEBT', { debt });
+  }
   const faction = { factionRecordKey: candidate.factionRecordKey, sections: candidate.sections.map(s => ({ section: s.section, draft: s.draft })) };
   return seal({ version: 'faction_consumer_context_v1', candidateHash: candidate.hash, inputHash: input.hash,
     overall: { skill: input.overallSkill, guide: input.operationalGuide }, faction,

@@ -5,7 +5,35 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: actual field selection and host-owned plan binding
+## Current checkpoint: first review cycle complete, independent semantic veto
+
+Run `faction-v1-1c95d67afe4e20b85ef0`, handle4444, is running. It reused the
+actual4+4 field selections without another binding call. The first section's
+revision1 completed all eight review batches with no model/old-policy issues;
+the producer has moved to `unit_roles.1`, with6/7 advice items written. One
+wrong-topic batch was actually recovered by the existing source-first target
+reconstruction mechanism. Update: both scoped reconstructions succeeded,
+7/7 items are now written and supportive review has started. Last settled
+all-history54,927,759 tokens /estimated-or-reserved ¥53.766943; no402.
+Do not start a duplicate process.
+
+IMPORTANT: review workflow completion1/15 is not qualification1/15. Independent
+inspection of the actual first section found the retained Academy/Life Support
+damage-reduction recommendation in4.reviseIf.1 described below. Both real
+review routes marked it supported. The new `faction-semantic-debt-v1.mjs`
+rechecks the frozen source predicates and now vetoes this exact known debt at
+the consumer-context entry, before any paid consumer request. Source drift also
+fails closed. The read-only real-section report is
+`b8a59cc9b971797f278adf963a8b33046b01806a9e5e58a1d99fb0475cb7cb0d`.
+It does not rewrite the original model flags or masquerade as a general
+paraphrase detector. Actual local correction and fresh independent evaluation
+remain required. Consumer14-check regression passed (8 injected responses,
+zero Provider calls), including rejecting the actual debt before any model
+call. Readiness `1cdbfe4cf2f786747c234122a49b5278781cd437db7b9b32e38ff784f73d066c`.
+Faction Skills0/2,
+Ticket18 2/8,project16/22,overall offline1/5,formal/runtime0/5.
+
+## Earlier checkpoint: actual field selection and host-owned plan binding
 
 Run `faction-v1-de32d27f150eb1349dea` is terminal, handle2824 exit1. The actual
 model selected four valid candidate fields per target, but copied the prompt
@@ -29,6 +57,16 @@ workflow `6e03bcd99c10bdd2d11847dabf5a5585ba9be9b9ee82669b2b28dbf9a5716b8a`,
 DSH `8ff29f9231927218a5d25a3c61c8957ea0c921a373ecca2c42eb305d2ed64f4e`.
 Continuation must be fromde32d, retaining all ancestor accounting and time.
 No additional semantic review or Skill acceptance is implied.
+
+Manual semantic follow-up, not a new score: in repaired draft4daa6b49…,
+recommendation4 `reviseIf.1` still recommends reserving Advanced Training for
+the most important damage-reduction Reaction when Life Support is frequent.
+Its own corrected `procedure.2` says Life Support and Advanced Training cannot
+be nested in the same activation. Frozen core10.4 p1 permits only one Reaction
+per player per activation, while the Academy and Medic product texts mark
+both abilities as Reactions. This residual whole-advice consistency concern
+must be checked against the next actual draft before independent qualification;
+absence of the original six exact failed phrases must not waive it.
 
 ## Earlier checkpoint: field-selection recovery instead of repeated quote rewriting
 

@@ -70,12 +70,21 @@ try {
   assert.throws(() => factionConsumerContextV1({ ...args, candidate: seal({ ...candidateBody, inputHash: hash('drift') }) }), { code: 'FACTION_CONSUMER_CANDIDATE_NOT_READY' });
   const failed = structuredClone(candidateBody); failed.sections[0].draft.recommendations[0].procedure = [policies[0].sourceFindings[0].badText];
   assert.throws(() => factionConsumerContextV1({ ...args, candidate: seal(failed) }), { code: 'FACTION_KNOWN_RULE_FAILURE' });
+  const actualDraft = verifySeal(JSON.parse(await readFile(path.join(base,
+    'faction-v1-9d47758f9f7f7625a1af/first-repair-inspection.json'), 'utf8'))).after;
+  const stale = structuredClone(candidateBody); stale.sections[0].draft = actualDraft;
+  assert.throws(() => factionConsumerContextV1({ ...args, candidate: seal(stale) }), { code: 'FACTION_CONSUMER_KNOWN_SEMANTIC_DEBT' });
+  const beforeDebt = calls;
+  await assert.rejects(() => evaluateFactionRosterUseV1({ ...args, candidate: seal(stale), store: makeStore('actual-semantic-debt'),
+    model: modelFor('positive') }), { code: 'FACTION_CONSUMER_KNOWN_SEMANTIC_DEBT' });
+  assert.equal(calls, beforeDebt, 'Known real semantic debt is rejected before any consumer call');
 } finally { stores.forEach(s => s.close()); }
 const files = ['packages/skill-evaluation/faction-roster-use-evaluation-v1.mjs', 'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs',
+  'packages/skill-evaluation/faction-semantic-debt-v1.mjs',
   'packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-known-rule-findings-v1.mjs',
   'scripts/verify-ticket-18-faction-roster-use-evaluation-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 12, codeHashes, inputHashes: inputs.map(i => i.hash), drillManifestHash: drills.manifest.hash,
+const report = seal({ passed: true, checks: 14, codeHashes, inputHashes: inputs.map(i => i.hash), drillManifestHash: drills.manifest.hash,
   fixtureOnly: true, injectedModelCalls: calls, providerCalls: 0, actualSkillQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'consumer-evaluation-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 12, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 14, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
