@@ -11,6 +11,9 @@ import { createProductionRuntimeV3 } from '../packages/skill-production-v3/runti
 import { createFactionWritingPlanV1, produceFactionStrategyV1, renderFactionStrategyV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { compileFactionProductionInputV1 } from '../packages/skill-production-v3/faction-production-input-v1.mjs';
 import { inspectFactionContinuationV1 } from '../packages/skill-production-v3/faction-continuation-v1.mjs';
+import { createFactionKnownRulePolicyV1 } from '../packages/skill-production-v3/faction-known-rule-findings-v1.mjs';
+import { createFactionRosterChoiceDrillsV1 } from '../packages/skill-evaluation/faction-roster-choice-drills-v1.mjs';
+import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/official-development-tranche-source-lock-fixture-v1.mjs';
 import { withCheckpointContinuation } from '../packages/skill-production/continuation.mjs';
 import { prepareDshLoop } from '../packages/skill-production/loops.mjs';
 import { verifyProductionReadiness } from '../packages/skill-production/recipe.mjs';
@@ -49,9 +52,14 @@ for (const name of ['terran_armed_forces', 'zerg_swarm']) {
   const saved = await json('build/ticket-18-faction-production-v1/' + name + '-input.json');
   if (input.hash !== saved.hash) fail('FACTION_SAVED_INPUT_DRIFT'); inputs.push(input);
 }
+// Recompute the calibrated kernel finding, never trust a saved model verdict or
+// a readiness flag as rule truth. Only the already-known diagnostic is exposed.
+const { dataset } = await loadOfficialDevelopmentTrancheSourceLockFixtureV1({ root });
+const drills = await createFactionRosterChoiceDrillsV1({ catalogue, dataset });
+const knownRulePolicies = inputs.map(input => createFactionKnownRulePolicyV1({ input, drills }));
 const main = await verifyProductionReadiness(root, catalogue);
 const gates = [];
-for (const name of ['input-readiness', 'workflow-readiness', 'dsh-context-readiness', 'continuation-readiness', 'json-recovery-readiness']) {
+for (const name of ['input-readiness', 'workflow-readiness', 'dsh-context-readiness', 'continuation-readiness', 'json-recovery-readiness', 'targeted-corrections-readiness']) {
   const gate = await json('build/ticket-18-faction-production-v1/' + name + '.json');
   if (!gate.passed) fail('FACTION_READINESS_FAILED');
   for (const r of gate.codeHashes) if (sha256(await readFile(path.join(root, r.file))) !== r.hash) fail('FACTION_READINESS_CODE_DRIFT');
@@ -59,7 +67,12 @@ for (const name of ['input-readiness', 'workflow-readiness', 'dsh-context-readin
 }
 if (hash(gates[1].inputHashes) !== hash(inputs.map(i => i.hash)) || hash(gates[2].inputHashes) !== hash(inputs.map(i => i.hash))
   || gates[2].contextHash !== context.hash) fail('FACTION_READINESS_INPUT_DRIFT');
+if (hash(gates[5].inputHashes) !== hash(inputs.map(i => i.hash))
+  || hash(gates[5].policyHashes) !== hash(knownRulePolicies.map(p => p.hash))
+  || hash(gates[1].policyHashes) !== hash(knownRulePolicies.map(p => p.hash))) fail('FACTION_KNOWN_RULE_READINESS_DRIFT');
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
+  'packages/skill-production-v3/faction-review-targets-v1.mjs', 'packages/skill-production-v3/faction-known-rule-findings-v1.mjs',
+  'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs',
   'packages/skill-production-v3/faction-continuation-v1.mjs', 'packages/skill-production-v3/runtime.mjs',
   'packages/skill-production-v3/context.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs',
   'packages/skill-production/loops.mjs', 'packages/skill-production/model.mjs', 'packages/skill-production/store.mjs',
@@ -71,6 +84,7 @@ const next = seal({ version: 'faction_strategy_production_v1', overallRunId: arg
   qualificationReceiptHash: qualificationReceipt.hash, inputHashes: inputs.map(i => i.hash), planHashes: inputs.map(i => createFactionWritingPlanV1(i).hash),
   catalogueHash: catalogue.hash, sourceBinding: catalogue.sourceBinding, contextHash: context.hash, modelHash: profile.integrity.hash,
   mainReadinessHash: main.hash, workflowReadinessHash: gates[1].hash, dshContextReadinessHash: gates[2].hash, jsonRecoveryReadinessHash: gates[4].hash,
+  targetedCorrectionsReadinessHash: gates[5].hash, knownRulePolicyHashes: knownRulePolicies.map(p => p.hash),
   dshBindingHash: gates[2].dshBinding.hash, codeHashes, limits,
   target: 'two_complete_conditional_faction_strategy_candidates_with_source_review_not_runtime_promotion',
   independentEvaluationAnswersExposed: false, sourceRefreshPerformed: false, trainingTruth: false });
@@ -80,7 +94,7 @@ if (args[4]) {
   const parentReport = await json('build/ticket-18-faction-production-v1/' + args[4] + '/report.json');
   const before = await json('build/ticket-17-production-redesign-v1/readiness-' + parent.mainReadinessHash + '.json');
   continuation = inspectFactionContinuationV1({ filename, parentRunId: args[4], parent, parentReport, next,
-    normalizationMigration: { before, after: main, recovery: gates[4] } });
+    normalizationMigration: { before, after: main, recovery: gates[4] }, correctionMigration: gates[5] });
 }
 const { hash: ignored, ...nextBody } = next;
 const recipe = continuation ? seal({ ...nextBody, continuation: continuation.manifest }) : next;
@@ -123,9 +137,9 @@ try {
       cumulativeEstimateOrReserveCny: (historyMicros + store.globalSummary().reservedOrSettledMicros) / 1e6 })) });
   const runtime = createProductionRuntimeV3({ store, reader: createEvidenceReader(catalogue), context, verifier: {}, model, dsh,
     onProgress: row => console.log(JSON.stringify({ event: 'role', ticket: 18, slice: 174, ...row })) });
-  for (const input of inputs) {
+  for (const [index, input] of inputs.entries()) {
     const name = input.factionRecordKey.split(':')[1]; await put(name + '-input', input);
-    const candidate = await produceFactionStrategyV1({ input, runtime, store,
+    const candidate = await produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownRulePolicies[index],
       onProgress: row => console.log(JSON.stringify({ event: 'faction-progress', ticket: 18, slice: 174, faction: name, ...row })) });
     candidates.push(candidate); await put(name + '-candidate', candidate);
     await writeFile(path.join(out, name + '-candidate.md'), renderFactionStrategyV1(candidate));

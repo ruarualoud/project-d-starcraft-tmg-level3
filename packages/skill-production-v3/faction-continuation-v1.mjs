@@ -1,14 +1,32 @@
 import { DatabaseSync } from 'node:sqlite';
 import { seal, verifySeal, hash, fail } from '../skill-production/common.mjs';
 
-export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration }) {
+export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration }) {
   [parent, parentReport, next].forEach(verifySeal);
   if (parent.version !== 'faction_strategy_production_v1' || parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20)
     || parentReport.runId !== parentRunId || parentReport.recipeHash !== parent.hash || !parentReport.failure) fail('FACTION_CONTINUATION_PARENT_INVALID');
-  const strip = r => { const { hash: ignored, codeHashes, workflowReadinessHash, dshContextReadinessHash, mainReadinessHash, jsonRecoveryReadinessHash, continuation, ...body } = r; return body; };
+  const strip = r => { const { hash: ignored, codeHashes, workflowReadinessHash, dshContextReadinessHash, mainReadinessHash, jsonRecoveryReadinessHash,
+    targetedCorrectionsReadinessHash, knownRulePolicyHashes, continuation, ...body } = r; return body; };
   if (hash(strip(parent)) !== hash(strip(next))) fail('FACTION_CONTINUATION_CONTRACT_DRIFT');
   const allowed = new Set(['packages/skill-production-v3/faction-strategy-workflow-v1.mjs',
     'packages/skill-production-v3/faction-continuation-v1.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs']);
+  const correctionFiles = ['packages/skill-production-v3/faction-review-targets-v1.mjs',
+    'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs'];
+  let correctionProof = null;
+  if (parent.knownRulePolicyHashes && hash(parent.knownRulePolicyHashes) !== hash(next.knownRulePolicyHashes || null)) fail('FACTION_CONTINUATION_KNOWN_RULE_POLICY_DRIFT');
+  if (next.knownRulePolicyHashes || parent.targetedCorrectionsReadinessHash || next.targetedCorrectionsReadinessHash) {
+    if (!correctionMigration) fail('FACTION_CORRECTION_MIGRATION_PROOF_MISSING');
+    verifySeal(correctionMigration);
+    if (!correctionMigration.passed || correctionMigration.hash !== next.targetedCorrectionsReadinessHash
+      || !correctionMigration.actualShiftedQuotesRejected || !correctionMigration.rawHistoricalFailurePreserved
+      || hash(correctionMigration.inputHashes) !== hash(next.inputHashes)
+      || hash(correctionMigration.policyHashes) !== hash(next.knownRulePolicyHashes || null)
+      || [...correctionFiles, 'packages/skill-production-v3/faction-strategy-workflow-v1.mjs'].some(file =>
+        !next.codeHashes.find(r => r.file === file) || next.codeHashes.find(r => r.file === file)?.hash !== correctionMigration.codeHashes.find(r => r.file === file)?.hash)) fail('FACTION_CORRECTION_MIGRATION_PROOF_INVALID');
+    correctionFiles.forEach(file => allowed.add(file));
+    correctionProof = { readinessHash: correctionMigration.hash, policyHashes: next.knownRulePolicyHashes,
+      priorPolicyHashes: parent.knownRulePolicyHashes || null, policy: 'known_kernel_fact_and_explicit_review_target_binding_no_source_or_budget_change' };
+  }
   let migrationProof = null;
   if (parent.mainReadinessHash !== next.mainReadinessHash || parent.jsonRecoveryReadinessHash !== next.jsonRecoveryReadinessHash) {
     const { before, after, recovery } = normalizationMigration || {};
@@ -52,6 +70,7 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
     const steps = rows.filter(r => r.artifact?.roleId === r.id && r.artifact?.loop?.transcript);
     const manifest = seal({ parentRunId, parentRecipeHash: parent.hash, nextBaseRecipeHash: next.hash,
       parentStart: began, accounting, changes, ...(migrationProof ? { normalizationMigration: migrationProof } : {}),
+      ...(correctionProof ? { correctionMigration: correctionProof } : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
       policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
     return { manifest, steps };

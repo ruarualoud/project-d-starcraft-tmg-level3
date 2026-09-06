@@ -5,7 +5,57 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: actual review round and repair stop
+## Current checkpoint: explicit targets, empty-patch recovery, calibrated fact correction
+
+The three observed defects now have production-path changes, not just a report:
+
+- Review tasks end with host-created target IDs, full titles, exact advice
+  hashes/text/field paths and the same frozen original cited passages. The
+  Provider must quote a field of each intended target; the host resolves its
+  index. Actual shifted outputs and wrong-neighbour quotes are rejected. All
+  global sources, the overall Skill and whole section remain in every call.
+  Correct identity/quotes still do not prove semantic judgment correctness.
+- A genuinely empty patch is classified before denominator validation and
+  enters the same bounded source-first no-progress recovery as an unchanged
+  replacement. Other complete recommendations remain visible; rejected target
+  prose is omitted only for that reconstruction. No partial aggregate applies.
+- The known Factory-is-cheapest sentence is corrected in one exact field using
+  recomputed source-bound Rules cost/slot evidence, with the missing Armory
+  citation added. This is explicitly host-rendered factual correction, NOT a
+  model-authored strategy or a proof that cheaper wins games. Unflagged fields
+  and original Provider artifacts remain unchanged. Reintroducing that exact
+  known failure blocks production acceptance; unknown paraphrases still require
+  independent evaluation. Fresh dual source review is required.
+- Independent full-draft reading found six further exact source counterexamples
+  across four advice items: Marauder Core-gap arithmetic, nested Academy/Life
+  Support reactions, two incorrect Active REPEATABLE restrictions, Indomitable
+  friendly targeting, and Target Lock's omitted Movement/12-inch condition.
+  They enter the actual typed issue journal with exact flagged fields and
+  frozen original source evidence even when both model readers say supported.
+  The model must repair those recommendations; the host does not write their
+  replacement strategy. Original issue history is retained and unchanged known
+  failures veto acceptance. This is a known-error regression set, not held-out
+  strategy evaluation or a complete detector for arbitrary paraphrases.
+
+The paid runner recomputes the kernel finding before Keychain/egress and binds
+the resulting policy hashes into its recipe. An explicit tested continuation
+migration admits only these corrective modules and validated actual-sample
+evidence. Sources, full inputs, model, budgets, ancestor accounting and original
+start time do not change. Numeric-only old source reviews are not inherited as
+accepted new target-bound reviews. Exact-input raw generation roles remain reusable.
+
+Actual-failure regression22/22, continuation20/20 and complete-workflow34/34
+pass with zero Provider calls. Two actual DSH sessions with injected HTTPS
+responses transported the full sources/overall Skill/eight-item draft/largest
+review pair plus all known source-repair evidence: wire bodies1,029,954 and
+1,049,171 bytes, within both enforced model-input and transport limits.
+This is transport/mechanism evidence, not model strategy quality. Live
+continuation has NOT started yet. Authoritative paid terminal
+remains `faction-v1-c6b855593093fd3f6ecb`, cumulative44,981,402 known tokens /
+estimated-or-reserved ¥50.755463, no402. Source-reviewed sections0/15, qualified
+faction candidates0/2; Ticket18 2/8, project16/22, formal/runtime first-five0/5.
+
+## Earlier checkpoint: actual review round and repair stop
 
 Run `faction-v1-c6b855593093fd3f6ecb` is terminal; handle80045 exited1, no paid
 process remains. Report

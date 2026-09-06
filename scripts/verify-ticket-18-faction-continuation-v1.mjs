@@ -37,6 +37,28 @@ const drift = seal({ ...b, inputHashes: [hash('different input')] });
 assert.throws(() => inspectFactionContinuationV1({ ...deps, next: drift }), { code: 'FACTION_CONTINUATION_CONTRACT_DRIFT' });
 const foreign = seal({ ...b, codeHashes: [{ file: 'packages/skill-production/model.mjs', hash: hash('different model') }] });
 assert.throws(() => inspectFactionContinuationV1({ ...deps, next: foreign }), { code: 'FACTION_CONTINUATION_DEPENDENCY_DRIFT' });
+const correctionFiles = ['packages/skill-production-v3/faction-review-targets-v1.mjs',
+  'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs'];
+const correctionCode = [...next.codeHashes, ...correctionFiles.map(file => ({ file, hash: hash('correction ' + file) }))];
+const correctionMigration = seal({ passed: true, inputHashes: parent.inputHashes, policyHashes: [hash('calibrated policy')],
+  codeHashes: correctionCode, actualShiftedQuotesRejected: true, rawHistoricalFailurePreserved: true });
+const correctionNext = seal({ ...b, codeHashes: correctionCode, knownRulePolicyHashes: correctionMigration.policyHashes,
+  targetedCorrectionsReadinessHash: correctionMigration.hash });
+assert.throws(() => inspectFactionContinuationV1({ ...deps, next: correctionNext }), { code: 'FACTION_CORRECTION_MIGRATION_PROOF_MISSING' });
+const correctedContinuation = inspectFactionContinuationV1({ ...deps, next: correctionNext, correctionMigration });
+assert.deepEqual(correctedContinuation.manifest.accounting, continuation.manifest.accounting);
+assert.deepEqual(correctedContinuation.manifest.correctionMigration.policyHashes, correctionMigration.policyHashes);
+const { hash: ignoredCorrection, ...correctionBody } = correctionNext;
+assert.throws(() => inspectFactionContinuationV1({ ...deps, next: seal({ ...correctionBody, knownRulePolicyHashes: [hash('unproved')] }), correctionMigration }),
+  { code: 'FACTION_CORRECTION_MIGRATION_PROOF_INVALID' });
+assert.throws(() => inspectFactionContinuationV1({ ...deps, next: seal({ ...correctionBody,
+  codeHashes: correctionCode.map(r => ({ ...r, hash: hash('unbound code') })) }), correctionMigration }), { code: 'FACTION_CORRECTION_MIGRATION_PROOF_INVALID' });
+assert.throws(() => inspectFactionContinuationV1({ ...deps, next: seal({ ...correctionBody, limits: { ...parent.limits, maxTokens: 2000000 } }), correctionMigration }),
+  { code: 'FACTION_CONTINUATION_CONTRACT_DRIFT' });
+const boundParentId = 'faction-v1-' + correctionNext.hash.slice(0, 20);
+assert.throws(() => inspectFactionContinuationV1({ ...deps, parent: correctionNext, parentRunId: boundParentId,
+  parentReport: seal({ runId: boundParentId, recipeHash: correctionNext.hash, failure: { code: 'INJECTED' } }), next, correctionMigration }),
+  { code: 'FACTION_CONTINUATION_KNOWN_RULE_POLICY_DRIFT' });
 const providerFiles = ['provider-response-outcome-v1.mjs', 'provider-egress-transport-v1.mjs', 'provider-worker-success-classifier-v1.mjs'].map(n => 'packages/secure-provider-runtime/' + n);
 const before = seal({ passed: true, catalogueHash: hash('frozen'), dshBinding: { hash: hash('dsh') }, codeHashes: providerFiles.map(file => ({ file, hash: hash('old ' + file) })) });
 const after = seal({ passed: true, catalogueHash: before.catalogueHash, dshBinding: before.dshBinding, codeHashes: providerFiles.map(file => ({ file, hash: hash('new ' + file) })) });
@@ -66,6 +88,6 @@ assert.throws(() => inspectFactionContinuationV1(deps), { code: 'API_BALANCE_EXH
 nextStore.close(); parentStore.close();
 const files = ['packages/skill-production-v3/faction-continuation-v1.mjs', 'packages/skill-production/continuation.mjs', 'scripts/verify-ticket-18-faction-continuation-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 13, codeHashes, providerCalls: 0, fixtureOnly: true, trainingTruth: false });
+const report = seal({ passed: true, checks: 20, codeHashes, providerCalls: 0, fixtureOnly: true, trainingTruth: false });
 await writeFile(path.join(base, 'continuation-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 13, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 20, providerCalls: 0, hash: report.hash }));

@@ -1,5 +1,7 @@
 import { seal, verifySeal, hash, exact, text, clone, fail } from '../skill-production/common.mjs';
 import { validateTutorLessonV3 } from './runtime.mjs';
+import { createFactionReviewTargetsV1, validateTargetedFactionReviewV1 } from './faction-review-targets-v1.mjs';
+import { correctKnownFactionRuleFailuresV1, assertNoKnownFactionRuleFailureV1, mergeFactionKnownSourceIssuesV1 } from './faction-known-rule-findings-v1.mjs';
 
 export const FACTION_AXES_V1 = ['army_resources', 'unit_roles', 'phase_tempo', 'objectives', 'threat_tradeoffs', 'card_packages'];
 const ADVICE_SHAPE = { recommendations: [{ title: '标题', when: ['适用的可观察条件'], procedure: ['步骤'],
@@ -157,6 +159,8 @@ export function createFactionRepairIssuesV1(section, draft, reviews) {
 export function applyFactionStrategyPatchV1(output, { input, draft, issues }) {
   verifySeal(issues); exact(output, ['parentHash', 'replacements', 'additions']);
   if (output.parentHash !== hash(draft) || issues.parentHash !== hash(draft)) fail('FACTION_PATCH_PARENT_DRIFT');
+  if (Array.isArray(output.replacements) && Array.isArray(output.additions)
+    && !output.replacements.length && !output.additions.length) fail('FACTION_PATCH_NO_PROGRESS');
   const expected = new Map(issues.issues.filter(i => i.kind === 'recommendation_source_or_condition').map(i => [i.index, i.oldHash]));
   const omitted = new Set(issues.issues.filter(i => i.kind === 'assigned_source_omission').map(i => i.sourceRef));
   if (!Array.isArray(output.replacements) || output.replacements.length !== expected.size || !Array.isArray(output.additions)
@@ -178,7 +182,9 @@ export function applyFactionStrategyPatchV1(output, { input, draft, issues }) {
   return validateFactionDraftV1(next, input);
 }
 
-export async function produceFactionStrategyV1({ input, runtime, store, onProgress = () => {} }) {
+export async function produceFactionStrategyV1({ input, runtime, store, knownRulePolicy, onProgress = () => {} }) {
+  verifySeal(knownRulePolicy);
+  if (knownRulePolicy.inputHash !== input.hash) fail('FACTION_KNOWN_RULE_POLICY_DRIFT');
   const plan = createFactionWritingPlanV1(input), common = factionRoleWorkspaceV1(input);
   const packet = seal({ id: 'faction.' + input.factionRecordKey.split(':')[1], inputHash: input.hash, sourceBinding: input.sourceBinding });
   const roleArtifacts = [];
@@ -256,7 +262,13 @@ export async function produceFactionStrategyV1({ input, runtime, store, onProgre
       recommendations.push(...generated.value.map(item => item.value));
       onProgress({ section: section.id, stage: 'generated_items', completedItems: recommendations.length, plannedItems: outline.value.outline.length });
     }
-    let draft = validateFactionDraftV1({ recommendations }, input); const rounds = [], edits = [], seen = new Set([hash(draft)]);
+    const rawDraft = validateFactionDraftV1({ recommendations }, input);
+    const knownRuleCorrection = correctKnownFactionRuleFailuresV1({ input, policy: knownRulePolicy, draft: rawDraft });
+    const correctionLease = store.acquire(section.id + '.known-rule-correction', { correctionHash: knownRuleCorrection.hash });
+    if (!correctionLease.cached) store.finish(correctionLease, knownRuleCorrection);
+    let draft = validateFactionDraftV1(knownRuleCorrection.draft, input); const rounds = [], edits = [], seen = new Set([hash(draft)]);
+    if (knownRuleCorrection.patches.length) onProgress({ section: section.id, stage: 'known_rule_fact_corrected',
+      correctedFields: knownRuleCorrection.patches.length, correctionHash: knownRuleCorrection.hash });
     let passed = false;
     for (let revision = 0; revision <= 3; revision++) {
       const reviews = [], reviewHashes = [], reviewPartition = [];
@@ -264,17 +276,21 @@ export async function produceFactionStrategyV1({ input, runtime, store, onProgre
         for (let first = 0; first < draft.recommendations.length; first += 2) {
           const reviewIndices = draft.recommendations.slice(first, first + 2).map((_, n) => first + n);
           const requiredSourceRefs = first === 0 ? section.requiredSourceRefs : [];
-          const reviewed = await role(section.id + '.review-batch.' + route + '.' + revision + '.' + first,
-            '独立来源审查，角色' + route + '。每次仍读取完整官方来源、完整总规则和整节候选，无其他审查意见或生成历史；只输出reviewIndices指定的1至2条判断。核对其全部字段、数值算术、when、支付/时机/例外、步骤、替代和reviseIf。条件性建议也不能夹带不真实的确定性断言或保证最优/胜率。另核对coverageRequiredSourceRefs是否在整节实际讨论，不只是挂引用。返回{"verdicts":[{"index":指定全局序号,"verdict":"supported|unsupported|uncertain","reason":"具体问题及依据，最多400字符","sourceRefs":["实际官方来源ID，1至8"]}],"coverage":[{"sourceRef":"指定覆盖来源","verdict":"covered|omitted|uncertain","recommendationIndices":[整节直接引用此来源的建议序号],"reason":"具体覆盖依据，最多400字符"}]}。reviewIndices每项一次，coverageRequiredSourceRefs每项一次；后者为空时输出coverage:[]。不输出整节全部verdicts/引用清单，不忽略不确定或否定问题。',
+          const targets = createFactionReviewTargetsV1({ input, section, draft, indices: reviewIndices });
+          const reviewed = await role(section.id + '.review-target-batch-v1.' + route + '.' + revision + '.' + first,
+            '独立来源审查，角色' + route + '。完整来源、总规则、整节候选仍在；本次只审查末尾targetContract明确给出的1至2个对象。不要自行数数组位置。以targetId和完整title标识对象，focus引用该对象fields中具体path及原文片段（8至240字符）；不能引用邻近建议代替。核对所有when/procedure/alternatives/risk/reviseIf/unproven字段、算术、支付/时机/例外。区分事实、条件策略、未验证效果；不能因为建议有条件就忽略不真实的确定性断言。focusedSources是同一冻结来源原文，非另一个模型的摘要。返回{"verdicts":[{"targetId":"给定ID","title":"给定完整标题","focus":[{"path":"给定字段路径","quote":"该字段原文片段"}],"verdict":"supported|unsupported|uncertain","reason":"针对此对象的具体依据，最多400字符","sourceRefs":["实际官方来源ID，1至8"]}],"coverage":[{"sourceRef":"指定覆盖来源","verdict":"covered|omitted|uncertain","recommendationIndices":[整节直接引用此来源的建议序号],"reason":"具体覆盖依据，最多400字符"}]}。每个targetId及coverageRequiredSourceRefs一次，coverageRequiredSourceRefs为空则coverage:[]。不要输出其他对象或数字index；否定/不确定判断必须指出对象内具体问题，规则来源优先于候选措辞。',
             { section, draft, reviewIndices, coverageRequiredSourceRefs: requiredSourceRefs,
-              outputRequestAtEnd: { reviewOnlyIndices: reviewIndices, coverageOnlySourceRefs: requiredSourceRefs,
-                note: 'Whole-section context remains available. Limit output only; do not repeat other recommendations or other reviews.' } },
-            out => validateFactionReviewV1(out, { input, section, draft, reviewIndices, requiredSourceRefs }));
-          reviews.push(reviewed.value); reviewHashes.push(reviewed.artifact.hash);
-          reviewPartition.push({ route, reviewIndices, requiredSourceRefs, artifactHash: reviewed.artifact.hash });
+              outputRequestAtEnd: { targetContract: targets, coverageOnlySourceRefs: requiredSourceRefs } }, out => {
+              const bound = validateTargetedFactionReviewV1(out, targets);
+              validateFactionReviewV1(bound.review, { input, section, draft, reviewIndices, requiredSourceRefs }); return bound;
+            });
+          reviews.push(reviewed.value.review); reviewHashes.push(reviewed.artifact.hash);
+          reviewPartition.push({ route, reviewIndices, requiredSourceRefs, artifactHash: reviewed.artifact.hash,
+            targetContractHash: targets.hash, bindingReceipt: reviewed.value });
         }
       }
-      const issues = createFactionRepairIssuesV1(section, draft, reviews);
+      const issues = mergeFactionKnownSourceIssuesV1({ input, policy: knownRulePolicy, draft,
+        issues: createFactionRepairIssuesV1(section, draft, reviews) });
       const round = seal({ sectionId: section.id, revision, draftHash: hash(draft), reviewHashes, reviews, reviewPartition, issues,
         priorRoundHash: rounds.at(-1)?.hash || null, oldFailuresRetained: true, trainingTruth: false });
       const lease = store.acquire(section.id + '.issue-journal.' + revision, { roundHash: round.hash });
@@ -290,25 +306,33 @@ export async function produceFactionStrategyV1({ input, runtime, store, onProgre
         const localIssues = seal({ ...Object.fromEntries(Object.entries(issues).filter(([k]) => k !== 'hash')), issues: [issue], openIssues: 1 });
         const validatePatch = out => { applyFactionStrategyPatchV1(out, { input, draft, issues: localIssues }); return out; };
         let edit = await role(section.id + '.editor.' + revision + '.' + ordinal, instruction + '\n本次仅输出localIssue这一项的替换或补充，其余问题会分别处理；完整draft及allIssues保留供一致性核对。',
-          { section, draft, parentHash: hash(draft), localIssue: issue, issues: localIssues, allIssues: issues }, out => out);
+          { section, draft, parentHash: hash(draft), localIssue: issue, issues: localIssues, allIssues: issues,
+            editTargetAtEnd: { parentHash: hash(draft), localIssue: issue,
+              target: issue.index === undefined ? null : { index: issue.index, title: draft.recommendations[issue.index].title,
+                recommendationHash: hash(draft.recommendations[issue.index]), recommendation: draft.recommendations[issue.index] } } }, out => out);
         try { validatePatch(edit.value); }
         catch (error) {
           if (error.code !== 'FACTION_PATCH_NO_PROGRESS') throw error;
           const repairScopes = [issue.kind === 'assigned_source_omission' ? issue : {
-            kind: issue.kind, index: issue.index, findings: issue.findings, sourceRefs: draft.recommendations[issue.index].sourceRefs }];
+            kind: issue.kind, index: issue.index, title: draft.recommendations[issue.index].title,
+            findings: issue.findings, sourceRefs: draft.recommendations[issue.index].sourceRefs }];
           edit = await role(section.id + '.source-reconstruction.' + revision + '.' + ordinal,
-            instruction + '\n旧编辑原样复制已被拦。现不给错误原稿，仅从完整官方来源与repairScopes重建这一项。保留父hash和index，未标记正文由主机保留，不输出它们。',
-            { section, parentHash: hash(draft), repairScopes, noProgressArtifactHash: edit.artifact.hash }, out => out);
+            instruction + '\n旧编辑为空或未改变被标记内容，已记录为语义无进展而非JSON错误。现不给被标记的旧正文，从完整官方来源与repairScopes重建这一项；其他建议完整保留为上下文。保留父hash和index，不改其他建议。如果来源不能支持修改，保持阻断，不编造。',
+            { section, parentHash: hash(draft), repairScopes, noProgressArtifactHash: edit.artifact.hash,
+              preservedRecommendations: draft.recommendations.flatMap((r, index) => index === issue.index ? [] : [{ index, recommendation: r }]),
+              repairRequestAtEnd: { parentHash: hash(draft), repairScopes } }, out => out);
           validatePatch(edit.value);
         }
         collected.replacements.push(...edit.value.replacements); collected.additions.push(...edit.value.additions); editorHashes.push(edit.artifact.hash);
       }
       const next = applyFactionStrategyPatchV1(collected, { input, draft, issues });
+      assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: next });
       if (seen.has(hash(next))) fail('FACTION_REPAIR_CYCLE'); seen.add(hash(next));
       edits.push(seal({ parentHash: hash(draft), resultHash: hash(next), artifactHashes: editorHashes, patch: collected, trainingTruth: false }));
       draft = next;
     }
-    const result = seal({ section, outline: outline.value, outlineArtifactHash: outline.artifact.hash, draft, rounds, edits, semanticReviewPassed: passed,
+    assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft });
+    const result = seal({ section, outline: outline.value, outlineArtifactHash: outline.artifact.hash, draft, rounds, edits, knownRuleCorrection, semanticReviewPassed: passed,
       rulesApplicationPassed: false, strategyEffectivenessProven: false, runtimeAccepted: false, trainingTruth: false });
     const lease = store.acquire(section.id + '.result', { resultHash: result.hash });
     sections.push(lease.cached ? verifySeal(lease.artifact) : store.finish(lease, result));
@@ -318,6 +342,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, onProgre
   const candidate = seal({ schema: 'starcraft_faction_strategy_candidate_v1', gameId: 'starcraft-tmg',
     skillId: 'skill.starcraft-tmg.faction.tactical-cards-' + input.factionRecordKey.split(':')[1].replaceAll('_', '-'), factionRecordKey: input.factionRecordKey,
     inputHash: input.hash, planHash: plan.hash, sourceBinding: input.sourceBinding, overallDependencyHash: input.overallDependencyHash,
+    knownRulePolicyHash: knownRulePolicy.hash, knownUnchangedRuleFailuresBlocked: true,
     tutorArtifactHash: tutor.artifact.hash, questionTree: tree.value, challengerTree: challenger.value,
     sections, roleArtifacts, semanticReviewPassed: sections.length === plan.sections.length && sections.every(s => s.semanticReviewPassed),
     scope: 'conditional_faction_strategy_with_all_assigned_unit_and_card_sources_not_proven_complete_game_strength',
