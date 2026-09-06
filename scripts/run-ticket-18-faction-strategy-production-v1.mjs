@@ -11,6 +11,8 @@ import { createProductionRuntimeV3 } from '../packages/skill-production-v3/runti
 import { createFactionWritingPlanV1, produceFactionStrategyV1, renderFactionStrategyV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { compileFactionProductionInputV1 } from '../packages/skill-production-v3/faction-production-input-v1.mjs';
 import { inspectFactionContinuationV1 } from '../packages/skill-production-v3/faction-continuation-v1.mjs';
+import { inspectFactionFieldRepairEvidenceV1 } from '../packages/skill-evaluation/faction-field-repair-evidence-v1.mjs';
+import { validateFactionFieldRepairSeedV1 } from '../packages/skill-production-v3/faction-field-repair-seed-v1.mjs';
 import { createFactionKnownRulePolicyV1 } from '../packages/skill-production-v3/faction-known-rule-findings-v1.mjs';
 import { createFactionRosterChoiceDrillsV1 } from '../packages/skill-evaluation/faction-roster-choice-drills-v1.mjs';
 import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/official-development-tranche-source-lock-fixture-v1.mjs';
@@ -26,8 +28,9 @@ import { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } from '../packages/se
 import { STARCRAFT_TMG_OFFLINE_SKILL_PROVIDER_PROFILE_V1 as profile } from '../content/skill-generation/offline-provider-profile-v1.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), args = process.argv.slice(2);
-if (![3, 5].includes(args.length) || !['--preflight', '--live'].includes(args[0]) || args[1] !== '--overall-run'
-  || !/^guide-repair-[a-f0-9]{20}$/.test(args[2]) || args.length === 5 && (args[3] !== '--continue-from' || !/^faction-v1-[a-f0-9]{20}$/.test(args[4]))) fail('FACTION_RUN_ARGUMENTS_INVALID');
+if (![3, 5, 7].includes(args.length) || !['--preflight', '--live'].includes(args[0]) || args[1] !== '--overall-run'
+  || !/^guide-repair-[a-f0-9]{20}$/.test(args[2]) || args.length >= 5 && (args[3] !== '--continue-from' || !/^faction-v1-[a-f0-9]{20}$/.test(args[4]))
+  || args.length === 7 && (args[5] !== '--field-repair-run' || !/^field-repair-[a-f0-9]{20}$/.test(args[6]))) fail('FACTION_RUN_ARGUMENTS_INVALID');
 const base = path.join(root, 'build/ticket-18-faction-production-v1'), filename = path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite');
 const json = async file => verifySeal(JSON.parse(await readFile(path.join(root, file), 'utf8')));
 const db = new DatabaseSync(filename, { readOnly: true });
@@ -57,6 +60,10 @@ for (const name of ['terran_armed_forces', 'zerg_swarm']) {
 const { dataset } = await loadOfficialDevelopmentTrancheSourceLockFixtureV1({ root });
 const drills = await createFactionRosterChoiceDrillsV1({ catalogue, dataset });
 const knownRulePolicies = inputs.map(input => createFactionKnownRulePolicyV1({ input, drills }));
+const parentRecipe = args[4] ? await json('build/ticket-18-faction-production-v1/' + args[4] + '/recipe.json') : null;
+const fieldRepairRunId = args[6] || parentRecipe?.fieldRepairBinding?.runId;
+const fieldRepairSeed = fieldRepairRunId ? await inspectFactionFieldRepairEvidenceV1({ root, runId: fieldRepairRunId }) : null;
+const fieldRepairBinding = fieldRepairSeed ? validateFactionFieldRepairSeedV1({ input: inputs[0], knownRulePolicy: knownRulePolicies[0], seed: fieldRepairSeed }) : null;
 const main = await verifyProductionReadiness(root, catalogue);
 const gates = [];
 for (const name of ['input-readiness', 'workflow-readiness', 'dsh-context-readiness', 'continuation-readiness', 'json-recovery-readiness', 'targeted-corrections-readiness', 'review-evidence-readiness']) {
@@ -70,6 +77,13 @@ if (hash(gates[1].inputHashes) !== hash(inputs.map(i => i.hash)) || hash(gates[2
 if (hash(gates[5].inputHashes) !== hash(inputs.map(i => i.hash))
   || hash(gates[5].policyHashes) !== hash(knownRulePolicies.map(p => p.hash))
   || hash(gates[1].policyHashes) !== hash(knownRulePolicies.map(p => p.hash))) fail('FACTION_KNOWN_RULE_READINESS_DRIFT');
+let fieldRepairReadiness = null;
+if (fieldRepairBinding) {
+  fieldRepairReadiness = await json('build/ticket-18-faction-production-v1/field-seed-readiness.json');
+  if (!fieldRepairReadiness.passed || fieldRepairReadiness.bindingHash !== fieldRepairBinding.hash) fail('FACTION_FIELD_SEED_READINESS_DRIFT');
+  for (const r of fieldRepairReadiness.codeHashes) if (sha256(await readFile(path.join(root, r.file))) !== r.hash) fail('FACTION_FIELD_SEED_READINESS_CODE_DRIFT');
+  gates.push(fieldRepairReadiness);
+}
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/faction-review-targets-v1.mjs', 'packages/skill-production-v3/faction-known-rule-findings-v1.mjs',
   'packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs',
@@ -79,6 +93,9 @@ const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 
   'packages/skill-production/loops.mjs', 'packages/skill-production/model.mjs', 'packages/skill-production/store.mjs',
   'packages/secure-provider-runtime/provider-response-outcome-v1.mjs', 'packages/secure-provider-runtime/provider-egress-transport-v1.mjs',
   'packages/secure-provider-runtime/provider-worker-success-classifier-v1.mjs'];
+if (fieldRepairBinding) files.push('packages/skill-production-v3/faction-field-repair-seed-v1.mjs',
+  'packages/skill-production-v3/faction-field-repair-v1.mjs', 'packages/skill-evaluation/faction-field-repair-evidence-v1.mjs',
+  'packages/skill-evaluation/faction-semantic-debt-v1.mjs', 'packages/skill-evaluation/read-only-production-replay-v1.mjs');
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
 const limits = { maxCalls: 400, maxCostMicros: 20_000_000, maxTokens: 60_000_000, maxWallMs: 8 * 60 * 60 * 1000, maxInputBytes: 1_000_000, maxRevisions: 3 };
 const next = seal({ version: 'faction_strategy_production_v1', overallRunId: args[2], overallDependencyHash: overallDependency.hash,
@@ -86,16 +103,17 @@ const next = seal({ version: 'faction_strategy_production_v1', overallRunId: arg
   catalogueHash: catalogue.hash, sourceBinding: catalogue.sourceBinding, contextHash: context.hash, modelHash: profile.integrity.hash,
   mainReadinessHash: main.hash, workflowReadinessHash: gates[1].hash, dshContextReadinessHash: gates[2].hash, jsonRecoveryReadinessHash: gates[4].hash,
   targetedCorrectionsReadinessHash: gates[5].hash, knownRulePolicyHashes: knownRulePolicies.map(p => p.hash),
-  dshBindingHash: gates[2].dshBinding.hash, codeHashes, limits,
+  dshBindingHash: gates[2].dshBinding.hash, codeHashes, limits, ...(fieldRepairBinding ? { fieldRepairBinding } : {}),
   target: 'two_complete_conditional_faction_strategy_candidates_with_source_review_not_runtime_promotion',
   independentEvaluationAnswersExposed: false, sourceRefreshPerformed: false, trainingTruth: false });
 let continuation = null;
 if (args[4]) {
-  const parent = await json('build/ticket-18-faction-production-v1/' + args[4] + '/recipe.json');
+  const parent = parentRecipe;
   const parentReport = await json('build/ticket-18-faction-production-v1/' + args[4] + '/report.json');
   const before = await json('build/ticket-17-production-redesign-v1/readiness-' + parent.mainReadinessHash + '.json');
   continuation = inspectFactionContinuationV1({ filename, parentRunId: args[4], parent, parentReport, next,
-    normalizationMigration: { before, after: main, recovery: gates[4] }, correctionMigration: gates[5] });
+    normalizationMigration: { before, after: main, recovery: gates[4] }, correctionMigration: gates[5],
+    fieldRepairMigration: fieldRepairBinding ? { binding: fieldRepairBinding, readiness: fieldRepairReadiness } : null });
 }
 const { hash: ignored, ...nextBody } = next;
 const recipe = continuation ? seal({ ...nextBody, continuation: continuation.manifest }) : next;
@@ -141,6 +159,7 @@ try {
   for (const [index, input] of inputs.entries()) {
     const name = input.factionRecordKey.split(':')[1]; await put(name + '-input', input);
     const candidate = await produceFactionStrategyV1({ input, runtime, store, knownRulePolicy: knownRulePolicies[index],
+      fieldRepairSeed: index === 0 ? fieldRepairSeed : null,
       onProgress: row => console.log(JSON.stringify({ event: 'faction-progress', ticket: 18, slice: 174, faction: name, ...row })) });
     candidates.push(candidate); await put(name + '-candidate', candidate);
     await writeFile(path.join(out, name + '-candidate.md'), renderFactionStrategyV1(candidate));

@@ -29,6 +29,31 @@ const deps = { filename, parentRunId, parent, parentReport, next };
 const continuation = inspectFactionContinuationV1(deps);
 assert.equal(continuation.manifest.reusable.length, 1); assert.equal(continuation.manifest.parentStart, 1000);
 assert.deepEqual(continuation.manifest.accounting, { calls: 1, costMicros: 10, tokens: 12 });
+const fieldFiles = ['packages/skill-production-v3/faction-field-repair-seed-v1.mjs',
+  'packages/skill-production-v3/faction-field-repair-v1.mjs', 'packages/skill-evaluation/faction-field-repair-evidence-v1.mjs',
+  'packages/skill-evaluation/faction-semantic-debt-v1.mjs', 'packages/skill-evaluation/read-only-production-replay-v1.mjs'];
+const fieldCode = [...next.codeHashes, ...fieldFiles.map(file => ({ file, hash: hash('bound ' + file) }))];
+const fieldBinding = seal({ inputHash: parent.inputHashes[0], evidenceHash: hash('fixture inspected actual request'), semanticAcceptanceInherited: false });
+const fieldReadiness = seal({ passed: true, bindingHash: fieldBinding.hash, evidenceHash: fieldBinding.evidenceHash,
+  actualRepairReapplied: true, freshReviewRequired: true, freshNegativeRetained: true, codeHashes: fieldCode });
+const fieldNext = seal({ ...bFor(parent), fieldRepairBinding: fieldBinding, codeHashes: fieldCode });
+function bFor(value) { const { hash: ignored, ...body } = value; return body; }
+const fieldDeps = { ...deps, next: fieldNext, fieldRepairMigration: { binding: fieldBinding, readiness: fieldReadiness } };
+assert.throws(() => inspectFactionContinuationV1({ ...deps, next: fieldNext }), { code: 'FACTION_FIELD_REPAIR_MIGRATION_PROOF_MISSING' });
+const fieldContinuation = inspectFactionContinuationV1(fieldDeps);
+assert.deepEqual(fieldContinuation.manifest.accounting, continuation.manifest.accounting);
+assert.equal(fieldContinuation.manifest.parentStart, continuation.manifest.parentStart);
+assert.equal(fieldContinuation.manifest.fieldRepairMigration.bindingHash, fieldBinding.hash);
+for (const fields of [{ freshReviewRequired: false }, { freshNegativeRetained: false }, { evidenceHash: hash('forged') }])
+  assert.throws(() => inspectFactionContinuationV1({ ...fieldDeps,
+    fieldRepairMigration: { binding: fieldBinding, readiness: seal({ ...bFor(fieldReadiness), ...fields }) } }),
+  { code: 'FACTION_FIELD_REPAIR_MIGRATION_PROOF_INVALID' });
+assert.throws(() => inspectFactionContinuationV1({ ...fieldDeps,
+  next: seal({ ...bFor(fieldNext), limits: { ...parent.limits, maxTokens: 2000000 } }) }), { code: 'FACTION_CONTINUATION_CONTRACT_DRIFT' });
+const fieldParentId = 'faction-v1-' + fieldNext.hash.slice(0, 20);
+assert.throws(() => inspectFactionContinuationV1({ ...fieldDeps, parent: fieldNext, parentRunId: fieldParentId,
+  parentReport: seal({ runId: fieldParentId, recipeHash: fieldNext.hash, failure: { code: 'INJECTED' } }), next }),
+  { code: 'FACTION_CONTINUATION_FIELD_REPAIR_DRIFT' });
 const nextStore = openProductionStore(filename, { runId: 'injected-next', recipeHash: next.hash });
 const wrapped = withCheckpointContinuation(nextStore, continuation);
 assert.equal(wrapped.acquire(id, roleInput).artifact.hash, artifact.hash); assert.equal(nextStore.summary().calls, 0);
@@ -89,6 +114,6 @@ assert.throws(() => inspectFactionContinuationV1(deps), { code: 'API_BALANCE_EXH
 nextStore.close(); parentStore.close();
 const files = ['packages/skill-production-v3/faction-continuation-v1.mjs', 'packages/skill-production/continuation.mjs', 'scripts/verify-ticket-18-faction-continuation-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 20, codeHashes, providerCalls: 0, fixtureOnly: true, trainingTruth: false });
+const report = seal({ passed: true, checks: 29, codeHashes, providerCalls: 0, fixtureOnly: true, trainingTruth: false });
 await writeFile(path.join(base, 'continuation-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 20, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 29, providerCalls: 0, hash: report.hash }));

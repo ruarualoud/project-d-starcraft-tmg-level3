@@ -5,7 +5,49 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: source coverage task scope and exact semantic field repair
+## Current checkpoint: actual field repair and mandatory fresh review import
+
+`field-repair-d393a7c3884ae5104f96` is terminal successfully (4014 exit0).
+One real DSH/Provider call used260,771 tokens, estimated ¥0.251209. The model
+changed only `4.reviseIf.1`: it now explicitly prohibits using Life Support
+and Advanced Training in the same activation and reserves Advanced Training
+for active CP abilities such as Medpack. The other seven recommendations and
+all other fields remain byte-identical. This is an actual repair candidate,
+not a source-review or runtime acceptance. Report
+`6172b9d7b40b295c53e424d82ffe43e613d930e91d2308b9b60c7098e6ecf125`.
+All-history58,096,715 known tokens /estimated-or-reserved ¥54.479103; no402.
+
+The read-only inspector rebuilt that exact paid request through a fresh pinned
+DSH session, matched the stored request hash/response fingerprint/receipt and
+reapplied the raw output to the original section. No credentials, HTTP port,
+new attempts or writes to the production database exist in replay. Evidence
+`247e210cf2fd38d6bd52ec602e2899abbbc756d4e4a6724adf64c5097c56ecbc`;
+actual receipt
+`584ddd079802d2a3798b56e05cc45782e7a5bfb6321284561276761bd8b6b44f`.
+Fresh DSH message identities differ in raw pre-normalization observation and
+message-event data hashes. These are explicitly NON-replayed session-local
+metadata; the actual Provider request, final commands/receipts, tools, stable
+event content/order and pinned runtime are exact. The original record remains
+unchanged; the new sandbox's identity is not substituted into paid evidence.
+
+The producer can now import this versioned patch only after reproducing its
+exact parent draft. It then reviews the complete repaired section on BOTH
+routes; old positive flags cannot skip this round, and new negative findings
+cannot be waived. Source/model/input/ancestor accounting/time budgets remain
+unchanged through an explicit repair-seed continuation proof. Twenty seed/
+actual-evidence/negative controls and29 continuation checks passed, including
+16 injected fresh reviews (NOT actual semantic review). Workflow44 and
+targeted-correction28 also passed. Two actual DSH full-context transport gates
+and14 consumer checks passed with zero Provider calls. Readiness:
+seed `e616423b28042760c8b49b86172b14753e8ffa2ae9cbe3eeea085254e17e31ce`,
+continuation `2704c04ce99ee7c0e493376ee53f1b93e70600700dd8dd3d6ed34974a0b78276`,
+workflow `1da9a8f474f0aed9c344ddd679df857e378e0dbee84b9ce5dea2785ee6f88592`,
+DSH `c7a343a01011a203d56592c22d9964337d7b0a29656c679b9ee36bbe6c141ef4`.
+Next: audited continuation from18f0 with the verified repair seed. Review
+workflow1/15, faction independent qualification0/2, Ticket18 2/8, project16/22,
+overall offline1/5, formal/runtime0/5; fresh review of the actual fix is pending.
+
+## Earlier checkpoint: source coverage task scope and exact semantic field repair
 
 Run `faction-v1-18f0b5e3b20fc4909d08` is TERMINAL (97220 exit1), not running.
 It reused the valid21-field choice and completed the second section's eight

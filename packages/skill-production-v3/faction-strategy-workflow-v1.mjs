@@ -220,9 +220,12 @@ export function applyFactionStrategyPatchV1(output, { input, draft, issues }) {
   return validateFactionDraftV1(next, input);
 }
 
-export async function produceFactionStrategyV1({ input, runtime, store, knownRulePolicy, onProgress = () => {} }) {
+export async function produceFactionStrategyV1({ input, runtime, store, knownRulePolicy, fieldRepairSeed = null, onProgress = () => {} }) {
   verifySeal(knownRulePolicy);
   if (knownRulePolicy.inputHash !== input.hash) fail('FACTION_KNOWN_RULE_POLICY_DRIFT');
+  const fieldRepairBinding = fieldRepairSeed ? (await import('./faction-field-repair-seed-v1.mjs')).validateFactionFieldRepairSeedV1({
+    input, knownRulePolicy, seed: fieldRepairSeed }) : null;
+  let fieldRepairConsumed = false;
   const plan = createFactionWritingPlanV1(input), common = factionRoleWorkspaceV1(input);
   const packet = seal({ id: 'faction.' + input.factionRecordKey.split(':')[1], inputHash: input.hash, sourceBinding: input.sourceBinding });
   const roleArtifacts = [];
@@ -350,7 +353,22 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
       const lease = store.acquire(section.id + '.issue-journal.' + revision, { roundHash: round.hash });
       const saved = lease.cached ? verifySeal(lease.artifact) : store.finish(lease, round); rounds.push(saved);
       onProgress({ section: section.id, revision, stage: 'reviewed', openIssues: issues.openIssues });
-      if (!issues.openIssues) { passed = true; break; }
+      if (!issues.openIssues) {
+        if (fieldRepairBinding?.sectionId === section.id && !fieldRepairConsumed) {
+          if (hash(draft) !== fieldRepairBinding.parentDraftHash) fail('FACTION_FIELD_SEED_BASE_NOT_REPRODUCED');
+          if (revision === 3) fail('FACTION_FIELD_SEED_FRESH_REVIEW_REQUIRED');
+          const patched = validateFactionDraftV1(fieldRepairSeed.candidate.patch.draft, input);
+          assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: patched });
+          edits.push(seal({ version: 'verified_field_repair_import_v1', parentHash: hash(draft), resultHash: hash(patched),
+            binding: fieldRepairBinding, patch: fieldRepairSeed.candidate.patch,
+            oldReviewAcceptanceInherited: false, freshWholeSectionReviewRequired: true, trainingTruth: false }));
+          draft = patched; seen.add(hash(draft)); fieldRepairConsumed = true;
+          onProgress({ section: section.id, revision, stage: 'actual_field_repair_imported',
+            changedFields: fieldRepairSeed.candidate.patch.changes.length, freshReviewPending: true });
+          continue;
+        }
+        passed = true; break;
+      }
       if (revision === 3) break;
       const instruction = '按实际来源问题只改被指出的recommendation，其他条目逐字不变。原建议哈希已绑定；source omission只可新增直接引用该遗漏来源的有条件建议。不能把审查意见当新规则；如不确定保留阻断，不编造。返回{"parentHash":"精确父hash","replacements":[{"index":被标记序号,"value":完整recommendation对象}],"additions":[仅补遗漏来源的完整recommendation对象]}。所有被标记index恰好一次；无关不改。对象字段遵循' + JSON.stringify(ADVICE_SHAPE.recommendations[0]) + '。';
       const collected = { parentHash: hash(draft), replacements: [], additions: [] }, editorHashes = [];
@@ -393,12 +411,14 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     onProgress({ section: section.id, stage: 'section_complete', completed: sections.length, total: plan.sections.length, passed });
     if (!passed) break;
   }
+  if (fieldRepairBinding && !fieldRepairConsumed) fail('FACTION_FIELD_SEED_NOT_CONSUMED');
   const candidate = seal({ schema: 'starcraft_faction_strategy_candidate_v1', gameId: 'starcraft-tmg',
     skillId: 'skill.starcraft-tmg.faction.tactical-cards-' + input.factionRecordKey.split(':')[1].replaceAll('_', '-'), factionRecordKey: input.factionRecordKey,
     inputHash: input.hash, planHash: plan.hash, sourceBinding: input.sourceBinding, overallDependencyHash: input.overallDependencyHash,
     knownRulePolicyHash: knownRulePolicy.hash, knownUnchangedRuleFailuresBlocked: true,
     tutorArtifactHash: tutor.artifact.hash, questionTree: tree.value, challengerTree: challenger.value,
-    sections, roleArtifacts, semanticReviewPassed: sections.length === plan.sections.length && sections.every(s => s.semanticReviewPassed),
+    sections, roleArtifacts, ...(fieldRepairBinding ? { fieldRepairBinding } : {}),
+    semanticReviewPassed: sections.length === plan.sections.length && sections.every(s => s.semanticReviewPassed),
     scope: 'conditional_faction_strategy_with_all_assigned_unit_and_card_sources_not_proven_complete_game_strength',
     candidateOnly: true, independentEvaluationPassed: false, actualRoomReplayPerformed: false,
     strategyEffectivenessProven: false, runtimeAccepted: false, humanReviewed: false, canAffectRules: false, trainingTruth: false });

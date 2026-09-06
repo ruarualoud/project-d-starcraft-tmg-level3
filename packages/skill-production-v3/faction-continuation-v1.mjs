@@ -1,15 +1,36 @@
 import { DatabaseSync } from 'node:sqlite';
 import { seal, verifySeal, hash, fail } from '../skill-production/common.mjs';
 
-export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration }) {
+export function inspectFactionContinuationV1({ filename, parentRunId, parent, parentReport, next, normalizationMigration, correctionMigration, fieldRepairMigration }) {
   [parent, parentReport, next].forEach(verifySeal);
   if (parent.version !== 'faction_strategy_production_v1' || parentRunId !== 'faction-v1-' + parent.hash.slice(0, 20)
     || parentReport.runId !== parentRunId || parentReport.recipeHash !== parent.hash || !parentReport.failure) fail('FACTION_CONTINUATION_PARENT_INVALID');
   const strip = r => { const { hash: ignored, codeHashes, workflowReadinessHash, dshContextReadinessHash, mainReadinessHash, jsonRecoveryReadinessHash,
-    targetedCorrectionsReadinessHash, knownRulePolicyHashes, continuation, ...body } = r; return body; };
+    targetedCorrectionsReadinessHash, knownRulePolicyHashes, fieldRepairBinding, continuation, ...body } = r; return body; };
   if (hash(strip(parent)) !== hash(strip(next))) fail('FACTION_CONTINUATION_CONTRACT_DRIFT');
   const allowed = new Set(['packages/skill-production-v3/faction-strategy-workflow-v1.mjs',
     'packages/skill-production-v3/faction-continuation-v1.mjs', 'scripts/run-ticket-18-faction-strategy-production-v1.mjs']);
+  let fieldRepairProof = null;
+  if (parent.fieldRepairBinding && hash(parent.fieldRepairBinding) !== hash(next.fieldRepairBinding || null))
+    fail('FACTION_CONTINUATION_FIELD_REPAIR_DRIFT');
+  if (next.fieldRepairBinding) {
+    const { binding, readiness } = fieldRepairMigration || {};
+    if (!binding || !readiness) fail('FACTION_FIELD_REPAIR_MIGRATION_PROOF_MISSING');
+    [binding, readiness, next.fieldRepairBinding].forEach(verifySeal);
+    const files = ['packages/skill-production-v3/faction-field-repair-seed-v1.mjs',
+      'packages/skill-production-v3/faction-field-repair-v1.mjs', 'packages/skill-evaluation/faction-field-repair-evidence-v1.mjs',
+      'packages/skill-evaluation/faction-semantic-debt-v1.mjs', 'packages/skill-evaluation/read-only-production-replay-v1.mjs'];
+    if (binding.hash !== next.fieldRepairBinding.hash || !next.inputHashes.includes(binding.inputHash)
+      || !readiness.passed || readiness.bindingHash !== binding.hash || readiness.evidenceHash !== binding.evidenceHash
+      || !readiness.actualRepairReapplied || !readiness.freshReviewRequired || !readiness.freshNegativeRetained
+      || binding.semanticAcceptanceInherited !== false
+      || [...files, 'packages/skill-production-v3/faction-strategy-workflow-v1.mjs'].some(file =>
+        !next.codeHashes.find(r => r.file === file) || next.codeHashes.find(r => r.file === file)?.hash !== readiness.codeHashes.find(r => r.file === file)?.hash))
+      fail('FACTION_FIELD_REPAIR_MIGRATION_PROOF_INVALID');
+    files.forEach(file => allowed.add(file));
+    fieldRepairProof = { bindingHash: binding.hash, readinessHash: readiness.hash,
+      evidenceHash: binding.evidenceHash, policy: 'exact_actual_patch_after_reproduced_parent_draft_then_fresh_whole_section_review' };
+  }
   const correctionFiles = ['packages/skill-production-v3/faction-review-targets-v1.mjs',
     'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs',
     'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs'];
@@ -72,6 +93,7 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
     const manifest = seal({ parentRunId, parentRecipeHash: parent.hash, nextBaseRecipeHash: next.hash,
       parentStart: began, accounting, changes, ...(migrationProof ? { normalizationMigration: migrationProof } : {}),
       ...(correctionProof ? { correctionMigration: correctionProof } : {}),
+      ...(fieldRepairProof ? { fieldRepairMigration: fieldRepairProof } : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
       policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
     return { manifest, steps };
