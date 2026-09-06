@@ -214,7 +214,7 @@ const structuredEditorPolicy = Object.freeze({ maxOutputUnits: 2048,
   attemptEstimateMicros: 500000, attemptTokenReserve: 90000,
   allowDefinitelyNotSentRetry: false, allowOneCapacityRetry: false,
   idempotentRetrySupported: false, encryptedRawQuarantineAvailable: false });
-const structuredReviewPolicy = Object.freeze({ maxOutputUnits: 2048,
+const structuredReviewPolicy = Object.freeze({ maxOutputUnits: 4096,
   attemptEstimateMicros: 800000, attemptTokenReserve: 500000,
   allowDefinitelyNotSentRetry: false, allowOneCapacityRetry: false,
   idempotentRetrySupported: false, encryptedRawQuarantineAvailable: false });

@@ -65,7 +65,8 @@ export function validateFactionStructuredReviewMigrationV1({
   const binding = next.structuredReviewBinding;
   const introduced = !parent.structuredReviewBinding;
   const contractMigration = readiness.contractMigration;
-  if (!readiness.passed || readiness.checks.length !== 11
+  const capacityMigration = readiness.capacityMigration;
+  if (!readiness.passed || readiness.checks.length !== 12
     || readiness.hash !== next.structuredReviewReadinessHash
     || readiness.providerCalls !== 0
     || readiness.actualCapabilityRunId !== binding.capabilityRunId
@@ -85,6 +86,17 @@ export function validateFactionStructuredReviewMigrationV1({
     || !readiness.completeCurrentFactionProductsIncluded
     || !readiness.hostOwnedIdentityMaterialization
     || !readiness.onePhysicalAttemptPerInvocation
+    || !capacityMigration
+    || capacityMigration.failureClass !== 'output_incomplete'
+    || capacityMigration.incompleteReason !== 'max_output_tokens'
+    || capacityMigration.previousMaxOutputUnits !== 2048
+    || capacityMigration.nextMaxOutputUnits !== 4096
+    || capacityMigration.exactOutputContractRetained !== true
+    || capacityMigration.oneExplicitContinuationOnly !== true
+    || capacityMigration.automaticRetries !== 0
+    || readiness.actualCapacityFailureRunId
+      !== 'faction-v1-ad5d16565e2b118d830a'
+    || !readiness.actualCapacityFailureReceiptHash
     || bindingChanged && (!contractMigration
       || contractMigration.from?.hash
         !== parent.structuredReviewBinding.outputContractRef.hash

@@ -55,6 +55,7 @@ const CODE_FILES = [
   "packages/structured-generation/output-contract-registry-v1.mjs",
   "packages/structured-generation/adapters/deepseek-responses-json-schema-v1.mjs",
   "packages/structured-generation/structured-generation-runtime-v1.mjs",
+  "scripts/run-ticket-18-faction-strategy-production-v1.mjs",
   "scripts/run-ticket-18-structured-review-capability-canary-v1.mjs",
   "scripts/verify-ticket-18-faction-structured-review-runtime-v1.mjs",
 ];
@@ -78,7 +79,8 @@ const input = verifySeal(JSON.parse(await readFile(path.join(ROOT,
 const db = new DatabaseSync(path.join(ROOT,
   "build/ticket-17-production-redesign-v1/production.sqlite"),
 { readOnly: true });
-let corrected, actualBoundaryCandidate;
+let corrected, actualBoundaryCandidate, actualCapacityUsage,
+  actualCapacityFailure;
 try {
   corrected = verifySeal(JSON.parse(db.prepare(
     "SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'",
@@ -89,6 +91,12 @@ try {
     "SELECT artifact FROM steps WHERE run=? AND id LIKE ? AND state='complete'",
   ).get("faction-v1-38cff03b5a47b54b6573",
     "structured-%.rejected-candidate").artifact)).value;
+  const capacityRow = db.prepare(
+    "SELECT usage,response FROM attempts WHERE run=? AND code=?",
+  ).get("faction-v1-ad5d16565e2b118d830a",
+    "STRUCTURED_PROVIDER_INCOMPLETE");
+  actualCapacityUsage = verifySeal(JSON.parse(capacityRow.usage)).value;
+  actualCapacityFailure = verifySeal(JSON.parse(capacityRow.response)).value;
 } finally { db.close(); }
 const section = createFactionWritingPlanV1(input).sections.find((row) =>
   row.id === "faction.terran_armed_forces.objectives.1");
@@ -132,7 +140,7 @@ const capabilityReceipt = createStarcraftTmgProviderCapabilityReceiptV1({
   probedAt: now.toISOString(),
   expiresAt: new Date(now.getTime() + 60_000).toISOString(),
 });
-const policy = { maxOutputUnits: 2_048, attemptEstimateMicros: 100_000,
+const policy = { maxOutputUnits: 4_096, attemptEstimateMicros: 100_000,
   attemptTokenReserve: 150_000, allowDefinitelyNotSentRetry: false,
   allowOneCapacityRetry: false, idempotentRetrySupported: false,
   encryptedRawQuarantineAvailable: false };
@@ -173,6 +181,20 @@ await check("review.v1-frozen-v2-only-relaxes-verdict-reason-envelope", async ()
   assert.equal(validateStarcraftTmgProviderJsonSchemaValueV1(
     contract.providerSchema,
     actualBoundaryCandidate.providerValue).ok, true);
+});
+
+await check("review.actual-2048-incomplete-authorizes-one-4096-continuation", async () => {
+  assert.equal(actualCapacityFailure.code,
+    "STRUCTURED_PROVIDER_INCOMPLETE");
+  assert.equal(actualCapacityFailure.incompleteReason, "max_output_tokens");
+  assert.equal(actualCapacityFailure.outputContractRef.hash, contractRef.hash);
+  assert.equal(actualCapacityFailure.automaticRetries, 0);
+  assert.equal(actualCapacityUsage.outputUnits, 2_048);
+  assert.equal(policy.maxOutputUnits, 4_096);
+  assert.equal(policy.allowOneCapacityRetry, false);
+  assert.match(await readFile(path.join(ROOT,
+    "scripts/run-ticket-18-faction-strategy-production-v1.mjs"), "utf8"),
+  /structuredReviewPolicy = Object\.freeze\(\{ maxOutputUnits: 4096,/u);
 });
 
 await check("review.actual-contract-capability-probe", async () => {
@@ -409,6 +431,17 @@ const report = seal({
   contractMigration,
   actualBoundaryFailureRunId: "faction-v1-38cff03b5a47b54b6573",
   actualBoundaryRejectedCandidateHash: actualBoundaryCandidate.hash,
+  actualCapacityFailureRunId: "faction-v1-ad5d16565e2b118d830a",
+  actualCapacityFailureReceiptHash: actualCapacityFailure.receiptHash,
+  capacityMigration: {
+    failureClass: "output_incomplete",
+    incompleteReason: "max_output_tokens",
+    previousMaxOutputUnits: 2_048,
+    nextMaxOutputUnits: 4_096,
+    exactOutputContractRetained: true,
+    oneExplicitContinuationOnly: true,
+    automaticRetries: 0,
+  },
   contextCapsuleBytes: capsule.compiledInputBytes,
   completeCoreFaqIncluded: true,
   completeCurrentFactionProductsIncluded: true,

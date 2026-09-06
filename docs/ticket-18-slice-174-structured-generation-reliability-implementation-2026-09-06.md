@@ -35,8 +35,9 @@
 - actual/max 与精确失败候选续跑门：validator issue 现在携带长度/数量上下界或类型/枚举约束；删除被点名非法字段也可通过“屏蔽后其余对象哈希一致”证明。前一 run 的首个 rejected candidate 由 continuation manifest 独立哈希授权，在新合同下重验相同 path/code 后才能作为修复输入，不继承接受结论。合同5、adapter12、runtime6、review10、continuation40、editor5、budget25 项均0Provider通过。最新 preflight recipe `38cff03b5a47b54b65738aa2ffa65e2e36b1cd205da6ca00a808462ab882e111`，169 roles复用、1 rejected candidate导入，首个未缓存角色精确为 `supportive.2.0.schema-repair.1`，首审重放调用0。
 - actual/max 修复实跑 `faction-v1-38cff03b5a47b54b6573` 证明导入生效且只调用修复角色：1 call / 124,619 tokens / 约 ¥0.445411。但模型在明确 403/400 后仍逐字返回同一 403 字 reason；本地门再次隔离且没有第二次修复。三次实际 Provider 输出一致，故停止把不合理字符边界当模型服从问题。
 - reviewer 合同 V2：V1 哈希 `ac4f185c…` 原样冻结并可展示；V2 哈希 `00acc1f9…` 仅把 verdict reason 的 maxLength 400→800，coverage reason 仍400，host fields/mapper/semantic validator不变。真实403字候选在V1失败、V2通过结构门，但不继承语义接受。V2 capability canary `structured-review-probe-b7791c9a70d07662279e289fdec8f03a` 通过，1 call / 702 tokens / 约 ¥0.001454。review11、continuation40、editor5、budget25及基础合同/adapter/runtime门均0Provider通过；preflight recipe `ad5d16565e2b118d830a4ef5186b2d4e2804fe2ef066dd03de63d79b152f4b76` 复用169 roles、V1候选跨合同导入0、首个miss为V2 supportive2.0。
+- V2 首次正式审阅 `faction-v1-ad5d16565e2b118d830a` 没有 schema 候选：HTTP200 输出正好达到 2,048 tokens，并以 `max_output_tokens` incomplete 结束；1 call / 124,487 tokens / 约 ¥0.452613，0 自动重试。按 recovery ladder 单独授权一次同合同、同上下文、同任务的 4,096-token 容量续跑，仍关闭运行内自动重试；若再次截断则改 reviewer 分批。review12、continuation40、editor5、budget25 均0Provider通过；preflight recipe `58dc727c7ae7ce8cece50b62cde7a6396c576971fb7c5c21f50db0e25ce7036a` 复用169 roles，首个miss仍为V2 supportive2.0。
 
-最新已知累计用量为 101,614,409 tokens，估算或历史预留合计 ¥64.478754，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
+最新已知累计用量为 101,738,896 tokens，估算或历史预留合计 ¥64.931367，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
 
 ## 仍未完成
 
@@ -47,4 +48,4 @@
 
 ## 下一步
 
-从 `faction-v1-38cff03b5a47b54b6573` 按上述 V2 recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。
+从 `faction-v1-ad5d16565e2b118d830a` 按上述 V2 4,096-token recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。
