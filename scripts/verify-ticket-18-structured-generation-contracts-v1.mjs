@@ -85,6 +85,12 @@ await check("r1.output-contract-local-schema-validation", async () => {
     outputContractRef: contractRef,
     value: { ...advice, sourceRefs: ["same", "same"] },
   }).issues.some((issue) => issue.code === "array_items_not_unique"), true);
+  const overlong = outputRegistry.validate({
+    outputContractRef: contractRef,
+    value: { ...advice, risk: "R".repeat(1_601) },
+  }).issues.find((issue) => issue.code === "string_too_long");
+  assert.deepEqual(overlong, { path: "$.risk", code: "string_too_long",
+    actualLength: 1_601, minLength: 1, maxLength: 1_600 });
 });
 
 const v2Registry = createStarcraftTmgProviderProfileRegistryV2({

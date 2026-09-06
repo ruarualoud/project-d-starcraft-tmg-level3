@@ -66,7 +66,7 @@ export function validateFactionStructuredReviewMigrationV1({
   [next.structuredReviewBinding, readiness, capabilityReport].forEach(verifySeal);
   const binding = next.structuredReviewBinding;
   const introduced = !parent.structuredReviewBinding;
-  if (!readiness.passed || readiness.checks.length !== 9
+  if (!readiness.passed || readiness.checks.length !== 10
     || readiness.hash !== next.structuredReviewReadinessHash
     || readiness.providerCalls !== 0
     || readiness.actualCapabilityRunId !== binding.capabilityRunId
@@ -396,8 +396,22 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
     if (accounting.calls >= next.limits.maxCalls || accounting.costMicros >= next.limits.maxCostMicros
       || accounting.tokens >= next.limits.maxTokens) fail('FACTION_CONTINUATION_BUDGET_EXHAUSTED');
     // Reuse paid raw role outputs only. Candidate/review decisions and typed
-    // issue journals are reconstructed under the current validators.
+    // issue journals are reconstructed under the current validators. A
+    // parseable rejected structured-review candidate is not a role result: it
+    // may be carried only as an explicitly hashed repair input and must be
+    // revalidated against the unchanged output contract before use.
     const steps = rows.filter(r => r.artifact?.roleId === r.id && r.artifact?.loop?.transcript);
+    const schemaRepairCandidates = rows.filter((row) =>
+      String(row.artifact?.version || "").endsWith(".rejected-candidate")
+      && row.artifact?.outputContractRef?.id
+        === "starcraft-tmg.faction-target-review"
+      && /\.review-target-batch-v1\./u.test(row.artifact?.roleRef?.id || "")
+      && !/\.schema-repair\./u.test(row.artifact?.roleRef?.id || ""));
+    const schemaRepairImports = schemaRepairCandidates
+      .map((row) => ({ id: row.id, artifactHash: hash(row.artifact),
+        roleRefHash: row.artifact.roleRef.hash,
+        contextManifestHash: row.artifact.contextManifestRef.hash,
+        outputContractHash: row.artifact.outputContractRef.hash }));
     const manifest = seal({ parentRunId, parentRecipeHash: parent.hash, nextBaseRecipeHash: next.hash,
       parentStart: began, accounting, changes, ...(migrationProof ? { normalizationMigration: migrationProof } : {}),
       ...(correctionProof ? { correctionMigration: correctionProof } : {}),
@@ -416,7 +430,8 @@ export function inspectFactionContinuationV1({ filename, parentRunId, parent, pa
       ...(structuredReviewProof
         ? { structuredReviewMigration: structuredReviewProof } : {}),
       reusable: steps.map(r => ({ id: r.id, inputHash: r.inputHash, artifactHash: hash(r.artifact) })),
-      policy: 'exact_input_raw_roles_only_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
-    return { manifest, steps };
+      ...(schemaRepairImports.length ? { schemaRepairImports } : {}),
+      policy: 'exact_input_raw_roles_plus_explicit_schema_repair_candidate_no_attempt_copy_no_acceptance_inheritance', trainingTruth: false });
+    return { manifest, steps, schemaRepairCandidates };
   } finally { db.close(); }
 }

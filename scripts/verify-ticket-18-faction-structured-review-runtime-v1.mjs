@@ -36,8 +36,11 @@ import { createStarcraftTmgProviderCapabilityReceiptV1 } from
   "../packages/structured-generation/provider-capability-receipt-v1.mjs";
 import { assertStarcraftTmgProviderCapabilityReceiptV1 } from
   "../packages/structured-generation/provider-capability-receipt-v1.mjs";
-import { STARCRAFT_TMG_JSON_SCHEMA_SUBSET_VERSION } from
+import { STARCRAFT_TMG_JSON_SCHEMA_SUBSET_VERSION,
+  validateStarcraftTmgProviderJsonSchemaValueV1 } from
   "../packages/structured-generation/output-contract-registry-v1.mjs";
+import { contextManifestRefStarcraftTmgV1 } from
+  "../packages/structured-generation/context-capsule-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const reportPath = path.join(ROOT,
@@ -46,6 +49,7 @@ const CODE_FILES = [
   "content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs",
   "packages/skill-production-v3/faction-review-context-capsule-v1.mjs",
   "packages/skill-production-v3/faction-structured-review-runtime-v1.mjs",
+  "packages/structured-generation/output-contract-registry-v1.mjs",
   "packages/structured-generation/adapters/deepseek-responses-json-schema-v1.mjs",
   "packages/structured-generation/structured-generation-runtime-v1.mjs",
   "scripts/run-ticket-18-structured-review-capability-canary-v1.mjs",
@@ -209,9 +213,11 @@ await check("review.one-bounded-schema-instance-repair-preserves-other-values", 
   rejected.verdicts[0].reason = "R".repeat(401);
   rejected.verdicts[0].sourceSlots = capsule.localIssue.reviewTask
     .includedSourceSlots.slice(0, 9);
+  rejected.verdicts[0].unexpectedField = "delete only this field";
   const repaired = structuredClone(rejected);
   repaired.verdicts[0].reason = "Condensed without changing the judgment.";
   repaired.verdicts[0].sourceSlots = rejected.verdicts[0].sourceSlots.slice(0, 8);
+  delete repaired.verdicts[0].unexpectedField;
   const fault = createStarcraftTmgInMemoryStructuredFaultAdapterV1({
     steps: [{ kind: "success", output: rejected },
       { kind: "success", output: repaired }],
@@ -235,10 +241,63 @@ await check("review.one-bounded-schema-instance-repair-preserves-other-values", 
     assert.equal(result.structuredDecodePassed, true);
     assert.equal(result.schemaRepairScope.allOtherValuesHashEqual, true);
     assert.deepEqual(result.schemaRepairScope.allowedChangedPaths,
-      ["$.verdicts[0].reason", "$.verdicts[0].sourceSlots"]);
+      ["$.verdicts[0].reason", "$.verdicts[0].sourceSlots",
+        "$.verdicts[0].unexpectedField"]);
     assert.equal(fault.inspect().calls.length, 2);
     assert.equal(store.summary().attempts.filter((row) =>
       row.code === "STRUCTURED_PROVIDER_SCHEMA_INVALID").length, 1);
+  } finally { store.close(); }
+});
+
+await check("review.exact-rejected-candidate-import-skips-initial-provider-call", async () => {
+  const rejectedValue = structuredClone(providerOutput);
+  rejectedValue.verdicts[1].reason = "R".repeat(403);
+  const validation = validateStarcraftTmgProviderJsonSchemaValueV1(
+    contract.providerSchema, rejectedValue);
+  assert.deepEqual(validation.issues[0], {
+    path: "$.verdicts[1].reason", code: "string_too_long",
+    actualLength: 403, minLength: 1, maxLength: 400,
+  });
+  const imported = seal({
+    version:
+      "starcraft_tmg_structured_generation_runtime_v1.rejected-candidate",
+    invocationHash: hash("imported fixture invocation"),
+    roleRef,
+    contextManifestRef: contextManifestRefStarcraftTmgV1(capsule),
+    outputContractRef: contractRef,
+    providerValue: rejectedValue,
+    validation,
+    safeReceiptHash: hash("imported fixture receipt"),
+    semanticAcceptanceInherited: false, published: false,
+    runtimeAccepted: false, trainingTruth: false,
+  });
+  const repaired = structuredClone(rejectedValue);
+  repaired.verdicts[1].reason = "R".repeat(399);
+  const fault = createStarcraftTmgInMemoryStructuredFaultAdapterV1({
+    steps: [{ kind: "success", output: repaired }],
+  });
+  const store = openProductionStore(":memory:", {
+    runId: "structured-review-import-test",
+    recipeHash: hash("structured-review-import-test"),
+    maxCalls: 2, maxCostMicros: 500_000, maxTokens: 300_000,
+  });
+  try {
+    const runtime = createFactionStructuredReviewRuntimeV1({ input,
+      runtime: { role: async () => assert.fail("fallback invoked") },
+      store, dsh: { run: runDirectLoop },
+      providerAdapter: createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1({
+        send: fault.send,
+      }),
+      egressBinding: binding, capabilityReceipt, outputContract: contract,
+      executionPolicy: policy, priceUsage: (usage) => usage.totalUnits,
+      schemaRepairImports: [imported],
+    });
+    const result = await runtime.role(request);
+    assert.equal(result.schemaRepairImportReceipt.initialProviderCallsReplayed,
+      0);
+    assert.equal(result.schemaRepairScope.allOtherValuesHashEqual, true);
+    assert.equal(fault.inspect().calls.length, 1);
+    assert.equal(store.summary().calls, 1);
   } finally { store.close(); }
 });
 

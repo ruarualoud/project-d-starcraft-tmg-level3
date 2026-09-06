@@ -406,6 +406,21 @@ const legacyPromptRoleIds = continuation
   ? deriveFactionLegacyPromptRoleIdsV1(continuation.steps) : [];
 const legacyStructuredReviewRoleIds = continuation
   ? deriveFactionLegacyStructuredReviewRoleIdsV1(continuation.steps) : [];
+const schemaRepairImportRows = new Map((continuation?.schemaRepairCandidates || [])
+  .map((row) => [row.id, row]));
+const structuredReviewSchemaRepairImports =
+  (continuation?.manifest.schemaRepairImports || []).map((permit) => {
+    const row = schemaRepairImportRows.get(permit.id);
+    if (!row || hash(row.artifact) !== permit.artifactHash
+      || row.artifact?.roleRef?.hash !== permit.roleRefHash
+      || row.artifact?.contextManifestRef?.hash
+        !== permit.contextManifestHash
+      || row.artifact?.outputContractRef?.hash
+        !== permit.outputContractHash) {
+      fail('FACTION_STRUCTURED_REVIEW_SCHEMA_REPAIR_IMPORT_TAMPERED');
+    }
+    return row.artifact;
+  });
 if (args[0] === '--preflight') {
   // Exercise exact inherited role input hashes without credentials or egress.
   // Initial cutover has one exact expected editor. Later continuations derive
@@ -459,6 +474,7 @@ if (args[0] === '--preflight') {
       executionPolicy: structuredReviewPolicy,
       priceUsage: priceStructuredUsage,
       legacyStructuredReviewRoleIds,
+      schemaRepairImports: structuredReviewSchemaRepairImports,
     });
     const dryFactionRuntime = useReviewTransaction ? createFactionReviewTransactionRuntimeV1({ input: inputs[0], runtime: dryStructuredReviewRuntime,
       store: dryStore, phaseFieldSeed }) : dryStructuredReviewRuntime;
@@ -493,6 +509,8 @@ if (args[0] === '--preflight') {
     reusableRoles: continuation?.manifest.reusable.length || 0, inheritedAccounting: continuation?.manifest.accounting || null,
     legacyPromptRoles: legacyPromptRoleIds.length, structuredCanaryImport: structuredEditorImport.hash,
     legacyStructuredReviewRoles: legacyStructuredReviewRoleIds.length,
+    structuredReviewSchemaRepairImports:
+      structuredReviewSchemaRepairImports.length,
     structuredReviewCapabilityRunId: structuredReviewCapabilityReport.runId,
     firstUncachedRole, firstUncachedRoute, initialStructuredCutover,
     initialStructuredReviewCutover,
@@ -578,6 +596,7 @@ try {
       executionPolicy: structuredReviewPolicy,
       priceUsage: priceStructuredUsage,
       legacyStructuredReviewRoleIds,
+      schemaRepairImports: structuredReviewSchemaRepairImports,
       onProgress: row => console.log(JSON.stringify({ event: 'structured-role',
         ticket: 18, slice: 174, faction: name, ...row,
         cumulativeEstimateOrReserveCny: (historyMicros

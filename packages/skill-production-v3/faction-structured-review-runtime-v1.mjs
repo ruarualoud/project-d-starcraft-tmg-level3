@@ -15,7 +15,8 @@ import { classifyStarcraftTmgStructuredFailureV1 } from
 import { assertStarcraftTmgProviderCapabilityReceiptV1 } from
   "../structured-generation/provider-capability-receipt-v1.mjs";
 import { createStarcraftTmgOutputContractRegistryV1,
-  outputContractRefStarcraftTmgV1 } from
+  outputContractRefStarcraftTmgV1,
+  validateStarcraftTmgProviderJsonSchemaValueV1 } from
   "../structured-generation/output-contract-registry-v1.mjs";
 import { createStarcraftTmgStructuredGenerationRuntimeV1 } from
   "../structured-generation/structured-generation-runtime-v1.mjs";
@@ -69,9 +70,10 @@ function pathTokens(path) {
   return tokens;
 }
 
-function maskRepairPaths(value, paths) {
+function maskRepairIssues(value, issues, side) {
   const result = structuredClone(value);
-  for (const path of paths) {
+  for (const issue of issues) {
+    const path = issue.path;
     const tokens = pathTokens(path);
     let cursor = result;
     for (const token of tokens.slice(0, -1)) {
@@ -82,8 +84,15 @@ function maskRepairPaths(value, paths) {
       cursor = cursor[token];
     }
     const last = tokens.at(-1);
-    if (!cursor || typeof cursor !== "object"
-      || !Object.hasOwn(cursor, last)) {
+    if (!cursor || typeof cursor !== "object") {
+      fail("FACTION_STRUCTURED_REVIEW_SCHEMA_REPAIR_PATH_INVALID");
+    }
+    const exists = Object.hasOwn(cursor, last);
+    const permittedMissing = side === "before"
+      && issue.code === "required_field_missing"
+      || side === "after"
+        && issue.code === "additional_property_forbidden";
+    if (!exists && !permittedMissing) {
       fail("FACTION_STRUCTURED_REVIEW_SCHEMA_REPAIR_PATH_INVALID");
     }
     cursor[last] = { hostMaskedSchemaRepairPath: path };
@@ -91,23 +100,69 @@ function maskRepairPaths(value, paths) {
   return result;
 }
 
+function pathValue(value, path) {
+  const tokens = pathTokens(path);
+  let cursor = value;
+  for (const token of tokens) {
+    if (!cursor || typeof cursor !== "object"
+      || !Object.hasOwn(cursor, token)) return { exists: false };
+    cursor = cursor[token];
+  }
+  return { exists: true, value: cursor };
+}
+
+function issueSignature(issues) {
+  return issues.map((row) => `${row.path}\u0000${row.code}`).sort();
+}
+
+function revalidateImportedRejectedCandidate({ candidate, capsule,
+  roleRef, outputContract, outputContractRef }) {
+  verifySeal(candidate);
+  if (candidate.roleRef?.hash !== roleRef.hash
+    || candidate.contextManifestRef?.hash !== capsule.hash
+    || candidate.outputContractRef?.hash !== outputContractRef.hash
+    || candidate.validation?.valueHash !== hash(candidate.providerValue)
+    || candidate.validation?.ok !== false) {
+    fail("FACTION_STRUCTURED_REVIEW_SCHEMA_REPAIR_IMPORT_INVALID");
+  }
+  const validation = validateStarcraftTmgProviderJsonSchemaValueV1(
+    outputContract.providerSchema, candidate.providerValue);
+  if (validation.ok || hash(issueSignature(validation.issues))
+    !== hash(issueSignature(candidate.validation.issues))) {
+    fail("FACTION_STRUCTURED_REVIEW_SCHEMA_REPAIR_IMPORT_DRIFT");
+  }
+  return seal({
+    version: "faction_structured_review_revalidated_rejected_candidate_v1",
+    invocationHash: candidate.invocationHash,
+    roleRef,
+    contextManifestRef: contextManifestRefStarcraftTmgV1(capsule),
+    outputContractRef,
+    providerValue: candidate.providerValue,
+    validation,
+    originRejectedCandidateRef: { hash: candidate.hash },
+    semanticAcceptanceInherited: false,
+    published: false,
+    runtimeAccepted: false,
+    trainingTruth: false,
+  });
+}
+
 export function verifyFactionStructuredReviewSchemaRepairScopeV1({
   rejectedCandidate, repairedOutput,
 }) {
   verifySeal(rejectedCandidate);
-  const paths = rejectedCandidate.validation?.issues?.map((row) => row.path);
-  if (!Array.isArray(paths) || !paths.length
-    || new Set(paths).size !== paths.length
-    || hash(maskRepairPaths(rejectedCandidate.providerValue, paths))
-      !== hash(maskRepairPaths(repairedOutput, paths))
+  const issues = rejectedCandidate.validation?.issues;
+  const paths = Array.isArray(issues)
+    ? [...new Set(issues.map((row) => row.path))] : [];
+  if (!paths.length
+    || hash(maskRepairIssues(rejectedCandidate.providerValue, issues,
+      "before"))
+      !== hash(maskRepairIssues(repairedOutput, issues, "after"))
     || paths.every((path) => {
-      const tokens = pathTokens(path);
-      let before = rejectedCandidate.providerValue;
-      let after = repairedOutput;
-      for (const token of tokens) {
-        before = before?.[token]; after = after?.[token];
-      }
-      return hash(before) === hash(after);
+      const before = pathValue(rejectedCandidate.providerValue, path);
+      const after = pathValue(repairedOutput, path);
+      return before.exists === after.exists
+        && (!before.exists || hash(before.value) === hash(after.value));
     })) {
     fail("FACTION_STRUCTURED_REVIEW_SCHEMA_REPAIR_SCOPE_INVALID");
   }
@@ -187,6 +242,16 @@ export function createFactionStructuredReviewRuntimeV1(options = {}) {
   if (capabilityReceipt.outputContractRef.hash !== outputContractRef.hash) {
     fail("FACTION_STRUCTURED_REVIEW_CAPABILITY_DRIFT");
   }
+  const schemaRepairImports = new Map();
+  for (const candidate of options.schemaRepairImports || []) {
+    verifySeal(candidate);
+    const key = `${candidate.roleRef?.hash || ""}:${candidate.contextManifestRef?.hash || ""}`;
+    if (!candidate.roleRef?.hash || !candidate.contextManifestRef?.hash
+      || schemaRepairImports.has(key)) {
+      fail("FACTION_STRUCTURED_REVIEW_SCHEMA_REPAIR_IMPORT_INVALID");
+    }
+    schemaRepairImports.set(key, candidate);
+  }
   const policy = Object.freeze({ ...executionPolicy });
   const legacyRoles = new Set(options.legacyStructuredReviewRoleIds || []);
   if (legacyRoles.size !== (options.legacyStructuredReviewRoleIds || []).length) {
@@ -223,6 +288,8 @@ export function createFactionStructuredReviewRuntimeV1(options = {}) {
         route: match[1],
       });
       const contextManifestRef = contextManifestRefStarcraftTmgV1(capsule);
+      const importedRejectedCandidate = schemaRepairImports.get(
+        `${roleRef.hash}:${contextManifestRef.hash}`) || null;
       const roleInput = {
         version: STARCRAFT_TMG_FACTION_STRUCTURED_REVIEW_RUNTIME_VERSION,
         packetHash: request.packet.hash,
@@ -304,17 +371,29 @@ export function createFactionStructuredReviewRuntimeV1(options = {}) {
         }
       }
       try {
-        const first = await runStructured(roleRef, capsule,
+        const first = importedRejectedCandidate ? {
+          outcome: {
+            status: "quarantined",
+            issueRef: { class: "schema_instance",
+              importedRejectedCandidateHash: importedRejectedCandidate.hash },
+          },
+          importedRejectedCandidate: revalidateImportedRejectedCandidate({
+            candidate: importedRejectedCandidate, capsule, roleRef,
+            outputContract, outputContractRef,
+          }),
+          loop: null,
+        } : await runStructured(roleRef, capsule,
           `Run structured target review ${canonical} from its complete section proof capsule and finish.`);
         let active = first, activeCapsule = capsule;
         let schemaRepairScope = null;
         if (first.outcome?.status === "quarantined"
           && first.outcome.issueRef?.class === "schema_instance"
-          && first.outcome.issueRef?.rejectedCandidateRef) {
-          const rejected = store.artifact(
+          && (first.outcome.issueRef?.rejectedCandidateRef
+            || first.importedRejectedCandidate)) {
+          const rejected = first.importedRejectedCandidate || store.artifact(
             first.outcome.issueRef.rejectedCandidateRef.id);
-          if (!rejected
-            || rejected.hash
+          if (!rejected || !first.importedRejectedCandidate
+            && rejected.hash
               !== first.outcome.issueRef.rejectedCandidateRef.hash) {
             fail("FACTION_STRUCTURED_REVIEW_REJECTED_CANDIDATE_MISSING");
           }
@@ -327,7 +406,7 @@ export function createFactionStructuredReviewRuntimeV1(options = {}) {
             capsule, rejectedCandidate: rejected, roleRef: repairRoleRef,
           });
           active = await runStructured(repairRoleRef, activeCapsule,
-            `Repair only the exact local schema-instance paths for ${canonical}; preserve every other parsed value and finish once.`);
+            `Repair only the exact local schema-instance paths for ${canonical}. Obey every validationIssues actual/min/max value exactly, preserve every other parsed value, and finish once.`);
           if (active.outcome?.status === "accepted" && active.loop) {
             schemaRepairScope =
               verifyFactionStructuredReviewSchemaRepairScopeV1({
@@ -355,7 +434,8 @@ export function createFactionStructuredReviewRuntimeV1(options = {}) {
           outputTokens: active.outcome.usage.output,
           estimatedCny: active.outcome.usage.estimatedCny,
           contextCapsuleBytes: activeCapsule.compiledInputBytes,
-          schemaRepairApplied: Boolean(schemaRepairScope) });
+          schemaRepairApplied: Boolean(schemaRepairScope),
+          schemaRepairImported: Boolean(importedRejectedCandidate) });
         return store.finish(lease, seal({
           output: materialized.output,
           roleId: fullRoleId,
@@ -368,6 +448,17 @@ export function createFactionStructuredReviewRuntimeV1(options = {}) {
           hostMaterializationReceipt: materialized.receipt,
           ...(schemaRepairScope ? { schemaRepairScope,
             initialStructuredIssueRef: first.outcome.issueRef } : {}),
+          ...(importedRejectedCandidate ? {
+            schemaRepairImportReceipt: seal({
+              version: "faction_structured_review_schema_repair_import_v1",
+              originRejectedCandidateHash: importedRejectedCandidate.hash,
+              revalidatedRejectedCandidateHash:
+                first.importedRejectedCandidate.hash,
+              initialProviderCallsReplayed: 0,
+              semanticAcceptanceInherited: false,
+              trainingTruth: false,
+            }),
+          } : {}),
           toolReadRefs: [], toolTrace: [], loop: active.loop,
           structuredDecodePassed: true,
           semanticAcceptance: false,

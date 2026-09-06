@@ -19,6 +19,26 @@ const roleInput = { task: 'full original input' }, id = 'faction.terran.tutor';
 const artifact = seal({ roleId: id, output: { lesson: ['Injected actual-store checkpoint'] }, loop: { transcript: [] } });
 put(parentStore, id, roleInput, artifact);
 put(parentStore, 'faction.terran.candidate', {}, seal({ semanticReviewPassed: true }));
+const rejectedCandidate = seal({
+  version: 'starcraft_tmg_structured_generation_runtime_v1.rejected-candidate',
+  invocationHash: hash('fixture invocation'),
+  roleRef: { id: 'faction.terran.objectives.1.review-target-batch-v1.supportive.2.0',
+    version: 'structured-review-v1', hash: hash('fixture role') },
+  contextManifestRef: { id: 'context.fixture', version: 'starcraft_tmg_context_capsule_v1',
+    hash: hash('fixture context') },
+  outputContractRef: { id: 'starcraft-tmg.faction-target-review',
+    version: '2026.09.06.1', hash: hash('fixture output contract') },
+  providerValue: { verdicts: [], coverage: [] },
+  validation: { ok: false, issues: [{ path: '$.verdicts',
+    code: 'array_too_short', actualItems: 0, minItems: 1, maxItems: 2 }],
+  valueHash: hash({ verdicts: [], coverage: [] }),
+  schemaHash: hash('fixture schema') },
+  safeReceiptHash: hash('fixture safe receipt'),
+  semanticAcceptanceInherited: false, published: false,
+  runtimeAccepted: false, trainingTruth: false,
+});
+put(parentStore, 'structured-fixture.rejected-candidate',
+  { rejectedCandidateHash: rejectedCandidate.hash }, rejectedCandidate);
 parentStore.reserve(id + '.call-1', { request: 'injected' }, 100, 30);
 parentStore.settle(id + '.call-1', { usage: { inputUnits: 10, outputUnits: 2, totalUnits: 12 }, costMicros: 10, response: { injectedOnly: true } });
 const parentReport = seal({ runId: parentRunId, recipeHash: parent.hash, failure: { code: 'OUTPUT_SCHEMA_INVALID' } });
@@ -28,6 +48,9 @@ const next = seal({ ...b, codeHashes: [{ file: 'packages/skill-production-v3/fac
 const deps = { filename, parentRunId, parent, parentReport, next };
 const continuation = inspectFactionContinuationV1(deps);
 assert.equal(continuation.manifest.reusable.length, 1); assert.equal(continuation.manifest.parentStart, 1000);
+assert.equal(continuation.manifest.schemaRepairImports.length, 1);
+assert.equal(continuation.schemaRepairCandidates[0].artifact.hash,
+  rejectedCandidate.hash);
 assert.deepEqual(continuation.manifest.accounting, { calls: 1, costMicros: 10, tokens: 12 });
 const unitFiles = ['packages/skill-production-v3/faction-unit-role-field-repair-v1.mjs', 'packages/skill-evaluation/faction-unit-role-debt-v1.mjs'];
 const unitCode = [...next.codeHashes, ...unitFiles.map(file => ({ file, hash: hash('unit repair ' + file) }))];
@@ -140,6 +163,6 @@ assert.throws(() => inspectFactionContinuationV1(deps), { code: 'API_BALANCE_EXH
 nextStore.close(); parentStore.close();
 const files = ['packages/skill-production-v3/faction-continuation-v1.mjs', 'packages/skill-production/continuation.mjs', 'scripts/verify-ticket-18-faction-continuation-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 38, codeHashes, providerCalls: 0, fixtureOnly: true, trainingTruth: false });
+const report = seal({ passed: true, checks: 40, codeHashes, providerCalls: 0, fixtureOnly: true, trainingTruth: false });
 await writeFile(path.join(base, 'continuation-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 38, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 40, providerCalls: 0, hash: report.hash }));

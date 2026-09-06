@@ -205,18 +205,22 @@ function collectValidationIssues(schema, value, path, issues) {
   if (issues.length >= 32) return;
   if (schema.type === "object") {
     if (!object(value)) {
-      issues.push({ path, code: "type_object_required" });
+      issues.push({ path, code: "type_object_required",
+        expectedType: "object" });
       return;
     }
     const keys = Object.keys(value);
     for (const required of schema.required) {
       if (!Object.hasOwn(value, required)) {
-        issues.push({ path: `${path}.${required}`, code: "required_field_missing" });
+        issues.push({ path: `${path}.${required}`,
+          code: "required_field_missing", required: true });
       }
     }
     for (const key of keys) {
       if (!Object.hasOwn(schema.properties, key)) {
-        issues.push({ path: `${path}.${key}`, code: "additional_property_forbidden" });
+        issues.push({ path: `${path}.${key}`,
+          code: "additional_property_forbidden",
+          additionalProperties: false });
       } else {
         collectValidationIssues(schema.properties[key], value[key],
           `${path}.${key}`, issues);
@@ -226,40 +230,59 @@ function collectValidationIssues(schema, value, path, issues) {
   }
   if (schema.type === "array") {
     if (!Array.isArray(value)) {
-      issues.push({ path, code: "type_array_required" });
+      issues.push({ path, code: "type_array_required",
+        expectedType: "array" });
       return;
     }
-    if (value.length < schema.minItems) issues.push({ path, code: "array_too_short" });
-    if (value.length > schema.maxItems) issues.push({ path, code: "array_too_long" });
+    if (value.length < schema.minItems) issues.push({ path,
+      code: "array_too_short", actualItems: value.length,
+      minItems: schema.minItems, maxItems: schema.maxItems });
+    if (value.length > schema.maxItems) issues.push({ path,
+      code: "array_too_long", actualItems: value.length,
+      minItems: schema.minItems, maxItems: schema.maxItems });
     if (schema.uniqueItems === true
       && new Set(value.map((entry) => hashStarcraftTmgContract(entry))).size
-        !== value.length) issues.push({ path, code: "array_items_not_unique" });
+        !== value.length) issues.push({ path, code: "array_items_not_unique",
+      actualItems: value.length, uniqueItems: true });
     value.forEach((entry, index) => collectValidationIssues(
       schema.items, entry, `${path}[${index}]`, issues));
     return;
   }
   if (schema.type === "string") {
     if (typeof value !== "string") {
-      issues.push({ path, code: "type_string_required" });
+      issues.push({ path, code: "type_string_required",
+        expectedType: "string" });
       return;
     }
-    if (value.length < schema.minLength) issues.push({ path, code: "string_too_short" });
-    if (value.length > schema.maxLength) issues.push({ path, code: "string_too_long" });
-    if (schema.enum && !schema.enum.includes(value)) issues.push({ path, code: "enum_mismatch" });
+    if (value.length < schema.minLength) issues.push({ path,
+      code: "string_too_short", actualLength: value.length,
+      minLength: schema.minLength, maxLength: schema.maxLength });
+    if (value.length > schema.maxLength) issues.push({ path,
+      code: "string_too_long", actualLength: value.length,
+      minLength: schema.minLength, maxLength: schema.maxLength });
+    if (schema.enum && !schema.enum.includes(value)) issues.push({ path,
+      code: "enum_mismatch", allowedValues: schema.enum });
     return;
   }
   if (schema.type === "integer") {
     if (!Number.isSafeInteger(value)) {
-      issues.push({ path, code: "type_integer_required" });
+      issues.push({ path, code: "type_integer_required",
+        expectedType: "integer" });
       return;
     }
-    if (value < schema.minimum) issues.push({ path, code: "integer_too_small" });
-    if (value > schema.maximum) issues.push({ path, code: "integer_too_large" });
-    if (schema.enum && !schema.enum.includes(value)) issues.push({ path, code: "enum_mismatch" });
+    if (value < schema.minimum) issues.push({ path,
+      code: "integer_too_small", actualValue: value,
+      minimum: schema.minimum, maximum: schema.maximum });
+    if (value > schema.maximum) issues.push({ path,
+      code: "integer_too_large", actualValue: value,
+      minimum: schema.minimum, maximum: schema.maximum });
+    if (schema.enum && !schema.enum.includes(value)) issues.push({ path,
+      code: "enum_mismatch", allowedValues: schema.enum });
     return;
   }
   if (schema.type === "boolean" && typeof value !== "boolean") {
-    issues.push({ path, code: "type_boolean_required" });
+    issues.push({ path, code: "type_boolean_required",
+      expectedType: "boolean" });
   }
 }
 

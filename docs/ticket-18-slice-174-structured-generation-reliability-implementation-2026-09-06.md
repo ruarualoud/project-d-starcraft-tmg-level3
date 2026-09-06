@@ -31,8 +31,10 @@
 - reviewer 结构化本地门：初版 7 项通过、0 Provider；胶囊 408,572 bytes，target/source 身份均由 host 映射，重复/越界 slot 封闭失败。CLI 预检 recipe `bac6bf97cd50325f0d775e31f12dd708562ba76c23ace03bec4c8649f5312440`；复用 169 roles、冻结 37 个旧 prompt roles 和 88 个旧 reviewer roles，首一 miss 精确为 `objectives.1.review-target-batch-v1.supportive.2.0`，路由 `responses_json_schema`，0 Provider。
 - 第一次真实结构 reviewer：`faction-v1-bac6bf97cd50325f0d77` 的 Provider 返回 HTTP 200 且 JSON 可解析，但本地门发现 `$.verdicts[0].reason`、`$.verdicts[1].reason` 超长及 `$.verdicts[0].sourceSlots` 超量，因此隔离失败而未进入 Skill。本轮 1 call / 123,444 tokens / 约 ¥0.441606，无重试、402 或在途请求。
 - schema-instance 定点修复门：adapter 12 项、structured runtime 6 项、structured reviewer 9 项、local editor 5 项、continuation 38 项、budget 25 项全部通过，0 Provider。正例证明两次调用内只缩短被点名理由及 sourceSlots；反例证明任何未点名 verdict 改动封闭失败。最新零付费预检 recipe `a9ebe04ed3442c97cb2c24da5bc97b3577866afb5ca57805ae489b5c84581904`，复用 169 roles，仍精确从 supportive.2.0 进入 Responses JSON Schema。
+- 第一次定点修复实跑：`faction-v1-a9ebe04ed3442c97cb2c` 共 2 calls / 247,921 tokens / 约 ¥0.886333。首候选只剩 `verdicts[1].reason` 403>400 与一个 coverage 非法附加字段；修复准确删除附加字段，但因旧 issue 只给 `string_too_long` 而未传 actual/max，仍原样保留 403 字 reason。两次均 HTTP200/可解析但本地 schema 隔离，无第三次调用、402 或在途请求。
+- actual/max 与精确失败候选续跑门：validator issue 现在携带长度/数量上下界或类型/枚举约束；删除被点名非法字段也可通过“屏蔽后其余对象哈希一致”证明。前一 run 的首个 rejected candidate 由 continuation manifest 独立哈希授权，在新合同下重验相同 path/code 后才能作为修复输入，不继承接受结论。合同5、adapter12、runtime6、review10、continuation40、editor5、budget25 项均0Provider通过。最新 preflight recipe `38cff03b5a47b54b65738aa2ffa65e2e36b1cd205da6ca00a808462ab882e111`，169 roles复用、1 rejected candidate导入，首个未缓存角色精确为 `supportive.2.0.schema-repair.1`，首审重放调用0。
 
-最新已知累计用量为 101,241,167 tokens，估算或历史预留合计 ¥63.145556，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
+最新已知累计用量为 101,489,088 tokens，估算或历史预留合计 ¥64.031889，非账单；未触发 ¥100 通知线。后续正式续跑的新增用量必须继续独立记账。
 
 ## 仍未完成
 
@@ -43,4 +45,4 @@
 
 ## 下一步
 
-从 `faction-v1-bac6bf97cd50325f0d77` 按上述最新 recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。
+从 `faction-v1-a9ebe04ed3442c97cb2c` 按上述最新 recipe 正式续跑。任何 schema/context/capability 错误先修合同或接线；任何语义/来源错误进入 typed repair；402 立即停止全部工作；ambiguous delivery 不自动重发。完整 faction 候选产生后，再运行独立消费者、来源核验、规则应用与对局策略评估。

@@ -172,8 +172,8 @@ export function createFactionReviewSchemaRepairContextCapsuleV1(input = {}) {
         rejectedCandidateHash: rejectedCandidate.hash,
         providerValue: rejectedCandidate.providerValue,
         validationIssues: rejectedCandidate.validation.issues,
-        allowedChanges: rejectedCandidate.validation.issues.map((row) =>
-          row.path),
+        allowedChanges: [...new Set(rejectedCandidate.validation.issues
+          .map((row) => row.path))],
         policy: "change_only_exact_invalid_paths_preserve_every_other_value",
       },
     },
@@ -187,8 +187,10 @@ export function createFactionReviewSchemaRepairContextCapsuleV1(input = {}) {
     instructions: [
       capsule.instructions,
       "The prior value was valid JSON but failed the listed local schema constraints.",
+      `Exact machine constraints: ${JSON.stringify(
+        rejectedCandidate.validation.issues)}.`,
       "Return the complete corrected schema object. Change only the exact validationIssues paths; every other value must remain byte-for-byte equivalent after JSON parsing.",
-      "Shorten overlong reason text without changing its verdict or factual meaning. Select at most eight most direct supplied sourceSlots; do not invent or renumber slots.",
+      "For length/cardinality failures, obey the listed actualLength/actualItems and maxLength/maxItems exactly. Delete fields marked additional_property_forbidden. Shorten overlong reason text without changing its verdict or factual meaning. Select at most eight most direct supplied sourceSlots; do not invent or renumber slots.",
       "This is one bounded schema-instance correction, not a new review. If it cannot be done without changing another field, preserve uncertainty and still obey the exact schema.",
     ].join("\n"),
   });
