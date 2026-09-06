@@ -7,9 +7,10 @@ import { loadFrozenSkillEvidence, createEvidenceReader } from '../packages/skill
 import { createGlobalProductionContext } from '../packages/skill-production-v3/context.mjs';
 import { createProductionRuntimeV3 } from '../packages/skill-production-v3/runtime.mjs';
 import { runDirectLoop } from '../packages/skill-production/loops.mjs';
+import { createFactionReviewTargetsV1, validateTargetedFactionReviewV1 } from '../packages/skill-production-v3/faction-review-targets-v1.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
 import { FACTION_AXES_V1, createFactionWritingPlanV1, validateFactionDraftV1, applyFactionStrategyPatchV1, validateFactionDraftBatchV1, inspectFactionBatchScopeV1, validateFactionReviewV1, createFactionRepairIssuesV1,
-  produceFactionStrategyV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
+  produceFactionStrategyV1, inspectFactionCoverageLinksV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { seal, verifySeal, hash, sha256, fail } from '../packages/skill-production/common.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), base = path.join(root, 'build/ticket-18-faction-production-v1');
@@ -72,6 +73,27 @@ try {
   assert.throws(() => validateFactionReviewV1(conflict, aliasParams), { code: 'FACTION_REVIEW_COVERAGE_ALIAS_CONFLICT' });
   const extraField = structuredClone(aliased); extraField.coverage[0].verdictOverride = 'supported';
   assert.throws(() => validateFactionReviewV1(extraField, aliasParams), { code: 'OUTPUT_SCHEMA_INVALID' });
+  const indirectArtifact = suffix => verifySeal(JSON.parse(evidenceDb.prepare("SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'").get(
+    'faction-v1-c89720ec563c3f2ecc1f', 'faction.terran_armed_forces.faction.terran_armed_forces.army_resources.1.review-target-batch-v1.adversarial.0.0' + suffix).artifact)).value.output;
+  const indirect = indirectArtifact(''); assert.equal(hash(indirect), hash(indirectArtifact('.schema')));
+  const correctedDraft = verifySeal(JSON.parse(await readFile(path.join(base, 'targeted-corrections-readiness.json'), 'utf8'))).knownRuleCorrection.draft;
+  const binding = validateTargetedFactionReviewV1(indirect, createFactionReviewTargetsV1({ input: inputs[0], section, draft: correctedDraft, indices: [0, 1] }));
+  const indirectParams = { input: inputs[0], section, draft: correctedDraft, reviewIndices: [0, 1] };
+  // RED: a valid direct citation to item0 coexists with an explicitly indirect
+  // claimed relation to item1. Never relabel item1 as a direct citation.
+  assert.equal(hash(validateFactionReviewV1(binding.review, indirectParams)), hash(binding.review));
+  const links = inspectFactionCoverageLinksV1(binding.review, correctedDraft);
+  assert.deepEqual(links.links[0].directCitationIndices, [0]); assert.deepEqual(links.links[0].indirectClaimedIndices, [1]);
+  assert.equal(links.links[0].indirectClaimVerified, false);
+  const onlyIndirect = structuredClone(binding.review); onlyIndirect.coverage[0].recommendationIndices = [1];
+  assert.throws(() => validateFactionReviewV1(onlyIndirect, indirectParams), { code: 'FACTION_REVIEW_COVERAGE_INVALID' });
+  const unknownIndex = structuredClone(binding.review); unknownIndex.coverage[0].recommendationIndices.push(8);
+  assert.throws(() => validateFactionReviewV1(unknownIndex, indirectParams), { code: 'FACTION_REVIEW_COVERAGE_INVALID' });
+  const indirectNegative = structuredClone(onlyIndirect); indirectNegative.coverage[0].verdict = 'uncertain';
+  validateFactionReviewV1(indirectNegative, indirectParams);
+  const keptNegative = createFactionRepairIssuesV1(section, correctedDraft, [indirectNegative]);
+  assert(keptNegative.issues.some(i => i.index === 1 && i.findings.some(f => f.verdict === 'uncertain')));
+  assert(!keptNegative.issues.some(i => i.kind === 'assigned_source_omission'), 'Edit already represented sources, do not demand a ninth advice item');
 } finally { evidenceDb.close(); }
 const temp = await mkdtemp(path.join(base, 'workflow-test-'));
 const stores = [], makeStore = name => { const s = openProductionStore(path.join(temp, name + '.sqlite'), { runId: name, recipeHash: hash(name) }); stores.push(s); return s; };
@@ -175,8 +197,8 @@ const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 
   'packages/skill-production-v3/runtime.mjs', 'packages/skill-production-v3/faction-review-targets-v1.mjs',
   'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 34, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 41, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 34, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 41, maxTaskBytes, injectedModelCalls: calls, providerCalls: 0, hash: report.hash }));

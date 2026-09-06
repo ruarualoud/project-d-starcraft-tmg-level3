@@ -129,12 +129,23 @@ export function validateFactionReviewV1(output, { input, section, draft,
     exact(c, keys); text(c.reason, 1200);
     if (!sources.delete(c.sourceRef) || !['covered', 'omitted', 'uncertain'].includes(c.verdict)
       || !Array.isArray(c.recommendationIndices) || new Set(c.recommendationIndices).size !== c.recommendationIndices.length
-      || c.recommendationIndices.some(i => !Number.isInteger(i) || !draft.recommendations[i]?.sourceRefs.includes(c.sourceRef))
-      || c.verdict === 'covered' && !c.recommendationIndices.length) fail('FACTION_REVIEW_COVERAGE_INVALID');
+      || c.recommendationIndices.some(i => !Number.isInteger(i) || !draft.recommendations[i])
+      || c.verdict === 'covered' && !c.recommendationIndices.some(i => draft.recommendations[i].sourceRefs.includes(c.sourceRef))) fail('FACTION_REVIEW_COVERAGE_INVALID');
     required.delete(c.sourceRef);
   }
   if (required.size) fail('FACTION_REVIEW_DENOMINATOR');
   return output;
+}
+
+// Preserve a model's claimed semantic relationship, but derive direct citation
+// membership from the actual draft. Indirect claims never satisfy coverage by
+// themselves and are not silently converted into citations.
+export function inspectFactionCoverageLinksV1(review, draft) {
+  return seal({ draftHash: hash(draft), rawReviewHash: hash(review), links: review.coverage.map(c => ({
+    sourceRef: c.sourceRef, verdict: c.verdict, claimedRecommendationIndices: c.recommendationIndices,
+    directCitationIndices: c.recommendationIndices.filter(i => draft.recommendations[i].sourceRefs.includes(c.sourceRef)),
+    indirectClaimedIndices: c.recommendationIndices.filter(i => !draft.recommendations[i].sourceRefs.includes(c.sourceRef)),
+    indirectClaimVerified: false })), semanticCoverageProven: false, trainingTruth: false });
 }
 
 export function createFactionRepairIssuesV1(section, draft, reviews) {
@@ -142,15 +153,18 @@ export function createFactionRepairIssuesV1(section, draft, reviews) {
   for (const [index, r] of draft.recommendations.entries()) {
     const findings = reviews.flatMap(v => [
       ...v.verdicts.filter(c => c.index === index && c.verdict !== 'supported'),
-      ...v.coverage.filter(c => !section.requiredSourceRefs.includes(c.sourceRef)
-        && c.verdict !== 'covered' && r.sourceRefs.includes(c.sourceRef))
-        .map(c => ({ kind: 'additional_cited_source_coverage', ...c })),
+      ...v.coverage.filter(c => c.verdict !== 'covered' && (c.recommendationIndices.length
+        ? c.recommendationIndices.includes(index) : r.sourceRefs.includes(c.sourceRef)))
+        .map(c => ({ kind: section.requiredSourceRefs.includes(c.sourceRef)
+          ? 'assigned_source_content_or_condition' : 'additional_cited_source_coverage', ...c })),
     ]);
     if (findings.length) issues.push({ kind: 'recommendation_source_or_condition', index, oldHash: hash(r), findings });
   }
   for (const sourceRef of section.requiredSourceRefs) {
     const findings = reviews.flatMap(v => v.coverage.filter(c => c.sourceRef === sourceRef && c.verdict !== 'covered'));
-    if (findings.length || !draft.recommendations.some(r => r.sourceRefs.includes(sourceRef))) issues.push({ kind: 'assigned_source_omission', sourceRef, findings });
+    // A negative judgment about existing cited advice requires an edit, not an
+    // unrelated ninth recommendation beyond an eight-item section's capacity.
+    if (!draft.recommendations.some(r => r.sourceRefs.includes(sourceRef))) issues.push({ kind: 'assigned_source_omission', sourceRef, findings });
   }
   return seal({ sectionId: section.id, parentHash: hash(draft), issues,
     openIssues: issues.length, reviewerConsensusNotRulesAuthority: true, trainingTruth: false });
@@ -286,7 +300,8 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
             });
           reviews.push(reviewed.value.review); reviewHashes.push(reviewed.artifact.hash);
           reviewPartition.push({ route, reviewIndices, requiredSourceRefs, artifactHash: reviewed.artifact.hash,
-            targetContractHash: targets.hash, bindingReceipt: reviewed.value });
+            targetContractHash: targets.hash, bindingReceipt: reviewed.value,
+            coverageLinks: inspectFactionCoverageLinksV1(reviewed.value.review, draft) });
         }
       }
       const issues = mergeFactionKnownSourceIssuesV1({ input, policy: knownRulePolicy, draft,

@@ -5,7 +5,36 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Current checkpoint: preserve mixed source/target evidence without misattribution
+## Current checkpoint: distinguish direct citations from claimed indirect relationships
+
+`faction-v1-c89720ec563c3f2ecc1f` is terminal, handle56915 exit1. It reused
+the saved target reviews, then generated supportive items6/7 and adversarial
+items0/1. The latter correctly identified both targets but its coverage row
+listed `[0,1]`: item0 directly cites the faction card; its reason explicitly
+described item1 as an indirect dependency without a direct citation. Strict
+direct-only index validation rejected the entire review; schema feedback again
+returned an identical result. Run3 calls /808,102 tokens /estimated ¥0.578353;
+all-history46,856,542 known tokens /estimated-or-reserved ¥51.940615, no402.
+Report `bc46cfb09676e561b54060597bc6e387396cf6b57d399b2f1ef93b04bb638a35`.
+
+The real response reproduced a red test. Coverage now preserves every original
+index/reason/verdict while a host receipt separates `directCitationIndices`
+from `indirectClaimedIndices`. A covered row still requires at least one actual
+direct citation; indirect-only positives and nonexistent indices fail. A
+negative indirect relationship is retained as a recommendation issue, not
+dropped. Negative coverage of a source already represented in the draft edits
+the affected existing advice; only a genuinely missing source requires an
+addition. This avoids demanding a ninth item merely because an existing cited
+item needs correction. No model's relationship assertion becomes rule truth.
+
+The mandatory six known source failures remain independent of these model
+reviews. Related gates passed: workflow41, actual-correction22, mixed-evidence10,
+unchanged continuation20 and two actual DSH full-context capacity sessions,
+all with zero Provider calls. No next paid process has started. Current
+source-reviewed sections0/15 and faction candidates0/2, Ticket18 2/8,
+project16/22, formal/runtime first-five0/5.
+
+## Earlier checkpoint: preserve mixed source/target evidence without misattribution
 
 Code `2518343` was pushed. Actual run `faction-v1-bcba77c39b85d99b5dbd`
 reused all eight recommendations and applied the one calibrated cost correction.
