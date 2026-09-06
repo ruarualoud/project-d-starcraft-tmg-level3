@@ -39,7 +39,8 @@ const applicationDrills = await createFactionRuleApplicationDrillsV1({ catalogue
 const knownRulePolicy = createFactionKnownRulePolicyV1({ input, drills });
 const { candidate, evidence } = await inspectFactionCandidateEvidenceV1({ root, runId: args[2], input, knownRulePolicy, catalogue, context });
 const gates = await Promise.all(['production-replay-readiness', 'consumer-evaluation-readiness', 'unit-role-debt-readiness',
-  'cross-field-source-audit-readiness', 'phase-source-debt-readiness', 'rule-application-drill-readiness', 'rule-use-evaluation-readiness'].map(json));
+  'cross-field-source-audit-readiness', 'phase-source-debt-readiness', 'rule-application-drill-readiness', 'rule-use-evaluation-readiness',
+  'repair-regression-guard-readiness'].map(json));
 for (const gate of gates) {
   if (!gate.passed) fail('FACTION_CONSUMER_READINESS_FAILED');
   for (const c of gate.codeHashes) if (sha256(await readFile(path.join(root, c.file))) !== c.hash) fail('FACTION_CONSUMER_READINESS_CODE_DRIFT');
@@ -48,11 +49,13 @@ if (!gates[1].inputHashes.includes(input.hash) || gates[1].drillManifestHash !==
 if (!gates[6].inputHashes.includes(input.hash) || gates[6].drillManifestHash !== applicationDrills.manifest.hash
   || gates[6].repetitionsPerArm !== 3 || gates[6].questions !== 22 || !gates[6].answerKeysAbsentFromPrompts
   || !gates[6].midEvaluationResumeWithoutRepeatedCalls) fail('FACTION_RULE_CONSUMER_READINESS_INPUT_DRIFT');
+if (!gates[7].consumerGuardWired || gates[7].newProviderCalls !== 0) fail('FACTION_REPAIR_GUARD_READINESS_INVALID');
 const files = ['scripts/run-ticket-18-faction-consumer-evaluation-v1.mjs', 'packages/skill-evaluation/faction-candidate-evidence-v1.mjs',
   'packages/skill-evaluation/faction-production-replay-v1.mjs', 'packages/skill-evaluation/faction-roster-use-evaluation-v1.mjs',
   'packages/skill-evaluation/faction-unit-role-debt-v1.mjs',
   'packages/skill-evaluation/faction-cross-field-source-audit-v1.mjs',
   'packages/skill-evaluation/faction-phase-source-debt-v1.mjs',
+  'packages/skill-production-v3/faction-repair-regression-guard-v1.mjs',
   'packages/skill-evaluation/faction-rule-application-drills-v1.mjs', 'packages/skill-evaluation/faction-rule-use-evaluation-v1.mjs',
   'packages/skill-evaluation/faction-roster-choice-drills-v1.mjs', 'packages/skill-production/model.mjs', 'packages/skill-production/store.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));

@@ -5,7 +5,44 @@ DSH-backed faction production started. No faction candidate accepted yet.
 Project16/22; Ticket18 2/8 complete,6 remaining. Overall offline dependency1/5;
 formal/runtime first-five acceptance0/5. No source refresh or Codex subagents.
 
-## Latest cumulative budget extension and live entry
+## Latest: terminal run and actual source-regression diagnosis
+
+Session52952 /process31993 has exited1. Run `faction-v1-182042133d7ba5b21c2a`
+made19 actual calls,5,057,832 tokens, estimated¥0.747180. All-history known
+tokens85,241,576; estimated-or-reserved¥58.970151. No402 or paid request in
+flight. The terminal error is `CHANNEL_SHAPE_INVALID` in revision3 adversarial
+batch0; this is separate from the semantic regression introduced by editor2.
+
+The editor falsely removed Tenacity's printed Active type and the general
+activation/card-state prerequisites. The later supportive review and raw
+adversarial response both reject that claim; the candidate was never accepted.
+`inspect-ticket-18-faction-phase-regression-v1.mjs` reconstructs the original
+workflow, then re-enters the pinned DSH for four actual completed roles with a
+read-only response port. Complete Provider request hashes, receipts and stable
+loop results match. Evidence `e16247b9…` proves the card label and full general
+rules were delivered unchanged. The three general rules were absent only from
+the local focus excerpt. That omission's causal contribution remains unproven.
+
+A new bounded source-reading graph retains original passages and exposes
+printed ability labels plus card/Active/Reaction/phase/movement dependencies.
+It is neither a complete dependency catalogue nor a legality/reviewer verdict.
+The new repair-checkpoint guard protects11 previously repaired fields. The
+actual new draft changes four of them: three false Tenacity fields and one
+damage-risk wording change. All require source revalidation; a changed hash
+does not itself mean a statement is false. The real consumer seam accepted
+this altered draft before the fix; its regression test now rejects it before
+any consumer model call, regardless of model-supported flags.
+
+Nineteen guard/context checks pass (`1ec3dd10…`), plus the old14 roster checks
+(`8c100028…`) and10 repeated-rule-use checks (`2438bb63…`),0 Provider calls.
+Producer v1 and its historical request construction remain unchanged. The
+guard is wired to consumer admission, not yet to producer edit commit; the
+new source context has not yet been tested in paid production. Next: actual
+source-review recheck using the complete corpus plus the dependency context,
+then scoped correction/revalidation. Do not blindly resume the rejected edit
+or treat these engineering checks as a completed faction.
+
+## Historical: cumulative budget extension and live entry
 
 Budget increment `1bbc9ca` is pushed. Live session52952 /process31993 is
 `faction-v1-182042133d7ba5b21c2a`; do not restart it or modify its producing

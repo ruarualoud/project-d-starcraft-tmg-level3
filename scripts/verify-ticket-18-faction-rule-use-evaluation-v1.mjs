@@ -97,6 +97,7 @@ try {
 } finally { stores.forEach(store => store.close()); }
 const files = ['packages/skill-evaluation/faction-rule-use-evaluation-v1.mjs', 'packages/skill-evaluation/faction-rule-application-drills-v1.mjs',
   'packages/skill-evaluation/faction-roster-use-evaluation-v1.mjs', 'packages/skill-evaluation/faction-phase-source-debt-v1.mjs',
+  'packages/skill-production-v3/faction-repair-regression-guard-v1.mjs',
   'packages/skill-evaluation/faction-cross-field-source-audit-v1.mjs', 'packages/skill-evaluation/faction-unit-role-debt-v1.mjs',
   'scripts/verify-ticket-18-faction-rule-use-evaluation-v1.mjs'];
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));

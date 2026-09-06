@@ -3,6 +3,7 @@ import { withSessionDeadline } from '../skill-production/deadline.mjs';
 import { createFactionWritingPlanV1 } from '../skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { assertNoKnownFactionRuleFailureV1 } from '../skill-production-v3/faction-known-rule-findings-v1.mjs';
 import { inspectFactionSemanticDebtV1 } from './faction-semantic-debt-v1.mjs';
+import { assertNoFactionImportedRepairRegressionV1 } from '../skill-production-v3/faction-repair-regression-guard-v1.mjs';
 
 // Consumer-side comparison, deliberately excluding production dialogue, source
 // reviewer verdicts, known-failure proofs and expected test answers. This is a
@@ -16,6 +17,7 @@ export function factionConsumerContextV1({ input, candidate, knownRulePolicy }) 
     || candidate.knownRulePolicyHash !== knownRulePolicy.hash || !candidate.semanticReviewPassed
     || candidate.runtimeAccepted || candidate.trainingTruth || candidate.sections.length !== plan.sections.length
     || candidate.sections.some((s, n) => !s.semanticReviewPassed || hash(s.section) !== hash(plan.sections[n]))) fail('FACTION_CONSUMER_CANDIDATE_NOT_READY');
+  assertNoFactionImportedRepairRegressionV1({ input, candidate });
   for (const section of candidate.sections) {
     assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: section.draft });
     const debt = inspectFactionSemanticDebtV1({ input, draft: section.draft });
