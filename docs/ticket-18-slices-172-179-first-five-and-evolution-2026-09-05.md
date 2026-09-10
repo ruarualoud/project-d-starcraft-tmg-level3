@@ -22,13 +22,13 @@ recommendation only. The comparison is between the two independent Faction
 Skills under the selected Race. Directed Terran→Zerg and Zerg→Terran matchup
 Skills remain separate artifacts.
 
-Current checkpoint (2026-09-11): Slices 172–177 complete; 178–179 pending.
+Current checkpoint (2026-09-11): Slices 172–178 complete; 179 pending.
 The formal offline foundational pack is `5/5`; all five exact versions are now
 runtime-accepted in the isolated online registry after both directed routes
 passed candidate and accepted Room Preview→human confirmation→Apply→Replay.
 This proves routing and authority flow with an injected deterministic Provider,
-not model strength or full-game strategy effectiveness. Ticket 18 is `5/8`
-complete with two slices remaining. See the
+not model strength or full-game strategy effectiveness. Ticket 18 is `7/8`
+complete with one slice remaining. See the
 [directed matchup closure](ticket-18-slice-175-directed-matchup-skill-closure-2026-09-11.md)
 and [online arena closure](ticket-18-slice-176-online-strategy-arena-2026-09-11.md).
 Slice177 then compiled four Rules-executed transition Episodes with strict
@@ -36,6 +36,11 @@ pre-action/outcome separation, resumed a completed reflection without a second
 Provider call, and produced two quarantined directed-matchup SkillOpt
 candidates. See the
 [SkillOpt reflection closure](ticket-18-slice-177-postgame-skillopt-2026-09-11.md).
+Slice178 then compiled both patches into complete candidate Skills, passed each
+on four old/new direction-specific Rules cases, rejected two fixed-first-actor
+negative controls, selected every arena route by exact hash, and rolled an
+isolated candidate acceptance back to the original five parent hashes. See the
+[SkillOpt regression closure](ticket-18-slice-178-skillopt-upgrade-regression-2026-09-11.md).
 
 2026-09-07 follow-up: six preexecution engineering repairs now cover current
 frozen-data movement, explicit corrected FAQ routing, resource-aware cases,

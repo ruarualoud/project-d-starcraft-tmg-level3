@@ -68,8 +68,10 @@ function assertStrategySkill(value, expectedSourceBinding) {
     fail("STRATEGY_SKILL_RUNTIME_CANDIDATE_INVALID", { skillId: skill.skillId });
   }
   const role = strategyRole(skill);
-  if ((role === "general" && skill.status !== "replay_passed")
-    || (role !== "general" && skill.status !== "offline_candidate")) {
+  const allowedStatus = role === "general"
+    ? new Set(["replay_passed"])
+    : new Set(["offline_candidate", "skillopt_candidate"]);
+  if (!allowedStatus.has(skill.status)) {
     fail("STRATEGY_SKILL_OFFLINE_STATUS_INVALID", { skillId: skill.skillId });
   }
   return freeze({ skill, role });
@@ -118,6 +120,18 @@ function promptGuidance(skill, loadRole) {
     fullGameStrategyEffectivenessProven:
       skill.fullGameStrategyEffectivenessProven === true,
     rulesAuthority: "external_rules_service",
+    ...(Array.isArray(skill.skillOptAdvisories)
+      && skill.skillOptAdvisories.length > 0 ? {
+        skillOptAdvisories: skill.skillOptAdvisories.map((advisory) => ({
+          advisoryHash: advisory.hash,
+          axis: advisory.axis,
+          title: advisory.title,
+          when: clone(advisory.when || []),
+          guidance: advisory.guidance,
+          risk: advisory.risk,
+          reviseIf: clone(advisory.reviseIf || []),
+        })),
+      } : {}),
   };
   if (loadRole === "own_faction" || loadRole === "opponent_faction") {
     return freeze({
@@ -347,6 +361,19 @@ export function createStarcraftTmgOnlineStrategySkillRegistryV1(input = {}) {
 
   function readEvaluationRoute(request = {}) {
     const selected = new Map(skillIds);
+    if (request.candidateSkillHashes !== undefined) {
+      if (!Array.isArray(request.candidateSkillHashes)
+        || request.candidateSkillHashes.length === 0
+        || new Set(request.candidateSkillHashes).size
+          !== request.candidateSkillHashes.length) {
+        fail("STRATEGY_REGISTRY_EVALUATION_SELECTION_INVALID");
+      }
+      for (const skillHash of request.candidateSkillHashes) {
+        const row = candidates.get(digest(skillHash, "candidateSkillHash"));
+        if (!row) fail("STRATEGY_REGISTRY_CANDIDATE_NOT_FOUND", { skillHash });
+        selected.set(row.skill.skillId, row.skill.hash);
+      }
+    }
     return routeSnapshot(request, "evaluation_candidate", selected, runtimeRevision);
   }
 
