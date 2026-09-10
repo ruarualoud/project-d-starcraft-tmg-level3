@@ -166,6 +166,16 @@ function evidenceCatalog(gathered) {
       authority: "accepted_same_game_rule_skill",
     });
   }
+  for (const skill of gathered.strategySkills?.skillRefs || []) {
+    refs.push({
+      evidenceId: `strategy_skill:${skill.hash}`,
+      kind: "strategy_skill",
+      id: skill.id,
+      version: skill.version,
+      hash: skill.hash,
+      authority: "accepted_or_isolated_evaluation_advisory_strategy_skill",
+    });
+  }
   if (gathered.publicEvents) {
     refs.push({
       evidenceId: "current_public_events",
@@ -188,6 +198,10 @@ function requiredEvidenceKinds(mode, intent, catalog) {
   const kinds = ["room_projection"];
   if (catalog.some((entry) => entry.kind === "rule_skill")) kinds.push("rule_skill");
   if (mode === "opponent" && intent === "take_turn") kinds.push("legal_space");
+  if (mode === "opponent" && intent === "take_turn"
+    && catalog.some((entry) => entry.kind === "strategy_skill")) {
+    kinds.push("strategy_skill");
+  }
   if (mode === "commentator") kinds.push("public_events");
   return kinds;
 }
@@ -228,6 +242,8 @@ function createResponseContract(input) {
       : "forbidden",
     strategyMemoryRefs: strategyRefs,
     strategyMemoryIsAdvisory: true,
+    strategySkillRefs: input.gathered.strategySkills?.skillRefs || [],
+    strategySkillsAreAdvisory: true,
     mayPreview: mode === "opponent" && input.intent === "take_turn",
     mayConfirm: false,
     mayApply: false,

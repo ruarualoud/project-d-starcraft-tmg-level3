@@ -15,6 +15,8 @@ import {
   assertStarcraftTmgOnlineRuleSkillSnapshotV1,
   containsStarcraftTmgOnlineContextCredentialMaterialV1,
 } from "./role-context-contracts-v1.mjs";
+import { assertStarcraftTmgOnlineStrategySkillSnapshotV1 } from
+  "../strategy-skills/online-strategy-skill-registry-v1.mjs";
 
 export const STARCRAFT_TMG_ONLINE_ROLE_CONTEXT_RUNTIME_VERSION =
   "starcraft_tmg_online_role_context_runtime_v1";
@@ -325,6 +327,8 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       historyPolicy,
       promptArtifactDurability: "ephemeral_server_store",
       ruleSkillPolicy: "accepted_same_game_same_rules_hash_refs_only",
+      strategySkillPolicy:
+        "opponent_only_explicit_registry_snapshot_advisory_no_rules_authority",
       memoryPolicy: "accepted_same_session_allowed_namespace_advisory_only",
       memoryWrites: "disabled_live_turn",
       skillGeneration: "disabled_live_turn",
@@ -534,6 +538,30 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       });
     }
 
+    let strategySkills = null;
+    if (session.binding.mode === "opponent"
+      && typeof roomTools.readStrategySkills === "function") {
+      const strategy = await roomTools.readStrategySkills(input);
+      calls.push("read_strategy_skills");
+      if (!strategy?.ok) throw Object.assign(new Error("strategy Skill read failed"), {
+        code: "strategy_skill_read_failed",
+      });
+      try {
+        strategySkills = assertStarcraftTmgOnlineStrategySkillSnapshotV1(
+          strategy.snapshot, {
+            roomId: session.binding.roomId,
+            roomBindingHash: session.binding.roomBinding.roomBindingHash,
+            rulesVersion: session.binding.roomBinding.rulesVersion,
+            dataVersion: session.binding.roomBinding.dataVersion,
+            sourceSnapshotHash: session.binding.roomBinding.sourceSnapshotHash,
+          });
+      } catch {
+        throw Object.assign(new Error("strategy Skill snapshot was rejected"), {
+          code: "strategy_skill_snapshot_rejected",
+        });
+      }
+    }
+
     const memory = await memoryStore.read({
       gameId: "starcraft-tmg",
       roomId: session.binding.roomId,
@@ -582,6 +610,7 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       legalSpaceHash: legalSpace?.legalSpaceHash || null,
       publicEventsHash: publicEvents?.eventsHash || null,
       ruleSkillSnapshotHash: ruleSkills.snapshotHash,
+      strategySkillSnapshotHash: strategySkills?.snapshotHash || null,
       memorySnapshotHash: memorySnapshot.snapshotHash,
       worldbookActivationHash: worldbookActivation.receipt.activationHash,
       modelInitiatedToolCalls: 0,
@@ -594,6 +623,7 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       legalSpace,
       publicEvents,
       ruleSkills,
+      strategySkills,
       memorySnapshot,
       worldbookActivation,
       receipt,
@@ -629,6 +659,16 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         rulesAuthority: "external_rules_service",
         skillsMayOverrideRules: false,
       }),
+      ...(gathered.strategySkills ? [node("runtime-strategy-skills", "advisory", {
+        snapshotHash: gathered.strategySkills.snapshotHash,
+        refs: gathered.strategySkills.skillRefs,
+        guidance: gathered.strategySkills.skillEntries.map((entry) =>
+          entry.promptGuidance),
+        dependencyOrder: gathered.strategySkills.dependencyOrder,
+        publicationState: gathered.strategySkills.publicationState,
+        rulesAuthority: "external_rules_service",
+        skillsMayOverrideRules: false,
+      })] : []),
       node("runtime-memory", "advisory", {
         snapshotHash: gathered.memorySnapshot.snapshotHash,
         entries: gathered.memorySnapshot.entries,
@@ -652,6 +692,7 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       basePromptReceiptHash: base.receipt.receiptHash,
       nodeHashes: nodes.map((entry) => entry.nodeHash),
       ruleSkillSetHash: gathered.ruleSkills.skillSetHash,
+      strategySkillSetHash: gathered.strategySkills?.skillSetHash || null,
       memorySetHash: gathered.memorySnapshot.memorySetHash,
       historyHash: history.historyHash,
       toolContextReceiptHash: gathered.receipt.receiptHash,
@@ -681,6 +722,7 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       return deepFreeze({
         promptPack: getStarcraftTmgModeCapability(session.binding.mode).promptPack,
         ruleSkillRefs: [],
+        strategySkillRefs: [],
         memoryRefs: [],
         harnessToolsCalled: [],
         lastTrace: null,
@@ -702,6 +744,7 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       toolAllowlist: session.capability.tools,
       memoryNamespaces: session.capability.memoryNamespaces,
       ruleSkillRefs: previous.ruleSkillRefs,
+      strategySkillRefs: previous.strategySkillRefs,
       memoryRefs: previous.memoryRefs,
       harnessToolsCalled: previous.harnessToolsCalled,
       history,
@@ -868,6 +911,7 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         promptReceiptHash: prompt.receipt.receiptHash,
         promptArtifactHash: prompt.artifact.promptArtifactHash,
         ruleSkillRefs: gathered.ruleSkills.skillRefs,
+        strategySkillRefs: gathered.strategySkills?.skillRefs || [],
         memoryRefs: gathered.memorySnapshot.refs,
         harnessVersion: STARCRAFT_TMG_ONLINE_ROLE_CONTEXT_RUNTIME_VERSION,
         agentVersion: materials.providerProfile.model,
@@ -904,6 +948,7 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       lastContexts.set(session.sessionId, deepFreeze({
         promptPack: materials.capability.promptPack,
         ruleSkillRefs: gathered.ruleSkills.skillRefs,
+        strategySkillRefs: gathered.strategySkills?.skillRefs || [],
         memoryRefs: gathered.memorySnapshot.refs,
         harnessToolsCalled: allToolCalls,
         lastTrace: trace,
