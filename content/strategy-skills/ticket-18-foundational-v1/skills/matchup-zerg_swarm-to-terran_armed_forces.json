@@ -1,0 +1,627 @@
+{
+  "schema": "project_d_game_skill_v1",
+  "gameId": "starcraft-tmg",
+  "rulesVersion": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+  "sourceBinding": {
+    "core": "1adbdb652fafc09d01887981a3ae86f69e65e1f1480d804156a8da1d4d1757a1",
+    "faq": "2881adb2a4e0475f07bb17aebf02e64f35c9073f274cec2cf0a8f770f8647226",
+    "rules": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+    "dataset": "b2579b83bb9a77b6119730009725a34d4e828d92d302248243bab33863551067"
+  },
+  "skillId": "starcraft-tmg.matchup.zerg_swarm-to-terran_armed_forces",
+  "version": "1.0.0-offline-bounded-evaluation",
+  "skillType": "strategy",
+  "direction": {
+    "family": "matchup",
+    "ownFaction": "tactical_cards:zerg_swarm",
+    "opponentFaction": "tactical_cards:terran_armed_forces"
+  },
+  "dependencies": {
+    "generalSkillHash": "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+    "ownFactionSkillHash": "7b49063aafbd1d67302a8674249f07dfc5a21892747f95222649af2ff541a960",
+    "opponentFactionSkillHash": "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148"
+  },
+  "strategyLayerHash": "ee2622d6f3c87edfe909d34ae0f42b6728791f31555c56f11e1bf938dd2e9503",
+  "sourceRefs": [
+    "source:tactical_cards:zerg_swarm",
+    "source:tactical_cards:terran_armed_forces",
+    "source:army_units:jim_raynor",
+    "source:army_units:goliath",
+    "source:army_units:medic",
+    "source:army_units:marine",
+    "source:army_units:marauder",
+    "source:faction_cards:mission_hold_position",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.50",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+    "faq-v1:37",
+    "faq-v1:53",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.3",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.2",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.2",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.4",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.75",
+    "core.OszqexisUrSOKMW6TzA5.items.2",
+    "faq-v1:27",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.1",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+    "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.32",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.37",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.38",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.54",
+    "core.OszqexisUrSOKMW6TzA5.items.4",
+    "core.OszqexisUrSOKMW6TzA5.items.6",
+    "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.2",
+    "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.5",
+    "core.u3zNStKpd5XegMjmJfMS.items.1",
+    "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.9",
+    "faq-v1:29",
+    "faq-v1:34",
+    "faq-v1:48",
+    "faq-v1:59",
+    "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.6",
+    "faq-v1:25",
+    "faq-v1:26",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.0",
+    "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+    "source:faction_cards:mission_supply_drop",
+    "source:faction_cards:mission_supply_drop__skirmish_",
+    "faq-v1:62",
+    "faq-v1:63"
+  ],
+  "preconditions": [
+    "加载精确总规则、己方势力与对方势力 Skill 依赖",
+    "读取当前玩家可见状态、任务、阶段、资源、单位与升级",
+    "先从 Rules 服务取得当前 LegalSpace；策略不能创造动作或裁定规则"
+  ],
+  "procedure": [
+    {
+      "axis": "opponent_profile",
+      "title": "Zerg Swarm 对 Terran Armed Forces：按对手公开能力与当前可见局面选择争夺或保留",
+      "when": [
+        "己方为 Zerg Swarm，对手为 Terran Armed Forces，需要为当前阶段选择行动方向",
+        "对手的 Jim Raynor、Goliath、Medic、Marine/Marauder 升级与战术卡状态部分可见或部分未知",
+        "当前任务为 Hold Position（Standard：起始 Supply 6、每轮 +2、第 2 轮起计分、领先 10+ VP 立即结束）或同类按 Supply 争夺标记的任务",
+        "当前可见局面中双方在场单位与可争夺标记数量有限，需要判断先到位还是保留激活"
+      ],
+      "objective": "把对手 Terran 的公开能力当作可观察约束来规划，而不是按模型数或基础 Supply 估算对手争夺总值；在当前可见局面下优先选择能兑现当前任务收益且不依赖未证实假设的行动，并明确对手主要回应发生时的转换条件。",
+      "steps": [
+        "先读取当前可见局面：回合数、阶段、先手标记持有者、双方在场单位及其 currentSupply、可争夺标记的编号与坐标、己方 Ready 资源卡数量与类型。不依据对手阵营 Skill 中的建议作为己方选项。",
+        "把对手 Terran 的公开能力列为约束：Jim Raynor 的 Commander（自身 Supply 视为 +1 用于控制/争夺/完成任务/Disengage）与 Freedom Fighters（8\" 内友方在控制/争夺/完成任务时 Supply 不低于 1）；Goliath 的 Indomitable（Engaged 时仍可向外射击，防御方获 Evade Roll）与 PINPOINT（仅允许向 Engaged 目标射击）；Medic 的 Life Support/Restoration 为反应且受每次激活每玩家一个反应限制；Marine/Marauder 的 Stimpack 造成 NON-LETHAL DAMAGE (2) 只累加至 Damage Marker。",
+        "对每个候选标记，先确认它是否在当前可见局面中存在且可争夺：若当前只有中立标记（如 marker-5）而无对手颜色标记，则“争夺对手颜色标记得 2 VP”的分支在当前局面没有对象，不得据此规划。",
+        "计算争夺比较时，只使用当前可见的对手争夺单位与其 Supply，并把 Jim Raynor 光环覆盖范围作为未确认项：若无法确认某标记是否在其 8\" 内，则把该标记的争夺结果标为不确定，不写成确定分支。",
+        "比较候选行动：先到位争夺当前可争夺标记、保留激活以回应对手移动阶段行动、或使用 Rapid Burrowing 规避火力。Rapid Burrowing 使目标获得 Burrowed，但 Burrowed 单位不能控制或争夺任务标记，且执行除 Hold 外的行动会立即移除 Burrowed，因此它不能与“当轮争夺标记”同时成立。",
+        "若己方单位 currentSupply 为 0 且无对手争夺，Supply 0 单位仍可控制标记；此时“谁先到位”比“谁 Supply 高”更关键，但仍须满足在战场、In Coherency、至少一个模型在标记 3\" 内且有 LoS 并在同一海拔。",
+        "对已使用 Stimpack 的 Terran 单位，把其 Damage Marker 视为已累积；追加一次可靠普通伤害的击杀价值高于对未累积标记的同类单位，但该判断依赖命中与防御结果，须用概率而非单次骰点表述。",
+        "每次对手行动后重读可见局面，只执行仍成立的下一步；不照抄预先设定的完整队列。"
+      ],
+      "alternatives": [
+        {
+          "option": "先到位争夺当前可争夺标记",
+          "preferWhen": "当前局面存在可争夺标记且己方单位能在本阶段内满足争夺条件（在战场、In Coherency、至少一个模型在标记 3\" 内且有 LoS 并在同一海拔），且对手尚无单位在该标记上形成更高争夺 Supply"
+        },
+        {
+          "option": "保留激活以回应对手移动阶段行动",
+          "preferWhen": "对手仍有未激活单位或可能使用 Terran Tenacity 抢走 Assault Phase 先手，且当前标记的争夺结果在对手行动后可能改变；保留激活的代价是放弃本阶段先到位的机会"
+        },
+        {
+          "option": "使用 Rapid Burrowing 规避火力",
+          "preferWhen": "己方单位当轮不需要争夺或控制任务标记，且预期对手在突击阶段以远程攻击集中打击该单位；若该单位是当轮唯一争夺关键标记的单位，则不应使用"
+        },
+        {
+          "option": "对已使用 Stimpack 的 Terran 单位追加普通伤害",
+          "preferWhen": "己方有合法攻击机会且该单位 Damage Marker 已累积，追加伤害可能触发伤亡移除；若己方攻击机会有限或目标防御较高，则优先攻击其他目标"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手使用 Terran Tenacity 在移动阶段取得 First Player Marker，使 Assault Phase 由对手先激活",
+          "adaptation": "不假设己方在 Assault Phase 先行动；重新评估己方单位在对手先射击下的生存与站位，必要时把原定争夺计划改为保守站位或保留 Brood Instinct 应对关键攻击"
+        },
+        {
+          "response": "对手的 Jim Raynor 光环覆盖己方目标标记，使对手争夺 Supply 高于己方估算",
+          "adaptation": "重算该标记的争夺比较；若己方合计 Supply 无法严格超过对手，考虑放弃该标记转向其他可争夺标记，或集中更多单位后再争夺，而不是投入更多单位陷入消耗"
+        },
+        {
+          "response": "对手的 Goliath 在 Engaged 状态下仍向外射击，或使用 Target Lock 使 Autocannon 获得 Surge 加成",
+          "adaptation": "重新评估己方接战 Goliath 的单位在 Assault Phase 的生存；若该单位可能被消灭，考虑改用其他目标或调整站位，避免把关键单位暴露在 Goliath 火力下"
+        },
+        {
+          "response": "对手在同一敌方激活中只能结算一个反应（Medic 减伤或 Engineering Bay 护甲强化二选一）",
+          "adaptation": "把该约束当作可观察限制，但不能假定对手一定选哪一个；若己方集火依赖对手不使用减伤，则须准备对手使用减伤后的后续批次或改用其他目标"
+        }
+      ],
+      "risk": "本策略只覆盖有限分支，不证明任何计划在完整对局中更优。对手军队构成、升级选择、战术意图与随机掷骰结果存在不确定性；Jim Raynor 光环的 8\" 覆盖范围、Supply Depot 的 Additional Supply Depots 是否与 Commander 叠加、Terran Tenacity 能否夺回已因早 Pass 获得的 First Player Marker、Armed and Ready 是否消耗整个激活、HIGH GROUND Cover 正文与决策表的措辞冲突，均在来源中未裁定，依赖这些未决项的规划可能失效。",
+      "reviseIf": [
+        "对手公开新信息（如部署 Jim Raynor、Goliath 携带 Target Lock、Medic 携带 Stabilizer Medpacks），改变 Supply 比较或生存估算",
+        "当前可见局面中可争夺标记的数量或坐标改变，使原定目标不再存在",
+        "对手使用 Terran Tenacity 或提前 Pass 改变先手标记归属",
+        "己方单位被 Burrow、失序或变为 Flying，失去争夺资格",
+        "规则服务或裁判裁定 Jim Raynor 光环覆盖范围、Supply 加成叠加、Terran Tenacity 夺回时机、Armed and Ready 激活消耗或 HIGH GROUND Cover 措辞冲突"
+      ],
+      "requiredQueries": [
+        "viewer_state",
+        "legal_space",
+        "phase",
+        "initiative",
+        "activation_state",
+        "threat",
+        "own_resources",
+        "score_forecast"
+      ],
+      "ruleRefs": [
+        "source:tactical_cards:zerg_swarm",
+        "source:tactical_cards:terran_armed_forces",
+        "source:army_units:jim_raynor",
+        "source:army_units:goliath",
+        "source:army_units:medic",
+        "source:army_units:marine",
+        "source:army_units:marauder",
+        "source:faction_cards:mission_hold_position",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.50",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+        "faq-v1:37",
+        "faq-v1:53"
+      ],
+      "developmentCaseIds": []
+    },
+    {
+      "axis": "opening_branches",
+      "title": "Zerg Swarm 对 Terran Armed Forces 的开局分支：先手标记持有者的首个激活分配与早 Pass 取舍",
+      "when": [
+        "己方为 Zerg Swarm，对手为 Terran Armed Forces，处于第1轮移动阶段且双方单位均在预备队",
+        "己方持有先手标记，需决定本阶段首个激活由哪一方执行",
+        "己方或对手可能通过早 Pass 争夺下一阶段先手标记",
+        "任务为 Hold Position（Standard），第1轮标记 VP 尚未启用"
+      ],
+      "objective": "在交替激活与先手标记规则下，选择第1轮移动阶段的首个激活分配与是否早 Pass，使己方在标记 VP 尚未启用的第1轮仍能兑现可说明的收益（位置、第2轮起的控制、摧毁敌方补给得分），同时避免把本阶段剩余激活让给对手利用。不假设任何分支在完整对局中更优。",
+      "steps": [
+        "读取当前阶段、先手标记持有者、双方已激活状态、双方预备队单位及其当前补给值、Available Supply（= 当前 Supply Pool − 战场上友方单位总当前补给），以及 Gauntlet 部署卡下双方 Entry Edge 与 6 英寸 Zone of Influence 的几何。",
+        "确认硬约束：所有单位开局在预备队；Deploy 须满足 Current Supply Value ≤ Available Supply，不能以结束位置落在对手 Zone of Influence 内，且绝不能以 Out of Coherency 结束 Deploy；若所有模型无法合法放置并保持 Coherency，该单位不能在该位置部署。",
+        "确认预备队单位在放置到战场前不能使用能力或测量距离，因此部署移动必须使用单位标准 Speed，不能获得 ON CREEP 等加成；任何“部署时先吃速度加成”的分支假设不成立。",
+        "确认第1轮标记得分尚未启用（Hold Position 从第2轮起才按标记计 VP），因此第1轮开局分支的收益只能体现为位置、后续回合控制与摧毁敌方补给得分，不能把第2轮起的计分结构直接套到第1轮。",
+        "比较首个激活分配的两个分支：己方先激活（先部署/先占位）与让对手先激活（先观察对手投入再决定落点）。先手标记持有者拥有选择权，但选择本身不赋予任何一方额外行动。",
+        "比较是否早 Pass：第一个 Pass 的玩家取得下一阶段先手标记，但一旦 Pass 本阶段不能再激活任何单位，对手随后完成剩余激活；须同时计入收益（下一阶段先手）与代价（放弃本阶段剩余激活，对手可利用其部署到己方射程外、可冲锋位置或抢占标记）。",
+        "确认 Supply 0 例外与争夺边界：若没有敌方单位争夺，Supply 0 单位仍可控制标记；但 Supply 0 单位无法赢得争夺（平局不转移控制）。因此“先抢标记”与“先击杀”的排序须先确认对手是否有合格争夺单位。",
+        "每次对手行动后重读可见局面，只执行仍成立的下一步；不照抄预先设定的完整队列。"
+      ],
+      "alternatives": [
+        {
+          "option": "己方先激活，部署低补给单位抢占标记 5（中立，27,18）附近位置",
+          "preferWhen": "己方有低补给单位可在 Available Supply 内合法部署，且对手尚无合格争夺单位；第1轮虽不计标记 VP，但可建立第2轮起的粘性控制基础"
+        },
+        {
+          "option": "让对手先激活，己方保留首个激活以观察对手部署落点",
+          "preferWhen": "对手预备队构成或意图未知，且等待不丢失己方关键落点；先手标记持有者拥有选择权，让出首个激活不赋予对手额外行动"
+        },
+        {
+          "option": "己方先激活后早 Pass，取得突击阶段先手标记",
+          "preferWhen": "己方关键单位已就位或无需再部署，且由标记持有者选择突击阶段首个行动方的收益超过放弃本阶段剩余激活的机会成本；须先确认对手是否仍有预备队可利用这些激活"
+        },
+        {
+          "option": "保留高补给单位至第2轮，第1轮仅部署低补给单位或不部署",
+          "preferWhen": "第1轮标记得分未启用，且第2轮补给池增长（+2）后可部署更高补给单位以争夺标记；须评估对手是否会在第1轮抢占关键落点"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手使用 Terran Tenacity（每局一次，主动能力）立即取得先手标记，且本阶段其他玩家不能再取得该标记",
+          "adaptation": "放弃原定“早 Pass 换下一阶段先手”的分支；重新评估本阶段剩余合法激活，优先完成仍有价值的位置部署或保留单位，不假设 Tenacity 能否夺回对手已 Pass 取得的标记（该交互在冻结来源中未完整说明，须提交规则服务或裁判）"
+        },
+        {
+          "response": "对手在移动阶段早 Pass 取得突击阶段先手标记，随后完成其剩余激活",
+          "adaptation": "本阶段完成己方仍有价值的剩余合法激活；进入突击阶段后不假设己方先行动，并在标记持有者选择首个行动方后重新评估下一步"
+        },
+        {
+          "response": "对手部署高补给单位至标记 5 附近，形成争夺态势",
+          "adaptation": "重算标记 5 的争夺补给总值；若己方争夺补给不足，考虑放弃该标记并转向其他可得分目标，或保留高补给单位至第2轮再争夺，而非投入更多单位陷入消耗"
+        },
+        {
+          "response": "对手部署单位至可冲锋己方单位的位置或己方射程外",
+          "adaptation": "重新评估己方部署落点的安全性；若原落点已不可接受，考虑选择更保守的落点或保留单位至第2轮"
+        }
+      ],
+      "risk": "本策略不证明任何开局分支在完整对局中更优；开发案例 matchup.zerg_to_terran.initiative.development 为合成夹具，reachableFromMatchStartProven 为 false，runtimeCoverage 明确排除 zerg_movement、zerg_card_cleanup、combat_and_scoring 与 matchup_strategy_preference。当前可见局面为单步夹具（双方各一单位、Supply 0、无地形、无升级），不能据此推断开局分支的实战收益。Terran Tenacity 与对手已 Pass 后标记归属的精确交互未在冻结来源中完整说明。Rapid Burrowing 与 Brood Instinct 的 BM 费用数值在本次来源中未逐项给出，故第1轮是否需要 BM 的取舍无法量化。",
+      "reviseIf": [
+        "对手使用 Terran Tenacity 或早 Pass 改变先手标记归属时",
+        "己方或对手的预备队单位、当前补给值或 Available Supply 发生变化时",
+        "任务计分结构改变（如标记 VP 启用轮次变化）或分差接近 10 VP 即时胜利阈值时",
+        "Gauntlet 部署卡下 Entry Edge 与 Zone of Influence 的几何使原定落点不再合法时",
+        "规则服务或裁判裁定 Terran Tenacity 与已 Pass 标记的交互、或 Rapid Burrowing/Brood Instinct 的 BM 费用时"
+      ],
+      "requiredQueries": [
+        "legal_space",
+        "phase",
+        "initiative",
+        "activation_state",
+        "viewer_state",
+        "own_resources",
+        "geometry"
+      ],
+      "ruleRefs": [
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.3",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.4",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.75",
+        "core.OszqexisUrSOKMW6TzA5.items.2",
+        "faq-v1:27",
+        "source:faction_cards:mission_hold_position",
+        "source:tactical_cards:terran_armed_forces",
+        "source:tactical_cards:zerg_swarm"
+      ],
+      "developmentCaseIds": [
+        "matchup.zerg_to_terran.initiative.development"
+      ]
+    },
+    {
+      "axis": "counterplay",
+      "title": "对手回应分支下的反制计划：以公开信息与规则窗口为限",
+      "when": [
+        "己方为 Zerg Swarm，对手为 Terran Armed Forces，处于交替激活阶段（阶段1/2/3）且对手仍有未激活单位或可用 Reaction",
+        "需要决定是否以及如何反制对手已声明或可预期的行动（部署、移动/奔跑、冲锋、远程攻击、近战攻击、Reaction/Active 能力）",
+        "己方持有或可争夺先手标记，或对手可能通过 Pass 取得下一阶段先手",
+        "己方有 Ready 的匹配资源卡（BM）可支付反制能力，或可依赖规则授予的防御资格（Evade、HIDDEN、INDIRECT FIRE、INSTANT）"
+      ],
+      "objective": "在对手公开可行的回应分支下，选择仍能兑现当前任务收益的反制方案，并明确回应发生时的转换条件；不把任何反制偏好当作规则或已证实的优势，合法性一律交由 Rules 服务裁定。",
+      "steps": [
+        "读取当前回合、阶段、先手标记持有者、双方已激活状态、对手可见单位位置与剩余行动，以及己方 Ready 资源卡与 BM 数量；不依据单位名称或历史版本猜测能力。",
+        "区分反制对象：对手已声明的行动（受精确触发时机约束，如 Reaction 必须在触发瞬间声明）与对手可能的行动（仅为条件性假设，不得写成确定分支）。",
+        "枚举规则授予的反制窗口并逐一核对适用条件：目标已接战时远程攻击的 Evade Roll 资格；HIDDEN 使 4 英寸外不可被选为目标；INDIRECT FIRE 对不在视线内目标授予 Evade Roll；INSTANT 阻止敌方声明或结算 Reaction；先手标记持有者决定每阶段首个行动方；第一个 Pass 者取得下一阶段先手标记且 Pass 后本阶段不能再激活。",
+        "核对频率与支付约束：每玩家每次激活仅一个 Reaction（REPEATABLE 不解除此限）；每具名 Active/Reaction 能力每轮每单位一次；支付须耗尽匹配资源类型的 Ready 卡，超额资源立即丢失，耗尽后该卡本回合不再提供资源或能力。",
+        "对每个候选反制，列出至少一个会使该反制失效的对手公开回应（如对手先 Pass 取得下一阶段先手、对手结算 Reaction 降低收益、对手以更高争夺补给总值夺回标记），并说明该回应发生时的转换目标。",
+        "比较候选时保留骰子边界：修正只调整目标值，目标值不得低于 2+ 或高于 6+，自然 1 必败、自然 6 必胜；ANTI-EVADE 等修正最多把检定恶化到 6+，不能完全取消一次检定。",
+        "若关键判断落在未解决的来源冲突上（HIGH GROUND Cover 正文与决策表措辞不一致；BURROWED 授予闪避掷骰与 Evade 为 Null Value 的冲突），不自行裁定，改用保守分支或上报规则服务。",
+        "每次对手动作后重读可见局面，只执行仍成立的下一步；不照抄预先设定的完整队列。"
+      ],
+      "alternatives": [
+        {
+          "option": "承诺推进既定反制",
+          "preferWhen": "主要对手公开回应下仍能兑现足够任务或伤害收益，且反制所依赖的规则窗口（Evade 资格、HIDDEN、INSTANT 等）在当前局面确实成立"
+        },
+        {
+          "option": "保留后手或低承诺反制",
+          "preferWhen": "对手存在代价较低的强反制（如先 Pass 取得下一阶段先手、可用 Reaction 削减收益），或己方信息不足（Closed Lists 下未部署单位升级未知）"
+        },
+        {
+          "option": "先补全只读信息再反制",
+          "preferWhen": "等待查询不丢失合法行动窗口，且能显著缩小关键不确定性（如确认对手已部署单位升级、确认 LegalSpace 候选）"
+        },
+        {
+          "option": "放弃反制，转为保单位或保标记",
+          "preferWhen": "反制代价（耗尽关键资源卡、暴露高价值单位、失去标记争夺资格）超过其可兑现收益"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手首先 Pass 并取得下一阶段 First Player Marker，随后在下一阶段选择首个行动方",
+          "adaptation": "本阶段完成仍有价值的剩余合法激活；进入下一阶段后不假设己方先行动，在标记持有者选择首个行动方后重新评估下一步，并重新核对己方 Reaction 窗口是否仍可用"
+        },
+        {
+          "response": "对手在合法触发点结算可见 Reaction（如减伤、闪避、反制冲锋），或使用 INSTANT 武器阻止己方声明 Reaction",
+          "adaptation": "重新读取结算后的可见局面；若原反制收益被大幅削减，转向其他合法目标或保留仍为 Ready 的支付卡牌；若己方 Reaction 被 INSTANT 封锁，改用非 Reaction 手段（提前站位、依赖 Armour/Evade）"
+        },
+        {
+          "response": "对手以更高争夺补给总值夺回或控制关键任务标记",
+          "adaptation": "重算该标记控制权与分差；若己方争夺补给总值不足，考虑放弃该标记并转向其他可得分目标，而非投入更多单位陷入消耗"
+        },
+        {
+          "response": "对手部署新单位或公开新信息（Closed Lists 下部署时披露升级）",
+          "adaptation": "更新假设后重新比较原备选，停止固定序列，只执行仍成立的下一步；若新信息使原反制前提失效，转向保守分支"
+        }
+      ],
+      "risk": "本轴没有任何已冻结的 matchup 反制策略文本或对手回应案例；developmentCases 仅含一个单步先手选择演练，其 runtimeCoverage 明确排除战斗、计分与 matchup 策略偏好，故无法据此证明任何反制方案更优。反制收益取决于单位位置、射程、任务目标与对手资源状态，均未量化。HIGH GROUND Cover 措辞冲突与 BURROWED-vs-Null-Evade 冲突未解决，涉及该情形的反制判断未决。任何反制偏好都只是条件性假设，不是规则、不是已证实的胜率优势。",
+      "reviseIf": [
+        "对手回应超出假设范围，或原反制的必要前提（位置、资源、控制、规则窗口）失效",
+        "对手公开新信息（部署新单位、使用 Reaction、披露升级）改变威胁评估",
+        "己方关键单位被威胁、失去行动能力，或 Ready 资源卡不足以支付反制费用",
+        "规则服务或裁判裁定 HIGH GROUND Cover 措辞冲突或 BURROWED-vs-Null-Evade 冲突，改变相关反制判断",
+        "任务计分条件或分差改变，使反制优先抢分与优先保单位的排序发生变化"
+      ],
+      "requiredQueries": [
+        "viewer_state",
+        "legal_space",
+        "preview",
+        "phase",
+        "initiative",
+        "activation_state",
+        "threat",
+        "own_resources"
+      ],
+      "ruleRefs": [
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.1",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+        "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.32",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.37",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.38",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.54",
+        "core.OszqexisUrSOKMW6TzA5.items.4",
+        "core.OszqexisUrSOKMW6TzA5.items.6",
+        "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.2",
+        "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.5",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8",
+        "core.u3zNStKpd5XegMjmJfMS.items.1",
+        "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.9",
+        "faq-v1:29",
+        "faq-v1:34",
+        "faq-v1:48",
+        "faq-v1:59"
+      ],
+      "developmentCaseIds": []
+    },
+    {
+      "axis": "resource_exchange",
+      "title": "Zerg 对 Terran：以单张 Ready 资源卡的机会成本决定耗尽、保留或放弃支付",
+      "when": [
+        "己方为 Zerg（BM/Biomass），对手为 Terran（CP/Command Point），双方资源类型互不通用",
+        "当前回合己方仅有一张 Ready 的 Biomass 资源卡（如 player2-zerg-swarm，resource 1），本回合可支付上限为 1 BM",
+        "存在需要 BM 支付的主动能力（绑定单位激活窗口）或反应能力（绑定触发时刻，每玩家每次激活最多一个）",
+        "对手仍有未激活单位或可用反应能力，可能在本回合改变战场局面"
+      ],
+      "objective": "在资源类型隔离、超额资源丢失、耗尽与使用卡牌自身能力互斥的约束下，选择能带来可说明的当前或近期收益的支付方案，同时保留足够的 Ready 卡给更关键的后续窗口；不假设存在跨回合储蓄或资源转换。",
+      "steps": [
+        "读取当前阶段、己方 Ready 资源卡的数量与资源类型、各单位激活状态与剩余合法行动；确认本回合可支付上限（本对局为 1 BM）。",
+        "列出每个候选支付：需要耗尽哪张 Ready 卡、该卡因此本回合无法再提供的至少一个后续用途（产生资源或使用其自身 Active/Reaction 能力），以及该支付依赖的假设。",
+        "区分支付窗口类型：主动能力只能在单位被激活时、于声明行动前或行动完全结算后立即使用；反应能力必须在触发发生的精确时刻声明，且每玩家每次激活最多结算一个反应。",
+        "对每个候选，只在其存在可说明的增量收益（如到达新位置、获得关键加成、阻止关键伤害）时才选择支出；若当前不支付也能达成目标，或保留资源对后续更关键窗口价值更高，则选择保留。",
+        "确认超额资源立即丢失：用产出高于费用的卡支付低费用能力会造成不可回收的浪费，属规划错误而非对手造成的威胁。",
+        "确认预备队单位不能使用主动、被动或反应能力，也不能测量距离，除非能力明确说明可在预备队生效或该能力本身就是执行部署的能力。",
+        "每次对手行动后重读可见局面，只执行仍成立的下一步；不照抄预先设定的完整队列。"
+      ],
+      "alternatives": [
+        {
+          "option": "立即耗尽 Ready 资源卡以支付当前能力",
+          "preferWhen": "当前窗口关闭后无法再兑现关键收益，且支付后的增量收益足以覆盖资源消耗与该卡本回合失去自身能力的代价"
+        },
+        {
+          "option": "保留 Ready 资源卡不支付",
+          "preferWhen": "当前不支付也能完成目标，或保留该卡对后续更关键的反应/主动窗口（或使用其自身能力）价值更高"
+        },
+        {
+          "option": "放弃本回合支付，改用不消耗资源的行动",
+          "preferWhen": "所有候选支付的收益均不可说明，或支付会使关键单位暴露于不可接受的反击风险"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手在己方计划支付的单位激活前将其移除或使其无法激活（如通过反应能力强制其视为已激活，或直接摧毁）",
+          "adaptation": "重新评估仍为 Ready 且资源类型匹配的卡牌与当前计划；若原支付窗口已消失，放弃原计划并保护仍可用于新威胁的支付窗口"
+        },
+        {
+          "response": "对手在己方支付后于同一激活中结算其自身反应能力",
+          "adaptation": "注意每玩家每次激活最多一个反应是各自独立的，对手的反应不消耗己方名额；重新读取结算后的可见局面，若原计划收益被削减则转向其他合法目标或保留仍为 Ready 的卡牌"
+        }
+      ],
+      "risk": "本策略的有效性缺乏完整对局证据：本对局为单步执行演练（declared_single_transition_drill），仅覆盖 Round 2 Movement Phase 的先行动选择，未覆盖完整回合的资源循环、Cleanup 刷新或跨回合资源规划。观察中 player2 的 Biomass 卡 abilities 为空数组，无法确认其是否实际带有 Rapid Burrowing 或 Brood Instinct 等能力，因此「耗尽它即失去其自身能力」在本对局中未被证实。观察未列出 player1（Terran）的 cardResources，无法核验 Terran 侧本回合可支付的 CP 上限，任何跨阵营资源节奏比较均缺乏证据。",
+      "reviseIf": [
+        "可支付卡牌的 Ready/Exhausted 状态、匹配资源类型或可产生数值发生变化",
+        "当前支付的收益前提（如目标可达性、单位激活窗口、后续行动可行性）被破坏",
+        "对手行动改变了关键后续窗口的优先级，或使原计划支付的单位无法激活",
+        "获得 player1 的 cardResources 或 player2-zerg-swarm 的能力清单后，重新核验本对局的可支付上限与机会成本",
+        "存在未收录的 FAQ 或产品更新改变资源支付、超额丢失或耗尽刷新规则时，以现行官方来源为准"
+      ],
+      "requiredQueries": [
+        "own_resources",
+        "legal_space",
+        "preview",
+        "phase",
+        "activation_state",
+        "viewer_state"
+      ],
+      "ruleRefs": [
+        "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+        "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.0",
+        "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.6",
+        "faq-v1:25",
+        "faq-v1:26",
+        "faq-v1:34",
+        "faq-v1:59"
+      ],
+      "developmentCaseIds": []
+    },
+    {
+      "axis": "endgame",
+      "title": "终局条件性规划：以任务卡阈值、预备队计分与先手机制为约束",
+      "when": [
+        "当前局面已进入或接近任务卡定义的最终回合（如 Hold Position Standard 为第5回合）",
+        "需要判断本回合应优先抢分、守分、击杀敌方单位或部署预备队单位",
+        "双方分差接近任务卡即时胜利阈值（如 Hold Position Standard 为10+ VP）",
+        "己方或对手仍有单位留在预备队（Reserves）"
+      ],
+      "objective": "在任务卡定义的终局窗口内，选择能最大化最终净VP或阻止对手达成即时胜利的计划。净VP需同时计入标记控制得分、摧毁敌方Supply得分、Supply下降给对手的VP，以及最终Scoring Phase开始时预备队单位被视为Destroyed所给对手的VP。不假设存在脱离具体任务卡与局面的通用终局最优解。",
+      "steps": [
+        "读取任务卡数据：确认即时胜利阈值（Hold Position Standard 为10+ VP，Supply Drop Standard 为12+，Supply Drop Skirmish 为8+）、游戏长度、标记计分起始回合与每标记VP值；不把某一任务卡的阈值当作通用规则。",
+        "读取当前回合数、双方VP与分差、各标记控制状态、双方场上与预备队单位的Current Supply Value，以及本回合剩余合法激活数。",
+        "区分三条独立终局触发：特殊胜利条件达成（立即结束，达成者直接获胜）；一方场上无模型且预备队无单位（幸存方+10 VP）；最终回合最终阶段完成（进入Part 8.10结算）。三者互不等价，不能把其中一条当作另一条的替代。",
+        "计算本回合预计净VP：标记控制得分（Hold Position从第2回合起，中立/己方色1 VP，对手色2 VP）＋摧毁敌方Supply得分（每1 Supply 1 VP）－己方Supply下降给对手的VP（faq-v1:62）－最终回合预备队单位被视为Destroyed所给对手的VP。",
+        "若己方领先且本回合预计得分会使分差达到或超过任务卡阈值，优先选择能立即结束游戏的计划；若己方落后且对手可能达到阈值，优先选择能阻止对手得分或降低己方暴露风险的计划。",
+        "在最终回合，比较将单位留在预备队与部署上场：最终Scoring Phase开始时仍在预备队的单位被视为Destroyed并按任务卡给对手VP，因此规划应在该时点前完成部署，而非等到计分阶段才评估。",
+        "注意最终回合Supply Pool变为无限、Available Supply限制解除，但部署仍走正常交替激活顺序；无限补给不等于可以跳过激活顺序或一次性全部部署。",
+        "注意终局先手是追赶机制：Phase 4结束时First Player Marker授予VP较少的一方，平局则Roll-Off；领先方在终局通常不掌握先手，规划时不能假设己方先动。",
+        "每次对手行动后重新计算控制状态与分差，只执行在当前可见局面下仍能兑现的计划。"
+      ],
+      "alternatives": [
+        {
+          "option": "守住并巩固现有控制标记",
+          "preferWhen": "现有控制标记已能提供稳定VP，且分散兵力去争夺新标记会暴露现有控制给对手夺回"
+        },
+        {
+          "option": "集中火力摧毁高Supply敌方单位",
+          "preferWhen": "击杀产生的VP（每1 Supply 1 VP）高于或等于放弃控制一个标记所损失的VP，且该单位是对方得分或控制的关键"
+        },
+        {
+          "option": "在最终回合前部署预备队单位",
+          "preferWhen": "最终回合仍有合法部署机会，且该单位部署后能贡献标记控制、击杀或阻止对手得分；留在预备队会在最终Scoring Phase开始时被视为Destroyed并给对手VP"
+        },
+        {
+          "option": "主动牺牲或让单位降档以换取其他收益",
+          "preferWhen": "该行动带来的净VP增量（如解除不利接战、抢占关键标记）超过Supply下降给对手的VP（faq-v1:62）"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手通过击杀我方高Supply单位获得VP并接近任务卡即时胜利阈值",
+          "adaptation": "若对手因此可能触发即时胜利，优先保护剩余高Supply单位并阻止其继续得分，而非继续进攻"
+        },
+        {
+          "response": "对手在最终回合前将单位留在预备队，或利用最终回合无限补给一次性部署",
+          "adaptation": "重算双方场上Supply与标记控制；若对手部署后改变控制态势，重新评估己方争夺或防守优先级"
+        },
+        {
+          "response": "对手利用终局先手追赶机制（VP较少方获得First Player Marker）在下一阶段先动",
+          "adaptation": "不假设己方先动；在对手先动后重新读取可见局面，只执行仍成立的下一步"
+        },
+        {
+          "response": "对手使用Terran Tenacity（Terran Armed Forces阵营卡主动能力）在Movement Phase立即取得First Player Marker",
+          "adaptation": "若己方计划靠早Pass取得Assault Phase先手，该能力是直接反制；评估是否改用其他方式取得先手或接受后手"
+        }
+      ],
+      "risk": "本策略不保证在未知任务卡、对手构成或概率结果下最优；终局规则存在多处未裁定交互（即时胜利阈值与最终Scoring Phase结算步骤的先后、预备队单位被视为Destroyed是否触发非计分效果、Supply下降给对手VP与任务卡摧毁Supply得分是否重复计分、场上无模型且预备队无单位时+10 VP与即时胜利阈值的优先级），在裁定明确前不应把未决交互当作确定事实。当前workspace的observation为round 2 movement、双方各1模型、比分0-0，未提供任何终局局面数据，因此本策略为条件性假设，非胜率或最优性证明。",
+      "reviseIf": [
+        "任务卡即时胜利阈值或游戏长度与假设不符（如实际为Supply Drop Standard 12+或Skirmish 8+）",
+        "当前回合数或分差发生变化，影响即时胜利或最终计分风险",
+        "任务标记控制状态或双方单位Supply值发生改变",
+        "对手的回应使原计划的净VP前提不再成立",
+        "规则服务裁定即时胜利阈值与最终Scoring Phase结算步骤的先后顺序",
+        "规则服务裁定最终回合预备队单位被视为Destroyed是否触发非计分效果",
+        "规则服务裁定Supply下降给对手VP与任务卡摧毁Supply得分是否重复计分",
+        "规则服务裁定场上无模型且预备队无单位时+10 VP与即时胜利阈值的优先级"
+      ],
+      "requiredQueries": [
+        "scenario",
+        "score_forecast",
+        "legal_space",
+        "viewer_state",
+        "threat",
+        "probability"
+      ],
+      "ruleRefs": [
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.0",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.4",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+        "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+        "source:faction_cards:mission_hold_position",
+        "source:faction_cards:mission_supply_drop",
+        "source:faction_cards:mission_supply_drop__skirmish_",
+        "source:tactical_cards:terran_armed_forces",
+        "faq-v1:62",
+        "faq-v1:63"
+      ],
+      "developmentCaseIds": []
+    }
+  ],
+  "legalityChecks": [
+    "Rules 服务是动作合法性的唯一权威",
+    "只选择当前 LegalSpace 中启用的候选",
+    "写操作必须 Preview→房间确认策略→Apply→Replay"
+  ],
+  "illegalPatterns": [
+    "把对抗偏好写成规则事实",
+    "读取对手私有信息或未披露升级",
+    "使用 held-out 目标修改 Skill 正文",
+    "把单步先手测试当作整局最优或胜率证明",
+    "因来源冲突自行扩大 Rules 权限"
+  ],
+  "examples": [
+    {
+      "axis": "opening_branches",
+      "caseId": "matchup.zerg_to_terran.initiative.development",
+      "receiptHash": "27df09e348ee2fecaa9dfbb5e91c107467f774d95e6ef7ca5d153c9c14cd6706"
+    }
+  ],
+  "counterExamples": [
+    "opponent_profile: 尚无真实局面开发/held-out 对照，不得宣称效果已验证",
+    "counterplay: 尚无真实局面开发/held-out 对照，不得宣称效果已验证",
+    "resource_exchange: 尚无真实局面开发/held-out 对照，不得宣称效果已验证",
+    "endgame: 尚无真实局面开发/held-out 对照，不得宣称效果已验证"
+  ],
+  "judgeTests": {
+    "productionHash": "9b01da90fed827efb0ff3b4dcf265afd9776210a4e8ffbd461293c1605f60d74",
+    "sourceAuditHash": "a99df384ed42f09e38a898fab829286fcbaf5fc570e8246a870020c049302c44",
+    "caseResults": [
+      {
+        "caseId": "matchup.zerg_to_terran.initiative.development",
+        "split": "development",
+        "passed": true,
+        "receiptHash": "27df09e348ee2fecaa9dfbb5e91c107467f774d95e6ef7ca5d153c9c14cd6706"
+      },
+      {
+        "caseId": "matchup.zerg_to_terran.initiative.heldout",
+        "split": "heldout",
+        "passed": true,
+        "receiptHash": "c8f66dda363c43da8242868032067b671ff05326d635ee53fd653a0473481e3a"
+      }
+    ],
+    "evaluatedDecisionAxes": [
+      "opening_branches"
+    ],
+    "uncoveredDecisionAxes": [
+      "opponent_profile",
+      "counterplay",
+      "resource_exchange",
+      "endgame"
+    ]
+  },
+  "confidence": "all_fields_source_bound_and_opening_rules_cases_passed_other_axes_and_full_game_unproven",
+  "trustTier": "offline_evaluated_advisory",
+  "status": "offline_candidate",
+  "humanReviewed": false,
+  "canAffectStrategy": true,
+  "canAffectRules": false,
+  "fullGameStrategyEffectivenessProven": false,
+  "runtimeAccepted": false,
+  "published": false,
+  "trainingTruth": false,
+  "hash": "f843dd8a3493c0db6a004274c2febd8a179e720cd319ff004e5cba2ccc990a19"
+}

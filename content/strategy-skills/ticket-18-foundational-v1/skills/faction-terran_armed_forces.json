@@ -1,0 +1,2506 @@
+{
+  "schema": "project_d_game_skill_v1",
+  "gameId": "starcraft-tmg",
+  "rulesVersion": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+  "sourceBinding": {
+    "core": "1adbdb652fafc09d01887981a3ae86f69e65e1f1480d804156a8da1d4d1757a1",
+    "faq": "2881adb2a4e0475f07bb17aebf02e64f35c9073f274cec2cf0a8f770f8647226",
+    "rules": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+    "dataset": "b2579b83bb9a77b6119730009725a34d4e828d92d302248243bab33863551067"
+  },
+  "skillId": "starcraft-tmg.faction.terran_armed_forces",
+  "draftEnvelopeBinding": {
+    "version": "faction_draft_envelope_v2",
+    "maximumAdviceSourceRefs": 128,
+    "minimumUnprovenItems": 0,
+    "maximumUnprovenItems": 16,
+    "sourceOperation": "preserve_every_distinct_known_reference_in_original_order",
+    "emptyUnprovenMeaning": "model_reported_none_not_evidence_of_no_uncertainty",
+    "acceptedPaths": [
+      "$.items[*].value.sourceRefs",
+      "$.items[*].value.unproven"
+    ],
+    "originalProviderSchemaUnchanged": true,
+    "substantiveAdviceFieldsUnchanged": true,
+    "originalPaidFailurePreserved": true,
+    "automaticProviderRetries": 0,
+    "freshWholeSectionReviewRequired": true,
+    "independentStrategyEvaluationRequired": true,
+    "semanticAcceptanceInherited": false,
+    "canAffectRules": false,
+    "trainingTruth": false,
+    "hash": "d819b6d8a9ffbd634d9d6edce5885b90856bcf4155ab51b30a0d34247a94511d"
+  },
+  "factionRecordKey": "tactical_cards:terran_armed_forces",
+  "version": "1.0.0-offline-bounded-evaluation",
+  "skillType": "strategy",
+  "dependencies": {
+    "generalSkillHash": "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+    "generalLayerHash": "c0efea33d7c84f5adefb7216d9367d38e5306df31788449d6b91bcd20d7cfe4f",
+    "rulesReferenceHash": "d086ae7f69e48716b9bae7a8adb4db2d1f013b98e02b17c314b10cbe95e14292"
+  },
+  "knowledge": [
+    {
+      "section": {
+        "id": "faction.terran_armed_forces.army_resources.1",
+        "axis": "army_resources",
+        "requiredSourceRefs": [
+          "source:tactical_cards:terran_armed_forces"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "解锁Hero与Elite槽位以编入Jim Raynor与Goliath",
+            "when": [
+              "选择Terran Armed Forces阵营卡（起始3 Core/1 Elite/1 Support，无Hero/Air）",
+              "军队名单需包含Jim Raynor（Hero槽位，1模型/补给1/250矿物）与Goliath（Elite槽位，1模型/补给2/190矿物）",
+              "瓦斯预算为矿物上限10%（Standard 2000矿物对应200瓦斯）"
+            ],
+            "procedure": [
+              "确认Jim Raynor与Goliath的阵营标签均为Terran，符合阵营卡标签资格",
+              "购买Supply Depot（40瓦斯，Unique，+1 Core/+1 Elite/+1 Hero）以解锁唯一Hero槽位来源，同时补足Elite",
+              "若还需更多Elite槽位（如第二台Goliath或大编制），购买Factory（35瓦斯，+2 Elite）而非Armory（30瓦斯，+1 Elite），因Factory每瓦斯提供更多Elite槽位",
+              "核算槽位占用：每单位按其起始Supply Value占用对应类型槽位（Jim Raynor占1 Hero，Goliath占2 Elite）",
+              "确认总瓦斯支出不超过预算，且Unique卡（Supply Depot）仅购一张"
+            ],
+            "alternatives": [
+              "若军队不含Jim Raynor且编入两台Goliath：两台各占2 Elite，合计需4 Elite；Terran起始仅1 Elite，尚缺3。单张Armory后共2、单张Factory后共3，均不足；Factory+Armory后共4且65瓦斯，是所列可行方案中最低成本；两张Factory后共5且70瓦斯，也可行。若仅编入一台Goliath，单张Factory（35瓦斯，+2 Elite）即可满足。",
+              "若需额外Core槽位（如大编制Marine/Marauder）：考虑Barracks (Tech Lab)（45瓦斯，+1 Core +1 Elite）或Orbital Command（25瓦斯，+1 Core，Unique），按Core缺口选择",
+              "若瓦斯紧张且仅需1 Elite：Armory（30瓦斯，+1 Elite）比Factory便宜5瓦斯，但无额外Core收益"
+            ],
+            "risk": "购买Supply Depot（40瓦斯）占用大量瓦斯预算，若还需其他战术卡可能超支；未使用槽位会浪费且不能结转，需精确核算",
+            "reviseIf": [
+              "对手军队以空军为主而己方无对空手段时，优先考虑其他战术卡而非单纯解锁槽位",
+              "瓦斯预算不足40时，放弃Jim Raynor改以Marine/Marauder/Goliath为核心",
+              "任务卡起始补给低（如Skirmish 3-4）导致高补给单位部署受限时，重新评估Goliath（补给2）的性价比"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:terran_armed_forces",
+              "source:tactical_cards:supply_depot",
+              "source:tactical_cards:factory",
+              "source:army_units:jim_raynor",
+              "source:army_units:goliath",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+              "source:tactical_cards:armory"
+            ],
+            "unproven": [
+              "Supply Depot的+1 Hero槽位是否足以支撑Jim Raynor在5轮任务中的持续价值，需实际对局检验",
+              "Factory与Supply Depot组合在200瓦斯预算下的整体编军效率，需结合具体单位升级成本验证"
+            ]
+          },
+          {
+            "title": "Stimpack非致命伤害的累加与Medic治疗协同",
+            "when": [
+              "Marine或Marauder单位在移动阶段使用Stimpack（1 CP，受NON-LETHAL DAMAGE (2)）",
+              "该单位已累积伤害（Damage Marker）或预计后续受标准伤害",
+              "Medic单位（3模型/补给1）在4英寸内可提供HEAL或Life Support"
+            ],
+            "procedure": [
+              "使用Stimpack后，将NON-LETHAL DAMAGE (2)累加至单位Damage Marker，不因Total Damage超过模型HP而移除模型",
+              "若单位已累积伤害，NON-LETHAL DAMAGE只累加至Damage Marker，不触发伤亡移除；后续任何正数标准伤害到来时，将既有标记与新伤害合并并按正常规则移除模型。每移除一个模型便从Total Damage扣除其HP；若最后一个模型被移除，单位不再保留Damage Marker，状态输出的postDamageMarker记0，剩余溢出伤害弃置；若仍有模型且余量不足以移除下一模型，才把余量保留为Damage Marker。",
+              "若需抵消非致命伤害，在移动阶段激活Medic使用Medpack（1 CP，HEAL X，X为4英寸内Medic模型数），减少Damage Marker",
+              "若单位在敌方激活中受伤害，可用Medic的Life Support（反应，1 CP）在分配前减少Total Damage（每4英寸内Medic模型减1，Stabilizer Medpacks升级视为多1模型）",
+              "注意每次激活每位玩家仅能结算一个反应：若Marine已用其他反应（如Engineering Bay的Infantry Armor），Medic的Life Support无法再响应同一攻击"
+            ],
+            "alternatives": [
+              "若单位已受重伤且需立即恢复：优先Medpack主动治疗而非等待Life Support反应，因反应受每激活一次限制",
+              "若单位将承受高伤害攻击：保留Medic的Life Support反应用于减伤，而非提前用Medpack，因Life Support可防止伤亡",
+              "若单位无Medic支援：避免在已累积伤害时使用Stimpack，或仅在能确保击杀目标时使用以承受非致命伤害"
+            ],
+            "risk": "Stimpack的非致命伤害会永久累加至Damage Marker，若后续受标准伤害可能提前触发伤亡移除；Medic治疗需消耗CP且受反应限制，无法覆盖所有伤害",
+            "reviseIf": [
+              "单位已累积伤害接近模型HP时，避免使用Stimpack以免后续一击致死",
+              "Medic的CP资源紧张或已耗尽时，改用其他防御手段（如Engineering Bay的Infantry Armor反应）",
+              "对手有高伤害单次攻击（如PIERCE或CRITICAL HIT）时，优先保留Life Support而非Medpack"
+            ],
+            "sourceRefs": [
+              "source:army_units:marine",
+              "source:army_units:marauder",
+              "source:army_units:medic",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.31",
+              "faq-v1:43",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3"
+            ],
+            "unproven": [
+              "Stimpack非致命伤害与Medic HEAL在连续多轮使用下的净收益，需实际对局验证",
+              "Life Support反应与Stabilizer Medpacks升级在保护Marine/Marauder时的最优站位距离，需结合地形检验"
+            ]
+          },
+          {
+            "title": "Standard规模下Marauder/Goliath核心军队的战术卡选择：Barracks (Tech Lab)与Factory比较",
+            "when": [
+              "选择Terran Armed Forces阵营卡（起始3 Core/1 Elite/1 Support，无Hero/Air）",
+              "军队以Marauder（Core）与Goliath（Elite）为核心，需解锁额外Core或Elite槽位",
+              "交战规模为Standard（2000矿物上限，200瓦斯预算，瓦斯为矿物10%）"
+            ],
+            "procedure": [
+              "确认Marauder小编制（2模型/补给1/150矿物）占1 Core槽位，大编制（4模型/补给2/280矿物）占2 Core槽位；Goliath（1模型/补给2/190矿物）占2 Elite槽位",
+              "仅编入小编制Marauder（1 Core）与Goliath（2 Elite），且不另计其他单位/卡牌时，起始3 Core已满足Core需求，Elite仅缺1。如果目标仅为满足槽位并最小化所列备选的瓦斯支出，Armory（30瓦斯，+1 Elite）比Factory（35瓦斯，+2 Elite）少花5瓦斯；Factory多提供一个剩余Elite槽位。此计算不评价两张卡的特殊能力，也不证明更便宜的选择实战更强。",
+              "若编入一队大编制Marauder（2 Core）或两队小编制Marauder（合计2 Core），起始3 Core仍满足Core需求，不产生Core缺口；此时无需为补Core购买Barracks (Tech Lab)。若军队名单还包含其他Core单位（如Marine）使Core需求超过3，才需按完整名单求和后补足缺口，可考虑Barracks (Tech Lab)（45瓦斯，+1 Core +1 Elite）同时补Core与Elite",
+              "核算总槽位：起始3 Core/1 Elite加所选卡后，确保每单位按其起始Supply占用对应类型槽位不超限",
+              "确认瓦斯支出（Factory 35或Tech Lab 45）加其他战术卡不超过200瓦斯，且Unique卡（Tech Lab）仅购一张"
+            ],
+            "alternatives": [
+              "若仅需1 Elite且瓦斯紧张：Armory（30瓦斯，+1 Elite）比Factory便宜5瓦斯，但无额外Core收益",
+              "若军队名单经完整求和后确实缺Core（如含多队Core单位）：Barracks (Tech Lab)（45瓦斯，+1 Core +1 Elite）或Orbital Command（25瓦斯，+1 Core，Unique）/Barracks（25瓦斯，+1 Core）按缺口选择",
+              "若军队含Jim Raynor（Hero）：需Supply Depot（40瓦斯，+1 Core/+1 Elite/+1 Hero，Unique）解锁Hero，此时Factory与Supply Depot组合可能优于Tech Lab"
+            ],
+            "risk": "Tech Lab比Factory贵10瓦斯且Unique，若瓦斯预算需分配给其他卡可能超支；未使用槽位会浪费且不能结转，需精确核算；Core缺口必须按完整明确名单求和，不能凭单一编制选项臆断",
+            "reviseIf": [
+              "对手军队以空军为主而己方无对空手段时，优先考虑其他战术卡而非单纯解锁槽位",
+              "瓦斯预算不足45时，改用Factory（35瓦斯）并调整Marauder编制为小编制以节省Core需求",
+              "任务卡起始补给低（如Skirmish 3-4）导致高补给单位部署受限时，重新评估Goliath（补给2）的性价比"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:barracks__tech_lab_",
+              "source:tactical_cards:factory",
+              "source:army_units:marauder",
+              "source:army_units:goliath",
+              "source:tactical_cards:terran_armed_forces",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.0",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+              "source:tactical_cards:armory"
+            ],
+            "unproven": [
+              "Tech Lab的Let's Have a Blast!（ANTI-EVADE 1）与Factory的Field Repair（HEAL 2）在实战中的相对价值，需结合对手Evade单位与机械单位损伤情况检验",
+              "Factory与Tech Lab在200瓦斯预算下的整体编军效率，需结合具体单位升级成本验证"
+            ]
+          },
+          {
+            "title": "Medic Advanced Medic Facilities与Jim Raynor Freedom Fighters对Mission Marker争夺补给值的作用域区分",
+            "when": [
+              "军队含Medic（Support，3模型/补给1/110矿物）与Jim Raynor（Hero，1模型/补给1/250矿物）",
+              "Medic购买Advanced Medic Facilities升级（60矿物，补给在计算Supply Pool时视为0）",
+              "Jim Raynor在Medic 8英寸内，其Freedom Fighters被动生效（友方单位争夺/控制标记时补给不能降至1以下）"
+            ],
+            "procedure": [
+              "确认两能力作用域不同：Advanced Medic Facilities仅影响Supply Pool计算（部署可用补给），不影响Mission Marker争夺；Freedom Fighters仅影响争夺/控制标记与完成任务时的补给下限",
+              "计算Medic对Mission Marker的争夺补给值：3模型Medic当前补给1，因Freedom Fighters下限1，争夺值保持1（不受Advanced Medic Facilities影响）",
+              "若Medic伤亡降至1模型（补给0）：Freedom Fighters使其争夺值升至1，而非0；Advanced Medic Facilities不改变此结果",
+              "若Medic不在Jim Raynor 8英寸内：Freedom Fighters不生效，1模型Medic（补给0）争夺值0，但仍可控制标记（若无敌方争夺）",
+              "将Jim Raynor自身补给（Commander被动+1）纳入争夺计算：Jim Raynor补给1+1=2，用于控制/争夺标记"
+            ],
+            "alternatives": [
+              "若需最大化Medic的争夺价值：保持Medic满编（3模型）并置于Jim Raynor 8英寸内，争夺值1",
+              "若Medic仅作治疗支援且不争夺标记：可将其置于Jim Raynor范围外以节省机动，但失去Freedom Fighters下限保护",
+              "若需高补给单位争夺标记：优先部署Goliath（补给2）或Jim Raynor（补给2含Commander）而非依赖Medic"
+            ],
+            "risk": "Freedom Fighters仅设下限1，不提升高补给单位价值；Medic补给0时虽可控制标记但无法赢得争夺，需配合高补给单位",
+            "reviseIf": [
+              "Jim Raynor被摧毁或移出8英寸范围时，Medic争夺值可能降至0（若伤亡至1模型），需重新评估标记控制",
+              "对手以高补给单位争夺同一标记时，Medic（争夺值1）无法胜出，应改用Goliath或Jim Raynor",
+              "任务卡得分依赖标记控制（如Frontlines）时，优先保护Jim Raynor以维持Freedom Fighters光环"
+            ],
+            "sourceRefs": [
+              "source:army_units:medic",
+              "source:army_units:jim_raynor",
+              "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14"
+            ],
+            "unproven": [
+              "Advanced Medic Facilities与Freedom Fighters同时作用于同一单位时的精确交互（补给视为0 vs 下限1）未在官方来源明确，需实际对局或裁判确认",
+              "Medic补给0时控制标记（无敌方争夺）与Freedom Fighters下限1的边界情形，需结合具体任务卡检验"
+            ]
+          },
+          {
+            "title": "Academy的Advanced Training与Medic CP能力费用协同",
+            "when": [
+              "军队含Medic（Support，3模型/补给1/110矿物）且已购买Academy（35瓦斯，+2 Support，Unique）",
+              "Medic需在移动阶段使用Medpack（1 CP）",
+              "场上存在已激活的友方单位以结算Academy的主动/反应能力"
+            ],
+            "procedure": [
+              "确认Academy的Advanced Training为反应能力（Any Phase）：当友方Support单位激活消耗CP的特殊能力时，该能力CP费用减1（最低0），且不耗尽Academy卡",
+              "在Medic激活并使用Medpack（1 CP）时声明Advanced Training，使费用降为0，无需耗尽任何Ready卡支付",
+              "注意每次激活每位玩家仅能结算一个反应：若Medic本激活已使用其他反应（如Restoration），Advanced Training无法再响应同一能力；Life Support本身也是反应，不能与Advanced Training在同一激活中嵌套使用",
+              "确认Academy的Advanced Training每轮一次（Once per Round），且Academy为Unique仅购一张"
+            ],
+            "alternatives": [
+              "若Medic需在同一激活内多次使用CP能力（如Medpack后接其他能力）：Advanced Training仅降一次费用，其余能力须正常耗尽Ready卡支付",
+              "若Academy已因产生资源被耗尽：其Advanced Training不可用，须等Phase 4 Cleanup刷新；此时Medpack按原1 CP支付",
+              "若需降低非Support单位（如Marine的Stimpack）的CP费用：Advanced Training不适用，改用其他资源手段（如Jim Raynor的Orders）"
+            ],
+            "risk": "Advanced Training每轮一次且为反应能力，若Medic在敌方激活中已用Life Support响应，则无法再用Advanced Training降低后续能力费用；Academy耗尽后其能力不可用",
+            "reviseIf": [
+              "Medic的CP能力使用频率低（每轮少于一次）时，Academy的35瓦斯成本可能不如直接购买其他战术卡",
+              "对手以高伤害攻击迫使Medic频繁使用Life Support时，注意Life Support与Advanced Training同为反应能力，同一激活内无法同时结算；应优先保留Life Support用于最关键的减伤反应，Advanced Training则用于降低Medpack等主动CP能力的费用",
+              "Academy的+2 Support槽位已满或无需额外Support单位时，重新评估购买Academy的必要性"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:academy",
+              "source:army_units:medic",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+              "faq-v1:34"
+            ],
+            "unproven": [
+              "Advanced Training将Medpack费用降为0后，Medic在无CP消耗下的治疗频率提升能否弥补Academy的35瓦斯成本，需实际对局检验",
+              "Advanced Training与Medic的Stabilizer Medpacks升级（视为多1模型在范围内）叠加后的治疗效率，需结合具体伤亡情况验证"
+            ]
+          },
+          {
+            "title": "Terran Tenacity与早Pass策略的时机权衡",
+            "when": [
+              "选择Terran Armed Forces阵营卡（含Terran Tenacity主动能力，移动阶段，每局一次）",
+              "移动阶段中己方关键单位已就位或无需再部署，考虑是否早Pass以夺取Assault Phase先手",
+              "对手可能在移动阶段早Pass夺取下一阶段First Player Marker"
+            ],
+            "procedure": [
+              "评估移动阶段剩余激活价值：若己方关键单位已部署或就位，早Pass可夺取Assault Phase先手并先射击",
+              "若对手已Pass或即将Pass夺取标记，使用Terran Tenacity（每局一次）立即取得First Player Marker，且本阶段内其他玩家不能取得该标记",
+              "在己方单位激活时于行动前或行动后立即使用Terran Tenacity（主动能力须在激活时使用）",
+              "取得标记后，在Assault Phase先激活高价值远程单位（如Goliath的Autocannon或Marine的C-14 Rifle）以最大化先手优势",
+              "注意Terran Tenacity每局一次，且使用后本阶段其他玩家无法通过Pass夺取标记，可阻止对手的早Pass策略"
+            ],
+            "alternatives": [
+              "若己方无需先手射击（如防御型军队）：不使用Terran Tenacity，保留至后续回合关键时机",
+              "若对手已Pass且己方仍有多单位需激活：早Pass夺取标记可能牺牲本阶段剩余激活，权衡信息优势与行动机会",
+              "若己方在Assault Phase有强力Charge单位（如Marauder）：先手激活可先接战，Terran Tenacity价值更高"
+            ],
+            "risk": "Terran Tenacity每局一次，若过早使用可能浪费于低价值回合；早Pass夺取标记后若己方单位未就位，可能无法有效利用先手",
+            "reviseIf": [
+              "对手在移动阶段早Pass且己方单位未就位时，避免使用Terran Tenacity，改用正常激活完成部署",
+              "己方在Assault Phase无高价值先手目标时，保留Terran Tenacity至后续回合",
+              "对手军队以防御为主且不依赖先手时，Terran Tenacity的战略价值降低，可考虑其他主动能力（如Tactical Retreat）"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:terran_armed_forces",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1"
+            ],
+            "unproven": [
+              "Terran Tenacity在阻止对手早Pass夺取标记时的实际效果（对手是否仍可于后续激活使用其他手段取得标记），需实际对局检验",
+              "Terran Tenacity与早Pass策略在5轮任务中的最优使用回合，需结合任务卡得分节奏验证"
+            ]
+          },
+          {
+            "title": "Tactical Retreat与Jim Raynor Orders叠加忽略Disengage惩罚及Tactical Mass例外",
+            "when": [
+              "己方Engaged单位需在Movement Phase执行Disengage，且计划在下一Assault Phase进行Ranged Attack或Charge",
+              "该单位Current Supply Value未超过其Engaged的所有敌方单位Combined Supply（无Tactical Mass）",
+              "Jim Raynor（Hero）在8英寸内且为激活单位，或Terran Armed Forces阵营卡Ready可用",
+              "单位已激活或即将激活，且能支付对应CP（Orders 1 CP）或使用阵营卡主动能力"
+            ],
+            "procedure": [
+              "确认单位Engaged状态及Disengage惩罚适用条件：Disengage后下一Assault Phase不能Ranged Attack或Charge，除非Current Supply Value大于Engaged敌方Combined Supply（Tactical Mass例外）",
+              "若单位无Tactical Mass且需保留下一Assault Phase火力：在Movement Phase激活该单位，于Disengage行动前或后立即使用Tactical Retreat（主动，移动阶段），使该单位本回合剩余时间忽略Disengage惩罚",
+              "若Tactical Retreat已用或需节省阵营卡：在Jim Raynor激活时使用Orders（主动，1 CP，REPEATABLE），选择8英寸内该友方生物单位，支付1 CP使其本回合忽略Disengage惩罚",
+              "若两者均可用且需保护多个单位或同一单位多次脱离：可分别使用（Tactical Retreat覆盖本回合，Orders亦覆盖本回合）；Orders因REPEATABLE可同轮且同次激活多次使用，每次须满足费用与触发条件，不受每轮每单位一次限制",
+              "执行Disengage：按标准Move规则移动，确保Leading Model能完全脱离所有敌方Engagement Range，否则Disengage失败且Leading Model被移除",
+              "下一Assault Phase正常执行Ranged Attack或Charge，不受Disengage惩罚限制"
+            ],
+            "alternatives": [
+              "若单位本身有Tactical Mass（Current Supply大于Engaged敌方Combined Supply）：无需Tactical Retreat或Orders，直接Disengage即可保留下一Assault Phase行动，节省CP与阵营卡",
+              "若单位仅需脱离而不需下一Assault Phase火力：直接Disengage并接受惩罚，保留Tactical Retreat/Orders用于其他单位或后续回合",
+              "若Jim Raynor不在8英寸内或已激活：仅用Tactical Retreat（若Ready），或改用其他单位执行Disengage",
+              "若需保护多个Engaged单位：优先对高价值远程单位（如Goliath）使用忽略惩罚效果，低价值单位可接受惩罚；Orders的REPEATABLE允许Jim Raynor在一次激活中多次支付CP保护多个单位"
+            ],
+            "risk": "Tactical Retreat与Orders均为主动能力，须在单位激活时使用，若单位已激活或Jim Raynor已激活则无法使用；Orders需支付1 CP（耗尽Ready卡），若CP不足或卡已耗尽则无法使用；Disengage本身有失败风险（Leading Model无法脱离则被移除）",
+            "reviseIf": [
+              "单位已受重伤或预计被摧毁时，放弃Disengage改以Hold或牺牲单位换取其他战术目标",
+              "对手在下一Assault Phase有强力反应（如Concussive Shells减速）使保留火力价值降低时，重新评估是否值得消耗CP/阵营卡",
+              "Jim Raynor被摧毁或移出8英寸范围时，改用Tactical Retreat或接受Disengage惩罚",
+              "Tactical Retreat已在本回合使用（每轮每单位一次限制）时，无法再次使用；Orders因REPEATABLE不受此限，但需逐次支付CP且Jim Raynor须保持激活"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:terran_armed_forces",
+              "source:army_units:jim_raynor",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.3",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.69",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.54"
+            ],
+            "unproven": [
+              "Tactical Retreat与Orders叠加后单位在Disengage当回合是否仍受其他移动限制（如Grass摧毁、Gap Clearance）需实际对局检验",
+              "Orders的REPEATABLE在Movement Phase多次使用（每次1 CP）以保护多个单位时的CP消耗效率，需结合Ready卡数量验证",
+              "Tactical Mass例外在单位伤亡后Current Supply降至更低档位时的精确判定时机，需结合伤亡结算顺序检验"
+            ]
+          },
+          {
+            "title": "Goliath Indomitable与PINPOINT区别及Engaged状态下武器使用与LONG RANGE修正",
+            "when": [
+              "Goliath（Elite，1模型/补给2/190矿物）处于Engaged状态，需决定是否进行Ranged Attack",
+              "Goliath装备Autocannon（RANGE 12/LONG RANGE 18）、Underbelly Machine Gun（RANGE 8/PINPOINT/SIDEARM）或Hellfire Missiles（RANGE 16/Flying）",
+              "需区分Indomitable（被动）与PINPOINT关键词的适用场景",
+              "目标单位在12-18英寸间（Autocannon LONG RANGE范围）或8英寸内（Underbelly Machine Gun）"
+            ],
+            "procedure": [
+              "确认Indomitable（被动，Assault Phase）：Goliath Engaged时可攻击未接战敌方单位，也可被未接战敌方单位攻击；两种情况防御方均获得Evade Roll",
+              "确认PINPOINT关键词：仅允许武器瞄准已Engaged的敌方单位（忽略标准Engagement限制），不允许Engaged单位向外射击（FAQ v1:53）",
+              "区分两者：Indomitable使Engaged的Goliath能向外攻击未接战目标（突破自身Engagement限制）；PINPOINT使未Engaged的Goliath能攻击Engaged目标（突破目标限制）",
+              "若Goliath Engaged且需攻击未接战目标：依赖Indomitable，使用Autocannon或Underbelly Machine Gun（注意防御方获Evade Roll）",
+              "若Goliath未Engaged且需攻击Engaged目标：使用Underbelly Machine Gun（PINPOINT）或Hellfire Missiles（若目标Flying），Autocannon无PINPOINT不能攻击Engaged目标",
+              "测量射程：Autocannon基础12英寸内正常命中（4+），12-18英寸间（LONG RANGE）命中受-1修正（5+）；Underbelly Machine Gun 8英寸内命中3+",
+              "若目标在12-18英寸且需高命中：若该目标已在先前Movement Phase被Target Lock锁定（Target Lock为Movement Phase主动能力，1 CP，选择12英寸内Enemy），Autocannon对该目标获Surge Type: Light, Armoured与S Dice: D3+1；若尚未锁定，须在后续Movement Phase先锁定（目标须在12英寸内）再于Assault Phase射击，不能把当下12-18英寸目标直接当作合法Target Lock目标"
+            ],
+            "alternatives": [
+              "若需对空（Flying目标）：使用Hellfire Missiles（RANGE 16，ANTI-EVADE 1），不受Indomitable/PINPOINT影响（Flying永不Engaged）",
+              "若Goliath未Engaged且目标未Engaged：正常使用Autocannon（无PINPOINT限制），优先于Underbelly Machine Gun（射程短）",
+              "若Goliath Engaged且被多个敌方单位包围：Indomitable使其可攻击外部未接战敌方单位，但自身也暴露于未接战敌方攻击（防御方获Evade Roll），评估生存风险",
+              "若需攻击Engaged目标且Goliath未Engaged：仅Underbelly Machine Gun（PINPOINT）可瞄准Engaged敌方单位；Indomitable不授权攻击Friendly Unit，也不泛化向任何已接战目标开火"
+            ],
+            "risk": "Indomitable使Goliath被未接战敌方攻击时防御方获Evade Roll，但Goliath Evade为-（无法Evade），实际无防御加成；Autocannon LONG RANGE命中-1修正降低输出；Engaged状态限制Close Combat武器（Stomp）与部分行动；Target Lock须在Movement Phase对12英寸内目标使用，时机与距离限制严格",
+            "reviseIf": [
+              "Goliath受重伤（HP 10中损失过半）时，避免Engaged状态暴露于外部火力，优先Disengage或撤退",
+              "对手有高Evade单位（如Zergling Evade 4+）时，Autocannon LONG RANGE命中劣势放大，改用Target Lock（须先于Movement Phase锁定12英寸内目标）或缩短距离",
+              "对手依赖PINPOINT/Indomitable类似能力时，重新评估Goliath站位避免被集火",
+              "Goliath需在Combat Phase使用Stomp（近战）时，避免在Assault Phase过度暴露导致被摧毁"
+            ],
+            "sourceRefs": [
+              "source:army_units:goliath",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.50",
+              "faq-v1:53",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.2"
+            ],
+            "unproven": [
+              "Indomitable使Goliath被未接战敌方攻击时防御方获Evade Roll，但Goliath Evade为-（无法Evade），实际无防御加成；Autocannon LONG RANGE命中-1修正降低输出；Engaged状态限制Close Combat武器（Stomp）与部分行动",
+              "Goliath Engaged时Indomitable与PINPOINT武器（Underbelly Machine Gun）组合能否同时攻击Engaged与未Engaged目标，需实际对局检验",
+              "Target Lock（1 CP）在LONG RANGE命中劣势下的收益是否值得CP消耗，需结合目标Combat Tag与Surge效率验证"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.terran_armed_forces.unit_roles.1",
+        "axis": "unit_roles",
+        "requiredSourceRefs": [
+          "source:army_units:goliath",
+          "source:army_units:jim_raynor",
+          "source:army_units:marauder",
+          "source:army_units:marine",
+          "source:army_units:medic"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Marine与Marauder按目标Combat Tag分工：Light用C-14、Armoured用Quad K12",
+            "when": [
+              "己方同时编有Marine与Marauder单位",
+              "敌方出现Light标签单位（如Zergling、Hydralisk）与Armoured标签单位（如Roach、Goliath）",
+              "Assault Phase中可分别声明多个Batch目标"
+            ],
+            "procedure": [
+              "核对目标Combat Tag：Marine的C-14 Rifle Surge Type为Light，仅对Light目标触发Surge；Marauder的Quad K12 Surge Type为Armoured且带PIERCE Armoured (2)，对Armoured目标高效",
+              "将C-14 Rifle批次指向Light目标：同武器档案所有模型须攻击同一目标，构成一个Batch；命中后若Surge Type匹配，按Surge骰结果将等量骰子从Armour Pool直接移入Damage Pool，绕过Armour Roll",
+              "将Quad K12批次指向Armoured目标：命中后Surge绕过Armour，且PIERCE Armoured (2)使该武器对Armoured目标的Damage视为2",
+              "若单位有多个武器档案，逐个声明并完全结算一个Batch后再声明下一个，避免同时声明",
+              "若Marine单位需对抗Armoured目标，配置AGG-12（SURGE: Armoured D3，SPECIALIST）或Rocket Launcher（无Surge但RoA 4，INDIRECT FIRE）作为独立Batch"
+            ],
+            "alternatives": [
+              "若敌方以Light为主，保留Marine C-14并让Marauder Quad K12转向次要Armoured目标或支援",
+              "若敌方以Armoured为主，为Marine购买AGG-12（替换C-14，SPECIALIST限1模型）以补充Armoured Surge，但会减少该模型的Light Surge输出；或购买Rocket Launcher（SIDEARM+SPECIALIST，无Surge）让1模型保留C-14并额外获得RoA 4的INDIRECT FIRE输出，以矿物支出换取对Armoured目标的稳定伤害",
+              "若需同时处理两类目标且Batch有限，优先用Quad K12消灭已受损Armoured单位，再用C-14处理Light单位"
+            ],
+            "risk": "同武器档案必须同目标，无法在同一档案内拆分火力；Surge不匹配时Surge骰结果被忽略，浪费潜在伤害；SPECIALIST升级仅限1模型且替换会失去原武器，降低对另一类目标的效率",
+            "reviseIf": [
+              "敌方单位构成与预期不符（如Armoured单位数量远超Light）",
+              "Marine/Marauder单位因伤亡降至低补给档位，火力不足以覆盖两类目标",
+              "发现敌方有HIGH GROUND Cover或Direct Cover使某类目标难以命中"
+            ],
+            "sourceRefs": [
+              "source:army_units:marine",
+              "source:army_units:marauder",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.49",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3"
+            ],
+            "unproven": [
+              "C-14与Quad K12在特定骰运下的实际伤害期望未经验证",
+              "AGG-12/Rocket Launcher替换C-14后对混合目标军队的整体效率需实战检验"
+            ]
+          },
+          {
+            "title": "Goliath的Indomitable与PINPOINT区分及Engaged状态下的武器使用",
+            "when": [
+              "Goliath处于Engaged状态（被敌方Ground单位接战）",
+              "敌方有未接战单位在Autocannon或Underbelly Machine Gun射程内",
+              "需判断能否射击Engaged目标或从Engaged中向外射击"
+            ],
+            "procedure": [
+              "确认Indomitable为被动能力：Engaged的Goliath可攻击未接战敌方单位，也可被未接战敌方单位攻击；两种情况防御方均获得Evade Roll",
+              "确认PINPOINT仅允许向Engaged目标射击（覆盖目标接战限制），不允许Engaged单位向外射击——Indomitable才是向外射击的依据",
+              "Engaged时优先用Autocannon（TARGET: Ground，RoA 9，LONG RANGE 18\\\"）攻击未接战Ground单位；超出12\\\"基础射程时命中受-1修正",
+              "用Underbelly Machine Gun（RoA 6，HIT 3+，PINPOINT，SIDEARM）作为独立Batch攻击Engaged目标，或与Autocannon分批次处理不同目标",
+              "若敌方有Flying单位，用Hellfire Missiles（TARGET: Flying，ANTI-EVADE 1，SIDEARM）作为独立Batch，但注意SIDEARM批次须同档案同目标"
+            ],
+            "alternatives": [
+              "若Goliath未被Engaged，按标准规则选择未接战目标，无需依赖Indomitable",
+              "若需对Engaged目标造成额外伤害，用Underbelly Machine Gun（PINPOINT）而非Autocannon",
+              "若敌方以Flying为主，优先Hellfire Missiles；若需对Ground目标造成额外伤害，可考虑Haywire Missiles（PIERCE Armoured 3）替换Hellfire Missiles，但Haywire Missiles的TARGET为Ground，不能用于攻击Flying目标"
+            ],
+            "risk": "Indomitable使防御方获得Evade Roll，降低命中效率；Autocannon对超出12\\\"目标有-1命中修正；Goliath无Evade（-），被未接战单位攻击时无法闪避，生存性依赖Armour 4+",
+            "reviseIf": [
+              "Goliath被多个敌方单位Engaged且无法安全脱离",
+              "敌方未接战单位有HIGH GROUND Cover或Evade加成，使Indomitable攻击效率过低",
+              "Goliath需优先保护Mission Marker而非输出火力"
+            ],
+            "sourceRefs": [
+              "source:army_units:goliath",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.50",
+              "faq-v1:53",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.2"
+            ],
+            "unproven": [
+              "Indomitable在Engaged状态下对未接战单位的实际伤害输出需实战检验",
+              "Goliath无Evade在敌方远程火力下的生存性未经验证"
+            ]
+          },
+          {
+            "title": "Medic作为Support的站位与激活时机：Life Support与Medpack保护Marine/Marauder",
+            "when": [
+              "己方编有Medic（Support）且场上存在Marine/Marauder等Biological单位",
+              "敌方在Assault Phase或Any Phase对4英寸内友方Biological单位造成伤害",
+              "友方单位累积Damage需在Movement Phase治疗"
+            ],
+            "procedure": [
+              "将Medic保持在目标单位4英寸内：Life Support（反应，1 CP）在友方Biological单位受伤害时，按范围内Medic模型数减少Total Damage；Stabilizer Medpacks升级使计算时视为多1个模型在范围内",
+              "在Movement Phase激活Medic并使用Medpack（主动，1 CP）：选择4英寸内另一友方Biological单位，HEAL (X)，X为范围内Medic模型数（Stabilizer Medpacks再+1）",
+              "在敌方激活中，若友方单位受伤害且尚未使用反应，优先用Life Support减少Total Damage；注意每次激活每玩家仅能结算一个反应，且每具名反应每轮每单位限一次",
+              "若友方单位同时受多个来源伤害，选择伤害最高或最可能触发伤亡的一次使用Life Support，避免浪费反应窗口",
+              "若友方单位被施加DEBUFF，可用Restoration（反应，1 CP）移除4英寸内友方单位的全部DEBUFF"
+            ],
+            "alternatives": [
+              "若Medic需保护多个单位，将其置于多个Marine/Marauder的4英寸重叠区，但注意Life Support按范围内Medic模型数计算，分散会降低效率",
+              "若敌方攻击为普通高伤害（非INSTANT），考虑用Engineering Bay的Infantry Armor（反应）替代Life Support，但两者不能在同一敌方激活中同时使用；若攻击带INSTANT，敌方不能针对该攻击声明或结算任何Reaction，Infantry Armor与Life Support均无法响应",
+              "若Medic自身受威胁，可将其后撤至安全位置，牺牲部分治疗范围换取生存"
+            ],
+            "risk": "每次激活每玩家仅一个反应，若Marine已用Infantry Armor则Medic无法响应同一攻击；Medic本身HP 2、Armour 5+，若被Engaged或受远程火力可能被快速摧毁；Life Support每轮每单位限一次，无法持续保护",
+            "reviseIf": [
+              "Medic被Engaged或受威胁需撤离",
+              "友方单位伤亡使Medic的治疗目标减少",
+              "敌方使用INSTANT武器使Life Support无法触发"
+            ],
+            "sourceRefs": [
+              "source:army_units:medic",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+              "faq-v1:37",
+              "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2"
+            ],
+            "unproven": [
+              "Medic在特定站位下的实际治疗效率需实战检验",
+              "Life Support与Medpack在连续多轮中的资源消耗（CP）与收益平衡未经验证"
+            ]
+          },
+          {
+            "title": "Jim Raynor的Orders三选项战术选择：CRITICAL HIT、忽略Disengage惩罚、移除Activation Marker",
+            "when": [
+              "己方编有Jim Raynor（Hero，需战术卡解锁Hero槽位）",
+              "Jim Raynor在Movement Phase被激活，且8英寸内有另一友方Biological单位",
+              "有Ready的CP资源卡可耗尽支付Orders费用"
+            ],
+            "procedure": [
+              "确认Orders为主动能力（X CP，REPEATABLE，Movement Phase）：选择8英寸内另一友方Biological单位，支付CP应用效果",
+              "1 CP选项——CRITICAL HIT (2)：使该单位首个使用武器获得CRITICAL HIT (2)，可将最多2个Armour Pool骰直接移入Damage Pool（不超池内骰数）；适用于即将进行高RoA攻击的Marine（C-14）或Marauder（Quad K12）",
+              "1 CP选项——忽略Disengage惩罚：使该单位本回合忽略Disengage惩罚，下一Assault Phase可正常Ranged Attack或Charge；适用于需脱离Engagement的高价值Biological单位（如Marine或Marauder，注意Orders仅能选择另一友方Biological单位，Goliath为Mechanical不满足条件）",
+              "2 CP选项——移除Activation Marker：使该单位在本阶段可再次激活；适用于需在Movement Phase执行第二次行动的单位（如Marine再移动或Marauder再部署）",
+              "REPEATABLE允许每轮多次使用Orders，但每次须在Jim Raynor激活时支付CP，且每次支付均须耗尽Ready卡"
+            ],
+            "alternatives": [
+              "若需强化单次攻击输出，优先1 CP CRITICAL HIT (2)作用于Marauder Quad K12（RoA 3，PIERCE Armoured 2）",
+              "若单位被Engaged且需脱离后继续射击，用1 CP忽略Disengage惩罚而非Tactical Retreat（阵营卡，节省CP）",
+              "若单位已完成行动但需额外移动或部署，用2 CP移除Activation Marker，但注意消耗较高"
+            ],
+            "risk": "Orders每次使用均须Jim Raynor激活且支付CP，耗尽Ready卡后本回合无法再用该卡资源；CRITICAL HIT (2)不超Armour Pool骰数，若命中骰少则效果有限；Jim Raynor本身HP 8无Shield，若被Engaged或受远程火力可能被摧毁，失去Orders来源",
+            "reviseIf": [
+              "Jim Raynor受威胁需撤离或保护",
+              "CP资源不足或Ready卡已耗尽",
+              "目标单位已使用过Orders效果或本回合无法行动"
+            ],
+            "sourceRefs": [
+              "source:army_units:jim_raynor",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.54",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2"
+            ],
+            "unproven": [
+              "Orders三选项在不同单位上的实际收益需实战检验",
+              "REPEATABLE多次使用Orders的CP消耗与资源管理平衡未经验证"
+            ]
+          },
+          {
+            "title": "Marine对抗Armoured目标：以AGG-12或Rocket Launcher作为SPECIALIST独立Batch补足伤害",
+            "when": [
+              "敌方出现Armoured标签单位（如Roach、Goliath、Marauder）且Marine的C-14 Rifle（SURGE: Light）对其Surge不触发",
+              "Marine单位已购买AGG-12（替换C-14，SPECIALIST）或Rocket Launcher（SIDEARM+SPECIALIST）升级",
+              "Assault Phase中Marine单位可声明多个Batch，SPECIALIST模型作为独立Batch结算"
+            ],
+            "procedure": [
+              "核对目标Combat Tag：C-14 Rifle Surge Type为Light，仅对Light目标触发；对Armoured目标Surge骰结果被忽略，不产生额外伤害",
+              "若Marine带AGG-12（RANGE 12，TARGET: Ground，RoA 2，HIT 3+，SURGE: Armoured D3，LONG RANGE 18\\\"，SPECIALIST，替换C-14）：指定1模型携带，攻击Armoured目标时Surge Type匹配，按Surge骰结果将等量骰子从Armour Pool直接移入Damage Pool绕过Armour",
+              "若Marine带Rocket Launcher（RANGE 12，TARGET: Ground，RoA 4，HIT 3+，无Surge，INDIRECT FIRE，LONG RANGE 18\\\"，SIDEARM，SPECIALIST）：指定1模型携带，以高RoA 4提供稳定命中，且INDIRECT FIRE可无视视线选择目标（目标须在射程内，若不在视线内可获Evade Roll）",
+              "SPECIALIST模型因携带不同武器，在攻击序列中作为独立Batch结算；同武器档案所有模型须攻击同一目标，不同档案可分别批次攻击不同目标",
+              "批次逐个声明并完全结算：先用C-14 Rifle批次处理Light目标，再用AGG-12/Rocket Launcher批次处理Armoured目标，或反之根据目标威胁度排序",
+              "若购买AGG-12（替换C-14），该模型失去C-14 Rifle，仅保留AGG-12；若购买Rocket Launcher（SIDEARM），该模型保留C-14并可同时使用两者，但Rocket Launcher批次须独立结算"
+            ],
+            "alternatives": [
+              "若敌方以Armoured为主且Marine单位规模大（9模型），可购买Rocket Launcher（40矿物，SPECIALIST，SIDEARM）让1模型保留C-14并额外获得RoA 4的INDIRECT FIRE输出；该升级不减少Light Surge输出，其代价是40矿物的编军支出与其他升级的机会成本",
+              "若敌方以Light为主，保留全队C-14 Rifle以最大化Light Surge，不购买SPECIALIST替换，避免降低对Light目标的效率",
+              "若需同时处理两类目标，优先用Quad K12（Marauder）或Goliath Autocannon处理Armoured，Marine C-14专注Light，避免Marine单位过度投资SPECIALIST",
+              "若敌方单位有HIGH GROUND Cover或Direct Cover使AGG-12难以命中，改用Rocket Launcher的INDIRECT FIRE无视视线（但目标不在视线内时可获Evade Roll）"
+            ],
+            "risk": "SPECIALIST升级仅限1模型且AGG-12替换会失去C-14，降低该模型对Light目标的Surge输出；Rocket Launcher无Surge，对Armoured目标依赖高RoA但无绕过Armour能力；SPECIALIST模型若被移除，其武器不能转移给其他模型（FAQ v1:64），升级投资损失；购买SPECIALIST升级占用矿物预算，可能挤占其他单位升级",
+            "reviseIf": [
+              "敌方单位构成与预期不符（如Armoured单位数量远超Light或反之）",
+              "Marine单位因伤亡降至低补给档位（如6模型降至3模型，补给从1降至0），SPECIALIST模型被移除",
+              "发现敌方有HIGH GROUND Cover或Direct Cover使AGG-12命中率过低，或INDIRECT FIRE目标频繁获得Evade Roll",
+              "CP资源紧张需优先用于Stimpack或其他能力，无法兼顾SPECIALIST升级"
+            ],
+            "sourceRefs": [
+              "source:army_units:marine",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.49",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.61",
+              "faq-v1:64"
+            ],
+            "unproven": [
+              "AGG-12与Rocket Launcher在特定骰运下对Armoured目标的实际伤害期望未经验证",
+              "SPECIALIST模型作为独立Batch对混合目标军队的整体效率需实战检验",
+              "Rocket Launcher的INDIRECT FIRE在无视线目标上的Evade Roll频率未经验证"
+            ]
+          },
+          {
+            "title": "Medic反应能力的使用限制：在每次激活一个反应与每轮一次限制下选择最关键伤害",
+            "when": [
+              "己方编有Medic（Support）且场上存在Marine/Marauder等Biological单位",
+              "敌方在Any Phase对4英寸内友方Biological单位造成伤害，且Medic尚未使用Life Support",
+              "同一敌方激活中友方单位可能受多个来源伤害，或友方单位已使用其他反应（如Engineering Bay的Infantry Armor）"
+            ],
+            "procedure": [
+              "确认Reaction次数限制时把两个计数分开：触发发生在某次Activation内，唯一封锁条件是本玩家在当前Activation已经结算过1个Reaction；REPEATABLE使同名能力在本轮其他Activation使用过仍不触发“每轮一次”封锁，usesForTrigger不在此分支重复计数。因此inside_activation且reactionsResolvedThisActivation=0时，本次次数检查通过（即使usesForTrigger=1）；计数为1时失败。触发完全发生在Activation外时才改为同一trigger最多一次，即usesForTrigger=0通过、1失败。此结论只处理次数上限，费用、触发和目标仍须另检。",
+              "在敌方激活中，若友方Biological单位受伤害且Medic尚未使用反应，优先用Life Support（反应，1 CP）减少Total Damage：按4英寸内Medic模型数减少Total Damage（Stabilizer Medpacks升级使计算时视为多1个模型在范围内）",
+              "若同一敌方激活中友方单位已使用Infantry Armor（Engineering Bay反应）进行护甲掷骰，则Medic的Life Support无法再响应同一攻击——因每次激活每玩家仅一个反应",
+              "若友方单位同时受多个来源伤害（不同激活），Medic在同一敌方激活中已用Life Support后不能再响应后续攻击，需选择伤害最高或最可能触发伤亡的一次使用",
+              "在Movement Phase激活Medic并使用Medpack（主动，1 CP）：选择4英寸内另一友方Biological单位，HEAL (X)，X为范围内Medic模型数（Stabilizer Medpacks再+1），以清除累积Damage",
+              "若友方单位被施加DEBUFF，可用Restoration（反应，1 CP）移除4英寸内友方单位的全部DEBUFF；注意Restoration与Life Support为不同具名反应，各自每轮每单位限一次，但同一敌方激活中每玩家仅能结算一个反应，故两者不能在同一敌方激活中同时使用"
+            ],
+            "alternatives": [
+              "若敌方攻击为普通高伤害（非INSTANT），可考虑用Engineering Bay的Infantry Armor（反应）替代Life Support，但两者不能在同一敌方激活中同时使用；若敌方攻击带INSTANT，则敌方不能针对该攻击声明或结算任何Reaction，Infantry Armor与Life Support均无法响应，应改用其他非反应手段（如提前站位或依赖Armour）应对。",
+              "若Medic需保护多个单位，将其置于多个Marine/Marauder的4英寸重叠区，但注意Life Support按范围内Medic模型数计算，分散会降低效率",
+              "若友方单位已累积Damage且Medic的Life Support已用，改用Medpack（主动）在Movement Phase治疗，或依赖Jim Raynor的Orders（1 CP忽略Disengage惩罚）让单位脱离危险",
+              "若Medic自身受威胁，可将其后撤至安全位置，牺牲部分治疗范围换取生存"
+            ],
+            "risk": "每次激活每玩家仅一个反应，若Marine已用Infantry Armor则Medic无法响应同一攻击；Life Support每轮每单位限一次，无法持续保护；Medic本身HP 2、Armour 5+，若被Engaged或受远程火力可能被快速摧毁；Life Support需支付1 CP，耗尽Ready卡后本回合无法再用该卡资源",
+            "reviseIf": [
+              "Medic被Engaged或受威胁需撤离",
+              "友方单位伤亡使Medic的治疗目标减少",
+              "敌方使用INSTANT武器使Life Support无法触发",
+              "CP资源不足或Ready卡已耗尽，无法支付Life Support费用"
+            ],
+            "sourceRefs": [
+              "source:army_units:medic",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+              "faq-v1:37",
+              "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+              "source:tactical_cards:engineering_bay",
+              "faq-v1:59"
+            ],
+            "unproven": [
+              "Medic在特定站位下的实际治疗效率需实战检验",
+              "Life Support与Medpack在连续多轮中的资源消耗（CP）与收益平衡未经验证",
+              "Medic在敌方INSTANT武器下的生存性与保护能力未经验证"
+            ]
+          },
+          {
+            "title": "Jim Raynor的Orders 1CP强化Marauder Quad K12：CRITICAL HIT(2)的批次内应用与REPEATABLE资源节奏",
+            "when": [
+              "己方编有Jim Raynor（Hero，需战术卡解锁Hero槽位）且8英寸内有Marauder单位",
+              "Marauder将在本回合Assault Phase使用Quad K12（RoA 3，HIT 3+，SURGE: Armoured D3，PIERCE Armoured 2）攻击Armoured目标",
+              "Jim Raynor在Movement Phase被激活，且有Ready的CP资源卡可耗尽支付Orders费用"
+            ],
+            "procedure": [
+              "在Jim Raynor激活时（行动前或行动后立即）使用Orders（主动，X CP，REPEATABLE，Movement Phase），选择8英寸内另一友方Biological单位（Marauder）并支付1 CP，使该单位首个使用武器获得CRITICAL HIT (2)",
+              "确认CRITICAL HIT (2)作用于武器批次（集体骰池）而非单个模型：Marauder Quad K12命中后，将最多2个Armour Pool骰直接移入Damage Pool，绕过Armour Roll；移动骰数不能超过Armour Pool现有骰数",
+              "若Quad K12的Surge Type（Armoured）匹配目标，Surge骰结果另将等量骰子从Armour Pool移入Damage Pool；CRITICAL HIT与Surge分别结算，均不超池内骰数",
+              "批次逐个声明并完全结算：先用Quad K12批次攻击Armoured目标，若该批次摧毁目标，后续批次（如SIDEARM或另一武器档案）可自由选择新目标",
+              "REPEATABLE允许每轮多次使用Orders，但每次须在Jim Raynor激活时支付CP，且每次支付均须耗尽一张或多张Ready的CP资源卡；耗尽后该卡本回合不再提供资源或能力，直到Phase 4 Cleanup刷新",
+              "若需对多个单位强化，按威胁度排序：优先对将进行高RoA攻击的Marauder/Marine使用1 CP CRITICAL HIT，再考虑其他效果"
+            ],
+            "alternatives": [
+              "若Marauder需脱离Engagement后继续射击，用Orders的1 CP忽略Disengage惩罚选项而非CRITICAL HIT，使下一Assault Phase可正常Ranged Attack或Charge",
+              "若单位已完成行动但需额外移动或部署，用Orders的2 CP移除Activation Marker选项，但消耗较高，需权衡CP资源",
+              "若敌方以Light为主，CRITICAL HIT (2)对Quad K12的收益低于对Marine C-14（SURGE: Light）的强化，可将Orders转向Marine",
+              "若CP资源紧张，改用阵营卡Tactical Retreat（主动，移动阶段）忽略Disengage惩罚，节省Orders的CP用于CRITICAL HIT"
+            ],
+            "risk": "Orders每次使用均须Jim Raynor激活且支付CP，耗尽Ready卡后本回合无法再用该卡资源；CRITICAL HIT (2)不超Armour Pool骰数，若命中骰少则效果有限；Jim Raynor本身HP 8无Shield，若被Engaged或受远程火力可能被摧毁，失去Orders来源；'first used weapon'在单位有多个武器档案时的精确界定未在来源中明确，若Quad K12非首个使用武器则效果不适用",
+            "reviseIf": [
+              "Jim Raynor受威胁需撤离或保护",
+              "CP资源不足或Ready卡已耗尽，无法支付Orders费用",
+              "Marauder已使用过Orders效果或本回合无法行动（如已被激活且无Activation Marker可移除）",
+              "目标单位构成变化，CRITICAL HIT (2)的收益低于其他Orders选项"
+            ],
+            "sourceRefs": [
+              "source:army_units:jim_raynor",
+              "source:army_units:marauder",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.13",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.54",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+              "faq-v1:60",
+              "faq-v1:34"
+            ],
+            "unproven": [
+              "CRITICAL HIT (2)与Quad K12 Surge叠加在特定骰运下的实际伤害期望未经验证",
+              "REPEATABLE多次使用Orders的CP消耗与资源管理平衡需实战检验",
+              "'first used weapon'在Marauder多武器档案（Quad K12与Strike）下的精确界定需实际局面确认"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.terran_armed_forces.phase_tempo.1",
+        "axis": "phase_tempo",
+        "requiredSourceRefs": [
+          "source:tactical_cards:terran_armed_forces"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Terran Tenacity 与早Pass的时机权衡",
+            "when": [
+              "移动阶段中己方仍有未激活单位且需完成部署/机动",
+              "对手尚未Pass或即将Pass，争夺下一阶段先手",
+              "己方单位已就位或无需再部署，但不想放弃剩余激活"
+            ],
+            "procedure": [
+              "确认Terran Tenacity为阵营卡主动能力，文本为'Once per Game. Immediately claim the First Player Marker. No other player may claim the First Player Marker for the remainder of this Phase.'；按Part 10.2通用规则，主动能力须由当前被激活单位在声明行动前或行动完全结算后立即使用，且每个具名主动能力每轮每单位限用一次（除非REPEATABLE）；Tenacity未免除该前提，使用它需要已有激活窗口，但不额外消耗一次单位激活",
+              "比较两条取得Assault Phase先手的路径：早Pass（第一个Pass者取得标记但本阶段不能再激活单位）与Tenacity（立即取得标记且本阶段其他玩家不能取得）",
+              "若己方仍需多个单位完成移动/部署，优先用Tenacity取得标记，保留剩余激活以完成机动",
+              "若己方已无重要单位需激活，直接早Pass取得标记更省资源，保留Tenacity留待对手可能夺回先手的回合",
+              "使用Tenacity后，本阶段内对手无法通过Pass取得标记，可迫使对手在无先手收益下继续激活"
+            ],
+            "alternatives": [
+              "对手已Pass取得标记时：来源未说明Tenacity能否夺回已Pass者取得的标记，需先确认标记当前持有者与规则交互，不确定时保留Tenacity",
+              "己方已Pass后：Pass后本阶段不能再激活单位，且Tenacity作为主动能力仍需10.2的当前激活窗口，因此己方Pass后不能再使用Tenacity；若计划使用，应在己方Pass之前的合法激活窗口内安排。",
+              "第1轮掷骰胜者已让出先手时：若己方为后手方，可在对手完成关键部署后Pass前用Tenacity抢回Assault先手"
+            ],
+            "risk": "每局仅一次，若过早使用而对手后续回合更需先手（如关键Charge或标记争夺轮），可能浪费；Tenacity作为主动能力须由当前被激活单位使用，因此存在机会成本（占用该单位的激活窗口），且使用会按10.5.2耗尽阵营卡；实际成本需按规则服务确认",
+            "reviseIf": [
+              "对手在移动阶段早期即Pass且己方无需先手射击时，保留Tenacity",
+              "己方单位需连续两轮先手（如连续Charge）时，评估是否值得在本轮使用",
+              "对手阵营有类似夺回先手能力时，预留Tenacity作为反制"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:terran_armed_forces",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1"
+            ],
+            "unproven": [
+              "Tenacity与对手已Pass后标记归属的精确交互未在来源中完整说明",
+              "Tenacity是否要求当前被激活单位使用或受Pass后禁止激活限制，需实际对局验证"
+            ]
+          },
+          {
+            "title": "Stimpack与Go! Go! Go!的移动叠加规划",
+            "when": [
+              "Marine/Marauder单位在移动阶段需快速进入Assault Phase有效射程或Charge距离",
+              "单位处于满编或接近满编，能承受Stimpack的非致命伤害",
+              "Barracks战术卡为Ready状态且可支付其主动能力（Marine/Marauder Stimpack为1 CP）"
+            ],
+            "procedure": [
+              "确认Marine/Marauder Speed为4/7（单模型或减至1模型时用7），Stimpack为主动能力（Marine与Marauder均为1 CP，移动阶段）",
+              "激活单位后先使用Stimpack：单位受NON-LETHAL DAMAGE (2)、获得BUFF Speed (3)，C-14 Rifle/Quad K12及近战武器获PRECISION",
+              "再使用Barracks的Go! Go! Go!（主动，移动阶段，不占行动次数）：单位额外执行2英寸Move",
+              "执行标准Move：单模型Marine Speed 7+BUFF 3=10英寸，Go! Go! Go!为独立2英寸Move，两者各自受'底座任何部分不能移动超过当前Speed值'约束，不能简单相加为单次总位移",
+              "规划终点：确保进入C-14 Rifle（12英寸）或Quad K12（12英寸）射程，或接近Charge距离（Speed+1D6）",
+              "记录Damage Marker：NON-LETHAL DAMAGE (2)累加至Total Damage，不立即移除模型"
+            ],
+            "alternatives": [
+              "单位已受伤害或残编时：跳过Stimpack仅用Go! Go! Go!，避免非致命伤害合并触发伤亡",
+              "目标在LONG RANGE内（Marine AGG-12 18英寸）时：无需Stimpack移动，保留CP用于其他能力",
+              "需在Assault Phase射击而非Charge时：移动阶段用Stimpack+Move进入射程，突击阶段直接Ranged Attack"
+            ],
+            "risk": "Stimpack造成NON-LETHAL DAMAGE (2)，仅累加至Damage Marker，即使Total Damage达到或超过模型HP也不立即移除模型；但若单位随后受到标准伤害，合并后的Total Damage将正常触发伤亡移除，因此已累积非致命伤害会提高后续普通伤害的致死风险。BUFF Speed为数值关键词，不叠加，若已有其他BUFF Speed来源仅取最高值；消耗1 CP与Barracks卡，可能影响后续能力支付。",
+            "reviseIf": [
+              "单位Total Damage接近模型HP（Marine HP2、Marauder HP5）时，避免Stimpack",
+              "对手有反制移动或高伤害远程时，评估暴露风险",
+              "Barracks卡需用于其他能力（如后续回合Go! Go! Go!）时，权衡CP分配"
+            ],
+            "sourceRefs": [
+              "source:army_units:marine",
+              "source:army_units:marauder",
+              "source:tactical_cards:barracks",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.2",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.6",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47"
+            ],
+            "unproven": [
+              "BUFF Speed (3)与Go! Go! Go!额外Move叠加后单次激活总位移是否受'No part of a base can move more than its Speed value'限制，需实际对局验证",
+              "Stimpack后单位在Assault Phase的暴露风险与伤害累积的实际影响因对手火力而异"
+            ]
+          },
+          {
+            "title": "Tactical Retreat与Orders的Disengage后行动选择",
+            "when": [
+              "己方单位处于Engaged且需脱离不利近战",
+              "下一Assault Phase仍想用Ranged Attack或Charge",
+              "己方阵营卡Tactical Retreat为Ready状态，且当前激活单位可支付使用",
+              "Jim Raynor在8英寸内且已激活，可支付CP使用Orders"
+            ],
+            "procedure": [
+              "确认Tactical Retreat为阵营卡主动能力（移动阶段），文本为'The active Unit ignores the Disengage penalty'；按Part 10.2通用规则，主动能力须由当前被激活单位在声明行动前或行动后立即使用，且每个具名主动能力每轮每单位限用一次（除非REPEATABLE）",
+              "确认Orders为Jim Raynor的REPEATABLE主动能力（移动阶段，X CP），可多次使用；其中1 CP选项使另一友方生物单位忽略Disengage惩罚直至回合结束",
+              "比较两条豁免路径：Tactical Retreat（阵营卡主动，须由当前激活单位使用）与Orders（Jim Raynor主动，1 CP，作用于8英寸内另一友方生物单位）",
+              "若当前激活单位即需脱离的单位：由该单位使用Tactical Retreat，本回合剩余时间内忽略Disengage惩罚",
+              "若需脱离的单位为另一友方生物单位且Jim Raynor在8英寸内：用Orders的1 CP选项使该单位忽略Disengage惩罚，保留Tactical Retreat供其他单位使用",
+              "执行Disengage：按标准Move规则移动，确保Leading Model能完全脱离所有敌方单位Engagement Range（1英寸），否则Disengage失败且Leading Model被移除",
+              "Disengage成功后，因已忽略惩罚，下一Assault Phase可正常Ranged Attack或Charge，无论敌方Combined Supply"
+            ],
+            "alternatives": [
+              "若单位Current Supply大于敌方Combined Supply（Tactical Mass成立）时：无需Tactical Retreat或Orders，直接Disengage并保留资源",
+              "仅需脱离而不需下轮攻击时：直接Disengage，下轮Run或Hold，节省资源",
+              "Jim Raynor需用Orders提供CRITICAL HIT或移除Activation Marker时，改用Tactical Retreat"
+            ],
+            "risk": "Tactical Retreat消耗一次单位激活且阵营卡每轮仅一次；Orders消耗CP且Jim Raynor须在8英寸内；若Disengage失败（Leading Model无法脱离Engagement Range），单位不移动且Leading Model被移除，能力浪费",
+            "reviseIf": [
+              "敌方Combined Supply明显低于己方（Tactical Mass成立）时，不用Tactical Retreat或Orders",
+              "Jim Raynor需用Orders提供CRITICAL HIT或移除Activation Marker时，改用Tactical Retreat",
+              "对手有反制Disengage或高伤害反应时，评估是否值得脱离"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:terran_armed_forces",
+              "source:army_units:jim_raynor",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.3",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.69",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2"
+            ],
+            "unproven": [
+              "Tactical Retreat与Orders同时满足时是否叠加或冲突未在来源中明确",
+              "Tactical Retreat与Tactical Mass同时满足时是否叠加或冲突未在来源中明确"
+            ]
+          },
+          {
+            "title": "Stimpack非致命伤害与突击节奏平衡",
+            "when": [
+              "Marine/Marauder单位在移动阶段需快速进入射程或Charge距离，且单位处于满编或接近满编",
+              "单位Total Damage较低（Marine HP2、Marauder HP5），能承受Stimpack的NON-LETHAL DAMAGE (2)",
+              "Medic在4英寸内可提供HEAL抵消非致命伤害"
+            ],
+            "procedure": [
+              "确认单位Total Damage：Marine HP2、Marauder HP5；若Total Damage已接近HP，避免Stimpack以防合并触发伤亡",
+              "激活单位后使用Stimpack（1 CP，移动阶段）：单位受NON-LETHAL DAMAGE (2)、获得BUFF Speed (3)，武器获PRECISION",
+              "记录Damage Marker：NON-LETHAL DAMAGE (2)累加至Total Damage，不立即移除模型",
+              "若Medic在4英寸内，用Medpack（主动，1 CP，移动阶段）HEAL (X)抵消部分伤害，X=范围内Medic模型数",
+              "在Assault Phase执行Ranged Attack：NON-LETHAL DAMAGE不影响RoA或命中，单位可正常射击",
+              "若单位随后受标准伤害，合并Total Damage按标准规则移除模型（Marine HP2：Total Damage≥2移除1模型）"
+            ],
+            "alternatives": [
+              "单位已受伤害或残编时：跳过Stimpack，仅用Move或Go! Go! Go!进入射程",
+              "需在Assault Phase Charge而非射击时：Stimpack的BUFF Speed (3)提升Charge距离（Speed+1D6），但注意非致命伤害",
+              "Medic不在范围内时：评估Stimpack后单位暴露风险，必要时保留CP用于其他防御"
+            ],
+            "risk": "Stimpack造成NON-LETHAL DAMAGE (2)，仅累加至Damage Marker，即使Total Damage达到或超过模型HP也不立即移除模型；但若单位随后受到标准伤害，合并后的Total Damage将正常触发伤亡移除，因此已累积非致命伤害会提高后续普通伤害的致死风险。消耗1 CP，可能影响后续能力支付。",
+            "reviseIf": [
+              "单位Total Damage接近模型HP（Marine≥1、Marauder≥3）时，避免Stimpack",
+              "对手有高伤害远程或模板武器时，评估暴露风险",
+              "Medic需用Life Support（反应）保护其他单位时，权衡HEAL与防御"
+            ],
+            "sourceRefs": [
+              "source:army_units:marine",
+              "source:army_units:marauder",
+              "source:army_units:medic",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.31"
+            ],
+            "unproven": [
+              "Stimpack后单位在Assault Phase的暴露风险与伤害累积的实际影响因对手火力而异",
+              "Medic HEAL能否完全抵消Stimpack非致命伤害后单位仍保持满编的实际效果需对局验证"
+            ]
+          },
+          {
+            "title": "Terran Tenacity与Passing的边界交互",
+            "when": [
+              "移动阶段中己方仍有未激活单位且尚未Pass",
+              "对手已Pass并取得First Player Marker，或即将Pass",
+              "己方需在完成部署/机动后仍保有Assault Phase先手"
+            ],
+            "procedure": [
+              "确认Terran Tenacity为阵营卡主动能力：文本为'Once per Game. Immediately claim the First Player Marker. No other player may claim the First Player Marker for the remainder of this Phase.'。按Part 10.5，阵营卡能力同样遵守10.1–10.4；按Part 10.2，主动能力须由当前被激活单位在声明行动前或行动完全结算后立即使用。Tenacity未免除该前提，因此使用它需要已有激活窗口，但卡面未额外消耗一次单位激活。",
+              "若己方尚未Pass：在完成关键部署/机动后、对手Pass前，使用Tenacity立即取得标记，保留剩余激活",
+              "若对手已Pass取得标记：使用Tenacity立即取得标记；来源未明确'claim'是否可夺回已Pass者持有的标记，此情形需提交有约束力的规则/裁判处理",
+              "若己方已Pass：Pass后本阶段不能再激活单位，且Tenacity作为Active能力仍需10.2的当前激活窗口（须由当前被激活单位在声明行动前或行动完全结算后立即使用）；己方Pass后已无该窗口，不能把此情形列成来源未说明的自由裁决，应视为不可用。",
+              "使用后确认标记归属：Tenacity使本阶段其他玩家不能取得标记，可迫使对手在无先手收益下继续激活"
+            ],
+            "alternatives": [
+              "己方单位已全部就位且无需再激活时：直接早Pass取得标记更省资源，保留Tenacity留待对手可能夺回先手的回合",
+              "对手尚未Pass且己方需先手射击时：在对手Pass前用Tenacity取得Assault先手，同时保留己方剩余激活",
+              "第1轮掷骰胜者已让出先手时：若己方为后手方，可在对手完成关键部署后Pass前用Tenacity取得Assault先手"
+            ],
+            "risk": "每局仅一次，若过早使用而对手后续回合更需先手（如关键Charge或标记争夺轮），可能浪费；Tenacity作为Active能力须由当前被激活单位在行动前或行动完全结算后立即使用，且使用会按10.5.2耗尽阵营卡；己方Pass后已无当前激活窗口，不能把Pass后使用列成未验证情形；'夺回'已Pass者标记的交互仍属来源未完整说明，需按规则服务确认。",
+            "reviseIf": [
+              "对手在移动阶段早期即Pass且己方无需先手射击时，保留Tenacity",
+              "己方单位需连续两轮先手（如连续Charge）时，评估是否值得在本轮使用",
+              "对手阵营有类似取得先手能力时，预留Tenacity作为反制"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:terran_armed_forces",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2"
+            ],
+            "unproven": [
+              "Tenacity与对手已Pass后标记归属的精确交互未在来源中完整说明",
+              "Tenacity在对手持有标记且已Pass后的夺回时机是否受Pass后禁止激活限制，需实际对局验证"
+            ]
+          },
+          {
+            "title": "Stimpack与Go! Go! Go!叠加的移动规划",
+            "when": [
+              "Marine/Marauder单位在移动阶段需快速进入Assault Phase有效射程或Charge距离",
+              "单位处于满编或接近满编，能承受Stimpack的非致命伤害",
+              "Barracks战术卡为Ready状态且可支付1 CP（Marine/Marauder Stimpack）"
+            ],
+            "procedure": [
+              "确认Marine/Marauder Speed为4/7（单模型或减至1模型时用7），Stimpack为主动能力（1 CP，移动阶段）",
+              "激活单位后先使用Stimpack：单位受NON-LETHAL DAMAGE (2)、获得BUFF Speed (3)，C-14 Rifle/Quad K12及近战武器获PRECISION",
+              "确认BUFF Speed (3)提升Speed特性：单模型Marine Speed由7升至10，多模型单位以Leading Model路径计",
+              "再使用Barracks的Go! Go! Go!（主动，移动阶段，不占行动次数）：单位额外执行2英寸Move",
+              "执行标准Move：单次Move内Leading Model底座任何部分不能移动超过当前Speed值。Speed 4/7的第二个值仅限始终单模型或只剩1模型时使用：多模型单位Stimpack后Speed为4+3=7英寸，单模型单位才为7+3=10英寸。Go! Go! Go!为一次独立执行的额外2英寸Move，其位移按该次Move自身规则判定，不把单次Move上限当作所有独立移动的总和上限。",
+              "规划终点：确保进入C-14 Rifle（12英寸）或Quad K12（12英寸）射程，或接近Charge距离（Speed+1D6）",
+              "记录Damage Marker：NON-LETHAL DAMAGE (2)累加至Total Damage，不立即移除模型"
+            ],
+            "alternatives": [
+              "单位已受伤害或残编时：跳过Stimpack仅用Go! Go! Go!，避免非致命伤害合并触发伤亡",
+              "目标在LONG RANGE内（Marine AGG-12 18英寸）时：无需Stimpack移动，保留CP用于其他能力",
+              "需在Assault Phase射击而非Charge时：移动阶段用Stimpack+Move进入射程，突击阶段直接Ranged Attack"
+            ],
+            "risk": "Stimpack造成NON-LETHAL DAMAGE (2)，仅累加至Damage Marker，即使Total Damage达到或超过模型HP也不立即移除模型；但若单位随后受到标准伤害，合并后的Total Damage将正常触发伤亡移除，因此Stimpack会提高后续普通伤害的致死风险。BUFF Speed为数值关键词不叠加，若已有其他BUFF Speed来源仅取最高值；消耗1 CP与Barracks卡，可能影响后续能力支付。",
+            "reviseIf": [
+              "单位Total Damage接近模型HP（Marine HP2、Marauder HP5）时，避免Stimpack",
+              "对手有反制移动或高伤害远程时，评估暴露风险",
+              "Barracks卡需用于其他能力（如后续回合Go! Go! Go!）时，权衡CP分配"
+            ],
+            "sourceRefs": [
+              "source:army_units:marine",
+              "source:tactical_cards:barracks",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.2",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.6",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47"
+            ],
+            "unproven": [
+              "BUFF Speed (3)与Go! Go! Go!额外Move叠加后单次激活总位移是否受'No part of a base can move more than its Speed value'限制，需实际对局验证",
+              "Stimpack后单位在Assault Phase的暴露风险与伤害累积的实际影响因对手火力而异"
+            ]
+          },
+          {
+            "title": "Tactical Retreat下Goliath的Disengage与Tactical Mass判定",
+            "when": [
+              "己方Goliath（Current Supply 2）处于Engaged且需脱离不利近战",
+              "下一Assault Phase仍想用Autocannon/Underbelly Machine Gun进行Ranged Attack",
+              "己方阵营卡Tactical Retreat为Ready状态，且当前激活单位可支付使用"
+            ],
+            "procedure": [
+              "确认Goliath处于Engaged状态且需Disengage；比较两条豁免路径：Tactical Retreat（阵营卡主动能力，移动阶段，文本为'The active Unit ignores the Disengage penalty'）与Tactical Mass（Current Supply>敌方Combined Supply）",
+              "若敌方Combined Supply大于Goliath的Current Supply（2），Tactical Mass不成立，须依赖Tactical Retreat豁免Disengage惩罚",
+              "由当前激活单位使用Tactical Retreat：本回合剩余时间内该单位忽略Disengage惩罚",
+              "执行Disengage：按标准Move规则移动，确保Leading Model能完全脱离所有敌方单位Engagement Range（1英寸），否则Disengage失败且Leading Model被移除",
+              "Disengage成功后，因已忽略惩罚，下一Assault Phase可正常Ranged Attack或Charge，无论敌方Combined Supply",
+              "若未使用Tactical Retreat且无Tactical Mass，Disengage后下一Assault Phase只能Run或Hold"
+            ],
+            "alternatives": [
+              "若Goliath Current Supply大于敌方Combined Supply（Tactical Mass成立）时：无需Tactical Retreat，直接Disengage并保留阵营卡供其他单位使用",
+              "仅需脱离而不需下轮攻击时：直接Disengage，下轮Run或Hold，节省阵营卡使用",
+              "若需脱离的单位为另一友方Biological单位且Jim Raynor在8英寸内并已激活时：可用Orders的1 CP选项（忽略Disengage惩罚）替代Tactical Retreat，保留阵营卡。注意Orders只能选择另一友方Biological单位，不能用于Goliath（标签为Armoured/Mechanical/Ground）。"
+            ],
+            "risk": "Tactical Retreat为阵营卡主动能力，须由当前激活单位在声明行动前或行动完全结算后立即使用（Part 10.2通用规则）；若Disengage失败（Leading Model无法脱离Engagement Range），单位不移动且Leading Model被移除，能力浪费；Goliath无Evade（-），脱离过程中若受反应攻击可能承受伤害",
+            "reviseIf": [
+              "敌方Combined Supply明显低于己方（Tactical Mass成立）时，不用Tactical Retreat",
+              "Jim Raynor需用Orders提供CRITICAL HIT或移除Activation Marker时，改用Tactical Retreat",
+              "对手有反制Disengage或高伤害反应时，评估是否值得脱离"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:terran_armed_forces",
+              "source:army_units:goliath",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.3",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.69",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2"
+            ],
+            "unproven": [
+              "Tactical Retreat与Tactical Mass同时满足时是否叠加或冲突未在来源中明确",
+              "Goliath Disengage后若敌方有PINPOINT或Indomitable类能力，其脱离后暴露风险需实际对局验证"
+            ]
+          },
+          {
+            "title": "Stimpack非致命伤害对RoA/命中与伤亡移除的影响",
+            "when": [
+              "Marine单位在移动阶段使用Stimpack（NON-LETHAL DAMAGE 2）后需在Assault Phase进行Ranged Attack",
+              "单位Total Damage较低（Marine HP2），能承受非致命伤害且不立即触发伤亡",
+              "需判断非致命伤害是否影响后续攻击效率与伤亡移除"
+            ],
+            "procedure": [
+              "确认Marine使用Stimpack（1 CP，移动阶段）：单位受NON-LETHAL DAMAGE (2)、获得BUFF Speed (3)，C-14 Rifle及近战武器获PRECISION (3)",
+              "记录Damage Marker：NON-LETHAL DAMAGE (2)累加至Total Damage，不立即移除任何模型（即使Total Damage超过模型HP）",
+              "确认NON-LETHAL DAMAGE不影响RoA或命中：Marine C-14 Rifle仍为RoA 2、Hit 3+，可正常进行Ranged Attack",
+              "在Assault Phase执行Ranged Attack：按标准三池序列（Attack→Armour→Damage）结算，非致命伤害不改变攻击骰池或命中目标值",
+              "若单位随后受标准伤害：合并Total Damage按标准规则移除模型——Marine HP2，Total Damage≥2时移除1个Marine并减去2点，剩余伤害记录为Damage Marker",
+              "若Medic在4英寸内，可用Medpack（主动，1 CP）HEAL (X)抵消部分Total Damage，X=范围内Medic模型数，减少伤亡风险"
+            ],
+            "alternatives": [
+              "单位已受伤害或残编时：跳过Stimpack，避免非致命伤害合并触发伤亡移除",
+              "需在Assault Phase Charge而非射击时：Stimpack的BUFF Speed (3)提升Charge距离（Speed+1D6），但注意非致命伤害累积",
+              "Medic不在范围内时：评估Stimpack后单位暴露风险，必要时保留CP用于其他防御能力"
+            ],
+            "risk": "Stimpack造成NON-LETHAL DAMAGE (2)，若单位已累积伤害可能使Total Damage达到模型HP（Marine HP2），后续任何标准伤害都可能触发伤亡移除；消耗1 CP，可能影响后续能力支付；受非致命伤害的单位更易被后续攻击摧毁",
+            "reviseIf": [
+              "单位Total Damage接近模型HP（Marine≥1）时，避免Stimpack以防合并触发伤亡",
+              "对手有高伤害远程或模板武器时，评估暴露风险",
+              "Medic需用Life Support（反应）保护其他单位时，权衡HEAL与防御"
+            ],
+            "sourceRefs": [
+              "source:army_units:marine",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.31"
+            ],
+            "unproven": [
+              "Stimpack后单位在Assault Phase的暴露风险与伤害累积的实际影响因对手火力而异",
+              "Medic HEAL能否完全抵消Stimpack非致命伤害后单位仍保持满编的实际效果需对局验证"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.terran_armed_forces.objectives.1",
+        "axis": "objectives",
+        "requiredSourceRefs": [
+          "source:tactical_cards:terran_armed_forces"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Frontlines任务中Terran Armed Forces的标记控制与单位分配策略（修正版）",
+            "when": [
+              "任务为Frontlines（Standard：起始补给6、每轮+2、5轮，第2轮起每控制1 VP、当轮从对手夺回标记额外+2 VP）",
+              "己方使用Terran Armed Forces阵营卡（3 Core/1 Elite/1 Support，无Hero/Air）",
+              "已编入Marine/Marauder（Core）与Goliath（Elite）等地面单位"
+            ],
+            "procedure": [
+              "第1轮优先部署高补给单位（如Goliath补给2或大编制Marine补给2）抢占1-2个关键标记，利用粘性控制建立早期优势",
+              "第2轮起，在每轮Scoring Phase开始前（即Movement/Assault Phase内）确保至少一个单位在目标标记3英寸内、同海拔且有LoS、In Coherency，以维持或夺回控制",
+              "用Marine/Marauder（补给1-2）守己方关联或中立标记，用Goliath（补给2）压制对手高补给单位所在标记",
+              "若对手以更高Supply夺回标记，需在下一轮Scoring Phase前集中2-3个单位（合计补给≥对手）重新夺回，因当轮夺回额外+2 VP；注意Scoring Phase无单位激活，必须在之前完成站位调整",
+              "利用Terran Tenacity（每局一次，Active能力）在Movement Phase激活单位时于行动前/后立即使用，夺取First Player Marker，以在后续Phase获得先手激活优势"
+            ],
+            "alternatives": [
+              "若对手单位补给总值过高难以夺回，放弃该标记转向无人争夺标记，因粘性控制下无争夺不转移",
+              "若己方单位伤亡致补给下降，且已编入Jim Raynor，可用其Freedom Fighters（8英寸内友方在控制/争夺标记时补给不能降至1以下）维持争夺资格；未编入Jim Raynor时改用集中多个单位合计补给超过对手",
+              "若需快速部署，用Barracks/Engineering Bay解锁Core槽位，优先上大编制Marine以增加补给"
+            ],
+            "risk": "单位分散守多个标记易被逐个击破；Goliath无Evade且Size 3易被远程集火；过早Pass可能失去机动灵活性；Terran Tenacity需在激活单位时使用且每局一次，时机不当会浪费；Scoring Phase无单位激活，若未在之前调整站位则无法当轮夺回标记",
+            "reviseIf": [
+              "对手集中高补给单位压制单一标记且己方无法在下一轮Scoring Phase前夺回时",
+              "己方单位伤亡致补给大幅下降，无法维持多个标记控制时",
+              "任务进入第4-5轮，需评估最终回合Reserves单位被摧毁的VP影响时"
+            ],
+            "sourceRefs": [
+              "source:faction_cards:mission_frontlines",
+              "source:tactical_cards:terran_armed_forces",
+              "source:army_units:marine",
+              "source:army_units:goliath",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+              "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+              "faq-v1:05"
+            ],
+            "unproven": [
+              "粘性控制下单位移开后对手需以更高Supply主动夺回的具体边界情形",
+              "Terran Tenacity与对手早Pass交互的精确时机",
+              "当轮夺回额外+2 VP在单位于计分前被摧毁时的实际收益"
+            ]
+          },
+          {
+            "title": "Divide and Conquer任务中区域Supply优势与Marker 5控制策略（修正版）",
+            "when": [
+              "任务为Divide and Conquer（Standard：起始补给8、每轮+2、4轮，每区Supply优势1 VP、Marker 5控制2 VP）",
+              "己方使用Terran Armed Forces阵营卡（3 Core/1 Elite/1 Support，无Hero/Air）",
+              "已编入Marine/Marauder（Core）与Goliath（Elite）等地面单位，需按Quarter计分"
+            ],
+            "procedure": [
+              "确认任务规则：每轮计分时，仅Wholly Within某Quarter的单位贡献其Supply至该区检查；单位若部分模型跨区，则不贡献任何Supply（不存在按Leading Model所在区贡献的规则）",
+              "判定Wholly Within：单位每个模型的整个底座须完全位于该Quarter内，任何部分不得超出边界（Part 4.2/WHOLLY WITHIN定义）",
+              "部署时避免单位跨区：将单位整体置于单一Quarter内，确保其Supply贡献至目标区；多模型单位（如Marine 6模型）需检查所有模型底座是否同区",
+              "将高补给单位（Goliath补给2、大编制Marine补给2）集中部署于2-3个关键Quarter，争取每区Supply优势；控制标记的单位额外+1 Supply用于该区检查",
+              "每轮计分前检查各区单位是否仍Wholly Within，避免因移动或伤亡导致跨区而丧失Supply贡献；伤亡不触发Coherency检查（FAQ v1:05），但伤亡可能使单位模型减少而改变跨区状态",
+              "优先控制Marker 5（中立，控制得2 VP），用高补给单位驻守并保持In Coherency；Marker 5价值高于单区1 VP"
+            ],
+            "alternatives": [
+              "若对手在某区Supply优势明显，放弃该区转向Marker 5或薄弱区，因Marker 5价值2 VP高于单区1 VP",
+              "若单位需跨区移动，用Run行动在Assault Phase调整位置，确保计分时Wholly Within目标区；注意Run须实际改变位置（FAQ v1:10）",
+              "若己方补给不足，用Barracks/Factory解锁槽位部署更多单位分散至各区，或用Medic的Advanced Medic Facilities（补给视为0计算Supply Pool）释放补给"
+            ],
+            "risk": "单位过度分散致各区均无优势；跨区单位不贡献任何Supply造成浪费；Marker 5争夺激烈易损失高补给单位；Goliath无Evade且Size 3易被远程集火",
+            "reviseIf": [
+              "对手集中兵力于Marker 5且己方无法夺回时",
+              "己方单位伤亡致某区Supply优势丧失，需重新分配时",
+              "任务进入第3-4轮，需评估最终回合Reserves单位被摧毁的VP影响时"
+            ],
+            "sourceRefs": [
+              "source:faction_cards:mission_divide_and_conquer",
+              "source:tactical_cards:terran_armed_forces",
+              "source:army_units:marine",
+              "source:army_units:goliath",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.73",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1"
+            ],
+            "unproven": [
+              "跨区单位不贡献Supply的判定在单位底座跨越区边界时的精确几何（如底座中心在A区但边缘在B区）",
+              "控制标记单位额外+1 Supply与Jim Raynor的Commander补给+1的叠加顺序",
+              "Marker 5控制与区域Supply优势同时满足时的最优资源分配"
+            ]
+          },
+          {
+            "title": "Jim Raynor的Commander与Freedom Fighters对Mission Marker争夺补给值的影响",
+            "when": [
+              "己方使用Terran Armed Forces阵营卡并编入Jim Raynor（Hero，1模型/补给1/250矿物）",
+              "Jim Raynor位于Mission Marker 3英寸内、同海拔且有LoS、单位In Coherency，需计算其争夺补给值",
+              "Jim Raynor 8英寸内有友方单位因伤亡降至补给0，需判断其争夺资格"
+            ],
+            "procedure": [
+              "确认Jim Raynor的Commander为被动：其补给在控制/争夺Mission Markers、完成任务与Disengage检定时视为+1，故其争夺补给值=当前补给1+1=2",
+              "确认Freedom Fighters为被动：8英寸内友方单位在控制/争夺标记与完成任务时补给不能降至1以下，故补给0的Marine以补给1参与争夺",
+              "区分两者范围：Commander仅作用于Jim Raynor自身且含Disengage；Freedom Fighters作用于8英寸内友方且仅限控制/争夺/完成任务，不改变实际Current Supply Value",
+              "计分前检查Jim Raynor与受影响友方单位是否仍满足争夺条件（在战场、In Coherency、3英寸内且有LoS同海拔），伤亡不触发Coherency检查（FAQ v1:05）",
+              "若Jim Raynor伤亡致补给下降，评估其Commander加成是否仍足以维持标记控制，必要时用Medic的HEAL或调整站位"
+            ],
+            "alternatives": [
+              "若Jim Raynor需离开标记支援他处，可依赖粘性控制（控制保持至对手以更高Supply夺回），但需评估对手夺回风险",
+              "若友方单位补给0且不在Jim Raynor 8英寸内，该单位仅能在无对手争夺时控制标记（零补给例外），无法赢得争夺",
+              "若需提升标记争夺，可用Medic的Advanced Medic Facilities（补给视为0计算Supply Pool）释放补给供部署，但不改变争夺补给值"
+            ],
+            "risk": "Jim Raynor（8 HP无Shield）作为高价值Hero易被集火，损失后Commander/Freedom Fighters光环消失；补给0单位在对手争夺时无法赢得控制；光环范围8英寸限制站位灵活性",
+            "reviseIf": [
+              "Jim Raynor被摧毁或被迫离开标记区域时",
+              "对手以更高Supply夺回标记且己方无法重新集结时",
+              "友方单位伤亡致补给降至0且不在光环范围内时"
+            ],
+            "sourceRefs": [
+              "source:army_units:jim_raynor",
+              "source:army_units:medic",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+              "faq-v1:05"
+            ],
+            "unproven": [
+              "Commander的补给+1与Freedom Fighters的补给不能降至1以下同时作用于同一单位时的叠加顺序",
+              "Freedom Fighters是否影响Disengage的Tactical Mass判定（文本仅限控制/争夺/完成任务）",
+              "Jim Raynor伤亡后其施加给友方的效果是否持续（按Destroyed规则应结束，但光环类被动需确认）"
+            ]
+          },
+          {
+            "title": "Supply Drop任务中标记激活轮次得分与部署时机规划",
+            "when": [
+              "任务为Supply Drop（Standard：起始补给6、每轮+2、5轮，标记初始Deactivated）",
+              "第1-4轮开始时随机激活一个Deactivated标记（1-4），第5轮自动激活Marker 5",
+              "己方控制已激活标记，需在Scoring Phase计分"
+            ],
+            "procedure": [
+              "确认得分规则：每轮计分时，对每个己方控制的已激活标记，获得等于该标记激活轮次的VP并移除该标记（得分后标记离场）",
+              "第1轮优先部署高机动/高补给单位（如Marine小编制补给1或Goliath补给2）至可能激活的标记附近，但避免过度分散",
+              "每轮开始时观察随机激活的标记，集中2-3个单位（合计补给≥对手）争夺该标记，因早期激活标记得分高（第1轮激活得1 VP，第5轮得5 VP）",
+              "利用粘性控制：一旦控制某激活标记，即使单位移开仍保持控制，直到对手以更高Supply夺回；得分后标记移除，控制自然结束",
+              "用Terran Tenacity（每局一次）在移动阶段夺取First Player Marker，确保计分前能先激活单位调整站位至目标标记"
+            ],
+            "alternatives": [
+              "若随机激活的标记远离己方主力，评估放弃该标记转向其他未激活标记的预部署，因未激活标记不参与计分",
+              "若对手集中争夺某激活标记，可用Jim Raynor的Orders（2 CP移除Activation Marker）让已激活单位再次行动调整站位",
+              "若己方补给不足，用Barracks/Engineering Bay解锁Core槽位部署更多单位，或保留高补给单位至后期争夺高轮次标记"
+            ],
+            "risk": "标记随机激活导致预部署失效；单位分散守多个标记易被击破；得分后标记移除可能使己方单位失去目标而暴露",
+            "reviseIf": [
+              "随机激活的标记连续远离己方主力，预部署单位无法及时赶到时",
+              "对手集中高补给单位压制某激活标记且己方无法夺回时",
+              "任务进入第4-5轮，需评估最终回合Reserves单位被摧毁的VP影响时"
+            ],
+            "sourceRefs": [
+              "source:faction_cards:mission_supply_drop",
+              "source:tactical_cards:terran_armed_forces",
+              "source:army_units:marine",
+              "source:army_units:goliath",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1"
+            ],
+            "unproven": [
+              "得分后标记移除对粘性控制的影响（移除后是否需重新控制其他标记）",
+              "随机激活标记的分布概率与最优预部署位置的精确计算",
+              "Terran Tenacity在随机激活标记场景下夺取先手的实际收益"
+            ]
+          },
+          {
+            "title": "Terran Tenacity夺取First Player Marker的时机与Pass交互（保守修正版）",
+            "when": [
+              "任务为Frontlines（Standard：起始补给6、每轮+2、5轮，第2轮起每控制1 VP、夺回对手标记额外+2 VP）",
+              "己方使用Terran Armed Forces阵营卡（3 Core/1 Elite/1 Support，无Hero/Air）",
+              "己方或对手考虑在Movement Phase使用Terran Tenacity或Pass以影响First Player Marker归属"
+            ],
+            "procedure": [
+              "确认Terran Tenacity为Active能力（<Active> <Movement Phase>，每局一次）：须在己方单位被激活时，于声明行动前或完全解决行动后立即使用；不能在行动中使用，也不能在单位处于Reserves时使用（Part 10.2）",
+              "确认Terran Tenacity效果：立即claim First Player Marker，且本Phase内其他玩家不得再claim该标记",
+              "确认Pass规则：Active Player可在回合中任意时刻Pass；首位Pass的玩家获得下一Phase的First Player Marker；一旦Pass，该玩家本Phase不能再激活单位（Part 8.2.1）",
+              "若对手尚未Pass，可在己方单位激活时使用Terran Tenacity抢先claim First Player Marker，阻止对手在本Phase内通过早Pass获得该标记",
+              "若对手已Pass并获得First Player Marker，Terran Tenacity能否夺回该标记在来源中未明确，不应作为确定性策略依赖；此时应评估其他选项（见alternatives）",
+              "在Movement Phase使用Terran Tenacity后，己方立即获得First Player Marker，但该标记仅决定下一Phase（Assault Phase）的Active Player顺序；Scoring Phase无单位激活，故该能力不能直接用于Scoring Phase的先手",
+              "若己方单位已全部激活或无法在Movement Phase使用Terran Tenacity，评估是否值得Pass以获取下一Phase先手，但注意Pass后本Phase不能再激活单位"
+            ],
+            "alternatives": [
+              "若对手已Pass并获得First Player Marker，且Terran Tenacity能否夺回该标记未明确，可放弃使用该能力，转而依赖粘性控制（控制保持至对手以更高Supply夺回）或集中单位补给在Scoring Phase夺回标记",
+              "若己方无需调整站位，保留Terran Tenacity至后续关键轮次（如第4-5轮），因每局一次且效果仅限当前Phase",
+              "若需在Movement Phase调整多个单位，可结合Jim Raynor的Orders（2 CP移除Activation Marker）让已激活单位再次行动，而非依赖Terran Tenacity"
+            ],
+            "risk": "Terran Tenacity每局一次，误用会浪费关键先手机动；Pass后己方本Phase无法再激活单位，可能失去调整站位机会；若对手在Scoring Phase以更高Supply夺回标记，己方失去标记且对手获额外+2 VP；Terran Tenacity与对手早Pass交互的精确时机未在来源中明确，依赖该交互的策略可能失效",
+            "reviseIf": [
+              "对手已Pass并获得First Player Marker，且Terran Tenacity能否夺回该标记经官方澄清后确定不能时",
+              "己方单位伤亡致补给大幅下降，无法维持多个标记控制时",
+              "任务进入第4-5轮，需评估最终回合Reserves单位被摧毁的VP影响时"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:terran_armed_forces",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+              "faq-v1:05"
+            ],
+            "unproven": [
+              "Terran Tenacity能否夺回对手已因早Pass获得的First Player Marker（卡牌文本未明确，需官方澄清）",
+              "Terran Tenacity在Movement Phase使用后，是否影响Scoring Phase的First Player Marker归属（规则仅提及Phase内claim）",
+              "Terran Tenacity与Jim Raynor的Orders（2 CP移除Activation Marker）同时可用时的最优资源分配"
+            ]
+          },
+          {
+            "title": "Divide and Conquer中跨区单位不贡献Supply的判定与部署规避",
+            "when": [
+              "任务为Divide and Conquer（Standard：起始补给8、每轮+2、4轮，每区Supply优势1 VP、Marker 5控制2 VP）",
+              "己方使用Terran Armed Forces阵营卡（3 Core/1 Elite/1 Support）",
+              "己方单位（如Marine 6模型或Goliath）部分模型位于Quarter A、部分位于Quarter B，或需部署单位至特定Quarter"
+            ],
+            "procedure": [
+              "确认任务规则：每轮计分时，仅Wholly Within某Quarter的单位贡献其Supply至该区检查；单位若部分模型跨区，则不贡献任何Supply（不存在按Leading Model所在区贡献的规则）",
+              "判定Wholly Within：单位每个模型的整个底座须完全位于该Quarter内，任何部分不得超出边界（Part 4.2/WHOLLY WITHIN定义）",
+              "部署时避免单位跨区：将单位整体置于单一Quarter内，确保其Supply贡献至目标区；多模型单位（如Marine 6模型）需检查所有模型底座是否同区",
+              "将高补给单位（Goliath补给2、大编制Marine补给2）集中部署于2-3个关键Quarter，争取每区Supply优势；控制标记的单位额外+1 Supply用于该区检查",
+              "每轮计分前检查各区单位是否仍Wholly Within，避免因移动或伤亡导致跨区而丧失Supply贡献；伤亡不触发Coherency检查（FAQ v1:05），但伤亡可能使单位模型减少而改变跨区状态",
+              "优先控制Marker 5（中立，控制得2 VP），用高补给单位驻守并保持In Coherency；Marker 5价值高于单区1 VP"
+            ],
+            "alternatives": [
+              "若对手在某区Supply优势明显，放弃该区转向Marker 5或薄弱区，因Marker 5价值2 VP高于单区1 VP",
+              "若单位需跨区移动，用Run行动在Assault Phase调整位置，确保计分时Wholly Within目标区；注意Run须实际改变位置（FAQ v1:10）",
+              "若己方补给不足，用Barracks/Factory解锁槽位部署更多单位分散至各区，或用Medic的Advanced Medic Facilities（补给视为0计算Supply Pool）释放补给"
+            ],
+            "risk": "单位过度分散致各区均无优势；跨区单位不贡献任何Supply造成浪费；Marker 5争夺激烈易损失高补给单位；Goliath无Evade且Size 3易被远程集火",
+            "reviseIf": [
+              "对手集中兵力于Marker 5且己方无法夺回时",
+              "己方单位伤亡致某区Supply优势丧失，需重新分配时",
+              "任务进入第3-4轮，需评估最终回合Reserves单位被摧毁的VP影响时"
+            ],
+            "sourceRefs": [
+              "source:faction_cards:mission_divide_and_conquer",
+              "source:tactical_cards:terran_armed_forces",
+              "source:army_units:marine",
+              "source:army_units:goliath",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.73",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1"
+            ],
+            "unproven": [
+              "跨区单位不贡献Supply的判定在单位底座跨越区边界时的精确几何（如底座中心在A区但边缘在B区）",
+              "控制标记单位额外+1 Supply与Jim Raynor的Commander补给+1的叠加顺序",
+              "Marker 5控制与区域Supply优势同时满足时的最优资源分配"
+            ]
+          },
+          {
+            "title": "Raynor光环与Medic补给修正对标记争夺计算的叠加影响",
+            "when": [
+              "己方使用Terran Armed Forces阵营卡并编入Jim Raynor（Hero，1模型/补给1/250矿物）与Medic（Support，3模型/补给1/110矿物）",
+              "Jim Raynor位于Mission Marker 3英寸内、同海拔且有LoS、单位In Coherency，需计算其争夺补给值",
+              "Jim Raynor 8英寸内有友方单位因伤亡降至补给0，或Medic的Advanced Medic Facilities（补给视为0计算Supply Pool）已购买"
+            ],
+            "procedure": [
+              "确认Jim Raynor的Commander为被动：其补给在控制/争夺Mission Markers、完成任务与Disengage检定时视为+1，故其争夺补给值=当前补给1+1=2",
+              "确认Freedom Fighters为被动：8英寸内友方单位在控制/争夺标记与完成任务时补给不能降至1以下，故补给0的Marine以补给1参与争夺",
+              "区分两者范围：Commander仅作用于Jim Raynor自身且含Disengage；Freedom Fighters作用于8英寸内友方且仅限控制/争夺/完成任务，不改变实际Current Supply Value",
+              "确认Medic的Advanced Medic Facilities（被动，60矿物）仅使其补给在计算Supply Pool时视为0，不改变其争夺补给值（Medic补给1仍以1争夺）",
+              "计分前检查Jim Raynor与受影响友方单位是否仍满足争夺条件（在战场、In Coherency、3英寸内且有LoS同海拔），伤亡不触发Coherency检查（FAQ v1:05）",
+              "若Jim Raynor伤亡致补给下降，评估其Commander加成是否仍足以维持标记控制，必要时用Medic的HEAL或调整站位"
+            ],
+            "alternatives": [
+              "若Jim Raynor需离开标记支援他处，可依赖粘性控制（控制保持至对手以更高Supply夺回），但需评估对手夺回风险",
+              "若友方单位补给0且不在Jim Raynor 8英寸内，该单位仅能在无对手争夺时控制标记（零补给例外），无法赢得争夺",
+              "若需提升标记争夺，可用Medic的Advanced Medic Facilities释放补给供部署更多单位，但不改变Medic自身争夺补给值"
+            ],
+            "risk": "Jim Raynor（8 HP无Shield）作为高价值Hero易被集火，损失后Commander/Freedom Fighters光环消失；补给0单位在对手争夺时无法赢得控制；光环范围8英寸限制站位灵活性；Medic补给修正仅影响Supply Pool不影响争夺，误用会浪费部署机会",
+            "reviseIf": [
+              "Jim Raynor被摧毁或被迫离开标记区域时",
+              "对手以更高Supply夺回标记且己方无法重新集结时",
+              "友方单位伤亡致补给降至0且不在光环范围内时"
+            ],
+            "sourceRefs": [
+              "source:army_units:jim_raynor",
+              "source:army_units:medic",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+              "faq-v1:05"
+            ],
+            "unproven": [
+              "Commander的补给+1与Freedom Fighters的补给不能降至1以下同时作用于同一单位时的叠加顺序",
+              "Freedom Fighters是否影响Disengage的Tactical Mass判定（文本仅限控制/争夺/完成任务）",
+              "Jim Raynor伤亡后其施加给友方的效果是否持续（按Destroyed规则应结束，但光环类被动需确认）"
+            ]
+          },
+          {
+            "title": "Supply Drop得分轮次与标记移除的时机判定",
+            "when": [
+              "任务为Supply Drop（Standard：起始补给6、每轮+2、5轮，标记初始Deactivated）",
+              "第1-4轮开始时随机激活一个Deactivated标记（1-4），第5轮自动激活Marker 5",
+              "己方控制已激活标记，需在Scoring Phase计分"
+            ],
+            "procedure": [
+              "确认得分规则：每轮计分时，对每个己方控制的已激活标记，获得等于该标记激活轮次的VP并移除该标记（得分后标记离场）",
+              "判定得分基准：得分等于标记激活轮次而非控制轮次——第2轮激活的Marker 1若第2轮控制得2 VP并移除；若第3轮才控制仍得2 VP",
+              "确认控制判定先于计VP：Phase 4顺序为控制标记→计VP，故须先确认己方在Scoring Phase开始时控制该激活标记",
+              "得分后标记移除，控制自然结束；若标记未得分（如未控制），保留至后续轮次继续争夺",
+              "第1轮优先部署高机动/高补给单位（如Marine小编制补给1或Goliath补给2）至可能激活的标记附近，但避免过度分散",
+              "每轮开始时观察随机激活的标记，集中2-3个单位（合计补给≥对手）争夺该标记，因早期激活标记得分高（第1轮激活得1 VP，第5轮得5 VP）",
+              "利用粘性控制：一旦控制某激活标记，即使单位移开仍保持控制，直到对手以更高Supply夺回；得分后标记移除，控制自然结束",
+              "用Terran Tenacity（每局一次）在移动阶段夺取First Player Marker，确保计分前能先激活单位调整站位至目标标记"
+            ],
+            "alternatives": [
+              "若随机激活的标记远离己方主力，评估放弃该标记转向其他未激活标记的预部署，因未激活标记不参与计分",
+              "若对手集中争夺某激活标记，可用Jim Raynor的Orders（2 CP移除Activation Marker）让已激活单位再次行动调整站位",
+              "若己方补给不足，用Barracks/Engineering Bay解锁Core槽位部署更多单位，或保留高补给单位至后期争夺高轮次标记"
+            ],
+            "risk": "标记随机激活导致预部署失效；单位分散守多个标记易被击破；得分后标记移除可能使己方单位失去目标而暴露；误判得分轮次（按控制轮次而非激活轮次）会导致VP计算错误",
+            "reviseIf": [
+              "随机激活的标记连续远离己方主力，预部署单位无法及时赶到时",
+              "对手集中高补给单位压制某激活标记且己方无法夺回时",
+              "任务进入第4-5轮，需评估最终回合Reserves单位被摧毁的VP影响时"
+            ],
+            "sourceRefs": [
+              "source:faction_cards:mission_supply_drop",
+              "source:tactical_cards:terran_armed_forces",
+              "source:army_units:marine",
+              "source:army_units:goliath",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1"
+            ],
+            "unproven": [
+              "得分后标记移除对粘性控制的影响（移除后是否需重新控制其他标记）",
+              "随机激活标记的分布概率与最优预部署位置的精确计算",
+              "Terran Tenacity在随机激活标记场景下夺取先手的实际收益"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.terran_armed_forces.threat_tradeoffs.1",
+        "axis": "threat_tradeoffs",
+        "requiredSourceRefs": [
+          "source:tactical_cards:terran_armed_forces"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "模板武器威胁下的Terran单位间距与目标争夺权衡",
+            "when": [
+              "敌方军队包含Blast Template(BT)或Flamer Template(FT)武器",
+              "己方Terran Armed Forces需同时争夺Mission Marker并保持火力集中",
+              "己方单位(如Marine/Marauder)可能被单次模板覆盖多个模型"
+            ],
+            "procedure": [
+              "识别敌方模板武器主目标声明：敌方会选一个单位作Primary target，该单位被覆盖模型数决定主目标攻击骰数(覆盖模型数+武器RoA修正)；其他被覆盖单位按Spillover独立Batch结算，攻击骰数仅等于覆盖模型数，不应用RoA修正、不产生Surge",
+              "在移动/奔跑阶段将多模型单位(如Marine 6-9模型)尽量分散：Coherency要求所有模型Wholly Within 3英寸Leading Model且能追溯Link，在此上限内拉开模型间距，使单次模板覆盖的模型数最小化",
+              "将不同单位(如Marine与Goliath)保持至少模板直径以上的间距，避免Spillover同时命中多个单位；Spillover目标须与主目标共享至少一个Combat Tag且同海拔(FAQ v1:66)",
+              "争夺Mission Marker时仅需单模型Within 3英寸且有LoS、同海拔、单位In Coherency(Part 8.9.1)，故可将1个模型置于标记3英寸内，其余模型分散在Coherency允许范围内以降低模板覆盖",
+              "若己方单位被模板Spillover命中且Engaged，评估是否使用阵营卡Tactical Retreat(主动，移动阶段)使该单位本回合忽略Disengage惩罚，以便下回合脱离后仍能Ranged Attack或Charge"
+            ],
+            "alternatives": [
+              "若敌方模板武器为FT(锥形)且己方单位密集于近战，优先用Close Ranks将更多模型拉入Fighting Rank以集中火力，接受模板覆盖风险，因近战单位本身需密集接战",
+              "若任务为Divide and Conquer(按四分之一区Supply优势得分)，需单位Wholly Within某区才贡献Supply，此时分散间距与区域贡献冲突，应优先保证高Supply单位(如Goliath补给2)Wholly Within关键区，牺牲部分分散",
+              "若己方有Medic(Support)，可将Medic置于4英寸内以触发Life Support反应减少Total Damage，但注意每次激活每位玩家仅一个反应，且Medic本身被模板覆盖时无法自救"
+            ],
+            "risk": "过度分散会降低火力集中度与Coherency Link稳定性；若模型间距过大导致无法追溯Link，单位Out of Coherency将丧失Mission Marker争夺资格；Tactical Retreat为主动能力，须在单位激活时使用且每轮每单位限一次，过早使用会浪费其脱离豁免价值",
+            "reviseIf": [
+              "敌方模板武器实际覆盖效果低于预期(如地形阻挡视线使覆盖模型数少)时，可恢复更密集阵型以增强火力",
+              "己方单位因分散而无法有效争夺关键Mission Marker或完成区域Supply优势时，应重新聚拢",
+              "Tactical Retreat已用于其他单位或该单位本回合已激活，无法提供脱离豁免时，改用Jim Raynor的Orders(1 CP忽略Disengage惩罚)或直接Hold"
+            ],
+            "sourceRefs": [
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.5",
+              "core.I03mzBYujgXw6xN2qXhH.items.4",
+              "faq-v1:66",
+              "faq-v1:68",
+              "source:tactical_cards:terran_armed_forces",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0"
+            ],
+            "unproven": [
+              "模板武器精确物理尺寸与形状未在来源中规定，实际覆盖边缘情形需对局中协商",
+              "分散间距对Spillover减少量的具体数值效果未经验证，取决于敌方模板尺寸与放置选择",
+              "Tactical Retreat在Spillover后脱离的时机收益(是否值得消耗激活)需实际对局检验"
+            ]
+          },
+          {
+            "title": "Goliath与Marine在不同掩护下的生存性及地形利用",
+            "when": [
+              "己方Terran Armed Forces含Goliath(Size 3，Evade -)与Marine(Size 2，Evade 5+)",
+              "战场存在Size 2+墙、HIGH GROUND(Size 3+)或Direct Cover可利用地形",
+              "敌方远程火力威胁己方远程单位，需选择站位以降低伤亡"
+            ],
+            "procedure": [
+              "识别掩护类型：Full Cover要求地形Effective Size≥攻击者与目标双方Effective Size；Direct Cover要求视线轨迹穿过地形且攻击者或目标之一Within 1英寸该地形，且地形Effective Size≥该模型Effective Size(Part 7.1.1)",
+              "Marine(Size 2，Evade 5+)：优先利用Direct Cover——将Marine置于Size 2墙1英寸内，因墙Effective Size(2)≥Marine Effective Size(2)，可阻挡视线；若Marine被攻击且无掩护，其Evade 5+提供约33%闪避率",
+              "Goliath(Size 3，Evade -)：无Evade Roll，须依赖Full Cover或Direct Cover阻挡视线；将Goliath置于Size 3+墙后或利用HIGH GROUND(Effective Size=自身Size+地形Size)获得视线优势，但HIGH GROUND单位更易被看见",
+              "若Goliath站在HIGH GROUND(Size 4)上，Effective Size=7，可越过Size 6墙看到敌方(Full Cover失败因墙Effective Size 6<7)；但敌方若位于该墙1英寸内且墙Effective Size≥敌方Effective Size，Direct Cover仍阻挡视线",
+              "HIGH GROUND Cover：若Marine所有模型以底座任意部分站立于HIGH GROUND(Size 3+)，对来自较低海拔的远程攻击获Evade Roll(Part 7.1.3)；Goliath无Evade特性，即使获Evade Roll资格也无法使用(Evade -)",
+              "若Goliath被Engaged且需维持远程输出，评估使用阵营卡Tactical Retreat(主动，移动阶段)使该单位本回合忽略Disengage惩罚，脱离后下回合可Ranged Attack或Charge"
+            ],
+            "alternatives": [
+              "若敌方依赖INDIRECT FIRE(忽略视线)，掩护无法阻挡，应优先利用HIGH GROUND Cover的Evade Roll(仅Marine)或保持移动避免被LOCKED IN(目标Stationary时RoA增加)",
+              "若任务需争夺Mission Marker，Marine(补给1-2)与Goliath(补给2)的补给值决定控制权；Goliath补给2在争夺中更强，但无Evade使其更脆弱，需权衡站位",
+              "若敌方有Flying单位，Goliath的Hellfire Missiles(Target: Flying)可反制，但Goliath本身无Evade，应置于掩护后避免被Flying远程攻击"
+            ],
+            "risk": "Goliath无Evade特性使其在无掩护时极易被远程火力摧毁(10 HP但无闪避)；HIGH GROUND虽提升Effective Size但使单位更易被看见，且Goliath无法利用HIGH GROUND Cover的Evade Roll；Tactical Retreat消耗激活且每轮每单位限一次，若用于脱离则本回合无法执行其他行动",
+            "reviseIf": [
+              "敌方远程火力集中于Goliath且掩护不足时，应将其后撤或利用Run行动转移位置",
+              "敌方使用INDIRECT FIRE或模板武器使掩护失效时，应放弃依赖掩护，改为分散或利用HIGH GROUND Cover(仅Marine)",
+              "Goliath已Engaged且Tactical Retreat不可用(已使用或单位已激活)时，改用Jim Raynor的Orders(1 CP忽略Disengage惩罚)或接受近战输出(Stomp Combat Phase武器)"
+            ],
+            "sourceRefs": [
+              "source:army_units:goliath",
+              "source:army_units:marine",
+              "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.2",
+              "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.0",
+              "source:tactical_cards:terran_armed_forces",
+              "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.1"
+            ],
+            "unproven": [
+              "HIGH GROUND Cover授予条件在正文(7.1.3，底座任意部分站立)与决策表(Wholly Within)间存在措辞冲突，边缘情形未解决",
+              "Goliath在HIGH GROUND上Effective Size=7越过Size 6墙的具体视线判定需实际地形布局验证",
+              "Tactical Retreat用于Goliath脱离后维持远程输出的收益是否优于直接Hold需实际对局检验"
+            ]
+          },
+          {
+            "title": "Engaged Marine受远程攻击时的防御反应选择",
+            "when": [
+              "己方Marine单位处于Engaged状态且被敌方Ranged Attack指定为目标，且该敌方攻击者与Marine处于Engaged状态（Part 8.7.3限制攻击目标）",
+              "Medic(Support)位于受损Marine 4英寸内且Life Support可用",
+              "Engineering Bay战术卡为Ready状态且Infantry Armor反应可用"
+            ],
+            "procedure": [
+              "确认反应限制：每次激活每位玩家仅能结算一个反应(Part 10.4)，Life Support与Infantry Armor均为反应能力，不能同时用于同一攻击",
+              "若敌方攻击已通过护甲掷骰且Total Damage较高，优先考虑Life Support：按4英寸内Medic模型数减少Total Damage(分配前)，Stabilizer Medpacks升级使计算时视为多1个模型在范围内",
+              "若Marine单位已累积Damage Marker(如Stimpack的NON-LETHAL DAMAGE 2)，Life Support的Total Damage减免可防止触发伤亡移除，此时优先Life Support",
+              "若敌方攻击为Close Combat Attack(Combat Phase)，Life Support仍可响应(Any Phase)，但Infantry Armor仅适用于Armour Roll，两者择一仍适用",
+              "若敌方攻击为模板武器Spillover，Life Support按范围内Medic模型数减少Total Damage，但Spillover批次不应用RoA修正且不产生Surge，伤害较低时可考虑不使用反应保留资源",
+              "若Marine被Engaged且需在后续回合维持远程输出，评估使用阵营卡Tactical Retreat(主动，移动阶段)使该单位本回合忽略Disengage惩罚，以便下回合脱离后仍可Ranged Attack"
+            ],
+            "alternatives": [
+              "若敌方攻击为Ranged Attack且Marine的Evade 5+可生效，可考虑使用Infantry Armor：在护甲掷骰前授予TOUGH (1)，将最多1个失败护甲结果改为成功，减少进入Damage Pool的骰子",
+              "若Medic自身被Engaged或不在4英寸内，Life Support不可用，只能依赖Infantry Armor或Marine自身Evade 5+",
+              "若Engineering Bay已Exhausted(用于其他能力或资源)，Infantry Armor不可用，只能使用Life Support或接受伤害"
+            ],
+            "risk": "误用反应会浪费每次激活仅一个反应的限制；若Marine已用Infantry Armor进行护甲掷骰，则同一敌方激活中Medic的Life Support无法再响应同一攻击(FAQ v1:37)；Tactical Retreat为主动能力，须在单位激活时使用且每轮每单位限一次，过早使用会浪费其脱离豁免价值",
+            "reviseIf": [
+              "敌方攻击伤害较低且Marine无伤亡风险时，可保留反应能力用于更关键的后续攻击",
+              "Medic的Life Support模型数不足(如仅1个Medic在范围内)导致减免效果有限时，改用Infantry Armor",
+              "Marine单位已因Stimpack累积NON-LETHAL DAMAGE且接近伤亡阈值时，优先Life Support而非Infantry Armor",
+              "Tactical Retreat已用于其他单位或该单位本回合已激活，无法提供脱离豁免时，改用Jim Raynor的Orders(1 CP忽略Disengage惩罚)或直接Hold"
+            ],
+            "sourceRefs": [
+              "source:army_units:medic",
+              "source:tactical_cards:engineering_bay",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+              "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+              "source:tactical_cards:terran_armed_forces",
+              "faq-v1:37"
+            ],
+            "unproven": [
+              "Life Support与Infantry Armor在具体伤害数值下的最优选择需实际对局检验",
+              "Medic的Stabilizer Medpacks升级对Life Support减免的实际增益幅度未经验证",
+              "Tactical Retreat在反应受限时提供脱离后行动选项的收益是否优于直接Hold需实际检验"
+            ]
+          },
+          {
+            "title": "Jim Raynor光环与BULKY武器的站位权衡",
+            "when": [
+              "己方Terran Armed Forces编入Jim Raynor(Hero，8 HP，无Shield)",
+              "Jim Raynor需维持Commander/Freedom Fighters光环覆盖友方单位",
+              "敌方远程火力或Engaged威胁可能迫使Jim Raynor失去远程输出"
+            ],
+            "procedure": [
+              "识别Jim Raynor武器限制：Commando Rifle(Range 18，BULKY)在Engaged时无法使用；C-14 rifle(Range 12，BURST FIRE 8\\\" (3))为替换武器，无BULKY限制，Engaged时仍可用",
+              "将Jim Raynor置于友方单位后方8英寸内以维持Freedom Fighters光环(友方补给不能降至1以下用于控制/争夺)，同时利用Commando Rifle的Range 18从远处输出",
+              "若Jim Raynor被Engaged，评估使用阵营卡Tactical Retreat(主动，移动阶段)使该单位本回合忽略Disengage惩罚，脱离后下回合可Ranged Attack或Charge，恢复Commando Rifle输出",
+              "若Tactical Retreat不可用，Jim Raynor的Orders(1 CP，REPEATABLE)可选择另一友方Biological单位忽略Disengage惩罚，但Orders须在移动阶段由激活单位使用，且不能选择Jim Raynor自身",
+              "利用Commander被动(补给+1用于控制/争夺、完成任务、Disengage检定)将Jim Raynor置于Mission Marker附近，其补给视为2(基础1+1)，增强标记控制",
+              "若敌方远程火力集中，利用HIGH GROUND Cover(若Jim Raynor所有模型以底座任意部分站立于Size 3+地形，对较低海拔远程攻击获Evade Roll 5+)或Direct Cover(地形Effective Size≥Jim Raynor Effective Size 2)降低被命中率"
+            ],
+            "alternatives": [
+              "若Jim Raynor需近身维持光环且敌方有Engaged威胁，可换用C-14 rifle(无BULKY)在Engaged时输出，但Range 12较短且BURST FIRE 8\\\" (3)需目标在8英寸内才触发",
+              "若任务需争夺Mission Marker，Jim Raynor的Commander补给+1与Freedom Fighters光环可显著增强控制，应优先保护其站位而非追求远程输出",
+              "若敌方有Flying单位，Jim Raynor的Commando Rifle(Target: All)与C-14 rifle(Target: All)均可反制，但需保持Unengaged以使用Commando Rifle",
+              "若Jim Raynor被Engaged且无法脱离，可接受近战输出(Bayonet，Combat Phase武器，RoA 2)并利用其8 HP承受伤害，同时维持光环"
+            ],
+            "risk": "Jim Raynor无Shield且8 HP，被Engaged时若无法使用Commando Rifle(BULKY)将失去主要远程输出；HIGH GROUND虽提升Effective Size但使单位更易被看见；Tactical Retreat消耗激活且每轮每单位限一次，若用于脱离则本回合无法执行其他行动；Orders的2 CP选项(移除Activation Marker)成本较高，需权衡资源",
+            "reviseIf": [
+              "敌方远程火力集中于Jim Raynor且掩护不足时，应将其后撤或利用Run行动转移位置",
+              "Jim Raynor被Engaged且Tactical Retreat不可用(已使用或单位已激活)时，改用Orders(1 CP忽略Disengage惩罚)或换用C-14 rifle维持输出",
+              "敌方使用INDIRECT FIRE或模板武器使掩护失效时，应放弃依赖掩护，改为分散或利用HIGH GROUND Cover(Evade 5+)"
+            ],
+            "sourceRefs": [
+              "source:army_units:jim_raynor",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.7",
+              "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.1",
+              "source:tactical_cards:terran_armed_forces",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.3"
+            ],
+            "unproven": [
+              "Jim Raynor在Engaged状态下换用C-14 rifle维持输出的实际收益需实际对局检验",
+              "HIGH GROUND Cover授予条件在正文(7.1.3)与决策表(Wholly Within)间存在措辞冲突，边缘情形未解决",
+              "Tactical Retreat用于Jim Raynor脱离后恢复Commando Rifle输出的收益是否优于直接Hold需实际检验"
+            ]
+          },
+          {
+            "title": "Blast Template主目标与Spillover结算及脱离时机",
+            "when": [
+              "敌方使用Blast Template(BT)攻击Terran单位",
+              "模板覆盖2个Marine(同单位)与1个Goliath(不同单位)",
+              "己方Terran Armed Forces需在Spillover后维持行动能力"
+            ],
+            "procedure": [
+              "确认主目标：敌方声明一个单位(如Marine)为Primary target，该单位被覆盖模型数决定主目标攻击骰数(覆盖模型数+RoA修正)；其他被覆盖单位(如Goliath)按Spillover处理",
+              "确认Spillover资格：Goliath须与主目标共享至少一个Combat Tag且同海拔(FAQ v1:66)；Marine与Goliath均具Ground标签，若同海拔则Goliath受Spillover影响",
+              "结算Spillover：Goliath作为独立Batch，攻击骰数仅等于覆盖模型数(1)，不应用RoA修正、不产生Surge(FAQ v1:68)；武器关键词(PRECISION、CRITICAL HIT)不转移至Spillover",
+              "若Goliath被Spillover命中且已Engaged，评估使用阵营卡Tactical Retreat(主动，移动阶段)使该单位本回合忽略Disengage惩罚，以便下回合脱离后仍可Ranged Attack或Charge",
+              "若Tactical Retreat不可用且Goliath已Engaged，可接受近战输出(Stomp Combat Phase武器)或利用Indomitable被动(Engaged时可攻击Unengaged敌方单位，但防御方获Evade Roll)"
+            ],
+            "alternatives": [
+              "若模板覆盖多个己方单位且均受Spillover，优先保护高价值单位(如Goliath补给2)而非低补给Marine，因Spillover每单位独立Batch且不应用RoA修正",
+              "若敌方模板武器为FT(锥形)且己方单位密集于近战，接受Spillover风险以集中火力，因近战单位本身需密集接战",
+              "若任务需争夺Mission Marker，Goliath补给2在争夺中更强，应优先保护其免受Spillover，必要时用Medic Life Support减少Total Damage"
+            ],
+            "risk": "Spillover虽不应用RoA修正且不产生Surge，但仍可能造成伤害；Tactical Retreat为主动能力，须在单位激活时使用且每轮每单位限一次(Part 10.2)，过早使用会浪费其脱离豁免价值；若Goliath被Spillover摧毁(10 HP但无Evade)，将损失补给2的标记控制力",
+            "reviseIf": [
+              "敌方模板武器实际覆盖效果低于预期(如地形阻挡视线使覆盖模型数少)时，可恢复更密集阵型以增强火力",
+              "Goliath已因Spillover受重伤且Tactical Retreat不可用时，应将其后撤或利用Run行动转移位置",
+              "敌方模板武器为INDIRECT FIRE(忽略视线)时，掩护无法阻挡，应分散单位避免多模型被覆盖"
+            ],
+            "sourceRefs": [
+              "faq-v1:66",
+              "faq-v1:68",
+              "source:tactical_cards:terran_armed_forces",
+              "source:army_units:goliath",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2"
+            ],
+            "unproven": [
+              "模板武器精确物理尺寸与形状未在来源中规定，实际覆盖边缘情形需对局中协商",
+              "Spillover对Goliath的具体伤害数值取决于敌方模板放置与命中掷骰，未经验证",
+              "Tactical Retreat在Spillover后脱离的时机收益(是否值得消耗激活)需实际对局检验"
+            ]
+          },
+          {
+            "title": "Goliath在HIGH GROUND的Effective Size与Direct Cover判定及脱离选项",
+            "when": [
+              "己方Goliath(Size 3，Evade -)站在HIGH GROUND(Size 4)上，Effective Size为7",
+              "敌方单位位于Size 6墙后或该墙1英寸内，需判断Goliath能否越过墙看到敌方并维持远程输出",
+              "若Goliath已Engaged且需维持远程输出，评估使用Tactical Retreat脱离"
+            ],
+            "procedure": [
+              "计算Goliath Effective Size：站在HIGH GROUND(Size 4)上，Effective Size=自身Size(3)+地形Size(4)=7(Part 7.1.2)",
+              "判定Full Cover：Size 6墙的Effective Size(6)<Goliath Effective Size(7)，Full Cover失败，Goliath可越过墙看到敌方(若敌方Effective Size<7)",
+              "判定Direct Cover：若敌方单位位于该墙1英寸内，且墙Effective Size(6)≥敌方Effective Size(如Marine Size 2)，则Direct Cover阻挡视线，Goliath无法看到该敌方单位(Part 7.1.1)",
+              "若敌方单位不在墙1英寸内，Direct Cover不适用，Goliath可正常看到并攻击",
+              "若Goliath被Engaged且需维持远程输出，评估使用阵营卡Tactical Retreat(主动，移动阶段)使该单位本回合忽略Disengage惩罚，脱离后下回合可Ranged Attack或Charge",
+              "若Tactical Retreat不可用，接受近战输出(Stomp Combat Phase武器)或利用Indomitable被动(Engaged时可攻击Unengaged敌方单位，且防御方获Evade Roll)"
+            ],
+            "alternatives": [
+              "若敌方单位位于墙1英寸内且Direct Cover阻挡视线，Goliath可移动至墙另一侧或利用Target Lock(主动，1 CP)选择12英寸内敌方单位，使Autocannon获得Surge Type: Light, Armoured与S Dice: D3+1",
+              "若敌方依赖INDIRECT FIRE(忽略视线)，掩护无法阻挡，Goliath应利用HIGH GROUND的视线优势先手攻击，或保持移动避免被LOCKED IN(目标Stationary时RoA增加)",
+              "若任务需争夺Mission Marker，Goliath补给2在争夺中更强，但无Evade使其更脆弱，应权衡HIGH GROUND暴露风险与标记控制收益"
+            ],
+            "risk": "Goliath无Evade特性(Evade -)，即使获HIGH GROUND Cover资格也无法使用Evade Roll；HIGH GROUND虽提升Effective Size但使单位更易被看见；Direct Cover可能阻挡视线使Goliath无法攻击墙后1英寸内目标；Tactical Retreat为主动能力，须在单位激活时使用且每轮每单位限一次(Part 10.2)，过早使用会浪费其脱离豁免价值",
+            "reviseIf": [
+              "敌方单位位于墙1英寸内且Direct Cover阻挡视线时，应移动Goliath至墙另一侧或放弃攻击该目标",
+              "敌方远程火力集中于Goliath且掩护不足时，应将其后撤或利用Run行动转移位置",
+              "Goliath已Engaged且Tactical Retreat不可用(已使用或单位已激活)时，接受近战输出或利用Indomitable被动维持攻击"
+            ],
+            "sourceRefs": [
+              "source:army_units:goliath",
+              "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.1",
+              "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.0",
+              "source:tactical_cards:terran_armed_forces",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2"
+            ],
+            "unproven": [
+              "Goliath在HIGH GROUND上Effective Size=7越过Size 6墙的具体视线判定需实际地形布局验证",
+              "HIGH GROUND Cover授予条件在正文(7.1.3，底座任意部分站立)与决策表(Wholly Within)间存在措辞冲突，边缘情形未解决",
+              "Tactical Retreat用于Goliath脱离后维持远程输出的收益是否优于直接Hold需实际对局检验"
+            ]
+          },
+          {
+            "title": "Engaged Marine受远程攻击时的防御反应选择与后续脱离时机",
+            "when": [
+              "己方Marine单位处于Engaged状态且被敌方Ranged Attack指定为目标，且该敌方攻击者与Marine处于Engaged状态（Part 8.7.3限制攻击目标）",
+              "Medic(Support)位于受损Marine 4英寸内且Life Support可用",
+              "Engineering Bay战术卡为Ready状态且Infantry Armor反应可用"
+            ],
+            "procedure": [
+              "确认反应限制：每次激活每位玩家仅能结算一个反应(Part 10.4)，Life Support与Infantry Armor均为反应能力，不能同时用于同一攻击",
+              "若敌方攻击已通过护甲掷骰且Total Damage较高，优先考虑Life Support：按4英寸内Medic模型数减少Total Damage(分配前)，Stabilizer Medpacks升级使计算时视为多1个模型在范围内",
+              "若Marine单位已累积Damage Marker(如Stimpack的NON-LETHAL DAMAGE 2)，Life Support的Total Damage减免可防止触发伤亡移除，此时优先Life Support",
+              "若敌方攻击为Close Combat Attack(Combat Phase)，Life Support仍可响应(Any Phase)，但Infantry Armor仅适用于Armour Roll，两者择一仍适用",
+              "若敌方攻击为模板武器Spillover，Life Support按范围内Medic模型数减少Total Damage，但Spillover批次不应用RoA修正且不产生Surge，伤害较低时可考虑不使用反应保留资源",
+              "若Marine被Engaged且需在后续回合维持远程输出，评估使用阵营卡Tactical Retreat(主动，移动阶段)使该单位本回合忽略Disengage惩罚，以便下回合脱离后仍可Ranged Attack"
+            ],
+            "alternatives": [
+              "若敌方攻击为Ranged Attack且Marine的Evade 5+可生效，可考虑使用Infantry Armor：在护甲掷骰前授予TOUGH (1)，将最多1个失败护甲结果改为成功，减少进入Damage Pool的骰子",
+              "若Medic自身被Engaged或不在4英寸内，Life Support不可用，只能依赖Infantry Armor或Marine自身Evade 5+",
+              "若Engineering Bay已Exhausted(用于其他能力或资源)，Infantry Armor不可用，只能使用Life Support或接受伤害"
+            ],
+            "risk": "误用反应会浪费每次激活仅一个反应的限制；若Marine已用Infantry Armor进行护甲掷骰，则同一敌方激活中Medic的Life Support无法再响应同一攻击(FAQ v1:37)；Tactical Retreat为主动能力，须在单位激活时使用且每轮每单位限一次，过早使用会浪费其脱离豁免价值",
+            "reviseIf": [
+              "敌方攻击伤害较低且Marine无伤亡风险时，可保留反应能力用于更关键的后续攻击",
+              "Medic的Life Support模型数不足(如仅1个Medic在范围内)导致减免效果有限时，改用Infantry Armor",
+              "Marine单位已因Stimpack累积NON-LETHAL DAMAGE且接近伤亡阈值时，优先Life Support而非Infantry Armor",
+              "Tactical Retreat已用于其他单位或该单位本回合已激活，无法提供脱离豁免时，改用Jim Raynor的Orders(1 CP忽略Disengage惩罚)或直接Hold"
+            ],
+            "sourceRefs": [
+              "source:army_units:medic",
+              "source:tactical_cards:engineering_bay",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+              "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+              "source:tactical_cards:terran_armed_forces",
+              "faq-v1:37"
+            ],
+            "unproven": [
+              "Life Support与Infantry Armor在具体伤害数值下的最优选择需实际对局检验",
+              "Medic的Stabilizer Medpacks升级对Life Support减免的实际增益幅度未经验证",
+              "Tactical Retreat在反应受限时提供脱离后行动选项的收益是否优于直接Hold需实际检验"
+            ]
+          },
+          {
+            "title": "Jim Raynor在Engaged状态下的远程输出与光环维持及Tactical Retreat脱离",
+            "when": [
+              "己方Terran Armed Forces编入Jim Raynor(Hero，8 HP，无Shield)",
+              "Jim Raynor需维持Commander/Freedom Fighters光环覆盖友方单位",
+              "Jim Raynor被Engaged且需恢复Commando Rifle远程输出",
+              "己方Terran Armed Forces阵营卡为Ready状态，Tactical Retreat可用"
+            ],
+            "procedure": [
+              "识别Jim Raynor武器限制：Commando Rifle(Range 18，BULKY)在Engaged时无法使用；C-14 rifle(Range 12，BURST FIRE 8\\\" (3))为替换武器，无BULKY限制，Engaged时仍可用",
+              "若Jim Raynor被Engaged且需恢复Commando Rifle输出，评估使用阵营卡Tactical Retreat(主动，移动阶段)使该单位本回合忽略Disengage惩罚，脱离后本回合的Assault Phase可Ranged Attack或Charge",
+              "若Tactical Retreat不可用，Jim Raynor的Orders(1 CP，REPEATABLE)可选择另一友方Biological单位忽略Disengage惩罚，但Orders须在移动阶段由激活单位使用，且不能选择Jim Raynor自身",
+              "利用Commander被动(补给+1用于控制/争夺、完成任务、Disengage检定)将Jim Raynor置于Mission Marker附近，其补给视为2(基础1+1)，增强标记控制",
+              "将Jim Raynor置于友方单位后方8英寸内以维持Freedom Fighters光环(友方补给不能降至1以下用于争夺Mission Marker和完成任务)，同时利用Commando Rifle的Range 18从远处输出",
+              "若敌方远程火力集中，利用HIGH GROUND Cover(若Jim Raynor所有模型以底座任意部分站立于Size 3+地形，对较低海拔远程攻击获Evade Roll 5+)或Direct Cover(地形Effective Size≥Jim Raynor Effective Size 2)降低被命中率"
+            ],
+            "alternatives": [
+              "若Jim Raynor需近身维持光环且敌方有Engaged威胁，可换用C-14 rifle(无BULKY)在Engaged时输出，但Range 12较短且BURST FIRE 8\\\" (3)需目标在8英寸内才触发",
+              "若任务需争夺Mission Marker，Jim Raynor的Commander补给+1与Freedom Fighters光环可显著增强控制，应优先保护其站位而非追求远程输出",
+              "若敌方有Flying单位，Jim Raynor的Commando Rifle(Target: All)与C-14 rifle(Target: All)均可反制，但需保持Unengaged以使用Commando Rifle",
+              "若Jim Raynor被Engaged且无法脱离，可接受近战输出(Bayonet，Combat Phase武器，RoA 2)并利用其8 HP承受伤害，同时维持光环"
+            ],
+            "risk": "Jim Raynor无Shield且8 HP，被Engaged时若无法使用Commando Rifle(BULKY)将失去主要远程输出；HIGH GROUND虽提升Effective Size但使单位更易被看见；Tactical Retreat消耗激活且每轮每单位限一次，若用于脱离则本回合无法执行其他行动；Orders的2 CP选项(移除Activation Marker)成本较高，需权衡资源",
+            "reviseIf": [
+              "敌方远程火力集中于Jim Raynor且掩护不足时，应将其后撤或利用Run行动转移位置",
+              "Jim Raynor被Engaged且Tactical Retreat不可用(已使用或单位已激活)时，改用Orders(1 CP忽略Disengage惩罚)或换用C-14 rifle维持输出",
+              "敌方使用INDIRECT FIRE或模板武器使掩护失效时，应放弃依赖掩护，改为分散或利用HIGH GROUND Cover(Evade 5+)",
+              "Jim Raynor已受重伤且无法维持光环时，应优先保护其生存而非追求远程输出"
+            ],
+            "sourceRefs": [
+              "source:army_units:jim_raynor",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.7",
+              "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.1",
+              "source:tactical_cards:terran_armed_forces",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.3",
+              "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.2",
+              "source:army_units:marine"
+            ],
+            "unproven": [
+              "Jim Raynor在Engaged状态下换用C-14 rifle维持输出的实际收益需实际对局检验",
+              "HIGH GROUND Cover授予条件在正文(7.1.3)与决策表(Wholly Within)间存在措辞冲突，边缘情形未解决",
+              "Tactical Retreat用于Jim Raynor脱离后恢复Commando Rifle输出的收益是否优于直接Hold需实际检验"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.terran_armed_forces.card_packages.1",
+        "axis": "card_packages",
+        "requiredSourceRefs": [
+          "source:tactical_cards:academy",
+          "source:tactical_cards:armory",
+          "source:tactical_cards:barracks",
+          "source:tactical_cards:barracks__proxy_",
+          "source:tactical_cards:barracks__tech_lab_"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Terran Armed Forces 兵营选择：Proxy 与 Tech Lab 的取舍",
+            "when": [
+              "选择 Terran Armed Forces 阵营卡（起始 3 Core/1 Elite/1 Support，无 Hero/Air）",
+              "瓦斯预算有限，需在 Barracks (Proxy)（40 瓦斯，+2 Core，Unique）与 Barracks (Tech Lab)（45 瓦斯，+1 Core +1 Elite，Unique）之间选择",
+              "军队以 Marine/Marauder（均占 Core 槽位）为核心，且考虑是否编入 Goliath（占 Elite 槽位）",
+              "需要评估 Armed and Ready（Proxy 提供，从非 Entry Edge 部署）或 Let's Have a Blast!（Tech Lab 提供，首个远程武器获 ANTI-EVADE 1）的战术价值"
+            ],
+            "procedure": [
+              "确认阵营卡起始槽位：3 Core、1 Elite、1 Support，无 Hero/Air；Marine 与 Marauder 均为 Core 单位，Goliath 为 Elite 单位（source:army_units:marine、source:army_units:marauder、source:army_units:goliath、source:tactical_cards:terran_armed_forces）。",
+              "若需最大化 Core 槽位以部署多队 Marine/Marauder，优先选择 Barracks (Proxy)（+2 Core，40 瓦斯），其成本低于 Tech Lab 且提供更多 Core 槽位；若需 Elite 槽位以编入 Goliath 或未来扩展，选择 Barracks (Tech Lab)（+1 Core +1 Elite，45 瓦斯）。",
+              "评估 Armed and Ready（Proxy）：该主动能力使激活的生物单位从非 Entry Edge 部署，须距敌方 10 英寸外，且本轮若已有另一友方生物单位部署则不可用；此能力提供侧翼入场机会，但部署是否消耗单位整个激活未在来源中明确（见 unproven）。",
+              "评估 Let's Have a Blast!（Tech Lab）：该主动能力使激活生物单位的首个远程武器获 ANTI-EVADE (1)，对依赖 Evade 的敌方单位更有效。",
+              "结合瓦斯预算（Standard 2000 矿物对应 200 瓦斯）与整体军队构成，权衡 Proxy 的部署灵活性 vs Tech Lab 的 Elite 槽位与反闪避增益；若瓦斯紧张且仅需 Core 槽位，基础 Barracks（25 瓦斯，+1 Core，非 Unique）是更经济的替代。",
+              "最终选择后，确认 Unique 限制（两者均 Unique，只能各购一张）与槽位占用，确保不超 Army Slot 上限。"
+            ],
+            "alternatives": [
+              "若瓦斯预算极紧（<40 瓦斯）且仅需额外 Core 槽位，购买基础 Barracks（25 瓦斯，+1 Core）并使用其 Go! Go! Go!（额外 2 英寸移动）作为机动辅助，放弃侧翼部署或反闪避增益。",
+              "若军队已含 Goliath 且需更多 Elite 槽位，Tech Lab 的 +1 Elite 比 Proxy 的 +2 Core 更有价值，即使其成本高 5 瓦斯。",
+              "若敌方依赖 HIDDEN 或侧翼部署，Proxy 的 Armed and Ready 可提供战术奇袭，但需注意其每轮一次的生物部署限制。",
+              "若敌方单位普遍有高 Evade，Tech Lab 的 ANTI-EVADE (1) 对 Marine/Marauder 的 C-14/Quad K12 提升显著。"
+            ],
+            "risk": "Proxy 的 Armed and Ready 是否消耗单位整个激活未在来源中直接说明，若消耗则部署后单位无法立即行动，可能浪费关键单位的输出机会；Tech Lab 成本更高但仅 +1 Core，若 Core 槽位已足则 Elite 槽位可能闲置；Unique 限制每一种卡各一份；不能仅凭 Unique 标记推导两种不同卡互斥，仍须按其他编军规则校验。",
+            "reviseIf": [
+              "若瓦斯预算不足以购买所选卡（Proxy 40 或 Tech Lab 45），改用基础 Barracks（25 瓦斯）或 Engineering Bay（25 瓦斯，+1 Core）。",
+              "若军队构成改变（如决定不编入 Goliath，仅需 Core 单位），Tech Lab 的 Elite 槽位价值下降，Proxy 或基础 Barracks 更优。",
+              "若对手军队显示低 Evade 或无侧翼威胁，Tech Lab 的 ANTI-EVADE 与 Proxy 的侧翼部署价值均降低，可考虑其他战术卡（如 Factory 35 瓦斯 +2 Elite）。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:barracks__proxy_",
+              "source:tactical_cards:barracks__tech_lab_",
+              "source:tactical_cards:terran_armed_forces",
+              "source:army_units:marine",
+              "source:army_units:marauder",
+              "source:army_units:goliath",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+              "source:tactical_cards:barracks"
+            ],
+            "unproven": [
+              "Armed and Ready 是否消耗单位整个激活未在来源中直接说明，仅由 FAQ v1:22（Pylon 部署）推断，需规则服务确认。",
+              "Proxy 与 Tech Lab 在实战中的相对胜率未经验证，取决于对手军队构成与地图部署。",
+              "Armed and Ready 的每轮一次限制是否适用于同一单位多次部署（如被送回 Reserves 后再次部署）未明确。"
+            ]
+          },
+          {
+            "title": "Engineering Bay 与 Armory 组合：步兵与载具增益的协同",
+            "when": [
+              "已购买 Engineering Bay（25 瓦斯，+1 Core，非 Unique）与 Armory（30 瓦斯，+1 Elite，非 Unique）",
+              "军队包含 Marine（Biological、Core）与 Goliath（Mechanical、Elite）单位",
+              "计划在突击阶段为 Marine 与 Goliath 分别使用 Infantry Weapons 与 Vehicle Weapons 的 CRITICAL HIT (1) 增益",
+              "需确认每具名主动能力的每轮每单位限制是否允许不同单位分别使用"
+            ],
+            "procedure": [
+              "确认 Engineering Bay 的 Infantry Weapons 为主动能力（突击阶段）：使激活的生物单位首个使用的远程武器获得 CRITICAL HIT (1)；Armory 的 Vehicle Weapons 为主动能力（突击阶段）：使激活的机械单位首个使用的远程武器获得 CRITICAL HIT (1)（source:tactical_cards:engineering_bay、source:tactical_cards:armory）。",
+              "确认每具名主动能力每轮每单位限用一次，但不同单位可在不同激活中分别使用同名能力（core.H3Fn8YSvEvpJZpT57qw1.items.2）。因此，Marine 与 Goliath 可在同一回合的不同激活中分别使用 Infantry Weapons 与 Vehicle Weapons。",
+              "在突击阶段，先激活 Marine，使用 Infantry Weapons 使其 C-14 Rifle 获 CRITICAL HIT (1)；再激活 Goliath，使用 Vehicle Weapons 使其 Autocannon 获 CRITICAL HIT (1)。",
+              "注意 CRITICAL HIT (1) 仅作用于首个使用的远程武器；若单位有多个武器档案（如 Goliath 的 Autocannon 与 SIDEARM），须确保增益作用于预期武器。",
+              "若需在同一激活中为两单位提供增益（如通过 Jim Raynor 的 Orders 移除 Activation Marker 使单位再次激活），需确认能力来源与激活顺序，且每具名能力每轮每单位限一次的限制仍适用。",
+              "结合基础 Barracks 的 Go! Go! Go!（主动，移动阶段，额外 2 英寸移动）辅助 Marine 进入射程，以最大化 Infantry Weapons 的 CRITICAL HIT 效果（source:tactical_cards:barracks）。"
+            ],
+            "alternatives": [
+              "若瓦斯预算仅够一张，优先选择 Engineering Bay（25 瓦斯）若军队以 Marine 为主，或 Armory（30 瓦斯）若 Goliath 是核心输出。",
+              "若需更多 Core 槽位而非 Elite，选择 Engineering Bay；若需 Elite 槽位（如编入更多 Goliath），选择 Armory。",
+              "若敌方依赖高 Armour 单位，CRITICAL HIT (1) 绕过 Armour 的价值提升；若敌方依赖 Evade，可考虑 Tech Lab 的 ANTI-EVADE (1)（45 瓦斯，+1 Core +1 Elite）。",
+              "若军队无 Goliath，Armory 的 Vehicle 增益无效，可考虑其他 Elite 槽位卡（如 Factory 35 瓦斯 +2 Elite，但 Factory 不在本建议聚焦来源内，其成本与槽位需另行核对当前产品数据）。"
+            ],
+            "risk": "两张卡总成本 55 瓦斯，可能挤占其他战术卡预算；CRITICAL HIT (1) 仅作用于首个远程武器，若单位有多个武器档案需注意使用顺序；若 Marine 与 Goliath 在同一激活中（通过特殊能力）使用，每具名能力每轮每单位限一次的限制可能阻止重复使用。",
+            "reviseIf": [
+              "若瓦斯预算不足以购买两张卡，优先购买与军队核心单位类型匹配的一张。",
+              "若军队构成改变（如加入 Jim Raynor 需 Hero 槽位），需重新评估瓦斯分配，可能放弃 Armory 以购买 Supply Depot（40 瓦斯，+1 Core +1 Elite +1 Hero）。",
+              "若敌方单位普遍有高 Evade 而非高 Armour，CRITICAL HIT 的收益下降，可考虑其他增益（如 ANTI-EVADE）。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:engineering_bay",
+              "source:tactical_cards:armory",
+              "source:army_units:marine",
+              "source:army_units:goliath",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+              "source:tactical_cards:barracks"
+            ],
+            "unproven": [
+              "Infantry Weapons 与 Vehicle Weapons 在同一激活中通过 Jim Raynor 的 Orders 等能力同时使用的精确交互未在来源中明确。",
+              "两张卡组合在实战中的胜率提升未经验证，取决于对手军队与地图。",
+              "CRITICAL HIT (1) 对多模型单位（如 Marine 9 模型）的实际伤害提升受 Armour Pool 骰数限制，未在来源中量化。"
+            ]
+          },
+          {
+            "title": "Academy 与 Medic 协同：Advanced Training 降低 CP 费用",
+            "when": [
+              "军队包含 Medic（Support 单位）且已购买 Academy（35 瓦斯，+2 Support，Unique）",
+              "Medic 需在移动阶段使用 Medpack（1 CP）或在任意阶段使用 Life Support（1 CP）",
+              "瓦斯或 CP 资源紧张，需降低能力费用以保留其他卡牌资源",
+              "Medic 携带 Stabilizer Medpacks 升级，需最大化 HEAL 或伤害减免效果"
+            ],
+            "procedure": [
+              "确认 Academy 的 Advanced Training 为反应能力，每轮一次，当友方 Support 单位激活需 CP 的特殊能力时，将其 CP 费用降低 1（最低 0），且不耗尽 Academy（source:tactical_cards:academy）。",
+              "Medic 的 Medpack（主动，移动阶段，1 CP）与 Life Support（反应，任意阶段，1 CP）均为 CP 能力，Advanced Training 可将其费用降至 0（source:army_units:medic）。",
+              "因 Advanced Training 每轮仅一次，须在 Medpack 与 Life Support 间择一降低费用；若 Medic 需治疗，优先 Medpack；若友方单位正受伤害，优先 Life Support。",
+              "Advanced Training 本身是反应能力，受每次激活每玩家仅一个反应限制（core.H3Fn8YSvEvpJZpT57qw1.items.4）；若 Medic 已用 Life Support 响应伤害，则 Advanced Training 不能在同一激活中再用于其他反应。",
+              "Medic 携带 Stabilizer Medpacks 时，结算 Life Support 或 Medpack 视为多 1 个模型在范围内，提升 HEAL 点数或伤害减免量（source:army_units:medic）。",
+              "支付能力费用时，若 Advanced Training 将费用降至 0，则无需耗尽任何卡牌；若费用仍为 1 CP，须耗尽一张 Ready 的 CP 卡（如 Barracks 或 Engineering Bay），多余资源丢失（core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0）。",
+              "结合基础 Barracks 的 Go! Go! Go!（主动，移动阶段，额外 2 英寸移动）辅助 Medic 快速就位，使其 Medpack 或 Life Support 覆盖更多友方单位。"
+            ],
+            "alternatives": [
+              "若 Medic 需在同轮多次使用能力，Advanced Training 仅能降低一次费用，其余能力须全额支付 CP；可考虑购买多张 CP 资源卡（如 Barracks 25 瓦斯）以提供充足 CP。",
+              "若军队无 Medic 或其他 Support 单位，Academy 的 Advanced Training 价值降低，可考虑其他战术卡（如 Engineering Bay 25 瓦斯 +1 Core）。",
+              "若敌方依赖高伤害单次攻击，优先用 Advanced Training 降低 Life Support 费用以触发伤害减免；若己方单位普遍受损，优先降低 Medpack 费用以恢复。",
+              "若瓦斯预算紧张，Academy（35 瓦斯）的成本可改投基础 Barracks（25 瓦斯）以获取 Core 槽位与 Go! Go! Go!，牺牲费用降低能力。"
+            ],
+            "risk": "Advanced Training 每轮仅一次，若错误选择降低 Medpack 费用而随后友方单位遭重创，Life Support 将无法免费触发；Academy 为 Unique 卡，购买后无法再购第二张；若 Medic 被摧毁或远离战场，Academy 的 Support 槽位与能力可能闲置。",
+            "reviseIf": [
+              "若 Medic 单位被摧毁或无法保持 4 英寸覆盖范围，Advanced Training 的收益下降，考虑将 Academy 替换为其他战术卡。",
+              "若敌方攻击模式显示集中伤害而非持续消耗，优先用 Advanced Training 降低 Life Support 费用而非 Medpack。",
+              "若军队构成改变（如加入 Jim Raynor 需 Hero 槽位），需重新评估瓦斯分配，可能放弃 Academy 以购买 Supply Depot（40 瓦斯，+1 Core +1 Elite +1 Hero）。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:academy",
+              "source:army_units:medic",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+              "faq-v1:34",
+              "source:tactical_cards:barracks"
+            ],
+            "unproven": [
+              "Advanced Training 降低费用后，Medic 的 Medpack 与 Life Support 在同轮多次使用的实际收益未经验证，取决于伤害频率与治疗需求。",
+              "Academy 与 Stabilizer Medpacks 组合在实战中的胜率提升未经验证，取决于对手军队构成与地图。",
+              "Advanced Training 是否可作用于 Medic 通过其他来源获得的 CP 能力（如升级添加的能力）未在来源中明确。"
+            ]
+          },
+          {
+            "title": "Orbital Command 时机：Scanner Sweep 与 ComSat Station 的反制选择",
+            "when": [
+              "军队已购买 Orbital Command（25 瓦斯，+1 Core，Unique）",
+              "敌方依赖 HIDDEN 单位（如 Stalker 的 Path of Shadows）或从非 Entry Edge 侧翼部署（如 Barracks (Proxy) 的 Armed and Ready）",
+              "移动阶段有已激活单位可执行主动能力",
+              "需在反隐侦测与封锁部署之间选择，以应对敌方战术"
+            ],
+            "procedure": [
+              "确认 Orbital Command 提供 Scanner Sweep（主动，移动阶段）与 ComSat Station（主动，移动阶段），两者均为主动能力，每轮每具名能力限一次，且须有战场上已激活单位才能结算（source:tactical_cards:orbital_command、faq-v1:36）。",
+              "若敌方依赖 HIDDEN 单位，使用 Scanner Sweep：放置 Faction Indicator 于战场任意位置，使 6 英寸内敌方单位失去 HIDDEN 状态，从而可被远程攻击或需 LoS 的能力选中（source:tactical_cards:orbital_command、core.FuahgilWtc8nccVSp2Vv.items.0.subItems.32）。",
+              "若敌方可能从非 Entry Edge 部署（如 Proxy Barracks 的 Armed and Ready、Warp Gate 的 Warp In），使用 ComSat Station：选择一条非 Entry Edge 的桌边，至回合结束敌方不能从该边部署（source:tactical_cards:orbital_command）。",
+              "根据敌方军队构成选择：若敌方有 HIDDEN 单位（如 Protoss Stalker 或 Zerg 掘地单位），优先 Scanner Sweep；若敌方有侧翼部署能力或地图边缘威胁，优先 ComSat Station。",
+              "放置 Faction Indicator 时，选择能覆盖关键区域（如 Mission Marker 或预计敌方 HIDDEN 单位位置）的位置；ComSat Station 选择敌方最可能利用的侧翼桌边。",
+              "注意 Scanner Sweep 与 ComSat Station 均为主动能力，须在移动阶段由激活单位使用，且每轮各限一次；若两者都想用，需在不同轮次或通过不同激活单位分别使用（每具名能力每轮每单位限一次，但不同单位可分别使用）。",
+              "结合基础 Barracks 的 Go! Go! Go!（额外 2 英寸移动）辅助单位机动至能覆盖关键区域的位置，以最大化 Scanner Sweep 或 ComSat Station 的效果。"
+            ],
+            "alternatives": [
+              "若敌方无 HIDDEN 单位且无侧翼部署威胁，Orbital Command 的能力价值降低，可考虑其他战术卡（如 Engineering Bay 25 瓦斯 +1 Core 提供 Infantry Weapons/Armor）。",
+              "若敌方 HIDDEN 单位分散，Scanner Sweep 的 6 英寸范围可能不足，可结合其他侦测手段（如单位自带 Detection）或放弃反隐。",
+              "若敌方从多条非 Entry Edge 桌边部署，ComSat Station 仅能封锁一条，需判断敌方最可能利用的边。",
+              "若瓦斯预算紧张，Orbital Command（25 瓦斯）的成本可改投基础 Barracks（25 瓦斯）以获取 Core 槽位与 Go! Go! Go!，牺牲反制能力。"
+            ],
+            "risk": "Scanner Sweep 的 Faction Indicator 可被敌方单位移动阻挡（faq-v1:41），若指示物被阻挡，侦测区域可能失效；ComSat Station 仅封锁一条桌边，若敌方从其他边部署则无效；两者均为主动能力，若移动阶段无可用激活单位（如所有单位已激活），则无法使用。",
+            "reviseIf": [
+              "若敌方军队显示无 HIDDEN 单位且无侧翼部署能力，放弃 Scanner Sweep 与 ComSat Station，将 Orbital Command 替换为其他战术卡。",
+              "若敌方 HIDDEN 单位位置分散或频繁移动，Scanner Sweep 的静态指示物可能无法持续覆盖，考虑其他反隐手段。",
+              "若敌方从多条桌边部署，ComSat Station 的单一封锁效果不足，需结合其他部署限制或调整防守布局。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:orbital_command",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.32",
+              "faq-v1:57",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.75",
+              "faq-v1:36",
+              "source:tactical_cards:barracks"
+            ],
+            "unproven": [
+              "Scanner Sweep 的 Faction Indicator 持续时间未在来源中明确，卡面文本'While Enemy Units are Within 6\\\"'暗示范围内持续生效，但离开范围是否恢复 HIDDEN 未证实。",
+              "ComSat Station 封锁非 Entry Edge 部署的实际效果取决于敌方部署能力的具体规则，未在来源中详细说明。",
+              "Orbital Command 在实战中的反制胜率提升未经验证，取决于敌方军队构成与地图。"
+            ]
+          },
+          {
+            "title": "Barracks (Proxy) 的 Armed and Ready 部署消耗与限制",
+            "when": [
+              "选择 Terran Armed Forces 阵营卡（起始 3 Core/1 Elite/1 Support，无 Hero/Air）",
+              "瓦斯预算允许购买 Barracks (Proxy)（40 瓦斯，+2 Core，Unique）",
+              "军队以 Marine/Marauder（Biological、Core 单位）为核心，需评估侧翼部署能力 Armed and Ready 的战术价值",
+              "需确认 Armed and Ready 是否消耗单位整个激活，以及其部署是否受 Zone of Influence 与 Coherency 限制"
+            ],
+            "procedure": [
+              "确认 Barracks (Proxy) 提供 Armed and Ready（主动能力，移动阶段）：激活的生物单位从非 Entry Edge 的任意桌边部署，任何模型不得位于敌方模型 10 英寸内；若本轮已有另一友方生物单位部署，则本能力不可用（source:tactical_cards:barracks__proxy_）。",
+              "确认 Armed and Ready 是主动能力，须由当前被激活的单位在移动阶段使用；主动能力只能在声明行动之前或行动完全解决之后触发，不能在行动进行中使用（core.H3Fn8YSvEvpJZpT57qw1.items.2）。",
+              "确认 Armed and Ready 使单位执行部署（Deploy），但该能力文本未明确说明是否消耗单位整个激活；FAQ v1:22 仅针对通过 Pylon 作为 Entry Edge 部署的情形（该情形消耗整个激活），而 Armed and Ready 是从非 Entry Edge 部署，机制不同，不能直接套用该裁决（faq-v1:22）。",
+              "确认标准 Deploy 行动规则（core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4）：单位从 Reserves 进入战场，须确认 Current Supply Value 不超过 Available Supply，将 Leading Model 与 Entry Edge 接触后按标准移动规则移动，其余模型保持 Coherency；单位不能结束部署于敌方 Zone of Influence 内，且绝不能以 Out of Coherency 结束 Deploy。",
+              "因 Armed and Ready 是特殊能力而非标准 Deploy 行动，其是否受 Zone of Influence 与 Coherency 限制未在来源中明确；若该能力被视为执行部署行动，则这些限制可能适用，但需规则服务确认（见 unproven）。",
+              "若 Armed and Ready 消耗单位整个激活（推断），则部署后该单位本阶段不能再行动；若规则服务确认其不消耗整个激活，则单位部署后可能仍可执行其他行动（如主动能力），但此点未证实。",
+              "结合基础 Barracks 的 Go! Go! Go!（主动，移动阶段，额外 2 英寸移动，不计入行动限制）评估：若 Armed and Ready 消耗整个激活，则 Go! Go! Go! 无法在部署后使用；若规则允许，可先使用 Go! Go! Go! 再部署（但需确认能力顺序与激活状态）。"
+            ],
+            "alternatives": [
+              "若规则服务确认 Armed and Ready 消耗单位整个激活，则其价值在于侧翼入场而非立即输出；若需部署后立即行动，可考虑标准 Deploy 行动（从 Entry Edge 部署）或基础 Barracks（25 瓦斯，+1 Core，非 Unique）。",
+              "若军队需更多 Core 槽位且瓦斯有限，基础 Barracks（25 瓦斯）比 Proxy（40 瓦斯）更经济，但失去 Armed and Ready 的侧翼部署能力。",
+              "若需 Elite 槽位（如编入 Goliath），可考虑 Barracks (Tech Lab)（45 瓦斯，+1 Core +1 Elite，Unique），其提供 Let's Have a Blast!（首个远程武器获 ANTI-EVADE 1）而非侧翼部署。",
+              "若敌方依赖 HIDDEN 或侧翼威胁，Armed and Ready 的 10 英寸限制与每轮一次生物部署限制需纳入评估；若敌方无侧翼威胁，Proxy 的部署能力价值降低。"
+            ],
+            "risk": "Armed and Ready 是否消耗单位整个激活未在来源中直接说明，若消耗则部署后单位无法立即行动，可能浪费关键单位的输出机会；若其不受 Zone of Influence 限制，则可能被用于深入敌方区域，但 10 英寸限制仍约束落点；Proxy 为 Unique 卡，错误选择后无法在同一军队中补购另一张；若本轮已有另一友方生物单位部署，则 Armed and Ready 不可用，需协调部署顺序。",
+            "reviseIf": [
+              "若规则服务确认 Armed and Ready 消耗单位整个激活，则调整部署时机，避免在需要该单位立即输出的回合使用。",
+              "若规则服务确认 Armed and Ready 不受 Zone of Influence 限制，则其侧翼部署价值提升，可更积极使用；若受限制，则落点选择受限。",
+              "若军队构成改变（如决定不编入 Marine/Marauder 或需更多 Elite 槽位），重新评估 Proxy 与 Tech Lab 或基础 Barracks 的取舍。",
+              "若瓦斯预算不足以购买 Proxy（40 瓦斯），改用基础 Barracks（25 瓦斯）或 Engineering Bay（25 瓦斯，+1 Core）。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:barracks__proxy_",
+              "faq-v1:22",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+              "source:tactical_cards:barracks"
+            ],
+            "unproven": [
+              "Armed and Ready 是否消耗单位整个激活未在来源中直接说明，仅由 FAQ v1:22（Pylon 部署）推断，需规则服务确认。",
+              "Armed and Ready 是否受 Zone of Influence 与 Coherency 限制未在来源中明确，标准 Deploy 行动规则是否适用于此特殊能力需规则服务确认。",
+              "Armed and Ready 的每轮一次限制是否适用于同一单位多次部署（如被送回 Reserves 后再次部署）未明确。",
+              "Armed and Ready 与 Go! Go! Go! 在同一激活中的顺序交互（先移动后部署或反之）未在来源中说明。"
+            ]
+          },
+          {
+            "title": "Engineering Bay 与 Armory 的 CRITICAL HIT 增益同轮使用",
+            "when": [
+              "已购买 Engineering Bay（25 瓦斯，+1 Core）与 Armory（30 瓦斯，+1 Elite），两者均非 Unique",
+              "军队包含 Marine（Biological）与 Goliath（Mechanical）单位",
+              "计划在同一回合内为 Marine 与 Goliath 分别使用 Infantry Weapons 与 Vehicle Weapons 的 CRITICAL HIT (1) 增益",
+              "需确认每具名主动能力的每轮每单位限制是否允许不同单位分别使用"
+            ],
+            "procedure": [
+              "确认 Engineering Bay 的 Infantry Weapons 为主动能力（突击阶段），使激活的生物单位首个使用的远程武器获得 CRITICAL HIT (1)；Armory 的 Vehicle Weapons 为主动能力（突击阶段），使激活的机械单位首个使用的远程武器获得 CRITICAL HIT (1)（source:tactical_cards:engineering_bay、source:tactical_cards:armory）。",
+              "确认每具名主动能力每轮每单位限用一次，但不同单位可在不同激活中分别使用同名能力（core.H3Fn8YSvEvpJZpT57qw1.items.2）。因此，Marine 与 Goliath 可在同一回合的不同激活中分别使用 Infantry Weapons 与 Vehicle Weapons。",
+              "在突击阶段，先激活 Marine，使用 Infantry Weapons 使其 C-14 Rifle 获 CRITICAL HIT (1)；再激活 Goliath，使用 Vehicle Weapons 使其 Autocannon 获 CRITICAL HIT (1)。",
+              "注意 CRITICAL HIT (1) 仅作用于首个使用的远程武器；若单位有多个武器档案（如 Goliath 的 Autocannon 与 SIDEARM），须确保增益作用于预期武器。",
+              "若需在同一激活中为两单位提供增益（如通过 Jim Raynor 的 Orders 移除 Activation Marker 使单位再次激活），需确认能力来源与激活顺序，且每具名能力每轮每单位限一次的限制仍适用。",
+              "结合基础 Barracks 的 Go! Go! Go!（主动，移动阶段，额外 2 英寸移动）辅助 Marine 进入射程，以最大化 Infantry Weapons 的 CRITICAL HIT 效果。"
+            ],
+            "alternatives": [
+              "若瓦斯预算仅够一张，优先选择 Engineering Bay（25 瓦斯）若军队以 Marine 为主，或 Armory（30 瓦斯）若 Goliath 是核心输出。",
+              "若需更多 Core 槽位而非 Elite，选择 Engineering Bay；若需 Elite 槽位（如编入更多 Goliath），选择 Armory。",
+              "若敌方依赖高 Armour 单位，CRITICAL HIT (1) 绕过 Armour 的价值提升；若敌方依赖 Evade，可考虑 Tech Lab 的 ANTI-EVADE (1)（45 瓦斯，+1 Core +1 Elite）。",
+              "若军队无 Goliath，Armory 的 Vehicle 增益无效，可考虑其他 Elite 槽位卡（如 Factory 35 瓦斯 +2 Elite）。"
+            ],
+            "risk": "两张卡总成本 55 瓦斯，可能挤占其他战术卡预算；CRITICAL HIT (1) 仅作用于首个远程武器，若单位有多个武器档案需注意使用顺序；若 Marine 与 Goliath 在同一激活中（通过特殊能力）使用，每具名能力每轮每单位限一次的限制可能阻止重复使用。",
+            "reviseIf": [
+              "若瓦斯预算不足以购买两张卡，优先购买与军队核心单位类型匹配的一张。",
+              "若军队构成改变（如加入 Jim Raynor 需 Hero 槽位），需重新评估瓦斯分配，可能放弃 Armory 以购买 Supply Depot（40 瓦斯，+1 Core +1 Elite +1 Hero）。",
+              "若敌方单位普遍有高 Evade 而非高 Armour，CRITICAL HIT 的收益下降，可考虑其他增益（如 ANTI-EVADE）。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:engineering_bay",
+              "source:tactical_cards:armory",
+              "source:army_units:marine",
+              "source:army_units:goliath",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+              "source:tactical_cards:barracks"
+            ],
+            "unproven": [
+              "Infantry Weapons 与 Vehicle Weapons 在同一激活中通过 Jim Raynor 的 Orders 等能力同时使用的精确交互未在来源中明确。",
+              "两张卡组合在实战中的胜率提升未经验证，取决于对手军队与地图。",
+              "CRITICAL HIT (1) 对多模型单位（如 Marine 9 模型）的实际伤害提升受 Armour Pool 骰数限制，未在来源中量化。"
+            ]
+          },
+          {
+            "title": "Academy 的 Advanced Training 与 Medic 费用减免的取舍",
+            "when": [
+              "已购买 Academy（35 瓦斯，+2 Support，Unique）且军队含 Medic（Support 单位）",
+              "Medic 需在移动阶段使用 Medpack（1 CP）或在任意阶段使用 Life Support（1 CP）",
+              "CP 资源紧张，需降低能力费用以保留其他卡牌资源",
+              "Medic 携带 Stabilizer Medpacks 升级，需最大化 HEAL 或伤害减免效果"
+            ],
+            "procedure": [
+              "确认 Academy 的 Advanced Training 为反应能力，每轮一次：当友方 Support 单位激活需 CP 的特殊能力时，将其 CP 费用降低 1（最低 0），且不耗尽 Academy（source:tactical_cards:academy）。",
+              "Medic 的 Medpack（主动，移动阶段，1 CP）与 Life Support（反应，任意阶段，1 CP）均为 CP 能力，Advanced Training 可将其费用降至 0（source:army_units:medic）。",
+              "因 Advanced Training 每轮仅一次，须在 Medpack 与 Life Support 间择一降低费用：若友方单位已受损需恢复，优先 Medpack；若友方单位正受伤害需减免，优先 Life Support。",
+              "Advanced Training 本身是反应能力，受每次激活每玩家仅一个反应限制（core.H3Fn8YSvEvpJZpT57qw1.items.4）；若 Medic 已用 Life Support 响应伤害，则 Advanced Training 不能在同一激活中再用于其他反应。",
+              "Medic 携带 Stabilizer Medpacks 时，结算 Life Support 或 Medpack 视为多 1 个模型在范围内，提升 HEAL 点数或伤害减免量（source:army_units:medic）。",
+              "支付能力费用时，若 Advanced Training 将费用降至 0，则无需耗尽任何卡牌；若费用仍为 1 CP，须耗尽一张 Ready 的 CP 卡（如 Barracks 或 Engineering Bay），多余资源丢失（core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0）。",
+              "结合基础 Barracks 的 Go! Go! Go!（主动，移动阶段，额外 2 英寸移动）辅助 Medic 快速就位，使其 Medpack 或 Life Support 覆盖更多友方单位（source:tactical_cards:barracks）。"
+            ],
+            "alternatives": [
+              "若 Medic 需在同轮多次使用能力，Advanced Training 仅能降低一次费用，其余能力须全额支付 CP；可考虑购买多张 CP 资源卡（如 Barracks 25 瓦斯）以提供充足 CP。",
+              "若军队无 Medic 或其他 Support 单位，Academy 的 Advanced Training 价值降低，可考虑其他战术卡（如 Engineering Bay 25 瓦斯 +1 Core 提供 Infantry Weapons/Armor）。",
+              "若敌方依赖高伤害单次攻击，优先用 Advanced Training 降低 Life Support 费用以触发伤害减免；若己方单位普遍受损，优先降低 Medpack 费用以恢复。",
+              "若瓦斯预算紧张，Academy（35 瓦斯）的成本可改投基础 Barracks（25 瓦斯）以获取 Core 槽位与 Go! Go! Go!，牺牲费用降低能力。"
+            ],
+            "risk": "Advanced Training 每轮仅一次，若错误选择降低 Medpack 费用而随后友方单位遭重创，Life Support 将无法免费触发；Academy 为 Unique 卡，购买后无法再购第二张；若 Medic 被摧毁或远离战场，Academy 的 Support 槽位与能力可能闲置。",
+            "reviseIf": [
+              "若 Medic 单位被摧毁或无法保持 4 英寸覆盖范围，Advanced Training 的收益下降，考虑将 Academy 替换为其他战术卡。",
+              "若敌方攻击模式显示集中伤害而非持续消耗，优先用 Advanced Training 降低 Life Support 费用而非 Medpack。",
+              "若军队构成改变（如加入 Jim Raynor 需 Hero 槽位），需重新评估瓦斯分配，可能放弃 Academy 以购买 Supply Depot（40 瓦斯，+1 Core +1 Elite +1 Hero）。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:academy",
+              "source:army_units:medic",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+              "faq-v1:34",
+              "source:tactical_cards:barracks"
+            ],
+            "unproven": [
+              "Advanced Training 降低费用后，Medic 的 Medpack 与 Life Support 在同轮多次使用的实际收益未经验证，取决于伤害频率与治疗需求。",
+              "Academy 与 Stabilizer Medpacks 组合在实战中的胜率提升未经验证，取决于对手军队构成与地图。",
+              "Advanced Training 是否可作用于 Medic 通过其他来源获得的 CP 能力（如升级添加的能力）未在来源中明确。"
+            ]
+          },
+          {
+            "title": "Scanner Sweep 的持续性判断与反隐时机",
+            "when": [
+              "已购买 Orbital Command（25 瓦斯，+1 Core，Unique）且移动阶段有已激活单位",
+              "敌方依赖 HIDDEN 单位（如 Stalker 的 Path of Shadows 或 Zerg 掘地单位）",
+              "需放置 Faction Indicator 以侦测 6 英寸内 HIDDEN 单位",
+              "需确认 Scanner Sweep 的持续时间以规划反隐覆盖"
+            ],
+            "procedure": [
+              "确认 Scanner Sweep 为主动能力（移动阶段）：放置 Faction Indicator 于战场任意位置，使 6 英寸内敌方单位失去 HIDDEN 状态（source:tactical_cards:orbital_command）。",
+              "确认 FAQ v1:57：侦测类能力（如 Scanner Sweep）以战场位置为目标而非单位，因此不受 HIDDEN 4 英寸内才能被选为目标的限制，可在 6 英寸范围内影响 HIDDEN 单位（faq-v1:57）。",
+              "卡面文本 'While Enemy Units are Within 6\\\" of this Faction Indicator, they lose HIDDEN Status' 暗示范围内持续生效：只要敌方单位处于指示物 6 英寸内即失去 HIDDEN，离开范围可能恢复 HIDDEN（推断，见 unproven）。",
+              "放置 Faction Indicator 时，选择能覆盖关键区域（如 Mission Marker 或预计敌方 HIDDEN 单位位置）的位置，以最大化侦测覆盖。",
+              "若敌方 HIDDEN 单位分散或频繁移动，静态指示物可能无法持续覆盖，需结合其他侦测手段（如单位自带 Detection）或调整指示物位置。",
+              "结合基础 Barracks 的 Go! Go! Go!（主动，移动阶段，额外 2 英寸移动）辅助单位机动至能覆盖关键区域的位置，以配合 Scanner Sweep 的侦测区域（source:tactical_cards:barracks）。"
+            ],
+            "alternatives": [
+              "若敌方无 HIDDEN 单位，Scanner Sweep 价值降低，可改用 ComSat Station（封锁非 Entry Edge 部署）或考虑其他战术卡（如 Engineering Bay 25 瓦斯 +1 Core）。",
+              "若敌方 HIDDEN 单位位置分散，Scanner Sweep 的 6 英寸范围可能不足，可结合其他侦测手段或放弃反隐。",
+              "若需封锁敌方侧翼部署而非反隐，使用 ComSat Station（主动，移动阶段，选择一条非 Entry Edge 桌边，至回合结束敌方不能从该边部署）。",
+              "若瓦斯预算紧张，Orbital Command（25 瓦斯）的成本可改投基础 Barracks（25 瓦斯）以获取 Core 槽位与 Go! Go! Go!，牺牲反制能力。"
+            ],
+            "risk": "Scanner Sweep 的 Faction Indicator 可被敌方单位移动阻挡（faq-v1:41），若指示物被阻挡，侦测区域可能失效；若敌方 HIDDEN 单位离开 6 英寸范围，可能恢复 HIDDEN 状态（推断）；Scanner Sweep 为主动能力，若移动阶段无可用激活单位则无法使用。",
+            "reviseIf": [
+              "若敌方军队显示无 HIDDEN 单位，放弃 Scanner Sweep，将 Orbital Command 的能力用于 ComSat Station 或替换为其他战术卡。",
+              "若敌方 HIDDEN 单位位置分散或频繁移动，Scanner Sweep 的静态指示物可能无法持续覆盖，考虑其他反隐手段。",
+              "若规则服务确认 Scanner Sweep 的指示物持续至回合结束（而非仅放置瞬间），则反隐覆盖更可靠，可更积极使用。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:orbital_command",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.32",
+              "faq-v1:57",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.75",
+              "faq-v1:41",
+              "source:tactical_cards:barracks"
+            ],
+            "unproven": [
+              "Scanner Sweep 的 Faction Indicator 持续时间未在来源中明确，卡面文本 'While Enemy Units are Within 6\\\"' 暗示范围内持续生效，但离开范围是否恢复 HIDDEN 未证实，需规则服务澄清。",
+              "Faction Indicator 被敌方阻挡后，侦测区域是否完全失效或仅部分失效未在来源中明确。",
+              "Scanner Sweep 在实战中的反隐胜率提升未经验证，取决于敌方 HIDDEN 单位的使用频率与位置。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.terran_armed_forces.card_packages.2",
+        "axis": "card_packages",
+        "requiredSourceRefs": [
+          "source:tactical_cards:dropship",
+          "source:tactical_cards:engineering_bay",
+          "source:tactical_cards:factory",
+          "source:tactical_cards:orbital_command",
+          "source:tactical_cards:supply_depot"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Terran Armed Forces 卡牌包选择：Barracks (Proxy) 与 Barracks (Tech Lab) 的取舍",
+            "when": [
+              "玩家选择 Terran Armed Forces 阵营卡（起始 3 Core / 1 Elite / 1 Support，无 Hero/Air 槽位），且需在 Standard 规模（2000 矿物 / 200 瓦斯）下组建以 Marine/Marauder 为核心的军队。",
+              "军队需要更多 Core 槽位以编入多个 Marine 或 Marauder 单位，或需要额外 Elite 槽位以编入 Goliath。",
+              "玩家计划利用 Barracks (Proxy) 的 Armed and Ready 从非 Entry Edge 部署，或利用 Barracks (Tech Lab) 的 Let's Have a Blast! 强化首次远程攻击。"
+            ],
+            "procedure": [
+              "确认瓦斯预算：Standard 规模下瓦斯为矿物的 10%，即 200 瓦斯；Barracks (Proxy) 成本 40，Barracks (Tech Lab) 成本 45，Unique 限制每一种卡各一份；不能仅凭 Unique 标记推导两种不同卡互斥，仍须按其他编军规则校验。",
+              "若优先需要 2 个 Core 槽位且计划利用非 Entry Edge 部署（如侧翼包抄或规避敌方 Zone of Influence），选择 Barracks (Proxy)。其 Armed and Ready 允许从非 Entry Edge 部署，且若本轮已有其他友方生物单位部署过，则该能力不可再使用；卡面未说明该部署是否消耗整个激活，此点须由规则服务确认，不得直接套用 FAQ v1:22（该条针对 Pylon 作为 Entry Edge 的部署）。",
+              "若需要同时补充 1 个 Core 与 1 个 Elite 槽位（如编入 Goliath），并强化 Marine/Marauder 的首次远程攻击，选择 Barracks (Tech Lab)。其 Let's Have a Blast! 为首次使用的远程武器提供 ANTI-EVADE (1)。",
+              "购买后，将卡牌正面朝上置于桌面；使用其主动能力时，须有战场上已激活的单位（FAQ v1:36），且能力须在单位激活时于行动前或行动后立即使用。"
+            ],
+            "alternatives": [
+              "若军队以 Goliath 等 Elite 单位为主而非 Marine/Marauder，可考虑 Factory（35 瓦斯，+2 Elite）或 Armory（30 瓦斯，+1 Elite）替代，前者提供 Field Repair（HEAL 2），后者提供 Vehicle Weapons/Plating。",
+              "若仅需 1 个 Core 槽位且预算紧张，可购买基础 Barracks（25 瓦斯，+1 Core），其 Go! Go! Go! 提供额外 2 英寸移动，不占行动次数。",
+              "若需 Hero 槽位编入 Jim Raynor，须购买 Supply Depot（40 瓦斯，+1 Core +1 Elite +1 Hero，Unique），而非上述两者。"
+            ],
+            "risk": "Barracks (Proxy) 的 Armed and Ready 每轮仅限一次，若过早使用可能浪费后续部署机会；Barracks (Tech Lab) 的 ANTI-EVADE (1) 仅对首次使用的远程武器生效，若单位有多个武器档案需规划使用顺序。两者均为 Unique，错误选择将无法在当局更换。",
+            "reviseIf": [
+              "若对手军队依赖 HIDDEN 单位或侧翼部署，优先考虑 Orbital Command（25 瓦斯，+1 Core，Unique）的 Scanner Sweep 或 ComSat Station，而非上述两者。",
+              "若军队需编入 Jim Raynor（Hero），须优先购买 Supply Depot 解锁 Hero 槽位，再考虑 Core/Elite 槽位补充。",
+              "若瓦斯预算不足以同时购买所需卡牌，优先满足军队核心槽位（Core/Elite/Hero）需求，再考虑能力协同。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:barracks__proxy_",
+              "source:tactical_cards:barracks__tech_lab_",
+              "source:army_units:marine",
+              "source:army_units:marauder",
+              "source:army_units:goliath",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+              "faq-v1:22",
+              "faq-v1:36"
+            ],
+            "unproven": [
+              "Armed and Ready 是否消耗整个激活未在卡面明示；FAQ v1:22 仅针对 Pylon 作为 Entry Edge 的部署，不能直接类推，需规则服务确认。",
+              "Barracks (Proxy) 与 Barracks (Tech Lab) 的选择无绝对优劣，实际效果受军队构成、任务卡与对手战术影响，需实战检验。",
+              "Let's Have a Blast! 的 ANTI-EVADE (1) 对 Evade 值较高目标（如 Zergling Evade 4+）的实际收益未量化，需对局验证。"
+            ]
+          },
+          {
+            "title": "Engineering Bay 与 Armory 组合：Marine/Goliath 混合军队的攻防强化",
+            "when": [
+              "玩家选择 Terran Armed Forces 阵营卡，军队同时包含生物单位（Marine/Marauder）与机械单位（Goliath）。",
+              "玩家有足够瓦斯预算（Standard 规模 200 瓦斯）购买 Engineering Bay（25 瓦斯，+1 Core）与 Armory（30 瓦斯，+1 Elite）。",
+              "玩家计划在突击阶段强化首次远程攻击，或在防御时提升护甲掷骰成功率。"
+            ],
+            "procedure": [
+              "确认军队构成：Marine 为 Biological 单位，Goliath 为 Mechanical 单位；Engineering Bay 的 Infantry Weapons/Armor 仅作用于 Biological，Armory 的 Vehicle Weapons/Plating 仅作用于 Mechanical。",
+              "购买 Engineering Bay 与 Armory，两者均非 Unique，可各购一张；卡牌正面朝上置于桌面，耗尽时各产生 1 CP。",
+              "突击阶段：激活 Marine 单位时，使用 Engineering Bay 的 Infantry Weapons（主动，Assault Phase），使其首次远程武器获得 CRITICAL HIT (1)；激活 Goliath 单位时，使用 Armory 的 Vehicle Weapons（主动，Assault Phase），使其首次远程武器获得 CRITICAL HIT (1)。",
+              "防御时：当 Marine 单位进行护甲掷骰前，使用 Engineering Bay 的 Infantry Armor（反应），使其获得 TOUGH (1)；当 Goliath 单位进行护甲掷骰前，使用 Armory 的 Vehicle Plating（反应），使其获得 TOUGH (1)。",
+              "注意反应能力限制：每次激活每位玩家仅能结算一个反应；若 Marine 已使用 Infantry Armor，则同一敌方激活中 Medic 的 Life Support 无法再响应同一攻击。"
+            ],
+            "alternatives": [
+              "若军队以 Marine 为主而 Goliath 较少，可仅购买 Engineering Bay（25 瓦斯）节省预算，将剩余瓦斯用于其他卡牌（如 Academy 或 Orbital Command）。",
+              "若军队以 Goliath 为主，可仅购买 Armory（30 瓦斯），或考虑 Factory（35 瓦斯，+2 Elite）提供更多 Elite 槽位与 Field Repair（HEAL 2）。",
+              "若需强化近战而非远程，可考虑 Barracks (Tech Lab) 的 Let's Have a Blast!（ANTI-EVADE 1）；近战强化不适用于 Terran 的对应卡牌。"
+            ],
+            "risk": "Infantry Weapons 与 Vehicle Weapons 均为主动能力，受每轮每单位每具名能力一次限制，且只能在单位激活时于行动前或行动后立即使用；由于每次激活只激活一个单位，同一激活中通常只能对当前激活的单位使用对应能力。反应能力（Infantry Armor/Vehicle Plating）受每次激活一反应限制，无法同时使用两个反应。",
+            "reviseIf": [
+              "若对手军队以高 Armour 单位为主，CRITICAL HIT (1) 的收益可能有限，可考虑其他强化（如 PRECISION 或 PIERCE）。",
+              "若军队需更多 Core 槽位而非 Elite，优先购买 Engineering Bay（+1 Core）而非 Armory（+1 Elite）。",
+              "若瓦斯预算不足，优先购买 Engineering Bay（25 瓦斯）以强化 Marine 火力，再考虑 Armory。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:engineering_bay",
+              "source:tactical_cards:armory",
+              "source:army_units:marine",
+              "source:army_units:goliath",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.1",
+              "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+              "faq-v1:37"
+            ],
+            "unproven": [
+              "Infantry Weapons 与 Vehicle Weapons 能否在同一激活中分别作用于不同单位，取决于两单位是否均被激活及激活顺序，来源未明确。",
+              "CRITICAL HIT (1) 对 Marine（RoA 2）与 Goliath（Autocannon RoA 9）的实际收益差异未量化，需对局验证。",
+              "TOUGH (1) 对 Armour 5+（Marine）与 Armour 4+（Goliath）的防御提升效果未量化，需实战检验。"
+            ]
+          },
+          {
+            "title": "Academy 与 Medic 升级协同：降低治疗成本并提升效率",
+            "when": [
+              "玩家选择 Terran Armed Forces 阵营卡，并已购买 Academy（35 瓦斯，+2 Support，Unique）以解锁或补充 Support 槽位。",
+              "军队中包含 Medic 单位，且 Medic 已购买 Stabilizer Medpacks 升级（30 矿物）。",
+              "玩家计划在移动阶段使用 Medic 的 Medpack（1 CP）进行主动治疗，或在任意阶段使用 Life Support（1 CP）进行反应性减伤。",
+              "玩家需要管理有限的 CP 资源，并希望在一次激活中最大化 Medic 的治疗或保护效果。"
+            ],
+            "procedure": [
+              "确认 Medic 为 Support 单位，其 Medpack 与 Life Support 均为消耗 CP 的特殊能力。",
+              "在 Medic 激活时，于声明行动前或行动后立即使用 Medpack（1 CP）。若 Academy 的 Advanced Training 尚未在本轮使用，则触发该反应能力，将 Medpack 的 CP 成本降低 1（至 0），且不耗尽 Academy 卡。",
+              "结算 Medpack 时，计算范围内 Medic 模型数。若已购买 Stabilizer Medpacks，则视为范围内多 1 个模型，从而增加 HEAL (X) 的治疗量。",
+              "当友方生物单位受到伤害时，若 Medic 在 4 英寸内，可声明使用 Life Support（1 CP）作为反应。若 Advanced Training 本轮尚未使用，可将其应用于此能力，将成本降至 0。",
+              "注意：Advanced Training 每轮仅限一次，且为反应能力。若 Medic 在同一轮内先后使用 Life Support 与 Medpack，Advanced Training 仅能作用于其中一个，需根据当前战况选择优先级。"
+            ],
+            "alternatives": [
+              "若 Medic 未购买 Stabilizer Medpacks，Advanced Training 仍可降低 Medpack 或 Life Support 的成本，但每次治疗/减伤的量不会增加。",
+              "若需在同一敌方激活中响应多次攻击，可考虑使用其他反应能力（如 Engineering Bay 的 Infantry Armor），但受每次激活每位玩家仅一个反应限制，需权衡。",
+              "若 CP 资源充裕且无需降低成本，可将 Academy 卡耗尽以产生 1 CP，用于支付其他能力费用，而非保留其 Advanced Training 效果。"
+            ],
+            "risk": "Advanced Training 每轮仅一次，若过早用于降低 Medpack 成本，则后续可能无法用于降低 Life Support 成本，反之亦然。错误选择可能导致关键治疗或减伤能力因 CP 不足而无法使用。",
+            "reviseIf": [
+              "若 Medic 单位在本轮已使用过 Life Support 或 Medpack，且 Advanced Training 尚未使用，应评估是否仍有其他 Support 单位（如另一队 Medic）会在本轮激活并使用 CP 能力。",
+              "若对手军队以高伤害单次攻击为主，优先将 Advanced Training 用于 Life Support 以降低关键减伤成本；若己方单位持续受到低伤害攻击，则优先用于 Medpack 以维持治疗。",
+              "若 Academy 卡已被耗尽（例如用于产生 CP），则其 Advanced Training 能力本回合不可用，需调整计划。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:academy",
+              "source:army_units:medic",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+              "faq-v1:34",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+              "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2"
+            ],
+            "unproven": [
+              "Advanced Training 与 Stabilizer Medpacks 的协同效应为条件性假设，实际效果受每轮一次限制及反应能力使用时机影响，需实战检验。",
+              "Advanced Training 能否作用于 Medic 的 Restoration（1 CP，反应）等其他 CP 能力，卡面未明确排除，需规则服务确认。",
+              "若 Medic 单位因伤亡减少模型数，Stabilizer Medpacks 的额外模型效果是否仍按原升级描述生效，需对局验证。"
+            ]
+          },
+          {
+            "title": "Orbital Command 能力选择：Scanner Sweep 与 ComSat Station 的时机",
+            "when": [
+              "玩家选择 Terran Armed Forces 阵营卡，并已购买 Orbital Command（25 瓦斯，+1 Core，Unique）。",
+              "对手军队包含依赖 HIDDEN 状态的单位（如 Stalker 的 Path of Shadows），或计划从非 Entry Edge 的桌边进行侧翼部署。",
+              "玩家在移动阶段激活一个单位，并需决定使用 Orbital Command 的哪个主动能力以应对当前威胁。"
+            ],
+            "procedure": [
+              "评估对手威胁：若对手有 HIDDEN 单位可能接近己方关键单位或任务标记，优先使用 Scanner Sweep。",
+              "使用 Scanner Sweep：在移动阶段，激活一个单位后，于其行动前或行动后立即声明使用。在战场上任意位置放置一个 Faction Indicator。",
+              "效果结算：只要敌方单位位于该 Faction Indicator 6 英寸内，即失去 HIDDEN 状态。此能力以位置为目标，不受 HIDDEN 单位 4 英寸内才能被选为目标限制（FAQ v1:57）。",
+              "若对手威胁来自侧翼部署，则改用 ComSat Station：选择一条非玩家 Entry Edge 的桌边，直到回合结束，敌方单位不能从该边部署。",
+              "注意：Scanner Sweep 与 ComSat Station 均为 Orbital Command 的主动能力，每具名主动能力每轮每单位限一次，因此 Orbital Command 每轮仅能使用其中一个。"
+            ],
+            "alternatives": [
+              "若对手 HIDDEN 单位威胁不大，但可能从侧翼包抄，优先使用 ComSat Station 封锁部署边。",
+              "若 Orbital Command 的主动能力均非当前急需，可将其耗尽以产生 1 CP，用于支付其他能力费用。",
+              "若军队需更多 Core 槽位，可考虑购买基础 Barracks（25 瓦斯，+1 Core）替代 Orbital Command，但将失去侦测与部署封锁能力。"
+            ],
+            "risk": "Scanner Sweep 的 Faction Indicator 可被对手单位移动到并阻挡，但不会移除指示物本身；若指示物被包围，其侦测范围可能受限。ComSat Station 仅封锁非 Entry Edge 桌边，若对手主要从标准 Entry Edge 部署，则此能力收益有限。",
+            "reviseIf": [
+              "若对手军队不依赖 HIDDEN 单位，且其部署主要从标准 Entry Edge 进行，则 Orbital Command 的主动能力价值降低，可考虑将其耗尽产生 CP 或更换其他战术卡。",
+              "若对手有单位能移除或无视 Faction Indicator 效果，需评估 Scanner Sweep 的实际收益。",
+              "若游戏进入后期，对手 Reserves 单位减少，ComSat Station 的封锁效果可能减弱，应优先使用 Scanner Sweep 应对剩余威胁。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:orbital_command",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.32",
+              "faq-v1:57",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.75",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2"
+            ],
+            "unproven": [
+              "Scanner Sweep 的持续时间未在卡面明确，按主动能力默认持续到回合结束推断；若单位移出 6 英寸范围，是否重新获得 HIDDEN 状态需在移动结束时重新检查，此交互未在来源中明确。",
+              "ComSat Station 封锁的桌边是否包括对手通过特殊能力（如 Barracks (Proxy) 的 Armed and Ready）部署的边，卡面未明确，需规则服务确认。",
+              "若对手单位在 Scanner Sweep 的 Faction Indicator 放置前已处于 HIDDEN 状态，其失去 HIDDEN 的时机是否立即生效，需对局验证。"
+            ]
+          },
+          {
+            "title": "Dropship 机动回收与延迟部署：Strap in! 与 Ready For Dust-off 的运用",
+            "when": [
+              "玩家选择 Terran Armed Forces 阵营卡，并已购买 Dropship（40 瓦斯，+1 Core +1 Support，Unique）。",
+              "军队中包含需要机动回收的高价值地面单位（如 Jim Raynor 或受创的 Marauder），或计划在回合结束时于关键位置部署增援。",
+              "玩家在移动阶段激活一个未接战的地面单位，并希望将其送回 Reserves 以释放补给或规避威胁。"
+            ],
+            "procedure": [
+              "确认 Dropship 卡为 Ready 状态且未被耗尽；其主动能力须在移动阶段由战场上已激活的单位使用（FAQ v1:36）。",
+              "若需回收单位：激活目标未接战地面单位，在声明行动前使用 Strap in!，该单位被送回 Reserves 而非执行行动。该单位保留其 Damage Marker 与装备，且若已在当前阶段被激活，送回后仍保持已激活状态（Part 8.5.5）。",
+              "若需延迟部署：在移动阶段激活任一单位，使用 Ready For Dust-off，在战场上距任何敌方模型超过 10 英寸处放置一个 Faction Indicator。",
+              "回合结束时（Phase 4 的 End of the Round Effects 步骤），控制玩家可选择将一个地面单位从 Reserves 部署至与该 Faction Indicator 底座接触的位置。",
+              "部署时，将 Leading Model 与指示物底座接触放置，其余模型保持 Coherency 且完全位于敌方 Engagement Range 之外；若无法满足，则该单位不能部署，能力被浪费（FAQ v1:24）。",
+              "注意：对手可移动至并阻挡该 Faction Indicator；若被阻挡导致无法放置部署模型，指示物保留至回合结束，然后被移除且不部署单位（FAQ v1:41）。"
+            ],
+            "alternatives": [
+              "若需快速将单位送回 Reserves 以释放补给供新单位部署，优先使用 Strap in!；若需在特定位置建立增援点，则使用 Ready For Dust-off。",
+              "若军队以 Goliath 等机械单位为主，可考虑 Factory（35 瓦斯，+2 Elite）提供 Field Repair（HEAL 2）以维持战线，而非依赖 Dropship 的回收。",
+              "若需额外 Support 槽位编入 Medic，Dropship 的 +1 Support 槽位可与 Academy（35 瓦斯，+2 Support）互补，但需权衡瓦斯预算。"
+            ],
+            "risk": "Ready For Dust-off 的 Faction Indicator 可被对手阻挡，导致部署失败且浪费能力；Strap in! 送回的单位在 Reserves 期间能力不生效，且若已在当前阶段激活则本阶段不能再行动。Dropship 为 Unique，错误使用将无法在当局更换。",
+            "reviseIf": [
+              "若对手军队能快速移动至并阻挡 Faction Indicator，应避免使用 Ready For Dust-off，改用 Strap in! 或标准部署。",
+              "若游戏进入最终回合，Reserves 单位在最终计分阶段视为被摧毁，此时应优先部署而非回收。",
+              "若军队需更多 Core 槽位而非 Support，可考虑基础 Barracks（25 瓦斯，+1 Core）替代 Dropship。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:dropship",
+              "faq-v1:24",
+              "faq-v1:41",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+              "faq-v1:36"
+            ],
+            "unproven": [
+              "Ready For Dust-off 部署是否消耗单位整个激活未在卡面明示，类推 FAQ v1:24 需规则服务确认。",
+              "Strap in! 送回的单位在 Reserves 期间其 Damage Marker 保留，重新部署时携带相同 Damage，此交互需按 Part 8.5.5 核对。",
+              "Dropship 的机动回收对高价值单位（如 Jim Raynor）的实际生存收益未量化，需对局验证。"
+            ]
+          },
+          {
+            "title": "Factory 的 Elite 槽位与机械维修：Field Repair 的运用",
+            "when": [
+              "玩家选择 Terran Armed Forces 阵营卡，并已购买 Factory（35 瓦斯，+2 Elite）。",
+              "军队中包含 Goliath 等机械单位，且这些单位在战斗中可能受到伤害。",
+              "玩家在移动阶段激活一个机械单位，并希望恢复其生命值以维持战线。"
+            ],
+            "procedure": [
+              "确认 Factory 卡为 Ready 状态且未被耗尽；其 Field Repair 为主动能力，须在移动阶段由战场上已激活的机械单位使用。",
+              "激活目标机械单位（如 Goliath），在声明行动前或行动后立即使用 Field Repair，结算 HEAL (2) 效果，移除该单位 2 点累积伤害（减少其 Damage Marker）。",
+              "注意：HEAL 不能返回已摧毁的模型，仅减少现有伤害（Part 11 HEAL 定义）。",
+              "若 Goliath 单位已受伤害且需继续作战，优先使用 Field Repair 恢复生命值，而非将其送回 Reserves。",
+              "Factory 提供 +2 Elite 槽位，可编入多个 Goliath 单位；购买后卡牌正面朝上置于桌面，耗尽时产生 1 CP。"
+            ],
+            "alternatives": [
+              "若军队以 Marine 等生物单位为主，可考虑 Engineering Bay（25 瓦斯，+1 Core）提供 Infantry Weapons/Armor，而非 Factory。",
+              "若需强化 Goliath 的攻击而非维修，可购买 Armory（30 瓦斯，+1 Elite）提供 Vehicle Weapons（CRITICAL HIT 1）与 Vehicle Plating（TOUGH 1）。",
+              "若需更多 Elite 槽位且预算有限，Factory（35 瓦斯，+2 Elite）比 Armory（30 瓦斯，+1 Elite）提供更多槽位，但无攻击/防御强化。"
+            ],
+            "risk": "Field Repair 每轮每单位每具名主动能力限一次；若 Goliath 单位已在本轮使用过其他主动能力，需规划使用顺序。Factory 为 +2 Elite 槽位，若军队 Elite 单位不足，可能浪费槽位。",
+            "reviseIf": [
+              "若军队中机械单位较少或未受伤害，Field Repair 的收益有限，可考虑将 Factory 耗尽产生 CP 或更换其他战术卡。",
+              "若对手军队以高伤害攻击为主，Goliath 可能在单次攻击中被摧毁，此时维修收益有限，应优先考虑防御强化（如 Armory 的 Vehicle Plating）。",
+              "若游戏进入后期，Reserves 单位减少，应优先部署而非依赖维修维持战线。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:factory",
+              "source:army_units:goliath",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.31",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4"
+            ],
+            "unproven": [
+              "Field Repair 对 Goliath（HP 10）的实际维修收益未量化，需对局验证。",
+              "Factory 的 +2 Elite 槽位与 Armory 的 +1 Elite 槽位在不同军队构成下的相对价值未量化，需实战检验。",
+              "Field Repair 与 Goliath 的 Indomitable（Engaged 时可攻击/被攻击）的交互未在来源中明确，需规则服务确认。"
+            ]
+          },
+          {
+            "title": "Supply Depot 解锁 Hero 槽位并强化补给控制",
+            "when": [
+              "军队选择 Terran Armed Forces 阵营卡（起始 3 Core / 1 Elite / 1 Support，无 Hero 槽位），且计划编入 Jim Raynor（Hero 单位，1 模型 / 补给 1 / 250 矿物）。",
+              "需要额外的 Core 或 Elite 槽位以编入更多 Marine/Marauder 或 Goliath 单位。",
+              "玩家希望在任务标记控制或争夺中提升关键单位的有效补给值。"
+            ],
+            "procedure": [
+              "确认瓦斯预算：Standard 规模（2000 矿物）下瓦斯为 200；Supply Depot 成本 40 瓦斯，为 Unique 卡，每军队仅一张。",
+              "购买 Supply Depot 并正面朝上置于桌面；其提供 +1 Core、+1 Elite、+1 Hero 槽位，是编入 Jim Raynor 的必要条件。",
+              "在移动阶段激活一个单位，于其行动前或行动后立即使用 Additional Supply Depots（主动能力），使该单位在控制/争夺任务标记及完成任务时补给值 +1。卡面未写明该效果的持续时间；按主动能力默认规则，除非另有说明，其效果在回合结束时失效（Part 10.2），但此点未经来源明确裁定。",
+              "若需编入 Jim Raynor，将其列入军队名单并占用 1 个 Hero 槽位；Jim Raynor 的 Commander（被动）使其在控制/争夺标记、完成任务与 Disengage 检定时补给视为 +1。Commander 与 Additional Supply Depots 是否叠加、以及「Supply 特性 +1」与「Supply Value 改进 +1」是否属同一类修正，来源未裁定，须由规则服务确认后再决定是否依赖两者同时生效。",
+              "部署 Jim Raynor 时，确认其当前补给值不超过 Available Supply，且部署位置不在对手 Zone of Influence 内并保持 Coherency。Jim Raynor 受 Commander 影响时其用于部署判定的当前补给值是否仍为 1，来源未澄清，须按规则服务裁定。"
+            ],
+            "alternatives": [
+              "若军队以 Marine/Marauder 为主且无需 Hero，可购买 Barracks (Tech Lab)（45 瓦斯，+1 Core +1 Elite）或 Factory（35 瓦斯，+2 Elite）替代，以补充 Core/Elite 槽位。",
+              "若需额外 Support 槽位编入 Medic，可考虑 Academy（35 瓦斯，+2 Support，Unique）或 Dropship（40 瓦斯，+1 Core +1 Support，Unique）。",
+              "若瓦斯预算紧张且仅需 1 个 Core 槽位，可购买基础 Barracks（25 瓦斯，+1 Core），但将失去 Hero 槽位与补给强化能力。"
+            ],
+            "risk": "Supply Depot 为 Unique 且成本较高（40 瓦斯），若军队未编入 Jim Raynor 或其他高补给单位，其 Hero 槽位与补给强化收益可能有限；Additional Supply Depots 为主动能力，每轮每单位每具名限一次，需在单位激活时使用。若 Commander 与 Additional Supply Depots 实际不叠加，则依赖两者同时生效的计划会落空。",
+            "reviseIf": [
+              "若军队不计划编入 Jim Raynor 或其他 Hero 单位，Supply Depot 的 Hero 槽位价值降低，可考虑其他战术卡。",
+              "若对手军队以高伤害攻击为主，Jim Raynor（8 HP，无 Shield）可能过早被摧毁，此时应评估是否值得为其购买 Supply Depot。",
+              "若瓦斯预算需优先满足多个 Core/Elite 槽位，可暂缓购买 Supply Depot，先购买 Barracks 或 Factory。",
+              "若规则服务裁定 Commander 与 Additional Supply Depots 不叠加，或裁定 Supply 特性修改影响部署时的当前补给值，须重写 procedure.4 与 procedure.5。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:supply_depot",
+              "source:army_units:jim_raynor",
+              "source:tactical_cards:terran_armed_forces",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.4"
+            ],
+            "unproven": [
+              "Additional Supply Depots 与 Jim Raynor 的 Commander 补给加成能否叠加未在来源中明确，需规则服务确认；本建议不再断言其可叠加。",
+              "Additional Supply Depots 的效果持续时间卡面未写明，按主动能力默认在回合结束时失效仅为推断，需规则服务确认。",
+              "Jim Raynor 受 Commander 影响时，其用于部署判定的当前补给值是否仍为 1，来源未澄清。",
+              "Jim Raynor 作为高价值 Hero 的实际生存收益未量化，需对局验证。",
+              "Supply Depot 的补给强化对任务标记控制的实际影响受单位位置与对手争夺影响，需实战检验。"
+            ]
+          },
+          {
+            "title": "Terran Armed Forces 卡牌组合与瓦斯预算分配",
+            "when": [
+              "玩家选择 Terran Armed Forces 阵营卡（起始 3 Core / 1 Elite / 1 Support，无 Hero/Air 槽位），并在 Standard 规模（2000 矿物 / 200 瓦斯）下组建军队。",
+              "军队构成包含 Marine/Marauder（Core）、Goliath（Elite）、Medic（Support）及可能的 Jim Raynor（Hero），需通过战术卡解锁额外槽位。",
+              "玩家需在 Barracks (Proxy/Tech Lab)、Engineering Bay、Armory、Academy、Orbital Command、Dropship、Factory、Supply Depot 间分配瓦斯预算。"
+            ],
+            "procedure": [
+              "列出军队所需槽位：按 Part 9.1.6，每个单位占用的 Army Slot 数等于其起始 Supply Value（依所选 Composition Option 的模型数决定）。Marine 小编制（6 模型）Supply 1、大编制（9 模型）Supply 2，均占 Core 槽；Marauder 小编制（2 模型）Supply 1、大编制（4 模型）Supply 2，均占 Core 槽；Goliath（1 模型）Supply 2，占 Elite 槽；Medic（3 模型）Supply 1，占 Support 槽；Jim Raynor（1 模型）Supply 1，占 Hero 槽。与阵营卡起始槽位（3 Core / 1 Elite / 1 Support）对比，确定缺口。",
+              "优先购买解锁缺口槽位的战术卡：若缺 Core 槽位，选 Barracks（25 瓦斯，+1 Core）或 Barracks (Proxy)（40 瓦斯，+2 Core）；若缺 Elite 槽位，选 Factory（35 瓦斯，+2 Elite）或 Armory（30 瓦斯，+1 Elite）；若需 Hero 槽位编入 Jim Raynor，必须购买 Supply Depot（40 瓦斯，+1 Core +1 Elite +1 Hero）。",
+              "在满足槽位需求后，用剩余瓦斯购买能力协同卡：Engineering Bay（25 瓦斯，+1 Core）强化 Biological 单位攻防，Armory（30 瓦斯，+1 Elite）强化 Mechanical 单位，Academy（35 瓦斯，+2 Support）的 Advanced Training 为 Reaction、每轮一次，仅当友方 Support 单位激活一项消耗 CP 的特殊能力时，将该能力的 CP 费用降低 1（最低为 0），且不耗尽 Academy 卡；Orbital Command（25 瓦斯，+1 Core）提供侦测与部署封锁。",
+              "核对 Unique 限制：Barracks (Proxy)、Barracks (Tech Lab)、Academy、Orbital Command、Supply Depot、Dropship 均为 Unique，每张仅可购一张；非 Unique 卡（Barracks、Engineering Bay、Armory、Factory）可购多张但受瓦斯预算限制。",
+              "确认总瓦斯花费不超过 200；未使用的瓦斯在本局内浪费，不能转换或留待后续使用。"
+            ],
+            "alternatives": [
+              "若军队以 Marine/Marauder 为主，优先购买 Barracks (Tech Lab)（45 瓦斯，+1 Core +1 Elite）与 Engineering Bay（25 瓦斯，+1 Core），以强化步兵火力与防御。",
+              "若军队以 Goliath 为主，优先购买 Factory（35 瓦斯，+2 Elite）与 Armory（30 瓦斯，+1 Elite），以补充 Elite 槽位并提供 Vehicle Weapons/Plating。",
+              "若需编入 Jim Raynor，优先购买 Supply Depot（40 瓦斯）解锁 Hero 槽位，再考虑其他卡牌；若预算不足，可牺牲部分能力协同卡。",
+              "若需机动回收或延迟部署，可购买 Dropship（40 瓦斯，+1 Core +1 Support，Unique），但需权衡其与 Academy/Orbital Command 的预算竞争。"
+            ],
+            "risk": "瓦斯预算有限（200），错误分配可能导致关键槽位不足或能力协同缺失；Unique 卡不可重复购买，选择错误将无法在当局更换。过度购买能力卡而忽视槽位需求可能导致军队无法合法编入计划单位。Academy 的 Advanced Training 每轮仅一次且仅作用于 Support 单位消耗 CP 的特殊能力，若误以为可无限次或可作用于非 Support 单位，将导致 CP 预算规划错误。",
+            "reviseIf": [
+              "若军队构成调整（如放弃 Jim Raynor 或减少 Goliath 数量），需重新评估槽位缺口并调整卡牌购买。",
+              "若对手军队依赖 HIDDEN 或侧翼部署，优先保留瓦斯购买 Orbital Command（25 瓦斯）以应对。",
+              "若游戏规模为 Skirmish（1000 矿物 / 100 瓦斯），瓦斯预算减半，需精简卡牌选择，优先满足核心槽位。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:terran_armed_forces",
+              "source:tactical_cards:barracks__proxy_",
+              "source:tactical_cards:barracks__tech_lab_",
+              "source:tactical_cards:engineering_bay",
+              "source:tactical_cards:armory",
+              "source:tactical_cards:academy",
+              "source:tactical_cards:orbital_command",
+              "source:tactical_cards:supply_depot"
+            ],
+            "unproven": [
+              "不同卡牌组合在实战中的相对价值未量化，受任务卡、地形与对手战术影响，需对局验证。",
+              "瓦斯预算分配的最优解取决于军队构成与战术目标，无绝对标准，需根据具体对局调整。",
+              "本建议仅覆盖槽位与能力协同，未验证完整编军合法性（如 Composition Option 模型数、升级规则），最终以有约束力的 Rules 服务为准。"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "sourceRefs": [
+    "source:tactical_cards:terran_armed_forces",
+    "source:tactical_cards:supply_depot",
+    "source:tactical_cards:factory",
+    "source:army_units:jim_raynor",
+    "source:army_units:goliath",
+    "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+    "source:tactical_cards:armory",
+    "source:army_units:marine",
+    "source:army_units:marauder",
+    "source:army_units:medic",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.31",
+    "faq-v1:43",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+    "source:tactical_cards:barracks__tech_lab_",
+    "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.0",
+    "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+    "source:tactical_cards:academy",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+    "faq-v1:34",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.3",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.69",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.54",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.50",
+    "faq-v1:53",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.2",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.49",
+    "faq-v1:37",
+    "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.61",
+    "faq-v1:64",
+    "source:tactical_cards:engineering_bay",
+    "faq-v1:59",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.13",
+    "faq-v1:60",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+    "source:tactical_cards:barracks",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.2",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.6",
+    "source:faction_cards:mission_frontlines",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+    "faq-v1:05",
+    "source:faction_cards:mission_divide_and_conquer",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.73",
+    "source:faction_cards:mission_supply_drop",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.5",
+    "core.I03mzBYujgXw6xN2qXhH.items.4",
+    "faq-v1:66",
+    "faq-v1:68",
+    "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.2",
+    "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.0",
+    "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.1",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.7",
+    "source:tactical_cards:barracks__proxy_",
+    "source:tactical_cards:orbital_command",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.32",
+    "faq-v1:57",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.75",
+    "faq-v1:36",
+    "faq-v1:22",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4",
+    "faq-v1:41",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.1",
+    "source:tactical_cards:dropship",
+    "faq-v1:24",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.4"
+  ],
+  "preconditions": [
+    "Load the exact general Skill dependency and current player-visible board.",
+    "Check roster eligibility, selected upgrades, current phase and available resources."
+  ],
+  "procedure": [
+    "Read the complete relevant conditional recommendations in knowledge.",
+    "Compare enabled LegalSpace candidates using the general Skill and faction alternatives.",
+    "Use Preview, the room confirmation policy, Apply and Replay; reconsider when reviseIf holds."
+  ],
+  "judgeTests": {
+    "productionEvidenceHash": "baf945d12de4ae7813afe8967ee8c05197427f911d4e1e010d1409a4da6778c9",
+    "consumerEvidenceHash": "9fad3ae76d5d352a145cd65774036a5d96bfd3692e58c226c127786ffb7b2d8c",
+    "finalGeneralDependencyHash": "a2d4f7cfd885b8ae3bb12cc992cd5963cd0a4a199c54c2aef3e789a1ec3cf305",
+    "rosterEvaluationHash": "4d338c22fad88f81f1bd3d0f4f699d48385aa48dbebd16e71b4cbd0161b8dc4f",
+    "ruleEvaluationHash": "a08a2989ba6926cc422ef3fffc8966e86b77ede86a14545efd73f5869523cf1c",
+    "rosterScores": [
+      {
+        "arm": "overall_only",
+        "correct": 0,
+        "total": 4
+      },
+      {
+        "arm": "overall_plus_faction",
+        "correct": 4,
+        "total": 4
+      }
+    ],
+    "ruleScores": [
+      {
+        "arm": "overall_only",
+        "total": 66,
+        "correct": 63,
+        "groups": [
+          {
+            "group": "damage_timing",
+            "total": 24,
+            "correct": 24
+          },
+          {
+            "group": "reaction_cap",
+            "total": 24,
+            "correct": 21
+          },
+          {
+            "group": "active_named_limit",
+            "total": 18,
+            "correct": 18
+          }
+        ]
+      },
+      {
+        "arm": "overall_plus_faction",
+        "total": 66,
+        "correct": 66,
+        "groups": [
+          {
+            "group": "damage_timing",
+            "total": 24,
+            "correct": 24
+          },
+          {
+            "group": "reaction_cap",
+            "total": 24,
+            "correct": 24
+          },
+          {
+            "group": "active_named_limit",
+            "total": 18,
+            "correct": 18
+          }
+        ]
+      }
+    ],
+    "independentlyHeldOutRuleCases": 0
+  },
+  "confidence": "source_review_and_bounded_roster_rule_application_only",
+  "trustTier": "offline_evaluated_advisory",
+  "status": "offline_candidate",
+  "humanReviewed": false,
+  "canAffectRules": false,
+  "canAffectStrategy": true,
+  "fullGameStrategyEffectivenessProven": false,
+  "runtimeAccepted": false,
+  "published": false,
+  "trainingTruth": false,
+  "hash": "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148"
+}

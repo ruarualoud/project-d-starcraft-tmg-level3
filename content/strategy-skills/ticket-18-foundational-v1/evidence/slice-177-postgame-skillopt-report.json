@@ -1,0 +1,140 @@
+{
+  "schema": "ticket18_slice177_postgame_skillopt_report_v1",
+  "ticket": 18,
+  "slice": 177,
+  "status": "passed",
+  "predecessorArenaReportHash": "9e1498bbd9ff88649270dde724fa60df4b4bd07395ab72a1bec32ec68868eca8",
+  "foundationalPackHash": "686f0e3b9771a8e171598be0f58ea1e2b13836e77a5f21817c3628be1bad8886",
+  "acceptedParentSkillHashes": [
+    "3ddf4221b8e21e36ddc0a59991aae536fe397eaf9107ec61ca70b73bef8fafee",
+    "f843dd8a3493c0db6a004274c2febd8a179e720cd319ff004e5cba2ccc990a19"
+  ],
+  "episodeCount": 4,
+  "directionCount": 2,
+  "developmentEpisodes": 2,
+  "heldoutEpisodes": 2,
+  "allRulesReplayPassed": true,
+  "hindsightBoundaryPassed": true,
+  "controlledPause": {
+    "status": "paused_after_completed_reflection",
+    "resumeCursor": "ticket18-s177-first-five-reflection-v1.skillopt-candidates",
+    "checkpointHash": "1a700e60912b8dce04dd70ff73b10a7bdaf6cb3668b9b17a28f341894c3689d7"
+  },
+  "resumedWithoutDuplicateReflectionCall": true,
+  "injectedReflectionCalls": 1,
+  "reflectionHash": "d80f39057c0b9cd9f6ede65b35c7cc244ad1fefe273c51ea48e8d42bb00ee79b",
+  "skillOptCandidateHashes": [
+    "1d3f33718a82b12a05a503a59b2846c1f9eb14cd62bd2233806ae2777ab5fa8c",
+    "326eee9f0d5359aa242faff6eab81a7938cd1ccda9a3274eb24c8a3b49b3ddd6"
+  ],
+  "skillOptCandidates": [
+    {
+      "candidateId": "starcraft-tmg.matchup.terran_armed_forces-to-zerg_swarm.skillopt-candidate.1",
+      "parentSkillRef": {
+        "id": "starcraft-tmg.matchup.terran_armed_forces-to-zerg_swarm",
+        "version": "1.0.0-offline-bounded-evaluation",
+        "hash": "3ddf4221b8e21e36ddc0a59991aae536fe397eaf9107ec61ca70b73bef8fafee"
+      },
+      "proposedVersion": "1.0.0-offline-bounded-evaluation+skillopt.1",
+      "status": "quarantined_candidate",
+      "runtimeAccepted": false
+    },
+    {
+      "candidateId": "starcraft-tmg.matchup.zerg_swarm-to-terran_armed_forces.skillopt-candidate.2",
+      "parentSkillRef": {
+        "id": "starcraft-tmg.matchup.zerg_swarm-to-terran_armed_forces",
+        "version": "1.0.0-offline-bounded-evaluation",
+        "hash": "f843dd8a3493c0db6a004274c2febd8a179e720cd319ff004e5cba2ccc990a19"
+      },
+      "proposedVersion": "1.0.0-offline-bounded-evaluation+skillopt.1",
+      "status": "quarantined_candidate",
+      "runtimeAccepted": false
+    }
+  ],
+  "currentlyAcceptedRuntimeSkillsPreserved": 5,
+  "automaticPromotion": false,
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    "reflection_prompt",
+    "skillopt_prompt"
+  ],
+  "harnessToolsCalled": [
+    "read_episode_trace",
+    "read_rules_skills",
+    "read_strategy_skills",
+    "write_skillopt_candidate"
+  ],
+  "uiTraceEvidence": [
+    {
+      "arenaReportHash": "9e1498bbd9ff88649270dde724fa60df4b4bd07395ab72a1bec32ec68868eca8",
+      "visualTraceCount": 4,
+      "threatCoverage": [
+        "partial"
+      ]
+    }
+  ],
+  "agentDecisionEvidence": [
+    {
+      "episodeHash": "7b3fb8578eae6b167a9ef3f5211486d8bb5db53d7327c2e9637f02655fb0ca9c",
+      "preActionHash": "7372f6c32f12732f2240338e44fa8c73dc7dbc0da5ceece99129595c63440ed5",
+      "actualOutcomeHash": "6d9b6f3379dd31bb043cbd3076f77ad16154d7798a127c7388e15497e8018c8c",
+      "selectedCandidateId": "first-player1",
+      "evaluationSplit": "development"
+    },
+    {
+      "episodeHash": "f927bd4d0fcc84ee4e938552b4188541d9a119c01958310a7125b55f79199cdb",
+      "preActionHash": "bb916bd08d28d738d314d8aa643efc622879129b24551d924480e900db25b483",
+      "actualOutcomeHash": "db4c038d9ef3fcf93dd6667aff7157f3ec8b9bf2ae255fab203f65b09e90b664",
+      "selectedCandidateId": "first-player2",
+      "evaluationSplit": "heldout"
+    },
+    {
+      "episodeHash": "98356dc7a97cbc6468f1891d47f222fd12dffbf8262cc424b0e2a1581f36ec39",
+      "preActionHash": "edc492d0f36a10de7a684a763036a4a668722138d0c465c48a0de2316cdf77d4",
+      "actualOutcomeHash": "e88403b846785a56233b47e8da1300629357d5654a33385c5870a71e0f2e0c30",
+      "selectedCandidateId": "first-player2",
+      "evaluationSplit": "development"
+    },
+    {
+      "episodeHash": "f50790467e2c2e7539a1dc8ce20bf3e457dbee3a3772fce19ee78e8134bfd71c",
+      "preActionHash": "a4b4a93f8d227f939714ee7274c171af148357cd178c42dfba907c141a343a89",
+      "actualOutcomeHash": "57836e1c1639f93a1dbbf19ec20a936c10b21aafea05a672879cc941ca58ae88",
+      "selectedCandidateId": "first-player1",
+      "evaluationSplit": "heldout"
+    }
+  ],
+  "memoryTraceEvidence": {
+    "writesPerformed": 0,
+    "reflectionPromotedToMemory": false
+  },
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": {
+    "acceptedParentsRemainActive": true,
+    "skillOptCandidatesStartQuarantined": true,
+    "independentHeldoutRequired": true,
+    "arenaComparisonRequired": true,
+    "silentLiveUpgradeAllowed": false
+  },
+  "userVisibleChecks": [
+    "Review shows decision-time evidence separately from later outcome evidence.",
+    "Both directions merge two completed transition episodes without losing room/case identity.",
+    "A completed reflection resumes from checkpoint without a second Provider call.",
+    "SkillOpt output is visibly quarantined and does not replace the accepted Skill."
+  ],
+  "limitations": [
+    "The four source episodes are rules-executed synthetic transitions, not full games.",
+    "The reflection adapter is deterministic and injected, not a paid language model.",
+    "Candidate utility and regression safety remain unproven until Slice 178."
+  ],
+  "modelCalls": 0,
+  "paidProviderUsed": false,
+  "sourceRefreshPerformed": false,
+  "fullGameStrategyEffectivenessProven": false,
+  "runtimeAccepted": false,
+  "eligibleForTraining": false,
+  "trainingTruth": false,
+  "hash": "dfc4ef065595db46dbfbf5aa2bd4fca1b7c54b46556cfa306cf5fc81de60c5eb"
+}

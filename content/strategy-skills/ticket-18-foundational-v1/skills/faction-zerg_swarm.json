@@ -1,0 +1,2473 @@
+{
+  "schema": "project_d_game_skill_v1",
+  "gameId": "starcraft-tmg",
+  "rulesVersion": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+  "sourceBinding": {
+    "core": "1adbdb652fafc09d01887981a3ae86f69e65e1f1480d804156a8da1d4d1757a1",
+    "faq": "2881adb2a4e0475f07bb17aebf02e64f35c9073f274cec2cf0a8f770f8647226",
+    "rules": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+    "dataset": "b2579b83bb9a77b6119730009725a34d4e828d92d302248243bab33863551067"
+  },
+  "skillId": "starcraft-tmg.faction.zerg_swarm",
+  "draftEnvelopeBinding": {
+    "version": "faction_draft_envelope_v2",
+    "maximumAdviceSourceRefs": 128,
+    "minimumUnprovenItems": 0,
+    "maximumUnprovenItems": 16,
+    "sourceOperation": "preserve_every_distinct_known_reference_in_original_order",
+    "emptyUnprovenMeaning": "model_reported_none_not_evidence_of_no_uncertainty",
+    "acceptedPaths": [
+      "$.items[*].value.sourceRefs",
+      "$.items[*].value.unproven"
+    ],
+    "originalProviderSchemaUnchanged": true,
+    "substantiveAdviceFieldsUnchanged": true,
+    "originalPaidFailurePreserved": true,
+    "automaticProviderRetries": 0,
+    "freshWholeSectionReviewRequired": true,
+    "independentStrategyEvaluationRequired": true,
+    "semanticAcceptanceInherited": false,
+    "canAffectRules": false,
+    "trainingTruth": false,
+    "hash": "d819b6d8a9ffbd634d9d6edce5885b90856bcf4155ab51b30a0d34247a94511d"
+  },
+  "factionRecordKey": "tactical_cards:zerg_swarm",
+  "version": "1.0.0-offline-bounded-evaluation",
+  "skillType": "strategy",
+  "dependencies": {
+    "generalSkillHash": "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+    "generalLayerHash": "c0efea33d7c84f5adefb7216d9367d38e5306df31788449d6b91bcd20d7cfe4f",
+    "rulesReferenceHash": "d086ae7f69e48716b9bae7a8adb4db2d1f013b98e02b17c314b10cbe95e14292"
+  },
+  "knowledge": [
+    {
+      "section": {
+        "id": "faction.zerg_swarm.army_resources.1",
+        "axis": "army_resources",
+        "requiredSourceRefs": [
+          "source:tactical_cards:zerg_swarm"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Zerg Swarm起始槽位与瓦斯优先序：Elite解锁决策",
+            "when": [
+              "选择Zerg Swarm阵营卡（3 Core/1 Elite/1 Support，无Air/Hero）",
+              "军队需包含小编制Hydralisk（2模型，Supply 2，占2 Elite槽）",
+              "军队仅需1 Elite单位（如小编制Raptor，Supply 1，占1 Elite槽）",
+              "需在200瓦斯预算内决定购买哪些战术卡以扩充槽位"
+            ],
+            "procedure": [
+              "确认目标单位：若需小编制Hydralisk，其占2 Elite槽，超过起始1 Elite槽，必须购买额外战术卡解锁Elite槽。",
+              "比较Elite解锁选项：Hydralisk Den（35瓦斯，+2 Elite）、Lair（35瓦斯，+1 Elite/+1 Core）、Overlord（35瓦斯，+1 Elite/+1 Core/+1 Hero）均能提供至少1 Elite槽；无单一必选卡，按军队整体需求选择。",
+              "若仅需1 Elite单位（如Raptor占1 Elite），起始槽已够，无需为此购买Elite解锁卡。",
+              "若需更多Core或Support槽，可考虑Lair（+1 Core）或Hatchery（30瓦斯，+1 Support），后者同时提供Creep Spread能力。",
+              "在200瓦斯预算内，Hydralisk Den（35瓦斯）是解锁Hydralisk的最直接选择，因其提供2 Elite槽且无其他槽位附带。",
+              "购买后确认单位占用槽位：小编制Hydralisk占2 Elite，起始1 Elite加Hydralisk Den的2 Elite共3 Elite，部署Hydralisk后剩余1 Elite可容纳其他Elite单位。"
+            ],
+            "alternatives": [
+              "若军队以近战为主而非远程，可优先购买Lair（35瓦斯，+1 Elite/+1 Core）而非Hydralisk Den，其Predation能力（主动，任意阶段，使近战武器获得INSTANT）增强近战单位，且额外Core槽可部署更多Zergling。",
+              "若计划包含Kerrigan（1 Hero槽），必须购买Overlord（35瓦斯，+1 Hero/+1 Elite/+1 Core），因其是当前唯一提供Hero槽的Zerg战术卡；此时Hydralisk Den与Overlord均花35瓦斯，但Overlord同时解决Hero与Elite缺口。",
+              "若预算紧张且仅需1 Elite单位，可不购买Elite解锁卡，利用起始1 Elite槽部署Raptor（占1 Elite），将瓦斯用于其他战术卡。",
+              "若需额外Support槽（如多个Queen），购买Hatchery（30瓦斯，+1 Support），其Creep Spread能力帮助维持ON CREEP状态。"
+            ],
+            "risk": "购买Hydralisk Den（35瓦斯）占用预算，若第1回合补给池不足以部署Hydralisk（可用补给<2），该投资在早期回合无法产生战场效果；若军队实际不需要Hydralisk的远程火力，该瓦斯支出可能浪费。",
+            "reviseIf": [
+              "战前写军表时，若任务起始补给较低，应重新比较Hydralisk与低Supply单位的开局部署顺序，并在Army Building完成所选战术卡的购买。进入对局后军表已定；若当前可用补给不足2，可先部署已编入军表的Supply 1单位，延后已编入军表的Hydralisk部署，不能等补给增长再购买Hydralisk Den。",
+              "若对手军队以大量低HP单位为主，Hydralisk的DMG 2价值降低，可转向Raptor或Zergling等近战单位",
+              "若军队计划包含Kerrigan，优先购买Overlord而非Hydralisk Den，因其同时解决Hero与Elite槽缺口"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:lair",
+              "source:tactical_cards:overlord",
+              "source:army_units:hydralisk",
+              "source:army_units:raptor__zergling_",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4"
+            ],
+            "unproven": [
+              "Hydralisk Den优先于Lair或Overlord的决策在实战中的胜率影响未经测试",
+              "不同任务卡（如Divide and Conquer的Quarter计分）下Elite单位与Core单位的相对价值需实际对战验证"
+            ]
+          },
+          {
+            "title": "Zerg Swarm Biomass资源管理：耗尽卡牌与保留能力的权衡",
+            "when": [
+              "Zerg Swarm军队需支付单位卡上实际列明的BM费用，或需在使用阵营卡自身能力与耗尽它支付别处能力之间取舍；Rapid Burrowing与Brood Instinct没有可由任意卡代付的1 BM费用。",
+              "回合内计划多次使用BM能力",
+              "需在耗尽战术卡产生BM与保留其Ready使用自身能力间选择"
+            ],
+            "procedure": [
+              "评估当前战局并先区分使用方式：支付单位卡实际列明的BM费用，需要保留足够的合格Ready资源卡；使用Rapid Burrowing则需要Zerg Swarm阵营卡本身Ready，并满足其Movement Phase及目标条件，不能耗尽另一张卡代替。",
+              "比较卡牌能力价值：若某战术卡的能力（如Lair的Predation使近战武器获得INSTANT）在当回合可能使用，保留其Ready；否则可耗尽产生BM。",
+              "优先耗尽能力价值较低的卡牌：如仅提供槽位而无强能力的卡（如Hydralisk Den的Missile Attacks仅使首个远程武器获得PRECISION (1)），或本回合确定不使用的卡。",
+              "保留能力强的卡：如Lair（Predation）、Evolution Chamber（Extended Claws +1 IMPACT修正、Carapace TOUGH (1)）、Hatchery（Creep Spread）等，其能力可能改变战局。",
+              "注意耗尽阵营卡（Zerg Swarm）产生1 BM后，该卡本回合Exhausted，无法再次耗尽；若需第二点BM，必须耗尽另一张Ready Zerg战术卡。",
+              "规划回合内BM使用顺序：若需多次使用BM能力，确保有足够Ready卡；耗尽产生资源与使用卡牌能力互斥，且多余BM立即丢失，不能保存。"
+            ],
+            "alternatives": [
+              "若当回合无需使用某些卡牌的自身能力，可把这些卡保留为Ready，计划在各次能力实际支付时分别耗尽，并按卡面资源值匹配当前这一次费用；不要提前耗尽来储存BM。超过本次费用的资源立即丢失，不能保留或转用于另一次能力。",
+              "若某战术卡能力价值极高（如Lair的Predation在近战阶段前使用），即使需要BM，也应保留该卡Ready，转而耗尽其他卡或放弃非关键单位能力。",
+              "Rapid Burrowing与Brood Instinct是Zerg Swarm阵营卡自身的能力，使用其中一项需要耗尽这张Ready阵营卡；两者并非各有可由任意卡支付的1 BM费用。若预计稍后需要Brood Instinct，须权衡现在使用Rapid Burrowing的收益与保留该阵营卡Ready的价值；耗尽其他卡产生BM不能代替已耗尽阵营卡使用自身能力。",
+              "若军队包含多个Queen，其Transfusion（反应，1 BM）和Restoration（反应，1 BM）可能在同一敌方激活中竞争唯一反应名额，需预先决定保留哪张卡Ready以支付。"
+            ],
+            "risk": "耗尽过多卡牌产生BM可能导致关键战术卡能力（如Evolution Chamber的Carapace提供TOUGH (1)）在当回合无法使用，降低防御或输出能力；若耗尽后BM未使用完，多余部分立即丢失，造成资源浪费。",
+            "reviseIf": [
+              "若预计对手将攻击需要闪避保护的高价值单位，考虑保留Zerg Swarm阵营卡本身Ready以使用Brood Instinct；若该卡已耗尽，其他Ready卡产生的BM不能使Brood Instinct重新可用，须等待适用的Refresh。",
+              "若己方近战单位即将进入战斗阶段，保留Lair Ready以使用Predation（INSTANT），而非耗尽产生BM",
+              "若回合内BM能力使用次数减少（如关键单位被摧毁），停止耗尽额外卡牌，保留其能力供后续回合使用"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "source:tactical_cards:evolution_chamber",
+              "source:tactical_cards:hatchery",
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:lair",
+              "source:tactical_cards:overlord",
+              "source:tactical_cards:overseer",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0"
+            ],
+            "unproven": [
+              "不同卡牌能力价值的主观排序在实战中的最优性未经测试",
+              "耗尽策略对回合内资源可用性的影响需在具体对战中验证"
+            ]
+          },
+          {
+            "title": "Zerg Swarm无Hero槽时部署Kerrigan的槽位与瓦斯方案",
+            "when": [
+              "选择Zerg Swarm阵营卡（起始3 Core/1 Elite/1 Support，无Air/Hero槽）",
+              "军队计划包含Kerrigan（1模型，Supply 1，占1 Hero槽）",
+              "需在200瓦斯预算内决定购买哪些战术卡以解锁Hero槽"
+            ],
+            "procedure": [
+              "确认Zerg Swarm起始无Hero槽，Kerrigan（1 Hero槽）无法直接部署。",
+              "购买Overlord（35瓦斯，+1 Core/+1 Elite/+1 Hero，Unique）——当前产品数据中唯一提供Hero槽的Zerg战术卡。",
+              "确认Lair（35瓦斯，+1 Core/+1 Elite）不提供Hero槽，不能替代Overlord用于部署Kerrigan。",
+              "若同时需小编制Hydralisk（占2 Elite），起始1 Elite加Overlord的1 Elite共2 Elite恰好容纳，无剩余Elite。",
+              "若需保留Elite余量，可再加Lair（共70瓦斯）提供1 Elite余量；原需求不要求备用Elite时不必加购。",
+              "当前Zerg产品数据无Air槽位单位（无Flying Combat Tag的Zerg单位），故无Air槽解锁需求。"
+            ],
+            "alternatives": [
+              "若放弃Kerrigan，仅需小编制Hydralisk时，Lair或Overlord均花35瓦斯、剩余0 Elite，无更便宜选项；按所需附带槽位（Core或Hero）选择。",
+              "若需额外Core槽部署更多Zergling，Overlord（+1 Core）与Lair（+1 Core）均提供，但Overlord额外含Hero槽。",
+              "若预算紧张且不部署Kerrigan，可不购买Hero解锁卡，将瓦斯用于其他战术卡。",
+              "若需备用Elite槽容纳其他Elite单位，Overlord加Lair（70瓦斯）提供1 Elite余量，但占用预算较大。"
+            ],
+            "risk": "Overlord为Unique卡，每军队限一份；其35瓦斯成本若仅用于解锁Hero槽而Kerrigan未部署或早期被摧毁，投资回报降低。Ventral Sacs能力（回合末部署）与Zone of Influence、敌方Engagement Range的交互需按FAQ v1:24确认，误用可能浪费激活。",
+            "reviseIf": [
+              "若军队不包含Kerrigan或其他Hero单位，取消Overlord购买，将35瓦斯用于其他战术卡",
+              "若需同时容纳Kerrigan与小编制Hydralisk且保留Elite余量，加购Lair（共70瓦斯）",
+              "若未来产品更新引入Zerg Air单位，重新评估Air槽解锁需求"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "source:tactical_cards:overlord",
+              "source:tactical_cards:lair",
+              "source:army_units:kerrigan",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4"
+            ],
+            "unproven": [
+              "Overlord作为唯一Hero槽来源在实战中的部署时机与Ventral Sacs回合末部署的实际收益未经对战检验",
+              "Kerrigan在Zerg Swarm军队中的整体胜率贡献需实际对局验证"
+            ]
+          },
+          {
+            "title": "第1回合补给池下Hydralisk Den解锁与Hydralisk部署可行性",
+            "when": [
+              "购买Hydralisk Den（35瓦斯，+2 Elite槽）以部署小编制Hydralisk（2模型，Supply 2）",
+              "任务卡第1回合补给池为6（如Standard Frontlines/Hold Position/Gather the Resources）",
+              "需判断Hydralisk是否能在第1回合部署及该投资是否值得"
+            ],
+            "procedure": [
+              "确认小编制Hydralisk起始Supply为2，占2 Elite槽；Hydralisk Den提供2 Elite槽，起始1 Elite加2 Elite共3 Elite，可容纳。",
+              "计算第1回合可用补给：可用补给=补给池（6）−战场上友方单位总当前补给。",
+              "若第1回合尚未部署其他单位，可用补给为6，Hydralisk（Supply 2）不超过可用补给，可部署。",
+              "若第1回合已部署其他单位占用补给（如Zergling Supply 1、Roach Supply 1），可用补给降至4或更低，Hydralisk仍可部署（需可用≥2）。",
+              "若已部署单位总补给超过4（可用补给<2），Hydralisk无法在第1回合部署，需待补给池增长或单位被摧毁释放补给。",
+              "补给紧张时，先部署Supply 1单位（如Zergling/Roach）争夺标记，待补给池增长后再部署Hydralisk。"
+            ],
+            "alternatives": [
+              "战前写军表时，若任务起始补给较低，应重新比较Hydralisk与低Supply单位的开局部署顺序，并在Army Building完成所选战术卡的购买。进入对局后军表已定；若当前可用补给不足2，可先部署已编入军表的Supply 1单位，延后已编入军表的Hydralisk部署，不能等补给增长再购买Hydralisk Den。",
+              "若军队以近战为主，可用Spawning Pool（25瓦斯，+1 Core）解锁Supply 1单位槽位，成本更低但无Hydralisk远程火力。",
+              "若需Hydralisk远程火力但补给紧张，可先部署其他单位，第2回合补给池增长后再部署Hydralisk。",
+              "若对手军队以大量低HP单位为主，Hydralisk的DMG 2价值降低，可转向Raptor或Zergling等近战单位。"
+            ],
+            "risk": "Hydralisk Den（35瓦斯）若第1回合可用补给不足导致Hydralisk无法部署，该投资在早期回合无战场效果；Hydralisk Supply 2占用较大补给比例，可能限制其他单位部署。",
+            "reviseIf": [
+              "战前写军表时，若任务起始补给较低，应重新比较Hydralisk与低Supply单位的开局部署顺序，并在Army Building完成所选战术卡的购买。进入对局后军表已定；若当前可用补给不足2，可先部署已编入军表的Supply 1单位，延后已编入军表的Hydralisk部署，不能等补给增长再购买Hydralisk Den。",
+              "若第1回合已部署单位占用补给致可用<2，停止部署Hydralisk，待补给池增长",
+              "若对手军队以大量低HP单位为主，Hydralisk的DMG 2价值降低，转向近战单位"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:hydralisk_den",
+              "source:army_units:hydralisk",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.0",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.4"
+            ],
+            "unproven": [
+              "Hydralisk Den投资在第1回合部署Hydralisk的实际战场收益需按具体任务与对手军队验证",
+              "不同任务卡起始补给与补给升级下Hydralisk部署时机的优劣需实际对战检验"
+            ]
+          },
+          {
+            "title": "Zerg Swarm Biomass 来源规划：耗尽阵营卡后的后续 BM 支付",
+            "when": [
+              "已选择Zerg Swarm阵营卡，且该卡已为自身能力或为别处实际列明的BM费用而耗尽；例如使用Rapid Burrowing耗尽的是这张卡本身，不是支付卡面另列的1 BM费用。",
+              "计划在同一回合内支付另一项实际列明BM费用的能力，或需要判断Brood Instinct是否仍可用；必须分别检查资源卡与Zerg Swarm阵营卡本身的Ready状态。",
+              "需要确认耗尽后的卡牌状态及后续 BM 的合法来源"
+            ],
+            "procedure": [
+              "确认 Zerg Swarm 阵营卡被耗尽后，其状态为 Exhausted（面朝下），在 Phase 4 Cleanup & Refresh 前无法再次被耗尽以产生资源或使用其能力。",
+              "若需支付后续的 BM 能力费用，必须耗尽另一张符合条件的、处于 Ready 状态的 Zerg 战术卡（如 Evolution Chamber、Hatchery、Hydralisk Den、Lair、Overlord、Overseer、Roach Warren、Spawning Pool 等，各产生 1 BM；Spawning Pool (Six Pool) 产生 2 BM）。",
+              "在回合开始时规划 BM 来源：若计划多次使用 BM 能力，确保有足够数量的 Ready 战术卡可供耗尽，避免因卡牌不足而无法支付关键能力。",
+              "权衡耗尽卡牌与保留其 Ready 状态：若某战术卡的能力（如 Lair 的 Predation）在当回合可能使用，优先保留其 Ready，转而耗尽其他能力价值较低的卡牌。",
+              "注意：耗尽卡牌产生资源与使用该卡自身能力互斥；耗尽产生的多余 BM 立即丢失，不能保存或转用于其他能力。"
+            ],
+            "alternatives": [
+              "Rapid Burrowing与Brood Instinct是Zerg Swarm阵营卡自身的能力，使用其中一项需要耗尽这张Ready阵营卡；两者并非各有可由任意卡支付的1 BM费用。若预计稍后需要Brood Instinct，须权衡现在使用Rapid Burrowing的收益与保留该阵营卡Ready的价值；耗尽其他卡产生BM不能代替已耗尽阵营卡使用自身能力。",
+              "若某战术卡能力价值极高（如 Lair 的 Predation 在近战阶段前使用），即使需要 BM，也应保留该卡 Ready，转而耗尽其他卡或放弃非关键单位能力。",
+              "若军队包含多个 Queen，其 Transfusion（反应，1 BM）和 Restoration（反应，1 BM）可能在同一敌方激活中竞争唯一反应名额，需预先决定保留哪张卡 Ready 以支付。"
+            ],
+            "risk": "未预留足够合格Ready资源卡，会使后续实际列明BM费用的能力无法支付；另一个独立风险是Zerg Swarm阵营卡已耗尽后，Brood Instinct无法使用，即使还有其他Ready卡也不能代付恢复。耗尽卡牌前应分别比较这两种机会成本。",
+            "reviseIf": [
+              "若预计对手将攻击需要闪避保护的高价值单位，考虑保留Zerg Swarm阵营卡本身Ready以使用Brood Instinct；若该卡已耗尽，其他Ready卡产生的BM不能使Brood Instinct重新可用，须等待适用的Refresh。",
+              "若己方近战单位即将进入战斗阶段，保留 Lair Ready 以使用 Predation（INSTANT），而非耗尽产生 BM",
+              "若回合内 BM 能力使用次数减少（如关键单位被摧毁），停止耗尽额外卡牌，保留其能力供后续回合使用"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+              "source:tactical_cards:evolution_chamber",
+              "source:tactical_cards:hatchery",
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:lair",
+              "source:tactical_cards:overlord"
+            ],
+            "unproven": [
+              "不同卡牌能力价值的主观排序在实战中的最优性未经测试",
+              "耗尽策略对回合内资源可用性的影响需在具体对战中验证"
+            ]
+          },
+          {
+            "title": "Zerg Swarm 同时部署 Kerrigan 与小编制 Hydralisk 的槽位方案",
+            "when": [
+              "选择 Zerg Swarm 阵营卡（起始 3 Core/1 Elite/1 Support，无 Air/Hero 槽）",
+              "军队计划同时包含 Kerrigan（1 模型，Supply 1，占 1 Hero 槽）与小编制 Hydralisk（2 模型，Supply 2，占 2 Elite 槽）",
+              "需在 200 瓦斯预算内决定购买哪些战术卡以解锁所需槽位"
+            ],
+            "procedure": [
+              "确认 Zerg Swarm 起始无 Hero 槽，Kerrigan 无法直接部署；起始 1 Elite 槽不足以容纳小编制 Hydralisk（占 2 Elite）。",
+              "购买 Overlord（35 瓦斯，+1 Core/+1 Elite/+1 Hero，Unique）——当前产品数据中唯一提供 Hero 槽的 Zerg 战术卡。",
+              "计算槽位：起始 1 Elite 加 Overlord 的 1 Elite 共 2 Elite，恰好容纳小编制 Hydralisk；Overlord 的 1 Hero 槽容纳 Kerrigan。此方案在所述槽位上已足够，无剩余 Elite。",
+              "确认 Lair（35 瓦斯，+1 Core/+1 Elite）不提供 Hero 槽，无法替代 Overlord 用于部署 Kerrigan。",
+              "若需保留 1 Elite 余量以容纳其他 Elite 单位，可加购 Lair（共 70 瓦斯）提供该余量；原需求不要求备用 Elite 时不必加购。",
+              "若放弃 Kerrigan，仅需小编制 Hydralisk 时，Lair 或 Overlord 均花 35 瓦斯、剩余 0 Elite，无更便宜选项；按所需附带槽位（Core 或 Hero）选择。"
+            ],
+            "alternatives": [
+              "若军队不包含 Kerrigan，可仅购买 Lair（35 瓦斯，+1 Elite/+1 Core）容纳小编制 Hydralisk，将瓦斯用于其他战术卡。",
+              "若需额外 Core 槽部署更多 Zergling，Overlord（+1 Core）与 Lair（+1 Core）均提供，但 Overlord 额外含 Hero 槽。",
+              "若预算紧张且不部署 Kerrigan，可不购买 Hero 解锁卡，将瓦斯用于其他战术卡。",
+              "若需备用 Elite 槽容纳其他 Elite 单位，Overlord 加 Lair（70 瓦斯）提供 1 Elite 余量，但占用预算较大。"
+            ],
+            "risk": "Overlord 为 Unique 卡，每军队限一份；其 35 瓦斯成本若仅用于解锁 Hero 槽而 Kerrigan 未部署或早期被摧毁，投资回报降低。Ventral Sacs 能力（回合末部署）与 Zone of Influence、敌方 Engagement Range 的交互需按 FAQ v1:24 确认，误用可能浪费激活。",
+            "reviseIf": [
+              "若军队不包含 Kerrigan 或其他 Hero 单位，取消 Overlord 购买，将 35 瓦斯用于其他战术卡",
+              "若需同时容纳 Kerrigan 与小编制 Hydralisk 且保留 Elite 余量，加购 Lair（共 70 瓦斯）",
+              "若未来产品更新引入 Zerg Air 单位，重新评估 Air 槽解锁需求"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:overlord",
+              "source:tactical_cards:lair",
+              "source:army_units:kerrigan",
+              "source:army_units:hydralisk",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+              "source:tactical_cards:zerg_swarm",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3"
+            ],
+            "unproven": [
+              "Overlord 作为唯一 Hero 槽来源在实战中的部署时机与 Ventral Sacs 回合末部署的实际收益未经对战检验",
+              "Kerrigan 在 Zerg Swarm 军队中的整体胜率贡献需实际对局验证"
+            ]
+          },
+          {
+            "title": "给定编军备选的机械核算：槽位、Unique 与瓦斯并列最小值",
+            "when": [
+              "已选择 Zerg Swarm，并需要在若干给定战术卡组合中判断哪些能容纳完整单位名单。",
+              "目标是先通过阵营、槽位、Unique 与资源检查，再在全部合法组合中找最低瓦斯；此处不比较卡牌能力或胜率。"
+            ],
+            "procedure": [
+              "逐类合计单位起始 Supply；每个单位占用其类型等于起始 Supply 的 Army Slots，再加总阵营卡与每张所购战术卡提供的槽位。每个备选必须独立从零计算。",
+              "只对明确带 Unique 标记的卡限制一份；Hydralisk Den 不带 Unique，可购买两份并把两张的 +2 Elite 分别计入。Overlord 与 Lair 带 Unique 时才各自限一份，不能把该限制扩展给其他卡。",
+              "先列出所有槽位与 Unique 检查通过的备选，再分别相加卡面瓦斯。Hydralisk Den、Lair、Overlord 各为 35；Overseer 为 25；Hatchery 为 30。",
+              "最低成本集合只保留瓦斯总和等于最小值的合法备选；若多个合法备选同价则全部保留。minimumVespene 必须与所列最低成本备选的真实总和一致，不能把 30 瓦斯的 Hatchery 与 25 瓦斯的 Overseer并列成最低。"
+            ],
+            "alternatives": [
+              "若目标改为比较能力价值、任务适配或对局胜率，完成上述合法性与成本核算后另开策略比较，不能用主观强度改变最低成本答案。",
+              "若卡面或官方规则版本改变槽位、费用或 Unique 标记，以新版本来源重新核算，不沿用旧结论。"
+            ],
+            "risk": "把“仅 Unique 卡限一份”误读成“所有战术卡限一份”，会错误排除重复非 Unique 卡；先报最低瓦斯再核对对应备选，也会产生集合与数值互相矛盾的结果。",
+            "reviseIf": [
+              "完整单位名单、编制大小或任一备选卡组合改变时，从单位槽位总需求开始重算。",
+              "目标不再是给定选项中的最低瓦斯，而是完整军表强度或任务适配时，切换到对应策略流程。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:lair",
+              "source:tactical_cards:overlord",
+              "source:tactical_cards:overseer",
+              "source:tactical_cards:hatchery",
+              "source:army_units:hydralisk",
+              "source:army_units:raptor__zergling_",
+              "source:army_units:queen",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4"
+            ],
+            "unproven": [
+              "最低瓦斯只证明给定组合的机械成本，不证明该组合在完整对局中更强。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.zerg_swarm.unit_roles.1",
+        "axis": "unit_roles",
+        "requiredSourceRefs": [
+          "source:army_units:corpser__roach_",
+          "source:army_units:hydralisk",
+          "source:army_units:kerrigan",
+          "source:army_units:queen",
+          "source:army_units:raptor__zergling_"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Zerg Swarm 起始槽位与瓦斯扩充：Hydralisk 或 Raptor 的 Elite 取舍",
+            "when": [
+              "选择 Zerg Swarm 阵营卡（3 Core、1 Elite、1 Support，无 Air/Hero），且计划在 Elite 槽位部署单位。",
+              "已确认小编制 Raptor（12 模型，Supply 1，占 1 Elite）可直接放入起始 1 Elite 槽位。",
+              "已确认小编制 Hydralisk（2 模型，Supply 2，占 2 Elite）超出起始 1 Elite 槽位，需额外战术卡解锁。",
+              "已确认 Vespene Gas 预算（Standard 2000 矿物为 200 瓦斯）需分配给战术卡，且未用槽位不能结转。"
+            ],
+            "procedure": [
+              "1. 若优先远程火力与单点目标压制：购买 Hydralisk Den（35 瓦斯，+2 Elite）或 Lair（35 瓦斯，+1 Elite/+1 Core），解锁第 2 个 Elite 槽位后部署小编制 Hydralisk。",
+              "2. 部署 Hydralisk 后，在突击阶段使用 Needle Spines（RoA 3、Range 12、Hit 3+、DMG 2、Surge Light/Armoured D3+1）作为主力远程输出，并利用其 Supply 2 争夺任务标记。",
+              "3. 若瓦斯有限或优先近战蜂群与机动：直接部署小编制 Raptor（12 模型，Supply 1）至起始 Elite 槽位，无需额外瓦斯。",
+              "4. 使用 Raptor 时，在突击阶段以 Claws（RoA 2、Hit 4+、DMG 1）配合 Devastating Charge（IMPACT 1 5+）冲锋，并利用 Speed 5/9 与 Raptor Strain（穿越 Size 4 以下不可通行地形、无需 ACCESS POINT 改变海拔）进行机动。",
+              "5. 若选择 Lair 而非 Hydralisk Den，额外获得 Predation（主动，任意阶段，使近战武器获得 INSTANT）与 Creep Spread（主动，移动阶段，放置 Creep Tumor），可与近战单位或 Creep 网络协同。"
+            ],
+            "alternatives": [
+              "若同时需要远程与近战能力且瓦斯充足：购买 Lair（35 瓦斯）解锁 1 Elite 并保留 1 Core 槽位，再以剩余 Core 槽位部署 Roach 或 Zergling，形成混合编成。",
+              "若需额外 Support 槽位或 Creep 扩展：购买 Hatchery（30 瓦斯，+1 Support）而非 Elite 卡，利用其 Creep Spread 维持 ON CREEP 状态，但会牺牲 Hydralisk 的远程火力。",
+              "若完全不投入 Elite 扩充：仅使用起始 1 Elite 槽位部署 Raptor，将瓦斯用于其他战术卡（如 Evolution Chamber 30 瓦斯 +1 Core，或 Spawning Pool 25 瓦斯 +1 Core）以扩充 Core 部队。"
+            ],
+            "risk": "购买 Hydralisk Den 或 Lair 消耗 35 瓦斯，可能挤占其他战术卡预算；Hydralisk 仅 2 模型，若被远程火力消灭会损失 Supply 2 的标记控制力。Raptor 虽模型多但 HP 1、Armour 6+，面对 Roach 等 Armour 3+ 目标破甲效率低（Claws Hit 4+ 对 Armour 3+ 仅 33% 成功率），冲锋失败会浪费整个激活。",
+            "reviseIf": [
+              "若对手大量部署 Armour 3+ 或更高护甲单位，Hydralisk 的 DMG 2 与 Surge 效率优于 Raptor，应优先解锁 Elite 槽位。",
+              "若对手依赖远程火力或模板武器，Raptor 的 12 模型易被范围伤害清除，应考虑 Hydralisk 或 Roach 的耐久性。",
+              "若任务要求快速争夺多个标记（如 Divide and Conquer 的 Quarter 计分），Raptor 的多模型分散能力可能优于 Hydralisk 的单点 Supply。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "source:army_units:hydralisk",
+              "source:army_units:raptor__zergling_",
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:lair",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3"
+            ],
+            "unproven": [
+              "Hydralisk 与 Raptor 在具体任务（如 Supply Drop 的激活标记计分）下的实际 VP 贡献未经验证，需按任务卡文本计算。",
+              "Lair 的 Predation（INSTANT）与 Raptor 近战武器的协同效果在实战中未验证，需测试反应窗口与频率限制。",
+              "Raptor 12 模型能否同时分散至多个标记 3 英寸内，取决于部署卡标记间距，来源未提供精确坐标。"
+            ]
+          },
+          {
+            "title": "Core 单位角色分工：Zergling 早期抢点与 Roach 防守线",
+            "when": [
+              "选择 Zerg Swarm 阵营卡，且起始 3 Core 槽位需分配 Zergling（12 模型，Supply 1，1 Core）或 Roach（3 模型，Supply 1，1 Core）。",
+              "已确认任务标记控制由 Current Supply Value 决定，而非模型数量，两者均贡献 Supply 1。",
+              "已确认 Zergling 特性：Armour 6+、Evade 4+、HP 1、Speed 4/8、Claws（RoA 2、Hit 4+、DMG 1）。",
+              "已确认 Roach 特性：Armour 3+、Evade 5+、HP 4、Speed 4/7、Acid Saliva（RoA 3、Hit 3+、Range 8、DMG 1）。"
+            ],
+            "procedure": [
+              "1. 若需早期战场存在、冲锋或铺开争夺多个位置：部署 Zergling，利用 Speed 4/8 与高模型数在移动阶段快速推进，并在突击阶段以 Charge 或 Run 占据关键地形。",
+              "2. 使用 Zergling 时，在突击阶段以 Metabolic Boost（主动，1 BM，掷 2D6 取高值加至 Charge 距离）扩大冲锋范围，并以 Devastating Charge（IMPACT 1 5+）造成额外伤害。",
+              "3. 若需防守线或远程支援：部署 Roach，利用 Armour 3+ 与 HP 4 承受火力，并在突击阶段以 Acid Saliva（RoA 3、Hit 3+、Range 8）从安全距离射击。",
+              "4. 使用 Roach 时，在移动阶段可激活 Burrow（主动，2 BM，若未接战则获得/失去 Burrowed 状态）以规避远程攻击，并在激活时触发 Regeneration（HEAL 2）。",
+              "5. 在计分阶段（Phase 4），将任一单位置于标记 3 英寸内且保持 Coherency，以 Supply 1 参与控制判定；注意 Burrowed 单位不能争夺标记。"
+            ],
+            "alternatives": [
+              "若对手依赖近战冲锋：Zergling 的 Evade 4+ 与高模型数可承受伤亡并维持标记控制，优于 Roach 的单一模型。",
+              "若对手依赖远程火力：Roach 的 Armour 3+ 与 HP 4 更耐久，且 Acid Saliva 可在不接战的情况下输出，优于 Zergling 的脆弱性。",
+              "若需对抗 Armour 3+ 目标：为 Zergling 购买 Shredding Claws 升级（10 矿物，Claws 获得 Surge Light/Armoured D3），提升破甲效率，否则 Roach 的远程输出更可靠。"
+            ],
+            "risk": "Zergling 的 HP 1 与 Armour 6+ 使其极易被清除，面对 Roach 的 Acid Saliva（Hit 3+）或模板武器时可能快速减员，导致 Supply 降至 0 并失去标记控制力。Roach 仅 3 模型，若被集中火力消灭会损失整个 Core 槽位的投入。Zergling 的 Claws 对 Armour 3+ 目标破甲效率低（Hit 4+ 后 Armour 3+ 仅 33% 成功率），冲锋可能造成低效交换。",
+            "reviseIf": [
+              "若对手部署大量 Armour 3+ 或更高护甲单位，Roach 的远程输出与耐久性优于 Zergling，应优先部署 Roach。",
+              "若任务要求快速争夺多个标记或早期压制，Zergling 的 Speed 4/8 与高模型数更适合铺开，应优先部署 Zergling。",
+              "若对手依赖模板武器或范围伤害，Zergling 的密集模型易被清除，应考虑 Roach 或分散部署。"
+            ],
+            "sourceRefs": [
+              "source:army_units:zergling",
+              "source:army_units:roach",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0"
+            ],
+            "unproven": [
+              "Zergling 与 Roach 在具体任务（如 Frontlines 的标记控制计分）下的实际 VP 贡献未经验证，需按任务卡文本计算。",
+              "Zergling 的 Metabolic Boost 与 Devastating Charge 在实战中的冲锋成功率未验证，取决于骰运与敌方单位位置。",
+              "Roach 的 Burrow 与 Regeneration 在对抗远程火力时的实际生存提升未经验证，需测试敌方攻击频率与伤害输出。"
+            ]
+          },
+          {
+            "title": "Zerg Swarm 的 Queen 定位：唯一 Support 槽位的力场倍增器与生存权衡",
+            "when": [
+              "选择 Zerg Swarm 阵营卡（起始 1 Support 槽位），且计划在该槽位部署 Queen（1 模型，Supply 1）。",
+              "已确认 Queen 特性：Armour 4+、Evade 为 '-'（无法进行闪避掷骰）、HP 9、Size 3、Speed 4。",
+              "已确认 Queen 能力：Transfusion（反应，1 BM，4英寸内友方生物单位受伤时总伤害减 2）、Restoration（反应，1 BM，移除 4 英寸内友方单位的 DEBUFF）、Spawn Creep Tumor（主动，1 BM，任意阶段，与自身 Base-to-Base 放置 Creep Tumor）。",
+              "已确认 ON CREEP 状态：友方或敌方地面 Zerg 单位处于任一 Creep Tumor Token 或 Creep 来源 6 英寸内即视为 ON CREEP。",
+              "已确认 Queen 的 Creep Speed 升级（10 矿物）：ON CREEP 时 Speed 特性 +2。"
+            ],
+            "procedure": [
+              "1. 将 Queen 部署至起始 1 Support 槽位，作为力场倍增器而非直接伤害输出或标记争夺者（其 Supply 1 仅与低补给单位相当）。",
+              "2. 在移动阶段，若需维持前线生存，将 Queen 置于距需要 Transfusion 的友方生物单位（如 Roach、Corpser）4 英寸内，但优先选择有掩护或处于敌方视线外的位置。",
+              "3. 在敌方突击阶段，当 4 英寸内友方生物单位受到伤害时，声明 Transfusion（反应，1 BM）将总伤害减 2；注意每玩家每次激活仅限一个反应，需与其他反应（如 Brood Instinct）取舍。",
+              "4. 若友方单位被施加 DEBUFF，使用 Restoration（反应，1 BM）移除之；同样受每次激活一个反应限制。",
+              "5. 在移动阶段或任意阶段，使用 Spawn Creep Tumor（主动，1 BM）在 Queen 旁放置 Creep Tumor，为友方地面 Zerg 单位提供 ON CREEP 状态，触发 Creep Speed（+2 Speed）或 Accelerating Creep 的 Speed on Creep（+1 Speed）。",
+              "6. 若 Queen 处于 ON CREEP，其 Speed 提升至 6（基础 4 + Creep Speed 2），可更灵活地 reposition 以维持 4 英寸治疗范围。"
+            ],
+            "alternatives": [
+              "若前线压力大且 Queen 暴露风险高：将 Queen 保持在后方掩护后，接受其 Transfusion 范围（4 英寸）可能无法覆盖最前线单位，优先保证 Queen 生存以持续提供治疗。",
+              "若需额外 Support 槽位或多个 Queen：购买 Hatchery（30 瓦斯，+1 Support），其 Creep Spread（主动，移动阶段）可在友方 Entry Edge 或现有 Creep Tumor 6 英寸内放置 Creep Tumor，帮助维持 ON CREEP 状态。",
+              "若 Queen 的生存成为首要问题且无法保持掩护：可考虑以 Burrow（若通过其他来源获得）保护，但注意 Burrowed 单位不能争夺或控制任务标记，且 Queen 自身无 Burrow 能力（需 Roach Warren 的 Lie in Wait 或 Zerg Swarm 的 Rapid Burrowing）。",
+              "若不需要治疗或 Creep 扩展：可将 Support 槽位让给其他单位或保留，将矿物/瓦斯投入 Core 或 Elite 单位（如 Roach、Hydralisk）以增强直接战斗力。"
+            ],
+            "risk": "Queen 的 Evade 特性为 '-'，即使被授予闪避检定也无法进行，使其极易受远程攻击伤害。若 Queen 被部署在前线以维持 4 英寸治疗范围，可能被敌方远程火力快速消灭，损失整个 Support 槽位的投入。Transfusion 与 Restoration 均为反应能力，受每玩家每次激活一个反应限制，若同一激活中其他反应已使用则无法触发。Queen 的 Supply 1 在标记争夺中贡献有限，若被消灭会释放补给但失去力场倍增能力。",
+            "reviseIf": [
+              "若对手部署大量远程火力单位（如 Hydralisk、Goliath），Queen 暴露风险过高，应将其保持在掩护后或视线外，接受治疗范围缩减。",
+              "若友方单位频繁受到 DEBUFF 或需要持续治疗，优先保留 Queen 的 BM 以使用 Transfusion/Restoration，而非耗尽卡牌支付其他能力。",
+              "若任务要求 Queen 参与标记争夺（如 Frontlines），需权衡 Burrow 或后撤带来的生存提升与失去标记控制资格的代价。",
+              "若 Creep 网络被对手频繁清除（敌方单位以移动动作结束于 Creep Tumor 1 英寸内），依赖 ON CREEP 的速度加成可能不稳定，应考虑减少对 Creep 的依赖。"
+            ],
+            "sourceRefs": [
+              "source:army_units:queen",
+              "source:tactical_cards:hatchery",
+              "source:tactical_cards:zerg_swarm",
+              "source:tactical_cards:accelerating_creep",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.1",
+              "core.u3zNStKpd5XegMjmJfMS.items.1",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3"
+            ],
+            "unproven": [
+              "Queen 在具体任务（如 Divide and Conquer 的 Quarter 计分）下的实际 VP 贡献未经验证，需按任务卡文本计算。",
+              "Transfusion 与 Brood Instinct 在同一激活中的反应取舍效果未在实战中验证，取决于敌方攻击顺序与己方单位价值。",
+              "Queen 的 Creep Speed 升级（+2 Speed）与 Accelerating Creep 的 Speed on Creep（+1 Speed）叠加后的实际机动性提升未经验证，需测试 Creep 网络的稳定性。",
+              "Queen 在无 Evade 特性下的生存能力取决于具体战场地形与敌方火力分配，未在来源中提供量化数据。"
+            ]
+          },
+          {
+            "title": "Zergling 对 Roach 的近战效率评估：控图优于杀甲",
+            "when": [
+              "选择 Zerg Swarm 阵营卡，且考虑以 Zergling 单位（12 模型，Supply 1，1 Core）冲锋 Roach 单位（3 模型，Supply 1，1 Core）。",
+              "已确认 Zergling 特性：Armour 6+、Evade 4+、HP 1、Speed 4/8、Claws（RoA 2、Hit 4+、DMG 1、Surge Light D3）。",
+              "已确认 Roach 特性：Armour 3+、Evade 5+、HP 4、Speed 4/7、Acid Saliva（RoA 3、Hit 3+、Range 8、DMG 1）。",
+              "已确认冲锋规则：未接战地面单位可冲锋，掷 1D6 加 Speed 作为冲锋距离；成功需 Leading Model 结束于所有声明目标 1 英寸内。",
+              "已确认战斗阶段规则：仅 Fighting Rank（距敌方 1 英寸内）与 Supporting Rank（与 Fighting Rank 友方 Base-to-Base）的模型可攻击。"
+            ],
+            "procedure": [
+              "1. 评估是否以 Zergling 冲锋 Roach：计算预期伤害。Zergling Claws 命中率 50%（Hit 4+），Roach Armour 3+ 使 2/3 命中被格挡，故每次攻击仅约 16.7% 造成 1 伤害。",
+              "2. 若决定冲锋，在突击阶段声明 Roach 为目标（无需视线），使用 Metabolic Boost（主动，1 BM，掷 2D6 取高值加至 Charge 距离）扩大冲锋范围。",
+              "3. 冲锋成功后，尽可能将 Leading Model 与 Roach Base-to-Base，其余模型按 Coherency 放置，优先 Base-to-Base 接触。",
+              "4. 在战斗阶段，仅计算处于 Fighting Rank 或 Supporting Rank 的 Zergling 模型的攻击骰；12 模型中实际能攻击的数量受限于 Roach 单位周围空间与模型底座尺寸。",
+              "5. 若冲锋失败或预期伤害不足，考虑以 Run 行动 reposition 或改用 Roach 的远程 Acid Saliva（RoA 3、Hit 3+、Range 8）从安全距离射击 Zergling。",
+              "6. 若需对抗 Armour 3+ 目标，为 Zergling 购买 Shredding Claws 升级（10 矿物，Claws 获得 Surge Light/Armoured D3），提升对 Armoured 目标的伤害效率。"
+            ],
+            "alternatives": [
+              "若目标是消灭 Roach 而非控图：以己方 Roach 的 Acid Saliva（RoA 3、Hit 3+、DMG 1）远程射击更高效，因无需承受冲锋风险且可先手削弱。",
+              "若目标是控制任务标记或铺开战场：Zergling 的 12 模型可分散至多个标记 3 英寸内，以 Supply 1 参与多点争夺，优于 Roach 的单点集中。",
+              "若对手 Roach 已接战其他单位：Zergling 可冲锋支援，利用多模型包围增加 Fighting Rank 数量，但需注意接战单位伤亡优先级规则。",
+              "若瓦斯/矿物有限：优先部署 Roach 作为耐久 Core 单位，而非投资 Zergling 的 Shredding Claws 升级，因 Roach 的远程输出更稳定。"
+            ],
+            "risk": "Zergling 对 Roach 的破甲效率极低（每次攻击约 16.7% 造成伤害），12 模型冲锋可能造成低效交换，损失大量 HP 1 模型。冲锋失败会浪费整个激活，且 Zergling 的 Armour 6+ 与 HP 1 使其在 Roach 的 Acid Saliva（Hit 3+）下快速减员。若 Zergling 单位减至 6 模型以下，其 Supply 降至 0，失去标记控制力。",
+            "reviseIf": [
+              "若对手 Roach 数量多或 Armour 3+ 单位密集，Zergling 的冲锋效率过低，应优先部署己方 Roach 或 Hydralisk 以远程削弱。",
+              "若任务要求快速争夺多个标记或早期压制，Zergling 的 Speed 4/8 与高模型数更适合铺开，即使对 Roach 破甲效率低也应部署。",
+              "若对手依赖模板武器或范围伤害，Zergling 的密集模型易被清除，应考虑 Roach 或分散部署。",
+              "若已购买 Shredding Claws 升级，Zergling 对 Armoured 目标的伤害提升（Surge Light/Armoured D3）可能使冲锋更可行，需重新评估。"
+            ],
+            "sourceRefs": [
+              "source:army_units:zergling",
+              "source:army_units:roach",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0"
+            ],
+            "unproven": [
+              "实际能进入 Fighting Rank 的 Zergling 模型数量取决于 Roach 单位周围空间与底座尺寸，来源未提供精确几何数据。",
+              "Zergling 与 Roach 的交换效率是概率性的，基于期望值而非保证结果，实际骰运可能显著偏离。",
+              "Shredding Claws 升级对 Armour 3+ 目标的实际伤害提升未经验证，需测试 Surge 触发频率与伤害分配。",
+              "Zergling 在具体任务（如 Supply Drop 的激活标记计分）下的实际 VP 贡献未经验证，需按任务卡文本计算。"
+            ]
+          },
+          {
+            "title": "任务目标争夺：Gather the Resources 中 Hydralisk 单点压制与 Raptor 多点铺开的取舍",
+            "when": [
+              "选择 Zerg Swarm 阵营卡，且任务为 Gather the Resources（标准或小规模），该任务从第 2 回合起，每控制一个与对手颜色关联的任务标记获得 2 VP。",
+              "已确认任务标记控制由争夺单位的 Current Supply Value 总和决定，而非模型数量；控制具有粘性，平局不转移控制。",
+              "已确认小编制 Hydralisk（2 模型，Supply 2，占 2 Elite）需额外战术卡解锁第 2 个 Elite 槽位；小编制 Raptor（12 模型，Supply 1，占 1 Elite）可直接放入起始 1 Elite 槽位。",
+              "已确认 Hydralisk 的 Needle Spines（RoA 3、Range 12、Hit 3+、DMG 2）与 Raptor 的 Claws（RoA 2、Hit 4+、DMG 1）及 Devastating Charge（IMPACT 1 5+）特性。"
+            ],
+            "procedure": [
+              "1. 若优先确保单个关键标记（如对手颜色标记）的控制：购买 Hydralisk Den（35 瓦斯，+2 Elite）或 Lair（35 瓦斯，+1 Elite/+1 Core）解锁槽位，部署小编制 Hydralisk。",
+              "2. 将 Hydralisk 部署至目标标记 3 英寸内且保持 Coherency，利用其 Supply 2 在计分阶段压制对手的 Supply 1 单位（如 Raptor、Zergling）。",
+              "3. 在突击阶段，以 Hydralisk 的 Needle Spines（RoA 3、Range 12、DMG 2）远程射击试图争夺该标记的敌方单位，削弱其模型数以降低其 Supply。",
+              "4. 若优先多点铺开或早期压制：直接部署小编制 Raptor（12 模型，Supply 1）至起始 Elite 槽位，无需额外瓦斯。",
+              "5. 将 Raptor 的 12 个模型分散至多个标记 3 英寸内（每个模型可分别满足不同标记的争夺条件），以 Supply 1 参与多点争夺，并利用其机动性（Speed 5/9、Raptor Strain）在标记间转移。",
+              "6. 在计分阶段前，确认争夺单位未被 Burrow、未处于 Out of Coherency，且至少一个模型对标记有 LoS 并在同一海拔，否则不能争夺。"
+            ],
+            "alternatives": [
+              "若同时需要单点压制与多点铺开且瓦斯充足：购买 Lair（35 瓦斯）解锁 1 Elite 并保留 1 Core，部署 Hydralisk 后以剩余 Core 槽位部署 Zergling 或 Roach 分散至其他标记。",
+              "若对手以高 Supply 单位（如 Supply 2 的 Hydralisk）驻守关键标记：Raptor 的 Supply 1 无法在单点胜出，可比较已编入军表单位的部署与集结方案，但双方合格争夺单位须按当前 Supply 求和；若敌方总和为 2，我方两个 Supply 1 单位合计也是 2，只会形成平局，控制权不变，不能据此夺走敌方已控制的标记；转移控制权须在适用计分时机使我方总和严格高于敌方。",
+              "若任务为小规模（Skirmish）且瓦斯预算有限：Raptor 无需额外瓦斯即可上场，可将瓦斯用于其他战术卡（如 Spawning Pool 25 瓦斯 +1 Core）扩充 Core 部队。",
+              "若对手依赖远程火力清除标记驻守单位：Hydralisk 的 2 模型易被消灭，Raptor 的 12 模型可承受更多伤亡并维持 Supply 1 更久，但需注意模型数降至 6 或以下时 Supply 降为 0（1–6 模型为 Supply 0，7–12 模型为 Supply 1）。"
+            ],
+            "risk": "Hydralisk 仅 2 模型，若被敌方远程火力（如 Roach 的 Acid Saliva）消灭，会损失 Supply 2 的标记控制力并释放补给。Raptor 虽模型多但 HP 1、Armour 6+，面对模板武器或范围伤害时可能快速减员，Supply 降至 0 后对争夺总和的贡献为 0，但不能仅据此判定失去争夺资格；满足标记争夺条件且没有敌方单位争夺时，Supply 0 单位仍可控制标记。购买 Hydralisk Den 或 Lair 消耗 35 瓦斯，可能挤占其他战术卡预算。",
+            "reviseIf": [
+              "若对手大量部署高 Supply 单位驻守标记，Hydralisk 的单点 Supply 2 可能不足以胜出，需联合其他单位或考虑多点铺开。",
+              "若任务要求快速控制多个标记（如 Gather the Resources 中多个对手颜色标记），Raptor 的多模型分散能力可能优于 Hydralisk 的单点集中。",
+              "若对手依赖模板武器或范围伤害，Raptor 的密集模型易被清除，应考虑 Hydralisk 或分散部署。",
+              "若瓦斯预算紧张且需保留资源购买其他战术卡，Raptor 的零瓦斯成本更具吸引力。"
+            ],
+            "sourceRefs": [
+              "source:army_units:hydralisk",
+              "source:army_units:raptor__zergling_",
+              "source:faction_cards:mission_gather_the_resources",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:lair",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3"
+            ],
+            "unproven": [
+              "Raptor 的 12 个模型能否同时分散至多个标记 3 英寸内，取决于部署卡上标记的间距，来源未提供精确坐标。",
+              "Hydralisk 与 Raptor 在 Gather the Resources 任务中的实际 VP 贡献未经验证，需按任务卡文本与具体战局计算。",
+              "Hydralisk 的远程火力在防守标记时的实际效果取决于敌方单位位置与骰运，未在来源中提供量化数据。"
+            ]
+          },
+          {
+            "title": "Corpser (Roach) 作为 Core 耐久选项与 Kerrigan 的 Hero 槽位取舍",
+            "when": [
+              "选择 Zerg Swarm 阵营卡（起始 3 Core、1 Elite、1 Support，无 Hero 槽位），且考虑部署 Corpser (Roach) 或 Kerrigan。",
+              "已确认 Corpser (Roach)（3 模型，Supply 1，占 1 Core）特性：Armour 3+、Evade 5+、HP 4、Speed 4/7、Acid Saliva（RoA 2、Hit 3+、Range 8、DMG 1）。",
+              "已确认 Kerrigan（1 模型，Supply 1，占 1 Hero）特性：Armour 5+、Evade 6+、HP 9、Speed 7，且其 Commander 被动使 Supply 在控制/争夺标记、完成任务与 Disengage 检定时视为 +1。",
+              "已确认 Zerg Swarm 起始无 Hero 槽位，需购买 Overlord（35 瓦斯，+1 Core/+1 Elite/+1 Hero）等卡解锁。",
+              "已确认 Corpser 的 Burrow（主动，2 BM，若未接战则获得/失去 Burrowed 状态）与 Regeneration（被动，Assault Phase 中该单位变为 Activated 时，若已有 Burrowed 状态则 HEAL 2）能力。"
+            ],
+            "procedure": [
+              "1. 若需耐久 Core 单位守线或抢点且不想额外花瓦斯：部署 Corpser (Roach) 至起始 Core 槽位，利用 Armour 3+ 与 HP 4 承受火力。",
+              "2. 在突击阶段，以 Corpser 的 Acid Saliva（RoA 2、Hit 3+、Range 8）从安全距离射击，避免近战交换。",
+              "3. 若 Corpser 面临远程火力威胁，在移动阶段、该单位未接战且满足主动能力使用条件时，可支付 2 BM 使用 Burrow 获得 Burrowed 状态（Size 视为 0、可对每次攻击闪避）；这不在移动阶段立即触发 Regeneration。Regeneration 是 Assault Phase 的被动能力，仅当该阶段该单位变为 Activated 时已具有 Burrowed 状态，才结算 HEAL 2；注意 Burrowed 单位不能争夺标记。",
+              "4. 若需高价值 Hero 单位且愿意投入瓦斯：购买 Overlord（35 瓦斯，+1 Core/+1 Elite/+1 Hero）解锁 Hero 槽位，部署 Kerrigan。",
+              "5. 利用 Kerrigan 的 Commander 被动（Supply 视为 +1）在计分阶段以 Supply 2 争夺标记，或在 Disengage 检定时获得 Tactical Mass 优势。",
+              "6. 在移动阶段，使用 Kerrigan 的 Crushing Grip（主动，1 BM，12 英寸内选择敌方单位，使其本阶段视为已激活）剥夺敌方一次激活，或使用 Mutating Carapace（主动，1 BM，18 英寸内选择敌方单位，对其攻击获得 +2 闪避修正）提升生存。"
+            ],
+            "alternatives": [
+              "若瓦斯预算有限且需保留资源购买其他战术卡：优先部署 Corpser (Roach) 而非购买 Overlord，因 Corpser 直接放入起始 Core 槽位且提供耐久守线能力。",
+              "若需同时拥有 Kerrigan 与额外 Core/Elite 槽位：购买 Overlord（35 瓦斯）解锁 1 Core/1 Elite/1 Hero，可同时部署 Kerrigan 与小编制 Raptor（1 Elite）或 Roach（1 Core）。",
+              "若对手依赖远程火力：Kerrigan 的 Armour 5+ 与 HP 9 更耐久，且 Mutating Carapace 可提供 +2 闪避修正；Corpser 的 Burrow 也可规避火力，但 Burrowed 时不能争夺标记。",
+              "若任务要求快速争夺多个标记：Corpser 的 Supply 1 与 Kerrigan 的 Supply 2（含 Commander 加成）均可参与，但 Kerrigan 的单模型更易被集中火力消灭。"
+            ],
+            "risk": "购买 Overlord 消耗 35 瓦斯，可能挤占其他战术卡预算；Kerrigan 虽 Supply 视为 2（含 Commander），但仅 1 模型，若被消灭会损失全部投入。Corpser 的 Burrow 需 2 BM，若 BM 不足则无法激活，且 Burrowed 时不能争夺标记，可能错失计分窗口。Kerrigan 的 Crushing Grip 与 Mutating Carapace 均为主动能力，每轮每单位限一次，需在移动阶段合理分配 BM。",
+            "reviseIf": [
+              "若对手部署大量远程火力单位，Kerrigan 的生存能力（Armour 5+、HP 9、Mutating Carapace）优于 Corpser，应优先解锁 Hero 槽位。",
+              "若任务要求快速争夺多个标记或早期压制，Corpser 的 Supply 1 与耐久性更适合铺开，Kerrigan 的单点 Supply 2 可能不足。",
+              "若瓦斯预算紧张且需保留资源购买其他战术卡，Corpser 的零额外瓦斯成本更具吸引力。",
+              "若对手依赖近战冲锋，Corpser 的 Armour 3+ 与 HP 4 可承受更多伤害，Kerrigan 的 Evade 6+ 虽高但 HP 9 仍可能被多轮攻击消耗。"
+            ],
+            "sourceRefs": [
+              "source:army_units:corpser__roach_",
+              "source:army_units:kerrigan",
+              "source:tactical_cards:overlord",
+              "source:tactical_cards:zerg_swarm",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0"
+            ],
+            "unproven": []
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.zerg_swarm.unit_roles.2",
+        "axis": "unit_roles",
+        "requiredSourceRefs": [
+          "source:army_units:roach",
+          "source:army_units:swarmling__zergling_",
+          "source:army_units:vile__roach_",
+          "source:army_units:zergling"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Zergling 与 Roach 的 Core 角色分工：抢点消耗 vs 守线远程",
+            "when": [
+              "Zerg Swarm 阵营卡（3 Core/1 Elite/1 Support）下需在 Core 槽位分配小编制 Zergling（12模型，Supply 1，Armour 6+/Evade 4+/HP 1/Speed 4/8，Claws RoA 2 Hit 4+ DMG 1）与小编制 Roach（3模型，Supply 1，Armour 3+/Evade 5+/HP 4/Speed 4/7，Acid Saliva Range 8 RoA 3 Hit 3+ DMG 1）时。",
+              "需要早期（第1-2轮）把单位送到 Mission Marker 附近并承受第一波火力时。",
+              "需要在中线附近以 8\" 远程持续输出并承受高伤害打击时。",
+              "当双方争夺单位的 Current Supply 总值接近、需要判断谁控制标记时。"
+            ],
+            "procedure": [
+              "1. 先确认任务与轮次：若任务要求早期抢点（如 Frontlines 从第二轮起每控制标记得1VP），优先部署 Zergling 小编制，利用 Speed 4/8 与 Evade 4+ 先到位。",
+              "2. 若任务要求守住已控制标记或在中线消耗（如 Hold Position），优先部署 Roach 小编制，利用 HP 4、Armour 3+ 与 Acid Saliva Range 8 在敌方接近前输出。",
+              "3. 计算标记控制时，只比较双方合格争夺单位的 Current Supply 总值，不比较模型数；Zergling 与 Roach 小编制 Supply 均为1，单看供给值无差别。",
+              "4. 确认争夺资格：单位须在战场上、In Coherency、至少一个模型 Within 3\" 且有 LoS 到标记并在同一海拔；Burrowed、Flying、Out of Coherency 单位不能争夺或控制。",
+              "5. 若需要更高 Supply 争夺效率，考虑用高 Supply 单位（如小编制 Hydralisk Supply 2）替代或叠加 Queen 的 Domineering Presence（+1 Supply）。"
+            ],
+            "alternatives": [
+              "若对手以高 RoA 低 DMG 火力为主（如多模型轻武器），Zergling 的 Evade 4+ 更能减少命中，优先 Zergling。",
+              "若对手以高 DMG 火力为主（如高伤害单发武器），Roach 的 HP 4 与 Armour 3+ 更能承受，优先 Roach。",
+              "若瓦斯预算允许且需要远程压制，可购买 Hydralisk Den（35瓦斯，+2 Elite）改带小编制 Hydralisk（Supply 2）争夺标记，但会耗尽 Elite 槽位。",
+              "若需要穿越复杂地形抢点，Raptor 小编制（Supply 1，占1 Elite）的 Raptor Strain 可穿 IMPASSABLE TERRAIN（Size 4或以下）并无需 ACCESS POINT 改变海拔，但需 Elite 槽位。"
+            ],
+            "risk": "Zergling 的 HP 1 使其在承受任何伤害后即被移除，若对手先手射击可能整队迅速减员；Roach 的 Speed 4/7 较慢，可能无法及时到达远处标记。两者 Supply 均为1，若对手投入 Supply 2 单位争夺，单独一个 Core 单位可能无法控制标记。",
+            "reviseIf": [
+              "若对手以高 RoA 低 DMG 火力为主，改用 Zergling 的 Evade 4+ 而非 Roach 的 HP 4。",
+              "若对手以高 DMG 火力为主，改用 Roach 的 HP 4 而非 Zergling 的 Evade 4+。",
+              "若任务要求早期抢点且 Zergling 无法在敌方火力下存活，改用 Raptor 的 Raptor Strain 穿越地形或高 Supply 单位争夺。",
+              "若标记争夺需要更高 Supply，改用小编制 Hydralisk（Supply 2）或叠加 Queen 的 Domineering Presence。"
+            ],
+            "sourceRefs": [
+              "source:army_units:zergling",
+              "source:army_units:roach",
+              "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0"
+            ],
+            "unproven": [
+              "Zergling 与 Roach 在实际任务中的抢点/守线效率未经过对战检验；角色分工为条件性假设，非规则或胜率证明。",
+              "两者 Supply 均为1时，标记控制的实际结果取决于双方投入的争夺单位组合，未证明单一 Core 单位足以控制标记。",
+              "Zergling 的 Evade 4+ 与 Roach 的 HP 4 在不同火力类型下的实际存活率未量化验证。"
+            ]
+          },
+          {
+            "title": "Elite 槽位选择：小编制 Hydralisk 需补槽 vs 小编制 Raptor 直接上场",
+            "when": [
+              "Zerg Swarm 阵营卡仅提供 1 Elite 槽位，需在 Elite 单位中二选一时。",
+              "考虑小编制 Hydralisk（2模型，Supply 2，占2 Elite，Needle Spines Range 12 RoA 3 Hit 3+ DMG 2 Surge Light/Armoured D3+1）时。",
+              "考虑小编制 Raptor（12模型，Supply 1，占1 Elite，Claws RoA 2 Hit 4+ DMG 1，Devastating Charge IMPACT (1) 5+，Raptor Strain 可穿 IMPASSABLE TERRAIN Size 4或以下且无需 ACCESS POINT 改变海拔）时。",
+              "瓦斯预算有限或需要远程压制/穿越复杂地形时。"
+            ],
+            "procedure": [
+              "1. 确认起始 Elite 槽位仅1：小编制 Hydralisk 占2 Elite，无法仅凭起始槽位上场；小编制 Raptor 占1 Elite，可直接用起始槽位。",
+              "2. 若选 Hydralisk，须用瓦斯购买 Hydralisk Den（35瓦斯，+2 Elite）或 Lair（35瓦斯，+1 Elite/+1 Core）补足 Elite 槽位；购买后按单位起始 Supply 占用槽位，未用槽位不能结转。",
+              "3. 若选 Raptor，无需额外卡即可上场；其 Raptor Strain 允许穿越 IMPASSABLE TERRAIN（Size 4或以下）并无需 ACCESS POINT 改变海拔，适合复杂地形。",
+              "4. 评估火力需求：Hydralisk 的 Needle Spines 提供 Range 12、RoA 3、Hit 3+、DMG 2、Surge Light/Armoured D3+1 的远程输出，Target: All 可打 Flying；Raptor 的 Claws 为近战 RoA 2、Hit 4+、DMG 1，配合 Devastating Charge IMPACT (1) 5+ 提供冲锋压制。",
+              "5. 检查瓦斯预算：Hydralisk 需额外35瓦斯购卡，Raptor 无需；若预算紧张，Raptor 更经济。"
+            ],
+            "alternatives": [
+              "若瓦斯预算紧张或需要穿越复杂地形，选 Raptor（无需额外卡，Raptor Strain 穿地形）。",
+              "若需要远程压制或对手有 Flying 单位，选 Hydralisk（Needle Spines Target: All，Range 12，DMG 2）。",
+              "若需要同时带多个 Elite 单位，购买 Hydralisk Den（+2 Elite）或 Lair（+1 Elite/+1 Core）扩展槽位，但会消耗瓦斯。",
+              "若需要近战冲锋压制，Raptor 的 Devastating Charge IMPACT (1) 5+ 与 Metabolic Boost（1 BM，2D6取高冲锋）更合适。"
+            ],
+            "risk": "Hydralisk 占2 Elite 会耗尽全部起始 Elite 槽位，无法再带其他 Elite 单位；购买 Hydralisk Den 或 Lair 消耗35瓦斯，可能挤占其他战术卡预算。Raptor 的 Claws Hit 4+ 命中率一般，且 HP 1 使其在承受伤害后迅速减员。",
+            "reviseIf": [
+              "若瓦斯预算不足以购买 Hydralisk Den 或 Lair，改用 Raptor 直接上场。",
+              "若任务要求远程压制或对手有 Flying 单位，改用 Hydralisk 的 Needle Spines Target: All。",
+              "若任务要求近战抢点或穿越复杂地形，改用 Raptor 的 Raptor Strain 与 Devastating Charge。",
+              "若需要同时带多个 Elite 单位，购买 Hydralisk Den（+2 Elite）或 Lair（+1 Elite/+1 Core）扩展槽位。"
+            ],
+            "sourceRefs": [
+              "source:army_units:hydralisk",
+              "source:army_units:raptor__zergling_",
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:lair",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3"
+            ],
+            "unproven": [
+              "Hydralisk 与 Raptor 在实际任务中的火力/机动效率未经过对战检验；选择为条件性假设，非规则或胜率证明。",
+              "Hydralisk 占2 Elite 后无法再带其他 Elite 单位的实际影响未量化验证。",
+              "Raptor Strain 穿越 IMPASSABLE TERRAIN 在具体地形布局下的实际收益未验证。"
+            ]
+          },
+          {
+            "title": "Support 槽位：Queen 作为支援倍增器与 Hatchery 扩展",
+            "when": [
+              "Zerg Swarm 阵营卡提供 1 Support 槽位，考虑小编制 Queen（1模型，Supply 1，Armour 4+/Evade '-'/HP 9/Size 3，Speed 4）时。",
+              "需要治疗（Transfusion）、移除 DEBUFF（Restoration）、放置 Creep Tumor（Spawn Creep Tumor）或提升标记争夺 Supply（Domineering Presence）时。",
+              "考虑购买 Hatchery（30瓦斯，+1 Support，含 Creep Spread）扩展 Support 槽位或维持 Creep 网络时。",
+              "Queen 需靠近前线（Within 4\"）以使用 Transfusion/Restoration，但自身无 Evade 值，需评估生存风险时。"
+            ],
+            "procedure": [
+              "1. 确认 Queen 占 1 Support 槽位，起始 1 Support 已够；若需第二个 Support 单位，购买 Hatchery（30瓦斯，+1 Support）扩展，未用槽位不能结转。",
+              "2. 评估支援需求：Transfusion（反应，1 BM，友方 Biological 单位 Within 4\" 受伤时减 2 伤害）适合对抗高 DMG 远程；Restoration（反应，1 BM，移除 Within 4\" 友方单位 DEBUFF）适合对抗 DEBUFF 密集的对手。",
+              "3. 若依赖 Creep 速度加成，用 Spawn Creep Tumor（主动，1 BM，放置 Creep Tumor）维持 ON CREEP；Creep Speed（被动，10瓦斯，ON CREEP 时速度 +2）提升 Queen 自身机动。",
+              "4. 若需提升标记争夺，用 Domineering Presence（主动，1 BM+10瓦斯，Within 6\" 友方单位 Supply +1 用于控制/争夺标记），注意该加成仅用于控制/争夺，不改变实际 Supply 值。",
+              "5. 定位 Queen：放在前线后方约 4\" 处，使 Transfusion/Restoration 覆盖前线单位，同时利用 Size 2+ 地形阻挡视线或 Rapid Burrowing（主动，移动阶段，1 BM，友方未接战地面 Zerg 单位获得 Burrowed）保护；但 Burrowed 单位不能争夺标记，且 Queen 若已接战则不能 Burrow。",
+              "6. 注意 Transfusion 与 Restoration 均为反应，每玩家每次激活仅限一个反应，且每个具名反应能力每轮每单位限一次；需预先决定将本激活唯一反应留给哪个触发。"
+            ],
+            "alternatives": [
+              "若不需要治疗/去 DEBUFF，可将 Support 槽位用于其他单位，或购买 Hatchery（30瓦斯，+1 Support）扩展后带第二个 Queen。",
+              "若对手以高 DMG 远程火力为主，优先 Transfusion 减 2 伤害；若对手以 DEBUFF 为主，优先 Restoration。",
+              "若依赖 Creep 速度，优先 Spawn Creep Tumor 与 Creep Speed；若需提升标记争夺，优先 Domineering Presence。",
+              "若 Queen 生存风险过高，可将其保持在后方，仅用 Domineering Presence（Within 6\"）支援，放弃 Transfusion 的前线覆盖。"
+            ],
+            "risk": "Queen 的 Evade 为 '-'，无 Evade 值，不能进行 Evade Roll，除非能力明确授予；面对远程攻击只能靠 Armour 4+、HP 9、Size 3 硬抗。靠近前线使用 Transfusion 会暴露于敌方火力；保持后方则无法治疗。Transfusion 为反应，每玩家每次激活仅限一个反应，若同一激活中其他反应已使用则不能再用。Burrowed 单位不能争夺标记，若 Queen 需在当轮结束时争夺标记则不应 Burrow。",
+            "reviseIf": [
+              "若对手以高 DMG 远程火力为主，优先 Transfusion 减 2 伤害而非 Restoration。",
+              "若对手以 DEBUFF 为主，优先 Restoration 而非 Transfusion。",
+              "若 Queen 在前线被迅速击杀，改为后方定位，仅用 Domineering Presence 支援。",
+              "若需要第二个 Support 单位或依赖 Creep 网络，购买 Hatchery（30瓦斯，+1 Support，含 Creep Spread）。",
+              "若 Queen 需在当轮结束时争夺标记，不要使其 Burrow。"
+            ],
+            "sourceRefs": [
+              "source:army_units:queen",
+              "source:tactical_cards:hatchery",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.1"
+            ],
+            "unproven": [
+              "Queen 在实际任务中的支援效率未经过对战检验；角色定位为条件性假设，非规则或胜率证明。",
+              "Queen Evade '-' 与 Brood Instinct 授予 Evade Roll 的交互未证实：Queen 无 Evade 值，是否可进行该掷骰需查阅完整规则或 FAQ；当前来源未明确。",
+              "Domineering Presence 的 +1 Supply 与 Supply Depot 的 Additional Supply Depots 等 Supply 加成是否可叠加，以及它们对标记控制的具体影响未验证。",
+              "Queen 在前线后方 4\" 处的实际生存率与 Transfusion 覆盖效率未量化验证。"
+            ]
+          },
+          {
+            "title": "Zergling 对 Roach 的期望伤害条件性分析（非规则、非胜率证明）",
+            "when": [
+              "Zergling 小编制（12模型，Supply 1，Claws RoA 2 Hit 4+ DMG 1，Speed 4/8，Metabolic Boost 可 2D6 取高冲锋）考虑冲锋 Roach 小编制（3模型，Supply 1，Armour 3+，HP 4）时。",
+              "Roach 小编制考虑用 Acid Saliva（Range 8，RoA 3，Hit 3+，DMG 1）先手射击 Zergling 时。",
+              "需要评估近战淹没与远程消耗的相对效率时。"
+            ],
+            "procedure": [
+              "1. 确认 Zergling 小编制 12 模型、Claws RoA 2 Hit 4+ DMG 1；Roach 小编制 3 模型、Armour 3+、HP 4、Acid Saliva Range 8 RoA 3 Hit 3+ DMG 1。",
+              "2. 若 Zergling 先冲锋：用 Metabolic Boost（主动，1 BM，冲锋距离 2D6 取高加 Speed）提高成功率；冲锋成功仅当 Leading Model 能结束在所有声明目标 Engagement Range（1\"）内，失败则单位不动、激活结束。",
+              "3. 计算近战期望时，先确认实际能进入 Fighting Rank（Within 1\"）的模型数；12 模型通常无法全部进入，受 Coherency、地形、敌方模型位置限制。假设 N 个模型进入，攻击骰为 2N，Hit 4+ 约一半命中，Roach Armour 3+ 约 1/3 被挡，剩余进入 Damage Pool，每次 DMG 1。",
+              "4. 若 Roach 先射击：3 模型共 9 次攻击骰，Hit 3+ 约 6 次命中，Zergling Armour 6+ 约 1/6 被挡，约 5 次进入 Damage Pool，击杀约 5 个 Zergling（每个 HP 1）。",
+              "5. 比较结果：若 Zergling 无法让足够模型进入 Fighting Rank，其近战效率低于 Roach 的远程输出；若 Roach 被先手冲锋且无法撤退，则可能被淹没。",
+              "6. 注意冲锋失败则激活结束，且 Zergling 的 HP 1 使其在承受任何伤害后即被移除。"
+            ],
+            "alternatives": [
+              "Zergling 用 Metabolic Boost（1 BM，2D6 取高冲锋）提高冲锋成功率；若距离过远，先用 Run 接近，下轮再冲锋。",
+              "Roach 用 Burrow Ambush（20瓦斯，部署时 PLACE 18\"）或 Glial Reconstitution（1 BM+20瓦斯，BUFF Speed）调整位置，避免被先手冲锋。",
+              "Roach 用 Hydriodic Bile（10瓦斯，Acid Saliva 获得 Surge Type: Light 与 S Dice D3+1）提升远程输出。",
+              "Zergling 用 Adrenal Glands（20瓦斯，Claws 与 Shredding Claws 获得 PRECISION (2)）提升近战命中。"
+            ],
+            "risk": "期望伤害算术基于简化假设（全部模型可进入 Fighting Rank、无地形阻挡、无特殊能力），实际受 Coherency、地形、敌方模型位置与激活顺序限制，未证明。12 模型通常无法全部进入 Fighting Rank，实际伤害可能远低于理论值。冲锋失败会浪费整个激活。Zergling 的 HP 1 使其在 Roach 先手射击后可能损失近半模型。",
+            "reviseIf": [
+              "若 Zergling 无法让足够模型进入 Fighting Rank，改用 Run 接近或放弃冲锋，避免浪费激活。",
+              "若 Roach 被先手冲锋且无法撤退，考虑用 Burrow Ambush 或 Glial Reconstitution 调整位置。",
+              "若对手以高 RoA 火力为主，Zergling 的 Evade 4+ 可能比 Roach 的 HP 4 更有效。",
+              "若需要远程压制，优先 Roach 的 Acid Saliva 而非 Zergling 的近战冲锋。"
+            ],
+            "sourceRefs": [
+              "source:army_units:zergling",
+              "source:army_units:roach",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0"
+            ],
+            "unproven": [
+              "期望伤害计算为简化假设，非规则或胜率证明；实际战斗受 Coherency、地形、敌方模型位置与激活顺序影响，未验证。",
+              "12 模型 Zergling 实际能进入 Fighting Rank 的模型数未量化验证。",
+              "Roach 先手射击的实际击杀数与 Zergling 冲锋的实际伤害未经过对战检验。",
+              "Metabolic Boost 与 Observer 的 Gravitic Boosters 等冲锋距离加成的叠加交互未验证。"
+            ]
+          },
+          {
+            "title": "Gather the Resources 下 Hydralisk（Supply 2）与 Raptor（Supply 1）的标记争夺比较",
+            "when": [
+              "任务为 Gather the Resources（Standard 或 Skirmish）：从第二轮起每控制一个对手颜色标记得 2 VP；本任务计分条件另含“本轮摧毁的敌方 Supply 等值 VP”（Score VPs equal to Enemy Supply destroyed this Round）。",
+              "Zerg Swarm 阵营卡仅提供 1 Elite 槽位，需在小编制 Hydralisk（2 模型，Supply 2，占 2 Elite）与小编制 Raptor（12 模型，Supply 1，占 1 Elite）之间取舍时。",
+              "需要判断单个单位能否在标记争夺中胜过对手投入的争夺单位时。"
+            ],
+            "procedure": [
+              "1. 确认标记控制规则：每轮结束时比较双方合格争夺单位的 Current Supply 总值，高者控制；平局不转移控制。争夺资格要求单位在战场上、In Coherency、至少一个模型 Within 3\" 且有 LoS 到标记并在同一海拔；Burrowed、Flying、Out of Coherency 单位不能争夺或控制。",
+              "2. 若目标是控制对手颜色标记以获取 2 VP，可优先考虑 Hydralisk 小编制：其 Supply 2 高于 Raptor 的 Supply 1，在双方投入相同数量争夺单位时供给值更高；但控制结果取决于双方争夺 Supply 总值，Supply 2 并不保证胜过对手。",
+              "3. 但 Hydralisk 占 2 Elite，起始 1 Elite 不足，须用瓦斯购买 Hydralisk Den（35 瓦斯，+2 Elite）或 Lair（35 瓦斯，+1 Elite/+1 Core）补足；购买后按单位起始 Supply 占用槽位，未用槽位不能结转。",
+              "4. 若瓦斯预算紧张或需要穿越复杂地形，选 Raptor 小编制：占 1 Elite 可直接用起始槽位，12 模型提供身体阻挡、近战输出与 Devastating Charge IMPACT (1) 5+，且 Raptor Strain 可穿 IMPASSABLE TERRAIN（Size 4 或以下）并无需 ACCESS POINT 改变海拔。",
+              "5. 若对手投入更高 Supply 单位争夺，Hydralisk 的 Supply 2 可能仍不足；可叠加 Queen 的 Domineering Presence（主动，1 BM+10 瓦斯，Within 6\" 友方单位 Supply +1 用于控制/争夺标记）。",
+              "6. 若任务要求摧毁敌方 Supply 计 VP，Raptor 的 12 模型可提供更多攻击骰与近战输出，但需注意其 Claws Hit 4+ 命中率一般。"
+            ],
+            "alternatives": [
+              "若瓦斯预算紧张或需穿越复杂地形，选 Raptor（无需额外卡，Raptor Strain 穿地形）。",
+              "若需远程压制或对手有 Flying 单位，选 Hydralisk（Needle Spines Range 12 RoA 3 Hit 3+ DMG 2 Surge Light/Armoured D3+1，Target: All）。",
+              "若对手以更高 Supply 争夺，叠加 Queen 的 Domineering Presence（+1 Supply）提升争夺 Supply；注意 Supply Depot 属 Terran 战术卡，不在 Zerg Swarm 阵营可选范围内，不可用于 Zerg 军队。",
+              "若需要同时带多个 Elite 单位，购买 Hydralisk Den（+2 Elite）或 Lair（+1 Elite/+1 Core）扩展槽位，但会消耗瓦斯。"
+            ],
+            "risk": "Hydralisk 占 2 Elite 会耗尽全部起始 Elite 槽位，无法再带其他 Elite 单位；购买 Hydralisk Den 或 Lair 消耗 35 瓦斯，可能挤占其他战术卡预算。Raptor 的 Supply 1 在单独争夺时低于 Hydralisk 的 Supply 2，若对手投入 Supply 2 单位则无法控制标记。两者均不能争夺若 Burrowed/Flying/Out of Coherency。",
+            "reviseIf": [
+              "若瓦斯预算不足以购买 Hydralisk Den 或 Lair，改用 Raptor 直接上场。",
+              "若对手投入更高 Supply 单位争夺，叠加 Queen 的 Domineering Presence 或改用更高 Supply 单位。",
+              "若任务要求摧毁敌方 Supply 计 VP，改用 Raptor 的模型数优势。",
+              "若需要远程压制或对手有 Flying 单位，改用 Hydralisk 的 Needle Spines Target: All。",
+              "若单位需在当轮结束时争夺标记，不要使其 Burrow。"
+            ],
+            "sourceRefs": [
+              "source:army_units:hydralisk",
+              "source:army_units:raptor__zergling_",
+              "source:faction_cards:mission_gather_the_resources",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0"
+            ],
+            "unproven": [
+              "Hydralisk 与 Raptor 在 Gather the Resources 中的实际争夺效率未经过对战检验；选择为条件性假设，非规则或胜率证明。",
+              "Hydralisk 占 2 Elite 后无法再带其他 Elite 单位的实际影响未量化验证。",
+              "Raptor Strain 穿越 IMPASSABLE TERRAIN 在具体地形布局下的实际收益未验证。",
+              "Domineering Presence 的 +1 Supply 与其他 Supply 加成是否可叠加，以及它们对标记控制的具体影响未验证。"
+            ]
+          },
+          {
+            "title": "Queen 前线定位与生存权衡：Transfusion 覆盖 vs 远程火力暴露",
+            "when": [
+              "Zerg Swarm 阵营卡提供 1 Support 槽位，考虑小编制 Queen（1 模型，Supply 1，Armour 4+/Evade '-'/HP 9/Size 3，Speed 4）时。",
+              "Queen 需靠近前线（Within 4\"）以使用 Transfusion（反应，1 BM，友方 Biological 单位受伤时减 2 伤害）或 Restoration（反应，1 BM，移除 Within 4\" 友方单位 DEBUFF）时。",
+              "对手以远程火力为主，Queen 可能暴露于 Ranged Attack 时。"
+            ],
+            "procedure": [
+              "1. 确认 Queen 的 Evade 为 '-'，无 Evade 值，不能进行 Evade Roll，除非能力明确授予；Brood Instinct（反应，任意阶段，友方单位进行 Evade Roll 前施加 +1 修正）虽授予 Evade Roll，但 Queen 无 Evade 值，该交互未证实，不应假设 Queen 可借此闪避。",
+              "2. 因此 Queen 面对远程攻击只能靠 Armour 4+、HP 9、Size 3 硬抗；若靠近前线（Within 4\"）以使用 Transfusion，会暴露于敌方远程火力。",
+              "3. 若保持后方，则 Transfusion 无法覆盖前线单位；需权衡治疗价值与 Queen 生存。",
+              "4. 替代定位：将 Queen 放在前线后方约 4\" 处，使 Transfusion 覆盖前线单位，同时利用 Size 2+ 地形阻挡视线（Full Cover 或 Direct Cover）或 Rapid Burrowing（主动，移动阶段，1 BM，友方未接战地面 Zerg 单位获得 Burrowed）保护。",
+              "5. 注意 Burrowed 单位不能争夺或控制 Mission Marker，且 Queen 若已接战则不能 Burrow；若 Queen 需在当轮结束时争夺标记，不应使其 Burrow。",
+              "6. 注意 Transfusion 与 Restoration 均为反应，每玩家每次激活仅限一个反应，且每个具名反应能力每轮每单位限一次；需预先决定将本激活唯一反应留给哪个触发。"
+            ],
+            "alternatives": [
+              "若对手以高 DMG 远程火力为主，优先 Transfusion 减 2 伤害；若对手以 DEBUFF 为主，优先 Restoration。",
+              "若 Queen 在前线被迅速击杀，改为后方定位，仅用 Domineering Presence（主动，1 BM+10 瓦斯，Within 6\" 友方单位 Supply +1 用于控制/争夺标记）支援。",
+              "若需要第二个 Support 单位或依赖 Creep 网络，购买 Hatchery（30 瓦斯，+1 Support，含 Creep Spread 主动放置 Creep Tumor）。",
+              "若 Queen 需在当轮结束时争夺标记，不要使其 Burrow；若其不参与标记争夺且面临远程威胁，Burrow 可提供闪避保护。"
+            ],
+            "risk": "Queen 的 Evade '-' 使其无法闪避，面对高 RoA 远程火力时可能迅速被击杀；靠近前线使用 Transfusion 会暴露，保持后方则无法治疗。Transfusion 为反应，每玩家每次激活仅限一个反应，若同一激活中其他反应已使用则不能再用。Burrowed 单位不能争夺标记，若 Queen 需争夺标记则不应 Burrow。",
+            "reviseIf": [
+              "若对手以高 DMG 远程火力为主，优先 Transfusion 减 2 伤害而非 Restoration。",
+              "若对手以 DEBUFF 为主，优先 Restoration 而非 Transfusion。",
+              "若 Queen 在前线被迅速击杀，改为后方定位，仅用 Domineering Presence 支援。",
+              "若需要第二个 Support 单位或依赖 Creep 网络，购买 Hatchery（30 瓦斯，+1 Support，含 Creep Spread）。",
+              "若 Queen 需在当轮结束时争夺标记，不要使其 Burrow。"
+            ],
+            "sourceRefs": [
+              "source:army_units:queen",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.31",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3"
+            ],
+            "unproven": [
+              "Queen 在实际任务中的支援效率与生存率未经过对战检验；定位为条件性假设，非规则或胜率证明。",
+              "Queen Evade '-' 与 Brood Instinct 授予 Evade Roll 的交互未证实：Queen 无 Evade 值，是否可进行该掷骰需查阅完整规则或 FAQ；当前来源未明确。",
+              "Queen 在前线后方 4\" 处的实际生存率与 Transfusion 覆盖效率未量化验证。",
+              "Rapid Burrowing 与任务标记控制的交互在 FAQ 中是否有额外裁定未验证；当前依据核心规则（Burrowed 不能争夺/控制标记）与卡面文本。"
+            ]
+          },
+          {
+            "title": "Swarmling 与 Vile 的 Core 角色分工：数量压制 vs 远程削弱",
+            "when": [
+              "Zerg Swarm 阵营卡（3 Core/1 Elite/1 Support）下需在 Core 槽位分配小编制 Swarmling（18模型，Supply 1，Armour 6+/Evade 5+/HP 1/Speed 4/8，Claws RoA 2 Hit 5+ DMG 1）与小编制 Vile（3模型，Supply 1，Armour 3+/Evade 5+/HP 4/Speed 4/7，Acid Saliva Range 8 RoA 4 Hit 3+ DMG 1）时。",
+              "需要大量模型抢点、消耗或作为身体阻挡时。",
+              "对手以高 RoA 远程火力为主，需要削弱其射击效率时。",
+              "双方争夺单位的 Current Supply 总值接近、需要判断谁控制标记时。"
+            ],
+            "procedure": [
+              "1. 确认两者小编制 Supply 均为1：标记控制由争夺单位 Current Supply 总值决定，非模型数，故单看供给值无差别；Swarmling 的18模型优势不直接转化为控制优势。",
+              "2. 若需数量压制、抢点或消耗，优先 Swarmling：18模型可分散承受伤害、提供更多攻击骰，且可用 Zergling Reconstitution（主动，1 BM，RESPAWN 2，或 ON CREEP 时 RESPAWN 3）补充模型。",
+              "3. 若需远程输出与削弱敌方射击，优先 Vile：Acid Saliva Range 8 RoA 4 Hit 3+ DMG 1 输出高于 Swarmling 的 Claws；Debilitating Saliva（反应，1 BM，对8\"内敌方单位远程武器施加 DEBUFF Hit (1)）可降低敌方命中。",
+              "4. 确认争夺资格：单位须在战场上、In Coherency、至少一个模型 Within 3\" 且有 LoS 到标记并在同一海拔；Burrowed、Flying、Out of Coherency 单位不能争夺或控制。",
+              "5. 若需调整位置，Vile 可用 Burrow Ambush（20瓦斯，部署时 PLACE 18\"）或 Glial Reconstitution（1 BM+20瓦斯，BUFF Speed 1，ON CREEP 时2）机动；Swarmling 可用 Burrow Ambush（20瓦斯）部署。",
+              "6. 注意 Debilitating Saliva 为反应，每玩家每次激活仅限一个反应，且每个具名反应能力每轮每单位限一次。"
+            ],
+            "alternatives": [
+              "若对手以高 RoA 远程火力为主，选 Vile 的 Debilitating Saliva 削弱其命中，而非 Swarmling 的数量压制。",
+              "若需要大量模型抢点或消耗，选 Swarmling 的18模型与 Zergling Reconstitution 补充。",
+              "若需要远程输出，选 Vile 的 Acid Saliva（Range 8 RoA 4 Hit 3+ DMG 1）而非 Swarmling 的近战 Claws（Hit 5+）。",
+              "若需要穿越复杂地形，考虑 Raptor 小编制（占1 Elite，Raptor Strain 穿 IMPASSABLE TERRAIN Size 4或以下且无需 ACCESS POINT 改海拔），但需 Elite 槽位。"
+            ],
+            "risk": "Swarmling 的 Claws Hit 5+ 命中率低，且 HP 1 使其在承受任何伤害后即被移除；Vile 的 Supply 1 与 Swarmling 相同，单独争夺标记时无供给优势。两者均不能争夺若 Burrowed/Flying/Out of Coherency。Debilitating Saliva 为反应，每玩家每次激活仅限一个反应，若同一激活中其他反应已使用则不能再用。",
+            "reviseIf": [
+              "若对手以高 RoA 远程火力为主，改用 Vile 的 Debilitating Saliva 而非 Swarmling 的数量压制。",
+              "若需要大量模型抢点或消耗，改用 Swarmling 的18模型与 Zergling Reconstitution。",
+              "若需要远程输出，改用 Vile 的 Acid Saliva 而非 Swarmling 的近战 Claws。",
+              "若标记争夺需要更高 Supply，改用小编制 Hydralisk（Supply 2）或叠加 Queen 的 Domineering Presence（+1 Supply）。",
+              "若单位需在当轮结束时争夺标记，不要使其 Burrow。"
+            ],
+            "sourceRefs": [
+              "source:army_units:swarmling__zergling_",
+              "source:army_units:vile__roach_",
+              "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0"
+            ],
+            "unproven": [
+              "Swarmling 与 Vile 在实际任务中的数量压制/远程削弱效率未经过对战检验；角色分工为条件性假设，非规则或胜率证明。",
+              "Debilitating Saliva 的 DEBUFF Hit (1) 对多武器单位的精确影响未逐项验证；后续角色须查阅完整单位卡与 FAQ 确认。",
+              "两者 Supply 均为1时，标记控制的实际结果取决于双方投入的争夺单位组合，未证明单一 Core 单位足以控制标记。",
+              "Zergling Reconstitution 的 RESPAWN 2/3 在实际战斗中的补充效率未量化验证。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.zerg_swarm.phase_tempo.1",
+        "axis": "phase_tempo",
+        "requiredSourceRefs": [
+          "source:tactical_cards:zerg_swarm"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "移动阶段 Pass 时机：以先手标记换取突击阶段先射击",
+            "when": [
+              "己方 Zergling/Raptor 等冲锋单位已进入可冲锋位置，或 Hydralisk 等远程单位已进入射程且有视线，本阶段无需再部署或重新定位。",
+              "对手仍有大量预备队未部署，且其剩余移动阶段激活可能显著改变战场布局（部署高威胁单位、抢占关键标记、或进入可冲锋己方单位的位置）。",
+              "己方已无高价值部署或标记争夺需求，继续激活的边际收益低于先射击与观察对手部署的信息收益。"
+            ],
+            "procedure": [
+              "1. 确认规则事实：移动阶段第一个 Pass 的玩家获得突击阶段先手标记；一旦 Pass，该玩家本阶段不能再激活任何单位，对手随后完成其剩余激活。先手标记只决定下一阶段谁先激活，不保证先手方一定命中或获胜。",
+              "2. 评估己方关键单位是否已就位：若 Zergling/Raptor 已可冲锋、Hydralisk 已可射击，且无高价值单位待部署，则 Pass 的边际成本较低。",
+              "3. 评估对手剩余激活价值：若对手仍有大量预备队，其可利用剩余激活部署到己方先手射击射程外、部署到可冲锋己方单位的位置、或抢占关键标记；此时早 Pass 可能被利用。",
+              "4. 若决定 Pass，立即声明；本阶段不再激活任何单位，观察对手剩余部署与移动，为突击阶段先手射击收集信息。",
+              "5. 若决定不 Pass，继续用激活完成关键部署、移动或抢占标记，迫使对手先 Pass 或消耗其激活。"
+            ],
+            "alternatives": [
+              "不 Pass 而用 Run 重新定位，保持本阶段机动灵活性，但放弃先手标记。",
+              "Hold 保留单位 Stationary 状态，以触发 LOCKED IN 类效果或保留反应窗口，但同样放弃先手标记。",
+              "Pass 前先用己方激活完成关键部署或移动，再 Pass 夺取先手标记，兼顾部署与先射击。"
+            ],
+            "risk": "早 Pass 后本阶段不能再激活任何单位，对手可用剩余激活反制（部署到射程外、抢占标记、进入冲锋位置）；先手标记不保证命中或获胜，先射击可能因射程、视线或目标选择而落空。",
+            "reviseIf": [
+              "对手已无剩余预备队或已无有价值激活时，Pass 的边际成本降低，早 Pass 更优。",
+              "己方仍需部署高价值单位或需在当轮结束时争夺关键标记时，Pass 的代价升高，应继续激活。",
+              "对手部署模式显示其集中部署且进入己方冲锋/射击范围时，先手射击收益升高；若对手分散且避开己方射程，先手射击收益降低。"
+            ],
+            "sourceRefs": [
+              "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1"
+            ],
+            "unproven": [
+              "对手部署模式（Entry Edge 方向、是否避开己方 Zone of Influence、集中或分散）作为决策输入的具体推断未在来源中逐条规定，属条件性假设，需实际对战检验。",
+              "早 Pass 与对手剩余激活价值比较的定量胜率未在来源中给出，实际决策需结合完整战场状态、任务卡与部署卡。"
+            ]
+          },
+          {
+            "title": "早 Pass 的可被利用性：对手剩余激活的反制窗口",
+            "when": [
+              "Zerg 玩家在移动阶段早 Pass 以夺取突击阶段先手标记，但对手尚未部署任何单位或仍有大量预备队。",
+              "对手可观察到 Zerg 玩家的 Pass，并知道 Zerg 玩家本阶段不能再激活任何单位。",
+              "对手剩余移动阶段激活足以改变战场布局（部署高威胁单位、抢占关键标记、或进入可冲锋 Zerg 单位的位置）。"
+            ],
+            "procedure": [
+              "1. 确认规则事实：第一个 Pass 的玩家获得突击阶段先手标记；一旦 Pass，该玩家本阶段不能再激活任何单位，对手随后完成其剩余激活。",
+              "2. 识别早 Pass 是对手可观察的公开行动，并非不可预测的必胜招。",
+              "3. 评估对手剩余激活的价值：若对手仍有大量预备队，其可利用剩余激活将单位部署到 Zerg 玩家先手射击射程之外、部署到可冲锋 Zerg 单位的位置、或抢占关键标记。",
+              "4. 比较早 Pass 的收益（先射击 + 观察对手部署的信息）与对手剩余激活的价值；若对手剩余激活能显著改变战场布局，早 Pass 可能被利用。",
+              "5. 若决定不早 Pass，继续用己方激活完成关键部署或移动，迫使对手先 Pass 或消耗其激活；或 Pass 前先用己方激活完成关键部署/移动，再 Pass 夺取先手标记。"
+            ],
+            "alternatives": [
+              "不 Pass 而继续激活，迫使对手先 Pass 或消耗其激活，但放弃先手标记。",
+              "Pass 前先用己方激活完成关键部署/移动，再 Pass 夺取先手标记，兼顾部署与先射击。",
+              "用 Run 重新定位而非 Pass，保持本阶段机动灵活性，但放弃先手标记。"
+            ],
+            "risk": "早 Pass 后本阶段不能再激活任何单位，对手可用剩余激活反制；若对手仍有高价值部署，早 Pass 的风险升高，可能让对手获得战场布局优势。",
+            "reviseIf": [
+              "对手已无剩余预备队或已无有价值激活时，早 Pass 的代价降低，风险下降。",
+              "对手仍有高价值部署（如高威胁单位、关键标记争夺单位）时，早 Pass 的风险升高，应继续激活或先完成关键部署。",
+              "对手部署模式显示其无法有效反制（如已全部部署或位置受限）时，早 Pass 更安全。"
+            ],
+            "sourceRefs": [
+              "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0"
+            ],
+            "unproven": [
+              "对手部署模式的具体反制手段未在来源中逐条规定，属条件性假设，需实际对战检验。",
+              "早 Pass 与对手剩余激活价值比较的定量胜率未在来源中给出，实际决策需结合完整战场状态、任务卡与部署卡。"
+            ]
+          },
+          {
+            "title": "Rapid Burrowing 的规则事实与时机：以 Burrowed 换取突击阶段闪避保护",
+            "when": [
+              "己方存在一个未接战（Unengaged）的地面 Zerg 单位，且该单位当轮结束时不需要争夺或控制任何任务标记。",
+              "预期敌方在突击阶段会以远程攻击集中打击该高价值单位（如 Queen、Hydralisk、Kerrigan），且该单位自身 Armour/Evade 不足以稳定承受。",
+              "该单位本回合已激活或尚未激活均可——Rapid Burrowing 明确允许对已激活单位使用。",
+              "己方仍有可用 BM 支付 1 BM 费用，且愿意耗尽一张 Zerg 战术卡或阵营卡来产生该资源。"
+            ],
+            "procedure": [
+              "1. 确认规则事实：Rapid Burrowing 是 Zerg Swarm 阵营卡的主动能力，阶段限制为移动阶段，费用 1 BM；选择战场上任意一个友方、未接战的地面 Zerg 单位，使其获得 Burrowed 状态，即使该单位本回合已激活也可。",
+              "2. 确认目标合法性：目标必须未接战——若目标已接战则不能使用此能力；目标必须是地面 Zerg 单位。",
+              "3. 确认 Burrowed 状态效果：Size 视为 0（用于所有目的）、具有 HIDDEN 状态、不能控制或争夺任务标记、可对每次攻击进行闪避掷骰；其 Current Supply Value 视为 0 用于 Disengage 检定。",
+              "4. 确认移除条件：Burrowed 单位执行 Deploy、Move、Disengage、Run、Hold、Close Ranks 中除 Hold 外的任何行动会立即移除 Burrowed；因此若计划让该单位在突击阶段射击或冲锋，Burrow 会在行动时失效。",
+              "5. 支付 1 BM（耗尽一张 Ready 的 Zerg 资源卡；多余资源丢失），在移动阶段早期对该单位使用 Rapid Burrowing。",
+              "6. 在突击阶段让该单位保持 Hold 或仅承受攻击，利用 Burrowed 的 HIDDEN 与对每次攻击的闪避掷骰降低被消灭概率。",
+              "7. 在计分阶段前确认该单位不参与标记争夺；若其原本是唯一争夺单位，需另派合格单位接替。"
+            ],
+            "alternatives": [
+              "用 Brood Instinct 反应（任意阶段，0 资源）在友方单位进行闪避掷骰前施加 +1 修正，不牺牲标记控制，但每玩家每次激活仅限一个反应，且对闪避值已为 6+ 的单位（如 Kerrigan）加成无效（目标数值上限 6+）。",
+              "让单位执行 Hold 保留 Stationary 状态，以触发 LOCKED IN 类效果或保留反应窗口，不消耗 BM 也不失去标记争夺资格。",
+              "将单位移至掩体后或地形后方，利用 Direct Cover/Full Cover 阻断视线，而非依赖 Burrowed 的闪避。",
+              "若敌方突击阶段以近战冲锋为主而非远程攻击，Burrow 的闪避价值下降，可改用其他防御手段或直接反击。"
+            ],
+            "risk": "Burrowed 单位不能控制或争夺任务标记，若该单位是当轮唯一争夺关键标记的单位，对手可能因此获得该标记控制；Burrowed 状态下执行除 Hold 外任何行动会立即移除 Burrowed，因此若计划射击或冲锋则 Burrow 无效；Rapid Burrowing 每轮每单位每具名主动能力限一次，且需支付 1 BM 并耗尽一张资源卡，可能挤占其他能力的资源。",
+            "reviseIf": [
+              "敌方突击阶段主要使用近战冲锋而非远程攻击时，Burrow 的闪避价值下降，应改用其他防御或反击手段。",
+              "该单位是唯一争夺关键标记的单位时，标记控制代价可能超过其生存收益，应改用 Brood Instinct 或掩体保护。",
+              "该单位需要在突击阶段射击或冲锋时，Burrow 会在行动时立即移除，不应使用。",
+              "己方 BM 资源紧张且其他能力（如 Queen 的 Transfusion 或 Spawn Creep Tumor）优先级更高时，应重新评估 1 BM 的分配。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0"
+            ],
+            "unproven": [
+              "Rapid Burrowing 与任务标记控制的交互在 FAQ 中是否有额外裁定；当前依据核心规则（Burrowed 不能争夺/控制标记）与卡面文本，若存在未收录的 FAQ 或产品更新，应以现行官方来源为准。",
+              "Burrowed 单位对每次攻击的闪避掷骰在实际对局中降低被消灭概率的具体幅度，需结合敌方武器 RoA、Hit、Damage 与目标 Evade 值实测。",
+              "Rapid Burrowing 是否可在同一回合对同一单位多次使用（受每轮每单位每具名主动能力一次限制）；当前依据核心主动能力频率规则，若卡面或 FAQ 有例外应以官方来源为准。"
+            ]
+          },
+          {
+            "title": "Rapid Burrowing 与任务标记控制的权衡：以标记控制换取 Queen 的生存（Evade 裁定待定）",
+            "when": [
+              "Queen 是 Zerg 玩家唯一争夺某关键任务标记的合格单位，且该标记的 VP 价值或控制权对当轮胜负重要。",
+              "预期敌方在突击阶段会集中远程火力消灭 Queen，且 Queen 即使不 Burrow 也可能被消灭。",
+              "Queen 的存活对后续回合的支援（Transfusion、Restoration、Spawn Creep Tumor、Creep Speed）有较高价值。",
+              "己方有可用 BM 支付 1 BM，且愿意耗尽一张 Zerg 资源卡。",
+              "使用前必须已就 Queen 的 Evade 为 Null Value（“-”）时 Burrowed 是否仍可进行闪避掷骰取得裁定；在裁定明确前，本建议的生存收益部分为未决，不应据此假定 Burrow 能保护 Queen。"
+            ],
+            "procedure": [
+              "1. 确认规则事实：Rapid Burrowing 是 Zerg Swarm 阵营卡主动能力（移动阶段，1 BM），选择友方、未接战的地面 Zerg 单位，使其获得 Burrowed 状态，即使该单位本回合已激活也可；Burrowed 单位不能控制或争夺任务标记。",
+              "2. 确认标记控制规则：任务标记控制由各玩家合格争夺单位的 Current Supply Value 总和决定；若只有一方有合格争夺单位，该方控制标记；若此前由 Zerg 控制且对手补给总值更高，则控制权转移；平局不转移控制。",
+              "3. 评估若 Queen 被 Burrow：当轮结束时 Queen 不再是合格争夺单位；若对手有合格争夺单位，对手将控制该标记（或若此前由 Zerg 控制且对手补给总值更高，则控制权转移）。",
+              "4. 计算权衡：比较该标记的 VP 价值（或控制权对后续回合的价值）与 Queen 的存活价值（后续支援能力、Supply 占用、替代成本）。",
+              "5. 在裁定明确前，不得把“Burrow 提供对每次攻击的闪避”当作已确立的生存收益：Queen 的 Evade 为 Null Value（“-”），核心规则规定 Null Value 表示该单位不能进行闪避掷骰，且明确授予闪避掷骰的能力也不覆盖此限制；而 BURROWED 关键词称 Burrowed 单位可对每次攻击进行闪避掷骰。两者冲突，来源未给出裁定，须提交规则服务或裁判。",
+              "6. 若裁定为 Burrow 不授予 Queen 闪避掷骰，则本建议的“以标记控制换取 Queen 生存”前提不成立，不应以生存收益为由 Burrow Queen；改用其他单位争夺标记、将 Queen 移至安全位置，或用掩体/地形阻断视线。",
+              "7. 若裁定为 Burrow 授予 Queen 闪避掷骰，且标记 VP 价值低于 Queen 存活价值，则可使用 Rapid Burrowing 保护 Queen；若标记 VP 是当轮胜负关键，或 Queen 即使 Burrow 也可能被消灭，则不应 Burrow。",
+              "8. 若决定 Burrow，确保另派合格单位（如 Zergling、Roach）在当轮结束时争夺该标记，以维持或夺取控制。"
+            ],
+            "alternatives": [
+              "用其他单位争夺标记：将 Queen 移至安全位置，派 Zergling/Roach 等合格单位在标记 3\" 内保持 Coherency 并争夺，Queen 保持未 Burrow 以继续提供支援。",
+              "将 Queen 移至标记 3\" 内但保持未 Burrow，用 Brood Instinct 反应（+1 闪避修正）增强其闪避，不牺牲标记控制；但 Brood Instinct 每玩家每次激活仅限一个反应，且对闪避值已为 6+ 的单位加成无效。",
+              "若对手无合格争夺单位，Burrow 不导致控制权转移，可安全使用。",
+              "若 Queen 的 Evade 为 Null Value 且裁定 Burrow 不授予闪避掷骰，则 Burrow 的生存收益为零，应改用掩体或地形阻断视线，或直接以其他单位接替标记争夺。"
+            ],
+            "risk": "Burrow 后 Queen 不再是合格争夺单位，对手可能因此获得该标记控制或转移控制权；若 Queen 即使 Burrow 也被消灭，则既失去 Queen 又失去标记；Rapid Burrowing 每轮每单位每具名主动能力限一次，且需支付 1 BM 并耗尽一张资源卡，可能挤占其他能力资源；最关键的是，Queen 的 Evade 为 Null Value（“-”），核心规则规定 Null Value 表示不能进行闪避掷骰且明确授予闪避的能力也不覆盖此限制，而 BURROWED 关键词称 Burrowed 单位可对每次攻击进行闪避掷骰——该冲突未在来源中裁定，因此“Burrow 保护 Queen”的生存收益在本裁定明确前属未决，不应作为决策依据。",
+            "reviseIf": [
+              "规则服务或裁判裁定 Queen 的 Null Value Evade 使 Burrowed 的闪避掷骰不适用时，本建议的生存收益前提失效，应整体改写为不以 Burrow 保护 Queen。",
+              "规则服务或裁判裁定 Burrowed 的闪避掷骰覆盖 Null Value 限制时，可恢复以生存收益为核心的权衡表述。",
+              "对手无合格争夺单位时，Burrow 不导致控制权转移，风险降低。",
+              "该标记 VP 是当轮胜负关键时，标记控制代价可能超过 Queen 存活价值，不应 Burrow。",
+              "Queen 的存活对后续回合支援价值较低（如己方已有其他支援单位或 Queen 已受损严重）时，可优先保标记。",
+              "己方 BM 资源紧张且其他能力优先级更高时，应重新评估 1 BM 的分配。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "source:army_units:queen",
+              "core.OszqexisUrSOKMW6TzA5.items.4",
+              "core.u3zNStKpd5XegMjmJfMS.items.1"
+            ],
+            "unproven": [
+              "核心冲突未裁定：Queen 的 Evade 为 Null Value（“-”），核心规则规定 Null Value 表示该单位不能进行闪避掷骰，且明确授予闪避掷骰的能力也不覆盖此限制；而 BURROWED 关键词称 Burrowed 单位可对每次攻击进行闪避掷骰。来源未给出裁定，本建议的生存收益部分因此未决，须提交规则服务或裁判。",
+              "Rapid Burrowing 与任务标记控制的交互在 FAQ 中是否有额外裁定；当前依据核心规则（Burrowed 不能争夺/控制标记）与卡面文本，若存在未收录的 FAQ 或产品更新，应以现行官方来源为准。",
+              "标记 VP 价值与 Queen 存活价值的定量比较未在来源中给出，实际决策需结合完整任务卡、部署卡与战场状态。"
+            ]
+          },
+          {
+            "title": "突击阶段行动选择与激活顺序：先远程削弱、再近战冲锋，或 Run 换取下回合稳定冲锋",
+            "when": [
+              "己方单位在突击阶段被激活，且该单位带有移动阶段激活标记（仍在预备队的单位不能在本阶段行动）。",
+              "己方同时拥有可射击的远程单位（如 Hydralisk，Needle Spines 射程 12、RoA 3、Hit 3+、DMG 2）与可冲锋的近战单位（如 Zergling，速度 4、Claws RoA 2、Hit 4+，或 Raptor，速度 5、Claws RoA 2、Hit 4+）。",
+              "目标距离处于冲锋距离 Speed+1D6 的区间内（Zergling 为 5–10\"，Raptor 为 6–11\"），或远程单位已进入射程且有视线。"
+            ],
+            "procedure": [
+              "1. 确认规则事实：突击阶段每个单位选择一个行动——Ranged Attack、Charge、Run 或 Hold；Charge 距离为 Speed + 1D6，领队模型必须能合法结束在所有声明目标 1\" 内，失败则单位不移动且激活立即结束；Run 使用标准移动规则，不能 Charge。",
+              "2. 先评估远程单位：若 Hydralisk 已在射程内且有视线，优先 Ranged Attack，在敌方接近前造成伤害；若尚未进入射程，则用 Run 重新定位。",
+              "3. 再评估近战单位：若 Zergling/Raptor 的目标距离接近 Speed+1（最小冲锋距离），冲锋成功率高，且冲锋成功后按 Devastating Charge 的 IMPACT 规则结算（IMPACT 需对每枚 Impact Die 掷骰，结果达到阈值才置入 Armour Pool，并非自动命中）；若目标距离接近 Speed+6（最大冲锋距离），冲锋失败会浪费整个激活，此时用 Run 缩短距离、下回合保证冲锋更稳。",
+              "4. 安排激活顺序：先让远程单位射击削弱目标，再让近战单位冲锋；注意同一单位的多武器档案必须逐批声明目标并完全结算后再声明下一批。",
+              "5. 冲锋成功后按放置优先级设置模型：优先与声明目标底座接触，其次位于目标接战范围内，最后尽可能靠近领队模型以保持队形。",
+              "6. 若单位无法有效射击或冲锋，用 Run 重新定位到任务标记附近或掩体后，而非浪费激活执行 Hold。"
+            ],
+            "alternatives": [
+              "Hold 保留单位 Stationary 状态，以保留反应窗口或配合需要 Stationary 的效果，但放弃本阶段攻击或移动；注意 Stationary 也可能被对手的 LOCKED IN 类武器利用。",
+              "若目标已受损且射击可消灭，优先用远程单位射击而非冲锋，避免近战单位暴露于反击。",
+              "若目标有高 Evade 或高 Armour，冲锋的 IMPACT 需逐枚掷骰、达到阈值才置入 Armour Pool，并非自动命中；是否比射击更有效需结合具体阈值与目标防御实测。",
+              "若对手有 Reaction 能力可影响冲锋（如减速度或强制移动），可先用 Run 等待或改用射击，降低冲锋失败风险。"
+            ],
+            "risk": "冲锋失败会浪费整个激活且单位留在原地可能被反击；Run 放弃本回合攻击，对手可能在下回合移动、射击或夺取标记；同单位多武器必须逐批声明目标，不能同时声明；IMPACT 并非自动命中，需逐枚掷骰达到阈值才置入 Armour Pool，因此冲锋成功不等于造成伤害。",
+            "reviseIf": [
+              "目标距离接近 Speed+6 最大范围时，冲锋失败概率高，应改用 Run 缩短距离。",
+              "目标已受损且射击可消灭时，优先射击而非冲锋。",
+              "对手有 Reaction 可影响冲锋或闪避时，冲锋风险升高，应重新评估。",
+              "己方有 Metabolic Boost 等增加冲锋距离的能力（如 Zergling 的 Metabolic Boost 可掷 2D6 取高）时，冲锋成功率提高，可更积极冲锋。",
+              "己方单位是争夺关键标记的唯一单位时，应优先用 Run 或 Hold 保持标记争夺资格，而非冒险冲锋。"
+            ],
+            "sourceRefs": [
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+              "source:army_units:zergling",
+              "source:army_units:hydralisk"
+            ],
+            "unproven": [
+              "冲锋成功概率的具体数值未在来源中给出；实际概率需结合 D6 结果、修正值、重掷及特殊能力（如 Metabolic Boost 的 2D6 取高）计算。",
+              "先远程后近战的激活顺序在实际对局中减少反击的具体效果，需结合敌方单位构成、射程与视线实测；来源未规定该因果关系。",
+              "对手 Reaction 能力对冲锋的具体影响未在来源中逐条规定，属条件性假设。",
+              "IMPACT 阈值与目标防御的定量比较未在来源中给出，实际收益需按具体阈值与 Armour/Evade 实测。"
+            ]
+          },
+          {
+            "title": "Zergling 冲锋风险与 Run 的取舍：以本回合放弃攻击换取下回合稳定冲锋",
+            "when": [
+              "己方 Zergling 单位（速度 4，Charge 距离 5–10\"）在突击阶段被激活，且目标距离处于冲锋距离的边缘（如 9\"，需 D6≥5 才能成功）。",
+              "己方 Zergling 尚未进入可稳定冲锋的距离，且本回合不冲锋的代价可接受（如对手下回合无法有效消灭它或夺取关键标记）。",
+              "己方有其他单位可先射击削弱目标，或 Zergling 可移动到掩体后等待。"
+            ],
+            "procedure": [
+              "1. 确认规则事实：Run 使用标准移动规则，不能 Charge；Charge 距离为 Speed + 1D6，领队模型必须能合法结束在所有声明目标 1\" 内，失败则单位不移动且激活立即结束。Zergling 速度 4，Charge 距离 5–10\"。",
+              "2. 计算冲锋成功概率：目标 9\" 时，需 D6≥5，成功概率约 2/6，失败概率约 4/6；若先 Run 4\" 使距离变为 5\"，下回合 Charge 成功概率为 6/6（D6≥1），但本回合放弃攻击。",
+              "3. 评估本回合不冲锋的代价：对手可能在下回合移动、射击 Zergling 或夺取关键标记；若 Zergling 是争夺关键标记的唯一单位，或对手下回合可能消灭它，冒险冲锋可能更优。",
+              "4. 评估冲锋失败的代价：浪费整个激活，且 Zergling 留在原地可能被反击；若冲锋失败后 Zergling 暴露于敌方火力或冲锋范围，风险升高。",
+              "5. 若决定 Run，选择安全路径移动 4\" 缩短距离，尽量利用掩体或地形阻断敌方视线，为下回合冲锋创造稳定条件。",
+              "6. 若决定冲锋，先确认领队模型能合法结束在所有声明目标 1\" 内，且不进入未声明目标的接战范围；冲锋成功后按放置优先级设置模型。"
+            ],
+            "alternatives": [
+              "用其他单位先射击削弱目标，再让 Zergling 冲锋，提高冲锋后消灭目标的概率。",
+              "让 Zergling 移动到掩体后等待，利用 Direct Cover/Full Cover 阻断敌方视线，下回合再冲锋。",
+              "若己方有 Metabolic Boost 能力（1 BM，冲锋距离掷 2D6 取高），可提高冲锋成功率，更积极冲锋。",
+              "若目标已受损且射击可消灭，优先用远程单位射击，Zergling 保留用于争夺标记或防守。"
+            ],
+            "risk": "Run 放弃本回合攻击，对手可能在下回合移动、射击或夺取标记；冲锋失败浪费整个激活且 Zergling 留在原地可能被反击；若 Zergling 是唯一争夺关键标记的单位，Run 可能导致标记控制权转移。",
+            "reviseIf": [
+              "目标距离接近 Speed+1 最小范围时，冲锋成功率高，应优先冲锋。",
+              "己方有 Metabolic Boost 等增加冲锋距离的能力时，冲锋成功率提高，可更积极冲锋。",
+              "对手有 Reaction 可影响冲锋（如减速度或强制移动）时，冲锋风险升高，应改用 Run 或射击。",
+              "Zergling 是争夺关键标记的唯一单位时，应优先保持标记争夺资格，而非冒险冲锋。",
+              "对手下回合可能消灭 Zergling 时，冒险冲锋可能比等待更优。"
+            ],
+            "sourceRefs": [
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+              "source:army_units:zergling"
+            ],
+            "unproven": [
+              "冲锋成功概率计算基于均匀 D6 假设，未考虑修正值、重掷或特殊能力（如 Metabolic Boost 的 2D6 取高）对概率的影响；实际概率需按具体能力调整。",
+              "Run 后下回合冲锋的稳定性在实际对局中受对手移动、射击与标记争夺影响，需结合完整战场状态检验。",
+              "对手 Reaction 能力对冲锋的具体影响未在来源中逐条规定，属条件性假设。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.zerg_swarm.objectives.1",
+        "axis": "objectives",
+        "requiredSourceRefs": [
+          "source:tactical_cards:zerg_swarm"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Zerg Swarm 任务标记控制：高补给驻守与低补给锁定的取舍",
+            "when": [
+              "己方为 Zerg Swarm 阵营，需在计分阶段争夺或守住任务标记",
+              "己方拥有小编制 Hydralisk（补给 2）或小编制 Zergling（补给 1）等不同补给单位",
+              "对手以单个或少量单位争夺标记，且己方已控制或可控制该标记"
+            ],
+            "procedure": [
+              "确认标记控制由合格争夺单位的当前补给总值决定，而非模型数；平局不转移控制，补给 0 单位在无敌方争夺时仍可控制（8.9.1）。",
+              "若己方已控制某标记，用小编制 Zergling（补给 1）驻守即可：对手以等补给（如 Roach 补给 1）争夺形成平局，控制不转移，实现低成本锁定。",
+              "若需夺取未控制标记，优先投入高补给单位（如小编制 Hydralisk 补给 2）以在补给比较中压过对手单个低补给单位。",
+              "将高补给单位用于进攻或反夺关键标记，低补给 Zergling 用于占位、骚扰或锁定已控标记，以节省单位资源。"
+            ],
+            "alternatives": [
+              "若需更多 Elite 槽位带小编制 Raptor（补给 1），可购买 Hydralisk Den（35 瓦斯，+2 Elite）或 Lair（35 瓦斯，+1 Elite/+1 Core）补足，但会占用瓦斯预算。",
+              "若对手投入合计补给更高的单位（如小编制 Hydralisk 补给 2）夺回，己方可叠加多个低补给单位或改用高补给单位回防。"
+            ],
+            "risk": "Burrowed、Flying 及 Out of Coherency 单位不能争夺或控制标记；若己方单位被 Burrow 或失序，即使位于 3 英寸内也失去争夺资格，可能被对手以更高补给夺回。",
+            "reviseIf": [
+              "对手在某标记的争夺补给总值超过己方，需增援或改用更高补给单位",
+              "己方驻守单位被 Burrow、失序或 Flying，无法争夺标记",
+              "任务计分结构改变（如标记会被移除），需重新评估驻守价值"
+            ],
+            "sourceRefs": [
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+              "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+              "source:army_units:hydralisk",
+              "source:army_units:zergling"
+            ],
+            "unproven": [
+              "低补给单位锁定标记在对手投入更高补给单位时的实际防守效果需实战检验",
+              "高补给单位驻守与低补给单位骚扰的分配比例在不同对手构成下的最优性未验证"
+            ]
+          },
+          {
+            "title": "粘性控制下的任务标记优先级：Frontlines 与 Supply Drop 的差异化策略",
+            "when": [
+              "己方为 Zerg Swarm 阵营，任务为 Frontlines（每受控标记 1 VP，夺回额外 +2 VP）",
+              "己方为 Zerg Swarm 阵营，任务为 Supply Drop（已激活受控标记按激活回合数给 VP 后移除）",
+              "己方已控制或可控制任务标记，需决定驻守或转攻"
+            ],
+            "procedure": [
+              "确认控制具粘性：一旦控制，即使单位移开仍保持，直到对手在计分阶段以更高争夺补给总值夺回；平局不转移；一旦被控制不恢复中立（8.9.1）。",
+              "Frontlines 下：优先夺取并粘住标记，因每个受控标记每轮给 1 VP，且从对手手中夺回额外 +2 VP；用低补给单位驻守已控标记，高补给单位机动反夺。",
+              "Supply Drop 下：标记按激活回合数给 VP 后移除，不能重复得分；优先争夺当轮新激活的高回合数标记以获取更高单次 VP，而非死守旧标记。",
+              "每轮计分前确认驻守单位合格（非 Burrowed、Flying、Out of Coherency），否则控制可能被对手夺回。"
+            ],
+            "alternatives": [
+              "若新激活的高值标记难以到达，可先控制旧标记保底，但需接受较低的单次 VP。",
+              "若对手补给优势明显，可放弃难以防守的标记，集中资源争夺可赢的标记或等待对手移开后再反夺。"
+            ],
+            "risk": "粘性控制不阻止对手以更高补给夺回；Supply Drop 中标记移除后控制价值归零，死守旧标记可能浪费单位资源；Frontlines 中若对手抢先控制标记，夺回需投入更高补给。",
+            "reviseIf": [
+              "任务计分结构改变（如标记不再移除或夺回奖励变化）",
+              "对手在某标记的争夺补给总值超过己方，需增援或转攻",
+              "己方驻守单位被 Burrow、失序或 Flying，无法争夺标记"
+            ],
+            "sourceRefs": [
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "source:faction_cards:mission_frontlines",
+              "source:faction_cards:mission_supply_drop"
+            ],
+            "unproven": [
+              "Frontlines 下优先粘住标记与 Supply Drop 下优先新激活标记的策略在不同对手回应下的实际 VP 收益需实战检验",
+              "低补给单位驻守与高补给单位反夺的分配比例在不同任务和对手构成下的最优性未验证"
+            ]
+          },
+          {
+            "title": "Divide and Conquer 四分区补给争夺：完全置于区内并正确计算标记控制的 +1 补给",
+            "when": [
+              "任务为 Divide and Conquer（Standard 或 Skirmish 版本），从第一轮起按战场四分区计算总当前补给",
+              "己方为 Zerg Swarm 阵营，拥有可完全置于某分区内的地面单位（如小编制 Zergling 补给 1、小编制 Roach 补给 1、小编制 Hydralisk 补给 2）",
+              "己方有单位可控制某分区内的任务标记，或可争夺标记 5"
+            ],
+            "procedure": [
+              "确认计分结构：从第一轮起，计算每个战场分区的总当前补给；己方补给高于对手的每个分区得 1 VP；只有完全位于某分区内的单位才贡献其补给；若一个单位控制任务标记，该单位在该分区检查中额外算 1 补给；控制标记 5 得 2 VP（source:faction_cards:mission_divide_and_conquer）。",
+              "放置单位时确保其整个底座完全位于目标分区内，而非跨分区边缘；Wholly Within 要求整个底座完全在范围内，部分重叠不算（core.FuahgilWtc8nccVSp2Vv.items.0.subItems.73）。",
+              "按实际控制关系计算 +1 补给：卡面仅对“控制任务标记的单位”授予 +1 补给，而控制由粘性控制规则决定——同一标记在同一计分阶段只由争夺补给总值更高的一方控制，平局不转移；因此不能假定同一分区内多个单位可各自独立控制同一标记并各叠加 +1（core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0）。",
+              "若某分区难以争夺，集中补给于可赢分区，并优先争夺标记 5 以获取 2 VP。",
+              "每轮计分前确认贡献单位合格：非 Burrowed、非 Flying、In Coherency，且完全位于分区内（core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0）。"
+            ],
+            "alternatives": [
+              "若某分区无法赢下，放弃该分区，将单位调往可赢分区或标记 5，避免分散补给。",
+              "若对手在某分区以实际控制标记的单位获得 +1 反超，己方可用更高争夺补给总值夺回该标记控制权（夺回后该单位才获得 +1），或转而在同分区控制其他标记，或投入更高补给单位（如小编制 Hydralisk 补给 2）提升基础贡献。"
+            ],
+            "risk": "跨分区边缘放置的单位不贡献补给，浪费其补给值；Out of Coherency、Burrowed 或 Flying 单位不能争夺或控制标记，也不贡献标记控制的 +1 补给；对手可用更高争夺补给总值实际控制标记从而获得 +1，而非仅靠单位数量叠加；若己方贡献单位被 Burrow 或失序，分区补给优势可能瞬间逆转。",
+            "reviseIf": [
+              "对手在某分区的合计补给超过己方，需增援、夺回标记控制权或转投其他分区",
+              "己方贡献单位被 Burrow、失序或变为 Flying，失去分区贡献资格",
+              "任务计分结构改变（如分区划分或标记 5 奖励变化）",
+              "需要区分 Standard 与 Skirmish 版本的具体数值（起始补给、每轮额外补给、胜负阈值）时，须以对应卡面为准"
+            ],
+            "sourceRefs": [
+              "source:faction_cards:mission_divide_and_conquer",
+              "source:faction_cards:mission_divide_and_conquer__skirmish_",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.73"
+            ],
+            "unproven": [
+              "同一分区内多个单位各自控制不同标记从而各获 +1 补给的实际 VP 收益需在不同对手构成下实战检验",
+              "完全置于区内与跨区边缘放置在实际桌面测量中的边界判定需实战检验",
+              "分区争夺中放弃劣势分区与集中资源争夺标记 5 的分配比例在不同任务版本下的最优性未验证",
+              "Standard 与 Skirmish 版本在起始补给、每轮额外补给与胜负阈值上的差异对上述分配策略的影响未量化"
+            ]
+          },
+          {
+            "title": "等补给平局锁定：已控标记的低成本驻守与反夺权衡",
+            "when": [
+              "任务为 Frontlines（从第二轮起每个受控标记 1 VP，从对手夺回额外 +2 VP）",
+              "己方已控制某任务标记，对手以等补给单位争夺（如 Zergling 补给 1 对 Roach 补给 1）",
+              "己方需决定用低补给单位驻守还是将高补给单位调往他处"
+            ],
+            "procedure": [
+              "确认控制由争夺单位当前补给总值比较决定；平局为争夺中，控制不转移（core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0）。",
+              "若己方已控制某标记，用小编制 Zergling（补给 1）驻守即可：对手以等补给（如 Roach 补给 1）争夺形成平局，控制不转移，实现低成本锁定（source:army_units:zergling、source:army_units:roach）。",
+              "将高补给单位（如小编制 Hydralisk 补给 2）用于进攻或反夺其他关键标记，而非浪费在已控标记的驻守上。",
+              "Frontlines 下优先夺取并粘住标记，因每个受控标记每轮给 1 VP，且从对手手中夺回额外 +2 VP（source:faction_cards:mission_frontlines）。",
+              "每轮计分前确认驻守单位合格：非 Burrowed、非 Flying、In Coherency，否则失去争夺资格。"
+            ],
+            "alternatives": [
+              "若对手投入合计补给更高的单位（如小编制 Hydralisk 补给 2）夺回，己方可叠加多个低补给单位或改用高补给单位回防。",
+              "若标记尚未被己方控制，平局不产生控制，需先以更高补给夺取控制权再考虑低成本驻守。"
+            ],
+            "risk": "平局锁定仅保护当前控制方；若标记尚未被己方控制，等补给平局不产生控制；若驻守单位被 Burrow、失序或变为 Flying，即使位于 3 英寸内也失去争夺资格，可能被对手以更高补给夺回。",
+            "reviseIf": [
+              "对手在某标记的争夺补给总值超过己方，需增援或改用更高补给单位",
+              "己方驻守单位被 Burrow、失序或 Flying，无法争夺标记",
+              "任务计分结构改变（如夺回奖励变化或标记不再计分）"
+            ],
+            "sourceRefs": [
+              "source:faction_cards:mission_frontlines",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "source:army_units:zergling",
+              "source:army_units:roach"
+            ],
+            "unproven": [
+              "低补给单位锁定标记在对手投入更高补给单位时的实际防守效果需实战检验",
+              "等补给平局锁定与高补给单位反夺的分配比例在不同对手构成下的最优性未验证"
+            ]
+          },
+          {
+            "title": "Supply Drop 标记争夺：按激活回合数计 VP 的优先级与版本差异",
+            "when": [
+              "任务为 Supply Drop（Standard 或 Skirmish 版本），所有任务标记初始停用",
+              "Standard：第 1-4 轮开始时随机将一个停用标记（1-4）翻为激活；第 5 轮标记 5 自动激活",
+              "Skirmish：第 2-4 轮开始时随机将一个停用标记（1、2、5）翻为激活；无第 5 轮标记 5 自动激活",
+              "己方为 Zerg Swarm 阵营，拥有可争夺标记的地面单位（如小编制 Zergling 补给 1、小编制 Roach 补给 1、小编制 Hydralisk 补给 2）",
+              "己方需决定将单位投入当轮新激活标记还是继续驻守已控旧标记"
+            ],
+            "procedure": [
+              "确认计分结构：从第一轮起，每个已激活的受控标记按该标记被激活的回合数给 VP，然后移除该标记；被移除的标记不能再次得分（source:faction_cards:mission_supply_drop）。",
+              "确认版本差异：Standard 为第 1-4 轮随机激活标记 1-4、第 5 轮标记 5 自动激活，特殊胜利条件为领先 12+ VP；Skirmish 为第 2-4 轮随机激活标记 1、2、5，无第 5 轮自动激活，特殊胜利条件为领先 8+ VP（source:faction_cards:mission_supply_drop__skirmish_）。",
+              "确认控制判定：由合格争夺单位的当前补给总值比较决定，平局不转移控制，补给 0 单位在无敌方争夺时仍可控制（core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0）。",
+              "每轮开始时先确认当轮新激活的标记编号及其激活回合数；VP 等于该标记被激活的回合数，故越晚激活的标记单次 VP 越高，优先将高补给单位（如小编制 Hydralisk 补给 2）投入该标记争夺。",
+              "用低补给 Zergling（补给 1）驻守已控旧标记作为保底，但需接受其单次 VP 较低且标记即将被移除；不要为死守旧标记而放弃争夺当轮高值标记。",
+              "每轮计分前确认争夺单位合格：非 Burrowed、非 Flying、In Coherency，且至少一个模型在标记 3 英寸内、有视线且与标记同海拔（core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0）。"
+            ],
+            "alternatives": [
+              "若当轮新激活的高值标记因距离或地形难以到达，可先控制旧标记保底，接受较低单次 VP，同时为下一轮新标记预置单位。",
+              "若对手抢先控制高值标记，可评估是否以更高补给单位反夺（夺回后仍按激活回合数得分），或转投下一个即将激活的标记。",
+              "若己方补给不足以同时争夺多个标记，集中资源于单次 VP 最高的当轮新激活标记，放弃低值旧标记。"
+            ],
+            "risk": "随机激活使目标不可预测，可能无法及时到达高值标记；标记移除后控制价值归零，死守旧标记可能浪费单位激活；若争夺单位被 Burrow、失序或变为 Flying，即使位于 3 英寸内也失去争夺资格，可能被对手以更高补给夺走当轮高值标记；Standard 与 Skirmish 的激活轮次与特殊胜利条件不同，混用可能导致错误优先级。",
+            "reviseIf": [
+              "当轮新激活标记难以到达或已被对手以更高补给控制，转为保底旧标记或预置下一轮",
+              "己方争夺单位被 Burrow、失序或 Flying，无法争夺标记",
+              "任务计分结构改变（如标记不再移除或激活规则变化）",
+              "对手在某标记的争夺补给总值超过己方，需增援或转攻其他标记",
+              "版本为 Skirmish 时，须改用第 2-4 轮随机激活标记 1、2、5 且无第 5 轮自动激活的规则"
+            ],
+            "sourceRefs": [
+              "source:faction_cards:mission_supply_drop",
+              "source:faction_cards:mission_supply_drop__skirmish_",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+              "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+              "source:army_units:hydralisk",
+              "source:army_units:zergling"
+            ],
+            "unproven": [
+              "优先争夺当轮新激活高值标记与保底旧标记的实际 VP 收益对比需在不同随机激活序列下实战检验",
+              "高补给单位投入新标记与低补给单位驻守旧标记的分配比例在不同对手回应下的最优性未验证",
+              "随机激活导致的目标不可预测性对 Zerg Swarm 机动单位（如 Zergling 速度 4/8）到达能力的影响未量化"
+            ]
+          },
+          {
+            "title": "Divide and Conquer 分区争夺：控制标记 +1 补给的归属与单个高补给单位被反超的权衡",
+            "when": [
+              "任务为 Divide and Conquer（Standard 或 Skirmish 版本），从第一轮起按战场四分区计算总当前补给",
+              "己方为 Zerg Swarm 阵营，拥有可完全置于某分区内的地面单位（如小编制 Hydralisk 补给 2、小编制 Zergling 补给 1）",
+              "己方有单位可控制某分区内的任务标记，或可争夺标记 5",
+              "对手在同一分区内可能以多个控制标记单位叠加补给"
+            ],
+            "procedure": [
+              "确认计分结构：从第一轮起，计算每个战场分区的总当前补给；己方补给高于对手的每个分区得 1 VP；只有完全位于某分区内的单位才贡献其补给；控制任务标记的单位在该分区检查中额外算 1 补给；控制标记 5 得 2 VP（source:faction_cards:mission_divide_and_conquer）。",
+              "确认控制判定：由合格争夺单位的当前补给总值比较决定，平局不转移控制（core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0）。",
+              "注意 +1 补给的归属：卡面仅对“控制任务标记的单位”授予 +1 补给，而控制由粘性控制规则决定——同一标记在同一计分阶段只由争夺补给总值更高的一方控制，平局不转移；因此不能假定同一分区内多个单位可各自独立“控制”同一标记并各叠加 +1。",
+              "计算己方分区贡献：若己方控制某标记的小编制 Hydralisk 贡献 2（自身补给）+ 1（控制标记）= 3；对手若在同一分区以更高争夺补给总值实际控制该标记，则其控制单位获得 +1，己方需以实际控制关系而非单位数量估算。",
+              "应对反超：己方可在同一分区内控制不同的标记（每个被己方控制的标记对应单位各 +1），或投入更高补给单位提升基础贡献；单纯增加未控制标记的单位只增加其自身补给，不产生额外 +1。",
+              "放置单位时确保其整个底座完全位于目标分区内，而非跨分区边缘；Wholly Within 要求整个底座完全在范围内，部分重叠不算（core.FuahgilWtc8nccVSp2Vv.items.0.subItems.73）。",
+              "每轮计分前确认贡献单位合格：非 Burrowed、非 Flying、In Coherency，且完全位于分区内（core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0）。"
+            ],
+            "alternatives": [
+              "若某分区无法赢下，放弃该分区，将单位调往可赢分区或标记 5，避免分散补给。",
+              "若对手以实际控制标记的单位叠加 +1 反超，己方可用更高争夺补给总值夺回该标记控制权（夺回后该单位才获得 +1），或转而在同分区控制其他标记。",
+              "若标记 5 可争夺，优先控制标记 5 以获取 2 VP；标记 5 为中立（无玩家归属），其控制仍按争夺补给总值判定（core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1）。"
+            ],
+            "risk": "跨分区边缘放置的单位不贡献补给，浪费其补给值；Out of Coherency、Burrowed 或 Flying 单位不能争夺或控制标记，也不贡献标记控制的 +1 补给；对手可用更高争夺补给总值实际控制标记从而获得 +1，而非仅靠单位数量叠加；若己方贡献单位被 Burrow 或失序，分区补给优势可能瞬间逆转。",
+            "reviseIf": [
+              "对手在某分区的合计补给超过己方，需增援、夺回标记控制权或转投其他分区",
+              "己方贡献单位被 Burrow、失序或变为 Flying，失去分区贡献资格",
+              "任务计分结构改变（如分区划分或标记 5 奖励变化）",
+              "标记 5 已被对手控制且难以反夺，需重新分配分区资源",
+              "需要区分 Standard 与 Skirmish 版本的具体数值（起始补给、每轮额外补给、胜负阈值）时，须以对应卡面为准"
+            ],
+            "sourceRefs": [
+              "source:faction_cards:mission_divide_and_conquer",
+              "source:faction_cards:mission_divide_and_conquer__skirmish_",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.73",
+              "source:army_units:hydralisk",
+              "source:army_units:zergling"
+            ],
+            "unproven": [
+              "同一分区内多个单位各自控制不同标记从而各获 +1 补给的实际 VP 收益需在不同对手构成下实战检验",
+              "完全置于区内与跨区边缘放置在实际桌面测量中的边界判定需实战检验",
+              "分区争夺中放弃劣势分区与集中资源争夺标记 5 的分配比例在不同任务版本下的最优性未验证",
+              "Standard 与 Skirmish 版本在起始补给、每轮额外补给与胜负阈值上的差异对上述分配策略的影响未量化"
+            ]
+          },
+          {
+            "title": "Zerg Swarm 阵营卡自身：BM 资源、Rapid Burrowing 与 Brood Instinct 的条件用法",
+            "when": [
+              "己方选择 Zerg Swarm 阵营卡（起始槽位 3 Core / 1 Elite / 1 Support，无 Air/Hero；资源为 BM，耗尽本卡产 1 BM）",
+              "组军时须依 Zerg Creep 被动恰好选一张 Creep 卡并支付其费用；本卡被动文本未按标签限制可选 Creep 卡，具体某张 Creep 卡是否合法取决于其标签是否全部出现在本阵营卡上，而本阵营卡记录未提供可核验的标签集合",
+              "己方拥有一个友方、未接战的地面 Zerg 单位，且该单位当轮不需争夺或控制任务标记，面临敌方远程火力威胁",
+              "敌方突击阶段激活中，己方某单位将进行闪避掷骰，且本激活尚未使用其他反应"
+            ],
+            "procedure": [
+              "确认本卡资源与槽位：耗尽 Zerg Swarm 卡产 1 BM；起始 3 Core / 1 Elite / 1 Support，无 Air/Hero；未用槽位不能结转（source:tactical_cards:zerg_swarm）。",
+              "组军时依 Zerg Creep 被动恰好选一张 Creep 卡并支付其费用；被动文本仅要求“恰好一张 Creep 卡并支付其费用”，未按标签限定，故具体可选卡需以该卡标签与本阵营卡标签的现行官方记录为准（source:tactical_cards:zerg_swarm）。",
+              "Rapid Burrowing（主动，移动阶段）：选一个友方、未接战的地面 Zerg 单位，使其获得 Burrowed 状态，即使该单位本回合已激活也可；目标必须未接战，已接战则不能使用（source:tactical_cards:zerg_swarm）。作为主动能力，使用时该单位须处于已激活状态，且须在宣告动作前或动作完全结算后立即使用（core.H3Fn8YSvEvpJZpT57qw1.items.2）。",
+              "仅在目标当轮不参与标记争夺时使用 Rapid Burrowing：Burrowed 单位不能控制或争夺任务标记，Size 视为 0，但可对每次攻击进行闪避掷骰（core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8）。",
+              "注意 Burrowed 状态下仅可执行 Deploy、Move、Disengage、Run、Hold 与 Close Ranks；执行其中除 Hold 外的任一动作会立即移除 Burrowed 状态，故 Burrow 主要用于规避火力或拖延，而非射击前准备（core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8）。",
+              "Brood Instinct（反应，任意阶段）：在友方单位进行闪避掷骰前使用，对该掷骰施加 +1 修正；每玩家每次激活仅限一个反应，且每个具名反应能力每轮每单位限一次（source:tactical_cards:zerg_swarm；core.H3Fn8YSvEvpJZpT57qw1.items.4）。本卡记录未给出该能力的费用数值，故不在此断言其 BM 成本。",
+              "支付 BM 时须耗尽一张或多张匹配资源类型的 Ready 卡；多余 BM 立即丢失，不能保存或转用于其他能力；耗尽后该卡本回合不再提供资源或能力，直到第 4 阶段清理刷新（core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0）。"
+            ],
+            "alternatives": [
+              "保留 Zerg Swarm 卡 Ready 以使用其自身能力（Rapid Burrowing 或 Brood Instinct），而非耗尽产 BM 支付单位能力；两者不可兼得，需按当轮需求取舍。",
+              "若目标单位需在当轮争夺标记或已接战，则不用 Rapid Burrowing，改用其他保护手段或接受暴露。",
+              "若本激活已使用其他反应，则不用 Brood Instinct；对闪避值已为 6+ 的单位（如 Kerrigan）加成无效，因目标数值上限 6+（faq-v1:29）。"
+            ],
+            "risk": "耗尽卡牌后本回合不再提供资源或能力，多余 BM 丢失；Rapid Burrowing 使单位失去标记争夺资格，可能让出关键标记；Brood Instinct 受每次激活一个反应限制，过早使用可能错过更重要的反应窗口；对闪避已 6+ 单位加成无效。",
+            "reviseIf": [
+              "目标单位需在当轮争夺或控制任务标记，或已接战，则不用 Rapid Burrowing",
+              "本激活已使用其他反应，或目标闪避值已达 6+，则不用 Brood Instinct",
+              "当轮更需要卡牌自身能力而非其 BM 产出，则保留卡牌 Ready 不耗尽",
+              "获得 Malignant Creep、Accelerating Creep 及本阵营卡标签的现行官方记录后，重新核验 Creep 卡可选范围",
+              "存在未收录 FAQ 或产品更新改变 Burrowed 与标记控制或反应频率的交互，则以现行官方来源为准"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "faq-v1:29",
+              "source:army_units:kerrigan"
+            ],
+            "unproven": [
+              "本卡记录未提供可核验的标签集合，且 Malignant Creep 与 Accelerating Creep 的产品记录不在本次依赖闭包内，故“Malignant Creep 不合法、Accelerating Creep 为唯一合法选择”的结论无法在此证实，需按精确来源引用扩展上下文后核验",
+              "Brood Instinct 的 BM 费用数值未在本次来源中给出，需按精确来源引用扩展上下文后核验",
+              "Rapid Burrowing 保护高价值单位与牺牲其标记争夺资格的实际收益对比需在不同任务与对手火力下实战检验",
+              "Brood Instinct 在每次激活唯一反应窗口中的优先级分配（对高价值单位 vs 低价值单位）未验证",
+              "耗尽 Zerg Swarm 卡产 BM 与保留其自身能力的取舍在不同回合节奏下的最优性未量化"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.zerg_swarm.threat_tradeoffs.1",
+        "axis": "threat_tradeoffs",
+        "requiredSourceRefs": [
+          "source:tactical_cards:zerg_swarm"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Brood Instinct 反应名额分配：与 Transfusion 的取舍及 6+ 上限",
+            "when": [
+              "你控制 Zerg Swarm 阵营卡，且本回合至少有一张 Zerg 战术卡或阵营卡处于 Ready 状态可支付 0 费 Brood Instinct。",
+              "敌方本激活内将对一个或多个友方单位结算远程攻击，且这些单位中至少一个的 Evade 特性不是 Null（-）。",
+              "你同时拥有 Queen（Transfusion：Reaction，1 BM，减 Total Damage 2）或其他 Reaction 能力，且本激活尚未使用过 Reaction。"
+            ],
+            "procedure": [
+              "1. 在敌方激活开始前，列出本激活可能被攻击的友方单位及其 Evade 特性；标出 Evade 已达 6+ 的单位（如 Kerrigan，Evade 6+）。",
+              "2. 分开判断 Reaction 次数：触发位于某次 Activation 内时，每玩家本次 Activation 最多结算一个 Reaction；REPEATABLE Reaction 只看本次 Activation 已结算总数，0 次则通过次数检查、1 次则失败，不再套用同名能力每轮一次，也不读取只属于激活外触发的 usesForTrigger。触发完全位于 Activation 外时，才按同一 trigger 最多一次判断。Brood Instinct 与 Transfusion 在同一次 Activation 内仍竞争同一个 Reaction 名额。",
+              "3. 若目标 Evade 为 6+，不要使用 Brood Instinct：+1 修正使目标值降低 1，但目标值不可高于 6+，故对 6+ 无效果；改用 Transfusion（确定性减伤 2）或保留名额。",
+              "4. 若目标 Evade 未达上限且本激活只有一次关键攻击，评估 Brood Instinct 的概率收益（目标值降 1）与 Transfusion 的确定性减伤 2；若该单位濒危且伤害量高，优先 Transfusion；若伤害量低但命中骰多，Brood Instinct 可能更优。",
+              "5. 若本激活还有更关键的触发（如保护即将被消灭的单位），保留 Reaction 名额，不提前使用 Brood Instinct。",
+              "6. 使用 Brood Instinct 时，在友方单位进行闪避掷骰前声明，对该次掷骰施加 +1 修正；修正调整目标值而非骰子结果，自然 1 仍失败、自然 6 仍成功。"
+            ],
+            "alternatives": [
+              "替代 A：若目标 Evade 为 6+，改用 Queen 的 Transfusion（Reaction，1 BM，减 Total Damage 2）或依赖 Burrowed 状态自带的闪避掷骰。",
+              "替代 B：若本激活有多个单位可能被攻击，把唯一 Reaction 留给最可能被消灭或 Supply 最高的单位，而非第一个被攻击的单位。",
+              "替代 C：若敌方本激活只有一次低伤害攻击，保留 Reaction 名额到后续激活，避免浪费在低价值触发上。"
+            ],
+            "risk": "Brood Instinct 是概率性减伤，若闪避骰失败则无实际减伤；对 Evade 6+ 单位使用完全无效，浪费本激活唯一 Reaction 名额。Transfusion 虽确定性减伤 2，但需 1 BM 且 Queen 须在 4\" 内，可能受位置限制。",
+            "reviseIf": [
+              "若 FAQ 或产品更新改变 Reaction 频率限制（每激活一反应）或修正上限（2+ 至 6+），须重新评估。",
+              "若目标单位的 Evade 特性因 BUFF/DEBUFF 改变，须重新计算 Brood Instinct 的实际收益。",
+              "若 Queen 不在目标 4\" 内或 BM 不足，Transfusion 不可用，须改用其他替代。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "source:army_units:queen",
+              "source:army_units:kerrigan",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+              "faq-v1:29",
+              "faq-v1:59"
+            ],
+            "unproven": [
+              "Brood Instinct 与 Transfusion 在同一激活中的实际取舍在真实对局中的胜率影响未经检验。",
+              "对 Evade 6+ 单位使用 Brood Instinct 无效的结论基于目标值上限 6+，但若存在未收录的 FAQ 或产品更新，须以现行官方来源为准。"
+            ]
+          },
+          {
+            "title": "Brood Instinct 对带 ANTI-EVADE 攻击的效率：Hydralisk 案例",
+            "when": [
+              "你控制 Zerg Swarm 阵营卡，且本激活尚未使用过 Reaction。",
+              "敌方本激活将对一个友方 Hydralisk（Evade 5+）结算远程攻击，且该攻击可能带有 ANTI-EVADE (X) 关键词。",
+              "你拥有 Brood Instinct（Reaction，0 费，+1 Evade 修正）可用。"
+            ],
+            "procedure": [
+              "1. 确认攻击是否带 ANTI-EVADE (X)：该关键词使目标闪避掷骰受到 -X 修正，即目标值增加 X。",
+              "2. 计算无 ANTI-EVADE 时的目标值：Hydralisk Evade 5+，Brood Instinct 使目标值降 1 至 4+，成功概率从 2/6 提升到 3/6（+1/6）。",
+              "3. 计算有 ANTI-EVADE (1) 时的目标值：5+ 先升到 6+，Brood Instinct 再降回 5+，成功概率从 1/6 提升到 2/6（+1/6）。",
+              "4. 比较绝对与相对提升：两种情形绝对提升均为 +1/6，但有 ANTI-EVADE 时相对提升翻倍（1/6→2/6）。",
+              "5. 确认目标值上限 6+：ANTI-EVADE 最多把检定恶化到 6+，不能完全取消闪避掷骰；自然 1 仍失败、自然 6 仍成功。",
+              "6. 决策：若本激活仅此一次攻击且无 ANTI-EVADE，保留名额给更关键触发可能更优；若有 ANTI-EVADE 或该单位濒危，优先使用 Brood Instinct。",
+              "7. 若决定不使用 Brood Instinct，改用 Queen 的 Transfusion（确定性减伤 2）或依赖 Burrowed 状态自带的闪避掷骰。"
+            ],
+            "alternatives": [
+              "替代 A：若本激活有多个单位受攻击，把唯一 Reaction 留给带 ANTI-EVADE 的攻击目标，因相对提升更大。",
+              "替代 B：若 Hydralisk 已处于 Burrowed 状态，其自带闪避掷骰可能已足够，保留 Brood Instinct 名额给其他单位。",
+              "替代 C：若 BM 充足且 Queen 在 4\" 内，改用 Transfusion 的确定性减伤 2，避免概率性收益。"
+            ],
+            "risk": "Brood Instinct 是概率性减伤，若闪避骰失败则无实际减伤；在无 ANTI-EVADE 时使用可能浪费本激活唯一 Reaction 名额。ANTI-EVADE 与 Brood Instinct 的叠加顺序若被误判，可能导致目标值计算错误。",
+            "reviseIf": [
+              "若 FAQ 或产品更新改变 ANTI-EVADE 与修正的叠加顺序或目标值上限，须重新计算。",
+              "若 Hydralisk 的 Evade 特性因 BUFF/DEBUFF 改变，须重新评估 Brood Instinct 的实际收益。",
+              "若敌方攻击不带 ANTI-EVADE 且伤害量低，保留名额到后续激活可能更优。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "source:army_units:hydralisk",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.2",
+              "faq-v1:29"
+            ],
+            "unproven": [
+              "Brood Instinct 在带 ANTI-EVADE 攻击中的实际效率提升在真实对局中的胜率影响未经检验。",
+              "ANTI-EVADE 与 Brood Instinct 的精确叠加顺序及目标值上限交互基于核心规则与 FAQ v1:29，但若存在未收录的 FAQ 或产品更新，须以现行官方来源为准。"
+            ]
+          },
+          {
+            "title": "Rapid Burrowing 的防御收益与标记控制代价：Queen/Hydralisk 的 Burrow 取舍",
+            "when": [
+              "你控制 Zerg Swarm 阵营卡，且本回合至少有一张 Zerg 战术卡或阵营卡处于 Ready 状态可支付 Rapid Burrowing 的 1 BM 费用。",
+              "战场上存在一个友方、未接战（Unengaged）的地面 Zerg 单位（如 Queen 或 Hydralisk），且该单位本回合尚未被 Burrow。",
+              "敌方在接下来的突击阶段可能对该单位发动远程攻击，或该单位面临被消灭的风险。"
+            ],
+            "procedure": [
+              "1. 确认 Rapid Burrowing 为 Active、移动阶段、1 BM；选择战场上任意一个友方、未接战的地面 Zerg 单位，使其获得 Burrowed 状态，即使该单位本回合已激活也可。目标必须未接战——若目标已接战则不能使用。",
+              "2. 确认 Burrowed 的完整效果：Size 视为 0、不能 Control 或 Contest Mission Markers、可对每次攻击进行闪避掷骰、获得 HIDDEN 状态。",
+              "3. 判断该单位是否需要在当轮结束时争夺或控制任务标记：若需要，则不应 Burrow，因为 Burrowed 单位不能 Control/Contest，会直接放弃该标记。",
+              "4. 若该单位不参与标记争夺且面临远程威胁，Burrow 可提供闪避保护；对高价值单位（Queen、Hydralisk）而言，若其 Supply 是争夺关键标记的唯一来源，Burrow 会直接放弃该标记控制、可能损失 VP。",
+              "5. 若该标记已由其他单位控制（控制权粘性：一旦控制，直到对手以更高 Supply 总值夺回前保持），则 Burrow 高价值单位的代价较低，可放心使用。",
+              "6. 注意 Burrowed 状态下执行 Move/Disengage/Run/Charge/Close Ranks（除 Hold 外）会立即移除 Burrowed 状态；因此 Burrow 主要用于规避火力或拖延，而非作为射击前准备。"
+            ],
+            "alternatives": [
+              "替代 A：用其他单位争夺标记，让高价值单位 Burrow 规避火力；若己方有多个单位可争夺同一标记，优先让低 Supply 单位争夺，高价值单位 Burrow。",
+              "替代 B：若该标记已由其他单位控制（控制权粘性），可放心 Burrow 高价值单位，因为控制权不会因该单位 Burrow 而立即丢失。",
+              "替代 C：若该单位必须争夺标记且面临远程威胁，保持未 Burrow 争夺，接受被消灭风险；或利用地形/掩护降低被击中概率，而非依赖 Burrow。"
+            ],
+            "risk": "Burrow 高价值单位会直接放弃其标记控制能力，若该单位是唯一能争夺关键标记的单位，可能损失 VP 并输局。Burrowed 状态下执行除 Hold 外的任何行动会立即移除 Burrowed，若计划在突击阶段射击或冲锋，Burrow 可能被浪费。",
+            "reviseIf": [
+              "若任务卡对标记控制有特殊规则（如 Supply Drop 的激活标记计分、Divide and Conquer 的 Quarter 计分），须重新评估 Burrow 的代价。",
+              "若 FAQ 或产品更新改变 Burrowed 与任务标记控制的交互，须以现行官方来源为准。",
+              "若该单位在当轮结束时不再需要争夺标记（如标记已由其他单位控制），Burrow 的代价降低，可优先使用。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+              "source:army_units:queen",
+              "source:army_units:hydralisk"
+            ],
+            "unproven": [
+              "Burrow 高价值单位与放弃标记控制之间的实际胜率影响在真实对局中未经检验。",
+              "Rapid Burrowing 对已激活单位的使用是否受其他规则限制（如该单位是否已在本阶段执行过行动）基于卡面文本“即使该单位本回合已激活也可”，但若存在未收录的 FAQ 或产品更新，须以现行官方来源为准。"
+            ]
+          },
+          {
+            "title": "终局唯一争夺单位时的 Burrow 决策：Queen 的标记控制与生存取舍",
+            "when": [
+              "你控制 Zerg Swarm 阵营卡，且本回合至少有一张 Zerg 战术卡或阵营卡处于 Ready 状态可支付 Rapid Burrowing 的 1 BM 费用。",
+              "Queen 是己方唯一能在当轮结束时争夺某个关键任务标记的单位，且该标记的控制权可能决定游戏胜负。",
+              "敌方有单位能争夺同一标记，且 Queen 面临被远程攻击消灭的风险。"
+            ],
+            "procedure": [
+              "1. 确认 Rapid Burrowing 为 Active、移动阶段、1 BM；选择 Queen（友方、未接战的地面 Zerg 单位）使其获得 Burrowed 状态，即使本回合已激活也可。",
+              "2. 确认 Burrowed 的完整效果：Size 视为 0、不能 Control 或 Contest Mission Markers、可对每次攻击进行闪避掷骰、获得 HIDDEN 状态。",
+              "3. 判断 Queen 是否需要在当轮结束时争夺该关键标记：若需要，则 Burrow 会直接放弃该标记控制、可能损失 VP 并输局；此时应保持未 Burrow 争夺，接受被消灭风险。",
+              "4. 若该标记已由其他单位控制（控制权粘性：一旦控制，直到对手以更高 Supply 总值夺回前保持），或另有单位可替代争夺，则 Burrow 保护 Queen 的代价较低，可优先使用。",
+              "5. 若决定保持未 Burrow 争夺，利用地形/掩护降低被击中概率，或让 Queen 在争夺前先移动至有掩护的位置。",
+              "6. 注意 Burrowed 状态下执行除 Hold 外的任何行动会立即移除 Burrowed；若 Queen 需在突击阶段射击或冲锋，Burrow 可能被浪费。"
+            ],
+            "alternatives": [
+              "替代 A：用其他单位争夺标记，让 Queen Burrow 规避火力；若己方有多个单位可争夺同一标记，优先让低 Supply 单位争夺，Queen Burrow。",
+              "替代 B：若该标记已由其他单位控制（控制权粘性），可放心 Burrow Queen，因为控制权不会因 Queen Burrow 而立即丢失。",
+              "替代 C：若 Queen 必须争夺标记且面临远程威胁，保持未 Burrow 争夺，接受被消灭风险；或利用地形/掩护降低被击中概率，而非依赖 Burrow。"
+            ],
+            "risk": "Burrow Queen 会直接放弃其标记控制能力，若 Queen 是唯一能争夺关键标记的单位，可能损失 VP 并输局。保持未 Burrow 争夺则接受被消灭风险，若 Queen 被消灭，可能同时失去标记控制与单位。",
+            "reviseIf": [
+              "若任务卡对标记控制有特殊规则（如 Supply Drop 的激活标记计分、Divide and Conquer 的 Quarter 计分），须重新评估 Burrow 的代价。",
+              "若 FAQ 或产品更新改变 Burrowed 与任务标记控制的交互，须以现行官方来源为准。",
+              "若该标记在当轮结束时不再需要争夺（如标记已由其他单位控制），Burrow 的代价降低，可优先使用。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "source:army_units:queen",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0"
+            ],
+            "unproven": [
+              "终局唯一争夺单位时 Burrow 与保持未 Burrow 之间的实际胜率影响在真实对局中未经检验。",
+              "Rapid Burrowing 对已激活单位的使用是否受其他规则限制（如该单位是否已在本阶段执行过行动）基于卡面文本“即使该单位本回合已激活也可”，但若存在未收录的 FAQ 或产品更新，须以现行官方来源为准。"
+            ]
+          },
+          {
+            "title": "Creep 扩张投资与肿瘤被清除风险：Speed on Creep 的放置时机与诱饵取舍",
+            "when": [
+              "你控制 Zerg Swarm 阵营卡，且已按 Zerg Creep 被动在组军时选择 Accelerating Creep（Malignant Creep 带 Kerrigan's Swarm 标签，对 Zerg Swarm 不合法）。",
+              "你拥有 Queen（Spawn Creep Tumor：Active，1 BM，将 Creep Tumor 置于与该单位底座接触处）或已购买 Hatchery（30 瓦斯，Creep Spread：Active，移动阶段，在友方 Entry Edge 或现有友方 Creep Tumor 6\" 内放置 Creep Tumor）。",
+              "当轮至少有一个友方地面 Zerg 单位计划执行 Move/Run/Charge，且其起点在现有或即将放置的 Creep Tumor 6\" 内（ON CREEP 判定）。"
+            ],
+            "procedure": [
+              "1. 确认 Speed on Creep 为 Passive 平坦修正（非 BUFF 关键词）：若主动友方 Zerg 单位在移动开始时 ON CREEP，其 Speed +1，且整段移动保持该加成，即使中途离开 Creep 也有效（FAQ v1:47）。",
+              "2. 确认 ON CREEP 判定：友方或敌方地面 Zerg 单位在任一 Creep Tumor Token 或指定 Creep 来源模型 6\" 内即 ON CREEP（Part 11 ON CREEP）。",
+              "3. 确认 Creep Removal 触发：仅当敌方单位以 Move、Deploy、Run、Charge 或 Disengage 结束于友方 Creep Tumor 1\" 内时移除该肿瘤；PLACE 不触发（FAQ v1:54）。",
+              "4. 放置前先数当轮将立即受益的单位数：若 ≥2 个单位在放置后同一移动阶段内移动，则 Queen 的 Spawn Creep Tumor（1 BM）或 Hatchery 的 Creep Spread 激活通常值得；若仅 1 个单位且对手可轻易清除，则牺牲该激活可能不划算。",
+              "5. 比较两种放置来源：Queen 的 Spawn Creep Tumor 需 1 BM 且肿瘤与 Queen 底座接触，位置受 Queen 站位限制；Hatchery 的 Creep Spread 需 30 瓦斯购卡、无 BM 费，可在友方 Entry Edge 或现有肿瘤 6\" 内放置，扩展更灵活但受 6\" 链式限制。",
+              "6. 若决定放置，尽量在关键移动前才放置，缩短对手响应窗口；或把肿瘤放在对手难以用单次移动清除的位置（远离其激活路径）。",
+              "7. 若对手已用激活清除肿瘤，评估该激活交换：对手消耗一个激活清除，己方消耗一个激活放置，若己方因此打乱对手节奏或保护了更关键单位，则未必是净损失。"
+            ],
+            "alternatives": [
+              "替代 A：把 Creep Tumor 当诱饵——故意放在对手必须清除的位置，迫使其消耗移动阶段激活，从而减少其当轮可用于争夺标记或射击的激活数。",
+              "替代 B：若仅一个单位需要 +1 速度，改用 Queen 的 Creep Speed 升级（Passive，10 瓦斯，ON CREEP 时 Speed +2）或 Glial Reconstitution（Active，1 BM，BUFF SPEED 1，ON CREEP 时 2），避免占用放置激活。",
+              "替代 C：若对手清除能力弱或己方已有稳定 Creep 网络，优先用 Hatchery 的 Creep Spread 扩展链式 Creep，而非 Queen 的贴身放置。",
+              "替代 D：若当轮无单位依赖 Creep 速度，保留 Queen 的激活用于 Transfusion（Reaction，1 BM，减 Total Damage 2）或 Domineering Presence（Active，1 BM，目标 Supply +1 用于争夺标记）。"
+            ],
+            "risk": "Creep Tumor 是临时资产：对手可用一次 Move/Deploy/Run/Charge/Disengage 结束于 1\" 内清除，Queen 或 Hatchery 的放置激活可能被浪费。若肿瘤被清除后己方单位已开始移动，Speed on Creep 加成仍保留（移动开始时已检查），但后续轮次失去 Creep 网络。过度投资 Creep 扩张会挤占 BM 与激活，削弱争夺标记与射击能力。",
+            "reviseIf": [
+              "若 FAQ 或产品更新改变 Creep Removal 触发条件（如新增 PLACE 触发）或 ON CREEP 检查时机，须重新评估放置时机。",
+              "若对手阵容缺乏清除 Creep 的手段（如无地面单位可结束于 1\" 内），Creep 投资回报上升，可更积极放置。",
+              "若任务卡要求单位分散争夺多个标记（如 Divide and Conquer 的 Quarter 计分），Creep 网络覆盖范围可能不足，须改用其他速度来源。",
+              "若 BM 紧张且 Queen 需保留 BM 用于 Transfusion，优先用 Hatchery 的 Creep Spread（无 BM 费）替代。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:accelerating_creep",
+              "source:army_units:queen",
+              "source:tactical_cards:hatchery",
+              "faq-v1:47",
+              "faq-v1:54",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48"
+            ],
+            "unproven": [
+              "Creep 扩张投资与肿瘤被清除风险之间的实际胜率影响在真实对局中未经检验。",
+              "Speed on Creep 与 Queen 的 Creep Speed 升级、Glial Reconstitution 等速度来源的精确叠加在具体单位档案下未经逐项核对；后续角色须查阅完整单位卡与 FAQ 确认。",
+              "Hatchery 的 Creep Spread 与 Queen 的 Spawn Creep Tumor 在同一轮内的放置顺序与 6\" 链式限制在边界情形下未经实际局面检验。"
+            ]
+          },
+          {
+            "title": "Creep 放置激活的时机与对手响应窗口：Queen 放 Creep 助 Zergling 冲锋是否被浪费",
+            "when": [
+              "你控制 Zerg Swarm 阵营卡，且已选择 Accelerating Creep（Zerg Swarm 唯一合法 Creep 卡）。",
+              "你拥有 Queen（Spawn Creep Tumor：Active，1 BM）或 Hatchery（Creep Spread：Active，移动阶段，30 瓦斯），且当轮计划让一个或多个 Zergling/Raptor 单位执行 Charge。",
+              "对手拥有可在其移动阶段以 Move/Run/Charge/Disengage 结束于 Creep Tumor 1\" 内的单位，且其激活顺序在己方放置之后。"
+            ],
+            "procedure": [
+              "1. 确认 Speed on Creep 为 Passive 平坦修正（非 BUFF）：移动开始时检查 ON CREEP，若满足则整段移动 Speed +1，即使中途离开 Creep 也保持（FAQ v1:47）。",
+              "2. 确认 Creep Removal 触发：仅当敌方单位以 Move、Deploy、Run、Charge 或 Disengage 结束于友方 Creep Tumor 1\" 内时移除；PLACE 不触发（FAQ v1:54）。",
+              "3. 评估当轮受益单位数：若放置后同一移动阶段内有 ≥2 个单位将移动并受益，则 Queen 的放置激活通常值得；若仅 1 个单位，则需比较该激活用于放置 vs 用于移动/射击/争夺标记的收益。",
+              "4. 评估对手响应窗口：若对手在己方放置后仍有移动阶段激活，且其单位可到达肿瘤 1\" 内，则肿瘤可能被清除；若己方在对手移动阶段结束后才放置（如通过 Hatchery 的 Creep Spread 在己方后续激活中放置），则对手当轮无法响应。",
+              "5. 若决定放置，优先在关键 Charge 前才放置，缩短对手响应窗口；或把肿瘤放在对手单位无法在单次移动内到达的位置（如远离其激活路径、被地形阻挡）。",
+              "6. 若对手已清除肿瘤，评估激活交换：对手消耗一个激活清除，己方消耗一个激活放置；若己方因此打乱对手节奏、保护了更关键单位或迫使对手偏离原计划，则未必是净损失。",
+              "7. 若判断放置会被浪费，改用其他速度来源（如 Queen 的 Creep Speed 升级、Glial Reconstitution）或直接执行 Charge（Charge 距离为 Speed + 1D6，不依赖 Creep 加成）。"
+            ],
+            "alternatives": [
+              "替代 A：把 Creep Tumor 当诱饵——故意放在对手必须清除的位置，迫使其消耗移动阶段激活，从而减少其当轮可用于争夺标记或射击的激活数。",
+              "替代 B：若仅一个 Zergling 单位需要 +1 速度，改用 Queen 的 Creep Speed 升级（Passive，10 瓦斯，ON CREEP 时 Speed +2）或 Glial Reconstitution（Active，1 BM，BUFF SPEED 1，ON CREEP 时 2），避免占用放置激活。",
+              "替代 C：若对手清除能力弱或己方已有稳定 Creep 网络，优先用 Hatchery 的 Creep Spread 扩展链式 Creep，而非 Queen 的贴身放置。",
+              "替代 D：若当轮无单位依赖 Creep 速度，保留 Queen 的激活用于 Transfusion（Reaction，1 BM，减 Total Damage 2）或 Domineering Presence（Active，1 BM，目标 Supply +1 用于争夺标记）。"
+            ],
+            "risk": "Creep Tumor 是临时资产：对手可用一次 Move/Deploy/Run/Charge/Disengage 结束于 1\" 内清除，Queen 或 Hatchery 的放置激活可能被浪费。若肿瘤被清除后己方单位已开始移动，Speed on Creep 加成仍保留（移动开始时已检查），但后续轮次失去 Creep 网络。过度投资 Creep 扩张会挤占 BM 与激活，削弱争夺标记与射击能力。",
+            "reviseIf": [
+              "若 FAQ 或产品更新改变 Creep Removal 触发条件（如新增 PLACE 触发）或 ON CREEP 检查时机，须重新评估放置时机。",
+              "若对手阵容缺乏清除 Creep 的手段（如无地面单位可结束于 1\" 内），Creep 投资回报上升，可更积极放置。",
+              "若任务卡要求单位分散争夺多个标记（如 Divide and Conquer 的 Quarter 计分），Creep 网络覆盖范围可能不足，须改用其他速度来源。",
+              "若 BM 紧张且 Queen 需保留 BM 用于 Transfusion，优先用 Hatchery 的 Creep Spread（无 BM 费）替代。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:accelerating_creep",
+              "source:army_units:queen",
+              "source:tactical_cards:hatchery",
+              "faq-v1:47",
+              "faq-v1:54",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48"
+            ],
+            "unproven": [
+              "Creep 放置激活与对手响应窗口之间的实际胜率影响在真实对局中未经检验。",
+              "Speed on Creep 与 Queen 的 Creep Speed 升级、Glial Reconstitution 等速度来源的精确叠加在具体单位档案下未经逐项核对；后续角色须查阅完整单位卡与 FAQ 确认。",
+              "Hatchery 的 Creep Spread 与 Queen 的 Spawn Creep Tumor 在同一轮内的放置顺序与 6\" 链式限制在边界情形下未经实际局面检验。"
+            ]
+          },
+          {
+            "title": "利用对手 NON-LETHAL DAMAGE 标记选择集火时机",
+            "when": [
+              "对手单位因 Stimpack 或其他来源承受 NON-LETHAL DAMAGE，且需要判断它是否已经被移除、是否值得追加普通伤害。",
+              "当前只分析伤害子过程；攻击完整合法性、命中与防御仍由规则器另行确认。"
+            ],
+            "procedure": [
+              "NON-LETHAL DAMAGE 只把数值加到 Unit 的 Damage Marker；即使总标记达到或超过模型 HP，也不在这个步骤移除任何模型。没有后续普通伤害事件时，targetDestroyed 为 false、casualtyCount 为 0，标记保留为先前值加本次非致命伤害。",
+              "该单位后来承受正数标准 Damage 时，才把已有 Damage Marker 与新伤害合并并正常移除伤亡；每移除一个模型扣除其 HP。最后一个模型被移除后，postDamageMarker 记 0，溢出伤害不保留。",
+              "制定 Zerg 集火计划时，把高 NON-LETHAL 标记的敌方单位视为“仍在场但下一次普通伤害可能触发伤亡”，优先比较追加一次可靠普通伤害与攻击其他目标的收益。"
+            ],
+            "alternatives": [
+              "若本轮无法合法造成普通伤害，不把高 NON-LETHAL 标记误记为已消灭；继续按其在场位置、威胁范围与任务控制计算。",
+              "若目标还有多个模型，按每个模型 HP 逐个扣除并保留不足以下一次移除的余量，不能套用最后一个模型归零的快捷结论。"
+            ],
+            "risk": "提前移除仅承受非致命伤害的模型会错误改变位置、控制、威胁与激活；反过来忽略已有标记，会低估一次后续普通伤害的击杀价值。",
+            "reviseIf": [
+              "目标模型数、HP、已有 Damage Marker、非致命伤害量或后续普通伤害量变化时重新计算。",
+              "存在减伤、伤害转移、特殊伤亡顺序或其他效果时，交由相应规则器按实际事件顺序重算。"
+            ],
+            "sourceRefs": [
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+              "source:army_units:marine"
+            ],
+            "unproven": [
+              "把火力转向带高非致命标记的目标是否优于当前其他目标，仍需结合位置、任务得分与命中概率评估。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.zerg_swarm.card_packages.1",
+        "axis": "card_packages",
+        "requiredSourceRefs": [
+          "source:tactical_cards:accelerating_creep",
+          "source:tactical_cards:evolution_chamber",
+          "source:tactical_cards:hatchery",
+          "source:tactical_cards:hydralisk_den",
+          "source:tactical_cards:lair"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Zerg Swarm 战术卡包：Hydralisk Den 与 Lair 的槽位/能力取舍",
+            "when": [
+              "组军阶段，Standard 规模（2000 矿物 / 200 瓦斯），已选 Zerg Swarm 阵营卡（起始 3 Core / 1 Elite / 1 Support，无 Air/Hero）",
+              "计划带小编制 Hydralisk（2 模型，占 2 Elite，Supply 2）或小编制 Raptor（12 模型，占 1 Elite，Supply 1）",
+              "需要判断 35 瓦斯应投入 Hydralisk Den 还是 Lair"
+            ],
+            "procedure": [
+              "确认起始 Elite 槽仅 1，小编制 Hydralisk 需 2 Elite，故必须购买解锁 Elite 的战术卡。",
+              "若目标是小编制 Hydralisk：购 Hydralisk Den（35 瓦斯，+2 Elite）。其 Missile Attacks 为主动能力（突击阶段，需激活单位并耗尽该卡），使激活单位首个远程武器获 PRECISION(1)，非被动光环。",
+              "若目标是小编制 Raptor 并需额外 Core 槽：购 Lair（35 瓦斯，+1 Core/+1 Elite）。其 Predation 为主动能力（任意阶段，需激活单位并耗尽该卡），使激活单位近战武器获 INSTANT；Creep Spread 为主动能力（移动阶段），在友方 Entry Edge 或现有友方 Creep Tumor 6\"内放置 Creep Tumor。",
+              "注意耗尽后该卡本回合不再提供资源或能力，直到 Phase 4 Cleanup 刷新；未用槽位不能结转。"
+            ],
+            "alternatives": [
+              "Overlord（35 瓦斯，+1 Core/+1 Elite/+1 Hero）无 Elite 双槽，无法单独支撑小编制 Hydralisk，但可兼顾 Hero 槽。",
+              "两卡同购（70 瓦斯）可同时满足 Hydralisk 与 Raptor，但挤压其他瓦斯支出。",
+              "若只带 Core 单位（Zergling/Roach 各占 1 Core），起始 3 Core 通常够用，可跳过 Elite 解锁卡。"
+            ],
+            "risk": "Hydralisk Den 只给 Elite，若还想带 Raptor 则 Elite 槽可能不足；Lair 只给 1 Elite，无法单独支撑小编制 Hydralisk。耗尽卡牌使用能力会牺牲该卡本回合的 BM 产出。",
+            "reviseIf": [
+              "实际军队还需 Hero/Air 槽，应改选 Overlord 或 Supply Depot。",
+              "任务要求更多 Core 单位时，Lair 的 +1 Core 更有价值。",
+              "官方产品数据更新改变槽位或成本。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:lair",
+              "source:tactical_cards:zerg_swarm",
+              "source:army_units:hydralisk",
+              "source:army_units:raptor__zergling_"
+            ],
+            "unproven": [
+              "Hydralisk Den 与 Lair 在具体任务与对手构成下的实际胜率差异未经对战检验。",
+              "Missile Attacks 与 Predation 的精确触发窗口及与单位能力的叠加效果需实际局面验证。"
+            ]
+          },
+          {
+            "title": "Zerg Swarm 唯一合法 Creep 卡：Accelerating Creep 的 Creep 网络维持",
+            "when": [
+              "组军阶段，已选 Zerg Swarm 阵营卡，其 Zerg Creep 被动要求选择恰好一张 Creep 卡",
+              "需要判断如何利用 Accelerating Creep 的 Speed on Creep、Living Glob of Tissue、Creep Removal 维持 Creep 网络"
+            ],
+            "procedure": [
+              "确认合法性：Malignant Creep 带 Kerrigan's Swarm 标签，而 Zerg Swarm 阵营卡只有 Zerg 标签，故不合法；Accelerating Creep（0 瓦斯）是唯一合法选择。",
+              "Speed on Creep（被动，任意阶段）：激活的友方 Zerg 单位若 ON CREEP 则 Speed +1。ON CREEP 在移动开始时检查，若开始移动时 ON CREEP 则整段移动获得 +1，即使中途离开也保持（FAQ v1:47）。此加成可与 Queen 的 Creep Speed 升级（ON CREEP 时 +2）叠加，但不与 BUFF Speed 效果叠加。",
+              "Living Glob of Tissue（被动）：Creep Tumor 获 STAY IN PLAY 与 DISPLACEMENT。",
+              "Creep Removal（被动）：敌方单位以 Move/Deploy/Run/Charge/Disengage 结束于友方 Creep Tumor 1\"内时移除该肿瘤；PLACE 不触发（FAQ v1:54）。",
+              "维持网络：Hatchery 的 Creep Spread（主动，移动阶段，需激活单位并耗尽卡牌）在友方 Entry Edge 或现有友方 Creep Tumor 6\"内放置肿瘤；Overlord 的 Excrete Creep（主动，突击阶段，同条件）；Queen 的 Spawn Creep Tumor（主动，任意阶段，1 BM，与自身底座接触放置）。"
+            ],
+            "alternatives": [
+              "仅靠 Queen 的 Spawn Creep Tumor 维持局部 Creep，不投入 Hatchery/Overlord。",
+              "利用 DISPLACEMENT 作为推挤工具改变对手位置，但该策略的 Creep 网络维持效果未经来源确立。"
+            ],
+            "risk": "Creep Tumor 是临时资产，对手可主动以移动结束于肿瘤 1\"内清除它。耗尽卡牌使用能力会牺牲该卡本回合的 BM 产出。",
+            "reviseIf": [
+              "对手频繁清除肿瘤，或任务要求单位分散远离 Creep 网络时，Speed on Creep 价值下降。",
+              "官方 FAQ 或产品更新改变 Creep 卡合法性或能力文本。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:accelerating_creep",
+              "source:tactical_cards:hatchery",
+              "source:tactical_cards:overlord",
+              "source:tactical_cards:zerg_swarm",
+              "source:army_units:queen",
+              "faq-v1:47",
+              "faq-v1:54"
+            ],
+            "unproven": [
+              "DISPLACEMENT 与 Creep Removal 同时触发时的结算顺序来源未明，须裁判裁定。",
+              "“肿瘤被推着走可维持 Creep 网络”的推断未被来源确立，仅为条件假设。"
+            ]
+          },
+          {
+            "title": "Zerg Swarm 标准局战术卡包：槽位解锁与能力卡的瓦斯取舍（来源冲突已标注）",
+            "when": [
+              "组军阶段，Standard 规模（2000 矿物 / 200 瓦斯，即矿物的 10%），已选 Zerg Swarm 阵营卡（起始 3 Core / 1 Elite / 1 Support，无 Air/Hero）",
+              "需要决定 200 瓦斯应优先投入多槽位卡（如 Overlord）还是能力卡（如 Evolution Chamber）",
+              "计划是否包含 Kerrigan（1 Hero，250 矿物，Unique）"
+            ],
+            "procedure": [
+              "先确认起始槽位：3 Core / 1 Elite / 1 Support，无 Air/Hero；每个单位按其起始 Supply 占用对应类型槽位，未用槽位不能结转（ARMY SLOT：Unused Army Slots are lost）。",
+              "若计划带 Kerrigan（Hero，Supply 1，Commander 使 Supply 视为 +1 用于控制/争夺/脱离），必须购买提供 Hero 槽的卡。Overlord 的槽位为 +1 Core/+1 Elite/+1 Hero；其瓦斯成本在冻结来源间存在冲突：source:tactical_cards:overlord 记为 35，而 Core Part 12.11 Zerg 战术卡表记为 45，本建议不裁定该冲突，使用前须以官方当前产品数据/裁判裁定为准。",
+              "若需强化近战/生存，Evolution Chamber（30 瓦斯，+1 Core）提供 Extended Claws（<Active> <Assault Phase>：The active Unit gains a +1 Modifier to all IMPACT Hit Rolls）与 Carapace（<Reaction> <Any Phase>：Use before a Friendly Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll）。来源能力文本只标注 Active/Reaction 与阶段，未在能力描述中写“耗尽”；耗尽卡牌是使用 Active/Reaction 能力的通用支付方式（Part 10.5.2），与“耗尽以产生资源”是两种不同用途，须区分。",
+              "注意耗尽后该卡本回合不再提供资源或能力，直到 Phase 4 Cleanup 刷新；BM 由阵营卡（resource 1）及 Zerg 战术卡耗尽提供（Spawning Pool (Six Pool) 的 resource 为 2，其余多为 1），多余 BM 立即丢失。"
+            ],
+            "alternatives": [
+              "不带 Hero 时跳过 Overlord，将瓦斯投入 Hydralisk Den（35 瓦斯，+2 Elite）+ Evolution Chamber（30 瓦斯，+1 Core）=65 瓦斯，强化 Elite 与近战/生存。",
+              "若同时需要 Hero 与 Elite 双槽，可购 Overlord + Hydralisk Den，但挤压其他支出；Overlord 成本冲突（35 或 45）会改变该组合总额，须先裁定。",
+              "Supply Depot 在本批次冻结来源中标记为 not_in_current_faction_scope，其文本未随本批次提供，故其成本、槽位与 Additional Supply Depots 能力无法核验，不应作为已确立选项使用。"
+            ],
+            "risk": "耗尽卡牌使用能力会牺牲该卡本回合的 BM 产出；未用槽位不能结转；Kerrigan 为 Unique。关于 Brood Instinct：Kerrigan 的 Evade 为 6+，而 Part 3.4 规定 Target Number 不得高于 6+、FAQ v1:29 说明修正最多只能使检定恶化到 6+；对 Evade 6+ 施加 +1 修正会使目标数降为 5+，即仍可改善，故“Brood Instinct 对其无效”与来源不符，不应据此断言。",
+            "reviseIf": [
+              "官方当前产品数据或裁判裁定明确 Overlord 的瓦斯成本（35 与 45 冲突）后，重新计算预算组合。",
+              "Supply Depot 的当前阵营归属与完整文本被提供后，重新评估其作为 Hero 槽来源的可行性。",
+              "任务/部署要求特定单位组合（如必须带 Hero 或 Air）时，重新评估槽位卡优先级。",
+              "对手威胁类型改变（大量远程需 Carapace，大量近战需 Extended Claws）时调整能力卡选择。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "source:tactical_cards:overlord",
+              "source:tactical_cards:evolution_chamber",
+              "source:army_units:kerrigan",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+              "core.OszqexisUrSOKMW6TzA5.items.4",
+              "faq-v1:29"
+            ],
+            "unproven": [
+              "Overlord 的瓦斯成本在冻结来源间冲突（source:tactical_cards:overlord 记 35，Core Part 12.11 Zerg 战术卡表记 45），本建议未裁定，须以官方当前数据或裁判裁定为准。",
+              "Supply Depot 被标记为 not_in_current_faction_scope 且文本未随本批次提供，其成本、槽位与 Additional Supply Depots 能力无法核验。",
+              "Overlord 与 Evolution Chamber 在具体任务与对手构成下的实际胜率差异未经对战检验。",
+              "Extended Claws 与 Carapace 的精确触发窗口及与单位能力的叠加效果需实际局面验证。",
+              "Kerrigan 的 Commander 补给加成与任务特定计分条件的交互未验证。"
+            ]
+          },
+          {
+            "title": "Hold Position 下的 Hydralisk Den 与 Lair 取舍：远程火力 vs 近战群+额外 Core 槽",
+            "when": [
+              "组军阶段，已选 Zerg Swarm 阵营卡，任务为 Hold Position（Standard，起始补给 6，每回合 +2，5 回合）",
+              "需要判断 35 瓦斯应投入 Hydralisk Den（+2 Elite）还是 Lair（+1 Core/+1 Elite）",
+              "计划带小编制 Hydralisk（2 模型，Supply 2）或小编制 Raptor（12 模型，Supply 1）"
+            ],
+            "procedure": [
+              "确认 Hold Position 计分：从第二回合起，每个受控且中立或与己方颜色关联的标记得 1 VP，每个受控且与对手颜色关联的标记得 2 VP；另按摧毁的敌方补给得分。标记控制由合格争夺单位的 Current Supply Value 总和决定，非模型数。",
+              "Hydralisk Den 方案（35 瓦斯，+2 Elite）：带小编制 Hydralisk（2 模型，Supply 2，Needle Spines RoA3/射程12/DMG2，Surge Light+Armoured D3+1）；其 Missile Attacks 为 <Active> <Assault Phase>，使激活单位的首个远程武器获 PRECISION(1)。使用该能力须按通用规则支付其费用（耗尽一张 Ready 的 BM 卡），耗尽后该卡本回合不再提供资源、其能力亦不可再用，直到 Phase 4 Cleanup 刷新。",
+              "Lair 方案（35 瓦斯，+1 Core/+1 Elite）：带小编制 Raptor（12 模型，Supply 1，Claws RoA2 Hit4+，Devastating Charge IMPACT(1)5+）加一个 Core 单位（Zergling 12 模型 Supply 1 或 Roach 3 模型 Supply 1）；其 Predation 为 <Active> <Any Phase>，使激活单位的近战武器获 INSTANT；Creep Spread 为 <Active> <Movement Phase>，在友方 Entry Edge 或现有友方 Creep Tumor 6\"内放置 Creep Tumor。两者同样须按通用规则耗尽卡牌支付，耗尽后该卡本回合不再提供资源或能力，直到 Phase 4 Cleanup 刷新。",
+              "注意：耗尽卡牌有两种用途——使用该卡自身印制的 Active/Reaction 能力，或产生资源以支付别处能力的费用；一旦耗尽，该卡本回合既不再提供资源，其能力也不可使用，直到 Phase 4 Cleanup 刷新。"
+            ],
+            "alternatives": [
+              "两卡同购（70 瓦斯）兼顾远程与近战，但挤压其他瓦斯支出。",
+              "若任务强调分散占位，Lair 的额外 Core 槽可多带一个 Core 单位。",
+              "若对手近战强，可考虑搭配 Queen 的 Transfusion（<Reaction>，1 Biomass，当另一友方 Biological 单位在 4\"内受伤时，在分配前将 Total Damage 减少 2）。"
+            ],
+            "risk": "Raptor 需成功冲锋才能发挥 IMPACT，冲锋失败时该单位不移动、其激活立即结束，会浪费整个激活。耗尽卡牌使用能力会牺牲该卡本回合的资源产出。",
+            "reviseIf": [
+              "对手远程火力强则 Raptor 难以接近，应改选 Hydralisk Den 或增加掩护。",
+              "对手近战强则 Hydralisk 需保护，应搭配 Queen 或调整部署。",
+              "任务改为 Supply Drop 等标记会被移除的任务时，重新评估高补给单位的价值。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:lair",
+              "source:army_units:hydralisk",
+              "source:army_units:raptor__zergling_",
+              "source:faction_cards:mission_hold_position",
+              "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6"
+            ],
+            "unproven": [
+              "Hydralisk Den 与 Lair 方案在 Hold Position 具体对局中的实际 VP 差异未经对战检验。",
+              "Missile Attacks 与 Predation 的精确触发窗口及与单位能力的叠加效果需实际局面验证。",
+              "Hydralisk 与 Raptor 在标记争夺中的实际生存率与输出效率需实战验证。",
+              "“Hydralisk 模型少易被集中火力消灭”“Raptor 模型多、近战压制强但远程弱”等为策略性判断，来源未确立。"
+            ]
+          },
+          {
+            "title": "Creep Tumor 的 DISPLACEMENT 与 Creep Removal：推挤假设与结算顺序未决",
+            "when": [
+              "组军阶段已选 Zerg Swarm 阵营卡，其 Zerg Creep 被动强制选择恰好一张 Creep 卡；Malignant Creep 带 Kerrigan's Swarm 标签而 Zerg Swarm 仅 Zerg，故不合法，Accelerating Creep（0 瓦斯）是唯一合法选择",
+              "已通过 Hatchery 的 Creep Spread（主动，移动阶段，需激活单位并耗尽该卡，在友方 Entry Edge 或现有友方 Creep Tumor 6\"内放置）或 Queen 的 Spawn Creep Tumor（主动，任意阶段，1 BM，与自身底座接触放置）在战场上放置了 Creep Tumor",
+              "对手的领队模型以 Move/Deploy/Run/Charge/Disengage/Close Ranks 或特殊能力移动结束，其底座与肿瘤重叠，或结束位置在肿瘤 1\"内"
+            ],
+            "procedure": [
+              "确认 Accelerating Creep 的 Living Glob of Tissue（被动）使 Creep Tumor 获得 STAY IN PLAY 与 DISPLACEMENT；STAY IN PLAY 使其在 Phase 4 Cleanup 不被移除，DISPLACEMENT 允许领队模型结束移动时与其重叠。",
+              "确认 DISPLACEMENT 的结算：若领队模型结束移动重叠该肿瘤，控制玩家立即将肿瘤设为与领队模型底座接触；若无法底座接触则尽可能靠近。来源只规定这一放置动作，未规定放置后肿瘤是否仍留在敌方单位 1\"内。",
+              "确认 Creep Removal（被动）：若敌方单位以 Move、Deploy、Run、Charge 或 Disengage 结束于友方 Creep Tumor 1\"内，则移除该肿瘤；PLACE 不属于这些动作，故 PLACE 结束于肿瘤附近不触发移除（FAQ v1:54）。",
+              "若对手结束移动时同时满足“重叠肿瘤”与“结束于肿瘤 1\"内”，两个效果同时触发；来源未规定结算顺序，须由裁判裁定或等待官方 FAQ 澄清。",
+              "在顺序未明前，不要把“肿瘤被推着走、可维持 Creep 网络”当作已确立结论；它只是条件假设，实际结果取决于裁定顺序与推挤后肿瘤与敌方单位的距离。"
+            ],
+            "alternatives": [
+              "把肿瘤放在对手难以接近的位置（远离其推进路线或置于地形后方），降低被主动清除的概率。",
+              "利用 DISPLACEMENT 作为推挤工具改变对手领队模型的最终位置，但该策略对 Creep 网络维持的效果未经来源确立。",
+              "仅靠 Queen 的 Spawn Creep Tumor 在关键移动前临时放置肿瘤，接受其可能被清除，而不投入 Hatchery/Overlord 的额外放置能力。"
+            ],
+            "risk": "Creep Tumor 是临时资产，对手可主动以移动结束于肿瘤 1\"内清除它；DISPLACEMENT 与 Creep Removal 同时触发时的结算顺序来源未明，可能导致肿瘤被推离后仍被移除，或推挤反而使对手位置更有利。耗尽卡牌使用放置能力会牺牲该卡本回合的 BM 产出。",
+            "reviseIf": [
+              "官方 FAQ 或产品更新明确 DISPLACEMENT 与 Creep Removal 同时触发时的结算顺序。",
+              "对手频繁清除肿瘤，或任务要求单位分散远离 Creep 网络时，Speed on Creep 的价值下降。",
+              "Creep 卡合法性或能力文本发生更新。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:accelerating_creep",
+              "source:tactical_cards:hatchery",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.16",
+              "faq-v1:54",
+              "source:tactical_cards:zerg_swarm",
+              "source:army_units:queen"
+            ],
+            "unproven": [
+              "DISPLACEMENT 与 Creep Removal 同时触发时的结算顺序来源未明，须裁判裁定。",
+              "“肿瘤被推着走可维持 Creep 网络”的推断未被来源确立，仅为条件假设。",
+              "推挤后肿瘤与敌方单位的实际距离及其对后续 Creep 依赖移动的影响需实战验证。"
+            ]
+          },
+          {
+            "title": "Standard 200 瓦斯预算：Kerrigan+Overlord+Lair 与 Hydralisk Den+Evolution Chamber 的取舍（来源冲突已标注）",
+            "when": [
+              "组军阶段，Standard 规模（2000 矿物 / 200 瓦斯，即矿物的 10%），已选 Zerg Swarm 阵营卡（起始 3 Core / 1 Elite / 1 Support，无 Air/Hero）",
+              "需要决定是否包含 Kerrigan（1 Hero，250 矿物，Unique，Supply 1，Commander 使 Supply 视为 +1 用于控制/争夺/脱离）",
+              "需要判断 200 瓦斯应投入方案 A（Overlord+Lair）还是方案 B（Hydralisk Den+Evolution Chamber）"
+            ],
+            "procedure": [
+              "确认起始槽位：3 Core / 1 Elite / 1 Support，无 Air/Hero；每个单位按其起始 Supply 占用对应类型槽位，未用槽位不能结转（ARMY SLOT：Unused Army Slots are lost）。",
+              "方案 A：购 Overlord + Lair。Lair 为 35 瓦斯（+1 Core/+1 Elite）。Overlord 的瓦斯成本在冻结来源间存在冲突：source:tactical_cards:overlord 记为 35，而 Core Part 12.11 Zerg 战术卡表（core.gMXfLyHJfnGYKw2rmoPS.items.11.subItems.1）记为 45；本建议不裁定该冲突，使用前须以官方当前产品数据/裁判裁定为准。若按 35 计，方案 A 合计 70 瓦斯；若按 45 计，合计 80 瓦斯。该组合提供 +1 Hero/+2 Core/+2 Elite，可带 Kerrigan（1 Hero）与小编制 Hydralisk（2 Elite，Supply 2），并获额外 Core 槽。",
+              "方案 B：跳过 Kerrigan，购 Hydralisk Den（35 瓦斯，+2 Elite）+ Evolution Chamber（30 瓦斯，+1 Core）=65 瓦斯。可带小编制 Hydralisk（2 Elite）及额外 Core，且 Evolution Chamber 提供 Extended Claws（主动，突击阶段，需激活单位并耗尽该卡，使 IMPACT 命中 +1）与 Carapace（反应，任意阶段，需耗尽该卡，友方单位 Armour Roll 前获 TOUGH(1)）。",
+              "注意 Overlord 的 Ventral Sacs、Lair 的 Predation、Hydralisk Den 的 Missile Attacks、Evolution Chamber 的 Extended Claws/Carapace 均为需激活单位并耗尽卡牌的主动/反应能力，非被动光环；耗尽后该卡本回合不再提供资源或能力，直到 Phase 4 Cleanup 刷新。",
+              "BM 由阵营卡（1 BM）及符合条件的 Zerg 战术卡（各 1 BM，Spawning Pool (Six Pool) 为 2 BM）耗尽提供，多余 BM 立即丢失。"
+            ],
+            "alternatives": [
+              "任务重标记控制时选方案 A：Kerrigan 的 Commander 补给加成与高属性（Armour 5+/Evade 6+/HP 9/Speed 7，Blades RoA6 Hit4+ DMG2 CRITICAL HIT(2)，Energy Blast RoA5 射程8）有利于争夺。",
+              "任务重近战压制时选方案 B：Evolution Chamber 的 Extended Claws 与 Carapace 直接强化近战与生存。",
+              "若同时需要 Hero 与 Elite 双槽，可购 Overlord + Hydralisk Den，但挤压其他支出；Overlord 成本冲突（35 或 45）会改变该组合总额，须先裁定。",
+              "Supply Depot 在本批次冻结来源中标记为 not_in_current_faction_scope，其文本未随本批次提供，故其成本、槽位与 Additional Supply Depots 能力无法核验，不应作为已确立选项使用。"
+            ],
+            "risk": "耗尽卡牌使用能力会牺牲该卡本回合的 BM 产出；未用槽位不能结转；Kerrigan 为 Unique。关于 Brood Instinct：Kerrigan 的 Evade 为 6+，而 Part 3.4 规定 Target Number 不得高于 6+、FAQ v1:29 说明修正最多只能使检定恶化到 6+；对 Evade 6+ 施加 +1 修正会使目标数降为 5+，即仍可改善，故“Brood Instinct 对其无效”与来源不符，不应据此断言。",
+            "reviseIf": [
+              "官方当前产品数据或裁判裁定明确 Overlord 的瓦斯成本（35 与 45 冲突）后，重新计算预算组合。",
+              "Supply Depot 的当前阵营归属与完整文本被提供后，重新评估其作为 Hero 槽来源的可行性。",
+              "任务/部署要求特定单位组合（如必须带 Hero 或 Air）时，重新评估槽位卡优先级。",
+              "对手威胁类型改变（大量远程需 Carapace，大量近战需 Extended Claws）时调整能力卡选择。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:overlord",
+              "source:tactical_cards:lair",
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:evolution_chamber",
+              "source:army_units:kerrigan",
+              "source:army_units:hydralisk",
+              "source:tactical_cards:zerg_swarm",
+              "core.gMXfLyHJfnGYKw2rmoPS.items.11.subItems.1"
+            ],
+            "unproven": [
+              "Overlord 的瓦斯成本在冻结来源间冲突（source:tactical_cards:overlord 记 35，Core Part 12.11 Zerg 战术卡表记 45），本建议未裁定，须以官方当前数据或裁判裁定为准。",
+              "Supply Depot 被标记为 not_in_current_faction_scope 且文本未随本批次提供，其成本、槽位与 Additional Supply Depots 能力无法核验。",
+              "方案 A 与方案 B 在具体任务与对手构成下的实际胜率差异未经对战检验。",
+              "Kerrigan 的 Commander 补给加成与任务特定计分条件的交互未验证。",
+              "Extended Claws 与 Carapace 的精确触发窗口及与单位能力的叠加效果需实际局面验证。",
+              "Overlord 的 Ventral Sacs 在回合结束部署时的具体时机与 Zone of Influence、敌方 Engagement Range 的交互未逐项核对。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section": {
+        "id": "faction.zerg_swarm.card_packages.2",
+        "axis": "card_packages",
+        "requiredSourceRefs": [
+          "source:tactical_cards:overlord",
+          "source:tactical_cards:overseer",
+          "source:tactical_cards:roach_warren",
+          "source:tactical_cards:spawning_pool",
+          "source:tactical_cards:spawning_pool__six_pool_"
+        ],
+        "writingScope": "one_section_inside_one_faction_skill_not_a_separate_skill"
+      },
+      "draft": {
+        "recommendations": [
+          {
+            "title": "Zerg Swarm 卡包：Hydralisk Den 与 Lair 的槽位/能力取舍",
+            "when": [
+              "已选 Zerg Swarm 阵营卡（起始 3 Core/1 Elite/1 Support，无 Air/Hero），且计划使用 Elite 单位（小编制 Hydralisk 占 2 Elite，或小编制 Raptor 占 1 Elite）",
+              "Standard 规模（2000 矿物/200 瓦斯）或按 10% 比例换算的其他规模，瓦斯预算有限",
+              "需要决定用 35 瓦斯购买 Hydralisk Den 还是 Lair 来补足 Elite 槽位"
+            ],
+            "procedure": [
+              "确认起始 Elite 槽仅 1，不足以容纳小编制 Hydralisk（2 模型，Supply 2，占 2 Elite）；必须先购买解锁 Elite 槽的战术卡。",
+              "若军队核心是远程火力：购买 Hydralisk Den（35 瓦斯，+2 Elite），可带小编制 Hydralisk（2 模型，Supply 2，140 矿物），其 Needle Spines 为 Range 12/RoA 3/HIT 3+/DMG 2/Surge Light,Armoured (D3+1)。",
+              "若军队核心是近战群：购买 Lair（35 瓦斯，+1 Core/+1 Elite），可带小编制 Raptor（12 模型，Supply 1，占 1 Elite）并保留 1 Core 槽给 Zergling（12 模型，Supply 1）；Lair 同时解锁 Predation（主动，任意阶段，激活单位近战武器获 INSTANT）与 Creep Spread（主动，移动阶段，在友方 Entry Edge 或现有 Creep Tumor 6\" 内放 Creep Tumor）。",
+              "两卡同价 35 瓦斯，按军队近战/远程重心二选一；若两者都需，可合计 70 瓦斯购买。"
+            ],
+            "alternatives": [
+              "Overlord（35 瓦斯，+1 Core/+1 Elite/+1 Hero）：一卡补三类槽，若同时需要 Hero 槽（如 Kerrigan 占 1 Hero）或同时缺 Core 与 Elite，优先于 Den/Lair。",
+              "Spawning Pool（25 瓦斯，+1 Core）：最便宜补 Core，但不补 Elite；若只需 Core 单位（Zergling/Roach/Corpser 各占 1 Core），起始 3 Core 通常已够，无需购买。",
+              "Hatchery（30 瓦斯，+1 Support）：补 Support 并给 Creep Spread；若需额外 Support 或 Creep 网络，优先于 Den/Lair。"
+            ],
+            "risk": "购买 Den 或 Lair 后若军队实际不含 Elite 单位，35 瓦斯被浪费且未用槽位不能结转；Lair 的 Predation 需激活单位在战场上才能使用，且耗尽卡牌使用其能力后本回合不再提供 BM 资源，需在资源与能力间权衡。",
+            "reviseIf": [
+              "军队不含 Elite 单位或改用 Core 单位时，Den/Lair 优先级下降，改买 Core 槽卡或能力卡。",
+              "官方更新 Zerg Swarm 阵营卡槽位、战术卡费用或槽位数据时，重新计算。",
+              "任务卡要求特定单位类型（如大量 Core 单位）时，优先 Core 槽卡。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:lair",
+              "source:tactical_cards:zerg_swarm",
+              "source:army_units:hydralisk",
+              "source:army_units:raptor__zergling_"
+            ],
+            "unproven": [
+              "Den 方案与 Lair 方案在实战中的相对胜率未经验证；本建议为条件性假设，非规则或胜率证明。",
+              "Lair 的 Predation（近战 INSTANT）与 Creep Spread 在具体任务与对手构成下的实际收益需实战检验。",
+              "小编制 Hydralisk 的 Supply 2 在标记争夺中的优势是否足以抵消其模型数少、易被集中火力的弱点，需实际局面验证。"
+            ]
+          },
+          {
+            "title": "Zerg Swarm 唯一合法 Creep 卡：Accelerating Creep 的 Creep 网络维持",
+            "when": [
+              "已选 Zerg Swarm 阵营卡，其 Zerg Creep 被动要求组军时选择恰好一张 Creep 卡加入军队并支付其费用",
+              "Malignant Creep 带 Kerrigan's Swarm 标签，与仅带 Zerg 标签的 Zerg Swarm 阵营卡不匹配，故不合法",
+              "需要决定如何利用 Accelerating Creep（0 瓦斯）的能力维持 Creep 网络"
+            ],
+            "procedure": [
+              "组军时选择 Accelerating Creep（0 瓦斯）作为唯一合法 Creep 卡；确认 Malignant Creep（10 瓦斯，带 Kerrigan's Swarm 标签）对 Zerg Swarm 不合法。",
+              "利用 Speed on Creep（被动，任意阶段）：激活的友方 Zerg 单位 ON CREEP 时 Speed +1；此加成在移动开始时检查 ON CREEP 状态，若开始移动时 ON CREEP 则整个移动获得 +1，即使中途离开 Creep 也保持（faq-v1:47）。",
+              "利用 Living Glob of Tissue（被动）：Creep Tumor 获 STAY IN PLAY 与 DISPLACEMENT；DISPLACEMENT 允许 Leading Model 移动结束重叠该 Token，控制玩家立即将 Token 设为 Base-to-Base 接触，无法则尽可能靠近。",
+              "利用 Creep Removal（被动）：敌方单位以 Move/Deploy/Run/Charge/Disengage 结束于友方 Creep Tumor 1\" 内时移除该 Tumor；PLACE 不触发（faq-v1:54）。",
+              "维持网络：用 Hatchery（30 瓦斯，+1 Support）的 Creep Spread（主动，移动阶段）在友方 Entry Edge 或现有 Creep Tumor 6\" 内放 Tumor；或用 Overlord（35 瓦斯，+1 Core/+1 Elite/+1 Hero）的 Excrete Creep（主动，突击阶段）同样放置。",
+              "规划激活顺序：先让 Queen 或 Hatchery 的 Creep Spread 放置/扩展 Creep，再让依赖速度的 Zergling/Roach 单位移动，以最大化移动距离。"
+            ],
+            "alternatives": [
+              "若对手不主动清理 Creep Tumor，可减少放置频率，节省激活用于其他行动。",
+              "若对手频繁清理，评估是否值得持续投入激活放置 Tumor，或改用不依赖 Creep 的单位与战术。",
+              "若需额外 Support 槽位，Hatchery 同时提供 +1 Support 与 Creep Spread；若需 Hero 槽，Overlord 同时提供 +1 Hero 与 Excrete Creep。"
+            ],
+            "risk": "Creep Tumor 是临时资产，对手可在其移动阶段主动清除；依赖 Creep 的速度加成时，若 Tumor 被移除，单位移动距离下降。耗尽 Hatchery 或 Overlord 使用 Creep Spread/Excrete Creep 后，该卡本回合不再提供 BM 资源，需在资源与能力间权衡。",
+            "reviseIf": [
+              "官方更新 Malignant Creep 标签或新增合法 Creep 卡时，重新评估 Creep 卡选择。",
+              "官方 FAQ 澄清 Creep Removal 与 DISPLACEMENT 同时触发时的结算顺序时，以 FAQ 为准。",
+              "对手战术不依赖 Creep 或频繁清理 Tumor 时，降低 Creep 网络投入。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:accelerating_creep",
+              "source:tactical_cards:hatchery",
+              "source:tactical_cards:overlord",
+              "source:tactical_cards:zerg_swarm",
+              "faq-v1:54",
+              "faq-v1:47"
+            ],
+            "unproven": [
+              "Creep 网络在实战中的维持成本与收益比未经验证；本建议为条件性假设。",
+              "Speed on Creep 与 Queen 的 Creep Speed 升级（ON CREEP 时 +2）的叠加效果需实际局面验证。",
+              "Creep Removal 与 DISPLACEMENT 同时触发时的精确结算顺序未在来源中明确，需以现行官方裁定为准。"
+            ]
+          },
+          {
+            "title": "Zerg Swarm 标准规模卡包：多槽卡与能力卡的瓦斯取舍",
+            "when": [
+              "已选 Zerg Swarm 阵营卡（起始 3 Core/1 Elite/1 Support，无 Air/Hero）",
+              "Standard 规模（2000 矿物/200 瓦斯，即矿物的 10%）；其他规模按 10% 比例换算",
+              "需要决定 200 瓦斯如何在解锁槽位的战术卡与提供能力的战术卡之间分配",
+              "军队是否包含 Hero（如 Kerrigan 占 1 Hero）或 Elite 单位（小编制 Hydralisk 占 2 Elite）"
+            ],
+            "procedure": [
+              "先确认硬约束：起始无 Hero 槽，若军队含 Kerrigan（250 矿物，1 模型，Supply 1，占 1 Hero），必须购买至少一张提供 Hero 槽的卡（如 Overlord 35 瓦斯，+1 Core/+1 Elite/+1 Hero），否则该单位无法合法上场。",
+              "若同时缺 Core 与 Elite 且需 Hero：优先 Overlord（35 瓦斯，+1 Core/+1 Elite/+1 Hero），一卡补三类槽，性价比最高。",
+              "若只需补 Elite（如带小编制 Hydralisk 2 模型 Supply 2 占 2 Elite）：选 Hydralisk Den（35 瓦斯，+2 Elite）或 Lair（35 瓦斯，+1 Core/+1 Elite）。",
+              "若只需补 Core（如 Zergling/Roach/Corpser 各占 1 Core）：起始 3 Core 通常已够；若不够，Spawning Pool（25 瓦斯，+1 Core）最便宜。",
+              "若需额外 Support（如多个 Queen）：Hatchery（30 瓦斯，+1 Support）同时提供 Creep Spread（主动，移动阶段，在友方 Entry Edge 或现有 Creep Tumor 6\" 内放 Tumor）。",
+              "能力卡取舍：Evolution Chamber（30 瓦斯，+1 Core）提供 Extended Claws（主动，突击阶段，激活单位 IMPACT 命中 +1）与 Carapace（反应，任意阶段，友方单位 Armour Roll 前获 TOUGH (1)）；若军队依赖 IMPACT（如 Zergling/Raptor 的 Devastating Charge），其价值高于纯槽位卡。",
+              "按 200 瓦斯预算核算：例如 Overlord(35)+Hydralisk Den(35)+Evolution Chamber(30)=100 瓦斯，剩 100 瓦斯可再购其他卡；确保总瓦斯不超上限，未用瓦斯浪费。"
+            ],
+            "alternatives": [
+              "若军队不含 Hero 且 Core 充足：跳过 Overlord，优先 Hydralisk Den（+2 Elite）或 Lair（+1 Core/+1 Elite）补 Elite，再用 Evolution Chamber 强化 IMPACT。",
+              "若军队以近战群为主：Lair（35 瓦斯）的 Predation（主动，任意阶段，近战武器获 INSTANT）比 Evolution Chamber 的 IMPACT 加成更直接，但两者可叠加（不同具名来源）。",
+              "若军队以远程为主：Hydralisk Den 补 Elite 带 Hydralisk，Evolution Chamber 的 Extended Claws 对远程无直接加成，可改买 Hatchery 补 Support 或 Spawning Pool 补 Core。",
+              "若瓦斯紧张：Spawning Pool（25 瓦斯，+1 Core）与 Hatchery（30 瓦斯，+1 Support）是最便宜的槽位卡，但均不补 Elite。"
+            ],
+            "risk": "购买槽位卡后若军队实际不含对应类型单位，瓦斯被浪费且未用槽位不能结转；耗尽卡牌使用其能力后本回合不再提供 BM 资源，需在资源与能力间权衡；带 Kerrigan 却未买 Hero 槽卡会导致该单位无法合法上场，属组军合法性错误。",
+            "reviseIf": [
+              "军队不含 Elite 或 Hero 单位时，多槽卡（Overlord）价值下降，改买能力卡或 Core 槽卡。",
+              "任务卡要求大量 Core 单位（如需要多队 Zergling 争夺标记）时，优先 Spawning Pool 补 Core。",
+              "官方更新 Zerg Swarm 阵营卡槽位、战术卡费用或槽位数据时，重新核算。",
+              "Engagement Scale 改为 Skirmish（1000 矿物/100 瓦斯）时，预算减半，需重新取舍。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:zerg_swarm",
+              "source:tactical_cards:overlord",
+              "source:tactical_cards:evolution_chamber",
+              "source:army_units:kerrigan",
+              "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4"
+            ],
+            "unproven": [
+              "多槽卡与能力卡在实战中的相对收益未经验证；本建议为条件性假设，非规则或胜率证明。",
+              "Evolution Chamber 的 Extended Claws 与 Carapace 在具体任务与对手构成下的实际收益需实战检验。",
+              "Kerrigan 的 Commander（Supply +1 用于控制/争夺/脱离）与近战能力是否值得占用 1 Hero 槽与 Overlord 的 35 瓦斯，需实际局面验证。"
+            ]
+          },
+          {
+            "title": "Hold Position 任务下 Hydralisk Den 与 Lair 方案的标记争夺取舍",
+            "when": [
+              "已选 Zerg Swarm 阵营卡（起始 3 Core/1 Elite/1 Support）",
+              "任务为 Hold Position（Standard：起始 Supply 6，每轮 +2；第 2 轮起控制中立或己方色标记 1 VP，控制对手色标记 2 VP）",
+              "需要决定 35 瓦斯购买 Hydralisk Den（+2 Elite）还是 Lair（+1 Core/+1 Elite）",
+              "标记控制由争夺单位 Current Supply 总值决定，非模型数"
+            ],
+            "procedure": [
+              "确认 Hold Position 计分：从第 2 轮起，控制中立或己方色标记得 1 VP，控制对手色标记得 2 VP；控制由各玩家合格争夺单位的 Current Supply 总值比较决定，平局不转移控制。",
+              "方案 A（远程/高 Supply 单标记）：购买 Hydralisk Den（35 瓦斯，+2 Elite），带小编制 Hydralisk（2 模型，Supply 2，140 矿物，占 2 Elite），其 Needle Spines 为 Range 12/RoA 3/HIT 3+/DMG 2/Surge Light,Armoured (D3+1)；单标记争夺 Supply 2 较高。",
+              "方案 B（近战群/多单位覆盖）：购买 Lair（35 瓦斯，+1 Core/+1 Elite），带小编制 Raptor（12 模型，Supply 1，占 1 Elite）加一个 Core 单位（如 Zergling 12 模型，Supply 1，占 1 Core），总 Supply 2 但模型数多，近战群 + Devastating Charge IMPACT。",
+              "争夺标记时，确保至少一个模型在标记 3\" 内、有 LoS、与标记同海拔，且单位 In Coherency；Burrowed、Flying、Out of Coherency 单位不能争夺。",
+              "利用粘性控制：一旦控制标记，即使单位移开也保持控制，直到对手以更高 Supply 总值夺回；平局不转移。",
+              "若对手以高 Supply 精英单位争夺，方案 A 的单标记 Supply 2 更稳；若需覆盖多个标记，方案 B 的单位数更多。"
+            ],
+            "alternatives": [
+              "两者都买（70 瓦斯）：兼顾 Hydralisk 远程与 Raptor 近战群，但瓦斯预算紧张。",
+              "若对手远程强：优先方案 B 的近战群，利用地形与 Creep 速度接近，避免被远程压制。",
+              "若对手近战强：优先方案 A 的 Hydralisk 远程火力，在标记附近远程压制。",
+              "若任务改为 Supply Drop（标记激活后计分并移除）：粘性控制价值下降，优先高机动单位快速夺取激活标记。"
+            ],
+            "risk": "方案 A 的 Hydralisk 模型数少（2 模型），易被集中火力消灭，Supply 2 一旦降至 1 或 0，标记争夺优势丧失；方案 B 的低 Supply 群（各 Supply 1）在单标记争夺中可能被对手高 Supply 精英压制。Lair 的 Predation 需激活单位在战场上才能使用，耗尽卡牌后本回合不再提供 BM 资源。",
+            "reviseIf": [
+              "对手以高 Supply 精英单位争夺时，低 Supply 群可能被压制，改方案 A 或增加高 Supply 单位。",
+              "对手远程强时，近战群需先接近，改方案 A 或利用 Creep 速度与地形。",
+              "任务改为 Divide and Conquer（按 Quarter 总 Supply 计分）时，需重新评估单位分布与 Wholly Within 要求。",
+              "官方更新任务卡计分或单位 Supply 数据时，重新核算。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:lair",
+              "source:army_units:hydralisk",
+              "source:army_units:raptor__zergling_",
+              "source:faction_cards:mission_hold_position"
+            ],
+            "unproven": [
+              "两方案在 Hold Position 实战中的相对胜率未经验证；本建议为条件性假设，非规则或胜率证明。",
+              "Hydralisk 的 Supply 2 在标记争夺中的优势是否足以抵消其模型数少、易被集中火力的弱点，需实际局面验证。",
+              "Raptor 近战群 + Devastating Charge IMPACT 在对手远程火力下的生存与接近能力需实战检验。"
+            ]
+          },
+          {
+            "title": "Creep Tumor 的 DISPLACEMENT 与 Creep Removal 冲突：推走还是移除",
+            "when": [
+              "已选 Zerg Swarm 阵营卡，且已选 Accelerating Creep（0 瓦斯）作为唯一合法 Creep 卡，故 Creep Tumor 具有 STAY IN PLAY 与 DISPLACEMENT，且 Creep Removal 被动生效",
+              "战场上存在友方 Creep Tumor（由 Hatchery 的 Creep Spread 或 Overlord 的 Excrete Creep 放置）",
+              "敌方单位以 Move、Deploy、Run、Charge 或 Disengage 结束移动，且该结束位置既重叠该 Tumor 底座、又位于该 Tumor 1\" 以内",
+              "需要判断该 Tumor 是被 DISPLACEMENT 推至 Base-to-Base 接触，还是被 Creep Removal 移除"
+            ],
+            "procedure": [
+              "先确认两条规则各自独立成立：DISPLACEMENT（核心 Part 11）规定，若 Leading Model 以 Move、Deploy、Run、Charge、Disengage、Close Ranks 或特殊能力移动结束并重叠该 Token，控制玩家立即将该 Token 设为与 Leading Model Base-to-Base 接触；若无法 Base-to-Base，则尽可能靠近。",
+              "再确认 Creep Removal（Accelerating Creep 被动）规定：若敌方单位以 Move、Deploy、Run、Charge 或 Disengage 结束于友方 Creep Tumor 1\" 内，移除该 Tumor。",
+              "注意 PLACE 不触发 Creep Removal（faq-v1:54），因此以 PLACE 结束于 Tumor 附近不会移除它；但 PLACE 是否触发 DISPLACEMENT 需另查 DISPLACEMENT 文本（其列举含特殊能力移动）。",
+              "当敌方结束移动同时满足重叠（触发 DISPLACEMENT）与 1\" 内（触发 Creep Removal）时，来源未明确两条规则的结算顺序；不得自行断言 Tumor 必然存活或被推走，应提交有约束力的规则/裁判裁定。",
+              "在裁定前，规划时按最保守假设处理：预期该 Tumor 可能被移除，不要将关键移动的速度加成建立在它必然存活之上。",
+              "若裁定为 Creep Removal 先结算，则 Tumor 被移除，DISPLACEMENT 无对象可移；若裁定为 DISPLACEMENT 先结算，则 Tumor 被推至 Base-to-Base，但仍可能因仍在 1\" 内而随后被移除。"
+            ],
+            "alternatives": [
+              "把 Creep Tumor 放在对手难以结束移动的位置（如远离其推进路线、被地形或己方单位遮挡处），降低同时触发两条规则的概率。",
+              "若对手频繁以结束移动清除 Tumor，减少放置频率，把激活用于其他行动，或改用不依赖 Creep 的单位与战术。",
+              "利用 DISPLACEMENT 的推走效果作为战术：若裁定 Tumor 存活，可将其推向对手阵型内，扩大 Creep 覆盖；若裁定被移除，则视为消耗对手一次移动结束位置。",
+              "用 Hatchery 的 Creep Spread（主动，移动阶段）或 Overlord 的 Excrete Creep（主动，突击阶段）在关键移动前才放置 Tumor，缩短其暴露窗口。"
+            ],
+            "risk": "若误判结算顺序，可能高估 Creep 网络的持续性，导致依赖 Speed on Creep 的单位移动距离不足或位置错误。耗尽 Hatchery 或 Overlord 使用放置能力后，该卡本回合不再提供 BM 资源，需在资源与能力间权衡。Tumor 被移除后，依赖 ON CREEP 的能力（如 Queen 的 Creep Speed、Glial Reconstitution 的 BUFF SPEED (2)）当轮失效。",
+            "reviseIf": [
+              "官方 FAQ 或规则澄清 Creep Removal 与 DISPLACEMENT 同时触发时的结算顺序时，以该裁定为准并重写本建议。",
+              "官方更新 Accelerating Creep 的 Creep Removal 文本或 DISPLACEMENT 关键词定义时，重新评估。",
+              "对手战术改为不清理 Creep Tumor 时，可提高放置频率并依赖 Creep 网络。",
+              "任务卡或部署卡改变地形与推进路线，使 Tumor 更易或更难被结束移动清除时，调整放置位置。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:accelerating_creep",
+              "source:tactical_cards:hatchery",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.16",
+              "faq-v1:54"
+            ],
+            "unproven": [
+              "Creep Removal 与 DISPLACEMENT 同时触发时的精确结算顺序未在冻结来源中明确；本建议仅指出冲突并给出保守处理，未证明任一顺序。",
+              "DISPLACEMENT 是否适用于 PLACE 效果（其列举含“特殊能力移动”）未在来源中明确，需查完整关键词文本。",
+              "将 Tumor 推向对手阵型以扩大 Creep 覆盖的战术收益需实际局面验证。",
+              "对手清理 Tumor 的频率与成本在实战中的分布未经验证。"
+            ]
+          },
+          {
+            "title": "200 瓦斯预算下 Kerrigan 取舍：Overlord+Lair 对 Hydralisk Den+Evolution Chamber",
+            "when": [
+              "已选 Zerg Swarm 阵营卡（起始 3 Core/1 Elite/1 Support，无 Air/Hero）",
+              "Standard 规模（2000 矿物/200 瓦斯，即矿物的 10%）；其他规模按 10% 比例换算",
+              "需要决定是否纳入 Kerrigan（250 矿物，1 模型，Supply 1，占 1 Hero）",
+              "需要决定是否纳入小编制 Hydralisk（140 矿物，2 模型，Supply 2，占 2 Elite）",
+              "瓦斯预算约 200，需在解锁槽位与提供能力的战术卡之间分配"
+            ],
+            "procedure": [
+              "先确认硬约束：Zerg Swarm 起始无 Hero 槽，若纳入 Kerrigan 必须购买至少一张提供 Hero 槽的卡（如 Overlord 35 瓦斯，+1 Core/+1 Elite/+1 Hero），否则 Kerrigan 无法合法上场。",
+              "方案 A（含 Kerrigan）：购买 Overlord（35 瓦斯，+1 Core/+1 Elite/+1 Hero）与 Lair（35 瓦斯，+1 Core/+1 Elite），合计 70 瓦斯，剩约 130 瓦斯。此方案可带 Kerrigan（1 Hero）、小编制 Hydralisk（2 Elite，Supply 2）并保留额外 Core 槽。",
+              "方案 B（跳过 Kerrigan）：购买 Hydralisk Den（35 瓦斯，+2 Elite）与 Evolution Chamber（30 瓦斯，+1 Core），合计 65 瓦斯，剩约 135 瓦斯。此方案可带小编制 Hydralisk（2 Elite）并获得 Extended Claws（主动，突击阶段，激活单位 IMPACT 命中 +1）与 Carapace（反应，任意阶段，友方单位 Armour Roll 前获 TOUGH (1)）。",
+              "评估 Kerrigan 的收益：Commander（Supply +1 用于控制/争夺/脱离）、Crushing Grip（主动，移动阶段，1 BM，选 12\" 内敌方单位使其本阶段视为已激活）、Mutating Carapace（主动，移动阶段，1 BM，对选定敌方单位的所有攻击获 Evade Roll 且 +2 修正）、Energy Blast（Range 8/RoA 5/HIT 3+/DMG 1/Surge Light,Armoured D3）、Leaping Strike（主动，1 BM，未接战时 PLACE (6)）、Devastating Charge（IMPACT (4) 4+）、Blades（Range E/RoA 6/HIT 4+/DMG 2/CRITICAL HIT (2)）。",
+              "评估方案 B 的收益：Extended Claws 强化所有 IMPACT 命中（与 Zergling/Raptor 的 Devastating Charge 协同），Carapace 提供 Armour Roll 保护；Hydralisk Den 的 +2 Elite 直接支撑小编制 Hydralisk 的远程火力（Needle Spines Range 12/RoA 3/DMG 2/Surge Light,Armoured D3+1）。",
+              "按军队重心选择：若核心是 Hydralisk 远程 + 近战群且不需 Hero 特殊能力，方案 B 更直接强化 Elite 与 IMPACT；若需高机动英雄、Supply 争夺加成或 Crushing Grip 的激活压制，方案 A 更优。"
+            ],
+            "alternatives": [
+              "Overlord + Hydralisk Den（70 瓦斯）：带 Kerrigan 与小编制 Hydralisk，但无 Lair 的额外 Core 槽与 Predation/Creep Spread。",
+              "Overlord + Evolution Chamber（65 瓦斯）：带 Kerrigan 并强化 IMPACT，但 Elite 槽仍仅 1，无法带小编制 Hydralisk（占 2 Elite）。",
+              "若瓦斯紧张：跳过 Kerrigan，仅买 Hydralisk Den（35 瓦斯）带 Hydralisk，剩 165 瓦斯用于其他卡或升级。",
+              "若任务需 Hero 特殊能力（如 Crushing Grip 压制敌方激活）：优先方案 A，即使牺牲 Evolution Chamber 的 IMPACT 加成。"
+            ],
+            "risk": "方案 A 占用 70 瓦斯且 Kerrigan 仅 1 模型、Supply 1，若被集中火力消灭，Hero 槽与瓦斯投入损失大；方案 B 跳过 Hero，若任务或对手构成需要英雄特殊能力（如 Crushing Grip 的激活压制），可能缺乏应对手段。两方案均需确保总瓦斯不超上限，未用瓦斯浪费。耗尽卡牌使用其能力后本回合不再提供 BM 资源。",
+            "reviseIf": [
+              "军队不含 Hero 或 Elite 单位时，两方案均需重估，改买能力卡或 Core 槽卡。",
+              "任务卡要求 Hero 特殊能力或 Supply 争夺时，Kerrigan 价值上升，优先方案 A。",
+              "Engagement Scale 改为 Skirmish（1000 矿物/100 瓦斯）时，预算减半，方案 A 的 70 瓦斯占比过高，需重新取舍。",
+              "官方更新 Kerrigan、Hydralisk 或战术卡费用/槽位数据时，重新核算。",
+              "对手以高 Supply 精英单位争夺标记时，Kerrigan 的 Commander（Supply +1）价值上升。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:overlord",
+              "source:tactical_cards:lair",
+              "source:tactical_cards:hydralisk_den",
+              "source:tactical_cards:evolution_chamber",
+              "source:army_units:kerrigan",
+              "source:army_units:hydralisk"
+            ],
+            "unproven": [
+              "两方案在实战中的相对胜率未经验证；本建议为条件性假设，非规则或胜率证明。",
+              "Kerrigan 的 Commander（Supply +1 用于控制/争夺/脱离）与 Crushing Grip 的激活压制在具体任务与对手构成下的实际收益需实战检验。",
+              "Evolution Chamber 的 Extended Claws 与 Carapace 对 IMPACT 依赖型军队的实际提升幅度需实际局面验证。",
+              "小编制 Hydralisk 的 Supply 2 在标记争夺中的优势是否足以抵消其模型数少、易被集中火力的弱点，需实际局面验证。"
+            ]
+          },
+          {
+            "title": "Zerg Swarm 指定来源：Overseer、Roach Warren、Spawning Pool 与 Six Pool 的条件用法",
+            "when": [
+              "已选 Zerg Swarm 阵营卡（起始 3 Core/1 Elite/1 Support，无 Air/Hero），且已按 10% 比例确定瓦斯预算（Standard 2000 矿物对应 200 瓦斯）",
+              "军队包含依赖 Burrowed 状态突袭的单位（如 Roach/Corpser/Vile，其 Burrow 为主动、任意阶段、2 BM），或包含近战群（Zergling/Raptor），或需要反 HIDDEN 与冲锋稳定性",
+              "需要决定是否购买 Overseer（25 瓦斯，+1 Support）、Roach Warren（25 瓦斯，+1 Core）、Spawning Pool（25 瓦斯，+1 Core）或 Spawning Pool (Six Pool)（40 瓦斯，+2 Core，2 BM）"
+            ],
+            "procedure": [
+              "Overseer（25 瓦斯，+1 Support）：提供 Oversight Mode（主动，移动阶段，在战场任意处放 Faction Indicator，6\" 内敌方单位失去 HIDDEN）与 Pneumatized Carapace（反应，突击阶段，友方单位掷冲锋 D6 后追加 D6 取高值）。起始 1 Support 已够，仅在需额外 Support 槽或需反 HIDDEN（如对手用 Stalker 的 Path of Shadows 获 HIDDEN）时购买。",
+              "Roach Warren（25 瓦斯，+1 Core）：提供 Nasty Surprise（主动，突击阶段，激活的地面单位失去 Burrowed 状态）。该能力仅移除 Burrowed 状态；移除后单位失去 HIDDEN、闪避保护与 Size 0 特性，但来源未说明移除状态后在同一突击阶段是否立即恢复射击或冲锋资格，不得据此断言可“正常射击或冲锋”。",
+              "Spawning Pool（25 瓦斯，+1 Core）：提供 Feral Rage（主动，战斗阶段，激活单位首个近战武器获 PRECISION (2)）。适合近战群（Zergling/Raptor），在战斗阶段提升命中转化；关键词不叠加，PRECISION 数值只取最高值，故与 Adrenal Glands 的 PRECISION (2) 同时存在时不产生额外收益。",
+              "Spawning Pool (Six Pool)（40 瓦斯，+2 Core，2 BM）：额外提供 Timing Push（主动，移动阶段，激活的 Zergling 单位从任一非玩家 Entry Edge 的桌边部署，须结束于距任一敌方模型 >10\"）。适合侧翼突袭或绕后争夺标记；受 10\" 距离限制。Zone of Influence 限制在来源中明确针对“从预备队抵达”的单位（8.3.3），Timing Push 是否同样受该限制未在来源中明确，不得断言。",
+              "按军队构成取舍：若军队不含 Zergling 或近战单位，Six Pool 与 Spawning Pool 价值下降；若无需反 HIDDEN 或额外 Support，Overseer 优先级低；若依赖 Burrow 突袭，Roach Warren 的 Nasty Surprise 是关键。",
+              "耗尽这些卡使用其能力后，该卡本回合不再提供 BM 资源，直到第 4 阶段清理时刷新；需在资源与能力间权衡。"
+            ],
+            "alternatives": [
+              "若无需反 HIDDEN 或额外 Support：跳过 Overseer，把 25 瓦斯用于 Hydralisk Den（35 瓦斯，+2 Elite）或 Lair（35 瓦斯，+1 Core/+1 Elite）补 Elite。",
+              "若军队不含 Zergling：跳过 Six Pool，改买 Spawning Pool（25 瓦斯，+1 Core）或 Hydralisk Den 补 Elite。",
+              "若依赖 Burrow 突袭但不想买 Roach Warren：可让 Burrowed 单位保持 Burrowed 以获闪避保护，放弃当轮射击/冲锋，或直接用 Burrow 的 2 BM 支付其他能力。",
+              "若需侧翼部署但瓦斯紧张：Spawning Pool (Six Pool) 的 40 瓦斯与 2 BM 产出可部分抵消其成本，但需确认军队确有 Zergling 单位。"
+            ],
+            "risk": "购买 Roach Warren 后若军队不含 Burrow 单位，25 瓦斯浪费；Nasty Surprise 移除 Burrowed 后单位失去 HIDDEN、闪避保护与 Size 0，可能暴露于敌方火力，且来源未说明移除后同阶段能否立即射击或冲锋。Six Pool 的 Timing Push 受 10\" 距离限制；Zone of Influence 是否适用于该能力未在来源中明确，若战场地形或对手部署使合法落点不足，该能力可能无法使用。耗尽卡牌使用能力后本回合不再提供 BM，可能影响其他单位能力的支付。",
+            "reviseIf": [
+              "军队不含 Zergling 或近战单位时，Six Pool 与 Spawning Pool 优先级下降，改买 Elite 槽卡或能力卡。",
+              "对手不使用 HIDDEN 单位时，Overseer 的 Oversight Mode 价值下降，可跳过。",
+              "官方更新这些战术卡的费用、槽位或能力文本时，重新核算。",
+              "Engagement Scale 改为 Skirmish（1000 矿物/100 瓦斯）时，预算减半，40 瓦斯的 Six Pool 占比过高，需重新取舍。",
+              "任务卡或部署卡使侧翼部署（Timing Push）难以找到合法落点时，降低 Six Pool 优先级。",
+              "官方 FAQ 或规则澄清 Timing Push 是否受 Zone of Influence 限制、或 Nasty Surprise 移除 Burrowed 后的行动资格时，以该裁定为准并重写本建议。"
+            ],
+            "sourceRefs": [
+              "source:tactical_cards:overseer",
+              "source:tactical_cards:roach_warren",
+              "source:tactical_cards:spawning_pool",
+              "source:tactical_cards:spawning_pool__six_pool_",
+              "source:tactical_cards:zerg_swarm",
+              "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8",
+              "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.2"
+            ],
+            "unproven": [
+              "Oversight Mode 的 Faction Indicator 是否受 STAY IN PLAY、Zone of Influence 或敌方阻挡影响，来源未明确；后续须查原文与 FAQ。",
+              "Timing Push 的“非 Entry Edge 桌边”部署与 Zone of Influence、敌方 Engagement Range 及 10\" 限制的精确交互未在来源中展开；8.3.3 的 ZoI 限制明确针对从预备队抵达，是否适用于 Timing Push 未明确，须查完整部署规则。",
+              "Nasty Surprise 移除 Burrowed 后是否立即恢复单位正常射击或冲锋资格、以及是否与 Regeneration 等 Burrowed 触发能力交互，来源未明确。",
+              "Feral Rage 的 PRECISION (2) 与 Adrenal Glands 的 PRECISION (2) 同时存在时，按关键词不叠加规则只取最高值，故不产生额外收益；此结论基于 Core Part 11 与 2.6.1，但具体卡面交互仍建议以现行官方裁定确认。",
+              "这些卡在实战中的相对收益未经验证；本建议为条件性假设，非规则或胜率证明。"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "sourceRefs": [
+    "source:tactical_cards:zerg_swarm",
+    "source:tactical_cards:hydralisk_den",
+    "source:tactical_cards:lair",
+    "source:tactical_cards:overlord",
+    "source:army_units:hydralisk",
+    "source:army_units:raptor__zergling_",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+    "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+    "source:tactical_cards:evolution_chamber",
+    "source:tactical_cards:hatchery",
+    "source:tactical_cards:overseer",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+    "source:army_units:kerrigan",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.0",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.4",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+    "source:army_units:queen",
+    "source:army_units:zergling",
+    "source:army_units:roach",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+    "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+    "source:tactical_cards:accelerating_creep",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.1",
+    "core.u3zNStKpd5XegMjmJfMS.items.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+    "source:faction_cards:mission_gather_the_resources",
+    "source:army_units:corpser__roach_",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.8",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.31",
+    "source:army_units:swarmling__zergling_",
+    "source:army_units:vile__roach_",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+    "core.OszqexisUrSOKMW6TzA5.items.4",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+    "source:faction_cards:mission_frontlines",
+    "source:faction_cards:mission_supply_drop",
+    "source:faction_cards:mission_divide_and_conquer",
+    "source:faction_cards:mission_divide_and_conquer__skirmish_",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.73",
+    "source:faction_cards:mission_supply_drop__skirmish_",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+    "faq-v1:29",
+    "faq-v1:59",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.2",
+    "faq-v1:47",
+    "faq-v1:54",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47",
+    "source:army_units:marine",
+    "source:faction_cards:mission_hold_position",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.16",
+    "core.gMXfLyHJfnGYKw2rmoPS.items.11.subItems.1",
+    "source:tactical_cards:roach_warren",
+    "source:tactical_cards:spawning_pool",
+    "source:tactical_cards:spawning_pool__six_pool_",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.2"
+  ],
+  "preconditions": [
+    "Load the exact general Skill dependency and current player-visible board.",
+    "Check roster eligibility, selected upgrades, current phase and available resources."
+  ],
+  "procedure": [
+    "Read the complete relevant conditional recommendations in knowledge.",
+    "Compare enabled LegalSpace candidates using the general Skill and faction alternatives.",
+    "Use Preview, the room confirmation policy, Apply and Replay; reconsider when reviseIf holds."
+  ],
+  "judgeTests": {
+    "productionEvidenceHash": "186b0bd72e215d4473319b422985a17b286b57ac5c14e829d099268e39644708",
+    "consumerEvidenceHash": "75f97ce79abe53cd0e46987b097d7d32df95acf68528ec4ea430cedc746eda53",
+    "finalGeneralDependencyHash": "6a4b08ade52ff68185c8611f479daf2d9bf53e3bd37c24b9e314289fceb9bf51",
+    "rosterEvaluationHash": "6028f59346f306b7b296ef3857219738e66c1ae7e35f14ae9333ce4f85ce1c16",
+    "ruleEvaluationHash": "16c12940dcb614c405323dda6e35704fda297f0d25e59466bc49b5542e0a2e9f",
+    "rosterScores": [
+      {
+        "arm": "overall_only",
+        "correct": 0,
+        "total": 4
+      },
+      {
+        "arm": "overall_plus_faction",
+        "correct": 4,
+        "total": 4
+      }
+    ],
+    "ruleScores": [
+      {
+        "arm": "overall_only",
+        "total": 66,
+        "correct": 54,
+        "groups": [
+          {
+            "group": "damage_timing",
+            "total": 24,
+            "correct": 15
+          },
+          {
+            "group": "reaction_cap",
+            "total": 24,
+            "correct": 21
+          },
+          {
+            "group": "active_named_limit",
+            "total": 18,
+            "correct": 18
+          }
+        ]
+      },
+      {
+        "arm": "overall_plus_faction",
+        "total": 66,
+        "correct": 66,
+        "groups": [
+          {
+            "group": "damage_timing",
+            "total": 24,
+            "correct": 24
+          },
+          {
+            "group": "reaction_cap",
+            "total": 24,
+            "correct": 24
+          },
+          {
+            "group": "active_named_limit",
+            "total": 18,
+            "correct": 18
+          }
+        ]
+      }
+    ],
+    "independentlyHeldOutRuleCases": 0
+  },
+  "confidence": "source_review_and_bounded_roster_rule_application_only",
+  "trustTier": "offline_evaluated_advisory",
+  "status": "offline_candidate",
+  "humanReviewed": false,
+  "canAffectRules": false,
+  "canAffectStrategy": true,
+  "fullGameStrategyEffectivenessProven": false,
+  "runtimeAccepted": false,
+  "published": false,
+  "trainingTruth": false,
+  "hash": "7b49063aafbd1d67302a8674249f07dfc5a21892747f95222649af2ff541a960"
+}

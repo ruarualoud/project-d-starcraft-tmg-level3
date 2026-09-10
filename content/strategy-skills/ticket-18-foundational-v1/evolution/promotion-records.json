@@ -1,0 +1,57 @@
+{
+  "schema": "ticket18_skillopt_promotion_record_bundle_v1",
+  "records": [
+    {
+      "schema": "starcraft_tmg_skillopt_promotion_record_v1",
+      "candidateSkillId": "starcraft-tmg.matchup.terran_armed_forces-to-zerg_swarm",
+      "candidateSkillHash": "449d4281de792f106de9d7e2b979cb89c9c0c33775422713c1ef6db870b5be27",
+      "parentSkillHash": "3ddf4221b8e21e36ddc0a59991aae536fe397eaf9107ec61ca70b73bef8fafee",
+      "evaluationHash": "578aad7e06a671eab08ea5b68467a224fbae39192241685f905a8e83b0328b86",
+      "arenaComparisonHash": "2cecf36be58e181d8ab9f347aaf2d6959a1f13edaed4354d56f66c44c4e107b4",
+      "status": "promotable_manual_approval_required",
+      "criticalHighFindings": [],
+      "nonBlockingFindings": [
+        {
+          "severity": "Medium",
+          "code": "ONLY_BOUNDED_INITIATIVE_TRANSITIONS_EVALUATED",
+          "blocksIntegration": false
+        }
+      ],
+      "automaticPromotion": false,
+      "currentlyLive": false,
+      "rollbackTargetRuntimeRevision": 1,
+      "runtimeAccepted": false,
+      "eligibleForTraining": false,
+      "trainingTruth": false,
+      "hash": "eb61d11a8c650faba8d861002319187f7b90993c130b1cb497aaf3c572406c9d"
+    },
+    {
+      "schema": "starcraft_tmg_skillopt_promotion_record_v1",
+      "candidateSkillId": "starcraft-tmg.matchup.zerg_swarm-to-terran_armed_forces",
+      "candidateSkillHash": "a9d81b552db20d812639b41e764260808a543831c1ddb0ba572bc32f15b8e00d",
+      "parentSkillHash": "f843dd8a3493c0db6a004274c2febd8a179e720cd319ff004e5cba2ccc990a19",
+      "evaluationHash": "b47ab80f1bc995e3717bd68061710710f66b13625b04e7201d55bfe6f4b9efaf",
+      "arenaComparisonHash": "c263cdc277c4c8541683e6dc3fe63e776cb5db3ea0369fee3e9d5cb64450061f",
+      "status": "promotable_manual_approval_required",
+      "criticalHighFindings": [],
+      "nonBlockingFindings": [
+        {
+          "severity": "Medium",
+          "code": "ONLY_BOUNDED_INITIATIVE_TRANSITIONS_EVALUATED",
+          "blocksIntegration": false
+        }
+      ],
+      "automaticPromotion": false,
+      "currentlyLive": false,
+      "rollbackTargetRuntimeRevision": 1,
+      "runtimeAccepted": false,
+      "eligibleForTraining": false,
+      "trainingTruth": false,
+      "hash": "fe467c8ab1a88df618a7057f7c9c758354f02801688dc4727be2081196f2829e"
+    }
+  ],
+  "automaticPromotion": false,
+  "runtimeAccepted": false,
+  "trainingTruth": false,
+  "hash": "a232ad99d5e999801f5d0216be30db54c0ea23fa51ceda18a21f729a1732ba27"
+}

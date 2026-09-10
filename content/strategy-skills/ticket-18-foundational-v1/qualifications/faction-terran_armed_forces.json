@@ -1,0 +1,68 @@
+{
+  "schema": "faction_final_offline_handoff_v2",
+  "runId": "faction-consumer-v2-f82b51d3ef4535f7dfdb",
+  "recipeHash": "f82b51d3ef4535f7dfdb74a579703faf437d039f32c543f01ac329090ac4b01a",
+  "skillHash": "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+  "candidateHash": "51d1bbac951b5a87a0750303780a0b14a338f1a3b869bf5d2d46bc461bdc3aa7",
+  "parentCandidateHash": "a4c44d7c3eecd57eb1039796df8b7d097e271a6320d821dc0199c62c76f75ea7",
+  "productionEvidenceHash": "baf945d12de4ae7813afe8967ee8c05197427f911d4e1e010d1409a4da6778c9",
+  "consumerEvidenceHash": "9fad3ae76d5d352a145cd65774036a5d96bfd3692e58c226c127786ffb7b2d8c",
+  "revisionSpecHash": "75e7bb9f790b01f751aa9795efe50f0e0187241c0bf63d0ef19a28714f7c57a9",
+  "completeChapters": 7,
+  "recommendations": 55,
+  "boundedRosterChoicePassed": true,
+  "boundedRuleApplicationPassed": true,
+  "groupedRuleScores": [
+    {
+      "arm": "overall_only",
+      "total": 66,
+      "correct": 63,
+      "groups": [
+        {
+          "group": "damage_timing",
+          "total": 24,
+          "correct": 24
+        },
+        {
+          "group": "reaction_cap",
+          "total": 24,
+          "correct": 21
+        },
+        {
+          "group": "active_named_limit",
+          "total": 18,
+          "correct": 18
+        }
+      ]
+    },
+    {
+      "arm": "overall_plus_faction",
+      "total": 66,
+      "correct": 66,
+      "groups": [
+        {
+          "group": "damage_timing",
+          "total": 24,
+          "correct": 24
+        },
+        {
+          "group": "reaction_cap",
+          "total": 24,
+          "correct": 24
+        },
+        {
+          "group": "active_named_limit",
+          "total": 18,
+          "correct": 18
+        }
+      ]
+    }
+  ],
+  "formalOfflineSkillAccepted": true,
+  "sourceRefreshPerformed": false,
+  "newProviderCalls": 0,
+  "runtimeAccepted": false,
+  "fullGameEffectivenessProven": false,
+  "trainingTruth": false,
+  "hash": "083f5d573b06c8254a20d750a94b401e839ea450a5a2de58cf4cf071ad6cb832"
+}

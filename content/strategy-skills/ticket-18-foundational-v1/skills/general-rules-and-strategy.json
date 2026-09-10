@@ -1,0 +1,756 @@
+{
+  "schema": "project_d_game_skill_v1",
+  "gameId": "starcraft-tmg",
+  "rulesVersion": "official-frozen-71/69/48+faq-v1",
+  "skillId": "starcraft-tmg.general-rules-and-strategy",
+  "version": "1.0.1-offline-replay-passed",
+  "skillType": "strategy",
+  "sourceBinding": {
+    "core": "1adbdb652fafc09d01887981a3ae86f69e65e1f1480d804156a8da1d4d1757a1",
+    "faq": "2881adb2a4e0475f07bb17aebf02e64f35c9073f274cec2cf0a8f770f8647226",
+    "rules": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+    "dataset": "b2579b83bb9a77b6119730009725a34d4e828d92d302248243bab33863551067"
+  },
+  "sourceRefs": [
+    "source:faction_cards:mission_hold_position",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+    "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+    "faq-v1:62",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+    "core.I03mzBYujgXw6xN2qXhH.items.3",
+    "core.I03mzBYujgXw6xN2qXhH.items.4",
+    "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.0",
+    "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.2",
+    "core.I03mzBYujgXw6xN2qXhH.items.6",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.2",
+    "faq-v1:06",
+    "faq-v1:10",
+    "source:army_units:marine",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.2",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.4",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+    "faq-v1:28",
+    "faq-v1:29",
+    "faq-v1:30",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.69",
+    "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.9",
+    "core.OszqexisUrSOKMW6TzA5.items.6",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+    "faq-v1:34",
+    "faq-v1:37",
+    "faq-v1:48",
+    "core.I03mzBYujgXw6xN2qXhH.items.1",
+    "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.2",
+    "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.5",
+    "core.OszqexisUrSOKMW6TzA5.items.4",
+    "faq-v1:27",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+    "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2"
+  ],
+  "rulesReferenceHash": "99f1cba072ef4d30d09b53c639fcfd516485785fadb455d46b814dae1bbbddc0",
+  "strategyLayerHash": "c0efea33d7c84f5adefb7216d9367d38e5306df31788449d6b91bcd20d7cfe4f",
+  "phase": "multi_phase",
+  "preconditions": [
+    "读取当前玩家可见状态与版本绑定",
+    "先从Rules服务取得LegalSpace",
+    "缺失查询或来源冲突时fail closed"
+  ],
+  "procedure": [
+    {
+      "axis": "objective_plan",
+      "title": "按回合末可兑现分数与即时胜利风险排序目标",
+      "when": [
+        "存在多个可争夺或需防守的任务标记",
+        "当前分差接近或可能接近10 VP的即时胜利阈值",
+        "需要决定本回合优先抢分、守分还是击杀敌方单位"
+      ],
+      "objective": "在Hold Position任务中，优先选择能在本回合计分阶段兑现最高净VP的计划。净VP需同时考虑控制标记得分、摧毁敌方补给得分与己方可能失去的补给。当己方领先且有机会达到10 VP分差时，优先选择能立即结束游戏的计划；当己方落后时，优先选择能阻止对手达到10 VP分差或降低己方暴露风险的计划。",
+      "steps": [
+        "读取当前回合数、分差、各标记控制状态、双方场上与预备队单位的当前补给值，以及本回合剩余激活数。",
+        "对每个候选计划，分别计算其在本回合计分阶段预计产生的VP：若当前回合为第2回合或之后，控制中立/己方色标记各+1，控制对方色标记各+2；若当前回合为第1回合，任务标记VP尚未启用，不计入本回合得分，但控制仍可产生位置或未来回合收益。摧毁敌方补给每1点+1；同时减去己方单位被摧毁或补给降低可能给对手的VP。",
+        "区分按当前可见局面与明确假设可计算的任务得分分支，和依赖攻击结果的概率性得分：标记分数只有在“计分前控制不再改变”等假设成立时才能写成确定分支；攻击得分需查询成功概率或伤害分布，使用期望值而非单次骰点，并明确未覆盖条件。",
+        "若己方领先且本回合预计得分会使分差达到或超过10，优先选择能立即结束游戏的计划；若己方落后且对手可能达到10分差，优先选择能阻止对手得分或降低己方暴露风险的计划。",
+        "比较守住现有控制标记与争夺新标记：只有当争夺新标记的预计净VP增量大于放弃或削弱现有控制所损失的风险时才转换目标。",
+        "在最终回合（第5回合）仍有合法部署机会时，提前比较将高补给单位保留在预备队、部署上场与得分风险；最终计分阶段开始时，预备队单位会被视作摧毁并给对手VP，因此规划应在该时点前完成，而非等到计分阶段开始才评估。",
+        "每次对手行动后重新计算控制状态与分差，只执行在当前可见局面下仍能兑现的计划。"
+      ],
+      "alternatives": [
+        {
+          "option": "守住并巩固现有控制标记",
+          "preferWhen": "现有控制标记已能提供稳定VP，且分散兵力去争夺新标记会暴露现有控制给对手夺回"
+        },
+        {
+          "option": "主动争夺对方色或中立标记",
+          "preferWhen": "现有控制不足以在本回合或剩余回合内达成目标，且投入争夺的净VP增量高于守住的收益；注意对方色标记价值2 VP，中立或己方色标记价值1 VP"
+        },
+        {
+          "option": "集中火力摧毁高补给敌方单位",
+          "preferWhen": "击杀产生的VP（每1补给1 VP）高于或等于放弃控制一个标记所损失的VP，且该单位是对方得分或控制的关键；若放弃的是对方色标记（2 VP），击杀1补给单位通常不足以替代，需结合其他得分来源评估"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手投入高补给单位争夺我方控制的标记",
+          "adaptation": "重算该标记的控制权；若我方争夺补给总值不足，考虑放弃该标记并转向其他可得分目标，而非投入更多单位陷入消耗"
+        },
+        {
+          "response": "对手通过击杀我方高补给单位获得VP并接近10分差",
+          "adaptation": "若对手因此可能触发即时胜利，优先保护剩余高补给单位并阻止其继续得分，而非继续进攻"
+        },
+        {
+          "response": "对手通过控制中立或己方色标记（各1 VP）或对方色标记（2 VP）扩大分差",
+          "adaptation": "重新评估各标记的控制状态与分差；若对手控制新标记使分差接近10 VP，优先夺回高价值标记或阻止其继续得分"
+        }
+      ],
+      "risk": "当前开发案例 movement.far-v2 仅验证“只有增强移动能到达已声明位置目标”这一条合法转移选择，不能证明真实任务计分、分差管理、标记控制或整局目标规划最优；完整对局策略有效性仍未证明。",
+      "reviseIf": [
+        "当前回合数或分差发生变化，影响即时胜利或最终计分风险",
+        "任务标记控制状态或双方单位补给值发生改变",
+        "对手的回应使原计划的净VP前提不再成立"
+      ],
+      "requiredQueries": [
+        "scenario",
+        "score_forecast",
+        "legal_space",
+        "viewer_state",
+        "threat",
+        "probability"
+      ],
+      "ruleRefs": [
+        "source:faction_cards:mission_hold_position",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+        "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+        "faq-v1:62"
+      ],
+      "developmentCaseIds": [
+        "movement.far-v2"
+      ]
+    },
+    {
+      "axis": "activation_tempo",
+      "title": "按阶段约束与机会窗口决定激活顺序",
+      "when": [
+        "己方在当前阶段有多个未激活单位或可以选择Pass",
+        "存在即将消失的行动机会或需要保留回应能力"
+      ],
+      "objective": "在交替激活的规则约束下，先处理延后即失去价值的行动，同时保留能回应对手后续行动的选项；不假设存在脱离具体局面的最优顺序。",
+      "steps": [
+        "读取当前阶段、先手标记持有者、各单位已激活状态和剩余合法行动；阶段1/2/3使用交替激活：轮到一名玩家时激活一个单位，每个被激活单位只执行该阶段允许的一个行动。",
+        "列出己方所有未激活单位及其合法行动（Move/Deploy/Disengage/Hold/Run/Charge/Ranged Attack），并识别哪些行动若延后会被对手关闭或失去价值。",
+        "比较先行动、保留关键激活、合法Pass三种选择的后果；若提前Pass，明确放弃的本阶段行动机会，以及取得下一阶段先手标记并由标记持有者选择首个行动方的价值。",
+        "在阶段3，仅激活Engaged单位且不能跳过；按各单位战斗优先级（如高价值目标、低生存单位）决定顺序，但须先确认Engagement状态。",
+        "若己方单位携带Active Ability，确认其只能在该单位激活时、声明行动前或行动完全结算后使用；若携带Reaction Ability，须在具体触发发生时声明，且每名玩家在每次激活期间最多结算一个Reaction。",
+        "每次对手行动后重读可见局面，只执行仍成立的下一步；不照抄预先设定的完整队列。"
+      ],
+      "alternatives": [
+        {
+          "option": "先激活关键单位兑现机会",
+          "preferWhen": "该单位的行动（如部署高价值单位、抢占任务标记、消灭威胁）若延后会被对手下一次行动关闭或显著贬值"
+        },
+        {
+          "option": "保留关键激活以回应对手",
+          "preferWhen": "等待能获得信息（如对手先部署或移动）且不会错过本阶段必须完成的行动"
+        },
+        {
+          "option": "在阶段1或阶段2提前Pass，取得下一阶段先手标记",
+          "preferWhen": "己方关键单位已就位或无需再行动，且由标记持有者选择下一阶段首个行动方的收益超过放弃本阶段剩余激活的机会成本；Combat阶段不能自愿采用此分支"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手提前Pass或改变阶段节奏",
+          "adaptation": "停止原定队列，重新枚举本阶段剩余合法行动；若对手已Pass，己方完成剩余激活后进入下一阶段"
+        },
+        {
+          "response": "对手激活单位关闭了己方关键机会",
+          "adaptation": "放弃被关闭的计划，转向仍可兑现的目标或保留后手；不因原计划失效而强行执行"
+        }
+      ],
+      "risk": "本轴仅提供决策框架，不提供跨轴最优解；开发案例（tempo.act-first、tempo.respond）仅验证规则执行，不包含对手名单、任务计分或完整威胁信息，不能据此推断真实对局中的最优激活策略。",
+      "reviseIf": [
+        "关键候选单位不再合法或已激活",
+        "对手结束阶段或改变先手标记归属",
+        "任务计分条件或分差发生变化",
+        "新单位进入战场或改变控制态势"
+      ],
+      "requiredQueries": [
+        "legal_space",
+        "phase",
+        "initiative",
+        "activation_state",
+        "viewer_state"
+      ],
+      "ruleRefs": [
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4"
+      ],
+      "developmentCaseIds": [
+        "tempo.act-first-v2",
+        "tempo.respond-v2"
+      ]
+    },
+    {
+      "axis": "movement_position",
+      "title": "移动决策：先满足位置目标，再评估资源增强移动的增量收益",
+      "when": [
+        "存在多个可行的移动终点或资源增强移动的候选",
+        "需要决定是否消耗CP等资源以增加移动距离",
+        "移动后可能影响后续回合的射击、冲锋或任务控制"
+      ],
+      "objective": "选择能以最低可接受代价达成当前回合位置目标的移动方案；仅在资源增强移动能带来可说明的、超出普通移动的战术收益时才支付额外资源。",
+      "steps": [
+        "读取当前单位的模型数量、Speed值、底座尺寸、Coherency状态、地形布局及所有合法移动终点；不依据单位名称或历史版本猜测移动能力。",
+        "对每个候选移动（普通移动、资源增强移动、留守）使用Preview验证路径与落点。Ground单位的Leading Model通常不能穿过Size 2+地形，但Grass按其特殊规则处理，Flying在途中忽略通常地形与模型限制；所有分支仍须遵守适用的Gap Clearance、合法底座落点、战场边界、敌方Engagement Range与最终Coherency。",
+        "先确定普通移动能否达成当前回合的位置目标（如进入射击范围、控制点、掩护后）。若普通移动已达成目标，则仅在资源增强移动能新增可兑现收益（如进入新的射击/冲锋范围、抢占关键点）时才考虑支付资源。",
+        "若普通移动无法达成目标，比较资源增强移动的代价（CP消耗、NON-LETHAL DAMAGE等）与达成目标带来的收益；收益必须可说明且与当前任务目标相关。",
+        "移动后评估单位暴露于敌方潜在反击的风险，以及移动对后续阶段（Assault/Combat）可用行动的影响。"
+      ],
+      "alternatives": [
+        {
+          "option": "普通移动至目标点",
+          "preferWhen": "普通移动已能达成位置目标，且无需消耗资源或承受额外伤害"
+        },
+        {
+          "option": "资源增强移动（如Stimpack）",
+          "preferWhen": "普通移动无法达成目标，且增强移动带来的位置收益（如进入射击/冲锋范围、抢占关键点）足以覆盖资源消耗与伤害代价"
+        },
+        {
+          "option": "留守（Hold）",
+          "preferWhen": "所有移动候选均无法达成有价值的位置目标，或移动会使单位暴露于不可接受的反击风险"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手在移动后调整位置或转移威胁，使原定终点暴露或失去价值",
+          "adaptation": "重新评估当前终点与替代终点的安全性；若原终点已不可接受，考虑放弃移动或选择更保守的落点"
+        },
+        {
+          "response": "对手利用我方移动消耗的资源（如CP）或承受的伤害（如NON-LETHAL DAMAGE）发动针对性攻击",
+          "adaptation": "在移动前评估单位在承受额外伤害后的生存能力；若单位可能被摧毁，重新权衡移动收益与损失"
+        }
+      ],
+      "risk": "本策略的有效性缺乏完整对局证据；现有案例（movement.near, movement.far）仅为单步转移练习，不能证明任何移动选择在完整对局中更优。移动后的位置优势（如控制点、射击角度）未能量化为可比较的收益。对手对移动的反应未被建模。Stimpack造成的NON-LETHAL DAMAGE (2)对Marine（HP 2）的长期生存能力影响未被评估。",
+      "reviseIf": [
+        "单位模型数量、状态或Speed值发生变化",
+        "地形布局或敌方位置改变，使原定终点不再合法或安全",
+        "资源（CP）可用性或卡牌准备状态改变",
+        "后续攻击或任务收益的前提不再成立"
+      ],
+      "requiredQueries": [
+        "legal_space",
+        "preview",
+        "geometry",
+        "threat",
+        "own_resources",
+        "phase",
+        "activation_state"
+      ],
+      "ruleRefs": [
+        "core.I03mzBYujgXw6xN2qXhH.items.3",
+        "core.I03mzBYujgXw6xN2qXhH.items.4",
+        "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.0",
+        "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.2",
+        "core.I03mzBYujgXw6xN2qXhH.items.6",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.2",
+        "faq-v1:06",
+        "faq-v1:10",
+        "source:army_units:marine",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.47"
+      ],
+      "developmentCaseIds": [
+        "movement.near-v2",
+        "movement.far-v2"
+      ]
+    },
+    {
+      "axis": "threat_trade",
+      "title": "威胁交换：先算可移除模型与后续状态，再比伤害",
+      "when": [
+        "存在多个可攻击目标或可避免交战的候选",
+        "攻击可能改变双方接战状态或任务标记控制",
+        "对手单位可能拥有闪避资格或反制能力"
+      ],
+      "objective": "选择能最大化当前任务收益且最小化后续损失的交换，而非仅追求单次伤害或击杀。",
+      "steps": [
+        "读取当前任务计分条件、分差、双方单位位置、接战状态、可见性与武器档案。",
+        "对每个候选目标，先确定可移除模型数：未接战目标受可见性限制，接战目标按优先级移除且不能破坏接战。",
+        "计算预期伤害时，纳入武器Surge Type与目标标签匹配、目标可能的闪避资格、ANTI-EVADE等修正，并保留自然1/6边界。",
+        "评估交换后双方接战状态：若攻击会摧毁与己方接战的敌方单位，判断己方是否解除接战；若攻击接战目标，确认不会误伤己方关键接战。",
+        "比较候选时，将目标单位补给值下降对任务标记控制与战术质量的影响作为独立权重，而非仅按模型或伤害计算。",
+        "若信息不足（如封闭名单），先补充可观察信息或选择低承诺、可逆的候选，避免基于未证实假设的不可逆交换。"
+      ],
+      "alternatives": [
+        {
+          "option": "接受交换并攻击",
+          "preferWhen": "交换后能显著改变任务标记控制或解除不利接战，且反击代价可承受"
+        },
+        {
+          "option": "回避或集中兵力",
+          "preferWhen": "交换会失去关键得分单位或支援功能，或对手有低成本强反制"
+        },
+        {
+          "option": "先补充信息再行动",
+          "preferWhen": "对手单位升级或能力未知，且等待不丢失合法行动窗口"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手用不同目标或多单位集火",
+          "adaptation": "重估累计威胁，若原交换收益被抵消则放弃并转为防守或撤退"
+        },
+        {
+          "response": "对手使用反应能力（如减伤、闪避、反制冲锋）",
+          "adaptation": "若反应使预期伤害大幅降低，保留后续批次或改用其他目标"
+        }
+      ],
+      "risk": "缺乏具体单位对战案例与概率数据，无法证明某种交换策略整体更优；对手军队构成、剩余资源与战术卡状态未知，精确伤害期望依赖未证实假设。",
+      "reviseIf": [
+        "任务计分条件或分差改变",
+        "目标单位接战状态或可见性变化",
+        "对手公开新信息或使用反应能力",
+        "我方关键单位被威胁或失去行动能力"
+      ],
+      "requiredQueries": [
+        "threat",
+        "probability",
+        "legal_space",
+        "preview",
+        "viewer_state"
+      ],
+      "ruleRefs": [
+        "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.4",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+        "faq-v1:28",
+        "faq-v1:29",
+        "faq-v1:30",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.69",
+        "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.9",
+        "core.OszqexisUrSOKMW6TzA5.items.6"
+      ],
+      "developmentCaseIds": [
+        "threat.standoff-v1"
+      ]
+    },
+    {
+      "axis": "resource_timing",
+      "title": "资源支出前先确认可兑现收益与保留价值",
+      "when": [
+        "存在需要消耗CP、BM或PE的主动能力或战术卡可增强当前行动",
+        "当前单位已激活且处于可支付资源的状态",
+        "存在多个会消耗同一批Ready卡牌、且需要匹配资源类型的后续行动或反应窗口"
+      ],
+      "objective": "在规则允许的支付窗口内，选择能带来可说明当前或近期收益的支出，同时保留足够的匹配Ready卡牌给关键后续窗口；已生成的多余资源会丢失，不能储存。",
+      "steps": [
+        "确认当前阶段、单位激活状态、可支付卡牌的准备状态与资源类型，只考虑规则允许的支付时机。",
+        "列出本次需要Exhaust哪些Ready卡牌，以及这些卡牌本回合因此无法再提供的至少一个后续用途；卡牌产生的超额资源不能保留或转给另一能力。",
+        "比较支付与不支付两个候选：只有存在可说明的增量收益（如到达新位置、获得关键加成）时才选择支出。",
+        "若当前不支付也能达成目标，或保留资源对后续关键窗口价值更高，则选择保留。",
+        "对每个候选，明确其依赖的假设（如对手反应、后续行动可行性），不把未实现的收益当作确定事实。"
+      ],
+      "alternatives": [
+        {
+          "option": "立即支付资源以增强当前行动",
+          "preferWhen": "当前窗口关闭后无法再兑现关键收益，且支付后的增量收益足以覆盖资源消耗与后续风险"
+        },
+        {
+          "option": "保留资源不支付",
+          "preferWhen": "当前不支付也能完成目标，或保留资源对后续更关键的反应/主动窗口价值更高"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手在后续激活中迫使你使用反应能力或改变局面",
+          "adaptation": "重新评估仍为Ready且资源类型匹配的卡牌与当前计划；若原支出收益已无法兑现，放弃原计划并保护仍可用于新威胁的支付窗口"
+        }
+      ],
+      "risk": "当前开发案例（movement.near, movement.far）仅验证单次移动转移与CP保留，未覆盖资源支出的完整机会成本、后续回合收益兑现或对手回应，因此本策略的有效性未被证明。对手军队构成、卡牌资源与未来意图未知，无法量化当前支出相对于未来关键窗口的相对价值。",
+      "reviseIf": [
+        "可支付卡牌的Ready/Exhausted状态、匹配资源类型或可产生数值发生变化",
+        "当前支出的收益前提（如目标可达性、后续行动可行性）被破坏",
+        "对手行动改变了关键后续窗口的优先级"
+      ],
+      "requiredQueries": [
+        "own_resources",
+        "legal_space",
+        "preview",
+        "phase",
+        "activation_state"
+      ],
+      "ruleRefs": [
+        "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "faq-v1:34",
+        "faq-v1:37",
+        "faq-v1:48"
+      ],
+      "developmentCaseIds": [
+        "movement.near-v2",
+        "movement.far-v2"
+      ]
+    },
+    {
+      "axis": "uncertainty",
+      "title": "信息缺口下的保守决策与可逆行动优先",
+      "when": [
+        "对手军队构成、升级或反应能力存在未知",
+        "规则文本存在未解决的边缘冲突或覆盖缺口",
+        "行动结果依赖概率性骰点或对手后续回应",
+        "当前可见威胁评估无法覆盖预备队潜在单位"
+      ],
+      "objective": "在信息不完整时，优先选择可逆、低承诺且不依赖单一对手回应的行动，避免基于伪精确数字或不可验证假设做出不可逆决策。",
+      "steps": [
+        "区分己方可见事实、合理假设、缺失查询和规则服务不支持的情况。场上对象通常允许随时预量距离；预备队单位是明确例外，在放置到战场前不能使用能力或测量其射程。",
+        "对可补的只读查询（如公开战术卡、已部署单位升级）先补全；封闭名单下未部署单位的升级在部署时披露，此前不可确认。",
+        "若关键行动依赖概率结果或对手反应，列出至少两个公开可行回应分支，并确认计划在主要分支下仍有价值。",
+        "若规则文本存在冲突或缺口（如HIGH GROUND Cover正文与决策表措辞不一致），不自行裁定，改用保守分支或上报规则服务。",
+        "比较候选行动的可逆性：优先选择不消耗稀缺资源、不暴露关键单位、不使单位进入不可撤退位置的选择。",
+        "若行动无法通过Preview验证，换合法候选或明确上报，禁止编造裁定。"
+      ],
+      "alternatives": [
+        {
+          "option": "补充查询后再行动",
+          "preferWhen": "等待查询不丢失合法行动窗口，且能显著缩小关键不确定性"
+        },
+        {
+          "option": "低承诺可逆行动",
+          "preferWhen": "信息仍不足，但存在不依赖对手特定回应且符合当前目标的合法选择"
+        },
+        {
+          "option": "推进高风险计划",
+          "preferWhen": "当前分差或任务窗口要求必须冒险，且已确认主要对手回应下仍有可接受收益"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手公开新信息（如部署新单位或使用反应能力）",
+          "adaptation": "更新假设后重新比较原备选，停止固定序列，只执行仍成立的下一步"
+        },
+        {
+          "response": "对手选择未预期分支或利用规则缺口",
+          "adaptation": "立即转向保守分支，避免不可逆损失，并记录该情形供后续查询"
+        }
+      ],
+      "risk": "本策略不保证在未知对手构成或概率结果下最优；封闭名单推断仅为启发式，规则冲突解法需裁判裁决，单次攻击期望不预测整局结果。",
+      "reviseIf": [
+        "信息公开或规则版本更新",
+        "关键行动前提被对手回应破坏",
+        "查询结果显示原假设错误"
+      ],
+      "requiredQueries": [
+        "viewer_state",
+        "coverage",
+        "legal_space",
+        "preview",
+        "threat",
+        "own_resources"
+      ],
+      "ruleRefs": [
+        "core.I03mzBYujgXw6xN2qXhH.items.1",
+        "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.9",
+        "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.2",
+        "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.5",
+        "core.OszqexisUrSOKMW6TzA5.items.6",
+        "core.OszqexisUrSOKMW6TzA5.items.4",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+        "faq-v1:27",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0"
+      ],
+      "developmentCaseIds": [
+        "movement.near-v2"
+      ]
+    },
+    {
+      "axis": "opponent_response",
+      "title": "对手回应分支下的计划选择",
+      "when": [
+        "准备执行影响后续回合的计划",
+        "对手仍有未激活单位或可用反应能力",
+        "存在多个公开可行的对手回应"
+      ],
+      "objective": "选择在对手主要公开可行回应下仍有价值的计划，并明确回应发生时的转换条件。",
+      "steps": [
+        "读取当前阶段、先手标记、双方已激活状态、对手可见单位位置与剩余行动。",
+        "从对手公开位置、武器射程、任务目标和剩余行动中，找出至少一个会使当前计划失效的回应。",
+        "对比积极推进与保留后手，说明该回应发生时如何转换目标或调整行动。",
+        "每次对手动作后重读可见局面，只执行仍成立的下一步。"
+      ],
+      "alternatives": [
+        {
+          "option": "承诺推进",
+          "preferWhen": "主要对手回应下仍能兑现足够任务或伤害收益"
+        },
+        {
+          "option": "试探或保留后手",
+          "preferWhen": "对手存在代价较低的强反制，或信息不足"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手首先Pass并取得下一阶段First Player Marker，随后在下一阶段选择首个行动方",
+          "adaptation": "本阶段完成仍有价值的剩余合法激活；进入下一阶段后，不假设己方先行动，并在标记持有者选择首个行动方后重新评估下一步"
+        },
+        {
+          "response": "对手在合法触发点结算可见Reaction，或通过其他已确认的防御规则与能力降低计划收益",
+          "adaptation": "重新读取结算后的可见局面；若原计划收益被大幅削减，转向其他合法目标或保留仍为Ready的支付卡牌"
+        }
+      ],
+      "risk": "对手的军队构成、升级选择、战术意图和随机掷骰结果存在不确定性；本计划只覆盖有限分支，不穷尽对手行为，也不保证胜利。",
+      "reviseIf": [
+        "对手回应超出假设范围",
+        "原计划的必要前提（如位置、资源、控制）失效",
+        "对手公开新信息改变威胁评估"
+      ],
+      "requiredQueries": [
+        "viewer_state",
+        "threat",
+        "legal_space",
+        "phase",
+        "initiative",
+        "activation_state"
+      ],
+      "ruleRefs": [
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+        "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26"
+      ],
+      "developmentCaseIds": [
+        "tempo.respond-v2"
+      ]
+    }
+  ],
+  "legalityChecks": [
+    "Rules服务是唯一动作合法性权威",
+    "选择当前LegalSpace候选",
+    "写操作必须Preview→确认策略→Apply→Replay"
+  ],
+  "illegalPatterns": [
+    "把策略偏好当规则",
+    "读取对方私有信息",
+    "用heldout答案修正文",
+    "未Preview直接写房间",
+    "把单步Case当整局最优证明"
+  ],
+  "examples": [
+    {
+      "axis": "movement_position",
+      "caseId": "movement.near-v2",
+      "receiptHash": "cdba8ae32b5f62fedbd55d6ca5911b816d2448b0e5db3ee6d73ed2ee99a54291"
+    },
+    {
+      "axis": "resource_timing",
+      "caseId": "movement.near-v2",
+      "receiptHash": "8a80ad25ab78f98d1d5d0024d8eb90afcb17dbe0c992ff33f98412b93890a0de"
+    },
+    {
+      "axis": "uncertainty",
+      "caseId": "movement.near-v2",
+      "receiptHash": "3f856c7798eec93540f540065ae4dfbdf756ca020dbb146c8590ef9f9f42e0a5"
+    },
+    {
+      "axis": "movement_position",
+      "caseId": "movement.far-v2",
+      "receiptHash": "616bbfddc5d95cbcd2b9e48fbfef8ec1aab015a8bbdc26a7672cbcaebd40465a"
+    },
+    {
+      "axis": "resource_timing",
+      "caseId": "movement.far-v2",
+      "receiptHash": "71caf9272e937df823b491460f3ed3089fd4b612cda5a9972f3cb24e59bc0878"
+    },
+    {
+      "axis": "objective_plan",
+      "caseId": "movement.far-v2",
+      "receiptHash": "b278341f83ef4b4163a475bdf0f06d22189d32ed29806554837b03e89269cc30"
+    },
+    {
+      "axis": "threat_trade",
+      "caseId": "threat.standoff-v1",
+      "receiptHash": "760cb5495351e30f7008956741c318b8329368a8e30b619b4049812af021d15d"
+    },
+    {
+      "axis": "activation_tempo",
+      "caseId": "tempo.act-first-v2",
+      "receiptHash": "db80ff98337586fd05e1a494b83e4be229b7ba43af05d2ef025708a5164b5318"
+    },
+    {
+      "axis": "activation_tempo",
+      "caseId": "tempo.respond-v2",
+      "receiptHash": "bbd437d03c01b33e2d55461b1923abf1d36b1fc2d5099e4af2a5439e0a63c8e1"
+    },
+    {
+      "axis": "opponent_response",
+      "caseId": "tempo.respond-v2",
+      "receiptHash": "4cb15cbd4f37aa48d9e56d76563bb38a73cf20b30deed505846041de8e0c9479"
+    }
+  ],
+  "counterExamples": [
+    "当前来源冲突时自行裁决",
+    "一次胜负直接改Skill",
+    "自然1或6被修正值覆盖",
+    "Combat阶段自愿提前Pass"
+  ],
+  "judgeTests": [
+    {
+      "axis": "movement_position",
+      "caseId": "movement.near-v2",
+      "split": "development",
+      "passed": true,
+      "receiptHash": "cdba8ae32b5f62fedbd55d6ca5911b816d2448b0e5db3ee6d73ed2ee99a54291"
+    },
+    {
+      "axis": "resource_timing",
+      "caseId": "movement.near-v2",
+      "split": "development",
+      "passed": true,
+      "receiptHash": "8a80ad25ab78f98d1d5d0024d8eb90afcb17dbe0c992ff33f98412b93890a0de"
+    },
+    {
+      "axis": "uncertainty",
+      "caseId": "movement.near-v2",
+      "split": "development",
+      "passed": true,
+      "receiptHash": "3f856c7798eec93540f540065ae4dfbdf756ca020dbb146c8590ef9f9f42e0a5"
+    },
+    {
+      "axis": "movement_position",
+      "caseId": "movement.far-v2",
+      "split": "development",
+      "passed": true,
+      "receiptHash": "616bbfddc5d95cbcd2b9e48fbfef8ec1aab015a8bbdc26a7672cbcaebd40465a"
+    },
+    {
+      "axis": "resource_timing",
+      "caseId": "movement.far-v2",
+      "split": "development",
+      "passed": true,
+      "receiptHash": "71caf9272e937df823b491460f3ed3089fd4b612cda5a9972f3cb24e59bc0878"
+    },
+    {
+      "axis": "objective_plan",
+      "caseId": "movement.far-v2",
+      "split": "development",
+      "passed": true,
+      "receiptHash": "b278341f83ef4b4163a475bdf0f06d22189d32ed29806554837b03e89269cc30"
+    },
+    {
+      "axis": "threat_trade",
+      "caseId": "threat.standoff-v1",
+      "split": "development",
+      "passed": true,
+      "receiptHash": "760cb5495351e30f7008956741c318b8329368a8e30b619b4049812af021d15d"
+    },
+    {
+      "axis": "activation_tempo",
+      "caseId": "tempo.act-first-v2",
+      "split": "development",
+      "passed": true,
+      "receiptHash": "db80ff98337586fd05e1a494b83e4be229b7ba43af05d2ef025708a5164b5318"
+    },
+    {
+      "axis": "activation_tempo",
+      "caseId": "tempo.respond-v2",
+      "split": "development",
+      "passed": true,
+      "receiptHash": "bbd437d03c01b33e2d55461b1923abf1d36b1fc2d5099e4af2a5439e0a63c8e1"
+    },
+    {
+      "axis": "opponent_response",
+      "caseId": "tempo.respond-v2",
+      "split": "development",
+      "passed": true,
+      "receiptHash": "4cb15cbd4f37aa48d9e56d76563bb38a73cf20b30deed505846041de8e0c9479"
+    },
+    {
+      "axis": "movement_position",
+      "caseId": "movement.private-v2",
+      "split": "heldout",
+      "passed": true,
+      "receiptHash": "8d58a32d74b64b3db78f3105dd1cda8723528f4fc8101a51cd9f73966f89b850"
+    },
+    {
+      "axis": "resource_timing",
+      "caseId": "movement.private-v2",
+      "split": "heldout",
+      "passed": true,
+      "receiptHash": "ad073153b86eb24513db07c4a6ec06402b7dc3bdd307ffab02d1e416d52d2b75"
+    },
+    {
+      "axis": "objective_plan",
+      "caseId": "objective.private-v1",
+      "split": "heldout",
+      "passed": true,
+      "receiptHash": "2c1860bdd08fa6d36170d5cf1fc35fda34fda73b97032d4e0e034d4091a6925b"
+    },
+    {
+      "axis": "uncertainty",
+      "caseId": "uncertainty.private-v1",
+      "split": "heldout",
+      "passed": true,
+      "receiptHash": "5d7263edab15da4371e6bcef0ec540f86b9316c364bc9c6135e406c5f2b820ca"
+    },
+    {
+      "axis": "threat_trade",
+      "caseId": "threat.private-v1",
+      "split": "heldout",
+      "passed": true,
+      "receiptHash": "c44d6b52cdc0cdceec36d9618b7119aa047809d02534f218005ac3b7f2fd35e4"
+    },
+    {
+      "axis": "activation_tempo",
+      "caseId": "tempo.private-v2",
+      "split": "heldout",
+      "passed": true,
+      "receiptHash": "a6f868a62efbb4eec024d1ca47687686efed33d9036b69638b58c97dd797cd7e"
+    },
+    {
+      "axis": "opponent_response",
+      "caseId": "response.private-v1",
+      "split": "heldout",
+      "passed": true,
+      "receiptHash": "f6f9e54d030c4562a519ff82dc7084baa782e74685a8111acd6eeb2e0252002a"
+    }
+  ],
+  "confidence": "source_and_rules_executed_small_cases_passed_full_game_unproven",
+  "trustTier": "replay_passed_offline_candidate",
+  "status": "replay_passed",
+  "humanReviewed": false,
+  "canAffectStrategy": true,
+  "canAffectRules": false,
+  "runtimeAccepted": false,
+  "published": false,
+  "trainingTruth": false,
+  "parentSkillHash": "0143a33c91b0cb6bf5e60cdb633a3819e58f748f17850b32d453518fa7ff7010",
+  "evidenceMetadataCorrectionHash": "bdae0ed964ef65635afe10bcbe317f7c8a7b3f2633f644f4f0bb8aea25dcca7d",
+  "hash": "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b"
+}

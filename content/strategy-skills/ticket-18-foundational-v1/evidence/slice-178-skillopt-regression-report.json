@@ -1,0 +1,200 @@
+{
+  "schema": "ticket18_slice178_skillopt_upgrade_regression_report_v1",
+  "ticket": 18,
+  "slice": 178,
+  "status": "passed",
+  "predecessorArenaReportHash": "9e1498bbd9ff88649270dde724fa60df4b4bd07395ab72a1bec32ec68868eca8",
+  "predecessorSkillOptReportHash": "dfc4ef065595db46dbfbf5aa2bd4fca1b7c54b46556cfa306cf5fc81de60c5eb",
+  "foundationalPackHash": "686f0e3b9771a8e171598be0f58ea1e2b13836e77a5f21817c3628be1bad8886",
+  "compiledCandidateSkillHashes": [
+    "449d4281de792f106de9d7e2b979cb89c9c0c33775422713c1ef6db870b5be27",
+    "a9d81b552db20d812639b41e764260808a543831c1ddb0ba572bc32f15b8e00d"
+  ],
+  "negativeControlSkillHashes": [
+    "8457ed77bb2aee76008a78602425276f1b0bf6bdc17213dd44c672ae8440accd",
+    "1a274b345cef03e6323d31d6385a17f84088fba7361a58a8b7c24e1876125ccb"
+  ],
+  "historicalFailureRegression": {
+    "caseId": "matchup.zerg_to_terran.initiative.heldout",
+    "resultHash": "3cb054fd51c4d5fe7f5546d9dadfe3d0e1e7830e3556bfeb0e4a8d3c3a877be0",
+    "priorPreferencePassed": false,
+    "retainedAsRegressionInput": true
+  },
+  "originalRegressionCases": 4,
+  "independentHeldoutCases": 4,
+  "independentStateAndFamilyHashes": true,
+  "rulesExecutedBranches": 16,
+  "candidateEvaluations": [
+    {
+      "skillId": "starcraft-tmg.matchup.terran_armed_forces-to-zerg_swarm",
+      "skillHash": "449d4281de792f106de9d7e2b979cb89c9c0c33775422713c1ef6db870b5be27",
+      "evaluationHash": "578aad7e06a671eab08ea5b68467a224fbae39192241685f905a8e83b0328b86",
+      "passedCases": 4,
+      "totalCases": 4,
+      "status": "promotable_manual_approval_required"
+    },
+    {
+      "skillId": "starcraft-tmg.matchup.zerg_swarm-to-terran_armed_forces",
+      "skillHash": "a9d81b552db20d812639b41e764260808a543831c1ddb0ba572bc32f15b8e00d",
+      "evaluationHash": "b47ab80f1bc995e3717bd68061710710f66b13625b04e7201d55bfe6f4b9efaf",
+      "passedCases": 4,
+      "totalCases": 4,
+      "status": "promotable_manual_approval_required"
+    }
+  ],
+  "negativeControlEvaluations": [
+    {
+      "skillId": "starcraft-tmg.matchup.terran_armed_forces-to-zerg_swarm",
+      "skillHash": "8457ed77bb2aee76008a78602425276f1b0bf6bdc17213dd44c672ae8440accd",
+      "evaluationHash": "8c495779d66b6d4fdc84a62240c959a5fcf6e5cbc57247fc36a97c829a753dbb",
+      "passedCases": 1,
+      "failedCases": 1,
+      "status": "quarantined_regression"
+    },
+    {
+      "skillId": "starcraft-tmg.matchup.zerg_swarm-to-terran_armed_forces",
+      "skillHash": "1a274b345cef03e6323d31d6385a17f84088fba7361a58a8b7c24e1876125ccb",
+      "evaluationHash": "65fab9666c139ec8d1c73908088979847acff70e027324d1d86aed44a2afa5d0",
+      "passedCases": 1,
+      "failedCases": 1,
+      "status": "quarantined_regression"
+    }
+  ],
+  "arenaComparisonHashes": [
+    "2cecf36be58e181d8ab9f347aaf2d6959a1f13edaed4354d56f66c44c4e107b4",
+    "c263cdc277c4c8541683e6dc3fe63e776cb5db3ea0369fee3e9d5cb64450061f"
+  ],
+  "promotionRecordHashes": [
+    "eb61d11a8c650faba8d861002319187f7b90993c130b1cb497aaf3c572406c9d",
+    "fe467c8ab1a88df618a7057f7c9c758354f02801688dc4727be2081196f2829e"
+  ],
+  "isolatedRegistry": {
+    "candidateRegistrationHash": "e86201a05102ae52acbf0651c9b3c261dd9994e911af9cab299068d38b70d5ea",
+    "baseRuntimeRevision": 1,
+    "candidateProbeRuntimeRevision": 2,
+    "rollbackRuntimeRevision": 3,
+    "activeParentHashesRestored": true,
+    "negativeControlsEverAccepted": false
+  },
+  "onlyCriticalHighBlockIntegration": true,
+  "candidateCriticalHighFindings": 0,
+  "candidateNonBlockingMediumFindings": 2,
+  "automaticPromotion": false,
+  "silentLiveReplacement": false,
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    "accepted_parent_route",
+    "skillopt_candidate_route",
+    "fixed_actor_negative_control_route"
+  ],
+  "harnessToolsCalled": [
+    "read_strategy_skills",
+    "read_viewer_state",
+    "read_legal_space",
+    "preview",
+    "confirm",
+    "apply",
+    "replay",
+    "read_skillopt_evaluation"
+  ],
+  "uiTraceEvidence": [
+    {
+      "direction": "terran_to_zerg",
+      "candidateSnapshotHash": "c1a567aee5b838890d1adc200f855397b9f76b28f95cb11411fc63b8d7513bea",
+      "negativeControlSnapshotHash": "db110f7cd4819b66f60d898d38877d713654cf29f6c4744c5f8f4c1eed3e22bc",
+      "visualTraceProduced": false,
+      "reason": "Slice178 evaluates Rules transitions and registry routes; Slice176 owns rendered Room traces."
+    },
+    {
+      "direction": "zerg_to_terran",
+      "candidateSnapshotHash": "686a6265fe7f220b096fe72d919af716d7b4b853eb1d2a3ef473ab8dbf8e5f80",
+      "negativeControlSnapshotHash": "3d5393d56cdcc2a330d2840e19e0e4fde1dc0b474932d502258c456c0142c2cb",
+      "visualTraceProduced": false,
+      "reason": "Slice178 evaluates Rules transitions and registry routes; Slice176 owns rendered Room traces."
+    }
+  ],
+  "agentDecisionEvidence": [
+    {
+      "skillHash": "449d4281de792f106de9d7e2b979cb89c9c0c33775422713c1ef6db870b5be27",
+      "caseId": "matchup.terran_to_zerg.initiative.development",
+      "caseResultHash": "1445fe4862dc26f9bd25dd6084502f6071dc32c6da9d071d741328bebce39bad",
+      "passed": true
+    },
+    {
+      "skillHash": "449d4281de792f106de9d7e2b979cb89c9c0c33775422713c1ef6db870b5be27",
+      "caseId": "matchup.terran_to_zerg.initiative.heldout",
+      "caseResultHash": "042a73110099648723a5a8f35b860c10e35fcdc1a971928100f868ce5971a59c",
+      "passed": true
+    },
+    {
+      "skillHash": "449d4281de792f106de9d7e2b979cb89c9c0c33775422713c1ef6db870b5be27",
+      "caseId": "matchup.terran_to_zerg.initiative.skillopt-heldout-a",
+      "caseResultHash": "ee126d08dbed70a84cf7edd04b0794c8860afd760507c39cac4bf677736006e6",
+      "passed": true
+    },
+    {
+      "skillHash": "449d4281de792f106de9d7e2b979cb89c9c0c33775422713c1ef6db870b5be27",
+      "caseId": "matchup.terran_to_zerg.initiative.skillopt-heldout-b",
+      "caseResultHash": "1b64bd1bff13697531b8cfac2488d2c35afbff2254665482c4d9db4fc2e41f27",
+      "passed": true
+    },
+    {
+      "skillHash": "a9d81b552db20d812639b41e764260808a543831c1ddb0ba572bc32f15b8e00d",
+      "caseId": "matchup.zerg_to_terran.initiative.development",
+      "caseResultHash": "dd3047d0b4cc4030d1550dc8a89eb413f4e9c62dc86488b5549e964f1f9a0972",
+      "passed": true
+    },
+    {
+      "skillHash": "a9d81b552db20d812639b41e764260808a543831c1ddb0ba572bc32f15b8e00d",
+      "caseId": "matchup.zerg_to_terran.initiative.heldout",
+      "caseResultHash": "4bde7625d54e1bb3a864545f1f57575456ee9d379059cdfb04e95a57c4b8a7d1",
+      "passed": true
+    },
+    {
+      "skillHash": "a9d81b552db20d812639b41e764260808a543831c1ddb0ba572bc32f15b8e00d",
+      "caseId": "matchup.zerg_to_terran.initiative.skillopt-heldout-a",
+      "caseResultHash": "993ced292ae321921937dfc97989f4ac47289b8fe92bd48a3f0a1c234b72ea33",
+      "passed": true
+    },
+    {
+      "skillHash": "a9d81b552db20d812639b41e764260808a543831c1ddb0ba572bc32f15b8e00d",
+      "caseId": "matchup.zerg_to_terran.initiative.skillopt-heldout-b",
+      "caseResultHash": "5f57b80a53cabfe07b305e82b82c10ee585d394cc7e8bda906d83663507b20dd",
+      "passed": true
+    }
+  ],
+  "memoryTraceEvidence": {
+    "writesPerformed": 0,
+    "candidatesPromotedToMemory": false
+  },
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": {
+    "acceptedParentsRemainLiveAfterProbe": true,
+    "criticalOrHighFindingQuarantinesCandidate": true,
+    "mediumFindingTrackedWithoutBlocking": true,
+    "manualPublicationRequired": true,
+    "rollbackCreatesNewRuntimeRevision": true
+  },
+  "userVisibleChecks": [
+    "Two complete SkillOpt candidate versions are inspectable beside their accepted parents.",
+    "A fixed-first-actor negative control fails one independent held-out case per direction and remains quarantined.",
+    "Exact-hash arena routing compares parent, candidate, and negative control without latest-version guessing.",
+    "The isolated candidate acceptance is rolled back to the five accepted parent hashes; no live publication occurs."
+  ],
+  "limitations": [
+    "All evaluation positions are Rules-executed synthetic single-transition fixtures, not complete games.",
+    "The bounded deterministic decision consumer proves gate discrimination and non-regression, not model win-rate improvement.",
+    "Only opening_branches is exercised; four matchup axes remain unproven and are Medium non-blocking findings."
+  ],
+  "modelCalls": 0,
+  "paidProviderUsed": false,
+  "sourceRefreshPerformed": false,
+  "fullGameStrategyEffectivenessProven": false,
+  "runtimeAccepted": false,
+  "eligibleForTraining": false,
+  "trainingTruth": false,
+  "hash": "33792bc949313e9e45fefbd6773b22fab77ed01afbf39ea20e25eb3c21430daa"
+}

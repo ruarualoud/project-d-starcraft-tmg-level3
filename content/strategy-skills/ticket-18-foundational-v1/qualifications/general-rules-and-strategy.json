@@ -1,0 +1,16 @@
+{
+  "schema": "ticket18_general_strategy_final_completion_receipt_v2",
+  "parentCompletionHash": "2ad7157459a17948f5694f6f8785457482f11270d94298e1510d4f440fa4648d",
+  "parentRestartVerificationHash": "6257d7ba65776233c81083d11573228d7217218ef460755ef78619d239f00318",
+  "reportHash": "02abbd691226b86263662f0cfaec410cab8c02d204f57a1dbb18f72176ae3fa6",
+  "resultHash": "59338326c8de039bec1323eaa630eaf6044d41fd386eaae3a4db15bdadbfbd29",
+  "skillHash": "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+  "strategyLayerHash": "c0efea33d7c84f5adefb7216d9367d38e5306df31788449d6b91bcd20d7cfe4f",
+  "routerManifestHash": "b52fef77bb7999f31fa19b25e40b2bdf8167a1c4a448fb8701a92b8a862baaa6",
+  "evidenceMetadataCorrectionHash": "bdae0ed964ef65635afe10bcbe317f7c8a7b3f2633f644f4f0bb8aea25dcca7d",
+  "formalGeneralSkillCompleted": true,
+  "runtimeAccepted": false,
+  "published": false,
+  "trainingTruth": false,
+  "hash": "2bc23f2b6bbbe69534ac603aa1bab6260b3568ad337553a6fa879b6d5670e967"
+}

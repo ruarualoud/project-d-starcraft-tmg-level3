@@ -1,8 +1,8 @@
 # Remaining StarCraft TMG Level-3 development tickets
 
-Current amendment, 2026-09-06: Ticket17 is complete9/9 after Slice171;
-project16/22. Remaining Tickets:14,18,19,20,21,22 (six, including deferred
-physical-device acceptance). Ticket18 is active on the fixed
+Current amendment, 2026-09-11: Tickets 17 and 18 are complete; project `17/22`.
+Remaining Tickets: 14, 19, 20, 21 and 22 (five, including deferred
+physical-device acceptance). Ticket18 closed `8/8` on the fixed
 [172–179 first-five/evolution plan](ticket-18-slices-172-179-first-five-and-evolution-2026-09-05.md).
 The historical progress below is retained, not the current counter.
 
@@ -37,8 +37,8 @@ is retained, with readiness, first-five priority and cost gates still enforced.
 | 14 | Shared Web/App client: restore the Expo product, implement one Client Domain Module, mount authoritative rooms/board/source/character flows, migrate Battle Lab, add the complete battle workbench, and prove browser plus real-device behavior. | 16 slices (128–143), Web/App/Battle Lab parity, unit/scenario/deploy/score inspection, multi-mode threat, rules-bound probability, complete Token/Marker action surface, score forecast/rules quick view, no second state authority, pinned builds and browser/native traces. |
 | 15 | **Complete.** Online role-Agent sessions: Tutor, Opponent, Commentator and Companion are real room-connected product modes with isolated tools, visibility, prompts and memory. | Nine slices (144–152); authenticated HTTP; real Chromium four-mode/failure/cancel/reconnect/budget evidence; legal Opponent Preview and human-confirmed Apply/Receipt/Replay; 192 fixed assertions including closure. |
 | 16 | **Complete, 10/10.** Direct Provider and secure BYOK: move the current injected Adapter into isolated, budgeted, recoverable production execution. | Slices 153–162 complete; isolated credential/egress child, SQLite/PostgreSQL store contract, durable Gateway, Web flow and redaction/browser aggregate; one authorized DeepSeek HTTP 200 attempt with zero retry; 20/20 preflight, 16/16 live closure and 531 cumulative fixed assertions. |
-| 17 | **In progress, 8/9.** DSH offline candidate generation with direct control. | Slices163–170 complete, including source-spans, durable repair/accounting, actual DSH tool loop, 20/20 candidate chapters and independent mechanics evaluation. Candidates remain quarantined; Slice171 owns operational/performance/predecessor aggregate closure. |
-| 18 | Skill scheduler, evaluation and promotion: turn candidate generation into durable DAG jobs with leases/fencing/WAL, Judge/Cross-Time/held-out/A-B gates and administrator promotion/rollback. | SQLite/PostgreSQL scheduler parity, crash recovery, fixed evaluation denominators, quarantined candidates, approved versioned Skill snapshot. |
+| 17 | **Complete, 9/9.** DSH offline candidate generation with direct control. | Slices163–171 complete, including source-spans, durable repair/accounting, actual DSH tool loop, bounded candidate production, independent mechanics evaluation and operational aggregate closure. |
+| 18 | **Complete, 8/8.** Five foundational Skills plus stable production/evolution. | Exact portable five-Skill pack; explicit online registry/rollback; postgame reflection and SkillOpt candidates; old/new held-out regression with negative controls; SQLite/PostgreSQL release-store parity and crash recovery. |
 | 19 | MuZero player-view trajectory contract and export: define observation/action/reward/discount/chance/recurrent-state lineage from the authoritative journal. | Viewer-leakage tests, terminal/version binding, NDJSON/MuZero/RLDS round trips; eligibility remains separately gated and no learner is trained. |
 | 20 | Human-agent and agent-agent self-play orchestration: bind seats, Providers, Skills, Rules/data, maps, rosters, RNG, budgets and experiment cells. | Finite H-A/A-A denominator, pause/resume/recovery, opponent pools, failure accounting, viewer-safe trajectories and no automatic promotion. |
 | 21 | Production operations, security and observability: distinguish local demo, controlled experiment, production room and training-eligible run. | Identity/RBAC, KMS, multi-instance CAS, persistent queues, immutable releases, privacy retention, telemetry/cost controls, incident rollback and distribution gates. |

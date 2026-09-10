@@ -1,0 +1,274 @@
+{
+  "schema": "ticket18_directed_matchup_finalization_report_v1",
+  "ticket": 18,
+  "slice": 175,
+  "runId": "matchup-final-v1-73e96a3db3be82d1b0bf",
+  "recipeHash": "73e96a3db3be82d1b0bf9a8a921738a3d1995b15bc6e669b190b9e115aabad89",
+  "producerRunId": "matchup-v1-d88dcc6a82f6f55ee6b2",
+  "producerReportHash": "7e7fe13b0f54821554776e73ab6c75b97627c7c2c74124ca72562e3c37e95bf9",
+  "sourceDirectionsAccepted": 2,
+  "sourceAxesAccepted": 10,
+  "sourceFieldsAccepted": 110,
+  "caseResults": 4,
+  "developmentResults": 2,
+  "heldoutResults": 2,
+  "decisionCasesPassed": true,
+  "formalMatchupSkillsCompleted": 2,
+  "skillHashes": [
+    "3ddf4221b8e21e36ddc0a59991aae536fe397eaf9107ec61ca70b73bef8fafee",
+    "f843dd8a3493c0db6a004274c2febd8a179e720cd319ff004e5cba2ccc990a19"
+  ],
+  "failure": null,
+  "shapeRecoveries": [
+    {
+      "schema": "strategy_decision_shape_recovery_v2",
+      "recoveryKind": "string_list_to_singular_narrative",
+      "originalFailureReceiptHash": "ef6c707436fc4061e84ea37717162ef75a58c2ffb10ce73439247bff590ab62c",
+      "originalWireHash": "2760f84d63bbd958a60821be6d834904a85918b0db4c55af55054bee5355078a",
+      "beforeValueHash": "7051f14e9b1e6b280afba8c5499dab84e63066254b1edbd159574d5aa5a189d7",
+      "afterValueHash": "4bed7b262c8cc646e078dea9bd207c2ad3a655b53d8f3b997fe8a848f546720a",
+      "changedFields": [
+        "reviseIf"
+      ],
+      "originalItemHashes": [
+        "1d02a9eccba07c7573755c80a8b92c0f01abf04ffe9ab68d27219ab8155826c3",
+        "060ee1bc96476072efe7af112d3f7add07bddb3595ab114adddfd65e701a3e50",
+        "c4d00e7228b4b7994b8f2334cc15397f1244570bd2a386aba1a0820c9e77ea12",
+        "ad21ff73f7d4d497f02ef71aa96fcd41adeb843eb5904eeca91ef21d6bf4c373",
+        "65e985916756701d45813084ba9e486e16ea8eff118b8a875b316926a82eef39"
+      ],
+      "originalItemCount": 5,
+      "separator": "\n",
+      "textFragmentsPreserved": true,
+      "itemOrderPreserved": true,
+      "candidateSelectionChanged": false,
+      "comparisonsChanged": false,
+      "providerRegenerationCalls": 0,
+      "semanticAcceptanceInherited": false,
+      "sourceAndStrategyEvaluationStillRequired": true,
+      "runtimeAccepted": false,
+      "trainingTruth": false,
+      "hash": "27f9ad3b7647e90f80f5e0b1d752ffc38ed1182da92add397612eddf0a97a214"
+    }
+  ],
+  "softLimitAlerts": [],
+  "ledger": {
+    "runId": "matchup-final-v1-73e96a3db3be82d1b0bf",
+    "recipeHash": "73e96a3db3be82d1b0bf9a8a921738a3d1995b15bc6e669b190b9e115aabad89",
+    "calls": 5,
+    "reservedOrSettledMicros": 3425706,
+    "knownTokens": 1253795,
+    "reservedOrSettledTokens": 1753795,
+    "unknownCalls": 1,
+    "attempts": [
+      {
+        "id": "structured-18d28118c3e567addf93d2b8489d9dbb7fb1fee2f6d2a22b",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 553596,
+        "code": null
+      },
+      {
+        "id": "structured-3741da1cfc96c6618b7aa8f8a78ec3439693505dd3c36a60",
+        "state": "failed",
+        "reserve": 1500000,
+        "settled": null,
+        "code": "STRATEGY_DECISION_LOCAL_REPAIR_NOT_APPLICABLE",
+        "responseOutcome": null
+      },
+      {
+        "id": "structured-6f17fe90bece0f1ce665940aa6d04c9066e91b656bad7cfc",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 235314,
+        "code": null
+      },
+      {
+        "id": "structured-856acf697922a349297c5e836288647baa06cc040ca58ac7",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 1104358,
+        "code": null
+      },
+      {
+        "id": "structured-ee6cd0016e90f924715bfa12538fdee9f37961237bab7c97",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 32438,
+        "code": null
+      }
+    ],
+    "steps": [
+      {
+        "id": "matchup-finalization-start",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role-decision-schema-recovery.f887818b4fc8848b4c58cb89ccfebd61dae7308b25efb55d",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role-decision-schema-transition.f887818b4fc8848b4c58cb89ccfebd61dae7308b25efb55d",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.0304ac8e70fb268ede5171b1af0ad1ff66e456cbbe44f852",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.4d7a79eb8c8c6ce5a9539425edd7e1dd9997069164357c82",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.73eb56ba2fc1624f74c5a0dd43e9d844ef938459321cc856",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.f27af0d31cd2637de26102a3e6ee43eafd3b858344a18ec0",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.ff118d1c22d8bb283052cc5b58f68585cc8445ba509c89e2",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-18d28118c3e567addf93d2b8489d9dbb7fb1fee2f6d2a22b.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-18d28118c3e567addf93d2b8489d9dbb7fb1fee2f6d2a22b.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-3741da1cfc96c6618b7aa8f8a78ec3439693505dd3c36a60.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-3741da1cfc96c6618b7aa8f8a78ec3439693505dd3c36a60.issue",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-3741da1cfc96c6618b7aa8f8a78ec3439693505dd3c36a60.local-recovery-runtime-receipt-v2",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-3741da1cfc96c6618b7aa8f8a78ec3439693505dd3c36a60.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-6f17fe90bece0f1ce665940aa6d04c9066e91b656bad7cfc.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-6f17fe90bece0f1ce665940aa6d04c9066e91b656bad7cfc.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-856acf697922a349297c5e836288647baa06cc040ca58ac7.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-856acf697922a349297c5e836288647baa06cc040ca58ac7.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-ee6cd0016e90f924715bfa12538fdee9f37961237bab7c97.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-ee6cd0016e90f924715bfa12538fdee9f37961237bab7c97.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      }
+    ],
+    "currency": "CNY",
+    "invoice": false,
+    "trainingTruth": false,
+    "hash": "048fbfb8a88f3ee7570561db70840bcd48951ac5055756d2811063fb1dc7adf6"
+  },
+  "cumulative": {
+    "attempts": 1714,
+    "intentCount": 0,
+    "paymentRequiredCount": 0,
+    "cumulativeTokens": 260204060,
+    "cumulativeEstimateMicros": 312143927,
+    "ledgerHash": "dadc84670d0f24a6de3634856b43f1b33714fb4cabc9aac23f535476614eb3bd",
+    "invoice": false,
+    "hash": "92f72b65bb9a1e2c1d4e702025247574a9516dc7055e8ab850628f8bbbfc0979"
+  },
+  "matchupBudgetEpoch": {
+    "version": "directed_matchup_budget_epoch_progress_v1",
+    "epochHash": "2f7b78450ee6e8240bf4c8ffe628f0fa480ba5a492f9adf0f971528f25743f4d",
+    "attempts": 109,
+    "tokens": 34120976,
+    "estimateMicros": 15721921,
+    "estimateCny": 15.721921,
+    "nextNotificationThresholdMicros": 100000000,
+    "historicalLedgerPreserved": true,
+    "invoice": false,
+    "trainingTruth": false,
+    "hash": "09e0f65f1e65faabb1b1fccc59029cf4484cd36f879781cb553c4eb78b76d585"
+  },
+  "additionalCalls": 5,
+  "additionalTokens": 1253795,
+  "additionalCostMicros": 3425706,
+  "ctx2skillLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "roleRoutes": [
+    "opponent",
+    "rule_skill_builder"
+  ],
+  "skillsRead": [
+    "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+    "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+    "7b49063aafbd1d67302a8674249f07dfc5a21892747f95222649af2ff541a960",
+    "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+    "7b49063aafbd1d67302a8674249f07dfc5a21892747f95222649af2ff541a960",
+    "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148"
+  ],
+  "skillsGenerated": [
+    "starcraft-tmg.matchup.terran_armed_forces-to-zerg_swarm",
+    "starcraft-tmg.matchup.zerg_swarm-to-terran_armed_forces"
+  ],
+  "judgeTestsRun": 114,
+  "crossTimeReplayResult": "four_frozen_rules_transitions_passed_restart_replay_pending",
+  "promotions": [
+    "offline_advisory:starcraft-tmg.matchup.terran_armed_forces-to-zerg_swarm",
+    "offline_advisory:starcraft-tmg.matchup.zerg_swarm-to-terran_armed_forces"
+  ],
+  "blocks": [
+    "runtime_room_arena",
+    "complete_game_ab",
+    "authenticated_human_promotion"
+  ],
+  "remainingRuleGaps": [
+    "zerg_movement_not_exercised",
+    "combat_and_scoring_not_exercised"
+  ],
+  "sourceRefreshPerformed": false,
+  "fullGameStrategyEffectivenessProven": false,
+  "runtimeAccepted": false,
+  "trainingTruth": false,
+  "hash": "d39f30f979bf52aa242e336adb0ab84717a75d80740955e44ef29a22f575469a"
+}

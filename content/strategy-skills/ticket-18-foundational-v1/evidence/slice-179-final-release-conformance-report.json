@@ -1,0 +1,207 @@
+{
+  "schema": "ticket18_slice179_final_release_conformance_report_v1",
+  "ticket": 18,
+  "slice": 179,
+  "status": "passed",
+  "ticketProgress": "8/8_complete",
+  "projectProgress": "17/22",
+  "portableManifestHash": "47ed51cb716563d46179695f6c76d789242eff158be9fad554cba5fcd2935bc8",
+  "portableLoadReceiptHash": "d9bd75d65d195af5b78a48945a22ee1693168b616f80846c935e2debff5eabc6",
+  "portableContentObjects": 15,
+  "persistedReleaseArtifactRecords": 16,
+  "foundationalSkills": 5,
+  "runtimeAcceptedFoundationalSkills": 5,
+  "skillOptCandidates": 2,
+  "skillOptCandidateHashes": [
+    "449d4281de792f106de9d7e2b979cb89c9c0c33775422713c1ef6db870b5be27",
+    "a9d81b552db20d812639b41e764260808a543831c1ddb0ba572bc32f15b8e00d"
+  ],
+  "promotionRecordBundleHash": "a232ad99d5e999801f5d0216be30db54c0ea23fa51ceda18a21f729a1732ba27",
+  "predecessorEvidence": [
+    {
+      "slice": 176,
+      "hash": "9e1498bbd9ff88649270dde724fa60df4b4bd07395ab72a1bec32ec68868eca8",
+      "status": "passed"
+    },
+    {
+      "slice": 177,
+      "hash": "dfc4ef065595db46dbfbf5aa2bd4fca1b7c54b46556cfa306cf5fc81de60c5eb",
+      "status": "passed"
+    },
+    {
+      "slice": 178,
+      "hash": "33792bc949313e9e45fefbd6773b22fab77ed01afbf39ea20e25eb3c21430daa",
+      "status": "passed"
+    }
+  ],
+  "buildPathDependencies": false,
+  "releaseStoreConformance": {
+    "contractHash": "6d6445a8ae9a63ec93769ddfcc4e4bb835d19d0b123b0a77a1f87eb45e8e369d",
+    "methods": [
+      "initialize",
+      "putArtifact",
+      "getArtifact",
+      "createJob",
+      "acquireLease",
+      "completeJob",
+      "recoverExpiredLeases",
+      "getJob",
+      "health",
+      "close"
+    ],
+    "schemaFingerprint": "682fdfa61d5cf2ba2deee9899da5578ca8b83150c3a172fb9302e0340420b514",
+    "sqlite": {
+      "closeReopenPassed": true,
+      "expiredLeaseRecoveryCount": 1,
+      "staleFenceRejected": true,
+      "finalJobHash": "66f602ca205cf9f831b181c5d15657235cb1060be8f93e6ae4dcb846032204a1",
+      "healthHash": "35559cc675886be023f35567eb98cfb308c04014578babf3a973b318ad06bf9b"
+    },
+    "postgres": {
+      "deterministicProtocolDoubleUsed": true,
+      "realServerUsed": false,
+      "serializableObserved": true,
+      "selectForUpdateObserved": true,
+      "internalDatabaseRetries": 0,
+      "connectionCount": 24,
+      "finalJobHash": "66f602ca205cf9f831b181c5d15657235cb1060be8f93e6ae4dcb846032204a1",
+      "healthHash": "f75469f79dea0afe275127718e8f8a51dcd8caeb71caa1e4d8420d47c86a6d8e"
+    },
+    "semanticParity": {
+      "artifactRecordHash": true,
+      "initialJobHash": true,
+      "firstLeaseJobHash": true,
+      "recoveryJobHash": true,
+      "secondLeaseFence": true,
+      "completedJobHash": true,
+      "finalJobHash": true
+    }
+  },
+  "providerAttemptConformance": {
+    "methods": [
+      "initialize",
+      "openBudget",
+      "reserveAttempt",
+      "markAttemptDispatched",
+      "settleAttempt",
+      "recoverOpenAttempts",
+      "getBudget",
+      "getAttempt",
+      "readAudit",
+      "replayBudget",
+      "health",
+      "close"
+    ],
+    "sqliteWalRestartCount": 2,
+    "preDispatchRecovery": "abandoned_before_egress",
+    "preDispatchChargedUnits": 0,
+    "postDispatchRecovery": "ambiguous",
+    "postDispatchChargedUnits": 50,
+    "ambiguousRetryAuthorizationRequired": true,
+    "budgetHash": "8c3eb131bd164199fd2b393c64b6ee9b74711fb01a8ab69a04ad4cbf7592817b",
+    "auditEventCount": 6,
+    "auditReplayHash": "00e565ec737fd11fc0a5b7ec0bf5931d31f4643bce5eef5a767a5f4dea3b243d",
+    "auditReplayMatchesProjection": true,
+    "healthAdapter": "sqlite",
+    "actualProviderCalls": 0
+  },
+  "tokenAndCostLedger": {
+    "matchupEpochTokens": 34120976,
+    "matchupEpochEstimatedCny": 15.721921,
+    "historicalCumulativeTokens": 260204060,
+    "historicalCumulativeEstimatedCny": 312.143927,
+    "slice179IncrementalTokens": 0,
+    "slice179IncrementalEstimatedCny": 0,
+    "paymentRequiredCount": 0
+  },
+  "extraFactionScope": {
+    "terranArmedForcesIsOneFactionSkill": true,
+    "zergSwarmIsOneFactionSkill": true,
+    "protossExperiment": "tactical_cards:daelaam",
+    "secondFactionExperiment": "choose_exactly_one_of_terran_raynors_raiders_or_zerg_kerrigans_swarm",
+    "selectionFinalized": false,
+    "combinedTerranZergFactionSkill": false
+  },
+  "onlyCriticalHighBlockIntegration": true,
+  "criticalHighFindings": [],
+  "nonBlockingFindings": [
+    {
+      "severity": "Medium",
+      "code": "FULL_GAME_STRATEGY_EFFECTIVENESS_NOT_PROVEN",
+      "blocksIntegration": false
+    },
+    {
+      "severity": "Medium",
+      "code": "REAL_POSTGRES_SERVER_NOT_USED_IN_LOCAL_SLICE",
+      "blocksIntegration": false
+    }
+  ],
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    "general_rules_and_strategy",
+    "own_faction",
+    "opponent_faction_dependency",
+    "directed_matchup",
+    "postgame_reflection",
+    "skillopt_candidate"
+  ],
+  "harnessToolsCalled": [
+    "read_strategy_skills",
+    "read_rules_skills",
+    "read_viewer_state",
+    "read_legal_space",
+    "preview",
+    "confirm",
+    "apply",
+    "replay",
+    "write_skillopt_candidate"
+  ],
+  "uiTraceEvidence": [
+    {
+      "predecessorSlice": 176,
+      "reportHash": "9e1498bbd9ff88649270dde724fa60df4b4bd07395ab72a1bec32ec68868eca8",
+      "newUiTraceProduced": false,
+      "reason": "Slice179 is persistence and release conformance only."
+    }
+  ],
+  "agentDecisionEvidence": [
+    {
+      "predecessorSlice": 178,
+      "reportHash": "33792bc949313e9e45fefbd6773b22fab77ed01afbf39ea20e25eb3c21430daa",
+      "candidateCriticalHighFindings": 0
+    }
+  ],
+  "memoryTraceEvidence": {
+    "writesPerformed": 0,
+    "candidatesPromotedToMemory": false
+  },
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": {
+    "oldSkillVersionsRemainDisplayable": true,
+    "runtimeUsesExplicitAcceptedRevision": true,
+    "expiredJobLeaseRequeuesWithNewFence": true,
+    "preDispatchAttemptAbandonsWithoutCharge": true,
+    "postDispatchUnknownAttemptBecomesAmbiguous": true,
+    "automaticProviderRetry": false,
+    "automaticSkillPromotion": false
+  },
+  "userVisibleChecks": [
+    "The exact five foundational Skills load from tracked content paths on a clean checkout.",
+    "Old accepted Skills and newer SkillOpt candidates remain separately inspectable by hash.",
+    "An expired worker cannot complete after a recovered worker receives a higher fence.",
+    "SQLite M1 and PostgreSQL production adapters produce the same semantic release records.",
+    "No Terran/Zerg combined Faction Skill is produced; the later second-Faction choice remains explicit."
+  ],
+  "sourceRefreshPerformed": false,
+  "modelCalls": 0,
+  "paidProviderUsed": false,
+  "fullGameStrategyEffectivenessProven": false,
+  "automaticPromotion": false,
+  "runtimeAccepted": false,
+  "eligibleForTraining": false,
+  "trainingTruth": false,
+  "hash": "79d857214b4594b7679c02ca67d5f0a866372f0b7c6acbacc79457e34316991a"
+}

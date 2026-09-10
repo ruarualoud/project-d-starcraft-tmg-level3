@@ -1,0 +1,69 @@
+{
+  "schema": "faction_final_offline_handoff_v3",
+  "runId": "faction-consumer-7906dde1fd2affdef98d",
+  "recipeHash": "7906dde1fd2affdef98d9a91d24a63ac013db72b6a1794835b000668e3bcadbb",
+  "skillHash": "7b49063aafbd1d67302a8674249f07dfc5a21892747f95222649af2ff541a960",
+  "candidateHash": "3f9713679e526d2c3ff75ba8c9e0f75f969e556df5a5539560e8408af18603d5",
+  "parentCandidateHash": "8008767b9e865076255c48abf0fcd41575658443440dbf7156dd900f6a625805",
+  "productionEvidenceHash": "186b0bd72e215d4473319b422985a17b286b57ac5c14e829d099268e39644708",
+  "consumerEvidenceHash": "75f97ce79abe53cd0e46987b097d7d32df95acf68528ec4ea430cedc746eda53",
+  "revisionSpecHash": "fe122d90a81f608457423275257f8418bb0cc75c141f7548a125b906f7e5e68c",
+  "completeChapters": 8,
+  "recommendations": 53,
+  "boundedRosterChoicePassed": true,
+  "boundedRuleApplicationPassed": true,
+  "groupedRuleScores": [
+    {
+      "arm": "overall_only",
+      "total": 66,
+      "correct": 54,
+      "groups": [
+        {
+          "group": "damage_timing",
+          "total": 24,
+          "correct": 15
+        },
+        {
+          "group": "reaction_cap",
+          "total": 24,
+          "correct": 21
+        },
+        {
+          "group": "active_named_limit",
+          "total": 18,
+          "correct": 18
+        }
+      ]
+    },
+    {
+      "arm": "overall_plus_faction",
+      "total": 66,
+      "correct": 66,
+      "groups": [
+        {
+          "group": "damage_timing",
+          "total": 24,
+          "correct": 24
+        },
+        {
+          "group": "reaction_cap",
+          "total": 24,
+          "correct": 24
+        },
+        {
+          "group": "active_named_limit",
+          "total": 18,
+          "correct": 18
+        }
+      ]
+    }
+  ],
+  "independentlyHeldOutApplicationCases": 0,
+  "formalOfflineSkillAccepted": true,
+  "sourceRefreshPerformed": false,
+  "newProviderCalls": 0,
+  "runtimeAccepted": false,
+  "fullGameEffectivenessProven": false,
+  "trainingTruth": false,
+  "hash": "c39f8ce71705b9fa0bf832584e6496eda07380e9723933a721f06721ea03b0b8"
+}

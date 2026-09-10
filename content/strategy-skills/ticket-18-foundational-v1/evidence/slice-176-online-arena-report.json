@@ -1,0 +1,197 @@
+{
+  "schema": "ticket18_slice176_online_strategy_arena_report_v1",
+  "ticket": 18,
+  "slice": 176,
+  "status": "passed",
+  "manifestHash": "686f0e3b9771a8e171598be0f58ea1e2b13836e77a5f21817c3628be1bad8886",
+  "packLoadReceiptHash": "3a6150b10b19071ba783f8796d0fa62de50924136766dc9ffbb7b8a8f7f10956",
+  "registrationReceiptHash": "6dc4ede5e63286dfd2c3e5d17ad6619dfd1efbfaa23835ea9d77ef1fcdc47393",
+  "evaluationReceiptHash": "36a7fa63f71e697dbbede0ac2bcb8f1232af5787ccb0fd976af28e7787440def",
+  "acceptanceReceiptHash": "9d0ef795cd53dc3a641b4d4fc5a9b71c8243a63762e8e8bf51d30a1779546ad6",
+  "rollbackReceiptHashes": [
+    "f096529c7ef6d76221330d083898165a5b387022eb6953e9a644f0d1cad9c161",
+    "67d5ad3089263fc6147265d03418a49e2f135957b4dbf1927aef73a2f1f370c4"
+  ],
+  "registryState": {
+    "schema": "starcraft_tmg_online_strategy_skill_registry_v1.state",
+    "gameId": "starcraft-tmg",
+    "sourceBinding": {
+      "core": "1adbdb652fafc09d01887981a3ae86f69e65e1f1480d804156a8da1d4d1757a1",
+      "faq": "2881adb2a4e0475f07bb17aebf02e64f35c9073f274cec2cf0a8f770f8647226",
+      "rules": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+      "dataset": "b2579b83bb9a77b6119730009725a34d4e828d92d302248243bab33863551067"
+    },
+    "sourceBindingHash": "b56095d05848412081021abbcc0143e9370be22076b48a8d478f4be04c7471dc",
+    "catalogRevision": 1,
+    "runtimeRevision": 3,
+    "candidateSkillHashes": [
+      "3ddf4221b8e21e36ddc0a59991aae536fe397eaf9107ec61ca70b73bef8fafee",
+      "7b49063aafbd1d67302a8674249f07dfc5a21892747f95222649af2ff541a960",
+      "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+      "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+      "f843dd8a3493c0db6a004274c2febd8a179e720cd319ff004e5cba2ccc990a19"
+    ],
+    "activeSkillHashes": [
+      "3ddf4221b8e21e36ddc0a59991aae536fe397eaf9107ec61ca70b73bef8fafee",
+      "7b49063aafbd1d67302a8674249f07dfc5a21892747f95222649af2ff541a960",
+      "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+      "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+      "f843dd8a3493c0db6a004274c2febd8a179e720cd319ff004e5cba2ccc990a19"
+    ],
+    "candidateCount": 5,
+    "activeCount": 5,
+    "automaticPromotion": false,
+    "silentReplacement": false,
+    "rulesAuthority": "external_rules_service",
+    "trainingTruth": false,
+    "hash": "d2bbba20b90b160ac50b4ac49c1a11f1ed1a56cb1123537f2a6e6518f83401a0"
+  },
+  "foundationalOfflineSkills": 5,
+  "runtimeAcceptedSkills": 5,
+  "candidateArenaRoutes": 2,
+  "acceptedArenaRoutes": 2,
+  "staleCasReason": "STRATEGY_REGISTRY_RUNTIME_CAS_CONFLICT",
+  "pinnedRevision": 1,
+  "pinnedSkillSetHash": "6c41025a902bfee35d608a36e0b0120b557872553d54674cbd9a6cc24e0d105e",
+  "exactDependencyOrder": [
+    "general",
+    "own_faction",
+    "opponent_faction",
+    "directed_matchup"
+  ],
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    "opponent_prompt"
+  ],
+  "harnessToolsCalled": [
+    "read_board_state",
+    "list_legal_actions",
+    "read_rules_skills",
+    "read_strategy_skills",
+    "read_memory_snapshot",
+    "read_character_worldbook",
+    "preview_action",
+    "confirm_preview_after_human_authorization",
+    "claim_control",
+    "apply_action",
+    "replay_room",
+    "write_episode_trace"
+  ],
+  "uiTraceEvidence": [
+    {
+      "roomId": "ticket18-s176-evaluation_candidate-1",
+      "visualProjectionHash": "e8c9071a3e09609d2cff5b919883e4479b7c5034893972b8eee40bc043084696",
+      "previewProjectionHash": "fe03f147095a215d5bfc42b40ede247a6b67bc39d53a4685d8c275d4987e6245",
+      "threatCoverage": "partial",
+      "screenPixelGeometryUsedForRules": false
+    },
+    {
+      "roomId": "ticket18-s176-evaluation_candidate-2",
+      "visualProjectionHash": "2d01adf37c54cdd64ce266750c7e2bc6742547b1a9dfdb9e6a043f86b4568797",
+      "previewProjectionHash": "7900096baf06c09cb59a052b0d743007f1b139b3194b96040b27f8b7f275ac52",
+      "threatCoverage": "partial",
+      "screenPixelGeometryUsedForRules": false
+    },
+    {
+      "roomId": "ticket18-s176-accepted-3",
+      "visualProjectionHash": "2efad6ce97b4e5f302a6a4d6716091f7193dbc044f1549320aa544d2f311cf6b",
+      "previewProjectionHash": "b4ec56f9223f48250062bcd30e1d0178d45d1f1194d57c56ec8b34ac0580d47e",
+      "threatCoverage": "partial",
+      "screenPixelGeometryUsedForRules": false
+    },
+    {
+      "roomId": "ticket18-s176-accepted-4",
+      "visualProjectionHash": "a606df3b54ad55523dee44a00c33488d8e704506bf0ac4cebca057578e9802e5",
+      "previewProjectionHash": "b37fbc05536978db3fe4b6cbd1f23256ae1ad22b9e936017783a0cd1feed5d6f",
+      "threatCoverage": "partial",
+      "screenPixelGeometryUsedForRules": false
+    }
+  ],
+  "agentDecisionEvidence": [
+    {
+      "traceHash": "1696002cffa42c0034f78134b13b9c2ef14a9624be0e700efeaa3b5f68feee18",
+      "decisionReceiptHash": "8cc83c7b9b86d760dfb74e8e2a7b691862b5268b01156157e653fef314caca53",
+      "strategySkillHashes": [
+        "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+        "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+        "7b49063aafbd1d67302a8674249f07dfc5a21892747f95222649af2ff541a960",
+        "3ddf4221b8e21e36ddc0a59991aae536fe397eaf9107ec61ca70b73bef8fafee"
+      ],
+      "applyReceiptHash": "5ba260859f98a0071ee3bd94cbc5926207f8a46750cfc242d65019a1d6f785ea",
+      "replayStateHash": "1bb7d4a3a68df01f47866c5902a7312b0f2f02f63b9c64fc352f5e0d4414a1a7"
+    },
+    {
+      "traceHash": "467577a61be5f36f687ee21409a14312c31a3943bb857aca96ebfb1d431f2ad6",
+      "decisionReceiptHash": "949afb51153e207bec21ed02b8ef7b7132bbecdb719e46f9c0f1ffc1e7a9e57b",
+      "strategySkillHashes": [
+        "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+        "7b49063aafbd1d67302a8674249f07dfc5a21892747f95222649af2ff541a960",
+        "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+        "f843dd8a3493c0db6a004274c2febd8a179e720cd319ff004e5cba2ccc990a19"
+      ],
+      "applyReceiptHash": "3cf3c76eb804b899794ec90147766b64e166c427f12b52d3351a7242fa2441ca",
+      "replayStateHash": "1bb7d4a3a68df01f47866c5902a7312b0f2f02f63b9c64fc352f5e0d4414a1a7"
+    },
+    {
+      "traceHash": "4dcec3d5f826de614522ab98ae6eba8002144377668e7a96851144188905c934",
+      "decisionReceiptHash": "f2bc3ed761adf918fd8d531254734f97553a7926c470a1f4229699d722424c8c",
+      "strategySkillHashes": [
+        "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+        "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+        "7b49063aafbd1d67302a8674249f07dfc5a21892747f95222649af2ff541a960",
+        "3ddf4221b8e21e36ddc0a59991aae536fe397eaf9107ec61ca70b73bef8fafee"
+      ],
+      "applyReceiptHash": "7adc3b5b62cb8500f04500011bed3aecec77f688cca773ece65c13884c82c939",
+      "replayStateHash": "1bb7d4a3a68df01f47866c5902a7312b0f2f02f63b9c64fc352f5e0d4414a1a7"
+    },
+    {
+      "traceHash": "ce7f29be5f88c7babac970f157fbb955792b86198d26134180701b6bf537c230",
+      "decisionReceiptHash": "c4d50e80c86d56707c60e47a9535aece94c620b12b5645f00d6ef2c5d63c6dea",
+      "strategySkillHashes": [
+        "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+        "7b49063aafbd1d67302a8674249f07dfc5a21892747f95222649af2ff541a960",
+        "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+        "f843dd8a3493c0db6a004274c2febd8a179e720cd319ff004e5cba2ccc990a19"
+      ],
+      "applyReceiptHash": "d8ea10f9d60519a6d8df068824403b97d2eb461d1db1752d6b375bb08f0262c2",
+      "replayStateHash": "1bb7d4a3a68df01f47866c5902a7312b0f2f02f63b9c64fc352f5e0d4414a1a7"
+    }
+  ],
+  "memoryTraceEvidence": {
+    "refsRead": 0,
+    "writesPerformed": 0,
+    "liveMemoryPromotionPerformed": false
+  },
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": {
+    "activationRequiresExplicitCas": true,
+    "candidateRegistrationChangesActiveVersion": false,
+    "staleRevisionRejected": true,
+    "rollbackCreatesNewRuntimeRevision": true,
+    "roomMayPinOldAcceptedRevision": true,
+    "silentReplacementAllowed": false
+  },
+  "userVisibleChecks": [
+    "Both directed seats show four ordered strategy dependencies.",
+    "The agent stops at Preview and displays human confirmation required.",
+    "Only the human supervisor confirms and applies the action.",
+    "Replay matches the applied room state.",
+    "Candidate, accepted, rollback and pinned versions remain distinguishable."
+  ],
+  "limitations": [
+    "The provider is deterministic and injected; no model quality claim is made.",
+    "The current workbench threat overlay remains partial, not an exact spatial oracle.",
+    "These one-transition traces do not prove whole-game strategy effectiveness."
+  ],
+  "modelCalls": 0,
+  "paidProviderUsed": false,
+  "sourceRefreshPerformed": false,
+  "fullGameStrategyEffectivenessProven": false,
+  "rulesAuthority": "external_rules_service",
+  "eligibleForTraining": false,
+  "trainingTruth": false,
+  "hash": "9e1498bbd9ff88649270dde724fa60df4b4bd07395ab72a1bec32ec68868eca8"
+}
