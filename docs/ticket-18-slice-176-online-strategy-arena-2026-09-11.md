@@ -18,8 +18,8 @@ order is:
 
 This is not a Terran/Zerg combined Skill. The two matchup artifacts remain
 directional and independent. The later extra-faction experiment remains one
-independent Daelaam Skill plus one second Faction Skill under either Terran or
-Zerg; that selection is still pending.
+independent Protoss `Daelaam` Skill plus the second Zerg Faction Skill,
+`Kerrigan's Swarm`, beside `Zerg Swarm`. It does not include `Raynor's Raiders`.
 
 ## Delivered boundaries
 

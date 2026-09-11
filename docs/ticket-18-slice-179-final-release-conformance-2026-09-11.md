@@ -1,7 +1,8 @@
 # Ticket 18 / Slice 179 — final release and store conformance
 
-Status: complete on 2026-09-11. Ticket 18 is `8/8` and complete. Project
-progress is `17/22`; remaining Tickets are 14, 19, 20, 21 and 22.
+Status: engineering slice complete on 2026-09-11. The later completion audit
+extended the Ticket through Slice 182; Ticket 18 is now complete at `11/11`
+and project progress is `17/22`.
 
 ## Outcome
 
@@ -22,9 +23,9 @@ the portable-pack load receipt.
 
 This final closure does not create a Terran/Zerg combined Skill. The current
 Faction Skills remain one Faction each: `Terran Armed Forces` and `Zerg Swarm`.
-The later experiment is independent Protoss `Daelaam` plus exactly one second
-Faction under either Terran (`Raynor's Raiders`) or Zerg (`Kerrigan's Swarm`).
-That Terran/Zerg choice remains open.
+The later experiment is independent Protoss `Daelaam` plus the second Zerg
+Faction `Kerrigan's Swarm` beside `Zerg Swarm`. `Raynor's Raiders` is not
+selected for this experiment.
 
 ## Store composition
 
@@ -97,14 +98,17 @@ Provider/model calls and incremental cost are zero. The retained matchup epoch
 is `34,120,976` tokens / estimated CNY `15.721921`; historical cumulative is
 `260,204,060` / estimated CNY `312.143927`. Payment-required count is zero.
 
-## What Ticket 18 proves—and does not prove
+## What Slices 172–179 prove—and do not prove
 
-Ticket 18 now proves stable production inputs, five formal foundational Skills,
+Slices 172–179 prove stable production inputs, five formal foundational Skills,
 explicit online routing/acceptance, replay-safe postgame reflection, bounded
 SkillOpt candidate generation, a discriminating regression gate, rollback and
 durable portable scheduling/storage contracts.
 
-It does not prove complete-game win-rate improvement, production PostgreSQL
+Slice 181 proves bounded current-official complete-match Harness use, and Slice
+182 proves real-match SkillOpt evolution with explicit rollback. They still do
+not prove complete-game win-rate improvement, production PostgreSQL
 operations, MuZero export, full human-agent/agent-agent seasons, or final
-device acceptance. Those belong to Tickets 19–22 and the deferred final slice
-of Ticket 14.
+device acceptance. The remaining production/learning/product gates belong to
+Tickets 19–22 and the
+deferred final slice of Ticket 14.

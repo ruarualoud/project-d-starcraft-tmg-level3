@@ -1,0 +1,122 @@
+{
+  "schema": "starcraft_tmg_postgame_strategy_reflection_v1",
+  "findings": [
+    {
+      "findingId": "finding.terran_to_zerg.fullmatch_hold_draw",
+      "direction": "terran_to_zerg",
+      "caseIds": [
+        "matchup.terran_to_zerg.complete-match.ticket18-s181-player1"
+      ],
+      "claimType": "complete_match_bounded_policy_limit",
+      "claim": "Repeated Hold preserved the already occupied marker but the bounded legal subset exposed no route to improve a tied score; the Draw supports local preservation, not a general always-Hold plan.",
+      "preActionRefHashes": [
+        "401073899529153d0161dc7743f6a3408239bb8ee020419291b9969876e878ce"
+      ],
+      "outcomeRefHashes": [
+        "f3718dbc8fb7e3f3bf14dad7e91e83c3dafea5b6a27336b2c8f66f491aa6351b"
+      ],
+      "limitations": [
+        "The complete match uses one Marine and one Zergling under a Hold/Pass evaluation subset.",
+        "Threat coverage is unknown, so the trace cannot prove that movement or fire-lane alternatives are strategically inferior."
+      ]
+    },
+    {
+      "findingId": "finding.zerg_to_terran.fullmatch_hold_draw",
+      "direction": "zerg_to_terran",
+      "caseIds": [
+        "matchup.zerg_to_terran.complete-match.ticket18-s181-player2"
+      ],
+      "claimType": "complete_match_bounded_policy_limit",
+      "claim": "Repeated Hold preserved the already occupied marker but the bounded legal subset exposed no route to improve a tied score; the Draw supports local preservation, not a general always-Hold plan.",
+      "preActionRefHashes": [
+        "ddb93138bfc48901c4ff5d91e0eafb300e4c233a0ae32cd63b7c28faa0d3d649"
+      ],
+      "outcomeRefHashes": [
+        "961133c8552d2f41d7b8c6252c4779cb1ac2e925078e7e5c6253e319737032f0"
+      ],
+      "limitations": [
+        "The complete match uses one Marine and one Zergling under a Hold/Pass evaluation subset.",
+        "Threat coverage is unknown, so the trace cannot prove that movement or fire-lane alternatives are strategically inferior."
+      ]
+    }
+  ],
+  "patches": [
+    {
+      "targetSkillHash": "3ddf4221b8e21e36ddc0a59991aae536fe397eaf9107ec61ca70b73bef8fafee",
+      "targetSkillId": "starcraft-tmg.matchup.terran_armed_forces-to-zerg_swarm",
+      "operation": "append_advisory_strategy_note",
+      "axis": "opening_branches",
+      "lesson": {
+        "title": "Treat Hold as local position preservation, not a complete plan",
+        "when": [
+          "The movement LegalSpace includes Hold.",
+          "The current player-view contains marker distance/control and score information."
+        ],
+        "guidance": "Before repeating Hold, compare marker control, score forecast, legal movement/attack alternatives and threat coverage. Hold is locally justified when it preserves a valuable position and no supported higher-value branch is visible. If spatial evidence is incomplete, query it and bound the claim instead of inferring that the opponent cannot contest.",
+        "risk": "The source games are full length but use a deliberately narrow Marine/Zergling Hold/Pass fixture; this advisory does not prove matchup win-rate improvement.",
+        "reviseIf": [
+          "A legal movement or attack branch can improve mission score or deny opponent scoring.",
+          "Threat, line-of-sight, formation, base-edge or fire-lane evidence changes.",
+          "Broader-army complete matches contradict the preservation policy."
+        ],
+        "decisionProtocol": {
+          "kind": "position_aware_hold_v1",
+          "decisionOrder": [
+            "read_marker_control_and_base_edge_distance",
+            "read_current_and_projected_score",
+            "read_movement_attack_and_counterplay_legal_space",
+            "read_threat_coverage_and_fire_lanes",
+            "compare_preservation_against_scoring_alternatives"
+          ],
+          "onIncompleteSpatialEvidence": "query_then_bound_claim",
+          "rulesAuthority": "external_rules_service"
+        }
+      },
+      "evidenceFindingIds": [
+        "finding.terran_to_zerg.fullmatch_hold_draw"
+      ]
+    },
+    {
+      "targetSkillHash": "f843dd8a3493c0db6a004274c2febd8a179e720cd319ff004e5cba2ccc990a19",
+      "targetSkillId": "starcraft-tmg.matchup.zerg_swarm-to-terran_armed_forces",
+      "operation": "append_advisory_strategy_note",
+      "axis": "opening_branches",
+      "lesson": {
+        "title": "Treat Hold as local position preservation, not a complete plan",
+        "when": [
+          "The movement LegalSpace includes Hold.",
+          "The current player-view contains marker distance/control and score information."
+        ],
+        "guidance": "Before repeating Hold, compare marker control, score forecast, legal movement/attack alternatives and threat coverage. Hold is locally justified when it preserves a valuable position and no supported higher-value branch is visible. If spatial evidence is incomplete, query it and bound the claim instead of inferring that the opponent cannot contest.",
+        "risk": "The source games are full length but use a deliberately narrow Marine/Zergling Hold/Pass fixture; this advisory does not prove matchup win-rate improvement.",
+        "reviseIf": [
+          "A legal movement or attack branch can improve mission score or deny opponent scoring.",
+          "Threat, line-of-sight, formation, base-edge or fire-lane evidence changes.",
+          "Broader-army complete matches contradict the preservation policy."
+        ],
+        "decisionProtocol": {
+          "kind": "position_aware_hold_v1",
+          "decisionOrder": [
+            "read_marker_control_and_base_edge_distance",
+            "read_current_and_projected_score",
+            "read_movement_attack_and_counterplay_legal_space",
+            "read_threat_coverage_and_fire_lanes",
+            "compare_preservation_against_scoring_alternatives"
+          ],
+          "onIncompleteSpatialEvidence": "query_then_bound_claim",
+          "rulesAuthority": "external_rules_service"
+        }
+      },
+      "evidenceFindingIds": [
+        "finding.zerg_to_terran.fullmatch_hold_draw"
+      ]
+    }
+  ],
+  "outcomeUsedForReviewOnly": true,
+  "originalDecisionInputsRewritten": false,
+  "automaticPromotion": false,
+  "fullGameStrategyEffectivenessProven": false,
+  "eligibleForTraining": false,
+  "trainingTruth": false,
+  "hash": "e7275f83cfb7987d7ed32905c54faad8b789285ef34a49574235cf3f2bead72b"
+}

@@ -14,16 +14,26 @@ strategy is conditional advisory material, never Rules or training truth.
 2026-09-11 scope clarification: the post-matchup comparison is not a combined
 Terran/Zerg Skill. `Terran Armed Forces` and `Zerg Swarm` each cover only one of
 the two currently frozen Faction cards for its Race. After the five foundational
-Skills, produce an independent Protoss `Daelaam` Skill. Separately choose exactly
-one existing Race and produce its second Faction Skill: either Terran
-`Raynor's Raiders` beside `Terran Armed Forces`, or Zerg `Kerrigan's Swarm`
-beside `Zerg Swarm`. That choice is not fixed yet; Zerg remains the current
-recommendation only. The comparison is between the two independent Faction
-Skills under the selected Race. Directed Terran→Zerg and Zerg→Terran matchup
-Skills remain separate artifacts.
+Skills, produce an independent Protoss `Daelaam` Skill. Separately produce the
+second Zerg Faction Skill, `Kerrigan's Swarm`, beside the existing `Zerg Swarm`
+Skill. This is a same-Race comparison between two independent Zerg Faction
+Skills; it is not a Terran/Zerg joint artifact. `Raynor's Raiders` is not in this
+experiment. Directed Terran→Zerg and Zerg→Terran matchup Skills remain separate
+artifacts.
 
-Final checkpoint (2026-09-11): Slices 172–179 complete. Ticket 18 is `8/8`;
-project progress is `17/22`.
+Completion-audit amendment (2026-09-11): Slices 172–179 are complete as
+engineering milestones, Slice 180 is complete as the corrective evidence
+audit, Slice 181 passed two current-Rules terminal matches, and Slice 182 passed
+real-match local evolution/regression/rollback. Ticket 18 is complete at
+`11/11`; project progress is `17/22`. The prior
+`8/8` statement is superseded because Slice 176 used the legacy compatibility
+runtime for one transition per route, while Slices 177–178 used synthetic
+one-transition Episodes. They do not prove current-official complete-match
+Harness use or real-match Skill evolution. Slices 181–182 closed both High gaps
+without claiming measured win-rate improvement. See the
+[full-match acceptance audit](ticket-18-slice-180-full-match-acceptance-audit-2026-09-11.md).
+
+Historical engineering checkpoint (2026-09-11): Slices 172–179 complete.
 The formal offline foundational pack is `5/5`; all five exact versions are now
 runtime-accepted in the isolated online registry after both directed routes
 passed candidate and accepted Room Preview→human confirmation→Apply→Replay.
@@ -96,6 +106,9 @@ sources have not been refreshed.
 | 177 | Postgame review→reflection→SkillOpt candidate | Reconstruct real traces, use pre-action information for choices and actual outcomes for review; bounded local revisions, failure resume, no hindsight leakage |
 | 178 | Upgrade regression and replay acceptance | Old failures + independently held-out tests + arena comparison; bad candidate quarantined, good version retained as promotable with rollback; no silent live upgrade |
 | 179 | Scheduler/store conformance and aggregate | SQLite M1/PostgreSQL Adapter contract, durable leases/budgets/attempts, recovery and predecessor regression; exact remaining production gates |
+| 180 | Completion and full-match evidence audit | Distinguish legacy one-turn/synthetic evidence from current-official complete matches; freeze the two remaining High gaps and preserve the corrected extra-Faction scope |
+| 181 | Current-Rules complete-match Harness — complete | T→Z and Z→T reached authoritative Round 5 terminal states under the 912/912 catalogue, with exact five-Skill routing, player-view decisions and Preview→Apply→Replay traces |
+| 182 | Real-match Skill evolution and final acceptance — complete | Complete-match replay→reflection→versioned local upgrade→held-out/full-match regression→explicit rollback; independently grade rules, usability and strategy without automatic promotion |
 
 Completion is separately reported as Ticket slices, generated candidates,
 evaluation-passed Skills, and runtime-accepted Skills. Merely creating five

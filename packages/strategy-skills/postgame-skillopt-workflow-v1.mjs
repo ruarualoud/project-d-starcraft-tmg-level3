@@ -32,6 +32,18 @@ function caseDirection(caseId) {
   return match[1];
 }
 
+function completeMatchDirection(match) {
+  if (match.designatedAgentFaction === "tactical_cards:terran_armed_forces"
+    && match.opponentFaction === "tactical_cards:zerg_swarm") {
+    return "terran_to_zerg";
+  }
+  if (match.designatedAgentFaction === "tactical_cards:zerg_swarm"
+    && match.opponentFaction === "tactical_cards:terran_armed_forces") {
+    return "zerg_to_terran";
+  }
+  fail("SKILLOPT_COMPLETE_MATCH_DIRECTION_INVALID", { roomId: match.roomId });
+}
+
 function stateSummary(state = {}) {
   return freeze({
     round: state.round,
@@ -159,6 +171,110 @@ export function compileStarcraftTmgCompletedStrategyEpisodeV1(input = {}) {
   });
 }
 
+export function compileStarcraftTmgCompletedMatchStrategyEpisodeV1(input = {}) {
+  const match = verifySeal(clone(input.matchTrace));
+  const sourceBinding = freeze(clone(input.sourceBinding));
+  if (match.schema !== "ticket18_s181_current_rules_complete_match_trace_v1"
+    || match.terminal !== true || Number(match.finalRound) !== 5
+    || match.finalReplayStateHash !== match.finalCurrentStateHash
+    || match.silentCompatibilityUsed !== false
+    || !Array.isArray(match.strategySkillRefs)
+    || match.strategySkillRefs.length !== 4
+    || !Array.isArray(match.decisions) || !match.decisions.length
+    || match.decisions.length !== Number(match.acceptedActionCount)
+    || match.trainingTruth !== false
+    || match.sourceRulesReceiptHash !== sourceBinding.rules) {
+    fail("SKILLOPT_COMPLETE_MATCH_INPUT_INVALID", { roomId: match.roomId });
+  }
+  const direction = completeMatchDirection(match);
+  const designated = match.decisions.filter((decision) =>
+    decision.designatedAgent === true);
+  if (!designated.length
+    || designated.length !== Number(match.designatedAgentDecisionCount)) {
+    fail("SKILLOPT_COMPLETE_MATCH_DECISIONS_INVALID", { roomId: match.roomId });
+  }
+  const decisionInputs = designated.map((decision) => {
+    const {
+      applyReceiptHash: _applyReceiptHash,
+      postStateHash: _postStateHash,
+      ...preApply
+    } = decision;
+    return clone(preApply);
+  });
+  const preAction = seal({
+    schema: `${STARCRAFT_TMG_POSTGAME_SKILLOPT_WORKFLOW_VERSION}.complete-match-input`,
+    roomId: match.roomId,
+    direction,
+    evaluationSplit: "development",
+    seatKey: match.designatedAgentSideKey,
+    sourceBinding,
+    sourceRulesReceiptHash: match.sourceRulesReceiptHash,
+    rulesRuntimeBinding: clone(match.rulesRuntimeBinding),
+    strategySkillRefs: clone(match.strategySkillRefs),
+    strategySkillSetHash: match.strategySkillSetHash,
+    decisionInputs,
+    decisionInputHash: hash(decisionInputs),
+    workbenchSnapshotHashes: (match.workbenchEvidence || [])
+      .filter((entry) => entry.phase !== "terminal")
+      .map((entry) => entry.snapshotHash),
+    visibility: "recorded_player_view_before_each_apply",
+    applyReceiptsIncluded: false,
+    postStateHashesIncluded: false,
+    terminalOutcomeIncluded: false,
+    hiddenOpponentInformationIncluded: false,
+    trainingTruth: false,
+  });
+  const actualOutcome = seal({
+    schema: `${STARCRAFT_TMG_POSTGAME_SKILLOPT_WORKFLOW_VERSION}.complete-match-outcome`,
+    roomId: match.roomId,
+    direction,
+    acceptedActionCount: match.acceptedActionCount,
+    designatedAgentDecisionCount: match.designatedAgentDecisionCount,
+    appliedDecisionReceipts: designated.map((decision) => ({
+      actionSequence: decision.actionSequence,
+      applyReceiptHash: decision.applyReceiptHash,
+      postStateHash: decision.postStateHash,
+    })),
+    terminal: match.terminal,
+    terminalReason: match.terminalReason,
+    winner: match.winner,
+    finalScores: clone(match.finalScores),
+    finalReplayStateHash: match.finalReplayStateHash,
+    finalCurrentStateHash: match.finalCurrentStateHash,
+    allRecordedReplaysMatched: match.replayEvidence.every((entry) =>
+      entry.matchesCurrent === true),
+    fullGameEvidence: true,
+    trainingTruth: false,
+  });
+  return seal({
+    schema: `${STARCRAFT_TMG_POSTGAME_SKILLOPT_WORKFLOW_VERSION}.episode`,
+    episodeId: `matchup.${direction}.complete-match.${match.roomId}`,
+    direction,
+    evaluationSplit: "development",
+    preAction,
+    actualOutcome,
+    preActionHash: preAction.hash,
+    actualOutcomeHash: actualOutcome.hash,
+    hindsightBoundary: {
+      decisionInputHash: preAction.hash,
+      reviewOutcomeHash: actualOutcome.hash,
+      outcomeAvailableToOriginalDecision: false,
+      reviewMayRewriteOriginalObservation: false,
+    },
+    sourceProvenance: {
+      sourceRulesReceiptHash: match.sourceRulesReceiptHash,
+      matchTraceHash: match.hash,
+      rulesRuntimeHash: match.rulesRuntimeBinding.runtimeHash,
+    },
+    reachableFromMatchStartProven: true,
+    fullGameEvidence: true,
+    fullGameStrategyEffectivenessProven: false,
+    eligibleForTraining: false,
+    reviewStatus: "raw",
+    trainingTruth: false,
+  });
+}
+
 function validateReview(value, episodes, targetSkills) {
   safe(value);
   if (value?.schema !== "starcraft_tmg_postgame_strategy_reflection_v1"
@@ -173,7 +289,7 @@ function validateReview(value, episodes, targetSkills) {
   const findings = value.findings.map((finding) => {
     const findingId = nonEmpty(finding.findingId, "findingId");
     if (findingIds.has(findingId) || !DIRECTION.test(finding.direction || "")
-      || !Array.isArray(finding.caseIds) || finding.caseIds.length < 2
+      || !Array.isArray(finding.caseIds) || finding.caseIds.length < 1
       || !Array.isArray(finding.preActionRefHashes)
       || !Array.isArray(finding.outcomeRefHashes)
       || finding.preActionRefHashes.length !== finding.caseIds.length
@@ -189,6 +305,10 @@ function validateReview(value, episodes, targetSkills) {
         fail("SKILLOPT_REFLECTION_EVIDENCE_MISMATCH", { findingId, caseId });
       }
     });
+    if (finding.caseIds.length < 2 && !finding.caseIds.every((caseId) =>
+      episodeById.get(caseId)?.fullGameEvidence === true)) {
+      fail("SKILLOPT_REFLECTION_FINDING_EVIDENCE_TOO_SMALL", { findingId });
+    }
     return freeze({
       findingId,
       direction: finding.direction,
@@ -217,6 +337,19 @@ function validateReview(value, episodes, targetSkills) {
       || !patch.lesson.reviseIf.length) {
       fail("SKILLOPT_REFLECTION_PATCH_INVALID", { targetSkillHash });
     }
+    const decisionProtocol = patch.lesson.decisionProtocol;
+    if (decisionProtocol !== undefined
+      && (!decisionProtocol || typeof decisionProtocol !== "object"
+        || decisionProtocol.kind !== "position_aware_hold_v1"
+        || !Array.isArray(decisionProtocol.decisionOrder)
+        || decisionProtocol.decisionOrder.length < 4
+        || decisionProtocol.decisionOrder.some((entry) =>
+          typeof entry !== "string" || !entry.trim())
+        || decisionProtocol.onIncompleteSpatialEvidence
+          !== "query_then_bound_claim"
+        || decisionProtocol.rulesAuthority !== "external_rules_service")) {
+      fail("SKILLOPT_REFLECTION_DECISION_PROTOCOL_INVALID", { targetSkillHash });
+    }
     return freeze({
       targetSkillHash,
       targetSkillId: target.skillId,
@@ -229,6 +362,14 @@ function validateReview(value, episodes, targetSkills) {
         risk: nonEmpty(patch.lesson.risk, "lesson.risk"),
         reviseIf: patch.lesson.reviseIf.map((entry) =>
           nonEmpty(entry, "lesson.reviseIf")),
+        ...(decisionProtocol ? { decisionProtocol: freeze({
+          kind: decisionProtocol.kind,
+          decisionOrder: decisionProtocol.decisionOrder.map((entry) =>
+            nonEmpty(entry, "lesson.decisionProtocol.decisionOrder")),
+          onIncompleteSpatialEvidence:
+            decisionProtocol.onIncompleteSpatialEvidence,
+          rulesAuthority: decisionProtocol.rulesAuthority,
+        }) } : {}),
       },
       evidenceFindingIds: clone(patch.evidenceFindingIds),
     });
@@ -246,7 +387,7 @@ function validateReview(value, episodes, targetSkills) {
   });
 }
 
-function skillOptCandidates(review, targetSkills) {
+function skillOptCandidates(review, targetSkills, versionSuffix = "skillopt.1") {
   const targetByHash = new Map(targetSkills.map((skill) => [skill.hash, skill]));
   return review.patches.map((patch, index) => {
     const parent = targetByHash.get(patch.targetSkillHash);
@@ -259,7 +400,7 @@ function skillOptCandidates(review, targetSkills) {
         version: parent.version,
         hash: parent.hash,
       },
-      proposedVersion: `${parent.version}+skillopt.1`,
+      proposedVersion: `${parent.version}+${versionSuffix}`,
       change: clone(patch),
       reflectionHash: review.hash,
       status: "quarantined_candidate",
@@ -325,6 +466,14 @@ export function createStarcraftTmgPostgameSkillOptWorkflowV1(options = {}) {
 
   async function run(input = {}) {
     const runId = nonEmpty(input.runId, "runId");
+    const candidateVersionSuffix = String(
+      input.candidateVersionSuffix || "skillopt.1",
+    ).trim();
+    if (!/^skillopt(?:\.[a-z][a-z0-9-]*)?\.[1-9][0-9]*$/u.test(
+      candidateVersionSuffix,
+    )) {
+      fail("SKILLOPT_CANDIDATE_VERSION_SUFFIX_INVALID");
+    }
     if (!Array.isArray(input.episodes) || input.episodes.length < 2
       || !Array.isArray(input.targetSkills) || input.targetSkills.length !== 2) {
       fail("SKILLOPT_WORKFLOW_INPUT_INVALID");
@@ -335,6 +484,7 @@ export function createStarcraftTmgPostgameSkillOptWorkflowV1(options = {}) {
       runId,
       episodeHashes: episodes.map((episode) => episode.hash),
       targetSkillHashes: targets.map((skill) => skill.hash),
+      candidateVersionSuffix,
     });
     const episodeStepId = `${runId}.episodes`;
     const reviewStepId = `${runId}.reflection`;
@@ -382,7 +532,11 @@ export function createStarcraftTmgPostgameSkillOptWorkflowV1(options = {}) {
     }
     let candidateRow = store.get(candidateStepId);
     if (!candidateRow) {
-      const candidates = skillOptCandidates(reviewRow.value, targets);
+      const candidates = skillOptCandidates(
+        reviewRow.value,
+        targets,
+        candidateVersionSuffix,
+      );
       candidateRow = store.put(candidateStepId, inputHash, candidates);
     }
     return freeze({

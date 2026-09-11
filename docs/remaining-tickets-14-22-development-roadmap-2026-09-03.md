@@ -1,10 +1,16 @@
 # Remaining StarCraft TMG Level-3 development tickets
 
-Current amendment, 2026-09-11: Tickets 17 and 18 are complete; project `17/22`.
-Remaining Tickets: 14, 19, 20, 21 and 22 (five, including deferred
-physical-device acceptance). Ticket18 closed `8/8` on the fixed
-[172–179 first-five/evolution plan](ticket-18-slices-172-179-first-five-and-evolution-2026-09-05.md).
-The historical progress below is retained, not the current counter.
+Completion-audit amendment, 2026-09-11: Tickets 17 and 18 are complete; Ticket
+18 closed at `11/11`; project progress is `17/22`. Remaining Tickets are 14 and
+19–22 (five, including deferred physical-device acceptance). The prior Ticket18
+`8/8` closure is retained only as the Slices 172–179 engineering checkpoint.
+Slice 180 proved that the online Arena used one legacy-compatibility transition
+per route and that its evolution Episodes were synthetic transitions, so the
+active goal's complete-match and real-match evolution gates were closed by
+Slices 181–182. See the
+[full-match audit](ticket-18-slice-180-full-match-acceptance-audit-2026-09-11.md)
+and the extended
+[Ticket18 plan](ticket-18-slices-172-179-first-five-and-evolution-2026-09-05.md).
 
 Execution amendment, 2026-09-05: follow the
 [Skill production / play / evolution redesign](skill-production-play-evolution-redesign-2026-09-05.md).
@@ -38,7 +44,7 @@ is retained, with readiness, first-five priority and cost gates still enforced.
 | 15 | **Complete.** Online role-Agent sessions: Tutor, Opponent, Commentator and Companion are real room-connected product modes with isolated tools, visibility, prompts and memory. | Nine slices (144–152); authenticated HTTP; real Chromium four-mode/failure/cancel/reconnect/budget evidence; legal Opponent Preview and human-confirmed Apply/Receipt/Replay; 192 fixed assertions including closure. |
 | 16 | **Complete, 10/10.** Direct Provider and secure BYOK: move the current injected Adapter into isolated, budgeted, recoverable production execution. | Slices 153–162 complete; isolated credential/egress child, SQLite/PostgreSQL store contract, durable Gateway, Web flow and redaction/browser aggregate; one authorized DeepSeek HTTP 200 attempt with zero retry; 20/20 preflight, 16/16 live closure and 531 cumulative fixed assertions. |
 | 17 | **Complete, 9/9.** DSH offline candidate generation with direct control. | Slices163–171 complete, including source-spans, durable repair/accounting, actual DSH tool loop, bounded candidate production, independent mechanics evaluation and operational aggregate closure. |
-| 18 | **Complete, 8/8.** Five foundational Skills plus stable production/evolution. | Exact portable five-Skill pack; explicit online registry/rollback; postgame reflection and SkillOpt candidates; old/new held-out regression with negative controls; SQLite/PostgreSQL release-store parity and crash recovery. |
+| 18 | **In progress, 9/11.** Five foundational Skills plus stable production/evolution and truthful complete-match acceptance. | Exact portable five-Skill pack, registry/rollback and Store recovery are complete. Remaining: two current-official terminal matches with exact Skill routing, then real-match reflection/local upgrade/regression/rollback and final independent strategy grading. |
 | 19 | MuZero player-view trajectory contract and export: define observation/action/reward/discount/chance/recurrent-state lineage from the authoritative journal. | Viewer-leakage tests, terminal/version binding, NDJSON/MuZero/RLDS round trips; eligibility remains separately gated and no learner is trained. |
 | 20 | Human-agent and agent-agent self-play orchestration: bind seats, Providers, Skills, Rules/data, maps, rosters, RNG, budgets and experiment cells. | Finite H-A/A-A denominator, pause/resume/recovery, opponent pools, failure accounting, viewer-safe trajectories and no automatic promotion. |
 | 21 | Production operations, security and observability: distinguish local demo, controlled experiment, production room and training-eligible run. | Identity/RBAC, KMS, multi-instance CAS, persistent queues, immutable releases, privacy retention, telemetry/cost controls, incident rollback and distribution gates. |

@@ -19,8 +19,8 @@ independent directed artifacts:
 - `Zerg Swarm → Terran Armed Forces`.
 
 The later extra-faction experiment remains a separate Protoss `Daelaam` Skill
-plus exactly one second Faction Skill under an existing Race: either Terran
-`Raynor's Raiders` or Zerg `Kerrigan's Swarm`. The latter choice is still open.
+plus the second Zerg Faction Skill, `Kerrigan's Swarm`, beside `Zerg Swarm`.
+`Raynor's Raiders` is outside this experiment.
 
 ## Regression design
 

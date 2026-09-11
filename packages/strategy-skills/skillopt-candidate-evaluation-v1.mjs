@@ -83,6 +83,9 @@ export function compileStarcraftTmgSkillOptCandidateSkillV1(input = {}) {
     guidance: change.lesson.guidance,
     risk: change.lesson.risk,
     reviseIf: clone(change.lesson.reviseIf),
+    ...(change.lesson.decisionProtocol ? {
+      decisionProtocol: clone(change.lesson.decisionProtocol),
+    } : {}),
     evidenceFindingIds: clone(change.evidenceFindingIds),
     reflectionHash: candidate.reflectionHash,
     evaluationPolicy: {

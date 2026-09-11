@@ -1,0 +1,223 @@
+{
+  "schema": "ticket18_slice182_real_match_skill_evolution_report_v1",
+  "ticket": 18,
+  "slice": 182,
+  "status": "passed",
+  "predecessorSlice181ReportHash": "0e6e78e277fe79352844f7e4672990b693639fa91bbb0c48f1bcf2064f333704",
+  "foundationalPackHash": "686f0e3b9771a8e171598be0f58ea1e2b13836e77a5f21817c3628be1bad8886",
+  "completeMatchEpisodeBundleHash": "13a0850d709fe80a86b3c3ff9fd5a376b2b002930926bada5cd4f3f160dab4ef",
+  "completeMatchEpisodeCount": 2,
+  "hindsightBoundaryPassed": true,
+  "reflectionHash": "e7275f83cfb7987d7ed32905c54faad8b789285ef34a49574235cf3f2bead72b",
+  "controlledPauseAndZeroDuplicateReflection": true,
+  "candidateSkillHashes": [
+    "41d024e663f350f3a3fef4a8a8726c6a4f5d16a856c3a97dc2335cfb8da06dc2",
+    "ce0969b81b7de79668126ec58a668540ead54c992b6a83458972765c8dccada1"
+  ],
+  "candidateVersions": [
+    "1.0.0-offline-bounded-evaluation+skillopt.fullmatch.1",
+    "1.0.0-offline-bounded-evaluation+skillopt.fullmatch.1"
+  ],
+  "predecessorRegression": [
+    {
+      "skillId": "starcraft-tmg.matchup.terran_armed_forces-to-zerg_swarm",
+      "evaluationHash": "a886456921ac5e4b8b218b200b71ab2f52d87329e7293b1a531723d9c67aeefb",
+      "passedCases": 4,
+      "totalCases": 4,
+      "allRulesReplayPassed": true
+    },
+    {
+      "skillId": "starcraft-tmg.matchup.zerg_swarm-to-terran_armed_forces",
+      "evaluationHash": "564225f754f7b522d8cbc231770fbf1edbe0f4b917fba221ca6efdee4e069ef7",
+      "passedCases": 4,
+      "totalCases": 4,
+      "allRulesReplayPassed": true
+    }
+  ],
+  "positionEvaluationBundleHash": "38ea08dfa9fb7085ea5381b360fd1511f0f83a52fc2d6618cebb6d9b03d990b0",
+  "positionEvaluations": [
+    {
+      "direction": "terran_to_zerg",
+      "evaluationHash": "683b58a2f18a80b3545b5f2d257ad7f9eec1321315288a44765b3459025c5416",
+      "completeMatchCasesPassed": 5,
+      "completeMatchCases": 5,
+      "independentHeldoutCasesPassed": 3,
+      "independentHeldoutCases": 3,
+      "negativeControlHeldoutFailures": 2
+    },
+    {
+      "direction": "zerg_to_terran",
+      "evaluationHash": "7ccb410cc24196b3762a828a0fa6a43db9a0084d2a09dc715c80d74812f3d69d",
+      "completeMatchCasesPassed": 5,
+      "completeMatchCases": 5,
+      "independentHeldoutCasesPassed": 3,
+      "independentHeldoutCases": 3,
+      "negativeControlHeldoutFailures": 2
+    }
+  ],
+  "isolatedRegistry": {
+    "candidateRegistrationHash": "f8df2184740d3dad882e88364c8ec6fe4bc0b61e6e899a19c28c306bbc704dc6",
+    "evaluationRouteHashes": [
+      "8338485905af07b4f38ce4cd62ea07fc4547c9ab88a1fb210f7edee39377a308",
+      "87acbffa2500ca2caef8014e38af35fbcc7f98731c0ac0298958c91408e233c5"
+    ],
+    "baseRuntimeRevision": 1,
+    "probeRuntimeRevision": 2,
+    "rollbackRuntimeRevision": 3,
+    "activeParentHashesRestored": true,
+    "automaticPromotion": false
+  },
+  "promotionBundleHash": "df5d90c50a8e6dd4a53fb9f9d3d3f330a43c125d5538e7a5d96f4f9ddae01e63",
+  "onlyCriticalHighBlockIntegration": true,
+  "criticalHighFindings": [],
+  "nonBlockingFindings": [
+    {
+      "severity": "Medium",
+      "code": "BOUNDED_HOLD_PASS_MATCH_NO_WIN_RATE_PROOF",
+      "tracked": true,
+      "blocksIntegration": false
+    },
+    {
+      "severity": "Medium",
+      "code": "BROADER_ARMY_SPATIAL_AND_COMBAT_POLICY_PENDING_TICKET20",
+      "tracked": true,
+      "blocksIntegration": false
+    }
+  ],
+  "grades": {
+    "rulesCorrectness": "passed_for_current_bounded_fixture",
+    "runtimeUsability": "passed_two_current_rules_terminal_matches",
+    "strategyQuality": "usable_position_aware_advisory_with_bounded_claims",
+    "completeGameEvidence": "passed_wiring_and_evolution_not_win_rate_strength"
+  },
+  "ticket18AcceptancePassed": true,
+  "fullGameStrategyEffectivenessProven": false,
+  "foundationalAcceptedSkillsRemainLive": true,
+  "skillOptCandidatesCurrentlyLive": false,
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    "reflection_prompt",
+    "skillopt_prompt",
+    "skillopt_candidate_route",
+    "accepted_parent_route"
+  ],
+  "harnessToolsCalled": [
+    "read_complete_match_trace",
+    "compile_hindsight_safe_episode",
+    "aggregate_postgame_reflection",
+    "write_versioned_skillopt_candidate",
+    "read_legal_space_evidence",
+    "evaluate_position_counterfactual",
+    "read_evaluation_route",
+    "accept_isolated_candidate",
+    "rollback_parent_set"
+  ],
+  "uiTraceEvidence": [
+    {
+      "matchTraceHash": "7da63b494b006e5384f0860d930a3282185dcdd54bb0e4df385375ee2f71c503",
+      "workbenchSnapshotHashes": [
+        "b802250fc684b9e83299417c7d44bb2f67b1fa728a93f3c030beb706fbb50871",
+        "787ea2eae1ecc701d7460641120a8607734a53ab3d28fb25b492a5cfc727f6ea",
+        "1bf749a47d27db96b78d97d21d0b4f0dbc5a1cde2873fd0115e7f49a2cd4918a",
+        "47f72d98da044baf2f1285a1308e1e8c8b59b1b9570516bff7697a82f51b22af",
+        "ea5ef5f35eb971dfef307fad5b4a911dece6f19227a8679867a6928fff044a7c",
+        "399b9586859613cb08fafeabc003c524eaeb1c58b41a1175aad363b2d1826032",
+        "c53e4da7d222e88919c304e753d46852c60d50e06ca4a40bdddc52589a230d5f",
+        "bb2e352a6562bc884c9f61e7302eed5ec844e8e54291fedf22f1d89ad4156a94",
+        "1cb21fd221cb1f93c254b530f92b5658eb0a6ad4e2ad827d253d638d3b1ad59f",
+        "6716b1da6bc64133aef378b2eed3b37f8c7dce9e14b02b6bfd051dfb944e48ba",
+        "b47bffdc3498e49f9583e713613a0e40d5dcf38b57d098ca8c642414bf92bf04",
+        "faaa6724cf271c4135323ca8176615c1e5b29703ebe6362e71166db65e1ca422",
+        "6c66ada95aecfdc65e76b9767d9d6b902b162e7ce368de4777d35773651a387e",
+        "413fea69dc22853c9d86a4a7f5dee5e25bab2c2b51a46028b97cbc708ef95edc",
+        "a99c3fedb2e1696f9c80e15d668c5a931ffdddd5b5f6a443531aabf2d161e365",
+        "1733a84765ba5bb39273bf4dc03ee401dcbe026240e8838de222e13fb686284b",
+        "e5b35417007018f468d74ad1a37e373f12a7d351ac2e302fbc7bbfb11650ca9e",
+        "5fa763fe78fb497b4401229d2cfdbee94c05f9538d16b1ac0a454ffa32cff1b1",
+        "2111e8480e402b9ef2902bb89dfd6a9e5ad6aa24b28d62d885d45883d4c0164b",
+        "b885348824ca8c46eff9cf1de2b0b071de610e8c39a6ee042823b23532029837",
+        "d951582cc1f014e1d519aa105e362910ca51feda2222966a4e36d04d47ecdf50",
+        "34affa4c37750bd94c0449b57f35f3f441c6699dcfe0d56aa5f2824d64294997",
+        "c02298804a8b5e4c098b1c8c6ff3fc539929278bc3aefd73c1b819f20da2c176",
+        "046f8f6714a069c2ac6126d175a68f8478d290d757c2b38ab5d7e89ffc3a68bc",
+        "5c6dbd3dcc365c2fe49427881dfafae0de3e7fd72672a8902bef2ecf69993aaf"
+      ]
+    },
+    {
+      "matchTraceHash": "a0b8509320b048738b33bb2d3f6c7fcef367afacb18ced609039dc7fc7b597bd",
+      "workbenchSnapshotHashes": [
+        "515f4431c21676f79e0a768cf363ad80762b17864ca2842aeff59c2762ab6972",
+        "7ec41fdaa4be1c1a695fab667454ebdaabbb04307e35e4e033cb94265c92ea03",
+        "8e6dafff111b86c39862628d62492c4e28a44e92161c039bbe39b52d455617d6",
+        "9d733cc9843ae55565c5a7f6727ea2fee20bd92de183680c25d0128ce5d54bbe",
+        "590b1a2c025f64b64f33854abe44df055e2d660cbe37fc60f9628662f08f188d",
+        "1166e08a4e993f569799c66c8eddf1d731a6d147bb4f2e5b34ffdca5f67a3c1b",
+        "30bdb19b6ebc56be94cd17f810a0c2ed09f3d54067b67c3c6bcea6e0bf89cfd4",
+        "9ee8b7408b7904f4595a7c734c57389b3738766ec42b3d21426940cd1b4f0d28",
+        "63de875008d56dc05ef63be2f653d934a51d0b849acf2ed9de0ceaa6304f8a57",
+        "8f5d53c33ab46139bd7870c7b7ca24bf9260f84ae2a3ec80ff994a5c7e91eaa1",
+        "73797b4ebacd7c37c8f412833c067f00d2f64d0ee29f243c17d082f0f891aab0",
+        "0460ef44459bf65333d21552e802a5634e2acc43e09e7cff9b2a31e9761f1983",
+        "bbd325c23baa531834dae1ae6fe51fb9525e189562ba92df00f893587f936563",
+        "cf751c8a867068bb6f548f5f1fb70051f1add469b47292ab7c6295931827542f",
+        "3e9223968a6da0e6e23a65e4b2a7519e532d853b14aa49f96dc0f62a5246585b",
+        "e9ceba89b0181a16ffb53ff0cecefda6714f2903878f6f06c7c7144d814a9abb",
+        "1b15de99b539d8b247eef02f8387ac926aef6ce88d92e64045f001d6a38e8eca",
+        "455a8ae0f2005da57f176a5288930ae5ed92a6bb2aefcd89747a57b01da4ad48",
+        "898b29f6d0a29eacb797fed8dc910425ba02ce305068a554c18e806c7311e1d7",
+        "53697dff82ad34374eb2f3522074133eae19fd2180e4aa19011d3b356a778426",
+        "73611f6e91c65077fae3062f80f7b8af7c048641c371f2e62f55e06ecc369f2e",
+        "666c577c0d89b159db809f771274ff67cae1dbe20e2aef2f914364e80e4f1945",
+        "fd5a9b32fa94845fdb42947bc5808f0b9ad54542a020047d8fc1cfec168de046",
+        "ff1b48f8e9f40c13432ee8fbd839fb900e24f14b761b5432c2b75add9c888e17",
+        "b26cf5284aa2642e8b2c1fabb193c50e93257dc92d95c7c364fb998462ae0e0e"
+      ]
+    }
+  ],
+  "agentDecisionEvidence": [
+    {
+      "direction": "terran_to_zerg",
+      "skillHash": "41d024e663f350f3a3fef4a8a8726c6a4f5d16a856c3a97dc2335cfb8da06dc2",
+      "evaluationHash": "683b58a2f18a80b3545b5f2d257ad7f9eec1321315288a44765b3459025c5416"
+    },
+    {
+      "direction": "zerg_to_terran",
+      "skillHash": "ce0969b81b7de79668126ec58a668540ead54c992b6a83458972765c8dccada1",
+      "evaluationHash": "7ccb410cc24196b3762a828a0fa6a43db9a0084d2a09dc715c80d74812f3d69d"
+    }
+  ],
+  "memoryTraceEvidence": {
+    "reflectionsPromotedToMemory": false,
+    "candidatePromotionState": "manual_promotable_not_live",
+    "acceptedParentsRestoredAfterProbe": true
+  },
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "any_critical_or_high_finding_keeps_candidate_quarantined",
+    "independent_position_case_failure_keeps_candidate_quarantined",
+    "negative_control_must_be_rejected_before_manual_promotion",
+    "isolated_acceptance_must_create_a_new_revision_and_explicit_rollback",
+    "medium_findings_are_tracked_without_blocking_integration"
+  ],
+  "userVisibleChecks": [
+    "Two complete-match Episodes show decision-time inputs separately from terminal outcomes.",
+    "Each local Skill version exposes a structured position-aware Hold protocol in its runtime route.",
+    "Independent counterfactuals reject always-Hold while retaining a justified secure-position Hold.",
+    "The candidate probe rolls back to the exact five foundational parent hashes."
+  ],
+  "providerCalls": 0,
+  "paidProviderUsed": false,
+  "sourceRefreshPerformed": false,
+  "incrementalTokens": 0,
+  "incrementalCostCny": 0,
+  "retainedMatchupEpochTokens": 34120976,
+  "retainedMatchupEpochCostCny": 15.721921,
+  "retainedCumulativeTokens": 260204060,
+  "retainedCumulativeCostCny": 312.143927,
+  "eligibleForTraining": false,
+  "trainingTruth": false,
+  "hash": "6e42d3158eb5fe0674fb904680383ef12d69818404ec4a666fb58032c0656b60"
+}

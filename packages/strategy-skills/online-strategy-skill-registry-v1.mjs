@@ -48,6 +48,39 @@ function assertSourceBinding(value) {
   return freeze(binding);
 }
 
+function assertRulesRuntimeBinding(value, rulesVersion) {
+  if (!value) return null;
+  const binding = {
+    schemaVersion: nonEmpty(value.schemaVersion, "rulesRuntimeBinding.schemaVersion"),
+    mode: nonEmpty(value.mode, "rulesRuntimeBinding.mode"),
+    runtimeId: nonEmpty(value.runtimeId, "rulesRuntimeBinding.runtimeId"),
+    runtimeVersion: nonEmpty(value.runtimeVersion, "rulesRuntimeBinding.runtimeVersion"),
+    runtimeHash: digest(value.runtimeHash, "rulesRuntimeBinding.runtimeHash"),
+    catalogueHash: digest(value.catalogueHash, "rulesRuntimeBinding.catalogueHash"),
+    executableRuleAtomCount: revision(value.executableRuleAtomCount,
+      "rulesRuntimeBinding.executableRuleAtomCount"),
+    nonExecutableRuleAtomCount: revision(value.nonExecutableRuleAtomCount,
+      "rulesRuntimeBinding.nonExecutableRuleAtomCount"),
+    legalSpaceComplete: value.legalSpaceComplete === true,
+    developmentSubset: value.developmentSubset === true,
+    legacyCompatibilityUsed: value.legacyCompatibilityUsed === true,
+    productionRoomEligible: value.productionRoomEligible === true,
+    ctx2skillPromotionEligible: value.ctx2skillPromotionEligible === true,
+    trainingTruth: value.trainingTruth === true,
+  };
+  if (binding.schemaVersion !== "starcraft_tmg_rules_runtime_binding_v1"
+    || binding.legacyCompatibilityUsed
+    || binding.ctx2skillPromotionEligible
+    || binding.trainingTruth
+    || (binding.legalSpaceComplete
+      !== (binding.nonExecutableRuleAtomCount === 0))
+    || (binding.productionRoomEligible && !binding.legalSpaceComplete)
+    || !nonEmpty(rulesVersion, "rulesVersion")) {
+    fail("STRATEGY_SNAPSHOT_RULE_RUNTIME_INVALID");
+  }
+  return freeze(binding);
+}
+
 function strategyRole(skill) {
   if (skill.skillId === "starcraft-tmg.general-rules-and-strategy") return "general";
   if (FACTION.test(skill.factionRecordKey || "")) return "faction";
@@ -130,6 +163,9 @@ function promptGuidance(skill, loadRole) {
           guidance: advisory.guidance,
           risk: advisory.risk,
           reviseIf: clone(advisory.reviseIf || []),
+          ...(advisory.decisionProtocol ? {
+            decisionProtocol: clone(advisory.decisionProtocol),
+          } : {}),
         })),
       } : {}),
   };
@@ -172,14 +208,23 @@ function promptGuidance(skill, loadRole) {
 
 export function createStarcraftTmgOnlineStrategySkillSnapshotV1(input = {}) {
   const sourceBinding = assertSourceBinding(input.sourceBinding);
+  const rulesVersion = nonEmpty(input.rulesVersion, "rulesVersion");
+  const rulesRuntimeBinding = assertRulesRuntimeBinding(
+    input.rulesRuntimeBinding,
+    rulesVersion,
+  );
   const roomBinding = {
     roomId: nonEmpty(input.roomId, "roomId"),
     roomBindingHash: digest(input.roomBindingHash, "roomBindingHash"),
-    rulesVersion: nonEmpty(input.rulesVersion, "rulesVersion"),
+    rulesVersion,
     dataVersion: nonEmpty(input.dataVersion, "dataVersion"),
     sourceSnapshotHash: digest(input.sourceSnapshotHash, "sourceSnapshotHash"),
   };
-  if (roomBinding.rulesVersion !== sourceBinding.rules
+  // sourceBinding.rules is the immutable source-receipt identity used to build
+  // the Skills. rulesVersion/rulesRuntimeBinding identify the executable room
+  // runtime. They happened to be equal in the legacy arena fixture, but they
+  // are intentionally distinct in a real official-runtime room.
+  if ((!rulesRuntimeBinding && roomBinding.rulesVersion !== sourceBinding.rules)
     || roomBinding.dataVersion !== sourceBinding.dataset
     || roomBinding.sourceSnapshotHash !== hash(sourceBinding)) {
     fail("STRATEGY_SNAPSHOT_ROOM_SOURCE_MISMATCH");
@@ -226,6 +271,10 @@ export function createStarcraftTmgOnlineStrategySkillSnapshotV1(input = {}) {
     schemaVersion: `${STARCRAFT_TMG_ONLINE_STRATEGY_SKILL_REGISTRY_VERSION}.snapshot`,
     gameId: "starcraft-tmg",
     ...roomBinding,
+    ...(rulesRuntimeBinding ? {
+      sourceRulesReceiptHash: sourceBinding.rules,
+      rulesRuntimeBinding,
+    } : {}),
     sourceBinding,
     sourceBindingHash: hash(sourceBinding),
     ownFaction,
@@ -342,6 +391,7 @@ export function createStarcraftTmgOnlineStrategySkillRegistryV1(input = {}) {
         || request.roomBinding?.bindingHash
         || request.roomBinding?.matchBindingHash,
       rulesVersion: request.roomBinding?.rulesVersion,
+      rulesRuntimeBinding: request.roomBinding?.rulesRuntimeBinding,
       dataVersion: request.roomBinding?.dataVersion,
       sourceSnapshotHash: request.roomBinding?.sourceSnapshotHash,
       sourceBinding,

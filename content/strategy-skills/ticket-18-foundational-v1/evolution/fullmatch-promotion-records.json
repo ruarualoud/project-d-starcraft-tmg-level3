@@ -1,0 +1,46 @@
+{
+  "schema": "starcraft_tmg_fullmatch_skillopt_promotion_bundle_v1",
+  "records": [
+    {
+      "schema": "starcraft_tmg_fullmatch_skillopt_promotion_record_v1",
+      "skillId": "starcraft-tmg.matchup.terran_armed_forces-to-zerg_swarm",
+      "candidateSkillHash": "41d024e663f350f3a3fef4a8a8726c6a4f5d16a856c3a97dc2335cfb8da06dc2",
+      "parentSkillHash": "3ddf4221b8e21e36ddc0a59991aae536fe397eaf9107ec61ca70b73bef8fafee",
+      "predecessorRegressionHash": "a886456921ac5e4b8b218b200b71ab2f52d87329e7293b1a531723d9c67aeefb",
+      "positionEvaluationHash": "683b58a2f18a80b3545b5f2d257ad7f9eec1321315288a44765b3459025c5416",
+      "sourceCompleteMatchTraceHash": "7da63b494b006e5384f0860d930a3282185dcdd54bb0e4df385375ee2f71c503",
+      "status": "promotable_manual_approval_required",
+      "isolatedRuntimeAcceptanceProved": true,
+      "currentlyLive": false,
+      "rolledBackToParentSet": true,
+      "automaticPromotion": false,
+      "fullGameStrategyEffectivenessProven": false,
+      "eligibleForTraining": false,
+      "trainingTruth": false,
+      "hash": "0da3eb3437921c5528473a5c2ad7a76e56111aea701f92c53aa19705a9ed0136"
+    },
+    {
+      "schema": "starcraft_tmg_fullmatch_skillopt_promotion_record_v1",
+      "skillId": "starcraft-tmg.matchup.zerg_swarm-to-terran_armed_forces",
+      "candidateSkillHash": "ce0969b81b7de79668126ec58a668540ead54c992b6a83458972765c8dccada1",
+      "parentSkillHash": "f843dd8a3493c0db6a004274c2febd8a179e720cd319ff004e5cba2ccc990a19",
+      "predecessorRegressionHash": "564225f754f7b522d8cbc231770fbf1edbe0f4b917fba221ca6efdee4e069ef7",
+      "positionEvaluationHash": "7ccb410cc24196b3762a828a0fa6a43db9a0084d2a09dc715c80d74812f3d69d",
+      "sourceCompleteMatchTraceHash": "a0b8509320b048738b33bb2d3f6c7fcef367afacb18ced609039dc7fc7b597bd",
+      "status": "promotable_manual_approval_required",
+      "isolatedRuntimeAcceptanceProved": true,
+      "currentlyLive": false,
+      "rolledBackToParentSet": true,
+      "automaticPromotion": false,
+      "fullGameStrategyEffectivenessProven": false,
+      "eligibleForTraining": false,
+      "trainingTruth": false,
+      "hash": "891a3748de152b3b53578c486176bc350dcaeb7576391db2c99c0ece1f10e083"
+    }
+  ],
+  "automaticPromotion": false,
+  "currentlyLive": false,
+  "rollbackRuntimeRevision": 3,
+  "trainingTruth": false,
+  "hash": "df5d90c50a8e6dd4a53fb9f9d3d3f330a43c125d5538e7a5d96f4f9ddae01e63"
+}
