@@ -1,8 +1,10 @@
 # Remaining StarCraft TMG Level-3 development tickets
 
-Completion-audit amendment, 2026-09-11: Tickets 17 and 18 are complete; Ticket
-18 closed at `11/11`; project progress is `17/22`. Remaining Tickets are 14 and
-19–22 (five, including deferred physical-device acceptance). The prior Ticket18
+Completion-audit amendment, 2026-09-14: Tickets 17, 18, 19, 20, 21 and 22 are complete;
+Ticket 18 closed at `11/11`, Ticket 19 at `6/6`, Ticket 20 at `10/10`;
+Ticket 21 closed at `8/8`, Ticket 22 at `5/5`, and project progress is `21/22`.
+The only remaining item is Ticket 14's deferred physical-device acceptance.
+The prior Ticket18
 `8/8` closure is retained only as the Slices 172–179 engineering checkpoint.
 Slice 180 proved that the online Arena used one legacy-compatibility transition
 per route and that its evolution Episodes were synthetic transitions, so the
@@ -44,11 +46,11 @@ is retained, with readiness, first-five priority and cost gates still enforced.
 | 15 | **Complete.** Online role-Agent sessions: Tutor, Opponent, Commentator and Companion are real room-connected product modes with isolated tools, visibility, prompts and memory. | Nine slices (144–152); authenticated HTTP; real Chromium four-mode/failure/cancel/reconnect/budget evidence; legal Opponent Preview and human-confirmed Apply/Receipt/Replay; 192 fixed assertions including closure. |
 | 16 | **Complete, 10/10.** Direct Provider and secure BYOK: move the current injected Adapter into isolated, budgeted, recoverable production execution. | Slices 153–162 complete; isolated credential/egress child, SQLite/PostgreSQL store contract, durable Gateway, Web flow and redaction/browser aggregate; one authorized DeepSeek HTTP 200 attempt with zero retry; 20/20 preflight, 16/16 live closure and 531 cumulative fixed assertions. |
 | 17 | **Complete, 9/9.** DSH offline candidate generation with direct control. | Slices163–171 complete, including source-spans, durable repair/accounting, actual DSH tool loop, bounded candidate production, independent mechanics evaluation and operational aggregate closure. |
-| 18 | **In progress, 9/11.** Five foundational Skills plus stable production/evolution and truthful complete-match acceptance. | Exact portable five-Skill pack, registry/rollback and Store recovery are complete. Remaining: two current-official terminal matches with exact Skill routing, then real-match reflection/local upgrade/regression/rollback and final independent strategy grading. |
-| 19 | MuZero player-view trajectory contract and export: define observation/action/reward/discount/chance/recurrent-state lineage from the authoritative journal. | Viewer-leakage tests, terminal/version binding, NDJSON/MuZero/RLDS round trips; eligibility remains separately gated and no learner is trained. |
-| 20 | Human-agent and agent-agent self-play orchestration: bind seats, Providers, Skills, Rules/data, maps, rosters, RNG, budgets and experiment cells. | Finite H-A/A-A denominator, pause/resume/recovery, opponent pools, failure accounting, viewer-safe trajectories and no automatic promotion. |
-| 21 | Production operations, security and observability: distinguish local demo, controlled experiment, production room and training-eligible run. | Identity/RBAC, KMS, multi-instance CAS, persistent queues, immutable releases, privacy retention, telemetry/cost controls, incident rollback and distribution gates. |
-| 22 | Final implementation-ready synthesis and acceptance: consolidate ADRs, contracts, milestones, dependencies, risks, verification matrix and handoff. | Requirement-by-requirement audit proving the full Web/App/Rules/Agent/Skill/source/self-play/MuZero outcome, with every remaining blocker and production gate explicit. |
+| 18 | **Complete, 11/11.** Five foundational Skills plus stable production/evolution and truthful complete-match acceptance. | Exact portable five-Skill pack, current-Rules terminal matches, real-match reflection/local upgrade/regression/rollback and final independent strategy grading. |
+| 19 | **Complete, 6/6.** MuZero player-view trajectory contract and export: define observation/action/reward/discount/chance/recurrent-state lineage from the authoritative journal. | An actual 80-step terminal A-A trajectory passed viewer leakage, terminal/version/recurrent binding and lossless NDJSON/MuZero/RLDS round trips; eligibility remains separately gated and no learner was trained. |
+| 20 | **Complete, 10/10.** Human-agent and agent-agent self-play orchestration: bind seats, Providers, Skills, Rules/data, maps, rosters, RNG, budgets and experiment cells. | Complete product H-A journey plus bounded `1/1` A-A five-round terminal cell; pause/resume/recovery, directional Skill pool, failure accounting, viewer-safe trajectories and no automatic promotion. |
+| 21 | **Complete, 8/8.** Production operations, security and observability: distinguish local demo, controlled experiment, production room and training-eligible run. | Environment/RBAC/key/CAS/queue/release/privacy/telemetry/incident contracts and focused evidence; local/controlled ready while external production/device/training approval gates remain explicit. |
+| 22 | **Complete, 5/5.** Final implementation-ready synthesis and acceptance: consolidate ADRs, contracts, milestones, dependencies, risks, verification matrix and handoff. | Requirement-by-requirement trace, architecture/contract index, evidence/risk matrix, handoff runbook and one machine aggregate preserve every bounded claim, blocker and production gate. |
 
 The order is dependency-driven rather than fully serial. Ticket 19 can progress
 once its authoritative journal inputs are stable, and Ticket 17 can advance in
