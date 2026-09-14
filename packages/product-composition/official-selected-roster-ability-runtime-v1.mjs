@@ -18,7 +18,7 @@ import { getOfficialModelBaseGeometryProfileV1 } from
 
 export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ability-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION = "1.0.0";
+export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION = "1.1.0";
 export const OFFICIAL_SELECTED_ROSTER_ABILITY_PARAMETER_KIND =
   "official_selected_roster_active_ability_v1";
 export const OFFICIAL_SELECTED_ROSTER_FINISH_ACTIVATION_PARAMETER_KIND =
@@ -393,6 +393,7 @@ function paymentSelections(state, route) {
 function targetUnitIds(state, route, actor) {
   if (route.targetKind === "enemy_within") return state.pieces.filter((entry) => (
     entry.sideKey === otherSide(route.sideKey) && activePiece(entry)
+      && entry.isStructure !== true
       && unitGap(actor, entry) <= route.rangeInches + 0.001
   )).map((entry) => entry.id).sort();
   return [];

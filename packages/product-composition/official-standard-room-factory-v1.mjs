@@ -318,6 +318,10 @@ export function createOfficialRoomPieceFromRosterUnitV1(dataset,
   const record = getOfficialCurrentProductRecord(dataset, unit.recordKey);
   const geometry = getOfficialModelBaseGeometryProfileV1(
     modelGeometryBundle, unit.recordKey);
+  const isStructure = (record.payload.upgrades || []).some((entry) => (
+    String(entry.name || "").normalize("NFC").trim().toLowerCase() === "structure"));
+  const printedSize = Number(record.payload.stats?.size);
+  const sizeCharacteristic = Number.isFinite(printedSize) ? printedSize : 0;
   const expectedEquipment = deriveOfficialUnitExpectedEquipmentV1({
     rosterDisclosureDataBundle: registryContext.bundle,
     rosterRegistryResult: registryContext.result,
@@ -341,8 +345,9 @@ export function createOfficialRoomPieceFromRosterUnitV1(dataset,
     currentModels: composition.startingModelCount,
     maxModels: composition.startingModelCount,
     currentSupply: composition.startingSupply,
+    sizeCharacteristic,
     destroyedModelIds: [], isOnField: false, isInReserves: true,
-    isDestroyed: false,
+    isDestroyed: false, isStructure,
     combatTag: String(record.payload.tags || "").toLowerCase().includes("flying")
       ? "flying" : "ground",
     combatTags: String(record.payload.tags || "").split(",")

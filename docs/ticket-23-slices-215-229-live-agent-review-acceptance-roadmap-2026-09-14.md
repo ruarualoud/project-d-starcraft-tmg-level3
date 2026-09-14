@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–235 完成；Ticket 23 为 `21/36`，剩余 `15` 片
+状态：Slices 215–237 完成；Ticket 23 为 `23/36`，剩余 `13` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -56,7 +56,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 234 | **Complete:** 51 个官方武器档案进入全产品目录，23 个 Assault 武器与 7 个远程能力定义完成动作/Consumer 接线 | 30 new / owner pending 0；分母 135 exact / 117 pending；新 E2E 门因大小写验收脚本三轮未收敛，Medium 跟踪 | 20/36 |
 | 235 | **Complete:** 全卡池 Fight、Charge、逐模型 IMPACT 与近战效果接线 | 40 new / owner pending 0；目标分母 175/77；三轮门停于前置冻结数据集身份，Medium 跟踪 | 21/36 |
 | 236 | **Complete:** 24 条 Reaction、12 类触发窗口、双方优先级、每激活/每回合限制及支付接线 | 第 2 轮通过 24/24、Open→Replay；目标分母 199/53 | 22/36 |
-| 237 | Token、Marker、Indicator、Structure、Creep、Pylon 与实体组件生命周期接线 | battlefield asset family 门一次；当前 pending 30 | 23/36 |
+| 237 | **Complete:** Token、Marker、Indicator、Structure、Creep、Pylon 与实体组件生命周期接线 | 30 new / owner pending 0；分母 229 exact / 23 pending；圆形 Creep Tumor 28mm、Force Field 80mm、Shade 40mm | 23/36 |
 | 238 | Summon、Morph、Respawn、返回 Reserve、设置/创建/替换模型与 Supply 生命周期接线 | unit lifecycle family 门一次；当前 pending 11 | 24/36 |
 | 239 | 任务控制、计分、先后手、Pass 和回合阶段系统动作接线 | match lifecycle family 门一次；当前 pending 2 | 25/36 |
 | 240 | Terran 当前单位、阵营与战术卡的独特能力余项收口 | Terran gap gate 一次；当前 pending 4 | 26/36 |

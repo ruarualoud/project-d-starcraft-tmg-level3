@@ -13,6 +13,10 @@ import { resolveOfficialEngagementScaleAgreementV1 } from
   "../rule-atoms/official-faction-army-eligibility-rules-kernel-v1.mjs";
 import { createOfficialDeploymentGeometryBindingV1 } from
   "../rule-atoms/official-deployment-geometry-rules-kernel-v1.mjs";
+import {
+  createOfficialBattlefieldTokenMarkerRegistryV1,
+  verifyOfficialBattlefieldTokenMarkerRegistryV1,
+} from "../rule-atoms/official-battlefield-token-marker-rules-kernel-v1.mjs";
 import { createOfficialTerrainElevationAgreementV1 } from
   "../rule-atoms/official-elevation-effective-size-rules-kernel-v1.mjs";
 import { createOfficialMissionRuntimeV2 } from
@@ -32,6 +36,12 @@ import { createOfficialAbilityEffectIrCatalogueV1 } from
   "../source-data/official-ability-effect-ir-v1.mjs";
 import { createOfficialBalancedTerrainRulesDataBundleV1 } from
   "../source-data/official-balanced-terrain-rules-data-bundle-v1.mjs";
+import {
+  createOfficialBattlefieldAssetComponentProfileV1,
+  verifyOfficialBattlefieldAssetComponentProfileV1,
+} from "../source-data/official-battlefield-asset-component-profile-v1.mjs";
+import { createOfficialBattlefieldTokenMarkerRulesDataBundleV1 } from
+  "../source-data/official-battlefield-token-marker-rules-data-bundle-v1.mjs";
 import { createOfficialCardBuildPaymentDataBundleV1 } from
   "../source-data/official-card-build-payment-data-bundle-v1.mjs";
 import { createOfficialDeploymentGeometryDataBundleV1 } from
@@ -96,6 +106,12 @@ import {
   verifyOfficialReactionFamilySourceBundleV1,
 } from "./official-reaction-family-adapter-v1.mjs";
 import {
+  createOfficialBattlefieldAssetFamilyAdapterV1,
+  createOfficialBattlefieldAssetFamilyDefinitionBindingsV1,
+  createOfficialBattlefieldAssetFamilySourceBundleV1,
+  verifyOfficialBattlefieldAssetFamilySourceBundleV1,
+} from "./official-battlefield-asset-family-adapter-v1.mjs";
+import {
   createOfficialSelectedRosterMeleeActionRuntimeV1,
   verifyOfficialSelectedRosterMeleeRuntimeDescriptorV1,
 } from "./official-selected-roster-melee-action-runtime-v1.mjs";
@@ -118,7 +134,7 @@ import {
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
-export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "2.1.0";
+export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "2.2.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MISSION_RECORD_KEY = "faction_cards:mission_hold_position__skirmish_";
@@ -415,6 +431,16 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   });
   const unitSupplyBundle = createOfficialUnitCardSupplyDataBundleV1({ dataset });
   const cardBuildPaymentDataBundle = createOfficialCardBuildPaymentDataBundleV1({ dataset });
+  const battlefieldTokenMarkerRulesDataBundle =
+    createOfficialBattlefieldTokenMarkerRulesDataBundleV1({
+      dataset, deploymentGeometryDataBundle: geometryBundle,
+    });
+  const battlefieldTokenMarkerRegistry = createOfficialBattlefieldTokenMarkerRegistryV1({
+    battlefieldTokenMarkerRulesDataBundle,
+    deploymentGeometryBinding: geometryBinding,
+  });
+  const battlefieldAssetComponentProfile =
+    createOfficialBattlefieldAssetComponentProfileV1();
   const registryContext = { bundle: rosterBundle, result: registry };
   const pieces = SIDE_KEYS.flatMap((sideKey) => registry.rostersByPlayer[sideKey].units
     .map((unit) => createOfficialRoomPieceFromRosterUnitV1(dataset,
@@ -463,6 +489,10 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
       compositionBundle.armyResourceBudgetDataBundle.factionArmyEligibilityDataBundle,
     officialUnitCardSupplyDataBundle: unitSupplyBundle,
     officialCardBuildPaymentDataBundle: cardBuildPaymentDataBundle,
+    officialBattlefieldTokenMarkerRulesDataBundle:
+      battlefieldTokenMarkerRulesDataBundle,
+    officialBattlefieldTokenMarkerRegistry: battlefieldTokenMarkerRegistry,
+    officialBattlefieldAssetComponentProfile: battlefieldAssetComponentProfile,
     armyBuildingEngagementScale: scaleAgreement, engagementScale: "Skirmish",
     armyBuildingConfigurationBySide: recipes,
     armyResourceBudgetsBySide: Object.fromEntries(SIDE_KEYS.map((sideKey) => [
@@ -655,11 +685,29 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   });
   const reactionBindings = createOfficialReactionFamilyDefinitionBindingsV1(
     state.officialReactionFamilySourceBundle);
-  state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+  const battlefieldAssetBaselineCatalogue = createOfficialAbilityEffectIrCatalogueV1({
     dataset,
     executionBindings: [...selectedAbilityBindings, ...relocationBindings,
       ...characteristicStatusBindings, ...rangedBindings, ...meleeBindings,
       ...reactionBindings],
+  });
+  const battlefieldAssetBaselineDenominator =
+    createOfficialCurrentProductAbilityDenominatorV1({
+      catalogue: battlefieldAssetBaselineCatalogue,
+    });
+  state.officialBattlefieldAssetFamilySourceBundle =
+    createOfficialBattlefieldAssetFamilySourceBundleV1({
+      catalogue: battlefieldAssetBaselineCatalogue,
+      denominator: battlefieldAssetBaselineDenominator,
+    });
+  const battlefieldAssetBindings =
+    createOfficialBattlefieldAssetFamilyDefinitionBindingsV1(
+      state.officialBattlefieldAssetFamilySourceBundle);
+  state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+    dataset,
+    executionBindings: [...selectedAbilityBindings, ...relocationBindings,
+      ...characteristicStatusBindings, ...rangedBindings, ...meleeBindings,
+      ...reactionBindings, ...battlefieldAssetBindings],
   });
   const abilityEffectRuntime = createOfficialAbilityEffectRuntimeV1({
     catalogue: state.officialAbilityEffectIrCatalogue,
@@ -674,7 +722,9 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     createOfficialMeleeFamilyAdapterV1(
       state.officialMeleeFamilySourceBundle),
     createOfficialReactionFamilyAdapterV1(
-      state.officialReactionFamilySourceBundle)],
+      state.officialReactionFamilySourceBundle),
+    createOfficialBattlefieldAssetFamilyAdapterV1(
+      state.officialBattlefieldAssetFamilySourceBundle)],
   });
   verifyOfficialAbilityEffectRuntimeDescriptorV1(abilityEffectRuntime.descriptor);
   state.officialAbilityEffectRuntimeDescriptor = abilityEffectRuntime.descriptor;
@@ -752,6 +802,12 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         state.officialMeleeFamilySourceBundle.bundleHash,
       reactionFamilySourceBundleHash:
         state.officialReactionFamilySourceBundle.bundleHash,
+      battlefieldAssetFamilySourceBundleHash:
+        state.officialBattlefieldAssetFamilySourceBundle.bundleHash,
+      battlefieldAssetComponentProfileHash:
+        state.officialBattlefieldAssetComponentProfile.profileHash,
+      battlefieldAssetKnownOfficialFootprintCount:
+        state.officialBattlefieldAssetComponentProfile.knownOfficialFootprintCount,
       currentProductUnitRecordCount: unitRecordKeys.length,
       currentProductAttackProfileCount: attackProfileCatalogue.profiles.length,
       currentProductAbilityExactCount:
@@ -763,8 +819,9 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
       sourceSnapshotHash: dataset.sourceSnapshotHash,
       normalizedDatasetHash: dataset.datasetHash,
       sourceRefreshPerformed: false,
+      officialComponentEvidenceRefreshPerformed: true,
       repositoryFallbackUsed: false,
-      completeActionRuntimeDeferredToSlices: [237, 238, 239, 240, 241, 242, 243],
+      completeActionRuntimeDeferredToSlices: [238, 239, 240, 241, 242, 243],
       trainingTruth: false,
     },
     trainingTruth: false,
@@ -817,6 +874,7 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
     || evidence?.viewerProjectionEvidence
       ?.authorityRosterRegistryAbsentFromAllViewerProjections !== true
     || evidence?.sourceRefreshPerformed !== false
+    || evidence?.officialComponentEvidenceRefreshPerformed !== true
     || evidence?.repositoryFallbackUsed !== false
     || !HASH.test(String(evidence?.balancedTerrainCertificateHash || ""))
     || !HASH.test(String(evidence?.initialReserveReceiptHash || ""))
@@ -844,10 +902,15 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
       !== state?.officialMeleeFamilySourceBundle?.bundleHash
     || evidence?.reactionFamilySourceBundleHash
       !== state?.officialReactionFamilySourceBundle?.bundleHash
+    || evidence?.battlefieldAssetFamilySourceBundleHash
+      !== state?.officialBattlefieldAssetFamilySourceBundle?.bundleHash
+    || evidence?.battlefieldAssetComponentProfileHash
+      !== state?.officialBattlefieldAssetComponentProfile?.profileHash
+    || evidence?.battlefieldAssetKnownOfficialFootprintCount !== 3
     || evidence?.currentProductUnitRecordCount !== 26
     || evidence?.currentProductAttackProfileCount !== 51
-    || evidence?.currentProductAbilityExactCount !== 199
-    || evidence?.currentProductAbilityPendingCount !== 53
+    || evidence?.currentProductAbilityExactCount !== 229
+    || evidence?.currentProductAbilityPendingCount !== 23
     || authority.trainingTruth !== false) {
     fail("SKIRMISH_500_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
   }
@@ -883,6 +946,17 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
   );
   verifyOfficialReactionFamilySourceBundleV1(
     state.officialReactionFamilySourceBundle,
+  );
+  verifyOfficialBattlefieldAssetFamilySourceBundleV1(
+    state.officialBattlefieldAssetFamilySourceBundle,
+  );
+  verifyOfficialBattlefieldAssetComponentProfileV1(
+    state.officialBattlefieldAssetComponentProfile,
+  );
+  verifyOfficialBattlefieldTokenMarkerRegistryV1(
+    state.officialBattlefieldTokenMarkerRegistry,
+    state.officialBattlefieldTokenMarkerRulesDataBundle,
+    state.officialDeploymentGeometryBinding,
   );
   return true;
 }

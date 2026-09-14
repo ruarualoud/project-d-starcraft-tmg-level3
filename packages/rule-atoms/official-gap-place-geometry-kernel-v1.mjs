@@ -50,6 +50,21 @@ function modelRadius(model) {
 function modelPoint(model) {
   return { xMilliInches: milli(model?.xInches), yMilliInches: milli(model?.yInches) };
 }
+function tokenPoint(token) {
+  if (object(token?.coordinate)) {
+    return { xMilliInches: milli(token.coordinate.x),
+      yMilliInches: milli(token.coordinate.y) };
+  }
+  return modelPoint(token);
+}
+function tokenRadius(token) {
+  const diameter = token?.baseDiameterInches ?? token?.baseWidthInches;
+  const value = milli(diameter,
+    "GAP_PLACE_BASE_SCOPE_UNSUPPORTED", String(token?.tokenId || token?.id || ""));
+  if (value <= 0) fail("GAP_PLACE_BASE_SCOPE_UNSUPPORTED",
+    String(token?.tokenId || token?.id || ""));
+  return Math.round(value / 2);
+}
 function activePiece(piece) {
   return piece?.isOnField === true && piece?.isDestroyed !== true
     && Number(piece?.currentModels || 0) > 0;
@@ -116,8 +131,8 @@ function footprints(state) {
   }
   for (const token of state.board?.tokens || []) {
     if (token?.isRemoved === true || token?.isDestroyed === true) continue;
-    rows.push(roundFootprint(String(token.id || ""), modelPoint(token),
-      modelRadius(token), "token", token));
+    rows.push(roundFootprint(String(token.tokenId || token.id || ""), tokenPoint(token),
+      tokenRadius(token), "token", token));
   }
   for (const terrain of state.board?.terrain || []) rows.push(terrainFootprint(terrain));
   return rows;

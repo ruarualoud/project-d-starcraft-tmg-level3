@@ -128,17 +128,36 @@ export function createOfficialBattlefieldTokenV1(input = {}) {
     || registry.schema !== OFFICIAL_BATTLEFIELD_TOKEN_MARKER_REGISTRY_SCHEMA) {
     fail("BATTLEFIELD_TOKEN_REGISTRY_REQUIRED");
   }
-  const baseDiameterMm = positive(input.baseDiameterMm,
-    "BATTLEFIELD_TOKEN_BASE_DIAMETER_INVALID");
-  const baseDiameterInches = baseDiameterMm / registry.worldGeometry.millimetresPerInch;
+  const baseShape = String(input.baseShape || "round").toLowerCase();
+  if (!["round", "square"].includes(baseShape)) {
+    fail("BATTLEFIELD_TOKEN_BASE_SHAPE_INVALID", baseShape);
+  }
+  const baseWidthMm = baseShape === "round"
+    ? positive(input.baseDiameterMm, "BATTLEFIELD_TOKEN_BASE_DIAMETER_INVALID")
+    : positive(input.baseWidthMm, "BATTLEFIELD_TOKEN_BASE_WIDTH_INVALID");
+  const baseDepthMm = baseShape === "round" ? baseWidthMm
+    : positive(input.baseDepthMm, "BATTLEFIELD_TOKEN_BASE_DEPTH_INVALID");
+  if (baseShape === "square" && baseWidthMm !== baseDepthMm) {
+    fail("BATTLEFIELD_TOKEN_SQUARE_DIMENSIONS_INVALID");
+  }
+  const baseWidthInches = baseWidthMm / registry.worldGeometry.millimetresPerInch;
+  const baseDepthInches = baseDepthMm / registry.worldGeometry.millimetresPerInch;
   const centre = coordinate(input.coordinate, registry.battlefield,
-    "BATTLEFIELD_TOKEN_COORDINATE_INVALID", baseDiameterInches / 2);
+    "BATTLEFIELD_TOKEN_COORDINATE_INVALID",
+    Math.max(baseWidthInches, baseDepthInches) / 2);
   const tokenId = nonEmpty(input.tokenId, "BATTLEFIELD_TOKEN_ID_REQUIRED");
   const tokenKind = nonEmpty(input.tokenKind, "BATTLEFIELD_TOKEN_KIND_REQUIRED");
   const stayInPlay = input.stayInPlay === true;
+  const baseGeometry = baseShape === "round"
+    ? { ...(input.baseShape ? { baseShape: "round" } : {}),
+      baseDiameterMm: baseWidthMm, baseDiameterInches: baseWidthInches,
+      rulesFootprint: { shape: "circle", centre, diameterInches: baseWidthInches } }
+    : { baseShape: "square", baseWidthMm, baseDepthMm,
+      baseWidthInches, baseDepthInches, baseRotationDegrees: 0,
+      rulesFootprint: { shape: "axis_aligned_square", centre,
+        widthInches: baseWidthInches, depthInches: baseDepthInches } };
   const body = { schema: OFFICIAL_BATTLEFIELD_TOKEN_SCHEMA,
-    tokenId, tokenKind, coordinate: centre,
-    baseDiameterMm, baseDiameterInches,
+    tokenId, tokenKind, coordinate: centre, ...baseGeometry,
     terrainSize: 0, tangibleBattlefieldAsset: true, ownBase: true,
     modelsMayMoveThrough: true,
     modelsMayEndOverlappingByDefault: false,
@@ -149,7 +168,6 @@ export function createOfficialBattlefieldTokenV1(input = {}) {
     createdRound: input.createdRound !== null && input.createdRound !== undefined
       && Number.isSafeInteger(Number(input.createdRound))
       ? Number(input.createdRound) : null,
-    rulesFootprint: { shape: "circle", centre, diameterInches: baseDiameterInches },
     trainingTruth: false };
   return seal(body, "tokenHash");
 }
@@ -157,7 +175,9 @@ export function createOfficialBattlefieldTokenV1(input = {}) {
 export function verifyOfficialBattlefieldTokenV1(token, registry) {
   const rebuilt = createOfficialBattlefieldTokenV1({ registry,
     tokenId: token?.tokenId, tokenKind: token?.tokenKind,
-    coordinate: token?.coordinate, baseDiameterMm: token?.baseDiameterMm,
+    coordinate: token?.coordinate, baseShape: token?.baseShape,
+    baseDiameterMm: token?.baseDiameterMm,
+    baseWidthMm: token?.baseWidthMm, baseDepthMm: token?.baseDepthMm,
     stayInPlay: token?.stayInPlay, createdByPieceId: token?.createdByPieceId,
     createdRound: token?.createdRound });
   if (!object(token) || token.tokenHash !== hashStarcraftTmgContract(without(token,
@@ -175,10 +195,17 @@ export function resolveOfficialTokenMovementOverlapV1(input = {}) {
   const modelRadius = modelDiameterMm / registry.worldGeometry.millimetresPerInch / 2;
   const destination = coordinate(input.destination, registry.battlefield,
     "BATTLEFIELD_TOKEN_MODEL_DESTINATION_INVALID", modelRadius);
-  const tokenRadius = token.baseDiameterInches / 2;
+  const square = token.baseShape === "square";
+  const tokenRadius = square ? null : token.baseDiameterInches / 2;
   const centreDistance = Math.hypot(destination.x - token.coordinate.x,
     destination.y - token.coordinate.y);
-  const overlaps = centreDistance < modelRadius + tokenRadius;
+  const closestX = square ? Math.max(token.coordinate.x - token.baseWidthInches / 2,
+    Math.min(destination.x, token.coordinate.x + token.baseWidthInches / 2)) : null;
+  const closestY = square ? Math.max(token.coordinate.y - token.baseDepthInches / 2,
+    Math.min(destination.y, token.coordinate.y + token.baseDepthInches / 2)) : null;
+  const overlaps = square
+    ? Math.hypot(destination.x - closestX, destination.y - closestY) < modelRadius
+    : centreDistance < modelRadius + tokenRadius;
   const explicitEndOverlapPermission = input.explicitEndOverlapPermission === true;
   return { schema: "starcraft_tmg_official_token_movement_overlap_resolution_v1",
     tokenId: token.tokenId, mayTraverseThroughToken: true,
@@ -186,9 +213,12 @@ export function resolveOfficialTokenMovementOverlapV1(input = {}) {
     explicitEndOverlapPermission,
     mayEndAtDestination: !overlaps || explicitEndOverlapPermission,
     modelBaseDiameterMm: modelDiameterMm,
-    tokenBaseDiameterMm: token.baseDiameterMm,
+    tokenBaseShape: square ? "square" : "round",
+    tokenBaseDiameterMm: token.baseDiameterMm ?? null,
+    tokenBaseWidthMm: token.baseWidthMm ?? token.baseDiameterMm,
+    tokenBaseDepthMm: token.baseDepthMm ?? token.baseDiameterMm,
     centreDistanceInches: centreDistance,
-    requiredNonOverlapDistanceInches: modelRadius + tokenRadius,
+    requiredNonOverlapDistanceInches: square ? null : modelRadius + tokenRadius,
     rulesGeometryUnit: "inch", clientCollisionAccepted: false,
     trainingTruth: false };
 }
@@ -204,12 +234,22 @@ export function measureOfficialClosestTokenBaseEdgeV1(input = {}) {
     "BATTLEFIELD_TOKEN_MEASUREMENT_ORIGIN_INVALID", originRadius);
   const centreDistance = Math.hypot(origin.x - token.coordinate.x,
     origin.y - token.coordinate.y);
+  const square = token.baseShape === "square";
+  const closestX = square ? Math.max(token.coordinate.x - token.baseWidthInches / 2,
+    Math.min(origin.x, token.coordinate.x + token.baseWidthInches / 2)) : null;
+  const closestY = square ? Math.max(token.coordinate.y - token.baseDepthInches / 2,
+    Math.min(origin.y, token.coordinate.y + token.baseDepthInches / 2)) : null;
+  const edgeDistance = square
+    ? Math.hypot(origin.x - closestX, origin.y - closestY)
+    : centreDistance - token.baseDiameterInches / 2;
   return { schema: "starcraft_tmg_official_token_edge_measurement_v1",
     tokenId: token.tokenId, measurement: "closest_base_edge",
-    distanceInches: Math.max(0, centreDistance - originRadius
-      - token.baseDiameterInches / 2),
+    distanceInches: Math.max(0, edgeDistance - originRadius),
     centreDistanceInches: centreDistance,
-    originBaseDiameterMm, tokenBaseDiameterMm: token.baseDiameterMm,
+    originBaseDiameterMm, tokenBaseShape: square ? "square" : "round",
+    tokenBaseDiameterMm: token.baseDiameterMm ?? null,
+    tokenBaseWidthMm: token.baseWidthMm ?? token.baseDiameterMm,
+    tokenBaseDepthMm: token.baseDepthMm ?? token.baseDiameterMm,
     negativeDistancesClampedToZero: true, trainingTruth: false };
 }
 
@@ -331,6 +371,24 @@ export function resolveOfficialTokenMarkerCleanupV1(input = {}) {
 
 export function projectOfficialBattlefieldTokenV1(input = {}) {
   verifyOfficialBattlefieldTokenV1(input.token, input.registry);
+  if (input.token.baseShape === "square") {
+    verifyOfficialBattlefieldViewportProjectionV1(input.viewportProjection,
+      input.deploymentGeometryBinding);
+    const p = input.viewportProjection; const b = input.deploymentGeometryBinding;
+    const widthCss = input.token.baseWidthInches * p.cssPixelsPerInch;
+    const heightCss = input.token.baseDepthInches * p.cssPixelsPerInch;
+    return { schema: "starcraft_tmg_official_battlefield_token_projection_v1",
+      tokenId: input.token.tokenId,
+      xCss: p.offsetCssX + input.token.coordinate.x * p.cssPixelsPerInch,
+      yCss: p.offsetCssY + (b.battlefield.heightInches - input.token.coordinate.y)
+        * p.cssPixelsPerInch,
+      widthCss, heightCss, baseShape: "square",
+      touchTargetWidthCss: Math.max(widthCss, Number(input.minimumTouchTargetCss ?? 0)),
+      touchTargetHeightCss: Math.max(heightCss, Number(input.minimumTouchTargetCss ?? 0)),
+      worldGeometryHash: input.token.tokenHash,
+      zoomPanAffectRulesGeometry: false,
+      devicePixelRatioAffectsRulesGeometry: false, trainingTruth: false };
+  }
   const projected = projectOfficialWorldCircleToViewportV1({
     deploymentGeometryBinding: input.deploymentGeometryBinding,
     viewportProjection: input.viewportProjection,

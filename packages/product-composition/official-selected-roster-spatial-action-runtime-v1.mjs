@@ -23,10 +23,12 @@ import {
   openOfficialSelectedRosterAfterActionWindowV1,
   resolveOfficialSelectedRosterAbilityModifiersV1,
 } from "./official-selected-roster-ability-runtime-v1.mjs";
+import { projectOfficialBattlefieldAssetFamilyModifiersV1 } from
+  "./official-battlefield-asset-family-adapter-v1.mjs";
 
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-spatial-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION = "1.1.0";
+export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION = "1.2.0";
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_PARAMETER_KIND =
   "official_selected_roster_spatial_path_v1";
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_PLAN_SCHEMA =
@@ -279,7 +281,13 @@ function exactSpeed(state, piece, profile, modelCount) {
   const modifiers = resolveOfficialSelectedRosterAbilityModifiersV1(state, piece, {
     actionType: "movement",
   });
-  return printed + modifiers.speedModifier;
+  const battlefield = state.officialBattlefieldAssetFamilySourceBundle
+    ? projectOfficialBattlefieldAssetFamilyModifiersV1(
+      state.officialBattlefieldAssetFamilySourceBundle, state,
+      { pieceId: piece.id, context: { actionType: "movement" } },
+    ) : {};
+  return printed + Math.max(Number(modifiers.speedModifier || 0),
+    Number(battlefield.speedModifier || 0));
 }
 function modelProfiles(piece) {
   return activePiece(piece) ? activeModels(piece).map((model) => ({
@@ -355,6 +363,9 @@ function actionContext(state, sideKey, piece, actionType) {
   phaseReady(state, sideKey, actionType);
   if (!piece || piece.sideKey !== sideKey || !livePiece(piece)) {
     fail("SELECTED_SPATIAL_UNIT_UNAVAILABLE", String(piece?.id || ""));
+  }
+  if (piece.isStructure === true) {
+    fail("SELECTED_SPATIAL_STRUCTURE_CANNOT_PERFORM_ACTIONS", piece.id);
   }
   if (piece.activatedPhases?.[actionType === "run" ? "assault" : "movement"] === true) {
     fail("SELECTED_SPATIAL_UNIT_ALREADY_ACTIVATED", piece.id);
@@ -661,6 +672,30 @@ function assertPathBoardAndModels(state, piece, leadingModel, path, domain, acti
       }
     }
   }
+}
+function crossedForceFieldTokenIds(state, piece, leadingModel, path) {
+  const bindings = new Map((state.officialBattlefieldAssetBindings || []).map((entry) => (
+    [entry.assetId, entry])));
+  const fields = (state.board?.tokens || []).filter((token) => {
+    const id = String(token.tokenId || token.id || "");
+    return token.isRemoved !== true && bindings.get(id)?.assetKind === "force_field"
+      && bindings.get(id)?.consumed !== true;
+  }).map((token) => ({
+    id: String(token.tokenId || token.id),
+    centre: { xMilliInches: milli(token.coordinate?.x ?? token.xInches),
+      yMilliInches: milli(token.coordinate?.y ?? token.yInches) },
+    radius: Math.round(milli(token.baseDiameterInches ?? token.baseWidthInches) / 2),
+  }));
+  if (fields.length === 0) return [];
+  const movingRadius = modelRadius(leadingModel);
+  const crossed = fields.filter((field) => path.points.slice(1).some((pointValue, index) => (
+    pointSegmentDistance(field.centre, path.points[index], pointValue)
+      < field.radius + movingRadius - TOLERANCE
+  ))).map((entry) => entry.id).sort();
+  if (crossed.length > 0 && Number(piece.sizeCharacteristic || 0) <= 2) {
+    fail("SELECTED_SPATIAL_FORCE_FIELD_BLOCKS_SIZE_TWO_OR_LOWER", crossed[0]);
+  }
+  return crossed;
 }
 function deployTerrainResult(state, piece, path) {
   const radius = modelRadius(piece.models.find((entry) => (
@@ -1028,6 +1063,8 @@ export function instantiateOfficialSelectedRosterSpatialActionV1(
   const path = canonicalPath(start, parameters.path, domain, domain.actionType);
   if (segment) verifyDeployInward(segment, path);
   assertPathBoardAndModels(state, piece, leadingModel, path, domain, domain.actionType);
+  const crossedForceFieldTokenIdsValue = crossedForceFieldTokenIds(
+    state, piece, leadingModel, path);
   const endpoint = path.points.at(-1);
   const placements = canonicalPlacements(domain, leadingModelId,
     parameters.placements, endpoint);
@@ -1071,6 +1108,9 @@ export function instantiateOfficialSelectedRosterSpatialActionV1(
     grassRemovedTerrainIds: domain.actionType === "deploy"
       ? terrainResult.grassRemovedTerrainIds
       : terrainResult.result.grassRemovedTerrainIds,
+    crossedForceFieldTokenIds: crossedForceFieldTokenIdsValue,
+    forceFieldsRemovedBySizeThreeOrHigher:
+      crossedForceFieldTokenIdsValue.length > 0,
     entrySegmentId: segment?.segmentId || null,
     entryAlongEdgeMilliInches: segment
       ? Number(parameters.entryAlongEdgeMilliInches) : null,
@@ -1193,6 +1233,16 @@ export function applyOfficialSelectedRosterSpatialActionV1(
     const terrain = state.board.terrain.find((entry) => entry.id === terrainId);
     if (terrain) terrain.isRemoved = true;
   }
+  const removedForceFieldTokenIds = actionInput.spatialPlan.crossedForceFieldTokenIds || [];
+  if (removedForceFieldTokenIds.length > 0) {
+    const removed = new Set(removedForceFieldTokenIds);
+    state.board.tokens = (state.board.tokens || []).filter((token) => (
+      !removed.has(String(token.tokenId || token.id || ""))));
+    state.officialBattlefieldAssetBindings = (state.officialBattlefieldAssetBindings || [])
+      .map((binding) => removed.has(binding.assetId) ? seal({
+        ...without(binding, ["bindingHash"]), consumed: true,
+      }, "bindingHash") : binding);
+  }
   if (state.reserveManifestBySide?.[piece.sideKey]) {
     const row = state.reserveManifestBySide[piece.sideKey].find((entry) => (
       entry.pieceId === piece.id
@@ -1208,6 +1258,7 @@ export function applyOfficialSelectedRosterSpatialActionV1(
     speedAllowanceInches: actionInput.spatialPlan.speedAllowanceInches,
     modelPositionCount: positions.size,
     grassRemovedTerrainIds: clone(actionInput.spatialPlan.grassRemovedTerrainIds),
+    removedForceFieldTokenIds: clone(removedForceFieldTokenIds),
     movementActivated: piece.activatedPhases.movement === true,
     assaultActivated: piece.activatedPhases.assault === true,
     rulesTruth: "official_selected_roster_spatial_transition",

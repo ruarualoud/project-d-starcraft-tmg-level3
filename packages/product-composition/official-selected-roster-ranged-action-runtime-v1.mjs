@@ -41,10 +41,14 @@ import {
 } from "./official-characteristic-status-family-adapter-v1.mjs";
 import { projectOfficialRangedFamilyModifiersV1 } from
   "./official-ranged-family-projection-v1.mjs";
+import {
+  consumeOfficialBattlefieldAssetFirstWeaponEffectsV1,
+  projectOfficialBattlefieldAssetFamilyModifiersV1,
+} from "./official-battlefield-asset-family-adapter-v1.mjs";
 
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ranged-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.3.0";
+export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.4.0";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_TYPE = "ranged_attack";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_FINISH_ACTION_TYPE =
   "finish_ranged_attack_sequence";
@@ -261,6 +265,9 @@ function assertAssaultContext(state, sideKey, piece, target, graph, profile) {
   }
   if (!activePiece(piece) || piece.sideKey !== sideKey) {
     fail("SELECTED_RANGED_UNIT_UNAVAILABLE", String(piece?.id || ""));
+  }
+  if (piece.isStructure === true) {
+    fail("SELECTED_RANGED_STRUCTURE_CANNOT_PERFORM_ACTIONS", piece.id);
   }
   if (!activePiece(target) || target.sideKey !== otherSide(sideKey)) {
     fail("SELECTED_RANGED_TARGET_UNAVAILABLE", String(target?.id || ""));
@@ -663,13 +670,25 @@ function planAttackResolution(state, piece, target, profile, geometry, targetPro
         weaponName: profile.weaponName, damageKind: "ranged_attack",
         attackKind: "ranged", targetPieceId: target.id } },
     ) : {};
+  const rangedAttackOrdinalAgainstTargetInRound = 1 + (state.rangedActionHistory || [])
+    .filter((entry) => Number(entry.round) === Number(state.round)
+      && entry.targetId === target.id).length;
+  const battlefieldTargetModifiers = state.officialBattlefieldAssetFamilySourceBundle
+    ? projectOfficialBattlefieldAssetFamilyModifiersV1(
+      state.officialBattlefieldAssetFamilySourceBundle, state,
+      { pieceId: target.id, context: { attackerPieceId: piece.id,
+        targetPieceId: target.id, damageKind: "ranged_attack", attackKind: "ranged",
+        weaponName: profile.weaponName, rangedAttackOrdinalAgainstTargetInRound } },
+    ) : {};
   const evadeEligible = targetProfile.evadeThreshold !== null
     && (engagement.targetEngaged || highGroundEvadeEligible
       || selectedTargetModifiers.evadeEligible
-      || characteristicTargetModifiers.eligibleEvadeAgainstAllAttacks);
+      || characteristicTargetModifiers.eligibleEvadeAgainstAllAttacks
+      || battlefieldTargetModifiers.eligibleEvadeAgainstRanged);
   const authoritativeEvadeReason = !evadeEligible ? "none"
     : selectedTargetModifiers.evadeEligible
       || characteristicTargetModifiers.eligibleEvadeAgainstAllAttacks
+      || battlefieldTargetModifiers.eligibleEvadeAgainstRanged
       ? "active_or_passive_ability_evade_eligibility"
       : engagement.targetEngaged && highGroundEvadeEligible
       ? "target_engaged_or_all_high_ground"
@@ -686,11 +705,20 @@ function planAttackResolution(state, piece, target, profile, geometry, targetPro
         targetPieceId: target.id, weaponName: profile.weaponName,
         damageKind: "ranged_attack", attackKind: "ranged" } },
     ) : {};
+  const battlefieldAttackerModifiers = state.officialBattlefieldAssetFamilySourceBundle
+    ? projectOfficialBattlefieldAssetFamilyModifiersV1(
+      state.officialBattlefieldAssetFamilySourceBundle, state,
+      { pieceId: piece.id, context: { attackerPieceId: piece.id,
+        targetPieceId: target.id, weaponName: profile.weaponName,
+        damageKind: "ranged_attack", attackKind: "ranged" } },
+    ) : {};
   const attackerAbilityModifiers = {
     precision: Math.max(Number(selectedAttackerModifiers.precision || 0),
-      Number(characteristicAttackerModifiers.precision || 0)),
+      Number(characteristicAttackerModifiers.precision || 0),
+      Number(battlefieldAttackerModifiers.precision || 0)),
     antiEvade: Number(characteristicAttackerModifiers.antiEvade || 0),
-    criticalHit: Number(characteristicAttackerModifiers.criticalHit || 0),
+    criticalHit: Math.max(Number(characteristicAttackerModifiers.criticalHit || 0),
+      Number(battlefieldAttackerModifiers.criticalHit || 0)),
     rateOfAttackModifier: Number(characteristicAttackerModifiers.rateOfAttackModifier || 0),
   };
   const rangedModifiers = state.officialRangedFamilySourceBundle
@@ -711,14 +739,26 @@ function planAttackResolution(state, piece, target, profile, geometry, targetPro
     rangedModifiers, targetModifiers, target, choices.pointDefenseRemovedDieIds || []);
   const mechanicalPlan = createMechanicalPlan(profileForBatch, {
     ...targetProfile,
+    armourThreshold: Math.max(2, Number(targetProfile.armourThreshold)
+      - Number(battlefieldTargetModifiers.armourModifier || 0)),
     evadeThreshold: targetProfile.evadeThreshold === null ? null
       : Math.max(2, Number(targetProfile.evadeThreshold)
-        - Number(selectedTargetModifiers.evadeModifier || 0)),
+        - Number(selectedTargetModifiers.evadeModifier || 0)
+        - Number(battlefieldTargetModifiers.evadeModifier || 0)),
   }, geometry, evadeEligible, authoritativeEvadeReason);
   return { mechanicalPlan, profileForBatch, evadeEligible,
     authoritativeEvadeReason, highGroundEvadeEligible,
     abilityModifiers: { ...selectedTargetModifiers,
-      ...characteristicTargetModifiers }, attackerAbilityModifiers, rangedModifiers };
+      ...characteristicTargetModifiers,
+      evadeModifier: Number(selectedTargetModifiers.evadeModifier || 0)
+        + Number(battlefieldTargetModifiers.evadeModifier || 0),
+      armourModifier: Number(battlefieldTargetModifiers.armourModifier || 0),
+      battlefieldAssetDefinitionIds:
+        battlefieldTargetModifiers.applicableDefinitionIds || [] },
+    attackerAbilityModifiers: { ...attackerAbilityModifiers,
+      battlefieldAssetDefinitionIds:
+        battlefieldAttackerModifiers.applicableDefinitionIds || [] },
+    rangedModifiers };
 }
 function contextFor(state, sideKey, piece, target, profileKey, shared = {}) {
   const graph = shared.graph || deriveOfficialEngagementGraphV2(state);
@@ -1357,6 +1397,9 @@ export function applyOfficialSelectedRosterRangedActionV1(
     && state.officialCharacteristicStatusFamilySourceBundle
     ? consumeOfficialCharacteristicStatusFirstWeaponEffectsV1(
       state, piece.id, "ranged") : [];
+  const consumedBattlefieldAssetEffects = !priorSequence
+    && state.officialBattlefieldAssetFamilySourceBundle
+    ? consumeOfficialBattlefieldAssetFirstWeaponEffectsV1(state, piece.id) : null;
   const pointDefenseSourcePieceIds = chance.context.profileForBatch.instant
     ? [] : clone(chance.context.profileForBatch.attackPoolRemoval
       .pointDefenseSourcePieceIds || []);
@@ -1406,6 +1449,8 @@ export function applyOfficialSelectedRosterRangedActionV1(
     shieldedAfter: casualty.shieldedAfter,
     pointDefenseSourcePieceIds,
     consumedCharacteristicFirstWeaponEffects: consumedCharacteristicEffects,
+    consumedBattlefieldAssetFirstWeaponEffects:
+      consumedBattlefieldAssetEffects?.consumedEffectHashes || [],
     currentSupplyBefore: beforeSupply,
     currentSupplyAfter: Number(target.currentSupply),
     evadeEligibilityReason: actionInput.rangedPlan.evadeEligibilityReason,

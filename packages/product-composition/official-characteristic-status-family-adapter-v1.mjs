@@ -14,12 +14,14 @@ import { getOfficialCombatProfileV1 } from
   "../source-data/official-combat-profile-bundle-v1.mjs";
 import { verifyOfficialCurrentProductAbilityDenominatorV1 } from
   "./official-current-product-ability-denominator-v1.mjs";
+import { resolveOfficialBattlefieldAssetAbilityResourceCostV1 } from
+  "./official-battlefield-asset-family-adapter-v1.mjs";
 import { projectOfficialRangedFamilyModifiersV1 } from
   "./official-ranged-family-projection-v1.mjs";
 
 export const OFFICIAL_CHARACTERISTIC_STATUS_FAMILY_ADAPTER_ID =
   "official-characteristic-status-family-adapter-v1";
-export const OFFICIAL_CHARACTERISTIC_STATUS_FAMILY_ADAPTER_VERSION = "1.0.0";
+export const OFFICIAL_CHARACTERISTIC_STATUS_FAMILY_ADAPTER_VERSION = "1.1.0";
 export const OFFICIAL_CHARACTERISTIC_STATUS_FAMILY_BUNDLE_SCHEMA =
   "starcraft_tmg_official_characteristic_status_family_source_bundle_v1";
 export const OFFICIAL_CHARACTERISTIC_STATUS_FAMILY_PARAMETER_KIND =
@@ -492,8 +494,14 @@ function paymentRef(state, card) {
     profileHash: profile.profileHash,
     isReady: card.readiness === "ready" };
 }
-function paymentSelections(state, route, sideKey) {
+function paymentSelections(state, route, sideKey, actor) {
   if (!route.resourceType || route.resourceCost === 0) return [[]];
+  const effectiveCost = state.officialBattlefieldAssetFamilySourceBundle
+    ? resolveOfficialBattlefieldAssetAbilityResourceCostV1(
+      state.officialBattlefieldAssetFamilySourceBundle, state,
+      { sideKey, pieceId: actor.id, resourceType: route.resourceType,
+        printedResourceCost: route.resourceCost }).effectiveResourceCost
+    : route.resourceCost;
   const cards = (state.cardResources?.[sideKey] || []).filter((entry) => (
     entry.readiness === "ready"));
   const rows = [];
@@ -503,7 +511,7 @@ function paymentSelections(state, route, sideKey) {
       resolveOfficialAbilityResourcePaymentV1({
         cardDataBundle: state.officialCardBuildPaymentDataBundle,
         resourceType: route.resourceType,
-        resourceCost: route.resourceCost,
+        resourceCost: effectiveCost,
         selectedCardInstanceSetComplete: true,
         selectedCardInstances: selected.map((card) => paymentRef(state, card)),
       });
@@ -522,13 +530,14 @@ function targetIds(state, route, actor) {
     || route.rangeMilliInches;
   if (route.targetKind === "enemy_within") {
     return (state.pieces || []).filter((target) => target.sideKey === otherSide(actor.sideKey)
-      && activePiece(target)
+      && activePiece(target) && target.isStructure !== true
       && unitWithin(state, actor, target, rangeMilliInches).within)
       .map((entry) => entry.id).sort();
   }
   if (route.targetKind === "another_friendly_biological_within") {
     return (state.pieces || []).filter((target) => target.sideKey === actor.sideKey
-      && target.id !== actor.id && activePiece(target) && tags(target).has("biological")
+      && target.id !== actor.id && activePiece(target) && target.isStructure !== true
+      && tags(target).has("biological")
       && unitWithin(state, actor, target, route.rangeMilliInches).within)
       .map((entry) => entry.id).sort();
   }
@@ -545,7 +554,7 @@ function routeAvailable(state, route, instance, actor) {
   const targets = targetIds(state, route, actor);
   if (route.targetKind && route.targetKind !== "friendly_ground_zerg_any_activation"
     && targets.length === 0) fail("CHARACTERISTIC_STATUS_TARGET_UNAVAILABLE", route.abilityName);
-  const payments = paymentSelections(state, route, instance.sideKey);
+  const payments = paymentSelections(state, route, instance.sideKey, actor);
   if (payments.length === 0) fail("CHARACTERISTIC_STATUS_PAYMENT_UNAVAILABLE");
   return { targets, payments };
 }
@@ -916,11 +925,19 @@ function applyEffect(state, route, actor, action, events) {
 function pay(state, route, action, events) {
   const ids = action.characteristicStatusPlan.canonicalParameters.paymentCardInstanceIds;
   if (route.resourceType) {
+    const cost = state.officialBattlefieldAssetFamilySourceBundle
+      ? resolveOfficialBattlefieldAssetAbilityResourceCostV1(
+        state.officialBattlefieldAssetFamilySourceBundle, state,
+        { sideKey: action.sideKey, pieceId: action.pieceId,
+          resourceType: route.resourceType, printedResourceCost: route.resourceCost,
+          planHash: action.characteristicStatusPlan.planHash }, { consume: true })
+      : { effectiveResourceCost: route.resourceCost,
+        resourceCostReduction: 0, sourcePieceId: null };
     const cards = ids.map((id) => cardById(state, action.sideKey, id));
     if (cards.some((entry) => !entry)) fail("CHARACTERISTIC_STATUS_PAYMENT_CARD_UNKNOWN");
     const payment = resolveOfficialAbilityResourcePaymentV1({
       cardDataBundle: state.officialCardBuildPaymentDataBundle,
-      resourceType: route.resourceType, resourceCost: route.resourceCost,
+      resourceType: route.resourceType, resourceCost: cost.effectiveResourceCost,
       selectedCardInstanceSetComplete: true,
       selectedCardInstances: cards.map((card) => paymentRef(state, card)),
     });
@@ -928,7 +945,10 @@ function pay(state, route, action, events) {
       cardById(state, action.sideKey, id).readiness = "exhausted";
     }
     events.push({ type: "ability_resource_paid", resourceType: route.resourceType,
-      resourceCost: route.resourceCost,
+      resourceCost: cost.effectiveResourceCost,
+      printedResourceCost: route.resourceCost,
+      resourceCostReduction: cost.resourceCostReduction,
+      discountSourcePieceId: cost.sourcePieceId,
       paymentResultHash: payment.resultHash,
       exhaustedCardInstanceIds: payment.selectedCardsExhaustOnCommit,
       trainingTruth: false });

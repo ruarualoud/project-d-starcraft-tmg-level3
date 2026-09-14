@@ -41,6 +41,10 @@ import {
 import { projectOfficialMeleeFamilyModifiersV1 } from
   "./official-melee-family-projection-v1.mjs";
 import {
+  consumeOfficialBattlefieldAssetFirstWeaponEffectsV1,
+  projectOfficialBattlefieldAssetFamilyModifiersV1,
+} from "./official-battlefield-asset-family-adapter-v1.mjs";
+import {
   createOfficialCurrentProductCasualtyDomainV1,
   resolveOfficialCurrentProductCasualtyDomainV1,
 } from "./official-selected-roster-ranged-action-runtime-v1.mjs";
@@ -52,7 +56,7 @@ import { verifyOfficialStandardActionRouteCatalogueV1 } from
 
 export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-melee-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "2.0.0";
+export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "2.1.0";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_DECLARATION_PARAMETER_KIND =
   "official_selected_roster_charge_declaration_v1";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_RESOLUTION_PARAMETER_KIND =
@@ -225,8 +229,13 @@ function currentSpeed(state, piece) {
       state.officialCharacteristicStatusFamilySourceBundle, state,
       { pieceId: piece.id, context: { actionType: state.phase } },
     ) : {};
+  const battlefield = state.officialBattlefieldAssetFamilySourceBundle
+    ? projectOfficialBattlefieldAssetFamilyModifiersV1(
+      state.officialBattlefieldAssetFamilySourceBundle, state,
+      { pieceId: piece.id, context: { actionType: state.phase } },
+    ) : {};
   return printed + Math.max(Number(selected.speedModifier || 0),
-    Number(current.speedModifier || 0));
+    Number(current.speedModifier || 0), Number(battlefield.speedModifier || 0));
 }
 function coherencyRange(state, piece) {
   const current = state.officialCharacteristicStatusFamilySourceBundle
@@ -285,7 +294,8 @@ function diagnostic(sideKey, phase, pieceId, actionType, error) {
 function chargeContext(state, sideKey, piece) {
   phaseReady(state, sideKey, "assault");
   if (!activePiece(piece) || piece.sideKey !== sideKey
-    || piece.combatTag !== "ground" || piece.combatTags?.includes("flying")) {
+    || piece.isStructure === true || piece.combatTag !== "ground"
+    || piece.combatTags?.includes("flying")) {
     fail("SELECTED_MELEE_CHARGE_UNIT_UNAVAILABLE", String(piece?.id || ""));
   }
   if (piece.activatedPhases?.assault === true) {
@@ -316,6 +326,11 @@ function chargeDeclarationDomain(state, sideKey, piece) {
       state.officialCharacteristicStatusFamilySourceBundle, state,
       { pieceId: piece.id, context: { actionType: "charge" } },
     ) : {};
+  const battlefield = state.officialBattlefieldAssetFamilySourceBundle
+    ? projectOfficialBattlefieldAssetFamilyModifiersV1(
+      state.officialBattlefieldAssetFamilySourceBundle, state,
+      { pieceId: piece.id, context: { actionType: "charge" } },
+    ) : {};
   const chargeRoll = characteristic.chargeDistanceRoll
     || { diceCount: 1, keepHighest: 1, addTo: "speed" };
   const body = {
@@ -337,7 +352,8 @@ function chargeDeclarationDomain(state, sideKey, piece) {
       speedInches: currentSpeed(state, piece),
       chargeDistanceModifier: modifiers.chargeDistanceModifier,
       impactHitModifier: Number(modifiers.impactHitModifier || 0)
-        + Number(characteristic.impactHitModifier || 0),
+        + Number(characteristic.impactHitModifier || 0)
+        + Number(battlefield.impactHitModifier || 0),
       chargeDistanceRoll: clone(chargeRoll),
       lineOfSightRequired: false, groundOnly: true,
       targetsDeclaredBeforeChance: true,
@@ -742,6 +758,13 @@ function impactChancePlan(state, current, allocations) {
           targetPieceId: target.id, damageKind: "enemy_special_ability",
           attackKind: "impact", weaponName: "IMPACT" } },
       ) : {};
+    const battlefield = state.officialBattlefieldAssetFamilySourceBundle
+      ? projectOfficialBattlefieldAssetFamilyModifiersV1(
+        state.officialBattlefieldAssetFamilySourceBundle, state,
+        { pieceId: target.id, context: { attackerPieceId: current.pieceId,
+          targetPieceId: target.id, damageKind: "enemy_special_ability",
+          attackKind: "impact", weaponName: "IMPACT" } },
+      ) : {};
     const evadeEligible = profile.evadeThreshold !== null
       && (modifiers.evadeEligible
         || characteristic.eligibleEvadeAgainstAllAttacks);
@@ -749,7 +772,8 @@ function impactChancePlan(state, current, allocations) {
       : Math.max(2, Number(profile.evadeThreshold) - modifiers.evadeModifier);
     return { targetUnitId: target.id, dice: allocation.dice,
       targetProfileHash: profile.profileHash,
-      armourThreshold: profile.armourThreshold, evadeThreshold,
+      armourThreshold: Math.max(2, Number(profile.armourThreshold)
+        - Number(battlefield.armourModifier || 0)), evadeThreshold,
       evadeEligible,
       evadeModifier: modifiers.evadeModifier,
       layout: { hit: allocation.dice, armour: allocation.dice,
@@ -860,7 +884,8 @@ function closeRanksProjection(state, piece, graph, parameters) {
 function fightContext(state, sideKey, piece, catalogueV2, profileKey) {
   phaseReady(state, sideKey, "combat");
   if (!activePiece(piece) || piece.sideKey !== sideKey
-    || piece.combatTag !== "ground" || piece.combatTags?.includes("flying")) {
+    || piece.isStructure === true || piece.combatTag !== "ground"
+    || piece.combatTags?.includes("flying")) {
     fail("SELECTED_MELEE_FIGHT_UNIT_UNAVAILABLE", String(piece?.id || ""));
   }
   if (piece.activatedPhases?.combat === true) {
@@ -924,9 +949,21 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
   const surge = profile.effects.find((effect) => (
     effect.effectAtomId === "attack-effect:surge-armour-bypass-v1"
   ));
-  const critical = profile.effects.find((effect) => (
+  const printedCritical = profile.effects.find((effect) => (
     effect.effectAtomId === "attack-effect:critical-hit-v1"
   ));
+  const battlefieldAttacker = state.officialBattlefieldAssetFamilySourceBundle
+    ? projectOfficialBattlefieldAssetFamilyModifiersV1(
+      state.officialBattlefieldAssetFamilySourceBundle, state,
+      { pieceId: attacker.id, context: { attackerPieceId: attacker.id,
+        weaponName: profile.weaponName, damageKind: "close_combat",
+        attackKind: "close_combat" } },
+    ) : {};
+  const grantedCritical = Number(battlefieldAttacker.criticalHit || 0);
+  const critical = printedCritical || (grantedCritical > 0 ? {
+    effectAtomId: "attack-effect:critical-hit-v1", sourceKind: "weapon_keyword",
+    parameters: { bypassArmourDice: grantedCritical },
+  } : null);
   const instant = profile.effects.find((effect) => (
     effect.effectAtomId === "attack-effect:instant-v1"
   ));
@@ -958,6 +995,20 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
     const selectedAttacker = resolveOfficialSelectedRosterAbilityModifiersV1(
       state, attacker, { attackerPieceId: attacker.id, targetPieceId: target.id,
         damageKind: "close_combat", weaponName: profile.weaponName });
+    const battlefieldTarget = state.officialBattlefieldAssetFamilySourceBundle
+      ? projectOfficialBattlefieldAssetFamilyModifiersV1(
+        state.officialBattlefieldAssetFamilySourceBundle, state,
+        { pieceId: target.id, context: { attackerPieceId: attacker.id,
+          targetPieceId: target.id, damageKind: "close_combat",
+          attackKind: "close_combat", weaponName: profile.weaponName } },
+      ) : {};
+    const battlefieldAttackerForTarget = state.officialBattlefieldAssetFamilySourceBundle
+      ? projectOfficialBattlefieldAssetFamilyModifiersV1(
+        state.officialBattlefieldAssetFamilySourceBundle, state,
+        { pieceId: attacker.id, context: { attackerPieceId: attacker.id,
+          targetPieceId: target.id, damageKind: "close_combat",
+          attackKind: "close_combat", weaponName: profile.weaponName } },
+      ) : {};
     const evadeEligible = targetProfile.evadeThreshold !== null
       && (targetModifiers.evadeEligible
         || characteristicTarget.eligibleEvadeAgainstAllAttacks);
@@ -973,13 +1024,15 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
       || (pierceMatched ? pierce.parameters.damage : profile.damage));
     return { targetUnitId: target.id, dice: allocation.dice,
       targetProfileHash: targetProfile.profileHash,
-      armourThreshold: targetProfile.armourThreshold,
+      armourThreshold: Math.max(2, Number(targetProfile.armourThreshold)
+        - Number(battlefieldTarget.armourModifier || 0)),
       evadeEligible,
       evadeModifier: Number(targetModifiers.evadeModifier || 0),
       antiEvade: Number(characteristicAttacker.antiEvade || 0),
       evadeThreshold,
       precision: Math.max(Number(selectedAttacker.precision || 0),
-        Number(characteristicAttacker.precision || 0)),
+        Number(characteristicAttacker.precision || 0),
+        Number(battlefieldAttackerForTarget.precision || 0)),
       damagePerDie,
       damageSetToApplied: characteristicAttacker.damageSetTo || null,
       pierceMatched,
@@ -990,7 +1043,12 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
         armour: allocation.dice,
         evade: evadeEligible ? allocation.dice : 0 } };
   });
-  const criticalPlan = critical ? CRITICAL_HIT.plan({ profile,
+  const criticalProfile = critical && !printedCritical ? (() => {
+    const body = { ...without(profile, ["profileHash"]),
+      profileKey: `${profile.profileKey}:orders-critical`, effects: [critical] };
+    return { ...body, profileHash: hashStarcraftTmgContract(body) };
+  })() : profile;
+  const criticalPlan = critical ? CRITICAL_HIT.plan({ profile: criticalProfile,
     attackPoolDice: allocations.find((entry) => (
       entry.targetUnitId === criticalTargetUnitId
     )).dice,
@@ -1408,7 +1466,14 @@ function impactEligibility(state, piece, declaredTargetUnitIds) {
   if (!modifiers.devastatingCharge) return null;
   const allowedTargets = new Set(declaredTargetUnitIds.filter((unitId) => {
     const target = state.pieces.find((entry) => entry.id === unitId);
-    return activePiece(target) && !statusNamed(target, ["hidden"]);
+    const battlefield = target && state.officialBattlefieldAssetFamilySourceBundle
+      ? projectOfficialBattlefieldAssetFamilyModifiersV1(
+        state.officialBattlefieldAssetFamilySourceBundle, state,
+        { pieceId: target.id, context: { attackerPieceId: piece.id,
+          targetPieceId: target.id, attackKind: "impact" } },
+      ) : {};
+    return activePiece(target) && (!statusNamed(target, ["hidden"])
+      || battlefield.hiddenSuppressedByDetection === true);
   }));
   const graph = deriveOfficialEngagementGraphV2(state);
   const fighting = new Map();
@@ -1542,6 +1607,9 @@ function applyDamageAction(stateInput, action, options, kind) {
     if (state.officialCharacteristicStatusFamilySourceBundle) {
       consumeOfficialCharacteristicStatusFirstWeaponEffectsV1(
         state, piece.id, "close_combat");
+    }
+    if (state.officialBattlefieldAssetFamilySourceBundle) {
+      consumeOfficialBattlefieldAssetFirstWeaponEffectsV1(state, piece.id);
     }
   } else {
     delete state.pendingAction;
