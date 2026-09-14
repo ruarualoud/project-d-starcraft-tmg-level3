@@ -117,7 +117,6 @@ function profileFromRecord(record) {
   const payload = record.payload;
   const combatWeapons = (payload.upgrades || []).map(weaponProfile).filter(Boolean)
     .sort((left, right) => left.weaponName.localeCompare(right.weaponName));
-  if (combatWeapons.length === 0) fail("official_combat_weapon_profile_required", record.recordKey);
   const profile = {
     recordKey: record.recordKey,
     sourceRecordHash: record.sourceRecordHash,
@@ -132,6 +131,7 @@ function profileFromRecord(record) {
     shield: nullablePositiveInteger(payload.stats?.shield, "official_combat_shield_invalid"),
     squadProfile: squadProfile(payload.squadProfile),
     combatWeapons,
+    weaponlessCombatProfileAllowed: combatWeapons.length === 0,
   };
   if (!profile.unitId || !profile.unitName || !profile.faction) fail("official_combat_profile_identity_invalid");
   return profile;

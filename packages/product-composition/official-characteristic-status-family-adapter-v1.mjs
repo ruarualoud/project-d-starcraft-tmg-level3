@@ -14,6 +14,8 @@ import { getOfficialCombatProfileV1 } from
   "../source-data/official-combat-profile-bundle-v1.mjs";
 import { verifyOfficialCurrentProductAbilityDenominatorV1 } from
   "./official-current-product-ability-denominator-v1.mjs";
+import { projectOfficialRangedFamilyModifiersV1 } from
+  "./official-ranged-family-projection-v1.mjs";
 
 export const OFFICIAL_CHARACTERISTIC_STATUS_FAMILY_ADAPTER_ID =
   "official-characteristic-status-family-adapter-v1";
@@ -511,10 +513,17 @@ function paymentSelections(state, route, sideKey) {
   return rows.sort((left, right) => left.join("|").localeCompare(right.join("|")));
 }
 function targetIds(state, route, actor) {
+  const rangedProjection = state.officialRangedFamilySourceBundle
+    ? projectOfficialRangedFamilyModifiersV1(
+      state.officialRangedFamilySourceBundle, state,
+      { pieceId: actor.id, context: { abilityName: route.abilityName } },
+    ) : null;
+  const rangeMilliInches = rangedProjection?.opticalFlareRangeMilliInches
+    || route.rangeMilliInches;
   if (route.targetKind === "enemy_within") {
     return (state.pieces || []).filter((target) => target.sideKey === otherSide(actor.sideKey)
       && activePiece(target)
-      && unitWithin(state, actor, target, route.rangeMilliInches).within)
+      && unitWithin(state, actor, target, rangeMilliInches).within)
       .map((entry) => entry.id).sort();
   }
   if (route.targetKind === "another_friendly_biological_within") {
@@ -817,7 +826,13 @@ function applyEffect(state, route, actor, action, events) {
         source: { kind: "model", unitId: actor.id, modelId: model.id },
         targetUnitId: target.id, rangeMilliInches: route.rangeMilliInches }).unitWithin
     )).length;
-    applyHeal(state, route, actor, target, modelCount, events);
+    const rangedProjection = state.officialRangedFamilySourceBundle
+      ? projectOfficialRangedFamilyModifiersV1(
+        state.officialRangedFamilySourceBundle, state,
+        { pieceId: actor.id, context: { abilityName: route.abilityName } },
+      ) : null;
+    applyHeal(state, route, actor, target, modelCount
+      + Number(rangedProjection?.medpackAdditionalModelsWithinRange || 0), events);
   } else if (route.effectKind === "burrow_toggle") {
     applyBurrow(state, route, actor, target,
       hasStatus(target, "burrowed") ? "lose" : "gain", events);
@@ -1002,7 +1017,9 @@ function targetEngagedWithOtherFriendly(state, actor, target) {
     && piece.id !== actor.id && activePiece(piece)
     && unitWithin(state, piece, target, 1000).within);
 }
-function projection(bundle, state, request) {
+export function projectOfficialCharacteristicStatusFamilyModifiersV1(
+  bundle, state, request,
+) {
   const piece = state.pieces.find((entry) => entry.id === request.pieceId);
   if (!piece) fail("CHARACTERISTIC_STATUS_QUERY_PIECE_UNKNOWN", String(request.pieceId || ""));
   const context = object(request.context) ? request.context : {};
@@ -1118,6 +1135,26 @@ function projection(bundle, state, request) {
     trainingTruth: false,
   };
 }
+
+export function consumeOfficialCharacteristicStatusFirstWeaponEffectsV1(
+  state, pieceId, attackKind,
+) {
+  const piece = (state?.pieces || []).find((entry) => entry.id === pieceId);
+  if (!piece) fail("CHARACTERISTIC_STATUS_CONSUMER_PIECE_UNKNOWN", String(pieceId || ""));
+  const expectedKind = normalized(attackKind);
+  const consumed = [];
+  piece.officialAbilityEffects = (piece.officialAbilityEffects || []).filter((entry) => {
+    if (entry.effectKind !== "first_weapon_keyword"
+      || normalized(entry.weaponScope) !== expectedKind
+      || Number(entry.remainingUses || 0) <= 0) return true;
+    consumed.push({ effectHash: entry.effectHash, sourceDefinitionId: entry.sourceDefinitionId,
+      keyword: entry.keyword, value: entry.value });
+    entry.remainingUses = Number(entry.remainingUses) - 1;
+    return entry.remainingUses > 0;
+  });
+  return freezeDeep(consumed.sort((left, right) => (
+    left.effectHash.localeCompare(right.effectHash))));
+}
 function query(bundle, state, request = {}) {
   const queryKind = String(request.queryKind || request.kind || "");
   if (queryKind === "instantiate_parameterized_action") {
@@ -1146,7 +1183,7 @@ function query(bundle, state, request = {}) {
   }
   return seal({ schema: "starcraft_tmg_official_characteristic_status_query_v1",
     semanticVersion: "1.0.0", queryKind, precision: "exact",
-    result: projection(bundle, state, request),
+    result: projectOfficialCharacteristicStatusFamilyModifiersV1(bundle, state, request),
     source: OFFICIAL_CHARACTERISTIC_STATUS_FAMILY_ADAPTER_ID,
     rulesAuthority: true, mutationAuthority: false,
     sourceRefreshPerformed: false, trainingTruth: false }, "queryReceiptHash");

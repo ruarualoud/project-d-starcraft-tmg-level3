@@ -52,7 +52,7 @@ import { createOfficialStandardActionRouteCatalogueV1 } from
 
 export const OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_standard_room_initial_state_authority_v1";
-export const OFFICIAL_STANDARD_ROOM_FACTORY_VERSION = "1.0.0";
+export const OFFICIAL_STANDARD_ROOM_FACTORY_VERSION = "1.1.0";
 
 const HOLD_POSITION = "faction_cards:mission_hold_position";
 const GAUNTLET = "faction_cards:2NdngLtIeZAprsWr25hM";
@@ -349,7 +349,8 @@ export function createOfficialRoomPieceFromRosterUnitV1(dataset,
       .map((entry) => entry.trim().toLowerCase()).filter(Boolean).sort(),
     coherencyStatus: { schemaVersion: "starcraft_tmg_unit_coherency_status_v1",
       status: "reserve", isOutOfCoherency: false },
-    statuses: [],
+    statuses: Number(record.payload.stats?.shield || 0) > 0 ? ["Shielded"] : [],
+    firstModelShieldCapacityApplied: Number(record.payload.stats?.shield || 0) > 0,
     selectedUpgradeNames: unit.selectedUpgrades.map((entry) => entry.upgradeName).sort(),
     selectedUpgrades: clone(unit.selectedUpgrades),
     equipment: clone(expectedEquipment.equipmentRows), weaponChoices: [],

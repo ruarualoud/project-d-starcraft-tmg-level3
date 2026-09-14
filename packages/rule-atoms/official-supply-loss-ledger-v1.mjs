@@ -87,6 +87,17 @@ function classifyCause(events, pieceId, ownerSideKey) {
       scoreable: false,
     };
   }
+  const pointDefense = events.find((event) => (
+    event?.type === "point_defense_drone_removed" && event.pieceId === pieceId
+  ));
+  if (pointDefense) {
+    return {
+      causeKind: "point_defense_reaction_removal",
+      causalSideKey: ownerSideKey,
+      attributionStatus: "exact_rules_owned_self_removal",
+      scoreable: false,
+    };
+  }
   const attack = events.find((event) => (
     ["close_combat_attack", "ranged_attack"].includes(event?.type)
       && event.targetId === pieceId

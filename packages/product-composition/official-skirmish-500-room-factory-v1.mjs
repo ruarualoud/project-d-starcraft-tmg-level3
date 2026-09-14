@@ -78,6 +78,12 @@ import {
   verifyOfficialCharacteristicStatusFamilySourceBundleV1,
 } from "./official-characteristic-status-family-adapter-v1.mjs";
 import {
+  createOfficialRangedFamilyAdapterV1,
+  createOfficialRangedFamilyDefinitionBindingsV1,
+  createOfficialRangedFamilySourceBundleV1,
+  verifyOfficialRangedFamilySourceBundleV1,
+} from "./official-ranged-family-adapter-v1.mjs";
+import {
   createOfficialSelectedRosterMeleeActionRuntimeV1,
   verifyOfficialSelectedRosterMeleeRuntimeDescriptorV1,
 } from "./official-selected-roster-melee-action-runtime-v1.mjs";
@@ -100,7 +106,7 @@ import {
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
-export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "1.8.0";
+export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "1.9.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MISSION_RECORD_KEY = "faction_cards:mission_hold_position__skirmish_";
@@ -375,8 +381,10 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     deploymentGeometryBinding: geometryBinding,
     balancedTerrainRulesDataBundle: terrainBundle,
   });
-  const unitRecordKeys = [...new Set(SIDE_KEYS.flatMap((sideKey) => (
-    recipes[sideKey].units.map((entry) => entry.recordKey))))];
+  const unitRecordKeys = dataset.recordIndex.filter((entry) => (
+    entry.recordType === "unit"
+      && entry.authorityDisposition === "official_current_product_candidate"
+  )).map((entry) => entry.recordKey).sort((left, right) => left.localeCompare(right));
   const gameplayBundle = createOfficialMatchGameplayDataBundleV2({
     snapshot, dataset, missionDeploymentDraftDataBundle: draftBundle,
     missionRecordKey: MISSION_RECORD_KEY, unitRecordKeys,
@@ -591,10 +599,25 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   const characteristicStatusBindings =
     createOfficialCharacteristicStatusFamilyDefinitionBindingsV1(
       state.officialCharacteristicStatusFamilySourceBundle);
-  state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+  const rangedBaselineCatalogue = createOfficialAbilityEffectIrCatalogueV1({
     dataset,
     executionBindings: [...selectedAbilityBindings, ...relocationBindings,
       ...characteristicStatusBindings],
+  });
+  const rangedBaselineDenominator = createOfficialCurrentProductAbilityDenominatorV1({
+    catalogue: rangedBaselineCatalogue,
+  });
+  state.officialRangedFamilySourceBundle = createOfficialRangedFamilySourceBundleV1({
+    catalogue: rangedBaselineCatalogue,
+    denominator: rangedBaselineDenominator,
+    attackProfileCatalogue,
+  });
+  const rangedBindings = createOfficialRangedFamilyDefinitionBindingsV1(
+    state.officialRangedFamilySourceBundle);
+  state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+    dataset,
+    executionBindings: [...selectedAbilityBindings, ...relocationBindings,
+      ...characteristicStatusBindings, ...rangedBindings],
   });
   const abilityEffectRuntime = createOfficialAbilityEffectRuntimeV1({
     catalogue: state.officialAbilityEffectIrCatalogue,
@@ -603,7 +626,9 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     createOfficialRelocationFamilyAdapterV1(
       state.officialRelocationFamilySourceBundle),
     createOfficialCharacteristicStatusFamilyAdapterV1(
-      state.officialCharacteristicStatusFamilySourceBundle)],
+      state.officialCharacteristicStatusFamilySourceBundle),
+    createOfficialRangedFamilyAdapterV1(
+      state.officialRangedFamilySourceBundle)],
   });
   verifyOfficialAbilityEffectRuntimeDescriptorV1(abilityEffectRuntime.descriptor);
   state.officialAbilityEffectRuntimeDescriptor = abilityEffectRuntime.descriptor;
@@ -675,13 +700,21 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         state.officialRelocationFamilySourceBundle.bundleHash,
       characteristicStatusFamilySourceBundleHash:
         state.officialCharacteristicStatusFamilySourceBundle.bundleHash,
+      rangedFamilySourceBundleHash:
+        state.officialRangedFamilySourceBundle.bundleHash,
+      currentProductUnitRecordCount: unitRecordKeys.length,
+      currentProductAttackProfileCount: attackProfileCatalogue.profiles.length,
+      currentProductAbilityExactCount:
+        state.officialCurrentProductAbilityDenominator.summary.executableExact,
+      currentProductAbilityPendingCount:
+        state.officialCurrentProductAbilityDenominator.summary.pendingFamilyAdapter,
       rosterVisibility: visibility.rosterVisibility,
       viewerProjectionEvidence,
       sourceSnapshotHash: dataset.sourceSnapshotHash,
       normalizedDatasetHash: dataset.datasetHash,
       sourceRefreshPerformed: false,
       repositoryFallbackUsed: false,
-      completeActionRuntimeDeferredToSlices: [234, 235, 236, 237,
+      completeActionRuntimeDeferredToSlices: [235, 236, 237,
         238, 239, 240, 241, 242, 243],
       trainingTruth: false,
     },
@@ -756,6 +789,12 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
       !== state?.officialRelocationFamilySourceBundle?.bundleHash
     || evidence?.characteristicStatusFamilySourceBundleHash
       !== state?.officialCharacteristicStatusFamilySourceBundle?.bundleHash
+    || evidence?.rangedFamilySourceBundleHash
+      !== state?.officialRangedFamilySourceBundle?.bundleHash
+    || evidence?.currentProductUnitRecordCount !== 26
+    || evidence?.currentProductAttackProfileCount !== 51
+    || evidence?.currentProductAbilityExactCount !== 135
+    || evidence?.currentProductAbilityPendingCount !== 117
     || authority.trainingTruth !== false) {
     fail("SKIRMISH_500_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
   }
@@ -782,6 +821,9 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
   );
   verifyOfficialCharacteristicStatusFamilySourceBundleV1(
     state.officialCharacteristicStatusFamilySourceBundle,
+  );
+  verifyOfficialRangedFamilySourceBundleV1(
+    state.officialRangedFamilySourceBundle,
   );
   return true;
 }

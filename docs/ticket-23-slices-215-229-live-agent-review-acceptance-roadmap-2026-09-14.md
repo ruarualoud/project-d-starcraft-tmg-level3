@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–233 完成；Ticket 23 为 `19/36`，剩余 `17` 片
+状态：Slices 215–234 完成；Ticket 23 为 `20/36`，剩余 `16` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -53,7 +53,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 231 | **Complete:** 冻结官方 26 Unit、6 Faction Card、31 Tactical Card、252 definition 的逐项产品责任账本、唯一 owner 和缺口清单 | current-product denominator 门一次通过：20 exact / 232 pending / 252 ownership edges | 17/36 |
 | 232 | **Complete:** 全卡池 Move、PLACE、Deploy、位移 permission 与边锁能力族接线；误归类的战场资产/Unit 生命周期转交正确 owner | relocation family 门第 2 轮通过；25 new + 3 existing，owner pending 0 | 18/36 |
 | 233 | **Complete:** 全卡池 BUFF、DEBUFF、Status、Heal、Damage 能力族接线 | characteristic/status family 门一次通过；60 new + 5 existing，owner pending 0 | 19/36 |
-| 234 | 51 个官方武器与全部远程攻击效果接线 | ranged family 门一次；当前 pending 30 | 20/36 |
+| 234 | **Complete:** 51 个官方武器档案进入全产品目录，23 个 Assault 武器与 7 个远程能力定义完成动作/Consumer 接线 | 30 new / owner pending 0；分母 135 exact / 117 pending；新 E2E 门因大小写验收脚本三轮未收敛，Medium 跟踪 | 20/36 |
 | 235 | 全卡池 Fight、Charge、IMPACT 与近战效果接线 | melee family 门一次；当前 pending 40 | 21/36 |
 | 236 | 24 条 Reaction、触发窗口、双方优先级和每激活限制接线 | reaction family 门一次；当前 pending 24 | 22/36 |
 | 237 | Token、Marker、Indicator、Structure、Creep、Pylon 与实体组件生命周期接线 | battlefield asset family 门一次；当前 pending 30 | 23/36 |
