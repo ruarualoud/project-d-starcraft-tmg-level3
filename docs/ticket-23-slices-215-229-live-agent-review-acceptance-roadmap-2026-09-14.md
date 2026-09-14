@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–238 完成；Ticket 23 为 `24/36`，剩余 `12` 片
+状态：Slices 215–239 完成；Ticket 23 为 `25/36`，剩余 `11` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -58,10 +58,10 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 236 | **Complete:** 24 条 Reaction、12 类触发窗口、双方优先级、每激活/每回合限制及支付接线 | 第 2 轮通过 24/24、Open→Replay；目标分母 199/53 | 22/36 |
 | 237 | **Complete:** Token、Marker、Indicator、Structure、Creep、Pylon 与实体组件生命周期接线 | 30 new / owner pending 0；分母 229 exact / 23 pending；圆形 Creep Tumor 28mm、Force Field 80mm、Shade 40mm | 23/36 |
 | 238 | **Complete:** Summon、Respawn、返回 Reserve、设置/创建 Unit/模型与 Supply 生命周期接线，并承接 Shade/Indicator/Pylon/Omega 部署机会 | 第 2 轮通过：11 new / owner pending 0；分母 240 exact / 12 pending；实际 3 模型 Roachling Apply/Replay | 24/36 |
-| 239 | 任务控制、计分、先后手、Pass 和回合阶段系统动作接线 | match lifecycle family 门一次；当前 pending 2 | 25/36 |
-| 240 | Terran 当前单位、阵营与战术卡的独特能力余项收口 | Terran gap gate 一次；当前 pending 4 | 26/36 |
-| 241 | Zerg 当前单位、阵营与战术卡的独特能力余项收口 | Zerg gap gate 一次；当前 pending 2 | 27/36 |
-| 242 | Protoss 当前单位、阵营与战术卡的独特能力余项收口 | Protoss gap gate 一次；当前 pending 4 | 28/36 |
+| 239 | **Complete:** Stalker 已激活目标 `INSTANT` 与 Queen 7 模型/每轮一次 BM 减免两个阶段/回合 consumer 接线；既有任务、计分与 Pass Runtime 不重复实现 | 分母 242 exact / 10 pending；`TARGET: All` 通配修复后 Stalker 真实射击门通过 | 25/36 |
+| 240 | Terran 独特余项：Medic Advanced Medic Facilities、Raynor Commander/Freedom Fighters、Supply Depot Additional Supply Depots | Terran 4-definition gap gate 一次 | 26/36 |
+| 241 | Zerg 独特余项：Queen Domineering Presence（消费 Psionic Link）与 Lair Predation | Zerg 2-definition gap gate 一次 | 27/36 |
+| 242 | Protoss 独特余项：Nexus Ancient Pride、Artanis Commander、Warp Gate Warp In、Khalai Bound by the Khala | Protoss 4-definition gap gate 一次 | 28/36 |
 | 243 | 全官方产品分母收口：252/252 有执行角色、`unsupported=0`、无静默缺口 | 仅运行 current-product aggregate 一次 | 29/36 |
 | 244 | Standard 2000 Room/军表/任务 Factory 最终绑定：双方各 2000 Minerals、≤200 Vespene、54×36 | 仅运行 2000 factory 门一次 | 30/36 |
 | 245 | Web 探索性 H-A dry-run 与统一 UI 修复：写表/数据库/对战桌、悬浮副官、通知/物理任务、计划/日志/成本/截图面板 | 只对本轮修复跑一次 Web 用户旅程 | 31/36 |
@@ -335,13 +335,14 @@ fixture 身份拒绝。因此新增模块完成并可解析，但没有新的 Fa
 - `docs/ticket-23-slice-234-current-product-ranged-family-closure-2026-09-14.md`
 - `docs/ticket-23-slice-235-current-product-melee-family-closure-2026-09-14.md`
 
-## Slices 236–238 收口
+## Slices 236–239 收口
 
 Slice 236 把 24 条 Reaction 接入双方优先级、资源支付、每激活/每回合限制和 12 类触发
 窗口；Slice 237 把 30 条 Token/Marker/Indicator/Structure/Creep/Pylon 定义接入实体组件和
 战斗消费者；Slice 238 再把 11 条 pending Unit lifecycle 定义接入召唤、重生、召回、
-Reserve 和跨 family 回合末机会。当前产品账本为 `240 exact / 12 pending`，owner 236–238
-均为 pending 0。
+Reserve 和跨 family 回合末机会。Slice 239 接入 Stalker Fury 的阶段激活条件与 Queen
+Psionic Link 的完整模型/回合支付条件，并修正所有远程武器 `TARGET: All` 被误当普通标签的
+生产缺口。当前产品账本为 `242 exact / 10 pending`，owner 236–239 均为 pending 0。
 
 Slice 238 聚焦门第 1 轮正确拒绝只有 1 Biomass、却尝试支付 2 Biomass 的旧 500 分夹具，
 并发现 Omega Network 应按每轮累计 Supply≤2，而非首个部署后锁死；第 2 轮以合法资源
@@ -350,6 +351,7 @@ Slice 238 聚焦门第 1 轮正确拒绝只有 1 Biomass、却尝试支付 2 Bio
 - `docs/ticket-23-slice-236-current-product-reaction-family-closure-2026-09-14.md`
 - `docs/ticket-23-slice-237-current-product-battlefield-asset-family-closure-2026-09-14.md`
 - `docs/ticket-23-slice-238-current-product-unit-lifecycle-family-closure-2026-09-14.md`
+- `docs/ticket-23-slice-239-current-product-match-lifecycle-family-closure-2026-09-15.md`
 
 ## 验证与成本规则
 

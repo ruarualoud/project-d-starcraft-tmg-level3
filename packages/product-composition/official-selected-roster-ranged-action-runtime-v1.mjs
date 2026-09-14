@@ -45,10 +45,12 @@ import {
   consumeOfficialBattlefieldAssetFirstWeaponEffectsV1,
   projectOfficialBattlefieldAssetFamilyModifiersV1,
 } from "./official-battlefield-asset-family-adapter-v1.mjs";
+import { projectOfficialMatchLifecycleFamilyModifiersV1 } from
+  "./official-match-lifecycle-family-adapter-v1.mjs";
 
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ranged-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.4.0";
+export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.5.0";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_TYPE = "ranged_attack";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_FINISH_ACTION_TYPE =
   "finish_ranged_attack_sequence";
@@ -274,7 +276,9 @@ function assertAssaultContext(state, sideKey, piece, target, graph, profile) {
   }
   const targetTags = new Set([target.combatTag, ...(target.combatTags || [])]
     .map(normalizedName).filter(Boolean));
-  if (!profile?.targetTags?.some((tag) => targetTags.has(normalizedName(tag)))) {
+  const normalizedTargetTags = (profile?.targetTags || []).map(normalizedName);
+  if (!normalizedTargetTags.includes("all")
+    && !normalizedTargetTags.some((tag) => targetTags.has(tag))) {
     fail("SELECTED_RANGED_TARGET_TAG_PROHIBITED", target.id);
   }
   if (piece.activatedPhases?.assault === true) {
@@ -426,10 +430,11 @@ function diceValue(expression, outcome) {
   fail("SELECTED_RANGED_SURGE_DICE_UNSUPPORTED", String(expression || ""));
 }
 function batchProfile(profile, geometry, attackerModifiers, rangedModifiers,
-  targetModifiers, target, pointDefenseRemovedDieIds = []) {
+  targetModifiers, matchLifecycleModifiers, target, pointDefenseRemovedDieIds = []) {
   const burst = effectById(profile, "attack-effect:burst-fire-v1");
   const locked = effectById(profile, "attack-effect:locked-in-v1");
-  const instant = Boolean(effectById(profile, "attack-effect:instant-v1"));
+  const printedInstant = Boolean(effectById(profile, "attack-effect:instant-v1"));
+  const instant = printedInstant || matchLifecycleModifiers.instant === true;
   const targetStationary = statusNamed(target, "stationary");
   const printedRateOfAttack = Number(profile.rateOfAttack);
   const rateOfAttackModifier = Number(attackerModifiers.rateOfAttackModifier || 0);
@@ -524,6 +529,9 @@ function batchProfile(profile, geometry, attackerModifiers, rangedModifiers,
     damagePerDie,
     pierceMatched: damagePerDie !== Number(profile.damage),
     instant,
+    printedInstant,
+    instantGrantedByMatchLifecycle: !printedInstant && instant,
+    instantSourceDefinitionId: matchLifecycleModifiers.instantSourceDefinitionId || null,
     indirectFire: Boolean(effectById(profile, "attack-effect:indirect-fire-v1")),
     sidearm: Boolean(effectById(profile, "attack-effect:sidearm-v1")),
     pinpoint: Boolean(effectById(profile, "attack-effect:pinpoint-v1")),
@@ -735,8 +743,15 @@ function planAttackResolution(state, piece, target, profile, geometry, targetPro
     surgeTypes: clone(characteristicAttackerModifiers.surgeTypes || []),
     surgeDice: characteristicAttackerModifiers.surgeDice || null,
   };
+  const matchLifecycleModifiers = state.officialMatchLifecycleFamilySourceBundle
+    ? projectOfficialMatchLifecycleFamilyModifiersV1(
+      state.officialMatchLifecycleFamilySourceBundle, state,
+      { pieceId: piece.id, targetPieceId: target.id,
+        weaponName: profile.weaponName },
+    ) : {};
   const profileForBatch = batchProfile(profile, geometry, attackerAbilityModifiers,
-    rangedModifiers, targetModifiers, target, choices.pointDefenseRemovedDieIds || []);
+    rangedModifiers, targetModifiers, matchLifecycleModifiers, target,
+    choices.pointDefenseRemovedDieIds || []);
   const mechanicalPlan = createMechanicalPlan(profileForBatch, {
     ...targetProfile,
     armourThreshold: Math.max(2, Number(targetProfile.armourThreshold)

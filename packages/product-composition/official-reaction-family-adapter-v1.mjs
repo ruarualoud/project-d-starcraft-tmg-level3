@@ -10,6 +10,8 @@ import { verifyOfficialAbilityEffectIrCatalogueV1 } from
   "../source-data/official-ability-effect-ir-v1.mjs";
 import { verifyOfficialCurrentProductAbilityDenominatorV1 } from
   "./official-current-product-ability-denominator-v1.mjs";
+import { resolveOfficialMatchLifecycleAbilityResourceCostV1 } from
+  "./official-match-lifecycle-family-adapter-v1.mjs";
 
 export const OFFICIAL_REACTION_FAMILY_ADAPTER_ID =
   "official-reaction-family-adapter-v1";
@@ -465,8 +467,14 @@ function paymentRef(state, card) {
     profileHash: profile.profileHash,
     isReady: card.readiness === "ready" };
 }
-function paymentSelections(state, route, sideKey) {
+function paymentSelections(state, route, sideKey, sourceInstanceId) {
   if (!route.resourceType || route.resourceCost === 0) return [[]];
+  const effectiveCost = state.officialMatchLifecycleFamilySourceBundle
+    ? resolveOfficialMatchLifecycleAbilityResourceCostV1(
+      state.officialMatchLifecycleFamilySourceBundle, state,
+      { sideKey, pieceId: sourceInstanceId, resourceType: route.resourceType,
+        printedResourceCost: route.resourceCost },
+    ).effectiveResourceCost : route.resourceCost;
   const cards = (state.cardResources?.[sideKey] || []).filter((entry) => (
     entry.readiness === "ready"));
   const rows = [];
@@ -475,7 +483,7 @@ function paymentSelections(state, route, sideKey) {
     try {
       resolveOfficialAbilityResourcePaymentV1({
         cardDataBundle: state.officialCardBuildPaymentDataBundle,
-        resourceType: route.resourceType, resourceCost: route.resourceCost,
+        resourceType: route.resourceType, resourceCost: effectiveCost,
         selectedCardInstanceSetComplete: true,
         selectedCardInstances: selected.map((card) => paymentRef(state, card)),
       });
@@ -561,7 +569,8 @@ function enumerate(bundle, state, options = {}) {
     for (const route of bundle.routes) {
       for (const instance of routeInstances(state, route)) {
         if (!routeEligible(state, window, route, instance)) continue;
-        for (const payment of paymentSelections(state, route, instance.sideKey)) {
+        for (const payment of paymentSelections(state, route, instance.sideKey,
+          instance.sourceInstanceId)) {
           parameterDomains.push(domainFor(state, window, route, instance, payment));
         }
       }
@@ -645,11 +654,19 @@ function preview(bundle, state, request = {}) {
 function pay(state, route, action, events) {
   const ids = action.reactionPlan.canonicalParameters.paymentCardInstanceIds || [];
   if (route.resourceType) {
+    const cost = state.officialMatchLifecycleFamilySourceBundle
+      ? resolveOfficialMatchLifecycleAbilityResourceCostV1(
+        state.officialMatchLifecycleFamilySourceBundle, state,
+        { sideKey: action.sideKey, pieceId: action.reactionPlan.sourceInstanceId,
+          resourceType: route.resourceType, printedResourceCost: route.resourceCost,
+          planHash: action.reactionPlan.planHash }, { consume: true })
+      : { effectiveResourceCost: route.resourceCost,
+        resourceCostReduction: 0, discountSourcePieceId: null };
     const cards = ids.map((id) => cardById(state, action.sideKey, id));
     if (cards.some((entry) => !entry)) fail("REACTION_PAYMENT_CARD_UNKNOWN");
     const payment = resolveOfficialAbilityResourcePaymentV1({
       cardDataBundle: state.officialCardBuildPaymentDataBundle,
-      resourceType: route.resourceType, resourceCost: route.resourceCost,
+      resourceType: route.resourceType, resourceCost: cost.effectiveResourceCost,
       selectedCardInstanceSetComplete: true,
       selectedCardInstances: cards.map((card) => paymentRef(state, card)),
     });
@@ -657,7 +674,11 @@ function pay(state, route, action, events) {
       cardById(state, action.sideKey, id).readiness = "exhausted";
     }
     events.push({ type: "reaction_resource_paid", resourceType: route.resourceType,
-      resourceCost: route.resourceCost, paymentResultHash: payment.resultHash,
+      resourceCost: cost.effectiveResourceCost,
+      printedResourceCost: route.resourceCost,
+      resourceCostReduction: cost.resourceCostReduction,
+      discountSourcePieceId: cost.discountSourcePieceId,
+      paymentResultHash: payment.resultHash,
       exhaustedCardInstanceIds: payment.selectedCardsExhaustOnCommit,
       trainingTruth: false });
   } else if (route.sourceKind === "card_feature"
