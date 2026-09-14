@@ -5,13 +5,14 @@ import { verifyOfficialAbilityEffectIrCatalogueV1 } from
 
 export const OFFICIAL_CURRENT_PRODUCT_ABILITY_DENOMINATOR_SCHEMA =
   "starcraft_tmg_official_current_product_ability_denominator_v1";
-export const OFFICIAL_CURRENT_PRODUCT_ABILITY_DENOMINATOR_VERSION = "1.3.0";
+export const OFFICIAL_CURRENT_PRODUCT_ABILITY_DENOMINATOR_VERSION = "1.4.0";
 
 const DELIVERY_SLICE_BY_ADAPTER = Object.freeze({
   "starcraft-tmg-official-selected-roster-ability-runtime-v1": 229,
   "official-relocation-family-adapter-v1": 232,
   "official-characteristic-status-family-adapter-v1": 233,
   "official-ranged-family-adapter-v1": 234,
+  "official-melee-family-adapter-v1": 235,
 });
 
 const OWNER_BY_SLICE = Object.freeze({

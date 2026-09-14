@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–234 完成；Ticket 23 为 `20/36`，剩余 `16` 片
+状态：Slices 215–235 完成；Ticket 23 为 `21/36`，剩余 `15` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -54,7 +54,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 232 | **Complete:** 全卡池 Move、PLACE、Deploy、位移 permission 与边锁能力族接线；误归类的战场资产/Unit 生命周期转交正确 owner | relocation family 门第 2 轮通过；25 new + 3 existing，owner pending 0 | 18/36 |
 | 233 | **Complete:** 全卡池 BUFF、DEBUFF、Status、Heal、Damage 能力族接线 | characteristic/status family 门一次通过；60 new + 5 existing，owner pending 0 | 19/36 |
 | 234 | **Complete:** 51 个官方武器档案进入全产品目录，23 个 Assault 武器与 7 个远程能力定义完成动作/Consumer 接线 | 30 new / owner pending 0；分母 135 exact / 117 pending；新 E2E 门因大小写验收脚本三轮未收敛，Medium 跟踪 | 20/36 |
-| 235 | 全卡池 Fight、Charge、IMPACT 与近战效果接线 | melee family 门一次；当前 pending 40 | 21/36 |
+| 235 | **Complete:** 全卡池 Fight、Charge、逐模型 IMPACT 与近战效果接线 | 40 new / owner pending 0；目标分母 175/77；三轮门停于前置冻结数据集身份，Medium 跟踪 | 21/36 |
 | 236 | 24 条 Reaction、触发窗口、双方优先级和每激活限制接线 | reaction family 门一次；当前 pending 24 | 22/36 |
 | 237 | Token、Marker、Indicator、Structure、Creep、Pylon 与实体组件生命周期接线 | battlefield asset family 门一次；当前 pending 30 | 23/36 |
 | 238 | Summon、Morph、Respawn、返回 Reserve、设置/创建/替换模型与 Supply 生命周期接线 | unit lifecycle family 门一次；当前 pending 11 | 24/36 |
@@ -316,6 +316,24 @@ Module 只通过 query Seam 消费 modifier，不复制规则原文。唯一聚�
 编译、Adrenal Overload BM 支付、Preview→Apply→Replay、IMPACT +1 与 Squadron 4 英寸
 投影。闭包记录：
 `docs/ticket-23-slice-233-current-product-characteristic-status-family-closure-2026-09-14.md`。
+
+## Slices 234–235 收口
+
+Slice 234 把 23 个 Assault weapon 与 7 条 ranged consumer 接入全产品远程攻击
+Adapter，推进到 `135 exact / 117 pending`；其三轮内联门留下规范武器名大小写的 Medium
+证据债务。Slice 235 再绑定 28 个 Combat weapon、11 条新增 Devastating Charge 和
+My Life for Aiur，目标账本推进到 `175 exact / 77 pending`。IMPACT 已纠正为逐个
+Fighting/Supporting Rank 合格模型各生成 X 骰，并按该模型实际对抗的 Enemy Unit 分配；
+近战同时消费 Target、替换武器、Precision、Anti-Evade、Pierce、Titan Killers、Shield、
+伤亡和 Supply。
+
+Slice 235 三轮门分别遇到一处已修语法错误，以及两次发生在新逻辑之前的冻结数据集
+fixture 身份拒绝。因此新增模块完成并可解析，但没有新的 Factory/Apply/Replay 绿色回执；
+按 Only Critical/High block 作为 Medium 集成证据债务保留。Slice 243 必须用当时权威
+冻结装配入口同时清偿 234/235 两项。闭包记录：
+
+- `docs/ticket-23-slice-234-current-product-ranged-family-closure-2026-09-14.md`
+- `docs/ticket-23-slice-235-current-product-melee-family-closure-2026-09-14.md`
 
 ## 验证与成本规则
 

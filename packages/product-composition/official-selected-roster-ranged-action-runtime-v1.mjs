@@ -1099,7 +1099,7 @@ export function resolveOfficialSelectedRosterRangedChanceV1(
     rulesTruth: "official_selected_roster_ranged_pool_resolution",
     trainingTruth: false,
   }, "resolutionHash");
-  const casualtyDomain = createCurrentProductCasualtyDomain({
+  const casualtyDomain = createOfficialCurrentProductCasualtyDomainV1({
     targetPiece: target, targetProfile: context.targetProfile,
     incomingDamage: Number(stages.damage.totalDamage),
     visibleModelIds: context.geometry.visibleTargetModelIds,
@@ -1109,7 +1109,7 @@ export function resolveOfficialSelectedRosterRangedChanceV1(
   return freezeDeep({ context, resolution, casualtyDomain });
 }
 
-function createCurrentProductCasualtyDomain(input) {
+export function createOfficialCurrentProductCasualtyDomainV1(input) {
   const targetPiece = input.targetPiece;
   const hitPoints = Number(input.targetProfile.hitPoints);
   const shieldValue = Number(input.targetProfile.shield || 0);
@@ -1169,7 +1169,7 @@ function createCurrentProductCasualtyDomain(input) {
     trainingTruth: false,
   }, "domainHash");
 }
-function resolveCurrentProductCasualtyDomain(domain, selectionHash) {
+export function resolveOfficialCurrentProductCasualtyDomainV1(domain, selectionHash) {
   if (!object(domain)
     || domain.schema !== "starcraft_tmg_official_current_product_casualty_domain_v1"
     || domain.domainHash !== hashStarcraftTmgContract(without(domain, ["domainHash"]))) {
@@ -1311,7 +1311,7 @@ export function applyOfficialSelectedRosterRangedActionV1(
     || (chance.casualtyDomain.legalSelections.length === 1
       ? chance.casualtyDomain.legalSelections[0].selectionHash : ""));
   if (!selectionHash) fail("SELECTED_RANGED_CASUALTY_SELECTION_REQUIRED");
-  const casualty = resolveCurrentProductCasualtyDomain(
+  const casualty = resolveOfficialCurrentProductCasualtyDomainV1(
     chance.casualtyDomain, selectionHash);
   const state = clone(stateInput);
   const piece = state.pieces.find((entry) => entry.id === actionInput.pieceId);

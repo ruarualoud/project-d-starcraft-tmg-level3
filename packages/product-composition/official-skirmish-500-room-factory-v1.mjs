@@ -84,6 +84,12 @@ import {
   verifyOfficialRangedFamilySourceBundleV1,
 } from "./official-ranged-family-adapter-v1.mjs";
 import {
+  createOfficialMeleeFamilyAdapterV1,
+  createOfficialMeleeFamilyDefinitionBindingsV1,
+  createOfficialMeleeFamilySourceBundleV1,
+  verifyOfficialMeleeFamilySourceBundleV1,
+} from "./official-melee-family-adapter-v1.mjs";
+import {
   createOfficialSelectedRosterMeleeActionRuntimeV1,
   verifyOfficialSelectedRosterMeleeRuntimeDescriptorV1,
 } from "./official-selected-roster-melee-action-runtime-v1.mjs";
@@ -106,7 +112,7 @@ import {
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
-export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "1.9.0";
+export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "2.0.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MISSION_RECORD_KEY = "faction_cards:mission_hold_position__skirmish_";
@@ -614,10 +620,25 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   });
   const rangedBindings = createOfficialRangedFamilyDefinitionBindingsV1(
     state.officialRangedFamilySourceBundle);
-  state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+  const meleeBaselineCatalogue = createOfficialAbilityEffectIrCatalogueV1({
     dataset,
     executionBindings: [...selectedAbilityBindings, ...relocationBindings,
       ...characteristicStatusBindings, ...rangedBindings],
+  });
+  const meleeBaselineDenominator = createOfficialCurrentProductAbilityDenominatorV1({
+    catalogue: meleeBaselineCatalogue,
+  });
+  state.officialMeleeFamilySourceBundle = createOfficialMeleeFamilySourceBundleV1({
+    catalogue: meleeBaselineCatalogue,
+    denominator: meleeBaselineDenominator,
+    attackProfileCatalogueV2,
+  });
+  const meleeBindings = createOfficialMeleeFamilyDefinitionBindingsV1(
+    state.officialMeleeFamilySourceBundle);
+  state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+    dataset,
+    executionBindings: [...selectedAbilityBindings, ...relocationBindings,
+      ...characteristicStatusBindings, ...rangedBindings, ...meleeBindings],
   });
   const abilityEffectRuntime = createOfficialAbilityEffectRuntimeV1({
     catalogue: state.officialAbilityEffectIrCatalogue,
@@ -628,7 +649,9 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     createOfficialCharacteristicStatusFamilyAdapterV1(
       state.officialCharacteristicStatusFamilySourceBundle),
     createOfficialRangedFamilyAdapterV1(
-      state.officialRangedFamilySourceBundle)],
+      state.officialRangedFamilySourceBundle),
+    createOfficialMeleeFamilyAdapterV1(
+      state.officialMeleeFamilySourceBundle)],
   });
   verifyOfficialAbilityEffectRuntimeDescriptorV1(abilityEffectRuntime.descriptor);
   state.officialAbilityEffectRuntimeDescriptor = abilityEffectRuntime.descriptor;
@@ -702,6 +725,8 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         state.officialCharacteristicStatusFamilySourceBundle.bundleHash,
       rangedFamilySourceBundleHash:
         state.officialRangedFamilySourceBundle.bundleHash,
+      meleeFamilySourceBundleHash:
+        state.officialMeleeFamilySourceBundle.bundleHash,
       currentProductUnitRecordCount: unitRecordKeys.length,
       currentProductAttackProfileCount: attackProfileCatalogue.profiles.length,
       currentProductAbilityExactCount:
@@ -714,7 +739,7 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
       normalizedDatasetHash: dataset.datasetHash,
       sourceRefreshPerformed: false,
       repositoryFallbackUsed: false,
-      completeActionRuntimeDeferredToSlices: [235, 236, 237,
+      completeActionRuntimeDeferredToSlices: [236, 237,
         238, 239, 240, 241, 242, 243],
       trainingTruth: false,
     },
@@ -791,10 +816,12 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
       !== state?.officialCharacteristicStatusFamilySourceBundle?.bundleHash
     || evidence?.rangedFamilySourceBundleHash
       !== state?.officialRangedFamilySourceBundle?.bundleHash
+    || evidence?.meleeFamilySourceBundleHash
+      !== state?.officialMeleeFamilySourceBundle?.bundleHash
     || evidence?.currentProductUnitRecordCount !== 26
     || evidence?.currentProductAttackProfileCount !== 51
-    || evidence?.currentProductAbilityExactCount !== 135
-    || evidence?.currentProductAbilityPendingCount !== 117
+    || evidence?.currentProductAbilityExactCount !== 175
+    || evidence?.currentProductAbilityPendingCount !== 77
     || authority.trainingTruth !== false) {
     fail("SKIRMISH_500_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
   }
@@ -824,6 +851,9 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
   );
   verifyOfficialRangedFamilySourceBundleV1(
     state.officialRangedFamilySourceBundle,
+  );
+  verifyOfficialMeleeFamilySourceBundleV1(
+    state.officialMeleeFamilySourceBundle,
   );
   return true;
 }

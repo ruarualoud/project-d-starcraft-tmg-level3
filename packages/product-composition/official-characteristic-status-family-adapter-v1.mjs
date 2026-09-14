@@ -1000,7 +1000,7 @@ function weaponMatches(scope, weaponName) {
 }
 function activeEffects(piece) {
   return (piece?.officialAbilityEffects || []).filter((entry) => (
-    entry?.effectHash && entry?.sourceDefinitionId));
+    entry?.effectHash && (entry?.sourceDefinitionId || entry?.sourceFeatureHash)));
 }
 function maximumKeyword(rows, keyword, weaponName) {
   return Math.max(0, ...rows.filter((entry) => entry.keyword === keyword
@@ -1087,7 +1087,7 @@ export function projectOfficialCharacteristicStatusFamilyModifiersV1(
   return {
     pieceId: piece.id,
     applicableDefinitionIds: [...new Set([...passives.map((entry) => entry.definitionId),
-      ...effects.map((entry) => entry.sourceDefinitionId)])].sort(),
+      ...effects.map((entry) => entry.sourceDefinitionId).filter(Boolean)])].sort(),
     speedModifier: Math.max(0, ...effects.map((entry) => Number(entry.speedModifier || 0))),
     rangeModifier: Math.min(0, ...optical.map((entry) => Number(entry.modifier || 0)))
       + Math.max(0, ...firstWeapon.filter((entry) => entry.keyword === "buff_range")
