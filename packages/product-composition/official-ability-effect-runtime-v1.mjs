@@ -16,12 +16,13 @@ import {
 
 export const OFFICIAL_ABILITY_EFFECT_RUNTIME_ID =
   "starcraft-tmg-official-ability-effect-runtime-v1";
-export const OFFICIAL_ABILITY_EFFECT_RUNTIME_VERSION = "1.2.0";
+export const OFFICIAL_ABILITY_EFFECT_RUNTIME_VERSION = "1.3.0";
 export const OFFICIAL_ABILITY_PENDING_ADAPTER_ID =
   "official-ability-pending-family-adapter-v1";
 
 const OPERATIONS = new Set([
   "legal_space", "preview", "apply", "query", "lifecycle", "replay",
+  "open_reaction_window", "consume_reaction_window",
 ]);
 const LIFECYCLE_EVENTS = new Set([
   "activation_start", "action_performed", "activation_end", "phase_end", "round_end",
@@ -292,6 +293,12 @@ function dispatchRuntime(runtime, input = {}) {
     }, "replayReceiptHash");
   }
   const adapter = adapterFor(runtime, selectedAdapterId(input), operation);
+  if (operation === "open_reaction_window") {
+    return adapter.openReactionWindow(input.state, input.request || {});
+  }
+  if (operation === "consume_reaction_window") {
+    return adapter.consumeReactionWindow(input.state, input.request || {});
+  }
   if (operation === "preview") return adapter.preview(input.state, input.request || {});
   if (operation === "apply") return adapter.apply(input.state, input.request || {});
   return adapter.query(input.state, input.request || {});
