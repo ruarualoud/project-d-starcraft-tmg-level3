@@ -16,7 +16,7 @@ import {
 
 export const OFFICIAL_ABILITY_EFFECT_RUNTIME_ID =
   "starcraft-tmg-official-ability-effect-runtime-v1";
-export const OFFICIAL_ABILITY_EFFECT_RUNTIME_VERSION = "1.1.0";
+export const OFFICIAL_ABILITY_EFFECT_RUNTIME_VERSION = "1.2.0";
 export const OFFICIAL_ABILITY_PENDING_ADAPTER_ID =
   "official-ability-pending-family-adapter-v1";
 
@@ -24,7 +24,8 @@ const OPERATIONS = new Set([
   "legal_space", "preview", "apply", "query", "lifecycle", "replay",
 ]);
 const LIFECYCLE_EVENTS = new Set([
-  "activation_end", "phase_end", "round_end", "cleanup_and_refresh",
+  "activation_start", "action_performed", "activation_end", "phase_end", "round_end",
+  "cleanup_and_refresh",
 ]);
 
 function fail(code, detail = "") {

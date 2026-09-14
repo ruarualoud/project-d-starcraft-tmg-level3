@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–232 完成；Ticket 23 为 `18/36`，剩余 `18` 片
+状态：Slices 215–233 完成；Ticket 23 为 `19/36`，剩余 `17` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -52,7 +52,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 230 | **Complete:** 通用能力注册表、类型化 Effect IR、Action/Consumer/System 生命周期自动路由、关系图和统一调用合同 | 三轮内收敛：252 definition / 1,762 edges / 20 exact / 232 pending | 16/36 |
 | 231 | **Complete:** 冻结官方 26 Unit、6 Faction Card、31 Tactical Card、252 definition 的逐项产品责任账本、唯一 owner 和缺口清单 | current-product denominator 门一次通过：20 exact / 232 pending / 252 ownership edges | 17/36 |
 | 232 | **Complete:** 全卡池 Move、PLACE、Deploy、位移 permission 与边锁能力族接线；误归类的战场资产/Unit 生命周期转交正确 owner | relocation family 门第 2 轮通过；25 new + 3 existing，owner pending 0 | 18/36 |
-| 233 | 全卡池 BUFF、DEBUFF、Status、Heal、Damage 能力族接线 | characteristic/status family 门一次；当前 pending 60 | 19/36 |
+| 233 | **Complete:** 全卡池 BUFF、DEBUFF、Status、Heal、Damage 能力族接线 | characteristic/status family 门一次通过；60 new + 5 existing，owner pending 0 | 19/36 |
 | 234 | 51 个官方武器与全部远程攻击效果接线 | ranged family 门一次；当前 pending 30 | 20/36 |
 | 235 | 全卡池 Fight、Charge、IMPACT 与近战效果接线 | melee family 门一次；当前 pending 40 | 21/36 |
 | 236 | 24 条 Reaction、触发窗口、双方优先级和每激活限制接线 | reaction family 门一次；当前 pending 24 | 22/36 |
@@ -301,6 +301,21 @@ PLACE、额外 Move、非 Entry Edge Deploy 与 ComSat edge lock 十类。统一
 均通过 Preview→Apply→Replay。聚焦门第 1 轮发现 Router 未读取嵌套 request executor，
 修复 Seam 后第 2 轮通过且不再重跑。闭包记录：
 `docs/ticket-23-slice-232-current-product-relocation-family-closure-2026-09-14.md`。
+
+## Slice 233 收口
+
+特征/状态 Adapter 将 owner 233 的 `60` 条 pending 原文逐条编译为 `28` 个共享语义族，
+覆盖主动资源支付、BUFF/DEBUFF/Status、Burrow/Hidden、HEAL、NON-LETHAL DAMAGE、
+首把武器增益、Guardian Shield/Target Lock，以及被动武器关键词、首次 Armour Roll、
+Detection、Hit Points、4 英寸 Coherency、Regeneration 和条件式近远战修正。加上 Slice 229
+已有 5 条，本 owner 为 `65/65 exact`；全产品账本推进到 `105 exact / 147 pending`。
+
+统一 Runtime 增加 `activation_start` 与 `action_performed` 生命周期事件；所有主动效果、
+状态 marker、资源耗竭与消费者投影仍通过同一 Adapter Interface。后续移动/远程/近战
+Module 只通过 query Seam 消费 modifier，不复制规则原文。唯一聚焦门首轮通过 60/60
+编译、Adrenal Overload BM 支付、Preview→Apply→Replay、IMPACT +1 与 Squadron 4 英寸
+投影。闭包记录：
+`docs/ticket-23-slice-233-current-product-characteristic-status-family-closure-2026-09-14.md`。
 
 ## 验证与成本规则
 
