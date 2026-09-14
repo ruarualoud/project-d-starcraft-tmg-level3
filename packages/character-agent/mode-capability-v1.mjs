@@ -42,7 +42,7 @@ const PROFILES = Object.freeze({
   companion: {
     promptPack: "sparring_coach_prompt",
     visibilityPolicy: "seat_scoped_player_view_v0",
-    tools: [...SHARED_READ_TOOLS],
+    tools: [...SHARED_READ_TOOLS, "read_public_events"],
     outputChannels: ["speech", "teaching"],
     memoryNamespaces: ["room_memory", "user_character_relation", "conversation_history", "conversation_summary", "battle_public_events"],
     maySelectDecision: false,
