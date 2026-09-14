@@ -504,6 +504,12 @@ export function evaluateOfficialCoherencyPlacementV1(input = {}) {
   if (remaining.size > 0) fail("MODEL_BASE_GEOMETRY_PLACEMENT_DENOMINATOR_INVALID");
   const leading = rows.find((entry) => entry.modelId === leadingModelId);
   if (!leading?.footprint) fail("MODEL_BASE_GEOMETRY_LEADING_MODEL_INVALID");
+  const coherencyRangeMilliInches = Number(
+    input.coherencyRangeMilliInches ?? COHERENCY_RANGE_MILLI_INCHES,
+  );
+  if (![3000, 4000].includes(coherencyRangeMilliInches)) {
+    fail("MODEL_BASE_GEOMETRY_COHERENCY_RANGE_UNSUPPORTED");
+  }
   const width = milli(state.board?.widthInches);
   const height = milli(state.board?.heightInches);
   const placed = rows.filter((entry) => entry.footprint);
@@ -548,7 +554,7 @@ export function evaluateOfficialCoherencyPlacementV1(input = {}) {
   const assessments = placed.map((entry) => ({ modelId: entry.modelId,
     whollyWithinLeading: entry.modelId === leadingModelId
       || whollyWithinRange(leading.footprint, entry.footprint,
-        COHERENCY_RANGE_MILLI_INCHES) }));
+        coherencyRangeMilliInches) }));
   const flying = (actor.combatTags || []).some((entry) => (
     String(entry).toLowerCase() === "flying"
   ));
@@ -596,7 +602,7 @@ export function evaluateOfficialCoherencyPlacementV1(input = {}) {
     placements: placed.map((entry) => ({ modelId: entry.modelId,
       footprint: entry.footprint })),
     casualtyModelIds, assessments, linkEdges,
-    coherencyRangeMilliInches: COHERENCY_RANGE_MILLI_INCHES,
+    coherencyRangeMilliInches,
     flyingLinkExceptionsApplied: flying,
     inCoherency, outOfCoherency: !inCoherency,
     canControlOrContestMissionMarkers: inCoherency,

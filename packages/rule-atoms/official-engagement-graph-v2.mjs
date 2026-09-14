@@ -16,7 +16,7 @@ const COMPLETENESS_FLAGS = Object.freeze([
   "elevationSupportsComplete",
   "accessPointAdjacencyComplete",
 ]);
-const ACCESS_ELEVATION_PAIRS = new Set(["ground:mid", "high:mid"]);
+const ACCESS_ELEVATION_PAIRS = new Set(["ground:high", "ground:mid", "high:mid"]);
 
 export class OfficialEngagementGraphV2Error extends Error {
   constructor(code, detail = "") {
@@ -59,6 +59,19 @@ function activePiece(piece) {
 }
 
 function normalizeFootprint(input, code, detail) {
+  if (object(input?.footprint)
+    && input.footprint.shape === "axis_aligned_rectangle") {
+    const minX = Number(input.footprint.minXMilliInches);
+    const maxX = Number(input.footprint.maxXMilliInches);
+    const minY = Number(input.footprint.minYMilliInches);
+    const maxY = Number(input.footprint.maxYMilliInches);
+    if (![minX, maxX, minY, maxY].every(Number.isSafeInteger)
+      || minX >= maxX || minY >= maxY) fail(code, detail);
+    return { footprint: "rect", rotationDegrees: 0,
+      x: Math.round((minX + maxX) / 2),
+      y: Math.round((minY + maxY) / 2),
+      width: maxX - minX, height: maxY - minY };
+  }
   const footprint = String(input?.footprint || "").trim().toLowerCase();
   const rotationDegrees = ((Number(input?.rotationDegrees || 0) % 360) + 360) % 360;
   if (!["circle", "rect"].includes(footprint)
@@ -155,7 +168,9 @@ function normalizeAccessPoints(board, terrainById) {
   return (board.accessPoints || [])
     .filter((accessPoint) => accessPoint?.isRemoved !== true && accessPoint?.isDestroyed !== true)
     .map((accessPoint) => {
-      const accessPointId = String(accessPoint?.id || "").trim();
+      const accessPointId = String(
+        accessPoint?.id || accessPoint?.accessPointId || "",
+      ).trim();
       if (!accessPointId || seen.has(accessPointId)) {
         fail("ENGAGEMENT_V2_ACCESS_POINT_INVALID", accessPointId || "missing_id");
       }
@@ -165,7 +180,7 @@ function normalizeAccessPoints(board, terrainById) {
         fail("ENGAGEMENT_V2_ACCESS_POINT_TERRAIN_REQUIRED", accessPointId);
       }
       const connectsElevations = uniqueSortedStrings(
-        accessPoint.connectsElevations,
+        accessPoint.connectsElevations || accessPoint.connects,
         "ENGAGEMENT_V2_ACCESS_POINT_ELEVATIONS_INVALID",
         accessPointId,
       );

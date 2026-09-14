@@ -88,7 +88,7 @@ function classifyCause(events, pieceId, ownerSideKey) {
     };
   }
   const attack = events.find((event) => (
-    event?.type === "close_combat_attack"
+    ["close_combat_attack", "ranged_attack"].includes(event?.type)
       && event.targetId === pieceId
       && Array.isArray(event.casualtyModelIds)
       && event.casualtyModelIds.length > 0
