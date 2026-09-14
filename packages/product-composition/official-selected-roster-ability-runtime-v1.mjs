@@ -18,7 +18,7 @@ import { getOfficialModelBaseGeometryProfileV1 } from
 
 export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ability-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION = "1.1.0";
+export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION = "1.2.0";
 export const OFFICIAL_SELECTED_ROSTER_ABILITY_PARAMETER_KIND =
   "official_selected_roster_active_ability_v1";
 export const OFFICIAL_SELECTED_ROSTER_FINISH_ACTIVATION_PARAMETER_KIND =
@@ -346,12 +346,17 @@ export function verifyOfficialSelectedRosterAbilitySourceBundleV1(bundle) {
   if (!object(bundle)
     || bundle.schema !== "starcraft_tmg_official_selected_roster_ability_source_bundle_v1"
     || bundle.semanticVersion !== "1.0.0"
-    || bundle.selectedActiveRouteCount !== 13
-    || bundle.selectedPassiveBindingCount !== 9
+    || !Number.isSafeInteger(bundle.selectedActiveRouteCount)
+    || bundle.selectedActiveRouteCount < 0
+    || !Number.isSafeInteger(bundle.selectedPassiveBindingCount)
+    || bundle.selectedPassiveBindingCount < 0
     || bundle.unsupportedSelectedAbilityCount !== 0
-    || bundle.routes?.length !== 13 || bundle.passiveBindings?.length !== 9
-    || new Set(bundle.routes.map((entry) => entry.routeId)).size !== 13
-    || new Set(bundle.passiveBindings.map((entry) => entry.bindingId)).size !== 9
+    || bundle.routes?.length !== bundle.selectedActiveRouteCount
+    || bundle.passiveBindings?.length !== bundle.selectedPassiveBindingCount
+    || new Set(bundle.routes.map((entry) => entry.routeId)).size
+      !== bundle.selectedActiveRouteCount
+    || new Set(bundle.passiveBindings.map((entry) => entry.bindingId)).size
+      !== bundle.selectedPassiveBindingCount
     || bundle.routeDenominatorComplete !== true
     || bundle.sourceRefreshPerformed !== false || bundle.trainingTruth !== false
     || bundle.bundleHash !== hashStarcraftTmgContract(without(bundle, ["bundleHash"]))) {
@@ -1052,8 +1057,10 @@ export function verifyOfficialSelectedRosterAbilityRuntimeDescriptorV1(descripto
   if (!object(descriptor)
     || descriptor.runtimeId !== OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_ID
     || descriptor.runtimeVersion !== OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION
-    || descriptor.selectedActiveRouteCount !== 13
-    || descriptor.selectedPassiveBindingCount !== 9
+    || !Number.isSafeInteger(descriptor.selectedActiveRouteCount)
+    || descriptor.selectedActiveRouteCount < 0
+    || !Number.isSafeInteger(descriptor.selectedPassiveBindingCount)
+    || descriptor.selectedPassiveBindingCount < 0
     || descriptor.unsupportedSelectedAbilityCount !== 0
     || descriptor.legalSpacePreviewApplyShareInstantiation !== true
     || descriptor.activationWindowLifecycleExact !== true

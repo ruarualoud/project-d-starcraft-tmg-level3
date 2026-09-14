@@ -54,7 +54,7 @@ import {
 
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ranged-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.6.0";
+export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.7.0";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_TYPE = "ranged_attack";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_FINISH_ACTION_TYPE =
   "finish_ranged_attack_sequence";
@@ -1643,7 +1643,7 @@ export function createOfficialSelectedRosterRangedActionRuntimeV1(state) {
     noRangedUnitIds, unsupportedSelectedRangedRouteCount: 0,
     routes, actions: [OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_TYPE,
       OFFICIAL_SELECTED_ROSTER_RANGED_FINISH_ACTION_TYPE],
-    geometryScope: "selected_500_skirmish_round_bases_certified_terrain_v1",
+    geometryScope: "current_product_scale_bound_bases_certified_terrain_v1",
     arbitraryRosterClosureClaimed: false,
     fullModelPairVisibilityAndRangeDenominator: true,
     elevatedAndGrassLineOfSightExact: true,
@@ -1675,13 +1675,21 @@ export function verifyOfficialSelectedRosterRangedRuntimeDescriptorV1(descriptor
     || descriptor.runtimeVersion !== OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION
     || descriptor.runtimeHash !== hashStarcraftTmgContract(
       without(descriptor, ["runtimeHash"]))
-    || descriptor.selectedUnitCount !== 5
-    || descriptor.selectedRangedUnitCount !== 4
-    || descriptor.selectedRangedRouteCount !== 4
-    || descriptor.selectedNoRangedUnitCount !== 1
+    || !Number.isSafeInteger(descriptor.selectedUnitCount)
+    || descriptor.selectedUnitCount < 1
+    || !Number.isSafeInteger(descriptor.selectedRangedUnitCount)
+    || descriptor.selectedRangedUnitCount < 0
+    || !Number.isSafeInteger(descriptor.selectedRangedRouteCount)
+    || descriptor.selectedRangedRouteCount < 0
+    || !Number.isSafeInteger(descriptor.selectedNoRangedUnitCount)
+    || descriptor.selectedNoRangedUnitCount < 0
+    || descriptor.selectedRangedUnitCount + descriptor.selectedNoRangedUnitCount
+      !== descriptor.selectedUnitCount
     || descriptor.unsupportedSelectedRangedRouteCount !== 0
-    || descriptor.routes?.length !== 4
-    || descriptor.noRangedUnitIds?.length !== 1
+    || descriptor.routes?.length !== descriptor.selectedRangedRouteCount
+    || descriptor.noRangedUnitIds?.length !== descriptor.selectedNoRangedUnitCount
+    || new Set(descriptor.routes.map((entry) => entry.pieceId)).size
+      !== descriptor.selectedRangedUnitCount
     || descriptor.fullModelPairVisibilityAndRangeDenominator !== true
     || descriptor.defenderPointDefenseChoiceBoundIntoActionPlan !== true
     || descriptor.sequentialWeaponBatchesAndVoluntaryFinishExact !== true

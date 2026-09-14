@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–241 完成；Ticket 23 为 `27/36`，剩余 `9` 片
+状态：Slices 215–244 完成；Ticket 23 为 `30/36`，剩余 `6` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -63,7 +63,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 241 | **Complete:** Zerg 独特余项：Queen Domineering Presence 复用 Psionic Link 支付/消费，Lair Predation 进入真实 Close Combat INSTANT consumer | 第 2 轮通过：2 new / owner pending 0 / 分母 248 exact、4 pending | 27/36 |
 | 242 | **Complete:** Protoss 独特余项：Nexus Ancient Pride、Artanis Commander、Warp Gate Warp In、Khalai Bound by the Khala；首武器消费、完整底座非入口边部署和连续激活已接线 | 4 new / owner pending 0 / 分母 252 exact、0 pending；窄化终态门 exit 0 | 28/36 |
 | 243 | **Complete:** 全官方产品分母收口：252/252 有唯一执行角色/owner/Adapter，`pending=0`、`unsupported=0`、无静默缺口；Rules 输出近战 rank/总骰 | 第 2 轮 aggregate 通过；规范 C-14 rifle 与 Rules 计算 2 骰 Strike 均真实 Apply/Replay | 29/36 |
-| 244 | Standard 2000 Room/军表/任务 Factory 最终绑定：双方各 2000 Minerals、≤200 Vespene、54×36 | 仅运行 2000 factory 门一次 | 30/36 |
+| 244 | **Complete:** Standard 2000 Room/军表/任务/平衡地形/完整产品 Runtime 最终绑定：双方各 2000 Minerals、≤200 Vespene、54×36 | 第 3 轮通过：15 Unit、9 terrain、60/25/32 空间/远程/近战路线、252/0 能力 | 30/36 |
 | 245 | Web 探索性 H-A dry-run 与统一 UI 修复：写表/数据库/对战桌、悬浮副官、通知/物理任务、计划/日志/成本/截图面板 | 只对本轮修复跑一次 Web 用户旅程 | 31/36 |
 | 246 | 产品 Runtime 总组合与 2000 分零 Provider 完整自动 dry-run：任务全生命周期和最终 preflight | 仅运行一场 deterministic full-match dry-run | 32/36 |
 | 247 | 正式 2000 分 H-A live-model 完整局，逐动作截图/描述/骰子/回执/公开理由；预算 ≤¥80 | 一次正式局 + 权威最终 Replay | 33/36 |

@@ -5,10 +5,16 @@ import { hashStarcraftTmgContract } from
 import { resolveOfficialEngagementScaleAgreementV1 } from
   "../rule-atoms/official-faction-army-eligibility-rules-kernel-v1.mjs";
 import {
-  createOfficialDeploymentGeometryBindingV1,
-  createOfficialTerrainHeightTierLedgerV1,
-  finalizeOfficialMissionMarkerPlacementV1,
-} from "../rule-atoms/official-deployment-geometry-rules-kernel-v1.mjs";
+  certifyOfficialBalancedTerrainSetupV1,
+  OFFICIAL_BALANCED_TERRAIN_SETUP_PLAN_SCHEMA,
+  verifyOfficialBalancedTerrainArtifactsV1,
+} from "../rule-atoms/official-balanced-terrain-rules-kernel-v1.mjs";
+import {
+  createOfficialBattlefieldTokenMarkerRegistryV1,
+  verifyOfficialBattlefieldTokenMarkerRegistryV1,
+} from "../rule-atoms/official-battlefield-token-marker-rules-kernel-v1.mjs";
+import { createOfficialDeploymentGeometryBindingV1 } from
+  "../rule-atoms/official-deployment-geometry-rules-kernel-v1.mjs";
 import {
   applyOfficialMissionDeploymentDraftChoiceV1,
   createOfficialMissionDeploymentDraftStateV1,
@@ -16,6 +22,8 @@ import {
 } from "../rule-atoms/official-mission-deployment-draft-rules-kernel-v1.mjs";
 import { createOfficialMissionRuntimeV2 } from
   "../rule-atoms/official-mission-runtime-v2.mjs";
+import { createOfficialTerrainElevationAgreementV1 } from
+  "../rule-atoms/official-elevation-effective-size-rules-kernel-v1.mjs";
 import { resolveOfficialArmyInitialReservesV1 } from
   "../rule-atoms/official-reserve-lifecycle-rules-kernel-v1.mjs";
 import {
@@ -26,16 +34,32 @@ import {
 } from "../rule-atoms/official-roster-disclosure-rules-kernel-v1.mjs";
 import { resolveOfficialCompleteArmyCompositionUpgradeAuditV1 } from
   "../rule-atoms/official-unit-composition-upgrade-rules-kernel-v1.mjs";
+import { createOfficialSupplyLossLedgerV1 } from
+  "../rule-atoms/official-supply-loss-ledger-v1.mjs";
+import { createOfficialAttackProfileCatalogueV1 } from
+  "../source-data/official-attack-profile-catalogue-v1.mjs";
+import { createOfficialAttackProfileCatalogueV2 } from
+  "../source-data/official-attack-profile-catalogue-v2.mjs";
+import { createOfficialBalancedTerrainRulesDataBundleV1 } from
+  "../source-data/official-balanced-terrain-rules-data-bundle-v1.mjs";
+import {
+  createOfficialBattlefieldAssetComponentProfileV1,
+  verifyOfficialBattlefieldAssetComponentProfileV1,
+} from "../source-data/official-battlefield-asset-component-profile-v1.mjs";
+import { createOfficialBattlefieldTokenMarkerRulesDataBundleV1 } from
+  "../source-data/official-battlefield-token-marker-rules-data-bundle-v1.mjs";
+import { createOfficialCardBuildPaymentDataBundleV1 } from
+  "../source-data/official-card-build-payment-data-bundle-v1.mjs";
 import { getOfficialCurrentProductRecord } from
   "../source-data/official-command-center-adapter-v1.mjs";
 import { createOfficialDeploymentGeometryDataBundleV1 } from
   "../source-data/official-deployment-geometry-data-bundle-v1.mjs";
 import { createOfficialGameplayDataBundleV1 } from
   "../source-data/official-gameplay-data-bundle-v1.mjs";
+import { createOfficialMatchGameplayDataBundleV2 } from
+  "../source-data/official-match-gameplay-data-bundle-v2.mjs";
 import { createOfficialMissionDeploymentDraftDataBundleV1 } from
   "../source-data/official-mission-deployment-draft-data-bundle-v1.mjs";
-import { createOfficialMissionEffectCatalogueV1 } from
-  "../source-data/official-mission-effect-ir-v1.mjs";
 import { createOfficialMissionSetupBindingV1 } from
   "../source-data/official-mission-setup-binding-v1.mjs";
 import { createOfficialModelBaseGeometryDataBundleV1,
@@ -43,16 +67,27 @@ import { createOfficialModelBaseGeometryDataBundleV1,
   "../source-data/official-model-base-geometry-data-bundle-v1.mjs";
 import { createOfficialReserveLifecycleDataBundleV1 } from
   "../source-data/official-reserve-lifecycle-data-bundle-v1.mjs";
+import { createOfficialRespawnMorphDataBundleV1,
+  verifyOfficialRespawnMorphDataBundleV1 } from
+  "../source-data/official-respawn-morph-data-bundle-v1.mjs";
 import { createOfficialRosterDisclosureDataBundleV1 } from
   "../source-data/official-roster-disclosure-data-bundle-v1.mjs";
 import { createOfficialUnitCardSupplyDataBundleV1 } from
   "../source-data/official-unit-card-supply-data-bundle-v1.mjs";
+import { createOfficialSummonDataBundleV1, verifyOfficialSummonDataBundleV1 } from
+  "../source-data/official-summon-data-bundle-v1.mjs";
+import { createOfficialTerrainLosDataBundleV1 } from
+  "../source-data/official-terrain-los-data-bundle-v1.mjs";
+import {
+  composeOfficialCurrentProductActionRuntimeV1,
+  verifyOfficialCurrentProductActionRuntimeCompositionV1,
+} from "./official-current-product-action-runtime-composition-v1.mjs";
 import { createOfficialStandardActionRouteCatalogueV1 } from
   "./official-standard-action-route-catalogue-v1.mjs";
 
 export const OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_standard_room_initial_state_authority_v1";
-export const OFFICIAL_STANDARD_ROOM_FACTORY_VERSION = "1.1.0";
+export const OFFICIAL_STANDARD_ROOM_FACTORY_VERSION = "2.0.0";
 
 const HOLD_POSITION = "faction_cards:mission_hold_position";
 const GAUNTLET = "faction_cards:2NdngLtIeZAprsWr25hM";
@@ -77,6 +112,96 @@ function deepFreeze(value) {
 function clone(value) { return structuredClone(value); }
 function without(value, keys) {
   return Object.fromEntries(Object.entries(value).filter(([key]) => !keys.includes(key)));
+}
+function terrain(terrainPieceId, size, terrainKind, xMin, xMax, yMin, yMax,
+  options = {}) {
+  const footprint = { xMin, xMax, yMin, yMax };
+  return { terrainPieceId, size, terrainKind,
+    originalFootprint: clone(options.originalFootprint || footprint),
+    footprint, heightTier: options.heightTier || "ground_level",
+    standableHorizontalSurface: options.standableHorizontalSurface === true,
+    openings: clone(options.openings || []),
+    adjacentElevationPairs: clone(options.adjacentElevationPairs || []),
+    accessPoints: clone(options.accessPoints || []) };
+}
+function access(accessPointId, xMin, xMax, yMin, yMax, groundApproachPath) {
+  return { accessPointId, role: "ladder", footprint: { xMin, xMax, yMin, yMax },
+    connects: ["ground", "high"], groundApproachPath };
+}
+function placementHistory(pieces) {
+  return pieces.map((entry, index) => ({ ordinal: index + 1,
+    terrainPieceId: entry.terrainPieceId,
+    placedByPlayerId: index % 2 === 0 ? "player1" : "player2" }));
+}
+
+export function createOfficialStandard2000BalancedTerrainPlanV1() {
+  const pieces = [
+    terrain("std-grass-sw", 2, "grass", 3, 5, 3, 5),
+    terrain("std-grass-se", 2, "grass", 49, 51, 3, 5),
+    terrain("std-grass-nw", 2, "grass", 3, 5, 31, 33),
+    terrain("std-grass-ne", 2, "grass", 49, 51, 31, 33),
+    terrain("std-ordinary-west", 2, "ordinary", 14, 16, 16, 18),
+    terrain("std-ordinary-east", 2, "ordinary", 38, 40, 18, 20),
+    terrain("std-centre-large", 3, "ordinary", 26, 28, 17, 19, {
+      heightTier: "high_ground", standableHorizontalSurface: true,
+      adjacentElevationPairs: [["ground", "high"]],
+      accessPoints: [access("access-std-centre", 26, 26.5, 17, 17.5,
+        [{ x: 23, y: 18 }, { x: 26.25, y: 17.25 }])],
+    }),
+    terrain("std-size-one-south", 1, "ordinary", 25, 26, 4, 5),
+    terrain("std-size-one-north", 1, "ordinary", 28, 29, 31, 32),
+  ];
+  return {
+    schema: OFFICIAL_BALANCED_TERRAIN_SETUP_PLAN_SCHEMA,
+    planId: "ticket23-standard-2000-balanced-terrain-v1",
+    placementMethod: "alternating", premadeMapId: null,
+    physicalLayoutConfirmedByPlayerIds: [...SIDE_KEYS],
+    placementHistory: placementHistory(pieces), terrainPieces: pieces,
+    size3PlusAvailable: true,
+    quadrantManoeuvreLanes: [
+      { quadrant: "south_west", laneId: "std-manoeuvre-sw",
+        start: { x: 8, y: 10 }, end: { x: 20, y: 10 }, widthInches: 100 / 25.4 },
+      { quadrant: "south_east", laneId: "std-manoeuvre-se",
+        start: { x: 34, y: 10 }, end: { x: 46, y: 10 }, widthInches: 100 / 25.4 },
+      { quadrant: "north_west", laneId: "std-manoeuvre-nw",
+        start: { x: 8, y: 26 }, end: { x: 20, y: 26 }, widthInches: 100 / 25.4 },
+      { quadrant: "north_east", laneId: "std-manoeuvre-ne",
+        start: { x: 34, y: 26 }, end: { x: 46, y: 26 }, widthInches: 100 / 25.4 },
+    ],
+    fireLanes: [
+      { laneId: "std-fire-west", start: { x: 21, y: 0 },
+        end: { x: 21, y: 36 }, widthInches: 6 },
+      { laneId: "std-fire-east", start: { x: 33, y: 0 },
+        end: { x: 33, y: 36 }, widthInches: 6 },
+    ],
+    rulesTruth: "official_balanced_terrain_setup_plan",
+    trainingTruth: false,
+  };
+}
+
+function terrainBoardRows(artifacts, plan) {
+  const planById = new Map(plan.terrainPieces.map((entry) => (
+    [entry.terrainPieceId, entry])));
+  return artifacts.certificate.terrainPieces.map((entry) => {
+    const source = planById.get(entry.terrainPieceId);
+    const runtime = artifacts.terrainPieces.find((value) => value.id
+      === entry.terrainPieceId);
+    return {
+      ...clone(runtime),
+      id: entry.terrainPieceId, terrainId: entry.terrainPieceId,
+      terrainKind: entry.terrainKind, size: entry.size,
+      footprint: clone(entry.footprint), originalFootprint: clone(entry.originalFootprint),
+      elevation: entry.heightTier, heightTier: entry.heightTier,
+      standableHorizontalSurface: entry.standableHorizontalSurface,
+      elevationSurface: entry.standableHorizontalSurface,
+      impassable: entry.terrainKind === "impassable",
+      openings: clone(source?.openings || []),
+      accessPoints: clone(source?.accessPoints || []),
+      terrainHash: runtime?.terrainHash, isRemoved: false,
+      rulesTruth: runtime?.rulesTruth,
+      trainingTruth: false,
+    };
+  });
 }
 
 export const OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1 = deepFreeze({
@@ -474,20 +599,38 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     missionDeploymentDraftDataBundle: draftBundle,
     missionDeploymentDraftState: draft,
   });
-  const terrainLedger = createOfficialTerrainHeightTierLedgerV1({
+  const balancedTerrainRulesDataBundle =
+    createOfficialBalancedTerrainRulesDataBundleV1({
+      dataset, deploymentGeometryDataBundle: geometryBundle,
+    });
+  const terrainPlan = clone(input.terrainPlan
+    || createOfficialStandard2000BalancedTerrainPlanV1());
+  const terrainArtifacts = certifyOfficialBalancedTerrainSetupV1({
     deploymentGeometryBinding: geometryBinding,
-    terrainPieces: clone(input.terrainPieces || []),
+    deploymentGeometryDataBundle: geometryBundle,
+    balancedTerrainRulesDataBundle,
+    setupPlan: terrainPlan,
   });
-  const markerPlacement = finalizeOfficialMissionMarkerPlacementV1({
+  verifyOfficialBalancedTerrainArtifactsV1({ ...terrainArtifacts,
     deploymentGeometryBinding: geometryBinding,
-    terrainHeightTierLedger: terrainLedger,
+    balancedTerrainRulesDataBundle,
   });
+  const terrainLedger = terrainArtifacts.terrainHeightTierLedger;
+  const markerPlacement = terrainArtifacts.missionMarkerPlacement;
+  const currentProductUnitRecordKeys = dataset.recordIndex.filter((entry) => (
+    entry.recordType === "unit"
+      && entry.authorityDisposition === "official_current_product_candidate"
+  )).map((entry) => entry.recordKey).sort((left, right) => left.localeCompare(right));
   const gameplayBundle = createOfficialGameplayDataBundleV1({
     snapshot, dataset,
     unitRecordKeys: [...new Set(SIDE_KEYS.flatMap((sideKey) => (
       recipes[sideKey].units.map((entry) => entry.recordKey))))],
     missionRecordKey,
     reserveDeployData: true,
+  });
+  const currentProductGameplayBundle = createOfficialMatchGameplayDataBundleV2({
+    snapshot, dataset, missionDeploymentDraftDataBundle: draftBundle,
+    missionRecordKey, unitRecordKeys: currentProductUnitRecordKeys,
   });
   const legacyMissionBinding = createOfficialMissionSetupBindingV1({
     gameplayDataBundle: gameplayBundle,
@@ -496,7 +639,30 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     seatColorAssignment: draft.colourByPlayer,
   });
   const modelGeometryBundle = createOfficialModelBaseGeometryDataBundleV1({ dataset });
+  const attackProfileCatalogue = createOfficialAttackProfileCatalogueV1({
+    snapshot, dataset, recordKeys: currentProductUnitRecordKeys,
+  });
+  const attackProfileCatalogueV2 = createOfficialAttackProfileCatalogueV2({
+    previousCatalogue: attackProfileCatalogue,
+  });
+  const terrainLosDataBundle = createOfficialTerrainLosDataBundleV1({ dataset });
+  const terrainElevationAgreement = createOfficialTerrainElevationAgreementV1({
+    supportRelations: [],
+  });
   const unitSupplyBundle = createOfficialUnitCardSupplyDataBundleV1({ dataset });
+  const cardBuildPaymentDataBundle = createOfficialCardBuildPaymentDataBundleV1({ dataset });
+  const summonDataBundle = createOfficialSummonDataBundleV1({ dataset });
+  const respawnMorphDataBundle = createOfficialRespawnMorphDataBundleV1({ dataset });
+  const battlefieldTokenMarkerRulesDataBundle =
+    createOfficialBattlefieldTokenMarkerRulesDataBundleV1({
+      dataset, deploymentGeometryDataBundle: geometryBundle,
+    });
+  const battlefieldTokenMarkerRegistry = createOfficialBattlefieldTokenMarkerRegistryV1({
+    battlefieldTokenMarkerRulesDataBundle,
+    deploymentGeometryBinding: geometryBinding,
+  });
+  const battlefieldAssetComponentProfile =
+    createOfficialBattlefieldAssetComponentProfileV1();
   const reserveLifecycleBundle = createOfficialReserveLifecycleDataBundleV1({
     dataset, gameplayDataBundle: gameplayBundle,
   });
@@ -523,12 +689,18 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     officialMissionDeploymentDraftDataBundle: draftBundle,
     officialDeploymentGeometryDataBundle: geometryBundle,
     officialDeploymentGeometryBinding: geometryBinding,
+    officialBalancedTerrainRulesDataBundle: balancedTerrainRulesDataBundle,
+    officialBalancedTerrainSetupCertificate: terrainArtifacts.certificate,
     officialTerrainHeightTierLedger: terrainLedger,
     officialMissionMarkerPlacement: markerPlacement,
     officialMissionSetupBinding: legacyMissionBinding,
     officialGameplayDataBundle: gameplayBundle,
-    officialCombatProfileBundle: gameplayBundle.combatProfileBundle,
+    officialCurrentProductGameplayDataBundle: currentProductGameplayBundle,
+    officialCombatProfileBundle: currentProductGameplayBundle.combatProfileBundle,
+    officialAttackProfileCatalogue: attackProfileCatalogue,
+    officialAttackProfileCatalogueV2: attackProfileCatalogueV2,
     officialModelBaseGeometryDataBundle: modelGeometryBundle,
+    officialTerrainLosDataBundle: terrainLosDataBundle,
     officialRosterDisclosureDataBundle: rosterBundle,
     officialUnitCompositionUpgradeDataBundle: compositionBundle,
     officialArmyResourceBudgetDataBundle: compositionBundle.armyResourceBudgetDataBundle,
@@ -536,6 +708,13 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
       compositionBundle.armyResourceBudgetDataBundle.factionArmyEligibilityDataBundle,
     officialUnitCardSupplyDataBundle: unitSupplyBundle,
     officialReserveLifecycleDataBundle: reserveLifecycleBundle,
+    officialCardBuildPaymentDataBundle: cardBuildPaymentDataBundle,
+    officialSummonDataBundle: summonDataBundle,
+    officialRespawnMorphDataBundle: respawnMorphDataBundle,
+    officialBattlefieldTokenMarkerRulesDataBundle:
+      battlefieldTokenMarkerRulesDataBundle,
+    officialBattlefieldTokenMarkerRegistry: battlefieldTokenMarkerRegistry,
+    officialBattlefieldAssetComponentProfile: battlefieldAssetComponentProfile,
     armyBuildingEngagementScale: scaleAgreement, engagementScale: "Standard",
     armyBuildingConfigurationBySide: recipes,
     armyResourceBudgetsBySide: Object.fromEntries(SIDE_KEYS.map((sideKey) => [
@@ -566,12 +745,17 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
       deploymentName: draft.selectedDeployment.profile.name,
       deploymentImageUrl: draft.selectedDeployment.profile.frontUrl,
       mapSourceType: "official_current_deployment_card",
-      terrain: terrainLedger.terrainPieces.map((entry) => ({
-        id: entry.terrainPieceId, terrainId: entry.terrainPieceId,
-        elevation: entry.heightTier, footprint: clone(entry.footprint),
-        impassable: entry.impassable, isRemoved: false, trainingTruth: false,
-      })),
-      accessPoints: [], tokens: [], markers: [], effectMarkers: [],
+      terrain: terrainBoardRows(terrainArtifacts, terrainPlan),
+      specialTerrainAgreement: terrainArtifacts.specialTerrainAgreement,
+      terrainElevationAgreement,
+      accessPoints: terrainArtifacts.specialTerrainAgreement.terrainEntries
+        .flatMap((terrainEntry) => terrainEntry.accessPoints.map((entry) => ({
+          id: entry.accessPointId, accessPointId: entry.accessPointId,
+          role: entry.role, footprint: clone(entry.footprint),
+          connects: clone(entry.connects), connectsElevations: clone(entry.connects),
+          terrainId: terrainEntry.terrainId, trainingTruth: false,
+        }))),
+      tokens: [], markers: [], effectMarkers: [],
       missionMarkers: markerPlacement.missionMarkers.map((entry) => ({
         id: `mission-marker-${entry.number}`, number: entry.number,
         xInches: entry.coordinate.x, yInches: entry.coordinate.y,
@@ -607,11 +791,12 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     gameOver: false, terminal: false, winner: "", terminalReason: "", log: [],
     eligibleForTraining: false, trainingTruth: false,
   };
-  const missionCatalogue = createOfficialMissionEffectCatalogueV1({
-    missionDeploymentDraftDataBundle: draftBundle,
-  });
   const missionRuntime = createOfficialMissionRuntimeV2({
-    missionEffectCatalogue: missionCatalogue,
+    missionEffectCatalogue: currentProductGameplayBundle.missionEffectCatalogue,
+  });
+  state.officialMissionRuntimeDescriptor = missionRuntime.descriptor;
+  state.supplyLossLedger = createOfficialSupplyLossLedgerV1({
+    round: 1, rulesRuntimeHash: missionRuntime.descriptor.runtimeHash,
   });
   state = clone(missionRuntime.initialize({
     state, missionRecordKey,
@@ -635,13 +820,17 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
   state.officialActionRouteCatalogue = createOfficialStandardActionRouteCatalogueV1({
     dataset, state,
   });
-  state.officialMissionEffectCatalogue = missionCatalogue;
+  const actionRuntimeComposition = composeOfficialCurrentProductActionRuntimeV1({
+    dataset, state,
+  });
+  state = actionRuntimeComposition.state;
+  state.officialMissionEffectCatalogue = currentProductGameplayBundle.missionEffectCatalogue;
   state.officialMissionRuntimeDescriptor = missionRuntime.descriptor;
   const dependencies = {
     sourceSnapshot: { artifactId: "official-development-tranche-command-center-snapshot",
       content: snapshot },
-    dataSnapshot: { artifactId: "official-standard-2000-gameplay-data-v1",
-      content: gameplayBundle },
+    dataSnapshot: { artifactId: "official-standard-2000-gameplay-data-v2",
+      content: currentProductGameplayBundle },
     geometryArtifact: { artifactId: "official-standard-selected-deployment-geometry-v1",
       content: { geometryBinding, terrainLedger, markerPlacement,
         missionRuntimeDescriptor: missionRuntime.descriptor } },
@@ -662,12 +851,17 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
       mineralSpentBySide: Object.fromEntries(SIDE_KEYS.map((sideKey) => [
         sideKey, audits[sideKey].armyResourceBudgetResult.mineralSpent,
       ])),
+      maximumVespenePerSide: 200,
+      vespeneSpentBySide: Object.fromEntries(SIDE_KEYS.map((sideKey) => [
+        sideKey, audits[sideKey].armyResourceBudgetResult.vespeneSpent,
+      ])),
       rosterHashBySide: Object.fromEntries(SIDE_KEYS.map((sideKey) => [
         sideKey, registry.rostersByPlayer[sideKey].rosterHash,
       ])),
       allArmyListUnitsBeginInReserves: true,
       missionRuntimeHash: missionRuntime.descriptor.runtimeHash,
-      missionEffectCatalogueHash: missionCatalogue.catalogueHash,
+      missionEffectCatalogueHash:
+        currentProductGameplayBundle.missionEffectCatalogue.catalogueHash,
       rosterVisibility: visibility.rosterVisibility,
       selectedMissionRecordKey: missionRecordKey,
       selectedDeploymentRecordKey: deploymentRecordKey,
@@ -678,8 +872,19 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
       actionRouteCatalogueHash: state.officialActionRouteCatalogue.catalogueHash,
       fieldedActionRouteDenominatorComplete: true,
       genericDeploymentExecutorReady: true,
-      genericDeploymentExecutorOwner: "official-standard-reserve-deploy-adapter-v1",
-      genericDeploymentExecutorProductionReady: false,
+      genericDeploymentExecutorOwner:
+        state.officialSelectedRosterSpatialRuntimeDescriptor.runtimeId,
+      genericDeploymentExecutorProductionReady: true,
+      balancedTerrainCertificateHash: terrainArtifacts.certificate.certificateHash,
+      balancedTerrainPieceCount: terrainArtifacts.terrainPieces.length,
+      currentProductActionRuntimeComposition: actionRuntimeComposition.evidence,
+      currentProductAbilityExactCount:
+        state.officialCurrentProductAbilityDenominator.summary.executableExact,
+      currentProductAbilityPendingCount:
+        state.officialCurrentProductAbilityDenominator.summary.pendingFamilyAdapter,
+      currentProductUnitRecordCount: currentProductUnitRecordKeys.length,
+      currentProductAttackProfileCount: attackProfileCatalogue.profiles.length,
+      completeMatchDryRunPassed: false,
       trainingTruth: false,
     }, trainingTruth: false,
   };
@@ -690,26 +895,57 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
 }
 
 export function verifyOfficialStandardRoomInitialStateAuthorityV1(authority) {
+  const state = authority?.state;
+  const evidence = authority?.compositionEvidence;
   if (!object(authority)
     || authority.schema !== OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA
     || authority.version !== OFFICIAL_STANDARD_ROOM_FACTORY_VERSION
     || authority.source !== "server_factory"
     || authority.receiptHash !== hashStarcraftTmgContract(
       without(authority, ["receiptHash"]))
-    || authority.state?.engagementScale !== "Standard"
-    || authority.state?.pieces?.length < 2
-    || authority.state.pieces.some((piece) => (
+    || state?.engagementScale !== "Standard"
+    || state?.board?.widthInches !== 54 || state?.board?.heightInches !== 36
+    || state?.pieces?.length !== 15
+    || state.pieces.some((piece) => (
       piece.isOnField !== false || piece.isInReserves !== true))
-    || authority.compositionEvidence?.mineralSpentBySide?.player1 !== 2000
-    || authority.compositionEvidence?.mineralSpentBySide?.player2 !== 2000
-    || authority.compositionEvidence?.allArmyListUnitsBeginInReserves !== true
-    || authority.compositionEvidence?.genericDeploymentExecutorReady !== true
-    || authority.compositionEvidence?.genericDeploymentExecutorProductionReady !== false
-    || authority.compositionEvidence?.actionRouteCatalogueHash
-      !== authority.state?.officialActionRouteCatalogue?.catalogueHash
-    || !HASH_PATTERN.test(String(authority.compositionEvidence?.missionRuntimeHash || ""))
+    || state?.officialBalancedTerrainSetupCertificate?.balancedTerrainCertified !== true
+    || state?.board?.terrain?.length !== 9
+    || evidence?.mineralSpentBySide?.player1 !== 2000
+    || evidence?.mineralSpentBySide?.player2 !== 2000
+    || evidence?.maximumVespenePerSide !== 200
+    || SIDE_KEYS.some((sideKey) => !Number.isFinite(
+      evidence?.vespeneSpentBySide?.[sideKey])
+      || evidence.vespeneSpentBySide[sideKey] < 0
+      || evidence.vespeneSpentBySide[sideKey] > 200)
+    || evidence?.allArmyListUnitsBeginInReserves !== true
+    || evidence?.genericDeploymentExecutorReady !== true
+    || evidence?.genericDeploymentExecutorProductionReady !== true
+    || evidence?.actionRouteCatalogueHash
+      !== state?.officialActionRouteCatalogue?.catalogueHash
+    || evidence?.balancedTerrainCertificateHash
+      !== state?.officialBalancedTerrainSetupCertificate?.certificateHash
+    || evidence?.balancedTerrainPieceCount !== 9
+    || evidence?.currentProductAbilityExactCount !== 252
+    || evidence?.currentProductAbilityPendingCount !== 0
+    || evidence?.currentProductUnitRecordCount !== 26
+    || evidence?.currentProductAttackProfileCount !== 51
+    || evidence?.completeMatchDryRunPassed !== false
+    || !HASH_PATTERN.test(String(evidence?.missionRuntimeHash || ""))
     || authority.trainingTruth !== false) {
     fail("STANDARD_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
   }
+  verifyOfficialCurrentProductActionRuntimeCompositionV1(
+    state, evidence.currentProductActionRuntimeComposition,
+  );
+  verifyOfficialSummonDataBundleV1(state.officialSummonDataBundle);
+  verifyOfficialRespawnMorphDataBundleV1(state.officialRespawnMorphDataBundle);
+  verifyOfficialBattlefieldAssetComponentProfileV1(
+    state.officialBattlefieldAssetComponentProfile,
+  );
+  verifyOfficialBattlefieldTokenMarkerRegistryV1(
+    state.officialBattlefieldTokenMarkerRegistry,
+    state.officialBattlefieldTokenMarkerRulesDataBundle,
+    state.officialDeploymentGeometryBinding,
+  );
   return true;
 }

@@ -62,7 +62,7 @@ import {
 
 export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-melee-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "2.4.0";
+export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "2.5.0";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_DECLARATION_PARAMETER_KIND =
   "official_selected_roster_charge_declaration_v1";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_RESOLUTION_PARAMETER_KIND =
@@ -140,6 +140,15 @@ function modelRadius(model) {
   }
   return Math.round(width / 2);
 }
+function verifyDeclaredBase(model) {
+  const width = milli(model?.baseWidthInches);
+  const depth = milli(model?.baseDepthInches);
+  const shape = String(model?.baseShape || "").toLowerCase();
+  if (width <= 0 || depth <= 0 || !["round", "rectangle"].includes(shape)
+    || (shape === "round" && Math.abs(width - depth) > TOLERANCE)) {
+    fail("SELECTED_MELEE_BASE_SCOPE_UNSUPPORTED", String(model?.id || ""));
+  }
+}
 function centreDistance(left, right) {
   return Math.hypot(right.xMilliInches - left.xMilliInches,
     right.yMilliInches - left.yMilliInches);
@@ -199,7 +208,7 @@ function verifyRuntimeState(state) {
       || (activePiece(piece) && activeModels(piece).length !== Number(piece.currentModels))) {
       fail("SELECTED_MELEE_MODEL_DENOMINATOR_INVALID", piece.id);
     }
-    for (const model of piece.models) modelRadius(model);
+    for (const model of piece.models) verifyDeclaredBase(model);
   }
   return catalogueV2;
 }

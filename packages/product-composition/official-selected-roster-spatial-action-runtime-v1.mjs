@@ -30,18 +30,12 @@ import { projectOfficialBattlefieldAssetFamilyModifiersV1 } from
 
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-spatial-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION = "1.3.0";
+export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION = "1.4.0";
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_PARAMETER_KIND =
   "official_selected_roster_spatial_path_v1";
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_PLAN_SCHEMA =
   "starcraft_tmg_official_selected_roster_spatial_plan_v1";
 
-const SELECTED_RECORD_KEYS = new Set([
-  "army_units:marine",
-  "army_units:kerrigan",
-  "army_units:kerrigan_swarm_raptor__zergling_",
-  "army_units:omega_worm",
-]);
 const ACTION_TYPES = Object.freeze(["deploy", "move", "run", "disengage"]);
 const MOVEMENT_ACTION_TYPES = new Set([
   "move", "run", "disengage", "charge", "close_ranks",
@@ -140,6 +134,17 @@ function modelRadius(model) {
     fail("SELECTED_SPATIAL_BASE_SCOPE_UNSUPPORTED", String(model?.id || ""));
   }
   return Math.round(width / 2);
+}
+function verifyDeclaredBase(model) {
+  const width = milli(model?.baseWidthInches,
+    "SELECTED_SPATIAL_BASE_INVALID", String(model?.id || ""));
+  const depth = milli(model?.baseDepthInches,
+    "SELECTED_SPATIAL_BASE_INVALID", String(model?.id || ""));
+  const shape = String(model?.baseShape || "").toLowerCase();
+  if (width <= 0 || depth <= 0 || !["round", "rectangle"].includes(shape)
+    || (shape === "round" && Math.abs(width - depth) > TOLERANCE)) {
+    fail("SELECTED_SPATIAL_BASE_SCOPE_UNSUPPORTED", String(model?.id || ""));
+  }
 }
 function canonicalRotation(value) {
   const parsed = Number(value || 0);
@@ -307,7 +312,8 @@ function modelProfiles(piece) {
 }
 function verifyRuntimeState(state) {
   if (!object(state) || !Array.isArray(state.pieces) || !object(state.board)
-    || state.engagementScale !== "Skirmish" || !SIDE_KEYS.has(state.activeSideKey)
+    || !["Skirmish", "Standard"].includes(state.engagementScale)
+    || !SIDE_KEYS.has(state.activeSideKey)
     || state.gameOver === true || state.terminal === true) {
     fail("SELECTED_SPATIAL_STATE_INVALID");
   }
@@ -315,8 +321,7 @@ function verifyRuntimeState(state) {
   verifyOfficialModelBaseGeometryDataBundleV1(state.officialModelBaseGeometryDataBundle);
   verifyOfficialTerrainLosDataBundleV1(state.officialTerrainLosDataBundle);
   const live = state.pieces.filter(livePiece);
-  if (live.length < 1 || live.some((piece) => !SELECTED_RECORD_KEYS.has(
-    piece.officialUnitRecordKey))) {
+  if (live.length < 1) {
     fail("SELECTED_SPATIAL_ROSTER_SCOPE_INVALID");
   }
   for (const piece of live) {
@@ -326,11 +331,13 @@ function verifyRuntimeState(state) {
       fail("SELECTED_SPATIAL_MODEL_DENOMINATOR_INVALID", piece.id);
     }
     for (const model of piece.models.filter((entry) => entry.isDestroyed !== true)) {
-      modelRadius(model);
+      verifyDeclaredBase(model);
     }
   }
-  if (milli(state.board.widthInches) !== 36000
-    || milli(state.board.heightInches) !== 36000
+  const expectedBattlefield = state.engagementScale === "Standard"
+    ? [54000, 36000] : [36000, 36000];
+  if (milli(state.board.widthInches) !== expectedBattlefield[0]
+    || milli(state.board.heightInches) !== expectedBattlefield[1]
     || !object(state.board.specialTerrainAgreement)) {
     fail("SELECTED_SPATIAL_BOARD_SCOPE_INVALID");
   }
@@ -1335,7 +1342,7 @@ export function createOfficialSelectedRosterSpatialActionRuntimeV1(state) {
     unsupportedSelectedSpatialRouteCount: 0,
     routes,
     actions: [...ACTION_TYPES],
-    geometryScope: "selected_500_skirmish_round_bases_certified_terrain_v1",
+    geometryScope: "current_product_scale_bound_bases_certified_terrain_v1",
     arbitraryRosterClosureClaimed: false,
     successfulPlacementPathExact: true,
     noLegalDisengagePlacementCertificateInterfaceRequired: true,
@@ -1361,10 +1368,11 @@ export function verifyOfficialSelectedRosterSpatialRuntimeDescriptorV1(descripto
     || descriptor.runtimeVersion !== OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION
     || descriptor.runtimeHash !== hashStarcraftTmgContract(
       without(descriptor, ["runtimeHash"]))
-    || descriptor.selectedUnitCount !== 5
-    || descriptor.selectedSpatialRouteCount !== 20
+    || !Number.isSafeInteger(descriptor.selectedUnitCount)
+    || descriptor.selectedUnitCount < 1
+    || descriptor.selectedSpatialRouteCount !== descriptor.selectedUnitCount * 4
     || descriptor.unsupportedSelectedSpatialRouteCount !== 0
-    || descriptor.routes?.length !== 20
+    || descriptor.routes?.length !== descriptor.selectedSpatialRouteCount
     || descriptor.legalSpacePreviewApplyAndQueryShareInstantiation !== true
     || descriptor.sourceRefreshPerformed !== false
     || descriptor.trainingTruth !== false) {
