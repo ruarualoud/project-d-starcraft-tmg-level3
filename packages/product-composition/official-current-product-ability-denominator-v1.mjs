@@ -5,7 +5,7 @@ import { verifyOfficialAbilityEffectIrCatalogueV1 } from
 
 export const OFFICIAL_CURRENT_PRODUCT_ABILITY_DENOMINATOR_SCHEMA =
   "starcraft_tmg_official_current_product_ability_denominator_v1";
-export const OFFICIAL_CURRENT_PRODUCT_ABILITY_DENOMINATOR_VERSION = "1.6.0";
+export const OFFICIAL_CURRENT_PRODUCT_ABILITY_DENOMINATOR_VERSION = "1.7.0";
 
 const DELIVERY_SLICE_BY_ADAPTER = Object.freeze({
   "starcraft-tmg-official-selected-roster-ability-runtime-v1": 229,
@@ -15,6 +15,7 @@ const DELIVERY_SLICE_BY_ADAPTER = Object.freeze({
   "official-melee-family-adapter-v1": 235,
   "official-reaction-family-adapter-v1": 236,
   "official-battlefield-asset-family-adapter-v1": 237,
+  "official-unit-lifecycle-family-adapter-v1": 238,
 });
 
 const OWNER_BY_SLICE = Object.freeze({

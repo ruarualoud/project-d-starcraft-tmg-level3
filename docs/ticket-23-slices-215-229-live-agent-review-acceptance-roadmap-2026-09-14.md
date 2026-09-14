@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–237 完成；Ticket 23 为 `23/36`，剩余 `13` 片
+状态：Slices 215–238 完成；Ticket 23 为 `24/36`，剩余 `12` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -57,7 +57,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 235 | **Complete:** 全卡池 Fight、Charge、逐模型 IMPACT 与近战效果接线 | 40 new / owner pending 0；目标分母 175/77；三轮门停于前置冻结数据集身份，Medium 跟踪 | 21/36 |
 | 236 | **Complete:** 24 条 Reaction、12 类触发窗口、双方优先级、每激活/每回合限制及支付接线 | 第 2 轮通过 24/24、Open→Replay；目标分母 199/53 | 22/36 |
 | 237 | **Complete:** Token、Marker、Indicator、Structure、Creep、Pylon 与实体组件生命周期接线 | 30 new / owner pending 0；分母 229 exact / 23 pending；圆形 Creep Tumor 28mm、Force Field 80mm、Shade 40mm | 23/36 |
-| 238 | Summon、Morph、Respawn、返回 Reserve、设置/创建/替换模型与 Supply 生命周期接线 | unit lifecycle family 门一次；当前 pending 11 | 24/36 |
+| 238 | **Complete:** Summon、Respawn、返回 Reserve、设置/创建 Unit/模型与 Supply 生命周期接线，并承接 Shade/Indicator/Pylon/Omega 部署机会 | 第 2 轮通过：11 new / owner pending 0；分母 240 exact / 12 pending；实际 3 模型 Roachling Apply/Replay | 24/36 |
 | 239 | 任务控制、计分、先后手、Pass 和回合阶段系统动作接线 | match lifecycle family 门一次；当前 pending 2 | 25/36 |
 | 240 | Terran 当前单位、阵营与战术卡的独特能力余项收口 | Terran gap gate 一次；当前 pending 4 | 26/36 |
 | 241 | Zerg 当前单位、阵营与战术卡的独特能力余项收口 | Zerg gap gate 一次；当前 pending 2 | 27/36 |
@@ -334,6 +334,22 @@ fixture 身份拒绝。因此新增模块完成并可解析，但没有新的 Fa
 
 - `docs/ticket-23-slice-234-current-product-ranged-family-closure-2026-09-14.md`
 - `docs/ticket-23-slice-235-current-product-melee-family-closure-2026-09-14.md`
+
+## Slices 236–238 收口
+
+Slice 236 把 24 条 Reaction 接入双方优先级、资源支付、每激活/每回合限制和 12 类触发
+窗口；Slice 237 把 30 条 Token/Marker/Indicator/Structure/Creep/Pylon 定义接入实体组件和
+战斗消费者；Slice 238 再把 11 条 pending Unit lifecycle 定义接入召唤、重生、召回、
+Reserve 和跨 family 回合末机会。当前产品账本为 `240 exact / 12 pending`，owner 236–238
+均为 pending 0。
+
+Slice 238 聚焦门第 1 轮正确拒绝只有 1 Biomass、却尝试支付 2 Biomass 的旧 500 分夹具，
+并发现 Omega Network 应按每轮累计 Supply≤2，而非首个部署后锁死；第 2 轮以合法资源
+通过 11-route、三模型 Roachling Preview→Apply→Replay。闭包记录：
+
+- `docs/ticket-23-slice-236-current-product-reaction-family-closure-2026-09-14.md`
+- `docs/ticket-23-slice-237-current-product-battlefield-asset-family-closure-2026-09-14.md`
+- `docs/ticket-23-slice-238-current-product-unit-lifecycle-family-closure-2026-09-14.md`
 
 ## 验证与成本规则
 

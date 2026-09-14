@@ -388,7 +388,9 @@ function paymentSelections(state, sideKey, resourceType, resourceCost) {
 function routeInstances(state, route) {
   if (route.sourceKind === "unit_feature") {
     return (state.pieces || []).filter((piece) => piece.officialUnitRecordKey === route.recordKey
-      && activePiece(piece) && fieldedFeature(piece, route)).map((piece) => ({
+      && activePiece(piece) && fieldedFeature(piece, route)
+      && (piece.specialAbilitiesSuppressedUntilRoundEnd !== true
+        || route.effectKind === "structure")).map((piece) => ({
       sourceInstanceId: piece.id, sideKey: piece.sideKey, sourcePiece: piece,
     }));
   }

@@ -54,6 +54,11 @@ import { createOfficialModelBaseGeometryDataBundleV1 } from
   "../source-data/official-model-base-geometry-data-bundle-v1.mjs";
 import { createOfficialRosterDisclosureDataBundleV1 } from
   "../source-data/official-roster-disclosure-data-bundle-v1.mjs";
+import { createOfficialRespawnMorphDataBundleV1,
+  verifyOfficialRespawnMorphDataBundleV1 } from
+  "../source-data/official-respawn-morph-data-bundle-v1.mjs";
+import { createOfficialSummonDataBundleV1, verifyOfficialSummonDataBundleV1 } from
+  "../source-data/official-summon-data-bundle-v1.mjs";
 import { createOfficialTerrainLosDataBundleV1 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
 import { createOfficialUnitCardSupplyDataBundleV1 } from
@@ -112,6 +117,12 @@ import {
   verifyOfficialBattlefieldAssetFamilySourceBundleV1,
 } from "./official-battlefield-asset-family-adapter-v1.mjs";
 import {
+  createOfficialUnitLifecycleFamilyAdapterV1,
+  createOfficialUnitLifecycleFamilyDefinitionBindingsV1,
+  createOfficialUnitLifecycleFamilySourceBundleV1,
+  verifyOfficialUnitLifecycleFamilySourceBundleV1,
+} from "./official-unit-lifecycle-family-adapter-v1.mjs";
+import {
   createOfficialSelectedRosterMeleeActionRuntimeV1,
   verifyOfficialSelectedRosterMeleeRuntimeDescriptorV1,
 } from "./official-selected-roster-melee-action-runtime-v1.mjs";
@@ -134,7 +145,7 @@ import {
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
-export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "2.2.0";
+export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "2.3.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MISSION_RECORD_KEY = "faction_cards:mission_hold_position__skirmish_";
@@ -431,6 +442,8 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   });
   const unitSupplyBundle = createOfficialUnitCardSupplyDataBundleV1({ dataset });
   const cardBuildPaymentDataBundle = createOfficialCardBuildPaymentDataBundleV1({ dataset });
+  const summonDataBundle = createOfficialSummonDataBundleV1({ dataset });
+  const respawnMorphDataBundle = createOfficialRespawnMorphDataBundleV1({ dataset });
   const battlefieldTokenMarkerRulesDataBundle =
     createOfficialBattlefieldTokenMarkerRulesDataBundleV1({
       dataset, deploymentGeometryDataBundle: geometryBundle,
@@ -489,6 +502,8 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
       compositionBundle.armyResourceBudgetDataBundle.factionArmyEligibilityDataBundle,
     officialUnitCardSupplyDataBundle: unitSupplyBundle,
     officialCardBuildPaymentDataBundle: cardBuildPaymentDataBundle,
+    officialSummonDataBundle: summonDataBundle,
+    officialRespawnMorphDataBundle: respawnMorphDataBundle,
     officialBattlefieldTokenMarkerRulesDataBundle:
       battlefieldTokenMarkerRulesDataBundle,
     officialBattlefieldTokenMarkerRegistry: battlefieldTokenMarkerRegistry,
@@ -703,11 +718,31 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   const battlefieldAssetBindings =
     createOfficialBattlefieldAssetFamilyDefinitionBindingsV1(
       state.officialBattlefieldAssetFamilySourceBundle);
-  state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+  const unitLifecycleBaselineCatalogue = createOfficialAbilityEffectIrCatalogueV1({
     dataset,
     executionBindings: [...selectedAbilityBindings, ...relocationBindings,
       ...characteristicStatusBindings, ...rangedBindings, ...meleeBindings,
       ...reactionBindings, ...battlefieldAssetBindings],
+  });
+  const unitLifecycleBaselineDenominator =
+    createOfficialCurrentProductAbilityDenominatorV1({
+      catalogue: unitLifecycleBaselineCatalogue,
+    });
+  state.officialUnitLifecycleFamilySourceBundle =
+    createOfficialUnitLifecycleFamilySourceBundleV1({
+      catalogue: unitLifecycleBaselineCatalogue,
+      denominator: unitLifecycleBaselineDenominator,
+      summonDataBundle,
+      respawnMorphDataBundle,
+    });
+  const unitLifecycleBindings =
+    createOfficialUnitLifecycleFamilyDefinitionBindingsV1(
+      state.officialUnitLifecycleFamilySourceBundle);
+  state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+    dataset,
+    executionBindings: [...selectedAbilityBindings, ...relocationBindings,
+      ...characteristicStatusBindings, ...rangedBindings, ...meleeBindings,
+      ...reactionBindings, ...battlefieldAssetBindings, ...unitLifecycleBindings],
   });
   const abilityEffectRuntime = createOfficialAbilityEffectRuntimeV1({
     catalogue: state.officialAbilityEffectIrCatalogue,
@@ -724,7 +759,9 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     createOfficialReactionFamilyAdapterV1(
       state.officialReactionFamilySourceBundle),
     createOfficialBattlefieldAssetFamilyAdapterV1(
-      state.officialBattlefieldAssetFamilySourceBundle)],
+      state.officialBattlefieldAssetFamilySourceBundle),
+    createOfficialUnitLifecycleFamilyAdapterV1(
+      state.officialUnitLifecycleFamilySourceBundle)],
   });
   verifyOfficialAbilityEffectRuntimeDescriptorV1(abilityEffectRuntime.descriptor);
   state.officialAbilityEffectRuntimeDescriptor = abilityEffectRuntime.descriptor;
@@ -804,6 +841,10 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         state.officialReactionFamilySourceBundle.bundleHash,
       battlefieldAssetFamilySourceBundleHash:
         state.officialBattlefieldAssetFamilySourceBundle.bundleHash,
+      unitLifecycleFamilySourceBundleHash:
+        state.officialUnitLifecycleFamilySourceBundle.bundleHash,
+      summonDataBundleHash: state.officialSummonDataBundle.bundleHash,
+      respawnMorphDataBundleHash: state.officialRespawnMorphDataBundle.bundleHash,
       battlefieldAssetComponentProfileHash:
         state.officialBattlefieldAssetComponentProfile.profileHash,
       battlefieldAssetKnownOfficialFootprintCount:
@@ -821,7 +862,7 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
       sourceRefreshPerformed: false,
       officialComponentEvidenceRefreshPerformed: true,
       repositoryFallbackUsed: false,
-      completeActionRuntimeDeferredToSlices: [238, 239, 240, 241, 242, 243],
+      completeActionRuntimeDeferredToSlices: [239, 240, 241, 242, 243],
       trainingTruth: false,
     },
     trainingTruth: false,
@@ -909,8 +950,13 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
     || evidence?.battlefieldAssetKnownOfficialFootprintCount !== 3
     || evidence?.currentProductUnitRecordCount !== 26
     || evidence?.currentProductAttackProfileCount !== 51
-    || evidence?.currentProductAbilityExactCount !== 229
-    || evidence?.currentProductAbilityPendingCount !== 23
+    || evidence?.unitLifecycleFamilySourceBundleHash
+      !== state?.officialUnitLifecycleFamilySourceBundle?.bundleHash
+    || evidence?.summonDataBundleHash !== state?.officialSummonDataBundle?.bundleHash
+    || evidence?.respawnMorphDataBundleHash
+      !== state?.officialRespawnMorphDataBundle?.bundleHash
+    || evidence?.currentProductAbilityExactCount !== 240
+    || evidence?.currentProductAbilityPendingCount !== 12
     || authority.trainingTruth !== false) {
     fail("SKIRMISH_500_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
   }
@@ -950,6 +996,11 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
   verifyOfficialBattlefieldAssetFamilySourceBundleV1(
     state.officialBattlefieldAssetFamilySourceBundle,
   );
+  verifyOfficialUnitLifecycleFamilySourceBundleV1(
+    state.officialUnitLifecycleFamilySourceBundle,
+  );
+  verifyOfficialSummonDataBundleV1(state.officialSummonDataBundle);
+  verifyOfficialRespawnMorphDataBundleV1(state.officialRespawnMorphDataBundle);
   verifyOfficialBattlefieldAssetComponentProfileV1(
     state.officialBattlefieldAssetComponentProfile,
   );
