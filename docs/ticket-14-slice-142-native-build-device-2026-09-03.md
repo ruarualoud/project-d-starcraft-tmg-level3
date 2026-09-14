@@ -61,3 +61,21 @@ evaluation/promotion. Completing those client surfaces will require a later
 package rebuild, while the credentials and Skill runtime remain server-side.
 
 No official-source refresh was performed.
+
+## 2026-09-14 current-product rebuild
+
+Ticket 20 完整产品旅程与 A-A 接线完成后，旧 9 月 3 日 APK 已不再代表当前产品。
+原生构建门因此改为稳定版本合同：继续严格固定 lock、pnpm/Expo/React Native、JDK/
+SDK/ABI、包名、权限、签名和是否内嵌 bundle；App/config/Metro 的当前内容 hash 写入
+每次收据，但不再拿历史 bundle 的精确字节阻止合法 UI 更新。
+
+同一构建命令一次成功：Android Metro `1772` modules、`48` assets；debug APK
+`97,459,894` bytes / `8627f521…928e`，standalone internal-preview APK
+`52,370,020` bytes / `7d2b2a71…2fd1`。16/16 包身份、SDK、双 ABI、权限、v2 签名和
+内嵌 JS 检查通过。可直接交付文件：
+`build/ticket-14-slice-142-native-v1/project-d-starcraft-tmg-internal-preview.apk`。
+
+ADB 已启动并返回空设备列表；没有实体设备，所以没有生成
+`android-device-receipt.json`，也没有把模拟器或 APK 扫描冒充设备通过。完整 Xcode
+仍不可用。Slice 142 继续保持 build-ready/device-open，Ticket 14 为 `15/16`。
+本次无来源刷新、Provider/模型调用或 token/费用。
