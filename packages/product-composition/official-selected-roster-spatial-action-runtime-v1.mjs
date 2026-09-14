@@ -8,6 +8,8 @@ import { OFFICIAL_DISENGAGE_CASUALTY_ACTION_ATOM_IDS } from
   "../rule-atoms/official-disengage-casualty-executor-v1.mjs";
 import { evaluateOfficialCoherencyPlacementV1 } from
   "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import { projectOfficialContextualSupplyValueV1 } from
+  "../rule-atoms/official-contextual-supply-projection-v1.mjs";
 import { OFFICIAL_RESERVE_DEPLOY_V5_ACTION_ATOM_IDS } from
   "../rule-atoms/official-reserve-deploy-executor-v5.mjs";
 import { OFFICIAL_STANDARD_MOVE_V5_ACTION_ATOM_IDS } from
@@ -28,7 +30,7 @@ import { projectOfficialBattlefieldAssetFamilyModifiersV1 } from
 
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-spatial-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION = "1.2.0";
+export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION = "1.3.0";
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_PARAMETER_KIND =
   "official_selected_roster_spatial_path_v1";
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_PLAN_SCHEMA =
@@ -346,17 +348,16 @@ function phaseReady(state, sideKey, actionType) {
   }
 }
 function effectiveDisengageSupply(state, piece) {
-  const profile = routeProfile(state, piece);
-  const commander = profile.routes.some((route) => (
-    route.sourceKind === "official_card_feature" && route.featureName === "Commander"
-  ));
-  return Number(piece.currentSupply) + (commander ? 1 : 0);
+  return projectOfficialContextualSupplyValueV1({ state, pieceId: piece.id,
+    context: "disengage_check" }).effectiveSupply;
 }
 function supplyAvailable(state, sideKey) {
   const capacity = Number(state.players?.[sideKey]?.supply || 0);
   const committed = state.pieces.filter((piece) => (
     piece.sideKey === sideKey && activePiece(piece)
-  )).reduce((sum, piece) => sum + Number(piece.currentSupply || 0), 0);
+  )).reduce((sum, piece) => sum + projectOfficialContextualSupplyValueV1({
+    state, pieceId: piece.id, context: "supply_pool_calculation",
+  }).effectiveSupply, 0);
   return { capacity, committed, available: Math.max(0, capacity - committed) };
 }
 function actionContext(state, sideKey, piece, actionType) {
@@ -378,7 +379,9 @@ function actionContext(state, sideKey, piece, actionType) {
       fail("SELECTED_SPATIAL_DEPLOY_REQUIRES_RESERVE", piece.id);
     }
     const supply = supplyAvailable(state, sideKey);
-    if (Number(piece.currentSupply) > supply.available) {
+    const requestedSupply = projectOfficialContextualSupplyValueV1({ state,
+      pieceId: piece.id, context: "supply_pool_calculation" }).effectiveSupply;
+    if (requestedSupply > supply.available) {
       fail("SELECTED_SPATIAL_DEPLOY_SUPPLY_UNAVAILABLE", piece.id);
     }
   } else {

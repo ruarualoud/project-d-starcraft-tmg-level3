@@ -3,6 +3,8 @@ import {
   getOfficialCombatProfileV1,
   verifyOfficialCombatProfileBundleV1,
 } from "../source-data/official-combat-profile-bundle-v1.mjs";
+import { projectOfficialContextualSupplyValueV1 } from
+  "./official-contextual-supply-projection-v1.mjs";
 
 export const OFFICIAL_MISSION_MARKER_CONTROL_KERNEL_V1_SCHEMA =
   "starcraft_tmg_official_mission_marker_control_kernel_v1";
@@ -240,10 +242,15 @@ function normalizeUnits(state, bundle, width, height) {
         ? "burrowed"
         : null;
     const inCoherency = unitInCoherency(piece, models);
+    const supplyProjection = projectOfficialContextualSupplyValueV1({
+      state, pieceId: id, context: "mission_marker_control",
+    });
     return {
       id,
       sideKey,
-      currentSupply: officialSupply,
+      baseSupply: officialSupply,
+      currentSupply: supplyProjection.effectiveSupply,
+      supplyProjectionHash: supplyProjection.projectionHash,
       isOnBattlefield: true,
       inCoherency,
       prohibitedStatus,
@@ -308,7 +315,9 @@ function markerResolution(marker, units) {
     if (evidence.eligible) {
       contestingUnitsBySide[unit.sideKey].push({
         unitId: unit.id,
+        baseSupply: unit.baseSupply,
         currentSupply: unit.currentSupply,
+        supplyProjectionHash: unit.supplyProjectionHash,
         eligibleModelIds: evidence.modelIds,
       });
     } else {

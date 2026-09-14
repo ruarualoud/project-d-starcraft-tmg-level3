@@ -7,6 +7,8 @@ import {
   evaluateOfficialBaseMeasurementV1,
   evaluateOfficialCoherencyPlacementV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import { projectOfficialContextualSupplyValueV1 } from
+  "../rule-atoms/official-contextual-supply-projection-v1.mjs";
 import { verifyOfficialAbilityEffectIrCatalogueV1 } from
   "../source-data/official-ability-effect-ir-v1.mjs";
 import { verifyOfficialModelBaseGeometryDataBundleV1 } from
@@ -16,7 +18,7 @@ import { verifyOfficialCurrentProductAbilityDenominatorV1 } from
 
 export const OFFICIAL_RELOCATION_FAMILY_ADAPTER_ID =
   "official-relocation-family-adapter-v1";
-export const OFFICIAL_RELOCATION_FAMILY_ADAPTER_VERSION = "1.0.0";
+export const OFFICIAL_RELOCATION_FAMILY_ADAPTER_VERSION = "1.1.0";
 export const OFFICIAL_RELOCATION_FAMILY_BUNDLE_SCHEMA =
   "starcraft_tmg_official_relocation_family_source_bundle_v1";
 export const OFFICIAL_RELOCATION_FAMILY_PARAMETER_KIND =
@@ -364,7 +366,8 @@ function supplyAvailable(state, sideKey) {
   const capacity = Number(state.players?.[sideKey]?.supply || 0);
   const committed = (state.pieces || []).filter((piece) => (
     piece.sideKey === sideKey && activePiece(piece))).reduce((sum, piece) => (
-    sum + Number(piece.currentSupply || 0)), 0);
+    sum + projectOfficialContextualSupplyValueV1({ state, pieceId: piece.id,
+      context: "supply_pool_calculation" }).effectiveSupply), 0);
   return Math.max(0, capacity - committed);
 }
 function priorBiologicalDeploy(state, sideKey, actorId) {
@@ -418,7 +421,9 @@ function routeAvailable(state, route, instance, actor) {
   if (route.actionKind === "deploy_from_reserves"
     || route.actionKind === "special_deploy") {
     if (!deployTimingAvailable(state, route, instance.sideKey, actor)) return false;
-    if (Number(actor.currentSupply || 0) > supplyAvailable(state, instance.sideKey)) {
+    const requestedSupply = projectOfficialContextualSupplyValueV1({ state,
+      pieceId: actor.id, context: "supply_pool_calculation" }).effectiveSupply;
+    if (requestedSupply > supplyAvailable(state, instance.sideKey)) {
       return false;
     }
     if (route.oneFriendlyBiologicalDeployPerRound === true

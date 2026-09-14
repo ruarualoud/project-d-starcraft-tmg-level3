@@ -7,11 +7,13 @@ import {
   verifyOfficialMissionEffectCatalogueV1,
 } from "../source-data/official-mission-effect-ir-v1.mjs";
 import { deriveOfficialEngagementGraphV2 } from "./official-engagement-graph-v2.mjs";
+import { projectOfficialContextualSupplyValueV1 } from
+  "./official-contextual-supply-projection-v1.mjs";
 import { verifyOfficialSupplyLossLedgerV1 } from "./official-supply-loss-ledger-v1.mjs";
 
 export const OFFICIAL_STANDARD_MISSION_RUNTIME_SCHEMA =
   "starcraft_tmg_official_standard_mission_runtime_v1";
-export const OFFICIAL_STANDARD_MISSION_RUNTIME_VERSION = "1.0.0";
+export const OFFICIAL_STANDARD_MISSION_RUNTIME_VERSION = "1.1.0";
 export const OFFICIAL_STANDARD_MISSION_RUNTIME_STATE_SCHEMA =
   "starcraft_tmg_official_standard_mission_runtime_state_v1";
 export const OFFICIAL_STANDARD_MISSION_ACTION_SCHEMA =
@@ -453,12 +455,17 @@ function quarterBreakdowns(state, context, control) {
       || Number(piece.currentModels || 0) < 1) continue;
     const sideKey = side(piece.sideKey);
     const quarter = whollyWithinQuarter(state, piece, context);
-    const currentSupply = safeInteger(piece.currentSupply,
+    const baseSupply = safeInteger(piece.currentSupply,
       "STANDARD_MISSION_QUARTER_SUPPLY_INVALID");
+    const supplyProjection = projectOfficialContextualSupplyValueV1({
+      state, pieceId: piece.id, context: "objective_completion",
+    });
+    const currentSupply = supplyProjection.effectiveSupply;
     const markerControlBonus = controllingUnitIds.has(piece.id) ? 1 : 0;
     if (quarter) totals[sideKey][quarter] += currentSupply + markerControlBonus;
-    unitRows.push({ unitId: piece.id, sideKey, quarter, currentSupply,
-      markerControlBonus, contributes: Boolean(quarter) });
+    unitRows.push({ unitId: piece.id, sideKey, quarter, baseSupply, currentSupply,
+      supplyProjectionHash: supplyProjection.projectionHash, markerControlBonus,
+      contributes: Boolean(quarter) });
   }
   const vp = { player1: 0, player2: 0 };
   const results = [];
