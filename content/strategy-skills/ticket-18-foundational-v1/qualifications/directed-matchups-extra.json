@@ -1,0 +1,300 @@
+{
+  "schema": "ticket18_directed_matchup_finalization_report_v1",
+  "ticket": 18,
+  "slice": 184,
+  "runId": "extra-matchup-final-v1-b1c7cfaf9aafd85cfb9f",
+  "recipeHash": "b1c7cfaf9aafd85cfb9f98c44313d5daae105d27377c0b3bddf2113c4dcede04",
+  "producerRunId": "extra-matchup-v13-6edcbedc895679a460cd",
+  "producerReportHash": "4f65d10390d409b18464547dd348be9abe6434b9262f1f2d592b2c29b5120605",
+  "sourceDirectionsAccepted": 4,
+  "sourceAxesAccepted": 20,
+  "sourceFieldsAccepted": 220,
+  "caseResults": 8,
+  "developmentResults": 4,
+  "heldoutResults": 4,
+  "decisionCasesPassed": true,
+  "formalMatchupSkillsCompleted": 4,
+  "skillHashes": [
+    "481cf06474d0598701ae7cacc9dcf5a7268e2f0e84bda74b97f5b56c5e6c64eb",
+    "14ad8ee42feb82194af2d1da207b9260e64c6f3d6d7693df86765dae0fbc9bda",
+    "dea45e9aba67a02597d4f5e95273478b5b3643c3e6cba048b4f05fb2e3e43e6e",
+    "d1d0fe69d6645363a825c5c066a30af04b8f2c12dd6c688194aa17143bbfd82e"
+  ],
+  "failure": null,
+  "shapeRecoveries": [],
+  "softLimitAlerts": [],
+  "ledger": {
+    "runId": "extra-matchup-final-v1-b1c7cfaf9aafd85cfb9f",
+    "recipeHash": "b1c7cfaf9aafd85cfb9f98c44313d5daae105d27377c0b3bddf2113c4dcede04",
+    "calls": 8,
+    "reservedOrSettledMicros": 1369175,
+    "knownTokens": 2270599,
+    "reservedOrSettledTokens": 2270599,
+    "unknownCalls": 0,
+    "attempts": [
+      {
+        "id": "structured-03798187946d68dd233ce6c84c8012e623c09b055b5a5913",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 64706,
+        "code": null
+      },
+      {
+        "id": "structured-2692388b23157f56a50055c91ad0abc461a8c73fe90ae1a8",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 188888,
+        "code": null
+      },
+      {
+        "id": "structured-500450bad8a08656e5fb7974eee1930e953c22d9d139169d",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 366056,
+        "code": null
+      },
+      {
+        "id": "structured-53e9ed39cf10b1300325de6d1f684210eb921fa48b067be6",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 62452,
+        "code": null
+      },
+      {
+        "id": "structured-764a863cc114d855f0af25971d26ed637b3884f2b3fe255b",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 63639,
+        "code": null
+      },
+      {
+        "id": "structured-8dd3867bd3084cc2ceeeb8ba5d931784aa50bed01ef08e8c",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 365243,
+        "code": null
+      },
+      {
+        "id": "structured-f3841d5467307ac9121a822c0045b72efbc5c85bb73dfb28",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 64875,
+        "code": null
+      },
+      {
+        "id": "structured-fe57566d668ab3f92261a8edcb81571edd1bc44bc27b7327",
+        "state": "received",
+        "reserve": 1500000,
+        "settled": 193316,
+        "code": null
+      }
+    ],
+    "steps": [
+      {
+        "id": "matchup-finalization-start",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.05419fa79dc724689279d5efa92e1157327c8bc599076e64",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.1e6f45a4a3207b08aac92a71c15badfc5131daed139b9d8d",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.310278500d37893968e66cdd78d59b7db6ee60ee218a9c0b",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.4e4364bbe7be77091d05566c63e72f3978e6ba747f4604b9",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.5bbddb329d8cf11d089a3ec72eea27546ba2fa455248abbb",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.6690b638aa93d73b339badfe2ddc8cb3a12f76c3d0994901",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.828ac197e66a87846f946275fcc24ea6c96eb3614d14e66a",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "strategy-role.a9011d2115b08bce0b5679eb26438845d2913c9d5109cd02",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-03798187946d68dd233ce6c84c8012e623c09b055b5a5913.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-03798187946d68dd233ce6c84c8012e623c09b055b5a5913.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-2692388b23157f56a50055c91ad0abc461a8c73fe90ae1a8.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-2692388b23157f56a50055c91ad0abc461a8c73fe90ae1a8.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-500450bad8a08656e5fb7974eee1930e953c22d9d139169d.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-500450bad8a08656e5fb7974eee1930e953c22d9d139169d.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-53e9ed39cf10b1300325de6d1f684210eb921fa48b067be6.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-53e9ed39cf10b1300325de6d1f684210eb921fa48b067be6.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-764a863cc114d855f0af25971d26ed637b3884f2b3fe255b.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-764a863cc114d855f0af25971d26ed637b3884f2b3fe255b.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-8dd3867bd3084cc2ceeeb8ba5d931784aa50bed01ef08e8c.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-8dd3867bd3084cc2ceeeb8ba5d931784aa50bed01ef08e8c.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-f3841d5467307ac9121a822c0045b72efbc5c85bb73dfb28.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-f3841d5467307ac9121a822c0045b72efbc5c85bb73dfb28.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-fe57566d668ab3f92261a8edcb81571edd1bc44bc27b7327.candidate",
+        "state": "complete",
+        "generation": 1
+      },
+      {
+        "id": "structured-fe57566d668ab3f92261a8edcb81571edd1bc44bc27b7327.runtime-receipt",
+        "state": "complete",
+        "generation": 1
+      }
+    ],
+    "currency": "CNY",
+    "invoice": false,
+    "trainingTruth": false,
+    "hash": "aea9ff967ca5d3ba918b4ae86631f1b381a2a5bb97c57cce8ba20b2c4ec9be94"
+  },
+  "cumulative": {
+    "attempts": 2055,
+    "intentCount": 0,
+    "paymentRequiredCount": 0,
+    "cumulativeTokens": 356415432,
+    "cumulativeEstimateMicros": 355437664,
+    "ledgerHash": "f785eef65c858de768b4b0838db6d6661db25b51681f0a70cf884f9448e1c131",
+    "invoice": false,
+    "hash": "4efa50ea1d1ede8a51cccc4315349cddf1cdca1dc33d7046f257bbdb15198486"
+  },
+  "matchupBudgetEpoch": {
+    "version": "extra_matchup_budget_epoch_progress_v1",
+    "epochHash": "3c5540c7e3f5b4d6e4841c454ff40b7611673b2340d0f004df76092b91d19e90",
+    "attempts": 217,
+    "tokens": 63199798,
+    "estimateMicros": 26399260,
+    "estimateCny": 26.39926,
+    "nextNotificationThresholdMicros": 100000000,
+    "historicalLedgerPreserved": true,
+    "invoice": false,
+    "trainingTruth": false,
+    "hash": "18f1363b4ccca6303918e9b9e8a458c797716cffc650cd8b0182a7de29b9e2c3"
+  },
+  "additionalCalls": 8,
+  "additionalTokens": 2270599,
+  "additionalCostMicros": 1369175,
+  "ctx2skillLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "roleRoutes": [
+    "opponent",
+    "rule_skill_builder"
+  ],
+  "skillsRead": [
+    "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+    "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+    "a71afdaedbb784f8e672a7f4c92c503638c935e4b1a08f1529a46b6afb441fa1",
+    "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+    "a71afdaedbb784f8e672a7f4c92c503638c935e4b1a08f1529a46b6afb441fa1",
+    "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+    "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+    "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+    "9babc3386ac4046d41ed58d6d8a13b0c3e5fb03384af9b7c8ca9394c72d48ccf",
+    "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+    "9babc3386ac4046d41ed58d6d8a13b0c3e5fb03384af9b7c8ca9394c72d48ccf",
+    "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148"
+  ],
+  "skillsGenerated": [
+    "starcraft-tmg.matchup.terran_armed_forces-to-daelaam",
+    "starcraft-tmg.matchup.daelaam-to-terran_armed_forces",
+    "starcraft-tmg.matchup.terran_armed_forces-to-kerrigan_s_swarm",
+    "starcraft-tmg.matchup.kerrigan_s_swarm-to-terran_armed_forces"
+  ],
+  "judgeTestsRun": 228,
+  "crossTimeReplayResult": "8_frozen_rules_transitions_passed_restart_replay_pending",
+  "promotions": [
+    "offline_advisory:starcraft-tmg.matchup.terran_armed_forces-to-daelaam",
+    "offline_advisory:starcraft-tmg.matchup.daelaam-to-terran_armed_forces",
+    "offline_advisory:starcraft-tmg.matchup.terran_armed_forces-to-kerrigan_s_swarm",
+    "offline_advisory:starcraft-tmg.matchup.kerrigan_s_swarm-to-terran_armed_forces"
+  ],
+  "blocks": [
+    "runtime_room_arena",
+    "complete_game_ab",
+    "authenticated_human_promotion"
+  ],
+  "remainingRuleGaps": [
+    "zerg_movement_not_exercised",
+    "combat_and_scoring_not_exercised"
+  ],
+  "sourceRefreshPerformed": false,
+  "fullGameStrategyEffectivenessProven": false,
+  "runtimeAccepted": false,
+  "trainingTruth": false,
+  "hash": "bc14d956d36410ca9dc676e815a9dc2eb79835880eb9e123c9fb47ea93ce46f3"
+}

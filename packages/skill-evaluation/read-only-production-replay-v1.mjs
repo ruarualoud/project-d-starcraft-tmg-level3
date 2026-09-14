@@ -27,10 +27,24 @@ export function openReadOnlyProductionReplayV1({ filename, runId, recipe, comman
     },
     release() {},
     reserve(id, request) {
-      const row = db.prepare('SELECT request_hash,state,response FROM attempts WHERE run=? AND id=?').get(runId, id);
+      const row = db.prepare('SELECT request_hash,state,response,code FROM attempts WHERE run=? AND id=?').get(runId, id);
       if (!row || row.request_hash !== hash(safe(request))) fail('READ_ONLY_REPLAY_REQUEST_DRIFT');
-      if (row.state !== 'received' || !row.response) fail('READ_ONLY_REPLAY_RESPONSE_MISSING');
-      const response = decode(row.response), receipt = response?.usageReceipt;
+      if (!row.response) fail('READ_ONLY_REPLAY_RESPONSE_MISSING');
+      const response = decode(row.response);
+      if (row.state === 'failed') {
+        const { receiptHash, ...failure } = response || {};
+        const outcome = failure.responseOutcome;
+        if (hash(failure) !== receiptHash || failure.schemaVersion !== 'starcraft_tmg_provider_egress_transport_v1.failure'
+          || failure.code !== row.code || failure.status !== 200 || failure.requestDefinitelyNotSent !== false
+          || failure.requestMayHaveBeenSent !== true || failure.physicalAttempts !== 1
+          || failure.automaticRetries !== 0 || !outcome?.usageKnown
+          || outcome.profileHash !== recipe.modelHash || receipts.has(receiptHash))
+          fail('READ_ONLY_REPLAY_FAILURE_RECEIPT_INVALID');
+        receipts.add(receiptHash);
+        return { failed: true, code: failure.code, usageKnown: true };
+      }
+      if (row.state !== 'received') fail('READ_ONLY_REPLAY_RESPONSE_MISSING');
+      const receipt = response?.usageReceipt;
       if (!receipt) fail('READ_ONLY_REPLAY_RECEIPT_MISSING');
       const { receiptHash, ...body } = receipt;
       if (hash(body) !== receiptHash || body.schemaVersion !== 'starcraft_tmg_provider_egress_transport_v1.success'

@@ -13,6 +13,7 @@ import { loadFrozenSkillEvidence } from '../packages/skill-production/evidence.m
 import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from './support/official-development-tranche-source-lock-fixture-v1.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
 import { createAccountedModel } from '../packages/skill-production/model.mjs';
+import { bindFactionGeneralDependencyV1 } from '../packages/strategy-skills/faction-general-dependency-v1.mjs';
 import { seal, verifySeal, hash, sha256 } from '../packages/skill-production/common.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -47,8 +48,9 @@ const filename = path.join(temp, 'fixture.sqlite');
 const reseal = (v, fields) => { const { hash: ignored, ...body } = v; return seal({ ...body, ...fields }); };
 let injectedCalls = 0, checks = 0;
 async function check(fn) { await fn(); checks++; }
-async function fixture(negative) {
+async function fixture(negative, finalGeneral = null) {
   const recipe = seal({ version: 'faction_consumer_evaluation_run_v2', sourceRunId: productionEvidence.runId,
+    ...(finalGeneral ? { finalGeneralDependencyHash: finalGeneral.hash } : {}),
     inputHash: input.hash, candidateHash: candidate.hash, productionEvidenceHash: productionEvidence.hash,
     knownRulePolicyHash: knownRulePolicy.hash, catalogueHash: input.catalogueHash, contextHash: input.frozenSources.hash,
     modelHash: hash('injected model profile'), drillManifestHash: drills.manifest.hash,
@@ -62,6 +64,10 @@ async function fixture(negative) {
       injectedCalls++;
       const content = request.promptNodes.find(n => n.type === 'actual_agent_conversation').value.messages[0].content;
       const payload = JSON.parse(content.slice(content.indexOf('\n') + 1));
+      if (finalGeneral) {
+        assert.equal(payload.overall.finalStrategySkill.hash, finalGeneral.generalSkill.hash);
+        assert.equal(payload.overall.finalStrategyLayer.hash, finalGeneral.generalLayer.hash);
+      } else assert(!payload.overall.finalStrategyLayer);
       const predictions = payload.questions.map(q => structuredClone(expected.get(q.id)));
       if (negative && payload.faction && predictions[0].answer) predictions[0].answer.targetDestroyed = true;
       const output = { channels: { skill: { action: 'finish', content: { predictions } } } };
@@ -71,7 +77,7 @@ async function fixture(negative) {
         fixtureRequestHash: hash(request), fixtureOnly: true };
       return { output, usageReceipt: { ...body, receiptHash: hash(body) } };
     } });
-  const args = { input, candidate, knownRulePolicy, store, model };
+  const args = { input, candidate, knownRulePolicy, store, model, finalGeneral };
   let evaluation, applicationEvaluation;
   try {
     evaluation = await evaluateFactionRosterUseV1({ ...args, drills });
@@ -84,9 +90,22 @@ async function fixture(negative) {
     results: evaluation.results.map(r => ({ arm: r.arm, correct: r.correct, total: r.total })),
     actualRoomReplayPerformed: false, formalSkillsAccepted: 0, strategyStrengthProven: false, trainingTruth: false,
     failure: negative ? { code: 'FACTION_RULE_CONSUMER_BOUNDED_EVALUATION_FAILED' } : null });
-  return { filename, runId, recipe, report, input, candidate, productionEvidence, knownRulePolicy, drills, applicationDrills, evaluation, applicationEvaluation };
+  return { filename, runId, recipe, report, input, candidate, productionEvidence, knownRulePolicy, drills, applicationDrills, evaluation, applicationEvaluation, finalGeneral };
 }
 const good = await fixture(false), bad = await fixture(true);
+const generalBase = path.join(root, 'build/ticket-18-general-strategy-live-v1/general-strategy-3705e4aa46ecd74a7826207a67b5b096/general-strategy-final-v1');
+const generalJson = async name => verifySeal(JSON.parse(await readFile(path.join(generalBase, name + '.json'), 'utf8')));
+const finalGeneral = bindFactionGeneralDependencyV1({ input, generalSkill: await generalJson('final-general-skill'),
+  generalLayer: await generalJson('final-general-strategy-layer') });
+const current = await fixture(false, finalGeneral);
+await check(async () => {
+  const before = injectedCalls, evidence = await inspectFactionConsumerReplayV1(current);
+  assert.equal(injectedCalls, before); assert.equal(evidence.finalGeneralDependencyHash, finalGeneral.hash);
+  assert.equal(evidence.rawAnswersRescored, 140); assert.equal(evidence.delivery.receiptHashes.length, 8);
+  assert.notEqual(current.evaluation.consumerContextHash, good.evaluation.consumerContextHash);
+  await assert.rejects(inspectFactionConsumerReplayV1({ ...current, finalGeneral: null }),
+    { code: 'FACTION_CONSUMER_EVIDENCE_GENERAL_DRIFT' });
+});
 await check(async () => {
   const before = injectedCalls, evidence = await inspectFactionConsumerReplayV1(good);
   assert.equal(injectedCalls, before); assert.equal(evidence.rawAnswersRescored, 140);
@@ -120,6 +139,7 @@ await check(async () => {
   finally { db.prepare('UPDATE attempts SET response=? WHERE run=? AND id=?').run(row.response, good.runId, row.id); db.close(); }
 });
 const files = ['packages/skill-evaluation/faction-consumer-evidence-v1.mjs',
+  'packages/strategy-skills/faction-general-dependency-v1.mjs',
   'scripts/inspect-ticket-18-faction-consumer-evidence-v1.mjs', 'scripts/verify-ticket-18-faction-consumer-evidence-v1.mjs',
   'packages/skill-evaluation/read-only-production-replay-v1.mjs', 'packages/skill-evaluation/faction-roster-use-evaluation-v1.mjs',
   'packages/skill-evaluation/faction-rule-use-evaluation-v1.mjs'];

@@ -18,7 +18,8 @@ function sourceClass(ref) {
 export function createFactionReviewContextCapsuleV1(input = {}) {
   const { factionInput, section, draft, reviewIndices,
     coverageRequiredSourceRefs, targets, roleRef, outputContractRef,
-    route } = input;
+    route, includeSharedScenarioSources = false } = input;
+  if (typeof includeSharedScenarioSources !== 'boolean') fail('FACTION_REVIEW_SCENARIO_CONTEXT_INVALID');
   [factionInput, targets].forEach(verifySeal);
   if (!["supportive", "adversarial"].includes(route)
     || targets.hash !== createFactionReviewTargetsV1({
@@ -34,6 +35,9 @@ export function createFactionReviewContextCapsuleV1(input = {}) {
     ...factionInput.factionEvidence.armyPool.map((row) => row.source.ref),
     ...section.requiredSourceRefs,
     ...draft.recommendations.flatMap((row) => row.sourceRefs),
+    ...(includeSharedScenarioSources ? factionInput.frozenSources.prompt.sources
+      .filter(source => source.ref.startsWith('source:faction_cards:mission_'))
+      .map(source => source.ref) : []),
   ]);
   const relevant = createFactionSourceDependencyContextV1({
     input: factionInput,
@@ -82,6 +86,7 @@ export function createFactionReviewContextCapsuleV1(input = {}) {
       operationalGuide: factionInput.operationalGuide,
       completeCoreFaqIncluded: true,
       completeCurrentFactionProductsIncluded: true,
+      ...(includeSharedScenarioSources ? { sharedScenarioSourcesIncluded: true } : {}),
       sourcePolicy: factionInput.frozenSources.prompt.sourcePolicy,
       usagePolicy: factionInput.frozenSources.prompt.usagePolicy,
     },
@@ -192,6 +197,91 @@ export function createFactionReviewSchemaRepairContextCapsuleV1(input = {}) {
       "Return the complete corrected schema object. Change only the exact validationIssues paths; every other value must remain byte-for-byte equivalent after JSON parsing.",
       "For length/cardinality failures, obey the listed actualLength/actualItems and maxLength/maxItems exactly. Delete fields marked additional_property_forbidden. Shorten overlong reason text without changing its verdict or factual meaning. Select at most eight most direct supplied sourceSlots; do not invent or renumber slots.",
       "This is one bounded schema-instance correction, not a new review. If it cannot be done without changing another field, preserve uncertainty and still obey the exact schema.",
+    ].join("\n"),
+  });
+}
+
+export function createFactionReviewHostContractRepairContextCapsuleV1(input = {}) {
+  const { capsule, rejectedCandidate, roleRef, repairScope } = input;
+  [capsule, rejectedCandidate, repairScope].forEach(verifySeal);
+  if (capsule.kind !== 'whole_section_review_context'
+    || rejectedCandidate.outputContractRef.hash !== capsule.outputContractRef.hash
+    || rejectedCandidate.contextManifestRef.hash !== capsule.hash
+    || repairScope.route !== 'full_output'
+    || !['incomplete_target_slot_set', 'incomplete_coverage_slot_set'].includes(repairScope.reasonCode)
+    || !roleRef?.id || !roleRef?.version || !roleRef?.hash) {
+    fail('FACTION_STRUCTURED_REVIEW_HOST_CONTRACT_REPAIR_CONTEXT_INVALID');
+  }
+  return createStarcraftTmgContextCapsuleV1({
+    kind: 'whole_section_review_context', roleRef,
+    outputContractRef: capsule.outputContractRef,
+    immutableBase: capsule.immutableBase, section: capsule.section,
+    localIssue: { ...capsule.localIssue, hostContractRepair: {
+      rejectedCandidateHash: rejectedCandidate.hash,
+      providerValue: rejectedCandidate.providerValue,
+      validationIssues: rejectedCandidate.validation.issues,
+      repairScope,
+      policy: 'complete_coordinate_sets_before_leaf_field_repair',
+    } },
+    protectedFields: [...capsule.protectedFields,
+      { path: 'hostContractRepair.rejectedCandidate', hash: rejectedCandidate.hash }],
+    dependencyGraph: capsule.dependencyGraph,
+    sourceIndexRef: capsule.sourceIndexRef,
+    expansionToolRef: capsule.expansionToolRef,
+    omittedDomains: capsule.omittedDomains,
+    instructions: [
+      capsule.instructions,
+      'The prior complete-object response cannot be repaired by replacing leaf field values because its Host-owned coordinate row set is incomplete, duplicated, or out of range.',
+      `Return every targetSlot from 0 through ${repairScope.targetCount - 1} exactly once and every coverageSlot from 0 through ${repairScope.coverageCount - 1} exactly once.`,
+      'Return one fresh complete review object from the supplied frozen chapter and sources. Preserve still-supported prior judgments where possible, but do not omit a required coordinate merely to preserve the prior object.',
+      'This is a bounded complete-object Host-contract correction. Do not claim semantic acceptance, strategy effectiveness, runtime acceptance, or training truth.',
+    ].join('\n'),
+  });
+}
+
+export function createFactionReviewOutputCapRecoveryContextCapsuleV1(
+  input = {}) {
+  const { capsule, roleRef, originIssueRef } = input;
+  verifySeal(capsule);
+  if (capsule.kind !== "whole_section_review_context"
+    || !roleRef?.id || !roleRef?.version || !roleRef?.hash
+    || originIssueRef?.class !== "output_incomplete"
+    || !/^[a-f0-9]{64}$/u.test(originIssueRef?.hash || "")) {
+    fail("FACTION_STRUCTURED_REVIEW_OUTPUT_CAP_RECOVERY_CONTEXT_INVALID");
+  }
+  return createStarcraftTmgContextCapsuleV1({
+    kind: "whole_section_review_context",
+    roleRef,
+    outputContractRef: capsule.outputContractRef,
+    immutableBase: capsule.immutableBase,
+    section: capsule.section,
+    localIssue: {
+      ...capsule.localIssue,
+      outputCapRecovery: {
+        originIssueHash: originIssueRef.hash,
+        originClass: originIssueRef.class,
+        reason: "max_output_tokens",
+        maximumFocusRowsPerTarget: 4,
+        maximumReasonCharacters: 600,
+        maximumSourceSlotsPerTarget: 4,
+        policy:
+          "same_semantic_review_once_with_explicit_compact_output_no_partial_continuation",
+      },
+    },
+    protectedFields: [...capsule.protectedFields,
+      { path: "outputCapRecovery.originIssueHash",
+        hash: originIssueRef.hash }],
+    dependencyGraph: capsule.dependencyGraph,
+    sourceIndexRef: capsule.sourceIndexRef,
+    expansionToolRef: capsule.expansionToolRef,
+    omittedDomains: capsule.omittedDomains,
+    instructions: [
+      capsule.instructions,
+      "The prior complete-task response reached the exact provider output ceiling and was rejected without preserving partial prose.",
+      "Repeat the same complete semantic review exactly once; this is not permission to omit any supplied targetSlot or coverageSlot.",
+      "For each target return at most four decisive focus rows, at most four direct sourceSlots, and one reason no longer than 600 characters.",
+      "For each coverage row return one reason no longer than 600 characters. Prefer precise source-bound conclusions over background explanation.",
+      "Do not continue, quote, infer from, or claim acceptance of the rejected partial response. Return one complete schema object from scratch.",
     ].join("\n"),
   });
 }

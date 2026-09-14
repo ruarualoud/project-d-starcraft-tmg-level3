@@ -16,6 +16,8 @@ import { createFactionWritingPlanV1 } from
 import { createFactionLocalEditorContextCapsuleV1,
   isolateFactionLocalEditorIssueV1 } from
   "../packages/skill-production-v3/faction-local-editor-context-capsule-v1.mjs";
+import { createFactionRepairConflictHistoryV1 } from
+  "../packages/skill-production-v3/faction-repair-conflict-history-v1.mjs";
 import { verifySeal } from "../packages/skill-production/common.mjs";
 import {
   contextManifestRefStarcraftTmgV1,
@@ -122,6 +124,45 @@ await check("r4.local-capsule-excludes-full-source-text", async () => {
   assert.equal(capsule.fullContextFormatRetryAllowed, false);
 });
 
+const oscillationCandidate = verifySeal(JSON.parse(await readFile(path.join(
+  ROOT, "build/ticket-18-faction-production-v1",
+  "faction-v1-f037c375d47fc41a5121",
+  "terran_armed_forces-candidate.json"), "utf8")));
+const oscillationSection = oscillationCandidate.sections.at(-1);
+const oscillationIssues = oscillationSection.rounds.at(-1).issues;
+const oscillationIssueOrdinal = oscillationIssues.issues.findIndex(row =>
+  row.index === 4);
+const oscillationLocalIssues = isolateFactionLocalEditorIssueV1({
+  issues: oscillationIssues, issueOrdinal: oscillationIssueOrdinal,
+});
+const repairConflictHistory = createFactionRepairConflictHistoryV1({
+  rounds: oscillationSection.rounds,
+  issue: oscillationLocalIssues.issues[0],
+});
+const conflictRoleRef = {
+  id: "faction.terran_armed_forces.objectives.1.editor.3.0",
+  version: "structured-v1",
+  hash: hashStarcraftTmgContract(
+    "faction.terran_armed_forces.objectives.1.editor.3.0.structured-v1"),
+};
+const conflictCapsule = createFactionLocalEditorContextCapsuleV1({
+  factionInput, section, draft: oscillationSection.draft,
+  issues: oscillationLocalIssues, issueOrdinal: 0,
+  repairConflictHistory, roleRef: conflictRoleRef, outputContractRef,
+});
+await check("r4.multi-round-conflict-history-enters-sealed-local-capsule",
+async () => {
+  verifyStarcraftTmgContextCapsuleV1(conflictCapsule);
+  assert.equal(conflictCapsule.localIssue.repairConflictHistory.hash,
+    repairConflictHistory.hash);
+  assert.equal(repairConflictHistory.repeatedNegativeRounds, 4);
+  assert.equal(repairConflictHistory.semanticOppositionProvenByHost, false);
+  assert.match(conflictCapsule.instructions,
+    /do not answer a prior objection by asserting its unsupported opposite/u);
+  assert.equal(conflictCapsule.dependencyGraph.roots.includes(
+    "source:tactical_cards:terran_armed_forces"), true);
+});
+
 const routes = [
   ["CONTRACT_CHAIN_DRIFT", {}, "pre_egress_contract", "stopped"],
   ["STRUCTURED_PROVIDER_PRE_EGRESS_FAILED",
@@ -201,6 +242,7 @@ const report = {
   localIssueOrdinal: 0,
   localIssuesHash: localIssues.hash,
   contextCapsuleHash: capsule.hash,
+  conflictCapsuleHash: conflictCapsule.hash,
   contextCapsuleBytes: capsule.compiledInputBytes,
   dependencyClosure: {
     roots: capsule.dependencyGraph.roots.length,

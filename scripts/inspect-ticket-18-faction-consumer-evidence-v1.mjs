@@ -16,6 +16,7 @@ if (process.argv.length !== 3 || !/^faction-consumer-[a-f0-9]{20}$/.test(runId |
 const json = async n => verifySeal(JSON.parse(await readFile(path.join(base, runId, n + '.json'), 'utf8')));
 const [recipe, report, input, savedCandidate, savedEvidence, evaluation, applicationEvaluation] = await Promise.all(
   ['recipe', 'report', 'input', 'candidate', 'production-evidence', 'evaluation', 'rule-application-evaluation'].map(json));
+const finalGeneral = recipe.finalGeneralDependencyHash ? await json('final-general-dependency') : null;
 for (const row of recipe.codeHashes) if (sha256(await readFile(path.join(root, row.file))) !== row.hash)
   fail('FACTION_CONSUMER_INSPECTION_CODE_DRIFT');
 const catalogue = await loadFrozenSkillEvidence(root), context = createGlobalProductionContext(catalogue);
@@ -28,7 +29,7 @@ const { candidate, evidence: productionEvidence } = await inspectFactionCandidat
 if (candidate.hash !== savedCandidate.hash || productionEvidence.hash !== savedEvidence.hash)
   fail('FACTION_CONSUMER_INSPECTION_PRODUCTION_DRIFT');
 const evidence = await inspectFactionConsumerReplayV1({ filename: path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite'),
-  runId, recipe, report, input, candidate, productionEvidence, knownRulePolicy, drills, applicationDrills, evaluation, applicationEvaluation });
+  runId, recipe, report, input, candidate, productionEvidence, knownRulePolicy, drills, applicationDrills, evaluation, applicationEvaluation, finalGeneral });
 await writeFile(path.join(base, runId, 'verified-consumer-evidence.json'), JSON.stringify(evidence, null, 2));
 console.log(JSON.stringify({ evidenceVerified: true, matchedActualRequests: evidence.delivery.receiptHashes.length,
   rawAnswersRescored: evidence.rawAnswersRescored, boundedRosterChoicePassed: evidence.boundedRosterChoicePassed,

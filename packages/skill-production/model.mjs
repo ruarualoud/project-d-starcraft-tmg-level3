@@ -44,7 +44,7 @@ function cost(usage, receipt) {
 }
 export function createAccountedModel({ store, complete, onUsage = () => {}, maxOutput = 4096, maxInputBytes = 180000,
   outputRecoveryLimit = null, commandPolicy = 'production_tools',
-  wireSyntaxRetryAllowed = true }) {
+  wireSyntaxRetryAllowed = true, priceUsage = cost, validateModelReceipt = null }) {
   if (!['production_tools', 'finish_only'].includes(commandPolicy)) fail('MODEL_COMMAND_POLICY_INVALID');
   if (typeof wireSyntaxRetryAllowed !== 'boolean') fail('MODEL_WIRE_RETRY_POLICY_INVALID');
   // Preserve the old recipe's limit. Full-source workflows must opt into a
@@ -101,7 +101,7 @@ export function createAccountedModel({ store, complete, onUsage = () => {}, maxO
         } catch (error) {
           const receipt = error.safeReceipt, outcome = receipt?.responseOutcome;
           store.settle(id, { usage: outcome?.usageKnown ? outcome.usage : null,
-            costMicros: outcome?.usageKnown ? cost(outcome.usage, outcome) : null,
+            costMicros: outcome?.usageKnown ? priceUsage(outcome.usage, outcome) : null,
             failureReceipt: receipt || null,
             code: error.code || "PROVIDER_FAILURE_UNKNOWN",
             definitelyNotSent: receipt?.requestDefinitelyNotSent === true });
@@ -112,10 +112,11 @@ export function createAccountedModel({ store, complete, onUsage = () => {}, maxO
         }
         // Durable usage and normalized response BEFORE chapter/role validation.
         const u = response.usageReceipt.usage;
-        store.settle(id, { usage: u, costMicros: cost(u, response.usageReceipt), response });
+        store.settle(id, { usage: u, costMicros: priceUsage(u, response.usageReceipt), response });
         onUsage(store.summary());
       }
-      if (response.usageReceipt.reportedModel !== "deepseek-v4-flash") fail("PROVIDER_MODEL_DRIFT");
+      if (validateModelReceipt) validateModelReceipt(response.usageReceipt);
+      else if (response.usageReceipt.reportedModel !== "deepseek-v4-flash") fail("PROVIDER_MODEL_DRIFT");
       // A forbidden tool request is retained and stopped, never executed or
       // silently treated as a correctable answer-schema failure.
       if (commandPolicy === 'finish_only' && response.output?.channels?.skill?.action

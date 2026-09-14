@@ -19,6 +19,7 @@ import { hash, seal, sha256, verifySeal } from
 import { openProductionStore } from "../packages/skill-production/store.mjs";
 import { createFactionWritingPlanV1 } from
   "../packages/skill-production-v3/faction-strategy-workflow-v1.mjs";
+import { resolveFactionPromptLineageV1 } from "../packages/skill-production-v3/faction-prompt-lineage-v1.mjs";
 import { isolateFactionLocalEditorIssueV1 } from
   "../packages/skill-production-v3/faction-local-editor-context-capsule-v1.mjs";
 import {
@@ -41,7 +42,9 @@ const CODE_FILES = [
   "packages/skill-production/model.mjs",
   "packages/skill-production-v3/faction-continuation-v1.mjs",
   "packages/skill-production-v3/faction-local-editor-context-capsule-v1.mjs",
+  "packages/skill-production-v3/faction-repair-conflict-history-v1.mjs",
   "packages/skill-production-v3/faction-structured-local-editor-runtime-v1.mjs",
+  "packages/skill-production-v3/faction-prompt-lineage-v1.mjs",
   "packages/structured-generation/output-contract-registry-v1.mjs",
   "packages/structured-generation/provider-capability-receipt-v1.mjs",
   "packages/structured-generation/adapters/deepseek-responses-json-schema-v1.mjs",
@@ -134,6 +137,7 @@ function requestFor(issueOrdinal) {
 await check("r6.imports-exact-r5-canary-with-zero-new-provider-calls", async () => {
   const fault = createStarcraftTmgInMemoryStructuredFaultAdapterV1({ steps: [] });
   const adapter = createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1({
+    now: () => capabilityReceipt.probedAt,
     send: fault.send,
   });
   const store = openProductionStore(":memory:", {
@@ -165,6 +169,7 @@ await check("r6.nonimported-editor-crosses-one-structured-runtime-seam", async (
     steps: [{ kind: "success", output }],
   });
   const adapter = createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1({
+    now: () => capabilityReceipt.probedAt,
     send: fault.send,
   });
   const store = openProductionStore(":memory:", {
@@ -243,6 +248,53 @@ await check("r6.structured-artifact-never-reenters-legacy-prompt-route", async (
   ]);
   assert.deepEqual(roles, [legacyId.replace(epoch, "")]);
   assert(!roles.includes(structuredId.replace(epoch, "")));
+  const parentRunId = 'faction-v1-f037c375d47fc41a5121';
+  const db = new DatabaseSync(path.join(ROOT, 'build/ticket-17-production-redesign-v1/production.sqlite'), { readOnly: true });
+  const actual = db.prepare("SELECT id,input_hash,artifact FROM steps WHERE run=? AND state='complete'").all(parentRunId)
+    .map(row => ({ id: row.id, inputHash: row.input_hash, artifact: JSON.parse(row.artifact).value }))
+    .filter(row => row.artifact?.roleId === row.id && row.artifact?.loop?.transcript);
+  db.close();
+  const lineage = await resolveFactionPromptLineageV1({ steps: actual, parentRunId,
+    readRecipe: runId => json(path.join(ROOT, 'build/ticket-18-faction-production-v1', runId, 'recipe.json')) });
+  assert.equal(deriveFactionLegacyPromptRoleIdsV1(actual).length, 39);
+  assert.equal(deriveFactionLegacyPromptRoleIdsV1(actual, lineage).length, 37);
+  // The real 27ef continuation also carries independently verified fragment
+  // checkpoints. They have no roleId and must not be classified as prompts.
+  const fragmentDb = new DatabaseSync(path.join(ROOT,
+    'build/ticket-17-production-redesign-v1/production.sqlite'), { readOnly: true });
+  let auxiliary;
+  try {
+    auxiliary = fragmentDb.prepare("SELECT id,input_hash,artifact FROM steps WHERE run=? AND state='complete' AND id LIKE ?")
+      .all('faction-v1-27ef94cd6f32462ec36a', 'faction-review-decomposition.%')
+      .map(row => ({ id: row.id, inputHash: row.input_hash,
+        artifact: verifySeal(JSON.parse(row.artifact)).value }))
+      .filter(row => row.artifact.roleId === undefined);
+  } finally { fragmentDb.close(); }
+  assert(auxiliary.length > 0, 'Actual paid-recovery auxiliary checkpoint is required');
+  const auxiliaryLineage = await resolveFactionPromptLineageV1({ steps: auxiliary,
+    parentRunId: 'faction-v1-27ef94cd6f32462ec36a',
+    readRecipe: () => assert.fail('Auxiliary checkpoints have no prompt origin') });
+  assert.deepEqual(auxiliaryLineage.rows, []);
+  assert.deepEqual(deriveFactionLegacyPromptRoleIdsV1(auxiliary, auxiliaryLineage), []);
+  assert.deepEqual(deriveFactionLegacyPromptRoleIdsV1([...actual, ...auxiliary], lineage),
+    deriveFactionLegacyPromptRoleIdsV1(actual, lineage));
+  // Filtering auxiliary records must not hide a changed real role's identity,
+  // removed declaration, lease input, or artifact contents.
+  const legacyRow = actual.find(row => lineage.rows.find(origin => origin.roleId === row.id)?.promptProtocol === 'legacy_json_prompt_v1');
+  assert(legacyRow);
+  for (const changed of [
+    { ...legacyRow, inputHash: hash('foreign input') },
+    { ...legacyRow, artifact: { ...legacyRow.artifact, roleId: undefined } },
+    { ...legacyRow, artifact: { ...legacyRow.artifact, roleId: 'foreign.role' } },
+    { ...legacyRow, artifact: { ...legacyRow.artifact, output: { changed: true } } },
+  ]) assert.throws(() => deriveFactionLegacyPromptRoleIdsV1([changed, ...auxiliary], lineage),
+    { code: 'FACTION_PROMPT_LINEAGE_STEP_DRIFT' });
+  const reconstructed = lineage.rows.find(row => row.roleId.includes('source-reconstruction.2.1'));
+  assert.equal(reconstructed.promptProtocol, 'current_json_prompt_v1');
+  assert.equal(reconstructed.inputHash, 'fdf7887d4f421fefa9f611907119a9cc8b84f06305596ad0ea69f853fcce3380');
+  await assert.rejects(() => resolveFactionPromptLineageV1({ steps: actual, parentRunId,
+    readRecipe: async runId => { const r = structuredClone(await json(path.join(ROOT, 'build/ticket-18-faction-production-v1', runId, 'recipe.json')));
+      r.overallRunId = 'tampered'; return r; } }), { code: 'ARTIFACT_HASH_MISMATCH' });
 });
 
 const readiness = seal({

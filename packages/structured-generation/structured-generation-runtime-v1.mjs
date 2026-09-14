@@ -219,6 +219,39 @@ export function createStarcraftTmgStructuredGenerationRuntimeV1(options = {}) {
     } else if (reservation.failed) {
       const error = new Error(reservation.code || "STRUCTURED_ATTEMPT_FAILED");
       error.code = reservation.code || "STRUCTURED_ATTEMPT_FAILED";
+      // A terminal attempt already owns sealed issue/receipt evidence. Restore
+      // that typed outcome on restart so callers can route the original paid
+      // failure without guessing an attempt or issuing another Provider call.
+      const issueId = `${attemptId}.issue`;
+      const receiptId = `${attemptId}.runtime-receipt`;
+      const savedIssue = store.artifact(issueId);
+      const savedReceipt = store.artifact(receiptId);
+      if (savedIssue || savedReceipt) {
+        if (!savedIssue || !savedReceipt) {
+          throw new TypeError("Structured cached failure evidence is incomplete");
+        }
+        verifySeal(savedIssue); verifySeal(savedReceipt);
+        if (savedIssue.invocationHash !== invocationHash
+          || savedIssue.code !== error.code
+          || hashStarcraftTmgContract(savedIssue.outputContractRef)
+            !== hashStarcraftTmgContract(outputReference)
+          || savedReceipt.invocationHash !== invocationHash
+          || savedReceipt.attemptId !== attemptId
+          || savedReceipt.issueHash !== savedIssue.hash
+          || savedReceipt.candidateHash !== null
+          || !STATUSES.has(savedReceipt.status)
+          || savedReceipt.status === "accepted") {
+          throw new TypeError("Structured cached failure evidence is invalid");
+        }
+        error.outcome = outcome({ status: savedReceipt.status,
+          candidateRef: null,
+          issueRef: { id: issueId, hash: savedIssue.hash,
+            class: savedIssue.class,
+            rejectedCandidateRef: savedIssue.rejectedCandidateRef },
+          receiptRef: { hash: savedReceipt.hash },
+          usage: normalizedUsage(),
+        });
+      }
       throw error;
     } else {
       try {
@@ -332,7 +365,7 @@ export function createStarcraftTmgStructuredGenerationRuntimeV1(options = {}) {
         return outcome({
           status: classification.status,
           candidateRef: null,
-          issueRef: { hash: storedIssue.hash, class: storedIssue.class,
+          issueRef: { id: `${attemptId}.issue`, hash: storedIssue.hash, class: storedIssue.class,
             rejectedCandidateRef },
           receiptRef: { hash: storedReceipt.hash },
           usage: normalizedUsage(knownUsage, costMicros || 0),

@@ -5,11 +5,12 @@ import { fileURLToPath } from 'node:url';
 import { openFactionProductionReplayV1 } from '../packages/skill-evaluation/faction-production-replay-v1.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
 import { hash, sha256, seal } from '../packages/skill-production/common.mjs';
+import { factionExecutionProfileV1 } from '../packages/skill-production-v3/faction-execution-model-v1.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const base = path.join(root, 'build/ticket-18-faction-production-v1');
 const temp = await mkdtemp(path.join(base, 'production-replay-test-'));
 const recipeBody = { version: 'faction_strategy_production_v1', contextHash: hash('full frozen context'),
-  modelHash: hash('model'), sourceBinding: { source: hash('source') }, dshBindingHash: hash('dsh') };
+  modelHash: factionExecutionProfileV1({}).integrity.hash, sourceBinding: { source: hash('source') }, dshBindingHash: hash('dsh') };
 const input = { task: 'complete injected host task', contextHash: recipeBody.contextHash }, roleId = 'faction.fixture.review';
 const output = { channels: { skill: { action: 'finish', content: { verdict: 'unsupported', reason: 'injected negative' } } } };
 const receiptBody = { schemaVersion: 'starcraft_tmg_provider_egress_transport_v1.success', providerProfileRef: { hash: recipeBody.modelHash },

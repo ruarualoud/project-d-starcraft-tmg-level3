@@ -1,0 +1,2150 @@
+{
+  "schema": "extra_faction_finalization_result_v1",
+  "inputHash": "b05a47a286236505ff5d4c118be066b50b7e836b7e5f7ec6ef44477305b22eb0",
+  "productionHash": "a055f243b3de9f37dc55e8b56dfd815d30b264042fcfbfd0661a294e6ce13294",
+  "sourceAudit": {
+    "schema": "extra_faction_independent_source_audit_bundle_v1",
+    "inputHash": "b05a47a286236505ff5d4c118be066b50b7e836b7e5f7ec6ef44477305b22eb0",
+    "productionHash": "a055f243b3de9f37dc55e8b56dfd815d30b264042fcfbfd0661a294e6ce13294",
+    "scope": {
+      "family": "faction",
+      "ownFaction": "tactical_cards:kerrigan_s_swarm"
+    },
+    "axisAudits": [
+      {
+        "schema": "extra_faction_independent_source_axis_audit_v1",
+        "inputHash": "b05a47a286236505ff5d4c118be066b50b7e836b7e5f7ec6ef44477305b22eb0",
+        "productionHash": "a055f243b3de9f37dc55e8b56dfd815d30b264042fcfbfd0661a294e6ce13294",
+        "candidateHash": "49f184e6b9eb59c8f542342d56b7b32913c1723e335f6f821e8fdaba99b4a77c",
+        "policyHash": "63ff4d531ff21ed75176c4187ae386b0fe2d79feede65e65f6117b0c91ed3ec2",
+        "axis": "army_resources",
+        "checkedFields": [
+          "title",
+          "when",
+          "objective",
+          "decisionProcedure",
+          "alternatives",
+          "opponentBranches",
+          "risk",
+          "reviseIf",
+          "requiredQueries",
+          "ruleRefs",
+          "caseIds"
+        ],
+        "boundSources": [
+          {
+            "ref": "source:tactical_cards:kerrigan_s_swarm",
+            "sourceHash": "a3f2e0b74a676a7b3697fcf49c2c5770236ec445adc8874fbef83be5a9129884"
+          },
+          {
+            "ref": "source:tactical_cards:accelerating_creep",
+            "sourceHash": "6ed9224a887899c8b15329e32415353c8bc722f547944cb592f9b51c946f1b75"
+          },
+          {
+            "ref": "source:tactical_cards:malignant_creep",
+            "sourceHash": "3d78c79607a1386a6a25f8dfc745ba8d6847a1f3fdaa1b06222560e871eac312"
+          },
+          {
+            "ref": "source:tactical_cards:hatchery",
+            "sourceHash": "81e1577238a48f6d4207ea45ccb341cf386f9104d2a3f8e6cb9153c22f46d7a0"
+          },
+          {
+            "ref": "source:tactical_cards:overseer",
+            "sourceHash": "7d6799c62b1bda25412d57a61d228dd4cd774fc07b00f261b77ebbbf0941bf29"
+          },
+          {
+            "ref": "source:army_units:queen",
+            "sourceHash": "473649b56d81bfb804b3c8a3da15edaff605e73ce0d9f672ab36dc51083d15de"
+          },
+          {
+            "ref": "source:army_units:kerrigan",
+            "sourceHash": "d7ed2fe48f4f6cda581850ce1e6b80a204c4bd7bcdb072d64bd193c574c95ed3"
+          },
+          {
+            "ref": "source:army_units:hydralisk",
+            "sourceHash": "92d4ec86d5cb7753703911b53ecc04c0155c0186905a0559e73b655f01dc47ca"
+          },
+          {
+            "ref": "source:army_units:omega_worm",
+            "sourceHash": "d1eae57976861c20c704fbb32cfff378def09a2f75174029092f067ba1fb4748"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.0",
+            "sourceHash": "f7d42a67c540b737e5a619a03fcadbeaadcb8e648bdb5ab6711101144fe539dc"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.1",
+            "sourceHash": "db29eeb92a586ab58eee9f8befa92e2485bd3b4879f93fe822a6f6d0af4bccdd"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.3",
+            "sourceHash": "f4225f7727cb0ace224a1f31602412b7b006e831d257743def7d7cf966b685cd"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+            "sourceHash": "974aaaa7801354c51eb0b067fd2fda1e4ac7f9b10a20c21aaffaa5961eb0e15c"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.5",
+            "sourceHash": "7360d9829c590952af5ebbc8c349f31f9b2a834a2bab8c02401866771d56657f"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.6",
+            "sourceHash": "95c3dd8525fe510af73715d193ffea5945fbe7f9f5a7167dfbf46501929370a6"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.8",
+            "sourceHash": "ec15e5e4ff44ed9e266758c39bd9187532a875183ca2a5ea0a09dc76b499762d"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+            "sourceHash": "dc0d8613f40f0a29de27a43e7bc5d73862162cf8691865dd4eb66163724d4609"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.24",
+            "sourceHash": "44926772e3b376ebbb71113aef6fb0c8ad2d315cbd5f32962b7032471839f67c"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.61",
+            "sourceHash": "5ed173558f4e8a6b1314424064c48fd3ac416f5b9758c48f6c46a1c309c8ba88"
+          },
+          {
+            "ref": "faq-v1:21",
+            "sourceHash": "8644b1e75bb2be4faac585594695c8b6edc892d842f013af1ad9770b11da3615"
+          },
+          {
+            "ref": "faq-v1:23",
+            "sourceHash": "6b2a3c4d545358e90cb864bbb79a8e4d01301837272f81966a4c5ee9dd2b8e7a"
+          }
+        ],
+        "sourceReviewPassed": true,
+        "decisionCaseCount": 0,
+        "semanticAcceptanceInherited": false,
+        "runtimeAccepted": false,
+        "trainingTruth": false,
+        "hash": "935bd144b868eb962594bf547cdfca8ef57bcf9f20b40d82a1459ed35ae346fe"
+      },
+      {
+        "schema": "extra_faction_independent_source_axis_audit_v1",
+        "inputHash": "b05a47a286236505ff5d4c118be066b50b7e836b7e5f7ec6ef44477305b22eb0",
+        "productionHash": "a055f243b3de9f37dc55e8b56dfd815d30b264042fcfbfd0661a294e6ce13294",
+        "candidateHash": "ef6857910a17434865d7e7dc5deabdd9aac437657e2dd58a0380707b2d0bb728",
+        "policyHash": "fe7e209c07f3cfe1de8f4be7f37fcce54abef129a2ba6487f32ca54fed0b43fe",
+        "axis": "unit_roles",
+        "checkedFields": [
+          "title",
+          "when",
+          "objective",
+          "decisionProcedure",
+          "alternatives",
+          "opponentBranches",
+          "risk",
+          "reviseIf",
+          "requiredQueries",
+          "ruleRefs",
+          "caseIds"
+        ],
+        "boundSources": [
+          {
+            "ref": "source:tactical_cards:kerrigan_s_swarm",
+            "sourceHash": "a3f2e0b74a676a7b3697fcf49c2c5770236ec445adc8874fbef83be5a9129884"
+          },
+          {
+            "ref": "source:army_units:kerrigan",
+            "sourceHash": "d7ed2fe48f4f6cda581850ce1e6b80a204c4bd7bcdb072d64bd193c574c95ed3"
+          },
+          {
+            "ref": "source:army_units:hydralisk",
+            "sourceHash": "92d4ec86d5cb7753703911b53ecc04c0155c0186905a0559e73b655f01dc47ca"
+          },
+          {
+            "ref": "source:army_units:kerrigan_swarm_raptor__zergling_",
+            "sourceHash": "5c29b584ad8273ac5f554ffbf1ed09adee9b3b3123f6501b382b7ffe5d271c96"
+          },
+          {
+            "ref": "source:army_units:raptor__zergling_",
+            "sourceHash": "75046165db5330bf0da028a1bd19cf09f800bb4e75432aedc4859a5dadfa8f6c"
+          },
+          {
+            "ref": "source:army_units:zergling",
+            "sourceHash": "e63535821dfeac0f67d10a022c935b4c4fab12c531d354fd341dcdac02c68524"
+          },
+          {
+            "ref": "source:army_units:swarmling__zergling_",
+            "sourceHash": "c152adfafdb105aec463aa967e4bc94e7923c0294ea0f3864809c9a4225084d8"
+          },
+          {
+            "ref": "source:army_units:roach",
+            "sourceHash": "3c821c9d196014d6649d12799d056451e043fb080bc7be8b699da41201f8683a"
+          },
+          {
+            "ref": "source:army_units:corpser__roach_",
+            "sourceHash": "68ad023ab5d4802340620ecb321042d1c35ffbbf8c8c6473a0ecfd8825b9468a"
+          },
+          {
+            "ref": "source:army_units:vile__roach_",
+            "sourceHash": "a906ff72e0b9bdcd46a26e6e80079840100d43dad92362da6d6a0080bdae81b1"
+          },
+          {
+            "ref": "source:army_units:queen",
+            "sourceHash": "473649b56d81bfb804b3c8a3da15edaff605e73ce0d9f672ab36dc51083d15de"
+          },
+          {
+            "ref": "source:army_units:omega_worm",
+            "sourceHash": "d1eae57976861c20c704fbb32cfff378def09a2f75174029092f067ba1fb4748"
+          },
+          {
+            "ref": "source:tactical_cards:hatchery",
+            "sourceHash": "81e1577238a48f6d4207ea45ccb341cf386f9104d2a3f8e6cb9153c22f46d7a0"
+          },
+          {
+            "ref": "source:tactical_cards:overseer",
+            "sourceHash": "7d6799c62b1bda25412d57a61d228dd4cd774fc07b00f261b77ebbbf0941bf29"
+          },
+          {
+            "ref": "source:tactical_cards:accelerating_creep",
+            "sourceHash": "6ed9224a887899c8b15329e32415353c8bc722f547944cb592f9b51c946f1b75"
+          },
+          {
+            "ref": "source:tactical_cards:malignant_creep",
+            "sourceHash": "3d78c79607a1386a6a25f8dfc745ba8d6847a1f3fdaa1b06222560e871eac312"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+            "sourceHash": "974aaaa7801354c51eb0b067fd2fda1e4ac7f9b10a20c21aaffaa5961eb0e15c"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.5",
+            "sourceHash": "7360d9829c590952af5ebbc8c349f31f9b2a834a2bab8c02401866771d56657f"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.6",
+            "sourceHash": "95c3dd8525fe510af73715d193ffea5945fbe7f9f5a7167dfbf46501929370a6"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.8",
+            "sourceHash": "ec15e5e4ff44ed9e266758c39bd9187532a875183ca2a5ea0a09dc76b499762d"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.1",
+            "sourceHash": "db29eeb92a586ab58eee9f8befa92e2485bd3b4879f93fe822a6f6d0af4bccdd"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+            "sourceHash": "dc0d8613f40f0a29de27a43e7bc5d73862162cf8691865dd4eb66163724d4609"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48",
+            "sourceHash": "facf3f94dbaa71333981e856f5ac357c0540d6a9004303f1772cd6eaa09f8671"
+          }
+        ],
+        "sourceReviewPassed": true,
+        "decisionCaseCount": 0,
+        "semanticAcceptanceInherited": false,
+        "runtimeAccepted": false,
+        "trainingTruth": false,
+        "hash": "933241fefed6e14940f4fa082cdafaa3ac07d82a4318f34d60b2ef46cf354f58"
+      },
+      {
+        "schema": "extra_faction_independent_source_axis_audit_v1",
+        "inputHash": "b05a47a286236505ff5d4c118be066b50b7e836b7e5f7ec6ef44477305b22eb0",
+        "productionHash": "a055f243b3de9f37dc55e8b56dfd815d30b264042fcfbfd0661a294e6ce13294",
+        "candidateHash": "337dfb5717fff16843e48444bbf66182298f7b5d871a0d63bcdf598a62d06970",
+        "policyHash": "a72f4c94fe5d850edfa4cef24d73efd86e2f33018e54ef221815f74355caea63",
+        "axis": "phase_tempo",
+        "checkedFields": [
+          "title",
+          "when",
+          "objective",
+          "decisionProcedure",
+          "alternatives",
+          "opponentBranches",
+          "risk",
+          "reviseIf",
+          "requiredQueries",
+          "ruleRefs",
+          "caseIds"
+        ],
+        "boundSources": [
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+            "sourceHash": "9636b9b57d649b52b9cd335311c008d6cfcc9d35f8480b74d1667e38607a9839"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+            "sourceHash": "0f2c8712441024d4dd2e039d05d8c86b65a6d3420010602dfe62e83bab801e25"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+            "sourceHash": "90bfd0eb8f557c85ceabe36124a549b7d729c0da46e8963ae882113a1475f122"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+            "sourceHash": "dbf1871ee562eee245b24fdad22960676bb212425d722661a563b2fce902cc4e"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+            "sourceHash": "05f91c0117b7406d990e4d05a405341e1863e23ce251aaf019f3288bd1bb39d5"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4",
+            "sourceHash": "de505565097a3aa38fde9797337051032c374d418643d7594e8fc6856edf2fd6"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.0",
+            "sourceHash": "0c7ecb35e1a4230dc7a9b370fd96803fb4af0a5205d1c3bedf99e7179eafc550"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.1",
+            "sourceHash": "d07ea280a4d1b27a0149811352abb9e83363b1ef43d05151d0298d645e9dfee6"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.0",
+            "sourceHash": "e474dc621bfcaabc636418c831747f8f30f9181ca7f53dd0d7d0fff61a2fa8a2"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+            "sourceHash": "dad8397806c296560d5c64550478b7483ea42452a9906451d9fc0e57373f62ef"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+            "sourceHash": "9ecc20148d7f057e914fe00b07abd218a385936ce111a8b9ac8755005ceb361d"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+            "sourceHash": "6f0403f5e5cca997d6af6a47600cd667276e256d99acafeb2ddad4dd9d751a9d"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+            "sourceHash": "cd323e7dc6c300632c50ede59face4a337a71037c05d97e63340121850b613ab"
+          },
+          {
+            "ref": "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+            "sourceHash": "8ba1ee020d91917baaf1b83e9aed938970e52891588bc98cabe68ebfb53555a2"
+          },
+          {
+            "ref": "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+            "sourceHash": "a92ff2ed2e06b140e7b0fb56d35401f606e4cec9bbe0b497fb2aa7f6c12bbcbc"
+          },
+          {
+            "ref": "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.0",
+            "sourceHash": "5c43f269a35ec8e95786111697632f505f26cb69aad42080c0bc84585f69004a"
+          },
+          {
+            "ref": "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+            "sourceHash": "896a923a4c5c0d6eb86c30ac1a0f15f7cffd7f16a0306ff12bba3730e89efe01"
+          },
+          {
+            "ref": "faq-v1:10",
+            "sourceHash": "5e64e632ffd20652c0e0c6c9c342858d887453276c9a952fdd44fb4e2bdad625"
+          },
+          {
+            "ref": "faq-v1:25",
+            "sourceHash": "6d2c13b14773d9fb62378bbe06d483f832aea1be8db4072c6cb4bda81221027e"
+          },
+          {
+            "ref": "faq-v1:27",
+            "sourceHash": "79c1fcde88ebd26563bd56973a1a4140f80b90950379f1f3485180ec99097c20"
+          },
+          {
+            "ref": "faq-v1:59",
+            "sourceHash": "183b6e6af6baed0fbd8df0efcc3f110f07de80cb06563659f4c72ba6a63ab425"
+          },
+          {
+            "ref": "source:army_units:kerrigan",
+            "sourceHash": "d7ed2fe48f4f6cda581850ce1e6b80a204c4bd7bcdb072d64bd193c574c95ed3"
+          }
+        ],
+        "sourceReviewPassed": true,
+        "decisionCaseCount": 0,
+        "semanticAcceptanceInherited": false,
+        "runtimeAccepted": false,
+        "trainingTruth": false,
+        "hash": "b1809e4ca268e72ad961d08797ebad1fe31a148580373ce804ef5c48c611bdf2"
+      },
+      {
+        "schema": "extra_faction_independent_source_axis_audit_v1",
+        "inputHash": "b05a47a286236505ff5d4c118be066b50b7e836b7e5f7ec6ef44477305b22eb0",
+        "productionHash": "a055f243b3de9f37dc55e8b56dfd815d30b264042fcfbfd0661a294e6ce13294",
+        "candidateHash": "3e50e38a0a365f21b7212d25fda2f20210a34ce6aa1614ae36ff1f1479469cce",
+        "policyHash": "6f71485a2809b7ec51894497f76219c04471596fc286e9a933dbdc32aee495f5",
+        "axis": "objectives",
+        "checkedFields": [
+          "title",
+          "when",
+          "objective",
+          "decisionProcedure",
+          "alternatives",
+          "opponentBranches",
+          "risk",
+          "reviseIf",
+          "requiredQueries",
+          "ruleRefs",
+          "caseIds"
+        ],
+        "boundSources": [
+          {
+            "ref": "source:faction_cards:mission_hold_position",
+            "sourceHash": "7ae4fb7697b8936717070fe484990effdbec3f6b85c8a447bce9c90bfaf14505"
+          },
+          {
+            "ref": "source:faction_cards:mission_hold_position__skirmish_",
+            "sourceHash": "21ef970cede182670f3aeaffaddafd68f18e71d26878ee94a09a66b6e0b1a214"
+          },
+          {
+            "ref": "source:faction_cards:mission_frontlines",
+            "sourceHash": "6639d197158a9b860d9ead5a61c0755bff78d40c39b294861eedd9602f5d18c8"
+          },
+          {
+            "ref": "source:faction_cards:mission_gather_the_resources",
+            "sourceHash": "d41431f4379f59617076000be9452595986dc5876cd49fdccf1825fd47517c87"
+          },
+          {
+            "ref": "source:faction_cards:mission_divide_and_conquer",
+            "sourceHash": "aa765d212e8ef259d4260acaad95644ed0b288b1a10f19ef2c053903b90eb3e5"
+          },
+          {
+            "ref": "source:faction_cards:mission_supply_drop",
+            "sourceHash": "6fc4f6a24be4b6cdc87e1ef2fbccc1b5921534caa374d38ebecb76a96033d58e"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+            "sourceHash": "767ba8fd72ee35675222b6c4002d94fff20c0ad9be0ae21106da0afc7cb8ef8d"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+            "sourceHash": "6225abc9f727b5e0769ac7014cb6a5846983aeb7bf158216b1795da565570849"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.2",
+            "sourceHash": "8001456fa7aafebdaf312c2be91d8e01b060d4b287e62baab52cf62c976617ea"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+            "sourceHash": "2cca48b80111a1a5b53399f559745d842a8e62524092c15e48805d8ed3173430"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+            "sourceHash": "2d16a4c5f314b5dca83d711b3e68a52715b9648ac5c3d737316f5a13971b82d4"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+            "sourceHash": "191b272a4af4ae9a9df8f5ecb55a7ab280f8ba2aa14b029c0452803567b512cb"
+          },
+          {
+            "ref": "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+            "sourceHash": "57840f9dd96f28dbdd06ef4d50380cb0a9e5dea3898582a13851edff5600ba39"
+          },
+          {
+            "ref": "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+            "sourceHash": "8fffa4da76b9229634005dcdac19c3f477e31121d1ac2976b6b679cdcdb2af7b"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.44",
+            "sourceHash": "09dc5534b47b981e9b9317306f6fe4dc34ea290ec62ff4f75429f37692f91db3"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+            "sourceHash": "34b032e51aca2f16cf8c588f1bd186971fa73f49484f8244b1fade445f6c3316"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.2",
+            "sourceHash": "19dd354cc01eb88d52f0372fbb9536f55a1080a8451d85ec8629656ef6cd952b"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.2.subItems.0",
+            "sourceHash": "1ddf3b60ba414ea7fc6a0257ab6ad4b8ba4e138d0895520541d1eb8830685f84"
+          },
+          {
+            "ref": "core.u3zNStKpd5XegMjmJfMS.items.6",
+            "sourceHash": "fa2b2962d3281684eeddce56ddf65c096437d143d1d220d824b427cd94256d75"
+          },
+          {
+            "ref": "core.I03mzBYujgXw6xN2qXhH.items.4",
+            "sourceHash": "b12a1aba656c2f1a6982e92bd2ba18091bd75dd2a3f2f1219e98521b33941b8c"
+          },
+          {
+            "ref": "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.2",
+            "sourceHash": "216f861fca19ad50559f4096660d5d5c5f01da1a8dc343550d68a3badfb2beeb"
+          },
+          {
+            "ref": "faq-v1:05",
+            "sourceHash": "faa7724179c8d8977d49f3e8a21f6ddf54c6055a12d05c8d87ac6a4278d46b42"
+          }
+        ],
+        "sourceReviewPassed": true,
+        "decisionCaseCount": 0,
+        "semanticAcceptanceInherited": false,
+        "runtimeAccepted": false,
+        "trainingTruth": false,
+        "hash": "85e9a51f815ecce76b45d2de2513ab8e099316cb2fbcbd752937d9a77712d9a7"
+      },
+      {
+        "schema": "extra_faction_independent_source_axis_audit_v1",
+        "inputHash": "b05a47a286236505ff5d4c118be066b50b7e836b7e5f7ec6ef44477305b22eb0",
+        "productionHash": "a055f243b3de9f37dc55e8b56dfd815d30b264042fcfbfd0661a294e6ce13294",
+        "candidateHash": "1a65d8ffc4a0266a30dd27181c6caabf3e83179247081ac4ab19a52826be1390",
+        "policyHash": "31e6e59ca88345685e5b6316a8b6f24334c0a534e682bb7592c971f807fff0d1",
+        "axis": "threat_tradeoffs",
+        "checkedFields": [
+          "title",
+          "when",
+          "objective",
+          "decisionProcedure",
+          "alternatives",
+          "opponentBranches",
+          "risk",
+          "reviseIf",
+          "requiredQueries",
+          "ruleRefs",
+          "caseIds"
+        ],
+        "boundSources": [
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.2",
+            "sourceHash": "0077902a1b76c24080f0c048dd0a217a7c827c14aa2722840794c935c7e4757f"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+            "sourceHash": "bfb631ed3fa3455c8b1145369c3de956dee0a80bfec2955680f22da7e739407d"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.4",
+            "sourceHash": "0676bbb06a81133b398c9f5dcd81f33169c00b926f739dd7ea0e1860e391166b"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+            "sourceHash": "c7dea6682093f6a4e2bbc98494372318c196f7106a1469a8c2820e265348768f"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+            "sourceHash": "dad8397806c296560d5c64550478b7483ea42452a9906451d9fc0e57373f62ef"
+          },
+          {
+            "ref": "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+            "sourceHash": "9ecc20148d7f057e914fe00b07abd218a385936ce111a8b9ac8755005ceb361d"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+            "sourceHash": "deddb7c60c376c1d582b063f17c3f3726eb69095bc177f957320726966a4afe0"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.17",
+            "sourceHash": "2c28602a46f9c1a19bb18c19911e3fc20fbd130837b9f21b97451a104adc83b3"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.50",
+            "sourceHash": "0261a1f5eb75c3103828a81f381f203c56f5606442ab81db25b4c657d9dd1aad"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.58",
+            "sourceHash": "d38480d0be92c34bc14419f8e6197e354e2e9b9eb63337d6802b8bf7c3475689"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.69",
+            "sourceHash": "5a6dcba8f88d42567961ce673ea75fc5e6c775fab491c117d8ce5d45e3ef45a1"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.70",
+            "sourceHash": "612a05ce383e8c3db8df96a3c59585ddd699cc043daf82c16f6e9ff62d6cfb21"
+          },
+          {
+            "ref": "core.H3Fn8YSvEvpJZpT57qw1.items.3",
+            "sourceHash": "4a015f73052be4b4570530888bf4549ed7dc7dcf622af1e499e4fd5e8fc1b7b8"
+          },
+          {
+            "ref": "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+            "sourceHash": "a92ff2ed2e06b140e7b0fb56d35401f606e4cec9bbe0b497fb2aa7f6c12bbcbc"
+          },
+          {
+            "ref": "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+            "sourceHash": "896a923a4c5c0d6eb86c30ac1a0f15f7cffd7f16a0306ff12bba3730e89efe01"
+          },
+          {
+            "ref": "core.OszqexisUrSOKMW6TzA5.items.4",
+            "sourceHash": "ff6dcdd7e715696c31cc40ce9f352893c2ad2e055945b1633908ba3d72b0f92b"
+          },
+          {
+            "ref": "core.OszqexisUrSOKMW6TzA5.items.6",
+            "sourceHash": "f05420dd9a7975812423583a6083a5aadc7246a290203b1a72e04ad64590ee17"
+          },
+          {
+            "ref": "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+            "sourceHash": "8fffa4da76b9229634005dcdac19c3f477e31121d1ac2976b6b679cdcdb2af7b"
+          },
+          {
+            "ref": "faq-v1:28",
+            "sourceHash": "ee4065e4d83dd93b067d1aceaf26a4c663838bdac76ff7099c8df3d8465e933f"
+          },
+          {
+            "ref": "faq-v1:29",
+            "sourceHash": "9c7ae5387773fb45b914b8b8396367f8ee7e9db4690de3dffe25c42e93defd9c"
+          },
+          {
+            "ref": "faq-v1:30",
+            "sourceHash": "c4788367eb23c18257e7bbd541e3b66230c131e8b616661c9031c104bab9d9c5"
+          },
+          {
+            "ref": "faq-v1:32",
+            "sourceHash": "d8f9d44685999b4ce889995ff1d606982945472b65ab90a5a0dd90c01c52d7ef"
+          },
+          {
+            "ref": "faq-v1:53",
+            "sourceHash": "e995d962ece422c69af82c859b9ea9fc95d22c96a3c3b9b4f474c911c5a43070"
+          },
+          {
+            "ref": "faq-v1:59",
+            "sourceHash": "183b6e6af6baed0fbd8df0efcc3f110f07de80cb06563659f4c72ba6a63ab425"
+          },
+          {
+            "ref": "faq-v1:60",
+            "sourceHash": "8647a0af3aa349b2aa0c3e2303f15517b32156d94f816d9548e3a14ca962d6f7"
+          },
+          {
+            "ref": "faq-v1:61",
+            "sourceHash": "6f8cf6aea93455cc10e1a1ebbad12bc7badbccee3ff8a748b1b9f92aec35053c"
+          },
+          {
+            "ref": "faq-v1:62",
+            "sourceHash": "34304f962f4626c9310aee3b071883c0900726731396a84be0d80da52e686f36"
+          },
+          {
+            "ref": "faq-v1:63",
+            "sourceHash": "9c6034b8bca7819bbc3ea48f856461ef80ca59315c6b84987f6c00a3da28ae0b"
+          },
+          {
+            "ref": "faq-v1:66",
+            "sourceHash": "fc4364da3b58db7fb854f48b5bcf711e200aa92ac1a04ce7481b0dc7ac8d69d4"
+          },
+          {
+            "ref": "faq-v1:68",
+            "sourceHash": "970c184862182fa6580fd93a38538ecc6ffa1ca7939f75a8972840f17a8784e3"
+          }
+        ],
+        "sourceReviewPassed": true,
+        "decisionCaseCount": 0,
+        "semanticAcceptanceInherited": false,
+        "runtimeAccepted": false,
+        "trainingTruth": false,
+        "hash": "9c90f6eaea09a3b53320b8258e66991fb63c697a2d2c12ce09847c1c8bf263b1"
+      },
+      {
+        "schema": "extra_faction_independent_source_axis_audit_v1",
+        "inputHash": "b05a47a286236505ff5d4c118be066b50b7e836b7e5f7ec6ef44477305b22eb0",
+        "productionHash": "a055f243b3de9f37dc55e8b56dfd815d30b264042fcfbfd0661a294e6ce13294",
+        "candidateHash": "7adedddd9bc73f73b798923e6c47e6b43fc6f35390c0423af1cc12a1b04bf2cc",
+        "policyHash": "3ed088f99e7d61664965d1685a9fbef81a0b1beb3cf9d55c7561b98373ba9d69",
+        "axis": "card_packages",
+        "checkedFields": [
+          "title",
+          "when",
+          "objective",
+          "decisionProcedure",
+          "alternatives",
+          "opponentBranches",
+          "risk",
+          "reviseIf",
+          "requiredQueries",
+          "ruleRefs",
+          "caseIds"
+        ],
+        "boundSources": [
+          {
+            "ref": "source:tactical_cards:kerrigan_s_swarm",
+            "sourceHash": "a3f2e0b74a676a7b3697fcf49c2c5770236ec445adc8874fbef83be5a9129884"
+          },
+          {
+            "ref": "source:tactical_cards:accelerating_creep",
+            "sourceHash": "6ed9224a887899c8b15329e32415353c8bc722f547944cb592f9b51c946f1b75"
+          },
+          {
+            "ref": "source:tactical_cards:malignant_creep",
+            "sourceHash": "3d78c79607a1386a6a25f8dfc745ba8d6847a1f3fdaa1b06222560e871eac312"
+          },
+          {
+            "ref": "source:army_units:omega_worm",
+            "sourceHash": "d1eae57976861c20c704fbb32cfff378def09a2f75174029092f067ba1fb4748"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.1",
+            "sourceHash": "db29eeb92a586ab58eee9f8befa92e2485bd3b4879f93fe822a6f6d0af4bccdd"
+          },
+          {
+            "ref": "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+            "sourceHash": "974aaaa7801354c51eb0b067fd2fda1e4ac7f9b10a20c21aaffaa5961eb0e15c"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+            "sourceHash": "dc0d8613f40f0a29de27a43e7bc5d73862162cf8691865dd4eb66163724d4609"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.24",
+            "sourceHash": "44926772e3b376ebbb71113aef6fb0c8ad2d315cbd5f32962b7032471839f67c"
+          },
+          {
+            "ref": "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48",
+            "sourceHash": "facf3f94dbaa71333981e856f5ac357c0540d6a9004303f1772cd6eaa09f8671"
+          },
+          {
+            "ref": "core.cB7X7UfOMHh3Wxn79ASF.items.3.subItems.0",
+            "sourceHash": "8a1a0dc966bd923a68128f300815d4ba57f2905dbfac6179c49bc911e7a9f8cc"
+          },
+          {
+            "ref": "faq-v1:54",
+            "sourceHash": "b576e39ca9853825ca7ded6b8be9007848b5a57437804eecf6cf54ba7dbe976c"
+          }
+        ],
+        "sourceReviewPassed": true,
+        "decisionCaseCount": 0,
+        "semanticAcceptanceInherited": false,
+        "runtimeAccepted": false,
+        "trainingTruth": false,
+        "hash": "b9728d11cd1f58f3eea0200749211b88ca1f782799735b24b8f7f5d21fb76324"
+      }
+    ],
+    "axesChecked": 6,
+    "fieldsChecked": 66,
+    "sourceReviewPassed": true,
+    "runtimeAccepted": false,
+    "trainingTruth": false,
+    "hash": "0c2018b96a5946b2c67535b97339838de3e0088916dc80825806fbcd08ef36ba"
+  },
+  "structureAudit": {
+    "schema": "extra_faction_strategy_structure_audit_v1",
+    "inputHash": "b05a47a286236505ff5d4c118be066b50b7e836b7e5f7ec6ef44477305b22eb0",
+    "productionHash": "a055f243b3de9f37dc55e8b56dfd815d30b264042fcfbfd0661a294e6ce13294",
+    "axes": [
+      "army_resources",
+      "unit_roles",
+      "phase_tempo",
+      "objectives",
+      "threat_tradeoffs",
+      "card_packages"
+    ],
+    "policies": [
+      {
+        "axis": "army_resources",
+        "when": 4,
+        "alternatives": 5,
+        "opponentBranches": 4,
+        "reviseIf": 5,
+        "requiredQueries": 5
+      },
+      {
+        "axis": "unit_roles",
+        "when": 4,
+        "alternatives": 5,
+        "opponentBranches": 3,
+        "reviseIf": 5,
+        "requiredQueries": 6
+      },
+      {
+        "axis": "phase_tempo",
+        "when": 4,
+        "alternatives": 4,
+        "opponentBranches": 4,
+        "reviseIf": 5,
+        "requiredQueries": 6
+      },
+      {
+        "axis": "objectives",
+        "when": 4,
+        "alternatives": 4,
+        "opponentBranches": 4,
+        "reviseIf": 5,
+        "requiredQueries": 8
+      },
+      {
+        "axis": "threat_tradeoffs",
+        "when": 4,
+        "alternatives": 4,
+        "opponentBranches": 4,
+        "reviseIf": 5,
+        "requiredQueries": 8
+      },
+      {
+        "axis": "card_packages",
+        "when": 4,
+        "alternatives": 4,
+        "opponentBranches": 3,
+        "reviseIf": 5,
+        "requiredQueries": 6
+      }
+    ],
+    "conditionalDecisionContractPassed": true,
+    "realDecisionCases": 0,
+    "fullGameStrategyEffectivenessProven": false,
+    "runtimeAccepted": false,
+    "trainingTruth": false,
+    "hash": "c1877c1b592410735a44eed765d4d57e7a7f7095856f857b3f76879665ca1b7d"
+  },
+  "skill": {
+    "schema": "project_d_game_skill_v1",
+    "gameId": "starcraft-tmg",
+    "rulesVersion": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+    "sourceBinding": {
+      "core": "1adbdb652fafc09d01887981a3ae86f69e65e1f1480d804156a8da1d4d1757a1",
+      "faq": "2881adb2a4e0475f07bb17aebf02e64f35c9073f274cec2cf0a8f770f8647226",
+      "rules": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+      "dataset": "b2579b83bb9a77b6119730009725a34d4e828d92d302248243bab33863551067"
+    },
+    "skillId": "starcraft-tmg.faction.kerrigan_s_swarm",
+    "factionRecordKey": "tactical_cards:kerrigan_s_swarm",
+    "version": "1.0.0-offline-source-reviewed",
+    "skillType": "strategy",
+    "dependencies": {
+      "generalSkillHash": "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+      "generalLayerHash": "c0efea33d7c84f5adefb7216d9367d38e5306df31788449d6b91bcd20d7cfe4f",
+      "rulesReferenceHash": "d086ae7f69e48716b9bae7a8adb4db2d1f013b98e02b17c314b10cbe95e14292"
+    },
+    "knowledge": [
+      {
+        "axis": "army_resources",
+        "policy": {
+          "axis": "army_resources",
+          "title": "Kerrigan's Swarm 组军资源分配：先满足槽位与标签合法性，再按可兑现收益分配 Vespene",
+          "when": [
+            "在 Army Building 阶段为 Kerrigan's Swarm 阵营卡选择单位、升级与战术卡",
+            "需要决定 Vespene Gas 在补槽战术卡、Creep Card 与资源/能力卡之间的分配",
+            "需要决定是否购买提供 Support 槽的战术卡以携带 Queen 等 Support 单位",
+            "需要决定 Core/Elite/Hero 槽位如何被 Supply 占用"
+          ],
+          "objective": "在 Standard 规模（2000 矿物 / 200 Vespene）下，构造一个槽位合法、标签合法、Vespene 不超预算且保留足够匹配资源卡用于能力支付的军队；优先满足能兑现任务得分与关键能力的槽位需求，而非追求单位数量或单一高成本单位。",
+          "decisionProcedure": [
+            "先确认合法性边界：所选阵营卡为 Kerrigan's Swarm（起始槽位 Core 3 / Elite 2 / Hero 1 / Support 0 / Air 0，标签 Zerg + Kerrigan's Swarm）；任何单位或战术卡上的每个标签都必须出现在该阵营卡上，否则不可用。合法性最终由绑定的 Rules 服务判定，本策略不构成规则权威。",
+            "计算 Vespene 预算：Standard 规模矿物上限 2000 → Vespene 上限 200（矿物的 10%）；Vespene 只能用于战术卡，不能转换为矿物，未花费即作废。",
+            "先处理硬性槽位缺口：起始 Support 槽为 0，因此任何 Support 单位（如 Queen，Supply 1）在未购买提供 Support 槽的战术卡前无槽可占。若计划携带 Support 单位，必须先从 Hatchery（30 Vespene，+1 Support）或 Overseer（25 Vespene，+1 Support）等合格卡中购买至少一张补槽卡。",
+            "处理 Zerg Creep 强制选择：阵营卡的 Zerg Creep 被动要求恰好选择一张 Creep Card 并支付其费用。在 Accelerating Creep（0 Vespene，仅 Zerg 标签）与 Malignant Creep（10 Vespene，Kerrigan's Swarm 标签）之间二选一；两者都提供 Creep Tumor 的 STAY IN PLAY 与 DISPLACEMENT，Malignant Creep 额外提供 ON CREEP 且声明 Charge 时的 +1 IMPACT 修正，Accelerating Creep 提供 ON CREEP 时 Speed +1。",
+            "按 Supply 占用核算槽位：每个单位按其起始 Supply Value 占用对应类型槽位（如 Hydralisk small = Supply 2 占 2 Elite，large = Supply 3 占 3 Elite；Kerrigan = Supply 1 占 1 Hero）。未使用槽位作废，不可转换或结转，因此不要为未使用的槽位付费。",
+            "在剩余 Vespene 内分配资源卡：优先保留能产生与计划能力费用匹配的资源类型（Zerg 为 BM）的 Ready 卡；注意卡牌被 Exhaust 后本回合不再提供资源，且超额资源会丢失。",
+            "对每个候选配置，明确其依赖的假设（如任务计分条件、对手构成、地形），不把未验证的收益当作确定事实；若关键信息缺失（如任务卡未定），选择低承诺、可调整的配置。",
+            "每次任务卡、对手公开信息或规则版本变化后，重新核算槽位占用与 Vespene 支出，只保留仍合法的配置。"
+          ],
+          "alternatives": [
+            {
+              "option": "优先购买补槽战术卡以携带 Support 单位（如 Hatchery 30 Vespene 或 Overseer 25 Vespene）",
+              "preferWhen": "计划携带 Queen 等 Support 单位，且其 Reaction 能力（如 Transfusion 减伤、Restoration 移除 DEBUFF）或 Domineering Presence 的 Supply +1 对当前任务得分或生存有可说明的贡献"
+            },
+            {
+              "option": "不购买补槽卡，将 Vespene 留给其他战术卡或资源卡",
+              "preferWhen": "当前配置不需要 Support 单位，或补槽卡的机会成本高于其带来的可兑现收益；注意未使用的 Support 槽不会自动产生价值"
+            },
+            {
+              "option": "选择 Malignant Creep（10 Vespene）而非 Accelerating Creep（0 Vespene）",
+              "preferWhen": "计划依赖 ON CREEP 冲锋的 IMPACT 修正，且 10 Vespene 的支出不影响其他关键卡；否则 Accelerating Creep 的 0 成本与 Speed +1 更保守"
+            },
+            {
+              "option": "填满 Hero 槽（如 Kerrigan，Supply 1，250 矿物）",
+              "preferWhen": "Kerrigan 的 Commander 被动（Supply +1 用于控制/争夺/脱离）与主动能力（如 Crushing Grip、Mutating Carapace）对当前任务有可说明贡献，且 Hero 槽无更优替代"
+            },
+            {
+              "option": "保留 Vespene 不全部花完",
+              "preferWhen": "当前配置已满足槽位与标签合法性，且保留 Vespene 可换取更灵活的战术卡选择；注意未花费 Vespene 会作废，因此保留仅在仍有可购买项时才有意义"
+            }
+          ],
+          "opponentBranches": [
+            {
+              "response": "对手公开的战术卡或阵营卡暗示其可能携带大量远程火力或模板武器",
+              "adaptation": "重新评估是否优先购买提供减伤/闪避或移除 DEBUFF 的 Support 卡（如 Queen 的 Transfusion/Restoration），而非纯进攻性战术卡"
+            },
+            {
+              "response": "对手可能携带 HIDDEN 单位或依赖隐蔽部署",
+              "adaptation": "评估是否购买 Overseer（25 Vespene，+1 Support 且提供 Oversight Mode 侦测）而非 Hatchery，以同时满足补槽与侦测需求"
+            },
+            {
+              "response": "任务卡计分条件偏向控制标记（如 Hold Position 的标记 VP）",
+              "adaptation": "优先考虑能提升 Supply 用于控制/争夺的单位或能力（如 Kerrigan 的 Commander、Queen 的 Domineering Presence），而非纯击杀导向配置"
+            },
+            {
+              "response": "对手使用大量 IMPACT 或冲锋威胁",
+              "adaptation": "重新评估 Malignant Creep 的 ON CREEP 冲锋修正与 Evolution Chamber 的 Extended Claws 之间的取舍，以及是否需要更多减伤 Support"
+            }
+          ],
+          "risk": "本生产轮未提供任何真实决策案例（developmentCases 为空），因此无法证明任何组军或资源分配策略在完整对局中更优。Kerrigan's Swarm 的槽位与 Vespene 预算之间的具体最优分配未被验证；不同任务卡的计分条件可能改变优先级，但未建模。Omega Network 的每回合 Supply ≤ 2 部署限制与常规 Entry Edge 部署在实战中的相对价值未被量化。Zerg Creep 选择 Accelerating Creep 还是 Malignant Creep 的收益差异未被验证。Kerrigan Swarm Raptor 的 Unique 标签与普通 Raptor 的差异在实战中的相对价值未被验证。Queen 的 Support 槽需求与起始 Support 0 之间的资源取舍未被量化。本策略不构成规则权威；所有合法性判断须由绑定的 Rules 服务决定，且当前来源中 HIGH GROUND Cover 正文与决策表措辞不一致等边缘冲突未解决。",
+          "reviseIf": [
+            "任务卡或部署卡确定，改变计分条件与地形假设",
+            "对手公开新信息（如战术卡、已部署单位升级）改变威胁评估",
+            "规则版本或产品数据更新，改变槽位、成本或标签",
+            "所选配置的 Vespene 支出超出预算或槽位占用不合法",
+            "关键能力费用与可用资源卡类型不匹配"
+          ],
+          "requiredQueries": [
+            "legal_space",
+            "own_resources",
+            "viewer_state",
+            "scenario",
+            "coverage"
+          ],
+          "ruleRefs": [
+            "source:tactical_cards:kerrigan_s_swarm",
+            "source:tactical_cards:accelerating_creep",
+            "source:tactical_cards:malignant_creep",
+            "source:tactical_cards:hatchery",
+            "source:tactical_cards:overseer",
+            "source:army_units:queen",
+            "source:army_units:kerrigan",
+            "source:army_units:hydralisk",
+            "source:army_units:omega_worm",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.0",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.1",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.3",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.5",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.6",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.8",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.24",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.61",
+            "faq-v1:21",
+            "faq-v1:23"
+          ],
+          "caseIds": []
+        }
+      },
+      {
+        "axis": "unit_roles",
+        "policy": {
+          "axis": "unit_roles",
+          "title": "按槽位稀缺度与编制选项分配单位角色，而非按单位名称",
+          "when": [
+            "在Kerrigan's Swarm阵营卡下组建军队或评估现有编制",
+            "需要决定Core/Elite/Hero/Support槽位如何分配给候选单位",
+            "需要在同一单位的不同Composition Option之间选择以改变槽位占用与角色",
+            "需要判断某单位（如Queen）是否必须依赖战术卡解锁槽位才能编入"
+          ],
+          "objective": "在Kerrigan's Swarm的起始槽位约束（Core 3 / Elite 2 / Hero 1 / Support 0 / Air 0）下，按槽位稀缺度与所选Composition Option的实际占用，为每个候选单位分配可说明的角色，并明确哪些角色必须通过购买战术卡解锁槽位才能实现；不假设任何具体编制在完整对局中更优。",
+          "decisionProcedure": [
+            "读取所选Faction Card的起始Army Slots（Kerrigan's Swarm：Core 3、Elite 2、Hero 1、Support 0、Air 0）与已购买战术卡解锁的额外槽位；未使用的槽位会丢失，不能转换或结转。",
+            "对每个候选单位，读取其armySlotType与每个Composition Option的startingSupply（即占用的槽位数），不按单位名称或历史版本猜测占用：例如Hydralisk small占2 Elite、large占3 Elite；Zergling small占1 Core、large占2 Core；Raptor (Zergling) small占1 Elite、large占2 Elite；Kerrigan Swarm Raptor占1 Elite；Kerrigan占1 Hero。",
+            "先检查槽位类型是否可用：若某单位所需槽位类型当前为0（如Support 0下的Queen），则该角色必须通过购买提供该槽位类型的战术卡（如Hatchery或Overseer各提供1 Support）来解锁，否则该单位不能编入；不要假设SUMMON或特殊规则可绕过组军槽位限制。",
+            "在同类槽位内比较候选单位的角色差异，使用来源中可观察的属性而非推断价值：例如远程武器档案（Hydralisk Needle Spines RANGE 12 TARGET All）、近战档案（Zergling/Raptor Claws RANGE E）、移动角色（Kerrigan Swarm Raptor的Raptor Strain可穿越Size 4或以下IMPASSABLE TERRAIN并无需ACCESS POINT改变海拔）、Burrow相关能力（Roach/Corpser/Vile的Burrow与Burrow Ambush）、支援能力（Queen的Transfusion、Spawn Creep Tumor）。",
+            "区分子阵营专属单位与通用单位：Kerrigan Swarm Raptor带Kerrigan's Swarm标签，普通Zergling/Raptor/Swarmling只带Zerg标签；两者在Kerrigan's Swarm下都合法，但角色不可互换（如Raptor Strain的移动角色是通用Zergling所没有的）。",
+            "将Omega Worm视为nonArmyBuildingUnit：它不可在组军时购买，只能通过Kerrigan's Swarm的Omega Network能力放置，其角色是战场上的Entry Edge/Structure，不占用组军槽位，也不应被计入槽位分配。",
+            "若选择Creep Card（Zerg Creep要求恰好一张），明确其对ON CREEP依赖单位角色的侧重：Accelerating Creep提供Speed on Creep（ON CREEP时Speed +1，偏机动），Malignant Creep提供Malevolent Matriarch（ON CREEP冲锋时IMPACT Hit Roll +1，偏冲击）；不推断两者相对价值。",
+            "每次对手公开新信息（如部署单位、使用反应能力）或任务/分差变化后，重新评估槽位分配是否仍服务于当前目标；不照抄预先设定的固定编制。"
+          ],
+          "alternatives": [
+            {
+              "option": "优先填满Core槽位以廉价单位建立战场存在",
+              "preferWhen": "需要多个可争夺标记或承受伤亡的低成本单位，且Core槽位（3）相对充裕；注意每个Core单位按所选Composition Option占用1或2 Core"
+            },
+            {
+              "option": "将Elite槽位集中给单一高占用单位（如Hydralisk small占2 Elite）",
+              "preferWhen": "需要该单位的远程火力或特定武器档案，且愿意放弃在同一Elite槽位内编入多个低占用Elite单位（如Kerrigan Swarm Raptor占1 Elite）"
+            },
+            {
+              "option": "将Elite槽位分散给多个低占用Elite单位（如Kerrigan Swarm Raptor占1 Elite）",
+              "preferWhen": "需要多个独立单位承担不同角色（如移动角色与近战角色），且不依赖单一高占用单位的火力"
+            },
+            {
+              "option": "购买战术卡解锁缺失槽位类型（如Hatchery/Overseer解锁Support以编入Queen）",
+              "preferWhen": "该单位提供的支援能力（如Transfusion、Spawn Creep Tumor）对当前计划有可说明的用途，且Vespene Gas支出与槽位占用可接受"
+            },
+            {
+              "option": "不编入需要缺失槽位类型的单位，改用现有槽位类型内的替代角色",
+              "preferWhen": "解锁槽位的战术卡成本或机会成本高于该单位角色带来的可说明收益"
+            }
+          ],
+          "opponentBranches": [
+            {
+              "response": "对手部署高火力远程单位或集火威胁我方关键单位",
+              "adaptation": "重新评估当前槽位分配中哪些单位承担承受火力或提供掩护的角色；若原分配缺乏可承受火力的单位，考虑在后续组军或部署中调整，而非在已定编制内强行改变角色"
+            },
+            {
+              "response": "对手使用反应能力或防御规则降低我方单位收益",
+              "adaptation": "重新读取结算后的可见局面；若原角色（如冲击角色）收益被削减，转向仍可兑现的角色（如机动或支援），并保留仍为Ready的支付卡牌"
+            },
+            {
+              "response": "对手公开新信息（如部署子阵营专属单位或使用Creep相关能力）",
+              "adaptation": "更新对对手角色构成的假设；若对手的移动或Creep依赖改变了我方单位角色的相对价值，重新评估槽位分配是否仍服务于当前目标"
+            }
+          ],
+          "risk": "本轴仅基于Kerrigan's Swarm阵营卡与当前产品数据解释槽位约束与单位角色差异，未提供任何真实对局决策案例；因此无法证明任何具体槽位分配或单位角色选择在完整对局中更优。起始槽位（Core 3、Elite 2、Hero 1、Support 0）与单位Supply Value的交互仅说明合法性上限，未证明任何编制在任务、分差或对手回应下最优。子阵营专属单位与通用单位的角色差异、Omega Worm的放置时机、Creep Card选择对ON CREEP依赖单位的影响均未在来源中给出战术评价，本轴不推断其相对价值。本轴未覆盖对手军队构成、任务计分条件、分差或战场地形。",
+          "reviseIf": [
+            "所选Faction Card或已购买战术卡解锁的槽位类型/数量发生变化",
+            "候选单位的Composition Option或armySlotType发生变化",
+            "对手公开新信息改变对单位角色相对价值的评估",
+            "任务计分条件、分差或战场地形使原角色分配的前提不再成立",
+            "Creep Card选择发生变化，影响ON CREEP依赖单位的角色侧重"
+          ],
+          "requiredQueries": [
+            "legal_space",
+            "viewer_state",
+            "own_resources",
+            "phase",
+            "activation_state",
+            "scenario"
+          ],
+          "ruleRefs": [
+            "source:tactical_cards:kerrigan_s_swarm",
+            "source:army_units:kerrigan",
+            "source:army_units:hydralisk",
+            "source:army_units:kerrigan_swarm_raptor__zergling_",
+            "source:army_units:raptor__zergling_",
+            "source:army_units:zergling",
+            "source:army_units:swarmling__zergling_",
+            "source:army_units:roach",
+            "source:army_units:corpser__roach_",
+            "source:army_units:vile__roach_",
+            "source:army_units:queen",
+            "source:army_units:omega_worm",
+            "source:tactical_cards:hatchery",
+            "source:tactical_cards:overseer",
+            "source:tactical_cards:accelerating_creep",
+            "source:tactical_cards:malignant_creep",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.5",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.6",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.8",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.1",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48"
+          ],
+          "caseIds": []
+        }
+      },
+      {
+        "axis": "phase_tempo",
+        "policy": {
+          "axis": "phase_tempo",
+          "title": "按阶段约束、Pass窗口与对手节奏干扰决定激活顺序",
+          "when": [
+            "己方在当前阶段有多个未激活单位或可以选择Pass",
+            "存在延后即失去价值的行动机会（部署、抢占标记、射击窗口）",
+            "需要决定是否提前Pass以取得下一阶段先手标记",
+            "对手可能使用节奏干扰能力（如强制单位计为已激活）或反应能力"
+          ],
+          "objective": "在交替激活与阶段专属约束下，先兑现延后即失效的行动，再评估提前Pass换取下一阶段先手的价值，同时保留至多一个关键反应窗口；不假设存在脱离具体局面的最优顺序，也不把先手当作静态优势。",
+          "decisionProcedure": [
+            "读取当前阶段、先手标记持有者、双方各单位已激活状态、剩余合法行动与对手可见威胁；阶段1/2/3使用交替激活，每个被激活单位只执行该阶段允许的一个行动。",
+            "先区分当前阶段：阶段1（Deploy/Move/Disengage/Hold）、阶段2（Run/Hold/Charge/Ranged Attack，且单位须带阶段1移动侧激活标记，Reserves单位不能行动）、阶段3（仅Engaged单位必须激活，不能自愿跳过）。",
+            "在阶段1/2，识别哪些行动若延后会被对手下一次激活关闭或显著贬值（如关键单位部署、抢占标记、进入射击/冲锋范围），优先兑现这些行动。",
+            "评估提前Pass：若己方关键单位已就位或无需再行动，比较放弃本阶段剩余激活的机会成本与取得下一阶段先手标记（由标记持有者选择首个行动方）的价值；若对手仍有多个未激活单位，保留激活以观察其部署/移动通常更有信息价值。",
+            "在阶段3，不采用提前Pass分支：所有Engaged单位必须激活，只有无剩余Engaged单位时才能Pass；按战斗优先级（高价值目标、低生存单位、需解除不利接战者）决定激活顺序，并注意解除Engagement后本阶段尚未激活的单位视为Pass、自下一回合起正常行动。",
+            "若单位携带Active Ability，确认其只能在该单位激活时、声明行动前或行动完全结算后使用，且每具名能力每单位每回合一次（除非REPEATABLE）；若携带Reaction Ability，须在触发精确时刻声明，且每名玩家每次激活最多结算一个反应。",
+            "每次对手行动后重读可见局面，只执行仍成立的下一步；不照抄预先设定的完整队列。"
+          ],
+          "alternatives": [
+            {
+              "option": "先激活关键单位兑现机会",
+              "preferWhen": "该单位的行动（部署高价值单位、抢占任务标记、进入射击/冲锋范围、消灭威胁）若延后会被对手下一次激活关闭或显著贬值"
+            },
+            {
+              "option": "保留关键激活以观察对手",
+              "preferWhen": "等待能获得对手部署/移动信息，且不会错过本阶段必须完成的行动；注意保留的回应窗口受每激活一个反应限制"
+            },
+            {
+              "option": "在阶段1或阶段2提前Pass，取得下一阶段先手标记",
+              "preferWhen": "己方关键单位已就位或无需再行动，且由标记持有者选择下一阶段首个行动方的收益超过放弃本阶段剩余激活的机会成本；阶段3不能自愿采用此分支"
+            },
+            {
+              "option": "在阶段2用Run替代Hold或低价值攻击",
+              "preferWhen": "单位无法有效射击或冲锋，且能实际改变位置（0英寸移动视为Hold）以缩短距离、抢占标记或撤至掩护后"
+            }
+          ],
+          "opponentBranches": [
+            {
+              "response": "对手在阶段1或阶段2提前Pass并取得下一阶段先手标记",
+              "adaptation": "本阶段完成仍有价值的剩余合法激活（部署、移动、抢占标记）；进入下一阶段后不假设己方先行动，在标记持有者选择首个行动方后重新评估下一步"
+            },
+            {
+              "response": "对手使用节奏干扰能力（如Kerrigan的Crushing Grip，1 Biomass，Movement Phase，使一个敌方单位在本阶段计为已激活）",
+              "adaptation": "重算己方本阶段剩余可激活单位；若关键单位被计为已激活，转向仍可兑现的次优行动或保留后手，不强行执行原队列"
+            },
+            {
+              "response": "对手在合法触发点结算反应能力（如减伤、闪避、反制冲锋）降低计划收益",
+              "adaptation": "重新读取结算后的可见局面；若原计划收益被大幅削减，转向其他合法目标或保留仍为Ready的支付卡牌；注意己方本激活的反应窗口已用尽"
+            },
+            {
+              "response": "对手在阶段3强制战斗中以伤亡优先级保护核心接战模型",
+              "adaptation": "按Engaged伤亡优先级（先非接战范围、再接战范围非底座接触、最后底座接触）评估可移除模型；若无法破坏关键接战，考虑改用其他目标或接受消耗"
+            }
+          ],
+          "risk": "本轴仅提供阶段节奏决策框架，不提供跨轴最优解；本生产轮未提供真实决策案例，开发案例（tempo.act-first-v2、tempo.respond-v2）仅验证规则执行，不包含对手名单、任务计分或完整威胁信息，不能据此推断真实对局中的最优激活顺序。提前Pass的收益未被量化；阶段3强制激活的节奏影响、反应窗口的最优保留策略、部署时机与阶段节奏的耦合均未被建模。",
+          "reviseIf": [
+            "关键候选单位不再合法、已激活或被对手节奏干扰能力计为已激活",
+            "对手结束阶段或改变先手标记归属",
+            "任务计分条件或分差发生变化，改变提前Pass的相对价值",
+            "新单位进入战场或改变控制态势",
+            "对手公开新信息（部署新单位、使用反应能力）改变威胁评估"
+          ],
+          "requiredQueries": [
+            "legal_space",
+            "phase",
+            "initiative",
+            "activation_state",
+            "viewer_state",
+            "threat"
+          ],
+          "ruleRefs": [
+            "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.0",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.1",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.0",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+            "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+            "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+            "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.0",
+            "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+            "faq-v1:10",
+            "faq-v1:25",
+            "faq-v1:27",
+            "faq-v1:59",
+            "source:army_units:kerrigan"
+          ],
+          "caseIds": []
+        }
+      },
+      {
+        "axis": "objectives",
+        "policy": {
+          "axis": "objectives",
+          "title": "按任务卡VP结构与争夺资格合取条件排序目标",
+          "when": [
+            "已通过草案确定本局任务卡与部署卡",
+            "存在多个可争夺、可防守或可放弃的任务标记",
+            "需要决定本回合优先抢分、守分、击杀敌方单位或保留预备队",
+            "当前分差接近或可能接近该任务卡的即时胜利阈值"
+          ],
+          "objective": "在所选任务卡的计分结构下，优先选择能在本回合计分阶段兑现最高净VP的计划。净VP需同时计入：按该任务卡规则控制标记的得分、按该任务卡规则摧毁敌方补给或完成特殊行动（如Gather）的得分，并减去己方单位被摧毁或补给降低可能给对手的VP。当己方领先且本回合预计得分可使分差达到该任务卡的即时胜利阈值时，优先选择能立即结束游戏的计划；当己方落后且对手可能达到该阈值时，优先选择能阻止对手得分或降低己方暴露风险的计划。",
+          "decisionProcedure": [
+            "读取本局任务卡与其版本（Standard或Skirmish）、部署卡、当前回合数、双方VP分差、各标记控制状态（谁控制/中立/争夺中），以及该任务卡的即时胜利阈值与是否含“摧毁敌方补给得分”条件。",
+            "对每个候选争夺单位，先判定争夺资格合取条件：在战场上、处于队形内、至少一个模型在标记3英寸内且对该标记有视线并与标记同海拔；飞行与钻地单位不能争夺或控制。任一条件不满足则该单位对本标记贡献0补给，必须从补给总值比较中剔除。",
+            "按该任务卡的VP结构计算每个候选计划在本回合计分阶段的预计净VP：标记得分须按该任务卡的具体规则（例如Hold Position的中立/己方色1VP、对方色2VP；Frontlines的每控制标记1VP且从对手夺回额外+2VP；Gather the Resources的对方色标记2VP与Gather行动1VP；Divide and Conquer的分区补给比较与Marker 5额外2VP），不得跨任务套用同一VP表。",
+            "区分可确定分支与概率性分支：标记得分只有在“计分前控制不再改变”等明确假设成立时才能写成确定分支；依赖攻击结果的击杀得分需查询成功概率或伤害分布，使用期望值而非单次骰点，并明确未覆盖条件。",
+            "比较守住现有控制标记与争夺新标记：只有当争夺新标记的预计净VP增量大于放弃或削弱现有控制所损失的风险时才转换目标；注意控制具有粘性，且补给值为0的单位在无敌方争夺时仍可控制标记，因此“削弱守军”不等于“夺取标记”，进攻方必须实际以更高争夺补给总值结束计分阶段。",
+            "若己方领先且本回合预计得分会使分差达到该任务卡的即时胜利阈值，优先选择能立即结束游戏的计划；若己方落后且对手可能达到该阈值，优先选择能阻止对手得分或降低己方暴露风险的计划。",
+            "在最终回合（按任务卡Game Length确定）仍有合法部署机会时，提前比较将高补给单位保留在预备队、部署上场与得分风险；最终计分阶段开始时，预备队单位会被视作摧毁并给对手VP，因此规划应在该时点前完成，而非等到计分阶段开始才评估。",
+            "每次对手行动后重新计算各标记的争夺资格与补给总值、控制状态与分差，只执行在当前可见局面下仍能兑现的计划。"
+          ],
+          "alternatives": [
+            {
+              "option": "守住并巩固现有控制标记",
+              "preferWhen": "现有控制标记已能提供稳定VP，且分散兵力去争夺新标记会暴露现有控制给对手以更高争夺补给总值夺回；尤其当己方领先且接近即时胜利阈值时"
+            },
+            {
+              "option": "主动争夺对方色或高价值标记",
+              "preferWhen": "现有控制不足以在本回合或剩余回合内达成目标，且投入争夺的净VP增量高于守住的收益；须按该任务卡的具体VP结构评估（例如Hold Position对方色标记2VP、Frontlines从对手夺回额外+2VP、Gather the Resources对方色标记2VP），而非按颜色直觉"
+            },
+            {
+              "option": "集中火力摧毁高补给敌方单位",
+              "preferWhen": "该任务卡含“摧毁敌方补给得分”条件，且击杀产生的VP高于或等于放弃控制一个标记所损失的VP，且该单位是对方得分或控制的关键；若该任务卡不含此条件，则此分支不成立"
+            },
+            {
+              "option": "保留高补给单位在预备队",
+              "preferWhen": "当前回合不是最终回合，且保留可换取后续回合的部署时机或可用补给；须注意最终回合开始时仍在预备队的单位会被视作摧毁并给对手VP，且被送回预备队的单位若本阶段已激活则仍保持已激活状态"
+            }
+          ],
+          "opponentBranches": [
+            {
+              "response": "对手投入高补给单位争夺我方控制的标记",
+              "adaptation": "重算该标记的争夺资格与双方补给总值；若我方争夺补给总值不足，考虑放弃该标记并转向其他可得分目标，而非投入更多单位陷入消耗"
+            },
+            {
+              "response": "对手从预备队部署高补给单位到争夺中的标记，在同一计分窗口内以更高补给总值夺回",
+              "adaptation": "在计分前评估对手剩余可用补给与其可部署单位的补给值；若对手可能以更高补给总值结束计分阶段，考虑提前增援该标记、放弃该标记或转向其他目标，而非假设当前控制会保持"
+            },
+            {
+              "response": "对手通过击杀我方高补给单位获得VP并接近该任务卡的即时胜利阈值",
+              "adaptation": "若对手因此可能触发即时胜利，优先保护剩余高补给单位并阻止其继续得分，而非继续进攻"
+            },
+            {
+              "response": "对手通过控制标记或完成特殊行动（如Gather）扩大分差",
+              "adaptation": "按该任务卡的VP结构重新评估各标记与行动的价值；若对手控制新标记或完成行动使分差接近即时胜利阈值，优先夺回高价值标记或阻止其继续得分"
+            }
+          ],
+          "risk": "本策略为决策框架加规则约束，未在真实对局中验证。当前无真实决策案例，因此无法证明任何目标选择在完整对局中更优。标记控制得分依赖“计分前控制不再改变”的假设；击杀得分依赖未提供的概率/伤害分布。对手的军队构成、升级、剩余资源与战术卡状态未知，其能否在我方计分前以更高争夺补给总值夺回标记、或通过击杀我方高补给单位接近即时胜利阈值，无法量化。最终回合前部署高补给单位与保留在预备队之间的得分权衡，缺少当前分差与剩余部署窗口数据，无法给出确定结论。",
+          "reviseIf": [
+            "草案结果确定或改变任务卡与部署卡，从而改变标记VP结构、即时胜利阈值与标记可达性",
+            "当前回合数或分差发生变化，影响即时胜利或最终计分风险",
+            "任务标记控制状态、争夺资格或双方单位补给值发生改变",
+            "对手从预备队部署单位或以其他方式改变某标记的争夺补给总值",
+            "对手的回应使原计划的净VP前提不再成立"
+          ],
+          "requiredQueries": [
+            "scenario",
+            "mission_card",
+            "deployment_card",
+            "score_forecast",
+            "legal_space",
+            "viewer_state",
+            "threat",
+            "probability"
+          ],
+          "ruleRefs": [
+            "source:faction_cards:mission_hold_position",
+            "source:faction_cards:mission_hold_position__skirmish_",
+            "source:faction_cards:mission_frontlines",
+            "source:faction_cards:mission_gather_the_resources",
+            "source:faction_cards:mission_divide_and_conquer",
+            "source:faction_cards:mission_supply_drop",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.2",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+            "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+            "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.44",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.2",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.2.subItems.0",
+            "core.u3zNStKpd5XegMjmJfMS.items.6",
+            "core.I03mzBYujgXw6xN2qXhH.items.4",
+            "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.2",
+            "faq-v1:05"
+          ],
+          "caseIds": []
+        }
+      },
+      {
+        "axis": "threat_tradeoffs",
+        "policy": {
+          "axis": "threat_tradeoffs",
+          "title": "Kerrigan's Swarm 威胁交换：在合法目标集内先算可兑现伤亡与净VP，再比伤害",
+          "when": [
+            "己方单位在 Assault 或 Combat 阶段可对多个合法敌方目标行动",
+            "攻击可能改变双方接战状态、任务标记控制或双方补给值",
+            "目标单位可能拥有闪避资格、防御性被动或反应能力",
+            "需要决定是接受交换、回避/集中兵力，还是先补充信息"
+          ],
+          "objective": "在 Kerrigan's Swarm 的合法目标集合内，选择能最大化当前任务净收益且最小化后续损失的交换。净收益需同时计入：目标方补给值下降带来的 VP、攻击方自身补给损失给对手的 VP、以及交换对任务标记控制与战术质量（Disengage 豁免）的影响；而非仅比较单次伤害或击杀数。",
+          "decisionProcedure": [
+            "读取当前阶段、任务计分条件与分差、双方单位位置、接战状态、可见性、武器档案与当前补给值；先确定合法目标集合：未接战攻击者不能选择已接战单位（模板 Spillover 除外），已接战攻击者只能攻击其当前接战的单位；PINPOINT 只覆盖“瞄准已接战敌方”，不允许已接战单位向外射击。",
+            "按武器档案结构确定批次：同一武器档案的所有模型必须攻击同一目标，只有不同档案（含 SIDEARM 档案）可攻击不同单位；因此候选目标受单位武器档案结构约束，而非逐模型自由选择。",
+            "对每个合法候选目标，先估算可兑现伤亡而非总伤害：未接战目标受可见性限制（不能移除超过可见模型数，超出部分丢弃），但伤亡移除不受射程限制——目标单位中任何对攻击方至少一个模型可见的模型都可被移除，即使物理上超出射程；接战目标忽略标准可见性而按优先级1→2→3移除，且不能为逃避接战而移除唯一维持接战的模型。",
+            "在估算中同时检查 Surge Type 与目标 Combat Tag 是否匹配（不匹配则 Surge 骰结果被忽略），并检查目标是否有闪避资格：Surge 只绕过护甲掷骰、不绕过闪避掷骰，闪避针对包含 Surge 骰的最终伤害池结算；保留自然1必败、自然6必胜边界，且 ANTI-EVADE 等修正最多把检定恶化到6+，不能当作保证命中或保证击杀。",
+            "把防御性被动与反应分开计入：对手每次激活最多结算一个 Reaction，每个具名 Reaction 每单位每轮一次；但 Passive Ability 始终生效且不受每次激活一次的限制，防御性被动（如 TOUGH、DODGE、授予闪避的被动）可在不消耗对手 Reaction 预算的情况下降低预期伤害。",
+            "计算净 VP 时同时计入两侧补给损失：目标方当前补给值下降使对手获得等于所降补给值的 VP（部分任务按摧毁补给计分），攻击方自身补给值下降同样使对手获得 VP；并把目标方补给下降对任务标记控制与战术质量（Disengage 惩罚豁免）的影响作为独立权重。",
+            "比较候选时区分 Assault 阶段与 Combat 阶段：Assault 阶段可合法选择 Hold 或改打其他目标；Combat 阶段所有已接战单位必须激活，只要仍有已接战单位就不能自愿 Pass，因此“回避交换”在 Combat 阶段并非总是合法分支，此时应改为战斗内的批次排序与目标分配选择。",
+            "若信息不足（封闭名单下对手升级、被动/反应能力不可确认），先补充可观察信息或选择低承诺、可逆的候选；不把未证实的对手防御能力当作确定事实，也不把单次攻击期望当作整局结果。"
+          ],
+          "alternatives": [
+            {
+              "option": "接受交换并攻击当前合法目标",
+              "preferWhen": "交换后能显著改变任务标记控制或解除不利接战，且计入双方补给损失后的净 VP 为正、反击代价可承受"
+            },
+            {
+              "option": "回避或集中兵力（Assault 阶段合法时）",
+              "preferWhen": "交换会失去关键得分单位或支援功能，或对手有低成本强反制；注意 Combat 阶段已接战单位不能自愿 Pass，此分支仅在 Assault 阶段或未接战单位上合法"
+            },
+            {
+              "option": "先补充信息再行动",
+              "preferWhen": "对手单位升级或防御性被动/反应未知，且等待不丢失合法行动窗口；封闭名单下未部署单位的升级在部署时才披露"
+            },
+            {
+              "option": "改用模板武器或 PINPOINT 打开目标选项",
+              "preferWhen": "唯一高价值敌人已接战而攻击者未接战，且己方拥有 PINPOINT 武器或模板武器；注意 Spillover 按独立批次结算、不应用 RoA 修正、不产生 Surge，且武器关键词只作用于主目标批次"
+            }
+          ],
+          "opponentBranches": [
+            {
+              "response": "对手在合法触发点结算防御性 Reaction（如减伤、闪避、反制冲锋）",
+              "adaptation": "重新读取结算后的可见局面；若预期伤害被大幅削减，保留后续批次或改用其他合法目标，并注意对手本次激活已用掉其唯一 Reaction 预算"
+            },
+            {
+              "response": "对手依赖防御性 Passive（TOUGH、DODGE、授予闪避）而非 Reaction 降低伤害",
+              "adaptation": "在估算中直接下调预期伤害，不假设对手消耗了 Reaction 预算；若净 VP 转为负值，转向其他目标或保留资源"
+            },
+            {
+              "response": "对手用不同目标或多单位集火反击，或通过击杀我方高补给单位获得 VP",
+              "adaptation": "重估累计威胁与双方补给损失；若原交换收益被抵消或对手接近即时胜利阈值，转为防守、撤退或保护剩余高补给单位"
+            },
+            {
+              "response": "对手在 Combat 阶段强制我方已接战单位继续战斗，使回避分支不可用",
+              "adaptation": "放弃回避分支，改为在战斗内选择批次排序与目标分配，优先维持与所有敌方单位的接战并避免移除唯一维持接战的模型"
+            }
+          ],
+          "risk": "本轮未提供真实决策案例（developmentCases 为空），因此“先算可兑现伤亡与净VP再比伤害”的交换策略在完整对局中是否更优未被证明。封闭名单下对手军队构成、升级、被动/反应能力可用性与剩余资源未知，精确伤害期望依赖未证实假设。补给损失折算为 VP 的权重、以及“放弃标记控制”与“击杀补给”之间的换算，来源未给出统一公式，需按具体任务卡计分条件逐案计算。单次攻击期望不预测整局结果，本轴不提供跨轴最优解，也不保证胜利。",
+          "reviseIf": [
+            "任务计分条件或分差改变，使净 VP 换算前提不再成立",
+            "目标单位接战状态、可见性或补给值变化",
+            "对手公开新信息（部署新单位、使用反应或被动能力）或使用未预期分支",
+            "我方关键单位被威胁、失去行动能力或补给值下降",
+            "规则文本冲突或覆盖缺口（如 HIGH GROUND Cover 正文与决策表措辞不一致、模板武器物理尺寸未规定）需上报规则服务或裁判"
+          ],
+          "requiredQueries": [
+            "threat",
+            "probability",
+            "legal_space",
+            "preview",
+            "viewer_state",
+            "own_resources",
+            "phase",
+            "activation_state"
+          ],
+          "ruleRefs": [
+            "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.2",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.4",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+            "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.17",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.50",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.58",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.69",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.70",
+            "core.H3Fn8YSvEvpJZpT57qw1.items.3",
+            "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+            "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+            "core.OszqexisUrSOKMW6TzA5.items.4",
+            "core.OszqexisUrSOKMW6TzA5.items.6",
+            "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+            "faq-v1:28",
+            "faq-v1:29",
+            "faq-v1:30",
+            "faq-v1:32",
+            "faq-v1:53",
+            "faq-v1:59",
+            "faq-v1:60",
+            "faq-v1:61",
+            "faq-v1:62",
+            "faq-v1:63",
+            "faq-v1:66",
+            "faq-v1:68"
+          ],
+          "caseIds": []
+        }
+      },
+      {
+        "axis": "card_packages",
+        "policy": {
+          "axis": "card_packages",
+          "title": "Kerrigan's Swarm 卡包选择：先锁定 Creep Card 与槽位骨架，再按可兑现收益排序 Omega Network 与 Wild Mutation",
+          "when": [
+            "为 Kerrigan's Swarm 阵营卡组建或调整 Army List，需要决定携带哪些 Tactical/Creep 卡",
+            "需要在 Accelerating Creep 与 Malignant Creep 之间二选一（Zerg Creep 被动要求恰好一张 Creep Card）",
+            "需要决定是否把 Omega Network 与 Wild Mutation 纳入本局计划，以及它们与槽位解锁卡的取舍",
+            "当前可见局面显示己方单位是否 ON CREEP、是否有可用的 Omega Worm 落点"
+          ],
+          "objective": "在 Kerrigan's Swarm 的标签资格、起始槽位（Core 3 / Elite 2 / Hero 1 / Support 0 / Air 0）与 Zerg Creep 恰好一张 Creep Card 的约束下，选择一组卡包，使每张卡都能对应一个可说明的、与当前任务目标相关的用途；不假设任何卡包在完整对局中更优。",
+          "decisionProcedure": [
+            "先做资格过滤：只保留每个 Faction Tag 都出现在 Kerrigan's Swarm 阵营卡（Zerg、Kerrigan's Swarm）上的单位与战术卡；任一标签缺失即排除。据此 Terran/Protoss 卡全部出局，普通 Zergling（仅 Zerg）与 Kerrigan Swarm Raptor（Zerg, Kerrigan's Swarm）均可用。",
+            "锁定 Zerg Creep 被动：恰好选择一张 Creep Card 并支付其费用。当前产品数据中 Accelerating Creep 费用 0、Malignant Creep 费用 10 且带 Kerrigan's Swarm 标签；两者均为 Unique，不能同时携带。",
+            "用起始槽位做骨架核算：Core 3 / Elite 2 / Hero 1 / Support 0 / Air 0。逐项把候选单位的起始 Supply Value 映射到对应槽位类型，确认不超槽；Support 0 意味着任何 Support 单位（如 Queen）必须先购买解锁 Support 槽位的战术卡（如 Hatchery 提供 1× Support）。未使用槽位作废，不能结转。",
+            "对每个候选卡包，写出它对应的可兑现用途与依赖条件：Omega Network 依赖 Movement Phase 激活、战场上无友方 Omega Worm、且存在距任何敌方模型超过 10\" 的 GROUND LEVEL 落点；Wild Mutation 依赖激活单位 ON CREEP（处于任一 Creep Tumor Token 或 Creep 来源模型 6\" 内）。",
+            "比较 Creep Card 二选一：Accelerating Creep 提供 Speed on Creep（ON CREEP 时 Speed +1）、Living Glob of Tissue（Creep Tumor Token 获得 STAY IN PLAY 与 DISPLACEMENT）与 Creep Removal；Malignant Creep 提供 Malevolent Matriarch（ON CREEP 时 Charge 获得 +1 IMPACT Hit Roll 修正）、同样的 Living Glob of Tissue 与 Creep Removal，但费用 10 且带 Kerrigan's Swarm 标签。选择依据是当前计划更依赖移动速度还是冲锋 IMPACT 修正，而非费用高低本身。",
+            "比较槽位解锁卡与能力卡：若骨架核算显示某类槽位不足（例如需要 Support 单位但 Support 0），优先购买能解锁该槽位的战术卡；只有在槽位已满足时才把剩余 Vespene Gas 分配给 Omega Network / Wild Mutation 所在阵营卡以外的能力卡。",
+            "对每个候选卡包，明确其依赖的假设（如对手是否会让己方单位保持 ON CREEP、Omega Worm 落点是否会被对手封锁），不把未实现的收益当作确定事实。",
+            "每次对手行动或己方部署后重读可见局面，只保留在当前局面下仍能兑现用途的卡包；若某张卡的前提被破坏，重新比较替代卡包。"
+          ],
+          "alternatives": [
+            {
+              "option": "携带 Accelerating Creep（费用 0）",
+              "preferWhen": "计划更依赖 ON CREEP 时的移动速度（Speed on Creep +1）来达成位置目标，且希望把 Vespene Gas 留给槽位解锁卡或其他能力卡"
+            },
+            {
+              "option": "携带 Malignant Creep（费用 10，带 Kerrigan's Swarm 标签）",
+              "preferWhen": "计划更依赖 ON CREEP 时 Charge 的 +1 IMPACT Hit Roll 修正，且愿意支付 10 Vespene Gas；注意它与 Accelerating Creep 均为 Unique，不能同时携带"
+            },
+            {
+              "option": "优先购买槽位解锁战术卡（如 Hatchery 解锁 1× Support）",
+              "preferWhen": "骨架核算显示所需单位类型的槽位不足，且不购买该卡就无法合法上场目标单位"
+            },
+            {
+              "option": "把 Omega Network / Wild Mutation 纳入本局计划",
+              "preferWhen": "存在可说明的用途：Omega Network 有合法落点且需要 Entry Edge 部署或返回 Reserves；Wild Mutation 有单位能在激活时处于 ON CREEP 并需要 Speed 或 PRECISION 增量"
+            }
+          ],
+          "opponentBranches": [
+            {
+              "response": "对手以 Move/Deploy/Run/Charge/Disengage 结束于己方 Creep Tumor Token 1\" 内，触发 Creep Removal 移除 Token",
+              "adaptation": "重算己方单位是否仍 ON CREEP；若 ON CREEP 前提被破坏，Wild Mutation 与 Speed on Creep 的收益不再成立，转向不依赖 ON CREEP 的卡包用途或重新放置 Creep Tumor Token"
+            },
+            {
+              "response": "对手封锁或占据 Omega Worm 的候选落点，使距任何敌方模型超过 10\" 的 GROUND LEVEL 位置不可用",
+              "adaptation": "放弃本回合的 Omega Network 放置计划，改用其他合法卡包用途；不强行在非法位置放置"
+            },
+            {
+              "response": "对手针对 Omega Worm 或依赖 ON CREEP 的单位发动攻击",
+              "adaptation": "重新评估该卡包用途的净收益；若 Omega Worm 被摧毁或 ON CREEP 单位被消灭，转向仍可兑现的卡包用途"
+            }
+          ],
+          "risk": "本策略仅基于来源文本与规则引用，未提供任何真实决策案例或对局证据；所有关于 Omega Network、Wild Mutation、Creep Card 选择与 Omega Worm 部署的策略价值均为未验证假设。未证明 Accelerating Creep 与 Malignant Creep 之间何者更优；未证明 Omega Worm 的 Entry Edge 部署与返回 Reserves 能力在真实任务计分、分差管理或对手回应下的净收益；未证明 Wild Mutation 的 BUFF Speed (1) 与 PRECISION (1) 在具体单位上的增量收益是否值得消耗 BM 与激活窗口；未证明 Creep Tumor Token 的 STAY IN PLAY 与 DISPLACEMENT 在对抗 Creep Removal 时的实际生存率或战术价值；未证明起始槽位在 Standard 或 Skirmish 规模下是否足以支撑任何特定单位组合。",
+          "reviseIf": [
+            "Creep Card 选择改变（Accelerating Creep 与 Malignant Creep 互换）",
+            "槽位核算显示所需单位类型的槽位不足，需要购买或更换槽位解锁卡",
+            "己方单位不再 ON CREEP，或 Omega Worm 落点不再合法",
+            "对手行动破坏了某张卡包用途的前提（如移除 Creep Tumor Token、封锁落点、摧毁 Omega Worm）",
+            "任务计分条件或分差改变，使原卡包用途的收益不再相关"
+          ],
+          "requiredQueries": [
+            "legal_space",
+            "own_resources",
+            "viewer_state",
+            "phase",
+            "activation_state",
+            "geometry"
+          ],
+          "ruleRefs": [
+            "source:tactical_cards:kerrigan_s_swarm",
+            "source:tactical_cards:accelerating_creep",
+            "source:tactical_cards:malignant_creep",
+            "source:army_units:omega_worm",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.1",
+            "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.24",
+            "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48",
+            "core.cB7X7UfOMHh3Wxn79ASF.items.3.subItems.0",
+            "faq-v1:54"
+          ],
+          "caseIds": []
+        }
+      }
+    ],
+    "sourceRefs": [
+      "source:tactical_cards:kerrigan_s_swarm",
+      "source:tactical_cards:accelerating_creep",
+      "source:tactical_cards:malignant_creep",
+      "source:tactical_cards:hatchery",
+      "source:tactical_cards:overseer",
+      "source:army_units:queen",
+      "source:army_units:kerrigan",
+      "source:army_units:hydralisk",
+      "source:army_units:omega_worm",
+      "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.0",
+      "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.1",
+      "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.3",
+      "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+      "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.5",
+      "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.6",
+      "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.8",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.24",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.61",
+      "faq-v1:21",
+      "faq-v1:23",
+      "source:army_units:kerrigan_swarm_raptor__zergling_",
+      "source:army_units:raptor__zergling_",
+      "source:army_units:zergling",
+      "source:army_units:swarmling__zergling_",
+      "source:army_units:roach",
+      "source:army_units:corpser__roach_",
+      "source:army_units:vile__roach_",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.0",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.1",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.0",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+      "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+      "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+      "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.0",
+      "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+      "faq-v1:10",
+      "faq-v1:25",
+      "faq-v1:27",
+      "faq-v1:59",
+      "source:faction_cards:mission_hold_position",
+      "source:faction_cards:mission_hold_position__skirmish_",
+      "source:faction_cards:mission_frontlines",
+      "source:faction_cards:mission_gather_the_resources",
+      "source:faction_cards:mission_divide_and_conquer",
+      "source:faction_cards:mission_supply_drop",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.2",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+      "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+      "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.44",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+      "core.Rj6sMyNODPQ8OHUc9Clp.items.2",
+      "core.Rj6sMyNODPQ8OHUc9Clp.items.2.subItems.0",
+      "core.u3zNStKpd5XegMjmJfMS.items.6",
+      "core.I03mzBYujgXw6xN2qXhH.items.4",
+      "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.2",
+      "faq-v1:05",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.2",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.4",
+      "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.17",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.50",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.58",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.69",
+      "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.70",
+      "core.H3Fn8YSvEvpJZpT57qw1.items.3",
+      "core.OszqexisUrSOKMW6TzA5.items.4",
+      "core.OszqexisUrSOKMW6TzA5.items.6",
+      "faq-v1:28",
+      "faq-v1:29",
+      "faq-v1:30",
+      "faq-v1:32",
+      "faq-v1:53",
+      "faq-v1:60",
+      "faq-v1:61",
+      "faq-v1:62",
+      "faq-v1:63",
+      "faq-v1:66",
+      "faq-v1:68",
+      "core.cB7X7UfOMHh3Wxn79ASF.items.3.subItems.0",
+      "faq-v1:54"
+    ],
+    "preconditions": [
+      "加载精确总规则 Skill 与当前玩家可见战场状态",
+      "从 Rules 服务取得当前 LegalSpace，并核对编军、升级、阶段与资源"
+    ],
+    "procedure": [
+      {
+        "axis": "army_resources",
+        "title": "Kerrigan's Swarm 组军资源分配：先满足槽位与标签合法性，再按可兑现收益分配 Vespene",
+        "when": [
+          "在 Army Building 阶段为 Kerrigan's Swarm 阵营卡选择单位、升级与战术卡",
+          "需要决定 Vespene Gas 在补槽战术卡、Creep Card 与资源/能力卡之间的分配",
+          "需要决定是否购买提供 Support 槽的战术卡以携带 Queen 等 Support 单位",
+          "需要决定 Core/Elite/Hero 槽位如何被 Supply 占用"
+        ],
+        "objective": "在 Standard 规模（2000 矿物 / 200 Vespene）下，构造一个槽位合法、标签合法、Vespene 不超预算且保留足够匹配资源卡用于能力支付的军队；优先满足能兑现任务得分与关键能力的槽位需求，而非追求单位数量或单一高成本单位。",
+        "steps": [
+          "先确认合法性边界：所选阵营卡为 Kerrigan's Swarm（起始槽位 Core 3 / Elite 2 / Hero 1 / Support 0 / Air 0，标签 Zerg + Kerrigan's Swarm）；任何单位或战术卡上的每个标签都必须出现在该阵营卡上，否则不可用。合法性最终由绑定的 Rules 服务判定，本策略不构成规则权威。",
+          "计算 Vespene 预算：Standard 规模矿物上限 2000 → Vespene 上限 200（矿物的 10%）；Vespene 只能用于战术卡，不能转换为矿物，未花费即作废。",
+          "先处理硬性槽位缺口：起始 Support 槽为 0，因此任何 Support 单位（如 Queen，Supply 1）在未购买提供 Support 槽的战术卡前无槽可占。若计划携带 Support 单位，必须先从 Hatchery（30 Vespene，+1 Support）或 Overseer（25 Vespene，+1 Support）等合格卡中购买至少一张补槽卡。",
+          "处理 Zerg Creep 强制选择：阵营卡的 Zerg Creep 被动要求恰好选择一张 Creep Card 并支付其费用。在 Accelerating Creep（0 Vespene，仅 Zerg 标签）与 Malignant Creep（10 Vespene，Kerrigan's Swarm 标签）之间二选一；两者都提供 Creep Tumor 的 STAY IN PLAY 与 DISPLACEMENT，Malignant Creep 额外提供 ON CREEP 且声明 Charge 时的 +1 IMPACT 修正，Accelerating Creep 提供 ON CREEP 时 Speed +1。",
+          "按 Supply 占用核算槽位：每个单位按其起始 Supply Value 占用对应类型槽位（如 Hydralisk small = Supply 2 占 2 Elite，large = Supply 3 占 3 Elite；Kerrigan = Supply 1 占 1 Hero）。未使用槽位作废，不可转换或结转，因此不要为未使用的槽位付费。",
+          "在剩余 Vespene 内分配资源卡：优先保留能产生与计划能力费用匹配的资源类型（Zerg 为 BM）的 Ready 卡；注意卡牌被 Exhaust 后本回合不再提供资源，且超额资源会丢失。",
+          "对每个候选配置，明确其依赖的假设（如任务计分条件、对手构成、地形），不把未验证的收益当作确定事实；若关键信息缺失（如任务卡未定），选择低承诺、可调整的配置。",
+          "每次任务卡、对手公开信息或规则版本变化后，重新核算槽位占用与 Vespene 支出，只保留仍合法的配置。"
+        ],
+        "alternatives": [
+          {
+            "option": "优先购买补槽战术卡以携带 Support 单位（如 Hatchery 30 Vespene 或 Overseer 25 Vespene）",
+            "preferWhen": "计划携带 Queen 等 Support 单位，且其 Reaction 能力（如 Transfusion 减伤、Restoration 移除 DEBUFF）或 Domineering Presence 的 Supply +1 对当前任务得分或生存有可说明的贡献"
+          },
+          {
+            "option": "不购买补槽卡，将 Vespene 留给其他战术卡或资源卡",
+            "preferWhen": "当前配置不需要 Support 单位，或补槽卡的机会成本高于其带来的可兑现收益；注意未使用的 Support 槽不会自动产生价值"
+          },
+          {
+            "option": "选择 Malignant Creep（10 Vespene）而非 Accelerating Creep（0 Vespene）",
+            "preferWhen": "计划依赖 ON CREEP 冲锋的 IMPACT 修正，且 10 Vespene 的支出不影响其他关键卡；否则 Accelerating Creep 的 0 成本与 Speed +1 更保守"
+          },
+          {
+            "option": "填满 Hero 槽（如 Kerrigan，Supply 1，250 矿物）",
+            "preferWhen": "Kerrigan 的 Commander 被动（Supply +1 用于控制/争夺/脱离）与主动能力（如 Crushing Grip、Mutating Carapace）对当前任务有可说明贡献，且 Hero 槽无更优替代"
+          },
+          {
+            "option": "保留 Vespene 不全部花完",
+            "preferWhen": "当前配置已满足槽位与标签合法性，且保留 Vespene 可换取更灵活的战术卡选择；注意未花费 Vespene 会作废，因此保留仅在仍有可购买项时才有意义"
+          }
+        ],
+        "opponentBranches": [
+          {
+            "response": "对手公开的战术卡或阵营卡暗示其可能携带大量远程火力或模板武器",
+            "adaptation": "重新评估是否优先购买提供减伤/闪避或移除 DEBUFF 的 Support 卡（如 Queen 的 Transfusion/Restoration），而非纯进攻性战术卡"
+          },
+          {
+            "response": "对手可能携带 HIDDEN 单位或依赖隐蔽部署",
+            "adaptation": "评估是否购买 Overseer（25 Vespene，+1 Support 且提供 Oversight Mode 侦测）而非 Hatchery，以同时满足补槽与侦测需求"
+          },
+          {
+            "response": "任务卡计分条件偏向控制标记（如 Hold Position 的标记 VP）",
+            "adaptation": "优先考虑能提升 Supply 用于控制/争夺的单位或能力（如 Kerrigan 的 Commander、Queen 的 Domineering Presence），而非纯击杀导向配置"
+          },
+          {
+            "response": "对手使用大量 IMPACT 或冲锋威胁",
+            "adaptation": "重新评估 Malignant Creep 的 ON CREEP 冲锋修正与 Evolution Chamber 的 Extended Claws 之间的取舍，以及是否需要更多减伤 Support"
+          }
+        ],
+        "risk": "本生产轮未提供任何真实决策案例（developmentCases 为空），因此无法证明任何组军或资源分配策略在完整对局中更优。Kerrigan's Swarm 的槽位与 Vespene 预算之间的具体最优分配未被验证；不同任务卡的计分条件可能改变优先级，但未建模。Omega Network 的每回合 Supply ≤ 2 部署限制与常规 Entry Edge 部署在实战中的相对价值未被量化。Zerg Creep 选择 Accelerating Creep 还是 Malignant Creep 的收益差异未被验证。Kerrigan Swarm Raptor 的 Unique 标签与普通 Raptor 的差异在实战中的相对价值未被验证。Queen 的 Support 槽需求与起始 Support 0 之间的资源取舍未被量化。本策略不构成规则权威；所有合法性判断须由绑定的 Rules 服务决定，且当前来源中 HIGH GROUND Cover 正文与决策表措辞不一致等边缘冲突未解决。",
+        "reviseIf": [
+          "任务卡或部署卡确定，改变计分条件与地形假设",
+          "对手公开新信息（如战术卡、已部署单位升级）改变威胁评估",
+          "规则版本或产品数据更新，改变槽位、成本或标签",
+          "所选配置的 Vespene 支出超出预算或槽位占用不合法",
+          "关键能力费用与可用资源卡类型不匹配"
+        ],
+        "requiredQueries": [
+          "legal_space",
+          "own_resources",
+          "viewer_state",
+          "scenario",
+          "coverage"
+        ],
+        "ruleRefs": [
+          "source:tactical_cards:kerrigan_s_swarm",
+          "source:tactical_cards:accelerating_creep",
+          "source:tactical_cards:malignant_creep",
+          "source:tactical_cards:hatchery",
+          "source:tactical_cards:overseer",
+          "source:army_units:queen",
+          "source:army_units:kerrigan",
+          "source:army_units:hydralisk",
+          "source:army_units:omega_worm",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.0",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.1",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.3",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.5",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.6",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.8",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.24",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.61",
+          "faq-v1:21",
+          "faq-v1:23"
+        ]
+      },
+      {
+        "axis": "unit_roles",
+        "title": "按槽位稀缺度与编制选项分配单位角色，而非按单位名称",
+        "when": [
+          "在Kerrigan's Swarm阵营卡下组建军队或评估现有编制",
+          "需要决定Core/Elite/Hero/Support槽位如何分配给候选单位",
+          "需要在同一单位的不同Composition Option之间选择以改变槽位占用与角色",
+          "需要判断某单位（如Queen）是否必须依赖战术卡解锁槽位才能编入"
+        ],
+        "objective": "在Kerrigan's Swarm的起始槽位约束（Core 3 / Elite 2 / Hero 1 / Support 0 / Air 0）下，按槽位稀缺度与所选Composition Option的实际占用，为每个候选单位分配可说明的角色，并明确哪些角色必须通过购买战术卡解锁槽位才能实现；不假设任何具体编制在完整对局中更优。",
+        "steps": [
+          "读取所选Faction Card的起始Army Slots（Kerrigan's Swarm：Core 3、Elite 2、Hero 1、Support 0、Air 0）与已购买战术卡解锁的额外槽位；未使用的槽位会丢失，不能转换或结转。",
+          "对每个候选单位，读取其armySlotType与每个Composition Option的startingSupply（即占用的槽位数），不按单位名称或历史版本猜测占用：例如Hydralisk small占2 Elite、large占3 Elite；Zergling small占1 Core、large占2 Core；Raptor (Zergling) small占1 Elite、large占2 Elite；Kerrigan Swarm Raptor占1 Elite；Kerrigan占1 Hero。",
+          "先检查槽位类型是否可用：若某单位所需槽位类型当前为0（如Support 0下的Queen），则该角色必须通过购买提供该槽位类型的战术卡（如Hatchery或Overseer各提供1 Support）来解锁，否则该单位不能编入；不要假设SUMMON或特殊规则可绕过组军槽位限制。",
+          "在同类槽位内比较候选单位的角色差异，使用来源中可观察的属性而非推断价值：例如远程武器档案（Hydralisk Needle Spines RANGE 12 TARGET All）、近战档案（Zergling/Raptor Claws RANGE E）、移动角色（Kerrigan Swarm Raptor的Raptor Strain可穿越Size 4或以下IMPASSABLE TERRAIN并无需ACCESS POINT改变海拔）、Burrow相关能力（Roach/Corpser/Vile的Burrow与Burrow Ambush）、支援能力（Queen的Transfusion、Spawn Creep Tumor）。",
+          "区分子阵营专属单位与通用单位：Kerrigan Swarm Raptor带Kerrigan's Swarm标签，普通Zergling/Raptor/Swarmling只带Zerg标签；两者在Kerrigan's Swarm下都合法，但角色不可互换（如Raptor Strain的移动角色是通用Zergling所没有的）。",
+          "将Omega Worm视为nonArmyBuildingUnit：它不可在组军时购买，只能通过Kerrigan's Swarm的Omega Network能力放置，其角色是战场上的Entry Edge/Structure，不占用组军槽位，也不应被计入槽位分配。",
+          "若选择Creep Card（Zerg Creep要求恰好一张），明确其对ON CREEP依赖单位角色的侧重：Accelerating Creep提供Speed on Creep（ON CREEP时Speed +1，偏机动），Malignant Creep提供Malevolent Matriarch（ON CREEP冲锋时IMPACT Hit Roll +1，偏冲击）；不推断两者相对价值。",
+          "每次对手公开新信息（如部署单位、使用反应能力）或任务/分差变化后，重新评估槽位分配是否仍服务于当前目标；不照抄预先设定的固定编制。"
+        ],
+        "alternatives": [
+          {
+            "option": "优先填满Core槽位以廉价单位建立战场存在",
+            "preferWhen": "需要多个可争夺标记或承受伤亡的低成本单位，且Core槽位（3）相对充裕；注意每个Core单位按所选Composition Option占用1或2 Core"
+          },
+          {
+            "option": "将Elite槽位集中给单一高占用单位（如Hydralisk small占2 Elite）",
+            "preferWhen": "需要该单位的远程火力或特定武器档案，且愿意放弃在同一Elite槽位内编入多个低占用Elite单位（如Kerrigan Swarm Raptor占1 Elite）"
+          },
+          {
+            "option": "将Elite槽位分散给多个低占用Elite单位（如Kerrigan Swarm Raptor占1 Elite）",
+            "preferWhen": "需要多个独立单位承担不同角色（如移动角色与近战角色），且不依赖单一高占用单位的火力"
+          },
+          {
+            "option": "购买战术卡解锁缺失槽位类型（如Hatchery/Overseer解锁Support以编入Queen）",
+            "preferWhen": "该单位提供的支援能力（如Transfusion、Spawn Creep Tumor）对当前计划有可说明的用途，且Vespene Gas支出与槽位占用可接受"
+          },
+          {
+            "option": "不编入需要缺失槽位类型的单位，改用现有槽位类型内的替代角色",
+            "preferWhen": "解锁槽位的战术卡成本或机会成本高于该单位角色带来的可说明收益"
+          }
+        ],
+        "opponentBranches": [
+          {
+            "response": "对手部署高火力远程单位或集火威胁我方关键单位",
+            "adaptation": "重新评估当前槽位分配中哪些单位承担承受火力或提供掩护的角色；若原分配缺乏可承受火力的单位，考虑在后续组军或部署中调整，而非在已定编制内强行改变角色"
+          },
+          {
+            "response": "对手使用反应能力或防御规则降低我方单位收益",
+            "adaptation": "重新读取结算后的可见局面；若原角色（如冲击角色）收益被削减，转向仍可兑现的角色（如机动或支援），并保留仍为Ready的支付卡牌"
+          },
+          {
+            "response": "对手公开新信息（如部署子阵营专属单位或使用Creep相关能力）",
+            "adaptation": "更新对对手角色构成的假设；若对手的移动或Creep依赖改变了我方单位角色的相对价值，重新评估槽位分配是否仍服务于当前目标"
+          }
+        ],
+        "risk": "本轴仅基于Kerrigan's Swarm阵营卡与当前产品数据解释槽位约束与单位角色差异，未提供任何真实对局决策案例；因此无法证明任何具体槽位分配或单位角色选择在完整对局中更优。起始槽位（Core 3、Elite 2、Hero 1、Support 0）与单位Supply Value的交互仅说明合法性上限，未证明任何编制在任务、分差或对手回应下最优。子阵营专属单位与通用单位的角色差异、Omega Worm的放置时机、Creep Card选择对ON CREEP依赖单位的影响均未在来源中给出战术评价，本轴不推断其相对价值。本轴未覆盖对手军队构成、任务计分条件、分差或战场地形。",
+        "reviseIf": [
+          "所选Faction Card或已购买战术卡解锁的槽位类型/数量发生变化",
+          "候选单位的Composition Option或armySlotType发生变化",
+          "对手公开新信息改变对单位角色相对价值的评估",
+          "任务计分条件、分差或战场地形使原角色分配的前提不再成立",
+          "Creep Card选择发生变化，影响ON CREEP依赖单位的角色侧重"
+        ],
+        "requiredQueries": [
+          "legal_space",
+          "viewer_state",
+          "own_resources",
+          "phase",
+          "activation_state",
+          "scenario"
+        ],
+        "ruleRefs": [
+          "source:tactical_cards:kerrigan_s_swarm",
+          "source:army_units:kerrigan",
+          "source:army_units:hydralisk",
+          "source:army_units:kerrigan_swarm_raptor__zergling_",
+          "source:army_units:raptor__zergling_",
+          "source:army_units:zergling",
+          "source:army_units:swarmling__zergling_",
+          "source:army_units:roach",
+          "source:army_units:corpser__roach_",
+          "source:army_units:vile__roach_",
+          "source:army_units:queen",
+          "source:army_units:omega_worm",
+          "source:tactical_cards:hatchery",
+          "source:tactical_cards:overseer",
+          "source:tactical_cards:accelerating_creep",
+          "source:tactical_cards:malignant_creep",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.5",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.6",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.8",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.1",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48"
+        ]
+      },
+      {
+        "axis": "phase_tempo",
+        "title": "按阶段约束、Pass窗口与对手节奏干扰决定激活顺序",
+        "when": [
+          "己方在当前阶段有多个未激活单位或可以选择Pass",
+          "存在延后即失去价值的行动机会（部署、抢占标记、射击窗口）",
+          "需要决定是否提前Pass以取得下一阶段先手标记",
+          "对手可能使用节奏干扰能力（如强制单位计为已激活）或反应能力"
+        ],
+        "objective": "在交替激活与阶段专属约束下，先兑现延后即失效的行动，再评估提前Pass换取下一阶段先手的价值，同时保留至多一个关键反应窗口；不假设存在脱离具体局面的最优顺序，也不把先手当作静态优势。",
+        "steps": [
+          "读取当前阶段、先手标记持有者、双方各单位已激活状态、剩余合法行动与对手可见威胁；阶段1/2/3使用交替激活，每个被激活单位只执行该阶段允许的一个行动。",
+          "先区分当前阶段：阶段1（Deploy/Move/Disengage/Hold）、阶段2（Run/Hold/Charge/Ranged Attack，且单位须带阶段1移动侧激活标记，Reserves单位不能行动）、阶段3（仅Engaged单位必须激活，不能自愿跳过）。",
+          "在阶段1/2，识别哪些行动若延后会被对手下一次激活关闭或显著贬值（如关键单位部署、抢占标记、进入射击/冲锋范围），优先兑现这些行动。",
+          "评估提前Pass：若己方关键单位已就位或无需再行动，比较放弃本阶段剩余激活的机会成本与取得下一阶段先手标记（由标记持有者选择首个行动方）的价值；若对手仍有多个未激活单位，保留激活以观察其部署/移动通常更有信息价值。",
+          "在阶段3，不采用提前Pass分支：所有Engaged单位必须激活，只有无剩余Engaged单位时才能Pass；按战斗优先级（高价值目标、低生存单位、需解除不利接战者）决定激活顺序，并注意解除Engagement后本阶段尚未激活的单位视为Pass、自下一回合起正常行动。",
+          "若单位携带Active Ability，确认其只能在该单位激活时、声明行动前或行动完全结算后使用，且每具名能力每单位每回合一次（除非REPEATABLE）；若携带Reaction Ability，须在触发精确时刻声明，且每名玩家每次激活最多结算一个反应。",
+          "每次对手行动后重读可见局面，只执行仍成立的下一步；不照抄预先设定的完整队列。"
+        ],
+        "alternatives": [
+          {
+            "option": "先激活关键单位兑现机会",
+            "preferWhen": "该单位的行动（部署高价值单位、抢占任务标记、进入射击/冲锋范围、消灭威胁）若延后会被对手下一次激活关闭或显著贬值"
+          },
+          {
+            "option": "保留关键激活以观察对手",
+            "preferWhen": "等待能获得对手部署/移动信息，且不会错过本阶段必须完成的行动；注意保留的回应窗口受每激活一个反应限制"
+          },
+          {
+            "option": "在阶段1或阶段2提前Pass，取得下一阶段先手标记",
+            "preferWhen": "己方关键单位已就位或无需再行动，且由标记持有者选择下一阶段首个行动方的收益超过放弃本阶段剩余激活的机会成本；阶段3不能自愿采用此分支"
+          },
+          {
+            "option": "在阶段2用Run替代Hold或低价值攻击",
+            "preferWhen": "单位无法有效射击或冲锋，且能实际改变位置（0英寸移动视为Hold）以缩短距离、抢占标记或撤至掩护后"
+          }
+        ],
+        "opponentBranches": [
+          {
+            "response": "对手在阶段1或阶段2提前Pass并取得下一阶段先手标记",
+            "adaptation": "本阶段完成仍有价值的剩余合法激活（部署、移动、抢占标记）；进入下一阶段后不假设己方先行动，在标记持有者选择首个行动方后重新评估下一步"
+          },
+          {
+            "response": "对手使用节奏干扰能力（如Kerrigan的Crushing Grip，1 Biomass，Movement Phase，使一个敌方单位在本阶段计为已激活）",
+            "adaptation": "重算己方本阶段剩余可激活单位；若关键单位被计为已激活，转向仍可兑现的次优行动或保留后手，不强行执行原队列"
+          },
+          {
+            "response": "对手在合法触发点结算反应能力（如减伤、闪避、反制冲锋）降低计划收益",
+            "adaptation": "重新读取结算后的可见局面；若原计划收益被大幅削减，转向其他合法目标或保留仍为Ready的支付卡牌；注意己方本激活的反应窗口已用尽"
+          },
+          {
+            "response": "对手在阶段3强制战斗中以伤亡优先级保护核心接战模型",
+            "adaptation": "按Engaged伤亡优先级（先非接战范围、再接战范围非底座接触、最后底座接触）评估可移除模型；若无法破坏关键接战，考虑改用其他目标或接受消耗"
+          }
+        ],
+        "risk": "本轴仅提供阶段节奏决策框架，不提供跨轴最优解；本生产轮未提供真实决策案例，开发案例（tempo.act-first-v2、tempo.respond-v2）仅验证规则执行，不包含对手名单、任务计分或完整威胁信息，不能据此推断真实对局中的最优激活顺序。提前Pass的收益未被量化；阶段3强制激活的节奏影响、反应窗口的最优保留策略、部署时机与阶段节奏的耦合均未被建模。",
+        "reviseIf": [
+          "关键候选单位不再合法、已激活或被对手节奏干扰能力计为已激活",
+          "对手结束阶段或改变先手标记归属",
+          "任务计分条件或分差发生变化，改变提前Pass的相对价值",
+          "新单位进入战场或改变控制态势",
+          "对手公开新信息（部署新单位、使用反应能力）改变威胁评估"
+        ],
+        "requiredQueries": [
+          "legal_space",
+          "phase",
+          "initiative",
+          "activation_state",
+          "viewer_state",
+          "threat"
+        ],
+        "ruleRefs": [
+          "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.0",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.1",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.0",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+          "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+          "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+          "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.0",
+          "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+          "faq-v1:10",
+          "faq-v1:25",
+          "faq-v1:27",
+          "faq-v1:59",
+          "source:army_units:kerrigan"
+        ]
+      },
+      {
+        "axis": "objectives",
+        "title": "按任务卡VP结构与争夺资格合取条件排序目标",
+        "when": [
+          "已通过草案确定本局任务卡与部署卡",
+          "存在多个可争夺、可防守或可放弃的任务标记",
+          "需要决定本回合优先抢分、守分、击杀敌方单位或保留预备队",
+          "当前分差接近或可能接近该任务卡的即时胜利阈值"
+        ],
+        "objective": "在所选任务卡的计分结构下，优先选择能在本回合计分阶段兑现最高净VP的计划。净VP需同时计入：按该任务卡规则控制标记的得分、按该任务卡规则摧毁敌方补给或完成特殊行动（如Gather）的得分，并减去己方单位被摧毁或补给降低可能给对手的VP。当己方领先且本回合预计得分可使分差达到该任务卡的即时胜利阈值时，优先选择能立即结束游戏的计划；当己方落后且对手可能达到该阈值时，优先选择能阻止对手得分或降低己方暴露风险的计划。",
+        "steps": [
+          "读取本局任务卡与其版本（Standard或Skirmish）、部署卡、当前回合数、双方VP分差、各标记控制状态（谁控制/中立/争夺中），以及该任务卡的即时胜利阈值与是否含“摧毁敌方补给得分”条件。",
+          "对每个候选争夺单位，先判定争夺资格合取条件：在战场上、处于队形内、至少一个模型在标记3英寸内且对该标记有视线并与标记同海拔；飞行与钻地单位不能争夺或控制。任一条件不满足则该单位对本标记贡献0补给，必须从补给总值比较中剔除。",
+          "按该任务卡的VP结构计算每个候选计划在本回合计分阶段的预计净VP：标记得分须按该任务卡的具体规则（例如Hold Position的中立/己方色1VP、对方色2VP；Frontlines的每控制标记1VP且从对手夺回额外+2VP；Gather the Resources的对方色标记2VP与Gather行动1VP；Divide and Conquer的分区补给比较与Marker 5额外2VP），不得跨任务套用同一VP表。",
+          "区分可确定分支与概率性分支：标记得分只有在“计分前控制不再改变”等明确假设成立时才能写成确定分支；依赖攻击结果的击杀得分需查询成功概率或伤害分布，使用期望值而非单次骰点，并明确未覆盖条件。",
+          "比较守住现有控制标记与争夺新标记：只有当争夺新标记的预计净VP增量大于放弃或削弱现有控制所损失的风险时才转换目标；注意控制具有粘性，且补给值为0的单位在无敌方争夺时仍可控制标记，因此“削弱守军”不等于“夺取标记”，进攻方必须实际以更高争夺补给总值结束计分阶段。",
+          "若己方领先且本回合预计得分会使分差达到该任务卡的即时胜利阈值，优先选择能立即结束游戏的计划；若己方落后且对手可能达到该阈值，优先选择能阻止对手得分或降低己方暴露风险的计划。",
+          "在最终回合（按任务卡Game Length确定）仍有合法部署机会时，提前比较将高补给单位保留在预备队、部署上场与得分风险；最终计分阶段开始时，预备队单位会被视作摧毁并给对手VP，因此规划应在该时点前完成，而非等到计分阶段开始才评估。",
+          "每次对手行动后重新计算各标记的争夺资格与补给总值、控制状态与分差，只执行在当前可见局面下仍能兑现的计划。"
+        ],
+        "alternatives": [
+          {
+            "option": "守住并巩固现有控制标记",
+            "preferWhen": "现有控制标记已能提供稳定VP，且分散兵力去争夺新标记会暴露现有控制给对手以更高争夺补给总值夺回；尤其当己方领先且接近即时胜利阈值时"
+          },
+          {
+            "option": "主动争夺对方色或高价值标记",
+            "preferWhen": "现有控制不足以在本回合或剩余回合内达成目标，且投入争夺的净VP增量高于守住的收益；须按该任务卡的具体VP结构评估（例如Hold Position对方色标记2VP、Frontlines从对手夺回额外+2VP、Gather the Resources对方色标记2VP），而非按颜色直觉"
+          },
+          {
+            "option": "集中火力摧毁高补给敌方单位",
+            "preferWhen": "该任务卡含“摧毁敌方补给得分”条件，且击杀产生的VP高于或等于放弃控制一个标记所损失的VP，且该单位是对方得分或控制的关键；若该任务卡不含此条件，则此分支不成立"
+          },
+          {
+            "option": "保留高补给单位在预备队",
+            "preferWhen": "当前回合不是最终回合，且保留可换取后续回合的部署时机或可用补给；须注意最终回合开始时仍在预备队的单位会被视作摧毁并给对手VP，且被送回预备队的单位若本阶段已激活则仍保持已激活状态"
+          }
+        ],
+        "opponentBranches": [
+          {
+            "response": "对手投入高补给单位争夺我方控制的标记",
+            "adaptation": "重算该标记的争夺资格与双方补给总值；若我方争夺补给总值不足，考虑放弃该标记并转向其他可得分目标，而非投入更多单位陷入消耗"
+          },
+          {
+            "response": "对手从预备队部署高补给单位到争夺中的标记，在同一计分窗口内以更高补给总值夺回",
+            "adaptation": "在计分前评估对手剩余可用补给与其可部署单位的补给值；若对手可能以更高补给总值结束计分阶段，考虑提前增援该标记、放弃该标记或转向其他目标，而非假设当前控制会保持"
+          },
+          {
+            "response": "对手通过击杀我方高补给单位获得VP并接近该任务卡的即时胜利阈值",
+            "adaptation": "若对手因此可能触发即时胜利，优先保护剩余高补给单位并阻止其继续得分，而非继续进攻"
+          },
+          {
+            "response": "对手通过控制标记或完成特殊行动（如Gather）扩大分差",
+            "adaptation": "按该任务卡的VP结构重新评估各标记与行动的价值；若对手控制新标记或完成行动使分差接近即时胜利阈值，优先夺回高价值标记或阻止其继续得分"
+          }
+        ],
+        "risk": "本策略为决策框架加规则约束，未在真实对局中验证。当前无真实决策案例，因此无法证明任何目标选择在完整对局中更优。标记控制得分依赖“计分前控制不再改变”的假设；击杀得分依赖未提供的概率/伤害分布。对手的军队构成、升级、剩余资源与战术卡状态未知，其能否在我方计分前以更高争夺补给总值夺回标记、或通过击杀我方高补给单位接近即时胜利阈值，无法量化。最终回合前部署高补给单位与保留在预备队之间的得分权衡，缺少当前分差与剩余部署窗口数据，无法给出确定结论。",
+        "reviseIf": [
+          "草案结果确定或改变任务卡与部署卡，从而改变标记VP结构、即时胜利阈值与标记可达性",
+          "当前回合数或分差发生变化，影响即时胜利或最终计分风险",
+          "任务标记控制状态、争夺资格或双方单位补给值发生改变",
+          "对手从预备队部署单位或以其他方式改变某标记的争夺补给总值",
+          "对手的回应使原计划的净VP前提不再成立"
+        ],
+        "requiredQueries": [
+          "scenario",
+          "mission_card",
+          "deployment_card",
+          "score_forecast",
+          "legal_space",
+          "viewer_state",
+          "threat",
+          "probability"
+        ],
+        "ruleRefs": [
+          "source:faction_cards:mission_hold_position",
+          "source:faction_cards:mission_hold_position__skirmish_",
+          "source:faction_cards:mission_frontlines",
+          "source:faction_cards:mission_gather_the_resources",
+          "source:faction_cards:mission_divide_and_conquer",
+          "source:faction_cards:mission_supply_drop",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.2",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+          "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+          "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.44",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.2",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.2.subItems.0",
+          "core.u3zNStKpd5XegMjmJfMS.items.6",
+          "core.I03mzBYujgXw6xN2qXhH.items.4",
+          "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.2",
+          "faq-v1:05"
+        ]
+      },
+      {
+        "axis": "threat_tradeoffs",
+        "title": "Kerrigan's Swarm 威胁交换：在合法目标集内先算可兑现伤亡与净VP，再比伤害",
+        "when": [
+          "己方单位在 Assault 或 Combat 阶段可对多个合法敌方目标行动",
+          "攻击可能改变双方接战状态、任务标记控制或双方补给值",
+          "目标单位可能拥有闪避资格、防御性被动或反应能力",
+          "需要决定是接受交换、回避/集中兵力，还是先补充信息"
+        ],
+        "objective": "在 Kerrigan's Swarm 的合法目标集合内，选择能最大化当前任务净收益且最小化后续损失的交换。净收益需同时计入：目标方补给值下降带来的 VP、攻击方自身补给损失给对手的 VP、以及交换对任务标记控制与战术质量（Disengage 豁免）的影响；而非仅比较单次伤害或击杀数。",
+        "steps": [
+          "读取当前阶段、任务计分条件与分差、双方单位位置、接战状态、可见性、武器档案与当前补给值；先确定合法目标集合：未接战攻击者不能选择已接战单位（模板 Spillover 除外），已接战攻击者只能攻击其当前接战的单位；PINPOINT 只覆盖“瞄准已接战敌方”，不允许已接战单位向外射击。",
+          "按武器档案结构确定批次：同一武器档案的所有模型必须攻击同一目标，只有不同档案（含 SIDEARM 档案）可攻击不同单位；因此候选目标受单位武器档案结构约束，而非逐模型自由选择。",
+          "对每个合法候选目标，先估算可兑现伤亡而非总伤害：未接战目标受可见性限制（不能移除超过可见模型数，超出部分丢弃），但伤亡移除不受射程限制——目标单位中任何对攻击方至少一个模型可见的模型都可被移除，即使物理上超出射程；接战目标忽略标准可见性而按优先级1→2→3移除，且不能为逃避接战而移除唯一维持接战的模型。",
+          "在估算中同时检查 Surge Type 与目标 Combat Tag 是否匹配（不匹配则 Surge 骰结果被忽略），并检查目标是否有闪避资格：Surge 只绕过护甲掷骰、不绕过闪避掷骰，闪避针对包含 Surge 骰的最终伤害池结算；保留自然1必败、自然6必胜边界，且 ANTI-EVADE 等修正最多把检定恶化到6+，不能当作保证命中或保证击杀。",
+          "把防御性被动与反应分开计入：对手每次激活最多结算一个 Reaction，每个具名 Reaction 每单位每轮一次；但 Passive Ability 始终生效且不受每次激活一次的限制，防御性被动（如 TOUGH、DODGE、授予闪避的被动）可在不消耗对手 Reaction 预算的情况下降低预期伤害。",
+          "计算净 VP 时同时计入两侧补给损失：目标方当前补给值下降使对手获得等于所降补给值的 VP（部分任务按摧毁补给计分），攻击方自身补给值下降同样使对手获得 VP；并把目标方补给下降对任务标记控制与战术质量（Disengage 惩罚豁免）的影响作为独立权重。",
+          "比较候选时区分 Assault 阶段与 Combat 阶段：Assault 阶段可合法选择 Hold 或改打其他目标；Combat 阶段所有已接战单位必须激活，只要仍有已接战单位就不能自愿 Pass，因此“回避交换”在 Combat 阶段并非总是合法分支，此时应改为战斗内的批次排序与目标分配选择。",
+          "若信息不足（封闭名单下对手升级、被动/反应能力不可确认），先补充可观察信息或选择低承诺、可逆的候选；不把未证实的对手防御能力当作确定事实，也不把单次攻击期望当作整局结果。"
+        ],
+        "alternatives": [
+          {
+            "option": "接受交换并攻击当前合法目标",
+            "preferWhen": "交换后能显著改变任务标记控制或解除不利接战，且计入双方补给损失后的净 VP 为正、反击代价可承受"
+          },
+          {
+            "option": "回避或集中兵力（Assault 阶段合法时）",
+            "preferWhen": "交换会失去关键得分单位或支援功能，或对手有低成本强反制；注意 Combat 阶段已接战单位不能自愿 Pass，此分支仅在 Assault 阶段或未接战单位上合法"
+          },
+          {
+            "option": "先补充信息再行动",
+            "preferWhen": "对手单位升级或防御性被动/反应未知，且等待不丢失合法行动窗口；封闭名单下未部署单位的升级在部署时才披露"
+          },
+          {
+            "option": "改用模板武器或 PINPOINT 打开目标选项",
+            "preferWhen": "唯一高价值敌人已接战而攻击者未接战，且己方拥有 PINPOINT 武器或模板武器；注意 Spillover 按独立批次结算、不应用 RoA 修正、不产生 Surge，且武器关键词只作用于主目标批次"
+          }
+        ],
+        "opponentBranches": [
+          {
+            "response": "对手在合法触发点结算防御性 Reaction（如减伤、闪避、反制冲锋）",
+            "adaptation": "重新读取结算后的可见局面；若预期伤害被大幅削减，保留后续批次或改用其他合法目标，并注意对手本次激活已用掉其唯一 Reaction 预算"
+          },
+          {
+            "response": "对手依赖防御性 Passive（TOUGH、DODGE、授予闪避）而非 Reaction 降低伤害",
+            "adaptation": "在估算中直接下调预期伤害，不假设对手消耗了 Reaction 预算；若净 VP 转为负值，转向其他目标或保留资源"
+          },
+          {
+            "response": "对手用不同目标或多单位集火反击，或通过击杀我方高补给单位获得 VP",
+            "adaptation": "重估累计威胁与双方补给损失；若原交换收益被抵消或对手接近即时胜利阈值，转为防守、撤退或保护剩余高补给单位"
+          },
+          {
+            "response": "对手在 Combat 阶段强制我方已接战单位继续战斗，使回避分支不可用",
+            "adaptation": "放弃回避分支，改为在战斗内选择批次排序与目标分配，优先维持与所有敌方单位的接战并避免移除唯一维持接战的模型"
+          }
+        ],
+        "risk": "本轮未提供真实决策案例（developmentCases 为空），因此“先算可兑现伤亡与净VP再比伤害”的交换策略在完整对局中是否更优未被证明。封闭名单下对手军队构成、升级、被动/反应能力可用性与剩余资源未知，精确伤害期望依赖未证实假设。补给损失折算为 VP 的权重、以及“放弃标记控制”与“击杀补给”之间的换算，来源未给出统一公式，需按具体任务卡计分条件逐案计算。单次攻击期望不预测整局结果，本轴不提供跨轴最优解，也不保证胜利。",
+        "reviseIf": [
+          "任务计分条件或分差改变，使净 VP 换算前提不再成立",
+          "目标单位接战状态、可见性或补给值变化",
+          "对手公开新信息（部署新单位、使用反应或被动能力）或使用未预期分支",
+          "我方关键单位被威胁、失去行动能力或补给值下降",
+          "规则文本冲突或覆盖缺口（如 HIGH GROUND Cover 正文与决策表措辞不一致、模板武器物理尺寸未规定）需上报规则服务或裁判"
+        ],
+        "requiredQueries": [
+          "threat",
+          "probability",
+          "legal_space",
+          "preview",
+          "viewer_state",
+          "own_resources",
+          "phase",
+          "activation_state"
+        ],
+        "ruleRefs": [
+          "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.2",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.4",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+          "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.17",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.50",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.58",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.69",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.70",
+          "core.H3Fn8YSvEvpJZpT57qw1.items.3",
+          "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+          "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+          "core.OszqexisUrSOKMW6TzA5.items.4",
+          "core.OszqexisUrSOKMW6TzA5.items.6",
+          "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+          "faq-v1:28",
+          "faq-v1:29",
+          "faq-v1:30",
+          "faq-v1:32",
+          "faq-v1:53",
+          "faq-v1:59",
+          "faq-v1:60",
+          "faq-v1:61",
+          "faq-v1:62",
+          "faq-v1:63",
+          "faq-v1:66",
+          "faq-v1:68"
+        ]
+      },
+      {
+        "axis": "card_packages",
+        "title": "Kerrigan's Swarm 卡包选择：先锁定 Creep Card 与槽位骨架，再按可兑现收益排序 Omega Network 与 Wild Mutation",
+        "when": [
+          "为 Kerrigan's Swarm 阵营卡组建或调整 Army List，需要决定携带哪些 Tactical/Creep 卡",
+          "需要在 Accelerating Creep 与 Malignant Creep 之间二选一（Zerg Creep 被动要求恰好一张 Creep Card）",
+          "需要决定是否把 Omega Network 与 Wild Mutation 纳入本局计划，以及它们与槽位解锁卡的取舍",
+          "当前可见局面显示己方单位是否 ON CREEP、是否有可用的 Omega Worm 落点"
+        ],
+        "objective": "在 Kerrigan's Swarm 的标签资格、起始槽位（Core 3 / Elite 2 / Hero 1 / Support 0 / Air 0）与 Zerg Creep 恰好一张 Creep Card 的约束下，选择一组卡包，使每张卡都能对应一个可说明的、与当前任务目标相关的用途；不假设任何卡包在完整对局中更优。",
+        "steps": [
+          "先做资格过滤：只保留每个 Faction Tag 都出现在 Kerrigan's Swarm 阵营卡（Zerg、Kerrigan's Swarm）上的单位与战术卡；任一标签缺失即排除。据此 Terran/Protoss 卡全部出局，普通 Zergling（仅 Zerg）与 Kerrigan Swarm Raptor（Zerg, Kerrigan's Swarm）均可用。",
+          "锁定 Zerg Creep 被动：恰好选择一张 Creep Card 并支付其费用。当前产品数据中 Accelerating Creep 费用 0、Malignant Creep 费用 10 且带 Kerrigan's Swarm 标签；两者均为 Unique，不能同时携带。",
+          "用起始槽位做骨架核算：Core 3 / Elite 2 / Hero 1 / Support 0 / Air 0。逐项把候选单位的起始 Supply Value 映射到对应槽位类型，确认不超槽；Support 0 意味着任何 Support 单位（如 Queen）必须先购买解锁 Support 槽位的战术卡（如 Hatchery 提供 1× Support）。未使用槽位作废，不能结转。",
+          "对每个候选卡包，写出它对应的可兑现用途与依赖条件：Omega Network 依赖 Movement Phase 激活、战场上无友方 Omega Worm、且存在距任何敌方模型超过 10\" 的 GROUND LEVEL 落点；Wild Mutation 依赖激活单位 ON CREEP（处于任一 Creep Tumor Token 或 Creep 来源模型 6\" 内）。",
+          "比较 Creep Card 二选一：Accelerating Creep 提供 Speed on Creep（ON CREEP 时 Speed +1）、Living Glob of Tissue（Creep Tumor Token 获得 STAY IN PLAY 与 DISPLACEMENT）与 Creep Removal；Malignant Creep 提供 Malevolent Matriarch（ON CREEP 时 Charge 获得 +1 IMPACT Hit Roll 修正）、同样的 Living Glob of Tissue 与 Creep Removal，但费用 10 且带 Kerrigan's Swarm 标签。选择依据是当前计划更依赖移动速度还是冲锋 IMPACT 修正，而非费用高低本身。",
+          "比较槽位解锁卡与能力卡：若骨架核算显示某类槽位不足（例如需要 Support 单位但 Support 0），优先购买能解锁该槽位的战术卡；只有在槽位已满足时才把剩余 Vespene Gas 分配给 Omega Network / Wild Mutation 所在阵营卡以外的能力卡。",
+          "对每个候选卡包，明确其依赖的假设（如对手是否会让己方单位保持 ON CREEP、Omega Worm 落点是否会被对手封锁），不把未实现的收益当作确定事实。",
+          "每次对手行动或己方部署后重读可见局面，只保留在当前局面下仍能兑现用途的卡包；若某张卡的前提被破坏，重新比较替代卡包。"
+        ],
+        "alternatives": [
+          {
+            "option": "携带 Accelerating Creep（费用 0）",
+            "preferWhen": "计划更依赖 ON CREEP 时的移动速度（Speed on Creep +1）来达成位置目标，且希望把 Vespene Gas 留给槽位解锁卡或其他能力卡"
+          },
+          {
+            "option": "携带 Malignant Creep（费用 10，带 Kerrigan's Swarm 标签）",
+            "preferWhen": "计划更依赖 ON CREEP 时 Charge 的 +1 IMPACT Hit Roll 修正，且愿意支付 10 Vespene Gas；注意它与 Accelerating Creep 均为 Unique，不能同时携带"
+          },
+          {
+            "option": "优先购买槽位解锁战术卡（如 Hatchery 解锁 1× Support）",
+            "preferWhen": "骨架核算显示所需单位类型的槽位不足，且不购买该卡就无法合法上场目标单位"
+          },
+          {
+            "option": "把 Omega Network / Wild Mutation 纳入本局计划",
+            "preferWhen": "存在可说明的用途：Omega Network 有合法落点且需要 Entry Edge 部署或返回 Reserves；Wild Mutation 有单位能在激活时处于 ON CREEP 并需要 Speed 或 PRECISION 增量"
+          }
+        ],
+        "opponentBranches": [
+          {
+            "response": "对手以 Move/Deploy/Run/Charge/Disengage 结束于己方 Creep Tumor Token 1\" 内，触发 Creep Removal 移除 Token",
+            "adaptation": "重算己方单位是否仍 ON CREEP；若 ON CREEP 前提被破坏，Wild Mutation 与 Speed on Creep 的收益不再成立，转向不依赖 ON CREEP 的卡包用途或重新放置 Creep Tumor Token"
+          },
+          {
+            "response": "对手封锁或占据 Omega Worm 的候选落点，使距任何敌方模型超过 10\" 的 GROUND LEVEL 位置不可用",
+            "adaptation": "放弃本回合的 Omega Network 放置计划，改用其他合法卡包用途；不强行在非法位置放置"
+          },
+          {
+            "response": "对手针对 Omega Worm 或依赖 ON CREEP 的单位发动攻击",
+            "adaptation": "重新评估该卡包用途的净收益；若 Omega Worm 被摧毁或 ON CREEP 单位被消灭，转向仍可兑现的卡包用途"
+          }
+        ],
+        "risk": "本策略仅基于来源文本与规则引用，未提供任何真实决策案例或对局证据；所有关于 Omega Network、Wild Mutation、Creep Card 选择与 Omega Worm 部署的策略价值均为未验证假设。未证明 Accelerating Creep 与 Malignant Creep 之间何者更优；未证明 Omega Worm 的 Entry Edge 部署与返回 Reserves 能力在真实任务计分、分差管理或对手回应下的净收益；未证明 Wild Mutation 的 BUFF Speed (1) 与 PRECISION (1) 在具体单位上的增量收益是否值得消耗 BM 与激活窗口；未证明 Creep Tumor Token 的 STAY IN PLAY 与 DISPLACEMENT 在对抗 Creep Removal 时的实际生存率或战术价值；未证明起始槽位在 Standard 或 Skirmish 规模下是否足以支撑任何特定单位组合。",
+        "reviseIf": [
+          "Creep Card 选择改变（Accelerating Creep 与 Malignant Creep 互换）",
+          "槽位核算显示所需单位类型的槽位不足，需要购买或更换槽位解锁卡",
+          "己方单位不再 ON CREEP，或 Omega Worm 落点不再合法",
+          "对手行动破坏了某张卡包用途的前提（如移除 Creep Tumor Token、封锁落点、摧毁 Omega Worm）",
+          "任务计分条件或分差改变，使原卡包用途的收益不再相关"
+        ],
+        "requiredQueries": [
+          "legal_space",
+          "own_resources",
+          "viewer_state",
+          "phase",
+          "activation_state",
+          "geometry"
+        ],
+        "ruleRefs": [
+          "source:tactical_cards:kerrigan_s_swarm",
+          "source:tactical_cards:accelerating_creep",
+          "source:tactical_cards:malignant_creep",
+          "source:army_units:omega_worm",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.1",
+          "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.24",
+          "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48",
+          "core.cB7X7UfOMHh3Wxn79ASF.items.3.subItems.0",
+          "faq-v1:54"
+        ]
+      }
+    ],
+    "judgeTests": {
+      "productionEvidenceHash": "a055f243b3de9f37dc55e8b56dfd815d30b264042fcfbfd0661a294e6ce13294",
+      "consumerEvidenceHash": "c1877c1b592410735a44eed765d4d57e7a7f7095856f857b3f76879665ca1b7d",
+      "rosterEvaluationHash": "d0f2430a6faaf0e1557de45c067b505fef86f013168488d2ffb948f9bb1b6f1b",
+      "ruleEvaluationHash": "0c2018b96a5946b2c67535b97339838de3e0088916dc80825806fbcd08ef36ba",
+      "sourceAuditHash": "0c2018b96a5946b2c67535b97339838de3e0088916dc80825806fbcd08ef36ba",
+      "structureAuditHash": "c1877c1b592410735a44eed765d4d57e7a7f7095856f857b3f76879665ca1b7d",
+      "sourceAxesPassed": 6,
+      "sourceFieldsPassed": 66,
+      "realDecisionCases": 0,
+      "evaluatedDecisionAxes": [],
+      "uncoveredDecisionAxes": [
+        "army_resources",
+        "unit_roles",
+        "phase_tempo",
+        "objectives",
+        "threat_tradeoffs",
+        "card_packages"
+      ]
+    },
+    "confidence": "all_fields_source_bound_and_strategy_structure_checked_real_cases_and_full_game_unproven",
+    "trustTier": "offline_source_reviewed_advisory",
+    "status": "offline_candidate",
+    "humanReviewed": false,
+    "canAffectStrategy": true,
+    "canAffectRules": false,
+    "fullGameStrategyEffectivenessProven": false,
+    "runtimeAccepted": false,
+    "published": false,
+    "trainingTruth": false,
+    "hash": "9babc3386ac4046d41ed58d6d8a13b0c3e5fb03384af9b7c8ca9394c72d48ccf"
+  },
+  "routerEntry": {
+    "schema": "starcraft_faction_skill_router_entry_v1",
+    "gameId": "starcraft-tmg",
+    "factionRecordKey": "tactical_cards:kerrigan_s_swarm",
+    "skillId": "starcraft-tmg.faction.kerrigan_s_swarm",
+    "skillHash": "9babc3386ac4046d41ed58d6d8a13b0c3e5fb03384af9b7c8ca9394c72d48ccf",
+    "offlineProductionLoads": [
+      "9babc3386ac4046d41ed58d6d8a13b0c3e5fb03384af9b7c8ca9394c72d48ccf"
+    ],
+    "runtimeLoads": [],
+    "legalityAuthority": "rules_service_only",
+    "runtimeBlockedUntil": [
+      "isolated_room_arena",
+      "version_registry_cas"
+    ],
+    "runtimeAccepted": false,
+    "trainingTruth": false,
+    "hash": "e73da275f9694398f8ba324a50e136110badf1eba190e8add303d9cd824805a4"
+  },
+  "formalOfflineSkillCompleted": true,
+  "realDecisionCases": 0,
+  "runtimeAccepted": false,
+  "trainingTruth": false,
+  "hash": "3e658aabd2c29c51cac109a36cdbfb7f35b168a7e1295a134b5d90e22876ef0e"
+}

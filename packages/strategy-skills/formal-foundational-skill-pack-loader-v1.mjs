@@ -5,6 +5,7 @@ import { clone, fail, seal, verifySeal } from "../skill-production/common.mjs";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const ROLES = new Set(["general", "faction", "matchup"]);
+const MINIMUM_FOUNDATIONAL_ENTRY_COUNT = 5;
 
 async function json(filename) {
   return verifySeal(JSON.parse(await readFile(filename, "utf8")));
@@ -16,11 +17,19 @@ function qualified(entry, report) {
       && report.formalGeneralSkillCompleted === true;
   }
   if (entry.role === "faction") {
-    return /^faction_final_offline_handoff_v[1-9][0-9]*$/u.test(report.schema || "")
-      && report.formalOfflineSkillAccepted === true;
+    const originalFactionHandoff =
+      /^faction_final_offline_handoff_v[1-9][0-9]*$/u.test(report.schema || "")
+        && report.formalOfflineSkillAccepted === true;
+    const extraFactionHandoff = report.schema === "extra_faction_finalization_result_v1"
+      && report.formalOfflineSkillCompleted === true
+      && report.skill?.skillId === entry.skillId
+      && report.skill?.hash === entry.skillHash;
+    return originalFactionHandoff || extraFactionHandoff;
   }
   return report.schema === "ticket18_directed_matchup_finalization_report_v1"
-    && report.formalMatchupSkillsCompleted === 2
+    && Number.isSafeInteger(report.formalMatchupSkillsCompleted)
+    && report.formalMatchupSkillsCompleted >= 2
+    && report.formalMatchupSkillsCompleted === report.skillHashes?.length
     && report.decisionCasesPassed === true
     && report.skillHashes?.includes(entry.skillHash);
 }
@@ -57,11 +66,32 @@ export async function loadFormalFoundationalStrategyPackV1({ root, manifest }) {
   verifySeal(manifest);
   if (!path.isAbsolute(root || "")
     || manifest.schema !== "ticket18_foundational_strategy_pack_manifest_v1"
-    || manifest.gameId !== "starcraft-tmg" || manifest.entries?.length !== 5
+    || manifest.gameId !== "starcraft-tmg"
+    || !Array.isArray(manifest.entries)
+    || manifest.entries.length < MINIMUM_FOUNDATIONAL_ENTRY_COUNT
     || manifest.selectionPolicy !== "exact_manifest_only_no_highest_version_autoselection"
     || manifest.sourceRefreshPerformed !== false || manifest.runtimeAccepted !== false
     || manifest.trainingTruth !== false) {
     fail("FOUNDATIONAL_STRATEGY_MANIFEST_INVALID");
+  }
+  const entrySkillIds = manifest.entries.map((entry) => entry?.skillId);
+  const entrySkillHashes = manifest.entries.map((entry) => entry?.skillHash);
+  const factionRecordKeys = manifest.entries
+    .filter((entry) => entry?.role === "faction")
+    .map((entry) => entry?.factionRecordKey);
+  const matchupDirections = manifest.entries
+    .filter((entry) => entry?.role === "matchup")
+    .map((entry) => `${entry?.ownFaction}->${entry?.opponentFaction}`);
+  const roleCounts = Object.fromEntries([...ROLES].map((role) => [
+    role,
+    manifest.entries.filter((entry) => entry?.role === role).length,
+  ]));
+  if (roleCounts.general !== 1 || roleCounts.faction < 2 || roleCounts.matchup < 2
+    || new Set(entrySkillIds).size !== entrySkillIds.length
+    || new Set(entrySkillHashes).size !== entrySkillHashes.length
+    || new Set(factionRecordKeys).size !== factionRecordKeys.length
+    || new Set(matchupDirections).size !== matchupDirections.length) {
+    fail("FOUNDATIONAL_STRATEGY_MANIFEST_DENOMINATOR_INVALID");
   }
   const rows = await Promise.all(manifest.entries.map(async (entry) => {
     const [skill, qualification] = await Promise.all([

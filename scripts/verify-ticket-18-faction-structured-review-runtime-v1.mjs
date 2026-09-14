@@ -26,13 +26,16 @@ import { runDirectLoop } from "../packages/skill-production/loops.mjs";
 import { hash, seal, sha256, verifySeal } from
   "../packages/skill-production/common.mjs";
 import { openProductionStore } from "../packages/skill-production/store.mjs";
-import { createFactionReviewContextCapsuleV1 } from
+import { createFactionReviewContextCapsuleV1,
+  createFactionReviewOutputCapRecoveryContextCapsuleV1 } from
   "../packages/skill-production-v3/faction-review-context-capsule-v1.mjs";
 import { createFactionReviewTargetsV1 } from
   "../packages/skill-production-v3/faction-review-targets-v1.mjs";
 import { createFactionWritingPlanV1 } from
   "../packages/skill-production-v3/faction-strategy-workflow-v1.mjs";
 import { createFactionStructuredReviewRuntimeV1,
+  createFactionStructuredReviewOutputCapFailureImportV1,
+  createFactionStructuredReviewOutputCapSuccessImportV1,
   deriveFactionLegacyStructuredReviewRoleIdsV1,
   materializeFactionStructuredReviewV1,
   verifyFactionStructuredReviewSchemaRepairScopeV1 } from
@@ -58,6 +61,7 @@ const CODE_FILES = [
   "content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs",
   "packages/skill-production-v3/faction-review-context-capsule-v1.mjs",
   "packages/skill-production-v3/faction-structured-review-runtime-v1.mjs",
+  "packages/skill-production-v3/faction-continuation-v1.mjs",
   "packages/skill-production-v3/faction-strategy-workflow-v1.mjs",
   "packages/secure-provider-runtime/provider-response-outcome-v1.mjs",
   "packages/structured-generation/output-contract-registry-v1.mjs",
@@ -90,7 +94,9 @@ const db = new DatabaseSync(path.join(ROOT,
 let corrected, actualBoundaryCandidate, actualV2BoundaryCandidate,
   actualV3BoundaryCandidate,
   actualCapacityUsage,
-  actualCapacityFailure, actualWireFailure;
+  actualCapacityFailure, actualCeilingUsage, actualCeilingFailure,
+  actualWireFailure, actualCompactCandidate, actualCompactRuntimeReceipt,
+  actualCompactAttempt;
 try {
   corrected = verifySeal(JSON.parse(db.prepare(
     "SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'",
@@ -117,12 +123,39 @@ try {
     "STRUCTURED_PROVIDER_INCOMPLETE");
   actualCapacityUsage = verifySeal(JSON.parse(capacityRow.usage)).value;
   actualCapacityFailure = verifySeal(JSON.parse(capacityRow.response)).value;
+  const ceilingRow = db.prepare(
+    "SELECT usage,response FROM attempts WHERE run=? AND code=?",
+  ).get("faction-v1-64dfe1d35c4921569be7",
+    "STRUCTURED_PROVIDER_INCOMPLETE");
+  actualCeilingUsage = verifySeal(JSON.parse(ceilingRow.usage)).value;
+  actualCeilingFailure = verifySeal(JSON.parse(ceilingRow.response)).value;
   const wireRow = db.prepare(
     "SELECT response FROM attempts WHERE run=? AND response LIKE ?",
   ).get("faction-v1-58dc727c7ae7ce8cece5",
     "%provider_json_not_parseable%");
   actualWireFailure = verifySeal(JSON.parse(wireRow.response)).value;
+  const compactAttempt = db.prepare(
+    "SELECT id,request_hash,usage,response FROM attempts WHERE run=? AND state='received' AND code IS NULL",
+  ).get("faction-v1-cd070778679108170434");
+  actualCompactAttempt = {
+    ...compactAttempt,
+    usage: verifySeal(JSON.parse(compactAttempt.usage)),
+    response: verifySeal(JSON.parse(compactAttempt.response)),
+  };
+  actualCompactCandidate = verifySeal(JSON.parse(db.prepare(
+    "SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'",
+  ).get("faction-v1-cd070778679108170434",
+    `${compactAttempt.id}.candidate`).artifact)).value;
+  actualCompactRuntimeReceipt = verifySeal(JSON.parse(db.prepare(
+    "SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'",
+  ).get("faction-v1-cd070778679108170434",
+    `${compactAttempt.id}.runtime-receipt`).artifact)).value;
 } finally { db.close(); }
+const actualCompactParentRecipe = verifySeal(JSON.parse(await readFile(
+  path.join(ROOT, "build/ticket-18-faction-production-v1",
+    "faction-v1-cd070778679108170434/recipe.json"), "utf8")));
+const actualCompactOriginPermit =
+  actualCompactParentRecipe.continuation.outputCapRecoveryImports[0];
 const section = createFactionWritingPlanV1(input).sections.find((row) =>
   row.id === "faction.terran_armed_forces.objectives.1");
 const draft = corrected.draft;
@@ -255,6 +288,39 @@ await check("review.actual-2048-incomplete-authorizes-one-4096-continuation", as
   /structuredReviewPolicy = Object\.freeze\(\{ maxOutputUnits: 4096,/u);
 });
 
+await check("review.actual-4096-cap-enables-one-compact-recovery", async () => {
+  assert.equal(actualCeilingFailure.code,
+    "STRUCTURED_PROVIDER_INCOMPLETE");
+  assert.equal(actualCeilingFailure.incompleteReason, "max_output_tokens");
+  assert.equal(actualCeilingFailure.outputContractRef.hash, contractRef.hash);
+  assert.equal(actualCeilingFailure.capabilityReceiptHash,
+    actualCapabilityReceipt.receiptHash);
+  assert.equal(actualCeilingFailure.automaticRetries, 0);
+  assert.equal(actualCeilingUsage.outputUnits, 4_096);
+  assert.equal(actualCeilingFailure.status, 200);
+  assert.equal(actualCeilingFailure.requestMayHaveBeenSent, true);
+});
+
+await check("review.actual-settled-compact-success-is-importable", async () => {
+  const imported = createFactionStructuredReviewOutputCapSuccessImportV1({
+    parentRunId: "faction-v1-cd070778679108170434",
+    fullRoleId: actualCompactOriginPermit.fullRoleId,
+    originIssueHash: actualCompactOriginPermit.originIssueHash,
+    originAttemptId: actualCompactAttempt.id,
+    originRequestHash: actualCompactAttempt.request_hash,
+    candidate: actualCompactCandidate,
+    runtimeReceipt: actualCompactRuntimeReceipt,
+    providerResponse: actualCompactAttempt.response.value,
+    usage: actualCompactAttempt.usage.value,
+    usageHash: actualCompactAttempt.usage.hash,
+  });
+  assert.equal(imported.originalProviderCallSettled, true);
+  assert.equal(imported.originalProviderCallsReplayed, 0);
+  assert.equal(imported.originalUsage.outputUnits, 1_065);
+  assert.equal(imported.candidate.providerValue.verdicts[0].reason.length, 629);
+  assert.equal(imported.semanticAcceptanceInherited, false);
+});
+
 await check("review.actual-wire-failure-enables-lossless-normalizer-not-prompt-retry", async () => {
   assert.equal(actualWireFailure.code,
     "STRUCTURED_PROVIDER_SCHEMA_INVALID");
@@ -337,6 +403,337 @@ await check("review.one-structured-attempt-no-prompt-fallback", async () => {
     assert.equal(fault.inspect().calls.length, 1);
   } finally { store.close(); }
 });
+
+await check("review.one-explicit-compact-recovery-after-output-cap", async () => {
+  const compactBoundaryOutput = structuredClone(providerOutput);
+  compactBoundaryOutput.verdicts[0].reason = "R".repeat(629);
+  const fault = createStarcraftTmgInMemoryStructuredFaultAdapterV1({
+    steps: [{ kind: "incomplete", reason: "max_output_tokens",
+      usage: { input_tokens: 120,
+        input_tokens_details: { cached_tokens: 0 },
+        output_tokens: 4_096,
+        output_tokens_details: { reasoning_tokens: 0 },
+        total_tokens: 4_216 } },
+    { kind: "success", output: compactBoundaryOutput,
+      usage: { input_tokens: 120,
+        input_tokens_details: { cached_tokens: 0 },
+        output_tokens: 1_065,
+        output_tokens_details: { reasoning_tokens: 0 },
+        total_tokens: 1_185 } }],
+  });
+  const store = openProductionStore(":memory:", {
+    runId: "structured-review-output-cap-recovery-test",
+    recipeHash: hash("structured-review-output-cap-recovery-test"),
+    maxCalls: 3, maxCostMicros: 500_000, maxTokens: 300_000,
+  });
+  try {
+    const runtime = createFactionStructuredReviewRuntimeV1({ input,
+      runtime: { role: async () => assert.fail("fallback invoked") },
+      store, dsh: { run: runDirectLoop },
+      providerAdapter: createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1({
+        send: fault.send,
+      }),
+      egressBinding: binding, capabilityReceipt, outputContract: contract,
+      executionPolicy: policy, priceUsage: (usage) => usage.totalUnits,
+      allowBoundedOutputCapRecovery: true,
+    });
+    const result = await runtime.role(request);
+    assert.equal(result.structuredDecodePassed, true);
+    assert.equal(result.outputCapRecoveryReceipt.explicitRecoveryCalls, 1);
+    assert.equal(result.outputCapRecoveryReceipt.originalAttemptReplayed, false);
+    assert.equal(result.outputCapRecoveryReceipt.semanticAcceptanceInherited,
+      false);
+    assert.equal(result.outputCapRecoveryReceipt
+      .requestedMaximumReasonCharacters, 600);
+    assert.equal(result.outputCapRecoveryReceipt
+      .acceptedMaximumReasonCharacters, 800);
+    assert.equal(result.outputCapRecoveryReceipt
+      .acceptedMaximumOutputUnits, 3_072);
+    assert.equal(result.outputCapRecoveryReceipt
+      .observedRecoveryOutputUnits, 1_065);
+    assert.equal(fault.inspect().calls.length, 2);
+    assert.notEqual(fault.inspect().calls[0].requestId,
+      fault.inspect().calls[1].requestId);
+    assert.equal(store.summary().attempts.filter((row) =>
+      row.code === "STRUCTURED_PROVIDER_INCOMPLETE").length, 1);
+  } finally { store.close(); }
+});
+
+await check("review.compact-recovery-hard-bounds-reject-without-truncation",
+  async () => {
+    for (const [name, output, outputTokens] of [["reason",
+      (() => { const value = structuredClone(providerOutput);
+        value.verdicts[0].reason = "R".repeat(801); return value; })(), 500],
+    ["response", providerOutput, 3_073]]) {
+      const fault = createStarcraftTmgInMemoryStructuredFaultAdapterV1({
+        steps: [{ kind: "incomplete", reason: "max_output_tokens",
+          usage: { input_tokens: 120,
+            input_tokens_details: { cached_tokens: 0 },
+            output_tokens: 4_096,
+            output_tokens_details: { reasoning_tokens: 0 },
+            total_tokens: 4_216 } },
+        { kind: "success", output,
+          usage: { input_tokens: 120,
+            input_tokens_details: { cached_tokens: 0 },
+            output_tokens: outputTokens,
+            output_tokens_details: { reasoning_tokens: 0 },
+            total_tokens: 120 + outputTokens } }],
+      });
+      const store = openProductionStore(":memory:", {
+        runId: `structured-review-hard-bound-${name}`,
+        recipeHash: hash(`structured-review-hard-bound-${name}`),
+        maxCalls: 3, maxCostMicros: 500_000, maxTokens: 300_000,
+      });
+      try {
+        const runtime = createFactionStructuredReviewRuntimeV1({ input,
+          runtime: { role: async () => assert.fail("fallback invoked") },
+          store, dsh: { run: runDirectLoop },
+          providerAdapter:
+            createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1({
+              send: fault.send,
+            }),
+          egressBinding: binding, capabilityReceipt,
+          outputContract: contract, executionPolicy: policy,
+          priceUsage: (usage) => usage.totalUnits,
+          allowBoundedOutputCapRecovery: true,
+        });
+        await assert.rejects(() => runtime.role(request), {
+          code: "FACTION_STRUCTURED_REVIEW_OUTPUT_CAP_RECOVERY_NOT_COMPACT",
+        });
+        assert.equal(fault.inspect().calls.length, 2);
+      } finally { store.close(); }
+    }
+  });
+
+await check("review.imported-output-cap-failure-skips-rejected-attempt", async () => {
+  const contextManifestRef = contextManifestRefStarcraftTmgV1(capsule);
+  const executionPolicyRef = {
+    id: "policy.faction-target-review.production",
+    version: "2026.09.06.1",
+    hash: hash(policy),
+  };
+  const invocationBody = {
+    schemaVersion:
+      "starcraft_tmg_structured_generation_runtime_v1.invocation",
+    roleRef, contextManifestRef, outputContractRef: contractRef,
+    executionPolicyRef, continuationRef: null,
+    contextPayloadHash: hash({ instructions: capsule.instructions,
+      input: capsule.compiledInput }),
+    capabilityReceiptHash: capabilityReceipt.receiptHash,
+    trainingTruth: false,
+  };
+  const invocationHash = hash(invocationBody);
+  const originAttemptId = `structured-${invocationHash.slice(0, 48)}`;
+  const usage = { inputUnits: 120, outputUnits: 4_096,
+    totalUnits: 4_216, inputCacheHitUnits: 0,
+    inputCacheMissUnits: 120, reasoningOutputUnits: 0 };
+  const failureBody = {
+    schemaVersion:
+      "starcraft_tmg_deepseek_responses_json_schema_adapter_v1.failure",
+    code: "STRUCTURED_PROVIDER_INCOMPLETE",
+    requestDefinitelyNotSent: false,
+    requestMayHaveBeenSent: true,
+    status: 200,
+    physicalAttempts: 1,
+    outputContractRef: contractRef,
+    capabilityReceiptHash: capabilityReceipt.receiptHash,
+    usageKnown: true,
+    usage,
+    causeCode: null,
+    incompleteReason: "max_output_tokens",
+    payloadHash: hash("synthetic output-cap payload"),
+    outputTextHash: null,
+    schemaIssues: [],
+    responseNormalization: null,
+    responseNormalizationReceiptHash: null,
+    automaticRetries: 0,
+    trainingTruth: false,
+  };
+  const failureReceipt = { ...failureBody,
+    receiptHash: hash(failureBody) };
+  const originIssue = seal({
+    version: "starcraft_tmg_structured_generation_runtime_v1.issue",
+    invocationHash,
+    outputContractRef: contractRef,
+    class: "output_incomplete",
+    code: "STRUCTURED_PROVIDER_INCOMPLETE",
+    retryRoute: null,
+    safeReceiptHash: failureReceipt.receiptHash,
+    rejectedCandidateRef: null,
+    rawPayloadPersisted: false,
+    trainingTruth: false,
+  });
+  const imported = createFactionStructuredReviewOutputCapFailureImportV1({
+    parentRunId: "faction-v1-0123456789abcdefabcd",
+    fullRoleId: `${packet.id}.${roleId}`,
+    originAttemptId,
+    originRequestHash: hash("synthetic output-cap request"),
+    originIssue,
+    failureReceipt,
+    usage,
+    usageHash: hash({ value: usage }),
+  });
+  const fault = createStarcraftTmgInMemoryStructuredFaultAdapterV1({
+    steps: [{ kind: "success", output: providerOutput }],
+  });
+  const store = openProductionStore(":memory:", {
+    runId: "structured-review-imported-output-cap-test",
+    recipeHash: hash("structured-review-imported-output-cap-test"),
+    maxCalls: 2, maxCostMicros: 500_000, maxTokens: 300_000,
+  });
+  try {
+    const runtime = createFactionStructuredReviewRuntimeV1({ input,
+      runtime: { role: async () => assert.fail("fallback invoked") },
+      store, dsh: { run: runDirectLoop },
+      providerAdapter: createStarcraftTmgDeepSeekResponsesJsonSchemaAdapterV1({
+        send: fault.send,
+      }),
+      egressBinding: binding, capabilityReceipt, outputContract: contract,
+      executionPolicy: policy, priceUsage: (value) => value.totalUnits,
+      allowBoundedOutputCapRecovery: true,
+      outputCapRecoveryImports: [imported],
+    });
+    const result = await runtime.role(request);
+    assert.equal(result.outputCapRecoveryReceipt.importedFailureHash,
+      imported.hash);
+    assert.equal(result.outputCapRecoveryReceipt.originalProviderCallsReplayed,
+      0);
+    assert.equal(fault.inspect().calls.length, 1);
+    assert.notEqual(fault.inspect().calls[0].requestId, originAttemptId);
+    assert.equal(store.summary().attempts.some((row) =>
+      row.id === originAttemptId), false);
+  } finally { store.close(); }
+});
+
+await check("review.imported-output-cap-success-uses-zero-current-usage",
+  async () => {
+    const originIssueHash = hash("synthetic imported output-cap issue");
+    const recoveryRoleRef = {
+      id: `${roleRef.id}.output-cap-recovery.1`,
+      version: "structured-review-v1",
+      hash: hash(`${roleRef.id}.output-cap-recovery.1.structured-review-v1`),
+    };
+    const recoveryCapsule =
+      createFactionReviewOutputCapRecoveryContextCapsuleV1({
+        capsule, roleRef: recoveryRoleRef,
+        originIssueRef: { hash: originIssueHash,
+          class: "output_incomplete" },
+      });
+    const executionPolicyRef = {
+      id: "policy.faction-target-review.production",
+      version: "2026.09.06.1",
+      hash: hash(policy),
+    };
+    const invocationHash = hash({
+      schemaVersion:
+        "starcraft_tmg_structured_generation_runtime_v1.invocation",
+      roleRef: recoveryRoleRef,
+      contextManifestRef: contextManifestRefStarcraftTmgV1(recoveryCapsule),
+      outputContractRef: contractRef,
+      executionPolicyRef,
+      continuationRef: null,
+      contextPayloadHash: hash({ instructions: recoveryCapsule.instructions,
+        input: recoveryCapsule.compiledInput }),
+      capabilityReceiptHash: capabilityReceipt.receiptHash,
+      trainingTruth: false,
+    });
+    const originAttemptId = `structured-${invocationHash.slice(0, 48)}`;
+    const providerReceiptHash = hash("synthetic accepted provider receipt");
+    const localValidationReceipt = {
+      outputContractRef: contractRef,
+      valueHash: hash(providerOutput),
+      valid: true,
+      trainingTruth: false,
+    };
+    const candidate = seal({
+      version: "starcraft_tmg_structured_generation_runtime_v1.candidate",
+      invocationHash,
+      roleRef: recoveryRoleRef,
+      contextManifestRef: contextManifestRefStarcraftTmgV1(recoveryCapsule),
+      outputContractRef: contractRef,
+      providerValue: providerOutput,
+      providerReceiptHash,
+      localValidationReceipt,
+      semanticAcceptanceInherited: false,
+      published: false,
+      runtimeAccepted: false,
+      trainingTruth: false,
+    });
+    const runtimeReceipt = seal({
+      version: "starcraft_tmg_structured_generation_runtime_v1.receipt",
+      invocationHash,
+      attemptId: originAttemptId,
+      outputContractRef: contractRef,
+      status: "accepted",
+      candidateHash: candidate.hash,
+      issueHash: null,
+      providerReceiptHash,
+      providerAttempts: 1,
+      automaticRetries: 0,
+      acceptanceScope: "structured_decode_and_local_schema_only",
+      semanticAcceptance: false,
+      trainingTruth: false,
+    });
+    const usage = { inputUnits: 120, outputUnits: 40, totalUnits: 160,
+      inputCacheHitUnits: 0, inputCacheMissUnits: 120,
+      reasoningOutputUnits: 0 };
+    const imported = createFactionStructuredReviewOutputCapSuccessImportV1({
+      parentRunId: "faction-v1-0123456789abcdefabcd",
+      fullRoleId: `${packet.id}.${roleId}`,
+      originIssueHash,
+      originAttemptId,
+      originRequestHash: hash("synthetic accepted request"),
+      candidate,
+      runtimeReceipt,
+      providerResponse: {
+        output: providerOutput,
+        usageReceipt: { requestId: originAttemptId, receiptHash:
+          providerReceiptHash, outputContractRef: contractRef, usage },
+        localValidationReceipt,
+      },
+      usage,
+      usageHash: hash({ value: usage }),
+    });
+    let importedModelCalls = 0;
+    const strictDsh = { run: (args) => runDirectLoop({
+      ...args,
+      callModel: async (request) => {
+        importedModelCalls += 1;
+        const response = await args.callModel(request);
+        assert.deepEqual(response.usage, {
+          inputUnits: 0, outputUnits: 0, totalUnits: 0,
+          inputCacheHitUnits: 0, inputCacheMissUnits: 0,
+          reasoningOutputUnits: 0,
+        });
+        return response;
+      },
+    }) };
+    const store = openProductionStore(":memory:", {
+      runId: "structured-review-imported-success-test",
+      recipeHash: hash("structured-review-imported-success-test"),
+      maxCalls: 2, maxCostMicros: 500_000, maxTokens: 300_000,
+    });
+    try {
+      const runtime = createFactionStructuredReviewRuntimeV1({ input,
+        runtime: { role: async () => assert.fail("fallback invoked") },
+        store, dsh: strictDsh,
+        providerAdapter: { complete: async () =>
+          assert.fail("provider invoked") },
+        egressBinding: binding, capabilityReceipt,
+        outputContract: contract, executionPolicy: policy,
+        priceUsage: () => 0,
+        allowBoundedOutputCapRecovery: true,
+        outputCapRecoverySuccessImports: [imported],
+      });
+      const result = await runtime.role(request);
+      assert.equal(result.outputCapRecoveryReceipt.importedSuccessHash,
+        imported.hash);
+      assert.equal(result.outputCapSuccessImportReceipt
+        .originalProviderCallsReplayed, 0);
+      assert.equal(importedModelCalls, 1);
+      assert.equal(store.summary().calls, 0);
+    } finally { store.close(); }
+  });
 
 await check("review.one-bounded-schema-instance-repair-preserves-other-values", async () => {
   const rejected = structuredClone(providerOutput);
@@ -515,6 +912,8 @@ const report = seal({
   actualBoundaryRejectedCandidateHash: actualV3BoundaryCandidate.hash,
   actualCapacityFailureRunId: "faction-v1-ad5d16565e2b118d830a",
   actualCapacityFailureReceiptHash: actualCapacityFailure.receiptHash,
+  actualOutputCeilingFailureRunId: "faction-v1-64dfe1d35c4921569be7",
+  actualOutputCeilingFailureReceiptHash: actualCeilingFailure.receiptHash,
   capacityMigration: {
     failureClass: "output_incomplete",
     incompleteReason: "max_output_tokens",
@@ -523,6 +922,31 @@ const report = seal({
     exactOutputContractRetained: true,
     oneExplicitContinuationOnly: true,
     automaticRetries: 0,
+    profileCeilingOutputUnits: 4_096,
+    atProfileCeilingRoute:
+      "one_explicit_same_task_compact_recovery_with_new_attempt_identity",
+    maximumFocusRowsPerTarget: 4,
+    maximumSourceSlotsPerTarget: 4,
+    maximumReasonCharacters: 600,
+    hardMaximumReasonCharacters: 800,
+    hardMaximumRecoveryOutputUnits: 3_072,
+    settledFailureImportSupported: true,
+    settledSuccessImportSupported: true,
+    settledSuccessCurrentUsageZero: true,
+    strictDshImportTested: true,
+    actualSettledSuccessRunId: "faction-v1-cd070778679108170434",
+    actualSettledSuccessAttemptId: actualCompactAttempt.id,
+    actualSettledSuccessCandidateHash: actualCompactCandidate.hash,
+    actualSettledSuccessOutputUnits:
+      actualCompactAttempt.usage.value.outputUnits,
+    actualSettledSuccessLongestReasonCharacters: Math.max(
+      ...actualCompactCandidate.providerValue.verdicts.map((row) =>
+        row.reason.length),
+      ...actualCompactCandidate.providerValue.coverage.map((row) =>
+        row.reason.length)),
+    originalAttemptReplayAllowed: false,
+    rejectedPartialOutputUsed: false,
+    furtherRecoveryAllowed: false,
   },
   actualWireFailureRunId: "faction-v1-58dc727c7ae7ce8cece5",
   actualWireFailureReceiptHash: actualWireFailure.receiptHash,

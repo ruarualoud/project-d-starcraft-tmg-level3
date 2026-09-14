@@ -14,8 +14,9 @@ import { assertStarcraftTmgProviderCapabilityReceiptV1 } from
 import { createStarcraftTmgOutputContractRegistryV1,
   outputContractRefStarcraftTmgV1 } from
   "../structured-generation/output-contract-registry-v1.mjs";
-import { createStarcraftTmgStructuredGenerationRuntimeV1 } from
-  "../structured-generation/structured-generation-runtime-v1.mjs";
+import { createStructuredRuntimeWithWireRecoveryV2 } from
+  "../structured-generation/structured-runtime-selection-v2.mjs";
+import { validateFactionEditorDraftEnvelopeBindingV2, recoverFactionEditorDraftEnvelopeV2 } from './faction-editor-draft-envelope-v2.mjs';
 
 export const STARCRAFT_TMG_FACTION_STRUCTURED_LOCAL_EDITOR_RUNTIME_VERSION =
   "starcraft_tmg_faction_structured_local_editor_runtime_v1";
@@ -26,10 +27,29 @@ function canonicalRoleId(value) {
   return String(value || "").replace(SOURCE_EPOCH, "");
 }
 
-export function deriveFactionLegacyPromptRoleIdsV1(steps = []) {
+export function deriveFactionLegacyPromptRoleIdsV1(steps = [], promptLineage = null) {
   if (!Array.isArray(steps)) throw new TypeError("Continuation steps are invalid");
-  const roles = steps.filter((row) => row?.artifact?.structuredDecodePassed !== true
+  if (promptLineage) verifySeal(promptLineage);
+  const origins = new Map((promptLineage?.rows || []).map(row => [row.roleId, row]));
+  const roles = steps.filter(row => {
+    if (!promptLineage) return true; // Preserve frozen callers without lineage.
+    // Continuations also carry separately verified fragments/assemblies. Use
+    // the same role-record boundary as the lineage resolver; an auxiliary
+    // checkpoint cannot acquire or require a prompt identity.
+    if (row?.artifact?.roleId === undefined && !origins.has(row?.id)) return false;
+    // A known role must not evade validation by dropping/changing its roleId.
+    if (row?.artifact?.roleId !== row?.id) fail('FACTION_PROMPT_LINEAGE_STEP_DRIFT');
+    return true;
+  }).filter((row) => row?.artifact?.structuredDecodePassed !== true
     && row?.artifact?.structuredImportHash === undefined)
+    .filter(row => {
+      if (!promptLineage) return true; // Frozen historical callers retain their exact behavior.
+      const origin = origins.get(row.id);
+      if (!origin || origin.inputHash !== row.inputHash || origin.artifactHash !== hash(row.artifact)) {
+        fail('FACTION_PROMPT_LINEAGE_STEP_DRIFT');
+      }
+      return origin.promptProtocol === 'legacy_json_prompt_v1';
+    })
     .map((row) => canonicalRoleId(row.id))
     .filter((id) => /\.(?:reasoner|judge|generator-items\.[0-9]+|editor\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+|source-reconstruction\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+)$/u.test(id));
   if (new Set(roles).size !== roles.length) {
@@ -70,8 +90,36 @@ function localContext(request) {
       issueOrdinal: matches[0].index,
     });
   }
+  if (workspace.repairConflictHistory) {
+    verifySeal(workspace.repairConflictHistory);
+    if (workspace.repairConflictHistory.targetIndex
+      !== issues.issues[0].index
+      || workspace.repairConflictHistory.currentIssueHash
+        !== hash(issues.issues[0])) {
+      fail("FACTION_STRUCTURED_EDITOR_CONFLICT_HISTORY_DRIFT");
+    }
+  }
   return { section: workspace.section, draft: workspace.draft,
-    issues };
+    issues, repairConflictHistory: workspace.repairConflictHistory || null };
+}
+
+export function prepareFactionStructuredLocalEditorRoleV1({ input, request, outputContract, executionPolicy }) {
+  verifySeal(input); verifySeal(request.packet);
+  if (!eligibleRole(request.roleId) || request.packet.inputHash !== input.hash || request.workspace?.inputHash !== input.hash)
+    fail('FACTION_STRUCTURED_EDITOR_INPUT_DRIFT');
+  const context = localContext(request), canonical = canonicalRoleId(request.roleId);
+  const roleRef = { id: canonical, version: 'structured-v1', hash: hash(`${canonical}.structured-v1`) };
+  const outputContractRef = outputContractRefStarcraftTmgV1(outputContract);
+  const executionPolicyRef = { id: 'policy.faction-local-editor.production', version: '2026.09.06.1', hash: hash(executionPolicy) };
+  const capsule = createFactionLocalEditorContextCapsuleV1({ factionInput: input,
+    section: context.section, draft: context.draft, issues: context.issues, issueOrdinal: 0,
+    repairConflictHistory: context.repairConflictHistory, roleRef, outputContractRef });
+  const contextManifestRef = contextManifestRefStarcraftTmgV1(capsule);
+  const roleInput = { version: STARCRAFT_TMG_FACTION_STRUCTURED_LOCAL_EDITOR_RUNTIME_VERSION,
+    packetHash: request.packet.hash, roleRef, contextManifestRef, outputContractRef,
+    executionPolicyRef, semanticAcceptanceInherited: false };
+  return { fullRoleId: `${request.packet.id}.${request.roleId}`, canonical, capsule, roleRef,
+    contextManifestRef, outputContractRef, executionPolicyRef, roleInput };
 }
 
 export function createFactionStructuredLocalEditorImportV1(input = {}) {
@@ -129,6 +177,9 @@ export function createFactionStructuredLocalEditorRuntimeV1(options = {}) {
     fail("FACTION_STRUCTURED_EDITOR_CAPABILITY_DRIFT");
   }
   const policy = Object.freeze({ ...executionPolicy });
+  if (options.editorEnvelopeBinding) validateFactionEditorDraftEnvelopeBindingV2(options.editorEnvelopeBinding, options.draftEnvelopeBinding);
+  if (options.editorEnvelopeBinding && hash(policy) !== options.editorEnvelopeBinding.executionPolicyHash)
+    fail('FACTION_EDITOR_ENVELOPE_EXECUTION_POLICY_DRIFT');
   const legacyPromptRoles = new Set(options.legacyPromptRoleIds || []);
   if (legacyPromptRoles.size !== (options.legacyPromptRoleIds || []).length) {
     fail("FACTION_STRUCTURED_EDITOR_LEGACY_ROLE_DUPLICATE");
@@ -159,31 +210,23 @@ export function createFactionStructuredLocalEditorRuntimeV1(options = {}) {
       if (request.workspace?.inputHash !== input.hash) {
         fail("FACTION_STRUCTURED_EDITOR_INPUT_DRIFT");
       }
-      const context = localContext(request);
-      const canonical = canonicalRoleId(request.roleId);
-      const roleRef = { id: canonical, version: "structured-v1",
-        hash: hash(`${canonical}.structured-v1`) };
-      const capsule = createFactionLocalEditorContextCapsuleV1({
-        factionInput: input,
-        section: context.section,
-        draft: context.draft,
-        issues: context.issues,
-        issueOrdinal: 0,
-        roleRef,
-        outputContractRef,
-      });
-      const contextManifestRef = contextManifestRefStarcraftTmgV1(capsule);
-      const roleInput = {
-        version: STARCRAFT_TMG_FACTION_STRUCTURED_LOCAL_EDITOR_RUNTIME_VERSION,
-        packetHash: request.packet.hash,
-        roleRef,
-        contextManifestRef,
-        outputContractRef,
-        executionPolicyRef,
-        semanticAcceptanceInherited: false,
-      };
+      const prepared = prepareFactionStructuredLocalEditorRoleV1({ input, request, outputContract, executionPolicy: policy });
+      const { canonical, roleRef, capsule, contextManifestRef, roleInput } = prepared;
       const lease = store.acquire(fullRoleId, roleInput);
       if (lease.cached) return verifySeal(lease.artifact);
+      const envelopeEvidenceMatches = (options.editorEnvelopeImports || []).filter(e =>
+        e.rejected.roleRef.id === roleRef.id && e.rejected.contextManifestRef.hash === contextManifestRef.hash);
+      if (envelopeEvidenceMatches.length > 1) { store.release(lease); fail('FACTION_EDITOR_ENVELOPE_IMPORT_AMBIGUOUS'); }
+      const envelopeEvidence = envelopeEvidenceMatches[0];
+      if (options.editorEnvelopeBinding && envelopeEvidence) {
+        if (options.dry === true) {
+          store.release(lease); options.onEnvelopeImport?.({ roleId: fullRoleId });
+          fail('FACTION_PREFLIGHT_FIRST_EDITOR_ENVELOPE_IMPORT');
+        }
+        try { return store.finish(lease, await recoverFactionEditorDraftEnvelopeV2({ input, request, prepared,
+          evidence: envelopeEvidence, binding: options.editorEnvelopeBinding, draftEnvelopeBinding: options.draftEnvelopeBinding, dsh })); }
+        catch (error) { store.release(lease); throw error; }
+      }
       const imported = imports.get(`${roleRef.hash}:${capsule.hash}`);
       if (imported) {
         const artifact = seal({
@@ -211,7 +254,9 @@ export function createFactionStructuredLocalEditorRuntimeV1(options = {}) {
           return saved;
         },
       };
-      const generated = createStarcraftTmgStructuredGenerationRuntimeV1({
+      let providerFailure = null;
+      const generated = createStructuredRuntimeWithWireRecoveryV2({
+        wireRecovery: options.wireRecovery,
         outputContractRegistry: createStarcraftTmgOutputContractRegistryV1({
           entries: [outputContract],
         }),
@@ -235,11 +280,21 @@ export function createFactionStructuredLocalEditorRuntimeV1(options = {}) {
               ? { ok: true, capabilityReceipt } : { ok: false };
           },
         },
-        providerAdapter,
+        providerAdapter: options.editorEnvelopeBinding ? { ...providerAdapter, async complete(args) {
+          try { return await providerAdapter.complete(args); }
+          catch (error) { providerFailure = error; throw error; }
+        } } : providerAdapter,
         store: storeProxy,
         egressBinding,
         priceUsage,
-        classifyFailure: classifyStarcraftTmgStructuredFailureV1,
+        classifyFailure(args) {
+          // The V2 selector preserves this observer even when it replaces
+          // the Adapter. Capture the original error only for the explicitly
+          // bound recovery route; frozen legacy callers retain the DSH
+          // rejection they previously received.
+          if (options.editorEnvelopeBinding) providerFailure = args.error;
+          return classifyStarcraftTmgStructuredFailureV1(args);
+        },
         readCandidate: (candidateRef) => candidates.get(candidateRef.hash),
       });
       const invocation = { roleRef, contextManifestRef, outputContractRef,
@@ -290,8 +345,25 @@ export function createFactionStructuredLocalEditorRuntimeV1(options = {}) {
           trainingTruth: false,
         }));
       } catch (error) {
+        if (options.editorEnvelopeBinding && providerFailure?.code === 'STRUCTURED_PROVIDER_SCHEMA_INVALID'
+          && options.readEditorEnvelopeFailure) {
+          try {
+            const evidence = options.readEditorEnvelopeFailure({ prepared, failureReceiptHash: providerFailure.safeReceipt?.receiptHash });
+            if (evidence.rejected.safeReceiptHash !== providerFailure.safeReceipt?.receiptHash)
+              fail('FACTION_EDITOR_ENVELOPE_EVIDENCE_INVALID');
+            const recovered = await recoverFactionEditorDraftEnvelopeV2({ input, request, prepared, evidence,
+              binding: options.editorEnvelopeBinding, draftEnvelopeBinding: options.draftEnvelopeBinding, dsh });
+            options.onProgress?.({ role: request.roleId, state: 'structured_local_editor_envelope_recovered',
+              providerCalls: 0, originalProviderFailurePreserved: true, freshWholeSectionReviewRequired: true });
+            return store.finish(lease, recovered);
+          } catch (recoveryError) {
+            if (recoveryError.code !== 'FACTION_EDITOR_ENVELOPE_NOT_APPLICABLE') {
+              store.release(lease); throw recoveryError;
+            }
+          }
+        }
         store.release(lease);
-        throw error;
+        throw providerFailure || error;
       }
     },
   });

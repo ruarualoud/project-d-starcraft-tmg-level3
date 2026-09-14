@@ -31,7 +31,8 @@ export async function loadPortableFoundationalStrategyPackV2(input = {}) {
   if (!path.isAbsolute(input.root || "")
     || manifest.schema !== "ticket18_portable_strategy_pack_manifest_v2"
     || manifest.gameId !== "starcraft-tmg"
-    || manifest.entries?.length !== 5
+    || !Array.isArray(manifest.entries)
+    || manifest.entries.length < 5
     || manifest.selectionPolicy
       !== "exact_portable_manifest_only_no_build_path_no_highest_version"
     || manifest.buildPathDependencies !== false

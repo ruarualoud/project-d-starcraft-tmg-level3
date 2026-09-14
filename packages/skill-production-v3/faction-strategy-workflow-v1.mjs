@@ -2,8 +2,28 @@ import { seal, verifySeal, hash, exact, text, clone, fail } from '../skill-produ
 import { validateTutorLessonV3 } from './runtime.mjs';
 import { createFactionReviewTargetsV1, validateTargetedFactionReviewV1, planFactionReviewFieldBindingV1,
   applyFactionReviewFieldBindingV1 } from './faction-review-targets-v1.mjs';
+import { createFactionRepairConflictHistoryV1,
+  verifyFactionRepairConflictProgressV1 } from
+  './faction-repair-conflict-history-v1.mjs';
 import { correctKnownFactionRuleFailuresV1, assertNoKnownFactionRuleFailureV1, mergeFactionKnownSourceIssuesV1 } from './faction-known-rule-findings-v1.mjs';
 import { adjudicateFactionSourceScopesV1 } from './faction-source-scope-adjudication-v1.mjs';
+import { produceFactionTeachRecoveryV1 } from './faction-teach-recovery-v1.mjs';
+import { FACTION_OBSERVED_SOURCE_REPAIR_BINDING_V1, correctObservedFactionReasonerSourceFactsV1 } from './faction-observed-source-repair-v1.mjs';
+import { inspectFactionCardPackageSourceDebtV1, proposeFactionUniqueClauseCorrectionV1 } from '../skill-evaluation/faction-card-package-source-audit-v1.mjs';
+import { FACTION_UNIQUE_RISK_CLAUSE_BINDING_V2, inspectFactionUniqueRiskClauseV2,
+  proposeFactionUniqueRiskClauseCorrectionV2 } from '../skill-evaluation/faction-unique-risk-clause-v2.mjs';
+import { FACTION_PROPOSER_BATCH_BINDING_V1, produceFactionProposerBatchesV1 } from './faction-proposer-batches-v1.mjs';
+import { validateFactionDraftEnvelopeBindingV2 } from './faction-draft-envelope-v2.mjs';
+import { validateFactionInitialSourceCorrectionBindingV2, inspectFactionInitialSourceDebtV2,
+  createFactionInitialSourceCorrectionV2 } from './faction-initial-source-correction-v2.mjs';
+import { FACTION_ZERG_UNIT_TIMING_BINDING_V1, inspectFactionZergUnitTimingDebtV1,
+  proposeFactionZergUnitTimingCorrectionV1 } from '../skill-evaluation/faction-zerg-unit-timing-audit-v1.mjs';
+import { STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V5,
+  STARCRAFT_TMG_FACTION_REVIEW_CATALOGUE_BINDING_V1 } from '../../content/skill-generation/ticket-18-faction-review-output-contract-v1.mjs';
+import { STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V6,
+  FACTION_REVIEW_SLOT_NAMESPACE_BINDING_V1 } from '../../content/skill-generation/ticket-18-faction-review-output-contract-v6.mjs';
+import { FACTION_PARSED_REVIEW_VALUE_BINDING_V2 } from './faction-parsed-review-value-v1.mjs';
+import { FACTION_REVIEW_SOFT_LIMIT_BINDING_V1 } from './faction-review-soft-limit-v1.mjs';
 
 export const FACTION_AXES_V1 = ['army_resources', 'unit_roles', 'phase_tempo', 'objectives', 'threat_tradeoffs', 'card_packages'];
 const ADVICE_SHAPE = { recommendations: [{ title: '标题', when: ['适用的可观察条件'], procedure: ['步骤'],
@@ -74,9 +94,9 @@ export function factionRoleWorkspaceV1(input) {
     factionEvidence: input.factionEvidence, taskBoundary: input.taskBoundary };
 }
 
-function refs(values, input) {
+function refs(values, input, maximum = 8) {
   const available = new Set(input.frozenSources.prompt.sources.map(s => s.ref));
-  if (!Array.isArray(values) || !values.length || values.length > 8 || new Set(values).size !== values.length
+  if (!Array.isArray(values) || !values.length || values.length > maximum || new Set(values).size !== values.length
     || values.some(r => !available.has(r))) fail('FACTION_SOURCE_REFERENCE_INVALID');
 }
 function strings(values, { empty = false, max = 16 } = {}) {
@@ -94,14 +114,17 @@ export function validateFactionTreeV1(output, input, field = 'questions') {
   }
   return output;
 }
-export function validateFactionDraftV1(output, input) {
+export function validateFactionDraftV1(output, input, { draftEnvelopeBinding = null } = {}) {
+  if (draftEnvelopeBinding) validateFactionDraftEnvelopeBindingV2(draftEnvelopeBinding);
   exact(output, ['recommendations']);
   if (!Array.isArray(output.recommendations) || !output.recommendations.length || output.recommendations.length > 8) fail('FACTION_DRAFT_DENOMINATOR');
   if (Buffer.byteLength(JSON.stringify(output)) > 65536) fail('FACTION_DRAFT_SIZE_LIMIT');
   for (const r of output.recommendations) {
     exact(r, ['title', 'when', 'procedure', 'alternatives', 'risk', 'reviseIf', 'sourceRefs', 'unproven']);
     text(r.title, 200); text(r.risk, 1600);
-    [r.when, r.procedure, r.alternatives, r.reviseIf, r.unproven].forEach(v => strings(v)); refs(r.sourceRefs, input);
+    [r.when, r.procedure, r.alternatives, r.reviseIf].forEach(v => strings(v));
+    strings(r.unproven, { empty: draftEnvelopeBinding?.minimumUnprovenItems === 0 });
+    refs(r.sourceRefs, input, draftEnvelopeBinding?.maximumAdviceSourceRefs || 8);
     if (/production-heldout\.|heldout\.|independent-condition\./.test(JSON.stringify(r))) fail('FACTION_TEST_MEMORIZATION_REJECTED');
   }
   return output;
@@ -113,6 +136,81 @@ export function validateFactionOutlineV1(output, { input, section }) {
   for (const item of output.outline) { exact(item, ['focus', 'sourceRefs']); text(item.focus, 600); refs(item.sourceRefs, input); }
   if (section.requiredSourceRefs.some(ref => !output.outline.some(item => item.sourceRefs.includes(ref)))) fail('FACTION_OUTLINE_SOURCE_OMISSION');
   return output;
+}
+
+export function createFactionOutlineSourceIssueV1(output, { input, section }) {
+  exact(output, ['outline']);
+  if (!Array.isArray(output.outline) || !output.outline.length
+    || output.outline.length > 8) fail('FACTION_OUTLINE_DENOMINATOR');
+  for (const item of output.outline) {
+    exact(item, ['focus', 'sourceRefs']);
+    text(item.focus, 600); refs(item.sourceRefs, input);
+  }
+  const missingSourceRefs = section.requiredSourceRefs.filter(ref =>
+    !output.outline.some(item => item.sourceRefs.includes(ref)));
+  if (!missingSourceRefs.length) fail('FACTION_OUTLINE_SOURCE_ISSUE_EMPTY');
+  return seal({ version: 'faction_outline_source_issue_v1',
+    sectionId: section.id, rejectedOutputHash: hash(output),
+    missingSourceRefs, allowedIndices: output.outline.map((_, index) => index),
+    existingItems: output.outline.map((item, index) => ({ index,
+      focusHash: hash(item.focus), sourceRefs: item.sourceRefs })),
+    policy: 'rewrite_selected_outline_items_only_preserve_existing_source_refs_and_cover_every_missing_required_source',
+    semanticAcceptanceInherited: false, trainingTruth: false });
+}
+
+export function applyFactionOutlineSourceReconstructionV1(output,
+  { input, section, rejectedOutput, issue }) {
+  verifySeal(issue);
+  if (issue.version !== 'faction_outline_source_issue_v1'
+    || issue.sectionId !== section.id
+    || issue.rejectedOutputHash !== hash(rejectedOutput)
+    || issue.hash !== createFactionOutlineSourceIssueV1(rejectedOutput,
+      { input, section }).hash) {
+    fail('FACTION_OUTLINE_SOURCE_RECONSTRUCTION_BINDING_INVALID');
+  }
+  exact(output, ['planHash', 'replacements']);
+  if (output.planHash !== issue.hash || !Array.isArray(output.replacements)
+    || !output.replacements.length
+    || output.replacements.length > rejectedOutput.outline.length) {
+    fail('FACTION_OUTLINE_SOURCE_RECONSTRUCTION_SCOPE_INVALID');
+  }
+  const next = clone(rejectedOutput), pending = new Set(issue.missingSourceRefs);
+  const changedIndices = new Set();
+  for (const replacement of output.replacements) {
+    exact(replacement, ['index', 'focus', 'sourceRefs']);
+    if (!Number.isInteger(replacement.index)
+      || !issue.allowedIndices.includes(replacement.index)
+      || changedIndices.has(replacement.index)) {
+      fail('FACTION_OUTLINE_SOURCE_RECONSTRUCTION_SCOPE_INVALID');
+    }
+    text(replacement.focus, 600); refs(replacement.sourceRefs, input);
+    const previous = rejectedOutput.outline[replacement.index];
+    if (replacement.focus === previous.focus
+      || !replacement.sourceRefs.some(ref => issue.missingSourceRefs.includes(ref))) {
+      fail('FACTION_OUTLINE_SOURCE_RECONSTRUCTION_CONTENT_REQUIRED');
+    }
+    if (previous.sourceRefs.some(ref => !replacement.sourceRefs.includes(ref))) {
+      fail('FACTION_OUTLINE_SOURCE_RECONSTRUCTION_DROPPED_SOURCE');
+    }
+    replacement.sourceRefs.forEach(ref => pending.delete(ref));
+    next.outline[replacement.index] = clone({ focus: replacement.focus,
+      sourceRefs: replacement.sourceRefs });
+    changedIndices.add(replacement.index);
+  }
+  if (pending.size) fail('FACTION_OUTLINE_SOURCE_RECONSTRUCTION_INCOMPLETE');
+  if (hash(next) === hash(rejectedOutput)) {
+    fail('FACTION_OUTLINE_SOURCE_RECONSTRUCTION_NO_PROGRESS');
+  }
+  validateFactionOutlineV1(next, { input, section });
+  return { output: next, receipt: seal({
+    version: 'faction_outline_source_reconstruction_receipt_v1',
+    issueHash: issue.hash, rejectedOutputHash: issue.rejectedOutputHash,
+    reconstructionOutputHash: hash(output), materializedOutputHash: hash(next),
+    changedIndices: [...changedIndices], missingSourceRefs: issue.missingSourceRefs,
+    oldProviderOutputOverwritten: false, existingSourceRefsPreserved: true,
+    freshDraftGenerationAndWholeSectionReviewRequired: true,
+    semanticAcceptanceInherited: false, trainingTruth: false,
+  }) };
 }
 
 function adviceBodyHash(r) {
@@ -146,14 +244,14 @@ export function inspectFactionBatchScopeV1(output, { outline, indices, completed
         duplicatesCompletedIndices: value ? completedRecommendations.flatMap((r, n) => adviceBodyHash(r) === adviceBodyHash(value) ? [n] : []) : [] };
     }), sourceReviewStillRequired: true, trainingTruth: false });
 }
-export function validateFactionDraftBatchV1(output, { input, outline, indices, completedRecommendations = [] }) {
+export function validateFactionDraftBatchV1(output, { input, outline, indices, completedRecommendations = [], draftEnvelopeBinding = null }) {
   output = normalizeFactionBatchEnvelopeV1(output).output;
   if (!Array.isArray(output.items) || output.items.length !== indices.length) fail('FACTION_BATCH_DENOMINATOR');
   const pending = new Set(indices), items = [];
   for (const item of output.items) {
     exact(item, ['index', 'value']);
     if (!pending.delete(item.index)) fail('FACTION_BATCH_SCOPE_INVALID');
-    validateFactionDraftV1({ recommendations: [item.value] }, input);
+    validateFactionDraftV1({ recommendations: [item.value] }, input, { draftEnvelopeBinding });
     if ([...completedRecommendations, ...items.map(r => r.value)].some(r => adviceBodyHash(r) === adviceBodyHash(item.value))) fail('FACTION_BATCH_DUPLICATE_RECOMMENDATION');
     if (outline[item.index].sourceRefs.some(ref => !item.value.sourceRefs.includes(ref))) fail('FACTION_BATCH_SOURCE_OMISSION');
     items.push(item);
@@ -164,8 +262,9 @@ export function validateFactionDraftBatchV1(output, { input, outline, indices, c
 export function validateFactionReviewV1(output, { input, section, draft,
   reviewIndices = draft.recommendations.map((_, i) => i),
   requiredSourceRefs = section.requiredSourceRefs,
-  reviewReasonMaximum = 1200 }) {
-  if (![1200, 16_384].includes(reviewReasonMaximum))
+  reviewReasonMaximum = 1200, reviewSourceMaximum = 8 }) {
+  if (![8, 128].includes(reviewSourceMaximum)) fail('FACTION_REVIEW_SOURCE_BOUND_INVALID');
+  if (reviewReasonMaximum !== null && ![1200, 16_384].includes(reviewReasonMaximum))
     fail('FACTION_REVIEW_REASON_BOUND_INVALID');
   exact(output, ['verdicts', 'coverage']);
   if (!Array.isArray(output.verdicts) || output.verdicts.length !== reviewIndices.length
@@ -173,7 +272,7 @@ export function validateFactionReviewV1(output, { input, section, draft,
   const pending = new Set(reviewIndices);
   for (const v of output.verdicts) {
     exact(v, ['index', 'verdict', 'reason', 'sourceRefs']);
-    text(v.reason, reviewReasonMaximum); refs(v.sourceRefs, input);
+    text(v.reason, reviewReasonMaximum ?? Number.MAX_SAFE_INTEGER); refs(v.sourceRefs, input, reviewSourceMaximum);
     if (!pending.delete(v.index) || !['supported', 'unsupported', 'uncertain'].includes(v.verdict)) fail('FACTION_REVIEW_SCOPE_INVALID');
   }
   const required = new Set(requiredSourceRefs);
@@ -189,7 +288,7 @@ export function validateFactionReviewV1(output, { input, section, draft,
       // the model to rewrite a negative review. Conflicting aliases fail.
       if (hash(c.sourceRefs) !== hash([c.sourceRef])) fail('FACTION_REVIEW_COVERAGE_ALIAS_CONFLICT');
     }
-    exact(c, keys); text(c.reason, reviewReasonMaximum);
+    exact(c, keys); text(c.reason, reviewReasonMaximum ?? Number.MAX_SAFE_INTEGER);
     if (!sources.delete(c.sourceRef) || !['covered', 'omitted', 'uncertain'].includes(c.verdict)
       || !Array.isArray(c.recommendationIndices) || new Set(c.recommendationIndices).size !== c.recommendationIndices.length
       || c.recommendationIndices.some(i => !Number.isInteger(i) || !draft.recommendations[i])
@@ -201,9 +300,31 @@ export function validateFactionReviewV1(output, { input, section, draft,
 }
 
 export function resolveFactionReviewReasonMaximumV1(artifact,
-  structuredReviewValidationBinding = null) {
+  structuredReviewValidationBinding = null, catalogueReviewBinding = null, reviewSlotNamespaceBinding = null) {
   if (artifact?.structuredDecodePassed !== true) return 1200;
   verifySeal(artifact);
+  if (artifact.outputContractRef?.hash === STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V6.hash) {
+    if (!reviewSlotNamespaceBinding || verifySeal(reviewSlotNamespaceBinding).hash !== FACTION_REVIEW_SLOT_NAMESPACE_BINDING_V1.hash
+      || hash(artifact.outputContractRef) !== hash(STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V6)
+      || artifact.reviewSlotNamespaceBindingHash !== FACTION_REVIEW_SLOT_NAMESPACE_BINDING_V1.hash)
+      fail('FACTION_REVIEW_VALIDATION_BINDING_INVALID');
+    if (artifact.parsedReviewNarrativeBindingHash) {
+      if (artifact.parsedReviewNarrativeBindingHash !== FACTION_PARSED_REVIEW_VALUE_BINDING_V2.hash)
+        fail('FACTION_REVIEW_VALIDATION_BINDING_INVALID');
+      return null;
+    }
+    if (artifact.reviewSoftLimitBindingHash) {
+      if (artifact.reviewSoftLimitBindingHash !== FACTION_REVIEW_SOFT_LIMIT_BINDING_V1.hash)
+        fail('FACTION_REVIEW_VALIDATION_BINDING_INVALID');
+      return null;
+    }
+    return 16384;
+  }
+  if (artifact.outputContractRef?.hash === STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V5.hash) {
+    verifySeal(catalogueReviewBinding);
+    if (catalogueReviewBinding.hash !== STARCRAFT_TMG_FACTION_REVIEW_CATALOGUE_BINDING_V1.hash) fail('FACTION_REVIEW_VALIDATION_BINDING_INVALID');
+    return 16384;
+  }
   verifySeal(structuredReviewValidationBinding);
   const { hash: ignoredBindingHash, ...binding } =
     structuredReviewValidationBinding;
@@ -217,6 +338,22 @@ export function resolveFactionReviewReasonMaximumV1(artifact,
     fail('FACTION_REVIEW_VALIDATION_BINDING_INVALID');
   }
   return binding.reviewReasonMaximum;
+}
+
+export function validateFactionProductionTargetReviewV1(output, { artifact, targets, input, section, draft,
+  reviewIndices, requiredSourceRefs, structuredReviewValidationBinding, catalogueReviewBinding,
+  reviewSlotNamespaceBinding = null }) {
+  const narrativeUnbounded = artifact?.parsedReviewNarrativeBindingHash
+    === FACTION_PARSED_REVIEW_VALUE_BINDING_V2.hash
+    || artifact?.reviewSoftLimitBindingHash === FACTION_REVIEW_SOFT_LIMIT_BINDING_V1.hash;
+  const bound = validateTargetedFactionReviewV1(output, targets,
+    { narrativeCharacterMaximum: narrativeUnbounded ? null : 240 });
+  validateFactionReviewV1(bound.review, { input, section, draft, reviewIndices, requiredSourceRefs,
+    reviewSourceMaximum: [STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V5.hash,
+      STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V6.hash].includes(artifact?.outputContractRef?.hash) ? 128 : 8,
+    reviewReasonMaximum: resolveFactionReviewReasonMaximumV1(artifact,
+      structuredReviewValidationBinding, catalogueReviewBinding, reviewSlotNamespaceBinding) });
+  return bound;
 }
 
 // Preserve a model's claimed semantic relationship, but derive direct citation
@@ -252,7 +389,7 @@ export function createFactionRepairIssuesV1(section, draft, reviews) {
     openIssues: issues.length, reviewerConsensusNotRulesAuthority: true, trainingTruth: false });
 }
 
-export function applyFactionStrategyPatchV1(output, { input, draft, issues }) {
+export function applyFactionStrategyPatchV1(output, { input, draft, issues, draftEnvelopeBinding = null }) {
   verifySeal(issues); exact(output, ['parentHash', 'replacements', 'additions']);
   if (output.parentHash !== hash(draft) || issues.parentHash !== hash(draft)) fail('FACTION_PATCH_PARENT_DRIFT');
   if (Array.isArray(output.replacements) && Array.isArray(output.additions)
@@ -265,17 +402,17 @@ export function applyFactionStrategyPatchV1(output, { input, draft, issues }) {
   for (const r of output.replacements) {
     exact(r, ['index', 'value']);
     if (!expected.has(r.index) || hash(draft.recommendations[r.index]) !== expected.get(r.index)) fail('FACTION_PATCH_SCOPE_INVALID');
-    expected.delete(r.index); validateFactionDraftV1({ recommendations: [r.value] }, input);
+    expected.delete(r.index); validateFactionDraftV1({ recommendations: [r.value] }, input, { draftEnvelopeBinding });
     if (hash(r.value) === hash(draft.recommendations[r.index])) fail('FACTION_PATCH_NO_PROGRESS');
     next.recommendations[r.index] = clone(r.value);
   }
   for (const r of output.additions) {
-    validateFactionDraftV1({ recommendations: [r] }, input);
+    validateFactionDraftV1({ recommendations: [r] }, input, { draftEnvelopeBinding });
     if (!r.sourceRefs.some(s => omitted.has(s))) fail('FACTION_PATCH_UNRELATED_ADDITION');
     next.recommendations.push(clone(r));
   }
   if (hash(next) === hash(draft)) fail('FACTION_PATCH_NO_PROGRESS');
-  return validateFactionDraftV1(next, input);
+  return validateFactionDraftV1(next, input, { draftEnvelopeBinding });
 }
 
 // Optional empty channels belong to the host's edit scope, not to model
@@ -291,7 +428,7 @@ export function normalizeFactionStrategyPatchEnvelopeV1(output, args) {
     const [issue] = args.issues.issues;
     if (args.issues.issues.length !== 1 || !['recommendation_source_or_condition', 'assigned_source_omission'].includes(issue?.kind))
       fail('FACTION_LOCAL_EDITOR_SCOPE_INVALID');
-    validateFactionDraftV1({ recommendations: [output] }, args.input);
+    validateFactionDraftV1({ recommendations: [output] }, args.input, { draftEnvelopeBinding: args.draftEnvelopeBinding });
     normalized = issue.kind === 'recommendation_source_or_condition'
       ? { parentHash: hash(args.draft), replacements: [{ index: issue.index, value: clone(output) }], additions: [] }
       : { parentHash: hash(args.draft), replacements: [], additions: [clone(output)] };
@@ -317,7 +454,34 @@ export function normalizeFactionStrategyPatchEnvelopeV1(output, args) {
 
 export async function produceFactionStrategyV1({ input, runtime, store, knownRulePolicy, fieldRepairSeed = null,
   phaseFieldSeed = null, registeredSourceFieldRepair = false, legacyPromptRoleIds = [],
-  structuredReviewValidationBinding = null, onProgress = () => {} }) {
+  structuredReviewValidationBinding = null, catalogueReviewBinding = null,
+  reviewSlotNamespaceBinding = null,
+  tutorRecovery = null, observedSourceRepair = null, proposerBatches = null,
+  uniqueRiskClauseBinding = null, draftEnvelopeBinding = null, initialSourceCorrectionBinding = null,
+  zergUnitTimingBinding = null, onProgress = () => {} }) {
+  if (draftEnvelopeBinding) validateFactionDraftEnvelopeBindingV2(draftEnvelopeBinding);
+  if (initialSourceCorrectionBinding) validateFactionInitialSourceCorrectionBindingV2(initialSourceCorrectionBinding);
+  if (zergUnitTimingBinding && verifySeal(zergUnitTimingBinding).hash !== FACTION_ZERG_UNIT_TIMING_BINDING_V1.hash)
+    fail('FACTION_ZERG_UNIT_BINDING_INVALID');
+  const draftOptions = { draftEnvelopeBinding };
+  if (proposerBatches) {
+    verifySeal(proposerBatches.binding);
+    if (proposerBatches.binding.hash !== FACTION_PROPOSER_BATCH_BINDING_V1.hash
+      || !Array.isArray(proposerBatches.frozenRoleIds)
+      || new Set(proposerBatches.frozenRoleIds).size !== proposerBatches.frozenRoleIds.length
+      || proposerBatches.frozenRoleIds.some(id => !/^faction\.[a-z_]+\.faction\.[a-z_]+\.[a-z_]+\.\d+\.proposer$/u.test(id)))
+      fail('FACTION_PROPOSER_BATCH_BINDING_INVALID');
+  }
+  if (uniqueRiskClauseBinding && verifySeal(uniqueRiskClauseBinding).hash !== FACTION_UNIQUE_RISK_CLAUSE_BINDING_V2.hash)
+    fail('FACTION_UNIQUE_RISK_CLAUSE_BINDING_INVALID');
+  const uniqueAudit = uniqueRiskClauseBinding ? inspectFactionUniqueRiskClauseV2 : inspectFactionCardPackageSourceDebtV1;
+  const uniqueCorrection = uniqueRiskClauseBinding ? proposeFactionUniqueRiskClauseCorrectionV2 : proposeFactionUniqueClauseCorrectionV1;
+  if (observedSourceRepair) {
+    const { binding, facts } = observedSourceRepair;
+    [binding, facts].forEach(verifySeal);
+    if (binding.hash !== FACTION_OBSERVED_SOURCE_REPAIR_BINDING_V1.hash || facts.inputHash !== input.hash
+      || hash(facts.sourceBinding) !== hash(input.sourceBinding)) fail('FACTION_OBSERVED_SOURCE_REPAIR_BINDING_INVALID');
+  }
   if (typeof registeredSourceFieldRepair !== 'boolean') fail('FACTION_SOURCE_FIELD_POLICY_INVALID');
   if (!Array.isArray(legacyPromptRoleIds) || new Set(legacyPromptRoleIds).size !== legacyPromptRoleIds.length
     || legacyPromptRoleIds.some(id => typeof id !== 'string' || !/^faction\.[a-z_]+\.faction\.[a-z_]+\.[a-z_]+\.[1-9][0-9]*\.(?:reasoner|judge|generator-items\.[0-9]+|editor\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+|source-reconstruction\.[0-3](?:\.phase-seed-v1\.[a-f0-9]{20})?\.[0-9]+)$/.test(id)))
@@ -340,6 +504,12 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
   const roleArtifacts = [];
   async function role(id, instruction, workspace, validate, batchScope = null) {
     const request = { packet, roleId: id, instruction, workspace: { ...common, ...workspace }, maxOutput: 4096 };
+    if (proposerBatches && id.endsWith('.proposer') && !proposerBatches.frozenRoleIds.includes(fullRoleId(id))) {
+      const generated = await produceFactionProposerBatchesV1({ input, request, role: r => runtime.role(r), store,
+        auxiliaryCapacityBinding: proposerBatches.auxiliaryCapacityBinding || null,
+        onArtifact: artifact => roleArtifacts.push(artifact), onProgress });
+      return { ...generated, value: validate(generated.value) };
+    }
     let result = await runtime.role(request); roleArtifacts.push({ id, hash: result.hash });
     try { return { artifact: result, value: validate(result.output, result) }; }
     catch (error) {
@@ -374,6 +544,45 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
         if (hash(recovered.output) === hash(result.output)) fail('FACTION_BATCH_RECONSTRUCTION_NO_PROGRESS');
         return { artifact: recovered, value: validate(recovered.output) };
       }
+      if (error.code === 'FACTION_OUTLINE_SOURCE_OMISSION') {
+        const issue = createFactionOutlineSourceIssueV1(result.output,
+          { input, section: workspace.section });
+        const lease = store.acquire(packet.id + '.' + id
+          + '.source-issue-v1', { issueHash: issue.hash });
+        if (!lease.cached) store.finish(lease, issue);
+        const recovered = await runtime.role({ ...request,
+          roleId: id + '.source-reconstruction.v1',
+          instruction: instruction
+            + '\n这是提纲遗漏指定来源后的定点重建，不是整份重写。只返回outputRequestAtEnd要求的planHash和replacements；选择确实能用缺失来源形成有条件决策的旧提纲项重写。每个replacement必须保留该项全部旧sourceRefs，并覆盖至少一个missingSourceRef；不得改其他项，不得把引用本身当作策略正确性证明。',
+          workspace: { ...request.workspace, rejectedOutline: result.output,
+            outlineSourceIssue: issue, outputRequestAtEnd: {
+              action: 'rewrite_only_selected_outline_items_to_cover_missing_required_sources',
+              planHash: issue.hash,
+              missingSourceRefs: issue.missingSourceRefs,
+              allowedIndices: issue.allowedIndices,
+              expectedShape: { planHash: issue.hash,
+                replacements: [{ index: 0,
+                  focus: '重写后的有条件决策主题与范围',
+                  sourceRefs: ['保留该项旧来源并加入缺失的实际官方来源ID'] }] },
+            } },
+        });
+        roleArtifacts.push({ id: id + '.source-reconstruction.v1',
+          hash: recovered.hash });
+        const materialized = applyFactionOutlineSourceReconstructionV1(
+          recovered.output, { input, section: workspace.section,
+            rejectedOutput: result.output, issue });
+        const receiptLease = store.acquire(packet.id + '.' + id
+          + '.source-reconstruction-receipt-v1',
+        { receiptHash: materialized.receipt.hash });
+        if (!receiptLease.cached) store.finish(receiptLease,
+          materialized.receipt);
+        onProgress({ section: workspace.section.id,
+          stage: 'outline_source_reconstructed',
+          missingSources: issue.missingSourceRefs.length,
+          changedItems: materialized.receipt.changedIndices.length,
+          freshReviewPending: true });
+        return { artifact: recovered, value: validate(materialized.output) };
+      }
       if (!/^(OUTPUT_SCHEMA_INVALID|TEXT_INVALID|FACTION_(SOURCE_REFERENCE_INVALID|STRING_ARRAY_INVALID|TREE_|DRAFT_|REVIEW_|ANSWER_|OUTLINE_|BATCH_))/.test(error.code || '')) throw error;
       const repaired = await runtime.role({ ...request, roleId: id + '.schema',
         instruction: instruction + '\n只纠正下面记录的结构/地址错误，不改变否定判断，不删掉上下文或材料，不扩大语义修改范围。',
@@ -383,7 +592,13 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
       return { artifact: repaired, value: validate(repaired.output) };
     }
   }
-  const tutor = await role('tutor', 'Teach：使用完整官方来源和已核验总规则，教授本阵营的决策结构、资源/编军限制、单位与卡牌的条件配合。不是RTS，标签合格不等于编军合法；保留升级成本、时机、例外和特殊单位入场限制。不预先注入某个对手战术，不声称胜率。返回{"lesson":["教学要点"],"uncertainties":["未证明的事项"]}。整份不超过64KB。', {}, validateTutorLessonV3);
+  const tutor = tutorRecovery ? await produceFactionTeachRecoveryV1({ input, recovery: tutorRecovery, role })
+    : await role('tutor', 'Teach：使用完整官方来源和已核验总规则，教授本阵营的决策结构、资源/编军限制、单位与卡牌的条件配合。不是RTS，标签合格不等于编军合法；保留升级成本、时机、例外和特殊单位入场限制。不预先注入某个对手战术，不声称胜率。返回{"lesson":["教学要点"],"uncertainties":["未证明的事项"]}。整份不超过64KB。', {}, validateTutorLessonV3);
+  if (tutorRecovery) {
+    const lease = store.acquire(packet.id + '.tutor.capacity-assembly.v1', { assemblyHash: tutor.artifact.hash });
+    if (!lease.cached) store.finish(lease, tutor.artifact);
+    onProgress({ stage: 'teach_capacity_recovered', parts: tutor.artifact.parts.length });
+  }
   const tree = await role('question-tree', 'Ctx2Skill：从完整中立官方观察及Teach生成问题树。以下六轴各2至4个不同问题：' + FACTION_AXES_V1.join(', ')
     + '。覆盖未知编军泛化、先后手、任务类型、资源取舍、脆弱规则条件；不能把某对抗结论当先验。返回{"branches":[{"axis":"精确轴名","questions":[{"question":"问题","sourceRefs":["存在的官方来源ID，1至8个"]}]}]}。保留全部叶节点，不写答案。',
     { unverifiedTutor: tutor.value }, out => validateFactionTreeV1(out, input));
@@ -404,29 +619,55 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
       return out;
     });
     const judgeId = section.id + '.judge';
-    const judge = await role(judgeId, prompt(judgeId,
-      'Judge：独立按完整来源检查每个推理回答的事实、条件、时机、成本、例外与建议范围；策略可以是有条件假设，不得当作已赢对战。正确引用不等于正确结论。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.judge + '；index必须是从answers复制的JSON整数，每个回答一次。判断是模型审查而非Rules真值。', LEGACY_JSON_PROMPT_V1.judge),
-      { ...scope, answers: answers.value }, out => {
+    const judgeInstruction = 'Judge：独立按完整来源检查每个推理回答的事实、条件、时机、成本、例外与建议范围；策略可以是有条件假设，不得当作已赢对战。正确引用不等于正确结论。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.judge + '；index必须是从answers复制的JSON整数，每个回答一次。判断是模型审查而非Rules真值。';
+    const validateJudge = out => {
         exact(out, ['judgments']);
         if (!Array.isArray(out.judgments) || out.judgments.length !== questions.length) fail('FACTION_REVIEW_DENOMINATOR');
         const pending = new Set(questions.map(q => q.index));
         for (const j of out.judgments) { exact(j, ['index', 'verdict', 'reason', 'sourceRefs']); text(j.reason, 1200); refs(j.sourceRefs, input);
           if (!pending.delete(j.index) || !['supported', 'unsupported', 'uncertain'].includes(j.verdict)) fail('FACTION_REVIEW_SCOPE_INVALID'); }
         return out;
-      });
+      };
+    let judge = await role(judgeId, prompt(judgeId, judgeInstruction, LEGACY_JSON_PROMPT_V1.judge),
+      { ...scope, answers: answers.value }, validateJudge);
+    const sourceFactCorrection = observedSourceRepair ? correctObservedFactionReasonerSourceFactsV1({
+      input, section, questions, answers: answers.value, judge: judge.value, ...observedSourceRepair }) : null;
+    let writingScope = scope, writingAnswers = answers.value;
+    if (sourceFactCorrection) {
+      const lease = store.acquire(section.id + '.observed-source-fact-correction-v1', { correctionHash: sourceFactCorrection.hash });
+      if (!lease.cached) store.finish(lease, sourceFactCorrection);
+      const originalJudge = judge;
+      writingAnswers = sourceFactCorrection.correctedAnswers;
+      judge = await role(section.id + '.judge.source-fact-correction-v1.' + sourceFactCorrection.hash.slice(0, 20),
+        judgeInstruction + '\n这是独立Rules编军计算发现原Judge错放后的全组复审。必须检查全部answers而非仅修改项；sourceFactCorrection只证明列出的费用/槽位/Unique事实，不证明完整编军、部署或策略优势。originalAnswers与originalJudge是保留的未可信历史，不能继承supported结论。若其他事实或策略仍有问题，继续给出unsupported或uncertain及具体理由。',
+        { ...scope, answers: writingAnswers, sourceFactCorrection,
+          originalAnswers: answers.value, originalJudge: originalJudge.value }, validateJudge);
+      writingScope = { ...scope, sourceFactCorrection,
+        sourceFactFreshJudgeArtifactHash: judge.artifact.hash };
+      onProgress({ section: section.id, stage: 'observed_source_facts_rejudged', changedAnswers: 3,
+        judgments: judge.value.judgments.length, unsupportedOrUncertain: judge.value.judgments.filter(j => j.verdict !== 'supported').length,
+        semanticAcceptanceInherited: false });
+    }
     const proposer = await role(section.id + '.proposer', 'Proposer：依据来源、推理和Judge的具体问题，为本节生成最小且完整的策略编写方案。明确保留、纠正与尚不能下结论的事项，不照抄错误回答或自行推翻规则。所有指定单位/卡牌都要有有条件决策用法，不把可选项推荐成必选，不把标签池写成已合法阵容。返回{"lesson":["拟采用的策略结构与修正"],"uncertainties":["保留未证实事项"]}，整份不超过64KB。',
-      { ...scope, answers: answers.value, judge: judge.value }, validateTutorLessonV3);
-    const outline = await role(section.id + '.generator-outline', 'Generator提纲：本节最终会有1至8条有条件建议。这里只给简短完整提纲，不写完整正文；覆盖每个指定来源和Proposer中全部关键决策，不删除叶问题。每项focus最多600字符，引用1至8个官方ID。返回{"outline":[{"focus":"建议的决策主题与范围","sourceRefs":["实际来源ID"]}]}。每个section.requiredSourceRefs至少关联一项提纲。随后会给完整共同上下文逐批输出正文。',
-      { ...scope, proposals: proposer.value, judge: judge.value }, out => validateFactionOutlineV1(out, { input, section }));
+      { ...writingScope, answers: writingAnswers, judge: judge.value }, validateTutorLessonV3);
+    // Completed historical writing stays byte-identical. A new assembled
+    // plan has a new generation identity, so an invalid old outline cannot
+    // be imported simply because its Provider call finished successfully.
+    const planningEpoch = proposer.plan ? '.planning-v1.' + proposer.artifact.hash.slice(0, 20) : '';
+    if (proposer.plan) writingScope = { ...writingScope, answers: writingAnswers,
+      proposerPlan: proposer.plan, proposerAssemblyHash: proposer.artifact.hash };
+    const outline = await role(section.id + '.generator-outline' + planningEpoch, 'Generator提纲：本节最终会有1至8条有条件建议。这里只给简短完整提纲，不写完整正文；覆盖每个指定来源和Proposer中全部关键决策，不删除叶问题。每项focus最多600字符，引用1至8个官方ID。返回{"outline":[{"focus":"建议的决策主题与范围","sourceRefs":["实际来源ID"]}]}。每个section.requiredSourceRefs至少关联一项提纲。随后会给完整共同上下文逐批输出正文。'
+      + (proposer.plan ? '\nproposerPlan的assigned_source_coverage是本节正文义务，不是可省背景。全轴问题中其他组卡牌可作为条件比较，不能挤掉本节指定卡牌。先安排每个section.requiredSourceRefs的决策位置，再合并相关问题，不能只给引用而不规划其用途。' : ''),
+      { ...writingScope, proposals: proposer.value, judge: judge.value }, out => validateFactionOutlineV1(out, { input, section }));
     const recommendations = [], generationEnvelopeRepairs = [];
     for (let first = 0; first < outline.value.outline.length; first += 2) {
       const indices = outline.value.outline.slice(first, first + 2).map((_, n) => first + n);
-      const generatorId = section.id + '.generator-items.' + first;
+      const generatorId = section.id + '.generator-items.' + first + planningEpoch;
       const generated = await role(generatorId, prompt(generatorId,
         'Generator：仅为indices指定的1至2项提纲写完整中文策略建议。全部官方来源、总规则、整节提纲和已完成建议均在输入中；分批只限制输出，不限制阅读。逐项保留适用条件、支付/时机/例外、步骤、替代、风险、reviseIf和未证明效果。对于单位考虑装备/规模/任务条件；卡牌保留次数限制和资源替代用途。不保证胜利，不复制题号。返回' + FACTION_JSON_OUTPUT_EXAMPLES_V1.generatorItems
           + '，index必须是从indices复制的JSON整数，每个index一次。每项文本不超过1600字符，sourceRefs保留提纲所引来源，可补真实来源至最多8个。不要输出其他index、整份Skill或提纲。', LEGACY_JSON_PROMPT_V1.generatorItems),
-        { ...scope, proposals: proposer.value, judge: judge.value, outline: outline.value.outline, indices, completedRecommendations: recommendations },
-        out => validateFactionDraftBatchV1(out, { input, outline: outline.value.outline, indices, completedRecommendations: recommendations }),
+        { ...writingScope, proposals: proposer.value, judge: judge.value, outline: outline.value.outline, indices, completedRecommendations: recommendations },
+        out => validateFactionDraftBatchV1(out, { input, outline: outline.value.outline, indices, completedRecommendations: recommendations, draftEnvelopeBinding }),
         { outline: outline.value.outline, indices, completedRecommendations: recommendations });
       const envelope = normalizeFactionBatchEnvelopeV1(generated.artifact.output);
       if (envelope.receipt.moved.length) {
@@ -438,18 +679,43 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
       recommendations.push(...generated.value.map(item => item.value));
       onProgress({ section: section.id, stage: 'generated_items', completedItems: recommendations.length, plannedItems: outline.value.outline.length });
     }
-    const rawDraft = validateFactionDraftV1({ recommendations }, input);
+    const rawDraft = validateFactionDraftV1({ recommendations }, input, draftOptions);
     const knownRuleCorrection = correctKnownFactionRuleFailuresV1({ input, policy: knownRulePolicy, draft: rawDraft });
     const correctionLease = store.acquire(section.id + '.known-rule-correction', { correctionHash: knownRuleCorrection.hash });
     if (!correctionLease.cached) store.finish(correctionLease, knownRuleCorrection);
-    let draft = validateFactionDraftV1(knownRuleCorrection.draft, input); const rounds = [], edits = [], seen = new Set([hash(draft)]);
+    let draft = validateFactionDraftV1(knownRuleCorrection.draft, input, draftOptions); const rounds = [], edits = [], seen = new Set([hash(draft)]);
     if (knownRuleCorrection.patches.length) onProgress({ section: section.id, stage: 'known_rule_fact_corrected',
       correctedFields: knownRuleCorrection.patches.length, correctionHash: knownRuleCorrection.hash });
     let passed = false, reviewEpoch = '';
     for (let revision = 0; revision <= 3; revision++) {
+      // Independently demonstrated source defects need not first consume a
+      // paid review of known-bad prose. Preserve the complete original draft
+      // and correction evidence, consume one existing revision, then review
+      // the complete new draft under fresh role/request identities.
+      if (zergUnitTimingBinding) {
+        const correction = proposeFactionZergUnitTimingCorrectionV1({ input, draft, binding: zergUnitTimingBinding });
+        if (correction) {
+          if (revision === 3) fail('FACTION_ZERG_UNIT_FRESH_REVIEW_REQUIRED');
+          const patched = validateFactionDraftV1(correction.proposedDraft, input, draftOptions);
+          assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: patched });
+          if (seen.has(hash(patched))) fail('FACTION_REPAIR_CYCLE');
+          const applied = seal({ version: 'faction_zerg_unit_timing_application_v1', bindingHash: zergUnitTimingBinding.hash,
+            correction, originalDraft: draft, parentHash: hash(draft), resultHash: hash(patched), revision,
+            priorRoundHash: rounds.at(-1)?.hash || null, sourceCounterexampleBeforePaidReview: true,
+            oldPaidArtifactsOverwritten: false, oldReviewAcceptanceInherited: false,
+            freshWholeSectionReviewRequired: true, trainingTruth: false });
+          const lease = store.acquire(section.id + '.zerg-unit-timing-correction-v1.' + revision, { applicationHash: applied.hash });
+          if (lease.cached && verifySeal(lease.artifact).hash !== applied.hash) fail('FACTION_ZERG_UNIT_APPLICATION_DRIFT');
+          if (!lease.cached) store.finish(lease, applied);
+          edits.push(applied); draft = patched; seen.add(hash(draft));
+          onProgress({ section: section.id, revision, stage: 'zerg_unit_timing_fields_corrected',
+            changedFields: correction.changes.length, freshReviewPending: true });
+          continue;
+        }
+      }
       if (phaseSeed?.binding.sectionId === section.id && !phaseSeedConsumed && revision === phaseSeed.binding.importBeforeRevision) {
         if (hash(draft) !== phaseSeed.binding.parentDraftHash) fail('FACTION_PHASE_SEED_BASE_NOT_REPRODUCED');
-        const next = validateFactionDraftV1(phaseSeed.draft, input);
+        const next = validateFactionDraftV1(phaseSeed.draft, input, draftOptions);
         assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: next });
         if (seen.has(hash(next))) fail('FACTION_REPAIR_CYCLE');
         edits.push(seal({ version: 'verified_phase_field_import_v1', parentHash: hash(draft), resultHash: hash(next),
@@ -473,11 +739,9 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
             '独立来源审查，角色' + route + '。完整来源、总规则、整节候选仍在；本次只审查末尾targetContract明确给出的1至2个对象。不要自行数数组位置。以targetId和完整title标识对象，focus引用该对象fields中具体path及原文片段（8至240字符）；不能引用邻近建议代替。核对所有when/procedure/alternatives/risk/reviseIf/unproven字段、算术、支付/时机/例外。区分事实、条件策略、未验证效果；不能因为建议有条件就忽略不真实的确定性断言。focusedSources是同一冻结来源原文，非另一个模型的摘要。返回{"verdicts":[{"targetId":"给定ID","title":"给定完整标题","focus":[{"path":"给定字段路径","quote":"该字段原文片段"}],"verdict":"supported|unsupported|uncertain","reason":"针对此对象的具体依据，最多400字符","sourceRefs":["实际官方来源ID，1至8"]}],"coverage":[{"sourceRef":"指定覆盖来源","verdict":"covered|omitted|uncertain","recommendationIndices":[整节直接引用此来源的建议序号],"reason":"具体覆盖依据，最多400字符"}]}。每个targetId及coverageRequiredSourceRefs一次，coverageRequiredSourceRefs为空则coverage:[]。不要输出其他对象或数字index；否定/不确定判断必须指出对象内具体问题，规则来源优先于候选措辞。',
             { section, draft, reviewIndices, coverageRequiredSourceRefs: requiredSourceRefs,
               outputRequestAtEnd: { targetContract: targets, coverageOnlySourceRefs: requiredSourceRefs } }, (out, artifact) => {
-              const bound = validateTargetedFactionReviewV1(out, targets);
-              validateFactionReviewV1(bound.review, { input, section, draft,
-                reviewIndices, requiredSourceRefs,
-                reviewReasonMaximum: resolveFactionReviewReasonMaximumV1(
-                  artifact, structuredReviewValidationBinding) }); return bound;
+              return validateFactionProductionTargetReviewV1(out, { artifact, targets, input, section, draft,
+                reviewIndices, requiredSourceRefs, structuredReviewValidationBinding, catalogueReviewBinding,
+                reviewSlotNamespaceBinding });
             });
           reviews.push(reviewed.value.review); reviewHashes.push(reviewed.artifact.hash);
           reviewPartition.push({ route, reviewIndices, requiredSourceRefs, artifactHash: reviewed.artifact.hash,
@@ -495,11 +759,47 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
       const lease = store.acquire(section.id + '.issue-journal.' + revision + reviewEpoch, { roundHash: round.hash });
       const saved = lease.cached ? verifySeal(lease.artifact) : store.finish(lease, round); rounds.push(saved);
       onProgress({ section: section.id, revision, stage: 'reviewed', openIssues: issues.openIssues });
+      if (initialSourceCorrectionBinding) {
+        const correction = createFactionInitialSourceCorrectionV2({ input, draft, binding: initialSourceCorrectionBinding });
+        if (correction) {
+          if (revision === 3) fail('FACTION_INITIAL_SOURCE_CORRECTION_FRESH_REVIEW_REQUIRED');
+          const patched = validateFactionDraftV1(correction.proposedDraft, input, draftOptions);
+          assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: patched });
+          if (seen.has(hash(patched))) fail('FACTION_REPAIR_CYCLE');
+          const applied = seal({ version: 'faction_initial_source_correction_application_v2',
+            bindingHash: initialSourceCorrectionBinding.hash, correction,
+            parentHash: hash(draft), resultHash: hash(patched), priorRoundHash: saved.hash,
+            originalModelIssuesHash: issues.hash, originalModelIssuesWaived: false,
+            oldReviewAcceptanceInherited: false, freshWholeSectionReviewRequired: true, trainingTruth: false });
+          const repairLease = store.acquire(section.id + '.initial-source-correction-v2.' + revision,
+            { applicationHash: applied.hash });
+          if (!repairLease.cached) store.finish(repairLease, applied);
+          edits.push(applied); draft = patched; seen.add(hash(draft));
+          onProgress({ section: section.id, revision, stage: 'initial_source_fields_corrected',
+            changedFields: correction.changes.length, freshReviewPending: true });
+          continue;
+        }
+      }
       if (!issues.openIssues) {
+        if ((observedSourceRepair || uniqueRiskClauseBinding) && uniqueAudit({ input, draft }).findings.length) {
+          if (revision === 3) fail('FACTION_UNIQUE_CARD_FRESH_REVIEW_REQUIRED');
+          const correction = uniqueCorrection({ input, draft });
+          const patched = validateFactionDraftV1(correction.proposedDraft, input, draftOptions);
+          assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: patched });
+          if (seen.has(hash(patched))) fail('FACTION_REPAIR_CYCLE');
+          const applied = seal({ version: 'faction_observed_unique_clause_application_v1',
+            bindingHash: (uniqueRiskClauseBinding || observedSourceRepair.binding).hash, correction, parentHash: hash(draft), resultHash: hash(patched),
+            oldReviewAcceptanceInherited: false, freshWholeSectionReviewRequired: true, trainingTruth: false });
+          const repairLease = store.acquire(section.id + (uniqueRiskClauseBinding ? '.unique-risk-correction-v2.' : '.observed-unique-correction-v1.') + revision, { applicationHash: applied.hash });
+          if (!repairLease.cached) store.finish(repairLease, applied);
+          edits.push(applied); draft = patched; seen.add(hash(draft));
+          onProgress({ section: section.id, revision, stage: 'observed_unique_clause_corrected', changedFields: 1, freshReviewPending: true });
+          continue;
+        }
         if (fieldRepairBinding?.sectionId === section.id && !fieldRepairConsumed) {
           if (hash(draft) !== fieldRepairBinding.parentDraftHash) fail('FACTION_FIELD_SEED_BASE_NOT_REPRODUCED');
           if (revision === 3) fail('FACTION_FIELD_SEED_FRESH_REVIEW_REQUIRED');
-          const patched = validateFactionDraftV1(fieldRepairSeed.candidate.patch.draft, input);
+          const patched = validateFactionDraftV1(fieldRepairSeed.candidate.patch.draft, input, draftOptions);
           assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: patched });
           edits.push(seal({ version: 'verified_field_repair_import_v1', parentHash: hash(draft), resultHash: hash(patched),
             binding: fieldRepairBinding, patch: fieldRepairSeed.candidate.patch,
@@ -512,7 +812,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
         const unitDebt = inspectFactionUnitRoleDebtV1({ input, draft });
         if (unitDebt.findings.length) {
           if (revision === 3) fail('FACTION_UNIT_FIELD_FRESH_REVIEW_REQUIRED');
-          const repair = await repairKnownFactionUnitRoleFieldsV1({ input, section, draft, runtime, store });
+          const repair = await repairKnownFactionUnitRoleFieldsV1({ input, section, draft, runtime, store, draftEnvelopeBinding });
           assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: repair.patch.draft });
           if (seen.has(repair.patch.draftHash)) fail('FACTION_REPAIR_CYCLE');
           edits.push(repair); draft = repair.patch.draft; seen.add(hash(draft));
@@ -522,7 +822,7 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
         }
         if (registeredRepair?.inspectFactionRegisteredSourceDebtV2({ input, draft }).findings.length) {
           if (revision === 3) fail('FACTION_SOURCE_FIELD_FRESH_REVIEW_REQUIRED');
-          const repair = await registeredRepair.repairFactionSourceFieldsV2({ input, section, draft, runtime, store });
+          const repair = await registeredRepair.repairFactionSourceFieldsV2({ input, section, draft, runtime, store, draftEnvelopeBinding });
           assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: repair.patch.draft });
           if (seen.has(repair.patch.draftHash)) fail('FACTION_REPAIR_CYCLE');
           edits.push(repair); draft = repair.patch.draft; seen.add(hash(draft));
@@ -542,38 +842,53 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
         const editorId = section.id + '.editor.' + revision + reviewEpoch + '.' + ordinal;
         const instruction = prompt(editorId, currentInstruction, LEGACY_JSON_PROMPT_V1.editor);
         const localIssues = seal({ ...Object.fromEntries(Object.entries(issues).filter(([k]) => k !== 'hash')), issues: [issue], openIssues: 1 });
+        const repairConflictHistory = createFactionRepairConflictHistoryV1({
+          rounds, issue });
         const validatePatch = edit => {
-          const normalized = normalizeFactionStrategyPatchEnvelopeV1(edit.value, { input, draft, issues: localIssues });
+          const normalized = normalizeFactionStrategyPatchEnvelopeV1(edit.value, { input, draft, issues: localIssues, draftEnvelopeBinding });
+          const conflictProgress = repairConflictHistory
+            ? verifyFactionRepairConflictProgressV1({
+              history: repairConflictHistory, patch: normalized.output })
+            : null;
           if (normalized.receipt) {
             const lease = store.acquire(edit.artifact.roleId + '.patch-envelope-v1', {
               artifactHash: edit.artifact.hash, normalizationHash: normalized.receipt.hash });
             if (!lease.cached) store.finish(lease, seal({ rawArtifactHash: edit.artifact.hash,
               normalization: normalized.receipt, rawProviderOutputOverwritten: false, trainingTruth: false }));
           }
-          return { ...edit, value: normalized.output };
+          return { ...edit, value: normalized.output, conflictProgress };
         };
-        let edit = await role(editorId, instruction + '\n本次仅输出localIssue这一项的替换或补充，其余问题会分别处理；完整draft及allIssues保留供一致性核对。',
+        const conflictInstruction = repairConflictHistory
+          ? '\n该对象已连续多轮来源审查失败。repairConflictHistory保留所有旧否定理由与已拒绝版本；不得用一个无来源的确定断言替换另一个相反断言。删除所有争议性确定结论，只保留各轮共同有来源支持且不依赖争议交互的策略；未解决分支仅写入unproven。不得恢复任何rejectedRecommendationHashes中的版本。'
+          : '';
+        let edit = await role(editorId, instruction + '\n本次仅输出localIssue这一项的替换或补充，其余问题会分别处理；完整draft及allIssues保留供一致性核对。' + conflictInstruction,
           { section, draft, parentHash: hash(draft), localIssue: issue, issues: localIssues, allIssues: issues,
+            ...(repairConflictHistory ? { repairConflictHistory } : {}),
             editTargetAtEnd: { parentHash: hash(draft), localIssue: issue,
               target: issue.index === undefined ? null : { index: issue.index, title: draft.recommendations[issue.index].title,
                 recommendationHash: hash(draft.recommendations[issue.index]), recommendation: draft.recommendations[issue.index] } } }, out => out);
         try { edit = validatePatch(edit); }
         catch (error) {
-          if (error.code !== 'FACTION_PATCH_NO_PROGRESS') throw error;
+          if (!['FACTION_PATCH_NO_PROGRESS',
+            'FACTION_REPAIR_REJECTED_VERSION_RESTORED'].includes(error.code)) throw error;
           const repairScopes = [issue.kind === 'assigned_source_omission' ? issue : {
             kind: issue.kind, index: issue.index, title: draft.recommendations[issue.index].title,
             findings: issue.findings, sourceRefs: draft.recommendations[issue.index].sourceRefs }];
           const reconstructionId = section.id + '.source-reconstruction.' + revision + reviewEpoch + '.' + ordinal;
+          const reconstructionReason = repairConflictHistory
+            ? '\n旧编辑为空、未改变被标记内容或恢复了已拒绝版本，已记录为语义无进展而非JSON错误。现不给被标记的旧正文，从完整官方来源与repairScopes重建这一项；其他建议完整保留为上下文。保留父hash和index，不改其他建议。如果来源不能支持修改，保持阻断，不编造。'
+            : '\n旧编辑为空或未改变被标记内容，已记录为语义无进展而非JSON错误。现不给被标记的旧正文，从完整官方来源与repairScopes重建这一项；其他建议完整保留为上下文。保留父hash和index，不改其他建议。如果来源不能支持修改，保持阻断，不编造。';
           edit = await role(reconstructionId,
-            prompt(reconstructionId, currentInstruction, LEGACY_JSON_PROMPT_V1.editor) + '\n旧编辑为空或未改变被标记内容，已记录为语义无进展而非JSON错误。现不给被标记的旧正文，从完整官方来源与repairScopes重建这一项；其他建议完整保留为上下文。保留父hash和index，不改其他建议。如果来源不能支持修改，保持阻断，不编造。',
+            prompt(reconstructionId, currentInstruction, LEGACY_JSON_PROMPT_V1.editor) + reconstructionReason + conflictInstruction,
             { section, parentHash: hash(draft), repairScopes, noProgressArtifactHash: edit.artifact.hash,
+              ...(repairConflictHistory ? { repairConflictHistory } : {}),
               preservedRecommendations: draft.recommendations.flatMap((r, index) => index === issue.index ? [] : [{ index, recommendation: r }]),
               repairRequestAtEnd: { parentHash: hash(draft), repairScopes } }, out => out);
           edit = validatePatch(edit);
         }
         collected.replacements.push(...edit.value.replacements); collected.additions.push(...edit.value.additions); editorHashes.push(edit.artifact.hash);
       }
-      const next = applyFactionStrategyPatchV1(collected, { input, draft, issues });
+      const next = applyFactionStrategyPatchV1(collected, { input, draft, issues, draftEnvelopeBinding });
       assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft: next });
       if (seen.has(hash(next))) fail('FACTION_REPAIR_CYCLE'); seen.add(hash(next));
       edits.push(seal({ parentHash: hash(draft), resultHash: hash(next), artifactHashes: editorHashes, patch: collected, trainingTruth: false }));
@@ -582,7 +897,14 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     assertNoKnownFactionRuleFailureV1({ input, policy: knownRulePolicy, draft });
     if (inspectFactionUnitRoleDebtV1({ input, draft }).findings.length) fail('FACTION_UNIT_FIELDS_UNREPAIRED');
     if (registeredRepair?.inspectFactionRegisteredSourceDebtV2({ input, draft }).findings.length) fail('FACTION_SOURCE_FIELDS_UNREPAIRED');
+    if ((observedSourceRepair || uniqueRiskClauseBinding) && uniqueAudit({ input, draft }).findings.length)
+      fail('FACTION_CANDIDATE_CARD_PACKAGE_SOURCE_DEBT');
+    if (initialSourceCorrectionBinding && inspectFactionInitialSourceDebtV2({ input, draft }).findings.length)
+      fail('FACTION_INITIAL_SOURCE_CORRECTION_DEBT_REMAINS');
+    if (zergUnitTimingBinding && inspectFactionZergUnitTimingDebtV1({ input, draft }).findings.length)
+      fail('FACTION_CANDIDATE_ZERG_UNIT_TIMING_DEBT');
     const result = seal({ section, outline: outline.value, outlineArtifactHash: outline.artifact.hash, draft, rounds, edits, knownRuleCorrection, semanticReviewPassed: passed,
+      ...(sourceFactCorrection ? { sourceFactCorrection, sourceFactFreshJudgeArtifactHash: judge.artifact.hash } : {}),
       ...(generationEnvelopeRepairs.length ? { generationEnvelopeRepairs } : {}),
       rulesApplicationPassed: false, strategyEffectivenessProven: false, runtimeAccepted: false, trainingTruth: false });
     const lease = store.acquire(section.id + '.result', { resultHash: result.hash });
@@ -600,6 +922,15 @@ export async function produceFactionStrategyV1({ input, runtime, store, knownRul
     sections, roleArtifacts, ...(fieldRepairBinding ? { fieldRepairBinding } : {}),
     ...(phaseSeed ? { phaseFieldBinding: phaseSeed.binding } : {}),
     ...(registeredSourceFieldRepair ? { registeredSourceFieldRepair: true } : {}),
+    ...(observedSourceRepair ? { observedSourceRepairBindingHash: observedSourceRepair.binding.hash,
+      observedRosterFactsHash: observedSourceRepair.facts.hash } : {}),
+    ...(proposerBatches ? { proposerBatchBindingHash: proposerBatches.binding.hash,
+      proposerBatchFrozenRoleIdsHash: hash(proposerBatches.frozenRoleIds) } : {}),
+    ...(proposerBatches?.auxiliaryCapacityBinding ? { proposerAuxiliaryCapacityBindingHash: proposerBatches.auxiliaryCapacityBinding.hash } : {}),
+    ...(uniqueRiskClauseBinding ? { uniqueRiskClauseBindingHash: uniqueRiskClauseBinding.hash } : {}),
+    ...(draftEnvelopeBinding ? { draftEnvelopeBindingHash: draftEnvelopeBinding.hash } : {}),
+    ...(initialSourceCorrectionBinding ? { initialSourceCorrectionBindingHash: initialSourceCorrectionBinding.hash } : {}),
+    ...(zergUnitTimingBinding ? { zergUnitTimingBindingHash: zergUnitTimingBinding.hash } : {}),
     semanticReviewPassed: sections.length === plan.sections.length && sections.every(s => s.semanticReviewPassed),
     scope: 'conditional_faction_strategy_with_all_assigned_unit_and_card_sources_not_proven_complete_game_strength',
     candidateOnly: true, independentEvaluationPassed: false, actualRoomReplayPerformed: false,

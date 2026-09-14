@@ -31,7 +31,7 @@ export function createFactionReviewTransactionBindingV1({ input, phaseFieldSeed 
 // replayable byte-for-byte; new role requests have an explicit namespace and
 // changed source context. Persist the raw proposal and guard finding before
 // returning an editor result to the workflow's patch-application code.
-export function createFactionReviewTransactionRuntimeV1({ input, runtime, store, phaseFieldSeed = null }) {
+export function createFactionReviewTransactionRuntimeV1({ input, runtime, store, phaseFieldSeed = null, draftEnvelopeBinding = null }) {
   const binding = createFactionReviewTransactionBindingV1({ input, phaseFieldSeed });
   const plan = createFactionWritingPlanV1(input), editorContexts = new Map();
   let guard = null;
@@ -46,7 +46,7 @@ export function createFactionReviewTransactionRuntimeV1({ input, runtime, store,
   return Object.freeze({ binding, async role(request) {
     const sectionIndex = plan.sections.findIndex(s => s.id === request.workspace?.section?.id);
     const isReview = request.roleId.includes('.review-target-batch-v1.');
-    const isEditor = request.roleId.includes('.editor.') || request.roleId.includes('.source-reconstruction.');
+    const isEditor = /\.(?:editor|source-reconstruction)\.[0-3](?:\.|$)/u.test(request.roleId);
     const eligible = (isReview || isEditor) && sectionIndex >= binding.startSectionIndex
       && (sectionIndex !== binding.startSectionIndex || !binding.firstSectionRoleEpoch
         || request.roleId.includes(binding.firstSectionRoleEpoch));
@@ -77,9 +77,9 @@ export function createFactionReviewTransactionRuntimeV1({ input, runtime, store,
     const artifact = await runtime.role(transformed);
     if (isEditor && guard && sectionIndex === binding.startSectionIndex) {
       let normalization;
-      try { normalization = normalizeFactionStrategyPatchEnvelopeV1(artifact.output, { input, ...editContext }); }
+      try { normalization = normalizeFactionStrategyPatchEnvelopeV1(artifact.output, { input, ...editContext, draftEnvelopeBinding }); }
       catch { return artifact; } // Old workflow retains its exact schema/no-progress handling.
-      const proposed = applyFactionStrategyPatchV1(normalization.output, { input, ...editContext });
+      const proposed = applyFactionStrategyPatchV1(normalization.output, { input, ...editContext, draftEnvelopeBinding });
       const inspection = inspectFactionRepairRegressionV1({ input, guard, draft: proposed });
       const receipt = seal({ version: 'faction_review_transaction_patch_guard_v1', bindingHash: binding.hash,
         rawArtifactHash: artifact.hash, originalRoleId: request.roleId, actualRoleId: transformed.roleId,

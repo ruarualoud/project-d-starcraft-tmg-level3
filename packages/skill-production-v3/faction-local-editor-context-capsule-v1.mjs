@@ -42,10 +42,21 @@ export function createFactionLocalEditorContextCapsuleV1(input = {}) {
     fail("FACTION_LOCAL_CAPSULE_INPUT_DRIFT");
   }
   const issue = input.issues.issues[input.issueOrdinal];
+  if (input.repairConflictHistory) {
+    verifySeal(input.repairConflictHistory);
+    if (input.repairConflictHistory.sectionId !== input.section.id
+      || input.repairConflictHistory.targetIndex !== issue.index
+      || input.repairConflictHistory.currentIssueHash !== hash(issue)
+      || input.repairConflictHistory.conservativeRepairRequired !== true) {
+      fail("FACTION_LOCAL_CAPSULE_CONFLICT_HISTORY_DRIFT");
+    }
+  }
   const roots = [...new Set([
     ...input.section.requiredSourceRefs,
     ...input.draft.recommendations.flatMap((row) => row.sourceRefs),
     ...issueSourceRefs(issue),
+    ...(input.repairConflictHistory?.entries || [])
+      .flatMap(row => row.findings.flatMap(issueSourceRefs)),
   ])];
   const dependency = createFactionSourceDependencyContextV1({
     input: input.factionInput,
@@ -92,6 +103,9 @@ export function createFactionLocalEditorContextCapsuleV1(input = {}) {
       issue,
       targetRecommendation: issue.index === undefined ? null
         : input.draft.recommendations[issue.index],
+      ...(input.repairConflictHistory ? {
+        repairConflictHistory: input.repairConflictHistory,
+      } : {}),
       hostOwns: ["index", "parentHash", "issueRoute", "replacements",
         "additions", "revision", "acceptanceStatus", "publicationStatus"],
     },
@@ -130,6 +144,11 @@ export function createFactionLocalEditorContextCapsuleV1(input = {}) {
       "Preserve conditions, timing, costs, exceptions, alternatives, risk and uncertainty.",
       "Do not invent source IDs or claim strategy effectiveness.",
       "If the supplied closure is insufficient, keep the uncertainty explicit and do not guess; the host will route a typed context-expansion issue.",
+      ...(input.repairConflictHistory ? [
+        "This target failed multiple fresh review rounds. Read every preserved prior finding; do not answer a prior objection by asserting its unsupported opposite.",
+        "Remove every disputed certainty from operational steps. Restrict the strategy to independently supported cases and preserve unresolved branches only as explicit unproven conditions.",
+        "Do not restore any recommendation version listed in rejectedRecommendationHashes; a fresh whole-section review still decides acceptance.",
+      ] : []),
     ].join("\n"),
   });
 }

@@ -11,8 +11,8 @@ export function inspectFactionRegisteredSourceDebtV2(args) {
     audits, findings: audits.flatMap(a => a.findings), absenceProvesGeneralCorrectness: false, trainingTruth: false });
 }
 
-export function createFactionSourceFieldPlanV2({ input, section, draft }) {
-  verifySeal(input); validateFactionDraftV1(draft, input);
+export function createFactionSourceFieldPlanV2({ input, section, draft, draftEnvelopeBinding = null }) {
+  verifySeal(input); validateFactionDraftV1(draft, input, { draftEnvelopeBinding });
   if (!createFactionWritingPlanV1(input).sections.some(s => hash(s) === hash(section))) fail('FACTION_SOURCE_FIELD_SECTION_DRIFT');
   const debt = inspectFactionRegisteredSourceDebtV2({ input, draft });
   if (!debt.findings.length) fail('FACTION_SOURCE_FIELD_NO_DEBT');
@@ -56,9 +56,9 @@ function validateReplacements(output, targets) {
   return output;
 }
 
-export function applyFactionSourceFieldRepairV2(output, { input, section, draft, plan }) {
+export function applyFactionSourceFieldRepairV2(output, { input, section, draft, plan, draftEnvelopeBinding = null }) {
   verifySeal(plan);
-  if (createFactionSourceFieldPlanV2({ input, section, draft }).hash !== plan.hash) fail('FACTION_SOURCE_FIELD_PLAN_DRIFT');
+  if (createFactionSourceFieldPlanV2({ input, section, draft, draftEnvelopeBinding }).hash !== plan.hash) fail('FACTION_SOURCE_FIELD_PLAN_DRIFT');
   validateReplacements(output, plan.targets);
   const next = clone(draft), changes = [];
   for (const r of output.replacements) {
@@ -67,7 +67,7 @@ export function applyFactionSourceFieldRepairV2(output, { input, section, draft,
     else next.recommendations[t.index][parts[0]][Number(parts[1])] = r.text;
     changes.push({ targetId: t.targetId, index: t.index, path: t.path, beforeHash: t.oldTextHash, afterHash: hash(r.text) });
   }
-  validateFactionDraftV1(next, input);
+  validateFactionDraftV1(next, input, { draftEnvelopeBinding });
   const debtAfter = inspectFactionRegisteredSourceDebtV2({ input, draft: next });
   if (debtAfter.findings.length) fail('FACTION_SOURCE_FIELD_KNOWN_DEBT_REMAINS');
   return seal({ version: 'faction_source_field_patch_v2', planHash: plan.hash, parentDraftHash: hash(draft), draftHash: hash(next),
@@ -77,8 +77,8 @@ export function applyFactionSourceFieldRepairV2(output, { input, section, draft,
     sourceReviewPassed: false, independentEvaluationPassed: false, runtimeAccepted: false, trainingTruth: false });
 }
 
-export async function repairFactionSourceFieldsV2({ input, section, draft, runtime, store }) {
-  const plan = createFactionSourceFieldPlanV2({ input, section, draft });
+export async function repairFactionSourceFieldsV2({ input, section, draft, runtime, store, draftEnvelopeBinding = null }) {
+  const plan = createFactionSourceFieldPlanV2({ input, section, draft, draftEnvelopeBinding });
   const packet = seal({ id: 'faction.' + input.factionRecordKey.split(':')[1], inputHash: input.hash, sourceBinding: input.sourceBinding });
   const id = section.id + '.registered-source-fields-v2.' + plan.hash.slice(0, 20);
   const issueLease = store.acquire(id + '.issue', { planHash: plan.hash });
@@ -91,7 +91,7 @@ export async function repairFactionSourceFieldsV2({ input, section, draft, runti
       workspace: { ...factionRoleWorkspaceV1(input), section, draft, repairPlan: plan, editTargetsAtEnd: targets } });
     validateReplacements(edited.output, targets); replacements.push(...edited.output.replacements); artifactHashes.push(edited.hash);
   }
-  const patch = applyFactionSourceFieldRepairV2({ replacements }, { input, section, draft, plan });
+  const patch = applyFactionSourceFieldRepairV2({ replacements }, { input, section, draft, plan, draftEnvelopeBinding });
   const result = seal({ version: 'faction_source_field_repair_candidate_v2', plan, patch, artifactHashes,
     sourceReviewPassed: false, freshWholeSectionReviewRequired: true, runtimeAccepted: false, trainingTruth: false });
   const lease = store.acquire(id + '.patch', { resultHash: result.hash });

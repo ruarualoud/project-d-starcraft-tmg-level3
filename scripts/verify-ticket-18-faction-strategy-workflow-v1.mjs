@@ -14,6 +14,9 @@ import { FACTION_AXES_V1, FACTION_JSON_OUTPUT_EXAMPLES_V1, createFactionWritingP
   normalizeFactionStrategyPatchEnvelopeV1,
   resolveFactionReviewReasonMaximumV1 } from '../packages/skill-production-v3/faction-strategy-workflow-v1.mjs';
 import { seal, verifySeal, hash, sha256, fail } from '../packages/skill-production/common.mjs';
+import { createFactionRepairConflictHistoryV1,
+  verifyFactionRepairConflictProgressV1 } from
+  '../packages/skill-production-v3/faction-repair-conflict-history-v1.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), base = path.join(root, 'build/ticket-18-faction-production-v1');
 const catalogue = await loadFrozenSkillEvidence(root), context = createGlobalProductionContext(catalogue), reader = createEvidenceReader(catalogue);
@@ -30,7 +33,7 @@ assert.equal(JSON.parse(FACTION_JSON_OUTPUT_EXAMPLES_V1.generatorItems).items[0]
 assert.deepEqual(Object.keys(JSON.parse(FACTION_JSON_OUTPUT_EXAMPLES_V1.editor)).sort(),
   ['alternatives', 'procedure', 'reviseIf', 'risk', 'sourceRefs', 'title', 'unproven', 'when']);
 const evidenceDb = new DatabaseSync(path.join(root, 'build/ticket-17-production-redesign-v1/production.sqlite'), { readOnly: true });
-let actualPromptFailureEvidence;
+let actualPromptFailureEvidence, repairConflictHistoryReadiness;
 try {
   const promptFailureRuns = ['faction-v1-6792c09dcce21eeff6c4', 'faction-v1-70baa40b53f141b3dabb'];
   const promptFailureRows = promptFailureRuns.flatMap(runId => evidenceDb.prepare(
@@ -148,6 +151,51 @@ try {
       outputContractRef: { ...actualV4Artifact.outputContractRef,
         version: 'mismatched' } })),
   { code: 'FACTION_REVIEW_VALIDATION_BINDING_INVALID' });
+  const oscillationCandidate = verifySeal(JSON.parse(await readFile(path.join(
+    base, 'faction-v1-f037c375d47fc41a5121',
+    'terran_armed_forces-candidate.json'), 'utf8')));
+  const oscillationSection = oscillationCandidate.sections.at(-1);
+  const oscillationIssue = oscillationSection.rounds.at(-1).issues.issues
+    .find(row => row.index === 4);
+  const conflictHistory = createFactionRepairConflictHistoryV1({
+    rounds: oscillationSection.rounds, issue: oscillationIssue });
+  const beforeConflictThreshold = createFactionRepairConflictHistoryV1({
+    rounds: oscillationSection.rounds.slice(0, 2),
+    issue: oscillationSection.rounds[1].issues.issues.find(row =>
+      row.index === 4),
+  });
+  assert.equal(beforeConflictThreshold, null);
+  assert.equal(conflictHistory.repeatedNegativeRounds, 4);
+  assert.equal(conflictHistory.rejectedRecommendationHashes.length, 4);
+  assert.equal(conflictHistory.semanticOppositionProvenByHost, false);
+  assert.equal(conflictHistory.conservativeRepairRequired, true);
+  const restoredRejectedVersion = oscillationSection.edits.at(-1).patch;
+  assert.throws(() => verifyFactionRepairConflictProgressV1({
+    history: conflictHistory, patch: restoredRejectedVersion }),
+  { code: 'FACTION_REPAIR_REJECTED_VERSION_RESTORED' });
+  const conservativePatch = structuredClone(restoredRejectedVersion);
+  conservativePatch.replacements.find(row => row.index === 4).value.title +=
+    '（仅测试新版本哈希）';
+  const conflictProgress = verifyFactionRepairConflictProgressV1({
+    history: conflictHistory, patch: conservativePatch });
+  assert.equal(conflictProgress.rejectedVersionsRestored, false);
+  assert.equal(conflictProgress.semanticConflictResolved, false);
+  repairConflictHistoryReadiness = seal({
+    version: 'faction_repair_conflict_history_readiness_v1',
+    actualFailureRunId: 'faction-v1-f037c375d47fc41a5121',
+    actualCandidateHash: oscillationCandidate.hash,
+    actualFailureCode: 'FACTION_SOURCE_REVIEW_NOT_PASSED',
+    minimumRepeatedNegativeRounds: 3,
+    actualRepeatedNegativeRounds: conflictHistory.repeatedNegativeRounds,
+    expectedFirstCutoverRole:
+      'faction.terran_armed_forces.objectives.1.editor.2.2',
+    rejectedRecommendationVersions: 4,
+    oldVersionRestorationRejected: true,
+    ordinaryTwoRoundRepairPreservesExactReuse: true,
+    conservativeRepairDoesNotProveSemanticResolution: true,
+    providerCalls: 0,
+    trainingTruth: false,
+  });
   const unitPrefix = 'faction.terran_armed_forces.faction.terran_armed_forces.unit_roles.1.';
   const unitArtifact = suffix => verifySeal(JSON.parse(evidenceDb.prepare("SELECT artifact FROM steps WHERE run=? AND id=? AND state='complete'")
     .get('faction-v1-18f0b5e3b20fc4909d08', unitPrefix + suffix).artifact)).value.output;
@@ -311,15 +359,18 @@ try {
 assert.equal(legacyPromptCalls, 4);
 const files = ['packages/skill-production-v3/faction-strategy-workflow-v1.mjs', 'packages/skill-production-v3/faction-production-input-v1.mjs',
   'packages/skill-production-v3/runtime.mjs', 'packages/skill-production-v3/faction-review-targets-v1.mjs',
-  'packages/skill-production-v3/faction-known-rule-findings-v1.mjs', 'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
+  'packages/skill-production-v3/faction-known-rule-findings-v1.mjs',
+  'packages/skill-production-v3/faction-repair-conflict-history-v1.mjs',
+  'scripts/verify-ticket-18-faction-strategy-workflow-v1.mjs'];
 files.push('packages/skill-production-v3/faction-source-scope-adjudication-v1.mjs');
 const codeHashes = await Promise.all(files.map(async file => ({ file, hash: sha256(await readFile(path.join(root, file))) })));
-const report = seal({ passed: true, checks: 68, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
+const report = seal({ passed: true, checks: 77, inputHashes: inputs.map(i => i.hash), policyHashes: policies.map(p => p.hash), codeHashes, maxTaskBytes,
   modelInstructionJsonExamples: Object.keys(FACTION_JSON_OUTPUT_EXAMPLES_V1).length, invalidBarePlaceholderExamples: 0,
   actualPromptFailureEvidence, validJsonExamplesReplaceBareNaturalLanguageIndexPlaceholders: true,
+  repairConflictHistoryReadiness,
   exactInheritedLegacyPromptRoleBindingsTested: 4, legacyPromptCalls,
   localEditorHostScopeMaterializationTested: true, modelAuthoredEditorIdentifiers: false,
   injectedCandidateHashes: resultHashes, providerCalls: 0, dshSessions: 0, injectedRoleResultsOnly: true,
   actualStrategyQualityProven: false, trainingTruth: false });
 await writeFile(path.join(base, 'workflow-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 68, maxTaskBytes, injectedModelCalls: calls, legacyPromptCalls, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 77, maxTaskBytes, injectedModelCalls: calls, legacyPromptCalls, providerCalls: 0, hash: report.hash }));

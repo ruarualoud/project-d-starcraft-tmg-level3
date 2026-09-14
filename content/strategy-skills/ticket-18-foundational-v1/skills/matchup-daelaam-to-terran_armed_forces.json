@@ -1,0 +1,697 @@
+{
+  "schema": "project_d_game_skill_v1",
+  "gameId": "starcraft-tmg",
+  "rulesVersion": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+  "sourceBinding": {
+    "core": "1adbdb652fafc09d01887981a3ae86f69e65e1f1480d804156a8da1d4d1757a1",
+    "faq": "2881adb2a4e0475f07bb17aebf02e64f35c9073f274cec2cf0a8f770f8647226",
+    "rules": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+    "dataset": "b2579b83bb9a77b6119730009725a34d4e828d92d302248243bab33863551067"
+  },
+  "skillId": "starcraft-tmg.matchup.daelaam-to-terran_armed_forces",
+  "version": "1.0.0-offline-bounded-evaluation",
+  "skillType": "strategy",
+  "direction": {
+    "family": "matchup",
+    "ownFaction": "tactical_cards:daelaam",
+    "opponentFaction": "tactical_cards:terran_armed_forces"
+  },
+  "dependencies": {
+    "generalSkillHash": "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+    "ownFactionSkillHash": "a71afdaedbb784f8e672a7f4c92c503638c935e4b1a08f1529a46b6afb441fa1",
+    "opponentFactionSkillHash": "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148"
+  },
+  "strategyLayerHash": "ba06567c2698007c868094ce00ddde02c2079235f44e9e021a122a4f1f594525",
+  "sourceRefs": [
+    "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.9",
+    "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.10",
+    "source:tactical_cards:terran_armed_forces",
+    "source:tactical_cards:supply_depot",
+    "source:army_units:jim_raynor",
+    "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.2",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.10",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.27",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.72",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+    "faq-v1:37",
+    "source:tactical_cards:academy",
+    "source:tactical_cards:engineering_bay",
+    "source:tactical_cards:orbital_command",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.2",
+    "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.2",
+    "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.5",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+    "core.xLLTUyQm53B1KXj59oLs.items.1",
+    "source:tactical_cards:daelaam",
+    "source:faction_cards:mission_hold_position",
+    "source:army_units:medic",
+    "source:tactical_cards:armory",
+    "source:tactical_cards:barracks__proxy_",
+    "source:tactical_cards:warp_gate",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.4",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.3",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+    "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.75",
+    "faq-v1:43",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+    "core.u3zNStKpd5XegMjmJfMS.items.3",
+    "core.u3zNStKpd5XegMjmJfMS.items.4",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+    "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+    "source:army_units:zealot",
+    "source:army_units:adept",
+    "source:army_units:stalker",
+    "source:army_units:sentry",
+    "source:army_units:artanis",
+    "source:army_units:marine",
+    "faq-v1:25",
+    "faq-v1:27",
+    "faq-v1:34",
+    "faq-v1:59",
+    "faq-v1:62",
+    "faq-v1:63",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.0",
+    "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+    "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.2",
+    "faq-v1:05",
+    "source:army_units:queen"
+  ],
+  "preconditions": [
+    "加载精确总规则、己方势力与对方势力 Skill 依赖",
+    "读取当前玩家可见状态、任务、阶段、资源、单位与升级",
+    "先从 Rules 服务取得当前 LegalSpace；策略不能创造动作或裁定规则"
+  ],
+  "procedure": [
+    {
+      "axis": "opponent_profile",
+      "title": "Daelaam 对 Terran Armed Forces 的对手画像：只按公开可见事实与结构性约束分层刻画，不推断名单",
+      "when": [
+        "本局为 Daelaam（Protoss）对 Terran Armed Forces（Terran）的 matchup，需要为后续决策建立对手画像",
+        "对手采用 Open Lists 或 Closed Lists 尚未确认，或对手未部署单位的升级与武器替换尚未披露",
+        "需要判断对手当前可见单位（如 player1-marine）的威胁类型、补给权重与可被攻击性",
+        "需要评估对手公开阵营卡能力（Tactical Retreat、Terran Tenacity）与可能持有的战术卡能力对己方计划的影响",
+        "对手的 First Player Marker 归属、Terran Tenacity 使用状态或 Entry Edge 分配未在可见状态中给出"
+      ],
+      "objective": "在只使用公开可见事实与当前官方产品数据的前提下，把对手刻画为三层：已确认事实（可见单位档案、公开阵营卡与槽位结构）、结构性约束（由槽位与标签资格推出的可能性边界）、以及明确未确认项（名单、升级、战术卡、先手状态）。据此为每个己方候选计划标注其依赖的对手假设，并优先选择在主要未确认项下仍成立的计划；不把任何未确认项当作事实，也不因对手画像而宣告合法性。",
+      "steps": [
+        "先分层记录，不混用：第一层为已确认事实——对手阵营为 Terran、公开阵营卡为 Terran Armed Forces、当前可见单位及其档案（如 player1-marine：1 模型、currentSupply 0、combatTags biological/ground/light、Armour 5+、Evade 5+、HP 2、Size 2、Speed 4/7、位置 (2,11)）；第二层为结构性约束——由公开阵营卡与当前产品数据推出的可能性边界；第三层为未确认项——对手名单、升级、战术卡持有、资源状态、先手标记归属与 Entry Edge 分配。",
+        "对每个可见对手单位，按 Combat Tag 而非物理高度判断可被攻击性：Ground 单位可被己方 Zealot 的 Psi Blades（RANGE E，TARGET: Ground）攻击，也可被 Charge 声明为目标；Flying 单位永不被 Engage、不能被 Charge、不参与 Combat Phase。若对手单位 Combat Tag 含 Ground，则近战与冲锋分支开放；若为 Flying，则须改用 Target: All 或 Target: Flying 的武器。",
+        "按当前模型数读取对手单位的 Current Supply Value，并据此判断其在标记争夺中的权重：例如 1 模型 Marine 对应 Supply Profile 第 1 档（1-3 模型，Supply 0），在无对手争夺时可控制标记但无法赢得争夺；因此不能把该单位当作争夺威胁，但也不能假设它不会在后续回合被增援或替换。",
+        "把对手公开阵营卡能力作为已确认事实纳入画像：Tactical Retreat（Active，Movement Phase，使激活单位忽略 Disengage 惩罚）意味着对手可在脱离后仍保留下一 Assault Phase 的 Ranged Attack 或 Charge；Terran Tenacity（Active，Movement Phase，每局一次，立即取得 First Player Marker 且本阶段其他玩家不得再取得）意味着对手存在一次性夺取先手的分支。两者均为主动能力，须由当前被激活单位在声明行动前或行动完全结算后立即使用，且每具名主动能力每轮每单位限一次。",
+        "把对手可能持有的战术卡能力列为未确认项，并只使用规则层面的通用约束：反应类能力受「每名玩家每次激活最多结算一个 Reaction」限制，因此对手不能在同一激活中叠加多个防御反应，但会选最有影响力的那个；在对手未公开前，不假设其持有任何具体战术卡，也不假设其不持有。",
+        "对每个己方候选计划，标注其依赖的对手假设（例如「假设对手 Marine 无远程武器」「假设对手未持有侦测能力」「假设对手 Terran Tenacity 仍可用」），并检查该计划在主要未确认项取相反值时是否仍成立；若计划只在某一未确认假设下成立，则降低其优先级或先补充可观察信息。",
+        "若对手采用 Closed Lists，未部署单位的升级与武器替换在部署时才披露；此时不基于未披露信息做不可逆计划，改为在对手每次部署后更新画像并重读可见局面。",
+        "每次对手行动、部署或使用能力后，重读可见状态并更新三层记录；只执行在当前可见局面下仍成立的下一步，不照抄预先设定的完整队列。",
+        "若规则文本存在未解决的边缘冲突（如 HIGH GROUND Cover 正文与决策表措辞不一致），不自行裁定，改用保守分支或上报规则服务；对手画像中的任何合法性判断最终由绑定的 Rules 服务决定。"
+      ],
+      "alternatives": [
+        {
+          "option": "按已确认事实行动，忽略未确认项",
+          "preferWhen": "当前可见事实已足以支撑一个低承诺、可逆的行动（如移动、站位调整），且该行动在对手名单与升级未知时仍成立"
+        },
+        {
+          "option": "先补充可观察信息再行动",
+          "preferWhen": "等待不丢失合法行动窗口，且补充信息（如对手部署新单位、公开战术卡、使用能力）能显著缩小关键不确定性"
+        },
+        {
+          "option": "按结构性约束做条件性准备",
+          "preferWhen": "需要为对手可能的分支（如 Jim Raynor 需 Supply Depot 才能编入、对手可能持有反应类减伤能力）预留应对，但不把该分支当作已发生事实"
+        },
+        {
+          "option": "按最坏情况假设保守行动",
+          "preferWhen": "当前分差或任务窗口要求必须行动，且对手主要未确认项取最不利值时原计划会失效；此时选择在多个分支下都不至于不可逆损失的方案"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手部署新单位或公开新升级，使原画像中的未确认项变为已确认事实",
+          "adaptation": "更新三层记录：把新披露的单位档案、武器与能力移入已确认事实层，重新评估其 Combat Tag、Current Supply Value 与威胁类型；重算己方候选计划所依赖的假设，只执行在新事实下仍成立的下一步"
+        },
+        {
+          "response": "对手使用 Terran Tenacity 夺取 First Player Marker",
+          "adaptation": "确认该能力每局一次且本阶段其他玩家不得再取得该标记；不假设己方仍能通过 Pass 取得本阶段先手，改为在对手选择的激活顺序下重新评估己方剩余合法行动，并记录该能力已用尽"
+        },
+        {
+          "response": "对手使用 Tactical Retreat 使某单位忽略 Disengage 惩罚",
+          "adaptation": "不假设该单位脱离后失去下一 Assault Phase 的 Ranged Attack 或 Charge 能力；重新评估该单位在下一阶段的威胁范围，并注意该能力为主动能力、每具名能力每轮每单位限一次"
+        },
+        {
+          "response": "对手在合法触发点结算反应类能力（如减伤、授予闪避、反制冲锋）",
+          "adaptation": "注意每名玩家每次激活最多结算一个 Reaction，因此对手不能叠加多个防御反应；重新读取结算后的可见局面，若原计划收益被大幅削减，转向其他合法目标或保留仍为 Ready 的支付卡牌"
+        },
+        {
+          "response": "对手采用 Closed Lists，其未部署单位的升级与武器替换在部署时才披露",
+          "adaptation": "不基于未披露信息做不可逆计划；在对手每次部署后立即更新画像，并把该单位的实际武器与能力纳入后续威胁评估"
+        }
+      ],
+      "risk": "本轴未提供任何真实决策案例：developmentCases 仅含一个单步先手执行演练（matchup.daelaam_to_terran.initiative.development），其 runtimeCoverage 明确排除 combat_and_scoring_not_exercised 与 matchup_strategy_preference_not_proven，因此任何关于对手画像如何影响策略选择的主张均未被证明。对手的完整名单、升级选择、战术卡持有情况与资源状态均不可见；本轴只能刻画公开可见的结构性约束，不能推断对手实际编制或意图。对手 Marine 的远程武器档案未出现在当前战斗档案包中，其是否携带 C-14 Rifle 或其他远程升级无法确认，因此不能断言对手当前仅有近战威胁。对手是否持有 Hero 单位（Jim Raynor）取决于其是否购买 Supply Depot，而对手 cardResources 未提供，无法确认。对手的 First Player Marker 归属与 Terran Tenacity 使用状态未在 observation 中给出（activeAbilityUseHistory 为空），无法判断其先手分支是否仍开放。对手的 Entry Edge 与 Zone of Influence 分配未在 observation 中给出，无法判断其 Marine 位置相对其部署区与己方部署区的几何关系。HIGH GROUND Cover 授予条件在正文（7.1.3，底座任意部分站立）与决策表（Wholly Within）之间存在措辞冲突，涉及对手单位是否获得高地闪避的边缘情形未解决，不应自行裁定。本轴不构成规则权威，也不代表运行时接受或已发布；对手画像中的任何合法性判断最终由绑定的 Rules 服务决定。",
+      "reviseIf": [
+        "对手公开新信息（部署新单位、披露升级或武器替换、使用战术卡能力）使未确认项变为已确认事实",
+        "对手使用 Terran Tenacity 或 Tactical Retreat，改变先手分支或脱离后行动能力",
+        "对手采用 Closed Lists 并在部署时披露与当前画像不同的武器或能力",
+        "当前可见对手单位的模型数、Current Supply Value、Combat Tag 或位置发生变化",
+        "规则服务或裁判对 HIGH GROUND Cover 等边缘冲突作出裁决，影响对手单位是否获得掩护或闪避",
+        "己方候选计划所依赖的对手假设被证明不成立"
+      ],
+      "requiredQueries": [
+        "viewer_state",
+        "legal_space",
+        "threat",
+        "coverage",
+        "phase",
+        "initiative",
+        "activation_state"
+      ],
+      "ruleRefs": [
+        "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.9",
+        "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.10",
+        "source:tactical_cards:terran_armed_forces",
+        "source:tactical_cards:supply_depot",
+        "source:army_units:jim_raynor",
+        "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.2",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.10",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.6",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.27",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.3",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.72",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+        "faq-v1:37",
+        "source:tactical_cards:academy",
+        "source:tactical_cards:engineering_bay",
+        "source:tactical_cards:orbital_command",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.7.subItems.2",
+        "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.2",
+        "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.5"
+      ],
+      "developmentCaseIds": []
+    },
+    {
+      "axis": "opening_branches",
+      "title": "先手选择分支：持标记者先激活 vs 让对手先激活，并区分 Pass 分支",
+      "when": [
+        "己方持有 First Player Marker 且当前阶段为 Movement 或 Assault 阶段，需要决定谁先激活",
+        "己方有单位可在本阶段兑现延后即失去价值的行动（如进入任务标记争夺范围、进入射程或冲锋距离）",
+        "对手可能通过先 Pass 取得下一阶段 First Player Marker，或持有可在本阶段使用的先手相关能力（如 Terran Tenacity）",
+        "当前可见局面不足以判断对手下一步行动，需要以让先换取信息"
+      ],
+      "objective": "在先手标记持有者选择首个行动方的规则框架下，比较“己方先激活”与“让对手先激活”两个分支，并明确 Pass 是独立于该选择的另一条分支；选择在对手主要公开可行回应下仍能兑现当前任务收益的分支，并写明回应发生时的转换条件。不假设任一分支在完整对局中更优。",
+      "steps": [
+        "读取当前阶段、First Player Marker 持有者、本阶段是否已有玩家 Pass、双方单位激活状态与剩余合法行动，以及当前任务计分条件与分差。",
+        "确认规则边界：先手标记持有者决定每阶段谁先激活；该选择本身不等于立刻激活单位，也不额外获得行动。Pass 是单向承诺——Pass 后本阶段不能再激活任何单位，且阶段1/2中第一个 Pass 的玩家取得下一阶段的 First Player Marker。",
+        "列出己方在本阶段可兑现的行动及其时间敏感性：若某行动（进入任务标记 3\" 争夺范围、进入射程、完成部署）延后会被对手下一次激活关闭或显著贬值，则该行动倾向于支持“己方先激活”。",
+        "评估“让对手先激活”的信息价值：对手先行动会公开其单位移动方向、是否争夺关键标记、是否进入己方潜在交战范围；若这些信息能显著改变己方后续行动选择，且己方没有必须立即兑现的行动，则该分支价值上升。",
+        "评估对手的公开可行回应，至少包括：(a) 对手先 Pass 并取得下一阶段 First Player Marker；(b) 对手使用其阵营卡或单位能力改变先手归属或局面（例如 Terran Armed Forces 的 Terran Tenacity，为 Active 能力，须由当前被激活单位在声明行动前或行动完全结算后立即使用，因此让对手先激活等于把该激活窗口交给对手）；(c) 对手向关键任务标记或己方单位移动。",
+        "比较三个分支的后果：己方先激活、让对手先激活、己方先 Pass。若己方先 Pass，明确放弃本阶段剩余激活，并确认第一个 Pass 者取得下一阶段先手标记；同时注意阶段1首个 Pass 会为未激活的己方场上单位放置移动侧激活标记，因此未在阶段1激活不等于阶段2无资格。",
+        "若选择让对手先激活，明确己方在对手行动后要读取的具体信息（对手移动方向、是否进入争夺范围、是否暴露于己方攻击），以及这些信息如何改变己方下一步；不预设固定后续队列。",
+        "若对手使用先手相关能力或先 Pass，把“该能力能否夺回已被 Pass 者取得的先手标记”等来源未明确的交互作为未决情形上报规则服务，不自行裁定，也不据此做确定性规划。",
+        "每次对手行动后重读可见局面，只执行在当前局面下仍成立的下一步。"
+      ],
+      "alternatives": [
+        {
+          "option": "己方先激活（first-player2 分支）",
+          "preferWhen": "己方存在延后即失去价值的行动（如单位一次移动即可进入任务标记 3\" 争夺范围、进入射程或完成部署），且该行动不依赖对手先暴露信息；同时接受对手可能随后先 Pass 取得下一阶段先手标记"
+        },
+        {
+          "option": "让对手先激活（first-player1 分支）",
+          "preferWhen": "己方没有必须立即兑现的行动，且对手先行动能公开其移动方向、争夺意图或暴露位置，从而显著改变己方后续选择；同时须计入把激活窗口交给对手的代价（对手可能借此使用其 Active 能力或先 Pass 取得下一阶段先手标记）"
+        },
+        {
+          "option": "己方先 Pass",
+          "preferWhen": "己方关键单位已就位或本阶段无需再行动，且取得下一阶段 First Player Marker 的价值高于放弃本阶段剩余激活的机会成本；注意 Pass 后本阶段不能再激活任何单位，且该分支不属于“谁先激活”的选择"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手先 Pass，取得下一阶段 First Player Marker",
+          "adaptation": "己方完成本阶段仍有价值的剩余合法激活；进入下一阶段后不假设己方先行动，在标记持有者选择首个行动方后重新评估下一步；若对手持有可夺回先手的能力，把该交互作为未决情形上报规则服务而非依赖确定结论"
+        },
+        {
+          "response": "对手使用先手相关能力（如 Terran Armed Forces 的 Terran Tenacity，Active、Movement Phase、每局一次）",
+          "adaptation": "注意该能力须由当前被激活单位在声明行动前或行动完全结算后立即使用，因此让对手先激活等于把该窗口交给对手；若对手已使用，重新读取标记归属与剩余激活分配，只执行仍成立的下一步"
+        },
+        {
+          "response": "对手向关键任务标记或己方单位移动，改变争夺或交战态势",
+          "adaptation": "重算该标记的争夺补给总值与双方位置关系；若己方原计划的前提（如对手不进入争夺范围）不再成立，转向其他可得分目标或调整己方单位的移动终点"
+        }
+      ],
+      "risk": "本轴未提供任何真实决策案例：developmentCases 仅为一个单步执行演练，其 objective 明确说明不证明这一短计划优于相反计划，因此“己方先激活”或“让对手先激活”在完整对局中更优的主张均未被证明。当前可见状态仅显示 Marker 5，未显示 Marker 1-4 与完整 Deployment Card 布局，无法评估完整的标记争夺排序。双方完整名单、升级与预备队单位未知，无法据此推断真实对局中的单位构成或资源分配。Terran Tenacity 能否夺回已被 Pass 者取得的先手标记在来源中未明确。Daelaam 的 Mass Recall 与 Dae'Uhl 在具体节奏窗口中的价值未经测试，且本局可见资源状态未显示 Psionic Energy 来源。本策略不构成规则权威，先手选择与 Pass 的合法性由绑定的 Rules 服务决定。",
+      "reviseIf": [
+        "先手标记归属改变，或本阶段已有玩家 Pass，改变剩余激活分配",
+        "己方出现延后即失去价值的行动（如单位进入任务标记 3\" 争夺范围、进入射程或完成部署），使“己方先激活”的收益前提成立",
+        "对手公开新信息（部署新单位、使用先手相关能力或阵营卡能力）改变威胁评估",
+        "任务计分条件或分差发生变化，改变 Pass 与保留激活的相对价值",
+        "规则服务对 Terran Tenacity 能否夺回已被 Pass 者取得的先手标记等未决交互作出裁定"
+      ],
+      "requiredQueries": [
+        "legal_space",
+        "phase",
+        "initiative",
+        "activation_state",
+        "viewer_state",
+        "scenario"
+      ],
+      "ruleRefs": [
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "core.xLLTUyQm53B1KXj59oLs.items.1",
+        "source:tactical_cards:terran_armed_forces",
+        "source:tactical_cards:daelaam",
+        "source:faction_cards:mission_hold_position"
+      ],
+      "developmentCaseIds": [
+        "matchup.daelaam_to_terran.initiative.development"
+      ]
+    },
+    {
+      "axis": "counterplay",
+      "title": "Daelaam 对 Terran Armed Forces 的反制：以 Pass 单向承诺与反应窗口稀缺为杠杆，先确认可兑现收益再承诺",
+      "when": [
+        "本局为 Daelaam（Protoss，起始 Core 3 / Elite 1 / Support 1 / Hero 0 / Air 0）对 Terran Armed Forces（起始 Core 3 / Elite 1 / Support 1，无 Hero/Air）的 matchup",
+        "己方在阶段 1 或阶段 2 考虑是否提前 Pass、或对手可能提前 Pass 以争夺下一阶段 First Player Marker",
+        "对手可能使用 Terran Tenacity（每局一次，Active，立即取得 First Player Marker 且本阶段其他玩家不能再取得）",
+        "对手可能在同一敌方激活中于多个 Reaction 之间取舍（Medic Life Support、Engineering Bay Infantry Armor、Armory Vehicle Plating、Academy Advanced Training）",
+        "对手可能编入 Jim Raynor（Hero，需 Supply Depot 解锁 Hero 槽位）并依赖 Commander / Freedom Fighters 光环",
+        "需要决定是否投入 Daelaam 的标记争夺杠杆（Artanis 的 Commander、Supply Depot 的 Additional Supply Depots、Queen 的 Domineering Presence）或 Mass Recall / Dae'Uhl"
+      ],
+      "objective": "在双方共享的节奏与反应窗口约束下，选择能在对手主要公开可行回应下仍有价值的反制计划，并明确回应发生时的转换条件；不假设任何反制手段已被证明更优，也不假设对手会按预期行动。",
+      "steps": [
+        "读取当前阶段、先手标记持有者、本阶段是否已有玩家 Pass、双方已激活状态、对手可见单位位置与剩余合法行动，以及当前已抽定的 Mission Card 分值条件与分差。",
+        "识别对手的节奏杠杆与其代价：Terran Tenacity 是 Active 能力，须由当前被激活单位在声明行动前或行动完全结算后立即使用，且使用会耗尽阵营卡；因此它不是无代价的免费先手，存在激活窗口的机会成本。",
+        "识别 Pass 的单向承诺：阶段 1 或阶段 2 中第一个 Pass 的玩家取得下一阶段 First Player Marker，但一旦 Pass 该玩家本阶段不能再激活任何单位。若对手用早 Pass 抢 Assault 先手，它放弃本阶段剩余激活；己方可在对手 Pass 后完成自己的剩余合法激活，但仍须注意对手剩余单位仍会激活并可能关闭机会。",
+        "识别阶段 3 没有自愿 Pass：所有 Engaged 单位必须激活，玩家只有在没有剩余 Engaged 单位可激活时才 Pass；若某单位在阶段中因伤亡解除接战且尚未激活，则不再受强制激活约束，视为 Pass。己方可通过解除或维持接战改变下一个被迫激活方。",
+        "识别反应窗口是双方共享的稀缺资源：每名玩家每次激活最多结算一个 Reaction，且每个具名 Reaction 每单位每轮一次。对手的 Medic Life Support、Engineering Bay Infantry Armor、Armory Vehicle Plating、Academy Advanced Training 在同一敌方激活中互斥；己方 Dae'Uhl 也是 Reaction。因此可通过制造多次伤害来源或多次触发点，迫使对手在多个 Reaction 之间取舍。",
+        "评估 Dae'Uhl 的边际价值：其文本为 reduce the Total Damage by 2 (to a minimum of 1)，不能把伤害降到 0，也不能阻止恰好 1 点伤害造成的伤亡。若对手伤害集中在 1 点档，Dae'Uhl 的边际价值下降；若对手依赖高伤害单次攻击，其相对价值更高。",
+        "评估标记控制反制：控制按争夺单位的 Total Current Supply Value 比较而非模型数，Supply-0 单位在无敌方争夺时仍可控制标记，控制具有粘性且平局不转移控制。因此单纯击杀廉价模型可能几乎不改变控制，而移除或压制高补给单位（如 Goliath 补给 2、Jim Raynor 含 Commander 视为 2）才可能翻转标记。",
+        "评估 Jim Raynor 光环反制：Commander 与 Freedom Fighters 是单位卡上的 Passive 能力，Part 10.3 规定 Passive 在单位位于战场上时始终生效；但 Destroyed 后光环类被动的具体处理未在来源中针对该单位裁定。因此“迫使 Jim Raynor 离开 8 英寸覆盖或将其摧毁”是条件性假设，不是已证明的反制。",
+        "对每个候选反制计划，列出至少一个会使该计划失效的对手公开可行回应，并说明该回应发生时如何转换目标或调整行动；不把未实现的收益当作确定事实。",
+        "若规则文本存在冲突或缺口（如 HIGH GROUND Cover 正文与决策表措辞不一致、Terran Tenacity 与已 Pass 者持有标记的交互、Mass Recall 返回 Reserves 后的 Supply 重算），不自行裁定，改用保守分支或上报规则服务。",
+        "每次对手动作后重读可见局面，只执行仍成立的下一步；不照抄预先设定的完整队列。"
+      ],
+      "alternatives": [
+        {
+          "option": "承诺推进：在对手 Pass 前完成关键部署或抢占任务标记",
+          "preferWhen": "该行动若延后会被对手下一次激活关闭或显著贬值，且主要对手回应（如对手用 Terran Tenacity 抢标记、或对手以高补给单位争夺同一标记）下仍能兑现足够任务收益"
+        },
+        {
+          "option": "保留后手：等待对手先 Pass 或先投入单位，再完成己方剩余合法激活",
+          "preferWhen": "对手存在代价较低的强反制（如 Terran Tenacity 或高补给单位压制），或信息不足；注意对手 Pass 后己方仍须面对其剩余单位的激活"
+        },
+        {
+          "option": "制造多次触发点以消耗对手的单一 Reaction 窗口",
+          "preferWhen": "对手依赖 Medic Life Support 或 Infantry Armor 等 Reaction 保护关键单位，且己方能在同一敌方激活中制造多个伤害来源或多次触发点，迫使对手在多个 Reaction 之间取舍"
+        },
+        {
+          "option": "以高补给单位争夺标记而非击杀廉价模型",
+          "preferWhen": "对手以高补给单位（Goliath 补给 2、Jim Raynor 含 Commander 视为 2）控制标记，且己方争夺补给总值接近平局；单纯击杀廉价模型可能几乎不改变控制"
+        },
+        {
+          "option": "使用 Mass Recall 将受威胁单位撤回 Reserves 并重新部署",
+          "preferWhen": "需要将受威胁单位撤出并重新部署，且已计入其节奏代价：这些单位释放补给、移除场上存在、无法争夺/控制任务标记，其留下的 Token/Marker 被移除（除非 STAY IN PLAY），且本局仅一次"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手在阶段 1 或阶段 2 先 Pass，取得下一阶段 First Player Marker 并选择下一阶段首个行动方",
+          "adaptation": "己方完成本阶段仍有价值的剩余合法激活；进入下一阶段后不假设己方先行动，在标记持有者选择首个行动方后重新评估下一步；注意对手剩余单位仍会激活并可能关闭机会"
+        },
+        {
+          "response": "对手使用 Terran Tenacity 立即取得 First Player Marker，且本阶段其他玩家不能再取得该标记",
+          "adaptation": "确认该能力已耗尽对手阵营卡且占用其激活窗口；重新评估本阶段剩余激活的价值，转向不依赖先手的可兑现目标；不假设己方仍可通过 Pass 取得标记"
+        },
+        {
+          "response": "对手在合法触发点结算单一最强 Reaction（如 Medic Life Support 减伤、Engineering Bay Infantry Armor 授予 TOUGH、Armory Vehicle Plating、Academy Advanced Training 降低 CP 费用）",
+          "adaptation": "重新读取结算后的可见局面；若原计划收益被大幅削减，转向其他合法目标或保留仍为 Ready 的支付卡牌；注意对手在同一敌方激活中只能结算一个 Reaction，因此其选择本身排除了其他 Reaction"
+        },
+        {
+          "response": "对手以 Jim Raynor 的 Commander / Freedom Fighters 光环维持高补给单位的标记控制",
+          "adaptation": "评估迫使 Jim Raynor 离开 8 英寸覆盖或将其摧毁的可行性；但注意 Destroyed 后光环类被动的处理未在来源中裁定，该反制方向属条件性假设，不应作为确定性计划依赖"
+        },
+        {
+          "response": "对手使用非 Entry Edge 部署能力（如 Barracks (Proxy) 的 Armed and Ready、Warp Gate 的 Warp In）从侧翼入场",
+          "adaptation": "重新评估己方侧翼与后方的防守布局；注意这些能力是否受 Zone of Influence 限制在来源中未明确，不应自行裁定，必要时上报规则服务"
+        }
+      ],
+      "risk": "本轴没有任何真实 matchup 决策案例：developmentCases 仅含一个单步先手选择演练 matchup.daelaam_to_terran.initiative.development，其 runtimeCoverage 明确排除 extra_faction_movement、extra_faction_card_activation_and_cleanup、combat_and_scoring 与 matchup_strategy_preference，且 productionQualificationEligible=false、fullGameCoverage=false。因此 Daelaam 对 Terran 的任何具体反制主张均未被证明。Terran Tenacity 与对手已 Pass 后标记归属的精确交互未在来源中完整说明；依赖该交互的反制计划可能失效。Jim Raynor 光环在单位被摧毁后的处理、以及 Commander 与 Additional Supply Depots 是否叠加，来源未裁定。Daelaam 的 Mass Recall 返回 Reserves 后的 Supply 重算与再部署时机未在来源中完全解决。HIGH GROUND Cover 正文与决策表措辞不一致属未解决边缘情形，不应自行裁定。模板武器精确物理尺寸与形状未在来源中规定，涉及覆盖边缘的几何判定可能需玩家协商。双方的实际伤害期望、生存能力与角色效率未量化；来源仅提供档案数据，不含概率分布或对局统计。本策略不构成规则权威，也不代表运行时接受或已发布；合法性由绑定的 Rules 服务决定。",
+      "reviseIf": [
+        "对手公开新信息（部署 Flying、高 Armour 或 HIDDEN/BURROWED 单位，或使用未预期的阵营卡能力）改变威胁评估",
+        "先手标记归属改变，或本阶段已有玩家 Pass，改变剩余激活分配",
+        "任务计分条件或分差发生变化，改变 Pass 与保留激活的相对价值",
+        "Terran Tenacity 已被本局使用，或其与已 Pass 者持有标记的交互经规则服务澄清",
+        "Jim Raynor 被摧毁或被迫离开 8 英寸覆盖，或其光环在摧毁后的处理经规则服务裁定",
+        "Mass Recall 或 Dae'Uhl 已被本局/本回合使用，或其收益前提（如单位位置、反应窗口）不再成立",
+        "规则服务或裁判对 HIGH GROUND Cover 措辞冲突、非 Entry Edge 部署是否受 Zone of Influence 限制等边缘冲突作出裁决"
+      ],
+      "requiredQueries": [
+        "legal_space",
+        "phase",
+        "initiative",
+        "activation_state",
+        "viewer_state",
+        "threat",
+        "own_resources",
+        "scenario"
+      ],
+      "ruleRefs": [
+        "source:tactical_cards:daelaam",
+        "source:tactical_cards:terran_armed_forces",
+        "source:army_units:jim_raynor",
+        "source:army_units:medic",
+        "source:tactical_cards:engineering_bay",
+        "source:tactical_cards:armory",
+        "source:tactical_cards:academy",
+        "source:tactical_cards:barracks__proxy_",
+        "source:tactical_cards:warp_gate",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.3",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+        "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.75",
+        "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.2",
+        "core.cB7X7UfOMHh3Wxn79ASF.items.1.subItems.5",
+        "faq-v1:43"
+      ],
+      "developmentCaseIds": []
+    },
+    {
+      "axis": "resource_exchange",
+      "title": "Daelaam 对 Terran Armed Forces 的资源交换：先确认 PE 支付资格与支付窗口，再按补给/控制 VP 口径比较支出与保留",
+      "when": [
+        "player2（Daelaam/Protoss 方向）在 Movement Phase 或 Assault Phase 考虑消耗 Psionic Energy 或 CP 以换取位置、伤害或标记控制",
+        "己方仅有少量 Ready 卡（本局观察为一张 player2-daelaam，resourceType 标注为 CP、resource 1、face up），而 Daelaam 单位侧能力标注消耗 Psionic Energy",
+        "对手为 Terran Armed Forces，可能持有 CP 反应能力（如 Infantry Armor、Life Support）或 Terran Tenacity 等先手资源",
+        "任务为 Hold Position（Standard）：第 2 回合起控制中立/己方色标记各 1 VP、对方色标记 2 VP，摧毁敌方补给每 1 点 1 VP，领先 10+ VP 立即结束游戏",
+        "双方单位可能处于 Supply 0（本局观察 Marine 与 Zealot 均为 1 模型、currentSupply 0），需判断花资源争夺标记的边际收益"
+      ],
+      "objective": "在资源类型匹配、支付窗口合法、且收益可按 Hold Position 的 VP 口径说明的前提下，选择能带来可兑现增量收益的资源支出；若支付资格未确认、收益无法折算成 VP、或保留资源对后续更关键窗口价值更高，则选择不支出。本轴不假设任何支出在完整对局中更优。",
+      "steps": [
+        "先做支付资格硬检查：确认拟支付费用的资源类型（Daelaam 单位能力标注为 Psionic Energy；Terran 侧为 CP），并确认己方存在与该费用资源类型匹配的 Ready 卡。本局观察中 player2 唯一 Ready 卡标注 resourceType 为 CP，而 Daelaam 单位能力标注消耗 Psionic Energy，因此该卡能否支付 PE 费用必须先由 Rules 服务确认；在确认前不得把任何 PE 能力当作可用。",
+        "确认支付窗口：主动能力只能在单位被激活时、于声明行动之前或行动完全结算之后使用，不能在行动中途插入；单位在 Reserves 时其主动/被动/反应能力均不生效，因此不能在部署前先花资源强化该单位。",
+        "确认无结转：耗尽卡牌产生的超额资源立即丢失，不能储存或转用于另一能力；因此支出必须一次性对齐费用与卡牌产出，不存在“先花掉再补”或“攒资源”的选项。",
+        "把候选支出的收益折算成 Hold Position 的 VP 口径：控制中立/己方色标记各 1 VP、对方色标记 2 VP（第 2 回合起）、摧毁敌方补给每 1 点 1 VP；同时计入隐性成本——每当己方单位 Current Supply Value 降低（含 Morph），对手获得等于降低量的 VP。",
+        "按补给与控制而非模型数计价：任务标记控制比较双方争夺单位的 Total Current Supply Value；Supply 0 单位在无敌方争夺时仍可控制标记，因此花资源换掉一个廉价模型可能几乎不改变控制，而失去一个高补给单位可能翻转标记。",
+        "比较“支出”与“保留”两个候选：只有当支出能带来可说明的增量收益（如翻转一个标记控制、阻止对手达到 10+ VP 阈值、或解除不利接战）且该收益高于保留资源用于后续更关键窗口的价值时，才选择支出。",
+        "若拟使用反应能力（如 Dae'Uhl 或单位侧防御反应），先确认每名玩家每次激活最多结算一个 Reaction、且每个具名 Reaction 每单位每回合一次；因此对手一次激活中只能在多个防御性反应里选一个，不能叠加多个防御性资源支出。",
+        "若关键前提（支付资格、支付窗口、收益折算）任一无法确认，选择不支出或改用不依赖该资源的合法候选，并明确记录该缺口供后续查询；不自行裁定资源类型或规则冲突。",
+        "每次对手行动后重读可见局面与资源状态，只执行在当前局面下仍成立的下一步；不照抄预先设定的支出序列。"
+      ],
+      "alternatives": [
+        {
+          "option": "支出资源以换取当前窗口的位置或伤害",
+          "preferWhen": "Rules 服务已确认该费用资源类型与己方 Ready 卡匹配，支付窗口合法，且折算后的 VP 增量（标记控制翻转、阻止对手 10+ VP、或解除不利接战）高于保留资源的机会成本"
+        },
+        {
+          "option": "保留资源不支出",
+          "preferWhen": "支付资格未确认（如本局 CP 卡能否支付 PE 未定）、当前不支出也能达成目标、或保留资源对后续更关键的反应/主动窗口价值更高"
+        },
+        {
+          "option": "改用不依赖该资源的合法候选（如普通 Move/Run/Hold 或单位自身不消耗资源的行动）",
+          "preferWhen": "资源类型不匹配或支付窗口已过，但仍存在能推进当前任务目标的合法行动；此时不把资源支出当作达成目标的必要条件"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手（Terran Armed Forces）在己方支出后于合法触发点结算单一最强 Reaction（如 Infantry Armor 的 TOUGH (1) 或 Medic 的 Life Support 减伤），降低本次支出换来的伤害收益",
+          "adaptation": "重新读取结算后的可见局面；若原收益被大幅削减，转向其他合法目标或保留仍为 Ready 的支付卡牌，不强行执行原计划；注意对手每次激活也只能结算一个 Reaction，因此其防御选择同样受限"
+        },
+        {
+          "response": "对手使用 Terran Tenacity（每局一次，Movement Phase 主动能力）立即取得 First Player Marker，改变后续阶段的先手顺序",
+          "adaptation": "不假设己方在下一阶段先行动；在标记持有者选择首个行动方后重新评估下一步，并重新计算资源支出窗口是否仍然存在"
+        },
+        {
+          "response": "对手通过击杀或 Morph 使己方单位 Current Supply Value 降低，从而获得等于降低量的 VP",
+          "adaptation": "把该 VP 计入交换成本重新比较；若该隐性成本使原支出计划的净 VP 变为负值，放弃原计划并转为保护剩余高补给单位"
+        }
+      ],
+      "risk": "本轴未提供任何真实决策案例，因此没有任何具体资源支出、保留或替代方案被证明在完整对局中更优。本局最关键的硬约束——player2 唯一 Ready 卡标注 resourceType 为 CP 而 Daelaam 单位能力标注消耗 Psionic Energy——尚未由 Rules 服务确认，在确认前所有 PE 能力可用性主张都只是未证实假设。对手（Terran Armed Forces）的战术卡、升级与剩余资源未知，其反制资源交换的能力（Infantry Armor、Life Support、Terran Tenacity）无法量化。Hold Position 的 10+ VP 即时胜利阈值在本局低补给、单模型局面下何时可能触发未能量化。Supply 0 单位在无对手争夺时控制标记的边际收益与花资源争夺的边际收益比较缺乏对局证据。Mass Recall 返回 Reserves 后的 Supply 重算与再部署时机未在来源中完全解决。HIGH GROUND Cover 正文（7.1.3“底座任意部分站立”）与决策表（“完全位于”）措辞不一致，涉及资源交换后站位判定的边缘情形需规则服务或裁判裁决。本策略不构成规则权威，也不代表运行时接受或已发布；合法性由绑定的 Rules 服务决定。",
+      "reviseIf": [
+        "Rules 服务确认 player2 的 CP 标注卡能否支付 Psionic Energy 费用，或确认本局 player2 实际没有可用的 PE 来源",
+        "当前 LegalSpace 显示 player2 在 Movement Phase 的合法候选与假设不同（如无可用主动能力或无可达标记）",
+        "对手公开新信息（部署新单位、使用反应能力或 Terran Tenacity）改变威胁与先手评估",
+        "任务标记控制状态、双方单位 Current Supply Value 或分差发生变化，使原支出的 VP 前提不再成立",
+        "Mass Recall 或任何每局一次能力已被使用，或其收益前提（如单位位置、反应窗口）不再成立",
+        "规则服务或裁判对 HIGH GROUND Cover 措辞冲突或资源类型交互作出裁定，影响支出后的站位或支付判定"
+      ],
+      "requiredQueries": [
+        "own_resources",
+        "legal_space",
+        "viewer_state",
+        "phase",
+        "activation_state",
+        "scenario",
+        "mission_identity",
+        "score_forecast",
+        "coverage"
+      ],
+      "ruleRefs": [
+        "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+        "core.u3zNStKpd5XegMjmJfMS.items.3",
+        "core.u3zNStKpd5XegMjmJfMS.items.4",
+        "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+        "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+        "source:faction_cards:mission_hold_position",
+        "source:tactical_cards:daelaam",
+        "source:tactical_cards:terran_armed_forces",
+        "source:army_units:zealot",
+        "source:army_units:adept",
+        "source:army_units:stalker",
+        "source:army_units:sentry",
+        "source:army_units:artanis",
+        "source:army_units:marine",
+        "source:army_units:medic",
+        "faq-v1:25",
+        "faq-v1:27",
+        "faq-v1:34",
+        "faq-v1:59",
+        "faq-v1:62",
+        "faq-v1:63"
+      ],
+      "developmentCaseIds": []
+    },
+    {
+      "axis": "endgame",
+      "title": "终局规划：按已抽定任务卡的分值条件与双向补给计价排序标记争夺，并把控制变更窗口前移到 Combat 阶段结束",
+      "when": [
+        "已进入第2回合或之后，任务标记VP已开始生效（Hold Position 自第2回合起）",
+        "需要决定本回合优先抢分、守分、击杀敌方单位还是部署预备队单位",
+        "当前分差接近或可能接近该任务卡的即时胜利阈值（Hold Position 为领先10+ VP）",
+        "已进入最终回合（按任务卡 gameLength，Hold Position 为第5回合）且预备队中仍有未部署单位",
+        "对手拥有可改变终局先手或标记争夺算式的可见能力（如 Terran Tenacity、Jim Raynor 的 Commander/Freedom Fighters）"
+      ],
+      "objective": "在已抽定的任务卡分值条件下，选择能在本回合计分阶段兑现最高净VP的终局计划，并优先阻止对手达到该任务卡的即时胜利阈值。净VP必须双向计价：己方控制标记得分与摧毁敌方补给得分，减去己方单位被摧毁或 Current Supply Value 降低给对手的等量VP（faq-v1:62）。所有改变标记控制的行动必须在 Combat 阶段结束前完成，因为 Scoring & Cleanup 阶段没有单位激活。",
+      "steps": [
+        "读取当前已抽定的 Mission Card 名称与其 scoringConditions、additionalConditions（即时胜利阈值）、startingSupply、extraSupply、gameLength；读取当前回合数、分差、各标记控制状态与争夺状态、双方场上与预备队单位的当前补给值、Coherency 状态，以及本回合剩余激活数与先手标记归属。不套用其他任务卡的数值。",
+        "按该任务卡的分值条件逐项计算候选计划在本回合计分阶段的预计VP：Hold Position 为控制中立/己方色标记各1 VP、对方色标记2 VP；摧毁敌方补给每1点+1 VP。同时减去己方单位被摧毁或 Current Supply Value 降低给对手的等量VP（faq-v1:62），使击杀交换成为双向计价而非单向收益。",
+        "先过争夺资格硬门槛，再做VP排序：单位须在战场上、至少一个模型在标记3英寸内且对该标记有 LoS 并与标记同海拔、单位 In Coherency；Flying 与 BURROWED 单位不能争夺或控制标记。不满足资格的单位不进入VP比较。",
+        "把对手的补给修正能力作为独立变量写入算式，而非仅在风险段落提及：Jim Raynor 的 Commander 使其自身争夺补给视为+1，Freedom Fighters 使8英寸内友方单位在控制/争夺标记时补给不能降至1以下。因此己方以补给0单位争夺可能被对手的下限保护反超，须按修正后的争夺补给总值比较。",
+        "区分按当前可见局面与明确假设可计算的分支，和依赖攻击结果的概率性得分：标记分数只有在“计分前控制不再改变”等假设成立时才能写成确定分支；攻击得分需查询成功概率或伤害分布，使用期望值而非单次骰点，并明确未覆盖条件。",
+        "若己方领先且本回合预计得分会使分差达到或超过该任务卡的即时胜利阈值，优先选择能立即结束游戏的计划；若己方落后且对手可能达到该阈值，优先选择能阻止对手得分或降低己方暴露风险的计划。若双方同时接近阈值，判定顺序未在来源中明确，须上报规则服务而非自行裁定。",
+        "把“守住现有控制标记”与“争夺新标记”放在粘性控制下重新评估：一旦控制即保持到对手以更高争夺补给总值夺回，且一旦被控制就不会再回到中立。因此放弃某标记的站位不等于失去其VP——只要对手未以更高补给夺回，己方仍持续得分；只有当争夺新标记的预计净VP增量大于放弃站位所增加的被夺回风险时才转换目标。",
+        "在最终回合（按 gameLength 确定）仍有合法部署机会时，提前比较将高补给单位保留在预备队、部署上场与得分风险：最终计分阶段开始时，预备队单位被视为摧毁并按任务卡条件给对手VP，因此“保留在预备队”不是中性选项，而是确定性的对手得分来源，除非该单位能在计分阶段开始前被部署。最终回合补给池无限只放宽部署可行性，不消除该计分惩罚。",
+        "把改变标记控制的最后窗口明确为 Combat 阶段结束：Scoring & Cleanup 阶段无单位激活，控制判定与计VP按固定顺序由先手玩家发起，双方不能在该阶段内通过行动改变控制。因此终局部署与站位决策必须前移到 Movement/Assault 阶段完成。",
+        "每次对手行动后重读可见局面，只执行在当前可见局面下仍能兑现的下一步；不照抄预先设定的完整队列。"
+      ],
+      "alternatives": [
+        {
+          "option": "守住并巩固现有控制标记",
+          "preferWhen": "现有控制标记已能提供稳定VP，且分散兵力去争夺新标记会提高对手以更高争夺补给总值夺回的风险；在粘性控制下，守住站位本身不额外产生VP，但降低被夺回的概率"
+        },
+        {
+          "option": "主动争夺对方色或中立标记",
+          "preferWhen": "现有控制不足以在本回合或剩余回合内达成目标，且投入争夺的净VP增量高于放弃站位所增加的被夺回风险；Hold Position 下对方色标记价值2 VP，中立或己方色标记价值1 VP"
+        },
+        {
+          "option": "集中火力摧毁高补给敌方单位",
+          "preferWhen": "击杀产生的VP（每1点敌方补给1 VP）在减去己方因该交换损失的补给所给对手的VP后仍为正，且该单位是对方得分或控制的关键；若交换中己方损失等量或更多补给，净VP可能为零或负，此时不应仅按敌方补给单向计价"
+        },
+        {
+          "option": "在最终回合前部署预备队高补给单位",
+          "preferWhen": "该单位能在计分阶段开始前合法部署并满足争夺资格；若无法在计分阶段前部署，保留在预备队会给对手等于其补给的VP，此时应比较部署收益与保留惩罚，而非默认保留"
+        },
+        {
+          "option": "投入标记争夺补给杠杆（如 Artanis 的 Commander、Supply Depot 的 Additional Supply Depots、Queen 的 Domineering Presence）",
+          "preferWhen": "某标记的争夺补给总值接近平局，且提升1点争夺补给即可翻转控制或阻止对手夺回；这些能力提升的是用于控制/争夺标记的补给特性，而非模型数量"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手使用 Terran Tenacity（每局一次，立即取得 First Player Marker，且本阶段其他玩家不能再取得）改变关键阶段的先手",
+          "adaptation": "不假设己方在下一阶段先行动；在标记持有者选择首个行动方后重新评估终局争夺顺序，并把己方改变控制的行动安排在仍可执行的激活窗口内"
+        },
+        {
+          "response": "对手投入高补给单位争夺我方控制的标记，或使用 Jim Raynor 的 Commander/Freedom Fighters 提升争夺补给",
+          "adaptation": "按修正后的争夺补给总值重算该标记控制权；若我方争夺补给总值不足，考虑放弃该标记的站位并转向其他可得分目标，而非投入更多单位陷入消耗"
+        },
+        {
+          "response": "对手通过击杀我方高补给单位获得VP并接近该任务卡的即时胜利阈值",
+          "adaptation": "按双向计价重算分差；若对手因此可能触发即时胜利，优先保护剩余高补给单位并阻止其继续得分，而非继续进攻"
+        },
+        {
+          "response": "对手在最终回合前把单位送回 Reserves 或重新部署，改变控制态势",
+          "adaptation": "注意送回 Reserves 不算 Destroyed 且保留 Damage Marker；重新计算标记控制与分差，并确认该单位是否会在最终计分阶段被视为摧毁并给对手VP"
+        }
+      ],
+      "risk": "本轴未提供任何真实终局决策案例；开发案例 matchup.daelaam_to_terran.initiative.development 仅覆盖第2回合移动阶段“持标记者选择谁先行动”的单步转移，其 runtimeCoverage 明确排除战斗、计分与 matchup 策略偏好，因此不能证明任何终局标记争夺、牺牲或预备队部署决策在完整对局中更优。对手 Terran Armed Forces 的军队构成、升级选择、剩余资源与战术意图未知，无法量化对手在终局夺回标记或击杀高补给单位的概率。将高补给单位保留在预备队与部署上场的相对得分风险未在完整对局中验证；最终回合补给池无限与预备队单位被视为摧毁之间的交互未在来源中给出完整结论。Hold Position 的即时胜利阈值（10+ VP）在双方同时接近阈值时的判定顺序未在来源中明确。标记控制粘性与“一旦控制不再回到中立”在标记被移除或任务特殊条件改变时的交互未在来源中说明。本策略不构成规则权威，也不代表运行时接受或已发布；合法性由绑定的 Rules 服务决定。",
+      "reviseIf": [
+        "Draft 确定了不同的 Mission Card，其 scoringConditions、即时胜利阈值或 gameLength 与当前假设不同",
+        "当前回合数或分差发生变化，影响即时胜利或最终计分风险",
+        "任务标记控制状态或双方单位补给值发生改变",
+        "对手公开新信息（部署新单位、使用 Terran Tenacity 或 Jim Raynor 能力）改变终局争夺算式",
+        "本局已进入最终回合且预备队中仍有未部署单位，或该状态被解除",
+        "规则服务对 10+ VP 同时接近阈值的判定顺序、或粘性控制与标记移除的交互给出裁定"
+      ],
+      "requiredQueries": [
+        "scenario",
+        "mission_identity",
+        "score_forecast",
+        "legal_space",
+        "viewer_state",
+        "threat",
+        "probability",
+        "own_resources"
+      ],
+      "ruleRefs": [
+        "source:faction_cards:mission_hold_position",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.0",
+        "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+        "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.2",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+        "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.2",
+        "faq-v1:05",
+        "faq-v1:62",
+        "faq-v1:63",
+        "source:tactical_cards:terran_armed_forces",
+        "source:army_units:jim_raynor",
+        "source:tactical_cards:supply_depot",
+        "source:army_units:queen",
+        "source:army_units:artanis"
+      ],
+      "developmentCaseIds": []
+    }
+  ],
+  "legalityChecks": [
+    "Rules 服务是动作合法性的唯一权威",
+    "只选择当前 LegalSpace 中启用的候选",
+    "写操作必须 Preview→房间确认策略→Apply→Replay"
+  ],
+  "illegalPatterns": [
+    "把对抗偏好写成规则事实",
+    "读取对手私有信息或未披露升级",
+    "使用 held-out 目标修改 Skill 正文",
+    "把单步先手测试当作整局最优或胜率证明",
+    "因来源冲突自行扩大 Rules 权限"
+  ],
+  "examples": [
+    {
+      "axis": "opening_branches",
+      "caseId": "matchup.daelaam_to_terran.initiative.development",
+      "receiptHash": "39dccbbe42d30079f0a2f2c233df596fab35e3eefda17958b57c278b4fa4b51e"
+    }
+  ],
+  "counterExamples": [
+    "opponent_profile: 尚无真实局面开发/held-out 对照，不得宣称效果已验证",
+    "counterplay: 尚无真实局面开发/held-out 对照，不得宣称效果已验证",
+    "resource_exchange: 尚无真实局面开发/held-out 对照，不得宣称效果已验证",
+    "endgame: 尚无真实局面开发/held-out 对照，不得宣称效果已验证"
+  ],
+  "judgeTests": {
+    "productionHash": "77d89021828d3417b70c505d75d1a5098fc65c9b63827b304217ece5d037d5f8",
+    "sourceAuditHash": "f9399027c85ddfef567783293e219bca9e2ac44a2f32fb36755623e1a2868001",
+    "caseResults": [
+      {
+        "caseId": "matchup.daelaam_to_terran.initiative.development",
+        "split": "development",
+        "passed": true,
+        "receiptHash": "39dccbbe42d30079f0a2f2c233df596fab35e3eefda17958b57c278b4fa4b51e"
+      },
+      {
+        "caseId": "matchup.daelaam_to_terran.initiative.heldout",
+        "split": "heldout",
+        "passed": true,
+        "receiptHash": "04148f65596a53924450dcfc48030bfcae8269618bbb419471389a13f4fbc98f"
+      }
+    ],
+    "evaluatedDecisionAxes": [
+      "opening_branches"
+    ],
+    "uncoveredDecisionAxes": [
+      "opponent_profile",
+      "counterplay",
+      "resource_exchange",
+      "endgame"
+    ]
+  },
+  "confidence": "all_fields_source_bound_and_opening_rules_cases_passed_other_axes_and_full_game_unproven",
+  "trustTier": "offline_evaluated_advisory",
+  "status": "offline_candidate",
+  "humanReviewed": false,
+  "canAffectStrategy": true,
+  "canAffectRules": false,
+  "fullGameStrategyEffectivenessProven": false,
+  "runtimeAccepted": false,
+  "published": false,
+  "trainingTruth": false,
+  "hash": "14ad8ee42feb82194af2d1da207b9260e64c6f3d6d7693df86765dae0fbc9bda"
+}

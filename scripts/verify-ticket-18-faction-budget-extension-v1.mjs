@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdtemp } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createFactionBudgetExtensionV1, projectFactionCumulativeCostV1,
-  validateFactionBudgetExtensionV1 } from '../packages/skill-production-v3/faction-budget-extension-v1.mjs';
+import { createFactionBudgetExtensionV1, createFactionBudgetExtensionV2, createFactionBudgetExtensionV3, projectFactionCumulativeCostV1,
+  validateFactionBudgetExtensionV1, verifyFactionCostNotificationV1 } from '../packages/skill-production-v3/faction-budget-extension-v1.mjs';
 import { inspectFactionContinuationV1 } from '../packages/skill-production-v3/faction-continuation-v1.mjs';
 import { openProductionStore } from '../packages/skill-production/store.mjs';
 import { withCheckpointContinuation } from '../packages/skill-production/continuation.mjs';
@@ -15,6 +15,23 @@ const extension = createFactionBudgetExtensionV1(parent), next = reseal(parent, 
 assert.equal(validateFactionBudgetExtensionV1({ parent, next: parent }), null);
 const proof = validateFactionBudgetExtensionV1({ parent, next }); assert.equal(proof.extensionHash, extension.hash);
 assert.equal(validateFactionBudgetExtensionV1({ parent: next, next }).hash, proof.hash);
+const reauthorization = createFactionBudgetExtensionV2(next);
+const reauthorized = reseal(next, { budgetExtension: reauthorization,
+  limits: reauthorization.nextLimits });
+const reauthorizationProof = validateFactionBudgetExtensionV1({ parent: next,
+  next: reauthorized });
+assert.equal(reauthorizationProof.authorization, 'explicit_rebilling_v2');
+assert.equal(reauthorizationProof.extensionHash, reauthorization.hash);
+assert.equal(reauthorization.nextNotificationThresholdMicros, 200_000_000);
+assert.equal(reauthorization.originalClockPreserved, true);
+for (const field of ['maxInputBytes', 'maxRevisions'])
+  assert.equal(reauthorization.nextLimits[field], extension.nextLimits[field]);
+assert.equal(validateFactionBudgetExtensionV1({ parent: reauthorized,
+  next: reauthorized }).extensionHash, reauthorization.hash);
+assert.equal(createFactionBudgetExtensionV2(reauthorized).hash,
+  reauthorization.hash);
+assert.throws(() => createFactionBudgetExtensionV2(parent),
+  { code: 'FACTION_BUDGET_EXTENSION_V2_PARENT_INVALID' });
 assert.throws(() => createFactionBudgetExtensionV1(next), { code: 'FACTION_BUDGET_EXTENSION_PARENT_INVALID' });
 assert.throws(() => validateFactionBudgetExtensionV1({ parent, next: reseal(parent, { limits: extension.nextLimits }) }),
   { code: 'FACTION_BUDGET_EXTENSION_REQUIRED' });
@@ -23,6 +40,10 @@ for (const fields of [{ maxCalls: 801 }, { maxTokens: 181_000_000 }, { maxCostMi
   { maxWallMs: 25 * 60 * 60 * 1000 }, { maxInputBytes: 2_000_000 }, { maxRevisions: 4 }])
   assert.throws(() => validateFactionBudgetExtensionV1({ parent, next: reseal(next, { limits: { ...next.limits, ...fields } }) }),
     { code: 'FACTION_BUDGET_EXTENSION_LIMIT_DRIFT' });
+assert.throws(() => validateFactionBudgetExtensionV1({ parent: next,
+  next: reseal(reauthorized, { limits: { ...reauthorized.limits,
+    maxCostMicros: 70_000_001 } }) }),
+{ code: 'FACTION_BUDGET_EXTENSION_LIMIT_DRIFT' });
 for (const fields of [{ parentRecipeHash: hash('foreign') }, { originalClockPreserved: false }, { allPriorAccountingPreserved: false }])
   assert.throws(() => validateFactionBudgetExtensionV1({ parent, next: reseal(next, { budgetExtension: reseal(extension, fields) }) }),
     { code: 'FACTION_BUDGET_EXTENSION_INVALID' });
@@ -82,9 +103,42 @@ try {
   assert.throws(() => inspectFactionContinuationV1({ ...deps, next: reseal(fixtureNext, { inputHashes: [hash('changed source')] }) }),
     { code: 'FACTION_CONTINUATION_CONTRACT_DRIFT' });
 } finally { local?.close(); sourceStore.close(); }
-const report = seal({ passed: true, checks: 29, codeHashes, originalParentRecipeHash: parent.hash,
+const latest = verifySeal(JSON.parse(await readFile(path.join(base, 'faction-v1-96a0ecb6908bf4fe4d6c/recipe.json'), 'utf8')));
+const remainingExtension = createFactionBudgetExtensionV3(latest);
+const remainingNext = reseal(latest, { budgetExtension: remainingExtension, limits: remainingExtension.nextLimits });
+assert.equal(validateFactionBudgetExtensionV1({ parent: latest, next: remainingNext }).authorization, 'remaining_production_v3');
+assert.equal(createFactionBudgetExtensionV3(remainingNext).hash, remainingExtension.hash);
+assert.equal(validateFactionBudgetExtensionV1({ parent: remainingNext, next: remainingNext }).extensionHash, remainingExtension.hash);
+assert.equal(remainingNext.limits.maxCostMicros, 120_000_000);
+for (const field of ['maxCalls', 'maxTokens', 'maxInputBytes', 'maxWallMs', 'maxRevisions'])
+  assert.equal(remainingNext.limits[field], latest.limits[field]);
+assert.throws(() => validateFactionBudgetExtensionV1({ parent: latest, next: reseal(remainingNext,
+  { limits: { ...remainingNext.limits, maxCostMicros: 120_000_001 } }) }), { code: 'FACTION_BUDGET_EXTENSION_LIMIT_DRIFT' });
+assert.throws(() => createFactionBudgetExtensionV3(next), { code: 'FACTION_BUDGET_EXTENSION_V3_PARENT_INVALID' });
+const notification = verifySeal(JSON.parse(await readFile(path.join(base, 'cny-100-notification-receipt.json'), 'utf8')));
+const currentProjection = projectFactionCumulativeCostV1({ historyMicros: 34_013_743,
+  globalSpentMicros: 80_895_079, inheritedCostMicros: 48_602_560,
+  currentRunCostMicros: 0, chainLimitMicros: 120_000_000 });
+assert.equal(currentProjection.projectedMaximumCumulativeMicros, 186_306_262);
+assert.equal(verifyFactionCostNotificationV1({ projection: currentProjection, notification,
+  budgetExtension: remainingExtension }).coverage, 'notified_tier_below_next_threshold');
+assert.throws(() => verifyFactionCostNotificationV1({ projection: currentProjection, notification,
+  budgetExtension: latest.budgetExtension }), { code: 'CNY_100_NOTIFICATION_REQUIRED' });
+assert.throws(() => verifyFactionCostNotificationV1({ projection: reseal(currentProjection,
+  { projectedMaximumCumulativeMicros: 200_000_000 }), notification, budgetExtension: remainingExtension }),
+{ code: 'CNY_100_NOTIFICATION_REQUIRED' });
+for (const delta of [{ userNotified: false }, { cumulativeAccountingReset: true },
+  { observedCumulativeMicros: 115_000_000 }, { projectedMaximumMicros: 200_000_000 }, { nextThresholdMicros: 300_000_000 }])
+  assert.throws(() => verifyFactionCostNotificationV1({ projection: currentProjection,
+    notification: reseal(notification, delta), budgetExtension: remainingExtension }), { code: 'CNY_100_NOTIFICATION_REQUIRED' });
+const report = seal({ passed: true, checks: 59, codeHashes, originalParentRecipeHash: parent.hash,
   sqliteAncestorUsageAndUnknownReservePreserved: true, originalClockPreserved: true, copiedProviderAttempts: 0,
-  extension, proof, productionJournalMutationPerformed: false, fixtureJournalMutated: true,
+  extension, proof, reauthorization, reauthorizationProof, remainingExtension,
+  originalClockPreservedAcrossReauthorization: true,
+  cumulativeAccountingPreservedAcrossReauthorization: true,
+  productionJournalMutationPerformed: false, fixtureJournalMutated: true,
   actualContinuationPreflightPerformed: false, providerCalls: 0, trainingTruth: false });
 await writeFile(path.join(base, 'budget-extension-readiness.json'), JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ passed: true, checks: 29, limits: extension.nextLimits, providerCalls: 0, hash: report.hash }));
+console.log(JSON.stringify({ passed: true, checks: 59,
+  limits: extension.nextLimits, reauthorizedLimits: reauthorization.nextLimits,
+  providerCalls: 0, hash: report.hash }));

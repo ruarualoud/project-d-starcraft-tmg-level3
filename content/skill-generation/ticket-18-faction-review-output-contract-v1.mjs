@@ -427,3 +427,27 @@ export const STARCRAFT_TMG_FACTION_REVIEW_CONTRACT_MIGRATION_V3_TO_V4 = seal({
   semanticAcceptanceInherited: false,
   trainingTruth: false,
 });
+
+// A review may need more sources than the recommendation it audits. Do not
+// discard valid evidence to match the writing envelope's eight-citation cap.
+const catalogueReviewSchema = structuredClone(STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V4.providerSchema);
+catalogueReviewSchema.properties.verdicts.items.properties.sourceSlots.maxItems = 128;
+export const STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V5 = createStarcraftTmgOutputContractV1({
+  id: 'starcraft-tmg.faction-target-review', version: '2026.09.07.5', schemaName: 'faction_target_review_v5',
+  providerSchema: catalogueReviewSchema,
+  modelOwnedFields: STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V4.modelOwnedFields,
+  hostOwnedFields: STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V4.hostOwnedFields,
+  mapperRef: STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V4.mapperRef,
+  semanticValidatorRef: { id: 'validateTargetedFactionReviewV1', version: 'v3',
+    hash: hashStarcraftTmgContract('target-review-source-set-bounded-by-actual-included-catalogue-v3') },
+  description: 'V5 preserves every distinct available source used to audit a target; source existence, scope, quoted fields, and negative findings remain independently validated.',
+});
+export const STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V5 = outputContractRefStarcraftTmgV1(STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_V5);
+export const STARCRAFT_TMG_FACTION_REVIEW_CATALOGUE_BINDING_V1 = seal({
+  version: 'faction_review_catalogue_capacity_v1',
+  prior: STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V4,
+  current: STARCRAFT_TMG_FACTION_REVIEW_OUTPUT_CONTRACT_REF_V5,
+  onlySchemaChange: { path: '$.properties.verdicts.items.properties.sourceSlots.maxItems', before: 8, after: 128 },
+  oldRawRolesRequireExactOldContract: true, recommendationCitationLimitChanged: false,
+  sourceMembershipStillRequired: true, semanticAcceptanceInherited: false, trainingTruth: false,
+});

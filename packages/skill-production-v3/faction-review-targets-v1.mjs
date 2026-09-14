@@ -57,7 +57,10 @@ export function createFactionReviewTargetsV1({ input, section, draft, indices })
 
 // The host owns index mapping. Providers identify the explicitly supplied
 // target and quote a field of that target; they never count the whole array.
-export function validateTargetedFactionReviewV1(output, targets) {
+export function validateTargetedFactionReviewV1(output, targets,
+  { narrativeCharacterMaximum = 240 } = {}) {
+  if (narrativeCharacterMaximum !== null && narrativeCharacterMaximum !== 240)
+    fail('FACTION_REVIEW_NARRATIVE_BOUND_INVALID');
   verifySeal(targets); exact(output, ['verdicts', 'coverage']);
   const coverageMetadata = normalizeFactionCoverageMetadataV1(output.coverage);
   if (!Array.isArray(output.verdicts) || output.verdicts.length !== targets.targets.length) fail('FACTION_REVIEW_TARGET_DENOMINATOR');
@@ -78,9 +81,9 @@ export function validateTargetedFactionReviewV1(output, targets) {
       const originalSourceMatches = focusedSourceQuoteMatches(targets, v.sourceRefs, originalQuote);
       const originalTargetMatch = field.text.includes(originalQuote);
       let quote = originalQuote;
-      if (quote.length > 240) {
+      if (narrativeCharacterMaximum !== null && quote.length > narrativeCharacterMaximum) {
         if (!originalTargetMatch && !originalSourceMatches.length) fail('FACTION_REVIEW_FOCUS_OVERFLOW_UNBOUND');
-        quote = quote.slice(0, 240);
+        quote = quote.slice(0, narrativeCharacterMaximum);
         focusMetadataRepairs.push(seal({ targetId: target.targetId, path: f.path,
           originalQuoteHash: hash(originalQuote), originalLength: originalQuote.length,
           normalizedQuoteHash: hash(quote), normalizedLength: quote.length,
@@ -93,7 +96,7 @@ export function validateTargetedFactionReviewV1(output, targets) {
           rawProviderOutputOverwritten: false, judgmentChanged: false,
           sourceEvidenceAdded: false, trainingTruth: false }));
       }
-      text(quote, 240);
+      text(quote, narrativeCharacterMaximum ?? Number.MAX_SAFE_INTEGER);
       if (field.text.includes(quote)) return { kind: 'target_field_quote', path: f.path, quote, fieldHash: hash(field.text) };
       // The observed review copied the COMPLETE field and appended one Chinese
       // sentence stop. This is not an exact quote: preserve both strings and

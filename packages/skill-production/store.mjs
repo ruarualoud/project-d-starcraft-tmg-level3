@@ -5,9 +5,14 @@ import { seal, verifySeal, hash, safe, fail, integer, clone } from "./common.mjs
 // One journal owns attempts, reservations, normalized artifacts and CAS leases.
 // A process dying after intent cannot make the request safe to repeat.
 export function openProductionStore(filename, { runId, recipeHash, maxCalls = 180,
-  maxCostMicros = 50_000_000, maxTokens = 5_000_000, now = () => Date.now() } = {}) {
+  maxCostMicros = 50_000_000, maxTokens = 5_000_000,
+  resetCallWindow = false, limitMode = 'hard', onLimitAlert = null,
+  now = () => Date.now() } = {}) {
   if (!/^[a-zA-Z0-9._-]{4,120}$/.test(runId) || !/^[a-f0-9]{64}$/.test(recipeHash)) fail("RUN_ID_INVALID");
   integer(maxCalls, 1, 1000); integer(maxCostMicros, 1, 1e9);
+  if (!['hard', 'alert'].includes(limitMode)
+    || onLimitAlert !== null && typeof onLimitAlert !== 'function')
+    fail('PRODUCTION_LIMIT_MODE_INVALID');
   const db = new DatabaseSync(filename);
   db.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000");
   db.exec("CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, recipe TEXT NOT NULL, cap INTEGER NOT NULL, calls INTEGER NOT NULL, token_cap INTEGER NOT NULL);" +
@@ -16,6 +21,13 @@ export function openProductionStore(filename, { runId, recipeHash, maxCalls = 18
   const initial = db.prepare("SELECT * FROM runs WHERE id=?").get(runId);
   if (initial && (initial.recipe !== recipeHash || initial.cap !== maxCostMicros || initial.calls !== maxCalls || initial.token_cap !== maxTokens)) fail("RUN_RECIPE_DRIFT");
   if (!initial) db.prepare("INSERT INTO runs VALUES(?,?,?,?,?)").run(runId, recipeHash, maxCostMicros, maxCalls, maxTokens);
+  // Cost and token caps remain cumulative. A controlled resume may reset only
+  // the process-level runaway-call window after the caller has proven that no
+  // ambiguous request or running lease remains.
+  const callWindowStart = resetCallWindow
+    ? db.prepare("SELECT count(*) AS n FROM attempts WHERE run=?").get(runId).n
+    : 0;
+  const emittedLimitAlerts = new Set();
   const encode = (v) => JSON.stringify(safe(seal({ value: v })));
   const decode = (v) => v === null || v === undefined ? null : clone(verifySeal(JSON.parse(v)).value);
   function transaction(fn) {
@@ -59,20 +71,38 @@ export function openProductionStore(filename, { runId, recipeHash, maxCalls = 18
       .run(runId, lease.id, lease.owner, lease.generation);
   }
   function reserve(id, request, estimateMicros, tokenReserve = 1) {
-    integer(estimateMicros, 1, maxCostMicros);
-    integer(tokenReserve, 1, maxTokens);
+    integer(estimateMicros, 1, 1e9);
+    integer(tokenReserve, 1, 1e12);
     return transaction(() => {
       const row = db.prepare("SELECT * FROM attempts WHERE run=? AND id=?").get(runId, id);
       if (row) {
         if (row.request_hash !== hash(request)) fail("ATTEMPT_INPUT_DRIFT");
         if (row.state === "received") return { cached: true, response: decode(row.response) };
-        if (row.state === "failed") return { failed: true, code: row.code, usageKnown: !!row.usage };
+        if (row.state === "failed") return { failed: true, code: row.code,
+          usageKnown: !!row.usage, failureReceipt: decode(row.response) };
         fail(row.state === "intent" ? "AMBIGUOUS_EGRESS_NO_RETRY" : "ATTEMPT_ALREADY_SETTLED", { priorCode: row.code });
       }
       const totals = summary();
       if (totals.attempts.some((attempt) => attempt.code === "PROVIDER_PAYMENT_REQUIRED")) fail("API_BALANCE_EXHAUSTED_STOP_ALL_WORK");
-      if (totals.calls >= maxCalls || totals.reservedOrSettledMicros + estimateMicros > maxCostMicros
-        || totals.reservedOrSettledTokens + tokenReserve > maxTokens) fail("PRODUCTION_BUDGET_EXHAUSTED");
+      const exceeded = [
+        ...(totals.calls - callWindowStart >= maxCalls ? ['calls'] : []),
+        ...(totals.reservedOrSettledMicros + estimateMicros > maxCostMicros ? ['cost'] : []),
+        ...(totals.reservedOrSettledTokens + tokenReserve > maxTokens ? ['tokens'] : []),
+      ];
+      if (exceeded.length) {
+        if (limitMode === 'hard') fail("PRODUCTION_BUDGET_EXHAUSTED");
+        for (const kind of exceeded) if (!emittedLimitAlerts.has(kind)) {
+          emittedLimitAlerts.add(kind);
+          onLimitAlert?.(seal({ version: 'production_soft_limit_alert_v1',
+            runId, kind, action: 'continue', attemptId: id,
+            observed: kind === 'calls' ? totals.calls - callWindowStart
+              : kind === 'cost' ? totals.reservedOrSettledMicros + estimateMicros
+                : totals.reservedOrSettledTokens + tokenReserve,
+            configuredThreshold: kind === 'calls' ? maxCalls
+              : kind === 'cost' ? maxCostMicros : maxTokens,
+            paymentRequiredStillBlocks: true, trainingTruth: false }));
+        }
+      }
       db.prepare("INSERT INTO attempts VALUES(?,?,?,'intent',?,NULL,NULL,NULL,NULL,?)").run(runId, id, hash(safe(request)), estimateMicros, tokenReserve);
       return { cached: false };
     });

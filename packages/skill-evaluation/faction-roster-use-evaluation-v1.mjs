@@ -4,11 +4,12 @@ import { createFactionWritingPlanV1 } from '../skill-production-v3/faction-strat
 import { assertNoKnownFactionRuleFailureV1 } from '../skill-production-v3/faction-known-rule-findings-v1.mjs';
 import { inspectFactionSemanticDebtV1 } from './faction-semantic-debt-v1.mjs';
 import { assertNoFactionImportedRepairRegressionV1 } from '../skill-production-v3/faction-repair-regression-guard-v1.mjs';
+import { bindFactionGeneralDependencyV1 } from '../strategy-skills/faction-general-dependency-v1.mjs';
 
 // Consumer-side comparison, deliberately excluding production dialogue, source
 // reviewer verdicts, known-failure proofs and expected test answers. This is a
 // bounded card-package decision test, NOT permission to publish a Skill.
-export function factionConsumerContextV1({ input, candidate, knownRulePolicy }) {
+export function factionConsumerContextV1({ input, candidate, knownRulePolicy, finalGeneral = null }) {
   [input, candidate, knownRulePolicy].forEach(verifySeal);
   const plan = createFactionWritingPlanV1(input);
   if (candidate.schema !== 'starcraft_faction_strategy_candidate_v1' || candidate.inputHash !== input.hash
@@ -24,15 +25,23 @@ export function factionConsumerContextV1({ input, candidate, knownRulePolicy }) 
     if (debt.knownSemanticDebtBlocksIndependentQualification) fail('FACTION_CONSUMER_KNOWN_SEMANTIC_DEBT', { debt });
   }
   const faction = { factionRecordKey: candidate.factionRecordKey, sections: candidate.sections.map(s => ({ section: s.section, draft: s.draft })) };
+  if (finalGeneral) {
+    verifySeal(finalGeneral);
+    if (bindFactionGeneralDependencyV1({ input, ...finalGeneral }).hash !== finalGeneral.hash)
+      fail('FACTION_CONSUMER_GENERAL_DEPENDENCY_DRIFT');
+  }
   return seal({ version: 'faction_consumer_context_v1', candidateHash: candidate.hash, inputHash: input.hash,
-    overall: { skill: input.overallSkill, guide: input.operationalGuide }, faction,
+    overall: { skill: input.overallSkill, guide: input.operationalGuide,
+      ...(finalGeneral ? { finalStrategySkill: finalGeneral.generalSkill,
+        finalStrategyLayer: finalGeneral.generalLayer } : {}) }, faction,
+    ...(finalGeneral ? { finalGeneralDependencyHash: finalGeneral.hash } : {}),
     authority: 'advisory_only_rules_remain_authoritative', trainingTruth: false });
 }
 
-export async function evaluateFactionRosterUseV1({ input, candidate, knownRulePolicy, drills, store, model, onProgress = () => {} }) {
+export async function evaluateFactionRosterUseV1({ input, candidate, knownRulePolicy, drills, store, model, finalGeneral = null, onProgress = () => {} }) {
   verifySeal(drills.manifest);
   if (drills.manifest.catalogueHash !== input.catalogueHash || hash(drills.manifest.sourceBinding) !== hash(input.sourceBinding)) fail('FACTION_CONSUMER_DRILL_SOURCE_DRIFT');
-  const consumer = factionConsumerContextV1({ input, candidate, knownRulePolicy });
+  const consumer = factionConsumerContextV1({ input, candidate, knownRulePolicy, finalGeneral });
   const cases = drills.list(input.factionRecordKey);
   if (!cases.length) fail('FACTION_CONSUMER_CASES_MISSING');
   const results = [];
@@ -72,6 +81,7 @@ export async function evaluateFactionRosterUseV1({ input, candidate, knownRulePo
   }
   const baseline = results[0], augmented = results[1];
   return seal({ schema: 'starcraft_faction_roster_use_evaluation_v1', candidateHash: candidate.hash,
+    ...(finalGeneral ? { finalGeneralDependencyHash: finalGeneral.hash } : {}),
     consumerContextHash: consumer.hash, inputHash: input.hash, sourceBinding: input.sourceBinding,
     drillManifestHash: drills.manifest.hash, results, boundedRosterChoicePassed: augmented.correct === augmented.total,
     descriptiveCorrectDelta: augmented.correct - baseline.correct,

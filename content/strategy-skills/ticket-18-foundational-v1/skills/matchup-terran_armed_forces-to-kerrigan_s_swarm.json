@@ -1,0 +1,707 @@
+{
+  "schema": "project_d_game_skill_v1",
+  "gameId": "starcraft-tmg",
+  "rulesVersion": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+  "sourceBinding": {
+    "core": "1adbdb652fafc09d01887981a3ae86f69e65e1f1480d804156a8da1d4d1757a1",
+    "faq": "2881adb2a4e0475f07bb17aebf02e64f35c9073f274cec2cf0a8f770f8647226",
+    "rules": "f069451ab987d7951231a336d2b2318b74dc19a8fc6998860f14bcd584d06c13",
+    "dataset": "b2579b83bb9a77b6119730009725a34d4e828d92d302248243bab33863551067"
+  },
+  "skillId": "starcraft-tmg.matchup.terran_armed_forces-to-kerrigan_s_swarm",
+  "version": "1.0.0-offline-bounded-evaluation",
+  "skillType": "strategy",
+  "direction": {
+    "family": "matchup",
+    "ownFaction": "tactical_cards:terran_armed_forces",
+    "opponentFaction": "tactical_cards:kerrigan_s_swarm"
+  },
+  "dependencies": {
+    "generalSkillHash": "e06b28c385c12d278d5e3d6ff2a777ef8d20cd520ea8e27e4449afa26218b10b",
+    "ownFactionSkillHash": "f717d6ffa02433a7d2cce20a937fbaf37c3a6fa83115470fdc4d7fc9cd1ab148",
+    "opponentFactionSkillHash": "9babc3386ac4046d41ed58d6d8a13b0c3e5fb03384af9b7c8ca9394c72d48ccf"
+  },
+  "strategyLayerHash": "146abfe1dea83c32caf2d1ca9860bf5337e0332ca299957039fe3c42c5c88c89",
+  "sourceRefs": [
+    "source:tactical_cards:kerrigan_s_swarm",
+    "source:army_units:kerrigan",
+    "source:army_units:omega_worm",
+    "source:tactical_cards:accelerating_creep",
+    "source:tactical_cards:malignant_creep",
+    "source:tactical_cards:hatchery",
+    "source:tactical_cards:overseer",
+    "source:tactical_cards:terran_armed_forces",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+    "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.0",
+    "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+    "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+    "faq-v1:21",
+    "faq-v1:23",
+    "faq-v1:54",
+    "faq-v1:59",
+    "core.OszqexisUrSOKMW6TzA5.items.2",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.3",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.2",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.3",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.17",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.70",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+    "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.9",
+    "faq-v1:25",
+    "faq-v1:47",
+    "faq-v1:49",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+    "core.H3Fn8YSvEvpJZpT57qw1.items.1",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.54",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.6",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+    "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+    "source:faction_cards:mission_hold_position",
+    "faq-v1:34",
+    "faq-v1:48",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.2",
+    "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.0",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.4",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.44",
+    "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.65",
+    "core.cB7X7UfOMHh3Wxn79ASF.items.4",
+    "core.I03mzBYujgXw6xN2qXhH.items.4",
+    "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.2",
+    "core.u3zNStKpd5XegMjmJfMS.items.5",
+    "faq-v1:05"
+  ],
+  "preconditions": [
+    "加载精确总规则、己方势力与对方势力 Skill 依赖",
+    "读取当前玩家可见状态、任务、阶段、资源、单位与升级",
+    "先从 Rules 服务取得当前 LegalSpace；策略不能创造动作或裁定规则"
+  ],
+  "procedure": [
+    {
+      "axis": "opponent_profile",
+      "title": "Kerrigan's Swarm 对手画像：按可观察的节奏干扰、Creep 依赖与 Omega 落点条件分支，而非按阵营名假设固定打法",
+      "when": [
+        "本局对手为 Kerrigan's Swarm 阵营卡（标签 Zerg + Kerrigan's Swarm），己方为 Terran Armed Forces",
+        "需要为当前阶段（Movement/Assault/Combat）预判对手的激活顺序、节奏干扰与部署方式",
+        "对手的 Kerrigan、Omega Worm、Creep Tumor Token 或 ON CREEP 单位位置可观察，或对手已公开其战术卡与阵营卡",
+        "需要决定是否保留 Terran Tenacity、是否提前 Pass、以及是否把单位置于对手 12\" 内或 Creep 6\" 内"
+      ],
+      "objective": "在只使用当前可见信息的前提下，为 Kerrigan's Swarm 对手建立一组可检验的条件分支：把对手的已知能力（Crushing Grip 的节奏干扰、Omega Network 的 Entry Edge 部署、Wild Mutation 的 ON CREEP 依赖、Creep Card 二选一）映射为可观察的触发条件与己方应对，而不是假设对手有固定编制、固定开局或 RTS 式经济。任何分支都只是条件性假设，不构成规则权威，也不证明更优。",
+      "steps": [
+        "先固定信息边界：只使用当前可见事实（对手已部署单位、已公开的战术卡与阵营卡、场上 Creep Tumor Token 与 Omega Worm 位置、当前阶段与先手标记归属）。封闭名单下未部署单位的升级在部署时才披露，此前不可确认；不把未公开的编制当作已知。",
+        "读取对手的固定约束作为画像骨架：Kerrigan's Swarm 起始槽位 Core 3 / Elite 2 / Hero 1 / Support 0 / Air 0，因此任何 Support 单位（如 Queen）必须先购买 Hatchery（30 Vespene，+1 Support）或 Overseer（25 Vespene，+1 Support）才能编入；Zerg Creep 被动要求恰好一张 Creep Card，且 Accelerating Creep 与 Malignant Creep 均为 Unique、不能同时携带。据此可推断对手在 Support 与 Creep 上必然做了取舍，但取舍方向不可从阵营名推断。",
+        "建立节奏干扰分支：若对手场上有 Kerrigan 且己方某单位在 12\" 内，则该单位可能被 Crushing Grip（1 Biomass，Movement Phase）计为已激活，从而在本阶段失去一次激活机会。应对：在规划本阶段激活队列时，先确认该单位是否已被计为已激活；若被计为已激活，转向仍可兑现的次优行动，不强行执行原队列。",
+        "建立部署分支：若对手场上无 Omega Worm，则 Omega Network（Movement Phase）可能在距任何敌方模型超过 10\" 的 GROUND LEVEL 位置放置一个 Omega Worm，其底座视为 Entry Edge，且每回合可通过该 Entry Edge 部署合计 Supply ≤ 2 的友方单位。应对：在己方部署与站位时，评估对手是否仍有合法的 10\" 外落点；若存在，预期对手可能从该点投入低补给单位（如 Supply 1 的 Zergling 或 Kerrigan Swarm Raptor），并据此调整己方对侧翼与后方的覆盖。",
+        "建立 ON CREEP 依赖分支：若对手单位处于任一 Creep Tumor Token 或 Creep 来源模型 6\" 内，则该单位 ON CREEP，可能触发 Wild Mutation（Any Phase，BUFF Speed 1 与首个武器 PRECISION 1）、Accelerating Creep 的 Speed +1、或 Malignant Creep 的冲锋 IMPACT +1。应对：把 Creep Tumor Token 视为可被移除的目标——按 Creep Removal，敌方单位以 Move/Deploy/Run/Charge/Disengage 结束于该 Token 1\" 内即移除该 Token；注意 PLACE 不触发移除（faq-v1:54）。移除 Token 可切断对手的 ON CREEP 前提，但需评估为此投入的激活是否值得。",
+        "建立 Creep Card 二选一分支：若对手表现出更强的机动（ON CREEP 时 Speed +1），倾向 Accelerating Creep；若对手表现出更强的冲锋冲击（ON CREEP 冲锋 IMPACT Hit Roll +1），倾向 Malignant Creep。此判断仅用于调整己方对冲锋距离与 IMPACT 风险的预期，不用于断言对手一定携带哪张卡。",
+        "建立先手分支：先手标记是流动资源——持有者选择每阶段首个行动方；阶段 1 或 2 首个 Pass 者取得下一阶段标记；阶段 4 结束时标记归 VP 较少者（平局掷骰）。若对手持有标记，不假设己方先行动；若己方持有标记，评估是否用 Terran Tenacity（Active，Movement Phase，每局一次，须由当前被激活单位在行动前或行动完全结算后使用）立即取得标记并阻止对手本阶段取得。注意 Terran Tenacity 能否夺回对手已因早 Pass 取得的标记在来源中未明确，不应作为确定线路依赖。",
+        "每次对手行动后重读可见局面，只保留在当前局面下仍成立的分支；若对手公开新信息（部署新单位、使用反应能力、放置或移除 Creep Tumor Token），更新画像并重新比较己方候选。"
+      ],
+      "alternatives": [
+        {
+          "option": "按“节奏干扰优先”画像准备：预期对手用 Crushing Grip 削减己方本阶段激活数",
+          "preferWhen": "对手场上有 Kerrigan 且己方有高价值单位位于其 12\" 内；此时优先把关键行动安排在不易被计为已激活的单位上，或先处理该单位再规划其余队列"
+        },
+        {
+          "option": "按“侧翼部署优先”画像准备：预期对手用 Omega Network 建立 Entry Edge 并从后方投入低补给单位",
+          "preferWhen": "对手场上无 Omega Worm 且存在距己方模型超过 10\" 的 GROUND LEVEL 落点；此时保留对后方与侧翼的覆盖，或考虑用 ComSat Station 封锁一条非 Entry Edge 桌边"
+        },
+        {
+          "option": "按“ON CREEP 冲击优先”画像准备：预期对手依赖 Creep 加成进行冲锋",
+          "preferWhen": "对手单位明显聚集在 Creep Tumor Token 6\" 内，且其单位具备冲锋相关能力（如 Zergling/Raptor 的 Metabolic Boost、Kerrigan Swarm Raptor 的 Leap）；此时评估是否投入激活移除 Creep Tumor Token，或拉开距离使冲锋距离不足"
+        },
+        {
+          "option": "按“保守观察”画像准备：不预设对手具体打法，先补全可观察信息",
+          "preferWhen": "对手尚未部署关键单位、其战术卡与阵营卡虽公开但不足以推断编制，且等待不丢失合法行动窗口；此时选择低承诺、可逆的站位与激活顺序"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手使用 Crushing Grip 将己方某单位计为已激活",
+          "adaptation": "重算己方本阶段剩余可激活单位；若关键单位被计为已激活，转向仍可兑现的次优行动或保留后手，不强行执行原队列；同时记录该能力本回合已使用，后续回合不再预期同一单位被再次计为已激活"
+        },
+        {
+          "response": "对手使用 Omega Network 放置 Omega Worm 并从该 Entry Edge 部署低补给单位",
+          "adaptation": "重新评估己方后方与侧翼的覆盖；若对手投入的单位威胁到己方未受保护的任务标记或支援单位，考虑调整站位或在下回合优先处理该单位；注意 Omega Worm 本身是 Structure，不能激活、不能控制或争夺标记，且其 Supply 视为 0"
+        },
+        {
+          "response": "对手以 Move/Deploy/Run/Charge/Disengage 结束于己方 Creep Tumor Token 1\" 内（若己方为 Zerg 则适用；对 Terran 己方不适用，此处指对手自身 Token 被己方移除的情形）",
+          "adaptation": "若己方成功移除对手的 Creep Tumor Token，重算对手单位是否仍 ON CREEP；若 ON CREEP 前提被破坏，对手的 Wild Mutation、Speed on Creep 与冲锋 IMPACT 修正不再成立，己方对冲锋距离与冲击风险的预期应相应下调"
+        },
+        {
+          "response": "对手在合法触发点结算反应能力（如 Queen 的 Transfusion 减伤、Restoration 移除 DEBUFF）",
+          "adaptation": "重新读取结算后的可见局面；注意对手每次激活最多结算一个反应，且每个具名反应每单位每轮一次；若预期伤害被削减，保留后续批次或改用其他合法目标"
+        },
+        {
+          "response": "对手使用 Terran Tenacity 的对应手段（若对手为 Terran）或通过早 Pass 取得下一阶段先手标记",
+          "adaptation": "本阶段完成仍有价值的剩余合法激活；进入下一阶段后不假设己方先行动，在标记持有者选择首个行动方后重新评估下一步"
+        }
+      ],
+      "risk": "本画像仅基于 Kerrigan's Swarm 阵营卡与当前产品数据中可观察的能力与约束，未提供任何真实 Terran-vs-Kerrigan's Swarm 决策案例；唯一的开发案例是合成单步先手演练，其 runtimeCoverage 明确排除额外阵营移动、卡牌激活与清理、战斗与计分以及对抗策略偏好。因此无法证明任何画像分支在完整对局中更优。对手的实际编制、升级、Creep Card 选择、Omega Worm 落点与先手使用时机均不可从阵营名推断。Terran Tenacity 能否夺回对手已因早 Pass 取得的标记在来源中未明确。Armed and Ready 是否消耗整个激活、是否受 Zone of Influence 与 Coherency 限制在来源中未明确。Additional Supply Depots 与 Jim Raynor 的 Commander 是否叠加在来源中未明确。Accelerating Creep 与 Malignant Creep 的相对价值未被来源确立。Omega Network 的 Entry Edge 部署与返回 Reserves 能力在真实计分与对手回应下的净收益未被量化。Wild Mutation 的 BUFF Speed (1) 与 PRECISION (1) 在具体单位上的增量收益未被量化。本策略不构成规则权威；所有合法性判断须由绑定的 Rules 服务决定。",
+      "reviseIf": [
+        "对手公开新信息（部署新单位、使用反应能力、放置或移除 Creep Tumor Token、使用 Omega Network）改变画像假设",
+        "对手的 Creep Card 选择或 ON CREEP 依赖被证实或证伪",
+        "当前阶段、先手标记归属或分差发生变化，改变节奏分支的相对价值",
+        "己方关键单位被 Crushing Grip 计为已激活，或己方成功移除对手的 Creep Tumor Token",
+        "规则服务澄清 Terran Tenacity 与已 Pass 标记的交互、Armed and Ready 的激活消耗、或 Additional Supply Depots 与 Commander 的叠加"
+      ],
+      "requiredQueries": [
+        "viewer_state",
+        "threat",
+        "legal_space",
+        "phase",
+        "initiative",
+        "activation_state",
+        "own_resources"
+      ],
+      "ruleRefs": [
+        "source:tactical_cards:kerrigan_s_swarm",
+        "source:army_units:kerrigan",
+        "source:army_units:omega_worm",
+        "source:tactical_cards:accelerating_creep",
+        "source:tactical_cards:malignant_creep",
+        "source:tactical_cards:hatchery",
+        "source:tactical_cards:overseer",
+        "source:tactical_cards:terran_armed_forces",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.3",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+        "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.0",
+        "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+        "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+        "faq-v1:21",
+        "faq-v1:23",
+        "faq-v1:54",
+        "faq-v1:59"
+      ],
+      "developmentCaseIds": []
+    },
+    {
+      "axis": "opening_branches",
+      "title": "Terran Armed Forces 对 Kerrigan's Swarm 的开局分支：先按 Roll-Off 与补给约束确定首轮先手与部署顺序，再评估提前 Pass 与 Terran Tenacity",
+      "when": [
+        "本局为 Terran Armed Forces（己方）对 Kerrigan's Swarm（对手），已通过草案确定任务卡与部署卡",
+        "第1轮 Roll-Off 已产生胜者，需决定 First Player Marker 分配给哪一方",
+        "Movement Phase 中己方仍有单位在 Reserves，需决定部署顺序与是否提前 Pass",
+        "己方考虑是否使用 Terran Tenacity（每局一次）抢先手",
+        "对手可能使用 Crushing Grip 或 Omega Network 干扰己方首轮节奏"
+      ],
+      "objective": "在第1轮开局阶段，按 Roll-Off 结果、Available Supply 与部署合法性约束，选择一条可说明的开局分支：确定 First Player Marker 归属、首轮部署顺序、是否提前 Pass 换取 Assault Phase 先手、以及是否消耗 Terran Tenacity；不假设任何分支在完整对局中更优，也不把先手当作静态优势。",
+      "steps": [
+        "读取当前回合数、阶段、First Player Marker 持有者、双方 VP 分差、任务卡（含起始补给、每轮递增、即时胜利阈值、标记得分起始回合）、部署卡（Entry Edge、Zone of Influence、标记坐标）、双方场上与 Reserves 单位及其当前补给值、己方 Ready 卡与资源类型。",
+        "先确认第1轮先手归属规则：Roll-Off 胜者将 First Player Marker 分配给任一玩家；该标记持有者在每个 Phase 开始时选择哪位玩家先激活。因此“谁先行动”是胜者的可分配选择，而非固定由胜者自己先动。",
+        "若己方为 Roll-Off 胜者，比较把标记给自己与给对手两个分支：给自己可在 Assault Phase 先射击；给对手可在 Movement Phase 观察其部署后再反应。两者均须以当前任务卡、己方单位构成与对手可见信息为前提，不预设哪一方更优。",
+        "在 Movement Phase 部署时，先核对 Available Supply（= Supply Pool − 场上友方单位总 Supply）与部署合法性：部署不能结束在对手 Zone of Influence 内，也不能以 Out of Coherency 结束；若所有模型无法合法放置并保持 Coherency，则该位置不可部署。",
+        "比较首轮部署顺序分支：先部署廉价/低补给单位以建立战场存在并争夺标记，还是先部署高补给单位以抢占关键位置；选择依据是当前任务卡的标记得分结构、己方单位构成与对手可见威胁，而非固定优先级。",
+        "评估是否在 Movement Phase 提前 Pass：若己方关键单位已就位或无需再部署，比较放弃本 Phase 剩余激活的机会成本与取得 Assault Phase 先手标记（由标记持有者选择首个行动方）的价值；注意一旦 Pass，本 Phase 内不能再激活任何单位，对手随后完成其剩余激活。",
+        "评估是否使用 Terran Tenacity（每局一次，Active Ability，Movement Phase）：该能力立即 claim First Player Marker 且本 Phase 内其他玩家不得再 claim。作为 Active Ability，须由当前被激活单位在声明行动前或行动完全结算后立即使用；其与“对手已 Pass 取得标记后能否夺回”的交互在来源中未明确，须先向 Rules 服务查询，未确认前不把夺回当作确定分支。",
+        "在 Phase 3（Combat）不采用提前 Pass 分支：所有 Engaged 单位必须激活，玩家只有在没有剩余 Engaged 单位可激活时才 Pass。",
+        "每次对手行动后重读可见局面，只执行仍成立的下一步；不照抄预先设定的完整队列。"
+      ],
+      "alternatives": [
+        {
+          "option": "Roll-Off 胜者把 First Player Marker 给自己",
+          "preferWhen": "己方希望在 Assault Phase 先射击或先 Charge，且己方关键单位能在 Movement Phase 完成部署并进入有效射程/冲锋距离；注意此分支放弃在 Movement Phase 观察对手部署的信息优势"
+        },
+        {
+          "option": "Roll-Off 胜者把 First Player Marker 给对手",
+          "preferWhen": "己方希望在 Movement Phase 观察对手部署后再反应，且己方单位构成更依赖对对手位置的回应；注意此分支使对手在 Assault Phase 可能先射击"
+        },
+        {
+          "option": "Movement Phase 先部署廉价/低补给单位",
+          "preferWhen": "需要多个单位建立战场存在、争夺标记或承受伤亡，且 Available Supply 有限；注意每个单位按其当前补给值占用 Available Supply"
+        },
+        {
+          "option": "Movement Phase 先部署高补给单位",
+          "preferWhen": "需要抢占关键位置或标记，且该单位能在对手回应前建立控制；注意高补给单位被摧毁会给对手更多 VP（若任务卡含摧毁补给得分）"
+        },
+        {
+          "option": "在 Movement Phase 提前 Pass 取得 Assault Phase 先手",
+          "preferWhen": "己方关键单位已就位或无需再部署，且由标记持有者选择 Assault Phase 首个行动方的收益超过放弃本 Phase 剩余激活的机会成本；Phase 3 不能自愿采用此分支"
+        },
+        {
+          "option": "使用 Terran Tenacity 抢先手",
+          "preferWhen": "己方需要在对手 Pass 前锁定本 Phase 的 First Player Marker，且已确认该能力的使用窗口（须由当前被激活单位在行动前或行动完全结算后使用）；其与对手已 Pass 取得标记的交互须先经 Rules 服务确认"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手在 Movement Phase 提前 Pass 并取得 Assault Phase 的 First Player Marker",
+          "adaptation": "本 Phase 完成仍有价值的剩余合法激活（部署、移动、抢占标记）；进入 Assault Phase 后不假设己方先行动，在标记持有者选择首个行动方后重新评估下一步；若己方仍持有 Terran Tenacity 且规则服务确认其可夺回，再评估是否使用"
+        },
+        {
+          "response": "对手使用 Crushing Grip（1 Biomass，Movement Phase）使己方一个单位在本 Phase 计为已激活",
+          "adaptation": "重算己方本 Phase 剩余可激活单位；该单位在本 Phase 的剩余行动权、Activation Marker 的相位归属、以及对 Assault Phase 激活前提（需 Movement 侧标记）的影响在来源中未明确，须先向 Rules 服务查询；未确认前不假设该单位仍可正常激活或仍满足 Assault Phase 前提，转向仍可兑现的次优行动"
+        },
+        {
+          "response": "对手使用 Omega Network（Movement Phase）放置 Omega Worm，其 base 计为 Entry Edge 且每 Round 可部署合计 Supply ≤ 2 的友方单位",
+          "adaptation": "评估该 Entry Edge 对己方 Zone of Influence 与标记争夺的影响；注意 Omega Worm 当回合不可用其 Special Abilities（除 Structure 外），且其落点须距任何敌方模型超过 10\" 且位于 GROUND LEVEL；若其落点威胁己方关键区域，考虑调整部署顺序或提前 Pass 以改变 Assault Phase 先手"
+        },
+        {
+          "response": "对手在 Assault Phase 先射击或先 Charge，使己方单位在部署后立即承受压力",
+          "adaptation": "重新评估己方单位的掩护与站位；若原部署位置暴露，考虑在后续 Phase 用 Run 或 Disengage 调整，或保留仍为 Ready 的支付卡牌用于防御性反应"
+        }
+      ],
+      "risk": "本轴仅提供开局分支决策框架，不提供跨轴最优解。本方向无任何真实对局决策案例：唯一开发案例 matchup.terran_to_kerrigan_s_swarm.initiative.development 自述为 declared_single_transition_drill，其 runtimeCoverage 声明 combat_and_scoring_not_exercised、matchup_strategy_preference_not_proven、productionQualificationEligible=false，因此不能证明任何开局分支在完整对局中更优。第1轮 Roll-Off 胜者应把 First Player Marker 给自己还是给对手，来源仅提供设计者说明，未提供量化比较或对局证据。提前 Pass 的收益与机会成本未被量化。Terran Tenacity 能否夺回对手已因早 Pass 取得的标记、以及其是否消耗激活窗口，来源未明确。Crushing Grip 的“计为已激活”对剩余行动权与 Assault Phase 激活前提的影响未明确。Omega Network 的每 Round Supply ≤ 2 部署与常规 Entry Edge 部署在开局轮次的相对价值未被评价。Standard 与 Skirmish 规模的起始补给、递增与即时胜利阈值不同，会改变分支相对价值，本轴未分别建模。",
+      "reviseIf": [
+        "Roll-Off 结果或 First Player Marker 归属发生变化",
+        "任务卡或部署卡确定或改变，从而改变起始补给、递增、即时胜利阈值、标记可达性与 Zone of Influence",
+        "己方或对手的场上单位、Reserves 单位、当前补给值或 Available Supply 发生变化",
+        "对手使用 Crushing Grip、Omega Network 或其他节奏干扰能力，改变己方本 Phase 剩余可激活单位或 Assault Phase 激活前提",
+        "Rules 服务就 Terran Tenacity 与对手已 Pass 取得标记的交互、或 Crushing Grip 的“计为已激活”效果给出裁定",
+        "对手公开新信息（部署新单位、使用反应能力）改变威胁评估"
+      ],
+      "requiredQueries": [
+        "legal_space",
+        "phase",
+        "initiative",
+        "activation_state",
+        "viewer_state",
+        "own_resources",
+        "scenario",
+        "mission_card",
+        "deployment_card"
+      ],
+      "ruleRefs": [
+        "core.OszqexisUrSOKMW6TzA5.items.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.3",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.5.subItems.4",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.8",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.8.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.7",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "source:tactical_cards:terran_armed_forces",
+        "source:army_units:kerrigan",
+        "source:tactical_cards:kerrigan_s_swarm",
+        "source:army_units:omega_worm"
+      ],
+      "developmentCaseIds": [
+        "matchup.terran_to_kerrigan_s_swarm.initiative.development"
+      ]
+    },
+    {
+      "axis": "counterplay",
+      "title": "对 Kerrigan's Swarm 的反制：先按对手公开信息确认其节奏工具是否在场，再选择消耗其单一反应窗口、切断 ON CREEP 前提或规避 Omega Worm 入场点",
+      "when": [
+        "本局为 Terran Armed Forces（己方）对 Kerrigan's Swarm（对手）的 matchup，且已通过草案确定任务卡与部署卡",
+        "对手公开的战术卡/阵营卡显示其可能携带 Crushing Grip（Kerrigan）、Omega Network、Wild Mutation 或 Creep Card",
+        "己方在 Movement/Assault/Combat 阶段有可激活单位，且需要决定激活顺序、目标选择或是否用 Move/Run/Charge/Disengage 结束于特定位置",
+        "对手仍有未激活单位、未用尽的具名 Active 能力或未消耗的反应窗口"
+      ],
+      "objective": "在对手公开信息可确认的范围内，选择能降低对手节奏工具收益、同时不依赖未证实假设的反制行动；优先选择可逆、低承诺且不消耗稀缺资源的选项，并明确每个反制所依赖的前提被破坏时的转换条件。不假设任何反制在完整对局中更优，也不把对手未确认的编成当作确定事实。",
+      "steps": [
+        "先做可观察信息核对，不推断：读取对手已正面朝上的战术卡与阵营卡（Part 9.1.10 默认公开名单；封闭名单下战术卡与阵营卡仍须正面朝上且可随时检查），据此判断对手是否可能拥有 Crushing Grip（Kerrigan 单位在场）、Omega Network（Kerrigan's Swarm 阵营卡）、Wild Mutation（同卡）与哪一张 Creep Card；对手是否携带 Queen 取决于其是否购买 Support 槽解锁卡（起始 Support 0），在未观察到 Queen 单位或对应战术卡前不假设其拥有 Transfusion/Restoration。",
+        "把对手的防御分成两类分别计入：Reaction（每名玩家每次激活最多一个，每个具名 Reaction 每单位每轮一次，REPEATABLE 不解除每次激活一次的限制，完全发生在激活之外的触发每触发一次）与 Passive（只要在战场上就始终生效，不消耗 Reaction 预算，如 TOUGH、DODGE、授予闪避的被动）。不得把“对手已用完反应”等同于“对手无防御”。",
+        "针对 Crushing Grip（Kerrigan，Active，1 Biomass，Movement Phase，选择 12\" 内一个敌方单位使其本阶段计为已激活）：在规划本阶段激活队列时预留“关键单位被计为已激活”的分支；若关键单位被计为已激活，转向仍可兑现的次优行动或保留后手，不强行执行原队列。注意该能力作用于“单位”而非“模型”，且每具名 Active 能力每单位每轮一次，因此对手本轮只能用一次。",
+        "针对 Omega Network / Omega Worm：先确认战场上是否已有对手的 Omega Worm 及其位置。Omega Worm 的 Structure 被动使其不能被激活、不能执行行动、Current Supply 视为 0、且不能成为能力目标（除非另有说明），因此不把“清除 Omega Worm”当作默认可用手段；同时 FAQ v1:21 明确其底座是放置者的友方 Entry Edge，FAQ v1:23 明确它不生成 Zone of Influence，因此不假设它带来额外 ZoI 限制。反制方向是评估其落点约束（GROUND LEVEL 且距任何敌方模型超过 10\"）与每轮经此部署合计 Supply ≤ 2 的上限，据此判断对手本轮还能从该点投入多少补给，并据此调整己方对侧翼的防守分配。",
+        "针对 Wild Mutation 与 ON CREEP：确认对手单位是否处于任一 Creep Tumor Token 或 Creep 来源模型 6\" 内。若己方有单位能以 Move、Deploy、Run、Charge 或 Disengage 结束于该 Creep Tumor Token 1\" 内，则可触发 Creep Removal 移除该 Token，从而切断对手的 ON CREEP 前提；注意 PLACE 不触发 Creep Removal（FAQ v1:54），且 ON CREEP 在移动开始时检查（FAQ v1:47），因此移除时机与对手移动顺序相关。在采用此反制前，先评估其代价（消耗的激活、暴露位置、是否使己方单位进入不利接战）。",
+        "针对对手的单一反应窗口：若对手拥有减伤/移除 DEBUFF 类 Reaction（如 Queen 的 Transfusion/Restoration，前提是其确实携带 Queen），在估算预期伤害时按“该次激活内最多一次减伤”计入，而不是假设其可无限次响应；同时注意对手的 Passive 防御不消耗该窗口。不把“多批次攻击必然消耗或绕过对手反应窗口”当作已证实的结论——每次激活一个反应的限制是已确立的，但单次激活能向防守方呈现多少个独立触发点未被来源量化。",
+        "针对 Kerrigan 的 Mutating Carapace（Active，1 Biomass，Movement Phase，选择 18\" 内一个敌方单位）与 Commander 被动：在目标选择时把 Kerrigan 可能获得 +2 修正的 Evade Roll 计入预期伤害，并注意 ANTI-EVADE 等修正最多把检定恶化到 6+，不能当作保证命中；在标记争夺计算中把 Kerrigan 视为 Supply 1+1=2 的争夺单位。",
+        "每次对手行动后重读可见局面，只执行在当前局面下仍成立的反制；若某反制的前提（如 Creep Tumor 位置、Omega Worm 落点、对手反应窗口已用尽）被破坏，重新比较替代选项，不照抄预先设定的完整队列。"
+      ],
+      "alternatives": [
+        {
+          "option": "按对手公开信息确认其节奏工具是否在场，再决定是否投入反制",
+          "preferWhen": "对手的战术卡与阵营卡可检查（默认公开名单，或封闭名单下仍正面朝上的战术卡/阵营卡），且确认结果会改变己方激活顺序或目标选择"
+        },
+        {
+          "option": "以 Move/Run/Charge/Disengage 结束于 Creep Tumor Token 1\" 内触发 Creep Removal",
+          "preferWhen": "该 Token 位于己方单位可合法到达的位置，且移除它能使对手失去 ON CREEP 前提（影响 Wild Mutation 与 Creep Card 的 Speed/IMPACT 加成），且该移动的暴露与激活代价可接受；注意 PLACE 不触发此移除"
+        },
+        {
+          "option": "规避 Omega Worm 入场点而非尝试清除它",
+          "preferWhen": "Omega Worm 的 Structure 被动使其不能成为常规能力目标，且其落点距己方关键区域较远；此时按每轮 Supply ≤ 2 的上限评估对手可投入的补给，并据此分配防守，而非投入资源尝试清除"
+        },
+        {
+          "option": "在对手单一反应窗口内安排攻击顺序",
+          "preferWhen": "对手确实拥有减伤/移除 DEBUFF 类 Reaction（需先确认其携带对应单位），且己方有多个批次或单位可在同一激活内呈现威胁；注意此分支的收益未被来源量化，仅作为条件性假设"
+        },
+        {
+          "option": "保留后手，不主动投入反制",
+          "preferWhen": "对手的节奏工具是否在场无法确认，或反制的代价（激活、暴露、资源）高于其可说明的收益；此时优先完成己方本阶段必须完成的行动"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手使用 Crushing Grip 使己方一个关键单位在本阶段计为已激活",
+          "adaptation": "重算己方本阶段剩余可激活单位集合；若关键单位被计为已激活，转向仍可兑现的次优行动或保留后手，不强行执行原队列；注意该能力每具名 Active 能力每单位每轮一次，对手本轮已用掉该次"
+        },
+        {
+          "response": "对手使用 Omega Network 放置 Omega Worm，并从该 Entry Edge 部署合计 Supply ≤ 2 的单位",
+          "adaptation": "按落点约束（GROUND LEVEL 且距任何敌方模型超过 10\"）判断其可能出现的区域，重新分配己方对侧翼的防守；不假设可清除 Omega Worm，也不假设它生成 Zone of Influence"
+        },
+        {
+          "response": "对手以 Move/Run/Charge/Disengage 结束于己方 Creep Tumor Token 1\" 内（若己方为 Zerg 则不适用；此处指对手移除己方 Token 的对称情形）或己方移除对手 Token 后对手重新放置",
+          "adaptation": "重算 ON CREEP 前提是否仍成立；若对手失去 ON CREEP，Wild Mutation 与 Creep Card 的 Speed/IMPACT 加成不再适用，据此调整预期威胁半径"
+        },
+        {
+          "response": "对手在合法触发点结算防御性 Reaction（如减伤、移除 DEBUFF）",
+          "adaptation": "重新读取结算后的可见局面；若预期伤害被削减，保留后续批次或改用其他合法目标，并注意对手本次激活已用掉其唯一 Reaction 预算；但不得据此假设对手无 Passive 防御"
+        },
+        {
+          "response": "对手依赖防御性 Passive（TOUGH、DODGE、授予闪避的被动）而非 Reaction 降低伤害",
+          "adaptation": "在估算中直接下调预期伤害，不假设对手消耗了 Reaction 预算；若净收益转为负值，转向其他目标或保留资源"
+        }
+      ],
+      "risk": "本轴为 matchup 方向 Terran Armed Forces 对 Kerrigan's Swarm 的 counterplay 策略，本生产轮未提供任何真实决策案例，因此所有反制方向均为未验证假设，不构成已验证的对抗结论。对手是否实际携带 Queen 及其 Transfusion/Restoration 反应能力取决于其 Support 槽解锁选择，当前不可确认。Omega Network 的每轮 Supply ≤ 2 部署额度与常规 Entry Edge 部署在真实任务计分、分差管理或对手回应下的相对价值未被量化。Crushing Grip 作用于“单位”时对多单位编成的实际节奏影响未被建模。以 Move/Run/Charge/Disengage 结束于 Creep Tumor 1\" 内触发 Creep Removal 的可行性与代价（暴露、消耗激活）未被量化。Kerrigan 的 Mutating Carapace +2 Evade 修正与己方武器 Surge/ANTI-EVADE 的交互在具体骰运下的净效果未被量化，且 ANTI-EVADE 等修正最多把检定恶化到 6+，不能当作保证命中。本轴不构成规则权威；所有合法性判断须由绑定的 Rules 服务决定，且来源中 HIGH GROUND Cover 正文与决策表措辞不一致等边缘冲突未解决。",
+      "reviseIf": [
+        "对手公开新信息（部署新单位、使用反应或被动能力、公开战术卡）改变对其节奏工具的确认结果",
+        "对手的 Omega Worm 落点、Creep Tumor Token 位置或 ON CREEP 状态发生变化",
+        "对手已用尽或尚未使用 Crushing Grip、Mutating Carapace、Wild Mutation 等具名 Active 能力",
+        "己方关键单位被计为已激活、被摧毁或失去行动能力",
+        "任务计分条件或分差改变，使原反制方向的收益不再相关",
+        "规则文本冲突或覆盖缺口（如 HIGH GROUND Cover 正文与决策表措辞不一致、模板武器物理尺寸未规定）需上报规则服务或裁判"
+      ],
+      "requiredQueries": [
+        "viewer_state",
+        "legal_space",
+        "threat",
+        "phase",
+        "activation_state",
+        "own_resources",
+        "preview",
+        "geometry"
+      ],
+      "ruleRefs": [
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.6.subItems.1",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.26",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.3",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+        "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.17",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.70",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.48",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.14",
+        "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.4",
+        "core.Rj6sMyNODPQ8OHUc9Clp.items.1.subItems.9",
+        "faq-v1:21",
+        "faq-v1:23",
+        "faq-v1:25",
+        "faq-v1:47",
+        "faq-v1:49",
+        "faq-v1:54",
+        "faq-v1:59",
+        "source:army_units:kerrigan",
+        "source:army_units:omega_worm",
+        "source:tactical_cards:kerrigan_s_swarm",
+        "source:tactical_cards:accelerating_creep",
+        "source:tactical_cards:malignant_creep",
+        "source:tactical_cards:hatchery",
+        "source:tactical_cards:overseer"
+      ],
+      "developmentCaseIds": []
+    },
+    {
+      "axis": "resource_exchange",
+      "title": "资源交换：先确认支付窗口与匹配卡，再按可兑现增量收益与整轮机会成本决定是否 Exhaust",
+      "when": [
+        "己方单位被激活且处于 Active Ability 的合法支付窗口（声明行动前或行动完全结算后）",
+        "存在需要消耗 CP/BM/PE 的能力或战术卡可增强当前行动",
+        "存在多个会消耗同一批 Ready 卡牌、且需要匹配资源类型的后续行动或反应窗口",
+        "当前可见局面为第 2 回合 Movement 阶段、player1 持 First Player Marker 且为 Active Player，场上双方各 1 模型（Marine 与 Zergling）、双方 currentSupply 均为 0、VP 0-0、仅 marker-5 存在"
+      ],
+      "objective": "在规则允许的支付窗口内，选择能带来可说明的当前或近期收益的支出，同时保留足够的匹配 Ready 卡牌给关键后续窗口；已生成的多余资源会丢失、不能储存，且 Exhaust 的机会成本覆盖整轮（含该卡印制的其他能力），因此不把未实现的收益当作确定事实。",
+      "steps": [
+        "确认支付前提：当前阶段、被激活单位是否在战场上（Reserves 单位不能使用 Active/Passive/Reaction 能力，除非能力明确说明）、该单位是否已声明或已结算行动（决定 Active Ability 窗口是否仍开放），以及本激活是否已结算过 Reaction（决定 Reaction 预算是否已用尽）。",
+        "列出本次需要 Exhaust 哪些 Ready 卡牌及其资源类型与数值；只考虑与费用资源类型匹配的卡（Terran 用 CP、Zerg 用 BM、Protoss 用 PE），且若无法 Exhaust 足够卡牌支付全部费用，则不能激活该能力。",
+        "对每张候选卡，写出它被 Exhaust 后本回合因此无法再提供的至少一个后续用途：既包括其资源产出，也包括其印制的任何 Active/Reaction 能力（Exhaust 后本回合不可用，直到 Phase 4 Cleanup & Refresh 翻回 Ready）；卡牌产生的超额资源不能保留或转给另一能力。",
+        "比较支付与不支付两个候选：只有存在可说明的增量收益（如到达新位置、获得关键加成、改变标记控制）时才选择支出；若当前不支付也能达成目标，或保留资源对后续关键窗口价值更高，则选择保留。",
+        "检查频率限制是否使本次支付合法且不浪费：每个具名 Active Ability 每单位每轮一次（除非 REPEATABLE）；每个具名 Reaction 每单位每轮一次，且每名玩家每次激活最多结算一个 Reaction；REPEATABLE 只豁免“每轮每单位一次”，不豁免“每次激活每玩家一个 Reaction”。",
+        "对每个候选，明确其依赖的假设（如对手反应、后续行动可行性、任务计分条件），不把未实现的收益当作确定事实；若关键信息缺失（如任务卡未定、对手 BM 资源池未知），选择低承诺、可逆的支出或保留资源。",
+        "每次对手行动或己方部署后重读可见局面，只保留在当前局面下仍能兑现收益的支出计划；若某次支付的前提被破坏，重新比较替代方案。"
+      ],
+      "alternatives": [
+        {
+          "option": "立即 Exhaust 匹配卡以支付当前能力",
+          "preferWhen": "当前窗口关闭后无法再兑现关键收益，且支付后的增量收益足以覆盖资源消耗、该卡整轮不可再用（含其印制能力）以及后续风险"
+        },
+        {
+          "option": "保留资源不支付",
+          "preferWhen": "当前不支付也能完成目标，或保留资源对后续更关键的反应/主动窗口价值更高；注意未花费资源不会结转，保留仅在仍有可购买或可支付项时才有意义"
+        },
+        {
+          "option": "改用产出恰好等于费用的卡支付",
+          "preferWhen": "存在资源值恰好匹配的 Ready 卡；用产出高于费用的卡支付会造成不可回收的损失，仅在无恰好匹配卡且该能力收益仍值得时才接受损失"
+        },
+        {
+          "option": "放弃本次能力，改用不消耗资源的行动",
+          "preferWhen": "所有候选支付都会耗尽唯一匹配卡，且该卡印制的其他能力或资源产出对后续窗口更关键"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手在后续激活中迫使你使用反应能力或改变局面",
+          "adaptation": "重新评估仍为 Ready 且资源类型匹配的卡牌与当前计划；若原支出收益已无法兑现，放弃原计划并保护仍可用于新威胁的支付窗口"
+        },
+        {
+          "response": "对手使用其 BM 资源支付 Omega Network 或 Wild Mutation（Active 能力，需激活窗口与 BM 支付）",
+          "adaptation": "重读结算后的可见局面；若对手的放置或增益改变了标记控制或威胁评估，重新比较己方剩余资源应保留给哪个窗口，而非按原计划支出"
+        },
+        {
+          "response": "对手提前 Pass 并取得下一阶段 First Player Marker",
+          "adaptation": "本阶段完成仍有价值的剩余合法激活；进入下一阶段后不假设己方先行动，并在标记持有者选择首个行动方后重新评估是否值得为当前能力支付资源"
+        }
+      ],
+      "risk": "本轴未提供任何真实决策案例，因此无法证明任何具体资源交换选择在完整对局中更优；以下均为条件性框架而非已验证结论。当前可见局面双方 currentSupply 均为 0、VP 0-0，缺少可比较的数值基础来量化任何资源交换的净收益。己方当前可见资源仅一张 Ready 的 Terran Armed Forces 阵营卡（1 CP），其两个能力（Tactical Retreat、Terran Tenacity）均为 Active 能力，使用任一能力会按 10.5.2 耗尽该卡，从而在本轮内同时失去其 1 CP 资源产出与另一个能力；但“结算卡面 Active 能力是否必然 Exhaust 该卡”在所提供的来源段落中未被直接确认，需由绑定的 Rules 服务裁定。对手 BM 资源池规模、Ready 卡数量与未来支付窗口未知，无法量化其能否在同一轮内多次支付 Omega Network / Wild Mutation。Terran Tenacity 与对手已 Pass 后 First Player Marker 归属的精确交互在来源中未完整说明，依赖该交互的资源交换计划可能失效。HIGH GROUND Cover 正文（7.1.3，底座任意部分站立）与决策表（Wholly Within）措辞不一致，涉及该边缘情形的资源交换收益评估需上报规则服务或裁判。",
+      "reviseIf": [
+        "可支付卡牌的 Ready/Exhausted 状态、匹配资源类型或可产生数值发生变化",
+        "当前支出的收益前提（如目标可达性、后续行动可行性、标记控制）被破坏",
+        "对手行动改变了关键后续窗口的优先级，或对手公开新信息（部署新单位、使用 Active 能力或 Reaction）",
+        "任务卡或部署卡确定，改变计分条件与地形假设",
+        "规则服务裁定“结算卡面 Active 能力是否 Exhaust 该卡”或澄清 Terran Tenacity 与已 Pass 标记归属的交互"
+      ],
+      "requiredQueries": [
+        "own_resources",
+        "legal_space",
+        "preview",
+        "phase",
+        "activation_state",
+        "viewer_state",
+        "threat"
+      ],
+      "ruleRefs": [
+        "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.0",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.5.subItems.1",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.2",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.4",
+        "core.H3Fn8YSvEvpJZpT57qw1.items.1",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.54",
+        "core.QX7B9DFpviRo84fVCBIj.items.7.subItems.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.6",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.4.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+        "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+        "source:tactical_cards:terran_armed_forces",
+        "source:tactical_cards:kerrigan_s_swarm",
+        "source:faction_cards:mission_hold_position",
+        "faq-v1:34",
+        "faq-v1:48",
+        "faq-v1:59",
+        "faq-v1:25"
+      ],
+      "developmentCaseIds": []
+    },
+    {
+      "axis": "endgame",
+      "title": "终局轴：先锁定结束触发点与计分顺序，再决定最终回合的部署/保留与标记争夺",
+      "when": [
+        "当前回合数接近或等于本局任务卡的 Game Length（Hold Position Standard 为 5 轮）",
+        "己方或对手可能达到该任务卡的即时胜利阈值（Hold Position 为领先 10+ VP）",
+        "最终回合仍有单位在预备队，或存在可部署/可送回预备队的单位",
+        "存在多个任务标记的控制状态可能在最终计分阶段改变",
+        "需要决定最终回合优先部署、争夺标记、击杀敌方补给还是保留单位"
+      ],
+      "objective": "在所选任务卡的终局结构下，选择能在最终计分阶段兑现最高净 VP 且不把未裁定交互当作确定事实的计划。净 VP 需同时计入：按该任务卡规则控制标记的得分、按该任务卡规则摧毁敌方补给或完成特殊行动的得分、最终计分阶段开始时仍在预备队且未部署的单位被视作 Destroyed 而给对手的 VP，并减去己方单位被摧毁或补给降低可能给对手的 VP。当己方领先且本回合预计得分可使分差达到该任务卡的即时胜利阈值时，优先选择能立即结束游戏的计划；当己方落后且对手可能达到该阈值时，优先选择能阻止对手得分或降低己方暴露风险的计划。",
+      "steps": [
+        "读取本局任务卡与其版本、部署卡、当前回合数、双方 VP 分差、各标记控制状态（谁控制/中立/争夺中）、该任务卡的 Game Length、即时胜利阈值、是否含“摧毁敌方补给得分”条件，以及双方场上与预备队单位的当前补给值。",
+        "先枚举 Part 8.9.3 的三种立即结束情形并逐一核对：是否已有玩家满足特殊胜利条件（Hold Position 为领先 10+ VP）；是否已有玩家场上无模型且预备队无单位（幸存方 +10 VP）；是否已完成最终回合的最终阶段（转入 Part 8.10 结算）。三者是独立触发点，不合并为同一判定链。",
+        "对每个候选争夺单位，先判定争夺资格合取条件：在战场上、处于队形内、至少一个模型在标记 3 英寸内且对该标记有视线并与标记同海拔；飞行与钻地单位不能争夺或控制。任一条件不满足则该单位对本标记贡献 0 补给，必须从补给总值比较中剔除。",
+        "按该任务卡的 VP 结构计算每个候选计划在本回合计分阶段的预计净 VP：标记得分须按该任务卡的具体规则（Hold Position：中立/己方色 1 VP、对方色 2 VP，且从第 2 轮起才计标记 VP），不得跨任务套用同一 VP 表。",
+        "把最终回合的预备队处理作为独立项计入：在最终计分阶段开始时，所有仍在预备队且未部署的单位被视为 Destroyed，并按任务卡对摧毁敌方单位的计分条件给对手授予 VP。因此“留在预备队”在最后一轮不是中性选择，而是主动向对手让分；规划应在该时点前完成，而非等到计分阶段开始才评估。",
+        "区分可确定分支与概率性分支：标记得分只有在“计分前控制不再改变”等明确假设成立时才能写成确定分支；依赖攻击结果的击杀得分需查询成功概率或伤害分布，使用期望值而非单次骰点，并明确未覆盖条件。",
+        "比较守住现有控制标记与争夺新标记：只有当争夺新标记的预计净 VP 增量大于放弃或削弱现有控制所损失的风险时才转换目标；注意控制具有粘性，且补给值为 0 的单位在无敌方争夺时仍可控制标记，因此“削弱守军”不等于“夺取标记”，进攻方必须实际以更高争夺补给总值结束计分阶段。",
+        "若己方领先且本回合预计得分会使分差达到该任务卡的即时胜利阈值，优先选择能立即结束游戏的计划；若己方落后且对手可能达到该阈值，优先选择能阻止对手得分或降低己方暴露风险的计划。",
+        "对任何依赖“10+ VP 阈值判定时点”或“最终回合预备队单位被视作 Destroyed 是否连带触发 Part 7.4 效果结束/Token 移除”的计划，不自行裁定，改用保守分支或上报有约束力的规则服务/裁判。",
+        "每次对手行动后重新计算各标记的争夺资格与补给总值、控制状态与分差，只执行在当前可见局面下仍能兑现的计划。"
+      ],
+      "alternatives": [
+        {
+          "option": "守住并巩固现有控制标记",
+          "preferWhen": "现有控制标记已能提供稳定 VP，且分散兵力去争夺新标记会暴露现有控制给对手以更高争夺补给总值夺回；尤其当己方领先且接近即时胜利阈值时"
+        },
+        {
+          "option": "主动争夺对方色或高价值标记",
+          "preferWhen": "现有控制不足以在本回合或剩余回合内达成目标，且投入争夺的净 VP 增量高于守住的收益；须按该任务卡的具体 VP 结构评估（Hold Position 对方色标记 2 VP、中立/己方色 1 VP），而非按颜色直觉"
+        },
+        {
+          "option": "在最终回合部署预备队单位而非保留",
+          "preferWhen": "当前回合为最终回合，且部署后该单位能在计分阶段前合法落位并可能贡献控制或得分；须同时比较部署后可能被摧毁给对手的 VP 与保留在预备队被视作 Destroyed 给对手的 VP，两者都需按任务卡计分条件计算"
+        },
+        {
+          "option": "集中火力摧毁高补给敌方单位",
+          "preferWhen": "该任务卡含“摧毁敌方补给得分”条件（Hold Position 为每 1 点敌方补给 1 VP），且击杀产生的 VP 高于或等于放弃控制一个标记所损失的 VP，且该单位是对方得分或控制的关键；若该任务卡不含此条件，则此分支不成立"
+        },
+        {
+          "option": "保留高补给单位在预备队",
+          "preferWhen": "当前回合不是最终回合，且保留可换取后续回合的部署时机或可用补给；须注意最终回合开始时仍在预备队的单位会被视作 Destroyed 并给对手 VP，且被送回预备队的单位若本阶段已激活则仍保持已激活状态"
+        }
+      ],
+      "opponentBranches": [
+        {
+          "response": "对手投入高补给单位争夺我方控制的标记",
+          "adaptation": "重算该标记的争夺资格与双方补给总值；若我方争夺补给总值不足，考虑放弃该标记并转向其他可得分目标，而非投入更多单位陷入消耗"
+        },
+        {
+          "response": "对手从预备队部署高补给单位到争夺中的标记，在同一计分窗口内以更高补给总值夺回",
+          "adaptation": "在计分前评估对手剩余可用补给与其可部署单位的补给值；若对手可能以更高补给总值结束计分阶段，考虑提前增援该标记、放弃该标记或转向其他目标，而非假设当前控制会保持"
+        },
+        {
+          "response": "对手通过击杀我方高补给单位获得 VP 并接近该任务卡的即时胜利阈值",
+          "adaptation": "若对手因此可能触发即时胜利，优先保护剩余高补给单位并阻止其继续得分，而非继续进攻"
+        },
+        {
+          "response": "对手在最终回合前以更高争夺补给总值夺回标记",
+          "adaptation": "按粘性控制规则，控制权在对手以更高争夺补给总值结束某个计分阶段时才转移，而非对手行动瞬间；在该轮计分前仍有调整窗口，据此决定是否增援或转向其他标记"
+        },
+        {
+          "response": "对手依赖 Creep 相关能力（如 ON CREEP 加成或 Creep Tumor Token）支撑其终局计划",
+          "adaptation": "注意 Creep Removal 仅在敌方单位以 Move/Deploy/Run/Charge/Disengage 结束于 Creep Tumor Token 1 英寸内时触发，PLACE 不属于这些动作；据此评估能否在终局前通过常规移动破坏对手的 ON CREEP 前提，但不假定 PLACE 可清除 Token"
+        }
+      ],
+      "risk": "本策略为决策框架加规则约束，未在真实对局中验证。本方向未提供任何终局轴的真实决策案例；唯一开发案例仅为第 2 轮 Movement 阶段的单步先手选择，双方 currentSupply 均为 0、分数 0-0，不含终局计分、预备队部署或 10+ VP 阈值场景，因此无法证明任何终局策略在完整对局中更优。标记控制得分依赖“计分前控制不再改变”的假设；击杀得分依赖未提供的概率/伤害分布。Hold Position 的 10+ VP 即时胜利阈值与“最终回合预备队单位被视作 Destroyed”之间的交互未被任何来源明确裁定；两者是否可能在同一计分阶段内相互触发，需按有约束力的规则服务或裁判确认。“领先 10+ VP 立即结束”的判定时点（逐步结算时即时判定 vs 全部 VP 结算完毕后判定）未在来源中明确。最终回合补给池无限与 Part 8.3.1 硬上限“Total Current Supply of on-table Units may never exceed the Supply Pool”之间的关系未在来源中明确，因此“最终回合可无限堆叠场上补给”不是已证事实。被送回 Reserves 的单位在最终计分阶段是否与“从未部署的单位”同等处理，来源未明确区分。Destroyed 单位施加给其他单位的持续效果在终局计分时是否仍计入控制或得分判定，来源仅说明效果持续，未说明其对计分的影响。对手的军队构成、升级、剩余资源与战术卡状态未知，其能否在我方计分前以更高争夺补给总值夺回标记、或通过击杀我方高补给单位接近即时胜利阈值，无法量化。",
+      "reviseIf": [
+        "草案结果确定或改变任务卡与部署卡，从而改变标记 VP 结构、即时胜利阈值、Game Length 与标记可达性",
+        "当前回合数或分差发生变化，影响即时胜利或最终计分风险",
+        "任务标记控制状态、争夺资格或双方单位补给值发生改变",
+        "对手从预备队部署单位或以其他方式改变某标记的争夺补给总值",
+        "有约束力的规则服务或裁判裁定“10+ VP 阈值判定时点”或“最终回合预备队单位被视作 Destroyed 是否连带触发 Part 7.4 效果结束/Token 移除”",
+        "有约束力的规则服务或裁判裁定最终回合无限补给池是否完全解除 Part 8.3.1 的 Total Current Supply 硬上限",
+        "对手公开新信息（部署新单位、使用反应能力、Creep 相关能力）改变威胁评估"
+      ],
+      "requiredQueries": [
+        "scenario",
+        "mission_card",
+        "deployment_card",
+        "score_forecast",
+        "legal_space",
+        "viewer_state",
+        "threat",
+        "probability",
+        "own_resources",
+        "phase",
+        "activation_state"
+      ],
+      "ruleRefs": [
+        "source:faction_cards:mission_hold_position",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.3",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.4",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.10",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.0",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.1",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.9.subItems.2",
+        "core.iuUyObNTQ2M8xK4IUqzC.items.3.subItems.0",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.4",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.44",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.55",
+        "core.FuahgilWtc8nccVSp2Vv.items.0.subItems.65",
+        "core.xLLTUyQm53B1KXj59oLs.items.2.subItems.0",
+        "core.cB7X7UfOMHh3Wxn79ASF.items.4",
+        "core.I03mzBYujgXw6xN2qXhH.items.4",
+        "core.I03mzBYujgXw6xN2qXhH.items.4.subItems.2",
+        "core.u3zNStKpd5XegMjmJfMS.items.5",
+        "faq-v1:05",
+        "faq-v1:54",
+        "source:army_units:omega_worm",
+        "source:tactical_cards:kerrigan_s_swarm",
+        "source:tactical_cards:accelerating_creep",
+        "source:tactical_cards:malignant_creep"
+      ],
+      "developmentCaseIds": []
+    }
+  ],
+  "legalityChecks": [
+    "Rules 服务是动作合法性的唯一权威",
+    "只选择当前 LegalSpace 中启用的候选",
+    "写操作必须 Preview→房间确认策略→Apply→Replay"
+  ],
+  "illegalPatterns": [
+    "把对抗偏好写成规则事实",
+    "读取对手私有信息或未披露升级",
+    "使用 held-out 目标修改 Skill 正文",
+    "把单步先手测试当作整局最优或胜率证明",
+    "因来源冲突自行扩大 Rules 权限"
+  ],
+  "examples": [
+    {
+      "axis": "opening_branches",
+      "caseId": "matchup.terran_to_kerrigan_s_swarm.initiative.development",
+      "receiptHash": "62eb040371a7e091c4ca20447b9c483a1782a4858e52449226087a5e58bb3619"
+    }
+  ],
+  "counterExamples": [
+    "opponent_profile: 尚无真实局面开发/held-out 对照，不得宣称效果已验证",
+    "counterplay: 尚无真实局面开发/held-out 对照，不得宣称效果已验证",
+    "resource_exchange: 尚无真实局面开发/held-out 对照，不得宣称效果已验证",
+    "endgame: 尚无真实局面开发/held-out 对照，不得宣称效果已验证"
+  ],
+  "judgeTests": {
+    "productionHash": "2cba09b513ceaa2495873de4395599d6f0c21b50f42741548415826db5d04dd0",
+    "sourceAuditHash": "5011976e3d04972caba02e3a6dcd10e0e46894d3aa42d1571a3313749e637ad4",
+    "caseResults": [
+      {
+        "caseId": "matchup.terran_to_kerrigan_s_swarm.initiative.development",
+        "split": "development",
+        "passed": true,
+        "receiptHash": "62eb040371a7e091c4ca20447b9c483a1782a4858e52449226087a5e58bb3619"
+      },
+      {
+        "caseId": "matchup.terran_to_kerrigan_s_swarm.initiative.heldout",
+        "split": "heldout",
+        "passed": true,
+        "receiptHash": "1aff631cd830f36c8c833cc913b06de67c1e652a9f36b69dd1a919b8120cd724"
+      }
+    ],
+    "evaluatedDecisionAxes": [
+      "opening_branches"
+    ],
+    "uncoveredDecisionAxes": [
+      "opponent_profile",
+      "counterplay",
+      "resource_exchange",
+      "endgame"
+    ]
+  },
+  "confidence": "all_fields_source_bound_and_opening_rules_cases_passed_other_axes_and_full_game_unproven",
+  "trustTier": "offline_evaluated_advisory",
+  "status": "offline_candidate",
+  "humanReviewed": false,
+  "canAffectStrategy": true,
+  "canAffectRules": false,
+  "fullGameStrategyEffectivenessProven": false,
+  "runtimeAccepted": false,
+  "published": false,
+  "trainingTruth": false,
+  "hash": "dea45e9aba67a02597d4f5e95273478b5b3643c3e6cba048b4f05fb2e3e43e6e"
+}

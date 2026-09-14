@@ -1,6 +1,8 @@
 import { DatabaseSync } from 'node:sqlite';
 import { createAccountedModel } from '../skill-production/model.mjs';
 import { seal, verifySeal, hash, exact, sha256, fail } from '../skill-production/common.mjs';
+import { assertFactionExecutionModelBindingV1, verifyFactionLegacyExecutionModelReceiptV1,
+  estimateFactionBetaUsageCnyMicrosV1 } from './faction-execution-model-v1.mjs';
 
 // Epochs change source/revision context, not the review content contract.
 // Schema/field repairs, editors and unknown suffixes remain out of scope.
@@ -77,7 +79,8 @@ export function inspectFactionCommandRecoveryV1({ filename, parentRunId, parent 
   } finally { db.close(); }
 }
 
-export function createFactionAccountedModelV1({ store, recovery = null, additionalRecoveries = [], ...options }) {
+export function createFactionAccountedModelV1({ store, recovery = null, additionalRecoveries = [], executionModelBinding = null, ...options }) {
+  if (executionModelBinding) assertFactionExecutionModelBindingV1(executionModelBinding);
   if (!Array.isArray(additionalRecoveries)) fail('FACTION_COMMAND_RECOVERY_SET_INVALID');
   const recoveries = [...(recovery ? [recovery] : []), ...additionalRecoveries];
   for (const row of recoveries) {
@@ -92,7 +95,9 @@ export function createFactionAccountedModelV1({ store, recovery = null, addition
     const capture = (id, requestHash, response, originRunId = null, recoveryManifestHash = null) => {
       received = { id, requestHash, response, originRunId, recoveryManifestHash };
       if (reviewStage(request.stageId) && bare(response.output)) {
-        if (response.usageReceipt?.reportedModel !== 'deepseek-v4-flash') fail('PROVIDER_MODEL_DRIFT');
+        if (executionModelBinding) verifyFactionLegacyExecutionModelReceiptV1({binding:executionModelBinding,
+          receipt:response.usageReceipt,verifiedHistoricalOrigin:Boolean(originRunId)});
+        else if (response.usageReceipt?.reportedModel !== 'deepseek-v4-flash') fail('PROVIDER_MODEL_DRIFT');
         fail('FACTION_BARE_REVIEW_CAPTURED');
       }
     };
@@ -127,7 +132,10 @@ export function createFactionAccountedModelV1({ store, recovery = null, addition
           capture(id, requestHash, fields.response);
         }
       } };
-    try { return await createAccountedModel({ ...options, store: proxy })(request); }
+    try { return await createAccountedModel({ ...options, store: proxy,
+      ...(executionModelBinding ? {priceUsage:estimateFactionBetaUsageCnyMicrosV1,
+        validateModelReceipt:receipt=>verifyFactionLegacyExecutionModelReceiptV1({binding:executionModelBinding,
+          receipt,verifiedHistoricalOrigin:Boolean(received?.originRunId)})} : {}) })(request); }
     catch (error) {
       if (error.code !== 'FACTION_BARE_REVIEW_CAPTURED') throw error;
       const normalized = normalizeFactionReviewCommandEnvelopeV1({ output: received.response.output, stageId: request.stageId, observed: request.observed });

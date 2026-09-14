@@ -7,12 +7,12 @@ import { inspectFactionUnitRoleDebtV1 } from './faction-unit-role-debt-v1.mjs';
 
 // Fresh direct-model consumers, never DSH and never a source-review consensus
 // score. Repeated development probes are explicitly NOT unseen held-out data.
-export async function evaluateFactionRuleUseV1({ input, candidate, knownRulePolicy, drills, store, model, onProgress = () => {} }) {
+export async function evaluateFactionRuleUseV1({ input, candidate, knownRulePolicy, drills, store, model, finalGeneral = null, onProgress = () => {} }) {
   verifySeal(drills.manifest);
   if (drills.manifest.catalogueHash !== input.catalogueHash || hash(drills.manifest.sourceBinding) !== hash(input.sourceBinding)
     || drills.manifest.cases !== 22 || drills.manifest.independentlyHeldOutCases !== 0 || !drills.manifest.sourceCalibratedBeforeScoring)
     fail('FACTION_RULE_CONSUMER_DRILL_SOURCE_DRIFT');
-  const consumer = factionConsumerContextV1({ input, candidate, knownRulePolicy });
+  const consumer = factionConsumerContextV1({ input, candidate, knownRulePolicy, finalGeneral });
   assertNoFactionPhaseSourceDebtV1({ input, candidate }); assertNoFactionCrossFieldSourceDebtV1({ input, candidate });
   for (const section of candidate.sections) if (inspectFactionUnitRoleDebtV1({ input, draft: section.draft }).findings.length)
     fail('FACTION_RULE_CONSUMER_KNOWN_UNIT_DEBT');
@@ -56,6 +56,7 @@ export async function evaluateFactionRuleUseV1({ input, candidate, knownRulePoli
         correct: scores.filter(row => row.group === group && row.passed).length })) };
   });
   return seal({ schema: 'starcraft_faction_rule_use_evaluation_v1', candidateHash: candidate.hash, inputHash: input.hash,
+    ...(finalGeneral ? { finalGeneralDependencyHash: finalGeneral.hash } : {}),
     consumerContextHash: consumer.hash, sourceBinding: input.sourceBinding, drillManifestHash: drills.manifest.hash,
     repetitions, results, summary, boundedRuleApplicationPassed: summary[1].correct === summary[1].total,
     descriptiveCorrectDelta: summary[1].correct - summary[0].correct, independentlyHeldOutCases: 0,

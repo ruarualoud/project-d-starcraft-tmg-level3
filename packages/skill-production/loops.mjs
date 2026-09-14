@@ -1,16 +1,19 @@
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { attestPinnedDshRuntimeV1 } from "../skill-generation-runtime/dsh-pinned-runtime-v1.mjs";
-import { createDisposableOsSkillRunnerV1, verifyDisposableOsMediatedJobReceiptV1 } from "../skill-generation-runtime/disposable-os-runner-v1.mjs";
+import { createDisposableOsSkillRunnerV1, verifyDisposableOsMediatedJobReceiptV1, inspectDisposableRuntimeTreeV1 } from "../skill-generation-runtime/disposable-os-runner-v1.mjs";
 import { STARCRAFT_TMG_DSH_EXECUTOR_CONFIG_V1 as baseConfig } from "../skill-generation-runtime/dsh-skill-executor-v1.mjs";
 import { exact, safe, seal, fail, hash } from "./common.mjs";
 import { modelEvidence } from "./spans.mjs";
 import { withSessionDeadline } from "./deadline.mjs";
 import { prepareExecutionProjection } from "./runtime-projection.mjs";
+import { createPreparedRuntimeCacheV1 } from "./prepared-runtime-cache-v1.mjs";
+import { PHASED_DSH_SESSION_POLICY_V1, withPhasedSessionDeadlineV1 } from "./session-lifecycle-v1.mjs";
 
 export const LOOP_LIMITS = Object.freeze({ maxCalls: 6, maxTools: 5, maxOutput: 4096, maxWallMs: 180000 });
 const config = { ...baseConfig, rows: baseConfig.rows.map((row) => row.id === "system-prompt"
   ? { ...row, config: { ...row.config, includeHarnessIdentity: false, includeRuntimeContext: false } } : row) };
+const preparedRuntimes = createPreparedRuntimeCacheV1();
 export function validateCommand(command) {
   safe(command);
   if (command?.action === "finish") {
@@ -69,17 +72,37 @@ export async function runDirectLoop({ task, callModel, toolPort, limits = LOOP_L
   });
   return seal(result);
 }
-export async function prepareDshLoop(root) {
+export async function prepareDshLoop(root, { sessionPolicy = 'legacy-v1' } = {}) {
+  if (!['legacy-v1', 'phased-v1'].includes(sessionPolicy)) fail('DSH_SESSION_POLICY_UNSUPPORTED');
+  // Re-attest the pinned contents before every cache lookup. A changed root,
+  // runtime tree, worker or config selects a different immutable preparation.
+  // Each run still creates its own disposable OS job, deadline and tool bridge.
   const pinned = await attestPinnedDshRuntimeV1({ repositoryRoot: root });
+  // The pinned receipt checks package/lock/profile identities, not every file.
+  // Keep the complete content check before reuse; never trust the receipt alone.
+  const inspected = await inspectDisposableRuntimeTreeV1({ repositoryRoot: root, sourceRoot: pinned.runtimeRoot });
+  if (inspected.manifestHash !== pinned.receipt.runtimeTreeHash) fail('PINNED_RUNTIME_CONTENT_DRIFT');
+  const entrySource = await readFile(new URL("./dsh-worker.mjs", import.meta.url), "utf8");
+  const identity = hash({ root, runtimeRoot: pinned.runtimeRoot, sessionPolicy,
+    runtimeTreeHash: pinned.receipt.runtimeTreeHash, entryHash: hash(entrySource), configHash: hash(config) });
+  return preparedRuntimes.get(identity, () => prepareAttestedDshLoop(root, pinned, entrySource, sessionPolicy));
+}
+async function prepareAttestedDshLoop(root, pinned, entrySource, sessionPolicy) {
   const projection = await prepareExecutionProjection(root, pinned);
   const runner = createDisposableOsSkillRunnerV1({ repositoryRoot: root });
   const attestation = await runner.attest();
-  const entrySource = await readFile(new URL("./dsh-worker.mjs", import.meta.url), "utf8");
-  return {
+  return Object.freeze({
     binding: seal({ runtimeTreeHash: pinned.receipt.runtimeTreeHash, executionProjection: projection.receipt,
       entryHash: hash(entrySource), configHash: hash(config) }),
+    // Runtime content identity is independent of the explicitly selected Host
+    // execution policy. Historical input hashes must not change when a clock
+    // policy changes. Every new phased result carries its own lifecycle proof.
+    ...(sessionPolicy === 'phased-v1' ? { sessionPolicy: PHASED_DSH_SESSION_POLICY_V1 } : {}),
     async run({ task, callModel, toolPort, limits = LOOP_LIMITS }) {
-      const completed = await withSessionDeadline(limits.maxWallMs, async ({ signal, guard, check }) => {
+      const runSession = sessionPolicy === 'phased-v1'
+        ? operation => withPhasedSessionDeadlineV1({ maxWallMs: limits.maxWallMs }, operation)
+        : operation => withSessionDeadline(limits.maxWallMs, operation);
+      const completed = await runSession(async ({ signal, guard, check, beginFinalization }) => {
       const boundedModel = guard((request) => callModel({ ...request, signal }));
       const boundedTool = guard((name, args) => toolPort.execute(name, args));
       let calls = 0;
@@ -95,7 +118,9 @@ export async function prepareDshLoop(root) {
           if (request.kind === "model") {
             exact(request, ["kind", "call", "observed"]);
             if (request.call !== ++calls || calls > limits.maxCalls) fail("MODEL_CALL_LIMIT");
-            const response = await boundedModel(request); validateCommand(response.command); return response;
+            const response = await boundedModel(request); validateCommand(response.command);
+            if (response.command.action === 'finish') beginFinalization?.();
+            return response;
           }
           exact(request, ["kind", "name", "args"]);
           if (request.kind !== "tool" || toolPort.trace().length >= limits.maxTools) fail("TOOL_CALL_LIMIT");
@@ -110,5 +135,5 @@ export async function prepareDshLoop(root) {
       });
       return seal(completed);
     },
-  };
+  });
 }
