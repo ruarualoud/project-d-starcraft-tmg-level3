@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–229 完成；Ticket 23 为 `15/36`，剩余 `21` 片
+状态：Slices 215–230 完成；Ticket 23 为 `16/36`，剩余 `20` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -49,7 +49,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 227 | **Complete:** 所选五个 Unit 的通用远程战斗闭包：武器选择、射程/LoS、攻击池、防御、伤害、伤亡、补给与骰子 | selected-roster ranged combat 门通过：4 route / no-ranged 1 / unsupported 0 | 13/21 |
 | 228 | **Complete:** 所选五个 Unit 的 Charge/IMPACT/近战闭包：冲锋距离、接战、卡位、批次、近战伤亡与脱离关系 | selected-roster melee 门一次通过：5 Charge / 5 Fight / 2 IMPACT / unsupported 0 | 14/21 |
 | 229 | **Complete:** 参考阵容 13 主动/9 被动能力的资源、状态、Token/Marker、Omega Worm、激活窗口与消费者接线 | selected-roster ability 门第 2 轮通过：13/9/unsupported 0 | 15/36 |
-| 230 | 通用能力注册表、类型化 Effect IR、Action/Consumer/System 生命周期自动路由和统一调用合同 | 仅运行 ability registry/compiler 门一次 | 16/36 |
+| 230 | **Complete:** 通用能力注册表、类型化 Effect IR、Action/Consumer/System 生命周期自动路由、关系图和统一调用合同 | 三轮内收敛：252 definition / 1,762 edges / 20 exact / 232 pending | 16/36 |
 | 231 | 冻结官方 26 Unit、37 Card、252 definition 的产品动作分母编译和缺口清单 | 仅运行 current-product denominator 门一次 | 17/36 |
 | 232 | 全卡池 Move、PLACE、Deploy、Return-to-Reserve 能力族接线 | 仅运行 relocation family 门一次 | 18/36 |
 | 233 | 全卡池 BUFF、DEBUFF、Status、Heal、Damage 能力族接线 | 仅运行 characteristic/status family 门一次 | 19/36 |
@@ -265,6 +265,18 @@ Omega Worm 使用 Structure target-only 防御 Profile，不放宽旧武器编�
 和 Omega Worm 实体生成；未跑历史全量门。闭包记录：
 `docs/ticket-23-slice-229-selected-roster-abilities-closure-2026-09-14.md`。
 
+## Slice 230 收口
+
+冻结官方 `26 Unit + 37 Card` 的 `252` 条 definition 已进入同一个 typed IR catalogue，
+并自动分类为 `138 Action / 24 Reaction / 51 Consumer / 39 System`。深模块只暴露一个
+`dispatch` Interface，现有 selected exact Runtime 与 pending-family diagnostic 作为两个
+Adapter；后者永不产生可执行 candidate。当前 `20 exact / 232 pending` 是 definition
+分母，不把同一 Stimpack 展开到三队 Marine 后的实例动作重复计数。关系图随 compiler
+自动生成 `1,762` 条边；Factory `1.5.0` 已绑定 catalogue/runtime。聚焦门在第 3 轮内
+收敛并证明全产品诊断、Tactical Retreat Preview/Apply/Replay 和 phase-end cleanup。
+闭包记录：
+`docs/ticket-23-slice-230-ability-effect-runtime-closure-2026-09-14.md`。
+
 ## 验证与成本规则
 
 - 已通过门不重跑；每次代码变更只跑一条确实受影响的门，且最多一次。
@@ -277,5 +289,5 @@ Omega Worm 使用 Structure target-only 防御 Profile，不放宽旧武器编�
 
 ## 非声称
 
-Slice 215 只冻结方案，不证明任务 runtime、500 分正式军表、live Flash、物理操作、真实
-H-A/A-A、复盘改进或 PDF 已完成。它们必须分别由 216–235 的具体交付物证明。
+Slice 215 只冻结方案，不证明任务 runtime、完整卡池、live Flash、物理操作、真实
+H-A/A-A、复盘改进或 PDF 已完成。它们必须分别由 216–250 的具体交付物证明。

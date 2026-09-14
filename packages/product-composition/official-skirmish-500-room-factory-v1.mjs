@@ -28,6 +28,8 @@ import { createOfficialAttackProfileCatalogueV1 } from
   "../source-data/official-attack-profile-catalogue-v1.mjs";
 import { createOfficialAttackProfileCatalogueV2 } from
   "../source-data/official-attack-profile-catalogue-v2.mjs";
+import { createOfficialAbilityEffectIrCatalogueV1 } from
+  "../source-data/official-ability-effect-ir-v1.mjs";
 import { createOfficialBalancedTerrainRulesDataBundleV1 } from
   "../source-data/official-balanced-terrain-rules-data-bundle-v1.mjs";
 import { createOfficialCardBuildPaymentDataBundleV1 } from
@@ -54,6 +56,12 @@ import {
   verifyOfficialSelectedRosterAbilityRuntimeDescriptorV1,
 } from "./official-selected-roster-ability-runtime-v1.mjs";
 import {
+  createOfficialAbilityEffectRuntimeV1,
+  createOfficialSelectedRosterAbilityAdapterV1,
+  createOfficialSelectedRosterAbilityDefinitionBindingsV1,
+  verifyOfficialAbilityEffectRuntimeDescriptorV1,
+} from "./official-ability-effect-runtime-v1.mjs";
+import {
   createOfficialSelectedRosterMeleeActionRuntimeV1,
   verifyOfficialSelectedRosterMeleeRuntimeDescriptorV1,
 } from "./official-selected-roster-melee-action-runtime-v1.mjs";
@@ -76,7 +84,7 @@ import {
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
-export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "1.4.0";
+export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "1.5.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MISSION_RECORD_KEY = "faction_cards:mission_hold_position__skirmish_";
@@ -533,6 +541,18 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   );
   state.officialSelectedRosterAbilityRuntimeDescriptor =
     selectedRosterAbilityRuntime.descriptor;
+  state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+    dataset,
+    executionBindings: createOfficialSelectedRosterAbilityDefinitionBindingsV1(
+      state.officialSelectedRosterAbilitySourceBundle),
+  });
+  const abilityEffectRuntime = createOfficialAbilityEffectRuntimeV1({
+    catalogue: state.officialAbilityEffectIrCatalogue,
+    adapters: [createOfficialSelectedRosterAbilityAdapterV1(
+      state.officialSelectedRosterAbilitySourceBundle)],
+  });
+  verifyOfficialAbilityEffectRuntimeDescriptorV1(abilityEffectRuntime.descriptor);
+  state.officialAbilityEffectRuntimeDescriptor = abilityEffectRuntime.descriptor;
   state.officialMissionEffectCatalogue = gameplayBundle.missionEffectCatalogue;
   state.officialMissionRuntimeDescriptor = missionRuntime.descriptor;
   const viewerProjectionEvidence = projectionEvidence(state);
@@ -587,13 +607,18 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         state.officialSelectedRosterMeleeRuntimeDescriptor.runtimeHash,
       selectedRosterAbilityRuntimeHash:
         state.officialSelectedRosterAbilityRuntimeDescriptor.runtimeHash,
+      abilityEffectIrCatalogueHash:
+        state.officialAbilityEffectIrCatalogue.catalogueHash,
+      abilityEffectRuntimeHash:
+        state.officialAbilityEffectRuntimeDescriptor.runtimeHash,
       rosterVisibility: visibility.rosterVisibility,
       viewerProjectionEvidence,
       sourceSnapshotHash: dataset.sourceSnapshotHash,
       normalizedDatasetHash: dataset.datasetHash,
       sourceRefreshPerformed: false,
       repositoryFallbackUsed: false,
-      completeActionRuntimeDeferredToSlices: [230],
+      completeActionRuntimeDeferredToSlices: [231, 232, 233, 234, 235, 236,
+        237, 238, 239, 240, 241, 242, 243],
       trainingTruth: false,
     },
     trainingTruth: false,
@@ -657,6 +682,10 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
       !== state?.officialSelectedRosterMeleeRuntimeDescriptor?.runtimeHash
     || evidence?.selectedRosterAbilityRuntimeHash
       !== state?.officialSelectedRosterAbilityRuntimeDescriptor?.runtimeHash
+    || evidence?.abilityEffectIrCatalogueHash
+      !== state?.officialAbilityEffectIrCatalogue?.catalogueHash
+    || evidence?.abilityEffectRuntimeHash
+      !== state?.officialAbilityEffectRuntimeDescriptor?.runtimeHash
     || authority.trainingTruth !== false) {
     fail("SKIRMISH_500_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
   }
@@ -671,6 +700,9 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
   );
   verifyOfficialSelectedRosterAbilityRuntimeDescriptorV1(
     state.officialSelectedRosterAbilityRuntimeDescriptor,
+  );
+  verifyOfficialAbilityEffectRuntimeDescriptorV1(
+    state.officialAbilityEffectRuntimeDescriptor,
   );
   return true;
 }
