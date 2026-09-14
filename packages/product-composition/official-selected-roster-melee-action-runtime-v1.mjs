@@ -62,7 +62,7 @@ import {
 
 export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-melee-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "2.3.0";
+export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "2.4.0";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_DECLARATION_PARAMETER_KIND =
   "official_selected_roster_charge_declaration_v1";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_RESOLUTION_PARAMETER_KIND =
@@ -918,6 +918,15 @@ function fightContext(state, sideKey, piece, catalogueV2, profileKey) {
 }
 function fightDomain(state, sideKey, piece, catalogueV2, profileKey) {
   const context = fightContext(state, sideKey, piece, catalogueV2, profileKey);
+  const ranks = fightingRanks(state, piece, context.graph);
+  const characteristic = state.officialCharacteristicStatusFamilySourceBundle
+    ? projectOfficialCharacteristicStatusFamilyModifiersV1(
+      state.officialCharacteristicStatusFamilySourceBundle, state,
+      { pieceId: piece.id, context: { weaponName: context.profile.weaponName,
+        attackKind: "close_combat", damageKind: "close_combat" } },
+    ) : {};
+  const effectiveRateOfAttack = Math.max(0, Number(context.profile.rateOfAttack)
+    + Number(characteristic.rateOfAttackModifier || 0));
   const zerg = state.officialZergUniqueFamilySourceBundle
     ? projectOfficialZergUniqueFamilyModifiersV1(
       state.officialZergUniqueFamilySourceBundle, state,
@@ -946,6 +955,12 @@ function fightDomain(state, sideKey, piece, catalogueV2, profileKey) {
     constraints: { engagementGraphHash: context.graph.graphHash,
       targetUnitIds: context.targetUnitIds,
       printedRateOfAttack: context.profile.rateOfAttack,
+      declineCloseRanksFightingModelIds: ranks.fightingModelIds,
+      declineCloseRanksSupportingModelIds: ranks.supportingModelIds,
+      declineCloseRanksContributingModelIds: ranks.contributingModelIds,
+      declineCloseRanksEffectiveRateOfAttack: effectiveRateOfAttack,
+      declineCloseRanksAttackDice:
+        ranks.contributingModelIds.length * effectiveRateOfAttack,
       sourceProfileHash: context.profile.profileHash,
       optionalCloseRanksDistanceMilliInches: 3000,
       fightingAndSupportingRanksDerivedAfterCloseRanks: true,

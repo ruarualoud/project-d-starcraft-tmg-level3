@@ -81,6 +81,10 @@ import {
   verifyOfficialCurrentProductAbilityDenominatorV1,
 } from "./official-current-product-ability-denominator-v1.mjs";
 import {
+  createOfficialCurrentProductAbilityCoverageReleaseV1,
+  verifyOfficialCurrentProductAbilityCoverageReleaseV1,
+} from "./official-current-product-ability-coverage-release-v1.mjs";
+import {
   createOfficialRelocationFamilyAdapterV1,
   createOfficialRelocationFamilyDefinitionBindingsV1,
   createOfficialRelocationFamilySourceBundleV1,
@@ -169,7 +173,7 @@ import {
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
-export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "2.7.0";
+export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "2.8.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MISSION_RECORD_KEY = "faction_cards:mission_hold_position__skirmish_";
@@ -882,6 +886,12 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     createOfficialCurrentProductAbilityDenominatorV1({
       catalogue: state.officialAbilityEffectIrCatalogue,
     });
+  state.officialCurrentProductAbilityCoverageRelease =
+    createOfficialCurrentProductAbilityCoverageReleaseV1({
+      catalogue: state.officialAbilityEffectIrCatalogue,
+      denominator: state.officialCurrentProductAbilityDenominator,
+      runtimeDescriptor: state.officialAbilityEffectRuntimeDescriptor,
+    });
   state.officialMissionEffectCatalogue = gameplayBundle.missionEffectCatalogue;
   state.officialMissionRuntimeDescriptor = missionRuntime.descriptor;
   const viewerProjectionEvidence = projectionEvidence(state);
@@ -942,6 +952,8 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         state.officialAbilityEffectRuntimeDescriptor.runtimeHash,
       currentProductAbilityDenominatorHash:
         state.officialCurrentProductAbilityDenominator.denominatorHash,
+      currentProductAbilityCoverageReleaseHash:
+        state.officialCurrentProductAbilityCoverageRelease.releaseHash,
       relocationFamilySourceBundleHash:
         state.officialRelocationFamilySourceBundle.bundleHash,
       characteristicStatusFamilySourceBundleHash:
@@ -983,7 +995,7 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
       sourceRefreshPerformed: false,
       officialComponentEvidenceRefreshPerformed: true,
       repositoryFallbackUsed: false,
-      completeActionRuntimeDeferredToSlices: [243],
+      completeActionRuntimeDeferredToSlices: [],
       trainingTruth: false,
     },
     trainingTruth: false,
@@ -1054,6 +1066,8 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
       !== state?.officialAbilityEffectRuntimeDescriptor?.runtimeHash
     || evidence?.currentProductAbilityDenominatorHash
       !== state?.officialCurrentProductAbilityDenominator?.denominatorHash
+    || evidence?.currentProductAbilityCoverageReleaseHash
+      !== state?.officialCurrentProductAbilityCoverageRelease?.releaseHash
     || evidence?.relocationFamilySourceBundleHash
       !== state?.officialRelocationFamilySourceBundle?.bundleHash
     || evidence?.characteristicStatusFamilySourceBundleHash
@@ -1106,6 +1120,9 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
   );
   verifyOfficialCurrentProductAbilityDenominatorV1(
     state.officialCurrentProductAbilityDenominator,
+  );
+  verifyOfficialCurrentProductAbilityCoverageReleaseV1(
+    state.officialCurrentProductAbilityCoverageRelease,
   );
   verifyOfficialRelocationFamilySourceBundleV1(
     state.officialRelocationFamilySourceBundle,
