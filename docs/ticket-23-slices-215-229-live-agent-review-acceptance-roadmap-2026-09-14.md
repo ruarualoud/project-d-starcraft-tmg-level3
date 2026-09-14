@@ -1,13 +1,15 @@
-# Ticket 23 / Slices 215–235：真实 Agent 对战、复盘实验与证据路线图
+# Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–228 完成；Ticket 23 为 `14/21`，剩余 `7` 片  
+状态：Slices 215–228 完成；Ticket 23 为 `14/36`，剩余 `22` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
 ## 最终目标
 
-通过真实产品 Web UI 和稳定大模型完成一场 500 分 Skirmish 人机对战、一场同配置机机对战、
+先把冻结官方产品分母中的 26 个 Unit、37 张 Faction/Tactical Card 和 252 条卡面定义
+全部接入可观察、可查询、可执行、可回放的产品 Runtime，再通过真实产品 Web UI 和稳定
+大模型完成一场双方各 2000 分 Standard 人机对战、一场同配置机机对战、
 两局合并复盘和基于权威 checkpoint 的反事实实验；输出逐动作截图、骰子、规则回执、
 公开决策摘要、主 PDF/子 PDF、机器可读轨迹、SkillOpt 预期变化与 MuZero 候选。
 
@@ -28,7 +30,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 - H-A ¥80、A-A ¥160、复盘/反事实 ¥260，总计 ¥500；每累计 ¥100 通知。
 - 只有 Critical/High 阻断，Medium 记录；同一 review 最多三轮。
 
-## 21 个 Slice
+## 36 个 Slice
 
 | Slice | 具体交付物 | 单片验证 | 完成后 |
 | --- | --- | --- | --- |
@@ -46,13 +48,28 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 226 | **Complete:** 所选五个 Unit 的通用空间动作闭包：Deploy、Move、Run、Disengage、底座/编队/地形/高低差/路径与边界 | selected-roster movement 门通过：5 Unit / 20 route / unsupported 0 | 12/21 |
 | 227 | **Complete:** 所选五个 Unit 的通用远程战斗闭包：武器选择、射程/LoS、攻击池、防御、伤害、伤亡、补给与骰子 | selected-roster ranged combat 门通过：4 route / no-ranged 1 / unsupported 0 | 13/21 |
 | 228 | **Complete:** 所选五个 Unit 的 Charge/IMPACT/近战闭包：冲锋距离、接战、卡位、批次、近战伤亡与脱离关系 | selected-roster melee 门一次通过：5 Charge / 5 Fight / 2 IMPACT / unsupported 0 | 14/21 |
-| 229 | 入局卡面能力闭包：Marine、Kerrigan、Raptor、Terran/Kerrigan's Swarm 与 Creep 的资源、状态、Token/Marker 生命周期 | 仅运行 selected-roster ability 门一次 | 15/21 |
-| 230 | 产品 Runtime 总组合与完整自动 dry-run：unsupported=0、任务全生命周期、正式只读来源差异和最终 preflight | 仅运行一场零 Provider deterministic dry-run | 16/21 |
-| 231 | Web 探索性 H-A dry-run 与统一 UI 修复：用户视角验证所有必要操作、写表/数据库/对战桌、悬浮副官、通知/物理任务、计划/日志/成本/截图面板 | 只对本轮修复跑一次 Web 用户旅程 | 17/21 |
-| 232 | 正式 500 分 H-A live-model 完整局，逐动作截图/描述/骰子/回执/公开理由；预算 ≤¥80 | 一次正式局 + 权威最终 Replay | 18/21 |
-| 233 | 相同配置、独立记忆的 500 分 A-A live-model 完整局；预算 ≤¥160 | 一次正式局 + 权威最终 Replay | 19/21 |
-| 234 | H-A+A-A 全动作合并复盘、必要反事实实验、策略差异/骰运/操作错误区分、SkillOpt 候选和 MuZero/counterfactual 输出；预算 ≤¥260 | 一次 review aggregate | 20/21 |
-| 235 | 主 PDF 索引、按局/按回合子 PDF、JSON/NDJSON、成本与验收矩阵；最终用户验收包 | 一次 Ticket 23 evidence aggregate | 21/21 |
+| 229 | 参考阵容卡面能力闭包：Marine、Kerrigan、Raptor、Terran/Kerrigan's Swarm 与 Creep 的资源、状态、Token/Marker 生命周期 | 仅运行 selected-roster ability 门一次 | 15/36 |
+| 230 | 通用能力注册表、类型化 Effect IR、Action/Consumer/System 生命周期自动路由和统一调用合同 | 仅运行 ability registry/compiler 门一次 | 16/36 |
+| 231 | 冻结官方 26 Unit、37 Card、252 definition 的产品动作分母编译和缺口清单 | 仅运行 current-product denominator 门一次 | 17/36 |
+| 232 | 全卡池 Move、PLACE、Deploy、Return-to-Reserve 能力族接线 | 仅运行 relocation family 门一次 | 18/36 |
+| 233 | 全卡池 BUFF、DEBUFF、Status、Heal、Damage 能力族接线 | 仅运行 characteristic/status family 门一次 | 19/36 |
+| 234 | 51 个官方武器与全部远程攻击效果接线 | 仅运行 ranged family 门一次 | 20/36 |
+| 235 | 全卡池 Fight、Charge、IMPACT 与近战效果接线 | 仅运行 melee family 门一次 | 21/36 |
+| 236 | 24 条 Reaction、触发窗口、双方优先级和每激活限制接线 | 仅运行 reaction family 门一次 | 22/36 |
+| 237 | Token、Marker、Structure、Creep、Pylon 与实体组件生命周期接线 | 仅运行 battlefield asset family 门一次 | 23/36 |
+| 238 | Summon、Morph、Respawn、创建/替换模型与 Supply 生命周期接线 | 仅运行 unit lifecycle family 门一次 | 24/36 |
+| 239 | 任务控制、计分、先后手、Pass 和回合阶段系统动作接线 | 仅运行 match lifecycle family 门一次 | 25/36 |
+| 240 | Terran 当前单位、阵营与战术卡的独特能力余项收口 | 仅运行 Terran gap gate 一次 | 26/36 |
+| 241 | Zerg 当前单位、阵营与战术卡的独特能力余项收口 | 仅运行 Zerg gap gate 一次 | 27/36 |
+| 242 | Protoss 当前单位、阵营与战术卡的独特能力余项收口 | 仅运行 Protoss gap gate 一次 | 28/36 |
+| 243 | 全官方产品分母收口：252/252 有执行角色、`unsupported=0`、无静默缺口 | 仅运行 current-product aggregate 一次 | 29/36 |
+| 244 | Standard 2000 Room/军表/任务 Factory 最终绑定：双方各 2000 Minerals、≤200 Vespene、54×36 | 仅运行 2000 factory 门一次 | 30/36 |
+| 245 | Web 探索性 H-A dry-run 与统一 UI 修复：写表/数据库/对战桌、悬浮副官、通知/物理任务、计划/日志/成本/截图面板 | 只对本轮修复跑一次 Web 用户旅程 | 31/36 |
+| 246 | 产品 Runtime 总组合与 2000 分零 Provider 完整自动 dry-run：任务全生命周期和最终 preflight | 仅运行一场 deterministic full-match dry-run | 32/36 |
+| 247 | 正式 2000 分 H-A live-model 完整局，逐动作截图/描述/骰子/回执/公开理由；预算 ≤¥80 | 一次正式局 + 权威最终 Replay | 33/36 |
+| 248 | 相同配置、独立记忆的 2000 分 A-A live-model 完整局；预算 ≤¥160 | 一次正式局 + 权威最终 Replay | 34/36 |
+| 249 | H-A+A-A 全动作合并复盘、必要反事实实验、策略差异/骰运/操作错误区分、SkillOpt 候选和 MuZero/counterfactual 输出；预算 ≤¥260 | 一次 review aggregate | 35/36 |
+| 250 | 主 PDF 索引、按局/按回合子 PDF、JSON/NDJSON、成本与验收矩阵；最终用户验收包 | 一次 Ticket 23 evidence aggregate | 36/36 |
 
 ## 依赖顺序
 
@@ -63,12 +80,14 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
   -> 219 roster/deploy + 220 action coverage
   -> 221 hosted physical-operation flow
   -> 222 live decision port + 223 review/experiment runtime
-  -> 224 formal 500 contract/capability audit
-  -> 225 500 Room -> 226 movement -> 227 ranged -> 228 melee
-  -> 229 selected abilities -> 230 complete dry-run/final preflight
-  -> 231 Web dry-run/UI closure
-  -> 232 H-A -> 233 A-A -> 234 review/counterfactual
-  -> 235 evidence/PDF closure
+  -> 224 initial formal contract/capability audit
+  -> 225 500 reference Room -> 226 movement -> 227 ranged -> 228 melee
+  -> 229 selected abilities -> 230 generic ability/effect routing
+  -> 231 full denominator -> 232–239 shared semantic families
+  -> 240 Terran -> 241 Zerg -> 242 Protoss -> 243 unsupported=0
+  -> 244 Standard 2000 final Room -> 245 Web dry-run/UI closure
+  -> 246 deterministic full match -> 247 H-A -> 248 A-A
+  -> 249 review/counterfactual -> 250 evidence/PDF closure
 ```
 
 任务执行覆盖必须先于正式对局，因为任务决定部署、动作、资源、计分和终局。Review
@@ -168,7 +187,11 @@ cells，并恢复一个已执行但回包丢失的 arm，实际执行仍为一�
 
 ## Slice 224 收口
 
-正式实验已改按用户确认的 `500` 分执行，而不是旧路线图误写的 2000 分。Manifest 固定
+> 2026-09-14 后续范围修订：本节记录当时的历史决定；用户随后把最终验收重新指定为
+> 双方各 `2000` 分 Standard，并要求在正式对局前完成全官方卡池产品接线。历史 500 分
+> Manifest 保留为参考闭环，最终门以 Slices 230–250 的现行表为准。
+
+正式实验当时改按用户确认的 `500` 分执行，而不是旧路线图误写的 2000 分。Manifest 固定
 Skirmish、Hold Position (Skirmish)、CHAR PLAINS、36×36、双方精确 500 分计划军表、
 两条四层策略 Skill 路由、H-A/A-A/Review 的 `¥80/¥160/¥260` 独立预算、每累计 ¥100
 通知和逐动作 Web 证据要求。现有 portable loader 已从写死 5 条改为验证任意扩展分母，
