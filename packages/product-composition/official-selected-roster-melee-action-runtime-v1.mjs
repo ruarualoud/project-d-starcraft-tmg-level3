@@ -55,10 +55,14 @@ import { verifyOfficialStandardActionRouteCatalogueV1 } from
   "./official-standard-action-route-catalogue-v1.mjs";
 import { projectOfficialZergUniqueFamilyModifiersV1 } from
   "./official-zerg-unique-family-adapter-v1.mjs";
+import {
+  consumeOfficialProtossUniqueFirstWeaponEffectV1,
+  projectOfficialProtossUniqueFamilyModifiersV1,
+} from "./official-protoss-unique-family-adapter-v1.mjs";
 
 export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-melee-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "2.2.0";
+export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "2.3.0";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_DECLARATION_PARAMETER_KIND =
   "official_selected_roster_charge_declaration_v1";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_RESOLUTION_PARAMETER_KIND =
@@ -920,6 +924,12 @@ function fightDomain(state, sideKey, piece, catalogueV2, profileKey) {
       { pieceId: piece.id, attackKind: "close_combat", weaponPhase: "combat",
         weaponName: context.profile.weaponName })
     : { closeCombatInstant: false };
+  const protoss = state.officialProtossUniqueFamilySourceBundle
+    ? projectOfficialProtossUniqueFamilyModifiersV1(
+      state.officialProtossUniqueFamilySourceBundle, state,
+      { pieceId: piece.id, attackKind: "close_combat",
+        weaponName: context.profile.weaponName })
+    : { firstWeaponInstant: false };
   const body = {
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
     semanticVersion: "1.0.0",
@@ -944,7 +954,7 @@ function fightDomain(state, sideKey, piece, catalogueV2, profileKey) {
       criticalHitTransfersExistingDiceOnly: true,
       enemyReactionAllowed: !(context.profile.effects.some((effect) => (
         effect.effectAtomId === "attack-effect:instant-v1"))
-        || zerg.closeCombatInstant),
+        || zerg.closeCombatInstant || protoss.firstWeaponInstant),
     },
     confirmationClass: "agent_owned_legal_action_auto_apply_or_human_direct_choice",
     rulesTruth: "official_selected_roster_fight_domain",
@@ -981,7 +991,14 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
       { pieceId: attacker.id, attackKind: "close_combat", weaponPhase: "combat",
         weaponName: profile.weaponName })
     : { closeCombatInstant: false, sourceDefinitionIds: [] };
-  const instant = printedInstant || (zerg.closeCombatInstant ? {
+  const protoss = state.officialProtossUniqueFamilySourceBundle
+    ? projectOfficialProtossUniqueFamilyModifiersV1(
+      state.officialProtossUniqueFamilySourceBundle, state,
+      { pieceId: attacker.id, attackKind: "close_combat",
+        weaponName: profile.weaponName })
+    : { firstWeaponInstant: false, sourceDefinitionIds: [] };
+  const instant = printedInstant || (zerg.closeCombatInstant
+    || protoss.firstWeaponInstant ? {
     effectAtomId: "attack-effect:instant-v1", sourceKind: "weapon_keyword", parameters: {},
   } : null);
   if (Boolean(surge) !== Boolean(surgeTargetUnitId)
@@ -1073,9 +1090,10 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
       source: "target_official_profile_and_effect_state" } }) : null;
   const instantProfile = instant && !printedInstant ? (() => {
     const body = { ...without(profile, ["profileHash"]),
-      profileKey: `${profile.profileKey}:predation-instant`,
+      profileKey: `${profile.profileKey}:runtime-instant`,
       effects: [...profile.effects, instant],
-      runtimeGrantedEffectDefinitionIds: [...zerg.sourceDefinitionIds] };
+      runtimeGrantedEffectDefinitionIds: [...new Set([
+        ...zerg.sourceDefinitionIds, ...protoss.sourceDefinitionIds])].sort() };
     return { ...body, profileHash: hashStarcraftTmgContract(body) };
   })() : profile;
   const instantPlan = instant ? INSTANT.plan({ profile: instantProfile }) : null;
@@ -1086,7 +1104,8 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
     criticalTargetUnitId: criticalTargetUnitId || null,
     criticalHitPlan: criticalPlan,
     instantPlan,
-    instantSourceDefinitionIds: printedInstant ? [] : [...zerg.sourceDefinitionIds],
+    instantSourceDefinitionIds: printedInstant ? [] : [...new Set([
+      ...zerg.sourceDefinitionIds, ...protoss.sourceDefinitionIds])].sort(),
     enemyReactionDeclarationAllowed: !instant,
     enemyReactionResolutionAllowed: !instant,
     activePrecisionValue: Math.max(0, ...targets.map((entry) => entry.precision)),
@@ -1635,6 +1654,14 @@ function applyDamageAction(stateInput, action, options, kind) {
     }
     if (state.officialBattlefieldAssetFamilySourceBundle) {
       consumeOfficialBattlefieldAssetFirstWeaponEffectsV1(state, piece.id);
+    }
+    if (state.officialProtossUniqueFamilySourceBundle) {
+      const consumed = consumeOfficialProtossUniqueFirstWeaponEffectV1(
+        state, piece.id);
+      if (consumed.length > 0) {
+        events.push({ type: "protoss_first_weapon_instant_consumed",
+          pieceId: piece.id, consumedEffects: consumed, trainingTruth: false });
+      }
     }
   } else {
     delete state.pendingAction;

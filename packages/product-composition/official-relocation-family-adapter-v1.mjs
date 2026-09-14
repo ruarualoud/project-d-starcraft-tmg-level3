@@ -18,7 +18,7 @@ import { verifyOfficialCurrentProductAbilityDenominatorV1 } from
 
 export const OFFICIAL_RELOCATION_FAMILY_ADAPTER_ID =
   "official-relocation-family-adapter-v1";
-export const OFFICIAL_RELOCATION_FAMILY_ADAPTER_VERSION = "1.1.0";
+export const OFFICIAL_RELOCATION_FAMILY_ADAPTER_VERSION = "1.2.0";
 export const OFFICIAL_RELOCATION_FAMILY_BUNDLE_SCHEMA =
   "starcraft_tmg_official_relocation_family_source_bundle_v1";
 export const OFFICIAL_RELOCATION_FAMILY_PARAMETER_KIND =
@@ -952,6 +952,124 @@ function enemyZoneCheck(state, actor, placements) {
     }))) fail("RELOCATION_ENEMY_ZONE_OF_INFLUENCE_PROHIBITED", model.id);
   }
 }
+
+export function describeOfficialNonEntryEdgeDeployV1(input = {}) {
+  const { state } = input;
+  verifyOfficialModelBaseGeometryDataBundleV1(state?.officialModelBaseGeometryDataBundle);
+  const actor = state.pieces?.find((entry) => entry.id === input.pieceId);
+  if (!livePiece(actor) || actor.isOnField === true || actor.isInReserves !== true) {
+    fail("NON_ENTRY_EDGE_DEPLOY_RESERVE_UNIT_REQUIRED", String(input.pieceId || ""));
+  }
+  const profile = movementProfile(state, actor);
+  const modelIds = liveModels(actor).map((entry) => entry.id).sort();
+  const edges = nonEntrySides(state).filter((side) => !lockedEdges(
+    state, actor.sideKey).has(side));
+  if (modelIds.length === 0 || edges.length === 0) {
+    fail("NON_ENTRY_EDGE_DEPLOY_DOMAIN_EMPTY", actor.id);
+  }
+  const body = {
+    schema: "starcraft_tmg_official_non_entry_edge_deploy_description_v1",
+    semanticVersion: OFFICIAL_RELOCATION_FAMILY_ADAPTER_VERSION,
+    pieceId: actor.id, sideKey: actor.sideKey,
+    modelIds, edgeSides: edges,
+    modelFootprints: liveModels(actor).map((model) => ({
+      modelId: model.id, baseShape: model.baseShape,
+      baseWidthMilliInches: milli(model.baseWidthInches),
+      baseDepthMilliInches: milli(model.baseDepthInches),
+    })).sort((left, right) => left.modelId.localeCompare(right.modelId)),
+    maxDistanceMilliInches: milli(profile.currentDeploySpeedInches),
+    coherencyRangeMilliInches: 3000,
+    minimumEnemyGapMilliInchesExclusive:
+      Number(input.minimumEnemyGapMilliInchesExclusive || 10000),
+    fullBaseBoundaryRequired: true,
+    completeFormationCoherencyRequired: true,
+    enemyZoneOfInfluenceStillApplies: true,
+    rulesTruth: "official_relocation_non_entry_edge_deploy_description",
+    trainingTruth: false,
+  };
+  return freezeDeep({ ...body, descriptionHash: hashStarcraftTmgContract(body) });
+}
+
+export function planOfficialNonEntryEdgeDeployV1(input = {}) {
+  const { state, parameters } = input;
+  const description = describeOfficialNonEntryEdgeDeployV1(input);
+  const actor = state.pieces.find((entry) => entry.id === description.pieceId);
+  if (!object(parameters) || Object.keys(parameters).some((key) => ![
+    "leadingModelId", "placements", "edgeSide",
+  ].includes(key))) fail("NON_ENTRY_EDGE_DEPLOY_PARAMETERS_INVALID");
+  const { leadingModelId, placements } = canonicalPlacements(actor, parameters);
+  const leadingPlacement = placements.find((entry) => entry.modelId === leadingModelId);
+  const leadingModel = liveModels(actor).find((entry) => entry.id === leadingModelId);
+  const edgeSide = String(parameters.edgeSide || "");
+  if (!description.edgeSides.includes(edgeSide)) {
+    fail("NON_ENTRY_EDGE_DEPLOY_EDGE_INVALID", edgeSide);
+  }
+  const terrain = supportAndGrass(state, actor, placements);
+  const ignoredTerrainIds = [...new Set([
+    ...terrain.supportedTerrainIds, ...terrain.grassRemovedTerrainIds,
+  ])].sort();
+  edgeConstraint(state, actor, leadingPlacement, leadingModel, edgeSide,
+    description.maxDistanceMilliInches);
+  enemyZoneCheck(state, actor, placements);
+  const projected = projectGeometry(state, actor, placements, ignoredTerrainIds);
+  const coherency = evaluateOfficialCoherencyPlacementV1({
+    state: projected.state, actor: projected.actor,
+    dataBundle: state.officialModelBaseGeometryDataBundle,
+    coherencyRangeMilliInches: description.coherencyRangeMilliInches,
+    plan: { planId: `non-entry-${description.descriptionHash.slice(0, 24)}`,
+      leadingModelId, placements: placements.map((entry) => ({
+        ...entry, outcome: "placed",
+      })), currentlyEngagedEnemyUnitIds: [],
+    closestLegalPlacementDenominatorComplete: false },
+  });
+  enemyGapCheck(projected.state, projected.actor,
+    description.minimumEnemyGapMilliInchesExclusive);
+  const canonicalParameters = { leadingModelId, placements, edgeSide };
+  const body = {
+    schema: "starcraft_tmg_official_non_entry_edge_deploy_geometry_plan_v1",
+    semanticVersion: OFFICIAL_RELOCATION_FAMILY_ADAPTER_VERSION,
+    sourceDefinitionId: String(input.sourceDefinitionId || ""),
+    pieceId: actor.id, descriptionHash: description.descriptionHash,
+    leadingModelId, finalModelPositions: placements,
+    edgeSide, maxDistanceMilliInches: description.maxDistanceMilliInches,
+    minimumEnemyGapMilliInchesExclusive:
+      description.minimumEnemyGapMilliInchesExclusive,
+    coherencyResultHash: coherency.resultHash,
+    grassRemovedTerrainIds: terrain.grassRemovedTerrainIds,
+    fullBaseBoundaryChecked: true, rectangularEndpointBasesChecked: true,
+    completeFormationCoherencyChecked: true,
+    enemyZoneOfInfluenceChecked: true,
+    rulesTruth: "official_relocation_non_entry_edge_deploy_geometry",
+    trainingTruth: false,
+  };
+  return freezeDeep({ canonicalParameters,
+    geometryPlan: { ...body, geometryPlanHash: hashStarcraftTmgContract(body) },
+    description });
+}
+
+export function applyOfficialNonEntryEdgeDeployPlanV1(input = {}) {
+  const plan = input.geometryPlan;
+  if (!object(plan)
+    || plan.schema !== "starcraft_tmg_official_non_entry_edge_deploy_geometry_plan_v1"
+    || plan.geometryPlanHash !== hashStarcraftTmgContract(without(plan,
+      ["geometryPlanHash"]))) fail("NON_ENTRY_EDGE_DEPLOY_GEOMETRY_PLAN_INVALID");
+  const state = clone(input.state);
+  const actor = state.pieces?.find((entry) => entry.id === plan.pieceId);
+  if (!livePiece(actor) || actor.isOnField === true || actor.isInReserves !== true) {
+    fail("NON_ENTRY_EDGE_DEPLOY_RESERVE_UNIT_REQUIRED", plan.pieceId);
+  }
+  placeActor(state, actor, { planHash: plan.geometryPlanHash,
+    geometryPlan: { ...plan,
+      finalModelPositions: plan.finalModelPositions,
+      leadingModelId: plan.leadingModelId,
+      grassRemovedTerrainIds: plan.grassRemovedTerrainIds } });
+  actor.deploymentStatus = "deployed";
+  const manifest = state.reserveManifestBySide?.[actor.sideKey]?.find((entry) => (
+    entry.pieceId === actor.id));
+  if (manifest) manifest.deploymentStatus = "deployed";
+  return freezeDeep(state);
+}
+
 function instantiate(bundle, state, domain, parameters = {}) {
   const current = enumerate(bundle, state, { sideKey: domain?.sideKey,
     includeDisabled: true }).parameterDomains.find((entry) => (

@@ -47,10 +47,14 @@ import {
 } from "./official-battlefield-asset-family-adapter-v1.mjs";
 import { projectOfficialMatchLifecycleFamilyModifiersV1 } from
   "./official-match-lifecycle-family-adapter-v1.mjs";
+import {
+  consumeOfficialProtossUniqueFirstWeaponEffectV1,
+  projectOfficialProtossUniqueFamilyModifiersV1,
+} from "./official-protoss-unique-family-adapter-v1.mjs";
 
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ranged-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.5.0";
+export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.6.0";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_TYPE = "ranged_attack";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_FINISH_ACTION_TYPE =
   "finish_ranged_attack_sequence";
@@ -430,11 +434,13 @@ function diceValue(expression, outcome) {
   fail("SELECTED_RANGED_SURGE_DICE_UNSUPPORTED", String(expression || ""));
 }
 function batchProfile(profile, geometry, attackerModifiers, rangedModifiers,
-  targetModifiers, matchLifecycleModifiers, target, pointDefenseRemovedDieIds = []) {
+  targetModifiers, matchLifecycleModifiers, protossModifiers, target,
+  pointDefenseRemovedDieIds = []) {
   const burst = effectById(profile, "attack-effect:burst-fire-v1");
   const locked = effectById(profile, "attack-effect:locked-in-v1");
   const printedInstant = Boolean(effectById(profile, "attack-effect:instant-v1"));
-  const instant = printedInstant || matchLifecycleModifiers.instant === true;
+  const instant = printedInstant || matchLifecycleModifiers.instant === true
+    || protossModifiers.firstWeaponInstant === true;
   const targetStationary = statusNamed(target, "stationary");
   const printedRateOfAttack = Number(profile.rateOfAttack);
   const rateOfAttackModifier = Number(attackerModifiers.rateOfAttackModifier || 0);
@@ -530,8 +536,13 @@ function batchProfile(profile, geometry, attackerModifiers, rangedModifiers,
     pierceMatched: damagePerDie !== Number(profile.damage),
     instant,
     printedInstant,
-    instantGrantedByMatchLifecycle: !printedInstant && instant,
+    instantGrantedByMatchLifecycle: !printedInstant
+      && matchLifecycleModifiers.instant === true,
+    instantGrantedByProtossFirstWeapon: !printedInstant
+      && protossModifiers.firstWeaponInstant === true,
     instantSourceDefinitionId: matchLifecycleModifiers.instantSourceDefinitionId || null,
+    protossInstantSourceDefinitionIds:
+      clone(protossModifiers.sourceDefinitionIds || []),
     indirectFire: Boolean(effectById(profile, "attack-effect:indirect-fire-v1")),
     sidearm: Boolean(effectById(profile, "attack-effect:sidearm-v1")),
     pinpoint: Boolean(effectById(profile, "attack-effect:pinpoint-v1")),
@@ -749,8 +760,13 @@ function planAttackResolution(state, piece, target, profile, geometry, targetPro
       { pieceId: piece.id, targetPieceId: target.id,
         weaponName: profile.weaponName },
     ) : {};
+  const protossModifiers = state.officialProtossUniqueFamilySourceBundle
+    ? projectOfficialProtossUniqueFamilyModifiersV1(
+      state.officialProtossUniqueFamilySourceBundle, state,
+      { pieceId: piece.id, attackKind: "ranged", weaponName: profile.weaponName },
+    ) : {};
   const profileForBatch = batchProfile(profile, geometry, attackerAbilityModifiers,
-    rangedModifiers, targetModifiers, matchLifecycleModifiers, target,
+    rangedModifiers, targetModifiers, matchLifecycleModifiers, protossModifiers, target,
     choices.pointDefenseRemovedDieIds || []);
   const mechanicalPlan = createMechanicalPlan(profileForBatch, {
     ...targetProfile,
@@ -1415,6 +1431,9 @@ export function applyOfficialSelectedRosterRangedActionV1(
   const consumedBattlefieldAssetEffects = !priorSequence
     && state.officialBattlefieldAssetFamilySourceBundle
     ? consumeOfficialBattlefieldAssetFirstWeaponEffectsV1(state, piece.id) : null;
+  const consumedProtossFirstWeaponEffects = !priorSequence
+    && state.officialProtossUniqueFamilySourceBundle
+    ? consumeOfficialProtossUniqueFirstWeaponEffectV1(state, piece.id) : [];
   const pointDefenseSourcePieceIds = chance.context.profileForBatch.instant
     ? [] : clone(chance.context.profileForBatch.attackPoolRemoval
       .pointDefenseSourcePieceIds || []);
@@ -1466,6 +1485,7 @@ export function applyOfficialSelectedRosterRangedActionV1(
     consumedCharacteristicFirstWeaponEffects: consumedCharacteristicEffects,
     consumedBattlefieldAssetFirstWeaponEffects:
       consumedBattlefieldAssetEffects?.consumedEffectHashes || [],
+    consumedProtossFirstWeaponEffects,
     currentSupplyBefore: beforeSupply,
     currentSupplyAfter: Number(target.currentSupply),
     evadeEligibilityReason: actionInput.rangedPlan.evadeEligibilityReason,

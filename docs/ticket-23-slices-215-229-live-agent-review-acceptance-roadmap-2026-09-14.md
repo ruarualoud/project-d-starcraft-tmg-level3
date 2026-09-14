@@ -61,7 +61,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 239 | **Complete:** Stalker 已激活目标 `INSTANT` 与 Queen 7 模型/每轮一次 BM 减免两个阶段/回合 consumer 接线；既有任务、计分与 Pass Runtime 不重复实现 | 分母 242 exact / 10 pending；`TARGET: All` 通配修复后 Stalker 真实射击门通过 | 25/36 |
 | 240 | **Complete:** Terran 独特余项：Medic Advanced Medic Facilities、Raynor Commander/Freedom Fighters、Supply Depot Additional Supply Depots；四语境 Supply 投影不改基础值 | 第 2 轮通过：4 new / owner pending 0 / 分母 246 exact、6 pending | 26/36 |
 | 241 | **Complete:** Zerg 独特余项：Queen Domineering Presence 复用 Psionic Link 支付/消费，Lair Predation 进入真实 Close Combat INSTANT consumer | 第 2 轮通过：2 new / owner pending 0 / 分母 248 exact、4 pending | 27/36 |
-| 242 | Protoss 独特余项：Nexus Ancient Pride、Artanis Commander、Warp Gate Warp In、Khalai Bound by the Khala | Protoss 4-definition gap gate 一次 | 28/36 |
+| 242 | **Complete:** Protoss 独特余项：Nexus Ancient Pride、Artanis Commander、Warp Gate Warp In、Khalai Bound by the Khala；首武器消费、完整底座非入口边部署和连续激活已接线 | 4 new / owner pending 0 / 分母 252 exact、0 pending；窄化终态门 exit 0 | 28/36 |
 | 243 | 全官方产品分母收口：252/252 有执行角色、`unsupported=0`、无静默缺口 | 仅运行 current-product aggregate 一次 | 29/36 |
 | 244 | Standard 2000 Room/军表/任务 Factory 最终绑定：双方各 2000 Minerals、≤200 Vespene、54×36 | 仅运行 2000 factory 门一次 | 30/36 |
 | 245 | Web 探索性 H-A dry-run 与统一 UI 修复：写表/数据库/对战桌、悬浮副官、通知/物理任务、计划/日志/成本/截图面板 | 只对本轮修复跑一次 Web 用户旅程 | 31/36 |

@@ -141,6 +141,12 @@ import {
   verifyOfficialZergUniqueFamilySourceBundleV1,
 } from "./official-zerg-unique-family-adapter-v1.mjs";
 import {
+  createOfficialProtossUniqueFamilyAdapterV1,
+  createOfficialProtossUniqueFamilyDefinitionBindingsV1,
+  createOfficialProtossUniqueFamilySourceBundleV1,
+  verifyOfficialProtossUniqueFamilySourceBundleV1,
+} from "./official-protoss-unique-family-adapter-v1.mjs";
+import {
   createOfficialSelectedRosterMeleeActionRuntimeV1,
   verifyOfficialSelectedRosterMeleeRuntimeDescriptorV1,
 } from "./official-selected-roster-melee-action-runtime-v1.mjs";
@@ -163,7 +169,7 @@ import {
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
-export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "2.6.0";
+export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "2.7.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MISSION_RECORD_KEY = "faction_cards:mission_hold_position__skirmish_";
@@ -812,12 +818,36 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     });
   const zergUniqueBindings = createOfficialZergUniqueFamilyDefinitionBindingsV1(
     state.officialZergUniqueFamilySourceBundle);
-  state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+  const protossUniqueBaselineCatalogue = createOfficialAbilityEffectIrCatalogueV1({
     dataset,
     executionBindings: [...selectedAbilityBindings, ...relocationBindings,
       ...characteristicStatusBindings, ...rangedBindings, ...meleeBindings,
       ...reactionBindings, ...battlefieldAssetBindings, ...unitLifecycleBindings,
       ...matchLifecycleBindings, ...terranUniqueBindings, ...zergUniqueBindings],
+  });
+  const protossUniqueBaselineDenominator =
+    createOfficialCurrentProductAbilityDenominatorV1({
+      catalogue: protossUniqueBaselineCatalogue,
+    });
+  state.officialProtossUniqueFamilySourceBundle =
+    createOfficialProtossUniqueFamilySourceBundleV1({
+      catalogue: protossUniqueBaselineCatalogue,
+      denominator: protossUniqueBaselineDenominator,
+    });
+  state.officialContextualSupplyModifierRoutes = [
+    ...state.officialTerranUniqueFamilySourceBundle.routes,
+    ...state.officialProtossUniqueFamilySourceBundle.routes.filter((route) => (
+      route.effectKind === "commander_supply_bonus")),
+  ];
+  const protossUniqueBindings = createOfficialProtossUniqueFamilyDefinitionBindingsV1(
+    state.officialProtossUniqueFamilySourceBundle);
+  state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+    dataset,
+    executionBindings: [...selectedAbilityBindings, ...relocationBindings,
+      ...characteristicStatusBindings, ...rangedBindings, ...meleeBindings,
+      ...reactionBindings, ...battlefieldAssetBindings, ...unitLifecycleBindings,
+      ...matchLifecycleBindings, ...terranUniqueBindings, ...zergUniqueBindings,
+      ...protossUniqueBindings],
   });
   const abilityEffectRuntime = createOfficialAbilityEffectRuntimeV1({
     catalogue: state.officialAbilityEffectIrCatalogue,
@@ -842,7 +872,9 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     createOfficialTerranUniqueFamilyAdapterV1(
       state.officialTerranUniqueFamilySourceBundle),
     createOfficialZergUniqueFamilyAdapterV1(
-      state.officialZergUniqueFamilySourceBundle)],
+      state.officialZergUniqueFamilySourceBundle),
+    createOfficialProtossUniqueFamilyAdapterV1(
+      state.officialProtossUniqueFamilySourceBundle)],
   });
   verifyOfficialAbilityEffectRuntimeDescriptorV1(abilityEffectRuntime.descriptor);
   state.officialAbilityEffectRuntimeDescriptor = abilityEffectRuntime.descriptor;
@@ -930,6 +962,8 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         state.officialTerranUniqueFamilySourceBundle.bundleHash,
       zergUniqueFamilySourceBundleHash:
         state.officialZergUniqueFamilySourceBundle.bundleHash,
+      protossUniqueFamilySourceBundleHash:
+        state.officialProtossUniqueFamilySourceBundle.bundleHash,
       summonDataBundleHash: state.officialSummonDataBundle.bundleHash,
       respawnMorphDataBundleHash: state.officialRespawnMorphDataBundle.bundleHash,
       battlefieldAssetComponentProfileHash:
@@ -949,7 +983,7 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
       sourceRefreshPerformed: false,
       officialComponentEvidenceRefreshPerformed: true,
       repositoryFallbackUsed: false,
-      completeActionRuntimeDeferredToSlices: [242, 243],
+      completeActionRuntimeDeferredToSlices: [243],
       trainingTruth: false,
     },
     trainingTruth: false,
@@ -1045,11 +1079,13 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
       !== state?.officialTerranUniqueFamilySourceBundle?.bundleHash
     || evidence?.zergUniqueFamilySourceBundleHash
       !== state?.officialZergUniqueFamilySourceBundle?.bundleHash
+    || evidence?.protossUniqueFamilySourceBundleHash
+      !== state?.officialProtossUniqueFamilySourceBundle?.bundleHash
     || evidence?.summonDataBundleHash !== state?.officialSummonDataBundle?.bundleHash
     || evidence?.respawnMorphDataBundleHash
       !== state?.officialRespawnMorphDataBundle?.bundleHash
-    || evidence?.currentProductAbilityExactCount !== 248
-    || evidence?.currentProductAbilityPendingCount !== 4
+    || evidence?.currentProductAbilityExactCount !== 252
+    || evidence?.currentProductAbilityPendingCount !== 0
     || authority.trainingTruth !== false) {
     fail("SKIRMISH_500_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
   }
@@ -1100,6 +1136,9 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
   );
   verifyOfficialZergUniqueFamilySourceBundleV1(
     state.officialZergUniqueFamilySourceBundle,
+  );
+  verifyOfficialProtossUniqueFamilySourceBundleV1(
+    state.officialProtossUniqueFamilySourceBundle,
   );
   verifyOfficialSummonDataBundleV1(state.officialSummonDataBundle);
   verifyOfficialRespawnMorphDataBundleV1(state.officialRespawnMorphDataBundle);
