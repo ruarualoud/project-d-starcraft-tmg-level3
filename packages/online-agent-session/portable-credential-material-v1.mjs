@@ -1,5 +1,14 @@
-const SENSITIVE_VALUE_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]{8,}|\bsk-[A-Za-z0-9_-]{12,}|(?:api[_-]?key|authorization|credential|secret)\s*[:=]\s*[^\s,;}]{6,}/iu;
-const SENSITIVE_KEY_PATTERN = /(?:api.?key|authorization|cookie|credential|secret|access.?token|refresh.?token)/iu;
+// This generic portable-artifact guard rejects actual API authentication
+// material, not security vocabulary or game-domain "token"/"secret" text.
+// Exact attached-secret echo detection is handled separately below.
+const SENSITIVE_VALUE_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]{8,}|\b(?:j?sk)-[A-Za-z0-9_-]{12,}|\b(?:x[-_]?api[-_]?key|api[-_]?key)\s*[:=]\s*[^\s,;}]{6,}/iu;
+const SENSITIVE_KEY_PATTERN = /^(?:x[-_]?api[-_]?key|api[-_]?key|apikey|authorization)$/iu;
+
+function populatedCredentialValue(value) {
+  if (typeof value === 'string') return value.trim().length >= 6;
+  if (value instanceof Uint8Array) return value.byteLength >= 6;
+  return Boolean(value && typeof value === 'object');
+}
 
 function containsSensitiveMaterial(value, seen = new Set()) {
   if (typeof value === "string") return SENSITIVE_VALUE_PATTERN.test(value);
@@ -9,7 +18,8 @@ function containsSensitiveMaterial(value, seen = new Set()) {
     return value.some((entry) => containsSensitiveMaterial(entry, seen));
   }
   return Object.entries(value).some(([key, child]) =>
-    SENSITIVE_KEY_PATTERN.test(key) || containsSensitiveMaterial(child, seen));
+    SENSITIVE_KEY_PATTERN.test(key) && populatedCredentialValue(child)
+      || containsSensitiveMaterial(child, seen));
 }
 
 export function containsStarcraftTmgOnlineCredentialMaterialV1(value) {
