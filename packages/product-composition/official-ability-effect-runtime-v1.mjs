@@ -16,7 +16,7 @@ import {
 
 export const OFFICIAL_ABILITY_EFFECT_RUNTIME_ID =
   "starcraft-tmg-official-ability-effect-runtime-v1";
-export const OFFICIAL_ABILITY_EFFECT_RUNTIME_VERSION = "1.6.0";
+export const OFFICIAL_ABILITY_EFFECT_RUNTIME_VERSION = "1.7.0";
 export const OFFICIAL_ABILITY_PENDING_ADAPTER_ID =
   "official-ability-pending-family-adapter-v1";
 

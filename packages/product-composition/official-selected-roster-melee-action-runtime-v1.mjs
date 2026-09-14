@@ -53,10 +53,12 @@ import {
 } from "./official-selected-roster-spatial-action-runtime-v1.mjs";
 import { verifyOfficialStandardActionRouteCatalogueV1 } from
   "./official-standard-action-route-catalogue-v1.mjs";
+import { projectOfficialZergUniqueFamilyModifiersV1 } from
+  "./official-zerg-unique-family-adapter-v1.mjs";
 
 export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-melee-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "2.1.0";
+export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "2.2.0";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_DECLARATION_PARAMETER_KIND =
   "official_selected_roster_charge_declaration_v1";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_RESOLUTION_PARAMETER_KIND =
@@ -912,6 +914,12 @@ function fightContext(state, sideKey, piece, catalogueV2, profileKey) {
 }
 function fightDomain(state, sideKey, piece, catalogueV2, profileKey) {
   const context = fightContext(state, sideKey, piece, catalogueV2, profileKey);
+  const zerg = state.officialZergUniqueFamilySourceBundle
+    ? projectOfficialZergUniqueFamilyModifiersV1(
+      state.officialZergUniqueFamilySourceBundle, state,
+      { pieceId: piece.id, attackKind: "close_combat", weaponPhase: "combat",
+        weaponName: context.profile.weaponName })
+    : { closeCombatInstant: false };
   const body = {
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
     semanticVersion: "1.0.0",
@@ -934,9 +942,9 @@ function fightDomain(state, sideKey, piece, catalogueV2, profileKey) {
       allocationDeclaredBeforeHitRoll: true,
       surgeDieCannotBeSplit: true,
       criticalHitTransfersExistingDiceOnly: true,
-      enemyReactionAllowed: !context.profile.effects.some((effect) => (
-        effect.effectAtomId === "attack-effect:instant-v1"
-      )),
+      enemyReactionAllowed: !(context.profile.effects.some((effect) => (
+        effect.effectAtomId === "attack-effect:instant-v1"))
+        || zerg.closeCombatInstant),
     },
     confirmationClass: "agent_owned_legal_action_auto_apply_or_human_direct_choice",
     rulesTruth: "official_selected_roster_fight_domain",
@@ -964,9 +972,18 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
     effectAtomId: "attack-effect:critical-hit-v1", sourceKind: "weapon_keyword",
     parameters: { bypassArmourDice: grantedCritical },
   } : null);
-  const instant = profile.effects.find((effect) => (
+  const printedInstant = profile.effects.find((effect) => (
     effect.effectAtomId === "attack-effect:instant-v1"
   ));
+  const zerg = state.officialZergUniqueFamilySourceBundle
+    ? projectOfficialZergUniqueFamilyModifiersV1(
+      state.officialZergUniqueFamilySourceBundle, state,
+      { pieceId: attacker.id, attackKind: "close_combat", weaponPhase: "combat",
+        weaponName: profile.weaponName })
+    : { closeCombatInstant: false, sourceDefinitionIds: [] };
+  const instant = printedInstant || (zerg.closeCombatInstant ? {
+    effectAtomId: "attack-effect:instant-v1", sourceKind: "weapon_keyword", parameters: {},
+  } : null);
   if (Boolean(surge) !== Boolean(surgeTargetUnitId)
     || Boolean(critical) !== Boolean(criticalTargetUnitId)) {
     fail("SELECTED_MELEE_EFFECT_TARGET_REQUIRED");
@@ -1054,7 +1071,14 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
     )).dice,
     targetDodge: { present: false, reduction: 0,
       source: "target_official_profile_and_effect_state" } }) : null;
-  const instantPlan = instant ? INSTANT.plan({ profile }) : null;
+  const instantProfile = instant && !printedInstant ? (() => {
+    const body = { ...without(profile, ["profileHash"]),
+      profileKey: `${profile.profileKey}:predation-instant`,
+      effects: [...profile.effects, instant],
+      runtimeGrantedEffectDefinitionIds: [...zerg.sourceDefinitionIds] };
+    return { ...body, profileHash: hashStarcraftTmgContract(body) };
+  })() : profile;
+  const instantPlan = instant ? INSTANT.plan({ profile: instantProfile }) : null;
   return seal({ schemaVersion: "starcraft_tmg_selected_roster_fight_chance_plan_v1",
     semanticVersion: "1.0.0", profileKey: profile.profileKey,
     profileHash: profile.profileHash, targets,
@@ -1062,6 +1086,7 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
     criticalTargetUnitId: criticalTargetUnitId || null,
     criticalHitPlan: criticalPlan,
     instantPlan,
+    instantSourceDefinitionIds: printedInstant ? [] : [...zerg.sourceDefinitionIds],
     enemyReactionDeclarationAllowed: !instant,
     enemyReactionResolutionAllowed: !instant,
     activePrecisionValue: Math.max(0, ...targets.map((entry) => entry.precision)),

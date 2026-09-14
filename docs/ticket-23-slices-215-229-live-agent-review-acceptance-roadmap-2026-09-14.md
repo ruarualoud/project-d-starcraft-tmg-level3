@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–240 完成；Ticket 23 为 `26/36`，剩余 `10` 片
+状态：Slices 215–241 完成；Ticket 23 为 `27/36`，剩余 `9` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -60,7 +60,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 238 | **Complete:** Summon、Respawn、返回 Reserve、设置/创建 Unit/模型与 Supply 生命周期接线，并承接 Shade/Indicator/Pylon/Omega 部署机会 | 第 2 轮通过：11 new / owner pending 0；分母 240 exact / 12 pending；实际 3 模型 Roachling Apply/Replay | 24/36 |
 | 239 | **Complete:** Stalker 已激活目标 `INSTANT` 与 Queen 7 模型/每轮一次 BM 减免两个阶段/回合 consumer 接线；既有任务、计分与 Pass Runtime 不重复实现 | 分母 242 exact / 10 pending；`TARGET: All` 通配修复后 Stalker 真实射击门通过 | 25/36 |
 | 240 | **Complete:** Terran 独特余项：Medic Advanced Medic Facilities、Raynor Commander/Freedom Fighters、Supply Depot Additional Supply Depots；四语境 Supply 投影不改基础值 | 第 2 轮通过：4 new / owner pending 0 / 分母 246 exact、6 pending | 26/36 |
-| 241 | Zerg 独特余项：Queen Domineering Presence（消费 Psionic Link）与 Lair Predation | Zerg 2-definition gap gate 一次 | 27/36 |
+| 241 | **Complete:** Zerg 独特余项：Queen Domineering Presence 复用 Psionic Link 支付/消费，Lair Predation 进入真实 Close Combat INSTANT consumer | 第 2 轮通过：2 new / owner pending 0 / 分母 248 exact、4 pending | 27/36 |
 | 242 | Protoss 独特余项：Nexus Ancient Pride、Artanis Commander、Warp Gate Warp In、Khalai Bound by the Khala | Protoss 4-definition gap gate 一次 | 28/36 |
 | 243 | 全官方产品分母收口：252/252 有执行角色、`unsupported=0`、无静默缺口 | 仅运行 current-product aggregate 一次 | 29/36 |
 | 244 | Standard 2000 Room/军表/任务 Factory 最终绑定：双方各 2000 Minerals、≤200 Vespene、54×36 | 仅运行 2000 factory 门一次 | 30/36 |
@@ -335,7 +335,7 @@ fixture 身份拒绝。因此新增模块完成并可解析，但没有新的 Fa
 - `docs/ticket-23-slice-234-current-product-ranged-family-closure-2026-09-14.md`
 - `docs/ticket-23-slice-235-current-product-melee-family-closure-2026-09-14.md`
 
-## Slices 236–240 收口
+## Slices 236–241 收口
 
 Slice 236 把 24 条 Reaction 接入双方优先级、资源支付、每激活/每回合限制和 12 类触发
 窗口；Slice 237 把 30 条 Token/Marker/Indicator/Structure/Creep/Pylon 定义接入实体组件和
@@ -344,7 +344,9 @@ Reserve 和跨 family 回合末机会。Slice 239 接入 Stalker Fury 的阶段�
 Psionic Link 的完整模型/回合支付条件，并修正所有远程武器 `TARGET: All` 被误当普通标签的
 生产缺口。Slice 240 再把 Medic、Jim Raynor 和 Supply Depot 的四条 Supply 定义拆成
 Supply Pool、Marker、Objective、Disengage 四个上下文投影，基础 `currentSupply` 不变。
-当前产品账本为 `246 exact / 6 pending`，owner 236–240 均为 pending 0。
+Slice 241 将 Domineering Presence 接入同一 Psionic Link 支付账本，并让 Predation 同时影响
+Fight 声明域与实际 chance plan 的 INSTANT/Reaction。当前产品账本为
+`248 exact / 4 pending`，owner 236–241 均为 pending 0。
 
 Slice 238 聚焦门第 1 轮正确拒绝只有 1 Biomass、却尝试支付 2 Biomass 的旧 500 分夹具，
 并发现 Omega Network 应按每轮累计 Supply≤2，而非首个部署后锁死；第 2 轮以合法资源
@@ -355,6 +357,7 @@ Slice 238 聚焦门第 1 轮正确拒绝只有 1 Biomass、却尝试支付 2 Bio
 - `docs/ticket-23-slice-238-current-product-unit-lifecycle-family-closure-2026-09-14.md`
 - `docs/ticket-23-slice-239-current-product-match-lifecycle-family-closure-2026-09-15.md`
 - `docs/ticket-23-slice-240-current-product-terran-unique-family-closure-2026-09-15.md`
+- `docs/ticket-23-slice-241-current-product-zerg-unique-family-closure-2026-09-15.md`
 
 ## 验证与成本规则
 
