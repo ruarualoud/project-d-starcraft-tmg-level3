@@ -62,6 +62,10 @@ import {
   verifyOfficialAbilityEffectRuntimeDescriptorV1,
 } from "./official-ability-effect-runtime-v1.mjs";
 import {
+  createOfficialCurrentProductAbilityDenominatorV1,
+  verifyOfficialCurrentProductAbilityDenominatorV1,
+} from "./official-current-product-ability-denominator-v1.mjs";
+import {
   createOfficialSelectedRosterMeleeActionRuntimeV1,
   verifyOfficialSelectedRosterMeleeRuntimeDescriptorV1,
 } from "./official-selected-roster-melee-action-runtime-v1.mjs";
@@ -84,7 +88,7 @@ import {
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
-export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "1.5.0";
+export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "1.6.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MISSION_RECORD_KEY = "faction_cards:mission_hold_position__skirmish_";
@@ -553,6 +557,10 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   });
   verifyOfficialAbilityEffectRuntimeDescriptorV1(abilityEffectRuntime.descriptor);
   state.officialAbilityEffectRuntimeDescriptor = abilityEffectRuntime.descriptor;
+  state.officialCurrentProductAbilityDenominator =
+    createOfficialCurrentProductAbilityDenominatorV1({
+      catalogue: state.officialAbilityEffectIrCatalogue,
+    });
   state.officialMissionEffectCatalogue = gameplayBundle.missionEffectCatalogue;
   state.officialMissionRuntimeDescriptor = missionRuntime.descriptor;
   const viewerProjectionEvidence = projectionEvidence(state);
@@ -611,14 +619,16 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         state.officialAbilityEffectIrCatalogue.catalogueHash,
       abilityEffectRuntimeHash:
         state.officialAbilityEffectRuntimeDescriptor.runtimeHash,
+      currentProductAbilityDenominatorHash:
+        state.officialCurrentProductAbilityDenominator.denominatorHash,
       rosterVisibility: visibility.rosterVisibility,
       viewerProjectionEvidence,
       sourceSnapshotHash: dataset.sourceSnapshotHash,
       normalizedDatasetHash: dataset.datasetHash,
       sourceRefreshPerformed: false,
       repositoryFallbackUsed: false,
-      completeActionRuntimeDeferredToSlices: [231, 232, 233, 234, 235, 236,
-        237, 238, 239, 240, 241, 242, 243],
+      completeActionRuntimeDeferredToSlices: [232, 233, 234, 235, 236, 237,
+        238, 239, 240, 241, 242, 243],
       trainingTruth: false,
     },
     trainingTruth: false,
@@ -686,6 +696,8 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
       !== state?.officialAbilityEffectIrCatalogue?.catalogueHash
     || evidence?.abilityEffectRuntimeHash
       !== state?.officialAbilityEffectRuntimeDescriptor?.runtimeHash
+    || evidence?.currentProductAbilityDenominatorHash
+      !== state?.officialCurrentProductAbilityDenominator?.denominatorHash
     || authority.trainingTruth !== false) {
     fail("SKIRMISH_500_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
   }
@@ -703,6 +715,9 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
   );
   verifyOfficialAbilityEffectRuntimeDescriptorV1(
     state.officialAbilityEffectRuntimeDescriptor,
+  );
+  verifyOfficialCurrentProductAbilityDenominatorV1(
+    state.officialCurrentProductAbilityDenominator,
   );
   return true;
 }

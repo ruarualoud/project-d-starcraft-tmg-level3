@@ -3,7 +3,7 @@ import { hashStarcraftTmgContract } from
 
 export const OFFICIAL_ABILITY_EFFECT_IR_SCHEMA =
   "starcraft_tmg_official_ability_effect_ir_catalogue_v1";
-export const OFFICIAL_ABILITY_EFFECT_IR_VERSION = "1.0.0";
+export const OFFICIAL_ABILITY_EFFECT_IR_VERSION = "1.1.0";
 
 export const OFFICIAL_ABILITY_ACTIVATION_KINDS = Object.freeze([
   "active", "passive", "reaction", "weapon",
@@ -217,6 +217,8 @@ export function createOfficialAbilityEffectIrCatalogueV1(input = {}) {
           semanticVersion: OFFICIAL_ABILITY_EFFECT_IR_VERSION,
           definitionId: `ability:${sourceFeatureHash.slice(0, 24)}`,
           sourceKind: collectionId === "army_units" ? "unit_feature" : "card_feature",
+          sourceProductKind: collectionId === "army_units" ? "unit"
+            : record.payload?.isFactionCard === true ? "faction_card" : "tactical_card",
           collectionId,
           recordKey: record.recordKey,
           sourceIndex,
@@ -327,6 +329,8 @@ export function verifyOfficialAbilityEffectIrCatalogueV1(catalogue) {
       definition.definitionId === edge.from)))
     || definitions.some((entry) => entry.schema
       !== "starcraft_tmg_official_ability_effect_definition_ir_v1"
+      || !["unit", "faction_card", "tactical_card"].includes(
+        entry.sourceProductKind)
       || !ACTIVATION_KINDS.has(entry.activationKind)
       || !RUNTIME_ROLES.has(entry.runtimeRole)
       || !Array.isArray(entry.timingHooks) || entry.timingHooks.length === 0
