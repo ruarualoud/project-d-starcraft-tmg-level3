@@ -147,6 +147,16 @@
                 <label><span>Mode</span><select data-agent-mode><option value="tutor">Tutor</option><option value="opponent">Opponent</option><option value="commentator">Commentator</option><option value="companion" selected>Companion</option></select></label>
                 <label><span>Intent</span><select data-agent-intent><option value="reflect">Reflect</option><option value="chat">Chat</option></select></label>
               </div>
+              <section class="hosted-bot-card" data-hosted-bot-card hidden aria-label="Hosted opponent status">
+                <div class="provider-head">
+                  <strong>Hosted opponent</strong>
+                  <span data-hosted-bot-status>not mounted</span>
+                </div>
+                <p data-hosted-bot-decision>No verified opponent action yet.</p>
+                <p data-hosted-bot-memory>Plan, memory and spatial evidence are waiting for the first turn.</p>
+                <p data-hosted-bot-evidence>Confirm and Apply authority remain host-owned.</p>
+                <button data-command="hosted-bot-sync">Sync opponent and room</button>
+              </section>
               <section class="provider-console" data-provider-console aria-label="Secure BYOK Provider controls">
                 <div class="provider-head">
                   <strong>Secure BYOK Provider</strong>

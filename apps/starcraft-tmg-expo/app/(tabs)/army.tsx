@@ -151,6 +151,7 @@ export default function ArmyScreen() {
     armyLists,
     saveArmy,
     deleteArmy,
+    catalogueSource,
     officialCatalogueAvailable,
     officialSourceMetadataVerified,
   } = useData();
@@ -187,7 +188,9 @@ export default function ArmyScreen() {
       <ScreenContainer containerClassName="bg-background">
         <View style={s.header}>
           <Text style={s.headerTitle}>{t('armyManage')}</Text>
-          <Text style={s.headerSub}>{armyLists.length} {t('armyCount')}</Text>
+          <Text style={s.headerSub}>
+            {armyLists.length} {t('armyCount')} · U{catalogueSource.dataVersions.unitsVersion}/C{catalogueSource.dataVersions.cardsVersion}
+          </Text>
         </View>
         <ScrollView style={{ flex: 1 }}>
           {armyLists.length === 0 ? (
@@ -900,6 +903,17 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
             {army.roster.length === 0 ? (
               <View style={s.emptyBox}>
                 <Text style={s.emptyText}>{t('rosterEmpty')}</Text>
+                {!army.factionCardId && (
+                  <>
+                    <Text style={s.emptyHint}>{t('selectFactionFirst')}</Text>
+                    <Pressable
+                      onPress={() => onTabChange('command')}
+                      style={({ pressed }) => [s.emptyCommandBtn, { borderColor: fColor }, pressed && { opacity: 0.7 }]}
+                    >
+                      <Text style={[s.emptyCommandBtnText, { color: fColor }]}>{t('commandTab')}</Text>
+                    </Pressable>
+                  </>
+                )}
               </View>
             ) : (
               army.roster.map((ru, idx) => {
@@ -1219,6 +1233,8 @@ const s = StyleSheet.create({
   upgCost: { fontSize: 11, color: '#eab308' },
   addUnitBtn: { padding: 14, borderRadius: 8, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', marginTop: 8 },
   addUnitBtnText: { fontSize: 14, fontWeight: '700' },
+  emptyCommandBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6, borderWidth: 1, marginTop: 12 },
+  emptyCommandBtnText: { fontSize: 12, fontWeight: '700' },
 
   // Add unit
   searchBarInner: { paddingHorizontal: 12, paddingVertical: 8 },

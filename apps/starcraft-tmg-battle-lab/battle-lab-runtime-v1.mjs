@@ -28,6 +28,9 @@ import {
   createHttpStarcraftTmgSecureProviderClientTransportV1,
 } from "../../packages/client-domain/secure-provider-transport-adapters-v1.mjs";
 import {
+  createHttpStarcraftTmgHostedBotSeatTransportV1,
+} from "../../packages/client-domain/hosted-bot-seat-transport-v1.mjs";
+import {
   createStarcraftTmgSecureProviderSessionClientV1,
 } from "../../packages/client-domain/secure-provider-session-client-v1.mjs";
 
@@ -154,18 +157,40 @@ export function createStarcraftTmgBattleLabRuntime(options = {}) {
   if (traceProjectionPort && typeof traceProjectionPort.read !== "function") {
     throw new TypeError("TraceProjectionPort.read is required");
   }
+  const hostedBotSeatTransport = options.hostedBotSeatTransport
+    || createHttpStarcraftTmgHostedBotSeatTransportV1({
+      baseUrl: String(options.baseUrl || "").replace(/\/+$/u, ""),
+      fetchImpl: options.fetchImpl || globalThis.fetch,
+      apiPrefix: options.hostedBotSeatApiPrefix,
+      timeoutMs: options.hostedBotSeatTimeoutMs,
+    });
+  if (typeof hostedBotSeatTransport?.read !== "function") {
+    throw new TypeError("HostedBotSeatTransport.read is required");
+  }
   const listeners = new Set();
   let agentTraceProjection = null;
   let traceRefreshGeneration = 0;
-  let surfaceView = projectStarcraftTmgBattleLabObservabilityV1({
-    clientView: clientDomain.read(),
+  let hostedBotSeat = Object.freeze({
+    availability: "unbound",
+    projection: null,
+    reason: null,
+    trainingTruth: false,
+  });
+  let surfaceView = Object.freeze({
+    ...projectStarcraftTmgBattleLabObservabilityV1({
+      clientView: clientDomain.read(),
+    }),
+    hostedBotSeat,
   });
   let pendingTraceRefresh = Promise.resolve(surfaceView);
 
   function publish() {
-    surfaceView = projectStarcraftTmgBattleLabObservabilityV1({
-      clientView: clientDomain.read(),
-      agentTraceProjection,
+    surfaceView = Object.freeze({
+      ...projectStarcraftTmgBattleLabObservabilityV1({
+        clientView: clientDomain.read(),
+        agentTraceProjection,
+      }),
+      hostedBotSeat,
     });
     for (const listener of [...listeners]) {
       try { listener(surfaceView); } catch {
@@ -228,6 +253,12 @@ export function createStarcraftTmgBattleLabRuntime(options = {}) {
       });
     }
     agentTraceProjection = null;
+    hostedBotSeat = Object.freeze({
+      availability: "unbound",
+      projection: null,
+      reason: null,
+      trainingTruth: false,
+    });
     const result = await clientDomain.bootstrap({
       route: input.route,
       principal: input.principal || {},
@@ -244,6 +275,34 @@ export function createStarcraftTmgBattleLabRuntime(options = {}) {
   }
 
   async function dispatch(intent) {
+    if (intent?.type === "read_hosted_bot_seat") {
+      const roomId = clientDomain.read().roomProjection?.room?.roomId || null;
+      if (!roomId) {
+        hostedBotSeat = Object.freeze({
+          availability: "unbound",
+          projection: null,
+          reason: null,
+          trainingTruth: false,
+        });
+      } else {
+        const result = await hostedBotSeatTransport.read({ roomId });
+        hostedBotSeat = Object.freeze({
+          availability: result.ok !== true
+            ? "unavailable"
+            : result.available ? "available" : "not_mounted",
+          projection: result.available ? result.projection : null,
+          reason: result.reason || null,
+          trainingTruth: false,
+        });
+      }
+      const view = publish();
+      return Object.freeze({
+        ok: hostedBotSeat.availability !== "unavailable",
+        outcome: hostedBotSeat.availability,
+        hostedBotSeat,
+        view,
+      });
+    }
     const result = await clientDomain.dispatch(intent);
     if (traceProjectionIsLiveClientBound) await pendingTraceRefresh;
     else await refreshTraceProjection();

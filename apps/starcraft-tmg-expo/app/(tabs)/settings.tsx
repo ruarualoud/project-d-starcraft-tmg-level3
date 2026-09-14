@@ -11,6 +11,7 @@ export default function SettingsScreen() {
   const {
     dataVersion,
     dataClassification,
+    catalogueSource,
     units,
     migration,
     scanLegacyData,
@@ -36,13 +37,9 @@ export default function SettingsScreen() {
     authority: zh ? '房间/规则权威' : 'Room / Rules authority',
     noAuthority: zh ? '否（来源元数据只读）' : 'No (source metadata is read-only)',
     sourceTitle: zh ? '官方资料接入' : 'Official source integration',
-    sourceNotice: source
-      ? zh
-        ? '已校验服务端冻结来源投影。Command Center 官方玩法数据仍匹配 71/69/48，但官方 FAQ V1.0 尚未纳入冻结锁，不能称为完整最新规则语料。当前仅展示 hash、版本、覆盖率和审核状态，不下发正文、译文或图片。'
-        : 'The server-generated frozen source projection is verified. Command Center gameplay still matches 71/69/48, but official FAQ V1.0 is not yet in the frozen lock, so this is not the complete latest rules corpus. Only hashes, versions, coverage, and review status are delivered—never text, translations, or images.'
-      : zh
-        ? '尚未取得可验证的来源投影。请显式刷新来源元数据；在成功前不声明版本、完整性或再分发状态。'
-        : 'No verifiable source projection is loaded. Refresh source metadata explicitly; version, completeness, and redistribution status remain unverified until it succeeds.',
+    sourceNotice: zh
+      ? `产品已内置经冻结链验证的 Command Center 目录 U${catalogueSource.dataVersions.unitsVersion}/C${catalogueSource.dataVersions.cardsVersion}/R${catalogueSource.dataVersions.rulesVersion}，可用于浏览、写表与非权威计算。开发期间不会自动拉取；房间规则仍独立绑定规则器。${source ? '服务端来源元数据也已连接。' : '服务端元数据刷新是可选诊断，不影响本地目录。'}`
+      : `The product carries a frozen-chain verified Command Center catalogue U${catalogueSource.dataVersions.unitsVersion}/C${catalogueSource.dataVersions.cardsVersion}/R${catalogueSource.dataVersions.rulesVersion} for browsing, army building, and non-authoritative calculations. It never auto-refreshes during development; room Rules remain separately bound. ${source ? 'Server source metadata is also connected.' : 'Refreshing server metadata is optional diagnostics and does not gate the local catalogue.'}`,
     historyTitle: zh ? '历史对战记录' : 'Historical match records',
     historyNotice: zh
       ? '旧对局只可净化成只读比分/回合摘要；玩家名、备注、battleTable、远端地址、side/revision 与邀请能力全部丢弃。'
@@ -51,8 +48,8 @@ export default function SettingsScreen() {
     historyRecord: zh ? '旧对局只读摘要' : 'Read-only legacy match',
     localPrefsTitle: zh ? '本地可写范围' : 'Local writable scope',
     localPrefsNotice: zh
-      ? '本地只保存显示偏好、未审核标签、工具历史、检疫草稿和 viewer 投影；权威对战只能经 Project D 房间服务写入。'
-      : 'Local storage is limited to display preferences, unreviewed labels, tool history, quarantined drafts, and viewer projections. Authoritative play is written only through the Project D room service.',
+      ? '本地保存显示偏好、单位译名、工具历史和当前军表草稿；这些都不是规则权威。权威对战只能经 Project D 房间服务写入。'
+      : 'Local storage holds display preferences, unit labels, tool history, and active army drafts; none is Rules authority. Authoritative play is written only through the Project D room service.',
     scan: zh ? '扫描旧数据' : 'Scan legacy data',
     scanAgain: zh ? '重新扫描' : 'Scan again',
     confirmImport: zh ? '确认净化导入' : 'Confirm sanitized import',
@@ -173,18 +170,18 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>{copy.sourceTitle}</Text>
           <Text style={styles.noticeText}>{copy.sourceNotice}</Text>
           <View style={styles.infoGrid}>
-            <InfoRow label="status" value={sourceStatus.status} />
-            <InfoRow label={copy.classification} value={source ? dataClassification.classification : copy.unverified} />
+            <InfoRow label="status" value={source ? sourceStatus.status : 'catalogue_ready'} />
+            <InfoRow label={copy.classification} value={dataClassification.classification} />
             <InfoRow label={copy.legacyVersion} value={dataVersion > 0 ? `v${dataVersion}` : '—'} />
-            <InfoRow label="cards / rules" value={source ? `v${source.source.dataVersions.cardsVersion} / v${source.source.dataVersions.rulesVersion}` : '—'} />
-            <InfoRow label="records / fields" value={source ? `${source.coverage.records} / ${source.coverage.fields}` : '—'} />
-            <InfoRow label="full latest corpus" value={source ? (source.freshness.completeLatestOfficialRulesCorpus ? 'yes' : 'no — FAQ V1.0 pending refresh/review') : copy.unverified} />
-            <InfoRow label="snapshot" value={source?.source.sourceSnapshotHash || '—'} mono />
-            <InfoRow label="official dataset" value={source?.source.officialDatasetHash || '—'} mono />
+            <InfoRow label="cards / rules" value={`v${catalogueSource.dataVersions.cardsVersion} / v${catalogueSource.dataVersions.rulesVersion}`} />
+            <InfoRow label="records" value={`${catalogueSource.recordCounts.units + catalogueSource.recordCounts.cards + catalogueSource.recordCounts.gameCards}`} />
+            <InfoRow label="full latest corpus" value="no — product catalogue is not the Rules/FAQ corpus" />
+            <InfoRow label="snapshot" value={catalogueSource.sourceSnapshotHash} mono />
+            <InfoRow label="official dataset" value={catalogueSource.officialDatasetHash} mono />
             <InfoRow label="localization" value={source?.source.localizationDatasetHash || '—'} mono />
-            <InfoRow label="room pin" value={sourceStatus.roomBinding} />
-            <InfoRow label="rights" value={source ? (source.rights.publicReleaseGatePassed ? 'released' : 'pending / metadata only') : copy.unverified} />
-            <InfoRow label="legacy fallback" value={source ? (sourceStatus.legacyFallbackUsed ? 'invalid' : 'disabled') : copy.unverified} />
+            <InfoRow label="room pin" value={source ? sourceStatus.roomBinding : 'not_bound'} />
+            <InfoRow label="product catalogue" value="public display enabled" />
+            <InfoRow label="legacy fallback" value={sourceStatus.legacyFallbackUsed ? 'invalid' : 'disabled'} />
             <InfoRow label={copy.authority} value={copy.noAuthority} />
           </View>
           <Pressable

@@ -63,11 +63,11 @@ function UnitDetail({ unit, onClose }: { unit: UnitCard; onClose: () => void }) 
       </View>
 
       <View style={s.statsRow}>
-        <StatBadge label="HP" value={unit.stats.hp} color="#ef4444" />
-        <StatBadge label={t('shieldStat')} value={unit.stats.shield} color="#38bdf8" />
-        <StatBadge label={t('armorStat')} value={unit.stats.armor} color="#94a3b8" />
-        <StatBadge label={t('evadeStat')} value={unit.stats.evade} color="#eab308" />
-        <StatBadge label={t('speedStat')} value={unit.stats.speed} color="#22c55e" />
+        <StatBadge label="HP" value={unit.printedStats?.hp ?? unit.stats.hp} color="#ef4444" />
+        <StatBadge label={t('shieldStat')} value={unit.printedStats?.shield ?? unit.stats.shield} color="#38bdf8" />
+        <StatBadge label={t('armorStat')} value={unit.printedStats?.armor ?? unit.stats.armor} color="#94a3b8" />
+        <StatBadge label={t('evadeStat')} value={unit.printedStats?.evade ?? unit.stats.evade} color="#eab308" />
+        <StatBadge label={t('speedStat')} value={unit.printedStats?.speed ?? unit.stats.speed} color="#22c55e" />
       </View>
 
       {/* Tags (Armor Type: Light/Armored/Massive etc.) */}
@@ -339,6 +339,7 @@ export default function DatabaseScreen() {
     cards,
     gameCards,
     isLoading,
+    catalogueSource,
     officialCatalogueAvailable,
     officialSourceMetadataVerified,
   } = useData();
@@ -451,6 +452,10 @@ export default function DatabaseScreen() {
       <View style={s.header}>
         <Text style={s.headerTitle}>{t('database')}</Text>
         <Text style={s.headerSub}>{units.length} {t('unitCount')} · {cards.length} {t('cardCount')} · {gameCards.length} {t('missions')}/{t('deployments')}</Text>
+        <Text style={s.sourceLine}>
+          Command Center · U{catalogueSource.dataVersions.unitsVersion}/C{catalogueSource.dataVersions.cardsVersion}/R{catalogueSource.dataVersions.rulesVersion}
+          {' · '}{lang === 'zh' ? '开发期固定快照' : 'development-frozen snapshot'}
+        </Text>
       </View>
 
       {/* Browse Tabs: Factions / Missions / Deployments */}
@@ -665,6 +670,7 @@ const s = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#e5e7eb' },
   headerSub: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  sourceLine: { fontSize: 10, color: '#38bdf8', marginTop: 4, fontFamily: 'monospace' },
 
   // Browse tabs (top level)
   browseTabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#334155', backgroundColor: '#0f172a' },

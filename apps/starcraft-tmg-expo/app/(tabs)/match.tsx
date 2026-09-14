@@ -11,7 +11,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 
 import { AuthoritativeBattleWorkspace } from "@/components/battlefield/authoritative-battle-workspace";
-import { TacticalAdjutantPanel } from "@/components/character/tactical-adjutant-panel";
+import { LearningConsolePanel } from "@/components/battlefield/learning-console-panel";
 import { ScreenContainer } from "@/components/screen-container";
 import { useI18n } from "@/lib/i18n";
 import { useLevel3ClientDomain } from "@/lib/level3/client-domain-provider";
@@ -33,7 +33,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 type AccessAction = "claim_control" | "issue_invite" | "issue_recovery" | "historical_rules";
-type MatchSurface = "battle" | "adjutant" | "room";
+type MatchSurface = "battle" | "room" | "learning";
 
 interface EphemeralLink {
   kind: StarcraftTmgRoomAccessKind;
@@ -279,12 +279,32 @@ export default function MatchScreen() {
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={styles.headerTitle}>{zh ? "对战房间" : "Battle Room"}</Text>
-          <Text style={styles.headerSub}>Project D Level-3 · Ticket 14 / Slice 136</Text>
+          <Text style={styles.headerSub}>
+            {zh ? "星际争霸 TMG · Web / App 共用权威房间" : "StarCraft TMG · shared authoritative Web / App room"}
+          </Text>
         </View>
         <View style={[styles.statusPill, { borderColor: statusColor }]}>
           <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
           <Text style={[styles.statusPillText, { color: statusColor }]}>{statusLabel}</Text>
         </View>
+      </View>
+
+      <View accessibilityRole="tablist" style={styles.surfaceTabs}>
+        <ActionButton
+          label={zh ? "战桌" : "Battlefield"}
+          onPress={() => setSurface("battle")}
+          kind={surface === "battle" ? "primary" : "secondary"}
+        />
+        <ActionButton
+          label={zh ? "房间与规则" : "Room & rules"}
+          onPress={() => setSurface("room")}
+          kind={surface === "room" ? "primary" : "secondary"}
+        />
+        <ActionButton
+          label={zh ? "复盘与 Skill" : "Review & Skill"}
+          onPress={() => setSurface("learning")}
+          kind={surface === "learning" ? "primary" : "secondary"}
+        />
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -327,28 +347,9 @@ export default function MatchScreen() {
           </View>
         )}
 
-        <View accessibilityRole="tablist" style={styles.surfaceTabs}>
-          <ActionButton
-            label={zh ? "战桌" : "Battlefield"}
-            onPress={() => setSurface("battle")}
-            kind={surface === "battle" ? "primary" : "secondary"}
-          />
-          <ActionButton
-            label={zh ? "副官" : "Adjutant"}
-            onPress={() => setSurface("adjutant")}
-            kind={surface === "adjutant" ? "primary" : "secondary"}
-          />
-          <ActionButton
-            label={zh ? "房间与规则" : "Room & rules"}
-            onPress={() => setSurface("room")}
-            kind={surface === "room" ? "primary" : "secondary"}
-          />
-        </View>
-
         {surface === "battle" && (
           <AuthoritativeBattleWorkspace onOpenRoomRules={() => setSurface("room")} />
         )}
-        {surface === "adjutant" && <TacticalAdjutantPanel />}
         {surface === "room" && (
           <>
         <View accessibilityRole="summary" accessibilityLiveRegion="polite" style={styles.heroCard}>
@@ -427,7 +428,6 @@ export default function MatchScreen() {
             </View>
           </View>
         )}
-
         {(notice || actionError) && (
           <View accessibilityLiveRegion="polite" style={styles.noticeCard}>
             {notice && <Text style={styles.noticeText}>{notice}</Text>}
@@ -526,6 +526,9 @@ export default function MatchScreen() {
         </View>
           </>
         )}
+        {surface === "learning" && (
+          <LearningConsolePanel roomId={connection.roomId} zh={zh} />
+        )}
       </ScrollView>
     </ScreenContainer>
   );
@@ -594,7 +597,7 @@ const styles = StyleSheet.create({
   statusPillText: { flexShrink: 1, fontSize: 11, fontWeight: "800" },
   scroll: { flex: 1 },
   content: { padding: 16, paddingTop: 6, paddingBottom: 48, gap: 14 },
-  surfaceTabs: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 8, borderRadius: 12, backgroundColor: "#07111f", borderWidth: 1, borderColor: "#164e63" },
+  surfaceTabs: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginHorizontal: 16, marginBottom: 6, padding: 8, borderRadius: 12, backgroundColor: "#07111f", borderWidth: 1, borderColor: "#164e63" },
   warningCard: { borderRadius: 12, padding: 14, backgroundColor: "#422006", borderWidth: 1, borderColor: "#f59e0b" },
   controlWarning: { borderRadius: 12, padding: 14, backgroundColor: "#3f1515", borderWidth: 1, borderColor: "#ef4444" },
   historicalRulesCard: { borderRadius: 14, padding: 16, gap: 10, backgroundColor: "#0b1c27", borderWidth: 1, borderColor: "#28566a" },

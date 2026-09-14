@@ -13,7 +13,7 @@ import type { DiceRoll } from '@/lib/types';
 import { RosterAnalysisPanel } from '@/components/roster-analysis-panel';
 
 type ToolTab = 'dice' | 'damage' | 'matchup' | 'versus' | 'roster';
-const LEGACY_CALCULATOR_EXECUTION_ENABLED = false;
+const CATALOGUE_ESTIMATOR_EXECUTION_ENABLED = true;
 
 
 // ============================================================
@@ -104,7 +104,12 @@ function DicePanel() {
         </View>
       </View>
 
-      <Pressable onPress={doRoll} style={({ pressed }) => [st.rollBtn, pressed && { transform: [{ scale: 0.97 }] }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${t('rollDice')} ${count}d${sides}`}
+        onPress={doRoll}
+        style={({ pressed }) => [st.rollBtn, pressed && { transform: [{ scale: 0.97 }] }]}
+      >
         <Text style={st.rollBtnText}>{t('rollDice')} {count}d{sides}</Text>
       </Pressable>
 
@@ -245,69 +250,77 @@ function DamagePanel() {
   }, [weapon, defender, attacker, attackerEffects, defenderEffects, attackerModels, defenderModels, hitModifier, inBurstRange, isCharge, defenderCanEvade, defenderEngaged, defenderVisible, defenderMovedThisRound]);
 
   return (
-    <ScrollView style={{ flex: 1, padding: 16 }}>
-      {/* Attacker */}
-      <Text style={st.sectionLabel}>{t('attacker')}</Text>
-      <FactionPicker value={attackerFaction} onChange={f => { setAttackerFaction(f); setAttackerId(''); setAttackerSelectedUpgrades([]); }} />
-      <UnitPicker units={attackerUnits} value={attackerId} onChange={id => { setAttackerId(id); setSelectedWeaponIdx(0); setAttackerSelectedUpgrades([]); }} />
-
-      {attacker && (
-        <SizePicker
-          unit={attacker}
-          value={attackerSize}
-          onChange={setAttackerSize}
-          label={`${t('attackerSquad')} (${attackerModels} ${t('models')})`}
-        />
-      )}
-      {attacker && (
-        <UpgradeSelector
-          unit={attacker}
-          selected={attackerSelectedUpgrades}
-          onChange={setAttackerSelectedUpgrades}
-          title={t('attackerUpgrades')}
-        />
-      )}
-
-      {weapons.length > 0 && (
-        <View style={st.weaponPicker}>
-          <Text style={st.subLabel}>{t('selectWeapon')}</Text>
-          {weapons.map((w, i) => (
-            <Pressable
-              key={i}
-              onPress={() => setSelectedWeaponIdx(i)}
-              style={({ pressed }) => [st.weaponOption, selectedWeaponIdx === i && st.weaponOptionActive, pressed && { opacity: 0.7 }]}
-            >
-              <Text style={[st.weaponOptionText, selectedWeaponIdx === i && { color: '#ef4444' }]}>
-                {w.name || `${t('weaponN')}${i + 1}`} ({t('hitLabel')}:{w.hit} {t('dmgLabel')}:{w.dmg} RoA:{w.roa})
-              </Text>
-              {w.surge && <Text style={st.weaponSurgeText}>Surge: {w.surge}</Text>}
-              {w.keywords && <Text style={st.weaponKwText}>{t('kwLabel')}: {w.keywords}</Text>}
-            </Pressable>
-          ))}
+    <ScrollView style={{ flex: 1, padding: 16 }} testID="damage-calculator-panel">
+      <View style={st.combatantPickerGrid}>
+        <View style={st.combatantPickerCard}>
+          <Text style={st.sectionLabel}>{t('attacker')}</Text>
+          <FactionPicker value={attackerFaction} onChange={f => { setAttackerFaction(f); setAttackerId(''); setAttackerSelectedUpgrades([]); }} />
+          <UnitPicker testID="damage-attacker-unit-picker" units={attackerUnits} value={attackerId} onChange={id => { setAttackerId(id); setSelectedWeaponIdx(0); setAttackerSelectedUpgrades([]); }} />
+          {attacker && (
+            <SizePicker
+              unit={attacker}
+              value={attackerSize}
+              onChange={setAttackerSize}
+              label={`${t('attackerSquad')} (${attackerModels} ${t('models')})`}
+            />
+          )}
         </View>
-      )}
 
-      {/* Defender */}
-      <Text style={[st.sectionLabel, { marginTop: 16 }]}>{t('defender')}</Text>
-      <FactionPicker value={defenderFaction} onChange={f => { setDefenderFaction(f); setDefenderId(''); setDefenderSelectedUpgrades([]); }} />
-      <UnitPicker units={defenderUnits} value={defenderId} onChange={id => { setDefenderId(id); setDefenderSelectedUpgrades([]); }} />
+        <View style={st.combatantPickerCard}>
+          <Text style={st.sectionLabel}>{t('defender')}</Text>
+          <FactionPicker value={defenderFaction} onChange={f => { setDefenderFaction(f); setDefenderId(''); setDefenderSelectedUpgrades([]); }} />
+          <UnitPicker testID="damage-defender-unit-picker" units={defenderUnits} value={defenderId} onChange={id => { setDefenderId(id); setDefenderSelectedUpgrades([]); }} />
+          {defender && (
+            <SizePicker
+              unit={defender}
+              value={defenderSize}
+              onChange={setDefenderSize}
+              label={`${t('defenderSquad')} (${defenderModels} ${t('models')})`}
+            />
+          )}
+        </View>
+      </View>
 
-      {defender && (
-        <SizePicker
-          unit={defender}
-          value={defenderSize}
-          onChange={setDefenderSize}
-          label={`${t('defenderSquad')} (${defenderModels} ${t('models')})`}
-        />
-      )}
-      {defender && (
-        <UpgradeSelector
-          unit={defender}
-          selected={defenderSelectedUpgrades}
-          onChange={setDefenderSelectedUpgrades}
-          title={t('defenderUpgrades')}
-        />
-      )}
+      <View style={st.combatantDetailGrid}>
+        <View style={st.combatantDetailColumn}>
+          {attacker && (
+            <UpgradeSelector
+              unit={attacker}
+              selected={attackerSelectedUpgrades}
+              onChange={setAttackerSelectedUpgrades}
+              title={t('attackerUpgrades')}
+            />
+          )}
+          {weapons.length > 0 && (
+            <View style={st.weaponPicker}>
+              <Text style={st.subLabel}>{t('selectWeapon')}</Text>
+              {weapons.map((w, i) => (
+                <Pressable
+                  key={i}
+                  onPress={() => setSelectedWeaponIdx(i)}
+                  style={({ pressed }) => [st.weaponOption, selectedWeaponIdx === i && st.weaponOptionActive, pressed && { opacity: 0.7 }]}
+                >
+                  <Text style={[st.weaponOptionText, selectedWeaponIdx === i && { color: '#ef4444' }]}> 
+                    {w.name || `${t('weaponN')}${i + 1}`} ({t('hitLabel')}:{w.hit} {t('dmgLabel')}:{w.dmg} RoA:{w.roa})
+                  </Text>
+                  {Boolean(w.surge) && <Text style={st.weaponSurgeText}>Surge: {w.surge}</Text>}
+                  {Boolean(w.keywords) && <Text style={st.weaponKwText}>{t('kwLabel')}: {w.keywords}</Text>}
+                </Pressable>
+              ))}
+            </View>
+          )}
+        </View>
+        <View style={st.combatantDetailColumn}>
+          {defender && (
+            <UpgradeSelector
+              unit={defender}
+              selected={defenderSelectedUpgrades}
+              onChange={setDefenderSelectedUpgrades}
+              title={t('defenderUpgrades')}
+            />
+          )}
+        </View>
+      </View>
 
       {/* Combat Modifiers */}
       {weapon && defender && (
@@ -500,16 +513,32 @@ function MatchupPanel() {
   }, [unitA, unitB, weaponsA, weaponsB, modelsA, modelsB, unitAEffects, unitBEffects]);
 
   return (
-    <ScrollView style={{ flex: 1, padding: 16 }}>
-      <Text style={st.sectionLabel}>{t('unitA')}</Text>
-      <FactionPicker value={factionA} onChange={f => { setFactionA(f); setUnitAId(''); }} />
-      <UnitPicker units={unitsA} value={unitAId} onChange={setUnitAId} />
-      {unitA && <SizePicker unit={unitA} value={sizeA} onChange={setSizeA} label={`${t('squadA')} (${modelsA} ${t('models')})`} />}
+    <ScrollView testID="matchup-calculator-panel" style={{ flex: 1, padding: 16 }}>
+      <View style={st.combatantPickerGrid}>
+        <View style={st.combatantPickerCard}>
+          <Text style={st.sectionLabel}>{t('unitA')}</Text>
+          <FactionPicker value={factionA} onChange={f => { setFactionA(f); setUnitAId(''); }} />
+          <UnitPicker
+            testID="matchup-unit-a-picker"
+            units={unitsA}
+            value={unitAId}
+            onChange={setUnitAId}
+          />
+          {unitA && <SizePicker unit={unitA} value={sizeA} onChange={setSizeA} label={`${t('squadA')} (${modelsA} ${t('models')})`} />}
+        </View>
 
-      <Text style={[st.sectionLabel, { marginTop: 16 }]}>{t('unitB')}</Text>
-      <FactionPicker value={factionB} onChange={f => { setFactionB(f); setUnitBId(''); }} />
-      <UnitPicker units={unitsB} value={unitBId} onChange={setUnitBId} />
-      {unitB && <SizePicker unit={unitB} value={sizeB} onChange={setSizeB} label={`${t('squadB')} (${modelsB} ${t('models')})`} />}
+        <View style={st.combatantPickerCard}>
+          <Text style={st.sectionLabel}>{t('unitB')}</Text>
+          <FactionPicker value={factionB} onChange={f => { setFactionB(f); setUnitBId(''); }} />
+          <UnitPicker
+            testID="matchup-unit-b-picker"
+            units={unitsB}
+            value={unitBId}
+            onChange={setUnitBId}
+          />
+          {unitB && <SizePicker unit={unitB} value={sizeB} onChange={setSizeB} label={`${t('squadB')} (${modelsB} ${t('models')})`} />}
+        </View>
+      </View>
 
       {analysis && unitA && unitB && (
         <View style={st.matchupResult}>
@@ -781,7 +810,7 @@ function VersusPanel() {
   const pickerArmy = selectedArmyId ? armyLists.find(a => a.id === selectedArmyId) : null;
 
   return (
-    <ScrollView style={{ flex: 1, padding: 16 }}>
+    <ScrollView testID="versus-calculator-panel" style={{ flex: 1, padding: 16 }}>
       {/* Army Import Overlay */}
       {showArmyPickerFor && (
         <View style={st.armyImportOverlay}>
@@ -848,19 +877,49 @@ function VersusPanel() {
         </View>
       )}
 
-      {/* Unit A Selection */}
-      <View style={st.unitSectionHeader}>
-        <Text style={st.sectionLabel}>{t('unitA')}</Text>
-        <Pressable
-          onPress={() => { setShowArmyPickerFor('A'); setSelectedArmyId(null); }}
-          style={({ pressed }) => [st.armyImportBtn, pressed && { opacity: 0.7 }]}
-        >
-          <Text style={st.armyImportBtnText}>{t('importFromArmy')}</Text>
-        </Pressable>
+      <View style={st.combatantPickerGrid}>
+        {/* Unit A Selection */}
+        <View style={st.combatantPickerCard}>
+          <View style={st.unitSectionHeader}>
+            <Text style={st.sectionLabel}>{t('unitA')}</Text>
+            <Pressable
+              onPress={() => { setShowArmyPickerFor('A'); setSelectedArmyId(null); }}
+              style={({ pressed }) => [st.armyImportBtn, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={st.armyImportBtnText}>{t('importFromArmy')}</Text>
+            </Pressable>
+          </View>
+          <FactionPicker value={factionA} onChange={f => { setFactionA(f); setUnitAId(''); setCustomModelsA(0); setSelectedUpgradesA([]); }} />
+          <UnitPicker
+            testID="versus-unit-a-picker"
+            units={unitsA}
+            value={unitAId}
+            onChange={id => { setUnitAId(id); setCustomModelsA(0); setSelectedUpgradesA([]); }}
+          />
+          {unitA && <SizePicker unit={unitA} value={sizeA} onChange={s => { setSizeA(s); setCustomModelsA(0); }} label={`${t('squadA')} (${modelsA} ${t('models')})`} />}
+        </View>
+
+        {/* Unit B Selection */}
+        <View style={st.combatantPickerCard}>
+          <View style={st.unitSectionHeader}>
+            <Text style={st.sectionLabel}>{t('unitB')}</Text>
+            <Pressable
+              onPress={() => { setShowArmyPickerFor('B'); setSelectedArmyId(null); }}
+              style={({ pressed }) => [st.armyImportBtn, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={st.armyImportBtnText}>{t('importFromArmy')}</Text>
+            </Pressable>
+          </View>
+          <FactionPicker value={factionB} onChange={f => { setFactionB(f); setUnitBId(''); setCustomModelsB(0); setSelectedUpgradesB([]); }} />
+          <UnitPicker
+            testID="versus-unit-b-picker"
+            units={unitsB}
+            value={unitBId}
+            onChange={id => { setUnitBId(id); setCustomModelsB(0); setSelectedUpgradesB([]); }}
+          />
+          {unitB && <SizePicker unit={unitB} value={sizeB} onChange={s => { setSizeB(s); setCustomModelsB(0); }} label={`${t('squadB')} (${modelsB} ${t('models')})`} />}
+        </View>
       </View>
-      <FactionPicker value={factionA} onChange={f => { setFactionA(f); setUnitAId(''); setCustomModelsA(0); setSelectedUpgradesA([]); }} />
-      <UnitPicker units={unitsA} value={unitAId} onChange={id => { setUnitAId(id); setCustomModelsA(0); setSelectedUpgradesA([]); }} />
-      {unitA && <SizePicker unit={unitA} value={sizeA} onChange={s => { setSizeA(s); setCustomModelsA(0); }} label={`${t('squadA')} (${modelsA} ${t('models')})`} />}
       {unitA && (
         <ModelCountPicker
           defaultCount={defaultModelsA}
@@ -924,19 +983,7 @@ function VersusPanel() {
         </View>
       )}
 
-      {/* Unit B Selection */}
-      <View style={[st.unitSectionHeader, { marginTop: 16 }]}>
-        <Text style={st.sectionLabel}>{t('unitB')}</Text>
-        <Pressable
-          onPress={() => { setShowArmyPickerFor('B'); setSelectedArmyId(null); }}
-          style={({ pressed }) => [st.armyImportBtn, pressed && { opacity: 0.7 }]}
-        >
-          <Text style={st.armyImportBtnText}>{t('importFromArmy')}</Text>
-        </Pressable>
-      </View>
-      <FactionPicker value={factionB} onChange={f => { setFactionB(f); setUnitBId(''); setCustomModelsB(0); setSelectedUpgradesB([]); }} />
-      <UnitPicker units={unitsB} value={unitBId} onChange={id => { setUnitBId(id); setCustomModelsB(0); setSelectedUpgradesB([]); }} />
-      {unitB && <SizePicker unit={unitB} value={sizeB} onChange={s => { setSizeB(s); setCustomModelsB(0); }} label={`${t('squadB')} (${modelsB} ${t('models')})`} />}
+      {/* Unit B details */}
       {unitB && (
         <ModelCountPicker
           defaultCount={defaultModelsB}
@@ -1267,7 +1314,7 @@ function FactionPicker({ value, onChange }: { value: Faction; onChange: (f: Fact
   );
 }
 
-function UnitPicker({ units, value, onChange }: { units: UnitCard[]; value: string; onChange: (id: string) => void }) {
+function UnitPicker({ units, value, onChange, testID }: { units: UnitCard[]; value: string; onChange: (id: string) => void; testID?: string }) {
   const { t } = useI18n();
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(false);
@@ -1280,8 +1327,8 @@ function UnitPicker({ units, value, onChange }: { units: UnitCard[]; value: stri
   const selected = units.find(u => u.id === value);
 
   return (
-    <View style={st.unitPicker}>
-      <Pressable onPress={() => setExpanded(!expanded)} style={({ pressed }) => [st.unitPickerBtn, pressed && { opacity: 0.7 }]}>
+    <View style={st.unitPicker} testID={testID}>
+      <Pressable accessibilityRole="button" accessibilityLabel={selected?.name || t('selectUnit')} onPress={() => setExpanded(!expanded)} style={({ pressed }) => [st.unitPickerBtn, pressed && { opacity: 0.7 }]}> 
         <Text style={st.unitPickerText}>{selected ? selected.name : t('selectUnit')}</Text>
         <Text style={st.unitPickerChevron}>{expanded ? '▲' : '▼'}</Text>
       </Pressable>
@@ -1299,6 +1346,8 @@ function UnitPicker({ units, value, onChange }: { units: UnitCard[]; value: stri
             {filtered.map(u => (
               <Pressable
                 key={u.id}
+                accessibilityRole="button"
+                accessibilityLabel={u.name}
                 onPress={() => { onChange(u.id); setExpanded(false); setSearch(''); }}
                 style={({ pressed }) => [st.unitPickerItem, pressed && { backgroundColor: '#1e293b' }]}
               >
@@ -1473,7 +1522,7 @@ export default function ToolsScreen() {
   const [tab, setTab] = useState<ToolTab>('dice');
 
   useEffect(() => {
-    if (LEGACY_CALCULATOR_EXECUTION_ENABLED && params.tab === 'roster') setTab('roster');
+    if (CATALOGUE_ESTIMATOR_EXECUTION_ENABLED && params.tab === 'roster') setTab('roster');
   }, [params.tab]);
 
   return (
@@ -1491,15 +1540,11 @@ export default function ToolsScreen() {
         ] as [ToolTab, string][]).map(([key, label]) => (
           <Pressable
             key={key}
-            accessibilityState={{ disabled: key !== 'dice' }}
-            disabled={key !== 'dice'}
-            onPress={() => {
-              if (key === 'dice') setTab(key);
-            }}
+            accessibilityState={{ disabled: false }}
+            onPress={() => setTab(key)}
             style={({ pressed }) => [
               st.tabBtn,
               tab === key && st.tabBtnActive,
-              key !== 'dice' && st.tabBtnDisabled,
               pressed && { opacity: 0.7 },
             ]}
           >
@@ -1510,15 +1555,15 @@ export default function ToolsScreen() {
       <View accessibilityRole="alert" style={st.legacyToolNotice}>
         <Text style={st.legacyToolNoticeText}>
           {lang === 'zh'
-            ? '伤害、对位、VS 与军表分析仍绑定旧 beta 规则，仅保留为历史界面证据，当前不可执行。骰子是本地非权威工具，可继续使用。'
-            : 'Damage, Matchup, Versus, and Roster Analysis remain bound to legacy beta rules. Their historical UI is retained but execution is isolated. Dice remains available as a local, non-authoritative tool.'}
+            ? '计算器使用当前固定官方目录与已支持的效果做非权威估算；真实对战合法性与结算仍以战桌的 LegalSpace / Preview 为准。'
+            : 'Calculators provide non-authoritative estimates from the current frozen official catalogue and supported effects. Battle legality and resolution still come from LegalSpace / Preview.'}
         </Text>
       </View>
       {tab === 'dice' && <DicePanel />}
-      {LEGACY_CALCULATOR_EXECUTION_ENABLED && tab === 'damage' && <DamagePanel />}
-      {LEGACY_CALCULATOR_EXECUTION_ENABLED && tab === 'matchup' && <MatchupPanel />}
-      {LEGACY_CALCULATOR_EXECUTION_ENABLED && tab === 'versus' && <VersusPanel />}
-      {LEGACY_CALCULATOR_EXECUTION_ENABLED && tab === 'roster' && <RosterAnalysisPanel initialArmyAId={typeof params.armyAId === 'string' ? params.armyAId : undefined} initialArmyBId={typeof params.armyBId === 'string' ? params.armyBId : undefined} />}
+      {CATALOGUE_ESTIMATOR_EXECUTION_ENABLED && tab === 'damage' && <DamagePanel />}
+      {CATALOGUE_ESTIMATOR_EXECUTION_ENABLED && tab === 'matchup' && <MatchupPanel />}
+      {CATALOGUE_ESTIMATOR_EXECUTION_ENABLED && tab === 'versus' && <VersusPanel />}
+      {CATALOGUE_ESTIMATOR_EXECUTION_ENABLED && tab === 'roster' && <RosterAnalysisPanel initialArmyAId={typeof params.armyAId === 'string' ? params.armyAId : undefined} initialArmyBId={typeof params.armyBId === 'string' ? params.armyBId : undefined} />}
     </ScreenContainer>
   );
 }
@@ -1534,6 +1579,10 @@ const st = StyleSheet.create({
   tabBtnDisabled: { opacity: 0.35 },
   legacyToolNotice: { margin: 12, marginBottom: 0, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#475569', backgroundColor: '#111827' },
   legacyToolNoticeText: { fontSize: 12, lineHeight: 18, color: '#cbd5e1' },
+  combatantPickerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start' },
+  combatantPickerCard: { flexGrow: 1, flexBasis: 420, minWidth: 280, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#334155', backgroundColor: '#07111f' },
+  combatantDetailGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start' },
+  combatantDetailColumn: { flexGrow: 1, flexBasis: 420, minWidth: 280 },
 
   // Dice
   configRow: { gap: 16, marginBottom: 16 },

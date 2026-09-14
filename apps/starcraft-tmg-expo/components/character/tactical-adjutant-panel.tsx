@@ -35,7 +35,9 @@ function configuredAssetOrigin() {
   return null;
 }
 
-export function TacticalAdjutantPanel() {
+export function TacticalAdjutantPanel({ variant = "inline" }: {
+  variant?: "inline" | "floating";
+}) {
   const { lang } = useI18n();
   const {
     view,
@@ -47,7 +49,8 @@ export function TacticalAdjutantPanel() {
   } = useLevel3ClientDomain();
   const routeFocused = useIsFocused();
   const reducedMotion = useReducedMotion();
-  const [expanded, setExpanded] = useState(true);
+  const floating = variant === "floating";
+  const [expanded, setExpanded] = useState(!floating);
   const [frame, setFrame] = useState<StarcraftTmgVisibleCharacterFrame | null>(null);
   const [assetFailedFor, setAssetFailedFor] = useState<string | null>(null);
   const [selectedMode, setSelectedMode] = useState<(typeof AGENT_MODES)[number]>("companion");
@@ -199,7 +202,8 @@ export function TacticalAdjutantPanel() {
     <View
       accessibilityRole="summary"
       accessibilityLabel={zh ? "战术副官" : "Tactical Adjutant"}
-      style={styles.panel}
+      style={[styles.panel, floating && styles.floatingPanel]}
+      testID="tactical-adjutant-panel"
     >
       <Pressable
         accessibilityRole="button"
@@ -216,7 +220,7 @@ export function TacticalAdjutantPanel() {
                 ? projection.character.displayName
                 : cachedPersona
                   ? (zh ? "已封存的离线副官" : "Sealed offline Adjutant")
-                : (zh ? "副官尚未接入" : "Adjutant not connected")}
+                  : (zh ? "凯瑞甘副官 · 待连接" : "Kerrigan Adjutant · awaiting room")}
           </Text>
         </View>
         <Text style={styles.toggle}>{expanded ? "−" : "+"}</Text>
@@ -777,6 +781,7 @@ function ActionButton({
 
 const styles = StyleSheet.create({
   panel: { borderRadius: 14, overflow: "hidden", backgroundColor: "#080f0b", borderWidth: 1, borderColor: "#52624a" },
+  floatingPanel: { borderColor: "#2d839d", backgroundColor: "#060d12" },
   header: { minHeight: 52, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: "#101912" },
   headerCopy: { flex: 1 },
   eyebrow: { color: "#a8bd7d", fontSize: 10, fontWeight: "900", letterSpacing: 1.4 },

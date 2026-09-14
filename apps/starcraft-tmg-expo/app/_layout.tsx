@@ -14,6 +14,8 @@ import {
 import { DataProvider } from "@/lib/data-context";
 import { I18nProvider } from "@/lib/i18n";
 import { Level3ClientDomainProvider } from "@/lib/level3/client-domain-provider";
+import { TacticalAdjutantDock } from "@/components/character/tactical-adjutant-dock";
+import { View } from "react-native";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -38,10 +40,13 @@ export default function RootLayout() {
       <I18nProvider>
         <Level3ClientDomainProvider>
           <DataProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="room/[roomId]" />
-            </Stack>
+            <View style={{ flex: 1 }}>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="room/[roomId]" />
+              </Stack>
+              <TacticalAdjutantDock />
+            </View>
           </DataProvider>
         </Level3ClientDomainProvider>
       </I18nProvider>

@@ -17,6 +17,8 @@ import {
 } from "./role-context-contracts-v1.mjs";
 import { assertStarcraftTmgOnlineStrategySkillSnapshotV1 } from
   "../strategy-skills/online-strategy-skill-registry-v1.mjs";
+import { createStarcraftTmgCompanionTacticalAnalysisV1 } from
+  "./companion-tactical-analysis-v1.mjs";
 
 export const STARCRAFT_TMG_ONLINE_ROLE_CONTEXT_RUNTIME_VERSION =
   "starcraft_tmg_online_role_context_runtime_v1";
@@ -266,6 +268,9 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
   const memoryStore = options.memoryStore;
   const promptArtifactStore = options.promptArtifactStore;
   const roleOutputPolicy = options.roleOutputPolicy || null;
+  const decisionContinuity = options.decisionContinuity || null;
+  const spatialObservationProjector = options.spatialObservationProjector || null;
+  const spatialActionQueryRuntime = options.spatialActionQueryRuntime || null;
   if (typeof sessionLifecycle?.readSession !== "function") {
     throw new TypeError("sessionLifecycle.readSession is required");
   }
@@ -300,6 +305,22 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
     throw new TypeError(
       "roleOutputPolicy createResponseContract/process are required when configured");
   }
+  if (decisionContinuity !== null
+    && (typeof decisionContinuity.observe !== "function"
+      || typeof decisionContinuity.record !== "function")) {
+    throw new TypeError(
+      "decisionContinuity observe/record are required when configured");
+  }
+  if (spatialObservationProjector !== null
+    && typeof spatialObservationProjector !== "function") {
+    throw new TypeError("spatialObservationProjector must be a function");
+  }
+  if (spatialActionQueryRuntime !== null
+    && (typeof spatialActionQueryRuntime.actionSpace !== "function"
+      || typeof spatialActionQueryRuntime.query !== "function")) {
+    throw new TypeError(
+      "spatialActionQueryRuntime actionSpace/query are required when configured");
+  }
   const now = typeof options.now === "function" ? options.now : () => new Date().toISOString();
   const historyPolicy = normalizeHistoryPolicy(options.historyPolicy);
   const maxUserMessageBytes = Number(options.maxUserMessageBytes || 8_192);
@@ -315,6 +336,7 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
   const contextBindings = new Map();
   const histories = new Map();
   const lastContexts = new Map();
+  const companionTacticalAnalyses = new Map();
 
   function metadata() {
     return deepFreeze({
@@ -331,6 +353,20 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         "opponent_only_explicit_registry_snapshot_advisory_no_rules_authority",
       memoryPolicy: "accepted_same_session_allowed_namespace_advisory_only",
       memoryWrites: "disabled_live_turn",
+      ...(decisionContinuity ? {
+        matchDecisionContinuity:
+          "same_match_goal_purpose_and_rules_owned_initiative_advisory",
+        preexecutionSearch: "asynchronous_non_blocking_snapshot_bound",
+      } : {}),
+      ...(spatialObservationProjector ? {
+        spatialObservation:
+          "viewer_scoped_world_coordinates_and_physical_footprints",
+      } : {}),
+      ...(spatialActionQueryRuntime ? {
+        spatialActionSpace:
+          "finite_actions_plus_unbounded_current_parameter_domains",
+        spatialQueryPolicy: "exact_or_advisory_or_unknown_never_silent_exact",
+      } : {}),
       skillGeneration: "disabled_live_turn",
       providerCredentialsAccepted: false,
       productionReady: false,
@@ -487,6 +523,15 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
     };
   }
 
+  function continuityScope(session) {
+    return {
+      gameId: "starcraft-tmg",
+      roomId: session.binding.roomId,
+      matchBindingHash: session.binding.roomBinding.matchBindingHash,
+      seatKey: session.binding.seatKey,
+    };
+  }
+
   async function gatherContext(session, materials, userMessage) {
     const calls = [];
     const input = toolInput(session);
@@ -515,6 +560,49 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         code: "public_event_read_failed",
       });
       publicEvents = assertPublicEvents(events.events, session);
+    }
+
+    let spatialObservation = null;
+    if (["opponent", "companion"].includes(session.binding.mode)
+      && spatialObservationProjector) {
+      spatialObservation = await spatialObservationProjector({
+        roomProjection,
+        legalSpace,
+      });
+      if (!object(spatialObservation)
+        || spatialObservation.roomId !== session.binding.roomId
+        || spatialObservation.matchBindingHash
+          !== session.binding.roomBinding.matchBindingHash
+        || spatialObservation.stateRevision !== roomProjection.room.stateRevision
+        || spatialObservation.stateHash !== roomProjection.room.stateHash
+        || !HASH_PATTERN.test(String(spatialObservation.observationHash || ""))) {
+        throw Object.assign(new Error("spatial observation binding mismatch"), {
+          code: "spatial_observation_rejected",
+        });
+      }
+      calls.push("read_player_spatial_observation");
+    }
+
+    let spatialActionSpace = null;
+    if (session.binding.mode === "opponent" && spatialActionQueryRuntime) {
+      spatialActionSpace = await spatialActionQueryRuntime.actionSpace({
+        roomProjection,
+        legalSpace,
+        spatialObservation,
+      });
+      if (!object(spatialActionSpace)
+        || spatialActionSpace.authority?.roomId !== session.binding.roomId
+        || spatialActionSpace.authority?.stateRevision
+          !== roomProjection.room.stateRevision
+        || spatialActionSpace.authority?.stateHash !== roomProjection.room.stateHash
+        || spatialActionSpace.authority?.legalSpaceHash
+          !== legalSpace?.legalSpaceHash
+        || !HASH_PATTERN.test(String(spatialActionSpace.actionSpaceHash || ""))) {
+        throw Object.assign(new Error("spatial action space binding mismatch"), {
+          code: "spatial_action_space_rejected",
+        });
+      }
+      calls.push("read_spatial_action_space");
     }
 
     const rules = await roomTools.readRulesSkills(input);
@@ -560,6 +648,42 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
           code: "strategy_skill_snapshot_rejected",
         });
       }
+    }
+
+    let matchDecisionContext = null;
+    if (["opponent", "companion"].includes(session.binding.mode)
+      && decisionContinuity) {
+      matchDecisionContext = await decisionContinuity.observe({
+        scope: continuityScope(session),
+        roomProjection,
+        legalSpace,
+        publicEvents,
+        spatialObservation,
+        spatialActionSpace,
+        strategySkillSetHash: strategySkills?.skillSetHash || null,
+      });
+      calls.push("observe_match_decision_continuity");
+    }
+
+    let companionTacticalAnalysis = null;
+    if (session.binding.mode === "companion" && publicEvents
+      && spatialObservation) {
+      let runtime = companionTacticalAnalyses.get(session.sessionId);
+      if (!runtime) {
+        runtime = createStarcraftTmgCompanionTacticalAnalysisV1({
+          roomId: session.binding.roomId,
+          matchBindingHash: session.binding.roomBinding.matchBindingHash,
+          seatKey: session.binding.seatKey,
+        });
+        companionTacticalAnalyses.set(session.sessionId, runtime);
+      }
+      companionTacticalAnalysis = runtime.observe({
+        roomProjection,
+        publicEvents,
+        spatialObservation,
+        matchMemory: matchDecisionContext?.matchMemory || null,
+      });
+      calls.push("analyze_public_action_spatial_delta");
     }
 
     const memory = await memoryStore.read({
@@ -612,6 +736,21 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       ruleSkillSnapshotHash: ruleSkills.snapshotHash,
       strategySkillSnapshotHash: strategySkills?.snapshotHash || null,
       memorySnapshotHash: memorySnapshot.snapshotHash,
+      ...(spatialObservation ? {
+        spatialObservationHash: spatialObservation.observationHash,
+      } : {}),
+      ...(spatialActionSpace ? {
+        spatialActionSpaceHash: spatialActionSpace.actionSpaceHash,
+      } : {}),
+      ...(matchDecisionContext ? {
+        matchDecisionContextHash: matchDecisionContext.contextHash,
+        preexecutionSearchStatus:
+          matchDecisionContext.preexecutionSearch.status,
+      } : {}),
+      ...(companionTacticalAnalysis ? {
+        companionTacticalAnalysisHash:
+          companionTacticalAnalysis.analysisHash,
+      } : {}),
       worldbookActivationHash: worldbookActivation.receipt.activationHash,
       modelInitiatedToolCalls: 0,
       roomMutationCalls: 0,
@@ -625,6 +764,10 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       ruleSkills,
       strategySkills,
       memorySnapshot,
+      spatialObservation,
+      spatialActionSpace,
+      matchDecisionContext,
+      companionTacticalAnalysis,
       worldbookActivation,
       receipt,
     };
@@ -676,7 +819,48 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         opponentDecisionInfluence:
           "strategy_memory_only_when_explicitly_marked_mayInfluenceDecision",
       }),
+      ...(gathered.matchDecisionContext ? [node(
+        "match-decision-continuity", "same-match-advisory", {
+          contextHash: gathered.matchDecisionContext.contextHash,
+          matchMemory: gathered.matchDecisionContext.matchMemory,
+          preexecutionSearch:
+            gathered.matchDecisionContext.preexecutionSearch,
+          instructions: [
+            "Continue or explicitly revise the recorded same-match objective; do not silently forget it between alternating activations.",
+            "Treat pass, First Player Marker and chosen first actor only as Rules-owned observed facts.",
+            "A ready pre-execution search result is advisory and must still pass the current LegalSpace and Preview.",
+          ],
+          rulesMayBeOverridden: false,
+          roomMayBeMutated: false,
+        })] : []),
+      ...(gathered.spatialObservation ? [node(
+        "player-spatial-observation", "viewer-scoped-rules-observation", {
+          ...gathered.spatialObservation,
+          instructions: [
+            "Reason in world milli-inches and complete physical footprints, never CSS pixels or unit centres alone.",
+            "Use only exact fields directly; call Rules queries for paths, LOS, threat and scoring relations listed as query-required.",
+            "Return unknown for unsupported geometry instead of treating a UI circle as legal reachability.",
+          ],
+        })] : []),
+      ...(gathered.spatialActionSpace ? [node(
+        "spatial-action-space", "external-rules-service", {
+          ...gathered.spatialActionSpace,
+          instructions: [
+            "Finite actions and parameter domains are different: do not collapse a domain into a fixed candidate count.",
+            "Instantiate coordinates, paths, targets, weapons and resources through the current Rules domain before Preview.",
+            "Use exact query results as facts, advisory estimates only as preferences, and unknown as a reason to query or bound the claim.",
+          ],
+        })] : []),
       ...(gathered.publicEvents ? [node("public-events", "referee", gathered.publicEvents)] : []),
+      ...(gathered.companionTacticalAnalysis ? [node(
+        "companion-tactical-analysis", "typed-observation-and-inference", {
+          ...gathered.companionTacticalAnalysis,
+          instructions: [
+            "State observed facts only from observedFacts and cite their factId.",
+            "Label every claim about player purpose as an inferred intent; cite basisFactIds and confidence.",
+            "Never claim access to an opponent's private plan or hidden reasoning.",
+          ],
+        })] : []),
       node("bounded-conversation-history", "conversation", history),
       node("user-message", "user", { intent, text: userMessage }),
       node("response-contract", "platform", response.contract),
@@ -694,6 +878,20 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       ruleSkillSetHash: gathered.ruleSkills.skillSetHash,
       strategySkillSetHash: gathered.strategySkills?.skillSetHash || null,
       memorySetHash: gathered.memorySnapshot.memorySetHash,
+      ...(gathered.matchDecisionContext ? {
+        matchDecisionContextHash:
+          gathered.matchDecisionContext.contextHash,
+      } : {}),
+      ...(gathered.spatialObservation ? {
+        spatialObservationHash: gathered.spatialObservation.observationHash,
+      } : {}),
+      ...(gathered.spatialActionSpace ? {
+        spatialActionSpaceHash: gathered.spatialActionSpace.actionSpaceHash,
+      } : {}),
+      ...(gathered.companionTacticalAnalysis ? {
+        companionTacticalAnalysisHash:
+          gathered.companionTacticalAnalysis.analysisHash,
+      } : {}),
       historyHash: history.historyHash,
       toolContextReceiptHash: gathered.receipt.receiptHash,
       responseContractHash: response.contract.contractHash,
@@ -724,6 +922,10 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         ruleSkillRefs: [],
         strategySkillRefs: [],
         memoryRefs: [],
+        matchDecisionContextRef: null,
+        companionTacticalAnalysisRef: null,
+        spatialObservationRef: null,
+        spatialActionSpaceRef: null,
         harnessToolsCalled: [],
         lastTrace: null,
       });
@@ -746,6 +948,19 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
       ruleSkillRefs: previous.ruleSkillRefs,
       strategySkillRefs: previous.strategySkillRefs,
       memoryRefs: previous.memoryRefs,
+      ...(previous.matchDecisionContextRef ? {
+        matchDecisionContextRef: previous.matchDecisionContextRef,
+      } : {}),
+      ...(previous.companionTacticalAnalysisRef ? {
+        companionTacticalAnalysisRef:
+          previous.companionTacticalAnalysisRef,
+      } : {}),
+      ...(previous.spatialObservationRef ? {
+        spatialObservationRef: previous.spatialObservationRef,
+      } : {}),
+      ...(previous.spatialActionSpaceRef ? {
+        spatialActionSpaceRef: previous.spatialActionSpaceRef,
+      } : {}),
       harnessToolsCalled: previous.harnessToolsCalled,
       history,
       providerState,
@@ -881,8 +1096,33 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         ? roleOutcome?.reason || null
         : providerResult.reason;
       const additionalToolCalls = roleOutputPolicy
-        ? roleOutcome?.harnessToolsCalled || []
+        ? [...(roleOutcome?.harnessToolsCalled || [])]
         : [];
+      let matchDecisionWrite = null;
+      if (decisionContinuity && session.binding.mode === "opponent"
+        && roleAccepted && roleOutcome?.decision) {
+        try {
+          matchDecisionWrite = await decisionContinuity.record({
+            scope: continuityScope(session),
+            roomProjection: gathered.roomProjection,
+            legalSpace: gathered.legalSpace,
+            decision: roleOutcome.decision,
+            decisionStatus: roleOutcome.preview
+              ? "previewed_waiting_confirmation" : "selected_not_previewed",
+            decisionReceiptHash:
+              roleOutcome.decisionReceipt?.receiptHash || null,
+            previewProjectionHash:
+              roleOutcome.preview?.previewProjectionHash || null,
+          });
+          additionalToolCalls.push("record_match_decision_purpose");
+        } catch (error) {
+          matchDecisionWrite = {
+            ok: false,
+            recorded: 0,
+            reason: String(error?.message || error),
+          };
+        }
+      }
       const allToolCalls = [...gathered.receipt.calls, ...additionalToolCalls];
       const history = historyFor(session.sessionId);
       const entry = appendHistory(history, historyPolicy, {
@@ -913,6 +1153,33 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         ruleSkillRefs: gathered.ruleSkills.skillRefs,
         strategySkillRefs: gathered.strategySkills?.skillRefs || [],
         memoryRefs: gathered.memorySnapshot.refs,
+        ...(gathered.matchDecisionContext ? {
+          matchDecisionContextHash:
+            gathered.matchDecisionContext.contextHash,
+          matchDecisionSearchStatus:
+            gathered.matchDecisionContext.preexecutionSearch.status,
+          matchDecisionRecordRefs:
+            matchDecisionWrite?.recordRefs || [],
+          matchDecisionWrites: matchDecisionWrite?.recorded || 0,
+          matchDecisionWriteStatus: matchDecisionWrite?.ok === false
+            ? "degraded" : "recorded",
+        } : {}),
+        ...(gathered.spatialObservation ? {
+          spatialObservationHash: gathered.spatialObservation.observationHash,
+          spatialCoverage: gathered.spatialObservation.coverage,
+        } : {}),
+        ...(gathered.spatialActionSpace ? {
+          spatialActionSpaceHash: gathered.spatialActionSpace.actionSpaceHash,
+          spatialActionCounts: gathered.spatialActionSpace.counts,
+        } : {}),
+        ...(gathered.companionTacticalAnalysis ? {
+          companionTacticalAnalysisHash:
+            gathered.companionTacticalAnalysis.analysisHash,
+          companionObservedFactCount:
+            gathered.companionTacticalAnalysis.observedFacts.length,
+          companionIntentInferenceCount:
+            gathered.companionTacticalAnalysis.intentInferences.length,
+        } : {}),
         harnessVersion: STARCRAFT_TMG_ONLINE_ROLE_CONTEXT_RUNTIME_VERSION,
         agentVersion: materials.providerProfile.model,
         rulesVersion: session.binding.roomBinding.rulesVersion,
@@ -950,6 +1217,33 @@ export function createStarcraftTmgOnlineRoleContextRuntimeV1(options = {}) {
         ruleSkillRefs: gathered.ruleSkills.skillRefs,
         strategySkillRefs: gathered.strategySkills?.skillRefs || [],
         memoryRefs: gathered.memorySnapshot.refs,
+        matchDecisionContextRef: gathered.matchDecisionContext ? {
+          contextHash: gathered.matchDecisionContext.contextHash,
+          searchStatus:
+            gathered.matchDecisionContext.preexecutionSearch.status,
+        } : null,
+        spatialObservationRef: gathered.spatialObservation ? {
+          observationHash: gathered.spatialObservation.observationHash,
+          stateRevision: gathered.spatialObservation.stateRevision,
+          exactFootprintCount:
+            gathered.spatialObservation.coverage.exactFootprintCount,
+          unknownFootprintCount:
+            gathered.spatialObservation.coverage.unknownFootprintCount,
+        } : null,
+        spatialActionSpaceRef: gathered.spatialActionSpace ? {
+          actionSpaceHash: gathered.spatialActionSpace.actionSpaceHash,
+          counts: gathered.spatialActionSpace.counts,
+        } : null,
+        companionTacticalAnalysisRef:
+          gathered.companionTacticalAnalysis ? {
+            analysisHash:
+              gathered.companionTacticalAnalysis.analysisHash,
+            observedFactCount:
+              gathered.companionTacticalAnalysis.observedFacts.length,
+            intentInferenceCount:
+              gathered.companionTacticalAnalysis.intentInferences.length,
+            factInferenceSeparation: "typed_and_required",
+          } : null,
         harnessToolsCalled: allToolCalls,
         lastTrace: trace,
       }));

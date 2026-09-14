@@ -1,6 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import type { UnitCard, TacticalCard, GameCard, ArmyList, Faction } from './types';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import officialCatalogueJson from '../assets/data/official-product-catalogue-v1.json';
+import type { UnitCard, TacticalCard, GameCard, ArmyList, Faction, DataPackage } from './types';
+import { normalizeDataPackage } from './weapon-profile';
+import * as productStorage from './storage';
 import { useLevel3ClientDomain } from './level3/client-domain-provider';
 import {
   confirmLegacyStarcraftTmgDeviceDataMigrationV1,
@@ -13,10 +16,10 @@ import {
 } from '../../../packages/client-domain/device-data-migration-v1.mjs';
 
 export const OFFICIAL_DATA_CLASSIFICATION = Object.freeze({
-  classification: 'official_source_metadata_projection_rights_and_faq_refresh_pending',
-  canonicalSourceOwner: 'server_source_localization_runtime',
-  canonical: false,
-  catalogueBodyAvailable: false,
+  classification: 'verified_frozen_official_product_projection',
+  canonicalSourceOwner: 'starcraft-tmg.official.command-center',
+  canonical: true,
+  catalogueBodyAvailable: true,
   roomAuthority: false,
   rulesAuthority: false,
   automaticNetworkSync: false,
@@ -24,6 +27,31 @@ export const OFFICIAL_DATA_CLASSIFICATION = Object.freeze({
   legacyFallbackAllowed: false,
   trainingTruth: false,
 } as const);
+
+interface ProductCatalogueSource {
+  sourceId: string;
+  sourceSnapshotHash: string;
+  officialDatasetHash: string;
+  sourceLockHash: string;
+  capturedAt: string;
+  dataVersions: { unitsVersion: string; cardsVersion: string; rulesVersion: string };
+  recordCounts: { units: number; cards: number; gameCards: number };
+  sourceRefreshPolicy: 'explicit_user_command_only';
+  displayAuthority: 'verified_frozen_official_product_projection';
+  rulesAuthority: false;
+  trainingTruth: false;
+}
+
+interface ProductCatalogueEnvelope extends DataPackage {
+  schemaVersion: 'starcraft_tmg_official_product_catalogue_v1';
+  source: ProductCatalogueSource;
+}
+
+// JSON imports widen literal union members (Faction, UnitType and card type) to
+// `string`. The build script validates and normalizes that frozen source before
+// emitting this product envelope, so the cast belongs at this one import seam.
+const officialCatalogue = officialCatalogueJson as unknown as ProductCatalogueEnvelope;
+const normalizedOfficialCatalogue = normalizeDataPackage(officialCatalogue);
 
 interface MigrationView {
   phase: 'not_scanned' | 'scanning' | 'classified' | 'importing' | 'sanitized_imported' | 'failed';
@@ -40,7 +68,8 @@ interface DataContextType {
   armyLists: ArmyList[];
   dataVersion: number;
   dataClassification: typeof OFFICIAL_DATA_CLASSIFICATION;
-  officialCatalogueAvailable: false;
+  catalogueSource: ProductCatalogueSource;
+  officialCatalogueAvailable: true;
   officialSourceMetadataVerified: boolean;
   migration: MigrationView;
   isLoading: boolean;
@@ -75,6 +104,7 @@ function errorCode(error: unknown): string {
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { view } = useLevel3ClientDomain();
   const [migration, setMigration] = useState<MigrationView>(INITIAL_MIGRATION);
+  const [armyLists, setArmyLists] = useState<ArmyList[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const migrationOperationEpoch = useRef(0);
   const activeMigrationOperation = useRef<'reload' | 'scan' | 'confirm' | null>(null);
@@ -89,6 +119,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const manifest = await loadStarcraftTmgDeviceMigrationManifestV1({
         storage: AsyncStorage,
       });
+      const activeArmies = await productStorage.getArmyLists();
+      if (migrationOperationEpoch.current === epoch) setArmyLists(activeArmies);
       if (manifest && migrationOperationEpoch.current === epoch) {
         const history = await readStarcraftTmgReadOnlyLegacyHistoryV1({
           storage: AsyncStorage,
@@ -215,42 +247,48 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, [migration.phase, migration.scan, source]);
 
-  const unavailableArmyMutation = useCallback(async () => {
-    throw Object.assign(
-      new Error('Official catalogue body is unavailable pending rights release'),
-      { code: 'OFFICIAL_CATALOGUE_BODY_UNAVAILABLE' },
-    );
+  const saveArmy = useCallback(async (army: ArmyList) => {
+    await productStorage.saveArmyList(army);
+    setArmyLists(await productStorage.getArmyLists());
   }, []);
 
-  const emptyUnits = useMemo<UnitCard[]>(() => [], []);
-  const emptyCards = useMemo<TacticalCard[]>(() => [], []);
-  const emptyGameCards = useMemo<GameCard[]>(() => [], []);
-  const emptyArmies = useMemo<ArmyList[]>(() => [], []);
-  const dataVersion = Number(source?.source.dataVersions.unitsVersion || 0);
+  const deleteArmy = useCallback(async (id: string) => {
+    await productStorage.deleteArmyList(id);
+    setArmyLists(await productStorage.getArmyLists());
+  }, []);
 
-  const emptyByFaction = useCallback(() => [], []);
+  const units = normalizedOfficialCatalogue.units as UnitCard[];
+  const cards = normalizedOfficialCatalogue.cards as TacticalCard[];
+  const gameCards = normalizedOfficialCatalogue.gameCards as GameCard[];
+  const dataVersion = normalizedOfficialCatalogue.version;
+  const byFaction = useCallback(<T extends { faction: string },>(entries: T[], faction: Faction) => (
+    entries.filter((entry) => entry.faction === faction)
+  ), []);
 
   return (
     <DataContext.Provider value={{
-      units: emptyUnits,
-      cards: emptyCards,
-      gameCards: emptyGameCards,
-      armyLists: emptyArmies,
+      units,
+      cards,
+      gameCards,
+      armyLists,
       dataVersion,
       dataClassification: OFFICIAL_DATA_CLASSIFICATION,
-      officialCatalogueAvailable: false,
-      officialSourceMetadataVerified: source !== null,
+      catalogueSource: officialCatalogue.source,
+      officialCatalogueAvailable: true,
+      officialSourceMetadataVerified: true,
       migration,
       isLoading,
       reloadLocal,
       scanLegacyData,
       confirmLegacyMigration,
-      saveArmy: unavailableArmyMutation,
-      deleteArmy: unavailableArmyMutation,
-      getUnitsByFaction: emptyByFaction,
-      getCardsByFaction: emptyByFaction,
-      getFactionCards: emptyByFaction,
-      getTacticalCards: emptyByFaction,
+      saveArmy,
+      deleteArmy,
+      getUnitsByFaction: (faction) => byFaction(units, faction),
+      getCardsByFaction: (faction) => byFaction(cards, faction),
+      getFactionCards: (faction) => byFaction(cards, faction)
+        .filter((card) => card.isFactionCard),
+      getTacticalCards: (faction) => byFaction(cards, faction)
+        .filter((card) => !card.isFactionCard),
     }}>
       {children}
     </DataContext.Provider>

@@ -384,8 +384,8 @@ const UI_TEXT = {
     // Tab bar
     tabDatabase: 'Database',
     tabArmy: 'Army',
-    tabTools: 'Tools',
-    tabMatch: 'Match',
+    tabTools: 'Calculator',
+    tabMatch: 'Battle',
     tabSettings: 'Settings',
     // Combat
     range: 'Range',
@@ -882,8 +882,8 @@ const UI_TEXT = {
     aboutText: 'StarCraft TMG 军表助手\n星际争霸桌面战棋游戏工具\n\n功能: 数据浏览 · 军表创建 · 伤害计算 · 对抗分析 · 比赛记录\n\n数据来源: sc.starcraft-tmg.com\n所有数据存储在本地，无需后端服务',
     tabDatabase: '数据库',
     tabArmy: '军表',
-    tabTools: '工具箱',
-    tabMatch: '比赛',
+    tabTools: '计算',
+    tabMatch: '对战',
     tabSettings: '设置',
     range: '射程',
     target: '目标',

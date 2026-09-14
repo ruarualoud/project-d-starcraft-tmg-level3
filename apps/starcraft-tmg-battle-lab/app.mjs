@@ -37,6 +37,9 @@ voiceAudio.volume = 0.7;
 const mapMedia = starcraftTmgBattlefieldMapMediaV1();
 let activeDetailPanel = "unit";
 let providerView = readStarcraftTmgTrustedBattleLabProviderV1(runtime);
+let hostedBotPollInFlight = false;
+let hostedBotPollingEnabled = false;
+let hostedBotNextPollAt = 0;
 
 const el = Object.fromEntries([
   "connection", "shared-hash", "room-id", "seat-token", "room-title",
@@ -54,6 +57,8 @@ const el = Object.fromEntries([
   "provider-console", "provider-status", "provider-profile",
   "provider-profile-summary", "provider-consent", "provider-secret-row",
   "provider-secret", "provider-safe-state", "provider-error",
+  "hosted-bot-card", "hosted-bot-status", "hosted-bot-decision",
+  "hosted-bot-memory", "hosted-bot-evidence",
 ].map((name) => [name, document.querySelector(`[data-${name}]`)]));
 
 voiceAudio.addEventListener("playing", () => {
@@ -460,6 +465,28 @@ function renderAgent(agent, controls) {
   ])));
 }
 
+function renderHostedBotSeat(hosted) {
+  const available = hosted?.availability === "available"
+    && Boolean(hosted.projection);
+  el["hosted-bot-card"].hidden = !available;
+  if (!available) return;
+  const projection = hosted.projection;
+  const decision = projection.lastDecision;
+  const trace = projection.latestTrace;
+  el["hosted-bot-status"].textContent =
+    `${projection.lifecycle} · ${projection.driveStatus} · ${projection.actionCount} actions`;
+  el["hosted-bot-decision"].textContent = decision
+    ? `${decision.candidateId}: ${decision.selectedReason}`
+    : "No verified opponent action yet.";
+  el["hosted-bot-memory"].textContent = projection.memory
+    ? `plan ${shortHash(projection.memory.turnPlanHash)} · intent ${shortHash(projection.memory.actionIntentHash)} · continuity ${shortHash(projection.memory.continuityContextHash)}`
+    : "Plan, memory and spatial evidence are waiting for the first turn.";
+  const issue = projection.issues?.at(-1);
+  el["hosted-bot-evidence"].textContent = issue
+    ? `${issue.severity} ${issue.code} · ${issue.message}`
+    : `spatial ${shortHash(trace?.spatialObservationHash)} · replay ${projection.lastReplayMatchesCurrent === true ? "verified" : "waiting"} · model Confirm ${projection.authorization.modelConfirmCalls} / Apply ${projection.authorization.modelApplyCalls}`;
+}
+
 function selectedProviderProfile(view = providerView) {
   const selectedHash = el["provider-profile"]?.value || "";
   return view?.profiles?.find((profile) => profile.profileRef.hash === selectedHash)
@@ -688,6 +715,41 @@ async function invoke(intent, label) {
   return result;
 }
 
+async function refreshHostedBotSeat({ syncRoom = false, notifyUser = false } = {}) {
+  if (hostedBotPollInFlight) return null;
+  const roomId = runtime.read().shared.roomId;
+  if (!roomId) return null;
+  hostedBotPollInFlight = true;
+  try {
+    const result = await runtime.dispatch({ type: "read_hosted_bot_seat" });
+    const hosted = result.hostedBotSeat;
+    if (hosted?.availability === "not_mounted") {
+      hostedBotNextPollAt = Date.now() + 30_000;
+    } else if (hosted?.availability === "unavailable") {
+      hostedBotNextPollAt = Date.now() + 5_000;
+    } else {
+      hostedBotNextPollAt = Date.now() + 750;
+    }
+    const remoteRevision = Number(hosted?.projection?.lastAppliedStateRevision);
+    const localRevision = Number(runtime.read().referee.stateRevision);
+    if (syncRoom && Number.isInteger(remoteRevision)
+      && Number.isInteger(localRevision) && remoteRevision > localRevision
+      && runtime.read().connection.canDispatchAuthoritativeIntent) {
+      await runtime.dispatch({ type: "refresh" });
+      await runtime.dispatch({ type: "load_battle_workbench" });
+      await runtime.dispatch({ type: "load_legal_space" });
+    }
+    if (notifyUser) {
+      notify(hosted?.availability === "available"
+        ? "Hosted opponent and room synchronized"
+        : `Hosted opponent ${hosted?.availability || "unavailable"}`);
+    }
+    return result;
+  } finally {
+    hostedBotPollInFlight = false;
+  }
+}
+
 function renderActions(view) {
   const scene = view.battlefield;
   el["action-count"].textContent = `${scene.finiteActions.length} finite · ${scene.parameterDomains.length} domains`;
@@ -744,6 +806,7 @@ function render(view) {
   renderBoard(view);
   renderFacts(view.referee);
   renderAgent(view.agent, view.agentControls);
+  renderHostedBotSeat(view.hostedBotSeat);
   renderActions(view);
   renderWorkbench(view);
   renderHarness(view.harness);
@@ -819,7 +882,12 @@ document.addEventListener("click", async (event) => {
         locale: navigator.language || "en",
       });
       notify(result.ok ? "Authoritative room projection bound" : `Blocked: ${result.rejection?.code || "bind failed"}`);
-      if (result.ok) await invoke({ type: "load_battle_workbench" }, "Battle workbench loaded");
+      if (result.ok) {
+        hostedBotPollingEnabled = true;
+        hostedBotNextPollAt = 0;
+        await invoke({ type: "load_battle_workbench" }, "Battle workbench loaded");
+        await refreshHostedBotSeat();
+      }
     } else if (command === "refresh") {
       const result = await invoke({ type: "refresh" }, "Projection refreshed");
       if (result.ok) await invoke({ type: "load_battle_workbench" }, "Battle workbench refreshed");
@@ -916,6 +984,8 @@ document.addEventListener("click", async (event) => {
         await invoke({ type: "confirm_agent_preview", previewId },
           "Human confirmed Agent Preview; room receipt refreshed");
       }
+    } else if (command === "hosted-bot-sync") {
+      await refreshHostedBotSeat({ syncRoom: true, notifyUser: true });
     }
   } catch (error) {
     notify(`Blocked: ${error?.code || error?.message || "operation failed"}`);
@@ -930,3 +1000,8 @@ renderProvider(providerView);
 
 const initialRoom = new URL(globalThis.location.href).searchParams.get("room");
 if (initialRoom) el["room-id"].value = initialRoom;
+
+setInterval(() => {
+  if (!hostedBotPollingEnabled || Date.now() < hostedBotNextPollAt) return;
+  void refreshHostedBotSeat({ syncRoom: true });
+}, 750);

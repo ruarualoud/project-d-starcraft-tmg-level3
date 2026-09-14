@@ -56,6 +56,8 @@ export interface UnitCard {
   faction: Faction;
   unitType: UnitType;
   stats: UnitStats;
+  /** Exact printable values from the frozen catalogue (for example 5+ or 5/8). */
+  printedStats?: Partial<Record<keyof UnitStats, string>>;
   keywords?: string;
   tags?: string;
   upgrades: Upgrade[];

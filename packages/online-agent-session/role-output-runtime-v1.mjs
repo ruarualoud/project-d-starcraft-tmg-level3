@@ -186,6 +186,36 @@ function evidenceCatalog(gathered) {
       authority: "public_room_journal",
     });
   }
+  if (gathered.matchDecisionContext) {
+    refs.push({
+      evidenceId: "current_match_decision_continuity",
+      kind: "match_decision_continuity",
+      id: gathered.roomProjection.room.roomId,
+      version: String(gathered.roomProjection.room.stateRevision),
+      hash: gathered.matchDecisionContext.contextHash,
+      authority: "same_match_advisory_rules_state_derived",
+    });
+  }
+  if (gathered.spatialObservation) {
+    refs.push({
+      evidenceId: "current_player_spatial_observation",
+      kind: "player_spatial_observation",
+      id: gathered.roomProjection.room.roomId,
+      version: String(gathered.roomProjection.room.stateRevision),
+      hash: gathered.spatialObservation.observationHash,
+      authority: "viewer_scoped_rules_derived_world_geometry",
+    });
+  }
+  if (gathered.spatialActionSpace) {
+    refs.push({
+      evidenceId: "current_spatial_action_space",
+      kind: "spatial_action_space",
+      id: gathered.roomProjection.room.roomId,
+      version: String(gathered.roomProjection.room.stateRevision),
+      hash: gathered.spatialActionSpace.actionSpaceHash,
+      authority: "external_rules_service_legal_space_projection",
+    });
+  }
   const ids = new Set();
   for (const ref of refs) {
     if (ids.has(ref.evidenceId)) throw new TypeError("duplicate evidence identity");
@@ -202,7 +232,7 @@ function requiredEvidenceKinds(mode, intent, catalog) {
     && catalog.some((entry) => entry.kind === "strategy_skill")) {
     kinds.push("strategy_skill");
   }
-  if (mode === "commentator") kinds.push("public_events");
+  if (mode === "commentator" || mode === "companion") kinds.push("public_events");
   return kinds;
 }
 
@@ -244,6 +274,24 @@ function createResponseContract(input) {
     strategyMemoryIsAdvisory: true,
     strategySkillRefs: input.gathered.strategySkills?.skillRefs || [],
     strategySkillsAreAdvisory: true,
+    matchDecisionContextRef: input.gathered.matchDecisionContext ? {
+      id: input.gathered.roomProjection.room.roomId,
+      version: String(input.gathered.roomProjection.room.stateRevision),
+      hash: input.gathered.matchDecisionContext.contextHash,
+    } : null,
+    matchDecisionContextIsAdvisory: true,
+    spatialObservationRef: input.gathered.spatialObservation ? {
+      id: input.gathered.roomProjection.room.roomId,
+      version: String(input.gathered.roomProjection.room.stateRevision),
+      hash: input.gathered.spatialObservation.observationHash,
+    } : null,
+    spatialObservationIsViewerScoped: true,
+    spatialActionSpaceRef: input.gathered.spatialActionSpace ? {
+      id: input.gathered.roomProjection.room.roomId,
+      version: String(input.gathered.roomProjection.room.stateRevision),
+      hash: input.gathered.spatialActionSpace.actionSpaceHash,
+    } : null,
+    spatialQueriesAreReadOnly: true,
     mayPreview: mode === "opponent" && input.intent === "take_turn",
     mayConfirm: false,
     mayApply: false,

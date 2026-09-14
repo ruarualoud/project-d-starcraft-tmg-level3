@@ -3,11 +3,13 @@ import type { ExpoConfig } from "expo/config";
 const bundleId = "app.projectd.starcrafttmg";
 const scheme = "projectd-starcraft-tmg";
 const production = process.env.NODE_ENV === "production";
+const localWebExport = process.env.PROJECT_D_LOCAL_WEB_EXPORT === "1";
+const verifiedAppLinkRequired = production && !localWebExport;
 
 function configuredAppLinkOrigin() {
   const raw = process.env.EXPO_PUBLIC_STARCRAFT_TMG_WEB_ORIGIN;
   if (!raw) {
-    if (production) {
+    if (verifiedAppLinkRequired) {
       throw new Error(
         "EXPO_PUBLIC_STARCRAFT_TMG_WEB_ORIGIN is required for a production App Link build",
       );
@@ -48,7 +50,7 @@ const appLinkIntent = appLinkOrigin
     category: ["BROWSABLE" as const, "DEFAULT" as const],
   }
   : null;
-const developmentSchemeIntent = !production
+const developmentSchemeIntent = !verifiedAppLinkRequired
   ? {
     action: "VIEW" as const,
     autoVerify: false,
@@ -67,7 +69,7 @@ const config: ExpoConfig = {
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
-  ...(!production ? { scheme } : {}),
+  ...(!verifiedAppLinkRequired ? { scheme } : {}),
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
   ios: {
