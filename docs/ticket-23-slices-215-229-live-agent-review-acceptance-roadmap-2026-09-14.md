@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–231 完成；Ticket 23 为 `17/36`，剩余 `19` 片
+状态：Slices 215–232 完成；Ticket 23 为 `18/36`，剩余 `18` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -51,17 +51,17 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 229 | **Complete:** 参考阵容 13 主动/9 被动能力的资源、状态、Token/Marker、Omega Worm、激活窗口与消费者接线 | selected-roster ability 门第 2 轮通过：13/9/unsupported 0 | 15/36 |
 | 230 | **Complete:** 通用能力注册表、类型化 Effect IR、Action/Consumer/System 生命周期自动路由、关系图和统一调用合同 | 三轮内收敛：252 definition / 1,762 edges / 20 exact / 232 pending | 16/36 |
 | 231 | **Complete:** 冻结官方 26 Unit、6 Faction Card、31 Tactical Card、252 definition 的逐项产品责任账本、唯一 owner 和缺口清单 | current-product denominator 门一次通过：20 exact / 232 pending / 252 ownership edges | 17/36 |
-| 232 | 全卡池 Move、PLACE、Deploy、Return-to-Reserve 能力族接线 | relocation family 门一次；当前 pending 34 | 18/36 |
+| 232 | **Complete:** 全卡池 Move、PLACE、Deploy、位移 permission 与边锁能力族接线；误归类的战场资产/Unit 生命周期转交正确 owner | relocation family 门第 2 轮通过；25 new + 3 existing，owner pending 0 | 18/36 |
 | 233 | 全卡池 BUFF、DEBUFF、Status、Heal、Damage 能力族接线 | characteristic/status family 门一次；当前 pending 60 | 19/36 |
 | 234 | 51 个官方武器与全部远程攻击效果接线 | ranged family 门一次；当前 pending 30 | 20/36 |
 | 235 | 全卡池 Fight、Charge、IMPACT 与近战效果接线 | melee family 门一次；当前 pending 40 | 21/36 |
 | 236 | 24 条 Reaction、触发窗口、双方优先级和每激活限制接线 | reaction family 门一次；当前 pending 24 | 22/36 |
-| 237 | Token、Marker、Structure、Creep、Pylon 与实体组件生命周期接线 | battlefield asset family 门一次；当前 pending 26 | 23/36 |
-| 238 | Summon、Morph、Respawn、创建/替换模型与 Supply 生命周期接线 | unit lifecycle family 门一次；当前 pending 3 | 24/36 |
+| 237 | Token、Marker、Indicator、Structure、Creep、Pylon 与实体组件生命周期接线 | battlefield asset family 门一次；当前 pending 30 | 23/36 |
+| 238 | Summon、Morph、Respawn、返回 Reserve、设置/创建/替换模型与 Supply 生命周期接线 | unit lifecycle family 门一次；当前 pending 11 | 24/36 |
 | 239 | 任务控制、计分、先后手、Pass 和回合阶段系统动作接线 | match lifecycle family 门一次；当前 pending 2 | 25/36 |
-| 240 | Terran 当前单位、阵营与战术卡的独特能力余项收口 | Terran gap gate 一次；当前 pending 5 | 26/36 |
+| 240 | Terran 当前单位、阵营与战术卡的独特能力余项收口 | Terran gap gate 一次；当前 pending 4 | 26/36 |
 | 241 | Zerg 当前单位、阵营与战术卡的独特能力余项收口 | Zerg gap gate 一次；当前 pending 2 | 27/36 |
-| 242 | Protoss 当前单位、阵营与战术卡的独特能力余项收口 | Protoss gap gate 一次；当前 pending 6 | 28/36 |
+| 242 | Protoss 当前单位、阵营与战术卡的独特能力余项收口 | Protoss gap gate 一次；当前 pending 4 | 28/36 |
 | 243 | 全官方产品分母收口：252/252 有执行角色、`unsupported=0`、无静默缺口 | 仅运行 current-product aggregate 一次 | 29/36 |
 | 244 | Standard 2000 Room/军表/任务 Factory 最终绑定：双方各 2000 Minerals、≤200 Vespene、54×36 | 仅运行 2000 factory 门一次 | 30/36 |
 | 245 | Web 探索性 H-A dry-run 与统一 UI 修复：写表/数据库/对战桌、悬浮副官、通知/物理任务、计划/日志/成本/截图面板 | 只对本轮修复跑一次 Web 用户旅程 | 31/36 |
@@ -286,6 +286,21 @@ Adapter；后者永不产生可执行 candidate。当前 `20 exact / 232 pending
 阵容门替代全产品分母。Factory `1.6.0` 已绑定 denominator。唯一聚焦门一次通过。
 闭包记录：
 `docs/ticket-23-slice-231-current-product-ability-denominator-closure-2026-09-14.md`。
+
+## Slice 232 收口
+
+位移 Adapter 将 Slice 231 预账本中的 relocation 原文逐条复核后，纠正 9 条主 owner：
+6 条 Indicator/战场实体进入 Slice 237，3 条返回/设置 Unit 进入 Slice 238。真实位移分母
+为 `28 = 3 selected exact + 25 new`，25 条新定义编译为 Burrow permission、Raptor terrain
+permission、DISPLACEMENT、deploy Stimpack discount、Entry/Friendly-anchor PLACE、直接
+PLACE、额外 Move、非 Entry Edge Deploy 与 ComSat edge lock 十类。统一 Runtime 当前为
+`45 exact / 207 pending`，Slice 232 pending 为 0。
+
+几何使用完整圆/矩形底座和完整编队，不用棋子中心代替合法边界；Hydralisk 40×100mm
+矩形底 Entry PLACE、Zealot 2 英寸额外 Move、ComSat round-end expiry 与 Query consumer
+均通过 Preview→Apply→Replay。聚焦门第 1 轮发现 Router 未读取嵌套 request executor，
+修复 Seam 后第 2 轮通过且不再重跑。闭包记录：
+`docs/ticket-23-slice-232-current-product-relocation-family-closure-2026-09-14.md`。
 
 ## 验证与成本规则
 

@@ -2,6 +2,11 @@
 
 日期：2026-09-14。状态：完成。Ticket 23 为 `17/36`，剩余 `19` 片。
 
+> Slice 232 实现前的逐条原文复核发现本页初版 owner 分类有 9 条偏差：6 条 Indicator
+> 属于 battlefield asset，3 条返回/设置 Unit 属于 unit lifecycle。Slice 231 当时的门禁
+> 与历史计数保留不重跑；当前修正后的 owner/状态以 Slice 232 闭包为准：位移总数 28、
+> `45 exact / 207 pending`。
+
 ## 交付结果
 
 Slice 230 的 typed IR 现在具有逐项产品责任账本。冻结版本仍是

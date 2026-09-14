@@ -16,7 +16,7 @@ import {
 
 export const OFFICIAL_ABILITY_EFFECT_RUNTIME_ID =
   "starcraft-tmg-official-ability-effect-runtime-v1";
-export const OFFICIAL_ABILITY_EFFECT_RUNTIME_VERSION = "1.0.0";
+export const OFFICIAL_ABILITY_EFFECT_RUNTIME_VERSION = "1.1.0";
 export const OFFICIAL_ABILITY_PENDING_ADAPTER_ID =
   "official-ability-pending-family-adapter-v1";
 
@@ -24,7 +24,7 @@ const OPERATIONS = new Set([
   "legal_space", "preview", "apply", "query", "lifecycle", "replay",
 ]);
 const LIFECYCLE_EVENTS = new Set([
-  "activation_end", "phase_end", "cleanup_and_refresh",
+  "activation_end", "phase_end", "round_end", "cleanup_and_refresh",
 ]);
 
 function fail(code, detail = "") {
@@ -190,8 +190,9 @@ function adapterFor(runtime, id, operation) {
   return adapter;
 }
 function selectedAdapterId(request) {
-  return String(request.adapterId || request.domain?.executorId
-    || request.action?.executorId || OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_ID);
+  const payload = request.request || request;
+  return String(request.adapterId || payload.adapterId || payload.domain?.executorId
+    || payload.action?.executorId || OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_ID);
 }
 function lifecycleTransition(runtime, stateInput, request) {
   const eventKind = String(request.eventKind || "");
@@ -199,13 +200,12 @@ function lifecycleTransition(runtime, stateInput, request) {
     fail("ABILITY_EFFECT_RUNTIME_LIFECYCLE_EVENT_INVALID", eventKind);
   }
   let state = clone(stateInput);
-  if (eventKind === "cleanup_and_refresh") {
-    for (const adapter of runtime.adapters) {
-      if (typeof adapter.lifecycle !== "function") continue;
-      const next = adapter.lifecycle(state, request);
-      if (next) state = clone(next);
-    }
-  } else {
+  for (const adapter of runtime.adapters) {
+    if (typeof adapter.lifecycle !== "function") continue;
+    const next = adapter.lifecycle(state, request);
+    if (next) state = clone(next);
+  }
+  if (eventKind !== "cleanup_and_refresh") {
     const pieceId = String(request.pieceId || "");
     for (const piece of state.pieces || []) {
       piece.officialAbilityEffects = (piece.officialAbilityEffects || []).filter((effect) => (
@@ -214,10 +214,10 @@ function lifecycleTransition(runtime, stateInput, request) {
             && effect.sourcePieceId !== pieceId && piece.id !== pieceId)
       ));
     }
-    if (eventKind === "phase_end") {
+    if (eventKind === "phase_end" || eventKind === "round_end") {
       state.board = state.board || {};
       state.board.effectMarkers = (state.board.effectMarkers || []).filter((effect) => (
-        effect.expiresAt !== "phase_end"));
+        effect.expiresAt !== eventKind));
     }
   }
   const event = freezeDeep({ type: "official_ability_lifecycle_applied", eventKind,

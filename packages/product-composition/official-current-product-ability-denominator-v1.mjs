@@ -5,7 +5,12 @@ import { verifyOfficialAbilityEffectIrCatalogueV1 } from
 
 export const OFFICIAL_CURRENT_PRODUCT_ABILITY_DENOMINATOR_SCHEMA =
   "starcraft_tmg_official_current_product_ability_denominator_v1";
-export const OFFICIAL_CURRENT_PRODUCT_ABILITY_DENOMINATOR_VERSION = "1.0.0";
+export const OFFICIAL_CURRENT_PRODUCT_ABILITY_DENOMINATOR_VERSION = "1.1.0";
+
+const DELIVERY_SLICE_BY_ADAPTER = Object.freeze({
+  "starcraft-tmg-official-selected-roster-ability-runtime-v1": 229,
+  "official-relocation-family-adapter-v1": 232,
+});
 
 const OWNER_BY_SLICE = Object.freeze({
   232: Object.freeze({ ownerKind: "relocation_family",
@@ -87,6 +92,15 @@ function primaryFamily(slice) {
     241: "zerg_unique", 242: "protoss_unique",
   }[slice];
 }
+function deliverySlice(definition) {
+  if (definition.execution.status !== "executable_exact") return null;
+  const slice = DELIVERY_SLICE_BY_ADAPTER[definition.execution.adapterId];
+  if (!Number.isSafeInteger(slice)) {
+    fail("CURRENT_PRODUCT_ABILITY_DELIVERY_ADAPTER_UNOWNED",
+      definition.execution.adapterId);
+  }
+  return slice;
+}
 function counts(rows, selector) {
   const result = {};
   for (const row of rows) {
@@ -142,6 +156,10 @@ export function createOfficialCurrentProductAbilityDenominatorV1(input = {}) {
       runtimeRole: definition.runtimeRole,
       phase: definition.phase,
       effectFamilies: [...definition.effectFamilies],
+      costByComposition: definition.costByComposition
+        ? { ...definition.costByComposition } : null,
+      activationText: definition.activationText,
+      sourceText: definition.sourceText,
       primaryEffectFamily: primaryFamily(plannedOwnerSlice),
       plannedOwnerSlice,
       plannedOwnerKind: owner.ownerKind,
@@ -149,7 +167,7 @@ export function createOfficialCurrentProductAbilityDenominatorV1(input = {}) {
       implementationStatus: definition.execution.status,
       runtimeAdapterId: definition.execution.adapterId,
       runtimeAdapterVersion: definition.execution.adapterVersion,
-      deliveredBySlice: exact ? 229 : null,
+      deliveredBySlice: deliverySlice(definition),
       deliveryRequiredFromSlice: exact ? null : plannedOwnerSlice,
       mayBecomeExecutableOnlyThroughExactAdapter: true,
       trainingTruth: false,
@@ -261,7 +279,8 @@ export function verifyOfficialCurrentProductAbilityDenominatorV1(denominator) {
         entry.implementationStatus === "pending_family_adapter"
           ? entry.plannedOwnerSlice : null)
       || entry.deliveredBySlice !== (
-        entry.implementationStatus === "executable_exact" ? 229 : null)
+        entry.implementationStatus === "executable_exact"
+          ? DELIVERY_SLICE_BY_ADAPTER[entry.runtimeAdapterId] : null)
       || entry.mayBecomeExecutableOnlyThroughExactAdapter !== true
       || entry.obligationHash !== hashStarcraftTmgContract(without(entry,
         ["obligationHash"])) || entry.trainingTruth !== false)

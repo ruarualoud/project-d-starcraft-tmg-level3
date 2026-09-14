@@ -66,6 +66,12 @@ import {
   verifyOfficialCurrentProductAbilityDenominatorV1,
 } from "./official-current-product-ability-denominator-v1.mjs";
 import {
+  createOfficialRelocationFamilyAdapterV1,
+  createOfficialRelocationFamilyDefinitionBindingsV1,
+  createOfficialRelocationFamilySourceBundleV1,
+  verifyOfficialRelocationFamilySourceBundleV1,
+} from "./official-relocation-family-adapter-v1.mjs";
+import {
   createOfficialSelectedRosterMeleeActionRuntimeV1,
   verifyOfficialSelectedRosterMeleeRuntimeDescriptorV1,
 } from "./official-selected-roster-melee-action-runtime-v1.mjs";
@@ -88,7 +94,7 @@ import {
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
-export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "1.6.0";
+export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "1.7.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MISSION_RECORD_KEY = "faction_cards:mission_hold_position__skirmish_";
@@ -545,15 +551,34 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   );
   state.officialSelectedRosterAbilityRuntimeDescriptor =
     selectedRosterAbilityRuntime.descriptor;
+  const selectedAbilityBindings =
+    createOfficialSelectedRosterAbilityDefinitionBindingsV1(
+      state.officialSelectedRosterAbilitySourceBundle);
+  const relocationBaselineCatalogue = createOfficialAbilityEffectIrCatalogueV1({
+    dataset,
+    executionBindings: selectedAbilityBindings,
+  });
+  const relocationBaselineDenominator =
+    createOfficialCurrentProductAbilityDenominatorV1({
+      catalogue: relocationBaselineCatalogue,
+    });
+  state.officialRelocationFamilySourceBundle =
+    createOfficialRelocationFamilySourceBundleV1({
+      catalogue: relocationBaselineCatalogue,
+      denominator: relocationBaselineDenominator,
+    });
+  const relocationBindings = createOfficialRelocationFamilyDefinitionBindingsV1(
+    state.officialRelocationFamilySourceBundle);
   state.officialAbilityEffectIrCatalogue = createOfficialAbilityEffectIrCatalogueV1({
     dataset,
-    executionBindings: createOfficialSelectedRosterAbilityDefinitionBindingsV1(
-      state.officialSelectedRosterAbilitySourceBundle),
+    executionBindings: [...selectedAbilityBindings, ...relocationBindings],
   });
   const abilityEffectRuntime = createOfficialAbilityEffectRuntimeV1({
     catalogue: state.officialAbilityEffectIrCatalogue,
     adapters: [createOfficialSelectedRosterAbilityAdapterV1(
-      state.officialSelectedRosterAbilitySourceBundle)],
+      state.officialSelectedRosterAbilitySourceBundle),
+    createOfficialRelocationFamilyAdapterV1(
+      state.officialRelocationFamilySourceBundle)],
   });
   verifyOfficialAbilityEffectRuntimeDescriptorV1(abilityEffectRuntime.descriptor);
   state.officialAbilityEffectRuntimeDescriptor = abilityEffectRuntime.descriptor;
@@ -621,13 +646,15 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         state.officialAbilityEffectRuntimeDescriptor.runtimeHash,
       currentProductAbilityDenominatorHash:
         state.officialCurrentProductAbilityDenominator.denominatorHash,
+      relocationFamilySourceBundleHash:
+        state.officialRelocationFamilySourceBundle.bundleHash,
       rosterVisibility: visibility.rosterVisibility,
       viewerProjectionEvidence,
       sourceSnapshotHash: dataset.sourceSnapshotHash,
       normalizedDatasetHash: dataset.datasetHash,
       sourceRefreshPerformed: false,
       repositoryFallbackUsed: false,
-      completeActionRuntimeDeferredToSlices: [232, 233, 234, 235, 236, 237,
+      completeActionRuntimeDeferredToSlices: [233, 234, 235, 236, 237,
         238, 239, 240, 241, 242, 243],
       trainingTruth: false,
     },
@@ -698,6 +725,8 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
       !== state?.officialAbilityEffectRuntimeDescriptor?.runtimeHash
     || evidence?.currentProductAbilityDenominatorHash
       !== state?.officialCurrentProductAbilityDenominator?.denominatorHash
+    || evidence?.relocationFamilySourceBundleHash
+      !== state?.officialRelocationFamilySourceBundle?.bundleHash
     || authority.trainingTruth !== false) {
     fail("SKIRMISH_500_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
   }
@@ -718,6 +747,9 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
   );
   verifyOfficialCurrentProductAbilityDenominatorV1(
     state.officialCurrentProductAbilityDenominator,
+  );
+  verifyOfficialRelocationFamilySourceBundleV1(
+    state.officialRelocationFamilySourceBundle,
   );
   return true;
 }

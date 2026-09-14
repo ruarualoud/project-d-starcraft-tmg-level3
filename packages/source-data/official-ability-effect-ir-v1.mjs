@@ -3,7 +3,7 @@ import { hashStarcraftTmgContract } from
 
 export const OFFICIAL_ABILITY_EFFECT_IR_SCHEMA =
   "starcraft_tmg_official_ability_effect_ir_catalogue_v1";
-export const OFFICIAL_ABILITY_EFFECT_IR_VERSION = "1.1.0";
+export const OFFICIAL_ABILITY_EFFECT_IR_VERSION = "1.2.0";
 
 export const OFFICIAL_ABILITY_ACTIVATION_KINDS = Object.freeze([
   "active", "passive", "reaction", "weapon",
@@ -112,10 +112,11 @@ function effectFamilies(feature, kind, phase) {
   if (/\b(?:melee|fight|charge|impact|engaged|close ranks)\b/iu.test(source)) {
     families.add("melee_combat");
   }
-  if (/\b(?:token|marker|structure|creep|pylon|worm|shade)\b/iu.test(source)) {
+  if (/\b(?:token|marker|indicator|structure|creep|pylon|worm|shade)\b/iu.test(source)) {
     families.add("battlefield_asset");
   }
-  if (/\b(?:summon|respawn|morph|replace|return|create|destroyed|removed from play)\b/iu.test(source)) {
+  if (/\b(?:summon|respawn|morph|replace|return(?:ed|s|ing)?|create|destroyed|removed from play)\b/iu.test(source)
+    || /\bset a (?:friendly )?[\w -]+ unit\b/iu.test(source)) {
     families.add("unit_lifecycle");
   }
   if (/\b(?:round|phase|initiative|pass|victory point|supply|army building|deployment|setup)\b/iu.test(source)) {
