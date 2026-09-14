@@ -16,6 +16,7 @@ const CATALOGUED_TOOLS = new Set([
   "read_memory_snapshot",
   "read_character_worldbook",
   "read_public_events",
+  "analyze_public_action_spatial_delta",
   "preview_action",
   "provider_gateway.complete",
 ]);

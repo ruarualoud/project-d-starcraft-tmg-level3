@@ -1161,6 +1161,29 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
           );
         }
       }
+      if (enumerated.unsupportedDiagnostics !== undefined
+        && !Array.isArray(enumerated.unsupportedDiagnostics)) {
+        throw new AuthorityError(
+          "RULE_RUNTIME_INVALID",
+          "RULE_RUNTIME_INVALID: unsupported diagnostics must be an array",
+        );
+      }
+      for (const diagnostic of (enumerated.unsupportedDiagnostics || [])) {
+        if (!object(diagnostic)
+          || diagnostic.schema !== "starcraft_tmg_official_unsupported_action_diagnostic_v1"
+          || !object(diagnostic.action)
+          || !String(diagnostic.action.actionType || "").trim()
+          || diagnostic.action.sideKey !== sideKey
+          || !String(diagnostic.disabledReason || "").trim()
+          || diagnostic.details?.trainingTruth !== false
+          || diagnostic.executorId !== undefined
+          || diagnostic.ruleAtomIds !== undefined) {
+          throw new AuthorityError(
+            "RULE_RUNTIME_INVALID",
+            "RULE_RUNTIME_INVALID: unsupported diagnostic is not a typed non-executable route",
+          );
+        }
+      }
     } else {
       const legacyEnumerated = enumerateStarcraftTmgLegalActions(state, { sideKey, includeDisabled: true });
       const officialPassPhase = OFFICIAL_PASS_PHASES.has(state.phase);
@@ -1192,7 +1215,9 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       };
     }
     const finiteActions = [];
-    const disabledDiagnostics = [];
+    const runtimeUnsupportedDiagnostics = rulesRuntime
+      ? clone(enumerated.unsupportedDiagnostics || []) : [];
+    const disabledDiagnostics = [...runtimeUnsupportedDiagnostics];
     const searchSuggestions = [];
     for (const candidate of enumerated.candidates) {
       const action = contractAction(candidate);
@@ -1293,6 +1318,11 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       rulesRuntimeBinding: clone(rulesRuntimeBinding),
       finiteActions,
       parameterDomains,
+      ...(runtimeUnsupportedDiagnostics.length > 0 ? {
+        unsupportedDiagnosticsHash:
+          hashStarcraftTmgContract(runtimeUnsupportedDiagnostics),
+        unsupportedCount: runtimeUnsupportedDiagnostics.length,
+      } : {}),
     };
     const legalSpaceHash = hashStarcraftTmgContract(core);
     const compatibilityCandidates = [
@@ -1402,6 +1432,15 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
           "RULE_RUNTIME_INVALID: apply did not return an accepted state transition",
         );
       }
+      // Every rules runtime owns game semantics, but the authority seam owns
+      // revision identity. Stamp the same deterministic log/clock lineage used
+      // by built-in executors so a valid runtime result cannot expose a stale
+      // postGameClock to clients.
+      appendDeterministicLogIdentity(
+        applied.state,
+        previousLogLength,
+        envelope.stateRevision + 1,
+      );
     } else if (resolved.canonicalPath) {
       applied = applyCanonicalMovement(state, resolved.action, resolved.canonicalPath, resolved.domain, envelope.stateRevision + 1);
     } else if (resolved.action.actionType === "pass" && OFFICIAL_PASS_PHASES.has(state.phase)) {

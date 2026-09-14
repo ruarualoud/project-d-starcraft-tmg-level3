@@ -920,6 +920,24 @@ function validReplayResponse(result, projection, roomId) {
   return true;
 }
 
+function replayRevisionAheadOfProjection(result, projection, roomId) {
+  const identity = projectionAuthorityIdentity(projection, roomId, {
+    requireSeat: false,
+  });
+  const replay = result?.replay;
+  const envelope = replay?.envelope;
+  return Boolean(identity)
+    && result?.schemaVersion === VIEWER_REPLAY_RESPONSE_VERSION
+    && result?.matchesCurrent === true
+    && replay?.schemaVersion === VIEWER_REPLAY_BUNDLE_VERSION
+    && envelope?.schemaVersion === "starcraft_tmg_viewer_envelope_summary_v1"
+    && envelope?.gameId === identity.gameId
+    && envelope?.roomId === identity.roomId
+    && envelope?.matchBindingHash === identity.matchBindingHash
+    && nonNegativeSafeInteger(envelope?.stateRevision)
+    && envelope.stateRevision > identity.stateRevision;
+}
+
 function utf8Length(value) {
   let bytes = 0;
   for (const character of String(value)) {
@@ -2990,6 +3008,19 @@ export function createStarcraftTmgClientDomain(options = {}) {
         const code = result?.reason || "REPLAY_MISMATCH";
         latchReplayIntegrity(code);
         return rejection(code, { integrityBlocked: true });
+      }
+      if (replayRevisionAheadOfProjection(
+        result,
+        internal.roomProjection,
+        binding.roomId,
+      )) {
+        const refreshed = await refreshProjection("replay_revision_ahead");
+        if (!refreshed.ok) {
+          latchReplayIntegrity(
+            refreshed.rejection?.code || "REPLAY_PROJECTION_REFRESH_FAILED",
+          );
+          return refreshed;
+        }
       }
       if (!validReplayResponse(
         result,

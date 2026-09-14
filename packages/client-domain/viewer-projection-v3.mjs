@@ -78,7 +78,8 @@ export const STARCRAFT_TMG_VIEWER_STATE_V3_FIELDS = Object.freeze([
   "verifiedTournamentRosterVisibilityOverride", "teamMineralBudgetAgreement",
   "missionDeploymentDraftParticipantIds", "officialMissionDeploymentDraft",
   "officialMissionDeploymentDraftBinding", "officialMissionSetupBinding",
-  "officialMissionMarkerPlacement", "officialBattlefieldMarkers",
+  "officialMissionMarkerPlacement", "officialMissionRuntimeState",
+  "officialBattlefieldMarkers",
   "officialBattlefieldTokens", "officialBattlefieldMarkerViewsAtSetup",
   "officialBattlefieldSetup", "officialBalancedTerrainSetupCertificate",
   "officialDeploymentGeometryBinding", "officialRoundSupplyState",
@@ -238,6 +239,49 @@ const SOURCE_REF_KEYS = new Set(["sourceId", "collection", "id", "recordKey",
   "contentHash", "sourceHash", "url", "version", "trainingTruth"]);
 const GAME_CLOCK_KEYS = new Set(["schemaVersion", "round", "phase", "transition",
   "activeSideKey", "firstPlayerSideKey", "trainingTruth"]);
+const MISSION_RUNTIME_STATE_KEYS = new Set(["schema", "runtimeVersion", "runtimeHash",
+  "missionRecordKey", "missionEffectIrHash", "missionFamily", "engagementScale",
+  "markerAffinityByNumber", "roundProgressByRound", "startRoundHistory", "gatherHistory",
+  "scoringHistory", "endGameHistory", "sourceSnapshotHash", "normalizedDatasetHash",
+  "rulesTruth", "trainingTruth", "runtimeStateHash"]);
+const ROSTER_CARD_KEYS = new Set(["cardInstanceId", "recordKey", "cardId", "cardName",
+  "cardKind", "factionName", "raceTag", "sourceCardProfileHash", "profileHash",
+  "faceUp", "public", "trainingTruth"]);
+const ROSTER_UPGRADE_KEYS = new Set(["upgradeInstanceId", "purchasableUpgradeProfileId",
+  "upgradeName", "phase", "applicationKind", "nominatedModelId", "appliedModelIds",
+  "replacementTargetName", "mineralCost", "profileHash", "sourceDefinitionHash",
+  "sourceBudgetProfileId", "sourceBudgetProfileHash", "trainingTruth"]);
+const ROSTER_COMPOSITION_KEYS = new Set(["schema", "procedureKind", "unitInstanceId",
+  "recordKey", "unitId", "unitName", "factionTag", "armySlotType",
+  "compositionProfileId", "compositionKind", "startingModelIds", "startingModelCount",
+  "startingSupply", "occupiedArmySlots", "mineralCost", "armyReferenceMineralCost",
+  "mineralCostReconciliation", "sourceRecordHash", "payloadHash", "sourceUnitProfileHash",
+  "unitCompositionReferenceProfileHash", "compositionProfileHash",
+  "sourceBudgetProfileHash", "exactlyOneCompositionSelected", "unlistedModelCountAccepted",
+  "startingSupplyEqualsOccupiedArmySlots", "rulesOwnedModelCountSupplySlotsAndCost",
+  "clientSuppliedModelCountSupplySlotsOrCostAccepted", "trainingTruth", "resultHash"]);
+const ROSTER_UNIT_SELECTION_KEYS = new Set(["schema", "procedureKind", "unitInstanceId",
+  "recordKey", "unitId", "unitName", "unitCompositionResult", "selectedUpgrades",
+  "selectedUpgradeCount", "specialistUpgradeCount", "unitWideUpgradeCount", "mineralCost",
+  "upgradeSelectionSetComplete", "onlyPart12ListedUpgradeEntriesPurchased",
+  "sameUpgradeEntryPurchasedMoreThanOnce", "unitWideDefaultAppliedToEveryStartingModel",
+  "specialistAssignedToExactlyOneStartingModel",
+  "differentSpecialistsAssignedToDifferentModels", "rulesOwnedUpgradeCostsAndApplication",
+  "clientSuppliedUpgradeCostOrApplicationAccepted", "trainingTruth", "resultHash"]);
+const PUBLIC_ROSTER_UNIT_KEYS = new Set(["unitInstanceId", "recordKey", "unitId",
+  "unitName", "factionTag", "armySlotType", "compositionKind", "startingModelIds",
+  "startingModelCount", "startingSupply", "occupiedArmySlots", "unitMineralCost",
+  "selectedUpgrades", "selectedUpgradeCount", "upgradeMineralCost",
+  "unitCompositionResultHash", "unitUpgradeSelectionResultHash",
+  "upgradesAndWeaponSwapsDisclosed", "trainingTruth"]);
+const PUBLIC_ROSTER_KEYS = new Set(["playerId", "teamId", "publicCards", "units",
+  "unitEntriesComplete", "undisclosedRosterRemainderExists",
+  "factionAndTacticalCardsFaceUp", "rosterVisibility", "trainingTruth"]);
+const OWN_ROSTER_KEYS = new Set(["schema", "playerId", "teamId", "factionCard",
+  "tacticalCards", "publicCards", "units", "unitCount", "startingModelCount",
+  "startingSupply", "selectedUpgradeCount", "mineralBudget", "mineralSpent",
+  "completeArmyCompositionUpgradeAuditHash",
+  "independentlySelectedFactionTacticalCardsAndUnits", "trainingTruth", "rosterHash"]);
 
 function area(value) {
   return pick(value, AREA_KEYS, (child, key) => {
@@ -279,11 +323,61 @@ function participants(state) {
   return new Set([...Object.keys(state.players || {}), ...(state.participantIds || [])].map(String));
 }
 
-function participantMap(value, state) {
+function participantMap(value, state, project = generic) {
   if (!object(value)) return {};
   const allowed = participants(state);
   return Object.fromEntries(Object.entries(value).filter(([key]) => allowed.has(String(key)))
-    .map(([key, child]) => [key, object(child) || Array.isArray(child) ? generic(child) : clone(child)]));
+    .map(([key, child]) => [key, object(child) || Array.isArray(child)
+      ? project(child) : clone(child)]));
+}
+
+function rosterCard(value) {
+  return pick(value, ROSTER_CARD_KEYS);
+}
+
+function rosterUpgrade(value) {
+  return pick(value, ROSTER_UPGRADE_KEYS, (child) => clone(child));
+}
+
+function rosterComposition(value) {
+  return pick(value, ROSTER_COMPOSITION_KEYS, (child) => clone(child));
+}
+
+function rosterUnitSelection(value) {
+  return pick(value, ROSTER_UNIT_SELECTION_KEYS, (child, key) => {
+    if (key === "unitCompositionResult") return rosterComposition(child);
+    if (key === "selectedUpgrades") {
+      return Array.isArray(child) ? child.map(rosterUpgrade) : [];
+    }
+    return clone(child);
+  });
+}
+
+function publicRosterUnit(value) {
+  return pick(value, PUBLIC_ROSTER_UNIT_KEYS, (child, key) => key === "selectedUpgrades"
+    ? (Array.isArray(child) ? child.map(rosterUpgrade) : [])
+    : clone(child));
+}
+
+function publicRoster(value) {
+  return pick(value, PUBLIC_ROSTER_KEYS, (child, key) => {
+    if (key === "publicCards") return Array.isArray(child) ? child.map(rosterCard) : [];
+    if (key === "units") return Array.isArray(child) ? child.map(publicRosterUnit) : [];
+    return clone(child);
+  });
+}
+
+function ownRoster(value) {
+  return pick(value, OWN_ROSTER_KEYS, (child, key) => {
+    if (key === "factionCard") return rosterCard(child);
+    if (["tacticalCards", "publicCards"].includes(key)) {
+      return Array.isArray(child) ? child.map(rosterCard) : [];
+    }
+    if (key === "units") {
+      return Array.isArray(child) ? child.map(rosterUnitSelection) : [];
+    }
+    return clone(child);
+  });
 }
 
 function field(fieldName, value, state) {
@@ -316,6 +410,9 @@ function field(fieldName, value, state) {
         : clone(child));
   }
   if (fieldName === "gameClock") return pick(value, GAME_CLOCK_KEYS);
+  if (fieldName === "officialMissionRuntimeState") {
+    return pick(value, MISSION_RUNTIME_STATE_KEYS, (child) => clone(child));
+  }
   if (fieldName === "rosterRegistryResolution") {
     const keys = new Set(["schemaVersion", "rosterVisibility", "teamMembershipByPlayer",
       "registryHash", "resolutionHash", "trainingTruth"]);
@@ -323,11 +420,17 @@ function field(fieldName, value, state) {
       ? participantMap(child, state)
       : generic(child));
   }
+  if (fieldName === "publicRosterDisclosureBySide") {
+    return participantMap(value, state, publicRoster);
+  }
+  if (fieldName === "ownTeamArmyRostersBySide") {
+    return participantMap(value, state, ownRoster);
+  }
   if (["scores", "colourByPlayer", "controllerByDraft", "submissionsByPlayer",
     "armyCardOpenInformationBySide", "cardResources", "armyBuildingConfigurationBySide",
     "armyResourceBudgetsBySide", "unitCompositionSelectionsBySide",
-    "unitUpgradeSelectionsBySide", "armyCompositionUpgradeAuditsBySide",
-    "ownTeamArmyRostersBySide"].includes(fieldName)) return participantMap(value, state);
+    "unitUpgradeSelectionsBySide", "armyCompositionUpgradeAuditsBySide"
+  ].includes(fieldName)) return participantMap(value, state);
   if (fieldName === "equipmentReminderPermitsByActionHash") {
     if (!object(value)) return {};
     return Object.fromEntries(Object.entries(value)
