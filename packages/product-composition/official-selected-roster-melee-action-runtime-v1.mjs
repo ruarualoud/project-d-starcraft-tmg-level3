@@ -27,9 +27,15 @@ import {
   verifyOfficialAttackProfileCatalogueV2,
 } from "../source-data/official-attack-profile-catalogue-v2.mjs";
 import {
-  getOfficialCombatProfileV1,
   verifyOfficialCombatProfileBundleV1,
 } from "../source-data/official-combat-profile-bundle-v1.mjs";
+import {
+  assertOfficialSelectedRosterCoreActionWindowV1,
+  consumeOfficialSelectedRosterFirstWeaponModifierV1,
+  getOfficialSelectedRosterCombatProfileV1,
+  openOfficialSelectedRosterAfterActionWindowV1,
+  resolveOfficialSelectedRosterAbilityModifiersV1,
+} from "./official-selected-roster-ability-runtime-v1.mjs";
 import {
   validateOfficialSelectedRosterRelocationGeometryV1,
 } from "./official-selected-roster-spatial-action-runtime-v1.mjs";
@@ -38,7 +44,7 @@ import { verifyOfficialStandardActionRouteCatalogueV1 } from
 
 export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-melee-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "1.0.0";
+export const OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION = "1.1.0";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_DECLARATION_PARAMETER_KIND =
   "official_selected_roster_charge_declaration_v1";
 export const OFFICIAL_SELECTED_ROSTER_CHARGE_RESOLUTION_PARAMETER_KIND =
@@ -54,6 +60,7 @@ const SELECTED_RECORD_KEYS = new Set([
   "army_units:marine",
   "army_units:kerrigan",
   "army_units:kerrigan_swarm_raptor__zergling_",
+  "army_units:omega_worm",
 ]);
 const SIDE_KEYS = new Set(["player1", "player2"]);
 const CHARGE_ATOMS = Object.freeze([...new Set([
@@ -169,7 +176,7 @@ function statusNamed(piece, names) {
 }
 function verifyRuntimeState(state) {
   if (!object(state) || !object(state.players) || !object(state.board)
-    || !Array.isArray(state.pieces) || state.pieces.length !== 5
+    || !Array.isArray(state.pieces) || state.pieces.length < 5 || state.pieces.length > 6
     || state.pieces.some((piece) => !SELECTED_RECORD_KEYS.has(piece.officialUnitRecordKey))) {
     fail("SELECTED_MELEE_STATE_SCOPE_INVALID");
   }
@@ -215,9 +222,11 @@ function routeUnit(state, piece) {
 }
 function currentSpeed(state, piece) {
   const movement = routeUnit(state, piece).movementProfile;
-  return Number(piece.currentModels) === 1
+  const printed = Number(piece.currentModels) === 1
     ? Number(movement.singleModelSpeedInches)
     : Number(movement.multiModelSpeedInches);
+  return printed + resolveOfficialSelectedRosterAbilityModifiersV1(
+    state, piece, { actionType: state.phase }).speedModifier;
 }
 function coherencyRange(state, piece) {
   return milli(routeUnit(state, piece).movementProfile.horizontalCoherencyInches);
@@ -264,6 +273,8 @@ function chargeContext(state, sideKey, piece) {
   if (piece.activatedPhases?.assault === true) {
     fail("SELECTED_MELEE_CHARGE_ALREADY_ACTIVATED", piece.id);
   }
+  assertOfficialSelectedRosterCoreActionWindowV1(
+    state, sideKey, piece.id, "assault");
   if (piece.disengageAssaultRestriction?.chargeProhibited === true) {
     fail("SELECTED_MELEE_POST_DISENGAGE_CHARGE_PROHIBITED", piece.id);
   }
@@ -280,6 +291,8 @@ function chargeContext(state, sideKey, piece) {
 }
 function chargeDeclarationDomain(state, sideKey, piece) {
   const context = chargeContext(state, sideKey, piece);
+  const modifiers = resolveOfficialSelectedRosterAbilityModifiersV1(
+    state, piece, { actionType: "charge" });
   const body = {
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
     semanticVersion: "1.0.0",
@@ -297,9 +310,11 @@ function chargeDeclarationDomain(state, sideKey, piece) {
         [target.id, activeModels(target).map((model) => model.id).sort()]
       ))),
       speedInches: currentSpeed(state, piece),
+      chargeDistanceModifier: modifiers.chargeDistanceModifier,
+      impactHitModifier: modifiers.impactHitModifier,
       lineOfSightRequired: false, groundOnly: true,
       targetsDeclaredBeforeChance: true,
-      activeChargeModifiersDeferredToSlice229: ["Leap", "Adrenal Overload"],
+      activeChargeModifiersApplied: true,
       engagementGraphHash: context.graph.graphHash,
     },
     confirmationClass: "agent_owned_legal_action_auto_apply_or_human_direct_choice",
@@ -340,9 +355,9 @@ function instantiateChargeDeclaration(state, domain, parameters) {
     semanticVersion: "1.0.0", sideKey: domain.sideKey,
     pieceId: domain.pieceId, leadingModelId, targets,
     speedInches: domain.constraints.speedInches,
-    chargeDistanceModifier: 0,
-    impactHitModifier: 0,
-    activeChargeModifiersDeferredToSlice229: true,
+    chargeDistanceModifier: domain.constraints.chargeDistanceModifier,
+    impactHitModifier: domain.constraints.impactHitModifier,
+    activeChargeModifiersApplied: true,
     domainId: domain.domainId,
     chance: { kind: "fixed_roll_sequence", faces: 6, count: 1,
       layout: { chargeDistance: 1 }, revealOrder: ["chargeDistance"] },
@@ -651,17 +666,21 @@ function canonicalAllocations(value, targetUnitIds, total, code) {
 function impactChancePlan(state, current, allocations) {
   const targets = allocations.map((allocation) => {
     const target = state.pieces.find((entry) => entry.id === allocation.targetUnitId);
-    const profile = getOfficialCombatProfileV1(
-      state.officialCombatProfileBundle, target.officialUnitRecordKey,
-    );
-    if (profile.shield !== 0 || statusNamed(target,
-      ["combat_shield_active", "starcraft_tmg_official_combat_shield_status_v1"])) {
-      fail("SELECTED_MELEE_IMPACT_CARD_MODIFIER_REQUIRES_SLICE_229", target.id);
-    }
+    const profile = getOfficialSelectedRosterCombatProfileV1(
+      state, target.officialUnitRecordKey);
+    if (profile.shield !== 0) fail("SELECTED_MELEE_IMPACT_SHIELD_UNSUPPORTED", target.id);
+    const modifiers = resolveOfficialSelectedRosterAbilityModifiersV1(
+      state, target, { attackerPieceId: current.pieceId,
+        damageKind: "enemy_special_ability", weaponName: "IMPACT" });
+    const evadeThreshold = profile.evadeThreshold === null ? null
+      : Math.max(2, Number(profile.evadeThreshold) - modifiers.evadeModifier);
     return { targetUnitId: target.id, dice: allocation.dice,
       targetProfileHash: profile.profileHash,
-      armourThreshold: profile.armourThreshold,
-      layout: { hit: allocation.dice, armour: allocation.dice, evade: 0 } };
+      armourThreshold: profile.armourThreshold, evadeThreshold,
+      evadeEligible: modifiers.evadeEligible,
+      evadeModifier: modifiers.evadeModifier,
+      layout: { hit: allocation.dice, armour: allocation.dice,
+        evade: modifiers.evadeEligible ? allocation.dice : 0 } };
   });
   return seal({ schemaVersion: "starcraft_tmg_selected_roster_impact_chance_plan_v1",
     semanticVersion: "1.0.0", impactDice: current.impactDice,
@@ -769,10 +788,8 @@ function fightContext(state, sideKey, piece, catalogueV2) {
   if (piece.activatedPhases?.combat === true) {
     fail("SELECTED_MELEE_FIGHT_ALREADY_ACTIVATED", piece.id);
   }
-  if (statusNamed(piece, ["starcraft_tmg_official_stimpack_status_v1",
-    "stimpack_active"])) {
-    fail("SELECTED_MELEE_STIMPACK_REQUIRES_SLICE_229", piece.id);
-  }
+  assertOfficialSelectedRosterCoreActionWindowV1(
+    state, sideKey, piece.id, "combat");
   const graph = deriveOfficialEngagementGraphV2(state);
   const targetUnitIds = graphEnemyUnitIds(graph, piece.id);
   if (targetUnitIds.length === 0) fail("SELECTED_MELEE_FIGHT_REQUIRES_ENGAGEMENT");
@@ -814,7 +831,7 @@ function fightDomain(state, sideKey, piece, catalogueV2) {
   };
   return seal(body, "domainId");
 }
-function fightChancePlan(state, profile, allocations, surgeTargetUnitId,
+function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitId,
   criticalTargetUnitId) {
   const surge = profile.effects.find((effect) => (
     effect.effectAtomId === "attack-effect:surge-armour-bypass-v1"
@@ -831,21 +848,26 @@ function fightChancePlan(state, profile, allocations, surgeTargetUnitId,
   }
   const targets = allocations.map((allocation) => {
     const target = state.pieces.find((entry) => entry.id === allocation.targetUnitId);
-    const targetProfile = getOfficialCombatProfileV1(
-      state.officialCombatProfileBundle, target.officialUnitRecordKey,
-    );
-    if (targetProfile.shield !== 0 || statusNamed(target,
-      ["combat_shield_active", "starcraft_tmg_official_combat_shield_status_v1"])) {
-      fail("SELECTED_MELEE_FIGHT_CARD_MODIFIER_REQUIRES_SLICE_229", target.id);
-    }
+    const targetProfile = getOfficialSelectedRosterCombatProfileV1(
+      state, target.officialUnitRecordKey);
+    if (targetProfile.shield !== 0) fail("SELECTED_MELEE_FIGHT_SHIELD_UNSUPPORTED", target.id);
+    const modifiers = resolveOfficialSelectedRosterAbilityModifiersV1(
+      state, target, { attackerPieceId: attacker.id,
+        damageKind: "close_combat", weaponName: profile.weaponName });
+    const evadeThreshold = targetProfile.evadeThreshold === null ? null
+      : Math.max(2, Number(targetProfile.evadeThreshold) - modifiers.evadeModifier);
     return { targetUnitId: target.id, dice: allocation.dice,
       targetProfileHash: targetProfile.profileHash,
       armourThreshold: targetProfile.armourThreshold,
+      evadeEligible: modifiers.evadeEligible,
+      evadeModifier: modifiers.evadeModifier,
+      evadeThreshold,
       surge: surgeTargetUnitId === target.id,
       criticalHit: criticalTargetUnitId === target.id,
       layout: { hit: allocation.dice,
         surge: surgeTargetUnitId === target.id ? 1 : 0,
-        armour: allocation.dice, evade: 0 } };
+        armour: allocation.dice,
+        evade: modifiers.evadeEligible ? allocation.dice : 0 } };
   });
   const criticalPlan = critical ? CRITICAL_HIT.plan({ profile,
     attackPoolDice: allocations.find((entry) => (
@@ -854,6 +876,9 @@ function fightChancePlan(state, profile, allocations, surgeTargetUnitId,
     targetDodge: { present: false, reduction: 0,
       source: "target_official_profile_and_effect_state" } }) : null;
   const instantPlan = instant ? INSTANT.plan({ profile }) : null;
+  const attackerModifiers = resolveOfficialSelectedRosterAbilityModifiersV1(
+    state, attacker, { attackerPieceId: attacker.id,
+      damageKind: "close_combat", weaponName: profile.weaponName });
   return seal({ schemaVersion: "starcraft_tmg_selected_roster_fight_chance_plan_v1",
     semanticVersion: "1.0.0", profileKey: profile.profileKey,
     profileHash: profile.profileHash, targets,
@@ -863,6 +888,8 @@ function fightChancePlan(state, profile, allocations, surgeTargetUnitId,
     instantPlan,
     enemyReactionDeclarationAllowed: !instant,
     enemyReactionResolutionAllowed: !instant,
+    activePrecisionValue: attackerModifiers.precision,
+    precisionChoicePolicy: "failed_hit_die_indices_up_to_active_precision_value",
     chance: { kind: "fixed_roll_sequence", faces: 6,
       count: targets.reduce((sum, target) => sum + target.layout.hit
         + target.layout.surge + target.layout.armour + target.layout.evade, 0),
@@ -898,7 +925,7 @@ function instantiateFight(state, domain, parameters, catalogueV2) {
   )))) {
     fail("SELECTED_MELEE_EFFECT_TARGET_INVALID");
   }
-  const chancePlan = fightChancePlan(state, initial.profile, allocations,
+  const chancePlan = fightChancePlan(state, piece, initial.profile, allocations,
     surgeTargetUnitId, criticalTargetUnitId);
   const canonicalParameters = { closeRanksMode: String(parameters.closeRanksMode),
     allocations, surgeTargetUnitId: surgeTargetUnitId || null,
@@ -1084,18 +1111,31 @@ function resolvePools(state, action, plan, options, kind) {
   let offset = 0;
   const graph = deriveOfficialEngagementGraphV2(state);
   const rows = [];
+  let precisionRemaining = kind === "fight" ? Number(plan.activePrecisionValue || 0) : 0;
   for (const targetPlan of plan.targets) {
     const target = state.pieces.find((entry) => entry.id === targetPlan.targetUnitId);
-    const targetProfile = getOfficialCombatProfileV1(
-      state.officialCombatProfileBundle, target.officialUnitRecordKey,
-    );
+    const targetProfile = getOfficialSelectedRosterCombatProfileV1(
+      state, target.officialUnitRecordKey);
     const hitRolls = rolls.slice(offset, offset += targetPlan.layout.hit);
     const surgeRolls = rolls.slice(offset, offset += targetPlan.layout.surge);
     const armourRolls = rolls.slice(offset, offset += targetPlan.layout.armour);
     const evadeRolls = rolls.slice(offset, offset += targetPlan.layout.evade);
     const hitThreshold = kind === "impact"
       ? plan.effectiveHitThreshold : Number(profile.hitThreshold);
-    const hits = hitRolls.filter((roll) => rollSucceeds(roll, hitThreshold)).length;
+    const failedHitDieIndices = hitRolls.map((roll, index) => ({ roll, index }))
+      .filter(({ roll }) => !rollSucceeds(roll, hitThreshold))
+      .map(({ index }) => index);
+    const convertedFailedHitDieIndices = kind === "fight"
+      ? [...new Set((options.precisionConvertedFailedDieIndicesByTarget
+        ?.[target.id] || []).map(Number))].sort((left, right) => left - right) : [];
+    if (convertedFailedHitDieIndices.length > precisionRemaining
+      || convertedFailedHitDieIndices.some((index) => (
+        !Number.isSafeInteger(index) || !failedHitDieIndices.includes(index)))) {
+      fail("SELECTED_MELEE_PRECISION_SELECTION_INVALID", target.id);
+    }
+    precisionRemaining -= convertedFailedHitDieIndices.length;
+    const hits = hitRolls.filter((roll) => rollSucceeds(roll, hitThreshold)).length
+      + convertedFailedHitDieIndices.length;
     let bypassedArmourDice = 0;
     let criticalReceipt = null;
     if (targetPlan.criticalHit) {
@@ -1124,20 +1164,25 @@ function resolvePools(state, action, plan, options, kind) {
     const damageBeforeEvade = bypassedArmourDice + armourDice - armourSaves;
     const usedEvadeRolls = evadeRolls.slice(0, damageBeforeEvade);
     const evadeSaves = usedEvadeRolls.filter((roll) => (
-      rollSucceeds(roll, targetProfile.evadeThreshold)
+      rollSucceeds(roll, targetPlan.evadeThreshold)
     )).length;
     const damagePerDie = kind === "impact" ? 1 : Number(profile.damage);
     const totalDamage = (damageBeforeEvade - evadeSaves) * damagePerDie;
     const resolution = seal({ schemaVersion:
       `starcraft_tmg_selected_roster_${kind}_target_resolution_v1`,
     targetUnitId: target.id, hitRolls, hitThreshold, hits,
+    activePrecisionValue: kind === "fight" ? Number(plan.activePrecisionValue || 0) : 0,
+    failedHitDieIndices, convertedFailedHitDieIndices,
     hitRollModifier: kind === "impact" ? plan.hitRollModifier : 0,
     surgeRolls, surgeResult,
     criticalHitResolutionHash: criticalReceipt?.resolutionHash || null,
     bypassedArmourDice, armourDice, armourRolls: usedArmourRolls,
     unusedPreallocatedArmourRolls: armourRolls.slice(armourDice),
     armourThreshold: targetProfile.armourThreshold, armourSaves,
-    evadeDice: usedEvadeRolls.length, evadeRolls: usedEvadeRolls, evadeSaves,
+    evadeDice: usedEvadeRolls.length, evadeRolls: usedEvadeRolls,
+    evadeEligible: targetPlan.evadeEligible,
+    evadeModifier: targetPlan.evadeModifier,
+    evadeThreshold: targetPlan.evadeThreshold, evadeSaves,
     damagePerDie, totalDamage,
     rulesTruth: `official_selected_roster_${kind}_pool_resolution`,
     trainingTruth: false }, "resolutionHash");
@@ -1220,10 +1265,12 @@ function applyChargeResolution(stateInput, action) {
       phase: "assault", sideKey: action.sideKey, pieceId: action.pieceId,
       targetUnitIds: [...plan.declaredTargetUnitIds],
       abilityName: impact.abilityName, impactDice: impact.dice,
-      baseHitThreshold: impact.hitThreshold, hitRollModifier: 0,
-      effectiveHitThreshold: impact.hitThreshold,
+      baseHitThreshold: impact.hitThreshold,
+      hitRollModifier: Number(action.chargePlan.impactHitModifier || 0),
+      effectiveHitThreshold: Math.max(2, impact.hitThreshold
+        - Number(action.chargePlan.impactHitModifier || 0)),
       chargeResolutionPlanHash: plan.chargeResolutionPlanHash,
-      activeChargeModifiersDeferredToSlice229: true,
+      activeChargeModifiersApplied: true,
       sourceRefreshPerformed: false, trainingTruth: false };
     state.pendingAction = { ...pendingBody,
       pendingHash: hashStarcraftTmgContract(pendingBody) };
@@ -1234,7 +1281,10 @@ function applyChargeResolution(stateInput, action) {
       pendingHash: state.pendingAction.pendingHash, trainingTruth: false });
   } else {
     delete state.pendingAction;
-    alternate(state, action.sideKey, "assault");
+    if (!openOfficialSelectedRosterAfterActionWindowV1(
+      state, action.sideKey, piece.id, "assault")) {
+      alternate(state, action.sideKey, "assault");
+    }
   }
   state.chargeActionHistory = Array.isArray(state.chargeActionHistory)
     ? state.chargeActionHistory : [];
@@ -1279,6 +1329,7 @@ function applyDamageAction(stateInput, action, options, kind) {
   if (kind === "fight") {
     piece.activatedPhases = { movement: false, assault: false, combat: false,
       ...(piece.activatedPhases || {}), combat: true };
+    consumeOfficialSelectedRosterFirstWeaponModifierV1(state, piece.id);
   } else {
     delete state.pendingAction;
   }
@@ -1287,7 +1338,11 @@ function applyDamageAction(stateInput, action, options, kind) {
     rulesRuntimeHash: state.officialMissionRuntimeDescriptor.runtimeHash });
   state.supplyLossLedger = clone(recorded.ledger);
   events.push(...recorded.supplyLossEvents.map(clone));
-  alternate(state, action.sideKey, kind === "fight" ? "combat" : "assault");
+  const activationPhase = kind === "fight" ? "combat" : "assault";
+  if (!openOfficialSelectedRosterAfterActionWindowV1(
+    state, action.sideKey, piece.id, activationPhase)) {
+    alternate(state, action.sideKey, activationPhase);
+  }
   const historyKey = kind === "fight" ? "fightActionHistory" : "impactActionHistory";
   state[historyKey] = Array.isArray(state[historyKey]) ? state[historyKey] : [];
   state[historyKey].push({ round: Number(state.round), phase: state.phase,
@@ -1445,8 +1500,10 @@ export function createOfficialSelectedRosterMeleeActionRuntimeV1(state) {
     instantReactionProhibitionExact: true,
     surgeArmourBypassExact: true,
     supplyLossLedgerIntegrated: true,
-    activeCardModifiersDeferredToSlice229: ["Stimpack", "Combat Shield",
-      "Leap", "Adrenal Overload"],
+    activeCardModifiersApplied: ["Stimpack", "Combat Shield",
+      "Leap", "Adrenal Overload", "Wild Mutation"],
+    precisionChoiceUsesFailedHitDieIndices: true,
+    afterActionAbilityWindowIntegrated: true,
     legalSpacePreviewApplyAndQueryShareInstantiation: true,
     arbitraryRosterClosureClaimed: false,
     sourceRefreshPerformed: false, productionRoomEligible: false,

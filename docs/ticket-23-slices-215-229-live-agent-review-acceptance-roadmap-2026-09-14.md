@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–228 完成；Ticket 23 为 `14/36`，剩余 `22` 片
+状态：Slices 215–229 完成；Ticket 23 为 `15/36`，剩余 `21` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -48,7 +48,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 226 | **Complete:** 所选五个 Unit 的通用空间动作闭包：Deploy、Move、Run、Disengage、底座/编队/地形/高低差/路径与边界 | selected-roster movement 门通过：5 Unit / 20 route / unsupported 0 | 12/21 |
 | 227 | **Complete:** 所选五个 Unit 的通用远程战斗闭包：武器选择、射程/LoS、攻击池、防御、伤害、伤亡、补给与骰子 | selected-roster ranged combat 门通过：4 route / no-ranged 1 / unsupported 0 | 13/21 |
 | 228 | **Complete:** 所选五个 Unit 的 Charge/IMPACT/近战闭包：冲锋距离、接战、卡位、批次、近战伤亡与脱离关系 | selected-roster melee 门一次通过：5 Charge / 5 Fight / 2 IMPACT / unsupported 0 | 14/21 |
-| 229 | 参考阵容卡面能力闭包：Marine、Kerrigan、Raptor、Terran/Kerrigan's Swarm 与 Creep 的资源、状态、Token/Marker 生命周期 | 仅运行 selected-roster ability 门一次 | 15/36 |
+| 229 | **Complete:** 参考阵容 13 主动/9 被动能力的资源、状态、Token/Marker、Omega Worm、激活窗口与消费者接线 | selected-roster ability 门第 2 轮通过：13/9/unsupported 0 | 15/36 |
 | 230 | 通用能力注册表、类型化 Effect IR、Action/Consumer/System 生命周期自动路由和统一调用合同 | 仅运行 ability registry/compiler 门一次 | 16/36 |
 | 231 | 冻结官方 26 Unit、37 Card、252 definition 的产品动作分母编译和缺口清单 | 仅运行 current-product denominator 门一次 | 17/36 |
 | 232 | 全卡池 Move、PLACE、Deploy、Return-to-Reserve 能力族接线 | 仅运行 relocation family 门一次 | 18/36 |
@@ -253,6 +253,17 @@ Room Factory `1.3.0` 强制绑定 V2 Attack Profile Catalogue 与 melee descript
 唯一聚焦门一次通过 12 route、Marine `3+3` rank、Critical Hit、Surge/INSTANT 和 1 Supply
 归因；来源/Provider/训练真值均未更新。闭包记录：
 `docs/ticket-23-slice-228-selected-roster-melee-actions-closure-2026-09-14.md`。
+
+## Slice 229 收口
+
+参考阵容已从冻结官方数据编译 `13` 主动路由和 `9` 被动绑定，selected
+ability unsupported 为零。Rules-owned LegalSpace 统一管理动作前/后窗口、目标、
+资源支付、卡牌耗竭、PLACE/Omega Worm 几何和清理刷新；移动、脱离、射击、
+冲锋、IMPACT 和近战消费者实际读取 Speed、Precision、Evade 及命中修正。无武器
+Omega Worm 使用 Structure target-only 防御 Profile，不放宽旧武器编译器。聚焦门第
+1 轮发现该类型缺口，第 2 轮通过 13/9/0、Stimpack 2/7/3、Combat Shield Evade
+和 Omega Worm 实体生成；未跑历史全量门。闭包记录：
+`docs/ticket-23-slice-229-selected-roster-abilities-closure-2026-09-14.md`。
 
 ## 验证与成本规则
 

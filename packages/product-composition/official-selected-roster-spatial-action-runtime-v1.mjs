@@ -18,10 +18,15 @@ import { verifyOfficialTerrainLosDataBundleV1 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
 import { verifyOfficialStandardActionRouteCatalogueV1 } from
   "./official-standard-action-route-catalogue-v1.mjs";
+import {
+  assertOfficialSelectedRosterCoreActionWindowV1,
+  openOfficialSelectedRosterAfterActionWindowV1,
+  resolveOfficialSelectedRosterAbilityModifiersV1,
+} from "./official-selected-roster-ability-runtime-v1.mjs";
 
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-spatial-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION = "1.0.0";
+export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION = "1.1.0";
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_PARAMETER_KIND =
   "official_selected_roster_spatial_path_v1";
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_PLAN_SCHEMA =
@@ -31,6 +36,7 @@ const SELECTED_RECORD_KEYS = new Set([
   "army_units:marine",
   "army_units:kerrigan",
   "army_units:kerrigan_swarm_raptor__zergling_",
+  "army_units:omega_worm",
 ]);
 const ACTION_TYPES = Object.freeze(["deploy", "move", "run", "disengage"]);
 const MOVEMENT_ACTION_TYPES = new Set([
@@ -266,10 +272,14 @@ function routeProfile(state, piece) {
   }
   return unit;
 }
-function exactSpeed(profile, modelCount) {
-  return modelCount === 1
+function exactSpeed(state, piece, profile, modelCount) {
+  const printed = modelCount === 1
     ? profile.movementProfile.singleModelSpeedInches
     : profile.movementProfile.multiModelSpeedInches;
+  const modifiers = resolveOfficialSelectedRosterAbilityModifiersV1(state, piece, {
+    actionType: "movement",
+  });
+  return printed + modifiers.speedModifier;
 }
 function modelProfiles(piece) {
   return activePiece(piece) ? activeModels(piece).map((model) => ({
@@ -300,7 +310,7 @@ function verifyRuntimeState(state) {
     fail("SELECTED_SPATIAL_ROSTER_SCOPE_INVALID");
   }
   for (const piece of live) {
-    routeProfile(state, piece);
+    if (piece.isStructure !== true) routeProfile(state, piece);
     if (!Array.isArray(piece.models)
       || activeModels(piece).length !== (activePiece(piece) ? Number(piece.currentModels) : 0)) {
       fail("SELECTED_SPATIAL_MODEL_DENOMINATOR_INVALID", piece.id);
@@ -349,6 +359,8 @@ function actionContext(state, sideKey, piece, actionType) {
   if (piece.activatedPhases?.[actionType === "run" ? "assault" : "movement"] === true) {
     fail("SELECTED_SPATIAL_UNIT_ALREADY_ACTIVATED", piece.id);
   }
+  assertOfficialSelectedRosterCoreActionWindowV1(state, sideKey, piece.id,
+    actionType === "run" ? "assault" : "movement");
   const engagement = engagementSnapshot(state, piece);
   if (actionType === "deploy") {
     if (piece.isOnField === true || piece.isInReserves !== true) {
@@ -389,21 +401,27 @@ function postDisengageRestriction(state, piece, engagement) {
   const combinedEnemyEffectiveSupply = Object.values(enemySupplyByUnit)
     .reduce((sum, value) => sum + value, 0);
   const tacticalMass = ownEffectiveSupply > combinedEnemyEffectiveSupply;
+  const modifiers = resolveOfficialSelectedRosterAbilityModifiersV1(state, piece, {
+    actionType: "disengage",
+  });
+  const ignoresPenalty = modifiers.ignoreDisengagePenalty;
   return seal({
     schema: "starcraft_tmg_official_post_disengage_assault_restriction_v2",
     semanticVersion: "2.0.0", declaredRound: Number(state.round),
     appliesToPhase: "assault", engagedEnemyUnitIds: engagement.enemyUnitIds,
     enemyEffectiveSupplyByUnit: enemySupplyByUnit, ownEffectiveSupply,
     combinedEnemyEffectiveSupply, commanderModifierIncluded: true,
-    tacticalMass, rangedAttackProhibited: !tacticalMass,
-    chargeProhibited: !tacticalMass, evaluatedAtDeclaration: true,
+    tacticalMass, rangedAttackProhibited: !tacticalMass && !ignoresPenalty,
+    chargeProhibited: !tacticalMass && !ignoresPenalty,
+    disengagePenaltyIgnoredByActiveAbility: ignoresPenalty,
+    evaluatedAtDeclaration: true,
     rulesTruth: "official_selected_roster_disengage_tactical_mass",
     trainingTruth: false,
   }, "restrictionHash");
 }
 function domainFor(state, sideKey, piece, actionType, context) {
   const profiles = modelProfiles(piece);
-  const speed = exactSpeed(context.profile, Number(piece.currentModels));
+  const speed = exactSpeed(state, piece, context.profile, Number(piece.currentModels));
   const supply = supplyAvailable(state, sideKey);
   const core = {
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
@@ -1204,6 +1222,8 @@ export function applyOfficialSelectedRosterSpatialActionV1(
   state.log = Array.isArray(state.log) ? state.log : [];
   state.log.push({ id: `log-${state.log.length + 1}`, round: Number(state.round),
     phase: state.phase, action: clone(actionInput), events: [clone(event)] });
+  openOfficialSelectedRosterAfterActionWindowV1(
+    state, piece.sideKey, piece.id, activationPhase);
   return freezeDeep({ ok: true,
     schemaVersion: "starcraft_tmg_selected_roster_spatial_transition_v1",
     runtimeId: OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID,
@@ -1265,6 +1285,8 @@ export function createOfficialSelectedRosterSpatialActionRuntimeV1(state) {
     arbitraryRosterClosureClaimed: false,
     successfulPlacementPathExact: true,
     noLegalDisengagePlacementCertificateInterfaceRequired: true,
+    activeSpeedAndDisengageModifiersApplied: true,
+    afterActionAbilityWindowIntegrated: true,
     legalSpacePreviewApplyAndQueryShareInstantiation: true,
     sourceRefreshPerformed: false,
     productionRoomEligible: false,

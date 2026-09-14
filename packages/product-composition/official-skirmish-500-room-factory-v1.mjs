@@ -30,6 +30,8 @@ import { createOfficialAttackProfileCatalogueV2 } from
   "../source-data/official-attack-profile-catalogue-v2.mjs";
 import { createOfficialBalancedTerrainRulesDataBundleV1 } from
   "../source-data/official-balanced-terrain-rules-data-bundle-v1.mjs";
+import { createOfficialCardBuildPaymentDataBundleV1 } from
+  "../source-data/official-card-build-payment-data-bundle-v1.mjs";
 import { createOfficialDeploymentGeometryDataBundleV1 } from
   "../source-data/official-deployment-geometry-data-bundle-v1.mjs";
 import { createOfficialMatchGameplayDataBundleV2 } from
@@ -46,6 +48,11 @@ import { createOfficialUnitCardSupplyDataBundleV1 } from
   "../source-data/official-unit-card-supply-data-bundle-v1.mjs";
 import { STARCRAFT_TMG_FORMAL_500_ROSTER_RECIPES_V1 } from
   "./formal-experiment-run-manifest-v1.mjs";
+import {
+  createOfficialSelectedRosterAbilityRuntimeV1,
+  createOfficialSelectedRosterAbilitySourceBundleV1,
+  verifyOfficialSelectedRosterAbilityRuntimeDescriptorV1,
+} from "./official-selected-roster-ability-runtime-v1.mjs";
 import {
   createOfficialSelectedRosterMeleeActionRuntimeV1,
   verifyOfficialSelectedRosterMeleeRuntimeDescriptorV1,
@@ -69,7 +76,7 @@ import {
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
-export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "1.3.0";
+export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "1.4.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MISSION_RECORD_KEY = "faction_cards:mission_hold_position__skirmish_";
@@ -363,6 +370,7 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     supportRelations: [],
   });
   const unitSupplyBundle = createOfficialUnitCardSupplyDataBundleV1({ dataset });
+  const cardBuildPaymentDataBundle = createOfficialCardBuildPaymentDataBundleV1({ dataset });
   const registryContext = { bundle: rosterBundle, result: registry };
   const pieces = SIDE_KEYS.flatMap((sideKey) => registry.rostersByPlayer[sideKey].units
     .map((unit) => createOfficialRoomPieceFromRosterUnitV1(dataset,
@@ -410,6 +418,7 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     officialFactionArmyEligibilityDataBundle:
       compositionBundle.armyResourceBudgetDataBundle.factionArmyEligibilityDataBundle,
     officialUnitCardSupplyDataBundle: unitSupplyBundle,
+    officialCardBuildPaymentDataBundle: cardBuildPaymentDataBundle,
     armyBuildingEngagementScale: scaleAgreement, engagementScale: "Skirmish",
     armyBuildingConfigurationBySide: recipes,
     armyResourceBudgetsBySide: Object.fromEntries(SIDE_KEYS.map((sideKey) => [
@@ -515,6 +524,15 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   );
   state.officialSelectedRosterMeleeRuntimeDescriptor =
     selectedRosterMeleeRuntime.descriptor;
+  state.officialSelectedRosterAbilitySourceBundle =
+    createOfficialSelectedRosterAbilitySourceBundleV1({ dataset, state });
+  const selectedRosterAbilityRuntime =
+    createOfficialSelectedRosterAbilityRuntimeV1(state);
+  verifyOfficialSelectedRosterAbilityRuntimeDescriptorV1(
+    selectedRosterAbilityRuntime.descriptor,
+  );
+  state.officialSelectedRosterAbilityRuntimeDescriptor =
+    selectedRosterAbilityRuntime.descriptor;
   state.officialMissionEffectCatalogue = gameplayBundle.missionEffectCatalogue;
   state.officialMissionRuntimeDescriptor = missionRuntime.descriptor;
   const viewerProjectionEvidence = projectionEvidence(state);
@@ -567,13 +585,15 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         state.officialSelectedRosterRangedRuntimeDescriptor.runtimeHash,
       selectedRosterMeleeRuntimeHash:
         state.officialSelectedRosterMeleeRuntimeDescriptor.runtimeHash,
+      selectedRosterAbilityRuntimeHash:
+        state.officialSelectedRosterAbilityRuntimeDescriptor.runtimeHash,
       rosterVisibility: visibility.rosterVisibility,
       viewerProjectionEvidence,
       sourceSnapshotHash: dataset.sourceSnapshotHash,
       normalizedDatasetHash: dataset.datasetHash,
       sourceRefreshPerformed: false,
       repositoryFallbackUsed: false,
-      completeActionRuntimeDeferredToSlices: [229, 230],
+      completeActionRuntimeDeferredToSlices: [230],
       trainingTruth: false,
     },
     trainingTruth: false,
@@ -635,6 +655,8 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
       !== state?.officialSelectedRosterRangedRuntimeDescriptor?.runtimeHash
     || evidence?.selectedRosterMeleeRuntimeHash
       !== state?.officialSelectedRosterMeleeRuntimeDescriptor?.runtimeHash
+    || evidence?.selectedRosterAbilityRuntimeHash
+      !== state?.officialSelectedRosterAbilityRuntimeDescriptor?.runtimeHash
     || authority.trainingTruth !== false) {
     fail("SKIRMISH_500_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
   }
@@ -646,6 +668,9 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
   );
   verifyOfficialSelectedRosterMeleeRuntimeDescriptorV1(
     state.officialSelectedRosterMeleeRuntimeDescriptor,
+  );
+  verifyOfficialSelectedRosterAbilityRuntimeDescriptorV1(
+    state.officialSelectedRosterAbilityRuntimeDescriptor,
   );
   return true;
 }

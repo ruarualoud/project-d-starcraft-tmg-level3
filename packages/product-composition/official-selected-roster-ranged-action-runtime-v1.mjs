@@ -29,16 +29,21 @@ import {
   getOfficialAttackProfileV1,
   verifyOfficialAttackProfileCatalogueV1,
 } from "../source-data/official-attack-profile-catalogue-v1.mjs";
-import {
-  getOfficialCombatProfileV1,
-  verifyOfficialCombatProfileBundleV1,
-} from "../source-data/official-combat-profile-bundle-v1.mjs";
+import { verifyOfficialCombatProfileBundleV1 } from
+  "../source-data/official-combat-profile-bundle-v1.mjs";
 import { verifyOfficialTerrainLosDataBundleV1 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
+import {
+  assertOfficialSelectedRosterCoreActionWindowV1,
+  consumeOfficialSelectedRosterFirstWeaponModifierV1,
+  getOfficialSelectedRosterCombatProfileV1,
+  openOfficialSelectedRosterAfterActionWindowV1,
+  resolveOfficialSelectedRosterAbilityModifiersV1,
+} from "./official-selected-roster-ability-runtime-v1.mjs";
 
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ranged-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.0.0";
+export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.1.0";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_TYPE = "ranged_attack";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_PARAMETER_KIND =
   "official_selected_roster_ranged_target_v1";
@@ -49,6 +54,7 @@ const SELECTED_RECORD_KEYS = new Set([
   "army_units:marine",
   "army_units:kerrigan",
   "army_units:kerrigan_swarm_raptor__zergling_",
+  "army_units:omega_worm",
 ]);
 const SIDE_KEYS = new Set(["player1", "player2"]);
 const ATTACK_KERNEL = createOfficialAttackResolutionKernelV5();
@@ -92,6 +98,11 @@ function activeModels(piece) {
     model?.isOnField !== false && model?.isDestroyed !== true
   ));
 }
+function rollSucceeds(roll, threshold) {
+  if (roll === 1) return false;
+  if (roll === 6) return true;
+  return roll >= threshold;
+}
 function otherSide(sideKey) {
   if (sideKey === "player1") return "player2";
   if (sideKey === "player2") return "player1";
@@ -110,7 +121,7 @@ function phaseReady(state, sideKey) {
 }
 function verifyRuntimeState(state) {
   if (!object(state) || !object(state.players) || !object(state.board)
-    || !Array.isArray(state.pieces) || state.pieces.length !== 5
+    || !Array.isArray(state.pieces) || state.pieces.length < 5 || state.pieces.length > 6
     || state.pieces.some((piece) => !SELECTED_RECORD_KEYS.has(piece.officialUnitRecordKey))) {
     fail("SELECTED_RANGED_STATE_SCOPE_INVALID");
   }
@@ -183,6 +194,8 @@ function assertAssaultContext(state, sideKey, piece, target, graph) {
   if (piece.activatedPhases?.assault === true) {
     fail("SELECTED_RANGED_UNIT_ALREADY_ACTIVATED", piece.id);
   }
+  assertOfficialSelectedRosterCoreActionWindowV1(
+    state, sideKey, piece.id, "assault");
   const restriction = piece.disengageAssaultRestriction;
   if (restriction?.rangedAttackProhibited === true) {
     fail("SELECTED_RANGED_POST_DISENGAGE_PROHIBITED", piece.id);
@@ -296,24 +309,32 @@ function batchProfile(profile, eligibleModelCount) {
     rateOfAttack: Number(profile.rateOfAttack) * eligibleModelCount };
   return freezeDeep({ ...body, profileHash: hashStarcraftTmgContract(body) });
 }
-function planAttackResolution(state, profile, geometry, targetProfile,
+function planAttackResolution(state, piece, target, profile, geometry, targetProfile,
   engagement, graph) {
   const highGroundEvadeEligible = geometry.pairs.some((pair) => (
     pair.visible && pair.withinMaximumRange && pair.highGroundEvadeEligible
   ));
+  const abilityModifiers = resolveOfficialSelectedRosterAbilityModifiersV1(
+    state, target, { attackerPieceId: piece.id, weaponName: profile.weaponName,
+      damageKind: "ranged_attack" });
   const evadeEligible = targetProfile.evadeThreshold !== null
-    && (engagement.targetEngaged || highGroundEvadeEligible);
+    && (engagement.targetEngaged || highGroundEvadeEligible
+      || abilityModifiers.evadeEligible);
   const authoritativeEvadeReason = !evadeEligible ? "none"
-    : engagement.targetEngaged && highGroundEvadeEligible
+    : abilityModifiers.evadeEligible ? "active_ability_evade_eligibility"
+      : engagement.targetEngaged && highGroundEvadeEligible
       ? "target_engaged_or_all_high_ground"
       : engagement.targetEngaged
         ? "target_engaged_and_suffering_ranged_damage"
         : "target_all_high_ground_and_attack_originates_lower";
   const profileForBatch = batchProfile(profile, geometry.eligibleAttackerModelIds.length);
+  const evadeThreshold = targetProfile.evadeThreshold === null ? null
+    : Math.max(2, Number(targetProfile.evadeThreshold)
+      - Number(abilityModifiers.evadeModifier || 0));
   const mechanicalPlan = ATTACK_KERNEL.plan({
     profile: profileForBatch,
     target: { armourThreshold: targetProfile.armourThreshold,
-      evadeThreshold: targetProfile.evadeThreshold,
+      evadeThreshold,
       combatTags: targetProfile.combatTags },
     distanceInches: geometry.distanceInches,
     evadeEligibility: { eligible: evadeEligible,
@@ -324,8 +345,12 @@ function planAttackResolution(state, profile, geometry, targetProfile,
     )) ? { engaged: engagement.attackerEngaged,
         source: "official_engagement_graph_v2", graphHash: graph.graphHash } : undefined,
   });
+  const attackerAbilityModifiers = resolveOfficialSelectedRosterAbilityModifiersV1(
+    state, piece, { attackerPieceId: piece.id, weaponName: profile.weaponName,
+      damageKind: "ranged_attack" });
   return { mechanicalPlan, profileForBatch, evadeEligible,
-    authoritativeEvadeReason, highGroundEvadeEligible };
+    authoritativeEvadeReason, highGroundEvadeEligible, abilityModifiers,
+    attackerAbilityModifiers };
 }
 function contextFor(state, sideKey, piece, target, profileKey, shared = {}) {
   const graph = shared.graph || deriveOfficialEngagementGraphV2(state);
@@ -334,15 +359,14 @@ function contextFor(state, sideKey, piece, target, profileKey, shared = {}) {
     || activeProfilesFor(state, piece);
   const profile = profiles.find((entry) => entry.profileKey === profileKey);
   if (!profile) fail("SELECTED_RANGED_PROFILE_UNAVAILABLE", profileKey);
-  const targetProfile = getOfficialCombatProfileV1(
-    state.officialCombatProfileBundle, target.officialUnitRecordKey,
-  );
+  const targetProfile = getOfficialSelectedRosterCombatProfileV1(
+    state, target.officialUnitRecordKey);
   if (targetProfile.shield !== 0) {
     fail("SELECTED_RANGED_SELECTED_TARGET_SHIELD_SCOPE_UNSUPPORTED", target.id);
   }
   const geometry = candidateGeometry(state, piece, target, profile);
   const attack = planAttackResolution(
-    state, profile, geometry, targetProfile, engagement, graph,
+    state, piece, target, profile, geometry, targetProfile, engagement, graph,
   );
   return { graph, engagement, loadout, profile, targetProfile, geometry, ...attack };
 }
@@ -500,6 +524,8 @@ export function instantiateOfficialSelectedRosterRangedActionV1(
     attackerEngaged: context.engagement.attackerEngaged,
     targetEngaged: context.engagement.targetEngaged,
     highGroundEvadeEligible: context.highGroundEvadeEligible,
+    abilityEvadeModifier: context.abilityModifiers.evadeModifier,
+    activePrecisionValue: context.attackerAbilityModifiers.precision,
     evadeEligible: context.evadeEligible,
     evadeEligibilityReason: context.authoritativeEvadeReason,
     mechanicalEvadeAdapterUsed: context.evadeEligible
@@ -558,6 +584,59 @@ export function resolveOfficialSelectedRosterRangedChanceV1(
     context.mechanicalPlan, options.chanceReveals,
   );
   const stages = clone(mechanicalResolution.stages);
+  const precisionValue = Number(context.attackerAbilityModifiers.precision || 0);
+  const failedHitDieIndices = stages.hit.rolls.map((roll, index) => ({ roll, index }))
+    .filter(({ roll }) => !rollSucceeds(roll, stages.hit.threshold))
+    .map(({ index }) => index);
+  const convertedFailedHitDieIndices = [...new Set(
+    (options.precisionConvertedFailedHitDieIndices || []).map(Number),
+  )].sort((left, right) => left - right);
+  if (convertedFailedHitDieIndices.length > precisionValue
+    || convertedFailedHitDieIndices.some((index) => (
+      !Number.isSafeInteger(index) || !failedHitDieIndices.includes(index)))) {
+    fail("SELECTED_RANGED_PRECISION_SELECTION_INVALID");
+  }
+  if (convertedFailedHitDieIndices.length > 0) {
+    const originalHits = stages.hit.hits;
+    const hits = originalHits + convertedFailedHitDieIndices.length;
+    const surgeCapacity = stages.effects.surgeResults
+      .reduce((sum, value) => sum + value, 0);
+    const bypassedArmourHits = stages.effects.surgeMatched
+      ? Math.min(hits, surgeCapacity) : 0;
+    const armourDice = hits - bypassedArmourHits;
+    const armourRolls = [...stages.armour.rolls,
+      ...stages.armour.unusedPreallocatedRolls];
+    const resolvedArmourRolls = armourRolls.slice(0, armourDice);
+    const armourSaves = resolvedArmourRolls.filter((roll) => (
+      rollSucceeds(roll, stages.armour.threshold))).length;
+    const damagePoolBeforeEvade = bypassedArmourHits + armourDice - armourSaves;
+    const evadeDice = stages.evade.eligible ? damagePoolBeforeEvade : 0;
+    const evadeRolls = [...stages.evade.rolls, ...stages.evade.unusedPreallocatedRolls];
+    const resolvedEvadeRolls = evadeRolls.slice(0, evadeDice);
+    const evadeSaves = resolvedEvadeRolls.filter((roll) => (
+      rollSucceeds(roll, stages.evade.effectiveThreshold))).length;
+    const confirmedDamageDice = damagePoolBeforeEvade - evadeSaves;
+    stages.hit = { ...stages.hit, originalHits, hits,
+      failedHitDieIndices, convertedFailedHitDieIndices,
+      precisionConvertedHits: convertedFailedHitDieIndices.length };
+    stages.effects = { ...stages.effects, bypassedArmourHits,
+      precisionApplied: true, precisionValue,
+      convertedDiceCountAsHitsForAllPurposes: true };
+    stages.armour = { ...stages.armour, dice: armourDice,
+      rolls: resolvedArmourRolls,
+      unusedPreallocatedRolls: armourRolls.slice(armourDice), saves: armourSaves };
+    stages.evade = { ...stages.evade, dice: evadeDice,
+      rolls: resolvedEvadeRolls,
+      unusedPreallocatedRolls: evadeRolls.slice(evadeDice),
+      damagePoolBeforeEvade, saves: evadeSaves, confirmedDamageDice };
+    stages.damage = { ...stages.damage, damagePoolDice: confirmedDamageDice,
+      totalDamage: confirmedDamageDice * stages.damage.damagePerDie };
+  } else {
+    stages.hit.failedHitDieIndices = failedHitDieIndices;
+    stages.hit.convertedFailedHitDieIndices = [];
+    stages.effects.precisionApplied = false;
+    stages.effects.precisionValue = precisionValue;
+  }
   stages.evade.eligibilityReason = context.authoritativeEvadeReason;
   const resolution = seal({
     schemaVersion: "starcraft_tmg_selected_roster_ranged_resolution_v1",
@@ -565,6 +644,10 @@ export function resolveOfficialSelectedRosterRangedChanceV1(
     attackPlanHash: context.mechanicalPlan.planHash,
     authoritativeEvadeReason: context.authoritativeEvadeReason,
     stages, reveals: clone(mechanicalResolution.reveals),
+    precisionChoiceDomain: { failedHitDieIndices,
+      maximumConvertedDice: Math.min(precisionValue, failedHitDieIndices.length),
+      selectedFailedHitDieIndices: convertedFailedHitDieIndices,
+      mayDecline: true },
     rulesTruth: "official_selected_roster_ranged_pool_resolution",
     trainingTruth: false,
   }, "resolutionHash");
@@ -676,6 +759,7 @@ export function applyOfficialSelectedRosterRangedActionV1(
   if (casualty.targetDestroyed) target.isInReserves = false;
   piece.activatedPhases = { movement: false, assault: false, combat: false,
     ...(piece.activatedPhases || {}), assault: true };
+  consumeOfficialSelectedRosterFirstWeaponModifierV1(state, piece.id);
   const restrictionEvent = consumeRestriction(piece, state, actionInput);
   const rangedEvent = {
     type: "ranged_attack", sideKey: actionInput.sideKey,
@@ -707,11 +791,14 @@ export function applyOfficialSelectedRosterRangedActionV1(
   });
   state.supplyLossLedger = clone(supply.ledger);
   events.push(...supply.supplyLossEvents.map(clone));
-  const opponentSideKey = otherSide(actionInput.sideKey);
-  if (sideHasAvailableAssaultActivation(state, opponentSideKey)) {
-    state.activeSideKey = opponentSideKey;
-  } else if (sideHasAvailableAssaultActivation(state, actionInput.sideKey)) {
-    state.activeSideKey = actionInput.sideKey;
+  if (!openOfficialSelectedRosterAfterActionWindowV1(
+    state, actionInput.sideKey, piece.id, "assault")) {
+    const opponentSideKey = otherSide(actionInput.sideKey);
+    if (sideHasAvailableAssaultActivation(state, opponentSideKey)) {
+      state.activeSideKey = opponentSideKey;
+    } else if (sideHasAvailableAssaultActivation(state, actionInput.sideKey)) {
+      state.activeSideKey = actionInput.sideKey;
+    }
   }
   state.rangedActionHistory = Array.isArray(state.rangedActionHistory)
     ? state.rangedActionHistory : [];
@@ -754,6 +841,8 @@ export function queryOfficialSelectedRosterRangedActionV1(input = {}) {
   const chance = queryKind === "resolve_chance_and_casualty_domain"
     ? resolveOfficialSelectedRosterRangedChanceV1(state, preview.action, {
       chanceReveals: request.chanceReveals,
+      precisionConvertedFailedHitDieIndices:
+        request.precisionConvertedFailedHitDieIndices,
     }) : null;
   return seal({
     schemaVersion: "starcraft_tmg_selected_roster_ranged_query_v1",
@@ -806,6 +895,9 @@ export function createOfficialSelectedRosterRangedActionRuntimeV1(state) {
     multiModelAttackPoolAndCasualtySelectionExact: true,
     paidUnselectedAdditionalWeaponsFilteredFromLoadout: true,
     supplyLossLedgerIntegrated: true,
+    activeEvadeModifiersApplied: true,
+    activePrecisionValueExposedToChoiceLifecycle: true,
+    afterActionAbilityWindowIntegrated: true,
     legalSpacePreviewApplyAndQueryShareInstantiation: true,
     sourceRefreshPerformed: false, productionRoomEligible: false,
     rulesTruth: "official_selected_roster_ranged_runtime",
