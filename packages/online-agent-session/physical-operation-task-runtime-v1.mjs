@@ -58,10 +58,14 @@ function position(value = {}) {
     rotationDegrees: Number.isFinite(rotationDegrees) ? rotationDegrees : 0,
   };
 }
-function physicalState(value = {}) {
+function physicalState(value = {}, containingPiece = null) {
+  const pieceOnField = containingPiece
+    ? containingPiece.isOnField === true
+    : true;
   return {
-    isOnField: value.isOnField !== false,
-    isDestroyed: value.isDestroyed === true,
+    isOnField: pieceOnField && value.isOnField !== false,
+    isDestroyed: value.isDestroyed === true
+      || containingPiece?.isDestroyed === true,
     position: position(value),
   };
 }
@@ -82,7 +86,7 @@ function modelRows(state = {}) {
       objectType: model.id === piece.id ? "unit" : "model",
       pieceId: required(piece.id, "piece.id"),
       ownerSideKey: required(piece.sideKey, "piece.sideKey"),
-      state: physicalState(model),
+      state: physicalState(model, piece),
       unitState: null,
     }));
   });
@@ -120,7 +124,9 @@ function unitsById(state = {}) {
   return new Map((state.pieces || []).map((piece) => [piece.id, piece]));
 }
 function operationKind(before, after) {
-  if (!before && after?.state.isOnField && !after.state.isDestroyed) {
+  if ((!before || before.state.isOnField === false
+    || before.state.isDestroyed === true)
+    && after?.state.isOnField && !after.state.isDestroyed) {
     return after.objectType === "model" || after.objectType === "unit"
       ? "place_model" : "place_component";
   }

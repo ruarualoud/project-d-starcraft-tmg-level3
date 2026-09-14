@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–244 完成；Ticket 23 为 `30/36`，剩余 `6` 片
+状态：Slices 215–245 完成；Ticket 23 为 `31/36`，剩余 `5` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -64,7 +64,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 242 | **Complete:** Protoss 独特余项：Nexus Ancient Pride、Artanis Commander、Warp Gate Warp In、Khalai Bound by the Khala；首武器消费、完整底座非入口边部署和连续激活已接线 | 4 new / owner pending 0 / 分母 252 exact、0 pending；窄化终态门 exit 0 | 28/36 |
 | 243 | **Complete:** 全官方产品分母收口：252/252 有唯一执行角色/owner/Adapter，`pending=0`、`unsupported=0`、无静默缺口；Rules 输出近战 rank/总骰 | 第 2 轮 aggregate 通过；规范 C-14 rifle 与 Rules 计算 2 骰 Strike 均真实 Apply/Replay | 29/36 |
 | 244 | **Complete:** Standard 2000 Room/军表/任务/平衡地形/完整产品 Runtime 最终绑定：双方各 2000 Minerals、≤200 Vespene、54×36 | 第 3 轮通过：15 Unit、9 terrain、60/25/32 空间/远程/近战路线、252/0 能力 | 30/36 |
-| 245 | Web 探索性 H-A dry-run 与统一 UI 修复：写表/数据库/对战桌、悬浮副官、通知/物理任务、计划/日志/成本/截图面板 | 只对本轮修复跑一次 Web 用户旅程 | 31/36 |
+| 245 | **Complete:** Standard 2000 Web 探索性 H-A dry-run 与统一 UI 修复：写表/数据库/对战桌、悬浮副官、通知/物理任务、计划/日志/成本/截图面板 | 产品旅程 7/7、截图 11、console/page error 0、Provider 0 | 31/36 |
 | 246 | 产品 Runtime 总组合与 2000 分零 Provider 完整自动 dry-run：任务全生命周期和最终 preflight | 仅运行一场 deterministic full-match dry-run | 32/36 |
 | 247 | 正式 2000 分 H-A live-model 完整局，逐动作截图/描述/骰子/回执/公开理由；预算 ≤¥80 | 一次正式局 + 权威最终 Replay | 33/36 |
 | 248 | 相同配置、独立记忆的 2000 分 A-A live-model 完整局；预算 ≤¥160 | 一次正式局 + 权威最终 Replay | 34/36 |
@@ -358,6 +358,22 @@ Slice 238 聚焦门第 1 轮正确拒绝只有 1 Biomass、却尝试支付 2 Bio
 - `docs/ticket-23-slice-239-current-product-match-lifecycle-family-closure-2026-09-15.md`
 - `docs/ticket-23-slice-240-current-product-terran-unique-family-closure-2026-09-15.md`
 - `docs/ticket-23-slice-241-current-product-zerg-unique-family-closure-2026-09-15.md`
+
+## Slices 242–245 收口
+
+Slice 242 完成 Protoss 独特余项并把产品分母推进到 `252 exact / 0 pending`；Slice 243
+完成全产品唯一角色、owner、Adapter 与真实远程/近战 Apply/Replay 聚合证明；Slice 244
+把双方各 `2000 Minerals`、Vespene `115/140`、Standard `54×36`、15 Unit 和 9 件地形
+绑定到最终规模 Room 初态。Slice 245 再用真实产品 Web 完成 Database、写表、计算器、
+设置、悬浮副官、人类部署、机器自动动作、物理任务、Replay 与四局复盘控制台旅程，7/7
+检查通过，11 张截图，console/page error 为 0，Provider 调用和费用均为 0。
+
+闭包记录：
+
+- `docs/ticket-23-slice-242-current-product-protoss-unique-family-closure-2026-09-15.md`
+- `docs/ticket-23-slice-243-current-product-ability-aggregate-closure-2026-09-15.md`
+- `docs/ticket-23-slice-244-standard-2000-final-room-factory-closure-2026-09-15.md`
+- `docs/ticket-23-slice-245-standard-2000-product-web-closure-2026-09-15.md`
 
 ## 验证与成本规则
 

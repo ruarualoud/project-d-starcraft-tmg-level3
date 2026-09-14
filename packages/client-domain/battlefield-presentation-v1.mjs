@@ -239,6 +239,9 @@ function actionLabel(action) {
 }
 function parameterSupport(domain) {
     const kind = text(domain.parameterKind);
+    if (kind === "official_standard_reserve_deploy_path_v1") {
+        return "official_standard_deploy";
+    }
     if (kind === "official_standard_move"
         || /^official_standard_move_path_v\d+$/u.test(kind)) {
         return "official_standard_move";
@@ -262,9 +265,28 @@ function parameterDomainFrom(value) {
         return null;
     const constraints = record(value.constraints) || {};
     const parameterSchema = record(value.parameterSchema) || {};
+    const modelProfiles = rows(constraints.modelProfiles).map((profile) => ({
+        modelId: text(profile.modelId),
+        baseShape: shapeFrom(profile.shape ?? profile.baseShape),
+        baseWidthMilliInches: positiveInteger(profile.widthMilliInches
+            ?? profile.baseWidthMilliInches),
+        baseDepthMilliInches: positiveInteger(profile.depthMilliInches
+            ?? profile.baseDepthMilliInches),
+        baseRotationDegrees: safeNumber(profile.rotationDegrees
+            ?? profile.baseRotationDegrees) ?? 0,
+    })).filter((profile) => Boolean(profile.modelId));
     const modelIds = Array.isArray(constraints.modelIds)
         ? constraints.modelIds.map(text).filter(Boolean)
-        : [];
+        : modelProfiles.map((profile) => profile.modelId);
+    const entrySegments = rows(constraints.entrySegments).map((segment) => ({
+        segmentId: text(segment.segmentId),
+        side: text(segment.side),
+        startInches: safeNumber(segment.startInches),
+        endInches: safeNumber(segment.endInches),
+    })).filter((segment) => Boolean(segment.segmentId)
+        && ["top", "bottom", "left", "right"].includes(segment.side)
+        && segment.startInches !== null && segment.endInches !== null
+        && segment.endInches > segment.startInches);
     const modelStartPoints = normalizedPointMap(constraints.modelStartPoints);
     const maxPathPoints = positiveInteger(parameterSchema.maxCanonicalPathPoints ?? parameterSchema.maxCanonicalPoints);
     return {
@@ -276,6 +298,8 @@ function parameterDomainFrom(value) {
         support: parameterSupport(value),
         modelIds,
         modelStartPoints,
+        modelProfiles,
+        entrySegments,
         start: pointFrom(constraints.start),
         maxPathPoints,
         exactRemainingPlacementCount: safeInteger(parameterSchema.exactRemainingPlacementCount),
@@ -288,7 +312,12 @@ function previewPathFrom(pendingPreview) {
     const core = record(pendingPreview.core);
     const action = record(core?.action);
     const movePlan = record(action?.movePlan);
-    const canonicalPath = movePlan?.canonicalPath ?? action?.canonicalPath;
+    const deployPlan = record(action?.deployPlan);
+    const spatialPlan = record(action?.spatialPlan);
+    const canonicalPath = movePlan?.canonicalPath
+        ?? deployPlan?.canonicalPath
+        ?? spatialPlan?.canonicalPath
+        ?? action?.canonicalPath;
     const pathContainer = record(canonicalPath);
     const proposal = record(core?.proposal);
     const parameters = record(proposal?.parameters);
@@ -308,7 +337,11 @@ function previewPlacementsFrom(pendingPreview, models, diagnostics) {
     const core = record(pendingPreview.core);
     const action = record(core?.action);
     const movePlan = record(action?.movePlan);
-    const candidates = rows(movePlan?.finalModelPositions);
+    const deployPlan = record(action?.deployPlan);
+    const spatialPlan = record(action?.spatialPlan);
+    const candidates = rows(movePlan?.finalModelPositions
+        ?? deployPlan?.finalModelPositions
+        ?? spatialPlan?.finalModelPositions);
     const modelsById = new Map(models.map((model) => [model.id, model]));
     return candidates.map((candidate, index) => {
         const modelId = text(candidate.modelId) || `preview-model-${index + 1}`;

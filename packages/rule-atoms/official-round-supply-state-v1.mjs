@@ -46,7 +46,7 @@ export function createOfficialRoundSupplyStateV1(input = {}) {
   if (!object(state) || !Array.isArray(state.pieces)) fail("ROUND_SUPPLY_STATE_INVALID");
   const round = Number(state.round);
   const mission = gameplayDataBundle.missionScoringProfile;
-  if (!Number.isSafeInteger(round) || round < 2 || round > mission.gameLengthRounds) {
+  if (!Number.isSafeInteger(round) || round < 1 || round > mission.gameLengthRounds) {
     fail("ROUND_SUPPLY_ROUND_UNSUPPORTED", String(round));
   }
   const finalRound = round === mission.gameLengthRounds;
@@ -90,7 +90,9 @@ export function createOfficialRoundSupplyStateV1(input = {}) {
     rulesRuntimeHash: runtimeHash(input.rulesRuntimeHash),
     rulesTruth: finalRound
       ? "official_final_round_unlimited_supply"
-      : "official_mission_supply_escalation_and_available_supply",
+      : round === 1
+        ? "official_round_one_starting_supply_and_available_supply"
+        : "official_mission_supply_escalation_and_available_supply",
     trainingTruth: false,
   };
   return {

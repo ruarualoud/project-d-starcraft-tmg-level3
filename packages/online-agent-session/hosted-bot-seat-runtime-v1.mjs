@@ -598,6 +598,16 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
       modelApplyCalls: 0,
       providerCalls: Number(
         record.inflight.decision.providerTrace?.providerCalls || 0),
+      providerInputUnits: Number(
+        record.inflight.decision.providerTrace?.inputUnits || 0),
+      providerOutputUnits: Number(
+        record.inflight.decision.providerTrace?.outputUnits || 0),
+      providerTotalUnits: Number(
+        record.inflight.decision.providerTrace?.totalUnits || 0),
+      matchEstimatedCostCnyMicros: Number(
+        record.inflight.decision.providerTrace?.matchEstimatedCostCnyMicros || 0),
+      costNotificationThresholdsCrossed: clone(
+        record.inflight.decision.providerTrace?.notificationThresholdsCrossed || []),
       paidProviderUsed:
         record.inflight.decision.providerTrace?.paidProviderUsed === true,
       hostConfirmCalls: record.inflight.applyRequest.confirmationId ? 1 : 0,

@@ -1435,7 +1435,10 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       // Every rules runtime owns game semantics, but the authority seam owns
       // revision identity. Stamp the same deterministic log/clock lineage used
       // by built-in executors so a valid runtime result cannot expose a stale
-      // postGameClock to clients.
+      // postGameClock to clients. Runtime results may be deeply frozen; clone
+      // the accepted state before adding Authority-owned identity rather than
+      // requiring every Rules implementation to return mutable state.
+      applied = { ...applied, state: clone(applied.state) };
       appendDeterministicLogIdentity(
         applied.state,
         previousLogLength,
@@ -1684,7 +1687,12 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       ...resolved,
       chanceReveals: chanceArtifacts?.revealBundle.reveals,
     });
-    const baseConfirmationClass = confirmationClassFor(resolved.action);
+    // A parameterized proposal has already been resolved against one exact
+    // LegalSpace domain. Preserve that domain's confirmation contract in the
+    // sealed Preview; reclassifying only from the instantiated action type can
+    // contradict the entry the client selected (for example deploy domains).
+    const baseConfirmationClass = resolved.domain?.confirmationClass
+      || confirmationClassFor(resolved.action);
     return {
       core: {
         schemaVersion: `${STARCRAFT_TMG_AUTHORITY_VERSION}.preview-core`,

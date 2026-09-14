@@ -282,6 +282,17 @@ const OWN_ROSTER_KEYS = new Set(["schema", "playerId", "teamId", "factionCard",
   "startingSupply", "selectedUpgradeCount", "mineralBudget", "mineralSpent",
   "completeArmyCompositionUpgradeAuditHash",
   "independentlySelectedFactionTacticalCardsAndUnits", "trainingTruth", "rosterHash"]);
+const ARMY_RESOURCE_BUDGET_KEYS = new Set([
+  "schema", "procedureKind", "sideKey", "mineralBudget", "mineralSpent",
+  "mineralUnspent", "mineralUnspentDisposition", "mineralRetained",
+  "vespeneLimit", "vespeneSpent", "vespeneUnspent",
+  "vespeneUnspentDisposition", "vespeneRetained", "resourceConversionAllowed",
+  "resourceConversionApplied", "exactRationalVespeneComparison",
+  "fullFactionTagSlotAndUniqueLegalityValidated", "fullResourceArithmeticValidated",
+  "rulesOwnedCostsAndTotals", "clientSuppliedCostsOrTotalsAccepted",
+  "resultHash", "trainingTruth",
+]);
+const RATIONAL_KEYS = new Set(["numerator", "denominator"]);
 
 function area(value) {
   return pick(value, AREA_KEYS, (child, key) => {
@@ -380,6 +391,14 @@ function ownRoster(value) {
   });
 }
 
+function armyResourceBudget(value) {
+  return pick(value, ARMY_RESOURCE_BUDGET_KEYS, (child, key) => (
+    ["vespeneLimit", "vespeneUnspent"].includes(key)
+      ? pick(child, RATIONAL_KEYS)
+      : clone(child)
+  ));
+}
+
 function field(fieldName, value, state) {
   if (WHOLE_TREE.has(fieldName)) return clone(value);
   if (fieldName === "board") return pick(value, BOARD_KEYS, (child, key) => (
@@ -426,9 +445,12 @@ function field(fieldName, value, state) {
   if (fieldName === "ownTeamArmyRostersBySide") {
     return participantMap(value, state, ownRoster);
   }
+  if (fieldName === "armyResourceBudgetsBySide") {
+    return participantMap(value, state, armyResourceBudget);
+  }
   if (["scores", "colourByPlayer", "controllerByDraft", "submissionsByPlayer",
     "armyCardOpenInformationBySide", "cardResources", "armyBuildingConfigurationBySide",
-    "armyResourceBudgetsBySide", "unitCompositionSelectionsBySide",
+    "unitCompositionSelectionsBySide",
     "unitUpgradeSelectionsBySide", "armyCompositionUpgradeAuditsBySide"
   ].includes(fieldName)) return participantMap(value, state);
   if (fieldName === "equipmentReminderPermitsByActionHash") {

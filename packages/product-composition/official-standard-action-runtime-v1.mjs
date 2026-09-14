@@ -2,6 +2,8 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { OFFICIAL_RESERVE_DEPLOY_V5_EXECUTOR_ID } from
   "../rule-atoms/official-reserve-deploy-executor-v5.mjs";
+import { settleOfficialAlternatingPhaseAfterActivationV1 } from
+  "../rule-atoms/official-activation-pass-executor-v1.mjs";
 import {
   listOfficialUnsupportedActionRoutesV1,
   verifyOfficialStandardActionRouteCatalogueV1,
@@ -38,6 +40,16 @@ function without(value, keys) {
 function deployRoute(value) {
   return value?.executorId === OFFICIAL_RESERVE_DEPLOY_V5_EXECUTOR_ID
     && value?.actionType === "deploy";
+}
+function hasPhaseActivation(sideKey, state, phase) {
+  if (state?.players?.[sideKey]?.passedPhases?.[phase] === true) return false;
+  return (state?.pieces || []).some((piece) => (
+    piece.sideKey === sideKey
+      && piece.isDestroyed !== true
+      && Number(piece.currentModels || 0) > 0
+      && piece.activatedPhases?.[phase] !== true
+      && (piece.isOnField === true || phase === "movement")
+  ));
 }
 function baseFailureDiagnostic(sideKey, phase, error) {
   return {
@@ -142,7 +154,17 @@ export function createOfficialStandardActionRuntimeV1(input = {}) {
   function apply(state, action, options = {}) {
     if (action?.executorId === OFFICIAL_RESERVE_DEPLOY_V5_EXECUTOR_ID
       && action?.deployPlan?.schemaVersion === OFFICIAL_STANDARD_RESERVE_DEPLOY_PLAN_SCHEMA) {
-      return applyOfficialStandardReserveDeployV1(state, action, options);
+      const applied = applyOfficialStandardReserveDeployV1(state, action, options);
+      const settled = settleOfficialAlternatingPhaseAfterActivationV1(applied.state, {
+        phase: "movement",
+        actingSideKey: action.sideKey,
+        sideHasAvailableActivation: hasPhaseActivation,
+      });
+      const events = [...(applied.events || []), ...(settled.events || [])];
+      const lastLog = settled.state.log?.at(-1);
+      if (lastLog) events.length > 0 && (lastLog.events = clone(events));
+      return freezeDeep({ ...applied, state: settled.state, events,
+        settlementRequired: false });
     }
     return baseRuntime.apply(state, action, options);
   }

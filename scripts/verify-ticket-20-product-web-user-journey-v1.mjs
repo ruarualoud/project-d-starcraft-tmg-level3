@@ -9,6 +9,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const origin = String(process.env.TICKET20_WEB_ORIGIN || "").replace(/\/$/u, "");
 const recoveryUrl = String(process.env.TICKET20_RECOVERY_URL || "");
 if (!origin || !recoveryUrl) throw new Error("TICKET20_WEB_ORIGIN_AND_RECOVERY_URL_REQUIRED");
+const outputDirectory = path.join(ROOT, "build/ticket-23-slice-245-product-web-v1");
+await mkdir(outputDirectory, { recursive: true });
 
 function ensure(condition, code, details = {}) {
   if (!condition) throw Object.assign(new Error(code), { code, ...details });
@@ -49,6 +51,15 @@ const context = await browser.newContext({
   reducedMotion: "reduce",
 });
 const page = await context.newPage();
+let screenshotOrdinal = 0;
+async function capture(label) {
+  screenshotOrdinal += 1;
+  await page.screenshot({
+    path: path.join(outputDirectory,
+      `${String(screenshotOrdinal).padStart(2, "0")}-${label}.png`),
+    fullPage: true,
+  });
+}
 const consoleErrors = [];
 const developmentTransportNoise = [];
 const pageErrors = [];
@@ -78,6 +89,7 @@ try {
   await clickText(page, /陆战队员|Marine/u);
   body = await visibleText(page);
   ensure(/陆战队员|Marine/u.test(body) && /武器|Weapons/u.test(body), "DATABASE_UNIT_DETAIL_UNUSABLE");
+  await capture("database-unit-detail");
   await clickText(page, "✕");
   checks.push("database_catalogue_search_and_detail");
 
@@ -95,6 +107,7 @@ try {
   body = await visibleText(page);
   ensure(/1\s*(份军表|armies)/iu.test(body) && /1\s*·/u.test(body),
     "ARMY_DRAFT_NOT_PERSISTED");
+  await capture("army-builder-saved");
   checks.push("army_create_add_save_and_persist");
 
   await clickText(page, /计算|Calculator/u);
@@ -140,6 +153,7 @@ try {
   await clickText(page, /骰子|Dice/u);
   await page.getByRole("button", { name: /投掷|Roll/u }).first().click();
   ensure(/投掷历史|Roll History/u.test(await visibleText(page)), "DICE_HISTORY_MISSING");
+  await capture("calculators-and-dice-history");
   checks.push("all_calculator_tabs_and_dice_history");
 
   await clickText(page, /设置|Settings/u);
@@ -150,6 +164,7 @@ try {
   ensure(/Official source integration/iu.test(await visibleText(page)),
     "LANGUAGE_SWITCH_TO_ENGLISH_FAILED");
   await clickText(page, "中文");
+  await capture("settings-official-source");
   checks.push("settings_source_and_language");
 
   const dock = page.getByTestId("tactical-adjutant-floating-dock");
@@ -162,39 +177,94 @@ try {
 
   await page.goto(recoveryUrl, { waitUntil: "networkidle" });
   await page.getByText(/对战房间|Battle Room/u).waitFor({ timeout: 20_000 });
+  await page.getByText(/已连接权威房间|Authoritative room connected/u)
+    .waitFor({ timeout: 40_000 });
   body = await visibleText(page);
   ensure(/已连接权威房间|Authoritative room connected/u.test(body),
     "ROOM_RECOVERY_BIND_FAILED");
   await clickText(page, /战桌|Battlefield/u);
   await page.getByText(/权威战场|Authoritative Battlefield/u).waitFor();
   ensure(await page.locator("svg").count() > 0, "BATTLEFIELD_MAP_NOT_RENDERED");
-  const marineModel = page.getByText("Marine · player1", { exact: true });
-  await marineModel.scrollIntoViewIfNeeded();
-  await marineModel.click();
-  ensure((await visibleText(page)).includes("Marine"), "BATTLE_MODEL_NOT_SELECTABLE");
-  await page.getByRole("button", { name: /^(显示威胁|Show threat)$/u }).click();
+  body = await visibleText(page);
+  ensure(/Standard\s*·\s*54×36 in/u.test(body), "STANDARD_BATTLEFIELD_CONTRACT_MISSING");
+  ensure(body.includes("P1 2000 Minerals / 115 Vespene"), "PLAYER1_2000_RESOURCE_CONTRACT_MISSING");
+  ensure(body.includes("P2 2000 Minerals / 140 Vespene"), "PLAYER2_2000_RESOURCE_CONTRACT_MISSING");
+  ensure(body.includes("15 units") && body.includes("15 reserve")
+    && body.includes("9 terrain"), "STANDARD_ROOM_CONTENT_COUNTS_MISSING");
+  const manifest = await page.evaluate(async () => (await fetch("/__ticket20/manifest")).json());
+  ensure(manifest?.coverage?.currentProductAbilityExactCount === 252
+    && manifest?.coverage?.currentProductAbilityPendingCount === 0,
+  "CURRENT_PRODUCT_ABILITY_DENOMINATOR_NOT_CLOSED");
+  await capture("standard-2000-room-bound");
+
   await page.getByRole("button", { name: /^(行动|Actions)$/u }).click();
   const loadLegal = page.getByRole("button", { name: "Load LegalSpace" });
   if (await loadLegal.isEnabled()) await loadLegal.click();
-  const preview = page.getByRole("button", { name: /生成 Preview|Preview/u }).first();
+  const goliathActionCard = page.getByText("deploy · player1-goliath-1", { exact: true })
+    .locator("..");
+  await goliathActionCard.getByRole("button", { name: /编辑参数|Edit parameters/u })
+    .click();
+  await page.getByRole("button", { name: "player1-goliath-1-model-1", exact: true })
+    .click();
+  body = await visibleText(page);
+  const segmentMatch = body.match(/\b(top|bottom|left|right) · ([0-9.]+)–([0-9.]+) in/u);
+  ensure(segmentMatch, "STANDARD_DEPLOY_ENTRY_SEGMENT_NOT_VISIBLE");
+  const side = segmentMatch[1];
+  const along = (Number(segmentMatch[2]) + Number(segmentMatch[3])) / 2;
+  const endpoint = side === "left" ? { x: 2.075, y: along }
+    : side === "right" ? { x: 51.925, y: along }
+      : side === "bottom" ? { x: along, y: 2.075 }
+        : { x: along, y: 33.925 };
+  await page.getByLabel(/战场 X 坐标|Battlefield X coordinate/u)
+    .fill(String(endpoint.x));
+  await page.getByLabel(/战场 Y 坐标|Battlefield Y coordinate/u)
+    .fill(String(endpoint.y));
+  await page.getByRole("button", { name: /添加路径点|Add waypoint/u }).click();
+  await capture("human-deploy-parameter-proposal");
+  const preview = page.getByRole("button", { name: /提交权威 Preview|Request authoritative Preview/u });
   await preview.waitFor({ state: "visible", timeout: 15_000 });
+  ensure(await preview.isEnabled(), "STANDARD_DEPLOY_PARAMETER_PROPOSAL_NOT_READY");
   await preview.click();
   await page.getByText(/密封 Preview|Sealed Preview/u).waitFor({ timeout: 15_000 });
+  await capture("human-deploy-sealed-preview");
   await page.getByRole("button", { name: /确认并应用|Confirm and apply/u }).click();
-  await page.getByText(/收据与重放|Receipt & replay/u).waitFor({ timeout: 20_000 });
+  await page.getByText(/收据与重放|Receipt & replay/u).waitFor({ timeout: 45_000 });
   body = await visibleText(page);
   ensure(/matches current:\s*true/iu.test(body), "BATTLE_APPLY_REPLAY_NOT_VERIFIED");
-  checks.push("room_bind_map_select_threat_preview_apply_replay");
+  ensure(body.includes("Goliath · player1"), "DEPLOYED_GOLIATH_NOT_PROJECTED");
+  await capture("human-deploy-applied-and-replayed");
+
+  const opponentPanel = page.getByTestId("hosted-opponent-operations-panel");
+  await opponentPanel.getByText(/physical_sync_pending/u).waitFor({ timeout: 20_000 });
+  body = await opponentPanel.innerText();
+  ensure(/(?:逐动作人工批准|Per-action approval):\s*no/iu.test(body),
+    "BOT_PER_ACTION_APPROVAL_WRONGLY_REQUIRED");
+  ensure(/(?:机器动作|Agent actions):\s*1/iu.test(body),
+    "BOT_AUTOMATIC_ACTION_NOT_APPLIED");
+  ensure(/Tokens:\s*0/iu.test(body) && /Cost:\s*¥0\.0000/iu.test(body),
+    "BOT_COST_PANEL_MISSING");
+  ensure(/deploy|部署/iu.test(body) && /目的|Purpose/u.test(body),
+    "BOT_PUBLIC_DECISION_SUMMARY_MISSING");
+  ensure(/place_model/u.test(body), "BOT_PHYSICAL_OPERATION_NOT_VISIBLE");
+  await capture("bot-automatic-action-and-physical-task");
+  await opponentPanel.getByRole("button", { name: /我已完成|I completed it/u }).first().click();
+  await opponentPanel.getByText(/physical_operation_completed/u).waitFor({ timeout: 10_000 });
+  checks.push("standard_2000_deploy_bot_auto_apply_physical_sync_replay");
 
   await page.getByRole("button", {
     name: /^(复盘与 Skill|Review & Skill)$/u,
   }).click();
   await page.getByTestId("ticket20-learning-console").waitFor({ timeout: 15_000 });
+  await page.waitForFunction(() => (
+    /(?:已验证轨迹|Verified episodes)\s*4/iu.test(document.body.innerText)
+  ));
   body = await visibleText(page);
   ensure(/已验证轨迹\s*4|Verified episodes\s*4/iu.test(body),
     "LEARNING_EPISODES_NOT_VISIBLE");
   await page.getByRole("button", { name: /合并 4 条已验证轨迹|Merge 4 verified episodes/u }).click();
-  await page.getByText(/隔离候选|Quarantined candidates/u).waitFor();
+  await page.waitForFunction(() => (
+    /(?:隔离候选|Quarantined candidates)\s*2/iu.test(document.body.innerText)
+  ));
   body = await visibleText(page);
   ensure(/隔离候选\s*2|Quarantined candidates\s*2/iu.test(body),
     "SKILLOPT_CANDIDATES_NOT_CREATED");
@@ -204,18 +274,16 @@ try {
   body = await visibleText(page);
   ensure(/旧版可查看\s*是|Old versions readable\s*yes/iu.test(body),
     "FRESHNESS_OLD_VERSION_VISIBILITY_MISSING");
+  await capture("multigame-review-and-skill-freshness");
   checks.push("manual_multigame_skillopt_and_incremental_freshness");
 
   ensure(pageErrors.length === 0, "BROWSER_PAGE_ERRORS", { pageErrors });
   ensure(consoleErrors.length === 0, "BROWSER_CONSOLE_ERRORS", { consoleErrors });
-  const outputDirectory = path.join(ROOT, "build/ticket-20-product-web-user-journey-v1");
-  await mkdir(outputDirectory, { recursive: true });
   await page.screenshot({ path: path.join(outputDirectory, "final.png"), fullPage: true });
   console.log(JSON.stringify({ ok: true, checks, consoleErrors, pageErrors,
-    developmentTransportNoise, finalUrl: page.url(), modelCalls: 0, costCny: 0 }, null, 2));
+    developmentTransportNoise, screenshotCount: screenshotOrdinal + 1,
+    finalUrl: page.url(), modelCalls: 0, costCny: 0 }, null, 2));
 } catch (error) {
-  const outputDirectory = path.join(ROOT, "build/ticket-20-product-web-user-journey-v1");
-  await mkdir(outputDirectory, { recursive: true });
   await page.screenshot({ path: path.join(outputDirectory, "failure.png"), fullPage: true });
   const hitTargets = await page.evaluate(() => Array.from(document.querySelectorAll("div"))
     .filter((element) => ["Marine", "Goliath", "陆战队员"].includes(element.textContent?.trim() || ""))
@@ -231,6 +299,7 @@ try {
       };
     }));
   console.error(JSON.stringify({ failureUrl: page.url(), checks, hitTargets,
+    bodyText: (await visibleText(page)).slice(0, 12_000),
     consoleErrors, developmentTransportNoise, pageErrors }, null, 2));
   throw error;
 } finally {

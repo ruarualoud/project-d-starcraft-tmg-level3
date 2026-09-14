@@ -18,12 +18,22 @@ import {
   createInMemoryStarcraftTmgHostedBotSeatStoreV1,
   createStarcraftTmgHostedBotSeatRuntimeV1,
 } from "../../packages/online-agent-session/hosted-bot-seat-runtime-v1.mjs";
+import { createStarcraftTmgHostedOpponentRuntimeV2 } from
+  "../../packages/online-agent-session/hosted-opponent-runtime-v2.mjs";
 import { createStarcraftTmgAgentAgentExperimentOrchestratorV1 } from
   "../../packages/online-agent-session/agent-agent-experiment-orchestrator-v1.mjs";
 import { createStarcraftTmgRoomRuntime } from
   "../../packages/room-runtime/in-memory-room-v1.mjs";
 import { createOfficialTicket18CompleteMatchRuntimeV1 } from
   "../../packages/rule-atoms/official-ticket18-complete-match-runtime-v1.mjs";
+import { createOfficialExecutableRuleRuntimeV1 } from
+  "../../packages/rule-atoms/official-executable-rule-runtime-v1.mjs";
+import { createOfficialRoundSupplyStateV1 } from
+  "../../packages/rule-atoms/official-round-supply-state-v1.mjs";
+import { createOfficialStandardActionRuntimeV1 } from
+  "../../packages/product-composition/official-standard-action-runtime-v1.mjs";
+import { createOfficialStandardRoomInitialStateAuthorityV1 } from
+  "../../packages/product-composition/official-standard-room-factory-v1.mjs";
 import { getOfficialCurrentProductRecord } from
   "../../packages/source-data/official-command-center-adapter-v1.mjs";
 import { createOfficialGameplayDataBundleV1 } from
@@ -241,6 +251,59 @@ function chooseFinite(request) {
     || null;
 }
 
+function chooseParameterizedDeploy(request) {
+  const domain = (request.spatialActionSpace.parameterDomains || []).find((entry) => (
+    entry.actionType === "deploy"
+      && entry.parameterKind === "official_standard_reserve_deploy_path_v1"
+      && entry.constraints?.modelProfiles?.length === 1
+      && entry.constraints?.entrySegments?.length > 0
+  ));
+  if (!domain) return null;
+  const model = domain.constraints.modelProfiles[0];
+  const segment = domain.constraints.entrySegments[0];
+  const along = Math.round(((Number(segment.startInches)
+    + Number(segment.endInches)) / 2) * 1000);
+  const halfWidth = Math.round(Number(model.widthMilliInches) / 2);
+  const halfDepth = Math.round(Number(model.depthMilliInches) / 2);
+  const width = Number(domain.constraints.battlefieldWidthMilliInches);
+  const height = Number(domain.constraints.battlefieldHeightMilliInches);
+  const inset = 500;
+  const endpoint = segment.side === "left"
+    ? { xMilliInches: halfWidth + inset, yMilliInches: along }
+    : segment.side === "right"
+      ? { xMilliInches: width - halfWidth - inset, yMilliInches: along }
+      : segment.side === "bottom"
+        ? { xMilliInches: along, yMilliInches: halfDepth + inset }
+        : { xMilliInches: along, yMilliInches: height - halfDepth - inset };
+  return {
+    candidateId: domain.domainId,
+    proposal: {
+      kind: "parameterized",
+      domainId: domain.domainId,
+      parameters: {
+        leadingModelId: model.modelId,
+        entrySegmentId: segment.segmentId,
+        entryAlongEdgeMilliInches: along,
+        endpoint,
+        placements: [],
+      },
+    },
+    action: { actionType: "deploy", sideKey: domain.sideKey,
+      pieceId: domain.pieceId },
+  };
+}
+
+function chooseCurrentAction(request) {
+  const deploy = chooseParameterizedDeploy(request);
+  if (deploy) return deploy;
+  const finite = chooseFinite(request);
+  if (finite) return {
+    ...finite,
+    proposal: finite.proposal || { kind: "finite", actionKey: finite.candidateId },
+  };
+  return null;
+}
+
 function reasonFor(actionType) {
   if (actionType === "hold") {
     return "保持当前任务标记接触位置，避免用无位移 Move 伪装 Hold。";
@@ -250,6 +313,9 @@ function reasonFor(actionType) {
   }
   if (actionType === "choose_first_actor") {
     return "保留本阶段先行动权，防止计划在交替激活前失去节奏。";
+  }
+  if (actionType === "deploy") {
+    return "从规则器给出的己方 Entry Edge 合法域部署单位，并保留完整底座边界与编队约束。";
   }
   if (actionType === "determine_mission_marker_control") {
     return "让规则器按底座边缘、有效补给与标记位置结算控制。";
@@ -271,11 +337,16 @@ export function createTicket20DeterministicSkillGuidedDecisionPortV1(
   const opponentUnitName = String(profile.opponentUnitName || "Marine");
   return Object.freeze({
     async decide(request) {
-      const selected = chooseFinite(request);
+      const selected = chooseCurrentAction(request);
       if (!selected) return { ok: false, reason: "demo_has_no_finite_action" };
       const action = selected.action || {};
       const reason = reasonFor(action.actionType);
-      const rejected = (request.spatialActionSpace.finiteActions || [])
+      const rejected = [
+        ...(request.spatialActionSpace.finiteActions || []),
+        ...(request.spatialActionSpace.parameterDomains || []).map((entry) => ({
+          candidateId: entry.domainId,
+        })),
+      ]
         .filter((entry) => entry.candidateId !== selected.candidateId)
         .slice(0, 8)
         .map((entry) => ({ candidateId: entry.candidateId,
@@ -283,6 +354,7 @@ export function createTicket20DeterministicSkillGuidedDecisionPortV1(
       return {
         ok: true,
         candidateId: selected.candidateId,
+        proposal: selected.proposal,
         selectedReason: reason,
         scoreOrPositionValue:
           "优先保持当前标记接触、合法阶段顺序与可验证的回合得分。",
@@ -291,6 +363,22 @@ export function createTicket20DeterministicSkillGuidedDecisionPortV1(
           : "有界开发规则尚不证明更广军表中的进攻最优性。",
         rejectedAlternatives: rejected,
         speech: `${agentLabel}：${reason}`,
+        publicDecisionSummary: {
+          visibleFacts: [
+            `round ${request.roomProjection?.state?.round || "?"}`,
+            `phase ${request.roomProjection?.state?.phase || "?"}`,
+            `legal candidates ${(request.spatialActionSpace.finiteActions || []).length
+              + (request.spatialActionSpace.parameterDomains || []).length}`,
+          ],
+          plan: "保持任务控制计划，在每次权威状态变化后重新评估。",
+          purpose: reason,
+          calculations: ["骰池、距离、底座和资源均取自 Rules 输出；Agent 不自算规则结果。"],
+          predictedOpponentResponses: ["对手可能争夺任务标记或保留阶段先手。"],
+          counterResponse: "下一选择点重新读取空间观察、当前计划和 LegalSpace。",
+          risk: action.actionType === "pass"
+            ? "Pass 会改变本阶段节奏。"
+            : "部署位置可能暴露于对手的后续火力圈。",
+        },
         plan: request.planState?.plan ? null : {
           objective: `在 Hold Position 中最大化任务分并保持 ${ownUnitName} 存活。`,
           currentGoal: "维持最近任务标记的控制并保留下一阶段节奏。",
@@ -358,6 +446,10 @@ export function createTicket20DeterministicSkillGuidedDecisionPortV1(
           agentVersion: "ticket20_deterministic_skill_guided_demo_v1",
           providerCalls: 0,
           paidProviderUsed: false,
+          inputUnits: 0,
+          outputUnits: 0,
+          totalUnits: 0,
+          matchEstimatedCostCnyMicros: 0,
         },
       };
     },
@@ -385,53 +477,7 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     recordKey);
   const terranCard = get(TERRAN);
   const zergCard = get(ZERG);
-  const rulesRuntime = createOfficialTicket18CompleteMatchRuntimeV1({
-    catalogue: report11.slice.catalogue,
-    sourceBinding: loaded.manifest.sourceBinding,
-    factionRecords: [terranCard, zergCard],
-    sources: loaded.entries[0].skill.sourcePacket?.sources
-      || JSON.parse(await readFile(path.join(root,
-        "build/ticket-18-faction-production-v1/terran_armed_forces-input.json"),
-      "utf8")).frozenSources.prompt.sources,
-  });
-  const gameplayDataBundle = createOfficialGameplayDataBundleV1({
-    ...source,
-    unitRecordKeys: ["army_units:marine", "army_units:zergling"],
-    missionRecordKey: "faction_cards:mission_hold_position",
-    cleanupCardRecordKeys: ["tactical_cards:academy", TERRAN],
-    reserveDeployData: true,
-  });
-  const modelBaseGeometryDataBundle =
-    createOfficialModelBaseGeometryDataBundleV1({ dataset: source.dataset });
-  const missionSetupBinding = createOfficialMissionSetupBindingV1({
-    gameplayDataBundle,
-    missionDraftReceiptHash: hash({ kind: "mission-draft",
-      recordKey: "faction_cards:mission_hold_position" }),
-    deploymentDraftReceiptHash: hash({ kind: "deployment-draft",
-      recordKey: "faction_cards:deployment_no_mans_land" }),
-    seatColorAssignment: { player1: "red", player2: "blue" },
-  });
-  const profileByKey = gameplayDataBundle.combatProfileBundle.profilesByRecordKey;
-  const state = initialState({
-    gameplayDataBundle,
-    modelBaseGeometryDataBundle,
-    missionSetupBinding,
-    marineProfile: profileByKey["army_units:marine"],
-    zerglingProfile: profileByKey["army_units:zergling"],
-    terranCard,
-    zergCard,
-  });
-  const authorityEngine = createStarcraftTmgAuthoritativeEngine({
-    rulesRuntime,
-    allowIncompleteRuleRuntimeForDevelopment: true,
-    now,
-  });
-  const roomRuntime = createStarcraftTmgRoomRuntime({
-    authorityEngine,
-    now,
-    checkpointInterval: 8,
-    characterReleaseChannel: "development_internal",
-  });
+  const standard2000 = options.roomProfile === "standard_2000";
   const serverSeatPlan = [{
     label: "human",
     seatKey: "player1",
@@ -447,13 +493,125 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     roleMode: "supervisor",
     principalType: "human",
   }];
-  const createdRoom = await roomRuntime.createRoom({
-    roomId,
-    title: String(options.title
-      || "Ticket 20 · Human vs Kerrigan Bot · Hold Position"),
-    gameId: "starcraft-tmg",
-    surfaceMode: String(options.surfaceMode || "human_agent_development"),
-    initialStateAuthority: {
+  let rulesRuntime;
+  let state;
+  let initialStateAuthority;
+  let coverage;
+  if (standard2000) {
+    const standardAuthority = createOfficialStandardRoomInitialStateAuthorityV1({
+      dataset: source.dataset,
+      snapshot: source.snapshot,
+      serverSeatPlan,
+    });
+    const baseRuntime = createOfficialExecutableRuleRuntimeV1({
+      catalogue: report11.slice.catalogue,
+    });
+    rulesRuntime = createOfficialStandardActionRuntimeV1({
+      baseRuntime,
+      actionRouteCatalogue: standardAuthority.state.officialActionRouteCatalogue,
+    });
+    state = structuredClone(standardAuthority.state);
+    state.phase = "movement";
+    state.stage = "round_one_reserve_deployment";
+    state.activeSideKey = state.firstPlayerSideKey;
+    state.phaseFirstActorByRound = {
+      ...state.phaseFirstActorByRound,
+      "1:movement": {
+        round: 1,
+        phase: "movement",
+        markerHolderSideKey: state.firstPlayerSideKey,
+        chosenFirstActorSideKey: state.firstPlayerSideKey,
+      },
+    };
+    state.officialRoundSupplyState = createOfficialRoundSupplyStateV1({
+      state,
+      gameplayDataBundle: state.officialGameplayDataBundle,
+      rulesRuntimeHash: rulesRuntime.descriptor.runtimeHash,
+    });
+    const authorityBody = {
+      schema: "starcraft_tmg_standard_2000_web_dry_run_authority_v1",
+      version: "1.0.0",
+      source: "server_factory",
+      setupId: standardAuthority.setupId,
+      parentFactoryReceiptHash: standardAuthority.receiptHash,
+      state,
+      dataVersion: standardAuthority.dataVersion,
+      dependencies: {
+        ...structuredClone(standardAuthority.dependencies),
+        dataSnapshot: {
+          artifactId: "official-standard-2000-web-gameplay-data-v1",
+          content: state.officialGameplayDataBundle,
+        },
+      },
+      compositionEvidence: {
+        ...structuredClone(standardAuthority.compositionEvidence),
+        webDryRunPrepared: true,
+        webDryRunPhase: "movement",
+        completeMatchDryRunPassed: false,
+      },
+      serverSeatPlan,
+      trainingTruth: false,
+    };
+    initialStateAuthority = Object.freeze({
+      ...authorityBody,
+      receiptHash: hash(authorityBody),
+    });
+    coverage = Object.freeze({
+      mode: "standard_2000_current_product_web_exploration",
+      engagementScale: "Standard",
+      battlefieldInches: { width: 54, height: 36 },
+      mineralSpentBySide: { player1: 2000, player2: 2000 },
+      vespeneSpentBySide: { player1: 115, player2: 140 },
+      selectedUnitCount: 15,
+      terrainPieceCount: 9,
+      currentProductAbilityExactCount: 252,
+      currentProductAbilityPendingCount: 0,
+      legalSpaceComplete: false,
+      productionRoomEligible: false,
+      arbitraryArmyBuilderSupported: true,
+      interactiveDeploymentSupported: true,
+      fullMatchLifecycleSupported: false,
+      parentFactoryReceiptHash: standardAuthority.receiptHash,
+      trainingTruth: false,
+    });
+  } else {
+    rulesRuntime = createOfficialTicket18CompleteMatchRuntimeV1({
+      catalogue: report11.slice.catalogue,
+      sourceBinding: loaded.manifest.sourceBinding,
+      factionRecords: [terranCard, zergCard],
+      sources: loaded.entries[0].skill.sourcePacket?.sources
+        || JSON.parse(await readFile(path.join(root,
+          "build/ticket-18-faction-production-v1/terran_armed_forces-input.json"),
+        "utf8")).frozenSources.prompt.sources,
+    });
+    const gameplayDataBundle = createOfficialGameplayDataBundleV1({
+      ...source,
+      unitRecordKeys: ["army_units:marine", "army_units:zergling"],
+      missionRecordKey: "faction_cards:mission_hold_position",
+      cleanupCardRecordKeys: ["tactical_cards:academy", TERRAN],
+      reserveDeployData: true,
+    });
+    const modelBaseGeometryDataBundle =
+      createOfficialModelBaseGeometryDataBundleV1({ dataset: source.dataset });
+    const missionSetupBinding = createOfficialMissionSetupBindingV1({
+      gameplayDataBundle,
+      missionDraftReceiptHash: hash({ kind: "mission-draft",
+        recordKey: "faction_cards:mission_hold_position" }),
+      deploymentDraftReceiptHash: hash({ kind: "deployment-draft",
+        recordKey: "faction_cards:deployment_no_mans_land" }),
+      seatColorAssignment: { player1: "red", player2: "blue" },
+    });
+    const profileByKey = gameplayDataBundle.combatProfileBundle.profilesByRecordKey;
+    state = initialState({
+      gameplayDataBundle,
+      modelBaseGeometryDataBundle,
+      missionSetupBinding,
+      marineProfile: profileByKey["army_units:marine"],
+      zerglingProfile: profileByKey["army_units:zergling"],
+      terranCard,
+      zergCard,
+    });
+    initialStateAuthority = {
       source: "server_factory",
       state,
       dataVersion: loaded.manifest.sourceBinding.dataset,
@@ -469,7 +627,39 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
       },
       receiptHash: hash({ roomId, state,
         source: "ticket20-human-agent-demo-server-factory" }),
-    },
+    };
+    coverage = Object.freeze({
+      mode: "current_official_bounded_complete_match_development",
+      unitRecordKeys: ["army_units:marine", "army_units:zergling"],
+      missionRecordKey: "faction_cards:mission_hold_position",
+      legalSpaceComplete: false,
+      productionRoomEligible: false,
+      arbitraryArmyBuilderSupported: false,
+      interactiveDeploymentSupported: false,
+      fullMatchLifecycleSupported: true,
+      trainingTruth: false,
+    });
+  }
+  const authorityEngine = createStarcraftTmgAuthoritativeEngine({
+    rulesRuntime,
+    allowIncompleteRuleRuntimeForDevelopment: true,
+    now,
+  });
+  const roomRuntime = createStarcraftTmgRoomRuntime({
+    authorityEngine,
+    now,
+    checkpointInterval: 8,
+    characterReleaseChannel: "development_internal",
+  });
+  const createdRoom = await roomRuntime.createRoom({
+    roomId,
+    title: String(options.title
+      || (standard2000
+        ? "Ticket 23 · Standard 2000 Human vs Kerrigan Bot"
+        : "Ticket 20 · Human vs Kerrigan Bot · Hold Position")),
+    gameId: "starcraft-tmg",
+    surfaceMode: String(options.surfaceMode || "human_agent_development"),
+    initialStateAuthority,
     serverSeatPlan,
   });
   ensure(createdRoom.ok, "TICKET20_DEMO_ROOM_CREATE_FAILED", {
@@ -489,7 +679,8 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
   });
   const botStore = options.botStore
     || createInMemoryStarcraftTmgHostedBotSeatStoreV1();
-  const botRuntime = createStarcraftTmgHostedBotSeatRuntimeV1({
+  const notifications = [];
+  const botRuntimeOptions = {
     roomPort: roomRuntime,
     decisionPort: options.botDecisionPort
       || createTicket20DeterministicSkillGuidedDecisionPortV1(
@@ -507,7 +698,18 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     matchMode: options.matchMode || "user_vs_agent",
     now,
     autoDriveIntervalMs: options.autoDriveIntervalMs || 500,
-  });
+  };
+  const botRuntime = standard2000
+    ? createStarcraftTmgHostedOpponentRuntimeV2({
+      ...botRuntimeOptions,
+      notificationPort: {
+        async notify(event) {
+          notifications.push(structuredClone(event));
+          return { ok: true, notificationId: event.notificationId };
+        },
+      },
+    })
+    : createStarcraftTmgHostedBotSeatRuntimeV1(botRuntimeOptions);
   if (options.attachBot !== false) {
     await botRuntime.attach({
       scope: botScope,
@@ -539,6 +741,8 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     continuity,
     spatialRuntime,
     turnPlanRuntime,
+    notifications,
+    roomProfile: standard2000 ? "standard_2000" : "bounded_ticket20",
     humanRecoveryToken: humanRecovery.recovery.recoveryToken,
     sourceBinding: loaded.manifest.sourceBinding,
     strategySkillRefs: loaded.entries.map((entry) => ({
@@ -547,17 +751,7 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
       hash: entry.skill.hash,
     })),
     strategySkills: loaded.entries.map((entry) => entry.skill),
-    coverage: Object.freeze({
-      mode: "current_official_bounded_complete_match_development",
-      unitRecordKeys: ["army_units:marine", "army_units:zergling"],
-      missionRecordKey: "faction_cards:mission_hold_position",
-      legalSpaceComplete: false,
-      productionRoomEligible: false,
-      arbitraryArmyBuilderSupported: false,
-      interactiveDeploymentSupported: false,
-      fullMatchLifecycleSupported: true,
-      trainingTruth: false,
-    }),
+    coverage,
   });
 }
 

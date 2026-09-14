@@ -97,7 +97,10 @@ function browserLanguage() {
 }
 
 function roomLinkEnvironment(): "development" | "production" {
-  return process.env.NODE_ENV === "production" ? "production" : "development";
+  const localWebAcceptance = Platform.OS === "web"
+    && process.env.EXPO_PUBLIC_STARCRAFT_TMG_LOCAL_WEB_EXPORT === "1";
+  return process.env.NODE_ENV === "production" && !localWebAcceptance
+    ? "production" : "development";
 }
 
 function configuredTrustedRoomLinkOrigin() {

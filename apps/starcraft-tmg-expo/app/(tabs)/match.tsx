@@ -12,6 +12,8 @@ import * as Clipboard from "expo-clipboard";
 
 import { AuthoritativeBattleWorkspace } from "@/components/battlefield/authoritative-battle-workspace";
 import { LearningConsolePanel } from "@/components/battlefield/learning-console-panel";
+import { HostedOpponentOperationsPanel } from
+  "@/components/battlefield/hosted-opponent-operations-panel";
 import { ScreenContainer } from "@/components/screen-container";
 import { useI18n } from "@/lib/i18n";
 import { useLevel3ClientDomain } from "@/lib/level3/client-domain-provider";
@@ -348,7 +350,10 @@ export default function MatchScreen() {
         )}
 
         {surface === "battle" && (
-          <AuthoritativeBattleWorkspace onOpenRoomRules={() => setSurface("room")} />
+          <>
+            <AuthoritativeBattleWorkspace onOpenRoomRules={() => setSurface("room")} />
+            <HostedOpponentOperationsPanel roomId={connection.roomId} />
+          </>
         )}
         {surface === "room" && (
           <>

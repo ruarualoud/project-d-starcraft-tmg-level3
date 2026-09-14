@@ -54,6 +54,8 @@ type WorkspaceDetailPanel = "unit" | "actions" | "threat" | "status" | "markers"
 interface StandardMoveDraft {
   domainId: string;
   leadingModelId: string | null;
+  entrySegmentId: string | null;
+  entryAlongEdgeMilliInches: number | null;
   path: BattlefieldPointV1[];
   placements: Array<BattlefieldPointV1 & { modelId: string }>;
   mode: DraftMode;
@@ -358,6 +360,18 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     selectedModelId,
   }), [view.roomProjection, view.legalSpace, view.pendingPreview, selectedModelId]);
   const projection = view.roomProjection || {};
+  const productState = projection.state || {};
+  const armyBudgets = productState.armyResourceBudgetsBySide || {};
+  const roomPieces = Array.isArray(productState.pieces) ? productState.pieces : [];
+  const reserveCount = roomPieces.filter((piece: any) => (
+    piece?.isInReserves === true || piece?.deploymentStatus === "reserve"
+  )).length;
+  const terrainCount = Array.isArray(productState.board?.terrain)
+    ? productState.board.terrain.length : 0;
+  const playerResourceText = (sideKey: "player1" | "player2") => {
+    const budget = armyBudgets[sideKey] || {};
+    return `${sideKey === "player1" ? "P1" : "P2"} ${actionText(budget.mineralSpent)} Minerals / ${actionText(budget.vespeneSpent)} Vespene`;
+  };
   const viewer = projection.viewer || {};
   const capabilities = new Set<string>(
     Array.isArray(viewer.capabilities) ? viewer.capabilities.map(String) : [],
@@ -534,15 +548,23 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   };
   const draftPlacementGeometries: BattlefieldPlacementV1[] = placementPoints.map((point) => {
     const model = modelsById.get(point.modelId);
+    const profile = selectedDomain?.modelProfiles.find((entry) => (
+      entry.modelId === point.modelId
+    ));
     return {
       modelId: point.modelId,
       xMilliInches: point.xMilliInches,
       yMilliInches: point.yMilliInches,
-      baseShape: model?.baseShape ?? null,
-      baseWidthMilliInches: model?.baseWidthMilliInches ?? null,
-      baseDepthMilliInches: model?.baseDepthMilliInches ?? null,
-      baseRotationDegrees: model?.baseRotationDegrees ?? 0,
-      geometryRenderable: model?.geometryRenderable === true,
+      baseShape: model?.baseShape ?? profile?.baseShape ?? null,
+      baseWidthMilliInches: model?.baseWidthMilliInches
+        ?? profile?.baseWidthMilliInches ?? null,
+      baseDepthMilliInches: model?.baseDepthMilliInches
+        ?? profile?.baseDepthMilliInches ?? null,
+      baseRotationDegrees: model?.baseRotationDegrees
+        ?? profile?.baseRotationDegrees ?? 0,
+      geometryRenderable: model?.geometryRenderable === true
+        || Boolean(profile?.baseShape && profile.baseWidthMilliInches
+          && profile.baseDepthMilliInches),
     };
   });
 
@@ -596,12 +618,17 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   };
 
   const chooseDomain = (domain: BattlefieldParameterDomainV1) => {
+    const entrySegment = domain.entrySegments[0] || null;
     setSelectedDomainId(domain.domainId);
     setSelectedModelId(null);
     setErrorCode(null);
     setDraft({
       domainId: domain.domainId,
       leadingModelId: null,
+      entrySegmentId: entrySegment?.segmentId || null,
+      entryAlongEdgeMilliInches: entrySegment
+        ? Math.round(((entrySegment.startInches + entrySegment.endInches) / 2) * 1000)
+        : null,
       path: [],
       placements: [],
       mode: "path",
@@ -610,13 +637,16 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   };
 
   const selectLeadingModel = (modelId: string) => {
-    if (!selectedDomain || selectedDomain.support !== "official_standard_move") return;
+    if (!selectedDomain || !["official_standard_move", "official_standard_deploy"]
+      .includes(selectedDomain.support)) return;
     const model = modelsById.get(modelId);
     if (model) selectModel(model);
     else setSelectedModelId(modelId);
     setDraft({
       domainId: selectedDomain.domainId,
       leadingModelId: modelId,
+      entrySegmentId: draft?.entrySegmentId || null,
+      entryAlongEdgeMilliInches: draft?.entryAlongEdgeMilliInches ?? null,
       path: [],
       placements: [],
       mode: "path",
@@ -680,11 +710,16 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
       return;
     }
     if (selectedDomain.support === "unsupported") return;
-    if (selectedDomain.support === "official_standard_move" && !draft.leadingModelId) {
+    if (["official_standard_move", "official_standard_deploy"]
+      .includes(selectedDomain.support) && !draft.leadingModelId) {
       setErrorCode("LEADING_MODEL_SELECTION_REQUIRED");
       return;
     }
     if (draft.mode === "path") {
+      if (selectedDomain.support === "official_standard_deploy") {
+        setDraft({ ...draft, path: [point] });
+        return;
+      }
       if (selectedDomain.maxPathPoints !== null
         && draft.path.length >= selectedDomain.maxPathPoints) {
         setErrorCode("PATH_POINT_LIMIT_REACHED");
@@ -693,7 +728,8 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
       setDraft({ ...draft, path: [...draft.path, point] });
       return;
     }
-    if (selectedDomain.support === "official_standard_move" && nextPlacementModelId) {
+    if (["official_standard_move", "official_standard_deploy"]
+      .includes(selectedDomain.support) && nextPlacementModelId) {
       setDraft({
         ...draft,
         placements: [...draft.placements, { modelId: nextPlacementModelId, ...point }],
@@ -734,13 +770,25 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     && (selectedDomain.support === "legacy_path_only"
       || (selectedDomain.support === "official_standard_move"
         && draft.leadingModelId
+        && draft.placements.length === activeRemainingModelIds.length)
+      || (selectedDomain.support === "official_standard_deploy"
+        && draft.leadingModelId && draft.entrySegmentId
+        && Number.isSafeInteger(draft.entryAlongEdgeMilliInches)
         && draft.placements.length === activeRemainingModelIds.length)));
 
   const previewParameterized = async () => {
     if (!canPreview || !selectedDomain || !draft || !parameterDraftReady) return;
     const parameters = selectedDomain.support === "legacy_path_only"
       ? { path: draft.path }
-      : {
+      : selectedDomain.support === "official_standard_deploy"
+        ? {
+          leadingModelId: draft.leadingModelId,
+          entrySegmentId: draft.entrySegmentId,
+          entryAlongEdgeMilliInches: draft.entryAlongEdgeMilliInches,
+          endpoint: draft.path.at(-1),
+          placements: draft.placements,
+        }
+        : {
           leadingModelId: draft.leadingModelId,
           path: draft.path,
           placements: draft.placements,
@@ -853,6 +901,24 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         >
           <Text style={styles.revisionText}>r{actionText(scene.stateRevision)}</Text>
         </View>
+      </View>
+
+      <View style={styles.matchContract} testID="standard-match-contract">
+        <Text style={styles.matchContractTitle}>
+          {actionText(productState.engagementScale)} · {scene.widthMilliInches / 1000}×{scene.heightMilliInches / 1000} in
+        </Text>
+        <View style={styles.matchContractMetrics}>
+          <Text style={styles.matchContractMetric}>{playerResourceText("player1")}</Text>
+          <Text style={styles.matchContractMetric}>{playerResourceText("player2")}</Text>
+          <Text style={styles.matchContractMetric}>{roomPieces.length} units</Text>
+          <Text style={styles.matchContractMetric}>{reserveCount} reserve</Text>
+          <Text style={styles.matchContractMetric}>{terrainCount} terrain</Text>
+        </View>
+        <Text style={styles.matchContractNote}>
+          {zh
+            ? "资源、模型底座、部署域、骰池和结算结果均由权威 Rules 投影；客户端与 Agent 不补算。"
+            : "Resources, base geometry, deployment domains, dice pools, and outcomes are authoritative Rules projections; neither client nor Agent fills them in."}
+        </Text>
       </View>
 
       {!operational && (
@@ -1105,7 +1171,12 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
           </View>
           <Text style={styles.metaText}>LegalSpace hash: {actionText(view.legalSpace?.legalSpaceHash)}</Text>
 
-          <ScrollView style={styles.actionScroll} nestedScrollEnabled>
+          <ScrollView
+            style={styles.actionScroll}
+            contentContainerStyle={styles.actionScrollContent}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator
+          >
             {scene.finiteActions.map((action) => (
               <View key={action.actionKey} style={styles.actionCard}>
                 <Text style={styles.actionTitle}>{action.label}</Text>
@@ -1144,13 +1215,12 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                 {zh ? "先从服务器加载当前修订的 LegalSpace。" : "Load the current revision's LegalSpace from the server."}
               </Text>
             )}
-          </ScrollView>
-
           {selectedDomain && draft && (
             <View style={styles.editorCard}>
               <Text style={styles.panelTitle}>{zh ? "参数提案" : "Parameter proposal"}</Text>
               <Text style={styles.metaText}>{selectedDomain.domainId}</Text>
-              {selectedDomain.support === "official_standard_move" && (
+              {["official_standard_move", "official_standard_deploy"]
+                .includes(selectedDomain.support) && (
                 <>
                   <Text style={styles.editorLabel}>{zh ? "1. 显式选择 Leading Model" : "1. Explicitly select the leading model"}</Text>
                   <View style={styles.wrapRow}>
@@ -1166,8 +1236,42 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                   </View>
                 </>
               )}
+              {selectedDomain.support === "official_standard_deploy" && (
+                <>
+                  <Text style={styles.editorLabel}>
+                    {zh ? "2. 选择己方 Entry Edge 段" : "2. Select your Entry Edge segment"}
+                  </Text>
+                  <View style={styles.wrapRow}>
+                    {selectedDomain.entrySegments.map((segment) => (
+                      <Button
+                        key={segment.segmentId}
+                        compact
+                        active={draft.entrySegmentId === segment.segmentId}
+                        label={`${segment.side} · ${segment.startInches}–${segment.endInches} in`}
+                        onPress={() => setDraft({
+                          ...draft,
+                          entrySegmentId: segment.segmentId,
+                          entryAlongEdgeMilliInches: Math.round(
+                            ((segment.startInches + segment.endInches) / 2) * 1000,
+                          ),
+                          path: [],
+                          placements: [],
+                          mode: "path",
+                        })}
+                      />
+                    ))}
+                  </View>
+                  <Text style={styles.metaText}>
+                    {zh ? "默认从所选边段中点进入" : "Entry point defaults to the selected segment midpoint"}
+                    {": "}{draft.entryAlongEdgeMilliInches === null
+                      ? "—" : `${draft.entryAlongEdgeMilliInches / 1000} in`}
+                  </Text>
+                </>
+              )}
               <Text style={styles.editorLabel}>
-                {selectedDomain.support === "official_standard_move"
+                {selectedDomain.support === "official_standard_deploy"
+                  ? (zh ? "3. 在战场选择 Leading Model 终点" : "3. Choose the leading model endpoint")
+                  : selectedDomain.support === "official_standard_move"
                   ? (zh ? "2. 点战场逐个添加路径 waypoint" : "2. Tap the battlefield to append path waypoints")
                   : (zh ? "点战场逐个添加路径 waypoint" : "Tap the battlefield to append path waypoints")}
               </Text>
@@ -1222,9 +1326,12 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                 </View>
               </View>
 
-              {selectedDomain.support === "official_standard_move" && (
+              {["official_standard_move", "official_standard_deploy"]
+                .includes(selectedDomain.support) && (
                 <>
-                  <Text style={styles.editorLabel}>{zh ? "3. 逐个放置其余模型" : "3. Place each remaining model"}</Text>
+                  <Text style={styles.editorLabel}>{selectedDomain.support === "official_standard_deploy"
+                    ? (zh ? "4. 逐个放置其余模型" : "4. Place each remaining model")
+                    : (zh ? "3. 逐个放置其余模型" : "3. Place each remaining model")}</Text>
                   <View style={styles.wrapRow}>
                     <Button
                       compact
@@ -1284,6 +1391,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               </View>
             </View>
           )}
+          </ScrollView>
             </>
           ) : (
             <View style={styles.receiptCard}>
@@ -1340,6 +1448,13 @@ const styles = StyleSheet.create({
   subtitle: { color: "#94a3b8", fontSize: 12, lineHeight: 18, marginTop: 5 },
   revisionPill: { minHeight: 44, minWidth: 56, borderRadius: 22, borderWidth: 1, borderColor: "#22d3ee", alignItems: "center", justifyContent: "center", paddingHorizontal: 10 },
   revisionText: { color: "#67e8f9", fontWeight: "900", fontSize: 12 },
+  matchContract: { borderRadius: 10, padding: 11, gap: 7, backgroundColor: "#08202d",
+    borderWidth: 1, borderColor: "#155e75" },
+  matchContractTitle: { color: "#e0f2fe", fontSize: 13, fontWeight: "900" },
+  matchContractMetrics: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  matchContractMetric: { color: "#bae6fd", backgroundColor: "#0c4a6e", borderRadius: 12,
+    paddingHorizontal: 9, paddingVertical: 5, fontSize: 10, fontWeight: "800" },
+  matchContractNote: { color: "#94a3b8", fontSize: 10, lineHeight: 16 },
   warning: { borderRadius: 10, padding: 12, backgroundColor: "#422006", borderWidth: 1, borderColor: "#f59e0b" },
   warningTitle: { color: "#fef3c7", fontWeight: "900", fontSize: 13 },
   warningText: { color: "#fde68a", fontSize: 12, lineHeight: 18, marginTop: 4 },
@@ -1362,7 +1477,8 @@ const styles = StyleSheet.create({
   detailTabs: { flexDirection: "row", flexWrap: "wrap", gap: 7, padding: 7, borderRadius: 10, backgroundColor: "#020617", borderWidth: 1, borderColor: "#1e3a4a" },
   panelHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   panelTitle: { flex: 1, color: "#e2e8f0", fontSize: 13, fontWeight: "900" },
-  actionScroll: { maxHeight: 300 },
+  actionScroll: { maxHeight: 650 },
+  actionScrollContent: { gap: 10, paddingBottom: 8 },
   actionCard: { borderRadius: 10, padding: 11, marginBottom: 8, backgroundColor: "#0f172a", borderWidth: 1, borderColor: "#334155", gap: 7 },
   actionTitle: { color: "#e2e8f0", fontSize: 12, fontWeight: "800" },
   metaText: { color: "#64748b", fontSize: 10, lineHeight: 15, fontFamily: "monospace" },

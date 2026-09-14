@@ -514,6 +514,10 @@ function legalSpaceCore(legalSpace) {
     rulesRuntimeBinding: clone(legalSpace.rulesRuntimeBinding),
     finiteActions: clone(legalSpace.finiteActions),
     parameterDomains: clone(legalSpace.parameterDomains),
+    ...(legalSpace.unsupportedDiagnosticsHash !== undefined ? {
+      unsupportedDiagnosticsHash: legalSpace.unsupportedDiagnosticsHash,
+      unsupportedCount: legalSpace.unsupportedCount,
+    } : {}),
   };
 }
 
@@ -601,19 +605,46 @@ function validSearchSuggestions(suggestions, domains) {
   });
 }
 
-function validDisabledDiagnostics(diagnostics) {
+function validDisabledDiagnostics(diagnostics, identity) {
   return Array.isArray(diagnostics) && diagnostics.every((entry) => (
-    exactOrOptionalKeys(entry, ["action", "disabledReason"], ["details"])
+    exactOrOptionalKeys(entry, ["action", "disabledReason"], ["schema", "details"])
       && object(entry.action)
       && typeof entry.disabledReason === "string"
       && (entry.details === undefined || object(entry.details))
+      && (entry.schema === undefined || (
+        entry.schema === "starcraft_tmg_official_unsupported_action_diagnostic_v1"
+          && entry.action.sideKey === identity.sideKey
+          && entry.details?.trainingTruth === false
+      ))
   ));
 }
 
 function validLegalSpaceResponse(legalSpace, projection, roomId) {
   const identity = projectionAuthorityIdentity(projection, roomId);
+  const hasUnsupportedHash = Object.prototype.hasOwnProperty.call(
+    legalSpace || {}, "unsupportedDiagnosticsHash",
+  );
+  const hasUnsupportedCount = Object.prototype.hasOwnProperty.call(
+    legalSpace || {}, "unsupportedCount",
+  );
+  const typedUnsupportedDiagnostics = Array.isArray(legalSpace?.disabledDiagnostics)
+    ? legalSpace.disabledDiagnostics.filter((entry) => (
+      entry?.schema === "starcraft_tmg_official_unsupported_action_diagnostic_v1"
+    ))
+    : [];
   if (!identity
-    || !hasExactKeys(legalSpace, LEGAL_SPACE_KEYS)
+    || !exactOrOptionalKeys(legalSpace, LEGAL_SPACE_KEYS, [
+      "unsupportedDiagnosticsHash", "unsupportedCount",
+    ])
+    || hasUnsupportedHash !== hasUnsupportedCount
+    || (hasUnsupportedHash && (
+      !validContractHash(legalSpace.unsupportedDiagnosticsHash)
+        || !nonNegativeSafeInteger(legalSpace.unsupportedCount)
+        || legalSpace.unsupportedCount !== typedUnsupportedDiagnostics.length
+        || legalSpace.unsupportedDiagnosticsHash
+          !== contractHash(typedUnsupportedDiagnostics)
+    ))
+    || (!hasUnsupportedHash && typedUnsupportedDiagnostics.length !== 0)
     || legalSpace.schemaVersion !== `${identity.authorityVersion}.legal-space`
     || legalSpace.gameId !== identity.gameId
     || legalSpace.roomId !== identity.roomId
@@ -634,7 +665,7 @@ function validLegalSpaceResponse(legalSpace, projection, roomId) {
       legalSpace.searchSuggestions,
       legalSpace.parameterDomains,
     )
-    || !validDisabledDiagnostics(legalSpace.disabledDiagnostics)
+    || !validDisabledDiagnostics(legalSpace.disabledDiagnostics, identity)
     || legalSpace.disabledCount !== legalSpace.disabledDiagnostics.length
     || legalSpace.searchAndStrategyExcludedFromAuthority !== true
     || !Array.isArray(legalSpace.candidates)
@@ -1261,6 +1292,19 @@ function applyResponseMatchesRefreshedProjection(result, projection) {
       result.envelope.state,
       publicStateSummaryFromProjection(projection.state),
     );
+}
+
+function applyResponsePrecedesRefreshedProjection(result, projection) {
+  const receipt = result?.receipt;
+  const identity = projectionAuthorityIdentity(projection, receipt?.roomId);
+  return Boolean(identity)
+    && receipt?.gameId === identity.gameId
+    && receipt?.roomId === identity.roomId
+    && receipt?.matchBindingHash === identity.matchBindingHash
+    && nonNegativeSafeInteger(receipt?.postStateRevision)
+    && identity.stateRevision > receipt.postStateRevision
+    && nonNegativeSafeInteger(projection?.room?.acceptedReceiptCount)
+    && projection.room.acceptedReceiptCount >= receipt.postStateRevision;
 }
 
 function replayReference(replayResult) {
@@ -2881,7 +2925,14 @@ export function createStarcraftTmgClientDomain(options = {}) {
       }
       const refreshed = await refreshProjection("accepted_receipt");
       if (!refreshed.ok) return refreshed;
-      if (!applyResponseMatchesRefreshedProjection(applied, internal.roomProjection)) {
+      const matchesAppliedRevision = applyResponseMatchesRefreshedProjection(
+        applied, internal.roomProjection,
+      );
+      const advancedByLaterAcceptedActions = !matchesAppliedRevision
+        && applyResponsePrecedesRefreshedProjection(
+          applied, internal.roomProjection,
+        );
+      if (!matchesAppliedRevision && !advancedByLaterAcceptedActions) {
         return rejection("RECEIPT_RESPONSE_INVALID", {
           authoritativeOutcomeUncertain: true,
           postApplyProjectionMismatch: true,
@@ -2889,7 +2940,15 @@ export function createStarcraftTmgClientDomain(options = {}) {
       }
       const reference = receiptReference(applied.receipt);
       const view = publish({ lastReceipt: reference, pendingPreview: null, rejection: null });
-      return deepFreeze({ ok: true, outcome: "authoritative_receipt_applied", receipt: reference, view });
+      return deepFreeze({
+        ok: true,
+        outcome: advancedByLaterAcceptedActions
+          ? "authoritative_receipt_applied_projection_advanced"
+          : "authoritative_receipt_applied",
+        receipt: reference,
+        projectionAdvancedAfterApply: advancedByLaterAcceptedActions,
+        view,
+      });
     } catch (error) {
       publish({
         phase: "recovering",

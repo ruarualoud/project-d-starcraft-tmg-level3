@@ -19,7 +19,7 @@ import { createTicket20LearningConsoleFixtureV1 } from
   "./support/ticket20-learning-console-fixture-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const ROOM_ID = "ticket20-human-agent-demo";
+const ROOM_ID = "ticket23-standard-2000-web";
 const PRODUCT_WEB_ROOT = path.join(ROOT, "apps/starcraft-tmg-expo/dist");
 const BATTLE_LAB_ROOT = path.join(ROOT, "apps/starcraft-tmg-battle-lab");
 const PRODUCT_WEB_DOCUMENTS = new Map([
@@ -153,6 +153,7 @@ async function main() {
   const fixture = await createTicket20HumanAgentDemoFixtureV1({
     root: ROOT,
     roomId: ROOM_ID,
+    roomProfile: "standard_2000",
     autoDrive: true,
   });
   const roomAdapter = createStarcraftTmgLevel3HttpAdapter({
@@ -191,16 +192,11 @@ async function main() {
         return;
       }
       const botMatch = url.pathname.match(new RegExp(
-        `^${STARCRAFT_TMG_HOSTED_BOT_SEAT_API_PREFIX}/rooms/([^/]+)$`, "u"));
+        `^${STARCRAFT_TMG_HOSTED_BOT_SEAT_API_PREFIX}/rooms/([^/]+)(?:/physical-tasks/([^/]+)/(delegate|complete|dispute))?$`, "u"));
       if (botMatch) {
-        if (request.method !== "GET") {
-          sendJson(response, 405, {
-            schemaVersion: STARCRAFT_TMG_HOSTED_BOT_SEAT_HTTP_VERSION,
-            result: { ok: false, reason: "METHOD_NOT_ALLOWED" },
-          });
-          return;
-        }
         const roomId = decodeURIComponent(botMatch[1]);
+        const taskId = botMatch[2] ? decodeURIComponent(botMatch[2]) : null;
+        const operation = botMatch[3] || null;
         if (roomId !== fixture.roomId) {
           sendJson(response, 404, {
             schemaVersion: STARCRAFT_TMG_HOSTED_BOT_SEAT_HTTP_VERSION,
@@ -208,7 +204,49 @@ async function main() {
           });
           return;
         }
-        const result = await fixture.botRuntime.read({ scope: fixture.botScope });
+        if (!taskId && request.method !== "GET") {
+          sendJson(response, 405, {
+            schemaVersion: STARCRAFT_TMG_HOSTED_BOT_SEAT_HTTP_VERSION,
+            result: { ok: false, reason: "METHOD_NOT_ALLOWED" },
+          });
+          return;
+        }
+        if (taskId && request.method !== "POST") {
+          sendJson(response, 405, {
+            schemaVersion: STARCRAFT_TMG_HOSTED_BOT_SEAT_HTTP_VERSION,
+            result: { ok: false, reason: "METHOD_NOT_ALLOWED" },
+          });
+          return;
+        }
+        let result;
+        if (operation === "delegate") {
+          result = await fixture.botRuntime.delegatePhysicalTask({
+            scope: fixture.botScope,
+            taskId,
+          });
+        } else if (operation === "complete") {
+          result = await fixture.botRuntime.completePhysicalTask({
+            scope: fixture.botScope,
+            taskId,
+            completedBy: requestBody.body.completedBy === "agent" ? "agent" : "human",
+            evidenceRefs: Array.isArray(requestBody.body.evidenceRefs)
+              ? requestBody.body.evidenceRefs : [],
+          });
+        } else if (operation === "dispute") {
+          result = await fixture.botRuntime.openRulesDispute({
+            scope: fixture.botScope,
+            taskId,
+            reason: String(requestBody.body.reason || "Web user requested rules review"),
+          });
+        } else {
+          result = await fixture.botRuntime.read({ scope: fixture.botScope });
+        }
+        if (result?.projection) {
+          result = { ...result, projection: {
+            ...result.projection,
+            notifications: fixture.notifications.slice(-32),
+          } };
+        }
         sendJson(response, result.ok ? 200 : 404, {
           schemaVersion: STARCRAFT_TMG_HOSTED_BOT_SEAT_HTTP_VERSION,
           result,
@@ -221,10 +259,11 @@ async function main() {
         });
         const botRead = await fixture.botRuntime.read({ scope: fixture.botScope });
         sendJson(response, 200, {
-          schemaVersion: "ticket20_slice193_human_agent_demo_manifest_v1",
+          schemaVersion: "ticket23_slice245_standard_2000_web_manifest_v1",
           roomId: fixture.roomId,
           room: roomRead.projection.room,
           bot: botRead.projection,
+          notifications: fixture.notifications.slice(-32),
           coverage: fixture.coverage,
           strategySkillRefs: fixture.strategySkillRefs,
           providerCalls: 0,
@@ -285,7 +324,7 @@ async function main() {
   }
   const origin = `http://127.0.0.1:${address.port}`;
   process.stdout.write(`${JSON.stringify({
-    schemaVersion: "ticket20_slice193_human_agent_web_entry_v1",
+    schemaVersion: "ticket23_slice245_standard_2000_web_entry_v1",
     origin,
     url: `${origin}/room/${encodeURIComponent(fixture.roomId)}#recovery=${encodeURIComponent(fixture.humanRecoveryToken)}`,
     productSurface: "starcraft_tmg_expo_web",
