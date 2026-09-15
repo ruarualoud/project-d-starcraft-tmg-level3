@@ -4,6 +4,10 @@ import { verifyOfficialTerrainLosDataBundleV1 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
 import { evaluateOfficialFlyingCoverV1 } from
   "./official-flying-rules-kernel-v1.mjs";
+import {
+  createOfficialPhysicalFootprintV1,
+  evaluateOfficialPhysicalFootprintRelationV1,
+} from "./official-model-base-geometry-rules-kernel-v1.mjs";
 import { evaluateOfficialTerrainLineOfSightV1 } from
   "./official-terrain-los-rules-kernel-v1.mjs";
 
@@ -108,22 +112,34 @@ function rectanglesOverlap(left, right) {
     && left.minYMilliInches <= right.maxYMilliInches + TOLERANCE
     && left.maxYMilliInches >= right.minYMilliInches - TOLERANCE;
 }
-function pointRectangleDistance(point, footprint) {
-  const x = Math.max(footprint.minXMilliInches,
-    Math.min(point.xMilliInches, footprint.maxXMilliInches));
-  const y = Math.max(footprint.minYMilliInches,
-    Math.min(point.yMilliInches, footprint.maxYMilliInches));
-  return Math.hypot(point.xMilliInches - x, point.yMilliInches - y);
+function terrainPhysicalFootprint(terrain) {
+  const footprint = terrain.footprint;
+  return createOfficialPhysicalFootprintV1({
+    objectId: terrain.terrainId,
+    kind: "terrain_piece",
+    shape: "rectangle",
+    center: {
+      xMilliInches: Math.round((footprint.minXMilliInches
+        + footprint.maxXMilliInches) / 2),
+      yMilliInches: Math.round((footprint.minYMilliInches
+        + footprint.maxYMilliInches) / 2),
+    },
+    widthMilliInches: footprint.maxXMilliInches - footprint.minXMilliInches,
+    depthMilliInches: footprint.maxYMilliInches - footprint.minYMilliInches,
+    rotationDegrees: 0,
+  });
 }
 function modelEdgeToTerrain(model, terrain) {
-  return Math.max(0, pointRectangleDistance(model.center, terrain.footprint)
-    - model.radiusMilliInches);
+  return evaluateOfficialPhysicalFootprintRelationV1({
+    left: model.footprint,
+    right: terrainPhysicalFootprint(terrain),
+  }).minimumSeparationMilliInches;
 }
 function modelEdgeDistance(left, right) {
-  return Math.max(0, Math.hypot(
-    right.center.xMilliInches - left.center.xMilliInches,
-    right.center.yMilliInches - left.center.yMilliInches,
-  ) - left.radiusMilliInches - right.radiusMilliInches);
+  return evaluateOfficialPhysicalFootprintRelationV1({
+    left: left.footprint,
+    right: right.footprint,
+  }).minimumSeparationMilliInches;
 }
 
 export function createOfficialTerrainElevationAgreementV1(input = {}) {
@@ -228,8 +244,9 @@ function canonicalModel(piece, modelId, dataBundle, context) {
   const width = milli(model?.baseWidthInches, "ELEVATION_MODEL_BASE_INVALID", modelId);
   const depth = milli(model?.baseDepthInches ?? model?.baseWidthInches,
     "ELEVATION_MODEL_BASE_INVALID", modelId);
-  if (!model || String(model.baseShape || "round").toLowerCase() !== "round"
-    || width <= 0 || Math.abs(width - depth) > TOLERANCE
+  const shape = String(model?.baseShape || "round").toLowerCase();
+  if (!model || !["round", "rectangle"].includes(shape)
+    || width <= 0 || depth <= 0 || (shape === "round" && Math.abs(width - depth) > TOLERANCE)
     || !Array.isArray(model.supportTerrainIds)) {
     fail("ELEVATION_MODEL_BASE_INVALID", modelId);
   }
@@ -242,11 +259,22 @@ function canonicalModel(piece, modelId, dataBundle, context) {
   const center = { xMilliInches: milli(model.xInches,
     "ELEVATION_MODEL_POSITION_INVALID", modelId),
   yMilliInches: milli(model.yInches, "ELEVATION_MODEL_POSITION_INVALID", modelId) };
-  const radiusMilliInches = Math.round(width / 2);
+  const footprint = createOfficialPhysicalFootprintV1({
+    objectId: modelId,
+    kind: "model_base",
+    shape,
+    center,
+    widthMilliInches: width,
+    depthMilliInches: depth,
+    rotationDegrees: model.baseRotationDegrees || 0,
+  });
   const supportTerrainId = supportTerrainIds[0] || null;
   const support = supportTerrainId ? context.terrainById.get(supportTerrainId) : null;
   if (supportTerrainId && (!support || support.standableHorizontalSurface !== true
-    || pointRectangleDistance(center, support.footprint) > radiusMilliInches + TOLERANCE)) {
+    || evaluateOfficialPhysicalFootprintRelationV1({
+      left: footprint,
+      right: terrainPhysicalFootprint(support),
+    }).minimumSeparationMilliInches > TOLERANCE)) {
     fail("ELEVATION_MODEL_SUPPORT_INVALID", `${modelId}/${supportTerrainId}`);
   }
   const supportingTerrainEffectiveSize = supportTerrainId
@@ -257,7 +285,7 @@ function canonicalModel(piece, modelId, dataBundle, context) {
     fail("ELEVATION_MODEL_BAND_MISMATCH", modelId);
   }
   return { unitId: piece.id, modelId, sideKey: piece.sideKey, center,
-    radiusMilliInches, officialRecordKey: profile.recordKey,
+    footprint, baseShape: shape, officialRecordKey: profile.recordKey,
     printedSize: profile.printedSize, flying, supportTerrainId,
     supportTerrainIds, supportingTerrainEffectiveSize,
     supportTerrainChain: supportTerrainId
@@ -325,7 +353,18 @@ export function evaluateOfficialHorizontalElevationDistanceV1(input = {}) {
 }
 
 function geometryProjection(state, supportIds, dataBundle, participantIds) {
-  const projected = structuredClone(state);
+  // Geometry projection is deliberately minimal. The prior implementation
+  // cloned and hashed the complete multi-megabyte room state for every
+  // attacker/target model pair even though LoS reads only these participants
+  // and terrain. Keeping the exact geometry inputs preserves the proof while
+  // avoiding quadratic work as journals and catalogues grow.
+  const projected = {
+    board: {
+      terrain: structuredClone(state.board?.terrain || []),
+    },
+    pieces: (state.pieces || []).filter((piece) => participantIds.has(piece.id))
+      .map((piece) => structuredClone(piece)),
+  };
   const substitutions = [];
   const geometryProfile = dataBundle.profiles.find((entry) => entry.printedSize !== null);
   for (const piece of projected.pieces || []) {
@@ -349,7 +388,6 @@ function geometryProjection(state, supportIds, dataBundle, participantIds) {
   for (const terrain of projected.board?.terrain || []) {
     if (supportIds.has(terrain.id)) terrain.isRemoved = true;
   }
-  projected.board.terrainElevationAgreement = undefined;
   return { projected, substitutions };
 }
 function supportAssessment(terrain, attacker, target) {
@@ -400,11 +438,9 @@ export function evaluateOfficialElevatedLineOfSightV1(input = {}) {
     input.dataBundle, context);
   const flyingOverlappedTerrainIds = context.terrain.filter((terrain) => (
     (attacker.flying
-      && pointRectangleDistance(attacker.center, terrain.footprint)
-        <= attacker.radiusMilliInches + TOLERANCE)
+      && modelEdgeToTerrain(attacker, terrain) <= TOLERANCE)
     || (target.flying
-      && pointRectangleDistance(target.center, terrain.footprint)
-        <= target.radiusMilliInches + TOLERANCE)
+      && modelEdgeToTerrain(target, terrain) <= TOLERANCE)
   )).map((terrain) => terrain.terrainId);
   const supportIds = new Set([...attacker.supportTerrainChain, ...target.supportTerrainChain,
     ...flyingOverlappedTerrainIds]);

@@ -198,7 +198,7 @@ export function createOfficialElevatedEngagementRuleSliceV1(input = {}) {
     transitionSchema: OFFICIAL_COMBAT_PASS_V2_TRANSITION_SCHEMA,
     executableScope: "all_elevation_engagement_graph_and_combat_pass_plus_previous_families",
     supportedGeometryScope:
-      "round_bases_all_elevations_derived_supports_access_points_axis_aligned_terrain_v2",
+      "round_and_rotated_rectangle_bases_all_elevations_derived_supports_access_points_axis_aligned_terrain_v2",
     historicalCompatibility: {
       previousCatalogueHash: base.catalogueHash,
       previousCatalogueMutationAllowed: false,

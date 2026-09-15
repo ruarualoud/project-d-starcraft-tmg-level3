@@ -431,6 +431,37 @@ const elevatedFlyingLegal = engine.legalSpace(elevatedFlyingEnvelope, {
 assert.equal(elevatedFlyingLegal.finiteActions.length, 1);
 assert.equal(elevatedFlyingLegal.finiteActions[0].action.actionType, "pass");
 
+const rotatedRectangleState = groundMidState();
+rotatedRectangleState.board.terrain = [];
+rotatedRectangleState.board.accessPoints = [];
+for (const unit of rotatedRectangleState.pieces) {
+  Object.assign(unit.models[0], {
+    elevation: "ground",
+    supportTerrainIds: [],
+    adjacentAccessPointIds: [],
+  });
+}
+Object.assign(rotatedRectangleState.pieces[1].models[0], {
+  xInches: 13,
+  baseShape: "rectangle",
+  baseWidthInches: 1,
+  baseDepthInches: 3,
+  baseRotationDegrees: 90,
+});
+const rotatedRectangleEnvelope = engine.createEnvelope({
+  roomId: "official-elevated-engagement-rotated-rectangle-room",
+  state: rotatedRectangleState,
+});
+const rotatedRectangleCredentials = playerCredentials(engine, rotatedRectangleEnvelope);
+const rotatedRectangleLegal = engine.legalSpace(rotatedRectangleEnvelope, {
+  seatAuthority: rotatedRectangleCredentials.authority,
+});
+assert.equal(rotatedRectangleLegal.finiteActions.length, 0);
+assert.equal(
+  rotatedRectangleLegal.disabledDiagnostics[0].disabledReason,
+  "COMBAT_PASS_ENGAGED_UNIT_REMAINS",
+);
+
 const historicalCredentials = playerCredentials(historicalEngine, historicalEnvelope);
 const historicalLegal = historicalEngine.legalSpace(historicalEnvelope, {
   seatAuthority: historicalCredentials.authority,
@@ -504,6 +535,7 @@ const acceptance = [
   "same_high_surface_engages_without_self_blocking_terrain",
   "declared_elevation_and_access_adjacency_must_match_derived_geometry",
   "flying_ignores_elevation_and_access_points_and_remains_unengaged",
+  "rotated_rectangle_uses_exact_base_edge_for_engagement",
   "two_v2_passes_bind_graph_hash_and_replay_into_cleanup",
   "all_fifty_three_atoms_resolve_against_exact_frozen_dependencies",
   "ctx2skill_harness_and_training_lanes_remain_non_promoting",

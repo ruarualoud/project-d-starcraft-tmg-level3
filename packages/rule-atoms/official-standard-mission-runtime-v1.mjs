@@ -7,6 +7,10 @@ import {
   verifyOfficialMissionEffectCatalogueV1,
 } from "../source-data/official-mission-effect-ir-v1.mjs";
 import { deriveOfficialEngagementGraphV2 } from "./official-engagement-graph-v2.mjs";
+import {
+  createOfficialPhysicalFootprintV1,
+  evaluateOfficialPhysicalFootprintRelationV1,
+} from "./official-model-base-geometry-rules-kernel-v1.mjs";
 import { projectOfficialContextualSupplyValueV1 } from
   "./official-contextual-supply-projection-v1.mjs";
 import { verifyOfficialSupplyLossLedgerV1 } from "./official-supply-loss-ledger-v1.mjs";
@@ -333,21 +337,55 @@ function activeModels(piece) {
   ));
 }
 
-function modelRadius(model) {
+function currentMissionSupportsRectangles(context) {
+  return context.contract.runtimeSchema === OFFICIAL_MISSION_RUNTIME_SCHEMA;
+}
+
+function modelFootprint(model, context) {
   const shape = String(model?.baseShape || "").toLowerCase();
   const width = Number(model?.baseWidthInches);
   const depth = Number(model?.baseDepthInches);
-  if (shape !== "round" || !Number.isFinite(width) || width <= 0
-    || !Number.isFinite(depth) || Math.abs(width - depth) > 0.001) {
+  if (!new Set(["round", "rectangle"]).has(shape)
+    || !Number.isFinite(width) || width <= 0
+    || !Number.isFinite(depth) || depth <= 0
+    || (shape === "round" && Math.abs(width - depth) > 0.001)
+    || (shape === "rectangle" && !currentMissionSupportsRectangles(context))) {
     fail("STANDARD_MISSION_MODEL_BASE_SCOPE_UNSUPPORTED", String(model?.id || ""));
   }
-  return width / 2;
+  return createOfficialPhysicalFootprintV1({
+    objectId: String(model.id),
+    kind: "model_base",
+    shape,
+    center: {
+      xMilliInches: Math.round(Number(model.xInches) * 1000),
+      yMilliInches: Math.round(Number(model.yInches) * 1000),
+    },
+    widthMilliInches: Math.round(width * 1000),
+    depthMilliInches: Math.round(depth * 1000),
+    rotationDegrees: model.baseRotationDegrees ?? model.rotationDegrees ?? 0,
+  });
 }
 
-function edgeDistance(model, marker) {
-  const dx = Number(model.xInches) - Number(marker.xInches);
-  const dy = Number(model.yInches) - Number(marker.yInches);
-  return Math.max(0, Math.hypot(dx, dy) - modelRadius(model) - MARKER_RADIUS_INCHES);
+function markerFootprint(marker) {
+  const diameter = Math.round(MARKER_RADIUS_INCHES * 2000);
+  return createOfficialPhysicalFootprintV1({
+    objectId: String(marker.id),
+    kind: "mission_marker",
+    shape: "round",
+    center: {
+      xMilliInches: Math.round(Number(marker.xInches) * 1000),
+      yMilliInches: Math.round(Number(marker.yInches) * 1000),
+    },
+    widthMilliInches: diameter,
+    depthMilliInches: diameter,
+  });
+}
+
+function edgeDistance(model, marker, context) {
+  return evaluateOfficialPhysicalFootprintRelationV1({
+    left: modelFootprint(model, context),
+    right: markerFootprint(marker),
+  }).minimumSeparationMilliInches / 1000;
 }
 
 function relativeAffinity(runtimeState, markerNumber, sideKey) {
@@ -378,7 +416,9 @@ function gatherCandidates(state, context, sideKey) {
       fail("STANDARD_MISSION_GATHER_MODEL_COUNT_INVALID", String(piece.id || ""));
     }
     for (const marker of markers) {
-      const minimumDistance = Math.min(...models.map((model) => edgeDistance(model, marker)));
+      const minimumDistance = Math.min(...models.map((model) => (
+        edgeDistance(model, marker, context)
+      )));
       if (minimumDistance > 3 + DISTANCE_TOLERANCE_INCHES) continue;
       candidates.push({ pieceId: piece.id, markerId: marker.id,
         markerNumber: Number(marker.number), minimumEdgeDistanceInches: minimumDistance,
@@ -425,16 +465,24 @@ function whollyWithinQuarter(state, piece, context) {
     y: geometry.heightInches / 2,
   };
   const quadrants = models.map((model) => {
-    const radius = modelRadius(model);
-    const x = Number(model.xInches);
-    const y = Number(model.yInches);
-    if (![x, y].every(Number.isFinite)) {
+    const footprint = modelFootprint(model, context);
+    const xs = footprint.shape === "round"
+      ? [footprint.center.xMilliInches - footprint.radiusMilliInches,
+          footprint.center.xMilliInches + footprint.radiusMilliInches]
+      : footprint.vertices.map((entry) => entry.xMilliInches);
+    const ys = footprint.shape === "round"
+      ? [footprint.center.yMilliInches - footprint.radiusMilliInches,
+          footprint.center.yMilliInches + footprint.radiusMilliInches]
+      : footprint.vertices.map((entry) => entry.yMilliInches);
+    if (![...xs, ...ys].every(Number.isFinite)) {
       fail("STANDARD_MISSION_QUARTER_POSITION_INVALID", String(model.id || ""));
     }
-    const horizontal = x < midpoint.x && x + radius <= midpoint.x
-      ? "west" : x >= midpoint.x && x - radius >= midpoint.x ? "east" : null;
-    const vertical = y < midpoint.y && y + radius <= midpoint.y
-      ? "south" : y >= midpoint.y && y - radius >= midpoint.y ? "north" : null;
+    const midpointX = midpoint.x * 1000;
+    const midpointY = midpoint.y * 1000;
+    const horizontal = Math.max(...xs) <= midpointX
+      ? "west" : Math.min(...xs) >= midpointX ? "east" : null;
+    const vertical = Math.max(...ys) <= midpointY
+      ? "south" : Math.min(...ys) >= midpointY ? "north" : null;
     return horizontal && vertical ? `${vertical}_${horizontal}` : null;
   });
   return quadrants.every((quadrant) => quadrant && quadrant === quadrants[0])

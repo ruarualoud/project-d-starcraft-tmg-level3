@@ -15,6 +15,10 @@ import {
 import { createOfficialInstantAttackEffectKernelV1 } from
   "../rule-atoms/official-instant-attack-effect-kernel-v1.mjs";
 import {
+  createOfficialPhysicalFootprintV1,
+  evaluateOfficialPhysicalFootprintRelationV1,
+} from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import {
   OFFICIAL_MARINE_CHARGE_V2_ACTION_ATOM_IDS,
 } from "../rule-atoms/official-marine-charge-executor-v2.mjs";
 import { recordOfficialSupplyLossesV1, verifyOfficialSupplyLossLedgerV1 } from
@@ -132,13 +136,33 @@ function inches(value) { return Number((Number(value) / 1000).toFixed(3)); }
 function modelPoint(model) {
   return { xMilliInches: milli(model?.xInches), yMilliInches: milli(model?.yInches) };
 }
-function modelRadius(model) {
+function modelFootprint(model) {
   const width = milli(model?.baseWidthInches);
   const depth = milli(model?.baseDepthInches);
-  if (model?.baseShape !== "round" || width <= 0 || Math.abs(width - depth) > TOLERANCE) {
+  const shape = String(model?.baseShape || "").toLowerCase();
+  if (!new Set(["round", "rectangle"]).has(shape)
+    || width <= 0 || depth <= 0
+    || (shape === "round" && Math.abs(width - depth) > TOLERANCE)) {
     fail("SELECTED_MELEE_BASE_SCOPE_UNSUPPORTED", String(model?.id || ""));
   }
-  return Math.round(width / 2);
+  return createOfficialPhysicalFootprintV1({
+    objectId: String(model.id),
+    kind: "model_base",
+    shape,
+    center: modelPoint(model),
+    widthMilliInches: width,
+    depthMilliInches: depth,
+    rotationDegrees: model.baseRotationDegrees ?? model.rotationDegrees ?? 0,
+  });
+}
+function modelRadius(model) {
+  const footprint = modelFootprint(model);
+  return footprint.shape === "round"
+    ? footprint.radiusMilliInches
+    : Math.ceil(Math.hypot(
+      footprint.widthMilliInches,
+      footprint.depthMilliInches,
+    ) / 2);
 }
 function verifyDeclaredBase(model) {
   const width = milli(model?.baseWidthInches);
@@ -154,8 +178,10 @@ function centreDistance(left, right) {
     right.yMilliInches - left.yMilliInches);
 }
 function baseGap(left, right) {
-  return Math.round(centreDistance(modelPoint(left), modelPoint(right))
-    - modelRadius(left) - modelRadius(right));
+  return evaluateOfficialPhysicalFootprintRelationV1({
+    left: modelFootprint(left),
+    right: modelFootprint(right),
+  }).minimumSeparationMilliInches;
 }
 function edgeForModel(graph, unitId, modelId) {
   return graph.modelEdges.filter((edge) => (
@@ -297,13 +323,14 @@ function pending(state, stage) {
   }
   return value;
 }
-function diagnostic(sideKey, phase, pieceId, actionType, error) {
+function diagnostic(sideKey, phase, pieceId, actionType, error, context = {}) {
   return freezeDeep({ actionType, sideKey, phase, pieceId,
     executorId: OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_ID,
     executorVersion: OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION,
     isEnabled: false,
     disabledReason: String(error?.message || error).split(":")[0],
-    score: 0, details: { rulesTruth: "official_selected_melee_fail_closed",
+    score: 0, details: { ...clone(context),
+      rulesTruth: "official_selected_melee_fail_closed",
       trainingTruth: false } });
 }
 function chargeContext(state, sideKey, piece) {
@@ -510,8 +537,22 @@ function applyGeometry(stateInput, pieceId, geometry) {
         Math.min(placement.xMilliInches, rectangle.maxX));
       const y = Math.max(rectangle.minY,
         Math.min(placement.yMilliInches, rectangle.maxY));
-      return Math.hypot(placement.xMilliInches - x, placement.yMilliInches - y)
-        <= modelRadius(model) + TOLERANCE;
+      const accessFootprint = createOfficialPhysicalFootprintV1({
+        objectId: String(access.accessPointId || access.id),
+        kind: "access_point",
+        shape: "rectangle",
+        center: {
+          xMilliInches: Math.round((rectangle.minX + rectangle.maxX) / 2),
+          yMilliInches: Math.round((rectangle.minY + rectangle.maxY) / 2),
+        },
+        widthMilliInches: rectangle.maxX - rectangle.minX,
+        depthMilliInches: rectangle.maxY - rectangle.minY,
+        rotationDegrees: 0,
+      });
+      return evaluateOfficialPhysicalFootprintRelationV1({
+        left: modelFootprint(model),
+        right: accessFootprint,
+      }).minimumSeparationMilliInches <= TOLERANCE;
     }).map((entry) => entry.accessPointId || entry.id).sort();
   }
   const leading = geometry.finalModelPositions.find((entry) => (
@@ -532,7 +573,10 @@ function assertNoOverlap(state, piece) {
       entry.id !== piece.id && activePiece(entry)
     ))) {
       for (const other of activeModels(otherPiece)) {
-        if (baseGap(own, other) < -TOLERANCE) {
+        if (evaluateOfficialPhysicalFootprintRelationV1({
+          left: modelFootprint(own),
+          right: modelFootprint(other),
+        }).overlappingInteriors) {
           fail("SELECTED_MELEE_CHARGE_BASE_OVERLAP", `${own.id}:${other.id}`);
         }
       }
@@ -1235,8 +1279,13 @@ export function enumerateOfficialSelectedRosterMeleeActionsV1(state, options = {
       parameterDomains.push(state.pendingAction.stage === "resolve_charge_after_roll"
         ? chargeResolutionDomain(state) : impactDomain(state));
     } catch (error) {
-      if (options.includeDisabled === true) candidates.push(diagnostic(sideKey,
-        state.phase, state.pendingAction.pieceId, state.pendingAction.stage, error));
+      if (options.includeDisabled === true) {
+        const actionType = state.pendingAction.stage === "resolve_charge_after_roll"
+          ? "resolve_charge" : "resolve_impact";
+        candidates.push(diagnostic(sideKey, state.phase,
+          state.pendingAction.pieceId, actionType, error,
+          { pendingStage: state.pendingAction.stage }));
+      }
       else throw error;
     }
     return freezeDeep({ schemaVersion:
@@ -1264,7 +1313,8 @@ export function enumerateOfficialSelectedRosterMeleeActionsV1(state, options = {
             state, sideKey, piece, catalogueV2, profile.profileKey));
         } catch (error) {
           if (options.includeDisabled === true) candidates.push(diagnostic(sideKey,
-            state.phase, piece.id, `fight:${profile.profileKey}`, error));
+            state.phase, piece.id, "fight", error,
+            { profileKey: profile.profileKey }));
         }
       }
     }

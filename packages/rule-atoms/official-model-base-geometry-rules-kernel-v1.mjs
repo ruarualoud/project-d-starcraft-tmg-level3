@@ -154,6 +154,10 @@ function makeFootprint(input) {
   } else fail("MODEL_BASE_GEOMETRY_SHAPE_UNSUPPORTED", `${objectId}:${shape}`);
   return freezeDeep({ ...body, footprintHash: hashStarcraftTmgContract(body) });
 }
+
+export function createOfficialPhysicalFootprintV1(input = {}) {
+  return makeFootprint(input);
+}
 function activePiece(piece) {
   return piece?.isOnField === true && piece?.isDestroyed !== true
     && Number(piece?.currentModels || 0) > 0;
@@ -248,6 +252,103 @@ function minimumSeparation(left, right) {
     ...right.vertices.map((entry) => pointPolygonDistance(entry, left.vertices)),
   );
 }
+function closestPointOnSegment(value, start, end) {
+  const dx = end.xMilliInches - start.xMilliInches;
+  const dy = end.yMilliInches - start.yMilliInches;
+  if (dx === 0 && dy === 0) return { ...start };
+  const ratio = Math.max(0, Math.min(1,
+    (((value.xMilliInches - start.xMilliInches) * dx)
+      + ((value.yMilliInches - start.yMilliInches) * dy)) / ((dx * dx) + (dy * dy))));
+  return {
+    xMilliInches: Number((start.xMilliInches + (ratio * dx)).toFixed(6)),
+    yMilliInches: Number((start.yMilliInches + (ratio * dy)).toFixed(6)),
+  };
+}
+function closestPointOnPolygon(value, vertices) {
+  if (pointInPolygon(value, vertices)) return { ...value };
+  return polygonEdges(vertices).map(([start, end]) => (
+    closestPointOnSegment(value, start, end)
+  )).sort((left, right) => distance(value, left) - distance(value, right))[0];
+}
+function circleBoundaryToward(circle, target) {
+  const centreDistance = distance(circle.center, target);
+  if (centreDistance <= TOLERANCE) return { ...circle.center };
+  const ratio = circle.radiusMilliInches / centreDistance;
+  return {
+    xMilliInches: Number((circle.center.xMilliInches
+      + ((target.xMilliInches - circle.center.xMilliInches) * ratio)).toFixed(6)),
+    yMilliInches: Number((circle.center.yMilliInches
+      + ((target.yMilliInches - circle.center.yMilliInches) * ratio)).toFixed(6)),
+  };
+}
+function nearestFootprintPoints(left, right) {
+  if (left.shape === "round" && right.shape === "round") {
+    const centreDistance = distance(left.center, right.center);
+    if (centreDistance <= left.radiusMilliInches + right.radiusMilliInches + TOLERANCE) {
+      const contact = circleBoundaryToward(left, right.center);
+      return [contact, contact];
+    }
+    return [
+      circleBoundaryToward(left, right.center),
+      circleBoundaryToward(right, left.center),
+    ];
+  }
+  if (left.shape === "round") {
+    const onRight = closestPointOnPolygon(left.center, right.vertices);
+    if (distance(left.center, onRight) <= left.radiusMilliInches + TOLERANCE) {
+      return [onRight, onRight];
+    }
+    return [circleBoundaryToward(left, onRight), onRight];
+  }
+  if (right.shape === "round") {
+    const [onRight, onLeft] = nearestFootprintPoints(right, left);
+    return [onLeft, onRight];
+  }
+  if (polygonsIntersect(left.vertices, right.vertices)) {
+    const contact = {
+      xMilliInches: Number(((left.center.xMilliInches
+        + right.center.xMilliInches) / 2).toFixed(6)),
+      yMilliInches: Number(((left.center.yMilliInches
+        + right.center.yMilliInches) / 2).toFixed(6)),
+    };
+    return [contact, contact];
+  }
+  const candidates = [
+    ...left.vertices.map((onLeft) => ({
+      onLeft,
+      onRight: closestPointOnPolygon(onLeft, right.vertices),
+    })),
+    ...right.vertices.map((onRight) => ({
+      onLeft: closestPointOnPolygon(onRight, left.vertices),
+      onRight,
+    })),
+  ].sort((a, b) => distance(a.onLeft, a.onRight)
+    - distance(b.onLeft, b.onRight));
+  return [candidates[0].onLeft, candidates[0].onRight];
+}
+
+export function evaluateOfficialPhysicalFootprintRelationV1(input = {}) {
+  const left = input.left;
+  const right = input.right;
+  if (!object(left) || !object(right)
+    || left.schema !== "starcraft_tmg_physical_footprint_v1"
+    || right.schema !== "starcraft_tmg_physical_footprint_v1") {
+    fail("MODEL_BASE_GEOMETRY_FOOTPRINT_RELATION_INVALID");
+  }
+  const [nearestPointOnLeft, nearestPointOnRight] = nearestFootprintPoints(left, right);
+  const body = {
+    schema: "starcraft_tmg_physical_footprint_relation_v1",
+    leftFootprintHash: left.footprintHash,
+    rightFootprintHash: right.footprintHash,
+    minimumSeparationMilliInches: Math.round(minimumSeparation(left, right)),
+    nearestPointOnLeft,
+    nearestPointOnRight,
+    overlappingInteriors: overlaps(left, right),
+    nearestPhysicalEdgesUsed: true,
+    trainingTruth: false,
+  };
+  return freezeDeep({ ...body, relationHash: hashStarcraftTmgContract(body) });
+}
 function overlaps(left, right) {
   if (left.shape === "round" && right.shape === "round") {
     return distance(left.center, right.center)
@@ -306,6 +407,18 @@ function footprintInsideBoard(footprint, width, height) {
     entry.xMilliInches >= -TOLERANCE && entry.xMilliInches <= width + TOLERANCE
       && entry.yMilliInches >= -TOLERANCE && entry.yMilliInches <= height + TOLERANCE
   ));
+}
+
+export function isOfficialPhysicalFootprintInsideBoardV1(input = {}) {
+  const widthMilliInches = Number(input.widthMilliInches);
+  const heightMilliInches = Number(input.heightMilliInches);
+  if (!object(input.footprint)
+    || input.footprint.schema !== "starcraft_tmg_physical_footprint_v1"
+    || !Number.isSafeInteger(widthMilliInches) || widthMilliInches <= 0
+    || !Number.isSafeInteger(heightMilliInches) || heightMilliInches <= 0) {
+    fail("MODEL_BASE_GEOMETRY_BOARD_CONTAINMENT_INVALID");
+  }
+  return footprintInsideBoard(input.footprint, widthMilliInches, heightMilliInches);
 }
 function resolveReference(state, reference, dataBundle) {
   const kind = String(reference?.kind || "model");

@@ -129,11 +129,40 @@ function modelRadius(model) {
     "SELECTED_SPATIAL_BASE_INVALID", String(model?.id || ""));
   const depth = milli(model?.baseDepthInches,
     "SELECTED_SPATIAL_BASE_INVALID", String(model?.id || ""));
-  if (String(model?.baseShape || "").toLowerCase() !== "round"
-    || width <= 0 || Math.abs(width - depth) > TOLERANCE) {
+  const shape = String(model?.baseShape || "").toLowerCase();
+  if (width <= 0 || depth <= 0
+    || !new Set(["round", "rectangle"]).has(shape)
+    || (shape === "round" && Math.abs(width - depth) > TOLERANCE)) {
     fail("SELECTED_SPATIAL_BASE_SCOPE_UNSUPPORTED", String(model?.id || ""));
   }
-  return Math.round(width / 2);
+  // Continuous segment/obstacle checks use the circumscribed radius for the
+  // one official rectangular base. This is conservative (no false legal
+  // path); endpoint placement/coherency remains exact polygon geometry in the
+  // official model-base kernel below.
+  return shape === "round"
+    ? Math.round(width / 2)
+    : Math.ceil(Math.hypot(width, depth) / 2);
+}
+function modelHalfExtents(model, rotationDegrees = 0) {
+  const width = milli(model?.baseWidthInches,
+    "SELECTED_SPATIAL_BASE_INVALID", String(model?.id || ""));
+  const depth = milli(model?.baseDepthInches,
+    "SELECTED_SPATIAL_BASE_INVALID", String(model?.id || ""));
+  const shape = String(model?.baseShape || "").toLowerCase();
+  if (shape === "round") {
+    const radius = modelRadius(model);
+    return { x: radius, y: radius };
+  }
+  if (shape !== "rectangle" || width <= 0 || depth <= 0) {
+    fail("SELECTED_SPATIAL_BASE_SCOPE_UNSUPPORTED", String(model?.id || ""));
+  }
+  const angle = (canonicalRotation(rotationDegrees) * Math.PI) / 180;
+  const cosine = Math.abs(Math.cos(angle));
+  const sine = Math.abs(Math.sin(angle));
+  return {
+    x: ((width / 2) * cosine) + ((depth / 2) * sine),
+    y: ((width / 2) * sine) + ((depth / 2) * cosine),
+  };
 }
 function verifyDeclaredBase(model) {
   const width = milli(model?.baseWidthInches,
@@ -359,7 +388,11 @@ function effectiveDisengageSupply(state, piece) {
     context: "disengage_check" }).effectiveSupply;
 }
 function supplyAvailable(state, sideKey) {
-  const capacity = Number(state.players?.[sideKey]?.supply || 0);
+  const capacity = Number(
+    state.officialRoundSupplyState?.supplyPoolBySide?.[sideKey]
+      ?? state.players?.[sideKey]?.supply
+      ?? 0,
+  );
   const committed = state.pieces.filter((piece) => (
     piece.sideKey === sideKey && activePiece(piece)
   )).reduce((sum, piece) => sum + projectOfficialContextualSupplyValueV1({
@@ -587,13 +620,14 @@ function canonicalPath(start, raw, domain, actionType) {
   return freezeDeep({ schemaVersion: "starcraft_tmg_selected_spatial_path_v1",
     unit: "milli-inch", points, distanceMilliInches });
 }
-function fullBaseInsideBoard(value, radius, domain) {
-  return value.xMilliInches >= radius - TOLERANCE
+function fullBaseInsideBoard(value, model, domain) {
+  const half = modelHalfExtents(model, value.rotationDegrees);
+  return value.xMilliInches >= half.x - TOLERANCE
     && value.xMilliInches <= domain.constraints.battlefieldWidthMilliInches
-      - radius + TOLERANCE
-    && value.yMilliInches >= radius - TOLERANCE
+      - half.x + TOLERANCE
+    && value.yMilliInches >= half.y - TOLERANCE
     && value.yMilliInches <= domain.constraints.battlefieldHeightMilliInches
-      - radius + TOLERANCE;
+      - half.y + TOLERANCE;
 }
 function segmentById(domain, segmentId) {
   const segment = domain.constraints.entrySegments.find((entry) => (
@@ -665,7 +699,7 @@ function canonicalPlacements(domain, leadingModelId, raw, endpoint) {
 function assertPathBoardAndModels(state, piece, leadingModel, path, domain, actionType) {
   const radius = modelRadius(leadingModel);
   const pointsToCheck = actionType === "deploy" ? path.points.slice(1) : path.points;
-  if (pointsToCheck.some((entry) => !fullBaseInsideBoard(entry, radius, domain))) {
+  if (pointsToCheck.some((entry) => !fullBaseInsideBoard(entry, leadingModel, domain))) {
     fail("SELECTED_SPATIAL_FULL_BASE_OUTSIDE_BATTLEFIELD", leadingModel.id);
   }
   const blockers = state.pieces.filter((entry) => (

@@ -106,6 +106,11 @@ const ACTION_FIELDS = Object.freeze([
   "expectedRegistryHash", "expectedMarkerViewHash", "expectedTokenMarkerCleanupHash",
   "scoringFinalizationPlan",
   "disputeResolutionPlan",
+  // Product-composed Rules runtimes keep the exact originating action behind
+  // one Authority-bound dispatcher. These fields are emitted only by the
+  // trusted Rules runtime; preserving them here lets Preview/Apply/Replay
+  // dispatch to that exact source executor without a lossy reconstruction.
+  "sourceRuntimeKind", "sourceAction", "sourceActionHash",
 ]);
 
 class AuthorityError extends Error {
@@ -1101,8 +1106,26 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     return lease;
   }
 
+  // One accepted action is intentionally checked through three Authority
+  // boundaries: LegalSpace read, Preview resolution, and Apply reproduction.
+  // All three use the exact same immutable envelope. Cache that frozen result
+  // by its complete authoritative identity so a Standard 2000 battle does not
+  // re-enumerate the same spatial/ranged/melee/ability graph three times.
+  // A state transition, side change, or match binding change is a cache miss;
+  // no legal candidate, disabled diagnostic, hash, or Rules result is elided.
+  const legalSpaceCache = new Map();
+  const legalSpaceCacheLimit = 16;
+
   function buildLegalSpace(envelope, sideKey) {
     const state = validateEnvelope(envelope);
+    const cacheKey = [
+      envelope.matchBindingHash,
+      envelope.stateRevision,
+      envelope.stateHash,
+      sideKey,
+    ].join(":");
+    const cached = legalSpaceCache.get(cacheKey);
+    if (cached) return cached;
     let enumerated;
     if (rulesRuntime) {
       if (!rulesRuntimeBinding.legalSpaceComplete && !developmentSubsetEnabled) {
@@ -1329,7 +1352,7 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       ...finiteActions.map((entry) => ({ candidateId: entry.actionKey, action: clone(entry.action), isEnabled: true, score: 0, details: {}, authoritativeIdentity: true })),
       ...searchSuggestions,
     ];
-    return deepFreeze({
+    const result = deepFreeze({
       ...core,
       legalSpaceHash,
       searchSuggestions,
@@ -1338,6 +1361,11 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       disabledCount: disabledDiagnostics.length,
       searchAndStrategyExcludedFromAuthority: true,
     });
+    legalSpaceCache.set(cacheKey, result);
+    while (legalSpaceCache.size > legalSpaceCacheLimit) {
+      legalSpaceCache.delete(legalSpaceCache.keys().next().value);
+    }
+    return result;
   }
 
   function legalSpace(envelope, input = {}) {

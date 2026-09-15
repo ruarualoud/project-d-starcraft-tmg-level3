@@ -1,6 +1,11 @@
 import { isDeepStrictEqual } from "node:util";
 
 import { hashStarcraftTmgContract } from "../authoritative-engine/referee-crypto-v1.mjs";
+import {
+  createOfficialPhysicalFootprintV1,
+  evaluateOfficialPhysicalFootprintRelationV1,
+  isOfficialPhysicalFootprintInsideBoardV1,
+} from "./official-model-base-geometry-rules-kernel-v1.mjs";
 
 export const OFFICIAL_ENGAGEMENT_GRAPH_V2_SCHEMA = "starcraft_tmg_official_engagement_graph_v2";
 export const OFFICIAL_ENGAGEMENT_GEOMETRY_INPUT_V2_SCHEMA =
@@ -87,18 +92,23 @@ function normalizeFootprint(input, code, detail) {
   return { footprint, rotationDegrees, x, y, width, height };
 }
 
-function pointToRectDistance(point, rect) {
-  const dx = Math.max(Math.abs(point.x - rect.x) - (rect.width / 2), 0);
-  const dy = Math.max(Math.abs(point.y - rect.y) - (rect.height / 2), 0);
-  return Math.hypot(dx, dy);
+function physicalFootprint(value, objectId, kind) {
+  return createOfficialPhysicalFootprintV1({
+    objectId,
+    kind,
+    shape: value.footprint === "circle" ? "round" : "rectangle",
+    center: { xMilliInches: value.x, yMilliInches: value.y },
+    widthMilliInches: value.width,
+    depthMilliInches: value.height,
+    rotationDegrees: value.rotationDegrees,
+  });
 }
 
-function roundBaseTouchesFootprint(model, footprint) {
-  if (footprint.footprint === "circle") {
-    return Math.hypot(model.x - footprint.x, model.y - footprint.y)
-      <= model.radius + (footprint.width / 2);
-  }
-  return pointToRectDistance(model, footprint) <= model.radius;
+function modelBaseTouchesFootprint(modelFootprint, value, objectId, kind) {
+  return evaluateOfficialPhysicalFootprintRelationV1({
+    left: modelFootprint,
+    right: physicalFootprint(value, objectId, kind),
+  }).minimumSeparationMilliInches <= 1;
 }
 
 function segmentPointDistance(point, a, b) {
@@ -236,18 +246,33 @@ function normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints) 
       const baseShape = String(model.baseShape || "").trim().toLowerCase();
       const baseWidth = milli(model.baseWidthInches, "ENGAGEMENT_V2_BASE_GEOMETRY_REQUIRED", modelId);
       const baseDepth = milli(model.baseDepthInches, "ENGAGEMENT_V2_BASE_GEOMETRY_REQUIRED", modelId);
-      if (baseShape !== "round" || baseWidth <= 0 || Math.abs(baseWidth - baseDepth) > 1) {
+      if (!new Set(["round", "rectangle"]).has(baseShape)
+        || baseWidth <= 0 || baseDepth <= 0
+        || (baseShape === "round" && Math.abs(baseWidth - baseDepth) > 1)) {
         fail("ENGAGEMENT_V2_BASE_UNSUPPORTED", modelId);
       }
       const x = milli(model.xInches, "ENGAGEMENT_V2_MODEL_POSITION_REQUIRED", modelId);
       const y = milli(model.yInches, "ENGAGEMENT_V2_MODEL_POSITION_REQUIRED", modelId);
-      const radius = Math.round(baseWidth / 2);
-      if (x < radius || x > boardWidth - radius || y < radius || y > boardHeight - radius) {
+      const modelFootprint = createOfficialPhysicalFootprintV1({
+        objectId: modelId,
+        kind: "model_base",
+        shape: baseShape,
+        center: { xMilliInches: x, yMilliInches: y },
+        widthMilliInches: baseWidth,
+        depthMilliInches: baseDepth,
+        rotationDegrees: model.baseRotationDegrees ?? model.rotationDegrees ?? 0,
+      });
+      if (!isOfficialPhysicalFootprintInsideBoardV1({
+        footprint: modelFootprint,
+        widthMilliInches: boardWidth,
+        heightMilliInches: boardHeight,
+      })) {
         fail("ENGAGEMENT_V2_MODEL_OUTSIDE_BOARD", modelId);
       }
-      const preliminary = { x, y, radius };
       const derivedSupportTerrainIds = terrain
-        .filter((entry) => entry.elevationSurface && roundBaseTouchesFootprint(preliminary, entry))
+        .filter((entry) => entry.elevationSurface && modelBaseTouchesFootprint(
+          modelFootprint, entry, entry.terrainId, "terrain",
+        ))
         .map((entry) => entry.terrainId)
         .sort((left, right) => left.localeCompare(right));
       const declaredSupportTerrainIds = uniqueSortedStrings(
@@ -267,7 +292,9 @@ function normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints) 
       const derivedAdjacentAccessPointIds = combatTag === "flying" ? [] : accessPoints
         .filter((entry) => (
           entry.connectsElevations.includes(derivedElevation)
-            && roundBaseTouchesFootprint(preliminary, entry)
+            && modelBaseTouchesFootprint(
+              modelFootprint, entry, entry.accessPointId, "access_point",
+            )
         ))
         .map((entry) => entry.accessPointId)
         .sort((left, right) => left.localeCompare(right));
@@ -287,7 +314,7 @@ function normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints) 
         combatTag,
         x,
         y,
-        radius,
+        footprint: modelFootprint,
         elevation: combatTag === "flying" ? "ignored" : derivedElevation,
         supportTerrainIds: derivedSupportTerrainIds,
         adjacentAccessPointIds: derivedAdjacentAccessPointIds,
@@ -295,15 +322,6 @@ function normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints) 
     }
   }
   return models.sort((left, right) => left.modelId.localeCompare(right.modelId));
-}
-
-function edgeSegment(left, right, centerDistance) {
-  if (centerDistance === 0) return [{ x: left.x, y: left.y }, { x: right.x, y: right.y }];
-  const ux = (right.x - left.x) / centerDistance;
-  const uy = (right.y - left.y) / centerDistance;
-  return [{ x: left.x + (ux * left.radius), y: left.y + (uy * left.radius) }, {
-    x: right.x - (ux * right.radius), y: right.y - (uy * right.radius),
-  }];
 }
 
 function sharedAccessPointIds(left, right, accessPointById) {
@@ -367,8 +385,11 @@ export function deriveOfficialEngagementGraphV2(state) {
     for (let rightIndex = leftIndex + 1; rightIndex < models.length; rightIndex += 1) {
       const right = models[rightIndex];
       if (left.sideKey === right.sideKey || left.combatTag !== "ground" || right.combatTag !== "ground") continue;
-      const centerDistance = Math.hypot(right.x - left.x, right.y - left.y);
-      const baseGap = Math.max(0, Math.round(centerDistance - left.radius - right.radius));
+      const relation = evaluateOfficialPhysicalFootprintRelationV1({
+        left: left.footprint,
+        right: right.footprint,
+      });
+      const baseGap = relation.minimumSeparationMilliInches;
       if (baseGap > OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES) continue;
       const elevation = elevationEligibility(left, right, accessPointById);
       if (!elevation.eligible) {
@@ -382,7 +403,14 @@ export function deriveOfficialEngagementGraphV2(state) {
         });
         continue;
       }
-      const [from, to] = edgeSegment(left, right, centerDistance);
+      const from = {
+        x: relation.nearestPointOnLeft.xMilliInches,
+        y: relation.nearestPointOnLeft.yMilliInches,
+      };
+      const to = {
+        x: relation.nearestPointOnRight.xMilliInches,
+        y: relation.nearestPointOnRight.yMilliInches,
+      };
       const ignoredTerrainIds = new Set(left.supportTerrainIds.filter((id) => right.supportTerrainIds.includes(id)));
       for (const accessPointId of elevation.sharedAccessPointIds) {
         ignoredTerrainIds.add(accessPointById.get(accessPointId).terrainId);
@@ -426,7 +454,8 @@ export function deriveOfficialEngagementGraphV2(state) {
     rulesSourceContentHash: "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54",
     geometryInputHash: hashStarcraftTmgContract(geometryInput),
     engagementRangeMilliInches: OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES,
-    supportedGeometryScope: "round_bases_all_elevations_derived_supports_access_points_axis_aligned_terrain_v2",
+    supportedGeometryScope:
+      "round_and_rotated_rectangle_bases_all_elevations_derived_supports_access_points_axis_aligned_terrain_v2",
     modelEdges,
     elevationRejections,
     engagedUnitIds,

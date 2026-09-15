@@ -20,7 +20,38 @@ function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function normalizeCanonical(value, path = "$") {
+class CanonicalizationFault extends Error {}
+
+function normalizeCanonical(value) {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return value;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) throw new CanonicalizationFault("non_finite_number");
+    return Object.is(value, -0) ? 0 : value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => {
+      if (entry === undefined || typeof entry === "function" || typeof entry === "symbol" || typeof entry === "bigint") {
+        throw new CanonicalizationFault("array_value_not_representable");
+      }
+      return normalizeCanonical(entry);
+    });
+  }
+  if (object(value)) {
+    const result = {};
+    for (const key of Object.keys(value).sort()) {
+      const entry = value[key];
+      if (entry === undefined) continue;
+      if (typeof entry === "function" || typeof entry === "symbol" || typeof entry === "bigint") {
+        throw new CanonicalizationFault("object_value_not_representable");
+      }
+      result[key] = normalizeCanonical(entry);
+    }
+    return result;
+  }
+  throw new CanonicalizationFault("value_not_representable");
+}
+
+function normalizeCanonicalWithPath(value, path = "$") {
   if (value === null || typeof value === "string" || typeof value === "boolean") return value;
   if (typeof value === "number") {
     if (!Number.isFinite(value)) throw new TypeError(`${path} contains a non-finite number`);
@@ -31,7 +62,7 @@ function normalizeCanonical(value, path = "$") {
       if (entry === undefined || typeof entry === "function" || typeof entry === "symbol" || typeof entry === "bigint") {
         throw new TypeError(`${path}[${index}] is not representable by RFC 8785 JSON`);
       }
-      return normalizeCanonical(entry, `${path}[${index}]`);
+      return normalizeCanonicalWithPath(entry, `${path}[${index}]`);
     });
   }
   if (object(value)) {
@@ -42,7 +73,7 @@ function normalizeCanonical(value, path = "$") {
       if (typeof entry === "function" || typeof entry === "symbol" || typeof entry === "bigint") {
         throw new TypeError(`${path}.${key} is not representable by RFC 8785 JSON`);
       }
-      result[key] = normalizeCanonical(entry, `${path}.${key}`);
+      result[key] = normalizeCanonicalWithPath(entry, `${path}.${key}`);
     }
     return result;
   }
@@ -50,7 +81,17 @@ function normalizeCanonical(value, path = "$") {
 }
 
 export function canonicalStarcraftTmgJson(value) {
-  return JSON.stringify(normalizeCanonical(value));
+  try {
+    return JSON.stringify(normalizeCanonical(value));
+  } catch (error) {
+    if (error instanceof CanonicalizationFault) {
+      // Invalid payloads are exceptional. Re-run only those through the
+      // diagnostic normalizer so callers retain the precise historical path
+      // without charging every valid hash for path-string allocation.
+      return JSON.stringify(normalizeCanonicalWithPath(value));
+    }
+    throw error;
+  }
 }
 
 export function hashStarcraftTmgContract(value) {

@@ -306,9 +306,8 @@ function assertAssaultContext(state, sideKey, piece, target, graph, profile) {
     pinpointTargetOverrideApplied: !attackerEngaged && targetEngaged && pinpoint };
 }
 function terrainAsOrdinaryForLos(state) {
-  const projected = clone(state);
   const grassTerrainIds = [];
-  projected.board.terrain = (state.board.terrain || []).map((terrain) => {
+  const terrain = (state.board.terrain || []).map((terrain) => {
     if (terrain.isRemoved === true || terrain.terrainKind === "ordinary") {
       return clone(terrain);
     }
@@ -329,9 +328,14 @@ function terrainAsOrdinaryForLos(state) {
       impassable: false, openings: clone(terrain.openings || []),
       accessPoints: clone(terrain.accessPoints || []), isRemoved: false };
   });
-  projected.board.terrainElevationAgreement =
-    state.board.terrainElevationAgreement
-      || createOfficialTerrainElevationAgreementV1({ supportRelations: [] });
+  const projected = {
+    board: {
+      terrain,
+      terrainElevationAgreement: state.board.terrainElevationAgreement
+        || createOfficialTerrainElevationAgreementV1({ supportRelations: [] }),
+    },
+    pieces: state.pieces,
+  };
   return { projected, grassTerrainIds: grassTerrainIds.sort() };
 }
 function lineOfSightFor(state, attacker, attackerModel, target, targetModel,

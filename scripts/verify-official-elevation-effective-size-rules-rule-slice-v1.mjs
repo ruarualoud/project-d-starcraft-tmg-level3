@@ -30,7 +30,10 @@ import {
 } from "../packages/rule-atoms/official-elevation-effective-size-rules-rule-slice-v1.mjs";
 import { createOfficialExecutableRuleRuntimeV1 } from
   "../packages/rule-atoms/official-executable-rule-runtime-v1.mjs";
-import { createOfficialTerrainPieceV1 } from
+import {
+  createOfficialTerrainPieceV1,
+  evaluateOfficialTerrainLineOfSightToMissionMarkerV1,
+} from
   "../packages/rule-atoms/official-terrain-los-rules-kernel-v1.mjs";
 import { auditRuleRelationshipGraphV1 } from
   "../packages/rule-atoms/rule-relationship-graph-v1.mjs";
@@ -327,6 +330,33 @@ assert.throws(() => evaluateOfficialEffectiveSizeV1(
   effectiveSizeInput(ovalState, terrainBundle)), /ELEVATION_MODEL_BASE_INVALID/u);
 acceptance.push("arbitrary_model_base_geometry_remains_fail_closed_to_slice87");
 
+const rectangularState = prepare(fixture, terrainBundle);
+replaceWithOfficialUnit(rectangularState.pieces[0], fixture.dataset,
+  "army_units:hydralisk");
+Object.assign(rectangularState.pieces[0].models[0], {
+  baseShape: "rectangle",
+  baseWidthInches: 40 / 25.4,
+  baseDepthInches: 100 / 25.4,
+  baseRotationDegrees: 90,
+});
+rectangularState.board.missionMarkers = [{ id: "mission-marker-rectangle-los",
+  diameterMillimeters: 32, xInches: 20, yInches: 5, elevation: "ground" }];
+const rectangularSize = evaluateOfficialEffectiveSizeV1(
+  effectiveSizeInput(rectangularState, terrainBundle),
+);
+assert.equal(rectangularSize.subject.footprint.shape, "rectangle");
+const rectangularMarkerLos = evaluateOfficialTerrainLineOfSightToMissionMarkerV1({
+  state: rectangularState,
+  attacker: rectangularState.pieces[0],
+  attackerModelId: rectangularState.pieces[0].models[0].id,
+  attackerEffectiveSize: rectangularSize.subject.effectiveSize,
+  marker: rectangularState.board.missionMarkers[0],
+  dataBundle: terrainBundle,
+});
+assert.equal(rectangularMarkerLos.visible, true);
+assert(rectangularMarkerLos.modelEdgeDistanceMilliInches > 0);
+acceptance.push("hydralisk_rectangle_effective_size_and_mission_marker_los_share_exact_footprints");
+
 const specialState = prepare(fixture, terrainBundle, { terrain: [terrain(
   "deferred-grass", 2, { terrainKind: "grass" },
 )] });
@@ -538,7 +568,7 @@ assert.deepEqual(slice.ctx2skill.promotions, []);
 assert.deepEqual(slice.harness.trainingTraceCandidates, []);
 assert.equal(slice.elevationEffectiveSizeRulesProgress.sourceRefreshPerformed, false);
 acceptance.push("no_source_refresh_skill_dsh_muzero_selfplay_or_training_promotion_occurs");
-assert.equal(acceptance.length, 30);
+assert.equal(acceptance.length, 31);
 
 const report = {
   schema: "starcraft_tmg_official_elevation_effective_size_rules_rule_slice_verification_v1",

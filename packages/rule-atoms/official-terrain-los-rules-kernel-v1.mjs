@@ -2,6 +2,10 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { verifyOfficialTerrainLosDataBundleV1 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
+import {
+  createOfficialPhysicalFootprintV1,
+  evaluateOfficialPhysicalFootprintRelationV1,
+} from "./official-model-base-geometry-rules-kernel-v1.mjs";
 
 export const OFFICIAL_TERRAIN_LOS_RULES_KERNEL_SCHEMA =
   "starcraft_tmg_official_terrain_los_rules_kernel_v1";
@@ -40,6 +44,13 @@ function milli(value, code = "TERRAIN_LOS_GEOMETRY_INVALID", detail = "") {
 function distance(left, right) {
   return Math.hypot(right.xMilliInches - left.xMilliInches,
     right.yMilliInches - left.yMilliInches);
+}
+function elevationBand(value) {
+  const normalized = String(value || "ground").trim().toLowerCase();
+  if (["ground", "ground_level"].includes(normalized)) return "ground";
+  if (["mid", "middle", "mid_ground"].includes(normalized)) return "mid";
+  if (["high", "high_ground"].includes(normalized)) return "high";
+  return normalized;
 }
 function activePiece(piece) {
   return piece?.isOnField === true && piece?.isDestroyed !== true
@@ -169,21 +180,35 @@ function officialProfile(piece, dataBundle) {
   }
   return profile;
 }
-function roundModel(piece, modelId, dataBundle) {
+function physicalModel(piece, modelId, dataBundle) {
   if (!activePiece(piece)) fail("TERRAIN_LOS_UNIT_INVALID", String(piece?.id || ""));
   const model = (piece.models || []).find((entry) => entry.id === modelId && activeModel(entry));
   const profile = officialProfile(piece, dataBundle);
   const width = milli(model?.baseWidthInches, "TERRAIN_LOS_MODEL_BASE_INVALID", modelId);
   const depth = milli(model?.baseDepthInches ?? model?.baseWidthInches,
     "TERRAIN_LOS_MODEL_BASE_INVALID", modelId);
-  if (!model || String(model.baseShape || "round").toLowerCase() !== "round"
-    || width <= 0 || Math.abs(width - depth) > TOLERANCE) {
+  const shape = String(model?.baseShape || "round").toLowerCase();
+  if (!model || !["round", "rectangle"].includes(shape)
+    || width <= 0 || depth <= 0 || (shape === "round" && Math.abs(width - depth) > TOLERANCE)) {
     fail("TERRAIN_LOS_MODEL_BASE_INVALID", modelId);
   }
   const supportTerrainIds = [...new Set((model.supportTerrainIds || []).map(String))].sort();
+  const center = { xMilliInches: milli(model.xInches),
+    yMilliInches: milli(model.yInches) };
+  const footprint = createOfficialPhysicalFootprintV1({
+    objectId: model.id,
+    kind: "model_base",
+    shape,
+    center,
+    widthMilliInches: width,
+    depthMilliInches: depth,
+    rotationDegrees: model.baseRotationDegrees || 0,
+  });
   return { unitId: piece.id, modelId: model.id, sideKey: piece.sideKey,
-    center: { xMilliInches: milli(model.xInches), yMilliInches: milli(model.yInches) },
-    radiusMilliInches: Math.round(width / 2), printedSize: profile.printedSize,
+    center, footprint, baseShape: shape,
+    sweepRadiusMilliInches: shape === "round" ? Math.round(width / 2)
+      : Math.ceil(Math.hypot(width / 2, depth / 2)),
+    printedSize: profile.printedSize,
     elevation: String(model.elevation || "ground").toLowerCase(), supportTerrainIds,
     officialRecordKey: profile.recordKey };
 }
@@ -194,13 +219,34 @@ function pointRectangleDistance(value, footprint) {
     Math.min(value.yMilliInches, footprint.maxYMilliInches));
   return Math.hypot(value.xMilliInches - x, value.yMilliInches - y);
 }
+function terrainPhysicalFootprint(terrain) {
+  const footprint = terrain.footprint;
+  return createOfficialPhysicalFootprintV1({
+    objectId: terrain.terrainId,
+    kind: "terrain_piece",
+    shape: "rectangle",
+    center: {
+      xMilliInches: Math.round((footprint.minXMilliInches
+        + footprint.maxXMilliInches) / 2),
+      yMilliInches: Math.round((footprint.minYMilliInches
+        + footprint.maxYMilliInches) / 2),
+    },
+    widthMilliInches: footprint.maxXMilliInches - footprint.minXMilliInches,
+    depthMilliInches: footprint.maxYMilliInches - footprint.minYMilliInches,
+    rotationDegrees: 0,
+  });
+}
 function baseEdgeToTerrain(model, terrain) {
-  return Math.max(0, pointRectangleDistance(model.center, terrain.footprint)
-    - model.radiusMilliInches);
+  return evaluateOfficialPhysicalFootprintRelationV1({
+    left: model.footprint,
+    right: terrainPhysicalFootprint(terrain),
+  }).minimumSeparationMilliInches;
 }
 function modelEdgeDistance(left, right) {
-  return Math.max(0, distance(left.center, right.center)
-    - left.radiusMilliInches - right.radiusMilliInches);
+  return evaluateOfficialPhysicalFootprintRelationV1({
+    left: left.footprint,
+    right: right.footprint,
+  }).minimumSeparationMilliInches;
 }
 function segmentIntersectsRectangle(a, b, rect) {
   const dx = b.xMilliInches - a.xMilliInches;
@@ -272,8 +318,10 @@ function segmentRectangleDistance(a, b, rect) {
   return minimum;
 }
 function baseOverlapsTerrain(model, terrain) {
-  return pointRectangleDistance(model.center, terrain.footprint)
-    < model.radiusMilliInches - TOLERANCE;
+  return evaluateOfficialPhysicalFootprintRelationV1({
+    left: model.footprint,
+    right: terrainPhysicalFootprint(terrain),
+  }).overlappingInteriors;
 }
 function pathSweepsTerrain(points, radius, terrain) {
   for (let index = 1; index < points.length; index += 1) {
@@ -343,60 +391,79 @@ function movementOpeningsClearingPath(points, radius, terrain) {
 }
 function completeBarrier(left, right, terrain) {
   const rect = terrain.footprint;
+  const leftBounds = footprintBounds(left.footprint);
+  const rightBounds = footprintBounds(right.footprint);
   const vertical = (
-    left.center.xMilliInches + left.radiusMilliInches <= rect.minXMilliInches
-      && right.center.xMilliInches - right.radiusMilliInches >= rect.maxXMilliInches
+    leftBounds.maxX <= rect.minXMilliInches
+      && rightBounds.minX >= rect.maxXMilliInches
   ) || (
-    right.center.xMilliInches + right.radiusMilliInches <= rect.minXMilliInches
-      && left.center.xMilliInches - left.radiusMilliInches >= rect.maxXMilliInches
+    rightBounds.maxX <= rect.minXMilliInches
+      && leftBounds.minX >= rect.maxXMilliInches
   );
   if (vertical
-    && rect.minYMilliInches <= left.center.yMilliInches - left.radiusMilliInches
-    && rect.maxYMilliInches >= left.center.yMilliInches + left.radiusMilliInches
-    && rect.minYMilliInches <= right.center.yMilliInches - right.radiusMilliInches
-    && rect.maxYMilliInches >= right.center.yMilliInches + right.radiusMilliInches) {
-    return "vertical_rectangle_separates_complete_round_base_footprints";
+    && rect.minYMilliInches <= leftBounds.minY
+    && rect.maxYMilliInches >= leftBounds.maxY
+    && rect.minYMilliInches <= rightBounds.minY
+    && rect.maxYMilliInches >= rightBounds.maxY) {
+    return "vertical_rectangle_separates_complete_physical_base_footprints";
   }
   const horizontal = (
-    left.center.yMilliInches + left.radiusMilliInches <= rect.minYMilliInches
-      && right.center.yMilliInches - right.radiusMilliInches >= rect.maxYMilliInches
+    leftBounds.maxY <= rect.minYMilliInches
+      && rightBounds.minY >= rect.maxYMilliInches
   ) || (
-    right.center.yMilliInches + right.radiusMilliInches <= rect.minYMilliInches
-      && left.center.yMilliInches - left.radiusMilliInches >= rect.maxYMilliInches
+    rightBounds.maxY <= rect.minYMilliInches
+      && leftBounds.minY >= rect.maxYMilliInches
   );
   if (horizontal
-    && rect.minXMilliInches <= left.center.xMilliInches - left.radiusMilliInches
-    && rect.maxXMilliInches >= left.center.xMilliInches + left.radiusMilliInches
-    && rect.minXMilliInches <= right.center.xMilliInches - right.radiusMilliInches
-    && rect.maxXMilliInches >= right.center.xMilliInches + right.radiusMilliInches) {
-    return "horizontal_rectangle_separates_complete_round_base_footprints";
+    && rect.minXMilliInches <= leftBounds.minX
+    && rect.maxXMilliInches >= leftBounds.maxX
+    && rect.minXMilliInches <= rightBounds.minX
+    && rect.maxXMilliInches >= rightBounds.maxX) {
+    return "horizontal_rectangle_separates_complete_physical_base_footprints";
   }
   return null;
 }
+function footprintBounds(footprint) {
+  if (footprint.shape === "round") {
+    return {
+      minX: footprint.center.xMilliInches - footprint.radiusMilliInches,
+      maxX: footprint.center.xMilliInches + footprint.radiusMilliInches,
+      minY: footprint.center.yMilliInches - footprint.radiusMilliInches,
+      maxY: footprint.center.yMilliInches + footprint.radiusMilliInches,
+    };
+  }
+  return {
+    minX: Math.min(...footprint.vertices.map((entry) => entry.xMilliInches)),
+    maxX: Math.max(...footprint.vertices.map((entry) => entry.xMilliInches)),
+    minY: Math.min(...footprint.vertices.map((entry) => entry.yMilliInches)),
+    maxY: Math.max(...footprint.vertices.map((entry) => entry.yMilliInches)),
+  };
+}
+function visibilityPoints(model) {
+  const footprint = model.footprint;
+  if (footprint.shape === "round") {
+    const radius = footprint.radiusMilliInches;
+    return [model.center,
+      { xMilliInches: model.center.xMilliInches, yMilliInches: model.center.yMilliInches + radius },
+      { xMilliInches: model.center.xMilliInches, yMilliInches: model.center.yMilliInches - radius },
+      { xMilliInches: model.center.xMilliInches - radius, yMilliInches: model.center.yMilliInches },
+      { xMilliInches: model.center.xMilliInches + radius, yMilliInches: model.center.yMilliInches }];
+  }
+  return [model.center, ...footprint.vertices,
+    ...footprint.vertices.map((entry, index) => {
+      const next = footprint.vertices[(index + 1) % footprint.vertices.length];
+      return { xMilliInches: (entry.xMilliInches + next.xMilliInches) / 2,
+        yMilliInches: (entry.yMilliInches + next.yMilliInches) / 2 };
+    })];
+}
 function directVisibilityWitness(left, right, terrain) {
-  const candidates = [
-    [left.center, right.center, "center_to_center_clear"],
-    [{ xMilliInches: left.center.xMilliInches,
-      yMilliInches: left.center.yMilliInches + left.radiusMilliInches },
-    { xMilliInches: right.center.xMilliInches,
-      yMilliInches: right.center.yMilliInches + right.radiusMilliInches },
-    "corresponding_top_base_points_clear"],
-    [{ xMilliInches: left.center.xMilliInches,
-      yMilliInches: left.center.yMilliInches - left.radiusMilliInches },
-    { xMilliInches: right.center.xMilliInches,
-      yMilliInches: right.center.yMilliInches - right.radiusMilliInches },
-    "corresponding_bottom_base_points_clear"],
-    [{ xMilliInches: left.center.xMilliInches - left.radiusMilliInches,
-      yMilliInches: left.center.yMilliInches },
-    { xMilliInches: right.center.xMilliInches - right.radiusMilliInches,
-      yMilliInches: right.center.yMilliInches },
-    "corresponding_left_base_points_clear"],
-    [{ xMilliInches: left.center.xMilliInches + left.radiusMilliInches,
-      yMilliInches: left.center.yMilliInches },
-    { xMilliInches: right.center.xMilliInches + right.radiusMilliInches,
-      yMilliInches: right.center.yMilliInches },
-    "corresponding_right_base_points_clear"],
-  ];
+  const candidates = visibilityPoints(left).flatMap((start, leftIndex) => (
+    visibilityPoints(right).map((end, rightIndex) => (
+      [start, end, leftIndex === 0 && rightIndex === 0
+        ? "center_to_center_clear"
+        : `physical_base_points_clear_${leftIndex}_${rightIndex}`]
+    ))
+  ));
   return candidates.find(([start, end]) => (
     !segmentIntersectsRectangle(start, end, terrain.footprint)
   ))?.[2] || null;
@@ -408,31 +475,29 @@ function intervalsOverlap(...intervals) {
 function agreedOpeningClearsBarrier(opening, proof, left, right, terrain) {
   if (!opening.lineOfSightOpenAgreed) return false;
   const hole = opening.footprint; const rect = terrain.footprint;
+  const leftBounds = footprintBounds(left.footprint);
+  const rightBounds = footprintBounds(right.footprint);
   if (proof.startsWith("vertical")) {
     return hole.minXMilliInches <= rect.minXMilliInches + TOLERANCE
       && hole.maxXMilliInches >= rect.maxXMilliInches - TOLERANCE
       && intervalsOverlap(
-        [left.center.yMilliInches - left.radiusMilliInches,
-          left.center.yMilliInches + left.radiusMilliInches],
-        [right.center.yMilliInches - right.radiusMilliInches,
-          right.center.yMilliInches + right.radiusMilliInches],
+        [leftBounds.minY, leftBounds.maxY],
+        [rightBounds.minY, rightBounds.maxY],
         [hole.minYMilliInches, hole.maxYMilliInches],
       );
   }
   return hole.minYMilliInches <= rect.minYMilliInches + TOLERANCE
     && hole.maxYMilliInches >= rect.maxYMilliInches - TOLERANCE
     && intervalsOverlap(
-      [left.center.xMilliInches - left.radiusMilliInches,
-        left.center.xMilliInches + left.radiusMilliInches],
-      [right.center.xMilliInches - right.radiusMilliInches,
-        right.center.xMilliInches + right.radiusMilliInches],
+      [leftBounds.minX, leftBounds.maxX],
+      [rightBounds.minX, rightBounds.maxX],
       [hole.minXMilliInches, hole.maxXMilliInches],
     );
 }
 
 export function evaluateOfficialLeadingModelTerrainV1(input = {}) {
   const state = input.state; const piece = input.actor;
-  const model = roundModel(piece, input.leadingModelId, input.dataBundle);
+  const model = physicalModel(piece, input.leadingModelId, input.dataBundle);
   const points = (input.path || []).map((entry) => point(entry));
   if (points.length < 2 || points.length > 64
     || distance(points[0], model.center) > TOLERANCE) {
@@ -447,13 +512,24 @@ export function evaluateOfficialLeadingModelTerrainV1(input = {}) {
   }
   const endpoint = points.at(-1);
   const interactions = terrain.map((entry) => {
-    const pathIntersects = pathSweepsTerrain(points, model.radiusMilliInches, entry);
+    const pathIntersects = pathSweepsTerrain(points, model.sweepRadiusMilliInches, entry);
     const movementOpeningIdsUsed = pathIntersects
-      ? movementOpeningsClearingPath(points, model.radiusMilliInches, entry) : [];
+      ? movementOpeningsClearingPath(points, model.sweepRadiusMilliInches, entry) : [];
     const pathBlocked = pathIntersects && entry.size >= 2
       && movementOpeningIdsUsed.length === 0;
-    const endpointOverlaps = pointRectangleDistance(endpoint, entry.footprint)
-      < model.radiusMilliInches - TOLERANCE;
+    const endpointFootprint = createOfficialPhysicalFootprintV1({
+      objectId: model.modelId,
+      kind: "model_base",
+      shape: model.footprint.shape,
+      center: endpoint,
+      widthMilliInches: model.footprint.widthMilliInches,
+      depthMilliInches: model.footprint.depthMilliInches,
+      rotationDegrees: model.footprint.rotationDegrees,
+    });
+    const endpointOverlaps = evaluateOfficialPhysicalFootprintRelationV1({
+      left: endpointFootprint,
+      right: terrainPhysicalFootprint(entry),
+    }).overlappingInteriors;
     if (endpointOverlaps) fail("TERRAIN_LOS_MOVEMENT_ENDPOINT_OVERLAP", entry.terrainId);
     if (pathBlocked) {
       fail("TERRAIN_LOS_LARGE_TERRAIN_MOVEMENT_BLOCKED", entry.terrainId);
@@ -473,17 +549,57 @@ export function evaluateOfficialLeadingModelTerrainV1(input = {}) {
     path: points, endpoint, interactions,
     sizeZeroAndOnePassable: true, sizeTwoAndLargerImpassable: true,
     endpointTerrainOverlapForbidden: true,
+    rectangularBasePathSweepUsesConservativeCircumscribedRadius:
+      model.baseShape === "rectangle",
     openingMovementAndSightPermissionsIndependent: true,
     gapClearanceDelegatedToSlice82: true, deferredTerrainKinds: ["grass", "impassable", "ramp"],
     productionQuarantined: true, trainingTruth: false };
   return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
 }
 
-export function evaluateOfficialTerrainLineOfSightV1(input = {}) {
-  const state = input.state;
-  const attacker = roundModel(input.attacker, input.attackerModelId, input.dataBundle);
-  const target = roundModel(input.target, input.targetModelId, input.dataBundle);
-  const terrain = (state.board?.terrain || []).filter((entry) => entry?.isRemoved !== true)
+function missionMarkerTarget(state, markerInput) {
+  const markerId = String(markerInput?.id || "").trim();
+  const marker = state?.board?.missionMarkers?.find((entry) => entry.id === markerId);
+  const diameterMillimeters = Number(marker?.diameterMillimeters);
+  const elevation = elevationBand(marker?.elevation);
+  const supportTerrainId = String(marker?.supportTerrainPieceId || "").trim();
+  if (!marker || marker !== markerInput
+    || diameterMillimeters !== 32
+    || !["ground", "mid", "high"].includes(elevation)
+    || !Number.isFinite(Number(marker.xInches))
+    || !Number.isFinite(Number(marker.yInches))) {
+    fail("TERRAIN_LOS_MISSION_MARKER_INVALID", markerId);
+  }
+  return {
+    unitId: markerId,
+    modelId: markerId,
+    sideKey: null,
+    center: {
+      xMilliInches: milli(marker.xInches),
+      yMilliInches: milli(marker.yInches),
+    },
+    radiusMilliInches: Math.round((diameterMillimeters / 2 / 25.4) * 1000),
+    printedSize: 0,
+    effectiveSize: 0,
+    elevation,
+    supportTerrainIds: supportTerrainId ? [supportTerrainId] : [],
+    officialRecordKey: null,
+    footprint: createOfficialPhysicalFootprintV1({
+      objectId: markerId,
+      kind: "mission_marker",
+      shape: "round",
+      center: { xMilliInches: milli(marker.xInches), yMilliInches: milli(marker.yInches) },
+      widthMilliInches: Math.round((diameterMillimeters / 25.4) * 1000),
+      depthMilliInches: Math.round((diameterMillimeters / 25.4) * 1000),
+    }),
+  };
+}
+
+function evaluateTerrainLineOfSight(state, attacker, target, options = {}) {
+  const excludedTerrainIds = new Set(options.excludedTerrainIds || []);
+  const terrain = (state.board?.terrain || []).filter((entry) => (
+    entry?.isRemoved !== true && !excludedTerrainIds.has(entry.id)
+  ))
     .map(verifyTerrain);
   if (terrain.some((entry) => ["grass", "impassable", "ramp"].includes(entry.terrainKind))) {
     fail("TERRAIN_LOS_DEFERRED_TERRAIN_KIND", terrain.find((entry) => (
@@ -523,12 +639,16 @@ export function evaluateOfficialTerrainLineOfSightV1(input = {}) {
       && (attacker.supportTerrainIds.length > 0 || target.supportTerrainIds.length > 0)) {
       fail("TERRAIN_LOS_ELEVATION_EFFECTIVE_SIZE_DELEGATION_REQUIRED", entry.terrainId);
     }
+    const attackerSize = Number.isSafeInteger(attacker.effectiveSize)
+      ? attacker.effectiveSize : attacker.printedSize;
+    const targetSize = Number.isSafeInteger(target.effectiveSize)
+      ? target.effectiveSize : target.printedSize;
     const fullCoverBlocks = blockingTerrainTrace
-      && entry.size >= attacker.printedSize && entry.size >= target.printedSize;
+      && entry.size >= attackerSize && entry.size >= targetSize;
     const attackerDirectCover = blockingTerrainTrace && attackerNear
-      && entry.size >= attacker.printedSize;
+      && entry.size >= attackerSize;
     const targetDirectCover = blockingTerrainTrace && targetNear
-      && entry.size >= target.printedSize;
+      && entry.size >= targetSize;
     const directCoverBlocks = !closeQuarters
       && (attackerDirectCover || targetDirectCover);
     return { terrainId: entry.terrainId, terrainSize: entry.size,
@@ -554,10 +674,40 @@ export function evaluateOfficialTerrainLineOfSightV1(input = {}) {
     terrainEffectiveSizesNeverCombine: true,
     lineOfSightMutual: true, visible: blockers.length === 0,
     blockingTerrainIds: blockers,
+    ...(excludedTerrainIds.size > 0
+      ? { supportedSurfaceExcludedTerrainIds: [...excludedTerrainIds].sort() }
+      : {}),
     lineOfSightStatus: blockers.length === 0 ? "visible" : "blocked_by_one_qualifying_terrain",
     deferredTerrainKinds: ["grass", "impassable", "ramp"],
     productionQuarantined: true, trainingTruth: false };
   return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
+}
+
+export function evaluateOfficialTerrainLineOfSightV1(input = {}) {
+  const state = input.state;
+  const attacker = physicalModel(input.attacker, input.attackerModelId, input.dataBundle);
+  const target = physicalModel(input.target, input.targetModelId, input.dataBundle);
+  return evaluateTerrainLineOfSight(state, attacker, target);
+}
+
+export function evaluateOfficialTerrainLineOfSightToMissionMarkerV1(input = {}) {
+  const state = input.state;
+  const attacker = physicalModel(input.attacker, input.attackerModelId, input.dataBundle);
+  const attackerEffectiveSize = Number(input.attackerEffectiveSize);
+  if (!Number.isSafeInteger(attackerEffectiveSize)
+    || attackerEffectiveSize < attacker.printedSize) {
+    fail("TERRAIN_LOS_ATTACKER_EFFECTIVE_SIZE_INVALID", String(input.attackerModelId || ""));
+  }
+  attacker.effectiveSize = attackerEffectiveSize;
+  const target = missionMarkerTarget(state, input.marker);
+  const excludedTerrainIds = [...new Set((input.excludedTerrainIds || []).map(String))];
+  const availableTerrainIds = new Set((state.board?.terrain || []).map((entry) => entry.id));
+  if (excludedTerrainIds.some((terrainId) => !availableTerrainIds.has(terrainId))) {
+    fail("TERRAIN_LOS_EXCLUDED_TERRAIN_INVALID");
+  }
+  return evaluateTerrainLineOfSight(state, attacker, target, {
+    excludedTerrainIds,
+  });
 }
 
 export function certifyOfficialTerrainLosPlanV1(input = {}) {

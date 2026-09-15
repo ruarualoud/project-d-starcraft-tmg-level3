@@ -321,7 +321,17 @@ export function composeOfficialCurrentProductActionRuntimeV1(input = {}) {
       runtimeDescriptor: state.officialAbilityEffectRuntimeDescriptor,
     });
   const evidence = evidenceFor(state);
-  return { state, evidence };
+  return {
+    state,
+    evidence,
+    runtimes: Object.freeze({
+      spatial: spatialRuntime,
+      ranged: rangedRuntime,
+      melee: meleeRuntime,
+      selectedAbility: selectedAbilityRuntime,
+      ability: abilityRuntime,
+    }),
+  };
 }
 
 export function verifyOfficialCurrentProductActionRuntimeCompositionV1(state,

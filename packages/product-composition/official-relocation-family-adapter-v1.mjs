@@ -700,10 +700,6 @@ function footprintBounds(footprint) {
 }
 function canonicalPath(state, actor, leadingModel, placement, raw, maxDistance,
   elevationTransitions = []) {
-  if (leadingModel.baseShape !== "round"
-    || leadingModel.baseWidthInches !== leadingModel.baseDepthInches) {
-    fail("RELOCATION_MOVE_ROUND_LEADING_BASE_REQUIRED", leadingModel.id);
-  }
   if (!Array.isArray(raw) || raw.length < 1 || raw.length > MAX_PATH_POINTS) {
     fail("RELOCATION_PATH_DENOMINATOR_INVALID");
   }
@@ -726,7 +722,19 @@ function canonicalPath(state, actor, leadingModel, placement, raw, maxDistance,
   if (distanceMilliInches > maxDistance + TOLERANCE) {
     fail("RELOCATION_PATH_EXCEEDS_DISTANCE");
   }
-  const radius = milli(leadingModel.baseWidthInches) / 2;
+  const leadingFootprint = footprintAt(state, actor, leadingModel, {
+    ...modelPoint(leadingModel),
+    rotationDegrees: leadingModel.baseRotationDegrees || 0,
+  });
+  // The existing relocation path contract does not declare rotation at every
+  // waypoint. A rectangular base therefore uses its circumscribed radius for
+  // the continuous sweep: conservative near tight gaps, never false-legal.
+  const radius = leadingFootprint.shape === "round"
+    ? leadingFootprint.radiusMilliInches
+    : Math.ceil(Math.hypot(
+      leadingFootprint.widthMilliInches,
+      leadingFootprint.depthMilliInches,
+    ) / 2);
   const width = milli(state.board.widthInches); const height = milli(state.board.heightInches);
   if (points.some((entry) => entry.xMilliInches < radius - TOLERANCE
     || entry.xMilliInches > width - radius + TOLERANCE
@@ -794,7 +802,9 @@ function canonicalPath(state, actor, leadingModel, placement, raw, maxDistance,
   }
   return { points, distanceMilliInches,
     grassRemovedTerrainIds: [...grassRemovedTerrainIds].sort(),
-    fullRoundBaseSweptPathChecked: true };
+    fullRoundBaseSweptPathChecked: leadingFootprint.shape === "round",
+    fullRectangularBaseConservativeSweepChecked:
+      leadingFootprint.shape === "rectangle" };
 }
 function supportAndGrass(state, actor, placements) {
   const grass = new Set();

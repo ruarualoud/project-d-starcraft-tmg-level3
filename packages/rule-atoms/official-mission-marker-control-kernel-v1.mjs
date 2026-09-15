@@ -3,11 +3,24 @@ import {
   getOfficialCombatProfileV1,
   verifyOfficialCombatProfileBundleV1,
 } from "../source-data/official-combat-profile-bundle-v1.mjs";
+import { verifyOfficialTerrainLosDataBundleV1 } from
+  "../source-data/official-terrain-los-data-bundle-v1.mjs";
+import { evaluateOfficialEffectiveSizeV1 } from
+  "./official-elevation-effective-size-rules-kernel-v1.mjs";
 import { projectOfficialContextualSupplyValueV1 } from
   "./official-contextual-supply-projection-v1.mjs";
+import {
+  createOfficialPhysicalFootprintV1,
+  evaluateOfficialPhysicalFootprintRelationV1,
+  isOfficialPhysicalFootprintInsideBoardV1,
+} from "./official-model-base-geometry-rules-kernel-v1.mjs";
+import { evaluateOfficialTerrainLineOfSightToMissionMarkerV1 } from
+  "./official-terrain-los-rules-kernel-v1.mjs";
 
 export const OFFICIAL_MISSION_MARKER_CONTROL_KERNEL_V1_SCHEMA =
   "starcraft_tmg_official_mission_marker_control_kernel_v1";
+export const OFFICIAL_MISSION_MARKER_CONTROL_KERNEL_V2_SCHEMA =
+  "starcraft_tmg_official_mission_marker_control_kernel_v2";
 export const OFFICIAL_MISSION_MARKER_CONTROL_GEOMETRY_V1_SCHEMA =
   "starcraft_tmg_mission_marker_control_geometry_v1";
 
@@ -42,6 +55,10 @@ function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function clone(value) {
+  return structuredClone(value);
+}
+
 function milli(value, code, detail) {
   const number = Number(value);
   if (!Number.isFinite(number)) fail(code, detail);
@@ -69,21 +86,33 @@ function point(value, code, detail) {
   };
 }
 
-function distance(left, right) {
-  return Math.hypot(
-    right.xMilliInches - left.xMilliInches,
-    right.yMilliInches - left.yMilliInches,
-  );
+function elevationBand(value) {
+  const normalized = String(value || "ground").trim().toLowerCase();
+  if (["ground", "ground_level"].includes(normalized)) return "ground";
+  if (["mid", "middle", "mid_ground"].includes(normalized)) return "mid";
+  if (["high", "high_ground"].includes(normalized)) return "high";
+  return normalized;
 }
 
-function roundRadius(model, detail) {
+function modelFootprint(model, detail, options = {}) {
   const shape = String(model?.baseShape || "").trim().toLowerCase();
   const width = milli(model?.baseWidthInches, "MISSION_MARKER_MODEL_BASE_INVALID", detail);
   const depth = milli(model?.baseDepthInches, "MISSION_MARKER_MODEL_BASE_INVALID", detail);
-  if (shape !== "round" || width <= 0 || Math.abs(width - depth) > 1) {
+  if (!new Set(["round", "rectangle"]).has(shape)
+    || width <= 0 || depth <= 0
+    || (shape === "round" && Math.abs(width - depth) > 1)
+    || (shape === "rectangle" && options.rectangularBases !== true)) {
     fail("MISSION_MARKER_MODEL_BASE_SCOPE_UNSUPPORTED", detail);
   }
-  return Math.round(width / 2);
+  return createOfficialPhysicalFootprintV1({
+    objectId: detail,
+    kind: "model_base",
+    shape,
+    center: point(model, "MISSION_MARKER_MODEL_COORDINATE_INVALID", detail),
+    widthMilliInches: width,
+    depthMilliInches: depth,
+    rotationDegrees: model.baseRotationDegrees ?? model.rotationDegrees ?? 0,
+  });
 }
 
 function expectedSupply(profile, modelCount) {
@@ -127,7 +156,7 @@ function verifyProfileBinding(state, matchBinding) {
   return bundle;
 }
 
-function validateGeometry(state) {
+function validateGeometry(state, options = {}) {
   const board = state?.board;
   const declaration = board?.missionMarkerControlGeometry;
   if (!object(board)
@@ -139,7 +168,7 @@ function validateGeometry(state) {
   const activeTerrain = (board.terrain || []).filter((entry) => (
     entry?.isRemoved !== true && entry?.isDestroyed !== true
   ));
-  if (activeTerrain.length > 0) {
+  if (activeTerrain.length > 0 && options.terrainAware !== true) {
     fail("MISSION_MARKER_LINE_OF_SIGHT_TERRAIN_SCOPE_UNSUPPORTED");
   }
   const width = milli(board.widthInches, "MISSION_MARKER_BOARD_INVALID", "width");
@@ -153,7 +182,7 @@ function validateGeometry(state) {
   return { board, width, height };
 }
 
-function normalizeMarkers(board, width, height) {
+function normalizeMarkers(board, width, height, options = {}) {
   const ids = new Set();
   const numbers = new Set();
   return board.missionMarkers.map((marker) => {
@@ -169,9 +198,11 @@ function normalizeMarkers(board, width, height) {
       || typeof marker.isActivated !== "boolean") {
       fail("MISSION_MARKER_PHYSICAL_STATE_INVALID", id);
     }
-    const elevation = String(marker.elevation || "").trim().toLowerCase();
+    const elevation = elevationBand(marker.elevation);
     if (!ELEVATIONS.has(elevation)) fail("MISSION_MARKER_ELEVATION_INVALID", id);
-    if (elevation !== "ground") fail("MISSION_MARKER_ELEVATION_SCOPE_UNSUPPORTED", id);
+    if (elevation !== "ground" && options.terrainAware !== true) {
+      fail("MISSION_MARKER_ELEVATION_SCOPE_UNSUPPORTED", id);
+    }
     const markerPoint = point(marker, "MISSION_MARKER_COORDINATE_INVALID", id);
     if (markerPoint.xMilliInches < MARKER_RADIUS_MILLI_INCHES
       || markerPoint.xMilliInches > width - MARKER_RADIUS_MILLI_INCHES
@@ -194,14 +225,24 @@ function normalizeMarkers(board, width, height) {
       id,
       number,
       point: markerPoint,
+      footprint: createOfficialPhysicalFootprintV1({
+        objectId: id,
+        kind: "mission_marker",
+        shape: "round",
+        center: markerPoint,
+        widthMilliInches: MARKER_RADIUS_MILLI_INCHES * 2,
+        depthMilliInches: MARKER_RADIUS_MILLI_INCHES * 2,
+      }),
       elevation,
       isActivated: marker.isActivated,
+      isRemoved: marker.isRemoved === true,
+      supportTerrainPieceId: String(marker.supportTerrainPieceId || "").trim() || null,
       previousControlSideKey: controlSideKey,
     };
   }).sort((left, right) => left.number - right.number || left.id.localeCompare(right.id));
 }
 
-function normalizeUnits(state, bundle, width, height) {
+function normalizeUnits(state, bundle, width, height, options = {}) {
   const ids = new Set();
   const modelIds = new Set();
   return (state.pieces || []).map((piece) => {
@@ -260,30 +301,31 @@ function normalizeUnits(state, bundle, width, height) {
           fail("MISSION_MARKER_MODEL_ID_INVALID", modelId || id);
         }
         modelIds.add(modelId);
-        const elevation = String(model.elevation || "").trim().toLowerCase();
+        const elevation = elevationBand(model.elevation);
         if (!ELEVATIONS.has(elevation)) fail("MISSION_MARKER_MODEL_ELEVATION_INVALID", modelId);
-        if (elevation !== "ground") {
+        if (elevation !== "ground" && options.terrainAware !== true) {
           fail("MISSION_MARKER_MODEL_ELEVATION_SCOPE_UNSUPPORTED", modelId);
         }
-        if (!Array.isArray(model.supportTerrainIds) || model.supportTerrainIds.length !== 0) {
+        if (!Array.isArray(model.supportTerrainIds)
+          || (options.terrainAware === true
+            ? new Set(model.supportTerrainIds.map(String)).size
+                !== model.supportTerrainIds.length
+              || model.supportTerrainIds.length > 1
+            : model.supportTerrainIds.length !== 0)) {
           fail("MISSION_MARKER_MODEL_SUPPORT_SCOPE_UNSUPPORTED", modelId);
         }
-        const modelPoint = point(
-          model,
-          "MISSION_MARKER_MODEL_COORDINATE_INVALID",
-          modelId,
-        );
-        const radiusMilliInches = roundRadius(model, modelId);
-        if (modelPoint.xMilliInches < radiusMilliInches
-          || modelPoint.xMilliInches > width - radiusMilliInches
-          || modelPoint.yMilliInches < radiusMilliInches
-          || modelPoint.yMilliInches > height - radiusMilliInches) {
+        const footprint = modelFootprint(model, modelId, options);
+        if (!isOfficialPhysicalFootprintInsideBoardV1({
+          footprint,
+          widthMilliInches: width,
+          heightMilliInches: height,
+        })) {
           fail("MISSION_MARKER_MODEL_OUTSIDE_BATTLEFIELD", modelId);
         }
         return {
           id: modelId,
-          point: modelPoint,
-          radiusMilliInches,
+          point: footprint.center,
+          footprint,
           elevation,
         };
       }).sort((left, right) => left.id.localeCompare(right.id)),
@@ -297,9 +339,10 @@ function contestingEvidence(marker, unit) {
   if (unit.prohibitedStatus) return { eligible: false, reason: unit.prohibitedStatus, modelIds: [] };
   const modelIds = unit.models.filter((model) => (
     model.elevation === marker.elevation
-      && distance(model.point, marker.point)
-        - model.radiusMilliInches
-        - MARKER_RADIUS_MILLI_INCHES
+      && evaluateOfficialPhysicalFootprintRelationV1({
+        left: model.footprint,
+        right: marker.footprint,
+      }).minimumSeparationMilliInches
         <= CONTEST_RANGE_MILLI_INCHES + DISTANCE_TOLERANCE_MILLI_INCHES
   )).map((model) => model.id).sort((left, right) => left.localeCompare(right));
   return modelIds.length > 0
@@ -307,11 +350,14 @@ function contestingEvidence(marker, unit) {
     : { eligible: false, reason: "no_model_within_three_same_elevation_and_los", modelIds: [] };
 }
 
-function markerResolution(marker, units) {
+function markerResolution(marker, units, evidenceFor = contestingEvidence) {
   const contestingUnitsBySide = { player1: [], player2: [] };
   const ineligibleUnits = [];
   for (const unit of units) {
-    const evidence = contestingEvidence(marker, unit);
+    const evidence = marker.isRemoved
+      ? { eligible: false, reason: "marker_removed", modelIds: [],
+          lineOfSightResultHashes: [] }
+      : evidenceFor(marker, unit);
     if (evidence.eligible) {
       contestingUnitsBySide[unit.sideKey].push({
         unitId: unit.id,
@@ -319,6 +365,9 @@ function markerResolution(marker, units) {
         currentSupply: unit.currentSupply,
         supplyProjectionHash: unit.supplyProjectionHash,
         eligibleModelIds: evidence.modelIds,
+        ...(evidence.lineOfSightResultHashes
+          ? { lineOfSightResultHashes: evidence.lineOfSightResultHashes }
+          : {}),
       });
     } else {
       ineligibleUnits.push({ unitId: unit.id, sideKey: unit.sideKey, reason: evidence.reason });
@@ -386,6 +435,175 @@ export function resolveOfficialMissionMarkerControlV1(input = {}) {
     lineOfSightPolicy: "terrain_free_trace_is_visible_marker_effective_size_zero",
     markerResults,
     rulesTruth: "official_current_supply_coherency_eligibility_and_sticky_control_subset",
+    trainingTruth: false,
+  };
+  return Object.freeze({
+    ...body,
+    controlResolutionHash: hashStarcraftTmgContract(body),
+  });
+}
+
+function terrainAsOrdinaryForControl(state) {
+  const projected = clone(state);
+  const grassTerrainIds = [];
+  projected.board.terrain = (state.board?.terrain || []).map((terrain) => {
+    if (terrain.isRemoved === true || terrain.terrainKind === "ordinary") {
+      return clone(terrain);
+    }
+    if (terrain.terrainKind !== "grass") {
+      fail("MISSION_MARKER_TERRAIN_KIND_UNSUPPORTED", String(terrain.id || ""));
+    }
+    grassTerrainIds.push(terrain.id);
+    const body = {
+      schema: terrain.schema,
+      id: terrain.id,
+      terrainKind: "ordinary",
+      size: terrain.size,
+      footprint: clone(terrain.footprint),
+      standableHorizontalSurface: terrain.standableHorizontalSurface === true,
+      setupAgreement: clone(terrain.setupAgreement),
+      rulesTruth: "official_core_terrain_setup_agreement",
+      trainingTruth: false,
+    };
+    return {
+      ...body,
+      terrainHash: hashStarcraftTmgContract(body),
+      terrainId: terrain.id,
+      elevation: terrain.elevation,
+      heightTier: terrain.heightTier,
+      elevationSurface: terrain.elevationSurface,
+      impassable: false,
+      openings: clone(terrain.openings || []),
+      accessPoints: clone(terrain.accessPoints || []),
+      isRemoved: false,
+    };
+  });
+  return { projected, grassTerrainIds: grassTerrainIds.sort() };
+}
+
+function terrainAwareEvidence(state, adaptedState, dataBundle, marker, unit,
+  pieceById, effectiveSizeByModelId) {
+  if (!unit.isOnBattlefield) {
+    return { eligible: false, reason: "not_on_battlefield", modelIds: [],
+      lineOfSightResultHashes: [] };
+  }
+  if (!unit.inCoherency) {
+    return { eligible: false, reason: "out_of_coherency", modelIds: [],
+      lineOfSightResultHashes: [] };
+  }
+  if (unit.prohibitedStatus) {
+    return { eligible: false, reason: unit.prohibitedStatus, modelIds: [],
+      lineOfSightResultHashes: [] };
+  }
+  const piece = pieceById.get(unit.id);
+  const markerState = state.board.missionMarkers.find((entry) => entry.id === marker.id);
+  const visible = [];
+  for (const model of unit.models) {
+    if (model.elevation !== marker.elevation
+      || evaluateOfficialPhysicalFootprintRelationV1({
+        left: model.footprint,
+        right: marker.footprint,
+      }).minimumSeparationMilliInches
+          > CONTEST_RANGE_MILLI_INCHES + DISTANCE_TOLERANCE_MILLI_INCHES) {
+      continue;
+    }
+    const rawModel = piece.models.find((entry) => entry.id === model.id);
+    const excludedTerrainIds = [...new Set([
+      ...(rawModel.supportTerrainIds || []),
+      ...(marker.supportTerrainPieceId ? [marker.supportTerrainPieceId] : []),
+    ])];
+    const lineOfSight = evaluateOfficialTerrainLineOfSightToMissionMarkerV1({
+      state: adaptedState,
+      attacker: piece,
+      attackerModelId: model.id,
+      attackerEffectiveSize: effectiveSizeByModelId.get(model.id),
+      marker: adaptedState.board.missionMarkers.find((entry) => (
+        entry.id === markerState.id
+      )),
+      excludedTerrainIds,
+      dataBundle,
+    });
+    if (lineOfSight.visible) {
+      visible.push({ modelId: model.id, resultHash: lineOfSight.resultHash });
+    }
+  }
+  return visible.length > 0
+    ? { eligible: true, reason: null,
+        modelIds: visible.map((entry) => entry.modelId).sort(),
+        lineOfSightResultHashes: visible.map((entry) => entry.resultHash).sort() }
+    : { eligible: false,
+        reason: "no_model_within_three_same_elevation_and_line_of_sight",
+        modelIds: [], lineOfSightResultHashes: [] };
+}
+
+export function resolveOfficialMissionMarkerControlV2(input = {}) {
+  const state = input.state;
+  const dataBundle = input.terrainLosDataBundle || state?.officialTerrainLosDataBundle;
+  verifyOfficialTerrainLosDataBundleV1(dataBundle);
+  const rulesRuntimeHash = String(
+    input.matchBinding?.rulesRuntimeBinding?.runtimeHash || "",
+  ).trim();
+  if (!object(state) || !Array.isArray(state.pieces) || state.phase !== "cleanup") {
+    fail("MISSION_MARKER_CONTROL_STATE_INVALID");
+  }
+  if (!/^[a-f0-9]{64}$/u.test(rulesRuntimeHash)) {
+    fail("MISSION_MARKER_CONTROL_RUNTIME_BINDING_REQUIRED");
+  }
+  const { board, width, height } = validateGeometry(state, { terrainAware: true });
+  const bundle = state.officialCombatProfileBundle;
+  verifyOfficialCombatProfileBundleV1(bundle);
+  const markers = normalizeMarkers(board, width, height, { terrainAware: true });
+  const units = normalizeUnits(state, bundle, width, height, {
+    terrainAware: true,
+    rectangularBases: true,
+  });
+  const adapted = terrainAsOrdinaryForControl(state);
+  const pieceById = new Map(adapted.projected.pieces.map((piece) => [piece.id, piece]));
+  const effectiveSizeByModelId = new Map();
+  for (const piece of adapted.projected.pieces.filter(activePiece)) {
+    for (const model of activeModels(piece)) {
+      const result = evaluateOfficialEffectiveSizeV1({
+        state: adapted.projected,
+        subjectKind: "model",
+        unitId: piece.id,
+        modelId: model.id,
+        dataBundle,
+      });
+      effectiveSizeByModelId.set(model.id, result.subject.effectiveSize);
+    }
+  }
+  const markerResults = markers.map((marker) => markerResolution(
+    marker,
+    units,
+    (currentMarker, unit) => terrainAwareEvidence(
+      state,
+      adapted.projected,
+      dataBundle,
+      currentMarker,
+      unit,
+      pieceById,
+      effectiveSizeByModelId,
+    ),
+  ));
+  const body = {
+    schemaVersion: OFFICIAL_MISSION_MARKER_CONTROL_KERNEL_V2_SCHEMA,
+    round: Number(state.round || 1),
+    phase: "cleanup",
+    actingSideKey: String(state.firstPlayerSideKey || ""),
+    rulesRuntimeHash,
+    officialCombatProfileBundleHash: bundle.bundleHash,
+    terrainLosDataBundleHash: dataBundle.bundleHash,
+    geometryScope:
+      "round_and_rotated_rectangle_base_all_current_standard_terrain_exact_marker_control_v2",
+    markerDiameterMillimeters: MARKER_DIAMETER_MILLIMETERS,
+    markerRadiusMilliInches: MARKER_RADIUS_MILLI_INCHES,
+    contestRangeMilliInches: CONTEST_RANGE_MILLI_INCHES,
+    lineOfSightPolicy: "same_elevation_official_terrain_los_marker_effective_size_zero",
+    grassAdaptedToOrdinarySizeTwoLineOfSightRules:
+      adapted.grassTerrainIds.length > 0,
+    grassTerrainIds: adapted.grassTerrainIds,
+    markerResults,
+    rulesTruth: "official_current_supply_coherency_terrain_los_and_sticky_control",
     trainingTruth: false,
   };
   return Object.freeze({

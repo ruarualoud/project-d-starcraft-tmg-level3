@@ -245,7 +245,15 @@ function dispatchRuntime(runtime, input = {}) {
     fail("ABILITY_EFFECT_RUNTIME_STATE_REQUIRED", operation);
   }
   if (operation === "legal_space") {
-    const outputs = runtime.adapters.map((adapter) => ({
+    const excludedAdapterIds = new Set((input.options?.excludeAdapterIds || []).map(String));
+    const knownAdapterIds = new Set(runtime.adapters.map((adapter) => (
+      adapter.descriptor.adapterId)));
+    if ([...excludedAdapterIds].some((adapterId) => !knownAdapterIds.has(adapterId))) {
+      fail("ABILITY_EFFECT_RUNTIME_EXCLUDED_ADAPTER_INVALID");
+    }
+    const outputs = runtime.adapters.filter((adapter) => (
+      !excludedAdapterIds.has(adapter.descriptor.adapterId)
+    )).map((adapter) => ({
       adapterId: adapter.descriptor.adapterId,
       result: adapter.legalSpace(input.state, input.options || {}),
     }));
@@ -260,6 +268,7 @@ function dispatchRuntime(runtime, input = {}) {
       executableEnumerations: exact,
       pendingDiagnostics: pending?.result?.diagnostics || [],
       pendingDefinitionsAreNotCandidates: true,
+      excludedAdapterIds: [...excludedAdapterIds].sort(),
       rulesAuthority: true,
       sourceRefreshPerformed: false,
       trainingTruth: false,
