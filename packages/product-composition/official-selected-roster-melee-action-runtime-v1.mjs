@@ -447,8 +447,8 @@ function instantiateChargeDeclaration(state, domain, parameters) {
     domainId: domain.domainId,
     chance: { kind: "fixed_roll_sequence", faces: 6,
       count: Number(domain.constraints.chargeDistanceRoll.diceCount),
-      layout: { chargeDistance: Number(domain.constraints.chargeDistanceRoll.diceCount) },
-      revealOrder: ["chargeDistance"] },
+      layout: { charge: Number(domain.constraints.chargeDistanceRoll.diceCount) },
+      revealOrder: ["charge"] },
     sourceRefreshPerformed: false,
     rulesTruth: "official_selected_roster_charge_declaration",
     trainingTruth: false,
@@ -1776,8 +1776,11 @@ export function applyOfficialSelectedRosterMeleeActionV1(
     entry.domainId === (actionInput.chargePlan?.domainId
       || actionInput.chargeResolutionPlan?.domainId
       || actionInput.meleePlan?.domainId)
-      || entry.constraints?.pendingHash === actionInput.pendingHash
-      || entry.constraints?.pendingHash === actionInput.chargeResolutionPlan?.pendingHash
+      || (actionInput.pendingHash !== undefined
+        && entry.constraints?.pendingHash === actionInput.pendingHash)
+      || (actionInput.chargeResolutionPlan?.pendingHash !== undefined
+        && entry.constraints?.pendingHash
+          === actionInput.chargeResolutionPlan.pendingHash)
   ));
   if (!domain) fail("SELECTED_MELEE_PARAMETER_DOMAIN_STALE");
   const parameters = actionInput.chargePlan

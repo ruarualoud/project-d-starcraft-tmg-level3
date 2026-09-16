@@ -3,8 +3,8 @@
 Date: 2026-09-16
 
 Status: accepted follow-up to Ticket 24. Slice 259 has a live-state tracer
-bullet; Slices 260--263 remain. Ticket 24 Slice 258 still owns completion of the
-current Standard-2000 evidence match.
+bullet; Slice 260 is active and Slices 261--263 remain. Ticket 24 Slice 258
+still owns completion of the current Standard-2000 evidence match.
 
 ## Product requirement
 
@@ -150,6 +150,16 @@ proves the seam and correctness, not production latency or all action families.
 Deliverable: coverage matrix plus focused Rules-instantiated receipts for every
 formation-bearing action family. This is contract coverage, not one test per
 unit name.
+
+First live blocker: after action 57's authoritative Charge roll, the only
+current domain was `resolve_charge`. It was not classified as a formation
+domain, so the Planner emitted no formation search request and the model was
+asked to hand-author the Leading Model path plus 17 remaining placements. Three
+host attempts and 21 paid calls did not converge. Slice 260 must route this
+domain through the same Host solver and encode Charge-specific constraints:
+all declared target units engaged, no undeclared enemy engagement, Leading
+Model engagement with every declared target, closest-position behavior, and
+remaining-model priority of base-to-base, engagement, then coherency.
 
 ### Slice 261 — exact tactical relationship graph
 

@@ -3,7 +3,7 @@
 Date: 2026-09-16
 
 Status: Slice 258 remains open. The same Standard-2000 human-versus-Agent match
-is safely paused after authoritative action 39, in round two movement. The
+is safely paused after authoritative action 57, in round two assault. The
 runner's `failed` status is the retained result of an intentional Ctrl-C; the
 authoritative room, replay and decision records remain resumable.
 
@@ -122,6 +122,34 @@ evidence, and no Provider call occurred. This is a generic reserve-placement
 correction used by Omega/Pylon/transport/summon-style entries; it is not a
 Raptor-name special case.
 
+The live continuation then consumed that result. Action 40 placed all 18 Raptor
+models through the Omega Worm; actions 45, 47, 49 and 52 applied ordinary Move
+formations, each followed by normal activation continuation. No exposed layout
+was rejected for a board edge, collision, base size or coherency error.
+
+The first current-product Charge declaration exposed two independent legacy
+contract defects. The selected-roster charge emitted the chance layout key
+`chargeDistance`, while Authority consistently accepts the cross-runtime key
+`charge`; after correcting that key, Rules Apply revealed that a parameter-domain
+lookup treated absent pending hashes as equal and selected the first unrelated
+unit domain. The lookup now considers a pending hash only when the action
+actually carries one. A zero-Provider reconstruction of revision 56 with the
+same paid Raptor proposal then produced a valid chance spec and the exact
+`resolve_charge_after_roll` pending state. The third live convergence round
+reused the paid decision, added zero Provider calls and applied action 57
+`charge` with its authoritative die result.
+
+The post-roll resolution then exposed the next spatial coverage gap. Its only
+domain is `resolve_charge`, but the current Planner classifies only
+Deploy/Move/Run/Disengage as formation-bearing. Consequently
+`formationSearchRequest` stayed null, `requiredEvidence` requested only generic
+instantiation, and the model spent 21 calls attempting to author a full charge
+path and 18-model placement. Receipts alternated between invalid charge
+parameters and incomplete placement denominators before ending in
+`LIVE_DECISION_PARAMETERIZED_PROPOSAL_DID_NOT_CONVERGE`. This is the accepted
+Ticket 25 Slice 260 blocker: connect Charge resolution to
+`space.solve_formation`; it is not a prompt retry problem.
+
 ## Stability and strategy observation
 
 - New-policy calls in this decision: 4.
@@ -169,16 +197,23 @@ Raptor-name special case.
   which is recorded as Medium performance debt rather than a correctness block;
   bounded lazy candidates, spatial caching and asynchronous pre-execution
   belong to the dedicated spatial-solver follow-up.
+- At action 57 the durable ledger is 250 Provider calls, 12,240,201 input plus
+  585,209 output units (12,825,410 total), and CNY 22.205301. The Charge
+  declaration repair reused its paid decision with zero new calls; the 21-call
+  post-roll non-convergence is retained as Medium efficiency/coverage evidence.
+  No CNY 100 notification threshold was crossed.
 
 No source refresh occurred and no decision was promoted to training truth.
 
 ## Remaining Slice 258 work
 
-1. Resume the same authoritative room from action 39; consume the already
-   selected Raptor lifecycle choice through `space.solve_formation`, then
-   complete the Standard-2000 match without replaying earlier paid decisions.
-2. Review prompt-policy observations after subsequent decision types, especially
+1. In a fresh convergence cycle, extend `space.solve_formation` to the current
+   `resolve_charge` post-roll domain so it solves the Leading Model path and all
+   remaining model placements against declared-target engagement constraints.
+2. Resume the same authoritative room from action 57 without replaying the
+   completed Charge declaration, then complete the Standard-2000 match.
+3. Review prompt-policy observations after subsequent decision types, especially
    movement, ranged attack, melee/charge, Pass and phase transitions.
-3. Produce terminal JSON/NDJSON, screenshots, cost ledger and PDF evidence.
-4. Run the planned Agent-versus-Agent, replay/counterfactual/SkillOpt/MuZero
+4. Produce terminal JSON/NDJSON, screenshots, cost ledger and PDF evidence.
+5. Run the planned Agent-versus-Agent, replay/counterfactual/SkillOpt/MuZero
    evidence only after the human-versus-Agent terminal package is sound.
