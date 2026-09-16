@@ -75,19 +75,21 @@ room freeze are implemented. Skirmish/Standard are eligible; Grand Offensive rem
 honest preview until current task geometry exists. See
 `ticket-24-slice-254-two-layer-map-compiler-v1-2026-09-16.md`.
 
-### Slice 255 — Brood War gallery (10)
+### Slice 255 — Brood War gallery (10) (complete)
 
 - Generate ten map-specific art layers only after topology review.
 - Build ten default certified terrain recipes.
 
-In-progress checkpoint: four of ten visual candidates now exist for Lost
-Temple, Fighting Spirit, Circuit Breakers and Blue Storm. The accepted direction
-is restrained high-resolution Brood War/Remastered-style 2D map art with a
-matte tabletop finish and quieter micro-detail under circular unit portraits;
-modern PBR, isometric rendering and a shared generic template remain rejected.
-Blue Storm carries both a classic `1.5in`/32mm-only shortcut asset and the
-default `5in` all-current-base tabletop adaptation. Passage widths are recorded
-from model-base geometry rather than inferred from generated pixels.
+Closure: all ten cited seeds now have generated-original, individually
+recognizable display assets in a restrained high-resolution
+Brood War/Remastered 2D matte-tabletop style plus ten room-certifiable default
+Rules recipes. The gallery contains six Standard 54×36 and four Skirmish 36×36
+entries. Blue Storm carries both a classic `1.5in`/32mm-only shortcut asset and
+the default `5in` all-current-base tabletop adaptation. Every default map has a
+geometry-audited universal route; pixels never supply route authority. The
+versioned gallery contract uses build-time asset existence/dimension/duplicate
+checks without adding a fragile runtime media-signature gate. See
+`ticket-24-slice-255-brood-war-gallery-worklog-v1-2026-09-16.md`.
 
 Acceptance: no two entries share a generic layout template; each art/Rules pair traces to
 its cited seed.
