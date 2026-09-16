@@ -1,7 +1,7 @@
 # Ticket 23 / Slices 215–250：全官方卡池、真实 Agent 对战、复盘实验与证据路线图
 
 日期：2026-09-14  
-状态：Slices 215–246 完成；Ticket 23 为 `32/36`，剩余 `4` 片
+状态：Slices 215–247 完成；Ticket 23 为 `33/36`，剩余 `3` 片
 项目状态：原 22 Tickets 中 `21/22` 完成，Ticket 14 仅余真机验收；扩展 Ticket 23
 加入后总体为 `21/23` 完成。
 
@@ -66,7 +66,7 @@ Android 真机验收仍属于 Ticket 14，本 Ticket 不用模拟器或 Web 截�
 | 244 | **Complete:** Standard 2000 Room/军表/任务/平衡地形/完整产品 Runtime 最终绑定：双方各 2000 Minerals、≤200 Vespene、54×36 | 第 3 轮通过：15 Unit、9 terrain、60/25/32 空间/远程/近战路线、252/0 能力 | 30/36 |
 | 245 | **Complete:** Standard 2000 Web 探索性 H-A dry-run 与统一 UI 修复：写表/数据库/对战桌、悬浮副官、通知/物理任务、计划/日志/成本/截图面板 | 产品旅程 7/7、截图 11、console/page error 0、Provider 0 | 31/36 |
 | 246 | **Complete:** 产品 Runtime 总组合与 2000 分零 Provider 完整自动 dry-run：任务全生命周期、252/0/0、107 动作、五回合终局和 checkpoint 尾部重放 | deterministic full-match + 矩形底座 effective-size/任务 LoS 门通过 | 32/36 |
-| 247 | 正式 2000 分 H-A live-model 完整局，逐动作截图/描述/骰子/回执/公开理由；预算 ≤¥80 | 一次正式局 + 权威最终 Replay | 33/36 |
+| 247 | **Complete:** 正式 2000 分 H-A live-model 五回合完整局，137动作/181截图/公开理由/骰子回执，Zerg 12–0终局 | 权威最终 Replay一致；419 calls / 23,582,097 units / ¥36.496241 | 33/36 |
 | 248 | 相同配置、独立记忆的 2000 分 A-A live-model 完整局；预算 ≤¥160 | 一次正式局 + 权威最终 Replay | 34/36 |
 | 249 | H-A+A-A 全动作合并复盘、必要反事实实验、策略差异/骰运/操作错误区分、SkillOpt 候选和 MuZero/counterfactual 输出；预算 ≤¥260 | 一次 review aggregate | 35/36 |
 | 250 | 主 PDF 索引、按局/按回合子 PDF、JSON/NDJSON、成本与验收矩阵；最终用户验收包 | 一次 Ticket 23 evidence aggregate | 36/36 |
