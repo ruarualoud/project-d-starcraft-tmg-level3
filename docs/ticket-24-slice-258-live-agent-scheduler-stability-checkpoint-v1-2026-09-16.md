@@ -2,9 +2,10 @@
 
 Date: 2026-09-16
 
-Status: Slice 258 remains open. The Standard-2000 human-versus-Agent match is
-paused after authoritative action 18 so the scheduling change can be reviewed
-before the remaining match is run.
+Status: Slice 258 remains open. The same Standard-2000 human-versus-Agent match
+is safely paused after authoritative action 37, in round two movement. The
+runner's `failed` status is the retained result of an intentional Ctrl-C; the
+authoritative room, replay and decision records remain resumable.
 
 ## Change
 
@@ -28,6 +29,16 @@ before the remaining match is run.
   five earlier paid decisions: plan continuity, candidate and Pass comparison,
   Skill grounding, opponent counterplan, placement reasons, exact evidence,
   calls, tokens and corrections. Medium observations do not block Apply.
+- The browser runner now restores the controlled page to the foreground before
+  every human turn and captures visibility, focus, online state and URL before
+  dispatch. It distinguishes a request proven not dispatched from a response
+  timeout: only the former may retry once, while a possibly-sent Preview or
+  Apply is never blindly replayed.
+- Exact formation search now prefilters only candidates whose model bases have
+  overlapping interiors with current model or blocking-terrain footprints
+  under the same official physical-footprint relation used by Rules. Contact
+  remains legal, candidate order and failure accounting are preserved, and
+  every survivor still passes full Rules instantiation before exposure.
 
 ## Focused verification
 
@@ -43,6 +54,22 @@ decision selected and legally instantiated a two-model Hydralisk deployment,
 advanced the recorded action count from 17 to 18, and captured the Apply/UI
 evidence before the runner was intentionally stopped.
 
+The same room subsequently resumed through action 37. Human Web actions,
+round-one phase completion, round-two start, deployment and replay all passed.
+The foreground repair is visible at action 22
+(`screenshots/0033-r022-player1-pass-applied.png`). Action 37 applied an exact
+18-model Swarmling movement formation and captured
+`screenshots/0048-r037-player2-sc-domain-90202c48574325048507854a118a49cddc2e6e609dda1d36c2918e111a525350-applied.png`.
+
+The focused performance verifier reconstructed authoritative revision 36 from
+the revision-32 checkpoint and receipts 33--36, re-enumerated the full current
+Rules domain, and repeated the exact action-37 formation search without a
+Provider call. It preserved all six recorded option IDs in order. Of 273
+candidates, 267 exact overlaps were prefiltered and only six survivors entered
+full instantiation. The measured search segment completed in 15,597 ms under a
+60-second gate; the previous live path spent about four to five minutes fully
+instantiating the same 273 candidates.
+
 ## Stability and strategy observation
 
 - New-policy calls in this decision: 4.
@@ -56,6 +83,14 @@ evidence before the runner was intentionally stopped.
   from marker 5 and framed the move as next-round staging. This is coherent but
   not yet proof that it dominates the faster Raptor alternative. Track it in
   match/replay evaluation; it is not evidence of truncation by the new scheduler.
+- Action 37 revised the prior resource-conservation plan for round-two scoring
+  pressure, compared Pass and deployment alternatives, chose the 18-model
+  Swarmling move toward marker 5, cited three strategy Skills and two opponent
+  counterplans, and supplied a public purpose for all 18 placements. It used
+  seven Provider calls and 403,632 reported units, with zero semantic repair,
+  no forced terminal submission and
+  `no_observed_negative_strategy_effect`. This is auditable plan/evidence
+  rationale, not hidden chain-of-thought.
 
 ## Performance and cost
 
@@ -69,12 +104,16 @@ evidence before the runner was intentionally stopped.
 - Action prompts remain about 205–209 KB because an exact complete formation and
   every model assignment must be visible. That cost is intentional positioning
   evidence, not repeated broad candidate search.
+- At action 37 the complete run reports CNY 12.042980. This remains below the
+  next CNY 100 notification threshold. No tighter Provider budget was applied;
+  the performance change affects local Host geometry only.
 
 No source refresh occurred and no decision was promoted to training truth.
 
 ## Remaining Slice 258 work
 
-1. Resume the same authoritative room and complete the Standard-2000 match.
+1. Resume the same authoritative room from action 37 and complete the
+   Standard-2000 match.
 2. Review prompt-policy observations after subsequent decision types, especially
    movement, ranged attack, melee/charge, Pass and phase transitions.
 3. Produce terminal JSON/NDJSON, screenshots, cost ledger and PDF evidence.

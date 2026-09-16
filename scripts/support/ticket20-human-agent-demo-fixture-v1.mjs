@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { STARCRAFT_TMG_TICKET_18_FOUNDATIONAL_STRATEGY_PACK_V1 } from
   "../../content/skill-generation/ticket-18-foundational-strategy-pack-v1.mjs";
@@ -12,8 +13,12 @@ import { createStarcraftTmgPlayerSpatialObservationV1 } from
   "../../packages/online-agent-session/player-spatial-observation-v1.mjs";
 import { createStarcraftTmgSpatialActionQueryRuntimeV1 } from
   "../../packages/online-agent-session/spatial-action-query-runtime-v1.mjs";
+import { createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1 } from
+  "../../packages/online-agent-session/room-backed-spatial-rules-query-adapter-v1.mjs";
 import { createStarcraftTmgTurnPlanRuntimeV1 } from
   "../../packages/online-agent-session/turn-plan-runtime-v1.mjs";
+import { createStarcraftTmgSpatialPreexecutionSearchV1 } from
+  "../../packages/online-agent-session/spatial-preexecution-search-v1.mjs";
 import {
   createInMemoryStarcraftTmgHostedBotSeatStoreV1,
   createStarcraftTmgHostedBotSeatRuntimeV1,
@@ -32,6 +37,8 @@ import { createOfficialRoundSupplyStateV1 } from
   "../../packages/rule-atoms/official-round-supply-state-v1.mjs";
 import { createOfficialStandardActionRuntimeV1 } from
   "../../packages/product-composition/official-standard-action-runtime-v1.mjs";
+import { createOfficialCurrentProductMatchRuntimeV1 } from
+  "../../packages/product-composition/official-current-product-match-runtime-v1.mjs";
 import { createOfficialStandardRoomInitialStateAuthorityV1 } from
   "../../packages/product-composition/official-standard-room-factory-v1.mjs";
 import { getOfficialCurrentProductRecord } from
@@ -53,6 +60,63 @@ const ZERG = "tactical_cards:zerg_swarm";
 
 function ensure(condition, code, details = {}) {
   if (!condition) throw Object.assign(new Error(code), { code, ...details });
+}
+
+function registerResumedMatchDependencies(authorityEngine, binding,
+  initialStateAuthority, rulesRuntime) {
+  const supplied = initialStateAuthority.dependencies || {};
+  for (const kind of ["sourceSnapshot", "dataSnapshot", "geometryArtifact"]) {
+    const expected = binding.dependencies?.[kind];
+    ensure(expected && supplied[kind]?.content !== undefined,
+      "TICKET20_DEMO_RESUME_DEPENDENCY_UNAVAILABLE", { kind });
+    authorityEngine.registerDependency({ kind,
+      artifactId: expected.artifactId,
+      contentHash: expected.contentHash,
+      content: supplied[kind].content });
+  }
+  const generated = {
+    rulesArtifact: { kind: "rules-artifact",
+      rulesVersion: rulesRuntime.descriptor.rulesVersion,
+      rulesRuntimeBinding: binding.rulesRuntimeBinding },
+    executorArtifact: { kind: "executor-artifact",
+      authorityVersion: "starcraft_tmg_authority_v2",
+      rulesRuntimeHash: binding.rulesRuntimeBinding.runtimeHash,
+      catalogueHash: binding.rulesRuntimeBinding.catalogueHash,
+      executorManifest: rulesRuntime.descriptor.executorManifest },
+  };
+  for (const [kind, content] of Object.entries(generated)) {
+    const expected = binding.dependencies?.[kind];
+    ensure(expected, "TICKET20_DEMO_RESUME_DEPENDENCY_UNAVAILABLE", { kind });
+    authorityEngine.registerDependency({ kind,
+      artifactId: expected.artifactId,
+      contentHash: expected.contentHash,
+      content });
+  }
+  const expectedSchema = binding.dependencies?.actionSchema;
+  const actionSchema = Array.from({ length: 128 }, (_, index) => ({
+    kind: "action-schema",
+    schemaVersion: `hybrid_legal_space_v${index + 1}`,
+  })).find((content) => hash(content) === expectedSchema?.contentHash);
+  ensure(actionSchema, "TICKET20_DEMO_RESUME_ACTION_SCHEMA_UNAVAILABLE");
+  authorityEngine.registerDependency({ kind: "actionSchema",
+    artifactId: expectedSchema.artifactId,
+    contentHash: expectedSchema.contentHash,
+    content: actionSchema });
+  const display = binding.rulesDisplayBinding;
+  const rulesDisplay = `# Historical rules display\n\nFrozen rules version: `
+    + `${rulesRuntime.descriptor.rulesVersion}\n\nThis development artifact preserves `
+    + "the rules identity used by the match.";
+  authorityEngine.registerDependency({ kind: "rulesDisplay",
+    artifactId: display.artifactId,
+    contentHash: display.artifactHash,
+    mediaType: display.mediaType,
+    locale: display.locale,
+    content: rulesDisplay });
+  const verified = authorityEngine.verifyFrozenDependencies(binding);
+  ensure(verified.ok, "TICKET20_DEMO_RESUME_DEPENDENCY_QUARANTINED", {
+    reason: verified.reason,
+    quarantine: verified.quarantine,
+  });
 }
 
 function exactSupply(profile, currentModels) {
@@ -457,7 +521,8 @@ export function createTicket20DeterministicSkillGuidedDecisionPortV1(
 }
 
 export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
-  const root = path.resolve(options.root);
+  const root = path.resolve(options.root || path.join(
+    path.dirname(fileURLToPath(import.meta.url)), "../.."));
   const roomId = String(options.roomId || "ticket20-human-agent-demo");
   const occurredAt = String(options.occurredAt
     || "2026-09-11T16:00:00.000Z");
@@ -477,7 +542,9 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     recordKey);
   const terranCard = get(TERRAN);
   const zergCard = get(ZERG);
-  const standard2000 = options.roomProfile === "standard_2000";
+  const formalStandard2000 = options.roomProfile === "standard_2000_live";
+  const standard2000 = formalStandard2000
+    || options.roomProfile === "standard_2000";
   const serverSeatPlan = [{
     label: "human",
     seatKey: "player1",
@@ -502,35 +569,54 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
       dataset: source.dataset,
       snapshot: source.snapshot,
       serverSeatPlan,
-    });
-    const baseRuntime = createOfficialExecutableRuleRuntimeV1({
-      catalogue: report11.slice.catalogue,
-    });
-    rulesRuntime = createOfficialStandardActionRuntimeV1({
-      baseRuntime,
-      actionRouteCatalogue: standardAuthority.state.officialActionRouteCatalogue,
+      roomId,
+      ...(options.mapConfiguration
+        ? { mapConfiguration: structuredClone(options.mapConfiguration) }
+        : {}),
     });
     state = structuredClone(standardAuthority.state);
-    state.phase = "movement";
-    state.stage = "round_one_reserve_deployment";
+    if (formalStandard2000) {
+      rulesRuntime = createOfficialCurrentProductMatchRuntimeV1({
+        dataset: source.dataset,
+        state,
+      });
+      state.phase = "start_of_round";
+      state.stage = "mission_start_of_round";
+      state.phaseFirstActorByRound = {};
+      delete state.officialRoundSupplyState;
+    } else {
+      const baseRuntime = createOfficialExecutableRuleRuntimeV1({
+        catalogue: report11.slice.catalogue,
+      });
+      rulesRuntime = createOfficialStandardActionRuntimeV1({
+        baseRuntime,
+        actionRouteCatalogue: standardAuthority.state.officialActionRouteCatalogue,
+      });
+      state.phase = "movement";
+      state.stage = "round_one_reserve_deployment";
+    }
     state.activeSideKey = state.firstPlayerSideKey;
-    state.phaseFirstActorByRound = {
-      ...state.phaseFirstActorByRound,
-      "1:movement": {
-        round: 1,
-        phase: "movement",
-        markerHolderSideKey: state.firstPlayerSideKey,
-        chosenFirstActorSideKey: state.firstPlayerSideKey,
-      },
-    };
-    state.officialRoundSupplyState = createOfficialRoundSupplyStateV1({
-      state,
-      gameplayDataBundle: state.officialGameplayDataBundle,
-      rulesRuntimeHash: rulesRuntime.descriptor.runtimeHash,
-    });
+    if (!formalStandard2000) {
+      state.phaseFirstActorByRound = {
+        ...state.phaseFirstActorByRound,
+        "1:movement": {
+          round: 1,
+          phase: "movement",
+          markerHolderSideKey: state.firstPlayerSideKey,
+          chosenFirstActorSideKey: state.firstPlayerSideKey,
+        },
+      };
+      state.officialRoundSupplyState = createOfficialRoundSupplyStateV1({
+        state,
+        gameplayDataBundle: state.officialGameplayDataBundle,
+        rulesRuntimeHash: rulesRuntime.descriptor.runtimeHash,
+      });
+    }
     const authorityBody = {
-      schema: "starcraft_tmg_standard_2000_web_dry_run_authority_v1",
-      version: "1.0.0",
+      schema: formalStandard2000
+        ? "starcraft_tmg_standard_2000_live_web_authority_v1"
+        : "starcraft_tmg_standard_2000_web_dry_run_authority_v1",
+      version: formalStandard2000 ? "2.0.0" : "1.0.0",
       source: "server_factory",
       setupId: standardAuthority.setupId,
       parentFactoryReceiptHash: standardAuthority.receiptHash,
@@ -545,9 +631,11 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
       },
       compositionEvidence: {
         ...structuredClone(standardAuthority.compositionEvidence),
-        webDryRunPrepared: true,
-        webDryRunPhase: "movement",
-        completeMatchDryRunPassed: false,
+        webDryRunPrepared: !formalStandard2000,
+        webDryRunPhase: formalStandard2000 ? null : "movement",
+        currentProductMatchRuntimeHash: formalStandard2000
+          ? rulesRuntime.descriptor.runtimeHash : null,
+        completeMatchDryRunPassed: formalStandard2000,
       },
       serverSeatPlan,
       trainingTruth: false,
@@ -557,7 +645,9 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
       receiptHash: hash(authorityBody),
     });
     coverage = Object.freeze({
-      mode: "standard_2000_current_product_web_exploration",
+      mode: formalStandard2000
+        ? "standard_2000_current_product_live_web"
+        : "standard_2000_current_product_web_exploration",
       engagementScale: "Standard",
       battlefieldInches: { width: 54, height: 36 },
       mineralSpentBySide: { player1: 2000, player2: 2000 },
@@ -566,11 +656,11 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
       terrainPieceCount: 9,
       currentProductAbilityExactCount: 252,
       currentProductAbilityPendingCount: 0,
-      legalSpaceComplete: false,
-      productionRoomEligible: false,
+      legalSpaceComplete: formalStandard2000,
+      productionRoomEligible: formalStandard2000,
       arbitraryArmyBuilderSupported: true,
       interactiveDeploymentSupported: true,
-      fullMatchLifecycleSupported: false,
+      fullMatchLifecycleSupported: formalStandard2000,
       parentFactoryReceiptHash: standardAuthority.receiptHash,
       trainingTruth: false,
     });
@@ -642,26 +732,47 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
   }
   const authorityEngine = createStarcraftTmgAuthoritativeEngine({
     rulesRuntime,
-    allowIncompleteRuleRuntimeForDevelopment: true,
+    allowIncompleteRuleRuntimeForDevelopment: !formalStandard2000,
+    ...(options.refereeCrypto ? { refereeCrypto: options.refereeCrypto } : {}),
     now,
   });
   const roomRuntime = createStarcraftTmgRoomRuntime({
     authorityEngine,
+    ...(options.roomStore ? { roomStore: options.roomStore } : {}),
     now,
     checkpointInterval: 8,
     characterReleaseChannel: "development_internal",
   });
-  const createdRoom = await roomRuntime.createRoom({
-    roomId,
-    title: String(options.title
-      || (standard2000
-        ? "Ticket 23 · Standard 2000 Human vs Kerrigan Bot"
-        : "Ticket 20 · Human vs Kerrigan Bot · Hold Position")),
-    gameId: "starcraft-tmg",
-    surfaceMode: String(options.surfaceMode || "human_agent_development"),
-    initialStateAuthority,
-    serverSeatPlan,
-  });
+  let createdRoom;
+  if (options.resumeRoom === true) {
+    const aggregate = await roomRuntime.roomStore.loadRoom(roomId);
+    const resumeCredentials = options.resumeCredentials;
+    ensure(aggregate?.envelope?.matchBinding?.bindingHash
+      && resumeCredentials?.human?.seatToken
+      && resumeCredentials?.bot?.seatToken,
+    "TICKET20_DEMO_RESUME_AUTHORITY_MISSING");
+    registerResumedMatchDependencies(authorityEngine,
+      aggregate.envelope.matchBinding, initialStateAuthority, rulesRuntime);
+    createdRoom = Object.freeze({
+      ok: true,
+      resumed: true,
+      roomId,
+      matchBinding: structuredClone(aggregate.envelope.matchBinding),
+      credentials: structuredClone(resumeCredentials),
+    });
+  } else {
+    createdRoom = await roomRuntime.createRoom({
+      roomId,
+      title: String(options.title
+        || (standard2000
+          ? "Ticket 23 · Standard 2000 Human vs Kerrigan Bot"
+          : "Ticket 20 · Human vs Kerrigan Bot · Hold Position")),
+      gameId: "starcraft-tmg",
+      surfaceMode: String(options.surfaceMode || "human_agent_development"),
+      initialStateAuthority,
+      serverSeatPlan,
+    });
+  }
   ensure(createdRoom.ok, "TICKET20_DEMO_ROOM_CREATE_FAILED", {
     reason: createdRoom.reason,
   });
@@ -671,8 +782,81 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     matchBindingHash: createdRoom.matchBinding.bindingHash,
     seatKey: "player2",
   };
-  const continuity = createStarcraftTmgMatchDecisionContinuityV1({ now });
-  const spatialRuntime = createStarcraftTmgSpatialActionQueryRuntimeV1();
+  const previewBotFiniteSuccessor = async (request = {}) => {
+    const authority = request.authority || {};
+    const aggregate = await roomRuntime.roomStore.loadRoom(authority.roomId);
+    if (!aggregate
+      || aggregate.envelope?.matchBindingHash !== authority.matchBindingHash
+      || aggregate.stateRevision !== authority.stateRevision
+      || aggregate.envelope?.stateHash !== authority.stateHash) {
+      return { ok: false, reason: "PREEXECUTION_AUTHORITY_STALE",
+        rulesAuthority: false };
+    }
+    if (!request.action
+      || !new Set(["pass", "choose_first_actor"])
+        .has(request.action.actionType)) {
+      return { ok: false, reason: "PREEXECUTION_FINITE_PHASE_CONTROL_REQUIRED",
+        rulesAuthority: false };
+    }
+    const applied = rulesRuntime.apply(aggregate.envelope.state,
+      request.action, {
+        postRevision: aggregate.stateRevision + 1,
+        matchBinding: aggregate.envelope.matchBinding,
+      });
+    const nextState = applied.state;
+    const controlledSeatActsNext = nextState.activeSideKey === botScope.seatKey;
+    const next = controlledSeatActsNext
+      ? rulesRuntime.enumerate(nextState, {
+        sideKey: botScope.seatKey,
+        includeDisabled: false,
+      }) : { candidates: [], parameterDomains: [] };
+    return {
+      ok: true,
+      preStateHash: authority.stateHash,
+      nextStateRevision: aggregate.stateRevision + 1,
+      nextStateHash: hash(nextState),
+      nextRound: Number(nextState.round || 0),
+      nextPhase: String(nextState.phase || "unknown"),
+      nextActiveSideKey: nextState.activeSideKey || null,
+      controlledSeatActsNext,
+      controlledSeatNextFiniteActionTypes: [...new Set(
+        (next.candidates || []).map((entry) => entry.actionType)
+          .filter(Boolean))].sort(),
+      controlledSeatNextParameterizedActionTypes: [...new Set(
+        (next.parameterDomains || []).map((entry) => entry.actionType)
+          .filter(Boolean))].sort(),
+      rulesAuthority: true,
+      mutationAuthority: false,
+      liveRoomMutationCalls: 0,
+      trainingTruth: false,
+    };
+  };
+  const continuity = createStarcraftTmgMatchDecisionContinuityV1({
+    now,
+    ...(options.matchDecisionJournal ? {
+      journal: options.matchDecisionJournal,
+    } : {}),
+    ...(options.enableSpatialPreexecution === true ? {
+      preExecute: createStarcraftTmgSpatialPreexecutionSearchV1({
+        previewSuccessor: previewBotFiniteSuccessor,
+      }),
+    } : {}),
+  });
+  const spatialRulesQuery =
+    createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1({
+      roomStore: roomRuntime.roomStore,
+      rulesRuntime,
+      seatKey: "player2",
+    });
+  const humanSpatialRulesQuery =
+    createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1({
+      roomStore: roomRuntime.roomStore,
+      rulesRuntime,
+      seatKey: "player1",
+    });
+  const spatialRuntime = createStarcraftTmgSpatialActionQueryRuntimeV1({
+    rulesQuery: spatialRulesQuery.query,
+  });
   const turnPlanRuntime = createStarcraftTmgTurnPlanRuntimeV1({
     decisionContinuity: continuity,
     now,
@@ -698,6 +882,10 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     matchMode: options.matchMode || "user_vs_agent",
     now,
     autoDriveIntervalMs: options.autoDriveIntervalMs || 500,
+    deferForPreexecution: options.enableSpatialPreexecution === true,
+    ...(options.physicalAgentPort ? {
+      physicalAgentPort: options.physicalAgentPort,
+    } : {}),
   };
   const botRuntime = standard2000
     ? createStarcraftTmgHostedOpponentRuntimeV2({
@@ -723,13 +911,15 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
       autoDrive: options.autoDrive !== false,
     });
   }
-  const humanRecovery = await roomRuntime.issueSeatRecovery({
-    roomId,
-    seatToken: createdRoom.credentials.human.seatToken,
-  });
-  ensure(humanRecovery.ok, "TICKET20_DEMO_HUMAN_RECOVERY_ISSUE_FAILED", {
-    reason: humanRecovery.reason,
-  });
+  const humanRecovery = options.issueHumanRecovery === false ? null
+    : await roomRuntime.issueSeatRecovery({
+      roomId,
+      seatToken: createdRoom.credentials.human.seatToken,
+    });
+  ensure(options.issueHumanRecovery === false || humanRecovery?.ok,
+    "TICKET20_DEMO_HUMAN_RECOVERY_ISSUE_FAILED", {
+      reason: humanRecovery?.reason,
+    });
   return Object.freeze({
     roomId,
     authorityEngine,
@@ -740,16 +930,20 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     botScope,
     continuity,
     spatialRuntime,
+    spatialRulesQuery,
+    humanSpatialRulesQuery,
     turnPlanRuntime,
     notifications,
-    roomProfile: standard2000 ? "standard_2000" : "bounded_ticket20",
-    humanRecoveryToken: humanRecovery.recovery.recoveryToken,
+    roomProfile: formalStandard2000 ? "standard_2000_live"
+      : standard2000 ? "standard_2000" : "bounded_ticket20",
+    humanRecoveryToken: humanRecovery?.recovery?.recoveryToken || null,
     sourceBinding: loaded.manifest.sourceBinding,
     strategySkillRefs: loaded.entries.map((entry) => ({
       id: entry.skill.skillId,
       version: entry.skill.version,
       hash: entry.skill.hash,
     })),
+    strategySkillEntries: loaded.entries,
     strategySkills: loaded.entries.map((entry) => entry.skill),
     coverage,
   });
