@@ -2055,7 +2055,10 @@ function compactProviderContinuationMessages(choice, stage) {
       if (!HOST_DEFERRED_QUERY_KINDS.has(String(receipt?.queryKind || ""))
         && !PLANNING_POST_SELECTION_QUERY_KINDS.has(
           String(receipt?.queryKind || ""))) {
-        return message;
+        return {
+          ...message,
+          content: JSON.stringify(compactQueryReceiptForPrompt(receipt)),
+        };
       }
       return {
         ...message,
@@ -2377,6 +2380,114 @@ function compactSpatialObservation(observation) {
 }
 
 function compactQueryReceiptForPrompt(receipt) {
+  if (object(receipt)
+    && receipt.queryKind === "space.inspect_relationships"
+    && object(receipt.result)) {
+    const result = receipt.result;
+    const compactThreat = (value) => !object(value) ? null : {
+      stationaryProfileKeys: clone(value.stationaryProfileKeys || []),
+      moveThenAttackProfileKeys:
+        clone(value.moveThenAttackProfileKeys || []),
+      chargeBand: clone(value.chargeBand || null),
+      spatialThreatPrecision: value.spatialThreatPrecision || null,
+      currentLegalActionNotImplied:
+        value.currentLegalActionNotImplied === true,
+    };
+    const relationships = (result.relationships || []).map((entry) => {
+      if (entry.edgeKind === "objective_relationship") return {
+        edgeId: entry.edgeId,
+        edgeKind: entry.edgeKind,
+        fromUnitId: entry.fromUnitId,
+        toObjectiveId: entry.toObjectiveId,
+        minimumBaseEdgeDistanceMilliInches:
+          entry.minimumBaseEdgeDistanceMilliInches,
+        nearestModelId: entry.nearestModelId || null,
+        modelIdsWithinThreeInchesSameElevation:
+          clone(entry.modelIdsWithinThreeInchesSameElevation || []),
+        canGeometricallyContestNow:
+          entry.canGeometricallyContestNow === true,
+        currentControlSideKey: entry.currentControlSideKey || null,
+        unitCoherencyStatus: clone(entry.unitCoherencyStatus || null),
+        exactControlStillRequiresCurrentMissionEligibilityAndLos:
+          entry.exactControlStillRequiresCurrentMissionEligibilityAndLos
+            === true,
+        precision: entry.precision || null,
+      };
+      return {
+        edgeId: entry.edgeId,
+        edgeKind: entry.edgeKind,
+        fromUnitId: entry.fromUnitId,
+        toUnitId: entry.toUnitId,
+        relation: entry.relation || null,
+        nearestPhysicalEdges: clone(entry.nearestPhysicalEdges || null),
+        contactArc: clone(entry.contactArc || null),
+        engagement: clone(entry.engagement || null),
+        lineOfSight: object(entry.lineOfSight) ? {
+          assessedModelPairCount: entry.lineOfSight.assessedModelPairCount,
+          visibleModelPairCount: entry.lineOfSight.visibleModelPairCount,
+          blockedModelPairCount: entry.lineOfSight.blockedModelPairCount,
+          unknownModelPairCount: entry.lineOfSight.unknownModelPairCount,
+          blockingTerrainIds:
+            clone(entry.lineOfSight.blockingTerrainIds || []),
+          precision: entry.lineOfSight.precision || null,
+        } : null,
+        threats: {
+          fromTo: compactThreat(entry.threats?.fromTo),
+          toFrom: compactThreat(entry.threats?.toFrom),
+        },
+        fireZoneExchange: clone(entry.fireZoneExchange || null),
+        precision: entry.precision || null,
+      };
+    });
+    return {
+      schemaVersion: receipt.schemaVersion,
+      requestId: receipt.requestId || null,
+      queryKind: receipt.queryKind,
+      status: receipt.status,
+      reason: receipt.reason || null,
+      result: {
+        schemaVersion: result.schemaVersion,
+        relationshipGraphHash: result.relationshipGraphHash,
+        authority: clone(result.authority || null),
+        hypotheticalProjection: result.hypotheticalProjection === true,
+        intent: result.intent,
+        seatKey: result.seatKey,
+        scope: clone(result.scope || null),
+        nodes: {
+          units: (result.nodes?.units || []).map((entry) => ({
+            nodeId: entry.nodeId,
+            unitName: entry.unitName || null,
+            sideKey: entry.sideKey,
+            sideRelation: entry.sideRelation,
+            currentModels: entry.currentModels,
+            currentSupply: entry.currentSupply,
+            movement: clone(entry.movement || null),
+            coherency: clone(entry.coherency || null),
+            envelope: clone(entry.envelope || null),
+          })),
+          objectives: clone(result.nodes?.objectives || []),
+          terrain: clone(result.nodes?.terrain || []),
+        },
+        relationships,
+        aggregates: clone(result.aggregates || null),
+        overlay: clone(result.overlay || null),
+        precisionPolicy: clone(result.precisionPolicy || null),
+        sourceReceipts: clone(result.sourceReceipts || null),
+        fullRelationshipGraphStoredDurably: true,
+        exactFieldsDerivedFromRulesKernels:
+          result.exactFieldsDerivedFromRulesKernels === true,
+        rulesAuthority: result.rulesAuthority === true,
+        currentRoomFact: result.currentRoomFact === true,
+        mayMutateRoom: false,
+        eligibleForTraining: false,
+        trainingTruth: false,
+      },
+      queryReceiptHash: receipt.queryReceiptHash,
+      rulesAuthority: receipt.rulesAuthority ?? false,
+      mutationAuthority: false,
+      trainingTruth: false,
+    };
+  }
   if (!object(receipt)
     || !FORMATION_QUERY_KINDS.has(receipt.queryKind)
     || !Array.isArray(receipt.result?.formationOptions)) {
