@@ -54,7 +54,7 @@ const HOST_DEFERRED_QUERY_KINDS = new Set([
 ]);
 const PHASE_CONTROL_ACTIONS = new Set(["pass", "choose_first_actor"]);
 const FORMATION_ACTION_TYPES = new Set([
-  "deploy", "move", "run", "disengage",
+  "deploy", "move", "run", "disengage", "resolve_charge",
 ]);
 const FORMATION_QUERY_KINDS = new Set([
   STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
@@ -905,15 +905,46 @@ function bindFormationSelection(raw, queryReceipts) {
   }
   const parameters = clone(option.canonicalParameters);
   const leading = rationales.find((entry) => entry.isLeading);
+  if (parameters.outcome === "failure" && option.slots.length === 0) {
+    normalized.proposal = {
+      kind: "parameterized",
+      domainId,
+      parameters,
+    };
+    normalized.formationSelection = {
+      formationOptionId,
+      formationReceiptHash: receipt.queryReceiptHash,
+      patternId: option.patternId,
+      solverPolicyId: option.solverPolicyId || null,
+      formationObjectives: clone(option.formationObjectives || []),
+      tacticalMetrics: clone(option.tacticalMetrics || null),
+      anchor: clone(option.anchor),
+      publicReason: overallReason,
+      hostDefaultAssignmentUsed,
+      slotAssignments: [],
+    };
+    normalized.placementRationales = [];
+    return normalized;
+  }
   if (!leading) {
     throw correctionError("ACTION_FORMATION_LEADING_SLOT_REQUIRED");
   }
-  if (object(parameters.placementPlan)) {
+  if (hostDefaultAssignmentUsed) {
+    // Preserve the exact Host-instantiated parameter shape. Some actions bind
+    // their fixed leader in the domain rather than in the parameter object.
+  } else if (object(parameters.placementPlan)) {
     parameters.placementPlan.leadingModelId = leading.modelId;
     parameters.placementPlan.placements = rationales.map((entry) => ({
       modelId: entry.modelId,
       ...clone(entry.position),
     }));
+  } else if (option.actionType === "resolve_charge") {
+    if (leading.modelId !== option.fixedLeadingModelId) {
+      throw correctionError("ACTION_FORMATION_FIXED_LEADER_REASSIGNED",
+        `${leading.modelId}->${option.fixedLeadingModelId}`);
+    }
+    parameters.placements = rationales.filter((entry) => !entry.isLeading)
+      .map((entry) => ({ modelId: entry.modelId, ...clone(entry.position) }));
   } else {
     parameters.leadingModelId = leading.modelId;
     const placementsIncludeLeading = Array.isArray(parameters.placements)

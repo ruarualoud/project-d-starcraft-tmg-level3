@@ -29,7 +29,7 @@ export const STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS = Object.freeze([
 ]);
 
 const SUPPORTED_ACTION_TYPES = new Set([
-  "deploy", "move", "run", "disengage",
+  "deploy", "move", "run", "disengage", "resolve_charge",
   "resolve_relocation_ability",
   "resolve_unit_lifecycle_ability", "resolve_unit_lifecycle_consumer",
 ]);
@@ -317,6 +317,51 @@ function availablePackedFootprint(footprint, state, blockers, selected) {
       right: entry.footprint,
     }).overlappingInteriors
   ));
+}
+
+function pointAtDistance(origin, angle, distance) {
+  return {
+    xMilliInches: Math.round(origin.xMilliInches + (Math.cos(angle) * distance)),
+    yMilliInches: Math.round(origin.yMilliInches + (Math.sin(angle) * distance)),
+  };
+}
+
+function contactAnchor(profile, targetFootprint, angle, rotationDegrees = 0) {
+  const origin = footprintCenter(targetFootprint);
+  if (!origin) return null;
+  const targetBounds = footprintBounds(targetFootprint);
+  const targetRadius = Math.hypot(
+    targetBounds.maximumX - targetBounds.minimumX,
+    targetBounds.maximumY - targetBounds.minimumY,
+  ) / 2;
+  const profileRadiusBound = Math.hypot(
+    dimension(profile, "baseWidthMilliInches", "widthMilliInches"),
+    dimension(profile, "baseDepthMilliInches", "depthMilliInches"),
+  ) / 2;
+  let lower = 0;
+  let upper = Math.ceil(targetRadius + profileRadiusBound + 2_000);
+  let upperFootprint = footprintAt(profile,
+    pointAtDistance(origin, angle, upper), rotationDegrees);
+  while (evaluateOfficialPhysicalFootprintRelationV1({
+    left: upperFootprint,
+    right: targetFootprint,
+  }).overlappingInteriors && upper < 100_000) {
+    upper *= 2;
+    upperFootprint = footprintAt(profile,
+      pointAtDistance(origin, angle, upper), rotationDegrees);
+  }
+  if (upper >= 100_000) return null;
+  while (upper - lower > 1) {
+    const middle = Math.floor((lower + upper) / 2);
+    const footprint = footprintAt(profile,
+      pointAtDistance(origin, angle, middle), rotationDegrees);
+    if (evaluateOfficialPhysicalFootprintRelationV1({
+      left: footprint,
+      right: targetFootprint,
+    }).overlappingInteriors) lower = middle;
+    else upper = middle;
+  }
+  return pointAtDistance(origin, angle, upper);
 }
 
 function normalizeFormationObjectives(request = {}) {
@@ -741,7 +786,8 @@ function candidatePlacementRows(candidate) {
   const endpoint = Array.isArray(plan.path) ? plan.path.at(-1) : null;
   const placements = Array.isArray(plan.placements) ? plan.placements : [];
   if (endpoint) {
-    return [{ modelId: plan.leadingModelId, ...endpoint }, ...placements];
+    return [{ modelId: plan.leadingModelId || candidate.leadingModelId,
+      ...endpoint }, ...placements];
   }
   return placements;
 }
@@ -1014,6 +1060,177 @@ function relocationCandidates(domain, request) {
     right.anchor.xMilliInches - preferred.xMilliInches,
     right.anchor.yMilliInches - preferred.yMilliInches,
   ) || left.patternId.localeCompare(right.patternId));
+}
+
+function chargeResolutionCandidates(state, domain, request) {
+  const source = sourceDomain(domain);
+  const constraints = source.constraints;
+  const actor = (state.pieces || []).find((entry) => entry.id === source.pieceId);
+  if (!actor) throw new TypeError("LEGAL_FORMATION_CHARGE_PIECE_MISSING");
+  const leadingModelId = String(constraints.leadingModelId || "");
+  const allProfiles = relocationModelProfiles(state, domain);
+  const leadingProfile = allProfiles.find((entry) =>
+    entry.modelId === leadingModelId);
+  if (!leadingProfile || !object(leadingProfile.startPoint)) {
+    throw new TypeError("LEGAL_FORMATION_CHARGE_LEADING_MODEL_MISSING");
+  }
+  const profiles = [leadingProfile, ...allProfiles.filter((entry) =>
+    entry.modelId !== leadingModelId)];
+  const blockers = blockingFootprints(state, source.pieceId);
+  const declaredTargets = (constraints.declaredTargets || []).map((target) => {
+    const blocker = blockers.find((entry) => entry.kind === "model"
+      && entry.pieceId === target.unitId && entry.modelId === target.modelId);
+    if (!blocker) {
+      throw new TypeError("LEGAL_FORMATION_CHARGE_TARGET_MISSING");
+    }
+    return { ...clone(target), blocker };
+  });
+  if (declaredTargets.length < 1) {
+    throw new TypeError("LEGAL_FORMATION_CHARGE_TARGET_MISSING");
+  }
+  const targetIds = [...new Set(declaredTargets.flatMap((entry) =>
+    [String(entry.unitId), String(entry.modelId)]))];
+  const requiredSpatialConstraints = {
+    declaredTargets: clone(constraints.declaredTargets || []),
+    allDeclaredTargetsMustBeEngaged:
+      constraints.allDeclaredTargetsMustBeEngaged === true,
+    undeclaredEnemyEngagementProhibited:
+      constraints.undeclaredEnemyEngagementProhibited === true,
+    closestPositionRequiredUnlessBaseToBase: true,
+    remainingPlacementPriority:
+      clone(constraints.remainingPlacementPriority || []),
+  };
+  const leadingStartFootprint = footprintAt(leadingProfile,
+    leadingProfile.startPoint);
+  const impossibleTargets = declaredTargets.filter((entry) => {
+    const gap = evaluateOfficialPhysicalFootprintRelationV1({
+      left: leadingStartFootprint,
+      right: entry.blocker.footprint,
+    }).minimumSeparationMilliInches;
+    return Math.max(0, gap - 1_000)
+      > Number(constraints.maxDistanceMilliInches) + 1;
+  });
+  if (impossibleTargets.length > 0) {
+    return [{
+      parameters: {
+        outcome: "failure",
+        failureProof: { kind: "distance_shortfall" },
+      },
+      patternId: "charge-failure:distance-shortfall",
+      solverPolicyId: "rules-proven-distance-shortfall",
+      formationObjectives: normalizeFormationObjectives(request),
+      tacticalMetrics: {
+        outcome: "failure",
+        proofKind: "distance_shortfall",
+        impossibleTargetIds: impossibleTargets.map((entry) => entry.modelId),
+        physicalGeometryMetricsExact: true,
+        tacticalOutcomeIsAdvisoryUntilPreviewAndOpponentResponse: false,
+      },
+      anchor: clone(leadingProfile.startPoint),
+      modelProfiles: profiles,
+      leadingModelId,
+      requiredSpatialConstraints,
+      sameAnchorAlternativesMeaningful: false,
+    }];
+  }
+  const requestedObjectives = normalizeFormationObjectives(request);
+  const requiredEngagementObjective = {
+    kind: "maximize_engagement",
+    weight: 5,
+    targetIds,
+  };
+  const policies = formationSolverPolicies([
+    requiredEngagementObjective,
+    ...requestedObjectives.filter((entry) => entry.kind !== "maximize_engagement"
+      || entry.targetIds.join("\u0000") !== targetIds.join("\u0000")),
+  ]);
+  const angles = Array.from({ length: 48 }, (_, index) =>
+    (Math.PI * 2 * index) / 48);
+  const rotations = String(leadingProfile.baseShape || leadingProfile.shape)
+    === "round" ? [0] : [0, 45, 90, 135];
+  const candidates = [];
+  const generationLimit = Math.max(24, Math.min(192,
+    Number(request.maximumOptions || DEFAULT_MAX_OPTIONS) * 24));
+  for (const target of declaredTargets) {
+    const targetPoint = footprintCenter(target.blocker.footprint);
+    for (const rotationDegrees of rotations) {
+      const contactSeeds = angles.map((angle) => ({
+        kind: "base_contact",
+        anchor: contactAnchor(leadingProfile, target.blocker.footprint,
+          angle, rotationDegrees),
+      }));
+      const directAngle = Math.atan2(
+        targetPoint.yMilliInches - leadingProfile.startPoint.yMilliInches,
+        targetPoint.xMilliInches - leadingProfile.startPoint.xMilliInches,
+      );
+      const closestPositionSeeds = [-12, -9, -6, -3, 0, 3, 6, 9, 12]
+        .map((offsetDegrees) => ({
+          kind: "maximum_distance_closest_position",
+          anchor: pointAtDistance(leadingProfile.startPoint,
+            directAngle + ((offsetDegrees * Math.PI) / 180),
+            Number(constraints.maxDistanceMilliInches)),
+        }));
+      const seenAnchors = new Set();
+      for (const seed of [...contactSeeds, ...closestPositionSeeds]) {
+        const anchor = seed.anchor;
+        if (!anchor) continue;
+        const anchorKey = `${anchor.xMilliInches}:${anchor.yMilliInches}`;
+        if (seenAnchors.has(anchorKey)) continue;
+        seenAnchors.add(anchorKey);
+        const travelled = Math.hypot(
+          anchor.xMilliInches - leadingProfile.startPoint.xMilliInches,
+          anchor.yMilliInches - leadingProfile.startPoint.yMilliInches,
+        );
+        if (travelled <= 1
+          || travelled > Number(constraints.maxDistanceMilliInches) + 1) continue;
+        const movementAngle = Math.atan2(
+          anchor.yMilliInches - leadingProfile.startPoint.yMilliInches,
+          anchor.xMilliInches - leadingProfile.startPoint.xMilliInches,
+        );
+        for (const policy of policies) {
+          const solved = solveIntentFormationRows({
+            state,
+            profiles,
+            anchor,
+            angle: movementAngle,
+            coherencyRangeMilliInches:
+              Number(constraints.coherencyRangeMilliInches),
+            excludedPieceId: source.pieceId,
+            sideKey: source.sideKey || actor.sideKey,
+            policy,
+          });
+          if (!solved) continue;
+          const rows = solved.rows;
+          const pathEndpoint = Object.fromEntries(Object.entries(rows[0])
+            .filter(([key]) => key !== "modelId"));
+          candidates.push({
+            parameters: {
+              outcome: "success",
+              path: [pathEndpoint],
+              placements: rows.slice(1),
+            },
+            patternId: `intent-solver:${solved.policyId}`,
+            solverPolicyId: solved.policyId,
+            formationObjectives: solved.objectives,
+            tacticalMetrics: solved.metrics,
+            anchor,
+            modelProfiles: profiles,
+            leadingModelId,
+            requiredSpatialConstraints,
+            targetAnchor: {
+              unitId: target.unitId,
+              modelId: target.modelId,
+              point: targetPoint,
+              seedKind: seed.kind,
+            },
+            sameAnchorAlternativesMeaningful: true,
+          });
+          if (candidates.length >= generationLimit) return candidates;
+        }
+      }
+    }
+  }
+  return candidates;
 }
 
 function summonedUnitProfiles(state, source) {
@@ -1371,21 +1588,23 @@ function solveGeneratedCandidateIntent(state, source, candidate, request) {
 
 function slotsFor(option, profiles) {
   const parameters = option.canonicalParameters;
+  if (parameters.outcome === "failure") return [];
   const plan = object(parameters.placementPlan)
     ? parameters.placementPlan : parameters;
+  const leadingModelId = plan.leadingModelId || option.fixedLeadingModelId;
   const endpoint = Array.isArray(plan.path) ? plan.path.at(-1) : null;
   const placementsIncludeLeading = !endpoint
     && (plan.placements || []).some((entry) =>
-      entry.modelId === plan.leadingModelId);
+      entry.modelId === leadingModelId);
   const positions = object(parameters.placementPlan)
     ? (plan.placements || []).map((entry) => ({
-      ...clone(entry), isLeading: entry.modelId === plan.leadingModelId,
+      ...clone(entry), isLeading: entry.modelId === leadingModelId,
     }))
     : placementsIncludeLeading
       ? (plan.placements || []).map((entry) => ({
-        ...clone(entry), isLeading: entry.modelId === plan.leadingModelId,
+        ...clone(entry), isLeading: entry.modelId === leadingModelId,
       }))
-      : [{ modelId: plan.leadingModelId, ...clone(endpoint),
+      : [{ modelId: leadingModelId, ...clone(endpoint),
         isLeading: true }, ...(plan.placements || []).map((entry) => ({
         ...clone(entry), isLeading: false,
       }))];
@@ -1393,8 +1612,10 @@ function slotsFor(option, profiles) {
   const allModelIds = profiles.map((entry) => entry.modelId);
   return positions.map((position, index) => {
     const signature = baseSignature(profileById.get(position.modelId));
-    const compatibleModelIds = allModelIds.filter((modelId) =>
-      baseSignature(profileById.get(modelId)) === signature);
+    const compatibleModelIds = option.fixedLeadingModelId && position.isLeading
+      ? [option.fixedLeadingModelId]
+      : allModelIds.filter((modelId) =>
+        baseSignature(profileById.get(modelId)) === signature);
     return {
       slotId: `slot-${String(index + 1).padStart(2, "0")}`,
       isLeading: position.isLeading,
@@ -1435,6 +1656,8 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
     ? Math.max(1, Math.min(20_000, requestedAttempts)) : DEFAULT_MAX_ATTEMPTS;
   const generated = source.actionType === "deploy"
     ? deployCandidates(domain, request)
+    : source.actionType === "resolve_charge"
+      ? chargeResolutionCandidates(state, domain, request)
     : source.actionType === "resolve_relocation_ability"
       && source.effectKind === "entry_edge_place"
       ? entryEdgeRelocationCandidates(state, domain, request)
@@ -1484,6 +1707,10 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
         formationObjectives: clone(candidate.formationObjectives
           || normalizeFormationObjectives(request)),
         tacticalMetrics: clone(candidate.tacticalMetrics || null),
+        fixedLeadingModelId: candidate.leadingModelId
+          || source.constraints.leadingModelId || null,
+        requiredSpatialConstraints:
+          clone(candidate.requiredSpatialConstraints || null),
         anchor: clone(candidate.anchor),
         canonicalParameters,
         actionHash: hashStarcraftTmgContract(instantiated.action),
