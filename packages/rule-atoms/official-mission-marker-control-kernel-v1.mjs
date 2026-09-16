@@ -138,6 +138,16 @@ function unitInCoherency(piece, models) {
     if (models.length === 1) return true;
     fail("MISSION_MARKER_COHERENCY_STATUS_REQUIRED", piece.id);
   }
+  if (status.schemaVersion === "starcraft_tmg_unit_coherency_status_v1"
+    && status.status === "reserve"
+    && status.isOutOfCoherency === false
+    && piece?.isOnField === true
+    && piece?.deploymentStatus === "deployed_by_lifecycle_consumer") {
+    // Compatibility for rooms produced before lifecycle placement persisted its
+    // already-validated coherency result. The lifecycle adapter could set this
+    // deployment status only after exact placement evaluation succeeded.
+    return true;
+  }
   if (status.schemaVersion !== "starcraft_tmg_unit_coherency_status_v1"
     || !["in_coherency", "out_of_coherency"].includes(status.status)
     || status.isOutOfCoherency !== (status.status === "out_of_coherency")) {

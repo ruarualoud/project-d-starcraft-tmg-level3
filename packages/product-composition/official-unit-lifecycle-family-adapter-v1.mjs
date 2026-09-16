@@ -729,6 +729,19 @@ function placementResolution(state, pieceInput, placementPlan, options = {}) {
     model.elevation = options.groundLevelRequired
       ? "ground" : canonicalModelElevation(model.elevation);
   }
+  const leading = positions.get(placementPlan.leadingModelId);
+  piece.xInches = leading.footprint.center.xMilliInches / 1000;
+  piece.yInches = leading.footprint.center.yMilliInches / 1000;
+  piece.inCoherency = true;
+  piece.coherencyStatus = {
+    schemaVersion: "starcraft_tmg_unit_coherency_status_v1",
+    status: "in_coherency",
+    isOutOfCoherency: false,
+    coherencyRangeMilliInches: coherency,
+    derivedFromLifecyclePlacement: true,
+  };
+  piece.lastLeadingModelId = placementPlan.leadingModelId;
+  piece.lastLifecyclePlacementGeometryHash = geometry.resultHash;
   projected.pieces = projected.pieces.map((entry) => entry.id === piece.id ? piece : entry);
   if (Number(options.minimumEnemyGapMilliInchesExclusive || 0) > 0) {
     const enemyGap = Math.min(Infinity, ...(projected.pieces || []).filter((entry) => (
