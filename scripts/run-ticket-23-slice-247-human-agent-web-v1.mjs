@@ -24,6 +24,7 @@ const PROVIDER_ACTION_TIMEOUT_MS = 6 * 60_000;
 const MATCH_TIMEOUT_MS = 6 * 60 * 60_000;
 const REPLAY_UI_TIMEOUT_MS = 120_000;
 const MAX_TRANSIENT_BOT_DRIVE_ATTEMPTS = 3;
+const MAX_CONSECUTIVE_BROWSER_SURFACE_RECOVERIES = 3;
 const MAX_ZERO_USAGE_PROVIDER_NETWORK_ATTEMPTS = 12;
 const ZERO_USAGE_PROVIDER_NETWORK_REASONS = new Set([
   "provider_dns_resolution_failed",
@@ -342,6 +343,7 @@ async function main() {
   const matchDeadline = Date.now() + MATCH_TIMEOUT_MS;
   let server = null;
   let browser = null;
+  let browserContext = null;
   let page = null;
   let entry = null;
   let outputDirectory = null;
@@ -354,6 +356,53 @@ async function main() {
   const consoleErrors = [];
   const pageErrors = [];
   const mediumFindings = [];
+
+  function browserLifecycleFailure(error) {
+    const value = `${String(error?.code || "")} ${String(error?.message || "")}`
+      + ` ${String(error?.cause || "")}`;
+    return /Target page, context or browser has been closed|page\.evaluate:.*closed|browser has been closed|SLICE247_UI_NOT_FOREGROUND/iu
+      .test(value);
+  }
+
+  function attachPageObservers(targetPage) {
+    targetPage.on("console", (message) => {
+      if (message.type() === "error"
+        && !/WebSocket connection .*\/(?:hot|message).*404/u.test(message.text())) {
+        consoleErrors.push(sanitizeServerText(message.text()));
+      }
+    });
+    targetPage.on("pageerror", (error) => pageErrors.push(String(error.message)));
+    targetPage.on("response", async (response) => {
+      if (!isRoomProjectionResponse(response, entry.roomId)) return;
+      try {
+        const body = await response.json();
+        if (body?.result?.projection) currentProjection = body.result.projection;
+      } catch {}
+    });
+  }
+
+  async function openBrowserSurface(reason) {
+    try { await browserContext?.close(); } catch {}
+    try { await browser?.close(); } catch {}
+    const chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+    browser = await chromium.launch({
+      headless: true,
+      ...(existsSync(chromePath) ? { executablePath: chromePath } : {}),
+    });
+    browserContext = await browser.newContext({
+      viewport: { width: 1500, height: 1050 },
+      locale: "zh-CN",
+      reducedMotion: "reduce",
+    });
+    page = await browserContext.newPage();
+    attachPageObservers(page);
+    await page.goto(entry.url, { waitUntil: "networkidle", timeout: 60_000 });
+    await page.getByText(/已连接权威房间|Authoritative room connected/u)
+      .waitFor({ timeout: 60_000 });
+    await enterBattle();
+    await refreshRoomProjection();
+    return { reason, lifecycle: await browserLifecycleSnapshot() };
+  }
 
   async function progress(status, extra = {}) {
     if (!outputDirectory) return;
@@ -446,12 +495,34 @@ async function main() {
   }
 
   async function browserLifecycleSnapshot() {
-    return page.evaluate(() => ({
-      visibilityState: document.visibilityState,
-      online: navigator.onLine !== false,
-      hasFocus: document.hasFocus(),
-      url: window.location.href,
-    }));
+    const base = {
+      browserConnected: browser?.isConnected?.() === true,
+      pagePresent: Boolean(page),
+      pageClosed: page?.isClosed?.() ?? true,
+    };
+    if (!page || page.isClosed()) return {
+      ...base,
+      visibilityState: "closed",
+      online: null,
+      hasFocus: false,
+      url: null,
+    };
+    try {
+      return { ...base, ...(await page.evaluate(() => ({
+        visibilityState: document.visibilityState,
+        online: navigator.onLine !== false,
+        hasFocus: document.hasFocus(),
+        url: window.location.href,
+      }))) };
+    } catch (error) {
+      return { ...base,
+        visibilityState: "unavailable",
+        online: null,
+        hasFocus: false,
+        url: null,
+        snapshotError: sanitizeServerText(error?.message || error),
+      };
+    }
   }
 
   async function ensureOperationalForeground(reason) {
@@ -1106,37 +1177,7 @@ async function main() {
       resumed: entry.resumed === true,
     });
 
-    const chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-    browser = await chromium.launch({
-      headless: true,
-      ...(existsSync(chromePath) ? { executablePath: chromePath } : {}),
-    });
-    const context = await browser.newContext({
-      viewport: { width: 1500, height: 1050 },
-      locale: "zh-CN",
-      reducedMotion: "reduce",
-    });
-    page = await context.newPage();
-    page.on("console", (message) => {
-      if (message.type() === "error"
-        && !/WebSocket connection .*\/(?:hot|message).*404/u.test(message.text())) {
-        consoleErrors.push(sanitizeServerText(message.text()));
-      }
-    });
-    page.on("pageerror", (error) => pageErrors.push(String(error.message)));
-    page.on("response", async (response) => {
-      if (!isRoomProjectionResponse(response, entry.roomId)) return;
-      try {
-        const body = await response.json();
-        if (body?.result?.projection) currentProjection = body.result.projection;
-      } catch {}
-    });
-
-    await page.goto(entry.url, { waitUntil: "networkidle", timeout: 60_000 });
-    await page.getByText(/已连接权威房间|Authoritative room connected/u)
-      .waitFor({ timeout: 60_000 });
-    await enterBattle();
-    await refreshRoomProjection();
+    await openBrowserSurface("initial_connection");
     ensure(currentProjection?.state && currentProjection?.matchBinding,
       "SLICE247_INITIAL_AUTHORITY_PROJECTION_MISSING");
     let current = await manifest();
@@ -1159,32 +1200,57 @@ async function main() {
     await recoverUnrecordedHumanTransition(current);
     await recordUnseenAgentTraces(current);
 
+    let consecutiveBrowserSurfaceRecoveries = 0;
     while (Date.now() < matchDeadline && actions.length < MAX_ACTIONS
       && current.state?.terminal !== true && current.state?.gameOver !== true) {
-      const machineOwnsTurn = shouldDriveAgent(current);
-      if (machineOwnsTurn) {
-        current = await agentTurn(current);
-        if (!current.state?.terminal && !current.state?.gameOver) {
-          await refreshRoomProjection();
-          current = await manifest();
-        }
-      } else {
-        const beforeHuman = current;
-        await humanTurn();
-        // Apply/Replay can finish before the shared client consumes the new
-        // envelope. Refresh before asking that client for the next LegalSpace,
-        // especially after choose_first_actor.
-        await refreshRoomProjection();
-        const observed = await manifest();
-        if (botActionCount(observed) > botActionCount(beforeHuman)) {
-          current = await agentTurn(beforeHuman);
+      try {
+        const machineOwnsTurn = shouldDriveAgent(current);
+        if (machineOwnsTurn) {
+          current = await agentTurn(current);
           if (!current.state?.terminal && !current.state?.gameOver) {
             await refreshRoomProjection();
             current = await manifest();
           }
         } else {
-          current = observed;
+          const beforeHuman = current;
+          await humanTurn();
+          // Apply/Replay can finish before the shared client consumes the new
+          // envelope. Refresh before asking that client for the next LegalSpace,
+          // especially after choose_first_actor.
+          await refreshRoomProjection();
+          const observed = await manifest();
+          if (botActionCount(observed) > botActionCount(beforeHuman)) {
+            current = await agentTurn(beforeHuman);
+            if (!current.state?.terminal && !current.state?.gameOver) {
+              await refreshRoomProjection();
+              current = await manifest();
+            }
+          } else {
+            current = observed;
+          }
         }
+        consecutiveBrowserSurfaceRecoveries = 0;
+      } catch (error) {
+        if (!browserLifecycleFailure(error)
+          || consecutiveBrowserSurfaceRecoveries
+            >= MAX_CONSECUTIVE_BROWSER_SURFACE_RECOVERIES) throw error;
+        consecutiveBrowserSurfaceRecoveries += 1;
+        const failedLifecycle = await browserLifecycleSnapshot();
+        const recovery = await openBrowserSurface(
+          `loop_recovery_${consecutiveBrowserSurfaceRecoveries}`);
+        current = await manifest();
+        await recoverUnrecordedHumanTransition(current);
+        await recordUnseenAgentTraces(current);
+        mediumFindings.push({
+          severity: "Medium",
+          code: "SLICE247_BROWSER_SURFACE_RECOVERED",
+          attempt: consecutiveBrowserSurfaceRecoveries,
+          cause: sanitizeServerText(error?.message || error),
+          failedLifecycle,
+          recoveredLifecycle: recovery.lifecycle,
+          authoritativeStateRevision: current.room?.stateRevision ?? null,
+          strategyImpact: "none_authority_reconciled_before_next_decision",
+        });
       }
       await progress("running", { manifest: current,
         roomId: entry.roomId, providerModel: entry.providerModel });
