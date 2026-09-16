@@ -5,6 +5,8 @@ export interface StarcraftTmgClientControlView {
   status: "unclaimed" | "claimed" | "fenced" | "cleared";
   claimedAt: string | null;
   roomRevision: number | null;
+  leaseFence: number | null;
+  sessionBindingHash: string | null;
   trainingTruth: false;
 }
 
@@ -387,6 +389,7 @@ export function createStarcraftTmgExpoClientRuntime(options: {
   baseUrl?: string;
   apiPrefix?: string;
   timeoutMs?: number;
+  replayTimeoutMs?: number;
   projectionNamespace?: string;
   maxProjectionBytes?: number;
   allowHeadlessFallback?: boolean;

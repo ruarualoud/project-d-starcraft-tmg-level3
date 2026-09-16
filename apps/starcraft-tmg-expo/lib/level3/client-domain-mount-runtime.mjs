@@ -190,6 +190,7 @@ export function createStarcraftTmgExpoClientRuntime(options = {}) {
     fetchImpl: options.fetchImpl,
     apiPrefix: options.apiPrefix,
     timeoutMs: options.timeoutMs,
+    replayTimeoutMs: options.replayTimeoutMs,
     enableCharacterPresentation: options.enableCharacterPresentation === true,
   });
   const sourceLocalizationEnabled = options.enableSourceLocalization === true;

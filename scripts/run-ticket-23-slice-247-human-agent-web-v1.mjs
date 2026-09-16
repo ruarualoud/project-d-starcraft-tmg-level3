@@ -62,6 +62,20 @@ function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+function parseControlClaimReceipt(value) {
+  const raw = String(value || "").trim();
+  const match = raw.match(
+    /^(?:control-claim-receipt\s+)?status=claimed fence=([0-9]+) session=([a-f0-9]{12})$/u,
+  );
+  const leaseFence = Number(match?.[1]);
+  if (!Number.isSafeInteger(leaseFence) || leaseFence < 1) return null;
+  return {
+    leaseFence,
+    sessionBindingHash: match[2],
+    raw,
+  };
+}
+
 function safeName(value) {
   return String(value || "action").replace(/[^a-z0-9_-]+/giu, "-")
     .replace(/^-+|-+$/gu, "").slice(0, 80) || "action";
@@ -399,6 +413,7 @@ async function main() {
     await page.goto(entry.url, { waitUntil: "networkidle", timeout: 60_000 });
     await page.getByText(/已连接权威房间|Authoritative room connected/u)
       .waitFor({ timeout: 60_000 });
+    await claimControlIfNeeded();
     await enterBattle();
     await refreshRoomProjection();
     return { reason, lifecycle: await browserLifecycleSnapshot() };
@@ -600,15 +615,114 @@ async function main() {
   async function refreshRoomProjection() {
     await page.getByRole("button", { name: /^(房间与规则|Room & rules)$/u })
       .click();
+    await claimControlIfNeeded();
+    const beforeRefresh = await manifest();
+    const observedRevision = Number(
+      currentProjection?.room?.stateRevision ?? -1);
+    const authoritativeRevision = Number(
+      beforeRefresh.room?.stateRevision ?? -1);
+    if (observedRevision === authoritativeRevision
+      && authoritativeRevision >= 0) {
+      await enterBattle();
+      return;
+    }
     const refresh = page.getByRole("button", { name: /刷新投影|Refresh projection/u });
     if (await refresh.isEnabled()) {
       const responsePromise = page.waitForResponse((response) =>
-        isRoomProjectionResponse(response, entry.roomId), { timeout: 30_000 });
+        isRoomProjectionResponse(response, entry.roomId), { timeout: 30_000 })
+        .then((response) => ({ response }), (error) => ({ error }));
       await refresh.click();
-      const body = await (await responsePromise).json();
-      if (body?.result?.projection) currentProjection = body.result.projection;
+      const observed = await responsePromise;
+      if (observed.response) {
+        const body = await observed.response.json();
+        if (body?.result?.projection) currentProjection = body.result.projection;
+      } else {
+        const latest = await manifest();
+        const latestRevision = Number(latest.room?.stateRevision ?? -1);
+        if (Number(currentProjection?.room?.stateRevision ?? -1)
+          !== latestRevision) throw observed.error;
+        mediumFindings.push({
+          severity: "Medium",
+          code: "SLICE247_REFRESH_RESPONSE_OBSERVATION_RECOVERED",
+          stateRevision: latestRevision,
+          strategyImpact:
+            "none_projection_and_authoritative_manifest_already_agreed",
+        });
+      }
     }
     await enterBattle();
+  }
+
+  async function claimControlIfNeeded() {
+    const roomTab = page.getByRole("button", {
+      name: /^(房间与规则|Room & rules)$/u,
+    });
+    if (await roomTab.count()) await roomTab.click();
+    const receipt = page.getByTestId("starcraft-control-claim-receipt");
+    await receipt.waitFor({ state: "visible", timeout: 10_000 });
+    const readReceipt = async () => String(
+      await receipt.getAttribute("aria-valuetext")
+        || await receipt.textContent() || "",
+    ).trim();
+    const existingReceipt = parseControlClaimReceipt(await readReceipt());
+    if (existingReceipt) return false;
+    const previousFence = Number(
+      currentProjection?.control?.currentLeaseFence ?? 0);
+    let receiptText = "";
+    let attempt = 0;
+    while (attempt < 2) {
+      attempt += 1;
+      const claim = page.getByRole("button", {
+        name: /^(在本设备取得控制权|取得控制权|Take control here|Claim control)$/u,
+      });
+      if (!(await claim.count())
+        || !(await claim.isVisible({ timeout: 1_000 }))) return false;
+      await claim.click();
+      const deadline = Date.now() + 150_000;
+      while (Date.now() < deadline) {
+        receiptText = await readReceipt();
+        if (parseControlClaimReceipt(receiptText)) break;
+        const body = await page.locator("body").innerText();
+        if (/CONTROL_LEASE_OUTCOME_UNKNOWN/u.test(body)) break;
+        await sleep(100);
+      }
+      if (parseControlClaimReceipt(receiptText)) break;
+      if (attempt >= 2) break;
+      const refresh = page.getByRole("button", {
+        name: /刷新投影|Refresh projection/u,
+      });
+      ensure(await refresh.isVisible({ timeout: 5_000 }),
+        "SLICE247_CONTROL_CLAIM_RECOVERY_UNAVAILABLE", {
+          attempt,
+          observedReceipt: receiptText || null,
+        });
+      await refresh.click();
+      await page.getByText(
+        /已连接权威房间|Authoritative room connected/u,
+      ).first().waitFor({ timeout: 150_000 });
+    }
+    const claimEvidence = parseControlClaimReceipt(receiptText);
+    const leaseFence = Number(claimEvidence?.leaseFence);
+    ensure(Number.isSafeInteger(leaseFence) && leaseFence > previousFence,
+      "SLICE247_CONTROL_CLAIM_PRIVATE_RECEIPT_INVALID", {
+        previousFence,
+        leaseFence: Number.isSafeInteger(leaseFence) ? leaseFence : null,
+        sessionBindingPresent:
+          /^[a-f0-9]{12}$/u.test(String(
+            claimEvidence?.sessionBindingHash || "")),
+        observedReceipt: receiptText || null,
+      });
+    currentProjection = {
+      ...(currentProjection || {}),
+      control: {
+        ...(currentProjection?.control || {}),
+        visible: true,
+        currentLeaseFence: leaseFence,
+        ownedByViewer: true,
+        hasActiveLease: true,
+      },
+    };
+    return true;
   }
 
   async function verifyCurrentReplayThroughUi(expectedRevision) {
@@ -685,14 +799,37 @@ async function main() {
   }
 
   async function loadLegalSpace() {
+    const baseline = await manifest();
+    const baselineRevision = Number(baseline.room?.stateRevision ?? -1);
+    const baselineBotActionCount = botActionCount(baseline);
     await page.getByRole("button", { name: /^(行动|Actions)$/u }).click();
     const button = page.getByRole("button", { name: "Load LegalSpace" });
-    await button.waitFor({ state: "visible", timeout: 20_000 });
-    const enabledDeadline = Date.now() + 20_000;
-    while (!(await button.isEnabled()) && Date.now() < enabledDeadline) {
-      await sleep(100);
+    try {
+      await button.waitFor({ state: "visible", timeout: 20_000 });
+      const enabledDeadline = Date.now() + 20_000;
+      while (!(await button.isEnabled({ timeout: 1_000 }))
+        && Date.now() < enabledDeadline) await sleep(100);
+      ensure(await button.isEnabled({ timeout: 1_000 }),
+        "SLICE247_LOAD_LEGAL_SPACE_DISABLED");
+    } catch (error) {
+      const latest = await manifest();
+      const latestRevision = Number(latest.room?.stateRevision ?? -1);
+      const latestBotActionCount = botActionCount(latest);
+      if (latestRevision > baselineRevision
+        || latestBotActionCount > baselineBotActionCount) {
+        throw Object.assign(
+          new Error("SLICE247_AUTHORITY_ADVANCED_DURING_HUMAN_TURN"),
+          {
+            code: "SLICE247_AUTHORITY_ADVANCED_DURING_HUMAN_TURN",
+            baselineRevision,
+            latestRevision,
+            baselineBotActionCount,
+            latestBotActionCount,
+          },
+        );
+      }
+      throw error;
     }
-    ensure(await button.isEnabled(), "SLICE247_LOAD_LEGAL_SPACE_DISABLED");
     const response = await postThroughUi({
       endpoint: "legal-space",
       click: () => button.click(),
@@ -952,6 +1089,21 @@ async function main() {
       try {
         return await performHumanTurn();
       } catch (error) {
+        if (String(error?.code)
+          === "SLICE247_AUTHORITY_ADVANCED_DURING_HUMAN_TURN") {
+          mediumFindings.push({
+            severity: "Medium",
+            code: error.code,
+            baselineRevision: error.baselineRevision,
+            latestRevision: error.latestRevision,
+            baselineBotActionCount: error.baselineBotActionCount,
+            latestBotActionCount: error.latestBotActionCount,
+            strategyImpact:
+              "none_stale_human_ui_operation_cancelled_before_dispatch",
+          });
+          await refreshRoomProjection();
+          return { skippedBecauseAuthorityAdvanced: true };
+        }
         const recoverable = attempt === 1
           && RECOVERABLE_UI_DISPATCH_FAILURES.has(String(error?.code));
         if (!recoverable) throw error;

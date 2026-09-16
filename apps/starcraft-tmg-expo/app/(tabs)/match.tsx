@@ -147,6 +147,17 @@ export default function MatchScreen() {
     setEphemeralLink(null);
   }, [accessContextKey]);
 
+  useEffect(() => {
+    if (connection.status === "connected" && privateControl.status === "claimed") {
+      return;
+    }
+    setNotice((current) => (
+      current === "本设备已取得控制权。"
+        || current === "This device now holds control."
+        ? null : current
+    ));
+  }, [connection.status, privateControl.status]);
+
   const statusLabel = useMemo(() => {
     const labels: Record<string, [string, string]> = {
       room_required: ["等待房间", "Room required"],
@@ -182,10 +193,14 @@ export default function MatchScreen() {
     setNotice(null);
     try {
       const result = await dispatch({ type: "claim_control" });
-      if (result.ok) {
+      if (result.ok
+        && result.outcome === "control_claimed"
+        && result.view?.control?.status === "claimed"
+        && Number.isSafeInteger(Number(result.view.control.leaseFence))
+        && Boolean(result.view.control.sessionBindingHash)) {
         setNotice(zh ? "本设备已取得控制权。" : "This device now holds control.");
       } else {
-        setActionError(result.rejection?.code || "CONTROL_CLAIM_REJECTED");
+        setActionError(result.rejection?.code || "CONTROL_CLAIM_RECEIPT_INVALID");
       }
     } finally {
       setPendingAction(null);
@@ -510,10 +525,23 @@ export default function MatchScreen() {
               [zh ? "席位" : "Seat", scalar(viewer.seatKey)],
               [zh ? "角色模式" : "Role mode", scalar(viewer.roleMode)],
               [zh ? "控制状态" : "Control status", scalar(privateControl.status)],
+              [zh ? "本机会话 Fence" : "Local session fence", scalar(privateControl.leaseFence)],
+              [zh ? "本机会话绑定" : "Local session binding", privateControl.sessionBindingHash ? String(privateControl.sessionBindingHash).slice(0, 12) : "—"],
               [zh ? "活动控制" : "Active lease", projectedControl.hasActiveLease ? (zh ? "是" : "Yes") : (zh ? "否" : "No")],
               [zh ? "本观察者所有" : "Owned by viewer", projectedControl.ownedByViewer ? (zh ? "是" : "Yes") : (zh ? "否" : "No")],
             ]}
           />
+          <Text
+            testID="starcraft-control-claim-receipt"
+            accessibilityLabel="control-claim-receipt"
+            accessibilityValue={{
+              text: `status=${scalar(privateControl.status)} fence=${scalar(privateControl.leaseFence)} session=${privateControl.sessionBindingHash ? String(privateControl.sessionBindingHash).slice(0, 12) : "none"}`,
+            }}
+            selectable
+            style={styles.mono}
+          >
+            {`control-claim-receipt status=${scalar(privateControl.status)} fence=${scalar(privateControl.leaseFence)} session=${privateControl.sessionBindingHash ? String(privateControl.sessionBindingHash).slice(0, 12) : "none"}`}
+          </Text>
           <InfoCard
             title={zh ? "恢复与缓存" : "Recovery & cache"}
             rows={[

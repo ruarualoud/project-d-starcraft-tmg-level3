@@ -175,6 +175,15 @@ function createProductRuntime(): StarcraftTmgExpoClientRuntime {
     ),
     fetchImpl: globalThis.fetch,
     baseUrl: process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || "",
+    // Standard-2000 projections and derived reads can keep the single local
+    // authority process busy well beyond the small-room default. The Client
+    // Domain still reports uncertain mutations as failures; this larger budget
+    // only avoids aborting a valid request while authority is computing.
+    timeoutMs: 120_000,
+    // Full receipt-tail Replay is deliberately stronger and slower than a
+    // projection read. It gets its own budget; ordinary operations retain the
+    // transport adapter's short fail-fast timeout.
+    replayTimeoutMs: 120_000,
     enableCharacterPresentation: true,
     enableSourceLocalization: true,
     // Slice 150 proves the Web session. Native cookie/auth persistence and

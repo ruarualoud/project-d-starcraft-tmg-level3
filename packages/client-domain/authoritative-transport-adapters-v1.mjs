@@ -154,6 +154,13 @@ export function createHttpStarcraftTmgAuthoritativeTransportAdapter(options = {}
   const apiPrefix = String(options.apiPrefix || STARCRAFT_TMG_CLIENT_HTTP_API_PREFIX).replace(/\/+$/, "");
   const maxResponseBytes = Math.max(1024, Number(options.maxResponseBytes || 4 * 1024 * 1024));
   const timeoutMs = Math.max(250, Number(options.timeoutMs || 15_000));
+  // A replay re-executes the receipt tail after the latest signed checkpoint.
+  // That is intentionally more expensive than an ordinary room read or
+  // mutation, especially for a full 2000-point state. Keep its transport
+  // budget independent so a truthful replay is not converted into an
+  // uncertain mutation merely because the generic request budget is short.
+  const replayTimeoutMs = Math.max(timeoutMs,
+    Number(options.replayTimeoutMs || 120_000));
   const characterPresentationEnabled = options.enableCharacterPresentation === true;
 
   async function execute(input = {}) {
@@ -170,7 +177,10 @@ export function createHttpStarcraftTmgAuthoritativeTransportAdapter(options = {}
       init.body = JSON.stringify(request.payload || {});
     }
     const controller = typeof AbortController === "function" ? new AbortController() : null;
-    const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    const requestTimeoutMs = request.operation === "read_replay"
+      ? replayTimeoutMs : timeoutMs;
+    const timeout = controller
+      ? setTimeout(() => controller.abort(), requestTimeoutMs) : null;
     if (controller) init.signal = controller.signal;
     try {
       const response = await fetchImpl(`${baseUrl}${apiPrefix}/${endpoint.path}`, init);

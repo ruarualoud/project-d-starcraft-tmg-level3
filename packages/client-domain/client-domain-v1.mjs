@@ -1440,6 +1440,8 @@ function unclaimedControl(status = "unclaimed") {
     status,
     claimedAt: null,
     roomRevision: null,
+    leaseFence: null,
+    sessionBindingHash: null,
     trainingTruth: false,
   };
 }
@@ -1662,7 +1664,7 @@ function validateCharacterSelectionResponseV3(result, context) {
   return { projection, transition, roomRevision: result.room.roomRevision };
 }
 
-function claimedControl(result, claimedAt) {
+function claimedControl(result, claimedAt, clientSessionId) {
   return {
     schemaVersion: "starcraft_tmg_client_control_summary_v1",
     status: "claimed",
@@ -1670,6 +1672,11 @@ function claimedControl(result, claimedAt) {
     roomRevision: Number.isInteger(Number(result?.room?.roomRevision))
       ? Number(result.room.roomRevision)
       : null,
+    leaseFence: Number(result?.controlLease?.leaseFence),
+    sessionBindingHash: hashStarcraftTmgClientContract({
+      schemaVersion: "starcraft_tmg_client_session_binding_v1",
+      sessionId: clientSessionId,
+    }),
     trainingTruth: false,
   };
 }
@@ -1710,6 +1717,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
   let controlLeaseReference = null;
   let lifecycleUnsubscribe = null;
   let operationQueue = Promise.resolve();
+  let auxiliaryReadQueue = Promise.resolve();
   let internal = {
     clientRevision: 0,
     phase: "unbound",
@@ -1822,7 +1830,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
     return currentView;
   }
 
-  function rejection(code, details = {}, phase = internal.phase) {
+  function rejection(code, details = {}, phase = internal.phase, patch = {}) {
     const record = {
       schemaVersion: `${STARCRAFT_TMG_CLIENT_DOMAIN_VERSION}.rejection`,
       code: String(code || "CLIENT_OPERATION_REJECTED"),
@@ -1830,7 +1838,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
       occurredAt: now(),
       trainingTruth: false,
     };
-    const view = publish({ phase, rejection: record });
+    const view = publish({ ...clone(patch), phase, rejection: record });
     return deepFreeze({ ok: false, rejection: record, view });
   }
 
@@ -2661,7 +2669,9 @@ export function createStarcraftTmgClientDomain(options = {}) {
       const view = publish({ battleWorkbench: clone(snapshot), rejection: null });
       return deepFreeze({ ok: true, outcome: "battle_workbench_loaded", view });
     } catch (error) {
-      return handleTransportFailure(error, "read_battle_workbench");
+      return handleAuxiliaryReadFailure(error, "read_battle_workbench", {
+        battleWorkbench: null,
+      });
     }
   }
 
@@ -2737,6 +2747,7 @@ export function createStarcraftTmgClientDomain(options = {}) {
       const lease = result.controlLease;
       const leaseId = String(lease?.leaseId || "").trim();
       if (!object(lease) || !leaseId
+        || String(lease.sessionId || "") !== clientSessionId
         || !Number.isInteger(Number(lease.leaseFence)) || Number(lease.leaseFence) < 1) {
         controlLeaseReference = null;
         return rejection("CONTROL_LEASE_RESPONSE_INVALID");
@@ -2745,8 +2756,24 @@ export function createStarcraftTmgClientDomain(options = {}) {
         leaseId,
         leaseFence: Number(lease.leaseFence),
       };
-      const control = claimedControl(result, now());
-      publish({ control, rejection: null });
+      const control = claimedControl(result, now(), clientSessionId);
+      const currentProjection = internal.roomProjection;
+      const roomProjection = currentProjection ? {
+        ...currentProjection,
+        ...(object(result.room) ? { room: clone(result.room) } : {}),
+        control: {
+          ...(currentProjection.control || {}),
+          visible: true,
+          currentLeaseFence: Number(lease.leaseFence),
+          ownedByViewer: true,
+          hasActiveLease: true,
+        },
+      } : null;
+      publish({
+        ...(roomProjection ? { roomProjection } : {}),
+        control,
+        rejection: null,
+      });
       if (refreshAfterClaim) {
         const refreshed = await refreshProjection("control_claimed");
         if (!refreshed.ok) return refreshed;
@@ -2754,9 +2781,36 @@ export function createStarcraftTmgClientDomain(options = {}) {
           return rejection("CONTROL_LEASE_FENCED", { refreshed: true });
         }
       }
-      return success("control_claimed", { control: clone(internal.control), reusedPrivateReference: false });
+      return success("control_claimed", {
+        control: clone(internal.control),
+        claimReceipt: {
+          schemaVersion: "starcraft_tmg_client_control_claim_receipt_v1",
+          status: "claimed",
+          leaseFence: Number(lease.leaseFence),
+          roomRevision: Number(result.room?.roomRevision),
+          sessionBindingHash: control.sessionBindingHash,
+          trainingTruth: false,
+        },
+        reusedPrivateReference: false,
+      });
     } catch (error) {
-      return handleTransportFailure(error, "claim_control");
+      const failed = await handleTransportFailure(error, "claim_control", true);
+      if (!failed?.ok) return failed;
+      // A verified cached projection is useful for display, but it cannot
+      // prove that a timed-out lease mutation committed or recover the private
+      // lease ID. Never let the generic cache-recovery success masquerade as a
+      // successful control claim.
+      return rejection("CONTROL_LEASE_OUTCOME_UNKNOWN", {
+        operation: "claim_control",
+        cachedProjectionAvailable: true,
+        authoritativeOutcomeUncertain: true,
+      }, internal.phase, {
+        recovery: {
+          ...internal.recovery,
+          authoritativeOutcomeUncertain: true,
+          interruptedOperation: "claim_control",
+        },
+      });
     }
   }
 
@@ -3173,6 +3227,31 @@ export function createStarcraftTmgClientDomain(options = {}) {
     return rejection(code, { operation, ...safeErrorDetails(error, sensitiveValues) });
   }
 
+  async function handleAuxiliaryReadFailure(error, operation, patch = {}) {
+    const code = error instanceof StarcraftTmgClientTransportError
+      ? error.code : String(error?.code || "TRANSPORT_FAILED");
+    if (AUTHENTICATION_CODES.has(code)) {
+      return rejectAuthentication(code, {
+        operation,
+        ...safeErrorDetails(error, sensitiveValues),
+      });
+    }
+    // A derived, read-only panel timing out does not prove that the room
+    // authority is offline. Keep the last verified room projection usable and
+    // degrade only that panel. Real lifecycle loss still enters the ordinary
+    // offline cache path, and mutations retain stricter uncertainty handling.
+    if (RECOVERABLE_TRANSPORT_CODES.has(code)
+      && internal.roomProjection
+      && operationalLifecycle(lifecycle.read())) {
+      return rejection(code, {
+        operation,
+        auxiliaryReadUnavailable: true,
+        roomProjectionRetained: true,
+      }, "ready", patch);
+    }
+    return handleTransportFailure(error, operation);
+  }
+
   async function updateCharacterPresentation(intent) {
     const operationalError = ensureOperational();
     if (operationalError) return rejection(operationalError);
@@ -3323,7 +3402,10 @@ export function createStarcraftTmgClientDomain(options = {}) {
     if (intent.type === "load_battle_workbench") return loadBattleWorkbench();
     if (intent.type === "preview_finite" || intent.type === "preview_parameterized") return previewIntent(intent);
     if (intent.type === "confirm_and_apply_preview") return confirmAndApply(intent);
-    if (intent.type === "claim_control") return obtainControlLease({ force: true, refreshAfterClaim: true });
+    if (intent.type === "claim_control") return obtainControlLease({
+      force: true,
+      refreshAfterClaim: false,
+    });
     if (intent.type === "issue_invite") return issueAccess("invite");
     if (intent.type === "issue_recovery") return issueAccess("recovery");
     if (intent.type === "select_character_persona"
@@ -3343,6 +3425,14 @@ export function createStarcraftTmgClientDomain(options = {}) {
   }
 
   function dispatch(intent) {
+    if (intent?.type === "load_battle_workbench") {
+      const run = auxiliaryReadQueue.then(
+        () => performDispatch(intent),
+        () => performDispatch(intent),
+      );
+      auxiliaryReadQueue = run.catch(() => {});
+      return run;
+    }
     return enqueue(() => performDispatch(intent));
   }
 

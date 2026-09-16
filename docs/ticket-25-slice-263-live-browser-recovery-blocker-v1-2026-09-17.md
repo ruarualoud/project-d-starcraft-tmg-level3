@@ -165,3 +165,25 @@ normalizes the optional versioned display prefix, followed by one focused
 acceptance run from the same revision-129 room. Only after that persistent
 client-view assertion may the runner recover action 129 exactly once and resume
 the H-A match.
+
+## Next-cycle acceptance and terminal continuation
+
+The next cycle implemented only that parser change: the harness now locates the
+machine receipt by stable test ID and accepts the explicit
+`control-claim-receipt ` display prefix while retaining the strict claimed,
+positive-fence and 12-hex session-binding contract. Its only syntax gate passed,
+and the only browser acceptance run succeeded.
+
+The same Room then recovered action 129 exactly once, applied actions 130–137,
+and reached a Rules-terminal round-5 result. The final evidence is 137 actions,
+181 screenshots, 419 Provider calls, 23,582,097 total units and CNY 36.496241.
+Every Agent replay matched; Critical/High, console errors and page errors are
+all zero. Ticket 24 / Slice 258 and Ticket 23 / Slice 247 therefore close.
+
+This terminal tail selected finite Pass candidates rather than a
+formation-bearing action. It proves the control/recovery seam and shows no
+general prompt-scheduling regression, but it does not satisfy S262's natural
+post-change formation canary. Action 131 also disclosed a Medium lifecycle
+projection inconsistency by describing the same Raptor through on-board
+relationships and reserve policy. S262 remains `3/4` accepted and S263 remains
+open for the independent A-A/review path.
