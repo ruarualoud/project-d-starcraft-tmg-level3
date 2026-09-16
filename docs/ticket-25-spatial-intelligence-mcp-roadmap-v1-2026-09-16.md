@@ -2,9 +2,9 @@
 
 Date: 2026-09-16
 
-Status: accepted follow-up to Ticket 24. Slice 259 has a live-state tracer
-bullet; Slice 260 is active and Slices 261--263 remain. Ticket 24 Slice 258
-still owns completion of the current Standard-2000 evidence match.
+Status: accepted follow-up to Ticket 24. Slices 259--260 are implemented;
+Slice 261 is active and Slices 262--263 remain. Ticket 24 Slice 258 still owns
+completion of the current Standard-2000 evidence match.
 
 ## Product requirement
 
@@ -138,7 +138,7 @@ truth.
 The roughly 2.5-minute local solve remains Medium performance debt. This slice
 proves the seam and correctness, not production latency or all action families.
 
-### Slice 260 — complete action-family coverage
+### Slice 260 — complete action-family coverage (implemented)
 
 - Apply the same solver contract to Deploy/Move/Run/Disengage and every
   Charge/Place/Summon/Respawn/transport/forced-relocation domain.
@@ -150,6 +150,13 @@ proves the seam and correctness, not production latency or all action families.
 Deliverable: coverage matrix plus focused Rules-instantiated receipts for every
 formation-bearing action family. This is contract coverage, not one test per
 unit name.
+
+Closure: `ticket-25-slice-260-formation-action-family-coverage-v1-2026-09-17.md`
+records the exported denominator, live Standard/Charge/Relocation/Lifecycle
+receipts, exact `extra_move` and two-model Respawn adapter hashes, and the
+zero-domain forced-relocation result. The real action-58 Charge resolution also
+proved the solver's rules-certified failure exit rather than another model
+coordinate-repair loop.
 
 First live blocker: after action 57's authoritative Charge roll, the only
 current domain was `resolve_charge`. It was not classified as a formation

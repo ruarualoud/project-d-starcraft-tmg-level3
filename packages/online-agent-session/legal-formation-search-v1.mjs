@@ -33,6 +33,29 @@ const SUPPORTED_ACTION_TYPES = new Set([
   "resolve_relocation_ability",
   "resolve_unit_lifecycle_ability", "resolve_unit_lifecycle_consumer",
 ]);
+const RELOCATION_FORMATION_EFFECTS = new Set([
+  "entry_edge_place", "extra_move", "direct_place",
+  "friendly_anchor_place", "non_entry_edge_deploy",
+]);
+const LIFECYCLE_ABILITY_FORMATION_EFFECTS = new Set([
+  "phase_prism_swap", "summon_roachling", "respawn_models",
+]);
+const LIFECYCLE_CONSUMER_FORMATION_EFFECTS = new Set([
+  "omega_network_deploy", "pylon_warp_conduit_deploy",
+  "reserve_indicator_deploy", "shade_round_end_place",
+]);
+export const STARCRAFT_TMG_FORMATION_ACTION_FAMILY_COVERAGE_V1 = Object.freeze({
+  standardSpatialActionTypes: Object.freeze([
+    "deploy", "move", "run", "disengage",
+  ]),
+  chargeResolutionActionTypes: Object.freeze(["resolve_charge"]),
+  relocationEffects: Object.freeze([...RELOCATION_FORMATION_EFFECTS]),
+  lifecycleAbilityEffects:
+    Object.freeze([...LIFECYCLE_ABILITY_FORMATION_EFFECTS]),
+  lifecycleConsumerEffects:
+    Object.freeze([...LIFECYCLE_CONSUMER_FORMATION_EFFECTS]),
+  forcedRelocationParameterizedDomainCount: 0,
+});
 const DEFAULT_MAX_ATTEMPTS = 4_096;
 const DEFAULT_MAX_OPTIONS = 4;
 const FORMATION_OBJECTIVE_KIND_SET = new Set(
@@ -1015,6 +1038,134 @@ function entryEdgeRelocationCandidates(state, domain, request) {
   ) || left.patternId.localeCompare(right.patternId));
 }
 
+function relocationAbilityConstraints(state, domain) {
+  const source = sourceDomain(domain);
+  return {
+    ...source.constraints,
+    modelProfiles: relocationModelProfiles(state, domain),
+    battlefieldWidthMilliInches:
+      Math.round(Number(state.board.widthInches) * 1000),
+    battlefieldHeightMilliInches:
+      Math.round(Number(state.board.heightInches) * 1000),
+  };
+}
+
+function boundedRelocationAbilityCandidates(state, domain, request) {
+  const source = sourceDomain(domain);
+  const constraints = relocationAbilityConstraints(state, domain);
+  return relocationCandidates({ ...source, constraints }, request).map((entry) => ({
+    ...entry,
+    parameters: {
+      leadingModelId: entry.parameters.leadingModelId,
+      ...(source.effectKind === "extra_move"
+        ? { path: clone(entry.parameters.path) } : {}),
+      placements: [
+        { modelId: entry.parameters.leadingModelId,
+          ...clone(entry.parameters.path.at(-1)) },
+        ...clone(entry.parameters.placements),
+      ],
+    },
+    modelProfiles: constraints.modelProfiles,
+  }));
+}
+
+function friendlyAnchorRelocationCandidates(state, domain) {
+  const source = sourceDomain(domain);
+  const profiles = relocationModelProfiles(state, domain);
+  const leading = profiles[0];
+  const anchors = blockingFootprints(state, source.pieceId).filter((entry) =>
+    entry.kind === "model" && entry.sideKey === source.sideKey);
+  const angles = Array.from({ length: 24 }, (_, index) =>
+    (Math.PI * 2 * index) / 24);
+  return anchors.flatMap((entry) => angles.flatMap((angle) => {
+    const anchor = contactAnchor(leading, entry.footprint, angle);
+    if (!anchor) return [];
+    return [{
+      parameters: {
+        leadingModelId: leading.modelId,
+        anchorPieceId: entry.pieceId,
+        anchorModelId: entry.modelId,
+        placements: [{ modelId: leading.modelId, ...anchor }],
+      },
+      patternId: `friendly-anchor:${entry.pieceId}:${entry.modelId}`,
+      anchor,
+      modelProfiles: profiles,
+    }];
+  }));
+}
+
+function nonEntryEdgeRelocationCandidates(state, domain, request) {
+  const source = sourceDomain(domain);
+  const constraints = relocationAbilityConstraints(state, domain);
+  const profiles = constraints.modelProfiles;
+  const leading = profiles[0];
+  const preferred = preferredAnchor(request, constraints);
+  const sides = source.parameterSchema?.edgeSide?.enum || [];
+  const maximum = Number(constraints.maxDistanceMilliInches);
+  const halfWidth = dimension(leading, "baseWidthMilliInches", "widthMilliInches") / 2;
+  const halfDepth = dimension(leading, "baseDepthMilliInches", "depthMilliInches") / 2;
+  const acrossX = axisSamples(halfWidth,
+    constraints.battlefieldWidthMilliInches - halfWidth,
+    preferred.xMilliInches, 2_000);
+  const acrossY = axisSamples(halfDepth,
+    constraints.battlefieldHeightMilliInches - halfDepth,
+    preferred.yMilliInches, 2_000);
+  const candidates = [];
+  for (const edgeSide of sides) {
+    const anchors = new Set();
+    if (edgeSide === "left" || edgeSide === "right") {
+      const inward = [halfWidth, Math.max(halfWidth, maximum - halfWidth)];
+      for (const yMilliInches of acrossY) for (const distance of inward) {
+        const xMilliInches = edgeSide === "left" ? distance
+          : constraints.battlefieldWidthMilliInches - distance;
+        anchors.add(`${Math.round(xMilliInches)}:${Math.round(yMilliInches)}`);
+      }
+    } else {
+      const inward = [halfDepth, Math.max(halfDepth, maximum - halfDepth)];
+      for (const xMilliInches of acrossX) for (const distance of inward) {
+        const yMilliInches = edgeSide === "bottom" ? distance
+          : constraints.battlefieldHeightMilliInches - distance;
+        anchors.add(`${Math.round(xMilliInches)}:${Math.round(yMilliInches)}`);
+      }
+    }
+    for (const value of anchors) {
+      const [xMilliInches, yMilliInches] = value.split(":").map(Number);
+      candidates.push({
+        parameters: {
+          leadingModelId: leading.modelId,
+          edgeSide,
+          placements: [{ modelId: leading.modelId,
+            xMilliInches, yMilliInches }],
+        },
+        patternId: `non-entry-edge:${edgeSide}`,
+        anchor: { xMilliInches, yMilliInches },
+        modelProfiles: profiles,
+      });
+    }
+  }
+  return candidates;
+}
+
+function relocationAbilityCandidates(state, domain, request) {
+  const source = sourceDomain(domain);
+  if (!RELOCATION_FORMATION_EFFECTS.has(source.effectKind)) {
+    throw new TypeError("LEGAL_FORMATION_RELOCATION_EFFECT_UNSUPPORTED");
+  }
+  if (source.effectKind === "entry_edge_place") {
+    return entryEdgeRelocationCandidates(state, domain, request);
+  }
+  if (new Set(["extra_move", "direct_place"]).has(source.effectKind)) {
+    return boundedRelocationAbilityCandidates(state, domain, request);
+  }
+  if (source.effectKind === "friendly_anchor_place") {
+    return friendlyAnchorRelocationCandidates(state, domain);
+  }
+  if (source.effectKind === "non_entry_edge_deploy") {
+    return nonEntryEdgeRelocationCandidates(state, domain, request);
+  }
+  throw new TypeError("LEGAL_FORMATION_RELOCATION_EFFECT_UNSUPPORTED");
+}
+
 function relocationCandidates(domain, request) {
   const source = sourceDomain(domain);
   const constraints = source.constraints;
@@ -1255,6 +1406,13 @@ function summonedUnitProfiles(state, source) {
   }));
 }
 
+function firstPaymentSelection(source) {
+  const options = [...(source.parameterSchema
+    ?.paymentCardInstanceIds?.enum || [])].sort((left, right) =>
+    left.length - right.length || left.join("|").localeCompare(right.join("|")));
+  return clone(options[0] || []);
+}
+
 function summonCandidates(state, domain, request) {
   const source = sourceDomain(domain);
   if (source.effectKind !== "summon_roachling") {
@@ -1274,10 +1432,7 @@ function summonCandidates(state, domain, request) {
     battlefieldWidthMilliInches: Math.round(Number(state.board.widthInches) * 1000),
     battlefieldHeightMilliInches: Math.round(Number(state.board.heightInches) * 1000),
   });
-  const paymentOptions = [...(source.parameterSchema
-    ?.paymentCardInstanceIds?.enum || [])].sort((left, right) =>
-    left.length - right.length || left.join("|").localeCompare(right.join("|")));
-  const paymentCardInstanceIds = clone(paymentOptions[0] || []);
+  const paymentCardInstanceIds = firstPaymentSelection(source);
   const objectives = normalizeFormationObjectives(request);
   const policies = formationSolverPolicies(objectives);
   const generationLimit = Math.max(8, Math.min(32,
@@ -1353,6 +1508,238 @@ function summonCandidates(state, domain, request) {
   ) || left.patternId.localeCompare(right.patternId));
 }
 
+function phasePrismCandidates(state, domain, request) {
+  const source = sourceDomain(domain);
+  const actor = (state.pieces || []).find((entry) => entry.id === source.pieceId);
+  if (!actor) throw new TypeError("LEGAL_FORMATION_PHASE_PRISM_ACTOR_MISSING");
+  const profiles = reservePieceProfiles(actor);
+  const objectives = normalizeFormationObjectives(request);
+  const policies = formationSolverPolicies(objectives);
+  const paymentCardInstanceIds = firstPaymentSelection(source);
+  const targetIds = source.parameterSchema?.targetUnitId?.enum || [];
+  const targets = (state.pieces || []).filter((entry) =>
+    targetIds.includes(entry.id) && entry.isOnField === true)
+    .flatMap((piece) => (piece.models || []).filter((model) =>
+      model.isDestroyed !== true && model.isOnField !== false)
+      .map((model) => ({ piece, model, blocker: blockingFootprints(
+        state, source.pieceId).find((entry) => entry.modelId === model.id) }))
+      .filter((entry) => entry.blocker));
+  const angles = Array.from({ length: 24 }, (_, index) =>
+    (Math.PI * 2 * index) / 24);
+  const candidates = [];
+  const limit = Math.max(12, Math.min(64,
+    Number(request.maximumOptions || DEFAULT_MAX_OPTIONS) * 8));
+  for (const target of targets) {
+    for (const angle of angles) {
+      const anchor = contactAnchor(profiles[0], target.blocker.footprint, angle);
+      if (!anchor) continue;
+      for (const policy of policies) {
+        const solved = solveIntentFormationRows({
+          state,
+          profiles,
+          anchor,
+          angle,
+          coherencyRangeMilliInches: horizontalCoherencyRange(state, actor),
+          excludedPieceId: source.pieceId,
+          sideKey: source.sideKey || actor.sideKey,
+          policy,
+        });
+        if (!solved) continue;
+        candidates.push({
+          parameters: {
+            activeUnitId: source.pieceId,
+            paymentCardInstanceIds,
+            targetUnitId: target.piece.id,
+            targetContactModelId: target.model.id,
+            placementPlan: {
+              leadingModelId: solved.rows[0].modelId,
+              placements: solved.rows,
+            },
+          },
+          patternId: `intent-solver:${solved.policyId}`,
+          solverPolicyId: solved.policyId,
+          formationObjectives: solved.objectives,
+          tacticalMetrics: solved.metrics,
+          anchor,
+          modelProfiles: profiles,
+          parentContactModelId: target.model.id,
+          sameAnchorAlternativesMeaningful: true,
+        });
+        if (candidates.length >= limit) return candidates;
+      }
+    }
+  }
+  return candidates;
+}
+
+function profilesForPieceModels(state, piece, models) {
+  const geometry = getOfficialModelBaseGeometryProfileV1(
+    state.officialModelBaseGeometryDataBundle, piece.officialUnitRecordKey);
+  return models.map((model) => {
+    const width = Number(model.baseWidthInches) * 1000;
+    const depth = Number(model.baseDepthInches) * 1000;
+    return {
+      modelId: model.id,
+      baseShape: String(model.baseShape || geometry.baseShape),
+      baseWidthMilliInches: Number.isFinite(width) && width > 0
+        ? Math.round(width) : geometry.baseWidthMilliInches,
+      baseDepthMilliInches: Number.isFinite(depth) && depth > 0
+        ? Math.round(depth) : geometry.baseDepthMilliInches,
+    };
+  }).sort((left, right) => left.modelId.localeCompare(right.modelId));
+}
+
+function respawnRowsForPolicy(input) {
+  const { state, actor, profiles, activeModels, policy } = input;
+  const otherBlockers = blockingFootprints(state, actor.id);
+  const ownBlockers = activeModels.map((model) => {
+    const footprint = physicalFootprint({
+      objectId: model.id,
+      kind: "model_base",
+      shape: model.baseShape,
+      center: {
+        xMilliInches: Math.round(Number(model.xInches) * 1000),
+        yMilliInches: Math.round(Number(model.yInches) * 1000),
+      },
+      widthMilliInches: Math.round(Number(model.baseWidthInches) * 1000),
+      depthMilliInches: Math.round(Number(model.baseDepthInches) * 1000),
+      rotationDegrees: model.baseRotationDegrees || 0,
+    });
+    return { pieceId: actor.id, modelId: model.id, sideKey: actor.sideKey,
+      kind: "model", footprint, bounds: footprintBounds(footprint) };
+  });
+  const blockers = [...otherBlockers, ...ownBlockers];
+  const targetIndex = formationIntentTargetIndex(state, otherBlockers);
+  const selected = [];
+  const rows = [];
+  const angles = Array.from({ length: 24 }, (_, index) =>
+    (Math.PI * 2 * index) / 24);
+  const actorCenter = {
+    xMilliInches: Math.round(activeModels.reduce((sum, model) =>
+      sum + Number(model.xInches) * 1000, 0) / activeModels.length),
+    yMilliInches: Math.round(activeModels.reduce((sum, model) =>
+      sum + Number(model.yInches) * 1000, 0) / activeModels.length),
+  };
+  for (const profile of profiles) {
+    const options = [];
+    for (const own of ownBlockers) {
+      const ownPoint = footprintCenter(own.footprint);
+      for (const angle of angles) {
+        const point = contactAnchor(profile, own.footprint, angle);
+        if (!point) continue;
+        const footprint = footprintAt(profile, point);
+        if (!availablePackedFootprint(footprint, state, blockers, selected)) continue;
+        const outwardAngle = Math.atan2(
+          ownPoint.yMilliInches - actorCenter.yMilliInches,
+          ownPoint.xMilliInches - actorCenter.xMilliInches,
+        );
+        options.push({
+          point,
+          footprint,
+          contactModelId: own.modelId,
+          score: placementObjectiveScore({
+            footprint,
+            point,
+            selected,
+            anchor: actorCenter,
+            outward: { x: Math.cos(outwardAngle), y: Math.sin(outwardAngle) },
+            policy,
+            targetIndex,
+            sideKey: actor.sideKey,
+            scale: 3_000,
+          }),
+        });
+      }
+    }
+    options.sort((left, right) => right.score - left.score
+      || left.contactModelId.localeCompare(right.contactModelId)
+      || left.point.xMilliInches - right.point.xMilliInches
+      || left.point.yMilliInches - right.point.yMilliInches);
+    const chosen = options[0];
+    if (!chosen) return null;
+    selected.push({ profile, footprint: chosen.footprint, point: chosen.point,
+      rotationDegrees: 0 });
+    rows.push({ modelId: profile.modelId,
+      xMilliInches: chosen.point.xMilliInches,
+      yMilliInches: chosen.point.yMilliInches,
+      rotationDegrees: 0,
+      contactModelId: chosen.contactModelId });
+  }
+  return { rows, selected, actorCenter };
+}
+
+function respawnCandidates(state, domain, request) {
+  const source = sourceDomain(domain);
+  const actor = (state.pieces || []).find((entry) => entry.id === source.pieceId);
+  const active = (actor?.models || []).filter((model) =>
+    model.isDestroyed !== true && model.isOnField !== false);
+  const destroyed = (actor?.models || []).filter((model) =>
+    model.isDestroyed === true && model.isOnField === false
+      && (actor.destroyedModelIds || []).includes(model.id));
+  if (!actor || active.length < 1 || destroyed.length < 1) {
+    throw new TypeError("LEGAL_FORMATION_RESPAWN_DENOMINATOR_MISSING");
+  }
+  const carrier = state.officialRespawnMorphDataBundle
+    ?.currentRespawnCarriers?.find((entry) =>
+      entry.recordKey === actor.officialUnitRecordKey);
+  const maximumReturn = Math.min(destroyed.length, Math.max(
+    Number(carrier?.baseRespawnValue || 1),
+    Number(carrier?.onCreepRespawnValue || 1),
+  ));
+  const policies = formationSolverPolicies(normalizeFormationObjectives(request));
+  const candidates = [];
+  for (let count = maximumReturn; count >= 1; count -= 1) {
+    const profiles = profilesForPieceModels(state, actor, destroyed.slice(0, count));
+    for (const policy of policies) {
+      const solved = respawnRowsForPolicy({
+        state, actor, profiles, activeModels: active, policy,
+      });
+      if (!solved) continue;
+      candidates.push({
+        parameters: {
+          activeUnitId: source.pieceId,
+          paymentCardInstanceIds: firstPaymentSelection(source),
+          placementPlan: {
+            leadingModelId: solved.rows[0].modelId,
+            placements: solved.rows,
+          },
+        },
+        patternId: `intent-solver:${policy.policyId}:respawn-${count}`,
+        solverPolicyId: policy.policyId,
+        formationObjectives: clone(policy.objectives),
+        tacticalMetrics: formationSolverMetrics(solved.selected, {
+          anchor: solved.actorCenter,
+          policy,
+          targetIndex: formationIntentTargetIndex(state,
+            blockingFootprints(state, actor.id)),
+          sideKey: actor.sideKey,
+        }, 0),
+        anchor: solved.actorCenter,
+        modelProfiles: profiles,
+        sameAnchorAlternativesMeaningful: true,
+      });
+    }
+  }
+  return candidates;
+}
+
+function lifecycleAbilityCandidates(state, domain, request) {
+  const source = sourceDomain(domain);
+  if (!LIFECYCLE_ABILITY_FORMATION_EFFECTS.has(source.effectKind)) {
+    throw new TypeError("LEGAL_FORMATION_LIFECYCLE_EFFECT_UNSUPPORTED");
+  }
+  if (source.effectKind === "summon_roachling") {
+    return summonCandidates(state, domain, request);
+  }
+  if (source.effectKind === "phase_prism_swap") {
+    return phasePrismCandidates(state, domain, request);
+  }
+  if (source.effectKind === "respawn_models") {
+    return respawnCandidates(state, domain, request);
+  }
+  throw new TypeError("LEGAL_FORMATION_LIFECYCLE_EFFECT_UNSUPPORTED");
+}
+
 function reservePieceProfiles(piece) {
   const profiles = (piece?.models || []).filter((entry) =>
     entry.isDestroyed !== true).map((entry) => ({
@@ -1374,8 +1761,7 @@ function reservePieceProfiles(piece) {
 function lifecycleConsumerCandidates(state, domain, request) {
   const source = sourceDomain(domain);
   const effectKind = String(source.effectKind || "");
-  if (!new Set(["omega_network_deploy", "pylon_warp_conduit_deploy",
-    "reserve_indicator_deploy"]).has(effectKind)) {
+  if (!LIFECYCLE_CONSUMER_FORMATION_EFFECTS.has(effectKind)) {
     throw new TypeError("LEGAL_FORMATION_LIFECYCLE_CONSUMER_UNSUPPORTED");
   }
   const target = (state.pieces || []).find((entry) =>
@@ -1387,6 +1773,65 @@ function lifecycleConsumerCandidates(state, domain, request) {
   const policies = formationSolverPolicies(objectives);
   const generationLimit = Math.max(8, Math.min(32,
     Number(request.maximumOptions || DEFAULT_MAX_OPTIONS) * 3));
+  if (effectKind === "shade_round_end_place") {
+    const token = (state.board?.tokens || []).find((entry) =>
+      String(entry.tokenId || entry.id) === String(source.sourceInstanceId));
+    const point = boardPoint(token);
+    const diameter = Number(token?.baseDiameterInches
+      || token?.baseWidthInches
+      || (Number(token?.baseDiameterMm) / 25.4));
+    if (!token || !point || !Number.isFinite(diameter) || diameter <= 0) {
+      throw new TypeError("LEGAL_FORMATION_SHADE_TOKEN_MISSING");
+    }
+    const leaderRadius = profileRadius(profiles[0]);
+    const tokenRadius = Math.round(diameter * 500);
+    const anchors = [{ point, angle: 0, gap: "token_center" }];
+    for (const gapMilliInches of [0, 1_500, 3_000]) {
+      for (let index = 0; index < 24; index += 1) {
+        const angle = (Math.PI * 2 * index) / 24;
+        anchors.push({
+          point: pointAtDistance(point, angle,
+            tokenRadius + leaderRadius + gapMilliInches),
+          angle,
+          gap: `${gapMilliInches}`,
+        });
+      }
+    }
+    const candidates = [];
+    for (const anchor of anchors) {
+      for (const policy of policies) {
+        const solved = solveIntentFormationRows({
+          state,
+          profiles,
+          anchor: anchor.point,
+          angle: anchor.angle,
+          coherencyRangeMilliInches,
+          excludedPieceId: target.id,
+          sideKey: target.sideKey,
+          policy,
+        });
+        if (!solved) continue;
+        candidates.push({
+          parameters: {
+            activeUnitId: source.pieceId,
+            placementPlan: {
+              leadingModelId: solved.rows[0].modelId,
+              placements: solved.rows,
+            },
+          },
+          patternId: `intent-solver:${solved.policyId}:shade-gap-${anchor.gap}`,
+          solverPolicyId: solved.policyId,
+          formationObjectives: solved.objectives,
+          tacticalMetrics: solved.metrics,
+          anchor: anchor.point,
+          modelProfiles: profiles,
+          sameAnchorAlternativesMeaningful: true,
+        });
+        if (candidates.length >= generationLimit) return candidates;
+      }
+    }
+    return candidates;
+  }
   if (effectKind === "reserve_indicator_deploy") {
     const marker = (state.board?.markers || []).find((entry) => (
       String(entry.markerId || entry.id) === String(source.sourceInstanceId)));
@@ -1554,7 +1999,8 @@ function solveGeneratedCandidateIntent(state, source, candidate, request) {
     profiles,
     anchor: candidate.anchor,
     angle,
-    coherencyRangeMilliInches: horizontalCoherencyRange(state, actor),
+    coherencyRangeMilliInches: source.actionType === "resolve_relocation_ability"
+      ? 3_000 : horizontalCoherencyRange(state, actor),
     excludedPieceId: source.pieceId,
     sideKey: source.sideKey || actor?.sideKey,
     policy,
@@ -1565,10 +2011,10 @@ function solveGeneratedCandidateIntent(state, source, candidate, request) {
   if (object(parameters.placementPlan)) {
     parameters.placementPlan.leadingModelId = rows[0].modelId;
     parameters.placementPlan.placements = rows;
-  } else if (source.actionType === "resolve_relocation_ability"
-    && source.effectKind === "entry_edge_place") {
+  } else if (source.actionType === "resolve_relocation_ability") {
     parameters.leadingModelId = rows[0].modelId;
     parameters.placements = rows;
+    if (source.effectKind === "extra_move") parameters.path = [rows[0]];
   } else {
     parameters.leadingModelId = rows[0].modelId;
     parameters.path = [rows[0]];
@@ -1593,9 +2039,8 @@ function slotsFor(option, profiles) {
     ? parameters.placementPlan : parameters;
   const leadingModelId = plan.leadingModelId || option.fixedLeadingModelId;
   const endpoint = Array.isArray(plan.path) ? plan.path.at(-1) : null;
-  const placementsIncludeLeading = !endpoint
-    && (plan.placements || []).some((entry) =>
-      entry.modelId === leadingModelId);
+  const placementsIncludeLeading = (plan.placements || []).some((entry) =>
+    entry.modelId === leadingModelId);
   const positions = object(parameters.placementPlan)
     ? (plan.placements || []).map((entry) => ({
       ...clone(entry), isLeading: entry.modelId === leadingModelId,
@@ -1659,10 +2104,9 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
     : source.actionType === "resolve_charge"
       ? chargeResolutionCandidates(state, domain, request)
     : source.actionType === "resolve_relocation_ability"
-      && source.effectKind === "entry_edge_place"
-      ? entryEdgeRelocationCandidates(state, domain, request)
+      ? relocationAbilityCandidates(state, domain, request)
     : source.actionType === "resolve_unit_lifecycle_ability"
-      ? summonCandidates(state, domain, request)
+      ? lifecycleAbilityCandidates(state, domain, request)
       : source.actionType === "resolve_unit_lifecycle_consumer"
         ? lifecycleConsumerCandidates(state, domain, request)
         : relocationCandidates(domain, request);
@@ -1737,6 +2181,8 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
   return freeze({
     schemaVersion: STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION,
     toolName: STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
+    actionFamilyCoverageVersion: "starcraft_tmg_formation_action_family_coverage_v1",
+    actionFamilyCoverage: clone(STARCRAFT_TMG_FORMATION_ACTION_FAMILY_COVERAGE_V1),
     domainId: domain.domainId,
     actionType: source.actionType,
     pieceId: source.pieceId,
