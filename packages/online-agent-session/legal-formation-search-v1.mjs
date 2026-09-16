@@ -688,8 +688,10 @@ function formationSolverMetrics(selected, input, solverScore) {
 function solveIntentFormationRows(input) {
   const { state, profiles, anchor, angle, coherencyRangeMilliInches,
     excludedPieceId, sideKey, policy } = input;
-  const blockers = blockingFootprints(state, excludedPieceId);
-  const targetIndex = formationIntentTargetIndex(state, blockers);
+  const blockers = Array.isArray(input.blockers)
+    ? input.blockers : blockingFootprints(state, excludedPieceId);
+  const targetIndex = Array.isArray(input.targetIndex)
+    ? input.targetIndex : formationIntentTargetIndex(state, blockers);
   const leaderProfile = profiles[0];
   const leaderPoint = { xMilliInches: anchor.xMilliInches,
     yMilliInches: anchor.yMilliInches };
@@ -1974,14 +1976,37 @@ function stablePolicyIndex(value, denominator) {
   return denominator > 0 ? hash % denominator : 0;
 }
 
-function solveGeneratedCandidateIntent(state, source, candidate, request) {
+function generatedCandidateIntentKey(candidate, request) {
+  if (candidate.solverPolicyId || !object(candidate.anchor)) return null;
+  const profiles = candidate.modelProfiles;
+  if (profiles !== undefined && !Array.isArray(profiles)) return null;
+  const policies = formationSolverPolicies(normalizeFormationObjectives(request));
+  const policy = policies[stablePolicyIndex(candidate.patternId, policies.length)];
+  const nonSpatialParameters = clone(candidate.parameters || {});
+  delete nonSpatialParameters.leadingModelId;
+  delete nonSpatialParameters.path;
+  delete nonSpatialParameters.placements;
+  if (object(nonSpatialParameters.placementPlan)) {
+    delete nonSpatialParameters.placementPlan.leadingModelId;
+    delete nonSpatialParameters.placementPlan.placements;
+  }
+  return hashStarcraftTmgContract({
+    anchor: candidate.anchor,
+    policyId: policy.policyId,
+    nonSpatialParameters,
+  });
+}
+
+function solveGeneratedCandidateIntent(state, source, candidate, request,
+  searchContext = {}) {
   if (candidate.solverPolicyId) return candidate;
   const profiles = candidate.modelProfiles || source.constraints?.modelProfiles;
   if (!Array.isArray(profiles) || profiles.length < 1 || !object(candidate.anchor)) {
     return candidate;
   }
   const actor = (state.pieces || []).find((entry) => entry.id === source.pieceId);
-  const objectives = normalizeFormationObjectives(request);
+  const objectives = searchContext.objectives
+    || normalizeFormationObjectives(request);
   const policies = formationSolverPolicies(objectives);
   const policy = policies[stablePolicyIndex(candidate.patternId, policies.length)];
   const start = profiles[0]?.startPoint;
@@ -2006,6 +2031,8 @@ function solveGeneratedCandidateIntent(state, source, candidate, request) {
     excludedPieceId: source.pieceId,
     sideKey: source.sideKey || actor?.sideKey,
     policy,
+    blockers: searchContext.blockers,
+    targetIndex: searchContext.targetIndex,
   });
   if (!solved) return null;
   const parameters = clone(candidate.parameters);
@@ -2247,6 +2274,8 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
         ? lifecycleConsumerCandidates(state, domain, request)
         : relocationCandidates(domain, request);
   const blockers = blockingFootprints(state, source.pieceId);
+  const normalizedObjectives = normalizeFormationObjectives(request);
+  const intentTargetIndex = formationIntentTargetIndex(state, blockers);
   const options = [];
   const failureCounts = new Map();
   let baselineRelationshipGraph = null;
@@ -2272,11 +2301,24 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
   let attemptedCandidateCount = 0;
   let instantiatedCandidateCount = 0;
   let prefilteredCandidateCount = 0;
+  let duplicateIntentCandidateCount = 0;
+  const generatedIntentKeys = new Set();
   for (const generatedCandidate of generated) {
     if (attemptedCandidateCount >= maximumCandidateAttempts
       || options.length >= maximumOptions) break;
+    const generatedIntentKey = generatedCandidateIntentKey(
+      generatedCandidate, request);
+    if (generatedIntentKey && generatedIntentKeys.has(generatedIntentKey)) {
+      duplicateIntentCandidateCount += 1;
+      continue;
+    }
+    if (generatedIntentKey) generatedIntentKeys.add(generatedIntentKey);
     const candidate = solveGeneratedCandidateIntent(
-      state, source, generatedCandidate, request);
+      state, source, generatedCandidate, request, {
+        blockers,
+        targetIndex: intentTargetIndex,
+        objectives: normalizedObjectives,
+      });
     if (!candidate) continue;
     if (candidate.sameAnchorAlternativesMeaningful !== true
       && options.some((entry) => Math.hypot(
@@ -2359,6 +2401,7 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
     attemptedCandidateCount,
     instantiatedCandidateCount,
     prefilteredCandidateCount,
+    duplicateIntentCandidateCount,
     failureCounts: Object.fromEntries([...failureCounts.entries()]
       .sort(([left], [right]) => left.localeCompare(right))),
     assignmentContract: {

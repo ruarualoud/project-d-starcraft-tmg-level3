@@ -2550,6 +2550,8 @@ function compactQueryReceiptForPrompt(receipt) {
       formationOptions,
       optionCount: receipt.result.optionCount,
       attemptedCandidateCount: receipt.result.attemptedCandidateCount,
+      duplicateIntentCandidateCount:
+        receipt.result.duplicateIntentCandidateCount || 0,
       failureCounts: clone(receipt.result.failureCounts || {}),
       assignmentContract: clone(receipt.result.assignmentContract || null),
       formationIntent: clone(receipt.result.formationIntent || null),
