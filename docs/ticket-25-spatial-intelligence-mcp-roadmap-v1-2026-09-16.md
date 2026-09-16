@@ -2,10 +2,9 @@
 
 Date: 2026-09-16
 
-Status: accepted follow-up to Ticket 24. Slices 259--260 are implemented;
-Slice 261 is implemented 5/6 with its live formation-delta/prompt canary still
-open, and Slices 262--263 remain. Ticket 24 Slice 258 still owns completion of
-the current Standard-2000 evidence match.
+Status: accepted follow-up to Ticket 24. Slices 259--261 are implemented and
+Slices 262--263 remain. Ticket 24 Slice 258 still owns completion of the current
+Standard-2000 evidence match.
 
 ## Product requirement
 
@@ -169,7 +168,7 @@ all declared target units engaged, no undeclared enemy engagement, Leading
 Model engagement with every declared target, closest-position behavior, and
 remaining-model priority of base-to-base, engagement, then coherency.
 
-### Slice 261 — exact tactical relationship graph
+### Slice 261 — exact tactical relationship graph (implemented)
 
 - Exact nearest-base distances, containment, contact arcs, coherency graph,
   blockers, cover/elevation, line of sight, action-specific threat, fire-zone
@@ -184,9 +183,12 @@ solutions.
 Checkpoint: `ticket-25-slice-261-tactical-relationship-graph-checkpoint-v1-2026-09-17.md`
 records the new scoped `space.inspect_relationships` MCP, field-level precision,
 Grass LoS routing, formation-option projection and the three-round verifier
-outcome. The graph itself is proven on a live Room with zero Provider calls;
-the next naturally available formation action must still prove option deltas
-and the v4 Planner prompt canary before this Slice closes.
+outcome. Natural Standard-2000 action 126 then proved an Agent-selected complete
+18-model option, current-to-hypothetical relationship deltas, Rules Apply,
+Replay equality, revision-126 screenshot and no observed v4 strategy regression.
+The same receipt exposed the mission-marker coordinate-form mismatch; the
+focused repair now resolves official `xInches/yInches` and scores nearest
+physical edges against the marker's 32mm footprint without repaying the match.
 
 ### Slice 262 — bounded performance and asynchronous pre-execution
 

@@ -462,14 +462,50 @@ function footprintCenter(footprint) {
 
 function boardPoint(value) {
   const coordinate = object(value?.coordinate) ? value.coordinate : value;
-  const x = Number(coordinate?.xMilliInches
-    ?? (Number(coordinate?.x) * 1_000));
-  const y = Number(coordinate?.yMilliInches
-    ?? (Number(coordinate?.y) * 1_000));
+  const x = coordinate?.xMilliInches !== undefined
+    ? Number(coordinate.xMilliInches)
+    : Number(coordinate?.xInches ?? coordinate?.x) * 1_000;
+  const y = coordinate?.yMilliInches !== undefined
+    ? Number(coordinate.yMilliInches)
+    : Number(coordinate?.yInches ?? coordinate?.y) * 1_000;
   return Number.isFinite(x) && Number.isFinite(y) ? {
     xMilliInches: Math.round(x),
     yMilliInches: Math.round(y),
   } : null;
+}
+
+function positiveMilliInches(...candidates) {
+  for (const [value, scale] of candidates) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return Math.round(parsed * scale);
+    }
+  }
+  return null;
+}
+
+function boardTargetFootprint(entry, kind, point) {
+  const objectId = String(entry.id || entry.markerId || entry.tokenId
+    || entry.name || "");
+  if (!objectId || !point) return null;
+  const diameter = positiveMilliInches(
+    [entry.diameterMilliInches, 1],
+    [entry.baseDiameterMilliInches, 1],
+    [entry.diameterInches, 1_000],
+    [entry.baseDiameterInches, 1_000],
+    [entry.diameterMillimeters, 1_000 / 25.4],
+    [entry.baseDiameterMm, 1_000 / 25.4],
+  ) || (kind === "mission_marker" ? Math.round((32 / 25.4) * 1_000) : null);
+  if (!diameter) return null;
+  return physicalFootprint({
+    objectId,
+    kind,
+    shape: "round",
+    center: point,
+    widthMilliInches: diameter,
+    depthMilliInches: diameter,
+    rotationDegrees: 0,
+  });
 }
 
 function formationIntentTargetIndex(state, blockers) {
@@ -497,7 +533,7 @@ function formationIntentTargetIndex(state, blockers) {
         ids,
         sideKey: entry.sideKey || entry.controlSideKey || null,
         kind,
-        footprint: null,
+        footprint: boardTargetFootprint(entry, kind, point),
         point,
       });
     }
