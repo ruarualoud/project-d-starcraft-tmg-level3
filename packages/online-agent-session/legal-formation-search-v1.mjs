@@ -6,9 +6,27 @@ import {
   createOfficialPhysicalFootprintV1,
   evaluateOfficialPhysicalFootprintRelationV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import { projectOfficialCharacteristicStatusFamilyModifiersV1 } from
+  "../product-composition/official-characteristic-status-family-adapter-v1.mjs";
 
 export const STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION =
   "starcraft_tmg_legal_formation_search_v1";
+
+export const STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME =
+  "space.solve_formation";
+
+export const STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS = Object.freeze([
+  "balanced",
+  "advance",
+  "compact",
+  "disperse",
+  "maximize_engagement",
+  "surround_target",
+  "avoid_threat",
+  "control_objective",
+  "screen",
+  "preserve_lane",
+]);
 
 const SUPPORTED_ACTION_TYPES = new Set([
   "deploy", "move", "run", "disengage",
@@ -17,6 +35,9 @@ const SUPPORTED_ACTION_TYPES = new Set([
 ]);
 const DEFAULT_MAX_ATTEMPTS = 4_096;
 const DEFAULT_MAX_OPTIONS = 4;
+const FORMATION_OBJECTIVE_KIND_SET = new Set(
+  STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS,
+);
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -181,8 +202,12 @@ function blockingFootprints(state, actorPieceId) {
     .flatMap((piece) => (piece.models || []).filter((model) =>
       model.isOnField !== false && model.isDestroyed !== true
         && Number.isFinite(Number(model.xInches))
-        && Number.isFinite(Number(model.yInches))).map((model) =>
-      physicalFootprint({
+        && Number.isFinite(Number(model.yInches))).map((model) => ({
+      sideKey: piece.sideKey,
+      pieceId: piece.id,
+      modelId: model.id,
+      kind: "model",
+      footprint: physicalFootprint({
         objectId: model.id,
         kind: "model_base",
         shape: model.baseShape,
@@ -193,7 +218,8 @@ function blockingFootprints(state, actorPieceId) {
         widthMilliInches: Math.round(Number(model.baseWidthInches) * 1000),
         depthMilliInches: Math.round(Number(model.baseDepthInches) * 1000),
         rotationDegrees: model.baseRotationDegrees || 0,
-      })));
+      }),
+    })));
   const terrainBlockers = (state.board?.terrain || []).filter((terrain) =>
     terrain.isRemoved !== true && terrain.isDestroyed !== true
       && terrain.blocksPlacement !== false).flatMap((terrain) => {
@@ -205,7 +231,8 @@ function blockingFootprints(state, actorPieceId) {
       const maximumY = Number(source.maxYMilliInches);
       if (![minimumX, maximumX, minimumY, maximumY]
         .every(Number.isSafeInteger)) return [];
-      return [physicalFootprint({
+      return [{ sideKey: null, pieceId: null, modelId: null,
+        objectId: terrain.id, kind: "terrain", footprint: physicalFootprint({
         objectId: terrain.id,
         kind: "terrain",
         shape: "rectangle",
@@ -216,14 +243,495 @@ function blockingFootprints(state, actorPieceId) {
         widthMilliInches: maximumX - minimumX,
         depthMilliInches: maximumY - minimumY,
         rotationDegrees: 0,
-      })];
+      }) }];
     }
     return [];
   });
-  return [...modelBlockers, ...terrainBlockers].map((footprint) => ({
-    footprint,
-    bounds: footprintBounds(footprint),
+  return [...modelBlockers, ...terrainBlockers].map((entry) => ({
+    ...entry,
+    bounds: footprintBounds(entry.footprint),
   }));
+}
+
+function footprintInsideBattlefield(footprint, state) {
+  const bounds = footprintBounds(footprint);
+  return bounds.minimumX >= 0
+    && bounds.minimumY >= 0
+    && bounds.maximumX <= Math.round(Number(state.board.widthInches) * 1000)
+    && bounds.maximumY <= Math.round(Number(state.board.heightInches) * 1000);
+}
+
+function profileRadius(profile) {
+  return Math.max(
+    dimension(profile, "baseWidthMilliInches", "widthMilliInches"),
+    dimension(profile, "baseDepthMilliInches", "depthMilliInches"),
+  ) / 2;
+}
+
+function horizontalCoherencyRange(state, piece) {
+  if (!state.officialCharacteristicStatusFamilySourceBundle || !piece) return 3_000;
+  const projectedState = piece.isOnField === true ? state : clone(state);
+  if (projectedState !== state) {
+    const projectedPiece = projectedState.pieces.find((entry) =>
+      entry.id === piece.id);
+    projectedPiece.isOnField = true;
+    projectedPiece.isInReserves = false;
+    projectedPiece.models = projectedPiece.models.map((model) => ({
+      ...model,
+      isOnField: model.isDestroyed !== true,
+    }));
+  }
+  return Number(projectOfficialCharacteristicStatusFamilyModifiersV1(
+    projectedState.officialCharacteristicStatusFamilySourceBundle,
+    projectedState,
+    { pieceId: piece.id },
+  ).horizontalCoherencyMilliInches || 3_000);
+}
+
+function footprintAt(profile, point, rotationDegrees = 0) {
+  return physicalFootprint({
+    objectId: `candidate:${profile.modelId}`,
+    kind: "candidate_model_base",
+    shape: profile.baseShape || profile.shape,
+    center: point,
+    widthMilliInches: dimension(profile, "baseWidthMilliInches",
+      "widthMilliInches"),
+    depthMilliInches: dimension(profile, "baseDepthMilliInches",
+      "depthMilliInches"),
+    rotationDegrees,
+  });
+}
+
+function availablePackedFootprint(footprint, state, blockers, selected) {
+  if (!footprintInsideBattlefield(footprint, state)) return false;
+  for (const blocker of blockers) {
+    const relation = evaluateOfficialPhysicalFootprintRelationV1({
+      left: footprint,
+      right: blocker.footprint,
+    });
+    if (relation.overlappingInteriors) return false;
+  }
+  return selected.every((entry) => (
+    !evaluateOfficialPhysicalFootprintRelationV1({
+      left: footprint,
+      right: entry.footprint,
+    }).overlappingInteriors
+  ));
+}
+
+function normalizeFormationObjectives(request = {}) {
+  const source = Array.isArray(request.formationObjectives)
+    ? request.formationObjectives
+    : Array.isArray(request.formationIntent?.objectives)
+      ? request.formationIntent.objectives : [];
+  const objectives = [];
+  for (const entry of source.slice(0, 8)) {
+    const kind = String(entry?.kind || "");
+    if (!FORMATION_OBJECTIVE_KIND_SET.has(kind)) continue;
+    const weight = Number(entry?.weight);
+    objectives.push({
+      kind,
+      weight: Number.isSafeInteger(weight)
+        ? Math.max(1, Math.min(5, weight)) : 3,
+      targetIds: [...new Set((entry?.targetIds || []).map(String)
+        .filter(Boolean))].slice(0, 24),
+    });
+  }
+  return objectives.length > 0 ? objectives : [{
+    kind: "balanced",
+    weight: 3,
+    targetIds: [],
+  }];
+}
+
+function formationSolverPolicies(objectives) {
+  const requested = clone(objectives);
+  const policies = [
+    { policyId: "requested-direct", objectives: requested, tieBreaker: 0 },
+    { policyId: "requested-left", objectives: requested, tieBreaker: -1 },
+    { policyId: "requested-right", objectives: requested, tieBreaker: 1 },
+  ];
+  for (const objective of objectives) {
+    if (objectives.length < 2) break;
+    policies.push({
+      policyId: `isolate-${objective.kind}`,
+      objectives: [clone(objective)],
+      tieBreaker: 0,
+    });
+  }
+  if (objectives.length === 1 && objectives[0].kind === "balanced") {
+    policies.push({
+      policyId: "fallback-compact",
+      objectives: [{ kind: "compact", weight: 3, targetIds: [] }],
+      tieBreaker: 0,
+    }, {
+      policyId: "fallback-disperse",
+      objectives: [{ kind: "disperse", weight: 3, targetIds: [] }],
+      tieBreaker: 0,
+    }, {
+      policyId: "fallback-advance",
+      objectives: [{ kind: "advance", weight: 3, targetIds: [] }],
+      tieBreaker: 0,
+    });
+  }
+  return policies;
+}
+
+function footprintCenter(footprint) {
+  if (object(footprint?.center)) return clone(footprint.center);
+  if (Array.isArray(footprint?.vertices) && footprint.vertices.length > 0) {
+    return {
+      xMilliInches: Math.round(footprint.vertices.reduce((sum, entry) =>
+        sum + Number(entry.xMilliInches), 0) / footprint.vertices.length),
+      yMilliInches: Math.round(footprint.vertices.reduce((sum, entry) =>
+        sum + Number(entry.yMilliInches), 0) / footprint.vertices.length),
+    };
+  }
+  return null;
+}
+
+function boardPoint(value) {
+  const coordinate = object(value?.coordinate) ? value.coordinate : value;
+  const x = Number(coordinate?.xMilliInches
+    ?? (Number(coordinate?.x) * 1_000));
+  const y = Number(coordinate?.yMilliInches
+    ?? (Number(coordinate?.y) * 1_000));
+  return Number.isFinite(x) && Number.isFinite(y) ? {
+    xMilliInches: Math.round(x),
+    yMilliInches: Math.round(y),
+  } : null;
+}
+
+function formationIntentTargetIndex(state, blockers) {
+  const targets = [];
+  for (const blocker of blockers) {
+    targets.push({
+      ids: [...new Set([blocker.pieceId, blocker.modelId, blocker.objectId,
+        blocker.footprint?.objectId].filter(Boolean).map(String))],
+      sideKey: blocker.sideKey || null,
+      kind: blocker.kind,
+      footprint: blocker.footprint,
+      point: footprintCenter(blocker.footprint),
+    });
+  }
+  for (const [kind, collection] of [
+    ["mission_marker", state.board?.missionMarkers || []],
+    ["marker", state.board?.markers || []],
+    ["token", state.board?.tokens || []],
+  ]) {
+    for (const entry of collection) {
+      const point = boardPoint(entry);
+      const ids = [...new Set([entry.id, entry.markerId, entry.tokenId,
+        entry.name].filter(Boolean).map(String))];
+      if (point && ids.length > 0) targets.push({
+        ids,
+        sideKey: entry.sideKey || entry.controlSideKey || null,
+        kind,
+        footprint: null,
+        point,
+      });
+    }
+  }
+  return targets;
+}
+
+function targetsForObjective(index, objective, sideKey) {
+  const requested = new Set(objective.targetIds || []);
+  if (requested.size > 0) {
+    return index.filter((entry) => entry.ids.some((id) => requested.has(id)));
+  }
+  if (new Set(["maximize_engagement", "surround_target", "avoid_threat",
+    "screen"]).has(objective.kind)) {
+    return index.filter((entry) => entry.kind === "model"
+      && entry.sideKey && entry.sideKey !== sideKey);
+  }
+  if (objective.kind === "control_objective") {
+    return index.filter((entry) => entry.kind === "mission_marker");
+  }
+  return [];
+}
+
+function targetEdgeDistance(footprint, target) {
+  if (target.footprint) {
+    return evaluateOfficialPhysicalFootprintRelationV1({
+      left: footprint,
+      right: target.footprint,
+    }).minimumSeparationMilliInches;
+  }
+  const center = footprintCenter(footprint);
+  return center && target.point ? Math.hypot(
+    center.xMilliInches - target.point.xMilliInches,
+    center.yMilliInches - target.point.yMilliInches,
+  ) : Infinity;
+}
+
+function angleDistance(left, right) {
+  const raw = Math.abs(left - right) % (Math.PI * 2);
+  return Math.min(raw, (Math.PI * 2) - raw);
+}
+
+function pointToSegmentDistance(point, start, end) {
+  const dx = end.xMilliInches - start.xMilliInches;
+  const dy = end.yMilliInches - start.yMilliInches;
+  if (dx === 0 && dy === 0) return Math.hypot(
+    point.xMilliInches - start.xMilliInches,
+    point.yMilliInches - start.yMilliInches,
+  );
+  const fraction = Math.max(0, Math.min(1, (
+    ((point.xMilliInches - start.xMilliInches) * dx)
+      + ((point.yMilliInches - start.yMilliInches) * dy)
+  ) / ((dx * dx) + (dy * dy))));
+  return Math.hypot(
+    point.xMilliInches - (start.xMilliInches + (fraction * dx)),
+    point.yMilliInches - (start.yMilliInches + (fraction * dy)),
+  );
+}
+
+function placementObjectiveScore(input) {
+  const { footprint, point, selected, anchor, outward, policy, targetIndex,
+    sideKey, scale } = input;
+  const leaderDistance = Math.hypot(
+    point.xMilliInches - anchor.xMilliInches,
+    point.yMilliInches - anchor.yMilliInches,
+  );
+  const pairwiseSeparation = selected.length > 0 ? Math.min(...selected.map((entry) =>
+    evaluateOfficialPhysicalFootprintRelationV1({
+      left: footprint,
+      right: entry.footprint,
+    }).minimumSeparationMilliInches)) : 0;
+  const outwardProjection = ((point.xMilliInches - anchor.xMilliInches)
+    * outward.x) + ((point.yMilliInches - anchor.yMilliInches) * outward.y);
+  let score = 0;
+  for (const objective of policy.objectives) {
+    const targets = targetsForObjective(targetIndex, objective, sideKey);
+    const targetDistance = targets.length > 0
+      ? Math.min(...targets.map((entry) => targetEdgeDistance(footprint, entry)))
+      : scale;
+    let value = 0;
+    if (objective.kind === "balanced") {
+      value = (outwardProjection / scale) - (0.2 * leaderDistance / scale)
+        + (0.35 * pairwiseSeparation / scale);
+    } else if (objective.kind === "advance") {
+      value = outwardProjection / scale;
+    } else if (objective.kind === "compact") {
+      value = -leaderDistance / scale;
+    } else if (objective.kind === "disperse") {
+      value = pairwiseSeparation / scale;
+    } else if (objective.kind === "maximize_engagement") {
+      value = -(targetDistance / scale) + (targetDistance <= 1_000 ? 2 : 0);
+    } else if (objective.kind === "avoid_threat") {
+      value = targetDistance / scale;
+    } else if (objective.kind === "control_objective") {
+      value = -(targetDistance / scale) + (targetDistance <= 3_000 ? 1 : 0);
+    } else if (objective.kind === "surround_target") {
+      const target = targets[0]?.point;
+      const candidateAngle = target ? Math.atan2(
+        point.yMilliInches - target.yMilliInches,
+        point.xMilliInches - target.xMilliInches,
+      ) : 0;
+      const occupiedAngles = target ? selected.map((entry) => Math.atan2(
+        entry.point.yMilliInches - target.yMilliInches,
+        entry.point.xMilliInches - target.xMilliInches,
+      )) : [];
+      const angularNovelty = occupiedAngles.length > 0
+        ? Math.min(...occupiedAngles.map((entry) =>
+          angleDistance(candidateAngle, entry))) / Math.PI : 1;
+      value = angularNovelty - (0.35 * targetDistance / scale);
+    } else if (objective.kind === "screen"
+      || objective.kind === "preserve_lane") {
+      const points = targets.map((entry) => entry.point).filter(Boolean);
+      const distance = points.length >= 2
+        ? pointToSegmentDistance(point, points[0], points[1]) : targetDistance;
+      value = (objective.kind === "screen" ? -distance : distance) / scale;
+    }
+    score += value * objective.weight;
+  }
+  const tie = policy.tieBreaker * (
+    (-outward.y * (point.xMilliInches - anchor.xMilliInches))
+      + (outward.x * (point.yMilliInches - anchor.yMilliInches))
+  ) / scale;
+  return score + (tie * 0.01);
+}
+
+function formationSolverMetrics(selected, input, solverScore) {
+  const pairwise = [];
+  for (let left = 0; left < selected.length; left += 1) {
+    for (let right = left + 1; right < selected.length; right += 1) {
+      pairwise.push(evaluateOfficialPhysicalFootprintRelationV1({
+        left: selected[left].footprint,
+        right: selected[right].footprint,
+      }).minimumSeparationMilliInches);
+    }
+  }
+  const enemy = input.targetIndex.filter((entry) => entry.kind === "model"
+    && entry.sideKey && entry.sideKey !== input.sideKey);
+  const enemyDistances = selected.flatMap((entry) => enemy.map((target) =>
+    targetEdgeDistance(entry.footprint, target)));
+  const bounds = selected.map((entry) => footprintBounds(entry.footprint));
+  const envelope = {
+    minimumX: Math.min(...bounds.map((entry) => entry.minimumX)),
+    maximumX: Math.max(...bounds.map((entry) => entry.maximumX)),
+    minimumY: Math.min(...bounds.map((entry) => entry.minimumY)),
+    maximumY: Math.max(...bounds.map((entry) => entry.maximumY)),
+  };
+  const objectiveMetrics = input.policy.objectives.map((objective) => {
+    const targets = targetsForObjective(input.targetIndex, objective,
+      input.sideKey);
+    const distances = selected.flatMap((entry) => targets.map((target) =>
+      targetEdgeDistance(entry.footprint, target)));
+    return {
+      kind: objective.kind,
+      weight: objective.weight,
+      targetIds: clone(objective.targetIds),
+      resolvedTargetCount: targets.length,
+      minimumTargetBaseEdgeDistanceMilliInches:
+        distances.length > 0 ? Math.round(Math.min(...distances)) : null,
+      modelsWithinOneInchOfTarget: distances.filter((entry) => entry <= 1_000).length,
+      modelsWithinThreeInchesOfTarget: distances.filter((entry) => entry <= 3_000).length,
+      threatMetricPrecision: objective.kind === "avoid_threat"
+        ? "advisory_visible_source_clearance_not_exact_attack_legality"
+        : "not_applicable",
+    };
+  });
+  return {
+    solverScore: Number(solverScore.toFixed(6)),
+    modelCount: selected.length,
+    minimumPairwiseBaseSeparationMilliInches:
+      pairwise.length > 0 ? Math.round(Math.min(...pairwise)) : null,
+    maximumLeaderCenterDistanceMilliInches: Math.round(Math.max(...selected.map(
+      (entry) => Math.hypot(
+        entry.point.xMilliInches - input.anchor.xMilliInches,
+        entry.point.yMilliInches - input.anchor.yMilliInches,
+      )))),
+    formationEnvelopeMilliInches: envelope,
+    formationEnvelopeAreaSquareMilliInches:
+      (envelope.maximumX - envelope.minimumX)
+        * (envelope.maximumY - envelope.minimumY),
+    minimumVisibleEnemyBaseEdgeDistanceMilliInches:
+      enemyDistances.length > 0 ? Math.round(Math.min(...enemyDistances)) : null,
+    objectiveMetrics,
+    physicalGeometryMetricsExact: true,
+    tacticalOutcomeIsAdvisoryUntilPreviewAndOpponentResponse: true,
+  };
+}
+
+function solveIntentFormationRows(input) {
+  const { state, profiles, anchor, angle, coherencyRangeMilliInches,
+    excludedPieceId, sideKey, policy } = input;
+  const blockers = blockingFootprints(state, excludedPieceId);
+  const targetIndex = formationIntentTargetIndex(state, blockers);
+  const leaderProfile = profiles[0];
+  const leaderPoint = { xMilliInches: anchor.xMilliInches,
+    yMilliInches: anchor.yMilliInches };
+  const leaderFootprint = footprintAt(leaderProfile, leaderPoint);
+  if (!availablePackedFootprint(leaderFootprint, state, blockers, [])) {
+    return null;
+  }
+  const selected = [{ profile: leaderProfile, footprint: leaderFootprint,
+    point: leaderPoint, rotationDegrees: 0 }];
+  const spacing = Math.max(200, Math.round(Math.max(...profiles.flatMap((entry) => [
+    dimension(entry, "baseWidthMilliInches", "widthMilliInches"),
+    dimension(entry, "baseDepthMilliInches", "depthMilliInches"),
+  ])) + 20));
+  const maximumRing = Math.max(1,
+    Math.ceil(coherencyRangeMilliInches / spacing) + 1);
+  const rotation = angle + (policy.tieBreaker * Math.PI / 24);
+  const outward = { x: Math.cos(angle), y: Math.sin(angle) };
+  const lateral = { x: -outward.y, y: outward.x };
+  const points = [];
+  for (let q = -maximumRing; q <= maximumRing; q += 1) {
+    for (let r = -maximumRing; r <= maximumRing; r += 1) {
+      if (q === 0 && r === 0) continue;
+      const ring = Math.max(Math.abs(q), Math.abs(r), Math.abs(-q - r));
+      if (ring > maximumRing) continue;
+      const localX = spacing * (q + (r / 2));
+      const localY = spacing * (Math.sqrt(3) / 2) * r;
+      const x = (localX * Math.cos(rotation)) - (localY * Math.sin(rotation));
+      const y = (localX * Math.sin(rotation)) + (localY * Math.cos(rotation));
+      const distance = Math.hypot(x, y);
+      points.push({
+        point: {
+          xMilliInches: Math.round(anchor.xMilliInches + x),
+          yMilliInches: Math.round(anchor.yMilliInches + y),
+        },
+        ring,
+        distance,
+        outwardProjection: (x * outward.x) + (y * outward.y),
+        lateralProjection: (x * lateral.x) + (y * lateral.y),
+      });
+    }
+  }
+  points.sort((left, right) => left.point.xMilliInches - right.point.xMilliInches
+    || left.point.yMilliInches - right.point.yMilliInches);
+  const used = new Set();
+  let solverScore = 0;
+  for (const profile of profiles.slice(1).sort((left, right) => (
+    dimension(right, "baseWidthMilliInches", "widthMilliInches")
+      * dimension(right, "baseDepthMilliInches", "depthMilliInches")
+  ) - (
+    dimension(left, "baseWidthMilliInches", "widthMilliInches")
+      * dimension(left, "baseDepthMilliInches", "depthMilliInches")
+  ) || left.modelId.localeCompare(right.modelId))) {
+    const maximumCenterDistance = coherencyRangeMilliInches
+      + profileRadius(leaderProfile) - profileRadius(profile);
+    const rotations = String(profile.baseShape || profile.shape) === "round"
+      ? [0] : [0, 45, 90, 135];
+    const candidates = [];
+    for (const [index, entry] of points.entries()) {
+      if (used.has(index) || entry.distance > maximumCenterDistance + 1) continue;
+      for (const rotationDegrees of rotations) {
+        const footprint = footprintAt(profile, entry.point, rotationDegrees);
+        if (!availablePackedFootprint(footprint, state, blockers, selected)) {
+          continue;
+        }
+        candidates.push({
+          ...entry,
+          index,
+          rotationDegrees,
+          footprint,
+          score: placementObjectiveScore({
+            footprint,
+            point: entry.point,
+            selected,
+            anchor,
+            outward,
+            policy,
+            targetIndex,
+            sideKey,
+            scale: Math.max(1, coherencyRangeMilliInches),
+          }),
+        });
+      }
+    }
+    candidates.sort((left, right) => right.score - left.score
+      || left.ring - right.ring
+      || left.rotationDegrees - right.rotationDegrees
+      || left.point.xMilliInches - right.point.xMilliInches
+      || left.point.yMilliInches - right.point.yMilliInches);
+    const candidate = candidates[0];
+    if (!candidate) return null;
+    used.add(candidate.index);
+    solverScore += candidate.score;
+    selected.push({ profile, footprint: candidate.footprint, point: candidate.point,
+      rotationDegrees: candidate.rotationDegrees });
+  }
+  const rows = selected.map((entry) => ({
+    modelId: entry.profile.modelId,
+    xMilliInches: entry.point.xMilliInches,
+    yMilliInches: entry.point.yMilliInches,
+    rotationDegrees: entry.rotationDegrees,
+  }));
+  return {
+    rows,
+    policyId: policy.policyId,
+    objectives: clone(policy.objectives),
+    metrics: formationSolverMetrics(selected, {
+      anchor,
+      policy,
+      targetIndex,
+      sideKey,
+    }, solverScore),
+  };
 }
 
 function candidatePlacementRows(candidate) {
@@ -553,6 +1061,10 @@ function summonCandidates(state, domain, request) {
     ?.paymentCardInstanceIds?.enum || [])].sort((left, right) =>
     left.length - right.length || left.join("|").localeCompare(right.join("|")));
   const paymentCardInstanceIds = clone(paymentOptions[0] || []);
+  const objectives = normalizeFormationObjectives(request);
+  const policies = formationSolverPolicies(objectives);
+  const generationLimit = Math.max(8, Math.min(32,
+    Number(request.maximumOptions || DEFAULT_MAX_OPTIONS) * 3));
   const leadingRadius = Math.max(
     dimension(profiles[0], "baseWidthMilliInches", "widthMilliInches"),
     dimension(profiles[0], "baseDepthMilliInches", "depthMilliInches"),
@@ -571,11 +1083,19 @@ function summonCandidates(state, domain, request) {
         yMilliInches: Math.round(Number(parent.yInches) * 1000
           + Math.sin(angle) * contactDistance),
       };
-      for (const gap of [20, 60, 100]) {
-        for (const transform of TRANSFORMS) {
-          const offsets = formationOffsets(profiles, gap, transform.apply);
-          const rows = rowsAt(profiles, offsets,
-            anchor.xMilliInches, anchor.yMilliInches);
+      for (const policy of policies) {
+          const solved = solveIntentFormationRows({
+            state,
+            profiles,
+            anchor,
+            angle,
+            coherencyRangeMilliInches: 3_000,
+            excludedPieceId: null,
+            sideKey: actor.sideKey,
+            policy,
+          });
+          if (!solved) continue;
+          const rows = solved.rows;
           candidates.push({
             parameters: {
               activeUnitId: source.pieceId,
@@ -583,18 +1103,27 @@ function summonCandidates(state, domain, request) {
               parentContactModelId: parent.id,
               placementPlan: {
                 leadingModelId: rows[0].modelId,
-                placements: rows.map((entry) => ({
-                  ...entry,
-                  rotationDegrees: 0,
-                })),
+                placements: rows,
               },
             },
-            patternId: `summon-contact-${transform.id}-gap-${gap}`,
+            patternId: `intent-solver:${solved.policyId}`,
+            solverPolicyId: solved.policyId,
+            formationObjectives: solved.objectives,
+            tacticalMetrics: solved.metrics,
             anchor,
             modelProfiles: profiles,
             parentContactModelId: parent.id,
+            sameAnchorAlternativesMeaningful: true,
           });
-        }
+          if (candidates.length >= generationLimit) {
+            return candidates.sort((left, right) => Math.hypot(
+              left.anchor.xMilliInches - preferred.xMilliInches,
+              left.anchor.yMilliInches - preferred.yMilliInches,
+            ) - Math.hypot(
+              right.anchor.xMilliInches - preferred.xMilliInches,
+              right.anchor.yMilliInches - preferred.yMilliInches,
+            ) || left.patternId.localeCompare(right.patternId));
+          }
       }
     }
   }
@@ -627,12 +1156,69 @@ function reservePieceProfiles(piece) {
 
 function lifecycleConsumerCandidates(state, domain, request) {
   const source = sourceDomain(domain);
-  if (!new Set(["omega_network_deploy", "pylon_warp_conduit_deploy"])
-    .has(String(source.effectKind || ""))) {
+  const effectKind = String(source.effectKind || "");
+  if (!new Set(["omega_network_deploy", "pylon_warp_conduit_deploy",
+    "reserve_indicator_deploy"]).has(effectKind)) {
     throw new TypeError("LEGAL_FORMATION_LIFECYCLE_CONSUMER_UNSUPPORTED");
   }
   const target = (state.pieces || []).find((entry) =>
     entry.id === source.pieceId);
+  if (!target) throw new TypeError("LEGAL_FORMATION_RESERVE_TARGET_MISSING");
+  const profiles = reservePieceProfiles(target);
+  const coherencyRangeMilliInches = horizontalCoherencyRange(state, target);
+  const objectives = normalizeFormationObjectives(request);
+  const policies = formationSolverPolicies(objectives);
+  const generationLimit = Math.max(8, Math.min(32,
+    Number(request.maximumOptions || DEFAULT_MAX_OPTIONS) * 3));
+  if (effectKind === "reserve_indicator_deploy") {
+    const marker = (state.board?.markers || []).find((entry) => (
+      String(entry.markerId || entry.id) === String(source.sourceInstanceId)));
+    if (!marker || !Number.isFinite(Number(marker.coordinate?.x))
+      || !Number.isFinite(Number(marker.coordinate?.y))) {
+      throw new TypeError("LEGAL_FORMATION_RESERVE_INDICATOR_MISSING");
+    }
+    const anchor = {
+      xMilliInches: Math.round(Number(marker.coordinate.x) * 1000),
+      yMilliInches: Math.round(Number(marker.coordinate.y) * 1000),
+    };
+    const candidates = [];
+    const angles = Array.from({ length: 16 }, (_, index) =>
+      (Math.PI * 2 * index) / 16);
+    for (const angle of angles) {
+      for (const policy of policies) {
+            const solved = solveIntentFormationRows({
+              state,
+              profiles,
+              anchor,
+              angle,
+              coherencyRangeMilliInches,
+              excludedPieceId: target.id,
+              sideKey: target.sideKey,
+              policy,
+            });
+            if (!solved) continue;
+            const rows = solved.rows;
+            candidates.push({
+              parameters: {
+                activeUnitId: source.pieceId,
+                placementPlan: {
+                  leadingModelId: rows[0].modelId,
+                  placements: rows,
+                },
+              },
+              patternId: `intent-solver:${solved.policyId}`,
+              solverPolicyId: solved.policyId,
+              formationObjectives: solved.objectives,
+              tacticalMetrics: solved.metrics,
+              anchor,
+              modelProfiles: profiles,
+              sameAnchorAlternativesMeaningful: true,
+            });
+            if (candidates.length >= generationLimit) return candidates;
+      }
+    }
+    return candidates;
+  }
   const entrySource = (state.pieces || []).find((entry) =>
     entry.id === source.constraints.sourcePieceId);
   const sourceModels = (entrySource?.models || []).filter((entry) =>
@@ -642,7 +1228,6 @@ function lifecycleConsumerCandidates(state, domain, request) {
   if (!target || !entrySource || sourceModels.length < 1) {
     throw new TypeError("LEGAL_FORMATION_ENTRY_SOURCE_MISSING");
   }
-  const profiles = reservePieceProfiles(target);
   const preferred = preferredAnchor(request, {
     battlefieldWidthMilliInches: Math.round(Number(state.board.widthInches) * 1000),
     battlefieldHeightMilliInches: Math.round(Number(state.board.heightInches) * 1000),
@@ -665,29 +1250,46 @@ function lifecycleConsumerCandidates(state, domain, request) {
         yMilliInches: Math.round(Number(entryModel.yInches) * 1000
           + Math.sin(angle) * contactDistance),
       };
-      for (const gap of [20, 60, 100]) {
-        for (const transform of TRANSFORMS) {
-          const offsets = formationOffsets(profiles, gap, transform.apply);
-          const rows = rowsAt(profiles, offsets,
-            anchor.xMilliInches, anchor.yMilliInches);
+      for (const policy of policies) {
+          const solved = solveIntentFormationRows({
+            state,
+            profiles,
+            anchor,
+            angle,
+            coherencyRangeMilliInches,
+            excludedPieceId: target.id,
+            sideKey: target.sideKey,
+            policy,
+          });
+          if (!solved) continue;
+          const rows = solved.rows;
           candidates.push({
             parameters: {
               activeUnitId: source.pieceId,
               sourceContactModelId: entryModel.id,
               placementPlan: {
                 leadingModelId: rows[0].modelId,
-                placements: rows.map((entry) => ({
-                  ...entry,
-                  rotationDegrees: 0,
-                })),
+                placements: rows,
               },
             },
-            patternId: `entry-contact-${transform.id}-gap-${gap}`,
+            patternId: `intent-solver:${solved.policyId}`,
+            solverPolicyId: solved.policyId,
+            formationObjectives: solved.objectives,
+            tacticalMetrics: solved.metrics,
             anchor,
             modelProfiles: profiles,
             sourceContactModelId: entryModel.id,
+            sameAnchorAlternativesMeaningful: true,
           });
-        }
+          if (candidates.length >= generationLimit) {
+            return candidates.sort((left, right) => Math.hypot(
+              left.anchor.xMilliInches - preferred.xMilliInches,
+              left.anchor.yMilliInches - preferred.yMilliInches,
+            ) - Math.hypot(
+              right.anchor.xMilliInches - preferred.xMilliInches,
+              right.anchor.yMilliInches - preferred.yMilliInches,
+            ) || left.patternId.localeCompare(right.patternId));
+          }
       }
     }
   }
@@ -698,6 +1300,73 @@ function lifecycleConsumerCandidates(state, domain, request) {
     right.anchor.xMilliInches - preferred.xMilliInches,
     right.anchor.yMilliInches - preferred.yMilliInches,
   ) || left.patternId.localeCompare(right.patternId));
+}
+
+function stablePolicyIndex(value, denominator) {
+  let hash = 0;
+  for (const character of String(value || "")) {
+    hash = ((hash * 31) + character.codePointAt(0)) >>> 0;
+  }
+  return denominator > 0 ? hash % denominator : 0;
+}
+
+function solveGeneratedCandidateIntent(state, source, candidate, request) {
+  if (candidate.solverPolicyId) return candidate;
+  const profiles = candidate.modelProfiles || source.constraints?.modelProfiles;
+  if (!Array.isArray(profiles) || profiles.length < 1 || !object(candidate.anchor)) {
+    return candidate;
+  }
+  const actor = (state.pieces || []).find((entry) => entry.id === source.pieceId);
+  const objectives = normalizeFormationObjectives(request);
+  const policies = formationSolverPolicies(objectives);
+  const policy = policies[stablePolicyIndex(candidate.patternId, policies.length)];
+  const start = profiles[0]?.startPoint;
+  const boardCenter = {
+    xMilliInches: Math.round(Number(state.board.widthInches) * 500),
+    yMilliInches: Math.round(Number(state.board.heightInches) * 500),
+  };
+  const origin = object(start) ? start : boardCenter;
+  const dx = Number(candidate.anchor.xMilliInches) - Number(origin.xMilliInches);
+  const dy = Number(candidate.anchor.yMilliInches) - Number(origin.yMilliInches);
+  const angle = Math.abs(dx) + Math.abs(dy) > 1
+    ? Math.atan2(dy, dx)
+    : Math.atan2(boardCenter.yMilliInches - candidate.anchor.yMilliInches,
+      boardCenter.xMilliInches - candidate.anchor.xMilliInches);
+  const solved = solveIntentFormationRows({
+    state,
+    profiles,
+    anchor: candidate.anchor,
+    angle,
+    coherencyRangeMilliInches: horizontalCoherencyRange(state, actor),
+    excludedPieceId: source.pieceId,
+    sideKey: source.sideKey || actor?.sideKey,
+    policy,
+  });
+  if (!solved) return null;
+  const parameters = clone(candidate.parameters);
+  const rows = solved.rows;
+  if (object(parameters.placementPlan)) {
+    parameters.placementPlan.leadingModelId = rows[0].modelId;
+    parameters.placementPlan.placements = rows;
+  } else if (source.actionType === "resolve_relocation_ability"
+    && source.effectKind === "entry_edge_place") {
+    parameters.leadingModelId = rows[0].modelId;
+    parameters.placements = rows;
+  } else {
+    parameters.leadingModelId = rows[0].modelId;
+    parameters.path = [rows[0]];
+    parameters.placements = rows.slice(1);
+  }
+  return {
+    ...candidate,
+    parameters,
+    patternId: `intent-solver:${solved.policyId}`,
+    solverPolicyId: solved.policyId,
+    formationObjectives: solved.objectives,
+    tacticalMetrics: solved.metrics,
+    modelProfiles: profiles,
+    sameAnchorAlternativesMeaningful: true,
+  };
 }
 
 function slotsFor(option, profiles) {
@@ -734,6 +1403,11 @@ function slotsFor(option, profiles) {
       position: Object.fromEntries(Object.entries(position)
         .filter(([key]) => !new Set(["modelId", "isLeading"]).has(key))),
       baseSignature: signature,
+      solverPublicReason: position.isLeading
+        ? `Leading slot anchors the ${option.solverPolicyId || "legal"} layout.`
+        : `Host solver placed this base for ${(
+          option.formationObjectives || []).map((entry) => entry.kind).join("+")
+          || "balanced spacing"} while preserving exact physical legality.`,
     };
   });
 }
@@ -775,13 +1449,17 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
   let attemptedCandidateCount = 0;
   let instantiatedCandidateCount = 0;
   let prefilteredCandidateCount = 0;
-  for (const candidate of generated) {
+  for (const generatedCandidate of generated) {
     if (attemptedCandidateCount >= maximumCandidateAttempts
       || options.length >= maximumOptions) break;
-    if (options.some((entry) => Math.hypot(
+    const candidate = solveGeneratedCandidateIntent(
+      state, source, generatedCandidate, request);
+    if (!candidate) continue;
+    if (candidate.sameAnchorAlternativesMeaningful !== true
+      && options.some((entry) => Math.hypot(
       entry.anchor.xMilliInches - candidate.anchor.xMilliInches,
       entry.anchor.yMilliInches - candidate.anchor.yMilliInches,
-    ) < 1_000)) continue;
+      ) < 1_000)) continue;
     attemptedCandidateCount += 1;
     const profiles = candidate.modelProfiles || source.constraints.modelProfiles;
     if (candidatePlacementOverlapsBlocker(candidate, profiles, blockers)) {
@@ -802,6 +1480,10 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
         actionType: source.actionType,
         pieceId: source.pieceId,
         patternId: candidate.patternId,
+        solverPolicyId: candidate.solverPolicyId || null,
+        formationObjectives: clone(candidate.formationObjectives
+          || normalizeFormationObjectives(request)),
+        tacticalMetrics: clone(candidate.tacticalMetrics || null),
         anchor: clone(candidate.anchor),
         canonicalParameters,
         actionHash: hashStarcraftTmgContract(instantiated.action),
@@ -827,6 +1509,7 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
   }
   return freeze({
     schemaVersion: STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION,
+    toolName: STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
     domainId: domain.domainId,
     actionType: source.actionType,
     pieceId: source.pieceId,
@@ -843,14 +1526,23 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
     failureCounts: Object.fromEntries([...failureCounts.entries()]
       .sort(([left], [right]) => left.localeCompare(right))),
     assignmentContract: {
+      agentChoosesTacticalIntent: true,
+      hostSolvesCompletePhysicalLayouts: true,
+      internalSamplingIsNotAFormationTemplate: true,
       chooseExactlyOneFormationOption: true,
-      assignEverySlotExactlyOnce: true,
-      assignEveryModelExactlyOnce: true,
+      hostDefaultAssignmentUsesCanonicalModelIdentity: true,
+      optionalAgentAssignmentMustCoverEverySlotAndModelExactlyOnce: true,
       modelMustBeCompatibleWithSlot: true,
-      everySlotRequiresPublicReason: true,
+      everySlotHasHostSolverPublicReason: true,
       mixingSlotsAcrossOptionsForbidden: true,
       hostReinstantiatesAssignedFormationBeforeApply: true,
       hiddenChainOfThoughtRequested: false,
+    },
+    formationIntent: {
+      tacticalPurpose: String(request.tacticalPurpose || ""),
+      objectives: normalizeFormationObjectives(request),
+      exactThreatGeometryRequiredForExactThreatClaims: true,
+      visibleSourceClearanceAloneIsAdvisory: true,
     },
     bounded: true,
     rulesAuthority: options.length > 0,

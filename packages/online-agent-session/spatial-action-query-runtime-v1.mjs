@@ -15,6 +15,9 @@ const DIRECT_QUERY_KINDS = new Set([
   "within_and_wholly_within",
 ]);
 const DELEGATED_QUERY_KINDS = new Set([
+  "space.solve_formation",
+  "legal_formation_options",
+  "legal_asset_placement_options",
   "instantiate_parameterized_action",
   "legal_full_path_movement",
   "coherency_after_candidate_placement",
@@ -135,6 +138,10 @@ function delegatedResult(binding, queryKind, response) {
     return unknownResult(binding, queryKind,
       String(response.reason || "rules_query_returned_unknown"), {
         findingSeverity: response.findingSeverity || "Medium",
+        failureStage: response.failureStage || null,
+        safeFailureClass: response.safeFailureClass || null,
+        mayRepairSameChoice: response.mayRepairSameChoice === true,
+        repairContext: clone(response.repairContext || null),
       });
   }
   if (!new Set(["exact", "advisory_estimate"]).has(precision)) {
@@ -183,11 +190,17 @@ function parameterDomains(legalSpace) {
     domainId: domain.domainId,
     parameterKind: domain.parameterKind || null,
     actionType: domain.actionType,
+    abilityName: domain.abilityName || null,
+    effectKind: domain.effectKind || null,
+    definitionId: domain.definitionId || null,
+    sourceKind: domain.sourceKind || null,
+    createdUnitRecordKey: domain.constraints?.createdUnitRecordKey || null,
     sideKey: domain.sideKey,
     pieceId: domain.pieceId || null,
     executorId: domain.executorId || null,
     executorVersion: domain.executorVersion || null,
     parameterSchema: clone(domain.parameterSchema),
+    unitRepositionProcedure: clone(domain.unitRepositionProcedure || null),
     constraints: clone(domain.constraints),
     confirmationClass: domain.confirmationClass,
     proposalTemplate: {
@@ -246,6 +259,7 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
 
   async function query(input = {}) {
     const binding = authority(input);
+    const legalSpace = input.legalSpace;
     const request = object(input.request) ? input.request : {};
     const queryKind = String(request.queryKind || request.kind || "unknown");
     const args = object(request.arguments) ? request.arguments : {};
@@ -300,12 +314,21 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
     if (!inFlight.has(cacheKey)) {
       inFlight.set(cacheKey, (async () => {
         try {
+          const delegatedArguments = clone(args);
+          const domainId = String(args.domainId || args.proposal?.domainId || "");
+          const currentDomain = domainId
+            ? (legalSpace.parameterDomains || []).find((entry) => (
+                entry.domainId === domainId
+              )) : null;
+          if (currentDomain) {
+            delegatedArguments.currentLegalSpaceDomain = clone(currentDomain);
+          }
           const response = await rulesQuery(deepFreeze({
             schemaVersion:
               `${STARCRAFT_TMG_SPATIAL_ACTION_QUERY_RUNTIME_VERSION}.request`,
             authority: clone(binding),
             queryKind,
-            arguments: clone(args),
+            arguments: delegatedArguments,
             roomMutationAuthority: false,
             confirmationAuthority: false,
             trainingTruth: false,
@@ -339,6 +362,8 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
       unsupportedPolicy: "return_unknown_never_approximate_as_exact",
       parameterizedActionPolicy:
         "preserve_domain_then_rules_instantiate_then_preview",
+      unitMovementPolicy:
+        "leading_model_physical_path_then_agent_selected_complete_formation_placement",
       mutationAuthority: false,
       trainingTruth: false,
     }),

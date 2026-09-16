@@ -174,6 +174,14 @@ function unitObservation(piece, models, seatKey, state) {
     },
     physicalPlacementIsPerModel: true,
     unitCenterIsNotPlacementAuthority: true,
+    repositionProcedure: {
+      leadingModelUsesPhysicalPath: true,
+      remainingModelsArePlacedByCoherencyLinks: true,
+      agentChoosesFormationIntentAndCompleteSolvedLayout: true,
+      hostMaySolveMultipleCompleteLayoutsFromAgentIntent: true,
+      agentNeedNotAuthorEveryCoordinate: true,
+      unreviewedAutomaticFinalPlacementAllowed: false,
+    },
   };
 }
 
@@ -448,6 +456,16 @@ export function createStarcraftTmgPlayerSpatialObservationV1(input = {}) {
       cssPixelsIncluded: false,
       cameraPanZoomRotationIncluded: false,
       invariantUnderUiPanZoom: true,
+    },
+    unitRepositionSemantics: {
+      leadingModelPhysicalPathOnly: true,
+      remainingModelsArePlacedAfterLeadingModelPath: true,
+      agentMustChooseFormationIntentAndOneCompleteLegalLayout: true,
+      hostMaySolveCoordinatesFromWeightedTacticalObjectives: true,
+      agentNeedNotAuthorEveryRemainingCoordinate: true,
+      remainingModelTransitPathsAreNotRulesFacts: true,
+      completeFinalFormationUsesPerModelPhysicalBaseGeometry: true,
+      unreviewedAutomaticFinalPlacementAllowed: false,
     },
     rulesAuthority: "external_rules_service",
     mayMutateRoom: false,

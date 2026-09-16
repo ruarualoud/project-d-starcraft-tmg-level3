@@ -3,7 +3,7 @@
 Date: 2026-09-16
 
 Status: Slice 258 remains open. The same Standard-2000 human-versus-Agent match
-is safely paused after authoritative action 37, in round two movement. The
+is safely paused after authoritative action 39, in round two movement. The
 runner's `failed` status is the retained result of an intentional Ctrl-C; the
 authoritative room, replay and decision records remain resumable.
 
@@ -39,6 +39,14 @@ authoritative room, replay and decision records remain resumable.
   under the same official physical-footprint relation used by Rules. Contact
   remains legal, candidate order and failure accounting are preserved, and
   every survivor still passes full Rules instantiation before exposure.
+- Formation choice is now an explicit spatial tool contract named
+  `space.solve_formation`. The Planner supplies weighted tactical objectives
+  such as advance, dispersion, compactness, engagement, surrounding, threat
+  avoidance, objective control, screening and lane preservation. The Host
+  solves complete per-model layouts, exposes several physically legal options
+  with tactical metrics, and the Agent selects one option with a public reason.
+  Internal spatial sampling is an implementation detail, not a fixed formation
+  template, and the Agent need not hand-author every coordinate.
 
 ## Focused verification
 
@@ -94,6 +102,26 @@ Rules-rejected attempts now persist their local semantic replay version and a
 proposal/reason signature; the same invalid proposal stops after two identical
 failures rather than surviving explicit-retry cycles indefinitely.
 
+The room then advanced through two further authoritative actions: action 38
+placed the Omega Worm through the Host asset-placement search and action 39
+resolved the Ventral Sacs lifecycle indicator. The next Planner choice is the
+18-model Raptor Squadron entering through that Worm. Its formation search
+exposed a state-time mismatch: the off-field reserve representation hid the
+official `Squadron` four-inch horizontal coherency modifier, so the solver used
+the generic three-inch default although Rules correctly evaluated the placed
+unit at four inches. Formation evaluation now projects a reserve unit into its
+post-placement on-field state before reading static characteristic modifiers,
+matching the authoritative placement runtime.
+
+The existing revision-39 bug reproducer was run through three permitted repair
+cycles. The first two cycles returned zero options and directly isolated the
+coherency projection defect. After that code change, the third and final cycle
+passed: six of six generated options survived full Rules instantiation, all
+reported `space.solve_formation`, all carried tactical metrics and intent-solver
+evidence, and no Provider call occurred. This is a generic reserve-placement
+correction used by Omega/Pylon/transport/summon-style entries; it is not a
+Raptor-name special case.
+
 ## Stability and strategy observation
 
 - New-policy calls in this decision: 4.
@@ -135,14 +163,20 @@ failures rather than surviving explicit-retry cycles indefinitely.
   notification threshold. No tighter Provider budget was applied; the repair
   removes repeated invalid calls by replacing coordinate guessing with exact
   Host placement options.
+- At authoritative action 39 the durable decision ledger is 151 calls,
+  7,681,546 reported units and CNY 15.361386. The focused formation proof added
+  no model calls and no cost. Its current local solve takes roughly 2.5 minutes,
+  which is recorded as Medium performance debt rather than a correctness block;
+  bounded lazy candidates, spatial caching and asynchronous pre-execution
+  belong to the dedicated spatial-solver follow-up.
 
 No source refresh occurred and no decision was promoted to training truth.
 
 ## Remaining Slice 258 work
 
-1. Resume the same authoritative room from action 37; confirm the existing
-   Planner choice receives exact Omega placement options, applies once and does
-   not replay the old failure loop, then complete the Standard-2000 match.
+1. Resume the same authoritative room from action 39; consume the already
+   selected Raptor lifecycle choice through `space.solve_formation`, then
+   complete the Standard-2000 match without replaying earlier paid decisions.
 2. Review prompt-policy observations after subsequent decision types, especially
    movement, ranged attack, melee/charge, Pass and phase transitions.
 3. Produce terminal JSON/NDJSON, screenshots, cost ledger and PDF evidence.

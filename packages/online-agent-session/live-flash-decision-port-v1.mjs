@@ -6,6 +6,10 @@ import { priceStarcraftTmgDeepSeekCurrentUsageV2 } from
   "../secure-provider-runtime/provider-pricing-v2.mjs";
 import { normalizeProviderJsonDocumentV1 } from
   "../secure-provider-runtime/provider-response-outcome-v1.mjs";
+import {
+  STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS,
+  STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
+} from "./legal-formation-search-v1.mjs";
 
 export const STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION =
   "starcraft_tmg_live_flash_decision_port_v1";
@@ -21,12 +25,13 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_host_deferred_adaptive_queries_v2";
+  "starcraft_tmg_planner_action_host_deferred_formation_intent_v3";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_action_shape_normalization_v12";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_planner_shape_normalization_v4";
+  "starcraft_tmg_live_planner_shape_normalization_v5";
 const NATIVE_QUERY_KINDS = Object.freeze([
+  STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
   "legal_formation_options",
   "legal_asset_placement_options",
   "base_edge_distance",
@@ -42,6 +47,7 @@ const NATIVE_QUERY_KINDS = Object.freeze([
   "objective_score_after_candidate_action",
 ]);
 const HOST_DEFERRED_QUERY_KINDS = new Set([
+  STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
   "legal_formation_options",
   "legal_asset_placement_options",
   "instantiate_parameterized_action",
@@ -49,6 +55,10 @@ const HOST_DEFERRED_QUERY_KINDS = new Set([
 const PHASE_CONTROL_ACTIONS = new Set(["pass", "choose_first_actor"]);
 const FORMATION_ACTION_TYPES = new Set([
   "deploy", "move", "run", "disengage",
+]);
+const FORMATION_QUERY_KINDS = new Set([
+  STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
+  "legal_formation_options",
 ]);
 const FINAL_STATUSES = new Set(["completed", "closed"]);
 const DEFINITELY_NOT_SENT_FAILURES = new Set([
@@ -272,7 +282,8 @@ function candidateEvidenceRequirements(input) {
   return actionIndex(input.spatialActionSpace).map((entry) => {
     const actionType = String(entry.action?.actionType || "unknown");
     const exactBeforeApply = entry.kind === "parameterized"
-      ? [isFormationPlacementDomain(entry.action) ? "legal_formation_options"
+      ? [isFormationPlacementDomain(entry.action)
+        ? STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME
         : isAssetPlacementDomain(entry.action)
           ? "legal_asset_placement_options" : null,
       "instantiate_parameterized_action"].filter(Boolean)
@@ -745,7 +756,7 @@ function validateActionOutput(raw, input, planner) {
 
 function exactFormationReceipt(queryReceipts, domainId) {
   return [...(queryReceipts || [])].reverse().find((entry) =>
-    entry?.queryKind === "legal_formation_options"
+    FORMATION_QUERY_KINDS.has(entry?.queryKind)
       && entry?.status === "exact"
       && entry?.result?.domainId === domainId
       && Array.isArray(entry?.result?.formationOptions)
@@ -857,8 +868,16 @@ function bindFormationSelection(raw, queryReceipts) {
     throw correctionError("ACTION_FORMATION_OPTION_SELECTION_REQUIRED",
       domainId);
   }
-  const assignments = Array.isArray(selection.slotAssignments)
+  const submittedAssignments = Array.isArray(selection.slotAssignments)
     ? selection.slotAssignments : [];
+  const hostDefaultAssignmentUsed = submittedAssignments.length === 0;
+  const overallReason = String(selection.publicReason || "").trim();
+  const assignments = hostDefaultAssignmentUsed ? option.slots.map((slot) => ({
+    slotId: slot.slotId,
+    modelId: slot.defaultModelId,
+    publicReason: slot.solverPublicReason || overallReason
+      || "Selected as part of the complete Host-solved formation.",
+  })) : submittedAssignments;
   if (assignments.length !== option.slots.length) {
     throw correctionError("ACTION_FORMATION_SLOT_DENOMINATOR_INVALID",
       `${assignments.length}->${option.slots.length}`);
@@ -913,7 +932,12 @@ function bindFormationSelection(raw, queryReceipts) {
     formationOptionId,
     formationReceiptHash: receipt.queryReceiptHash,
     patternId: option.patternId,
+    solverPolicyId: option.solverPolicyId || null,
+    formationObjectives: clone(option.formationObjectives || []),
+    tacticalMetrics: clone(option.tacticalMetrics || null),
     anchor: clone(option.anchor),
+    publicReason: overallReason,
+    hostDefaultAssignmentUsed,
     slotAssignments: rationales.map((entry) => ({
       slotId: entry.slotId,
       modelId: entry.modelId,
@@ -1491,6 +1515,7 @@ function mapPlanningSubmission(raw, input) {
       },
       maximumOptions: Number(result.formationMaximumOptions),
       tacticalPurpose: String(result.formationTacticalPurpose || ""),
+      formationObjectives: clone(result.formationObjectives || []),
     };
   }
   if (result.assetPlacementSearchRequested === true) {
@@ -1505,7 +1530,7 @@ function mapPlanningSubmission(raw, input) {
   }
   for (const field of [
     "formationSearchRequested", "formationPreferredX", "formationPreferredY",
-    "formationMaximumOptions", "formationTacticalPurpose",
+    "formationMaximumOptions", "formationTacticalPurpose", "formationObjectives",
     "assetPlacementSearchRequested", "assetPreferredX", "assetPreferredY",
     "assetMaximumOptions", "assetTacticalPurpose",
   ]) delete result[field];
@@ -1539,6 +1564,7 @@ function mapDecisionSubmission(raw, input, choice) {
     result.formationSelection = {
       formationOptionId: String(selection.optionId || ""),
       slotAssignments: clone(selection.slotAssignments || []),
+      publicReason: String(selection.publicReason || ""),
     };
   } else if (selection.kind === "asset") {
     result.assetPlacementSelection = {
@@ -1715,6 +1741,18 @@ function planningSubmissionTool(input) {
         formationPreferredY: { type: "integer" },
         formationMaximumOptions: { type: "integer", minimum: 1, maximum: 8 },
         formationTacticalPurpose: strictString(0, 2_000),
+        formationObjectives: {
+          type: "array",
+          items: strictObject({
+            kind: strictString(1, 80, {
+              enum: [...STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS],
+            }),
+            weight: { type: "integer", minimum: 1, maximum: 5 },
+            targetIds: strictStringArray(0, 24),
+          }),
+          minItems: 0,
+          maxItems: 8,
+        },
         assetPlacementSearchRequested: { type: "boolean" },
         assetPreferredX: { type: "integer" },
         assetPreferredY: { type: "integer" },
@@ -1852,7 +1890,7 @@ function actionSubmissionTool(input, choice, queryReceipts) {
               modelId: modelIdSchema,
               publicReason: strictString(1, 2_000),
             }),
-            minItems: selection.kind === "formation" ? 1 : 0,
+            minItems: 0,
             maxItems: 128,
           },
           parametersJson: selection.kind === "parameters"
@@ -1877,7 +1915,7 @@ function nativeAgentLoop(choice, input, queryReceipts, stage,
     function: {
       name: NATIVE_QUERY_TOOL_NAME,
       description:
-        "Ask the Host for one read-only Rules, geometry, probability, fire-zone, path, coherency, line-of-sight, threat or score query. Encode query-specific arguments as one JSON object string. Formation search, asset placement and final instantiation are deferred to the Host after candidate selection.",
+        "Ask the Host for one read-only Rules, geometry, probability, fire-zone, path, coherency, line-of-sight, threat or score query. Encode query-specific arguments as one JSON object string. Intent-driven formation solving, asset placement and final instantiation are deferred to the Host after candidate selection.",
       parameters: {
         type: "object",
         properties: {
@@ -2268,7 +2306,7 @@ function compactSpatialObservation(observation) {
 
 function compactQueryReceiptForPrompt(receipt) {
   if (!object(receipt)
-    || receipt.queryKind !== "legal_formation_options"
+    || !FORMATION_QUERY_KINDS.has(receipt.queryKind)
     || !Array.isArray(receipt.result?.formationOptions)) {
     return clone(receipt);
   }
@@ -2291,11 +2329,15 @@ function compactQueryReceiptForPrompt(receipt) {
         compatibilityGroupId: groupId,
         position: clone(slot.position || null),
         baseSignature: slot.baseSignature || null,
+        solverPublicReason: slot.solverPublicReason || null,
       };
     });
     return {
       formationOptionId: option.formationOptionId,
       patternId: option.patternId || null,
+      solverPolicyId: option.solverPolicyId || null,
+      formationObjectives: clone(option.formationObjectives || []),
+      tacticalMetrics: clone(option.tacticalMetrics || null),
       anchor: clone(option.anchor || null),
       abilityName: option.abilityName || null,
       effectKind: option.effectKind || null,
@@ -2320,12 +2362,14 @@ function compactQueryReceiptForPrompt(receipt) {
       domainId: receipt.result.domainId,
       actionType: receipt.result.actionType,
       pieceId: receipt.result.pieceId,
+      toolName: receipt.result.toolName || STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
       preferredAnchor: clone(receipt.result.preferredAnchor || null),
       formationOptions,
       optionCount: receipt.result.optionCount,
       attemptedCandidateCount: receipt.result.attemptedCandidateCount,
       failureCounts: clone(receipt.result.failureCounts || {}),
       assignmentContract: clone(receipt.result.assignmentContract || null),
+      formationIntent: clone(receipt.result.formationIntent || null),
       exactCanonicalParametersRemainBoundToFormationOptionId: true,
       rulesAuthority: true,
       mutationAuthority: false,
@@ -2409,13 +2453,13 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
         : "Use exactly the Planner's recommended candidate. Submit only model-owned choices; the Host constructs the finite or parameterized proposal.",
       "For a Unit reposition, give a physical path only for the nominated Leading Model; the remaining models do not travel paths under the rules and must each receive an explicit final placement through the domain's placements field.",
       planning
-        ? "Do not request legal formation options, legal asset-placement options, or final parameter instantiation during Planning. Select the best current candidate first and set its formationSearchRequested or assetPlacementSearchRequested fields when applicable; the Host performs that exact search once after selection."
+        ? `Do not request ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME}, legal asset-placement options, or final parameter instantiation during Planning. Select the best current candidate first. For a formation action, set formationSearchRequested and provide weighted formationObjectives with visible targetIds; the Host runs the spatial solver once.`
         : "Use the exact Host-supplied formation or asset-placement options for the selected candidate; do not restart a broad placement search in the Action stage.",
-      "When an exact legal_formation_options receipt is present, choose exactly one formationOptionId and return formationSelection.slotAssignments for every supplied slot in one response. Assign each model exactly once to a compatible slot and give each slot one concise publicReason about objective, cover, threat, spacing, screening, lane access, model protection, or plan continuity. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.",
+      `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives and tacticalMetrics and choose exactly one formationOptionId. Give one concise publicReason for the formation. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
       "When an exact legal_asset_placement_options receipt is present, choose exactly one placementOptionId and return assetPlacementSelection with that ID and one concise publicReason about the visible position, intended threat/objective/route effect, and plan continuity. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
       "Position publicReason fields are auditable summaries, not hidden chain-of-thought. State the useful board fact and tactical purpose without private scratch work.",
       "For Deploy, the Host prepends the Leading Model base-centre start just outside the selected battlefield edge. The complete Speed allowance includes that ingress distance. Do not add an artificial path point on the edge and do not measure only from the edge; choose an endpoint whose complete Host path remains within maxDistanceMilliInches.",
-      "Never omit, invent automatically, or treat the remaining models as a unit centre: compare and choose the complete final formation using every model's physical base, coherency, board edge, terrain, objective, line-of-sight, blocking, threat and fire-zone consequences.",
+      "Never treat the remaining models as a unit centre: compare and choose a complete Host-solved final formation using every model's physical base, coherency, board edge, terrain, objective, line-of-sight, blocking, threat and fire-zone consequences.",
       "A typed query for a parameterized candidate must put domainId and the complete parameters object in the query tool arguments; the Host automatically Rules-checks every final parameterized proposal.",
       "Use exact query receipts as facts, advisory estimates as preferences, and unknown as uncertainty.",
       "An unknown query receipt may include Rules-derived repairContext. Use it only to repair and re-submit the same candidate; it never proves that the repaired proposal is legal until a later exact receipt accepts it.",
@@ -3718,7 +3762,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           const searchRequest = choice.plannerResult.formationSearchRequest || {};
           const formationQuery = await runQueries(input, [{
             requestId: `host-required-formation-${choice.choiceKey}`,
-            queryKind: "legal_formation_options",
+            queryKind: STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
             arguments: {
               domainId: selected.id,
               maximumOptions: Number(searchRequest.maximumOptions || 4),
@@ -3726,10 +3770,11 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
                 preferredAnchor: clone(searchRequest.preferredAnchor),
               } : {}),
               tacticalPurpose: String(searchRequest.tacticalPurpose || ""),
+              formationObjectives: clone(searchRequest.formationObjectives || []),
             },
           }]);
           const receipt = formationQuery.receipts.find((entry) =>
-            entry.queryKind === "legal_formation_options") || null;
+            FORMATION_QUERY_KINDS.has(entry.queryKind)) || null;
           if (receipt?.status !== "exact"
             || !Array.isArray(receipt?.result?.formationOptions)
             || receipt.result.formationOptions.length < 1) {
