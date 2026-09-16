@@ -721,6 +721,109 @@ function formationSolverMetrics(selected, input, solverScore) {
   };
 }
 
+function finiteOrFloor(value) {
+  if (value === null || value === undefined) return -Number.MAX_SAFE_INTEGER;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : -Number.MAX_SAFE_INTEGER;
+}
+
+function negativeFiniteOrFloor(value) {
+  if (value === null || value === undefined) return -Number.MAX_SAFE_INTEGER;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? -parsed : -Number.MAX_SAFE_INTEGER;
+}
+
+function paretoVector(option) {
+  const metrics = option.tacticalMetrics || {};
+  const axes = [{ name: "weighted_solver_score", maximize: true,
+    value: finiteOrFloor(metrics.solverScore) }];
+  const objectives = option.formationObjectives || [];
+  for (const objective of objectives) {
+    const metric = (metrics.objectiveMetrics || []).find((entry) =>
+      entry.kind === objective.kind
+        && hashStarcraftTmgContract(entry.targetIds || [])
+          === hashStarcraftTmgContract(objective.targetIds || []));
+    const prefix = `${objective.kind}:${(objective.targetIds || []).join("+")}`;
+    if (new Set(["control_objective", "advance", "maximize_engagement",
+      "surround_target", "screen"]).has(objective.kind)) {
+      axes.push({ name: `${prefix}:models_within_three_inches`, maximize: true,
+        value: finiteOrFloor(metric?.modelsWithinThreeInchesOfTarget) });
+      axes.push({ name: `${prefix}:negative_target_distance`, maximize: true,
+        value: negativeFiniteOrFloor(
+          metric?.minimumTargetBaseEdgeDistanceMilliInches) });
+    } else if (new Set(["avoid_threat", "preserve_lane"])
+      .has(objective.kind)) {
+      axes.push({ name: `${prefix}:target_clearance`, maximize: true,
+        value: finiteOrFloor(
+          metric?.minimumTargetBaseEdgeDistanceMilliInches) });
+    } else if (objective.kind === "compact") {
+      axes.push({ name: `${prefix}:negative_envelope_area`, maximize: true,
+        value: negativeFiniteOrFloor(
+          metrics.formationEnvelopeAreaSquareMilliInches) });
+    } else if (objective.kind === "disperse") {
+      axes.push({ name: `${prefix}:pairwise_clearance`, maximize: true,
+        value: finiteOrFloor(
+          metrics.minimumPairwiseBaseSeparationMilliInches) });
+      axes.push({ name: `${prefix}:envelope_area`, maximize: true,
+        value: finiteOrFloor(metrics.formationEnvelopeAreaSquareMilliInches) });
+    }
+  }
+  return axes;
+}
+
+function vectorDominates(left, right) {
+  if (left.length !== right.length
+    || left.some((entry, index) => entry.name !== right[index].name)) {
+    return false;
+  }
+  return left.every((entry, index) => entry.value >= right[index].value)
+    && left.some((entry, index) => entry.value > right[index].value);
+}
+
+function formationParetoDiversity(options) {
+  const groups = new Map();
+  for (const option of options) {
+    const signature = hashStarcraftTmgContract(
+      option.formationObjectives || []);
+    const rows = groups.get(signature) || [];
+    rows.push({ option, vector: paretoVector(option) });
+    groups.set(signature, rows);
+  }
+  const frontierOptionIds = [];
+  const dominatedOptionIds = [];
+  const objectiveGroups = [];
+  for (const [objectiveSignature, rows] of groups.entries()) {
+    const frontier = rows.filter((candidate, index) => !rows.some(
+      (other, otherIndex) => otherIndex !== index
+        && vectorDominates(other.vector, candidate.vector),
+    ));
+    const frontierIds = frontier.map((entry) => entry.option.formationOptionId);
+    const dominatedIds = rows.map((entry) => entry.option.formationOptionId)
+      .filter((optionId) => !frontierIds.includes(optionId));
+    frontierOptionIds.push(...frontierIds);
+    dominatedOptionIds.push(...dominatedIds);
+    objectiveGroups.push({
+      objectiveSignature,
+      formationObjectives: clone(rows[0]?.option.formationObjectives || []),
+      comparedOptionCount: rows.length,
+      frontierOptionIds: frontierIds,
+      dominatedOptionIds: dominatedIds,
+      axisNames: (rows[0]?.vector || []).map((entry) => entry.name),
+    });
+  }
+  return {
+    schemaVersion: "starcraft_tmg_formation_pareto_diversity_v1",
+    frontierOptionIds,
+    dominatedOptionIds,
+    objectiveGroups,
+    onlySameObjectiveContractsCompared: true,
+    exactOptionsHiddenByParetoAnalysis: 0,
+    agentMaySelectAnyExposedExactOption: true,
+    rulesAuthority: false,
+    trainingTruth: false,
+  };
+}
+
 function solveIntentFormationRows(input) {
   const { state, profiles, anchor, angle, coherencyRangeMilliInches,
     excludedPieceId, sideKey, policy } = input;
@@ -2338,10 +2441,12 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
   let instantiatedCandidateCount = 0;
   let prefilteredCandidateCount = 0;
   let duplicateIntentCandidateCount = 0;
+  let examinedGeneratedCandidateCount = 0;
   const generatedIntentKeys = new Set();
   for (const generatedCandidate of generated) {
     if (attemptedCandidateCount >= maximumCandidateAttempts
       || options.length >= maximumOptions) break;
+    examinedGeneratedCandidateCount += 1;
     const generatedIntentKey = generatedCandidateIntentKey(
       generatedCandidate, request);
     if (generatedIntentKey && generatedIntentKeys.has(generatedIntentKey)) {
@@ -2438,10 +2543,26 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
     instantiatedCandidateCount,
     prefilteredCandidateCount,
     duplicateIntentCandidateCount,
+    searchCoverage: {
+      generatedCandidateCount: generated.length,
+      examinedGeneratedCandidateCount,
+      exactInstantiationCount: instantiatedCandidateCount,
+      maximumCandidateAttempts,
+      maximumOptions,
+      candidateGenerationDeterministic: true,
+      exactInstantiationIsLazy: true,
+      greedyPerModelLocalImprovementUsed: true,
+      betterOptionMayExist:
+        examinedGeneratedCandidateCount < generated.length,
+      strategyObjectiveOrTokenBudgetReducedForPerformance: false,
+    },
+    paretoDiversity: formationParetoDiversity(options),
     failureCounts: Object.fromEntries([...failureCounts.entries()]
       .sort(([left], [right]) => left.localeCompare(right))),
     assignmentContract: {
       agentChoosesTacticalIntent: true,
+      agentSelectsFinalCompleteLayout: true,
+      agentSuppliesPublicFormationStrategyReason: true,
       hostSolvesCompletePhysicalLayouts: true,
       internalSamplingIsNotAFormationTemplate: true,
       chooseExactlyOneFormationOption: true,

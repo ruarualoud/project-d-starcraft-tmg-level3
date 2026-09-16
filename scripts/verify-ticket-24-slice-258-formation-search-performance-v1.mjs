@@ -43,6 +43,8 @@ const roomStore = createSqliteStarcraftTmgRoomStore({
 });
 const decisionDatabase = new DatabaseSync(path.join(
   runDirectory, "provider", "live-decisions.sqlite"), { readOnly: true });
+const roomDatabase = new DatabaseSync(path.join(runDirectory, "room.sqlite"),
+  { readOnly: true });
 
 try {
   const row = decisionDatabase.prepare(
@@ -62,8 +64,20 @@ try {
     "recorded six-option baseline is required");
 
   const bundle = await roomStore.loadReplayBundle(privateState.roomId);
-  assert.equal(bundle.latestCheckpoint?.stateRevision, 32,
-    "revision-32 checkpoint is required");
+  const targetStateRevision = 36;
+  const checkpointRow = roomDatabase.prepare(`
+    SELECT state_revision, checkpoint_cipher
+      FROM sc_checkpoints
+     WHERE room_id = ? AND state_revision <= ?
+     ORDER BY state_revision DESC LIMIT 1
+  `).get(privateState.roomId, targetStateRevision);
+  const replayCheckpoint = checkpointRow
+    ? privatePayloadCodec.decode(checkpointRow.checkpoint_cipher,
+      `room:${privateState.roomId}:checkpoint:${checkpointRow.state_revision}`)
+    : Number(bundle.latestCheckpoint?.stateRevision) <= targetStateRevision
+      ? bundle.latestCheckpoint : null;
+  const replayBaseRevision = Number(replayCheckpoint?.stateRevision
+    ?? bundle.initialEnvelope.stateRevision);
   const refereeCrypto = createStarcraftTmgRefereeCrypto({
     privateKey: privateState.refereePrivateKeyPem,
     publicKey: privateState.refereePublicKeyPem,
@@ -93,17 +107,20 @@ try {
     .filter((entry) => entry.payload?.type === "accepted_transition")
     .map((entry) => entry.payload.payload.receipt)
     .filter((receipt) =>
-      Number(receipt.postStateRevision) > 32
-        && Number(receipt.postStateRevision) <= 36)
+      Number(receipt.postStateRevision) > replayBaseRevision
+        && Number(receipt.postStateRevision) <= targetStateRevision)
     .sort((left, right) => Number(left.postStateRevision)
       - Number(right.postStateRevision));
   assert.deepEqual(receipts.map((receipt) => receipt.postStateRevision),
-    [33, 34, 35, 36], "contiguous replay tail is required");
-  const replay = fixture.authorityEngine.replay({
+    Array.from({ length: targetStateRevision - replayBaseRevision },
+      (_, index) => replayBaseRevision + index + 1),
+    "contiguous replay history is required");
+  const replayInput = {
     initialEnvelope: bundle.initialEnvelope,
-    checkpoint: bundle.latestCheckpoint,
     journal: receipts,
-  });
+    ...(replayCheckpoint ? { checkpoint: replayCheckpoint } : {}),
+  };
+  const replay = fixture.authorityEngine.replay(replayInput);
   assert.equal(replay.ok, true, replay.reason || "authority replay failed");
   assert.equal(replay.envelope.stateRevision, 36,
     "replayed decision revision must match");
@@ -141,6 +158,9 @@ try {
     schema: "ticket24_slice258_formation_search_performance_v1",
     ok: durationMs <= maximumDurationMs,
     stateRevision: 36,
+    replayBaseRevision,
+    latestStoredCheckpointRevision:
+      bundle.latestCheckpoint?.stateRevision ?? null,
     candidateId,
     durationMs,
     maximumDurationMs,
@@ -158,6 +178,7 @@ try {
   assert(report.ok,
     `formation search ${durationMs}ms exceeded ${maximumDurationMs}ms`);
 } finally {
+  roomDatabase.close();
   decisionDatabase.close();
   roomStore.close();
 }

@@ -202,6 +202,14 @@ Deliverable: the revision-39 18-model case returns a useful exact option set
 within the interactive budget while preserving the same legality denominator
 and without tightening the Agent's strategy or token budget.
 
+Checkpoint: `ticket-25-slice-262-bounded-async-spatial-search-checkpoint-v1-2026-09-17.md`
+records the completed bounded cache, deterministic lazy search, non-destructive
+Pareto labelling and cancellable pre-execution implementation. Existing exact
+18-model evidence is 15,597 ms for six unchanged options. Acceptance remains
+open only for the next natural live prompt canary because the Agent projection
+now receives the Pareto/search-coverage metadata; the three-cycle historical
+performance-verifier limit has been reached and is not rerun.
+
 ### Slice 263 — live strategy, memory and evolution proof
 
 - Live 2000-point H-A and A-A positioning decisions spanning movement,

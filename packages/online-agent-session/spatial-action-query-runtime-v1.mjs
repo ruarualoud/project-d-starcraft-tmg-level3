@@ -217,8 +217,82 @@ function parameterDomains(legalSpace) {
 export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
   const rulesQuery = typeof options.rulesQuery === "function"
     ? options.rulesQuery : null;
+  const configuredMaximumScopes = Number(options.maximumCachedScopes || 64);
+  const maximumCachedScopes = Number.isSafeInteger(configuredMaximumScopes)
+    ? Math.max(1, Math.min(1_024, configuredMaximumScopes)) : 64;
+  const configuredMaximumReceipts = Number(
+    options.maximumCachedReceiptsPerSnapshot || 128);
+  const maximumCachedReceiptsPerSnapshot = Number.isSafeInteger(
+    configuredMaximumReceipts)
+    ? Math.max(1, Math.min(2_048, configuredMaximumReceipts)) : 128;
   const inFlight = new Map();
   const completed = new Map();
+  const snapshotByScope = new Map();
+  const cacheKeysByScope = new Map();
+
+  function evictScope(scopeKey) {
+    for (const cacheKey of cacheKeysByScope.get(scopeKey) || []) {
+      completed.delete(cacheKey);
+    }
+    cacheKeysByScope.delete(scopeKey);
+    snapshotByScope.delete(scopeKey);
+  }
+
+  function enforceScopeLimit() {
+    while (snapshotByScope.size > maximumCachedScopes) {
+      const oldestScopeKey = snapshotByScope.keys().next().value;
+      if (!oldestScopeKey) break;
+      evictScope(oldestScopeKey);
+    }
+  }
+
+  function rememberCompleted(snapshot, cacheKey, receipt) {
+    if (!snapshotIsCurrent(snapshot)) return;
+    const keys = cacheKeysByScope.get(snapshot.scopeKey);
+    if (!keys) return;
+    keys.delete(cacheKey);
+    keys.add(cacheKey);
+    completed.set(cacheKey, receipt);
+    while ([...keys].filter((key) => completed.has(key)).length
+      > maximumCachedReceiptsPerSnapshot) {
+      const oldestCompletedKey = [...keys].find((key) =>
+        key !== cacheKey && completed.has(key));
+      if (!oldestCompletedKey) break;
+      completed.delete(oldestCompletedKey);
+      keys.delete(oldestCompletedKey);
+    }
+  }
+
+  function rotateSnapshot(binding) {
+    const scopeKey = hashStarcraftTmgContract({
+      gameId: binding.gameId,
+      roomId: binding.roomId,
+      matchBindingHash: binding.matchBindingHash,
+      seatKey: binding.seatKey,
+      visibilityScope: binding.visibilityScope,
+    });
+    const nextSnapshotKey = hashStarcraftTmgContract({
+      stateRevision: binding.stateRevision,
+      stateHash: binding.stateHash,
+      legalSpaceHash: binding.legalSpaceHash,
+      spatialObservationHash: binding.spatialObservationHash,
+    });
+    if (snapshotByScope.get(scopeKey) !== nextSnapshotKey) {
+      for (const cacheKey of cacheKeysByScope.get(scopeKey) || []) {
+        completed.delete(cacheKey);
+        inFlight.delete(cacheKey);
+      }
+      snapshotByScope.delete(scopeKey);
+      snapshotByScope.set(scopeKey, nextSnapshotKey);
+      cacheKeysByScope.set(scopeKey, new Set());
+      enforceScopeLimit();
+    }
+    return { scopeKey, snapshotKey: nextSnapshotKey };
+  }
+
+  function snapshotIsCurrent(snapshot) {
+    return snapshotByScope.get(snapshot.scopeKey) === snapshot.snapshotKey;
+  }
 
   function actionSpace(input = {}) {
     const binding = authority(input);
@@ -260,6 +334,7 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
 
   async function query(input = {}) {
     const binding = authority(input);
+    const snapshot = rotateSnapshot(binding);
     const legalSpace = input.legalSpace;
     const request = object(input.request) ? input.request : {};
     const queryKind = String(request.queryKind || request.kind || "unknown");
@@ -267,7 +342,12 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
     const state = projectStarcraftTmgViewerStateShapeV3(
       input.roomProjection.state || {});
     const cacheKey = hashStarcraftTmgContract({ binding, queryKind, args });
-    if (completed.has(cacheKey)) return completed.get(cacheKey);
+    const cacheable = DIRECT_QUERY_KINDS.has(queryKind)
+      || (DELEGATED_QUERY_KINDS.has(queryKind) && Boolean(rulesQuery));
+    if (cacheable) {
+      cacheKeysByScope.get(snapshot.scopeKey).add(cacheKey);
+      if (completed.has(cacheKey)) return completed.get(cacheKey);
+    }
 
     if (DIRECT_QUERY_KINDS.has(queryKind)) {
       try {
@@ -288,7 +368,7 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
           });
         const receipt = exactResult(binding, queryKind, result,
           "official_model_base_geometry_rules_kernel_v1");
-        completed.set(cacheKey, receipt);
+        rememberCompleted(snapshot, cacheKey, receipt);
         return receipt;
       } catch (error) {
         const receipt = unknownResult(binding, queryKind,
@@ -296,7 +376,7 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
             findingSeverity: "Medium",
             exactGeometryUnavailable: true,
           });
-        completed.set(cacheKey, receipt);
+        rememberCompleted(snapshot, cacheKey, receipt);
         return receipt;
       }
     }
@@ -335,7 +415,7 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
             trainingTruth: false,
           }));
           const receipt = delegatedResult(binding, queryKind, response);
-          completed.set(cacheKey, receipt);
+          rememberCompleted(snapshot, cacheKey, receipt);
           return receipt;
         } catch (error) {
           const receipt = unknownResult(binding, queryKind,
@@ -343,7 +423,7 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
               findingSeverity: "Medium",
               message: String(error?.message || error),
             });
-          completed.set(cacheKey, receipt);
+          rememberCompleted(snapshot, cacheKey, receipt);
           return receipt;
         } finally {
           inFlight.delete(cacheKey);
@@ -365,6 +445,11 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
         "preserve_domain_then_rules_instantiate_then_preview",
       unitMovementPolicy:
         "leading_model_physical_path_then_agent_selected_complete_formation_placement",
+      queryCachePolicy:
+        "deduplicate_within_exact_authority_snapshot_and_evict_on_revision_change",
+      maximumCachedScopes,
+      maximumCachedReceiptsPerSnapshot,
+      staleInFlightResultMayPopulateCurrentSnapshot: false,
       mutationAuthority: false,
       trainingTruth: false,
     }),
