@@ -12,6 +12,10 @@ import {
   getOfficialCompetitiveMapTabletopAdapterV1,
   verifyOfficialCompetitiveMapTabletopAdapterCatalogueV1,
 } from "./official-competitive-map-tabletop-adapter-v1.mjs";
+import {
+  auditOfficialCompetitiveMapSpatialReachabilityV1,
+  verifyOfficialCompetitiveMapSpatialReachabilityV1,
+} from "./official-competitive-map-spatial-reachability-v1.mjs";
 
 export const OFFICIAL_COMPETITIVE_MAP_TWO_LAYER_COMPILATION_V1_SCHEMA =
   "starcraft_tmg_official_competitive_map_two_layer_compilation_v1";
@@ -600,6 +604,30 @@ function deriveRoomFireLanes(binding, pieces) {
     widthInches: 6 }));
 }
 
+function missionQuarterTargets(battlefield) {
+  return [["south_west", 0.25, 0.25], ["south_east", 0.75, 0.25],
+    ["north_west", 0.25, 0.75], ["north_east", 0.75, 0.75]]
+    .map(([quarter, x, y]) => ({ targetId: `mission-quarter-${quarter}`,
+      targetKind: "mission_quarter", coordinate: {
+        x: battlefield.widthInches * x, y: battlefield.heightInches * y },
+      accessDistanceInches: 3 }));
+}
+
+function firstSpatialFailure(audit) {
+  for (const base of audit.baseProfileAudits || []) {
+    for (const side of base.sideAudits || []) {
+      const segment = side.entrySegments?.find((entry) => !entry.usable);
+      if (segment) return `${base.baseId}:${side.sideId}:${segment.segmentId}`;
+      if (!side.opponentEntryReachable) {
+        return `${base.baseId}:${side.sideId}:opposing_entry_unreachable`;
+      }
+      const target = side.targetAudits?.find((entry) => !entry.reachable);
+      if (target) return `${base.baseId}:${side.sideId}:${target.targetId}:${target.failureCode}`;
+    }
+  }
+  return "unknown";
+}
+
 export function certifyAndFreezeOfficialCompetitiveMapForRoomV1(input = {}) {
   const adapterCatalogue = input.adapterCatalogue
     || createOfficialCompetitiveMapTabletopAdapterCatalogueV1();
@@ -620,6 +648,21 @@ export function certifyAndFreezeOfficialCompetitiveMapForRoomV1(input = {}) {
   const red = Object.entries(binding.colourByPlayer).find(([, value]) => value === "red")?.[0];
   const blue = Object.entries(binding.colourByPlayer).find(([, value]) => value === "blue")?.[0];
   if (!red || !blue) fail("COMPETITIVE_MAP_ROOM_COLOURS_INVALID");
+  const adapter = getOfficialCompetitiveMapTabletopAdapterV1(adapterCatalogue,
+    compilation.seedId);
+  const spatialReachabilityAudit = auditOfficialCompetitiveMapSpatialReachabilityV1({
+    seedId: compilation.seedId, auditAuthority: "official_task_geometry",
+    battlefield: binding.battlefield,
+    terrainPieces: compilation.rulesLayer.terrainPieces,
+    baseProfiles: adapter.baseProfiles,
+    entryEdgesBySide: binding.entryEdgesByPlayer,
+    missionMarkers: binding.markerTargets,
+    areaTargets: missionQuarterTargets(binding.battlefield),
+  });
+  if (!spatialReachabilityAudit.spatialReachabilityCertified) {
+    fail("COMPETITIVE_MAP_ROOM_TASK_GEOMETRY_UNREACHABLE",
+      firstSpatialFailure(spatialReachabilityAudit));
+  }
   const template = clone(compilation.rulesLayer.setupPlanTemplate);
   const setupPlan = { ...template,
     physicalLayoutConfirmedByPlayerIds: [...binding.participantIds],
@@ -636,7 +679,7 @@ export function certifyAndFreezeOfficialCompetitiveMapForRoomV1(input = {}) {
     setupPlan,
   });
   const body = { schema: OFFICIAL_COMPETITIVE_MAP_ROOM_FREEZE_V1_SCHEMA,
-    version: "1.0.0", roomId, seedId: compilation.seedId,
+    version: "1.1.0", roomId, seedId: compilation.seedId,
     engagementScale: compilation.engagementScale,
     compilationHash: compilation.compilationHash,
     adapterHash: compilation.adapterHash,
@@ -644,6 +687,11 @@ export function certifyAndFreezeOfficialCompetitiveMapForRoomV1(input = {}) {
     setupPlan, setupPlanHash,
     balancedTerrainCertificate: artifacts.certificate,
     balancedTerrainCertificateHash: artifacts.certificate.certificateHash,
+    missionSpatialReachabilityAudit: spatialReachabilityAudit,
+    missionSpatialReachabilityAuditHash: spatialReachabilityAudit.auditHash,
+    everyEntrySegmentUsable: true,
+    opposingSidesConnectedForEveryCurrentBase: true,
+    everyMissionMarkerAndQuarterReachableByAtLeastOneCurrentBase: true,
     artLayerVisibilityFrozen: true, rulesLayerFrozen: true,
     backgroundRulesAuthority: false, authoritativeTerrainLayer: true,
     mutationAfterRoomCreationAllowed: false,
@@ -655,18 +703,27 @@ export function certifyAndFreezeOfficialCompetitiveMapForRoomV1(input = {}) {
 
 export function verifyOfficialCompetitiveMapRoomFreezeV1(freeze, input = {}) {
   if (!freeze || freeze.schema !== OFFICIAL_COMPETITIVE_MAP_ROOM_FREEZE_V1_SCHEMA
+    || freeze.version !== "1.1.0"
     || freeze.roomFreezeHash !== hashStarcraftTmgContract(without(freeze,
       ["roomFreezeHash"]))
     || freeze.setupPlanHash !== hashStarcraftTmgContract(freeze.setupPlan)
     || freeze.backgroundRulesAuthority !== false
     || freeze.authoritativeTerrainLayer !== true
     || freeze.mutationAfterRoomCreationAllowed !== false
+    || freeze.missionSpatialReachabilityAuditHash
+      !== freeze.missionSpatialReachabilityAudit?.auditHash
+    || freeze.missionSpatialReachabilityAudit?.spatialReachabilityCertified !== true
+    || freeze.everyEntrySegmentUsable !== true
+    || freeze.opposingSidesConnectedForEveryCurrentBase !== true
+    || freeze.everyMissionMarkerAndQuarterReachableByAtLeastOneCurrentBase !== true
     || freeze.trainingTruth !== false) {
     fail("COMPETITIVE_MAP_ROOM_FREEZE_INVALID");
   }
   verifyOfficialBalancedTerrainSetupCertificateV1(
     freeze.balancedTerrainCertificate, input.deploymentGeometryBinding,
     input.balancedTerrainRulesDataBundle);
+  verifyOfficialCompetitiveMapSpatialReachabilityV1(
+    freeze.missionSpatialReachabilityAudit);
   if (freeze.deploymentGeometryBindingHash
       !== input.deploymentGeometryBinding?.bindingHash
     || freeze.balancedTerrainCertificateHash

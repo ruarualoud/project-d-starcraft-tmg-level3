@@ -45,12 +45,17 @@ export interface OfficialCompetitiveMapTwoLayerCompilationV1 {
 
 export interface OfficialCompetitiveMapRoomFreezeV1 {
   schema: "starcraft_tmg_official_competitive_map_room_freeze_v1";
-  version: "1.0.0"; roomId: string; seedId: string;
+  version: "1.1.0"; roomId: string; seedId: string;
   engagementScale: "Skirmish" | "Standard";
   compilationHash: string; adapterHash: string;
   deploymentGeometryBindingHash: string; setupPlan: Readonly<Record<string, unknown>>;
   setupPlanHash: string; balancedTerrainCertificate: Readonly<Record<string, unknown>>;
   balancedTerrainCertificateHash: string; artLayerVisibilityFrozen: true;
+  missionSpatialReachabilityAudit: Readonly<Record<string, unknown>>;
+  missionSpatialReachabilityAuditHash: string;
+  everyEntrySegmentUsable: true;
+  opposingSidesConnectedForEveryCurrentBase: true;
+  everyMissionMarkerAndQuarterReachableByAtLeastOneCurrentBase: true;
   rulesLayerFrozen: true; backgroundRulesAuthority: false;
   authoritativeTerrainLayer: true; mutationAfterRoomCreationAllowed: false;
   sourceRefreshPerformed: false; rulesTruth: string; trainingTruth: false;
