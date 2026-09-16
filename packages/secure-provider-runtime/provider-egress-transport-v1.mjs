@@ -27,7 +27,7 @@ const COMPLETE_FIELDS = new Set([
 ]);
 const REQUEST_FIELDS = new Set([
   "schemaVersion", "requestId", "intent", "promptPack", "promptNodes",
-  "userMessage", "responseContract", "maxOutputUnits",
+  "userMessage", "responseContract", "agentLoop", "maxOutputUnits",
 ]);
 const RESPONSE_CONTRACT_FIELDS = new Set([
   "allowedChannels", "decisionCandidateSource",
@@ -38,6 +38,7 @@ const INTENTS = new Set([
 const CHANNEL = /^[a-z][a-z0-9_]{1,63}$/u;
 const SAFE_ID = /^[A-Za-z0-9._:-]{1,200}$/u;
 const SAFE_MODEL = /^[A-Za-z0-9._:/-]{1,240}$/u;
+const SAFE_TOOL_NAME = /^[A-Za-z_][A-Za-z0-9_.:-]{0,127}$/u;
 const SENSITIVE_FIELD =
   /(?:api.?key|authorization|bearer|cookie|credential|secret|access.?token|refresh.?token)/iu;
 const SENSITIVE_VALUE =
@@ -91,6 +92,137 @@ function exactIntegerHeader(value) {
   }
   const normalized = Number(value);
   return Number.isSafeInteger(normalized) ? normalized : null;
+}
+
+function normalizeToolCall(value, field) {
+  if (!object(value) || value.type !== "function" || !object(value.function)) {
+    throw new TypeError(`${field} is invalid`);
+  }
+  const callId = safeId(value.id, `${field}.id`);
+  const name = String(value.function.name || "");
+  if (!SAFE_TOOL_NAME.test(name)) throw new TypeError(`${field}.function.name is invalid`);
+  const rawArguments = typeof value.function.arguments === "string"
+    ? value.function.arguments : JSON.stringify(value.function.arguments ?? {});
+  if (rawArguments.length > 64 * 1024) {
+    throw new TypeError(`${field}.function.arguments is invalid`);
+  }
+  let parsedArguments;
+  try {
+    parsedArguments = JSON.parse(rawArguments);
+  } catch {
+    throw new TypeError(`${field}.function.arguments is invalid`);
+  }
+  if (!object(parsedArguments)) throw new TypeError(`${field}.function.arguments is invalid`);
+  return {
+    id: callId,
+    type: "function",
+    function: { name, arguments: JSON.stringify(parsedArguments) },
+  };
+}
+
+function normalizeProviderResponseToolCall(value, field, index) {
+  if (!object(value) || value.type !== "function" || !object(value.function)) {
+    throw new TypeError(`${field} is invalid`);
+  }
+  const suppliedId = String(value.id || "");
+  const callId = SAFE_ID.test(suppliedId)
+    ? suppliedId : `provider-tool-${index + 1}`;
+  const name = String(value.function.name || "");
+  if (!SAFE_TOOL_NAME.test(name)) {
+    throw new TypeError(`${field}.function.name is invalid`);
+  }
+  const rawArguments = typeof value.function.arguments === "string"
+    ? value.function.arguments : JSON.stringify(value.function.arguments ?? {});
+  let parsedArguments = {};
+  let argumentIssue = null;
+  if (rawArguments.length > 64 * 1024) {
+    argumentIssue = "arguments_too_large";
+  } else {
+    try {
+      const candidate = JSON.parse(rawArguments);
+      if (object(candidate)) parsedArguments = candidate;
+      else argumentIssue = "arguments_not_object";
+    } catch {
+      argumentIssue = "arguments_invalid_json";
+    }
+  }
+  return {
+    id: callId,
+    type: "function",
+    function: { name, arguments: JSON.stringify(parsedArguments) },
+    argumentIssue,
+  };
+}
+
+function normalizeToolDefinition(value, field) {
+  if (!object(value) || value.type !== "function" || !object(value.function)) {
+    throw new TypeError(`${field} is invalid`);
+  }
+  const name = String(value.function.name || "");
+  if (!SAFE_TOOL_NAME.test(name)) throw new TypeError(`${field}.function.name is invalid`);
+  const description = requiredString(value.function.description,
+    `${field}.function.description`, 4_096);
+  if (!object(value.function.parameters)) {
+    throw new TypeError(`${field}.function.parameters is invalid`);
+  }
+  return { type: "function", function: {
+    name, description, parameters: clone(value.function.parameters),
+    ...(value.function.strict === true ? { strict: true } : {}),
+  } };
+}
+
+function normalizeContinuationMessage(value, field) {
+  if (!object(value)) throw new TypeError(`${field} is invalid`);
+  if (value.role === "assistant") {
+    const calls = value.tool_calls;
+    const content = value.content === null || value.content === undefined
+      ? null : requiredString(value.content, `${field}.content`, 64 * 1024);
+    if (Array.isArray(calls) && calls.length >= 1 && calls.length <= 16) {
+      return { role: "assistant", content,
+        tool_calls: calls.map((call, index) =>
+          normalizeToolCall(call, `${field}.tool_calls[${index}]`)) };
+    }
+    if (content !== null) return { role: "assistant", content };
+    throw new TypeError(`${field} requires content or tool_calls`);
+  }
+  if (value.role === "user") {
+    return {
+      role: "user",
+      content: requiredString(value.content, `${field}.content`, 64 * 1024),
+    };
+  }
+  if (value.role === "tool") {
+    const name = String(value.name || "");
+    if (!SAFE_TOOL_NAME.test(name)) throw new TypeError(`${field}.name is invalid`);
+    const content = typeof value.content === "string"
+      ? value.content : JSON.stringify(value.content ?? {});
+    return {
+      role: "tool",
+      tool_call_id: safeId(value.tool_call_id, `${field}.tool_call_id`),
+      name,
+      content: requiredString(content, `${field}.content`, 256 * 1024),
+    };
+  }
+  throw new TypeError(`${field}.role is invalid`);
+}
+
+function normalizeAgentLoop(value) {
+  if (value === undefined || value === null) return null;
+  if (!object(value) || value.mode !== "native_tools") {
+    throw new TypeError("providerRequest.agentLoop is invalid");
+  }
+  if (!Array.isArray(value.tools) || value.tools.length < 1
+    || value.tools.length > 32 || !Array.isArray(value.continuationMessages)
+    || value.continuationMessages.length > 64) {
+    throw new TypeError("providerRequest.agentLoop is invalid");
+  }
+  const tools = value.tools.map((tool, index) =>
+    normalizeToolDefinition(tool, `providerRequest.agentLoop.tools[${index}]`));
+  const toolChoice = value.toolChoice === "required" ? "required" : "auto";
+  const continuationMessages = value.continuationMessages.map((message, index) =>
+    normalizeContinuationMessage(message,
+      `providerRequest.agentLoop.continuationMessages[${index}]`));
+  return { mode: "native_tools", tools, toolChoice, continuationMessages };
 }
 
 function sha256(value) {
@@ -219,6 +351,7 @@ function normalizeProviderRequest(value, binding) {
         value.responseContract.decisionCandidateSource,
         "providerRequest.responseContract.decisionCandidateSource", 200),
     },
+    ...(value.agentLoop ? { agentLoop: normalizeAgentLoop(value.agentLoop) } : {}),
     maxOutputUnits,
   };
   if (containsSensitiveMaterial(result)) {
@@ -247,6 +380,7 @@ function printableCredential(value, maximum) {
 }
 
 function requestBody(request, binding) {
+  const nativeTools = request.agentLoop?.mode === "native_tools";
   const systemContract = {
     schemaVersion: `${STARCRAFT_TMG_PROVIDER_EGRESS_TRANSPORT_VERSION}.prompt-contract`,
     promptPack: request.promptPack,
@@ -257,7 +391,11 @@ function requestBody(request, binding) {
       },
       ...request.responseContract,
       rulesAuthority: "external_rules_and_referee_only",
-      arbitraryToolCallsAllowed: false,
+      arbitraryToolCallsAllowed: nativeTools,
+      ...(nativeTools ? {
+        allowedToolNames: request.agentLoop.tools.map((tool) => tool.function.name),
+        toolResultsAreHostOwnedEvidence: true,
+      } : {}),
       trainingTruth: false,
     },
     promptNodes: request.promptNodes,
@@ -274,11 +412,17 @@ function requestBody(request, binding) {
         role: "user",
         content: JSON.stringify({ intent: request.intent, message: request.userMessage }),
       },
+      ...(nativeTools ? request.agentLoop.continuationMessages : []),
     ],
     temperature: binding.temperature,
     top_p: binding.topP,
     [binding.maxOutputField]: request.maxOutputUnits,
   };
+  if (nativeTools) {
+    body.tools = request.agentLoop.tools;
+    body.tool_choice = request.agentLoop.toolChoice;
+    body.parallel_tool_calls = false;
+  }
   if (binding.providerId === "deepseek-openai-compatible-direct") {
     body.thinking = { type: "disabled" };
     body.reasoning_effort = "low";
@@ -302,8 +446,28 @@ function outputFromPayload(payload, physicalAttempts, allowSingleFence = false) 
   const choice = payload?.choices?.[0];
   const message = choice?.message;
   const finishReason = String(choice?.finish_reason || "");
-  if (finishReason === "length") throw new StarcraftTmgProviderEgressError(
-    "PROVIDER_RESPONSE_OUTPUT_TRUNCATED", { requestMayHaveBeenSent: true, physicalAttempts });
+  if (Array.isArray(message?.tool_calls) && message.tool_calls.length) {
+    let toolCalls;
+    try {
+      toolCalls = message.tool_calls.map((call, index) => {
+        const normalized = normalizeProviderResponseToolCall(call,
+          `providerResponse.tool_calls[${index}]`, index);
+        return {
+          callId: normalized.id,
+          name: normalized.function.name,
+          arguments: JSON.parse(normalized.function.arguments),
+          argumentIssue: normalized.argumentIssue,
+        };
+      });
+    } catch {
+      throw new StarcraftTmgProviderEgressError(
+        "PROVIDER_RESPONSE_CONTRACT_REJECTED", {
+          requestMayHaveBeenSent: true,
+          physicalAttempts,
+        });
+    }
+    return { providerTurn: { kind: "tool_calls", toolCalls } };
+  }
   if (object(message?.parsed)) return clone(message.parsed);
   if (object(message?.content)) return clone(message.content);
   const rawText = contentText(message?.content);
@@ -320,12 +484,14 @@ function outputFromPayload(payload, physicalAttempts, allowSingleFence = false) 
     if (!object(parsed)) throw new Error("not an object");
     return parsed;
   } catch {
-    throw new StarcraftTmgProviderEgressError(
-      finishReason === "length" ? "PROVIDER_RESPONSE_OUTPUT_TRUNCATED"
-        : "PROVIDER_RESPONSE_JSON_INVALID", {
-        requestMayHaveBeenSent: true,
-        physicalAttempts,
-      });
+    return {
+      providerTurn: {
+        kind: "invalid_json",
+        issue: finishReason === "length"
+          ? "output_truncated" : "response_json_invalid",
+        content: text.slice(0, 64 * 1024),
+      },
+    };
   }
 }
 
