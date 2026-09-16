@@ -72,6 +72,11 @@ const DEFINITELY_NOT_SENT_FAILURES = new Set([
   "provider_request_contract_rejected",
   "provider_credential_invalid",
 ]);
+const EXPLICIT_RETRY_CHOICE_STATUSES = new Set([
+  "provider_failed_requires_explicit_retry",
+  "provider_output_invalid",
+  "provider_response_lost_requires_explicit_retry",
+]);
 const DECISION_STATE_FIELDS = Object.freeze([
   "round", "phase", "stage", "activeSideKey", "firstPlayerSideKey",
   "firstPassSideByPhase", "phaseFirstActorByRound", "players", "scores",
@@ -2844,6 +2849,7 @@ export function createInMemoryStarcraftTmgLiveDecisionStoreV1() {
 
 export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
   const providerSupervisor = options.providerSupervisor;
+  const providerAttemptObserver = options.providerAttemptObserver || null;
   const promptArtifactStore = options.promptArtifactStore;
   const availabilityPort = options.profileAvailabilityPort;
   const strategySkillPort = options.strategySkillPort;
@@ -2866,6 +2872,10 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
   if (typeof providerSupervisor?.sendTurn !== "function"
     || typeof providerSupervisor?.readState !== "function") {
     throw new TypeError("providerSupervisor readState/sendTurn are required");
+  }
+  if (providerAttemptObserver
+    && typeof providerAttemptObserver.observe !== "function") {
+    throw new TypeError("providerAttemptObserver.observe must be a function");
   }
   if (typeof promptArtifactStore?.put !== "function"
     || typeof promptArtifactStore?.release !== "function") {
@@ -3355,6 +3365,105 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     return { match, attemptKey,
       attempt: match.decisions[choice.choiceKey].attempts[attemptKey],
       thresholds };
+  }
+
+  async function reconcileProviderCommitUnknown(match, choice, attempt) {
+    if (!providerAttemptObserver) {
+      return { match, choice, attempt, reconciled: false, thresholds: [] };
+    }
+    let observed;
+    try {
+      observed = await providerAttemptObserver.observe({
+        requestHash: attempt.requestHash,
+        promptAssemblyHash: attempt.promptArtifactHash,
+      });
+    } catch {
+      return { match, choice, attempt, reconciled: false, thresholds: [] };
+    }
+    const durable = observed?.attempt;
+    if (observed?.ok !== true || !object(durable)
+      || durable.requestHash !== attempt.requestHash
+      || durable.promptAssemblyHash !== attempt.promptArtifactHash) {
+      return { match, choice, attempt, reconciled: false, thresholds: [] };
+    }
+    const definitelyNotSent = durable.status === "abandoned_before_egress"
+      || durable.providerMayHaveBeenCalled === false
+        && Number(durable.chargedUnits || 0) === 0
+        && new Set(["failed", "cancelled", "timed_out"])
+          .has(String(durable.status || ""));
+    const responseLost = durable.status === "completed";
+    const settledFailure = new Set([
+      "failed", "cancelled", "timed_out", "ambiguous",
+    ]).has(String(durable.status || ""));
+    if (!definitelyNotSent && !responseLost && !settledFailure) {
+      return { match, choice, attempt, reconciled: false, thresholds: [] };
+    }
+    const exactUsage = durable.usageKnown === true;
+    const used = {
+      inputUnits: exactUsage ? Number(durable.reportedInputUnits || 0) : 0,
+      outputUnits: exactUsage ? Number(durable.reportedOutputUnits || 0) : 0,
+      totalUnits: definitelyNotSent ? 0
+        : exactUsage ? Number(durable.reportedTotalUnits || 0)
+          : Number(durable.chargedUnits || 0),
+    };
+    const estimatedMicros = definitelyNotSent ? 0
+      : exactUsage ? estimateCnyMicros(used.inputUnits, used.outputUnits,
+        attempt.startedAt, match.selectedProfile.model)
+        : Number(attempt.projectedCostCnyMicros || 0);
+    const thresholds = [];
+    match = await commit(match, (draft) => {
+      const current = draft.decisions[choice.choiceKey];
+      const storedAttempt = current.attempts[attempt.attemptKey];
+      storedAttempt.status = definitelyNotSent
+        ? "provider_failed_not_sent"
+        : responseLost ? "provider_completed_response_lost"
+          : "provider_failed_after_possible_egress";
+      storedAttempt.completedAt = durable.settledAt || instant(now(), "now");
+      storedAttempt.usage = used;
+      storedAttempt.failure = definitelyNotSent
+        ? "provider_durable_attempt_abandoned_before_egress"
+        : responseLost
+          ? "provider_response_lost_after_durable_settlement"
+          : `provider_${durable.status}_after_possible_egress`;
+      storedAttempt.durableProviderAttemptId = durable.attemptId || null;
+      storedAttempt.durableProviderAttemptHash = durable.attemptHash || null;
+      storedAttempt.safeProviderReceiptHash =
+        durable.safeProviderReceiptHash || null;
+      storedAttempt.rawProviderOutputRetained = false;
+      current.status = definitelyNotSent ? "retry_ready"
+        : "provider_response_lost_requires_explicit_retry";
+      current.warnings.push(definitelyNotSent
+        ? "DURABLE_PROVIDER_ATTEMPT_ABANDONED_BEFORE_EGRESS"
+        : responseLost
+          ? "DURABLE_PROVIDER_SETTLED_RESPONSE_LOST"
+          : `DURABLE_PROVIDER_${String(durable.status).toUpperCase()}_RECONCILED`);
+      draft.usage.inputUnits += used.inputUnits;
+      draft.usage.outputUnits += used.outputUnits;
+      draft.usage.totalUnits += used.totalUnits;
+      draft.usage.estimatedCostCnyMicros += estimatedMicros;
+      while (draft.usage.estimatedCostCnyMicros
+        >= draft.usage.nextNotificationCnyMicros) {
+        thresholds.push(draft.usage.nextNotificationCnyMicros);
+        draft.usage.notificationThresholdsCrossed.push(
+          draft.usage.nextNotificationCnyMicros);
+        draft.usage.nextNotificationCnyMicros +=
+          draft.budget.notificationStepCnyMicros;
+      }
+      draft.issues.push({
+        code: responseLost
+          ? "LIVE_DECISION_PROVIDER_RESPONSE_LOST_AFTER_SETTLEMENT"
+          : "LIVE_DECISION_PROVIDER_TERMINAL_ATTEMPT_RECONCILED",
+        severity: "Medium",
+        choiceKey: current.choiceKey,
+        attemptKey: storedAttempt.attemptKey,
+        durableProviderAttemptId: storedAttempt.durableProviderAttemptId,
+        occurredAt: instant(now(), "now"),
+        roomMutationObserved: false,
+      });
+    });
+    choice = match.decisions[choice.choiceKey];
+    attempt = choice.attempts[attempt.attemptKey];
+    return { match, choice, attempt, reconciled: true, thresholds };
   }
 
   async function runQueries(input, requests) {
@@ -3906,6 +4015,14 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         attempt = null;
       }
       if (attempt?.status === "provider_call_may_have_started") {
+        const reconciled = await reconcileProviderCommitUnknown(
+          match, choice, attempt);
+        match = reconciled.match;
+        choice = reconciled.choice;
+        attempt = reconciled.attempt;
+        crossed.push(...reconciled.thresholds);
+      }
+      if (attempt?.status === "provider_call_may_have_started") {
         return rejection("LIVE_DECISION_PROVIDER_COMMIT_UNKNOWN", "High", {
           choiceKey: choice.choiceKey,
           attemptKey: attempt.attemptKey,
@@ -3913,8 +4030,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           projection: publicProjection(match),
         });
       }
-      if (["provider_failed_requires_explicit_retry", "provider_output_invalid"]
-        .includes(choice.status) && input.retryApproved !== true) {
+      if (EXPLICIT_RETRY_CHOICE_STATUSES.has(choice.status)
+        && input.retryApproved !== true) {
         return rejection("LIVE_DECISION_EXPLICIT_RETRY_REQUIRED", "High", {
           choiceKey: choice.choiceKey,
           automaticRetryPerformed: false,
@@ -3923,8 +4040,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       }
       if (choice.status === "retry_ready"
         || input.retryApproved === true
-          && ["provider_failed_requires_explicit_retry", "provider_output_invalid"]
-            .includes(choice.status)) {
+          && EXPLICIT_RETRY_CHOICE_STATUSES.has(choice.status)) {
         match = await commit(match, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           current.status = "generating";
@@ -4552,7 +4668,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         "preferred_then_pre_game_fallback_then_frozen_for_match",
       strategySkillLifecycle: "resolved_and_frozen_at_preflight",
       decisionRecovery:
-        "durable_stage_and_tool_continuation_before_egress_rebind_session_on_process_restart_no_automatic_retry_after_unknown",
+        "durable_stage_and_tool_continuation_before_egress_reconcile_terminal_attempt_by_request_binding_explicit_retry_after_paid_response_loss",
       maxCallLifecycle: "reset_at_new_match_epoch_only",
       toolQueryKinds: spatialQueryPort.metadata?.directExactQueries
         ? [...spatialQueryPort.metadata.directExactQueries,

@@ -347,6 +347,12 @@ export function createSqliteStarcraftTmgProviderAttemptStoreV1(options = {}) {
 
   const selectBudget = database.prepare("SELECT * FROM sc_provider_budgets WHERE budget_id = ?");
   const selectAttempt = database.prepare("SELECT * FROM sc_provider_attempts WHERE attempt_id = ?");
+  const selectAttemptsByRequestBinding = database.prepare(`
+    SELECT * FROM sc_provider_attempts
+     WHERE request_hash = ? AND prompt_assembly_hash = ?
+     ORDER BY reserved_at DESC, attempt_id DESC
+     LIMIT 2
+  `);
 
   function assertOpen() {
     if (closed) fail("PROVIDER_ATTEMPT_STORE_CLOSED");
@@ -829,6 +835,21 @@ export function createSqliteStarcraftTmgProviderAttemptStoreV1(options = {}) {
     return rowAttempt(selectAttempt.get(safeId(attemptId, "attemptId")));
   }
 
+  async function findAttemptByRequestBinding(input = {}) {
+    assertOpen();
+    exactFields(input, ["requestHash", "promptAssemblyHash"],
+      "PROVIDER_ATTEMPT_REQUEST_BINDING_FIELDS_INVALID");
+    const requestHash = hash(input.requestHash, "requestHash");
+    const promptAssemblyHash = hash(input.promptAssemblyHash,
+      "promptAssemblyHash");
+    const matches = selectAttemptsByRequestBinding.all(
+      requestHash, promptAssemblyHash);
+    if (matches.length > 1) {
+      fail("PROVIDER_ATTEMPT_REQUEST_BINDING_AMBIGUOUS");
+    }
+    return rowAttempt(matches[0] || null);
+  }
+
   async function readAudit(input = {}) {
     assertOpen();
     exactFields(input, ["budgetId", "afterSequence", "limit"],
@@ -961,6 +982,7 @@ export function createSqliteStarcraftTmgProviderAttemptStoreV1(options = {}) {
     recoverOpenAttempts,
     getBudget,
     getAttempt,
+    findAttemptByRequestBinding,
     readAudit,
     replayBudget,
     health,

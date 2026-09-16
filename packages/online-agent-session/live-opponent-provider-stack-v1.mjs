@@ -275,6 +275,9 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
   });
   const decisionPort = createStarcraftTmgLiveFlashDecisionPortV1({
     providerSupervisor: supervisor,
+    providerAttemptObserver: {
+      observe(input) { return durableGateway.observeAttempt(input); },
+    },
     promptArtifactStore,
     profileAvailabilityPort: availabilityPort,
     strategySkillPort: {

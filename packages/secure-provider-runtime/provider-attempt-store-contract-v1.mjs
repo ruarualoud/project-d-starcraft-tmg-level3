@@ -13,6 +13,7 @@ export const STARCRAFT_TMG_PROVIDER_ATTEMPT_STORE_METHODS = Object.freeze([
   "recoverOpenAttempts",
   "getBudget",
   "getAttempt",
+  "findAttemptByRequestBinding",
   "readAudit",
   "replayBudget",
   "health",

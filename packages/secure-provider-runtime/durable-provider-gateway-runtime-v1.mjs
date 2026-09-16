@@ -14,6 +14,9 @@ const SAFE_ID = /^[A-Za-z0-9._:@/+\-]{1,240}$/u;
 const INITIALIZE_FIELDS = new Set([
   "recoveryIdempotencyKeyHash", "recoveredAt",
 ]);
+const OBSERVE_ATTEMPT_FIELDS = new Set([
+  "requestHash", "promptAssemblyHash",
+]);
 const GATEWAY_FIELDS = new Set([
   "schemaVersion", "providerProfileRef", "promptAssemblyRef",
   "boundedRequest", "responseContract", "budgetReservation", "signal",
@@ -638,5 +641,25 @@ export function createStarcraftTmgDurableProviderGatewayRuntimeV1(options = {}) 
     });
   }
 
-  return Object.freeze({ metadata, initialize, complete });
+  async function observeAttempt(input = {}) {
+    if (!initialized) {
+      throw new StarcraftTmgDurableProviderGatewayError(
+        "provider_gateway_not_initialized");
+    }
+    exactFields(input, OBSERVE_ATTEMPT_FIELDS,
+      "Provider Gateway attempt observation input");
+    const attempt = await attemptStore.findAttemptByRequestBinding({
+      requestHash: hash(input.requestHash, "requestHash"),
+      promptAssemblyHash: hash(input.promptAssemblyHash,
+        "promptAssemblyHash"),
+    });
+    return freeze({
+      ok: true,
+      attempt: clone(attempt),
+      rawProviderOutputRetained: false,
+      trainingTruth: false,
+    });
+  }
+
+  return Object.freeze({ metadata, initialize, complete, observeAttempt });
 }

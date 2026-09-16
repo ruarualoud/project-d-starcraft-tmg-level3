@@ -18,6 +18,7 @@ export const STARCRAFT_TMG_POSTGRES_PROVIDER_ATTEMPT_STORE_VERSION =
   "starcraft_tmg_postgres_provider_attempt_store_v1";
 
 const SAFE_ID = /^[A-Za-z0-9._:@/+\-]{1,240}$/u;
+const HASH = /^[a-f0-9]{64}$/u;
 export const STARCRAFT_TMG_POSTGRES_PROVIDER_ATTEMPT_COLUMN_LAYOUT = Object.freeze({
   sc_provider_attempt_store_meta: [
     "singleton_id", "schema_version", "adapter_version", "schema_fingerprint_hash",
@@ -193,6 +194,12 @@ function freeze(value) {
 function safeId(value, field) {
   const result = String(value || "").trim();
   if (!SAFE_ID.test(result)) fail("PROVIDER_ATTEMPT_ID_INVALID", field);
+  return result;
+}
+
+function hash(value, field) {
+  const result = String(value || "").trim().toLowerCase();
+  if (!HASH.test(result)) fail("PROVIDER_ATTEMPT_HASH_INVALID", field);
   return result;
 }
 
@@ -875,6 +882,25 @@ export function createPostgresStarcraftTmgProviderAttemptStoreV1(options = {}) {
     return rowAttempt(await selectAttempt(pool, safeId(attemptIdInput, "attemptId")));
   }
 
+  async function findAttemptByRequestBinding(input = {}) {
+    await ensureInitialized();
+    exactFields(input, ["requestHash", "promptAssemblyHash"],
+      "PROVIDER_ATTEMPT_REQUEST_BINDING_FIELDS_INVALID");
+    const requestHash = hash(input.requestHash, "requestHash");
+    const promptAssemblyHash = hash(input.promptAssemblyHash,
+      "promptAssemblyHash");
+    const selected = await pool.query(`/* sc_provider_attempt:find_request_binding */
+      SELECT * FROM sc_provider_attempts
+       WHERE request_hash = $1 AND prompt_assembly_hash = $2
+       ORDER BY reserved_at DESC, attempt_id DESC
+       LIMIT 2
+    `, [requestHash, promptAssemblyHash]);
+    if (selected.rows.length > 1) {
+      fail("PROVIDER_ATTEMPT_REQUEST_BINDING_AMBIGUOUS");
+    }
+    return rowAttempt(selected.rows[0] || null);
+  }
+
   async function readAudit(input = {}) {
     await ensureInitialized();
     exactFields(input, ["budgetId", "afterSequence", "limit"],
@@ -1021,6 +1047,7 @@ export function createPostgresStarcraftTmgProviderAttemptStoreV1(options = {}) {
     recoverOpenAttempts,
     getBudget,
     getAttempt,
+    findAttemptByRequestBinding,
     readAudit,
     replayBudget,
     health,
