@@ -25,12 +25,13 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_host_deferred_formation_intent_v3";
+  "starcraft_tmg_planner_action_spatial_relationship_intent_v4";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_action_shape_normalization_v12";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v5";
 const NATIVE_QUERY_KINDS = Object.freeze([
+  "space.inspect_relationships",
   STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
   "legal_formation_options",
   "legal_asset_placement_options",
@@ -918,6 +919,7 @@ function bindFormationSelection(raw, queryReceipts) {
       solverPolicyId: option.solverPolicyId || null,
       formationObjectives: clone(option.formationObjectives || []),
       tacticalMetrics: clone(option.tacticalMetrics || null),
+      relationshipComparison: clone(option.relationshipComparison || null),
       anchor: clone(option.anchor),
       publicReason: overallReason,
       hostDefaultAssignmentUsed,
@@ -2491,6 +2493,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       "Position publicReason fields are auditable summaries, not hidden chain-of-thought. State the useful board fact and tactical purpose without private scratch work.",
       "For Deploy, the Host prepends the Leading Model base-centre start just outside the selected battlefield edge. The complete Speed allowance includes that ingress distance. Do not add an artificial path point on the edge and do not measure only from the edge; choose an endpoint whose complete Host path remains within maxDistanceMilliInches.",
       "Never treat the remaining models as a unit centre: compare and choose a complete Host-solved final formation using every model's physical base, coherency, board edge, terrain, objective, line-of-sight, blocking, threat and fire-zone consequences.",
+      "When candidate value depends materially on position, use space.inspect_relationships with a tactical intent and scoped subjectUnitIds/targetIds before choosing. Read field-level exact/advisory/unknown precision; use the returned one-to-many, many-to-one, fire-zone, objective and clearance relationships to justify the chosen intent. Do not infer geometry from the rendered pixels.",
       "A typed query for a parameterized candidate must put domainId and the complete parameters object in the query tool arguments; the Host automatically Rules-checks every final parameterized proposal.",
       "Use exact query receipts as facts, advisory estimates as preferences, and unknown as uncertainty.",
       "An unknown query receipt may include Rules-derived repairContext. Use it only to repair and re-submit the same candidate; it never proves that the repaired proposal is legal until a later exact receipt accepts it.",

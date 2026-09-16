@@ -4,12 +4,17 @@ import { searchStarcraftTmgLegalFormationOptionsV1 } from
   "./legal-formation-search-v1.mjs";
 import { searchStarcraftTmgLegalAssetPlacementOptionsV1 } from
   "./legal-asset-placement-search-v1.mjs";
+import {
+  buildStarcraftTmgTacticalRelationshipGraphV1,
+  STARCRAFT_TMG_RELATIONSHIP_QUERY_KIND,
+} from "./tactical-relationship-graph-v1.mjs";
 
 export const STARCRAFT_TMG_ROOM_BACKED_SPATIAL_RULES_QUERY_ADAPTER_VERSION =
   "starcraft_tmg_room_backed_spatial_rules_query_adapter_v1";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const INSTANTIATION_QUERY_KINDS = new Set([
+  STARCRAFT_TMG_RELATIONSHIP_QUERY_KIND,
   "space.solve_formation",
   "legal_formation_options",
   "legal_asset_placement_options",
@@ -212,6 +217,35 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
       });
     }
     const args = object(request.arguments) ? request.arguments : {};
+    if (queryKind === STARCRAFT_TMG_RELATIONSHIP_QUERY_KIND) {
+      try {
+        const result = buildStarcraftTmgTacticalRelationshipGraphV1({
+          state: aggregate.envelope.state,
+          seatKey,
+          authority,
+          request: args,
+        });
+        return freeze({
+          ok: true,
+          authority: clone(authority),
+          precision: "advisory_estimate",
+          queryKind,
+          result: clone(result),
+          source: STARCRAFT_TMG_ROOM_BACKED_SPATIAL_RULES_QUERY_ADAPTER_VERSION,
+          rulesAuthority: false,
+          mutationAuthority: false,
+          confirmationAuthority: false,
+          applyAuthority: false,
+          trainingTruth: false,
+        });
+      } catch (error) {
+        return unknown(authority, queryKind, safeCode(error), {
+          failureStage: "build_tactical_relationship_graph",
+          safeFailureClass: safeFailureClass(error),
+          mayRepairSameChoice: false,
+        });
+      }
+    }
     const domainId = String(args.domainId || args.proposal?.domainId || "");
     const domain = object(args.currentLegalSpaceDomain)
       ? args.currentLegalSpaceDomain : null;

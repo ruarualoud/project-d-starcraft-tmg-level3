@@ -8,6 +8,8 @@ import {
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
 import { projectOfficialCharacteristicStatusFamilyModifiersV1 } from
   "../product-composition/official-characteristic-status-family-adapter-v1.mjs";
+import { buildStarcraftTmgTacticalRelationshipGraphV1 } from
+  "./tactical-relationship-graph-v1.mjs";
 
 export const STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION =
   "starcraft_tmg_legal_formation_search_v1";
@@ -2078,6 +2080,140 @@ function slotsFor(option, profiles) {
   });
 }
 
+function relationshipIntent(objectives) {
+  const highest = [...(objectives || [])].sort((left, right) =>
+    Number(right.weight || 0) - Number(left.weight || 0))[0]?.kind;
+  return ({
+    maximize_engagement: "engage",
+    surround_target: "surround_target",
+    avoid_threat: "avoid_threat",
+    control_objective: "control_objective",
+    screen: "screen",
+    preserve_lane: "preserve_lane",
+  })[highest] || "overview";
+}
+
+function relationshipRows(graph) {
+  return (graph?.relationships || []).map((entry) => entry.edgeKind
+    === "objective_relationship" ? {
+      edgeId: entry.edgeId,
+      edgeKind: entry.edgeKind,
+      targetId: entry.toObjectiveId,
+      minimumBaseEdgeDistanceMilliInches:
+        entry.minimumBaseEdgeDistanceMilliInches,
+      modelsWithinThreeInchesSameElevation:
+        entry.modelIdsWithinThreeInchesSameElevation?.length || 0,
+      precision: entry.precision,
+    } : {
+      edgeId: entry.edgeId,
+      edgeKind: entry.edgeKind,
+      targetId: entry.toUnitId,
+      minimumBaseEdgeDistanceMilliInches:
+        entry.nearestPhysicalEdges?.distanceMilliInches ?? null,
+      engaged: entry.engagement?.engaged === true,
+      visibleModelPairCount: entry.lineOfSight?.visibleModelPairCount ?? null,
+      stationaryThreatProfileCount:
+        entry.threats?.fromTo?.stationaryProfileKeys?.length || 0,
+      enemyStationaryThreatProfileCount:
+        entry.threats?.toFrom?.stationaryProfileKeys?.length || 0,
+      fireZoneExchangeClass: entry.fireZoneExchange?.class || null,
+      precision: entry.precision,
+    });
+}
+
+function relationshipComparison(state, source, slots, objectives, baseline) {
+  if (!slots.length) return {
+    status: "not_applicable",
+    reason: "formation_has_no_placement_slots",
+  };
+  const actor = (state.pieces || []).find((entry) => entry.id === source.pieceId);
+  const positions = new Map(slots.map((entry) => [entry.defaultModelId,
+    entry.position]));
+  const actorModelIds = new Set((actor?.models || []).map((entry) => entry.id));
+  if (!actor || positions.size === 0
+    || [...positions.keys()].some((modelId) => !actorModelIds.has(modelId))) return {
+    status: "unknown",
+    reason: "placement_slots_do_not_belong_to_current_actor",
+  };
+  try {
+    const projected = clone(state);
+    const projectedActor = projected.pieces.find((entry) =>
+      entry.id === source.pieceId);
+    projectedActor.isOnField = true;
+    projectedActor.isInReserves = false;
+    projectedActor.inCoherency = true;
+    projectedActor.coherencyStatus = {
+      schemaVersion: "starcraft_tmg_unit_coherency_status_v1",
+      status: "in_coherency",
+      isOutOfCoherency: false,
+    };
+    for (const model of projectedActor.models) {
+      const position = positions.get(model.id);
+      if (!position) continue;
+      model.xInches = Number(position.xMilliInches) / 1000;
+      model.yInches = Number(position.yMilliInches) / 1000;
+      model.baseRotationDegrees = Number(position.rotationDegrees || 0);
+      model.isOnField = true;
+      model.isDestroyed = false;
+    }
+    projectedActor.destroyedModelIds = (projectedActor.destroyedModelIds || [])
+      .filter((modelId) => !positions.has(modelId));
+    projectedActor.currentModels = projectedActor.models.filter((model) =>
+      model.isDestroyed !== true && model.isOnField !== false).length;
+    const targetIds = [...new Set((objectives || []).flatMap((entry) =>
+      entry.targetIds || []))];
+    const graph = buildStarcraftTmgTacticalRelationshipGraphV1({
+      state: projected,
+      seatKey: projectedActor.sideKey,
+      hypotheticalProjection: true,
+      request: {
+        intent: relationshipIntent(objectives),
+        subjectUnitIds: [projectedActor.id],
+        targetIds,
+        maximumRelations: 64,
+      },
+    });
+    const beforeRows = relationshipRows(baseline);
+    const afterRows = relationshipRows(graph);
+    const beforeById = new Map(beforeRows.map((entry) => [entry.edgeId, entry]));
+    return {
+      status: "available",
+      baselineRelationshipGraphHash:
+        baseline?.relationshipGraphHash || null,
+      projectedRelationshipGraphHash: graph.relationshipGraphHash,
+      intent: graph.intent,
+      relationships: afterRows,
+      deltas: afterRows.map((entry) => {
+        const before = beforeById.get(entry.edgeId);
+        return {
+          edgeId: entry.edgeId,
+          baseEdgeDistanceDeltaMilliInches: before
+            && Number.isFinite(before.minimumBaseEdgeDistanceMilliInches)
+            && Number.isFinite(entry.minimumBaseEdgeDistanceMilliInches)
+            ? entry.minimumBaseEdgeDistanceMilliInches
+              - before.minimumBaseEdgeDistanceMilliInches : null,
+          engagementChanged: before && "engaged" in entry
+            ? before.engaged !== entry.engaged : null,
+          visibleModelPairDelta: before
+            && Number.isFinite(before.visibleModelPairCount)
+            && Number.isFinite(entry.visibleModelPairCount)
+            ? entry.visibleModelPairCount - before.visibleModelPairCount : null,
+        };
+      }),
+      clearances: clone(graph.aggregates?.clearances || []),
+      precisionPolicy: clone(graph.precisionPolicy),
+      sourceReceipts: clone(graph.sourceReceipts),
+      rulesInstantiationStillFinalAuthority: true,
+      trainingTruth: false,
+    };
+  } catch (error) {
+    return {
+      status: "unknown",
+      reason: String(error?.message || error).split(":")[0],
+    };
+  }
+}
+
 export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
   const domain = input.domain;
   const source = sourceDomain(domain);
@@ -2113,6 +2249,26 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
   const blockers = blockingFootprints(state, source.pieceId);
   const options = [];
   const failureCounts = new Map();
+  let baselineRelationshipGraph = null;
+  const actor = (state.pieces || []).find((entry) => entry.id === source.pieceId);
+  if (actor?.isOnField === true && actor?.isDestroyed !== true
+    && Number(actor?.currentModels || 0) > 0) {
+    try {
+      baselineRelationshipGraph = buildStarcraftTmgTacticalRelationshipGraphV1({
+        state,
+        seatKey: actor.sideKey,
+        request: {
+          intent: relationshipIntent(normalizeFormationObjectives(request)),
+          subjectUnitIds: [actor.id],
+          targetIds: [...new Set(normalizeFormationObjectives(request)
+            .flatMap((entry) => entry.targetIds || []))],
+          maximumRelations: 64,
+        },
+      });
+    } catch {
+      baselineRelationshipGraph = null;
+    }
+  }
   let attemptedCandidateCount = 0;
   let instantiatedCandidateCount = 0;
   let prefilteredCandidateCount = 0;
@@ -2142,14 +2298,15 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
       const canonicalParameters = clone(instantiated.canonicalParameters
         || instantiated.action?.sourceAction?.spatialPlan?.canonicalParameters);
       if (!object(canonicalParameters)) continue;
-      const optionCore = {
+      const objectives = clone(candidate.formationObjectives
+        || normalizeFormationObjectives(request));
+      const optionSeed = {
         domainId: domain.domainId,
         actionType: source.actionType,
         pieceId: source.pieceId,
         patternId: candidate.patternId,
         solverPolicyId: candidate.solverPolicyId || null,
-        formationObjectives: clone(candidate.formationObjectives
-          || normalizeFormationObjectives(request)),
+        formationObjectives: objectives,
         tacticalMetrics: clone(candidate.tacticalMetrics || null),
         fixedLeadingModelId: candidate.leadingModelId
           || source.constraints.leadingModelId || null,
@@ -2167,6 +2324,12 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
           canonicalParameters.parentContactModelId || null,
         rulesAuthority: true,
         trainingTruth: false,
+      };
+      const projectedSlots = slotsFor(optionSeed, profiles);
+      const optionCore = {
+        ...optionSeed,
+        relationshipComparison: relationshipComparison(state, source,
+          projectedSlots, objectives, baselineRelationshipGraph),
       };
       const formationOptionId = hashStarcraftTmgContract(optionCore);
       const option = { ...optionCore, formationOptionId };

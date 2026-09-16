@@ -15,6 +15,7 @@ const DIRECT_QUERY_KINDS = new Set([
   "within_and_wholly_within",
 ]);
 const DELEGATED_QUERY_KINDS = new Set([
+  "space.inspect_relationships",
   "space.solve_formation",
   "legal_formation_options",
   "legal_asset_placement_options",
