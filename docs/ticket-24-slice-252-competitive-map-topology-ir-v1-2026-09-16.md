@@ -41,7 +41,7 @@ a high-ground element may be standable high ground, cover, difficult terrain or
 visual-only; it cannot silently become an unrelated sight rule.
 
 The choices are declarations only in this slice. Slice 253 adapts topology to
-the 54 × 36 inch table and complete model bases. Slice 254 compiles a selected
+the source-matched 36×36, 54×36, or 72×36 table and complete model bases. Slice 254 compiles a selected
 declaration into separate immutable `artLayer` and authoritative `rulesLayer`
 receipts and freezes them when a room is created.
 

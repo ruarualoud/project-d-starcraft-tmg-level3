@@ -13,11 +13,33 @@ The shipped result has two independent layers:
 
 1. a generated-original visual layer which preserves the identity and overall composition
    of the seed map; and
-2. an authoritative TMG terrain layer compiled for a 54×36 inch Standard battlefield.
+2. an authoritative TMG terrain layer compiled for the selected official engagement
+   scale: Skirmish 36×36, Standard 54×36, or Grand Offensive 72×36 inches.
 
 Pixels never confer Rules authority. The user may keep, remove, or reinterpret every
 transcribed source element while selecting a map. That selection is compiled and certified
 before room creation, then frozen for the match and replay.
+
+## Source-size to engagement-scale assignment (Slice 253 correction)
+
+The gallery is not fixed to Standard. Public map-page dimensions are recorded as source
+metadata and combined with competitive topology density to choose a default TMG scale.
+The existing twenty seeds already satisfy the minimum of five maps per size, so no filler
+maps are needed:
+
+- Skirmish 36×36: 6 maps — Blue Storm 128×96, Destination 128×96, Heartbreak
+  Ridge 128×96, Match Point 112×128, Xel'Naga Caverns 124×124, Ohana 128×135.
+- Standard 54×36: 9 maps — Lost Temple, Fighting Spirit, Circuit Breakers,
+  Python, Tau Cross and Andromeda at 128×128; Daybreak 148×120; Cloud Kingdom
+  126×132; Antiga Shipyard 132×136.
+- Grand Offensive 72×36: 5 maps — Metalopolis 140×140, Shakuras Plateau
+  156×128, Whirlwind 160×160, Frost 158×162 and Abyssal Reef 152×136.
+
+The individual cited Liquipedia pages in the tables below expose these dimensions. Raw
+tile counts are not treated as a cross-engine physical unit; they are a relative size
+signal within the source era. Spawn count, base density, route length and macro character
+break ties. Users may choose another compatible scale, but that creates a new compiled
+recipe and must re-run clearance and terrain certification.
 
 ## Selection criteria
 
@@ -120,7 +142,7 @@ formal Standard match.
 
 1. Acquire and cite an overhead competitive reference.
 2. Human-review the topology transcription and element inventory.
-3. Compile a legal 54×36 terrain candidate from selected elements.
+3. Compile a legal 36×36, 54×36, or 72×36 terrain candidate from selected elements.
 4. Run authoritative terrain certification and base-clearance/connectivity audits.
 5. Generate or paint the visual layer from the seed's actual composition and theme, using
    the approved topology sketch as conditioning; never reuse one generic four-corner prompt.
@@ -134,4 +156,3 @@ formal Standard match.
 - each has a distinct topology signature and a stated tabletop adaptation target;
 - the physical-clearance and per-element-selection contracts are explicit;
 - no generated prototype is promoted merely because it looks like a StarCraft map.
-

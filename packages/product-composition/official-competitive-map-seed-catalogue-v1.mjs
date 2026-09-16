@@ -187,6 +187,32 @@ const ROWS = Object.freeze([
   },
 ]);
 
+const SIZE_ASSIGNMENTS = Object.freeze({
+  sc1_lost_temple_v1: [128, 128, "Standard", "medium_four_start_macro"],
+  sc1_fighting_spirit_1_4_v1: [128, 128, "Standard", "medium_four_start_macro"],
+  sc1_circuit_breakers_v1: [128, 128, "Standard", "medium_four_start_macro"],
+  sc1_python_1_3_v1: [128, 128, "Standard", "medium_four_start_macro"],
+  sc1_blue_storm_1_2_v1: [128, 96, "Skirmish", "compact_two_player_rectangle"],
+  sc1_tau_cross_1_1_v1: [128, 128, "Standard", "medium_three_start_macro"],
+  sc1_destination_1_1_v1: [128, 96, "Skirmish", "compact_two_player_rectangle"],
+  sc1_heartbreak_ridge_2_2_v1: [128, 96, "Skirmish",
+    "compact_two_player_rectangle"],
+  sc1_andromeda_1_2_v1: [128, 128, "Standard", "medium_four_start_macro"],
+  sc1_match_point_1_4_v1: [112, 128, "Skirmish", "compact_two_player_portrait"],
+  sc2_metalopolis_v1: [140, 140, "Grand Offensive", "large_four_start_macro"],
+  sc2_shakuras_plateau_2_0_v1: [156, 128, "Grand Offensive",
+    "large_long_corridor_macro"],
+  sc2_xelnaga_caverns_v1: [124, 124, "Skirmish", "compact_two_player_square"],
+  sc2_daybreak_v1: [148, 120, "Standard", "medium_two_player_rectangle"],
+  sc2_cloud_kingdom_v1: [126, 132, "Standard", "medium_two_player_square"],
+  sc2_antiga_shipyard_v1: [132, 136, "Standard", "medium_four_start_macro"],
+  sc2_ohana_v1: [128, 135, "Skirmish", "compact_direct_two_player"],
+  sc2_whirlwind_v1: [160, 160, "Grand Offensive", "large_four_start_macro"],
+  sc2_frost_le_v1: [158, 162, "Grand Offensive", "large_four_start_macro"],
+  sc2_abyssal_reef_le_v1: [152, 136, "Grand Offensive",
+    "large_two_player_rectangle"],
+});
+
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
 }
@@ -198,11 +224,18 @@ function deepFreeze(value) {
 }
 
 function seed(row, ordinal) {
+  const size = SIZE_ASSIGNMENTS[row.seedId];
+  if (!size) fail("COMPETITIVE_MAP_SEED_SIZE_ASSIGNMENT_MISSING", row.seedId);
   const body = {
     schema: "starcraft_tmg_official_competitive_map_seed_v1",
-    version: "1.0.0",
+    version: "1.1.0",
     ordinal,
     ...structuredClone(row),
+    sourceMapDimensions: { widthTiles: size[0], heightTiles: size[1] },
+    sourceMapAreaTiles: size[0] * size[1],
+    recommendedEngagementScale: size[2],
+    scaleAssignmentBasis: size[3],
+    sizeEvidenceUrl: row.competitiveEvidenceUrl,
     topologyPresetId: `${row.seedId}_topology`,
     visualPresetId: `${row.seedId}_visual`,
     researchCapturedAt: "2026-09-16",
@@ -220,12 +253,15 @@ export function createOfficialCompetitiveMapSeedCatalogueV1() {
   const seeds = ROWS.map((row, index) => seed(row, index + 1));
   const body = {
     schema: OFFICIAL_COMPETITIVE_MAP_SEED_CATALOGUE_V1_SCHEMA,
-    version: "1.0.0",
+    version: "1.1.0",
     researchCapturedAt: "2026-09-16",
     counts: {
       total: seeds.length,
       broodWar: seeds.filter((entry) => entry.gameEra === "brood_war").length,
       starcraft2: seeds.filter((entry) => entry.gameEra === "starcraft_2").length,
+      byEngagementScale: Object.fromEntries(["Skirmish", "Standard",
+        "Grand Offensive"].map((scale) => [scale, seeds.filter((entry) => (
+        entry.recommendedEngagementScale === scale)).length])),
     },
     seeds,
     topologyTranscriptionRequiredBeforeVisualPromotion: true,
@@ -248,6 +284,9 @@ export function verifyOfficialCompetitiveMapSeedCatalogueV1(catalogue) {
     || catalogue.counts?.total !== 20
     || catalogue.counts?.broodWar !== 10
     || catalogue.counts?.starcraft2 !== 10
+    || catalogue.counts?.byEngagementScale?.Skirmish < 5
+    || catalogue.counts?.byEngagementScale?.Standard < 5
+    || catalogue.counts?.byEngagementScale?.["Grand Offensive"] < 5
     || catalogue.topologyTranscriptionRequiredBeforeVisualPromotion !== true
     || catalogue.genericSharedVisualTemplateAllowed !== false
     || catalogue.runtimePixelInferenceAllowed !== false
@@ -259,6 +298,12 @@ export function verifyOfficialCompetitiveMapSeedCatalogueV1(catalogue) {
     const { seedHash, ...body } = entry;
     if (!entry.seedId || seedIds.has(entry.seedId)
       || !["brood_war", "starcraft_2"].includes(entry.gameEra)
+      || !Number.isSafeInteger(entry.sourceMapDimensions?.widthTiles)
+      || !Number.isSafeInteger(entry.sourceMapDimensions?.heightTiles)
+      || entry.sourceMapAreaTiles !== entry.sourceMapDimensions.widthTiles
+        * entry.sourceMapDimensions.heightTiles
+      || !["Skirmish", "Standard", "Grand Offensive"]
+        .includes(entry.recommendedEngagementScale)
       || !URL.canParse(entry.competitiveEvidenceUrl)
       || !Array.isArray(entry.topologySignature)
       || entry.topologySignature.length < 4
@@ -282,4 +327,3 @@ export function getOfficialCompetitiveMapSeedV1(catalogue, seedId) {
   if (!result) fail("COMPETITIVE_MAP_SEED_UNKNOWN", String(seedId || ""));
   return result;
 }
-

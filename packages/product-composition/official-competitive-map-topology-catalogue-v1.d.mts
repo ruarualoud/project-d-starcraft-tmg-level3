@@ -18,9 +18,13 @@ export interface CompetitiveMapTopologyElementV1 {
 }
 export interface OfficialCompetitiveMapTopologyV1 {
   schema: "starcraft_tmg_official_competitive_map_topology_v1";
-  version: "1.0.0"; seedId: string; seedHash: string;
+  version: "1.1.0"; seedId: string; seedHash: string;
   topologyPresetId: string; gameEra: "brood_war" | "starcraft_2";
   displayName: string; symmetry: string; playerAxis: string;
+  sourceMapDimensions: Readonly<{ widthTiles: number; heightTiles: number }>;
+  sourceMapAreaTiles: number;
+  recommendedEngagementScale: "Skirmish" | "Standard" | "Grand Offensive";
+  scaleAssignmentBasis: string; sizeEvidenceUrl: string;
   normalizedCoordinateSpace: Readonly<{ width: 1000; height: 1000 }>;
   zones: readonly Readonly<{ zoneId: string; role: string;
     centre: CompetitiveMapNormalizedPointV1 }>[];
@@ -39,7 +43,7 @@ export interface OfficialCompetitiveMapTopologyV1 {
 }
 export interface OfficialCompetitiveMapTopologyCatalogueV1 {
   schema: "starcraft_tmg_official_competitive_map_topology_catalogue_v1";
-  version: "1.0.0"; seedCatalogueHash: string;
+  version: "1.1.0"; seedCatalogueHash: string;
   topologies: readonly Readonly<OfficialCompetitiveMapTopologyV1>[];
   counts: Readonly<{ total: number; elements: number; lanes: number; portals: number }>;
   normalizedCoordinatesAreRulesAuthority: false;

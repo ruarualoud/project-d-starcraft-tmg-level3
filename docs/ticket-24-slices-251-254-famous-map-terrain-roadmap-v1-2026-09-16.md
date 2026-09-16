@@ -48,13 +48,15 @@ runtime.
 
 ### Slice 253 — Tabletop scaling and base-clearance adapter
 
-- Adapt topology to 54×36 inches.
+- Assign source-size/topology matches across Skirmish 36×36, Standard 54×36, and
+  Grand Offensive 72×36 with at least five maps in every size.
 - Audit 32/40/50/80 mm round and 40×100 mm rectangular bases.
 - Enforce straight heavy transit, turning pockets, formation lanes, mission clearance, and
   official terrain guidance.
 
-Acceptance: every competitive candidate has at least one certified heavy-base route and
-two certified fire lanes.
+Acceptance: every size has at least five map-specific candidates; every candidate has at
+least one certified heavy-base route and two certified fire lanes. Grand Offensive's
+current mission/deployment-card geometry gap remains explicit.
 
 ### Slice 254 — Two-layer compiler and per-element selection
 

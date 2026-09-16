@@ -459,9 +459,15 @@ function topologyRecord(seed, spec) {
     linkedElementGroupId }));
   const body = {
     schema: "starcraft_tmg_official_competitive_map_topology_v1",
-    version: "1.0.0", seedId: seed.seedId, seedHash: seed.seedHash,
+    version: "1.1.0", seedId: seed.seedId, seedHash: seed.seedHash,
     topologyPresetId: seed.topologyPresetId, gameEra: seed.gameEra,
-    displayName: seed.displayName, symmetry: spec.symmetry,
+    displayName: seed.displayName,
+    sourceMapDimensions: structuredClone(seed.sourceMapDimensions),
+    sourceMapAreaTiles: seed.sourceMapAreaTiles,
+    recommendedEngagementScale: seed.recommendedEngagementScale,
+    scaleAssignmentBasis: seed.scaleAssignmentBasis,
+    sizeEvidenceUrl: seed.sizeEvidenceUrl,
+    symmetry: spec.symmetry,
     playerAxis: spec.playerAxis, normalizedCoordinateSpace: { width: 1000, height: 1000 },
     zones, lanes, portals, elements,
     sourceElementGroups: groups.map((entry) => ({
@@ -495,7 +501,7 @@ export function createOfficialCompetitiveMapTopologyCatalogueV1(input = {}) {
   }
   const body = {
     schema: OFFICIAL_COMPETITIVE_MAP_TOPOLOGY_CATALOGUE_V1_SCHEMA,
-    version: "1.0.0", seedCatalogueHash: seedCatalogue.catalogueHash,
+    version: "1.1.0", seedCatalogueHash: seedCatalogue.catalogueHash,
     topologies,
     counts: { total: topologies.length,
       elements: topologies.reduce((sum, entry) => sum + entry.elements.length, 0),
@@ -530,6 +536,8 @@ export function verifyOfficialCompetitiveMapTopologyCatalogueV1(catalogue,
     const { topologyHash, ...body } = entry;
     if (!seed || seed.seedHash !== entry.seedHash || seedIds.has(entry.seedId)
       || entry.zones.length < 5 || entry.lanes.length < 3 || entry.elements.length < 5
+      || entry.recommendedEngagementScale !== seed.recommendedEngagementScale
+      || entry.sourceMapAreaTiles !== seed.sourceMapAreaTiles
       || entry.everyElementIndependentlyConfigurable !== true
       || entry.topologyRequiresTabletopCompilation !== true
       || entry.rulesAuthority !== false || entry.trainingTruth !== false

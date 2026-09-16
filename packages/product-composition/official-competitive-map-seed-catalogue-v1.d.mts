@@ -2,7 +2,7 @@ export type OfficialCompetitiveMapGameEraV1 = "brood_war" | "starcraft_2";
 
 export interface OfficialCompetitiveMapSeedV1 {
   schema: "starcraft_tmg_official_competitive_map_seed_v1";
-  version: "1.0.0";
+  version: "1.1.0";
   ordinal: number;
   seedId: string;
   gameEra: OfficialCompetitiveMapGameEraV1;
@@ -11,6 +11,11 @@ export interface OfficialCompetitiveMapSeedV1 {
   competitiveEvidenceUrl: string;
   topologySignature: readonly string[];
   tabletopAdaptationGoal: string;
+  sourceMapDimensions: Readonly<{ widthTiles: number; heightTiles: number }>;
+  sourceMapAreaTiles: number;
+  recommendedEngagementScale: "Skirmish" | "Standard" | "Grand Offensive";
+  scaleAssignmentBasis: string;
+  sizeEvidenceUrl: string;
   topologyPresetId: string;
   visualPresetId: string;
   researchCapturedAt: "2026-09-16";
@@ -25,9 +30,11 @@ export interface OfficialCompetitiveMapSeedV1 {
 
 export interface OfficialCompetitiveMapSeedCatalogueV1 {
   schema: "starcraft_tmg_official_competitive_map_seed_catalogue_v1";
-  version: "1.0.0";
+  version: "1.1.0";
   researchCapturedAt: "2026-09-16";
-  counts: Readonly<{ total: 20; broodWar: 10; starcraft2: 10 }>;
+  counts: Readonly<{ total: 20; broodWar: 10; starcraft2: 10;
+    byEngagementScale: Readonly<{ Skirmish: number; Standard: number;
+      "Grand Offensive": number }> }>;
   seeds: readonly Readonly<OfficialCompetitiveMapSeedV1>[];
   topologyTranscriptionRequiredBeforeVisualPromotion: true;
   genericSharedVisualTemplateAllowed: false;
@@ -48,4 +55,3 @@ export function getOfficialCompetitiveMapSeedV1(
   catalogue: OfficialCompetitiveMapSeedCatalogueV1,
   seedId: unknown,
 ): Readonly<OfficialCompetitiveMapSeedV1>;
-
