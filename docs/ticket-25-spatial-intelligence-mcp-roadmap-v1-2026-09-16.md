@@ -225,6 +225,16 @@ performance-verifier limit has been reached and is not rerun.
 Deliverable: action-by-action JSON/NDJSON, screenshots, cost/performance ledger,
 PDF evidence and promoted-or-rejected Skill delta.
 
+Live checkpoint: `ticket-25-slice-263-live-browser-recovery-blocker-v1-2026-09-17.md`
+records successful authoritative actions 127–128 and the three-cycle browser
+recovery convergence stop. The Room is safely at revision 129. The next concrete
+delivery was implemented as a session-bound, secret-free typed control-claim
+receipt. A second three-cycle recovery audit proved the server claim commit and
+persistent success notice, but the runner's combined DOM assertion still missed
+the new fence/binding fields. No fourth retry is allowed in this cycle. The next
+delivery is one captured post-claim accessibility snapshot followed by one
+label-independent typed-view assertion, then exact recovery of r129.
+
 ## Blocking policy
 
 Critical/High findings block Apply or release. Medium findings, including
