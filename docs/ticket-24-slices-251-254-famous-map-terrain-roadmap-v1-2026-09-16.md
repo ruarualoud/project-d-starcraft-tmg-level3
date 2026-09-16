@@ -58,7 +58,7 @@ Acceptance: every size has at least five map-specific candidates; every candidat
 least one certified heavy-base route and two certified fire lanes. Grand Offensive's
 current mission/deployment-card geometry gap remains explicit.
 
-### Slice 254 — Two-layer compiler and per-element selection
+### Slice 254 — Two-layer compiler and per-element selection (complete)
 
 - Compile user-selected classic motifs into a certified TMG plan.
 - Allow impassable elements to be blocking, passable/difficult, or visual-only.
@@ -68,6 +68,12 @@ current mission/deployment-card geometry gap remains explicit.
 
 Acceptance: identical seed and recipe compile identically; invalid official recipes are
 explained and never mislabeled.
+
+Closure: twenty deterministic default compilations, 166 element receipts, explicit neutral
+compensation, task-bound fire-lane derivation, existing Rules certification and immutable
+room freeze are implemented. Skirmish/Standard are eligible; Grand Offensive remains an
+honest preview until current task geometry exists. See
+`ticket-24-slice-254-two-layer-map-compiler-v1-2026-09-16.md`.
 
 ### Slice 255 — Brood War gallery (10)
 
