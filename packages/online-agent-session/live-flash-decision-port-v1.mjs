@@ -25,7 +25,7 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_relationship_intent_v4";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v5";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_action_shape_normalization_v12";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
@@ -52,6 +52,11 @@ const HOST_DEFERRED_QUERY_KINDS = new Set([
   "legal_formation_options",
   "legal_asset_placement_options",
   "instantiate_parameterized_action",
+]);
+const PLANNING_POST_SELECTION_QUERY_KINDS = new Set([
+  "legal_full_path_movement",
+  "coherency_after_candidate_placement",
+  "objective_score_after_candidate_action",
 ]);
 const PHASE_CONTROL_ACTIONS = new Set(["pass", "choose_first_actor"]);
 const FORMATION_ACTION_TYPES = new Set([
@@ -291,14 +296,14 @@ function candidateEvidenceRequirements(input) {
       : ["current_legalspace_membership"];
     const usefulQueries = [];
     if (/move|run|deploy|charge|disengage/u.test(actionType)) {
-      usefulQueries.push("legal_full_path_movement",
-        "coherency_after_candidate_placement", "fire_zone_exchange");
+      usefulQueries.push("space.inspect_relationships", "fire_zone_exchange");
     }
     if (/attack|fight|charge|impact/u.test(actionType)) {
       usefulQueries.push("action_specific_threat", "attack_probability",
         "fire_zone_exchange");
     }
-    if (/move|run|deploy|charge|attack|fight/u.test(actionType)) {
+    if (entry.kind !== "parameterized"
+      && /move|run|deploy|charge|attack|fight/u.test(actionType)) {
       usefulQueries.push("objective_score_after_candidate_action");
     }
     const successor = preexecution.get(entry.id);
@@ -529,7 +534,7 @@ function validateLifecycleAssessment(value, input, candidateId) {
   });
 }
 
-function normalizePlannerOutput(raw, input) {
+function normalizePlannerOutput(raw, input, queryReceipts = []) {
   if (!object(raw)) {
     throw correctionError("PLANNER_OUTPUT_REQUIRED");
   }
@@ -652,6 +657,37 @@ function normalizePlannerOutput(raw, input) {
     throw correctionError("PLANNER_PASS_OPPORTUNITY_COST_NOT_COMPARED",
       pass.id);
   }
+  const selected = actions.find((entry) => entry.id === recommendedCandidateId);
+  const formationAlternatives = actions.filter((entry) =>
+    entry.id !== pass?.id && entry.kind === "parameterized"
+      && isFormationPlacementDomain(entry.action));
+  if (selected?.action?.actionType === "pass"
+    && formationAlternatives.length > 0) {
+    const rawText = JSON.stringify(raw);
+    const citedPreselectionParameterFailure = queryReceipts.some((entry) =>
+      PLANNING_POST_SELECTION_QUERY_KINDS.has(String(entry?.queryKind || ""))
+        && entry?.status !== "exact"
+        && String(entry?.reason || "").trim()
+        && rawText.includes(String(entry.reason)));
+    if (citedPreselectionParameterFailure) {
+      throw correctionError(
+        "PLANNER_PASS_USED_PRESELECTION_PARAMETER_FAILURE",
+        "Select from current candidates using current relationships; the Host solves complete formation parameters only after candidate selection.",
+      );
+    }
+  }
+  const formationSearchRequest = object(raw.formationSearchRequest)
+    ? clone(raw.formationSearchRequest) : null;
+  if (selected?.kind === "parameterized"
+    && isFormationPlacementDomain(selected.action)) {
+    if (!formationSearchRequest
+      || !String(formationSearchRequest.tacticalPurpose || "").trim()
+      || !Array.isArray(formationSearchRequest.formationObjectives)
+      || formationSearchRequest.formationObjectives.length < 1) {
+      throw correctionError("PLANNER_FORMATION_INTENT_REQUIRED",
+        "tacticalPurpose,formationObjectives");
+    }
+  }
   if (!publicPlanSummary.trim()) {
     throw correctionError("PLANNER_PUBLIC_SUMMARY_REQUIRED");
   }
@@ -667,8 +703,7 @@ function normalizePlannerOutput(raw, input) {
       ? clone(raw.informationNeeds) : [],
     candidateComparisons: validComparisons,
     ignoredStaleComparisonCount,
-    formationSearchRequest: object(raw.formationSearchRequest)
-      ? clone(raw.formationSearchRequest) : null,
+    formationSearchRequest,
     assetPlacementSearchRequest: object(raw.assetPlacementSearchRequest)
       ? clone(raw.assetPlacementSearchRequest) : null,
     requiredEvidence: candidateEvidenceRequirements(input).find((entry) =>
@@ -1942,7 +1977,9 @@ function nativeAgentLoop(choice, input, queryReceipts, stage,
     ? planningSubmissionTool(input)
     : actionSubmissionTool(input, choice, queryReceipts);
   const exposedQueryKinds = NATIVE_QUERY_KINDS.filter((kind) =>
-    !HOST_DEFERRED_QUERY_KINDS.has(kind));
+    !HOST_DEFERRED_QUERY_KINDS.has(kind)
+      && !(stage === "planning"
+        && PLANNING_POST_SELECTION_QUERY_KINDS.has(kind)));
   const interactiveTools = [{
     type: "function",
     function: {
@@ -2015,7 +2052,9 @@ function compactProviderContinuationMessages(choice, stage) {
       || typeof message.content !== "string") return message;
     try {
       const receipt = JSON.parse(message.content);
-      if (!HOST_DEFERRED_QUERY_KINDS.has(String(receipt?.queryKind || ""))) {
+      if (!HOST_DEFERRED_QUERY_KINDS.has(String(receipt?.queryKind || ""))
+        && !PLANNING_POST_SELECTION_QUERY_KINDS.has(
+          String(receipt?.queryKind || ""))) {
         return message;
       }
       return {
@@ -2024,7 +2063,7 @@ function compactProviderContinuationMessages(choice, stage) {
           queryReceiptHash: receipt.queryReceiptHash || null,
           queryKind: receipt.queryKind,
           status: "superseded_by_host_deferred_search",
-          reason: "planner_selects_candidate_before_exact_host_search",
+          reason: "planner_selects_candidate_and_intent_before_exact_host_search",
           exactResultPreservedInDurableDecisionRecord: true,
           rulesAuthority: false,
           mutationAuthority: false,
@@ -2486,7 +2525,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
         : "Use exactly the Planner's recommended candidate. Submit only model-owned choices; the Host constructs the finite or parameterized proposal.",
       "For a Unit reposition, give a physical path only for the nominated Leading Model; the remaining models do not travel paths under the rules and must each receive an explicit final placement through the domain's placements field.",
       planning
-        ? `Do not request ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME}, legal asset-placement options, or final parameter instantiation during Planning. Select the best current candidate first. For a formation action, set formationSearchRequested and provide weighted formationObjectives with visible targetIds; the Host runs the spatial solver once.`
+        ? `Do not request ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME}, legal asset-placement options, final parameter instantiation, legal_full_path_movement, coherency_after_candidate_placement, or objective_score_after_candidate_action during Planning. Those require a selected candidate and complete Host-owned parameters. Select the best current candidate from current relationships first. For a formation action, set formationSearchRequested and provide a tacticalPurpose plus weighted formationObjectives with visible targetIds; the Host runs the spatial solver once.`
         : "Use the exact Host-supplied formation or asset-placement options for the selected candidate; do not restart a broad placement search in the Action stage.",
       `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives and tacticalMetrics and choose exactly one formationOptionId. Give one concise publicReason for the formation. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
       "When an exact legal_asset_placement_options receipt is present, choose exactly one placementOptionId and return assetPlacementSelection with that ID and one concise publicReason about the visible position, intended threat/objective/route effect, and plan continuity. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
@@ -2497,6 +2536,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       "A typed query for a parameterized candidate must put domainId and the complete parameters object in the query tool arguments; the Host automatically Rules-checks every final parameterized proposal.",
       "Use exact query receipts as facts, advisory estimates as preferences, and unknown as uncertainty.",
       "An unknown query receipt may include Rules-derived repairContext. Use it only to repair and re-submit the same candidate; it never proves that the repaired proposal is legal until a later exact receipt accepts it.",
+      "A pre-selection parameter-shape failure is Harness uncertainty, not tactical evidence against a formation candidate and never a reason to prefer Pass. The Planner chooses the candidate and spatial intent; the Host supplies every model's path and placement parameters afterward.",
       "The phase lifecycle node is Rules-owned. Ordinary actions exist only in their listed phase. Never defer Deploy, Move, Charge, Ranged Attack, Run, Hold, or Fight into another phase unless exact successor Rules evidence explicitly exposes it.",
       "Before recommending Pass, enumerate every current non-Pass actionType that will be forfeited and compare that opportunity cost with initiative value.",
       "When an exact successor is attached to Pass or choose_first_actor, cite its successorHash and use its actual next phase and action types. Do not invent a future LegalSpace.",
@@ -4067,7 +4107,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           plannerResult = normalizePlannerOutput(
             parts.terminal ? mapPlanningSubmission(parts.planning, input)
               : parts.planning,
-            input);
+            input,
+            choice.queryReceipts);
         } catch (error) {
           const correction = await recordSemanticCorrection(match, choice,
             attempt, error);
