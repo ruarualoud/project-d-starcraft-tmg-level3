@@ -11,6 +11,8 @@ import {
 import * as Clipboard from "expo-clipboard";
 
 import { AuthoritativeBattleWorkspace } from "@/components/battlefield/authoritative-battle-workspace";
+import { CompetitiveMapConfigurator } from
+  "@/components/battlefield/competitive-map-configurator";
 import { LearningConsolePanel } from "@/components/battlefield/learning-console-panel";
 import { HostedOpponentOperationsPanel } from
   "@/components/battlefield/hosted-opponent-operations-panel";
@@ -35,7 +37,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 type AccessAction = "claim_control" | "issue_invite" | "issue_recovery" | "historical_rules";
-type MatchSurface = "battle" | "room" | "learning";
+type MatchSurface = "battle" | "maps" | "room" | "learning";
 
 interface EphemeralLink {
   kind: StarcraftTmgRoomAccessKind;
@@ -107,6 +109,8 @@ export default function MatchScreen() {
   const room = projection.room || {};
   const viewer = projection.viewer || {};
   const projectedControl = projection.control || {};
+  const boundMapSeedId = projection.state?.board?.battlefieldMapManifest
+    ?.mapSeedId || null;
   const historicalRules = view.historicalRulesDisplay;
   const historicalRulesStatus = view.historicalRulesStatus;
   const privateControl = view.control || {};
@@ -298,6 +302,11 @@ export default function MatchScreen() {
           kind={surface === "battle" ? "primary" : "secondary"}
         />
         <ActionButton
+          label={zh ? "地图" : "Maps"}
+          onPress={() => setSurface("maps")}
+          kind={surface === "maps" ? "primary" : "secondary"}
+        />
+        <ActionButton
           label={zh ? "房间与规则" : "Room & rules"}
           onPress={() => setSurface("room")}
           kind={surface === "room" ? "primary" : "secondary"}
@@ -354,6 +363,9 @@ export default function MatchScreen() {
             <AuthoritativeBattleWorkspace onOpenRoomRules={() => setSurface("room")} />
             <HostedOpponentOperationsPanel roomId={connection.roomId} />
           </>
+        )}
+        {surface === "maps" && (
+          <CompetitiveMapConfigurator boundMapSeedId={boundMapSeedId} />
         )}
         {surface === "room" && (
           <>

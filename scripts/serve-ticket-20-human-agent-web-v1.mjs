@@ -17,6 +17,8 @@ import { createTicket20HumanAgentDemoFixtureV1 } from
   "./support/ticket20-human-agent-demo-fixture-v1.mjs";
 import { createTicket20LearningConsoleFixtureV1 } from
   "./support/ticket20-learning-console-fixture-v1.mjs";
+import { createOfficialCompetitiveMapConfiguratorV1 } from
+  "../packages/product-composition/official-competitive-map-configurator-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ROOM_ID = "ticket23-standard-2000-web";
@@ -159,6 +161,7 @@ async function main() {
   const roomAdapter = createStarcraftTmgLevel3HttpAdapter({
     roomRuntime: fixture.roomRuntime,
     assetRoot: ROOT,
+    mapConfigurationPort: createOfficialCompetitiveMapConfiguratorV1(),
   });
   const learning = await createTicket20LearningConsoleFixtureV1({
     root: ROOT,

@@ -40,6 +40,7 @@ import {
 import {
   STARCRAFT_TMG_BATTLEFIELD_MAP_SOURCE,
   randomStarcraftTmgPresentationMediaEntryV1,
+  starcraftTmgBattlefieldMapSourceV2,
   starcraftTmgBattlefieldUnitMediaAssetsV1,
 } from "@/lib/level3/battlefield-media-assets-v1";
 import {
@@ -127,36 +128,64 @@ function areaGlyph(area: BattlefieldAreaV1) {
     }
     return null;
   }
-  const common = {
-    fill: area.kind === "terrain" ? "#334155" : area.kind === "marker" ? "#fbbf2433" : "#22d3ee33",
-    stroke: area.kind === "terrain" ? "#64748b" : area.kind === "marker" ? "#fbbf24" : "#22d3ee",
-    strokeWidth: 100,
-  };
+  const terrainStyle = area.elevationSurface
+    ? { fill: "#f59e0b99", stroke: "#fde68a", strokeDasharray: undefined }
+    : area.terrainKind === "grass"
+      ? { fill: "#15803d99", stroke: "#86efac", strokeDasharray: "260 140" }
+      : area.terrainSize === 1
+        ? { fill: "#7e22ce99", stroke: "#e9d5ff", strokeDasharray: "180 120" }
+        : { fill: "#475569cc", stroke: "#e2e8f0", strokeDasharray: undefined };
+  const common = area.kind === "terrain"
+    ? { ...terrainStyle, strokeWidth: 150 }
+    : {
+        fill: area.kind === "marker" ? "#fbbf2433" : "#22d3ee33",
+        stroke: area.kind === "marker" ? "#fbbf24" : "#22d3ee",
+        strokeWidth: 100,
+      };
+  const terrainLabel = area.kind === "terrain"
+    ? `${area.label} · S${area.terrainSize ?? "?"}${area.elevationSurface ? " · HIGH" : ""}`
+    : null;
   if (area.shape === "rectangle") {
     return (
-      <Rect
-        key={`${area.kind}:${area.id}`}
-        id={`battlefield-${area.kind}-${area.id}`}
-        x={area.xMilliInches - (area.widthMilliInches / 2)}
-        y={area.yMilliInches - (area.depthMilliInches / 2)}
-        width={area.widthMilliInches}
-        height={area.depthMilliInches}
-        transform={`rotate(${area.rotationDegrees} ${area.xMilliInches} ${area.yMilliInches})`}
-        {...common}
-      />
+      <G key={`${area.kind}:${area.id}`}>
+        <Rect
+          id={`battlefield-${area.kind}-${area.id}`}
+          x={area.xMilliInches - (area.widthMilliInches / 2)}
+          y={area.yMilliInches - (area.depthMilliInches / 2)}
+          width={area.widthMilliInches}
+          height={area.depthMilliInches}
+          transform={`rotate(${area.rotationDegrees} ${area.xMilliInches} ${area.yMilliInches})`}
+          {...common}
+        />
+        {terrainLabel && (
+          <G transform={`translate(${area.xMilliInches} ${area.yMilliInches}) scale(1 -1)`}>
+            <SvgText x={0} y={90} textAnchor="middle" fill="#ffffff" stroke="#020617" strokeWidth={35} fontSize={420} fontWeight="700">
+              {terrainLabel}
+            </SvgText>
+          </G>
+        )}
+      </G>
     );
   }
   return (
-    <Ellipse
-      key={`${area.kind}:${area.id}`}
-      id={`battlefield-${area.kind}-${area.id}`}
-      cx={area.xMilliInches}
-      cy={area.yMilliInches}
-      rx={area.widthMilliInches / 2}
-      ry={area.depthMilliInches / 2}
-      transform={`rotate(${area.rotationDegrees} ${area.xMilliInches} ${area.yMilliInches})`}
-      {...common}
-    />
+    <G key={`${area.kind}:${area.id}`}>
+      <Ellipse
+        id={`battlefield-${area.kind}-${area.id}`}
+        cx={area.xMilliInches}
+        cy={area.yMilliInches}
+        rx={area.widthMilliInches / 2}
+        ry={area.depthMilliInches / 2}
+        transform={`rotate(${area.rotationDegrees} ${area.xMilliInches} ${area.yMilliInches})`}
+        {...common}
+      />
+      {terrainLabel && (
+        <G transform={`translate(${area.xMilliInches} ${area.yMilliInches}) scale(1 -1)`}>
+          <SvgText x={0} y={90} textAnchor="middle" fill="#ffffff" stroke="#020617" strokeWidth={35} fontSize={420} fontWeight="700">
+            {terrainLabel}
+          </SvgText>
+        </G>
+      )}
+    </G>
   );
 }
 
@@ -345,6 +374,8 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   const [bgmLoaded, setBgmLoaded] = useState(false);
   const [bgmPlaying, setBgmPlaying] = useState(false);
   const [mediaVolume, setMediaVolume] = useState(0.45);
+  const [showBattlefieldBackground, setShowBattlefieldBackground] = useState(true);
+  const [showAuthoritativeTerrain, setShowAuthoritativeTerrain] = useState(true);
   const [detailPanel, setDetailPanel] = useState<WorkspaceDetailPanel>("unit");
   const [threatMode, setThreatMode] = useState<WorkbenchThreatMode>("stationary_fire");
   const [selectedThreatWeaponId, setSelectedThreatWeaponId] = useState<string | null>(null);
@@ -368,6 +399,10 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   )).length;
   const terrainCount = Array.isArray(productState.board?.terrain)
     ? productState.board.terrain.length : 0;
+  const activeVisualPresetId = scene.board.mapSeedId
+    || scene.board.visualPresetId || "lost_temple_inspired_v1";
+  const activeMapSource = starcraftTmgBattlefieldMapSourceV2(
+    activeVisualPresetId, scene.board.mapArtAssetPath);
   const playerResourceText = (sideKey: "player1" | "player2") => {
     const budget = armyBudgets[sideKey] || {};
     return `${sideKey === "player1" ? "P1" : "P2"} ${actionText(budget.mineralSpent)} Minerals / ${actionText(budget.vespeneSpent)} Vespene`;
@@ -961,7 +996,22 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
             <Button compact label="→" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, x: value.x + panStepX }))} />
             <Button compact label="↑" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, y: value.y + panStepY }))} />
             <Button compact label="↓" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, y: value.y - panStepY }))} />
+            <Button
+              compact
+              active={showBattlefieldBackground}
+              label={zh ? "地图背景" : "Map art"}
+              onPress={() => setShowBattlefieldBackground((value) => !value)}
+            />
+            <Button
+              compact
+              active={showAuthoritativeTerrain}
+              label={zh ? `规则地形 ${terrainCount}` : `Rules terrain ${terrainCount}`}
+              onPress={() => setShowAuthoritativeTerrain((value) => !value)}
+            />
           </View>
+          <Text style={styles.mapContractText} testID="battlefield-map-contract-v1">
+            {`${scene.board.mapDisplayName || scene.board.visualPresetName || activeVisualPresetId} · ${scene.board.engagementScale || "legacy scale"} · ${scene.board.terrainPresetId || "terrain preset pending"} · seed ${scene.board.mapSeedId || scene.board.terrainSeed || "legacy"} · ${terrainCount} authoritative terrain · ${scene.board.mapRoomFreezeHash ? "room frozen" : "legacy room"} · background has no Rules authority`}
+          </Text>
           <Pressable
             accessibilityRole="imagebutton"
             accessibilityLabel={zh ? "战场；点按选择模型或添加当前参数步骤" : "Battlefield; tap to select a model or add the current parameter step"}
@@ -975,16 +1025,18 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
               preserveAspectRatio="xMidYMid meet"
             >
-              <SvgImage
-                id="battlefield-display-map-v1"
-                href={STARCRAFT_TMG_BATTLEFIELD_MAP_SOURCE}
-                x={0}
-                y={0}
-                width={scene.widthMilliInches}
-                height={scene.heightMilliInches}
-                preserveAspectRatio="xMidYMid slice"
-                opacity={0.72}
-              />
+              {showBattlefieldBackground && (
+                <SvgImage
+                  id="battlefield-display-map-v1"
+                  href={activeMapSource || STARCRAFT_TMG_BATTLEFIELD_MAP_SOURCE}
+                  x={0}
+                  y={0}
+                  width={scene.widthMilliInches}
+                  height={scene.heightMilliInches}
+                  preserveAspectRatio="xMidYMid slice"
+                  opacity={0.82}
+                />
+              )}
               <G transform={`translate(0 ${scene.heightMilliInches}) scale(1 -1)`}>
                 <Rect x={0} y={0} width={scene.widthMilliInches} height={scene.heightMilliInches} fill="#07111f99" stroke="#38bdf8" strokeWidth={140} />
                 {Array.from({ length: Math.floor(scene.widthMilliInches / 6000) + 1 }, (_, index) => (
@@ -993,7 +1045,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                 {Array.from({ length: Math.floor(scene.heightMilliInches / 6000) + 1 }, (_, index) => (
                   <Line key={`grid-y-${index}`} x1={0} y1={index * 6000} x2={scene.widthMilliInches} y2={index * 6000} stroke="#1e3a4f" strokeWidth={50} />
                 ))}
-                {scene.terrain.map(areaGlyph)}
+                {showAuthoritativeTerrain && scene.terrain.map(areaGlyph)}
                 {scene.markers.map(areaGlyph)}
                 {scene.tokens.map(areaGlyph)}
                 {threatRegions.map((region, index) => (
@@ -1462,6 +1514,9 @@ const styles = StyleSheet.create({
   workspaceDesktop: { flexDirection: "row", alignItems: "flex-start" },
   boardPane: { flex: 1, minWidth: 0, gap: 10 },
   viewportControls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 7 },
+  mapContractText: { color: "#a5f3fc", fontSize: 10, lineHeight: 15,
+    fontFamily: "monospace", backgroundColor: "#083344", borderRadius: 7,
+    borderWidth: 1, borderColor: "#0e7490", paddingHorizontal: 9, paddingVertical: 6 },
   zoomText: { minWidth: 44, color: "#cbd5e1", textAlign: "center", fontSize: 11, fontWeight: "800" },
   boardFrame: { width: "100%", overflow: "hidden", borderRadius: 10, backgroundColor: "#020617", borderWidth: 1, borderColor: "#334155" },
   legendRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },

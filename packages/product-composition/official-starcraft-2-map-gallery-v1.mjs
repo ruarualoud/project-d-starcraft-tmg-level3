@@ -94,6 +94,12 @@ function artAsset(row) {
     generatedOriginal: true, sourceScreenshotBundled: false,
     displayOnly: true, backgroundRulesAuthority: false, trainingTruth: false };
 }
+export function resolveOfficialStarcraft2MapGalleryArtAssetV1(seedId) {
+  const normalized = String(seedId || "").trim();
+  const row = ART_ROWS.find((entry) => entry.seedId === normalized);
+  if (!row) fail("STARCRAFT_2_MAP_GALLERY_ART_ASSET_UNKNOWN", normalized);
+  return deepFreeze({ seedId: normalized, ...artAsset(row) });
+}
 function galleryEntry(row, seedById, adapterCatalogue) {
   const seed = seedById.get(row.seedId);
   if (!seed || seed.gameEra !== "starcraft_2") {

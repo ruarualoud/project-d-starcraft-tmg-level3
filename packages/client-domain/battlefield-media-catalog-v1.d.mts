@@ -41,10 +41,34 @@ export function resolveStarcraftTmgBattlefieldUnitMediaV1(
 ): StarcraftTmgBattlefieldUnitMediaV1 | null;
 export function starcraftTmgBattlefieldMapMediaV1(): Readonly<{
   schemaVersion: "starcraft_tmg_battlefield_map_media_v1";
-  assetKey: "alien_temple_local_v1";
+  assetKey: string;
   path: string;
   generatedOriginal: true;
   displayOnly: true;
   rulesGeometryAuthority: false;
   trainingTruth: false;
 }>;
+export type StarcraftTmgBattlefieldMapVisualPresetIdV2 = string;
+export type StarcraftTmgBattlefieldMapAssetKeyV2 = string;
+export interface StarcraftTmgBattlefieldMapMediaV2 {
+  schemaVersion: "starcraft_tmg_battlefield_map_media_v2";
+  seedId: string;
+  visualPresetId: StarcraftTmgBattlefieldMapVisualPresetIdV2;
+  displayName: string;
+  era: "brood_war" | "starcraft_2";
+  engagementScale: "Skirmish" | "Standard" | "Grand Offensive";
+  battlefield: Readonly<{ widthInches: 36 | 54 | 72; heightInches: 36 }>;
+  formalTaskRoomEligible: boolean;
+  assetKey: StarcraftTmgBattlefieldMapAssetKeyV2;
+  path: string;
+  generatedOriginal: true;
+  displayOnly: true;
+  rulesGeometryAuthority: false;
+  bundledOriginalGameScreenshot: false;
+  trainingTruth: false;
+}
+export function listStarcraftTmgBattlefieldMapMediaV2():
+  readonly Readonly<StarcraftTmgBattlefieldMapMediaV2>[];
+export function resolveStarcraftTmgBattlefieldMapMediaV2(
+  visualPresetId: unknown,
+): Readonly<StarcraftTmgBattlefieldMapMediaV2> | null;

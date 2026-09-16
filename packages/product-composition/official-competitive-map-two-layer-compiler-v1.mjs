@@ -24,6 +24,9 @@ export const OFFICIAL_COMPETITIVE_MAP_ROOM_FREEZE_V1_SCHEMA =
 
 const RULES_DISPOSITIONS = new Set(["auto", "enabled", "disabled"]);
 const ART_DISPOSITIONS = new Set(["retain", "hide"]);
+const PASSAGE_MODES = new Set([
+  "preserve_source_clearance", "widen_all_current_bases",
+]);
 const OFFICIAL_TARGETS = Object.freeze({
   Skirmish: Object.freeze({ total: 7, size1: 2, size2: 4,
     size3Plus: 1, grass: 3 }),
@@ -105,6 +108,33 @@ function normalizeSelections(adapter, rawSelections = []) {
       selectionOrigin: supplied.has(element.elementId) ? "user" : "default",
       allowedRulesModes: [...element.allowedRulesModes] };
   });
+}
+
+function normalizePassageSelections(adapter, rawSelections = []) {
+  if (!Array.isArray(rawSelections)) {
+    fail("COMPETITIVE_MAP_PASSAGE_SELECTIONS_INVALID");
+  }
+  const laneById = new Map(adapter.lanes.map((entry) => [entry.laneId, entry]));
+  const supplied = new Map();
+  for (const raw of rawSelections) {
+    const laneId = String(raw?.laneId || "").trim();
+    const lane = laneById.get(laneId);
+    const passageMode = String(raw?.passageMode || "").trim();
+    if (!lane || supplied.has(laneId) || !PASSAGE_MODES.has(passageMode)
+      || !lane.availablePassageModes.includes(passageMode)) {
+      fail("COMPETITIVE_MAP_PASSAGE_SELECTION_INVALID", laneId);
+    }
+    supplied.set(laneId, passageMode);
+  }
+  return adapter.lanes.map((lane) => ({
+    laneId: lane.laneId,
+    selectedPassageMode: supplied.get(lane.laneId)
+      || lane.defaultPassageMode,
+    selectionOrigin: supplied.has(lane.laneId) ? "user" : "default",
+    availablePassageModes: [...lane.availablePassageModes],
+    displayLayerOnly: true,
+    rulesGeometryEffect: false,
+  }));
 }
 
 function sourceCandidate(adapter, selection) {
@@ -381,6 +411,8 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
     input.seedId);
   const targets = OFFICIAL_TARGETS[adapter.engagementScale];
   const selections = normalizeSelections(adapter, input.elementSelections || []);
+  const passageSelections = normalizePassageSelections(adapter,
+    input.passageSelections || []);
   const membership = compileRuleMembership(adapter, selections, targets);
   const pieces = materializeTerrain(adapter.seedId, membership.rows,
     adapter.battlefield);
@@ -401,6 +433,19 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
       sourceClearanceInches: lane.sourceRequiredClearanceInches,
       displayClearanceInches: lane.requiredClearanceInches,
       message: "Classic restricted passage is widened in the default tabletop art; the source-clearance option remains available." });
+  }
+  for (const selection of passageSelections.filter((entry) => (
+    entry.selectedPassageMode === "preserve_source_clearance"))) {
+    const audit = adapter.laneClearanceAudits.find((entry) => (
+      entry.laneId === selection.laneId));
+    if (audit?.sourceStraightTransitBaseProfilesBlocked.length > 0) {
+      warnings.push({ severity: "warning",
+        code: "CLASSIC_PASSAGE_RESTRICTION_SELECTED",
+        laneId: selection.laneId,
+        blockedBaseProfiles: clone(
+          audit.sourceStraightTransitBaseProfilesBlocked),
+        message: "Selected classic display passage is narrower than some current bases; authoritative Rules geometry remains the certified tabletop recipe." });
+    }
   }
   if (adapter.engagementScale === "Grand Offensive") {
     warnings.push({ severity: "warning",
@@ -424,14 +469,22 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
   });
   const auditByLane = new Map(adapter.laneClearanceAudits.map((entry) => (
     [entry.laneId, entry])));
+  const passageByLane = new Map(passageSelections.map((entry) => (
+    [entry.laneId, entry])));
   const routeTreatments = adapter.lanes.map((lane) => {
     const audit = auditByLane.get(lane.laneId);
+    const passage = passageByLane.get(lane.laneId);
+    const preserveSource = passage.selectedPassageMode
+      === "preserve_source_clearance";
     return { laneId: lane.laneId, routeClass: lane.routeClass,
       centreline: clone(lane.centreline),
       defaultPassageMode: lane.defaultPassageMode,
+      selectedPassageMode: passage.selectedPassageMode,
+      selectionOrigin: passage.selectionOrigin,
       availablePassageModes: clone(lane.availablePassageModes),
       sourceClearanceInches: lane.sourceRequiredClearanceInches,
-      displayClearanceInches: lane.requiredClearanceInches,
+      displayClearanceInches: preserveSource
+        ? lane.sourceRequiredClearanceInches : lane.requiredClearanceInches,
       sourceStraightTransitBaseProfilesCovered:
         clone(audit.sourceStraightTransitBaseProfilesCovered),
       sourceStraightTransitBaseProfilesBlocked:
@@ -440,10 +493,18 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
         clone(audit.straightTransitBaseProfilesCovered),
       defaultStraightTransitBaseProfilesBlocked:
         clone(audit.straightTransitBaseProfilesBlocked),
+      selectedStraightTransitBaseProfilesCovered: clone(preserveSource
+        ? audit.sourceStraightTransitBaseProfilesCovered
+        : audit.straightTransitBaseProfilesCovered),
+      selectedStraightTransitBaseProfilesBlocked: clone(preserveSource
+        ? audit.sourceStraightTransitBaseProfilesBlocked
+        : audit.straightTransitBaseProfilesBlocked),
+      restrictionDisclosureRequired: preserveSource
+        && audit.sourceStraightTransitBaseProfilesBlocked.length > 0,
       displayOnly: true, rulesAuthority: false };
   });
   const body = { schema: OFFICIAL_COMPETITIVE_MAP_TWO_LAYER_COMPILATION_V1_SCHEMA,
-    version: "1.1.0", compilationId: `${adapter.seedId}:default-or-user-recipe-v2`,
+    version: "1.2.0", compilationId: `${adapter.seedId}:default-or-user-recipe-v2`,
     seedId: adapter.seedId, adapterHash: adapter.adapterHash,
     engagementScale: adapter.engagementScale,
     sourceMapDimensions: clone(adapter.sourceMapDimensions),
@@ -461,6 +522,7 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
       authoritativeTerrainLayerAfterRoomCertification: true,
       rulesAuthorityBeforeRoomCertification: false },
     selectionReceipt: receipt,
+    passageSelectionReceipt: passageSelections,
     diagnostics, warnings,
     officialRecipeEligible: diagnostics.length === 0,
     roomCertificationEligible: diagnostics.length === 0
@@ -468,6 +530,8 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
     currentMissionDeploymentGeometryCoverage:
       adapter.currentMissionDeploymentGeometryCoverage,
     everySourceElementIndependentlyConfigurable: true,
+    everyPassageIndependentlyConfigurable: true,
+    passageModeChangesRulesGeometry: false,
     artAndRulesLayersIndependent: true,
     deterministicCompilation: true,
     sourceRefreshPerformed: false,
@@ -483,7 +547,7 @@ export function verifyOfficialCompetitiveMapTwoLayerCompilationV1(compilation,
   verifyOfficialCompetitiveMapTabletopAdapterCatalogueV1(adapterCatalogue);
   if (!compilation
     || compilation.schema !== OFFICIAL_COMPETITIVE_MAP_TWO_LAYER_COMPILATION_V1_SCHEMA
-    || compilation.version !== "1.1.0"
+    || compilation.version !== "1.2.0"
     || compilation.compilationHash !== hashStarcraftTmgContract(without(compilation,
       ["compilationHash"]))
     || compilation.artLayer?.backgroundRulesAuthority !== false
@@ -491,6 +555,8 @@ export function verifyOfficialCompetitiveMapTwoLayerCompilationV1(compilation,
     || compilation.rulesLayer?.rulesAuthorityBeforeRoomCertification !== false
     || compilation.rulesLayer?.sourceRoutePixelsAreRulesAuthority !== false
     || compilation.everySourceElementIndependentlyConfigurable !== true
+    || compilation.everyPassageIndependentlyConfigurable !== true
+    || compilation.passageModeChangesRulesGeometry !== false
     || compilation.artAndRulesLayersIndependent !== true
     || compilation.trainingTruth !== false) {
     fail("COMPETITIVE_MAP_TWO_LAYER_COMPILATION_INVALID");
@@ -501,6 +567,8 @@ export function verifyOfficialCompetitiveMapTwoLayerCompilationV1(compilation,
     || compilation.engagementScale !== adapter.engagementScale
     || compilation.artLayer.elements.length !== adapter.elements.length
     || compilation.selectionReceipt.length !== adapter.elements.length
+    || compilation.passageSelectionReceipt?.length !== adapter.lanes.length
+    || compilation.artLayer.routeTreatments.length !== adapter.lanes.length
     || compilation.rulesLayer.planHash !== hashStarcraftTmgContract(
       compilation.rulesLayer.setupPlanTemplate)) {
     fail("COMPETITIVE_MAP_TWO_LAYER_BINDING_INVALID", compilation.seedId);
@@ -512,6 +580,13 @@ export function verifyOfficialCompetitiveMapTwoLayerCompilationV1(compilation,
     || compilation.roomCertificationEligible !== (compilation.officialRecipeEligible
       && adapter.currentMissionDeploymentGeometryCoverage === "official_exact")) {
     fail("COMPETITIVE_MAP_TWO_LAYER_COUNTS_INVALID", compilation.seedId);
+  }
+  for (const route of compilation.artLayer.routeTreatments) {
+    const lane = adapter.lanes.find((entry) => entry.laneId === route.laneId);
+    if (!lane || !lane.availablePassageModes.includes(route.selectedPassageMode)
+      || route.displayOnly !== true || route.rulesAuthority !== false) {
+      fail("COMPETITIVE_MAP_TWO_LAYER_PASSAGE_INVALID", route?.laneId);
+    }
   }
   return true;
 }

@@ -1,3 +1,6 @@
+import { resolveStarcraftTmgBattlefieldMapMediaV2 } from
+    "./battlefield-media-catalog-v1.mjs";
+
 const DEFAULT_WIDTH_MILLI_INCHES = 54_000;
 const DEFAULT_HEIGHT_MILLI_INCHES = 36_000;
 function record(value) {
@@ -229,6 +232,16 @@ function areaFrom(value, index, kind, diagnostics) {
         depthMilliInches: depth,
         rotationDegrees: geometry.rotation,
         geometryRenderable,
+        terrainKind: kind === "terrain"
+            ? text(value.terrainKind ?? value.category) || "ordinary"
+            : null,
+        terrainSize: kind === "terrain" ? safeInteger(value.size) : null,
+        elevation: kind === "terrain"
+            ? text(value.elevation ?? value.heightTier) || "ground_level"
+            : null,
+        elevationSurface: kind === "terrain"
+            ? value.elevationSurface === true || value.standableHorizontalSurface === true
+            : false,
     };
 }
 function actionLabel(action) {
@@ -488,6 +501,13 @@ export function projectStarcraftTmgBattlefieldPresentationV1(input) {
     const previewPath = previewPathFrom(pendingPreview);
     const previewPlacements = previewPlacementsFrom(pendingPreview, models, diagnostics);
     const previewId = text(pendingPreview?.previewId) || null;
+    const mapManifest = record(board?.battlefieldMapManifest);
+    const mapSeedId = text(mapManifest?.mapSeedId);
+    const visualPresetId = text(mapManifest?.visualPresetId)
+        || mapSeedId || "lost_temple_inspired_v1";
+    const mapMedia = resolveStarcraftTmgBattlefieldMapMediaV2(mapSeedId
+        || visualPresetId)
+        || resolveStarcraftTmgBattlefieldMapMediaV2("lost_temple_inspired_v1");
     const terrain = areas(board?.terrain, "terrain");
     const markers = areas([
         ...rows(board?.centerMarkers),
@@ -511,7 +531,31 @@ export function projectStarcraftTmgBattlefieldPresentationV1(input) {
             heightMilliInches,
             scenarioMapId: text(board?.scenarioMapId) || null,
             scenarioMapName: text(board?.scenarioMapName) || null,
-            displayMapAssetKey: text(board?.scenarioMapId) ? "alien_temple_local_v1" : null,
+            mapSeedId: mapSeedId || mapMedia?.seedId || null,
+            mapDisplayName: text(mapManifest?.mapDisplayName)
+                || mapMedia?.displayName || null,
+            mapGameEra: text(mapManifest?.mapGameEra) || mapMedia?.era || null,
+            mapArtAssetPath: text(mapManifest?.mapArtAssetPath)
+                || mapMedia?.path || null,
+            engagementScale: text(mapManifest?.engagementScale)
+                || mapMedia?.engagementScale || null,
+            visualPresetId: mapMedia?.visualPresetId || null,
+            visualPresetName: mapMedia?.displayName || null,
+            displayMapAssetKey: mapMedia?.assetKey || null,
+            terrainPresetId: text(mapManifest?.terrainPresetId) || null,
+            terrainSeed: text(mapManifest?.terrainSeed) || null,
+            rulesTerrainPlanHash: text(mapManifest?.rulesTerrainPlanHash) || null,
+            mapManifestHash: text(mapManifest?.manifestHash) || null,
+            mapCompilationHash: text(mapManifest?.mapCompilationHash) || null,
+            mapRoomFreezeHash: text(mapManifest?.mapRoomFreezeHash) || null,
+            missionSpatialReachabilityAuditHash:
+                text(mapManifest?.missionSpatialReachabilityAuditHash) || null,
+            mapMutationAfterRoomCreationAllowed:
+                record(board?.competitiveMapRoomFreezeSummary)
+                    ?.mutationAfterRoomCreationAllowed === true,
+            backgroundVisibleByDefault: mapManifest?.backgroundVisibleByDefault !== false,
+            terrainVisibleByDefault: mapManifest?.terrainVisibleByDefault !== false,
+            backgroundRulesAuthority: false,
         }),
         widthMilliInches,
         heightMilliInches,

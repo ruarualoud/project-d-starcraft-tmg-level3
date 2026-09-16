@@ -51,3 +51,6 @@ export function verifyOfficialStarcraft2MapGalleryV1(value: unknown, input?: {
   seedCatalogue?: OfficialCompetitiveMapSeedCatalogueV1;
   adapterCatalogue?: OfficialCompetitiveMapTabletopAdapterCatalogueV1;
 }): true;
+export function resolveOfficialStarcraft2MapGalleryArtAssetV1(seedId: unknown):
+  Readonly<OfficialStarcraft2MapGalleryEntryV1["defaultArtAsset"] & {
+    seedId: string }>;

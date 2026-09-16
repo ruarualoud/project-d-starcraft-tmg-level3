@@ -65,3 +65,7 @@ export function verifyOfficialBroodWarMapGalleryV1(value: unknown, input?: {
   seedCatalogue?: OfficialCompetitiveMapSeedCatalogueV1;
   adapterCatalogue?: OfficialCompetitiveMapTabletopAdapterCatalogueV1;
 }): true;
+export function resolveOfficialBroodWarMapGalleryArtAssetV1(seedId: unknown,
+  input?: { classicRestrictedVariant?: boolean }):
+  Readonly<OfficialBroodWarMapArtAssetV1 & { seedId: string;
+    variant: "default" | "classic_restricted" }>;

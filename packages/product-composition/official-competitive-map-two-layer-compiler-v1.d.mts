@@ -12,10 +12,14 @@ export interface CompetitiveMapElementSelectionInputV1 {
   rulesDisposition?: CompetitiveMapRulesDispositionV1;
   rulesMode?: CompetitiveMapCompiledRulesModeV1;
 }
+export interface CompetitiveMapPassageSelectionInputV1 {
+  laneId: string;
+  passageMode: "preserve_source_clearance" | "widen_all_current_bases";
+}
 
 export interface OfficialCompetitiveMapTwoLayerCompilationV1 {
   schema: "starcraft_tmg_official_competitive_map_two_layer_compilation_v1";
-  version: "1.1.0"; compilationId: string; seedId: string; adapterHash: string;
+  version: "1.2.0"; compilationId: string; seedId: string; adapterHash: string;
   engagementScale: "Skirmish" | "Standard" | "Grand Offensive";
   sourceMapDimensions: Readonly<{ widthTiles: number; heightTiles: number }>;
   battlefield: Readonly<{ widthInches: number; heightInches: 36 }>;
@@ -33,11 +37,14 @@ export interface OfficialCompetitiveMapTwoLayerCompilationV1 {
     authoritativeTerrainLayerAfterRoomCertification: true;
     rulesAuthorityBeforeRoomCertification: false }>;
   selectionReceipt: readonly Readonly<Record<string, unknown>>[];
+  passageSelectionReceipt: readonly Readonly<Record<string, unknown>>[];
   diagnostics: readonly Readonly<Record<string, unknown>>[];
   warnings: readonly Readonly<Record<string, unknown>>[];
   officialRecipeEligible: boolean; roomCertificationEligible: boolean;
   currentMissionDeploymentGeometryCoverage: string;
   everySourceElementIndependentlyConfigurable: true;
+  everyPassageIndependentlyConfigurable: true;
+  passageModeChangesRulesGeometry: false;
   artAndRulesLayersIndependent: true; deterministicCompilation: true;
   sourceRefreshPerformed: false; rulesTruth: string; trainingTruth: false;
   compilationHash: string;
@@ -69,6 +76,7 @@ export const OFFICIAL_COMPETITIVE_MAP_ROOM_FREEZE_V1_SCHEMA:
 export function compileOfficialCompetitiveMapTwoLayerV1(input: {
   adapterCatalogue?: OfficialCompetitiveMapTabletopAdapterCatalogueV1;
   seedId: string; elementSelections?: readonly CompetitiveMapElementSelectionInputV1[];
+  passageSelections?: readonly CompetitiveMapPassageSelectionInputV1[];
 }): Readonly<OfficialCompetitiveMapTwoLayerCompilationV1>;
 export function verifyOfficialCompetitiveMapTwoLayerCompilationV1(
   compilation: unknown,

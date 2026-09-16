@@ -1,12 +1,16 @@
 import { Platform } from "react-native";
 
 import {
+  listStarcraftTmgBattlefieldMapMediaV2,
   resolveStarcraftTmgBattlefieldUnitMediaV1,
+  type StarcraftTmgBattlefieldMapAssetKeyV2,
+  type StarcraftTmgBattlefieldMapVisualPresetIdV2,
   type StarcraftTmgBattlefieldMediaReleaseChannelV1,
   type StarcraftTmgBattlefieldVoicePathsV1,
 } from "../../../../packages/client-domain/battlefield-media-catalog-v1.mjs";
 
 type PortraitSource = number | { uri: string };
+type MapSource = number | { uri: string };
 
 const PUBLIC_PORTRAITS: Record<string, { neutral: number; active: number }> = {
   marine: {
@@ -45,6 +49,95 @@ const PUBLIC_PORTRAITS: Record<string, { neutral: number; active: number }> = {
 
 export const STARCRAFT_TMG_BATTLEFIELD_MAP_SOURCE =
   require("../../../../assets/client/battlefield/alien-temple-map-v1.webp") as number;
+
+const BATTLEFIELD_MAP_SOURCES: Partial<
+  Record<StarcraftTmgBattlefieldMapAssetKeyV2, number>
+> = {
+  sc1_lost_temple_v1:
+    require("../../../../assets/client/battlefield/maps/brood-war/lost-temple-display-v2.png") as number,
+  sc1_fighting_spirit_1_4_v1:
+    require("../../../../assets/client/battlefield/maps/brood-war/fighting-spirit-display-v2.png") as number,
+  sc1_circuit_breakers_v1:
+    require("../../../../assets/client/battlefield/maps/brood-war/circuit-breakers-display-v2.png") as number,
+  sc1_python_1_3_v1:
+    require("../../../../assets/client/battlefield/maps/brood-war/python-display-v2.png") as number,
+  sc1_blue_storm_1_2_v1:
+    require("../../../../assets/client/battlefield/maps/brood-war/blue-storm-display-v3.png") as number,
+  sc1_tau_cross_1_1_v1:
+    require("../../../../assets/client/battlefield/maps/brood-war/tau-cross-display-v2.png") as number,
+  sc1_destination_1_1_v1:
+    require("../../../../assets/client/battlefield/maps/brood-war/destination-display-v2.png") as number,
+  sc1_heartbreak_ridge_2_2_v1:
+    require("../../../../assets/client/battlefield/maps/brood-war/heartbreak-ridge-display-v2.png") as number,
+  sc1_andromeda_1_2_v1:
+    require("../../../../assets/client/battlefield/maps/brood-war/andromeda-display-v2.png") as number,
+  sc1_match_point_1_4_v1:
+    require("../../../../assets/client/battlefield/maps/brood-war/match-point-display-v2.png") as number,
+  sc2_metalopolis_v1:
+    require("../../../../assets/client/battlefield/maps/starcraft-2/metalopolis-display-v1.png") as number,
+  sc2_shakuras_plateau_2_0_v1:
+    require("../../../../assets/client/battlefield/maps/starcraft-2/shakuras-plateau-display-v1.png") as number,
+  sc2_xelnaga_caverns_v1:
+    require("../../../../assets/client/battlefield/maps/starcraft-2/xelnaga-caverns-display-v1.png") as number,
+  sc2_daybreak_v1:
+    require("../../../../assets/client/battlefield/maps/starcraft-2/daybreak-display-v1.png") as number,
+  sc2_cloud_kingdom_v1:
+    require("../../../../assets/client/battlefield/maps/starcraft-2/cloud-kingdom-display-v1.png") as number,
+  sc2_antiga_shipyard_v1:
+    require("../../../../assets/client/battlefield/maps/starcraft-2/antiga-shipyard-display-v1.png") as number,
+  sc2_ohana_v1:
+    require("../../../../assets/client/battlefield/maps/starcraft-2/ohana-display-v1.png") as number,
+  sc2_whirlwind_v1:
+    require("../../../../assets/client/battlefield/maps/starcraft-2/whirlwind-display-v1.png") as number,
+  sc2_frost_le_v1:
+    require("../../../../assets/client/battlefield/maps/starcraft-2/frost-display-v1.png") as number,
+  sc2_abyssal_reef_le_v1:
+    require("../../../../assets/client/battlefield/maps/starcraft-2/abyssal-reef-display-v1.png") as number,
+};
+
+const BATTLEFIELD_MAP_VARIANT_SOURCES: Record<string, number> = {
+  "/assets/client/battlefield/maps/brood-war/blue-storm-display-classic-v2.png":
+    require("../../../../assets/client/battlefield/maps/brood-war/blue-storm-display-classic-v2.png") as number,
+};
+
+export const STARCRAFT_TMG_BATTLEFIELD_MAP_OPTIONS =
+  listStarcraftTmgBattlefieldMapMediaV2().map((entry) => ({
+    visualPresetId: entry.visualPresetId,
+    displayName: entry.displayName,
+    assetKey: entry.assetKey,
+    path: entry.path,
+    gameEra: entry.era,
+    engagementScale: entry.engagementScale,
+    battlefield: entry.battlefield,
+    formalTaskRoomEligible: entry.formalTaskRoomEligible,
+    source: BATTLEFIELD_MAP_SOURCES[entry.assetKey]
+      || (mediaUri(entry.path) ? { uri: mediaUri(entry.path) as string } : null),
+  })) as readonly {
+    visualPresetId: StarcraftTmgBattlefieldMapVisualPresetIdV2;
+    displayName: string;
+    assetKey: StarcraftTmgBattlefieldMapAssetKeyV2;
+    path: string;
+    gameEra: "brood_war" | "starcraft_2";
+    engagementScale: "Skirmish" | "Standard" | "Grand Offensive";
+    battlefield: Readonly<{ widthInches: 36 | 54 | 72; heightInches: 36 }>;
+    formalTaskRoomEligible: boolean;
+    source: MapSource | null;
+  }[];
+
+export function starcraftTmgBattlefieldMapSourceV2(
+  visualPresetId: StarcraftTmgBattlefieldMapVisualPresetIdV2 | null | undefined,
+  assetPath?: string | null,
+): MapSource {
+  if (assetPath && BATTLEFIELD_MAP_VARIANT_SOURCES[assetPath]) {
+    return BATTLEFIELD_MAP_VARIANT_SOURCES[assetPath];
+  }
+  return STARCRAFT_TMG_BATTLEFIELD_MAP_OPTIONS.find((entry) => (
+    entry.visualPresetId === visualPresetId
+      || entry.assetKey === visualPresetId
+  ))?.source || (assetPath && mediaUri(assetPath)
+    ? { uri: mediaUri(assetPath) as string }
+    : STARCRAFT_TMG_BATTLEFIELD_MAP_SOURCE);
+}
 
 function releaseChannel(): StarcraftTmgBattlefieldMediaReleaseChannelV1 {
   const configured = process.env.EXPO_PUBLIC_STARCRAFT_TMG_MEDIA_RELEASE_CHANNEL;

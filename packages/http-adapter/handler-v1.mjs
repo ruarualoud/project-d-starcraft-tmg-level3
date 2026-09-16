@@ -18,6 +18,8 @@ const BEARER_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/u;
 const BASE_ENDPOINTS = Object.freeze([
   "GET /starcraft-tmg-level3/api/v1/health",
   "GET /starcraft-tmg-level3/api/v1/metadata",
+  "GET /starcraft-tmg-level3/api/v1/map-configurator",
+  "POST /starcraft-tmg-level3/api/v1/map-configurator/preview",
   "POST /starcraft-tmg-level3/api/v1/rooms",
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/join",
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/invites",
@@ -154,6 +156,10 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
     "../..",
   ));
   const initialStateFactory = typeof options.initialStateFactory === "function" ? options.initialStateFactory : null;
+  const mapConfigurationPort = options.mapConfigurationPort
+    && typeof options.mapConfigurationPort.readCatalogue === "function"
+    && typeof options.mapConfigurationPort.preview === "function"
+    ? options.mapConfigurationPort : null;
   const createRoomId = typeof options.createRoomId === "function"
     ? options.createRoomId
     : () => `sc-level3-room-${randomUUID()}`;
@@ -258,6 +264,45 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
       });
     }
 
+    if (endpoint === "map-configurator" && method === "GET") {
+      if (!mapConfigurationPort) {
+        return failure(503, endpoint, "MAP_CONFIGURATOR_UNAVAILABLE");
+      }
+      try {
+        return response(200, endpoint, {
+          ok: true,
+          catalogue: await mapConfigurationPort.readCatalogue(),
+        });
+      } catch (error) {
+        return failure(500, endpoint, "MAP_CONFIGURATOR_READ_FAILED", {
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    if (endpoint === "map-configurator/preview" && method === "POST") {
+      if (!mapConfigurationPort) {
+        return failure(503, endpoint, "MAP_CONFIGURATOR_UNAVAILABLE");
+      }
+      const rejectedFields = unexpectedBodyFields(body,
+        ["seedId", "elementSelections", "passageSelections"]);
+      if (rejectedFields.length) {
+        return failure(400, endpoint, "CLIENT_AUTHORITY_FIELD_REJECTED", {
+          rejectedFields,
+        });
+      }
+      try {
+        return response(200, endpoint, {
+          ok: true,
+          preview: await mapConfigurationPort.preview(body),
+        });
+      } catch (error) {
+        return failure(400, endpoint, "MAP_CONFIGURATOR_PREVIEW_REJECTED", {
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
     if (endpoint === "rooms" && method === "POST") {
       if (!initialStateFactory) return failure(503, endpoint, "INITIAL_STATE_FACTORY_UNAVAILABLE");
       if (body.state !== undefined || body.sideKey !== undefined || body.hostSideKey !== undefined
@@ -267,13 +312,16 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
             .filter((field) => body[field] !== undefined),
         });
       }
+      const roomId = String(createRoomId());
       let initialStateAuthority;
       try {
         initialStateAuthority = await initialStateFactory({
+          roomId,
           setupId: body.setupId,
           rosterRefs: body.rosterRefs,
           scenarioRef: body.scenarioRef,
           surfaceMode: body.surfaceMode,
+          mapConfiguration: body.mapConfiguration,
         });
       } catch (error) {
         return failure(400, endpoint, "INITIAL_STATE_FACTORY_FAILED", { message: error instanceof Error ? error.message : String(error) });
@@ -281,7 +329,6 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
       if (!initialStateAuthority || initialStateAuthority.source !== "server_factory") {
         return failure(503, endpoint, "INITIAL_STATE_FACTORY_CONTRACT_INVALID");
       }
-      const roomId = String(createRoomId());
       const created = await runtime.createRoom({
         roomId,
         gameId: "starcraft-tmg",

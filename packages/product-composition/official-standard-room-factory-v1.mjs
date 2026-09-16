@@ -82,12 +82,28 @@ import {
   composeOfficialCurrentProductActionRuntimeV1,
   verifyOfficialCurrentProductActionRuntimeCompositionV1,
 } from "./official-current-product-action-runtime-composition-v1.mjs";
+import { createOfficialBattlefieldMapManifestV1,
+  verifyOfficialBattlefieldMapManifestV1 } from
+  "./official-battlefield-map-manifest-v1.mjs";
+import { resolveOfficialBroodWarMapGalleryArtAssetV1 } from
+  "./official-brood-war-map-gallery-v1.mjs";
+import {
+  certifyAndFreezeOfficialCompetitiveMapForRoomV1,
+  compileOfficialCompetitiveMapTwoLayerV1,
+  verifyOfficialCompetitiveMapRoomFreezeV1,
+} from "./official-competitive-map-two-layer-compiler-v1.mjs";
+import { createOfficialCompetitiveMapTabletopAdapterCatalogueV1 } from
+  "./official-competitive-map-tabletop-adapter-v1.mjs";
+import { createOfficialCompetitiveMapSeedCatalogueV1 } from
+  "./official-competitive-map-seed-catalogue-v1.mjs";
+import { resolveOfficialStarcraft2MapGalleryArtAssetV1 } from
+  "./official-starcraft-2-map-gallery-v1.mjs";
 import { createOfficialStandardActionRouteCatalogueV1 } from
   "./official-standard-action-route-catalogue-v1.mjs";
 
 export const OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_standard_room_initial_state_authority_v1";
-export const OFFICIAL_STANDARD_ROOM_FACTORY_VERSION = "2.0.0";
+export const OFFICIAL_STANDARD_ROOM_FACTORY_VERSION = "2.1.0";
 
 const HOLD_POSITION = "faction_cards:mission_hold_position";
 const GAUNTLET = "faction_cards:2NdngLtIeZAprsWr25hM";
@@ -603,8 +619,53 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     createOfficialBalancedTerrainRulesDataBundleV1({
       dataset, deploymentGeometryDataBundle: geometryBundle,
     });
-  const terrainPlan = clone(input.terrainPlan
-    || createOfficialStandard2000BalancedTerrainPlanV1());
+  const mapConfiguration = object(input.mapConfiguration)
+    ? clone(input.mapConfiguration) : null;
+  let competitiveMapCompilation = null;
+  let competitiveMapRoomFreeze = null;
+  let competitiveMapMetadata = null;
+  if (mapConfiguration) {
+    const roomId = String(input.roomId || "").trim();
+    if (!roomId) fail("STANDARD_ROOM_COMPETITIVE_MAP_ROOM_ID_REQUIRED");
+    const adapterCatalogue =
+      createOfficialCompetitiveMapTabletopAdapterCatalogueV1();
+    competitiveMapCompilation = compileOfficialCompetitiveMapTwoLayerV1({
+      adapterCatalogue,
+      seedId: mapConfiguration.seedId,
+      elementSelections: mapConfiguration.elementSelections || [],
+      passageSelections: mapConfiguration.passageSelections || [],
+    });
+    const seedEntry = createOfficialCompetitiveMapSeedCatalogueV1().seeds
+      .find((entry) => entry.seedId === competitiveMapCompilation.seedId);
+    if (!seedEntry) {
+      fail("STANDARD_ROOM_COMPETITIVE_MAP_GALLERY_ENTRY_MISSING",
+        competitiveMapCompilation.seedId);
+    }
+    const classicRestrictedVariant = competitiveMapCompilation.artLayer
+      .routeTreatments.some((entry) => (
+        entry.restrictionDisclosureRequired === true));
+    const artAsset = seedEntry.gameEra === "brood_war"
+      ? resolveOfficialBroodWarMapGalleryArtAssetV1(seedEntry.seedId, {
+        classicRestrictedVariant,
+      })
+      : resolveOfficialStarcraft2MapGalleryArtAssetV1(seedEntry.seedId);
+    competitiveMapMetadata = {
+      displayName: seedEntry.displayName,
+      gameEra: seedEntry.gameEra,
+      artAssetPath: artAsset.path,
+    };
+    competitiveMapRoomFreeze =
+      certifyAndFreezeOfficialCompetitiveMapForRoomV1({
+        adapterCatalogue,
+        compilation: competitiveMapCompilation,
+        roomId,
+        deploymentGeometryBinding: geometryBinding,
+        deploymentGeometryDataBundle: geometryBundle,
+        balancedTerrainRulesDataBundle,
+      });
+  }
+  const terrainPlan = clone(competitiveMapRoomFreeze?.setupPlan
+    || input.terrainPlan || createOfficialStandard2000BalancedTerrainPlanV1());
   const terrainArtifacts = certifyOfficialBalancedTerrainSetupV1({
     deploymentGeometryBinding: geometryBinding,
     deploymentGeometryDataBundle: geometryBundle,
@@ -615,6 +676,36 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     deploymentGeometryBinding: geometryBinding,
     balancedTerrainRulesDataBundle,
   });
+  if (competitiveMapRoomFreeze) {
+    verifyOfficialCompetitiveMapRoomFreezeV1(competitiveMapRoomFreeze, {
+      deploymentGeometryBinding: geometryBinding,
+      balancedTerrainRulesDataBundle,
+    });
+  }
+  const battlefieldMapManifest = createOfficialBattlefieldMapManifestV1({
+    mapSeedId: competitiveMapCompilation?.seedId,
+    mapDisplayName: competitiveMapMetadata?.displayName,
+    mapGameEra: competitiveMapMetadata?.gameEra,
+    mapArtAssetPath: competitiveMapMetadata?.artAssetPath,
+    engagementScale: competitiveMapCompilation?.engagementScale,
+    visualPresetId: competitiveMapCompilation?.artLayer.visualPresetId
+      || input.visualPresetId,
+    terrainPresetId: input.terrainPresetId,
+    terrainSeed: input.terrainSeed,
+    terrainGenerationMode: input.terrainGenerationMode,
+    terrainPlan,
+    mapCompilationHash: competitiveMapCompilation?.compilationHash,
+    mapRoomFreezeHash: competitiveMapRoomFreeze?.roomFreezeHash,
+    missionSpatialReachabilityAuditHash:
+      competitiveMapRoomFreeze?.missionSpatialReachabilityAuditHash,
+    elementSelectionCount:
+      competitiveMapCompilation?.selectionReceipt.length,
+    passageSelectionCount:
+      competitiveMapCompilation?.passageSelectionReceipt.length,
+    formalTaskRoomEligible:
+      competitiveMapCompilation?.roomCertificationEligible,
+  });
+  verifyOfficialBattlefieldMapManifestV1(battlefieldMapManifest, terrainPlan);
   const terrainLedger = terrainArtifacts.terrainHeightTierLedger;
   const markerPlacement = terrainArtifacts.missionMarkerPlacement;
   const currentProductUnitRecordKeys = dataset.recordIndex.filter((entry) => (
@@ -691,6 +782,7 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     officialDeploymentGeometryBinding: geometryBinding,
     officialBalancedTerrainRulesDataBundle: balancedTerrainRulesDataBundle,
     officialBalancedTerrainSetupCertificate: terrainArtifacts.certificate,
+    officialCompetitiveMapRoomFreeze: competitiveMapRoomFreeze,
     officialTerrainHeightTierLedger: terrainLedger,
     officialMissionMarkerPlacement: markerPlacement,
     officialMissionSetupBinding: legacyMissionBinding,
@@ -745,6 +837,25 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
       deploymentName: draft.selectedDeployment.profile.name,
       deploymentImageUrl: draft.selectedDeployment.profile.frontUrl,
       mapSourceType: "official_current_deployment_card",
+      battlefieldMapManifest,
+      competitiveMapRoomFreezeSummary: competitiveMapRoomFreeze ? {
+        schemaVersion: "starcraft_tmg_competitive_map_room_freeze_summary_v1",
+        seedId: competitiveMapRoomFreeze.seedId,
+        roomFreezeHash: competitiveMapRoomFreeze.roomFreezeHash,
+        compilationHash: competitiveMapRoomFreeze.compilationHash,
+        missionSpatialReachabilityAuditHash:
+          competitiveMapRoomFreeze.missionSpatialReachabilityAuditHash,
+        everyEntrySegmentUsable:
+          competitiveMapRoomFreeze.everyEntrySegmentUsable,
+        opposingSidesConnectedForEveryCurrentBase:
+          competitiveMapRoomFreeze.opposingSidesConnectedForEveryCurrentBase,
+        everyMissionMarkerAndQuarterReachableByAtLeastOneCurrentBase:
+          competitiveMapRoomFreeze
+            .everyMissionMarkerAndQuarterReachableByAtLeastOneCurrentBase,
+        mutationAfterRoomCreationAllowed: false,
+        backgroundRulesAuthority: false,
+        trainingTruth: false,
+      } : null,
       terrain: terrainBoardRows(terrainArtifacts, terrainPlan),
       specialTerrainAgreement: terrainArtifacts.specialTerrainAgreement,
       terrainElevationAgreement,
@@ -833,7 +944,9 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
       content: currentProductGameplayBundle },
     geometryArtifact: { artifactId: "official-standard-selected-deployment-geometry-v1",
       content: { geometryBinding, terrainLedger, markerPlacement,
-        missionRuntimeDescriptor: missionRuntime.descriptor } },
+        missionRuntimeDescriptor: missionRuntime.descriptor,
+        battlefieldMapManifest,
+        competitiveMapRoomFreeze } },
   };
   const authorityBody = {
     schema: OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA,
@@ -877,6 +990,12 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
       genericDeploymentExecutorProductionReady: true,
       balancedTerrainCertificateHash: terrainArtifacts.certificate.certificateHash,
       balancedTerrainPieceCount: terrainArtifacts.terrainPieces.length,
+      battlefieldMapManifestHash: battlefieldMapManifest.manifestHash,
+      competitiveMapSeedId: competitiveMapCompilation?.seedId || null,
+      competitiveMapCompilationHash:
+        competitiveMapCompilation?.compilationHash || null,
+      competitiveMapRoomFreezeHash:
+        competitiveMapRoomFreeze?.roomFreezeHash || null,
       currentProductActionRuntimeComposition: actionRuntimeComposition.evidence,
       currentProductAbilityExactCount:
         state.officialCurrentProductAbilityDenominator.summary.executableExact,
@@ -924,6 +1043,8 @@ export function verifyOfficialStandardRoomInitialStateAuthorityV1(authority) {
       !== state?.officialActionRouteCatalogue?.catalogueHash
     || evidence?.balancedTerrainCertificateHash
       !== state?.officialBalancedTerrainSetupCertificate?.certificateHash
+    || evidence?.battlefieldMapManifestHash
+      !== state?.board?.battlefieldMapManifest?.manifestHash
     || evidence?.balancedTerrainPieceCount !== 9
     || evidence?.currentProductAbilityExactCount !== 252
     || evidence?.currentProductAbilityPendingCount !== 0
@@ -933,6 +1054,28 @@ export function verifyOfficialStandardRoomInitialStateAuthorityV1(authority) {
     || !HASH_PATTERN.test(String(evidence?.missionRuntimeHash || ""))
     || authority.trainingTruth !== false) {
     fail("STANDARD_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
+  }
+  if (evidence.competitiveMapSeedId) {
+    if (state.officialCompetitiveMapRoomFreeze?.seedId
+        !== evidence.competitiveMapSeedId
+      || state.officialCompetitiveMapRoomFreeze?.compilationHash
+        !== evidence.competitiveMapCompilationHash
+      || state.officialCompetitiveMapRoomFreeze?.roomFreezeHash
+        !== evidence.competitiveMapRoomFreezeHash
+      || state.board.competitiveMapRoomFreezeSummary?.roomFreezeHash
+        !== evidence.competitiveMapRoomFreezeHash) {
+      fail("STANDARD_ROOM_COMPETITIVE_MAP_BINDING_INVALID");
+    }
+    verifyOfficialBattlefieldMapManifestV1(
+      state.board.battlefieldMapManifest,
+      state.officialCompetitiveMapRoomFreeze.setupPlan,
+    );
+    verifyOfficialCompetitiveMapRoomFreezeV1(
+      state.officialCompetitiveMapRoomFreeze,
+      { deploymentGeometryBinding: state.officialDeploymentGeometryBinding,
+        balancedTerrainRulesDataBundle:
+          state.officialBalancedTerrainRulesDataBundle },
+    );
   }
   verifyOfficialCurrentProductActionRuntimeCompositionV1(
     state, evidence.currentProductActionRuntimeComposition,

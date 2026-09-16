@@ -156,7 +156,8 @@ const AREA_CHILDREN = new Set(["footprint", "originalFootprint", "rulesFootprint
 const BOARD_KEYS = new Set(["schemaVersion", "widthInches", "heightInches",
   "scenarioMapId", "scenarioMapName", "backgroundImageUrl", "deploymentId",
   "deploymentName", "deploymentImageUrl", "mapSourceType", "terrain", "centerMarkers",
-  "effectMarkers", "markers", "tokens", "missionMarkers", "accessPoints", "trainingTruth"]);
+  "effectMarkers", "markers", "tokens", "missionMarkers", "accessPoints",
+  "battlefieldMapManifest", "competitiveMapRoomFreezeSummary", "trainingTruth"]);
 const BOARD_COLLECTIONS = new Set(["terrain", "centerMarkers", "effectMarkers", "markers",
   "tokens", "missionMarkers", "accessPoints"]);
 const PLAYER_KEYS = new Set(["schemaVersion", "id", "playerId", "sideKey", "teamKey",

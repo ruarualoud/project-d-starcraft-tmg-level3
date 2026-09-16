@@ -307,6 +307,25 @@ export function createStarcraftTmgPlayerSpatialObservationV1(input = {}) {
       state.board?.heightInches ?? battlefield.heightInches),
     scenarioMapId: state.board?.scenarioMapId || null,
     scenarioMapName: state.board?.scenarioMapName || null,
+    competitiveMap: state.board?.battlefieldMapManifest ? {
+      seedId: state.board.battlefieldMapManifest.mapSeedId || null,
+      displayName: state.board.battlefieldMapManifest.mapDisplayName || null,
+      gameEra: state.board.battlefieldMapManifest.mapGameEra || null,
+      engagementScale:
+        state.board.battlefieldMapManifest.engagementScale || null,
+      compilationHash:
+        state.board.battlefieldMapManifest.mapCompilationHash || null,
+      roomFreezeHash:
+        state.board.battlefieldMapManifest.mapRoomFreezeHash || null,
+      missionSpatialReachabilityAuditHash:
+        state.board.battlefieldMapManifest
+          .missionSpatialReachabilityAuditHash || null,
+      mutationAfterRoomCreationAllowed:
+        state.board?.competitiveMapRoomFreezeSummary
+          ?.mutationAfterRoomCreationAllowed === true,
+      backgroundRulesAuthority: false,
+      authoritativeTerrainLayer: true,
+    } : null,
     coordinateUnit: "milli-inch",
     origin: "battlefield_bottom_left",
     xAxis: "right",
@@ -403,6 +422,7 @@ export function createStarcraftTmgPlayerSpatialObservationV1(input = {}) {
     },
     queryCapabilities: {
       exactFromObservation: [
+        "frozen_competitive_map_identity_and_geometry_audit",
         "visible_world_positions",
         "official_model_base_footprints_when_geometry_status_exact",
         "complete_base_battlefield_containment_when_not_null",

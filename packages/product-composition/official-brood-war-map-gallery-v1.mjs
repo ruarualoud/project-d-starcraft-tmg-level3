@@ -113,6 +113,16 @@ function artAsset(row) {
   };
 }
 
+export function resolveOfficialBroodWarMapGalleryArtAssetV1(seedId, input = {}) {
+  const normalized = String(seedId || "").trim();
+  const row = ART_ROWS.find((entry) => entry.seedId === normalized);
+  if (!row) fail("BROOD_WAR_MAP_GALLERY_ART_ASSET_UNKNOWN", normalized);
+  const selected = input.classicRestrictedVariant === true && row.classicVariant
+    ? row.classicVariant : row;
+  return deepFreeze({ seedId: normalized, ...artAsset(selected),
+    variant: selected === row ? "default" : "classic_restricted" });
+}
+
 function galleryEntry(row, seedById, adapterCatalogue) {
   const seed = seedById.get(row.seedId);
   if (!seed || seed.gameEra !== "brood_war") {
@@ -285,4 +295,3 @@ export function verifyOfficialBroodWarMapGalleryV1(value, input = {}) {
   }
   return true;
 }
-

@@ -30,6 +30,8 @@ export interface BattlefieldAreaV1 extends BattlefieldPointV1 {
   id: string; kind: "terrain" | "marker" | "token"; label: string;
   shape: BattlefieldBaseShape | null; widthMilliInches: number | null;
   depthMilliInches: number | null; rotationDegrees: number; geometryRenderable: boolean;
+  terrainKind: string | null; terrainSize: number | null;
+  elevation: string | null; elevationSurface: boolean;
 }
 export interface BattlefieldPlacementV1 extends BattlefieldPointV1 {
   modelId: string; baseShape: BattlefieldBaseShape | null;
@@ -67,7 +69,18 @@ export interface BattlefieldSceneV1 {
   roomId: string | null; stateRevision: number | null; stateHash: string | null;
   board: { widthMilliInches: number; heightMilliInches: number;
     scenarioMapId: string | null; scenarioMapName: string | null;
-    displayMapAssetKey: "alien_temple_local_v1" | null };
+    mapSeedId: string | null; mapDisplayName: string | null;
+    mapGameEra: string | null; mapArtAssetPath: string | null;
+    engagementScale: string | null; visualPresetId: string | null;
+    visualPresetName: string | null;
+    displayMapAssetKey: string | null;
+    terrainPresetId: string | null; terrainSeed: string | null;
+    rulesTerrainPlanHash: string | null; mapManifestHash: string | null;
+    mapCompilationHash: string | null; mapRoomFreezeHash: string | null;
+    missionSpatialReachabilityAuditHash: string | null;
+    mapMutationAfterRoomCreationAllowed: boolean;
+    backgroundVisibleByDefault: boolean; terrainVisibleByDefault: boolean;
+    backgroundRulesAuthority: false };
   widthMilliInches: number; heightMilliInches: number;
   models: readonly BattlefieldModelV1[]; unitAnchors: readonly BattlefieldUnitAnchorV1[];
   terrain: readonly BattlefieldAreaV1[]; markers: readonly BattlefieldAreaV1[];
