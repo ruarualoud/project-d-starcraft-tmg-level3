@@ -70,6 +70,30 @@ full instantiation. The measured search segment completed in 15,597 ms under a
 60-second gate; the previous live path spent about four to five minutes fully
 instantiating the same 273 candidates.
 
+The next resume exposed a separate revision-37 active-ability defect before any
+new action applied. The Planner had selected `Omega Network`; repeated Action
+outputs placed the 80mm Omega Worm at the Swarmling formation anchor. Two
+independent problems were present:
+
+- the selected-ability runtime's legacy distance helper assumed every blocking
+  model had a round base, so the official 40x100mm Hydralisk raised the false
+  `SELECTED_ABILITY_ROUND_BASE_REQUIRED` result;
+- a Rules-rejected parameterized output was not marked as reviewed under the
+  current Action normalization version, so resume repeatedly reconsidered the
+  same failed output instead of converging.
+
+The distance helper now uses the shared official round/rectangle footprint
+relation and therefore measures nearest physical edges. Rules correctly reject
+the model-authored point as `SELECTED_ABILITY_OMEGA_BASE_OVERLAP`. Omega Network
+is now classified as a physical asset-placement domain: the Host searches exact
+locations, the Agent chooses one placement option ID, and the Host binds and
+reinstantiates the canonical parameters. The focused revision-37 regression
+found four legal options after 45 candidates; 19 were rejected for own-base
+overlap and 22 for insufficient enemy distance. It used zero Provider calls.
+Rules-rejected attempts now persist their local semantic replay version and a
+proposal/reason signature; the same invalid proposal stops after two identical
+failures rather than surviving explicit-retry cycles indefinitely.
+
 ## Stability and strategy observation
 
 - New-policy calls in this decision: 4.
@@ -104,16 +128,21 @@ instantiating the same 273 candidates.
 - Action prompts remain about 205–209 KB because an exact complete formation and
   every model assignment must be visible. That cost is intentional positioning
   evidence, not repeated broad candidate search.
-- At action 37 the complete run reports CNY 12.042980. This remains below the
-  next CNY 100 notification threshold. No tighter Provider budget was applied;
-  the performance change affects local Host geometry only.
+- At action 37 the complete run reported CNY 12.042980. The faulty action-38
+  recovery loop made 27 additional recorded calls without advancing the room,
+  raising the durable decision ledger to 139 calls, 7,073,496 units and CNY
+  14.546626 before it was stopped. This remains below the next CNY 100
+  notification threshold. No tighter Provider budget was applied; the repair
+  removes repeated invalid calls by replacing coordinate guessing with exact
+  Host placement options.
 
 No source refresh occurred and no decision was promoted to training truth.
 
 ## Remaining Slice 258 work
 
-1. Resume the same authoritative room from action 37 and complete the
-   Standard-2000 match.
+1. Resume the same authoritative room from action 37; confirm the existing
+   Planner choice receives exact Omega placement options, applies once and does
+   not replay the old failure loop, then complete the Standard-2000 match.
 2. Review prompt-policy observations after subsequent decision types, especially
    movement, ranged attack, melee/charge, Pass and phase transitions.
 3. Produce terminal JSON/NDJSON, screenshots, cost ledger and PDF evidence.

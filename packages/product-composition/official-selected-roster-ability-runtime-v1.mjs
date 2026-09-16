@@ -6,6 +6,10 @@ import { resolveOfficialAbilityResourcePaymentV1 } from
   "../rule-atoms/official-card-build-payment-rules-kernel-v1.mjs";
 import { createOfficialMarineStimpackKernelV1 } from
   "../rule-atoms/official-marine-stimpack-kernel-v1.mjs";
+import {
+  createOfficialPhysicalFootprintV1,
+  evaluateOfficialPhysicalFootprintRelationV1,
+} from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
 import { getOfficialCardBuildPaymentProfileV1,
   verifyOfficialCardBuildPaymentDataBundleV1 } from
   "../source-data/official-card-build-payment-data-bundle-v1.mjs";
@@ -142,9 +146,25 @@ function modelRadius(model) {
   }
   return width / 2;
 }
+function modelFootprint(model) {
+  return createOfficialPhysicalFootprintV1({
+    objectId: String(model?.id || "model"),
+    kind: "model_base",
+    shape: String(model?.baseShape || "").toLowerCase(),
+    center: {
+      xMilliInches: Math.round(Number(model?.xInches) * 1000),
+      yMilliInches: Math.round(Number(model?.yInches) * 1000),
+    },
+    widthMilliInches: Math.round(Number(model?.baseWidthInches) * 1000),
+    depthMilliInches: Math.round(Number(model?.baseDepthInches) * 1000),
+    rotationDegrees: Number(model?.baseRotationDegrees || 0),
+  });
+}
 function gap(left, right) {
-  return Math.max(0, Math.hypot(Number(left.xInches) - Number(right.xInches),
-    Number(left.yInches) - Number(right.yInches)) - modelRadius(left) - modelRadius(right));
+  return evaluateOfficialPhysicalFootprintRelationV1({
+    left: modelFootprint(left),
+    right: modelFootprint(right),
+  }).minimumSeparationMilliInches / 1000;
 }
 function unitGap(left, right) {
   const values = activeModels(left).flatMap((leftModel) => activeModels(right).map(

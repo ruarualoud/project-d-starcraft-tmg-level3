@@ -247,8 +247,13 @@ function sourceActionDomain(value) {
 function isAssetPlacementDomain(value) {
   const domain = sourceActionDomain(value);
   return domain?.actionType === "resolve_battlefield_asset_ability"
-    && domain?.parameterSchema?.coordinate?.type
-      === "world_point_milli_inches";
+      && domain?.parameterSchema?.coordinate?.type
+        === "world_point_milli_inches"
+    || domain?.actionType === "use_active_ability"
+      && domain?.effectKind === "omega_network"
+      && object(domain?.parameterSchema?.groundPoint)
+      && domain.parameterSchema.required?.includes("xMilliInches")
+      && domain.parameterSchema.required?.includes("yMilliInches");
 }
 
 function isFormationPlacementDomain(value) {
@@ -4083,6 +4088,9 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         const exact = receipt?.status === "exact";
         match = await commit(match, (draft) => {
           const current = draft.decisions[choice.choiceKey];
+          const storedAttempt = current.attempts[attempt.attemptKey];
+          storedAttempt.localSemanticReplayVersion =
+            ACTION_SHAPE_NORMALIZATION_VERSION;
           current.proposalValidationRounds =
             Number(current.proposalValidationRounds || 0) + 1;
           const known = new Set(current.queryReceipts.map((entry) =>
@@ -4095,16 +4103,31 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           }
           current.warnings.push(...validation.warnings);
           if (!exact) {
-            current.processedAttemptKeys.push(attempt.attemptKey);
+            if (!current.processedAttemptKeys.includes(attempt.attemptKey)) {
+              current.processedAttemptKeys.push(attempt.attemptKey);
+            }
+            const failureSignature = hashStarcraftTmgContract({
+              candidateId: decision.candidateId,
+              parameters: decision.proposal.parameters,
+              reason: receipt?.reason || "validation_receipt_missing",
+            });
+            current.repeatedProposalValidationFailureCount =
+              current.lastProposalValidationFailureSignature === failureSignature
+                ? Number(current.repeatedProposalValidationFailureCount || 0) + 1
+                : 1;
+            current.lastProposalValidationFailureSignature = failureSignature;
             current.warnings.push(`PARAMETERIZED_PROPOSAL_REJECTED:${
               receipt?.reason || "validation_receipt_missing"}`);
             current.status = Number(current.proposalValidationRounds)
-              >= maxToolRounds ? "provider_output_invalid" : "generating";
+              >= maxToolRounds
+              || current.repeatedProposalValidationFailureCount >= 2
+              ? "provider_output_invalid" : "generating";
           }
         });
         choice = match.decisions[choice.choiceKey];
         if (!exact) {
-          if (choice.proposalValidationRounds >= maxToolRounds) {
+          if (choice.proposalValidationRounds >= maxToolRounds
+            || choice.repeatedProposalValidationFailureCount >= 2) {
             return rejection("LIVE_DECISION_PARAMETERIZED_PROPOSAL_DID_NOT_CONVERGE",
               "High", {
                 choiceKey: choice.choiceKey,
