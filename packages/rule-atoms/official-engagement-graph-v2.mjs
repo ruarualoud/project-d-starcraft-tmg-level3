@@ -14,6 +14,11 @@ export const OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES = 1000;
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const ELEVATIONS = Object.freeze(["ground", "mid", "high"]);
+const ELEVATION_ALIASES = Object.freeze({
+  ground_level: "ground",
+  mid_ground: "mid",
+  high_ground: "high",
+});
 const COMPLETENESS_FLAGS = Object.freeze([
   "modelCoordinatesComplete",
   "baseFootprintsComplete",
@@ -55,6 +60,11 @@ function uniqueSortedStrings(values, code, detail) {
     fail(code, detail);
   }
   return normalized.sort((left, right) => left.localeCompare(right));
+}
+
+function normalizeElevation(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ELEVATION_ALIASES[normalized] || normalized;
 }
 
 function activePiece(piece) {
@@ -284,7 +294,7 @@ function normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints) 
         fail("ENGAGEMENT_V2_ELEVATION_SUPPORT_MISMATCH", modelId);
       }
       const derivedElevation = elevationForSupportTerrainIds(derivedSupportTerrainIds, terrainById);
-      const declaredElevation = String(model.elevation || "").trim().toLowerCase();
+      const declaredElevation = normalizeElevation(model.elevation);
       if (combatTag === "ground"
         && (!ELEVATIONS.includes(declaredElevation) || declaredElevation !== derivedElevation)) {
         fail("ENGAGEMENT_V2_ELEVATION_DECLARATION_MISMATCH", modelId);

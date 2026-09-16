@@ -638,6 +638,13 @@ function canonicalPlacement(value) {
   }).sort((left, right) => left.modelId.localeCompare(right.modelId));
   return { leadingModelId: String(value.leadingModelId), placements };
 }
+function canonicalModelElevation(value) {
+  const normalized = String(value || "ground").trim().toLowerCase();
+  if (normalized === "ground_level") return "ground";
+  if (normalized === "mid_ground") return "mid";
+  if (normalized === "high_ground") return "high";
+  return normalized;
+}
 function paymentAllowed(domain, ids) {
   return domain.parameterSchema.paymentCardInstanceIds?.enum?.some((entry) => (
     isDeepStrictEqual(entry, ids)));
@@ -684,7 +691,7 @@ function makeSpecialPiece(state, sideKey, recordKey, pieceId) {
     models: modelIds.map((id) => ({ id, baseShape: geometry.baseShape,
       baseWidthInches: geometry.baseWidthMilliInches / 1000,
       baseDepthInches: geometry.baseDepthMilliInches / 1000,
-      baseRotationDegrees: 0, elevation: "ground_level", supportTerrainIds: [],
+      baseRotationDegrees: 0, elevation: "ground", supportTerrainIds: [],
       adjacentAccessPointIds: [], damage: 0, remainingWounds: profile.hitPoints,
       isOnField: false, isDestroyed: false })),
     includedInArmyListDuringArmyBuilding: false,
@@ -719,7 +726,8 @@ function placementResolution(state, pieceInput, placementPlan, options = {}) {
     model.xInches = row.footprint.center.xMilliInches / 1000;
     model.yInches = row.footprint.center.yMilliInches / 1000;
     model.baseRotationDegrees = row.footprint.rotationDegrees;
-    model.elevation = options.groundLevelRequired ? "ground_level" : model.elevation;
+    model.elevation = options.groundLevelRequired
+      ? "ground" : canonicalModelElevation(model.elevation);
   }
   projected.pieces = projected.pieces.map((entry) => entry.id === piece.id ? piece : entry);
   if (Number(options.minimumEnemyGapMilliInchesExclusive || 0) > 0) {
