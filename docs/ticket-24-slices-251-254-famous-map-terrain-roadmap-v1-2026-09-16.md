@@ -80,6 +80,15 @@ honest preview until current task geometry exists. See
 - Generate ten map-specific art layers only after topology review.
 - Build ten default certified terrain recipes.
 
+In-progress checkpoint: four of ten visual candidates now exist for Lost
+Temple, Fighting Spirit, Circuit Breakers and Blue Storm. The accepted direction
+is restrained high-resolution Brood War/Remastered-style 2D map art with a
+matte tabletop finish and quieter micro-detail under circular unit portraits;
+modern PBR, isometric rendering and a shared generic template remain rejected.
+Blue Storm carries both a classic `1.5in`/32mm-only shortcut asset and the
+default `5in` all-current-base tabletop adaptation. Passage widths are recorded
+from model-base geometry rather than inferred from generated pixels.
+
 Acceptance: no two entries share a generic layout template; each art/Rules pair traces to
 its cited seed.
 

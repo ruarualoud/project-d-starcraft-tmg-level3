@@ -20,9 +20,28 @@ export interface CompetitiveMapTabletopAdapterElementV1 {
   rulesAuthority: false; trainingTruth: false;
 }
 
+export interface CompetitiveMapLaneClearanceAuditV1 {
+  laneId: string; requiredClearanceInches: number;
+  sourceRequiredClearanceInches: number;
+  defaultPassageMode: "preserve_source_clearance" | "widen_all_current_bases";
+  sourceStraightTransitBaseProfilesCovered: readonly string[];
+  sourceStraightTransitBaseProfilesBlocked: readonly string[];
+  straightTransitBaseProfilesCovered: readonly string[];
+  straightTransitBaseProfilesBlocked: readonly string[];
+  broadsideTransitBaseProfilesCovered: readonly string[];
+  inPlaceTurnBaseProfilesCovered: readonly string[];
+  allCurrentBaseProfilesStraightTransit: boolean;
+  allCurrentBaseProfilesInPlaceTurn: boolean;
+  passageClass: "universal_current_base_turning"
+    | "universal_current_base_straight_transit"
+    | "restricted_current_base_profiles";
+  hardBlockerIntrusions: readonly string[];
+  hardGeometryClearanceCertified: true;
+}
+
 export interface OfficialCompetitiveMapTabletopAdapterV1 {
   schema: "starcraft_tmg_official_competitive_map_tabletop_adapter_v1";
-  version: "1.1.0"; seedId: string; topologyHash: string;
+  version: "1.2.0"; seedId: string; topologyHash: string;
   sourceMapDimensions: Readonly<{ widthTiles: number; heightTiles: number }>;
   sourceMapAreaTiles: number;
   engagementScale: "Skirmish" | "Standard" | "Grand Offensive";
@@ -33,9 +52,10 @@ export interface OfficialCompetitiveMapTabletopAdapterV1 {
   lanes: readonly Readonly<Record<string, unknown>>[];
   zones: readonly Readonly<Record<string, unknown>>[];
   passageRecommendations: readonly Readonly<Record<string, unknown>>[];
-  laneClearanceAudits: readonly Readonly<Record<string, unknown>>[];
+  laneClearanceAudits: readonly Readonly<CompetitiveMapLaneClearanceAuditV1>[];
   fireLaneCandidateIds: readonly string[];
-  completeBaseClearanceCertified: true;
+  allLanesHardGeometryClearanceCertified: true;
+  hasUniversalCurrentBaseRoute: true;
   artAndRulesLayersRemainIndependent: true;
   hardModeOverrideRequiresRecompilation: true;
   normalizedCoordinatesAreRulesAuthority: false;
@@ -46,14 +66,15 @@ export interface OfficialCompetitiveMapTabletopAdapterV1 {
 
 export interface OfficialCompetitiveMapTabletopAdapterCatalogueV1 {
   schema: "starcraft_tmg_official_competitive_map_tabletop_adapter_catalogue_v1";
-  version: "1.1.0"; topologyCatalogueHash: string;
+  version: "1.2.0"; topologyCatalogueHash: string;
   engagementScaleProfiles: readonly Readonly<Record<string, unknown>>[];
   adapters: readonly Readonly<OfficialCompetitiveMapTabletopAdapterV1>[];
   counts: Readonly<{ total: 20; elements: number; lanes: number;
     passageRecommendations: number; downgradedSourceDefaults: number;
     byEngagementScale: Readonly<{ Skirmish: number; Standard: number;
       "Grand Offensive": number }> }>;
-  allMapsCompleteBaseClearanceCertified: true;
+  allMapLanesHardGeometryClearanceCertified: true;
+  allMapsHaveUniversalCurrentBaseRoute: true;
   artAndRulesLayersRemainIndependent: true;
   sourceRefreshPerformed: false; rulesTruth: string; trainingTruth: false;
   catalogueHash: string;

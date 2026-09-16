@@ -37,6 +37,7 @@ const CLEARANCE_BY_CLASS = Object.freeze({
 });
 const HARD_RULES_MODES = new Set(["blocking", "standable_high_ground"]);
 const TOLERANCE = 0.001;
+const MILLIMETRES_PER_INCH = 25.4;
 
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
@@ -49,6 +50,22 @@ function deepFreeze(value) {
 }
 
 function fixed(value) { return Number(Number(value).toFixed(3)); }
+
+function baseClearanceSpans(profile) {
+  const narrowMm = Math.min(profile.widthMm, profile.depthMm);
+  const broadMm = Math.max(profile.widthMm, profile.depthMm);
+  const turningMm = profile.shape === "round"
+    ? broadMm : Math.hypot(profile.widthMm, profile.depthMm);
+  return { straightTransitInches: fixed(narrowMm / MILLIMETRES_PER_INCH),
+    broadsideTransitInches: fixed(broadMm / MILLIMETRES_PER_INCH),
+    inPlaceTurnInches: fixed(turningMm / MILLIMETRES_PER_INCH) };
+}
+
+function coveredBaseIds(clearanceInches, spanKey) {
+  return BASE_PROFILES.filter((profile) => (
+    baseClearanceSpans(profile)[spanKey] <= clearanceInches + TOLERANCE
+  )).map((profile) => profile.baseId);
+}
 
 function pointFromNormalized(value, battlefield) {
   return { xInches: fixed(value.x * battlefield.widthInches / 1000),
@@ -167,20 +184,33 @@ function tabletopElement(element, battlefield) {
 function laneRows(topology, battlefield) {
   const rows = topology.lanes.map((lane) => ({ laneId: lane.laneId,
     routeClass: lane.routeClass, clearanceClass: lane.clearanceClass,
-    requiredClearanceInches: CLEARANCE_BY_CLASS[lane.clearanceClass],
+    sourceRequiredClearanceInches: CLEARANCE_BY_CLASS[lane.clearanceClass],
     centreline: lane.centreline.map((point) => pointFromNormalized(point, battlefield)),
     sourceFromZoneId: lane.fromZoneId, sourceToZoneId: lane.toZoneId,
     promotedToFireLaneCandidate: false }));
   const ranked = [...rows].sort((left, right) => (
-    right.requiredClearanceInches - left.requiredClearanceInches
+    right.sourceRequiredClearanceInches - left.sourceRequiredClearanceInches
       || Number(right.routeClass === "direct") - Number(left.routeClass === "direct")
       || left.laneId.localeCompare(right.laneId)
   ));
   const fireLaneIds = new Set(ranked.slice(0, 2).map((entry) => entry.laneId));
-  return rows.map((entry) => fireLaneIds.has(entry.laneId)
-    ? { ...entry, requiredClearanceInches: 6,
-      promotedToFireLaneCandidate: entry.clearanceClass !== "formation_fire_lane" }
-    : entry);
+  return rows.map((entry) => {
+    const classicRestrictionRetained = entry.clearanceClass === "small";
+    const defaultPassageMode = classicRestrictionRetained
+      ? "widen_all_current_bases" : "preserve_source_clearance";
+    const adaptedClearance = defaultPassageMode === "widen_all_current_bases"
+      ? CLEARANCE_BY_CLASS.heavy_turn : entry.sourceRequiredClearanceInches;
+    const fireLane = fireLaneIds.has(entry.laneId);
+    return { ...entry,
+      requiredClearanceInches: fireLane ? Math.max(6, adaptedClearance)
+        : adaptedClearance,
+      defaultPassageMode,
+      availablePassageModes: ["preserve_source_clearance",
+        "widen_all_current_bases"],
+      classicRestrictionRetainedAsOption: classicRestrictionRetained,
+      promotedToFireLaneCandidate: fireLane
+        && entry.clearanceClass !== "formation_fire_lane" };
+  });
 }
 
 function adaptClearance(topology, lanes, elements) {
@@ -237,10 +267,41 @@ function laneAudits(lanes, elements, passages) {
         element.candidateRulesFootprint) < lane.requiredClearanceInches / 2 - TOLERANCE
       && !passagePairs.has(`${element.elementId}:${lane.laneId}`)
     )).map((entry) => entry.elementId);
+    const straightTransitBaseProfilesCovered = coveredBaseIds(
+      lane.requiredClearanceInches, "straightTransitInches");
+    const sourceStraightTransitBaseProfilesCovered = coveredBaseIds(
+      lane.sourceRequiredClearanceInches, "straightTransitInches");
+    const broadsideTransitBaseProfilesCovered = coveredBaseIds(
+      lane.requiredClearanceInches, "broadsideTransitInches");
+    const inPlaceTurnBaseProfilesCovered = coveredBaseIds(
+      lane.requiredClearanceInches, "inPlaceTurnInches");
+    const allCurrentBaseProfilesStraightTransit =
+      straightTransitBaseProfilesCovered.length === BASE_PROFILES.length;
+    const allCurrentBaseProfilesInPlaceTurn =
+      inPlaceTurnBaseProfilesCovered.length === BASE_PROFILES.length;
+    const hardGeometryClearanceCertified = hardBlockerIntrusions.length === 0;
     return { laneId: lane.laneId,
       requiredClearanceInches: lane.requiredClearanceInches,
-      completeBaseProfilesCovered: BASE_PROFILES.map((entry) => entry.baseId),
-      hardBlockerIntrusions, clearanceCertified: hardBlockerIntrusions.length === 0 };
+      sourceRequiredClearanceInches: lane.sourceRequiredClearanceInches,
+      defaultPassageMode: lane.defaultPassageMode,
+      sourceStraightTransitBaseProfilesCovered,
+      sourceStraightTransitBaseProfilesBlocked: BASE_PROFILES.filter((profile) => (
+        !sourceStraightTransitBaseProfilesCovered.includes(profile.baseId)
+      )).map((profile) => profile.baseId),
+      straightTransitBaseProfilesCovered,
+      straightTransitBaseProfilesBlocked: BASE_PROFILES.filter((profile) => (
+        !straightTransitBaseProfilesCovered.includes(profile.baseId)
+      )).map((profile) => profile.baseId),
+      broadsideTransitBaseProfilesCovered,
+      inPlaceTurnBaseProfilesCovered,
+      allCurrentBaseProfilesStraightTransit,
+      allCurrentBaseProfilesInPlaceTurn,
+      passageClass: allCurrentBaseProfilesInPlaceTurn
+        ? "universal_current_base_turning"
+        : allCurrentBaseProfilesStraightTransit
+          ? "universal_current_base_straight_transit"
+          : "restricted_current_base_profiles",
+      hardBlockerIntrusions, hardGeometryClearanceCertified };
   });
 }
 
@@ -259,7 +320,7 @@ function mapAdapter(topology) {
     role: zone.role, centre: pointFromNormalized(zone.centre, battlefield) }));
   const body = {
     schema: "starcraft_tmg_official_competitive_map_tabletop_adapter_v1",
-    version: "1.1.0", seedId: topology.seedId,
+    version: "1.2.0", seedId: topology.seedId,
     topologyHash: topology.topologyHash,
     sourceMapDimensions: structuredClone(topology.sourceMapDimensions),
     sourceMapAreaTiles: topology.sourceMapAreaTiles,
@@ -268,14 +329,19 @@ function mapAdapter(topology) {
     battlefield: { ...battlefield },
     currentMissionDeploymentGeometryCoverage:
       scaleProfile.currentMissionDeploymentGeometryCoverage,
-    baseProfiles: BASE_PROFILES.map((entry) => ({ ...entry })),
+    baseProfiles: BASE_PROFILES.map((entry) => ({ ...entry,
+      ...baseClearanceSpans(entry) })),
     clearanceByClassInches: { ...CLEARANCE_BY_CLASS },
     zones, lanes, elements: clearance.elements,
     passageRecommendations: clearance.passageRecommendations,
     laneClearanceAudits: audits,
     fireLaneCandidateIds: lanes.filter((entry) => (
       entry.requiredClearanceInches === 6)).map((entry) => entry.laneId),
-    completeBaseClearanceCertified: audits.every((entry) => entry.clearanceCertified),
+    allLanesHardGeometryClearanceCertified: audits.every((entry) => (
+      entry.hardGeometryClearanceCertified)),
+    hasUniversalCurrentBaseRoute: audits.some((entry) => (
+      entry.hardGeometryClearanceCertified
+      && entry.allCurrentBaseProfilesStraightTransit)),
     artAndRulesLayersRemainIndependent: true,
     hardModeOverrideRequiresRecompilation: true,
     normalizedCoordinatesAreRulesAuthority: false,
@@ -298,10 +364,11 @@ export function createOfficialCompetitiveMapTabletopAdapterCatalogueV1(input = {
   const adapters = topologyCatalogue.topologies.map(mapAdapter);
   const body = {
     schema: OFFICIAL_COMPETITIVE_MAP_TABLETOP_ADAPTER_V1_SCHEMA,
-    version: "1.1.0", topologyCatalogueHash: topologyCatalogue.catalogueHash,
+    version: "1.2.0", topologyCatalogueHash: topologyCatalogue.catalogueHash,
     engagementScaleProfiles: Object.values(ENGAGEMENT_SCALE_PROFILES)
       .map((entry) => structuredClone(entry)),
-    baseProfiles: BASE_PROFILES.map((entry) => ({ ...entry })),
+    baseProfiles: BASE_PROFILES.map((entry) => ({ ...entry,
+      ...baseClearanceSpans(entry) })),
     clearanceByClassInches: { ...CLEARANCE_BY_CLASS },
     adapters,
     counts: { total: adapters.length,
@@ -315,8 +382,10 @@ export function createOfficialCompetitiveMapTabletopAdapterCatalogueV1(input = {
       byEngagementScale: Object.fromEntries(Object.keys(ENGAGEMENT_SCALE_PROFILES)
         .map((scale) => [scale, adapters.filter((entry) => (
           entry.engagementScale === scale)).length])) },
-    allMapsCompleteBaseClearanceCertified: adapters.every((entry) => (
-      entry.completeBaseClearanceCertified)),
+    allMapLanesHardGeometryClearanceCertified: adapters.every((entry) => (
+      entry.allLanesHardGeometryClearanceCertified)),
+    allMapsHaveUniversalCurrentBaseRoute: adapters.every((entry) => (
+      entry.hasUniversalCurrentBaseRoute)),
     artAndRulesLayersRemainIndependent: true,
     sourceRefreshPerformed: false, rulesTruth: "tabletop_adapter_candidate_catalogue",
     trainingTruth: false,
@@ -338,7 +407,8 @@ export function verifyOfficialCompetitiveMapTabletopAdapterCatalogueV1(catalogue
     || catalogue.counts?.byEngagementScale?.Skirmish < 5
     || catalogue.counts?.byEngagementScale?.Standard < 5
     || catalogue.counts?.byEngagementScale?.["Grand Offensive"] < 5
-    || catalogue.allMapsCompleteBaseClearanceCertified !== true
+    || catalogue.allMapLanesHardGeometryClearanceCertified !== true
+    || catalogue.allMapsHaveUniversalCurrentBaseRoute !== true
     || catalogue.artAndRulesLayersRemainIndependent !== true
     || catalogue.trainingTruth !== false) {
     fail("COMPETITIVE_MAP_TABLETOP_ADAPTER_CATALOGUE_INVALID");
@@ -360,7 +430,15 @@ export function verifyOfficialCompetitiveMapTabletopAdapterCatalogueV1(catalogue
       || adapter.elements.length !== topology.elements.length
       || adapter.lanes.length !== topology.lanes.length
       || adapter.fireLaneCandidateIds.length < 2
-      || adapter.laneClearanceAudits.some((entry) => !entry.clearanceCertified)
+      || adapter.allLanesHardGeometryClearanceCertified !== true
+      || adapter.hasUniversalCurrentBaseRoute !== true
+      || adapter.laneClearanceAudits.some((entry) => (
+        !entry.hardGeometryClearanceCertified
+        || entry.straightTransitBaseProfilesCovered.some((baseId) => (
+          !BASE_PROFILES.some((profile) => profile.baseId === baseId)))
+        || entry.straightTransitBaseProfilesCovered.length
+          + entry.straightTransitBaseProfilesBlocked.length
+          !== BASE_PROFILES.length))
       || adapter.zones.some((entry) => !inBounds(entry.centre, battlefield))) {
       fail("COMPETITIVE_MAP_TABLETOP_ADAPTER_INVALID", adapter?.seedId);
     }

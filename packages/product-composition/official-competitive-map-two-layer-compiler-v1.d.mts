@@ -15,11 +15,13 @@ export interface CompetitiveMapElementSelectionInputV1 {
 
 export interface OfficialCompetitiveMapTwoLayerCompilationV1 {
   schema: "starcraft_tmg_official_competitive_map_two_layer_compilation_v1";
-  version: "1.0.0"; compilationId: string; seedId: string; adapterHash: string;
+  version: "1.1.0"; compilationId: string; seedId: string; adapterHash: string;
   engagementScale: "Skirmish" | "Standard" | "Grand Offensive";
   sourceMapDimensions: Readonly<{ widthTiles: number; heightTiles: number }>;
   battlefield: Readonly<{ widthInches: number; heightInches: 36 }>;
-  artLayer: Readonly<{ visualPresetId: string; elements: readonly Readonly<Record<string, unknown>>[];
+  artLayer: Readonly<{ visualPresetId: string;
+    elements: readonly Readonly<Record<string, unknown>>[];
+    routeTreatments: readonly Readonly<Record<string, unknown>>[];
     backgroundRulesAuthority: false; pixelInferenceAllowed: false }>;
   rulesLayer: Readonly<{ terrainPieces: readonly Readonly<Record<string, unknown>>[];
     setupPlanTemplate: Readonly<Record<string, unknown>>; planHash: string;
@@ -27,6 +29,7 @@ export interface OfficialCompetitiveMapTwoLayerCompilationV1 {
     actualCounts: Readonly<Record<string, number>>;
     compensatingTerrainPieceIds: readonly string[];
     exactDeploymentFireLanesPendingRoomBinding: true;
+    sourceRoutePixelsAreRulesAuthority: false;
     authoritativeTerrainLayerAfterRoomCertification: true;
     rulesAuthorityBeforeRoomCertification: false }>;
   selectionReceipt: readonly Readonly<Record<string, unknown>>[];

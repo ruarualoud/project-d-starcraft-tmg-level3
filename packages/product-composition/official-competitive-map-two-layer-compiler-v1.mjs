@@ -389,6 +389,15 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
       code: "PASSABLE_DIFFICULT_HAS_NO_OFFICIAL_MOVEMENT_SURCHARGE",
       message: "Current official terrain has no difficult-movement surcharge; compiled as passable Size 1 cover." });
   }
+  for (const lane of adapter.lanes.filter((entry) => (
+    entry.defaultPassageMode === "widen_all_current_bases"))) {
+    warnings.push({ severity: "warning",
+      code: "CLASSIC_PASSAGE_WIDENED_FOR_CURRENT_BASES",
+      laneId: lane.laneId,
+      sourceClearanceInches: lane.sourceRequiredClearanceInches,
+      displayClearanceInches: lane.requiredClearanceInches,
+      message: "Classic restricted passage is widened in the default tabletop art; the source-clearance option remains available." });
+  }
   if (adapter.engagementScale === "Grand Offensive") {
     warnings.push({ severity: "warning",
       code: "GRAND_OFFENSIVE_TASK_GEOMETRY_NOT_IN_CURRENT_CARD_BUNDLE",
@@ -409,14 +418,34 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
     return { ...entry, compiledRulesStatus: included ? "included" : "not_in_rules_layer",
       compiledTerrainPieceId: included?.terrainPieceId || null };
   });
+  const auditByLane = new Map(adapter.laneClearanceAudits.map((entry) => (
+    [entry.laneId, entry])));
+  const routeTreatments = adapter.lanes.map((lane) => {
+    const audit = auditByLane.get(lane.laneId);
+    return { laneId: lane.laneId, routeClass: lane.routeClass,
+      centreline: clone(lane.centreline),
+      defaultPassageMode: lane.defaultPassageMode,
+      availablePassageModes: clone(lane.availablePassageModes),
+      sourceClearanceInches: lane.sourceRequiredClearanceInches,
+      displayClearanceInches: lane.requiredClearanceInches,
+      sourceStraightTransitBaseProfilesCovered:
+        clone(audit.sourceStraightTransitBaseProfilesCovered),
+      sourceStraightTransitBaseProfilesBlocked:
+        clone(audit.sourceStraightTransitBaseProfilesBlocked),
+      defaultStraightTransitBaseProfilesCovered:
+        clone(audit.straightTransitBaseProfilesCovered),
+      defaultStraightTransitBaseProfilesBlocked:
+        clone(audit.straightTransitBaseProfilesBlocked),
+      displayOnly: true, rulesAuthority: false };
+  });
   const body = { schema: OFFICIAL_COMPETITIVE_MAP_TWO_LAYER_COMPILATION_V1_SCHEMA,
-    version: "1.0.0", compilationId: `${adapter.seedId}:default-or-user-recipe-v1`,
+    version: "1.1.0", compilationId: `${adapter.seedId}:default-or-user-recipe-v2`,
     seedId: adapter.seedId, adapterHash: adapter.adapterHash,
     engagementScale: adapter.engagementScale,
     sourceMapDimensions: clone(adapter.sourceMapDimensions),
     battlefield: clone(adapter.battlefield),
-    artLayer: { visualPresetId: `${adapter.seedId}:generated-original-art-v1`,
-      elements: artElements, backgroundRulesAuthority: false,
+    artLayer: { visualPresetId: `${adapter.seedId}:generated-original-art-v2`,
+      elements: artElements, routeTreatments, backgroundRulesAuthority: false,
       pixelInferenceAllowed: false },
     rulesLayer: { terrainPieces: pieces, setupPlanTemplate: plan, planHash,
       targetCounts: clone(targets), actualCounts: actual,
@@ -424,6 +453,7 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
         entry.sourceType === "neutral_tmg_compensation")).map((entry) => (
         entry.terrainPieceId)),
       exactDeploymentFireLanesPendingRoomBinding: true,
+      sourceRoutePixelsAreRulesAuthority: false,
       authoritativeTerrainLayerAfterRoomCertification: true,
       rulesAuthorityBeforeRoomCertification: false },
     selectionReceipt: receipt,
@@ -449,11 +479,13 @@ export function verifyOfficialCompetitiveMapTwoLayerCompilationV1(compilation,
   verifyOfficialCompetitiveMapTabletopAdapterCatalogueV1(adapterCatalogue);
   if (!compilation
     || compilation.schema !== OFFICIAL_COMPETITIVE_MAP_TWO_LAYER_COMPILATION_V1_SCHEMA
-    || compilation.version !== "1.0.0"
+    || compilation.version !== "1.1.0"
     || compilation.compilationHash !== hashStarcraftTmgContract(without(compilation,
       ["compilationHash"]))
     || compilation.artLayer?.backgroundRulesAuthority !== false
+    || compilation.artLayer?.routeTreatments?.length < 3
     || compilation.rulesLayer?.rulesAuthorityBeforeRoomCertification !== false
+    || compilation.rulesLayer?.sourceRoutePixelsAreRulesAuthority !== false
     || compilation.everySourceElementIndependentlyConfigurable !== true
     || compilation.artAndRulesLayersIndependent !== true
     || compilation.trainingTruth !== false) {

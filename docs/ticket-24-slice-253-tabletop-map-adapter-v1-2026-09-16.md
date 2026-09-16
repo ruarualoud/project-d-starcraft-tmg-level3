@@ -29,8 +29,19 @@ The current product base denominator is frozen into every adapter receipt:
 
 Lane classes require `1.5`, `2.25`, `4`, `5`, and `6` inches respectively for
 small, standard, single-heavy, heavy-turn, and formation/fire-lane movement.
-The latter three cover the 100mm long base, its turn envelope, and formation
-space instead of validating only a model centre.
+The adapter now reports three different physical witnesses instead of treating
+them as interchangeable: narrow-axis straight transit, broadside transit, and
+the full in-place turn envelope. A `40 × 100mm` rectangular base therefore
+needs `40mm` for a straight narrow-axis transit, `100mm` broadside, and about
+`107.7mm` for a full turn.
+
+The source and tabletop-adapted clearances are also separate. Blue Storm's
+classic `1.5in` shortcut admits only the current `32mm` round base. Its default
+tabletop presentation widens that opening to `5in`, which admits and turns all
+current bases, while `preserve_source_clearance` remains an explicit classic
+option. The separate `6in` southern main route remains universal in either
+presentation. No route may claim complete-base coverage merely because it has
+no blocker intersection.
 
 Each map promotes at least two topology routes to six-inch fire-lane
 candidates. A hard source feature that intrudes a route is handled explicitly:
@@ -58,6 +69,7 @@ the final art/rules receipts and freeze them at Room creation.
 The slice gate checks module syntax and only these adapter invariants: 20/20
 topology binding, per-scale bounds and at least five maps per size, all 166
 element identities retained, two or more
-fire-lane candidates per map, no unresolved complete-base lane intrusion, unique
-adapter hashes and diff cleanliness. It does not run a match or unrelated
-suites.
+fire-lane candidates per map, no unresolved hard-geometry lane intrusion, at
+least one universal straight-transit route per map, exact per-base transit/turn
+lists, unique adapter hashes and diff cleanliness. It does not run a match or
+unrelated suites.
