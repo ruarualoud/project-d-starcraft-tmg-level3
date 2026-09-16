@@ -3446,6 +3446,14 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     });
     match = await commit(match, (draft) => {
       const current = draft.decisions[choice.choiceKey];
+      const storedAttempt = current.attempts[attempt.attemptKey];
+      if (attempt.stage === "planning") {
+        storedAttempt.localPlannerSemanticReplayVersion =
+          PLANNER_SHAPE_NORMALIZATION_VERSION;
+      } else {
+        storedAttempt.localSemanticReplayVersion =
+          ACTION_SHAPE_NORMALIZATION_VERSION;
+      }
       current.semanticCorrectionRounds =
         Number(current.semanticCorrectionRounds || 0) + 1;
       current.stageCorrectionRounds =
