@@ -124,3 +124,44 @@ claim projection without guessing label whitespace or requiring a raw network
 event. Revision 129 remains authoritative and absent from `actions.ndjson`,
 which remains at 128 records. The partial repair is intentionally uncommitted
 until that single acceptance assertion passes.
+
+## Post-cycle typed-receipt result
+
+After the preceding cycle had stopped, the implementation was narrowed again
+without rerunning the old assertion:
+
+- a timed-out `claim_control` mutation can no longer inherit the generic
+  `cached_projection_recovered` success outcome;
+- uncertain mutation completion now returns
+  `CONTROL_LEASE_OUTCOME_UNKNOWN` and remains offline/read-only;
+- the Match surface clears a stale success notice unless the private view is
+  both connected and claimed;
+- successful control UI now requires the exact `control_claimed` outcome plus
+  a local fence and session-binding hash;
+- Standard-2000 transport receives a 120-second request budget, while the
+  private typed receipt remains the acceptance authority.
+
+The one post-change browser validation ended with screenshot
+`screenshots/0170-r128-runner-SLICE247_CONTROL_CLAIM_PRIVATE_RECEIPT_INVALID-failure.png`.
+It proves the product repair succeeded:
+
+- visible machine receipt:
+  `control-claim-receipt status=claimed fence=13 session=438e5756622b`;
+- visible private control state: `claimed`, local fence `13`, session binding
+  `438e5756622b`;
+- authoritative room revision `505`, game-state revision still `129`;
+- no console error, page error, Provider call or game Apply.
+
+The runner nevertheless reported `leaseFence: null` because its anchored
+regular expression accepted only a value beginning with `status=`, while React
+Native Web exposed the element's visible, versioned prefix
+`control-claim-receipt ` before the same valid fields. This is a deterministic
+harness parser false negative, not a failed product claim and not a strategy
+regression.
+
+No additional patch or retry is performed in this convergence cycle. The next
+cycle's concrete deliverable is a label-independent typed-receipt parser that
+normalizes the optional versioned display prefix, followed by one focused
+acceptance run from the same revision-129 room. Only after that persistent
+client-view assertion may the runner recover action 129 exactly once and resume
+the H-A match.
