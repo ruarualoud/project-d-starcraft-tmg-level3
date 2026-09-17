@@ -75,6 +75,10 @@ async function main() {
         allowedVisualCues: [...request.responseContract.allowedVisualCues],
         hasRoomProjection: Boolean(request.toolContext.roomProjection),
         legalSpaceHash: request.toolContext.legalSpace?.legalSpaceHash || null,
+        promptNodeTypes: request.promptNodes.map((node) => node.nodeType),
+        conversationTurnCount: request.promptNodes.find((node) =>
+          node.nodeType === "conversation-history")?.content?.turns?.length
+          ?? null,
       });
       if (request.userMessage === "forbidden-decision") {
         return { output: { channels: { decision: { candidateId: request.toolContext.legalSpace.candidates.find((candidate) => candidate.isEnabled).candidateId, selectedReason: "forbidden test" } } } };
@@ -130,6 +134,7 @@ async function main() {
   let tutorInvocation = null;
   let commentatorInvocation = null;
   let companionInvocation = null;
+  let companionContinuation = null;
 
   async function check(id, fn) {
     try {
@@ -279,10 +284,26 @@ async function main() {
   await check("commentator_and_companion_remain_non_mutating", async () => {
     commentatorInvocation = await characterRuntime.invoke({ sessionId: sessionIds.commentator, userMessage: "解说局面", intent: "chat", occurredAt: OCCURRED_AT });
     companionInvocation = await characterRuntime.invoke({ sessionId: sessionIds.companion, userMessage: "陪我复盘", intent: "chat", occurredAt: OCCURRED_AT });
-    assert(commentatorInvocation.ok && companionInvocation.ok, "read-only role invocation failed");
+    companionContinuation = await characterRuntime.invoke({
+      sessionId: sessionIds.companion,
+      userMessage: "延续刚才的语气，指出我最需要改掉的一个习惯。",
+      intent: "chat",
+      occurredAt: OCCURRED_AT,
+    });
+    assert(commentatorInvocation.ok && companionInvocation.ok
+      && companionContinuation.ok, "read-only role invocation failed");
     assert(commentatorInvocation.preview === null && companionInvocation.preview === null, "read-only role created a preview");
     assert(commentatorInvocation.portraitState.phase === "speaking" && commentatorInvocation.portraitState.visualCue === "announce", "Commentator portrait cue mismatch");
     assert(companionInvocation.portraitState.phase === "speaking" && companionInvocation.portraitState.visualCue === "reflect", "Companion portrait cue mismatch");
+    const companionAudits = transportAudits.filter((entry) =>
+      entry.promptPack === "sparring_coach_prompt");
+    assert(companionAudits.length >= 2
+      && companionAudits.at(-1).conversationTurnCount === 1,
+    "Companion continuation did not receive the preceding accepted turn");
+    assert(companionAudits.every((entry) =>
+      entry.promptNodeTypes.includes("persona-anchor")
+        && entry.promptNodeTypes.includes("conversation-history")),
+    "Companion Prompt omitted its final persona or conversation anchor");
     const current = await roomRuntime.readRoom({ roomId: ROOM_ID });
     assert(current.projection.room.stateRevision === 1 && current.projection.room.acceptedReceiptCount === 1, "read-only role mutated room");
   });

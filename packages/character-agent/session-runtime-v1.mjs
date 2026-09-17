@@ -9,6 +9,8 @@ import {
   validateStarcraftTmgMemoryRefs,
 } from "./mode-capability-v1.mjs";
 import { assembleStarcraftTmgRolePrompt } from "./prompt-assembly-v1.mjs";
+import { projectStarcraftTmgCharacterRoomPromptV1 } from
+  "./room-prompt-projection-v1.mjs";
 import { createStarcraftTmgWorldbookRegistry } from "./worldbook-registry-v1.mjs";
 import {
   assertStarcraftTmgDynamicDialoguePortraitManifestV1,
@@ -66,6 +68,9 @@ function safeProviderReceipt(receipt) {
     usage: clone(receipt.usage || null),
     elapsedMs: Number.isSafeInteger(receipt.elapsedMs) ? receipt.elapsedMs : null,
     responseFingerprint: receipt.responseFingerprint || null,
+    responseNormalization: receipt.responseNormalization || "none",
+    responseNormalizationEvidenceHash:
+      receipt.responseNormalizationEvidenceHash || null,
     internalRetries: Number.isSafeInteger(receipt.internalRetries) ? receipt.internalRetries : null,
     receiptHash: receipt.receiptHash || null,
   };
@@ -127,6 +132,9 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
     ? assertStarcraftTmgDynamicDialoguePortraitManifestV1(options.dialoguePortraitManifest)
     : null;
   const dialoguePortraitEnvironment = options.dialoguePortraitEnvironment || "development";
+  const roomPromptProjection = typeof options.roomPromptProjection === "function"
+    ? options.roomPromptProjection
+    : projectStarcraftTmgCharacterRoomPromptV1;
   if (!["development", "public"].includes(dialoguePortraitEnvironment)) {
     throw new Error(`unsupported dialoguePortraitEnvironment: ${dialoguePortraitEnvironment}`);
   }
@@ -279,6 +287,7 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
         capability,
         binding,
         history: [],
+        conversationTurns: [],
         traces: [],
         dialoguePortraitState: dialoguePortraitManifest
           ? createStarcraftTmgDynamicDialoguePortraitStateV1(dialoguePortraitManifest, {
@@ -403,7 +412,8 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
       binding: session.binding,
       worldbooks: session.worldbooks,
       memoryRefs: session.memoryRefs,
-      roomProjection: room.projection,
+      conversationHistory: session.conversationTurns,
+      roomProjection: roomPromptProjection(room.projection),
       legalSpace,
       worldbookActivation: session.worldbookRegistry.activate({
         ok: true,
@@ -613,6 +623,16 @@ export function createStarcraftTmgCharacterSessionRuntime(options = {}) {
       outputHash: trace.outputHash,
       occurredAt,
     }));
+    session.conversationTurns.push(deepFreeze({
+      userMessage,
+      channels: clone(output.channels),
+      visualCue: output.visualCue,
+      occurredAt,
+    }));
+    if (session.conversationTurns.length > 16) {
+      session.conversationTurns.splice(0,
+        session.conversationTurns.length - 16);
+    }
     return deepFreeze({
       ok: true,
       output,

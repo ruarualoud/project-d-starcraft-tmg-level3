@@ -14,6 +14,27 @@ function node(nodeType, authority, content) {
   return Object.freeze({ ...unsigned, nodeHash: hashStarcraftTmgContract(unsigned) });
 }
 
+function boundedConversationHistory(value = []) {
+  if (!Array.isArray(value)) throw new TypeError("conversationHistory must be an array");
+  return value.slice(-8).map((turn, index) => {
+    if (!turn || typeof turn !== "object" || Array.isArray(turn)) {
+      throw new TypeError(`conversationHistory[${index}] must be an object`);
+    }
+    const userMessage = String(turn.userMessage || "").slice(0, 12000);
+    const channels = Object.fromEntries(Object.entries(turn.channels || {})
+      .filter(([, channel]) => channel && typeof channel.text === "string")
+      .map(([name, channel]) => [name, {
+        text: channel.text.slice(0, 8000),
+      }]));
+    return {
+      userMessage,
+      channels,
+      visualCue: turn.visualCue || "neutral",
+      occurredAt: turn.occurredAt || null,
+    };
+  });
+}
+
 export function assembleStarcraftTmgRolePrompt(input = {}) {
   const characterPackage = assertStarcraftTmgCharacterContract(input.characterPackage, "character-package");
   const roleSkillPack = assertStarcraftTmgCharacterContract(input.roleSkillPack, "role-skill-pack");
@@ -21,6 +42,8 @@ export function assembleStarcraftTmgRolePrompt(input = {}) {
   const binding = assertStarcraftTmgCharacterContract(input.binding, "game-role-binding");
   const capability = getStarcraftTmgModeCapability(binding.mode);
   const memoryRefs = validateStarcraftTmgMemoryRefs(binding.mode, input.memoryRefs || []);
+  const conversationHistory = boundedConversationHistory(
+    input.conversationHistory || []);
   const worldbooks = (input.worldbooks || []).map((worldbook) => assertStarcraftTmgCharacterContract(worldbook, "worldbook"));
   const worldbookActivation = input.worldbookActivation || null;
   if (worldbookActivation && worldbookActivation.ok !== true) throw new Error("worldbook activation failed");
@@ -54,6 +77,7 @@ export function assembleStarcraftTmgRolePrompt(input = {}) {
       description: characterPackage.description,
       personality: characterPackage.personality,
       speechProfile: characterPackage.speechProfile,
+      firstMessages: characterPackage.firstMessages,
       voicePolicy: characterPackage.voicePolicy,
       productRoleIsCanon: characterPackage.productRoleIsCanon,
     }),
@@ -73,6 +97,9 @@ export function assembleStarcraftTmgRolePrompt(input = {}) {
       mode: roleSkillPack.mode,
       speechActs: roleSkillPack.speechActs,
       voiceRules: roleSkillPack.voiceRules,
+      addressRules: roleSkillPack.addressRules,
+      narrativePerspective: roleSkillPack.narrativePerspective,
+      oocPolicy: roleSkillPack.oocPolicy,
       forbiddenClaims: roleSkillPack.forbiddenClaims,
       promptFragments: roleSkillPack.promptFragments,
     }),
@@ -83,11 +110,34 @@ export function assembleStarcraftTmgRolePrompt(input = {}) {
       explanationDepth: conversationProfile.explanationDepth,
       responseLength: conversationProfile.responseLength,
       oocEnabled: conversationProfile.oocEnabled,
+      commentaryFrequency: conversationProfile.commentaryFrequency,
+      expressionEnabled: conversationProfile.expressionEnabled,
+      voiceEnabled: conversationProfile.voiceEnabled,
     }),
     node("room-projection", "referee", input.roomProjection),
   ];
   if (input.legalSpace) nodes.push(node("legal-space", "rules", input.legalSpace));
   nodes.push(node("memory-references", "advisory", memoryRefs));
+  nodes.push(node("conversation-history", "user-private-session", {
+    turns: conversationHistory,
+    continuityRequired: conversationHistory.length > 0,
+    mayOverrideRoomOrRules: false,
+  }));
+  nodes.push(node("persona-anchor", "roleplay", {
+    characterId: characterPackage.characterId,
+    displayName: characterPackage.displayName,
+    activePersonaState:
+      binding.extensions?.worldbookPolicy?.activePersonaState || null,
+    roleMode: binding.mode,
+    roleplayIntensity: conversationProfile.roleplayIntensity,
+    requirements: [
+      "Answer in the configured original persona voice even when the subject is technical.",
+      "Use first person and the configured cadence, social stance, address rules, and role boundaries.",
+      "Preserve continuity with the bounded conversation history without inventing relationship history.",
+      "Keep rules and room facts sourced from authority nodes; persona changes expression, never facts.",
+      "Do not quote copyrighted dialogue or imitate an actor.",
+    ],
+  }));
 
   const receiptUnsigned = {
     schemaVersion: STARCRAFT_TMG_PROMPT_ASSEMBLY_VERSION,
@@ -98,6 +148,7 @@ export function assembleStarcraftTmgRolePrompt(input = {}) {
     promptPack: capability.promptPack,
     nodeHashes: nodes.map((entry) => entry.nodeHash),
     memoryRefs,
+    conversationTurnCount: conversationHistory.length,
     worldbookActivationHash: worldbookActivation?.receipt?.activationHash || null,
     rulesAuthority: "external_rules_service",
     trainingTruth: false,

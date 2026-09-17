@@ -4,6 +4,8 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createKerriganPrimalProductBundleV1 } from "../content/characters/kerrigan-primal-v1.mjs";
+import { STARCRAFT_TMG_TICKET_23_LIVE_ADJUTANT_FLASH_PROVIDER_PROFILE_V1 } from
+  "../content/provider/ticket-23-live-provider-profiles-v1.mjs";
 import {
   createStarcraftTmgAuthoritativeEngine,
   hashStarcraftTmgContract,
@@ -69,7 +71,11 @@ function request(providerProfile, overrides = {}) {
     promptNodes: [{ nodeType: "platform-policy", authority: "platform", content: { trainingTruth: false } }],
     userMessage: "请解释当前局面",
     intent: "chat",
-    responseContract: { allowedChannels: ["teaching"], decisionCandidateSource: "forbidden" },
+    responseContract: {
+      allowedChannels: ["teaching"],
+      allowedVisualCues: ["neutral", "explain"],
+      decisionCandidateSource: "forbidden",
+    },
     ...overrides,
   };
 }
@@ -82,7 +88,10 @@ async function main() {
   const successfulPayload = {
     id: "provider-response-1",
     model: "provider-model-v1",
-    choices: [{ message: { role: "assistant", content: JSON.stringify({ channels: { teaching: { text: "先观察合法候选，再决定行动。" } } }) } }],
+    choices: [{ message: { role: "assistant", content: `\`\`\`json\n${
+      JSON.stringify({ teaching: {
+        text: "先观察合法候选，再决定行动。",
+      } })}\n\`\`\`` } }],
     usage: { prompt_tokens: 120, completion_tokens: 20, total_tokens: 140 },
   };
   const transport = createStarcraftTmgOpenAiCompatibleProviderTransport({
@@ -116,10 +125,45 @@ async function main() {
     const sent = JSON.parse(captures[0].options.body);
     assert(sent.response_format.type === "json_object", "JSON response contract was not requested");
     assert(sent.messages[0].content.includes("arbitraryToolCallsAllowed"), "sealed Harness policy was not included");
+    assert(sent.messages[0].content.includes("allowedValues"),
+      "finite visual-cue response contract was not sent");
     assert(successfulResult.output.channels.teaching.text.includes("合法候选"), "Provider JSON output was not parsed");
     assert(successfulResult.receipt.internalRetries === 0 && successfulResult.receipt.usage.totalTokens === 140, "safe Provider receipt mismatch");
+    assert(successfulResult.receipt.responseNormalization
+      === "single_json_fence+top_level_channel_envelope_v1",
+    "fenced-JSON plus unambiguous channel-envelope recovery was not used");
     assert(!JSON.stringify(successfulResult).includes(API_KEY_SENTINEL), "safe Provider result leaked BYOK");
     assert(!JSON.stringify(successfulResult.receipt).includes("请解释当前局面"), "safe Provider receipt leaked prompt content");
+  });
+
+  await check("live_adjutant_profile_uses_beta_prompt_only_without_changing_match_profile", async () => {
+    const localCaptures = [];
+    const adjutantTransport = createStarcraftTmgOpenAiCompatibleProviderTransport({
+      async fetchImplementation(url, options) {
+        localCaptures.push({ url, options });
+        return fakeResponse(200, {
+          ...successfulPayload,
+          model: "deepseek-flash",
+        });
+      },
+    });
+    await adjutantTransport.complete(request(
+      STARCRAFT_TMG_TICKET_23_LIVE_ADJUTANT_FLASH_PROVIDER_PROFILE_V1));
+    assert(localCaptures.length === 1,
+      "live Adjutant transport did not make exactly one attempt");
+    assert(localCaptures[0].url
+      === "https://api.deepseek.com/beta/chat/completions",
+    "live Adjutant did not use the Flash beta compatibility route");
+    const sent = JSON.parse(localCaptures[0].options.body);
+    assert(sent.response_format === undefined,
+      "prompt-only live Adjutant request retained response_format");
+    assert(sent.thinking?.type === "disabled",
+      "live Adjutant request did not disable unnecessary model thinking");
+    assert(sent.reasoning_effort === "low",
+      "live Adjutant request did not retain the bounded reasoning effort");
+    assert(STARCRAFT_TMG_TICKET_23_LIVE_ADJUTANT_FLASH_PROVIDER_PROFILE_V1
+      .providerProfileId !== "starcraft-tmg.live-opponent.deepseek-v4-1-flash.v1",
+    "Adjutant route changed the frozen live-match profile identity");
   });
 
   await check("transport_requires_https_and_a_configured_model", async () => {
@@ -206,6 +250,10 @@ async function main() {
     const roomRuntime = createStarcraftTmgRoomRuntime({ authorityEngine, now: () => OCCURRED_AT });
     const state = createStarcraftTmgSampleState(data);
     state.board.terrain = [];
+    state.officialRosterDisclosureDataBundle = {
+      omittedStaticSentinel: "LARGE_STATIC_CATALOGUE_MUST_NOT_ENTER_CHARACTER_PROMPT",
+      padding: "x".repeat(2_400_000),
+    };
     const serverSeatPlan = [
       { label: "tutor", seatKey: "player1", roleMode: "tutor", principalType: "model" },
     ];
@@ -257,6 +305,13 @@ async function main() {
     assert(sessionInvocation.trace.providerReceipt.responseFingerprint === successfulResult.receipt.responseFingerprint, "Harness trace receipt lost output binding");
     assert(sessionInvocation.trace.harnessToolsCalled.join("/") === "read_board_state/list_legal_actions/read_character_worldbook", "Tutor Harness trace tool sequence mismatch");
     assert(!JSON.stringify(sessionInvocation).includes(API_KEY_SENTINEL), "Harness trace or result leaked BYOK");
+    const sentPrompt = JSON.parse(captures.at(-1).options.body);
+    assert(!sentPrompt.messages[0].content.includes(
+      "LARGE_STATIC_CATALOGUE_MUST_NOT_ENTER_CHARACTER_PROMPT"),
+    "large static catalogue entered the Character Prompt");
+    assert(sentPrompt.messages[0].content.includes(
+      "starcraft_tmg_character_room_prompt_projection_v1"),
+    "Character Prompt did not use the compact current-room projection");
     const currentRoom = await roomRuntime.readRoom({ roomId: "direct-provider-verifier-room" });
     assert(sessionInvocation.preview === null && currentRoom.projection.room.stateRevision === 0, "Tutor Provider invocation mutated room");
   });
