@@ -1,3 +1,6 @@
+import { hasOfficialPhaseActivationAvailableV1 } from
+  "./official-phase-activation-availability-v1.mjs";
+
 export const OFFICIAL_ACTIVATION_PASS_EXECUTOR_ID = "authority.activation-pass-v1";
 export const OFFICIAL_ACTIVATION_PASS_EXECUTOR_VERSION = "1.0.0";
 export const OFFICIAL_ACTIVATION_PASS_TRANSITION_SCHEMA = "starcraft_tmg_authority_v2.receipt";
@@ -43,27 +46,12 @@ function clone(value) {
   return structuredClone(value);
 }
 
-function activeOnTablePiece(piece) {
-  return piece?.isOnField === true
-    && piece?.isDestroyed !== true
-    && Number(piece?.currentModels || 0) > 0;
-}
-
 function sidePassed(state, sideKey, phase) {
   return state?.players?.[sideKey]?.passedPhases?.[phase] === true;
 }
 
-function phaseActivated(piece, phase) {
-  return piece?.activatedPhases?.[phase] === true;
-}
-
 function defaultSideHasAvailableActivation(state, sideKey, phase) {
-  if (sidePassed(state, sideKey, phase)) return false;
-  return (state.pieces || []).some((piece) => (
-    piece.sideKey === sideKey
-      && activeOnTablePiece(piece)
-      && !phaseActivated(piece, phase)
-  ));
+  return hasOfficialPhaseActivationAvailableV1(state, sideKey, phase);
 }
 
 function markUnactivatedOnTableUnits(state, sideKey, phase) {

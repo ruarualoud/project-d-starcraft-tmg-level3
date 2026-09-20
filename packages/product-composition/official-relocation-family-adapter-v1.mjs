@@ -9,6 +9,8 @@ import {
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
 import { projectOfficialContextualSupplyValueV1 } from
   "../rule-atoms/official-contextual-supply-projection-v1.mjs";
+import { alternateOfficialPhaseActivationV1 } from
+  "../rule-atoms/official-phase-activation-availability-v1.mjs";
 import { verifyOfficialAbilityEffectIrCatalogueV1 } from
   "../source-data/official-ability-effect-ir-v1.mjs";
 import { verifyOfficialModelBaseGeometryDataBundleV1 } from
@@ -355,7 +357,12 @@ function activeTimingAvailable(state, route, sideKey, actor) {
   return true;
 }
 function deployTimingAvailable(state, route, sideKey, actor) {
-  return SIDE_KEYS.has(sideKey) && state.activeSideKey === sideKey
+  const window = state.selectedRosterActivationWindow;
+  const windowAllowsActor = !window || (window.sideKey === sideKey
+    && window.pieceId === actor?.id && window.phase === "movement"
+    && window.stage === "before_action");
+  return windowAllowsActor && SIDE_KEYS.has(sideKey)
+    && state.activeSideKey === sideKey
     && state.phase === "movement"
     && state.players?.[sideKey]?.passedPhases?.movement !== true
     && livePiece(actor) && actor.sideKey === sideKey && actor.isInReserves === true
@@ -1276,14 +1283,7 @@ function openAfterActionWindow(state, actor) {
   };
 }
 function alternateAfterEndedActivation(state, sideKey) {
-  const phase = state.phase;
-  const available = (candidateSide) => state.players?.[candidateSide]
-    ?.passedPhases?.[phase] !== true && (state.pieces || []).some((piece) => (
-    piece.sideKey === candidateSide && livePiece(piece)
-      && piece.activatedPhases?.[phase] !== true));
-  const opponent = sideKey === "player1" ? "player2" : "player1";
-  if (available(opponent)) state.activeSideKey = opponent;
-  else if (available(sideKey)) state.activeSideKey = sideKey;
+  alternateOfficialPhaseActivationV1(state, sideKey, state.phase);
 }
 function apply(bundle, stateInput, request = {}) {
   const action = request.action;

@@ -22,8 +22,9 @@ explicit, isolated slice manifests.
 
 ## Product order after environment repair
 
-1. Ticket 23 / Slice 248: repair alternating activation and rerun a fresh
-   Standard-2000 A-A match from revision 0. **Active next.**
+1. Ticket 23 / Slice 248: alternating-activation repair passed its historical
+   revision-3 regression; run a zero-Provider two-sided canary, then rerun a
+   fresh Standard-2000 A-A match from revision 0. **Active.**
 2. Ticket 23 / Slice 248: complete player-seat companion permissions, layered
    memory/role runtime and real floating-Web acceptance.
 3. Ticket 23 / Slice 248: add attack probability, fire-zone exchange and the
@@ -64,7 +65,8 @@ evidence without rerunning already-passed unrelated gates.
 ## Current accounting
 
 - DeepSeek product ledger: preserve the latest authoritative Ticket record; no
-  new DeepSeek call occurred during environment repair.
+  new DeepSeek call occurred during environment repair or the alternating-
+  activation repair. The focused regression used 0 Provider calls.
 - Kimi environment ledger: 2 CLI runs (1 connectivity probe, 1 ENV-6
   implementation session); token and currency fields were not reported by Kimi
   Code CLI.

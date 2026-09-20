@@ -6,6 +6,8 @@ import { resolveOfficialAbilityResourcePaymentV1 } from
   "../rule-atoms/official-card-build-payment-rules-kernel-v1.mjs";
 import { createOfficialMarineStimpackKernelV1 } from
   "../rule-atoms/official-marine-stimpack-kernel-v1.mjs";
+import { alternateOfficialPhaseActivationV1 } from
+  "../rule-atoms/official-phase-activation-availability-v1.mjs";
 import {
   createOfficialPhysicalFootprintV1,
   evaluateOfficialPhysicalFootprintRelationV1,
@@ -863,13 +865,7 @@ function applyEffect(state, route, action, events) {
     effectKind: route.effectKind, trainingTruth: false });
 }
 function alternate(state, sideKey, phase) {
-  const available = (candidateSide) => state.players?.[candidateSide]
-    ?.passedPhases?.[phase] !== true && state.pieces.some((piece) => (
-      piece.sideKey === candidateSide && activePiece(piece)
-        && piece.activatedPhases?.[phase] !== true));
-  const opponent = otherSide(sideKey);
-  if (available(opponent)) state.activeSideKey = opponent;
-  else if (available(sideKey)) state.activeSideKey = sideKey;
+  alternateOfficialPhaseActivationV1(state, sideKey, phase);
 }
 
 export function applyOfficialSelectedRosterAbilityActionV1(
