@@ -22,14 +22,15 @@ explicit, isolated slice manifests.
 
 ## Product order after environment repair
 
-1. Ticket 23 / Slice 248: alternating-activation repair passed its historical
-   revision-3 regression, fresh revision-0 two-sided zero-Provider canary and
-   phase-completion regression. The same fresh Standard-2000 room resumed to
-   revision 31, where a certainly unreachable Raptor Charge plus post-roll
-   Metabolic Boost spend exposed a High strategy/timing defect. The focused
-   repair now gates Charge on exact all-target reachability and scopes roll
-   advantage to `before_action`; resume from the durable revision-31 boundary.
-   **Active.**
+1. Ticket 23 / Slice 248: alternating activation, phase completion and certain
+   Charge shortfall repairs passed their focused gates. The same fresh
+   Standard-2000 room is durable at revision 33. Its next Planner correctly
+   rejected every unreachable Charge and chose a useful Swarmling Run, but the
+   formation validator misread corrected “not outside the fire envelope” text
+   and aspirational plan prose as a realized no-threat claim. Sentence-level
+   realized-claim validation and the non-resettable three-round semantic cap
+   now pass their focused gate; locally revalidate the paid corrected output,
+   apply action 34 and continue the same room. **Active.**
 2. Ticket 23 / Slice 248: complete player-seat companion permissions, layered
    memory/role runtime and real floating-Web acceptance.
 3. Ticket 23 / Slice 248: add attack probability, fire-zone exchange and the
@@ -70,10 +71,10 @@ evidence without rerunning already-passed unrelated gates.
 ## Current accounting
 
 - DeepSeek product ledger: the fresh Slice-248 A-A room is durable at revision
-  31 with about 131 Provider calls and estimated cost ¥9.77. The alternating-
-  activation, phase-completion, and Charge timing/reachability focused repairs
-  themselves used 0 Provider calls and ¥0; no ¥100 notification threshold has
-  been crossed.
-- Kimi environment ledger: 2 CLI runs (1 connectivity probe, 1 ENV-6
+  33 with 152 Provider calls, 8,453,858 total units and estimated cost
+  ¥11.497316. Pending action 34 used 10 calls and added ¥1.068767 before the
+  local validator blocked it. All four focused repairs used 0 Provider calls
+  and ¥0; no ¥100 notification threshold has been crossed.
+- Kimi environment ledger: 3 CLI runs (2 connectivity probes, 1 ENV-6
   implementation session); token and currency fields were not reported by Kimi
   Code CLI.

@@ -1,7 +1,7 @@
 # Ticket 23 / Slice 248 alternating-activation repair v1
 
 Date: 2026-09-21
-Status: focused repairs passed; fresh Standard-2000 A-A acceptance is durable at revision 31
+Status: focused repairs passed; fresh Standard-2000 A-A acceptance is durable at revision 33
 
 ## Defect
 
@@ -139,9 +139,52 @@ The durable match is paused at revision 31. Through that boundary it used about
 was crossed. This branch remains acceptance evidence but not training truth
 until the repaired continuation reaches a valid terminal state.
 
+## Formation threat-claim convergence follow-up
+
+The repaired Planner resumed the same room and correctly rejected every
+certainly unreachable Zerg Charge before selecting a useful Swarmling Run.
+Authority reached revision 33 after Player 1's Goliath Run and activation end.
+At the pending Player 2 action, the Host exposed four complete formations and
+the model selected option `89be9dbd...`.
+
+The first action response incorrectly claimed that all own units would remain
+outside current Terran fire bands. Later responses corrected every realized
+outcome field and explicitly stated that both Goliaths retained stationary
+coverage. The old validator nevertheless rejected six paid responses because:
+
+- it searched the whole intent, including aspirational goals, predictions and
+  rejected alternatives rather than only realized-result claims;
+- its regular expression treated “not outside the enemy fire envelope” as the
+  opposite assertion because it matched the word `outside` without negation;
+- an explicit retry reset the per-cycle counter, allowing the same decision to
+  exceed the three-round convergence policy.
+
+The repair now checks sentence-level realized claims only: selected reason,
+position value, risk, expected outcome/effects/risks, outcome calculations,
+formation reason and public speech. It excludes goals, plan continuity,
+opponent predictions, fallbacks and rejected alternatives. Explicit denial of
+an escape claim is preserved, and an exact move-then-fire band is not confused
+with current stationary weapon coverage. Action normalization advanced to v13,
+so the durable corrected paid response is eligible for local revalidation.
+Semantic correction is capped at three total rounds per choice and cannot be
+reopened by restarting or approving another retry.
+
+The bug-specific gate passed once with zero Provider calls and zero cost:
+
+```sh
+node scripts/verify-ticket-23-slice-248-formation-threat-claim-scope-v1.mjs
+```
+
+It proves that aspirational text alone passes, a false realized no-threat
+outcome blocks, and the actual corrected “not outside” plus move-then-fire-band
+wording passes. Before this code repair the room's durable Provider ledger was
+152 calls, 8,453,858 total units and estimated CNY 11.497316. The pending
+action-34 decision accounts for 10 calls; its actual match-ledger increment was
+CNY 1.068767. No CNY 100 notification threshold was crossed.
+
 ## Next gate
 
-Resume the same fresh paid Standard-2000 A-A match from revision 31, prove the
-next off-band Unit does not repeat the failed-Charge/resource-waste pattern, and
-continue to terminal before rebuilding screenshots, NDJSON, JSON and PDF
-evidence from this room only.
+Resume the same fresh paid Standard-2000 A-A match from revision 33. Locally
+revalidate the already-paid corrected Swarmling Run response, apply it without
+a duplicate Provider request, and continue to terminal before rebuilding
+screenshots, NDJSON, JSON and PDF evidence from this room only.

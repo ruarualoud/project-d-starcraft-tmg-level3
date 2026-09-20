@@ -27,9 +27,10 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v11";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v12";
+  "starcraft_tmg_live_action_shape_normalization_v13";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v5";
+export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
 const NATIVE_QUERY_KINDS = Object.freeze([
   "space.inspect_relationships",
   STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
@@ -1056,6 +1057,80 @@ function bindPlannerSelectedProposal(raw, input, planner) {
   return normalized;
 }
 
+function formationThreatClaimFragments(raw, selection) {
+  const intent = object(raw?.intent) ? raw.intent : {};
+  const summary = object(raw?.publicDecisionSummary)
+    ? raw.publicDecisionSummary : {};
+  const fields = [
+    ["selectedReason", raw?.selectedReason],
+    ["scoreOrPositionValue", raw?.scoreOrPositionValue],
+    ["risk", raw?.risk],
+    ["intent.expectedOwnOutcome", intent.expectedOwnOutcome],
+    ["intent.expectedEffects", intent.expectedEffects],
+    ["intent.risks", intent.risks],
+    ["publicDecisionSummary.expectedOutcome", summary.expectedOutcome],
+    ["publicDecisionSummary.scoreOrPositionValue",
+      summary.scoreOrPositionValue],
+    ["publicDecisionSummary.risk", summary.risk],
+    ["publicDecisionSummary.calculations", summary.calculations],
+    ["formationSelection.publicReason", selection?.publicReason],
+    ["speech", raw?.speech],
+  ];
+  return fields.flatMap(([field, value]) => {
+    const values = Array.isArray(value) ? value : [value];
+    return values.flatMap((entry) => String(entry || "")
+      .split(/[.;!?。；！？\n]+/u)
+      .map((textValue) => textValue.trim())
+      .filter(Boolean)
+      .map((textValue) => ({ field, text: textValue })));
+  });
+}
+
+function claimsNoIncomingStationaryThreat(fragment) {
+  const normalized = String(fragment || "").replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">").toLowerCase();
+  if (!normalized) return false;
+  const explicitDenial =
+    /\b(?:not|never|no longer)\s+(?:fully\s+)?(?:outside|beyond|out of)\b|\b(?:isn't|aren't|wasn't|weren't)\s+(?:fully\s+)?(?:outside|beyond|out of)\b|\b(?:does|do|did)\s+not\s+(?:place|leave|put|move|keep)[^.;!?]{0,60}\b(?:outside|beyond|out of)\b|(?:并非|不是|不再|不能声称)[^。；！？]{0,60}(?:火力|射程|威胁)[^。；！？]{0,20}外/iu;
+  if (explicitDenial.test(normalized)) return false;
+
+  const withoutMovementOnlyBands = normalized
+    .replace(/[^.;!?]{0,80}\b(?:move[- ]then[- ]fire|advance[- ]and[- ]fire|post[- ]move\s+fire)\b[^.;!?]{0,80}/giu, " ");
+  const stationaryThreatTerm =
+    /\b(?:fire\s+(?:envelope|zone|band|range)|threat\s+(?:envelope|zone|band|range)|(?:weapon|firing|attack)\s+range|stationary\s+(?:fire|weapon|threat)(?:\s+(?:profile|range|band|envelope|coverage))?)s?\b/iu;
+  const escapeTerm = /\b(?:outside|beyond|out of)\b/iu;
+  const positiveEscape = escapeTerm.test(withoutMovementOnlyBands)
+    && stationaryThreatTerm.test(withoutMovementOnlyBands);
+  const positiveDenial =
+    /\b(?:no|zero)\b[^.;!?]{0,50}\b(?:stationary\s+)?(?:weapon|fire|threat)\b[^.;!?]{0,50}\b(?:cover|target|reach|profile)/iu
+    .test(withoutMovementOnlyBands)
+    || /\b(?:cannot|can't|unable to)\b[^.;!?]{0,50}\b(?:target|shoot|fire at)\b/iu
+      .test(withoutMovementOnlyBands);
+  const chineseEscape =
+    /(?:火力(?:圈|范围|区|带)|射程|威胁(?:圈|范围))外|无法(?:成为目标|被射击)/u
+      .test(withoutMovementOnlyBands);
+  return positiveEscape || positiveDenial || chineseEscape;
+}
+
+export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
+  const option = object(input.option) ? input.option : {};
+  const incomingTargetIds = (option.relationshipComparison?.relationships || [])
+    .filter((entry) => Number(entry.enemyStationaryThreatProfileCount || 0) > 0)
+    .map((entry) => String(entry.targetId || ""))
+    .filter(Boolean);
+  const checkedClaims = formationThreatClaimFragments(input.raw,
+    input.selection);
+  const contradictions = incomingTargetIds.length > 0
+    ? checkedClaims.filter((entry) => claimsNoIncomingStationaryThreat(
+      entry.text)) : [];
+  return freeze({
+    incomingTargetIds,
+    checkedClaimCount: checkedClaims.length,
+    contradictions,
+    contradicted: contradictions.length > 0,
+  });
+}
+
 function bindFormationSelection(raw, queryReceipts) {
   if (!object(raw) || !object(raw.proposal)
     || raw.proposal.kind !== "parameterized") return raw;
@@ -1074,21 +1149,15 @@ function bindFormationSelection(raw, queryReceipts) {
     throw correctionError("ACTION_FORMATION_OPTION_SELECTION_REQUIRED",
       domainId);
   }
-  const incomingStationaryThreatRows = (
-    option.relationshipComparison?.relationships || []
-  ).filter((entry) => Number(entry.enemyStationaryThreatProfileCount || 0) > 0);
-  const publicClaims = JSON.stringify([
-    normalized.selectedReason,
-    normalized.risk,
-    normalized.publicDecisionSummary,
-    normalized.intent,
-    selection.publicReason,
-  ]);
-  if (incomingStationaryThreatRows.length > 0
-    && /(?:outside|beyond|out of|not in|no legal target|deny[^.]{0,80}legal target)[^.]{0,80}(?:fire|threat|range)|(?:fire|threat|range)[^.]{0,80}(?:outside|beyond|out of|no legal target)|火力(?:圈|范围)外|射程外|无法(?:成为目标|射击)/iu.test(publicClaims)) {
+  const threatClaimInspection = inspectStarcraftTmgFormationThreatClaimsV1({
+    raw: normalized,
+    selection,
+    option,
+  });
+  if (threatClaimInspection.contradicted) {
     throw correctionError(
       "ACTION_FORMATION_THREAT_CLAIM_CONTRADICTS_PROJECTION",
-      incomingStationaryThreatRows.map((entry) => entry.targetId).join(","),
+      threatClaimInspection.incomingTargetIds.join(","),
     );
   }
   const submittedAssignments = Array.isArray(selection.slotAssignments)
@@ -3133,6 +3202,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     ? options.now : () => new Date().toISOString();
   const maxToolRounds = integer(options.maxToolRounds || 3,
     "maxToolRounds", 1, 16);
+  const maxSemanticCorrectionRounds = Math.min(maxToolRounds,
+    STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE);
   const maxPlanningQueryRounds = integer(
     options.maxPlanningQueryRounds || 8,
     "maxPlanningQueryRounds", 1, 32);
@@ -4102,14 +4173,18 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         role: "user",
         content: `The previous ${attempt.stage} submission failed typed validation: ${correction}. Correct only that defect, preserve supported facts, and call the required strict submit tool once.`,
       });
-      current.status = current.stageCorrectionRounds >= maxToolRounds
+      current.status = current.semanticCorrectionRounds
+          >= maxSemanticCorrectionRounds
+        || current.stageCorrectionRounds >= maxToolRounds
         || current.repeatedSemanticFailureCount >= 2
         ? "provider_output_invalid" : "generating";
     });
     const current = match.decisions[choice.choiceKey];
     return {
       match,
-      exhausted: current.stageCorrectionRounds >= maxToolRounds
+      exhausted: current.semanticCorrectionRounds
+          >= maxSemanticCorrectionRounds
+        || current.stageCorrectionRounds >= maxToolRounds
         || current.repeatedSemanticFailureCount >= 2,
       correction,
     };
@@ -4309,6 +4384,18 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           automaticRetryPerformed: false,
           projection: publicProjection(match),
         });
+      }
+      if (EXPLICIT_RETRY_CHOICE_STATUSES.has(choice.status)
+        && Number(choice.semanticCorrectionRounds || 0)
+          >= maxSemanticCorrectionRounds) {
+        return rejection("LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED",
+          "High", {
+            choiceKey: choice.choiceKey,
+            semanticCorrectionRounds: choice.semanticCorrectionRounds,
+            semanticCorrectionLimit: maxSemanticCorrectionRounds,
+            automaticRetryPerformed: false,
+            projection: publicProjection(match),
+          });
       }
       if (choice.status === "retry_ready"
         || input.retryApproved === true
