@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "id": "env-6-focused-guardrails",
+  "githubIssue": null,
+  "title": "Add focused local and GitHub guardrails without running the product-wide suite",
+  "owner": "kimi",
+  "agentProfile": "project-d-slice-implementer",
+  "model": "project-d-k3",
+  "baseRef": "codex/starcraft-integration-20260921",
+  "branch": "agent/kimi/env-6-focused-guardrails",
+  "worktree": ".worktrees/env-6-focused-guardrails",
+  "allowedPaths": [
+    ".github/workflows/",
+    ".githooks/",
+    "docs/development/env-6-focused-guardrails-closure-v1.md",
+    "package.json",
+    "scripts/install-project-hooks-v1.mjs",
+    "scripts/verify-development-environment-v1.mjs"
+  ],
+  "verification": [
+    {
+      "name": "development environment guardrail",
+      "command": "node scripts/verify-development-environment-v1.mjs"
+    }
+  ],
+  "taskBrief": "Build the repository guardrail identified by the current retro. Add a deterministic offline verifier that checks the pinned Node/npm contract, compact CURRENT_WORK/AGENTS navigation, ignored runtime/generated paths, both scoped Kimi agent profiles, and the collaboration manifest shape without reading secrets or calling a network/provider. Add an install script that sets core.hooksPath=.githooks, and a pre-commit hook that runs git diff --cached --check plus node --check only for staged .js/.mjs files. Add a GitHub Actions workflow that uses Node 24 and runs only this environment verifier; it must not run verify:all, paid calls, source refreshes, Expo builds, or historical gates. Add package scripts and a closure note. Do not change product behavior."
+}
