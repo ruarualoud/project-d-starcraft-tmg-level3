@@ -16,8 +16,8 @@ Codex and Kimi Code collaboration.
 | ENV-3 | Pinned runtime, ignore policy and offline environment doctor | Complete — focused doctor 9 pass / 1 expected dirty-tree warning |
 | ENV-4 | Compact navigation and verification routing | Complete — this file is the agent entry point; slice manifests own focused gates |
 | ENV-5 | One-Issue/one-worktree Codex–Kimi collaboration module | Complete — five-command interface and two scoped Kimi agents |
-| ENV-6 | Focused pre-commit and GitHub CI guardrails | Pending |
-| ENV-7 | GitHub labels, issue/PR templates and remaining-slice publication | Pending approval of issue breakdown |
+| ENV-6 | Focused pre-commit and GitHub CI guardrails | Complete — Kimi implementation `6f17212`, integrated as `de66fb8`; focused gate 21/21 |
+| ENV-7 | GitHub labels, issue/PR templates and remaining-slice publication | In progress — local publication package first; remote Issues wait only if GitHub CLI remains unauthenticated |
 
 ## Product order after environment repair
 
@@ -56,5 +56,6 @@ target above.
 
 - DeepSeek product ledger: preserve the latest authoritative Ticket record; no
   new DeepSeek call occurred during environment repair.
-- Kimi environment ledger: 1 connectivity call; token and currency fields were
-  not reported by Kimi Code CLI.
+- Kimi environment ledger: 2 CLI runs (1 connectivity probe, 1 ENV-6
+  implementation session); token and currency fields were not reported by Kimi
+  Code CLI.

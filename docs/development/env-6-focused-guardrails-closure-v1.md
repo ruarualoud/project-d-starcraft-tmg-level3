@@ -48,9 +48,10 @@ npm run hooks:install
 
 ## Bookkeeping notes
 
-- `CURRENT_WORK.md` row ENV-6 remains `Pending` in this worktree because the
-  file is outside this slice's allowed paths; the integrating Codex flips it to
-  complete after the gate passes.
-- No paid Provider call occurred during this slice; the Kimi environment ledger
-  is unchanged.
+- The Kimi-owned commit left `CURRENT_WORK.md` unchanged because it was outside
+  the slice's allowed paths; the integrating Codex marked ENV-6 complete after
+  the focused gate passed.
+- One Kimi Code implementation session produced this slice. Kimi Code did not
+  report token or currency usage, so the environment ledger records the CLI run
+  without inventing a cost estimate.
 - Unresolved Critical/High concerns: none.
