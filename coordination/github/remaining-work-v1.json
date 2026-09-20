@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "repository": "ruarualoud/project-d-starcraft-tmg-level3",
+  "sourceOfTruth": "CURRENT_WORK.md",
+  "publicationPolicy": {
+    "defaultMode": "preview",
+    "applyRequiresAuthenticatedGh": true,
+    "existingIssuesAreNeverDuplicated": true,
+    "onlyCriticalOrHighBlockIntegration": true,
+    "maximumReviewFixRounds": 3
+  },
+  "issues": [
+    {
+      "id": "ticket-20-slices-193-195-product-reacceptance",
+      "order": 1,
+      "title": "[Ticket 20 / Slices 193–195] Complete real browser product journey",
+      "labels": ["type:ticket", "status:ready", "priority:critical", "owner:codex", "area:web-ui", "area:harness"],
+      "body": [
+        "Reopen the claimed closure against the actual user-facing Web product rather than Battle Lab or fixture-only evidence.",
+        "Deliver Database, Army Builder, calculators, Settings/language, floating companion, authoritative room/map/models/threat, Preview/Apply/Replay, human-agent play, multi-game reflection, counterfactual branches and incremental Skill freshness as one coherent product journey.",
+        "Preserve Rules/Authority as the only legality source. Use one focused browser acceptance run per changed commit; only Critical/High findings block."
+      ],
+      "references": [
+        "docs/ticket-20-slices-186-195-human-agent-spatial-memory-roadmap-2026-09-11.md"
+      ]
+    },
+    {
+      "id": "ticket-14-physical-device-acceptance",
+      "order": 2,
+      "title": "[Ticket 14 / Slice 143] Complete Android physical-device acceptance",
+      "labels": ["type:slice", "status:blocked", "priority:high", "owner:codex", "area:app"],
+      "body": [
+        "Produce the deferred Android package and real-device evidence after the Web/service journey is accepted.",
+        "The missing physical device is an external acceptance dependency; package preparation and non-device checks may proceed without claiming device closure.",
+        "Do not substitute an emulator or browser screenshot for the requested physical-device receipt."
+      ],
+      "references": [
+        "docs/remaining-tickets-14-22-development-roadmap-2026-09-03.md"
+      ]
+    },
+    {
+      "id": "ticket-19-muzero-real-match-revalidation",
+      "order": 3,
+      "title": "[Ticket 19 / Slices 196–201] Revalidate MuZero export from accepted real matches",
+      "labels": ["type:ticket", "status:triage", "priority:high", "owner:codex", "area:training", "area:harness"],
+      "body": [
+        "Revalidate player-view observation/action/reward/discount/chance and recurrent-state lineage against the newly accepted H-A and A-A journals.",
+        "Prove hidden information does not leak and NDJSON/MuZero/RLDS round trips remain lossless.",
+        "Export eligibility stays separate from training; no learner is trained by this issue."
+      ],
+      "references": [
+        "docs/ticket-19-slices-196-201-muzero-player-view-trajectory-roadmap-2026-09-14.md"
+      ]
+    },
+    {
+      "id": "ticket-21-production-operations-revalidation",
+      "order": 4,
+      "title": "[Ticket 21 / Slices 202–209] Revalidate production operations after product closure",
+      "labels": ["type:ticket", "status:triage", "priority:high", "owner:codex", "area:operations"],
+      "body": [
+        "Reconcile environment, RBAC, credential isolation, queues, releases, privacy, telemetry and incident evidence with the accepted product build.",
+        "Keep local demo, controlled experiment, production room and training-eligible run as distinct states.",
+        "External production approval remains explicit and cannot be inferred from local success."
+      ],
+      "references": [
+        "docs/ticket-21-slices-202-209-production-operations-roadmap-2026-09-14.md"
+      ]
+    },
+    {
+      "id": "ticket-22-final-synthesis-refresh",
+      "order": 5,
+      "title": "[Ticket 22 / Slices 210–214] Refresh final synthesis and acceptance bundle",
+      "labels": ["type:ticket", "status:triage", "priority:high", "owner:codex", "area:operations"],
+      "body": [
+        "Refresh requirement traceability, architecture and contract index, evidence/risk matrix, handoff runbook and final machine-readable acceptance after all reopened work closes.",
+        "Historical closure claims remain evidence, not substitutes for the final accepted product journey.",
+        "Run only the Ticket 22 aggregate after its dependencies are complete."
+      ],
+      "references": [
+        "docs/ticket-22-slices-210-214-final-synthesis-acceptance-roadmap-2026-09-14.md"
+      ]
+    },
+    {
+      "id": "ticket-23-live-match-critical-followups",
+      "order": 6,
+      "title": "[Ticket 23 / Slices 248–249] Repair live match sequencing, companion and reflection gaps",
+      "labels": ["type:ticket", "status:triage", "priority:critical", "owner:codex", "area:harness", "area:web-ui", "paid-model"],
+      "body": [
+        "Preserve the recorded alternating-activation defect, combat-estimation/prediction-calibration gap, player-seat companion permission model and WikiSkill/EvoTest research as explicit follow-up work.",
+        "A fresh Standard-2000 match must start at revision 0 after the sequencing repair; the invalid historical match cannot become training truth.",
+        "Paid H-A/A-A and role-play runs require token/currency ledgers and user-visible reports."
+      ],
+      "references": [
+        "docs/ticket-23-slice-248-follow-up-combat-estimation-prediction-calibration-task-v1-2026-09-17.md",
+        "docs/ticket-23-slice-248-revision-46-checkpoint-report-v1-2026-09-17.md"
+      ]
+    },
+    {
+      "id": "ticket-25-spatial-formation-strategy-closure",
+      "order": 7,
+      "title": "[Ticket 25 / Slices 262–263] Close spatial formation strategy and natural-match canary",
+      "labels": ["type:ticket", "status:triage", "priority:high", "owner:codex", "area:harness", "paid-model"],
+      "body": [
+        "Complete the agent-selectable formation/placement solver, position-reason output and natural-match formation canary.",
+        "Keep exact base-edge geometry, coherency, terrain, threat and Rules Preview binding; templates may seed search but may not replace free legal formation choice.",
+        "Validate strategy impact without promoting advisory geometry to authority."
+      ],
+      "references": [
+        "docs/ticket-25-spatial-intelligence-mcp-roadmap-v1-2026-09-16.md",
+        "docs/ticket-25-slice-263-live-browser-recovery-blocker-v1-2026-09-17.md"
+      ]
+    },
+    {
+      "id": "ticket-26-companion-role-pack-comparison",
+      "order": 8,
+      "title": "[Ticket 26 / Slices 264–266] Build and compare two StarCraft II companion role packs",
+      "labels": ["type:ticket", "status:triage", "priority:high", "owner:kimi", "owner:codex", "area:web-ui", "area:harness", "paid-model"],
+      "body": [
+        "Build two complete commander companion packs with character card, world book, era/relationship state, layered memory, tactical voice and Web floating-window integration.",
+        "Compare role fidelity, continuity, seat permissions, fact/inference separation, tactical quality, hallucination and immersion under identical model, Skill, tool and token budgets.",
+        "Kimi may implement scoped UI slices; Codex owns contracts, integration and final acceptance."
+      ],
+      "references": ["CURRENT_WORK.md"]
+    }
+  ]
+}

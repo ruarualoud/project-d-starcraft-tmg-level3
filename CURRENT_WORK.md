@@ -4,10 +4,11 @@ This is the compact entry point for agents working in this repository. Historica
 detail remains in the parent `TASKS.md` and `PROJECT_MEMORY.md`; load a specific
 historical entry only when a linked task requires it.
 
-## Active phase: development environment repair
+## Active phase: product development resumed
 
-The product roadmap is temporarily paused while the repository is made safe for
-Codex and Kimi Code collaboration.
+The collaboration environment is complete. Product work resumes from the
+ordered acceptance list below; Codex owns integration and Kimi receives only
+explicit, isolated slice manifests.
 
 | Slice | Deliverable | Status |
 | --- | --- | --- |
@@ -17,11 +18,11 @@ Codex and Kimi Code collaboration.
 | ENV-4 | Compact navigation and verification routing | Complete — this file is the agent entry point; slice manifests own focused gates |
 | ENV-5 | One-Issue/one-worktree Codex–Kimi collaboration module | Complete — five-command interface and two scoped Kimi agents |
 | ENV-6 | Focused pre-commit and GitHub CI guardrails | Complete — Kimi implementation `6f17212`, integrated as `de66fb8`; focused gate 21/21 |
-| ENV-7 | GitHub labels, issue/PR templates and remaining-slice publication | In progress — local publication package first; remote Issues wait only if GitHub CLI remains unauthenticated |
+| ENV-7 | GitHub labels, issue/PR templates and remaining-slice publication | Complete — 15 labels, templates, 8-issue publication bundle; focused gate 33/33; remote issue apply waits for GitHub CLI authentication |
 
 ## Product order after environment repair
 
-1. Ticket 20 Slices 193–195: complete browser product journey.
+1. Ticket 20 Slices 193–195: complete browser product journey. **Active next.**
 2. Ticket 14: device/APK acceptance when an Android target is available; Web and
    service work may proceed before the device gate.
 3. Ticket 19: MuZero player-view training trajectories.

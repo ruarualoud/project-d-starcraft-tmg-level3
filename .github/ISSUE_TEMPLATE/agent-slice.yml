@@ -1,0 +1,66 @@
+name: Project D ticket or slice
+description: Track one independently reviewable StarCraft TMG delivery.
+title: "[TICKET/SLICE] "
+labels:
+  - status:triage
+body:
+  - type: input
+    id: identifier
+    attributes:
+      label: Ticket / Slice
+      description: Use the stable project identifier, for example Ticket 20 / Slice 193.
+      placeholder: Ticket 20 / Slice 193
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: User-visible outcome
+      description: State the concrete product behavior delivered by this issue.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: In scope and out of scope
+      description: List the exact implementation boundary and explicitly excluded work.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance evidence
+      description: Name the focused command, browser journey, receipt, screenshot, or device evidence required once.
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Allowed paths
+      description: List files or directory prefixes this issue may change.
+      placeholder: |-
+        - packages/client-domain/
+        - scripts/verify-ticket-20-slice-193-v1.mjs
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Paid model call
+      options:
+        - No paid call expected
+        - Paid call expected and budgeted
+        - Unknown; stop before first paid call
+    validations:
+      required: true
+  - type: checkboxes
+    id: invariants
+    attributes:
+      label: Execution invariants
+      options:
+        - label: I will run only the issue-specific gate once per changed commit.
+          required: true
+        - label: Only Critical/High review findings block integration.
+          required: true
+        - label: I will stop a non-converging review/fix loop after three rounds.
+          required: true

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "labels": [
+    { "name": "type:ticket", "color": "1f6feb", "description": "A complete Project D ticket" },
+    { "name": "type:slice", "color": "54aeff", "description": "One independently reviewable vertical slice" },
+    { "name": "status:triage", "color": "d4c5f9", "description": "Needs scope confirmation" },
+    { "name": "status:ready", "color": "0e8a16", "description": "Dependencies and acceptance gate are ready" },
+    { "name": "status:blocked", "color": "b60205", "description": "Cannot progress without an external state change" },
+    { "name": "priority:critical", "color": "b60205", "description": "Critical product or authority defect" },
+    { "name": "priority:high", "color": "d93f0b", "description": "High-priority completion work" },
+    { "name": "owner:codex", "color": "5319e7", "description": "Codex owns integration and acceptance" },
+    { "name": "owner:kimi", "color": "7057ff", "description": "Kimi Code owns the isolated implementation slice" },
+    { "name": "area:web-ui", "color": "c2e0c6", "description": "Web product journey or StarCraft presentation" },
+    { "name": "area:app", "color": "bfdadc", "description": "Native application or physical-device acceptance" },
+    { "name": "area:harness", "color": "fef2c0", "description": "Agent, room, memory, planning, or replay harness" },
+    { "name": "area:training", "color": "fbca04", "description": "MuZero, reflection, Skill evolution, or training data" },
+    { "name": "area:operations", "color": "006b75", "description": "Production operations, CI, security, or observability" },
+    { "name": "paid-model", "color": "e99695", "description": "May consume paid model quota; ledger required" }
+  ]
+}
