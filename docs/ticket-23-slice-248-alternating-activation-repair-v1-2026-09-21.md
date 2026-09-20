@@ -1,7 +1,7 @@
 # Ticket 23 / Slice 248 alternating-activation repair v1
 
 Date: 2026-09-21
-Status: focused repair passed; fresh Standard-2000 A-A acceptance not yet run
+Status: focused repair and zero-Provider canary passed; fresh Standard-2000 A-A acceptance not yet run
 
 ## Defect
 
@@ -66,8 +66,23 @@ No unrelated passed gate or full suite was rerun.
 - Rollback trigger: any focused canary that exposes a non-window unit or fails
   to hand control to a side with a legal reserve activation.
 
+## Fresh-room canary
+
+The product canary started a new room at revision 0 and passed once with this
+exact six-action sequence:
+
+1. start the round;
+2. choose Player 1 as first actor;
+3. Player 1 deploys Goliath and opens only Goliath's window;
+4. Goliath finishes and Authority hands control to Player 2;
+5. Player 2 deploys Kerrigan and opens only Kerrigan's window;
+6. Kerrigan finishes and Authority hands control back to Player 1.
+
+Evidence:
+`build/ticket-23-slice-248-zero-provider-alternation-canary-v1/report.json`.
+Provider calls and estimated cost were both zero; source data was not refreshed.
+
 ## Next gate
 
-Run a zero-Provider product canary from revision 0 across both sides' first
-deployments. If it passes, start the fresh paid Standard-2000 A-A match and
-rebuild screenshots, NDJSON, JSON and PDF evidence from that new room only.
+Start the fresh paid Standard-2000 A-A match from revision 0 and rebuild
+screenshots, NDJSON, JSON and PDF evidence from that new room only.
