@@ -23,8 +23,9 @@ explicit, isolated slice manifests.
 ## Product order after environment repair
 
 1. Ticket 23 / Slice 248: alternating-activation repair passed its historical
-   revision-3 regression and fresh revision-0 two-sided zero-Provider canary;
-   rerun a fresh Standard-2000 A-A match from revision 0. **Active.**
+   revision-3 regression, fresh revision-0 two-sided zero-Provider canary and
+   phase-completion regression; resume the fresh Standard-2000 A-A room from
+   its durable revision-18 boundary. **Active.**
 2. Ticket 23 / Slice 248: complete player-seat companion permissions, layered
    memory/role runtime and real floating-Web acceptance.
 3. Ticket 23 / Slice 248: add attack probability, fire-zone exchange and the

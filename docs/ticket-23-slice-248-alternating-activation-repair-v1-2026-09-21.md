@@ -82,6 +82,21 @@ Evidence:
 `build/ticket-23-slice-248-zero-provider-alternation-canary-v1/report.json`.
 Provider calls and estimated cost were both zero; source data was not refreshed.
 
+## Phase-completion follow-up
+
+The resumed paid match reached revision 18 and exposed a High implementation
+regression before any further Provider call: the shared-availability refactor
+had removed two local helpers that `completePhase()` still uses to mark
+unactivated on-table units. The immutable failure was
+`ReferenceError: activeOnTablePiece is not defined`; after three identical
+preview failures the harness correctly blocked instead of retrying forever.
+
+`verify-ticket-23-slice-248-phase-pass-completion-repair-v1.mjs` reproduced the
+same error before the repair. The local marking helpers were restored without
+changing the shared next-side rule. The same focused verifier then passed once:
+Movement advanced to Assault, Player 1 became active, and Provider calls were
+zero. The paid room remains durable at revision 18 for same-room recovery.
+
 ## Next gate
 
 Start the fresh paid Standard-2000 A-A match from revision 0 and rebuild

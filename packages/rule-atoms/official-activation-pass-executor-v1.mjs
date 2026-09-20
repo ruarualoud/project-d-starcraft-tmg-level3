@@ -46,8 +46,18 @@ function clone(value) {
   return structuredClone(value);
 }
 
+function activeOnTablePiece(piece) {
+  return piece?.isOnField === true
+    && piece?.isDestroyed !== true
+    && Number(piece?.currentModels || 0) > 0;
+}
+
 function sidePassed(state, sideKey, phase) {
   return state?.players?.[sideKey]?.passedPhases?.[phase] === true;
+}
+
+function phaseActivated(piece, phase) {
+  return piece?.activatedPhases?.[phase] === true;
 }
 
 function defaultSideHasAvailableActivation(state, sideKey, phase) {
