@@ -1,7 +1,7 @@
 # Ticket 23 / Slice 248 alternating-activation repair v1
 
 Date: 2026-09-21
-Status: focused repairs passed; fresh Standard-2000 A-A acceptance is durable at revision 33
+Status: focused repairs passed; fresh Standard-2000 A-A acceptance is durable at revision 34
 
 ## Defect
 
@@ -182,9 +182,16 @@ wording passes. Before this code repair the room's durable Provider ledger was
 action-34 decision accounts for 10 calls; its actual match-ledger increment was
 CNY 1.068767. No CNY 100 notification threshold was crossed.
 
+The same durable room then resumed from revision 33. Action normalization v13
+locally revalidated the final already-paid corrected response, applied the
+18-model Swarmling Run with formation option `89be9dbd...`, and produced
+`screenshots/0039-r034-player2-run-applied.png`. Room state advanced to revision
+34 with Replay equality. Provider calls remained exactly 152, total units
+remained 8,453,858 and estimated cost remained CNY 11.497316; no duplicate
+Provider request or charge occurred.
+
 ## Next gate
 
-Resume the same fresh paid Standard-2000 A-A match from revision 33. Locally
-revalidate the already-paid corrected Swarmling Run response, apply it without
-a duplicate Provider request, and continue to terminal before rebuilding
-screenshots, NDJSON, JSON and PDF evidence from this room only.
+Resume the same fresh paid Standard-2000 A-A match from revision 34 and continue
+to terminal before rebuilding screenshots, NDJSON, JSON and PDF evidence from
+this room only.
