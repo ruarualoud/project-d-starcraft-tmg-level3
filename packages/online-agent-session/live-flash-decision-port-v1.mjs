@@ -27,7 +27,7 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v11";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v13";
+  "starcraft_tmg_live_action_shape_normalization_v14";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v5";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -1091,7 +1091,7 @@ function claimsNoIncomingStationaryThreat(fragment) {
     .replaceAll("&gt;", ">").toLowerCase();
   if (!normalized) return false;
   const explicitDenial =
-    /\b(?:not|never|no longer)\s+(?:fully\s+)?(?:outside|beyond|out of)\b|\b(?:isn't|aren't|wasn't|weren't)\s+(?:fully\s+)?(?:outside|beyond|out of)\b|\b(?:does|do|did)\s+not\s+(?:place|leave|put|move|keep)[^.;!?]{0,60}\b(?:outside|beyond|out of)\b|(?:并非|不是|不再|不能声称)[^。；！？]{0,60}(?:火力|射程|威胁)[^。；！？]{0,20}外/iu;
+    /\b(?:not|never|no longer)\s+(?:fully\s+)?(?:outside|beyond|out of)\b|\b(?:isn't|aren't|wasn't|weren't)\s+(?:fully\s+)?(?:outside|beyond|out of)\b|\b(?:does|do|did)\s+not\s+(?:place|leave|put|move|keep)[^.;!?]{0,60}\b(?:outside|beyond|out of)\b|\binside\b[^.;!?]{0,120}\brather than\s+(?:fully\s+)?(?:outside|beyond|out of)\b|(?:并非|不是|不再|不能声称)[^。；！？]{0,60}(?:火力|射程|威胁)[^。；！？]{0,20}外/iu;
   if (explicitDenial.test(normalized)) return false;
 
   const withoutMovementOnlyBands = normalized
@@ -1905,6 +1905,27 @@ function mapDecisionSubmission(raw, input, choice) {
   }
   delete result.selection;
   return result;
+}
+
+function normalizeSubmittedAction(attempt, input, choice) {
+  const parts = responseParts(attempt?.safeOutput);
+  if (!object(parts.decision)) {
+    throw correctionError("ACTION_FINAL_OUTPUT_MISSING");
+  }
+  const submittedAction = parts.terminal
+    ? mapDecisionSubmission(parts.decision, input, choice)
+    : parts.decision;
+  const plannerBoundAction = bindPlannerSelectedProposal(submittedAction,
+    input, choice.plannerResult);
+  const formationBoundAction = bindFormationSelection(
+    plannerBoundAction, choice.queryReceipts);
+  const assetBoundAction = bindAssetPlacementSelection(formationBoundAction,
+    choice.queryReceipts);
+  const boundAction = bindExactInstantiatedProposal(assetBoundAction,
+    choice.queryReceipts, choice.plannerResult);
+  const normalizedAction = normalizeActionOutputShape(boundAction);
+  validateActionOutput(normalizedAction, input, choice.plannerResult);
+  return normalizedAction;
 }
 
 function strictObject(properties, description = undefined) {
@@ -4244,19 +4265,30 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         choice = match.decisions[choice.choiceKey];
         attempt = choice.attempts[replayablePlannerKey];
       }
-      const replayableCompletedKey = choice.plannerResult
+      const replayableCompletedCandidates = choice.plannerResult
         && (["provider_failed_requires_explicit_retry", "provider_output_invalid",
           "provider_call_may_have_started"]
           .includes(choice.status)
           || attempt?.status === "provider_call_may_have_started"
           || interruptedLocalReplay || normalizationUpgradePending)
-        ? [...choice.attemptKeys].reverse().find((attemptKey) => {
+        ? [...choice.attemptKeys].reverse().flatMap((attemptKey) => {
           const candidate = choice.attempts?.[attemptKey];
           return candidate?.status === "completed"
             && object(responseParts(candidate.safeOutput).decision)
             && candidate.localSemanticReplayVersion
-              !== ACTION_SHAPE_NORMALIZATION_VERSION;
-        }) : null;
+              !== ACTION_SHAPE_NORMALIZATION_VERSION
+            ? [{ attemptKey, candidate }] : [];
+        }) : [];
+      const locallyValidReplay = replayableCompletedCandidates.find((entry) => {
+        try {
+          normalizeSubmittedAction(entry.candidate, input, choice);
+          return true;
+        } catch {
+          return false;
+        }
+      });
+      const replayableCompletedKey = locallyValidReplay?.attemptKey
+        || replayableCompletedCandidates[0]?.attemptKey || null;
       if (replayableCompletedKey) {
         match = await commit(match, (draft) => {
           const current = draft.decisions[choice.choiceKey];
@@ -4746,19 +4778,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       let decision;
       let normalizedAction;
       try {
-        const submittedAction = parts.terminal
-          ? mapDecisionSubmission(parts.decision, input, choice)
-          : parts.decision;
-        const plannerBoundAction = bindPlannerSelectedProposal(submittedAction,
-          input, choice.plannerResult);
-        const formationBoundAction = bindFormationSelection(
-          plannerBoundAction, choice.queryReceipts);
-        const assetBoundAction = bindAssetPlacementSelection(formationBoundAction,
-          choice.queryReceipts);
-        const boundAction = bindExactInstantiatedProposal(assetBoundAction,
-          choice.queryReceipts, choice.plannerResult);
-        normalizedAction = normalizeActionOutputShape(boundAction);
-        validateActionOutput(normalizedAction, input, choice.plannerResult);
+        normalizedAction = normalizeSubmittedAction(attempt, input, choice);
         const composed = {
           ...clone(normalizedAction),
           plannerResult: clone(choice.plannerResult),

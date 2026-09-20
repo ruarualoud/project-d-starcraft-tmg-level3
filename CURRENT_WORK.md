@@ -23,15 +23,17 @@ explicit, isolated slice manifests.
 ## Product order after environment repair
 
 1. Ticket 23 / Slice 248: alternating activation, phase completion and certain
-   Charge shortfall repairs passed their focused gates. The same fresh
-   Standard-2000 room is durable at revision 34. Its next Planner correctly
-   rejected every unreachable Charge and chose a useful Swarmling Run, but the
-   formation validator misread corrected “not outside the fire envelope” text
-   and aspirational plan prose as a realized no-threat claim. Sentence-level
-   realized-claim validation and the non-resettable three-round semantic cap
-   now pass their focused gate. Action 34 locally reused the already-paid
-   corrected response, applied the complete 18-model formation and advanced
-   without changing calls, units or cost; continue the same room. **Active.**
+   Charge shortfall repairs passed their focused gates. The fresh Standard-2000
+   room is now durable at revision 57 in round 2 Movement. Its Planner has
+   recognized the round-2 Supply increase and exposed reserve Deploy as a later
+   activation. A three-round Swarmling formation correction proved two recovery
+   bugs: “inside the fire envelope rather than outside it” was falsely rejected,
+   and Hosted Bot dropped the Decision Port's High severity. Both are repaired;
+   action normalization v14 scans already-paid candidates and revalidates the
+   newest locally valid result before any new Provider call. The focused gate
+   passed, then action 57 reused the correct paid candidate, applied all 18 model
+   bases and verified replay with zero call/token/cost increment. Continue the
+   same room from revision 57. **Active.**
 2. Ticket 23 / Slice 248: complete player-seat companion permissions, layered
    memory/role runtime and real floating-Web acceptance.
 3. Ticket 23 / Slice 248: add attack probability, fire-zone exchange and the
@@ -72,10 +74,11 @@ evidence without rerunning already-passed unrelated gates.
 ## Current accounting
 
 - DeepSeek product ledger: the fresh Slice-248 A-A room is durable at revision
-  34 with 152 Provider calls, 8,453,858 total units and estimated cost
-  ¥11.497316. Pending action 34 used 10 calls and added ¥1.068767 before the
-  local validator blocked it. All four focused repairs used 0 Provider calls
-  and ¥0; no ¥100 notification threshold has been crossed.
+  57 with 200 Provider calls, 11,387,744 total units and estimated cost
+  ¥15.454723 (Player 1: 74 calls / ¥5.148525; Player 2: 126 calls /
+  ¥10.306198). The action-57 recovery reused an already-paid correct output and
+  added 0 calls, 0 units and ¥0. The current repair gate also used 0 Provider
+  calls and ¥0; no ¥100 notification threshold has been crossed.
 - Kimi environment ledger: 3 CLI runs (2 connectivity probes, 1 ENV-6
   implementation session); token and currency fields were not reported by Kimi
   Code CLI.

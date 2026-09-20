@@ -103,8 +103,10 @@ function normalizeConsent(value = {}, scopeValue) {
 
 function normalizeDecision(value, input) {
   if (!object(value) || value.ok === false) {
-    throw Object.assign(new Error("Bot decision port returned no decision"), {
-      code: value?.reason || "bot_decision_unavailable",
+    const code = String(value?.reason || "bot_decision_unavailable");
+    throw Object.assign(new Error(code), {
+      code,
+      severity: String(value?.findingSeverity || "Medium"),
     });
   }
   const proposal = object(value.proposal)

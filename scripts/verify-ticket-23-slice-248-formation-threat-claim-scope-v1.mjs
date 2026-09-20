@@ -5,6 +5,8 @@ import {
   inspectStarcraftTmgFormationThreatClaimsV1,
   STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE,
 } from "../packages/online-agent-session/live-flash-decision-port-v1.mjs";
+import { createStarcraftTmgHostedBotSeatRuntimeV1 } from
+  "../packages/online-agent-session/hosted-bot-seat-runtime-v1.mjs";
 
 const option = {
   relationshipComparison: {
@@ -74,16 +76,103 @@ const correctedOutcome = inspect({
 assert.equal(correctedOutcome.contradicted, false,
   "explicitly corrected denial and movement-only bands must not be re-rejected");
 
+const correctedRatherThanOutside = inspect({
+  risk: "The Host projection shows stationary profiles covering the unit, so the position is inside the current fire envelope rather than outside it.",
+}, "This formation is inside the enemy fire envelope rather than outside it.");
+assert.equal(correctedRatherThanOutside.contradicted, false,
+  "inside-rather-than-outside wording is an explicit correction, not an escape claim");
+
 assert.equal(STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE, 3,
   "one decision cannot reopen more than three semantic correction rounds");
+
+const rejectionScope = {
+  gameId: "starcraft-tmg",
+  roomId: "slice248-semantic-limit-room",
+  matchBindingHash: "slice248-semantic-limit-match",
+  seatKey: "player2",
+};
+const roomProjection = {
+  room: {
+    roomId: rejectionScope.roomId,
+    stateRevision: 56,
+    stateHash: "slice248-semantic-limit-state",
+  },
+  matchBinding: { bindingHash: rejectionScope.matchBindingHash },
+  viewer: { seatKey: rejectionScope.seatKey },
+  state: {
+    round: 2,
+    phase: "movement",
+    activeSideKey: rejectionScope.seatKey,
+    terminal: false,
+    gameOver: false,
+  },
+};
+const legalSpace = {
+  legalSpaceHash: "slice248-semantic-limit-legal-space",
+  finiteActions: ["candidate-1", "candidate-2"].map((actionKey) => ({
+    actionKey,
+    action: { actionType: "pass", sideKey: rejectionScope.seatKey },
+  })),
+  parameterDomains: [],
+};
+const roomPort = Object.fromEntries([
+  "previewAction", "confirmPreview", "claimControl", "applyAction",
+  "replayRoom",
+].map((method) => [method, async () => ({
+  ok: false,
+  reason: `UNEXPECTED_${method.toUpperCase()}`,
+})]));
+roomPort.readRoom = async () => ({ ok: true, projection: roomProjection });
+roomPort.legalSpace = async () => ({ ok: true, legalSpace });
+let rejectedDecisionCalls = 0;
+const rejectionRuntime = createStarcraftTmgHostedBotSeatRuntimeV1({
+  roomPort,
+  decisionPort: {
+    async decide() {
+      rejectedDecisionCalls += 1;
+      return {
+        ok: false,
+        reason: "LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED",
+        findingSeverity: "High",
+      };
+    },
+  },
+  matchMode: "agent_vs_agent",
+});
+await rejectionRuntime.attach({
+  scope: rejectionScope,
+  seatToken: "slice248-semantic-limit-seat-token",
+  automationConsent: {
+    approved: true,
+    approvedBy: "human",
+    scope: "current_match_bot_seat",
+    approvedAt: "2026-09-21T00:00:00.000Z",
+  },
+  autoDrive: false,
+});
+const rejectedDrive = await rejectionRuntime.drive({ scope: rejectionScope });
+assert.equal(rejectedDrive.ok, false);
+assert.equal(rejectedDrive.reason,
+  "LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED");
+assert.equal(rejectedDrive.findingSeverity, "High",
+  "a High decision rejection must block the Bot seat immediately");
+assert.equal(rejectedDrive.projection.lifecycle, "blocked");
+assert.equal(rejectedDecisionCalls, 1,
+  "the Bot runtime must not reopen the exhausted decision");
+await rejectionRuntime.close();
 
 console.log(JSON.stringify({
   passed: true,
   aspirationCheckedClaims: aspirationOnly.checkedClaimCount,
   falseOutcomeFields: falseOutcome.contradictions.map((entry) => entry.field),
   correctedOutcomeCheckedClaims: correctedOutcome.checkedClaimCount,
+  ratherThanOutsideCheckedClaims:
+    correctedRatherThanOutside.checkedClaimCount,
   semanticCorrectionLimit:
     STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE,
+  rejectionSeverity: rejectedDrive.findingSeverity,
+  rejectionLifecycle: rejectedDrive.projection.lifecycle,
+  rejectedDecisionCalls,
   providerCalls: 0,
   paidCostCny: 0,
 }, null, 2));
