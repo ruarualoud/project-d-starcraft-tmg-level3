@@ -2,7 +2,14 @@
   "name": "project-d-starcraft-tmg-level3",
   "private": true,
   "type": "module",
+  "packageManager": "npm@11.9.0",
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "npm": ">=11.0.0 <12"
+  },
   "scripts": {
+    "doctor": "node scripts/project-d-doctor-v1.mjs",
+    "doctor:strict": "node scripts/project-d-doctor-v1.mjs --strict",
     "verify:ticket-18-strategy-case-compiler": "node scripts/verify-ticket-18-strategy-case-compiler-v1.mjs",
     "verify:ticket-18-strategy-preexecution": "node scripts/verify-ticket-18-strategy-preexecution-v1.mjs",
     "verify:ticket-18-preexecution": "node scripts/verify-ticket-18-preexecution-v1.mjs",

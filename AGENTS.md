@@ -8,9 +8,20 @@
 
 ## Before editing
 
-- Read the repository-root `PROJECT_MEMORY.md` and `TASKS.md`.
-- Read `docs/implementation-plan-2026-08-24.md` and the relevant local package contract.
+- Read `CURRENT_WORK.md`; follow its active phase and linked roadmap.
+- Run `npm run doctor` once per fresh worktree. Resolve failed checks before editing.
+- Read the relevant local package contract. Read the historical parent
+  `PROJECT_MEMORY.md` or `TASKS.md` only when `CURRENT_WORK.md` points to a
+  specific entry that the task needs.
 - Preserve unrelated dirty-worktree changes.
+
+## Work isolation
+
+- One GitHub Issue owns one branch, one worktree, one agent and one focused
+  verification command. The slice manifest records all four.
+- Codex owns integration. Kimi Code works only in its assigned worktree and
+  returns a commit plus verification receipt; it never edits the integration
+  worktree directly.
 
 ## Product invariants
 
@@ -22,6 +33,8 @@
 ## Verification and bookkeeping
 
 - Do not run tests, lint, typecheck, installs, migrations, or network commands without the approval required by the repository-root instructions.
+- Run only the focused verification named by the active slice. A passed command
+  is not repeated without a relevant code change.
 - Write generated evidence below this directory.
 - After code changes, update the repository-root `TASKS.md`; update `PROJECT_MEMORY.md` only for durable knowledge. Do not commit unless asked.
 - The project owner authorized slice-level local Git management on 2026-09-14. After a Slice's scoped gate and closure bookkeeping finish, commit that Slice immediately; stage only files attributable to that Slice and preserve unrelated worktree changes.
