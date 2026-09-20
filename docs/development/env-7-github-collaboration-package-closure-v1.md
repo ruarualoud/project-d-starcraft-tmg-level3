@@ -13,10 +13,12 @@ The repository now carries its own GitHub collaboration contract:
 - a publisher that is offline by default and requires an explicit `--apply`;
 - a focused offline verifier.
 
-The remaining-work bundle includes the active Ticket 20 product reacceptance,
-deferred Ticket 14 device evidence, Tickets 19/21/22 revalidation/final refresh,
-and the explicitly recorded Ticket 23/25/26 follow-ups. Historical closure
-documents remain evidence; they do not override a reopened user-visible gap.
+The remaining-work bundle starts with the active Ticket 23 alternating-
+activation repair and fresh Standard-2000 A-A match, then preserves companion,
+combat calibration, spatial formation, Skill evolution and role-pack work. The
+deferred Ticket 14 physical-device gate remains last until a device exists.
+Tickets 19–22 and the original Ticket 20 acceptance stay closed by their
+existing evidence rather than being needlessly rerun.
 
 ## Focused evidence
 

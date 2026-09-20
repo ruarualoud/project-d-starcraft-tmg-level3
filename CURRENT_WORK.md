@@ -22,16 +22,24 @@ explicit, isolated slice manifests.
 
 ## Product order after environment repair
 
-1. Ticket 20 Slices 193–195: complete browser product journey. **Active next.**
-2. Ticket 14: device/APK acceptance when an Android target is available; Web and
-   service work may proceed before the device gate.
-3. Ticket 19: MuZero player-view training trajectories.
-4. Ticket 21: production operations.
-5. Ticket 22: final synthesis and acceptance.
+1. Ticket 23 / Slice 248: repair alternating activation and rerun a fresh
+   Standard-2000 A-A match from revision 0. **Active next.**
+2. Ticket 23 / Slice 248: complete player-seat companion permissions, layered
+   memory/role runtime and real floating-Web acceptance.
+3. Ticket 23 / Slice 248: add attack probability, fire-zone exchange and the
+   prediction → outcome calibration → replanning loop.
+4. Ticket 25 / Slices 262–263: close free legal formation strategy, the natural
+   canary and remaining A-A/review evidence.
+5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
+   replay-driven Skill evolution loop.
+6. Ticket 26 / Slices 264–266: build and compare two complete companion packs.
+7. Ticket 14 / Slice 143: run the deferred APK acceptance when a real Android
+   device is available.
 
-Later Ticket 23–25 work already present on this branch remains preserved as
-historical integration evidence. It does not redefine the ordered completion
-target above.
+Tickets 19–22 and the original Ticket 20 Slices 193–195 have existing focused
+closure evidence. They are not reopened merely because later live-match work
+found new Ticket 23/25 gaps; final synthesis must eventually index the new
+evidence without rerunning already-passed unrelated gates.
 
 ## Active invariants
 
