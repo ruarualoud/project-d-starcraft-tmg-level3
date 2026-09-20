@@ -15,7 +15,7 @@ Codex and Kimi Code collaboration.
 | ENV-2 | GitHub CLI, Kimi Code CLI, Keychain-backed K3 connection | Complete — Kimi `2.0.2`, gh `2.101.0`, `K3_READY` |
 | ENV-3 | Pinned runtime, ignore policy and offline environment doctor | Complete — focused doctor 9 pass / 1 expected dirty-tree warning |
 | ENV-4 | Compact navigation and verification routing | Complete — this file is the agent entry point; slice manifests own focused gates |
-| ENV-5 | One-Issue/one-worktree Codex–Kimi collaboration module | Pending |
+| ENV-5 | One-Issue/one-worktree Codex–Kimi collaboration module | Complete — five-command interface and two scoped Kimi agents |
 | ENV-6 | Focused pre-commit and GitHub CI guardrails | Pending |
 | ENV-7 | GitHub labels, issue/PR templates and remaining-slice publication | Pending approval of issue breakdown |
 

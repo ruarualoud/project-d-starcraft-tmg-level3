@@ -10,6 +10,7 @@
   "scripts": {
     "doctor": "node scripts/project-d-doctor-v1.mjs",
     "doctor:strict": "node scripts/project-d-doctor-v1.mjs --strict",
+    "agent:slice": "node scripts/project-d-agent-slice-v1.mjs",
     "verify:ticket-18-strategy-case-compiler": "node scripts/verify-ticket-18-strategy-case-compiler-v1.mjs",
     "verify:ticket-18-strategy-preexecution": "node scripts/verify-ticket-18-strategy-preexecution-v1.mjs",
     "verify:ticket-18-preexecution": "node scripts/verify-ticket-18-preexecution-v1.mjs",
