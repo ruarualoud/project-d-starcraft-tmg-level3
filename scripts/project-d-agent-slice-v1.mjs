@@ -2,6 +2,7 @@
 
 import { createHash } from "node:crypto";
 import {
+  createWriteStream,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -124,28 +125,28 @@ function changedPaths(worktreePath, baseCommit) {
 
 function pathAllowed(path, allowedPaths) {
   return allowedPaths.some((allowed) =>
-    allowed.endsWith("/") ? path.startsWith(allowed) : path === allowed || path.startsWith(allowed),
+    allowed.endsWith("/") ? path.startsWith(allowed) : path === allowed,
   );
 }
 
 async function runStreaming(executable, args, options, logPath) {
   await new Promise((resolvePromise, rejectPromise) => {
+    const log = createWriteStream(logPath, { mode: 0o600 });
     const child = spawn(executable, args, {
       ...options,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    let log = "";
     child.stdout.on("data", (chunk) => {
       process.stdout.write(chunk);
-      log += chunk.toString();
+      log.write(chunk);
     });
     child.stderr.on("data", (chunk) => {
       process.stderr.write(chunk);
-      log += chunk.toString();
+      log.write(chunk);
     });
     child.on("error", rejectPromise);
     child.on("close", (code) => {
-      writeFileSync(logPath, log, { mode: 0o600 });
+      log.end();
       if (code === 0) resolvePromise();
       else rejectPromise(new Error(`Kimi exited with ${code}`));
     });
