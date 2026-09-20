@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# ENV-6 focused pre-commit guardrail. Intentionally narrow: it never runs the
+# product-wide verify:all chain, never touches the network and never calls a
+# Provider. Install with: node scripts/install-project-hooks-v1.mjs
+
+set -euo pipefail
+
+# 1. Whitespace/error check on the staged diff.
+git diff --cached --check
+
+# 2. Syntax-check only staged JavaScript sources.
+while IFS= read -r -d '' file; do
+  if [[ -f "$file" ]]; then
+    node --check "$file"
+  fi
+done < <(git diff --cached --name-only --diff-filter=ACMR -z -- '*.js' '*.mjs')

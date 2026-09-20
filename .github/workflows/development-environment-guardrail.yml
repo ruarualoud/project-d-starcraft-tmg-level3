@@ -1,0 +1,31 @@
+name: development-environment-guardrail
+
+# ENV-6 focused GitHub guardrail. This workflow deliberately runs only the
+# offline development-environment verifier. It must never run verify:all,
+# historical product gates, official-source refreshes, paid Provider calls, or
+# Expo/Web builds.
+
+on:
+  push:
+    branches:
+      - codex/starcraft-integration-20260921
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  guardrail:
+    name: development environment guardrail
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use pinned Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+
+      - name: Run the focused environment verifier
+        run: node scripts/verify-development-environment-v1.mjs
