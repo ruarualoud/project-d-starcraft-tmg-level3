@@ -24,8 +24,12 @@ explicit, isolated slice manifests.
 
 1. Ticket 23 / Slice 248: alternating-activation repair passed its historical
    revision-3 regression, fresh revision-0 two-sided zero-Provider canary and
-   phase-completion regression; resume the fresh Standard-2000 A-A room from
-   its durable revision-18 boundary. **Active.**
+   phase-completion regression. The same fresh Standard-2000 room resumed to
+   revision 31, where a certainly unreachable Raptor Charge plus post-roll
+   Metabolic Boost spend exposed a High strategy/timing defect. The focused
+   repair now gates Charge on exact all-target reachability and scopes roll
+   advantage to `before_action`; resume from the durable revision-31 boundary.
+   **Active.**
 2. Ticket 23 / Slice 248: complete player-seat companion permissions, layered
    memory/role runtime and real floating-Web acceptance.
 3. Ticket 23 / Slice 248: add attack probability, fire-zone exchange and the
@@ -65,10 +69,11 @@ evidence without rerunning already-passed unrelated gates.
 
 ## Current accounting
 
-- DeepSeek product ledger: preserve the latest authoritative Ticket record; no
-  new DeepSeek call occurred during environment repair or the alternating-
-  activation repair. The focused regression and fresh-room canary used 0
-  Provider calls and ¥0 estimated cost.
+- DeepSeek product ledger: the fresh Slice-248 A-A room is durable at revision
+  31 with about 131 Provider calls and estimated cost ¥9.77. The alternating-
+  activation, phase-completion, and Charge timing/reachability focused repairs
+  themselves used 0 Provider calls and ¥0; no ¥100 notification threshold has
+  been crossed.
 - Kimi environment ledger: 2 CLI runs (1 connectivity probe, 1 ENV-6
   implementation session); token and currency fields were not reported by Kimi
   Code CLI.

@@ -1,7 +1,7 @@
 # Ticket 23 / Slice 248 alternating-activation repair v1
 
 Date: 2026-09-21
-Status: focused repair and zero-Provider canary passed; fresh Standard-2000 A-A acceptance not yet run
+Status: focused repairs passed; fresh Standard-2000 A-A acceptance is durable at revision 31
 
 ## Defect
 
@@ -95,9 +95,53 @@ preview failures the harness correctly blocked instead of retrying forever.
 same error before the repair. The local marking helpers were restored without
 changing the shared next-side rule. The same focused verifier then passed once:
 Movement advanced to Assault, Player 1 became active, and Provider calls were
-zero. The paid room remains durable at revision 18 for same-room recovery.
+zero. The paid room resumed from revision 18. Its zero-call phase pass applied
+at revision 19 and the match advanced into Assault without replaying a paid
+decision.
+
+## Charge timing and reachability follow-up
+
+The same fresh match then reached revision 31 and exposed a High agent/runtime
+interaction defect. At revision 27 the Planner carried stale casualty-role text
+into a current Raptor Charge candidate even though an exact relationship receipt
+showed the nearest target base edge at 21,164 milli-inches and the current
+maximum Charge move was 11,000 milli-inches. Authority legally resolved the
+declared Charge as `distance_shortfall`. The next LegalSpace incorrectly still
+offered Metabolic Boost after the Charge roll and resolution, so the agent paid
+one Ready BM card for charge-roll advantage and then immediately finished the
+activation without another roll.
+
+The repair keeps legality and strategy separate:
+
+- the characteristic/status adapter now exposes `charge_roll_advantage` only in
+  `before_action`, matching “when determining Charge Distance”; other active
+  effects retain their existing before/after timing unless separately scoped;
+- the live Planner must obtain exact physical base-edge relationships covering
+  every eligible target before recommending Charge;
+- a Host semantic guard rejects Charge when every eligible target has a proven
+  distance shortfall at the maximum current roll, even if model prose or plan
+  memory drifts; the correction remains inside the same decision and may select
+  Pass, a useful pre-Charge ability, or another current Unit.
+
+The one focused regression passed once with Provider calls zero. It proves
+Metabolic Boost timing `[before_action]` and reproduces the real geometry:
+nearest target 21,164, minimum move to engagement 20,164, maximum Charge move
+11,000 milli-inches, `certainDistanceShortfall=true`.
+
+Command:
+
+```sh
+node scripts/verify-ticket-23-slice-248-charge-timing-and-reachability-repair-v1.mjs
+```
+
+The durable match is paused at revision 31. Through that boundary it used about
+131 Provider calls and an estimated CNY 9.77; no CNY 100 notification threshold
+was crossed. This branch remains acceptance evidence but not training truth
+until the repaired continuation reaches a valid terminal state.
 
 ## Next gate
 
-Start the fresh paid Standard-2000 A-A match from revision 0 and rebuild
-screenshots, NDJSON, JSON and PDF evidence from that new room only.
+Resume the same fresh paid Standard-2000 A-A match from revision 31, prove the
+next off-band Unit does not repeat the failed-Charge/resource-waste pattern, and
+continue to terminal before rebuilding screenshots, NDJSON, JSON and PDF
+evidence from this room only.

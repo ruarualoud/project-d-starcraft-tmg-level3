@@ -65,6 +65,19 @@ const EXPECTED_ARCHETYPE_COUNTS = Object.freeze({
   weapon_characteristic_buff: 1,
 });
 
+const DEFAULT_ACTIVE_ABILITY_USE_TIMING = Object.freeze([
+  "before_action", "after_action",
+]);
+const BEFORE_ACTION_ONLY_EFFECT_KINDS = new Set([
+  "charge_roll_advantage",
+]);
+
+export function officialCharacteristicStatusUseTimingV1(effectKind) {
+  return BEFORE_ACTION_ONLY_EFFECT_KINDS.has(String(effectKind || ""))
+    ? Object.freeze(["before_action"])
+    : DEFAULT_ACTIVE_ABILITY_USE_TIMING;
+}
+
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
 }
@@ -461,6 +474,9 @@ function activeTimingAvailable(state, route, sideKey, actor) {
   if (route.alreadyActivatedAllowed !== true && window
     && (window.sideKey !== sideKey || window.pieceId !== actor.id
       || window.phase !== state.phase)) return false;
+  const windowStage = String(window?.stage || "before_action");
+  if (!officialCharacteristicStatusUseTimingV1(route.effectKind)
+    .includes(windowStage)) return false;
   return !usedThisRound(state, route, actor.id);
 }
 function actorMatches(state, route, actor) {
@@ -582,7 +598,9 @@ function domainFor(state, route, instance, actor, available) {
       paymentCardInstanceIds: { enum: clone(available.payments) },
       targetUnitId: available.targets.length > 0
         ? { enum: clone(available.targets) } : null },
-    constraints: { useTiming: ["before_action", "after_action"],
+    constraints: { useTiming: [
+      ...officialCharacteristicStatusUseTimingV1(route.effectKind),
+    ],
       oncePerRoundPerUnitAndName: true,
       alreadyActivatedAllowed: route.alreadyActivatedAllowed === true,
       sourceCardInstanceId: instance.card?.cardInstanceId || null,

@@ -25,7 +25,7 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v10";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v11";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_action_shape_normalization_v12";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
@@ -263,6 +263,80 @@ function actionIndex(actionSpace) {
 
 function sourceActionDomain(value) {
   return object(value?.sourceDomain) ? value.sourceDomain : value;
+}
+
+function maximumChargeRoll(constraints) {
+  const roll = constraints?.chargeDistanceRoll || {};
+  const diceCount = Math.max(1, Number(roll.diceCount || 1));
+  const keepHighest = Number(roll.keepHighest || 0);
+  return keepHighest > 0
+    ? Math.min(diceCount, keepHighest) * 6
+    : diceCount * 6;
+}
+
+function exactUnitDistance(receipts, fromUnitId, toUnitId) {
+  const matches = receipts.flatMap((receipt) => (
+    receipt?.queryKind === "space.inspect_relationships"
+      ? receipt?.result?.relationships || [] : []
+  )).filter((entry) => entry?.edgeKind === "unit_spatial_relationship"
+    && entry.fromUnitId === fromUnitId && entry.toUnitId === toUnitId
+    && entry.nearestPhysicalEdges?.precision === "exact_physical_footprints"
+    && Number.isFinite(Number(
+      entry.nearestPhysicalEdges?.distanceMilliInches)));
+  if (matches.length === 0) return null;
+  return Math.min(...matches.map((entry) => Number(
+    entry.nearestPhysicalEdges.distanceMilliInches)));
+}
+
+export function inspectStarcraftTmgChargeReachabilityV1(input = {}) {
+  const actions = actionIndex(input.spatialActionSpace || {});
+  const selected = actions.find((entry) => entry.id === input.candidateId);
+  const domain = sourceActionDomain(selected?.action);
+  if (!selected || domain?.actionType !== "charge"
+    || domain?.parameterKind
+      !== "official_selected_roster_charge_declaration_v1") {
+    return freeze({ status: "not_applicable", candidateId: input.candidateId || null,
+      certainDistanceShortfall: false, trainingTruth: false });
+  }
+  const targetUnitIds = Object.keys(
+    domain.constraints?.eligibleTargetModelIdsByUnitId || {}).sort();
+  const maximumDistanceMilliInches = Math.round(1_000 * (
+    Number(domain.constraints?.speedInches || 0)
+      + Number(domain.constraints?.chargeDistanceModifier || 0)
+      + maximumChargeRoll(domain.constraints)
+  ));
+  const targetDistances = targetUnitIds.map((targetUnitId) => {
+    const baseEdgeDistanceMilliInches = exactUnitDistance(
+      input.queryReceipts || [], domain.pieceId, targetUnitId);
+    return {
+      targetUnitId,
+      baseEdgeDistanceMilliInches,
+      minimumMoveToEngageMilliInches:
+        baseEdgeDistanceMilliInches === null ? null
+          : Math.max(0, baseEdgeDistanceMilliInches - 1_000),
+    };
+  });
+  const exact = targetDistances.length > 0 && targetDistances.every((entry) =>
+    entry.baseEdgeDistanceMilliInches !== null);
+  const certainDistanceShortfall = exact && targetDistances.every((entry) =>
+    entry.minimumMoveToEngageMilliInches > maximumDistanceMilliInches + 1);
+  return freeze({
+    status: exact ? "exact" : "unknown",
+    candidateId: selected.id,
+    pieceId: domain.pieceId,
+    targetUnitIds,
+    maximumDistanceMilliInches,
+    nearestTargetBaseEdgeDistanceMilliInches: exact
+      ? Math.min(...targetDistances.map((entry) =>
+        entry.baseEdgeDistanceMilliInches)) : null,
+    targetDistances,
+    certainDistanceShortfall,
+    evidenceKind: exact
+      ? "exact_physical_base_edges_and_current_charge_domain"
+      : "missing_exact_relationship_for_one_or_more_eligible_targets",
+    rulesAuthority: false,
+    trainingTruth: false,
+  });
 }
 
 function isAssetPlacementDomain(value) {
@@ -738,6 +812,22 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
       pass.id);
   }
   const selected = actions.find((entry) => entry.id === recommendedCandidateId);
+  const selectedCharge = inspectStarcraftTmgChargeReachabilityV1({
+    spatialActionSpace: input.spatialActionSpace,
+    candidateId: recommendedCandidateId,
+    queryReceipts,
+  });
+  if (selected?.action?.actionType === "charge"
+    && selectedCharge.status !== "exact") {
+    throw correctionError("PLANNER_CHARGE_REACHABILITY_EVIDENCE_REQUIRED",
+      `Query exact physical base-edge relationships from ${selectedCharge.pieceId
+        || selected?.action?.pieceId || "selected Unit"} to every eligible target before selecting Charge.`);
+  }
+  if (selected?.action?.actionType === "charge"
+    && selectedCharge.certainDistanceShortfall === true) {
+    throw correctionError("PLANNER_CERTAIN_CHARGE_DISTANCE_SHORTFALL",
+      `Nearest target base edge ${selectedCharge.nearestTargetBaseEdgeDistanceMilliInches} milli-inches; maximum Charge move ${selectedCharge.maximumDistanceMilliInches} milli-inches before the 1-inch engagement allowance. Select Pass, a useful ability before Charge, or another current candidate; do not declare a certainly failed Charge.`);
+  }
   const formationAlternatives = actions.filter((entry) =>
     entry.id !== pass?.id && entry.kind === "parameterized"
       && isFormationPlacementDomain(entry.action));
@@ -2823,6 +2913,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       "Never treat the remaining models as a unit centre: compare and choose a complete Host-solved final formation using every model's physical base, coherency, board edge, terrain, objective, line-of-sight, blocking, threat and fire-zone consequences.",
       "When candidate value depends materially on position, use space.inspect_relationships with a tactical intent and scoped subjectUnitIds/targetIds before choosing. Read field-level exact/advisory/unknown precision; use the returned one-to-many, many-to-one, fire-zone, objective and clearance relationships to justify the chosen intent. Do not infer geometry from the rendered pixels.",
       "For a ranged candidate, read current-action-index.rangedContributionOverview before comparing firepower. contributingModelCount and totalCurrentHitDice are the exact current Rules-domain contribution; currentLiveModelCount, visible target count, Unit size, or weapon-profile count are never substitutes for the attack pool. Never call an attack high-volume when most live models are nonContributing unless another exact batch proves that volume.",
+      "Before recommending Charge, query exact physical base-edge relationships from that Unit to every eligible target Unit. Compare minimum movement needed to reach 1-inch engagement against Speed plus the maximum current Charge roll and modifiers. Never select Charge when every eligible target is certainly beyond that maximum; compare Pass, a useful pre-Charge ability, or another current Unit instead. A roll-advantage ability such as Metabolic Boost changes probability but does not raise a D6's maximum face.",
       "When comparing a current ranged attack with Run or another reposition, state the immediate attack dice forfeited and the possible future weapon profiles gained. Future movement, path, line of sight and next-round availability remain advisory until queried; do not call reposition 'no positional gain' merely because a smaller current long-range batch exists.",
       "Claim an active ability or status improves the selected attack only when an exact action_specific_threat or instantiated-action receipt shows the modifier on that weapon batch. A status that applies to another weapon, or a Speed bonus used after movement is complete, is not realized attack value for the current batch.",
       "A typed query for a parameterized candidate must put domainId and the complete parameters object in the query tool arguments; the Host automatically Rules-checks every final parameterized proposal.",
