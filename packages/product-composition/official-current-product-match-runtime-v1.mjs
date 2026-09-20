@@ -101,6 +101,7 @@ function candidateAtoms(value) {
 }
 function wrapAction(value, sourceRuntimeKind, wrapperRuleAtomIds = []) {
   const original = clone(value);
+  const chance = original.chance || original.rangedPlan?.chance || null;
   const body = {
     actionType: original.actionType,
     sideKey: original.sideKey,
@@ -109,7 +110,7 @@ function wrapAction(value, sourceRuntimeKind, wrapperRuleAtomIds = []) {
     ...(original.abilityName ? { abilityName: original.abilityName } : {}),
     ...(original.chosenFirstActorSideKey
       ? { chosenFirstActorSideKey: original.chosenFirstActorSideKey } : {}),
-    ...(original.chance ? { chance: clone(original.chance) } : {}),
+    ...(chance ? { chance: clone(chance) } : {}),
     sourceRuntimeKind,
     sourceAction: original,
     sourceActionHash: hashStarcraftTmgContract(original),
@@ -142,22 +143,27 @@ function wrapCandidate(candidate, sourceRuntimeKind, wrapperRuleAtomIds = []) {
 }
 function wrapDomain(domain, sourceRuntimeKind) {
   const original = clone(domain);
-  const domainIdentity = {
-    sourceRuntimeKind,
-    sourceDomainId: original.domainId,
-    sourceExecutorId: original.executorId,
-    sourceExecutorVersion: original.executorVersion,
-  };
-  return freezeDeep({
+  const publicConfirmationClass = new Set(["direct_gesture", "explicit_human"])
+    .has(original.confirmationClass)
+    ? original.confirmationClass
+    : original.actionType === "finish_activation"
+      ? "direct_gesture"
+      : "explicit_human";
+  const domainCore = {
     ...without(original, ["domainId", "executorId", "executorVersion", "ruleAtomIds"]),
-    domainId: `sc-domain-${hashStarcraftTmgContract(domainIdentity)}`,
+    confirmationClass: publicConfirmationClass,
     executorId: OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_ID,
     executorVersion: OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_VERSION,
     ruleAtomIds: candidateAtoms(original),
     sourceRuntimeKind,
     sourceDomain: original,
     sourceDomainHash: hashStarcraftTmgContract(original),
-  });
+  };
+  // The room/client contract verifies every non-legacy parameter domain as
+  // sc-domain-sha256(domain without domainId). Keep wrapper provenance inside
+  // that core so the identifier proves exactly what the client can submit.
+  return freezeDeep({ ...domainCore,
+    domainId: `sc-domain-${hashStarcraftTmgContract(domainCore)}` });
 }
 function uniqueByHash(values) {
   const byHash = new Map();
@@ -408,7 +414,11 @@ export function createOfficialCurrentProductMatchRuntimeV1(input = {}) {
         "mission", [MISSION_ATOM_ID])
       )));
     } else if (ACTIVATION_PHASES.has(currentState.phase)) {
-      if (isOfficialPhaseInitiativePendingV1(currentState)) {
+      if (currentState.pendingCurrentProductRangedCasualtyChoice) {
+        addEnumeration(output, runtimeEnumeration(
+          runtimes.ranged, "ranged", currentState, sideKey, includeDisabled,
+        ));
+      } else if (isOfficialPhaseInitiativePendingV1(currentState)) {
         output.candidates.push(...enumerateOfficialPhaseInitiativeActionsV1(
           currentState, { sideKey, includeDisabled },
         ).map((candidate) => wrapCandidate(candidate, "phase_initiative")));

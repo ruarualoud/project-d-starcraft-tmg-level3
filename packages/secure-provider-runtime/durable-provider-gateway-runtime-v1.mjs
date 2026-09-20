@@ -251,6 +251,9 @@ function providerRequest({ attemptId, artifact, userMessage, gateway }) {
         contract.decisionCandidateSource,
         "responseContract.decisionCandidateSource", 200),
     },
+    ...(object(artifact.agentLoop) ? {
+      agentLoop: clone(artifact.agentLoop),
+    } : {}),
     maxOutputUnits: positiveInteger(gateway.boundedRequest.maxOutputUnits,
       "boundedRequest.maxOutputUnits", 1_000_000),
   });

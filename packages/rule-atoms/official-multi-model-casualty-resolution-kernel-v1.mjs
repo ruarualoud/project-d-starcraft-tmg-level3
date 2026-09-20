@@ -23,6 +23,7 @@ export const OFFICIAL_MULTI_MODEL_CASUALTY_SOURCE_BINDING_V1 = Object.freeze({
 });
 
 const HASH_PATTERN = /^[a-f0-9]{64}$/u;
+const MAX_MATERIALIZED_CASUALTY_SELECTIONS = 512n;
 
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
@@ -202,6 +203,55 @@ function enumerateSequences(input) {
   return results.sort((left, right) => left.join(":").localeCompare(right.join(":")));
 }
 
+function permutationCountUpperBound(candidateCount, casualtyCount) {
+  let count = 1n;
+  for (let index = 0; index < casualtyCount; index += 1) {
+    count *= BigInt(candidateCount - index);
+  }
+  return count;
+}
+
+function selectionBody(domain, casualtyModelIdsInput) {
+  const casualtyModelIds = (casualtyModelIdsInput || []).map(String);
+  if (casualtyModelIds.length !== domain.casualtyCount
+    || new Set(casualtyModelIds).size !== casualtyModelIds.length
+    || casualtyModelIds.some((modelId) => (
+      !domain.targetLedger.activeModelIds.includes(modelId)))) {
+    fail("MULTI_MODEL_CASUALTY_SELECTION_STALE");
+  }
+  const contract = domain.selectionContract;
+  const graph = { modelEdges: clone(contract?.relevantModelEdges || []) };
+  let remainingModelIds = [...domain.targetLedger.activeModelIds];
+  for (const modelId of casualtyModelIds) {
+    const candidates = domain.targetEngaged
+      ? legalNextEngagedCasualties(
+        graph,
+        domain.targetLedger.targetPieceId,
+        remainingModelIds,
+      )
+      : remainingModelIds.filter((id) => domain.visibleModelIds.includes(id));
+    if (!candidates.includes(modelId)) {
+      fail("MULTI_MODEL_CASUALTY_SELECTION_STALE");
+    }
+    remainingModelIds = remainingModelIds.filter((id) => id !== modelId);
+  }
+  const body = {
+    schema: "starcraft_tmg_official_multi_model_casualty_selection_v1",
+    targetPieceId: domain.targetLedger.targetPieceId,
+    casualtyModelIds,
+    remainingModelIds,
+    remainingEngagedEnemyUnitIds: enemyUnitIds(
+      targetEdges(graph, domain.targetLedger.targetPieceId, remainingModelIds),
+      domain.targetLedger.targetPieceId,
+    ),
+    postDamageMarker: domain.postDamageMarker,
+    targetDestroyed: domain.targetDestroyed,
+    discardedOverflowDamage: domain.discardedOverflowDamage,
+    trainingTruth: false,
+  };
+  return { ...body, selectionHash: hashStarcraftTmgContract(body) };
+}
+
 function verifyDomain(domain) {
   if (!object(domain)
     || domain.schema !== OFFICIAL_MULTI_MODEL_CASUALTY_DOMAIN_SCHEMA_V1
@@ -252,14 +302,24 @@ function createDomain(input = {}) {
   const discardRemainder = targetDestroyed || visibilityCapExhausted;
   const postDamageMarker = discardRemainder ? 0 : damageAfterCasualties;
   const discardedOverflowDamage = discardRemainder ? damageAfterCasualties : 0;
-  const sequences = enumerateSequences({
+  const candidateCount = targetEngaged
+    ? ledger.activeModelIds.length : visibleModelIds.length;
+  const selectionCountUpperBound = permutationCountUpperBound(
+    candidateCount,
     casualtyCount,
-    targetEngaged,
-    engagementGraph: graph,
-    targetPieceId: ledger.targetPieceId,
-    activeModelIds: ledger.activeModelIds,
-    visibleModelIds,
-  });
+  );
+  const selectionMode = selectionCountUpperBound
+    <= MAX_MATERIALIZED_CASUALTY_SELECTIONS
+    ? "enumerated_hashes" : "explicit_model_ids";
+  const sequences = selectionMode === "enumerated_hashes"
+    ? enumerateSequences({
+      casualtyCount,
+      targetEngaged,
+      engagementGraph: graph,
+      targetPieceId: ledger.targetPieceId,
+      activeModelIds: ledger.activeModelIds,
+      visibleModelIds,
+    }) : [];
   const legalSelections = sequences.map((casualtyModelIds) => {
     const remainingModelIds = ledger.activeModelIds.filter((id) => (
       !casualtyModelIds.includes(id)
@@ -280,7 +340,21 @@ function createDomain(input = {}) {
     };
     return { ...body, selectionHash: hashStarcraftTmgContract(body) };
   });
-  if (legalSelections.length < 1) fail("MULTI_MODEL_CASUALTY_SELECTION_DOMAIN_EMPTY");
+  if (selectionMode === "enumerated_hashes" && legalSelections.length < 1) {
+    fail("MULTI_MODEL_CASUALTY_SELECTION_DOMAIN_EMPTY");
+  }
+  const selectionContract = {
+    schema: "starcraft_tmg_official_multi_model_casualty_selection_contract_v1",
+    selectionMode,
+    casualtyCount,
+    candidateModelIds: targetEngaged
+      ? [...ledger.activeModelIds] : [...visibleModelIds],
+    orderedRemovalRequired: targetEngaged,
+    relevantModelEdges: targetEngaged ? clone(edges) : [],
+    exactLegalityCheckedOnInstantiation: true,
+    selectionCountUpperBound: selectionCountUpperBound.toString(),
+    trainingTruth: false,
+  };
   const body = {
     schema: OFFICIAL_MULTI_MODEL_CASUALTY_DOMAIN_SCHEMA_V1,
     sourceBinding: clone(OFFICIAL_MULTI_MODEL_CASUALTY_SOURCE_BINDING_V1),
@@ -302,6 +376,11 @@ function createDomain(input = {}) {
     postDamageMarker,
     targetDestroyed,
     discardedOverflowDamage,
+    selectionMode,
+    selectionContract,
+    legalSelectionCount: selectionMode === "enumerated_hashes"
+      ? legalSelections.length : null,
+    materializedSelectionCount: legalSelections.length,
     legalSelections,
     rulesTruth: targetEngaged
       ? "official_engaged_strict_priority_and_specific_engagement_preservation"
@@ -313,9 +392,16 @@ function createDomain(input = {}) {
 
 function resolve(input = {}) {
   const domain = verifyDomain(input.domain);
-  const selection = domain.legalSelections.find((row) => (
+  let selection = domain.legalSelections.find((row) => (
     row.selectionHash === input.selectionHash
   ));
+  if (Array.isArray(input.casualtyModelIds)) {
+    const explicit = selectionBody(domain, input.casualtyModelIds);
+    if (input.selectionHash && input.selectionHash !== explicit.selectionHash) {
+      fail("MULTI_MODEL_CASUALTY_SELECTION_STALE");
+    }
+    selection = explicit;
+  }
   if (!selection) fail("MULTI_MODEL_CASUALTY_SELECTION_STALE");
   const body = {
     schema: OFFICIAL_MULTI_MODEL_CASUALTY_RESOLUTION_SCHEMA_V1,

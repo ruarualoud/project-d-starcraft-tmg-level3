@@ -58,8 +58,28 @@ export function createStarcraftTmgHostedOpponentRuntimeV2(options = {}) {
   const lastTaskResultByRoom = new Map();
   const notificationIssues = [];
   const timers = new Map();
+  const automaticDriveScopes = new Set();
   const intervalMs = Math.max(100, Number(options.autoDriveIntervalMs || 750));
   let closed = false;
+
+  function driveKey(scopeValue) {
+    return `${scopeValue.roomId}:${scopeValue.seatKey}`;
+  }
+
+  function automaticDriveEnabled(scopeValue) {
+    return automaticDriveScopes.has(driveKey(scopeValue));
+  }
+
+  function configureAutomaticDrive(scopeValue, enabled) {
+    const key = driveKey(scopeValue);
+    if (enabled) {
+      automaticDriveScopes.add(key);
+      return;
+    }
+    automaticDriveScopes.delete(key);
+    if (timers.has(key)) clearTimeout(timers.get(key));
+    timers.delete(key);
+  }
 
   async function notify(event) {
     if (!notificationPort) return null;
@@ -138,8 +158,8 @@ export function createStarcraftTmgHostedOpponentRuntimeV2(options = {}) {
   });
 
   function schedule(scopeValue) {
-    const key = `${scopeValue.roomId}:${scopeValue.seatKey}`;
-    if (closed || timers.has(key)) return;
+    const key = driveKey(scopeValue);
+    if (closed || !automaticDriveEnabled(scopeValue) || timers.has(key)) return;
     const timer = setTimeout(async () => {
       timers.delete(key);
       try {
@@ -148,16 +168,17 @@ export function createStarcraftTmgHostedOpponentRuntimeV2(options = {}) {
         });
         if (gate.ok) await drive({ scope: scopeValue });
       } catch {}
-      if (!closed) schedule(scopeValue);
+      if (!closed && automaticDriveEnabled(scopeValue)) schedule(scopeValue);
     }, intervalMs);
     timer.unref?.(); timers.set(key, timer);
   }
   async function attach(input = {}) {
     const scopeValue = normalizedScope(input.scope || input);
     scopesByRoom.set(scopeValue.roomId, scopeValue);
+    configureAutomaticDrive(scopeValue, input.autoDrive !== false);
     const result = await base.attach({ ...input, scope: scopeValue,
       autoDrive: false });
-    if (result.ok && input.autoDrive !== false) schedule(scopeValue);
+    if (result.ok && automaticDriveEnabled(scopeValue)) schedule(scopeValue);
     return read({ scope: scopeValue, baseProjection: result.projection });
   }
   async function drive(input = {}) {
@@ -221,7 +242,8 @@ export function createStarcraftTmgHostedOpponentRuntimeV2(options = {}) {
         completedBy: "agent", evidenceRefs: executed.evidenceRefs || [],
       });
     }
-    if (result.projection.syncStatus === "in_sync") schedule(scopeValue);
+    if (result.projection.syncStatus === "in_sync"
+      && automaticDriveEnabled(scopeValue)) schedule(scopeValue);
     return result;
   }
   async function completePhysicalTask(input = {}) {
@@ -231,7 +253,8 @@ export function createStarcraftTmgHostedOpponentRuntimeV2(options = {}) {
     await notify({ kind: "physical_operation_completed",
       roomId: scopeValue.roomId, taskId: input.taskId,
       completedBy: input.completedBy });
-    if (result.projection.syncStatus === "in_sync") schedule(scopeValue);
+    if (result.projection.syncStatus === "in_sync"
+      && automaticDriveEnabled(scopeValue)) schedule(scopeValue);
     return result;
   }
   async function openRulesDispute(input = {}) {
@@ -248,7 +271,8 @@ export function createStarcraftTmgHostedOpponentRuntimeV2(options = {}) {
       scope: physicalScope(scopeValue) });
     await notify({ kind: "rules_dispute_resolved", roomId: scopeValue.roomId,
       taskId: input.taskId, resolution: input.resolution });
-    if (result.projection.syncStatus === "in_sync") schedule(scopeValue);
+    if (result.projection.syncStatus === "in_sync"
+      && automaticDriveEnabled(scopeValue)) schedule(scopeValue);
     return result;
   }
   async function close(input = {}) {
@@ -257,9 +281,10 @@ export function createStarcraftTmgHostedOpponentRuntimeV2(options = {}) {
       const key = `${value.roomId}:${value.seatKey}`;
       if (timers.has(key)) clearTimeout(timers.get(key));
       timers.delete(key);
+      automaticDriveScopes.delete(key);
     } else {
       for (const timer of timers.values()) clearTimeout(timer);
-      timers.clear(); closed = true;
+      timers.clear(); automaticDriveScopes.clear(); closed = true;
     }
     return base.close(input);
   }

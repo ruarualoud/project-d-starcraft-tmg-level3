@@ -48,7 +48,7 @@ import {
   type WorkbenchThreatMode,
 } from "./battle-workbench-read-panels";
 
-type PendingOperation = "legal" | "workbench" | "preview" | "apply" | "replay" | null;
+type PendingOperation = "legal" | "preview" | "apply" | "replay" | null;
 type DraftMode = "path" | "placements";
 type WorkspaceDetailPanel = "unit" | "actions" | "threat" | "status" | "markers" | "referee";
 
@@ -189,7 +189,11 @@ function areaGlyph(area: BattlefieldAreaV1) {
   );
 }
 
-function modelGlyph(model: BattlefieldModelV1) {
+function modelGlyph(
+  model: BattlefieldModelV1,
+  zoom: number,
+  boardHeightMilliInches: number,
+) {
   const color = sideColor(model.sideKey);
   if (!model.geometryRenderable || !model.baseShape
     || !model.baseWidthMilliInches || !model.baseDepthMilliInches) {
@@ -200,34 +204,62 @@ function modelGlyph(model: BattlefieldModelV1) {
       </G>
     );
   }
-  const common = {
-    fill: model.destroyed ? "#450a0a" : `${color}55`,
-    stroke: model.selected ? "#ffffff" : color,
-    strokeWidth: model.selected ? 190 : 110,
-  };
+  const outlineWidth = model.selected ? 240 : 180;
+  const fill = model.destroyed ? "#450a0a" : `${color}77`;
+  const outline = model.selected ? "#ffffff" : color;
   const media = starcraftTmgBattlefieldUnitMediaAssetsV1(model.unitId);
   const portraitWidth = model.baseWidthMilliInches * 0.84;
   const portraitDepth = model.baseDepthMilliInches * 0.84;
   const portraitClipId = `battlefield-portrait-clip-${model.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
   const shape = model.baseShape === "rectangle" ? (
-    <Rect
-      x={model.xMilliInches - (model.baseWidthMilliInches / 2)}
-      y={model.yMilliInches - (model.baseDepthMilliInches / 2)}
-      width={model.baseWidthMilliInches}
-      height={model.baseDepthMilliInches}
-      transform={`rotate(${model.baseRotationDegrees} ${model.xMilliInches} ${model.yMilliInches})`}
-      {...common}
-    />
+    <>
+      <Rect
+        x={model.xMilliInches - (model.baseWidthMilliInches / 2)}
+        y={model.yMilliInches - (model.baseDepthMilliInches / 2)}
+        width={model.baseWidthMilliInches}
+        height={model.baseDepthMilliInches}
+        transform={`rotate(${model.baseRotationDegrees} ${model.xMilliInches} ${model.yMilliInches})`}
+        fill={fill}
+        stroke="none"
+      />
+      <Rect
+        x={model.xMilliInches - (model.baseWidthMilliInches / 2) + (outlineWidth / 2)}
+        y={model.yMilliInches - (model.baseDepthMilliInches / 2) + (outlineWidth / 2)}
+        width={Math.max(0, model.baseWidthMilliInches - outlineWidth)}
+        height={Math.max(0, model.baseDepthMilliInches - outlineWidth)}
+        transform={`rotate(${model.baseRotationDegrees} ${model.xMilliInches} ${model.yMilliInches})`}
+        fill="none"
+        stroke={outline}
+        strokeWidth={outlineWidth}
+      />
+    </>
   ) : (
-    <Ellipse
-      cx={model.xMilliInches}
-      cy={model.yMilliInches}
-      rx={model.baseWidthMilliInches / 2}
-      ry={model.baseDepthMilliInches / 2}
-      transform={`rotate(${model.baseRotationDegrees} ${model.xMilliInches} ${model.yMilliInches})`}
-      {...common}
-    />
+    <>
+      <Ellipse
+        cx={model.xMilliInches}
+        cy={model.yMilliInches}
+        rx={model.baseWidthMilliInches / 2}
+        ry={model.baseDepthMilliInches / 2}
+        transform={`rotate(${model.baseRotationDegrees} ${model.xMilliInches} ${model.yMilliInches})`}
+        fill={fill}
+        stroke="none"
+      />
+      <Ellipse
+        cx={model.xMilliInches}
+        cy={model.yMilliInches}
+        rx={Math.max(0, (model.baseWidthMilliInches - outlineWidth) / 2)}
+        ry={Math.max(0, (model.baseDepthMilliInches - outlineWidth) / 2)}
+        transform={`rotate(${model.baseRotationDegrees} ${model.xMilliInches} ${model.yMilliInches})`}
+        fill="none"
+        stroke={outline}
+        strokeWidth={outlineWidth}
+      />
+    </>
   );
+  const showOverviewLabel = zoom <= 1.5 && /-model-1$/u.test(model.id);
+  const overviewLabelOffset = model.yMilliInches > boardHeightMilliInches / 2
+    ? (model.baseDepthMilliInches / 2) + 760
+    : -((model.baseDepthMilliInches / 2) + 760);
   return (
     <G
       key={model.id}
@@ -273,6 +305,39 @@ function modelGlyph(model: BattlefieldModelV1) {
         </>
       )}
       <Circle cx={model.xMilliInches} cy={model.yMilliInches} r={90} fill={color} />
+      {showOverviewLabel && (
+        <G transform={`translate(${model.xMilliInches} ${model.yMilliInches}) scale(1 -1)`}>
+          <Line
+            x1={0}
+            y1={0}
+            x2={0}
+            y2={overviewLabelOffset > 0 ? overviewLabelOffset - 300 : overviewLabelOffset + 300}
+            stroke={color}
+            strokeWidth={100}
+            strokeDasharray="180 120"
+          />
+          <Rect
+            x={-1500}
+            y={overviewLabelOffset - 360}
+            width={3000}
+            height={720}
+            rx={220}
+            fill="#020617dd"
+            stroke={color}
+            strokeWidth={100}
+          />
+          <SvgText
+            x={0}
+            y={overviewLabelOffset + 190}
+            textAnchor="middle"
+            fill="#f8fafc"
+            fontSize={560}
+            fontWeight="800"
+          >
+            {model.label}
+          </SvgText>
+        </G>
+      )}
     </G>
   );
 }
@@ -291,30 +356,55 @@ function placementGlyph(
       </G>
     );
   }
-  const common = {
-    fill: kind === "sealed" ? "#22d3ee33" : "#fbbf2433",
-    stroke: color,
-    strokeWidth: kind === "sealed" ? 170 : 120,
-    strokeDasharray: kind === "sealed" ? undefined : "240 140",
-  };
+  const outlineWidth = kind === "sealed" ? 170 : 120;
+  const fill = kind === "sealed" ? "#22d3ee33" : "#fbbf2433";
+  const dash = kind === "sealed" ? undefined : "240 140";
   const shape = placement.baseShape === "rectangle" ? (
-    <Rect
-      x={placement.xMilliInches - (placement.baseWidthMilliInches / 2)}
-      y={placement.yMilliInches - (placement.baseDepthMilliInches / 2)}
-      width={placement.baseWidthMilliInches}
-      height={placement.baseDepthMilliInches}
-      transform={`rotate(${placement.baseRotationDegrees} ${placement.xMilliInches} ${placement.yMilliInches})`}
-      {...common}
-    />
+    <>
+      <Rect
+        x={placement.xMilliInches - (placement.baseWidthMilliInches / 2)}
+        y={placement.yMilliInches - (placement.baseDepthMilliInches / 2)}
+        width={placement.baseWidthMilliInches}
+        height={placement.baseDepthMilliInches}
+        transform={`rotate(${placement.baseRotationDegrees} ${placement.xMilliInches} ${placement.yMilliInches})`}
+        fill={fill}
+        stroke="none"
+      />
+      <Rect
+        x={placement.xMilliInches - (placement.baseWidthMilliInches / 2) + (outlineWidth / 2)}
+        y={placement.yMilliInches - (placement.baseDepthMilliInches / 2) + (outlineWidth / 2)}
+        width={Math.max(0, placement.baseWidthMilliInches - outlineWidth)}
+        height={Math.max(0, placement.baseDepthMilliInches - outlineWidth)}
+        transform={`rotate(${placement.baseRotationDegrees} ${placement.xMilliInches} ${placement.yMilliInches})`}
+        fill="none"
+        stroke={color}
+        strokeWidth={outlineWidth}
+        strokeDasharray={dash}
+      />
+    </>
   ) : (
-    <Ellipse
-      cx={placement.xMilliInches}
-      cy={placement.yMilliInches}
-      rx={placement.baseWidthMilliInches / 2}
-      ry={placement.baseDepthMilliInches / 2}
-      transform={`rotate(${placement.baseRotationDegrees} ${placement.xMilliInches} ${placement.yMilliInches})`}
-      {...common}
-    />
+    <>
+      <Ellipse
+        cx={placement.xMilliInches}
+        cy={placement.yMilliInches}
+        rx={placement.baseWidthMilliInches / 2}
+        ry={placement.baseDepthMilliInches / 2}
+        transform={`rotate(${placement.baseRotationDegrees} ${placement.xMilliInches} ${placement.yMilliInches})`}
+        fill={fill}
+        stroke="none"
+      />
+      <Ellipse
+        cx={placement.xMilliInches}
+        cy={placement.yMilliInches}
+        rx={Math.max(0, (placement.baseWidthMilliInches - outlineWidth) / 2)}
+        ry={Math.max(0, (placement.baseDepthMilliInches - outlineWidth) / 2)}
+        transform={`rotate(${placement.baseRotationDegrees} ${placement.xMilliInches} ${placement.yMilliInches})`}
+        fill="none"
+        stroke={color}
+        strokeWidth={outlineWidth}
+        strokeDasharray={dash}
+      />
+    </>
   );
   return <G key={`${kind}:${placement.modelId}`}>{shape}</G>;
 }
@@ -365,6 +455,8 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [layout, setLayout] = useState({ width: 1, height: 1 });
   const [pending, setPending] = useState<PendingOperation>(null);
+  const [lastReplayVerifiedRevision, setLastReplayVerifiedRevision] =
+    useState<number | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [dismissedPreviewId, setDismissedPreviewId] = useState<string | null>(null);
@@ -473,20 +565,21 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     const roomId = view.roomProjection?.room?.roomId;
     const stateRevision = view.roomProjection?.room?.stateRevision;
     if (!roomId || !Number.isSafeInteger(stateRevision)
-      || !connection.visible || !connection.online || view.phase !== "ready") return;
+      || !connection.visible || !connection.online || view.phase !== "ready"
+      || pending !== null) return;
     const key = `${roomId}:${stateRevision}`;
     if (view.battleWorkbench?.stateRevision === stateRevision
       || requestedWorkbenchKey.current === key) return;
     requestedWorkbenchKey.current = key;
-    setPending("workbench");
     void dispatch({ type: "load_battle_workbench" }).then((result: any) => {
       if (!result.ok) {
         requestedWorkbenchKey.current = null;
         setErrorCode(result.rejection?.code || "BATTLE_WORKBENCH_REJECTED");
       }
-    }).finally(() => setPending(null));
+    });
   }, [connection.online, connection.visible, dispatch, view.battleWorkbench?.stateRevision,
-    view.phase, view.roomProjection?.room?.roomId, view.roomProjection?.room?.stateRevision]);
+    pending, view.phase, view.roomProjection?.room?.roomId,
+    view.roomProjection?.room?.stateRevision]);
 
   useEffect(() => {
     bgmPlayer.loop = true;
@@ -513,6 +606,11 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
 
   const selectModel = (model: BattlefieldModelV1) => {
     setSelectedModelId(model.id);
+    setZoom((value) => Math.max(value, 3));
+    setPan({
+      x: model.xMilliInches - (scene.widthMilliInches / 2),
+      y: model.yMilliInches - (scene.heightMilliInches / 2),
+    });
     setSelectedThreatWeaponId(null);
     setDetailPanel("unit");
     void playUnitVoice(model, "selected");
@@ -813,6 +911,8 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
 
   const previewParameterized = async () => {
     if (!canPreview || !selectedDomain || !draft || !parameterDraftReady) return;
+    const selectedRosterSpatial = selectedDomain.parameterKind
+      === "official_selected_roster_spatial_path_v1";
     const parameters = selectedDomain.support === "legacy_path_only"
       ? { path: draft.path }
       : selectedDomain.support === "official_standard_deploy"
@@ -820,7 +920,9 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
           leadingModelId: draft.leadingModelId,
           entrySegmentId: draft.entrySegmentId,
           entryAlongEdgeMilliInches: draft.entryAlongEdgeMilliInches,
-          endpoint: draft.path.at(-1),
+          ...(selectedRosterSpatial
+            ? { path: draft.path }
+            : { endpoint: draft.path.at(-1) }),
           placements: draft.placements,
         }
         : {
@@ -843,10 +945,30 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     }
   };
 
+  const previewParameterless = async (domainId: string) => {
+    if (!canPreview) return;
+    setPending("preview");
+    setErrorCode(null);
+    setNotice(null);
+    try {
+      const result = await dispatch({
+        type: "preview_parameterized",
+        domainId,
+        parameters: {},
+      });
+      if (!result.ok) setErrorCode(result.rejection?.code || "PREVIEW_REJECTED");
+      else setNotice(zh ? "权威 Preview 已生成，尚未改变房间状态。" : "Authoritative Preview ready; room state is unchanged.");
+    } finally {
+      setPending(null);
+    }
+  };
+
   const confirmAndApply = async () => {
     if (!canApply || !scene.previewId) return;
     setPending("apply");
     setErrorCode(null);
+    setNotice(null);
+    setLastReplayVerifiedRevision(null);
     try {
       const applied = await dispatch({
         type: "confirm_and_apply_preview",
@@ -861,6 +983,9 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
       if (!replayed.ok) {
         setErrorCode(replayed.rejection?.code || "REPLAY_REJECTED");
       } else {
+        setLastReplayVerifiedRevision(Number((replayed.replay as {
+          stateRevision?: unknown;
+        } | undefined)?.stateRevision));
         setNotice(zh ? "动作已应用，重放链与当前状态一致。" : "Action applied; replay chain matches current authority.");
         setDetailPanel("referee");
       }
@@ -880,6 +1005,9 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
       if (!result.ok) {
         setErrorCode(result.rejection?.code || "REPLAY_REJECTED");
       } else {
+        setLastReplayVerifiedRevision(Number((result.replay as {
+          stateRevision?: unknown;
+        } | undefined)?.stateRevision));
         setNotice(zh ? "Replay 与当前权威投影一致。" : "Replay matches the current authoritative projection.");
       }
     } finally {
@@ -1077,7 +1205,9 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                     strokeDasharray="420 260"
                   />
                 )}
-                {scene.models.map(modelGlyph)}
+                {scene.models.map((model) => modelGlyph(
+                  model, zoom, scene.heightMilliInches,
+                ))}
                 {scene.unitAnchors.map((anchor) => (
                   <G key={anchor.id}>
                     <Circle cx={anchor.xMilliInches} cy={anchor.yMilliInches} r={420} fill="none" stroke="#f59e0b" strokeWidth={100} strokeDasharray="180 120" />
@@ -1251,6 +1381,12 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                       {zh ? "当前参数 registry 不支持；禁止提交。" : "Unsupported by this parameter registry; submission is disabled."}
                     </Text>
                   </View>
+                ) : domain.support === "parameterless" ? (
+                  <Button
+                    label={zh ? "生成 Preview" : "Preview"}
+                    disabled={!canPreview || Boolean(visiblePreview)}
+                    onPress={() => void previewParameterless(domain.domainId)}
+                  />
                 ) : (
                   <Button
                     active={selectedDomainId === domain.domainId}
@@ -1318,7 +1454,47 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                     {": "}{draft.entryAlongEdgeMilliInches === null
                       ? "—" : `${draft.entryAlongEdgeMilliInches / 1000} in`}
                   </Text>
+                  <View style={styles.coordinateField}>
+                    <Text style={styles.coordinateLabel}>
+                      {zh ? "沿边进入坐标（英寸）" : "Along-edge entry coordinate (inches)"}
+                    </Text>
+                    <TextInput
+                      accessibilityLabel={zh
+                        ? "沿边进入坐标，英寸"
+                        : "Along-edge entry coordinate in inches"}
+                      editable={operational}
+                      keyboardType="decimal-pad"
+                      onChangeText={(value) => {
+                        const parsed = Number(value);
+                        setDraft({
+                          ...draft,
+                          entryAlongEdgeMilliInches: Number.isFinite(parsed)
+                            ? Math.round(parsed * 1000) : null,
+                          path: [],
+                          placements: [],
+                          mode: "path",
+                        });
+                      }}
+                      placeholder="0"
+                      placeholderTextColor="#64748b"
+                      style={styles.coordinateInput}
+                      value={draft.entryAlongEdgeMilliInches === null
+                        ? "" : String(draft.entryAlongEdgeMilliInches / 1000)}
+                    />
+                  </View>
                 </>
+              )}
+              {selectedDomain.modelProfiles.length > 0 && (
+                <Text style={styles.metaText} testID="parameter-model-profiles">
+                  {selectedDomain.modelProfiles.map((profile) => (
+                    `${profile.modelId}=${profile.baseShape || "unknown"}:`
+                    + `${(profile.baseWidthMilliInches || 0) / 1000}x`
+                    + `${(profile.baseDepthMilliInches || 0) / 1000}in`
+                  )).join(" · ")}
+                  {selectedDomain.maxDistanceMilliInches
+                    ? ` · max ${(selectedDomain.maxDistanceMilliInches / 1000)}in`
+                    : ""}
+                </Text>
               )}
               <Text style={styles.editorLabel}>
                 {selectedDomain.support === "official_standard_deploy"
@@ -1449,6 +1625,12 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
             <View style={styles.receiptCard}>
               <Text style={styles.panelTitle}>{zh ? "收据与重放" : "Receipt & replay"}</Text>
               <Text style={styles.metaText}>integrity: {integrityBlocked ? "blocked" : view.replay ? "verified" : "not_checked"}</Text>
+              <Text style={styles.metaText}>integrity reason: {actionText(view.integrity?.reason)}</Text>
+              <Text style={styles.metaText}>verified revision: {actionText(
+                lastReplayVerifiedRevision
+                  ?? (view.replay?.matchesCurrent === true
+                    ? view.replay?.stateRevision : null)
+              )}</Text>
               <Text style={styles.metaText}>journal: {actionText(view.lastReceipt?.journalHash)}</Text>
               <Text style={styles.metaText}>revision: {actionText(view.lastReceipt?.preStateRevision)} → {actionText(view.lastReceipt?.postStateRevision)}</Text>
               <Text style={styles.metaText}>signature: {actionText(view.lastReceipt?.refereeSignature?.signatureAlgorithm)}</Text>

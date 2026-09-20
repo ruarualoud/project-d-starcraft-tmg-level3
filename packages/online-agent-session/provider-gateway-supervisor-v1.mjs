@@ -624,8 +624,21 @@ export function createStarcraftTmgProviderGatewaySupervisorV1(options = {}) {
       return finalResponse(record);
     }
     if (outcome.kind === "rejected") {
+      let usageReceipt = null;
+      try {
+        if (object(outcome.error?.safeUsageReceipt)) {
+          usageReceipt = normalizeUsageReceipt(
+            outcome.error.safeUsageReceipt, record.reservation);
+        }
+      } catch {
+        usageReceipt = null;
+      }
       return finalize(record, "failed", {
         failure: safeFailure(outcome.error),
+        ...(usageReceipt ? {
+          usageReceipt,
+          chargedUnits: usageReceipt.totalUnits,
+        } : {}),
       });
     }
     let safeOutput;

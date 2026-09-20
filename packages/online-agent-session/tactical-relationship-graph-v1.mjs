@@ -6,11 +6,17 @@ import {
   evaluateOfficialPhysicalFootprintRelationV1,
   evaluateOfficialWithinWhollyWithinV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
-import { deriveOfficialEngagementGraphV2 } from
+import {
+  deriveOfficialEngagementGraphV2,
+  OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES,
+} from
   "../rule-atoms/official-engagement-graph-v2.mjs";
 import { evaluateOfficialTerrainLineOfSightV1 } from
   "../rule-atoms/official-terrain-los-rules-kernel-v1.mjs";
-import { certifyOfficialSpecialTerrainPlanV1 } from
+import {
+  certifyOfficialSpecialTerrainPlanV1,
+  evaluateOfficialSpecialTerrainLineOfSightBatchV1,
+} from
   "../rule-atoms/official-special-terrain-rules-kernel-v1.mjs";
 
 export const STARCRAFT_TMG_TACTICAL_RELATIONSHIP_GRAPH_VERSION =
@@ -253,26 +259,105 @@ function nearestPair(leftRows, rightRows) {
   return { nearest, pairs };
 }
 
-function engagementLookup(state) {
+function engagementLookup(state, request = {}) {
+  const knownMinimumOpponentGap = Number(
+    request.knownMinimumOpponentGapMilliInchesExclusive,
+  );
+  if (Number.isFinite(knownMinimumOpponentGap)
+    && knownMinimumOpponentGap
+      > OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES + 1) {
+    return {
+      graph: null,
+      edgeKeys: new Set(),
+      precision: "exact_rules_parameter_domain_gap_proof",
+      proof: {
+        knownMinimumOpponentGapMilliInchesExclusive: knownMinimumOpponentGap,
+        engagementRangeMilliInches:
+          OFFICIAL_ENGAGEMENT_RANGE_V2_MILLI_INCHES,
+        noSubjectTargetPairCanBeEngaged: true,
+      },
+    };
+  }
   try {
     const graph = deriveOfficialEngagementGraphV2(state);
     return { graph, edgeKeys: new Set(graph.modelEdges.flatMap((edge) => [
       `${edge.leftModelId}:${edge.rightModelId}`,
       `${edge.rightModelId}:${edge.leftModelId}`,
-    ])) };
+    ])), precision: "exact_rules_graph", proof: null };
   } catch (error) {
     return { graph: null, edgeKeys: new Set(),
+      precision: "unknown", proof: null,
       reason: String(error?.message || error).split(":")[0] };
   }
 }
 
-function lineOfSightPairs(state, leftPiece, rightPiece, pairs) {
+function lineOfSightPairKey(leftPieceId, leftModelId,
+  rightPieceId, rightModelId) {
+  return `${leftPieceId}:${leftModelId}->${rightPieceId}:${rightModelId}`;
+}
+
+function specialTerrainLineOfSightLookup(state, subjects, targets, rowsByUnit) {
+  const hasGrass = (state.board?.terrain || []).some((entry) =>
+    entry.isRemoved !== true && entry.isDestroyed !== true
+      && String(entry.terrainKind || "ordinary").toLowerCase() === "grass");
+  if (!hasGrass) return { results: null, batchHash: null, failure: null };
+  const queries = [];
+  for (const subject of subjects) {
+    for (const target of targets) {
+      for (const left of rowsByUnit.get(subject.id) || []) {
+        for (const right of rowsByUnit.get(target.id) || []) {
+          const queryId = lineOfSightPairKey(subject.id, left.model.id,
+            target.id, right.model.id);
+          queries.push({
+            queryId,
+            planId: `relationship-los:${queryId}`,
+            actorUnitId: subject.id,
+            attackerModelId: left.model.id,
+            targetUnitId: target.id,
+            targetModelId: right.model.id,
+          });
+        }
+      }
+    }
+  }
+  if (queries.length === 0) {
+    return { results: new Map(), batchHash: null, failure: null };
+  }
+  try {
+    const batch = evaluateOfficialSpecialTerrainLineOfSightBatchV1({
+      state,
+      dataBundle: state.officialTerrainLosDataBundle,
+      queries,
+    });
+    return {
+      results: new Map(batch.results.map((entry) =>
+        [entry.queryId, entry.result])),
+      batchHash: batch.batchHash,
+      failure: null,
+    };
+  } catch (error) {
+    return {
+      results: null,
+      batchHash: null,
+      failure: String(error?.message || error).split(":")[0],
+    };
+  }
+}
+
+function lineOfSightPairs(state, leftPiece, rightPiece, pairs,
+  specialTerrainLineOfSight) {
   const rows = [];
   for (const pair of pairs) {
     try {
       let result;
       let adapter = "official_terrain_los_rules_kernel_v1";
-      try {
+      const pairKey = lineOfSightPairKey(leftPiece.id, pair.left.model.id,
+        rightPiece.id, pair.right.model.id);
+      const batched = specialTerrainLineOfSight?.results?.get(pairKey);
+      if (batched) {
+        result = batched;
+        adapter = "official_special_terrain_grass_los_batch_adapter_v1";
+      } else try {
         result = evaluateOfficialTerrainLineOfSightV1({
           state,
           attacker: leftPiece,
@@ -300,13 +385,14 @@ function lineOfSightPairs(state, leftPiece, rightPiece, pairs) {
         result = certified.result;
         adapter = "official_special_terrain_grass_los_adapter_v1";
       }
+      const assessments = result.assessments || result.grassAssessments || [];
       rows.push({
         attackerModelId: pair.left.model.id,
         targetModelId: pair.right.model.id,
         visible: result.visible,
         baseEdgeDistanceMilliInches: result.modelEdgeDistanceMilliInches,
         blockingTerrainIds: clone(result.blockingTerrainIds),
-        coverAssessments: result.assessments.filter((entry) =>
+        coverAssessments: assessments.filter((entry) =>
           entry.blockingTerrainTrace || entry.attackerDirectCover
             || entry.targetDirectCover || entry.elevationDeadZoneBlocks)
           .map((entry) => ({
@@ -406,9 +492,11 @@ function threatProjection(state, attacker, target, minimumDistance,
   };
 }
 
-function unitRelation(state, left, right, leftRows, rightRows, engagement) {
+function unitRelation(state, left, right, leftRows, rightRows, engagement,
+  specialTerrainLineOfSight) {
   const { nearest, pairs } = nearestPair(leftRows, rightRows);
-  const los = lineOfSightPairs(state, left, right, pairs);
+  const los = lineOfSightPairs(state, left, right, pairs,
+    specialTerrainLineOfSight);
   const visiblePairCount = los.filter((entry) => entry.visible === true).length;
   const contactPairs = pairs.filter((entry) =>
     entry.result.minimumSeparationMilliInches <= 1);
@@ -461,7 +549,7 @@ function unitRelation(state, left, right, leftRows, rightRows, engagement) {
         toModelId: entry.right.model.id,
       })),
       graphHash: engagement.graph?.graphHash || null,
-      precision: engagement.graph ? "exact_rules_graph" : "unknown",
+      precision: engagement.precision,
       reason: engagement.reason || null,
     },
     lineOfSight: {
@@ -615,12 +703,15 @@ export function buildStarcraftTmgTacticalRelationshipGraphV1(input = {}) {
       ? requestedTargets.has(piece.id)
         || activeModels(piece).some((model) => requestedTargets.has(model.id))
       : piece.sideKey !== subjects[0]?.sideKey));
-  const engagement = engagementLookup(state);
+  const engagement = engagementLookup(state, request);
+  const specialTerrainLineOfSight = specialTerrainLineOfSightLookup(
+    state, subjects, targets, rowsByUnit,
+  );
   const unitEdges = [];
   for (const subject of subjects) {
     for (const target of targets) unitEdges.push(unitRelation(
       state, subject, target, rowsByUnit.get(subject.id), rowsByUnit.get(target.id),
-      engagement,
+      engagement, specialTerrainLineOfSight,
     ));
   }
   const markers = (state.board.missionMarkers || [])
@@ -742,6 +833,9 @@ export function buildStarcraftTmgTacticalRelationshipGraphV1(input = {}) {
     },
     sourceReceipts: {
       engagementGraphHash: engagement.graph?.graphHash || null,
+      engagementProof: clone(engagement.proof || null),
+      specialTerrainLosBatchHash: specialTerrainLineOfSight.batchHash,
+      specialTerrainLosBatchFailure: specialTerrainLineOfSight.failure,
       modelBaseGeometryBundleHash:
         state.officialModelBaseGeometryDataBundle?.bundleHash || null,
       terrainLosBundleHash: state.officialTerrainLosDataBundle?.bundleHash || null,

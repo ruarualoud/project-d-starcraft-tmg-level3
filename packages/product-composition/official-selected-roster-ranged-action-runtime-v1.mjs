@@ -5,6 +5,10 @@ import { hashStarcraftTmgContract } from
 import { deriveOfficialEngagementGraphV2 } from
   "../rule-atoms/official-engagement-graph-v2.mjs";
 import {
+  createOfficialModelBaseFootprintV1,
+  evaluateOfficialPhysicalFootprintRelationV1,
+} from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import {
   OFFICIAL_ELEVATION_EFFECTIVE_SIZE_RULES_ACTION_ATOM_IDS,
 } from "../rule-atoms/official-elevation-effective-size-rules-executor-v1.mjs";
 import {
@@ -54,12 +58,16 @@ import {
 
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ranged-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.7.0";
+export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.8.0";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_TYPE = "ranged_attack";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_FINISH_ACTION_TYPE =
   "finish_ranged_attack_sequence";
+export const OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_ACTION_TYPE =
+  OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_TYPE;
 export const OFFICIAL_SELECTED_ROSTER_RANGED_PARAMETER_KIND =
   "official_selected_roster_ranged_target_v1";
+export const OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_PARAMETER_KIND =
+  "official_selected_roster_ranged_casualty_selection_v1";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_PLAN_SCHEMA =
   "starcraft_tmg_official_selected_roster_ranged_plan_v1";
 
@@ -136,6 +144,94 @@ function pendingSequence(state) {
     fail("SELECTED_RANGED_PENDING_SEQUENCE_INVALID");
   }
   return pending;
+}
+function pendingCasualtyChoice(state) {
+  const pending = state.pendingCurrentProductRangedCasualtyChoice;
+  if (!pending) return null;
+  if (!object(pending)
+    || pending.schema
+      !== "starcraft_tmg_official_current_product_ranged_casualty_choice_v1"
+    || pending.pendingHash
+      !== hashStarcraftTmgContract(without(pending, ["pendingHash"]))
+    || pending.attackActionHash
+      !== hashStarcraftTmgContract(pending.attackAction)
+    || pending.casualtyDomainHash !== pending.casualtyDomain?.domainHash
+    || pending.attackerSideKey !== pending.attackAction?.sideKey
+    || pending.defenderSideKey === pending.attackerSideKey
+    || pending.targetPieceId !== pending.attackAction?.targetId
+    || !Array.isArray(pending.chanceReveals)) {
+    fail("SELECTED_RANGED_PENDING_CASUALTY_INVALID");
+  }
+  verifyOfficialCurrentProductCasualtyDomainV1(pending.casualtyDomain);
+  return pending;
+}
+function casualtyChoiceDomain(pending) {
+  const explicitModelSelection = pending.casualtyDomain.selectionMode
+    === "explicit_model_ids";
+  const parameterSchema = explicitModelSelection ? {
+    type: "object",
+    required: ["casualtyModelIds"],
+    casualtyModelIds: {
+      type: "array",
+      items: {
+        enum: clone(
+          pending.casualtyDomain.selectionContract.candidateModelIds,
+        ),
+      },
+      minItems: pending.casualtyDomain.casualtyCount,
+      maxItems: pending.casualtyDomain.casualtyCount,
+      uniqueItems: true,
+      orderedRemovalRequired:
+        pending.casualtyDomain.selectionContract.orderedRemovalRequired,
+    },
+  } : {
+    type: "object",
+    required: ["casualtySelectionHash"],
+    casualtySelectionHash: {
+      enum: pending.casualtyDomain.legalSelections.map((entry) => (
+        entry.selectionHash
+      )),
+    },
+  };
+  const body = {
+    schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
+    semanticVersion: "1.0.0",
+    parameterKind: OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_PARAMETER_KIND,
+    actionType: OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_ACTION_TYPE,
+    sideKey: pending.defenderSideKey,
+    phase: "assault",
+    pieceId: pending.targetPieceId,
+    executorId: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID,
+    executorVersion: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION,
+    ruleAtomIds: [...RULE_ATOM_IDS],
+    parameterSchema,
+    constraints: {
+      pendingHash: pending.pendingHash,
+      attackerSideKey: pending.attackerSideKey,
+      defenderSideKey: pending.defenderSideKey,
+      attackerPieceId: pending.attackerPieceId,
+      targetPieceId: pending.targetPieceId,
+      casualtyDomainHash: pending.casualtyDomainHash,
+      casualtyCount: pending.casualtyDomain.casualtyCount,
+      selectionMode: pending.casualtyDomain.selectionMode
+        || "enumerated_hashes",
+      selectionContract: clone(
+        pending.casualtyDomain.selectionContract || null,
+      ),
+      legalSelectionCount: pending.casualtyDomain.legalSelectionCount
+        ?? pending.casualtyDomain.legalSelections.length,
+      materializedSelectionCount:
+        pending.casualtyDomain.legalSelections.length,
+      legalSelections: clone(pending.casualtyDomain.legalSelections),
+      defenderOwnsSelection: true,
+    },
+    confirmationClass: "explicit_human",
+    searchAndStrategyExcludedFromAuthority: true,
+    rulesTruth: "official_defender_owned_ranged_casualty_selection",
+    trainingTruth: false,
+  };
+  return freezeDeep({ ...body,
+    domainId: `sc-domain-${hashStarcraftTmgContract(body)}` });
 }
 function verifyRuntimeState(state) {
   if (!object(state) || !object(state.players) || !object(state.board)
@@ -358,13 +454,20 @@ function lineOfSightFor(state, attacker, attackerModel, target, targetModel,
     trainingTruth: false,
   }, "lineOfSightHash");
 }
-function baseGapInches(left, right) {
-  const leftRadius = Number(left.baseWidthInches) / 2;
-  const rightRadius = Number(right.baseWidthInches) / 2;
-  return Number(Math.max(0, Math.hypot(
-    Number(right.xInches) - Number(left.xInches),
-    Number(right.yInches) - Number(left.yInches),
-  ) - leftRadius - rightRadius).toFixed(3));
+function baseGapInches(state, leftPiece, leftModel, rightPiece, rightModel) {
+  const relation = evaluateOfficialPhysicalFootprintRelationV1({
+    left: createOfficialModelBaseFootprintV1({
+      piece: leftPiece,
+      model: leftModel,
+      dataBundle: state.officialModelBaseGeometryDataBundle,
+    }),
+    right: createOfficialModelBaseFootprintV1({
+      piece: rightPiece,
+      model: rightModel,
+      dataBundle: state.officialModelBaseGeometryDataBundle,
+    }),
+  });
+  return Number((relation.minimumSeparationMilliInches / 1000).toFixed(3));
 }
 function maximumRangeFor(profile, characteristicModifiers, rangedModifiers) {
   const printedNormal = Number(profile.range.normalRangeInches);
@@ -393,7 +496,9 @@ function candidateGeometry(state, piece, target, profile, characteristicModifier
       const lineOfSight = lineOfSightFor(
         state, piece, attackerModel, target, targetModel, adapted,
       );
-      const distanceInches = baseGapInches(attackerModel, targetModel);
+      const distanceInches = baseGapInches(
+        state, piece, attackerModel, target, targetModel,
+      );
       pairs.push({ attackerModelId: attackerModel.id, targetModelId: targetModel.id,
         distanceInches, withinMaximumRange: distanceInches
           <= ranges.maximumRangeInches,
@@ -901,6 +1006,23 @@ export function enumerateOfficialSelectedRosterRangedActionsV1(state, options = 
   if (!SIDE_KEYS.has(sideKey)) fail("SELECTED_RANGED_SIDE_INVALID", sideKey);
   const parameterDomains = [];
   const candidates = [];
+  const casualtyPending = pendingCasualtyChoice(state);
+  if (casualtyPending) {
+    if (casualtyPending.defenderSideKey === sideKey) {
+      parameterDomains.push(casualtyChoiceDomain(casualtyPending));
+    }
+    return freezeDeep({
+      schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
+      runtimeId: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID,
+      runtimeVersion: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION,
+      candidates,
+      parameterDomains,
+      completeForSelectedRangedRoutes: true,
+      pendingDefenderCasualtyChoice: true,
+      searchAndStrategyExcludedFromAuthority: true,
+      trainingTruth: false,
+    });
+  }
   const pending = pendingSequence(state);
   if (pending && pending.sideKey === sideKey) {
     candidates.push(freezeDeep({
@@ -978,6 +1100,57 @@ export function instantiateOfficialSelectedRosterRangedActionV1(
   state, domain, parameters,
 ) {
   verifyRuntimeState(state);
+  if (domain?.parameterKind
+    === OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_PARAMETER_KIND) {
+    const pending = pendingCasualtyChoice(state);
+    const current = pending ? casualtyChoiceDomain(pending) : null;
+    if (!current || !isDeepStrictEqual(current, domain) || !object(parameters)) {
+      fail("SELECTED_RANGED_CASUALTY_PARAMETER_DOMAIN_INVALID");
+    }
+    const explicitModelSelection = pending.casualtyDomain.selectionMode
+      === "explicit_model_ids";
+    if (Object.keys(parameters).some((key) => explicitModelSelection
+      ? key !== "casualtyModelIds" : key !== "casualtySelectionHash")) {
+      fail("SELECTED_RANGED_CASUALTY_PARAMETER_DOMAIN_INVALID");
+    }
+    const casualtyModelIds = explicitModelSelection
+      ? clone(parameters.casualtyModelIds) : null;
+    const casualtySelectionHash = explicitModelSelection
+      ? resolveOfficialCurrentProductCasualtyDomainV1(
+        pending.casualtyDomain,
+        "",
+        casualtyModelIds,
+      ).selectionHash
+      : String(parameters.casualtySelectionHash || "");
+    if (!explicitModelSelection
+      && !current.parameterSchema.casualtySelectionHash.enum.includes(
+        casualtySelectionHash)) {
+      fail("SELECTED_RANGED_CASUALTY_SELECTION_STALE");
+    }
+    const canonicalParameters = explicitModelSelection
+      ? { casualtyModelIds } : { casualtySelectionHash };
+    return freezeDeep({
+      schemaVersion: "starcraft_tmg_official_parameter_instantiation_v1",
+      canonicalParameters,
+      action: {
+        actionType: OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_ACTION_TYPE,
+        resolutionStage: "defender_casualty_selection",
+        sideKey: pending.defenderSideKey,
+        phase: "assault",
+        pieceId: pending.targetPieceId,
+        attackerPieceId: pending.attackerPieceId,
+        pendingHash: pending.pendingHash,
+        casualtyDomainHash: pending.casualtyDomainHash,
+        casualtySelectionHash,
+        ...(explicitModelSelection ? { casualtyModelIds } : {}),
+        ruleAtomIds: [...RULE_ATOM_IDS],
+        executorId: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID,
+        executorVersion: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION,
+      },
+      rulesTruth: "official_defender_owned_ranged_casualty_selection",
+      trainingTruth: false,
+    });
+  }
   if (!object(domain)
     || domain.parameterKind !== OFFICIAL_SELECTED_ROSTER_RANGED_PARAMETER_KIND
     || domain.executorId !== OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID
@@ -1214,13 +1387,14 @@ export function createOfficialCurrentProductCasualtyDomainV1(input) {
   const discardRemainder = baseDomain.targetDestroyed
     || (baseDomain.casualtyCount < uncappedCasualtyCount);
   const postDamageMarker = discardRemainder ? 0 : remainder;
+  const discardedOverflowDamage = discardRemainder
+    ? Math.max(0, totalDamage - (casualtyCount === 0 ? 0
+      : firstModelHitPoints + ((casualtyCount - 1) * hitPoints))) : 0;
+  const shieldedAfter = shieldedBefore && casualtyCount === 0
+    && postDamageMarker <= shieldValue;
   const legalSelections = baseDomain.legalSelections.map((selection) => {
     const body = { ...clone(without(selection, ["selectionHash"])),
-      postDamageMarker, discardedOverflowDamage: discardRemainder
-        ? Math.max(0, totalDamage - (casualtyCount === 0 ? 0
-          : firstModelHitPoints + ((casualtyCount - 1) * hitPoints))) : 0,
-      shieldedAfter: shieldedBefore && casualtyCount === 0
-        && postDamageMarker <= shieldValue };
+      postDamageMarker, discardedOverflowDamage, shieldedAfter };
     return { ...body, selectionHash: hashStarcraftTmgContract(body) };
   });
   return seal({
@@ -1237,21 +1411,62 @@ export function createOfficialCurrentProductCasualtyDomainV1(input) {
     totalDamage,
     casualtyCount,
     postDamageMarker,
+    discardedOverflowDamage,
+    shieldedAfter,
     targetDestroyed: baseDomain.targetDestroyed,
     visibleModelIds: clone(input.visibleModelIds),
+    selectionMode: baseDomain.selectionMode || "enumerated_hashes",
+    selectionContract: clone(baseDomain.selectionContract || null),
+    legalSelectionCount: baseDomain.legalSelectionCount
+      ?? legalSelections.length,
+    materializedSelectionCount: legalSelections.length,
     legalSelections,
     rulesTruth: "official_current_product_shielded_and_multi_model_casualty_domain",
     trainingTruth: false,
   }, "domainHash");
 }
-export function resolveOfficialCurrentProductCasualtyDomainV1(domain, selectionHash) {
+function verifyOfficialCurrentProductCasualtyDomainV1(domain) {
   if (!object(domain)
     || domain.schema !== "starcraft_tmg_official_current_product_casualty_domain_v1"
     || domain.domainHash !== hashStarcraftTmgContract(without(domain, ["domainHash"]))) {
     fail("SELECTED_RANGED_CASUALTY_DOMAIN_INVALID");
   }
-  const selection = domain.legalSelections.find((entry) => (
+  return domain;
+}
+export function resolveOfficialCurrentProductCasualtyDomainV1(
+  domain, selectionHash, casualtyModelIds = null,
+) {
+  verifyOfficialCurrentProductCasualtyDomainV1(domain);
+  let selection = domain.legalSelections.find((entry) => (
     entry.selectionHash === selectionHash));
+  if (Array.isArray(casualtyModelIds)) {
+    const baseResolution = CASUALTY_KERNEL.resolve({
+      domain: domain.baseDomain,
+      casualtyModelIds,
+    });
+    const body = {
+      schema: "starcraft_tmg_official_multi_model_casualty_selection_v1",
+      targetPieceId: domain.targetPieceId,
+      casualtyModelIds: clone(baseResolution.casualtyModelIds),
+      remainingModelIds: clone(baseResolution.remainingModelIds),
+      remainingEngagedEnemyUnitIds: clone(
+        baseResolution.remainingEngagedEnemyUnitIds,
+      ),
+      postDamageMarker: domain.postDamageMarker,
+      targetDestroyed: domain.targetDestroyed,
+      discardedOverflowDamage: domain.discardedOverflowDamage,
+      trainingTruth: false,
+      shieldedAfter: domain.shieldedAfter,
+    };
+    const explicitSelection = {
+      ...body,
+      selectionHash: hashStarcraftTmgContract(body),
+    };
+    if (selectionHash && selectionHash !== explicitSelection.selectionHash) {
+      fail("SELECTED_RANGED_CASUALTY_SELECTION_STALE");
+    }
+    selection = explicitSelection;
+  }
   if (!selection) fail("SELECTED_RANGED_CASUALTY_SELECTION_STALE");
   return seal({
     schema: "starcraft_tmg_official_current_product_casualty_resolution_v1",
@@ -1328,7 +1543,10 @@ export function finishOfficialSelectedRosterRangedSequenceV1(
     sideKey: pending.sideKey, includeDisabled: true,
   }).candidates.find((entry) => entry.isEnabled === true
     && entry.actionType === OFFICIAL_SELECTED_ROSTER_RANGED_FINISH_ACTION_TYPE);
-  if (!current || !isDeepStrictEqual(current, actionInput)) {
+  const currentAction = current ? without(current, [
+    "isEnabled", "disabledReason", "score", "details",
+  ]) : null;
+  if (!currentAction || !isDeepStrictEqual(currentAction, actionInput)) {
     fail("SELECTED_RANGED_FINISH_ACTION_STALE");
   }
   const state = clone(stateInput);
@@ -1359,6 +1577,154 @@ export function finishOfficialSelectedRosterRangedSequenceV1(
     trainingTruth: false });
 }
 
+function openOfficialSelectedRosterRangedCasualtyChoiceV1(
+  stateInput, actionInput, chance, options = {},
+) {
+  const state = clone(stateInput);
+  const pendingBody = {
+    schema:
+      "starcraft_tmg_official_current_product_ranged_casualty_choice_v1",
+    semanticVersion: "1.0.0",
+    round: Number(state.round),
+    phase: state.phase,
+    attackerSideKey: actionInput.sideKey,
+    defenderSideKey: otherSide(actionInput.sideKey),
+    attackerPieceId: actionInput.pieceId,
+    targetPieceId: actionInput.targetId,
+    attackAction: clone(actionInput),
+    attackActionHash: hashStarcraftTmgContract(actionInput),
+    attackResolutionHash: chance.resolution.resolutionHash,
+    chanceReveals: clone(chance.resolution.reveals),
+    casualtyDomain: clone(chance.casualtyDomain),
+    casualtyDomainHash: chance.casualtyDomain.domainHash,
+    defenderOwnsSelection: true,
+    rulesTruth: "official_defender_owned_ranged_casualty_selection",
+    trainingTruth: false,
+  };
+  const pending = {
+    ...pendingBody,
+    pendingHash: hashStarcraftTmgContract(pendingBody),
+  };
+  state.pendingCurrentProductRangedCasualtyChoice = pending;
+  state.activeSideKey = pending.defenderSideKey;
+  const events = [{
+    type: "ranged_attack_roll_resolved_pending_defender_casualty",
+    attackerSideKey: pending.attackerSideKey,
+    defenderSideKey: pending.defenderSideKey,
+    attackerPieceId: pending.attackerPieceId,
+    targetPieceId: pending.targetPieceId,
+    attackResolutionHash: pending.attackResolutionHash,
+    casualtyDomainHash: pending.casualtyDomainHash,
+    casualtyCount: pending.casualtyDomain.casualtyCount,
+    legalSelectionCount: pending.casualtyDomain.legalSelectionCount,
+    materializedSelectionCount: pending.casualtyDomain.legalSelections.length,
+    chanceReveals: clone(pending.chanceReveals),
+    stages: clone(chance.resolution.stages),
+    pendingHash: pending.pendingHash,
+    trainingTruth: false,
+  }];
+  state.log = Array.isArray(state.log) ? state.log : [];
+  state.log.push({
+    id: `log-${state.log.length + 1}`,
+    round: Number(state.round),
+    phase: state.phase,
+    action: clone(actionInput),
+    events: clone(events),
+  });
+  return freezeDeep({
+    ok: true,
+    schemaVersion:
+      "starcraft_tmg_selected_roster_ranged_casualty_pending_transition_v1",
+    runtimeId: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID,
+    runtimeVersion: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION,
+    postRevision: Number(options.postRevision || 0),
+    state,
+    action: clone(actionInput),
+    events,
+    rulesTruth: "official_defender_owned_ranged_casualty_selection",
+    trainingTruth: false,
+  });
+}
+
+export function applyOfficialSelectedRosterRangedCasualtyChoiceV1(
+  stateInput, actionInput, options = {},
+) {
+  const pending = pendingCasualtyChoice(stateInput);
+  if (!pending || !object(actionInput)
+    || actionInput.actionType
+      !== OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_ACTION_TYPE
+    || actionInput.resolutionStage !== "defender_casualty_selection"
+    || actionInput.executorId
+      !== OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID
+    || actionInput.executorVersion
+      !== OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION
+    || actionInput.sideKey !== pending.defenderSideKey
+    || actionInput.pieceId !== pending.targetPieceId
+    || actionInput.attackerPieceId !== pending.attackerPieceId
+    || actionInput.pendingHash !== pending.pendingHash
+    || actionInput.casualtyDomainHash !== pending.casualtyDomainHash) {
+    fail("SELECTED_RANGED_CASUALTY_ACTION_INVALID");
+  }
+  const domain = casualtyChoiceDomain(pending);
+  const casualtyParameters = Array.isArray(actionInput.casualtyModelIds)
+    ? { casualtyModelIds: actionInput.casualtyModelIds }
+    : { casualtySelectionHash: actionInput.casualtySelectionHash };
+  const current = instantiateOfficialSelectedRosterRangedActionV1(
+    stateInput,
+    domain,
+    casualtyParameters,
+  );
+  if (!isDeepStrictEqual(current.action, actionInput)) {
+    fail("SELECTED_RANGED_CASUALTY_ACTION_STALE");
+  }
+  const restored = clone(stateInput);
+  delete restored.pendingCurrentProductRangedCasualtyChoice;
+  restored.activeSideKey = pending.attackerSideKey;
+  const settled = applyOfficialSelectedRosterRangedActionV1(
+    restored,
+    pending.attackAction,
+    {
+      ...options,
+      chanceReveals: clone(pending.chanceReveals),
+      casualtySelectionHash: actionInput.casualtySelectionHash,
+      casualtyModelIds: clone(actionInput.casualtyModelIds || null),
+    },
+  );
+  const state = clone(settled.state);
+  const resolutionEvent = {
+    type: "ranged_defender_casualty_selection_resolved",
+    attackerSideKey: pending.attackerSideKey,
+    defenderSideKey: pending.defenderSideKey,
+    attackerPieceId: pending.attackerPieceId,
+    targetPieceId: pending.targetPieceId,
+    pendingHash: pending.pendingHash,
+    casualtyDomainHash: pending.casualtyDomainHash,
+    casualtySelectionHash: actionInput.casualtySelectionHash,
+    casualtyModelIds: clone(actionInput.casualtyModelIds || null),
+    defenderOwnedSelection: true,
+    trainingTruth: false,
+  };
+  const events = [resolutionEvent, ...clone(settled.events || [])];
+  const lastLog = state.log?.at(-1);
+  if (lastLog) {
+    lastLog.action = clone(actionInput);
+    lastLog.events = clone(events);
+  }
+  return freezeDeep({
+    ok: true,
+    schemaVersion:
+      "starcraft_tmg_selected_roster_ranged_casualty_transition_v1",
+    runtimeId: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID,
+    runtimeVersion: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION,
+    postRevision: Number(options.postRevision || 0),
+    state,
+    action: clone(actionInput),
+    events,
+    rulesTruth: "official_defender_owned_ranged_casualty_selection",
+    trainingTruth: false,
+  });
+}
+
 export function applyOfficialSelectedRosterRangedActionV1(
   stateInput, actionInput, options = {},
 ) {
@@ -1385,9 +1751,15 @@ export function applyOfficialSelectedRosterRangedActionV1(
   const selectionHash = String(options.casualtySelectionHash
     || (chance.casualtyDomain.legalSelections.length === 1
       ? chance.casualtyDomain.legalSelections[0].selectionHash : ""));
-  if (!selectionHash) fail("SELECTED_RANGED_CASUALTY_SELECTION_REQUIRED");
+  const casualtyModelIds = Array.isArray(options.casualtyModelIds)
+    ? options.casualtyModelIds : null;
+  if (!selectionHash && !casualtyModelIds) {
+    return openOfficialSelectedRosterRangedCasualtyChoiceV1(
+      stateInput, actionInput, chance, options,
+    );
+  }
   const casualty = resolveOfficialCurrentProductCasualtyDomainV1(
-    chance.casualtyDomain, selectionHash);
+    chance.casualtyDomain, selectionHash, casualtyModelIds);
   const state = clone(stateInput);
   const piece = state.pieces.find((entry) => entry.id === actionInput.pieceId);
   const target = state.pieces.find((entry) => entry.id === actionInput.targetId);
@@ -1615,6 +1987,22 @@ export function queryOfficialSelectedRosterRangedActionV1(input = {}) {
   }, "queryReceiptHash");
 }
 
+export function applyOfficialSelectedRosterRangedRuntimeActionV1(
+  state, action, options = {},
+) {
+  if (action?.actionType === OFFICIAL_SELECTED_ROSTER_RANGED_FINISH_ACTION_TYPE) {
+    return finishOfficialSelectedRosterRangedSequenceV1(
+      state, action, options,
+    );
+  }
+  if (action?.resolutionStage === "defender_casualty_selection") {
+    return applyOfficialSelectedRosterRangedCasualtyChoiceV1(
+      state, action, options,
+    );
+  }
+  return applyOfficialSelectedRosterRangedActionV1(state, action, options);
+}
+
 export function createOfficialSelectedRosterRangedActionRuntimeV1(state) {
   verifyRuntimeState(state);
   const noRangedUnitIds = [];
@@ -1669,7 +2057,7 @@ export function createOfficialSelectedRosterRangedActionRuntimeV1(state) {
     instantiate: instantiateOfficialSelectedRosterRangedActionV1,
     preview: previewOfficialSelectedRosterRangedActionV1,
     resolveChance: resolveOfficialSelectedRosterRangedChanceV1,
-    apply: applyOfficialSelectedRosterRangedActionV1,
+    apply: applyOfficialSelectedRosterRangedRuntimeActionV1,
     query: queryOfficialSelectedRosterRangedActionV1 });
 }
 

@@ -349,6 +349,124 @@ export function evaluateOfficialPhysicalFootprintRelationV1(input = {}) {
   };
   return freezeDeep({ ...body, relationHash: hashStarcraftTmgContract(body) });
 }
+
+function convexHull(points) {
+  const ordered = [...new Map(points.map((entry) => [
+    `${entry.xMilliInches}:${entry.yMilliInches}`,
+    entry,
+  ])).values()].sort((left, right) => (
+    left.xMilliInches - right.xMilliInches
+      || left.yMilliInches - right.yMilliInches
+  ));
+  if (ordered.length <= 2) return ordered;
+  const cross = (origin, left, right) => (
+    (left.xMilliInches - origin.xMilliInches)
+      * (right.yMilliInches - origin.yMilliInches)
+    - (left.yMilliInches - origin.yMilliInches)
+      * (right.xMilliInches - origin.xMilliInches)
+  );
+  const half = (rows) => {
+    const result = [];
+    for (const entry of rows) {
+      while (result.length >= 2
+        && cross(result.at(-2), result.at(-1), entry) <= TOLERANCE) {
+        result.pop();
+      }
+      result.push(entry);
+    }
+    return result;
+  };
+  return [...half(ordered).slice(0, -1),
+    ...half([...ordered].reverse()).slice(0, -1)];
+}
+
+function segmentPolygonDistance(start, end, vertices) {
+  if (pointInPolygon(start, vertices) || pointInPolygon(end, vertices)
+    || polygonEdges(vertices).some(([left, right]) => (
+      segmentsIntersect(start, end, left, right)
+    ))) return 0;
+  return Math.min(
+    pointPolygonDistance(start, vertices),
+    pointPolygonDistance(end, vertices),
+    ...vertices.map((entry) => pointSegmentDistance(entry, start, end)),
+  );
+}
+
+function circumscribedRadius(footprint) {
+  if (footprint.shape === "round") return footprint.radiusMilliInches;
+  return Math.max(...footprint.vertices.map((entry) => (
+    distance(footprint.center, entry)
+  )));
+}
+
+function sweepCircleAgainstFootprint(start, end, radius, blocker) {
+  if (blocker.shape === "round") {
+    return pointSegmentDistance(blocker.center, start, end)
+      < radius + blocker.radiusMilliInches - TOLERANCE;
+  }
+  return segmentPolygonDistance(start, end, blocker.vertices)
+    < radius - TOLERANCE;
+}
+
+function exactConstantRotationSweepCollision(start, end, blocker) {
+  if (start.shape === "round") {
+    return sweepCircleAgainstFootprint(
+      start.center, end.center, start.radiusMilliInches, blocker,
+    );
+  }
+  const sweptVertices = convexHull([...start.vertices, ...end.vertices]);
+  if (blocker.shape === "round") {
+    return pointPolygonDistance(blocker.center, sweptVertices)
+      < blocker.radiusMilliInches - TOLERANCE;
+  }
+  return overlaps({ shape: "rectangle", vertices: sweptVertices }, blocker);
+}
+
+export function evaluateOfficialSweptPhysicalFootprintCollisionV1(input = {}) {
+  const movingStart = input.movingStart;
+  const movingEnd = input.movingEnd;
+  const blocker = input.blocker;
+  for (const footprint of [movingStart, movingEnd, blocker]) {
+    if (!object(footprint)
+      || footprint.schema !== "starcraft_tmg_physical_footprint_v1") {
+      fail("MODEL_BASE_GEOMETRY_SWEPT_FOOTPRINT_INVALID");
+    }
+  }
+  if (movingStart.shape !== movingEnd.shape
+    || movingStart.widthMilliInches !== movingEnd.widthMilliInches
+    || movingStart.depthMilliInches !== movingEnd.depthMilliInches) {
+    fail("MODEL_BASE_GEOMETRY_SWEPT_RIGID_BASE_MISMATCH");
+  }
+  const constantRotation = movingStart.shape === "round"
+    || Math.abs(movingStart.rotationDegrees - movingEnd.rotationDegrees)
+      <= TOLERANCE;
+  const precision = constantRotation
+    ? "exact_constant_rotation_convex_sweep"
+    : "conservative_rotation_circumscribed_envelope";
+  const collides = constantRotation
+    ? exactConstantRotationSweepCollision(movingStart, movingEnd, blocker)
+    : sweepCircleAgainstFootprint(
+      movingStart.center,
+      movingEnd.center,
+      Math.max(circumscribedRadius(movingStart),
+        circumscribedRadius(movingEnd)),
+      blocker,
+    );
+  const body = {
+    schema: "starcraft_tmg_official_swept_physical_footprint_collision_v1",
+    movingStartFootprintHash: movingStart.footprintHash,
+    movingEndFootprintHash: movingEnd.footprintHash,
+    blockerFootprintHash: blocker.footprintHash,
+    collides,
+    precision,
+    completePhysicalBaseSwept: true,
+    modelCentreOnlyMeasurement: false,
+    contactWithoutInteriorOverlapAllowed: true,
+    rulesTruth: "official_complete_physical_base_swept_collision",
+    trainingTruth: false,
+  };
+  return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
+}
 function overlaps(left, right) {
   if (left.shape === "round" && right.shape === "round") {
     return distance(left.center, right.center)

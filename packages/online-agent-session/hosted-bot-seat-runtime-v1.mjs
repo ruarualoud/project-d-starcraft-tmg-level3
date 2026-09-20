@@ -5,6 +5,7 @@ import { resolveStarcraftTmgEffectiveActingSideV1 } from
 
 export const STARCRAFT_TMG_HOSTED_BOT_SEAT_RUNTIME_VERSION =
   "starcraft_tmg_hosted_bot_seat_runtime_v1";
+const PREVIEW_REPLAY_VERSION = "hosted_bot_preview_replay_v2";
 
 const ACTIVE_LIFECYCLES = new Set(["active", "waiting_human", "paused"]);
 const MATCH_MODES = Object.freeze({
@@ -146,12 +147,22 @@ function normalizeDecision(value, input) {
     assessment: object(value.assessment) ? clone(value.assessment) : null,
     planRevision: object(value.planRevision) ? clone(value.planRevision) : null,
     intent: object(value.intent) ? clone(value.intent) : null,
+    lifecycleAssessment: object(value.lifecycleAssessment)
+      ? clone(value.lifecycleAssessment) : null,
+    plannerResult: object(value.plannerResult)
+      ? clone(value.plannerResult) : null,
     publicDecisionSummary: object(value.publicDecisionSummary)
       ? clone(value.publicDecisionSummary) : null,
+    formationSelection: object(value.formationSelection)
+      ? clone(value.formationSelection) : null,
+    assetPlacementSelection: object(value.assetPlacementSelection)
+      ? clone(value.assetPlacementSelection) : null,
+    placementRationales: Array.isArray(value.placementRationales)
+      ? clone(value.placementRationales) : [],
     speech: value.speech ? String(value.speech) : null,
     providerTrace: object(value.providerTrace)
       ? clone(value.providerTrace) : null,
-    action: clone(selected.action || null),
+    action: clone(selected.action || selected || null),
     decisionSource: "injected_bot_decision_port",
     rulesAuthority: false,
     confirmationAuthority: false,
@@ -167,6 +178,34 @@ function safeIssue(error, fallbackSeverity = "Medium") {
     severity: String(error?.severity || fallbackSeverity),
     message: String(error?.message || error).slice(0, 500),
   };
+}
+
+function typedRejectedCode(result, fallback) {
+  const messageCode = String(result?.message || "").split(":")[0];
+  if (/^[A-Z][A-Z0-9_]{2,159}$/u.test(messageCode)) return messageCode;
+  return String(result?.reason || fallback);
+}
+
+function previewFailureSignature(inflight) {
+  if (!inflight?.authority?.stateHash || !inflight?.decision?.proposal) {
+    return null;
+  }
+  return hashStarcraftTmgContract({
+    previewReplayVersion: PREVIEW_REPLAY_VERSION,
+    stateRevision: inflight.authority.stateRevision,
+    stateHash: inflight.authority.stateHash,
+    proposal: inflight.decision.proposal,
+  });
+}
+
+function resolveIssues(issues, codes, at, resolution) {
+  const resolvedCodes = new Set(codes);
+  return (issues || []).map((issue) => resolvedCodes.has(issue.code)
+    && !issue.resolvedAt ? {
+      ...clone(issue),
+      resolvedAt: at,
+      resolution,
+    } : clone(issue));
 }
 
 function highSeverity(reason) {
@@ -199,6 +238,8 @@ function newRecord(scopeValue, consent, at, mode) {
     lastObservedStateRevision: null,
     lastObservedStateHash: null,
     lastAttemptedStateHash: null,
+    preexecutionDeferralStateHash: null,
+    lastPreviewFailure: null,
     lastAppliedStateRevision: null,
     lastDecision: null,
     lastReceiptHash: null,
@@ -241,6 +282,8 @@ function project(record, connected) {
     lastAppliedStateRevision: record.lastAppliedStateRevision,
     lastDecision: record.lastDecision ? {
       candidateId: record.lastDecision.candidateId,
+      actionType: record.lastDecision.action?.actionType || null,
+      pieceId: record.lastDecision.action?.pieceId || null,
       selectedReason: record.lastDecision.selectedReason,
       scoreOrPositionValue: record.lastDecision.scoreOrPositionValue,
       risk: record.lastDecision.risk,
@@ -254,6 +297,9 @@ function project(record, connected) {
       idempotencyKeyHash: record.inflight?.idempotencyKey
         ? hashStarcraftTmgContract(record.inflight.idempotencyKey) : null,
       secretMaterialProjected: false,
+      previewReplayVersion: PREVIEW_REPLAY_VERSION,
+      repeatedPreviewFailureCount:
+        Number(record.lastPreviewFailure?.count || 0),
     },
     memory: trace ? {
       continuityContextHash: trace.continuityContextHash || null,
@@ -261,7 +307,12 @@ function project(record, connected) {
       actionIntentHash: trace.actionIntentHash || null,
       eventLogPersistence: trace.eventLogPersistence || null,
     } : null,
+    preexecution: {
+      deferredStateHash: record.preexecutionDeferralStateHash || null,
+      policy: "one_background_tick_then_never_block",
+    },
     latestTrace: trace ? clone(trace) : null,
+    recentTraces: clone(record.traces.slice(-32)),
     issues: clone(record.issues.slice(-16)),
     eligibleForTraining: false,
     trainingTruth: false,
@@ -297,6 +348,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
   const spatialObservationProjector = options.spatialObservationProjector || null;
   const spatialRuntime = options.spatialActionQueryRuntime || null;
   const turnPlanRuntime = options.turnPlanRuntime || null;
+  const deferForPreexecution = options.deferForPreexecution === true;
   const now = typeof options.now === "function"
     ? options.now : () => new Date().toISOString();
   const configuredMatchMode = matchMode(options.matchMode);
@@ -382,7 +434,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
     };
   }
 
-  async function readAuthority(record, seatToken) {
+  async function readProjection(record, seatToken) {
     const read = await room.readRoom({ roomId: record.scope.roomId, seatToken });
     if (read?.ok !== true) {
       throw Object.assign(new Error(read?.reason || "BOT_ROOM_READ_FAILED"), {
@@ -399,21 +451,35 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
         severity: "High",
       });
     }
+    return projection;
+  }
+
+  async function readAuthority(record, seatToken, currentProjection = null) {
+    const projection = currentProjection
+      || await readProjection(record, seatToken);
     const legal = await room.legalSpace({
       roomId: record.scope.roomId,
       seatToken,
     });
     if (legal?.ok !== true) {
-      throw Object.assign(new Error(legal?.reason || "BOT_LEGAL_SPACE_FAILED"), {
+      throw Object.assign(new Error(legal?.message || legal?.reason
+        || "BOT_LEGAL_SPACE_FAILED"), {
         code: legal?.reason || "BOT_LEGAL_SPACE_FAILED",
+        rulesFailureMessage: legal?.message || null,
         severity: highSeverity(legal?.reason) ? "High" : "Medium",
       });
     }
     const legalSpace = legal.legalSpace;
+    const forcedFiniteOnly = (legalSpace.finiteActions || []).length === 1
+      && (legalSpace.parameterDomains || []).length === 0;
+    // A forced one-action state may skip the heavier action-space query, but
+    // it still needs a revision-bound spatial observation. The observation is
+    // part of decision/memory/replay provenance and must not disappear merely
+    // because Rules currently exposes one legal choice.
     const spatialObservation = spatialObservationProjector
       ? await spatialObservationProjector({ roomProjection: projection,
         legalSpace }) : null;
-    const spatialActionSpace = spatialRuntime
+    const spatialActionSpace = !forcedFiniteOnly && spatialRuntime
       ? await spatialRuntime.actionSpace({ roomProjection: projection,
         legalSpace, spatialObservation })
       : seal({
@@ -567,11 +633,26 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
       turnPlanHash: record.inflight.turnPlanHash || null,
       actionIntentHash: record.inflight.actionIntent?.intentHash || null,
       candidateId: record.inflight.decision.candidateId,
+      actionType:
+        record.inflight.decision.lifecycleAssessment?.selectedActionType
+        || record.inflight.decision.action?.actionType || null,
+      authorityActionType:
+        record.inflight.decision.action?.actionType || null,
+      pieceId: record.inflight.decision.action?.pieceId || null,
       selectedReason: record.inflight.decision.selectedReason,
       scoreOrPositionValue: record.inflight.decision.scoreOrPositionValue,
       risk: record.inflight.decision.risk,
       publicDecisionSummary:
         clone(record.inflight.decision.publicDecisionSummary || null),
+      lifecycleAssessment:
+        clone(record.inflight.decision.lifecycleAssessment || null),
+      plannerResult: clone(record.inflight.decision.plannerResult || null),
+      formationSelection:
+        clone(record.inflight.decision.formationSelection || null),
+      assetPlacementSelection:
+        clone(record.inflight.decision.assetPlacementSelection || null),
+      placementRationales:
+        clone(record.inflight.decision.placementRationales || []),
       rejectedAlternatives:
         clone(record.inflight.decision.rejectedAlternatives),
       strategySkillRefs:
@@ -623,6 +704,97 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
     return { applied, replay, trace };
   }
 
+  async function executeSelectedDecision(record, scopeValue, seatToken) {
+    const decision = record.inflight.decision;
+    const authority = record.inflight.authority;
+    record = await persist(record, { driveStatus: "previewing" });
+    const preview = await room.previewAction({
+      roomId: scopeValue.roomId,
+      seatToken,
+      ...(decision.proposal.kind === "finite"
+        ? { candidateId: decision.proposal.actionKey }
+        : { proposal: decision.proposal }),
+      expectedMatchBindingHash: scopeValue.matchBindingHash,
+      expectedLegalSpaceHash: authority.legalSpaceHash,
+      expectedStateRevision: authority.stateRevision,
+      expectedStateHash: authority.stateHash,
+      occurredAt: iso(now(), "now"),
+    });
+    if (preview?.ok !== true) {
+      const code = typedRejectedCode(preview, "BOT_PREVIEW_FAILED");
+      throw Object.assign(new Error(preview?.message || preview?.reason
+        || "BOT_PREVIEW_FAILED"), {
+        code,
+        rulesRejection: preview?.reason || null,
+        severity: highSeverity(preview?.reason) ? "High" : "Medium",
+      });
+    }
+    let confirmationId = null;
+    if (preview.confirmationRequired) {
+      const confirmed = await room.confirmPreview({
+        roomId: scopeValue.roomId,
+        seatToken,
+        previewId: preview.preview.previewId,
+        previewToken: preview.preview.previewToken,
+        previewContentHash: preview.preview.previewSeal.contentHash,
+        occurredAt: iso(now(), "now"),
+      });
+      if (confirmed?.ok !== true) {
+        throw Object.assign(new Error(
+          confirmed?.reason || "BOT_CONFIRM_FAILED"), {
+          code: confirmed?.reason || "BOT_CONFIRM_FAILED",
+          severity: highSeverity(confirmed?.reason) ? "High" : "Medium",
+        });
+      }
+      confirmationId = confirmed.confirmation.confirmationId;
+    }
+    const control = await room.claimControl({
+      roomId: scopeValue.roomId,
+      seatToken,
+      sessionId: `hosted-bot-seat:${scopeValue.scopeKey}`,
+    });
+    if (control?.ok !== true) {
+      throw Object.assign(new Error(control?.reason || "BOT_CONTROL_FAILED"), {
+        code: control?.reason || "BOT_CONTROL_FAILED",
+        severity: highSeverity(control?.reason) ? "High" : "Medium",
+      });
+    }
+    record.inflight.stage = "ready_to_apply";
+    record.inflight.applyRequest = {
+      previewId: preview.preview.previewId,
+      confirmationId,
+      leaseId: control.controlLease.leaseId,
+      leaseFence: control.controlLease.leaseFence,
+      expectedStateRevision: authority.stateRevision,
+      idempotencyKey: record.inflight.idempotencyKey,
+      occurredAt: iso(now(), "now"),
+    };
+    record = await persist(record, { driveStatus: "applying",
+      inflight: record.inflight });
+    const result = await executeApply(record, seatToken);
+    const appliedAt = iso(now(), "now");
+    record = await persist(record, {
+      lifecycle: result.applied.envelope?.state?.terminal
+        || result.applied.envelope?.state?.gameOver ? "completed" : "active",
+      driveStatus: "action_applied_replay_verified",
+      actionCount: record.actionCount + 1,
+      replayVerifiedCount: record.replayVerifiedCount + 1,
+      lastAppliedStateRevision: result.applied.envelope?.stateRevision ?? null,
+      lastDecision: clone(record.inflight.decision),
+      lastReceiptHash: result.applied.receipt?.journalHash || null,
+      lastReplayMatchesCurrent: true,
+      traces: [...record.traces, result.trace],
+      issues: resolveIssues(record.issues, [
+        "REPLAY_MISMATCH", "PROPOSAL_INVALID",
+        "SELECTED_RANGED_CHANCE_REVEALS_REQUIRED",
+        "SELECTED_RANGED_CASUALTY_SELECTION_REQUIRED",
+      ], appliedAt, "preview_protocol_repaired_and_apply_replay_verified"),
+      lastPreviewFailure: null,
+      inflight: null,
+    });
+    return { record, trace: result.trace };
+  }
+
   async function runDrive(scopeValue, input) {
     let record = records.get(scopeValue.scopeKey)
       || await store.load(scopeValue.scopeKey);
@@ -642,7 +814,37 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
     }
     let authorityValue;
     try {
-      authorityValue = await readAuthority(record, credential.seatToken);
+      let observedProjection = null;
+      if (record.lifecycle === "waiting_human") {
+        observedProjection = await readProjection(record, credential.seatToken);
+        const observedState = observedProjection.state || {};
+        const observedActor = resolveStarcraftTmgEffectiveActingSideV1(
+          observedState);
+        if (observedState.terminal !== true && observedState.gameOver !== true
+          && observedActor.sideKey !== scopeValue.seatKey) {
+          record = await persist(record, {
+            lastObservedStateRevision: observedProjection.room.stateRevision,
+            lastObservedStateHash: observedProjection.room.stateHash,
+            driveStatus: "waiting_for_other_seat",
+          });
+          return deepFreeze({ ok: true, outcome: "waiting_for_other_seat",
+            projection: project(record, true) });
+        }
+        if (observedState.terminal !== true && observedState.gameOver !== true
+          && observedActor.sideKey === scopeValue.seatKey) {
+          record = await persist(record, {
+            lifecycle: "active",
+            lastObservedStateRevision: observedProjection.room.stateRevision,
+            lastObservedStateHash: observedProjection.room.stateHash,
+            driveStatus: "turn_handoff_observation_window",
+          });
+          return deepFreeze({ ok: true,
+            outcome: "turn_handoff_observation_window",
+            projection: project(record, true) });
+        }
+      }
+      authorityValue = await readAuthority(record, credential.seatToken,
+        observedProjection);
       const state = authorityValue.projection.state || {};
       record = await persist(record, {
         lastObservedStateRevision: authorityValue.projection.room.stateRevision,
@@ -650,6 +852,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
       });
       if (record.inflight?.applyRequest) {
         const result = await executeApply(record, credential.seatToken);
+        const recoveredAt = iso(now(), "now");
         record = await persist(record, {
           lifecycle: state.terminal || state.gameOver ? "completed" : "active",
           driveStatus: "applied_recovered_idempotently",
@@ -660,6 +863,8 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
           lastReceiptHash: result.applied.receipt?.journalHash || null,
           lastReplayMatchesCurrent: true,
           traces: [...record.traces, result.trace],
+          issues: resolveIssues(record.issues, ["REPLAY_MISMATCH"],
+            recoveredAt, "idempotent_apply_replay_verified"),
           inflight: null,
         });
         return deepFreeze({ ok: true, outcome: "bot_action_applied",
@@ -683,6 +888,50 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
         return deepFreeze({ ok: false, reason: "BOT_RETRY_REQUIRES_EXPLICIT_DRIVE",
           projection: project(record, true) });
       }
+      if (record.inflight?.stage === "decision_selected") {
+        const inflightAuthority = record.inflight.authority || {};
+        if (inflightAuthority.stateRevision
+            !== authorityValue.projection.room.stateRevision
+          || inflightAuthority.stateHash
+            !== authorityValue.projection.room.stateHash
+          || inflightAuthority.legalSpaceHash
+            !== authorityValue.legalSpace.legalSpaceHash) {
+          throw Object.assign(new Error(
+            "Persisted decision no longer matches current authority"), {
+            code: "BOT_INFLIGHT_DECISION_STALE",
+            severity: "High",
+          });
+        }
+        const signature = previewFailureSignature(record.inflight);
+        const priorFailure = record.lastPreviewFailure;
+        if (signature && priorFailure?.previewReplayVersion
+            === PREVIEW_REPLAY_VERSION
+          && priorFailure.signature === signature) {
+          const count = Number(priorFailure.count || 1) + 1;
+          const blocking = count >= 3;
+          record = await persist(record, {
+            lifecycle: blocking ? "blocked" : "paused",
+            driveStatus: blocking
+              ? "blocked_identical_preview_failure"
+              : "paused_identical_preview_failure",
+            lastPreviewFailure: { ...clone(priorFailure), count,
+              lastObservedAt: iso(now(), "now") },
+          });
+          return deepFreeze({
+            ok: false,
+            reason: blocking ? "BOT_PREVIEW_DID_NOT_CONVERGE"
+              : "BOT_IDENTICAL_PREVIEW_RETRY_BLOCKED",
+            findingSeverity: blocking ? "High" : "Medium",
+            projection: project(record, true),
+          });
+        }
+        const recovered = await executeSelectedDecision(
+          record, scopeValue, credential.seatToken,
+        );
+        record = recovered.record;
+        return deepFreeze({ ok: true, outcome: "bot_action_applied",
+          projection: project(record, true), trace: recovered.trace });
+      }
       let continuityContext = null;
       if (continuity) {
         continuityContext = await continuity.observe({
@@ -694,8 +943,28 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
           strategySkillSetHash: input.strategySkillSetHash || null,
         });
       }
+      const preexecutionStatus = continuityContext?.preexecutionSearch?.status;
+      if (deferForPreexecution
+        && new Set(["queued", "running"]).has(preexecutionStatus)
+        && record.preexecutionDeferralStateHash
+          !== authorityValue.projection.room.stateHash) {
+        record = await persist(record, {
+          lifecycle: "active",
+          driveStatus: "preexecution_search_running",
+          preexecutionDeferralStateHash:
+            authorityValue.projection.room.stateHash,
+        });
+        return deepFreeze({
+          ok: true,
+          outcome: "preexecution_search_started",
+          projection: project(record, true),
+        });
+      }
       let planState = null;
       if (turnPlanRuntime) {
+        if (typeof turnPlanRuntime.hydrate === "function") {
+          await turnPlanRuntime.hydrate({ scope: scopeValue });
+        }
         const current = turnPlanRuntime.read({ scope: scopeValue });
         if (current.plan) {
           await turnPlanRuntime.dispatch({
@@ -711,6 +980,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
         lifecycle: "active",
         driveStatus: "waiting_provider",
         lastAttemptedStateHash: authorityValue.projection.room.stateHash,
+        preexecutionDeferralStateHash: null,
       });
       const rawDecision = await decisionPort.decide(deepFreeze({
         schemaVersion:
@@ -764,93 +1034,40 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
         })}`,
         applyRequest: null,
       };
-      record = await persist(record, { driveStatus: "previewing", inflight });
-      const preview = await room.previewAction({
-        roomId: scopeValue.roomId,
-        seatToken: credential.seatToken,
-        ...(decision.proposal.kind === "finite"
-          ? { candidateId: decision.proposal.actionKey }
-          : { proposal: decision.proposal }),
-        expectedMatchBindingHash: scopeValue.matchBindingHash,
-        expectedLegalSpaceHash: authority.legalSpaceHash,
-        expectedStateRevision: authority.stateRevision,
-        expectedStateHash: authority.stateHash,
-        occurredAt: iso(now(), "now"),
-      });
-      if (preview?.ok !== true) {
-        throw Object.assign(new Error(preview?.reason || "BOT_PREVIEW_FAILED"), {
-          code: preview?.reason || "BOT_PREVIEW_FAILED",
-          severity: highSeverity(preview?.reason) ? "High" : "Medium",
-        });
-      }
-      let confirmationId = null;
-      if (preview.confirmationRequired) {
-        const confirmed = await room.confirmPreview({
-          roomId: scopeValue.roomId,
-          seatToken: credential.seatToken,
-          previewId: preview.preview.previewId,
-          previewToken: preview.preview.previewToken,
-          previewContentHash: preview.preview.previewSeal.contentHash,
-          occurredAt: iso(now(), "now"),
-        });
-        if (confirmed?.ok !== true) {
-          throw Object.assign(new Error(
-            confirmed?.reason || "BOT_CONFIRM_FAILED"), {
-            code: confirmed?.reason || "BOT_CONFIRM_FAILED",
-            severity: highSeverity(confirmed?.reason) ? "High" : "Medium",
-          });
-        }
-        confirmationId = confirmed.confirmation.confirmationId;
-      }
-      const control = await room.claimControl({
-        roomId: scopeValue.roomId,
-        seatToken: credential.seatToken,
-        sessionId: `hosted-bot-seat:${scopeValue.scopeKey}`,
-      });
-      if (control?.ok !== true) {
-        throw Object.assign(new Error(control?.reason || "BOT_CONTROL_FAILED"), {
-          code: control?.reason || "BOT_CONTROL_FAILED",
-          severity: highSeverity(control?.reason) ? "High" : "Medium",
-        });
-      }
-      record.inflight.stage = "ready_to_apply";
-      record.inflight.applyRequest = {
-        previewId: preview.preview.previewId,
-        confirmationId,
-        leaseId: control.controlLease.leaseId,
-        leaseFence: control.controlLease.leaseFence,
-        expectedStateRevision: authority.stateRevision,
-        idempotencyKey: record.inflight.idempotencyKey,
-        occurredAt: iso(now(), "now"),
-      };
-      record = await persist(record, { driveStatus: "applying",
-        inflight: record.inflight });
-      const result = await executeApply(record, credential.seatToken);
-      record = await persist(record, {
-        lifecycle: result.applied.envelope?.state?.terminal
-          || result.applied.envelope?.state?.gameOver ? "completed" : "active",
-        driveStatus: "action_applied_replay_verified",
-        actionCount: record.actionCount + 1,
-        replayVerifiedCount: record.replayVerifiedCount + 1,
-        lastAppliedStateRevision: result.applied.envelope?.stateRevision ?? null,
-        lastDecision: clone(record.inflight.decision),
-        lastReceiptHash: result.applied.receipt?.journalHash || null,
-        lastReplayMatchesCurrent: true,
-        traces: [...record.traces, result.trace],
-        inflight: null,
-      });
+      record = await persist(record, { driveStatus: "decision_selected",
+        inflight });
+      const completed = await executeSelectedDecision(
+        record, scopeValue, credential.seatToken,
+      );
+      record = completed.record;
       return deepFreeze({ ok: true, outcome: "bot_action_applied",
-        projection: project(record, true), trace: result.trace });
+        projection: project(record, true), trace: completed.trace });
     } catch (error) {
       const issue = { ...safeIssue(error,
         highSeverity(error?.code) ? "High" : "Medium"),
       occurredAt: iso(now(), "now") };
       const current = records.get(scopeValue.scopeKey) || record;
       const blocking = new Set(["Critical", "High"]).has(issue.severity);
+      const signature = current.inflight?.stage === "decision_selected"
+        ? previewFailureSignature(current.inflight) : null;
+      const priorFailure = current.lastPreviewFailure;
+      const repeated = Boolean(signature
+        && priorFailure?.previewReplayVersion === PREVIEW_REPLAY_VERSION
+        && priorFailure.signature === signature);
+      const previewFailure = signature ? {
+        previewReplayVersion: PREVIEW_REPLAY_VERSION,
+        signature,
+        code: issue.code,
+        count: repeated ? Number(priorFailure.count || 1) + 1 : 1,
+        firstObservedAt: repeated
+          ? priorFailure.firstObservedAt : issue.occurredAt,
+        lastObservedAt: issue.occurredAt,
+      } : current.lastPreviewFailure || null;
       record = await persist(current, {
         lifecycle: blocking ? "blocked" : "paused",
         driveStatus: blocking ? "blocked_high_finding" : "paused_after_failure",
-        issues: [...current.issues, issue],
+        issues: repeated ? clone(current.issues) : [...current.issues, issue],
+        lastPreviewFailure: previewFailure,
       });
       return deepFreeze({ ok: false, reason: issue.code,
         findingSeverity: issue.severity, projection: project(record, true) });
@@ -879,6 +1096,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
         throw new TypeError("persisted Bot Seat match mode mismatch");
       }
       records.set(requestedScope.scopeKey, record);
+      const reattachedAt = at;
       record = await persist(record, {
         consent: clone(consent),
         matchMode: configuredMatchMode,
@@ -886,6 +1104,11 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
         lifecycle: "active",
         driveStatus: "reattached",
         connectionEpoch: record.connectionEpoch + 1,
+        lastPreviewFailure: null,
+        issues: record.lastReplayMatchesCurrent === true
+          ? resolveIssues(record.issues, ["REPLAY_MISMATCH"], reattachedAt,
+            "persisted_apply_replay_was_verified")
+          : clone(record.issues),
         closedAt: null,
       });
     }

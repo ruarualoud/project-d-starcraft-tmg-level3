@@ -25,7 +25,7 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v5";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v10";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_action_shape_normalization_v12";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
@@ -387,7 +387,75 @@ function phaseLifecycleContract(input) {
   });
 }
 
-function compactPlanningActionSpace(actionSpace) {
+function currentRangedContributionOverview(actionSpace, spatialObservation) {
+  const liveModelsByUnit = new Map((spatialObservation?.units || []).map((unit) => [
+    unit.unitId,
+    [...new Set(unit.modelIds || [])].sort(),
+  ]));
+  const grouped = new Map();
+  for (const domain of actionSpace?.parameterDomains || []) {
+    if (domain.actionType !== "ranged_attack"
+      || domain.parameterKind !== "official_selected_roster_ranged_target_v1") {
+      continue;
+    }
+    for (const targetPlan of domain.constraints?.targetPlans || []) {
+      const key = `${domain.pieceId || ""}:${targetPlan.targetUnitId || ""}`;
+      if (!grouped.has(key)) grouped.set(key, {
+        pieceId: domain.pieceId || null,
+        targetUnitId: targetPlan.targetUnitId || null,
+        weaponBatches: [],
+      });
+      const layout = targetPlan.chance?.layout || {};
+      const eligibleAttackerModelIds = [...new Set(
+        targetPlan.eligibleAttackerModelIds || [])].sort();
+      grouped.get(key).weaponBatches.push({
+        domainId: domain.domainId,
+        profileKey: domain.profileKey || null,
+        weaponName: domain.weaponName || null,
+        eligibleAttackerModelIds,
+        eligibleAttackerModelCount: eligibleAttackerModelIds.length,
+        visibleTargetModelCount:
+          new Set(targetPlan.visibleTargetModelIds || []).size,
+        currentHitDice: Number(layout.hit || 0),
+        currentSurgeDice: Number(layout.surge || 0),
+        preallocatedArmourDice: Number(layout.armour || 0),
+        preallocatedEvadeDice: Number(layout.evade || 0),
+        exactAttackPlanHash: targetPlan.attackPlanHash || null,
+      });
+    }
+  }
+  return [...grouped.values()].map((entry) => {
+    const currentLiveModelIds = liveModelsByUnit.get(entry.pieceId) || [];
+    const contributingModelIds = [...new Set(entry.weaponBatches.flatMap((batch) =>
+      batch.eligibleAttackerModelIds))].sort();
+    const contributing = new Set(contributingModelIds);
+    const nonContributingModelIds = currentLiveModelIds.filter((modelId) =>
+      !contributing.has(modelId));
+    entry.weaponBatches.sort((left, right) =>
+      String(left.weaponName || "").localeCompare(String(right.weaponName || ""))
+        || left.domainId.localeCompare(right.domainId));
+    return {
+      pieceId: entry.pieceId,
+      targetUnitId: entry.targetUnitId,
+      currentLiveModelCount: currentLiveModelIds.length,
+      contributingModelIds,
+      contributingModelCount: contributingModelIds.length,
+      nonContributingModelIds,
+      nonContributingModelCount: nonContributingModelIds.length,
+      totalCurrentHitDice: entry.weaponBatches.reduce((sum, batch) =>
+        sum + batch.currentHitDice, 0),
+      weaponBatches: entry.weaponBatches,
+      currentRulesDomainExact: true,
+      futureMovementOutcomeNotImplied: true,
+      activeSkillModifierUtilizationRequiresActionSpecificThreat: true,
+    };
+  }).sort((left, right) => left.pieceId.localeCompare(right.pieceId)
+    || left.targetUnitId.localeCompare(right.targetUnitId));
+}
+
+export function projectStarcraftTmgPlanningActionSpaceForPromptV1(
+  actionSpace, spatialObservation = null,
+) {
   return freeze({
     schemaVersion:
       `${STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION}.planning-action-index`,
@@ -405,19 +473,26 @@ function compactPlanningActionSpace(actionSpace) {
       domainId: entry.domainId,
       parameterKind: entry.parameterKind || null,
       actionType: entry.actionType || null,
+      authorityActionType: entry.authorityActionType || null,
       abilityName: entry.abilityName || null,
       effectKind: entry.effectKind || null,
       createdUnitRecordKey: entry.createdUnitRecordKey || null,
       sideKey: entry.sideKey || null,
       phase: entry.phase || null,
       pieceId: entry.pieceId || null,
+      profileKey: entry.profileKey || null,
+      weaponName: entry.weaponName || null,
       maxDistanceMilliInches:
         entry.constraints?.maxDistanceMilliInches ?? null,
       supply: clone(entry.constraints?.supply || null),
       modelCount: entry.constraints?.modelProfiles?.length || 0,
       exactRulesInstantiationRequired: true,
     })),
+    rangedContributionOverview:
+      currentRangedContributionOverview(actionSpace, spatialObservation),
     fullSelectedDomainIsProvidedOnlyToTheActionStage: true,
+    spatialObservationBoundForContributionSummary:
+      object(spatialObservation),
     trainingTruth: false,
   });
 }
@@ -909,6 +984,23 @@ function bindFormationSelection(raw, queryReceipts) {
     throw correctionError("ACTION_FORMATION_OPTION_SELECTION_REQUIRED",
       domainId);
   }
+  const incomingStationaryThreatRows = (
+    option.relationshipComparison?.relationships || []
+  ).filter((entry) => Number(entry.enemyStationaryThreatProfileCount || 0) > 0);
+  const publicClaims = JSON.stringify([
+    normalized.selectedReason,
+    normalized.risk,
+    normalized.publicDecisionSummary,
+    normalized.intent,
+    selection.publicReason,
+  ]);
+  if (incomingStationaryThreatRows.length > 0
+    && /(?:outside|beyond|out of|not in|no legal target|deny[^.]{0,80}legal target)[^.]{0,80}(?:fire|threat|range)|(?:fire|threat|range)[^.]{0,80}(?:outside|beyond|out of|no legal target)|火力(?:圈|范围)外|射程外|无法(?:成为目标|射击)/iu.test(publicClaims)) {
+    throw correctionError(
+      "ACTION_FORMATION_THREAT_CLAIM_CONTRADICTS_PROJECTION",
+      incomingStationaryThreatRows.map((entry) => entry.targetId).join(","),
+    );
+  }
   const submittedAssignments = Array.isArray(selection.slotAssignments)
     ? selection.slotAssignments : [];
   const hostDefaultAssignmentUsed = submittedAssignments.length === 0;
@@ -1008,6 +1100,7 @@ function bindFormationSelection(raw, queryReceipts) {
     solverPolicyId: option.solverPolicyId || null,
     formationObjectives: clone(option.formationObjectives || []),
     tacticalMetrics: clone(option.tacticalMetrics || null),
+    relationshipComparison: clone(option.relationshipComparison || null),
     anchor: clone(option.anchor),
     publicReason: overallReason,
     hostDefaultAssignmentUsed,
@@ -2121,6 +2214,67 @@ function compactLegalSpace(legalSpace) {
   };
 }
 
+function currentRangedCasualtyResolutionEvidence(input) {
+  const casualtyDomain = (input?.legalSpace?.parameterDomains || []).find(
+    (domain) => domain?.parameterKind
+      === "official_selected_roster_ranged_casualty_selection_v1",
+  );
+  if (!casualtyDomain) return null;
+  const pendingHash = casualtyDomain.constraints?.pendingHash || null;
+  const event = [...(input?.roomProjection?.state?.log || [])]
+    .reverse().flatMap((entry) => [...(entry?.events || [])].reverse())
+    .find((entry) => entry?.type
+      === "ranged_attack_roll_resolved_pending_defender_casualty"
+      && (!pendingHash || entry.pendingHash === pendingHash));
+  const stages = event?.stages;
+  if (!stages) return null;
+  return {
+    schemaVersion:
+      `${STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION}.ranged-casualty-resolution-evidence`,
+    candidateId: casualtyDomain.domainId,
+    attackerSideKey: event.attackerSideKey,
+    defenderSideKey: event.defenderSideKey,
+    attackerPieceId: event.attackerPieceId,
+    targetPieceId: event.targetPieceId,
+    profileKey: stages.declaration?.profileKey || null,
+    distanceInches: stages.declaration?.distanceInches ?? null,
+    rangeBand: stages.declaration?.rangeBand || null,
+    hit: {
+      dice: Number(stages.hit?.dice || 0),
+      rolls: clone(stages.hit?.rolls || []),
+      hits: Number(stages.hit?.hits || 0),
+    },
+    surge: {
+      rolls: clone(stages.effects?.surgeRolls || []),
+      results: clone(stages.effects?.surgeResults || []),
+      targetTypeMatched: stages.effects?.surgeMatched === true,
+      matchedCapacity: Number(stages.effects?.surgeCapacity || 0),
+      appliedBypassedArmourHits:
+        Number(stages.effects?.bypassedArmourHits || 0),
+    },
+    armour: {
+      dice: Number(stages.armour?.dice || 0),
+      rolls: clone(stages.armour?.rolls || []),
+      saves: Number(stages.armour?.saves || 0),
+    },
+    evade: {
+      eligible: stages.evade?.eligible === true,
+      dice: Number(stages.evade?.dice || 0),
+      rolls: clone(stages.evade?.rolls || []),
+      saves: Number(stages.evade?.saves || 0),
+    },
+    totalDamage: Number(stages.damage?.totalDamage || 0),
+    casualtyCount: Number(event.casualtyCount || 0),
+    defenderActivationConsumed: false,
+    defenderActivationClosed: false,
+    attackerRangedSequenceRemainsPending: true,
+    source: "current_authoritative_resolution_log",
+    includedInStateOrLegalSpaceHash: false,
+    rulesAuthority: true,
+    trainingTruth: false,
+  };
+}
+
 function strategySearchTerms(input) {
   const state = input?.roomProjection?.state || {};
   const values = [
@@ -2526,6 +2680,21 @@ function compactQueryReceiptForPrompt(receipt) {
       solverPolicyId: option.solverPolicyId || null,
       formationObjectives: clone(option.formationObjectives || []),
       tacticalMetrics: clone(option.tacticalMetrics || null),
+      relationshipComparison: object(option.relationshipComparison) ? {
+        status: option.relationshipComparison.status || null,
+        hypotheticalProjection:
+          option.relationshipComparison.hypotheticalProjection === true,
+        intent: option.relationshipComparison.intent || null,
+        relationships: clone((
+          option.relationshipComparison.relationships || []
+        ).slice(0, 24)),
+        clearances: clone(option.relationshipComparison.clearances || []),
+        precisionPolicy:
+          clone(option.relationshipComparison.precisionPolicy || null),
+        rulesInstantiationStillFinalAuthority:
+          option.relationshipComparison.rulesInstantiationStillFinalAuthority
+            === true,
+      } : null,
       anchor: clone(option.anchor || null),
       abilityName: option.abilityName || null,
       effectKind: option.effectKind || null,
@@ -2647,13 +2816,18 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       planning
         ? `Do not request ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME}, legal asset-placement options, final parameter instantiation, legal_full_path_movement, coherency_after_candidate_placement, or objective_score_after_candidate_action during Planning. Those require a selected candidate and complete Host-owned parameters. Select the best current candidate from current relationships first. For a formation action, set formationSearchRequested and provide a tacticalPurpose plus weighted formationObjectives with visible targetIds; the Host runs the spatial solver once.`
         : "Use the exact Host-supplied formation or asset-placement options for the selected candidate; do not restart a broad placement search in the Action stage.",
-      `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives and tacticalMetrics and choose exactly one formationOptionId. Give one concise publicReason for the formation. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
+      `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one current stationary weapon profile covering the placed Unit; never describe that option as outside the enemy fire envelope. Compare objective gain against incoming profiles and fireZoneExchangeClass, preserve unknown probability as uncertainty, and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
       "When an exact legal_asset_placement_options receipt is present, choose exactly one placementOptionId and return assetPlacementSelection with that ID and one concise publicReason about the visible position, intended threat/objective/route effect, and plan continuity. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
       "Position publicReason fields are auditable summaries, not hidden chain-of-thought. State the useful board fact and tactical purpose without private scratch work.",
       "For Deploy, the Host prepends the Leading Model base-centre start just outside the selected battlefield edge. The complete Speed allowance includes that ingress distance. Do not add an artificial path point on the edge and do not measure only from the edge; choose an endpoint whose complete Host path remains within maxDistanceMilliInches.",
       "Never treat the remaining models as a unit centre: compare and choose a complete Host-solved final formation using every model's physical base, coherency, board edge, terrain, objective, line-of-sight, blocking, threat and fire-zone consequences.",
       "When candidate value depends materially on position, use space.inspect_relationships with a tactical intent and scoped subjectUnitIds/targetIds before choosing. Read field-level exact/advisory/unknown precision; use the returned one-to-many, many-to-one, fire-zone, objective and clearance relationships to justify the chosen intent. Do not infer geometry from the rendered pixels.",
+      "For a ranged candidate, read current-action-index.rangedContributionOverview before comparing firepower. contributingModelCount and totalCurrentHitDice are the exact current Rules-domain contribution; currentLiveModelCount, visible target count, Unit size, or weapon-profile count are never substitutes for the attack pool. Never call an attack high-volume when most live models are nonContributing unless another exact batch proves that volume.",
+      "When comparing a current ranged attack with Run or another reposition, state the immediate attack dice forfeited and the possible future weapon profiles gained. Future movement, path, line of sight and next-round availability remain advisory until queried; do not call reposition 'no positional gain' merely because a smaller current long-range batch exists.",
+      "Claim an active ability or status improves the selected attack only when an exact action_specific_threat or instantiated-action receipt shows the modifier on that weapon batch. A status that applies to another weapon, or a Speed bonus used after movement is complete, is not realized attack value for the current batch.",
       "A typed query for a parameterized candidate must put domainId and the complete parameters object in the query tool arguments; the Host automatically Rules-checks every final parameterized proposal.",
+      "A resolve_ranged_casualties candidate with parameterKind official_selected_roster_ranged_casualty_selection_v1 is a defender-owned choice of casualties from the controlled side, not a new attack. Follow its current parameterSchema: submit one casualtySelectionHash for an enumerated_hashes domain, or exactly casualtyCount ordered casualtyModelIds from the compact explicit_model_ids contract. Compare model position, role, coherency, threat and objective value. Public reasons must say which own models are removed and preserved and why; never claim an attack target or weapon for this resolution stage. authorityActionType is only the frozen Rules transport identity and does not change this meaning.",
+      "For resolve_ranged_casualties, read current-ranged-casualty-resolution as exact Rules evidence for the completed enemy weapon batch. surge.targetTypeMatched and surge.matchedCapacity describe eligibility/capacity; only surge.appliedBypassedArmourHits affected actual hits. Resolving casualties does not activate, close, move or spend the defending Unit and does not end the attacker's pending ranged sequence. Never describe it as closing the defender's activation or as the defender making an attack.",
       "Use exact query receipts as facts, advisory estimates as preferences, and unknown as uncertainty.",
       "An unknown query receipt may include Rules-derived repairContext. Use it only to repair and re-submit the same candidate; it never proves that the repaired proposal is legal until a later exact receipt accepts it.",
       "A pre-selection parameter-shape failure is Harness uncertainty, not tactical evidence against a formation candidate and never a reason to prefer Pass. The Planner chooses the candidate and spatial intent; the Host supplies every model's path and placement parameters afterward.",
@@ -2689,6 +2863,10 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       compactRoomProjection(input.roomProjection)),
     makeNode("current-legal-space", "rules", "rules_service",
       compactLegalSpace(input.legalSpace)),
+    ...(currentRangedCasualtyResolutionEvidence(input)
+      ? [makeNode("current-ranged-casualty-resolution", "rules-observation",
+        "rules_service", currentRangedCasualtyResolutionEvidence(input))]
+      : []),
     makeNode("round-phase-lifecycle", "rules", "rules_service",
       phaseLifecycleContract(input)),
     makeNode("current-spatial-observation", "rules-observation", "rules_service",
@@ -2703,7 +2881,8 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
     }),
     makeNode(planning ? "current-action-index" : "planner-selected-action",
       "rules", "rules_service", planning
-        ? compactPlanningActionSpace(input.spatialActionSpace)
+        ? projectStarcraftTmgPlanningActionSpaceForPromptV1(
+          input.spatialActionSpace, input.spatialObservation)
         : selectedActionSpace(input.spatialActionSpace, selectedId)),
     ...(planning ? [
       makeNode("same-match-memory", "same-match-advisory", "match_journal",

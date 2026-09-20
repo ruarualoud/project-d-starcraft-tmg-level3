@@ -17,9 +17,11 @@ import {
 } from "../packages/rule-atoms/official-model-base-geometry-rules-executor-v1.mjs";
 import {
   createOfficialModelBaseFootprintV1,
+  createOfficialPhysicalFootprintV1,
   createOfficialNoLegalCoherencyPositionCertificateV1,
   evaluateOfficialBaseMeasurementV1,
   evaluateOfficialCoherencyPlacementV1,
+  evaluateOfficialSweptPhysicalFootprintCollisionV1,
   evaluateOfficialWithinWhollyWithinV1,
 } from "../packages/rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
 import { OFFICIAL_MODEL_BASE_GEOMETRY_RULES_RELATIONSHIP_SCOPE_ID } from
@@ -297,6 +299,41 @@ const rectangleMeasurement = evaluateOfficialBaseMeasurementV1({ state: rectangl
 assert.equal(rectangleMeasurement.distanceMilliInches > 0, true);
 assert.equal(rectangleMeasurement.source.footprint.shape, "rectangle");
 acceptance.push("round_to_rotated_rectangle_nearest_edge_measurement_is_executable");
+
+const translatingHydraliskStart = createOfficialPhysicalFootprintV1({
+  objectId: "hydralisk-sweep-start", kind: "model_base", shape: "rectangle",
+  center: { xMilliInches: 5000, yMilliInches: 5000 },
+  widthMilliInches: 1575, depthMilliInches: 3937, rotationDegrees: 0,
+});
+const translatingHydraliskEnd = createOfficialPhysicalFootprintV1({
+  objectId: "hydralisk-sweep-end", kind: "model_base", shape: "rectangle",
+  center: { xMilliInches: 9000, yMilliInches: 5000 },
+  widthMilliInches: 1575, depthMilliInches: 3937, rotationDegrees: 0,
+});
+const clearMarine = createOfficialPhysicalFootprintV1({
+  objectId: "marine-clear", kind: "model_base", shape: "round",
+  center: { xMilliInches: 7000, yMilliInches: 7700 },
+  widthMilliInches: 1260, depthMilliInches: 1260, rotationDegrees: 0,
+});
+const blockingMarine = createOfficialPhysicalFootprintV1({
+  objectId: "marine-blocking", kind: "model_base", shape: "round",
+  center: { xMilliInches: 7000, yMilliInches: 7500 },
+  widthMilliInches: 1260, depthMilliInches: 1260, rotationDegrees: 0,
+});
+const clearSweep = evaluateOfficialSweptPhysicalFootprintCollisionV1({
+  movingStart: translatingHydraliskStart,
+  movingEnd: translatingHydraliskEnd,
+  blocker: clearMarine,
+});
+const blockingSweep = evaluateOfficialSweptPhysicalFootprintCollisionV1({
+  movingStart: translatingHydraliskStart,
+  movingEnd: translatingHydraliskEnd,
+  blocker: blockingMarine,
+});
+assert.equal(clearSweep.collides, false);
+assert.equal(clearSweep.precision, "exact_constant_rotation_convex_sweep");
+assert.equal(blockingSweep.collides, true);
+acceptance.push("rotated_rectangle_translation_uses_exact_swept_base_not_circumscribed_circle");
 
 const coherencyState = prepare(fixture, bundle);
 const [leading, other] = coherencyState.pieces[0].models;

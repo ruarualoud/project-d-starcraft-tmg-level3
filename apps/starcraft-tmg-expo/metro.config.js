@@ -31,6 +31,14 @@ if (staticWebCssInput) {
   if (!compiledCss.startsWith(`${workspaceRoot}${path.sep}`)) {
     throw new Error("PROJECT_D_STATIC_WEB_CSS_OUTSIDE_WORKSPACE");
   }
+  // The production builder writes this one immutable CSS input below the
+  // repository build root. The workspace root is intentionally not watched,
+  // so register only this generated directory; otherwise Metro can resolve
+  // the file but its file map cannot provide the SHA-1 during a cold export.
+  config.watchFolders = [...new Set([
+    ...(config.watchFolders ?? []),
+    path.dirname(compiledCss),
+  ])];
   const originalResolver = config.resolver.resolveRequest;
   config.resolver.resolveRequest = (context, moduleName, platform) => {
     const resolver = originalResolver ?? context.resolveRequest;

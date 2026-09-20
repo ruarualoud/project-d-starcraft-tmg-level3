@@ -48,8 +48,8 @@ function same(left, right) {
   return hashStarcraftTmgContract(left) === hashStarcraftTmgContract(right);
 }
 function position(value = {}) {
-  const xInches = Number(value.xInches);
-  const yInches = Number(value.yInches);
+  const xInches = Number(value.xInches ?? value.coordinate?.x);
+  const yInches = Number(value.yInches ?? value.coordinate?.y);
   const rotationDegrees = Number(value.baseRotationDegrees
     ?? value.rotationDegrees ?? 0);
   return {
@@ -94,11 +94,12 @@ function modelRows(state = {}) {
 function componentRows(state = {}) {
   const board = state.board || {};
   return [
-    ["token", board.tokens || []],
-    ["marker", board.markers || []],
-    ["effect_marker", board.effectMarkers || []],
-  ].flatMap(([objectType, rows]) => rows.map((entry) => ({
-    objectId: required(entry.id, `${objectType}.id`),
+    ["token", "tokenId", board.tokens || []],
+    ["marker", "markerId", board.markers || []],
+    ["effect_marker", "markerId", board.effectMarkers || []],
+  ].flatMap(([objectType, canonicalIdField, rows]) => rows.map((entry) => ({
+    objectId: required(entry[canonicalIdField] || entry.id,
+      `${objectType}.${canonicalIdField}`),
     objectType,
     pieceId: null,
     ownerSideKey: String(entry.sideKey || entry.ownerSideKey

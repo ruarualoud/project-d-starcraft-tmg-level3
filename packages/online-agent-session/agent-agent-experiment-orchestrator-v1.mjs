@@ -292,7 +292,8 @@ export function createStarcraftTmgAgentAgentExperimentOrchestratorV1(
       const result = await bindings[seatKey].runtime.read({
         scope: bindings[seatKey].scope,
       });
-      const projection = result?.projection;
+      const rootProjection = result?.projection;
+      const projection = rootProjection?.bot || rootProjection;
       return [seatKey, {
         lifecycle: projection?.lifecycle || null,
         driveStatus: projection?.driveStatus || null,
@@ -371,6 +372,13 @@ export function createStarcraftTmgAgentAgentExperimentOrchestratorV1(
         autoDrive: false,
       });
     }
+    const durableSeatReads = await Promise.all(SEAT_KEYS.map((seatKey) => (
+      bindings[seatKey].runtime.read({ scope: bindings[seatKey].scope })
+    )));
+    appliedActionCount = durableSeatReads.reduce((sum, result) => (
+      sum + Number((result?.projection?.bot || result?.projection)
+        ?.actionCount || 0)
+    ), 0);
     startedAt = iso(now(), "now");
     status = "running";
     await readAuthority();

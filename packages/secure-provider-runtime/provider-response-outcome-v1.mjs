@@ -82,6 +82,68 @@ export function normalizeProviderJsonDocumentV1(value) {
   try { JSON.parse(legacy.text); return legacy; } catch {}
   const text = normalizeSingleJsonFenceV1(value).text;
   if (typeof text !== 'string' || !text.trimStart().startsWith('{') || !text.trimEnd().endsWith('}')) return legacy;
+  let trailingOffset = null;
+  try { JSON.parse(text); }
+  catch (error) {
+    trailingOffset = Number(
+      /Unexpected non-whitespace character after JSON at position (\d+)/u
+        .exec(String(error?.message || ''))?.[1] ?? -1);
+  }
+  if (Number.isSafeInteger(trailingOffset) && trailingOffset > 0) {
+    const prefix = text.slice(0, trailingOffset);
+    const suffix = text.slice(trailingOffset).trim();
+    try {
+      const parsed = JSON.parse(prefix);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        && /^\}+$/.test(suffix)) {
+        return { text: prefix, kind: 'redundant_trailing_object_closers_v1',
+          evidence: {
+            schemaVersion: 'provider_json_trailing_delimiter_recovery_v1',
+            originalTextHash: hash(text), normalizedTextHash: hash(prefix),
+            removedUtf16Offset: trailingOffset,
+            removedClosingDelimiterCount: suffix.length,
+          } };
+      }
+    } catch {}
+    // A completed response can close the root immediately before a later
+    // top-level sibling, then emit one or more extra object delimiters. Only
+    // remove a contiguous delimiter suffix at the parser's exact boundary,
+    // and accept it only when one unique removal makes the whole document a
+    // single object. Never infer fields or alter scalar content.
+    let closeRunStart = trailingOffset;
+    while (closeRunStart > 0 && text[closeRunStart - 1] === '}') {
+      closeRunStart -= 1;
+    }
+    let closeRunEnd = trailingOffset;
+    while (closeRunEnd < text.length && text[closeRunEnd] === '}') {
+      closeRunEnd += 1;
+    }
+    const recoveries = [];
+    const maximumRemoved = Math.min(8, closeRunEnd - closeRunStart);
+    for (let removedCount = 1; removedCount <= maximumRemoved;
+      removedCount += 1) {
+      const removedStart = closeRunEnd - removedCount;
+      const candidate = text.slice(0, removedStart) + text.slice(closeRunEnd);
+      try {
+        const parsed = JSON.parse(candidate);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          recoveries.push({ candidate, removedStart, removedCount });
+        }
+      } catch {}
+    }
+    if (recoveries.length === 1) {
+      const recovered = recoveries[0];
+      return { text: recovered.candidate,
+        kind: 'redundant_pre_sibling_object_closers_v1', evidence: {
+          schemaVersion: 'provider_json_pre_sibling_delimiter_recovery_v1',
+          originalTextHash: hash(text),
+          normalizedTextHash: hash(recovered.candidate),
+          removedUtf16Offset: recovered.removedStart,
+          removedClosingDelimiterCount: recovered.removedCount,
+          parseErrorUtf16Offset: trailingOffset,
+        } };
+    }
+  }
   const quoteRecovered = normalizeSingleUnescapedQuote(text);
   if (quoteRecovered) return quoteRecovered;
   const stack = [], removed = []; let quoted = false, escaped = false, previous = '';
@@ -94,8 +156,17 @@ export function normalizeProviderJsonDocumentV1(value) {
     } else if (c === '"') quoted = true;
     else if (c === '{' || c === '[') stack.push(c);
     else if (c === '}' || c === ']') {
+      let next = i + 1;
+      while (/\s/.test(text[next] || '') && next < text.length) next++;
+      if (c === '}' && stack.length === 1 && stack[0] === '{'
+        && text[next] === ',' && removed.length < 8) {
+        removed.push(i); continue;
+      }
+      if (c === '}' && stack.length === 0 && removed.length > 0
+        && !text.slice(next).trim() && removed.length < 8) {
+        removed.push(i); continue;
+      }
       if (c === '}' && stack.at(-1) === '[' && previous === '}') {
-        let next = i + 1; while (/\s/.test(text[next] || '') && next < text.length) next++;
         if (![',', ']'].includes(text[next]) || removed.length >= 8) return legacy;
         removed.push(i); continue;
       }

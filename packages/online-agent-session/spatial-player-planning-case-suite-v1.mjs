@@ -55,7 +55,7 @@ const BLUEPRINTS = Object.freeze([
     family: "footprints_and_formation",
     split: "heldout",
     independence: "east-doorway-trailing-base",
-    situation: "The leader clears a doorway, but one trailing base clips the doorway corner.",
+    situation: "The leader's path clears a doorway, but one remaining model's proposed final placement clips the doorway corner.",
     geometry: { board: [36000, 36000], baseRadii: [630, 630, 630],
       positions: [[7000, 18000], [5500, 16800], [5500, 19200]],
       blockers: [[12000, 15000, 15000, 17400], [12000, 18600, 15000, 21000]] },
@@ -65,7 +65,7 @@ const BLUEPRINTS = Object.freeze([
       ["door_blocking", "intervening_model_or_terrain_blocking", "exact"],
       ["door_coherency", "coherency_after_candidate_placement", "exact"]],
     preferred: ["formation_doorway_clear"],
-    difference: "use swept complete bases for all formation members through a narrow opening",
+    difference: "use the leading model's swept base and every remaining model's complete final-placement base without inventing follower paths",
   },
   {
     id: "screen.dev.choke-occupation",

@@ -654,6 +654,14 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
       vespeneSpentBySide: { player1: 115, player2: 140 },
       selectedUnitCount: 15,
       terrainPieceCount: 9,
+      rosterHashBySide: structuredClone(
+        standardAuthority.compositionEvidence.rosterHashBySide,
+      ),
+      missionRecordKey:
+        standardAuthority.compositionEvidence.selectedMissionRecordKey,
+      deploymentRecordKey:
+        standardAuthority.compositionEvidence.selectedDeploymentRecordKey,
+      mapSeedId: state.board?.battlefieldMapManifest?.mapSeedId || null,
       currentProductAbilityExactCount: 252,
       currentProductAbilityPendingCount: 0,
       legalSpaceComplete: formalStandard2000,
@@ -975,6 +983,7 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
     }));
   const terranRefs = routedSkillRefs(manifestRefs, TERRAN, ZERG);
   const zergRefs = routedSkillRefs(manifestRefs, ZERG, TERRAN);
+  const requestedExperiment = options.agentAgentExperiment || {};
   const base = await createTicket20HumanAgentDemoFixtureV1({
     ...options,
     occurredAt,
@@ -982,8 +991,8 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
     autoDrive: false,
     attachBot: false,
     matchMode: "agent_vs_agent",
-    title: "Ticket 20 · Agent vs Agent · Hold Position",
-    surfaceMode: "agent_agent_development",
+    title: options.title || "Ticket 20 · Agent vs Agent · Hold Position",
+    surfaceMode: options.surfaceMode || "agent_agent_development",
     botSkillRefs: zergRefs,
     botDecisionProfile: {
       agentLabel: "凯瑞甘",
@@ -999,45 +1008,137 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
     matchBindingHash: base.createdRoom.matchBinding.bindingHash,
     seatKey: "player1",
   };
-  const player1Continuity = createStarcraftTmgMatchDecisionContinuityV1({ now });
-  const player1SpatialRuntime = createStarcraftTmgSpatialActionQueryRuntimeV1();
+  const previewPlayer1FiniteSuccessor = async (request = {}) => {
+    const authority = request.authority || {};
+    const aggregate = await base.roomRuntime.roomStore.loadRoom(
+      authority.roomId,
+    );
+    if (!aggregate
+      || aggregate.envelope?.matchBindingHash !== authority.matchBindingHash
+      || aggregate.stateRevision !== authority.stateRevision
+      || aggregate.envelope?.stateHash !== authority.stateHash) {
+      return { ok: false, reason: "PREEXECUTION_AUTHORITY_STALE",
+        rulesAuthority: false };
+    }
+    if (!request.action
+      || !new Set(["pass", "choose_first_actor"])
+        .has(request.action.actionType)) {
+      return { ok: false, reason: "PREEXECUTION_FINITE_PHASE_CONTROL_REQUIRED",
+        rulesAuthority: false };
+    }
+    const applied = base.rulesRuntime.apply(aggregate.envelope.state,
+      request.action, {
+        postRevision: aggregate.stateRevision + 1,
+        matchBinding: aggregate.envelope.matchBinding,
+      });
+    const nextState = applied.state;
+    const controlledSeatActsNext = nextState.activeSideKey === "player1";
+    const next = controlledSeatActsNext
+      ? base.rulesRuntime.enumerate(nextState, {
+        sideKey: "player1",
+        includeDisabled: false,
+      }) : { candidates: [], parameterDomains: [] };
+    return {
+      ok: true,
+      preStateHash: authority.stateHash,
+      nextStateRevision: aggregate.stateRevision + 1,
+      nextStateHash: hash(nextState),
+      nextRound: Number(nextState.round || 0),
+      nextPhase: String(nextState.phase || "unknown"),
+      nextActiveSideKey: nextState.activeSideKey || null,
+      controlledSeatActsNext,
+      controlledSeatNextFiniteActionTypes: [...new Set(
+        (next.candidates || []).map((entry) => entry.actionType)
+          .filter(Boolean))].sort(),
+      controlledSeatNextParameterizedActionTypes: [...new Set(
+        (next.parameterDomains || []).map((entry) => entry.actionType)
+          .filter(Boolean))].sort(),
+      rulesAuthority: true,
+      mutationAuthority: false,
+      liveRoomMutationCalls: 0,
+      trainingTruth: false,
+    };
+  };
+  const player1Continuity = createStarcraftTmgMatchDecisionContinuityV1({
+    now,
+    ...(options.player1MatchDecisionJournal ? {
+      journal: options.player1MatchDecisionJournal,
+    } : {}),
+    ...(options.enableSpatialPreexecution === true ? {
+      preExecute: createStarcraftTmgSpatialPreexecutionSearchV1({
+        previewSuccessor: previewPlayer1FiniteSuccessor,
+      }),
+    } : {}),
+  });
+  const player1SpatialRuntime = createStarcraftTmgSpatialActionQueryRuntimeV1({
+    rulesQuery: base.humanSpatialRulesQuery.query,
+  });
   const player1TurnPlanRuntime = createStarcraftTmgTurnPlanRuntimeV1({
     decisionContinuity: player1Continuity,
     now,
   });
-  const player1Runtime = createStarcraftTmgHostedBotSeatRuntimeV1({
+  const player1RuntimeOptions = {
     roomPort: base.roomRuntime,
-    decisionPort: createTicket20DeterministicSkillGuidedDecisionPortV1(
-      terranRefs,
-      {
+    decisionPort: options.player1DecisionPort
+      || createTicket20DeterministicSkillGuidedDecisionPortV1(terranRefs, {
         agentLabel: "Terran 指挥官",
         ownFaction: "Terran",
         ownUnitName: "Marine",
         opponentFaction: "Zerg",
         opponentUnitName: "Zergling",
-      },
-    ),
-    store: createInMemoryStarcraftTmgHostedBotSeatStoreV1(),
+      }),
+    store: options.player1BotStore
+      || createInMemoryStarcraftTmgHostedBotSeatStoreV1(),
     decisionContinuity: player1Continuity,
     spatialObservationProjector: createStarcraftTmgPlayerSpatialObservationV1,
     spatialActionQueryRuntime: player1SpatialRuntime,
     turnPlanRuntime: player1TurnPlanRuntime,
     matchMode: "agent_vs_agent",
     now,
-  });
+    autoDriveIntervalMs: options.autoDriveIntervalMs || 500,
+    deferForPreexecution: options.enableSpatialPreexecution === true,
+    ...(options.player1PhysicalAgentPort ? {
+      physicalAgentPort: options.player1PhysicalAgentPort,
+    } : {}),
+  };
+  const player1Notifications = [];
+  const player1Runtime = base.roomProfile === "standard_2000_live"
+    ? createStarcraftTmgHostedOpponentRuntimeV2({
+      ...player1RuntimeOptions,
+      notificationPort: {
+        async notify(event) {
+          player1Notifications.push(structuredClone(event));
+          return { ok: true, notificationId: event.notificationId };
+        },
+      },
+    })
+    : createStarcraftTmgHostedBotSeatRuntimeV1(player1RuntimeOptions);
   const consent = {
     approved: true,
     approvedBy: "human",
     scope: "current_match_bot_seat",
     approvedAt: occurredAt,
   };
+  const formalStandard2000 = base.roomProfile === "standard_2000_live";
+  const rosterIdsBySeat = formalStandard2000
+    ? base.coverage.rosterHashBySide
+    : {
+      player1: "bounded:army_units:marine@1",
+      player2: "bounded:army_units:zergling@1",
+    };
   const orchestrator = createStarcraftTmgAgentAgentExperimentOrchestratorV1({
     roomPort: base.roomRuntime,
     now,
     experimentCell: {
-      experimentId: "ticket20-agent-agent-closure-v1",
-      cellId: "hold-position-terran-vs-zerg-001",
-      denominator: { index: 1, total: 1 },
+      experimentId: String(requestedExperiment.experimentId
+        || (formalStandard2000
+          ? "ticket23-standard-2000-agent-agent-live-v1"
+          : "ticket20-agent-agent-closure-v1")),
+      cellId: String(requestedExperiment.cellId
+        || (formalStandard2000
+          ? "lost-temple-terran-vs-kerrigan-swarm-001"
+          : "hold-position-terran-vs-zerg-001")),
+      denominator: requestedExperiment.denominator || { index: 1, total: 1 },
       roomId: base.roomId,
       matchBindingHash: base.createdRoom.matchBinding.bindingHash,
       versions: {
@@ -1046,16 +1147,20 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
         strategy: `ticket18-foundational:${hash(manifestRefs)}`,
       },
       scenario: {
-        mapId: "ticket20-hold-position-demo",
-        missionId: "faction_cards:mission_hold_position",
-        rosterIdsBySeat: {
-          player1: "bounded:army_units:marine@1",
-          player2: "bounded:army_units:zergling@1",
-        },
+        mapId: String(requestedExperiment.mapId
+          || base.coverage.mapSeedId || "ticket20-hold-position-demo"),
+        missionId: String(requestedExperiment.missionId
+          || base.coverage.missionRecordKey
+          || "faction_cards:mission_hold_position"),
+        rosterIdsBySeat: requestedExperiment.rosterIdsBySeat
+          || rosterIdsBySeat,
       },
       rng: {
         scheme: "authoritative_room_recorded_v1",
-        seed: "ticket20-hold-position-fixed-v1",
+        seed: String(requestedExperiment.rngSeed
+          || (formalStandard2000
+            ? `room-authority:${base.createdRoom.matchBinding.bindingHash}`
+            : "ticket20-hold-position-fixed-v1")),
       },
       budgets: {
         maxAppliedActions: Number(options.maxAppliedActions || 160),
@@ -1063,15 +1168,27 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
       },
       seats: {
         player1: {
-          agentId: "ticket20-terran-command-agent-v1",
+          agentId: String(requestedExperiment.player1AgentId
+            || (formalStandard2000
+              ? "ticket23-terran-selfplay-agent-v1"
+              : "ticket20-terran-command-agent-v1")),
           factionRecordKey: TERRAN,
-          providerId: "deterministic-skill-guided-development-v1",
+          providerId: String(requestedExperiment.player1ProviderId
+            || (formalStandard2000
+              ? "deepseek-live-opponent-provider-stack-v1"
+              : "deterministic-skill-guided-development-v1")),
           skillRefs: terranRefs,
         },
         player2: {
-          agentId: "ticket20-kerrigan-swarm-agent-v1",
+          agentId: String(requestedExperiment.player2AgentId
+            || (formalStandard2000
+              ? "ticket23-kerrigan-swarm-selfplay-agent-v1"
+              : "ticket20-kerrigan-swarm-agent-v1")),
           factionRecordKey: ZERG,
-          providerId: "deterministic-skill-guided-development-v1",
+          providerId: String(requestedExperiment.player2ProviderId
+            || (formalStandard2000
+              ? "deepseek-live-opponent-provider-stack-v1"
+              : "deterministic-skill-guided-development-v1")),
           skillRefs: zergRefs,
         },
       },
@@ -1095,13 +1212,23 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
   return Object.freeze({
     ...base,
     orchestrator,
+    player1Runtime,
+    player1Scope,
+    player1Continuity,
+    player1SpatialRuntime,
+    player1TurnPlanRuntime,
+    player1Notifications,
     routedSkillRefsBySeat: Object.freeze({
       player1: terranRefs,
       player2: zergRefs,
     }),
     agentAgentCoverage: Object.freeze({
-      denominator: "1/1 bounded current-official experiment cell",
-      providerEvidence: "deterministic_skill_guided_no_model_call",
+      denominator: formalStandard2000
+        ? "1/1 Standard-2000 current-official live experiment cell"
+        : "1/1 bounded current-official experiment cell",
+      providerEvidence: formalStandard2000
+        ? "independent_live_provider_per_seat"
+        : "deterministic_skill_guided_no_model_call",
       strategyStrengthProven: false,
       fullMatchLifecycleSupported: true,
       pauseResumeRecoverySupported: true,

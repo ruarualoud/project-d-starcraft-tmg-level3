@@ -243,6 +243,7 @@ function planState(scopeValue) {
     searchJob: null,
     sequence: 0,
     issues: [],
+    hydratedFromContinuity: false,
   };
 }
 
@@ -312,6 +313,66 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       states.set(scopeValue.scopeKey, state);
     }
     return state;
+  }
+
+  async function hydrate(input = {}) {
+    const scopeValue = scope(input.scope);
+    const state = getState(scopeValue);
+    if (state.hydratedFromContinuity || !continuity
+      || typeof continuity.query !== "function") {
+      state.hydratedFromContinuity = true;
+      return { ok: true, restored: Boolean(state.plan),
+        plan: planProjection(state) };
+    }
+    const result = await continuity.query({
+      scope: scopeValue,
+      query: {
+        kinds: ["turn_plan", "plan_revision", "action_intent",
+          "decision_outcome"],
+        order: "oldest_first",
+        limit: 100_000,
+      },
+    });
+    const records = Array.isArray(result?.records) ? result.records : [];
+    const planSource = records.filter((entry) =>
+      entry.kind === "turn_plan" || entry.kind === "plan_revision").at(-1);
+    if (object(planSource?.payload)) {
+      const payload = planSource.payload;
+      const at = new Date(now()).toISOString();
+      state.plan = seal({
+        schemaVersion: `${STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION}.plan`,
+        planId: required(payload.planId, "restoredPlan.planId"),
+        version: Number.isSafeInteger(Number(payload.version))
+          ? Number(payload.version) : 1,
+        parentVersion: payload.parentVersion ?? null,
+        ...planSpec(payload),
+        status: String(payload.status || "reflection_required"),
+        revisionReason: "restored_from_same_match_journal",
+        nextIntentRef: null,
+        lastAssessmentRef: clone(payload.lastAssessmentRef || null),
+        lastValidatedAuthority: clone(payload.lastValidatedAuthority || null),
+        createdAt: String(payload.createdAt || at),
+        updatedAt: at,
+        rulesAuthority: "external_rules_service",
+        mayOverrideRules: false,
+        eligibleForTraining: false,
+        trainingTruth: false,
+      }, "planHash");
+      state.reflectionRequired = true;
+    }
+    state.intents = records.filter((entry) => entry.kind === "action_intent"
+      && object(entry.payload)).map((entry) => clone(entry.payload));
+    state.outcomes = records.filter((entry) => entry.kind === "decision_outcome"
+      && object(entry.payload)).map((entry) => clone(entry.payload));
+    state.sequence = records.reduce((maximum, entry) =>
+      Math.max(maximum, Number(entry.sequence || 0)), state.sequence);
+    state.hydratedFromContinuity = true;
+    return {
+      ok: true,
+      restored: Boolean(state.plan),
+      recordCount: records.length,
+      plan: planProjection(state),
+    };
   }
 
   async function persistPlan(state, input) {
@@ -864,6 +925,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
   async function dispatch(input = {}) {
     const scopeValue = scope(input.scope);
     const state = getState(scopeValue);
+    if (!state.hydratedFromContinuity) await hydrate({ scope: scopeValue });
     const authorityValue = authority(input, scopeValue);
     const command = required(input.command, "command");
     let result;
@@ -927,7 +989,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
   return Object.freeze({
     metadata: Object.freeze({
       schemaVersion: `${STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION}.metadata`,
-      interface: ["dispatch", "read"],
+      interface: ["hydrate", "dispatch", "read"],
       commands: ["open_plan", "observe_state", "reflect_plan", "create_intent",
         "pause_counterfactual", "adopt_counterfactual", "record_outcome",
         "recall_history"],
@@ -945,6 +1007,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       mutationAuthority: false,
       trainingTruth: false,
     }),
+    hydrate,
     dispatch,
     read,
   });

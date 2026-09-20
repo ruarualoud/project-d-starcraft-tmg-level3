@@ -44,7 +44,7 @@ export interface BattlefieldActionV1 {
 }
 export type BattlefieldParameterSupport =
   | "legacy_path_only" | "official_standard_move"
-  | "official_standard_deploy" | "unsupported";
+  | "official_standard_deploy" | "parameterless" | "unsupported";
 export interface BattlefieldEntrySegmentV1 {
   segmentId: string; side: "top" | "bottom" | "left" | "right";
   startInches: number; endInches: number;
@@ -61,7 +61,8 @@ export interface BattlefieldParameterDomainV1 {
   modelStartPoints: Readonly<Record<string, BattlefieldPointV1>>;
   modelProfiles: readonly BattlefieldModelProfileV1[];
   entrySegments: readonly BattlefieldEntrySegmentV1[];
-  start: BattlefieldPointV1 | null; maxPathPoints: number | null;
+  start: BattlefieldPointV1 | null; maxDistanceMilliInches: number | null;
+  maxPathPoints: number | null;
   exactRemainingPlacementCount: number | null; raw: Record<string, unknown>;
 }
 export interface BattlefieldSceneV1 {

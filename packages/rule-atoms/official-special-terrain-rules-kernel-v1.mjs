@@ -647,12 +647,12 @@ function evaluateMovement(input, context, profile) {
   };
   return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
 }
-function evaluateGrassLineOfSight(input, context) {
+function evaluateGrassLineOfSight(input, context, adaptedState = null) {
   const { state, actor, plan, dataBundle } = input;
   const target = state.pieces?.find((piece) => piece.id === plan.targetUnitId);
   if (!activePiece(target)) fail("SPECIAL_TERRAIN_LOS_TARGET_INVALID");
   const result = evaluateOfficialTerrainLineOfSightV1({
-    state: adaptedLineOfSightState(state, context),
+    state: adaptedState || adaptedLineOfSightState(state, context),
     attacker: actor, attackerModelId: plan.attackerModelId,
     target, targetModelId: plan.targetModelId, dataBundle,
   });
@@ -664,7 +664,11 @@ function evaluateGrassLineOfSight(input, context) {
   const body = {
     schema: "starcraft_tmg_official_grass_line_of_sight_result_v1",
     planId: String(plan.planId || ""), actorUnitId: actor.id,
-    targetUnitId: target.id, terrainLineOfSightResultHash: result.resultHash,
+    attackerModelId: plan.attackerModelId,
+    targetUnitId: target.id, targetModelId: plan.targetModelId,
+    modelEdgeDistanceMilliInches: result.modelEdgeDistanceMilliInches,
+    assessments: result.assessments,
+    terrainLineOfSightResultHash: result.resultHash,
     grassAssessments, grassSize: 2,
     grassBlocksLineOfSightUnderStandardCoverRules: true,
     visible: result.visible, blockingTerrainIds: result.blockingTerrainIds,
@@ -677,6 +681,54 @@ function evaluateGrassLineOfSight(input, context) {
     fail("SPECIAL_TERRAIN_GRASS_LOS_PLAN_INVALID");
   }
   return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
+}
+
+export function evaluateOfficialSpecialTerrainLineOfSightBatchV1(input = {}) {
+  const state = input.state;
+  const queries = input.queries;
+  if (!object(state) || !Array.isArray(queries) || queries.length < 1) {
+    fail("SPECIAL_TERRAIN_LOS_BATCH_INVALID");
+  }
+  const context = verifyContext(state);
+  const adaptedState = adaptedLineOfSightState(state, context);
+  const verifiedActorIds = new Set();
+  const seenQueryIds = new Set();
+  const results = queries.map((query) => {
+    const queryId = String(query?.queryId || "").trim();
+    const actor = state.pieces?.find((piece) => piece.id === query.actorUnitId);
+    const plan = {
+      planId: String(query?.planId || queryId),
+      attackerModelId: String(query?.attackerModelId || ""),
+      targetUnitId: String(query?.targetUnitId || ""),
+      targetModelId: String(query?.targetModelId || ""),
+    };
+    if (!queryId || seenQueryIds.has(queryId) || !activePiece(actor)
+      || !plan.planId || !plan.attackerModelId || !plan.targetUnitId
+      || !plan.targetModelId) fail("SPECIAL_TERRAIN_LOS_BATCH_QUERY_INVALID", queryId);
+    seenQueryIds.add(queryId);
+    if (!verifiedActorIds.has(actor.id)) {
+      officialProfile(actor, input.dataBundle);
+      verifiedActorIds.add(actor.id);
+    }
+    return {
+      queryId,
+      result: evaluateGrassLineOfSight({
+        state, actor, plan, dataBundle: input.dataBundle,
+      }, context, adaptedState),
+    };
+  });
+  const body = {
+    schema: "starcraft_tmg_official_special_terrain_los_batch_v1",
+    queryCount: results.length,
+    queryIds: results.map((entry) => entry.queryId),
+    results,
+    contextVerifiedOnce: true,
+    adaptedStateBuiltOnce: true,
+    everyModelPairStillEvaluatedByOfficialTerrainLos: true,
+    rulesTruth: "official_grass_line_of_sight_batch_conformance",
+    trainingTruth: false,
+  };
+  return freezeDeep({ ...body, batchHash: hashStarcraftTmgContract(body) });
 }
 
 export function certifyOfficialSpecialTerrainPlanV1(input = {}) {

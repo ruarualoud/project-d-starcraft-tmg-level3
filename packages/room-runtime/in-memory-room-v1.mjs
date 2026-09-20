@@ -229,8 +229,14 @@ export function projectStarcraftTmgStateForViewerV2(state, seatKey = null) {
     }
   }
   const revealAllRosters = visibility === "open";
-  const visiblePrivateSideKeys = revealAllRosters
-    ? new Set(Object.keys(state.players || {})) : alliedSideKeys;
+  // Anonymous observers consume the dedicated public roster disclosure.
+  // "open" roster visibility expands a bound seat's view; it must not turn
+  // private army-builder budgets, composition and upgrade audit structures
+  // into fields on the credential-free projection.
+  const visiblePrivateSideKeys = !seatKey
+    ? new Set()
+    : revealAllRosters
+      ? new Set(Object.keys(state.players || {})) : alliedSideKeys;
   for (const field of ["armyBuildingConfigurationBySide",
     "armyResourceBudgetsBySide", "unitCompositionSelectionsBySide",
     "unitUpgradeSelectionsBySide", "armyCompositionUpgradeAuditsBySide"]) {

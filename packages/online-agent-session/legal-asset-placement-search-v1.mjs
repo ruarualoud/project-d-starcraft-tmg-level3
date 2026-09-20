@@ -56,6 +56,193 @@ function tokenHalfExtents(profile) {
   };
 }
 
+function pointDistance(left, right) {
+  return Math.hypot(Number(left.xMilliInches) - Number(right.xMilliInches),
+    Number(left.yMilliInches) - Number(right.yMilliInches));
+}
+
+function roundFootprint(point, radius) {
+  return { shape: "round", point, radius };
+}
+
+function rectangleFootprint(point, halfWidth, halfDepth) {
+  return { shape: "axis_aligned_rectangle", point, halfWidth, halfDepth };
+}
+
+function footprintGap(left, right) {
+  if (left.shape === "round" && right.shape === "round") {
+    return Math.max(0, pointDistance(left.point, right.point)
+      - left.radius - right.radius);
+  }
+  if (left.shape === "axis_aligned_rectangle"
+    && right.shape === "axis_aligned_rectangle") {
+    const dx = Math.max(0, Math.abs(left.point.xMilliInches
+      - right.point.xMilliInches) - left.halfWidth - right.halfWidth);
+    const dy = Math.max(0, Math.abs(left.point.yMilliInches
+      - right.point.yMilliInches) - left.halfDepth - right.halfDepth);
+    return Math.hypot(dx, dy);
+  }
+  const circle = left.shape === "round" ? left : right;
+  const rectangle = left.shape === "axis_aligned_rectangle" ? left : right;
+  const dx = Math.max(0, Math.abs(circle.point.xMilliInches
+    - rectangle.point.xMilliInches) - rectangle.halfWidth);
+  const dy = Math.max(0, Math.abs(circle.point.yMilliInches
+    - rectangle.point.yMilliInches) - rectangle.halfDepth);
+  return Math.max(0, Math.hypot(dx, dy) - circle.radius);
+}
+
+function footprintForProfile(coordinate, profile) {
+  if (!object(profile)) return null;
+  const extent = tokenHalfExtents(profile);
+  if (String(profile.baseShape || profile.shape || "round") === "square") {
+    return rectangleFootprint(coordinate, extent.x, extent.y);
+  }
+  return roundFootprint(coordinate, Math.max(extent.x, extent.y));
+}
+
+function modelFootprint(model) {
+  const point = worldPoint(model);
+  const radius = Math.round(Math.max(Number(model?.baseWidthInches || 0),
+    Number(model?.baseDepthInches || model?.baseWidthInches || 0)) * 500);
+  return point && radius > 0 ? roundFootprint(point, radius) : null;
+}
+
+function existingTokenFootprint(token) {
+  const point = worldPoint(token?.coordinate || token);
+  if (!point) return null;
+  const shape = String(token?.baseShape || "round");
+  if (shape === "square") {
+    const halfWidth = Math.round(Number(token.baseWidthInches || 0) * 500);
+    const halfDepth = Math.round(Number(token.baseDepthInches || 0) * 500);
+    return halfWidth > 0 && halfDepth > 0
+      ? rectangleFootprint(point, halfWidth, halfDepth) : null;
+  }
+  const radius = Math.round(Number(token.baseDiameterInches
+    || token.baseWidthInches || 0) * 500);
+  return radius > 0 ? roundFootprint(point, radius) : null;
+}
+
+function terrainFootprint(terrain) {
+  const value = terrain?.footprint || terrain;
+  const minX = Number(value?.xMin ?? value?.minX);
+  const maxX = Number(value?.xMax ?? value?.maxX);
+  const minY = Number(value?.yMin ?? value?.minY);
+  const maxY = Number(value?.yMax ?? value?.maxY);
+  if (![minX, maxX, minY, maxY].every(Number.isFinite)
+    || maxX <= minX || maxY <= minY) return null;
+  return rectangleFootprint({
+    xMilliInches: Math.round((minX + maxX) * 500),
+    yMilliInches: Math.round((minY + maxY) * 500),
+  }, Math.round((maxX - minX) * 500), Math.round((maxY - minY) * 500));
+}
+
+function activePiece(piece) {
+  return piece?.isOnField === true && piece?.isDestroyed !== true
+    && Number(piece?.currentModels || 0) > 0;
+}
+
+function liveModelFootprints(piece) {
+  return (piece?.models || [])
+    .filter((model) => model?.isDestroyed !== true && model?.isOnField !== false)
+    .map(modelFootprint).filter(Boolean);
+}
+
+function pointSegmentDistance(point, startValue, endValue) {
+  const start = worldPoint(startValue);
+  const end = worldPoint(endValue);
+  if (!start || !end) return Number.POSITIVE_INFINITY;
+  const dx = end.xMilliInches - start.xMilliInches;
+  const dy = end.yMilliInches - start.yMilliInches;
+  if (dx === 0 && dy === 0) return pointDistance(point, start);
+  const ratio = Math.max(0, Math.min(1,
+    (((point.xMilliInches - start.xMilliInches) * dx)
+      + ((point.yMilliInches - start.yMilliInches) * dy))
+      / ((dx * dx) + (dy * dy))));
+  return pointDistance(point, {
+    xMilliInches: start.xMilliInches + (ratio * dx),
+    yMilliInches: start.yMilliInches + (ratio * dy),
+  });
+}
+
+function candidatePrefilterFailure(state, source, contract, candidate) {
+  const footprint = footprintForProfile(candidate.coordinate,
+    contract.physicalProfile);
+  if (!footprint) return null;
+  const width = Number(state.board?.widthInches) * 1_000;
+  const height = Number(state.board?.heightInches) * 1_000;
+  const halfWidth = footprint.shape === "round"
+    ? footprint.radius : footprint.halfWidth;
+  const halfDepth = footprint.shape === "round"
+    ? footprint.radius : footprint.halfDepth;
+  if (footprint.point.xMilliInches - halfWidth < 0
+    || footprint.point.yMilliInches - halfDepth < 0
+    || footprint.point.xMilliInches + halfWidth > width
+    || footprint.point.yMilliInches + halfDepth > height) {
+    return "BATTLEFIELD_ASSET_FULL_BASE_OUTSIDE_BATTLEFIELD";
+  }
+  if (["creep_token_place", "force_field_place", "shade_token_place"]
+    .includes(source.effectKind)) {
+    for (const piece of (state.pieces || []).filter(activePiece)) {
+      if (liveModelFootprints(piece).some((entry) =>
+        footprintGap(footprint, entry) < 1)) {
+        return "BATTLEFIELD_ASSET_TOKEN_OVERLAPS_MODEL";
+      }
+    }
+    for (const token of state.board?.tokens || []) {
+      if (token?.isRemoved === true) continue;
+      const other = existingTokenFootprint(token);
+      if (other && footprintGap(footprint, other) < 1) {
+        return "BATTLEFIELD_ASSET_TOKEN_OVERLAPS_TOKEN";
+      }
+    }
+    for (const terrain of state.board?.terrain || []) {
+      if (terrain?.isRemoved === true || terrain?.blocksPlacement === false) continue;
+      const other = terrainFootprint(terrain);
+      if (other && footprintGap(footprint, other) < 1) {
+        return "BATTLEFIELD_ASSET_TOKEN_OVERLAPS_TERRAIN";
+      }
+    }
+  }
+  const range = Number(source.constraints?.geometry?.rangeInches) * 1_000;
+  const actor = (state.pieces || []).find((entry) => entry.id === source.pieceId);
+  if (source.effectKind === "creep_token_place" && Number.isFinite(range)) {
+    const segments = state.officialDeploymentGeometryBinding
+      ?.entryEdgesByPlayer?.[source.sideKey]?.segments || [];
+    const extent = footprint.shape === "round" ? footprint.radius
+      : Math.hypot(footprint.halfWidth, footprint.halfDepth);
+    const entryWithin = segments.some((segment) => Math.max(0,
+      pointSegmentDistance(footprint.point, segment.startCoordinate,
+        segment.endCoordinate) - extent) <= range + 1);
+    const bindingByAssetId = new Map((state.officialBattlefieldAssetBindings || [])
+      .map((entry) => [String(entry.assetId || ""), entry]));
+    const tumorWithin = (state.board?.tokens || []).some((token) => {
+      if (token?.isRemoved === true) return false;
+      const binding = bindingByAssetId.get(String(token.tokenId || token.id || ""));
+      const other = existingTokenFootprint(token);
+      return binding?.sideKey === source.sideKey
+        && binding?.assetKind === "creep_tumor" && other
+        && footprintGap(footprint, other) <= range + 1;
+    });
+    if (!entryWithin && !tumorWithin) {
+      return "BATTLEFIELD_ASSET_CREEP_SOURCE_RANGE_REQUIRED";
+    }
+  }
+  if (source.effectKind === "force_field_place" && actor
+    && Number.isFinite(range)
+    && !liveModelFootprints(actor).some((entry) =>
+      footprintGap(footprint, entry) <= range + 1)) {
+    return "BATTLEFIELD_ASSET_FORCE_FIELD_RANGE_REQUIRED";
+  }
+  if (source.effectKind === "shade_token_place" && actor
+    && footprint.shape === "round" && Number.isFinite(range)
+    && !liveModelFootprints(actor).some((entry) =>
+      pointDistance(footprint.point, entry.point) - entry.radius
+        + footprint.radius <= range + 1)) {
+    return "BATTLEFIELD_ASSET_SHADE_WHOLE_BASE_RANGE_REQUIRED";
+  }
+  return null;
+}
+
 function placementContract(source) {
   if (source.actionType === "resolve_battlefield_asset_ability"
     && source.parameterSchema?.coordinate?.type
@@ -239,16 +426,27 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
   const options = [];
   const failureCounts = new Map();
   let attemptedCandidateCount = 0;
+  let prefilteredCandidateCount = 0;
+  let instantiatedCandidateCount = 0;
   for (const candidate of generated.candidates) {
     if (attemptedCandidateCount >= maximumCandidateAttempts
       || options.length >= maximumOptions) break;
     attemptedCandidateCount += 1;
+    const prefilterFailure = candidatePrefilterFailure(
+      state, source, contract, candidate);
+    if (prefilterFailure) {
+      prefilteredCandidateCount += 1;
+      failureCounts.set(prefilterFailure,
+        Number(failureCounts.get(prefilterFailure) || 0) + 1);
+      continue;
+    }
     const parameters = contract.kind === "coordinate"
       ? { ...clone(baseParameters), coordinate: clone(candidate.coordinate) }
       : { ...clone(baseParameters),
         xMilliInches: candidate.coordinate.xMilliInches,
         yMilliInches: candidate.coordinate.yMilliInches };
     try {
+      instantiatedCandidateCount += 1;
       const instantiated = instantiate(state, domain, parameters,
         clone(input.instantiateOptions || {}));
       const canonicalParameters = clone(instantiated.canonicalParameters);
@@ -290,6 +488,20 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
     placementOptions: options,
     optionCount: options.length,
     attemptedCandidateCount,
+    prefilteredCandidateCount,
+    instantiatedCandidateCount,
+    searchCoverage: {
+      generatedCandidateCount: generated.candidates.length,
+      exactInstantiationCount: instantiatedCandidateCount,
+      maximumCandidateAttempts,
+      maximumOptions,
+      candidateGenerationDeterministic: true,
+      cheapGeometryPrefilterOnlyRejects: true,
+      everySurvivorStillRequiresExactRulesInstantiation: true,
+      strategyRequestOrOptionBudgetReducedForPerformance: false,
+      betterOptionMayExist:
+        attemptedCandidateCount < generated.candidates.length,
+    },
     failureCounts: Object.fromEntries([...failureCounts.entries()]
       .sort(([left], [right]) => left.localeCompare(right))),
     continuousDomainNotExhaustivelyEnumerated: true,
@@ -300,6 +512,7 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
       selectedOptionRequiresPublicReason: true,
       hostReinstantiatesSelectedOptionBeforeApply: true,
       handWrittenReplacementCoordinateForbidden: true,
+      prefilterNeverCertifiesLegality: true,
       hiddenChainOfThoughtRequested: false,
     },
     rulesAuthority: options.length > 0,

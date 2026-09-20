@@ -46,6 +46,13 @@ for (const input of [broken, broken.slice(0, -1)]) {
   assert.equal(restored.join(''), input);
 }
 assert.equal(normalize(valid).text, valid); assert.equal(normalize(valid).kind, 'none');
+const prematureRootValid = JSON.stringify({ planning: { recommendedCandidateId: 'fixture-candidate' },
+  publicPlanSummary: 'preserve this complete scalar', query_requests: { requests: [] } });
+const prematureRootBroken = prematureRootValid.replace(',"query_requests"', '},"query_requests"') + '}';
+const prematureRootRecovery = normalize(prematureRootBroken);
+assert.equal(prematureRootRecovery.kind, 'redundant_array_object_closers_v1');
+assert.equal(prematureRootRecovery.text, prematureRootValid);
+assert.deepEqual(JSON.parse(prematureRootRecovery.text), JSON.parse(prematureRootValid));
 for (const unsafe of ['{"a":[{}},]}', '{"a":[{}},0,]}', '{"a":[{}}}', '{"a":[{}}],"b":}', '{"a":[{}}],"b":"unfinished', '{"a":[{}}],"b":1 "c":2}', '{"a":[{}}]}trailing', '{"a":[{}}}}]}', '{"a":[{}}]]}', '{"a":[{}}],"b":[1,2}', '{"a":[' + Array(9).fill('{}}').join(',') + ']}']) {
   assert.equal(normalize(unsafe).text, unsafe, unsafe);
 }

@@ -47,6 +47,10 @@ function fixture() {
           terrain: [{
             id: "official-wall",
             shape: "axis_aligned_rectangle",
+            // Current frozen map rooms retain these historical display fields.
+            // The authoritative footprint must remain the coordinate source.
+            xInches: 0,
+            yInches: 0,
             blocksPlacement: true,
             footprint: {
               shape: "axis_aligned_rectangle",
@@ -207,6 +211,17 @@ function fixture() {
 }
 
 describe("Slice 132 authoritative battlefield presentation", () => {
+  it("prefers the authoritative terrain footprint over stale legacy coordinates", () => {
+    const scene = projectStarcraftTmgBattlefieldPresentationV1(fixture());
+    expect(scene.terrain[0]).toMatchObject({
+      id: "official-wall",
+      xMilliInches: 10_000,
+      yMilliInches: 21_000,
+      widthMilliInches: 4_000,
+      depthMilliInches: 2_000,
+    });
+  });
+
   it("renders arbitrary model counts and never invents per-model positions for an aggregate", () => {
     const scene = projectStarcraftTmgBattlefieldPresentationV1(fixture());
     expect(scene.models).toHaveLength(13);

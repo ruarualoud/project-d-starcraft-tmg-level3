@@ -60,6 +60,7 @@ export const STARCRAFT_TMG_FORMATION_ACTION_FAMILY_COVERAGE_V1 = Object.freeze({
 });
 const DEFAULT_MAX_ATTEMPTS = 4_096;
 const DEFAULT_MAX_OPTIONS = 4;
+const PHYSICAL_DISTANCE_TOLERANCE_MILLI_INCHES = 1;
 const FORMATION_OBJECTIVE_KIND_SET = new Set(
   STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS,
 );
@@ -327,7 +328,37 @@ function footprintAt(profile, point, rotationDegrees = 0) {
   });
 }
 
-function availablePackedFootprint(footprint, state, blockers, selected) {
+function minimumEnemyGapFailure(footprint, blocker, input = {}) {
+  const minimumExclusive = Number(
+    input.minimumEnemyGapMilliInchesExclusive,
+  );
+  if (!Number.isFinite(minimumExclusive) || minimumExclusive <= 0
+    || blocker.kind !== "model" || !blocker.sideKey
+    || blocker.sideKey === input.sideKey) return false;
+  const footprintBoundsValue = footprintBounds(footprint);
+  const separationX = Math.max(
+    blocker.bounds.minimumX - footprintBoundsValue.maximumX,
+    footprintBoundsValue.minimumX - blocker.bounds.maximumX,
+    0,
+  );
+  const separationY = Math.max(
+    blocker.bounds.minimumY - footprintBoundsValue.maximumY,
+    footprintBoundsValue.minimumY - blocker.bounds.maximumY,
+    0,
+  );
+  if (Math.hypot(separationX, separationY)
+    > minimumExclusive + PHYSICAL_DISTANCE_TOLERANCE_MILLI_INCHES) {
+    return false;
+  }
+  return evaluateOfficialPhysicalFootprintRelationV1({
+    left: footprint,
+    right: blocker.footprint,
+  }).minimumSeparationMilliInches
+    <= minimumExclusive + PHYSICAL_DISTANCE_TOLERANCE_MILLI_INCHES;
+}
+
+function availablePackedFootprint(footprint, state, blockers, selected,
+  hardConstraints = {}) {
   if (!footprintInsideBattlefield(footprint, state)) return false;
   for (const blocker of blockers) {
     const relation = evaluateOfficialPhysicalFootprintRelationV1({
@@ -335,6 +366,9 @@ function availablePackedFootprint(footprint, state, blockers, selected) {
       right: blocker.footprint,
     });
     if (relation.overlappingInteriors) return false;
+    if (minimumEnemyGapFailure(footprint, blocker, hardConstraints)) {
+      return false;
+    }
   }
   return selected.every((entry) => (
     !evaluateOfficialPhysicalFootprintRelationV1({
@@ -835,7 +869,13 @@ function solveIntentFormationRows(input) {
   const leaderPoint = { xMilliInches: anchor.xMilliInches,
     yMilliInches: anchor.yMilliInches };
   const leaderFootprint = footprintAt(leaderProfile, leaderPoint);
-  if (!availablePackedFootprint(leaderFootprint, state, blockers, [])) {
+  const hardConstraints = {
+    sideKey,
+    minimumEnemyGapMilliInchesExclusive:
+      input.minimumEnemyGapMilliInchesExclusive,
+  };
+  if (!availablePackedFootprint(leaderFootprint, state, blockers, [],
+    hardConstraints)) {
     return null;
   }
   const selected = [{ profile: leaderProfile, footprint: leaderFootprint,
@@ -892,7 +932,8 @@ function solveIntentFormationRows(input) {
       if (used.has(index) || entry.distance > maximumCenterDistance + 1) continue;
       for (const rotationDegrees of rotations) {
         const footprint = footprintAt(profile, entry.point, rotationDegrees);
-        if (!availablePackedFootprint(footprint, state, blockers, selected)) {
+        if (!availablePackedFootprint(footprint, state, blockers, selected,
+          hardConstraints)) {
           continue;
         }
         candidates.push({
@@ -958,7 +999,8 @@ function candidatePlacementRows(candidate) {
   return placements;
 }
 
-function candidatePlacementOverlapsBlocker(candidate, profiles, blockers) {
+function candidatePlacementPrefilterFailure(candidate, profiles, blockers,
+  input = {}) {
   const profileById = new Map(profiles.map((profile) =>
     [profile.modelId, profile]));
   for (const position of candidatePlacementRows(candidate)) {
@@ -980,14 +1022,17 @@ function candidatePlacementOverlapsBlocker(candidate, profiles, blockers) {
     });
     const bounds = footprintBounds(footprint);
     for (const blocker of blockers) {
-      if (!boundsMayOverlap(bounds, blocker.bounds)) continue;
-      if (evaluateOfficialPhysicalFootprintRelationV1({
-        left: footprint,
-        right: blocker.footprint,
-      }).overlappingInteriors) return true;
+      if (boundsMayOverlap(bounds, blocker.bounds)
+        && evaluateOfficialPhysicalFootprintRelationV1({
+          left: footprint,
+          right: blocker.footprint,
+        }).overlappingInteriors) return "MODEL_BASE_GEOMETRY_PLACEMENT_OVERLAP";
+      if (minimumEnemyGapFailure(footprint, blocker, input)) {
+        return "RELOCATION_ENEMY_GAP_REQUIRED";
+      }
     }
   }
-  return false;
+  return null;
 }
 
 function deployCandidates(domain, request) {
@@ -2172,6 +2217,8 @@ function solveGeneratedCandidateIntent(state, source, candidate, request,
     policy,
     blockers: searchContext.blockers,
     targetIndex: searchContext.targetIndex,
+    minimumEnemyGapMilliInchesExclusive:
+      source.constraints?.minimumEnemyGapMilliInchesExclusive,
   });
   if (!solved) return null;
   const parameters = clone(candidate.parameters);
@@ -2278,10 +2325,18 @@ function relationshipRows(graph) {
         entry.nearestPhysicalEdges?.distanceMilliInches ?? null,
       engaged: entry.engagement?.engaged === true,
       visibleModelPairCount: entry.lineOfSight?.visibleModelPairCount ?? null,
+      stationaryThreatProfileKeys:
+        clone(entry.threats?.fromTo?.stationaryProfileKeys || []),
       stationaryThreatProfileCount:
         entry.threats?.fromTo?.stationaryProfileKeys?.length || 0,
+      moveThenAttackProfileKeys:
+        clone(entry.threats?.fromTo?.moveThenAttackProfileKeys || []),
+      enemyStationaryThreatProfileKeys:
+        clone(entry.threats?.toFrom?.stationaryProfileKeys || []),
       enemyStationaryThreatProfileCount:
         entry.threats?.toFrom?.stationaryProfileKeys?.length || 0,
+      enemyMoveThenAttackProfileKeys:
+        clone(entry.threats?.toFrom?.moveThenAttackProfileKeys || []),
       fireZoneExchangeClass: entry.fireZoneExchange?.class || null,
       precision: entry.precision,
     });
@@ -2326,8 +2381,15 @@ function relationshipComparison(state, source, slots, objectives, baseline) {
       .filter((modelId) => !positions.has(modelId));
     projectedActor.currentModels = projectedActor.models.filter((model) =>
       model.isDestroyed !== true && model.isOnField !== false).length;
-    const targetIds = [...new Set((objectives || []).flatMap((entry) =>
-      entry.targetIds || []))];
+    const visibleEnemyUnitIds = (projected.pieces || []).filter((entry) =>
+      entry.sideKey !== projectedActor.sideKey
+        && entry.isOnField === true
+        && entry.isDestroyed !== true
+        && Number(entry.currentModels || 0) > 0).map((entry) => entry.id);
+    const targetIds = [...new Set([
+      ...(objectives || []).flatMap((entry) => entry.targetIds || []),
+      ...visibleEnemyUnitIds,
+    ])];
     const graph = buildStarcraftTmgTacticalRelationshipGraphV1({
       state: projected,
       seatKey: projectedActor.sideKey,
@@ -2337,6 +2399,8 @@ function relationshipComparison(state, source, slots, objectives, baseline) {
         subjectUnitIds: [projectedActor.id],
         targetIds,
         maximumRelations: 64,
+        knownMinimumOpponentGapMilliInchesExclusive:
+          source.constraints?.minimumEnemyGapMilliInchesExclusive || null,
       },
     });
     const beforeRows = relationshipRows(baseline);
@@ -2344,6 +2408,7 @@ function relationshipComparison(state, source, slots, objectives, baseline) {
     const beforeById = new Map(beforeRows.map((entry) => [entry.edgeId, entry]));
     return {
       status: "available",
+      hypotheticalProjection: true,
       baselineRelationshipGraphHash:
         baseline?.relationshipGraphHash || null,
       projectedRelationshipGraphHash: graph.relationshipGraphHash,
@@ -2386,6 +2451,22 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
   const state = input.state;
   const instantiate = input.instantiate;
   const request = object(input.request) ? input.request : {};
+  const searchStartedAt = performance.now();
+  const observeProgress = typeof input.observeProgress === "function"
+    ? input.observeProgress : null;
+  const progress = (stage, detail = {}) => {
+    if (!observeProgress) return;
+    try {
+      observeProgress({
+        schemaVersion: "starcraft_tmg_formation_search_progress_v1",
+        stage,
+        elapsedMs: Math.round(performance.now() - searchStartedAt),
+        ...clone(detail),
+        mutationAuthority: false,
+        trainingTruth: false,
+      });
+    } catch {}
+  };
   if (!object(state) || !object(domain) || !object(source?.constraints)
     || typeof instantiate !== "function") {
     throw new TypeError("LEGAL_FORMATION_SEARCH_INPUT_INVALID");
@@ -2412,6 +2493,9 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
       : source.actionType === "resolve_unit_lifecycle_consumer"
         ? lifecycleConsumerCandidates(state, domain, request)
         : relocationCandidates(domain, request);
+  progress("candidate_generation_complete", {
+    generatedCandidateCount: generated.length,
+  });
   const blockers = blockingFootprints(state, source.pieceId);
   const normalizedObjectives = normalizeFormationObjectives(request);
   const intentTargetIndex = formationIntentTargetIndex(state, blockers);
@@ -2447,6 +2531,16 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
     if (attemptedCandidateCount >= maximumCandidateAttempts
       || options.length >= maximumOptions) break;
     examinedGeneratedCandidateCount += 1;
+    if (examinedGeneratedCandidateCount <= 5
+      || examinedGeneratedCandidateCount % 25 === 0) {
+      progress("candidate_started", {
+        examinedGeneratedCandidateCount,
+        attemptedCandidateCount,
+        instantiatedCandidateCount,
+        optionCount: options.length,
+        patternId: generatedCandidate.patternId,
+      });
+    }
     const generatedIntentKey = generatedCandidateIntentKey(
       generatedCandidate, request);
     if (generatedIntentKey && generatedIntentKeys.has(generatedIntentKey)) {
@@ -2461,6 +2555,16 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
         objectives: normalizedObjectives,
       });
     if (!candidate) continue;
+    if (examinedGeneratedCandidateCount <= 5
+      || examinedGeneratedCandidateCount % 25 === 0) {
+      progress("candidate_intent_solved", {
+        examinedGeneratedCandidateCount,
+        attemptedCandidateCount,
+        instantiatedCandidateCount,
+        optionCount: options.length,
+        patternId: candidate.patternId,
+      });
+    }
     if (candidate.sameAnchorAlternativesMeaningful !== true
       && options.some((entry) => Math.hypot(
       entry.anchor.xMilliInches - candidate.anchor.xMilliInches,
@@ -2468,16 +2572,36 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
       ) < 1_000)) continue;
     attemptedCandidateCount += 1;
     const profiles = candidate.modelProfiles || source.constraints.modelProfiles;
-    if (candidatePlacementOverlapsBlocker(candidate, profiles, blockers)) {
+    const prefilterFailure = candidatePlacementPrefilterFailure(
+      candidate, profiles, blockers, {
+        sideKey: source.sideKey || actor?.sideKey,
+        minimumEnemyGapMilliInchesExclusive:
+          source.constraints?.minimumEnemyGapMilliInchesExclusive,
+      });
+    if (prefilterFailure) {
       prefilteredCandidateCount += 1;
-      const code = "MODEL_BASE_GEOMETRY_PLACEMENT_OVERLAP";
-      failureCounts.set(code, Number(failureCounts.get(code) || 0) + 1);
+      failureCounts.set(prefilterFailure,
+        Number(failureCounts.get(prefilterFailure) || 0) + 1);
       continue;
     }
     instantiatedCandidateCount += 1;
+    progress("rules_instantiation_started", {
+      examinedGeneratedCandidateCount,
+      attemptedCandidateCount,
+      instantiatedCandidateCount,
+      optionCount: options.length,
+      patternId: candidate.patternId,
+    });
     try {
       const instantiated = instantiate(state, domain, candidate.parameters,
         clone(input.instantiateOptions || {}));
+      progress("rules_instantiation_completed", {
+        examinedGeneratedCandidateCount,
+        attemptedCandidateCount,
+        instantiatedCandidateCount,
+        optionCount: options.length,
+        patternId: candidate.patternId,
+      });
       const canonicalParameters = clone(instantiated.canonicalParameters
         || instantiated.action?.sourceAction?.spatialPlan?.canonicalParameters);
       if (!object(canonicalParameters)) continue;
@@ -2509,11 +2633,25 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
         trainingTruth: false,
       };
       const projectedSlots = slotsFor(optionSeed, profiles);
+      progress("relationship_comparison_started", {
+        examinedGeneratedCandidateCount,
+        attemptedCandidateCount,
+        instantiatedCandidateCount,
+        optionCount: options.length,
+        patternId: candidate.patternId,
+      });
       const optionCore = {
         ...optionSeed,
         relationshipComparison: relationshipComparison(state, source,
           projectedSlots, objectives, baselineRelationshipGraph),
       };
+      progress("relationship_comparison_completed", {
+        examinedGeneratedCandidateCount,
+        attemptedCandidateCount,
+        instantiatedCandidateCount,
+        optionCount: options.length + 1,
+        patternId: candidate.patternId,
+      });
       const formationOptionId = hashStarcraftTmgContract(optionCore);
       const option = { ...optionCore, formationOptionId };
       option.slots = slotsFor(option,
@@ -2522,8 +2660,25 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
     } catch (error) {
       const code = String(error?.message || error).split(":")[0];
       failureCounts.set(code, Number(failureCounts.get(code) || 0) + 1);
+      progress("rules_instantiation_failed", {
+        examinedGeneratedCandidateCount,
+        attemptedCandidateCount,
+        instantiatedCandidateCount,
+        optionCount: options.length,
+        patternId: candidate.patternId,
+        failureCode: code,
+      });
     }
   }
+  progress("search_completed", {
+    generatedCandidateCount: generated.length,
+    examinedGeneratedCandidateCount,
+    attemptedCandidateCount,
+    instantiatedCandidateCount,
+    prefilteredCandidateCount,
+    duplicateIntentCandidateCount,
+    optionCount: options.length,
+  });
   return freeze({
     schemaVersion: STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION,
     toolName: STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,

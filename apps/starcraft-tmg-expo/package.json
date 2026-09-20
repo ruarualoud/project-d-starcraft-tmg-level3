@@ -5,6 +5,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "dev": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --web --port ${EXPO_PORT:-8081}",
+    "export:web:local": "cross-env PROJECT_D_LOCAL_WEB_EXPORT=1 EXPO_PUBLIC_STARCRAFT_TMG_LOCAL_WEB_EXPORT=1 expo export --clear --platform web --output-dir dist",
     "check": "tsc --noEmit",
     "lint": "expo lint",
     "format": "prettier --write .",

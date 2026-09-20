@@ -29,6 +29,8 @@ const DELEGATED_QUERY_KINDS = new Set([
   "fire_zone_exchange",
   "objective_score_after_candidate_action",
 ]);
+const RANGED_CASUALTY_SELECTION_PARAMETER_KIND =
+  "official_selected_roster_ranged_casualty_selection_v1";
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -186,11 +188,14 @@ function finiteActions(legalSpace) {
   }));
 }
 
-function parameterDomains(legalSpace) {
+export function projectStarcraftTmgSpatialParameterDomainsV1(legalSpace) {
   return (legalSpace.parameterDomains || []).map((domain) => ({
     domainId: domain.domainId,
     parameterKind: domain.parameterKind || null,
-    actionType: domain.actionType,
+    actionType: domain.parameterKind
+        === RANGED_CASUALTY_SELECTION_PARAMETER_KIND
+      ? "resolve_ranged_casualties" : domain.actionType,
+    authorityActionType: domain.actionType,
     abilityName: domain.abilityName || null,
     effectKind: domain.effectKind || null,
     definitionId: domain.definitionId || null,
@@ -198,6 +203,8 @@ function parameterDomains(legalSpace) {
     createdUnitRecordKey: domain.constraints?.createdUnitRecordKey || null,
     sideKey: domain.sideKey,
     pieceId: domain.pieceId || null,
+    profileKey: domain.profileKey || null,
+    weaponName: domain.weaponName || null,
     executorId: domain.executorId || null,
     executorVersion: domain.executorVersion || null,
     parameterSchema: clone(domain.parameterSchema),
@@ -298,7 +305,7 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
     const binding = authority(input);
     const legalSpace = input.legalSpace;
     const finite = finiteActions(legalSpace);
-    const domains = parameterDomains(legalSpace);
+    const domains = projectStarcraftTmgSpatialParameterDomainsV1(legalSpace);
     const suggestions = (legalSpace.searchSuggestions || []).map((entry) => ({
       suggestionId: entry.suggestionId,
       proposal: clone(entry.proposal),

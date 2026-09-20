@@ -180,6 +180,36 @@ function activePlanRecord(records) {
     && current.payload?.status !== "abandoned" ? current : null;
 }
 
+function compactRecord(record, fields, arrayLimits = {}) {
+  if (!record) return null;
+  const source = object(record.payload) ? record.payload : {};
+  const payload = {};
+  for (const field of fields) {
+    if (source[field] === undefined) continue;
+    const value = source[field];
+    const limit = Number(arrayLimits[field] || 0);
+    payload[field] = Array.isArray(value) && limit > 0
+      ? clone(value.slice(-limit)) : clone(value);
+  }
+  return {
+    recordId: record.recordId,
+    recordHash: record.recordHash,
+    sequence: record.sequence,
+    kind: record.kind,
+    authority: clone(record.authority || null),
+    payload,
+  };
+}
+
+function compactOpponentResponse(entry) {
+  if (!object(entry)) return entry;
+  return Object.fromEntries([
+    "responseId", "opponentAction", "basis", "counterResponse",
+    "counterPurpose", "replanIf", "probabilityEvidenceRef",
+  ].filter((field) => entry[field] !== undefined)
+    .map((field) => [field, clone(entry[field])]));
+}
+
 function workingMemoryProjection(records, scope, authority, target) {
   const activePlan = activePlanRecord(records);
   const reflection = latest(records, "plan_reflection");
@@ -203,31 +233,52 @@ function workingMemoryProjection(records, scope, authority, target) {
     || activePlan?.payload?.currentGoal
     || activePlan?.payload?.objective
     || null;
+  const compactIntents = intents.slice(-Math.min(target, 2)).map((entry) =>
+    compactRecord(entry, [
+      "candidateId", "planId", "intentId", "currentGoal", "purpose",
+      "selectedReason", "expectedOwnOutcome", "nextDecisionFocus", "risk",
+      "unitIds", "abilitiesIntended", "resourcesIntended", "fallbacks",
+    ], { fallbacks: 3 }));
+  const predictedResponses = (latestIntent?.payload?.predictedOpponentResponses
+    || []).slice(-Math.min(target, 3)).map(compactOpponentResponse);
   return {
-    overallPlan: activePlan ? clone(activePlan) : null,
+    overallPlan: compactRecord(activePlan, [
+      "planId", "objective", "currentGoal", "status", "revisionReason",
+    ]),
     currentGoal,
-    planAssessment: reflection ? clone(reflection) : null,
-    commitments: clone(intents.slice(-Math.min(target, 8))),
+    planAssessment: compactRecord(reflection, [
+      "verdict", "health", "continuitySummary", "currentGoal",
+      "nextDecisionFocus", "unresolvedRisks", "changedAssumptions",
+    ], { unresolvedRisks: 6, changedAssumptions: 4 }),
+    commitments: compactIntents,
     tacticalLedger: {
-      abilitiesUsed: clone(abilityUses),
-      resourcesSpent: clone(resourceUses),
-      recentOutcomes: clone(outcomes.slice(-Math.min(target, 8))),
+      abilitiesUsed: abilityUses.slice(-target).map((entry) => compactRecord(
+        entry, ["abilityId", "unitId", "outcome", "receiptHash"])),
+      resourcesSpent: resourceUses.slice(-target).map((entry) => compactRecord(
+        entry, ["resourceId", "amount", "unitId", "purpose", "receiptHash"])),
+      recentOutcomes: outcomes.slice(-Math.min(target, 4)).map((entry) =>
+        compactRecord(entry, [
+          "candidateId", "intentId", "unitId", "outcome", "result",
+          "purposeAchieved", "receiptHash", "postStateRevision",
+        ])),
       sourceOfRemainingAvailability:
         "current_rules_projection_or_query_required",
     },
     opponentModel: {
-      predictedResponses: clone(latestIntent?.payload?.predictedOpponentResponses
-        || []),
-      observedResponses: clone(opponentResponses.slice(-Math.min(target, 8))),
+      predictedResponses,
+      observedResponses: opponentResponses.slice(-Math.min(target, 4))
+        .map((entry) => compactRecord(entry, [
+          "responseId", "opponentAction", "unitId", "result", "counterUsed",
+        ])),
     },
     counterplay: clone([
-      ...(latestIntent?.payload?.predictedOpponentResponses || []).map((entry) => ({
+      ...predictedResponses.map((entry) => ({
         predictedOpponentResponse: entry.opponentAction || entry.response || null,
         plannedCounterResponse: entry.counterResponse || null,
         replanIf: entry.replanIf || null,
         source: "current_action_intent",
       })),
-      ...counterResponses.slice(-Math.min(target, 8)).map((entry) => ({
+      ...counterResponses.slice(-Math.min(target, 4)).map((entry) => ({
         ...clone(entry.payload),
         source: "observed_execution",
       })),
@@ -273,23 +324,22 @@ function initiativePayload(scope, authority) {
 }
 
 function projectedMemory(state, scope, authority, promptRecordTarget) {
-  const decisionRecords = state.records.filter((entry) =>
-    entry.kind === "action_intent" || entry.kind === "decision_purpose"
-      || entry.kind === "decision_outcome");
   const initiativeRecords = state.records.filter((entry) =>
     entry.kind === "initiative_observation");
-  const activePlan = activePlanRecord(state.records);
-  const recentPurposes = decisionRecords.slice(-promptRecordTarget);
-  const initiativeTimeline = initiativeRecords.slice(-promptRecordTarget);
   const lastAgentFirstPass = [...initiativeRecords].reverse().find((entry) =>
     entry.payload?.agentWasFirstPasser === true) || null;
+  const workingMemory = workingMemoryProjection(state.records, scope, authority,
+    promptRecordTarget);
   return {
-    scope: clone(scope),
+    scope: {
+      gameId: scope.gameId,
+      roomId: scope.roomId,
+      seatKey: scope.seatKey,
+      scopeKey: scope.scopeKey,
+      matchBindingHash: scope.matchBindingHash,
+    },
     authority: clone(authority),
-    activePlan: activePlan ? clone(activePlan) : null,
-    workingMemory: workingMemoryProjection(state.records, scope, authority,
-      promptRecordTarget),
-    recentPurposes: clone(recentPurposes),
+    workingMemory,
     initiative: {
       ownsFirstPlayerMarker: authority.ownsFirstPlayerMarker,
       ownPassedCurrentPhase: authority.ownPassedCurrentPhase,
@@ -297,8 +347,10 @@ function projectedMemory(state, scope, authority, promptRecordTarget) {
       agentWasFirstPasserThisPhase:
         authority.currentPhaseFirstPassSideKey === scope.seatKey,
       phaseFirstActorChoice: clone(authority.phaseFirstActorChoice),
-      lastAgentFirstPass: lastAgentFirstPass ? clone(lastAgentFirstPass) : null,
-      timeline: clone(initiativeTimeline),
+      lastAgentFirstPass: compactRecord(lastAgentFirstPass, [
+        "round", "phase", "phaseKey", "agentWasFirstPasser",
+        "currentPhaseFirstPassSideKey", "ownsFirstPlayerMarker",
+      ]),
     },
     retainedRecordCount: state.records.length,
     eventLog: {
@@ -307,11 +359,17 @@ function projectedMemory(state, scope, authority, promptRecordTarget) {
       retainedRecordCount: state.records.length,
       latestSequence: state.sequence,
       durableHistoryDeleted: 0,
+      queryInterface: "match_decision_continuity.query",
+      queryableKinds: [...QUERYABLE_EVENT_KINDS],
     },
-    projectedRecordCount: recentPurposes.length + initiativeTimeline.length
-      + (activePlan ? 1 : 0),
+    projectedRecordCount:
+      workingMemory.commitments.length
+      + workingMemory.tacticalLedger.recentOutcomes.length
+      + (workingMemory.overallPlan ? 1 : 0)
+      + (workingMemory.planAssessment ? 1 : 0)
+      + (lastAgentFirstPass ? 1 : 0),
     promptProjectionPolicy: {
-      kind: "soft_recent_records_target",
+      kind: "fixed_working_summary_over_complete_queryable_log",
       target: promptRecordTarget,
       recordsRejectedForLength: 0,
       durableHistoryDeleted: 0,
@@ -456,7 +514,7 @@ export function createStarcraftTmgMatchDecisionContinuityV1(options = {}) {
     ? options.preExecute : null;
   const now = typeof options.now === "function"
     ? options.now : () => new Date().toISOString();
-  const configuredTarget = Number(options.promptRecordTarget || 24);
+  const configuredTarget = Number(options.promptRecordTarget || 6);
   const promptRecordTarget = Number.isSafeInteger(configuredTarget)
     && configuredTarget > 0 ? configuredTarget : 24;
   const states = new Map();
@@ -546,7 +604,7 @@ export function createStarcraftTmgMatchDecisionContinuityV1(options = {}) {
       strategySkillSetHash: strategySkillSetHash || null,
       spatialObservationHash: spatialObservation?.observationHash || null,
       spatialActionSpaceHash: spatialActionSpace?.actionSpaceHash || null,
-      activePlanHash: memory.activePlan?.recordHash || null,
+      activePlanHash: memory.workingMemory?.overallPlan?.recordHash || null,
     });
     if (state.searchJob?.searchKey === searchKey) return;
     cancelStaleSearch(state, searchKey);

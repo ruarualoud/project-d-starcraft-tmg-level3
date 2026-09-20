@@ -21,6 +21,13 @@ import {
 } from "../packages/rule-atoms/official-reserve-deploy-rule-slice-v1.mjs";
 import { createOfficialExecutableRuleRuntimeV1 } from "../packages/rule-atoms/official-executable-rule-runtime-v1.mjs";
 import { createOfficialRoundSupplyStateV1 } from "../packages/rule-atoms/official-round-supply-state-v1.mjs";
+import { createOfficialStandardActionRuntimeV1 } from
+  "../packages/product-composition/official-standard-action-runtime-v1.mjs";
+import {
+  OFFICIAL_STANDARD_RESERVE_DEPLOY_PARAMETER_KIND,
+} from "../packages/product-composition/official-standard-reserve-deploy-adapter-v1.mjs";
+import { createOfficialStandardRoomInitialStateAuthorityV1 } from
+  "../packages/product-composition/official-standard-room-factory-v1.mjs";
 import { createOfficialCommandCenterDataset } from "../packages/source-data/official-command-center-adapter-v1.mjs";
 import { createOfficialGameplayDataBundleV1 } from "../packages/source-data/official-gameplay-data-bundle-v1.mjs";
 import { createOfficialMissionSetupBindingV1 } from "../packages/source-data/official-mission-setup-binding-v1.mjs";
@@ -398,6 +405,254 @@ assert.ok(player2Legal.parameterDomains.some((entry) => (
     && entry.pieceId === "p2-reserve"
 )), JSON.stringify(player2Legal.disabledDiagnostics));
 acceptance.push("deploy_applies_leading_path_coherency_activation_supply_and_alternation_atomically");
+
+function standardSingleModelDeployParameters(deployDomain) {
+  const [model] = deployDomain.constraints.modelProfiles;
+  const [segment] = deployDomain.constraints.entrySegments;
+  assert.equal(deployDomain.constraints.modelProfiles.length, 1);
+  const along = Math.round((Number(segment.startInches)
+    + Number(segment.endInches)) * 500);
+  const halfWidth = Math.round(Number(model.widthMilliInches) / 2);
+  const halfDepth = Math.round(Number(model.depthMilliInches) / 2);
+  const width = Number(deployDomain.constraints.battlefieldWidthMilliInches);
+  const height = Number(deployDomain.constraints.battlefieldHeightMilliInches);
+  const inset = 500;
+  const endpoint = segment.side === "left"
+    ? { xMilliInches: halfWidth + inset, yMilliInches: along }
+    : segment.side === "right"
+      ? { xMilliInches: width - halfWidth - inset, yMilliInches: along }
+      : segment.side === "bottom"
+        ? { xMilliInches: along, yMilliInches: halfDepth + inset }
+        : { xMilliInches: along, yMilliInches: height - halfDepth - inset };
+  return {
+    leadingModelId: model.modelId,
+    entrySegmentId: segment.segmentId,
+    entryAlongEdgeMilliInches: along,
+    endpoint,
+    placements: [],
+  };
+}
+
+const currentCatalogueReport = JSON.parse(await readFile(
+  path.join(OUTPUT_DIR, "official-dispute-resolution-rules-rule-slice-v1-report.json"),
+  "utf8",
+));
+const standardSeatPlan = [{
+  label: "player1",
+  seatKey: "player1",
+  roleMode: "supervisor",
+  principalType: "human",
+}, {
+  label: "player2",
+  seatKey: "player2",
+  roleMode: "supervisor",
+  principalType: "human",
+}];
+const standardAuthority = createOfficialStandardRoomInitialStateAuthorityV1({
+  dataset,
+  snapshot,
+  serverSeatPlan: standardSeatPlan,
+  roomId: "official-standard-reserve-deploy-alternation-room",
+});
+const standardBaseRuntime = createOfficialExecutableRuleRuntimeV1({
+  catalogue: currentCatalogueReport.slice.catalogue,
+});
+const standardRuntime = createOfficialStandardActionRuntimeV1({
+  baseRuntime: standardBaseRuntime,
+  actionRouteCatalogue: standardAuthority.state.officialActionRouteCatalogue,
+});
+const standardState = structuredClone(standardAuthority.state);
+standardState.phase = "movement";
+standardState.stage = "round_one_reserve_deployment";
+standardState.activeSideKey = standardState.firstPlayerSideKey;
+assert.equal(standardState.activeSideKey, "player1");
+standardState.phaseFirstActorByRound = {
+  ...standardState.phaseFirstActorByRound,
+  "1:movement": {
+    round: 1,
+    phase: "movement",
+    markerHolderSideKey: "player1",
+    chosenFirstActorSideKey: "player1",
+  },
+};
+standardState.officialRoundSupplyState = createOfficialRoundSupplyStateV1({
+  state: standardState,
+  gameplayDataBundle: standardState.officialGameplayDataBundle,
+  rulesRuntimeHash: standardRuntime.descriptor.runtimeHash,
+});
+const eligibleReserveUnits = (sideKey, state) => state.pieces.filter((piece) => (
+  piece.sideKey === sideKey
+    && piece.isOnField !== true
+    && piece.isDestroyed !== true
+    && Number(piece.currentModels || 0) > 0
+    && piece.activatedPhases?.movement !== true
+));
+assert.ok(eligibleReserveUnits("player1", standardState).length >= 2);
+assert.ok(eligibleReserveUnits("player2", standardState).length >= 1);
+
+const standardEngine = createStarcraftTmgAuthoritativeEngine({
+  rulesRuntime: standardRuntime,
+  allowIncompleteRuleRuntimeForDevelopment: true,
+  now: () => OCCURRED_AT,
+  cryptoOptions: {
+    keyId: "ticket-23-standard-reserve-deploy-alternation-v1",
+    privateKey,
+    publicKey,
+    hmacSecret: "ticket-23-standard-reserve-deploy-alternation-v1",
+  },
+});
+const standardInitial = standardEngine.createEnvelope({
+  roomId: "official-standard-reserve-deploy-alternation-room",
+  dataVersion: standardAuthority.dataVersion,
+  dependencies: {
+    ...structuredClone(standardAuthority.dependencies),
+    dataSnapshot: {
+      artifactId: "official-standard-reserve-deploy-alternation-data-v1",
+      content: standardState.officialGameplayDataBundle,
+    },
+  },
+  state: standardState,
+});
+const standardPlayer1 = credentials(
+  standardEngine,
+  standardInitial,
+  "player1",
+  "standard-player1-first-activation",
+);
+const standardPlayer1Legal = standardEngine.legalSpace(standardInitial, {
+  seatAuthority: standardPlayer1.authority,
+});
+const standardDeployDomain = standardPlayer1Legal.parameterDomains.find((entry) => (
+  entry.parameterKind === OFFICIAL_STANDARD_RESERVE_DEPLOY_PARAMETER_KIND
+    && entry.pieceId === "player1-jim-raynor"
+));
+assert.ok(standardDeployDomain);
+const standardDeployParameters = standardSingleModelDeployParameters(
+  standardDeployDomain,
+);
+const standardPreview = standardEngine.preview({
+  envelope: standardInitial,
+  seatAuthority: standardPlayer1.authority,
+  proposal: {
+    kind: "parameterized",
+    domainId: standardDeployDomain.domainId,
+    parameters: standardDeployParameters,
+  },
+});
+assert.equal(standardPreview.ok, true, JSON.stringify(standardPreview));
+const standardConfirmation = standardEngine.confirmPreview({
+  envelope: standardInitial,
+  preview: standardPreview.preview,
+  seatAuthority: standardPlayer1.authority,
+});
+assert.equal(standardConfirmation.ok, true, JSON.stringify(standardConfirmation));
+const standardApplied = standardEngine.apply({
+  envelope: standardInitial,
+  expectedStateRevision: standardInitial.stateRevision,
+  preview: standardPreview.preview,
+  confirmation: standardConfirmation.confirmation,
+  seatAuthority: standardPlayer1.authority,
+  controlLease: standardPlayer1.lease,
+  idempotencyKey: "standard-reserve-deploy-player1-first-v1",
+});
+assert.equal(standardApplied.ok, true, JSON.stringify(standardApplied));
+assert.equal(standardApplied.envelope.state.activeSideKey, "player2");
+assert.ok(eligibleReserveUnits("player1", standardApplied.envelope.state).length >= 1);
+assert.ok(eligibleReserveUnits("player2", standardApplied.envelope.state).length >= 1);
+
+const standardPlayer1WrongSide = credentials(
+  standardEngine,
+  standardApplied.envelope,
+  "player1",
+  "standard-player1-wrong-side",
+);
+const wrongSideLegal = standardEngine.legalSpace(standardApplied.envelope, {
+  seatAuthority: standardPlayer1WrongSide.authority,
+});
+assert.equal(wrongSideLegal.parameterDomains.some((entry) => (
+  entry.sideKey === "player1" && entry.actionType === "deploy"
+)), false);
+assert.ok(wrongSideLegal.disabledDiagnostics.some((entry) => (
+  entry.action?.sideKey === "player1"
+    && entry.action?.actionType === "deploy"
+    && entry.disabledReason === "STANDARD_DEPLOY_PHASE_UNAVAILABLE"
+)));
+const wrongSidePreview = standardEngine.preview({
+  envelope: standardApplied.envelope,
+  seatAuthority: standardPlayer1WrongSide.authority,
+  proposal: {
+    kind: "parameterized",
+    domainId: standardDeployDomain.domainId,
+    parameters: standardDeployParameters,
+  },
+});
+assert.equal(wrongSidePreview.ok, false);
+assert.equal(wrongSidePreview.reason, "LEGAL_SPACE_STALE");
+const wrongSideApply = standardEngine.apply({
+  envelope: standardApplied.envelope,
+  expectedStateRevision: standardApplied.envelope.stateRevision,
+  preview: standardPreview.preview,
+  confirmation: standardConfirmation.confirmation,
+  seatAuthority: standardPlayer1WrongSide.authority,
+  controlLease: standardPlayer1WrongSide.lease,
+  idempotencyKey: "standard-reserve-deploy-wrong-side-replay-v1",
+});
+assert.equal(wrongSideApply.ok, false);
+assert.equal(wrongSideApply.reason, "LEGAL_SPACE_STALE");
+acceptance.push("standard_deploy_transfers_authority_and_stale_same_side_preview_apply_fail_closed");
+
+const standardPlayer2 = credentials(
+  standardEngine,
+  standardApplied.envelope,
+  "player2",
+  "standard-player2-pass",
+);
+const standardPlayer2Legal = standardEngine.legalSpace(standardApplied.envelope, {
+  seatAuthority: standardPlayer2.authority,
+});
+const player2Pass = standardPlayer2Legal.finiteActions.find((entry) => (
+  entry.action.actionType === "pass"
+));
+assert.ok(player2Pass);
+const player2PassPreview = standardEngine.preview({
+  envelope: standardApplied.envelope,
+  seatAuthority: standardPlayer2.authority,
+  proposal: { kind: "finite", actionKey: player2Pass.actionKey },
+});
+assert.equal(player2PassPreview.ok, true, JSON.stringify(player2PassPreview));
+const player2PassConfirmation = standardEngine.confirmPreview({
+  envelope: standardApplied.envelope,
+  preview: player2PassPreview.preview,
+  seatAuthority: standardPlayer2.authority,
+});
+assert.equal(player2PassConfirmation.ok, true, JSON.stringify(player2PassConfirmation));
+const player2Passed = standardEngine.apply({
+  envelope: standardApplied.envelope,
+  expectedStateRevision: standardApplied.envelope.stateRevision,
+  preview: player2PassPreview.preview,
+  confirmation: player2PassConfirmation.confirmation,
+  seatAuthority: standardPlayer2.authority,
+  controlLease: standardPlayer2.lease,
+  idempotencyKey: "standard-reserve-deploy-player2-pass-v1",
+});
+assert.equal(player2Passed.ok, true, JSON.stringify(player2Passed));
+assert.equal(player2Passed.envelope.state.players.player2.passedPhases.movement, true);
+assert.equal(player2Passed.envelope.state.activeSideKey, "player1");
+const standardPlayer1Continues = credentials(
+  standardEngine,
+  player2Passed.envelope,
+  "player1",
+  "standard-player1-after-player2-pass",
+);
+const player1ContinuesLegal = standardEngine.legalSpace(player2Passed.envelope, {
+  seatAuthority: standardPlayer1Continues.authority,
+});
+assert.ok(player1ContinuesLegal.parameterDomains.some((entry) => (
+  entry.sideKey === "player1"
+    && entry.actionType === "deploy"
+    && entry.pieceId !== "player1-jim-raynor"
+)));
+acceptance.push("standard_deploy_preserves_opponent_pass_same_side_continuation_exception");
 
 function assertInstantiationRejected(parameters, pattern) {
   assert.throws(

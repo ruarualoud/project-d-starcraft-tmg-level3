@@ -197,7 +197,11 @@ function areaFrom(value, index, kind, diagnostics) {
             depth: maxY - minY,
         }
         : null;
-    const point = pointFrom(value) ?? pointFrom(footprint) ?? boundedRectangle?.point ?? null;
+    // A room-bound rules footprint is the authoritative occupied geometry.
+    // Historical x/y display fields may remain at zero after a map compiler
+    // writes the exact min/max footprint, so they must never move the rendered
+    // object away from the geometry used by collision and movement Rules.
+    const point = boundedRectangle?.point ?? pointFrom(footprint) ?? pointFrom(value) ?? null;
     const geometry = dimensionsFrom(value);
     const width = geometry.width
         ?? boundedRectangle?.width
@@ -248,10 +252,21 @@ function actionLabel(action) {
     const actionType = text(action.actionType) || "action";
     const pieceId = text(action.pieceId);
     const target = text(action.targetId ?? record(action.target)?.id);
-    return [actionType, pieceId, target].filter(Boolean).join(" · ");
+    const explicitChoice = text(action.chosenFirstActorSideKey
+        ?? action.choiceId
+        ?? action.cardName
+        ?? action.abilityName);
+    return [actionType, pieceId, target, explicitChoice]
+        .filter(Boolean).join(" · ");
 }
 function parameterSupport(domain) {
     const kind = text(domain.parameterKind);
+    if (kind === "official_selected_roster_spatial_path_v1") {
+        if (domain.actionType === "deploy") return "official_standard_deploy";
+        if (["move", "run", "disengage"].includes(domain.actionType)) {
+            return "official_standard_move";
+        }
+    }
     if (kind === "official_standard_reserve_deploy_path_v1") {
         return "official_standard_deploy";
     }
@@ -261,6 +276,12 @@ function parameterSupport(domain) {
     }
     const schema = record(domain.parameterSchema);
     const required = Array.isArray(schema?.required) ? schema.required.map(text) : [];
+    const parameterFields = Object.keys(schema || {})
+        .filter((key) => !["type", "required"].includes(key));
+    if (schema?.type === "object" && required.length === 0
+        && parameterFields.length === 0) {
+        return "parameterless";
+    }
     if (!kind && required.length === 1 && required[0] === "path") {
         return "legacy_path_only";
     }
@@ -314,6 +335,7 @@ function parameterDomainFrom(value) {
         modelProfiles,
         entrySegments,
         start: pointFrom(constraints.start),
+        maxDistanceMilliInches: positiveInteger(constraints.maxDistanceMilliInches),
         maxPathPoints,
         exactRemainingPlacementCount: safeInteger(parameterSchema.exactRemainingPlacementCount),
         raw: value,
