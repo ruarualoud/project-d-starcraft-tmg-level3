@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "id": "ticket-20-slices-193-195-frontend-lead",
+  "githubIssue": null,
+  "title": "Frontend Lead overhaul for the complete StarCraft Web/App product journey",
+  "owner": "kimi",
+  "agentProfile": "project-d-ui-lead",
+  "model": "project-d-k3",
+  "baseRef": "codex/starcraft-integration-20260921",
+  "branch": "agent/kimi/ticket-20-slices-193-195-frontend-lead",
+  "worktree": ".worktrees/ticket-20-slices-193-195-frontend-lead",
+  "allowedPaths": [
+    "apps/starcraft-tmg-expo/",
+    "docs/ticket-20-slices-193-195-frontend-lead-v1-2026-09-21.md"
+  ],
+  "verification": [
+    {
+      "name": "Expo frontend TypeScript contract",
+      "command": "corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec tsc --noEmit"
+    },
+    {
+      "name": "focused navigation and character presentation components",
+      "command": "corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec vitest run lib/level3/__tests__/battlefield-presentation-v1.test.ts lib/level3/__tests__/character-presentation-mount-v2.test.tsx"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Own a frontend-only refinement program for Ticket 20 Slices 193-195. Preserve every current capability and every backend interface. First audit the actual Expo Web/App routes, navigation, battle table, Database, army builder, calculators, review/Skill and Settings surfaces, then write and freeze a numbered sub-slice plan in docs/ticket-20-slices-193-195-frontend-lead-v1-2026-09-21.md. Implement the plan as separate scoped commits. The target is a cohesive StarCraft command-interface experience that remains practical for tabletop players: the battle table must remain the visual focus; secondary panels must be reachable without a long scrolling page; unit identity, stats, upgrades, reserve/deploy state, score projections, tokens, threat modes and action feedback must be legible; Database, builder, calculator, battle and review journeys must have clear navigation; layouts must adapt to desktop Web, narrow Web and touch-first App screens; and accessibility/reduced-motion behavior must remain intact. Reuse existing StarCraft-style art, portraits, map assets and visual tokens, improving presentation-only composition where needed. Do not change Client Domain, Rules, Authority, room, Provider, memory, source data or API contracts. Do not remove operations merely because their backend is incomplete; retain them with honest disabled/loading/error states. Run only the two named focused gates under the profile's self-verification policy, record receipts in the closure document, commit each completed sub-slice, and do not push."
+}

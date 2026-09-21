@@ -124,6 +124,7 @@ for (const probe of ignoredProbes) {
 const agentProfiles = [
   "project-d-slice-implementer",
   "project-d-ui-implementer",
+  "project-d-ui-lead",
 ];
 
 for (const profile of agentProfiles) {
@@ -240,6 +241,10 @@ for (const manifestFile of manifestFiles) {
     )
   ) {
     problems.push("verification must list named commands");
+  }
+  if (manifest.selfVerificationByImplementer !== undefined
+    && typeof manifest.selfVerificationByImplementer !== "boolean") {
+    problems.push("selfVerificationByImplementer must be boolean when present");
   }
   for (const key of Object.keys(manifest)) {
     if (forbiddenManifestKeys.has(key)) {

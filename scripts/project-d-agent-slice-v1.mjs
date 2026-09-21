@@ -220,7 +220,12 @@ if (command === "prepare") {
     `Implement slice ${runtime.id}: ${runtime.title}`,
     runtime.taskBrief,
     `Allowed paths: ${runtime.allowedPaths.join(", ")}`,
-    "Do not run verification. Inspect the diff and create one scoped local commit. Do not push.",
+    runtime.selfVerificationByImplementer === true
+      ? `Run each of these focused verification commands at most once after its relevant final code change and record the receipt: ${runtime.verification.map((entry) => `${entry.name}: ${entry.command}`).join(" | ")}`
+      : "Do not run verification; the integrating Codex runs it exactly once.",
+    runtime.selfVerificationByImplementer === true
+      ? "Inspect each sub-slice diff, create one scoped local commit per completed sub-slice, and do not push."
+      : "Inspect the diff and create one scoped local commit. Do not push.",
   ].join("\n\n");
   try {
     await runStreaming(
