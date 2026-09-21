@@ -1222,6 +1222,13 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     const snapshot = projectStarcraftTmgBattleWorkbenchV1({
       roomProjection: projection,
       legalSpace: currentLegalSpace,
+      officialProfileSource: {
+        combatProfileBundle: aggregate.envelope.state.officialCombatProfileBundle
+          || aggregate.envelope.state.officialGameplayDataBundle?.combatProfileBundle,
+        attackProfileCatalogue: aggregate.envelope.state.officialAttackProfileCatalogueV2
+          || aggregate.envelope.state.officialAttackProfileCatalogue,
+        actionRouteCatalogue: aggregate.envelope.state.officialActionRouteCatalogue,
+      },
       includeThreat: true,
       includeProbability: true,
       includeWritePalette: true,

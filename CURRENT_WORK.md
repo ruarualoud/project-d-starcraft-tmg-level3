@@ -57,6 +57,10 @@ explicit, isolated slice manifests.
    without restarting or waiting for the full match. The formal server also
    rejects a missing or source-stale current Expo Web export before any Room or
    Provider work, preventing paid evidence from silently using an old UI.
+   Formal Workbench reads now resolve official pieces through the Room-frozen
+   combat/V2 attack/action-route catalogues and filter by projected equipment;
+   the Standard-2000 Marine gate passed 18/18 with four selected attack profiles
+   and zero Provider calls.
    Training and Skill promotion require independent approval.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
    replay-driven Skill evolution loop. The same scene-scoped evidence feeds a

@@ -109,9 +109,11 @@ function distribution(attacker, target, weapon) {
 }
 
 function targetCompatible(weapon, target) {
-  const targetType = String(weapon.target || "All").toLowerCase();
-  if (!targetType || targetType === "all") return true;
-  return tags(target).has(targetType);
+  const targetTypes = String(weapon.target || "All").split(",")
+    .map((entry) => entry.trim().toLowerCase()).filter(Boolean);
+  if (targetTypes.length === 0 || targetTypes.includes("all")) return true;
+  const targetTags = tags(target);
+  return targetTypes.some((targetType) => targetTags.has(targetType));
 }
 
 export function projectStarcraftTmgProbabilityWorkbenchV1(input = {}) {

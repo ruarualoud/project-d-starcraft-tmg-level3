@@ -47,7 +47,7 @@ function tokenRows(value) {
   return [...new Set(entries.flatMap((entry) => entry.split(",").map((token) => token.trim()).filter(Boolean)))];
 }
 
-function weaponRows(piece) {
+function legacyWeaponRows(piece) {
   return rows(piece.weapons).map((weapon, index) => ({
     id: text(weapon.id) || `${text(piece.id) || "piece"}:weapon:${index + 1}`,
     name: text(weapon.name ?? weapon.weaponName) || `Weapon ${index + 1}`,
@@ -59,7 +59,85 @@ function weaponRows(piece) {
     target: weapon.target ?? null,
     keywords: weapon.keywords ?? null,
     sourceUpgradeName: text(weapon.sourceUpgradeName) || null,
+    source: "viewer_piece_inline",
+    sourceProfileHash: null,
   }));
+}
+
+function normalizedName(value) {
+  return text(value).toLowerCase();
+}
+
+function officialCombatProfile(piece, source) {
+  const recordKey = text(piece.officialUnitRecordKey);
+  const profile = source?.combatProfileBundle?.profilesByRecordKey?.[recordKey];
+  return object(profile) && text(profile.recordKey) === recordKey ? profile : null;
+}
+
+function officialMovementProfile(piece, source) {
+  const unit = rows(source?.actionRouteCatalogue?.units).find((entry) => (
+    text(entry.pieceId) === text(piece.id)
+  ));
+  return object(unit?.movementProfile) ? unit.movementProfile : null;
+}
+
+function effectLabel(effect) {
+  const atom = text(effect.effectAtomId);
+  const parameters = object(effect.parameters) ? effect.parameters : {};
+  if (atom === "attack-effect:long-range-v1"
+    && number(parameters.maximumRangeInches) !== null) {
+    return `LONG RANGE (${number(parameters.maximumRangeInches)}\")`;
+  }
+  return atom || null;
+}
+
+function surgeLabel(surge) {
+  if (!object(surge)) return null;
+  const targets = stringRows(surge.targetTags);
+  const dice = text(surge.diceExpression);
+  return targets.length && dice ? `${targets.join(", ")} (${dice})` : null;
+}
+
+function officialWeaponRows(piece, source) {
+  const recordKey = text(piece.officialUnitRecordKey);
+  const catalogue = source?.attackProfileCatalogue;
+  if (!recordKey || !object(catalogue) || !Array.isArray(catalogue.profiles)) {
+    return null;
+  }
+  const equipped = new Set(rows(piece.equipment)
+    .map((entry) => normalizedName(entry.equipmentName))
+    .filter(Boolean));
+  const sourceName = catalogue.schema === "starcraft_tmg_official_attack_profile_catalogue_v2"
+    ? "official_attack_profile_catalogue_v2"
+    : "official_attack_profile_catalogue_v1";
+  return catalogue.profiles.filter((profile) => (
+    text(profile.recordKey) === recordKey
+      && equipped.has(normalizedName(profile.weaponName))
+  )).map((profile, index) => {
+    const range = profile.range?.kind === "inches"
+      ? number(profile.range.normalRangeInches) : "E";
+    const keywords = rows(profile.effects).map(effectLabel).filter(Boolean).join(", ");
+    return {
+      id: text(profile.profileKey) || `${text(piece.id) || "piece"}:official-weapon:${index + 1}`,
+      name: text(profile.weaponName) || `Weapon ${index + 1}`,
+      phase: text(profile.phase) || null,
+      range,
+      roa: number(profile.rateOfAttack),
+      hit: number(profile.hitThreshold) === null ? null : `${number(profile.hitThreshold)}+`,
+      dmg: number(profile.damage),
+      surge: surgeLabel(profile.surge),
+      target: stringRows(profile.targetTags).join(", ") || null,
+      keywords: keywords || null,
+      sourceUpgradeName: text(profile.weaponName) || null,
+      source: sourceName,
+      sourceProfileHash: text(profile.profileHash) || null,
+    };
+  });
+}
+
+function weaponRows(piece, source) {
+  const official = officialWeaponRows(piece, source);
+  return official === null ? legacyWeaponRows(piece) : official;
 }
 
 function upgradeRows(piece) {
@@ -111,25 +189,39 @@ function locationFor(piece, models) {
   return "undeployed";
 }
 
-function unitRows(state) {
+function unitRows(state, source = {}) {
   return rows(state.pieces).map((piece, index) => {
     const id = text(piece.id) || `piece-${index + 1}`;
     const models = modelRows({ ...piece, id });
-    const hpPerModel = number(piece.stats?.hp ?? piece.hp ?? piece.hitPoints);
-    const shieldPerModel = number(piece.stats?.shield ?? piece.shield) ?? 0;
+    const combatProfile = officialCombatProfile(piece, source);
+    const movementProfile = officialMovementProfile(piece, source);
+    const officialStats = combatProfile ? {
+      hp: number(combatProfile.hitPoints),
+      shield: number(combatProfile.shield) ?? 0,
+      armor: number(combatProfile.armourThreshold) === null
+        ? null : `${number(combatProfile.armourThreshold)}+`,
+      evade: number(combatProfile.evadeThreshold) === null
+        ? null : `${number(combatProfile.evadeThreshold)}+`,
+      ...(text(movementProfile?.sourceValue)
+        ? { speed: text(movementProfile.sourceValue) } : {}),
+    } : {};
+    const stats = { ...officialStats, ...(object(piece.stats) ? clone(piece.stats) : {}) };
+    const hpPerModel = number(stats.hp ?? piece.hp ?? piece.hitPoints);
+    const shieldPerModel = number(stats.shield ?? piece.shield) ?? 0;
     const currentModels = Math.max(0, Math.trunc(number(piece.currentModels) ?? models.length));
     const damage = number(piece.damageMarker ?? piece.damage) ?? 0;
     const totalDurability = hpPerModel === null
       ? null
       : Math.max(0, (hpPerModel + shieldPerModel) * currentModels);
     const location = locationFor(piece, models);
-    const weapons = weaponRows(piece);
+    const weapons = weaponRows(piece, source);
     return {
       id,
       unitId: text(piece.unitId) || null,
-      name: text(piece.name ?? piece.unitName) || id,
+      officialUnitRecordKey: text(piece.officialUnitRecordKey) || null,
+      name: text(piece.name ?? piece.unitName ?? combatProfile?.unitName) || id,
       sideKey: text(piece.sideKey ?? piece.controllerSideKey) || "unknown_side",
-      faction: text(piece.faction) || null,
+      faction: text(piece.faction ?? combatProfile?.faction) || null,
       unitType: text(piece.unitType) || null,
       profileSize: text(piece.profileSize) || null,
       armySlotType: text(piece.armySlotType) || null,
@@ -149,8 +241,9 @@ function unitRows(state) {
       shieldPerModel,
       totalDurability,
       remainingDurability: totalDurability === null ? null : Math.max(0, totalDurability - damage),
-      stats: object(piece.stats) ? clone(piece.stats) : {},
-      tags: tokenRows(piece.tags),
+      stats,
+      tags: tokenRows(piece.tags).length
+        ? tokenRows(piece.tags) : stringRows(combatProfile?.combatTags),
       keywords: tokenRows(piece.keywords),
       statuses: stringRows(piece.statuses),
       upgrades: upgradeRows(piece),
@@ -158,6 +251,9 @@ function unitRows(state) {
       weapons,
       abilities: rows(piece.abilities).map((entry) => clone(entry)),
       models,
+      profileSource: combatProfile
+        ? "authority_state_official_profile_bundles" : "viewer_piece_inline",
+      sourceProfileHash: text(combatProfile?.sourceRecordHash) || null,
       inspectionCoverage: hpPerModel === null || weapons.length === 0 ? "partial" : "exact",
     };
   });
@@ -222,7 +318,7 @@ function snapshotCore(input) {
   const room = object(projection.room) ? projection.room : {};
   const state = object(projection.state) ? projection.state : {};
   const matchBinding = object(projection.matchBinding) ? projection.matchBinding : {};
-  const units = unitRows(state);
+  const units = unitRows(state, input.officialProfileSource);
   const deployment = {
     battlefield: units.filter((unit) => unit.location === "battlefield").map((unit) => unit.id),
     reserve: units.filter((unit) => unit.location === "reserve").map((unit) => unit.id),
@@ -266,7 +362,16 @@ function snapshotCore(input) {
     rulesQuickView: clone(input.rulesQuickView)
       || placeholder("starcraft_tmg_rules_quick_view_v1", "slice_141_not_loaded"),
     coverage: {
-      unit: coverageEntry(unitCoverage, ["viewer_projection.pieces"]),
+      unit: coverageEntry(unitCoverage, [
+        "viewer_projection.pieces",
+        ...(units.some((unit) => unit.profileSource === "authority_state_official_profile_bundles")
+          ? [
+              "authority_state.officialCombatProfileBundle",
+              "authority_state.officialAttackProfileCatalogueV2",
+              "authority_state.officialActionRouteCatalogue",
+            ]
+          : []),
+      ]),
       scenario: coverageEntry(state.mission || state.selectedMission ? "exact" : "partial", ["viewer_projection.mission", "viewer_projection.board"]),
       deployment: coverageEntry("exact", ["viewer_projection.pieces.location"]),
       score: coverageEntry("exact", ["viewer_projection.scores"]),
