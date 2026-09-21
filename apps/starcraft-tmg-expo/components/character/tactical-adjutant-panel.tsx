@@ -13,6 +13,7 @@ import {
 
 import { useI18n } from "@/lib/i18n";
 import { useLevel3ClientDomain } from "@/lib/level3/client-domain-provider";
+import { CompanionCataloguePanel } from "./companion-catalogue-panel";
 import {
   createStarcraftTmgVisiblePortraitPlayerV2,
   resolveStarcraftTmgCharacterPortraitAssetUriV2,
@@ -31,6 +32,7 @@ const MODE_INTENTS = {
 type FloatingSectionKey =
   | "comms"
   | "identity"
+  | "catalogue"
   | "memory"
   | "session"
   | "provider"
@@ -127,6 +129,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   const floatingSectionDefaults: Record<FloatingSectionKey, boolean> = {
     comms: true,
     identity: false,
+    catalogue: false,
     memory: false,
     session: !agentSessionActive,
     provider: false,
@@ -1088,6 +1091,13 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
             "identity",
             zh ? "同伴与世界书" : "Companion & world book",
             renderIdentitySection(),
+          )}
+          {renderFloatingSection(
+            "catalogue",
+            zh ? "同伴目录与对等" : "Companion catalogue & parity",
+            <View style={styles.sectionBody} testID="companion-catalogue-section">
+              <CompanionCataloguePanel zh={zh} />
+            </View>,
           )}
           {renderFloatingSection(
             "memory",
