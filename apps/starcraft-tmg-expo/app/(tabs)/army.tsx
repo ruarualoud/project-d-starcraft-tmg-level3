@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
+import { SectionDisclosure } from '@/components/ui/command-primitives';
 import { useData } from '@/lib/data-context';
 import { useI18n } from '@/lib/i18n';
 import { computeArmyState, createRosterUnit, createEmptyArmy, armyToText, textToArmy } from '@/lib/army-calc';
@@ -473,6 +474,20 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
   const [missionFilter, setMissionFilter] = useState<'official' | 'all'>('official');
   const [deployFilter, setDeployFilter] = useState<'official' | 'all'>('official');
 
+  // Progressive disclosure for the four long Command-tab lists. Collapsed
+  // sections keep an informative one-line summary; default opens follow the
+  // build order (faction card first, then tactical cards).
+  type CommandSection = 'faction' | 'tactical' | 'mission' | 'deployment';
+  const [openSections, setOpenSections] = useState<Record<CommandSection, boolean>>(() => ({
+    faction: !army.factionCardId,
+    tactical: Boolean(army.factionCardId),
+    mission: false,
+    deployment: false,
+  }));
+  const toggleSection = (key: CommandSection) => {
+    setOpenSections((current) => ({ ...current, [key]: !current[key] }));
+  };
+
   // Filter missions and deployments
   const missions = useMemo(() => {
     let list = gameCards.filter(c => c.type === 'mission' || c.type === 'community_mission');
@@ -621,7 +636,14 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
               </Pressable>
             </View>
             {/* ── 1. Faction Cards ── */}
-            <Text style={s.sectionLabel}>{t('selectFactionCard')}</Text>
+            <SectionDisclosure
+              title={t('selectFactionCard')}
+              count={factionCards.length}
+              summary={selectedFactionCard ? selectedFactionCard.name : t('selectFactionFirst')}
+              open={openSections.faction}
+              onToggle={() => toggleSection('faction')}
+              accentColor={fColor}
+            >
             {factionCards.map(fc => {
               const selected = army.factionCardId === fc.id;
               return (
@@ -660,9 +682,19 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
                 </View>
               );
             })}
+            </SectionDisclosure>
 
             {/* ── 2. Tactical Cards ── */}
-            <Text style={[s.sectionLabel, { marginTop: 16 }]}>{t('selectTacticalCards')}</Text>
+            <SectionDisclosure
+              title={t('selectTacticalCards')}
+              count={tacticalCards.length}
+              summary={army.tacticalCardIds.length > 0
+                ? `${army.tacticalCardIds.length} ${t('tacticalCards')}`
+                : (army.factionCardId ? undefined : t('selectFactionFirst'))}
+              open={openSections.tactical}
+              onToggle={() => toggleSection('tactical')}
+              accentColor="#ff9204"
+            >
             {!army.factionCardId ? (
               <Text style={s.hint}>{t('selectFactionFirst')}</Text>
             ) : (
@@ -754,9 +786,17 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
                 );
               })
             )}
+            </SectionDisclosure>
 
             {/* ── 3. Mission Card Selection ── */}
-            <Text style={[s.sectionLabel, { marginTop: 20 }]}>{t('selectMission')}</Text>
+            <SectionDisclosure
+              title={t('selectMission')}
+              count={missions.length}
+              summary={selectedMission ? selectedMission.name : t('noMissionSelected')}
+              open={openSections.mission}
+              onToggle={() => toggleSection('mission')}
+              accentColor="#f59e0b"
+            >
             {/* Filter toggle */}
             <View style={s.filterRow}>
               {(['official', 'all'] as const).map(f => (
@@ -821,9 +861,17 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
                 <Text style={s.hint}>{t('noMissionSelected')}</Text>
               )
             )}
+            </SectionDisclosure>
 
             {/* ── 4. Deployment Card Selection ── */}
-            <Text style={[s.sectionLabel, { marginTop: 20 }]}>{t('selectDeployment')}</Text>
+            <SectionDisclosure
+              title={t('selectDeployment')}
+              count={deployments.length}
+              summary={selectedDeployment ? selectedDeployment.name : t('noDeploymentSelected')}
+              open={openSections.deployment}
+              onToggle={() => toggleSection('deployment')}
+              accentColor="#8b5cf6"
+            >
             {/* Filter toggle */}
             <View style={s.filterRow}>
               {(['official', 'all'] as const).map(f => (
@@ -886,6 +934,7 @@ function ArmyEditView({ army, cards, units, allCards, gameCards, tab, onTabChang
                 <Text style={s.hint}>{t('noDeploymentSelected')}</Text>
               )
             )}
+            </SectionDisclosure>
           </View>
         ) : (
           <View style={{ padding: 12 }}>
