@@ -357,6 +357,7 @@ async function main() {
         manifestValue?.usage?.estimatedCostCnyMicros || 0) / 1_000_000,
       round: manifestValue?.state?.round ?? null,
       phase: manifestValue?.state?.phase ?? null,
+      strategyEvidence: summarizeStrategyEvidence(actions),
       updatedAt: new Date().toISOString(),
       ...other,
     }, 0o644);

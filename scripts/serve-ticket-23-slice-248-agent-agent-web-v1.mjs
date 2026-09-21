@@ -47,6 +47,20 @@ const WEB_SOURCE_FILES = Object.freeze([
   "app.config.ts", "babel.config.js", "global.css", "metro.config.js",
   "package.json", "tailwind.config.js", "tsconfig.json",
 ]);
+// Expo resolves these workspace modules into the static browser bundle. A
+// source-only timestamp check used to miss them, allowing a newer viewer
+// projection contract to be served to an older browser validator.
+const WEB_TRANSITIVE_SOURCE_PATHS = Object.freeze([
+  path.join(ROOT, "packages/client-domain"),
+  path.join(ROOT,
+    "packages/online-agent-session/portable-credential-material-v1.mjs"),
+  path.join(ROOT,
+    "packages/online-agent-session/portable-http-wire-v1.mjs"),
+  path.join(ROOT,
+    "content/official-faq-f3-movement-battlefield-deployment-binding-v1.mjs"),
+  path.join(ROOT,
+    "content/official-faq-f4-ability-tactical-keyword-binding-v1.mjs"),
+]);
 const PRODUCT_WEB_DOCUMENTS = new Map([
   ["/", "index.html"], ["/index.html", "index.html"],
   ["/army", "army.html"], ["/match", "match.html"],
@@ -183,6 +197,7 @@ async function verifyCurrentWebBundle() {
       WEB_SOURCE_ROOT, entry))),
     ...WEB_SOURCE_FILES.map((entry) => newestFileMtime(path.join(
       WEB_SOURCE_ROOT, entry))),
+    ...WEB_TRANSITIVE_SOURCE_PATHS.map(newestFileMtime),
   ]);
   const newestSourceMtimeMs = Math.max(...sourceMtimes);
   const indexMtimeMs = (await stat(indexPath)).mtimeMs;
