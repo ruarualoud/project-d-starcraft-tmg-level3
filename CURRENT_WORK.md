@@ -164,7 +164,15 @@ explicit, isolated slice manifests.
   with a legacy fallback from `constraints.sourceCardInstanceId`; the exact
   projected Omega false-no-exhaustion gate passed at 0 Provider calls / ¥0.
   Preserve that revision 9 as valid Authority/non-training prose and fork from
-  corrected revision 8 for the resource-correct action.
+  corrected revision 8 for the resource-correct action. That fork
+  (`20260921201508356`) safely stopped before Apply after three Planner
+  corrections because the local effect classifier treated correct Source of
+  Creep/Entry Edge prose—and even explicit “not a Creep token / not a Faction
+  Indicator” wording—as foreign effects. The exact persisted wording failed
+  the existing gate before repair and passed once afterward. Effect matching
+  now uses high-confidence placed-asset claims plus negation awareness; positive
+  Omega-as-indicator drift still fails. Continue again from revision 8; do not
+  restart the match.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -214,4 +222,11 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
 - Fully projected effect branch `20260921195834545` through resource-defective
   revision 9: 4 calls, 161,952 units and ¥0.221175. Effect semantics are correct;
   the false source-card non-exhaustion claim keeps its prose non-training.
+- Resource-correct convergence branch `20260921201508356`: 5 calls, 242,980
+  units and ¥0.344920. No action was applied; the local classifier rejected
+  three semantically correct Omega plans because of broad/negation-blind phrase
+  matching. The branch remains non-training failure evidence. Recent recovery
+  work totals 33 calls, 1,468,149 units and ¥2.013744; together with the original
+  invalid-suffix source this is 62 calls, 2,814,943 units and ¥3.866465. No ¥100
+  threshold was crossed.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.

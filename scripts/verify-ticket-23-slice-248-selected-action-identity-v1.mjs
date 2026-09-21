@@ -122,6 +122,27 @@ assert.ok(omegaEffectDrift.contradictions.some((entry) =>
   entry.expectedEffectKind === "omega_network"
     && entry.claimedEffectKind === "reserve_deploy_indicator"));
 
+const omegaCorrectContractLanguage =
+  inspectStarcraftTmgSelectedActionIdentityClaimsV1({
+    spatialActionSpace: actionSpace,
+    candidateId: "omega-network-domain",
+    stage: "planning",
+    value: {
+      plan: {
+        currentGoal:
+          "Use the Swarmling's Omega Network active ability to set an Omega Worm.",
+      },
+      publicPlanSummary: {
+        plan:
+          "Activate Omega Network to set a friendly Omega Worm Unit on Ground Level more than 10 inches from every enemy model.",
+        purpose:
+          "Establish a non-contesting Structure and Source of Creep plus a future reserve Entry Edge. This is not a creep token placement and not a reserve-deploy faction indicator.",
+      },
+    },
+  });
+assert.equal(omegaCorrectContractLanguage.status, "consistent");
+assert.equal(omegaCorrectContractLanguage.contradictions.length, 0);
+
 const corrected = inspectStarcraftTmgSelectedActionIdentityClaimsV1({
   spatialActionSpace: actionSpace,
   candidateId: "ventral-sacs-domain",
@@ -177,6 +198,7 @@ console.log(JSON.stringify({
   effectDriftOnlyContradictionCount: effectDriftOnly.contradictions.length,
   omegaEffectDriftStatus: omegaEffectDrift.status,
   omegaEffectDriftContradictionCount: omegaEffectDrift.contradictions.length,
+  omegaCorrectContractLanguageStatus: omegaCorrectContractLanguage.status,
   correctedStatus: corrected.status,
   rejectedAlternativeStatus: rejectedAlternativeOnly.status,
   providerCalls: 0,

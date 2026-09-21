@@ -29,7 +29,7 @@ const PROMPT_POLICY_VERSION =
 const ACTION_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_action_shape_normalization_v22";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_planner_shape_normalization_v12";
+  "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
 const NATIVE_QUERY_KINDS = Object.freeze([
   "space.inspect_relationships",
@@ -110,18 +110,41 @@ const SELECTED_ACTION_EFFECT_CONTRACTS = Object.freeze({
 });
 const SELECTED_ACTION_EFFECT_CLAIM_PATTERNS = Object.freeze({
   creep_token_place:
-    /\bcreep\s+(?:tumou?r|token|network)\b|\bon\s+creep\b|\bspeed\s+on\s+creep\b|菌毯(?:肿瘤|标记|网络)?/iu,
+    /\bcreep\s+(?:tumou?r|token)\b|菌毯(?:肿瘤|标记)/iu,
   detection_indicator:
     /\bdetection\s+(?:indicator|aura)\b|\bremove\s+hidden\b|\blose\s+hidden\b|侦测(?:指示物|光环)|失去隐藏/iu,
   force_field_place:
     /\bforce\s+field\s+(?:token|barrier)\b|力场(?:标记|屏障)/iu,
   reserve_deploy_indicator:
-    /\breserve[- ]deploy\s+(?:beacon|indicator|route)\b|\bfaction\s+indicator\b|\bdeploy\b.{0,80}\bground\s+unit\b.{0,80}\bfrom\s+reserves\b|预备队部署(?:信标|指示物|路线)|势力指示物/iu,
+    /\breserve[- ]deploy\s+(?:beacon|indicator)\b|\bfaction\s+indicator\b|预备队部署(?:信标|指示物)|势力指示物/iu,
   shade_token_place:
     /\bshade\s+token\b|\bshade\s+displacement\b|暗影(?:标记|位移)/iu,
   omega_network:
     /\bomega\s+worm\b|\bsource\s+of\s+creep\b|\bentry\s+edge\b.{0,80}\b(?:supply|ground\s+reserves?)\b|欧米伽虫道|虫道(?:底盘|入口边缘)/iu,
 });
+
+function effectClaimIsNegated(text, matchIndex) {
+  const prefix = String(text || "").slice(Math.max(0, matchIndex - 96),
+    matchIndex);
+  const clause = prefix.slice(Math.max(
+    prefix.lastIndexOf("."), prefix.lastIndexOf("!"), prefix.lastIndexOf("?"),
+    prefix.lastIndexOf(";"), prefix.lastIndexOf(":"), prefix.lastIndexOf("。"),
+    prefix.lastIndexOf("！"), prefix.lastIndexOf("？"), prefix.lastIndexOf("；"),
+    prefix.lastIndexOf("：")) + 1);
+  if (/\bnot\s+only\b/iu.test(clause)) return false;
+  return /(?:\b(?:not|never|without)\b|\bno\s+(?:longer\s+)?|\brather\s+than\b|\binstead\s+of\b)[^,，]{0,72}$/iu.test(clause)
+    || /(?:不是|并非|不要|不应|没有|无|而非)[^，]{0,36}$/u.test(clause);
+}
+
+function assertedEffectClaim(text, pattern) {
+  const flags = pattern.flags.includes("g") ? pattern.flags
+    : `${pattern.flags}g`;
+  const matcher = new RegExp(pattern.source, flags);
+  for (const match of String(text || "").matchAll(matcher)) {
+    if (!effectClaimIsNegated(text, match.index)) return true;
+  }
+  return false;
+}
 const DEFINITELY_NOT_SENT_FAILURES = new Set([
   "provider_dns_resolution_failed",
   "provider_request_contract_rejected",
@@ -361,7 +384,8 @@ function claimedActionEffects(fragments, selectedIdentity) {
   const expectedEffectKind = selectedIdentity.effectKind;
   return fragments.flatMap((entry) => Object.entries(
     SELECTED_ACTION_EFFECT_CLAIM_PATTERNS).flatMap(([claimedEffectKind, pattern]) => (
-    claimedEffectKind !== expectedEffectKind && pattern.test(entry.text) ? [{
+    claimedEffectKind !== expectedEffectKind
+      && assertedEffectClaim(entry.text, pattern) ? [{
       field: entry.field,
       text: entry.text,
       claimedEffectKind,

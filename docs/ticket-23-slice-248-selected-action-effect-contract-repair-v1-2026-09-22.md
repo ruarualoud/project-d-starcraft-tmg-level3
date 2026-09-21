@@ -47,3 +47,28 @@ Fork the formal match through revision 7 and regenerate revision 8. The new
 decision must describe a Faction Indicator more than 10 inches from Enemy
 models and the optional End-of-Round Ground Reserve deployment. It must not
 claim a Creep Tumor, Creep network or ON CREEP benefit.
+
+## Omega false-positive follow-up
+
+The resource-correct continuation branch `20260921201508356` did not apply an
+invalid action. It stopped safely at revision 8 after three Planner correction
+rounds. Forensic extraction of the three submitted public purposes showed that
+all three described the selected Omega Network contract correctly: an Omega
+Worm, Source of Creep and later Entry Edge. The final submission also explicitly
+said it was *not* a Creep token and *not* a reserve-deploy Faction Indicator.
+
+The blocker was local classification, not Provider formatting or Rules. The
+old cross-effect patterns treated generic `ON CREEP`/Creep-network consequences
+as proof of a Creep Tumor action, treated generic Ground-reserve wording as
+proof of the separate indicator action, and ignored negation. The classifier
+now blocks only high-confidence foreign placed-asset claims and ignores a match
+inside an explicit English or Chinese negation. Positive Omega-as-Faction-
+Indicator drift remains rejected. Planner local normalization advanced to v13.
+
+The exact persisted Omega wording was added to the existing focused gate. It
+failed before the repair and passed once after it; the existing positive drift
+controls remained rejected. Provider calls, reported tokens and cost for this
+repair: `0 / 0 / ¥0`. The failed live branch cost `5 calls / 242,980 units /
+¥0.344920` and remains non-training convergence evidence. Continuation may fork
+from the still-valid revision-8 Authority checkpoint without restarting the
+match.
