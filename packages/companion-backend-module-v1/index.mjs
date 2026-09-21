@@ -46,6 +46,18 @@ export {
 } from "./session-runtime-v1.mjs";
 
 export {
+  COMPANION_BACKEND_CB4_ERROR_CODES,
+  COMPANION_AUDIT_EVENT_KINDS,
+  COMPANION_RATIONALE_RECEIPT_KINDS,
+  createCompanionAuditLog,
+  verifyCompanionAuditExport,
+  createCompanionPersistenceGateway,
+  createCompanionProviderGateway,
+  createCompanionPresentationResolver,
+  createCompanionRationaleRecord,
+} from "./ports-audit-presentation-v1.mjs";
+
+export {
   createInMemoryPersistenceAdapter,
   createInMemoryProviderAdapter,
 } from "./in-memory-adapter-v1.mjs";
@@ -60,12 +72,27 @@ import {
 import { createCompanionMemoryEngine } from "./worldbook-memory-engine-v1.mjs";
 import { createCompanionSessionRuntime } from "./session-runtime-v1.mjs";
 
+import {
+  createCompanionAuditLog,
+  createCompanionPersistenceGateway,
+  createCompanionProviderGateway,
+  createCompanionPresentationResolver,
+} from "./ports-audit-presentation-v1.mjs";
+
 export function composeCompanionBackend(dependencies = {}) {
   const injected = assertCompanionBackendDependencies(dependencies);
   const registry = injected.registry || createCompanionPackageRegistry();
-  const memoryEngine = createCompanionMemoryEngine({ persistence: injected.persistence });
+  // CB-4: the composed module routes persistence through the audited strict
+  // gateway (exact pass-through, so CB-1..CB-3 behavior is preserved) and
+  // exposes the provider gateway, audit log and presentation resolver. The
+  // raw injected persistence and provider remain available unchanged.
+  const auditLog = createCompanionAuditLog({ logId: "companion-backend-compose" });
+  const persistenceGateway = createCompanionPersistenceGateway({ persistence: injected.persistence, auditLog });
+  const providerGateway = createCompanionProviderGateway({ provider: injected.provider ?? null, auditLog });
+  const presentation = createCompanionPresentationResolver({ assetCatalog: injected.assetCatalog ?? null, auditLog });
+  const memoryEngine = createCompanionMemoryEngine({ persistence: persistenceGateway });
   const sessionRuntime = createCompanionSessionRuntime({
-    persistence: injected.persistence,
+    persistence: persistenceGateway,
     memoryEngine,
   });
   return Object.freeze({
@@ -74,6 +101,10 @@ export function composeCompanionBackend(dependencies = {}) {
     registry,
     persistence: injected.persistence,
     provider: injected.provider ?? null,
+    auditLog,
+    persistenceGateway,
+    providerGateway,
+    presentation,
     memoryEngine,
     sessionRuntime,
   });
