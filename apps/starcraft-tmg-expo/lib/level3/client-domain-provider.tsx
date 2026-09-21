@@ -82,9 +82,10 @@ interface CompanionProductResult {
 }
 
 /**
- * Stateless companion product facade (Ticket 26 / Slice 266c). Every method
- * re-derives the bound room/seat inside the Client Domain at call time; the
- * seat token never reaches this interface, the UI, or any storage.
+ * Stateless companion product facade (Ticket 26 / Slice 266c, extended in
+ * Slice 266d). Every method re-derives the bound room/seat inside the Client
+ * Domain at call time; the seat token never reaches this interface, the UI,
+ * or any storage.
  */
 interface StarcraftTmgCompanionProductClient {
   schemaVersion: string;
@@ -112,6 +113,87 @@ interface StarcraftTmgCompanionProductClient {
     checkpointId?: string;
   }): Promise<CompanionProductResult>;
   close(input?: { conversationId?: string }): Promise<CompanionProductResult>;
+  // ── Slice 266d: Tavern-equivalent companion contracts ──
+  readPersona(): Promise<CompanionProductResult>;
+  putPersona(input: {
+    displayName?: string;
+    description?: string;
+    note?: string;
+  }): Promise<CompanionProductResult>;
+  rollbackPersona(input: { version?: number; note?: string }): Promise<CompanionProductResult>;
+  readWorldbook(input?: { conversationId?: string }): Promise<CompanionProductResult>;
+  registerWorldbookEntry(input: {
+    conversationId?: string;
+    entry?: unknown;
+  }): Promise<CompanionProductResult>;
+  exportWorldbook(input?: { conversationId?: string }): Promise<CompanionProductResult>;
+  importWorldbook(input: {
+    conversationId?: string;
+    entries?: ReadonlyArray<unknown>;
+  }): Promise<CompanionProductResult>;
+  readMemory(input?: { conversationId?: string }): Promise<CompanionProductResult>;
+  writeSummary(input: {
+    conversationId?: string;
+    content?: string;
+    coversTranscriptThrough?: number;
+    note?: string;
+  }): Promise<CompanionProductResult>;
+  rollbackSummary(input: {
+    conversationId?: string;
+    summaryVersion?: number;
+    note?: string;
+  }): Promise<CompanionProductResult>;
+  addEpisodicFact(input: {
+    conversationId?: string;
+    content?: string;
+    factType?: string;
+  }): Promise<CompanionProductResult>;
+  applyRelationshipEvent(input: {
+    conversationId?: string;
+    eventType?: string;
+    deltas?: ReadonlyArray<unknown>;
+    note?: string;
+  }): Promise<CompanionProductResult>;
+  listBranches(input?: { conversationId?: string }): Promise<CompanionProductResult>;
+  openBranch(input: {
+    conversationId?: string;
+    kind?: string;
+    baseTurnSequence?: number;
+    note?: string;
+  }): Promise<CompanionProductResult>;
+  rerollBranch(input: {
+    conversationId?: string;
+    branchId?: string;
+  }): Promise<CompanionProductResult>;
+  submitBranchEdit(input: {
+    conversationId?: string;
+    branchId?: string;
+    content?: string;
+  }): Promise<CompanionProductResult>;
+  acceptBranch(input: {
+    conversationId?: string;
+    branchId?: string;
+    entryId?: string;
+  }): Promise<CompanionProductResult>;
+  discardBranch(input: {
+    conversationId?: string;
+    branchId?: string;
+  }): Promise<CompanionProductResult>;
+  readAuthorsNote(input?: { conversationId?: string }): Promise<CompanionProductResult>;
+  putAuthorsNote(input: {
+    conversationId?: string;
+    note?: string;
+    depth?: number;
+    frequency?: number;
+  }): Promise<CompanionProductResult>;
+  exportConversation(input?: { conversationId?: string }): Promise<CompanionProductResult>;
+  restoreConversation(input: { export?: unknown }): Promise<CompanionProductResult>;
+  exportPackage(input?: { packageId?: string }): Promise<CompanionProductResult>;
+  importPackage(input: { contract?: unknown }): Promise<CompanionProductResult>;
+  readAuditExport(): Promise<CompanionProductResult>;
+  verifyAudit(): Promise<CompanionProductResult>;
+  buildReplayCandidate(input?: { sessionRef?: unknown }): Promise<CompanionProductResult>;
+  readPermissionSurfaces(): Promise<CompanionProductResult>;
   readonly trainingTruth: false;
 }
 

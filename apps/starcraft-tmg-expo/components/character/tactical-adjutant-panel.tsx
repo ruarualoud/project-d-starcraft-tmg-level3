@@ -83,6 +83,12 @@ interface CompanionChatCheckpoint {
   turnSequence?: number;
 }
 
+interface CompanionChatActiveBranch {
+  branchId: string;
+  kind: string;
+  candidateEntryId: string | null;
+}
+
 interface CompanionChatState {
   bootstrapped: boolean;
   busy: boolean;
@@ -100,6 +106,28 @@ interface CompanionChatState {
   selectedPackageIds: string[];
   mentionPackageIds: string[];
   draft: string;
+  // Slice 266d: Tavern-equivalent surfaces (all server results, verbatim).
+  persona: any | null;
+  worldbook: any | null;
+  memoryDetail: any | null;
+  branchesResult: any | null;
+  activeBranch: CompanionChatActiveBranch | null;
+  authorsNote: any | null;
+  auditResult: any | null;
+  permissionSurfaces: any | null;
+  transferNote: string | null;
+  lastExport: any | null;
+  personaNameDraft: string;
+  personaDescriptionDraft: string;
+  worldbookIdDraft: string;
+  worldbookKeywordDraft: string;
+  worldbookContentDraft: string;
+  summaryDraft: string;
+  episodicDraft: string;
+  authorsNoteDraft: string;
+  authorsNoteDepthDraft: string;
+  authorsNoteFrequencyDraft: string;
+  branchEditDraft: string;
 }
 
 function configuredAssetOrigin() {
@@ -166,6 +194,27 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     selectedPackageIds: [],
     mentionPackageIds: [],
     draft: "",
+    persona: null,
+    worldbook: null,
+    memoryDetail: null,
+    branchesResult: null,
+    activeBranch: null,
+    authorsNote: null,
+    auditResult: null,
+    permissionSurfaces: null,
+    transferNote: null,
+    lastExport: null,
+    personaNameDraft: "",
+    personaDescriptionDraft: "",
+    worldbookIdDraft: "",
+    worldbookKeywordDraft: "",
+    worldbookContentDraft: "",
+    summaryDraft: "",
+    episodicDraft: "",
+    authorsNoteDraft: "",
+    authorsNoteDepthDraft: "4",
+    authorsNoteFrequencyDraft: "1",
+    branchEditDraft: "",
   });
   const [sectionOverrides, setSectionOverrides] = useState<
     Partial<Record<FloatingSectionKey, boolean>>
@@ -491,6 +540,436 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     } finally {
       patchChat({ busy: false });
     }
+  }
+
+  // ── Slice 266d: Tavern-equivalent companion operations ──
+  // Every action calls the live companion product facade and renders the
+  // server result verbatim; a rejection renders its reason, never a fake
+  // success. `transferNote` is the single honesty line for import/export.
+
+  function chatConversationId() {
+    return chat.conversation?.conversationId || null;
+  }
+
+  async function runChatOp(operation: string, fn: () => Promise<any>) {
+    if (!companionProduct || chat.busy) return null;
+    patchChat({ busy: true, error: null, lastOperation: operation });
+    try {
+      return await fn();
+    } finally {
+      patchChat({ busy: false });
+    }
+  }
+
+  async function refreshPersona() {
+    await runChatOp("persona_read", async () => {
+      const result = await companionProduct!.readPersona();
+      if (result?.ok) patchChat({ persona: result });
+      else patchChat({ error: { code: String(result?.reason || "COMPANION_PERSONA_READ_FAILED") } });
+    });
+  }
+
+  async function savePersona() {
+    const displayName = chat.personaNameDraft.trim();
+    if (!displayName) return;
+    await runChatOp("persona_put", async () => {
+      const result = await companionProduct!.putPersona({
+        displayName,
+        description: chat.personaDescriptionDraft,
+      });
+      if (result?.ok) {
+        patchChat({ persona: result });
+        const refreshed = await companionProduct!.readActive();
+        if (refreshed?.ok) patchChat({ conversation: refreshed });
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_PERSONA_WRITE_FAILED") } });
+      }
+    });
+  }
+
+  async function rollbackPersona(version: number) {
+    await runChatOp("persona_rollback", async () => {
+      const result = await companionProduct!.rollbackPersona({ version });
+      if (result?.ok) patchChat({ persona: result });
+      else patchChat({ error: { code: String(result?.reason || "COMPANION_PERSONA_ROLLBACK_FAILED") } });
+    });
+  }
+
+  async function refreshWorldbook() {
+    const conversationId = chatConversationId();
+    if (!conversationId) return;
+    await runChatOp("worldbook_read", async () => {
+      const result = await companionProduct!.readWorldbook({ conversationId });
+      if (result?.ok) patchChat({ worldbook: result });
+      else patchChat({ error: { code: String(result?.reason || "COMPANION_WORLDBOOK_READ_FAILED") } });
+    });
+  }
+
+  async function registerWorldbook() {
+    const conversationId = chatConversationId();
+    const entryId = chat.worldbookIdDraft.trim();
+    const keyword = chat.worldbookKeywordDraft.trim();
+    const content = chat.worldbookContentDraft.trim();
+    if (!conversationId || !entryId || !keyword || !content) return;
+    await runChatOp("worldbook_register", async () => {
+      const result = await companionProduct!.registerWorldbookEntry({
+        conversationId,
+        entry: {
+          entryId,
+          label: entryId,
+          content,
+          triggers: [{ kind: "keyword", keywords: [keyword] }],
+          priority: 10,
+          tokenBudget: 256,
+        },
+      });
+      if (result?.ok) {
+        patchChat({
+          worldbookIdDraft: "",
+          worldbookKeywordDraft: "",
+          worldbookContentDraft: "",
+        });
+        await refreshWorldbook();
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_WORLDBOOK_REGISTER_FAILED") } });
+      }
+    });
+  }
+
+  async function refreshMemory() {
+    const conversationId = chatConversationId();
+    if (!conversationId) return;
+    await runChatOp("memory_read", async () => {
+      const result = await companionProduct!.readMemory({ conversationId });
+      if (result?.ok) patchChat({ memoryDetail: result });
+      else patchChat({ error: { code: String(result?.reason || "COMPANION_MEMORY_READ_FAILED") } });
+    });
+  }
+
+  async function saveSummary() {
+    const conversationId = chatConversationId();
+    const content = chat.summaryDraft.trim();
+    if (!conversationId || !content) return;
+    await runChatOp("memory_summary_write", async () => {
+      const result = await companionProduct!.writeSummary({ conversationId, content });
+      if (result?.ok) {
+        patchChat({ summaryDraft: "" });
+        await refreshMemory();
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_SUMMARY_WRITE_FAILED") } });
+      }
+    });
+  }
+
+  async function rollbackSummary(summaryVersion: number) {
+    const conversationId = chatConversationId();
+    if (!conversationId) return;
+    await runChatOp("memory_summary_rollback", async () => {
+      const result = await companionProduct!.rollbackSummary({ conversationId, summaryVersion });
+      if (result?.ok) await refreshMemory();
+      else patchChat({ error: { code: String(result?.reason || "COMPANION_SUMMARY_ROLLBACK_FAILED") } });
+    });
+  }
+
+  async function addEpisodic() {
+    const conversationId = chatConversationId();
+    const content = chat.episodicDraft.trim();
+    if (!conversationId || !content) return;
+    await runChatOp("memory_episodic_add", async () => {
+      const result = await companionProduct!.addEpisodicFact({ conversationId, content });
+      if (result?.ok) {
+        patchChat({ episodicDraft: "" });
+        await refreshMemory();
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_EPISODIC_WRITE_FAILED") } });
+      }
+    });
+  }
+
+  async function refreshBranches() {
+    const conversationId = chatConversationId();
+    if (!conversationId) return;
+    await runChatOp("branches_list", async () => {
+      const result = await companionProduct!.listBranches({ conversationId });
+      if (result?.ok) patchChat({ branchesResult: result });
+      else patchChat({ error: { code: String(result?.reason || "COMPANION_BRANCH_LIST_FAILED") } });
+    });
+  }
+
+  // Swipe the most recent companion reply: open a swipe branch on the last
+  // companion turn and immediately reroll once through the real provider
+  // path. The candidate is NOT accepted until the human accepts it.
+  async function swipeLastReply() {
+    const conversationId = chatConversationId();
+    const conversation = chat.conversation;
+    if (!conversationId || !conversation) return;
+    const lastCompanionTurn = [...(conversation.messages || [])].reverse()
+      .find((message: any) => message.participantId !== conversation.userParticipantId);
+    if (!lastCompanionTurn) return;
+    await runChatOp("branch_swipe", async () => {
+      const opened: any = await companionProduct!.openBranch({
+        conversationId,
+        kind: "swipe",
+        baseTurnSequence: lastCompanionTurn.turnSequence,
+      });
+      if (!opened?.ok) {
+        patchChat({ error: { code: String(opened?.reason || "COMPANION_BRANCH_OPEN_FAILED") } });
+        return;
+      }
+      const branchId = opened.branch.branchId;
+      const rerolled: any = await companionProduct!.rerollBranch({ conversationId, branchId });
+      if (!rerolled?.ok) {
+        patchChat({
+          activeBranch: { branchId, kind: "swipe", candidateEntryId: null },
+          error: { code: String(rerolled?.reason || "COMPANION_BRANCH_REROLL_FAILED") },
+        });
+        return;
+      }
+      patchChat({
+        activeBranch: { branchId, kind: "swipe", candidateEntryId: rerolled.entry.entryId },
+        error: null,
+      });
+      await refreshBranches();
+    });
+  }
+
+  // Edit-as-branch on the user's own most recent turn.
+  async function editLastUserMessage() {
+    const conversationId = chatConversationId();
+    const conversation = chat.conversation;
+    if (!conversationId || !conversation) return;
+    const lastUserTurn = [...(conversation.messages || [])].reverse()
+      .find((message: any) => message.participantId === conversation.userParticipantId);
+    if (!lastUserTurn) return;
+    patchChat({ branchEditDraft: String(lastUserTurn.content || "") });
+    await runChatOp("branch_edit", async () => {
+      const opened: any = await companionProduct!.openBranch({
+        conversationId,
+        kind: "edit",
+        baseTurnSequence: lastUserTurn.turnSequence,
+      });
+      if (!opened?.ok) {
+        patchChat({ error: { code: String(opened?.reason || "COMPANION_BRANCH_OPEN_FAILED") } });
+        return;
+      }
+      patchChat({
+        activeBranch: { branchId: opened.branch.branchId, kind: "edit", candidateEntryId: null },
+      });
+      await refreshBranches();
+    });
+  }
+
+  async function submitBranchEdit() {
+    const conversationId = chatConversationId();
+    const content = chat.branchEditDraft.trim();
+    const branch = chat.activeBranch;
+    if (!conversationId || !branch || branch.kind !== "edit" || !content) return;
+    await runChatOp("branch_edit_submit", async () => {
+      const result: any = await companionProduct!.submitBranchEdit({
+        conversationId,
+        branchId: branch.branchId,
+        content,
+      });
+      if (result?.ok) {
+        patchChat({
+          activeBranch: { ...branch, candidateEntryId: result.entry.entryId },
+          error: null,
+        });
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_BRANCH_EDIT_FAILED") } });
+      }
+    });
+  }
+
+  async function acceptActiveBranch() {
+    const conversationId = chatConversationId();
+    const branch = chat.activeBranch;
+    if (!conversationId || !branch?.candidateEntryId) return;
+    const candidateEntryId: string = branch.candidateEntryId;
+    await runChatOp("branch_accept", async () => {
+      const result: any = await companionProduct!.acceptBranch({
+        conversationId,
+        branchId: branch.branchId,
+        entryId: candidateEntryId,
+      });
+      if (result?.ok) {
+        patchChat({ conversation: result, activeBranch: null, branchEditDraft: "" });
+        await refreshBranches();
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_BRANCH_ACCEPT_FAILED") } });
+      }
+    });
+  }
+
+  async function discardActiveBranch() {
+    const conversationId = chatConversationId();
+    const branch = chat.activeBranch;
+    if (!conversationId || !branch) return;
+    await runChatOp("branch_discard", async () => {
+      const result = await companionProduct!.discardBranch({
+        conversationId,
+        branchId: branch.branchId,
+      });
+      if (result?.ok) {
+        patchChat({ activeBranch: null, branchEditDraft: "" });
+        await refreshBranches();
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_BRANCH_DISCARD_FAILED") } });
+      }
+    });
+  }
+
+  async function refreshAuthorsNote() {
+    const conversationId = chatConversationId();
+    if (!conversationId) return;
+    await runChatOp("authors_note_read", async () => {
+      const result = await companionProduct!.readAuthorsNote({ conversationId });
+      if (result?.ok) {
+        patchChat({
+          authorsNote: result,
+          ...(result.note != null ? { authorsNoteDraft: String(result.note) } : {}),
+        });
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_AUTHORS_NOTE_READ_FAILED") } });
+      }
+    });
+  }
+
+  async function saveAuthorsNote() {
+    const conversationId = chatConversationId();
+    if (!conversationId) return;
+    const depth = Math.max(0, Math.min(8, Number(chat.authorsNoteDepthDraft) || 0));
+    const frequency = Math.max(1, Math.min(16, Number(chat.authorsNoteFrequencyDraft) || 1));
+    await runChatOp("authors_note_put", async () => {
+      const result = await companionProduct!.putAuthorsNote({
+        conversationId,
+        note: chat.authorsNoteDraft,
+        depth,
+        frequency,
+      });
+      if (result?.ok) patchChat({ authorsNote: result });
+      else patchChat({ error: { code: String(result?.reason || "COMPANION_AUTHORS_NOTE_WRITE_FAILED") } });
+    });
+  }
+
+  async function exportChatConversation() {
+    const conversationId = chatConversationId();
+    if (!conversationId) return;
+    await runChatOp("conversation_export", async () => {
+      const result: any = await companionProduct!.exportConversation({ conversationId });
+      if (result?.ok) {
+        patchChat({
+          lastExport: result.export,
+          transferNote: `export ok · integrity ${String(result.exportHash).slice(0, 16)}… · credentialsIncluded: false`,
+        });
+      } else {
+        patchChat({ transferNote: `export rejected · ${String(result?.reason || "COMPANION_EXPORT_FAILED")}` });
+      }
+    });
+  }
+
+  async function restoreChatConversation() {
+    if (!chat.lastExport) return;
+    await runChatOp("conversation_restore", async () => {
+      const result = await companionProduct!.restoreConversation({ export: chat.lastExport });
+      // Restoring into the live conversation id is honestly rejected
+      // (restore never overwrites); the rejection reason is rendered as-is.
+      patchChat({
+        transferNote: result?.ok
+          ? `restore ok · ${result.conversationId}`
+          : `restore rejected (never overwrites) · ${String(result?.reason || "COMPANION_RESTORE_FAILED")}`,
+      });
+    });
+  }
+
+  async function exportChatWorldbook() {
+    const conversationId = chatConversationId();
+    if (!conversationId) return;
+    await runChatOp("worldbook_export", async () => {
+      const result: any = await companionProduct!.exportWorldbook({ conversationId });
+      patchChat({
+        transferNote: result?.ok
+          ? `worldbook export ok · entries ${result.entryCount} · integrity ${String(result.export?.integrity?.hash || "").slice(0, 12)}…`
+          : `worldbook export rejected · ${String(result?.reason || "COMPANION_WORLDBOOK_EXPORT_FAILED")}`,
+      });
+    });
+  }
+
+  async function importChatWorldbook() {
+    const conversationId = chatConversationId();
+    if (!conversationId) return;
+    await runChatOp("worldbook_import", async () => {
+      const result: any = await companionProduct!.importWorldbook({
+        conversationId,
+        entries: [{
+          entryId: `ui-import-${Date.now().toString(36)}`,
+          label: "UI import",
+          content: "Imported from the companion window: the user favors defensive play.",
+          triggers: [{ kind: "keyword", keywords: ["defensive"] }],
+          priority: 5,
+          tokenBudget: 128,
+        }],
+      });
+      if (result?.ok) {
+        patchChat({ transferNote: `worldbook import ok · registered ${result.registered?.length ?? 0}` });
+        await refreshWorldbook();
+      } else {
+        patchChat({ transferNote: `worldbook import rejected · ${String(result?.reason || "COMPANION_WORLDBOOK_IMPORT_FAILED")}` });
+      }
+    });
+  }
+
+  async function verifyChatAudit() {
+    await runChatOp("audit_verify", async () => {
+      const result: any = await companionProduct!.verifyAudit();
+      if (result?.ok) patchChat({ auditResult: { kind: "verify", ...result.verify } });
+      else patchChat({ error: { code: String(result?.reason || "COMPANION_AUDIT_VERIFY_FAILED") } });
+    });
+  }
+
+  async function exportChatAudit() {
+    await runChatOp("audit_export", async () => {
+      const result: any = await companionProduct!.readAuditExport();
+      if (result?.ok) {
+        patchChat({
+          auditResult: {
+            kind: "export",
+            entryCount: result.export?.entries?.length ?? 0,
+            headHash: result.export?.integrity?.hash || null,
+          },
+        });
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_AUDIT_EXPORT_FAILED") } });
+      }
+    });
+  }
+
+  async function buildChatReplayCandidate() {
+    const conversationId = chatConversationId();
+    await runChatOp("audit_replay_candidate", async () => {
+      const result: any = await companionProduct!.buildReplayCandidate({
+        sessionRef: { sessionId: conversationId || "none" },
+      });
+      if (result?.ok) {
+        patchChat({
+          auditResult: {
+            kind: "replay-candidate",
+            candidateId: result.candidate?.candidateId,
+            promotion: result.candidate?.promotion?.automatic || "forbidden",
+          },
+        });
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_REPLAY_CANDIDATE_FAILED") } });
+      }
+    });
+  }
+
+  async function loadPermissionSurfaces() {
+    await runChatOp("permission_surfaces", async () => {
+      const result = await companionProduct!.readPermissionSurfaces();
+      if (result?.ok) patchChat({ permissionSurfaces: result });
+      else patchChat({ error: { code: String(result?.reason || "COMPANION_PERMISSION_SURFACES_FAILED") } });
+    });
   }
 
   const chatBootstrapRef = useRef(false);
@@ -1332,6 +1811,468 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     );
   }
 
+  function renderChatPersonaCard() {
+    const persona = chat.persona;
+    return (
+      <View style={styles.gapCard} testID="companion-chat-persona">
+        <Text style={styles.gapTitle}>
+          {zh ? "用户人设(版本化 · 席位绑定)" : "User persona (versioned · seat-bound)"}
+        </Text>
+        <Text style={styles.gapCode} testID="companion-chat-persona-status">
+          {persona
+            ? (persona.configured
+              ? `${persona.displayName} · v${persona.currentVersion}/${persona.versionCount} · ${persona.boundSeat || "seat"}`
+              : (zh ? "未配置(如实显示)" : "not configured (honest)"))
+            : (zh ? "未载入" : "not loaded")}
+        </Text>
+        <TextInput
+          accessibilityLabel={zh ? "人设显示名" : "Persona display name"}
+          editable={!chat.busy && !!companionProduct}
+          maxLength={64}
+          onChangeText={(value) => patchChat({ personaNameDraft: value })}
+          placeholder={zh ? "人设显示名…" : "Persona display name…"}
+          placeholderTextColor="#73806e"
+          style={styles.input}
+          testID="companion-chat-persona-name-input"
+          value={chat.personaNameDraft}
+        />
+        <TextInput
+          accessibilityLabel={zh ? "人设描述" : "Persona description"}
+          editable={!chat.busy && !!companionProduct}
+          maxLength={2000}
+          multiline
+          onChangeText={(value) => patchChat({ personaDescriptionDraft: value })}
+          placeholder={zh ? "人设描述(注入人设层世界书,附来源)…" : "Persona description (injected as the persona-tier worldbook entry, with provenance)…"}
+          placeholderTextColor="#73806e"
+          style={styles.input}
+          testID="companion-chat-persona-description-input"
+          value={chat.personaDescriptionDraft}
+        />
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={chat.busy || !companionProduct || !chat.personaNameDraft.trim()}
+            label={zh ? "保存人设(新版本)" : "Save persona (new version)"}
+            onPress={() => void savePersona()}
+            testID="companion-chat-persona-save"
+          />
+          <ActionButton
+            disabled={chat.busy || !companionProduct}
+            label={zh ? "读取人设" : "Read persona"}
+            onPress={() => void refreshPersona()}
+            testID="companion-chat-persona-refresh"
+          />
+          <ActionButton
+            disabled={chat.busy || !companionProduct || !persona?.configured}
+            label={zh ? "回滚到 v1(追加新版本)" : "Rollback to v1 (append-only)"}
+            onPress={() => void rollbackPersona(1)}
+            testID="companion-chat-persona-rollback"
+          />
+        </View>
+      </View>
+    );
+  }
+
+  function renderChatWorldbookCard() {
+    const worldbook = chat.worldbook;
+    const entries: any[] = worldbook?.entries || [];
+    return (
+      <View style={styles.gapCard} testID="companion-chat-worldbook">
+        <Text style={styles.gapTitle}>
+          {zh ? "世界书触发(四层级 · 有界递归)" : "Worldbook triggers (four tiers · bounded recursion)"}
+        </Text>
+        <Text style={styles.gapCode}>
+          {worldbook
+            ? `${zh ? "条目" : "entries"}: ${worldbook.entryCount} · ${zh ? "递归" : "recursion"}: depth ${worldbook.recursion?.maxDepth} (bounded) · ${zh ? "插入序" : "insertion"}: ${worldbook.insertionOrder || "priority → tier → id"}`
+            : (zh ? "未载入" : "not loaded")}
+        </Text>
+        <View testID="companion-chat-worldbook-list">
+          {entries.slice(0, 8).map((entry: any) => (
+            <Text key={`${entry.scopeTier}:${entry.entryId}`} style={styles.gapCode}>
+              [{entry.scopeTier}] {entry.entryId} · p{entry.priority} · {(entry.triggers || []).join(", ")}
+            </Text>
+          ))}
+        </View>
+        <TextInput
+          accessibilityLabel={zh ? "世界书条目 id" : "Worldbook entry id"}
+          editable={!chat.busy}
+          maxLength={64}
+          onChangeText={(value) => patchChat({ worldbookIdDraft: value })}
+          placeholder={zh ? "新聊天层条目 id…" : "new chat-tier entry id…"}
+          placeholderTextColor="#73806e"
+          style={styles.input}
+          testID="companion-chat-worldbook-id-input"
+          value={chat.worldbookIdDraft}
+        />
+        <TextInput
+          accessibilityLabel={zh ? "触发关键字" : "Trigger keyword"}
+          editable={!chat.busy}
+          maxLength={64}
+          onChangeText={(value) => patchChat({ worldbookKeywordDraft: value })}
+          placeholder={zh ? "触发关键字…" : "trigger keyword…"}
+          placeholderTextColor="#73806e"
+          style={styles.input}
+          testID="companion-chat-worldbook-keyword-input"
+          value={chat.worldbookKeywordDraft}
+        />
+        <TextInput
+          accessibilityLabel={zh ? "条目内容" : "Entry content"}
+          editable={!chat.busy}
+          maxLength={2000}
+          multiline
+          onChangeText={(value) => patchChat({ worldbookContentDraft: value })}
+          placeholder={zh ? "条目内容(附来源与收据)…" : "entry content (provenance + receipts attached server-side)…"}
+          placeholderTextColor="#73806e"
+          style={styles.input}
+          testID="companion-chat-worldbook-content-input"
+          value={chat.worldbookContentDraft}
+        />
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={chat.busy || !chat.worldbookIdDraft.trim() || !chat.worldbookKeywordDraft.trim() || !chat.worldbookContentDraft.trim()}
+            label={zh ? "注册聊天层条目" : "Register chat-tier entry"}
+            onPress={() => void registerWorldbook()}
+            testID="companion-chat-worldbook-register"
+          />
+          <ActionButton
+            disabled={chat.busy}
+            label={zh ? "读取世界书" : "Read worldbook"}
+            onPress={() => void refreshWorldbook()}
+            testID="companion-chat-worldbook-refresh"
+          />
+        </View>
+      </View>
+    );
+  }
+
+  function renderChatMemoryCard() {
+    const memory = chat.memoryDetail;
+    const layers = memory?.layers || {};
+    const versions: any[] = layers.rollingSummaryVersions || [];
+    return (
+      <View style={styles.gapCard} testID="companion-chat-memory">
+        <Text style={styles.gapTitle}>
+          {zh ? "分层记忆操作(摘要可编辑 · 回滚追加式)" : "Layered memory operations (editable summary · append-only rollback)"}
+        </Text>
+        <Text style={styles.gapCode} testID="companion-chat-memory-status">
+          {memory
+            ? `${zh ? "摘要版本" : "summary versions"}: ${versions.length} · ${zh ? "情景事实" : "episodic facts"}: ${(layers.episodicFacts || []).length} · ${zh ? "关系事件" : "relationship events"}: ${layers.relationshipState?.history?.length ?? 0} · ${layers.rollingSummaryHonesty || ""}`
+            : (zh ? "未载入" : "not loaded")}
+        </Text>
+        <TextInput
+          accessibilityLabel={zh ? "摘要内容" : "Summary content"}
+          editable={!chat.busy}
+          maxLength={2000}
+          multiline
+          onChangeText={(value) => patchChat({ summaryDraft: value })}
+          placeholder={zh ? "写入新摘要版本(绝不覆盖旧版本)…" : "write a new summary version (older versions are never overwritten)…"}
+          placeholderTextColor="#73806e"
+          style={styles.input}
+          testID="companion-chat-memory-summary-input"
+          value={chat.summaryDraft}
+        />
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={chat.busy || !chat.summaryDraft.trim()}
+            label={zh ? "保存摘要" : "Save summary"}
+            onPress={() => void saveSummary()}
+            testID="companion-chat-memory-summary-save"
+          />
+          <ActionButton
+            disabled={chat.busy || !versions.length}
+            label={zh ? "回滚摘要到 v1" : "Rollback summary to v1"}
+            onPress={() => void rollbackSummary(1)}
+            testID="companion-chat-memory-summary-rollback"
+          />
+          <ActionButton
+            disabled={chat.busy}
+            label={zh ? "读取记忆" : "Read memory"}
+            onPress={() => void refreshMemory()}
+            testID="companion-chat-memory-refresh"
+          />
+        </View>
+        <TextInput
+          accessibilityLabel={zh ? "情景事实" : "Episodic fact"}
+          editable={!chat.busy}
+          maxLength={2000}
+          onChangeText={(value) => patchChat({ episodicDraft: value })}
+          placeholder={zh ? "记录一条情景事实(附来源)…" : "record an episodic fact (with provenance)…"}
+          placeholderTextColor="#73806e"
+          style={styles.input}
+          testID="companion-chat-memory-episodic-input"
+          value={chat.episodicDraft}
+        />
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={chat.busy || !chat.episodicDraft.trim()}
+            label={zh ? "添加情景事实" : "Add episodic fact"}
+            onPress={() => void addEpisodic()}
+            testID="companion-chat-memory-episodic-add"
+          />
+        </View>
+      </View>
+    );
+  }
+
+  function renderChatBranchesCard() {
+    const branch = chat.activeBranch;
+    const branches: any[] = chat.branchesResult?.branches || [];
+    return (
+      <View style={styles.gapCard} testID="companion-chat-branches">
+        <Text style={styles.gapTitle}>
+          {zh ? "重roll / 编辑分支(接受即追加新回合,绝不改写历史)" : "Swipe / edit branches (accepting appends a NEW turn; history is never rewritten)"}
+        </Text>
+        <Text style={styles.gapCode} testID="companion-chat-branches-status">
+          {branch
+            ? `${zh ? "活动分支" : "active branch"}: ${branch.branchId} · ${branch.kind} · ${branch.candidateEntryId ? (zh ? "候选已就绪" : "candidate ready") : (zh ? "无候选" : "no candidate")}`
+            : `${zh ? "已记录分支" : "recorded branches"}: ${branches.length}`}
+        </Text>
+        <View testID="companion-chat-branches-list">
+          {branches.slice(0, 6).map((entry: any) => (
+            <Text key={entry.branchId} style={styles.gapCode}>
+              {entry.branchId} · {entry.kind} · {entry.status} · base turn {entry.baseTurnSequence}
+            </Text>
+          ))}
+        </View>
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={chat.busy || !!branch}
+            label={zh ? "重roll 最近同伴回复" : "Swipe last companion reply"}
+            onPress={() => void swipeLastReply()}
+            testID="companion-chat-branch-swipe"
+          />
+          <ActionButton
+            disabled={chat.busy || !!branch}
+            label={zh ? "编辑我最近消息(分支)" : "Edit my last message (branch)"}
+            onPress={() => void editLastUserMessage()}
+            testID="companion-chat-branch-edit"
+          />
+          <ActionButton
+            disabled={chat.busy}
+            label={zh ? "读取分支" : "Read branches"}
+            onPress={() => void refreshBranches()}
+            testID="companion-chat-branch-refresh"
+          />
+        </View>
+        {branch?.kind === "edit" && !branch.candidateEntryId && (
+          <>
+            <TextInput
+              accessibilityLabel={zh ? "编辑后的消息" : "Edited message"}
+              editable={!chat.busy}
+              maxLength={4096}
+              multiline
+              onChangeText={(value) => patchChat({ branchEditDraft: value })}
+              placeholder={zh ? "编辑后的消息内容…" : "edited message content…"}
+              placeholderTextColor="#73806e"
+              style={styles.input}
+              testID="companion-chat-branch-edit-input"
+              value={chat.branchEditDraft}
+            />
+            <View style={styles.actionRow}>
+              <ActionButton
+                disabled={chat.busy || !chat.branchEditDraft.trim()}
+                label={zh ? "提交编辑候选" : "Submit edit candidate"}
+                onPress={() => void submitBranchEdit()}
+                testID="companion-chat-branch-edit-submit"
+              />
+            </View>
+          </>
+        )}
+        {branch && (
+          <View style={styles.actionRow}>
+            <ActionButton
+              disabled={chat.busy || !branch.candidateEntryId}
+              label={zh ? "接受候选(追加新回合)" : "Accept candidate (append new turn)"}
+              onPress={() => void acceptActiveBranch()}
+              testID="companion-chat-branch-accept"
+            />
+            <ActionButton
+              danger
+              disabled={chat.busy}
+              label={zh ? "放弃分支" : "Discard branch"}
+              onPress={() => void discardActiveBranch()}
+              testID="companion-chat-branch-discard"
+            />
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  function renderChatAuthorsNoteCard() {
+    const note = chat.authorsNote;
+    return (
+      <View style={styles.gapCard} testID="companion-chat-authors-note">
+        <Text style={styles.gapTitle}>
+          {zh ? "作者注释(深度/频率注入 · 版本化)" : "Author's note (depth/frequency injection · versioned)"}
+        </Text>
+        <Text style={styles.gapCode} testID="companion-chat-authors-note-status">
+          {note
+            ? (note.configured
+              ? `v${note.version} · ${note.injection}`
+              : (zh ? "未配置(如实显示)" : "not configured (honest)"))
+            : (zh ? "未载入" : "not loaded")}
+        </Text>
+        <TextInput
+          accessibilityLabel={zh ? "作者注释" : "Author's note"}
+          editable={!chat.busy}
+          maxLength={2000}
+          multiline
+          onChangeText={(value) => patchChat({ authorsNoteDraft: value })}
+          placeholder={zh ? "作者注释内容(以系统消息注入,位置由深度决定)…" : "author's note content (injected as a system message; position set by depth)…"}
+          placeholderTextColor="#73806e"
+          style={styles.input}
+          testID="companion-chat-authors-note-input"
+          value={chat.authorsNoteDraft}
+        />
+        <View style={styles.choiceRow}>
+          <TextInput
+            accessibilityLabel={zh ? "注入深度" : "Injection depth"}
+            editable={!chat.busy}
+            keyboardType="number-pad"
+            maxLength={1}
+            onChangeText={(value) => patchChat({ authorsNoteDepthDraft: value })}
+            placeholder="4"
+            placeholderTextColor="#73806e"
+            style={[styles.input, styles.chatSmallInput]}
+            testID="companion-chat-authors-note-depth-input"
+            value={chat.authorsNoteDepthDraft}
+          />
+          <TextInput
+            accessibilityLabel={zh ? "注入频率" : "Injection frequency"}
+            editable={!chat.busy}
+            keyboardType="number-pad"
+            maxLength={2}
+            onChangeText={(value) => patchChat({ authorsNoteFrequencyDraft: value })}
+            placeholder="1"
+            placeholderTextColor="#73806e"
+            style={[styles.input, styles.chatSmallInput]}
+            testID="companion-chat-authors-note-frequency-input"
+            value={chat.authorsNoteFrequencyDraft}
+          />
+        </View>
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={chat.busy}
+            label={zh ? "保存作者注释" : "Save author's note"}
+            onPress={() => void saveAuthorsNote()}
+            testID="companion-chat-authors-note-save"
+          />
+          <ActionButton
+            disabled={chat.busy}
+            label={zh ? "读取作者注释" : "Read author's note"}
+            onPress={() => void refreshAuthorsNote()}
+            testID="companion-chat-authors-note-refresh"
+          />
+        </View>
+      </View>
+    );
+  }
+
+  function renderChatImportExportCard() {
+    return (
+      <View style={styles.gapCard} testID="companion-chat-import-export">
+        <Text style={styles.gapTitle}>
+          {zh ? "导入 / 导出 / 恢复(完整性哈希 · 绝无凭据)" : "Import / export / restore (integrity-hashed · never any credentials)"}
+        </Text>
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={chat.busy}
+            label={zh ? "导出会话" : "Export conversation"}
+            onPress={() => void exportChatConversation()}
+            testID="companion-chat-export"
+          />
+          <ActionButton
+            disabled={chat.busy || !chat.lastExport}
+            label={zh ? "恢复(同席位 · 绝不覆盖)" : "Restore (same seat · never overwrites)"}
+            onPress={() => void restoreChatConversation()}
+            testID="companion-chat-restore"
+          />
+          <ActionButton
+            disabled={chat.busy}
+            label={zh ? "导出世界书" : "Export worldbook"}
+            onPress={() => void exportChatWorldbook()}
+            testID="companion-chat-worldbook-export"
+          />
+          <ActionButton
+            disabled={chat.busy}
+            label={zh ? "导入世界书" : "Import worldbook"}
+            onPress={() => void importChatWorldbook()}
+            testID="companion-chat-worldbook-import"
+          />
+        </View>
+        <Text style={styles.gapCode} testID="companion-chat-transfer-note">
+          {chat.transferNote || (zh ? "尚未执行导入/导出。" : "no import/export run yet.")}
+        </Text>
+      </View>
+    );
+  }
+
+  function renderChatAuditCard() {
+    const audit = chat.auditResult;
+    return (
+      <View style={styles.gapCard} testID="companion-chat-audit">
+        <Text style={styles.gapTitle}>
+          {zh ? "审计 / 回放(哈希链 · 回放候选绝不自动晋升)" : "Audit / replay (hash chain · replay candidates never auto-promote)"}
+        </Text>
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={chat.busy || !companionProduct}
+            label={zh ? "校验审计链" : "Verify audit chain"}
+            onPress={() => void verifyChatAudit()}
+            testID="companion-chat-audit-verify"
+          />
+          <ActionButton
+            disabled={chat.busy || !companionProduct}
+            label={zh ? "导出审计日志" : "Export audit log"}
+            onPress={() => void exportChatAudit()}
+            testID="companion-chat-audit-export"
+          />
+          <ActionButton
+            disabled={chat.busy || !companionProduct}
+            label={zh ? "构建回放候选" : "Build replay candidate"}
+            onPress={() => void buildChatReplayCandidate()}
+            testID="companion-chat-audit-replay"
+          />
+        </View>
+        <Text style={styles.gapCode} testID="companion-chat-audit-result">
+          {audit
+            ? `${audit.kind} · ${audit.ok === false ? "FAILED" : "ok"} · entries ${audit.entryCount ?? "—"} · head ${String(audit.headHash || audit.candidateId || "").slice(0, 16)}…${audit.promotion ? ` · automatic promotion: ${audit.promotion}` : ""}`
+            : (zh ? "尚未执行审计操作。" : "no audit operation run yet.")}
+        </Text>
+      </View>
+    );
+  }
+
+  function renderChatPermissionsCard() {
+    const surfaces: any[] = chat.permissionSurfaces?.surfaces || [];
+    return (
+      <View style={styles.gapCard} testID="companion-chat-permissions">
+        <Text style={styles.gapTitle}>
+          {zh ? "权限面(实时策略判定 · 对手私有永远拒绝)" : "Permission surfaces (live policy decisions · opponent-private always denied)"}
+        </Text>
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={chat.busy || !companionProduct}
+            label={zh ? "读取四类权限面" : "Read the four surfaces"}
+            onPress={() => void loadPermissionSurfaces()}
+            testID="companion-chat-permissions-load"
+          />
+        </View>
+        <View testID="companion-chat-permissions-list">
+          {surfaces.map((surface: any) => {
+            const opponent = (surface.decisions || [])
+              .find((decision: any) => decision.resourceId === "opponent-private-plan");
+            return (
+              <Text key={surface.surfaceId} style={styles.gapCode} testID={`companion-chat-permission-${surface.surfaceId}`}>
+                {surface.surfaceId} · canSpeak: {String(surface.canSpeak)} · opponent-private: {opponent?.ok ? "ALLOWED" : "denied"} · Preview/Confirm/Apply: {String(surface.previewConfirmApplyAuthority)}
+              </Text>
+            );
+          })}
+        </View>
+      </View>
+    );
+  }
+
   function chatParticipantLabel(conversation: any, participantId: string) {
     const participant = (conversation?.participants || []).find(
       (entry: any) => entry.participantId === participantId,
@@ -1574,6 +2515,11 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         )}
 
         {renderChatMemorySummary(conversation)}
+        {renderChatWorldbookCard()}
+        {renderChatMemoryCard()}
+        {renderChatBranchesCard()}
+        {renderChatAuthorsNoteCard()}
+        {renderChatImportExportCard()}
       </>
     );
   }
@@ -1583,8 +2529,8 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
       <View style={styles.sectionBody} testID="companion-chat-section">
         <Text style={styles.sectionHint}>
           {zh
-            ? "同伴群聊（Slice 266c 已接通）：服务端绑定的持久会话，按席位校验。同伴永不持久化席位令牌、永不读取对手私有计划/记忆、永不请求或存储隐藏思维链、绝不伪造模型回复；无 Preview/Confirm/Apply 权限。"
-            : "Companion group chat (connected in Slice 266c): a server-bound persisted conversation, verified per seat. Companions never persist seat tokens, never read opponent-private plans/memory, never request or store hidden chain-of-thought, and never fabricate a model reply; no Preview/Confirm/Apply authority."}
+            ? "同伴群聊（Slice 266c 接通 · Slice 266d 补全 Tavern 对等合同）：服务端绑定的持久会话，按席位校验；人设/世界书/分层记忆/分支/作者注释/导入导出/审计/权限面全部走真实服务端合同。同伴永不持久化席位令牌、永不读取对手私有计划/记忆、永不请求或存储隐藏思维链、绝不伪造模型回复；无 Preview/Confirm/Apply 权限。"
+            : "Companion group chat (connected in Slice 266c · Tavern-equivalent contracts completed in Slice 266d): a server-bound persisted conversation, verified per seat; persona, worldbook, layered memory, branches, author's note, import/export, audit and permission surfaces all run through real server contracts. Companions never persist seat tokens, never read opponent-private plans/memory, never request or store hidden chain-of-thought, and never fabricate a model reply; no Preview/Confirm/Apply authority."}
         </Text>
         {!companionProduct && (
           <Text accessibilityRole="alert" style={styles.errorText}>
@@ -1594,6 +2540,9 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           </Text>
         )}
         {renderChatProviderStatus()}
+        {renderChatPersonaCard()}
+        {renderChatAuditCard()}
+        {renderChatPermissionsCard()}
         {chat.conversation ? renderChatConversation(chat.conversation) : (
           <>
             <Text style={styles.fieldLabel}>
@@ -2023,6 +2972,7 @@ const styles = StyleSheet.create({
   confirmTitle: { color: "#f6dda0", fontSize: 12, fontWeight: "900" },
   confirmText: { color: "#d8ceb0", fontSize: 11 },
   input: { minHeight: 72, maxHeight: 150, borderWidth: 1, borderColor: "#52624a", borderRadius: 10, padding: 10, color: "#eef4df", backgroundColor: "#0b120d", textAlignVertical: "top", fontSize: 12, lineHeight: 18 },
+  chatSmallInput: { minHeight: 40, maxHeight: 48, width: 64, flexGrow: 0, textAlignVertical: "center" },
   actionRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   actionButton: { minHeight: 38, justifyContent: "center", alignItems: "center", borderRadius: 8, paddingHorizontal: 14, backgroundColor: "#40563b", borderWidth: 1, borderColor: "#70805e" },
   dangerButton: { backgroundColor: "#4b2925", borderColor: "#8a5049" },
