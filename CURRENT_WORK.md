@@ -22,77 +22,35 @@ explicit, isolated slice manifests.
 
 ## Product order after environment repair
 
-1. Ticket 23 / Slice 248: alternating activation, phase completion and certain
-   Charge shortfall repairs passed their focused gates. The fresh Standard-2000
-   room is now durable at revision 66 in round 2 Movement. Its Planner has
-   recognized the round-2 Supply increase and exposed reserve Deploy as a later
-   activation. A three-round Swarmling formation correction proved two recovery
-   bugs: “inside the fire envelope rather than outside it” was falsely rejected,
-   and Hosted Bot dropped the Decision Port's High severity. Both are repaired;
-   action normalization v14 scans already-paid candidates and revalidates the
-   newest locally valid result before any new Provider call. The focused gate
-   passed, then action 57 reused the correct paid candidate, applied all 18 model
-   bases and verified replay with zero call/token/cost increment. Revisions
-   59–63 then proved round-2 reserve deployment, exact Creep Tumor placement and
-   exact reserve-deploy-beacon placement. The revision-63 Authority action was
-   valid Ventral Sacs, but its model-authored public explanation incorrectly
-   described Creep Spread. Prompt policy v12 plus Planner v6 / Action v15 now
-   bind the selected candidate's action/ability/effect/source identity and
-   reject a central execution claim for another ability while allowing rejected
-   alternatives to be discussed. The bug-specific gate passed once at 0
-   Provider calls / ¥0. Revision 64 then legally applied Vile's Glial
-   Reconstitution and paid 1 BM, but its old public prose incorrectly called
-   the action zero-Biomass. Prompt v13 plus Planner v7 / Action v16 now expose
-   the exact selected resource-cost contract in both stages and reject
-   zero/free/unspent claims for a positive BM/CP/PE effective cost without
-   conflating Supply. Its concrete focused gate passed once at 0 Provider calls
-   / ¥0. Revision 66 then legally resolved Roachling Infestation: Authority paid
-   2 BM and summoned three models, while old Agent prose again claimed zero BM.
-   The root cause was cross-family contract drift: several paying Adapters used
-   exact effective costs during Apply without publishing those same costs in
-   LegalSpace. Unit-lifecycle, characteristic/status, Reaction, selected-roster
-   and Zerg-unique routes now publish the Rules-owned per-choice printed,
-   reduction and effective cost that Apply consumes; Planner and Action share a
-   normalized reader with legacy flat-field compatibility. The exact durable
-   r66 reproducer failed before the repair and passed once afterward with zero
-   Provider calls / ¥0. The room is now frozen at revision 66 as the immutable
-   low-strategy “before” baseline; do not continue it. Preserve the old
-   r63/r64/r66 prose as non-training defect evidence. **Baseline frozen;
-   optimized comparison waits for Slices 262–263.**
+1. Ticket 23 / Slice 248: alternating activation, phase completion, Charge
+   recovery, 18-model formation recovery and round-2 reserve entry are repaired.
+   LegalSpace, Planner and Action now share the Rules-owned selected
+   action/ability/effect/source and printed/reduced/effective resource-cost
+   contracts across all paying action families. The exact r63/r64/r66 defect
+   reproducers passed at 0 Provider calls / ¥0. Freeze revision 66 as the
+   immutable low-strategy baseline; preserve its old prose as non-training
+   evidence and never resume it. Optimized comparison waits for Slices 262–263.
 2. Ticket 23 / Slice 248: complete player-seat companion permissions, layered
-   memory/role runtime and real floating-Web acceptance. The first Kimi-owned,
-   presentation-only floating companion sub-slice is running through
-   `coordination/slices/ticket-23-slice-248-floating-companion-ui.slice.json`;
-   Codex retains permission, memory, room and final browser acceptance work.
-   After that bounded slice, Kimi becomes the pure-frontend Lead: it owns the
-   interface audit, Web/App responsive design and self-partitioned focused UI
-   slices, while backend interfaces and Rules authority stay frozen.
+   memory/role runtime and real floating-Web acceptance. Kimi owns isolated
+   presentation work; Codex retains permission, memory and room contracts.
 3. Ticket 23 / Slice 248: attack probability, fire-zone exchange and the
    prediction → outcome calibration → replanning loop are implemented. The
    concrete r66 gate passed with 216 exact-mechanics samples, four comparison
    alternatives and one typed `hit` calibration; 0 Provider calls / ¥0.
    **Complete.**
-4. Ticket 25 / Slices 262–263: close free legal formation strategy, the natural
-   canary and remaining A-A/review evidence. K3 concurrently owns the isolated
-   presentation-only `ticket-25-slice-262-threat-visualization-ui` worktree:
-   selected stationary/move-fire/Charge threat, friendly/enemy aggregate
-   overlays, current predicted-interaction receipts, responsive Web/App UI and
-   real-browser screenshots. Codex retains all Rules/projection interfaces,
-   integration review and the natural-match acceptance.
-   The optimized A-A evidence path now persists the public plan, assessment,
-   plan revision and compact intent/query references per accepted action, so
-   prediction calibration and replanning can be compared without storing
-   hidden chain-of-thought. The frozen r66 baseline remains untouched.
+4. Ticket 25 / Slices 262–263: close free-formation strategy and A-A/review
+   evidence. K3 owns the isolated threat/predicted-interaction Web/App UI and
+   self-verification. Codex owns Rules/projections, integration and natural-match
+   acceptance. The optimized path now persists public plan, assessment, plan
+   revision and compact intent/query references without hidden chain-of-thought.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
    replay-driven Skill evolution loop.
 6. Ticket 26 / Slices 264–266: build and compare two complete companion packs.
 7. Ticket 14 / Slice 143: run the deferred APK acceptance when a real Android
    device is available.
 
-Tickets 19–22 and the original Ticket 20 Slices 193–195 have existing focused
-closure evidence. They are not reopened merely because later live-match work
-found new Ticket 23/25 gaps; final synthesis must eventually index the new
-evidence without rerunning already-passed unrelated gates.
+Tickets 19–22 and Ticket 20 Slices 193–195 retain their focused closure; final
+synthesis indexes later evidence without rerunning unrelated passed gates.
 
 ## Active invariants
 
@@ -116,12 +74,7 @@ evidence without rerunning already-passed unrelated gates.
 
 ## Current accounting
 
-- DeepSeek product ledger: the fresh Slice-248 A-A room is durable at revision
-  66 with 66 accepted actions and 76 screenshots. Its accepted-action progress
-  ledger reports 246 Provider calls, 14,864,740 total units and estimated cost
-  ¥20.117467. Selected-action identity, selected resource claims and the r66
-  cross-family resource-contract gates each used 0 Provider calls and ¥0; no
-  ¥100 notification threshold has been crossed.
-- Kimi environment ledger: 3 CLI runs (2 connectivity probes, 1 ENV-6
-  implementation session), plus the completed Ticket-20 frontend Lead run. The
-  CLI did not report token or currency fields, so no Kimi cost is inferred.
+- DeepSeek baseline r66: 66 actions, 76 screenshots, 246 Provider calls,
+  14,864,740 total units, ¥20.117467; focused repairs cost ¥0 and no ¥100
+  threshold was crossed.
+- Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.
