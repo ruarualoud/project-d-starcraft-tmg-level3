@@ -190,8 +190,41 @@ locally revalidated the final already-paid corrected response, applied the
 remained 8,453,858 and estimated cost remained CNY 11.497316; no duplicate
 Provider request or charge occurred.
 
+## Selected-action identity follow-up
+
+The same room advanced through round-2 reserve deployment and two distinct
+battlefield-asset card actions. Revision 62 used Creep Spread, exhausted
+`player2-tactical-2`, and placed a Creep Tumor. Revision 63 legally used Ventral
+Sacs, exhausted `player2-tactical-4`, and placed a reserve-deploy beacon. Room
+Authority and Replay were correct, but the revision-63 model-authored public
+summary still described Creep Spread and a second Creep Tumor. The defect was
+therefore evidence semantics, not duplicate Rules execution.
+
+The repair makes the selected identity a Host-owned structure containing the
+candidate, action type, piece, ability, effect and source instance. Both Planner
+and Action validators now require central plan/action prose to acknowledge the
+selected ability and reject positive execution wording for another current
+ability. Explicit rejection or comparison of another ability remains legal.
+Prompt policy advanced to v12, Planner local normalization to v6 and Action
+local normalization to v15.
+
+The concrete Ventral-Sacs/Creep-Spread reproducer failed before implementation
+because the identity inspector did not exist, then passed once after the repair:
+
+```sh
+node scripts/verify-ticket-23-slice-248-selected-action-identity-v1.mjs
+```
+
+It reports three contradictions for the drifted sample, accepts the corrected
+Ventral Sacs explanation and accepts an explicit Creep Spread rejection. It
+uses zero Provider calls and costs ¥0. The old revision-63 explanation remains
+immutable defect evidence and is not training truth; the valid Authority state
+continues from revision 63.
+
 ## Next gate
 
-Resume the same fresh paid Standard-2000 A-A match from revision 34 and continue
-to terminal before rebuilding screenshots, NDJSON, JSON and PDF evidence from
-this room only.
+Resume the same fresh paid Standard-2000 A-A match from revision 63. The open
+Player-2 decision has a current Glial Reconstitution candidate whose stored
+plan text is consistent with the Rules domain; Action normalization v15 will
+revalidate any completed paid response before new egress. Continue to terminal
+before rebuilding screenshots, NDJSON, JSON and PDF evidence from this room.

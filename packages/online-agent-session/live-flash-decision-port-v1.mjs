@@ -25,11 +25,11 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v11";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v12";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v14";
+  "starcraft_tmg_live_action_shape_normalization_v15";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_planner_shape_normalization_v5";
+  "starcraft_tmg_live_planner_shape_normalization_v6";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
 const NATIVE_QUERY_KINDS = Object.freeze([
   "space.inspect_relationships",
@@ -262,6 +262,135 @@ function actionIndex(actionSpace) {
   return freeze([...finite, ...domains]);
 }
 
+function selectedActionIdentity(actionSpace, candidateId) {
+  const selected = actionIndex(actionSpace).find((entry) =>
+    entry.id === String(candidateId || ""));
+  if (!selected) return null;
+  const action = sourceActionDomain(selected.action);
+  return freeze({
+    candidateId: selected.id,
+    kind: selected.kind,
+    actionType: String(action?.actionType || "unknown"),
+    pieceId: action?.pieceId || null,
+    abilityName: action?.abilityName || null,
+    effectKind: action?.effectKind || null,
+    sourceInstanceId: action?.sourceInstanceId || null,
+    rulesAuthority: true,
+    trainingTruth: false,
+  });
+}
+
+function parsedPublicPlanSummary(value) {
+  if (object(value)) return value;
+  if (typeof value !== "string" || !value.trim()) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return object(parsed) ? parsed : { summary: value };
+  } catch {
+    return { summary: value };
+  }
+}
+
+function selectedActionIdentityClaimFragments(value, stage) {
+  const input = object(value) ? value : {};
+  const intent = object(input.intent) ? input.intent : {};
+  const assessment = object(input.assessment) ? input.assessment : {};
+  const plan = object(input.planRevision) ? input.planRevision
+    : object(input.plan) ? input.plan : {};
+  const summary = stage === "planning"
+    ? parsedPublicPlanSummary(input.publicPlanSummary)
+    : object(input.publicDecisionSummary) ? input.publicDecisionSummary : {};
+  const selection = object(input.assetPlacementSelection)
+    ? input.assetPlacementSelection : {};
+  const fields = stage === "planning" ? [
+    ["assessment.currentGoal", assessment.currentGoal],
+    ["plan.currentGoal", plan.currentGoal],
+    ["publicPlanSummary.plan", summary.plan],
+    ["publicPlanSummary.currentGoal", summary.currentGoal],
+    ["publicPlanSummary.purpose", summary.purpose],
+    ["publicPlanSummary.summary", summary.summary],
+    ["assetPlacementSearchRequest.tacticalPurpose",
+      input.assetPlacementSearchRequest?.tacticalPurpose],
+  ] : [
+    ["selectedReason", input.selectedReason],
+    ["intent.currentGoal", intent.currentGoal],
+    ["intent.purpose", intent.purpose],
+    ["intent.expectedOwnOutcome", intent.expectedOwnOutcome],
+    ["publicDecisionSummary.plan", summary.plan],
+    ["publicDecisionSummary.purpose", summary.purpose],
+    ["assetPlacementSelection.publicReason", selection.publicReason],
+  ];
+  return fields.map(([field, fieldValue]) => ({
+    field,
+    text: String(fieldValue || "").trim(),
+  })).filter((entry) => entry.text);
+}
+
+function claimedAbilityAfterActionVerb(fragment, abilityNames) {
+  const normalized = String(fragment || "").normalize("NFC").toLowerCase();
+  const actionVerb = /\b(?:use|activate|select|perform|resolve|trigger|execute|choose|place)\b|(?:使用|选择|发动|激活|执行|施放|放置)/giu;
+  for (const match of normalized.matchAll(actionVerb)) {
+    const prefix = normalized.slice(Math.max(0, match.index - 28), match.index);
+    if (/(?:do\s+not|don't|never|avoid|reject|instead\s+of)\s*$/iu.test(prefix)
+      || /(?:不(?:要|再)?|勿|避免|拒绝|而非|不是)\s*$/u.test(prefix)) {
+      continue;
+    }
+    const suffix = normalized.slice(match.index + match[0].length,
+      match.index + match[0].length + 180);
+    const matches = abilityNames.map((abilityName) => ({
+      abilityName,
+      index: suffix.indexOf(abilityName.normalize("NFC").toLowerCase()),
+    })).filter((entry) => entry.index >= 0)
+      .sort((left, right) => left.index - right.index
+        || left.abilityName.localeCompare(right.abilityName));
+    if (matches.length > 0) return matches[0].abilityName;
+  }
+  return null;
+}
+
+export function inspectStarcraftTmgSelectedActionIdentityClaimsV1(input = {}) {
+  const candidateId = String(input.candidateId || "");
+  const selectedIdentity = selectedActionIdentity(
+    input.spatialActionSpace || {}, candidateId);
+  if (!selectedIdentity) {
+    return freeze({ status: "missing_candidate", selectedIdentity: null,
+      selectedIdentityMentioned: false, checkedClaims: [], contradictions: [] });
+  }
+  const fragments = selectedActionIdentityClaimFragments(input.value,
+    input.stage === "planning" ? "planning" : "action");
+  const abilityNames = [...new Set((input.spatialActionSpace?.parameterDomains || [])
+    .filter((entry) => entry.actionType === selectedIdentity.actionType
+      && String(entry.abilityName || "").trim())
+    .map((entry) => String(entry.abilityName).trim()))];
+  if (!selectedIdentity.abilityName || abilityNames.length < 1) {
+    return freeze({ status: "not_applicable", selectedIdentity,
+      selectedIdentityMentioned: true, checkedClaims: fragments,
+      contradictions: [] });
+  }
+  const selectedName = selectedIdentity.abilityName.normalize("NFC").toLowerCase();
+  const selectedIdentityMentioned = fragments.some((entry) =>
+    entry.text.normalize("NFC").toLowerCase().includes(selectedName));
+  const contradictions = fragments.flatMap((entry) => {
+    const claimedAbilityName = claimedAbilityAfterActionVerb(
+      entry.text, abilityNames);
+    return claimedAbilityName
+      && claimedAbilityName !== selectedIdentity.abilityName ? [{
+        field: entry.field,
+        text: entry.text,
+        claimedAbilityName,
+        expectedAbilityName: selectedIdentity.abilityName,
+      }] : [];
+  });
+  return freeze({
+    status: contradictions.length > 0 ? "contradicted"
+      : selectedIdentityMentioned ? "consistent" : "unbound",
+    selectedIdentity,
+    selectedIdentityMentioned,
+    checkedClaims: fragments,
+    contradictions,
+  });
+}
+
 function sourceActionDomain(value) {
   return object(value?.sourceDomain) ? value.sourceDomain : value;
 }
@@ -391,6 +520,8 @@ function candidateEvidenceRequirements(input) {
       candidateId: entry.id,
       kind: entry.kind,
       actionType,
+      selectedActionIdentity: selectedActionIdentity(
+        input.spatialActionSpace, entry.id),
       exactBeforeApply,
       usefulPlanningQueries: [...new Set(usefulQueries)],
       phaseControlSuccessor: PHASE_CONTROL_ACTIONS.has(actionType)
@@ -581,6 +712,7 @@ function selectedActionSpace(actionSpace, candidateId) {
       entry.candidateId === candidateId).map(clone),
     parameterDomains: (actionSpace?.parameterDomains || []).filter((entry) =>
       entry.domainId === candidateId).map(clone),
+    selectedActionIdentity: selectedActionIdentity(actionSpace, candidateId),
     selectedByPlanner: true,
     exactRulesInstantiationRequired: true,
     trainingTruth: false,
@@ -813,6 +945,21 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
       pass.id);
   }
   const selected = actions.find((entry) => entry.id === recommendedCandidateId);
+  const identityClaims = inspectStarcraftTmgSelectedActionIdentityClaimsV1({
+    spatialActionSpace: input.spatialActionSpace,
+    candidateId: recommendedCandidateId,
+    stage: "planning",
+    value: raw,
+  });
+  if (identityClaims.status === "contradicted") {
+    const first = identityClaims.contradictions[0];
+    throw correctionError("PLANNER_SELECTED_ACTION_IDENTITY_CONTRADICTED",
+      `${first.field}:${first.claimedAbilityName}->${first.expectedAbilityName}`);
+  }
+  if (identityClaims.status === "unbound") {
+    throw correctionError("PLANNER_SELECTED_ACTION_IDENTITY_REQUIRED",
+      identityClaims.selectedIdentity.abilityName);
+  }
   const selectedCharge = inspectStarcraftTmgChargeReachabilityV1({
     spatialActionSpace: input.spatialActionSpace,
     candidateId: recommendedCandidateId,
@@ -879,6 +1026,7 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
       ? clone(raw.assetPlacementSearchRequest) : null,
     requiredEvidence: candidateEvidenceRequirements(input).find((entry) =>
       entry.candidateId === recommendedCandidateId) || null,
+    selectedActionIdentity: identityClaims.selectedIdentity,
     lifecycleAssessment,
     publicPlanSummary,
     hiddenChainOfThoughtStored: false,
@@ -893,6 +1041,21 @@ function validateActionOutput(raw, input, planner) {
   if (selected.id !== planner.recommendedCandidateId) {
     throw correctionError("ACTION_DEPARTED_FROM_PLANNER",
       `${selected.id}->${planner.recommendedCandidateId}`);
+  }
+  const identityClaims = inspectStarcraftTmgSelectedActionIdentityClaimsV1({
+    spatialActionSpace: input.spatialActionSpace,
+    candidateId: selected.id,
+    stage: "action",
+    value: raw,
+  });
+  if (identityClaims.status === "contradicted") {
+    const first = identityClaims.contradictions[0];
+    throw correctionError("ACTION_SELECTED_ACTION_IDENTITY_CONTRADICTED",
+      `${first.field}:${first.claimedAbilityName}->${first.expectedAbilityName}`);
+  }
+  if (identityClaims.status === "unbound") {
+    throw correctionError("ACTION_SELECTED_ACTION_IDENTITY_REQUIRED",
+      identityClaims.selectedIdentity.abilityName);
   }
   const issues = [];
   const intent = object(raw.intent) ? raw.intent : {};
@@ -1690,6 +1853,8 @@ function normalizeDecision(raw, input, match, queryReceipts, providerTrace) {
   return freeze({
     proposal,
     candidateId: selected.id,
+    selectedActionIdentity: selectedActionIdentity(
+      input.spatialActionSpace, selected.id),
     selectedReason,
     scoreOrPositionValue,
     risk,
@@ -2998,6 +3163,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
         : "Use the exact Host-supplied formation or asset-placement options for the selected candidate; do not restart a broad placement search in the Action stage.",
       `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one current stationary weapon profile covering the placed Unit; never describe that option as outside the enemy fire envelope. Compare objective gain against incoming profiles and fireZoneExchangeClass, preserve unknown probability as uncertainty, and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
       "When an exact legal_asset_placement_options receipt is present, choose exactly one placementOptionId and return assetPlacementSelection with that ID and one concise publicReason about the visible position, intended threat/objective/route effect, and plan continuity. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
+      "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists. You may compare or reject another ability, but never describe that other ability as the action being selected, activated, used or placed.",
       "Position publicReason fields are auditable summaries, not hidden chain-of-thought. State the useful board fact and tactical purpose without private scratch work.",
       "For Deploy, the Host prepends the Leading Model base-centre start just outside the selected battlefield edge. The complete Speed allowance includes that ingress distance. Do not add an artificial path point on the edge and do not measure only from the edge; choose an endpoint whose complete Host path remains within maxDistanceMilliInches.",
       "Never treat the remaining models as a unit centre: compare and choose a complete Host-solved final formation using every model's physical base, coherency, board edge, terrain, objective, line-of-sight, blocking, threat and fire-zone consequences.",
