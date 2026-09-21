@@ -137,7 +137,12 @@ explicit, isolated slice manifests.
   name-correct/effect-wrong Planner or Action claims; the concrete gate passed
   at 0 Provider calls / ¥0. Preserve revision 8 as non-training defect evidence,
   fork through revision 7 and regenerate only that decision next; do not restart
-  from revision 0.
+  from revision 0. The first revision-7 fork exposed that accepted battlefield-
+  asset actions omit the domain's presentation-only ability name while retaining
+  definition/effect identity. Fork matching now uses exact core identity plus
+  every historical Rules discriminator and requires one unique current domain.
+  Zero-Provider preflight replayed all seven transitions into branch
+  `20260921192605226`; resume that branch for the corrected revision 8.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second

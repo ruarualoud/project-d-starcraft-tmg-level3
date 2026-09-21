@@ -108,6 +108,7 @@ function actionIdentity(value) {
     effectKind: action.effectKind
       || action.abilityPlan?.effectKind
       || action.characteristicStatusPlan?.effectKind || null,
+    definitionId: action.definitionId || null,
     chosenFirstActorSideKey: action.chosenFirstActorSideKey || null,
   };
 }
@@ -115,7 +116,17 @@ function actionIdentity(value) {
 function sameActionIdentity(left, right) {
   const a = actionIdentity(left);
   const b = actionIdentity(right);
-  return Object.keys(a).every((key) => a[key] === b[key]);
+  const core = ["actionType", "sideKey", "phase", "pieceId"];
+  if (!core.every((key) => a[key] === b[key])) return false;
+  // Accepted executable actions may intentionally omit presentation-only
+  // identity fields retained by their source parameter domain. Match every
+  // discriminator preserved by the historical action, then require the caller
+  // to prove the result is unique instead of treating an omitted label as a
+  // different Rules action.
+  return ["abilityName", "effectKind", "definitionId",
+    "chosenFirstActorSideKey"].every((key) => (
+    b[key] === null || a[key] === b[key]
+  ));
 }
 
 async function loadForkSource(sourceDirectory, throughRevision) {
@@ -278,10 +289,13 @@ async function replayForkPrefix({ fixture, roomId, forkSource }) {
         `SLICE265_FORK_FINITE_ACTION_MISSING:${sourceReceipt.postStateRevision}`);
       previewInput = { candidateId: candidate.actionKey };
     } else {
-      const domain = (legal.legalSpace.parameterDomains || []).find((entry) =>
+      const domains = (legal.legalSpace.parameterDomains || []).filter((entry) =>
         sameActionIdentity(sourceDomain(entry), sourceReceipt.action));
-      if (!domain) throw new Error(
-        `SLICE265_FORK_DOMAIN_MISSING:${sourceReceipt.postStateRevision}`);
+      const domainMatchStatus = domains.length === 0 ? "MISSING" : "AMBIGUOUS";
+      if (domains.length !== 1) throw new Error(
+        "SLICE265_FORK_DOMAIN_" + domainMatchStatus + ":"
+          + sourceReceipt.postStateRevision + ":" + domains.length);
+      const [domain] = domains;
       previewInput = { proposal: { kind: "parameterized",
         domainId: domain.domainId,
         parameters: structuredClone(sourceProposal.parameters) } };
