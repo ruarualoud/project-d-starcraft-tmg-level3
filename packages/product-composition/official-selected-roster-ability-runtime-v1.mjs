@@ -24,7 +24,7 @@ import { getOfficialModelBaseGeometryProfileV1 } from
 
 export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ability-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION = "1.3.0";
+export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION = "1.3.1";
 export const OFFICIAL_SELECTED_ROSTER_ABILITY_PARAMETER_KIND =
   "official_selected_roster_active_ability_v1";
 export const OFFICIAL_SELECTED_ROSTER_FINISH_ACTIVATION_PARAMETER_KIND =
@@ -565,6 +565,8 @@ function domainFor(state, route, actor, available) {
     actionType: "use_active_ability", sideKey: route.sideKey, phase: state.phase,
     routeId: route.routeId, abilityName: route.abilityName,
     pieceId: actor.id, effectKind: route.effectKind,
+    sourceKind: route.sourceKind,
+    sourceInstanceId: route.sourceCardInstanceId || route.pieceId || null,
     effectContract: effectContractForRoute(route),
     parameterSchema: { type: "object", required,
       activeUnitId: { const: actor.id },

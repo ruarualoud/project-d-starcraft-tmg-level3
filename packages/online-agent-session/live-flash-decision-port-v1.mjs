@@ -27,9 +27,9 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v18";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v21";
+  "starcraft_tmg_live_action_shape_normalization_v22";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_planner_shape_normalization_v11";
+  "starcraft_tmg_live_planner_shape_normalization_v12";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
 const NATIVE_QUERY_KINDS = Object.freeze([
   "space.inspect_relationships",
@@ -523,6 +523,10 @@ function selectedActionResourceContract(actionSpace, candidateId) {
     entry.id === String(candidateId || ""));
   if (!selected) return null;
   const action = sourceActionDomain(selected.action);
+  const sourceInstanceId = action?.sourceInstanceId
+    || action?.constraints?.sourceCardInstanceId || null;
+  const sourceCardExhaustedOnCommit = action?.sourceKind === "card_feature"
+    || Boolean(action?.constraints?.sourceCardInstanceId);
   const costs = Object.entries(normalizedResourceCostsByChoice(action))
     .map(([choice, cost]) => ({
       choice,
@@ -536,8 +540,8 @@ function selectedActionResourceContract(actionSpace, candidateId) {
   return freeze({
     candidateId: selected.id,
     costs,
-    sourceCardExhaustedOnCommit: action?.sourceKind === "card_feature",
-    sourceInstanceId: action?.sourceInstanceId || null,
+    sourceCardExhaustedOnCommit,
+    sourceInstanceId,
     rulesAuthority: true,
     trainingTruth: false,
   });

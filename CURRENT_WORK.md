@@ -157,6 +157,14 @@ explicit, isolated slice manifests.
   Planning index, at 0 Provider calls / ¥0. Preserve both r9 attempts as
   non-training evidence and fork through corrected r8 once more. If the same
   semantic class fails again, stop under the three-round convergence rule.
+  The third effect attempt then passed the full Omega semantic contract, but
+  exposed a separate source-resource transport defect: the Agent was told the
+  zero-resource card feature would not exhaust even though Apply exhausts it.
+  Selected-roster domains and Spatial Action now preserve source kind/instance,
+  with a legacy fallback from `constraints.sourceCardInstanceId`; the exact
+  projected Omega false-no-exhaustion gate passed at 0 Provider calls / ¥0.
+  Preserve that revision 9 as valid Authority/non-training prose and fork from
+  corrected revision 8 for the resource-correct action.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -203,4 +211,7 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
 - Adapter-contract branch `20260921194916820` through defective revision 9:
   5 calls, 221,094 reported units and ¥0.299055. Its contract was lost in
   projection, so the revision remains non-training evidence.
+- Fully projected effect branch `20260921195834545` through resource-defective
+  revision 9: 4 calls, 161,952 units and ¥0.221175. Effect semantics are correct;
+  the false source-card non-exhaustion claim keeps its prose non-training.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.

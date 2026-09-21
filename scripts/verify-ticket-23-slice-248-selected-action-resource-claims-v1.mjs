@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import {
   inspectStarcraftTmgSelectedActionResourceClaimsV1,
 } from "../packages/online-agent-session/live-flash-decision-port-v1.mjs";
+import { projectStarcraftTmgSpatialParameterDomainsV1 } from
+  "../packages/online-agent-session/spatial-action-query-runtime-v1.mjs";
 
 const actionSpace = {
   finiteActions: [],
@@ -131,6 +133,47 @@ assert.equal(falseNoExhaustion.resourceContract.sourceCardExhaustedOnCommit,
 assert(falseNoExhaustion.contradictions.some((entry) =>
   entry.claimKind === "source_card_exhaustion"));
 
+const projectedOmegaActionSpace = {
+  finiteActions: [],
+  parameterDomains: projectStarcraftTmgSpatialParameterDomainsV1({
+    parameterDomains: [{
+      domainId: "omega-network-domain",
+      actionType: "use_active_ability",
+      pieceId: "player2-swarmling",
+      abilityName: "Omega Network",
+      effectKind: "omega_network",
+      constraints: {
+        sourceCardInstanceId: "player2-tactical-omega",
+        resourceCostsByChoice: { default: {
+          resourceType: null,
+          printedResourceCost: 0,
+          resourceCostReduction: 0,
+          effectiveResourceCost: 0,
+        } },
+      },
+    }],
+  }),
+};
+const omegaFalseNoExhaustion =
+  inspectStarcraftTmgSelectedActionResourceClaimsV1({
+    spatialActionSpace: projectedOmegaActionSpace,
+    candidateId: "omega-network-domain",
+    stage: "action",
+    value: {
+      selectedReason:
+        "Use Omega Network at zero cost; the source card is not exhausted.",
+      intent: {
+        currentGoal: "Use Omega Network without exhausting its source card.",
+        purpose: "Keep the source card ready after placing the Omega Worm.",
+      },
+    },
+  });
+assert.equal(omegaFalseNoExhaustion.status, "contradicted");
+assert.equal(omegaFalseNoExhaustion.resourceContract
+  .sourceCardExhaustedOnCommit, true);
+assert.equal(omegaFalseNoExhaustion.resourceContract.sourceInstanceId,
+  "player2-tactical-omega");
+
 console.log(JSON.stringify({
   passed: true,
   driftedStatus: drifted.status,
@@ -139,6 +182,7 @@ console.log(JSON.stringify({
   correctedStatus: corrected.status,
   supplyOnlyStatus: supplyOnly.status,
   sourceCardExhaustionStatus: falseNoExhaustion.status,
+  projectedOmegaSourceCardExhaustionStatus: omegaFalseNoExhaustion.status,
   providerCalls: 0,
   paidCostCny: 0,
 }, null, 2));

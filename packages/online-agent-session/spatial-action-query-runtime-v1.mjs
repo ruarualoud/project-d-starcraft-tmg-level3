@@ -200,7 +200,10 @@ export function projectStarcraftTmgSpatialParameterDomainsV1(legalSpace) {
     effectKind: domain.effectKind || null,
     effectContract: clone(domain.effectContract || null),
     definitionId: domain.definitionId || null,
-    sourceKind: domain.sourceKind || null,
+    sourceKind: domain.sourceKind
+      || (domain.constraints?.sourceCardInstanceId ? "card_feature" : null),
+    sourceInstanceId: domain.sourceInstanceId
+      || domain.constraints?.sourceCardInstanceId || null,
     createdUnitRecordKey: domain.constraints?.createdUnitRecordKey || null,
     sideKey: domain.sideKey,
     pieceId: domain.pieceId || null,
