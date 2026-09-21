@@ -467,14 +467,26 @@ function paymentRef(state, card) {
     profileHash: profile.profileHash,
     isReady: card.readiness === "ready" };
 }
-function paymentSelections(state, route, sideKey, sourceInstanceId) {
-  if (!route.resourceType || route.resourceCost === 0) return [[]];
-  const effectiveCost = state.officialMatchLifecycleFamilySourceBundle
+function resourceCostContract(state, route, sideKey, sourceInstanceId,
+  options = {}) {
+  if (!route.resourceType) return freezeDeep({ resourceType: null,
+    printedResourceCost: 0, resourceCostReduction: 0,
+    effectiveResourceCost: 0, discountSourcePieceId: null,
+    trainingTruth: false });
+  return state.officialMatchLifecycleFamilySourceBundle
     ? resolveOfficialMatchLifecycleAbilityResourceCostV1(
       state.officialMatchLifecycleFamilySourceBundle, state,
       { sideKey, pieceId: sourceInstanceId, resourceType: route.resourceType,
-        printedResourceCost: route.resourceCost },
-    ).effectiveResourceCost : route.resourceCost;
+        printedResourceCost: route.resourceCost,
+        planHash: options.planHash || null },
+      { consume: options.consume === true })
+    : freezeDeep({ resourceType: route.resourceType,
+      printedResourceCost: route.resourceCost, resourceCostReduction: 0,
+      effectiveResourceCost: route.resourceCost, discountSourcePieceId: null,
+      trainingTruth: false });
+}
+function paymentSelections(state, route, sideKey, effectiveResourceCost) {
+  if (!route.resourceType || effectiveResourceCost === 0) return [[]];
   const cards = (state.cardResources?.[sideKey] || []).filter((entry) => (
     entry.readiness === "ready"));
   const rows = [];
@@ -483,7 +495,8 @@ function paymentSelections(state, route, sideKey, sourceInstanceId) {
     try {
       resolveOfficialAbilityResourcePaymentV1({
         cardDataBundle: state.officialCardBuildPaymentDataBundle,
-        resourceType: route.resourceType, resourceCost: effectiveCost,
+        resourceType: route.resourceType,
+        resourceCost: effectiveResourceCost,
         selectedCardInstanceSetComplete: true,
         selectedCardInstances: selected.map((card) => paymentRef(state, card)),
       });
@@ -501,7 +514,8 @@ function currentWindow(state) {
   }
   return window;
 }
-function domainFor(state, window, route, instance, paymentCardInstanceIds) {
+function domainFor(state, window, route, instance, paymentCardInstanceIds,
+  resourceCost) {
   const followupTargets = route.effectKind === "followup_second_charge"
     ? [...window.context.alternateEnemyUnitIds].sort() : [];
   const body = {
@@ -529,7 +543,8 @@ function domainFor(state, window, route, instance, paymentCardInstanceIds) {
       activePlayerResolvesFirst: true,
       oneReactionPerPlayerPerActivation: true,
       sameNamedReactionPerSourceUnitPerRound: true,
-      sourceRouteHash: route.routeHash },
+      sourceRouteHash: route.routeHash,
+      resourceCostsByChoice: { default: clone(resourceCost) } },
     executorId: OFFICIAL_REACTION_FAMILY_ADAPTER_ID,
     executorVersion: OFFICIAL_REACTION_FAMILY_ADAPTER_VERSION,
     confirmationClass: "rules_owned_reaction_choice",
@@ -569,9 +584,12 @@ function enumerate(bundle, state, options = {}) {
     for (const route of bundle.routes) {
       for (const instance of routeInstances(state, route)) {
         if (!routeEligible(state, window, route, instance)) continue;
+        const resourceCost = resourceCostContract(state, route,
+          instance.sideKey, instance.sourceInstanceId);
         for (const payment of paymentSelections(state, route, instance.sideKey,
-          instance.sourceInstanceId)) {
-          parameterDomains.push(domainFor(state, window, route, instance, payment));
+          resourceCost.effectiveResourceCost)) {
+          parameterDomains.push(domainFor(
+            state, window, route, instance, payment, resourceCost));
         }
       }
     }
@@ -654,14 +672,9 @@ function preview(bundle, state, request = {}) {
 function pay(state, route, action, events) {
   const ids = action.reactionPlan.canonicalParameters.paymentCardInstanceIds || [];
   if (route.resourceType) {
-    const cost = state.officialMatchLifecycleFamilySourceBundle
-      ? resolveOfficialMatchLifecycleAbilityResourceCostV1(
-        state.officialMatchLifecycleFamilySourceBundle, state,
-        { sideKey: action.sideKey, pieceId: action.reactionPlan.sourceInstanceId,
-          resourceType: route.resourceType, printedResourceCost: route.resourceCost,
-          planHash: action.reactionPlan.planHash }, { consume: true })
-      : { effectiveResourceCost: route.resourceCost,
-        resourceCostReduction: 0, discountSourcePieceId: null };
+    const cost = resourceCostContract(state, route, action.sideKey,
+      action.reactionPlan.sourceInstanceId,
+      { planHash: action.reactionPlan.planHash, consume: true });
     const cards = ids.map((id) => cardById(state, action.sideKey, id));
     if (cards.some((entry) => !entry)) fail("REACTION_PAYMENT_CARD_UNKNOWN");
     const payment = resolveOfficialAbilityResourcePaymentV1({

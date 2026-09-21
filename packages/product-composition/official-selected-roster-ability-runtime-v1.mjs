@@ -398,6 +398,13 @@ function paymentRef(state, card) {
     sourceRecordHash: card.sourceRecordHash, payloadHash: card.officialPayloadHash,
     profileHash: profile.profileHash, isReady: card.readiness === "ready" };
 }
+function resourceCostContract(route) {
+  const resourceType = String(route.resourceType || "").toUpperCase() || null;
+  const printedResourceCost = resourceType ? Number(route.resourceCost || 0) : 0;
+  return freezeDeep({ resourceType, printedResourceCost,
+    resourceCostReduction: 0, effectiveResourceCost: printedResourceCost,
+    discountSourcePieceId: null, trainingTruth: false });
+}
 function paymentSelections(state, route) {
   if (!route.resourceType || route.resourceCost === 0) return [[]];
   const cards = (state.cardResources?.[route.sideKey] || []).filter((entry) => (
@@ -464,7 +471,8 @@ function routeAvailable(state, route, actor) {
   if (route.targetKind === "enemy_within" && targets.length === 0) {
     fail("SELECTED_ABILITY_NO_TARGET_IN_RANGE", route.routeId);
   }
-  return { targets, payments: paymentSelections(state, route) };
+  return { targets, payments: paymentSelections(state, route),
+    resourceCostsByChoice: { default: resourceCostContract(route) } };
 }
 function domainFor(state, route, actor, available) {
   const required = ["activeUnitId", "paymentCardInstanceIds"];
@@ -502,6 +510,7 @@ function domainFor(state, route, actor, available) {
       oncePerRoundPerUnitAndName: true, oncePerGame: route.oncePerGame === true,
       sourceCardInstanceId: route.sourceCardInstanceId || null,
       resourceType: route.resourceType, resourceCost: route.resourceCost,
+      resourceCostsByChoice: clone(available.resourceCostsByChoice),
       rangeInches: route.rangeInches || null },
     confirmationClass: "rules_owned_direct_action",
     rulesTruth: "official_selected_roster_active_ability_domain",

@@ -510,14 +510,24 @@ function paymentRef(state, card) {
     profileHash: profile.profileHash,
     isReady: card.readiness === "ready" };
 }
-function paymentSelections(state, route, sideKey, actor) {
-  if (!route.resourceType || route.resourceCost === 0) return [[]];
-  const effectiveCost = state.officialBattlefieldAssetFamilySourceBundle
+function resourceCostContract(state, route, sideKey, actor, options = {}) {
+  if (!route.resourceType) return freezeDeep({ resourceType: null,
+    printedResourceCost: 0, resourceCostReduction: 0,
+    effectiveResourceCost: 0, sourcePieceId: null, trainingTruth: false });
+  return state.officialBattlefieldAssetFamilySourceBundle
     ? resolveOfficialBattlefieldAssetAbilityResourceCostV1(
       state.officialBattlefieldAssetFamilySourceBundle, state,
       { sideKey, pieceId: actor.id, resourceType: route.resourceType,
-        printedResourceCost: route.resourceCost }).effectiveResourceCost
-    : route.resourceCost;
+        printedResourceCost: route.resourceCost,
+        planHash: options.planHash || null },
+      { consume: options.consume === true })
+    : freezeDeep({ resourceType: route.resourceType,
+      printedResourceCost: route.resourceCost, resourceCostReduction: 0,
+      effectiveResourceCost: route.resourceCost, sourcePieceId: null,
+      trainingTruth: false });
+}
+function paymentSelections(state, route, sideKey, effectiveResourceCost) {
+  if (!route.resourceType || effectiveResourceCost === 0) return [[]];
   const cards = (state.cardResources?.[sideKey] || []).filter((entry) => (
     entry.readiness === "ready"));
   const rows = [];
@@ -527,7 +537,7 @@ function paymentSelections(state, route, sideKey, actor) {
       resolveOfficialAbilityResourcePaymentV1({
         cardDataBundle: state.officialCardBuildPaymentDataBundle,
         resourceType: route.resourceType,
-        resourceCost: effectiveCost,
+        resourceCost: effectiveResourceCost,
         selectedCardInstanceSetComplete: true,
         selectedCardInstances: selected.map((card) => paymentRef(state, card)),
       });
@@ -570,9 +580,13 @@ function routeAvailable(state, route, instance, actor) {
   const targets = targetIds(state, route, actor);
   if (route.targetKind && route.targetKind !== "friendly_ground_zerg_any_activation"
     && targets.length === 0) fail("CHARACTERISTIC_STATUS_TARGET_UNAVAILABLE", route.abilityName);
-  const payments = paymentSelections(state, route, instance.sideKey, actor);
+  const resourceCost = resourceCostContract(
+    state, route, instance.sideKey, actor);
+  const payments = paymentSelections(state, route, instance.sideKey,
+    resourceCost.effectiveResourceCost);
   if (payments.length === 0) fail("CHARACTERISTIC_STATUS_PAYMENT_UNAVAILABLE");
-  return { targets, payments };
+  return { targets, payments,
+    resourceCostsByChoice: { default: resourceCost } };
 }
 function domainFor(state, route, instance, actor, available) {
   const required = ["activeUnitId", "paymentCardInstanceIds"];
@@ -605,6 +619,7 @@ function domainFor(state, route, instance, actor, available) {
       alreadyActivatedAllowed: route.alreadyActivatedAllowed === true,
       sourceCardInstanceId: instance.card?.cardInstanceId || null,
       resourceType: route.resourceType, resourceCost: route.resourceCost,
+      resourceCostsByChoice: clone(available.resourceCostsByChoice),
       rangeMilliInches: route.rangeMilliInches || null,
       sourceRouteHash: route.routeHash },
     confirmationClass: "rules_owned_direct_action",
@@ -943,14 +958,9 @@ function applyEffect(state, route, actor, action, events) {
 function pay(state, route, action, events) {
   const ids = action.characteristicStatusPlan.canonicalParameters.paymentCardInstanceIds;
   if (route.resourceType) {
-    const cost = state.officialBattlefieldAssetFamilySourceBundle
-      ? resolveOfficialBattlefieldAssetAbilityResourceCostV1(
-        state.officialBattlefieldAssetFamilySourceBundle, state,
-        { sideKey: action.sideKey, pieceId: action.pieceId,
-          resourceType: route.resourceType, printedResourceCost: route.resourceCost,
-          planHash: action.characteristicStatusPlan.planHash }, { consume: true })
-      : { effectiveResourceCost: route.resourceCost,
-        resourceCostReduction: 0, sourcePieceId: null };
+    const actor = state.pieces.find((entry) => entry.id === action.pieceId);
+    const cost = resourceCostContract(state, route, action.sideKey, actor,
+      { planHash: action.characteristicStatusPlan.planHash, consume: true });
     const cards = ids.map((id) => cardById(state, action.sideKey, id));
     if (cards.some((entry) => !entry)) fail("CHARACTERISTIC_STATUS_PAYMENT_CARD_UNKNOWN");
     const payment = resolveOfficialAbilityResourcePaymentV1({

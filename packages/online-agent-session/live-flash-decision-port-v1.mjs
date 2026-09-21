@@ -25,11 +25,11 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v13";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v14";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v16";
+  "starcraft_tmg_live_action_shape_normalization_v17";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_planner_shape_normalization_v7";
+  "starcraft_tmg_live_planner_shape_normalization_v8";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
 const NATIVE_QUERY_KINDS = Object.freeze([
   "space.inspect_relationships",
@@ -391,19 +391,47 @@ export function inspectStarcraftTmgSelectedActionIdentityClaimsV1(input = {}) {
   });
 }
 
+function normalizedResourceCostsByChoice(action) {
+  const constraints = sourceActionDomain(action)?.constraints || {};
+  const explicit = object(constraints.resourceCostsByChoice)
+    ? clone(constraints.resourceCostsByChoice) : {};
+  if (Object.keys(explicit).length > 0) return explicit;
+  const resourceType = String(constraints.resourceType || "").toUpperCase() || null;
+  const hasLegacyCost = resourceType !== null
+    || constraints.printedResourceCost !== undefined
+    || constraints.effectiveResourceCost !== undefined
+    || constraints.resourceCost !== undefined;
+  if (!hasLegacyCost) return {};
+  const printedResourceCost = Number(
+    constraints.printedResourceCost ?? constraints.resourceCost ?? 0);
+  const effectiveResourceCost = Number(
+    constraints.effectiveResourceCost ?? constraints.resourceCost
+      ?? printedResourceCost);
+  return { default: {
+    resourceType,
+    printedResourceCost,
+    resourceCostReduction: Number(constraints.resourceCostReduction
+      ?? Math.max(0, printedResourceCost - effectiveResourceCost)),
+    effectiveResourceCost,
+    discountSourcePieceId: constraints.discountSourcePieceId
+      || constraints.sourcePieceId || null,
+  } };
+}
+
 function selectedActionResourceContract(actionSpace, candidateId) {
   const selected = actionIndex(actionSpace).find((entry) =>
     entry.id === String(candidateId || ""));
   if (!selected) return null;
   const action = sourceActionDomain(selected.action);
-  const costs = Object.entries(action?.constraints?.resourceCostsByChoice || {})
+  const costs = Object.entries(normalizedResourceCostsByChoice(action))
     .map(([choice, cost]) => ({
       choice,
       resourceType: String(cost?.resourceType || "").toUpperCase() || null,
       printedResourceCost: Number(cost?.printedResourceCost || 0),
       resourceCostReduction: Number(cost?.resourceCostReduction || 0),
       effectiveResourceCost: Number(cost?.effectiveResourceCost || 0),
-      discountSourcePieceId: cost?.sourcePieceId || null,
+      discountSourcePieceId: cost?.discountSourcePieceId
+        || cost?.sourcePieceId || null,
     })).sort((left, right) => left.choice.localeCompare(right.choice));
   return freeze({
     candidateId: selected.id,
@@ -811,7 +839,7 @@ export function projectStarcraftTmgPlanningActionSpaceForPromptV1(
         entry.constraints?.maxDistanceMilliInches ?? null,
       supply: clone(entry.constraints?.supply || null),
       resourceCostsByChoice:
-        clone(entry.constraints?.resourceCostsByChoice || {}),
+        normalizedResourceCostsByChoice(entry),
       modelCount: entry.constraints?.modelProfiles?.length || 0,
       exactRulesInstantiationRequired: true,
     })),

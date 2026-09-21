@@ -24,7 +24,7 @@ explicit, isolated slice manifests.
 
 1. Ticket 23 / Slice 248: alternating activation, phase completion and certain
    Charge shortfall repairs passed their focused gates. The fresh Standard-2000
-   room is now durable at revision 64 in round 2 Movement. Its Planner has
+   room is now durable at revision 66 in round 2 Movement. Its Planner has
    recognized the round-2 Supply increase and exposed reserve Deploy as a later
    activation. A three-round Swarmling formation correction proved two recovery
    bugs: “inside the fire envelope rather than outside it” was falsely rejected,
@@ -46,13 +46,25 @@ explicit, isolated slice manifests.
    the exact selected resource-cost contract in both stages and reject
    zero/free/unspent claims for a positive BM/CP/PE effective cost without
    conflating Supply. Its concrete focused gate passed once at 0 Provider calls
-   / ¥0. Continue the same room from revision 64; preserve the old r63/r64 prose
-   as non-training defect evidence. **Active.**
+   / ¥0. Revision 66 then legally resolved Roachling Infestation: Authority paid
+   2 BM and summoned three models, while old Agent prose again claimed zero BM.
+   The root cause was cross-family contract drift: several paying Adapters used
+   exact effective costs during Apply without publishing those same costs in
+   LegalSpace. Unit-lifecycle, characteristic/status, Reaction, selected-roster
+   and Zerg-unique routes now publish the Rules-owned per-choice printed,
+   reduction and effective cost that Apply consumes; Planner and Action share a
+   normalized reader with legacy flat-field compatibility. The exact durable
+   r66 reproducer failed before the repair and passed once afterward with zero
+   Provider calls / ¥0. Continue the same room from revision 66; preserve the
+   old r63/r64/r66 prose as non-training defect evidence. **Active.**
 2. Ticket 23 / Slice 248: complete player-seat companion permissions, layered
-   memory/role runtime and real floating-Web acceptance. The Kimi-owned,
-   presentation-only floating companion sub-slice is now dispatched through
+   memory/role runtime and real floating-Web acceptance. The first Kimi-owned,
+   presentation-only floating companion sub-slice is running through
    `coordination/slices/ticket-23-slice-248-floating-companion-ui.slice.json`;
    Codex retains permission, memory, room and final browser acceptance work.
+   After that bounded slice, Kimi becomes the pure-frontend Lead: it owns the
+   interface audit, Web/App responsive design and self-partitioned focused UI
+   slices, while backend interfaces and Rules authority stay frozen.
 3. Ticket 23 / Slice 248: add attack probability, fire-zone exchange and the
    prediction → outcome calibration → replanning loop.
 4. Ticket 25 / Slices 262–263: close free legal formation strategy, the natural
@@ -91,12 +103,11 @@ evidence without rerunning already-passed unrelated gates.
 ## Current accounting
 
 - DeepSeek product ledger: the fresh Slice-248 A-A room is durable at revision
-  64. Durable seat ledgers currently report 235 Provider calls, 14,096,549 total
-  units and estimated cost ¥19.073992 (Player 1: 82 calls / ¥5.838613; Player
-  2: 153 calls / ¥13.235379). One already-paid completed planning response for
-  the next post-r64 choice is preserved for local v7 revalidation. The
-  selected-action identity and resource-contract repair gates each used 0
-  Provider calls and ¥0; no ¥100 notification threshold has been crossed.
+  66 with 66 accepted actions and 76 screenshots. Its accepted-action progress
+  ledger reports 246 Provider calls, 14,864,740 total units and estimated cost
+  ¥20.117467. Selected-action identity, selected resource claims and the r66
+  cross-family resource-contract gates each used 0 Provider calls and ¥0; no
+  ¥100 notification threshold has been crossed.
 - Kimi environment ledger: 3 CLI runs (2 connectivity probes, 1 ENV-6
   implementation session); token and currency fields were not reported by Kimi
   Code CLI.

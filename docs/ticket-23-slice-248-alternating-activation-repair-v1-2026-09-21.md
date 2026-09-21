@@ -249,9 +249,36 @@ accepted zero additional Supply, and used zero Provider calls / ¥0. Revision 64
 Authority state remains valid; its drifted old explanation is non-training
 defect evidence.
 
+## Cross-family resource-contract follow-up
+
+The same room advanced to revision 66 and legally resolved Roachling
+Infestation. Authority spent 2 BM and summoned three Roachlings, but the old
+Agent prose claimed that the selected action spent zero Biomass. This exposed a
+deeper mismatch than the earlier selected-action validator: unit-lifecycle and
+several other paying Adapters computed the exact effective cost only inside
+payment enumeration and Apply, so Planner could not see the Rules-owned value.
+
+The repair makes every currently paying action family publish the same
+per-choice `printedCost`, `reduction` and `effectiveCost` contract consumed by
+Apply. It covers battlefield assets, unit lifecycle, characteristic/status,
+Reaction, selected-roster active abilities and Zerg-unique abilities. Planner
+and Action validation use one normalized reader; historical flat cost fields
+remain input compatibility only and cannot replace the canonical contract.
+
+The focused r66 reproducer first failed on the missing lifecycle LegalSpace
+contract, then passed exactly once after implementation:
+
+```sh
+node scripts/verify-ticket-23-slice-248-cross-family-resource-contract-v1.mjs
+```
+
+It proved the 2 BM printed/effective cost, zero reduction, Planner visibility
+and four contradictions in the false-zero explanation. It made zero Provider
+calls and cost ¥0. No unrelated gate or full suite was rerun.
+
 ## Next gate
 
-Resume the same fresh paid Standard-2000 A-A match from revision 64. One
-already-paid completed Planner response for the next Player-2 choice is durable;
-Planner normalization v7 will revalidate it locally before new egress. Continue to terminal
-before rebuilding screenshots, NDJSON, JSON and PDF evidence from this room.
+Resume the same fresh paid Standard-2000 A-A match from revision 66. Continue
+to terminal before rebuilding screenshots, NDJSON, JSON and PDF evidence from
+this room. Preserve the historical r63/r64/r66 prose as non-training defect
+evidence; never repay those already recorded decisions merely to improve prose.

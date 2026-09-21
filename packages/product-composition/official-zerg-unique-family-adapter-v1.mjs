@@ -296,6 +296,16 @@ function domainsForRoute(state, route) {
 function domainFor(state, route, sideKey, actor, sourceInstanceId, targetIds, payments) {
   const required = ["activeUnitId", "paymentCardInstanceIds"];
   if (targetIds.length > 0) required.push("targetUnitId");
+  const cost = effectiveCost(state, route, actor);
+  const resourceCost = freezeDeep({
+    resourceType: route.resourceType || null,
+    printedResourceCost: route.resourceType ? route.printedResourceCost : 0,
+    resourceCostReduction: Number(cost.resourceCostReduction || 0),
+    effectiveResourceCost: route.resourceType
+      ? Number(cost.effectiveResourceCost || 0) : 0,
+    discountSourcePieceId: cost.discountSourcePieceId || null,
+    trainingTruth: false,
+  });
   return seal({
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
     semanticVersion: OFFICIAL_ZERG_UNIQUE_FAMILY_ADAPTER_VERSION,
@@ -312,8 +322,8 @@ function domainFor(state, route, sideKey, actor, sourceInstanceId, targetIds, pa
       allowedPhases: clone(route.allowedPhases), targetIds: clone(targetIds),
       resourceType: route.resourceType,
       printedResourceCost: route.printedResourceCost,
-      effectiveResourceCost: route.resourceType
-        ? effectiveCost(state, route, actor).effectiveResourceCost : 0,
+      effectiveResourceCost: resourceCost.effectiveResourceCost,
+      resourceCostsByChoice: { default: resourceCost },
       effectExpiresAt: route.effectExpiresAt },
     executorId: OFFICIAL_ZERG_UNIQUE_FAMILY_ADAPTER_ID,
     executorVersion: OFFICIAL_ZERG_UNIQUE_FAMILY_ADAPTER_VERSION,
