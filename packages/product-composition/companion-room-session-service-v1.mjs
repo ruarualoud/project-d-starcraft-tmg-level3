@@ -91,6 +91,13 @@ function publicConversation(binding, state, extra = {}) {
       packageRef: participant.packageRef ? clone(participant.packageRef) : null,
     })),
     speakerOrder: [...state.speakerOrder],
+    userParticipantId: binding.userParticipantId,
+    companions: binding.companions.map((companion) => ({
+      participantId: companion.participantId,
+      packageRef: clone(companion.packageRef),
+      eraId: companion.eraId,
+    })),
+    memoryScope: clone(state.memoryScope),
     nextTurn: state.status === "active" ? (() => {
       if (state.pendingQueue.length) {
         return {
@@ -333,6 +340,78 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       await backend.persistenceGateway.put(BINDING_NAMESPACE, conversationId, binding);
       const state = await backend.sessionRuntime.getSessionState(conversationId);
       return publicConversation(binding, state);
+    } catch (error) {
+      return rejection(error?.code || "COMPANION_CONVERSATION_CREATE_FAILED", {
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  async function listScopeBindings(bindingScope) {
+    const keys = await backend.persistenceGateway.list(BINDING_NAMESPACE);
+    const matches = [];
+    for (const key of keys) {
+      const stored = await backend.persistenceGateway.get(BINDING_NAMESPACE, key);
+      const binding = stored.found ? stored.value : null;
+      if (!binding
+        || binding.roomId !== bindingScope.roomId
+        || binding.seatKey !== bindingScope.seatKey
+        || binding.principalScopeHash !== bindingScope.principalScopeHash
+        || binding.matchBindingHash !== bindingScope.matchBindingHash) continue;
+      matches.push(binding);
+    }
+    matches.sort((left, right) => String(left.createdAt).localeCompare(String(right.createdAt))
+      || left.conversationId.localeCompare(right.conversationId));
+    return matches;
+  }
+
+  function sameCompanionSet(binding, packageIds) {
+    const bound = binding.companions.map((entry) => entry.packageRef.id);
+    if (bound.length !== packageIds.length) return false;
+    const wanted = new Set(packageIds);
+    return bound.every((id) => wanted.has(id));
+  }
+
+  async function latestActiveBinding(bindings) {
+    for (let index = bindings.length - 1; index >= 0; index -= 1) {
+      const binding = bindings[index];
+      const state = await backend.sessionRuntime.getSessionState(binding.conversationId);
+      if (state.status === "active") return { binding, state };
+    }
+    return null;
+  }
+
+  async function readActiveConversation(input = {}) {
+    try {
+      const authenticated = await authority(input);
+      if (authenticated.rejection) return authenticated.rejection;
+      const active = await latestActiveBinding(
+        await listScopeBindings(authenticated.binding),
+      );
+      if (!active) return rejection("COMPANION_CONVERSATION_NOT_FOUND");
+      return publicConversation(active.binding, active.state, {
+        providerAccounting: backend.providerGateway.stats(),
+      });
+    } catch (error) {
+      return rejection(error?.code || "COMPANION_CONVERSATION_READ_FAILED");
+    }
+  }
+
+  async function openOrResumeConversation(input = {}) {
+    try {
+      const authenticated = await authority(input);
+      if (authenticated.rejection) return authenticated.rejection;
+      const packageIds = uniqueStrings(input.packageIds, "packageIds");
+      const candidates = (await listScopeBindings(authenticated.binding))
+        .filter((binding) => sameCompanionSet(binding, packageIds));
+      const active = await latestActiveBinding(candidates);
+      if (active) {
+        return publicConversation(active.binding, active.state, {
+          resumed: true,
+          providerAccounting: backend.providerGateway.stats(),
+        });
+      }
+      return openConversation(input);
     } catch (error) {
       return rejection(error?.code || "COMPANION_CONVERSATION_CREATE_FAILED", {
         message: error instanceof Error ? error.message : String(error),
@@ -596,7 +675,17 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
   function metadata() {
     return deepFreeze({
       schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.metadata`,
-      operations: ["open", "read", "send", "continue", "checkpoint", "resume", "close"],
+      operations: [
+        "open",
+        "open_or_resume",
+        "read",
+        "read_active",
+        "send",
+        "continue",
+        "checkpoint",
+        "resume",
+        "close",
+      ],
       maximumCompanions: MAX_COMPANIONS,
       roomBinding: "revalidated_on_every_operation",
       storedSeatCredential: false,
@@ -613,7 +702,9 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
   return Object.freeze({
     metadata,
     openConversation,
+    openOrResumeConversation,
     readConversation,
+    readActiveConversation,
     sendMessage,
     continueConversation,
     checkpointConversation,
