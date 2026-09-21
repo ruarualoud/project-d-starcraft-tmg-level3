@@ -93,8 +93,6 @@ function normalizeExperimentCell(value = {}) {
     scenario: {
       mapId: required(value.scenario?.mapId, "scenario.mapId"),
       missionId: required(value.scenario?.missionId, "scenario.missionId"),
-      scalePoints: positiveInteger(value.scenario?.scalePoints || 500,
-        "scenario.scalePoints"),
       rosterIdsBySeat: Object.fromEntries(SEAT_KEYS.map((seatKey) => [
         seatKey,
         required(value.scenario?.rosterIdsBySeat?.[seatKey],

@@ -1152,8 +1152,6 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
         missionId: String(requestedExperiment.missionId
           || base.coverage.missionRecordKey
           || "faction_cards:mission_hold_position"),
-        scalePoints: Number(requestedExperiment.scalePoints
-          || (formalStandard2000 ? 2_000 : 500)),
         rosterIdsBySeat: requestedExperiment.rosterIdsBySeat
           || rosterIdsBySeat,
       },

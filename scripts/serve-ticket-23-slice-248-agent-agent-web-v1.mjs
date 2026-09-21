@@ -414,7 +414,7 @@ async function main() {
         experimentCell: orchestratorResult.experimentCell,
         reviewContext: {
           evaluationSplit: "development",
-          scalePoints: orchestratorResult.experimentCell.scenario.scalePoints,
+          scalePoints: 2_000,
           modelSnapshotsBySeat: selectedModels,
           promptPackSnapshotsBySeat: {
             player1: "selfplay_agent_prompt",
