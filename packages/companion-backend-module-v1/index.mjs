@@ -37,6 +37,15 @@ export {
 } from "./worldbook-memory-engine-v1.mjs";
 
 export {
+  COMPANION_BACKEND_CB3_ERROR_CODES,
+  COMPANION_SESSION_PARTICIPANT_KINDS,
+  COMPANION_BRANCH_KINDS,
+  COMPANION_RESOURCE_VISIBILITIES,
+  COMPANION_SEAT_READ_POLICY,
+  createCompanionSessionRuntime,
+} from "./session-runtime-v1.mjs";
+
+export {
   createInMemoryPersistenceAdapter,
   createInMemoryProviderAdapter,
 } from "./in-memory-adapter-v1.mjs";
@@ -49,11 +58,16 @@ import {
 } from "./contracts-v1.mjs";
 
 import { createCompanionMemoryEngine } from "./worldbook-memory-engine-v1.mjs";
+import { createCompanionSessionRuntime } from "./session-runtime-v1.mjs";
 
 export function composeCompanionBackend(dependencies = {}) {
   const injected = assertCompanionBackendDependencies(dependencies);
   const registry = injected.registry || createCompanionPackageRegistry();
   const memoryEngine = createCompanionMemoryEngine({ persistence: injected.persistence });
+  const sessionRuntime = createCompanionSessionRuntime({
+    persistence: injected.persistence,
+    memoryEngine,
+  });
   return Object.freeze({
     schemaVersion: `${COMPANION_BACKEND_CONTRACT_VERSION}.module`,
     descriptor: COMPANION_BACKEND_INTEGRATION_DESCRIPTOR,
@@ -61,5 +75,6 @@ export function composeCompanionBackend(dependencies = {}) {
     persistence: injected.persistence,
     provider: injected.provider ?? null,
     memoryEngine,
+    sessionRuntime,
   });
 }
