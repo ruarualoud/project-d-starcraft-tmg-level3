@@ -130,7 +130,14 @@ explicit, isolated slice manifests.
   then dereferenced a null `stateHash`. The exact zero-Provider reproducer
   failed before the change and passed once after hydration recovered the record
   authority and the observation boundary made older missing authority a safe
-  reassessment. Resume this branch next; do not restart from revision 0.
+  reassessment. That branch then advanced legally through revision 7 with Creep
+  Spread. Revision 8 legally applied Ventral Sacs, but its public strategy prose
+  described a Creep Tumor/ON CREEP network. A Rules-owned effect contract now
+  distinguishes all five coordinate battlefield-asset families and rejects
+  name-correct/effect-wrong Planner or Action claims; the concrete gate passed
+  at 0 Provider calls / ¥0. Preserve revision 8 as non-training defect evidence,
+  fork through revision 7 and regenerate only that decision next; do not restart
+  from revision 0.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -166,4 +173,8 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
 - DeepSeek baseline r66: 66 actions, 76 screenshots, 246 Provider calls,
   14,864,740 total units, ¥20.117467; focused repairs cost ¥0 and no ¥100
   threshold was crossed.
+- Current recovered fixed-roster branch through defective revision 8: 10 calls,
+  455,829 reported units and ¥0.627174. Revision 7 accounts for 7 calls,
+  339,548 units and ¥0.459326; revision 8 adds 3 calls, 116,281 units and
+  ¥0.167848 and remains non-training evidence.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.

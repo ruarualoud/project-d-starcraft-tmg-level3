@@ -52,6 +52,31 @@ assert.equal(drifted.selectedIdentity.abilityName, "Ventral Sacs");
 assert.ok(drifted.contradictions.some((entry) =>
   entry.claimedAbilityName === "Creep Spread"));
 
+const effectDriftOnly = inspectStarcraftTmgSelectedActionIdentityClaimsV1({
+  spatialActionSpace: actionSpace,
+  candidateId: "ventral-sacs-domain",
+  stage: "action",
+  value: {
+    selectedReason:
+      "Use Raptor's Ventral Sacs to extend the Creep network.",
+    intent: {
+      currentGoal: "Activate Ventral Sacs and place a Creep Tumor.",
+      purpose: "Build an ON CREEP speed lane near marker-4.",
+    },
+    publicDecisionSummary: {
+      plan: "Use Ventral Sacs for another Creep token.",
+      purpose: "Extend the Creep network for Speed on Creep.",
+    },
+    assetPlacementSelection: {
+      publicReason: "Place the Creep Tumor near marker-4.",
+    },
+  },
+});
+assert.equal(effectDriftOnly.status, "contradicted");
+assert.ok(effectDriftOnly.contradictions.some((entry) =>
+  entry.expectedEffectKind === "reserve_deploy_indicator"
+    && entry.claimedEffectKind === "creep_token_place"));
+
 const corrected = inspectStarcraftTmgSelectedActionIdentityClaimsV1({
   spatialActionSpace: actionSpace,
   candidateId: "ventral-sacs-domain",
@@ -103,6 +128,8 @@ console.log(JSON.stringify({
   passed: true,
   driftedStatus: drifted.status,
   driftedContradictionCount: drifted.contradictions.length,
+  effectDriftOnlyStatus: effectDriftOnly.status,
+  effectDriftOnlyContradictionCount: effectDriftOnly.contradictions.length,
   correctedStatus: corrected.status,
   rejectedAlternativeStatus: rejectedAlternativeOnly.status,
   providerCalls: 0,

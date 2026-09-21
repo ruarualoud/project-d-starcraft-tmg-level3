@@ -25,11 +25,11 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v16";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v17";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v19";
+  "starcraft_tmg_live_action_shape_normalization_v20";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_planner_shape_normalization_v9";
+  "starcraft_tmg_live_planner_shape_normalization_v10";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
 const NATIVE_QUERY_KINDS = Object.freeze([
   "space.inspect_relationships",
@@ -68,6 +68,58 @@ const FORMATION_QUERY_KINDS = new Set([
   "legal_formation_options",
 ]);
 const FINAL_STATUSES = new Set(["completed", "closed"]);
+const SELECTED_ACTION_EFFECT_CONTRACTS = Object.freeze({
+  creep_token_place: Object.freeze({
+    schema: "starcraft_tmg_selected_action_effect_contract_v1",
+    effectKind: "creep_token_place",
+    placedAssetKind: "creep_tumor",
+    immediateEffect: "place a Creep Tumor token from a legal Creep source",
+    delayedEffect: null,
+  }),
+  detection_indicator: Object.freeze({
+    schema: "starcraft_tmg_selected_action_effect_contract_v1",
+    effectKind: "detection_indicator",
+    placedAssetKind: "faction_indicator",
+    immediateEffect:
+      "place a Faction Indicator whose detection aura removes HIDDEN within range",
+    delayedEffect: null,
+  }),
+  force_field_place: Object.freeze({
+    schema: "starcraft_tmg_selected_action_effect_contract_v1",
+    effectKind: "force_field_place",
+    placedAssetKind: "force_field",
+    immediateEffect: "place a Force Field token in legal unoccupied space",
+    delayedEffect: null,
+  }),
+  reserve_deploy_indicator: Object.freeze({
+    schema: "starcraft_tmg_selected_action_effect_contract_v1",
+    effectKind: "reserve_deploy_indicator",
+    placedAssetKind: "faction_indicator",
+    immediateEffect:
+      "place a Faction Indicator more than 10 inches from every Enemy model",
+    delayedEffect:
+      "at End of Round, may Deploy one Ground Unit from Reserves base-to-base with the indicator",
+  }),
+  shade_token_place: Object.freeze({
+    schema: "starcraft_tmg_selected_action_effect_contract_v1",
+    effectKind: "shade_token_place",
+    placedAssetKind: "shade",
+    immediateEffect: "place a Shade token wholly within the Rules-owned range",
+    delayedEffect: "resolve the Shade displacement at End of Round",
+  }),
+});
+const SELECTED_ACTION_EFFECT_CLAIM_PATTERNS = Object.freeze({
+  creep_token_place:
+    /\bcreep\s+(?:tumou?r|token|network)\b|\bon\s+creep\b|\bspeed\s+on\s+creep\b|菌毯(?:肿瘤|标记|网络)?/iu,
+  detection_indicator:
+    /\bdetection\s+(?:indicator|aura)\b|\bremove\s+hidden\b|\blose\s+hidden\b|侦测(?:指示物|光环)|失去隐藏/iu,
+  force_field_place:
+    /\bforce\s+field\s+(?:token|barrier)\b|力场(?:标记|屏障)/iu,
+  reserve_deploy_indicator:
+    /\breserve[- ]deploy\s+(?:beacon|indicator|route)\b|\bfaction\s+indicator\b|\bdeploy\b.{0,80}\bground\s+unit\b.{0,80}\bfrom\s+reserves\b|预备队部署(?:信标|指示物|路线)|势力指示物/iu,
+  shade_token_place:
+    /\bshade\s+token\b|\bshade\s+displacement\b|暗影(?:标记|位移)/iu,
+});
 const DEFINITELY_NOT_SENT_FAILURES = new Set([
   "provider_dns_resolution_failed",
   "provider_request_contract_rejected",
@@ -294,10 +346,25 @@ function selectedActionIdentity(actionSpace, candidateId) {
     pieceId: action?.pieceId || null,
     abilityName: action?.abilityName || null,
     effectKind: action?.effectKind || null,
+    effectContract: clone(
+      SELECTED_ACTION_EFFECT_CONTRACTS[action?.effectKind] || null),
     sourceInstanceId: action?.sourceInstanceId || null,
     rulesAuthority: true,
     trainingTruth: false,
   });
+}
+
+function claimedActionEffects(fragments, expectedEffectKind) {
+  if (!SELECTED_ACTION_EFFECT_CONTRACTS[expectedEffectKind]) return [];
+  return fragments.flatMap((entry) => Object.entries(
+    SELECTED_ACTION_EFFECT_CLAIM_PATTERNS).flatMap(([claimedEffectKind, pattern]) => (
+    claimedEffectKind !== expectedEffectKind && pattern.test(entry.text) ? [{
+      field: entry.field,
+      text: entry.text,
+      claimedEffectKind,
+      expectedEffectKind,
+    }] : []
+  )));
 }
 
 function parsedPublicPlanSummary(value) {
@@ -401,6 +468,8 @@ export function inspectStarcraftTmgSelectedActionIdentityClaimsV1(input = {}) {
         expectedAbilityName: selectedIdentity.abilityName,
       }] : [];
   });
+  contradictions.push(...claimedActionEffects(
+    fragments, selectedIdentity.effectKind));
   return freeze({
     status: contradictions.length > 0 ? "contradicted"
       : selectedIdentityMentioned ? "consistent" : "unbound",
@@ -409,6 +478,15 @@ export function inspectStarcraftTmgSelectedActionIdentityClaimsV1(input = {}) {
     checkedClaims: fragments,
     contradictions,
   });
+}
+
+function selectedActionIdentityContradictionDetail(contradiction) {
+  if (contradiction.claimedEffectKind) {
+    return `${contradiction.field}:${contradiction.claimedEffectKind}->${
+      contradiction.expectedEffectKind}`;
+  }
+  return `${contradiction.field}:${contradiction.claimedAbilityName}->${
+    contradiction.expectedAbilityName}`;
 }
 
 function normalizedResourceCostsByChoice(action) {
@@ -1157,7 +1235,7 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
   if (identityClaims.status === "contradicted") {
     const first = identityClaims.contradictions[0];
     throw correctionError("PLANNER_SELECTED_ACTION_IDENTITY_CONTRADICTED",
-      `${first.field}:${first.claimedAbilityName}->${first.expectedAbilityName}`);
+      selectedActionIdentityContradictionDetail(first));
   }
   if (identityClaims.status === "unbound") {
     throw correctionError("PLANNER_SELECTED_ACTION_IDENTITY_REQUIRED",
@@ -1277,7 +1355,7 @@ function validateActionOutput(raw, input, planner, queryReceipts = []) {
   if (identityClaims.status === "contradicted") {
     const first = identityClaims.contradictions[0];
     throw correctionError("ACTION_SELECTED_ACTION_IDENTITY_CONTRADICTED",
-      `${first.field}:${first.claimedAbilityName}->${first.expectedAbilityName}`);
+      selectedActionIdentityContradictionDetail(first));
   }
   if (identityClaims.status === "unbound") {
     throw correctionError("ACTION_SELECTED_ACTION_IDENTITY_REQUIRED",
@@ -3647,7 +3725,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
         : "Use the exact Host-supplied formation or asset-placement options for the selected candidate; do not restart a broad placement search in the Action stage.",
       `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one current stationary weapon profile covering the placed Unit; never describe that option as outside the enemy fire envelope. Read incomingStationaryFireEstimate when present: compare expected casualties, every exact legal removed-model list, lost occupied positions/formation reach, lost ranged contributors, exact current Fighting/Supporting losses, marker-by-marker control changes, probability of Supply reduction/zero, Supply freed for later deployment, VP awarded, and every exact reaction choice/cost against objective or scoring gain. Read incomingMoveThenFireEstimate too: a reachable row is a live threat even while legal path and post-move line of sight remain conditional; unknown path or line of sight is never safety or zero risk. Current Supply—not raw model count—controls marker strength. Do not default to the safest position: choose the highest expected net mission value after risk, and state why the accepted exposure is worth it. Preserve unknown probability as uncertainty and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
       "When an exact legal_asset_placement_options receipt is present, choose exactly one placementOptionId and return assetPlacementSelection with that ID and one concise publicReason about the visible position, intended threat/objective/route effect, and plan continuity. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
-      "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists. You may compare or reject another ability, but never describe that other ability as the action being selected, activated, used or placed.",
+      "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists and must preserve effectContract.placedAssetKind, immediateEffect and delayedEffect exactly. You may compare or reject another ability, but never describe that other ability or another effect family as the action being selected, activated, used or placed.",
       "Treat selectedActionResourceContract and resourceCostsByChoice as Rules-owned. State every nonzero effective resource cost accurately. Never call a positive BM, CP or PE cost zero, free, or unspent; Supply is a separate contract.",
       "Treat strategicImmediateValue as Rules-derived current value. A zero-benefit heal is not productive merely because its printed resource cost is zero: source-card exhaustion and forfeited alternatives remain real costs.",
       "Position publicReason fields are auditable summaries, not hidden chain-of-thought. State the useful board fact and tactical purpose without private scratch work.",
