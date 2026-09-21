@@ -861,7 +861,7 @@ async function main() {
       totalUnits: current.usage.totalUnits,
       estimatedCostCny:
         Number(current.usage.estimatedCostCnyMicros || 0) / 1_000_000,
-      naturalFormationCanaryCount: naturalFormationActions.length,
+      naturalFormationCanaryCount: formationEvidence.agentSelectedCount,
       reportPath: path.relative(ROOT,
         path.join(outputDirectory, "report.json")),
     }, null, 2)}\n`);
