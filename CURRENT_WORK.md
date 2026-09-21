@@ -54,8 +54,10 @@ explicit, isolated slice manifests.
    that delayed new calibrations until the following activation is repaired;
    one affected syntax gate passed. Long-run checkpoints now expose the same
    strategy-evidence summary before terminal closure, allowing early diagnosis
-   without restarting or waiting for the full match. Training and Skill
-   promotion require independent approval.
+   without restarting or waiting for the full match. The formal server also
+   rejects a missing or source-stale current Expo Web export before any Room or
+   Provider work, preventing paid evidence from silently using an old UI.
+   Training and Skill promotion require independent approval.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
    replay-driven Skill evolution loop. The same scene-scoped evidence feeds a
    three-arm comparison: current SkillOpt, WikiSkill knowledge compilation and

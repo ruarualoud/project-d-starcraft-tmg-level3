@@ -3,7 +3,7 @@
 import http from "node:http";
 import { generateKeyPairSync, randomBytes, timingSafeEqual } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -37,11 +37,16 @@ import { createTicket20AgentAgentDemoFixtureV1 } from
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LIVE_ROOT = path.join(ROOT,
   "build/ticket-23-slice-248-standard-2000-aa-live-v1");
-const VERIFIED_WEB_ROOT = path.join(ROOT,
-  "build/ticket-14-slice-136-web-static-v1/export-acceptance");
 const CURRENT_WEB_ROOT = path.join(ROOT, "apps/starcraft-tmg-expo/dist");
-const PRODUCT_WEB_ROOT = existsSync(CURRENT_WEB_ROOT)
-  ? CURRENT_WEB_ROOT : VERIFIED_WEB_ROOT;
+const PRODUCT_WEB_ROOT = CURRENT_WEB_ROOT;
+const WEB_SOURCE_ROOT = path.join(ROOT, "apps/starcraft-tmg-expo");
+const WEB_SOURCE_DIRECTORIES = Object.freeze([
+  "app", "assets", "components", "constants", "hooks", "lib",
+]);
+const WEB_SOURCE_FILES = Object.freeze([
+  "app.config.ts", "babel.config.js", "global.css", "metro.config.js",
+  "package.json", "tailwind.config.js", "tsconfig.json",
+]);
 const PRODUCT_WEB_DOCUMENTS = new Map([
   ["/", "index.html"], ["/index.html", "index.html"],
   ["/army", "army.html"], ["/match", "match.html"],
@@ -155,6 +160,47 @@ function authorizeRunner(request, runnerToken) {
     && timingSafeEqual(supplied, expected);
 }
 
+async function newestFileMtime(target) {
+  if (!existsSync(target)) return 0;
+  const info = await stat(target);
+  if (info.isFile()) return info.mtimeMs;
+  let newest = 0;
+  for (const entry of await readdir(target, { withFileTypes: true })) {
+    if (entry.name === "dist" || entry.name === "node_modules") continue;
+    newest = Math.max(newest, await newestFileMtime(path.join(
+      target, entry.name)));
+  }
+  return newest;
+}
+
+async function verifyCurrentWebBundle() {
+  const indexPath = path.join(CURRENT_WEB_ROOT, "index.html");
+  if (!existsSync(indexPath)) {
+    throw new Error("SLICE248_CURRENT_WEB_EXPORT_MISSING");
+  }
+  const sourceMtimes = await Promise.all([
+    ...WEB_SOURCE_DIRECTORIES.map((entry) => newestFileMtime(path.join(
+      WEB_SOURCE_ROOT, entry))),
+    ...WEB_SOURCE_FILES.map((entry) => newestFileMtime(path.join(
+      WEB_SOURCE_ROOT, entry))),
+  ]);
+  const newestSourceMtimeMs = Math.max(...sourceMtimes);
+  const indexMtimeMs = (await stat(indexPath)).mtimeMs;
+  if (indexMtimeMs < newestSourceMtimeMs) {
+    throw Object.assign(new Error("SLICE248_CURRENT_WEB_EXPORT_STALE"), {
+      indexMtimeMs,
+      newestSourceMtimeMs,
+    });
+  }
+  return {
+    root: path.relative(ROOT, CURRENT_WEB_ROOT),
+    entry: path.relative(ROOT, indexPath),
+    indexMtimeMs,
+    newestSourceMtimeMs,
+    currentSourceNotNewer: true,
+  };
+}
+
 function sumUsage(projections) {
   const rows = Object.values(projections).map((entry) => entry?.usage || {});
   return {
@@ -209,6 +255,7 @@ function compactProviderProjection(projection = {}) {
 }
 
 async function main() {
+  const webBundle = await verifyCurrentWebBundle();
   const resumeArgument = process.argv.find((entry) =>
     entry.startsWith("--resume-directory="));
   const requestedResumeDirectory = resumeArgument
@@ -633,6 +680,7 @@ async function main() {
       promptPackBySeat: {
         player1: "selfplay_agent_prompt", player2: "selfplay_agent_prompt",
       },
+      webBundle,
       evolutionExport: evolutionExportSummary,
       serviceProcess: {
         pid: process.pid,
@@ -761,6 +809,7 @@ async function main() {
     runnerToken,
     dataDirectory,
     selectedModels,
+    webBundle,
     budgetLimitCny: 160,
     providerCalls: startupUsage.providerCalls,
     totalUnits: startupUsage.totalUnits,

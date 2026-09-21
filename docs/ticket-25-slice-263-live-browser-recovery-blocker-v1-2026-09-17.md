@@ -310,3 +310,12 @@ prediction calibration citation and plan revision have appeared before the
 match closes. This is observation only: checkpointing neither changes the
 current action nor introduces an additional Provider call. The one changed
 Runner file passed its syntax gate once.
+
+The formal server now fails before Room creation or Provider initialization if
+the current Expo Web export is absent or older than any watched frontend source
+or configuration file. It no longer falls back to the historical Ticket-14
+bundle merely because the current export is missing. A successful preflight
+publishes the current bundle root, entry timestamp and newest source timestamp
+in both the startup receipt and live manifest. This prevents the fresh paid
+match from collecting screenshots against a stale UI after K3 integration. The
+single changed server file passed its syntax gate once; no Provider was called.
