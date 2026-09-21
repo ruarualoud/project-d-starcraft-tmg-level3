@@ -14,6 +14,21 @@ type BrowseTab = 'factions' | 'missions' | 'deployments';
 
 /* ──── Shared detail components ──── */
 
+/** Back breadcrumb shown above every detail view so the Database journey is
+ *  always one obvious tap away from the catalogue list. */
+function DetailBackBar({ label, onClose }: { label: string; onClose: () => void }) {
+  return (
+    <Pressable
+      onPress={onClose}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [s.backBar, pressed && { opacity: 0.7 }]}
+    >
+      <Text style={s.backBarText}>‹ {label}</Text>
+    </Pressable>
+  );
+}
+
 function StatBadge({ label, value, color }: { label: string; value: string | number | undefined; color?: string }) {
   if (value === undefined || value === null) return null;
   return (
@@ -52,6 +67,7 @@ function UnitDetail({ unit, onClose }: { unit: UnitCard; onClose: () => void }) 
 
   return (
     <ScrollView style={s.detailContainer}>
+      <DetailBackBar label={t('database')} onClose={onClose} />
       <View style={s.detailHeader}>
         <View style={{ flex: 1 }}>
           <Text style={[s.detailName, { color: fColor }]}>{unit.name}</Text>
@@ -150,6 +166,7 @@ function CardDetail({ card, onClose }: { card: TacticalCard; onClose: () => void
   const fColor = FACTION_COLORS[card.faction as keyof typeof FACTION_COLORS] || '#888';
   return (
     <ScrollView style={s.detailContainer}>
+      <DetailBackBar label={t('database')} onClose={onClose} />
       <View style={s.detailHeader}>
         <View style={{ flex: 1 }}>
           <Text style={[s.detailName, { color: fColor }]}>{card.name}</Text>
@@ -216,6 +233,7 @@ function MissionDetail({ card, onClose }: { card: GameCard; onClose: () => void 
 
   return (
     <ScrollView style={s.detailContainer}>
+      <DetailBackBar label={t('database')} onClose={onClose} />
       <View style={s.detailHeader}>
         <View style={{ flex: 1 }}>
           <Text style={[s.detailName, { color: accentColor }]}>{card.name}</Text>
@@ -572,7 +590,12 @@ export default function DatabaseScreen() {
                       {unitName(u.name)}
                       {u.isUnique ? <Text style={s.uniqueBadge}> ★</Text> : null}
                     </Text>
-                    <Text style={s.itemSub}>{u.unitType} · HP:{u.stats.hp || '?'}</Text>
+                    <Text style={s.itemSub}>
+                      {u.unitType}
+                      {` · HP:${u.stats.hp || '?'}`}
+                      {u.stats.armor != null ? ` · ARM:${u.stats.armor}` : ''}
+                      {u.stats.speed != null ? ` · SPD:${u.stats.speed}` : ''}
+                    </Text>
                   </View>
                   <Text style={[s.itemBadge, { color: fColor }]}>{u.unitType}</Text>
                 </Pressable>
@@ -693,7 +716,9 @@ const s = StyleSheet.create({
 
   searchBar: { paddingHorizontal: 12, paddingVertical: 8 },
   searchInput: { backgroundColor: '#1e293b', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: '#e5e7eb', fontSize: 14, borderWidth: 1, borderColor: '#334155' },
-  listContainer: { flex: 1 },
+  // Desktop Web keeps lists and details in a readable centered column; on
+  // phone/tablet widths maxWidth simply exceeds the viewport and has no effect.
+  listContainer: { flex: 1, width: '100%', maxWidth: 920, alignSelf: 'center' },
   catWrapper: { marginBottom: 2 },
   catHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#0f172a', borderLeftWidth: 3 },
   catTitle: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
@@ -718,7 +743,9 @@ const s = StyleSheet.create({
   deploymentThumb: { width: 56, height: 56, borderRadius: 8, backgroundColor: '#1e293b' },
 
   // Detail styles
-  detailContainer: { flex: 1, backgroundColor: '#020617' },
+  detailContainer: { flex: 1, backgroundColor: '#020617', width: '100%', maxWidth: 920, alignSelf: 'center' },
+  backBar: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b', backgroundColor: '#0f172a' },
+  backBarText: { color: '#38bdf8', fontSize: 14, fontWeight: '700' },
   detailHeader: { flexDirection: 'row', alignItems: 'flex-start', padding: 16, borderBottomWidth: 1, borderBottomColor: '#334155' },
   detailName: { fontSize: 22, fontWeight: '800' },
   detailSub: { fontSize: 12, color: '#64748b', marginTop: 4 },
