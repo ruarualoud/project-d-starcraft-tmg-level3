@@ -79,20 +79,20 @@ const STATE_CONTRACTS: Record<string, { states: any[] }> = {
 /**
  * Capability honesty surface. The generic companion backend module
  * (`packages/companion-backend-module-v1`, headless-verified in Slice 266)
- * supports the first group; the current PRODUCT room binding / persistence
- * adapter is Codex-owned and PENDING — nothing below is presented as
- * supported by the product UI.
+ * supports the first group; Slice 266c connected a subset to the PRODUCT
+ * through the companion product module (real-browser verified). Everything
+ * still pending is rendered pending — never presented as supported.
  */
 const CAPABILITY_ROWS = [
   { code: "WORLDBOOK_DYNAMIC_TRIGGER_CONTRACT", capability: "worldbook keyword/regex triggers", capabilityZh: "世界书关键字/正则动态触发", genericBackend: "supported", productBinding: "pending" },
-  { code: "COMPANION_MEMORY_LAYERS_PROJECTION", capability: "layered long-term memory + rolling summaries", capabilityZh: "分层长期记忆与滚动摘要", genericBackend: "supported", productBinding: "pending" },
-  { code: "COMPANION_RELATIONSHIP_STATE_PROJECTION", capability: "observed relationship state", capabilityZh: "观测型关系状态", genericBackend: "supported", productBinding: "pending" },
-  { code: "MULTI_COMPANION_SIMULTANEOUS_SESSION", capability: "multi-speaker turn ownership", capabilityZh: "多说话者回合归属", genericBackend: "supported", productBinding: "pending" },
+  { code: "COMPANION_MEMORY_LAYERS_PROJECTION", capability: "layered long-term memory + rolling summaries", capabilityZh: "分层长期记忆与滚动摘要", genericBackend: "supported", productBinding: "connected" },
+  { code: "COMPANION_RELATIONSHIP_STATE_PROJECTION", capability: "observed relationship state", capabilityZh: "观测型关系状态", genericBackend: "supported", productBinding: "connected" },
+  { code: "MULTI_COMPANION_SIMULTANEOUS_SESSION", capability: "multi-speaker turn ownership", capabilityZh: "多说话者回合归属", genericBackend: "supported", productBinding: "connected" },
   { code: "COMPANION_SWIPE_BRANCH_CONTRACT", capability: "swipe/edit branches", capabilityZh: "重roll/编辑分支", genericBackend: "supported", productBinding: "pending" },
-  { code: "COMPANION_LONG_SESSION_RESUME_CONTRACT", capability: "checkpoint / resume", capabilityZh: "检查点/恢复", genericBackend: "supported", productBinding: "pending" },
+  { code: "COMPANION_LONG_SESSION_RESUME_CONTRACT", capability: "checkpoint / resume", capabilityZh: "检查点/恢复", genericBackend: "supported", productBinding: "connected" },
   { code: "COMPANION_IMPORT_EXPORT_RESTORE_CONTRACT", capability: "import / export", capabilityZh: "导入/导出", genericBackend: "supported", productBinding: "pending" },
   { code: "COMPANION_AUDIT_REPLAY_SURFACE", capability: "deterministic audit / replay", capabilityZh: "确定性审计/回放", genericBackend: "supported", productBinding: "pending" },
-  { code: "COMPANION_EXTERNAL_PROVIDER_PORT", capability: "external Provider ports", capabilityZh: "外部 Provider 端口", genericBackend: "supported", productBinding: "pending" },
+  { code: "COMPANION_EXTERNAL_PROVIDER_PORT", capability: "external Provider ports", capabilityZh: "外部 Provider 端口", genericBackend: "supported", productBinding: "connected" },
   { code: "COMPANION_AUTHORS_NOTE_CONTRACT", capability: "author's-note injection", capabilityZh: "作者注释注入", genericBackend: "absent", productBinding: "pending" },
   { code: "USER_PERSONA_CONTRACT", capability: "user persona", capabilityZh: "用户人设", genericBackend: "absent", productBinding: "pending" },
   { code: "AGENT_VS_AGENT_COMPANION_POLICY_SURFACE", capability: "agent-vs-agent companion policy surface", capabilityZh: "Agent 对 Agent 同伴策略面", genericBackend: "absent", productBinding: "pending" },
@@ -101,8 +101,8 @@ const CAPABILITY_ROWS = [
 ];
 
 const PARITY_SUMMARY = [
-  { status: "supported", zh: "产品内已支持", items: ["六同伴呈现名册(真实准入关键帧)", "凯瑞甘动态头像合同(后端绑定)", "席位权限姿态", "BYOK 安全 Provider"], itemsEn: ["six-companion presentation roster (real admitted keyframes)", "Kerrigan dynamic portrait contract (backend-bound)", "seat permission posture", "secure BYOK Provider"] },
-  { status: "module_supported_binding_pending", zh: "通用后端模块已支持 · 产品绑定待 Codex", items: ["世界书触发", "分层记忆/摘要", "关系状态", "多说话者回合", "分支", "检查点/恢复", "导入导出", "审计/回放", "外部 Provider 端口"], itemsEn: ["worldbook triggers", "layered memory/summaries", "relationship state", "multi-speaker turns", "branches", "checkpoint/resume", "import/export", "audit/replay", "external Provider ports"] },
+  { status: "supported", zh: "产品内已支持", items: ["六同伴呈现名册(真实准入关键帧)", "凯瑞甘动态头像合同(后端绑定)", "席位权限姿态", "BYOK 安全 Provider", "同伴群聊:多说话者回合/@提及/持久转写(Slice 266c)", "分层记忆/关系投影(Slice 266c)", "检查点/恢复(Slice 266c)", "注入式外部 Provider 端口(Slice 266c)"], itemsEn: ["six-companion presentation roster (real admitted keyframes)", "Kerrigan dynamic portrait contract (backend-bound)", "seat permission posture", "secure BYOK Provider", "companion group chat: multi-speaker turns/@mentions/persisted transcript (Slice 266c)", "layered memory/relationship projection (Slice 266c)", "checkpoint/resume (Slice 266c)", "injected external Provider port (Slice 266c)"] },
+  { status: "module_supported_binding_pending", zh: "通用后端模块已支持 · 产品绑定待 Codex", items: ["世界书触发", "分支", "导入导出", "审计/回放"], itemsEn: ["worldbook triggers", "branches", "import/export", "audit/replay"] },
   { status: "missing", zh: "仍缺失", items: ["作者注释", "用户人设", "Agent 对 Agent 策略面", "连续头像动画(未验证)"], itemsEn: ["author's note", "user persona", "agent-vs-agent policy surface", "continuous portrait animation (not proven)"] },
 ];
 
@@ -403,7 +403,7 @@ export function CompanionCataloguePanel({ zh }: { zh: boolean }) {
     return (
       <View style={styles.prototype} testID="companion-multi-speaker-prototype">
         <Text style={styles.prototypeTitle}>
-          {zh ? "多同伴同会话 · 呈现原型(产品绑定待 Codex)" : "Multi-companion conversation · presentation prototype (product binding pending Codex)"}
+          {zh ? "多同伴同会话 · 呈现原型(实时绑定见「同伴群聊」)" : "Multi-companion conversation · presentation prototype (live binding in Companion group chat)"}
         </Text>
         <View style={styles.choiceRow}>
           {COMPANION_CATALOGUE_V1.entries.map((entry: any, index: number) => {
@@ -444,8 +444,8 @@ export function CompanionCataloguePanel({ zh }: { zh: boolean }) {
           <Text style={styles.gapCode}>
             MULTI_COMPANION_SIMULTANEOUS_SESSION
             {zh
-              ? ":通用后端模块已支持多说话者回合归属(无头验证);当前产品房间绑定/持久化适配器仍归 Codex 且未接通——本原型不伪造消息、不持久化、不调用 Provider。产品内同一时刻仍只有一位同伴真正发言。"
-              : ": the generic backend module supports multi-speaker turn ownership (headless-verified); the current product room binding/persistence adapter remains Codex-owned and unconnected — this prototype fabricates no messages, persists nothing, and calls no Provider. Exactly one companion truly speaks per session today."}
+              ? ":已于 Slice 266c 通过同伴产品模块接通——上方「同伴群聊」是服务端绑定的实时多同伴会话(确定性发言顺序、@提及、持久转写)。本原型保留为非伪造说明器:它不伪造消息、不持久化、不调用 Provider。"
+              : ": connected in Slice 266c through the companion product module — Companion group chat above is the live server-bound multi-companion conversation (deterministic speaker order, @mentions, persisted transcript). This prototype stays a non-fabricating explainer: it fabricates no messages, persists nothing, and calls no Provider."}
           </Text>
         </View>
       </View>
@@ -469,13 +469,15 @@ export function CompanionCataloguePanel({ zh }: { zh: boolean }) {
             {" · "}{zh ? "通用模块" : "generic module"}: {row.genericBackend === "supported"
               ? (zh ? "已支持(无头验证)" : "supported (headless-verified)")
               : (zh ? "不存在" : "absent")}
-            {" · "}{zh ? "产品绑定" : "product binding"}: {zh ? "待 Codex(未接通)" : "pending Codex (not connected)"}
+            {" · "}{zh ? "产品绑定" : "product binding"}: {row.productBinding === "connected"
+              ? (zh ? "已接通(Slice 266c)" : "connected (Slice 266c)")
+              : (zh ? "待 Codex(未接通)" : "pending Codex (not connected)")}
           </Text>
         ))}
         <Text style={styles.hint}>
           {zh
-            ? "完整矩阵:docs/ticket-26-slice-265-k3-sillytavern-parity-matrix-and-plan-v1-2026-09-21.md;通用后端模块证据:packages/companion-backend-module-v1(Slice 266 无头验证)。产品绑定/持久化适配器归 Codex,接通前此处一律显示待办,绝不伪装为已支持。"
-            : "Full matrix: docs/ticket-26-slice-265-k3-sillytavern-parity-matrix-and-plan-v1-2026-09-21.md; generic backend module evidence: packages/companion-backend-module-v1 (Slice 266 headless verification). The product binding/persistence adapter is Codex-owned; until connected everything renders pending here and is never presented as supported."}
+            ? "完整矩阵:docs/ticket-26-slice-265-k3-sillytavern-parity-matrix-and-plan-v1-2026-09-21.md;通用后端模块证据:packages/companion-backend-module-v1(Slice 266 无头验证);产品接通证据:Slice 266c 同伴产品模块(真实浏览器验证)。仍待接通的能力一律如实显示待办,绝不伪装为已支持。"
+            : "Full matrix: docs/ticket-26-slice-265-k3-sillytavern-parity-matrix-and-plan-v1-2026-09-21.md; generic backend module evidence: packages/companion-backend-module-v1 (Slice 266 headless verification); product binding evidence: the Slice 266c companion product module (real-browser verified). Everything still unconnected renders pending here and is never presented as supported."}
         </Text>
       </View>
     );

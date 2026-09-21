@@ -14,6 +14,12 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { useLevel3ClientDomain } from "@/lib/level3/client-domain-provider";
 import { CompanionCataloguePanel } from "./companion-catalogue-panel";
+import { COMPANION_CATALOGUE_V1 } from "../../../../content/characters/companion-catalogue-v1.mjs";
+import {
+  companionPortraitFrameAssetV1,
+  resolveCompanionPortraitAssetSourceV1,
+  type CompanionPortraitStateId,
+} from "@/lib/level3/companion-portrait-assets-v1";
 import {
   createStarcraftTmgVisiblePortraitPlayerV2,
   resolveStarcraftTmgCharacterPortraitAssetUriV2,
@@ -31,6 +37,7 @@ const MODE_INTENTS = {
 
 type FloatingSectionKey =
   | "comms"
+  | "chat"
   | "identity"
   | "catalogue"
   | "memory"
@@ -52,6 +59,48 @@ const CONTRACT_GAPS = {
 } as const;
 
 const MAX_TRANSCRIPT_MESSAGES = 64;
+const MAX_CHAT_COMPANIONS = 6;
+
+/**
+ * Registered companion package id ↔ catalogue character id. The product
+ * module registers `starcraft-tmg.companion.<slug>` per catalogue entry; the
+ * roster UI keys portraits by `starcraft.<slug>`. Both mappings are pure
+ * string derivations from the same slug — no lookup table can drift.
+ */
+function companionPackageIdFromCharacterId(characterId: string) {
+  const slug = characterId.split(".")[1] || characterId;
+  return `starcraft-tmg.companion.${slug}`;
+}
+
+function characterIdFromCompanionPackageId(packageId: string) {
+  const slug = packageId.replace(/^starcraft-tmg\.companion\./u, "");
+  return `starcraft.${slug}`;
+}
+
+interface CompanionChatCheckpoint {
+  checkpointId: string;
+  label: string;
+  turnSequence?: number;
+}
+
+interface CompanionChatState {
+  bootstrapped: boolean;
+  busy: boolean;
+  statusResult: any | null;
+  catalogueResult: any | null;
+  conversation: any | null;
+  lastOperation: string | null;
+  error: { code: string; message?: string } | null;
+  interrupted: {
+    reason: string;
+    pendingParticipantId?: string;
+    retryPolicy?: string;
+  } | null;
+  checkpoints: CompanionChatCheckpoint[];
+  selectedPackageIds: string[];
+  mentionPackageIds: string[];
+  draft: string;
+}
 
 function configuredAssetOrigin() {
   const configured = process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || "";
@@ -69,6 +118,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     view,
     connection,
     secureProvider,
+    companionProduct,
     dispatch,
     dispatchProvider,
     refresh,
@@ -94,6 +144,29 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   // reflects the completed operation itself — never persisted, never fake
   // state, and superseded whenever the projection reports "ready".
   const [catalogueLoaded, setCatalogueLoaded] = useState(false);
+  // Live companion product chat (Ticket 26 / Slice 266c). Ephemeral UI state
+  // only: the transcript, checkpoints and binding live server-side; the seat
+  // token never enters this component (the Client Domain attaches it inside
+  // its own module). Nothing here is persisted by the UI.
+  const defaultCompanionPackageId = useMemo(() => {
+    const entry = COMPANION_CATALOGUE_V1.entries.find((candidate: any) => candidate.defaultCompanion)
+      || COMPANION_CATALOGUE_V1.entries[0];
+    return companionPackageIdFromCharacterId(entry.characterId);
+  }, []);
+  const [chat, setChat] = useState<CompanionChatState>({
+    bootstrapped: false,
+    busy: false,
+    statusResult: null,
+    catalogueResult: null,
+    conversation: null,
+    lastOperation: null,
+    error: null,
+    interrupted: null,
+    checkpoints: [],
+    selectedPackageIds: [],
+    mentionPackageIds: [],
+    draft: "",
+  });
   const [sectionOverrides, setSectionOverrides] = useState<
     Partial<Record<FloatingSectionKey, boolean>>
   >({});
@@ -128,6 +201,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
 
   const floatingSectionDefaults: Record<FloatingSectionKey, boolean> = {
     comms: true,
+    chat: false,
     identity: false,
     catalogue: false,
     memory: false,
@@ -218,6 +292,214 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     });
     if (response.ok) setDraft("");
   }
+
+  function patchChat(patch: Partial<CompanionChatState>) {
+    setChat((current) => ({ ...current, ...patch }));
+  }
+
+  const effectiveChatSelection = chat.selectedPackageIds.length
+    ? chat.selectedPackageIds
+    : [defaultCompanionPackageId];
+
+  function toggleChatCompanion(packageId: string) {
+    if (chat.conversation || chat.busy) return;
+    const current = effectiveChatSelection;
+    const next = current.includes(packageId)
+      ? current.filter((id) => id !== packageId)
+      : [...current, packageId].slice(0, MAX_CHAT_COMPANIONS);
+    if (!next.length) return; // 1..6 companions: never zero
+    patchChat({ selectedPackageIds: next });
+  }
+
+  function toggleChatMention(packageId: string) {
+    const current = chat.mentionPackageIds;
+    patchChat({
+      mentionPackageIds: current.includes(packageId)
+        ? current.filter((id) => id !== packageId)
+        : [...current, packageId],
+    });
+  }
+
+  async function bootstrapChatSection() {
+    if (!companionProduct) return;
+    patchChat({ busy: true, error: null, lastOperation: "bootstrap" });
+    try {
+      const statusResult = await companionProduct.status();
+      const catalogueResult = await companionProduct.catalogue();
+      const active = await companionProduct.readActive();
+      patchChat({
+        bootstrapped: true,
+        statusResult,
+        catalogueResult,
+        ...(active?.ok ? { conversation: active } : {}),
+        error: statusResult?.ok
+          ? null
+          : { code: String(statusResult?.reason || "COMPANION_PRODUCT_STATUS_UNAVAILABLE") },
+      });
+    } finally {
+      patchChat({ busy: false });
+    }
+  }
+
+  async function openChatConversation() {
+    if (!companionProduct || chat.busy) return;
+    patchChat({ busy: true, error: null, interrupted: null, lastOperation: "open_or_resume" });
+    try {
+      const result = await companionProduct.openOrResume({
+        packageIds: effectiveChatSelection,
+      });
+      if (result?.ok) {
+        patchChat({ conversation: result, mentionPackageIds: [] });
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_OPEN_FAILED") } });
+      }
+    } finally {
+      patchChat({ busy: false });
+    }
+  }
+
+  async function sendChatMessage() {
+    if (!companionProduct || chat.busy) return;
+    const conversationId = chat.conversation?.conversationId;
+    const content = chat.draft.trim();
+    if (!conversationId || !content) return;
+    patchChat({ busy: true, error: null, lastOperation: "send" });
+    try {
+      const result = await companionProduct.send({
+        conversationId,
+        content,
+        mentions: chat.mentionPackageIds,
+      });
+      if (result?.ok) {
+        patchChat({ conversation: result, draft: "", mentionPackageIds: [], interrupted: null });
+        return;
+      }
+      const reason = String(result?.reason || "COMPANION_MESSAGE_FAILED");
+      if (result?.acceptedHistoryPreserved
+        || result?.retryPolicy === "explicit_continue_only_never_automatic") {
+        // Provider turn interrupted: the accepted history is preserved
+        // server-side, no reply is fabricated, and ONLY an explicit Continue
+        // resumes it — there is no automatic retry anywhere in this path.
+        patchChat({
+          interrupted: {
+            reason,
+            pendingParticipantId: result?.pendingParticipantId,
+            retryPolicy: result?.retryPolicy,
+          },
+        });
+        const refreshed = await companionProduct.read({ conversationId });
+        if (refreshed?.ok) patchChat({ conversation: refreshed });
+        return;
+      }
+      patchChat({ error: { code: reason } });
+    } finally {
+      patchChat({ busy: false });
+    }
+  }
+
+  async function continueChatConversation() {
+    if (!companionProduct || chat.busy) return;
+    const conversationId = chat.conversation?.conversationId;
+    if (!conversationId) return;
+    patchChat({ busy: true, error: null, lastOperation: "continue" });
+    try {
+      const result = await companionProduct.continue({ conversationId });
+      if (result?.ok) {
+        patchChat({ conversation: result, interrupted: null });
+        return;
+      }
+      const reason = String(result?.reason || "COMPANION_CONTINUE_FAILED");
+      if (result?.acceptedHistoryPreserved
+        || result?.retryPolicy === "explicit_continue_only_never_automatic") {
+        patchChat({
+          interrupted: {
+            reason,
+            pendingParticipantId: result?.pendingParticipantId,
+            retryPolicy: result?.retryPolicy,
+          },
+        });
+        return;
+      }
+      patchChat({ error: { code: reason } });
+    } finally {
+      patchChat({ busy: false });
+    }
+  }
+
+  async function checkpointChatConversation() {
+    if (!companionProduct || chat.busy) return;
+    const conversationId = chat.conversation?.conversationId;
+    if (!conversationId) return;
+    patchChat({ busy: true, error: null, lastOperation: "checkpoint" });
+    try {
+      const result = await companionProduct.checkpoint({
+        conversationId,
+        label: `manual-${new Date().toISOString()}`,
+      });
+      if (result?.ok && result.checkpoint?.checkpointId) {
+        patchChat({
+          checkpoints: [...chat.checkpoints, {
+            checkpointId: result.checkpoint.checkpointId,
+            label: result.checkpoint.label,
+            turnSequence: result.checkpoint.turnSequence,
+          }],
+        });
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_CHECKPOINT_FAILED") } });
+      }
+    } finally {
+      patchChat({ busy: false });
+    }
+  }
+
+  async function resumeChatConversation(checkpointId?: string) {
+    if (!companionProduct || chat.busy) return;
+    const conversationId = chat.conversation?.conversationId;
+    if (!conversationId) return;
+    patchChat({ busy: true, error: null, interrupted: null, lastOperation: "resume" });
+    try {
+      const result = await companionProduct.resume(
+        checkpointId ? { conversationId, checkpointId } : { conversationId },
+      );
+      if (result?.ok) {
+        patchChat({ conversation: result });
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_RESUME_FAILED") } });
+      }
+    } finally {
+      patchChat({ busy: false });
+    }
+  }
+
+  async function closeChatConversation() {
+    if (!companionProduct || chat.busy) return;
+    const conversationId = chat.conversation?.conversationId;
+    if (!conversationId) return;
+    patchChat({ busy: true, error: null, lastOperation: "close" });
+    try {
+      const result = await companionProduct.close({ conversationId });
+      if (result?.ok) {
+        patchChat({
+          conversation: null,
+          interrupted: null,
+          mentionPackageIds: [],
+          checkpoints: [],
+        });
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_CLOSE_FAILED") } });
+      }
+    } finally {
+      patchChat({ busy: false });
+    }
+  }
+
+  const chatBootstrapRef = useRef(false);
+  const chatSectionVisible = floating && expanded && sectionOpen("chat");
+  useEffect(() => {
+    if (!chatSectionVisible || !companionProduct || chatBootstrapRef.current) return;
+    chatBootstrapRef.current = true;
+    void bootstrapChatSection();
+  }, [chatSectionVisible, companionProduct]);
 
   useEffect(() => {
     const player = playerRef.current;
@@ -850,18 +1132,18 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         )}
         <View style={styles.gapCard}>
           <Text style={styles.gapTitle}>
-            {zh ? "多个同伴如实说明" : "Multiple companions, honestly"}
+            {zh ? "多个同伴（Slice 266c 已接通）" : "Multiple companions (connected in Slice 266c)"}
           </Text>
           <Text style={styles.sectionHint}>
             {zh
-              ? "不同同伴以人格/世界书选择存在，并按顺序切换发言；同一会话同一时刻只有一位同伴发言。"
-              : "Distinct companions exist as persona/world-book selections and speak by switching; exactly one companion speaks per session at a time."}
+              ? "多同伴同会话现已由服务端绑定支持：见上方「同伴群聊」——确定性发言顺序、@提及、持久化转写。"
+              : "Multi-companion sessions are now server-bound: see Companion group chat above — deterministic speaker order, @mentions, persisted transcript."}
           </Text>
           <Text style={styles.gapCode}>
             {CONTRACT_GAPS.multiSpeaker}
             {zh
-              ? "：通用后端模块已支持多说话者回合归属（无头验证），但当前产品房间绑定/持久化适配器归 Codex 且未接通；此处如实不可用，不做本地模拟。"
-              : ": the generic backend module supports multi-speaker turn ownership (headless-verified), but the current product room binding/persistence adapter is Codex-owned and unconnected; honestly unavailable here, never simulated locally."}
+              ? "：已通过同伴产品模块接通（Slice 266c，真实浏览器验证）；会话仍按席位校验，任何时刻同一回合只有一位发言者。"
+              : ": connected through the companion product module (Slice 266c, real-browser verified); conversations stay seat-scoped and exactly one participant owns any turn."}
           </Text>
         </View>
       </View>
@@ -905,8 +1187,8 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           <Text style={styles.gapCode}>
             {CONTRACT_GAPS.relationship}
             {zh
-              ? "：通用后端模块已支持观测型关系状态（无头验证），但当前产品房间绑定未投影；如实显示未知，绝不当零或编造。"
-              : ": the generic backend module supports observed relationship state (headless-verified), but the current product room binding does not project it; shown honestly as unknown, never zero or invented."}
+              ? "：已接通（Slice 266c）——「同伴群聊」中的记忆与关系卡片直接渲染服务端投影；未知仍是第一等状态，绝不填零或编造。"
+              : ": connected (Slice 266c) — the memory & relationship card in Companion group chat renders the server projection directly; unknown stays first-class, never zero-filled or invented."}
           </Text>
         </View>
         <View style={styles.gapCard}>
@@ -914,8 +1196,8 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           <Text style={styles.gapCode}>
             {CONTRACT_GAPS.memoryLayers}
             {zh
-              ? "：通用后端模块已支持分层长期记忆（无头验证），但当前产品绑定只暴露会话转写上限与安全记忆哈希引用；不做本地伪持久层。"
-              : ": the generic backend module supports layered long-term memory (headless-verified), but the current product binding exposes only the session transcript bound and safe memory hash refs; no fake local persistence layer is created."}
+              ? "：已接通（Slice 266c）——CB-2 分层记忆（转写/滚动摘要/关系）经同伴产品模块投影到「同伴群聊」；摘要未写入时如实标注，绝不伪造。"
+              : ": connected (Slice 266c) — the CB-2 layered memory (transcript / rolling summary / relationship) is projected into Companion group chat through the companion product module; an unwritten summary is labelled honestly, never fabricated."}
           </Text>
         </View>
         <View style={styles.gapCard}>
@@ -969,6 +1251,396 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
             ? "：显式策略面未投影，会话绝不自动打开）。复盘模式独立：赛后复盘在「复盘与 Skill」分面，不在同伴窗口。"
             : ": no explicit policy surface is projected, and sessions never auto-open). Review mode is separate: postgame review lives in the Review & Skill surface, not in the companion window."}
         </Text>
+      </View>
+    );
+  }
+
+  function renderChatProviderStatus() {
+    const provider = chat.statusResult?.provider;
+    const persistence = chat.statusResult?.persistence;
+    const unavailable = !provider || provider.state !== "injected_port";
+    return (
+      <View style={styles.chatStatusCard} testID="companion-chat-provider-status">
+        <Text style={styles.chatStatusTitle}>
+          {zh ? "Provider 状态" : "Provider status"}
+          {": "}
+          {!chat.statusResult
+            ? (chat.busy
+              ? (zh ? "加载中…" : "loading…")
+              : (zh ? "不可用 · 状态未载入" : "unavailable · status not loaded"))
+            : `${provider?.state || "unknown"}${provider?.reason ? ` · ${provider.reason}` : ""}`}
+        </Text>
+        <Text style={styles.chatStatusMeta}>
+          {!chat.statusResult
+            ? (zh
+              ? "如实不可用：不伪造 Provider 状态，不隐藏错误。"
+              : "Honestly unavailable: provider state is never fabricated and errors are never hidden.")
+            : unavailable
+              ? (zh
+                ? "同伴回复如实不可用：服务端未注入 Provider 端口。绝不伪造模型回复；打开/读取/检查点/关闭仍然可用。"
+                : "Companion replies are honestly unavailable: no Provider port is injected server-side. No model reply is ever fabricated; open/read/checkpoint/close still work.")
+              : (zh
+                ? `注入式 Provider 端口 · 调用 ${provider?.accounting?.calls ?? 0} 次 · 声明网络 ${provider?.declaredNetwork || "unknown"}`
+                : `injected Provider port · calls ${provider?.accounting?.calls ?? 0} · declared network ${provider?.declaredNetwork || "unknown"}`)}
+        </Text>
+        <Text style={styles.chatStatusMeta}>
+          {zh
+            ? "BYOK：真实密钥交接仍归下方「安全 Provider 设置」；同伴模块本身绝不接触凭据。"
+            : "BYOK: live key attachment stays with the secure Provider console below; the companion module itself never sees credentials."}
+          {persistence
+            ? (zh
+              ? ` 持久化：${persistence.durable ? "持久" : "内存（易失，如实声明）"}。`
+              : ` persistence: ${persistence.durable ? "durable" : "in-memory (volatile, honestly declared)"}.`)
+            : ""}
+        </Text>
+      </View>
+    );
+  }
+
+  function renderChatMemorySummary(conversation: any) {
+    const memory = conversation?.memorySummary;
+    if (!memory) return null;
+    const axes = memory.relationshipAxes && typeof memory.relationshipAxes === "object"
+      ? Object.entries(memory.relationshipAxes)
+      : [];
+    return (
+      <View style={styles.gapCard} testID="companion-chat-memory-summary">
+        <Text style={styles.gapTitle}>
+          {zh ? "记忆与关系（服务端投影）" : "Memory & relationship (server projection)"}
+        </Text>
+        <Text style={styles.gapCode}>
+          {zh ? "转写条目" : "transcript entries"}: {memory.transcriptEntries}
+          {" · "}{zh ? "最近发言" : "latest speakers"}: {(memory.latestSpeakers || [])
+            .map((participantId: string) => chatParticipantLabel(conversation, participantId))
+            .join(" → ") || "—"}
+        </Text>
+        <Text style={styles.gapCode}>
+          {zh ? "滚动摘要" : "rolling summary"}: {memory.rollingSummary
+            ? `${memory.rollingSummary.summaryVersion} (through ${memory.rollingSummary.coversTranscriptThrough})`
+            : memory.rollingSummaryHonesty || "not_written_yet_never_fabricated"}
+        </Text>
+        <Text style={styles.gapCode}>
+          {zh ? "关系轴" : "relationship axes"}: {axes.length
+            ? axes.map(([axis, state]: [string, any]) => `${axis}=${state?.status === "known" ? state.value : "unknown"}`).join(" · ")
+            : (zh ? "未知（第一等状态，绝不填零）" : "unknown (first-class, never zero-filled)")}
+          {" · "}{zh ? "观测事件" : "observed events"}: {memory.relationshipEvents ?? 0}
+        </Text>
+        <Text style={styles.gapCode}>
+          opponentPrivateAccess: false · hiddenChainOfThought: not_collected
+        </Text>
+      </View>
+    );
+  }
+
+  function chatParticipantLabel(conversation: any, participantId: string) {
+    const participant = (conversation?.participants || []).find(
+      (entry: any) => entry.participantId === participantId,
+    );
+    return participant?.label || participantId;
+  }
+
+  function chatCompanionSlug(companion: any) {
+    return String(companion?.packageRef?.id || "").replace(/^starcraft-tmg\.companion\./u, "");
+  }
+
+  function renderChatConversation(conversation: any) {
+    const participants: any[] = conversation.participants || [];
+    const messages: any[] = conversation.messages || [];
+    const boundCompanions: any[] = conversation.companions || [];
+    const lastMessage = messages.length ? messages[messages.length - 1] : null;
+    const nextOwner = conversation.nextTurn?.ownerParticipantId || null;
+    const speakerCompanion = boundCompanions.find((entry) => entry.participantId === nextOwner)
+      || boundCompanions.find((entry) => entry.participantId === lastMessage?.participantId)
+      || boundCompanions[0]
+      || null;
+    const speakerCharacterId = speakerCompanion
+      ? characterIdFromCompanionPackageId(speakerCompanion.packageRef.id)
+      : null;
+    const speakerState: CompanionPortraitStateId = speakerCompanion
+      && lastMessage?.participantId === speakerCompanion.participantId
+      ? "speaking"
+      : "listening";
+    const speakerSource = speakerCharacterId
+      ? resolveCompanionPortraitAssetSourceV1(speakerCharacterId, speakerState)
+      : null;
+    const speakerFrameAsset = speakerCharacterId
+      ? companionPortraitFrameAssetV1(speakerCharacterId, speakerState)
+      : null;
+    return (
+      <>
+        <Text style={styles.sectionMeta} testID="companion-chat-conversation-meta">
+          conversation: {conversation.conversationId}
+          {" · "}{conversation.status}
+          {" · "}{zh ? "回合" : "turn"} {conversation.turnCounter}
+          {" · "}{zh ? "席位" : "seat"} {conversation.seatKey}
+          {conversation.resumed ? (zh ? " · 已恢复" : " · resumed") : ""}
+        </Text>
+
+        <Text style={styles.fieldLabel}>
+          {zh ? "确定性发言顺序（下一回合高亮）" : "Deterministic speaker order (next turn highlighted)"}
+        </Text>
+        <View style={styles.choiceRow} testID="companion-chat-speaker-order">
+          {(conversation.speakerOrder || []).map((participantId: string, index: number) => {
+            const isNext = nextOwner === participantId;
+            const participant = participants.find((entry: any) => entry.participantId === participantId);
+            const slug = participant?.kind === "user"
+              ? "player"
+              : chatCompanionSlug(boundCompanions.find((entry: any) => entry.participantId === participantId));
+            return (
+              <View
+                key={participantId}
+                style={[styles.chatOrderChip, isNext && styles.chatOrderChipNext]}
+                testID={`companion-chat-order-${slug}`}
+              >
+                <Text style={[styles.chatOrderText, isNext && styles.chatOrderTextNext]}>
+                  {index + 1}. {participant?.label || participantId}{isNext ? " ▶" : ""}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+        <Text style={styles.sectionMeta}>
+          {zh ? "下一回合" : "next turn"}: {conversation.nextTurn
+            ? `${chatParticipantLabel(conversation, conversation.nextTurn.ownerParticipantId)} (${conversation.nextTurn.source})`
+            : (zh ? "—（会话未激活）" : "— (session not active)")}
+        </Text>
+
+        <View style={styles.chatSpeakerRow}>
+          {speakerSource ? (
+            <View
+              style={styles.chatSpeakerPortraitBox}
+              testID="companion-chat-speaker-portrait"
+            >
+              <Image
+                accessibilityIgnoresInvertColors
+                accessibilityLabel={`${speakerCompanion?.packageRef?.id || "companion"} · ${speakerState}`}
+                resizeMode="cover"
+                source={speakerSource}
+                style={styles.chatSpeakerPortrait}
+                testID="companion-chat-speaker-portrait-img"
+              />
+              <View pointerEvents="none" style={styles.scanlines} />
+            </View>
+          ) : (
+            <View
+              accessibilityLabel={zh ? "头像资产不可用（如实标注）" : "portrait asset unavailable (labelled honestly)"}
+              accessibilityRole="image"
+              style={styles.chatSpeakerPortraitBox}
+              testID="companion-chat-speaker-portrait"
+            >
+              <Text style={styles.fallbackGlyph}>◈</Text>
+            </View>
+          )}
+          <View style={styles.chatSpeakerCopy}>
+            <Text style={styles.sectionRow}>
+              {zh ? "当前发言者" : "Current speaker"}: {speakerCompanion
+                ? chatParticipantLabel(conversation, speakerCompanion.participantId)
+                : (zh ? "你" : "You")}
+            </Text>
+            {speakerFrameAsset && (
+              <Text style={styles.sectionMeta} testID="companion-chat-speaker-asset-meta">
+                asset: {speakerFrameAsset.assetPath}
+                {"\n"}sha256: {speakerFrameAsset.contentHash.slice(0, 12)}…
+                {" · "}{zh ? "准入静态关键帧" : "admitted static keyframe"}
+              </Text>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.transcript} testID="companion-chat-transcript">
+          {messages.length ? messages.slice(-16).map((message: any) => {
+            const isUser = message.participantId === conversation.userParticipantId;
+            return (
+              <View
+                key={message.turnId}
+                style={isUser ? styles.humanMessage : styles.agentMessage}
+                testID={`companion-chat-message-${message.turnSequence}`}
+              >
+                <Text style={styles.messageAuthor}>
+                  {chatParticipantLabel(conversation, message.participantId)}
+                  {message.mentions?.length
+                    ? `  ${message.mentions.map((participantId: string) => `@${chatParticipantLabel(conversation, participantId)}`).join(" ")}`
+                    : ""}
+                </Text>
+                <Text style={styles.messageText}>{message.content}</Text>
+              </View>
+            );
+          }) : (
+            <Text style={styles.emptyTranscript}>
+              {zh
+                ? "会话已接通（持久化转写为空）。发送第一条消息。"
+                : "Conversation open (persisted transcript is empty). Send the first message."}
+            </Text>
+          )}
+        </View>
+
+        {chat.interrupted && (
+          <View style={styles.chatInterruptCard} testID="companion-chat-interrupted">
+            <Text style={styles.chatInterruptTitle}>
+              {zh ? "Provider 回合已中断" : "Provider turn interrupted"}
+            </Text>
+            <Text style={styles.chatInterruptText}>
+              {chat.interrupted.reason}
+              {chat.interrupted.pendingParticipantId
+                ? ` · ${zh ? "待发言" : "pending"}: ${chatParticipantLabel(conversation, chat.interrupted.pendingParticipantId)}`
+                : ""}
+            </Text>
+            <Text style={styles.chatInterruptText}>
+              {zh
+                ? "已接受的历史完整保留；没有伪造任何回复。只有显式「继续」才会恢复该回合——绝不自动重试。"
+                : "The accepted history is fully preserved and no reply was fabricated. Only an explicit Continue resumes this turn — there is never an automatic retry."}
+            </Text>
+            <ActionButton
+              disabled={chat.busy}
+              label={zh ? "显式继续该回合" : "Explicitly continue turn"}
+              onPress={() => void continueChatConversation()}
+              testID="companion-chat-continue"
+            />
+          </View>
+        )}
+
+        <Text style={styles.fieldLabel}>{zh ? "@提及（可选）" : "@mentions (optional)"}</Text>
+        <View style={styles.choiceRow}>
+          {boundCompanions.map((companion: any) => {
+            const packageId = companion.packageRef.id;
+            const active = chat.mentionPackageIds.includes(packageId);
+            return (
+              <ChoiceButton
+                key={packageId}
+                active={active}
+                disabled={chat.busy}
+                label={`@${chatParticipantLabel(conversation, companion.participantId)}`}
+                onPress={() => toggleChatMention(packageId)}
+                testID={`companion-chat-mention-${chatCompanionSlug(companion)}`}
+              />
+            );
+          })}
+        </View>
+
+        <TextInput
+          accessibilityLabel={zh ? "同伴会话消息" : "Companion conversation message"}
+          editable={!chat.busy && conversation.status === "active"}
+          maxLength={4096}
+          multiline
+          onChangeText={(value) => patchChat({ draft: value })}
+          placeholder={zh ? "对同伴说话；@提及决定谁先回应…" : "Speak to your companions; an @mention decides who answers first…"}
+          placeholderTextColor="#73806e"
+          style={styles.input}
+          testID="companion-chat-input"
+          value={chat.draft}
+        />
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={!chat.draft.trim() || chat.busy || conversation.status !== "active"}
+            label={zh ? "发送" : "Send"}
+            onPress={() => void sendChatMessage()}
+            testID="companion-chat-send"
+          />
+          <ActionButton
+            disabled={chat.busy || conversation.status !== "active"}
+            label={zh ? "检查点" : "Checkpoint"}
+            onPress={() => void checkpointChatConversation()}
+            testID="companion-chat-checkpoint"
+          />
+          <ActionButton
+            danger
+            disabled={chat.busy}
+            label={zh ? "关闭会话" : "Close conversation"}
+            onPress={() => void closeChatConversation()}
+            testID="companion-chat-close"
+          />
+        </View>
+
+        {chat.checkpoints.length > 0 && (
+          <>
+            <Text style={styles.fieldLabel}>
+              {zh ? "本会话窗口记录的检查点" : "Checkpoints recorded in this window"}
+            </Text>
+            {chat.checkpoints.map((checkpoint) => (
+              <View key={checkpoint.checkpointId} style={styles.chatCheckpointRow}>
+                <Text style={styles.sectionMeta}>
+                  {checkpoint.checkpointId}
+                  {checkpoint.turnSequence !== undefined ? ` · turn ${checkpoint.turnSequence}` : ""}
+                </Text>
+                <ActionButton
+                  disabled={chat.busy}
+                  label={zh ? "恢复到此检查点" : "Resume to checkpoint"}
+                  onPress={() => void resumeChatConversation(checkpoint.checkpointId)}
+                  testID={`companion-chat-resume-${checkpoint.checkpointId}`}
+                />
+              </View>
+            ))}
+          </>
+        )}
+
+        {renderChatMemorySummary(conversation)}
+      </>
+    );
+  }
+
+  function renderChatSection() {
+    return (
+      <View style={styles.sectionBody} testID="companion-chat-section">
+        <Text style={styles.sectionHint}>
+          {zh
+            ? "同伴群聊（Slice 266c 已接通）：服务端绑定的持久会话，按席位校验。同伴永不持久化席位令牌、永不读取对手私有计划/记忆、永不请求或存储隐藏思维链、绝不伪造模型回复；无 Preview/Confirm/Apply 权限。"
+            : "Companion group chat (connected in Slice 266c): a server-bound persisted conversation, verified per seat. Companions never persist seat tokens, never read opponent-private plans/memory, never request or store hidden chain-of-thought, and never fabricate a model reply; no Preview/Confirm/Apply authority."}
+        </Text>
+        {!companionProduct && (
+          <Text accessibilityRole="alert" style={styles.errorText}>
+            {zh
+              ? "同伴产品客户端未挂载：如实不可用，不做本地模拟。"
+              : "Companion product client is not mounted: honestly unavailable, never simulated locally."}
+          </Text>
+        )}
+        {renderChatProviderStatus()}
+        {chat.conversation ? renderChatConversation(chat.conversation) : (
+          <>
+            <Text style={styles.fieldLabel}>
+              {zh ? "选择 1–6 位已注册同伴" : "Select 1–6 registered companions"}
+            </Text>
+            <View style={styles.choiceRow} testID="companion-chat-selector">
+              {COMPANION_CATALOGUE_V1.entries.map((entry: any) => {
+                const packageId = companionPackageIdFromCharacterId(entry.characterId);
+                const slug = entry.characterId.split(".")[1] || entry.characterId;
+                const active = effectiveChatSelection.includes(packageId);
+                return (
+                  <ChoiceButton
+                    key={entry.characterId}
+                    active={active}
+                    disabled={chat.busy || !companionProduct}
+                    label={zh ? entry.displayNameZh : entry.displayName}
+                    onPress={() => toggleChatCompanion(packageId)}
+                    testID={`companion-chat-select-${slug}`}
+                  />
+                );
+              })}
+            </View>
+            <Text style={styles.sectionMeta}>
+              {zh
+                ? `已选 ${effectiveChatSelection.length}/${MAX_CHAT_COMPANIONS}：发言顺序为确定性选择顺序，之后轮转。`
+                : `Selected ${effectiveChatSelection.length}/${MAX_CHAT_COMPANIONS}: speaker order is the deterministic selection order, then rotation.`}
+            </Text>
+            <ActionButton
+              disabled={chat.busy || !companionProduct}
+              label={zh ? "打开或恢复会话" : "Open or resume conversation"}
+              onPress={() => void openChatConversation()}
+              testID="companion-chat-open"
+            />
+            {chat.bootstrapped && !chat.error && (
+              <Text style={styles.sectionHint}>
+                {zh
+                  ? "本席位当前没有进行中的同伴会话；打开即创建或恢复同阵容的持久会话。"
+                  : "No active companion conversation for this seat right now; opening creates or resumes the persisted conversation for the same roster."}
+              </Text>
+            )}
+          </>
+        )}
+        {chat.error && (
+          <Text accessibilityRole="alert" style={styles.errorText} testID="companion-chat-error">
+            {chat.error.code}
+          </Text>
+        )}
       </View>
     );
   }
@@ -1086,6 +1758,11 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
                 </Text>
               )}
             </View>,
+          )}
+          {renderFloatingSection(
+            "chat",
+            zh ? "同伴群聊（已接通）" : "Companion group chat (connected)",
+            renderChatSection(),
           )}
           {renderFloatingSection(
             "identity",
@@ -1212,11 +1889,13 @@ function ChoiceButton({
   disabled,
   label,
   onPress,
+  testID,
 }: {
   active: boolean;
   disabled: boolean;
   label: string;
   onPress(): void;
+  testID?: string;
 }) {
   return (
     <Pressable
@@ -1225,6 +1904,7 @@ function ChoiceButton({
       disabled={disabled}
       onPress={onPress}
       style={[styles.choiceButton, active && styles.choiceButtonActive, disabled && styles.disabled]}
+      testID={testID}
     >
       <Text style={[styles.choiceText, active && styles.choiceTextActive]}>{label}</Text>
     </Pressable>
@@ -1236,11 +1916,13 @@ function ActionButton({
   disabled,
   label,
   onPress,
+  testID,
 }: {
   danger?: boolean;
   disabled: boolean;
   label: string;
   onPress(): void;
+  testID?: string;
 }) {
   return (
     <Pressable
@@ -1249,6 +1931,7 @@ function ActionButton({
       disabled={disabled}
       onPress={onPress}
       style={[styles.actionButton, danger && styles.dangerButton, disabled && styles.disabled]}
+      testID={testID}
     >
       <Text style={styles.actionButtonText}>{label}</Text>
     </Pressable>
@@ -1346,6 +2029,21 @@ const styles = StyleSheet.create({
   actionButtonText: { color: "#f5f2df", fontSize: 11, fontWeight: "900" },
   disabled: { opacity: 0.42 },
   traceCard: { gap: 4, padding: 9, borderRadius: 8, backgroundColor: "#0d1410", borderWidth: 1, borderColor: "#2d3a2b" },
+  chatStatusCard: { gap: 6, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: "#2d839d", backgroundColor: "#08202d" },
+  chatStatusTitle: { color: "#a5f3fc", fontSize: 12, fontWeight: "900" },
+  chatStatusMeta: { color: "#9fb3bd", fontSize: 10, lineHeight: 15 },
+  chatOrderChip: { minHeight: 24, justifyContent: "center", paddingHorizontal: 8, borderRadius: 999, backgroundColor: "#101912", borderWidth: 1, borderColor: "#4c6147" },
+  chatOrderChipNext: { borderColor: "#d2ae59", backgroundColor: "#31301b" },
+  chatOrderText: { color: "#aeb9a4", fontSize: 10, fontWeight: "800" },
+  chatOrderTextNext: { color: "#f6dda0" },
+  chatSpeakerRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, alignItems: "center" },
+  chatSpeakerPortraitBox: { width: 72, height: 72, maxWidth: "100%", borderWidth: 1, borderRadius: 8, borderColor: "#70805e", backgroundColor: "#071009", overflow: "hidden", alignItems: "center", justifyContent: "center", position: "relative" },
+  chatSpeakerPortrait: { width: "100%", height: "100%" },
+  chatSpeakerCopy: { flex: 1, flexBasis: 180, minWidth: 0, gap: 3 },
+  chatInterruptCard: { gap: 7, borderWidth: 1, borderColor: "#d2ae59", borderRadius: 10, padding: 11, backgroundColor: "#282313" },
+  chatInterruptTitle: { color: "#f6dda0", fontSize: 12, fontWeight: "900" },
+  chatInterruptText: { color: "#d8ceb0", fontSize: 11, lineHeight: 17 },
+  chatCheckpointRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: "#354232", borderRadius: 8, padding: 8, backgroundColor: "#0d1410" },
   traceTitle: { color: "#829b76", fontSize: 9, fontWeight: "900", letterSpacing: 1.1 },
   traceText: { color: "#92a08c", fontSize: 10, lineHeight: 15 },
   errorText: { color: "#ef9a8c", fontSize: 11, lineHeight: 17 },
