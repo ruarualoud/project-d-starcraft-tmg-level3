@@ -26,8 +26,8 @@ const PUBLIC_PORTRAITS: Record<string, { neutral: number; active: number }> = {
     active: require("../../../../assets/client/battlefield/unit-comms/public-fallback/medic-active.webp"),
   },
   goliath: {
-    neutral: require("../../../../assets/client/battlefield/unit-comms/public-fallback/goliath-neutral.webp"),
-    active: require("../../../../assets/client/battlefield/unit-comms/public-fallback/goliath-active.webp"),
+    neutral: require("../../../../assets/characters/goliath-pilot/idle-v1.png"),
+    active: require("../../../../assets/characters/goliath-pilot/selected-v1.png"),
   },
   zergling: {
     neutral: require("../../../../assets/client/battlefield/unit-comms/public-fallback/zergling-neutral.webp"),
@@ -192,10 +192,15 @@ export function starcraftTmgBattlefieldUnitMediaAssetsV1(unitId: unknown): {
   if (!media) return null;
   const fallback = PUBLIC_PORTRAITS[media.unitKey];
   if (!fallback) return null;
-  const originalNeutral = selectedChannel !== "public"
+  // The former public Goliath fallback was a generic robot face. Prefer the
+  // Project D original cockpit-pilot portrait for public/default sessions;
+  // the development-internal channel may still inspect owned classic media.
+  const preferProjectDOriginal = media.unitKey === "goliath"
+    && selectedChannel !== "development_internal";
+  const originalNeutral = selectedChannel !== "public" && !preferProjectDOriginal
     ? mediaUri(media.neutralPortraitPath)
     : null;
-  const originalActive = selectedChannel !== "public"
+  const originalActive = selectedChannel !== "public" && !preferProjectDOriginal
     ? mediaUri(media.activePortraitPath)
     : null;
   return {
