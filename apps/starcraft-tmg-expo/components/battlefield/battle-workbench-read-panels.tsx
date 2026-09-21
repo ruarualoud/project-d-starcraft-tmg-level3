@@ -564,7 +564,7 @@ function PredictedInteractionCard({ snapshot, threat, unitId, probabilityRows, p
       <Text style={styles.boundary}>
         {zh
           ? "火力区交换（原地/走打输出交换对比）：当前客户端投影未暴露该估计（仅 Agent 侧 combat-estimation 拥有 fire_zone_exchange）；此处如实显示未知，绝不当零。"
-          : "Fire-zone exchange (stationary vs move+fire output trade): the current client projection does not expose this estimate (only the agent-side combat-estimation runtime owns fire_zone_exchange); shown honestly as unknown, never zero."}
+          : "Fire-zone exchange (stationary vs move+fire output trade): not exposed by the current client projection (only the agent-side combat-estimation runtime owns fire_zone_exchange); shown honestly as unknown, never zero."}
       </Text>
       <Text style={styles.boundary}>
         {zh
