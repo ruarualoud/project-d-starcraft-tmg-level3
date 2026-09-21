@@ -45,8 +45,10 @@ explicit, isolated slice manifests.
    revision and compact intent/query references without hidden chain-of-thought.
    Terminal Replay parity now gates lossless NDJSON/MuZero/RLDS candidates and
    governance audit, plus a full-denominator Postgame Review V2 Episode with
-   checkpoint/scenario/model/prompt/Skill bindings; training and Skill promotion
-   still require independent approval.
+   checkpoint/scenario/model/prompt/Skill bindings. A Room-backed experiment
+   port now reconstructs exact signed checkpoints and protects the source Room;
+   the live isolated branch executor and acceptance still remain. Training and
+   Skill promotion require independent approval.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
    replay-driven Skill evolution loop. The same scene-scoped evidence feeds a
    three-arm comparison: current SkillOpt, WikiSkill knowledge compilation and

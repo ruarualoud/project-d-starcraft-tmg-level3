@@ -253,3 +253,22 @@ episodes, paired isolated checkpoint experiments, held-out evaluation and
 manual promotion. Slice 249 will use the same episode evidence to compare the
 existing SkillOpt path with WikiSkill and EvoTest adapters; none may mutate the
 formal Room, Rules or accepted Skill automatically.
+
+The formerly injected-only Review `experimentPort` now has a Room-backed
+adapter. `cloneCheckpoint` loads the source Room's private accepted receipts,
+replays the signed prefix through the frozen Authority runtime and rejects any
+revision/state/receipt drift. The complete envelope remains private and is
+passed only to an injected isolated branch Harness; the public clone reference
+contains hashes and revisions, not Room credentials. `executeArm` binds one
+execution key to one arm input, verifies the source Room identity before and
+after the experiment, rejects any source mutation and never retries an unknown
+commit. `readExecution` delegates durable recovery to the branch Harness, so a
+completed external execution can be recovered without a second paid call.
+
+This closes exact Room checkpoint reconstruction and source isolation, but it
+does not claim that a real Provider-driven A/B arm has run. The remaining
+dynamic requirement is an isolated branch executor that restores the frozen
+model/prompt/Skill refs, drives both sides to the declared horizon, preserves
+the opponent-response trace and returns an Authority-replayed trajectory. That
+executor will be exercised only after the fresh optimized match supplies the
+first new Episode.
