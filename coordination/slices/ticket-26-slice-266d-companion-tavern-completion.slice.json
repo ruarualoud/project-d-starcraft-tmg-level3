@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "id": "ticket-26-slice-266d-companion-tavern-completion",
+  "githubIssue": null,
+  "title": "Complete the companion product to the scoped Tavern-equivalent contract",
+  "owner": "kimi",
+  "agentProfile": "project-d-slice-implementer",
+  "model": "project-d-k3-256k",
+  "baseRef": "253c5ac48a68c22b5a63cb40a802fe6c11ef65f8",
+  "branch": "agent/kimi/ticket-26-slice-266c-companion-product-binding",
+  "worktree": ".worktrees/ticket-26-slice-266c-companion-product-binding",
+  "allowedPaths": [
+    "packages/companion-backend-module-v1/",
+    "packages/product-composition/companion-room-session-service-v1.mjs",
+    "packages/product-composition/companion-product-module-v1.mjs",
+    "packages/product-composition/index.mjs",
+    "packages/client-domain/client-domain-v1.mjs",
+    "content/characters/",
+    "apps/starcraft-tmg-expo/lib/level3/client-domain-provider.tsx",
+    "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+    "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+    "apps/starcraft-tmg-expo/components/character/companion-catalogue-content.d.ts",
+    "scripts/verify-ticket-26-slice-266c-companion-product-binding-v1.mjs",
+    "docs/ticket-26-slice-266d-companion-tavern-completion-v1-2026-09-22.md"
+  ],
+  "verification": [
+    {
+      "name": "durable Tavern-equivalent companion product browser journey",
+      "command": "node scripts/verify-ticket-26-slice-266c-companion-product-binding-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Continue from the completed Slice 266c worktree and finish all known companion product optimization without touching Rules, battle actions, strategy, replay/Skill evolution, source snapshots, credentials, or the main Codex match run. First read the existing SillyTavern parity matrix and the 266c closure, then freeze numbered sub-slices and implement them in dependency order with one scoped commit each. Close the remaining product gaps as real contracts rather than UI claims: (1) wire the existing encrypted SQLite M1 / PostgreSQL production persistence port into product construction and prove process-restart resume; (2) versioned user-persona binding to the authenticated seat; (3) deterministic Worldbook triggers with keyword/regex, global/character/persona/chat scopes, bounded recursion, insertion priority and provenance; (4) layered persistent transcript/summary/episodic/relationship memory with context budgeting, editable/rollback-safe summary and no hidden chain-of-thought; (5) swipe/reroll/edit-as-branch, checkpoints, branch lineage and long-session resume; (6) Author's Note depth/frequency injection; (7) safe import/export/restore for character cards, worldbooks and conversations with schema validation, integrity/version metadata and no credentials; (8) audit/replay of public companion turns; (9) explicit human-vs-agent, human-vs-human, agent-vs-agent-observer and review-mode permission surfaces that never expose opponent-private plans or grant Preview/Confirm/Apply; (10) complete six-package product binding for Kerrigan, Zagara, Raynor, Nova, Artanis and Zeratul using only committed approved portrait assets, with extensible catalogue registration; (11) responsive floating Web/App interaction and visual polish at desktop and 390px. Multi-companion same-conversation deterministic order, mentions, Provider interruption/Continue and seat isolation from 266c must remain intact. Do not implement a third-party extension marketplace. Do not call a paid Provider or refresh source data; use verifier-controlled deterministic Provider responses. Extend the existing 266c browser verifier rather than create another test, and after the final relevant code change run it once to prove all new contracts, durable restart, six real portrait pixels, zero Room mutation, privacy, branch/restore/audit behavior and no overflow; capture screenshots and a machine report. Only Critical/High findings block. Stop and report if the same repair loop does not converge after three rounds. Record exact files, commits, evidence and any honest nonblocking gap in the closure document. Do not push."
+}
