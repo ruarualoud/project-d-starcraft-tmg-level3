@@ -63,6 +63,32 @@
  *      plus sha256-hashed PNG evidence under
  *      build/ticket-26-slice-266c-companion-product-binding-v1/.
  *
+ * Slice 266d extension (same gate, extended — no second verifier):
+ *   7. durable Tavern-equivalent contracts are proven headlessly over the
+ *      SAME live HTTP surface after the browser journeys: versioned seat-bound
+ *      user persona (put/rollback append-only), four-tier worldbook triggers
+ *      (keyword/regex, chat/persona/character/global, bounded recursion with
+ *      firedAtDepth provenance), layered memory ops (summary edit + append-only
+ *      rollback, episodic, typed relationship events), swipe reroll + accept
+ *      lineage and edit-as-branch (accepted history hashes never rewritten),
+ *      Author's Note depth/frequency injection proven inside the captured
+ *      provider request, integrity-hashed export/tamper/cross-seat/never-
+ *      overwrite restore, package + worldbook export/import, hash-chained
+ *      audit export verified by verifyCompanionAuditExport with replay
+ *      candidates that can never auto-promote, and the four live permission
+ *      surfaces (opponent-private denied everywhere, observer/review cannot
+ *      speak, no Preview/Confirm/Apply anywhere);
+ *   8. durable process-restart resume: the product is composed twice over the
+ *      encrypted SQLite port (file under the build evidence dir, 32-byte
+ *      managed key); the second composition (simulated restart) resumes the
+ *      transcript, persona, author's note, summary versions and open branch;
+ *      a wrong/missing key fails closed;
+ *   9. all SIX companion portraits are proven as real pixels in the catalogue
+ *      section (decoded 1254px keyframes, canvas variance, served-bytes sha256
+ *      == committed file == server registry contentHash), and the new chat
+ *      cards are driven in the real browser at desktop AND 390px with zero
+ *      horizontal overflow.
+ *
  * No Provider call, no credential read, no source refresh, no Room mutation,
  * no hidden chain-of-thought, no fabricated model reply, and no gameplay
  * truth is computed here or in the UI under test.
@@ -106,6 +132,12 @@ const SCREENSHOT_EXPLANATIONS = {
   "11-narrow-chat-resumed.png": "390px touch: the same conversation resumes in the chat section with the persisted transcript; zero horizontal overflow.",
   "12-narrow-chat-speaker-pixels.png": "390px touch: current-speaker portrait pixel proof repeated at narrow width (real keyframe, served-bytes sha256 match).",
   "13-narrow-chat-closed.png": "390px touch: conversation closed; the 1..6 companion selector honestly returns for a new conversation.",
+  "14-desktop-266d-persona-worldbook.png": "Slice 266d: versioned seat-bound persona saved from the UI (Commander Vale v1) and a chat-tier worldbook entry registered with a keyword trigger; the four-tier listing is visible.",
+  "15-desktop-266d-branch-accepted.png": "Slice 266d: swipe of the last companion reply rerolled through the real provider path and ACCEPTED as a NEW appended turn (lineage shown; accepted history never rewritten), plus edit-as-branch on the user's own turn.",
+  "16-desktop-266d-memory-authors-note.png": "Slice 266d: layered memory card (summary saved as v1 then rolled back append-only) and the Author's Note card (depth/frequency saved, versioned).",
+  "17-desktop-266d-audit-permissions.png": "Slice 266d: audit chain verified + exported + replay candidate built (automatic promotion forbidden), and the four live permission surfaces each denying opponent-private with no Preview/Confirm/Apply.",
+  "18-narrow-266d-cards.png": "390px touch: the Slice 266d chat cards (persona/worldbook/memory/branches/author's note/import-export/audit/permissions) render inside the floating panel with zero horizontal overflow.",
+  "19-desktop-catalogue-six-portraits.png": "All six registered companion portraits in the catalogue section: every one decoded from its committed 1254px keyframe with canvas variance and served-bytes sha256 equal to the committed file and the server registry contentHash.",
 };
 const BACKEND_MODULES_RECORDED = [
   "packages/authoritative-engine/transition-v1.mjs",
@@ -114,12 +146,15 @@ const BACKEND_MODULES_RECORDED = [
   "packages/client-domain/portable-contract-hash-v1.mjs",
   "packages/companion-backend-module-v1/index.mjs",
   "packages/companion-backend-module-v1/in-memory-adapter-v1.mjs",
+  "packages/companion-backend-module-v1/durable-persistence-adapters-v1.mjs",
+  "packages/companion-backend-module-v1/worldbook-memory-engine-v1.mjs",
   "packages/http-adapter/handler-v1.mjs",
   "packages/product-composition/companion-product-module-v1.mjs",
   "packages/product-composition/companion-room-session-service-v1.mjs",
   "packages/product-composition/index.mjs",
   "packages/room-runtime/in-memory-room-v1.mjs",
   "content/characters/companion-catalogue-v1.mjs",
+  "content/characters/companion-portrait-asset-registry-v1.mjs",
 ];
 const SLICE_OWNED_BACKEND_PREFIXES = [
   "packages/client-domain/character-presentation-projection-v2.mjs",
@@ -666,6 +701,102 @@ async function proveChatSpeakerPixels(page, request, viewportWidth) {
   };
 }
 
+/**
+ * Slice 266d: the same claim-to-pixel discipline for EACH of the six
+ * registered companion portraits in the catalogue section. The expected
+ * asset + content hash come from the SERVER registry
+ * (content/characters/companion-portrait-asset-registry-v1.mjs); the rendered
+ * <img> must decode the committed 1254px keyframe with real luminance
+ * variance, and the served bundled bytes must hash to the same sha256 as the
+ * committed file and the registry pin.
+ */
+async function proveCataloguePortraitPixels(page, request, characterId, viewportWidth, registry) {
+  const slug = characterId.split(".")[1] || characterId;
+  const registryEntry = registry.entries
+    .find((candidate) => candidate.characterId === characterId);
+  ensure(registryEntry, "REGISTRY_ENTRY_MISSING", { characterId });
+  const idle = registryEntry.states.find((state) => state.stateId === "idle");
+  ensure(idle, "REGISTRY_IDLE_STATE_MISSING", { characterId });
+  const committedFile = safeFile(ROOT, idle.assetId);
+  ensure(committedFile && existsSync(committedFile), "LABELLED_ASSET_NOT_COMMITTED",
+    { assetId: idle.assetId });
+  const committedHash = await sha256File(committedFile);
+  ensure(committedHash === idle.contentHash, "REGISTRY_HASH_DRIFT",
+    { characterId, assetId: idle.assetId, committedHash, registryHash: idle.contentHash });
+
+  const testId = `companion-card-portrait-${slug}-img`;
+  const frame = page.getByTestId(testId);
+  await frame.waitFor({ timeout: 30_000 });
+  const img = frame.locator("img").first();
+  await img.waitFor({ state: "attached", timeout: 30_000 });
+  await page.waitForFunction((id) => {
+    const el = document.querySelector(`[data-testid="${id}"] img`);
+    return el && el.complete && el.naturalWidth > 0;
+  }, testId, { timeout: 30_000 });
+  const decoded = await img.evaluate((el) => ({
+    naturalWidth: el.naturalWidth,
+    naturalHeight: el.naturalHeight,
+    src: el.currentSrc || el.src,
+  }));
+  ensure(decoded.naturalWidth === 1254 && decoded.naturalHeight === 1254,
+    "CATALOGUE_PORTRAIT_NOT_COMMITTED_SOURCE", { characterId, decoded });
+
+  const renderInfo = await frame.evaluate((el) => {
+    for (const layer of [el, ...el.querySelectorAll("div")]) {
+      const style = getComputedStyle(layer);
+      const match = style.backgroundImage.match(/url\("(.+)"\)/u);
+      if (match) {
+        return { backgroundImage: match[1], backgroundSize: style.backgroundSize };
+      }
+    }
+    return { backgroundImage: null, backgroundSize: null };
+  });
+  ensure(renderInfo.backgroundImage, "CATALOGUE_PORTRAIT_NOT_RENDERED", { characterId });
+
+  const box = await frame.boundingBox();
+  ensure(box && box.width >= 40 && box.height >= 40
+    && box.x >= -1 && box.x + box.width <= viewportWidth + 1,
+  "CATALOGUE_PORTRAIT_NOT_SAFE_OR_NOT_CONTAINED", { characterId, box, viewportWidth });
+
+  const variance = await img.evaluate((el) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(el, 0, 0, 64, 64);
+    const data = ctx.getImageData(0, 0, 64, 64).data;
+    let sum = 0;
+    let sumSq = 0;
+    const n = data.length / 4;
+    for (let i = 0; i < data.length; i += 4) {
+      const luma = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+      sum += luma;
+      sumSq += luma * luma;
+    }
+    const mean = sum / n;
+    return { mean, stdev: Math.sqrt(Math.max(0, sumSq / n - mean * mean)) };
+  });
+  ensure(variance.stdev > 12, "CATALOGUE_PORTRAIT_FLAT_OR_GLYPH", { characterId, variance });
+
+  const served = await request.get(renderInfo.backgroundImage);
+  ensure(served.ok(), "CATALOGUE_PORTRAIT_SERVE_FAILED",
+    { characterId, status: served.status() });
+  const servedHash = sha256Buffer(await served.body());
+  ensure(servedHash === committedHash, "CATALOGUE_SERVED_BYTES_NOT_COMMITTED_ASSET",
+    { characterId, servedHash, committedHash });
+
+  return {
+    characterId,
+    assetId: idle.assetId,
+    contentHash: committedHash,
+    registryPinMatchesCommittedFile: true,
+    servedSha256MatchesCommitted: true,
+    naturalSize: [decoded.naturalWidth, decoded.naturalHeight],
+    renderedBox: box,
+    luminance: variance,
+  };
+}
+
 async function main() {
   const started = Date.now();
   await rm(BUILD_ROOT, { recursive: true, force: true });
@@ -694,14 +825,20 @@ async function main() {
   const {
     createInMemoryPersistenceAdapter,
     createInMemoryProviderAdapter,
+    verifyCompanionAuditExport,
   } = await importWorktree("packages/companion-backend-module-v1/index.mjs");
   const {
     STARCRAFT_TMG_COMPANION_PRODUCT_API_PREFIX,
     companionProductPackageInputFromCatalogueEntryV1,
+    companionPortraitAssetCatalogV1,
+    companionPortraitPresentationAssetsV1,
     createStarcraftTmgCompanionProductModuleV1,
+    createStarcraftTmgCompanionProductPersistenceV1,
   } = await importWorktree("packages/product-composition/index.mjs");
   const { COMPANION_CATALOGUE_V1 } = await importWorktree(
     "content/characters/companion-catalogue-v1.mjs");
+  const { COMPANION_PORTRAIT_ASSET_REGISTRY_V1 } = await importWorktree(
+    "content/characters/companion-portrait-asset-registry-v1.mjs");
 
   const data = await loadStarcraftTmgData(PROJECT_D_ROOT);
   const sampleState = createStarcraftTmgSampleState(data);
@@ -784,8 +921,10 @@ async function main() {
 
   // Verifier-controlled deterministic responder. NO real Provider, NO
   // network, NO credentials; `failNext` arms a one-shot outage so the
-  // interrupted-turn journey is exercised honestly.
-  const providerProbe = { calls: 0, failNext: 0, interruptions: 0 };
+  // interrupted-turn journey is exercised honestly. Every request's messages
+  // are recorded so the Slice 266d worldbook/Author's-Note injection can be
+  // proven INSIDE the provider request, not inferred.
+  const providerProbe = { calls: 0, failNext: 0, interruptions: 0, requests: [] };
   const responder = async (request) => {
     providerProbe.calls += 1;
     if (providerProbe.failNext > 0) {
@@ -793,6 +932,14 @@ async function main() {
       providerProbe.interruptions += 1;
       throw new Error("verifier-armed deterministic provider outage");
     }
+    providerProbe.requests.push({
+      requestId: request.requestId,
+      companionRef: String(request.companionRef?.id || ""),
+      messages: request.messages.map((message) => ({
+        role: message.role,
+        content: String(message.content),
+      })),
+    });
     const slug = String(request.companionRef?.id || "companion")
       .replace(/^starcraft-tmg\.companion\./u, "");
     const lastUser = [...request.messages].reverse()
@@ -804,11 +951,41 @@ async function main() {
       usage: { promptTokens: 128, completionTokens: 32, reportedCostUnits: 0 },
     };
   };
+  // Slice 266d: packages are sealed with their receipt/hash-bound portrait
+  // presentation assets, and the product receives the committed asset catalog
+  // plus one provenance-complete global-tier worldbook entry; trigger
+  // recursion is bounded at product depth 2 (engine maximum 4).
+  const packagesForProduct = () => COMPANION_CATALOGUE_V1.entries.map((entry) =>
+    companionProductPackageInputFromCatalogueEntryV1(entry, {
+      presentationAssets: companionPortraitPresentationAssetsV1(entry.characterId),
+    }));
+  const GLOBAL_WORLDBOOK_FIXTURE = [{
+    entryId: "global-koprulu-sector",
+    label: "Koprulu sector (global tier)",
+    content: "The Koprulu sector is the shared theatre; terran, zerg and protoss factions contest it.",
+    triggers: [{ kind: "keyword", keywords: ["koprulu"] }],
+    priority: 5,
+    tokenBudget: 96,
+    provenance: {
+      sourceKind: "platform_original",
+      author: "Project D",
+      license: "proprietary-development-internal",
+      sourceRefs: ["fixture://global-worldbook/koprulu"],
+      notes: "Verifier-controlled global-tier worldbook fixture; presentation framing only.",
+    },
+    sourceReceipts: [{
+      receiptId: "global-koprulu-receipt",
+      sourceRef: "fixture://global-worldbook/koprulu",
+    }],
+  }];
   const companionModule = createStarcraftTmgCompanionProductModuleV1({
     roomRuntime: roomFacade,
     persistence: createInMemoryPersistenceAdapter(),
     provider: createInMemoryProviderAdapter({ responder }),
-    packages: COMPANION_CATALOGUE_V1.entries.map(companionProductPackageInputFromCatalogueEntryV1),
+    packages: packagesForProduct(),
+    assetCatalog: companionPortraitAssetCatalogV1(),
+    globalWorldbookEntries: GLOBAL_WORLDBOOK_FIXTURE,
+    worldbookRecursionDepth: 2,
     now: () => GENERATED_AT,
   });
 
@@ -1246,6 +1423,155 @@ async function main() {
     });
     checks.push({ id: "desktop_chat_speaker_real_pixels", passed: true });
 
+    // ── Slice 266d: drive the Tavern-equivalent chat cards in the real
+    // browser (desktop). Every click below exercises the live server
+    // contract through the Client Domain facade; no card is a static claim.
+    // Persona (versioned, seat-bound): save v1 from the UI.
+    await chat.getByTestId("companion-chat-persona-name-input").fill("Commander Vale");
+    await chat.getByTestId("companion-chat-persona-description-input")
+      .fill("A cautious terran commander who scouts before engaging.");
+    await chat.getByTestId("companion-chat-persona-save").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-persona-status"]')
+        ?.innerText.includes("Commander Vale · v1/1")
+    ), null, { timeout: 60_000 });
+    checks.push({ id: "desktop_266d_persona_saved_v1", passed: true });
+
+    // Worldbook: register a chat-tier keyword entry from the UI; the merged
+    // four-tier listing shows it.
+    await chat.getByTestId("companion-chat-worldbook-id-input").fill("ui-raiders");
+    await chat.getByTestId("companion-chat-worldbook-keyword-input").fill("raiders");
+    await chat.getByTestId("companion-chat-worldbook-content-input")
+      .fill("Raynor's Raiders operate from the Hyperion.");
+    await chat.getByTestId("companion-chat-worldbook-register").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-worldbook-list"]')
+        ?.innerText.includes("[chat] ui-raiders")
+    ), null, { timeout: 60_000 });
+    const worldbookListText = await chat.getByTestId("companion-chat-worldbook-list").innerText();
+    ensure(worldbookListText.includes("[persona]") && worldbookListText.includes("[character]")
+      && worldbookListText.includes("[global]"),
+    "WORLDBOOK_TIERS_NOT_ALL_LISTED", { worldbookListText });
+    await capture(page, "14-desktop-266d-persona-worldbook.png", artifacts);
+    checks.push({ id: "desktop_266d_worldbook_registered_four_tiers", passed: true });
+
+    // Layered memory: save a summary version, then roll back append-only.
+    await chat.getByTestId("companion-chat-memory-summary-input")
+      .fill("The commander regrouped at the ridge and held the line.");
+    await chat.getByTestId("companion-chat-memory-summary-save").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-memory-status"]')
+        ?.innerText.includes("summary versions: 1")
+    ), null, { timeout: 60_000 });
+    await chat.getByTestId("companion-chat-memory-episodic-input")
+      .fill("The user prefers defensive siege positions.");
+    await chat.getByTestId("companion-chat-memory-episodic-add").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-memory-status"]')
+        ?.innerText.includes("episodic facts: 1")
+    ), null, { timeout: 60_000 });
+    await chat.getByTestId("companion-chat-memory-summary-rollback").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-memory-status"]')
+        ?.innerText.includes("summary versions: 2")
+    ), null, { timeout: 60_000 });
+    checks.push({ id: "desktop_266d_memory_summary_episodic_rollback", passed: true });
+
+    // Author's note: depth 2 / every companion turn, versioned.
+    await chat.getByTestId("companion-chat-authors-note-input")
+      .fill("Keep answers under three sentences.");
+    await chat.getByTestId("companion-chat-authors-note-depth-input").fill("2");
+    await chat.getByTestId("companion-chat-authors-note-frequency-input").fill("1");
+    await chat.getByTestId("companion-chat-authors-note-save").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-authors-note-status"]')
+        ?.innerText.includes("v1")
+    ), null, { timeout: 60_000 });
+    await capture(page, "16-desktop-266d-memory-authors-note.png", artifacts);
+    checks.push({ id: "desktop_266d_authors_note_saved", passed: true });
+
+    // Swipe the last companion reply: reroll through the real provider path,
+    // then ACCEPT — the candidate appends a NEW turn (turn 3 → 4); the
+    // accepted history is never rewritten.
+    await chat.getByTestId("companion-chat-branch-swipe").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-branches-status"]')
+        ?.innerText.includes("candidate ready")
+    ), null, { timeout: 90_000 });
+    await chat.getByTestId("companion-chat-branch-accept").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-conversation-meta"]')
+        ?.innerText.includes("turn 4")
+    ), null, { timeout: 60_000 });
+    // Edit-as-branch on the user's own last turn: submit then accept (turn 5).
+    await chat.getByTestId("companion-chat-branch-edit").click();
+    await chat.getByTestId("companion-chat-branch-edit-input").waitFor({ timeout: 60_000 });
+    await chat.getByTestId("companion-chat-branch-edit-submit").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-branches-status"]')
+        ?.innerText.includes("candidate ready")
+    ), null, { timeout: 60_000 });
+    await chat.getByTestId("companion-chat-branch-accept").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-conversation-meta"]')
+        ?.innerText.includes("turn 5")
+    ), null, { timeout: 60_000 });
+    await capture(page, "15-desktop-266d-branch-accepted.png", artifacts);
+    checks.push({ id: "desktop_266d_swipe_and_edit_branches_accepted", passed: true });
+
+    // Import/export: export succeeds with an integrity hash; restore into the
+    // live id is honestly rejected (restore never overwrites).
+    await chat.getByTestId("companion-chat-export").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-transfer-note"]')
+        ?.innerText.includes("export ok · integrity")
+    ), null, { timeout: 60_000 });
+    await chat.getByTestId("companion-chat-restore").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-transfer-note"]')
+        ?.innerText.includes("COMPANION_CONVERSATION_ALREADY_EXISTS")
+    ), null, { timeout: 60_000 });
+    checks.push({ id: "desktop_266d_export_ok_restore_never_overwrites", passed: true });
+
+    // Audit + permission surfaces, live from the UI.
+    await chat.getByTestId("companion-chat-audit-verify").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-audit-result"]')
+        ?.innerText.includes("verify · ok")
+    ), null, { timeout: 60_000 });
+    await chat.getByTestId("companion-chat-audit-replay").click();
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-audit-result"]')
+        ?.innerText.includes("automatic promotion: forbidden")
+    ), null, { timeout: 60_000 });
+    await chat.getByTestId("companion-chat-permissions-load").click();
+    await chat.getByTestId("companion-chat-permission-human_vs_agent").waitFor({ timeout: 60_000 });
+    await chat.getByTestId("companion-chat-permission-human_vs_human").waitFor({ timeout: 60_000 });
+    await chat.getByTestId("companion-chat-permission-agent_vs_agent_observer").waitFor({ timeout: 60_000 });
+    await chat.getByTestId("companion-chat-permission-review_mode").waitFor({ timeout: 60_000 });
+    const permissionText = await chat.getByTestId("companion-chat-permissions-list").innerText();
+    ensure((permissionText.match(/opponent-private: denied/gu) || []).length === 4,
+      "PERMISSION_SURFACES_NOT_ALL_DENYING_OPPONENT_PRIVATE", { permissionText });
+    ensure((permissionText.match(/Preview\/Confirm\/Apply: false/gu) || []).length === 4,
+      "PERMISSION_SURFACES_PREVIEW_CONFIRM_APPLY_NOT_FALSE", { permissionText });
+    await capture(page, "17-desktop-266d-audit-permissions.png", artifacts);
+    checks.push({ id: "desktop_266d_audit_replay_permission_surfaces", passed: true });
+
+    // Restore the checkpointed state (turn 3) server-side so the narrow
+    // journey resumes the same persisted conversation the 266c flow expects.
+    const resumeAfter266d = await companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}/resume`,
+      {
+        method: "POST",
+        seatToken: fixture.liveSeatToken(),
+        body: { roomId: ROOM_ID, checkpointId },
+      },
+    );
+    ensure(resumeAfter266d.envelope?.result?.ok === true
+      && resumeAfter266d.envelope.result.turnCounter === 3,
+    "RESUME_AFTER_266D_UI_FLOW_FAILED", { result: resumeAfter266d.envelope?.result });
+    checks.push({ id: "desktop_266d_resume_to_checkpoint_restored", passed: true });
+
     const desktopOverflow = await documentOverflow(page);
     ensure(desktopOverflow.documentWidth <= desktopOverflow.viewportWidth + 1,
       "DESKTOP_CHAT_HORIZONTAL_OVERFLOW", desktopOverflow);
@@ -1260,6 +1586,55 @@ async function main() {
     await waitBody(page, "the server approved 0 Provider profiles", 30_000);
     await capture(page, "10-desktop-byok-honest.png", artifacts);
     checks.push({ id: "desktop_byok_honestly_unavailable", passed: true });
+
+    // ── Slice 266d: all SIX registered companion portraits as real pixels ──
+    const catalogueSection = sectionButton(page, /Companion catalogue & parity/iu);
+    await catalogueSection.focus();
+    await page.keyboard.press("Enter");
+    await page.getByTestId("companion-catalogue-panel").waitFor({ timeout: 60_000 });
+    const portraitProofs = [];
+    for (const entry of COMPANION_CATALOGUE_V1.entries) {
+      portraitProofs.push(await proveCataloguePortraitPixels(
+        page, desktop.request, entry.characterId, 1500,
+        COMPANION_PORTRAIT_ASSET_REGISTRY_V1,
+      ));
+    }
+    ensure(portraitProofs.length === 6
+      && portraitProofs.every((proof) => proof.servedSha256MatchesCommitted
+        && proof.registryPinMatchesCommittedFile),
+    "SIX_PORTRAIT_PROOFS_INCOMPLETE", { count: portraitProofs.length });
+    // Parity matrix honesty: the 266d rows read connected; animation/pack
+    // sealing rows stay honestly pending.
+    const worldbookGap = await page.getByTestId("companion-gap-WORLDBOOK_DYNAMIC_TRIGGER_CONTRACT").innerText();
+    const branchGap = await page.getByTestId("companion-gap-COMPANION_SWIPE_BRANCH_CONTRACT").innerText();
+    const personaGap = await page.getByTestId("companion-gap-USER_PERSONA_CONTRACT").innerText();
+    const animationGap = await page.getByTestId("companion-gap-COMPANION_PORTRAIT_CONTINUOUS_ANIMATION").innerText();
+    ensure(worldbookGap.includes("connected (Slice 266c/266d)")
+      && branchGap.includes("connected (Slice 266c/266d)")
+      && personaGap.includes("connected (Slice 266c/266d)"),
+    "PARITY_266D_ROWS_NOT_CONNECTED", { worldbookGap, branchGap, personaGap });
+    ensure(animationGap.includes("pending"), "PARITY_ANIMATION_NOT_HONESTLY_PENDING",
+      { animationGap });
+    await capture(page, "19-desktop-catalogue-six-portraits.png", artifacts);
+    claim({
+      claimId: "six_companion_portraits_real_pixels",
+      screenshot: "19-desktop-catalogue-six-portraits.png",
+      viewport: "1500x1050",
+      precondition: "catalogue section open; all six companions registered",
+      interaction: "none (assertion on rendered pixels per portrait)",
+      expected: "each portrait decodes its committed 1254px keyframe with real variance; served-bytes sha256 == committed file == server registry contentHash; parity rows honest",
+      observed: portraitProofs.map((proof) => ({
+        characterId: proof.characterId,
+        contentHash: proof.contentHash.slice(0, 12),
+        luminanceStdev: Math.round(proof.luminance.stdev * 100) / 100,
+      })),
+      contract: "COMPANION_PORTRAIT_ASSET_REGISTRY_V1 + lib/level3/companion-portrait-assets-v1.ts (six approved portrait packages)",
+    });
+    checks.push({
+      id: "desktop_six_companion_portraits_real_pixels",
+      passed: true,
+      portraits: portraitProofs.map((proof) => proof.characterId),
+    });
 
     await desktop.close();
 
@@ -1322,6 +1697,48 @@ async function main() {
     });
     checks.push({ id: "narrow_chat_speaker_real_pixels", passed: true });
 
+    // Slice 266d at 390px: every Tavern-equivalent card renders inside the
+    // floating panel; zero horizontal overflow with them all present.
+    for (const cardTestId of [
+      "companion-chat-persona",
+      "companion-chat-worldbook",
+      "companion-chat-memory",
+      "companion-chat-branches",
+      "companion-chat-authors-note",
+      "companion-chat-import-export",
+      "companion-chat-audit",
+      "companion-chat-permissions",
+    ]) {
+      await narrowChat.getByTestId(cardTestId).waitFor({ timeout: 30_000 });
+    }
+    // Drive one live 266d interaction at touch width: read the permission
+    // surfaces and confirm all four render, opponent-private denied.
+    await narrowChat.getByTestId("companion-chat-permissions").evaluate((el) => (
+      el.scrollIntoView({ block: "center" })
+    ));
+    await narrowChat.getByTestId("companion-chat-permissions-load").tap();
+    await narrowChat.getByTestId("companion-chat-permission-review_mode")
+      .waitFor({ timeout: 60_000 });
+    const narrowPermissionText = await narrowChat
+      .getByTestId("companion-chat-permissions-list").innerText();
+    ensure((narrowPermissionText.match(/opponent-private: denied/gu) || []).length === 4,
+      "NARROW_PERMISSION_SURFACES_NOT_ALL_DENYING", { narrowPermissionText });
+    const narrowOverflow266d = await documentOverflow(narrowPage);
+    ensure(narrowOverflow266d.documentWidth <= narrowOverflow266d.viewportWidth + 1,
+      "NARROW_266D_CARDS_HORIZONTAL_OVERFLOW", narrowOverflow266d);
+    await capture(narrowPage, "18-narrow-266d-cards.png", artifacts);
+    claim({
+      claimId: "narrow_266d_cards_no_overflow",
+      screenshot: "18-narrow-266d-cards.png",
+      viewport: "390x844 touch",
+      precondition: "chat open at 390px with all Slice 266d cards rendered",
+      interaction: "scroll to the permission card, tap Read the four surfaces",
+      expected: "all eight 266d cards render; four live permission surfaces list with opponent-private denied everywhere; zero horizontal overflow",
+      observed: { overflow: narrowOverflow266d, surfaces: 4 },
+      contract: "responsive floating Web/App interaction (guardrail §9) at 390px",
+    });
+    checks.push({ id: "narrow_266d_cards_render_no_overflow", passed: true });
+
     // Close the conversation at 390px: the selector honestly returns.
     await narrowChat.getByTestId("companion-chat-close").tap();
     await narrowChat.getByTestId("companion-chat-selector").waitFor({ timeout: 60_000 });
@@ -1340,13 +1757,594 @@ async function main() {
 
     await narrow.close();
 
+    // ── Slice 266d headless contract phase (same live HTTP surface) ──────
+    // Opens a FRESH conversation (the narrow journey closed the first one)
+    // and proves every Tavern-equivalent contract end-to-end. Rejections are
+    // asserted as rejections; nothing is inferred from UI copy.
+    const seat266d = fixture.liveSeatToken();
+    const roomQuery266d = `roomId=${encodeURIComponent(ROOM_ID)}`;
+    const get266d = (sub) => companionFetch(
+      `${sub}${sub.includes("?") ? "&" : "?"}${roomQuery266d}`,
+      { seatToken: seat266d },
+    );
+    const post266d = (sub, body, method = "POST") => companionFetch(sub, {
+      method,
+      seatToken: seat266d,
+      body: { roomId: ROOM_ID, ...body },
+    });
+    const ok266d = (response, code) => {
+      ensure(response.envelope?.result?.ok === true, code, {
+        result: response.envelope?.result,
+      });
+      return response.envelope.result;
+    };
+    const rejected266d = (response, reason, code) => {
+      ensure(response.envelope?.result?.ok === false
+        && response.envelope.result.reason === reason, code, {
+        expected: reason,
+        result: response.envelope?.result,
+      });
+    };
+
+    // (2) Versioned user persona bound to the authenticated seat.
+    const personaBefore = ok266d(await get266d("persona"), "PERSONA_READ_266D_FAILED");
+    ensure(personaBefore.configured === true && personaBefore.boundSeat === "player1",
+      "PERSONA_NOT_SEAT_BOUND", { persona: personaBefore });
+    const personaPut = ok266d(await post266d("persona", {
+      displayName: "Commander Vale II",
+      description: "Renamed, still cautious.",
+    }, "PUT"), "PERSONA_PUT_266D_FAILED");
+    ensure(personaPut.currentVersion === personaBefore.currentVersion + 1,
+      "PERSONA_VERSION_NOT_INCREMENTED", { personaPut });
+    const personaRolled = ok266d(await post266d("persona/rollback", { version: 1 }),
+      "PERSONA_ROLLBACK_266D_FAILED");
+    ensure(personaRolled.currentVersion === personaBefore.currentVersion + 2
+      && personaRolled.versionCount === personaBefore.versionCount + 2
+      && personaRolled.displayName === "Commander Vale",
+    "PERSONA_ROLLBACK_NOT_APPEND_ONLY", { personaRolled });
+    checks.push({
+      id: "headless_266d_persona_versioned_seat_bound_append_only_rollback",
+      passed: true,
+      currentVersion: personaRolled.currentVersion,
+      versionCount: personaRolled.versionCount,
+    });
+
+    // Fresh conversation for the remaining contract proofs.
+    const opened266d = ok266d(await post266d("conversations", {
+      packageIds: [
+        "starcraft-tmg.companion.sarah_kerrigan",
+        "starcraft-tmg.companion.zagara",
+      ],
+    }), "CONVERSATION_266D_OPEN_FAILED");
+    const conv266d = opened266d.conversationId;
+    const convPath266d = `conversations/${encodeURIComponent(conv266d)}`;
+    ensure(conv266d !== conversationId, "SECOND_CONVERSATION_NOT_FRESH");
+
+    // (3) Deterministic worldbook triggers: keyword + regex + recursion pair.
+    const wbEntry = (entry) => post266d(`${convPath266d}/worldbook`, { entry });
+    ok266d(await wbEntry({
+      entryId: "chat-raiders",
+      label: "Raiders",
+      content: "Raynor's Raiders raid Dominion supply lines.",
+      triggers: [{ kind: "keyword", keywords: ["raiders"] }],
+      priority: 9,
+      tokenBudget: 64,
+    }), "WB_KEYWORD_REGISTER_FAILED");
+    ok266d(await wbEntry({
+      entryId: "chat-hyperion",
+      label: "Hyperion",
+      content: "The Hyperion is the Raiders' flagship.",
+      triggers: [{ kind: "regex", pattern: "hyperion", flags: "i" }],
+      priority: 8,
+      tokenBudget: 64,
+    }), "WB_REGEX_REGISTER_FAILED");
+    ok266d(await wbEntry({
+      entryId: "rec-alpha",
+      label: "Alpha",
+      content: "Alpha lore that mentions beta.",
+      triggers: [{ kind: "keyword", keywords: ["alpha"] }],
+      priority: 7,
+      tokenBudget: 64,
+    }), "WB_RECURSION_A_REGISTER_FAILED");
+    ok266d(await wbEntry({
+      entryId: "rec-beta",
+      label: "Beta",
+      content: "Beta deep lore.",
+      triggers: [{ kind: "keyword", keywords: ["beta"] }],
+      priority: 6,
+      tokenBudget: 64,
+    }), "WB_RECURSION_B_REGISTER_FAILED");
+    const wbRead = ok266d(await get266d(`${convPath266d}/worldbook`),
+      "WB_READ_266D_FAILED");
+    const tierSet = new Set(wbRead.entries.map((entry) => entry.scopeTier));
+    ensure(["chat", "persona", "character", "global"].every((tier) => tierSet.has(tier)),
+      "WB_SCOPE_TIERS_MISSING", { tiers: [...tierSet] });
+    ensure(wbRead.recursion?.maxDepth === 2 && wbRead.recursion?.bounded === true,
+      "WB_RECURSION_NOT_BOUNDED", { recursion: wbRead.recursion });
+
+    const sent266d = ok266d(await post266d(`${convPath266d}/turns`, {
+      content: "Commanders, tell me of the Koprulu raiders and the Hyperion alpha strike.",
+    }), "SEND_266D_FAILED");
+    ensure(sent266d.replies?.length === 2, "REPLIES_266D_WRONG_COUNT",
+      { replies: sent266d.replies?.length });
+    const fired = sent266d.replies[0].contextAssembly?.worldbookFired || [];
+    const firedById = Object.fromEntries(fired.map((row) => [row.entryId, row]));
+    const personaEntryId = `persona.current.v${personaRolled.currentVersion}`;
+    const expectedFired = [
+      ["chat-raiders", "chat", 0, "keyword:raiders"],
+      ["chat-hyperion", "chat", 0, "regex:hyperion"],
+      ["rec-alpha", "chat", 0, "keyword:alpha"],
+      ["rec-beta", "chat", 1, "keyword:beta"],
+      ["global-koprulu-sector", "global", 0, "keyword:koprulu"],
+      [personaEntryId, "persona", 0, "always"],
+    ];
+    for (const [entryId, scopeTier, firedAtDepth, matchedBy] of expectedFired) {
+      const row = firedById[entryId];
+      ensure(row, "WORLDBOOK_ENTRY_NOT_FIRED", {
+        entryId,
+        fired: fired.map((candidate) => candidate.entryId),
+      });
+      ensure(row.scopeTier === scopeTier && row.firedAtDepth === firedAtDepth,
+        "WORLDBOOK_FIRED_TIER_OR_DEPTH_WRONG", { entryId, row });
+      ensure((row.matchedBy || []).includes(matchedBy),
+        "WORLDBOOK_MATCHED_BY_WRONG", { entryId, matchedBy: row.matchedBy, expected: matchedBy });
+    }
+    // Deterministic insertion priority: among the verifier's own entries the
+    // order is strictly priority-desc (persona 10 → raiders 9 → hyperion 8 →
+    // rec-alpha 7 → rec-beta 6 → global 5), independent of fire depth.
+    const knownPriority = {
+      [personaEntryId]: 10,
+      "chat-raiders": 9,
+      "chat-hyperion": 8,
+      "rec-alpha": 7,
+      "rec-beta": 6,
+      "global-koprulu-sector": 5,
+    };
+    const knownSequence = fired.filter((row) => knownPriority[row.entryId] !== undefined)
+      .map((row) => knownPriority[row.entryId]);
+    ensure(knownSequence.length === 6
+      && knownSequence.every((value, index) => index === 0 || value < knownSequence[index - 1]),
+    "WORLDBOOK_INSERTION_ORDER_NOT_DETERMINISTIC", { knownSequence });
+    // Cross-companion determinism: the shared tiers (persona/chat/global)
+    // assemble byte-identically on every companion's context, while
+    // character-tier entries are sealed per companion package and fire only
+    // on that companion's own assembly (Kerrigan's reference pack carries
+    // none; Zagara's sealed pack carries three always-active entries). The
+    // second reply still fires the verifier's own six entries with identical
+    // tier/depth/match provenance.
+    const firedSecond = sent266d.replies[1].contextAssembly?.worldbookFired || [];
+    const firedSecondById = Object.fromEntries(firedSecond.map((row) => [row.entryId, row]));
+    for (const [entryId, scopeTier, firedAtDepth, matchedBy] of expectedFired) {
+      const row = firedSecondById[entryId];
+      ensure(row && row.scopeTier === scopeTier && row.firedAtDepth === firedAtDepth
+        && (row.matchedBy || []).includes(matchedBy),
+      "WORLDBOOK_ASSEMBLY_NOT_DETERMINISTIC_ACROSS_COMPANIONS", { entryId, row });
+    }
+    const sharedView = (rows) => rows.filter((row) => row.scopeTier !== "character")
+      .map((row) => [row.entryId, row.scopeTier, row.firedAtDepth, row.matchedBy]);
+    ensure(JSON.stringify(sharedView(firedSecond)) === JSON.stringify(sharedView(fired)),
+      "WORLDBOOK_SHARED_TIERS_NOT_IDENTICAL_ACROSS_COMPANIONS");
+    const characterTierScoped = (rows, prefix) => rows
+      .filter((row) => row.scopeTier === "character")
+      .every((row) => row.entryId.startsWith(prefix) && (row.matchedBy || []).includes("always"));
+    ensure(characterTierScoped(fired, "kerrigan.") && characterTierScoped(firedSecond, "zagara.")
+      && firedSecond.filter((row) => row.scopeTier === "character").length === 3,
+    "WORLDBOOK_CHARACTER_TIER_NOT_COMPANION_SCOPED", {
+      first: fired.filter((row) => row.scopeTier === "character").map((row) => row.entryId),
+      second: firedSecond.filter((row) => row.scopeTier === "character").map((row) => row.entryId),
+    });
+    checks.push({
+      id: "headless_266d_worldbook_triggers_scopes_recursion_priority_provenance",
+      passed: true,
+      fired: fired.map((row) => [row.entryId, row.scopeTier, row.firedAtDepth]),
+    });
+
+    // (6) Author's Note depth/frequency injection — proven inside the
+    // captured provider request at the exact injected position.
+    ok266d(await post266d(`${convPath266d}/authors-note`, {
+      note: "Stay terse.",
+      depth: 2,
+      frequency: 1,
+    }, "PUT"), "AUTHORS_NOTE_PUT_FAILED");
+    const callsBeforeNote = providerProbe.calls;
+    const noteSend = ok266d(await post266d(`${convPath266d}/turns`, {
+      content: "Status report please.",
+    }), "AUTHORS_NOTE_SEND_FAILED");
+    ensure(noteSend.replies.every((reply) => reply.authorsNoteInjected
+      && reply.authorsNoteInjected.depth === 2
+      && reply.authorsNoteInjected.frequency === 1
+      && reply.authorsNoteInjected.position >= 2),
+    "AUTHORS_NOTE_INJECTION_FLAGS_WRONG", {
+      injected: noteSend.replies.map((reply) => reply.authorsNoteInjected),
+    });
+    const noteRequests = providerProbe.requests.slice(callsBeforeNote);
+    ensure(noteRequests.length === 2, "NOTE_REQUESTS_NOT_CAPTURED",
+      { captured: noteRequests.length });
+    for (const [index, request] of noteRequests.entries()) {
+      const injectedAt = request.messages
+        .findIndex((message) => message.content.includes("Stay terse."));
+      ensure(injectedAt === noteSend.replies[index].authorsNoteInjected.position
+        && request.messages[injectedAt].role === "system",
+      "AUTHORS_NOTE_POSITION_WRONG", {
+        companion: request.companionRef,
+        injectedAt,
+        expected: noteSend.replies[index].authorsNoteInjected.position,
+      });
+    }
+    checks.push({ id: "headless_266d_authors_note_depth_frequency_injected", passed: true });
+
+    // (4) Layered memory: editable + append-only-rollback summary, episodic,
+    // typed relationship events; missing-version rollback fails closed.
+    ok266d(await post266d(`${convPath266d}/memory/summary`, { content: "Summary one." }),
+      "SUMMARY_ONE_FAILED");
+    ok266d(await post266d(`${convPath266d}/memory/summary`, { content: "Summary two." }),
+      "SUMMARY_TWO_FAILED");
+    ok266d(await post266d(`${convPath266d}/memory/summary/rollback`, { summaryVersion: 1 }),
+      "SUMMARY_ROLLBACK_FAILED");
+    ok266d(await post266d(`${convPath266d}/memory/episodic`, {
+      content: "The user scouted before engaging.",
+    }), "EPISODIC_ADD_FAILED");
+    ok266d(await post266d(`${convPath266d}/memory/relationship`, {
+      eventType: "observed_match_outcome",
+      deltas: [{ axis: "trust", delta: 5 }],
+    }), "RELATIONSHIP_EVENT_FAILED");
+    const memory266d = ok266d(await get266d(`${convPath266d}/memory`), "MEMORY_READ_FAILED");
+    ensure(memory266d.layers.rollingSummaryVersions?.length === 3
+      && memory266d.layers.rollingSummary?.content === "Summary one.",
+    "SUMMARY_APPEND_ONLY_ROLLBACK_WRONG", {
+      versions: memory266d.layers.rollingSummaryVersions,
+      current: memory266d.layers.rollingSummary,
+    });
+    ensure(memory266d.layers.episodicFacts?.length === 1, "EPISODIC_LAYER_WRONG");
+    ensure(memory266d.layers.relationshipState?.axes?.trust?.status === "known"
+      && memory266d.layers.relationshipState.axes.trust.value === 5,
+    "RELATIONSHIP_LAYER_WRONG", { axes: memory266d.layers.relationshipState?.axes });
+    rejected266d(
+      await post266d(`${convPath266d}/memory/summary/rollback`, { summaryVersion: 99 }),
+      "SUMMARY_VERSION_NOT_FOUND",
+      "MISSING_SUMMARY_VERSION_NOT_REJECTED",
+    );
+    checks.push({ id: "headless_266d_layered_memory_edit_rollback_episodic_relationship", passed: true });
+
+    // (5) Swipe reroll + accept lineage; edit-as-branch; kind validation.
+    const convBeforeSwipe = ok266d(await get266d(convPath266d), "READ_BEFORE_SWIPE_FAILED");
+    const swipeOpen = ok266d(await post266d(`${convPath266d}/branches`, { kind: "swipe" }),
+      "SWIPE_OPEN_FAILED");
+    const rerolled = ok266d(await post266d(
+      `${convPath266d}/branches/${swipeOpen.branch.branchId}/reroll`, {},
+    ), "SWIPE_REROLL_FAILED");
+    ensure(rerolled.entry?.entryId && rerolled.contextAssembly?.worldbookFired,
+      "REROLL_ENTRY_OR_ASSEMBLY_MISSING");
+    const acceptedSwipe = ok266d(await post266d(
+      `${convPath266d}/branches/${swipeOpen.branch.branchId}/accept`,
+      { entryId: rerolled.entry.entryId },
+    ), "SWIPE_ACCEPT_FAILED");
+    ensure(acceptedSwipe.turnCounter === convBeforeSwipe.turnCounter + 1
+      && acceptedSwipe.acceptedBranch?.lineage
+      && acceptedSwipe.messages.length === convBeforeSwipe.messages.length + 1
+      && acceptedSwipe.messages.slice(0, convBeforeSwipe.messages.length)
+        .every((message, index) => message.turnHash === convBeforeSwipe.messages[index].turnHash),
+    "SWIPE_ACCEPT_REWROTE_HISTORY_OR_DID_NOT_APPEND", {
+      before: convBeforeSwipe.turnCounter,
+      after: acceptedSwipe.turnCounter,
+    });
+    const editOpen = ok266d(await post266d(`${convPath266d}/branches`, {
+      kind: "edit",
+      baseTurnSequence: 1,
+    }), "EDIT_OPEN_FAILED");
+    const editSubmitted = ok266d(await post266d(
+      `${convPath266d}/branches/${editOpen.branch.branchId}/entries`,
+      { content: "Edited first order." },
+    ), "EDIT_SUBMIT_FAILED");
+    const acceptedEdit = ok266d(await post266d(
+      `${convPath266d}/branches/${editOpen.branch.branchId}/accept`,
+      { entryId: editSubmitted.entry.entryId },
+    ), "EDIT_ACCEPT_FAILED");
+    ensure(acceptedEdit.turnCounter === convBeforeSwipe.turnCounter + 2
+      && acceptedEdit.messages.at(-1).content === "Edited first order.",
+    "EDIT_ACCEPT_WRONG", { last: acceptedEdit.messages.at(-1) });
+    rejected266d(
+      await post266d(`${convPath266d}/branches`, { kind: "edit", baseTurnSequence: 2 }),
+      "COMPANION_BRANCH_EDIT_REQUIRES_OWN_USER_TURN",
+      "EDIT_ON_COMPANION_TURN_NOT_REJECTED",
+    );
+    rejected266d(
+      await post266d(`${convPath266d}/branches`, { kind: "swipe", baseTurnSequence: 1 }),
+      "COMPANION_BRANCH_SWIPE_REQUIRES_COMPANION_TURN",
+      "SWIPE_ON_USER_TURN_NOT_REJECTED",
+    );
+    const branchList = ok266d(await get266d(`${convPath266d}/branches`), "BRANCH_LIST_FAILED");
+    ensure(branchList.branches?.length === 2
+      && branchList.branches.every((branch) => branch.status === "accepted"),
+    "BRANCH_LIST_WRONG", { branches: branchList.branches });
+    checks.push({ id: "headless_266d_swipe_reroll_edit_branch_lineage", passed: true });
+
+    // (7) Safe import/export/restore: integrity, tamper, cross-seat,
+    // never-overwrite; no credentials in either direction.
+    const exported266d = ok266d(await get266d(`${convPath266d}/export`), "EXPORT_266D_FAILED");
+    ensure(exported266d.export?.integrity?.hash === exported266d.exportHash
+      && exported266d.credentialsIncluded === false,
+    "EXPORT_INTEGRITY_OR_CREDENTIAL_FLAG_WRONG");
+    const exportJson = JSON.stringify(exported266d.export);
+    for (const secret of secrets) {
+      ensure(!exportJson.includes(secret), "SECRET_IN_CONVERSATION_EXPORT");
+    }
+    rejected266d(
+      await post266d("conversations/restore", { export: exported266d.export }),
+      "COMPANION_CONVERSATION_ALREADY_EXISTS",
+      "RESTORE_OVERWRITE_NOT_REJECTED",
+    );
+    const tamperedExport = JSON.parse(exportJson);
+    tamperedExport.memory.episodicFacts[0].content = "tampered by verifier";
+    rejected266d(
+      await post266d("conversations/restore", { export: tamperedExport }),
+      "COMPANION_IMPORT_INTEGRITY_MISMATCH",
+      "TAMPERED_EXPORT_NOT_REJECTED",
+    );
+    rejected266d(
+      await companionFetch("conversations/restore", {
+        method: "POST",
+        seatToken: guestSeatToken,
+        body: { roomId: ROOM_ID, export: exported266d.export },
+      }),
+      "COMPANION_EXPORT_SCOPE_MISMATCH",
+      "CROSS_SEAT_RESTORE_NOT_REJECTED",
+    );
+    // Package (character card) export/import with sealed portrait assets.
+    const pkgExport = ok266d(await get266d(
+      `packages/${encodeURIComponent("starcraft-tmg.companion.sarah_kerrigan")}/export`,
+    ), "PACKAGE_EXPORT_FAILED");
+    const pkgAssets = pkgExport.export?.contract?.presentationAssets;
+    ensure(pkgExport.export?.integrity?.hash
+      && pkgAssets && Object.keys(pkgAssets).length === 6
+      && Object.values(pkgAssets).every((asset) => (
+        typeof asset?.contentHash === "string" && asset.contentHash.length === 64
+      )),
+    "PACKAGE_PORTRAIT_ASSETS_NOT_SEALED", { states: pkgAssets && Object.keys(pkgAssets) });
+    const pkgReimport = ok266d(await post266d("packages/import", {
+      contract: pkgExport.export.contract,
+    }), "PACKAGE_REIMPORT_FAILED");
+    ensure(pkgReimport.registered?.duplicate === true, "PACKAGE_REIMPORT_NOT_DUPLICATE");
+    const tamperedContract = JSON.parse(JSON.stringify(pkgExport.export.contract));
+    tamperedContract.displayName = "Tampered Kerrigan";
+    const tamperedImport = await post266d("packages/import", { contract: tamperedContract });
+    ensure(tamperedImport.envelope?.result?.ok === false, "TAMPERED_PACKAGE_NOT_REJECTED",
+      { result: tamperedImport.envelope?.result });
+    // Worldbook export/import (raw entries get honest user-authorship defaults).
+    const wbExport = ok266d(await get266d(`${convPath266d}/worldbook/export`),
+      "WB_EXPORT_FAILED");
+    ensure(wbExport.entryCount >= 4 && wbExport.export?.integrity?.hash,
+      "WB_EXPORT_INCOMPLETE", { entryCount: wbExport.entryCount });
+    const wbImport = ok266d(await post266d(`${convPath266d}/worldbook/import`, {
+      entries: [{
+        entryId: "imported-raw",
+        label: "Raw import",
+        content: "Imported lore about marines.",
+        triggers: [{ kind: "keyword", keywords: ["marines"] }],
+        priority: 3,
+        tokenBudget: 32,
+      }],
+    }), "WB_IMPORT_FAILED");
+    ensure(wbImport.registered?.length === 1, "WB_IMPORT_COUNT_WRONG");
+    checks.push({ id: "headless_266d_import_export_restore_integrity_no_credentials", passed: true });
+
+    // (8) Audit export/verify/replay: hash chain independently verified;
+    // replay candidates can never request automatic promotion.
+    const auditExport = ok266d(await get266d("audit/export"), "AUDIT_EXPORT_FAILED");
+    ensure(Array.isArray(auditExport.export?.entries) && auditExport.export.entries.length > 0,
+      "AUDIT_EXPORT_EMPTY");
+    const auditVerify = ok266d(await get266d("audit/verify"), "AUDIT_VERIFY_FAILED");
+    ensure(auditVerify.verify?.ok === true, "AUDIT_VERIFY_NOT_OK");
+    const independentAudit = verifyCompanionAuditExport(
+      `${JSON.stringify(auditExport.export, null, 2)}\n`,
+    );
+    ensure(independentAudit?.ok === true
+      && independentAudit.entryCount === auditExport.export.entries.length,
+    "AUDIT_INDEPENDENT_VERIFY_FAILED", { independentAudit });
+    const replay = ok266d(await post266d("audit/replay-candidate", {
+      sessionRef: { sessionId: conv266d },
+    }), "REPLAY_CANDIDATE_FAILED");
+    ensure(replay.candidate?.trainingTruth === false
+      && replay.candidate?.promotion?.automatic === "forbidden",
+    "REPLAY_CANDIDATE_BOUNDARY_WRONG", { candidate: replay.candidate });
+    rejected266d(
+      await post266d("audit/replay-candidate", { promote: true }),
+      "COMPANION_AUDIT_AUTOMATIC_PROMOTION_FORBIDDEN",
+      "PROMOTE_FLAG_NOT_REJECTED",
+    );
+    checks.push({ id: "headless_266d_audit_export_verify_replay_candidate", passed: true });
+
+    // (9) Four explicit permission surfaces, computed live.
+    const surfaces = ok266d(await get266d("permissions/surfaces"), "PERMISSION_SURFACES_FAILED");
+    ensure(surfaces.surfaces?.length === 4, "PERMISSION_SURFACE_COUNT_WRONG",
+      { surfaces: surfaces.surfaces?.map((surface) => surface.surfaceId) });
+    for (const surface of surfaces.surfaces) {
+      ensure(surface.previewConfirmApplyAuthority === false
+        && surface.roomMutationAuthority === false,
+      "PERMISSION_SURFACE_AUTHORITY_WRONG", { surface: surface.surfaceId });
+      const opponent = surface.decisions
+        .find((decision) => decision.resourceId === "opponent-private-plan");
+      ensure(opponent && opponent.ok === false, "OPPONENT_PRIVATE_NOT_DENIED",
+        { surface: surface.surfaceId });
+      for (const unknown of surface.decisions
+        .filter((decision) => decision.resourceId === "unknown-visibility")) {
+        ensure(unknown.ok === false, "UNKNOWN_VISIBILITY_NOT_FAIL_CLOSED",
+          { surface: surface.surfaceId });
+      }
+    }
+    ensure(surfaces.surfaces.find((surface) => surface.surfaceId === "agent_vs_agent_observer")
+      ?.canSpeak === false
+      && surfaces.surfaces.find((surface) => surface.surfaceId === "review_mode")
+        ?.canSpeak === false,
+    "READ_ONLY_SURFACES_CAN_SPEAK");
+    checks.push({ id: "headless_266d_four_permission_surfaces_live", passed: true });
+
+    // ── Slice 266d: durable encrypted-SQLite process-restart resume ──────
+    const durableDir = path.join(BUILD_ROOT, "durable");
+    await mkdir(durableDir, { recursive: true });
+    const durableFile = path.join(durableDir, "companion-product.sqlite");
+    const durableKey = createHash("sha256")
+      .update("ticket26-266d-durable-verifier-key").digest("base64");
+    const durableProbe = { calls: 0 };
+    const durableResponder = async (request) => {
+      durableProbe.calls += 1;
+      const slug = String(request.companionRef?.id || "companion")
+        .replace(/^starcraft-tmg\.companion\./u, "");
+      return {
+        content: `[${slug}] durable reply #${durableProbe.calls}`,
+        rationale: "durable fixture rationale",
+        uncertainty: 0.1,
+        usage: { promptTokens: 8, completionTokens: 4, reportedCostUnits: 0 },
+      };
+    };
+    const durableModuleOptions = (persistence) => ({
+      roomRuntime: roomFacade,
+      persistence,
+      provider: createInMemoryProviderAdapter({ responder: durableResponder }),
+      packages: packagesForProduct(),
+      assetCatalog: companionPortraitAssetCatalogV1(),
+      globalWorldbookEntries: GLOBAL_WORLDBOOK_FIXTURE,
+      now: () => GENERATED_AT,
+    });
+    const durableCall = async (module, method, sub, body) => (await module.handle({
+      method,
+      pathname: `${STARCRAFT_TMG_COMPANION_PRODUCT_API_PREFIX}/${sub}`,
+      query: method === "GET" ? { roomId: ROOM_ID } : {},
+      headers: { authorization: `Bearer ${seat266d}` },
+      body: method === "GET" ? {} : { roomId: ROOM_ID, ...(body || {}) },
+    })).response.result;
+
+    const persistenceA = createStarcraftTmgCompanionProductPersistenceV1({
+      kind: "sqlite",
+      filename: durableFile,
+      encryption: { key: durableKey },
+    });
+    const moduleA = createStarcraftTmgCompanionProductModuleV1(
+      durableModuleOptions(persistenceA),
+    );
+    const dStatus = await durableCall(moduleA, "GET", "status");
+    ensure(dStatus.ok === true && dStatus.persistence?.durable === true,
+      "DURABLE_DECLARATION_NOT_HONEST", { persistence: dStatus.persistence });
+    ensure((await durableCall(moduleA, "PUT", "persona", {
+      displayName: "Durable Commander",
+      description: "Persisted across restarts.",
+    })).ok === true, "DURABLE_PERSONA_PUT_FAILED");
+    const dOpen = await durableCall(moduleA, "POST", "conversations", {
+      packageIds: [
+        "starcraft-tmg.companion.sarah_kerrigan",
+        "starcraft-tmg.companion.zagara",
+      ],
+    });
+    ensure(dOpen.ok === true, "DURABLE_OPEN_FAILED", { reason: dOpen.reason });
+    const dConv = dOpen.conversationId;
+    const dSent = await durableCall(moduleA, "POST", `conversations/${dConv}/turns`, {
+      content: "Durable hello.",
+    });
+    ensure(dSent.ok === true && dSent.turnCounter === 3, "DURABLE_SEND_FAILED",
+      { reason: dSent.reason, turnCounter: dSent.turnCounter });
+    ensure((await durableCall(moduleA, "PUT", `conversations/${dConv}/authors-note`, {
+      note: "Durable note.",
+      depth: 2,
+      frequency: 1,
+    })).ok === true, "DURABLE_NOTE_PUT_FAILED");
+    ensure((await durableCall(moduleA, "POST", `conversations/${dConv}/memory/summary`, {
+      content: "Durable summary.",
+    })).ok === true, "DURABLE_SUMMARY_FAILED");
+    const dBranch = await durableCall(moduleA, "POST", `conversations/${dConv}/branches`, {
+      kind: "swipe",
+    });
+    ensure(dBranch.ok === true, "DURABLE_BRANCH_OPEN_FAILED", { reason: dBranch.reason });
+    ensure((await durableCall(
+      moduleA, "POST", `conversations/${dConv}/branches/${dBranch.branch.branchId}/reroll`, {},
+    )).ok === true, "DURABLE_REROLL_FAILED");
+    await persistenceA.close();
+
+    // Simulated process restart: a NEW adapter + module over the same file.
+    const persistenceB = createStarcraftTmgCompanionProductPersistenceV1({
+      kind: "sqlite",
+      filename: durableFile,
+      encryption: { key: durableKey },
+    });
+    const moduleB = createStarcraftTmgCompanionProductModuleV1(
+      durableModuleOptions(persistenceB),
+    );
+    const dActive = await durableCall(moduleB, "GET", "conversations/active");
+    ensure(dActive.ok === true && dActive.conversationId === dConv
+      && dActive.turnCounter === 3 && dActive.messages?.length === 3
+      && dActive.messages[1]?.content.includes("[sarah_kerrigan]"),
+    "DURABLE_RESTART_TRANSCRIPT_RESUME_FAILED", {
+      conversationId: dActive.conversationId,
+      turnCounter: dActive.turnCounter,
+      messages: dActive.messages?.length,
+      reason: dActive.reason,
+    });
+    const dPersona = await durableCall(moduleB, "GET", "persona");
+    ensure(dPersona.ok === true && dPersona.displayName === "Durable Commander"
+      && dPersona.currentVersion === 1,
+    "DURABLE_PERSONA_RESUME_FAILED", { persona: dPersona });
+    const dNote = await durableCall(moduleB, "GET", `conversations/${dConv}/authors-note`);
+    ensure(dNote.ok === true && dNote.note === "Durable note.", "DURABLE_NOTE_RESUME_FAILED");
+    const dMemory = await durableCall(moduleB, "GET", `conversations/${dConv}/memory`);
+    ensure(dMemory.ok === true && dMemory.layers?.rollingSummaryVersions?.length === 1
+      && dMemory.layers?.rollingSummary?.content === "Durable summary.",
+    "DURABLE_MEMORY_RESUME_FAILED");
+    const dBranches = await durableCall(moduleB, "GET", `conversations/${dConv}/branches`);
+    ensure(dBranches.ok === true && dBranches.branches?.length === 1
+      && dBranches.branches[0].status === "open"
+      && dBranches.branches[0].entryCount === 1,
+    "DURABLE_BRANCH_RESUME_FAILED", { branches: dBranches.branches });
+    await persistenceB.close();
+    const durableFileRecord = await artifactRecord(durableFile,
+      "Encrypted SQLite durable store (WAL, synchronous=FULL, AES-256-GCM private payload codec): the second composition (simulated process restart) resumed transcript, persona, author's note, summary versions and the open swipe branch from this file.");
+    artifacts.push(durableFileRecord);
+
+    // Wrong key fails closed; missing key fails closed; unknown kind fails closed.
+    const wrongKey = createHash("sha256").update("ticket26-266d-wrong-key").digest("base64");
+    const persistenceWrong = createStarcraftTmgCompanionProductPersistenceV1({
+      kind: "sqlite",
+      filename: durableFile,
+      encryption: { key: wrongKey },
+    });
+    const moduleWrong = createStarcraftTmgCompanionProductModuleV1(
+      durableModuleOptions(persistenceWrong),
+    );
+    const wrongRead = await durableCall(moduleWrong, "GET", "conversations/active");
+    ensure(wrongRead.ok === false, "WRONG_KEY_NOT_FAIL_CLOSED", { result: wrongRead });
+    await persistenceWrong.close().catch(() => {});
+    let missingKeyCode = null;
+    try {
+      createStarcraftTmgCompanionProductPersistenceV1({
+        kind: "sqlite",
+        filename: path.join(durableDir, "other.sqlite"),
+      });
+    } catch (error) {
+      missingKeyCode = String(error?.code || "");
+    }
+    ensure(missingKeyCode.includes("DEPENDENCY_MISSING"), "MISSING_KEY_NOT_FAIL_CLOSED",
+      { code: missingKeyCode });
+    let unknownKindCode = null;
+    try {
+      createStarcraftTmgCompanionProductPersistenceV1({ kind: "tape-drive" });
+    } catch (error) {
+      unknownKindCode = String(error?.code || "");
+    }
+    ensure(unknownKindCode === "COMPANION_PRODUCT_PERSISTENCE_KIND_UNKNOWN",
+      "UNKNOWN_PERSISTENCE_KIND_NOT_FAIL_CLOSED", { code: unknownKindCode });
+    checks.push({
+      id: "headless_266d_durable_sqlite_process_restart_resume_fail_closed_keys",
+      passed: true,
+      durableFile: durableFileRecord.path,
+      durableFileSha256: durableFileRecord.sha256,
+      providerCalls: durableProbe.calls,
+    });
+
     // ── Final headless contract assertions ─────────────────────────────
     // Provider unavailable honesty: the same module composed WITHOUT a
     // provider port reports an explicit fail-closed unavailable state.
     const noProviderModule = createStarcraftTmgCompanionProductModuleV1({
       roomRuntime: roomFacade,
       persistence: createInMemoryPersistenceAdapter(),
-      packages: COMPANION_CATALOGUE_V1.entries.map(companionProductPackageInputFromCatalogueEntryV1),
+      packages: packagesForProduct(),
       now: () => GENERATED_AT,
     });
     const noProviderStatus = await noProviderModule.handle({
@@ -1450,7 +2448,8 @@ async function main() {
     generatedAt: GENERATED_AT,
     ticket: 26,
     slice: "266c",
-    subSlice: "companion-product-binding",
+    sliceExtensions: ["266d"],
+    subSlice: "companion-product-binding + tavern-completion",
     status: "passed",
     assertionsPassed: checks.length,
     checks,
@@ -1458,6 +2457,19 @@ async function main() {
     artifacts,
     screenshotExplanations: SCREENSHOT_EXPLANATIONS,
     requestLog,
+    slice266dContracts: {
+      durablePersistence: "encrypted SQLite port wired into product construction; two compositions over one file = simulated process restart; transcript/persona/author's note/summary versions/open branch resumed; wrong and missing keys fail closed",
+      userPersona: "versioned (append-only, 32-version bound), bound to the authenticated seat inside the exact match binding",
+      worldbook: "keyword/regex triggers across chat/persona/character/global tiers, bounded recursion (depth 2, engine max 4), priority-ordered insertion, per-entry provenance; firedAtDepth proven in the provider-facing assembly",
+      layeredMemory: "transcript / rolling summary (editable, append-only rollback) / episodic facts / typed observed relationship state; context budgeting disclosed; no hidden chain-of-thought",
+      branches: "swipe reroll + accept appends a NEW turn (accepted history hashes unchanged); edit-as-branch restricted to the user's own turns; kind validation fail-closed",
+      authorsNote: "depth/frequency system-message injection proven at the exact position inside the captured provider request",
+      importExportRestore: "schema-validated integrity-hashed exports; tamper, cross-seat and never-overwrite all rejected; zero credentials in exports",
+      auditReplay: "hash-chained audit export independently verified by verifyCompanionAuditExport; replay candidates are evidence only, automatic promotion forbidden at both the service and HTTP boundary",
+      permissionSurfaces: "human_vs_agent / human_vs_human / agent_vs_agent_observer / review_mode computed live; opponent-private denied everywhere; observer and review cannot speak; no Preview/Confirm/Apply",
+      portraitPackages: "all six companions bound with receipt/hash-pinned presentation assets; six real-pixel browser proofs against committed 1254px keyframes",
+      notImplemented: "third-party extension marketplace (out of scope by contract)",
+    },
     environment: {
       playwright: "1.59.1",
       chromium: chromiumVersion,
@@ -1502,9 +2514,12 @@ async function main() {
       modelReplyFabricated: false,
       gameplayTruthComputedInUi: false,
       companionStateFabricated: false,
-      fakePersistenceImplemented: "in-memory persistence adapter is honestly declared volatile (durable adapters remain a later integration)",
+      fakePersistenceImplemented: "the in-memory persistence adapter is honestly declared volatile in the browser fixture; the durable path is proven separately in this same gate via two compositions over one encrypted SQLite file (simulated process restart) with fail-closed key handling",
       forceClickUsed: false,
       portraitPixelsProvenReal: true,
+      sixCompanionPortraitPixelsProvenReal: true,
+      durableProcessRestartResumeProven: true,
+      extensionMarketplaceImplemented: false,
       trainingTruth: false,
     },
     elapsedSeconds: Math.round((Date.now() - started) / 100) / 10,
