@@ -35,7 +35,8 @@ function configuredAssetOrigin() {
   return null;
 }
 
-export function TacticalAdjutantPanel({ variant = "inline" }: {
+export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: {
+  onExpandedChange?: (expanded: boolean) => void;
   variant?: "inline" | "floating";
 }) {
   const { lang } = useI18n();
@@ -142,6 +143,12 @@ export function TacticalAdjutantPanel({ variant = "inline" }: {
     setSelectedIntent(MODE_INTENTS[mode][0]);
   }
 
+  function toggleExpanded() {
+    const next = !expanded;
+    setExpanded(next);
+    onExpandedChange?.(next);
+  }
+
   async function sendAgentMessage() {
     const message = draft.trim();
     if (!message || agentBusy || agentReadOnly) return;
@@ -208,12 +215,12 @@ export function TacticalAdjutantPanel({ variant = "inline" }: {
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        onPress={() => setExpanded((current) => !current)}
-        style={styles.header}
+        onPress={toggleExpanded}
+        style={[styles.header, floating && !expanded && styles.headerCollapsedChip]}
       >
         <View style={styles.headerCopy}>
           <Text style={styles.eyebrow}>{zh ? "战术通讯" : "TACTICAL COMMS"}</Text>
-          <Text style={styles.title}>
+          <Text numberOfLines={1} style={styles.title}>
             {publicFallback
               ? projection.fallback.label
               : projection?.releaseChannel === "development_internal"
@@ -783,7 +790,8 @@ const styles = StyleSheet.create({
   panel: { borderRadius: 14, overflow: "hidden", backgroundColor: "#080f0b", borderWidth: 1, borderColor: "#52624a" },
   floatingPanel: { borderColor: "#2d839d", backgroundColor: "#060d12" },
   header: { minHeight: 52, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: "#101912" },
-  headerCopy: { flex: 1 },
+  headerCollapsedChip: { minHeight: 48, paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
+  headerCopy: { flex: 1, flexShrink: 1, minWidth: 0 },
   eyebrow: { color: "#a8bd7d", fontSize: 10, fontWeight: "900", letterSpacing: 1.4 },
   title: { color: "#eef4df", fontSize: 16, fontWeight: "900", marginTop: 3 },
   toggle: { color: "#d2ae59", fontSize: 24, fontWeight: "700" },
