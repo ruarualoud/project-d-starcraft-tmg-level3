@@ -1,10 +1,13 @@
 import {
   COMPANION_BACKEND_CONTRACT_VERSION,
+  COMPANION_DURABLE_PERSISTENCE_CONTRACT_V1,
   assertNoCredentials,
   assertNoHiddenChainOfThought,
   composeCompanionBackend,
   createCompanionPackage,
   createCompanionPackageRegistry,
+  createPostgresCompanionPersistenceAdapter,
+  createSqliteCompanionPersistenceAdapter,
 } from "../companion-backend-module-v1/index.mjs";
 import { createStarcraftTmgCompanionRoomSessionServiceV1 } from
   "./companion-room-session-service-v1.mjs";
@@ -67,14 +70,34 @@ function bearerToken(headers) {
  * package is a narrow registered reference whose identity truth remains the
  * server character projection. No package grants Rules, room-mutation,
  * Provider, or memory authority.
+ *
+ * Slice 266d: optional `extras.presentationAssets` (from the committed
+ * portrait asset registry) seals receipt/hash-bound presentation assets into
+ * the package, and a pack's worldbook entries ride inside the sealed
+ * `extensions.worldbookEntries` so the product can inject them as
+ * character-tier worldbook triggers without copying content into the
+ * service. Both are additive; old callers see no change.
  */
-export function companionProductPackageInputFromCatalogueEntryV1(entry) {
+export function companionProductPackageInputFromCatalogueEntryV1(entry, extras = {}) {
   if (!object(entry) || typeof entry.characterId !== "string") {
     fail("COMPANION_PRODUCT_PACKAGE_INVALID", "catalogue entry is required");
   }
   const slug = entry.characterId.split(".")[1] || entry.characterId;
   const pack = object(entry.pack) ? entry.pack : null;
   const eras = Array.isArray(pack?.eras) ? pack.eras : [];
+  const extensions = {};
+  if (Array.isArray(pack?.worldbookEntries) && pack.worldbookEntries.length) {
+    extensions.worldbookEntries = pack.worldbookEntries.map((worldbook) => ({
+      entryId: String(worldbook.entryId),
+      title: String(worldbook.title || worldbook.entryId),
+      content: String(worldbook.content || ""),
+      canonStatus: String(worldbook.canonStatus || "platform_framing"),
+      sourceRefs: Array.isArray(worldbook.sourceRefs) ? worldbook.sourceRefs.map(String) : [],
+      activation: object(worldbook.activation)
+        ? { always: worldbook.activation.always === true }
+        : { always: true },
+    }));
+  }
   return {
     packageId: `starcraft-tmg.companion.${slug}`,
     slug,
@@ -101,6 +124,9 @@ export function companionProductPackageInputFromCatalogueEntryV1(entry) {
     worldbookRefs: Array.isArray(pack?.worldbookEntries)
       ? pack.worldbookEntries.map((worldbook) => String(worldbook.entryId))
       : [],
+    ...(object(extras.presentationAssets)
+      ? { presentationAssets: clone(extras.presentationAssets) }
+      : {}),
     authority: { rules: "external_rules_service", matchState: "room_tools_only" },
     visibilityPolicy: "player_visible_only",
     provenance: {
@@ -113,8 +139,49 @@ export function companionProductPackageInputFromCatalogueEntryV1(entry) {
         : "Reference registration for the Ticket 13 backend-sealed companion; no content is copied.",
     },
     tags: [String(entry.factionAlignment || "unknown"), "tactical_companion"],
+    extensions,
   };
 }
+
+/**
+ * Durable companion product persistence (Ticket 26 / Slice 266d SS-3).
+ *
+ * Product-construction factory over the EXISTING encrypted persistence port:
+ * local/M1 development uses the file-backed SQLite adapter (WAL,
+ * synchronous=FULL, AES-256-GCM private payload codec) and production uses
+ * the PostgreSQL adapter over an injected pool. Both factories fail closed on
+ * a missing/malformed managed key or codec (enforced inside the adapters);
+ * this wrapper only validates the selection and never generates an ephemeral
+ * key. The in-memory adapter stays available for honestly-volatile fixtures
+ * and is never selected here.
+ */
+export function createStarcraftTmgCompanionProductPersistenceV1(options = {}) {
+  const kind = String(options.kind || "sqlite").trim();
+  if (kind === "sqlite") {
+    return createSqliteCompanionPersistenceAdapter({
+      ...(options.filename !== undefined ? { filename: options.filename } : {}),
+      ...(options.database !== undefined ? { database: options.database } : {}),
+      ...(options.databaseDurable !== undefined ? { databaseDurable: options.databaseDurable } : {}),
+      ...(options.adapterId !== undefined ? { adapterId: options.adapterId } : {}),
+      ...(options.encryption !== undefined ? { encryption: options.encryption } : {}),
+      ...(options.privatePayloadCodec !== undefined ? { privatePayloadCodec: options.privatePayloadCodec } : {}),
+      ...(typeof options.now === "function" ? { now: options.now } : {}),
+    });
+  }
+  if (kind === "postgresql" || kind === "postgres") {
+    return createPostgresCompanionPersistenceAdapter({
+      ...(options.pool !== undefined ? { pool: options.pool } : {}),
+      ...(options.adapterId !== undefined ? { adapterId: options.adapterId } : {}),
+      ...(options.encryption !== undefined ? { encryption: options.encryption } : {}),
+      ...(options.privatePayloadCodec !== undefined ? { privatePayloadCodec: options.privatePayloadCodec } : {}),
+      ...(typeof options.now === "function" ? { now: options.now } : {}),
+    });
+  }
+  fail("COMPANION_PRODUCT_PERSISTENCE_KIND_UNKNOWN",
+    `companion product persistence kind must be sqlite or postgresql; received: ${kind}`);
+}
+
+export { COMPANION_DURABLE_PERSISTENCE_CONTRACT_V1 };
 
 /**
  * Narrow companion product module (Ticket 26 / Slice 266c SS-2).
@@ -143,6 +210,7 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
     : composeCompanionBackend({
       persistence: options.persistence,
       provider: options.provider ?? null,
+      ...(options.assetCatalog !== undefined ? { assetCatalog: options.assetCatalog } : {}),
       ...(options.registry ? { registry: options.registry } : {}),
     });
   for (const method of ["resolve", "register", "list"]) {
