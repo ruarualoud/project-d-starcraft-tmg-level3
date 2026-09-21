@@ -411,6 +411,28 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
           if (currentDomain) {
             delegatedArguments.currentLegalSpaceDomain = clone(currentDomain);
           }
+          if (queryKind === "fire_zone_exchange") {
+            delegatedArguments.currentLegalSpaceDomains = clone(
+              legalSpace.parameterDomains || [],
+            );
+            const formationReceiptHash = String(
+              args.formationQueryReceiptHash || "",
+            );
+            if (formationReceiptHash) {
+              const formationReceipt = [...completed.values()].find((entry) =>
+                entry?.queryReceiptHash === formationReceiptHash
+                  && entry?.authority?.stateHash === binding.stateHash
+                  && entry?.authority?.legalSpaceHash === binding.legalSpaceHash
+                  && entry?.status === "exact"
+                  && new Set(["space.solve_formation",
+                    "legal_formation_options"]).has(entry?.queryKind));
+              if (formationReceipt) {
+                delegatedArguments.currentFormationQueryReceipt = clone(
+                  formationReceipt,
+                );
+              }
+            }
+          }
           const response = await rulesQuery(deepFreeze({
             schemaVersion:
               `${STARCRAFT_TMG_SPATIAL_ACTION_QUERY_RUNTIME_VERSION}.request`,

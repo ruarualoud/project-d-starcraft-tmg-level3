@@ -55,8 +55,10 @@ explicit, isolated slice manifests.
    reduction and effective cost that Apply consumes; Planner and Action share a
    normalized reader with legacy flat-field compatibility. The exact durable
    r66 reproducer failed before the repair and passed once afterward with zero
-   Provider calls / ¥0. Continue the same room from revision 66; preserve the
-   old r63/r64/r66 prose as non-training defect evidence. **Active.**
+   Provider calls / ¥0. The room is now frozen at revision 66 as the immutable
+   low-strategy “before” baseline; do not continue it. Preserve the old
+   r63/r64/r66 prose as non-training defect evidence. **Baseline frozen;
+   optimized comparison waits for Slices 262–263.**
 2. Ticket 23 / Slice 248: complete player-seat companion permissions, layered
    memory/role runtime and real floating-Web acceptance. The first Kimi-owned,
    presentation-only floating companion sub-slice is running through
@@ -65,8 +67,11 @@ explicit, isolated slice manifests.
    After that bounded slice, Kimi becomes the pure-frontend Lead: it owns the
    interface audit, Web/App responsive design and self-partitioned focused UI
    slices, while backend interfaces and Rules authority stay frozen.
-3. Ticket 23 / Slice 248: add attack probability, fire-zone exchange and the
-   prediction → outcome calibration → replanning loop.
+3. Ticket 23 / Slice 248: attack probability, fire-zone exchange and the
+   prediction → outcome calibration → replanning loop are implemented. The
+   concrete r66 gate passed with 216 exact-mechanics samples, four comparison
+   alternatives and one typed `hit` calibration; 0 Provider calls / ¥0.
+   **Complete.**
 4. Ticket 25 / Slices 262–263: close free legal formation strategy, the natural
    canary and remaining A-A/review evidence.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing

@@ -68,6 +68,7 @@ function authority(input, expectedScope) {
   const actingSide = resolveStarcraftTmgEffectiveActingSideV1(state);
   const round = Number(state.round || 1);
   const phase = String(state.phase || "unknown");
+  const publicLog = Array.isArray(state.log) ? state.log : [];
   return deepFreeze({
     roomId: expectedScope.roomId,
     matchBindingHash: expectedScope.matchBindingHash,
@@ -77,6 +78,8 @@ function authority(input, expectedScope) {
     legalSpaceHash: legalSpace.legalSpaceHash,
     spatialObservationHash: input.spatialObservation?.observationHash || null,
     spatialActionSpaceHash: actionSpace.actionSpaceHash,
+    publicLogCursor: publicLog.length,
+    publicLogHash: hashStarcraftTmgContract(publicLog),
     round,
     phase,
     activeSideKey: actingSide.activeSideKey,
@@ -127,11 +130,46 @@ function normalizeOpponentResponses(value) {
     if (!object(entry)) {
       throw new TypeError(`intent.predictedOpponentResponses[${index}] is invalid`);
     }
+    const actionClass = String(entry.actionClass || entry.actionType
+      || "unknown_action");
+    const confidence = entry.confidence === undefined
+      ? 0.5 : Number(entry.confidence);
+    if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) {
+      throw new TypeError(
+        `intent.predictedOpponentResponses[${index}].confidence is invalid`);
+    }
+    const horizonSource = object(entry.horizon) ? entry.horizon : {};
+    const horizonKind = String(horizonSource.kind
+      || "next_opponent_action");
+    if (!new Set(["next_opponent_action", "current_phase", "current_round",
+      "bounded_public_transitions"]).has(horizonKind)) {
+      throw new TypeError(
+        `intent.predictedOpponentResponses[${index}].horizon is invalid`);
+    }
+    const horizonCount = Number(horizonSource.count || 1);
+    if (!Number.isSafeInteger(horizonCount) || horizonCount < 1
+      || horizonCount > 64) {
+      throw new TypeError(
+        `intent.predictedOpponentResponses[${index}].horizon.count is invalid`);
+    }
     return {
       responseId: String(entry.responseId || `response-${index + 1}`),
+      actionClass,
       opponentAction: required(entry.opponentAction,
         `intent.predictedOpponentResponses[${index}].opponentAction`),
+      likelyActorUnitId: String(entry.likelyActorUnitId
+        || entry.actorUnitId || "") || null,
+      likelyTargetUnitId: String(entry.likelyTargetUnitId
+        || entry.targetUnitId || "") || null,
+      horizon: { kind: horizonKind, count: horizonCount },
+      confidence,
       basis: strings(entry.basis),
+      evidenceRefs: strings(entry.evidenceRefs).length
+        ? strings(entry.evidenceRefs) : strings(entry.basis),
+      invalidationCriteria: strings(entry.invalidationCriteria).length
+        ? strings(entry.invalidationCriteria)
+        : [String(entry.replanIf
+          || "the observed opponent action differs materially")],
       counterResponse: required(entry.counterResponse,
         `intent.predictedOpponentResponses[${index}].counterResponse`),
       counterPurpose: required(entry.counterPurpose,
@@ -240,6 +278,8 @@ function planState(scopeValue) {
     nextIntent: null,
     intents: [],
     outcomes: [],
+    predictionCalibrations: [],
+    calibratedPredictionKeys: new Set(),
     searchJob: null,
     sequence: 0,
     issues: [],
@@ -328,7 +368,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       scope: scopeValue,
       query: {
         kinds: ["turn_plan", "plan_revision", "action_intent",
-          "decision_outcome"],
+          "decision_outcome", "prediction_calibration"],
         order: "oldest_first",
         limit: 100_000,
       },
@@ -364,6 +404,11 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       && object(entry.payload)).map((entry) => clone(entry.payload));
     state.outcomes = records.filter((entry) => entry.kind === "decision_outcome"
       && object(entry.payload)).map((entry) => clone(entry.payload));
+    state.predictionCalibrations = records.filter((entry) =>
+      entry.kind === "prediction_calibration" && object(entry.payload))
+      .map((entry) => clone(entry.payload));
+    state.calibratedPredictionKeys = new Set(state.predictionCalibrations
+      .map((entry) => `${entry.intentId}:${entry.responseId}`));
     state.sequence = records.reduce((maximum, entry) =>
       Math.max(maximum, Number(entry.sequence || 0)), state.sequence);
     state.hydratedFromContinuity = true;
@@ -436,9 +481,119 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     job.controller.abort();
   }
 
+  function publicAction(entry) {
+    const action = object(entry?.action?.sourceAction)
+      ? entry.action.sourceAction : entry?.action;
+    if (!object(action)) return null;
+    return {
+      logId: String(entry.id || "") || null,
+      round: Number(entry.round || 0) || null,
+      phase: String(entry.phase || "") || null,
+      sideKey: String(action.sideKey || "") || null,
+      actionClass: String(action.actionType || action.resolutionStage || "")
+        || null,
+      actorUnitId: String(action.pieceId || action.actorUnitId || "") || null,
+      targetUnitId: String(action.targetId || action.targetUnitId || "") || null,
+    };
+  }
+
+  function horizonExpired(prediction, intent, authorityValue,
+    observedTransitionCount) {
+    const horizon = prediction.horizon || { kind: "next_opponent_action", count: 1 };
+    if (horizon.kind === "current_phase") {
+      return intent.authority.round !== authorityValue.round
+        || intent.authority.phase !== authorityValue.phase;
+    }
+    if (horizon.kind === "current_round") {
+      return intent.authority.round !== authorityValue.round;
+    }
+    if (horizon.kind === "bounded_public_transitions") {
+      return observedTransitionCount >= Number(horizon.count || 1);
+    }
+    return false;
+  }
+
+  function classifyPrediction(prediction, actual) {
+    if (!actual?.actionClass) return "unobservable";
+    const checks = [
+      actual.actionClass === prediction.actionClass,
+      prediction.likelyActorUnitId
+        ? actual.actorUnitId === prediction.likelyActorUnitId : true,
+      prediction.likelyTargetUnitId
+        ? actual.targetUnitId === prediction.likelyTargetUnitId : true,
+    ];
+    if (checks.every(Boolean)) return "hit";
+    if (checks.some(Boolean)) return "partial";
+    return "miss";
+  }
+
+  async function calibratePredictions(state, input, authorityValue) {
+    const publicLog = Array.isArray(input.roomProjection?.state?.log)
+      ? input.roomProjection.state.log : [];
+    const calibrations = [];
+    for (const intent of state.intents) {
+      const cursor = Number(intent.authority?.publicLogCursor || 0);
+      const newEntries = publicLog.slice(cursor);
+      const opponentActions = newEntries.map(publicAction).filter((entry) =>
+        entry && entry.sideKey && entry.sideKey !== state.scope.seatKey);
+      for (const prediction of intent.predictedOpponentResponses || []) {
+        const key = `${intent.intentId}:${prediction.responseId}`;
+        if (state.calibratedPredictionKeys.has(key)) continue;
+        const actual = opponentActions[0] || null;
+        let classification = null;
+        if (actual) classification = classifyPrediction(prediction, actual);
+        else if (horizonExpired(prediction, intent, authorityValue,
+          newEntries.length)) classification = "expired";
+        if (!classification) continue;
+        const payloadBody = {
+          schemaVersion:
+            `${STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION}.prediction-calibration`,
+          intentId: intent.intentId,
+          planId: intent.planRef.planId,
+          responseId: prediction.responseId,
+          classification,
+          prediction: clone(prediction),
+          actual,
+          authorityObserved: clone(authorityValue),
+          delta: {
+            actionClassMatched: actual
+              ? actual.actionClass === prediction.actionClass : null,
+            actorMatched: actual && prediction.likelyActorUnitId
+              ? actual.actorUnitId === prediction.likelyActorUnitId : null,
+            targetMatched: actual && prediction.likelyTargetUnitId
+              ? actual.targetUnitId === prediction.likelyTargetUnitId : null,
+          },
+          nextPlannerObligation:
+            "cite_this_calibration_and_explicitly_retain_or_revise_the_plan",
+          advisoryMemoryOnly: true,
+          eligibleForTraining: false,
+          trainingTruth: false,
+        };
+        const payload = seal(payloadBody, "calibrationHash");
+        calibrations.push(payload);
+        state.predictionCalibrations.push(payload);
+        state.calibratedPredictionKeys.add(key);
+      }
+    }
+    if (calibrations.length && continuity) {
+      await continuity.record({
+        scope: state.scope,
+        roomProjection: input.roomProjection,
+        legalSpace: input.legalSpace,
+        events: calibrations.map((payload) => ({
+          kind: "prediction_calibration",
+          payload,
+        })),
+      });
+    }
+    return calibrations;
+  }
+
   async function observeState(state, input, authorityValue) {
     cancelStaleSearch(state, authorityValue);
     if (!state.plan) return { event: "state_observed", status: "no_active_plan" };
+    const predictionCalibrations = await calibratePredictions(
+      state, input, authorityValue);
     const previous = state.plan.lastValidatedAuthority;
     const changed = previous.stateHash !== authorityValue.stateHash;
     const signals = strings(input.observedSignals);
@@ -477,6 +632,9 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       authorityChanged: changed,
       revisionReasons,
       nextIntentStillLegal,
+      predictionCalibrations: clone(predictionCalibrations),
+      predictionCalibrationRequiresExplicitPlanDisposition:
+        predictionCalibrations.length > 0,
       persistence,
     };
   }

@@ -8,6 +8,10 @@ import {
   buildStarcraftTmgTacticalRelationshipGraphV1,
   STARCRAFT_TMG_RELATIONSHIP_QUERY_KIND,
 } from "./tactical-relationship-graph-v1.mjs";
+import {
+  estimateStarcraftTmgAttackProbabilityV1,
+  estimateStarcraftTmgFireZoneExchangeV1,
+} from "./combat-estimation-runtime-v1.mjs";
 
 export const STARCRAFT_TMG_ROOM_BACKED_SPATIAL_RULES_QUERY_ADAPTER_VERSION =
   "starcraft_tmg_room_backed_spatial_rules_query_adapter_v1";
@@ -24,6 +28,8 @@ const INSTANTIATION_QUERY_KINDS = new Set([
   "intervening_model_or_terrain_blocking",
   "line_of_sight_cover_and_elevation",
   "action_specific_threat",
+  "attack_probability",
+  "fire_zone_exchange",
 ]);
 const MAX_PARAMETER_CANDIDATES_PER_BATCH = 128;
 
@@ -246,6 +252,41 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
         });
       }
     }
+    if (queryKind === "fire_zone_exchange") {
+      try {
+        const domains = Array.isArray(args.currentLegalSpaceDomains)
+          ? args.currentLegalSpaceDomains.filter((entry) =>
+            object(entry) && entry.sideKey === seatKey) : [];
+        const result = estimateStarcraftTmgFireZoneExchangeV1({
+          state: aggregate.envelope.state,
+          seatKey,
+          authority,
+          request: args,
+          currentLegalSpaceDomains: domains,
+          formationQueryReceipt: object(args.currentFormationQueryReceipt)
+            ? args.currentFormationQueryReceipt : null,
+        });
+        return freeze({
+          ok: true,
+          authority: clone(authority),
+          precision: "advisory_estimate",
+          queryKind,
+          result: clone(result),
+          source: STARCRAFT_TMG_ROOM_BACKED_SPATIAL_RULES_QUERY_ADAPTER_VERSION,
+          rulesAuthority: false,
+          mutationAuthority: false,
+          confirmationAuthority: false,
+          applyAuthority: false,
+          trainingTruth: false,
+        });
+      } catch (error) {
+        return unknown(authority, queryKind, safeCode(error), {
+          failureStage: "estimate_current_fire_zone_exchange",
+          safeFailureClass: safeFailureClass(error),
+          mayRepairSameChoice: false,
+        });
+      }
+    }
     const domainId = String(args.domainId || args.proposal?.domainId || "");
     const domain = object(args.currentLegalSpaceDomain)
       ? args.currentLegalSpaceDomain : null;
@@ -254,6 +295,35 @@ export function createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1(
       return unknown(authority, queryKind, "RULES_QUERY_CURRENT_DOMAIN_MISSING", {
         findingSeverity: "High",
       });
+    }
+    if (queryKind === "attack_probability") {
+      try {
+        const result = estimateStarcraftTmgAttackProbabilityV1({
+          state: aggregate.envelope.state,
+          domain,
+          parameters: args.parameters,
+          sampleBudget: args.sampleBudget,
+        });
+        return freeze({
+          ok: true,
+          authority: clone(authority),
+          precision: "advisory_estimate",
+          queryKind,
+          result: clone(result),
+          source: STARCRAFT_TMG_ROOM_BACKED_SPATIAL_RULES_QUERY_ADAPTER_VERSION,
+          rulesAuthority: false,
+          mutationAuthority: false,
+          confirmationAuthority: false,
+          applyAuthority: false,
+          trainingTruth: false,
+        });
+      } catch (error) {
+        return unknown(authority, queryKind, safeCode(error), {
+          failureStage: "estimate_current_ranged_attack",
+          safeFailureClass: safeFailureClass(error),
+          mayRepairSameChoice: false,
+        });
+      }
     }
     if (new Set(["space.solve_formation", "legal_formation_options"])
       .has(queryKind)) {

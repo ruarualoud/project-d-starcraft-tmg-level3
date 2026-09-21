@@ -25,9 +25,9 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v14";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v15";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v17";
+  "starcraft_tmg_live_action_shape_normalization_v18";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v8";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -1263,8 +1263,16 @@ function validateActionOutput(raw, input, planner) {
   for (const [index, response] of
     (Array.isArray(intent.predictedOpponentResponses)
       ? intent.predictedOpponentResponses : []).entries()) {
-    if (!object(response) || !String(response.opponentAction || "").trim()
+    if (!object(response) || !String(response.actionClass || "").trim()
+      || !String(response.opponentAction || "").trim()
+      || !object(response.horizon)
+      || !new Set(["next_opponent_action", "current_phase", "current_round",
+        "bounded_public_transitions"]).has(response.horizon.kind)
+      || !Number.isFinite(Number(response.confidence))
+      || Number(response.confidence) < 0 || Number(response.confidence) > 1
       || !Array.isArray(response.basis)
+      || !Array.isArray(response.evidenceRefs)
+      || !Array.isArray(response.invalidationCriteria)
       || !String(response.counterResponse || "").trim()
       || !String(response.counterPurpose || "").trim()) {
       issues.push(`ACTION_OPPONENT_RESPONSE_INVALID:${index}`);
@@ -1740,10 +1748,32 @@ function normalizeActionOutputShape(raw) {
         return {
           ...clone(source),
           responseId: String(source.responseId || `response-${index + 1}`),
+          actionClass: text(source.actionClass || source.actionType,
+            "unknown_action", 160),
           opponentAction: text(source.opponentAction,
             "Opponent may choose the strongest visible counter-action."),
+          likelyActorUnitId: text(source.likelyActorUnitId
+            || source.actorUnitId, "", 200) || null,
+          likelyTargetUnitId: text(source.likelyTargetUnitId
+            || source.targetUnitId, "", 200) || null,
+          horizon: object(source.horizon) ? {
+            kind: new Set(["next_opponent_action", "current_phase",
+              "current_round", "bounded_public_transitions"])
+              .has(source.horizon.kind)
+              ? source.horizon.kind : "next_opponent_action",
+            count: Math.max(1, Math.min(64,
+              Number(source.horizon.count || 1))),
+          } : { kind: "next_opponent_action", count: 1 },
+          confidence: Number.isFinite(Number(source.confidence))
+            ? Math.max(0, Math.min(1, Number(source.confidence))) : 0.5,
           basis: strings(source.basis).length
             ? strings(source.basis) : clone(responseBasis),
+          evidenceRefs: strings(source.evidenceRefs).length
+            ? strings(source.evidenceRefs) : clone(responseBasis),
+          invalidationCriteria: strings(source.invalidationCriteria).length
+            ? strings(source.invalidationCriteria)
+            : [source.replanIf || triggers[index] || triggers[0]
+              || "the observed opponent action differs materially"],
           counterResponse: text(source.counterResponse,
             fallbacks[index] || fallbacks[0]
               || "Reassess against the observed response."),
@@ -1834,9 +1864,27 @@ function normalizeOpponentResponses(value) {
   const result = (Array.isArray(value) ? value : []).filter(object)
     .map((entry, index) => ({
       responseId: String(entry.responseId || `response-${index + 1}`),
+      actionClass: text(entry.actionClass || entry.actionType,
+        "unknown_action", 160),
       opponentAction: text(entry.opponentAction,
         "Opponent may choose the strongest current counter-action."),
+      likelyActorUnitId: text(entry.likelyActorUnitId
+        || entry.actorUnitId, "", 200) || null,
+      likelyTargetUnitId: text(entry.likelyTargetUnitId
+        || entry.targetUnitId, "", 200) || null,
+      horizon: object(entry.horizon) ? {
+        kind: new Set(["next_opponent_action", "current_phase", "current_round",
+          "bounded_public_transitions"]).has(entry.horizon.kind)
+          ? entry.horizon.kind : "next_opponent_action",
+        count: Math.max(1, Math.min(64, Number(entry.horizon.count || 1))),
+      } : { kind: "next_opponent_action", count: 1 },
+      confidence: Number.isFinite(Number(entry.confidence))
+        ? Math.max(0, Math.min(1, Number(entry.confidence))) : 0.5,
       basis: strings(entry.basis),
+      evidenceRefs: strings(entry.evidenceRefs),
+      invalidationCriteria: strings(entry.invalidationCriteria).length
+        ? strings(entry.invalidationCriteria)
+        : [entry.replanIf || "the observed response differs materially"],
       counterResponse: text(entry.counterResponse,
         "Re-evaluate the plan against the observed response."),
       counterPurpose: text(entry.counterPurpose,
@@ -1846,8 +1894,15 @@ function normalizeOpponentResponses(value) {
     }));
   return result.length ? result.slice(0, 8) : [{
     responseId: "response-1",
+    actionClass: "unknown_action",
     opponentAction: "Opponent may choose the strongest current counter-action.",
+    likelyActorUnitId: null,
+    likelyTargetUnitId: null,
+    horizon: { kind: "next_opponent_action", count: 1 },
+    confidence: 0.5,
     basis: ["current visible position and LegalSpace"],
+    evidenceRefs: [],
+    invalidationCriteria: ["the observed response differs materially"],
     counterResponse: "Re-evaluate against the observed response at the next choice point.",
     counterPurpose: "Keep the plan coherent without assuming hidden information.",
     replanIf: "the observed response invalidates the expected exchange",
@@ -2529,8 +2584,21 @@ function actionSubmissionTool(input, choice, queryReceipts) {
             type: "array",
             items: strictObject({
               responseId: strictString(1, 200),
+              actionClass: strictString(1, 160),
               opponentAction: strictString(1, 2_000),
+              likelyActorUnitId: strictString(0, 200),
+              likelyTargetUnitId: strictString(0, 200),
+              horizon: strictObject({
+                kind: strictString(1, 64, {
+                  enum: ["next_opponent_action", "current_phase",
+                    "current_round", "bounded_public_transitions"],
+                }),
+                count: { type: "integer", minimum: 1, maximum: 64 },
+              }),
+              confidence: { type: "number", minimum: 0, maximum: 1 },
               basis: strictStringArray(1, 12),
+              evidenceRefs: strictStringArray(0, 12),
+              invalidationCriteria: strictStringArray(1, 12),
               counterResponse: strictString(1, 2_000),
               counterPurpose: strictString(1, 2_000),
               replanIf: strictString(1, 2_000),
@@ -3361,7 +3429,8 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       planning
         ? "Assess the existing same-match plan before selecting a candidate. A changed or contradicted assumption must produce at_risk/invalid and revise/abandon, never silent continue/sound."
         : "Produce the ActionIntent for the already selected Planner candidate; do not replace the plan or candidate inside the Action stage.",
-      "Predict a plausible opponent response and state a counter-response and replan trigger.",
+      "Predict a plausible opponent response as a typed hypothesis: actionClass, likely actor/target when visible, bounded horizon, confidence, evidence and invalidation criteria. State a counter-response and replan trigger.",
+      "When match memory contains predictionCalibrations, cite their calibrationHash in assessment evidence, update changedAssumptions/opponentModelUpdates, and use assessment.verdict to explicitly retain or revise the plan. A hit does not force continuation and a miss does not force abandonment; calibrate against position and objective value.",
       forceTerminal
         ? "If strategy context remains insufficient, record it as uncertainty and a replan trigger; never invent a missing Skill passage."
         : `If strategy context is insufficient, call ${NATIVE_SKILL_TOOL_NAME}; never invent a missing Skill passage.`,

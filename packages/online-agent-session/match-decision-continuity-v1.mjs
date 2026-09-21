@@ -17,6 +17,7 @@ const QUERYABLE_EVENT_KINDS = Object.freeze(new Set([
   "resource_spent",
   "unit_intent_result",
   "opponent_response_observed",
+  "prediction_calibration",
   "counter_response_used",
   "initiative_observation",
 ]));
@@ -105,6 +106,7 @@ function normalizeAuthority(scope, roomProjection, legalSpace) {
       player?.passedPhases?.[phase] === true]));
   const phaseChoice = object(state.phaseFirstActorByRound?.[phaseKey])
     ? clone(state.phaseFirstActorByRound[phaseKey]) : null;
+  const publicLog = Array.isArray(state.log) ? state.log : [];
   return deepFreeze({
     stateRevision,
     stateHash,
@@ -120,6 +122,8 @@ function normalizeAuthority(scope, roomProjection, legalSpace) {
     ownPassedCurrentPhase: passedBySide[scope.seatKey] === true,
     ownsFirstPlayerMarker: state.firstPlayerSideKey === scope.seatKey,
     phaseFirstActorChoice: phaseChoice,
+    publicLogCursor: publicLog.length,
+    publicLogHash: hashStarcraftTmgContract(publicLog),
     trainingTruth: false,
   });
 }
@@ -136,6 +140,8 @@ function createRecord(scope, sequence, kind, authority, payload, occurredAt) {
       stateHash: authority.stateHash,
       round: authority.round,
       phase: authority.phase,
+      publicLogCursor: authority.publicLogCursor,
+      publicLogHash: authority.publicLogHash,
     } : null,
     payload: clone(payload),
     occurredAt,
@@ -204,8 +210,10 @@ function compactRecord(record, fields, arrayLimits = {}) {
 function compactOpponentResponse(entry) {
   if (!object(entry)) return entry;
   return Object.fromEntries([
-    "responseId", "opponentAction", "basis", "counterResponse",
-    "counterPurpose", "replanIf", "probabilityEvidenceRef",
+    "responseId", "actionClass", "opponentAction", "likelyActorUnitId",
+    "likelyTargetUnitId", "horizon", "confidence", "basis", "evidenceRefs",
+    "invalidationCriteria", "counterResponse", "counterPurpose", "replanIf",
+    "probabilityEvidenceRef",
   ].filter((field) => entry[field] !== undefined)
     .map((field) => [field, clone(entry[field])]));
 }
@@ -221,6 +229,8 @@ function workingMemoryProjection(records, scope, authority, target) {
   const abilityUses = recent(records, ["ability_used"], target);
   const resourceUses = recent(records, ["resource_spent"], target);
   const opponentResponses = recent(records, ["opponent_response_observed"],
+    target);
+  const predictionCalibrations = recent(records, ["prediction_calibration"],
     target);
   const counterResponses = recent(records, ["counter_response_used"], target);
   const latestIntent = intents.at(-1) || null;
@@ -266,6 +276,11 @@ function workingMemoryProjection(records, scope, authority, target) {
     },
     opponentModel: {
       predictedResponses,
+      predictionCalibrations: predictionCalibrations
+        .slice(-Math.min(target, 6)).map((entry) => compactRecord(entry, [
+          "intentId", "planId", "responseId", "classification", "prediction",
+          "actual", "delta", "calibrationHash", "nextPlannerObligation",
+        ])),
       observedResponses: opponentResponses.slice(-Math.min(target, 4))
         .map((entry) => compactRecord(entry, [
           "responseId", "opponentAction", "unitId", "result", "counterUsed",
@@ -365,6 +380,7 @@ function projectedMemory(state, scope, authority, promptRecordTarget) {
     projectedRecordCount:
       workingMemory.commitments.length
       + workingMemory.tacticalLedger.recentOutcomes.length
+      + workingMemory.opponentModel.predictionCalibrations.length
       + (workingMemory.overallPlan ? 1 : 0)
       + (workingMemory.planAssessment ? 1 : 0)
       + (lastAgentFirstPass ? 1 : 0),

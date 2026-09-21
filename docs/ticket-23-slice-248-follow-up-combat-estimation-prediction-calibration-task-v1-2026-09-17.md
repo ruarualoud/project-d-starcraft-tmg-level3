@@ -2,13 +2,13 @@
 
 Date: 2026-09-17
 
-Status: recorded, not implemented
+Status: implemented and focused gate passed on 2026-09-21
 
-Priority: resume only after the current revision-46 report checkpoint
+Priority: completed before any continuation of the frozen revision-66 match
 
 ## Why this task exists
 
-The Standard-2000 A-A run reached authoritative state revision 46. The Zerg
+The Standard-2000 A-A run first exposed the gap at authoritative state revision 46. The Zerg
 planner could query exact geometry and current LegalSpace, but
 `attack_probability` and `fire_zone_exchange` returned `unknown`. It therefore
 could not quantify expected casualties, exposure, objective value, or the value
@@ -49,7 +49,8 @@ and prediction must never become Rules authority.
 
 ## Acceptance and safety
 
-- The live formal room remains paused at revision 46 while this task is pending.
+- The live formal room remains paused at revision 66 and is now the immutable
+  low-strategy “before” baseline. This repair did not advance it.
 - Authority binding includes room, match, state revision/hash and current
   LegalSpace/domain identity. Missing current domains return a typed unknown;
   they do not use stale estimates.
@@ -74,6 +75,50 @@ and prediction must never become Rules authority.
 - The existing memory records plan, purpose, intent and outcome, but the sampled
   Zerg outcomes do not bind an observed opponent response.
 
+## 2026-09-21 implementation and focused evidence
+
+- `combat-estimation-runtime-v1` freezes the current Rules-owned ranged domain,
+  target and defender point-defence choices. It enumerates the full D6
+  distribution when bounded, otherwise uses a deterministic reproducible
+  sample. Every sample still resolves through the exact current hit, surge,
+  armour, evade, damage, shield and casualty runtime. The distribution remains
+  `advisory_estimate`; it cannot select, Preview, confirm or Apply.
+- `attack_probability` now returns expected damage/casualties, any-damage,
+  any-casualty and destruction probability, contributing model IDs, explicit
+  assumptions and either exact-distribution or 95% sampling uncertainty.
+- `fire_zone_exchange` now combines the tactical relationship graph with
+  current attack estimates. It always exposes `hold`, `attack`, `retreat` and
+  `disperse`; unavailable hypothetical movement values remain explicitly
+  unknown until a current exact formation receipt is supplied. Unknown
+  opponent return-fire or score/supply values are never silently promoted to
+  zero.
+- opponent predictions are typed with action class, likely actor/target,
+  horizon, confidence, evidence and invalidation criteria. Later public
+  transitions produce one durable `prediction_calibration` event classified as
+  `hit`, `partial`, `miss`, `unobservable` or `expired`.
+- the bounded same-match working memory now returns calibration records to the
+  next Planner. Prompt policy v15 requires the Planner to cite calibration
+  evidence, update assumptions/opponent modelling and explicitly retain or
+  revise the plan; it does not equate a hit with “continue” or a miss with
+  “abandon”. Hidden chain-of-thought is still neither requested nor stored.
+- the concrete r66 reproducer first failed at `attack_probability=unknown`.
+  After implementation, the single changed-path run passed with one real
+  Terran ranged domain, 216 exact-mechanics samples, all four fire-zone
+  alternatives and a typed `hit` calibration. Provider calls: 0. Paid cost:
+  ¥0. Formal room revision after the gate: 66.
+
+## Rollback / demotion rules
+
+- Demote an estimate when its Room/state/LegalSpace binding is stale, its
+  current domain cannot be re-instantiated, or its sample assumptions no longer
+  match the selected target/defender choice.
+- A hypothetical retreat/disperse row without an exact current formation
+  receipt remains unknown and may not outrank known values as if it were zero.
+- Prediction calibration is same-match advisory memory only. It is excluded
+  from training and Skill promotion until later replay review.
+- Any future evidence that the added prompt policy materially reduces strategy
+  quality reverts prompt policy v15 independently of the Rules estimator.
+
 ## Harness bookkeeping
 
 - `harnessLoopUsed`: `agentic-harness-evolution-loop`
@@ -86,3 +131,12 @@ and prediction must never become Rules authority.
   set; no Skill generation or promotion is part of this repair.
 - `ctx2skillLoopUsed`: planning-only for later replay review; no candidate is
   promoted from this checkpoint.
+- `uiTraceEvidence`: none; this was a Host/query/memory repair and did not
+  mutate the Web/App surface.
+- `agentDecisionEvidence`: frozen r66 query reproducer plus typed calibration.
+- `memoryTraceEvidence`: durable `prediction_calibration` record and bounded
+  `opponentModel.predictionCalibrations` projection.
+- `trainingTraceCandidates`: none from this repair.
+- `rollbackOrDemotionRules`: see the section above.
+- `userVisibleChecks`: the later optimized A-A comparison must show the Planner
+  consuming these receipts; that natural canary belongs to Slice 263.
