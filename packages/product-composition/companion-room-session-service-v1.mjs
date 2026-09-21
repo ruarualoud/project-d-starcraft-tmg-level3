@@ -260,9 +260,14 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     const stored = await backend.persistenceGateway.get(BINDING_NAMESPACE, conversationId);
     if (!stored.found) return { rejection: rejection("COMPANION_CONVERSATION_NOT_FOUND") };
     const binding = stored.value;
+    // Conversation scope is the authenticated human SEAT inside the exact
+    // match binding — not one credential. A seat re-authenticating with a
+    // fresh recovery-derived credential (page reload, new device) resumes
+    // its own conversation; every credential is verified against the room
+    // runtime on every operation and the creating credential's principal
+    // scope hash stays recorded in the binding for audit.
     if (binding.roomId !== authenticated.binding.roomId
-      || binding.seatKey !== authenticated.binding.seatKey
-      || binding.principalScopeHash !== authenticated.binding.principalScopeHash) {
+      || binding.seatKey !== authenticated.binding.seatKey) {
       return { rejection: rejection("COMPANION_CONVERSATION_SCOPE_MISMATCH") };
     }
     if (binding.matchBindingHash !== authenticated.binding.matchBindingHash) {
@@ -356,7 +361,6 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       if (!binding
         || binding.roomId !== bindingScope.roomId
         || binding.seatKey !== bindingScope.seatKey
-        || binding.principalScopeHash !== bindingScope.principalScopeHash
         || binding.matchBindingHash !== bindingScope.matchBindingHash) continue;
       matches.push(binding);
     }
@@ -574,7 +578,10 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         let loaded = await loadBound(input);
         if (loaded.rejection) return loaded.rejection;
         const content = requiredString(input.content, "content", MAX_USER_MESSAGE_CHARS);
+        // An empty mentions list is equivalent to no mentions; only a
+        // non-empty list goes through the bounded 1..6 validation.
         const mentions = input.mentions === undefined
+          || (Array.isArray(input.mentions) && input.mentions.length === 0)
           ? []
           : uniqueStrings(input.mentions, "mentions", MAX_COMPANIONS).map((packageId) => {
             const companion = loaded.binding.companions.find((entry) => entry.packageRef.id === packageId);
@@ -688,6 +695,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       ],
       maximumCompanions: MAX_COMPANIONS,
       roomBinding: "revalidated_on_every_operation",
+      conversationScope: "room_seat_match_binding (credential revalidation per operation; a seat re-authenticating with a fresh credential resumes its own conversation; the creating credential principal scope hash stays recorded for audit)",
       storedSeatCredential: false,
       principalStorage: "scope_hash_only",
       opponentPrivateAccess: false,
