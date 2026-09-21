@@ -4,8 +4,12 @@ Owner: Kimi · Worktree `.worktrees/ticket-26-slice-266c-companion-product-bindi
 Base: `253c5ac48a68c22b5a63cb40a802fe6c11ef65f8` (Slice 266c closure) · Date: 2026-09-22
 Slice manifest: `.agent-runtime/slice.json` (`ticket-26-slice-266d-companion-tavern-completion`)
 
-> Status: **in progress** — this file opens as the frozen sub-slice plan (266d-SS-1)
-> and closes as the full closure document (266d-SS-8).
+> Status: **implementation complete — closed (266d-SS-8).** All eight sub-slices
+> are committed in dependency order on
+> `agent/kimi/ticket-26-slice-266c-companion-product-binding`. Per the slice
+> rules the single browser gate run is reserved for the integrating Codex; the
+> implementer's evidence is the full headless mirror of the gate (all green)
+> recorded below.
 
 ## Invariants honored for the whole slice
 
@@ -121,4 +125,113 @@ non-converging rounds. Only Critical/High findings block. 0 Provider calls / ¥0
 
 ## Evidence, commits, gaps
 
-_To be completed at 266d-SS-8._
+### Commits (base `253c5ac` → HEAD, one scoped commit per sub-slice)
+
+| Sub-slice | Commit | Files |
+|---|---|---|
+| SS-1 frozen plan | `a34a5e0` | `docs/ticket-26-slice-266d-companion-tavern-completion-v1-2026-09-22.md` |
+| SS-2 backend extension | `54c952a` | `packages/companion-backend-module-v1/worldbook-memory-engine-v1.mjs`, `packages/companion-backend-module-v1/index.mjs` |
+| SS-3 durable persistence + portrait registry | `dd57c9d` | `packages/product-composition/companion-product-module-v1.mjs`, `packages/product-composition/index.mjs`, `content/characters/companion-portrait-asset-registry-v1.mjs` |
+| SS-4 service + HTTP contracts | `eb857e5` | `packages/product-composition/companion-room-session-service-v1.mjs`, `packages/product-composition/companion-product-module-v1.mjs` |
+| SS-5 client domain extension | `a3b30a7` | `packages/client-domain/client-domain-v1.mjs` |
+| SS-6 floating UI cards | `733a301` | `apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx`, `apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx`, `apps/starcraft-tmg-expo/lib/level3/client-domain-provider.tsx` |
+| module hardening | `89d5415` | `packages/product-composition/companion-product-module-v1.mjs` (replay-candidate route rejects `promote`/`automaticPromotion` with `COMPANION_AUDIT_AUTOMATIC_PROMOTION_FORBIDDEN`) |
+| SS-7 gate extension | `b718550` | `scripts/verify-ticket-26-slice-266c-companion-product-binding-v1.mjs` (+1021 lines; every 266c check retained) |
+| SS-8 this closure | _(this commit)_ | `docs/ticket-26-slice-266d-companion-tavern-completion-v1-2026-09-22.md` |
+
+`git diff --name-only 253c5ac..HEAD` touches exactly the 12 files above, all
+inside the manifest `allowedPaths`. No push performed.
+
+### Evidence (implementer-side, 0 Provider calls / ¥0)
+
+1. **Headless gate mirror — `SS7 PREFLIGHT ALL OK`** (2026-09-22, worktree
+   HEAD `b718550`). A headless script asserting the exact SS-7 headless
+   contract surface passed end-to-end, including:
+   - versioned persona bound to the authenticated seat: v1 → v2 put,
+     append-only rollback to v1 content as v3 (`persona.current.v3`);
+   - worldbook: keyword + regex triggers; `global`/`character`/`persona`/
+     `chat` tiers all present; bounded recursion proven (`rec-alpha` depth 0 →
+     `rec-beta` depth 1, `maxDepth: 2, bounded: true`); insertion order
+     strictly priority-desc (10, 9, 8, 7, 6, 5); cross-companion determinism —
+     shared tiers byte-identical between Kerrigan's and Zagara's assemblies,
+     character tier sealed per companion package (Kerrigan 0, Zagara 3
+     always-active pack entries);
+   - Author's Note: `depth 2, frequency 1` injection proven **inside the
+     captured deterministic Provider request** at the exact reported position,
+     as a system message, on both companions;
+   - memory: summary v1/v2 + rollback (current returns to "Summary one." with
+     all three versions retained), episodic fact, typed relationship event
+     (`observed_match_outcome`, trust +5), `SUMMARY_VERSION_NOT_FOUND` on
+     unknown version;
+   - branches: swipe open → provider reroll → accept (new turn appended, prior
+     `turnHash` chain unchanged, lineage recorded); edit-as-branch on own user
+     turn → accept; `COMPANION_BRANCH_EDIT_REQUIRES_OWN_USER_TURN` and
+     `COMPANION_BRANCH_SWIPE_REQUIRES_COMPANION_TURN` rejections; branch list
+     shows both branches `accepted`;
+   - export/restore: integrity hash matches, no seat token or credentials in
+     the export JSON, duplicate restore → `COMPANION_CONVERSATION_ALREADY_EXISTS`,
+     tampered payload → `COMPANION_IMPORT_INTEGRITY_MISMATCH`, cross-seat →
+     `COMPANION_EXPORT_SCOPE_MISMATCH`; sealed package export/import with six
+     64-hex `presentationAssets` content hashes; chat-worldbook export/import;
+   - audit: export + verify + independent `verifyCompanionAuditExport` on the
+     serialized string (entry count + head hash match); replay candidate of
+     public turns; automatic promotion rejected;
+   - permission surfaces: exactly four (`human_vs_agent`, `human_vs_human`,
+     `agent_vs_agent_observer`, `review_mode`); opponent-private reads denied,
+     observer `canSpeak: false`, no Preview/Confirm/Apply anywhere;
+   - **durable restart**: two independent product compositions over one
+     encrypted SQLite file resumed transcript, persona (v3), Author's Note,
+     rolling summary and branch lineage after a simulated process restart;
+     module status reports `persistence.durable === true`; wrong key,
+     missing key and unknown kind all fail closed
+     (`DEPENDENCY_MISSING` / `COMPANION_PRODUCT_PERSISTENCE_KIND_UNKNOWN`);
+   - 401 without a seat token on the product API.
+2. **Backend module gates** `verify-v1`, `verify-cb2`, `verify-cb3`,
+   `verify-cb4`: all PASS after SS-2 (backward compatibility of the sealed
+   worldbook/memory engine preserved).
+3. **Service/HTTP/client smokes**: direct service, HTTP-route and
+   client-transport smokes all green end-to-end (persona v3 rollback, four
+   worldbook tiers firing, note injection in provider request, summary
+   rollback, branch lineage, export/tamper/cross-seat rejections, audit, four
+   permission surfaces).
+4. **tsc** on the Expo app: 29 errors before the slice, 29 after — no new
+   type errors introduced (the 29 are the pre-existing baseline in the three
+   touched UI files).
+5. The single slice gate
+   `node scripts/verify-ticket-26-slice-266c-companion-product-binding-v1.mjs`
+   was **not run by the implementer** (slice rules: the integrating Codex runs
+   it exactly once). `node --check` passes on the extended verifier.
+
+### Repair-loop record
+
+One non-converging assertion was found by the preflight and repaired in a
+single round: the SS-7 draft asserted byte-identical worldbook assemblies
+across companions, which is wrong by design — character-tier entries are
+sealed per companion package (Zagara's pack carries three always-active
+entries; Kerrigan's backend-bound reference pack carries none). The assertion
+was re-scoped to the honest contract (shared tiers byte-identical + character
+tier companion-scoped) in both the preflight and the gate; the loop then
+converged. Total repair rounds: 1 of max 3.
+
+### Honest nonblocking gaps (no Critical/High findings open)
+
+- **Browser phase unexecuted by the implementer.** The new desktop/390px
+  UI-interaction blocks (persona save, worldbook register, memory
+  save/rollback, branch swipe/edit accept, export/restore, audit, permissions)
+  and the six real-portrait pixel proofs
+  (`companion-card-portrait-{slug}-img`) are written into the gate but have
+  only been validated headlessly; their first live-browser execution is the
+  integrating Codex's gate run.
+- **Catalogue parity rows** for animation and pack-backend-promotion remain
+  honestly marked pending — those are Codex-owned gaps outside this slice;
+  only rows backed by real 266c/266d contracts were flipped to
+  `connected (Slice 266c/266d)`.
+- **Kerrigan character-tier worldbook**: the backend-bound reference pack
+  carries no sealed worldbook entries (pre-existing pack data, not changed by
+  this slice); her character tier is empty by data, which the gate asserts
+  explicitly.
+- **`verify-ticket-14-client-domain-module-v1.mjs`** fails identically on the
+  pre-slice baseline (missing local
+  `.worktrees/starcraft-tmg-local/data/starcraft-tmg-data.json`) — a
+  pre-existing environment issue, not introduced here.
+- No third-party extension marketplace was implemented (explicit exclusion).
