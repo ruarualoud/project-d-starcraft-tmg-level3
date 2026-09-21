@@ -223,12 +223,17 @@ explicit, isolated slice manifests.
   lifecycle hypothesis after one rejected Action attempt, then omitted the
   unchanged asset `selection` from both correction submissions. The Host
   mislabeled those partial corrections as `DECISION_PROPOSAL_ILLEGAL` and
-  stopped after three semantic rounds without Apply. Action normalization v27
-  now carries forward only a missing typed selection from an earlier completed
-  Action attempt for the same Planner candidate and still revalidates it through
-  the current Rules receipt. The exact correction shape passed once at 0
-  Provider calls. Resume that fork for local paid-candidate revalidation before
-  considering any new generation. See
+  stopped after three semantic rounds without Apply. The first local recovery
+  proved the missing selection, then exposed the complete schema-role drift:
+  four top-level fields were nested under `intent` and unchanged intent arrays
+  were omitted. Action normalization v28 now lifts those typed fields and merges
+  the correction as a delta over the newest complete same-candidate submission;
+  current values always win and the resulting selection still passes the
+  current Rules receipt. Explicit resume may ignore only this exact pre-start
+  finding until the retry ends; success marks history resolved, while any new
+  High still blocks. The exact delta gate passed once at 0 Provider calls.
+  Resume that fork for a third and final local revalidation; if it fails, stop
+  rather than adding another field-specific repair. See
   `docs/ticket-23-slice-248-terminal-tool-json-convergence-blocker-v1-2026-09-22.md`
   `docs/ticket-23-slice-248-terminal-tool-json-recovery-v1-2026-09-22.md` and
   `docs/ticket-23-slice-248-asset-placement-threat-strategy-repair-v1-2026-09-22.md`

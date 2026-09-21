@@ -27,7 +27,7 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v23";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v27";
+  "starcraft_tmg_live_action_shape_normalization_v28";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -2841,14 +2841,28 @@ function parseSubmittedParametersJson(value) {
   }
 }
 
-export function recoverStarcraftTmgCorrectionSelectionV1(raw, choice) {
-  if (!object(raw) || object(raw.selection)
-    || Number(choice?.semanticCorrectionRounds || 0) < 1) {
-    return { submission: clone(raw), recovered: false, sourceAttemptKey: null };
+const CORRECTION_LIFTED_INTENT_FIELDS = Object.freeze([
+  "lifecycleAssessment", "publicDecisionSummary", "selection", "speech",
+]);
+
+export function recoverStarcraftTmgCorrectionSubmissionV1(raw, choice) {
+  if (!object(raw)) return { submission: clone(raw), recovered: false,
+    sourceAttemptKey: null, inheritedFields: [], liftedFields: [] };
+  const current = clone(raw);
+  const currentIntent = object(current.intent) ? clone(current.intent) : {};
+  const liftedFields = [];
+  for (const field of CORRECTION_LIFTED_INTENT_FIELDS) {
+    if (current[field] === undefined && currentIntent[field] !== undefined) {
+      current[field] = clone(currentIntent[field]);
+      delete currentIntent[field];
+      liftedFields.push(field);
+    }
   }
-  const candidateId = String(raw.candidateId || "");
-  if (!candidateId) {
-    return { submission: clone(raw), recovered: false, sourceAttemptKey: null };
+  if (object(current.intent)) current.intent = currentIntent;
+  const candidateId = String(current.candidateId || "");
+  if (!candidateId || Number(choice?.semanticCorrectionRounds || 0) < 1) {
+    return { submission: current, recovered: liftedFields.length > 0,
+      sourceAttemptKey: null, inheritedFields: [], liftedFields };
   }
   const attempts = [...(choice?.attemptKeys || [])].reverse()
     .map((attemptKey) => ({ attemptKey,
@@ -2859,17 +2873,26 @@ export function recoverStarcraftTmgCorrectionSelectionV1(raw, choice) {
     const prior = responseParts(attempt.safeOutput).decision;
     if (!object(prior) || String(prior.candidateId || "") !== candidateId
       || !object(prior.selection)) continue;
-    return { submission: { ...clone(raw), selection: clone(prior.selection) },
-      recovered: true, sourceAttemptKey: attemptKey };
+    const inheritedFields = Object.keys(prior).filter((field) =>
+      current[field] === undefined);
+    const merged = { ...clone(prior), ...current,
+      intent: { ...clone(prior.intent || {}), ...clone(current.intent || {}) } };
+    return { submission: merged, recovered: true,
+      sourceAttemptKey: attemptKey, inheritedFields, liftedFields };
   }
-  return { submission: clone(raw), recovered: false, sourceAttemptKey: null };
+  return { submission: current, recovered: liftedFields.length > 0,
+    sourceAttemptKey: null, inheritedFields: [], liftedFields };
+}
+
+export function recoverStarcraftTmgCorrectionSelectionV1(raw, choice) {
+  return recoverStarcraftTmgCorrectionSubmissionV1(raw, choice);
 }
 
 function mapDecisionSubmission(raw, input, choice) {
   if (!object(raw)) return raw;
-  const selectionRecovery = recoverStarcraftTmgCorrectionSelectionV1(
+  const correctionRecovery = recoverStarcraftTmgCorrectionSubmissionV1(
     raw, choice);
-  const result = selectionRecovery.submission;
+  const result = correctionRecovery.submission;
   const candidateId = String(result.candidateId || "");
   const selected = actionIndex(input.spatialActionSpace).find((entry) =>
     entry.id === candidateId);
@@ -2897,11 +2920,13 @@ function mapDecisionSubmission(raw, input, choice) {
       parameters: parseSubmittedParametersJson(selection.parametersJson),
     };
   }
-  if (selectionRecovery.recovered) {
+  if (correctionRecovery.recovered) {
     result.correctionFieldRecovery = {
-      field: "selection",
-      sourceAttemptKey: selectionRecovery.sourceAttemptKey,
+      schema: "starcraft_tmg_action_correction_delta_recovery_v1",
+      sourceAttemptKey: correctionRecovery.sourceAttemptKey,
       candidateId,
+      inheritedFields: clone(correctionRecovery.inheritedFields),
+      liftedFields: clone(correctionRecovery.liftedFields),
       rulesRevalidationRequired: true,
     };
   }

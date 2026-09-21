@@ -1,4 +1,4 @@
-# Ticket 23 / Slice 248 — correction selection recovery
+# Ticket 23 / Slice 248 — correction delta recovery
 
 ## Concrete failure
 
@@ -17,33 +17,53 @@ This was not another strategy failure. It was a correction-lane transport gap:
 the instruction said to preserve supported fields, but the Host made the model
 resend an unchanged exact option instead of retaining it itself.
 
-## Repair
+## First repair and recovered structural evidence
 
-Action normalization v27 may recover only a missing top-level `selection` from
-the newest earlier completed Action submission when all of these hold:
+Action normalization v27 first recovered a missing top-level `selection` from
+the newest earlier completed Action submission for the same candidate and kept
+full Rules revalidation. A zero-call resume proved this was necessary but not
+sufficient. The two correction submissions had a more general schema-role
+drift: `lifecycleAssessment`, `publicDecisionSummary`, `selection` and `speech`
+were nested under `intent`, while unchanged intent arrays such as `tradeoffs`,
+`risks`, `fallbacks` and `stopOrReplanTriggers` were omitted.
+
+## General repair
+
+Action normalization v28 treats a correction as a typed delta when all of these
+hold:
 
 - the current decision is already in a semantic-correction round;
 - both submissions name the same Planner-selected candidate;
-- the current submission omitted `selection` rather than replacing it;
-- the earlier submission contains a typed selection.
+- the earlier submission contains a complete typed selection;
+- any current top-level field wins over the earlier value.
 
-The recovered selection is marked with its source attempt and
-`rulesRevalidationRequired=true`. Formation/asset binding and final Rules
-instantiation still run normally, so recovery never makes an old coordinate or
-parameter legal by itself. Current corrected intent and opponent predictions
-always win; only the missing unchanged selection is inherited.
+Four known top-level fields misplaced inside `intent` are lifted first. The
+current corrected payload is then overlaid on the prior complete submission;
+its `intent` is merged field-wise so the new prediction wins while omitted
+unchanged arrays survive. Recovery records lifted and inherited fields plus its
+source attempt and `rulesRevalidationRequired=true`. Formation/asset binding,
+semantic validation and final Rules instantiation still run normally, so an old
+coordinate, prediction or parameter cannot become legal merely by inheritance.
 
 The existing asset-placement focused verifier now contains the exact
 complete-first/partial-correction shape. After the production change it was run
-once and passed with `correctionAssetSelectionRecovered=true`, zero Provider
-calls and zero paid tokens. No unrelated gate or full suite was run.
+once after v28 and passed with `correctionAssetSelectionRecovered=true` and
+`correctionDeltaMerged=true`, zero Provider calls and zero paid tokens. No
+unrelated gate or full suite was run.
+
+Explicit resume also received one bounded control-plane rule: the initial
+manifest may temporarily ignore this exact pre-start decision finding while the
+authorized retry runs. Any new Critical/High still blocks. A successful
+Preview/Apply/Replay marks prior decision findings resolved (never deletes
+them); without success they remain active.
 
 ## Continuation
 
-Resume this exact failed fork once. Its already-paid completed Action candidate
-must be revalidated locally under normalization v27. A new Provider request is
-not required unless the recovered selection fails the unchanged Rules-owned
-option receipt or another independent semantic defect is found.
+Resume this exact failed fork for the third and final convergence attempt. Its
+already-paid completed Action candidate must be revalidated locally under
+normalization v28. No new Provider request is required. If the generic delta
+repair still does not converge, stop and report the blocker rather than adding
+another field-specific patch.
 
 ## Accounting
 

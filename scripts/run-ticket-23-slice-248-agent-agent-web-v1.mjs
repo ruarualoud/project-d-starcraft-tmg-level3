@@ -20,6 +20,9 @@ const MAX_ACTIONS = 180;
 const MATCH_TIMEOUT_MS = 10 * 60 * 60_000;
 const SEATS = Object.freeze(["player1", "player2"]);
 const BLOCKING_SEVERITIES = new Set(["Critical", "High"]);
+const EXPLICIT_RESUME_RETRYABLE_FINDING_CODES = new Set([
+  "LIVE_DECISION_ACTION_DID_NOT_CONVERGE",
+]);
 
 function ensure(condition, code, details = {}) {
   if (!condition) throw Object.assign(new Error(code), { code, ...details });
@@ -32,6 +35,11 @@ function sleep(milliseconds) {
 function safeName(value) {
   return String(value || "action").replace(/[^a-z0-9_-]+/giu, "-")
     .replace(/^-+|-+$/gu, "").slice(0, 80) || "action";
+}
+
+function findingKey(finding = {}) {
+  return [finding.seatKey || "", finding.code || "",
+    finding.occurredAt || ""].join(":");
 }
 
 function summarizeStrategyEvidence(actions = []) {
@@ -301,7 +309,7 @@ async function main() {
   let entry = null;
   let lastManifest = null;
 
-  async function manifest(timeoutMs = 60_000) {
+  async function manifest(timeoutMs = 60_000, options = {}) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     let response;
@@ -319,9 +327,15 @@ async function main() {
     const result = await response.json();
     lastManifest = result;
     const allFindings = findings(result);
+    const ignoredForExplicitResume = allFindings.filter((finding) =>
+      options.allowExistingRetryableFinding === true
+        && EXPLICIT_RESUME_RETRYABLE_FINDING_CODES.has(String(finding.code))
+        && Date.parse(String(finding.occurredAt || "")) < Date.parse(startedAt)
+        && !finding.resolvedAt);
+    const ignoredKeys = new Set(ignoredForExplicitResume.map(findingKey));
     const blocking = allFindings.filter((finding) =>
       BLOCKING_SEVERITIES.has(String(finding.severity))
-        && !finding.resolvedAt);
+        && !finding.resolvedAt && !ignoredKeys.has(findingKey(finding)));
     ensure(!blocking.length, "SLICE248_CRITICAL_OR_HIGH_FINDING", { blocking });
     for (const finding of allFindings.filter((entryValue) =>
       String(entryValue.severity) === "Medium")) {
@@ -688,7 +702,9 @@ async function main() {
     await page.getByText(/已连接权威房间|Authoritative room connected/u)
       .first().waitFor({ timeout: 60_000 });
     await enterBattle();
-    let current = await manifest();
+    let current = await manifest(60_000, {
+      allowExistingRetryableFinding: entry.resumed === true,
+    });
     ensure(current.coverage?.engagementScale === "Standard",
       "SLICE248_NOT_STANDARD_SCALE");
     ensure(current.coverage?.mineralSpentBySide?.player1 === 2000
