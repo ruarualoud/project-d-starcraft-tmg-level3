@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import {
   inspectStarcraftTmgFormationThreatClaimsV1,
+  inspectStarcraftTmgOpponentPredictionFeasibilityV1,
   STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE,
 } from "../packages/online-agent-session/live-flash-decision-port-v1.mjs";
 import { createStarcraftTmgHostedBotSeatRuntimeV1 } from
@@ -126,6 +127,54 @@ assert.deepEqual(new Set(falseRejectedAlternative.contradictions.map(
   "rejectedAlternatives[0].reason",
 ]));
 
+const opponentPredictionObservation = {
+  units: [
+    {
+      unitId: "player1-goliath-1",
+      sideRelation: "opponent",
+      activationStatus: {
+        activatedPhases: { movement: true, assault: false, combat: false },
+      },
+    },
+    {
+      unitId: "player1-marine-1",
+      sideRelation: "opponent",
+      activationStatus: {
+        activatedPhases: { movement: false, assault: false, combat: false },
+      },
+    },
+  ],
+};
+const impossibleActivatedMove =
+  inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+    responses: [{
+      responseId: "resp-goliath-advance",
+      actionClass: "move",
+      opponentAction: "The Goliath advances south this Movement Phase.",
+      likelyActorUnitId: "player1-goliath-1",
+      horizon: { kind: "current_phase", count: 1 },
+    }],
+    spatialObservation: opponentPredictionObservation,
+    currentPhase: "movement",
+  });
+assert.equal(impossibleActivatedMove.status, "contradicted");
+assert.equal(impossibleActivatedMove.contradictions[0].reason,
+  "actor_already_activated_for_predicted_phase");
+
+const possibleReserveDeploy =
+  inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+    responses: [{
+      responseId: "resp-marine-deploy",
+      actionClass: "deploy",
+      opponentAction: "A Marine deploys from reserves.",
+      likelyActorUnitId: "player1-marine-1",
+      horizon: { kind: "current_phase", count: 1 },
+    }],
+    spatialObservation: opponentPredictionObservation,
+    currentPhase: "movement",
+  });
+assert.equal(possibleReserveDeploy.status, "consistent");
+
 assert.equal(STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE, 3,
   "one decision cannot reopen more than three semantic correction rounds");
 
@@ -214,6 +263,8 @@ console.log(JSON.stringify({
     correctedRatherThanOutside.checkedClaimCount,
   moveThenFireAlternativeFields:
     falseRejectedAlternative.contradictions.map((entry) => entry.field),
+  impossibleActivatedPredictionStatus: impossibleActivatedMove.status,
+  possibleReserveDeployStatus: possibleReserveDeploy.status,
   semanticCorrectionLimit:
     STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE,
   rejectionSeverity: rejectedDrive.findingSeverity,

@@ -25,9 +25,9 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v18";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v19";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v22";
+  "starcraft_tmg_live_action_shape_normalization_v23";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -1461,6 +1461,20 @@ function validateActionOutput(raw, input, planner, queryReceipts = []) {
       issues.push(`ACTION_OPPONENT_RESPONSE_INVALID:${index}`);
     }
   }
+  const predictionFeasibility =
+    inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+      responses: intent.predictedOpponentResponses || [],
+      spatialObservation: input.spatialObservation,
+      currentPhase: input.roomProjection?.state?.phase,
+    });
+  if (predictionFeasibility.status === "contradicted") {
+    const first = predictionFeasibility.contradictions[0];
+    throw correctionError(
+      "ACTION_OPPONENT_PREDICTION_LIFECYCLE_CONTRADICTED",
+      `${first.responseId || first.index}:${first.actorId}:${
+        first.actionClass || "unknown"}:${first.reason}`,
+    );
+  }
   for (const [index, tradeoff] of
     (Array.isArray(intent.tradeoffs) ? intent.tradeoffs : []).entries()) {
     if (!object(tradeoff) || !String(tradeoff.benefit || "").trim()
@@ -1778,6 +1792,80 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
     checkedClaimCount: optionClaims.length + selectionClaims.length,
     contradictions,
     contradicted: contradictions.length > 0,
+  });
+}
+
+const PREDICTED_ORDINARY_ACTION_PHASES = Object.freeze({
+  move: "movement",
+  movement: "movement",
+  advance: "movement",
+  reposition: "movement",
+  deploy: "movement",
+  redeploy: "movement",
+  run: "assault",
+  charge: "assault",
+  ranged_attack: "assault",
+  shoot: "assault",
+  shooting: "assault",
+  hold_position: "assault",
+  fight: "combat",
+  melee: "combat",
+  melee_attack: "combat",
+  combat: "combat",
+});
+
+function observedUnitActivation(spatialObservation, unit) {
+  if (object(unit?.activationStatus?.activatedPhases)) {
+    return unit.activationStatus.activatedPhases;
+  }
+  return (spatialObservation?.models || []).find((entry) =>
+    entry?.unitId === unit?.unitId)?.status?.activatedPhases || {};
+}
+
+export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
+  input = {}) {
+  const observation = input.spatialObservation || {};
+  const units = new Map((observation.units || []).map((entry) =>
+    [String(entry?.unitId || ""), entry]));
+  const currentPhase = String(input.currentPhase || "").toLowerCase();
+  const contradictions = [];
+  for (const [index, response] of (input.responses || []).entries()) {
+    const actorId = String(response?.likelyActorUnitId || "").trim();
+    if (!actorId) continue;
+    const actor = units.get(actorId);
+    if (!actor) continue;
+    if (actor.sideRelation !== "opponent") {
+      contradictions.push({ index, responseId: response.responseId || null,
+        actorId, actionClass: response.actionClass || null,
+        reason: "predicted_actor_is_not_opponent" });
+      continue;
+    }
+    const predictedPhase = PREDICTED_ORDINARY_ACTION_PHASES[
+      String(response.actionClass || "").trim().toLowerCase()] || null;
+    if (!predictedPhase) continue;
+    const horizonKind = String(response?.horizon?.kind || "");
+    if (horizonKind === "current_phase" && currentPhase
+      && predictedPhase !== currentPhase) {
+      contradictions.push({ index, responseId: response.responseId || null,
+        actorId, actionClass: response.actionClass || null, predictedPhase,
+        currentPhase, reason: "action_class_not_available_in_current_phase" });
+      continue;
+    }
+    const activatedPhases = observedUnitActivation(observation, actor);
+    if (activatedPhases?.[predictedPhase] === true
+      && new Set(["next_opponent_action", "current_phase", "current_round"])
+        .has(horizonKind)) {
+      contradictions.push({ index, responseId: response.responseId || null,
+        actorId, actionClass: response.actionClass || null, predictedPhase,
+        currentPhase, reason: "actor_already_activated_for_predicted_phase" });
+    }
+  }
+  return freeze({
+    status: contradictions.length ? "contradicted" : "consistent",
+    currentPhase,
+    contradictions,
+    rulesAuthority: false,
+    trainingTruth: false,
   });
 }
 
@@ -3783,6 +3871,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
         ? "Assess the existing same-match plan before selecting a candidate. A changed or contradicted assumption must produce at_risk/invalid and revise/abandon, never silent continue/sound."
         : "Produce the ActionIntent for the already selected Planner candidate; do not replace the plan or candidate inside the Action stage.",
       "Predict a plausible opponent response as a typed hypothesis: actionClass, likely actor/target when visible, bounded horizon, confidence, evidence and invalidation criteria. State a counter-response and replan trigger.",
+      "Opponent predictions obey the current lifecycle. Read every visible Unit's activationStatus. A Unit with activatedPhases[predicted action phase] = true cannot take another ordinary Move, Deploy, Run, Charge, Ranged Attack or Fight action in that phase or round; choose an unactivated legal actor, a phase-control possibility, or an explicitly conditional later-round response instead.",
       "When match memory contains predictionCalibrations, cite their calibrationHash in assessment evidence, update changedAssumptions/opponentModelUpdates, and use assessment.verdict to explicitly retain or revise the plan. A hit does not force continuation and a miss does not force abandonment; calibrate against position and objective value.",
       forceTerminal
         ? "If strategy context remains insufficient, record it as uncertainty and a replan trigger; never invent a missing Skill passage."

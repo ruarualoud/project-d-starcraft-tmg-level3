@@ -173,6 +173,17 @@ explicit, isolated slice manifests.
   now uses high-confidence placed-asset claims plus negation awareness; positive
   Omega-as-indicator drift still fails. Continue again from revision 8; do not
   restart the match.
+  The next fork legally applied the corrected Omega action at revision 9, but
+  its public opponent model predicted another current-phase Goliath move after
+  the Authority journal had already recorded that Unit's completed Movement
+  activation at revision 5. Spatial observation already exposed
+  `activatedPhases`; the missing link was Host validation. A typed lifecycle
+  gate now rejects named own/allied actors, wrong-current-phase ordinary action
+  classes and visible actors already activated in the predicted phase. The
+  exact Goliath defect failed before repair and passed once afterward; an
+  unactivated Marine reserve deploy remains valid. Preserve the r9 Authority
+  action but not its strategy prose, and fork from revision 8 once more so plan
+  memory starts with a lifecycle-valid counterplay hypothesis.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -229,4 +240,9 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   work totals 33 calls, 1,468,149 units and ¥2.013744; together with the original
   invalid-suffix source this is 62 calls, 2,814,943 units and ¥3.866465. No ¥100
   threshold was crossed.
+- Lifecycle-defective Omega branch `20260921204159763`: revision 9 applied and
+  Replay matched, but the impossible repeated Goliath Movement prediction keeps
+  its strategy prose non-training. Usage: 6 calls, 271,979 units, ¥0.378876.
+  Recent recovery work is now 39 calls, 1,740,128 units and ¥2.392620; including
+  the original invalid-suffix source: 68 calls, 3,086,922 units and ¥4.245341.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.
