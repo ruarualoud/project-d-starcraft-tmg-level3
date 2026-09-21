@@ -73,7 +73,12 @@ explicit, isolated slice manifests.
    alternatives and one typed `hit` calibration; 0 Provider calls / ¥0.
    **Complete.**
 4. Ticket 25 / Slices 262–263: close free legal formation strategy, the natural
-   canary and remaining A-A/review evidence.
+   canary and remaining A-A/review evidence. K3 concurrently owns the isolated
+   presentation-only `ticket-25-slice-262-threat-visualization-ui` worktree:
+   selected stationary/move-fire/Charge threat, friendly/enemy aggregate
+   overlays, current predicted-interaction receipts, responsive Web/App UI and
+   real-browser screenshots. Codex retains all Rules/projection interfaces,
+   integration review and the natural-match acceptance.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
    replay-driven Skill evolution loop.
 6. Ticket 26 / Slices 264–266: build and compare two complete companion packs.
@@ -114,5 +119,5 @@ evidence without rerunning already-passed unrelated gates.
   cross-family resource-contract gates each used 0 Provider calls and ¥0; no
   ¥100 notification threshold has been crossed.
 - Kimi environment ledger: 3 CLI runs (2 connectivity probes, 1 ENV-6
-  implementation session); token and currency fields were not reported by Kimi
-  Code CLI.
+  implementation session), plus the completed Ticket-20 frontend Lead run. The
+  CLI did not report token or currency fields, so no Kimi cost is inferred.

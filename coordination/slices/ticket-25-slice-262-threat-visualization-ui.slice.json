@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "id": "ticket-25-slice-262-threat-visualization-ui",
+  "githubIssue": null,
+  "title": "Design and implement complete battlefield threat and predicted-interaction visualization",
+  "owner": "kimi",
+  "agentProfile": "project-d-ui-lead",
+  "model": "project-d-k3",
+  "baseRef": "codex/starcraft-integration-20260921",
+  "branch": "agent/kimi/ticket-25-slice-262-threat-visualization-ui",
+  "worktree": ".worktrees/ticket-25-slice-262-threat-visualization-ui",
+  "allowedPaths": [
+    "apps/starcraft-tmg-expo/",
+    "scripts/verify-ticket-25-slice-262-threat-visualization-browser-v1.mjs",
+    "docs/ticket-25-slice-262-threat-visualization-ui-v1-2026-09-21.md"
+  ],
+  "verification": [
+    {
+      "name": "Expo frontend TypeScript contract",
+      "command": "COREPACK_ENABLE_PROJECT_SPEC=0 corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec tsc --noEmit"
+    },
+    {
+      "name": "real-browser threat visualization journey and screenshots",
+      "command": "node scripts/verify-ticket-25-slice-262-threat-visualization-browser-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Own the presentation-only threat-visualization sub-slice for Ticket 25 / Slice 262. Begin by carefully reading the current battle workspace, battle-workbench read panels, battlefield/client projections, tactical relationship graph projection, attack-probability and fire-zone-exchange result shapes, existing Web browser harnesses, StarCraft visual tokens, and the current frontend-lead closure. Write and freeze a numbered implementation plan in docs/ticket-25-slice-262-threat-visualization-ui-v1-2026-09-21.md before editing UI code. Preserve every backend, Rules, Authority, room, Provider, memory, source-data and action contract. Implement a practical StarCraft command-table presentation for: selected-Unit stationary fire, move-then-fire, Charge/engagement, friendly aggregate and enemy aggregate threat layers; clear source/side/mode legends; overlap intensity or another legible aggregation treatment; exact/advisory/unknown precision; per-weapon and contributing-model facts already supplied by the product; and a compact predicted-interaction comparison for the selected/current action using only existing attack-probability, fire-zone-exchange, LegalSpace or relationship receipts. Never calculate gameplay truth in the UI, infer range from pixels, turn unknown into zero, or imply an action is legal/applied because it is visualized. If a current product projection does not expose a required estimate, show an honest not-loaded/unknown state and document the precise backend projection gap instead of inventing data. Threats remain off by default, all modes must be reachable in one or two interactions, overlays must not prevent model selection, and desktop Web plus narrow/touch App layouts must keep the battlefield as the visual focus. Reuse current map/unit art and StarCraft tokens, support reduced motion, keyboard/touch accessibility, and do not regress the Unit/Actions/Status/Markers/Referee/Adjutant/Harness surfaces. Build a self-contained real-browser verifier by adapting the repository's existing browser harnesses; it must use current product code, assert user-visible mode changes rather than field presence, capture desktop and narrow screenshots covering at least selected stationary, move/fire, Charge, friendly aggregate, enemy aggregate and predicted-interaction/unknown states, write an ignored machine-readable report plus image set, and record paths/hashes and a per-screenshot explanation in the closure document. Run only the two named gates once after the final relevant change; one repair rerun is allowed only for a concrete failure. Make separate scoped commits for plan, implementation, browser evidence/closure, and do not push."
+}
