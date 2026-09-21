@@ -95,6 +95,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   } | null>(null);
   const projection = view.characterPresentation;
   const offlineSnapshot = view.characterOfflineSnapshot;
+  const characterStatus = view.characterStatus;
   const roleAgent = view.roleAgentSession;
   const zh = lang === "zh";
   const active = routeFocused
@@ -259,7 +260,9 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
       ? projection.character.displayName
       : cachedPersona
         ? (zh ? "已封存的离线副官" : "Sealed offline Adjutant")
-        : (zh ? "凯瑞甘副官 · 待连接" : "Kerrigan Adjutant · awaiting room");
+        : characterStatus?.rejectionCode
+          ? (zh ? "副官 · 投影已扣留" : "Adjutant · projection withheld")
+          : (zh ? "凯瑞甘副官 · 待连接" : "Kerrigan Adjutant · awaiting room");
 
   const chipStatus: { label: string; color: string } = roleAgent?.pendingConfirmation
     ? { label: zh ? "等待确认" : "confirmation pending", color: "#f59e0b" }
@@ -340,7 +343,9 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
                   : !projection
                     ? cachedPersona
                       ? (zh ? "离线只读：已恢复封存选择；远程头像暂停" : "Offline read-only: sealed selection restored; remote portrait paused")
-                      : (zh ? "进入已验证房间后加载副官" : "Join a verified room to load an adjutant")
+                      : characterStatus?.rejectionCode
+                        ? (zh ? "角色投影未通过客户端校验，按失败关闭扣留" : "Character projection failed client validation; withheld fail-closed")
+                        : (zh ? "进入已验证房间后加载副官" : "Join a verified room to load an adjutant")
                     : (zh ? "头像资源不可用" : "Portrait asset unavailable")}
               </Text>
             </View>
@@ -809,11 +814,22 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
               : `Offline read-only: sealed companion selection "${cachedPersona.title}" (${cachedPersona.timeline.start} → ${cachedPersona.timeline.end}) restored; reconnect to switch.`}
           </Text>
         ) : (
-          <Text style={styles.sectionHint}>
-            {zh
-              ? "进入已验证房间后加载同伴身份与世界书。"
-              : "Join a verified room to load companion identity and world book."}
-          </Text>
+          <>
+            <Text style={styles.sectionHint}>
+              {characterStatus?.rejectionCode
+                ? (zh
+                  ? `服务端角色投影未通过客户端校验（${characterStatus.rejectionCode}）；身份按失败关闭原则扣留，不是缺失，也不会用旧数据顶替。`
+                  : `The server-sent character projection failed client validation (${characterStatus.rejectionCode}); identity is withheld fail-closed, not absent, and stale data is never substituted.`)
+                : (zh
+                  ? "进入已验证房间后加载同伴身份与世界书。"
+                  : "Join a verified room to load companion identity and world book.")}
+            </Text>
+            {characterStatus?.rejectionCode && (
+              <Text selectable style={styles.sectionMeta}>
+                rejection: {characterStatus.rejectionCode}
+              </Text>
+            )}
+          </>
         )}
         <View style={styles.gapCard}>
           <Text style={styles.gapTitle}>
@@ -1109,6 +1125,10 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
               {renderTraceCard()}
               <Text style={styles.diagMeta}>
                 sessionRef: {roleAgent?.sessionRef || "—"}
+              </Text>
+              <Text style={styles.diagMeta}>
+                {zh ? "角色投影状态" : "character status"}: {characterStatus?.status || "—"}
+                {" · "}{zh ? "拒绝码" : "rejection"}: {characterStatus?.rejectionCode || "none"}
               </Text>
               <Text style={styles.diagMeta}>
                 {zh ? "角色投影哈希" : "character projection hash"}: {projection?.projectionHash || "—"}
