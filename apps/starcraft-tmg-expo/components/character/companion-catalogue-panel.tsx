@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { COMPANION_CATALOGUE_V1 } from "../../../content/characters/companion-catalogue-v1.mjs";
-import { RAYNOR_PORTRAIT_STATE_CONTRACT_V1 } from "../../../content/characters/raynor-portrait-states-v1.mjs";
-import { ARTANIS_PORTRAIT_STATE_CONTRACT_V1 } from "../../../content/characters/artanis-portrait-states-v1.mjs";
+import { COMPANION_CATALOGUE_V1 } from "../../../../content/characters/companion-catalogue-v1.mjs";
+import { RAYNOR_PORTRAIT_STATE_CONTRACT_V1 } from "../../../../content/characters/raynor-portrait-states-v1.mjs";
+import { ARTANIS_PORTRAIT_STATE_CONTRACT_V1 } from "../../../../content/characters/artanis-portrait-states-v1.mjs";
 import { useReducedMotion } from "@/lib/level3/use-reduced-motion";
 
 /**
