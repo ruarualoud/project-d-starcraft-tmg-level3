@@ -462,6 +462,10 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
           return envelope(await service.verifyAuditLive(scoped));
         }
         if (method === "POST" && segments[1] === "replay-candidate") {
+          if (body.promote === true || body.automaticPromotion === true
+            || body.promotion === "automatic") {
+            return envelope(rejection("COMPANION_AUDIT_AUTOMATIC_PROMOTION_FORBIDDEN"));
+          }
           return envelope(await service.buildAuditReplayCandidate({
             ...scoped,
             ...(object(body.sessionRef) ? { sessionRef: body.sessionRef } : {}),
