@@ -189,24 +189,22 @@ check("provider gateway fails closed without a provider and never attempts netwo
   assert.equal(result.ok, false);
   assert.equal(result.failClosed, true);
   assert.equal(result.reason, "provider_unavailable");
+  assert.equal(result.directModuleNetworkAttempts, 0);
   assert.equal(result.networkAttempts, 0);
   assert.equal(result.paidInference, "not_performed");
   const stats = gateway.stats();
   assert.equal(stats.providerInjected, false);
-  assert.equal(stats.networkAttempts, 0);
+  assert.equal(stats.directModuleNetworkAttempts, 0);
+  assert.equal(stats.externalNetworkAttempts, 0);
   const kinds = auditLog.list().map((entry) => entry.kind);
   assert.ok(kinds.includes("provider.request"));
   assert.ok(kinds.includes("provider.rejection"));
 });
 
 check("provider gateway enforces the strict request/response port", async () => {
-  // Network-capable adapters never enter the module.
-  expectError(CB1.PROVIDER_NETWORK_FORBIDDEN, () => createCompanionProviderGateway({
-    provider: { portId: "companion_provider_port_v1", complete: async () => ({}), baseUrl: "https://example.invalid" },
-  }));
-  expectError(CB1.PROVIDER_NETWORK_FORBIDDEN, () => createCompanionProviderGateway({
-    provider: { portId: "companion_provider_port_v1", complete: async () => ({}), network: "https" },
-  }));
+  // Port conformance and credential hygiene are enforced; network-capable
+  // adapters are NOT rejected — an injected provider port is opaque and may
+  // execute externally (endpoint/transport/fetch live outside this module).
   expectError(CB1.PORT_CONFORMANCE_FAILURE, () => createCompanionProviderGateway({
     provider: { portId: "wrong-port", complete: async () => ({}) },
   }));
@@ -240,13 +238,19 @@ check("provider gateway enforces the strict request/response port", async () => 
   assert.equal(ok.response.uncertainty, 0.25);
   assert.equal(ok.response.receipts[0].kind, "tool");
   assert.match(ok.receipt.responseHash, /^[a-f0-9]{64}$/);
+  assert.equal(ok.receipt.directModuleNetworkAttempts, 0);
   assert.equal(ok.receipt.networkAttempts, 0);
+  assert.equal(ok.receipt.externalNetworkAttempts, 0);
   assert.equal(ok.receipt.paidInference, "not_performed");
+  assert.equal(ok.receipt.accountingSource, "adapter_declared_no_network");
   assert.equal(ok.receipt.hiddenChainOfThought, "not_present");
   const stats = gateway.stats();
   assert.equal(stats.calls, 1);
   assert.equal(stats.promptTokens, 11);
   assert.equal(stats.completionTokens, 7);
+  assert.equal(stats.directModuleNetworkAttempts, 0);
+  assert.equal(stats.externalNetworkAttempts, 0);
+  assert.equal(stats.paidInferencePerformed, 0);
 
   // Responder failures and invalid responses fail closed, never throw raw.
   const throwingGateway = createCompanionProviderGateway({
@@ -273,6 +277,96 @@ check("provider gateway enforces the strict request/response port", async () => 
   const cotResult = await cotGateway.complete({ messages: [{ role: "user", content: "hi" }] });
   assert.equal(cotResult.ok, false);
   assert.equal(cotResult.reason, CB1.HIDDEN_COT_FORBIDDEN);
+});
+
+check("opaque external provider port executes externally and its provider-reported accounting is preserved (High repair)", async () => {
+  // An injected provider port may carry endpoint/transport/fetch capability
+  // and execute externally; the module must not reject it and must not
+  // fabricate zeros over provider-reported accounting.
+  const auditLog = createCompanionAuditLog({ logId: "pr-ext" });
+  const externalProvider = {
+    portId: "companion_provider_port_v1",
+    adapterId: "external-provider-stub",
+    endpoint: "https://provider.example.invalid/v1/complete",
+    transport: "https",
+    network: "https",
+    fetch: async () => { throw new Error("never invoked by this module"); },
+    complete: async (request) => ({
+      ok: true,
+      response: {
+        content: `External answer to: ${request.messages[request.messages.length - 1].content}`,
+        rationale: "public rationale from the external provider",
+        receipts: [{ receiptId: "ext-rcpt-1", kind: "tool", sourceRef: "tool://external-completion" }],
+        uncertainty: 0.1,
+        usage: { promptTokens: 21, completionTokens: 9, reportedCostUnits: 0.0042 },
+      },
+      receipt: { networkAttempts: 2, paidInference: "performed", reportedCostUnits: 0.0042 },
+    }),
+  };
+  const gateway = createCompanionProviderGateway({ provider: externalProvider, auditLog });
+  assert.equal(gateway.providerInjected, true);
+  assert.equal(gateway.directModuleNetwork, "none");
+  assert.equal(gateway.externalProviderExecution, "allowed_outside_module");
+
+  const ok = await gateway.complete({
+    requestId: "req-ext-1",
+    messages: [{ role: "user", content: "external status?" }],
+  });
+  assert.equal(ok.ok, true);
+  assert.match(ok.response.content, /^External answer to:/);
+  // Provider-reported external accounting is preserved verbatim, not zeroed.
+  assert.equal(ok.receipt.directModuleNetworkAttempts, 0);
+  assert.equal(ok.receipt.networkAttempts, 2);
+  assert.equal(ok.receipt.externalNetworkAttempts, 2);
+  assert.equal(ok.receipt.paidInference, "performed");
+  assert.equal(ok.receipt.reportedCostUnits, 0.0042);
+  assert.equal(ok.receipt.accountingSource, "provider_receipt");
+  const stats = gateway.stats();
+  assert.equal(stats.directModuleNetworkAttempts, 0);
+  assert.equal(stats.externalNetworkAttempts, 2);
+  assert.equal(stats.paidInferencePerformed, 1);
+  assert.equal(stats.reportedCostUnits, 0.0042);
+  const responseEntry = auditLog.list().find((entry) => entry.kind === "provider.response");
+  assert.equal(responseEntry.subject.externalNetworkAttempts, 2);
+  assert.equal(responseEntry.subject.paidInference, "performed");
+  assert.equal(responseEntry.subject.directModuleNetworkAttempts, 0);
+
+  // An opaque external adapter that reports no receipt yields "unknown"
+  // external accounting, never a fabricated zero.
+  const silentGateway = createCompanionProviderGateway({
+    provider: {
+      portId: "companion_provider_port_v1",
+      endpoint: "https://provider.example.invalid",
+      transport: "https",
+      complete: async () => ({ content: "opaque answer", usage: { promptTokens: 5, completionTokens: 3, reportedCostUnits: 0.001 } }),
+    },
+  });
+  const silent = await silentGateway.complete({ messages: [{ role: "user", content: "hi" }] });
+  assert.equal(silent.ok, true);
+  assert.equal(silent.receipt.directModuleNetworkAttempts, 0);
+  assert.equal(silent.receipt.externalNetworkAttempts, "unknown");
+  assert.equal(silent.receipt.paidInference, "unknown");
+  assert.equal(silent.receipt.reportedCostUnits, 0.001);
+  assert.equal(silent.receipt.accountingSource, "unreported");
+  assert.equal(silentGateway.stats().paidInferenceUnknown, 1);
+
+  // Malformed provider receipts fail closed instead of being trusted.
+  const badReceiptGateway = createCompanionProviderGateway({
+    provider: {
+      portId: "companion_provider_port_v1",
+      endpoint: "https://provider.example.invalid",
+      complete: async () => ({
+        ok: true,
+        response: { content: "x" },
+        receipt: { networkAttempts: -3, paidInference: "performed" },
+      }),
+    },
+  });
+  const bad = await badReceiptGateway.complete({ messages: [{ role: "user", content: "hi" }] });
+  assert.equal(bad.ok, false);
+  assert.equal(bad.failClosed, true);
+  assert.equal(bad.reason, CB4.PROVIDER_RECEIPT_INVALID);
+  assert.equal(bad.directModuleNetworkAttempts, 0);
 });
 
 check("audit log is deterministic, hash-chained and tamper-evident", async () => {

@@ -18,15 +18,20 @@ import {
 //
 // Hard guarantees implemented here:
 // - Provider gateway: a strict request/response port wrapper. This module
-//   ships no Provider implementation, performs no network call, handles no
-//   credential and performs no paid inference. An injected provider adapter
-//   that declares any network capability (baseUrl/endpoint/url/fetch/socket/
-//   transport, or network != "none") is rejected at construction. Requests
-//   are built through the CB-1 strict request contract; responses are
-//   re-normalized through the CB-1 strict response contract, so only public
-//   rationale, source/tool receipts and uncertainty can ever leave the port.
-//   Without an injected provider the gateway fails closed with a rejection
-//   record (never a throw, never a network attempt).
+//   ships no Provider implementation, performs no direct network I/O, handles
+//   no credential and initiates no paid inference. An injected provider port
+//   is OPAQUE: it may execute externally (its own endpoint/transport/fetch or
+//   paid inference live outside this module) and is never rejected for
+//   carrying such capability. Credentials remain forbidden in module requests
+//   and in stored adapter data. The module's own directModuleNetworkAttempts
+//   is always 0. When the external adapter reports per-call accounting
+//   (networkAttempts, paidInference, reportedCostUnits) the gateway preserves
+//   those provider-reported values verbatim in receipts, stats and the audit
+//   log instead of inventing zeros; an adapter that declares network "none"
+//   (the pure in-memory port) truthfully reports zeros, and an opaque adapter
+//   that reports nothing yields "unknown", never a fabricated zero. Without
+//   an injected provider the gateway fails closed with a rejection record
+//   (never a throw, never a network attempt, all accounting zeros).
 // - Persistence gateway: a strict integration surface over the CB-1 injected
 //   persistence port. It re-verifies the port conformance and the honest
 //   durability declaration, enforces an optional namespace allowlist, and
@@ -54,6 +59,7 @@ const CB1 = COMPANION_BACKEND_ERROR_CODES;
 export const COMPANION_BACKEND_CB4_ERROR_CODES = Object.freeze({
   GATEWAY_INVALID: "GATEWAY_INVALID",
   PROVIDER_PAID_INFERENCE_FORBIDDEN: "PROVIDER_PAID_INFERENCE_FORBIDDEN",
+  PROVIDER_RECEIPT_INVALID: "PROVIDER_RECEIPT_INVALID",
   PERSISTENCE_NAMESPACE_VIOLATION: "PERSISTENCE_NAMESPACE_VIOLATION",
   AUDIT_INVALID: "AUDIT_INVALID",
   AUDIT_KIND_UNSUPPORTED: "AUDIT_KIND_UNSUPPORTED",
@@ -91,7 +97,7 @@ const RECEIPT_KIND_SET = new Set(COMPANION_RATIONALE_RECEIPT_KINDS);
 const PRESENTATION_STATE_SET = new Set(COMPANION_PRESENTATION_STATES);
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
 const PAID_INFERENCE_KEY_PATTERN = /paid[_-]?inference|billing|cost[_-]?override|charge[_-]?account/i;
-const NETWORK_CAPABILITY_KEYS = Object.freeze(["baseUrl", "endpoint", "url", "fetch", "socket", "transport"]);
+const PAID_INFERENCE_STATUSES = new Set(["performed", "not_performed", "unknown"]);
 const AUDIT_EXPORT_SCHEMA = `${COMPANION_BACKEND_CONTRACT_VERSION}.audit-export`;
 
 function clone(value) {
@@ -421,30 +427,98 @@ export function createCompanionPersistenceGateway(options = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Strict provider gateway. No implementation, no network, no credentials, no
-// paid inference; fail closed when no provider port is injected.
+// Strict provider gateway. The module ships no Provider implementation,
+// performs no direct network I/O, handles no credentials and initiates no
+// paid inference. An injected provider port is opaque and may execute
+// externally; provider-reported external accounting is preserved verbatim.
+// Fail closed (all zeros) when no provider port is injected.
 // ---------------------------------------------------------------------------
+
+// Normalizes the external accounting an opaque provider port reports for one
+// call. Returns { ok: true, accounting } or { ok: false, reason, message }.
+// The module never invents zeros for an external execution: unreported values
+// from an opaque adapter surface as "unknown", while an adapter that declares
+// network "none" (the pure in-memory port) truthfully reports zeros.
+function externalAccountingOf(raw, provider, response) {
+  const rawReceipt = object(raw) && raw.receipt !== undefined ? raw.receipt : null;
+  if (rawReceipt !== null) {
+    if (!object(rawReceipt)) {
+      return { ok: false, reason: CB4.PROVIDER_RECEIPT_INVALID, message: "provider receipt must be an object" };
+    }
+    try {
+      assertNoHiddenChainOfThought(rawReceipt, "providerReceipt");
+      assertNoCredentials(rawReceipt, "providerReceipt");
+    } catch (error) {
+      if (error instanceof CompanionBackendError) {
+        return { ok: false, reason: error.code, message: error.message, details: error.details };
+      }
+      throw error;
+    }
+    const networkAttempts = rawReceipt.networkAttempts === undefined ? 0 : Number(rawReceipt.networkAttempts);
+    if (!Number.isSafeInteger(networkAttempts) || networkAttempts < 0) {
+      return { ok: false, reason: CB4.PROVIDER_RECEIPT_INVALID, message: "provider receipt networkAttempts must be a non-negative safe integer" };
+    }
+    const paidInference = rawReceipt.paidInference === undefined ? "unknown" : String(rawReceipt.paidInference);
+    if (!PAID_INFERENCE_STATUSES.has(paidInference)) {
+      return { ok: false, reason: CB4.PROVIDER_RECEIPT_INVALID, message: `provider receipt paidInference must be one of ${[...PAID_INFERENCE_STATUSES].join(", ")}` };
+    }
+    const reportedCostUnits = rawReceipt.reportedCostUnits === undefined
+      ? response.usage.reportedCostUnits
+      : Number(rawReceipt.reportedCostUnits);
+    if (!Number.isFinite(reportedCostUnits) || reportedCostUnits < 0) {
+      return { ok: false, reason: CB4.PROVIDER_RECEIPT_INVALID, message: "provider receipt reportedCostUnits must be a non-negative number" };
+    }
+    return {
+      ok: true,
+      accounting: {
+        externalNetworkAttempts: networkAttempts,
+        paidInference,
+        reportedCostUnits,
+        accountingSource: "provider_receipt",
+      },
+    };
+  }
+  if (String(provider?.network || "") === "none") {
+    // Truthful zeros: the adapter itself declares it performs no network.
+    return {
+      ok: true,
+      accounting: {
+        externalNetworkAttempts: 0,
+        paidInference: "not_performed",
+        reportedCostUnits: response.usage.reportedCostUnits,
+        accountingSource: "adapter_declared_no_network",
+      },
+    };
+  }
+  // Opaque external adapter that reported nothing: never invent zeros.
+  return {
+    ok: true,
+    accounting: {
+      externalNetworkAttempts: "unknown",
+      paidInference: "unknown",
+      reportedCostUnits: response.usage.reportedCostUnits,
+      accountingSource: "unreported",
+    },
+  };
+}
 
 export function createCompanionProviderGateway(options = {}) {
   if (!object(options)) fail(CB4.GATEWAY_INVALID, "provider gateway options must be an object");
   const provider = options.provider === undefined ? null : options.provider;
   const auditLog = normalizeAuditLog(options.auditLog);
+  // Port conformance + credential scan only. An injected port is opaque: it
+  // may execute externally (endpoint/transport/fetch/paid inference outside
+  // this module) and is NOT rejected for that; the module itself still
+  // performs no direct network I/O and stores no credentials.
   if (provider !== null) {
     assertCompanionProviderPort(provider);
-    for (const key of NETWORK_CAPABILITY_KEYS) {
-      if (provider[key] !== undefined) {
-        fail(CB1.PROVIDER_NETWORK_FORBIDDEN,
-          `provider adapter must not carry network capability into this module: ${key}`);
-      }
-    }
-    if (provider.network !== undefined && String(provider.network) !== "none") {
-      fail(CB1.PROVIDER_NETWORK_FORBIDDEN,
-        `provider adapter declares network mode "${provider.network}"; this module performs no network calls`);
-    }
   }
   const gatewayId = String(options.gatewayId || "companion-provider-gateway-v1");
   let calls = 0;
   const usage = { promptTokens: 0, completionTokens: 0, reportedCostUnits: 0 };
+  let externalNetworkAttempts = 0;
+  let paidInferencePerformed = 0;
+  let paidInferenceUnknown = 0;
 
   function audit(kind, subject) {
     if (auditLog) auditLog.record(kind, { gatewayId, ...subject });
@@ -458,8 +532,10 @@ export function createCompanionProviderGateway(options = {}) {
       gatewayId,
       reason,
       failClosed: true,
+      directModuleNetworkAttempts: 0,
       networkAttempts: 0,
       paidInference: "not_performed",
+      accountingSource: "fail_closed",
       ...clone(details),
     });
   }
@@ -488,7 +564,7 @@ export function createCompanionProviderGateway(options = {}) {
     if (!provider) {
       return rejection("provider_unavailable", {
         requestId: request.requestId,
-        message: "no provider port injected; this module ships no Provider implementation and performs no network call, credential handling or paid inference",
+        message: "no provider port injected; this module ships no Provider implementation and performs no direct network call, credential handling or paid inference",
       });
     }
     let raw;
@@ -516,15 +592,34 @@ export function createCompanionProviderGateway(options = {}) {
       }
       throw error;
     }
+    const accountingResult = externalAccountingOf(raw, provider, response);
+    if (!accountingResult.ok) {
+      return rejection(accountingResult.reason, {
+        requestId: request.requestId,
+        message: accountingResult.message,
+        ...(accountingResult.details ? clone(accountingResult.details) : {}),
+      });
+    }
+    const accounting = accountingResult.accounting;
     usage.promptTokens += response.usage.promptTokens;
     usage.completionTokens += response.usage.completionTokens;
-    usage.reportedCostUnits += response.usage.reportedCostUnits;
+    usage.reportedCostUnits += accounting.reportedCostUnits;
+    if (typeof accounting.externalNetworkAttempts === "number") {
+      externalNetworkAttempts += accounting.externalNetworkAttempts;
+    }
+    if (accounting.paidInference === "performed") paidInferencePerformed += 1;
+    if (accounting.paidInference === "unknown") paidInferenceUnknown += 1;
     const responseHash = hashStarcraftTmgContract(response);
     audit("provider.response", {
       requestId: request.requestId,
       requestHash,
       responseHash,
       usage: clone(response.usage),
+      directModuleNetworkAttempts: 0,
+      externalNetworkAttempts: accounting.externalNetworkAttempts,
+      paidInference: accounting.paidInference,
+      reportedCostUnits: accounting.reportedCostUnits,
+      accountingSource: accounting.accountingSource,
     });
     const receipt = deepFreeze({
       schemaVersion: `${COMPANION_BACKEND_CONTRACT_VERSION}.provider-call-receipt`,
@@ -533,8 +628,15 @@ export function createCompanionProviderGateway(options = {}) {
       requestHash,
       responseHash,
       usage: clone(response.usage),
-      networkAttempts: 0,
-      paidInference: "not_performed",
+      // The module itself never touches the network; external attempts are
+      // provider-reported (or "unknown" when an opaque adapter reports
+      // nothing) and are preserved verbatim, never invented as zero.
+      directModuleNetworkAttempts: 0,
+      networkAttempts: accounting.externalNetworkAttempts,
+      externalNetworkAttempts: accounting.externalNetworkAttempts,
+      paidInference: accounting.paidInference,
+      reportedCostUnits: accounting.reportedCostUnits,
+      accountingSource: accounting.accountingSource,
       hiddenChainOfThought: "not_present",
     });
     return deepFreeze({ ok: true, gatewayId, requestId: request.requestId, request, response, receipt });
@@ -545,8 +647,10 @@ export function createCompanionProviderGateway(options = {}) {
       gatewayId,
       calls,
       ...usage,
-      networkAttempts: 0,
-      paidInference: "not_performed",
+      directModuleNetworkAttempts: 0,
+      externalNetworkAttempts,
+      paidInferencePerformed,
+      paidInferenceUnknown,
       providerInjected: provider !== null,
     });
   }
@@ -554,7 +658,10 @@ export function createCompanionProviderGateway(options = {}) {
   return Object.freeze({
     portId: COMPANION_PROVIDER_PORT_V1.portId,
     gatewayId,
-    network: "none",
+    // The module itself performs no direct network I/O; an injected opaque
+    // provider port may execute externally (outside this module).
+    directModuleNetwork: "none",
+    externalProviderExecution: provider !== null ? "allowed_outside_module" : "not_available",
     implementsRealProvider: false,
     providerInjected: provider !== null,
     complete,

@@ -425,9 +425,17 @@ export const COMPANION_PROVIDER_PORT_V1 = deepFreeze({
   schemaVersion: `${COMPANION_BACKEND_CONTRACT_VERSION}.provider-port`,
   portId: "companion_provider_port_v1",
   requiredMethods: ["complete"],
-  networkCallsForbiddenInsideModule: true,
+  // This module itself never performs network I/O, never handles credentials
+  // and never initiates paid inference. An injected provider port is opaque:
+  // the adapter may execute externally (its own endpoint/transport/fetch or
+  // paid inference live outside this module) and is never rejected for that.
+  // The adapter must report its external accounting per call and the module
+  // preserves those reports verbatim instead of inventing zeros.
+  directModuleNetworkCallsForbidden: true,
   credentialsForbidden: true,
   hiddenChainOfThoughtForbidden: true,
+  externalProviderExecution: "allowed_outside_module_via_injected_port",
+  externalAccounting: "provider_reported_preserved",
 });
 
 export function assertCompanionProviderPort(adapter) {
@@ -521,7 +529,7 @@ export const COMPANION_BACKEND_INTEGRATION_DESCRIPTOR = deepFreeze({
       name: "provider",
       port: COMPANION_PROVIDER_PORT_V1.portId,
       failClosedWhenAbsent: true,
-      reason: "no Provider implementation, network call or credential handling inside this module",
+      reason: "no Provider implementation, direct network call or credential handling inside this module; an injected opaque provider port may execute externally and its provider-reported accounting is preserved",
     },
     { name: "registry", port: "companion_package_registry_v1", failClosedWhenAbsent: false, reason: "defaults to an empty in-process registry" },
   ],
