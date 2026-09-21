@@ -43,6 +43,8 @@ explicit, isolated slice manifests.
    self-verification. Codex owns Rules/projections, integration and natural-match
    acceptance. The optimized path now persists public plan, assessment, plan
    revision and compact intent/query references without hidden chain-of-thought.
+   Terminal Replay parity now gates lossless NDJSON/MuZero/RLDS candidates and
+   governance audit; training and Skill promotion still require independent approval.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
    replay-driven Skill evolution loop.
 6. Ticket 26 / Slices 264–266: build and compare two complete companion packs.

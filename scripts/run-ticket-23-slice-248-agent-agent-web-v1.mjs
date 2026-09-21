@@ -669,6 +669,15 @@ async function main() {
         || entryValue.formationSelection?.formationOptionId);
     const perSeatUsage = Object.fromEntries(SEATS.map((seatKey) => [seatKey,
       current.providers?.[seatKey]?.usage || {}]));
+    ensure(current.evolutionExport?.terminal === true
+      && current.evolutionExport?.deterministicReplayMatchesCurrent === true
+      && current.evolutionExport?.governance?.criticalHighFindings === 0
+      && current.evolutionExport?.formats?.ndjson === true
+      && current.evolutionExport?.formats?.muzero === true
+      && current.evolutionExport?.formats?.rlds === true,
+    "SLICE263_TERMINAL_EVOLUTION_EXPORT_MISSING", {
+      evolutionExport: current.evolutionExport || null,
+    });
     const report = {
       schema: "ticket23_slice248_agent_agent_web_report_v1",
       ok: true, ticket: 23, slice: 248,
@@ -732,6 +741,7 @@ async function main() {
         browserConsoleErrors: consoleErrors,
         browserPageErrors: pageErrors,
       },
+      evolution: current.evolutionExport,
       sourceRefreshPerformed: false,
       eligibleForTraining: false,
       trainingTruth: false,

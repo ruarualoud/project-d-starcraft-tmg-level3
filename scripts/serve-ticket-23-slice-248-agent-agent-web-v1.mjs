@@ -29,6 +29,8 @@ import { createStarcraftTmgPrivatePayloadCodec } from
   "../packages/room-store/room-store-v1.mjs";
 import { createSqliteStarcraftTmgRoomStore } from
   "../packages/room-store/sqlite-room-store-v1.mjs";
+import { createStarcraftTmgLiveMatchEvolutionExportV1 } from
+  "../packages/training-data/live-match-evolution-export-v1.mjs";
 import { createTicket20AgentAgentDemoFixtureV1 } from
   "./support/ticket20-human-agent-demo-fixture-v1.mjs";
 
@@ -368,6 +370,11 @@ async function main() {
   };
   providerPorts.player1 = providerStacks.player1.decisionPort;
   providerPorts.player2 = providerStacks.player2.decisionPort;
+  const evolutionExportRuntime =
+    createStarcraftTmgLiveMatchEvolutionExportV1({
+      authorityEngine: fixture.authorityEngine,
+      roomStore: fixture.roomRuntime.roomStore,
+    });
   const selectedModels = Object.fromEntries(SEATS.map((seatKey) => [seatKey,
     providerStacks[seatKey].selectedProfile.model]));
   if (selectedModels.player1 !== selectedModels.player2) {
@@ -375,8 +382,81 @@ async function main() {
   }
   await fixture.orchestrator.start();
   let providerMatchesFinalized = false;
+  const existingEvolutionSummaryPath = path.join(dataDirectory,
+    "training/summary.json");
+  let evolutionExportSummary = existsSync(existingEvolutionSummaryPath)
+    ? JSON.parse(await readFile(existingEvolutionSummaryPath, "utf8")) : null;
+  if (evolutionExportSummary?.roomId !== roomId
+    || evolutionExportSummary?.terminal !== true) {
+    evolutionExportSummary = null;
+  }
+  let evolutionExportPromise = null;
   let driveJobSequence = 0;
   let driveJob = null;
+
+  async function writeTerminalEvolutionArtifacts(orchestratorResult) {
+    if (evolutionExportSummary) return evolutionExportSummary;
+    if (evolutionExportPromise) return evolutionExportPromise;
+    evolutionExportPromise = (async () => {
+      if (orchestratorResult?.status !== "completed"
+        || orchestratorResult?.replayMatchesCurrent !== true
+        || orchestratorResult?.state?.terminal !== true) {
+        throw Object.assign(new Error(
+          "terminal replay-verified orchestrator result is required"), {
+          code: "SLICE263_TERMINAL_EVOLUTION_SOURCE_INVALID",
+          severity: "High",
+        });
+      }
+      const compiled = await evolutionExportRuntime.compile({
+        roomId,
+        episodeId: `${roomId}:terminal`,
+        decisionBindings: orchestratorResult.trajectory,
+        experimentCell: orchestratorResult.experimentCell,
+        requireTerminal: true,
+      });
+      const directory = path.join(dataDirectory, "training");
+      await mkdir(directory, { recursive: true, mode: 0o700 });
+      const files = {
+        trajectory: "training/trajectory.json",
+        ndjson: "training/trajectory.ndjson",
+        muzero: "training/trajectory.muzero.json",
+        rlds: "training/trajectory.rlds.json",
+        audit: "training/leak-audit.json",
+        eligibility: "training/eligibility.json",
+        roundTrips: "training/round-trips.json",
+        summary: "training/summary.json",
+      };
+      await Promise.all([
+        writeFile(path.join(dataDirectory, files.trajectory),
+          `${JSON.stringify(compiled.trajectory)}\n`, { mode: 0o600 }),
+        writeFile(path.join(dataDirectory, files.ndjson),
+          compiled.exports.ndjson, { mode: 0o600 }),
+        writeFile(path.join(dataDirectory, files.muzero),
+          `${JSON.stringify(compiled.exports.muzero)}\n`, { mode: 0o600 }),
+        writeFile(path.join(dataDirectory, files.rlds),
+          `${JSON.stringify(compiled.exports.rlds)}\n`, { mode: 0o600 }),
+        writeFile(path.join(dataDirectory, files.audit),
+          `${JSON.stringify(compiled.audit, null, 2)}\n`, { mode: 0o600 }),
+        writeFile(path.join(dataDirectory, files.eligibility),
+          `${JSON.stringify(compiled.eligibility, null, 2)}\n`, { mode: 0o600 }),
+        writeFile(path.join(dataDirectory, files.roundTrips),
+          `${JSON.stringify(compiled.roundTrips, null, 2)}\n`, { mode: 0o600 }),
+      ]);
+      evolutionExportSummary = {
+        ...compiled.summary,
+        files,
+      };
+      await writeFile(path.join(dataDirectory, files.summary),
+        `${JSON.stringify(evolutionExportSummary, null, 2)}\n`, { mode: 0o600 });
+      return evolutionExportSummary;
+    })();
+    try {
+      return await evolutionExportPromise;
+    } catch (error) {
+      evolutionExportPromise = null;
+      throw error;
+    }
+  }
 
   async function completePendingPhysicalTasks() {
     const runtimes = { player1: fixture.player1Runtime,
@@ -412,6 +492,9 @@ async function main() {
       providerMatchesFinalized = true;
       await Promise.all(SEATS.map((seatKey) =>
         providerStacks[seatKey].finalizeMatch()));
+    }
+    if (result.status === "completed") {
+      await writeTerminalEvolutionArtifacts(result);
     }
     return result;
   }
@@ -537,6 +620,7 @@ async function main() {
       promptPackBySeat: {
         player1: "selfplay_agent_prompt", player2: "selfplay_agent_prompt",
       },
+      evolutionExport: evolutionExportSummary,
       serviceProcess: {
         pid: process.pid,
         uptimeSeconds: Number(process.uptime().toFixed(3)),

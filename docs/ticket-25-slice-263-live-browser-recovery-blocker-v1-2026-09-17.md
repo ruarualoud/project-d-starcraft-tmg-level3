@@ -202,3 +202,24 @@ receipts. The HTTP manifest and A-A NDJSON recorder project the same fields.
 Hidden chain-of-thought remains neither requested nor stored. This preparation
 made no Provider call and did not mutate or resume the frozen revision-66
 baseline room.
+
+## Terminal evolution export preparation
+
+The fresh optimized A-A service now has a terminal-only evolution export seam.
+After the orchestrator reports an authoritative terminal state and exact Replay
+parity, it compiles the accepted journal into the existing Ticket-19 acting-seat
+trajectory contract, runs the private/future-information audit, and writes
+lossless NDJSON, Sampled-MuZero and RLDS candidates beside the match evidence.
+All three formats must round-trip to the same trajectory before the terminal
+match report may close.
+
+This seam deliberately does not make a Provider call, run Skill generation or
+approve training. Advisory formation alternatives and unsampled parameterized
+actions are not labels; the only action label is the accepted Rules transition.
+The export remains `trainingTruth:false` and `eligibleForTraining:false` until
+an independent approval binds the exact trajectory hash. Critical/High
+governance findings block closure; Medium findings remain visible. Restarting a
+terminal server reuses the room-bound summary rather than regenerating it.
+
+Implementation is complete but live acceptance is pending the fresh optimized
+Standard-2000 match. The frozen revision-66 baseline remains untouched.
