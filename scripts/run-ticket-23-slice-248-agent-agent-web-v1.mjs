@@ -164,10 +164,15 @@ async function startServer(resumeDirectory = null, fork = null) {
   });
   const lines = readline.createInterface({ input: child.stdout });
   const entry = await new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(Object.assign(
-      new Error(`SLICE248_SERVER_START_TIMEOUT:${stderr}`),
-      { code: "SLICE248_SERVER_START_TIMEOUT" },
-    )), 180_000);
+    const timeout = setTimeout(() => {
+      lines.close();
+      if (!processState.exitObserved) child.kill("SIGTERM");
+      reject(Object.assign(
+        new Error(`SLICE248_SERVER_START_TIMEOUT:${stderr}`),
+        { code: "SLICE248_SERVER_START_TIMEOUT",
+          childTerminationRequested: true },
+      ));
+    }, 600_000);
     const finish = (callback) => (...values) => {
       clearTimeout(timeout);
       callback(...values);
