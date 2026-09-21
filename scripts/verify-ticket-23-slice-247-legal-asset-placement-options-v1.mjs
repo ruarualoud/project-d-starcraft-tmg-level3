@@ -6,6 +6,7 @@ import { searchStarcraftTmgLegalAssetPlacementOptionsV1 } from
   "../packages/online-agent-session/legal-asset-placement-search-v1.mjs";
 import {
   inspectStarcraftTmgFormationThreatClaimsV1,
+  inspectStarcraftTmgOpponentPredictionFeasibilityV1,
   resolveStarcraftTmgDeterministicSingletonActionV1,
 } from "../packages/online-agent-session/live-flash-decision-port-v1.mjs";
 
@@ -189,6 +190,23 @@ function main() {
       && singleton.proposal.domainId === "finish-domain"
       && Object.keys(singleton.proposal.parameters).length === 0,
     "EMPTY_PARAMETER_FINISH_NOT_DETERMINISTIC", { singleton });
+    const crossPhaseLockout =
+      inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+        currentPhase: "movement",
+        spatialObservation: { units: [{ unitId: "player1-goliath-1",
+          sideRelation: "opponent", activationStatus: { activatedPhases: {
+            movement: true, assault: false, combat: false,
+          } } }], offTableUnits: [] },
+        responses: [{ responseId: "resp-goliath-hold", actionClass: "hold",
+          likelyActorUnitId: "player1-goliath-1",
+          horizon: { kind: "current_round", count: 1 },
+          opponentAction: "The Goliath remains in place; it has already activated for movement, so it cannot take another Move, Run, Charge, Ranged Attack or Fight action in this phase or round.",
+          basis: [] }],
+      });
+    ensure(crossPhaseLockout.status === "contradicted"
+      && crossPhaseLockout.contradictions.some((entry) =>
+        entry.reason === "movement_activation_does_not_lock_other_phases"),
+    "CROSS_PHASE_ACTIVATION_LOCKOUT_NOT_REJECTED", { crossPhaseLockout });
     process.stdout.write(`${JSON.stringify({
       schema: "ticket23_slice247_legal_asset_placement_options_focused_v1",
       ok: true,
@@ -197,6 +215,7 @@ function main() {
       omegaSafeOptionCount: omegaResult.placementOptions.filter((option) =>
         option.tacticalMetrics?.incomingStationaryProfileCount === 0).length,
       deterministicFinish: true,
+      crossPhasePredictionRejected: true,
       attemptedCandidateCount: receipt.result.attemptedCandidateCount,
       providerCalls: 0,
       trainingTruth: false,

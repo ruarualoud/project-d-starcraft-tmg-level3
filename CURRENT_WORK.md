@@ -210,10 +210,21 @@ explicit, isolated slice manifests.
   placement now returns a bounded strategic option set with per-option incoming
   fire and objective metrics, rejects false-safe selection reasons, and makes a
   sole fully-bound finish action deterministic at zero Provider cost. Fork from
-  r8 and regenerate r9; never resume the low-strategy r9 branch. See
+  r8 and regenerate r9; never resume the low-strategy r9 branch. The first
+  threat-aware retry `20260921224418000` chose a position-valid Worm at
+  `(47250,1600)` with zero projected stationary and move-then-fire profiles,
+  but its final opponent hypothesis incorrectly treated completed Movement
+  activation as locking the Goliath out of later Assault and Combat actions.
+  Predicted action aliases are now canonicalized, cross-phase lockout prose is
+  rejected, and prompt v23 states that activation is phase-scoped. The concrete
+  gate failed before repair and passed once afterward at 0 Provider calls.
+  Preserve that r9 Authority state as position evidence only; fork r8 once more
+  for a lifecycle-valid r9. See
   `docs/ticket-23-slice-248-terminal-tool-json-convergence-blocker-v1-2026-09-22.md`
   `docs/ticket-23-slice-248-terminal-tool-json-recovery-v1-2026-09-22.md` and
-  `docs/ticket-23-slice-248-asset-placement-threat-strategy-repair-v1-2026-09-22.md`.
+  `docs/ticket-23-slice-248-asset-placement-threat-strategy-repair-v1-2026-09-22.md`
+  and
+  `docs/ticket-23-slice-248-cross-phase-activation-prediction-repair-v1-2026-09-22.md`.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -292,4 +303,9 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   ¥0.250923 without Apply. Recent recovery work is now 63 calls, 2,917,761 units
   and ¥4.016809; including the original invalid-suffix source: 92 calls,
   4,264,555 units and ¥5.869530. No ¥100 threshold was crossed.
+- Threat-aware branch `20260921224418000`: r8→r9 used 7 calls, 360,536 units
+  and ¥0.502328. Its Omega position is valid but the cross-phase activation
+  narrative is non-training evidence. Recent recovery work is now 70 calls,
+  3,278,297 units and ¥4.519137; including the original invalid-suffix source:
+  99 calls, 4,625,091 units and ¥6.371858. No ¥100 threshold was crossed.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.
