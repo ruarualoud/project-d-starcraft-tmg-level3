@@ -79,6 +79,10 @@ explicit, isolated slice manifests.
    overlays, current predicted-interaction receipts, responsive Web/App UI and
    real-browser screenshots. Codex retains all Rules/projection interfaces,
    integration review and the natural-match acceptance.
+   The optimized A-A evidence path now persists the public plan, assessment,
+   plan revision and compact intent/query references per accepted action, so
+   prediction calibration and replanning can be compared without storing
+   hidden chain-of-thought. The frozen r66 baseline remains untouched.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
    replay-driven Skill evolution loop.
 6. Ticket 26 / Slices 264–266: build and compare two complete companion packs.

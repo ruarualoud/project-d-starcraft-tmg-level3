@@ -187,3 +187,18 @@ post-change formation canary. Action 131 also disclosed a Medium lifecycle
 projection inconsistency by describing the same Raptor through on-board
 relationships and reserve policy. S262 remains `3/4` accepted and S263 remains
 open for the independent A-A/review path.
+
+## Optimized A-A evidence preparation
+
+Before starting the independent optimized A-A comparison, the persisted Hosted
+Bot trace was found to omit four already-public decision artifacts: the opened
+plan, current assessment, explicit plan revision and action intent. The
+Decision Port already produced these values, but retaining only the final
+summary made it impossible for the later report to prove how prediction
+calibration changed the next plan. The trace now preserves those four public
+artifacts. Intent query evidence is compacted to query kind, status, precision
+and receipt hash so the durable trace does not duplicate large spatial
+receipts. The HTTP manifest and A-A NDJSON recorder project the same fields.
+Hidden chain-of-thought remains neither requested nor stored. This preparation
+made no Provider call and did not mutate or resume the frozen revision-66
+baseline room.

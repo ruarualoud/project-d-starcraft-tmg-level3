@@ -188,6 +188,19 @@ function typedRejectedCode(result, fallback) {
   return String(result?.reason || fallback);
 }
 
+function publicIntentTrace(intent) {
+  if (!object(intent)) return null;
+  return {
+    ...clone(intent),
+    queryReceipts: (intent.queryReceipts || []).map((entry) => ({
+      queryKind: entry.queryKind || null,
+      status: entry.status || null,
+      precision: entry.precision || null,
+      queryReceiptHash: entry.queryReceiptHash || null,
+    })),
+  };
+}
+
 function previewFailureSignature(inflight) {
   if (!inflight?.authority?.stateHash || !inflight?.decision?.proposal) {
     return null;
@@ -646,6 +659,10 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
       risk: record.inflight.decision.risk,
       publicDecisionSummary:
         clone(record.inflight.decision.publicDecisionSummary || null),
+      plan: clone(record.inflight.decision.plan || null),
+      assessment: clone(record.inflight.decision.assessment || null),
+      planRevision: clone(record.inflight.decision.planRevision || null),
+      intent: publicIntentTrace(record.inflight.decision.intent),
       lifecycleAssessment:
         clone(record.inflight.decision.lifecycleAssessment || null),
       plannerResult: clone(record.inflight.decision.plannerResult || null),
