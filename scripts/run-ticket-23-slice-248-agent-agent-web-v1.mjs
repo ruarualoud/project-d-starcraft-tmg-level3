@@ -34,6 +34,73 @@ function safeName(value) {
     .replace(/^-+|-+$/gu, "").slice(0, 80) || "action";
 }
 
+function summarizeStrategyEvidence(actions = []) {
+  const formationActions = actions.filter((entry) =>
+    entry.formationSelection?.selectedOptionId
+      || entry.formationSelection?.optionId
+      || entry.formationSelection?.formationOptionId);
+  const evidenceRows = actions.map((entry) =>
+    entry.decisionMaterialEvidence || {});
+  const queryRows = evidenceRows.flatMap((entry) =>
+    Array.isArray(entry.queryReceipts) ? entry.queryReceipts : []);
+  const queryCoverage = Object.fromEntries([
+    "attack_probability", "fire_zone_exchange",
+  ].map((queryKind) => {
+    const rows = queryRows.filter((entry) => entry.queryKind === queryKind);
+    return [queryKind, {
+      capabilityAvailable: true,
+      executedReceiptCount: rows.length,
+      exactCount: rows.filter((entry) => entry.status === "exact").length,
+      advisoryCount: rows.filter((entry) =>
+        entry.status === "advisory_estimate").length,
+      unknownCount: rows.filter((entry) => entry.status === "unknown").length,
+      receiptHashes: [...new Set(rows.map((entry) =>
+        entry.queryReceiptHash).filter(Boolean))],
+    }];
+  }));
+  const calibrationAvailable = evidenceRows.flatMap((entry) =>
+    Array.isArray(entry.predictionCalibrationsAvailable)
+      ? entry.predictionCalibrationsAvailable : []);
+  const calibrationCited = evidenceRows.flatMap((entry) =>
+    Array.isArray(entry.predictionCalibrationsCited)
+      ? entry.predictionCalibrationsCited : []);
+  const planDispositionCounts = evidenceRows.reduce((counts, entry) => {
+    const disposition = String(entry.planDisposition || "unknown");
+    counts[disposition] = Number(counts[disposition] || 0) + 1;
+    return counts;
+  }, {});
+  return {
+    formationEvidence: {
+      capabilityAvailable: true,
+      agentSelectedCount: formationActions.length,
+      publicReasonCount: formationActions.filter((entry) => Boolean(String(
+        entry.formationSelection?.publicReason || "").trim())).length,
+      rulesAppliedAndReplayVerifiedCount: formationActions.filter((entry) =>
+        entry.replayMatchesCurrent === true && Boolean(entry.receiptHash)).length,
+    },
+    decisionMaterialCoverage: {
+      actionCount: actions.length,
+      actionsWithPublicIntent: actions.filter((entry) =>
+        Boolean(entry.intent)).length,
+      actionsWithOpponentPrediction: evidenceRows.filter((entry) =>
+        Number(entry.predictedOpponentResponseCount || 0) > 0).length,
+      queryCoverage,
+      predictionCalibration: {
+        availableToPlannerCount: calibrationAvailable.length,
+        citedByPlannerCount: calibrationCited.length,
+        availableHashes: [...new Set(calibrationAvailable.map((entry) =>
+          entry.calibrationHash).filter(Boolean))],
+        citedHashes: [...new Set(calibrationCited.map((entry) =>
+          entry.calibrationHash).filter(Boolean))],
+      },
+      planDispositionCounts,
+      planRevisionCount: evidenceRows.filter((entry) =>
+        entry.planRevised === true).length,
+      hiddenChainOfThoughtStored: false,
+    },
+  };
+}
+
 function sanitize(value) {
   return String(value || "")
     .replace(/\b(?:sk|jsk)-[A-Za-z0-9_-]{12,}/gu, "[REDACTED_API_KEY]")
@@ -623,6 +690,7 @@ async function main() {
         totalUnits: current.usage?.totalUnits || 0,
         estimatedCostCny:
           Number(current.usage?.estimatedCostCnyMicros || 0) / 1_000_000,
+        strategyEvidence: summarizeStrategyEvidence(actions),
         lastAction: actions.at(-1) || null,
         sourceRefreshPerformed: false,
         eligibleForTraining: false,
@@ -645,6 +713,7 @@ async function main() {
         totalUnits: current.usage?.totalUnits || 0,
         estimatedCostCny:
           Number(current.usage?.estimatedCostCnyMicros || 0) / 1_000_000,
+        strategyEvidence: summarizeStrategyEvidence(actions),
         checkpointPath: path.relative(ROOT,
           path.join(outputDirectory, "checkpoint.json")),
       }, null, 2)}\n`);
@@ -664,69 +733,8 @@ async function main() {
       "SLICE248_ACTION_DENOMINATOR_MISMATCH", {
         seatActionCounts, recorded: actions.length,
       });
-    const naturalFormationActions = actions.filter((entryValue) =>
-      entryValue.formationSelection?.selectedOptionId
-        || entryValue.formationSelection?.optionId
-        || entryValue.formationSelection?.formationOptionId);
-    const formationActionsWithPublicReason = naturalFormationActions.filter(
-      (entryValue) => Boolean(String(
-        entryValue.formationSelection?.publicReason || "").trim()));
-    const formationActionsApplied = naturalFormationActions.filter(
-      (entryValue) => entryValue.replayMatchesCurrent === true
-        && Boolean(entryValue.receiptHash));
-    const evidenceRows = actions.map((entryValue) =>
-      entryValue.decisionMaterialEvidence || {});
-    const queryEvidenceRows = evidenceRows.flatMap((entryValue) =>
-      Array.isArray(entryValue.queryReceipts) ? entryValue.queryReceipts : []);
-    const queryCoverage = Object.fromEntries([
-      "attack_probability", "fire_zone_exchange",
-    ].map((queryKind) => {
-      const rows = queryEvidenceRows.filter((entryValue) =>
-        entryValue.queryKind === queryKind);
-      return [queryKind, {
-        capabilityAvailable: true,
-        executedReceiptCount: rows.length,
-        exactCount: rows.filter((entryValue) =>
-          entryValue.status === "exact").length,
-        advisoryCount: rows.filter((entryValue) =>
-          entryValue.status === "advisory_estimate").length,
-        unknownCount: rows.filter((entryValue) =>
-          entryValue.status === "unknown").length,
-        receiptHashes: [...new Set(rows.map((entryValue) =>
-          entryValue.queryReceiptHash).filter(Boolean))],
-      }];
-    }));
-    const calibrationAvailable = evidenceRows.flatMap((entryValue) =>
-      Array.isArray(entryValue.predictionCalibrationsAvailable)
-        ? entryValue.predictionCalibrationsAvailable : []);
-    const calibrationCited = evidenceRows.flatMap((entryValue) =>
-      Array.isArray(entryValue.predictionCalibrationsCited)
-        ? entryValue.predictionCalibrationsCited : []);
-    const planDispositionCounts = evidenceRows.reduce((counts, entryValue) => {
-      const disposition = String(entryValue.planDisposition || "unknown");
-      counts[disposition] = Number(counts[disposition] || 0) + 1;
-      return counts;
-    }, {});
-    const decisionMaterialCoverage = {
-      actionCount: actions.length,
-      actionsWithPublicIntent: actions.filter((entryValue) =>
-        Boolean(entryValue.intent)).length,
-      actionsWithOpponentPrediction: evidenceRows.filter((entryValue) =>
-        Number(entryValue.predictedOpponentResponseCount || 0) > 0).length,
-      queryCoverage,
-      predictionCalibration: {
-        availableToPlannerCount: calibrationAvailable.length,
-        citedByPlannerCount: calibrationCited.length,
-        availableHashes: [...new Set(calibrationAvailable.map((entryValue) =>
-          entryValue.calibrationHash).filter(Boolean))],
-        citedHashes: [...new Set(calibrationCited.map((entryValue) =>
-          entryValue.calibrationHash).filter(Boolean))],
-      },
-      planDispositionCounts,
-      planRevisionCount: evidenceRows.filter((entryValue) =>
-        entryValue.planRevised === true).length,
-      hiddenChainOfThoughtStored: false,
-    };
+    const strategyEvidence = summarizeStrategyEvidence(actions);
+    const { formationEvidence, decisionMaterialCoverage } = strategyEvidence;
     const perSeatUsage = Object.fromEntries(SEATS.map((seatKey) => [seatKey,
       current.providers?.[seatKey]?.usage || {}]));
     ensure(current.evolutionExport?.terminal === true
@@ -772,13 +780,8 @@ async function main() {
         allActionsUseSelfplayPrompt: actions.every((entryValue) =>
           entryValue.promptPack === "selfplay_agent_prompt"),
         independentSeatStateAndMemory: current.isolation,
-        naturalFormationCanaryCount: naturalFormationActions.length,
-        formationEvidence: {
-          capabilityAvailable: true,
-          agentSelectedCount: naturalFormationActions.length,
-          publicReasonCount: formationActionsWithPublicReason.length,
-          rulesAppliedAndReplayVerifiedCount: formationActionsApplied.length,
-        },
+        naturalFormationCanaryCount: formationEvidence.agentSelectedCount,
+        formationEvidence,
         decisionMaterialCoverage,
         finalScreenshot,
         map: current.map,
@@ -801,25 +804,30 @@ async function main() {
         criticalOrHigh: [],
         medium: [
           ...mediumFindings,
-          ...(naturalFormationActions.length ? [] : [{
+          ...(formationEvidence.agentSelectedCount ? [] : [{
             severity: "Medium",
             code: "SLICE262_NATURAL_FORMATION_CANARY_NOT_OBSERVED",
             strategyImpact:
               "slice248_can_complete_but_ticket25_slice262_acceptance_remains_open",
           }]),
-          ...(queryCoverage.attack_probability.executedReceiptCount ? [] : [{
+          ...(decisionMaterialCoverage.queryCoverage.attack_probability
+            .executedReceiptCount ? [] : [{
             severity: "Medium",
             code: "ATTACK_PROBABILITY_NOT_NATURALLY_USED",
             strategyImpact:
               "capability_available_but_new_match_contains_no_usage_evidence",
           }]),
-          ...(queryCoverage.fire_zone_exchange.executedReceiptCount ? [] : [{
+          ...(decisionMaterialCoverage.queryCoverage.fire_zone_exchange
+            .executedReceiptCount ? [] : [{
             severity: "Medium",
             code: "FIRE_ZONE_EXCHANGE_NOT_NATURALLY_USED",
             strategyImpact:
               "capability_available_but_new_match_contains_no_usage_evidence",
           }]),
-          ...(calibrationAvailable.length && !calibrationCited.length ? [{
+          ...(decisionMaterialCoverage.predictionCalibration
+            .availableToPlannerCount
+            && !decisionMaterialCoverage.predictionCalibration
+              .citedByPlannerCount ? [{
             severity: "Medium",
             code: "PREDICTION_CALIBRATION_AVAILABLE_BUT_NOT_CITED",
             strategyImpact:

@@ -302,3 +302,11 @@ Only Critical/High findings block integration. The affected four-file syntax
 gate passed once with zero Provider calls and zero cost. Dynamic acceptance is
 still pending the K3 threat-UI integration and a fresh Standard-2000 A-A run;
 the revision-66 baseline remains immutable.
+
+The same strategy-evidence aggregation is now written into every explicit
+long-run checkpoint as well as the terminal report. Operators can therefore
+see whether natural formation selection, probability/fire-zone queries,
+prediction calibration citation and plan revision have appeared before the
+match closes. This is observation only: checkpointing neither changes the
+current action nor introduces an additional Provider call. The one changed
+Runner file passed its syntax gate once.

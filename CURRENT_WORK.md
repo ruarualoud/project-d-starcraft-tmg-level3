@@ -52,8 +52,10 @@ explicit, isolated slice manifests.
    Apply/Replay and observed impact for formations, attack probability,
    fire-zone exchange and prediction calibration. A same-cycle ordering defect
    that delayed new calibrations until the following activation is repaired;
-   one affected syntax gate passed. Training and Skill promotion require
-   independent approval.
+   one affected syntax gate passed. Long-run checkpoints now expose the same
+   strategy-evidence summary before terminal closure, allowing early diagnosis
+   without restarting or waiting for the full match. Training and Skill
+   promotion require independent approval.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
    replay-driven Skill evolution loop. The same scene-scoped evidence feeds a
    three-arm comparison: current SkillOpt, WikiSkill knowledge compilation and
