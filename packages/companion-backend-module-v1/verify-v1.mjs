@@ -505,6 +505,36 @@ check("opaque external provider port executes externally with provider-reported 
   assert.equal(stats.paidInferencePerformed, 1);
   assert.equal(stats.reportedCostUnits, 0.0042);
 
+  // A partial external receipt must not turn an omitted network-attempt count
+  // into a fabricated zero, either on the call receipt or in aggregate stats.
+  const partialAccountingModule = composeCompanionBackend({
+    persistence: createInMemoryPersistenceAdapter(),
+    provider: {
+      portId: "companion_provider_port_v1",
+      endpoint: "https://provider.example.invalid/v1/complete",
+      network: "https",
+      complete: async () => ({
+        ok: true,
+        response: {
+          content: "External answer with partial accounting.",
+          usage: { promptTokens: 5, completionTokens: 3, reportedCostUnits: 0.001 },
+        },
+        receipt: { paidInference: "performed", reportedCostUnits: 0.001 },
+      }),
+    },
+  });
+  const partial = await partialAccountingModule.providerGateway.complete({
+    requestId: "req-ext-partial-agg-1",
+    messages: [{ role: "user", content: "partial accounting?" }],
+  });
+  assert.equal(partial.ok, true);
+  assert.equal(partial.receipt.externalNetworkAttempts, "unknown");
+  assert.equal(partial.receipt.accountingSource, "provider_receipt_partial");
+  const partialStats = partialAccountingModule.providerGateway.stats();
+  assert.equal(partialStats.externalNetworkAttempts, "unknown");
+  assert.equal(partialStats.externalNetworkAttemptsKnown, 0);
+  assert.equal(partialStats.externalNetworkAttemptsUnknown, 1);
+
   // Credentials remain forbidden in stored adapter data even for opaque ports.
   expectError(CB1.CREDENTIALS_FORBIDDEN, () => composeCompanionBackend({
     persistence: createInMemoryPersistenceAdapter(),

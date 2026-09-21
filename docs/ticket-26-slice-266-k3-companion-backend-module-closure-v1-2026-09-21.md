@@ -55,7 +55,11 @@ and paid inference **inside this module**, not in an opaque external adapter.
   `network: "none"` (the pure in-memory port) truthfully reports
   `accountingSource: "adapter_declared_no_network"` zeros; an opaque adapter
   reporting nothing yields `"unknown"` external attempts/paid inference
-  (`accountingSource: "unreported"`), not a fabricated zero.
+  (`accountingSource: "unreported"`), not a fabricated zero. The same rule
+  applies to partial provider receipts: omitting `networkAttempts` produces
+  `accountingSource: "provider_receipt_partial"`, and aggregate stats expose
+  both the known total and the number of unknown calls instead of collapsing
+  unknown calls to zero.
 - No-provider remains fail closed: a rejection record with all zeros, never a
   throw, never a network attempt.
 - The in-memory provider adapter is unchanged and stays pure/no-network.

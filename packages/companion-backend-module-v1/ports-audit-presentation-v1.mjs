@@ -454,8 +454,10 @@ function externalAccountingOf(raw, provider, response) {
       }
       throw error;
     }
-    const networkAttempts = rawReceipt.networkAttempts === undefined ? 0 : Number(rawReceipt.networkAttempts);
-    if (!Number.isSafeInteger(networkAttempts) || networkAttempts < 0) {
+    const networkAttempts = rawReceipt.networkAttempts === undefined
+      ? (String(provider?.network || "") === "none" ? 0 : "unknown")
+      : Number(rawReceipt.networkAttempts);
+    if (networkAttempts !== "unknown" && (!Number.isSafeInteger(networkAttempts) || networkAttempts < 0)) {
       return { ok: false, reason: CB4.PROVIDER_RECEIPT_INVALID, message: "provider receipt networkAttempts must be a non-negative safe integer" };
     }
     const paidInference = rawReceipt.paidInference === undefined ? "unknown" : String(rawReceipt.paidInference);
@@ -474,7 +476,9 @@ function externalAccountingOf(raw, provider, response) {
         externalNetworkAttempts: networkAttempts,
         paidInference,
         reportedCostUnits,
-        accountingSource: "provider_receipt",
+        accountingSource: rawReceipt.networkAttempts === undefined
+          ? "provider_receipt_partial"
+          : "provider_receipt",
       },
     };
   }
@@ -516,7 +520,8 @@ export function createCompanionProviderGateway(options = {}) {
   const gatewayId = String(options.gatewayId || "companion-provider-gateway-v1");
   let calls = 0;
   const usage = { promptTokens: 0, completionTokens: 0, reportedCostUnits: 0 };
-  let externalNetworkAttempts = 0;
+  let externalNetworkAttemptsKnown = 0;
+  let externalNetworkAttemptsUnknown = 0;
   let paidInferencePerformed = 0;
   let paidInferenceUnknown = 0;
 
@@ -605,7 +610,9 @@ export function createCompanionProviderGateway(options = {}) {
     usage.completionTokens += response.usage.completionTokens;
     usage.reportedCostUnits += accounting.reportedCostUnits;
     if (typeof accounting.externalNetworkAttempts === "number") {
-      externalNetworkAttempts += accounting.externalNetworkAttempts;
+      externalNetworkAttemptsKnown += accounting.externalNetworkAttempts;
+    } else {
+      externalNetworkAttemptsUnknown += 1;
     }
     if (accounting.paidInference === "performed") paidInferencePerformed += 1;
     if (accounting.paidInference === "unknown") paidInferenceUnknown += 1;
@@ -648,7 +655,11 @@ export function createCompanionProviderGateway(options = {}) {
       calls,
       ...usage,
       directModuleNetworkAttempts: 0,
-      externalNetworkAttempts,
+      externalNetworkAttempts: externalNetworkAttemptsUnknown > 0
+        ? "unknown"
+        : externalNetworkAttemptsKnown,
+      externalNetworkAttemptsKnown,
+      externalNetworkAttemptsUnknown,
       paidInferencePerformed,
       paidInferenceUnknown,
       providerInjected: provider !== null,
