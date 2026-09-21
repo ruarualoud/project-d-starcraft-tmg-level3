@@ -357,6 +357,7 @@ async function main() {
         actionType,
         pieceId: transition?.action?.pieceId || trace.pieceId || null,
         publicDecisionSummary: trace.publicDecisionSummary || null,
+        decisionMaterialEvidence: trace.decisionMaterialEvidence || null,
         plan: trace.plan || null,
         assessment: trace.assessment || null,
         planRevision: trace.planRevision || null,
@@ -667,6 +668,65 @@ async function main() {
       entryValue.formationSelection?.selectedOptionId
         || entryValue.formationSelection?.optionId
         || entryValue.formationSelection?.formationOptionId);
+    const formationActionsWithPublicReason = naturalFormationActions.filter(
+      (entryValue) => Boolean(String(
+        entryValue.formationSelection?.publicReason || "").trim()));
+    const formationActionsApplied = naturalFormationActions.filter(
+      (entryValue) => entryValue.replayMatchesCurrent === true
+        && Boolean(entryValue.receiptHash));
+    const evidenceRows = actions.map((entryValue) =>
+      entryValue.decisionMaterialEvidence || {});
+    const queryEvidenceRows = evidenceRows.flatMap((entryValue) =>
+      Array.isArray(entryValue.queryReceipts) ? entryValue.queryReceipts : []);
+    const queryCoverage = Object.fromEntries([
+      "attack_probability", "fire_zone_exchange",
+    ].map((queryKind) => {
+      const rows = queryEvidenceRows.filter((entryValue) =>
+        entryValue.queryKind === queryKind);
+      return [queryKind, {
+        capabilityAvailable: true,
+        executedReceiptCount: rows.length,
+        exactCount: rows.filter((entryValue) =>
+          entryValue.status === "exact").length,
+        advisoryCount: rows.filter((entryValue) =>
+          entryValue.status === "advisory_estimate").length,
+        unknownCount: rows.filter((entryValue) =>
+          entryValue.status === "unknown").length,
+        receiptHashes: [...new Set(rows.map((entryValue) =>
+          entryValue.queryReceiptHash).filter(Boolean))],
+      }];
+    }));
+    const calibrationAvailable = evidenceRows.flatMap((entryValue) =>
+      Array.isArray(entryValue.predictionCalibrationsAvailable)
+        ? entryValue.predictionCalibrationsAvailable : []);
+    const calibrationCited = evidenceRows.flatMap((entryValue) =>
+      Array.isArray(entryValue.predictionCalibrationsCited)
+        ? entryValue.predictionCalibrationsCited : []);
+    const planDispositionCounts = evidenceRows.reduce((counts, entryValue) => {
+      const disposition = String(entryValue.planDisposition || "unknown");
+      counts[disposition] = Number(counts[disposition] || 0) + 1;
+      return counts;
+    }, {});
+    const decisionMaterialCoverage = {
+      actionCount: actions.length,
+      actionsWithPublicIntent: actions.filter((entryValue) =>
+        Boolean(entryValue.intent)).length,
+      actionsWithOpponentPrediction: evidenceRows.filter((entryValue) =>
+        Number(entryValue.predictedOpponentResponseCount || 0) > 0).length,
+      queryCoverage,
+      predictionCalibration: {
+        availableToPlannerCount: calibrationAvailable.length,
+        citedByPlannerCount: calibrationCited.length,
+        availableHashes: [...new Set(calibrationAvailable.map((entryValue) =>
+          entryValue.calibrationHash).filter(Boolean))],
+        citedHashes: [...new Set(calibrationCited.map((entryValue) =>
+          entryValue.calibrationHash).filter(Boolean))],
+      },
+      planDispositionCounts,
+      planRevisionCount: evidenceRows.filter((entryValue) =>
+        entryValue.planRevised === true).length,
+      hiddenChainOfThoughtStored: false,
+    };
     const perSeatUsage = Object.fromEntries(SEATS.map((seatKey) => [seatKey,
       current.providers?.[seatKey]?.usage || {}]));
     ensure(current.evolutionExport?.terminal === true
@@ -713,6 +773,13 @@ async function main() {
           entryValue.promptPack === "selfplay_agent_prompt"),
         independentSeatStateAndMemory: current.isolation,
         naturalFormationCanaryCount: naturalFormationActions.length,
+        formationEvidence: {
+          capabilityAvailable: true,
+          agentSelectedCount: naturalFormationActions.length,
+          publicReasonCount: formationActionsWithPublicReason.length,
+          rulesAppliedAndReplayVerifiedCount: formationActionsApplied.length,
+        },
+        decisionMaterialCoverage,
         finalScreenshot,
         map: current.map,
       },
@@ -740,6 +807,24 @@ async function main() {
             strategyImpact:
               "slice248_can_complete_but_ticket25_slice262_acceptance_remains_open",
           }]),
+          ...(queryCoverage.attack_probability.executedReceiptCount ? [] : [{
+            severity: "Medium",
+            code: "ATTACK_PROBABILITY_NOT_NATURALLY_USED",
+            strategyImpact:
+              "capability_available_but_new_match_contains_no_usage_evidence",
+          }]),
+          ...(queryCoverage.fire_zone_exchange.executedReceiptCount ? [] : [{
+            severity: "Medium",
+            code: "FIRE_ZONE_EXCHANGE_NOT_NATURALLY_USED",
+            strategyImpact:
+              "capability_available_but_new_match_contains_no_usage_evidence",
+          }]),
+          ...(calibrationAvailable.length && !calibrationCited.length ? [{
+            severity: "Medium",
+            code: "PREDICTION_CALIBRATION_AVAILABLE_BUT_NOT_CITED",
+            strategyImpact:
+              "planner_received_calibration_but_no_public_use_was_observed",
+          }] : []),
         ],
         browserConsoleErrors: consoleErrors,
         browserPageErrors: pageErrors,

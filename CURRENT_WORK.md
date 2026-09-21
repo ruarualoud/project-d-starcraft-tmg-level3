@@ -47,8 +47,13 @@ explicit, isolated slice manifests.
    governance audit, plus a full-denominator Postgame Review V2 Episode with
    checkpoint/scenario/model/prompt/Skill bindings. A Room-backed experiment
    port now reconstructs exact signed checkpoints and protects the source Room;
-   the live isolated branch executor and acceptance still remain. Training and
-   Skill promotion require independent approval.
+   the live isolated branch executor and acceptance still remain. New-match
+   evidence now separates available capability, natural Agent use, Rules
+   Apply/Replay and observed impact for formations, attack probability,
+   fire-zone exchange and prediction calibration. A same-cycle ordering defect
+   that delayed new calibrations until the following activation is repaired;
+   one affected syntax gate passed. Training and Skill promotion require
+   independent approval.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
    replay-driven Skill evolution loop. The same scene-scoped evidence feeds a
    three-arm comparison: current SkillOpt, WikiSkill knowledge compilation and

@@ -272,3 +272,33 @@ model/prompt/Skill refs, drives both sides to the declared horizon, preserves
 the opponent-response trace and returns an Authority-replayed trajectory. That
 executor will be exercised only after the fresh optimized match supplies the
 first new Episode.
+
+## Fresh-match decision-material acceptance
+
+The optimized match runner now records four different evidence levels instead
+of treating an implemented field as proof of strategy use:
+
+- formation capability, natural Agent selection with a public reason, and
+  accepted Apply plus matching Replay;
+- actual `attack_probability` and `fire_zone_exchange` receipts, split by
+  exact, advisory and unknown status;
+- typed opponent predictions, prediction calibrations available to the current
+  Planner, calibration hashes actually cited by its assessment, and the public
+  retain/revise disposition;
+- the complete public ActionIntent denominator, while continuing to exclude
+  hidden chain-of-thought.
+
+This audit exposed a live ordering defect. The Hosted Bot previously obtained
+the Provider-facing same-match memory projection before `observe_state`
+created the current prediction calibrations. The calibration was durable but
+could reach the model only on the seat's following activation. When the current
+observation creates calibrations, the Host now refreshes the same-match memory
+projection before Provider egress, so the current Planner can cite and act on
+them. No strategy prompt, probability algorithm or Rules transition changed.
+
+Absent natural use produces a Medium finding and keeps the corresponding
+feature acceptance open; it does not abort an otherwise valid terminal match.
+Only Critical/High findings block integration. The affected four-file syntax
+gate passed once with zero Provider calls and zero cost. Dynamic acceptance is
+still pending the K3 threat-UI integration and a fresh Standard-2000 A-A run;
+the revision-66 baseline remains immutable.

@@ -2018,6 +2018,26 @@ function normalizeDecision(raw, input, match, queryReceipts, providerTrace) {
   const queryRefs = queryReceipts.filter((entry) => object(entry)
     && entry.authority?.stateHash === input.roomProjection.room.stateHash
     && entry.authority?.legalSpaceHash === input.legalSpace.legalSpaceHash);
+  const availablePredictionCalibrations = Array.isArray(
+    input.matchMemory?.workingMemory?.opponentModel?.predictionCalibrations)
+    ? input.matchMemory.workingMemory.opponentModel.predictionCalibrations
+      .filter((entry) => object(entry) && entry.calibrationHash)
+      .map((entry) => ({
+        calibrationHash: String(entry.calibrationHash),
+        classification: entry.classification
+          ? String(entry.classification) : null,
+        responseId: entry.responseId ? String(entry.responseId) : null,
+      }))
+    : [];
+  const assessmentEvidenceText = [
+    ...assessment.evidenceFor,
+    ...assessment.evidenceAgainst,
+    ...assessment.changedAssumptions,
+    ...assessment.opponentModelUpdates,
+    assessment.revisionReason,
+  ].filter(Boolean).join("\n");
+  const citedPredictionCalibrations = availablePredictionCalibrations.filter(
+    (entry) => assessmentEvidenceText.includes(entry.calibrationHash));
   const intent = {
     currentGoal: text(rawIntent.currentGoal, assessment.currentGoal),
     purpose: text(rawIntent.purpose, selectedReason),
@@ -2098,6 +2118,20 @@ function normalizeDecision(raw, input, match, queryReceipts, providerTrace) {
     plannerResult: object(raw.plannerResult)
       ? clone(raw.plannerResult) : null,
     publicDecisionSummary,
+    decisionMaterialEvidence: freeze({
+      queryReceipts: queryRefs.map((entry) => ({
+        queryKind: entry.queryKind,
+        status: entry.status,
+        precision: entry.precision || null,
+        queryReceiptHash: entry.queryReceiptHash,
+      })),
+      predictionCalibrationsAvailable: availablePredictionCalibrations,
+      predictionCalibrationsCited: citedPredictionCalibrations,
+      planDisposition: assessment.verdict,
+      planRevised: Boolean(planRevision),
+      predictedOpponentResponseCount: predictedOpponentResponses.length,
+      hiddenChainOfThoughtStored: false,
+    }),
     formationSelection: object(raw.formationSelection)
       ? clone(raw.formationSelection) : null,
     assetPlacementSelection: object(raw.assetPlacementSelection)

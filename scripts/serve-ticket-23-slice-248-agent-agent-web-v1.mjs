@@ -175,7 +175,8 @@ function compactTrace(trace = {}) {
   return Object.fromEntries([
     "applyReceiptHash", "actionType", "authorityActionType", "candidateId",
     "pieceId", "postStateRevision", "postStateHash",
-    "publicDecisionSummary", "plan", "assessment", "planRevision", "intent",
+    "publicDecisionSummary", "decisionMaterialEvidence", "plan", "assessment",
+    "planRevision", "intent",
     "plannerResult", "lifecycleAssessment",
     "formationSelection", "assetPlacementSelection", "placementRationales",
     "selectedReason", "risk", "providerCalls", "providerInputUnits",

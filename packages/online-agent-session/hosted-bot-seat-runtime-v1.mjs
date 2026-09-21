@@ -155,6 +155,8 @@ function normalizeDecision(value, input) {
       ? clone(value.plannerResult) : null,
     publicDecisionSummary: object(value.publicDecisionSummary)
       ? clone(value.publicDecisionSummary) : null,
+    decisionMaterialEvidence: object(value.decisionMaterialEvidence)
+      ? clone(value.decisionMaterialEvidence) : null,
     formationSelection: object(value.formationSelection)
       ? clone(value.formationSelection) : null,
     assetPlacementSelection: object(value.assetPlacementSelection)
@@ -659,6 +661,8 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
       risk: record.inflight.decision.risk,
       publicDecisionSummary:
         clone(record.inflight.decision.publicDecisionSummary || null),
+      decisionMaterialEvidence:
+        clone(record.inflight.decision.decisionMaterialEvidence || null),
       plan: clone(record.inflight.decision.plan || null),
       assessment: clone(record.inflight.decision.assessment || null),
       planRevision: clone(record.inflight.decision.planRevision || null),
@@ -980,13 +984,14 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
         });
       }
       let planState = null;
+      let planObservation = null;
       if (turnPlanRuntime) {
         if (typeof turnPlanRuntime.hydrate === "function") {
           await turnPlanRuntime.hydrate({ scope: scopeValue });
         }
         const current = turnPlanRuntime.read({ scope: scopeValue });
         if (current.plan) {
-          await turnPlanRuntime.dispatch({
+          planObservation = await turnPlanRuntime.dispatch({
             ...authorityInput(scopeValue, authorityValue.projection,
               authorityValue.legalSpace, authorityValue.spatialObservation,
               authorityValue.spatialActionSpace),
@@ -994,6 +999,17 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
           });
         }
         planState = turnPlanRuntime.read({ scope: scopeValue });
+      }
+      if (continuity
+        && planObservation?.result?.predictionCalibrations?.length) {
+        continuityContext = await continuity.observe({
+          scope: scopeValue,
+          roomProjection: authorityValue.projection,
+          legalSpace: authorityValue.legalSpace,
+          spatialObservation: authorityValue.spatialObservation,
+          spatialActionSpace: authorityValue.spatialActionSpace,
+          strategySkillSetHash: input.strategySkillSetHash || null,
+        });
       }
       record = await persist(record, {
         lifecycle: "active",
