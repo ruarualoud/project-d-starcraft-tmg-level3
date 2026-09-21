@@ -184,6 +184,15 @@ explicit, isolated slice manifests.
   unactivated Marine reserve deploy remains valid. Preserve the r9 Authority
   action but not its strategy prose, and fork from revision 8 once more so plan
   memory starts with a lifecycle-valid counterplay hypothesis.
+  That retry correctly denied another Goliath move, but then typed an off-table
+  Marine as `move` while describing Deploy, and attached a side-level
+  `phase_control` response to the Goliath Unit. The same lifecycle gate now
+  unifies on-table/off-table actor location: Reserve actor requires Deploy,
+  on-table actor cannot use Reserve Deploy, destroyed actor cannot act, and
+  Pass/choose-first-actor/phase-control cannot name a Unit actor. The concrete
+  shapes failed before the follow-up and passed once after it. One third and
+  final live convergence attempt may fork from revision 8; if the typed response
+  still fails, stop and report rather than continuing paid retries.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -243,6 +252,12 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
 - Lifecycle-defective Omega branch `20260921204159763`: revision 9 applied and
   Replay matched, but the impossible repeated Goliath Movement prediction keeps
   its strategy prose non-training. Usage: 6 calls, 271,979 units, ¥0.378876.
+- Actor/location-inconsistent Omega branch `20260921205840768`: revision 9
+  Apply/Replay passed, but its off-table Marine `move` and Unit-bound
+  `phase_control` keep the strategy prose non-training. Usage: 6 calls, 296,013
+  units, ¥0.415465. Recent recovery work is now 45 calls, 2,036,141 units and
+  ¥2.808085; including the original invalid-suffix source: 74 calls, 3,382,935
+  units and ¥4.660806. No ¥100 threshold was crossed.
   Recent recovery work is now 39 calls, 1,740,128 units and ¥2.392620; including
   the original invalid-suffix source: 68 calls, 3,086,922 units and ¥4.245341.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.

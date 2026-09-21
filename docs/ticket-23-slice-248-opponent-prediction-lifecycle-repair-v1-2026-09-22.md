@@ -47,3 +47,24 @@ Fork from revision 8 and regenerate the Omega decision so the accepted plan
 contains only lifecycle-possible opponent responses. Do not replay or promote
 the first r9 prose. The failed strategy attempt cost `6 calls / 271,979 units /
 ¥0.378876`; it did not cross the ¥100 notification threshold.
+
+## Typed actor/location follow-up
+
+The first repaired retry correctly stopped the already-activated Goliath move,
+but exposed two adjacent typed inconsistencies in the accepted response list:
+an off-table Marine was named with `actionClass: move` while the prose described
+Deploy, and the side-level `phase_control` response named the Goliath as its
+Unit actor. The lifecycle inspector now treats on-table Units and
+`offTableUnits` as one typed actor catalogue: a live Reserve actor requires
+`deploy`, an on-table actor cannot use Reserve Deploy, a destroyed actor cannot
+act, and Pass / choose-first-actor / phase-control must leave
+`likelyActorUnitId` empty. Prompt v20 and Action normalization v24 expose and
+enforce the same contract.
+
+Both exact persisted shapes were added to the existing focused gate. They
+failed before the follow-up and passed once after it; a real Reserve Marine
+Deploy remains accepted. Provider calls / cost for the repair: `0 / ¥0`. The
+accepted but internally inconsistent retry branch `20260921205840768` remains
+non-training strategy evidence (`6 calls / 296,013 units / ¥0.415465`). This is
+the second lifecycle repair round; the next live retry is the third and final
+convergence attempt for this defect class.

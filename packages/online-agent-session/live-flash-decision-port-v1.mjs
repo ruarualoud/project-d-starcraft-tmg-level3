@@ -25,9 +25,9 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v19";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v20";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v23";
+  "starcraft_tmg_live_action_shape_normalization_v24";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -1813,6 +1813,9 @@ const PREDICTED_ORDINARY_ACTION_PHASES = Object.freeze({
   melee_attack: "combat",
   combat: "combat",
 });
+const SIDE_LEVEL_PREDICTED_ACTION_CLASSES = new Set([
+  "pass", "choose_first_actor", "phase_control",
+]);
 
 function observedUnitActivation(spatialObservation, unit) {
   if (object(unit?.activationStatus?.activatedPhases)) {
@@ -1827,12 +1830,23 @@ export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
   const observation = input.spatialObservation || {};
   const units = new Map((observation.units || []).map((entry) =>
     [String(entry?.unitId || ""), entry]));
+  const offTableUnits = new Map((observation.offTableUnits || []).map((entry) =>
+    [String(entry?.unitId || ""), entry]));
   const currentPhase = String(input.currentPhase || "").toLowerCase();
   const contradictions = [];
   for (const [index, response] of (input.responses || []).entries()) {
     const actorId = String(response?.likelyActorUnitId || "").trim();
     if (!actorId) continue;
-    const actor = units.get(actorId);
+    const actionClass = String(response.actionClass || "").trim().toLowerCase();
+    if (SIDE_LEVEL_PREDICTED_ACTION_CLASSES.has(actionClass)) {
+      contradictions.push({ index, responseId: response.responseId || null,
+        actorId, actionClass: response.actionClass || null,
+        reason: "side_level_action_must_not_name_unit_actor" });
+      continue;
+    }
+    const onTable = units.get(actorId);
+    const offTable = offTableUnits.get(actorId);
+    const actor = onTable || offTable;
     if (!actor) continue;
     if (actor.sideRelation !== "opponent") {
       contradictions.push({ index, responseId: response.responseId || null,
@@ -1840,8 +1854,25 @@ export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
         reason: "predicted_actor_is_not_opponent" });
       continue;
     }
-    const predictedPhase = PREDICTED_ORDINARY_ACTION_PHASES[
-      String(response.actionClass || "").trim().toLowerCase()] || null;
+    if (offTable?.isDestroyed === true) {
+      contradictions.push({ index, responseId: response.responseId || null,
+        actorId, actionClass: response.actionClass || null,
+        reason: "destroyed_actor_cannot_take_predicted_action" });
+      continue;
+    }
+    if (offTable?.isInReserves === true && actionClass !== "deploy") {
+      contradictions.push({ index, responseId: response.responseId || null,
+        actorId, actionClass: response.actionClass || null,
+        reason: "reserve_actor_requires_deploy_action_class" });
+      continue;
+    }
+    if (onTable && actionClass === "deploy") {
+      contradictions.push({ index, responseId: response.responseId || null,
+        actorId, actionClass: response.actionClass || null,
+        reason: "on_table_actor_cannot_use_reserve_deploy_action_class" });
+      continue;
+    }
+    const predictedPhase = PREDICTED_ORDINARY_ACTION_PHASES[actionClass] || null;
     if (!predictedPhase) continue;
     const horizonKind = String(response?.horizon?.kind || "");
     if (horizonKind === "current_phase" && currentPhase
@@ -3871,7 +3902,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
         ? "Assess the existing same-match plan before selecting a candidate. A changed or contradicted assumption must produce at_risk/invalid and revise/abandon, never silent continue/sound."
         : "Produce the ActionIntent for the already selected Planner candidate; do not replace the plan or candidate inside the Action stage.",
       "Predict a plausible opponent response as a typed hypothesis: actionClass, likely actor/target when visible, bounded horizon, confidence, evidence and invalidation criteria. State a counter-response and replan trigger.",
-      "Opponent predictions obey the current lifecycle. Read every visible Unit's activationStatus. A Unit with activatedPhases[predicted action phase] = true cannot take another ordinary Move, Deploy, Run, Charge, Ranged Attack or Fight action in that phase or round; choose an unactivated legal actor, a phase-control possibility, or an explicitly conditional later-round response instead.",
+      "Opponent predictions obey the current lifecycle. Read every visible Unit's activationStatus and offTableUnits. A Unit with activatedPhases[predicted action phase] = true cannot take another ordinary Move, Deploy, Run, Charge, Ranged Attack or Fight action in that phase or round. A Reserve actor must use actionClass deploy; an on-table actor must not use reserve Deploy. Pass, choose_first_actor and phase_control are side-level actions and must leave likelyActorUnitId empty. Keep actionClass, named actor and horizon internally consistent; choose an unactivated legal actor or an explicitly conditional later-round response instead.",
       "When match memory contains predictionCalibrations, cite their calibrationHash in assessment evidence, update changedAssumptions/opponentModelUpdates, and use assessment.verdict to explicitly retain or revise the plan. A hit does not force continuation and a miss does not force abandonment; calibrate against position and objective value.",
       forceTerminal
         ? "If strategy context remains insufficient, record it as uncertainty and a replan trigger; never invent a missing Skill passage."

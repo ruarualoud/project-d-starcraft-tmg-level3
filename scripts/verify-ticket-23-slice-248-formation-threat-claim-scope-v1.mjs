@@ -137,13 +137,20 @@ const opponentPredictionObservation = {
       },
     },
     {
-      unitId: "player1-marine-1",
-      sideRelation: "opponent",
+      unitId: "player2-swarmling",
+      sideRelation: "own",
       activationStatus: {
-        activatedPhases: { movement: false, assault: false, combat: false },
+        activatedPhases: { movement: true, assault: false, combat: false },
       },
     },
   ],
+  offTableUnits: [{
+    unitId: "player1-marine-1",
+    sideRelation: "opponent",
+    isInReserves: true,
+    isDestroyed: false,
+    positionAvailable: false,
+  }],
 };
 const impossibleActivatedMove =
   inspectStarcraftTmgOpponentPredictionFeasibilityV1({
@@ -161,6 +168,22 @@ assert.equal(impossibleActivatedMove.status, "contradicted");
 assert.equal(impossibleActivatedMove.contradictions[0].reason,
   "actor_already_activated_for_predicted_phase");
 
+const impossibleReserveMove =
+  inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+    responses: [{
+      responseId: "resp-marine-move",
+      actionClass: "move",
+      opponentAction: "A Marine moves from reserves.",
+      likelyActorUnitId: "player1-marine-1",
+      horizon: { kind: "current_phase", count: 1 },
+    }],
+    spatialObservation: opponentPredictionObservation,
+    currentPhase: "movement",
+  });
+assert.equal(impossibleReserveMove.status, "contradicted");
+assert.equal(impossibleReserveMove.contradictions[0].reason,
+  "reserve_actor_requires_deploy_action_class");
+
 const possibleReserveDeploy =
   inspectStarcraftTmgOpponentPredictionFeasibilityV1({
     responses: [{
@@ -174,6 +197,22 @@ const possibleReserveDeploy =
     currentPhase: "movement",
   });
 assert.equal(possibleReserveDeploy.status, "consistent");
+
+const impossibleUnitBoundPhaseControl =
+  inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+    responses: [{
+      responseId: "resp-pass",
+      actionClass: "phase_control",
+      opponentAction: "Player1 may Pass.",
+      likelyActorUnitId: "player1-goliath-1",
+      horizon: { kind: "current_phase", count: 1 },
+    }],
+    spatialObservation: opponentPredictionObservation,
+    currentPhase: "movement",
+  });
+assert.equal(impossibleUnitBoundPhaseControl.status, "contradicted");
+assert.equal(impossibleUnitBoundPhaseControl.contradictions[0].reason,
+  "side_level_action_must_not_name_unit_actor");
 
 assert.equal(STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE, 3,
   "one decision cannot reopen more than three semantic correction rounds");
@@ -264,7 +303,10 @@ console.log(JSON.stringify({
   moveThenFireAlternativeFields:
     falseRejectedAlternative.contradictions.map((entry) => entry.field),
   impossibleActivatedPredictionStatus: impossibleActivatedMove.status,
+  impossibleReserveMoveStatus: impossibleReserveMove.status,
   possibleReserveDeployStatus: possibleReserveDeploy.status,
+  impossibleUnitBoundPhaseControlStatus:
+    impossibleUnitBoundPhaseControl.status,
   semanticCorrectionLimit:
     STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE,
   rejectionSeverity: rejectedDrive.findingSeverity,
