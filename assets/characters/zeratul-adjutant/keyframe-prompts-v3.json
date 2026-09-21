@@ -1,0 +1,32 @@
+{
+  "schema": "companion-keyframe-prompts.v3",
+  "mode": "built-in-imagegen",
+  "basePrompt": "Use case: identity-preserve. Asset type: single square 1:1 StarCraft II Zeratul adjutant communication portrait action KEYFRAME, realistic game cinematic. Input image 1 is the exact edit target and character identity baseline; input image 2 official commander reference is secondary identity evidence. Preserve Zeratul's unique long dark blue-gray ridged bald cranium, narrow luminous green eyes, purple cloth face veil entirely concealing mouthless Protoss lower face, bronze-gold nested shoulder plates and green shoulder stone, dark cloth, segmented nerve cords with gold bands. Same camera, scale, crop, background and light/color as baseline; camera remains fixed, character physically moves. Never invent human mouth, lips, teeth, ears, hands, gear, wounds, dirt, new armor design. Clearly different physical head/neck/shoulder pose recognizable at 96 pixels, NOT merely recoloring or eye glow. One portrait only, no panels/text/frame.",
+  "states": [
+    {
+      "state": "speaking",
+      "prompt": "Speaking command gesture: head rises/chin elevates 12 degrees and yaws 10 degrees toward viewer LEFT from baseline; neck extends and upper chest lifts. Gaze engaged toward interlocutor. Purple veil bows gently outward and its folds respond to neck movement, without suggesting any visible mouth. Shoulder posture alert but relaxed. Make upward extended neck silhouette and head pitch plainly different.",
+      "savedPath": "assets/characters/zeratul-adjutant/speaking-v3.png"
+    },
+    {
+      "state": "listening",
+      "prompt": "Listening intently: head turns 23 degrees toward viewer RIGHT and tilts 10 degrees toward the raised right shoulder; eyes look toward that side; near shoulder rises mildly, opposite shoulder relaxes. Clear three-quarter perspective of head ridge, asymmetrical cloth fold drape and shoulder relation. Do not preserve frontal baseline pose.",
+      "savedPath": "assets/characters/zeratul-adjutant/listening-v3.png"
+    },
+    {
+      "state": "alert-combat",
+      "prompt": "Combat alert: neck drives forward toward camera, cranium pitches DOWN 13 degrees, shoulders brace up and forward with left shoulder leading, eyes look sharply upward from beneath brow toward camera. Tense compact predatory silhouette, visible foreshortening and shoulder displacement; no weapon or hands. Lighting remains baseline green subdued eyes, not a light-only variant.",
+      "savedPath": "assets/characters/zeratul-adjutant/alert-combat-v3.png"
+    },
+    {
+      "state": "damaged-concerned",
+      "prompt": "Alarmed concerned recoil, not actual injury: upper body recoils toward viewer RIGHT and head tilts 17 degrees toward viewer LEFT while cranium turns 12 degrees left; shoulder line slopes oppositely. Head pulled back into neck and eyes focused toward lower-left hazard. Veil pulled diagonally by changed neck pose. No blood, scratches, scars, damage or dirt; emotional concern conveyed through posture.",
+      "savedPath": "assets/characters/zeratul-adjutant/damaged-concerned-v3.png"
+    },
+    {
+      "state": "reflective",
+      "prompt": "Quiet thoughtful pose: head bows DOWN 20 degrees and turns 18 degrees toward viewer LEFT, gaze down past left bottom of frame, shoulders lowered and relaxed. Long crown visible from above, eye line substantially lower than idle, veil drape compresses gently against chest. Clear bowed asymmetric contemplative silhouette, not just dimmed eyes.",
+      "savedPath": "assets/characters/zeratul-adjutant/reflective-v3.png"
+    }
+  ]
+}

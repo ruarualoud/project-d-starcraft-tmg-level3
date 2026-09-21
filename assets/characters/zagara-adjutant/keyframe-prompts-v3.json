@@ -1,0 +1,32 @@
+{
+  "schema": "companion-keyframe-prompts.v3",
+  "mode": "built-in-imagegen",
+  "basePrompt": "Use case: identity-preserve. Asset type: single square StarCraft II Zagara adjutant communication portrait action KEYFRAME, game cinematic, for a 96px avatar. Input image is exact edit target and approved idle identity baseline. Preserve precisely this Zagara broodmother identity: central tall blade crest, broad two-pointed fan-shaped chitin head carapace, skull-like narrow alien face under crest, paired segmented black-brown hanging tendrils, purple-brown layered organic carapace, shoulder carapace projections and existing segmented nonhuman front claws. Keep fixed camera, framing scale, unchanged organic dark hive background, unchanged purple/orange light and materials. Real physical head/neck and chitin shoulder posture deformation visibly distinct at 96px; not a recolor. Head crest and head carapace move as a solid anatomical assembly; all plates/tendrils keep their count, structure and continuity. Never add human hands/fingers, lips, human teeth, human facial emotions or invented mouthparts, additional horns, armor or weapons. No wounds, blood, marks, dirt changes. No text, panels, border or UI.",
+  "states": [
+    {
+      "state": "speaking",
+      "prompt": "Zagara issuing orders: lift the head assembly and lengthen neck by visibly raising chin 12 degrees, tiny 7-degree turn toward viewer left. Existing mouthparts only slightly separate vertically without adding structures; paired front tendrils spread outward from resting chest drape and arc forward, upper thorax rises. Existing claws remain low, unchanged anatomy. Head crest must read taller and lifted versus idle.",
+      "savedPath": "assets/characters/zagara-adjutant/speaking-v3.png"
+    },
+    {
+      "state": "listening",
+      "prompt": "Listening to a report: turn the entire head-and-crest assembly 22 degrees toward viewer RIGHT and tilt 9 degrees toward that side, focus existing eyes toward the right. Neck bends, near tendrils hang slightly inward and far tendrils swing outward; shoulder assembly largely remains frontal. Clear asymmetry and actual three-quarter view, not brightness change. Keep silhouette carapace anatomical and matching baseline.",
+      "savedPath": "assets/characters/zagara-adjutant/listening-v3.png"
+    },
+    {
+      "state": "alert-combat",
+      "prompt": "Alert combat response: head and crest thrust FORWARD toward camera and pitch DOWN 15 degrees; neck compresses while both carapace shoulders brace outward and up. Existing paired hanging tendrils curve forward apart as a threat display; existing low claws stay below face. Frontal powerful lowered-head silhouette, broad head-carapace tips stay visible, eyes fixed forward. No invented monster mouth.",
+      "savedPath": "assets/characters/zagara-adjutant/alert-combat-v3.png"
+    },
+    {
+      "state": "damaged-concerned",
+      "prompt": "Concerned startled recoil with NO injury: pull neck and head backward, tilt entire head crest 16 degrees toward viewer LEFT with 9-degree left turn, contract upper thorax and bring existing hanging tendrils closer around chest. One carapace shoulder higher, one lower. Existing claws remain anatomically correct and low. Strong diagonal crest and body recoil visibly distinct; no scars/blood/dirt.",
+      "savedPath": "assets/characters/zagara-adjutant/damaged-concerned-v3.png"
+    },
+    {
+      "state": "reflective",
+      "prompt": "Contemplative assessment: bow head-and-crest assembly DOWN 19 degrees and turn 17 degrees toward viewer LEFT, gaze toward ground left, relax shoulders lower, existing paired tendrils hang close to chest with soft inward curve. Upper head carapace visibly seen from above, central crest diagonal in perspective. Calm low silhouette, no hand-to-face gesture, no new mouthparts.",
+      "savedPath": "assets/characters/zagara-adjutant/reflective-v3.png"
+    }
+  ]
+}
