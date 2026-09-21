@@ -1,10 +1,19 @@
 import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { threatOverlayModeLabel } from "./threat-overlay-v1";
+
 type Panel = "unit" | "threat" | "status" | "markers";
 export type WorkbenchThreatMode =
   | "stationary_fire" | "move_then_fire" | "charge_engagement"
   | "friendly_aggregate" | "enemy_aggregate";
+
+export interface PendingPreviewSummary {
+  previewId: string | null;
+  actionType: string | null;
+  eventCount: number;
+  chancePending: boolean;
+}
 
 function value(input: unknown, fallback = "—") {
   if (input === null || input === undefined || input === "") return fallback;
@@ -44,6 +53,7 @@ export function BattleWorkbenchReadPanel({
   zh,
   threatMode = "stationary_fire",
   selectedThreatWeaponId = null,
+  pendingPreviewSummary = null,
   onThreatMode,
   onThreatWeapon,
   onOpenActions,
@@ -57,6 +67,7 @@ export function BattleWorkbenchReadPanel({
   zh: boolean;
   threatMode?: WorkbenchThreatMode;
   selectedThreatWeaponId?: string | null;
+  pendingPreviewSummary?: PendingPreviewSummary | null;
   onThreatMode?: (mode: WorkbenchThreatMode) => void;
   onThreatWeapon?: (weaponId: string | null) => void;
   onOpenActions?: () => void;
@@ -65,6 +76,7 @@ export function BattleWorkbenchReadPanel({
   canPreview?: boolean;
 }) {
   const [probabilityOpen, setProbabilityOpen] = React.useState(false);
+  const [predictedOpen, setPredictedOpen] = React.useState(false);
   if (!snapshot) {
     return <Text style={styles.empty}>{zh ? "正在读取当前修订的作战工作台…" : "Loading the current-revision battle workbench…"}</Text>;
   }
@@ -79,31 +91,50 @@ export function BattleWorkbenchReadPanel({
         ?.models?.some((model: any) => model.id === selectedPieceId)
     ));
     const probabilityRows = snapshot.probability?.rows?.filter((entry: any) => entry.attackerUnitId === selectedUnit?.unitId) || [];
-    const modes: Array<[WorkbenchThreatMode, string]> = [
-      ["stationary_fire", zh ? "原地射击" : "Stationary"],
-      ["move_then_fire", zh ? "走打" : "Move + fire"],
-      ["charge_engagement", zh ? "冲锋" : "Charge"],
-      ["friendly_aggregate", zh ? "我方叠加" : "Friendly union"],
-      ["enemy_aggregate", zh ? "敌方叠加" : "Enemy union"],
+    const modes: WorkbenchThreatMode[] = [
+      "stationary_fire",
+      "move_then_fire",
+      "charge_engagement",
+      "friendly_aggregate",
+      "enemy_aggregate",
     ];
+    const isAggregate = threatMode.includes("aggregate");
+    const aggregate = isAggregate
+      ? threat.aggregates?.[threatMode === "friendly_aggregate" ? "friendly" : "enemy"]
+      : null;
+    const visibleWeapons = (selectedUnit?.weapons || [])
+      .filter((weapon: any) => !selectedThreatWeaponId || weapon.weaponId === selectedThreatWeaponId);
     return (
       <ScrollView style={styles.scroll} nestedScrollEnabled>
         <View style={styles.card}>
           <View style={styles.titleRow}><Text style={styles.title}>{zh ? "威胁图层" : "Threat layers"}</Text><StatusPill status={threat.coverage} /></View>
-          <View style={styles.grid}>{modes.map(([mode, label]) => (
-            <Pressable key={mode} onPress={() => onThreatMode?.(mode)} style={[styles.choice, threatMode === mode && styles.choiceActive]}>
-              <Text style={styles.choiceText}>{label}</Text>
+          <View style={styles.grid}>{modes.map((mode) => (
+            <Pressable
+              key={mode}
+              accessibilityRole="button"
+              accessibilityState={{ selected: threatMode === mode }}
+              onPress={() => onThreatMode?.(mode)}
+              style={[styles.choice, threatMode === mode && styles.choiceActive]}
+            >
+              <Text style={styles.choiceText}>{threatOverlayModeLabel(mode, zh)}</Text>
             </Pressable>
           ))}</View>
           <Text style={styles.boundary}>{threat.coverageReason}</Text>
         </View>
-        {selectedUnit && !threatMode.includes("aggregate") && (
+        <View style={styles.card}>
+          <Text style={styles.subtitle}>{zh ? "精度图例" : "Precision legend"}</Text>
+          <Text style={styles.row}>{zh ? "实线 = 精确 · 虚线 = 咨询性界 · 点线 = 未知" : "solid = exact · dashed = advisory bound · dotted = unknown"}</Text>
+          <Text style={styles.meta}>{zh
+            ? "当前投影只发布咨询性界（partial）；冲锋骰不掷、视线与地形按目标另查。未知永不画成零。"
+            : "The current projection publishes advisory bounds (partial) only; the charge die is not rolled and line-of-sight/terrain stay target-specific. Unknown is never drawn as zero."}</Text>
+        </View>
+        {selectedUnit && !isAggregate && (
           <View style={styles.card}>
             <Text style={styles.subtitle}>{zh ? "武器图层" : "Weapon layer"}</Text>
             <View style={styles.grid}>
-              <Pressable onPress={() => onThreatWeapon?.(null)} style={[styles.choice, selectedThreatWeaponId === null && styles.choiceActive]}><Text style={styles.choiceText}>All</Text></Pressable>
+              <Pressable accessibilityRole="button" accessibilityState={{ selected: selectedThreatWeaponId === null }} onPress={() => onThreatWeapon?.(null)} style={[styles.choice, selectedThreatWeaponId === null && styles.choiceActive]}><Text style={styles.choiceText}>All</Text></Pressable>
               {(selectedUnit.weapons || []).map((weapon: any) => (
-                <Pressable key={weapon.weaponId} onPress={() => onThreatWeapon?.(weapon.weaponId)} style={[styles.choice, selectedThreatWeaponId === weapon.weaponId && styles.choiceActive]}>
+                <Pressable key={weapon.weaponId} accessibilityRole="button" accessibilityState={{ selected: selectedThreatWeaponId === weapon.weaponId }} onPress={() => onThreatWeapon?.(weapon.weaponId)} style={[styles.choice, selectedThreatWeaponId === weapon.weaponId && styles.choiceActive]}>
                   <Text style={styles.choiceText}>{weapon.weaponName}</Text>
                 </Pressable>
               ))}
@@ -111,11 +142,81 @@ export function BattleWorkbenchReadPanel({
             <Text style={styles.meta}>speed {selectedUnit.speed?.printed} → {selectedUnit.speed?.speedInches} in ({selectedUnit.speed?.branch}) · models {selectedUnit.currentModels}</Text>
           </View>
         )}
+        {selectedUnit && !isAggregate && visibleWeapons.map((weapon: any) => (
+          <View key={weapon.weaponId} style={styles.card}>
+            <View style={styles.titleRow}><Text style={styles.subtitle}>{weapon.weaponName}</Text><StatusPill status={weapon.coverage || "unknown"} /></View>
+            <Text style={styles.row}>
+              {`range ${value(weapon.printedRangeInches)}${weapon.longRangeChoice ? ` → ${value(weapon.maximumRangeInches)} in (LONG RANGE choice)` : " in"} · stationary ${value(weapon.stationaryRadiusInches)} in · move+fire ${weapon.moveThenAttackRadiusInches === null ? (zh ? "未知（速度未投影）" : "unknown (speed unprojected)") : `${weapon.moveThenAttackRadiusInches} in`}`}
+            </Text>
+            <Text style={styles.meta}>
+              {zh ? "贡献模型" : "contributing models"}: {(weapon.stationaryRegions || []).length} · {(weapon.stationaryRegions || []).map((region: any) => region.modelId).join(", ") || "—"}
+            </Text>
+            {(weapon.unresolved || []).map((entry: any) => (
+              <Text key={String(entry)} style={styles.meta}>• {zh ? "未决" : "unresolved"}: {String(entry)}</Text>
+            ))}
+          </View>
+        ))}
+        {selectedUnit && !isAggregate && threatMode === "charge_engagement" && (
+          <View style={styles.card}>
+            <View style={styles.titleRow}><Text style={styles.subtitle}>{zh ? "冲锋包络" : "Charge envelope"}</Text><StatusPill status={selectedUnit.charge?.coverage || "unknown"} /></View>
+            <Text style={styles.row}>
+              {selectedUnit.charge?.minimumRadiusInches === null || selectedUnit.charge?.minimumRadiusInches === undefined
+                ? (zh ? "包络未知（速度未投影）" : "Envelope unknown (speed unprojected)")
+                : `${selectedUnit.charge.minimumRadiusInches}–${selectedUnit.charge.maximumRadiusInches} in`}
+              {" · "}{zh ? "贡献模型" : "contributing models"}: {(selectedUnit.charge?.regions || []).length}
+            </Text>
+            <Text style={styles.meta}>{value(selectedUnit.charge?.chance, "d6 charge distance not rolled by read query")}</Text>
+            {(selectedUnit.charge?.unresolved || []).map((entry: any) => (
+              <Text key={String(entry)} style={styles.meta}>• {zh ? "未决" : "unresolved"}: {String(entry)}</Text>
+            ))}
+            <Text style={styles.boundary}>{zh
+              ? "包络只是投影范围；冲锋是否合法只能由权威 Preview 判定。"
+              : "The envelope is a projected bound only; only an authoritative Preview decides whether a charge is legal."}</Text>
+          </View>
+        )}
+        {isAggregate && aggregate && (
+          <View style={styles.card}>
+            <View style={styles.titleRow}>
+              <Text style={styles.subtitle}>{threatMode === "friendly_aggregate" ? (zh ? "我方叠加层" : "Friendly union") : (zh ? "敌方叠加层" : "Enemy union")}</Text>
+              <StatusPill status={aggregate.coverage || "unknown"} />
+            </View>
+            <Text style={styles.row}>
+              {(aggregate.unitIds || []).length} {zh ? "单位" : "units"} · {(aggregate.regions || []).length} {zh ? "投影区域" : "projected regions"}
+            </Text>
+            <Text style={styles.meta}>{(aggregate.unitIds || []).join(", ") || "—"}</Text>
+            <Text style={styles.boundary}>{zh
+              ? "叠加层把各单位的原地/走打/冲锋投影区域并列显示；填充越亮代表越多投影来源重叠（仅为显示计数）。"
+              : "The union draws each unit's stationary / move+fire / charge projected regions together; brighter fill means more projected sources overlap (display count only)."}</Text>
+          </View>
+        )}
         <View style={styles.card}>
           <Text style={styles.subtitle}>{zh ? "覆盖依赖" : "Coverage dependencies"}</Text>
           {Object.entries(threat.dependencies || {}).map(([key, entry]) => <Text key={key} style={styles.row}>• {key}: {value(entry)}</Text>)}
         </View>
-        <Pressable onPress={() => setProbabilityOpen((value) => !value)} style={styles.sheetButton}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: predictedOpen }}
+          onPress={() => setPredictedOpen((current) => !current)}
+          style={styles.sheetButton}
+        >
+          <Text style={styles.choiceText}>{zh ? "预测交互对比" : "Predicted interactions"}</Text>
+        </Pressable>
+        {predictedOpen && (
+          <PredictedInteractionCard
+            snapshot={snapshot}
+            threat={threat}
+            unitId={selectedUnit?.unitId || null}
+            probabilityRows={probabilityRows}
+            pendingPreviewSummary={pendingPreviewSummary}
+            zh={zh}
+          />
+        )}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: probabilityOpen }}
+          onPress={() => setProbabilityOpen((current) => !current)}
+          style={styles.sheetButton}
+        >
           <Text style={styles.choiceText}>{zh ? "对抗概率" : "Matchup probability"}</Text>
         </Pressable>
         {probabilityOpen && <ProbabilitySheet rows={probabilityRows} snapshot={snapshot} zh={zh} />}
@@ -370,6 +471,106 @@ function WriteSheetCard({ snapshot, zh, onOpenActions }: {
         style={[styles.sheetButton, sheet.coverage === "quarantined" && styles.disabled]}>
         <Text style={styles.choiceText}>{zh ? "打开权威 Actions" : "Open authoritative Actions"}</Text>
       </Pressable>
+    </View>
+  );
+}
+
+function PredictedInteractionCard({ snapshot, threat, unitId, probabilityRows, pendingPreviewSummary, zh }: {
+  snapshot: Record<string, any>;
+  threat: Record<string, any>;
+  unitId: string | null;
+  probabilityRows: any[];
+  pendingPreviewSummary: PendingPreviewSummary | null;
+  zh: boolean;
+}) {
+  const unitNames = new Map((snapshot.units || []).map((unit: any) => [unit.id, unit.name]));
+  const relationships = (threat.relationships || [])
+    .filter((entry: any) => entry.attackerUnitId === unitId);
+  const probabilityByTarget = new Map<string, any[]>();
+  for (const row of probabilityRows) {
+    const list = probabilityByTarget.get(row.targetUnitId) || [];
+    list.push(row);
+    probabilityByTarget.set(row.targetUnitId, list);
+  }
+  const sourceActionRefs = Array.isArray(threat.sourceActionRefs)
+    ? threat.sourceActionRefs : [];
+  return (
+    <View style={styles.sheet}>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{zh ? "预测交互对比" : "Predicted interactions"}</Text>
+        <StatusPill status={value(snapshot.probability?.coverage, "not_loaded")} />
+      </View>
+      {!unitId ? (
+        <Text style={styles.muted}>{zh
+          ? "选择一个场上单位后与每个敌方单位对比。"
+          : "Select a battlefield unit to compare against each enemy unit."}</Text>
+      ) : relationships.length === 0 ? (
+        <Text style={styles.muted}>{zh
+          ? "没有投影到对立的场上单位；预测交互为未知（不是零）。"
+          : "No opposing battlefield units are projected; predicted interactions are unknown (not zero)."}</Text>
+      ) : relationships.map((relation: any) => {
+        const rows = probabilityByTarget.get(relation.targetUnitId) || [];
+        const targetName = value(unitNames.get(relation.targetUnitId), relation.targetUnitId);
+        const distance = Number(relation.baseEdgeDistanceMilliInches);
+        return (
+          <View key={relation.targetUnitId} style={styles.probabilityRow}>
+            <View style={styles.titleRow}>
+              <Text style={styles.row}>→ {targetName}</Text>
+              <StatusPill status={relation.coverage || "unknown"} />
+            </View>
+            <Text style={styles.meta}>
+              {zh ? "基座边缘距离" : "base edge"} {Number.isFinite(distance) ? `${(distance / 1000).toFixed(1)} in` : "unknown"}
+              {" · "}{zh ? "原地可及武器" : "stationary weapons"}: {(relation.stationaryWeaponIds || []).length}
+              {" · "}{zh ? "走打可及武器" : "move+fire weapons"}: {(relation.moveThenFireWeaponIds || []).length}
+              {" · "}{zh ? "冲锋" : "charge"}: {relation.chargeCandidate === true
+                ? (zh ? "在包络内（候选）" : "inside envelope (candidate)")
+                : (zh ? "包络外/未知" : "outside envelope / unknown")}
+            </Text>
+            {rows.map((row: any) => (
+              <Text key={row.queryId} style={styles.meta}>
+                • {row.weaponName}: E[dmg] {Number(row.result?.expectedDamage ?? 0).toFixed(2)}
+                {" · "}P(≥1) {(100 * Number(row.result?.probabilityAtLeastOneDamage ?? 0)).toFixed(1)}%
+                {" · "}{zh ? "减员" : "casualty"} {row.result?.casualtyProbability === null
+                  || row.result?.casualtyProbability === undefined
+                  ? (zh ? "未知（多模型分配）" : "unknown (multi-model allocation)")
+                  : `${(100 * Number(row.result.casualtyProbability)).toFixed(1)}%`}
+                {" · "}{row.coverage}
+              </Text>
+            ))}
+            {!rows.length && (
+              <Text style={styles.meta}>{zh
+                ? "该目标没有兼容的攻击概率行（not_loaded/不兼容）。"
+                : "No compatible attack-probability row for this target (not_loaded/incompatible)."}</Text>
+            )}
+            {(relation.unresolved || []).length > 0 && (
+              <Text style={styles.meta}>{zh ? "未决" : "unresolved"}: {(relation.unresolved || []).join(", ")}</Text>
+            )}
+          </View>
+        );
+      })}
+      <Text style={styles.meta}>
+        {zh ? "LegalSpace 动作引用" : "LegalSpace action refs"}: {sourceActionRefs.length}
+        {" · "}r{value(snapshot.stateRevision)}
+      </Text>
+      <Text style={styles.meta}>
+        {pendingPreviewSummary
+          ? (zh
+            ? `当前密封 Preview：${value(pendingPreviewSummary.actionType)} · ${pendingPreviewSummary.eventCount} 事件 · 待随机：${pendingPreviewSummary.chancePending ? "是" : "否"} —— 预测不等于确认；只有 Apply 写入状态。`
+            : `Current sealed Preview: ${value(pendingPreviewSummary.actionType)} · ${pendingPreviewSummary.eventCount} events · chance pending: ${pendingPreviewSummary.chancePending ? "yes" : "no"} — prediction is not confirmation; only Apply writes state.`)
+          : (zh
+            ? "本客户端当前没有密封 Preview；预测只引用已加载修订。"
+            : "No sealed Preview on this client; predictions reference only the loaded revision.")}
+      </Text>
+      <Text style={styles.boundary}>
+        {zh
+          ? "火力区交换（原地/走打输出交换对比）：当前客户端投影未暴露该估计（仅 Agent 侧 combat-estimation 拥有 fire_zone_exchange）；此处如实显示未知，绝不当零。"
+          : "Fire-zone exchange (stationary vs move+fire output trade): the current client projection does not expose this estimate (only the agent-side combat-estimation runtime owns fire_zone_exchange); shown honestly as unknown, never zero."}
+      </Text>
+      <Text style={styles.boundary}>
+        {zh
+          ? "对比只读：距离与可及武器来自威胁关系收据，伤害分布来自攻击概率收据；不掷骰、不补算、不暗示动作合法。"
+          : "Read-only comparison: distances and reachable weapons come from threat relationship receipts, damage distributions from attack-probability receipts; no dice, no recomputation, no implied legality."}
+      </Text>
     </View>
   );
 }
