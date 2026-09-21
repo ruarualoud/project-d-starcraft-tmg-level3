@@ -85,6 +85,13 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   const [providerConsent, setProviderConsent] = useState(false);
   const [providerKeyDraft, setProviderKeyDraft] = useState("");
   const [providerSubmitting, setProviderSubmitting] = useState(false);
+  // Ephemeral per-mount receipt of a catalogue load the user performed in
+  // this window. The backend projection intentionally exposes no
+  // `profilesLoaded` flag (derivedStatus() returns "session_required"
+  // without a bound agent session even after a successful load), so the UI
+  // reflects the completed operation itself — never persisted, never fake
+  // state, and superseded whenever the projection reports "ready".
+  const [catalogueLoaded, setCatalogueLoaded] = useState(false);
   const [sectionOverrides, setSectionOverrides] = useState<
     Partial<Record<FloatingSectionKey, boolean>>
   >({});
@@ -446,21 +453,28 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
               ))}
             </View>
           </>
-        ) : secureProvider && secureProvider.status !== "idle" ? (
+        ) : secureProvider?.status === "ready" || catalogueLoaded ? (
           <Text style={styles.providerMeta} testID="secure-provider-empty-catalogue">
             {zh
-              ? "Provider 清单已加载：服务端本会话许可 0 个 Provider 配置；BYOK 如实不可用，不是被隐藏。加载清单不会调用模型。"
-              : "Provider catalogue loaded: the server approved 0 Provider profiles for this session; BYOK is honestly unavailable, not hidden. Loading the catalogue does not call a model."}
+              ? "Provider 清单已加载（本会话窗口）：服务端许可 0 个 Provider 配置；BYOK 如实不可用，不是被隐藏。加载清单不会调用模型。"
+              : "Provider catalogue loaded (this session window): the server approved 0 Provider profiles; BYOK is honestly unavailable, not hidden. Loading the catalogue does not call a model."}
           </Text>
         ) : (
           <>
             <Text style={styles.providerMeta}>
-              {zh ? "Provider 清单尚未载入；加载动作不会调用模型。" : "Provider catalogue is not loaded; loading it does not call a model."}
+              {secureProvider?.status === "session_required"
+                ? (zh
+                  ? "BYOK 需要先接通副官会话；Provider 清单尚未载入，加载动作不会调用模型。"
+                  : "BYOK needs an open Adjutant session first; the Provider catalogue is not loaded, and loading it does not call a model.")
+                : (zh ? "Provider 清单尚未载入；加载动作不会调用模型。" : "Provider catalogue is not loaded; loading it does not call a model.")}
             </Text>
             <ActionButton
               disabled={providerBusy || !secureProvider}
               label={zh ? "加载 Provider 清单" : "Load Provider catalogue"}
-              onPress={() => void runProviderIntent({ type: "load_profiles" })}
+              onPress={() => void (async () => {
+                const result = await runProviderIntent({ type: "load_profiles" });
+                if (result?.ok) setCatalogueLoaded(true);
+              })()}
             />
           </>
         )}

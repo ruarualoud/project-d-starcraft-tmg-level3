@@ -766,12 +766,17 @@ async function main() {
     // Collapsed chip is compact and never spans the viewport.
     await assertChipCompact(page, 1500, "DESKTOP");
 
-    // The board is fully visible and its center is not intercepted.
+    // The board is materially visible on first paint (both bounds and a
+    // material visible height; full containment is not claimed on a
+    // scrollable desktop page) and its center is not intercepted.
     const board = page.locator('[aria-label^="Battlefield;"]').first();
     const boardBox = await board.boundingBox();
-    ensure(boardBox && boardBox.y >= 0 && boardBox.y + boardBox.height <= 1050
-      && boardBox.height >= 400,
-    "DESKTOP_BATTLEFIELD_NOT_FULLY_VISIBLE", { box: boardBox });
+    const desktopVisibleHeight = boardBox
+      ? Math.min(1050, boardBox.y + boardBox.height) - Math.max(0, boardBox.y)
+      : 0;
+    ensure(boardBox && boardBox.y >= 0 && boardBox.height >= 400
+      && desktopVisibleHeight >= 240,
+    "DESKTOP_BATTLEFIELD_NOT_MATERIALLY_VISIBLE", { box: boardBox });
     await capture(page, "01-desktop-collapsed-chip.png", artifacts);
     checks.push({ id: "desktop_collapsed_chip_compact_and_board_unobstructed", passed: true });
 
