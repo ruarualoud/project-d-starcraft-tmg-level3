@@ -412,6 +412,15 @@ async function main() {
         episodeId: `${roomId}:terminal`,
         decisionBindings: orchestratorResult.trajectory,
         experimentCell: orchestratorResult.experimentCell,
+        reviewContext: {
+          evaluationSplit: "development",
+          scalePoints: orchestratorResult.experimentCell.scenario.scalePoints,
+          modelSnapshotsBySeat: selectedModels,
+          promptPackSnapshotsBySeat: {
+            player1: "selfplay_agent_prompt",
+            player2: "selfplay_agent_prompt",
+          },
+        },
         requireTerminal: true,
       });
       const directory = path.join(dataDirectory, "training");
@@ -424,6 +433,7 @@ async function main() {
         audit: "training/leak-audit.json",
         eligibility: "training/eligibility.json",
         roundTrips: "training/round-trips.json",
+        postgameReviewEpisode: "training/postgame-review-episode.json",
         summary: "training/summary.json",
       };
       await Promise.all([
@@ -441,6 +451,8 @@ async function main() {
           `${JSON.stringify(compiled.eligibility, null, 2)}\n`, { mode: 0o600 }),
         writeFile(path.join(dataDirectory, files.roundTrips),
           `${JSON.stringify(compiled.roundTrips, null, 2)}\n`, { mode: 0o600 }),
+        writeFile(path.join(dataDirectory, files.postgameReviewEpisode),
+          `${JSON.stringify(compiled.reviewEpisode, null, 2)}\n`, { mode: 0o600 }),
       ]);
       evolutionExportSummary = {
         ...compiled.summary,

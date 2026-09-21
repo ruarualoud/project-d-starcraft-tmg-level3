@@ -674,7 +674,10 @@ async function main() {
       && current.evolutionExport?.governance?.criticalHighFindings === 0
       && current.evolutionExport?.formats?.ndjson === true
       && current.evolutionExport?.formats?.muzero === true
-      && current.evolutionExport?.formats?.rlds === true,
+      && current.evolutionExport?.formats?.rlds === true
+      && current.evolutionExport?.postgameReviewEpisodeReady === true
+      && current.evolutionExport?.postgameReviewDecisionCount
+        === current.evolutionExport?.stepCount,
     "SLICE263_TERMINAL_EVOLUTION_EXPORT_MISSING", {
       evolutionExport: current.evolutionExport || null,
     });

@@ -93,6 +93,8 @@ function normalizeExperimentCell(value = {}) {
     scenario: {
       mapId: required(value.scenario?.mapId, "scenario.mapId"),
       missionId: required(value.scenario?.missionId, "scenario.missionId"),
+      scalePoints: positiveInteger(value.scenario?.scalePoints || 500,
+        "scenario.scalePoints"),
       rosterIdsBySeat: Object.fromEntries(SEAT_KEYS.map((seatKey) => [
         seatKey,
         required(value.scenario?.rosterIdsBySeat?.[seatKey],
@@ -158,6 +160,11 @@ function safeTrace(trace) {
     selectedReason: trace.selectedReason,
     scoreOrPositionValue: trace.scoreOrPositionValue,
     risk: trace.risk,
+    publicDecisionSummary: clone(trace.publicDecisionSummary || null),
+    plan: clone(trace.plan || null),
+    assessment: clone(trace.assessment || null),
+    planRevision: clone(trace.planRevision || null),
+    intent: clone(trace.intent || null),
     strategySkillRefs: clone(trace.strategySkillRefs || []),
     applyReceiptHash: trace.applyReceiptHash,
     postStateRevision: trace.postStateRevision,

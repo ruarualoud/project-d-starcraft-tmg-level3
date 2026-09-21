@@ -44,10 +44,21 @@ explicit, isolated slice manifests.
    acceptance. The optimized path now persists public plan, assessment, plan
    revision and compact intent/query references without hidden chain-of-thought.
    Terminal Replay parity now gates lossless NDJSON/MuZero/RLDS candidates and
-   governance audit; training and Skill promotion still require independent approval.
+   governance audit, plus a full-denominator Postgame Review V2 Episode with
+   checkpoint/scenario/model/prompt/Skill bindings; training and Skill promotion
+   still require independent approval.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
-   replay-driven Skill evolution loop.
-6. Ticket 26 / Slices 264–266: build and compare two complete companion packs.
+   replay-driven Skill evolution loop. The same scene-scoped evidence feeds a
+   three-arm comparison: current SkillOpt, WikiSkill knowledge compilation and
+   EvoTest isolated test-time evolution; Critical/High-only blocking, held-out,
+   arena, versioned promotion and rollback remain mandatory.
+6. Ticket 26 / Slices 264–266: after the K3 threat-UI screenshot report is
+   user-reviewed, build and compare two complete companion packs. K3 owns the
+   Web/App interaction design; Codex owns room permissions, persistence and
+   agent contracts. Acceptance includes Tavern-equivalent cards/world books,
+   layered long-term memory and relationship state, resumable long-running
+   roleplay, multiple companions speaking in one conversation, and floating-Web
+   evidence without exposing opponent-private agent state.
 7. Ticket 14 / Slice 143: run the deferred APK acceptance when a real Android
    device is available.
 

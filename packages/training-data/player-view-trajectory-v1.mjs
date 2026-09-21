@@ -60,6 +60,15 @@ function required(value, field) {
   return normalized;
 }
 
+function withoutHiddenReasoning(value) {
+  if (Array.isArray(value)) return value.map(withoutHiddenReasoning);
+  if (!object(value)) return clone(value);
+  return Object.fromEntries(Object.entries(value)
+    .filter(([key]) => !/^(?:chain_?of_?thought|hidden_?reasoning|raw_?reasoning|thinking)$/iu
+      .test(key))
+    .map(([key, child]) => [key, withoutHiddenReasoning(child)]));
+}
+
 function identityBody(value) {
   const body = clone(value);
   delete body.contentIdentity;
@@ -239,7 +248,15 @@ function safeDecisionBinding(value, receipt, versionedSkillRefs = []) {
     turnPlanHash: value.turnPlanHash || null,
     actionIntentHash: value.actionIntentHash || null,
     strategySkillRefs: typed.length > 0 ? typed : traceStrategySkillRefs,
+    publicDecisionSummary: withoutHiddenReasoning(
+      value.publicDecisionSummary || null,
+    ),
+    plan: withoutHiddenReasoning(value.plan || null),
+    assessment: withoutHiddenReasoning(value.assessment || null),
+    planRevision: withoutHiddenReasoning(value.planRevision || null),
+    intent: withoutHiddenReasoning(value.intent || null),
     modelNarrativeIncluded: false,
+    hiddenChainOfThoughtIncluded: false,
   };
 }
 

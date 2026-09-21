@@ -223,3 +223,33 @@ terminal server reuses the room-bound summary rather than regenerating it.
 
 Implementation is complete but live acceptance is pending the fresh optimized
 Standard-2000 match. The frozen revision-66 baseline remains untouched.
+
+## Postgame Review V2 episode preparation
+
+The same terminal export now also adapts every accepted action into the
+existing Postgame Review V2 episode contract. This closes the former gap
+between a replay-verified live Room and the already-built multi-match review
+runtime without creating a second review system:
+
+- the Agent-vs-Agent orchestrator retains the public opened plan, current
+  assessment, explicit plan revision, action intent and decision summary that
+  the Hosted Bot already recorded; hidden chain-of-thought remains excluded;
+- every action receives an exact Room revision/state checkpoint, accepted
+  receipt replay reference, acting-seat observation reference, LegalSpace
+  reference and hybrid ActionSpace reference;
+- scenario identity includes mission, map, 2,000-point scale, round, phase,
+  initiative holder, score, faction/roster identities and player-view-derived
+  position/resource/status fingerprints;
+- both seats' frozen Skill set, selected model and prompt-pack snapshots bind
+  every decision, so a later A/B experiment cannot silently change the opponent
+  or harness while claiming a Skill-only comparison;
+- the terminal server writes `training/postgame-review-episode.json`, and the
+  runner refuses closure unless its decision denominator equals the exported
+  trajectory denominator.
+
+This file is an input to review, not a review conclusion. One terminal match is
+not enough to run the V2 workflow: it still requires at least two replay-verified
+episodes, paired isolated checkpoint experiments, held-out evaluation and
+manual promotion. Slice 249 will use the same episode evidence to compare the
+existing SkillOpt path with WikiSkill and EvoTest adapters; none may mutate the
+formal Room, Rules or accepted Skill automatically.

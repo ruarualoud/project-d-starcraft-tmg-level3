@@ -4,6 +4,10 @@ import { createStarcraftTmgTrainingExportRuntimeV1 } from
   "./training-export-v1.mjs";
 import { createStarcraftTmgTrainingGovernanceV1 } from
   "./training-governance-v1.mjs";
+import { hashStarcraftTmgContract } from
+  "../authoritative-engine/referee-crypto-v1.mjs";
+import { createStarcraftTmgScenarioReviewEpisodeV2 } from
+  "../strategy-skills/postgame-scenario-review-runtime-v2.mjs";
 
 export const STARCRAFT_TMG_LIVE_MATCH_EVOLUTION_EXPORT_VERSION =
   "starcraft_tmg_live_match_evolution_export_v1";
@@ -69,6 +73,207 @@ function splitIdentity(input, experimentCell, episodeId) {
   };
 }
 
+function ref(id, version, valueOrHash) {
+  return {
+    id: required(id, "ref.id"),
+    version: required(version, "ref.version"),
+    hash: /^[a-f0-9]{64}$/u.test(String(valueOrHash || ""))
+      ? String(valueOrHash)
+      : hashStarcraftTmgContract(valueOrHash),
+  };
+}
+
+function snapshotRef(value, field, fallbackVersion) {
+  if (object(value) && value.id && value.version && value.hash) {
+    return ref(value.id, value.version, value.hash);
+  }
+  const identity = required(object(value)
+    ? value.id || value.model || value.promptPack || value.name
+    : value, field);
+  return ref(`${field}:${identity}`, object(value)
+    ? value.version || fallbackVersion : fallbackVersion, value);
+}
+
+function skillSetRef(experimentCell, seatKey) {
+  const skillRefs = experimentCell.seats?.[seatKey]?.skillRefs || [];
+  return ref(
+    `${experimentCell.experimentId}:${seatKey}:skill-set`,
+    experimentCell.versions?.strategy || "strategy-snapshot-v1",
+    { seatKey, skillRefs },
+  );
+}
+
+function scenarioContext(step, experimentCell, scalePoints) {
+  const state = step.actorInput.viewerState || {};
+  const pieces = Array.isArray(state.pieces) ? state.pieces : [];
+  return {
+    missionId: experimentCell.scenario.missionId,
+    mapId: experimentCell.scenario.mapId,
+    scalePoints,
+    round: Number(state.round || 0),
+    phase: String(state.phase || "unknown"),
+    actingSeat: step.toPlay,
+    initiativeSeat: state.initiativeSideKey
+      || state.firstActorSideKey || state.firstPlayerSideKey || null,
+    scoreBySeat: clone(state.scores || {}),
+    factionBySeat: Object.fromEntries(Object.entries(
+      experimentCell.seats || {},
+    ).map(([seatKey, seat]) => [seatKey, seat.factionRecordKey])),
+    rosterArchetypeBySeat: clone(
+      experimentCell.scenario.rosterIdsBySeat || {},
+    ),
+    positionFingerprint: hashStarcraftTmgContract({
+      board: state.board || null,
+      pieces: pieces.map((piece) => ({
+        id: piece.id || piece.pieceId || null,
+        sideKey: piece.sideKey || null,
+        position: piece.position || null,
+        models: (piece.models || []).map((model) => ({
+          id: model.id || model.modelId || null,
+          position: model.position || {
+            xInches: model.xInches ?? null,
+            yInches: model.yInches ?? null,
+            elevation: model.elevation || null,
+          },
+          base: {
+            shape: model.baseShape || null,
+            widthInches: model.baseWidthInches ?? null,
+            depthInches: model.baseDepthInches ?? null,
+          },
+          isDestroyed: model.isDestroyed === true,
+          isOnField: model.isOnField !== false,
+        })),
+      })),
+    }),
+    resourceFingerprint: hashStarcraftTmgContract({
+      supply: state.supply || state.supplyBySeat || null,
+      cardResources: state.cardResources || null,
+      scores: state.scores || null,
+    }),
+    statusFingerprint: hashStarcraftTmgContract({
+      round: state.round ?? null,
+      phase: state.phase || null,
+      activeSideKey: state.activeSideKey || null,
+      pieces: pieces.map((piece) => ({
+        id: piece.id || piece.pieceId || null,
+        statuses: piece.statuses || piece.status || null,
+        damageMarker: piece.damageMarker ?? null,
+        currentModels: piece.currentModels ?? null,
+      })),
+    }),
+    tags: [
+      `action:${step.actionEncoding.actionType}`,
+      `round:${Number(state.round || 0)}`,
+      `phase:${String(state.phase || "unknown")}`,
+      `map:${experimentCell.scenario.mapId}`,
+      `mission:${experimentCell.scenario.missionId}`,
+    ],
+  };
+}
+
+function publicDecisionSummary(step) {
+  const binding = step.decisionBinding || {};
+  return {
+    summary: clone(binding.publicDecisionSummary || null),
+    openedPlan: clone(binding.plan || null),
+    assessment: clone(binding.assessment || null),
+    planRevision: clone(binding.planRevision || null),
+    actionIntent: clone(binding.intent || null),
+    hiddenChainOfThoughtStored: false,
+  };
+}
+
+function buildReviewEpisode(trajectory, experimentCell, reviewContext = {}) {
+  const modelSnapshots = reviewContext.modelSnapshotsBySeat || {};
+  const promptPacks = reviewContext.promptPackSnapshotsBySeat || {};
+  const scalePoints = Number(reviewContext.scalePoints
+    ?? experimentCell.scenario?.scalePoints);
+  if (!Number.isSafeInteger(scalePoints) || scalePoints < 1) {
+    throw new TypeError("reviewContext.scalePoints is required");
+  }
+  const seatKeys = Object.keys(experimentCell.seats || {});
+  const skillSnapshotsBySeat = Object.fromEntries(seatKeys.map((seatKey) =>
+    [seatKey, skillSetRef(experimentCell, seatKey)]));
+  const modelSnapshotsBySeat = Object.fromEntries(seatKeys.map((seatKey) =>
+    [seatKey, snapshotRef(modelSnapshots[seatKey],
+      `model:${seatKey}`, "model-snapshot-v1")]));
+  const promptPackSnapshotsBySeat = Object.fromEntries(seatKeys.map((seatKey) =>
+    [seatKey, snapshotRef(promptPacks[seatKey],
+      `prompt-pack:${seatKey}`, "prompt-pack-v1")]));
+  const decisions = trajectory.steps.map((step) => ({
+    decisionId: `${trajectory.episodeId}:decision:${step.stepIndex + 1}`,
+    sequence: step.stepIndex + 1,
+    actingSeat: step.toPlay,
+    checkpoint: {
+      checkpointId: `${trajectory.roomId}:revision:${step.revision.before}`,
+      stateRevision: step.revision.before,
+      stateHash: step.actorInput.stateHash,
+      rngCursor: hashStarcraftTmgContract({
+        scheme: experimentCell.rng.scheme,
+        seed: experimentCell.rng.seed,
+        privateJournalSequence: step.source.privateJournalSequence,
+        preStateHash: step.actorInput.stateHash,
+      }),
+      replayRef: ref(
+        `${trajectory.roomId}:accepted:${step.source.privateJournalSequence}`,
+        step.source.receiptSchemaVersion,
+        step.outcome.journalHash,
+      ),
+    },
+    scenarioContext: scenarioContext(step, experimentCell, scalePoints),
+    observationRef: ref(
+      `${trajectory.episodeId}:observation:${step.stepIndex + 1}`,
+      step.actorInput.schemaVersion,
+      step.actorInput,
+    ),
+    legalSpaceRef: ref(
+      `${trajectory.episodeId}:legal-space:${step.stepIndex + 1}`,
+      step.actorInput.legalSpace.schemaVersion,
+      step.actorInput.legalSpaceHash,
+    ),
+    actionSpaceRef: ref(
+      `${trajectory.episodeId}:action-space:${step.stepIndex + 1}`,
+      step.actionEncoding.schemaVersion,
+      step.actionEncoding,
+    ),
+    actualAction: {
+      proposal: clone(step.action.proposal),
+      appliedAction: clone(step.action.appliedAction),
+      actionEncoding: clone(step.actionEncoding),
+    },
+    actualOutcome: {
+      events: clone(step.outcome.events),
+      postStateHash: step.outcome.postStateHash,
+      targets: clone(step.targets),
+    },
+    skillSnapshotsBySeat,
+    modelSnapshotsBySeat,
+    promptPackSnapshotsBySeat,
+    publicDecisionSummary: publicDecisionSummary(step),
+  }));
+  return createStarcraftTmgScenarioReviewEpisodeV2({
+    episodeId: trajectory.episodeId,
+    evaluationSplit: reviewContext.evaluationSplit || "development",
+    matchMode: experimentCell.mode,
+    versions: {
+      data: trajectory.versions.data.version,
+      rules: trajectory.versions.rules.version,
+      actionSpace: trajectory.versions.actionSpace.version,
+      harness: experimentCell.versions.harness,
+    },
+    rng: clone(experimentCell.rng),
+    decisions,
+    terminalEvidence: {
+      terminal: trajectory.terminal.terminal === true,
+      replayMatchesCurrent:
+        trajectory.sourceLineage.deterministicReplayMatchesCurrent === true,
+      trajectoryHash: trajectory.contentIdentity.hash,
+      finalStateHash: trajectory.sourceLineage.finalStateHash,
+      journalTailHash: trajectory.sourceLineage.journalTailHash,
+    },
+  });
+}
+
 export function createStarcraftTmgLiveMatchEvolutionExportV1(options = {}) {
   const compiler = createStarcraftTmgPlayerViewTrajectoryCompilerV1({
     authorityEngine: options.authorityEngine,
@@ -128,6 +333,8 @@ export function createStarcraftTmgLiveMatchEvolutionExportV1(options = {}) {
       rlds: exportRuntime.verifyRoundTrip(trajectory,
         exportRuntime.importRlds(rlds)),
     };
+    const reviewEpisode = buildReviewEpisode(trajectory,
+      input.experimentCell, input.reviewContext);
     const summary = deepFreeze({
       schemaVersion: STARCRAFT_TMG_LIVE_MATCH_EVOLUTION_EXPORT_VERSION,
       roomId,
@@ -160,6 +367,9 @@ export function createStarcraftTmgLiveMatchEvolutionExportV1(options = {}) {
         muzero: roundTrips.muzero.exactCanonicalParity === true,
         rlds: roundTrips.rlds.exactCanonicalParity === true,
       },
+      postgameReviewEpisodeReady: true,
+      postgameReviewEpisodeHash: reviewEpisode.hash,
+      postgameReviewDecisionCount: reviewEpisode.decisions.length,
       automaticSkillPromotion: false,
       automaticTrainingApproval: false,
       trainingTruth: false,
@@ -170,6 +380,7 @@ export function createStarcraftTmgLiveMatchEvolutionExportV1(options = {}) {
       audit,
       eligibility,
       exports: { ndjson, muzero, rlds },
+      reviewEpisode,
       roundTrips,
       trainingTruth: false,
     });
