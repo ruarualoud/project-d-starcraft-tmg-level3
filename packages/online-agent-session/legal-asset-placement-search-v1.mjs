@@ -6,6 +6,7 @@ export const STARCRAFT_TMG_LEGAL_ASSET_PLACEMENT_SEARCH_VERSION =
 
 const DEFAULT_MAX_ATTEMPTS = 1_024;
 const DEFAULT_MAX_OPTIONS = 4;
+const DEFAULT_STRATEGIC_CANDIDATE_POOL = 96;
 const DIRECTIONS = Object.freeze(Array.from({ length: 16 }, (_, index) => {
   const radians = (Math.PI * 2 * index) / 16;
   return { x: Math.cos(radians), y: Math.sin(radians) };
@@ -41,6 +42,8 @@ function tokenHalfExtents(profile) {
     ?? value.widthMilliInches);
   const milliDepth = Number(value.baseDepthMilliInches
     ?? value.depthMilliInches);
+  const inchWidth = Number(value.baseWidthInches ?? value.widthInches);
+  const inchDepth = Number(value.baseDepthInches ?? value.depthInches);
   const diameter = milliInchesFromMillimeters(value.baseDiameterMm
     ?? value.baseWidthMm ?? value.widthMillimeters);
   const width = milliInchesFromMillimeters(value.baseWidthMm
@@ -50,9 +53,11 @@ function tokenHalfExtents(profile) {
   const round = String(value.baseShape || value.shape || "round") === "round";
   return {
     x: Math.max(1, Math.round((Number.isFinite(milliWidth) && milliWidth > 0
-      ? milliWidth : round ? diameter || width : width) / 2)),
+      ? milliWidth : Number.isFinite(inchWidth) && inchWidth > 0
+        ? inchWidth * 1_000 : round ? diameter || width : width) / 2)),
     y: Math.max(1, Math.round((Number.isFinite(milliDepth) && milliDepth > 0
-      ? milliDepth : round ? diameter || depth : depth) / 2)),
+      ? milliDepth : Number.isFinite(inchDepth) && inchDepth > 0
+        ? inchDepth * 1_000 : round ? diameter || depth : depth) / 2)),
   };
 }
 
@@ -102,9 +107,14 @@ function footprintForProfile(coordinate, profile) {
 
 function modelFootprint(model) {
   const point = worldPoint(model);
-  const radius = Math.round(Math.max(Number(model?.baseWidthInches || 0),
-    Number(model?.baseDepthInches || model?.baseWidthInches || 0)) * 500);
-  return point && radius > 0 ? roundFootprint(point, radius) : null;
+  const halfWidth = Math.round(Number(model?.baseWidthInches || 0) * 500);
+  const halfDepth = Math.round(Number(model?.baseDepthInches
+    || model?.baseWidthInches || 0) * 500);
+  if (!point || halfWidth <= 0 || halfDepth <= 0) return null;
+  return new Set(["square", "rectangle", "rectangular"])
+    .has(String(model?.baseShape || "round").toLowerCase())
+    ? rectangleFootprint(point, halfWidth, halfDepth)
+    : roundFootprint(point, Math.max(halfWidth, halfDepth));
 }
 
 function existingTokenFootprint(token) {
@@ -139,6 +149,182 @@ function terrainFootprint(terrain) {
 function activePiece(piece) {
   return piece?.isOnField === true && piece?.isDestroyed !== true
     && Number(piece?.currentModels || 0) > 0;
+}
+
+function normalizedName(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function targetTagsForPlacement(state, source) {
+  if (source.effectKind !== "omega_network") return [];
+  const template = state.officialSelectedRosterAbilitySourceBundle
+    ?.omegaWormTemplate;
+  return (template?.combatTags || ["ground"]).map(normalizedName);
+}
+
+function equippedWeaponProfiles(state, piece) {
+  const equipped = new Set((piece?.equipment || []).map((entry) =>
+    normalizedName(entry.equipmentName)));
+  return (state.officialAttackProfileCatalogueV2?.profiles || [])
+    .filter((profile) => profile.recordKey === piece.officialUnitRecordKey
+      && equipped.has(normalizedName(profile.weaponName)))
+    .map((profile) => {
+      const longRange = Math.max(0, ...(profile.effects || [])
+        .map((entry) => Number(entry.parameters?.maximumRangeInches || 0)));
+      const normal = Number(profile.range?.normalRangeInches || 0);
+      return {
+        profileKey: profile.profileKey,
+        weaponName: profile.weaponName,
+        rangeMilliInches: profile.range?.kind === "engagement"
+          ? 1_000 : Math.round(Math.max(normal, longRange) * 1_000),
+        targetTags: clone(profile.targetTags || []),
+      };
+    });
+}
+
+function currentSpeedMilliInches(state, piece) {
+  const profile = state.officialActionRouteCatalogue?.units?.find((entry) =>
+    entry.pieceId === piece.id)?.movementProfile;
+  const speed = Number(piece.currentModels) === 1
+    ? Number(profile?.singleModelSpeedInches)
+    : Number(profile?.multiModelSpeedInches);
+  return Number.isFinite(speed) ? Math.round(speed * 1_000) : 0;
+}
+
+function profileCanTarget(profile, targetTags) {
+  const tags = new Set(targetTags);
+  return (profile.targetTags || []).some((tag) => {
+    const normalized = normalizedName(tag);
+    return normalized === "all" || tags.has(normalized);
+  });
+}
+
+function markerCoordinate(marker) {
+  return worldPoint(marker?.coordinate || marker);
+}
+
+function tacticalPlacementProjection(state, source, contract, candidate) {
+  const targetTags = targetTagsForPlacement(state, source);
+  if (targetTags.length < 1) return null;
+  const placedFootprint = footprintForProfile(candidate.coordinate,
+    contract.physicalProfile);
+  if (!placedFootprint) return null;
+  const relationships = [];
+  for (const enemy of (state.pieces || []).filter((entry) =>
+    activePiece(entry) && entry.sideKey !== source.sideKey)) {
+    const enemyFootprints = liveModelFootprints(enemy);
+    if (enemyFootprints.length < 1) continue;
+    const distance = Math.round(Math.min(...enemyFootprints.map((entry) =>
+      footprintGap(placedFootprint, entry))));
+    const speed = currentSpeedMilliInches(state, enemy);
+    const eligible = equippedWeaponProfiles(state, enemy).filter((profile) =>
+      profileCanTarget(profile, targetTags));
+    const stationary = eligible.filter((profile) =>
+      distance <= profile.rangeMilliInches);
+    const moving = eligible.filter((profile) =>
+      distance <= profile.rangeMilliInches + speed);
+    relationships.push({
+      targetId: `${source.sideKey}-omega-worm`,
+      enemyUnitId: enemy.id,
+      minimumBaseEdgeDistanceMilliInches: distance,
+      enemyStationaryThreatProfileCount: stationary.length,
+      enemyStationaryThreatProfileKeys: stationary.map((entry) =>
+        entry.profileKey),
+      enemyMoveThenFireProfileCount: moving.length,
+      enemyMoveThenFireProfileKeys: moving.map((entry) => entry.profileKey),
+      enemySpeedMilliInches: speed,
+      lineOfSightStatus: "not_certified_for_hypothetical_placement",
+      precision:
+        "exact_base_edge_and_printed_range;line_of_sight_and_action_availability_advisory",
+    });
+  }
+  const markers = [...(state.board?.missionMarkers || []),
+    ...(state.board?.markers || [])].filter((entry) => entry?.isRemoved !== true)
+    .map((entry) => ({ markerId: String(entry.id || ""),
+      coordinate: markerCoordinate(entry) })).filter((entry) =>
+      entry.markerId && entry.coordinate).map((entry) => ({
+      markerId: entry.markerId,
+      centerDistanceMilliInches: Math.round(pointDistance(
+        candidate.coordinate, entry.coordinate)),
+    })).sort((left, right) => left.centerDistanceMilliInches
+      - right.centerDistanceMilliInches || left.markerId.localeCompare(
+        right.markerId));
+  const stationaryCount = relationships.reduce((sum, entry) => sum
+    + entry.enemyStationaryThreatProfileCount, 0);
+  const movingCount = relationships.reduce((sum, entry) => sum
+    + entry.enemyMoveThenFireProfileCount, 0);
+  const nearestEnemy = relationships.length
+    ? Math.min(...relationships.map((entry) =>
+      entry.minimumBaseEdgeDistanceMilliInches)) : null;
+  return {
+    relationshipComparison: {
+      relationships,
+      hypotheticalPlacement: true,
+      rulesAuthority: false,
+      trainingTruth: false,
+    },
+    tacticalMetrics: {
+      incomingStationaryProfileCount: stationaryCount,
+      incomingMoveThenFireProfileCount: movingCount,
+      nearestEnemyBaseEdgeDistanceMilliInches: nearestEnemy,
+      nearestObjectiveId: markers[0]?.markerId || null,
+      nearestObjectiveCenterDistanceMilliInches:
+        markers[0]?.centerDistanceMilliInches ?? null,
+      currentStationaryExposureKnown: relationships.length > 0,
+      lineOfSightCertified: false,
+      precision:
+        "exact_base_edge_and_printed_range;line_of_sight_and_action_availability_advisory",
+      trainingTruth: false,
+    },
+  };
+}
+
+function numberOrMax(value) {
+  if (value === null || value === undefined || value === "") {
+    return Number.MAX_SAFE_INTEGER;
+  }
+  const number = Number(value);
+  return Number.isFinite(number) ? number : Number.MAX_SAFE_INTEGER;
+}
+
+export function selectStarcraftTmgStrategicAssetPlacementOptionsV1(
+  candidates = [], maximumOptions = DEFAULT_MAX_OPTIONS, preferred = null,
+) {
+  if (!Array.isArray(candidates) || candidates.length < 1) return [];
+  const limit = Math.max(1, Math.min(8, Number(maximumOptions)
+    || DEFAULT_MAX_OPTIONS));
+  const preferredDistance = (entry) => preferred
+    ? pointDistance(entry.coordinate, preferred) : 0;
+  const riskOrder = [...candidates].sort((left, right) =>
+    numberOrMax(left.tacticalMetrics?.incomingStationaryProfileCount)
+      - numberOrMax(right.tacticalMetrics?.incomingStationaryProfileCount)
+    || numberOrMax(left.tacticalMetrics?.incomingMoveThenFireProfileCount)
+      - numberOrMax(right.tacticalMetrics?.incomingMoveThenFireProfileCount)
+    || numberOrMax(right.tacticalMetrics?.nearestEnemyBaseEdgeDistanceMilliInches)
+      - numberOrMax(left.tacticalMetrics?.nearestEnemyBaseEdgeDistanceMilliInches)
+    || preferredDistance(left) - preferredDistance(right)
+    || left.placementOptionId.localeCompare(right.placementOptionId));
+  const anchorOrder = [...candidates].sort((left, right) =>
+    preferredDistance(left) - preferredDistance(right)
+      || left.placementOptionId.localeCompare(right.placementOptionId));
+  const objectiveOrder = [...candidates].sort((left, right) =>
+    numberOrMax(left.tacticalMetrics?.nearestObjectiveCenterDistanceMilliInches)
+      - numberOrMax(right.tacticalMetrics
+        ?.nearestObjectiveCenterDistanceMilliInches)
+    || left.placementOptionId.localeCompare(right.placementOptionId));
+  const selected = [];
+  const selectedIds = new Set();
+  const add = (entry, facet) => {
+    if (!entry || selected.length >= limit
+      || selectedIds.has(entry.placementOptionId)) return;
+    selectedIds.add(entry.placementOptionId);
+    selected.push({ ...entry, selectionFacet: facet });
+  };
+  add(riskOrder[0], "lowest_projected_incoming_fire");
+  add(anchorOrder[0], "closest_to_preferred_anchor");
+  add(objectiveOrder[0], "closest_to_objective");
+  for (const entry of riskOrder) add(entry, "risk_ordered_alternative");
+  return selected;
 }
 
 function liveModelFootprints(piece) {
@@ -423,14 +609,14 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
       || source.pieceId),
     paymentCardInstanceIds: payments(source),
   };
-  const options = [];
+  const candidatePool = [];
   const failureCounts = new Map();
   let attemptedCandidateCount = 0;
   let prefilteredCandidateCount = 0;
   let instantiatedCandidateCount = 0;
   for (const candidate of generated.candidates) {
     if (attemptedCandidateCount >= maximumCandidateAttempts
-      || options.length >= maximumOptions) break;
+      || candidatePool.length >= DEFAULT_STRATEGIC_CANDIDATE_POOL) break;
     attemptedCandidateCount += 1;
     const prefilterFailure = candidatePrefilterFailure(
       state, source, contract, candidate);
@@ -466,14 +652,20 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
         rulesAuthority: true,
         trainingTruth: false,
       };
-      options.push({ ...optionCore,
-        placementOptionId: hashStarcraftTmgContract(optionCore) });
+      const tactical = tacticalPlacementProjection(
+        state, source, contract, candidate) || {};
+      candidatePool.push({ ...optionCore,
+        placementOptionId: hashStarcraftTmgContract(optionCore),
+        relationshipComparison: clone(tactical.relationshipComparison || null),
+        tacticalMetrics: clone(tactical.tacticalMetrics || null) });
     } catch (error) {
       const code = String(error?.code || error?.message || error)
         .split(":")[0];
       failureCounts.set(code, Number(failureCounts.get(code) || 0) + 1);
     }
   }
+  const options = selectStarcraftTmgStrategicAssetPlacementOptionsV1(
+    candidatePool, maximumOptions, generated.preferred);
   return freeze({
     schemaVersion: STARCRAFT_TMG_LEGAL_ASSET_PLACEMENT_SEARCH_VERSION,
     domainId: domain.domainId,
@@ -495,12 +687,15 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
       exactInstantiationCount: instantiatedCandidateCount,
       maximumCandidateAttempts,
       maximumOptions,
+      strategicCandidatePoolCount: candidatePool.length,
       candidateGenerationDeterministic: true,
       cheapGeometryPrefilterOnlyRejects: true,
       everySurvivorStillRequiresExactRulesInstantiation: true,
       strategyRequestOrOptionBudgetReducedForPerformance: false,
       betterOptionMayExist:
         attemptedCandidateCount < generated.candidates.length,
+      returnedOptionsAreStrategicallyDiverse: true,
+      preferredAnchorOrderDoesNotExcludeLowerThreatOptions: true,
     },
     failureCounts: Object.fromEntries([...failureCounts.entries()]
       .sort(([left], [right]) => left.localeCompare(right))),

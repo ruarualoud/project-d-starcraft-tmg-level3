@@ -202,15 +202,18 @@ explicit, isolated slice manifests.
   The exact tool-argument gate failed before and passed once after repair with
   0 Provider calls / ¥0. Post-repair branch `20260921214904680` has now
   advanced r8→r9 with a Rules-instantiated Omega Worm at `(14000,12000)`, source
-  card exhaustion, Replay parity and a real Web screenshot. The public strategy
-  correctly keeps the already-activated Goliath out of the current Movement
-  phase and types the off-table Marine response as Deploy. One contradictory
-  threat claim was corrected before submission; all six native tool calls had
-  valid arguments, so neither grammar nor terminal-format recovery was needed
-  in the live action. Continue this exact branch one action at a time. See
+  card exhaustion, Replay parity and a real Web screenshot. Its next
+  relationship query exposed a separate strategy defect: the Worm is about
+  `17.946"` base-edge from the Goliath and inside two stationary printed-range
+  bands, contradicting the r9 “far” rationale. The r10 Planner repeated that
+  false claim across three corrections and no r10 action was applied. Asset
+  placement now returns a bounded strategic option set with per-option incoming
+  fire and objective metrics, rejects false-safe selection reasons, and makes a
+  sole fully-bound finish action deterministic at zero Provider cost. Fork from
+  r8 and regenerate r9; never resume the low-strategy r9 branch. See
   `docs/ticket-23-slice-248-terminal-tool-json-convergence-blocker-v1-2026-09-22.md`
   `docs/ticket-23-slice-248-terminal-tool-json-recovery-v1-2026-09-22.md` and
-  `docs/ticket-23-slice-248-revision-9-omega-acceptance-v1-2026-09-22.md`.
+  `docs/ticket-23-slice-248-asset-placement-threat-strategy-repair-v1-2026-09-22.md`.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -285,4 +288,8 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   units and ¥0.417534. Recent recovery work is now 59 calls, 2,751,347 units and
   ¥3.765886; including the original invalid-suffix source: 88 calls, 4,098,141
   units and ¥5.618607. No ¥100 threshold was crossed.
+- The same branch's blocked r10 Planner added 4 calls, 166,414 units and
+  ¥0.250923 without Apply. Recent recovery work is now 63 calls, 2,917,761 units
+  and ¥4.016809; including the original invalid-suffix source: 92 calls,
+  4,264,555 units and ¥5.869530. No ¥100 threshold was crossed.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.

@@ -2,19 +2,30 @@
 
 import { createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1 } from
   "../packages/online-agent-session/room-backed-spatial-rules-query-adapter-v1.mjs";
+import { searchStarcraftTmgLegalAssetPlacementOptionsV1 } from
+  "../packages/online-agent-session/legal-asset-placement-search-v1.mjs";
+import {
+  inspectStarcraftTmgFormationThreatClaimsV1,
+  resolveStarcraftTmgDeterministicSingletonActionV1,
+} from "../packages/online-agent-session/live-flash-decision-port-v1.mjs";
 
 const HASH_A = "a".repeat(64);
 const HASH_B = "b".repeat(64);
 const HASH_C = "c".repeat(64);
 
 function ensure(condition, code, details = {}) {
-  if (!condition) throw Object.assign(new Error(code), { code, ...details });
+  if (!condition) throw Object.assign(new Error(
+    `${code}:${JSON.stringify(details)}`), { code, ...details });
 }
 
 function main() {
   const state = {
     board: { widthInches: 54, heightInches: 36, tokens: [], markers: [],
       effectMarkers: [], terrain: [] },
+    officialDeploymentGeometryBinding: { entryEdgesByPlayer: { player2: {
+      segments: [{ startCoordinate: { x: 0, y: 9 },
+        endCoordinate: { x: 54, y: 9 } }],
+    } } },
     pieces: [{ id: "player2-raptor", sideKey: "player2", models: [{
       id: "player2-raptor-model-1", xInches: 36, yInches: 9,
       baseShape: "round", baseWidthInches: 1.26, baseDepthInches: 1.26,
@@ -92,10 +103,100 @@ function main() {
         return false;
       }
     }), "LEGAL_ASSET_PLACEMENT_OPTION_NOT_RULES_EXACT");
+
+    const omegaState = {
+      board: { widthInches: 54, heightInches: 36, tokens: [], markers: [],
+        effectMarkers: [], terrain: [], missionMarkers: [{ id: "marker-4",
+          xInches: 18, yInches: 12, diameterMillimeters: 32 }] },
+      officialSelectedRosterAbilitySourceBundle: { omegaWormTemplate: {
+        unitName: "Omega Worm", unitId: "omega-worm", recordKey: "omega",
+        sourceRecordHash: HASH_A, payloadHash: HASH_B, baseShape: "round",
+        baseWidthInches: 3.15, baseDepthInches: 3.15, hitPoints: 8,
+        combatTags: ["ground"],
+      } },
+      officialAttackProfileCatalogueV2: { profiles: [{
+        recordKey: "goliath", profileKey: "goliath-autocannon",
+        weaponName: "Autocannon", phase: "assault",
+        range: { kind: "normal", normalRangeInches: 18 },
+        effects: [], targetTags: ["ground"], rateOfAttack: 2, damage: 2,
+        profileHash: HASH_C,
+      }, {
+        recordKey: "goliath", profileKey: "goliath-scatter",
+        weaponName: "Scatter Missiles", phase: "assault",
+        range: { kind: "normal", normalRangeInches: 18 },
+        effects: [], targetTags: ["ground"], rateOfAttack: 2, damage: 2,
+        profileHash: HASH_B,
+      }] },
+      officialActionRouteCatalogue: { units: [{ pieceId: "player1-goliath-1",
+        movementProfile: { multiModelSpeedInches: 6,
+          singleModelSpeedInches: 6 } }] },
+      pieces: [{ id: "player2-swarmling", sideKey: "player2",
+        isOnField: true, isDestroyed: false, currentModels: 1,
+        models: [{ id: "player2-swarmling-model-1", xInches: 10, yInches: 6,
+          baseShape: "round", baseWidthInches: 1.26,
+          baseDepthInches: 1.26, isOnField: true, isDestroyed: false }] },
+      { id: "player1-goliath-1", sideKey: "player1",
+        officialUnitRecordKey: "goliath", isOnField: true,
+        isDestroyed: false, currentModels: 1, combatTags: ["ground"],
+        equipment: [{ equipmentName: "Autocannon" },
+          { equipmentName: "Scatter Missiles" }],
+        models: [{ id: "player1-goliath-1-model-1", xInches: 24,
+          yInches: 29.5, baseShape: "round", baseWidthInches: 1.57,
+          baseDepthInches: 1.57, isOnField: true, isDestroyed: false }] }],
+    };
+    const omegaDomain = {
+      domainId: "omega-domain", actionType: "use_active_ability",
+      sideKey: "player2", pieceId: "player2-swarmling",
+      effectKind: "omega_network",
+      parameterSchema: { required: ["activeUnitId", "xMilliInches",
+        "yMilliInches"], activeUnitId: { const: "player2-swarmling" },
+        groundPoint: { baseShape: "round", baseWidthInches: 3.15,
+          baseDepthInches: 3.15 } },
+    };
+    const omegaResult = searchStarcraftTmgLegalAssetPlacementOptionsV1({
+      state: omegaState, domain: omegaDomain,
+      request: { preferredAnchor: { xMilliInches: 14_000,
+        yMilliInches: 12_000 }, maximumOptions: 6 },
+      instantiate(_state, _domain, parameters) {
+        return { canonicalParameters: { activeUnitId: parameters.activeUnitId,
+          placement: { xMilliInches: parameters.xMilliInches,
+            yMilliInches: parameters.yMilliInches } },
+        action: { actionType: "use_active_ability" } };
+      },
+    });
+    const threatened = omegaResult.placementOptions.find((option) =>
+      option.coordinate.xMilliInches === 14_000
+        && option.coordinate.yMilliInches === 12_000);
+    ensure(threatened?.tacticalMetrics?.incomingStationaryProfileCount === 2,
+      "OMEGA_ANCHOR_STATIONARY_THREAT_NOT_PROJECTED", { threatened });
+    ensure(omegaResult.placementOptions.some((option) =>
+      option.tacticalMetrics?.incomingStationaryProfileCount === 0),
+    "OMEGA_SAFE_STRATEGIC_ALTERNATIVE_NOT_RETURNED", { omegaResult });
+    const contradicted = inspectStarcraftTmgFormationThreatClaimsV1({
+      raw: { selectedReason: "Place the Omega Worm far outside the Goliath's fire range." },
+      selection: { publicReason: "The Worm is safe outside enemy fire." },
+      option: threatened,
+    });
+    ensure(contradicted.contradicted === true,
+      "OMEGA_FALSE_SAFE_REASON_NOT_REJECTED", { contradicted });
+
+    const singleton = resolveStarcraftTmgDeterministicSingletonActionV1([{
+      kind: "parameterized", id: "finish-domain", proposal: null,
+      action: { actionType: "finish_activation",
+        parameterSchema: { type: "object", required: [] } },
+    }]);
+    ensure(singleton?.proposal?.kind === "parameterized"
+      && singleton.proposal.domainId === "finish-domain"
+      && Object.keys(singleton.proposal.parameters).length === 0,
+    "EMPTY_PARAMETER_FINISH_NOT_DETERMINISTIC", { singleton });
     process.stdout.write(`${JSON.stringify({
       schema: "ticket23_slice247_legal_asset_placement_options_focused_v1",
       ok: true,
       optionCount: receipt.result.optionCount,
+      omegaOptionCount: omegaResult.optionCount,
+      omegaSafeOptionCount: omegaResult.placementOptions.filter((option) =>
+        option.tacticalMetrics?.incomingStationaryProfileCount === 0).length,
+      deterministicFinish: true,
       attemptedCandidateCount: receipt.result.attemptedCandidateCount,
       providerCalls: 0,
       trainingTruth: false,

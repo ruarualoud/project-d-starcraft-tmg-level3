@@ -25,9 +25,9 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v21";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v22";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v24";
+  "starcraft_tmg_live_action_shape_normalization_v25";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -1291,7 +1291,7 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
     const first = threatClaims.contradictions[0];
     throw correctionError(
       "PLANNER_SELECTION_THREAT_CLAIM_CONTRADICTS_PROJECTION",
-      `${first.field}:${first.threatKind}`,
+      threatContradictionDetail(first),
     );
   }
   const selectedCharge = inspectStarcraftTmgChargeReachabilityV1({
@@ -1411,7 +1411,7 @@ function validateActionOutput(raw, input, planner, queryReceipts = []) {
     const first = threatClaims.contradictions[0];
     throw correctionError(
       "ACTION_SELECTION_THREAT_CLAIM_CONTRADICTS_PROJECTION",
-      `${first.field}:${first.threatKind}`,
+      threatContradictionDetail(first),
     );
   }
   const issues = [];
@@ -1547,6 +1547,23 @@ function singletonDomainParameters(domain) {
     }
   }
   return parameters;
+}
+
+export function resolveStarcraftTmgDeterministicSingletonActionV1(
+  actions = [],
+) {
+  if (!Array.isArray(actions) || actions.length !== 1) return null;
+  const selected = actions[0];
+  if (selected?.kind === "finite" && object(selected.proposal)) {
+    return freeze({ selected: clone(selected), proposal: clone(selected.proposal),
+      parameterBinding: "finite", trainingTruth: false });
+  }
+  if (selected?.kind !== "parameterized") return null;
+  const parameters = singletonDomainParameters(selected.action);
+  if (!object(parameters)) return null;
+  return freeze({ selected: clone(selected), proposal: {
+    kind: "parameterized", domainId: selected.id, parameters,
+  }, parameterBinding: "singleton_domain", trainingTruth: false });
 }
 
 function bindPlannerSelectedProposal(raw, input, planner) {
@@ -1735,6 +1752,8 @@ function claimsNoIncomingMoveThenFireThreat(fragment) {
 function currentIncomingThreatTargets(queryReceipts) {
   const stationary = new Set();
   const moveThenFire = new Set();
+  const stationaryFacts = [];
+  const moveThenFireFacts = [];
   for (const receipt of queryReceipts || []) {
     if (receipt?.queryKind !== "space.inspect_relationships"
       || !new Set(["exact", "advisory_estimate"]).has(receipt?.status)) {
@@ -1743,18 +1762,45 @@ function currentIncomingThreatTargets(queryReceipts) {
     for (const relationship of receipt?.result?.relationships || []) {
       if (!new Set(["unit_spatial_relationship", "unit_relationship"])
         .has(relationship?.edgeKind)) continue;
-      const targetId = String(relationship.toUnitId || "");
+      const targetId = String(relationship.fromUnitId || "");
+      const attackerId = String(relationship.toUnitId || "");
       if (!targetId) continue;
       const incoming = relationship.threats?.toFrom || {};
       if ((incoming.stationaryProfileKeys || []).length > 0
         || Number(relationship.fireZoneExchange
-          ?.toStationaryProfileCount || 0) > 0) stationary.add(targetId);
+          ?.toStationaryProfileCount || 0) > 0) {
+        stationary.add(targetId);
+        stationaryFacts.push({ targetId, attackerId,
+          profileKeys: clone(incoming.stationaryProfileKeys || []),
+          minimumBaseEdgeDistanceMilliInches: Number(relationship
+            .nearestPhysicalEdges?.distanceMilliInches) || null });
+      }
       if ((incoming.moveThenAttackProfileKeys || []).length > 0
         || Number(relationship.fireZoneExchange
-          ?.toMoveThenFireProfileCount || 0) > 0) moveThenFire.add(targetId);
+          ?.toMoveThenFireProfileCount || 0) > 0) {
+        moveThenFire.add(targetId);
+        moveThenFireFacts.push({ targetId, attackerId,
+          profileKeys: clone(incoming.moveThenAttackProfileKeys || []),
+          minimumBaseEdgeDistanceMilliInches: Number(relationship
+            .nearestPhysicalEdges?.distanceMilliInches) || null });
+      }
     }
   }
-  return { stationary: [...stationary], moveThenFire: [...moveThenFire] };
+  return { stationary: [...stationary], moveThenFire: [...moveThenFire],
+    stationaryFacts, moveThenFireFacts };
+}
+
+function threatContradictionDetail(contradiction = {}) {
+  const facts = (contradiction.threatFacts || []).slice(0, 4).map((entry) => {
+    const profiles = (entry.profileKeys || []).map((value) => String(value)
+      .split("::").at(-1)).join(",");
+    return `${entry.targetId || "unknown_target"}<-${entry.attackerId
+      || "unknown_attacker"}[${profiles || "profile_count_nonzero"}]@${
+      entry.minimumBaseEdgeDistanceMilliInches ?? "unknown"}`;
+  }).join(";");
+  return `${contradiction.field || "unknown_field"}:${
+    contradiction.threatKind || "unknown_threat"}:${facts || contradiction.source
+      || "projection"}`;
 }
 
 export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
@@ -1773,16 +1819,26 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
     ...(optionIncomingTargetIds.length > 0
       ? optionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
         entry.text)).map((entry) => ({ ...entry,
-        threatKind: "stationary", source: "formation_projection" })) : []),
+        threatKind: "stationary", source: "formation_projection",
+        threatFacts: (option.relationshipComparison?.relationships || [])
+          .filter((fact) => Number(
+            fact.enemyStationaryThreatProfileCount || 0) > 0)
+          .map((fact) => ({ targetId: fact.targetId,
+            attackerId: fact.enemyUnitId,
+            profileKeys: clone(fact.enemyStationaryThreatProfileKeys || []),
+            minimumBaseEdgeDistanceMilliInches:
+              fact.minimumBaseEdgeDistanceMilliInches ?? null })) })) : []),
     ...(currentThreatTargets.stationary.length > 0
       ? selectionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
         entry.text)).map((entry) => ({ ...entry,
-        threatKind: "stationary", source: "current_relationship_graph" })) : []),
+        threatKind: "stationary", source: "current_relationship_graph",
+        threatFacts: clone(currentThreatTargets.stationaryFacts) })) : []),
     ...(currentThreatTargets.moveThenFire.length > 0
       ? selectionClaims.filter((entry) => claimsNoIncomingMoveThenFireThreat(
         entry.text)).map((entry) => ({ ...entry,
         threatKind: "move_then_fire",
-        source: "current_relationship_graph" })) : []),
+        source: "current_relationship_graph",
+        threatFacts: clone(currentThreatTargets.moveThenFireFacts) })) : []),
   ];
   return freeze({
     incomingTargetIds: [...new Set([
@@ -2068,6 +2124,18 @@ function bindAssetPlacementSelection(raw, queryReceipts) {
     throw correctionError("ACTION_ASSET_PLACEMENT_SELECTION_REQUIRED",
       domainId);
   }
+  const threatClaimInspection = inspectStarcraftTmgFormationThreatClaimsV1({
+    raw: normalized,
+    selection: { ...clone(selection), publicReason },
+    option,
+  });
+  if (threatClaimInspection.contradicted) {
+    const first = threatClaimInspection.contradictions[0];
+    throw correctionError(
+      "ACTION_ASSET_PLACEMENT_THREAT_CLAIM_CONTRADICTS_PROJECTION",
+      threatContradictionDetail(first),
+    );
+  }
   normalized.proposal = {
     kind: "parameterized",
     domainId,
@@ -2078,6 +2146,9 @@ function bindAssetPlacementSelection(raw, queryReceipts) {
     placementReceiptHash: receipt.queryReceiptHash,
     coordinate: clone(option.coordinate),
     sourceCandidateKind: option.sourceCandidateKind,
+    selectionFacet: option.selectionFacet || null,
+    tacticalMetrics: clone(option.tacticalMetrics || null),
+    relationshipComparison: clone(option.relationshipComparison || null),
     publicReason: publicReason.slice(0, 1_000),
   };
   normalized.placementRationales = [
@@ -3881,7 +3952,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
         ? `Do not request ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME}, legal asset-placement options, final parameter instantiation, legal_full_path_movement, coherency_after_candidate_placement, or objective_score_after_candidate_action during Planning. Those require a selected candidate and complete Host-owned parameters. Select the best current candidate from current relationships first. For a formation action, set formationSearchRequested and provide a tacticalPurpose plus weighted formationObjectives with visible targetIds; the Host runs the spatial solver once.`
         : "Use the exact Host-supplied formation or asset-placement options for the selected candidate; do not restart a broad placement search in the Action stage.",
       `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one current stationary weapon profile covering the placed Unit; never describe that option as outside the enemy fire envelope. Read incomingStationaryFireEstimate when present: compare expected casualties, every exact legal removed-model list, lost occupied positions/formation reach, lost ranged contributors, exact current Fighting/Supporting losses, marker-by-marker control changes, probability of Supply reduction/zero, Supply freed for later deployment, VP awarded, and every exact reaction choice/cost against objective or scoring gain. Read incomingMoveThenFireEstimate too: a reachable row is a live threat even while legal path and post-move line of sight remain conditional; unknown path or line of sight is never safety or zero risk. Current Supply—not raw model count—controls marker strength. Do not default to the safest position: choose the highest expected net mission value after risk, and state why the accepted exposure is worth it. Preserve unknown probability as uncertainty and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
-      "When an exact legal_asset_placement_options receipt is present, choose exactly one placementOptionId and return assetPlacementSelection with that ID and one concise publicReason about the visible position, intended threat/objective/route effect, and plan continuity. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
+      "When an exact legal_asset_placement_options receipt is present, compare every returned option's tacticalMetrics and relationshipComparison before choosing exactly one placementOptionId. incomingStationaryProfileCount is immediate printed-range exposure; incomingMoveThenFireProfileCount is conditional future exposure; unknown hypothetical line of sight remains uncertainty, never safety. Compare the low-fire, objective, route and preferred-anchor facets instead of assuming the preferred anchor is best. Return assetPlacementSelection with that ID and one concise publicReason naming accepted exposure, objective/route effect and plan continuity. Never call an option far away, safe, outside fire or unthreatened when its selected relationshipComparison reports incoming profiles. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
       "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists and preserve every applicable effectContract fact, including sourceText, targetKind, resultKind/resultAssetKind, immediateEffect, ongoingEffect and delayedEffect. forbiddenSubstitution states what this action is not. You may compare or reject another ability, but never describe that other ability or another effect family as the action being selected, activated, used or placed.",
       "Treat selectedActionResourceContract and resourceCostsByChoice as Rules-owned. State every nonzero effective resource cost accurately. Never call a positive BM, CP or PE cost zero, free, or unspent; Supply is a separate contract.",
       "Treat strategicImmediateValue as Rules-derived current value. A zero-benefit heal is not productive merely because its printed resource cost is zero: source-card exhaustion and forfeited alternatives remain real costs.",
@@ -5904,25 +5975,28 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         return freeze({ ...clone(choice.completedDecision), ok: true,
           idempotentReplay: true, choiceKey: choice.choiceKey });
       }
-      const forcedFinite = choice.actionIndex.length === 1
-        && choice.actionIndex[0].kind === "finite"
-        ? choice.actionIndex[0] : null;
-      if (forcedFinite) {
-        const actionType = forcedFinite.action?.actionType || "rules continuation";
+      const forcedSingleton =
+        resolveStarcraftTmgDeterministicSingletonActionV1(choice.actionIndex);
+      if (forcedSingleton) {
+        const actionType = forcedSingleton.selected.action?.actionType
+          || "rules continuation";
         const decision = normalizeDecision({
-          proposal: clone(forcedFinite.proposal),
+          proposal: clone(forcedSingleton.proposal),
           selectedReason:
-            `Rules exposes exactly one finite continuation (${actionType}); no strategic model choice exists.`,
+            `Rules exposes exactly one fully bound continuation (${actionType}); no strategic model choice exists.`,
           scoreOrPositionValue:
             "Preserves the authoritative lifecycle and reaches the next real decision point.",
           risk: "No alternative current legal action exists.",
           publicDecisionSummary: {
-            visibleFacts: ["Current ActionSpace contains one finite action and no parameter domain."],
+            visibleFacts: [
+              "Current ActionSpace contains one action and every required parameter has exactly one Rules-owned value.",
+            ],
             plan: "Advance the Rules-owned lifecycle without spending a model call.",
           },
         }, input, match, [], freeze({
           ...clone(providerTrace(match, choice, [])),
           deterministicHostStep: true,
+          deterministicParameterBinding: forcedSingleton.parameterBinding,
           providerCalls: 0,
           paidProviderUsed: false,
         }));

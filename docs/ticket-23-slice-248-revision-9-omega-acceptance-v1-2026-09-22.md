@@ -1,6 +1,6 @@
 # Ticket 23 / Slice 248 — revision 9 Omega acceptance
 
-## Result
+## Result (Authority-valid; strategy superseded)
 
 The post-repair fixed-roster Standard-2000 A-A branch
 `20260921214904680` advanced from revision 8 to revision 9. The accepted action
@@ -23,6 +23,15 @@ that the already-activated Goliath can move again in the current Movement phase.
 Its Goliath move is explicitly later-phase/round and its off-table Marine
 hypothesis is typed as `deploy`. One selection-threat contradiction was caught
 and corrected before submission.
+
+Later relationship evidence found a strategy defect not visible in the original
+placement receipt: the placed Worm is about `17.946"` base-edge from the
+Goliath and inside Autocannon and Scatter Missiles stationary printed-range
+bands. The action remains legal and Replay-equal, but its “far from the
+Goliath” reason and plan memory are non-training evidence. Formal continuation
+must fork from r8 and regenerate this placement with the threat-aware option
+contract documented in
+`ticket-23-slice-248-asset-placement-threat-strategy-repair-v1-2026-09-22.md`.
 
 ## Structured-output evidence
 
@@ -49,6 +58,5 @@ This one-action branch used 6 calls, 305,276 reported units and an estimated
 `¥3.765886`; including the original invalid-suffix source, 88 calls, 4,098,141
 units and `¥5.618607`. No `¥100` notification boundary was crossed.
 
-The checkpoint is not training truth and is not automatically promoted. The
-next operation resumes this exact branch for one additional action so strategy
-quality can be inspected before further continuation.
+The checkpoint is not training truth and is not automatically promoted. It is
+retained as the concrete low-strategy regression case and is not resumed.
