@@ -79,10 +79,12 @@ explicit, isolated slice manifests.
    production PostgreSQL adapters implement one encrypted persistence port;
    SQLite checkpoint/restore and restart passed the focused gate, and durable
    construction rejects missing or malformed managed keys instead of silently
-   accepting an ephemeral key. K3 is implementing the isolated six-companion
-   Web/App roster, Tavern-equivalent capability, floating product surface,
-   committed SC1-style dynamic portrait binding and its own browser acceptance;
-   image generation remains isolated in image sub-agents. Slice 266-E now binds durable companion
+   accepting an ephemeral key. K3 completed and self-verified the isolated
+   six-companion Web/App roster (`18/18` browser checks), and now owns Slice
+   266-C for the stale Character package binding, Tavern-equivalent capability,
+   floating product surface, committed SC1-style dynamic portrait binding and
+   its own browser acceptance; image generation remains isolated in image
+   sub-agents. Slice 266-E now binds durable companion
    conversations to the authenticated Room seat/principal/MatchBinding, supports
    1–6 ordered companion replies and session-isolated checkpoint restore, and
    never grants Room mutation. The remaining companion product work stays
@@ -102,6 +104,17 @@ explicit, isolated slice manifests.
    without storing hidden chain-of-thought or auto-promoting a Skill.
 8. Ticket 14 / Slice 143: run the deferred APK acceptance when a real Android
    device is available.
+
+## Current formal match
+
+- Ticket 23 / Slice 248 optimized Standard-2000 A-A run
+  `20260921173620519` is checkpointed at revision/action 6. It has 2/2
+  Agent-selected formations with public reasons and Apply/Replay parity, 20
+  Provider calls, 967,898 reported units and ¥1.338574. Zerg's first Swarmling
+  placement explicitly recognized both Goliath move-then-fire bands instead of
+  treating current out-of-range as safety. Attack probability/fire-zone
+  receipts and prediction calibration are not yet applicable/observed because
+  the match has only just completed the first deployment on each side.
 
 Tickets 19–22 and Ticket 20 Slices 193–195 retain their focused closure; final
 synthesis indexes later evidence without rerunning unrelated passed gates.

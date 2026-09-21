@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "id": "ticket-26-slice-266c-companion-product-binding",
+  "githubIssue": null,
+  "title": "Close live companion package binding, room chat and floating product journey",
+  "owner": "kimi",
+  "agentProfile": "project-d-slice-implementer",
+  "model": "project-d-k3-256k",
+  "baseRef": "e5ab22f",
+  "branch": "agent/kimi/ticket-26-slice-266c-companion-product-binding",
+  "worktree": ".worktrees/ticket-26-slice-266c-companion-product-binding",
+  "allowedPaths": [
+    "packages/client-domain/character-presentation-projection-v2.mjs",
+    "packages/client-domain/client-domain-v1.mjs",
+    "packages/product-composition/companion-room-session-service-v1.mjs",
+    "packages/product-composition/companion-product-module-v1.mjs",
+    "packages/product-composition/index.mjs",
+    "packages/companion-backend-module-v1/",
+    "apps/starcraft-tmg-expo/lib/level3/client-domain-provider.tsx",
+    "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+    "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+    "apps/starcraft-tmg-expo/components/character/companion-catalogue-content.d.ts",
+    "scripts/support/ticket20-human-agent-demo-fixture-v1.mjs",
+    "scripts/verify-ticket-26-slice-266c-companion-product-binding-v1.mjs",
+    "docs/ticket-26-slice-266c-companion-product-binding-v1-2026-09-22.md"
+  ],
+  "verification": [
+    {
+      "name": "character projection stale-pin regression and room-service binding",
+      "command": "corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec vitest run lib/level3/__tests__/character-presentation-mount-v2.test.tsx"
+    },
+    {
+      "name": "live floating companion product browser journey",
+      "command": "node scripts/verify-ticket-26-slice-266c-companion-product-binding-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Own the remaining Ticket 26 companion product path in this isolated worktree; do not modify Rules, Authority, battle actions, source data or strategy/replay code. First diagnose and remove CHARACTER_PACKAGE_HASH_PIN_STALE without weakening fail-closed integrity: replace brittle hand-updated package/catalogue constants with one versioned, registry-derived binding contract that validates the exact current sealed CharacterPackage, persona catalogue, selector, visual manifest and room/seat/principal scope. Old versioned projections remain readable only through an explicit legacy path; no silent compatibility. Then connect the existing createStarcraftTmgCompanionRoomSessionServiceV1 to the product through a narrow companion product module and Client Domain entry point. The Web/App floating Tactical Adjutant must open or resume a conversation for the authenticated human seat, select 1..6 registered companions, show deterministic speaker order and mentions, send a user turn, continue an interrupted provider turn explicitly, checkpoint/resume/close, and render persisted transcript, memory/relationship summaries and explicit Provider/BYOK unavailable/error states. It must never persist seat tokens, expose opponent-private plan/memory, request/store hidden chain-of-thought, fabricate a model reply, or gain Preview/Confirm/Apply authority. Keep all companion work isolated from the strategy/replay mainline. Use the existing injected provider port in the browser fixture to prove a complete two-companion user→A→B cycle, reload/resume, checkpoint isolation, wrong-seat rejection, zero Room mutations, and real portrait pixels at desktop and 390px. Do not call a paid Provider or refresh sources. Fix the stale hash failure so the existing component contract passes; do not allowlist or hide it. Build a current Web export inside the browser verifier only when stale. Record screenshots, claim-to-pixel/interaction receipts, exact changed files and remaining gaps. Run each declared gate once after the final relevant code change; only Critical/High block; stop after three non-converging repair rounds. Make scoped local commits and do not push."
+}

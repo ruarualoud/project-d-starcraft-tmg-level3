@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "id": "ticket-26-slice-266b-companion-roster-ui",
+  "githubIssue": null,
+  "title": "Bind the six-companion roster, real portrait states and extensible Tavern catalogue UI",
+  "owner": "kimi",
+  "agentProfile": "project-d-ui-lead",
+  "model": "project-d-k3",
+  "baseRef": "592bb95bd7018adfd74a9aee76b5bf99bd4c56e9",
+  "branch": "agent/kimi/ticket-26-slice-266b-companion-roster-ui",
+  "worktree": ".worktrees/ticket-26-slice-266b-companion-roster-ui",
+  "allowedPaths": [
+    "content/characters/",
+    "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+    "apps/starcraft-tmg-expo/components/character/companion-catalogue-content.d.ts",
+    "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+    "apps/starcraft-tmg-expo/lib/level3/companion-portrait-assets-v1.ts",
+    "scripts/verify-ticket-26-slice-266b-companion-roster-browser-v1.mjs",
+    "docs/ticket-26-slice-266b-companion-roster-ui-v1-2026-09-22.md"
+  ],
+  "verification": [
+    {
+      "name": "focused companion component contract",
+      "command": "corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec vitest run lib/level3/__tests__/character-presentation-mount-v2.test.tsx"
+    },
+    {
+      "name": "six-companion real-browser journey and screenshots",
+      "command": "node scripts/verify-ticket-26-slice-266b-companion-roster-browser-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Continue Ticket 26 without changing Rules, Authority, room actions, Provider execution, persistence implementation or source data. Build the complete extensible six-companion presentation roster requested by the user: Zerg Kerrigan + Zagara, Terran Raynor + Nova, Protoss Artanis + Zeratul. Start by reading the existing Raynor/Artanis packs, companion catalogue, portrait contracts, K3 guardrails and the three visual-audit documents for the admitted assets. Add data-driven Nova, Zagara and Zeratul companion packs using only repository-local canon/source summaries; clearly separate canon facts from Project D role configuration and never claim official rules authority. Keep Kerrigan's existing backend-bound eight-era pack as the default companion and do not duplicate or weaken it. The catalogue must be registration/data-driven so a seventh pack can be added without editing UI control flow. Bind actual committed portrait assets for all available six-state sets: Raynor/Nova v1; Artanis/Zeratul/Zagara admitted idle-v2 plus v3 states; Kerrigan uses the existing approved dynamic portrait contract and must label any shared/missing state honestly. Render real Image assets in the catalogue and floating companion UI with aspect-preserving crop/contain, no stretching, safe 96px recognition, explicit state controls and reduced-motion behavior. Do not treat the six static semantic states as one continuous animation; the audit says continuous animation is not yet proven. Update stale UI copy: the generic backend now supports worldbook triggers, layered memory, observed relationship state, multi-speaker turn ownership, branches, checkpoint/resume, import/export, audit/replay and external Provider ports, but the current product room binding/persistence adapter remains Codex-owned and must be shown as pending rather than falsely supported in this UI. Never fabricate a local chat, fake durability or model response. Preserve the StarCraft-style responsive floating window, touch/keyboard reachability and battlefield safe region. Create a focused real-browser journey that opens the companion catalogue, proves all six identities, switches at least one state for each character that has admitted assets, verifies actual image pixels (not glyph placeholders), checks 390px and desktop containment/no horizontal overflow, and records screenshots plus a claim-to-pixel report. No Provider calls, no network, no source refresh, no training truth. Run each declared focused gate once after the relevant final code change; only Critical/High block; stop after at most three repair cycles. Make scoped local commits and do not push."
+}
