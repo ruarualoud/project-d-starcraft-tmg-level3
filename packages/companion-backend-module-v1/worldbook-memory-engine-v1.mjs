@@ -309,7 +309,7 @@ export function createCompanionMemoryEngine(options = {}) {
   if (!object(options)) fail(COMPANION_BACKEND_CB2_ERROR_CODES.MEMORY_RECORD_INVALID, "memory engine options must be an object");
   if (options.persistence === undefined || options.persistence === null) {
     fail(COMPANION_BACKEND_ERROR_CODES.DEPENDENCY_MISSING,
-      "companion memory engine requires an injected persistence port; durable adapters are a later Codex integration",
+      "companion memory engine requires an injected persistence port",
       { missing: ["persistence"] });
   }
   const persistence = assertCompanionPersistencePort(options.persistence);
@@ -400,6 +400,55 @@ export function createCompanionMemoryEngine(options = {}) {
     log.sort((left, right) => left.sequence - right.sequence);
     const limited = options.limit === undefined ? log : log.slice(-safeInteger(options.limit, "limit", 1, 100000, COMPANION_BACKEND_CB2_ERROR_CODES.MEMORY_RECORD_INVALID));
     return deepFreeze(limited);
+  }
+
+  // Session-scoped checkpoint recovery uses this exact replacement primitive
+  // instead of restoring an entire shared persistence database.
+  async function replaceTranscript(scope, entries) {
+    const sc = normalizeCompanionScope(scope);
+    if (!Array.isArray(entries)) {
+      fail(COMPANION_BACKEND_CB2_ERROR_CODES.MEMORY_RECORD_INVALID,
+        "replacement transcript must be an array");
+    }
+    const normalized = entries.map((entry, index) => {
+      if (!object(entry)) {
+        fail(COMPANION_BACKEND_CB2_ERROR_CODES.MEMORY_RECORD_INVALID,
+          `replacement transcript[${index}] must be an object`);
+      }
+      assertNoHiddenChainOfThought(entry, `replacementTranscript[${index}]`);
+      assertNoCredentials(entry, `replacementTranscript[${index}]`);
+      if (typeof entry.content !== "string") {
+        fail(COMPANION_BACKEND_CB2_ERROR_CODES.MEMORY_RECORD_INVALID,
+          `replacementTranscript[${index}].content must be a string`);
+      }
+      return {
+        sequence: safeInteger(entry.sequence, `replacementTranscript[${index}].sequence`,
+          1, Number.MAX_SAFE_INTEGER,
+          COMPANION_BACKEND_CB2_ERROR_CODES.MEMORY_RECORD_INVALID),
+        speakerId: requiredString(entry.speakerId,
+          `replacementTranscript[${index}].speakerId`),
+        kind: requiredString(entry.kind || "message",
+          `replacementTranscript[${index}].kind`),
+        content: entry.content,
+        receipts: Array.isArray(entry.receipts) ? clone(entry.receipts) : [],
+      };
+    });
+    for (const [index, entry] of normalized.entries()) {
+      if (index > 0 && entry.sequence <= normalized[index - 1].sequence) {
+        fail(COMPANION_BACKEND_CB2_ERROR_CODES.MEMORY_RECORD_INVALID,
+          "replacement transcript sequence must be strictly increasing");
+      }
+    }
+    await persistence.put(layerNamespace("transcript", sc.scopeKey), "log", {
+      entries: normalized,
+    });
+    return deepFreeze({
+      ok: true,
+      layer: "transcript",
+      entryCount: normalized.length,
+      transcriptHash: hashStarcraftTmgContract(normalized),
+      scopeKey: sc.scopeKey,
+    });
   }
 
   async function writeRollingSummary(scope, summary = {}) {
@@ -873,6 +922,7 @@ export function createCompanionMemoryEngine(options = {}) {
     readCanon,
     appendTranscript,
     readTranscript,
+    replaceTranscript,
     writeRollingSummary,
     readRollingSummary,
     addEpisodicFact,

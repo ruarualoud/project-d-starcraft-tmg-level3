@@ -81,8 +81,11 @@ explicit, isolated slice manifests.
    construction rejects missing or malformed managed keys instead of silently
    accepting an ephemeral key. K3 is implementing the isolated six-companion
    Web/App roster and real committed portrait binding; image generation remains
-   isolated in image sub-agents. Codex next owns product room/seat/provider
-   binding and real floating-Web acceptance. Final acceptance still requires
+   isolated in image sub-agents. Slice 266-E now binds durable companion
+   conversations to the authenticated Room seat/principal/MatchBinding, supports
+   1–6 ordered companion replies and session-isolated checkpoint restore, and
+   never grants Room mutation. Codex next owns HTTP/Client Domain wiring and
+   real floating-Web acceptance. Final acceptance still requires
    Tavern-equivalent cards/world books, layered long-term memory and
    relationship state, resumable long-running roleplay, multiple companions in
    one conversation, and no exposure of opponent-private agent state.

@@ -26,8 +26,9 @@ import {
 //   mutates any accepted turn. There is no API that rewrites accepted turns.
 // - Long-session resume: sessions live entirely in the injected persistence
 //   port, so a fresh runtime resumes from the latest state or from a recorded
-//   persistence checkpoint. Resume re-verifies the hash chain and the recorded
-//   history hash and fails closed on any mismatch.
+//   session-scoped snapshot. Restoring one conversation never rolls back any
+//   other conversation sharing the adapter. Resume re-verifies the hash chain
+//   and the recorded history/transcript hashes and fails closed on mismatch.
 // - Player-seat / observer / review permission isolation: a human-seat
 //   companion may read only player-visible state and same-seat public
 //   plan/memory; observer defaults off (observer_public only); review mode is
@@ -202,14 +203,21 @@ export function createCompanionSessionRuntime(options = {}) {
   }
   const persistence = assertCompanionPersistencePort(options.persistence);
   const memoryEngine = options.memoryEngine;
-  if (typeof memoryEngine.appendTranscript !== "function" || typeof memoryEngine.readTranscript !== "function") {
+  if (typeof memoryEngine.appendTranscript !== "function"
+    || typeof memoryEngine.readTranscript !== "function"
+    || typeof memoryEngine.replaceTranscript !== "function") {
     fail(COMPANION_BACKEND_ERROR_CODES.DEPENDENCY_MISSING,
       "injected memory engine does not expose the CB-2 transcript contract",
-      { missing: ["memoryEngine.appendTranscript", "memoryEngine.readTranscript"] });
+      { missing: [
+        "memoryEngine.appendTranscript",
+        "memoryEngine.readTranscript",
+        "memoryEngine.replaceTranscript",
+      ] });
   }
   const prefix = String(options.namespacePrefix || "cb3").trim() || "cb3";
   const sessionNamespace = `${prefix}.session`;
   const indexNamespace = `${prefix}.session-index`;
+  const checkpointNamespace = `${prefix}.session-checkpoint`;
 
   const stateKey = (sessionId) => `state::${sessionId}`;
 
@@ -709,20 +717,36 @@ export function createCompanionSessionRuntime(options = {}) {
   async function checkpointSession(sessionId, label = "") {
     const state = await loadState(sessionId);
     ensureActive(state);
-    const persistenceCheckpoint = await persistence.checkpoint(`session:${state.sessionId}:${String(label || "")}`);
     const acceptedHistoryHash = computeHistoryHash(state);
     const checkpointId = `sessckpt-${state.checkpoints.length + 1}-${acceptedHistoryHash.slice(0, 12)}`;
     const record = {
       checkpointId,
       label: String(label || ""),
-      persistenceCheckpointId: persistenceCheckpoint.checkpointId,
-      persistenceContentHash: persistenceCheckpoint.contentHash,
+      storage: "session_scoped_state_and_transcript_v2",
       turnSequence: state.turnCounter,
       acceptedHistoryHash,
     };
     state.checkpoints.push(record);
+    const transcript = await memoryEngine.readTranscript(state.memoryScope);
+    const unsignedSnapshot = {
+      schemaVersion: `${COMPANION_BACKEND_CONTRACT_VERSION}.session-checkpoint-snapshot-v2`,
+      sessionId: state.sessionId,
+      checkpointId,
+      state: clone(state),
+      transcript: clone(transcript),
+      transcriptHash: hashStarcraftTmgContract(transcript),
+    };
+    const snapshot = {
+      ...unsignedSnapshot,
+      contentHash: hashStarcraftTmgContract(unsignedSnapshot),
+    };
+    await persistence.put(checkpointNamespace, `${state.sessionId}::${checkpointId}`, snapshot);
     await saveState(state);
-    return deepFreeze({ ok: true, sessionId: state.sessionId, checkpoint: clone(record) });
+    return deepFreeze({
+      ok: true,
+      sessionId: state.sessionId,
+      checkpoint: { ...clone(record), contentHash: snapshot.contentHash },
+    });
   }
 
   async function listCheckpoints(sessionId) {
@@ -732,9 +756,9 @@ export function createCompanionSessionRuntime(options = {}) {
 
   // Long-session resume. Without a checkpoint id this rehydrates the latest
   // persisted state (crash resume on a fresh runtime). With a checkpoint id it
-  // restores the persistence snapshot recorded at that checkpoint — later
-  // turns and branches roll back with it — then re-verifies the hash chain
-  // and the recorded history hash before allowing any further turn.
+  // restores only this session's state/transcript snapshot — later turns and
+  // branches roll back with it while every other session remains untouched —
+  // then re-verifies the recorded hashes before allowing any further turn.
   async function resumeSession(sessionId, options = {}) {
     if (options.checkpointId !== undefined && options.checkpointId !== null) {
       const checkpointId = requiredString(options.checkpointId, "checkpointId", CB3.CHECKPOINT_NOT_FOUND);
@@ -743,19 +767,39 @@ export function createCompanionSessionRuntime(options = {}) {
       if (!record) {
         fail(CB3.CHECKPOINT_NOT_FOUND, `session checkpoint not found: ${checkpointId}`, { sessionId: current.sessionId, checkpointId });
       }
-      const restored = await persistence.restore(record.persistenceCheckpointId);
-      if (!restored.ok) {
+      const stored = await persistence.get(
+        checkpointNamespace,
+        `${current.sessionId}::${checkpointId}`,
+      );
+      if (!stored.found) {
         fail(CB3.CHECKPOINT_NOT_FOUND,
-          `persistence checkpoint is unavailable: ${record.persistenceCheckpointId}`,
-          { sessionId: current.sessionId, checkpointId, reason: restored.reason });
+          `session checkpoint snapshot is unavailable: ${checkpointId}`,
+          { sessionId: current.sessionId, checkpointId });
       }
-      const state = await loadState(sessionId);
+      const snapshot = clone(stored.value);
+      const { contentHash, ...unsignedSnapshot } = snapshot || {};
+      if (!object(snapshot)
+        || snapshot.schemaVersion !== `${COMPANION_BACKEND_CONTRACT_VERSION}.session-checkpoint-snapshot-v2`
+        || snapshot.sessionId !== current.sessionId
+        || snapshot.checkpointId !== checkpointId
+        || contentHash !== hashStarcraftTmgContract(unsignedSnapshot)
+        || snapshot.transcriptHash !== hashStarcraftTmgContract(snapshot.transcript)) {
+        fail(COMPANION_BACKEND_CB3_ERROR_CODES.SESSION_INTEGRITY_MISMATCH,
+          `session checkpoint snapshot integrity mismatch: ${checkpointId}`,
+          { sessionId: current.sessionId, checkpointId });
+      }
+      const state = clone(snapshot.state);
       verifyHistoryIntegrity(state);
       if (state.turnCounter !== record.turnSequence || computeHistoryHash(state) !== record.acceptedHistoryHash) {
         fail(COMPANION_BACKEND_CB3_ERROR_CODES.SESSION_INTEGRITY_MISMATCH,
           "restored session does not match the recorded checkpoint history",
           { sessionId: state.sessionId, checkpointId });
       }
+      // Transcript first, state last. A crash between these writes can be
+      // repaired by repeating this explicit restore from the immutable
+      // session snapshot; no unrelated session is ever rolled back.
+      await memoryEngine.replaceTranscript(state.memoryScope, snapshot.transcript);
+      await saveState(state);
       return deepFreeze({
         ok: true,
         sessionId: state.sessionId,
