@@ -115,12 +115,39 @@ non-converging rounds.
 
 ## 5. Implementation log (filled as sub-slices complete)
 
-_(pending)_
+| SS | Commit | Files | Summary |
+| --- | --- | --- | --- |
+| SS-1 | `3673ebe` | `hooks/use-responsive-layout.ts`, `components/ui/command-primitives.tsx`, this doc | Plan frozen; responsive breakpoint hook and shared command primitives (header, pill tabs, panel card, status pill, section disclosure) added; no screen rewired. |
+| SS-2 | `ae47394` | `app/(tabs)/_layout.tsx` | Narrow Web (<720dp) collapses to a compact icon-only top rail and drops the truncating header; wide Web keeps beside-icon labels; native bottom bar unchanged; calculator icon for Tools; per-tab accessibility labels. |
+| SS-3 | `ea322fd` | `app/(tabs)/index.tsx` | Back breadcrumb (44dp) on unit/card/mission detail views, HP/ARM/SPD identity chips on unit rows from existing catalogue data, 920dp readable column on desktop Web. |
+| SS-4 | `bf592e5` | `app/(tabs)/army.tsx` | Command-tab faction/tactical/mission/deployment lists are collapsible sections with live counts and selection summaries, defaulting open along build order; all selection/import/share/legality/save flows unchanged. |
+| SS-5 | `6e9072b` | `app/(tabs)/match.tsx`, `components/battlefield/authoritative-battle-workspace.tsx` | Battle Room surfaces use the shared scrollable pill tab bar. Workspace: viewport controls split from display-layer toggles; threat toggle moved out of the audio card into the display group; desktop board 500→560dp; on phone/tablet column layouts the Unit/Actions/Threat/Status/Markers/Referee panel renders directly below the board with the media card and accessible model list after it. All testIDs, glyph ids and dispatch flows unchanged. Plan-note adjustment: instead of removing the page ScrollView (which would have made overflow content unreachable on short desktop viewports), table focus is achieved by pane reorder and control grouping; recorded here for traceability. |
+| SS-6 | `30e5955` | `app/(tabs)/tools.tsx`, `app/(tabs)/settings.tsx` | Tools tab strip scrolls horizontally below 560dp; roster tab uses the existing `rosterAnalysis` i18n key; Settings gains a chip quick-nav scrolling to Adjutant/language/source/migration/notice anchors. |
+| repair | `88af6b1` | `lib/level3/__tests__/battlefield-presentation-v1.test.ts` | Repinned the stale Slice-132 board expectation to the current Ticket-23 map-manifest projection contract (verbatim projection dump). Battlefield suite 7/7. See receipts. |
+
+Changed files (all under allowed paths): the seven rows above; no other files touched. No Client Domain, Rules, Authority, room, Provider, memory, source-data or API contract was modified; `git diff 5776b30 --stat` covers only the files listed.
 
 ## 6. Verification receipts
 
-_(pending)_
+Profile policy: `selfVerificationByImplementer: true`; each named gate run at most once after the last relevant code change, with at most one rerun after repair.
+
+1. **Expo frontend TypeScript contract**
+   - Command: `corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec tsc --noEmit`
+   - Run after the last SS-1..SS-6 code change (dependencies installed once via `pnpm install --frozen-lockfile --prefer-offline`; offline store reuse only, no lockfile change).
+   - Environment note: the first invocation was refused by corepack before executing tsc because the repository root `package.json` pins `packageManager: npm@11.9.0`; the gate was executed with `COREPACK_ENABLE_PROJECT_SPEC=0` so the named pnpm 9.12.0 toolchain ran unchanged.
+   - Result: **exit 0, zero diagnostics**. Covers SS-1 through SS-6 (all TypeScript/TSX changed paths).
+
+2. **Focused navigation and character presentation components**
+   - Command: `corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec vitest run lib/level3/__tests__/battlefield-presentation-v1.test.ts lib/level3/__tests__/character-presentation-mount-v2.test.tsx`
+   - First run (after SS-6, before any repair): **exit 1** — two pre-existing base failures, neither caused by this slice (diff vs base touches neither `lib/level3` nor `packages/`):
+     a. `battlefield-presentation-v1.test.ts` board assertion stale since `045933b` (Ticket 23 map-manifest extension added `visualPresetId`/`visualPresetName`, full map identity and freeze-hash fields; `displayMapAssetKey` moved `alien_temple_local_v1` → `sc1_lost_temple_v1`).
+     b. `character-presentation-mount-v2.test.tsx` fails collection: `packages/authoritative-engine/transition-v1.mjs` imports `../../../scripts/starcraft-tmg-rules-v0.mjs`, a legacy rules adapter input that is absent from this repository snapshot (not present at base commit `5776b30`, no git history, not git-ignored, no vendored copy). That path is outside this slice's allowed paths and is marked a read-only adapter input owned by the parent environment.
+   - Repair round 1 (in-scope half only): repinned the board expectation verbatim from a direct projection dump (`88af6b1`).
+   - Rerun (the one permitted rerun): **exit 1** — `battlefield-presentation-v1.test.ts` **7/7 passed**; `character-presentation-mount-v2.test.tsx` still fails collection with the identical out-of-scope missing-file error. Per policy, repair stopped: the remaining cause is not a frontend path this slice may edit (second non-converging round would be a no-op).
 
 ## 7. Unresolved Critical/High concerns
 
-_(pending)_
+- **High (environment/integration, out of slice scope):** the character-presentation half of the named vitest gate cannot collect in this repository snapshot because `scripts/starcraft-tmg-rules-v0.mjs` (legacy rules adapter providing `applyStarcraftTmgAction`, `enumerateStarcraftTmgLegalActions`, `normalizeStarcraftTmgState` to `packages/authoritative-engine/transition-v1.mjs`) is missing at base commit `5776b30` and lies outside the allowed paths. Codex/integration must restore that adapter input (or adjust the mount) before the combined gate can go green. My character components and the floating dock were not modified, and the battlefield half of the gate is green 7/7.
+- No Critical/High concerns within the changed frontend files themselves: no capability removed, no testID/contract changed, reduced-motion and accessibility wiring untouched, all presentation remains non-authoritative.
+
+Closure: 7 scoped local commits on `agent/kimi/ticket-20-slices-193-195-frontend-lead` (`3673ebe`, `ae47394`, `ea322fd`, `bf592e5`, `6e9072b`, `30e5955`, `88af6b1`, plus this document's closure commit). Not pushed, per instructions.
