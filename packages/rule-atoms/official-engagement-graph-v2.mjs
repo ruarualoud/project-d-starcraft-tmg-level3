@@ -228,6 +228,79 @@ function elevationForSupportTerrainIds(supportTerrainIds, terrainById) {
   return "ground";
 }
 
+export function deriveOfficialModelSurfacePlacementV2(state, request = {}) {
+  const pieceId = String(request.pieceId || "").trim();
+  const modelId = String(request.modelId || "").trim();
+  const piece = (state?.pieces || []).find((entry) => entry.id === pieceId);
+  const model = piece?.models?.find((entry) => entry.id === modelId);
+  const combatTag = String(piece?.combatTag || "").trim().toLowerCase();
+  if (!piece || !model || !["ground", "flying"].includes(combatTag)) {
+    fail("ENGAGEMENT_V2_MODEL_POSITION_REQUIRED", modelId || pieceId || "missing_id");
+  }
+  const baseShape = String(model.baseShape || "").trim().toLowerCase();
+  const baseWidth = milli(model.baseWidthInches,
+    "ENGAGEMENT_V2_BASE_GEOMETRY_REQUIRED", modelId);
+  const baseDepth = milli(model.baseDepthInches,
+    "ENGAGEMENT_V2_BASE_GEOMETRY_REQUIRED", modelId);
+  if (!new Set(["round", "rectangle"]).has(baseShape)
+    || baseWidth <= 0 || baseDepth <= 0
+    || (baseShape === "round" && Math.abs(baseWidth - baseDepth) > 1)) {
+    fail("ENGAGEMENT_V2_BASE_UNSUPPORTED", modelId);
+  }
+  const modelFootprint = createOfficialPhysicalFootprintV1({
+    objectId: modelId,
+    kind: "model_base",
+    shape: baseShape,
+    center: {
+      xMilliInches: milli(model.xInches,
+        "ENGAGEMENT_V2_MODEL_POSITION_REQUIRED", modelId),
+      yMilliInches: milli(model.yInches,
+        "ENGAGEMENT_V2_MODEL_POSITION_REQUIRED", modelId),
+    },
+    widthMilliInches: baseWidth,
+    depthMilliInches: baseDepth,
+    rotationDegrees: model.baseRotationDegrees ?? model.rotationDegrees ?? 0,
+  });
+  const boardWidth = milli(state?.board?.widthInches,
+    "ENGAGEMENT_V2_BOARD_INVALID", "width");
+  const boardHeight = milli(state?.board?.heightInches,
+    "ENGAGEMENT_V2_BOARD_INVALID", "height");
+  if (!isOfficialPhysicalFootprintInsideBoardV1({
+    footprint: modelFootprint,
+    widthMilliInches: boardWidth,
+    heightMilliInches: boardHeight,
+  })) fail("ENGAGEMENT_V2_MODEL_OUTSIDE_BOARD", modelId);
+  const terrain = normalizeTerrain(state.board);
+  const terrainById = new Map(terrain.map((entry) => [entry.terrainId, entry]));
+  const accessPoints = normalizeAccessPoints(state.board, terrainById);
+  const supportTerrainIds = terrain
+    .filter((entry) => entry.elevationSurface && modelBaseTouchesFootprint(
+      modelFootprint, entry, entry.terrainId, "terrain",
+    ))
+    .map((entry) => entry.terrainId)
+    .sort((left, right) => left.localeCompare(right));
+  const elevation = elevationForSupportTerrainIds(supportTerrainIds, terrainById);
+  const adjacentAccessPointIds = combatTag === "flying" ? [] : accessPoints
+    .filter((entry) => (
+      entry.connectsElevations.includes(elevation)
+        && modelBaseTouchesFootprint(
+          modelFootprint, entry, entry.accessPointId, "access_point",
+        )
+    ))
+    .map((entry) => entry.accessPointId)
+    .sort((left, right) => left.localeCompare(right));
+  return Object.freeze({
+    schemaVersion: `${OFFICIAL_ENGAGEMENT_GRAPH_V2_SCHEMA}.model-surface-placement`,
+    pieceId,
+    modelId,
+    elevation,
+    supportTerrainIds: Object.freeze(supportTerrainIds),
+    adjacentAccessPointIds: Object.freeze(adjacentAccessPointIds),
+    rulesTruth: "official_derived_model_surface_placement",
+    trainingTruth: false,
+  });
+}
+
 function normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints) {
   const terrainById = new Map(terrain.map((entry) => [entry.terrainId, entry]));
   const accessPointById = new Map(accessPoints.map((entry) => [entry.accessPointId, entry]));

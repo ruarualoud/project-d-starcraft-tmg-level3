@@ -61,6 +61,12 @@ explicit, isolated slice manifests.
    combat/V2 attack/action-route catalogues and filter by projected equipment;
    the Standard-2000 Marine gate passed 18/18 with four selected attack profiles
    and zero Provider calls.
+   Slice 265 is complete: Teach-derived decision material, creation-round Omega
+   suppression, last-valid-revision recovery, destination surface derivation,
+   exact stationary-fire casualty/Supply states, bounded move-then-fire risk,
+   reaction choices, Tactical Mass and exact loss lists passed the focused gate.
+   The room fork/replay smoke covered four transitions with 0 Provider calls and
+   ¥0; the historical failed suffix remains non-training evidence.
    Training and Skill promotion require independent approval.
 5. Ticket 23 / Slice 249: evaluate WikiSkill/EvoTest against the existing
    replay-driven Skill evolution loop. The same scene-scoped evidence feeds a
@@ -74,7 +80,15 @@ explicit, isolated slice manifests.
    layered long-term memory and relationship state, resumable long-running
    roleplay, multiple companions speaking in one conversation, and floating-Web
    evidence without exposing opponent-private agent state.
-7. Ticket 14 / Slice 143: run the deferred APK acceptance when a real Android
+7. Ticket 27 / Slices 267–272: build the independent Roster Strategist. The
+   Rules-owned Army Builder remains the sole legality authority; the Agent uses
+   General/faction/matchup Skills, scoring plans, spatial/probability/math tools
+   and isolated scenario simulation to choose a legal roster and persist a
+   public, versioned `RosterPlan`. Formal review compares the fixed preset
+   roster (explicitly no pregame plan) against an Agent-built roster, and makes
+   the structured planning/calibration trace available to WikiSkill/EvoTest
+   without storing hidden chain-of-thought or auto-promoting a Skill.
+8. Ticket 14 / Slice 143: run the deferred APK acceptance when a real Android
    device is available.
 
 Tickets 19–22 and Ticket 20 Slices 193–195 retain their focused closure; final
@@ -99,6 +113,7 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
 - Ticket 19 roadmap: `docs/ticket-19-slices-196-201-muzero-player-view-trajectory-roadmap-2026-09-14.md`
 - Ticket 21 roadmap: `docs/ticket-21-slices-202-209-production-operations-roadmap-2026-09-14.md`
 - Ticket 22 roadmap: `docs/ticket-22-slices-210-214-final-synthesis-acceptance-roadmap-2026-09-14.md`
+- Ticket 27 roadmap: `docs/ticket-27-slices-267-272-roster-strategist-roadmap-v1-2026-09-21.md`
 
 ## Current accounting
 

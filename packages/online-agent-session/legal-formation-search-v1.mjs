@@ -6,8 +6,17 @@ import {
   createOfficialPhysicalFootprintV1,
   evaluateOfficialPhysicalFootprintRelationV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import { deriveOfficialModelSurfacePlacementV2 } from
+  "../rule-atoms/official-engagement-graph-v2.mjs";
 import { projectOfficialCharacteristicStatusFamilyModifiersV1 } from
   "../product-composition/official-characteristic-status-family-adapter-v1.mjs";
+import {
+  enumerateOfficialSelectedRosterRangedActionsV1,
+  projectOfficialSelectedRosterRangedFirepowerV1,
+} from
+  "../product-composition/official-selected-roster-ranged-action-runtime-v1.mjs";
+import { estimateStarcraftTmgAttackProbabilityV1 } from
+  "./combat-estimation-runtime-v1.mjs";
 import { buildStarcraftTmgTacticalRelationshipGraphV1 } from
   "./tactical-relationship-graph-v1.mjs";
 
@@ -2342,6 +2351,219 @@ function relationshipRows(graph) {
     });
 }
 
+function otherSide(sideKey) {
+  return sideKey === "player1" ? "player2" : "player1";
+}
+
+function normalizeProjectedSurfacePlacements(projected) {
+  for (const piece of projected.pieces || []) {
+    if (piece.isOnField !== true || piece.isDestroyed === true
+      || Number(piece.currentModels || 0) <= 0) continue;
+    for (const model of piece.models || []) {
+      if (model.isOnField === false || model.isDestroyed === true) continue;
+      const surface = deriveOfficialModelSurfacePlacementV2(projected, {
+        pieceId: piece.id,
+        modelId: model.id,
+      });
+      model.elevation = surface.elevation;
+      model.supportTerrainIds = [...surface.supportTerrainIds];
+      model.adjacentAccessPointIds = [...surface.adjacentAccessPointIds];
+    }
+  }
+  return projected;
+}
+
+function incomingStationaryFireEstimate(projected, actorId) {
+  const actor = (projected.pieces || []).find((entry) => entry.id === actorId);
+  if (!actor) return { status: "unknown", reason: "projected_actor_missing" };
+  try {
+    const counterfactual = normalizeProjectedSurfacePlacements(clone(projected));
+    const opponentSideKey = otherSide(actor.sideKey);
+    counterfactual.phase = "assault";
+    counterfactual.stage = "unit_activation";
+    counterfactual.activeSideKey = opponentSideKey;
+    counterfactual.selectedRosterActivationWindow = null;
+    counterfactual.pendingAction = null;
+    counterfactual.pendingReactionWindow = null;
+    delete counterfactual.pendingCurrentProductRangedSequence;
+    delete counterfactual.pendingCurrentProductRangedCasualtyChoice;
+    for (const piece of counterfactual.pieces || []) {
+      if (piece.sideKey !== opponentSideKey) continue;
+      piece.activatedPhases = {
+        movement: false,
+        assault: false,
+        combat: false,
+        ...(piece.activatedPhases || {}),
+        assault: false,
+      };
+    }
+    counterfactual.players[opponentSideKey].passedPhases = {
+      ...(counterfactual.players[opponentSideKey].passedPhases || {}),
+      assault: false,
+    };
+    const phaseKey = `${Number(counterfactual.round)}:assault`;
+    counterfactual.phaseFirstActorByRound = {
+      ...(counterfactual.phaseFirstActorByRound || {}),
+      [phaseKey]: {
+        round: Number(counterfactual.round),
+        phase: "assault",
+        markerHolderSideKey: counterfactual.firstPlayerSideKey,
+        chosenFirstActorSideKey: opponentSideKey,
+      },
+    };
+    const enumeration = enumerateOfficialSelectedRosterRangedActionsV1(
+      counterfactual, { sideKey: opponentSideKey, includeDisabled: true });
+    const domains = enumeration.parameterDomains.filter((entry) =>
+      entry.parameterSchema?.targetUnitId?.enum?.includes(actorId));
+    const estimates = domains.map((domain) =>
+      estimateStarcraftTmgAttackProbabilityV1({
+        state: counterfactual,
+        domain,
+        parameters: { targetUnitId: actorId },
+        sampleBudget: 216,
+      })).sort((left, right) =>
+      right.outcomes.expectedCasualties - left.outcomes.expectedCasualties
+        || right.outcomes.expectedDamage - left.outcomes.expectedDamage);
+    return {
+      status: estimates.length > 0
+        ? "current_position_stationary_attacks_estimated"
+        : "no_current_position_stationary_attack_domain",
+      opponentSideKey,
+      opponentMovementIncluded: false,
+      opponentMovementBoundedSeparately: true,
+      attackEstimateCount: estimates.length,
+      attackEstimates: estimates,
+      disabledAttackDiagnostics: clone((enumeration.candidates || [])
+        .filter((entry) => entry.isEnabled === false).map((entry) => ({
+          pieceId: entry.pieceId || null,
+          weaponName: entry.weaponName || null,
+          profileKey: entry.profileKey || null,
+          disabledReason: entry.disabledReason || null,
+        }))),
+      rulesMechanicsPerOutcome: "exact",
+      tacticalProjection: "advisory",
+      mutationAuthority: false,
+      trainingTruth: false,
+    };
+  } catch (error) {
+    return {
+      status: "unknown",
+      reason: String(error?.message || error).split(":")[0],
+      opponentMovementIncluded: false,
+      opponentMovementBoundedSeparately: true,
+      mutationAuthority: false,
+      trainingTruth: false,
+    };
+  }
+}
+
+function maximumProfileRangeMilliInches(profile) {
+  const normal = Number(profile?.range?.normalRangeInches || 0);
+  const extended = Math.max(0, ...(profile?.effects || []).map((effect) =>
+    Number(effect?.parameters?.maximumRangeInches || 0)));
+  return Math.round(Math.max(normal, extended) * 1000);
+}
+
+function incomingMoveThenFireEstimate(projected, actorId, graph) {
+  const actor = (projected.pieces || []).find((entry) => entry.id === actorId);
+  if (!actor) return { status: "unknown", reason: "projected_actor_missing" };
+  try {
+    const rows = [];
+    for (const relationship of (graph.relationships || []).filter((entry) =>
+      new Set(["unit_spatial_relationship", "unit_relationship"])
+        .has(entry.edgeKind) && entry.fromUnitId === actorId)) {
+      const enemy = projected.pieces.find((entry) =>
+        entry.id === relationship.toUnitId);
+      if (!enemy || enemy.sideKey === actor.sideKey) continue;
+      const movementRoute = projected.officialActionRouteCatalogue?.units
+        ?.find((entry) => entry.pieceId === enemy.id);
+      const movementProfile = movementRoute?.movementProfile;
+      const printedSpeedInches = Number(enemy.currentModels) === 1
+        ? Number(movementProfile?.singleModelSpeedInches)
+        : Number(movementProfile?.multiModelSpeedInches);
+      const printedSpeedMilliInches = Number.isFinite(printedSpeedInches)
+        ? Math.round(printedSpeedInches * 1000) : null;
+      const contribution = projectOfficialSelectedRosterRangedFirepowerV1(
+        projected, enemy.id);
+      const contributionByProfile = new Map(contribution.profiles.map(
+        (entry) => [entry.profileKey, entry]));
+      const catalogueByProfile = new Map((projected
+        .officialAttackProfileCatalogueV2?.profiles || []).map((entry) => [
+        entry.profileKey, entry,
+      ]));
+      const distance = Number(
+        relationship.nearestPhysicalEdges?.distanceMilliInches);
+      for (const profileKey of relationship.threats?.toFrom
+        ?.moveThenAttackProfileKeys || []) {
+        const profile = catalogueByProfile.get(profileKey);
+        const currentContribution = contributionByProfile.get(profileKey);
+        const maximumRangeMilliInches = maximumProfileRangeMilliInches(profile);
+        const minimumMovementRequiredMilliInches = Math.max(0,
+          distance - maximumRangeMilliInches);
+        const reachable = printedSpeedMilliInches !== null
+          && minimumMovementRequiredMilliInches <= printedSpeedMilliInches;
+        const contributingModelCount = currentContribution
+          ?.contributingModelIds?.length || 0;
+        const rateOfAttack = Number(
+          currentContribution?.printedRateOfAttackPerContributor
+            ?? profile?.rateOfAttack ?? 0);
+        rows.push({
+          enemyUnitId: enemy.id,
+          profileKey,
+          weaponName: profile?.weaponName
+            || currentContribution?.weaponName || null,
+          currentBaseEdgeDistanceMilliInches: distance,
+          maximumRangeMilliInches,
+          minimumMovementRequiredMilliInches,
+          printedMovementAllowanceMilliInches: printedSpeedMilliInches,
+          printedMovementMarginMilliInches: printedSpeedMilliInches === null
+            ? null : printedSpeedMilliInches
+              - minimumMovementRequiredMilliInches,
+          canEnterMaximumRangeByPrintedMovement: reachable,
+          contributingModelIds: clone(
+            currentContribution?.contributingModelIds || []),
+          printedAttackDiceAtCurrentContributorCount:
+            contributingModelCount * rateOfAttack,
+          printedHitThreshold: Number(profile?.hitThreshold || 0) || null,
+          printedDamagePerConfirmedDie: Number(profile?.damage || 0),
+          conditionalDamageRequiresLegalPathPostMoveLosAndAttackInstantiation:
+            true,
+          legalPathAndPostMoveLosResolved: false,
+          mustBeTreatedAsLiveThreatWhenReachable: reachable,
+        });
+      }
+    }
+    rows.sort((left, right) => Number(right.canEnterMaximumRangeByPrintedMovement)
+      - Number(left.canEnterMaximumRangeByPrintedMovement)
+      || Number(right.printedAttackDiceAtCurrentContributorCount)
+        - Number(left.printedAttackDiceAtCurrentContributorCount)
+      || left.profileKey.localeCompare(right.profileKey));
+    return {
+      status: rows.some((entry) => entry.canEnterMaximumRangeByPrintedMovement)
+        ? "bounded_move_then_fire_threats"
+        : "no_printed_move_then_fire_reach",
+      opponentMovementRiskIncluded: true,
+      exactCurrentDistanceAndPrintedReach: true,
+      legalPathAndPostMoveLosResolved: false,
+      reachableThreatCount: rows.filter((entry) =>
+        entry.canEnterMaximumRangeByPrintedMovement).length,
+      threats: rows,
+      unknownPathOrLosNeverPromotedToSafeOrZero: true,
+      mutationAuthority: false,
+      trainingTruth: false,
+    };
+  } catch (error) {
+    return {
+      status: "unknown",
+      reason: String(error?.message || error).split(":")[0],
+      opponentMovementRiskIncluded: true,
+      unknownPathOrLosNeverPromotedToSafeOrZero: true,
+      mutationAuthority: false,
+      trainingTruth: false,
+    };
+  }
+}
+
 function relationshipComparison(state, source, slots, objectives, baseline) {
   if (!slots.length) return {
     status: "not_applicable",
@@ -2381,6 +2603,7 @@ function relationshipComparison(state, source, slots, objectives, baseline) {
       .filter((modelId) => !positions.has(modelId));
     projectedActor.currentModels = projectedActor.models.filter((model) =>
       model.isDestroyed !== true && model.isOnField !== false).length;
+    normalizeProjectedSurfacePlacements(projected);
     const visibleEnemyUnitIds = (projected.pieces || []).filter((entry) =>
       entry.sideKey !== projectedActor.sideKey
         && entry.isOnField === true
@@ -2432,6 +2655,10 @@ function relationshipComparison(state, source, slots, objectives, baseline) {
         };
       }),
       clearances: clone(graph.aggregates?.clearances || []),
+      incomingStationaryFireEstimate:
+        incomingStationaryFireEstimate(projected, projectedActor.id),
+      incomingMoveThenFireEstimate:
+        incomingMoveThenFireEstimate(projected, projectedActor.id, graph),
       precisionPolicy: clone(graph.precisionPolicy),
       sourceReceipts: clone(graph.sourceReceipts),
       rulesInstantiationStillFinalAuthority: true,

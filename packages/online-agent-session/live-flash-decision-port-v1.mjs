@@ -262,6 +262,26 @@ function actionIndex(actionSpace) {
   return freeze([...finite, ...domains]);
 }
 
+function decisionInputForChoice(input, choice) {
+  const unavailable = new Set((choice?.unavailableCandidateIds || []).map(String));
+  if (unavailable.size === 0) return input;
+  const spatialActionSpace = {
+    ...clone(input.spatialActionSpace),
+    finiteActions: (input.spatialActionSpace?.finiteActions || []).filter((entry) =>
+      !unavailable.has(String(entry.candidateId))),
+    parameterDomains: (input.spatialActionSpace?.parameterDomains || []).filter(
+      (entry) => !unavailable.has(String(entry.domainId))),
+  };
+  const legalSpace = {
+    ...clone(input.legalSpace),
+    finiteActions: (input.legalSpace?.finiteActions || []).filter((entry) =>
+      !unavailable.has(String(entry.candidateId))),
+    parameterDomains: (input.legalSpace?.parameterDomains || []).filter((entry) =>
+      !unavailable.has(String(entry.domainId))),
+  };
+  return { ...input, spatialActionSpace, legalSpace };
+}
+
 function selectedActionIdentity(actionSpace, candidateId) {
   const selected = actionIndex(actionSpace).find((entry) =>
     entry.id === String(candidateId || ""));
@@ -503,6 +523,19 @@ function falseFreeResourceClaim(fragment, resourceType) {
   });
 }
 
+function falseNoSourceCardExhaustionClaim(fragment) {
+  const value = String(fragment || "");
+  return /\b(?:no|without)\s+(?:source[- ]card\s+)?exhaust(?:ion|ing)?\b|\b(?:does|do|will)\s+not\s+exhaust\b|\bsource\s+card\s+(?:is|remains)\s+(?:ready|unexhausted)\b|(?:不|无需|不会)\s*(?:横置|耗竭|消耗)\s*(?:来源)?卡/u
+    .test(value);
+}
+
+function resourceContradictionDetail(entry) {
+  if (entry.claimKind === "source_card_exhaustion") {
+    return `${entry.field}:source_card:not_exhausted->exhausted`;
+  }
+  return `${entry.field}:${entry.resourceType}:0->${entry.effectiveResourceCost}`;
+}
+
 export function inspectStarcraftTmgSelectedActionResourceClaimsV1(input = {}) {
   const resourceContract = selectedActionResourceContract(
     input.spatialActionSpace || {}, input.candidateId);
@@ -526,6 +559,17 @@ export function inspectStarcraftTmgSelectedActionResourceClaimsV1(input = {}) {
       ? [{ field: entry.field, text: entry.text, resourceType,
         claimedEffectiveResourceCost: 0, effectiveResourceCost }] : [])
   ));
+  if (resourceContract.sourceCardExhaustedOnCommit) {
+    contradictions.push(...fragments.filter((entry) =>
+      falseNoSourceCardExhaustionClaim(entry.text)).map((entry) => ({
+      field: entry.field,
+      text: entry.text,
+      resourceType: "SOURCE_CARD",
+      claimKind: "source_card_exhaustion",
+      claimedSourceCardExhaustedOnCommit: false,
+      expectedSourceCardExhaustedOnCommit: true,
+    })));
+  }
   return freeze({
     status: contradictions.length > 0 ? "contradicted" : "consistent",
     resourceContract,
@@ -840,6 +884,8 @@ export function projectStarcraftTmgPlanningActionSpaceForPromptV1(
       supply: clone(entry.constraints?.supply || null),
       resourceCostsByChoice:
         normalizedResourceCostsByChoice(entry),
+      strategicImmediateValue:
+        clone(entry.constraints?.strategicImmediateValue || null),
       modelCount: entry.constraints?.modelProfiles?.length || 0,
       exactRulesInstantiationRequired: true,
     })),
@@ -1096,6 +1142,12 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
       pass.id);
   }
   const selected = actions.find((entry) => entry.id === recommendedCandidateId);
+  const immediateValue = sourceActionDomain(selected?.action)
+    ?.constraints?.strategicImmediateValue || null;
+  if (immediateValue?.zeroBenefit === true && actions.length > 1) {
+    throw correctionError("PLANNER_SELECTED_ZERO_CURRENT_BENEFIT_ACTION",
+      `${recommendedCandidateId}:${immediateValue.kind || "unknown"}`);
+  }
   const identityClaims = inspectStarcraftTmgSelectedActionIdentityClaimsV1({
     spatialActionSpace: input.spatialActionSpace,
     candidateId: recommendedCandidateId,
@@ -1120,7 +1172,7 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
   if (resourceClaims.status === "contradicted") {
     const first = resourceClaims.contradictions[0];
     throw correctionError("PLANNER_SELECTED_ACTION_RESOURCE_CONTRADICTED",
-      `${first.field}:${first.resourceType}:0->${first.effectiveResourceCost}`);
+      resourceContradictionDetail(first));
   }
   const selectedCharge = inspectStarcraftTmgChargeReachabilityV1({
     spatialActionSpace: input.spatialActionSpace,
@@ -1229,7 +1281,7 @@ function validateActionOutput(raw, input, planner) {
   if (resourceClaims.status === "contradicted") {
     const first = resourceClaims.contradictions[0];
     throw correctionError("ACTION_SELECTED_ACTION_RESOURCE_CONTRADICTED",
-      `${first.field}:${first.resourceType}:0->${first.effectiveResourceCost}`);
+      resourceContradictionDetail(first));
   }
   const issues = [];
   const intent = object(raw.intent) ? raw.intent : {};
@@ -2888,6 +2940,10 @@ function currentRangedCasualtyResolutionEvidence(input) {
     },
     totalDamage: Number(stages.damage?.totalDamage || 0),
     casualtyCount: Number(event.casualtyCount || 0),
+    strategicLossOptions:
+      clone(casualtyDomain.constraints?.strategicLossOptions || []),
+    explicitSelectionStrategicContract: clone(
+      casualtyDomain.constraints?.explicitSelectionStrategicContract || null),
     defenderActivationConsumed: false,
     defenderActivationClosed: false,
     attackerRangedSequenceRemainsPending: true,
@@ -3109,6 +3165,7 @@ function compactSpatialObservation(observation) {
       sideKey: entry.sideKey || null,
       sideRelation: entry.sideRelation || null,
       currentModels: entry.currentModels,
+      currentSupply: entry.currentSupply ?? null,
       modelIds: clone(entry.modelIds || []),
       leadingModelId: entry.leadingModelId || null,
       formationEnvelope: clone(entry.formationEnvelope || null),
@@ -3312,6 +3369,10 @@ function compactQueryReceiptForPrompt(receipt) {
           option.relationshipComparison.relationships || []
         ).slice(0, 24)),
         clearances: clone(option.relationshipComparison.clearances || []),
+        incomingStationaryFireEstimate: clone(
+          option.relationshipComparison.incomingStationaryFireEstimate || null),
+        incomingMoveThenFireEstimate: clone(
+          option.relationshipComparison.incomingMoveThenFireEstimate || null),
         precisionPolicy:
           clone(option.relationshipComparison.precisionPolicy || null),
         rulesInstantiationStillFinalAuthority:
@@ -3439,10 +3500,11 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       planning
         ? `Do not request ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME}, legal asset-placement options, final parameter instantiation, legal_full_path_movement, coherency_after_candidate_placement, or objective_score_after_candidate_action during Planning. Those require a selected candidate and complete Host-owned parameters. Select the best current candidate from current relationships first. For a formation action, set formationSearchRequested and provide a tacticalPurpose plus weighted formationObjectives with visible targetIds; the Host runs the spatial solver once.`
         : "Use the exact Host-supplied formation or asset-placement options for the selected candidate; do not restart a broad placement search in the Action stage.",
-      `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one current stationary weapon profile covering the placed Unit; never describe that option as outside the enemy fire envelope. Compare objective gain against incoming profiles and fireZoneExchangeClass, preserve unknown probability as uncertainty, and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
+      `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one current stationary weapon profile covering the placed Unit; never describe that option as outside the enemy fire envelope. Read incomingStationaryFireEstimate when present: compare expected casualties, every exact legal removed-model list, lost occupied positions/formation reach, lost ranged contributors, exact current Fighting/Supporting losses, marker-by-marker control changes, probability of Supply reduction/zero, Supply freed for later deployment, VP awarded, and every exact reaction choice/cost against objective or scoring gain. Read incomingMoveThenFireEstimate too: a reachable row is a live threat even while legal path and post-move line of sight remain conditional; unknown path or line of sight is never safety or zero risk. Current Supply—not raw model count—controls marker strength. Do not default to the safest position: choose the highest expected net mission value after risk, and state why the accepted exposure is worth it. Preserve unknown probability as uncertainty and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
       "When an exact legal_asset_placement_options receipt is present, choose exactly one placementOptionId and return assetPlacementSelection with that ID and one concise publicReason about the visible position, intended threat/objective/route effect, and plan continuity. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
       "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists. You may compare or reject another ability, but never describe that other ability as the action being selected, activated, used or placed.",
       "Treat selectedActionResourceContract and resourceCostsByChoice as Rules-owned. State every nonzero effective resource cost accurately. Never call a positive BM, CP or PE cost zero, free, or unspent; Supply is a separate contract.",
+      "Treat strategicImmediateValue as Rules-derived current value. A zero-benefit heal is not productive merely because its printed resource cost is zero: source-card exhaustion and forfeited alternatives remain real costs.",
       "Position publicReason fields are auditable summaries, not hidden chain-of-thought. State the useful board fact and tactical purpose without private scratch work.",
       "For Deploy, the Host prepends the Leading Model base-centre start just outside the selected battlefield edge. The complete Speed allowance includes that ingress distance. Do not add an artificial path point on the edge and do not measure only from the edge; choose an endpoint whose complete Host path remains within maxDistanceMilliInches.",
       "Never treat the remaining models as a unit centre: compare and choose a complete Host-solved final formation using every model's physical base, coherency, board edge, terrain, objective, line-of-sight, blocking, threat and fire-zone consequences.",
@@ -3454,6 +3516,8 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       "A typed query for a parameterized candidate must put domainId and the complete parameters object in the query tool arguments; the Host automatically Rules-checks every final parameterized proposal.",
       "A resolve_ranged_casualties candidate with parameterKind official_selected_roster_ranged_casualty_selection_v1 is a defender-owned choice of casualties from the controlled side, not a new attack. Follow its current parameterSchema: submit one casualtySelectionHash for an enumerated_hashes domain, or exactly casualtyCount ordered casualtyModelIds from the compact explicit_model_ids contract. Compare model position, role, coherency, threat and objective value. Public reasons must say which own models are removed and preserved and why; never claim an attack target or weapon for this resolution stage. authorityActionType is only the frozen Rules transport identity and does not change this meaning.",
       "For resolve_ranged_casualties, read current-ranged-casualty-resolution as exact Rules evidence for the completed enemy weapon batch. surge.targetTypeMatched and surge.matchedCapacity describe eligibility/capacity; only surge.appliedBypassedArmourHits affected actual hits. Resolving casualties does not activate, close, move or spend the defending Unit and does not end the attacker's pending ranged sequence. Never describe it as closing the defender's activation or as the defender making an attack.",
+      "For casualty choice, compare the exact removed-model list, loss of occupied positions and formation reach, lost specialist/upgrades, remaining ranged contributors, exact current Fighting/Supporting contributors, future melee potential, marker-by-marker controller/contact changes, Tactical Mass before/after, Current Supply/control strength, Supply freed for later deployment, VP awarded to the attacker by Supply loss, objective interaction, and follow-up activation value. Speed does not automatically decrease merely because models died, but crossing to one surviving model may select the card's single-model Speed. Current marker and engagement geometry in missionMarkerControlConsequences/tacticalMassConsequences is exact; future movement modifiers, future attack dice and future control geometry still require a fresh LegalSpace over the chosen survivors.",
+      "Before every strategic recommendation, check the current mission and score clock, phase and initiative/pass opportunity cost, Current and Available Supply plus reserves, terrain/LOS/elevation/base geometry, outgoing and incoming exchanges including reactions and attack-batch order, card/resource timing, and the most consequential opponent response. Explicitly mark irrelevant or unresolved dimensions instead of inventing them.",
       "Use exact query receipts as facts, advisory estimates as preferences, and unknown as uncertainty.",
       "An unknown query receipt may include Rules-derived repairContext. Use it only to repair and re-submit the same candidate; it never proves that the repaired proposal is legal until a later exact receipt accepts it.",
       "A pre-selection parameter-shape failure is Harness uncertainty, not tactical evidence against a formation candidate and never a reason to prefer Pass. The Planner chooses the candidate and spatial intent; the Host supplies every model's path and placement parameters afterward.",
@@ -3968,6 +4032,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       stageCorrectionRounds: 0,
       lastSemanticFailureSignature: null,
       repeatedSemanticFailureCount: 0,
+      unavailableCandidateIds: [],
       warnings: [],
       completedDecision: null,
       createdAt: instant(now(), "now"),
@@ -3991,7 +4056,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     const queryRoundLimit = stage === "planning"
       ? maxPlanningQueryRounds : maxActionQueryRounds;
     const forceTerminal = choice.stageQueryRounds >= queryRoundLimit;
-    const prompt = makePromptArtifact(match, input, choice, round,
+    const activeInput = decisionInputForChoice(input, choice);
+    const prompt = makePromptArtifact(match, activeInput, choice, round,
       choice.queryReceipts, stage, Boolean(memoryQueryPort), forceTerminal);
     if (containsApiCredential(prompt.artifact)) {
       throw Object.assign(new Error("API credential found in decision prompt"), {
@@ -4918,14 +4984,49 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           if (receipt?.status !== "exact"
             || !Array.isArray(receipt?.result?.formationOptions)
             || receipt.result.formationOptions.length < 1) {
-            return rejection("LIVE_DECISION_LEGAL_FORMATION_OPTIONS_UNAVAILABLE",
-              "High", {
-                choiceKey: choice.choiceKey,
-                candidateId: selected.id,
-                reason: receipt?.reason || "formation_receipt_missing",
-                automaticProviderRetryPerformed: false,
-                projection: publicProjection(match),
-              });
+            match = await commit(match, (draft) => {
+              const current = draft.decisions[choice.choiceKey];
+              current.unavailableCandidateIds = [...new Set([
+                ...(current.unavailableCandidateIds || []), selected.id,
+              ])];
+              const known = new Set(current.queryReceipts.map((entry) =>
+                entry.queryReceiptHash));
+              for (const entry of formationQuery.receipts) {
+                if (!known.has(entry.queryReceiptHash)) {
+                  known.add(entry.queryReceiptHash);
+                  current.queryReceipts.push(entry);
+                }
+              }
+              if (attempt?.status === "completed"
+                && !current.processedAttemptKeys.includes(attempt.attemptKey)) {
+                current.processedAttemptKeys.push(attempt.attemptKey);
+              }
+              current.queryRounds += 1;
+              current.stage = "planning";
+              current.plannerResult = null;
+              current.providerContinuationMessages = [];
+              current.stageQueryRounds = 0;
+              current.stageCorrectionRounds = 0;
+              current.lastSemanticFailureSignature = null;
+              current.repeatedSemanticFailureCount = 0;
+              current.proposalValidationRounds = 0;
+              current.warnings.push(...formationQuery.warnings,
+                `HOST_CANDIDATE_UNAVAILABLE:${selected.id}:${
+                  receipt?.reason || "formation_receipt_missing"}`);
+              current.status = "generating";
+            });
+            choice = match.decisions[choice.choiceKey];
+            if (actionIndex(decisionInputForChoice(input, choice)
+              .spatialActionSpace).length < 1) {
+              return rejection(
+                "LIVE_DECISION_ALL_CURRENT_CANDIDATES_UNAVAILABLE", "High", {
+                  choiceKey: choice.choiceKey,
+                  unavailableCandidateIds: choice.unavailableCandidateIds,
+                  automaticProviderRetryPerformed: false,
+                  projection: publicProjection(match),
+                });
+            }
+            continue;
           }
           match = await commit(match, (draft) => {
             const current = draft.decisions[choice.choiceKey];
@@ -4971,15 +5072,49 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           if (receipt?.status !== "exact"
             || !Array.isArray(receipt?.result?.placementOptions)
             || receipt.result.placementOptions.length < 1) {
-            return rejection(
-              "LIVE_DECISION_LEGAL_ASSET_PLACEMENT_OPTIONS_UNAVAILABLE",
-              "High", {
-                choiceKey: choice.choiceKey,
-                candidateId: selected.id,
-                reason: receipt?.reason || "asset_placement_receipt_missing",
-                automaticProviderRetryPerformed: false,
-                projection: publicProjection(match),
-              });
+            match = await commit(match, (draft) => {
+              const current = draft.decisions[choice.choiceKey];
+              current.unavailableCandidateIds = [...new Set([
+                ...(current.unavailableCandidateIds || []), selected.id,
+              ])];
+              const known = new Set(current.queryReceipts.map((entry) =>
+                entry.queryReceiptHash));
+              for (const entry of placementQuery.receipts) {
+                if (!known.has(entry.queryReceiptHash)) {
+                  known.add(entry.queryReceiptHash);
+                  current.queryReceipts.push(entry);
+                }
+              }
+              if (attempt?.status === "completed"
+                && !current.processedAttemptKeys.includes(attempt.attemptKey)) {
+                current.processedAttemptKeys.push(attempt.attemptKey);
+              }
+              current.queryRounds += 1;
+              current.stage = "planning";
+              current.plannerResult = null;
+              current.providerContinuationMessages = [];
+              current.stageQueryRounds = 0;
+              current.stageCorrectionRounds = 0;
+              current.lastSemanticFailureSignature = null;
+              current.repeatedSemanticFailureCount = 0;
+              current.proposalValidationRounds = 0;
+              current.warnings.push(...placementQuery.warnings,
+                `HOST_CANDIDATE_UNAVAILABLE:${selected.id}:${
+                  receipt?.reason || "asset_placement_receipt_missing"}`);
+              current.status = "generating";
+            });
+            choice = match.decisions[choice.choiceKey];
+            if (actionIndex(decisionInputForChoice(input, choice)
+              .spatialActionSpace).length < 1) {
+              return rejection(
+                "LIVE_DECISION_ALL_CURRENT_CANDIDATES_UNAVAILABLE", "High", {
+                  choiceKey: choice.choiceKey,
+                  unavailableCandidateIds: choice.unavailableCandidateIds,
+                  automaticProviderRetryPerformed: false,
+                  projection: publicProjection(match),
+                });
+            }
+            continue;
           }
           match = await commit(match, (draft) => {
             const current = draft.decisions[choice.choiceKey];
@@ -5170,10 +5305,11 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         }
         let plannerResult;
         try {
+          const activeInput = decisionInputForChoice(input, choice);
           plannerResult = normalizePlannerOutput(
-            parts.terminal ? mapPlanningSubmission(parts.planning, input)
+            parts.terminal ? mapPlanningSubmission(parts.planning, activeInput)
               : parts.planning,
-            input,
+            activeInput,
             choice.queryReceipts);
         } catch (error) {
           const correction = await recordSemanticCorrection(match, choice,

@@ -163,6 +163,7 @@ function unitObservation(piece, models, seatKey, state) {
     sideKey: piece.sideKey || null,
     sideRelation: relationFor(piece, seatKey, state),
     currentModels: Number(piece.currentModels || models.length),
+    currentSupply: Number(piece.currentSupply || 0),
     modelIds: models.map((entry) => entry.modelId),
     leadingModelId: piece.leadingModelId || piece.lastLeadingModelId || null,
     formationEnvelope: envelope,
@@ -355,6 +356,7 @@ export function createStarcraftTmgPlayerSpatialObservationV1(input = {}) {
       isInReserves: piece.isInReserves === true,
       isDestroyed: piece.isDestroyed === true,
       currentModels: Number(piece.currentModels || 0),
+      currentSupply: Number(piece.currentSupply || 0),
       positionAvailable: false,
     }));
   const terrain = (state.board?.terrain || []).map((entry) =>

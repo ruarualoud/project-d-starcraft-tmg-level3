@@ -2,7 +2,7 @@
 
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { appendFile, mkdir, readFile, readdir, rename, writeFile } from
+import { appendFile, copyFile, mkdir, readFile, readdir, rename, writeFile } from
   "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
@@ -35,11 +35,12 @@ function safeName(value) {
 }
 
 function summarizeStrategyEvidence(actions = []) {
-  const formationActions = actions.filter((entry) =>
+  const modelActions = actions.filter((entry) => entry.modelDecision === true);
+  const formationActions = modelActions.filter((entry) =>
     entry.formationSelection?.selectedOptionId
       || entry.formationSelection?.optionId
       || entry.formationSelection?.formationOptionId);
-  const evidenceRows = actions.map((entry) =>
+  const evidenceRows = modelActions.map((entry) =>
     entry.decisionMaterialEvidence || {});
   const queryRows = evidenceRows.flatMap((entry) =>
     Array.isArray(entry.queryReceipts) ? entry.queryReceipts : []);
@@ -80,7 +81,9 @@ function summarizeStrategyEvidence(actions = []) {
     },
     decisionMaterialCoverage: {
       actionCount: actions.length,
-      actionsWithPublicIntent: actions.filter((entry) =>
+      modelDecisionActionCount: modelActions.length,
+      deterministicHostActionCount: actions.length - modelActions.length,
+      actionsWithPublicIntent: modelActions.filter((entry) =>
         Boolean(entry.intent)).length,
       actionsWithOpponentPrediction: evidenceRows.filter((entry) =>
         Number(entry.predictedOpponentResponseCount || 0) > 0).length,
@@ -130,11 +133,15 @@ async function writeJsonAtomic(filename, value, mode = 0o600) {
   await rename(temporary, filename);
 }
 
-async function startServer(resumeDirectory = null) {
+async function startServer(resumeDirectory = null, fork = null) {
   const child = spawn(process.execPath, [SERVER,
     ...(resumeDirectory ? [
       `--resume-directory=${resumeDirectory}`,
       "--retry-provider-on-resume",
+    ] : []),
+    ...(fork ? [
+      `--fork-source-directory=${fork.sourceDirectory}`,
+      `--fork-through-revision=${fork.throughRevision}`,
     ] : [])], {
     cwd: ROOT, env: process.env, stdio: ["ignore", "pipe", "pipe"],
   });
@@ -246,6 +253,19 @@ async function main() {
     entry.startsWith("--resume-directory="));
   const resumeDirectory = resumeArgument
     ? path.resolve(resumeArgument.slice("--resume-directory=".length)) : null;
+  const forkSourceArgument = process.argv.find((entry) =>
+    entry.startsWith("--fork-source-directory="));
+  const forkSourceDirectory = forkSourceArgument
+    ? path.resolve(forkSourceArgument.slice("--fork-source-directory=".length))
+    : null;
+  const forkRevisionArgument = process.argv.find((entry) =>
+    entry.startsWith("--fork-through-revision="));
+  const forkThroughRevision = forkRevisionArgument
+    ? Number(forkRevisionArgument.split("=")[1]) : null;
+  ensure(!(resumeDirectory && forkSourceDirectory),
+    "SLICE265_FORK_AND_RESUME_MUTUALLY_EXCLUSIVE");
+  ensure(!forkSourceDirectory || Number.isSafeInteger(forkThroughRevision)
+    && forkThroughRevision > 0, "SLICE265_FORK_REVISION_INVALID");
   const checkpointArgument = process.argv.find((entry) =>
     entry.startsWith("--checkpoint-after-additional-actions="));
   const checkpointAfterAdditionalActions = checkpointArgument
@@ -575,12 +595,64 @@ async function main() {
   }
 
   try {
-    server = await startServer(resumeDirectory);
+    server = await startServer(resumeDirectory, forkSourceDirectory ? {
+      sourceDirectory: forkSourceDirectory,
+      throughRevision: forkThroughRevision,
+    } : null);
     entry = server.entry;
     outputDirectory = path.resolve(entry.dataDirectory);
     await mkdir(path.join(outputDirectory, "screenshots"), {
       recursive: true, mode: 0o700,
     });
+    if (entry.fork && actions.length === 0) {
+      const sourceRows = (await readFile(path.join(forkSourceDirectory,
+        "actions.ndjson"), "utf8")).split(/\n/u).filter(Boolean)
+        .map((line) => JSON.parse(line)).filter((row) =>
+          Number(row.postStateRevision) <= forkThroughRevision);
+      const transitionByRevision = new Map(entry.fork.replayedTransitions.map(
+        (transition) => [Number(transition.sourceStateRevision), transition]));
+      for (const row of sourceRows) {
+        const transition = transitionByRevision.get(
+          Number(row.postStateRevision));
+        if (!transition) continue;
+        let screenshot = null;
+        if (row.screenshot) {
+          const sourceScreenshot = path.join(forkSourceDirectory,
+            row.screenshot);
+          if (existsSync(sourceScreenshot)) {
+            screenshotCount += 1;
+            screenshot = `screenshots/${String(screenshotCount).padStart(
+              4, "0")}-fork-r${String(row.postStateRevision).padStart(
+              3, "0")}-${path.basename(row.screenshot)}`;
+            await copyFile(sourceScreenshot, path.join(outputDirectory,
+              screenshot));
+          }
+        }
+        actions.push({
+          ...row,
+          index: actions.length + 1,
+          receiptHash: transition.branchJournalHash,
+          postStateRevision: transition.branchStateRevision,
+          postStateHash: transition.branchStateHash,
+          screenshot,
+          screenshotObservedStateRevision: transition.branchStateRevision,
+          historicalUiReconstructionRequired: false,
+          providerCalls: 0,
+          providerInputUnits: 0,
+          providerOutputUnits: 0,
+          matchEstimatedCostCnyMicros: 0,
+          forkPrefix: true,
+          sourceReceiptHash: transition.sourceJournalHash,
+          replayedWithoutProvider: true,
+          eligibleForTraining: false,
+          trainingTruth: false,
+        });
+      }
+      await writeFile(path.join(outputDirectory, "actions.ndjson"),
+        actions.map((row) => JSON.stringify(row)).join("\n") + "\n", {
+          encoding: "utf8", mode: 0o644,
+        });
+    }
     if (entry.resumed) {
       const actionPath = path.join(outputDirectory, "actions.ndjson");
       if (existsSync(actionPath)) {

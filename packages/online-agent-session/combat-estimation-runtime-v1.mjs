@@ -3,8 +3,14 @@ import { hashStarcraftTmgContract } from
 import {
   OFFICIAL_SELECTED_ROSTER_RANGED_PARAMETER_KIND,
   previewOfficialSelectedRosterRangedActionV1,
+  projectOfficialSelectedRosterCasualtyStrategyV1,
+  projectOfficialSelectedRosterRangedContributionV1,
   resolveOfficialSelectedRosterRangedChanceV1,
 } from "../product-composition/official-selected-roster-ranged-action-runtime-v1.mjs";
+import {
+  createOfficialReactionFamilyAdapterV1,
+  openOfficialReactionFamilyWindowV1,
+} from "../product-composition/official-reaction-family-adapter-v1.mjs";
 import { buildStarcraftTmgTacticalRelationshipGraphV1 } from
   "./tactical-relationship-graph-v1.mjs";
 
@@ -107,6 +113,45 @@ function probability(successes, total, exact) {
   };
 }
 
+function supplyAtModelCount(profile, currentModels) {
+  if (currentModels <= 0) return 0;
+  const tier = (profile?.squadProfile || []).find((entry) => (
+    entry.minimumModels !== null
+      && currentModels >= Number(entry.minimumModels)
+      && currentModels <= Number(entry.maximumModels)
+  ));
+  return tier ? Number(tier.supply) : null;
+}
+
+function destroyedSupplyVictoryPointRate(state) {
+  const recordKey = state?.mission?.recordKey
+    || state?.selectedMission?.profile?.recordKey;
+  const mission = (state?.officialMissionEffectCatalogue?.missions || [])
+    .find((entry) => entry.missionRef?.recordKey === recordKey);
+  const rule = (mission?.scoring?.commonRules || []).find((entry) =>
+    entry.kind === "destroyed_enemy_supply_vp");
+  return rule ? Number(rule.vpPerDestroyedEnemySupply || 0) : null;
+}
+
+function formationEnvelope(models) {
+  const positioned = (models || []).filter((model) =>
+    Number.isFinite(Number(model.position?.xMilliInches))
+      && Number.isFinite(Number(model.position?.yMilliInches)));
+  if (positioned.length === 0) return null;
+  const x = positioned.map((model) => Number(model.position.xMilliInches));
+  const y = positioned.map((model) => Number(model.position.yMilliInches));
+  return {
+    modelCount: positioned.length,
+    minXMilliInches: Math.min(...x),
+    maxXMilliInches: Math.max(...x),
+    minYMilliInches: Math.min(...y),
+    maxYMilliInches: Math.max(...y),
+    widthMilliInches: Math.max(...x) - Math.min(...x),
+    heightMilliInches: Math.max(...y) - Math.min(...y),
+    modelBaseFootprintsExcludedFromEnvelope: true,
+  };
+}
+
 function normalizedParameters(domain, value = {}) {
   const targetUnitId = String(value.targetUnitId
     || domain.parameterSchema?.targetUnitId?.enum?.[0] || "");
@@ -139,6 +184,154 @@ function resolveWithOptimalPrecision(state, action, reveals) {
   return resolved;
 }
 
+const RANGED_REACTION_TRIGGERS = Object.freeze([
+  "ranged_attack_declared",
+  "before_armour_roll",
+  "before_evade_roll",
+  "damage_received",
+  "after_ranged_attack_resolved",
+]);
+
+function compactReactionChoice(domain, route) {
+  if (domain.actionType === "pass_reaction_family_window") return {
+    choiceKind: "pass",
+    domainId: domain.domainId,
+    sideKey: domain.sideKey,
+    voluntaryPass: true,
+  };
+  const cost = domain.constraints?.resourceCostsByChoice?.default || {};
+  return {
+    choiceKind: "reaction",
+    domainId: domain.domainId,
+    sideKey: domain.sideKey,
+    definitionId: domain.definitionId,
+    sourceInstanceId: domain.sourceInstanceId,
+    abilityName: domain.abilityName,
+    effectKind: domain.effectKind,
+    triggerKind: domain.constraints?.triggerKind || null,
+    paymentCardInstanceIds:
+      clone(domain.parameterSchema?.paymentCardInstanceIds?.const || []),
+    printedResourceCost: Number(cost.printedResourceCost || 0),
+    effectiveResourceCost: Number(cost.effectiveResourceCost || 0),
+    resourceType: cost.resourceType || route?.resourceType || null,
+    resourceCostReduction: Number(cost.resourceCostReduction || 0),
+    discountSourcePieceId: cost.discountSourcePieceId || null,
+    exhaustsSourceCard: route?.sourceKind === "card_feature"
+      && route?.exhaustSourceCard !== false,
+    effectParameters: route ? Object.fromEntries(Object.entries(route)
+      .filter(([key]) => new Set([
+        "tough", "dodge", "evadeModifier", "evadeEligible",
+        "hitModifier", "damageReduction", "minimumDamage",
+        "redirectedTargetEvadeEligible", "rangeInches", "automaticHits",
+        "damagePerHit", "requiredTargetTag", "effectDuration",
+      ]).has(key))) : {},
+  };
+}
+
+function projectReactionOpportunitySet(state, domain, preview, parameters) {
+  const bundle = state.officialReactionFamilySourceBundle;
+  if (!bundle) return {
+    status: "unavailable",
+    reason: "reaction_family_source_bundle_missing",
+    windows: [],
+  };
+  const enemyReactionAllowed = preview.action.rangedPlan
+    ?.reactionPolicy?.enemyDeclarationAllowed
+    ?? true;
+  const adapter = createOfficialReactionFamilyAdapterV1(bundle);
+  const validTargetUnitIds = clone(
+    domain.parameterSchema?.targetUnitId?.enum || [parameters.targetUnitId]);
+  const activationId = state.selectedRosterActivationWindow
+    ? `${Number(state.round)}:${state.phase}:${state
+      .selectedRosterActivationWindow.sideKey}:${state
+      .selectedRosterActivationWindow.pieceId}`
+    : `${Number(state.round)}:${state.phase}:${preview.action.sideKey}:${preview
+      .action.pieceId}:counterfactual`;
+  const windows = [];
+  for (const triggerKind of RANGED_REACTION_TRIGGERS) {
+    try {
+      const opened = openOfficialReactionFamilyWindowV1(bundle, state, {
+        triggerKind,
+        activeSideKey: preview.action.sideKey,
+        phase: state.phase,
+        activationId,
+        sourceActionHash: preview.actionHash,
+        resumeActionHash: preview.actionHash,
+        context: {
+          attackerPieceId: preview.action.pieceId,
+          actorPieceId: preview.action.pieceId,
+          targetPieceId: parameters.targetUnitId,
+          affectedPieceId: parameters.targetUnitId,
+          validTargetUnitIds,
+          enemyReactionAllowed,
+        },
+      });
+      const activeLegal = adapter.legalSpace(opened.state, {
+        sideKey: preview.action.sideKey,
+      });
+      const passDomain = activeLegal.parameterDomains.find((domain) =>
+        domain.actionType === "pass_reaction_family_window");
+      let defenderLegal = { parameterDomains: [], prioritySideKey: null };
+      if (passDomain) {
+        const passPreview = adapter.preview(opened.state, {
+          domain: passDomain, parameters: {},
+        });
+        const advanced = adapter.apply(opened.state, {
+          action: passPreview.action,
+        });
+        defenderLegal = adapter.legalSpace(advanced.state, {
+          sideKey: advanced.state.pendingOfficialReactionWindow
+            ?.prioritySideKeys?.[advanced.state.pendingOfficialReactionWindow
+              ?.priorityIndex],
+        });
+      }
+      const routeById = new Map(bundle.routes.map((route) => [
+        route.definitionId, route,
+      ]));
+      const choiceSet = (legal) => legal.parameterDomains.map((domain) =>
+        compactReactionChoice(domain, routeById.get(domain.definitionId)));
+      windows.push({
+        triggerKind,
+        activeSideKey: preview.action.sideKey,
+        enemyReactionAllowed,
+        prioritySequence: [
+          {
+            sideKey: activeLegal.prioritySideKey,
+            choices: choiceSet(activeLegal),
+          },
+          {
+            sideKey: defenderLegal.prioritySideKey,
+            choices: choiceSet(defenderLegal),
+            conditionalOnEarlierPriorityResolution: true,
+          },
+        ],
+        choicesMutuallyExclusivePerSidePerActivation: true,
+        oneReactionPerPlayerPerActivation: true,
+      });
+    } catch (error) {
+      windows.push({
+        triggerKind,
+        status: "unknown",
+        reason: String(error?.message || error).split(":")[0],
+      });
+    }
+  }
+  const unknownWindowCount = windows.filter((window) =>
+    window.status === "unknown").length;
+  return {
+    status: unknownWindowCount === 0
+      ? "exact_current_reaction_choice_sets"
+      : "partial_with_typed_unknown_reaction_windows",
+    enemyReactionAllowed,
+    windows,
+    unknownWindowCount,
+    baselineOutcomeDistributionExcludesOptionalReactionEffects: true,
+    optionalReactionEffectsMustBeComparedBeforeActionSelection: true,
+    mutationAuthority: false,
+    trainingTruth: false,
+  };
+}
+
 export function estimateStarcraftTmgAttackProbabilityV1(input = {}) {
   const state = input.state;
   const domain = sourceDomain(input.domain);
@@ -169,14 +362,179 @@ export function estimateStarcraftTmgAttackProbabilityV1(input = {}) {
   let anyDamage = 0;
   let anyCasualty = 0;
   let destroyed = 0;
+  let totalSupplyAfter = 0;
+  let supplyReduced = 0;
+  let supplyZero = 0;
+  const supplyAfterCounts = new Map();
+  const lossStateCounts = new Map();
   let minimumDamage = Number.POSITIVE_INFINITY;
   let maximumDamage = 0;
+  const target = (state.pieces || []).find((entry) =>
+    entry.id === parameters.targetUnitId);
+  const currentSupplyBefore = Number(target?.currentSupply ?? 0);
+  const destroyedSupplyVpRate = destroyedSupplyVictoryPointRate(state);
+  const targetRangedContribution = target
+    ? projectOfficialSelectedRosterRangedContributionV1(state, target.id)
+    : { profiles: [] };
+  const reactionOpportunitySet = projectReactionOpportunitySet(
+    state, domain, preview, parameters);
   for (const reveals of revealRows) {
     const resolved = resolveWithOptimalPrecision(state, preview.action, reveals);
     const damage = Number(resolved.resolution.stages.damage.totalDamage || 0);
     const casualties = Number(resolved.casualtyDomain.casualtyCount || 0);
+    const remainingModels = Math.max(0,
+      Number(target?.currentModels || 0) - casualties);
+    const supplyAfter = supplyAtModelCount(
+      resolved.context.targetProfile, remainingModels);
     totalDamage += damage;
     totalCasualties += casualties;
+    if (supplyAfter !== null) {
+      totalSupplyAfter += supplyAfter;
+      if (supplyAfter < currentSupplyBefore) supplyReduced += 1;
+      if (supplyAfter === 0) supplyZero += 1;
+      supplyAfterCounts.set(supplyAfter,
+        Number(supplyAfterCounts.get(supplyAfter) || 0) + 1);
+    }
+    const lossKey = `${casualties}:${supplyAfter ?? "unknown"}`;
+    if (!lossStateCounts.has(lossKey)) lossStateCounts.set(lossKey, {
+      casualtyCount: casualties,
+      currentModelsAfter: remainingModels,
+      currentSupplyAfter: supplyAfter,
+      count: 0,
+      possibleCasualtyModelIds: new Set(),
+      forcedCasualtyModelIds: null,
+      selectionExamples: new Map(),
+    });
+    const lossState = lossStateCounts.get(lossKey);
+    lossState.count += 1;
+    const legalSelections = resolved.casualtyDomain.legalSelections || [];
+    if (legalSelections.length > 0) {
+      for (const selection of legalSelections) {
+        const casualtyIds = [...new Set(selection.casualtyModelIds || [])].sort();
+        for (const modelId of casualtyIds) {
+          lossState.possibleCasualtyModelIds.add(modelId);
+        }
+        const selected = new Set(casualtyIds);
+        lossState.forcedCasualtyModelIds = lossState.forcedCasualtyModelIds
+          === null ? selected : new Set([...lossState.forcedCasualtyModelIds]
+            .filter((modelId) => selected.has(modelId)));
+        const selectionKey = casualtyIds.join("|");
+        if (lossState.selectionExamples.size < 12
+          && !lossState.selectionExamples.has(selectionKey)) {
+          const exactStrategic = projectOfficialSelectedRosterCasualtyStrategyV1(
+            state, target.id, casualtyIds);
+          const lost = new Set(casualtyIds);
+          const lostModels = (targetRangedContribution.models || []).filter(
+            (model) => lost.has(model.modelId));
+          const remainingModels = (targetRangedContribution.models || []).filter(
+            (model) => !lost.has(model.modelId));
+          const movement = targetRangedContribution.movementProfile;
+          const movementBefore = movement?.currentPrintedInches ?? null;
+          const movementAfter = remainingModels.length === 0
+            ? 0 : remainingModels.length === 1
+              ? movement?.singleModelInches ?? null
+              : movement?.multiModelInches ?? null;
+          const supplyLost = supplyAfter === null
+            ? null : currentSupplyBefore - supplyAfter;
+          lossState.selectionExamples.set(selectionKey, {
+            currentMeleeContributionLosses:
+              clone(exactStrategic.currentMeleeContributionLosses || []),
+            missionMarkerControlConsequences:
+              clone(exactStrategic.missionMarkerControlConsequences || null),
+            tacticalMassConsequences:
+              clone(exactStrategic.tacticalMassConsequences || null),
+            casualtyModelIds: casualtyIds,
+            lostModels: clone(lostModels),
+            remainingModelIds: clone(selection.remainingModelIds || []),
+            formationEnvelopeBefore: clone(
+              targetRangedContribution.formationEnvelopeBefore || null),
+            formationEnvelopeAfter: formationEnvelope(remainingModels),
+            formationReachChanged: JSON.stringify(
+              targetRangedContribution.formationEnvelopeBefore || null)
+                !== JSON.stringify(formationEnvelope(remainingModels)),
+            printedMovementCharacteristicBeforeInches: movementBefore,
+            printedMovementCharacteristicAfterInches: movementAfter,
+            printedMovementCharacteristicDeltaInches:
+              movementBefore === null || movementAfter === null
+                ? null : movementAfter - movementBefore,
+            movementModifiersRequireFreshLegalSpace: true,
+            currentSupplyBefore,
+            currentSupplyAfter: supplyAfter,
+            supplyLost,
+            availableSupplyFreed: supplyLost,
+            missionMarkerControlSupplyContributionBefore:
+              currentSupplyBefore,
+            missionMarkerControlSupplyContributionAfter: supplyAfter,
+            missionMarkerControlSupplyContributionLost: supplyLost,
+            mayStillControlUncontestedMarkerAtSupplyZero:
+              remainingModels.length > 0 && supplyAfter === 0,
+            attackerVictoryPointsFromSupplyLoss:
+              destroyedSupplyVpRate === null || supplyLost === null
+                ? null : destroyedSupplyVpRate * supplyLost,
+            supplyControlStrengthChanged:
+              supplyLost === null ? null : supplyLost !== 0,
+            rangedContributionLosses:
+              targetRangedContribution.profiles.map((profile) => {
+                const lostContributorModelIds =
+                  profile.contributingModelIds.filter((modelId) =>
+                    lost.has(modelId));
+                return {
+                  profileKey: profile.profileKey,
+                  weaponName: profile.weaponName,
+                  lostContributorModelIds,
+                  contributingModelCountBefore:
+                    profile.contributingModelIds.length,
+                  contributingModelCountAfter:
+                    profile.contributingModelIds.length
+                      - lostContributorModelIds.length,
+                  printedHitDiceBefore: profile.contributingModelIds.length
+                    * profile.printedRateOfAttackPerContributor,
+                  printedHitDiceAfter: (profile.contributingModelIds.length
+                    - lostContributorModelIds.length)
+                      * profile.printedRateOfAttackPerContributor,
+                  printedHitDiceLost: lostContributorModelIds.length
+                    * profile.printedRateOfAttackPerContributor,
+                  printedHitThreshold: profile.printedHitThreshold,
+                  printedDamagePerConfirmedDie:
+                    profile.printedDamagePerConfirmedDie,
+                  contributionCompletelyLost: lostContributorModelIds.length
+                    === profile.contributingModelIds.length,
+                  exactFutureDiceRequireFreshLegalSpace: true,
+                };
+              }),
+            meleePotentialContributionLosses:
+              (targetRangedContribution.meleePotentialProfiles || [])
+                .map((profile) => {
+                  const lostPotentialContributorModelIds =
+                    profile.potentialContributingModelIds.filter((modelId) =>
+                      lost.has(modelId));
+                  return {
+                    profileKey: profile.profileKey,
+                    weaponName: profile.weaponName,
+                    lostPotentialContributorModelIds,
+                    potentialContributingModelCountBefore:
+                      profile.potentialContributingModelIds.length,
+                    potentialContributingModelCountAfter:
+                      profile.potentialContributingModelIds.length
+                        - lostPotentialContributorModelIds.length,
+                    printedPotentialHitDiceLost:
+                      lostPotentialContributorModelIds.length
+                        * profile.printedRateOfAttackPerContributor,
+                    printedHitThreshold: profile.printedHitThreshold,
+                    printedDamagePerConfirmedDie:
+                      profile.printedDamagePerConfirmedDie,
+                    exactFutureDiceRequireEngagementAndFreshLegalSpace: true,
+                  };
+                }),
+          });
+        }
+      }
+    } else {
+      for (const modelId of resolved.casualtyDomain.selectionContract
+        ?.candidateModelIds || []) {
+        lossState.possibleCasualtyModelIds.add(modelId);
+      }
+    }
     if (damage > 0) anyDamage += 1;
     if (casualties > 0) anyCasualty += 1;
     if (resolved.casualtyDomain.targetDestroyed === true) destroyed += 1;
@@ -200,6 +558,7 @@ export function estimateStarcraftTmgAttackProbabilityV1(input = {}) {
     chance: clone(preview.chance),
     contributingModelIds: clone(preview.eligibleAttackerModelIds || []),
     visibleTargetModelIds: clone(preview.visibleTargetModelIds || []),
+    reactionOpportunitySet,
     outcomes: {
       distribution: exactDistribution
         ? "exact_full_enumeration" : "deterministic_stratified_sample",
@@ -215,11 +574,101 @@ export function estimateStarcraftTmgAttackProbabilityV1(input = {}) {
         exactDistribution),
       probabilityTargetDestroyed: probability(destroyed, sampleCount,
         exactDistribution),
+      currentSupplyBefore,
+      expectedSupplyAfter: sampleCount ? totalSupplyAfter / sampleCount : null,
+      expectedSupplyLoss: sampleCount
+        ? currentSupplyBefore - (totalSupplyAfter / sampleCount) : null,
+      expectedVictoryPointsAwardedToAttackerFromSupplyLoss:
+        sampleCount && destroyedSupplyVpRate !== null
+          ? (currentSupplyBefore - (totalSupplyAfter / sampleCount))
+            * destroyedSupplyVpRate : null,
+      expectedAvailableSupplyFreedForDefender: sampleCount
+        ? currentSupplyBefore - (totalSupplyAfter / sampleCount) : null,
+      destroyedSupplyVictoryPointRate: destroyedSupplyVpRate,
+      probabilitySupplyReduced: probability(supplyReduced, sampleCount,
+        exactDistribution),
+      probabilitySupplyZero: probability(supplyZero, sampleCount,
+        exactDistribution),
+      supplyAfterDistribution: [...supplyAfterCounts.entries()]
+        .sort(([left], [right]) => Number(left) - Number(right))
+        .map(([supply, count]) => ({
+          currentSupplyAfter: Number(supply),
+          probability: probability(count, sampleCount, exactDistribution),
+        })),
+      lossStateDistribution: [...lossStateCounts.values()]
+        .sort((left, right) => left.casualtyCount - right.casualtyCount
+          || Number(left.currentSupplyAfter) - Number(right.currentSupplyAfter))
+        .map((entry) => {
+          const possibleCasualtyModelIds = [
+            ...entry.possibleCasualtyModelIds,
+          ].sort();
+          const forcedCasualtyModelIds = entry.forcedCasualtyModelIds
+            ? [...entry.forcedCasualtyModelIds].sort() : [];
+          const positionFor = (modelId) => {
+            const model = (target?.models || []).find((candidate) =>
+              candidate.id === modelId);
+            const xMilliInches = Number.isFinite(Number(model?.xInches))
+              ? Math.round(Number(model.xInches) * 1000)
+              : Number.isFinite(Number(model?.xMilliInches))
+                ? Number(model.xMilliInches) : null;
+            const yMilliInches = Number.isFinite(Number(model?.yInches))
+              ? Math.round(Number(model.yInches) * 1000)
+              : Number.isFinite(Number(model?.yMilliInches))
+                ? Number(model.yMilliInches) : null;
+            return model && xMilliInches !== null && yMilliInches !== null ? {
+              modelId,
+              xMilliInches,
+              yMilliInches,
+              baseRotationDegrees: Number(model.baseRotationDegrees || 0),
+            } : { modelId, position: "unknown" };
+          };
+          return {
+            casualtyCount: entry.casualtyCount,
+            probability: probability(entry.count, sampleCount,
+              exactDistribution),
+            currentModelsAfter: entry.currentModelsAfter,
+            currentSupplyAfter: entry.currentSupplyAfter,
+            supplyControlStrengthChanged:
+              entry.currentSupplyAfter !== currentSupplyBefore,
+            missionMarkerControlSupplyContributionBefore:
+              currentSupplyBefore,
+            missionMarkerControlSupplyContributionAfter:
+              entry.currentSupplyAfter,
+            missionMarkerControlSupplyContributionLost:
+              entry.currentSupplyAfter === null
+                ? null : currentSupplyBefore - entry.currentSupplyAfter,
+            mayStillControlUncontestedMarkerAtSupplyZero:
+              entry.currentModelsAfter > 0 && entry.currentSupplyAfter === 0,
+            possibleCasualtyModelIds,
+            forcedCasualtyModelIds,
+            possibleLostOccupiedPositions:
+              possibleCasualtyModelIds.map(positionFor),
+            forcedLostOccupiedPositions:
+              forcedCasualtyModelIds.map(positionFor),
+            casualtySelectionExamples: [...entry.selectionExamples.values()],
+            casualtyChoiceMaterializationCapped:
+              entry.selectionExamples.size >= 12,
+            strategicConsequences: {
+              lostPotentialModelContributors: entry.casualtyCount,
+              potentialModelContributorsAfterUpperBound:
+                entry.currentModelsAfter,
+              futureAttackDiceRequireFreshLegalSpace: true,
+              printedMovementCharacteristicMayChangeAtSingleModelThreshold:
+                targetRangedContribution.movementProfile
+                  ?.multiModelInches !== targetRangedContribution
+                    .movementProfile?.singleModelInches,
+              formationReachAndContactCoverageMustBeRecomputed: true,
+              objectiveInteractionMustBeRecomputed: true,
+              exactRemovedModelsKnownAfterDefenderSelection: true,
+            },
+          };
+        }),
     },
     assumptions: [
       "The current authoritative ranged domain, target and point-defence choices stay frozen.",
       "Every sampled outcome is resolved by the exact Rules hit, surge, armour, evade, damage and casualty runtime.",
       "Available Precision converts the maximum legal failed hit dice for this estimate.",
+      "Supply-after outcomes use the target's frozen official squad-profile tiers after the exact casualty count.",
       "The estimate cannot select, Preview, confirm or Apply an action.",
     ],
     uncertainty: exactDistribution ? {

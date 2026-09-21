@@ -12,6 +12,8 @@ import {
   evaluateOfficialBaseMeasurementV1,
   evaluateOfficialCoherencyPlacementV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import { deriveOfficialModelSurfacePlacementV2 } from
+  "../rule-atoms/official-engagement-graph-v2.mjs";
 import { resolveOfficialRespawnModelsV1 } from
   "../rule-atoms/official-respawn-morph-rules-kernel-v1.mjs";
 import { verifyOfficialAbilityEffectIrCatalogueV1 } from
@@ -514,6 +516,8 @@ function omegaDomains(bundle, state, sideKey) {
   const result = [];
   for (const omega of routeInstances(state, route).filter((entry) => (
     entry.sideKey === sideKey)).map((entry) => entry.sourcePiece)) {
+    if (Number(omega?.structureRules?.specialAbilitiesDisabledThroughRound
+      ?? Number.NEGATIVE_INFINITY) >= Number(state.round)) continue;
     if (state.phase === "movement") {
       const spent = (state.unitLifecycleUseHistory || []).filter((entry) => (
         entry.effectKind === "omega_network_deploy" && entry.sourceInstanceId === omega.id
@@ -654,13 +658,6 @@ function canonicalPlacement(value) {
   }).sort((left, right) => left.modelId.localeCompare(right.modelId));
   return { leadingModelId: String(value.leadingModelId), placements };
 }
-function canonicalModelElevation(value) {
-  const normalized = String(value || "ground").trim().toLowerCase();
-  if (normalized === "ground_level") return "ground";
-  if (normalized === "mid_ground") return "mid";
-  if (normalized === "high_ground") return "high";
-  return normalized;
-}
 function paymentAllowed(domain, ids) {
   return domain.parameterSchema.paymentCardInstanceIds?.enum?.some((entry) => (
     isDeepStrictEqual(entry, ids)));
@@ -742,8 +739,16 @@ function placementResolution(state, pieceInput, placementPlan, options = {}) {
     model.xInches = row.footprint.center.xMilliInches / 1000;
     model.yInches = row.footprint.center.yMilliInches / 1000;
     model.baseRotationDegrees = row.footprint.rotationDegrees;
-    model.elevation = options.groundLevelRequired
-      ? "ground" : canonicalModelElevation(model.elevation);
+    const surface = deriveOfficialModelSurfacePlacementV2(projected, {
+      pieceId: piece.id,
+      modelId: model.id,
+    });
+    if (options.groundLevelRequired && surface.elevation !== "ground") {
+      fail("UNIT_LIFECYCLE_GROUND_LEVEL_REQUIRED", model.id);
+    }
+    model.elevation = surface.elevation;
+    model.supportTerrainIds = [...surface.supportTerrainIds];
+    model.adjacentAccessPointIds = [...surface.adjacentAccessPointIds];
   }
   const leading = positions.get(placementPlan.leadingModelId);
   piece.xInches = leading.footprint.center.xMilliInches / 1000;

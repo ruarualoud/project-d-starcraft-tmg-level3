@@ -439,7 +439,10 @@ function engagedWithEnemy(state, piece) {
 function passiveRoutesForPiece(bundle, state, piece) {
   return bundle.routes.filter((route) => route.recordKey === piece.officialUnitRecordKey
     && route.actionKind !== "active_ability" && fieldedFeature(piece, route)
-    && activePiece(piece));
+    && activePiece(piece)
+    && (route.effectKind === "structure"
+      || Number(piece?.structureRules?.specialAbilitiesDisabledThroughRound
+        ?? Number.NEGATIVE_INFINITY) < Number(state.round)));
 }
 function cannotGainBurrowed(bundle, state, piece) {
   return passiveRoutesForPiece(bundle, state, piece).some((route) => (
@@ -621,6 +624,17 @@ function domainFor(state, route, instance, actor, available) {
       resourceType: route.resourceType, resourceCost: route.resourceCost,
       resourceCostsByChoice: clone(available.resourceCostsByChoice),
       rangeMilliInches: route.rangeMilliInches || null,
+      strategicImmediateValue: route.effectKind === "fixed_heal" ? {
+        kind: "heal",
+        targetPieceId: actor.id,
+        damageMarkerBefore: Number(actor.damageMarker || 0),
+        printedHeal: Number(route.healValue || 0),
+        effectiveHeal: Math.min(Number(actor.damageMarker || 0),
+          Number(route.healValue || 0)),
+        zeroBenefit: Number(actor.damageMarker || 0) <= 0,
+        rulesDerived: true,
+        trainingTruth: false,
+      } : null,
       sourceRouteHash: route.routeHash },
     confirmationClass: "rules_owned_direct_action",
     rulesTruth: "official_current_product_characteristic_status_parameter_domain",

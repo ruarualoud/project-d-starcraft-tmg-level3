@@ -444,10 +444,15 @@ function wormForSide(state, sideKey) {
     && entry.officialUnitRecordKey === OMEGA_WORM_RECORD_KEY
     && entry.sideKey === sideKey && entry.isDestroyed !== true);
 }
+function wormSpecialAbilitiesAvailable(state, worm) {
+  return Number(worm?.structureRules?.specialAbilitiesDisabledThroughRound
+    ?? Number.NEGATIVE_INFINITY) < Number(state.round);
+}
 export function isOfficialSelectedRosterUnitOnCreepV1(state, piece) {
   if (!activePiece(piece) || !piece.combatTags?.includes("ground")) return false;
   const worm = wormForSide(state, piece.sideKey);
-  return Boolean(worm) && unitGap(piece, worm) <= 6.001;
+  return Boolean(worm) && wormSpecialAbilitiesAvailable(state, worm)
+    && unitGap(piece, worm) <= 6.001;
 }
 function routeAvailable(state, route, actor) {
   phaseReady(state, route.sideKey, route, actor);

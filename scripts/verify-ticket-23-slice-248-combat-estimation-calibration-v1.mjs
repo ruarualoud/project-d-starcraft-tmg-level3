@@ -209,6 +209,14 @@ try {
   assert.equal(attack.result.targetUnitId, targetUnitId);
   assert(attack.result.outcomes.sampleCount >= 216);
   assert(Number.isFinite(attack.result.outcomes.expectedDamage));
+  assert(Number.isFinite(attack.result.outcomes.expectedSupplyAfter));
+  assert(Array.isArray(attack.result.outcomes.supplyAfterDistribution));
+  assert(attack.result.outcomes.supplyAfterDistribution.length > 0);
+  assert(Array.isArray(attack.result.outcomes.lossStateDistribution));
+  assert(attack.result.outcomes.lossStateDistribution.every((entry) =>
+    Array.isArray(entry.possibleCasualtyModelIds)
+      && Array.isArray(entry.strategicConsequences
+        ? Object.keys(entry.strategicConsequences) : null)));
   assert.equal(attack.result.rulesMechanicsPerOutcome, "exact");
 
   const exchange = await adapter.query({

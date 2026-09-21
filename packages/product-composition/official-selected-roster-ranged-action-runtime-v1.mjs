@@ -17,6 +17,10 @@ import {
 } from "../rule-atoms/official-elevation-effective-size-rules-kernel-v1.mjs";
 import { createOfficialMultiModelCasualtyResolutionKernelV1 } from
   "../rule-atoms/official-multi-model-casualty-resolution-kernel-v1.mjs";
+import { projectOfficialContextualSupplyValueV1 } from
+  "../rule-atoms/official-contextual-supply-projection-v1.mjs";
+import { resolveOfficialMissionMarkerControlV2 } from
+  "../rule-atoms/official-mission-marker-control-kernel-v1.mjs";
 import {
   OFFICIAL_RANGED_ATTACK_V6_ACTION_ATOM_IDS,
 } from "../rule-atoms/official-ranged-attack-executor-v6.mjs";
@@ -29,6 +33,8 @@ import {
   getOfficialAttackProfileV1,
   verifyOfficialAttackProfileCatalogueV1,
 } from "../source-data/official-attack-profile-catalogue-v1.mjs";
+import { createOfficialAttackProfileCatalogueV2 } from
+  "../source-data/official-attack-profile-catalogue-v2.mjs";
 import { getOfficialCombatProfileV1, verifyOfficialCombatProfileBundleV1 } from
   "../source-data/official-combat-profile-bundle-v1.mjs";
 import { verifyOfficialTerrainLosDataBundleV1 } from
@@ -165,9 +171,492 @@ function pendingCasualtyChoice(state) {
   verifyOfficialCurrentProductCasualtyDomainV1(pending.casualtyDomain);
   return pending;
 }
-function casualtyChoiceDomain(pending) {
+
+function modelPositionForStrategy(model) {
+  const xMilliInches = Number.isFinite(Number(model?.xInches))
+    ? Math.round(Number(model.xInches) * 1000)
+    : Number.isFinite(Number(model?.xMilliInches))
+      ? Number(model.xMilliInches) : null;
+  const yMilliInches = Number.isFinite(Number(model?.yInches))
+    ? Math.round(Number(model.yInches) * 1000)
+    : Number.isFinite(Number(model?.yMilliInches))
+      ? Number(model.yMilliInches) : null;
+  return { xMilliInches, yMilliInches,
+    baseRotationDegrees: Number(model?.baseRotationDegrees || 0) };
+}
+
+function formationEnvelopeForStrategicModels(models) {
+  const positioned = models.map((model) => ({
+    modelId: model.modelId || model.id,
+    ...modelPositionForStrategy(model),
+  })).filter((model) => Number.isFinite(model.xMilliInches)
+    && Number.isFinite(model.yMilliInches));
+  if (positioned.length === 0) return null;
+  const x = positioned.map((model) => model.xMilliInches);
+  const y = positioned.map((model) => model.yMilliInches);
+  return {
+    modelCount: positioned.length,
+    minXMilliInches: Math.min(...x),
+    maxXMilliInches: Math.max(...x),
+    minYMilliInches: Math.min(...y),
+    maxYMilliInches: Math.max(...y),
+    widthMilliInches: Math.max(...x) - Math.min(...x),
+    heightMilliInches: Math.max(...y) - Math.min(...y),
+    modelBaseFootprintsExcludedFromEnvelope: true,
+  };
+}
+
+function strategicMovementProfile(state, target) {
+  const route = state.officialActionRouteCatalogue?.units?.find((entry) =>
+    entry.pieceId === target.id
+      && entry.recordKey === target.officialUnitRecordKey);
+  const movement = route?.movementProfile;
+  if (!movement) return null;
+  const multiModelInches = Number(movement.multiModelSpeedInches);
+  const singleModelInches = Number(movement.singleModelSpeedInches);
+  if (!Number.isFinite(multiModelInches)
+    || !Number.isFinite(singleModelInches)) return null;
+  return {
+    printedSourceValue: movement.sourceValue || null,
+    multiModelInches,
+    singleModelInches,
+    currentPrintedInches: Number(target.currentModels) === 1
+      ? singleModelInches : multiModelInches,
+    modifiersRequireFreshLegalSpace: true,
+  };
+}
+
+function currentMeleeRanks(state, target) {
+  try {
+    if (!activePiece(target)) return {
+      status: "not_on_battlefield",
+      fightingModelIds: [], supportingModelIds: [], contributingModelIds: [],
+    };
+    const graph = deriveOfficialEngagementGraphV2(state);
+    const fightingModelIds = activeModels(target).filter((model) => (
+      graph.modelEdges.some((edge) => (
+        edge.leftUnitId === target.id && edge.leftModelId === model.id
+          || edge.rightUnitId === target.id && edge.rightModelId === model.id
+      ))
+    )).map((model) => model.id).sort();
+    const fighting = new Set(fightingModelIds);
+    const supportingModelIds = activeModels(target).filter((model) => (
+      !fighting.has(model.id) && activeModels(target).some((friend) => (
+        fighting.has(friend.id)
+          && baseGapInches(state, target, model, target, friend) <= 0.001
+      ))
+    )).map((model) => model.id).sort();
+    return {
+      status: "exact_current_geometry",
+      engagementGraphHash: graph.graphHash,
+      fightingModelIds,
+      supportingModelIds,
+      contributingModelIds:
+        [...fightingModelIds, ...supportingModelIds].sort(),
+    };
+  } catch (error) {
+    return {
+      status: "unknown",
+      reason: String(error?.message || error).split(":")[0],
+      fightingModelIds: [], supportingModelIds: [], contributingModelIds: [],
+    };
+  }
+}
+
+function projectMissionMarkerControl(state) {
+  try {
+    const projected = clone(state);
+    projected.phase = "cleanup";
+    const resolution = resolveOfficialMissionMarkerControlV2({
+      state: projected,
+      terrainLosDataBundle: projected.officialTerrainLosDataBundle,
+      matchBinding: {
+        rulesRuntimeBinding: {
+          runtimeHash: projected.officialMissionRuntimeDescriptor?.runtimeHash,
+        },
+      },
+    });
+    return {
+      status: "exact_current_geometry",
+      controlResolutionHash: resolution.controlResolutionHash,
+      markerResults: clone(resolution.markerResults),
+    };
+  } catch (error) {
+    return {
+      status: "unknown",
+      reason: String(error?.message || error).split(":")[0],
+      markerResults: [],
+    };
+  }
+}
+
+function casualtyProjectedState(state, targetPieceId, casualtyModelIds) {
+  const projected = clone(state);
+  const target = projected.pieces.find((piece) => piece.id === targetPieceId);
+  if (!target) fail("SELECTED_RANGED_CASUALTY_TARGET_UNKNOWN", targetPieceId);
+  const casualties = new Set(casualtyModelIds);
+  for (const model of target.models) {
+    if (!casualties.has(model.id)) continue;
+    model.isDestroyed = true;
+    model.isOnField = false;
+  }
+  target.destroyedModelIds = [...new Set([
+    ...(target.destroyedModelIds || []), ...casualties,
+  ])].sort();
+  target.currentModels = activeModels(target).length;
+  const profile = getOfficialCombatProfileV1(
+    projected.officialCombatProfileBundle, target.officialUnitRecordKey);
+  target.currentSupply = exactCurrentSupply(profile, target.currentModels);
+  if (target.currentModels === 0) {
+    target.isDestroyed = true;
+    target.isOnField = false;
+  }
+  return projected;
+}
+
+function missionMarkerControlConsequences(state, targetPieceId, casualtyModelIds) {
+  const before = projectMissionMarkerControl(state);
+  const after = projectMissionMarkerControl(casualtyProjectedState(
+    state, targetPieceId, casualtyModelIds));
+  if (before.status !== "exact_current_geometry"
+    || after.status !== "exact_current_geometry") {
+    return {
+      status: "unknown",
+      beforeReason: before.reason || null,
+      afterReason: after.reason || null,
+      markers: [],
+    };
+  }
+  const afterById = new Map(after.markerResults.map((row) => [row.markerId, row]));
+  return {
+    status: "exact_current_geometry",
+    beforeControlResolutionHash: before.controlResolutionHash,
+    afterControlResolutionHash: after.controlResolutionHash,
+    markers: before.markerResults.map((beforeMarker) => {
+      const afterMarker = afterById.get(beforeMarker.markerId);
+      const beforeUnit = beforeMarker.contestingUnitsBySide
+        ?.[state.pieces.find((piece) => piece.id === targetPieceId)?.sideKey]
+        ?.find((unit) => unit.unitId === targetPieceId) || null;
+      const afterUnit = afterMarker?.contestingUnitsBySide
+        ?.[state.pieces.find((piece) => piece.id === targetPieceId)?.sideKey]
+        ?.find((unit) => unit.unitId === targetPieceId) || null;
+      return {
+        markerId: beforeMarker.markerId,
+        beforeEligibleModelIds: clone(beforeUnit?.eligibleModelIds || []),
+        afterEligibleModelIds: clone(afterUnit?.eligibleModelIds || []),
+        targetUnitContestsBefore: Boolean(beforeUnit),
+        targetUnitContestsAfter: Boolean(afterUnit),
+        supplyTotalsBefore: clone(beforeMarker.supplyTotals),
+        supplyTotalsAfter: clone(afterMarker?.supplyTotals || null),
+        controllerBefore: beforeMarker.nextControlSideKey,
+        controllerAfter: afterMarker?.nextControlSideKey || null,
+        controllerChangedByCasualtySelection:
+          beforeMarker.nextControlSideKey !== afterMarker?.nextControlSideKey,
+        resultBefore: beforeMarker.result,
+        resultAfter: afterMarker?.result || null,
+      };
+    }),
+  };
+}
+
+function tacticalMassProjection(state, targetPieceId) {
+  try {
+    const target = state.pieces.find((piece) => piece.id === targetPieceId);
+    if (!target || !activePiece(target)) return {
+      status: "not_applicable",
+      reason: "target_not_active_on_battlefield",
+    };
+    const graph = deriveOfficialEngagementGraphV2(state);
+    const engagedEnemyUnitIds = [...new Set(graph.modelEdges.flatMap((edge) => {
+      if (edge.leftUnitId === targetPieceId) return [edge.rightUnitId];
+      if (edge.rightUnitId === targetPieceId) return [edge.leftUnitId];
+      return [];
+    }))].sort();
+    if (engagedEnemyUnitIds.length === 0) return {
+      status: "not_applicable",
+      reason: "not_currently_engaged",
+      engagementGraphHash: graph.graphHash,
+      engagedEnemyUnitIds: [],
+    };
+    const own = projectOfficialContextualSupplyValueV1({
+      state, pieceId: targetPieceId, context: "disengage_check",
+    });
+    const enemyRows = engagedEnemyUnitIds.map((pieceId) =>
+      projectOfficialContextualSupplyValueV1({
+        state, pieceId, context: "disengage_check",
+      }));
+    const combinedEnemyEffectiveSupply = enemyRows.reduce((sum, row) =>
+      sum + Number(row.effectiveSupply), 0);
+    return {
+      status: "exact_current_geometry",
+      engagementGraphHash: graph.graphHash,
+      engagedEnemyUnitIds,
+      ownEffectiveSupply: Number(own.effectiveSupply),
+      enemyEffectiveSupplyByUnit: Object.fromEntries(enemyRows.map((row) => [
+        row.pieceId, Number(row.effectiveSupply),
+      ])),
+      combinedEnemyEffectiveSupply,
+      tacticalMass: Number(own.effectiveSupply) > combinedEnemyEffectiveSupply,
+      followingAssaultPenaltyAvoided:
+        Number(own.effectiveSupply) > combinedEnemyEffectiveSupply,
+    };
+  } catch (error) {
+    return {
+      status: "unknown",
+      reason: String(error?.message || error).split(":")[0],
+    };
+  }
+}
+
+function strategicLossContext(state, target) {
+  const profileRows = activeProfilesFor(state, target).profiles.map((profile) => {
+    const contributingModelIds = contributingModelIdsFor(
+      state, target, profile).sort();
+    return {
+      profileKey: profile.profileKey,
+      weaponName: profile.weaponName,
+      contributingModelIds,
+      printedRateOfAttackPerContributor: Number(profile.rateOfAttack),
+      printedHitThreshold: Number(profile.hitThreshold),
+      printedDamagePerConfirmedDie: Number(profile.damage),
+      printedHitDiceBeforeModifiers:
+        contributingModelIds.length * Number(profile.rateOfAttack),
+      surge: clone(profile.surge || null),
+      exactCurrentDiceAndDamageRequireFreshLegalSpace: true,
+    };
+  });
+  const active = activeModels(target);
+  const catalogueV2 = state.officialAttackProfileCatalogueV2
+    || createOfficialAttackProfileCatalogueV2({
+      previousCatalogue: state.officialAttackProfileCatalogue,
+    });
+  const fieldedMelee = catalogueV2.profiles.filter((profile) => (
+    profile.recordKey === target.officialUnitRecordKey
+      && profile.phase === "combat"
+      && profile.range.kind === "engagement"
+      && profileFielded(target, profile)
+  ));
+  const replacedMelee = new Set(fieldedMelee.filter((profile) =>
+    profile.linkedTo !== "-").map((profile) =>
+    normalizedName(profile.linkedTo)));
+  const meleeProfileRows = fieldedMelee.filter((profile) =>
+    !replacedMelee.has(normalizedName(profile.weaponName))).map((profile) => ({
+    profileKey: profile.profileKey,
+    weaponName: profile.weaponName,
+    potentialContributingModelIds: active.map((model) => model.id).sort(),
+    printedRateOfAttackPerContributor: Number(profile.rateOfAttack),
+    printedHitThreshold: Number(profile.hitThreshold),
+    printedDamagePerConfirmedDie: Number(profile.damage),
+    exactContributorsDependOnFutureEngagementAndCloseRanks: true,
+  })).sort((left, right) => left.profileKey.localeCompare(right.profileKey));
+  const movementProfile = strategicMovementProfile(state, target);
+  const meleeRanks = currentMeleeRanks(state, target);
+  const currentMeleeProfiles = meleeProfileRows.map((profile) => ({
+    profileKey: profile.profileKey,
+    weaponName: profile.weaponName,
+    fightingModelIds: clone(meleeRanks.fightingModelIds),
+    supportingModelIds: clone(meleeRanks.supportingModelIds),
+    contributingModelIds: clone(meleeRanks.contributingModelIds),
+    printedRateOfAttackPerContributor:
+      profile.printedRateOfAttackPerContributor,
+    printedHitDice: meleeRanks.contributingModelIds.length
+      * profile.printedRateOfAttackPerContributor,
+    printedHitThreshold: profile.printedHitThreshold,
+    printedDamagePerConfirmedDie: profile.printedDamagePerConfirmedDie,
+    contributionGeometryStatus: meleeRanks.status,
+    contributionGeometryReason: meleeRanks.reason || null,
+    engagementGraphHash: meleeRanks.engagementGraphHash || null,
+    closeRanksFutureGeometryExcluded: true,
+  }));
+  return {
+    unitId: target.id,
+    movementProfile,
+    movementCharacteristicInches:
+      movementProfile?.currentPrintedInches ?? null,
+    movementCharacteristicMayChangeAtSingleModelThreshold:
+      Boolean(movementProfile
+        && movementProfile.multiModelInches !== movementProfile.singleModelInches),
+    formationEnvelopeBefore: formationEnvelopeForStrategicModels(active),
+    models: active.map((model) => ({
+      modelId: model.id,
+      position: modelPositionForStrategy(model),
+      wasLeadingModel: model.id === target.leadingModelId,
+      assignedUpgradeNames: clone(
+        target.assignedUpgradeByModelId?.[model.id] || []),
+      rangedContributions: profileRows.filter((profile) =>
+        profile.contributingModelIds.includes(model.id)).map((profile) => ({
+        profileKey: profile.profileKey,
+        weaponName: profile.weaponName,
+        printedRateOfAttack: profile.printedRateOfAttackPerContributor,
+        printedHitThreshold: profile.printedHitThreshold,
+        printedDamagePerConfirmedDie:
+          profile.printedDamagePerConfirmedDie,
+      })),
+      meleePotentialContributions: meleeProfileRows.map((profile) => ({
+        profileKey: profile.profileKey,
+        weaponName: profile.weaponName,
+        exactContributionDependsOnFutureEngagementAndCloseRanks: true,
+      })),
+    })).sort((left, right) => left.modelId.localeCompare(right.modelId)),
+    profileContributorsBefore: profileRows,
+    meleePotentialContributorsBefore: meleeProfileRows,
+    currentMeleeContributorsBefore: currentMeleeProfiles,
+    markerControlUsesCurrentSupplyAndAtLeastOneEligibleModelWithinThreeInches:
+      true,
+    exactObjectiveControlRequiresFreshRulesProjection: true,
+    rulesAuthority: true,
+    trainingTruth: false,
+  };
+}
+
+function strategicLossOption(pending, selection, state) {
+  const context = pending.targetStrategicLossContext || { models: [] };
+  const casualties = new Set(selection.casualtyModelIds || []);
+  const lostModels = (context.models || []).filter((model) =>
+    casualties.has(model.modelId));
+  const remainingModels = (context.models || []).filter((model) =>
+    !casualties.has(model.modelId));
+  const profileLosses = (context.profileContributorsBefore || []).map((profile) => {
+    const lostContributorModelIds = profile.contributingModelIds.filter((modelId) =>
+      casualties.has(modelId));
+    return {
+      profileKey: profile.profileKey,
+      weaponName: profile.weaponName,
+      contributingModelCountBefore: profile.contributingModelIds.length,
+      lostContributorModelIds,
+      contributingModelCountAfter: profile.contributingModelIds.length
+        - lostContributorModelIds.length,
+      printedHitDiceBefore: profile.printedHitDiceBeforeModifiers,
+      printedHitDiceAfter: (profile.contributingModelIds.length
+        - lostContributorModelIds.length)
+          * profile.printedRateOfAttackPerContributor,
+      printedHitDiceLost: lostContributorModelIds.length
+        * profile.printedRateOfAttackPerContributor,
+      printedHitThreshold: profile.printedHitThreshold,
+      printedDamagePerConfirmedDie: profile.printedDamagePerConfirmedDie,
+      contributionCompletelyLost: lostContributorModelIds.length
+        === profile.contributingModelIds.length,
+      exactFutureDiceRequireFreshLegalSpace: true,
+    };
+  });
+  const meleePotentialLosses = (
+    context.meleePotentialContributorsBefore || []).map((profile) => {
+    const lostPotentialContributorModelIds =
+      profile.potentialContributingModelIds.filter((modelId) =>
+        casualties.has(modelId));
+    return {
+      profileKey: profile.profileKey,
+      weaponName: profile.weaponName,
+      potentialContributingModelCountBefore:
+        profile.potentialContributingModelIds.length,
+      lostPotentialContributorModelIds,
+      potentialContributingModelCountAfter:
+        profile.potentialContributingModelIds.length
+          - lostPotentialContributorModelIds.length,
+      printedPotentialHitDiceLost: lostPotentialContributorModelIds.length
+        * profile.printedRateOfAttackPerContributor,
+      printedHitThreshold: profile.printedHitThreshold,
+      printedDamagePerConfirmedDie: profile.printedDamagePerConfirmedDie,
+      exactFutureDiceRequireEngagementAndFreshLegalSpace: true,
+    };
+  });
+  const currentMeleeLosses = (
+    context.currentMeleeContributorsBefore || []).map((profile) => {
+    const lostContributorModelIds = profile.contributingModelIds.filter(
+      (modelId) => casualties.has(modelId));
+    return {
+      ...clone(profile),
+      lostContributorModelIds,
+      contributingModelCountBefore: profile.contributingModelIds.length,
+      contributingModelCountAfter: profile.contributingModelIds.length
+        - lostContributorModelIds.length,
+      printedHitDiceAfter: (profile.contributingModelIds.length
+        - lostContributorModelIds.length)
+          * profile.printedRateOfAttackPerContributor,
+      printedHitDiceLost: lostContributorModelIds.length
+        * profile.printedRateOfAttackPerContributor,
+      exactForCurrentGeometry: profile.contributionGeometryStatus
+        === "exact_current_geometry",
+    };
+  });
+  const formationEnvelopeAfter = formationEnvelopeForStrategicModels(
+    remainingModels.map((model) => ({
+      id: model.modelId,
+      xMilliInches: model.position?.xMilliInches,
+      yMilliInches: model.position?.yMilliInches,
+      baseRotationDegrees: model.position?.baseRotationDegrees,
+    })),
+  );
+  const currentPrintedMovement = context.movementProfile
+    ?.currentPrintedInches ?? null;
+  const movementAfter = remainingModels.length === 0
+    ? 0 : remainingModels.length === 1
+      ? context.movementProfile?.singleModelInches ?? null
+      : context.movementProfile?.multiModelInches ?? null;
+  const postCasualtyState = casualtyProjectedState(
+    state, pending.targetPieceId, selection.casualtyModelIds);
+  const tacticalMassBefore = tacticalMassProjection(
+    state, pending.targetPieceId);
+  const tacticalMassAfter = tacticalMassProjection(
+    postCasualtyState, pending.targetPieceId);
+  return {
+    lostModels: clone(lostModels),
+    remainingModelIds: remainingModels.map((model) => model.modelId),
+    rangedContributionLosses: profileLosses,
+    meleePotentialContributionLosses: meleePotentialLosses,
+    currentMeleeContributionLosses: currentMeleeLosses,
+    formationEnvelopeBefore: clone(context.formationEnvelopeBefore || null),
+    formationEnvelopeAfter,
+    formationReachChanged: JSON.stringify(context.formationEnvelopeBefore || null)
+      !== JSON.stringify(formationEnvelopeAfter),
+    printedMovementCharacteristicBeforeInches: currentPrintedMovement,
+    printedMovementCharacteristicAfterInches: movementAfter,
+    printedMovementCharacteristicDeltaInches:
+      currentPrintedMovement === null || movementAfter === null
+        ? null : movementAfter - currentPrintedMovement,
+    movementCharacteristicChangedByCasualtySelection:
+      currentPrintedMovement === null || movementAfter === null
+        ? null : movementAfter !== currentPrintedMovement,
+    movementModifiersRequireFreshLegalSpace: true,
+    movementAndPlacementReachMustBeResolvedFromSurvivorFootprints: true,
+    missionMarkerControlConsequences: missionMarkerControlConsequences(
+      state, pending.targetPieceId, selection.casualtyModelIds),
+    tacticalMassConsequences: {
+      before: tacticalMassBefore,
+      after: tacticalMassAfter,
+      changed: tacticalMassBefore.status === "exact_current_geometry"
+        && tacticalMassAfter.status === "exact_current_geometry"
+        ? tacticalMassBefore.tacticalMass !== tacticalMassAfter.tacticalMass
+        : null,
+    },
+    exactObjectiveControlRequiresFreshRulesProjection: false,
+  };
+}
+
+function destroyedSupplyVictoryPointRate(state) {
+  const recordKey = state?.mission?.recordKey
+    || state?.selectedMission?.profile?.recordKey;
+  const mission = (state?.officialMissionEffectCatalogue?.missions || [])
+    .find((entry) => entry.missionRef?.recordKey === recordKey);
+  const rule = (mission?.scoring?.commonRules || []).find((entry) =>
+    entry.kind === "destroyed_enemy_supply_vp");
+  return rule ? Number(rule.vpPerDestroyedEnemySupply || 0) : null;
+}
+
+function casualtyChoiceDomain(pending, state) {
   const explicitModelSelection = pending.casualtyDomain.selectionMode
     === "explicit_model_ids";
+  const strategicSupplyAfter = (currentModels) =>
+    Array.isArray(pending.targetSquadProfile)
+      && pending.targetSquadProfile.length > 0
+      ? exactCurrentSupply({ squadProfile: pending.targetSquadProfile },
+        currentModels)
+      : null;
+  const supplyDelta = (currentSupplyAfter) =>
+    pending.currentSupplyBefore === undefined
+      || pending.currentSupplyBefore === null
+      || currentSupplyAfter === null
+      ? null : Number(pending.currentSupplyBefore) - currentSupplyAfter;
   const parameterSchema = explicitModelSelection ? {
     type: "object",
     required: ["casualtyModelIds"],
@@ -193,6 +682,20 @@ function casualtyChoiceDomain(pending) {
       )),
     },
   };
+  const explicitCurrentModelsAfter = Math.max(0,
+    Number(pending.targetStrategicLossContext?.models?.length || 0)
+      - Number(pending.casualtyDomain.casualtyCount || 0));
+  const explicitCurrentSupplyAfter = strategicSupplyAfter(
+    explicitCurrentModelsAfter);
+  const explicitSupplyLost = supplyDelta(explicitCurrentSupplyAfter);
+  const explicitMovementProfile =
+    pending.targetStrategicLossContext?.movementProfile || null;
+  const explicitMovementBefore =
+    explicitMovementProfile?.currentPrintedInches ?? null;
+  const explicitMovementAfter = explicitCurrentModelsAfter === 0
+    ? 0 : explicitCurrentModelsAfter === 1
+      ? explicitMovementProfile?.singleModelInches ?? null
+      : explicitMovementProfile?.multiModelInches ?? null;
   const body = {
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
     semanticVersion: "1.0.0",
@@ -223,6 +726,84 @@ function casualtyChoiceDomain(pending) {
       materializedSelectionCount:
         pending.casualtyDomain.legalSelections.length,
       legalSelections: clone(pending.casualtyDomain.legalSelections),
+      strategicLossOptions: pending.casualtyDomain.legalSelections.map(
+        (selection) => {
+          const currentSupplyAfter = strategicSupplyAfter(
+            selection.remainingModelIds.length);
+          const supplyLost = supplyDelta(currentSupplyAfter);
+          return {
+            ...strategicLossOption(pending, selection, state),
+            selectionHash: selection.selectionHash,
+            casualtyModelIds: clone(selection.casualtyModelIds),
+            remainingModelIds: clone(selection.remainingModelIds),
+            currentModelsAfter: selection.remainingModelIds.length,
+            currentSupplyBefore: pending.currentSupplyBefore ?? null,
+            currentSupplyAfter,
+            supplyLost,
+            availableSupplyFreed: supplyLost,
+            missionMarkerControlSupplyContributionBefore:
+              pending.currentSupplyBefore ?? null,
+            missionMarkerControlSupplyContributionAfter: currentSupplyAfter,
+            missionMarkerControlSupplyContributionLost: supplyLost,
+            mayStillControlUncontestedMarkerAtSupplyZero:
+              selection.remainingModelIds.length > 0
+                && currentSupplyAfter === 0,
+            attackerVictoryPointsFromSupplyLoss:
+              pending.destroyedSupplyVictoryPointRate === null
+                || supplyLost === null ? null
+                : supplyLost * pending.destroyedSupplyVictoryPointRate,
+            supplyControlStrengthChanged:
+              supplyLost === null ? null : supplyLost !== 0,
+            leadingModelRemoved:
+              selection.casualtyModelIds.includes(pending.targetLeadingModelId),
+            lostPotentialModelContributors: clone(selection.casualtyModelIds),
+            futureAttackDiceRequireFreshLegalSpace: true,
+            formationReachAndContactCoverageMustBeRecomputed: true,
+            objectiveInteractionMustBeRecomputed: true,
+            rulesAuthority: true,
+            trainingTruth: false,
+          };
+        }),
+      explicitSelectionStrategicContract: explicitModelSelection ? {
+        casualtyCount: pending.casualtyDomain.casualtyCount,
+        candidateModelIds: clone(
+          pending.casualtyDomain.selectionContract.candidateModelIds),
+        candidateLossModels: clone((pending.targetStrategicLossContext?.models || [])
+          .filter((model) => pending.casualtyDomain.selectionContract
+            .candidateModelIds.includes(model.modelId))),
+        currentModelsAfter: explicitCurrentModelsAfter,
+        currentSupplyBefore: pending.currentSupplyBefore ?? null,
+        currentSupplyAfter: explicitCurrentSupplyAfter,
+        supplyLost: explicitSupplyLost,
+        availableSupplyFreed: explicitSupplyLost,
+        missionMarkerControlSupplyContributionBefore:
+          pending.currentSupplyBefore ?? null,
+        missionMarkerControlSupplyContributionAfter:
+          explicitCurrentSupplyAfter,
+        missionMarkerControlSupplyContributionLost: explicitSupplyLost,
+        mayStillControlUncontestedMarkerAtSupplyZero:
+          explicitCurrentModelsAfter > 0 && explicitCurrentSupplyAfter === 0,
+        printedMovementCharacteristicBeforeInches: explicitMovementBefore,
+        printedMovementCharacteristicAfterInches: explicitMovementAfter,
+        printedMovementCharacteristicDeltaInches:
+          explicitMovementBefore === null || explicitMovementAfter === null
+            ? null : explicitMovementAfter - explicitMovementBefore,
+        movementCharacteristicChangedByCasualtySelection:
+          explicitMovementBefore === null || explicitMovementAfter === null
+            ? null : explicitMovementAfter !== explicitMovementBefore,
+        movementModifiersRequireFreshLegalSpace: true,
+        profileContributorsBefore: clone(
+          pending.targetStrategicLossContext?.profileContributorsBefore || []),
+        meleePotentialContributorsBefore: clone(
+          pending.targetStrategicLossContext
+            ?.meleePotentialContributorsBefore || []),
+        exactLossListKnownAfterDefenderSelection: true,
+        futureAttackDiceRequireFreshLegalSpace: true,
+        formationReachAndContactCoverageMustBeRecomputed: true,
+        objectiveInteractionMustBeRecomputed: true,
+        rulesAuthority: true,
+        trainingTruth: false,
+      } : null,
       defenderOwnsSelection: true,
     },
     confirmationClass: "explicit_human",
@@ -339,6 +920,87 @@ function activeProfilesFor(state, piece, options = {}) {
   return { loadout, profiles: loadout.profileGroups.map((group) => (
     getOfficialAttackProfileV1(state.officialAttackProfileCatalogue, group.profileKey)
   )).filter((profile) => profile.range.kind === "inches") };
+}
+
+export function projectOfficialSelectedRosterRangedContributionV1(
+  state, pieceId,
+) {
+  const firepower = projectOfficialSelectedRosterRangedFirepowerV1(
+    state, pieceId,
+  );
+  const piece = (state?.pieces || []).find((entry) => entry.id === pieceId);
+  const context = strategicLossContext(state, piece);
+  return freezeDeep({
+    schemaVersion:
+      "starcraft_tmg_official_selected_roster_ranged_contribution_v1",
+    pieceId,
+    profiles: clone(firepower.profiles),
+    models: clone(context.models),
+    formationEnvelopeBefore: clone(context.formationEnvelopeBefore),
+    movementProfile: clone(context.movementProfile),
+    meleePotentialProfiles: clone(
+      context.meleePotentialContributorsBefore || []),
+    currentMeleeProfiles: clone(
+      context.currentMeleeContributorsBefore || []),
+    exactFutureDiceRequireFreshLegalSpace: true,
+    rulesAuthority: true,
+    trainingTruth: false,
+  });
+}
+
+export function projectOfficialSelectedRosterRangedFirepowerV1(
+  state, pieceId,
+) {
+  const piece = (state?.pieces || []).find((entry) => entry.id === pieceId);
+  if (!piece) fail("SELECTED_RANGED_CONTRIBUTION_PIECE_UNKNOWN", pieceId);
+  const { profiles } = activeProfilesFor(state, piece, { activeOnly: true });
+  return freezeDeep({
+    schemaVersion:
+      "starcraft_tmg_official_selected_roster_ranged_firepower_v1",
+    pieceId,
+    profiles: profiles.map((profile) => ({
+      profileKey: profile.profileKey,
+      weaponName: profile.weaponName,
+      contributingModelIds: contributingModelIdsFor(
+        state, piece, profile, { activeOnly: true }).sort(),
+      printedRateOfAttackPerContributor: Number(profile.rateOfAttack),
+      printedHitThreshold: Number(profile.hitThreshold),
+      printedDamagePerConfirmedDie: Number(profile.damage),
+      surge: clone(profile.surge || null),
+    })).sort((left, right) => left.profileKey.localeCompare(right.profileKey)),
+    exactCurrentContributors: true,
+    futureLegalSpaceStillRequired: true,
+    rulesAuthority: true,
+    trainingTruth: false,
+  });
+}
+
+export function projectOfficialSelectedRosterCasualtyStrategyV1(
+  state, pieceId, casualtyModelIds,
+) {
+  const target = (state?.pieces || []).find((entry) => entry.id === pieceId);
+  if (!target) fail("SELECTED_RANGED_CONTRIBUTION_PIECE_UNKNOWN", pieceId);
+  const casualties = [...new Set((casualtyModelIds || []).map(String))].sort();
+  const currentIds = activeModels(target).map((model) => model.id).sort();
+  if (casualties.some((modelId) => !currentIds.includes(modelId))) {
+    fail("SELECTED_RANGED_CASUALTY_MODEL_UNKNOWN", casualties.join("|"));
+  }
+  return freezeDeep({
+    schemaVersion:
+      "starcraft_tmg_official_selected_roster_casualty_strategy_v1",
+    pieceId,
+    casualtyModelIds: casualties,
+    ...strategicLossOption({
+      targetPieceId: pieceId,
+      targetStrategicLossContext: strategicLossContext(state, target),
+    }, {
+      casualtyModelIds: casualties,
+      remainingModelIds: currentIds.filter((modelId) =>
+        !casualties.includes(modelId)),
+    }, state),
+    rulesAuthority: true,
+    trainingTruth: false,
+  });
 }
 function profilesAllowedByPending(state, piece, profiles) {
   const pending = pendingSequence(state);
@@ -1009,7 +1671,7 @@ export function enumerateOfficialSelectedRosterRangedActionsV1(state, options = 
   const casualtyPending = pendingCasualtyChoice(state);
   if (casualtyPending) {
     if (casualtyPending.defenderSideKey === sideKey) {
-      parameterDomains.push(casualtyChoiceDomain(casualtyPending));
+      parameterDomains.push(casualtyChoiceDomain(casualtyPending, state));
     }
     return freezeDeep({
       schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
@@ -1103,7 +1765,7 @@ export function instantiateOfficialSelectedRosterRangedActionV1(
   if (domain?.parameterKind
     === OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_PARAMETER_KIND) {
     const pending = pendingCasualtyChoice(state);
-    const current = pending ? casualtyChoiceDomain(pending) : null;
+    const current = pending ? casualtyChoiceDomain(pending, state) : null;
     if (!current || !isDeepStrictEqual(current, domain) || !object(parameters)) {
       fail("SELECTED_RANGED_CASUALTY_PARAMETER_DOMAIN_INVALID");
     }
@@ -1597,6 +2259,15 @@ function openOfficialSelectedRosterRangedCasualtyChoiceV1(
     chanceReveals: clone(chance.resolution.reveals),
     casualtyDomain: clone(chance.casualtyDomain),
     casualtyDomainHash: chance.casualtyDomain.domainHash,
+    currentSupplyBefore: Number(state.pieces.find((entry) =>
+      entry.id === actionInput.targetId)?.currentSupply || 0),
+    targetLeadingModelId: state.pieces.find((entry) =>
+      entry.id === actionInput.targetId)?.leadingModelId || null,
+    targetSquadProfile: clone(chance.context.targetProfile.squadProfile || []),
+    targetStrategicLossContext: strategicLossContext(state,
+      state.pieces.find((entry) => entry.id === actionInput.targetId)),
+    destroyedSupplyVictoryPointRate:
+      destroyedSupplyVictoryPointRate(state),
     defenderOwnsSelection: true,
     rulesTruth: "official_defender_owned_ranged_casualty_selection",
     trainingTruth: false,
@@ -1665,7 +2336,7 @@ export function applyOfficialSelectedRosterRangedCasualtyChoiceV1(
     || actionInput.casualtyDomainHash !== pending.casualtyDomainHash) {
     fail("SELECTED_RANGED_CASUALTY_ACTION_INVALID");
   }
-  const domain = casualtyChoiceDomain(pending);
+  const domain = casualtyChoiceDomain(pending, stateInput);
   const casualtyParameters = Array.isArray(actionInput.casualtyModelIds)
     ? { casualtyModelIds: actionInput.casualtyModelIds }
     : { casualtySelectionHash: actionInput.casualtySelectionHash };

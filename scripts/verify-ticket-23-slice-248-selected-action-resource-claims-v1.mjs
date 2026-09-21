@@ -27,6 +27,26 @@ const actionSpace = {
         },
       },
     },
+    {
+      domainId: "field-repair-domain",
+      actionType: "resolve_characteristic_status_ability",
+      pieceId: "player1-goliath",
+      abilityName: "Field Repair",
+      effectKind: "fixed_heal",
+      sourceKind: "card_feature",
+      sourceInstanceId: "player1-tactical-2",
+      constraints: {
+        strategicImmediateValue: {
+          kind: "heal", effectiveHeal: 0, zeroBenefit: true,
+        },
+        resourceCostsByChoice: { default: {
+          resourceType: null,
+          printedResourceCost: 0,
+          resourceCostReduction: 0,
+          effectiveResourceCost: 0,
+        } },
+      },
+    },
   ],
 };
 
@@ -92,6 +112,25 @@ const supplyOnly = inspectStarcraftTmgSelectedActionResourceClaimsV1({
 assert.equal(supplyOnly.status, "consistent",
   "zero Supply is not a false claim about the exact Biomass cost");
 
+const falseNoExhaustion = inspectStarcraftTmgSelectedActionResourceClaimsV1({
+  spatialActionSpace: actionSpace,
+  candidateId: "field-repair-domain",
+  stage: "planning",
+  value: {
+    assessment: { currentGoal:
+      "Use Field Repair at no source card exhaustion." },
+    publicPlanSummary: {
+      plan: "Heal without exhausting the source card.",
+      purpose: "Keep every card ready.",
+    },
+  },
+});
+assert.equal(falseNoExhaustion.status, "contradicted");
+assert.equal(falseNoExhaustion.resourceContract.sourceCardExhaustedOnCommit,
+  true);
+assert(falseNoExhaustion.contradictions.some((entry) =>
+  entry.claimKind === "source_card_exhaustion"));
+
 console.log(JSON.stringify({
   passed: true,
   driftedStatus: drifted.status,
@@ -99,6 +138,7 @@ console.log(JSON.stringify({
   effectiveBiomassCost: drifted.resourceContract.costs[0].effectiveResourceCost,
   correctedStatus: corrected.status,
   supplyOnlyStatus: supplyOnly.status,
+  sourceCardExhaustionStatus: falseNoExhaustion.status,
   providerCalls: 0,
   paidCostCny: 0,
 }, null, 2));

@@ -87,6 +87,272 @@ const PUBLIC_BROWSER_CONTENT_MODULES = new Set([
 const MAX_BODY_BYTES = 256 * 1024;
 const SEATS = Object.freeze(["player1", "player2"]);
 
+function sourceDomain(value) {
+  return value?.sourceDomain || value;
+}
+
+function sourceAction(value) {
+  let current = value;
+  while (current?.sourceAction) current = current.sourceAction;
+  return current || {};
+}
+
+function actionIdentity(value) {
+  const action = sourceAction(value);
+  return {
+    actionType: action.actionType || null,
+    sideKey: action.sideKey || null,
+    phase: action.phase || null,
+    pieceId: action.pieceId || null,
+    abilityName: action.abilityName || null,
+    effectKind: action.effectKind
+      || action.abilityPlan?.effectKind
+      || action.characteristicStatusPlan?.effectKind || null,
+    chosenFirstActorSideKey: action.chosenFirstActorSideKey || null,
+  };
+}
+
+function sameActionIdentity(left, right) {
+  const a = actionIdentity(left);
+  const b = actionIdentity(right);
+  return Object.keys(a).every((key) => a[key] === b[key]);
+}
+
+async function loadForkSource(sourceDirectory, throughRevision) {
+  const sourcePrivate = JSON.parse(await readFile(path.join(sourceDirectory,
+    "runner-private.json"), "utf8"));
+  const sourceRunId = path.basename(sourceDirectory);
+  const sourceStore = createSqliteStarcraftTmgRoomStore({
+    filename: path.join(sourceDirectory, "room.sqlite"),
+    privatePayloadCodec: createStarcraftTmgPrivatePayloadCodec({
+      key: sourcePrivate.storeEncryptionKeyBase64,
+      keyId: `ticket23-slice248-room-store-${sourceRunId}`,
+      trustLevel: "development_persistent",
+    }),
+  });
+  try {
+    const bundle = await sourceStore.loadReplayBundle(sourcePrivate.roomId);
+    const receipts = (bundle.privateJournal || [])
+      .filter((entry) => entry.payload?.type === "accepted_transition")
+      .map((entry) => entry.payload.payload.receipt)
+      .filter((receipt) => Number(receipt.postStateRevision) <= throughRevision)
+      .sort((left, right) => Number(left.postStateRevision)
+        - Number(right.postStateRevision));
+    if (receipts.length !== throughRevision
+      || Number(receipts.at(-1)?.postStateRevision || 0) !== throughRevision) {
+      throw new Error("SLICE265_FORK_PREFIX_INCOMPLETE");
+    }
+    const sourceActions = (await readFile(path.join(sourceDirectory,
+      "actions.ndjson"), "utf8")).split(/\r?\n/gu).filter(Boolean)
+      .map((line) => JSON.parse(line))
+      .filter((entry) => Number(entry.postStateRevision) <= throughRevision)
+      .sort((left, right) => Number(left.postStateRevision)
+        - Number(right.postStateRevision));
+    return { sourceRunId, sourceRoomId: sourcePrivate.roomId,
+      sourceDirectory, receipts, sourceActions };
+  } finally {
+    sourceStore.close();
+  }
+}
+
+async function seedForkContinuity({ fixture, roomId, forkSource, fork }) {
+  const seatBindings = {
+    player1: {
+      seatToken: fixture.createdRoom.credentials.human.seatToken,
+      scope: fixture.player1Scope,
+      continuity: fixture.player1Continuity,
+    },
+    player2: {
+      seatToken: fixture.createdRoom.credentials.bot.seatToken,
+      scope: fixture.botScope,
+      continuity: fixture.continuity,
+    },
+  };
+  const seeds = [];
+  for (const [sideKey, binding] of Object.entries(seatBindings)) {
+    const source = forkSource.sourceActions.filter((entry) =>
+      entry.sideKey === sideKey && entry.modelDecision === true).at(-1);
+    if (!source) continue;
+    const room = await fixture.roomRuntime.readRoom({ roomId,
+      seatToken: binding.seatToken });
+    const legal = await fixture.roomRuntime.legalSpace({ roomId,
+      seatToken: binding.seatToken });
+    if (!room?.ok || !legal?.ok) {
+      throw new Error(`SLICE265_FORK_MEMORY_AUTHORITY_FAILED:${sideKey}`);
+    }
+    const sourcePlan = source.planRevision || {};
+    const sourceIntent = source.intent || {};
+    const planId = `fork-prefix-${sideKey}-${fork.sourceRunId}-r${
+      fork.throughStateRevision}`;
+    const persisted = await binding.continuity.record({
+      scope: binding.scope,
+      roomProjection: room.projection,
+      legalSpace: legal.legalSpace,
+      turnPlan: {
+        planId,
+        sourcePlanId: sourcePlan.planId || null,
+        objective: sourcePlan.objective || sourceIntent.purpose || null,
+        currentGoal: sourcePlan.currentGoal || sourceIntent.currentGoal || null,
+        strategicApproach: structuredClone(sourcePlan.strategicApproach || []),
+        activationPriorities: structuredClone(
+          sourcePlan.activationPriorities || []),
+        resourcePolicy: structuredClone(sourcePlan.resourcePolicy || []),
+        initiativePolicy: structuredClone(sourcePlan.initiativePolicy || []),
+        reservePolicy: structuredClone(sourcePlan.reservePolicy || []),
+        reviseIf: structuredClone(sourcePlan.reviseIf
+          || sourceIntent.stopOrReplanTriggers || []),
+        opponentModel: structuredClone(sourcePlan.opponentModel || []),
+        status: "active",
+        revisionReason:
+          "last legal high-strategy prefix replayed into a fresh branch",
+        forkSourceRunId: fork.sourceRunId,
+        forkThroughStateRevision: fork.throughStateRevision,
+        eligibleForTraining: false,
+        trainingTruth: false,
+      },
+      decision: {
+        candidateId: null,
+        planId,
+        intentId: null,
+        currentGoal: sourceIntent.currentGoal || sourcePlan.currentGoal || null,
+        selectedReason: sourceIntent.selectedReason || null,
+        decisionSummary: sourceIntent.decisionSummary || null,
+        planContinuity:
+          "Recovered from the last legal high-strategy prefix; reassess from current Rules authority before selecting a new candidate.",
+        scoreOrPositionValue: sourceIntent.scoreOrPositionValue || null,
+        expectedOwnOutcome: sourceIntent.expectedOwnOutcome || null,
+        predictedOpponentResponses: structuredClone(
+          sourceIntent.predictedOpponentResponses || []),
+        tradeoffs: structuredClone(sourceIntent.tradeoffs || []),
+        risks: structuredClone(sourceIntent.risks || []),
+        fallbacks: structuredClone(sourceIntent.fallbacks || []),
+        unitIds: structuredClone(sourceIntent.unitIds || []),
+        abilitiesIntended: structuredClone(
+          sourceIntent.abilitiesIntended || []),
+        resourcesIntended: structuredClone(
+          sourceIntent.resourcesIntended || []),
+        nextDecisionFocus: sourceIntent.nextDecisionFocus || null,
+        rejectedAlternatives: structuredClone(
+          sourceIntent.rejectedAlternatives || []),
+      },
+      decisionStatus: "fork_prefix_replayed_reassessment_required",
+      outcome: {
+        status: "fork_prefix_replayed_and_replay_verified",
+        receiptHash: fork.replayedTransitions.at(-1)?.branchJournalHash || null,
+        resultSummary: `Replayed accepted source prefix through revision ${
+          fork.throughStateRevision}; invalid suffix was not copied.`,
+        observedSignals: ["authoritative_prefix_replayed",
+          "invalid_suffix_excluded"],
+        planImpact: "reassess_against_fresh_legal_space",
+        sourceRunId: fork.sourceRunId,
+        sourceStateRevision: Number(source.postStateRevision),
+        eligibleForTraining: false,
+        trainingTruth: false,
+      },
+    });
+    seeds.push({ sideKey, sourceStateRevision: Number(source.postStateRevision),
+      recordCount: persisted.recorded, status: "seeded_for_reassessment" });
+  }
+  return seeds;
+}
+
+async function replayForkPrefix({ fixture, roomId, forkSource }) {
+  const seatTokens = {
+    player1: fixture.createdRoom.credentials.human.seatToken,
+    player2: fixture.createdRoom.credentials.bot.seatToken,
+  };
+  const replayedTransitions = [];
+  for (const sourceReceipt of forkSource.receipts) {
+    const seatKey = sourceReceipt.applyingSeatKey;
+    const seatToken = seatTokens[seatKey];
+    const aggregate = await fixture.roomRuntime.roomStore.loadRoom(roomId);
+    const legal = await fixture.roomRuntime.legalSpace({ roomId, seatToken });
+    if (!legal?.ok) throw new Error(`SLICE265_FORK_LEGALSPACE_FAILED:${
+      legal?.reason || seatKey}`);
+    const sourceProposal = sourceReceipt.proposal;
+    let previewInput;
+    if (sourceProposal.kind === "finite") {
+      const candidate = (legal.legalSpace.finiteActions || []).find((entry) =>
+        sameActionIdentity(entry.action, sourceReceipt.action));
+      if (!candidate) throw new Error(
+        `SLICE265_FORK_FINITE_ACTION_MISSING:${sourceReceipt.postStateRevision}`);
+      previewInput = { candidateId: candidate.actionKey };
+    } else {
+      const domain = (legal.legalSpace.parameterDomains || []).find((entry) =>
+        sameActionIdentity(sourceDomain(entry), sourceReceipt.action));
+      if (!domain) throw new Error(
+        `SLICE265_FORK_DOMAIN_MISSING:${sourceReceipt.postStateRevision}`);
+      previewInput = { proposal: { kind: "parameterized",
+        domainId: domain.domainId,
+        parameters: structuredClone(sourceProposal.parameters) } };
+    }
+    const preview = await fixture.roomRuntime.previewAction({
+      roomId, seatToken, ...previewInput,
+      expectedMatchBindingHash: fixture.createdRoom.matchBinding.bindingHash,
+      expectedLegalSpaceHash: legal.legalSpace.legalSpaceHash,
+      expectedStateRevision: aggregate.stateRevision,
+      expectedStateHash: aggregate.envelope.stateHash,
+    });
+    if (!preview?.ok) throw new Error(`SLICE265_FORK_PREVIEW_FAILED:${
+      sourceReceipt.postStateRevision}:${JSON.stringify({
+        reason: preview?.reason || "unknown",
+        message: preview?.message || null,
+        rulesReason: preview?.rulesReason || null,
+        field: preview?.field || null,
+        actionIdentity: actionIdentity(sourceReceipt.action),
+      })}`);
+    let confirmationId = null;
+    if (preview.confirmationRequired) {
+      const confirmed = await fixture.roomRuntime.confirmPreview({
+        roomId, seatToken,
+        previewId: preview.preview.previewId,
+        previewToken: preview.preview.previewToken,
+        previewContentHash: preview.preview.previewSeal.contentHash,
+      });
+      if (!confirmed?.ok) throw new Error(`SLICE265_FORK_CONFIRM_FAILED:${
+        sourceReceipt.postStateRevision}:${confirmed?.reason || "unknown"}`);
+      confirmationId = confirmed.confirmation.confirmationId;
+    }
+    const control = await fixture.roomRuntime.claimControl({
+      roomId, seatToken,
+      sessionId: `slice265-fork-prefix:${roomId}:${seatKey}`,
+    });
+    if (!control?.ok) throw new Error(`SLICE265_FORK_CONTROL_FAILED:${
+      sourceReceipt.postStateRevision}:${control?.reason || "unknown"}`);
+    const applied = await fixture.roomRuntime.applyAction({
+      roomId, seatToken,
+      previewId: preview.preview.previewId,
+      confirmationId,
+      leaseId: control.controlLease.leaseId,
+      leaseFence: control.controlLease.leaseFence,
+      expectedStateRevision: aggregate.stateRevision,
+      idempotencyKey: `slice265-fork-prefix:${sourceReceipt.postStateRevision}`,
+    });
+    if (!applied?.ok) throw new Error(`SLICE265_FORK_APPLY_FAILED:${
+      sourceReceipt.postStateRevision}:${applied?.reason || "unknown"}`);
+    replayedTransitions.push({
+      sourceStateRevision: sourceReceipt.postStateRevision,
+      sourceJournalHash: sourceReceipt.journalHash,
+      branchStateRevision: applied.receipt.postStateRevision,
+      branchJournalHash: applied.receipt.journalHash,
+      branchStateHash: applied.receipt.postStateHash,
+      actionType: applied.receipt.action.actionType,
+      sideKey: seatKey,
+    });
+  }
+  return {
+    schema: "ticket25_slice265_high_strategy_fork_v1",
+    sourceRunId: forkSource.sourceRunId,
+    sourceRoomId: forkSource.sourceRoomId,
+    throughStateRevision: forkSource.receipts.length,
+    replayedTransitions,
+    providerCalls: 0,
+    paidCostCny: 0,
+    invalidSuffixCopied: false,
+    trainingTruth: false,
+  };
+}
+
 function safeFile(root, relativePath) {
   const target = path.resolve(root, relativePath);
   return target === root || target.startsWith(`${root}${path.sep}`)
@@ -270,7 +536,12 @@ function compactProviderProjection(projection = {}) {
 }
 
 async function main() {
-  const webBundle = await verifyCurrentWebBundle();
+  const forkPreflightOnly = process.argv.includes("--fork-preflight-only");
+  const webBundle = forkPreflightOnly ? {
+    status: "skipped_for_rules_only_fork_preflight",
+    sourceRefreshPerformed: false,
+    trainingTruth: false,
+  } : await verifyCurrentWebBundle();
   const resumeArgument = process.argv.find((entry) =>
     entry.startsWith("--resume-directory="));
   const requestedResumeDirectory = resumeArgument
@@ -279,6 +550,32 @@ async function main() {
     && requestedResumeDirectory !== LIVE_ROOT
     && !requestedResumeDirectory.startsWith(`${LIVE_ROOT}${path.sep}`)) {
     throw new Error("SLICE248_RESUME_DIRECTORY_OUTSIDE_LIVE_ROOT");
+  }
+  const forkSourceArgument = process.argv.find((entry) =>
+    entry.startsWith("--fork-source-directory="));
+  const requestedForkSourceDirectory = forkSourceArgument
+    ? path.resolve(forkSourceArgument.slice("--fork-source-directory=".length))
+    : null;
+  const forkRevisionArgument = process.argv.find((entry) =>
+    entry.startsWith("--fork-through-revision="));
+  const forkThroughRevision = forkRevisionArgument
+    ? Number(forkRevisionArgument.slice("--fork-through-revision=".length))
+    : null;
+  if (requestedResumeDirectory && requestedForkSourceDirectory) {
+    throw new Error("SLICE265_FORK_AND_RESUME_MUTUALLY_EXCLUSIVE");
+  }
+  if (requestedForkSourceDirectory
+    && (requestedForkSourceDirectory === LIVE_ROOT
+      || !requestedForkSourceDirectory.startsWith(`${LIVE_ROOT}${path.sep}`)
+      || !Number.isSafeInteger(forkThroughRevision)
+      || forkThroughRevision < 1)) {
+    throw new Error("SLICE265_FORK_SOURCE_INVALID");
+  }
+  const forkSource = requestedForkSourceDirectory
+    ? await loadForkSource(requestedForkSourceDirectory, forkThroughRevision)
+    : null;
+  if (forkPreflightOnly && !forkSource) {
+    throw new Error("SLICE265_FORK_PREFLIGHT_SOURCE_REQUIRED");
   }
   const retryProviderOnResume = process.argv.includes(
     "--retry-provider-on-resume");
@@ -393,6 +690,17 @@ async function main() {
     title: "Ticket 23 · Standard 2000 · Agent vs Agent",
     surfaceMode: "agent_agent_live_evidence",
   });
+  const fork = forkSource ? await replayForkPrefix({
+    fixture, roomId, forkSource,
+  }) : null;
+  if (fork) {
+    fork.continuitySeeds = await seedForkContinuity({
+      fixture, roomId, forkSource, fork,
+    });
+    privateState.fork = fork;
+    await writeFile(path.join(dataDirectory, "fork-provenance.json"),
+      `${JSON.stringify(fork, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  }
   if (!requestedResumeDirectory) {
     privateState.resumeCredentials = {
       human: { seatToken: fixture.createdRoom.credentials.human.seatToken },
@@ -402,6 +710,31 @@ async function main() {
       `${JSON.stringify(privateState, null, 2)}\n`, {
         encoding: "utf8", mode: 0o600,
       });
+  }
+  if (forkPreflightOnly) {
+    const roomRead = await fixture.roomRuntime.readRoom({ roomId,
+      seatToken: fixture.createdRoom.credentials.human.seatToken });
+    process.stdout.write(`${JSON.stringify({
+      schemaVersion: "ticket25_slice265_fork_preflight_v1",
+      roomId,
+      dataDirectory,
+      stateRevision: roomRead?.projection?.room?.stateRevision ?? null,
+      stateHash: roomRead?.projection?.room?.stateHash ?? null,
+      fork,
+      providerCalls: 0,
+      providerStacksCreated: false,
+      webServerCreated: false,
+      sourceRefreshPerformed: false,
+      trainingTruth: false,
+    })}\n`);
+    try { await fixture.player1Runtime.close(); } catch {}
+    try { await fixture.botRuntime.close(); } catch {}
+    for (const seatKey of SEATS) {
+      try { memoryJournals[seatKey].close(); } catch {}
+      try { botStores[seatKey].close(); } catch {}
+    }
+    try { roomStore.close(); } catch {}
+    return;
   }
   const providerStacks = {
     player1: await createStarcraftTmgLiveOpponentProviderStackV1({
@@ -696,6 +1029,7 @@ async function main() {
         player1: "selfplay_agent_prompt", player2: "selfplay_agent_prompt",
       },
       webBundle,
+      fork,
       evolutionExport: evolutionExportSummary,
       serviceProcess: {
         pid: process.pid,
@@ -830,6 +1164,7 @@ async function main() {
     totalUnits: startupUsage.totalUnits,
     costCny: startupUsage.estimatedCostCnyMicros / 1_000_000,
     resumed: Boolean(requestedResumeDirectory),
+    fork,
   })}\n`);
   let closing = false;
   const close = async () => {

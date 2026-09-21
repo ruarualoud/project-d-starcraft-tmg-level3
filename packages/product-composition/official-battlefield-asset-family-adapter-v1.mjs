@@ -970,6 +970,10 @@ function zergGround(state, piece) {
   return tags(piece).has("ground") && (tags(piece).has("zerg")
     || faction.includes("zerg") || faction.includes("kerrigan"));
 }
+function structureSpecialAbilitiesAvailable(state, piece) {
+  return Number(piece?.structureRules?.specialAbilitiesDisabledThroughRound
+    ?? Number.NEGATIVE_INFINITY) < Number(state.round);
+}
 export function isOfficialCurrentProductUnitOnCreepV1(state, piece) {
   if (!activePiece(piece) || !zergGround(state, piece)) return false;
   const tumors = existingTokenRows(state).filter((entry) => (
@@ -978,7 +982,8 @@ export function isOfficialCurrentProductUnitOnCreepV1(state, piece) {
     footprintGap(roundFootprint(pointForModel(model), modelRadius(model)),
       token.footprint) <= 6.001)));
   const omega = (state.pieces || []).filter((entry) => activePiece(entry)
-    && entry.officialUnitRecordKey === "army_units:omega_worm");
+    && entry.officialUnitRecordKey === "army_units:omega_worm"
+    && structureSpecialAbilitiesAvailable(state, entry));
   return withinTumor || omega.some((source) => unitWithin(source, piece, 6));
 }
 function markerDistance(state, piece) {
@@ -1011,7 +1016,9 @@ export function projectOfficialBattlefieldAssetFamilyModifiersV1(
   const context = object(request.context) ? request.context : {};
   const pieceRoutes = bundle.routes.filter((route) => route.recordKey
     === piece.officialUnitRecordKey && route.sourceKind === "unit_feature"
-    && fieldedFeature(piece, route));
+    && fieldedFeature(piece, route)
+    && (structureSpecialAbilitiesAvailable(state, piece)
+      || route.effectKind === "structure"));
   const onCreep = isOfficialCurrentProductUnitOnCreepV1(state, piece);
   const activeEffects = (piece.officialAbilityEffects || []).filter((entry) => (
     entry.sourceAdapterId === OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_ID));
