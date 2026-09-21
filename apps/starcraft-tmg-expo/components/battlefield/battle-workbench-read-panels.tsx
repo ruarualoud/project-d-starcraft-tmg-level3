@@ -20,6 +20,11 @@ function value(input: unknown, fallback = "—") {
   return typeof input === "object" ? JSON.stringify(input) : String(input);
 }
 
+function fixedMetric(input: unknown, digits: number, suffix = "") {
+  const parsed = typeof input === "number" ? input : Number(input);
+  return Number.isFinite(parsed) ? `${parsed.toFixed(digits)}${suffix}` : "unknown";
+}
+
 function StatusPill({ status }: { status: string }) {
   return (
     <View style={styles.pill}>
@@ -528,8 +533,11 @@ function PredictedInteractionCard({ snapshot, threat, unitId, probabilityRows, p
             </Text>
             {rows.map((row: any) => (
               <Text key={row.queryId} style={styles.meta}>
-                • {row.weaponName}: E[dmg] {Number(row.result?.expectedDamage ?? 0).toFixed(2)}
-                {" · "}P(≥1) {(100 * Number(row.result?.probabilityAtLeastOneDamage ?? 0)).toFixed(1)}%
+                • {row.weaponName}: E[dmg] {fixedMetric(row.result?.expectedDamage, 2)}
+                {" · "}P(≥1) {row.result?.probabilityAtLeastOneDamage === null
+                  || row.result?.probabilityAtLeastOneDamage === undefined
+                  ? "unknown"
+                  : fixedMetric(100 * Number(row.result.probabilityAtLeastOneDamage), 1, "%")}
                 {" · "}{zh ? "减员" : "casualty"} {row.result?.casualtyProbability === null
                   || row.result?.casualtyProbability === undefined
                   ? (zh ? "未知（多模型分配）" : "unknown (multi-model allocation)")

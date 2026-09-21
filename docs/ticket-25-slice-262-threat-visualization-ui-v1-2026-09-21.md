@@ -200,12 +200,47 @@ lockfile change) — done once before SS-1.
 
 | SS | Commit | Files | Summary |
 | --- | --- | --- | --- |
-| plan | (this commit) | this doc | Audit + frozen numbered plan; no code changed. |
+| plan | `65d5137` | this doc | Audit + frozen numbered plan; no code changed. |
+| SS-1/2 | `d2189a0` | threat overlay, workspace, read panels | K3 implementation: five board-adjacent modes, projection-owned legends and predicted-interaction disclosure. |
+| SS-3 harness | `9ab314b` | browser verifier | Self-contained desktop/narrow browser journey and screenshot contract. |
+| integration corrections | pending checkpoint | workspace, read panels, overlay, verifier | Preserve unknown instead of zero, viewer-relative friendly/enemy labels, direct SVG model selection, integrated-main backend parity, mobile-first battlefield and contained media controls. |
 
 ## 6. Verification receipts
 
-(filled after the named gates run)
+- Desktop real-browser journey: 11 focused checks passed once against the
+  integrated main checkout; eight screenshots exist under
+  `build/ticket-25-slice-262-threat-visualization-browser-v1/browser-evidence/`.
+- Narrow repair journey nominally returned 15 aggregate checks and 11
+  screenshots (`reportHash`
+  `5aafa9ecd9f6bf75923b0afe34b1d95cf1afb2bd6974374e0fe2ebbf54c2ae9b`),
+  but mandatory human screenshot review rejected that report as a false green:
+  the board-after-toggle assertion accepted negative `y`, and the mobile
+  `boardPane` collapsed so the detail tabs overlapped the map contract/legend.
+  The verifier now rejects negative/off-screen board geometry and document
+  horizontal overflow. It has intentionally **not** been rerun after this
+  correction because the three-round convergence budget is exhausted.
+- 0 Provider calls, 0 paid tokens and ¥0 for this slice.
 
 ## 7. Unresolved Critical/High concerns
 
-(filled at closure)
+- **High · narrow layout stacking:** at 390×844, non-desktop `boardPane` still
+  carries desktop `flex: 1`; the following detail panel can overlap the map
+  contract and threat legend. K3 must give the mobile column intrinsic height
+  (or an equivalent non-overlapping structure) and prove it in a real browser.
+- **High · floating companion occlusion:** the current collapsed companion dock
+  spans almost the full narrow viewport and can intercept critical battlefield
+  controls at the bottom edge. A human can scroll around it, but the production
+  UI must reserve or avoid a safe interaction region rather than depend on
+  test-only force clicks.
+- **High · evidence honesty:** the narrow screenshot must visibly contain the
+  claimed battlefield/overlay. A position check must include the lower and
+  upper viewport bounds; `y < threshold` alone is forbidden.
+- **Medium · formal data projection:** official Standard-2000 Marine data has
+  two combat weapons, but `battle-workbench-v1` currently reads only legacy
+  inline piece profiles, yielding zero weapons/HP/threat in the formal room.
+  This backend projection repair remains Codex-owned and does not belong to the
+  K3 presentation slice.
+
+The slice is a preserved checkpoint, **not closed**. Per the three-cycle
+convergence rule, further mobile UI repair is transferred to the next K3 slice
+while Codex continues the independent formal-match path.

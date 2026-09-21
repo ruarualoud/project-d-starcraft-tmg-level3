@@ -155,12 +155,21 @@ export function ThreatOverlayLegend({
   mode,
   regionCount,
   emptyState,
+  viewerSideKey,
 }: {
   zh: boolean;
   mode: ThreatOverlayMode;
   regionCount: number;
   emptyState: string | null;
+  viewerSideKey: string | null;
 }) {
+  const sideRelation = (sideKey: string) => {
+    if (!viewerSideKey) return "";
+    if (viewerSideKey === sideKey) return zh ? "我方" : "friendly";
+    return zh ? "敌方" : "enemy";
+  };
+  const p1Relation = sideRelation("player1");
+  const p2Relation = sideRelation("player2");
   return (
     <View style={styles.legendCard} accessibilityLiveRegion="polite">
       <Text style={styles.legendTitle}>
@@ -171,11 +180,11 @@ export function ThreatOverlayLegend({
       <View style={styles.legendRow}>
         <Text style={styles.legendItem}>
           <Text style={[styles.swatch, { color: SIDE_STROKE.player1 }]}>●</Text>
-          {zh ? " P1 我方" : " P1 friendly"}
+          {` P1${p1Relation ? ` ${p1Relation}` : ""}`}
         </Text>
         <Text style={styles.legendItem}>
           <Text style={[styles.swatch, { color: SIDE_STROKE.player2 }]}>●</Text>
-          {zh ? " P2 敌方" : " P2 enemy"}
+          {` P2${p2Relation ? ` ${p2Relation}` : ""}`}
         </Text>
         <Text style={styles.legendItem}>
           <Text style={[styles.swatch, { color: CHARGE_STROKE }]}>●</Text>

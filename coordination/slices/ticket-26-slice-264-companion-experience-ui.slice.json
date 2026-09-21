@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "id": "ticket-26-slice-264-companion-experience-ui",
+  "githubIssue": null,
+  "title": "Close narrow battle UI defects, codify K3 frontend guardrails, then build the Tavern-equivalent companion experience",
+  "owner": "kimi",
+  "agentProfile": "project-d-ui-lead",
+  "model": "project-d-k3",
+  "baseRef": "codex/starcraft-integration-20260921",
+  "branch": "agent/kimi/ticket-26-slice-264-companion-experience-ui",
+  "worktree": ".worktrees/ticket-26-slice-264-companion-experience-ui",
+  "allowedPaths": [
+    "apps/starcraft-tmg-expo/components/battlefield/authoritative-battle-workspace.tsx",
+    "apps/starcraft-tmg-expo/components/battlefield/battle-workbench-read-panels.tsx",
+    "apps/starcraft-tmg-expo/components/battlefield/threat-overlay-v1.tsx",
+    "apps/starcraft-tmg-expo/components/character/",
+    "scripts/verify-ticket-25-slice-262-threat-visualization-browser-v1.mjs",
+    "scripts/verify-ticket-26-slice-264-companion-experience-browser-v1.mjs",
+    "docs/ticket-25-slice-262-threat-visualization-ui-v1-2026-09-21.md",
+    "docs/ticket-26-slice-264-k3-frontend-guardrails-v1-2026-09-21.md",
+    "docs/ticket-26-slice-264-companion-experience-ui-v1-2026-09-21.md"
+  ],
+  "verification": [
+    {
+      "name": "narrow battlefield and threat closure",
+      "command": "SLICE262_NARROW_REPAIR_ONLY=1 node scripts/verify-ticket-25-slice-262-threat-visualization-browser-v1.mjs"
+    },
+    {
+      "name": "focused tactical Adjutant component contract",
+      "command": "corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec vitest run lib/level3/__tests__/character-presentation-mount-v2.test.tsx"
+    },
+    {
+      "name": "companion real-browser journey and screenshots",
+      "command": "node scripts/verify-ticket-26-slice-264-companion-experience-browser-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Work in two explicit milestones and do not touch backend, Rules, Authority, Provider, source-data, memory-store implementation or action contracts. Milestone A is the mandatory repair handoff from Ticket 25 / Slice 262: read its closure document and the three current narrow screenshots; fix the 390px boardPane/detail-panel overlap, all visible horizontal overflow, and the floating companion's interception of critical battlefield controls. The battlefield must remain materially visible, not merely have y below a threshold; verify both viewport bounds and visible height. Never force-click through a product defect. Preserve the already-passed desktop behavior and reuse its evidence instead of rerunning it. Milestone B starts only after A passes: implement the frontend experience for a real Tavern-equivalent companion system. The companion is a compact StarCraft-style floating window that never covers essential board controls; supports Web and App/touch; exposes portrait, identity, world-book/persona state, relationship state, conversation, context/memory status, session controls, BYOK setup and diagnostics through progressive disclosure; supports multiple distinct companions speaking in the same conversation; and makes long-term role continuity, import/export/restore and memory layers understandable without pretending missing backend capabilities exist. Player-seat permissions must be explicit: a human-seat companion may read only player-visible state and same-seat public plan/memory; opponent-private state stays hidden and any inference is labelled inference/confidence; agent-vs-agent defaults to observer/off; review mode is separate. Reuse the existing strategy/query capabilities but keep companion advice suggestive and never expose hidden chain-of-thought. Do not fabricate state or implement fake persistence in local UI. If a required backend contract is absent, render an honest unavailable state and list the exact Codex-owned contract gap in the closure. Before implementation, write docs/ticket-26-slice-264-k3-frontend-guardrails-v1-2026-09-21.md as a concrete postmortem-derived development standard. It must include: current-main rather than stale-export verification; isolated-worktree versus integrated-main parity; viewer-relative side labels; unknown-never-zero; real model coordinates/base geometry; visible and hit-testable controls rather than first duplicate locators; real media paths; direct board interaction; mobile safe areas and no overlay interception; screenshot claim-to-pixel review; no backend contract invention; focused one-run gates; maximum three repair cycles. Review the prior K3 companion commit c91a1d6 for useful presentation ideas but do not assume it is correct or cherry-pick it blindly. Create a real-browser companion journey with desktop and 390px screenshots, keyboard/touch assertions and no Provider calls. Keep each milestone in a scoped commit, update both closure documents honestly, stop and report after three non-converging review rounds, and do not push."
+}

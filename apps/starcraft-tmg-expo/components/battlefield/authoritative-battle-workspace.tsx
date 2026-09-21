@@ -198,12 +198,19 @@ function modelGlyph(
   model: BattlefieldModelV1,
   zoom: number,
   boardHeightMilliInches: number,
+  onSelect?: (model: BattlefieldModelV1) => void,
 ) {
   const color = sideColor(model.sideKey);
   if (!model.geometryRenderable || !model.baseShape
     || !model.baseWidthMilliInches || !model.baseDepthMilliInches) {
     return (
-      <G key={model.id}>
+      <G
+        key={model.id}
+        onPress={onSelect ? (event: any) => {
+          event?.stopPropagation?.();
+          onSelect(model);
+        } : undefined}
+      >
         <Line x1={model.xMilliInches - 350} y1={model.yMilliInches - 350} x2={model.xMilliInches + 350} y2={model.yMilliInches + 350} stroke="#f59e0b" strokeWidth={120} />
         <Line x1={model.xMilliInches + 350} y1={model.yMilliInches - 350} x2={model.xMilliInches - 350} y2={model.yMilliInches + 350} stroke="#f59e0b" strokeWidth={120} />
       </G>
@@ -269,6 +276,10 @@ function modelGlyph(
     <G
       key={model.id}
       id={`${model.withinBoard ? "battlefield-model" : "battlefield-invalid-base-model"}-${model.id}`}
+      onPress={onSelect ? (event: any) => {
+        event?.stopPropagation?.();
+        onSelect(model);
+      } : undefined}
     >
       {shape}
       {media && (
@@ -543,6 +554,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     ? 560
     : clamp((windowWidth - 56) * (scene.heightMilliInches / scene.widthMilliInches), 260, 430);
   const desktop = windowWidth >= 980;
+  const compactMobile = windowWidth < 600;
   const pathPoints = draft?.path || [];
   const placementPoints = draft?.placements || [];
   const modelsById = useMemo(
@@ -1155,11 +1167,13 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         <View style={styles.titleCopy}>
           <Text style={styles.eyebrow}>LEGALSPACE → PREVIEW → CONFIRM → APPLY → REPLAY</Text>
           <Text style={styles.title}>{zh ? "权威战场" : "Authoritative Battlefield"}</Text>
-          <Text style={styles.subtitle}>
-            {zh
-              ? "所有底座、坐标和动作来自观察者投影；点按只编辑提案，不直接移动棋子。"
-              : "Bases, coordinates, and actions come from the viewer projection. Taps edit a proposal and never move state directly."}
-          </Text>
+          {!compactMobile && (
+            <Text style={styles.subtitle}>
+              {zh
+                ? "所有底座、坐标和动作来自观察者投影；点按只编辑提案，不直接移动棋子。"
+                : "Bases, coordinates, and actions come from the viewer projection. Taps edit a proposal and never move state directly."}
+            </Text>
+          )}
         </View>
         <View
           accessibilityLabel={`${zh ? "状态修订" : "State revision"} ${actionText(scene.stateRevision)}`}
@@ -1173,18 +1187,22 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         <Text style={styles.matchContractTitle}>
           {actionText(productState.engagementScale)} · {scene.widthMilliInches / 1000}×{scene.heightMilliInches / 1000} in
         </Text>
-        <View style={styles.matchContractMetrics}>
-          <Text style={styles.matchContractMetric}>{playerResourceText("player1")}</Text>
-          <Text style={styles.matchContractMetric}>{playerResourceText("player2")}</Text>
-          <Text style={styles.matchContractMetric}>{roomPieces.length} units</Text>
-          <Text style={styles.matchContractMetric}>{reserveCount} reserve</Text>
-          <Text style={styles.matchContractMetric}>{terrainCount} terrain</Text>
-        </View>
-        <Text style={styles.matchContractNote}>
-          {zh
-            ? "资源、模型底座、部署域、骰池和结算结果均由权威 Rules 投影；客户端与 Agent 不补算。"
-            : "Resources, base geometry, deployment domains, dice pools, and outcomes are authoritative Rules projections; neither client nor Agent fills them in."}
-        </Text>
+        {!compactMobile && (
+          <>
+            <View style={styles.matchContractMetrics}>
+              <Text style={styles.matchContractMetric}>{playerResourceText("player1")}</Text>
+              <Text style={styles.matchContractMetric}>{playerResourceText("player2")}</Text>
+              <Text style={styles.matchContractMetric}>{roomPieces.length} units</Text>
+              <Text style={styles.matchContractMetric}>{reserveCount} reserve</Text>
+              <Text style={styles.matchContractMetric}>{terrainCount} terrain</Text>
+            </View>
+            <Text style={styles.matchContractNote}>
+              {zh
+                ? "资源、模型底座、部署域、骰池和结算结果均由权威 Rules 投影；客户端与 Agent 不补算。"
+                : "Resources, base geometry, deployment domains, dice pools, and outcomes are authoritative Rules projections; neither client nor Agent fills them in."}
+            </Text>
+          </>
+        )}
       </View>
 
       {!operational && (
@@ -1274,7 +1292,11 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
             accessibilityLabel={zh ? "战场；点按选择模型或添加当前参数步骤" : "Battlefield; tap to select a model or add the current parameter step"}
             onLayout={updateLayout}
             onPress={onBoardPress}
-            style={[styles.boardFrame, { height: boardHeight }]}
+            style={[
+              styles.boardFrame,
+              compactMobile && styles.boardFrameMobileFirst,
+              { height: boardHeight },
+            ]}
           >
             <Svg
               width="100%"
@@ -1326,6 +1348,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                 )}
                 {scene.models.map((model) => modelGlyph(
                   model, zoom, scene.heightMilliInches,
+                  selectedDomain ? undefined : selectModel,
                 ))}
                 {scene.unitAnchors.map((anchor) => (
                   <G key={anchor.id}>
@@ -1372,6 +1395,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               mode={threatMode}
               regionCount={threatRegions.length}
               emptyState={threatEmptyState}
+              viewerSideKey={view.battleWorkbench?.viewerSideKey || null}
             />
           )}
 
@@ -1788,6 +1812,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "#0e7490", paddingHorizontal: 9, paddingVertical: 6 },
   zoomText: { minWidth: 44, color: "#cbd5e1", textAlign: "center", fontSize: 11, fontWeight: "800" },
   boardFrame: { width: "100%", overflow: "hidden", borderRadius: 10, backgroundColor: "#020617", borderWidth: 1, borderColor: "#334155" },
+  boardFrameMobileFirst: { order: -1 },
   legendRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   legendText: { color: "#64748b", fontSize: 10 },
   accessibleList: { borderRadius: 10, padding: 10, backgroundColor: "#0f172a", borderWidth: 1, borderColor: "#1e293b", gap: 8 },
@@ -1795,7 +1820,7 @@ const styles = StyleSheet.create({
   mediaCard: { minHeight: 96, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10, borderRadius: 10, padding: 10, backgroundColor: "#08202d", borderWidth: 1, borderColor: "#155e75" },
   commPortrait: { width: 86, height: 72, borderRadius: 8, backgroundColor: "#020617", borderWidth: 1, borderColor: "#67e8f9" },
   mediaCopy: { minWidth: 180, flex: 1, gap: 4 },
-  mediaControls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 },
+  mediaControls: { width: "100%", minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 },
   sidePanel: { gap: 10 },
   sidePanelDesktop: { width: 360, maxHeight: 760 },
   detailTabs: { flexDirection: "row", flexWrap: "wrap", gap: 7, padding: 7, borderRadius: 10, backgroundColor: "#020617", borderWidth: 1, borderColor: "#1e3a4a" },
