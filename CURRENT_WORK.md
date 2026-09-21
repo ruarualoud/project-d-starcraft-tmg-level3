@@ -80,12 +80,15 @@ explicit, isolated slice manifests.
    SQLite checkpoint/restore and restart passed the focused gate, and durable
    construction rejects missing or malformed managed keys instead of silently
    accepting an ephemeral key. K3 is implementing the isolated six-companion
-   Web/App roster and real committed portrait binding; image generation remains
-   isolated in image sub-agents. Slice 266-E now binds durable companion
+   Web/App roster, Tavern-equivalent capability, floating product surface,
+   committed SC1-style dynamic portrait binding and its own browser acceptance;
+   image generation remains isolated in image sub-agents. Slice 266-E now binds durable companion
    conversations to the authenticated Room seat/principal/MatchBinding, supports
    1–6 ordered companion replies and session-isolated checkpoint restore, and
-   never grants Room mutation. Codex next owns HTTP/Client Domain wiring and
-   real floating-Web acceptance. Final acceptance still requires
+   never grants Room mutation. The remaining companion product work stays
+   isolated under K3; Codex returns to strategy decisions, formal match evidence
+   and replay/Skill-evolution closure, and only reviews the final integration
+   boundary. Final companion acceptance still requires
    Tavern-equivalent cards/world books, layered long-term memory and
    relationship state, resumable long-running roleplay, multiple companions in
    one conversation, and no exposure of opponent-private agent state.

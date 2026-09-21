@@ -26,8 +26,8 @@ const PUBLIC_PORTRAITS: Record<string, { neutral: number; active: number }> = {
     active: require("../../../../assets/client/battlefield/unit-comms/public-fallback/medic-active.webp"),
   },
   goliath: {
-    neutral: require("../../../../assets/characters/goliath-pilot/idle-v2.png"),
-    active: require("../../../../assets/characters/goliath-pilot/selected-v2.png"),
+    neutral: require("../../../../assets/characters/goliath-pilot/idle-v1.png"),
+    active: require("../../../../assets/characters/goliath-pilot/selected-v1.png"),
   },
   zergling: {
     neutral: require("../../../../assets/client/battlefield/unit-comms/public-fallback/zergling-neutral.webp"),

@@ -2,7 +2,9 @@
 
 ## 结论
 
-本轮生成并准入一套新的 Goliath 驾驶员四态通讯关键帧：`idle / selected / attack / damaged`。新版本以 Blizzard 官方 StarCraft II Goliath 肖像确认驾驶员的人体与装备结构，同时保留 StarCraft 1 通讯头像的近景、暗舱、绿色监视器和 2D 绘制氛围。
+本轮生成并保留一套新的 Goliath 驾驶员四态通讯关键帧：`idle / selected / attack / damaged`。它以 Blizzard 官方 StarCraft II Goliath 肖像确认驾驶员的人体与装备结构，同时保留 StarCraft 1 通讯头像的近景、暗舱、绿色监视器和 2D 绘制氛围。
+
+**2026-09-22 产品纠偏：**产品默认视觉合同是 SC1 通讯头像风格与后续动态表现，而不是 SC2 肖像身份。v2 因此只保留为可选现代皮肤/研究资产，不替换默认的 `idle-v1 / selected-v1`。后续默认动态图、状态帧和六角色素材统一由 K3 的副官产品分片验收。
 
 四张图是**状态切换关键帧，不是连续动画**。它们没有中间帧、时间轴或循环连续性证明，不应在产品中标注为已经完成的动画。
 
@@ -12,10 +14,10 @@
 
 因此：
 
-- `*-v1.png` 可保留为原创的 SC1 面罩致敬变体，但**拒绝**接入“SC2 官方一致性”默认通道。
+- `*-v1.png` 是当前产品默认的原创 SC1 通讯头像风格；它不宣称复刻 SC2 驾驶员身份。
 - 旧 `public-fallback/goliath-neutral.webp` 与 `goliath-active.webp` 是蓝眼机器人/机甲面孔，**拒绝**继续作为公开默认身份。
 - `development-internal/goliath-animated.webp` 能说明 SC1 经典通讯构图，但属于既有内部参考，**不能**作为可公开分发的新资产。
-- 本轮 `*-v2.png` 四态与 `contact-sheet-96-v2.png` **准入**后续公开默认接线。
+- 本轮 `*-v2.png` 四态与 `contact-sheet-96-v2.png` 只准入可选现代皮肤/视觉研究，不进入公开默认接线。
 
 ## 官方证据与使用边界
 
@@ -41,14 +43,14 @@
 
 | 文件 | 尺寸 | SHA-256 | 决定 |
 | --- | --- | --- | --- |
-| `assets/characters/goliath-pilot/idle-v2.png` | 1254×1254 | `2e24067dfe14c35c061fede14964fc885717f2b37e81b5f29c16992e83ada7b2` | 准入，默认 neutral 候选。 |
-| `assets/characters/goliath-pilot/selected-v2.png` | 1254×1254 | `946d1de796518ccce43a382a16c7e083f5d20c77ff22ff752b5b77b763cefc61` | 准入，selected 候选。 |
+| `assets/characters/goliath-pilot/idle-v2.png` | 1254×1254 | `2e24067dfe14c35c061fede14964fc885717f2b37e81b5f29c16992e83ada7b2` | 保留为可选现代皮肤，不作默认。 |
+| `assets/characters/goliath-pilot/selected-v2.png` | 1254×1254 | `946d1de796518ccce43a382a16c7e083f5d20c77ff22ff752b5b77b763cefc61` | 保留为可选现代皮肤，不作默认。 |
 | `assets/characters/goliath-pilot/attack-v2.png` | 1254×1254 | `3667ba5656e986376e79eada56cd3e56eb7213d1ba17a232624b94a9685e9c63` | 准入，真实 attack 事件候选。 |
 | `assets/characters/goliath-pilot/damaged-v2.png` | 1254×1254 | `183bf28aba4b2ab7480ce7550dcc300051b2018b43b94be16648c58249f332b5` | 准入，真实 damaged 事件候选。 |
 | `assets/characters/goliath-pilot/contact-sheet-96-v2.png` | 384×192 | `e9325b1e13353e907fe5e3bd48f14b4995b022020751cba0d7a61f83f4b5663d` | 准入，仅用于审计。 |
 | `assets/characters/goliath-pilot/keyframe-prompts-v2.json` | 文本 | 见文件 | 准入，记录生成约束与状态语义。 |
 
-本隔离任务没有修改业务代码或媒体 resolver，也没有提交 Git。应用不会因文件存在而自动切换；主任务需将 neutral/selected 接到 v2，并只在真实 attack/damaged 事件发生时切换对应状态。
+本隔离任务原本没有修改业务代码或媒体 resolver。主任务曾短暂把 neutral/selected 接到 v2；产品纠偏已恢复 `idle-v1 / selected-v1` 默认映射。v2 不再参与默认事件状态切换。
 
 ## 制作与验证
 
