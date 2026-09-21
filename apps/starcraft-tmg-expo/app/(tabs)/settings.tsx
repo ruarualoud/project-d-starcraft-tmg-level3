@@ -27,6 +27,30 @@ export default function SettingsScreen() {
   const source = view.sourceLocalization;
   const sourceStatus = view.sourceLocalizationStatus;
 
+  // Section quick-nav: chips scroll the long settings page to its anchored
+  // sections instead of requiring a full manual scan.
+  const scrollRef = React.useRef<ScrollView>(null);
+  const sectionOffsets = React.useRef<Record<string, number>>({});
+  const scrollToSection = (key: string) => {
+    const y = sectionOffsets.current[key];
+    if (typeof y === 'number') {
+      scrollRef.current?.scrollTo({ y: Math.max(0, y - 8), animated: true });
+    }
+  };
+  const sectionAnchor = (key: string) => ({
+    onLayout: (event: { nativeEvent: { layout: { y: number } } }) => {
+      sectionOffsets.current[key] = event.nativeEvent.layout.y;
+    },
+    collapsable: false as const,
+  });
+  const navSections: Array<{ key: string; label: string }> = [
+    { key: 'persona', label: zh ? '副官' : 'Adjutant' },
+    { key: 'language', label: t('language') },
+    { key: 'source', label: zh ? '官方来源' : 'Source' },
+    { key: 'migration', label: zh ? '兼容迁移' : 'Migration' },
+    { key: 'notices', label: zh ? '边界说明' : 'Notices' },
+  ];
+
   const copy = useMemo(() => ({
     compatibilityTitle: zh ? '本机兼容迁移' : 'On-device compatibility migration',
     compatibilityNotice: zh
@@ -133,10 +157,24 @@ export default function SettingsScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('settings')}</Text>
       </View>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <CharacterPersonaSettingsPanel />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.navChipsScroll} contentContainerStyle={styles.navChips}>
+        {navSections.map((section) => (
+          <Pressable
+            key={section.key}
+            accessibilityRole="button"
+            onPress={() => scrollToSection(section.key)}
+            style={({ pressed }) => [styles.navChip, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={styles.navChipText}>{section.label}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+      <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        <View {...sectionAnchor('persona')}>
+          <CharacterPersonaSettingsPanel />
+        </View>
 
-        <View style={styles.section}>
+        <View style={styles.section} {...sectionAnchor('language')}>
           <Text style={styles.sectionTitle}>{t('language')}</Text>
           <Text style={styles.hint}>{t('languageHint')}</Text>
           <View style={styles.langRow}>
@@ -166,7 +204,7 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        <View style={styles.section}>
+        <View style={styles.section} {...sectionAnchor('source')}>
           <Text style={styles.sectionTitle}>{copy.sourceTitle}</Text>
           <Text style={styles.noticeText}>{copy.sourceNotice}</Text>
           <View style={styles.infoGrid}>
@@ -193,7 +231,7 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.section} {...sectionAnchor('migration')}>
           <Text style={styles.sectionTitle}>{copy.compatibilityTitle}</Text>
           <Text style={styles.warningText}>{copy.compatibilityNotice}</Text>
           <View style={styles.infoGrid}>
@@ -310,8 +348,10 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        <NoticeSection title={copy.historyTitle} body={copy.historyNotice} />
-        <NoticeSection title={copy.localPrefsTitle} body={copy.localPrefsNotice} />
+        <View {...sectionAnchor('notices')}>
+          <NoticeSection title={copy.historyTitle} body={copy.historyNotice} />
+          <NoticeSection title={copy.localPrefsTitle} body={copy.localPrefsNotice} />
+        </View>
       </ScrollView>
     </ScreenContainer>
   );
@@ -340,6 +380,10 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#e5e7eb' },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 48 },
+  navChipsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  navChips: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 8 },
+  navChip: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: '#334155', backgroundColor: '#0f172a' },
+  navChipText: { fontSize: 12, fontWeight: '700', color: '#94a3b8' },
   section: { marginBottom: 20, backgroundColor: '#0f172a', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#334155' },
   sectionTitle: { fontSize: 13, fontWeight: '800', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
   hint: { fontSize: 12, color: '#94a3b8', lineHeight: 20, marginBottom: 12 },

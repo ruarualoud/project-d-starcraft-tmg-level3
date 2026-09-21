@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { useI18n } from '@/lib/i18n';
-import { View, Text, Pressable, ScrollView, TextInput, StyleSheet, Platform, Switch, FlatList } from 'react-native';
+import { View, Text, Pressable, ScrollView, TextInput, StyleSheet, Platform, Switch, FlatList, useWindowDimensions } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { useData } from '@/lib/data-context';
 import { calculateCombatExpectation, calculateMatchup, type CombatInput, type CombatResult, type MatchupResult, type MatchupInput } from '@/lib/combat-engine';
@@ -1518,40 +1518,54 @@ function stepColor(step: string): string {
 // --- Main ---
 export default function ToolsScreen() {
   const { t, lang } = useI18n();
+  const { width } = useWindowDimensions();
   const params = useLocalSearchParams<{ tab?: string; armyAId?: string; armyBId?: string }>();
   const [tab, setTab] = useState<ToolTab>('dice');
+  const narrowTabs = width < 560;
 
   useEffect(() => {
     if (CATALOGUE_ESTIMATOR_EXECUTION_ENABLED && params.tab === 'roster') setTab('roster');
   }, [params.tab]);
+
+  const toolTabs = ([
+    ['dice', t('diceRoller')],
+    ['damage', t('damageCalc')],
+    ['matchup', t('matchupCalc')],
+    ['versus', t('versusCalc')],
+    ['roster', t('rosterAnalysis')],
+  ] as [ToolTab, string][]).map(([key, label]) => (
+    <Pressable
+      key={key}
+      accessibilityState={{ disabled: false }}
+      onPress={() => setTab(key)}
+      style={({ pressed }) => [
+        st.tabBtn,
+        narrowTabs && st.tabBtnNarrow,
+        tab === key && st.tabBtnActive,
+        pressed && { opacity: 0.7 },
+      ]}
+    >
+      <Text numberOfLines={1} style={[st.tabBtnText, tab === key && st.tabBtnTextActive]}>{label}</Text>
+    </Pressable>
+  ));
 
   return (
     <ScreenContainer containerClassName="bg-background">
       <View style={st.header}>
         <Text style={st.headerTitle}>{t('toolbox')}</Text>
       </View>
-      <View style={st.tabs}>
-        {([
-          ['dice', t('diceRoller')],
-          ['damage', t('damageCalc')],
-          ['matchup', t('matchupCalc')],
-          ['versus', t('versusCalc')],
-          ['roster', '军表分析'],
-        ] as [ToolTab, string][]).map(([key, label]) => (
-          <Pressable
-            key={key}
-            accessibilityState={{ disabled: false }}
-            onPress={() => setTab(key)}
-            style={({ pressed }) => [
-              st.tabBtn,
-              tab === key && st.tabBtnActive,
-              pressed && { opacity: 0.7 },
-            ]}
-          >
-            <Text style={[st.tabBtnText, tab === key && st.tabBtnTextActive]}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      {narrowTabs ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={st.tabsScroll}
+          contentContainerStyle={st.tabsScrollContent}
+        >
+          {toolTabs}
+        </ScrollView>
+      ) : (
+        <View style={st.tabs}>{toolTabs}</View>
+      )}
       <View accessibilityRole="alert" style={st.legacyToolNotice}>
         <Text style={st.legacyToolNoticeText}>
           {lang === 'zh'
@@ -1572,7 +1586,10 @@ const st = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#e5e7eb' },
   tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#334155' },
+  tabsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: '#334155' },
+  tabsScrollContent: { flexDirection: 'row' },
   tabBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabBtnNarrow: { flex: 0, minWidth: 96, paddingHorizontal: 14 },
   tabBtnActive: { borderBottomColor: '#38bdf8' },
   tabBtnText: { fontSize: 12, fontWeight: '700', color: '#64748b' },
   tabBtnTextActive: { color: '#38bdf8' },
