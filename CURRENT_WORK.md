@@ -200,10 +200,17 @@ explicit, isolated slice manifests.
   through the existing grammar-only normalizer and, when local recovery fails,
   forces a terminal-only format-repair round while preserving plan/query state.
   The exact tool-argument gate failed before and passed once after repair with
-  0 Provider calls / ¥0. A new post-repair acceptance may now fork from r8 for
-  exactly one action. See
+  0 Provider calls / ¥0. Post-repair branch `20260921214904680` has now
+  advanced r8→r9 with a Rules-instantiated Omega Worm at `(14000,12000)`, source
+  card exhaustion, Replay parity and a real Web screenshot. The public strategy
+  correctly keeps the already-activated Goliath out of the current Movement
+  phase and types the off-table Marine response as Deploy. One contradictory
+  threat claim was corrected before submission; all six native tool calls had
+  valid arguments, so neither grammar nor terminal-format recovery was needed
+  in the live action. Continue this exact branch one action at a time. See
   `docs/ticket-23-slice-248-terminal-tool-json-convergence-blocker-v1-2026-09-22.md`
-  and `docs/ticket-23-slice-248-terminal-tool-json-recovery-v1-2026-09-22.md`.
+  `docs/ticket-23-slice-248-terminal-tool-json-recovery-v1-2026-09-22.md` and
+  `docs/ticket-23-slice-248-revision-9-omega-acceptance-v1-2026-09-22.md`.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -274,4 +281,8 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   8 calls, 409,930 units and ¥0.540267. Recent recovery work is now 53 calls,
   2,446,071 units and ¥3.348352; including the original invalid-suffix source:
   82 calls, 3,792,865 units and ¥5.201073. No ¥100 threshold was crossed.
+- Accepted post-repair branch `20260921214904680`: r8→r9 used 6 calls, 305,276
+  units and ¥0.417534. Recent recovery work is now 59 calls, 2,751,347 units and
+  ¥3.765886; including the original invalid-suffix source: 88 calls, 4,098,141
+  units and ¥5.618607. No ¥100 threshold was crossed.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.
