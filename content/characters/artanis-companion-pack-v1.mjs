@@ -156,11 +156,13 @@ const unsigned = {
   },
 
   visualAssets: {
-    status: "pending_codex_generation",
+    status: "admitted_static_keyframes_committed",
+    admissionClass: "single_keyframe_per_state_continuous_animation_not_proven",
     stateContractRef: "content/characters/artanis-portrait-states-v1.mjs",
+    auditRef: "docs/ticket-26-slice-266-official-companion-visual-audit-v1-2026-09-21.md",
     generationBriefsRef: "docs/ticket-26-slice-265-k3-portrait-generation-briefs-v1-2026-09-21.md",
-    receiptPolicy: "no_fabricated_receipts_pending_codex_image_tool",
-    interimPresentation: "original_neutral_adjutant_fallback_with_pack_color_chrome",
+    receiptPolicy: "no_fabricated_receipts; admission is the recorded visual audit, not a generation receipt",
+    interimPresentation: "none_required_admitted_assets_committed",
   },
 
   authority: {

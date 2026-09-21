@@ -9,12 +9,12 @@ import { hashStarcraftTmgClientContract } from
  * neutral/blink/speaking/warning/reflect; phases idle/listening/thinking/
  * speaking/waiting_confirmation/error from
  * `packages/character-agent/dynamic-dialogue-portrait-v1.mjs`) and adds the
- * six communication states required by the Slice 265 brief. Raster frames
- * are NOT generated here: every frame binding is `PENDING_CODEX_GENERATION`
- * with an exact brief in
- * `docs/ticket-26-slice-265-k3-portrait-generation-briefs-v1-2026-09-21.md`.
- * Until Codex's image tool produces receipted frames, the UI renders the
- * deterministic neutral-fallback presentation — never a fabricated asset.
+ * six communication states required by the Slice 265 brief. Slice 266b binds
+ * the REAL committed audit-admitted v1 keyframes recorded in
+ * `docs/ticket-26-slice-266-raynor-nova-visual-audit-v1-2026-09-22.md` (every
+ * contentHash re-verified against the on-disk file on 2026-09-22). Admission
+ * covers one static keyframe per state; continuous animation is NOT proven
+ * and this contract must never be consumed as a playable sequence.
  */
 
 const CHARACTER_ID = "starcraft.jim_raynor";
@@ -91,6 +91,15 @@ const STATES = Object.freeze([
   },
 ]);
 
+const FRAME_FILES = Object.freeze({
+  idle: { file: "idle-v1.png", contentHash: "7ccea1bc8e16851c0c990ac1bccb428accde52ff91172c9e0b46aa395b17f012" },
+  speaking: { file: "speaking-v1.png", contentHash: "00b6b055e5172882f3e1d1c0c8312cc3f8335caf3ffabd0bc1715f9b5cd3e5f1" },
+  listening: { file: "listening-v1.png", contentHash: "046684054fd26db951b639bb7507db14cc9499c7b474ae42031ec29ffd37175e" },
+  alert_combat: { file: "alert-combat-v1.png", contentHash: "dc0b59b6f30d09fb715b513e3fbd9e02d94ad51dd20f642c44356f5f6a5629cf" },
+  damaged_concerned: { file: "damaged-concerned-v1.png", contentHash: "a31c350799ecf92340b28d3f64bd93954b7057f308fc8e8369030bcb6616243b" },
+  reflective: { file: "reflective-v1.png", contentHash: "cff0f1546988f96a17106aad2b1ddee578c1306b591efa000695c605bd830ace" },
+});
+
 const unsigned = {
   schemaVersion: "starcraft_tmg_companion_portrait_state_contract_v1",
   contractId: "starcraft-tmg.raynor.portrait-states.v1",
@@ -99,14 +108,15 @@ const unsigned = {
   presentationOnly: true,
   styleProfile: STYLE_PROFILE,
   states: STATES,
+  animationStatus: "keyframe_only_continuous_animation_not_proven",
   frameBindings: STATES.map((state) => ({
     stateId: state.stateId,
     frameRole: state.frameRole,
-    assetRef: "PENDING_CODEX_GENERATION",
-    contentHash: null,
+    assetRef: `assets/characters/raynor-adjutant/${FRAME_FILES[state.stateId].file}`,
+    contentHash: FRAME_FILES[state.stateId].contentHash,
+    admissionClass: "audit_admitted_static_keyframe",
+    admissionRef: "docs/ticket-26-slice-266-raynor-nova-visual-audit-v1-2026-09-22.md",
     generationReceiptHash: null,
-    generationBriefId: `raynor.${state.stateId}.frame-brief`,
-    briefDocument: "docs/ticket-26-slice-265-k3-portrait-generation-briefs-v1-2026-09-21.md",
   })),
   reducedMotionPolicy: "single_frame_with_static_scanlines_for_every_state",
   fallbackPolicy: {
