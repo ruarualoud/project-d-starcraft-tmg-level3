@@ -22,6 +22,21 @@ export {
 } from "./contracts-v1.mjs";
 
 export {
+  COMPANION_BACKEND_CB2_ERROR_CODES,
+  COMPANION_MEMORY_LAYERS,
+  COMPANION_CONTEXT_ASSEMBLY_ORDER,
+  COMPANION_WORLDBOOK_TRIGGER_KINDS,
+  COMPANION_RELATIONSHIP_EVENT_TYPES,
+  COMPANION_CONTEXT_BUDGET_POLICY,
+  estimateWorldbookTokens,
+  normalizeCompanionScope,
+  createWorldbookEntry,
+  matchWorldbookEntry,
+  selectWorldbookEntries,
+  createCompanionMemoryEngine,
+} from "./worldbook-memory-engine-v1.mjs";
+
+export {
   createInMemoryPersistenceAdapter,
   createInMemoryProviderAdapter,
 } from "./in-memory-adapter-v1.mjs";
@@ -33,14 +48,18 @@ import {
   createCompanionPackageRegistry,
 } from "./contracts-v1.mjs";
 
+import { createCompanionMemoryEngine } from "./worldbook-memory-engine-v1.mjs";
+
 export function composeCompanionBackend(dependencies = {}) {
   const injected = assertCompanionBackendDependencies(dependencies);
   const registry = injected.registry || createCompanionPackageRegistry();
+  const memoryEngine = createCompanionMemoryEngine({ persistence: injected.persistence });
   return Object.freeze({
     schemaVersion: `${COMPANION_BACKEND_CONTRACT_VERSION}.module`,
     descriptor: COMPANION_BACKEND_INTEGRATION_DESCRIPTOR,
     registry,
     persistence: injected.persistence,
     provider: injected.provider ?? null,
+    memoryEngine,
   });
 }
