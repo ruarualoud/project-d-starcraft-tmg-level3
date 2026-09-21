@@ -27,6 +27,10 @@ import {
   type StarcraftTmgSecureProviderView,
 } from "./client-domain-mount-runtime.mjs";
 import {
+  createHttpStarcraftTmgCompanionProductTransportV1,
+  createStarcraftTmgCompanionProductClientV1,
+} from "../../../../packages/client-domain/client-domain-v1.mjs";
+import {
   isStarcraftTmgRoomAccessCandidate,
   normalizeStarcraftTmgTrustedHttpsOrigin,
   parseStarcraftTmgRoomAccessUrl,
@@ -70,12 +74,54 @@ interface InitialRoomUrlView {
   errorCode: string | null;
 }
 
+interface CompanionProductResult {
+  ok: boolean;
+  reason?: string;
+  details?: unknown;
+  [key: string]: unknown;
+}
+
+/**
+ * Stateless companion product facade (Ticket 26 / Slice 266c). Every method
+ * re-derives the bound room/seat inside the Client Domain at call time; the
+ * seat token never reaches this interface, the UI, or any storage.
+ */
+interface StarcraftTmgCompanionProductClient {
+  schemaVersion: string;
+  status(): Promise<CompanionProductResult>;
+  catalogue(): Promise<CompanionProductResult>;
+  openOrResume(input?: {
+    packageIds?: ReadonlyArray<string>;
+    versions?: ReadonlyArray<string | null>;
+    eraIds?: ReadonlyArray<string | null>;
+  }): Promise<CompanionProductResult>;
+  readActive(): Promise<CompanionProductResult>;
+  read(input?: { conversationId?: string }): Promise<CompanionProductResult>;
+  send(input: {
+    conversationId?: string;
+    content?: string;
+    mentions?: ReadonlyArray<string>;
+  }): Promise<CompanionProductResult>;
+  continue(input?: { conversationId?: string }): Promise<CompanionProductResult>;
+  checkpoint(input?: {
+    conversationId?: string;
+    label?: string;
+  }): Promise<CompanionProductResult>;
+  resume(input?: {
+    conversationId?: string;
+    checkpointId?: string;
+  }): Promise<CompanionProductResult>;
+  close(input?: { conversationId?: string }): Promise<CompanionProductResult>;
+  readonly trainingTruth: false;
+}
+
 interface Level3ClientDomainContextValue {
   view: StarcraftTmgClientView;
   connection: StarcraftTmgExpoConnection;
   roomAccess: RoomAccessIngressView;
   initialRoomUrl: InitialRoomUrlView;
   secureProvider: StarcraftTmgSecureProviderView | null;
+  companionProduct: StarcraftTmgCompanionProductClient;
   bindRoom(input: BindRoomInput): Promise<StarcraftTmgClientResult>;
   ingestRoomUrl(url: string): Promise<RoomAccessIngressResult>;
   dispatch(intent: StarcraftTmgClientIntent): Promise<StarcraftTmgClientResult>;
@@ -201,6 +247,20 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
   const runtime = runtimeRef.current;
   const clientDomain = runtime.clientDomain;
   const secureProviderSession = runtime.secureProviderSession;
+  const companionProductRef = useRef<StarcraftTmgCompanionProductClient | null>(
+    null,
+  );
+  if (!companionProductRef.current) {
+    companionProductRef.current = createStarcraftTmgCompanionProductClientV1({
+      clientDomain,
+      transport: createHttpStarcraftTmgCompanionProductTransportV1({
+        baseUrl: process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || "",
+        fetchImpl: globalThis.fetch,
+        timeoutMs: 120_000,
+      }),
+    });
+  }
+  const companionProduct = companionProductRef.current;
   const [roomAccess, setRoomAccess] =
     useState<RoomAccessIngressView>(INITIAL_ROOM_ACCESS);
   const [initialRoomUrl, setInitialRoomUrl] = useState<InitialRoomUrlView>({
@@ -503,6 +563,7 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
       roomAccess,
       initialRoomUrl,
       secureProvider,
+      companionProduct,
       bindRoom,
       ingestRoomUrl,
       dispatch,
@@ -515,6 +576,7 @@ export function Level3ClientDomainProvider({ children }: PropsWithChildren) {
       roomAccess,
       initialRoomUrl,
       secureProvider,
+      companionProduct,
       bindRoom,
       ingestRoomUrl,
       dispatch,
@@ -542,6 +604,7 @@ export function useLevel3ClientDomain() {
 
 export type {
   BindRoomInput,
+  CompanionProductResult,
   Level3ClientDomainContextValue,
   RoomAccessIngressResult,
   RoomAccessIngressStatus,
@@ -549,6 +612,7 @@ export type {
   InitialRoomUrlView,
   StarcraftTmgClientIntent,
   StarcraftTmgClientView,
+  StarcraftTmgCompanionProductClient,
   StarcraftTmgExpoConnection,
   StarcraftTmgSecureProviderIntent,
   StarcraftTmgSecureProviderView,
