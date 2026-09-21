@@ -190,9 +190,14 @@ explicit, isolated slice manifests.
   unifies on-table/off-table actor location: Reserve actor requires Deploy,
   on-table actor cannot use Reserve Deploy, destroyed actor cannot act, and
   Pass/choose-first-actor/phase-control cannot name a Unit actor. The concrete
-  shapes failed before the follow-up and passed once after it. One third and
-  final live convergence attempt may fork from revision 8; if the typed response
-  still fails, stop and report rather than continuing paid retries.
+  shapes failed before the follow-up and passed once after it. The third and
+  final live convergence branch `20260921211447031` replayed safely to r8, then
+  stopped without Preview/Apply after three consecutive malformed
+  `submit_decision` JSON argument payloads. This is a High structured-output
+  transport blocker, not another lifecycle contradiction. Under the three-round
+  rule there is no fourth paid retry in this cycle; r8 remains the current safe
+  boundary. See
+  `docs/ticket-23-slice-248-terminal-tool-json-convergence-blocker-v1-2026-09-22.md`.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -258,6 +263,9 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   units, ¥0.415465. Recent recovery work is now 45 calls, 2,036,141 units and
   ¥2.808085; including the original invalid-suffix source: 74 calls, 3,382,935
   units and ¥4.660806. No ¥100 threshold was crossed.
-  Recent recovery work is now 39 calls, 1,740,128 units and ¥2.392620; including
-  the original invalid-suffix source: 68 calls, 3,086,922 units and ¥4.245341.
+- Terminal-tool convergence branch `20260921211447031`: replayed to r8, then
+  stopped before Apply after three malformed JSON `submit_decision` calls. Usage:
+  8 calls, 409,930 units and ¥0.540267. Recent recovery work is now 53 calls,
+  2,446,071 units and ¥3.348352; including the original invalid-suffix source:
+  82 calls, 3,792,865 units and ¥5.201073. No ¥100 threshold was crossed.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.
