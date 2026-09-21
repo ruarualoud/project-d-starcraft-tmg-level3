@@ -90,6 +90,16 @@ const COMPANION_PRODUCT_CONVERSATION_ID = /^[A-Za-z0-9._:-]{1,160}$/u;
 // caller-supplied transport, is never persisted by the Client Domain, and is
 // scrubbed from every error surface through the shared credential registry.
 const COMPANION_PRODUCT_INGRESS = new WeakMap();
+// The product mounts the Client Domain behind the role-Agent session client,
+// which wraps the base domain in a NEW frozen object (the exact four-operation
+// interface is preserved, so wrappers cannot be distinguished by shape). The
+// ingress above is identity-keyed on the base object, so a wrapper presented
+// by the app cannot resolve it directly. Every created domain is therefore
+// recorded here; when a presented object carries no direct ingress, the
+// dispatcher falls back to the ingress of the UNIQUE mounted domain and fails
+// closed on zero or ambiguous mounts. The privileged closure (binding +
+// credential handoff) never leaves the domain factory either way.
+const COMPANION_PRODUCT_MOUNTED_DOMAINS = new Set();
 
 export class StarcraftTmgCompanionProductTransportError extends Error {
   constructor(code, message, details = {}) {
@@ -111,7 +121,11 @@ export function dispatchStarcraftTmgTrustedCompanionProductV1(
   clientDomain,
   input = {},
 ) {
-  const ingress = COMPANION_PRODUCT_INGRESS.get(clientDomain);
+  let ingress = COMPANION_PRODUCT_INGRESS.get(clientDomain);
+  if (!ingress && COMPANION_PRODUCT_MOUNTED_DOMAINS.size === 1) {
+    const [mounted] = COMPANION_PRODUCT_MOUNTED_DOMAINS;
+    ingress = COMPANION_PRODUCT_INGRESS.get(mounted);
+  }
   if (!ingress) {
     throw new TypeError("Client Domain does not expose the trusted companion product ingress");
   }
@@ -4034,5 +4048,6 @@ export function createStarcraftTmgClientDomain(options = {}) {
     enqueue(() => confirmTrustedRoleAgentPreview(input)));
   COMPANION_PRODUCT_INGRESS.set(clientDomain, (input) =>
     enqueue(() => performTrustedCompanionProductOperation(input)));
+  COMPANION_PRODUCT_MOUNTED_DOMAINS.add(clientDomain);
   return clientDomain;
 }
