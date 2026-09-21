@@ -206,8 +206,8 @@ All under `build/ticket-26-slice-266b-companion-roster-browser-v1/browser-eviden
 | SS-1 | `fb36db5` | Three new presentation packs (Nova/Zagara/Zeratul), three new portrait state contracts with admitted asset bindings, Raynor/Artanis contracts rebound from PENDING to real assets, catalogue extended to six entries (Kerrigan default) |
 | SS-2 | `67b4fb6` | `companion-portrait-assets-v1.ts` registry (lazy Metro-bound sources, honest availability classes) + content typings |
 | SS-3 | `f9839c8` | Data-driven six-companion catalogue UI with real keyframes, explicit state controls, reduced-motion honesty, shared-frame badge, refreshed capability/pending-binding copy; adjutant panel gap copy updated; Gate 1 receipt |
-| SS-4 | _(this commit)_ | Browser gate + receipt below |
-| SS-5 | _(closure commit)_ | This document finalized |
+| SS-4 | `96b6fa6` | Browser gate + receipt above |
+| SS-5 | this commit | This document finalized |
 
 ## Changed files
 
