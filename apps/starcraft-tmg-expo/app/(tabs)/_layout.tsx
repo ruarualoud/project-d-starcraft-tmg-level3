@@ -1,16 +1,27 @@
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { Platform } from "react-native";
-import { useColors } from "@/hooks/use-colors";
+import { Platform, useWindowDimensions } from "react-native";
 import { useI18n } from "@/lib/i18n";
 
+/**
+ * Top-level command-network navigation.
+ *
+ * Presentation-only responsiveness:
+ * - native App keeps the bottom tab bar with safe-area padding and labels
+ *   below icons (touch-first);
+ * - wide Web (>=720dp) keeps the top command bar with beside-icon labels;
+ * - narrow Web collapses to a compact icon-only top bar so all five journeys
+ *   (Database, Army, Tools, Battle Room, Settings) stay reachable without
+ *   label collision.
+ */
 export default function TabLayout() {
-  const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { t } = useI18n();
   const web = Platform.OS === "web";
-  const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
+  const wideWeb = web && width >= 720;
+  const bottomPadding = web ? 12 : Math.max(insets.bottom, 8);
   const tabBarHeight = 56 + bottomPadding;
 
   return (
@@ -19,8 +30,9 @@ export default function TabLayout() {
         tabBarActiveTintColor: "#38bdf8",
         tabBarInactiveTintColor: "#8aa0b5",
         tabBarPosition: web ? "top" : "bottom",
-        tabBarLabelPosition: web ? "beside-icon" : "below-icon",
-        headerShown: web,
+        tabBarLabelPosition: wideWeb ? "beside-icon" : "below-icon",
+        tabBarShowLabel: web ? wideWeb : true,
+        headerShown: wideWeb,
         headerTitle: "STARCRAFT TMG  //  COMMAND NETWORK",
         headerTitleAlign: "left",
         headerStyle: {
@@ -46,15 +58,15 @@ export default function TabLayout() {
           borderBottomColor: web ? "#286078" : "transparent",
           borderBottomWidth: web ? 1 : 0,
         },
-        tabBarItemStyle: web ? {
+        tabBarItemStyle: wideWeb ? {
           maxWidth: 210,
           borderRightColor: "#172d3d",
           borderRightWidth: 1,
         } : undefined,
         tabBarLabelStyle: {
-          fontSize: web ? 12 : 10,
+          fontSize: wideWeb ? 12 : 10,
           fontWeight: "800",
-          letterSpacing: web ? 0.5 : 0,
+          letterSpacing: wideWeb ? 0.5 : 0,
         },
       }}
     >
@@ -62,6 +74,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: t('tabDatabase'),
+          tabBarAccessibilityLabel: t('tabDatabase'),
           tabBarIcon: ({ color }) => <MaterialIcons name="menu-book" size={24} color={color} />,
         }}
       />
@@ -69,20 +82,23 @@ export default function TabLayout() {
         name="army"
         options={{
           title: t('tabArmy'),
-          tabBarIcon: ({ color }) => <MaterialIcons name="build" size={24} color={color} />,
+          tabBarAccessibilityLabel: t('tabArmy'),
+          tabBarIcon: ({ color }) => <MaterialIcons name="groups" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="tools"
         options={{
           title: t('tabTools'),
-          tabBarIcon: ({ color }) => <MaterialIcons name="casino" size={24} color={color} />,
+          tabBarAccessibilityLabel: t('tabTools'),
+          tabBarIcon: ({ color }) => <MaterialIcons name="calculate" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="match"
         options={{
           title: t('tabMatch'),
+          tabBarAccessibilityLabel: t('tabMatch'),
           tabBarIcon: ({ color }) => <MaterialIcons name="sports-esports" size={24} color={color} />,
         }}
       />
@@ -90,6 +106,7 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: t('tabSettings'),
+          tabBarAccessibilityLabel: t('tabSettings'),
           tabBarIcon: ({ color }) => <MaterialIcons name="settings" size={24} color={color} />,
         }}
       />
