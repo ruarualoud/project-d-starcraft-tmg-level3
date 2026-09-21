@@ -25,11 +25,11 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v15";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v16";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v18";
+  "starcraft_tmg_live_action_shape_normalization_v19";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_planner_shape_normalization_v8";
+  "starcraft_tmg_live_planner_shape_normalization_v9";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
 const NATIVE_QUERY_KINDS = Object.freeze([
   "space.inspect_relationships",
@@ -1174,6 +1174,17 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
     throw correctionError("PLANNER_SELECTED_ACTION_RESOURCE_CONTRADICTED",
       resourceContradictionDetail(first));
   }
+  const threatClaims = inspectStarcraftTmgFormationThreatClaimsV1({
+    raw,
+    queryReceipts,
+  });
+  if (threatClaims.contradicted) {
+    const first = threatClaims.contradictions[0];
+    throw correctionError(
+      "PLANNER_SELECTION_THREAT_CLAIM_CONTRADICTS_PROJECTION",
+      `${first.field}:${first.threatKind}`,
+    );
+  }
   const selectedCharge = inspectStarcraftTmgChargeReachabilityV1({
     spatialActionSpace: input.spatialActionSpace,
     candidateId: recommendedCandidateId,
@@ -1249,7 +1260,7 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
   });
 }
 
-function validateActionOutput(raw, input, planner) {
+function validateActionOutput(raw, input, planner, queryReceipts = []) {
   if (!object(raw)) throw correctionError("ACTION_OUTPUT_REQUIRED");
   const actions = actionIndex(input.spatialActionSpace);
   const { selected } = selectedProposal(raw, actions);
@@ -1282,6 +1293,17 @@ function validateActionOutput(raw, input, planner) {
     const first = resourceClaims.contradictions[0];
     throw correctionError("ACTION_SELECTED_ACTION_RESOURCE_CONTRADICTED",
       resourceContradictionDetail(first));
+  }
+  const threatClaims = inspectStarcraftTmgFormationThreatClaimsV1({
+    raw,
+    queryReceipts,
+  });
+  if (threatClaims.contradicted) {
+    const first = threatClaims.contradictions[0];
+    throw correctionError(
+      "ACTION_SELECTION_THREAT_CLAIM_CONTRADICTS_PROJECTION",
+      `${first.field}:${first.threatKind}`,
+    );
   }
   const issues = [];
   const intent = object(raw.intent) ? raw.intent : {};
@@ -1483,6 +1505,59 @@ function formationThreatClaimFragments(raw, selection) {
   });
 }
 
+function selectionThreatClaimFragments(raw) {
+  const assessment = object(raw?.assessment) ? raw.assessment : {};
+  const plan = object(raw?.planRevision) ? raw.planRevision
+    : object(raw?.plan) ? raw.plan : {};
+  const publicPlanSummary = parsedPublicPlanSummary(raw?.publicPlanSummary);
+  const publicDecisionSummary = object(raw?.publicDecisionSummary)
+    ? raw.publicDecisionSummary : {};
+  const fields = [
+    ["assessment.evidenceFor", assessment.evidenceFor],
+    ["assessment.evidenceAgainst", assessment.evidenceAgainst],
+    ["assessment.opponentModelUpdates", assessment.opponentModelUpdates],
+    ["assessment.unresolvedRisks", assessment.unresolvedRisks],
+    ["plan.strategicApproach", plan.strategicApproach],
+    ["plan.assumptions", plan.assumptions],
+    ["plan.opponentModel", plan.opponentModel],
+    ["publicPlanSummary.visibleFacts", publicPlanSummary.visibleFacts],
+    ["publicPlanSummary.calculations", publicPlanSummary.calculations],
+    ["publicPlanSummary.risk", publicPlanSummary.risk],
+    ["publicDecisionSummary.visibleFacts", publicDecisionSummary.visibleFacts],
+    ["publicDecisionSummary.calculations",
+      publicDecisionSummary.calculations],
+    ["publicDecisionSummary.risk", publicDecisionSummary.risk],
+  ];
+  const fragments = fields.flatMap(([field, value]) => {
+    const values = Array.isArray(value) ? value : [value];
+    return values.flatMap((entry) => String(entry || "")
+      .split(/[.;!?。；！？\n]+/u)
+      .map((textValue) => textValue.trim())
+      .filter(Boolean)
+      .map((textValue) => ({ field, text: textValue })));
+  });
+  for (const [index, comparison] of
+    (Array.isArray(raw?.candidateComparisons)
+      ? raw.candidateComparisons : []).entries()) {
+    const textValue = String(comparison?.evaluation
+      || comparison?.reason || "").trim();
+    if (textValue) fragments.push({
+      field: `candidateComparisons[${index}].evaluation`,
+      text: textValue,
+    });
+  }
+  for (const [index, alternative] of
+    (Array.isArray(raw?.rejectedAlternatives)
+      ? raw.rejectedAlternatives : []).entries()) {
+    const textValue = String(alternative?.reason || "").trim();
+    if (textValue) fragments.push({
+      field: `rejectedAlternatives[${index}].reason`,
+      text: textValue,
+    });
+  }
+  return fragments;
+}
+
 function claimsNoIncomingStationaryThreat(fragment) {
   const normalized = String(fragment || "").replaceAll("&lt;", "<")
     .replaceAll("&gt;", ">").toLowerCase();
@@ -1509,20 +1584,89 @@ function claimsNoIncomingStationaryThreat(fragment) {
   return positiveEscape || positiveDenial || chineseEscape;
 }
 
+function claimsNoIncomingMoveThenFireThreat(fragment) {
+  const normalized = String(fragment || "").replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">").toLowerCase();
+  if (!normalized) return false;
+  const moveThenFire = String.raw`move[- ]then[- ](?:fire|attack)`;
+  const explicitZero = new RegExp(
+    String.raw`\b(?:no|zero|0)\s+(?:current\s+)?(?:in[- ]band\s+)?${moveThenFire}(?:\s+(?:weapon|threat|profile)s?)?\b`,
+    "iu",
+  ).test(normalized);
+  const explicitOutOfBand = new RegExp(
+    String.raw`\b${moveThenFire}[^.;!?]{0,100}\b(?:outside|beyond|out of)\s+(?:the\s+)?(?:current\s+)?(?:fire\s+)?(?:range|band|envelope|zone)\b`,
+    "iu",
+  ).test(normalized);
+  const allEnemyFireBandsAbsent =
+    /\b(?:outside|beyond|out of)\s+all\s+(?:enemy\s+)?(?:fire|threat|weapon)[ -]?(?:bands?|ranges?|envelopes?|zones?)\b/iu
+      .test(normalized)
+    || /\b(?:no|zero)\s+(?:enemy\s+)?(?:fire|threat|weapon)[ -]?(?:bands?|ranges?|envelopes?|zones?)\b/iu
+      .test(normalized);
+  const chineseAbsent =
+    /(?:移动后|移动并)(?:射击|攻击)[^。；！？]{0,30}(?:不在范围|超出范围|为零|没有|不存在)|(?:所有|全部)敌方(?:移动后)?(?:火力|射击|攻击)(?:圈|范围|区|带)外/u
+      .test(normalized);
+  return explicitZero || explicitOutOfBand || allEnemyFireBandsAbsent
+    || chineseAbsent;
+}
+
+function currentIncomingThreatTargets(queryReceipts) {
+  const stationary = new Set();
+  const moveThenFire = new Set();
+  for (const receipt of queryReceipts || []) {
+    if (receipt?.queryKind !== "space.inspect_relationships"
+      || !new Set(["exact", "advisory_estimate"]).has(receipt?.status)) {
+      continue;
+    }
+    for (const relationship of receipt?.result?.relationships || []) {
+      if (!new Set(["unit_spatial_relationship", "unit_relationship"])
+        .has(relationship?.edgeKind)) continue;
+      const targetId = String(relationship.toUnitId || "");
+      if (!targetId) continue;
+      const incoming = relationship.threats?.toFrom || {};
+      if ((incoming.stationaryProfileKeys || []).length > 0
+        || Number(relationship.fireZoneExchange
+          ?.toStationaryProfileCount || 0) > 0) stationary.add(targetId);
+      if ((incoming.moveThenAttackProfileKeys || []).length > 0
+        || Number(relationship.fireZoneExchange
+          ?.toMoveThenFireProfileCount || 0) > 0) moveThenFire.add(targetId);
+    }
+  }
+  return { stationary: [...stationary], moveThenFire: [...moveThenFire] };
+}
+
 export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
   const option = object(input.option) ? input.option : {};
-  const incomingTargetIds = (option.relationshipComparison?.relationships || [])
+  const optionIncomingTargetIds = (option.relationshipComparison
+    ?.relationships || [])
     .filter((entry) => Number(entry.enemyStationaryThreatProfileCount || 0) > 0)
     .map((entry) => String(entry.targetId || ""))
     .filter(Boolean);
-  const checkedClaims = formationThreatClaimFragments(input.raw,
+  const optionClaims = formationThreatClaimFragments(input.raw,
     input.selection);
-  const contradictions = incomingTargetIds.length > 0
-    ? checkedClaims.filter((entry) => claimsNoIncomingStationaryThreat(
-      entry.text)) : [];
+  const selectionClaims = selectionThreatClaimFragments(input.raw);
+  const currentThreatTargets = currentIncomingThreatTargets(
+    input.queryReceipts || []);
+  const contradictions = [
+    ...(optionIncomingTargetIds.length > 0
+      ? optionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
+        entry.text)).map((entry) => ({ ...entry,
+        threatKind: "stationary", source: "formation_projection" })) : []),
+    ...(currentThreatTargets.stationary.length > 0
+      ? selectionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
+        entry.text)).map((entry) => ({ ...entry,
+        threatKind: "stationary", source: "current_relationship_graph" })) : []),
+    ...(currentThreatTargets.moveThenFire.length > 0
+      ? selectionClaims.filter((entry) => claimsNoIncomingMoveThenFireThreat(
+        entry.text)).map((entry) => ({ ...entry,
+        threatKind: "move_then_fire",
+        source: "current_relationship_graph" })) : []),
+  ];
   return freeze({
-    incomingTargetIds,
-    checkedClaimCount: checkedClaims.length,
+    incomingTargetIds: [...new Set([
+      ...optionIncomingTargetIds, ...currentThreatTargets.stationary,
+    ])],
+    incomingMoveThenFireTargetIds: currentThreatTargets.moveThenFire,
+    checkedClaimCount: optionClaims.length + selectionClaims.length,
     contradictions,
     contradicted: contradictions.length > 0,
   });
@@ -2406,7 +2550,8 @@ function normalizeSubmittedAction(attempt, input, choice) {
   const boundAction = bindExactInstantiatedProposal(assetBoundAction,
     choice.queryReceipts, choice.plannerResult);
   const normalizedAction = normalizeActionOutputShape(boundAction);
-  validateActionOutput(normalizedAction, input, choice.plannerResult);
+  validateActionOutput(normalizedAction, input, choice.plannerResult,
+    choice.queryReceipts);
   return normalizedAction;
 }
 
@@ -3509,6 +3654,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       "For Deploy, the Host prepends the Leading Model base-centre start just outside the selected battlefield edge. The complete Speed allowance includes that ingress distance. Do not add an artificial path point on the edge and do not measure only from the edge; choose an endpoint whose complete Host path remains within maxDistanceMilliInches.",
       "Never treat the remaining models as a unit centre: compare and choose a complete Host-solved final formation using every model's physical base, coherency, board edge, terrain, objective, line-of-sight, blocking, threat and fire-zone consequences.",
       "When candidate value depends materially on position, use space.inspect_relationships with a tactical intent and scoped subjectUnitIds/targetIds before choosing. Read field-level exact/advisory/unknown precision; use the returned one-to-many, many-to-one, fire-zone, objective and clearance relationships to justify the chosen intent. Do not infer geometry from the rendered pixels.",
+      "Candidate comparisons and rejected-alternative reasons influence selection and must obey the same current relationship facts as the selected reason. In a unit_spatial_relationship from an own Unit to an enemy Unit, threats.toFrom describes incoming enemy weapons: any moveThenAttackProfileKeys entry is an in-band move-then-fire threat even when legal path or post-move line of sight remains unresolved. Never turn unresolved path or line of sight into zero profiles, out-of-band, outside all enemy fire bands, or no protection value.",
       "For a ranged candidate, read current-action-index.rangedContributionOverview before comparing firepower. contributingModelCount and totalCurrentHitDice are the exact current Rules-domain contribution; currentLiveModelCount, visible target count, Unit size, or weapon-profile count are never substitutes for the attack pool. Never call an attack high-volume when most live models are nonContributing unless another exact batch proves that volume.",
       "Before recommending Charge, query exact physical base-edge relationships from that Unit to every eligible target Unit. Compare minimum movement needed to reach 1-inch engagement against Speed plus the maximum current Charge roll and modifiers. Never select Charge when every eligible target is certainly beyond that maximum; compare Pass, a useful pre-Charge ability, or another current Unit instead. A roll-advantage ability such as Metabolic Boost changes probability but does not raise a D6's maximum face.",
       "When comparing a current ranged attack with Run or another reposition, state the immediate attack dice forfeited and the possible future weapon profiles gained. Future movement, path, line of sight and next-round availability remain advisory until queried; do not call reposition 'no positional gain' merely because a smaller current long-range batch exists.",

@@ -115,6 +115,20 @@ explicit, isolated slice manifests.
   treating current out-of-range as safety. Attack probability/fire-zone
   receipts and prediction calibration are not yet applicable/observed because
   the match has only just completed the first deployment on each side.
+- The later revision-7 Creep Spread action is preserved as non-training defect
+  evidence: its relationship graph showed two incoming Goliath move-then-fire
+  profiles while its Lie in Wait comparison claimed zero. Planner comparisons
+  and Action rejected alternatives now share a stationary-versus-move-then-fire
+  semantic gate; the exact defect-shaped command failed before the change and
+  passed once after it with 0 Provider calls / ¥0. The formal continuation must
+  fork from revision 6 rather than resume revision 7. The whole preserved run,
+  including the invalid suffix, accounts for 29 Provider calls, 1,346,794
+  reported units and ¥1.852721.
+- This match uses the fixed Standard-2000 acceptance rosters and therefore has
+  no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
+  Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
+  2000-point experiment with a public victory route, scoring plan, component
+  roles, matchup counters and query/simulation receipts.
 
 Tickets 19–22 and Ticket 20 Slices 193–195 retain their focused closure; final
 synthesis indexes later evidence without rerunning unrelated passed gates.

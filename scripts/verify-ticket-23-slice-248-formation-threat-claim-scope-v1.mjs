@@ -19,11 +19,13 @@ const option = {
   },
 };
 
-function inspect(raw, publicReason = "Rules-checked complete formation.") {
+function inspect(raw, publicReason = "Rules-checked complete formation.",
+  queryReceipts = []) {
   return inspectStarcraftTmgFormationThreatClaimsV1({
     raw,
     selection: { publicReason },
     option,
+    queryReceipts,
   });
 }
 
@@ -81,6 +83,48 @@ const correctedRatherThanOutside = inspect({
 }, "This formation is inside the enemy fire envelope rather than outside it.");
 assert.equal(correctedRatherThanOutside.contradicted, false,
   "inside-rather-than-outside wording is an explicit correction, not an escape claim");
+
+const moveThenFireReceipt = {
+  queryKind: "space.inspect_relationships",
+  status: "advisory_estimate",
+  result: {
+    relationships: [{
+      edgeKind: "unit_spatial_relationship",
+      fromUnitId: "player2-swarmling",
+      toUnitId: "player1-goliath-1",
+      threats: {
+        toFrom: {
+          stationaryProfileKeys: [],
+          moveThenAttackProfileKeys: [
+            "army_units:goliath::assault::Autocannon",
+            "army_units:goliath::assault::Scatter Missiles",
+          ],
+        },
+      },
+      fireZoneExchange: {
+        toStationaryProfileCount: 0,
+        toMoveThenFireProfileCount: 2,
+      },
+    }],
+  },
+};
+const falseRejectedAlternative = inspect({
+  candidateComparisons: [{
+    candidateId: "lie-in-wait",
+    evaluation: "Lie in Wait is unnecessary because the Swarmling is outside all enemy fire bands with 0 in-band move-then-fire profiles.",
+  }],
+  rejectedAlternatives: [{
+    candidateId: "lie-in-wait",
+    reason: "Burrowing gives no protection because there are 0 in-band move-then-fire profiles.",
+  }],
+}, "Rules-checked asset placement.", [moveThenFireReceipt]);
+assert.equal(falseRejectedAlternative.contradicted, true,
+  "selection-influencing alternative reasons must not erase live move-then-fire bands");
+assert.deepEqual(new Set(falseRejectedAlternative.contradictions.map(
+  (entry) => entry.field)), new Set([
+  "candidateComparisons[0].evaluation",
+  "rejectedAlternatives[0].reason",
+]));
 
 assert.equal(STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE, 3,
   "one decision cannot reopen more than three semantic correction rounds");
@@ -168,6 +212,8 @@ console.log(JSON.stringify({
   correctedOutcomeCheckedClaims: correctedOutcome.checkedClaimCount,
   ratherThanOutsideCheckedClaims:
     correctedRatherThanOutside.checkedClaimCount,
+  moveThenFireAlternativeFields:
+    falseRejectedAlternative.contradictions.map((entry) => entry.field),
   semanticCorrectionLimit:
     STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE,
   rejectionSeverity: rejectedDrive.findingSeverity,
