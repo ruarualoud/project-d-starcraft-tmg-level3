@@ -25,7 +25,7 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v20";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v21";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_action_shape_normalization_v24";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
@@ -3822,7 +3822,8 @@ function makeNode(nodeId, nodeType, authority, content) {
 }
 
 function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
-  memoryQueryAvailable = false, forceTerminal = false) {
+  memoryQueryAvailable = false, forceTerminal = false,
+  terminalForceReason = null) {
   const planning = stage === "planning";
   const selectedId = choice.plannerResult?.recommendedCandidateId || null;
   const continuedReceiptHashes = continuationReceiptHashes(choice);
@@ -3841,7 +3842,9 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
     terminalSubmissionTool: planning
       ? NATIVE_PLANNING_SUBMIT_TOOL_NAME : NATIVE_DECISION_SUBMIT_TOOL_NAME,
     queryMode: forceTerminal
-      ? "safety_ceiling_terminal_submission_only"
+      ? terminalForceReason === "terminal_tool_argument_format_repair"
+        ? "format_repair_terminal_submission_only"
+        : "safety_ceiling_terminal_submission_only"
       : "evidence_queries_or_terminal_submission",
     promptPolicyVersion: PROMPT_POLICY_VERSION,
     hiddenChainOfThoughtForbidden: true,
@@ -3855,10 +3858,14 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       : "Consume the planner's selected current candidate, instantiate it when parameterized, and produce one auditable ActionIntent.",
     output: {
       protocol: forceTerminal
-        ? "The query safety ceiling is reached. Call only the declared stage-specific strict submit tool, preserve uncertainty explicitly, and do not invent missing evidence."
+        ? terminalForceReason === "terminal_tool_argument_format_repair"
+          ? "The previous terminal tool arguments were malformed JSON. Preserve the selected plan and supported facts, regenerate only one concise valid argument object, JSON-escape quotes, backslashes and newlines, and call only the declared stage-specific strict submit tool."
+          : "The query safety ceiling is reached. Call only the declared stage-specific strict submit tool, preserve uncertainty explicitly, and do not invent missing evidence."
         : "Every turn must call exactly one declared tool. Use query tools while material evidence is missing; finish by calling only the stage-specific strict submit tool.",
       queryRound: forceTerminal
-        ? "No query tool is available after the safety ceiling; preserve every unresolved item as uncertainty in the terminal submission."
+        ? terminalForceReason === "terminal_tool_argument_format_repair"
+          ? "No query tool is exposed during format repair. Reuse the existing plan and receipts; change only JSON syntax and concision."
+          : "No query tool is available after the safety ceiling; preserve every unresolved item as uncertainty in the terminal submission."
         : `Use ${NATIVE_QUERY_TOOL_NAME} for exact spatial, probability, fire-zone, path, LOS, coherency or score evidence. Use ${NATIVE_SKILL_TOOL_NAME} only when the default frozen Skill excerpts do not answer the strategy question.${memoryQueryAvailable && planning ? ` Use ${NATIVE_MEMORY_TOOL_NAME} only when the fixed same-match working summary does not answer a history question.` : ""}`,
       terminalTool: planning
         ? NATIVE_PLANNING_SUBMIT_TOOL_NAME : NATIVE_DECISION_SUBMIT_TOOL_NAME,
@@ -3921,8 +3928,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       stage,
       plannerControlsAction: true,
       terminalSubmissionForced: forceTerminal,
-      terminalForceReason: forceTerminal
-        ? "query_safety_ceiling_reached" : null,
+      terminalForceReason: forceTerminal ? terminalForceReason : null,
       currentCorrections: clone(choice.warnings || []),
     }),
     makeNode("player-room-projection", "player-view", "room_service",
@@ -3965,9 +3971,13 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
     makeNode("user-message", "user-message", "host", {
       text: `Decision ${choice.choiceKey}, ${stage} stage. `
         + (forceTerminal
-          ? `The query safety ceiling is reached; preserve unresolved uncertainty and call only the strict ${planning
-            ? NATIVE_PLANNING_SUBMIT_TOOL_NAME
-            : NATIVE_DECISION_SUBMIT_TOOL_NAME} tool now.`
+          ? terminalForceReason === "terminal_tool_argument_format_repair"
+            ? `Repair only the previous malformed JSON arguments. Preserve the selected plan and evidence, use concise JSON-escaped strings, and call only the strict ${planning
+              ? NATIVE_PLANNING_SUBMIT_TOOL_NAME
+              : NATIVE_DECISION_SUBMIT_TOOL_NAME} tool now.`
+            : `The query safety ceiling is reached; preserve unresolved uncertainty and call only the strict ${planning
+              ? NATIVE_PLANNING_SUBMIT_TOOL_NAME
+              : NATIVE_DECISION_SUBMIT_TOOL_NAME} tool now.`
           : `Use ${NATIVE_QUERY_TOOL_NAME} for exact game evidence and ${NATIVE_SKILL_TOOL_NAME} for additional frozen strategy excerpts. After all material evidence is available, call only the strict ${planning
             ? NATIVE_PLANNING_SUBMIT_TOOL_NAME
             : NATIVE_DECISION_SUBMIT_TOOL_NAME} tool.`),
@@ -4405,6 +4415,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       proposalValidationRounds: 0,
       semanticCorrectionRounds: 0,
       stageCorrectionRounds: 0,
+      terminalFormatRepairPending: false,
       lastSemanticFailureSignature: null,
       repeatedSemanticFailureCount: 0,
       unavailableCandidateIds: [],
@@ -4430,10 +4441,15 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     const round = choice.attemptKeys.length + 1;
     const queryRoundLimit = stage === "planning"
       ? maxPlanningQueryRounds : maxActionQueryRounds;
-    const forceTerminal = choice.stageQueryRounds >= queryRoundLimit;
+    const terminalForceReason = choice.terminalFormatRepairPending === true
+      ? "terminal_tool_argument_format_repair"
+      : choice.stageQueryRounds >= queryRoundLimit
+        ? "query_safety_ceiling_reached" : null;
+    const forceTerminal = terminalForceReason !== null;
     const activeInput = decisionInputForChoice(input, choice);
     const prompt = makePromptArtifact(match, activeInput, choice, round,
-      choice.queryReceipts, stage, Boolean(memoryQueryPort), forceTerminal);
+      choice.queryReceipts, stage, Boolean(memoryQueryPort), forceTerminal,
+      terminalForceReason);
     if (containsApiCredential(prompt.artifact)) {
       throw Object.assign(new Error("API credential found in decision prompt"), {
         code: "LIVE_DECISION_API_CREDENTIAL_FORBIDDEN",
@@ -4910,6 +4926,13 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         "QUERY_SAFETY_CEILING_REACHED_TERMINAL_FORCED"),
       proposalValidationRoundCount: choice.proposalValidationRounds || 0,
       semanticCorrectionRoundCount: choice.semanticCorrectionRounds || 0,
+      toolArgumentGrammarRecoveryCount: attempts.reduce((count, entry) =>
+        count + (entry.safeOutput?.providerTurn?.toolCalls || [])
+          .filter((call) => object(call?.argumentRecovery)).length, 0),
+      terminalFormatRepairRoundCount: (choice.warnings || []).filter((warning) =>
+        String(warning).startsWith(
+          "SEMANTIC_CORRECTION_REQUIRED:TERMINAL_TOOL_SUBMISSION_INVALID:"))
+        .length,
       planningProviderCalls: attempts.filter((entry) =>
         entry.stage === "planning").length,
       actionProviderCalls: attempts.filter((entry) =>
@@ -5058,6 +5081,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         current.lastSemanticFailureSignature === failureSignature
           ? Number(current.repeatedSemanticFailureCount || 0) + 1 : 1;
       current.lastSemanticFailureSignature = failureSignature;
+      current.terminalFormatRepairPending =
+        correction.startsWith("TERMINAL_TOOL_SUBMISSION_INVALID:");
       if (!current.processedAttemptKeys.includes(attempt.attemptKey)) {
         current.processedAttemptKeys.push(attempt.attemptKey);
       }
@@ -5190,6 +5215,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           current.status = "generating";
           current.stageQueryRounds = 0;
           current.stageCorrectionRounds = 0;
+          current.terminalFormatRepairPending = false;
           current.lastSemanticFailureSignature = null;
           current.repeatedSemanticFailureCount = 0;
           current.proposalValidationRounds = 0;

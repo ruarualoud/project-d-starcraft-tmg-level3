@@ -135,6 +135,7 @@ function normalizeProviderResponseToolCall(value, field, index) {
     ? value.function.arguments : JSON.stringify(value.function.arguments ?? {});
   let parsedArguments = {};
   let argumentIssue = null;
+  let argumentRecovery = null;
   if (rawArguments.length > 64 * 1024) {
     argumentIssue = "arguments_too_large";
   } else {
@@ -143,7 +144,18 @@ function normalizeProviderResponseToolCall(value, field, index) {
       if (object(candidate)) parsedArguments = candidate;
       else argumentIssue = "arguments_not_object";
     } catch {
-      argumentIssue = "arguments_invalid_json";
+      const normalized = normalizeProviderJsonDocumentV1(rawArguments);
+      try {
+        const candidate = JSON.parse(normalized.text);
+        if (!object(candidate)) throw new TypeError("arguments_not_object");
+        parsedArguments = candidate;
+        argumentRecovery = {
+          normalizationKind: normalized.kind,
+          evidence: clone(normalized.evidence || null),
+        };
+      } catch {
+        argumentIssue = "arguments_invalid_json";
+      }
     }
   }
   return {
@@ -151,6 +163,7 @@ function normalizeProviderResponseToolCall(value, field, index) {
     type: "function",
     function: { name, arguments: JSON.stringify(parsedArguments) },
     argumentIssue,
+    ...(argumentRecovery ? { argumentRecovery } : {}),
   };
 }
 
@@ -457,6 +470,9 @@ function outputFromPayload(payload, physicalAttempts, allowSingleFence = false) 
           name: normalized.function.name,
           arguments: JSON.parse(normalized.function.arguments),
           argumentIssue: normalized.argumentIssue,
+          ...(normalized.argumentRecovery ? {
+            argumentRecovery: clone(normalized.argumentRecovery),
+          } : {}),
         };
       });
     } catch {

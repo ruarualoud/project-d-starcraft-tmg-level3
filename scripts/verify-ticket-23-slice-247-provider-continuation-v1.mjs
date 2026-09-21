@@ -24,7 +24,7 @@ const resolved = await registry.resolveEgressBinding({
 assert.equal(resolved.ok, true);
 
 const observation = {};
-const payload = JSON.stringify({
+let payload = JSON.stringify({
   id: "fixture-ticket-23-slice-247",
   model: "deepseek-v4-flash",
   choices: [{
@@ -145,7 +145,7 @@ assert.equal(observation.body.messages[3].role, "tool");
 assert.equal(observation.body.tools[0].function.name,
   "preview_finite_successor");
 assert.equal(observation.body.tool_choice, "auto");
-assert.equal(observation.body.response_format, undefined);
+assert.deepEqual(observation.body.response_format, { type: "json_object" });
 assert.deepEqual(result.output, {
   providerTurn: {
     kind: "tool_calls",
@@ -153,9 +153,97 @@ assert.deepEqual(result.output, {
       callId: "call_exact_successor",
       name: "preview_finite_successor",
       arguments: { candidateId: "pass-current-phase" },
+      argumentIssue: null,
     }],
   },
 });
 assert.equal(result.usageReceipt.usage.totalUnits, 92);
+
+payload = JSON.stringify({
+  id: "fixture-ticket-23-slice-248-tool-argument-recovery",
+  model: "deepseek-v4-flash",
+  choices: [{
+    finish_reason: "tool_calls",
+    message: {
+      role: "assistant",
+      content: null,
+      tool_calls: [{
+        id: "call_recoverable_terminal",
+        type: "function",
+        function: {
+          name: "preview_finite_successor",
+          arguments:
+            '{"candidateId":"pass-current-phase","publicReason":"Move 6" then hold."}',
+        },
+      }],
+    },
+  }],
+  usage: { prompt_tokens: 82, completion_tokens: 14, total_tokens: 96 },
+});
+const recoveryCredential = Buffer.from(
+  "fixture-ticket-23-slice-248-tool-recovery-only", "utf8");
+const recovered = await transport.complete({
+  egressBinding: resolved.egressBinding,
+  credentialBytes: recoveryCredential,
+  providerRequest: {
+    schemaVersion: "starcraft_tmg_direct_provider_request_v1",
+    requestId: "ticket-23-slice-248-tool-recovery-001",
+    intent: "take_turn",
+    promptPack: "starcraft_tmg_agent_planner_v2",
+    promptNodes: [{ nodeType: "platform", authority: "host" }],
+    userMessage: "Recover syntax only, then preserve the typed arguments.",
+    responseContract: {
+      allowedChannels: ["planning"],
+      decisionCandidateSource: "current_spatial_action_space_only",
+    },
+    agentLoop: {
+      mode: "native_tools",
+      tools: [{
+        type: "function",
+        function: {
+          name: "preview_finite_successor",
+          description: "Return the exact Rules-owned successor for a finite action.",
+          parameters: {
+            type: "object",
+            properties: {
+              candidateId: { type: "string" },
+              publicReason: { type: "string" },
+            },
+            required: ["candidateId", "publicReason"],
+            additionalProperties: false,
+          },
+        },
+      }],
+      continuationMessages: [],
+    },
+    maxOutputUnits: 64,
+  },
+});
+recoveryCredential.fill(0);
+assert.deepEqual(recovered.output, {
+  providerTurn: {
+    kind: "tool_calls",
+    toolCalls: [{
+      callId: "call_recoverable_terminal",
+      name: "preview_finite_successor",
+      arguments: {
+        candidateId: "pass-current-phase",
+        publicReason: 'Move 6" then hold.',
+      },
+      argumentIssue: null,
+      argumentRecovery: {
+        normalizationKind: "single_unescaped_quote_v1",
+        evidence: recovered.output.providerTurn.toolCalls[0]
+          .argumentRecovery?.evidence,
+      },
+    }],
+  },
+});
+assert.match(
+  recovered.output.providerTurn.toolCalls[0].argumentRecovery
+    .evidence.originalTextHash,
+  /^[a-f0-9]{64}$/u,
+);
+assert.equal(recovered.usageReceipt.usage.totalUnits, 96);
 
 process.stdout.write("ticket-23 slice-247 provider continuation gate passed\n");

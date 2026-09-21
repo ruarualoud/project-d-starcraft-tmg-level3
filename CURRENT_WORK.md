@@ -195,9 +195,15 @@ explicit, isolated slice manifests.
   stopped without Preview/Apply after three consecutive malformed
   `submit_decision` JSON argument payloads. This is a High structured-output
   transport blocker, not another lifecycle contradiction. Under the three-round
-  rule there is no fourth paid retry in this cycle; r8 remains the current safe
-  boundary. See
-  `docs/ticket-23-slice-248-terminal-tool-json-convergence-blocker-v1-2026-09-22.md`.
+  rule there was no fourth paid retry in that cycle; r8 remains the current safe
+  boundary. The independent follow-up repair now routes native tool arguments
+  through the existing grammar-only normalizer and, when local recovery fails,
+  forces a terminal-only format-repair round while preserving plan/query state.
+  The exact tool-argument gate failed before and passed once after repair with
+  0 Provider calls / ¥0. A new post-repair acceptance may now fork from r8 for
+  exactly one action. See
+  `docs/ticket-23-slice-248-terminal-tool-json-convergence-blocker-v1-2026-09-22.md`
+  and `docs/ticket-23-slice-248-terminal-tool-json-recovery-v1-2026-09-22.md`.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
