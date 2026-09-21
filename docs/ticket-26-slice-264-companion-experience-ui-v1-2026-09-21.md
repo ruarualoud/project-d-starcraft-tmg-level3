@@ -236,12 +236,49 @@ in this worktree.
 | SS-1 | `6415f4b` | guardrails doc, this doc | Standard + audit + frozen plan; no code changed. |
 | SS-2 | `f2ae788` | `authoritative-battle-workspace.tsx` | Mobile column panes use intrinsic non-overlapping structure; desktop-only `flex: 1`; overflow contained. |
 | SS-3 | `c24e463` | `tactical-adjutant-dock.tsx`, `tactical-adjutant-panel.tsx` | Collapsed dock shrink-wraps a compact chip; expanded viewport-bounded; single ScrollView; `onExpandedChange`. |
-| Gate A repair + receipt | pending | 262 verifier, 262 closure doc | Verifier drift base + lineage rule repaired for Codex-advanced main; board visibility measured at natural top scroll; gate passed on run 3. |
+| Gate A repair + receipt | `a60e820` | 262 verifier, 262 closure doc | Verifier drift base + lineage rule repaired for Codex-advanced main; board visibility measured at natural top scroll; gate passed on run 3. |
+| SS-4 | `2ae1fe8` | `tactical-adjutant-panel.tsx` | Companion experience: compact chip, six progressive-disclosure sections, seat permission posture, honest gap cards, BYOK empty-catalogue state, inline tree preserved. |
+| SS-4 honesty follow-up | `8244a25` | `tactical-adjutant-panel.tsx` | Gate B1 diagnosis: surface the fail-closed `CHARACTER_PROJECTION_INVALID` state truthfully (header, identity section, diagnostics). |
+| SS-5 | `6311ff9` | 264 verifier, panel (textTransform) | Real-browser companion journey; section headers keep copy/innerText/accessible-name agreement. |
+| Gate B2 repair + receipt | `d46fc9b` | panel, 264 verifier | BYOK session_required/empty-catalogue honesty repaired (two distinct defects); desktop material-visibility standard; gate passed on run 4. |
+| SS-6 | pending | this doc | Receipts, gaps, concerns. |
 
 ## 7. Codex-owned contract gaps (exact, for integration)
 
-Filled at SS-4; preview in §3.2. Each gap is rendered in-product as an
-honest unavailable state; none is worked around in the UI.
+Each gap is rendered in-product as an honest unavailable state; none is
+worked around in the UI.
+
+1. **`CHARACTER_PACKAGE_HASH_PIN_STALE` (High, blocks live companion
+   identity).** `packages/client-domain/character-presentation-projection-v2.mjs`
+   pins `EXPECTED_CHARACTER_PACKAGE_HASH = ab238d95…` and
+   `EXPECTED_PERSONA_CATALOGUE_HASH = 2e10ae7f…` (pinned in `61d0fdd`), but
+   the current character content produces `12d5ed6e…` / `7c4c3a65…`
+   (content evolved through `65b2822`). Every served development projection
+   therefore fails client validation (`CHARACTER_PROJECTION_INVALID:binding_or_hash`)
+   and the client domain fail-closes to `characterPresentation: null`. The
+   same stale pin fails Gate B1 (3 of 6 component tests) at the current
+   integration base AND at integrated main `89af268`. Codex owns re-pinning
+   (or regenerating) the hashes; K3 changed no backend file.
+2. **`COMPANION_RELATIONSHIP_STATE_PROJECTION`** — no relationship-state
+   projection in the client view (the tactical relationship graph is
+   agent-side only). UI: honest unknown card.
+3. **`COMPANION_MEMORY_LAYERS_PROJECTION`** — no layered long-term memory
+   projection; only the session transcript bound and safe `memoryRefs` hash
+   counts exist. UI: honest card, no fake local persistence layer.
+4. **`COMPANION_IMPORT_EXPORT_RESTORE_CONTRACT`** — no import/export/restore
+   contract for companion cards/world books/memory. UI: honest card.
+5. **`MULTI_COMPANION_SIMULTANEOUS_SESSION`** — one role-agent session (one
+   speaker) per seat. Distinct companions exist today only as sequential
+   persona/world-book selections. UI: honest card.
+6. **`AGENT_VS_AGENT_COMPANION_POLICY_SURFACE`** — no explicit agent-vs-agent
+   companion policy projection; the UI defaults to observer/off and sessions
+   never auto-open.
+7. **`SECURE_PROVIDER_PROFILES_LOADED_NOT_PROJECTED` (advisory).** After a
+   successful `metadata` load, `derivedStatus()` still returns
+   `session_required` when no agent session is bound, so the projection
+   cannot say "catalogue loaded, zero profiles". The panel reflects the
+   completed load with an ephemeral per-mount receipt instead; a projected
+   flag would let the UI drop that receipt. Not blocking.
 
 ## 8. Verification receipts
 
@@ -260,7 +297,57 @@ honest unavailable state; none is worked around in the UI.
   `32871806057cb30867ee9dafd3bc0a9a39bfdb7c0c42c862166580981d8fe8a7`.
   Covers SS-2, SS-3. 0 Provider calls / ¥0. Three runs, within the
   three-cycle budget; no further rerun of this gate.
+- **Gate B1 · focused tactical Adjutant component contract** —
+  `corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec vitest run lib/level3/__tests__/character-presentation-mount-v2.test.tsx`.
+  Run 1 exit 1: **3 failed / 3 passed**, all three failures
+  `CHARACTER_PROJECTION_INVALID:binding_or_hash` thrown inside the mount
+  runtime while validating the server fixture projection — i.e. before any
+  panel behavior. Root cause proven backend-side with a scratch Node
+  reproduction (no gate run): the validator's pinned character
+  package/catalogue hashes are stale versus current content (gap #1; pins
+  from `61d0fdd`, content through `65b2822`; identical at integrated main
+  `89af268`). The implicated path is Codex-owned backend/source-data, which
+  this slice must not touch, and a rerun cannot change the deterministic
+  outcome, so no rerun was spent. The 3 passing tests include the ones that
+  exercise the restructured panel (public fallback, sealed cold-offline
+  snapshot, persona selector). Pre-existing at the slice base: reproduced
+  with the untouched base code.
+- **Gate B2 · companion real-browser journey and screenshots** —
+  `node scripts/verify-ticket-26-slice-264-companion-experience-browser-v1.mjs`.
+  Run 1 exit 1 (desktop full-containment assertion over-strict for a
+  scrollable page; verifier moved to the material-visibility standard). Run
+  2 exit 1 (real product defect: the BYOK no-profile branch claimed
+  "catalogue loaded, zero profiles" under `session_required` before any
+  load). Run 3 exit 1 (second distinct defect: after a real load the
+  projection still reports `session_required`; the empty-catalogue state
+  could never render — confirmed by an isolated scratch reproduction of
+  `derivedStatus()`, then repaired with the ephemeral per-mount receipt).
+  Run 4 exit 0: **passed**, 15 checks, 11 hashed artifacts,
+  `characterState: withheld_fail_closed` (the journey exercised the honest
+  fail-closed identity path caused by gap #1), provider traffic limited to
+  one `GET …/provider/api/v1/metadata`, agent session-open rejected
+  locally with `AGENT_CHARACTER_NOT_AVAILABLE` rendered in-product,
+  reportHash
+  `291959786c4271b5856490d8f8de62cbd60407a9c7dd13d88784024c8271706f`.
+  Covers SS-4, SS-5. 0 Provider calls / ¥0; every request stayed on the
+  loopback fixture origin. Four runs — each round repaired a distinct,
+  verified defect and advanced the journey (converging), and run 4 was the
+  last attempt used.
+- Claim-to-pixel review performed on all six key screenshots (desktop 01,
+  05, 06; narrow 09, 10, 11): compact chip, expanded sections, BYOK card,
+  materially visible board and plain-tap threat toggle all confirmed in
+  pixels.
 
 ## 9. Unresolved Critical/High concerns
 
-None yet; filled honestly at closure.
+- **High · `CHARACTER_PACKAGE_HASH_PIN_STALE` (Codex-owned, gap #1).** The
+  live companion identity/portrait path is fail-closed across the product
+  until Codex re-pins or regenerates the character content hashes; Gate B1
+  stays red for the same reason. The companion window renders this state
+  honestly (`Adjutant · projection withheld`, fail-closed identity card,
+  diagnostics rejection code) — verified in the Gate B2 journey. No
+  frontend workaround is appropriate: substituting stale data would
+  violate fail-closed character rights.
+- No other Critical/High concerns. The Slice 262 narrow handoff is closed
+  (Gate A), and all Milestone B acceptance points that the current backend
+  contracts can support are green.
