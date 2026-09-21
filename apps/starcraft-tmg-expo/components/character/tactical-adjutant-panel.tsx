@@ -1249,7 +1249,7 @@ const styles = StyleSheet.create({
   commsRow: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   section: { borderRadius: 10, borderWidth: 1, borderColor: "#354232", backgroundColor: "#0a120c", overflow: "hidden" },
   sectionHeader: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: "#101912" },
-  sectionHeaderText: { flex: 1, color: "#d5e2c5", fontSize: 11, fontWeight: "900", letterSpacing: 0.6, textTransform: "uppercase" },
+  sectionHeaderText: { flex: 1, color: "#d5e2c5", fontSize: 11, fontWeight: "900", letterSpacing: 0.6 },
   sectionHeaderToggle: { color: "#d2ae59", fontSize: 18, fontWeight: "700" },
   sectionBody: { gap: 8, padding: 10 },
   sectionValue: { color: "#f5f2df", fontSize: 14, fontWeight: "900" },
