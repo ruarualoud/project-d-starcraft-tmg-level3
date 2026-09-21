@@ -198,6 +198,7 @@ export function projectStarcraftTmgSpatialParameterDomainsV1(legalSpace) {
     authorityActionType: domain.actionType,
     abilityName: domain.abilityName || null,
     effectKind: domain.effectKind || null,
+    effectContract: clone(domain.effectContract || null),
     definitionId: domain.definitionId || null,
     sourceKind: domain.sourceKind || null,
     createdUnitRecordKey: domain.constraints?.createdUnitRecordKey || null,

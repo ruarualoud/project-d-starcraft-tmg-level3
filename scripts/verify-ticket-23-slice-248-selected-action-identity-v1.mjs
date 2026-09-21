@@ -4,9 +4,10 @@ import assert from "node:assert/strict";
 import {
   inspectStarcraftTmgSelectedActionIdentityClaimsV1,
 } from "../packages/online-agent-session/live-flash-decision-port-v1.mjs";
+import { projectStarcraftTmgSpatialParameterDomainsV1 } from
+  "../packages/online-agent-session/spatial-action-query-runtime-v1.mjs";
 
-const actionSpace = {
-  finiteActions: [],
+const legalSpace = {
   parameterDomains: [
     {
       domainId: "creep-spread-domain",
@@ -41,6 +42,10 @@ const actionSpace = {
       },
     },
   ],
+};
+const actionSpace = {
+  finiteActions: [],
+  parameterDomains: projectStarcraftTmgSpatialParameterDomainsV1(legalSpace),
 };
 
 const drifted = inspectStarcraftTmgSelectedActionIdentityClaimsV1({

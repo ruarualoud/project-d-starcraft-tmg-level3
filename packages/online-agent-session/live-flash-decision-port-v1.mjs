@@ -951,6 +951,7 @@ export function projectStarcraftTmgPlanningActionSpaceForPromptV1(
       authorityActionType: entry.authorityActionType || null,
       abilityName: entry.abilityName || null,
       effectKind: entry.effectKind || null,
+      effectContract: clone(entry.effectContract || null),
       sourceKind: entry.sourceKind || null,
       sourceInstanceId: entry.sourceInstanceId || null,
       createdUnitRecordKey: entry.createdUnitRecordKey || null,

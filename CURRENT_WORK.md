@@ -149,8 +149,14 @@ explicit, isolated slice manifests.
   effect. All eleven executable selected-roster active effects now publish a
   mandatory adapter-owned semantic contract; Omega Network explicitly places
   an Omega Worm and exposes its later-round Entry Edge/Supply-2 behavior, not a
-  reserve indicator. The exact r9 gate passed at 0 Provider calls / ¥0. Preserve
-  r9 as non-training evidence and fork through corrected r8 next.
+  reserve indicator. The first live retry exposed a second High transport bug:
+  LegalSpace compiled the contract but the Spatial Action projection dropped it,
+  so selected identity still contained `effectContract: null`. The same exact
+  test now enters through the real projection; it failed before and passed once
+  after the contract was carried into both Spatial Action Space and the compact
+  Planning index, at 0 Provider calls / ¥0. Preserve both r9 attempts as
+  non-training evidence and fork through corrected r8 once more. If the same
+  semantic class fails again, stop under the three-round convergence rule.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -194,4 +200,7 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   386,294 reported units and ¥0.521420. Correct revision 8 accounts for 4 calls,
   181,580 units and ¥0.245971; defective revision 9 adds 5 calls, 204,714 units
   and ¥0.275449 and remains non-training evidence.
+- Adapter-contract branch `20260921194916820` through defective revision 9:
+  5 calls, 221,094 reported units and ¥0.299055. Its contract was lost in
+  projection, so the revision remains non-training evidence.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.
