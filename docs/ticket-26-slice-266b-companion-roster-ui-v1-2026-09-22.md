@@ -100,6 +100,38 @@ Slice manifest: `coordination/slices/ticket-26-slice-266b-companion-roster-ui.sl
 
 _(filled in as gates run — see below)_
 
+### Gate 1 · focused companion component contract (after SS-3)
+
+Command: `corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec vitest run lib/level3/__tests__/character-presentation-mount-v2.test.tsx`
+
+- Run 1 (2026-09-22, after the final SS-3 code change): **exit 1 — 3 failed / 3 passed**.
+  All three failures are `CHARACTER_PROJECTION_INVALID:binding_or_hash` thrown
+  inside the mount runtime while validating the server fixture projection —
+  before any panel behaviour. Root cause re-proven with a scratch Node
+  reproduction (not a gate run): the validator's pinned character
+  package/catalogue hashes (`EXPECTED_CHARACTER_PACKAGE_HASH ab238d95…`,
+  `EXPECTED_PERSONA_CATALOGUE_HASH 2e10ae7f…`, pinned in `61d0fdd`) are stale
+  versus current character content (`12d5ed6e…` / `7c4c3a65…`). This is the
+  pre-existing Codex-owned High gap `CHARACTER_PACKAGE_HASH_PIN_STALE`
+  documented since Slice 264 §7.1: identical at this slice's base `592bb95`
+  (all five Kerrigan-chain content files the runtime imports are byte-identical
+  to base, and `packages/` + `scripts/support/` carry zero drift). No file this
+  slice may edit is implicated; a rerun cannot change the deterministic
+  backend-owned outcome, so no rerun was spent (Slice 264 precedent).
+- The 3 passing tests are the ones that exercise the panel surfaces touched by
+  earlier slices and unchanged semantics here: public fallback without a
+  restricted image, sealed cold-offline snapshot, persona selector at the
+  default ceiling. SS-3's catalogue changes render only in the floating
+  variant, which this contract suite does not mount; the module-level import
+  chain (catalogue panel → content packs → asset registry with lazy require
+  thunks) evaluates cleanly under vitest.
+- Covered sub-slices: SS-3 (as far as the pre-existing backend pin defect
+  allows; pixel-level catalogue proof is carried by Gate 2).
+
+### Gate 2 · six-companion real-browser journey and screenshots (after SS-4)
+
+_(pending)_
+
 ## Commits
 
 _(filled in per sub-slice)_

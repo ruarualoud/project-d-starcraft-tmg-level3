@@ -860,8 +860,8 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           <Text style={styles.gapCode}>
             {CONTRACT_GAPS.multiSpeaker}
             {zh
-              ? "：当前客户端合同未暴露多同伴同会话同时发言；此处如实不可用，不做本地模拟。"
-              : ": simultaneous multi-speaker conversation is not exposed by the current client contract; honestly unavailable here, never simulated locally."}
+              ? "：通用后端模块已支持多说话者回合归属（无头验证），但当前产品房间绑定/持久化适配器归 Codex 且未接通；此处如实不可用，不做本地模拟。"
+              : ": the generic backend module supports multi-speaker turn ownership (headless-verified), but the current product room binding/persistence adapter is Codex-owned and unconnected; honestly unavailable here, never simulated locally."}
           </Text>
         </View>
       </View>
@@ -905,8 +905,8 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           <Text style={styles.gapCode}>
             {CONTRACT_GAPS.relationship}
             {zh
-              ? "：当前客户端投影未暴露同伴关系状态；如实显示未知，绝不当零或编造。"
-              : ": no companion relationship state is exposed by the current client projection; shown honestly as unknown, never zero or invented."}
+              ? "：通用后端模块已支持观测型关系状态（无头验证），但当前产品房间绑定未投影；如实显示未知，绝不当零或编造。"
+              : ": the generic backend module supports observed relationship state (headless-verified), but the current product room binding does not project it; shown honestly as unknown, never zero or invented."}
           </Text>
         </View>
         <View style={styles.gapCard}>
@@ -914,8 +914,8 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           <Text style={styles.gapCode}>
             {CONTRACT_GAPS.memoryLayers}
             {zh
-              ? "：当前客户端只暴露会话转写上限与安全记忆哈希引用；分层长期记忆投影未暴露，不做本地伪持久层。"
-              : ": the client exposes only the session transcript bound and safe memory hash refs; layered long-term memory is not projected, and no fake local persistence layer is created."}
+              ? "：通用后端模块已支持分层长期记忆（无头验证），但当前产品绑定只暴露会话转写上限与安全记忆哈希引用；不做本地伪持久层。"
+              : ": the generic backend module supports layered long-term memory (headless-verified), but the current product binding exposes only the session transcript bound and safe memory hash refs; no fake local persistence layer is created."}
           </Text>
         </View>
         <View style={styles.gapCard}>
@@ -923,8 +923,8 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           <Text style={styles.gapCode}>
             {CONTRACT_GAPS.importExportRestore}
             {zh
-              ? "：同伴卡片、世界书与记忆的导入/导出/恢复合同未暴露给客户端；此处不提供伪造入口。"
-              : ": no import/export/restore contract for companion cards, world books, or memory is exposed to the client; no fake entry point is offered."}
+              ? "：通用后端模块已支持导入/导出（无头验证），但产品房间绑定/持久化适配器归 Codex 且未接通；此处不提供伪造入口。"
+              : ": the generic backend module supports import/export (headless-verified), but the product room binding/persistence adapter is Codex-owned and unconnected; no fake entry point is offered."}
           </Text>
         </View>
       </View>
