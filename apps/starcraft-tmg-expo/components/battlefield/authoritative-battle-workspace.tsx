@@ -535,7 +535,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     pan.y,
   );
   const boardHeight = windowWidth >= 980
-    ? 500
+    ? 560
     : clamp((windowWidth - 56) * (scene.heightMilliInches / scene.widthMilliInches), 260, 430);
   const desktop = windowWidth >= 980;
   const pathPoints = draft?.path || [];
@@ -1046,6 +1046,71 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
       ? [selectedDomain.start, ...pathPoints]
       : pathPoints;
 
+  // Board-adjacent extras (communication portrait/audio and the accessible
+  // model list). On desktop they stay under the board in the left pane; on
+  // touch-first column layouts they render after the detail side panel so the
+  // Unit/Actions/Threat panels are reachable without scrolling past them.
+  const boardExtras = (
+    <>
+      <View style={styles.mediaCard}>
+        {selectedModel && starcraftTmgBattlefieldUnitMediaAssetsV1(selectedModel.unitId) && (
+          <ExpoImage
+            source={starcraftTmgBattlefieldUnitMediaAssetsV1(selectedModel.unitId)?.activePortrait}
+            contentFit="cover"
+            contentPosition="center"
+            style={styles.commPortrait}
+            accessibilityLabel={`${selectedModel.label} communication portrait`}
+          />
+        )}
+        <View style={styles.mediaCopy}>
+          <Text style={styles.panelTitle}>{selectedModel?.label || (zh ? "未选择单位" : "No unit selected")}</Text>
+          <Text style={styles.metaText}>
+            {zh
+              ? `${voicesEnabled ? "语音开启" : "语音静音"} · ${bgmLoaded ? (bgmPlaying ? "BGM 播放中" : "BGM 已暂停") : "BGM 未载入"}`
+              : `${voicesEnabled ? "Voices enabled" : "Voices muted"} · ${bgmLoaded ? (bgmPlaying ? "BGM playing" : "BGM paused") : "BGM not loaded"}`}
+          </Text>
+          <Text style={styles.boundaryText}>
+            {zh ? "声音只由本地操作或已验签 Apply 事件触发，不进入规则状态或训练数据。" : "Audio is triggered only by local selection or validated Apply events and never enters rules or training state."}
+          </Text>
+        </View>
+        <View style={styles.mediaControls}>
+          <Button compact label={voicesEnabled ? (zh ? "关闭语音" : "Mute voice") : (zh ? "开启语音" : "Enable voice")} onPress={toggleVoices} />
+          <Button compact label={zh ? "选择 BGM" : "Choose BGM"} onPress={chooseBgm} />
+          <Button compact label={bgmPlaying ? (zh ? "暂停 BGM" : "Pause BGM") : (zh ? "播放 BGM" : "Play BGM")} disabled={!bgmLoaded} onPress={toggleBgm} />
+          <Button compact label="Vol −" disabled={mediaVolume <= 0} onPress={() => setMediaVolume((value) => Math.max(0, value - 0.1))} />
+          <Text style={styles.zoomText}>{Math.round(mediaVolume * 100)}%</Text>
+          <Button compact label="Vol +" disabled={mediaVolume >= 1} onPress={() => setMediaVolume((value) => Math.min(1, value + 0.1))} />
+        </View>
+      </View>
+
+      <View style={styles.accessibleList}>
+        <Text style={styles.panelTitle}>{zh ? "可访问模型列表（44dp）" : "Accessible model list (44dp)"}</Text>
+        <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator>
+          <View style={styles.horizontalModelRow}>
+          {scene.models.map((model) => (
+            <Button
+              key={model.id}
+              compact
+              active={selectedModelId === model.id}
+              label={`${model.label} · ${model.sideKey}`}
+              onPress={() => selectModel(model)}
+            />
+          ))}
+          {scene.unitAnchors.map((anchor) => (
+            <Button
+              key={anchor.id}
+              compact
+              active={selectedModelId === anchor.id}
+              label={`${anchor.label} · ${actionText(anchor.currentModels)} models`}
+              onPress={() => setSelectedModelId(anchor.id)}
+            />
+          ))}
+          </View>
+        </ScrollView>
+      </View>
+    </>
+  );
+
   return (
     <View style={styles.shell}>
       <View style={styles.titleRow}>
@@ -1124,6 +1189,9 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
             <Button compact label="→" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, x: value.x + panStepX }))} />
             <Button compact label="↑" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, y: value.y + panStepY }))} />
             <Button compact label="↓" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, y: value.y - panStepY }))} />
+          </View>
+          <View style={styles.displayControls}>
+            <Text style={styles.displayGroupLabel}>{zh ? "显示图层" : "Display layers"}</Text>
             <Button
               compact
               active={showBattlefieldBackground}
@@ -1135,6 +1203,12 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               active={showAuthoritativeTerrain}
               label={zh ? `规则地形 ${terrainCount}` : `Rules terrain ${terrainCount}`}
               onPress={() => setShowAuthoritativeTerrain((value) => !value)}
+            />
+            <Button
+              compact
+              active={showThreatReference}
+              label={showThreatReference ? (zh ? "隐藏威胁" : "Hide threat") : (zh ? "显示威胁" : "Show threat")}
+              onPress={() => setShowThreatReference((value) => !value)}
             />
           </View>
           <Text style={styles.mapContractText} testID="battlefield-map-contract-v1">
@@ -1247,63 +1321,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
             <Text style={styles.legendText}>{zh ? "威胁参考默认关闭，仅显示投影中的印刷射程" : "Threat reference defaults off; projected printed range only"}</Text>
           </View>
 
-          <View style={styles.mediaCard}>
-            {selectedModel && starcraftTmgBattlefieldUnitMediaAssetsV1(selectedModel.unitId) && (
-              <ExpoImage
-                source={starcraftTmgBattlefieldUnitMediaAssetsV1(selectedModel.unitId)?.activePortrait}
-                contentFit="cover"
-                contentPosition="center"
-                style={styles.commPortrait}
-                accessibilityLabel={`${selectedModel.label} communication portrait`}
-              />
-            )}
-            <View style={styles.mediaCopy}>
-              <Text style={styles.panelTitle}>{selectedModel?.label || (zh ? "未选择单位" : "No unit selected")}</Text>
-              <Text style={styles.metaText}>
-                {zh
-                  ? `${voicesEnabled ? "语音开启" : "语音静音"} · ${bgmLoaded ? (bgmPlaying ? "BGM 播放中" : "BGM 已暂停") : "BGM 未载入"}`
-                  : `${voicesEnabled ? "Voices enabled" : "Voices muted"} · ${bgmLoaded ? (bgmPlaying ? "BGM playing" : "BGM paused") : "BGM not loaded"}`}
-              </Text>
-              <Text style={styles.boundaryText}>
-                {zh ? "声音只由本地操作或已验签 Apply 事件触发，不进入规则状态或训练数据。" : "Audio is triggered only by local selection or validated Apply events and never enters rules or training state."}
-              </Text>
-            </View>
-            <View style={styles.mediaControls}>
-              <Button compact label={voicesEnabled ? (zh ? "关闭语音" : "Mute voice") : (zh ? "开启语音" : "Enable voice")} onPress={toggleVoices} />
-              <Button compact label={zh ? "选择 BGM" : "Choose BGM"} onPress={chooseBgm} />
-              <Button compact label={bgmPlaying ? (zh ? "暂停 BGM" : "Pause BGM") : (zh ? "播放 BGM" : "Play BGM")} disabled={!bgmLoaded} onPress={toggleBgm} />
-              <Button compact label={showThreatReference ? (zh ? "隐藏威胁" : "Hide threat") : (zh ? "显示威胁" : "Show threat")} onPress={() => setShowThreatReference((value) => !value)} />
-              <Button compact label="Vol −" disabled={mediaVolume <= 0} onPress={() => setMediaVolume((value) => Math.max(0, value - 0.1))} />
-              <Text style={styles.zoomText}>{Math.round(mediaVolume * 100)}%</Text>
-              <Button compact label="Vol +" disabled={mediaVolume >= 1} onPress={() => setMediaVolume((value) => Math.min(1, value + 0.1))} />
-            </View>
-          </View>
-
-          <View style={styles.accessibleList}>
-            <Text style={styles.panelTitle}>{zh ? "可访问模型列表（44dp）" : "Accessible model list (44dp)"}</Text>
-            <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator>
-              <View style={styles.horizontalModelRow}>
-              {scene.models.map((model) => (
-                <Button
-                  key={model.id}
-                  compact
-                  active={selectedModelId === model.id}
-                  label={`${model.label} · ${model.sideKey}`}
-                  onPress={() => selectModel(model)}
-                />
-              ))}
-              {scene.unitAnchors.map((anchor) => (
-                <Button
-                  key={anchor.id}
-                  compact
-                  active={selectedModelId === anchor.id}
-                  label={`${anchor.label} · ${actionText(anchor.currentModels)} models`}
-                  onPress={() => setSelectedModelId(anchor.id)}
-                />
-              ))}
-              </View>
-            </ScrollView>
-          </View>
+          {desktop ? boardExtras : null}
         </View>
 
         <View style={[styles.sidePanel, desktop && styles.sidePanelDesktop]}>
@@ -1651,6 +1669,10 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
             </View>
           )}
         </View>
+
+        {!desktop ? (
+          <View style={styles.boardPane}>{boardExtras}</View>
+        ) : null}
       </View>
 
       {(notice || errorCode) && (
@@ -1696,6 +1718,8 @@ const styles = StyleSheet.create({
   workspaceDesktop: { flexDirection: "row", alignItems: "flex-start" },
   boardPane: { flex: 1, minWidth: 0, gap: 10 },
   viewportControls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 7 },
+  displayControls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 7 },
+  displayGroupLabel: { color: "#64748b", fontSize: 10, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.6, marginRight: 2 },
   mapContractText: { color: "#a5f3fc", fontSize: 10, lineHeight: 15,
     fontFamily: "monospace", backgroundColor: "#083344", borderRadius: 7,
     borderWidth: 1, borderColor: "#0e7490", paddingHorizontal: 9, paddingVertical: 6 },

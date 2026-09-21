@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 
@@ -17,6 +18,7 @@ import { LearningConsolePanel } from "@/components/battlefield/learning-console-
 import { HostedOpponentOperationsPanel } from
   "@/components/battlefield/hosted-opponent-operations-panel";
 import { ScreenContainer } from "@/components/screen-container";
+import { PillTabBar } from "@/components/ui/command-primitives";
 import { useI18n } from "@/lib/i18n";
 import { useLevel3ClientDomain } from "@/lib/level3/client-domain-provider";
 import {
@@ -95,6 +97,7 @@ function sharingLinkConfiguration(): SharingLinkConfiguration {
 
 export default function MatchScreen() {
   const { lang } = useI18n();
+  const { width: windowWidth } = useWindowDimensions();
   const { view, connection, roomAccess, dispatch, refresh } =
     useLevel3ClientDomain();
   const [pendingAction, setPendingAction] = useState<AccessAction | "refresh" | null>(null);
@@ -310,26 +313,18 @@ export default function MatchScreen() {
         </View>
       </View>
 
-      <View accessibilityRole="tablist" style={styles.surfaceTabs}>
-        <ActionButton
-          label={zh ? "战桌" : "Battlefield"}
-          onPress={() => setSurface("battle")}
-          kind={surface === "battle" ? "primary" : "secondary"}
-        />
-        <ActionButton
-          label={zh ? "地图" : "Maps"}
-          onPress={() => setSurface("maps")}
-          kind={surface === "maps" ? "primary" : "secondary"}
-        />
-        <ActionButton
-          label={zh ? "房间与规则" : "Room & rules"}
-          onPress={() => setSurface("room")}
-          kind={surface === "room" ? "primary" : "secondary"}
-        />
-        <ActionButton
-          label={zh ? "复盘与 Skill" : "Review & Skill"}
-          onPress={() => setSurface("learning")}
-          kind={surface === "learning" ? "primary" : "secondary"}
+      <View style={styles.surfaceTabsWrap}>
+        <PillTabBar<MatchSurface>
+          accessibilityLabel={zh ? "对战房间分面" : "Battle room surfaces"}
+          items={[
+            { key: "battle", label: zh ? "战桌" : "Battlefield" },
+            { key: "maps", label: zh ? "地图" : "Maps" },
+            { key: "room", label: zh ? "房间与规则" : "Room & rules" },
+            { key: "learning", label: zh ? "复盘与 Skill" : "Review & Skill" },
+          ]}
+          active={surface}
+          onSelect={setSurface}
+          scrollable={windowWidth < 560}
         />
       </View>
 
@@ -642,7 +637,7 @@ const styles = StyleSheet.create({
   statusPillText: { flexShrink: 1, fontSize: 11, fontWeight: "800" },
   scroll: { flex: 1 },
   content: { padding: 16, paddingTop: 6, paddingBottom: 48, gap: 14 },
-  surfaceTabs: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginHorizontal: 16, marginBottom: 6, padding: 8, borderRadius: 12, backgroundColor: "#07111f", borderWidth: 1, borderColor: "#164e63" },
+  surfaceTabsWrap: { marginHorizontal: 16, marginBottom: 6, borderRadius: 12, backgroundColor: "#07111f", borderWidth: 1, borderColor: "#164e63" },
   warningCard: { borderRadius: 12, padding: 14, backgroundColor: "#422006", borderWidth: 1, borderColor: "#f59e0b" },
   controlWarning: { borderRadius: 12, padding: 14, backgroundColor: "#3f1515", borderWidth: 1, borderColor: "#ef4444" },
   historicalRulesCard: { borderRadius: 14, padding: 16, gap: 10, backgroundColor: "#0b1c27", borderWidth: 1, borderColor: "#28566a" },
