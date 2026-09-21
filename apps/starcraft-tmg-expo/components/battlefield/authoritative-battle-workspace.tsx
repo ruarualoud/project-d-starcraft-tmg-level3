@@ -1234,7 +1234,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
       )}
 
       <View style={[styles.workspace, desktop && styles.workspaceDesktop]}>
-        <View style={styles.boardPane}>
+        <View style={[styles.boardPane, desktop && styles.boardPaneDesktop]}>
           <View style={styles.viewportControls}>
             <Button compact label="−" disabled={zoom <= 1} onPress={() => setZoom((value) => Math.max(1, value - 0.5))} />
             <Text style={styles.zoomText}>{Math.round(zoom * 100)}%</Text>
@@ -1802,7 +1802,13 @@ const styles = StyleSheet.create({
   warningText: { color: "#fde68a", fontSize: 12, lineHeight: 18, marginTop: 4 },
   workspace: { gap: 14 },
   workspaceDesktop: { flexDirection: "row", alignItems: "flex-start" },
-  boardPane: { flex: 1, minWidth: 0, gap: 10 },
+  // Mobile column panes use intrinsic content height at full width. The
+  // desktop-only flex: 1 must never leak into the column layout, where a
+  // shrunk pane lets following siblings overlap the map contract and legend
+  // (Ticket 25/262 narrow false-green). maxWidth keeps every pane inside the
+  // column so the document cannot overflow horizontally.
+  boardPane: { minWidth: 0, maxWidth: "100%", gap: 10 },
+  boardPaneDesktop: { flex: 1 },
   viewportControls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 7 },
   displayControls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 7 },
   threatModeRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 7 },
@@ -1821,7 +1827,7 @@ const styles = StyleSheet.create({
   commPortrait: { width: 86, height: 72, borderRadius: 8, backgroundColor: "#020617", borderWidth: 1, borderColor: "#67e8f9" },
   mediaCopy: { minWidth: 180, flex: 1, gap: 4 },
   mediaControls: { width: "100%", minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 },
-  sidePanel: { gap: 10 },
+  sidePanel: { gap: 10, minWidth: 0, maxWidth: "100%" },
   sidePanelDesktop: { width: 360, maxHeight: 760 },
   detailTabs: { flexDirection: "row", flexWrap: "wrap", gap: 7, padding: 7, borderRadius: 10, backgroundColor: "#020617", borderWidth: 1, borderColor: "#1e3a4a" },
   panelHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
