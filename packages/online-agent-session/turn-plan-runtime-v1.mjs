@@ -378,6 +378,9 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       entry.kind === "turn_plan" || entry.kind === "plan_revision").at(-1);
     if (object(planSource?.payload)) {
       const payload = planSource.payload;
+      const restoredAuthority = object(payload.lastValidatedAuthority)
+        ? payload.lastValidatedAuthority
+        : object(planSource.authority) ? planSource.authority : null;
       const at = new Date(now()).toISOString();
       state.plan = seal({
         schemaVersion: `${STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION}.plan`,
@@ -390,7 +393,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
         revisionReason: "restored_from_same_match_journal",
         nextIntentRef: null,
         lastAssessmentRef: clone(payload.lastAssessmentRef || null),
-        lastValidatedAuthority: clone(payload.lastValidatedAuthority || null),
+        lastValidatedAuthority: clone(restoredAuthority),
         createdAt: String(payload.createdAt || at),
         updatedAt: at,
         rulesAuthority: "external_rules_service",
@@ -594,16 +597,19 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     if (!state.plan) return { event: "state_observed", status: "no_active_plan" };
     const predictionCalibrations = await calibratePredictions(
       state, input, authorityValue);
-    const previous = state.plan.lastValidatedAuthority;
-    const changed = previous.stateHash !== authorityValue.stateHash;
+    const previous = object(state.plan.lastValidatedAuthority)
+      && String(state.plan.lastValidatedAuthority.stateHash || "").trim()
+      ? state.plan.lastValidatedAuthority : null;
+    const changed = !previous || previous.stateHash !== authorityValue.stateHash;
     const signals = strings(input.observedSignals);
     const triggered = state.plan.reviseIf.filter((entry) => signals.includes(entry));
     const nextIntentStillLegal = state.nextIntent
       ? proposalInActionSpace(state.nextIntent.proposal, input.spatialActionSpace)
       : null;
-    const initiativeChanged = previous.firstPlayerSideKey
-      !== authorityValue.firstPlayerSideKey;
+    const initiativeChanged = Boolean(previous?.firstPlayerSideKey
+      && previous.firstPlayerSideKey !== authorityValue.firstPlayerSideKey);
     const revisionReasons = [
+      ...(!previous ? ["restored_plan_authority_missing"] : []),
       ...triggered.map((entry) => `revise_if:${entry}`),
       ...(state.nextIntent && !nextIntentStillLegal
         ? ["planned_intent_absent_from_current_action_space"] : []),

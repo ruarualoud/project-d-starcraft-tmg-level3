@@ -124,6 +124,13 @@ explicit, isolated slice manifests.
   fork from revision 6 rather than resume revision 7. The whole preserved run,
   including the invalid suffix, accounts for 29 Provider calls, 1,346,794
   reported units and ¥1.852721.
+- A fresh fork now exists at revision 6 in run `20260921182729904`. Its first
+  resume exposed a pre-Provider recovery defect: continuity stored the forked
+  Plan authority on the record while TurnPlan hydration read only the payload,
+  then dereferenced a null `stateHash`. The exact zero-Provider reproducer
+  failed before the change and passed once after hydration recovered the record
+  authority and the observation boundary made older missing authority a safe
+  reassessment. Resume this branch next; do not restart from revision 0.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
