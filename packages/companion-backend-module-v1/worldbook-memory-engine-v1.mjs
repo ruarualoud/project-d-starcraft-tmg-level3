@@ -41,6 +41,9 @@ export const COMPANION_BACKEND_CB2_ERROR_CODES = Object.freeze({
   RELATIONSHIP_EVENT_VISIBILITY_VIOLATION: "RELATIONSHIP_EVENT_VISIBILITY_VIOLATION",
   OPPONENT_PRIVATE_INFERENCE_FORBIDDEN: "OPPONENT_PRIVATE_INFERENCE_FORBIDDEN",
   CONTEXT_ASSEMBLY_INVALID: "CONTEXT_ASSEMBLY_INVALID",
+  WORLDBOOK_SCOPE_INVALID: "WORLDBOOK_SCOPE_INVALID",
+  WORLDBOOK_RECURSION_DEPTH_INVALID: "WORLDBOOK_RECURSION_DEPTH_INVALID",
+  SUMMARY_VERSION_NOT_FOUND: "SUMMARY_VERSION_NOT_FOUND",
 });
 
 export const COMPANION_MEMORY_LAYERS = Object.freeze([
@@ -64,6 +67,17 @@ export const COMPANION_CONTEXT_ASSEMBLY_ORDER = Object.freeze([
 
 export const COMPANION_WORLDBOOK_TRIGGER_KINDS = Object.freeze(["always", "keyword", "regex"]);
 
+// Worldbook scope tiers (Slice 266d): an entry optionally declares the tier it
+// belongs to. The tier only affects deterministic merge ordering (ties after
+// insertion priority) and provenance labelling; an entry without a scope
+// behaves exactly as before and is treated as "character" tier. More specific
+// tiers win ordering ties: chat > persona > character > global.
+export const COMPANION_WORLDBOOK_SCOPES = Object.freeze(["global", "character", "persona", "chat"]);
+
+const WORLDBOOK_SCOPE_TIE_RANK = Object.freeze({ chat: 0, persona: 1, character: 2, global: 3 });
+const MAX_WORLDBOOK_RECURSION_DEPTH = 4;
+const MAX_WORLDBOOK_FIRED_ENTRIES = 64;
+
 export const COMPANION_RELATIONSHIP_EVENT_TYPES = Object.freeze([
   "promise_kept",
   "promise_broken",
@@ -82,6 +96,7 @@ export const COMPANION_CONTEXT_BUDGET_POLICY = "companion_context_budget_policy_
 const MEMORY_LAYER_SET = new Set(COMPANION_MEMORY_LAYERS);
 const ADDRESSABLE_LAYER_SET = new Set([...COMPANION_MEMORY_LAYERS, "worldbook"]);
 const TRIGGER_KIND_SET = new Set(COMPANION_WORLDBOOK_TRIGGER_KINDS);
+const WORLDBOOK_SCOPE_SET = new Set(COMPANION_WORLDBOOK_SCOPES);
 const EVENT_TYPE_SET = new Set(COMPANION_RELATIONSHIP_EVENT_TYPES);
 const PROVENANCE_SOURCE_KINDS = new Set([
   "official_summary",
@@ -251,6 +266,17 @@ export function createWorldbookEntry(input = {}) {
   if (content === null || !content.trim()) {
     fail(COMPANION_BACKEND_CB2_ERROR_CODES.WORLDBOOK_ENTRY_INVALID, "worldbook entry content must be a non-empty string");
   }
+  // Optional scope tier (global | character | persona | chat). The key is
+  // omitted entirely when not provided so previously sealed entries keep
+  // byte-identical hashes; an absent scope is treated as "character".
+  let scope;
+  if (input.scope !== undefined && input.scope !== null) {
+    scope = requiredString(input.scope, "worldbookEntry.scope", COMPANION_BACKEND_CB2_ERROR_CODES.WORLDBOOK_SCOPE_INVALID);
+    if (!WORLDBOOK_SCOPE_SET.has(scope)) {
+      fail(COMPANION_BACKEND_CB2_ERROR_CODES.WORLDBOOK_SCOPE_INVALID,
+        `unsupported worldbook scope tier: ${scope}; expected one of ${COMPANION_WORLDBOOK_SCOPES.join(", ")}`);
+    }
+  }
   const unsigned = {
     schemaVersion: `${COMPANION_BACKEND_CONTRACT_VERSION}.worldbook-entry`,
     entryId: requiredString(input.entryId, "entryId", COMPANION_BACKEND_CB2_ERROR_CODES.WORLDBOOK_ENTRY_INVALID),
@@ -259,6 +285,7 @@ export function createWorldbookEntry(input = {}) {
     priority: safeInteger(input.priority ?? 0, "priority", -10000, 10000, COMPANION_BACKEND_CB2_ERROR_CODES.WORLDBOOK_ENTRY_INVALID),
     tokenBudget: safeInteger(input.tokenBudget ?? 256, "tokenBudget", 1, 100000, COMPANION_BACKEND_CB2_ERROR_CODES.TOKEN_BUDGET_INVALID),
     content,
+    ...(scope ? { scope } : {}),
     enabled: input.enabled === false ? false : true,
     provenance: normalizeProvenance(input.provenance, { required: true, field: "worldbookEntry.provenance" }),
     sourceReceipts: normalizeSourceReceipts(input.sourceReceipts, "worldbookEntry.sourceReceipts"),
@@ -288,8 +315,16 @@ export function matchWorldbookEntry(entry, scanText) {
   return deepFreeze({ matched: matchedBy.length > 0, matchedBy });
 }
 
-// Deterministic trigger ordering: priority descending, then entryId ascending,
-// then entryHash ascending as a final stable tiebreak.
+function worldbookScopeTier(entry) {
+  const scope = String(entry?.scope || "character");
+  return WORLDBOOK_SCOPE_SET.has(scope) ? scope : "character";
+}
+
+// Deterministic trigger ordering: priority descending, then scope tier (more
+// specific first: chat > persona > character > global), then entryId
+// ascending, then entryHash ascending as a final stable tiebreak. Entries
+// without a declared scope are all "character" tier, preserving the exact
+// pre-scope ordering for them.
 export function selectWorldbookEntries(entries, scanText) {
   if (!Array.isArray(entries)) fail(COMPANION_BACKEND_CB2_ERROR_CODES.WORLDBOOK_ENTRY_INVALID, "entries must be an array");
   const fired = [];
@@ -299,9 +334,11 @@ export function selectWorldbookEntries(entries, scanText) {
     if (match.matched) fired.push({ entry, matchedBy: [...match.matchedBy] });
   }
   fired.sort((left, right) =>
-    (right.entry.priority - left.entry.priority) ||
-    left.entry.entryId.localeCompare(right.entry.entryId) ||
-    String(left.entry.entryHash || "").localeCompare(String(right.entry.entryHash || "")));
+    (right.entry.priority - left.entry.priority)
+    || (WORLDBOOK_SCOPE_TIE_RANK[worldbookScopeTier(left.entry)]
+      - WORLDBOOK_SCOPE_TIE_RANK[worldbookScopeTier(right.entry)])
+    || left.entry.entryId.localeCompare(right.entry.entryId)
+    || String(left.entry.entryHash || "").localeCompare(String(right.entry.entryHash || "")));
   return deepFreeze(fired);
 }
 
@@ -470,10 +507,71 @@ export function createCompanionMemoryEngine(options = {}) {
         ? null
         : safeInteger(summary.coversTranscriptThrough, "coversTranscriptThrough", 0, Number.MAX_SAFE_INTEGER, COMPANION_BACKEND_CB2_ERROR_CODES.MEMORY_RECORD_INVALID),
       receipts: Array.isArray(summary.receipts) ? clone(summary.receipts) : [],
+      note: String(summary.note || ""),
       revision,
     };
     await persistence.put(namespace, "current", record);
+    // Rollback-safe history (Slice 266d): every version is also stored as an
+    // immutable record in a SEPARATE history namespace, so the isolated
+    // rolling_summary layer keeps exactly its previous shape ("current" only)
+    // while no summary version is ever overwritten or deleted.
+    await persistence.put(summaryHistoryNamespace(sc.scopeKey), `v${summaryVersion}`, record);
     return deepFreeze({ ok: true, layer: "rolling_summary", summaryVersion, revision, scopeKey: sc.scopeKey });
+  }
+
+  function summaryHistoryNamespace(scopeKey) {
+    return `${prefix}.rolling_summary_history.${scopeKey}`;
+  }
+
+  async function readRollingSummaryVersion(scope, summaryVersion) {
+    const sc = normalizeCompanionScope(scope);
+    const version = safeInteger(summaryVersion, "summaryVersion", 1, Number.MAX_SAFE_INTEGER, COMPANION_BACKEND_CB2_ERROR_CODES.MEMORY_RECORD_INVALID);
+    const stored = await persistence.get(summaryHistoryNamespace(sc.scopeKey), `v${version}`);
+    return deepFreeze({ ok: true, layer: "rolling_summary", found: stored.found, value: stored.found ? clone(stored.value) : undefined });
+  }
+
+  async function listRollingSummaryVersions(scope) {
+    const sc = normalizeCompanionScope(scope);
+    const keys = await persistence.list(summaryHistoryNamespace(sc.scopeKey));
+    const versions = [];
+    for (const key of keys) {
+      const stored = await persistence.get(summaryHistoryNamespace(sc.scopeKey), key);
+      if (stored.found) versions.push(clone(stored.value));
+    }
+    versions.sort((left, right) => left.summaryVersion - right.summaryVersion);
+    return deepFreeze(versions);
+  }
+
+  // Rollback is itself append-only: restoring an older summary writes a NEW
+  // current version that copies the target content; the target and every
+  // other version stay immutable in the history namespace.
+  async function rollbackRollingSummary(scope, targetSummaryVersion, options = {}) {
+    const sc = normalizeCompanionScope(scope);
+    const target = await readRollingSummaryVersion(sc, targetSummaryVersion);
+    if (!target.found) {
+      fail(COMPANION_BACKEND_CB2_ERROR_CODES.SUMMARY_VERSION_NOT_FOUND,
+        `rolling summary version not found: v${targetSummaryVersion}`,
+        { summaryVersion: targetSummaryVersion });
+    }
+    const written = await writeRollingSummary(sc, {
+      content: target.value.content,
+      ...(target.value.coversTranscriptThrough === null || target.value.coversTranscriptThrough === undefined
+        ? {}
+        : { coversTranscriptThrough: target.value.coversTranscriptThrough }),
+      receipts: [
+        ...clone(target.value.receipts),
+        {
+          receiptId: `rollback-to-summary-v${target.value.summaryVersion}`,
+          sourceRef: `rolling-summary-history://${sc.scopeKey}/v${target.value.summaryVersion}`,
+        },
+      ],
+      note: String(options.note || `rolled back from summary v${target.value.summaryVersion}`),
+    });
+    return deepFreeze({
+      ...clone(written),
+      rolledBackFromSummaryVersion: target.value.summaryVersion,
+      rollbackSemantics: "append_only_new_current_version_never_overwrites",
+    });
   }
 
   async function readRollingSummary(scope) {
@@ -737,10 +835,49 @@ export function createCompanionMemoryEngine(options = {}) {
   // sections are filled in COMPANION_CONTEXT_ASSEMBLY_ORDER; world-book items
   // are truncated to min(entry.tokenBudget, remaining budget); every other
   // item is included whole or omitted with a disclosure record.
+  //
+  // Slice 266d (additive; defaults preserve the exact pre-scope behavior):
+  // - options.additionalScopes: extra memory scopes whose world-book entries
+  //   are merged with the primary scope's (deduplicated by entryId, first
+  //   occurrence wins) and whose rolling-summary / episodic-fact /
+  //   relationship-state layers are overlaid right after the primary layer of
+  //   the same kind. Transcript, canon and durable memory are never overlaid.
+  // - options.extraEntries: inline world-book entries (raw or normalized)
+  //   merged like additional-scope entries; used for deterministic
+  //   product-derived entries (persona, global, pack character entries).
+  // - options.maxRecursionDepth (0..4, default 0): bounded trigger recursion.
+  //   Entries fired at depth d provide the scan text for depth d+1; already
+  //   fired entries never re-fire, and the total fired set is capped
+  //   (disclosed). Insertion order is deterministic: priority descending,
+  //   scope tier (chat > persona > character > global), entryId, entryHash.
   async function assembleContext(scope, options = {}) {
     const sc = normalizeCompanionScope(scope);
     const tokenBudget = safeInteger(options.tokenBudget ?? 2048, "tokenBudget", 1, 1000000, COMPANION_BACKEND_CB2_ERROR_CODES.TOKEN_BUDGET_INVALID);
     const tail = safeInteger(options.transcriptTail ?? 20, "transcriptTail", 1, 100000, COMPANION_BACKEND_CB2_ERROR_CODES.CONTEXT_ASSEMBLY_INVALID);
+    const maxRecursionDepth = safeInteger(options.maxRecursionDepth ?? 0,
+      "maxRecursionDepth", 0, MAX_WORLDBOOK_RECURSION_DEPTH,
+      COMPANION_BACKEND_CB2_ERROR_CODES.WORLDBOOK_RECURSION_DEPTH_INVALID);
+    const additionalScopes = [];
+    const seenScopeKeys = new Set([sc.scopeKey]);
+    for (const [index, raw] of (Array.isArray(options.additionalScopes) ? options.additionalScopes : []).entries()) {
+      const normalized = normalizeCompanionScope(raw);
+      if (seenScopeKeys.has(normalized.scopeKey)) continue;
+      if (additionalScopes.length >= 8) {
+        fail(COMPANION_BACKEND_CB2_ERROR_CODES.CONTEXT_ASSEMBLY_INVALID,
+          `assembleContext supports at most 8 additional scopes; additionalScopes[${index}] exceeds the bound`);
+      }
+      seenScopeKeys.add(normalized.scopeKey);
+      additionalScopes.push(normalized);
+    }
+    const extraEntries = (Array.isArray(options.extraEntries) ? options.extraEntries : [])
+      .map((entry, index) => {
+        if (!object(entry)) {
+          fail(COMPANION_BACKEND_CB2_ERROR_CODES.WORLDBOOK_ENTRY_INVALID, `extraEntries[${index}] must be an object`);
+        }
+        return entry.schemaVersion === `${COMPANION_BACKEND_CONTRACT_VERSION}.worldbook-entry`
+          ? entry
+          : createWorldbookEntry(entry);
+      });
 
     const transcript = await readTranscript(sc);
     const tailEntries = transcript.slice(-tail);
@@ -817,66 +954,125 @@ export function createCompanionMemoryEngine(options = {}) {
     }
 
     // 3. world-book: triggered entries in deterministic priority order,
-    //    truncated to their per-entry token budget
-    const worldbookEntries = await listWorldbookEntries(sc);
-    const fired = selectWorldbookEntries(worldbookEntries, scanText);
-    for (const { entry, matchedBy } of fired) {
+    //    truncated to their per-entry token budget. Slice 266d: entries are
+    //    merged across the primary scope, every additional scope and any
+    //    inline extra entries (deduplicated by entryId, first occurrence
+    //    wins), and triggers recurse up to maxRecursionDepth — entries fired
+    //    at depth d provide the scan text for depth d+1; nothing re-fires.
+    const mergedWorldbookEntries = [];
+    const mergedEntryIds = new Set();
+    function mergeWorldbookEntries(entries) {
+      for (const entry of entries) {
+        if (mergedEntryIds.has(entry.entryId)) continue;
+        mergedEntryIds.add(entry.entryId);
+        mergedWorldbookEntries.push(entry);
+      }
+    }
+    mergeWorldbookEntries(await listWorldbookEntries(sc));
+    for (const additional of additionalScopes) {
+      mergeWorldbookEntries(await listWorldbookEntries(additional));
+    }
+    mergeWorldbookEntries(extraEntries.map((entry) => clone(entry)));
+
+    const firedWorldbook = [];
+    const firedWorldbookIds = new Set();
+    let worldbookFiredCapped = false;
+    let depthScanText = scanText;
+    for (let depth = 0; depth <= maxRecursionDepth; depth += 1) {
+      const round = selectWorldbookEntries(
+        mergedWorldbookEntries.filter((entry) => !firedWorldbookIds.has(entry.entryId)),
+        depthScanText,
+      );
+      if (round.length === 0) break;
+      const roundContents = [];
+      for (const { entry, matchedBy } of round) {
+        if (firedWorldbook.length >= MAX_WORLDBOOK_FIRED_ENTRIES) {
+          worldbookFiredCapped = true;
+          break;
+        }
+        firedWorldbookIds.add(entry.entryId);
+        firedWorldbook.push({ entry, matchedBy, firedAtDepth: depth });
+        roundContents.push(entry.content);
+      }
+      if (worldbookFiredCapped || depth === maxRecursionDepth) break;
+      depthScanText = roundContents.join("\n");
+    }
+    // Global deterministic insertion order (priority → scope tier → entryId →
+    // entryHash), independent of the recursion round an entry fired in.
+    firedWorldbook.sort((left, right) =>
+      (right.entry.priority - left.entry.priority)
+      || (WORLDBOOK_SCOPE_TIE_RANK[worldbookScopeTier(left.entry)]
+        - WORLDBOOK_SCOPE_TIE_RANK[worldbookScopeTier(right.entry)])
+      || left.entry.entryId.localeCompare(right.entry.entryId)
+      || String(left.entry.entryHash || "").localeCompare(String(right.entry.entryHash || "")));
+    for (const { entry, matchedBy, firedAtDepth } of firedWorldbook) {
       includeBudgeted({
         layer: "worldbook",
         itemId: `worldbook:${entry.entryId}`,
         content: entry.content,
         itemBudget: entry.tokenBudget,
         provenance: { ...clone(entry.provenance), sourceReceipts: clone(entry.sourceReceipts) },
-        extra: { matchedBy },
+        extra: { matchedBy, scopeTier: worldbookScopeTier(entry), firedAtDepth },
       });
     }
 
-    // 4. rolling summary
-    const summary = await persistence.get(layerNamespace("rolling_summary", sc.scopeKey), "current");
-    if (summary.found) {
-      includeWhole({
-        layer: "rolling_summary",
-        itemId: `rolling-summary-v${summary.value?.summaryVersion}`,
-        content: summary.value?.content || "",
-        provenance: { revision: summary.value?.revision, coversTranscriptThrough: summary.value?.coversTranscriptThrough ?? null },
-      });
+    // 4. rolling summary (primary scope, then every additional scope)
+    for (const [scopeIndex, layerScope] of [sc, ...additionalScopes].entries()) {
+      const summary = await persistence.get(layerNamespace("rolling_summary", layerScope.scopeKey), "current");
+      if (summary.found) {
+        includeWhole({
+          layer: "rolling_summary",
+          itemId: scopeIndex === 0
+            ? `rolling-summary-v${summary.value?.summaryVersion}`
+            : `rolling-summary-v${summary.value?.summaryVersion}@${layerScope.scopeKey}`,
+          content: summary.value?.content || "",
+          provenance: { revision: summary.value?.revision, coversTranscriptThrough: summary.value?.coversTranscriptThrough ?? null },
+        });
+      }
     }
 
-    // 5. episodic facts, most recent first
-    const facts = await listEpisodicFacts(sc);
-    const recentFacts = [...facts].sort((left, right) => (right.sequence - left.sequence) || left.factId.localeCompare(right.factId));
-    for (const fact of recentFacts) {
-      includeWhole({
-        layer: "episodic_facts",
-        itemId: `episodic:${fact.factId}`,
-        content: `[${fact.factType}] ${fact.content}`,
-        provenance: fact.provenance ? clone(fact.provenance) : null,
-      });
+    // 5. episodic facts, most recent first (primary scope, then additional)
+    for (const [scopeIndex, layerScope] of [sc, ...additionalScopes].entries()) {
+      const facts = await listEpisodicFacts(layerScope);
+      const recentFacts = [...facts].sort((left, right) => (right.sequence - left.sequence) || left.factId.localeCompare(right.factId));
+      for (const fact of recentFacts) {
+        includeWhole({
+          layer: "episodic_facts",
+          itemId: scopeIndex === 0 ? `episodic:${fact.factId}` : `episodic:${fact.factId}@${layerScope.scopeKey}`,
+          content: `[${fact.factType}] ${fact.content}`,
+          provenance: fact.provenance ? clone(fact.provenance) : null,
+        });
+      }
     }
 
     // 6. relationship state; unknown axes are disclosed, never zeroed
-    const relationship = await getRelationshipRecord(sc);
-    const axisNames = Object.keys(relationship.axes).sort();
-    if (axisNames.length > 0) {
-      const lines = axisNames.map((axis) => {
-        const axisState = relationship.axes[axis];
-        if (axisState.status !== "known") {
-          unknowns.push({
-            layer: "relationship_state",
-            itemId: `relationship:${axis}`,
-            value: "unknown",
-            note: "unknown relationship state is never rendered as zero",
-          });
-          return `${axis}: unknown`;
-        }
-        return `${axis}: ${axisState.value}`;
-      });
-      includeWhole({
-        layer: "relationship_state",
-        itemId: "relationship:state",
-        content: lines.join("; "),
-        provenance: { observedEventCount: relationship.history.length },
-      });
+    //    (primary scope, then additional scopes)
+    let relationshipStatus = "no_observed_events";
+    for (const [scopeIndex, layerScope] of [sc, ...additionalScopes].entries()) {
+      const relationship = await getRelationshipRecord(layerScope);
+      const axisNames = Object.keys(relationship.axes).sort();
+      if (axisNames.length > 0) relationshipStatus = "has_observed_axes";
+      if (axisNames.length > 0) {
+        const lines = axisNames.map((axis) => {
+          const axisState = relationship.axes[axis];
+          if (axisState.status !== "known") {
+            unknowns.push({
+              layer: "relationship_state",
+              itemId: scopeIndex === 0 ? `relationship:${axis}` : `relationship:${axis}@${layerScope.scopeKey}`,
+              value: "unknown",
+              note: "unknown relationship state is never rendered as zero",
+            });
+            return `${axis}: unknown`;
+          }
+          return `${axis}: ${axisState.value}`;
+        });
+        includeWhole({
+          layer: "relationship_state",
+          itemId: scopeIndex === 0 ? "relationship:state" : `relationship:state@${layerScope.scopeKey}`,
+          content: lines.join("; "),
+          provenance: { observedEventCount: relationship.history.length },
+        });
+      }
     }
 
     // 7. transcript tail, chronological
@@ -903,10 +1099,16 @@ export function createCompanionMemoryEngine(options = {}) {
       disclosures: {
         omittedCount: omissions.length,
         excludedDurableCandidates,
-        relationshipStatus: axisNames.length > 0 ? "has_observed_axes" : "no_observed_events",
+        relationshipStatus,
         unknownNeverZero: true,
         durablePromotion: "explicit_user_approval_only",
         opponentPrivateInference: "not_performed",
+        additionalScopeCount: additionalScopes.length,
+        inlineExtraEntryCount: extraEntries.length,
+        worldbookEntriesMerged: mergedWorldbookEntries.length,
+        worldbookEntriesFired: firedWorldbook.length,
+        worldbookFiredCapped,
+        worldbookMaxRecursionDepth: maxRecursionDepth,
         trainingTruth: false,
       },
     };
@@ -925,6 +1127,9 @@ export function createCompanionMemoryEngine(options = {}) {
     replaceTranscript,
     writeRollingSummary,
     readRollingSummary,
+    readRollingSummaryVersion,
+    listRollingSummaryVersions,
+    rollbackRollingSummary,
     addEpisodicFact,
     listEpisodicFacts,
     proposeDurableMemoryCandidate,
