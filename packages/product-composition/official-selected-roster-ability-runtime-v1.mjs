@@ -24,7 +24,7 @@ import { getOfficialModelBaseGeometryProfileV1 } from
 
 export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ability-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION = "1.2.0";
+export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION = "1.3.0";
 export const OFFICIAL_SELECTED_ROSTER_ABILITY_PARAMETER_KIND =
   "official_selected_roster_active_ability_v1";
 export const OFFICIAL_SELECTED_ROSTER_FINISH_ACTIVATION_PARAMETER_KIND =
@@ -91,6 +91,61 @@ const ACTIVE_SPECS = new Map([
     effectKind: "wild_mutation", phase: "any", resourceType: null,
     resourceCost: 0, targetKind: "active_friendly_on_creep",
     expiresAt: "cleanup_and_refresh",
+  }],
+]);
+const ACTIVE_EFFECT_CONTRACTS = new Map([
+  ["stimpack", {
+    resultKind: "self_status_and_nonlethal_damage",
+    immediateEffect: "take 2 non-lethal damage and gain Speed 3 plus Precision 3",
+    affectedWeapons: "C-14 rifle and all close-combat weapons",
+  }],
+  ["combat_shield", {
+    resultKind: "self_status",
+    immediateEffect:
+      "gain Evasion against close-combat attacks and enemy special abilities",
+  }],
+  ["crushing_grip", {
+    resultKind: "enemy_activation_status",
+    immediateEffect: "the selected Enemy Unit counts as activated in this phase",
+  }],
+  ["mutating_carapace", {
+    resultKind: "selected_enemy_defence_status",
+    immediateEffect: "gain Evasion 2 against the selected Enemy Unit",
+  }],
+  ["leaping_strike", {
+    resultKind: "self_place",
+    immediateEffect: "Place this Unit within 6 inches using legal final bases",
+  }],
+  ["leap", {
+    resultKind: "self_status",
+    immediateEffect: "gain 2 inches of Charge distance for this activation",
+  }],
+  ["adrenal_overload", {
+    resultKind: "self_status",
+    immediateEffect: "gain Impact Hit Roll 1 for this activation",
+  }],
+  ["tactical_retreat", {
+    resultKind: "self_status",
+    immediateEffect: "ignore the Disengage penalty",
+  }],
+  ["terran_tenacity", {
+    resultKind: "initiative_control",
+    immediateEffect: "take and lock the First Player Marker for this phase",
+  }],
+  ["omega_network", {
+    resultKind: "unit_place",
+    resultAssetKind: "omega_worm",
+    immediateEffect:
+      "set an Omega Worm on Ground Level more than 10 inches from every Enemy model",
+    ongoingEffect:
+      "the Omega Worm is a non-contesting Structure and Source of Creep; from a later round its base is an Entry Edge for Ground reserves with combined Supply at most 2 per round",
+    forbiddenSubstitution:
+      "this does not place a Faction Indicator and is not an End-of-Round reserve-deploy beacon",
+  }],
+  ["wild_mutation", {
+    resultKind: "self_status",
+    immediateEffect:
+      "while ON CREEP, gain Speed 1 and Precision 1 for the first weapon",
   }],
 ]);
 const PASSIVE_SPECS = new Map([
@@ -479,6 +534,23 @@ function routeAvailable(state, route, actor) {
   return { targets, payments: paymentSelections(state, route),
     resourceCostsByChoice: { default: resourceCostContract(route) } };
 }
+function effectContractForRoute(route) {
+  const compiled = ACTIVE_EFFECT_CONTRACTS.get(route.effectKind);
+  if (!compiled) fail("SELECTED_ABILITY_EFFECT_CONTRACT_MISSING", route.effectKind);
+  return {
+    schema: "starcraft_tmg_selected_action_effect_contract_v1",
+    effectKind: route.effectKind,
+    abilityName: route.abilityName,
+    sourceText: route.sourceDescription,
+    activationText: route.activationText,
+    targetKind: route.targetKind,
+    expiresAt: route.expiresAt,
+    ...clone(compiled),
+    sourceFeatureHash: route.sourceFeatureHash,
+    rulesAuthority: true,
+    trainingTruth: false,
+  };
+}
 function domainFor(state, route, actor, available) {
   const required = ["activeUnitId", "paymentCardInstanceIds"];
   if (route.targetKind === "enemy_within") required.push("targetUnitId");
@@ -493,6 +565,7 @@ function domainFor(state, route, actor, available) {
     actionType: "use_active_ability", sideKey: route.sideKey, phase: state.phase,
     routeId: route.routeId, abilityName: route.abilityName,
     pieceId: actor.id, effectKind: route.effectKind,
+    effectContract: effectContractForRoute(route),
     parameterSchema: { type: "object", required,
       activeUnitId: { const: actor.id },
       paymentCardInstanceIds: { enum: clone(available.payments) },

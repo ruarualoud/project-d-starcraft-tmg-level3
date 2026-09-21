@@ -25,11 +25,11 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v17";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v18";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v20";
+  "starcraft_tmg_live_action_shape_normalization_v21";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_planner_shape_normalization_v10";
+  "starcraft_tmg_live_planner_shape_normalization_v11";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
 const NATIVE_QUERY_KINDS = Object.freeze([
   "space.inspect_relationships",
@@ -119,6 +119,8 @@ const SELECTED_ACTION_EFFECT_CLAIM_PATTERNS = Object.freeze({
     /\breserve[- ]deploy\s+(?:beacon|indicator|route)\b|\bfaction\s+indicator\b|\bdeploy\b.{0,80}\bground\s+unit\b.{0,80}\bfrom\s+reserves\b|预备队部署(?:信标|指示物|路线)|势力指示物/iu,
   shade_token_place:
     /\bshade\s+token\b|\bshade\s+displacement\b|暗影(?:标记|位移)/iu,
+  omega_network:
+    /\bomega\s+worm\b|\bsource\s+of\s+creep\b|\bentry\s+edge\b.{0,80}\b(?:supply|ground\s+reserves?)\b|欧米伽虫道|虫道(?:底盘|入口边缘)/iu,
 });
 const DEFINITELY_NOT_SENT_FAILURES = new Set([
   "provider_dns_resolution_failed",
@@ -346,16 +348,17 @@ function selectedActionIdentity(actionSpace, candidateId) {
     pieceId: action?.pieceId || null,
     abilityName: action?.abilityName || null,
     effectKind: action?.effectKind || null,
-    effectContract: clone(
-      SELECTED_ACTION_EFFECT_CONTRACTS[action?.effectKind] || null),
+    effectContract: clone(action?.effectContract
+      || SELECTED_ACTION_EFFECT_CONTRACTS[action?.effectKind] || null),
     sourceInstanceId: action?.sourceInstanceId || null,
     rulesAuthority: true,
     trainingTruth: false,
   });
 }
 
-function claimedActionEffects(fragments, expectedEffectKind) {
-  if (!SELECTED_ACTION_EFFECT_CONTRACTS[expectedEffectKind]) return [];
+function claimedActionEffects(fragments, selectedIdentity) {
+  if (!selectedIdentity?.effectContract) return [];
+  const expectedEffectKind = selectedIdentity.effectKind;
   return fragments.flatMap((entry) => Object.entries(
     SELECTED_ACTION_EFFECT_CLAIM_PATTERNS).flatMap(([claimedEffectKind, pattern]) => (
     claimedEffectKind !== expectedEffectKind && pattern.test(entry.text) ? [{
@@ -468,8 +471,7 @@ export function inspectStarcraftTmgSelectedActionIdentityClaimsV1(input = {}) {
         expectedAbilityName: selectedIdentity.abilityName,
       }] : [];
   });
-  contradictions.push(...claimedActionEffects(
-    fragments, selectedIdentity.effectKind));
+  contradictions.push(...claimedActionEffects(fragments, selectedIdentity));
   return freeze({
     status: contradictions.length > 0 ? "contradicted"
       : selectedIdentityMentioned ? "consistent" : "unbound",
@@ -3725,7 +3727,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
         : "Use the exact Host-supplied formation or asset-placement options for the selected candidate; do not restart a broad placement search in the Action stage.",
       `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one current stationary weapon profile covering the placed Unit; never describe that option as outside the enemy fire envelope. Read incomingStationaryFireEstimate when present: compare expected casualties, every exact legal removed-model list, lost occupied positions/formation reach, lost ranged contributors, exact current Fighting/Supporting losses, marker-by-marker control changes, probability of Supply reduction/zero, Supply freed for later deployment, VP awarded, and every exact reaction choice/cost against objective or scoring gain. Read incomingMoveThenFireEstimate too: a reachable row is a live threat even while legal path and post-move line of sight remain conditional; unknown path or line of sight is never safety or zero risk. Current Supply—not raw model count—controls marker strength. Do not default to the safest position: choose the highest expected net mission value after risk, and state why the accepted exposure is worth it. Preserve unknown probability as uncertainty and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
       "When an exact legal_asset_placement_options receipt is present, choose exactly one placementOptionId and return assetPlacementSelection with that ID and one concise publicReason about the visible position, intended threat/objective/route effect, and plan continuity. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
-      "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists and must preserve effectContract.placedAssetKind, immediateEffect and delayedEffect exactly. You may compare or reject another ability, but never describe that other ability or another effect family as the action being selected, activated, used or placed.",
+      "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists and preserve every applicable effectContract fact, including sourceText, targetKind, resultKind/resultAssetKind, immediateEffect, ongoingEffect and delayedEffect. forbiddenSubstitution states what this action is not. You may compare or reject another ability, but never describe that other ability or another effect family as the action being selected, activated, used or placed.",
       "Treat selectedActionResourceContract and resourceCostsByChoice as Rules-owned. State every nonzero effective resource cost accurately. Never call a positive BM, CP or PE cost zero, free, or unspent; Supply is a separate contract.",
       "Treat strategicImmediateValue as Rules-derived current value. A zero-benefit heal is not productive merely because its printed resource cost is zero: source-card exhaustion and forfeited alternatives remain real costs.",
       "Position publicReason fields are auditable summaries, not hidden chain-of-thought. State the useful board fact and tactical purpose without private scratch work.",

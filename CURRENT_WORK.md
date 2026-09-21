@@ -142,7 +142,15 @@ explicit, isolated slice manifests.
   definition/effect identity. Fork matching now uses exact core identity plus
   every historical Rules discriminator and requires one unique current domain.
   Zero-Provider preflight replayed all seven transitions into branch
-  `20260921192605226`; resume that branch for the corrected revision 8.
+  `20260921192605226`. That branch regenerated revision 8 correctly: Ventral
+  Sacs placed a Faction Indicator and described the End-of-Round Ground Reserve
+  deploy with Apply/Replay parity (4 calls, 181,580 units, ¥0.245971). Revision
+  9 then selected legal Omega Network but falsely described the same indicator
+  effect. All eleven executable selected-roster active effects now publish a
+  mandatory adapter-owned semantic contract; Omega Network explicitly places
+  an Omega Worm and exposes its later-round Entry Edge/Supply-2 behavior, not a
+  reserve indicator. The exact r9 gate passed at 0 Provider calls / ¥0. Preserve
+  r9 as non-training evidence and fork through corrected r8 next.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -182,4 +190,8 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   455,829 reported units and ¥0.627174. Revision 7 accounts for 7 calls,
   339,548 units and ¥0.459326; revision 8 adds 3 calls, 116,281 units and
   ¥0.167848 and remains non-training evidence.
+- Corrected branch `20260921192605226` through defective revision 9: 9 calls,
+  386,294 reported units and ¥0.521420. Correct revision 8 accounts for 4 calls,
+  181,580 units and ¥0.245971; defective revision 9 adds 5 calls, 204,714 units
+  and ¥0.275449 and remains non-training evidence.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.

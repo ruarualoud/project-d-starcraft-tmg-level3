@@ -24,6 +24,22 @@ const actionSpace = {
       effectKind: "reserve_deploy_indicator",
       sourceInstanceId: "player2-tactical-4",
     },
+    {
+      domainId: "omega-network-domain",
+      actionType: "use_active_ability",
+      pieceId: "player2-raptor",
+      abilityName: "Omega Network",
+      effectKind: "omega_network",
+      effectContract: {
+        schema: "starcraft_tmg_selected_action_effect_contract_v1",
+        effectKind: "omega_network",
+        abilityName: "Omega Network",
+        sourceText:
+          "Set an Omega Worm on ground level more than 10 inches from Enemy models; its base is an Entry Edge.",
+        targetKind: "ground_place",
+        resultAssetKind: "omega_worm",
+      },
+    },
   ],
 };
 
@@ -76,6 +92,30 @@ assert.equal(effectDriftOnly.status, "contradicted");
 assert.ok(effectDriftOnly.contradictions.some((entry) =>
   entry.expectedEffectKind === "reserve_deploy_indicator"
     && entry.claimedEffectKind === "creep_token_place"));
+
+const omegaEffectDrift = inspectStarcraftTmgSelectedActionIdentityClaimsV1({
+  spatialActionSpace: actionSpace,
+  candidateId: "omega-network-domain",
+  stage: "action",
+  value: {
+    selectedReason:
+      "Use Omega Network to place a Faction Indicator for reserve deployment.",
+    intent: {
+      currentGoal: "Activate Omega Network and place the reserve-deploy beacon.",
+      purpose: "At End of Round deploy a Ground Unit from Reserves by the indicator.",
+    },
+    publicDecisionSummary: {
+      plan: "Use Omega Network for the reserve-deploy route.",
+      purpose: "Create a Faction Indicator.",
+    },
+  },
+});
+assert.equal(omegaEffectDrift.status, "contradicted");
+assert.equal(omegaEffectDrift.selectedIdentity.effectContract.resultAssetKind,
+  "omega_worm");
+assert.ok(omegaEffectDrift.contradictions.some((entry) =>
+  entry.expectedEffectKind === "omega_network"
+    && entry.claimedEffectKind === "reserve_deploy_indicator"));
 
 const corrected = inspectStarcraftTmgSelectedActionIdentityClaimsV1({
   spatialActionSpace: actionSpace,
@@ -130,6 +170,8 @@ console.log(JSON.stringify({
   driftedContradictionCount: drifted.contradictions.length,
   effectDriftOnlyStatus: effectDriftOnly.status,
   effectDriftOnlyContradictionCount: effectDriftOnly.contradictions.length,
+  omegaEffectDriftStatus: omegaEffectDrift.status,
+  omegaEffectDriftContradictionCount: omegaEffectDrift.contradictions.length,
   correctedStatus: corrected.status,
   rejectedAlternativeStatus: rejectedAlternativeOnly.status,
   providerCalls: 0,
