@@ -199,6 +199,16 @@ export { COMPANION_DURABLE_PERSISTENCE_CONTRACT_V1 };
  *     memory engine (unknown stays unknown; nothing is zero-filled);
  *   - never mutates the Room: the only room-runtime methods touched are the
  *     read-only projection reads the room session service already declares.
+ *
+ * Slice 266d extends the same authenticated surface with the Tavern-equivalent
+ * companion contracts: versioned seat-bound user persona, four-tier worldbook
+ * triggers with bounded recursion, layered memory operations (summary edit /
+ * rollback, episodic, relationship), swipe/reroll/edit-as-branch lineage,
+ * Author's Note depth/frequency, schema-validated integrity-hashed
+ * import/export/restore (no credentials either way), hash-chained audit
+ * export/verify/replay-candidate, and the four live permission surfaces. All
+ * of it delegates to the room session service; this module still ships no
+ * Provider, performs no network I/O and handles no credentials.
  */
 export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
   const roomRuntime = options.roomRuntime;
@@ -261,6 +271,10 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
     ...(options.maxOutputTokens !== undefined
       ? { maxOutputTokens: options.maxOutputTokens } : {}),
     ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+    ...(options.worldbookRecursionDepth !== undefined
+      ? { worldbookRecursionDepth: options.worldbookRecursionDepth } : {}),
+    ...(Array.isArray(options.globalWorldbookEntries)
+      ? { globalWorldbookEntries: clone(options.globalWorldbookEntries) } : {}),
   });
 
   async function authority(roomId, seatToken) {
@@ -281,10 +295,12 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
     if (!object(scope)) return null;
     const transcript = await backend.memoryEngine.readTranscript(scope);
     const rolling = await backend.memoryEngine.readRollingSummary(scope);
+    const summaryVersions = await backend.memoryEngine.listRollingSummaryVersions(scope);
+    const episodicFacts = await backend.memoryEngine.listEpisodicFacts(scope);
     const relationship = await backend.memoryEngine.getRelationshipState(scope);
     return deepFreeze({
       schemaVersion: `${STARCRAFT_TMG_COMPANION_PRODUCT_MODULE_VERSION}.memory-summary`,
-      layeredMemory: "cb2_transcript_rolling_summary_relationship",
+      layeredMemory: "cb2_transcript_rolling_summary_episodic_relationship",
       transcriptEntries: transcript.length,
       latestSpeakers: transcript.slice(-6).map((entry) => entry.speakerId),
       rollingSummary: rolling.found
@@ -293,9 +309,11 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
           coversTranscriptThrough: rolling.value.coversTranscriptThrough,
         }
         : null,
+      rollingSummaryVersions: summaryVersions.length,
       rollingSummaryHonesty: rolling.found
-        ? "persisted"
+        ? "persisted_versioned_rollback_safe"
         : "not_written_yet_never_fabricated",
+      episodicFacts: episodicFacts.length,
       relationshipAxes: clone(relationship.axes),
       relationshipEvents: relationship.history.length,
       relationshipHonesty: "unknown_is_first_class_never_zero_filled",
@@ -408,6 +426,74 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
         if (auth.rejection) return envelope(auth.rejection, 401);
         return envelope(catalogueBody());
       }
+      // ── Slice 266d: seat-scoped persona, audit, permissions, packages ──
+      if (segments[0] === "persona") {
+        const auth = await authority(roomId, seatToken);
+        if (auth.rejection) return envelope(auth.rejection, 401);
+        const scoped = { roomId: auth.roomId, seatToken };
+        if (method === "GET" && segments.length === 1) {
+          return envelope(await service.readUserPersona(scoped));
+        }
+        if (method === "PUT" && segments.length === 1) {
+          return envelope(await service.putUserPersona({
+            ...scoped,
+            displayName: body.displayName,
+            description: body.description,
+            note: body.note,
+          }));
+        }
+        if (method === "POST" && segments[1] === "rollback") {
+          return envelope(await service.rollbackUserPersona({
+            ...scoped,
+            version: body.version,
+            note: body.note,
+          }));
+        }
+        return envelope(rejection("COMPANION_PRODUCT_ROUTE_UNKNOWN"), 404);
+      }
+      if (segments[0] === "audit") {
+        const auth = await authority(roomId, seatToken);
+        if (auth.rejection) return envelope(auth.rejection, 401);
+        const scoped = { roomId: auth.roomId, seatToken };
+        if (method === "GET" && segments[1] === "export") {
+          return envelope(await service.readAuditExport(scoped));
+        }
+        if (method === "GET" && segments[1] === "verify") {
+          return envelope(await service.verifyAuditLive(scoped));
+        }
+        if (method === "POST" && segments[1] === "replay-candidate") {
+          return envelope(await service.buildAuditReplayCandidate({
+            ...scoped,
+            ...(object(body.sessionRef) ? { sessionRef: body.sessionRef } : {}),
+          }));
+        }
+        return envelope(rejection("COMPANION_PRODUCT_ROUTE_UNKNOWN"), 404);
+      }
+      if (segments[0] === "permissions" && segments[1] === "surfaces" && method === "GET") {
+        const auth = await authority(roomId, seatToken);
+        if (auth.rejection) return envelope(auth.rejection, 401);
+        return envelope(await service.readPermissionSurfaces({ roomId: auth.roomId, seatToken }));
+      }
+      if (segments[0] === "packages") {
+        const auth = await authority(roomId, seatToken);
+        if (auth.rejection) return envelope(auth.rejection, 401);
+        if (method === "POST" && segments[1] === "import") {
+          return envelope(await service.importPackage({
+            roomId: auth.roomId,
+            seatToken,
+            contract: body.contract,
+          }));
+        }
+        const packageId = String(segments[1] || "");
+        if (method === "GET" && segments[2] === "export" && CONVERSATION_ID.test(packageId)) {
+          return envelope(await service.exportPackage({
+            roomId: auth.roomId,
+            seatToken,
+            packageId,
+          }));
+        }
+        return envelope(rejection("COMPANION_PRODUCT_ROUTE_UNKNOWN"), 404);
+      }
       if (segments[0] === "conversations") {
         const auth = await authority(roomId, seatToken);
         if (auth.rejection) return envelope(auth.rejection, 401);
@@ -424,6 +510,16 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
           return envelope(await withSummary(await service.readActiveConversation({
             roomId: auth.roomId,
             seatToken,
+          })));
+        }
+        // Slice 266d: restore is a room-level conversation collection op; it
+        // must be matched BEFORE the conversationId branch ("restore" is a
+        // syntactically valid conversation id).
+        if (method === "POST" && segments[1] === "restore") {
+          return envelope(await withSummary(await service.restoreConversation({
+            roomId: auth.roomId,
+            seatToken,
+            export: body.export,
           })));
         }
         const conversationId = String(segments[1] || "");
@@ -459,6 +555,121 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
         if (method === "POST" && segments[2] === "close") {
           return envelope(await withSummary(await service.closeConversation(scoped)));
         }
+        // ── Slice 266d: worldbook, memory, branches, author's note, export ──
+        if (segments[2] === "worldbook") {
+          if (method === "GET" && segments.length === 3) {
+            return envelope(await service.readWorldbook(scoped));
+          }
+          if (method === "POST" && segments.length === 3) {
+            return envelope(await service.registerChatWorldbookEntry({
+              ...scoped,
+              entry: body.entry,
+            }));
+          }
+          if (method === "GET" && segments[3] === "export") {
+            return envelope(await service.exportConversationWorldbook(scoped));
+          }
+          if (method === "POST" && segments[3] === "import") {
+            return envelope(await service.importConversationWorldbook({
+              ...scoped,
+              entries: body.entries,
+            }));
+          }
+          return envelope(rejection("COMPANION_PRODUCT_ROUTE_UNKNOWN"), 404);
+        }
+        if (segments[2] === "memory") {
+          if (method === "GET" && segments.length === 3) {
+            return envelope(await service.readMemory(scoped));
+          }
+          if (method === "POST" && segments[3] === "summary" && segments.length === 4) {
+            return envelope(await service.writeConversationSummary({
+              ...scoped,
+              content: body.content,
+              ...(body.coversTranscriptThrough !== undefined
+                ? { coversTranscriptThrough: body.coversTranscriptThrough } : {}),
+              note: body.note,
+            }));
+          }
+          if (method === "POST" && segments[3] === "summary" && segments[4] === "rollback") {
+            return envelope(await service.rollbackConversationSummary({
+              ...scoped,
+              summaryVersion: body.summaryVersion,
+              note: body.note,
+            }));
+          }
+          if (method === "POST" && segments[3] === "episodic") {
+            return envelope(await service.addConversationEpisodicFact({
+              ...scoped,
+              content: body.content,
+              factType: body.factType,
+            }));
+          }
+          if (method === "POST" && segments[3] === "relationship") {
+            return envelope(await service.applyConversationRelationshipEvent({
+              ...scoped,
+              eventType: body.eventType,
+              deltas: body.deltas,
+              note: body.note,
+            }));
+          }
+          return envelope(rejection("COMPANION_PRODUCT_ROUTE_UNKNOWN"), 404);
+        }
+        if (segments[2] === "branches") {
+          if (method === "GET" && segments.length === 3) {
+            return envelope(await service.listConversationBranches(scoped));
+          }
+          if (method === "POST" && segments.length === 3) {
+            return envelope(await service.openConversationBranch({
+              ...scoped,
+              kind: body.kind,
+              ...(body.baseTurnSequence !== undefined
+                ? { baseTurnSequence: body.baseTurnSequence } : {}),
+              note: body.note,
+            }));
+          }
+          const branchId = String(segments[3] || "");
+          if (!CONVERSATION_ID.test(branchId)) {
+            return envelope(rejection("COMPANION_PRODUCT_ROUTE_UNKNOWN"), 404);
+          }
+          if (method === "POST" && segments[4] === "reroll") {
+            return envelope(await service.rerollConversationBranch({ ...scoped, branchId }));
+          }
+          if (method === "POST" && segments[4] === "entries") {
+            return envelope(await service.submitConversationBranchEdit({
+              ...scoped,
+              branchId,
+              content: body.content,
+            }));
+          }
+          if (method === "POST" && segments[4] === "accept") {
+            return envelope(await withSummary(await service.acceptConversationBranch({
+              ...scoped,
+              branchId,
+              entryId: body.entryId,
+            })));
+          }
+          if (method === "POST" && segments[4] === "discard") {
+            return envelope(await service.discardConversationBranch({ ...scoped, branchId }));
+          }
+          return envelope(rejection("COMPANION_PRODUCT_ROUTE_UNKNOWN"), 404);
+        }
+        if (segments[2] === "authors-note") {
+          if (method === "GET") {
+            return envelope(await service.readAuthorsNote(scoped));
+          }
+          if (method === "PUT") {
+            return envelope(await service.putAuthorsNote({
+              ...scoped,
+              note: body.note,
+              ...(body.depth !== undefined ? { depth: body.depth } : {}),
+              ...(body.frequency !== undefined ? { frequency: body.frequency } : {}),
+            }));
+          }
+          return envelope(rejection("COMPANION_PRODUCT_ROUTE_UNKNOWN"), 404);
+        }
+        if (method === "GET" && segments[2] === "export") {
+          return envelope(await service.exportConversation(scoped));
+        }
       }
       return envelope(rejection("COMPANION_PRODUCT_ROUTE_UNKNOWN"), 404);
     } catch (error) {
@@ -474,14 +685,42 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
       routes: [
         "GET status",
         "GET catalogue",
+        "GET persona",
+        "PUT persona",
+        "POST persona/rollback",
+        "GET audit/export",
+        "GET audit/verify",
+        "POST audit/replay-candidate",
+        "GET permissions/surfaces",
+        "GET packages/{packageId}/export",
+        "POST packages/import",
         "POST conversations (open_or_resume)",
         "GET conversations/active",
+        "POST conversations/restore",
         "GET conversations/{id}",
         "POST conversations/{id}/turns",
         "POST conversations/{id}/continue",
         "POST conversations/{id}/checkpoint",
         "POST conversations/{id}/resume",
         "POST conversations/{id}/close",
+        "GET conversations/{id}/worldbook",
+        "POST conversations/{id}/worldbook",
+        "GET conversations/{id}/worldbook/export",
+        "POST conversations/{id}/worldbook/import",
+        "GET conversations/{id}/memory",
+        "POST conversations/{id}/memory/summary",
+        "POST conversations/{id}/memory/summary/rollback",
+        "POST conversations/{id}/memory/episodic",
+        "POST conversations/{id}/memory/relationship",
+        "GET conversations/{id}/branches",
+        "POST conversations/{id}/branches",
+        "POST conversations/{id}/branches/{branchId}/reroll",
+        "POST conversations/{id}/branches/{branchId}/entries",
+        "POST conversations/{id}/branches/{branchId}/accept",
+        "POST conversations/{id}/branches/{branchId}/discard",
+        "GET conversations/{id}/authors-note",
+        "PUT conversations/{id}/authors-note",
+        "GET conversations/{id}/export",
       ],
       registeredPackages: registrations.map((entry) => clone(entry.packageRef)),
       provider: providerStatus().state,
