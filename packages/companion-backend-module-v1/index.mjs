@@ -62,6 +62,12 @@ export {
   createInMemoryProviderAdapter,
 } from "./in-memory-adapter-v1.mjs";
 
+export {
+  COMPANION_DURABLE_PERSISTENCE_CONTRACT_V1,
+  createSqliteCompanionPersistenceAdapter,
+  createPostgresCompanionPersistenceAdapter,
+} from "./durable-persistence-adapters-v1.mjs";
+
 import {
   COMPANION_BACKEND_CONTRACT_VERSION,
   COMPANION_BACKEND_INTEGRATION_DESCRIPTOR,

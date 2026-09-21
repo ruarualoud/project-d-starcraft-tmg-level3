@@ -73,13 +73,19 @@ explicit, isolated slice manifests.
    three-arm comparison: current SkillOpt, WikiSkill knowledge compilation and
    EvoTest isolated test-time evolution; Critical/High-only blocking, held-out,
    arena, versioned promotion and rollback remain mandatory.
-6. Ticket 26 / Slices 264–266: after the K3 threat-UI screenshot report is
-   user-reviewed, build and compare two complete companion packs. K3 owns the
-   Web/App interaction design; Codex owns room permissions, persistence and
-   agent contracts. Acceptance includes Tavern-equivalent cards/world books,
-   layered long-term memory and relationship state, resumable long-running
-   roleplay, multiple companions speaking in one conversation, and floating-Web
-   evidence without exposing opponent-private agent state.
+6. Ticket 26 / Slices 264–266: the generic companion backend and its five
+   capability bundles are integrated; Provider accounting now preserves
+   `unknown` rather than reporting an invented zero. File-backed SQLite and
+   production PostgreSQL adapters implement one encrypted persistence port;
+   SQLite checkpoint/restore and restart passed the focused gate, and durable
+   construction rejects missing or malformed managed keys instead of silently
+   accepting an ephemeral key. K3 is implementing the isolated six-companion
+   Web/App roster and real committed portrait binding; image generation remains
+   isolated in image sub-agents. Codex next owns product room/seat/provider
+   binding and real floating-Web acceptance. Final acceptance still requires
+   Tavern-equivalent cards/world books, layered long-term memory and
+   relationship state, resumable long-running roleplay, multiple companions in
+   one conversation, and no exposure of opponent-private agent state.
 7. Ticket 27 / Slices 267–272: build the independent Roster Strategist. The
    Rules-owned Army Builder remains the sole legality authority; the Agent uses
    General/faction/matchup Skills, scoring plans, spatial/probability/math tools

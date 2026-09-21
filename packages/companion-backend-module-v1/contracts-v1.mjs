@@ -521,7 +521,7 @@ export const COMPANION_BACKEND_INTEGRATION_DESCRIPTOR = deepFreeze({
     {
       name: "persistence",
       port: COMPANION_PERSISTENCE_PORT_V1.portId,
-      reason: "layered memory, session resume and checkpoint storage; durable adapters are a later Codex integration",
+      reason: "layered memory, session resume and checkpoint storage; local SQLite and production PostgreSQL adapters implement the same port",
     },
   ],
   optionalDependencies: [
