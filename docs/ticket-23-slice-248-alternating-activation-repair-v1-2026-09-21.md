@@ -221,10 +221,37 @@ uses zero Provider calls and costs ¥0. The old revision-63 explanation remains
 immutable defect evidence and is not training truth; the valid Authority state
 continues from revision 63.
 
+## Selected-action resource follow-up
+
+Revision 64 then legally applied Vile's Glial Reconstitution. Authority paid
+the exact effective cost of 1 BM and exhausted `faction:player2`, but the old
+Planner and Action prose repeatedly called it a zero-Biomass action. The
+compact Planning action index had exposed Supply but omitted the existing exact
+`resourceCostsByChoice`; Action validation also had no contradiction check for
+free/zero-resource claims.
+
+Prompt policy v13, Planner normalization v7 and Action normalization v16 now
+carry a Host-owned selected-action resource contract containing every choice's
+printed cost, reduction and effective BM/CP/PE cost, plus source-card exhaustion
+semantics. Both stages reject a zero/free/unspent statement for a positive
+effective resource cost. Supply remains a separate contract, so a correct
+zero-Supply statement is accepted.
+
+The r64 reproducer failed before implementation and passed exactly once after
+the repair:
+
+```sh
+node scripts/verify-ticket-23-slice-248-selected-action-resource-claims-v1.mjs
+```
+
+It found four false-free Biomass claims, accepted the corrected 1-BM wording,
+accepted zero additional Supply, and used zero Provider calls / ¥0. Revision 64
+Authority state remains valid; its drifted old explanation is non-training
+defect evidence.
+
 ## Next gate
 
-Resume the same fresh paid Standard-2000 A-A match from revision 63. The open
-Player-2 decision has a current Glial Reconstitution candidate whose stored
-plan text is consistent with the Rules domain; Action normalization v15 will
-revalidate any completed paid response before new egress. Continue to terminal
+Resume the same fresh paid Standard-2000 A-A match from revision 64. One
+already-paid completed Planner response for the next Player-2 choice is durable;
+Planner normalization v7 will revalidate it locally before new egress. Continue to terminal
 before rebuilding screenshots, NDJSON, JSON and PDF evidence from this room.

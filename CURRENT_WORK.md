@@ -24,7 +24,7 @@ explicit, isolated slice manifests.
 
 1. Ticket 23 / Slice 248: alternating activation, phase completion and certain
    Charge shortfall repairs passed their focused gates. The fresh Standard-2000
-   room is now durable at revision 63 in round 2 Movement. Its Planner has
+   room is now durable at revision 64 in round 2 Movement. Its Planner has
    recognized the round-2 Supply increase and exposed reserve Deploy as a later
    activation. A three-round Swarmling formation correction proved two recovery
    bugs: “inside the fire envelope rather than outside it” was falsely rejected,
@@ -40,8 +40,14 @@ explicit, isolated slice manifests.
    bind the selected candidate's action/ability/effect/source identity and
    reject a central execution claim for another ability while allowing rejected
    alternatives to be discussed. The bug-specific gate passed once at 0
-   Provider calls / ¥0. Continue the same room from revision 63; preserve the
-   old r63 prose as non-training defect evidence. **Active.**
+   Provider calls / ¥0. Revision 64 then legally applied Vile's Glial
+   Reconstitution and paid 1 BM, but its old public prose incorrectly called
+   the action zero-Biomass. Prompt v13 plus Planner v7 / Action v16 now expose
+   the exact selected resource-cost contract in both stages and reject
+   zero/free/unspent claims for a positive BM/CP/PE effective cost without
+   conflating Supply. Its concrete focused gate passed once at 0 Provider calls
+   / ¥0. Continue the same room from revision 64; preserve the old r63/r64 prose
+   as non-training defect evidence. **Active.**
 2. Ticket 23 / Slice 248: complete player-seat companion permissions, layered
    memory/role runtime and real floating-Web acceptance.
 3. Ticket 23 / Slice 248: add attack probability, fire-zone exchange and the
@@ -82,13 +88,12 @@ evidence without rerunning already-passed unrelated gates.
 ## Current accounting
 
 - DeepSeek product ledger: the fresh Slice-248 A-A room is durable at revision
-  63. Durable seat ledgers currently report 233 Provider calls, 13,789,867 total
-  units and estimated cost ¥18.665105 (Player 1: 82 calls / ¥5.838613; Player
-  2: 151 calls / ¥12.826492). Two Player-2 calls belong to the interrupted next
-  decision after r63 and are preserved for recovery accounting; the lagging
-  runner progress file reports only calls already bound through r63. The
-  selected-action identity repair gate used 0 Provider calls and ¥0; no ¥100
-  notification threshold has been crossed.
+  64. Durable seat ledgers currently report 235 Provider calls, 14,096,549 total
+  units and estimated cost ¥19.073992 (Player 1: 82 calls / ¥5.838613; Player
+  2: 153 calls / ¥13.235379). One already-paid completed planning response for
+  the next post-r64 choice is preserved for local v7 revalidation. The
+  selected-action identity and resource-contract repair gates each used 0
+  Provider calls and ¥0; no ¥100 notification threshold has been crossed.
 - Kimi environment ledger: 3 CLI runs (2 connectivity probes, 1 ENV-6
   implementation session); token and currency fields were not reported by Kimi
   Code CLI.

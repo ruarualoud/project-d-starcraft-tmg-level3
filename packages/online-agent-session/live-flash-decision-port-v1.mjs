@@ -25,11 +25,11 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v12";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v13";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v15";
+  "starcraft_tmg_live_action_shape_normalization_v16";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_planner_shape_normalization_v6";
+  "starcraft_tmg_live_planner_shape_normalization_v7";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
 const NATIVE_QUERY_KINDS = Object.freeze([
   "space.inspect_relationships",
@@ -391,6 +391,121 @@ export function inspectStarcraftTmgSelectedActionIdentityClaimsV1(input = {}) {
   });
 }
 
+function selectedActionResourceContract(actionSpace, candidateId) {
+  const selected = actionIndex(actionSpace).find((entry) =>
+    entry.id === String(candidateId || ""));
+  if (!selected) return null;
+  const action = sourceActionDomain(selected.action);
+  const costs = Object.entries(action?.constraints?.resourceCostsByChoice || {})
+    .map(([choice, cost]) => ({
+      choice,
+      resourceType: String(cost?.resourceType || "").toUpperCase() || null,
+      printedResourceCost: Number(cost?.printedResourceCost || 0),
+      resourceCostReduction: Number(cost?.resourceCostReduction || 0),
+      effectiveResourceCost: Number(cost?.effectiveResourceCost || 0),
+      discountSourcePieceId: cost?.sourcePieceId || null,
+    })).sort((left, right) => left.choice.localeCompare(right.choice));
+  return freeze({
+    candidateId: selected.id,
+    costs,
+    sourceCardExhaustedOnCommit: action?.sourceKind === "card_feature",
+    sourceInstanceId: action?.sourceInstanceId || null,
+    rulesAuthority: true,
+    trainingTruth: false,
+  });
+}
+
+function selectedActionResourceClaimFragments(value, stage) {
+  const input = object(value) ? value : {};
+  const intent = object(input.intent) ? input.intent : {};
+  const assessment = object(input.assessment) ? input.assessment : {};
+  const plan = object(input.planRevision) ? input.planRevision
+    : object(input.plan) ? input.plan : {};
+  const summary = stage === "planning"
+    ? parsedPublicPlanSummary(input.publicPlanSummary)
+    : object(input.publicDecisionSummary) ? input.publicDecisionSummary : {};
+  const fields = stage === "planning" ? [
+    ["assessment.currentGoal", assessment.currentGoal],
+    ["assessment.evidenceFor", assessment.evidenceFor],
+    ["plan.currentGoal", plan.currentGoal],
+    ["plan.resourcePolicy", plan.resourcePolicy],
+    ["publicPlanSummary.plan", summary.plan],
+    ["publicPlanSummary.purpose", summary.purpose],
+    ["publicPlanSummary.visibleFacts", summary.visibleFacts],
+    ["publicPlanSummary.calculations", summary.calculations],
+  ] : [
+    ["selectedReason", input.selectedReason],
+    ["scoreOrPositionValue", input.scoreOrPositionValue],
+    ["intent.currentGoal", intent.currentGoal],
+    ["intent.purpose", intent.purpose],
+    ["intent.expectedOwnOutcome", intent.expectedOwnOutcome],
+    ["intent.expectedEffects", intent.expectedEffects],
+    ["intent.resourcesIntended", intent.resourcesIntended],
+    ["publicDecisionSummary.plan", summary.plan],
+    ["publicDecisionSummary.purpose", summary.purpose],
+    ["publicDecisionSummary.visibleFacts", summary.visibleFacts],
+    ["publicDecisionSummary.calculations", summary.calculations],
+  ];
+  return fields.flatMap(([field, fieldValue]) => {
+    const values = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+    return values.map((entry) => ({ field,
+      text: String(entry || "").trim() })).filter((entry) => entry.text);
+  });
+}
+
+function falseFreeResourceClaim(fragment, resourceType) {
+  const aliases = {
+    BM: ["biomass", "bm", "生物质"],
+    CP: ["command points?", "cp", "指挥点"],
+    PE: ["psionic energy", "pe", "灵能"],
+  }[resourceType] || [];
+  return aliases.some((alias) => {
+    if (/[\u3400-\u9fff]/u.test(alias)) {
+      return new RegExp(`(?:零|0)\\s*${alias}|(?:不消耗|无需支付|无需消耗)\\s*${alias}`, "u")
+        .test(fragment);
+    }
+    const boundaryAlias = `(?:${alias})`;
+    return new RegExp(
+      `(?:\\b(?:zero|0)\\s*[- ]*${boundaryAlias}\\b|`
+      + `\\b(?:costs?|spends?|pays?|requires?)\\s+(?:zero|no|0)\\s+${boundaryAlias}\\b|`
+      + `\\bwithout\\s+(?:spending|paying|using)\\s+${boundaryAlias}\\b|`
+      + `\\bno\\s+${boundaryAlias}\\s+(?:is\\s+)?(?:spent|required|paid|cost)\\b|`
+      + `\\bat\\s+(?:zero|no|0)\\s+${boundaryAlias}\\s+cost\\b)`, "iu",
+    ).test(fragment);
+  });
+}
+
+export function inspectStarcraftTmgSelectedActionResourceClaimsV1(input = {}) {
+  const resourceContract = selectedActionResourceContract(
+    input.spatialActionSpace || {}, input.candidateId);
+  if (!resourceContract) {
+    return freeze({ status: "missing_candidate", resourceContract: null,
+      checkedClaims: [], contradictions: [] });
+  }
+  const minimumNonzeroCosts = new Map();
+  for (const cost of resourceContract.costs) {
+    if (!cost.resourceType || cost.effectiveResourceCost <= 0) continue;
+    const prior = minimumNonzeroCosts.get(cost.resourceType);
+    minimumNonzeroCosts.set(cost.resourceType,
+      prior === undefined ? cost.effectiveResourceCost
+        : Math.min(prior, cost.effectiveResourceCost));
+  }
+  const fragments = selectedActionResourceClaimFragments(input.value,
+    input.stage === "planning" ? "planning" : "action");
+  const contradictions = fragments.flatMap((entry) => (
+    [...minimumNonzeroCosts.entries()].flatMap(([resourceType,
+      effectiveResourceCost]) => falseFreeResourceClaim(entry.text, resourceType)
+      ? [{ field: entry.field, text: entry.text, resourceType,
+        claimedEffectiveResourceCost: 0, effectiveResourceCost }] : [])
+  ));
+  return freeze({
+    status: contradictions.length > 0 ? "contradicted" : "consistent",
+    resourceContract,
+    checkedClaims: fragments,
+    contradictions,
+  });
+}
+
 function sourceActionDomain(value) {
   return object(value?.sourceDomain) ? value.sourceDomain : value;
 }
@@ -521,6 +636,8 @@ function candidateEvidenceRequirements(input) {
       kind: entry.kind,
       actionType,
       selectedActionIdentity: selectedActionIdentity(
+        input.spatialActionSpace, entry.id),
+      selectedActionResourceContract: selectedActionResourceContract(
         input.spatialActionSpace, entry.id),
       exactBeforeApply,
       usefulPlanningQueries: [...new Set(usefulQueries)],
@@ -682,6 +799,8 @@ export function projectStarcraftTmgPlanningActionSpaceForPromptV1(
       authorityActionType: entry.authorityActionType || null,
       abilityName: entry.abilityName || null,
       effectKind: entry.effectKind || null,
+      sourceKind: entry.sourceKind || null,
+      sourceInstanceId: entry.sourceInstanceId || null,
       createdUnitRecordKey: entry.createdUnitRecordKey || null,
       sideKey: entry.sideKey || null,
       phase: entry.phase || null,
@@ -691,6 +810,8 @@ export function projectStarcraftTmgPlanningActionSpaceForPromptV1(
       maxDistanceMilliInches:
         entry.constraints?.maxDistanceMilliInches ?? null,
       supply: clone(entry.constraints?.supply || null),
+      resourceCostsByChoice:
+        clone(entry.constraints?.resourceCostsByChoice || {}),
       modelCount: entry.constraints?.modelProfiles?.length || 0,
       exactRulesInstantiationRequired: true,
     })),
@@ -713,6 +834,8 @@ function selectedActionSpace(actionSpace, candidateId) {
     parameterDomains: (actionSpace?.parameterDomains || []).filter((entry) =>
       entry.domainId === candidateId).map(clone),
     selectedActionIdentity: selectedActionIdentity(actionSpace, candidateId),
+    selectedActionResourceContract:
+      selectedActionResourceContract(actionSpace, candidateId),
     selectedByPlanner: true,
     exactRulesInstantiationRequired: true,
     trainingTruth: false,
@@ -960,6 +1083,17 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
     throw correctionError("PLANNER_SELECTED_ACTION_IDENTITY_REQUIRED",
       identityClaims.selectedIdentity.abilityName);
   }
+  const resourceClaims = inspectStarcraftTmgSelectedActionResourceClaimsV1({
+    spatialActionSpace: input.spatialActionSpace,
+    candidateId: recommendedCandidateId,
+    stage: "planning",
+    value: raw,
+  });
+  if (resourceClaims.status === "contradicted") {
+    const first = resourceClaims.contradictions[0];
+    throw correctionError("PLANNER_SELECTED_ACTION_RESOURCE_CONTRADICTED",
+      `${first.field}:${first.resourceType}:0->${first.effectiveResourceCost}`);
+  }
   const selectedCharge = inspectStarcraftTmgChargeReachabilityV1({
     spatialActionSpace: input.spatialActionSpace,
     candidateId: recommendedCandidateId,
@@ -1027,6 +1161,7 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
     requiredEvidence: candidateEvidenceRequirements(input).find((entry) =>
       entry.candidateId === recommendedCandidateId) || null,
     selectedActionIdentity: identityClaims.selectedIdentity,
+    selectedActionResourceContract: resourceClaims.resourceContract,
     lifecycleAssessment,
     publicPlanSummary,
     hiddenChainOfThoughtStored: false,
@@ -1056,6 +1191,17 @@ function validateActionOutput(raw, input, planner) {
   if (identityClaims.status === "unbound") {
     throw correctionError("ACTION_SELECTED_ACTION_IDENTITY_REQUIRED",
       identityClaims.selectedIdentity.abilityName);
+  }
+  const resourceClaims = inspectStarcraftTmgSelectedActionResourceClaimsV1({
+    spatialActionSpace: input.spatialActionSpace,
+    candidateId: selected.id,
+    stage: "action",
+    value: raw,
+  });
+  if (resourceClaims.status === "contradicted") {
+    const first = resourceClaims.contradictions[0];
+    throw correctionError("ACTION_SELECTED_ACTION_RESOURCE_CONTRADICTED",
+      `${first.field}:${first.resourceType}:0->${first.effectiveResourceCost}`);
   }
   const issues = [];
   const intent = object(raw.intent) ? raw.intent : {};
@@ -1854,6 +2000,8 @@ function normalizeDecision(raw, input, match, queryReceipts, providerTrace) {
     proposal,
     candidateId: selected.id,
     selectedActionIdentity: selectedActionIdentity(
+      input.spatialActionSpace, selected.id),
+    selectedActionResourceContract: selectedActionResourceContract(
       input.spatialActionSpace, selected.id),
     selectedReason,
     scoreOrPositionValue,
@@ -3164,6 +3312,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one current stationary weapon profile covering the placed Unit; never describe that option as outside the enemy fire envelope. Compare objective gain against incoming profiles and fireZoneExchangeClass, preserve unknown probability as uncertainty, and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
       "When an exact legal_asset_placement_options receipt is present, choose exactly one placementOptionId and return assetPlacementSelection with that ID and one concise publicReason about the visible position, intended threat/objective/route effect, and plan continuity. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
       "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists. You may compare or reject another ability, but never describe that other ability as the action being selected, activated, used or placed.",
+      "Treat selectedActionResourceContract and resourceCostsByChoice as Rules-owned. State every nonzero effective resource cost accurately. Never call a positive BM, CP or PE cost zero, free, or unspent; Supply is a separate contract.",
       "Position publicReason fields are auditable summaries, not hidden chain-of-thought. State the useful board fact and tactical purpose without private scratch work.",
       "For Deploy, the Host prepends the Leading Model base-centre start just outside the selected battlefield edge. The complete Speed allowance includes that ingress distance. Do not add an artificial path point on the edge and do not measure only from the edge; choose an endpoint whose complete Host path remains within maxDistanceMilliInches.",
       "Never treat the remaining models as a unit centre: compare and choose a complete Host-solved final formation using every model's physical base, coherency, board edge, terrain, objective, line-of-sight, blocking, threat and fire-zone consequences.",
