@@ -27,7 +27,7 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v23";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v26";
+  "starcraft_tmg_live_action_shape_normalization_v27";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -2841,9 +2841,35 @@ function parseSubmittedParametersJson(value) {
   }
 }
 
+export function recoverStarcraftTmgCorrectionSelectionV1(raw, choice) {
+  if (!object(raw) || object(raw.selection)
+    || Number(choice?.semanticCorrectionRounds || 0) < 1) {
+    return { submission: clone(raw), recovered: false, sourceAttemptKey: null };
+  }
+  const candidateId = String(raw.candidateId || "");
+  if (!candidateId) {
+    return { submission: clone(raw), recovered: false, sourceAttemptKey: null };
+  }
+  const attempts = [...(choice?.attemptKeys || [])].reverse()
+    .map((attemptKey) => ({ attemptKey,
+      attempt: choice?.attempts?.[attemptKey] }))
+    .filter(({ attempt }) => attempt?.stage === "action"
+      && attempt?.status === "completed");
+  for (const { attemptKey, attempt } of attempts) {
+    const prior = responseParts(attempt.safeOutput).decision;
+    if (!object(prior) || String(prior.candidateId || "") !== candidateId
+      || !object(prior.selection)) continue;
+    return { submission: { ...clone(raw), selection: clone(prior.selection) },
+      recovered: true, sourceAttemptKey: attemptKey };
+  }
+  return { submission: clone(raw), recovered: false, sourceAttemptKey: null };
+}
+
 function mapDecisionSubmission(raw, input, choice) {
   if (!object(raw)) return raw;
-  const result = clone(raw);
+  const selectionRecovery = recoverStarcraftTmgCorrectionSelectionV1(
+    raw, choice);
+  const result = selectionRecovery.submission;
   const candidateId = String(result.candidateId || "");
   const selected = actionIndex(input.spatialActionSpace).find((entry) =>
     entry.id === candidateId);
@@ -2869,6 +2895,14 @@ function mapDecisionSubmission(raw, input, choice) {
       kind: "parameterized",
       domainId: candidateId,
       parameters: parseSubmittedParametersJson(selection.parametersJson),
+    };
+  }
+  if (selectionRecovery.recovered) {
+    result.correctionFieldRecovery = {
+      field: "selection",
+      sourceAttemptKey: selectionRecovery.sourceAttemptKey,
+      candidateId,
+      rulesRevalidationRequired: true,
     };
   }
   delete result.selection;

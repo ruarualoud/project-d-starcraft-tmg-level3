@@ -219,12 +219,23 @@ explicit, isolated slice manifests.
   rejected, and prompt v23 states that activation is phase-scoped. The concrete
   gate failed before repair and passed once afterward at 0 Provider calls.
   Preserve that r9 Authority state as position evidence only; fork r8 once more
-  for a lifecycle-valid r9. See
+  for a lifecycle-valid r9. That fork, `20260921231542474`, corrected the
+  lifecycle hypothesis after one rejected Action attempt, then omitted the
+  unchanged asset `selection` from both correction submissions. The Host
+  mislabeled those partial corrections as `DECISION_PROPOSAL_ILLEGAL` and
+  stopped after three semantic rounds without Apply. Action normalization v27
+  now carries forward only a missing typed selection from an earlier completed
+  Action attempt for the same Planner candidate and still revalidates it through
+  the current Rules receipt. The exact correction shape passed once at 0
+  Provider calls. Resume that fork for local paid-candidate revalidation before
+  considering any new generation. See
   `docs/ticket-23-slice-248-terminal-tool-json-convergence-blocker-v1-2026-09-22.md`
   `docs/ticket-23-slice-248-terminal-tool-json-recovery-v1-2026-09-22.md` and
   `docs/ticket-23-slice-248-asset-placement-threat-strategy-repair-v1-2026-09-22.md`
   and
-  `docs/ticket-23-slice-248-cross-phase-activation-prediction-repair-v1-2026-09-22.md`.
+  `docs/ticket-23-slice-248-cross-phase-activation-prediction-repair-v1-2026-09-22.md`
+  and
+  `docs/ticket-23-slice-248-correction-selection-recovery-v1-2026-09-22.md`.
 - This match uses the fixed Standard-2000 acceptance rosters and therefore has
   no Agent-authored pregame `RosterPlan`. After this fixed-roster control match,
   Ticket 27 must deliver the Rules-gated Roster Strategist and run a second
@@ -308,4 +319,8 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   narrative is non-training evidence. Recent recovery work is now 70 calls,
   3,278,297 units and ¥4.519137; including the original invalid-suffix source:
   99 calls, 4,625,091 units and ¥6.371858. No ¥100 threshold was crossed.
+- Correction-lane fork `20260921231542474`: 6 calls, 316,804 units and
+  ¥0.448593; no action was applied. Recent recovery work is now 76 calls,
+  3,595,101 units and ¥4.967730; including the original invalid-suffix source:
+  105 calls, 4,941,895 units and ¥6.820451. No ¥100 threshold was crossed.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.

@@ -7,6 +7,7 @@ import { searchStarcraftTmgLegalAssetPlacementOptionsV1 } from
 import {
   inspectStarcraftTmgFormationThreatClaimsV1,
   inspectStarcraftTmgOpponentPredictionFeasibilityV1,
+  recoverStarcraftTmgCorrectionSelectionV1,
   resolveStarcraftTmgDeterministicSingletonActionV1,
 } from "../packages/online-agent-session/live-flash-decision-port-v1.mjs";
 
@@ -207,6 +208,43 @@ function main() {
       && crossPhaseLockout.contradictions.some((entry) =>
         entry.reason === "movement_activation_does_not_lock_other_phases"),
     "CROSS_PHASE_ACTIVATION_LOCKOUT_NOT_REJECTED", { crossPhaseLockout });
+    const correctionSelection =
+      recoverStarcraftTmgCorrectionSelectionV1({
+        candidateId: omegaDomain.domainId,
+        intent: { predictedOpponentResponses: [{
+          actionClass: "ranged_attack",
+          likelyActorUnitId: "player1-goliath-1",
+        }] },
+      }, {
+        semanticCorrectionRounds: 1,
+        attemptKeys: ["prior-action-attempt", "current-action-attempt"],
+        attempts: {
+          "prior-action-attempt": { stage: "action", status: "completed",
+            safeOutput: { providerTurn: { kind: "tool_calls", toolCalls: [{
+              name: "submit_decision", arguments: {
+                candidateId: omegaDomain.domainId,
+                selection: { kind: "asset",
+                  optionId: threatened.placementOptionId,
+                  slotAssignments: [], parametersJson: "{}",
+                  publicReason: "Accept the exact projected exposure." },
+              } }] } } },
+          "current-action-attempt": { stage: "action", status: "completed",
+            safeOutput: { providerTurn: { kind: "tool_calls", toolCalls: [{
+              name: "submit_decision", arguments: {
+                candidateId: omegaDomain.domainId,
+                intent: { predictedOpponentResponses: [{
+                  actionClass: "ranged_attack",
+                  likelyActorUnitId: "player1-goliath-1",
+                }] },
+              } }] } } },
+        },
+      });
+    ensure(correctionSelection.recovered === true
+      && correctionSelection.sourceAttemptKey === "prior-action-attempt"
+      && correctionSelection.submission.selection?.kind === "asset"
+      && correctionSelection.submission.selection?.optionId
+        === threatened.placementOptionId,
+    "CORRECTION_ASSET_SELECTION_NOT_RECOVERED", { correctionSelection });
     process.stdout.write(`${JSON.stringify({
       schema: "ticket23_slice247_legal_asset_placement_options_focused_v1",
       ok: true,
@@ -216,6 +254,7 @@ function main() {
         option.tacticalMetrics?.incomingStationaryProfileCount === 0).length,
       deterministicFinish: true,
       crossPhasePredictionRejected: true,
+      correctionAssetSelectionRecovered: true,
       attemptedCandidateCount: receipt.result.attemptedCandidateCount,
       providerCalls: 0,
       trainingTruth: false,
