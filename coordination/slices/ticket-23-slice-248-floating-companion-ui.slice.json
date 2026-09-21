@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "id": "ticket-23-slice-248-floating-companion-ui",
+  "githubIssue": null,
+  "title": "Turn the tactical Adjutant into a compact battlefield-first floating Web surface",
+  "owner": "kimi",
+  "agentProfile": "project-d-ui-implementer",
+  "model": "project-d-k3",
+  "baseRef": "codex/starcraft-integration-20260921",
+  "branch": "agent/kimi/ticket-23-slice-248-floating-companion-ui",
+  "worktree": ".worktrees/ticket-23-slice-248-floating-companion-ui",
+  "allowedPaths": [
+    "apps/starcraft-tmg-expo/components/character/tactical-adjutant-dock.tsx",
+    "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+    "docs/ticket-23-slice-248-floating-companion-ui-v1-2026-09-21.md"
+  ],
+  "verification": [
+    {
+      "name": "focused tactical Adjutant component gate",
+      "command": "corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec vitest run lib/level3/__tests__/character-presentation-mount-v2.test.tsx"
+    }
+  ],
+  "taskBrief": "Implement the Kimi-owned Web presentation sub-slice of Ticket 23 / Slice 248 without changing Client Domain, Rules, Authority, Provider, memory, or character data. Preserve every existing Adjutant operation, BYOK disclosure, portrait recovery path, role-agent message, decision, pending-confirmation and harness-trace projection. Make the floating variant battlefield-first: its collapsed presence must be compact and recognizable rather than a 440px-wide empty bar; its expanded surface must stay inside the viewport and avoid becoming one very long page; organize the existing portrait/comms, session controls, secure Provider setup and diagnostics into accessible progressive-disclosure surfaces so common chat and decision review remain one-step reachable while setup/trace details do not cover the battle table. Keep the inline variant behavior compatible, keep touch and keyboard accessibility, keep reduced-motion behavior, and use the existing StarCraft visual tokens/assets. Do not invent gameplay state, infer hidden information, add a Provider call, or alter the human-confirmation policy. Inspect the diff, write the closure note, and make one scoped local commit. Do not run the acceptance command and do not push."
+}

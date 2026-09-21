@@ -49,7 +49,10 @@ explicit, isolated slice manifests.
    / ¥0. Continue the same room from revision 64; preserve the old r63/r64 prose
    as non-training defect evidence. **Active.**
 2. Ticket 23 / Slice 248: complete player-seat companion permissions, layered
-   memory/role runtime and real floating-Web acceptance.
+   memory/role runtime and real floating-Web acceptance. The Kimi-owned,
+   presentation-only floating companion sub-slice is now dispatched through
+   `coordination/slices/ticket-23-slice-248-floating-companion-ui.slice.json`;
+   Codex retains permission, memory, room and final browser acceptance work.
 3. Ticket 23 / Slice 248: add attack probability, fire-zone exchange and the
    prediction → outcome calibration → replanning loop.
 4. Ticket 25 / Slices 262–263: close free legal formation strategy, the natural
