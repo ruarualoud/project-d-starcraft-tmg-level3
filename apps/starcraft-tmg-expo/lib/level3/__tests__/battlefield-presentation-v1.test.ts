@@ -246,7 +246,28 @@ describe("Slice 132 authoritative battlefield presentation", () => {
       heightMilliInches: 36_000,
       scenarioMapId: "lost-temple-standard",
       scenarioMapName: "Lost Temple",
-      displayMapAssetKey: "alien_temple_local_v1",
+      // Ticket 23 map-manifest extension: the board now pins the display map
+      // identity, preset, engagement scale and freeze hashes alongside the
+      // original milli-inch geometry. Pinned verbatim from the projection.
+      mapSeedId: "sc1_lost_temple_v1",
+      mapDisplayName: "Lost Temple",
+      mapGameEra: "brood_war",
+      mapArtAssetPath: "/assets/client/battlefield/maps/brood-war/lost-temple-display-v2.png",
+      engagementScale: "Standard",
+      visualPresetId: "sc1_lost_temple_v1:generated-original-art-v2",
+      visualPresetName: "Lost Temple",
+      displayMapAssetKey: "sc1_lost_temple_v1",
+      terrainPresetId: null,
+      terrainSeed: null,
+      rulesTerrainPlanHash: null,
+      mapManifestHash: null,
+      mapCompilationHash: null,
+      mapRoomFreezeHash: null,
+      missionSpatialReachabilityAuditHash: null,
+      mapMutationAfterRoomCreationAllowed: false,
+      backgroundVisibleByDefault: true,
+      terrainVisibleByDefault: true,
+      backgroundRulesAuthority: false,
     });
     expect(scene.models.slice(0, 3).map((entry) => entry.baseWidthMilliInches))
       .toEqual([1260, 1575, 3150]);
