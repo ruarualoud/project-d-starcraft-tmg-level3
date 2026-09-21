@@ -233,7 +233,10 @@ in this worktree.
 
 | SS | Commit | Files | Summary |
 | --- | --- | --- | --- |
-| SS-1 | pending | guardrails doc, this doc | Standard + audit + frozen plan; no code changed. |
+| SS-1 | `6415f4b` | guardrails doc, this doc | Standard + audit + frozen plan; no code changed. |
+| SS-2 | `f2ae788` | `authoritative-battle-workspace.tsx` | Mobile column panes use intrinsic non-overlapping structure; desktop-only `flex: 1`; overflow contained. |
+| SS-3 | `c24e463` | `tactical-adjutant-dock.tsx`, `tactical-adjutant-panel.tsx` | Collapsed dock shrink-wraps a compact chip; expanded viewport-bounded; single ScrollView; `onExpandedChange`. |
+| Gate A repair + receipt | pending | 262 verifier, 262 closure doc | Verifier drift base + lineage rule repaired for Codex-advanced main; board visibility measured at natural top scroll; gate passed on run 3. |
 
 ## 7. Codex-owned contract gaps (exact, for integration)
 
@@ -242,8 +245,21 @@ honest unavailable state; none is worked around in the UI.
 
 ## 8. Verification receipts
 
-Filled as gates run (command, exit status, covered sub-slices, report
-hashes).
+- **Gate A · narrow battlefield and threat closure** —
+  `SLICE262_NARROW_REPAIR_ONLY=1 node scripts/verify-ticket-25-slice-262-threat-visualization-browser-v1.mjs`.
+  Run 1 exit 1 (`BACKEND_CONTRACT_DRIFT_IN_WORKTREE`, harness still measured
+  drift against the Slice 262 base although Codex integration advanced
+  `packages/`; verifier repaired to the Slice 264 base with a
+  descend-from-base lineage check and `advanced_by_codex_integration`
+  hash records). Run 2 exit 1 (`NARROW_BATTLEFIELD_PUSHED_OUT`, board box
+  `{x:33, y:-31, w:324, h:260}` — product repaired, measurement was taken at
+  the touch helper's center-scroll offset; verifier repaired to measure at
+  the natural surface-top scroll position). Run 3 exit 0: **passed**, 15
+  checks (11 desktop reused byte-for-byte + 4 narrow), 11 hashed artifacts,
+  reportHash
+  `32871806057cb30867ee9dafd3bc0a9a39bfdb7c0c42c862166580981d8fe8a7`.
+  Covers SS-2, SS-3. 0 Provider calls / ¥0. Three runs, within the
+  three-cycle budget; no further rerun of this gate.
 
 ## 9. Unresolved Critical/High concerns
 

@@ -204,6 +204,7 @@ lockfile change) — done once before SS-1.
 | SS-1/2 | `d2189a0` | threat overlay, workspace, read panels | K3 implementation: five board-adjacent modes, projection-owned legends and predicted-interaction disclosure. |
 | SS-3 harness | `9ab314b` | browser verifier | Self-contained desktop/narrow browser journey and screenshot contract. |
 | integration corrections | pending checkpoint | workspace, read panels, overlay, verifier | Preserve unknown instead of zero, viewer-relative friendly/enemy labels, direct SVG model selection, integrated-main backend parity, mobile-first battlefield and contained media controls. |
+| narrow repair (Ticket 26 / Slice 264 Milestone A) | `f2ae788`, `c24e463`, verifier repair | workspace, dock, panel, verifier | Mobile column panes given intrinsic non-overlapping structure (desktop-only `flex: 1`); collapsed companion dock shrink-wraps a compact chip; verifier drift base updated to the Slice 264 base with Codex-integration lineage check; board visibility measured at the surface's natural top scroll position. |
 
 ## 6. Verification receipts
 
@@ -221,26 +222,45 @@ lockfile change) — done once before SS-1.
   correction because the three-round convergence budget is exhausted.
 - 0 Provider calls, 0 paid tokens and ¥0 for this slice.
 
+### Narrow repair receipts (Ticket 26 / Slice 264 Milestone A, 2026-09-21)
+
+Command: `SLICE262_NARROW_REPAIR_ONLY=1 node scripts/verify-ticket-25-slice-262-threat-visualization-browser-v1.mjs`
+(desktop journey not rerun; the eight desktop screenshots were reused
+byte-for-byte and hash-recorded as `evidenceReusedFromPreviousDesktopPass`).
+
+| Run | Exit | Outcome |
+| --- | --- | --- |
+| 1 | 1 | `BACKEND_CONTRACT_DRIFT_IN_WORKTREE` — harness defect: drift was still measured against the Slice 262 base `78fa68d` although Codex integration legitimately advanced `packages/` (e.g. `15d48f3` official profiles into the workbench). Repaired verifier: drift now measured against the Slice 264 base `1cced3b`, main checkout verified to descend from it, and main-ahead modules hash-recorded as `advanced_by_codex_integration`. |
+| 2 | 1 | `NARROW_BATTLEFIELD_PUSHED_OUT` — product layout repaired (board box `{x:33, y:-31, width:324, height:260}`, i.e. real 260px height, no overlap), but the measurement ran at the touch helper's center-scroll offset. Repaired verifier: board visibility is measured at the surface's natural top scroll position. |
+| 3 | 0 | **passed** — 15 checks (11 reused desktop + 4 narrow: board visible with overlay at both viewport bounds with >= 240px visible height, zero document horizontal overflow, touch model+mode selection, predicted card reachable, no browser errors), 11 hashed artifacts, reportHash `32871806057cb30867ee9dafd3bc0a9a39bfdb7c0c42c862166580981d8fe8a7`. 0 Provider calls / ¥0. |
+
+Claim-to-pixel review of the regenerated narrow screenshots (guardrail §10):
+`09` visibly contains the board and the enemy-union disc inside the viewport;
+`10` shows the board with stationary-fire regions after strip interaction;
+`11` shows the predicted-interaction card below the board; the collapsed
+companion dock is now a compact chip, not a full-width bar.
+
 ## 7. Unresolved Critical/High concerns
 
-- **High · narrow layout stacking:** at 390×844, non-desktop `boardPane` still
-  carries desktop `flex: 1`; the following detail panel can overlap the map
-  contract and threat legend. K3 must give the mobile column intrinsic height
-  (or an equivalent non-overlapping structure) and prove it in a real browser.
-- **High · floating companion occlusion:** the current collapsed companion dock
-  spans almost the full narrow viewport and can intercept critical battlefield
-  controls at the bottom edge. A human can scroll around it, but the production
-  UI must reserve or avoid a safe interaction region rather than depend on
-  test-only force clicks.
-- **High · evidence honesty:** the narrow screenshot must visibly contain the
-  claimed battlefield/overlay. A position check must include the lower and
-  upper viewport bounds; `y < threshold` alone is forbidden.
-- **Medium · formal data projection:** official Standard-2000 Marine data has
-  two combat weapons, but `battle-workbench-v1` currently reads only legacy
-  inline piece profiles, yielding zero weapons/HP/threat in the formal room.
-  This backend projection repair remains Codex-owned and does not belong to the
-  K3 presentation slice.
+- ~~High · narrow layout stacking~~ **Repaired (Slice 264 Milestone A,
+  `f2ae788`):** non-desktop `boardPane` no longer carries desktop `flex: 1`;
+  the mobile column uses intrinsic content height with `maxWidth: 100%`, so
+  the detail panel cannot overlap the map contract/legend. Proven in the
+  narrow repair run (board box `{x:33, y:…≥0, width:324, height:260}` inside
+  the viewport with >= 240px visible height).
+- ~~High · floating companion occlusion~~ **Repaired (Slice 264 Milestone A,
+  `c24e463`):** the collapsed dock shrink-wraps a compact right-aligned chip
+  (max ~280px) instead of spanning the viewport; the expanded window stays
+  viewport-bounded; no force clicks are used anywhere.
+- ~~High · evidence honesty~~ **Repaired:** position assertions include both
+  viewport bounds and visible height; the narrow repair run passed with
+  them, and board evidence is measured at the surface's natural top scroll
+  position rather than a test-induced offset.
+- **Medium · formal data projection:** Codex landed `15d48f3` ("project
+  official profiles into workbench") in integration main after the Slice 264
+  base; the narrow repair run executed the fixture against that newer main
+  (hash-recorded `advanced_by_codex_integration`, lineage verified). No K3
+  action remains.
 
-The slice is a preserved checkpoint, **not closed**. Per the three-cycle
-convergence rule, further mobile UI repair is transferred to the next K3 slice
-while Codex continues the independent formal-match path.
+The narrow-repair handoff is **closed** by Ticket 26 / Slice 264 Milestone A
+(three runs, within the three-cycle budget).

@@ -48,6 +48,14 @@ const BUILD_ROOT = path.join(ROOT, "build/ticket-25-slice-262-threat-visualizati
 const EVIDENCE_ROOT = path.join(BUILD_ROOT, "browser-evidence");
 const REPORT_PATH = path.join(BUILD_ROOT, "browser-report.json");
 const BASE_COMMIT = "78fa68d1cdc81b77155b2de0206b54d60e29e9d8";
+// Ticket 26 / Slice 264 narrow-repair handoff: this slice's own base. The
+// backend-parity rule (K3 guardrail §2) is "this slice never edited backend
+// code and the fixture backend descends from the slice base", NOT "backend
+// froze at the Slice 262 base" — Codex integration legitimately advanced
+// packages/ between the two bases (e.g. official profiles into the
+// workbench). Drift is therefore measured against SLICE_264_BASE_COMMIT and
+// any main-ahead module is hash-recorded as advanced_by_codex_integration.
+const SLICE_264_BASE_COMMIT = "1cced3b397533053d5a4a21ff7dddba6cdce4abd";
 const GENERATED_AT = "2026-09-21T00:00:00.000Z";
 const ROOM_ID = "ticket25-slice262-threat-viz";
 const SCREENSHOT_EXPLANATIONS = {
@@ -127,6 +135,14 @@ function runGit(args, cwd) {
   return String(result.stdout || "");
 }
 
+function runGitBuffer(args, cwd) {
+  const result = spawnSync("git", args, { cwd, encoding: "buffer" });
+  ensure(result.status === 0, `GIT_COMMAND_FAILED:${args.join(" ")}`, {
+    stderr: String(result.stderr || "").slice(-800),
+  });
+  return result.stdout;
+}
+
 function resolveBackendRoot() {
   const porcelain = runGit(["worktree", "list", "--porcelain"], ROOT);
   const first = porcelain.split("\n").find((line) => line.startsWith("worktree "));
@@ -139,11 +155,26 @@ function resolveBackendRoot() {
 
 async function assertBackendParity(backendRoot) {
   const integratedMain = path.resolve(ROOT) === path.resolve(backendRoot);
+  // (a) This slice must not drift backend code relative to its own base.
   const drift = runGit(integratedMain
     ? ["diff", "--name-only", "--", "packages/", "scripts/support/"]
-    : ["diff", "--name-only", BASE_COMMIT, "--", "packages/", "scripts/support/"],
+    : ["diff", "--name-only", SLICE_264_BASE_COMMIT, "--", "packages/", "scripts/support/"],
   ROOT).trim();
   ensure(!drift, "BACKEND_CONTRACT_DRIFT_IN_WORKTREE", { drift });
+  // (b) The fixture backend (main checkout) must descend from the slice base:
+  // Codex integration may advance it, but the lineage never diverges.
+  if (!integratedMain) {
+    const ancestry = spawnSync("git",
+      ["merge-base", "--is-ancestor", SLICE_264_BASE_COMMIT, "HEAD"],
+      { cwd: backendRoot });
+    ensure(ancestry.status === 0, "BACKEND_MAIN_NOT_DESCENDED_FROM_SLICE_BASE", {
+      backendRoot,
+    });
+  }
+  // (c) Every loaded backend module is hash-recorded. Identical bytes prove
+  // parity; differing bytes are allowed only when the worktree copy is still
+  // byte-identical to the slice base (i.e. main advanced via Codex
+  // integration, never via this slice).
   const modules = [];
   for (const relative of BACKEND_PARITY_MODULES) {
     const worktreeFile = path.join(ROOT, relative);
@@ -152,8 +183,16 @@ async function assertBackendParity(backendRoot) {
       "BACKEND_MODULE_MISSING", { relative });
     const worktreeHash = await sha256File(worktreeFile);
     const backendHash = await sha256File(backendFile);
-    ensure(worktreeHash === backendHash, "BACKEND_MODULE_HASH_MISMATCH", { relative });
-    modules.push({ path: relative, sha256: backendHash });
+    let parity = "identical";
+    if (worktreeHash !== backendHash) {
+      const baseHash = createHash("sha256").update(
+        runGitBuffer(["show", `${SLICE_264_BASE_COMMIT}:${relative}`], ROOT),
+      ).digest("hex");
+      ensure(worktreeHash === baseHash,
+        "BACKEND_MODULE_HASH_MISMATCH", { relative, worktreeHash, backendHash, baseHash });
+      parity = "advanced_by_codex_integration";
+    }
+    modules.push({ path: relative, sha256: backendHash, worktreeSha256: worktreeHash, parity });
   }
   return modules;
 }
@@ -431,6 +470,28 @@ async function touchClickClearOfFloatingChrome(locator) {
     inline: "center",
   }));
   await locator.click();
+}
+
+// Return every scrollable ancestor (and the window) to the surface's natural
+// entry position. The touch helper above center-scrolls targets clear of the
+// floating companion chip; board-visibility evidence must be measured at the
+// natural top position a user actually sees when the surface opens, never at
+// a test-induced scroll offset (Slice 262 false-green lesson: position checks
+// include both viewport bounds and visible height).
+async function resetScrollToSurfaceTop(page) {
+  await page.evaluate(() => {
+    const board = document.querySelector('[aria-label^="Battlefield;"]');
+    let node = board ? board.parentElement : null;
+    while (node) {
+      const style = getComputedStyle(node);
+      if (/(auto|scroll)/u.test(style.overflowY) && node.scrollHeight > node.clientHeight) {
+        node.scrollTop = 0;
+        node.scrollLeft = 0;
+      }
+      node = node.parentElement;
+    }
+    window.scrollTo(0, 0);
+  });
 }
 
 function threatCircles(page) {
@@ -874,6 +935,7 @@ async function main() {
     );
     await waitBody(narrowPage, "Threat layer: Enemy union", 30_000);
     ensure(await threatCircles(narrowPage).count() > 0, "NARROW_ENEMY_AGGREGATE_EMPTY");
+    await resetScrollToSurfaceTop(narrowPage);
     const narrowBoardBoxAfter = await narrowBoard.boundingBox();
     const narrowVisibleHeight = narrowBoardBoxAfter
       ? Math.min(844, narrowBoardBoxAfter.y + narrowBoardBoxAfter.height)
@@ -962,6 +1024,8 @@ async function main() {
       backendHead,
       backendModuleParity: parityModules,
       baseCommit: BASE_COMMIT,
+      slice264NarrowRepairBaseCommit: SLICE_264_BASE_COMMIT,
+      parityRule: "no backend drift versus the slice base; main-ahead modules are hash-recorded as advanced_by_codex_integration and the fixture backend is verified to descend from the slice base",
     },
     boundaries: {
       currentProductCodeServed: true,
