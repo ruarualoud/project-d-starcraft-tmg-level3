@@ -47,6 +47,11 @@ import {
   BattleWorkbenchReadPanel,
   type WorkbenchThreatMode,
 } from "./battle-workbench-read-panels";
+import {
+  ThreatOverlayLayer,
+  ThreatOverlayLegend,
+  threatOverlayModeLabel,
+} from "./threat-overlay-v1";
 
 type PendingOperation = "legal" | "preview" | "apply" | "replay" | null;
 type DraftMode = "path" | "placements";
@@ -560,6 +565,39 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
             .filter((weapon: any) => !selectedThreatWeaponId || weapon.weaponId === selectedThreatWeaponId)
             .flatMap((weapon: any) => threatMode === "stationary_fire"
               ? weapon.stationaryRegions : weapon.moveThenAttackRegions);
+
+  const threatModes: WorkbenchThreatMode[] = [
+    "stationary_fire",
+    "move_then_fire",
+    "charge_engagement",
+    "friendly_aggregate",
+    "enemy_aggregate",
+  ];
+  const threatSection = view.battleWorkbench?.threat || null;
+  const threatEmptyState = !showThreatReference ? null
+    : !view.battleWorkbench
+      ? (zh
+        ? "作战工作台尚未加载到当前修订。"
+        : "Battle workbench is not loaded for the current revision yet.")
+    : !threatSection || threatSection.coverage === "not_loaded"
+      ? (zh
+        ? "威胁投影未加载（not_loaded）；未知不会画成零。"
+        : "Threat projection is not_loaded for this revision; unknown is never drawn as zero.")
+    : threatMode.includes("aggregate")
+      ? threatRegions.length === 0
+        ? (zh
+          ? "该方当前没有场上单位，叠加层为空（未知，不当作零）。"
+          : "This side has no on-field units; the aggregate layer is empty (unknown, never zero).")
+        : null
+    : !selectedModel
+      ? (zh
+        ? "在战场上选择一个单位以查看其威胁层。"
+        : "Select a battlefield unit to inspect its threat layer.")
+    : threatRegions.length === 0
+      ? (zh
+        ? "所选单位在此模式下没有投影区域（单位不在场上或投影未知）；不显示为零。"
+        : "No projected regions for this selection in this mode (unit off the battlefield or coverage unknown); nothing is shown as zero.")
+      : null;
 
   useEffect(() => {
     const roomId = view.roomProjection?.room?.roomId;
@@ -1211,6 +1249,23 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               onPress={() => setShowThreatReference((value) => !value)}
             />
           </View>
+          {showThreatReference && (
+            <View
+              accessibilityRole="tablist"
+              accessibilityLabel={zh ? "威胁图层模式" : "Threat layer modes"}
+              style={styles.threatModeRow}
+            >
+              {threatModes.map((mode) => (
+                <Button
+                  key={mode}
+                  compact
+                  active={threatMode === mode}
+                  label={threatOverlayModeLabel(mode, zh)}
+                  onPress={() => setThreatMode(mode)}
+                />
+              ))}
+            </View>
+          )}
           <Text style={styles.mapContractText} testID="battlefield-map-contract-v1">
             {`${scene.board.mapDisplayName || scene.board.visualPresetName || activeVisualPresetId} · ${scene.board.engagementScale || "legacy scale"} · ${scene.board.terrainPresetId || "terrain preset pending"} · seed ${scene.board.mapSeedId || scene.board.terrainSeed || "legacy"} · ${terrainCount} authoritative terrain · ${scene.board.mapRoomFreezeHash ? "room frozen" : "legacy room"} · background has no Rules authority`}
           </Text>
@@ -1250,20 +1305,10 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                 {showAuthoritativeTerrain && scene.terrain.map(areaGlyph)}
                 {scene.markers.map(areaGlyph)}
                 {scene.tokens.map(areaGlyph)}
-                {threatRegions.map((region, index) => (
-                  <Circle
-                    key={`threat:${region.mode}:${region.modelId}:${region.weaponId || "none"}:${index}`}
-                    id={`battlefield-authoritative-threat-${index}`}
-                    cx={region.centerXMilliInches}
-                    cy={region.centerYMilliInches}
-                    r={region.radiusMilliInches}
-                    fill={region.sideKey === "player1" ? "#38bdf80b" : "#ef44440b"}
-                    stroke={region.mode === "charge_engagement" ? "#fbbf24" : sideColor(region.sideKey)}
-                    strokeWidth={100}
-                    strokeDasharray={region.coverage === "exact" ? undefined : "420 260"}
-                  />
-                ))}
-                {showThreatReference && threatRegions.length === 0 && selectedModel?.maxProjectedWeaponRangeMilliInches && (
+                <ThreatOverlayLayer regions={threatRegions} />
+                {showThreatReference && !threatMode.includes("aggregate")
+                  && threatRegions.length === 0
+                  && selectedModel?.maxProjectedWeaponRangeMilliInches && (
                   <Circle
                     id="battlefield-threat-reference-v1"
                     cx={selectedModel.xMilliInches}
@@ -1321,6 +1366,15 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
             <Text style={styles.legendText}>{zh ? "威胁参考默认关闭，仅显示投影中的印刷射程" : "Threat reference defaults off; projected printed range only"}</Text>
           </View>
 
+          {showThreatReference && (
+            <ThreatOverlayLegend
+              zh={zh}
+              mode={threatMode}
+              regionCount={threatRegions.length}
+              emptyState={threatEmptyState}
+            />
+          )}
+
           {desktop ? boardExtras : null}
         </View>
 
@@ -1351,6 +1405,14 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               zh={zh}
               threatMode={threatMode}
               selectedThreatWeaponId={selectedThreatWeaponId}
+              pendingPreviewSummary={visiblePreview ? {
+                previewId: scene.previewId || null,
+                actionType: view.pendingPreview?.core?.action?.actionType || null,
+                eventCount: Array.isArray(view.pendingPreview?.core?.result?.events)
+                  ? view.pendingPreview.core.result.events.length
+                  : 0,
+                chancePending: view.pendingPreview?.core?.result?.chancePending === true,
+              } : null}
               onThreatMode={(mode) => { setThreatMode(mode); setShowThreatReference(true); }}
               onThreatWeapon={setSelectedThreatWeaponId}
               onOpenActions={() => setDetailPanel("actions")}
@@ -1719,6 +1781,7 @@ const styles = StyleSheet.create({
   boardPane: { flex: 1, minWidth: 0, gap: 10 },
   viewportControls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 7 },
   displayControls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 7 },
+  threatModeRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 7 },
   displayGroupLabel: { color: "#64748b", fontSize: 10, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.6, marginRight: 2 },
   mapContractText: { color: "#a5f3fc", fontSize: 10, lineHeight: 15,
     fontFamily: "monospace", backgroundColor: "#083344", borderRadius: 7,
