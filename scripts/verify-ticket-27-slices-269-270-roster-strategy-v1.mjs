@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { isDeepStrictEqual } from "node:util";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -263,6 +264,152 @@ if (process.argv.includes("--narrative-recovery-only")) {
       ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version,
     contractSetHash:
       ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash,
+    providerCalls: 0,
+    paidCostCny: 0,
+    trainingTruth: false,
+  }, null, 2)}\n`);
+  process.exit(0);
+}
+
+// ---------------------------------------- --nesting-reassignment-only
+// Minimal focused mode for the round-11 comparison nesting drift
+// (selectedCandidateId lifted to the top level while the contracted home
+// comparison.selectedCandidateId was absent). Uses the REAL persisted
+// sanitized public answer from the round-11 paid call (zero new Provider
+// cost) as the red evidence, plus synthetic negative shapes for the
+// reassignment rule's fail-closed edges. Never initializes the battlefield,
+// the Rules-owned menu, the strategy pack or any historical round replay.
+if (process.argv.includes("--nesting-reassignment-only")) {
+  const mini = { checks: 0 };
+  const miniCheck = (condition, label) => {
+    assert(condition, label);
+    mini.checks += 1;
+  };
+  const r11Root = path.join(ROOT,
+    "build/ticket-27-slices-269-270-live-roster-plan-v1");
+  const r11Outputs = JSON.parse(await readFile(
+    path.join(r11Root, "recovery-public-round-outputs.json"), "utf8"));
+  const r11Report = JSON.parse(await readFile(
+    path.join(r11Root, "recovery-report.json"), "utf8"));
+  const comparisonEntry = r11Outputs.publicOutputs.find((entry) => (
+    entry.roundKind === "comparison_selection"));
+  // Artifact integrity and binding: the real paid answers are intact
+  // (sanitized output hashes match the recorded pre-sanitization hashes,
+  // nothing was dropped), and the saved failure is the nesting drift.
+  miniCheck(r11Report.status === "failed"
+    && r11Report.failureCode
+      === "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID"
+    && r11Report.failureDetail === "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:"
+      + "$.comparison.selectedCandidateId:required_field_missing,"
+      + "$.selectedCandidateId:additional_property_forbidden"
+    && comparisonEntry
+    && r11Outputs.publicOutputs.length === 3
+    && r11Outputs.publicOutputs.every((entry) => (
+      entry.droppedForbiddenKeyPaths.length === 0
+        && hashStarcraftTmgContract(entry.sanitizedOutput)
+          === entry.outputHash)),
+    "the persisted round-11 public answers must be intact and bound to the "
+      + "saved nesting-drift failure");
+  const realComparison = comparisonEntry.sanitizedOutput;
+  const comparisonSchema = rosterStrategistRoundOutputContractV1(
+    "comparison_selection").providerSchema;
+  const reassignmentRequest = {
+    roundKind: "comparison_selection",
+    schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+    contractSchema: comparisonSchema,
+  };
+  // Red evidence with the REAL payload: before the repair this normalization
+  // is an identity and the wire check reproduces the saved failure; after
+  // the repair the schema-unique reassignment moves the stray field home.
+  const normalization = normalizeRosterStrategistPublicOutputV1({
+    output: realComparison, request: reassignmentRequest });
+  const wire = validateStarcraftTmgProviderJsonSchemaValueV1(
+    comparisonSchema, normalization.output);
+  miniCheck(wire.ok === true
+    && normalization.receipt.operations.some((operation) => (
+      operation.kind === "schema_unique_field_reassignment"
+        && operation.path === "$.selectedCandidateId"
+        && operation.to === "$.comparison.selectedCandidateId"))
+    && normalization.output.comparison.selectedCandidateId
+      === realComparison.selectedCandidateId
+    && normalization.output.selectedCandidateId === undefined
+    && verifyRosterStrategistOutputNormalizationReceiptV1(
+      normalization.receipt) === true
+    && normalization.receipt.registryVersion === "1.1.0"
+    && normalization.receipt.semanticContentModified === false
+    && Object.keys(realComparison).every((key) => (
+      key === "selectedCandidateId" || isDeepStrictEqual(
+        normalization.output[key], realComparison[key]))),
+    "the real round-11 comparison output must be repaired by a schema-unique "
+      + "reassignment that moves the value unchanged, keeps every other "
+      + "strategy field and records provenance (red: identity normalization "
+      + "reproduces the saved failure before the repair)");
+  // Conflict: a present contracted target is never overwritten; the stray
+  // key stays in place so strict validation fails closed.
+  const conflictInput = JSON.parse(JSON.stringify(normalization.output));
+  conflictInput.selectedCandidateId = "cand_a_marker_floor_elite_anchor";
+  const conflictNormalization = normalizeRosterStrategistPublicOutputV1({
+    output: conflictInput, request: reassignmentRequest });
+  miniCheck(conflictNormalization.output.comparison.selectedCandidateId
+      === realComparison.selectedCandidateId
+    && conflictNormalization.output.selectedCandidateId
+      === "cand_a_marker_floor_elite_anchor"
+    && conflictNormalization.receipt.operations.every((operation) => (
+      operation.kind !== "schema_unique_field_reassignment"))
+    && validateStarcraftTmgProviderJsonSchemaValueV1(comparisonSchema,
+      conflictNormalization.output).ok === false,
+    "a present contracted target must never be overwritten and the conflict "
+      + "must fail closed");
+  // Ambiguous name: `window` names more than one contracted field, so a
+  // top-level stray `window` is not uniquely assignable and stays put.
+  const ambiguousInput = JSON.parse(JSON.stringify(normalization.output));
+  ambiguousInput.window = "round:2";
+  const ambiguousNormalization = normalizeRosterStrategistPublicOutputV1({
+    output: ambiguousInput, request: reassignmentRequest });
+  miniCheck(ambiguousNormalization.output.window === "round:2"
+    && ambiguousNormalization.receipt.operations.every((operation) => (
+      operation.kind !== "schema_unique_field_reassignment"))
+    && validateStarcraftTmgProviderJsonSchemaValueV1(comparisonSchema,
+      ambiguousNormalization.output).ok === false,
+    "a schema-ambiguous stray field must stay untouched and fail closed");
+  // Unknown name: a field the schema does not declare anywhere is never
+  // relocated or deleted — it stays so validation fails closed on it.
+  const unknownInput = JSON.parse(JSON.stringify(normalization.output));
+  unknownInput.unrelatedPublicNote = "not a contracted field";
+  const unknownNormalization = normalizeRosterStrategistPublicOutputV1({
+    output: unknownInput, request: reassignmentRequest });
+  miniCheck(unknownNormalization.output.unrelatedPublicNote
+      === "not a contracted field"
+    && unknownNormalization.receipt.operations.every((operation) => (
+      operation.kind !== "schema_unique_field_reassignment"))
+    && validateStarcraftTmgProviderJsonSchemaValueV1(comparisonSchema,
+      unknownNormalization.output).ok === false,
+    "a field the schema never declares must be preserved in place and fail "
+      + "closed (strategy content is never deleted)");
+  // Missing parent: the unique home's parent object does not exist, so the
+  // boundary never invents structure to receive the stray field.
+  const orphanInput = {
+    schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+    roundKind: "comparison_selection",
+    selectedCandidateId: "cand_b_hero_raynor_double_elite",
+  };
+  const orphanNormalization = normalizeRosterStrategistPublicOutputV1({
+    output: orphanInput, request: reassignmentRequest });
+  miniCheck(orphanNormalization.output.comparison === undefined
+    && orphanNormalization.output.selectedCandidateId
+      === "cand_b_hero_raynor_double_elite"
+    && orphanNormalization.receipt.operations.every((operation) => (
+      operation.kind !== "schema_unique_field_reassignment")),
+    "a missing contracted parent must never be invented to receive a stray "
+      + "field");
+  process.stdout.write(`${JSON.stringify({
+    schema: "ticket27_slices_269_270_nesting_reassignment_report_v1",
+    ok: true,
+    checks: mini.checks,
+    realArtifactHash: hashStarcraftTmgContract(r11Outputs),
+    savedFailureDetail: r11Report.failureDetail,
+    registryVersion:
+      ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.version,
     providerCalls: 0,
     paidCostCny: 0,
     trainingTruth: false,
@@ -1080,7 +1227,7 @@ await expectFailure(269, () => strategistA.planRoster(sessionInput, {
 // ROSTER_STRATEGIST_FOUNDATION_INVALID:hypothesis,implication,observable).
 check(269, verifyRosterStrategistOutputAliasRegistryV1(
     ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1) === true
-  && ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.version === "1.0.0"
+  && ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.version === "1.1.0"
   && strategistDescriptor.publicOutputNormalization?.aliasRegistryHash
     === ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.registryHash
   && strategistDescriptor.publicOutputNormalization
@@ -1239,7 +1386,7 @@ check(269, verifyRosterStrategistOutputNormalizationReceiptV1(
     verifyRosterStrategistOutputNormalizationReceiptV1(
       entry.outputNormalizationReceipt) === true))
   && aliasSession.sessionReceipt.outputNormalizationAliasRegistryVersion
-    === "1.0.0",
+    === "1.1.0",
   "the provenance receipt must record the unwrap, both constant stamps and "
     + "every admitted rename for the alias-drifted round");
 await expectFailure(269, () => strategistA.planRoster(sessionInput, {
