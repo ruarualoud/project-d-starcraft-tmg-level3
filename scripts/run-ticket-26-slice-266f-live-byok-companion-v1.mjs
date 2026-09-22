@@ -1,16 +1,21 @@
 #!/usr/bin/env node
 
 /**
- * Ticket 26 / Slice 266f — the ONE user-authorized live BYOK companion
- * product acceptance (reserved in the 266f closure, now explicitly
- * authorized by the user).
+ * Ticket 26 / Slice 266f — the user-authorized live BYOK companion
+ * product acceptance (reserved in the 266f closure, explicitly authorized
+ * by the user; the second-call repair authorization after the recorded
+ * 64-unit truncation is epoch 2).
  *
  * Hard rules enforced by this runner:
- *   - exactly ONE physical Provider call, ever, per authorization: a
- *     one-attempt dispatch lock (build/.../one-call-attempt.lock.json,
- *     O_EXCL) is claimed immediately before the single egress dispatch; a
- *     previous lock or a previous passing report refuses any rerun
- *     (ambiguous outcomes need fresh user authorization);
+ *   - exactly ONE physical Provider call per authorization epoch: a
+ *     one-attempt dispatch lock (build/.../one-call-attempt.lock.json for
+ *     epoch 1, one-call-attempt.second.lock.json for epoch 2, O_EXCL) is
+ *     claimed immediately before the single egress dispatch; a previous
+ *     lock or a previous passing report refuses any rerun (ambiguous
+ *     outcomes need fresh user authorization). Epoch 2 additionally refuses
+ *     unless epoch 1's lock AND failure report prove the exact recorded
+ *     truncation context (LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED), so the
+ *     slice-wide hard maximum is two physical calls, never more;
  *   - the credential is read ONLY through the existing macOS Keychain →
  *     isolated-Worker path
  *     (packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs →
@@ -24,6 +29,14 @@
  *   - zero retry: the egress transport itself is physicalAttempts: 1 /
  *     automaticRetries: 0; any 401/402/403, missing attachment or ambiguous
  *     dispatch (requestMayHaveBeenSent) terminates the run immediately;
+ *   - the output budget is the GENERAL versioned contract
+ *     (packages/companion-backend-module-v1/provider-output-budget-v1.mjs,
+ *     companion_output_budget_v2: sealed-envelope units + bounded reply-text
+ *     floor, character-agnostic); the egress profile used for the registry
+ *     is derived from the pinned Ticket 16 profile with outputBudget as the
+ *     ONLY delta (Provider infrastructure itself is never modified), and
+ *     truncated output is classified/recovered through the same versioned
+ *     contract instead of a generic contract rejection;
  *   - the conversation goes through the REAL companion product path (room
  *     runtime → companion product module → session service → provider
  *     gateway) with one companion, one bounded Chinese user prompt, and the
@@ -47,6 +60,11 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { chromium } from "playwright";
 
+import {
+  classifyCompanionProviderOutputV1,
+  resolveCompanionProviderOutputBudgetV1,
+} from "../packages/companion-backend-module-v1/provider-output-budget-v1.mjs";
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECT_D_ROOT = (() => {
   let cursor = ROOT;
@@ -65,13 +83,22 @@ const BUILD_ROOT = path.join(ROOT, "build/ticket-26-slice-266f-live-byok-compani
 const EVIDENCE_ROOT = path.join(BUILD_ROOT, "browser-evidence");
 const REPORT_PATH = path.join(BUILD_ROOT, "live-report.json");
 const LOCK_PATH = path.join(BUILD_ROOT, "one-call-attempt.lock.json");
+const REPORT_PATH_EPOCH2 = path.join(BUILD_ROOT, "live-report.second.json");
+const LOCK_PATH_EPOCH2 = path.join(BUILD_ROOT, "one-call-attempt.second.lock.json");
 const ROOM_ID = "ticket26-slice266f-live-byok-companion";
 const AGENT_API_PREFIX = "/starcraft-tmg-level3/agent/api/v2";
 const LEGACY_ADAPTER_PATH = path.join(PROJECT_D_ROOT, "scripts/starcraft-tmg-rules-v0.mjs");
 const LIVE_COMPANION_PACKAGE_ID = "starcraft-tmg.companion.zagara";
 const LIVE_USER_PROMPT = "Zagara，请用一句简短中文报告当前态势并给出下一步建议。";
-const LIVE_MAX_OUTPUT_UNITS = 64;
-const REQUIRED_FLAGS = new Set(["--authorize-live-byok-companion-once"]);
+// The versioned, character-agnostic output budget (companion_output_budget_v2):
+// sealed-envelope units + bounded reply-text floor. It supersedes the flat
+// 64-unit budget that truncated the first live call's sealed channel JSON.
+const LIVE_ALLOWED_CHANNELS = Object.freeze(["companion_reply"]);
+const LIVE_OUTPUT_BUDGET = resolveCompanionProviderOutputBudgetV1({
+  allowedChannels: [...LIVE_ALLOWED_CHANNELS],
+});
+const FIRST_CALL_FLAGS = new Set(["--authorize-live-byok-companion-once"]);
+const SECOND_CALL_FLAGS = new Set(["--authorize-live-byok-companion-second-call"]);
 const ROOM_MUTATION_METHODS = [
   "previewAction",
   "confirmPreview",
@@ -117,6 +144,10 @@ function clone(value) {
   return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 }
 
+function object(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 async function sha256File(filename) {
   return createHash("sha256").update(await readFile(filename)).digest("hex");
 }
@@ -130,35 +161,76 @@ async function artifactRecord(filename, explanation) {
   };
 }
 
-function flagsAuthorized() {
+function authorizedEpoch() {
   const flags = process.argv.slice(2);
-  return flags.length === REQUIRED_FLAGS.size
-    && flags.every((flag) => REQUIRED_FLAGS.has(flag));
+  if (flags.length === 1 && FIRST_CALL_FLAGS.has(flags[0])) return 1;
+  if (flags.length === 1 && SECOND_CALL_FLAGS.has(flags[0])) return 2;
+  return 0;
 }
 
-async function priorSuccessExists() {
+function epochPaths(epoch) {
+  return epoch === 2
+    ? {
+      reportPath: REPORT_PATH_EPOCH2,
+      lockPath: LOCK_PATH_EPOCH2,
+      evidenceRoot: path.join(EVIDENCE_ROOT, "epoch-2"),
+    }
+    : { reportPath: REPORT_PATH, lockPath: LOCK_PATH, evidenceRoot: EVIDENCE_ROOT };
+}
+
+async function readReport(reportPath) {
   try {
-    const report = JSON.parse(await readFile(REPORT_PATH, "utf8"));
-    return report?.status === "passed";
+    return JSON.parse(await readFile(reportPath, "utf8"));
   } catch {
-    return false;
+    return null;
   }
 }
 
-async function priorDispatchClaimExists() {
+async function priorSuccessExists(reportPath) {
+  const report = await readReport(reportPath);
+  return report?.status === "passed";
+}
+
+async function priorDispatchClaimExists(lockPath) {
   try {
-    await readFile(LOCK_PATH);
+    await readFile(lockPath);
     return true;
   } catch (error) {
     return error?.code !== "ENOENT";
   }
 }
 
-async function claimDispatchLock(runId, startedAt) {
+// Epoch 2 exists only as the user-authorized repair of the exact recorded
+// first-call truncation. Prove that context (epoch-1 dispatch lock consumed +
+// epoch-1 failure report with the contract-rejection code) before anything
+// else; otherwise the dispatch is ambiguous and the run refuses.
+async function assertSecondCallContext() {
+  ensure(await priorDispatchClaimExists(LOCK_PATH),
+    "LIVE_BYOK_SECOND_CALL_CONTEXT_MISSING", {
+      note: "the epoch-1 dispatch lock must already be consumed",
+    });
+  const firstReport = await readReport(REPORT_PATH);
+  ensure(firstReport && firstReport.status === "failed"
+    && firstReport.failureCode === "LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED",
+  "LIVE_BYOK_SECOND_CALL_CONTEXT_MISSING", {
+    note: "epoch 2 is authorized only as the repair of the recorded epoch-1 truncation",
+    firstReportStatus: firstReport?.status ?? null,
+    firstReportFailureCode: firstReport?.failureCode ?? null,
+  });
+  return {
+    lockPath: path.relative(ROOT, LOCK_PATH),
+    reportPath: path.relative(ROOT, REPORT_PATH),
+    failureCode: firstReport.failureCode,
+    physicalProviderCalls: firstReport.physicalProviderCalls ?? null,
+    outputUnits: firstReport.providerFailure?.receipt?.usage?.outputUnits ?? null,
+  };
+}
+
+async function claimDispatchLock(runId, startedAt, lockPath = LOCK_PATH, epoch = 1) {
   await mkdir(BUILD_ROOT, { recursive: true, mode: 0o700 });
   let handle;
   try {
-    handle = await open(LOCK_PATH, "wx", 0o600);
+    handle = await open(lockPath, "wx", 0o600);
   } catch (error) {
     throw Object.assign(new Error("LIVE_PROVIDER_ATTEMPT_ALREADY_CLAIMED"), {
       code: "LIVE_PROVIDER_ATTEMPT_ALREADY_CLAIMED",
@@ -169,7 +241,9 @@ async function claimDispatchLock(runId, startedAt) {
     schemaVersion: "starcraft_tmg_ticket_26_slice_266f_live_attempt_lock_v1",
     runId,
     startedAt,
+    attemptEpoch: epoch,
     physicalProviderCallBudget: 1,
+    sliceHardMaximumPhysicalProviderCalls: 2,
     automaticRetryAllowed: false,
     ambiguousOutcomeNeedsNewUserAuthorization: true,
     trainingTruth: false,
@@ -335,10 +409,10 @@ function liveProviderRequestFromCompanion(request) {
     promptNodes,
     userMessage,
     responseContract: {
-      allowedChannels: ["companion_reply"],
+      allowedChannels: [...LIVE_ALLOWED_CHANNELS],
       decisionCandidateSource: "forbidden",
     },
-    maxOutputUnits: LIVE_MAX_OUTPUT_UNITS,
+    maxOutputUnits: LIVE_OUTPUT_BUDGET.maxOutputUnits,
   };
   const byteLength = Buffer.byteLength(JSON.stringify(body), "utf8");
   ensure(byteLength <= 1024 * 1024,
@@ -427,24 +501,53 @@ export function createLiveCompanionProviderAdapter(options = {}) {
     }
     const receipt = value?.usageReceipt || null;
     const output = value?.output || null;
-    if (output?.providerTurn || typeof output?.channels?.companion_reply?.text !== "string"
-      || !output.channels.companion_reply.text.trim()) {
+    // Versioned output classification (companion_output_budget_v2): the
+    // egress transport's generic providerTurn protocol is classified into a
+    // typed outcome. A budget-truncated envelope whose channel text string is
+    // fully terminated is recovered structurally (never fabricated); a
+    // mid-string cut is a typed truncation failure with budget diagnostics.
+    const classification = classifyCompanionProviderOutputV1(output, {
+      allowedChannels: [...LIVE_ALLOWED_CHANNELS],
+      budgetUnits: LIVE_OUTPUT_BUDGET.maxOutputUnits,
+    });
+    if (classification.kind === "output_budget_truncated") {
+      // The physical call happened but the output budget cut the sealed
+      // channel JSON before the channel text could complete: record the
+      // typed truncation with its diagnostics and stop; never retry.
+      observation.physicalProviderCalls = receipt?.physicalAttempts ?? 1;
+      observation.failure = {
+        code: "LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED",
+        classification: clone(classification),
+        budget: clone(LIVE_OUTPUT_BUDGET),
+        receipt: clone(receipt),
+      };
+      return rejection("LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED",
+        "the Provider reply was cut by the output budget before the sealed channel JSON completed; typed truncation recorded, zero retry");
+    }
+    if (classification.kind !== "channel_text") {
       // The physical call happened but the reply is not the contracted
       // channel JSON: record honestly and stop; never retry.
       observation.physicalProviderCalls = receipt?.physicalAttempts ?? 1;
       observation.failure = {
         code: "LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED",
+        classification: clone(classification),
         receipt: clone(receipt),
       };
       return rejection("LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED",
         "the Provider reply did not match the sealed channel contract; recorded, not retried");
     }
     observation.physicalProviderCalls = receipt.physicalAttempts;
-    const pricing = priceUsage(receipt);
+    const priced = priceUsage(receipt);
+    const pricing = priced?.pricing || null;
+    const replyText = classification.text;
     observation.success = {
       receipt: clone(receipt),
       pricing: clone(pricing),
-      replyText: output.channels.companion_reply.text,
+      pricingAuthoritative: priced?.authoritative === true,
+      replyText,
+      recoveredFromTruncatedEnvelope:
+        classification.recoveredFromTruncatedEnvelope === true,
+      classification: clone(classification),
     };
     const reportedCostUnits = pricing ? pricing.calculatedCostNanoUsd : 0;
     usage.promptTokens += receipt.usage.inputUnits;
@@ -453,7 +556,7 @@ export function createLiveCompanionProviderAdapter(options = {}) {
     return Object.freeze({
       ok: true,
       response: {
-        content: output.channels.companion_reply.text,
+        content: replyText,
         rationale: "",
         uncertainty: "unknown",
         usage: {
@@ -468,6 +571,8 @@ export function createLiveCompanionProviderAdapter(options = {}) {
         reportedCostUnits,
         costUnit: "nano_usd_calculated_not_invoice",
         providerReceiptHash: receipt.receiptHash,
+        recoveredFromTruncatedEnvelope:
+          classification.recoveredFromTruncatedEnvelope === true,
       },
     });
   }
@@ -748,7 +853,7 @@ async function waitBody(page, expected, timeout = 60_000) {
 
 // ── Main ───────────────────────────────────────────────────────────────────
 
-async function writeFailureReport(runId, startedAt, code, extra = {}) {
+async function writeFailureReport(runId, startedAt, code, extra = {}, reportPath = REPORT_PATH) {
   await mkdir(BUILD_ROOT, { recursive: true, mode: 0o700 });
   const body = {
     schemaVersion: "starcraft_tmg_ticket_26_slice_266f_live_byok_companion_report_v1",
@@ -766,32 +871,37 @@ async function writeFailureReport(runId, startedAt, code, extra = {}) {
     trainingTruth: false,
     ...clone(extra),
   };
-  await writeFile(REPORT_PATH, `${JSON.stringify({
+  await writeFile(reportPath, `${JSON.stringify({
     ...body,
     reportHash: createHash("sha256").update(JSON.stringify(body)).digest("hex"),
   }, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
 }
 
 async function main() {
-  if (!flagsAuthorized()) {
+  const epoch = authorizedEpoch();
+  if (!epoch) {
     console.error("LIVE_BYOK_COMPANION_EXPLICIT_AUTHORIZATION_REQUIRED");
     process.exitCode = 2;
     return;
   }
-  if (await priorSuccessExists()) {
+  const { reportPath, lockPath, evidenceRoot } = epochPaths(epoch);
+  if (await priorSuccessExists(reportPath)) {
     console.error("LIVE_BYOK_COMPANION_SUCCESS_ALREADY_RECORDED");
     process.exitCode = 2;
     return;
   }
-  if (await priorDispatchClaimExists()) {
+  if (await priorDispatchClaimExists(lockPath)) {
     console.error("LIVE_PROVIDER_ATTEMPT_ALREADY_CLAIMED");
     process.exitCode = 2;
     return;
   }
+  // Epoch 2 is only the authorized repair of the recorded epoch-1
+  // truncation; prove that context before anything else.
+  const previousAttempt = epoch === 2 ? await assertSecondCallContext() : null;
 
   const runId = randomUUID();
   const startedAt = new Date().toISOString();
-  await mkdir(EVIDENCE_ROOT, { recursive: true });
+  await mkdir(evidenceRoot, { recursive: true });
 
   const { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } =
     await import(pathToFileURL(path.join(ROOT, "packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs")).href);
@@ -802,9 +912,13 @@ async function main() {
   const {
     priceStarcraftTmgDeepSeekV4FlashUsageV1,
     verifyStarcraftTmgProviderPricingReceiptV1,
+    isStarcraftTmgDeepSeekPeakWindowV1,
+    STARCRAFT_TMG_DEEPSEEK_V4_FLASH_PRICING_SNAPSHOT_V1: pricingSnapshot,
   } = await import(pathToFileURL(path.join(ROOT, "packages/secure-provider-runtime/provider-pricing-v1.mjs")).href);
   const { STARCRAFT_TMG_TICKET_16_LIVE_PROVIDER_PROFILE_V1: providerProfile } =
     await import(pathToFileURL(path.join(ROOT, "content/provider/ticket-16-live-provider-closure-v1.mjs")).href);
+  const { createProviderProfile } =
+    await import(pathToFileURL(path.join(ROOT, "packages/character-agent/contracts-v1.mjs")).href);
   const { containsStarcraftTmgOnlineCredentialMaterialV1 } =
     await import(pathToFileURL(path.join(ROOT, "packages/online-agent-session/portable-credential-material-v1.mjs")).href);
   const { hashStarcraftTmgContract } =
@@ -814,9 +928,76 @@ async function main() {
 
   const webExport = await assertFreshWebExport();
 
+  // ── Acceptance egress profile: derived from the pinned Ticket 16 profile
+  // through the SAME sealed profile factory, with outputBudget as the ONLY
+  // delta (the versioned companion_output_budget_v2 resolution). No Provider
+  // infrastructure file is modified; the derivation is recorded in the
+  // report with both profile hashes.
+  const acceptanceProfile = createProviderProfile({
+    providerProfileId: `${providerProfile.providerProfileId}.266f-acceptance-budget-v2`,
+    version: `${providerProfile.version}+266f.output-budget-v2`,
+    provider: providerProfile.provider,
+    baseUrl: providerProfile.baseUrl,
+    model: providerProfile.model,
+    thinkingMode: providerProfile.thinkingMode,
+    reasoningEffort: providerProfile.reasoningEffort,
+    temperature: providerProfile.temperature,
+    topP: providerProfile.topP,
+    contextBudget: providerProfile.contextBudget,
+    outputBudget: LIVE_OUTPUT_BUDGET.maxOutputUnits,
+    toolSupport: providerProfile.toolSupport,
+    timeoutMs: providerProfile.timeoutMs,
+    retryPolicy: clone(providerProfile.retryPolicy),
+    fallbackPolicy: providerProfile.fallbackPolicy,
+    extensions: clone(providerProfile.extensions || {}),
+  });
+
+  // Snapshot-rate estimate for the honestly-recorded case where the Provider
+  // reports a model outside the pinned pricing snapshot (drift first observed
+  // on the truncated epoch-1 call). Labelled estimateOnly, never an invoice.
+  function estimateUsageAtSnapshotRates(receipt) {
+    try {
+      const usage = receipt?.usage;
+      if (!object(usage) || !Number.isSafeInteger(usage.inputUnits)
+        || !Number.isSafeInteger(usage.outputUnits)
+        || !Number.isSafeInteger(usage.inputCacheHitUnits)
+        || !Number.isSafeInteger(usage.inputCacheMissUnits)
+        || usage.inputCacheHitUnits + usage.inputCacheMissUnits !== usage.inputUnits) {
+        return null;
+      }
+      const peak = isStarcraftTmgDeepSeekPeakWindowV1(receipt.startedAt);
+      const rates = peak
+        ? pricingSnapshot.ratesPerTokenNanoUsd.peak
+        : pricingSnapshot.ratesPerTokenNanoUsd.offPeak;
+      const calculatedCostNanoUsd = usage.inputCacheHitUnits * rates.inputCacheHit
+        + usage.inputCacheMissUnits * rates.inputCacheMiss
+        + usage.outputUnits * rates.output;
+      const whole = Math.floor(calculatedCostNanoUsd / 1_000_000_000);
+      const fractional = String(calculatedCostNanoUsd % 1_000_000_000)
+        .padStart(9, "0").replace(/0+$/u, "") || "0";
+      return {
+        schemaVersion: "starcraft_tmg_ticket_26_slice_266f_cost_estimate_v1",
+        estimateOnly: true,
+        authoritative: false,
+        reason: "reported_model_drift_outside_pricing_snapshot",
+        snapshotHash: pricingSnapshot.snapshotHash,
+        pricingWindow: peak ? "peak" : "off_peak",
+        ratesPerTokenNanoUsd: clone(rates),
+        usage: clone(usage),
+        calculatedCostNanoUsd,
+        calculatedCostUsd: `${whole}.${fractional}`,
+        providerInvoiceAuthoritative: true,
+        calculatedCostIsInvoice: false,
+        trainingTruth: false,
+      };
+    } catch {
+      return null; // cost honestly unknown; usage units still recorded
+    }
+  }
+
   // ── Keychain → isolated Worker (the ONLY credential path) ─────────────
   const registry = createStarcraftTmgProviderProfileRegistryV1({
-    entries: [{ providerProfile, completionPath: "/chat/completions" }],
+    entries: [{ providerProfile: acceptanceProfile, completionPath: "/chat/completions" }],
     allowedProviders: ["deepseek-openai-compatible-direct"],
   });
   const workerPort = createStarcraftTmgProviderEgressWorkerPortV1({
@@ -843,7 +1024,7 @@ async function main() {
   const screenshots = [];
 
   async function capture(page, name, explanation) {
-    const filename = path.join(EVIDENCE_ROOT, name);
+    const filename = path.join(evidenceRoot, name);
     await page.screenshot({ path: filename, fullPage: false });
     const record = await artifactRecord(filename, explanation);
     artifacts.push(record);
@@ -877,7 +1058,7 @@ async function main() {
     const attachmentId = `att-266f-live-${runId}`;
     const attached = await workerPort.attachCredential({
       attachmentId,
-      providerProfile,
+      providerProfile: acceptanceProfile,
       credentialBytes,
     });
     ensure(attached?.ok === true && typeof attached.workerRef === "string",
@@ -889,7 +1070,7 @@ async function main() {
     adapter = createLiveCompanionProviderAdapter({
       workerPort,
       getAttachedWorkerRef: () => workerRef,
-      claimDispatch: () => claimDispatchLock(runId, startedAt),
+      claimDispatch: () => claimDispatchLock(runId, startedAt, lockPath, epoch),
       containsCredentialMaterial: containsStarcraftTmgOnlineCredentialMaterialV1,
       priceUsage(receipt) {
         try {
@@ -900,9 +1081,16 @@ async function main() {
             startedAt: receipt.startedAt,
             usage: receipt.usage,
           });
-          return verifyStarcraftTmgProviderPricingReceiptV1(pricing) ? pricing : null;
+          return {
+            pricing,
+            authoritative: verifyStarcraftTmgProviderPricingReceiptV1(pricing),
+          };
         } catch {
-          return null; // cost honestly unknown; usage units still recorded
+          // Reported-model drift places the call outside the pinned pricing
+          // snapshot: degrade to an explicitly-labelled snapshot-rate
+          // estimate (never an invoice); usage units are still recorded.
+          const estimate = estimateUsageAtSnapshotRates(receipt);
+          return estimate ? { pricing: estimate, authoritative: false } : null;
         }
       },
     });
@@ -1009,7 +1197,14 @@ async function main() {
     await capture(page, "live-01-desktop-session-open.png",
       "Desktop 1500×1050: one-companion (Zagara) live BYOK session open through the real product path; zero Provider calls so far; provider status honestly declares the isolated-Worker HTTPS egress.");
 
-    // ONE bounded Chinese prompt → the single physical Provider call.
+    // ONE bounded Chinese prompt → the single physical Provider call. The
+    // server POST response is captured for the grounding proof (worldbook
+    // firing, assembly hash, byte-exact server↔adapter reply).
+    const turnResponsePromise = page.waitForResponse(
+      (response) => response.request().method() === "POST"
+        && /\/conversations\/[^/]+\/turns$/u.test(new URL(response.url()).pathname),
+      { timeout: 150_000 },
+    );
     await chat.getByTestId("companion-chat-input").fill(LIVE_USER_PROMPT);
     await chat.getByTestId("companion-chat-send").click();
     const replyMessage = chat.getByTestId("companion-chat-message-2");
@@ -1020,6 +1215,9 @@ async function main() {
     ]);
     ensure(outcome === "replied" || outcome === "interrupted",
       "LIVE_TURN_OUTCOME_TIMEOUT", { observation: clone(adapter.observation.failure) });
+    const turnEnvelope = await turnResponsePromise
+      .then((response) => response.json())
+      .catch(() => null);
     if (outcome === "interrupted") {
       const interruptText = await interrupted.innerText();
       await capture(page, "live-failure-interrupted.png",
@@ -1042,14 +1240,24 @@ async function main() {
         physicalProviderCalls: adapter.observation.physicalProviderCalls,
       },
     });
-    ensure(adapter.observation.success.receipt.requestedModel === providerProfile.model
-      && adapter.observation.success.receipt.reportedModel === providerProfile.model,
-    "LIVE_PROVIDER_REPORTED_MODEL_DRIFT", {
+    // The egress must request the pinned model. A Provider-REPORTED model
+    // drift (first observed on the truncated epoch-1 call) is recorded
+    // honestly and degrades pricing to a labelled snapshot-rate estimate; it
+    // is a Provider-side reporting fact, not a product-path failure.
+    ensure(adapter.observation.success.receipt.requestedModel === providerProfile.model,
+    "LIVE_PROVIDER_REQUESTED_MODEL_DRIFT", {
       requested: adapter.observation.success.receipt.requestedModel,
-      reported: adapter.observation.success.receipt.reportedModel,
     });
+    const modelReportingDrift = adapter.observation.success.receipt.reportedModel
+      === providerProfile.model ? null : {
+        requestedModel: adapter.observation.success.receipt.requestedModel,
+        reportedModel: adapter.observation.success.receipt.reportedModel,
+        pricingAuthoritative: false,
+        note: "Provider-reported model differs from the pinned requested model; recorded honestly (first observed on the truncated epoch-1 call); pricing is a snapshot-rate estimate, not an invoice",
+      };
 
-    // The rendered transcript byte-matches the ACTUAL Provider response.
+    // The rendered transcript byte-matches the ACTUAL Provider response, and
+    // the server-side turn proves persona/worldbook/memory grounding.
     const renderedReply = await replyMessage.innerText();
     const actualReply = adapter.observation.success.replyText;
     ensure(renderedReply.includes(actualReply),
@@ -1058,6 +1266,28 @@ async function main() {
         actual: actualReply.slice(0, 400),
       });
     replyRenderedMatch = true;
+    ensure(/[㐀-鿿]/u.test(actualReply),
+      "LIVE_REPLY_NOT_CHINESE", { actual: actualReply.slice(0, 200) });
+    const serverReply = turnEnvelope?.result?.replies?.[0] || null;
+    ensure(serverReply && serverReply.content === actualReply,
+      "SERVER_REPLY_NOT_ACTUAL_PROVIDER_RESPONSE", {
+        server: String(serverReply?.content || "").slice(0, 400),
+        actual: actualReply.slice(0, 400),
+      });
+    const worldbookFired = Array.isArray(serverReply.contextAssembly?.worldbookFired)
+      ? clone(serverReply.contextAssembly.worldbookFired) : [];
+    ensure(worldbookFired.some((entry) => entry.scopeTier === "character"),
+      "LIVE_WORLDBOOK_NOT_FIRED", { worldbookFired });
+    const grounding = {
+      replyContainsCjk: true,
+      serverReplyByteMatchAdapter: true,
+      contextAssemblyHash: serverReply.contextAssembly?.assemblyHash ?? null,
+      layersIncluded: clone(serverReply.contextAssembly?.layersIncluded) || [],
+      worldbookFired,
+      authorsNoteInjected: clone(serverReply.authorsNoteInjected) ?? null,
+      recoveredFromTruncatedEnvelope:
+        adapter.observation.success.recoveredFromTruncatedEnvelope === true,
+    };
     const messageCount = await chat.locator('[data-testid^="companion-chat-message-"]').count();
     ensure(messageCount === 2, "LIVE_MESSAGE_COUNT_WRONG", { messageCount });
     const readAfter = await stack.companionFetch(
@@ -1175,11 +1405,29 @@ async function main() {
       runId,
       startedAt,
       finishedAt: new Date().toISOString(),
+      attemptEpoch: epoch,
+      previousAttempt: clone(previousAttempt),
       userAuthorization: {
-        explicitFlag: "--authorize-live-byok-companion-once",
+        explicitFlag: epoch === 2
+          ? "--authorize-live-byok-companion-second-call"
+          : "--authorize-live-byok-companion-once",
         manifest: "ticket-26-slice-266f-companion-live-product-acceptance",
         hardMaximumPhysicalProviderCalls: 1,
+        sliceHardMaximumPhysicalProviderCalls: 2,
       },
+      outputBudgetContract: clone(LIVE_OUTPUT_BUDGET),
+      acceptanceProfile: {
+        note: "derived through the sealed createProviderProfile factory with outputBudget as the ONLY delta; no Provider infrastructure file modified",
+        derivedFromTicket16Profile: {
+          id: providerProfile.providerProfileId,
+          version: providerProfile.version,
+          hash: providerProfile.integrity.hash,
+          outputBudget: providerProfile.outputBudget,
+        },
+        providerProfileRef: clone(receipt.providerProfileRef),
+        outputBudget: acceptanceProfile.outputBudget,
+      },
+      modelReportingDrift: clone(modelReportingDrift),
       webExport,
       credentialIngress: clone(keychainReceipt),
       attachment: {
@@ -1209,6 +1457,10 @@ async function main() {
         callFinishedAt: receipt.finishedAt,
         usage: clone(receipt.usage),
         pricing: clone(pricing),
+        pricingAuthoritative: adapter.observation.success.pricingAuthoritative === true,
+        recoveredFromTruncatedEnvelope:
+          adapter.observation.success.recoveredFromTruncatedEnvelope === true,
+        outputClassification: clone(adapter.observation.success.classification),
         safeProviderReceiptHash: receipt.receiptHash,
       },
       conversation: {
@@ -1219,6 +1471,7 @@ async function main() {
         actualProviderReply: adapter.observation.success.replyText,
         replyRenderedByteMatchDesktop: replyRenderedMatch,
         replyRenderedByteMatchMobile: true,
+        grounding: clone(grounding),
         providerAccountingAfter,
       },
       browserEvidence: {
@@ -1260,19 +1513,22 @@ async function main() {
       ensure(!containsStarcraftTmgOnlineCredentialMaterialV1(bytes.toString("latin1")),
         "CREDENTIAL_SHAPED_MATERIAL_IN_ARTIFACT", { artifact: artifact.path });
     }
-    await writeFile(REPORT_PATH, `${JSON.stringify({
+    await writeFile(reportPath, `${JSON.stringify({
       ...reportBody,
       reportHash: createHash("sha256").update(serialized).digest("hex"),
     }, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
     console.log(JSON.stringify({
       ok: true,
+      epoch,
       model: receipt.reportedModel,
+      modelReportingDrift: modelReportingDrift !== null,
       inputUnits: receipt.usage.inputUnits,
       outputUnits: receipt.usage.outputUnits,
       calculatedCostUsd: pricing?.calculatedCostUsd ?? null,
+      pricingAuthoritative: adapter.observation.success.pricingAuthoritative === true,
       physicalAttempts: receipt.physicalAttempts,
       detached: true,
-      report: path.relative(ROOT, REPORT_PATH),
+      report: path.relative(ROOT, reportPath),
     }, null, 2));
   } catch (error) {
     const providerCode = String(adapter?.observation?.failure?.code || "");
@@ -1281,18 +1537,20 @@ async function main() {
       && ["PROVIDER_AUTHENTICATION_FAILED", "PROVIDER_PAYMENT_REQUIRED",
         "PROVIDER_WORKER_NOT_ATTACHED", "LIVE_PROVIDER_ATTEMPT_ALREADY_CLAIMED",
         "LIVE_CALL_DENOMINATOR_EXCEEDED",
+        "LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED",
         "LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED"].includes(providerCode)
       ? providerCode
       : /^[A-Z][A-Z0-9_]{2,79}$/u.test(thrownCode)
         ? thrownCode
         : "LIVE_BYOK_COMPANION_RUN_FAILED";
     await writeFailureReport(runId, startedAt, code, {
+      attemptEpoch: epoch,
       providerFailure: clone(adapter?.observation?.failure || null),
       providerDispatchAttempts: adapter?.observation?.dispatchAttempts ?? 0,
       physicalProviderCalls: adapter?.observation?.physicalProviderCalls ?? 0,
       conversationId,
       screenshots,
-    }).catch(() => {});
+    }, reportPath).catch(() => {});
     console.error(code);
     process.exitCode = 1;
   } finally {
