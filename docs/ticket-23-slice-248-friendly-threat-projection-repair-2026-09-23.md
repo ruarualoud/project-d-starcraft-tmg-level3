@@ -71,6 +71,18 @@ mandatory. Genuine strategy weaknesses in the public explanation stay for
 Slice 249 review. T23 is still 33/36: S248 match, S249 review and S250 closure
 remain incomplete.
 
+### Live result
+
+At `2026-09-22T18:03:09.849Z`, the saved r11 Action became `completed` through
+`LOCAL_COMPLETED_OUTPUT_REVALIDATION:starcraft_tmg_live_action_shape_normalization_v36`.
+The real Web flow then applied `resolve_relocation_ability` for Marine 1 as
+**r12**, with Replay matching. The run continued normally. Accounting remained
+22 physical calls / 1,785,213 units / ¥2.336185: **zero additional generation**
+was needed to recover the rejected decision. No earlier room action was rerolled.
+
+Screenshot:
+`build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/screenshots/0038-r012-player1-resolve_relocation_ability-complete-board-applied.png`.
+
 `harnessLoopUsed=true`; game `starcraft-tmg`; route `selfplay_agent_prompt`.
 Evidence links are the r11 decision SQLite, selected formation receipt, actual
 Room geometry and focused verifier output. No hidden chain-of-thought, memory

@@ -53,6 +53,11 @@ verifier's real r11 mode failed then passed once, including true-enemy negative
 control, 0 Provider/Room mutation. Action normalization v36 enables local replay
 of the already-paid candidate. Same r11 resume is running for 12 more actions.
 See `docs/ticket-23-slice-248-friendly-threat-projection-repair-2026-09-23.md`.
+Live closure: v36 locally recovered the saved Action and real Web applied
+Marine 1 Go! Go! Go! as r12, Replay matching. Calls/units/cost remain
+22 / 1,785,213 / ¥2.336185: no new paid generation for recovery. Screenshot
+`0038-r012-player1-resolve_relocation_ability-complete-board-applied.png`
+in that run. Continue the existing live process, not a new fork.
 
 2026-09-23 startup recovery: fork `20260922172710914` is safely persisted at r7.
 Independent preflights selected Pro/Flash, then a parity error left IPC workers
