@@ -27,7 +27,7 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v23";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v31";
+  "starcraft_tmg_live_action_shape_normalization_v32";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -2170,7 +2170,12 @@ export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
         reason: "destroyed_actor_cannot_take_predicted_action" });
       continue;
     }
-    if (offTable?.isInReserves === true && actionClass !== "deploy") {
+    const horizonKind = String(response?.horizon?.kind || "");
+    const horizonCount = Number(response?.horizon?.count || 0);
+    const reserveFuturePrerequisiteWindow =
+      horizonKind === "bounded_public_transitions" && horizonCount >= 2;
+    if (offTable?.isInReserves === true && actionClass !== "deploy"
+      && !reserveFuturePrerequisiteWindow) {
       contradictions.push({ index, responseId: response.responseId || null,
         actorId, actionClass, submittedActionClass,
         reason: "reserve_actor_requires_deploy_action_class" });
@@ -2192,7 +2197,6 @@ export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
     }
     const predictedPhase = PREDICTED_ORDINARY_ACTION_PHASES[actionClass] || null;
     if (!predictedPhase) continue;
-    const horizonKind = String(response?.horizon?.kind || "");
     if (horizonKind === "current_phase" && currentPhase
       && predictedPhase !== currentPhase) {
       contradictions.push({ index, responseId: response.responseId || null,

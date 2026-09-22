@@ -305,6 +305,22 @@ assert.equal(impossibleReserveMove.status, "contradicted");
 assert.equal(impossibleReserveMove.contradictions[0].reason,
   "reserve_actor_requires_deploy_action_class");
 
+const possibleFutureReserveMoveThenFire =
+  inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+    responses: [{
+      responseId: "resp-marine-future-move-fire",
+      actionClass: "move_then_ranged_attack",
+      opponentAction:
+        "After deploying, the Marine moves and fires in a later round.",
+      likelyActorUnitId: "player1-marine-1",
+      horizon: { kind: "bounded_public_transitions", count: 2 },
+    }],
+    spatialObservation: opponentPredictionObservation,
+    currentPhase: "movement",
+  });
+assert.equal(possibleFutureReserveMoveThenFire.status, "consistent",
+  "a reserve unit may be predicted to act after a bounded deploy prerequisite");
+
 const possibleReserveDeploy =
   inspectStarcraftTmgOpponentPredictionFeasibilityV1({
     responses: [{
@@ -353,7 +369,7 @@ assert.deepEqual(
 assert.deepEqual(recoveredMixedReservePredictions.opponentPredictionNormalization,
   {
     schema: "starcraft_tmg_opponent_prediction_normalization_v1",
-    normalizationVersion: "starcraft_tmg_live_action_shape_normalization_v31",
+    normalizationVersion: "starcraft_tmg_live_action_shape_normalization_v32",
     operation: "drop_lifecycle_impossible_auxiliary_predictions",
     inputCount: 2,
     retainedCount: 1,
