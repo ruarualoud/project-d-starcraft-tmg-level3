@@ -1653,10 +1653,14 @@ async function main() {
     await chat.getByTestId("companion-chat-memory-episodic-input")
       .fill("用户偏好防御型攻城阵地。");
     await chat.getByTestId("companion-chat-memory-episodic-add").click();
-    await page.waitForFunction(() => (
-      document.querySelector('[data-testid="companion-chat-continuity-memory"]')
-        ?.innerText.includes("summary versions 1")
-    ), null, { timeout: 60_000 });
+    // Wait for BOTH writes to be reflected in the server projection: the
+    // summary condition alone was already true from the summary save, so
+    // gating on it raced the episodic write (266f.11 fix).
+    await page.waitForFunction(() => {
+      const text = document.querySelector('[data-testid="companion-chat-continuity-memory"]')
+        ?.innerText || "";
+      return text.includes("summary versions 1") && text.includes("episodic facts 1");
+    }, null, { timeout: 60_000 });
     const continuityMemory = await chat
       .getByTestId("companion-chat-continuity-memory").innerText();
     ensure(continuityMemory.includes("episodic facts 1")
