@@ -19,11 +19,14 @@
 // Round 7+ generation-contract repairs (sub-slice 269.10+270.8): the user
 // explicitly authorized continued real BYOK attempts until one actual
 // generated 2000-point roster plus initial RosterPlan passes the Rules-owned
-// port, bounded to three new repair/live cycles (rounds 7-9; the flag map
-// below is the hard maximum — no tenth flag exists). Each attempt is
-// separately locked, costed and retained with zero automatic retry; 401 /
-// 402 / 403, ambiguous dispatch and missing secure attachment still stop
-// immediately and are never repairable.
+// port, bounded to three new repair/live cycles (rounds 7-9). Round 9 passed
+// legality but spent only 940/2000 minerals with an unknown VP schedule, so
+// the reopened slice (269.13-269.15 contracts) authorizes exactly one new
+// three-round BYOK generation cycle — repair round 10, chained to the
+// preserved round-9 success report. The flag map below is the hard maximum —
+// no eleventh flag exists. Each attempt is separately locked, costed and
+// retained with zero automatic retry; 401 / 402 / 403, ambiguous dispatch and
+// missing secure attachment still stop immediately and are never repairable.
 
 import { mkdir, open, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -111,6 +114,7 @@ const REPAIR_FLAGS = new Map([
   ["--repair-round-7-after-domain-integer-bounds", 7],
   ["--repair-round-8-after-generation-contract-repair", 8],
   ["--repair-round-9-after-generation-contract-repair", 9],
+  ["--repair-round-10-after-list-quality-contracts", 10],
 ]);
 // Failure classes a subsequent explicitly flagged repair attempt may chain
 // from: public-output contract violations only (typed validation on the
@@ -357,6 +361,15 @@ const LIVE_INSTRUCTIONS = [
     + "from that menu.",
   "Unknown stays unknown: use the declared unknown enums/statuses and "
     + "empty placeholders instead of inventing values.",
+  "Unspent minerals are lost (no carryover, no later spend): treat budget "
+    + "residue as an explicit opportunity cost. When a near-cap Rules-legal "
+    + "candidate is available, select a near-cap candidate or declare the "
+    + "public justification in resourceUtilization.",
+  "Ground the public VP schedule in the sealed mission-scoring authority "
+    + "when it is derivable (scheduleStatus declared, scoreRouteAuthority "
+    + "mission_grounded); when the authority is missing, keep the schedule "
+    + "unknown and identify the missing authority. Never fabricate scoring "
+    + "data.",
 ].join("\n");
 
 function estimatePricing(receipt) {
@@ -386,15 +399,27 @@ async function main() {
     process.exitCode = 2;
     return;
   }
-  if (await priorSuccessExists()) {
-    console.error("LIVE_ROSTER_PLAN_SUCCESS_ALREADY_RECORDED");
-    process.exitCode = 2;
-    return;
-  }
   let repairRound = 1;
   let priorFailureReport = null;
   let priorPreservedPath = null;
-  if (await priorAttemptClaimed()) {
+  if (await priorSuccessExists()) {
+    // Reopened list-quality lane (sub-slice 269.16+270.9): the manifest
+    // authorizes exactly one new three-round BYOK generation cycle after
+    // the round-9 legality pass (940/2000 minerals, unknown VP schedule),
+    // chained to the preserved round-9 success report. No eleventh flag
+    // exists; any other state still stops the lane.
+    const priorReport = JSON.parse(await readFile(REPORT_PATH, "utf8"));
+    const requestedRound = repairRoundRequested();
+    if (requestedRound !== 10
+      || Number(priorReport?.repairRound || 1) !== 9) {
+      console.error("LIVE_ROSTER_PLAN_SUCCESS_ALREADY_RECORDED");
+      process.exitCode = 2;
+      return;
+    }
+    repairRound = 10;
+    priorFailureReport = priorReport;
+    priorPreservedPath = await preserveAttemptReport(priorReport);
+  } else if (await priorAttemptClaimed()) {
     const requestedRound = repairRoundRequested();
     if (!requestedRound) {
       console.error("LIVE_ROSTER_PLAN_ATTEMPT_ALREADY_CLAIMED");
@@ -462,7 +487,8 @@ async function main() {
       })),
       ...Object.fromEntries(["querySpatial", "queryProbability",
         "queryThreatExchange", "queryMath", "runScenarioBranch",
-        "compareCandidatesSameState"].map((name) => [name, (...args) => {
+        "compareCandidatesSameState", "missionScoringAuthority"].map(
+        (name) => [name, (...args) => {
         const receipt = laboratoryCore[name](...args);
         toolReceipts.push(clone(receipt));
         return receipt;
@@ -859,7 +885,8 @@ async function main() {
         immediatePriorReport: {
           runId: priorFailureReport.runId,
           reportHash: priorFailureReport.reportHash,
-          failureCode: priorFailureReport.failureCode,
+          priorStatus: priorFailureReport.status ?? null,
+          failureCode: priorFailureReport.failureCode ?? null,
           failureDetail: priorFailureReport.failureDetail ?? null,
           repairRound: priorFailureReport.repairRound ?? null,
           providerCallsObserved: priorFailureReport.providerCallsObserved,
@@ -967,6 +994,30 @@ async function main() {
         toolReceiptReferenceCount: session.plan.toolReceiptReferences.length,
         hiddenChainOfThoughtIncluded: false,
         planFabricated: false,
+      },
+      // Reopened list-quality binding (sub-slices 269.13-269.15): the
+      // schedule-grounding and budget-utilization outcomes of this actual
+      // generated plan, bound from the session receipt.
+      listQuality: {
+        mineralBudget: 2_000,
+        mineralSpent: finalValidation.summary.mineralSpent,
+        mineralUnspent: 2_000 - finalValidation.summary.mineralSpent,
+        unspentResourceDisposition: "lost",
+        nearCapThresholdMinerals:
+          session.sessionReceipt.nearCapThresholdMinerals,
+        nearCapLegalCandidateAvailable:
+          session.sessionReceipt.nearCapLegalCandidateAvailable,
+        selectedCandidateNearCap:
+          session.sessionReceipt.selectedCandidateNearCap,
+        retainedResourceJustificationStatus:
+          session.sessionReceipt.retainedResourceJustificationStatus,
+        missionScoringAuthorityStatus:
+          session.sessionReceipt.missionScoringAuthorityStatus,
+        missionScoringAuthorityReceiptHash:
+          session.sessionReceipt.missionScoringAuthorityReceiptHash,
+        scoreRouteAuthorityStatus:
+          session.sessionReceipt.scoreRouteAuthorityStatus,
+        scheduleStatus: session.plan.scoreRoute.scheduleStatus,
       },
       laboratory: {
         descriptorHash: laboratoryCore.labDescriptor().descriptorHash,
