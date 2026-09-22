@@ -22,14 +22,91 @@ const PHASES = new Set([
 const MODES = new Set(["tutor", "opponent", "commentator", "companion"]);
 const RELEASE_CHANNELS = new Set(["development_internal", "public"]);
 const TOKEN_SEGMENT = /^[A-Za-z0-9_-]+$/u;
-const EXPECTED_TICKET_13_HANDOFF_HASH =
-  "4a15b4a2c2f48d28b2233758e88c064719e836a93b8a4d09277d297ac15af9c3";
-const EXPECTED_CHARACTER_PACKAGE_HASH =
-  "ab238d95ff95c4e69bcabb2abf88cc3daea3edf5a79a732aea30893739cdb246";
-const EXPECTED_PERSONA_CATALOGUE_HASH =
-  "2e10ae7f977d1d02285753efb6d0cb8bee44e2e80072bd3085ac206f2c58909a";
-const EXPECTED_VISUAL_BINDING_V2_HASH =
-  "3bf22247a2c4464d3e1e55e6e9eaddc241b1e00be39e0ef501166e9fa41f2ce2";
+
+export const STARCRAFT_TMG_CHARACTER_PACKAGE_BINDING_REGISTRY_VERSION =
+  "starcraft_tmg_character_package_binding_registry_v1";
+
+/**
+ * Versioned character package binding registry (Ticket 26 / Slice 266c).
+ *
+ * This registry replaces the former loose hand-updated EXPECTED_* hash
+ * constants. Every epoch records the exact sealed binding quadruple the
+ * validator derives its expectations from: the Ticket 13 handoff, the sealed
+ * CharacterPackage integrity hash, the persona catalogue hash and the persona
+ * visual-binding hash. Validation always targets the epoch marked
+ * `status: "current"`; projections sealed against an older epoch fail the
+ * default path closed and remain readable ONLY through the explicit legacy
+ * entry point (`assertStarcraftTmgClientCharacterProjectionV2Legacy`). There
+ * is no silent compatibility and no floating "latest content" lookup: an
+ * epoch change is an explicit, auditable registry append.
+ *
+ * Epoch 1 is the binding sealed at the Ticket 13/Slice 133 handoff (pinned
+ * in commit 61d0fdd). Epoch 2 is the exact current sealed CharacterPackage
+ * (`12d5ed6e…`) and persona catalogue (`7c4c3a65…`) produced by the unchanged
+ * content/characters sources; the handoff and visual-binding seals are
+ * byte-identical across both epochs.
+ */
+const CHARACTER_PACKAGE_BINDING_EPOCHS = [
+  {
+    epoch: 1,
+    status: "legacy",
+    ticket13HandoffHash:
+      "4a15b4a2c2f48d28b2233758e88c064719e836a93b8a4d09277d297ac15af9c3",
+    characterPackageHash:
+      "ab238d95ff95c4e69bcabb2abf88cc3daea3edf5a79a732aea30893739cdb246",
+    personaCatalogueHash:
+      "2e10ae7f977d1d02285753efb6d0cb8bee44e2e80072bd3085ac206f2c58909a",
+    visualBindingHash:
+      "3bf22247a2c4464d3e1e55e6e9eaddc241b1e00be39e0ef501166e9fa41f2ce2",
+  },
+  {
+    epoch: 2,
+    status: "current",
+    ticket13HandoffHash:
+      "4a15b4a2c2f48d28b2233758e88c064719e836a93b8a4d09277d297ac15af9c3",
+    characterPackageHash:
+      "12d5ed6e4ed8f23441830ba5edccb422da1646b3887824f61fbe7d118965e3ac",
+    personaCatalogueHash:
+      "7c4c3a65f627e1c5c0c789a09c7430a9e71a09968a2dd77a1752ec4b01de3f9c",
+    visualBindingHash:
+      "3bf22247a2c4464d3e1e55e6e9eaddc241b1e00be39e0ef501166e9fa41f2ce2",
+  },
+];
+
+function deepFreeze(value) {
+  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
+  for (const child of Object.values(value)) deepFreeze(child);
+  return Object.freeze(value);
+}
+
+export const STARCRAFT_TMG_CHARACTER_PACKAGE_BINDING_REGISTRY_V1 = deepFreeze({
+  schemaVersion: STARCRAFT_TMG_CHARACTER_PACKAGE_BINDING_REGISTRY_VERSION,
+  currentEpoch: 2,
+  legacyRead: "explicit_legacy_entry_point_only",
+  silentCompatibility: false,
+  epochs: CHARACTER_PACKAGE_BINDING_EPOCHS,
+});
+
+export function resolveStarcraftTmgCharacterPackageBindingV1(epoch) {
+  const wanted = Number(epoch);
+  const record = STARCRAFT_TMG_CHARACTER_PACKAGE_BINDING_REGISTRY_V1.epochs
+    .find((entry) => entry.epoch === wanted) || null;
+  if (!record) return null;
+  return deepFreeze({
+    epoch: record.epoch,
+    status: record.status,
+    ticket13HandoffHash: record.ticket13HandoffHash,
+    characterPackageHash: record.characterPackageHash,
+    personaCatalogueHash: record.personaCatalogueHash,
+    visualBindingHash: record.visualBindingHash,
+  });
+}
+
+function currentCharacterPackageBindingV1() {
+  return resolveStarcraftTmgCharacterPackageBindingV1(
+    STARCRAFT_TMG_CHARACTER_PACKAGE_BINDING_REGISTRY_V1.currentEpoch,
+  );
+}
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -37,12 +114,6 @@ function object(value) {
 
 function clone(value) {
   return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
-}
-
-function deepFreeze(value) {
-  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
-  for (const child of Object.values(value)) deepFreeze(child);
-  return Object.freeze(value);
 }
 
 function fail(code, detail = "") {
@@ -322,7 +393,11 @@ function validAssetGrantBinding(projection) {
     && expiresAt - issuedAt <= 120_000;
 }
 
-function validDevelopmentProjection(projection, expectedPrincipalScopeHash) {
+function validDevelopmentProjection(
+  projection,
+  expectedPrincipalScopeHash,
+  expectedBinding,
+) {
   exactKeys(projection, [
     "schemaVersion",
     "releaseChannel",
@@ -384,15 +459,15 @@ function validDevelopmentProjection(projection, expectedPrincipalScopeHash) {
     && projection.rights.derivedVisualAllowed === true
     && projection.rights.assetDeliveryAllowed === true
     && projection.bindings.schemaVersion === "starcraft_tmg_character_atomic_binding_v2"
-    && projection.bindings.ticket13HandoffHash === EXPECTED_TICKET_13_HANDOFF_HASH
-    && projection.bindings.characterPackageHash === EXPECTED_CHARACTER_PACKAGE_HASH
-    && projection.bindings.catalogueHash === EXPECTED_PERSONA_CATALOGUE_HASH
+    && projection.bindings.ticket13HandoffHash === expectedBinding.ticket13HandoffHash
+    && projection.bindings.characterPackageHash === expectedBinding.characterPackageHash
+    && projection.bindings.catalogueHash === expectedBinding.personaCatalogueHash
     && hash(projection.bindings.catalogueHash, "bindings.catalogueHash")
     && hash(projection.bindings.selectorStateHash, "bindings.selectorStateHash")
     && nonNegativeInteger(projection.bindings.selectorRevision, "bindings.selectorRevision") >= 0
     && nonEmpty(projection.bindings.selectedPersonaWorldbookId, "bindings.selectedPersonaWorldbookId")
     && nonEmpty(projection.bindings.selectedPersonaState, "bindings.selectedPersonaState")
-    && projection.bindings.visualBindingHash === EXPECTED_VISUAL_BINDING_V2_HASH
+    && projection.bindings.visualBindingHash === expectedBinding.visualBindingHash
     && hash(projection.bindings.manifestHash, "bindings.manifestHash")
     && hash(projection.bindings.portraitStateHash, "bindings.portraitStateHash")
     && nonNegativeInteger(projection.bindings.portraitRevision, "bindings.portraitRevision") >= 0
@@ -454,10 +529,7 @@ function validPublicProjection(projection, expectedPrincipalScopeHash) {
     && !serialized.includes("character/{contenthash}");
 }
 
-export function assertStarcraftTmgClientCharacterProjectionV2(
-  value,
-  expectedPrincipalScopeHash,
-) {
+function assertProjectionAgainstBinding(value, expectedPrincipalScopeHash, expectedBinding) {
   const projection = clone(value);
   if (!object(projection)
     || projection.schemaVersion !== STARCRAFT_TMG_CLIENT_CHARACTER_PROJECTION_VERSION
@@ -466,7 +538,11 @@ export function assertStarcraftTmgClientCharacterProjectionV2(
   }
   const valid = projection.releaseChannel === "public"
     ? validPublicProjection(projection, expectedPrincipalScopeHash)
-    : validDevelopmentProjection(projection, expectedPrincipalScopeHash);
+    : validDevelopmentProjection(
+      projection,
+      expectedPrincipalScopeHash,
+      expectedBinding,
+    );
   const { projectionHash, ...core } = projection;
   if (!valid
     || hash(projectionHash, "projection.projectionHash")
@@ -476,12 +552,62 @@ export function assertStarcraftTmgClientCharacterProjectionV2(
   return deepFreeze(projection);
 }
 
+export function assertStarcraftTmgClientCharacterProjectionV2(
+  value,
+  expectedPrincipalScopeHash,
+) {
+  // The default path derives its expectations from the registry epoch marked
+  // current. A projection sealed against any older epoch fails closed here;
+  // it is readable only through the explicit legacy entry point below.
+  return assertProjectionAgainstBinding(
+    value,
+    expectedPrincipalScopeHash,
+    currentCharacterPackageBindingV1(),
+  );
+}
+
+export function assertStarcraftTmgClientCharacterProjectionV2Legacy(
+  value,
+  expectedPrincipalScopeHash,
+  legacyEpoch,
+) {
+  const binding = resolveStarcraftTmgCharacterPackageBindingV1(legacyEpoch);
+  if (!binding || binding.status !== "legacy") {
+    fail("CHARACTER_PROJECTION_INVALID", "legacy_epoch_unknown_or_current");
+  }
+  // Explicit legacy read: the caller named the exact superseded epoch. The
+  // returned projection is marked so no downstream consumer can mistake it
+  // for a currently bound projection.
+  return deepFreeze({
+    ...assertProjectionAgainstBinding(value, expectedPrincipalScopeHash, binding),
+    legacyBindingEpoch: binding.epoch,
+    currentlyBound: false,
+  });
+}
+
 export function isStarcraftTmgClientCharacterProjectionV2(
   value,
   expectedPrincipalScopeHash,
 ) {
   try {
     assertStarcraftTmgClientCharacterProjectionV2(value, expectedPrincipalScopeHash);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function isStarcraftTmgClientCharacterProjectionV2Legacy(
+  value,
+  expectedPrincipalScopeHash,
+  legacyEpoch,
+) {
+  try {
+    assertStarcraftTmgClientCharacterProjectionV2Legacy(
+      value,
+      expectedPrincipalScopeHash,
+      legacyEpoch,
+    );
     return true;
   } catch {
     return false;

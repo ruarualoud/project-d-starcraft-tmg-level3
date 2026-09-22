@@ -62,6 +62,501 @@ export function confirmStarcraftTmgTrustedRoleAgentPreviewV1(
   return ingress(input);
 }
 
+export const STARCRAFT_TMG_COMPANION_PRODUCT_CLIENT_VERSION =
+  "starcraft_tmg_companion_product_client_v1";
+export const STARCRAFT_TMG_COMPANION_PRODUCT_API_PREFIX =
+  "/starcraft-tmg-level3/companion/api/v1";
+export const STARCRAFT_TMG_COMPANION_PRODUCT_HTTP_VERSION =
+  "starcraft_tmg_companion_product_http_v1";
+
+const COMPANION_PRODUCT_OPERATIONS = new Set([
+  "status",
+  "catalogue",
+  "open_or_resume",
+  "read_active",
+  "read",
+  "send",
+  "continue",
+  "checkpoint",
+  "resume",
+  "close",
+  // Slice 266d: Tavern-equivalent companion contracts.
+  "persona_read",
+  "persona_put",
+  "persona_rollback",
+  "audit_export",
+  "audit_verify",
+  "audit_replay_candidate",
+  "permission_surfaces",
+  "package_export",
+  "package_import",
+  "conversation_restore",
+  "worldbook_read",
+  "worldbook_register",
+  "worldbook_export",
+  "worldbook_import",
+  "memory_read",
+  "memory_summary_write",
+  "memory_summary_rollback",
+  "memory_episodic_add",
+  "memory_relationship_event",
+  "branches_list",
+  "branch_open",
+  "branch_reroll",
+  "branch_edit_submit",
+  "branch_accept",
+  "branch_discard",
+  "authors_note_read",
+  "authors_note_put",
+  "conversation_export",
+]);
+const COMPANION_PRODUCT_CONVERSATION_ID = /^[A-Za-z0-9._:-]{1,160}$/u;
+// The companion product extension deliberately preserves the four-operation
+// Client Domain interface. Its one privileged handoff — attaching the bound
+// seat credential to a companion product request — is kept out of the
+// returned object and is reachable only by module identity, exactly like the
+// role-Agent Preview ingress above. The seat token is passed in memory to the
+// caller-supplied transport, is never persisted by the Client Domain, and is
+// scrubbed from every error surface through the shared credential registry.
+const COMPANION_PRODUCT_INGRESS = new WeakMap();
+// The product mounts the Client Domain behind the role-Agent session client,
+// which wraps the base domain in a NEW frozen object (the exact four-operation
+// interface is preserved, so wrappers cannot be distinguished by shape). The
+// ingress above is identity-keyed on the base object, so a wrapper presented
+// by the app cannot resolve it directly. Every created domain is therefore
+// recorded here; when a presented object carries no direct ingress, the
+// dispatcher falls back to the ingress of the UNIQUE mounted domain and fails
+// closed on zero or ambiguous mounts. The privileged closure (binding +
+// credential handoff) never leaves the domain factory either way.
+const COMPANION_PRODUCT_MOUNTED_DOMAINS = new Set();
+
+export class StarcraftTmgCompanionProductTransportError extends Error {
+  constructor(code, message, details = {}) {
+    super(message);
+    this.name = "StarcraftTmgCompanionProductTransportError";
+    this.code = code;
+    this.details = details;
+  }
+}
+
+export function assertStarcraftTmgCompanionProductTransportPort(port) {
+  if (!port || typeof port.execute !== "function") {
+    throw new TypeError("CompanionProductTransportPort.execute is required");
+  }
+  return port;
+}
+
+export function dispatchStarcraftTmgTrustedCompanionProductV1(
+  clientDomain,
+  input = {},
+) {
+  let ingress = COMPANION_PRODUCT_INGRESS.get(clientDomain);
+  if (!ingress && COMPANION_PRODUCT_MOUNTED_DOMAINS.size === 1) {
+    const [mounted] = COMPANION_PRODUCT_MOUNTED_DOMAINS;
+    ingress = COMPANION_PRODUCT_INGRESS.get(mounted);
+  }
+  if (!ingress) {
+    throw new TypeError("Client Domain does not expose the trusted companion product ingress");
+  }
+  return ingress(input);
+}
+
+function companionProductEndpoint(request) {
+  const roomQuery = `roomId=${encodeURIComponent(request.roomId)}`;
+  const conversation = request.conversationId
+    ? `conversations/${encodeURIComponent(request.conversationId)}`
+    : null;
+  const body = { roomId: request.roomId, ...request.payload };
+  const branch = request.payload?.branchId !== undefined
+    ? `${conversation}/branches/${encodeURIComponent(String(request.payload.branchId))}`
+    : null;
+  return {
+    status: { method: "GET", path: `status?${roomQuery}` },
+    catalogue: { method: "GET", path: `catalogue?${roomQuery}` },
+    open_or_resume: {
+      method: "POST",
+      path: "conversations",
+      body,
+    },
+    read_active: { method: "GET", path: `conversations/active?${roomQuery}` },
+    read: { method: "GET", path: `${conversation}?${roomQuery}` },
+    send: {
+      method: "POST",
+      path: `${conversation}/turns`,
+      body,
+    },
+    continue: {
+      method: "POST",
+      path: `${conversation}/continue`,
+      body: { roomId: request.roomId },
+    },
+    checkpoint: {
+      method: "POST",
+      path: `${conversation}/checkpoint`,
+      body,
+    },
+    resume: {
+      method: "POST",
+      path: `${conversation}/resume`,
+      body,
+    },
+    close: {
+      method: "POST",
+      path: `${conversation}/close`,
+      body: { roomId: request.roomId },
+    },
+    // ── Slice 266d ──
+    persona_read: { method: "GET", path: `persona?${roomQuery}` },
+    persona_put: { method: "PUT", path: "persona", body },
+    persona_rollback: { method: "POST", path: "persona/rollback", body },
+    audit_export: { method: "GET", path: `audit/export?${roomQuery}` },
+    audit_verify: { method: "GET", path: `audit/verify?${roomQuery}` },
+    audit_replay_candidate: { method: "POST", path: "audit/replay-candidate", body },
+    permission_surfaces: { method: "GET", path: `permissions/surfaces?${roomQuery}` },
+    package_export: {
+      method: "GET",
+      path: `packages/${encodeURIComponent(String(request.packageId || ""))}/export?${roomQuery}`,
+    },
+    package_import: { method: "POST", path: "packages/import", body },
+    conversation_restore: { method: "POST", path: "conversations/restore", body },
+    worldbook_read: { method: "GET", path: `${conversation}/worldbook?${roomQuery}` },
+    worldbook_register: { method: "POST", path: `${conversation}/worldbook`, body },
+    worldbook_export: { method: "GET", path: `${conversation}/worldbook/export?${roomQuery}` },
+    worldbook_import: { method: "POST", path: `${conversation}/worldbook/import`, body },
+    memory_read: { method: "GET", path: `${conversation}/memory?${roomQuery}` },
+    memory_summary_write: { method: "POST", path: `${conversation}/memory/summary`, body },
+    memory_summary_rollback: {
+      method: "POST",
+      path: `${conversation}/memory/summary/rollback`,
+      body,
+    },
+    memory_episodic_add: { method: "POST", path: `${conversation}/memory/episodic`, body },
+    memory_relationship_event: { method: "POST", path: `${conversation}/memory/relationship`, body },
+    branches_list: { method: "GET", path: `${conversation}/branches?${roomQuery}` },
+    branch_open: { method: "POST", path: `${conversation}/branches`, body },
+    branch_reroll: { method: "POST", path: `${branch}/reroll`, body: { roomId: request.roomId } },
+    branch_edit_submit: { method: "POST", path: `${branch}/entries`, body },
+    branch_accept: { method: "POST", path: `${branch}/accept`, body },
+    branch_discard: { method: "POST", path: `${branch}/discard`, body: { roomId: request.roomId } },
+    authors_note_read: { method: "GET", path: `${conversation}/authors-note?${roomQuery}` },
+    authors_note_put: { method: "PUT", path: `${conversation}/authors-note`, body },
+    conversation_export: { method: "GET", path: `${conversation}/export?${roomQuery}` },
+  }[request.operation];
+}
+
+// Room-scoped companion product operations (no conversationId required).
+const COMPANION_PRODUCT_ROOM_SCOPED_OPERATIONS = new Set([
+  "status",
+  "catalogue",
+  "open_or_resume",
+  "read_active",
+  "persona_read",
+  "persona_put",
+  "persona_rollback",
+  "audit_export",
+  "audit_verify",
+  "audit_replay_candidate",
+  "permission_surfaces",
+  "package_export",
+  "package_import",
+  "conversation_restore",
+]);
+const COMPANION_PRODUCT_BRANCH_OPERATIONS = new Set([
+  "branch_reroll",
+  "branch_edit_submit",
+  "branch_accept",
+  "branch_discard",
+]);
+
+function assertCompanionProductRequest(request) {
+  if (!request || typeof request !== "object" || Array.isArray(request)
+    || !COMPANION_PRODUCT_OPERATIONS.has(request.operation)) {
+    throw new StarcraftTmgCompanionProductTransportError(
+      "COMPANION_TRANSPORT_REQUEST_INVALID",
+      "companion product transport request is invalid",
+    );
+  }
+  if (!String(request.roomId || "").trim()) {
+    throw new StarcraftTmgCompanionProductTransportError(
+      "COMPANION_TRANSPORT_REQUEST_INVALID",
+      "roomId is required",
+    );
+  }
+  if (!COMPANION_PRODUCT_ROOM_SCOPED_OPERATIONS.has(request.operation)
+    && !COMPANION_PRODUCT_CONVERSATION_ID.test(String(request.conversationId || ""))) {
+    throw new StarcraftTmgCompanionProductTransportError(
+      "COMPANION_TRANSPORT_REQUEST_INVALID",
+      "conversationId is required and bounded",
+    );
+  }
+  if (request.operation === "package_export"
+    && !COMPANION_PRODUCT_CONVERSATION_ID.test(String(request.packageId || ""))) {
+    throw new StarcraftTmgCompanionProductTransportError(
+      "COMPANION_TRANSPORT_REQUEST_INVALID",
+      "packageId is required and bounded",
+    );
+  }
+  if (COMPANION_PRODUCT_BRANCH_OPERATIONS.has(request.operation)
+    && !COMPANION_PRODUCT_CONVERSATION_ID.test(String(request.payload?.branchId || ""))) {
+    throw new StarcraftTmgCompanionProductTransportError(
+      "COMPANION_TRANSPORT_REQUEST_INVALID",
+      "payload.branchId is required and bounded",
+    );
+  }
+  return request;
+}
+
+function safeCompanionBaseUrl(value) {
+  const baseUrl = String(value || "").replace(/\/+$/u, "");
+  if (!baseUrl) return "";
+  const parsed = new URL(baseUrl);
+  const local = ["localhost", "127.0.0.1", "::1"].includes(parsed.hostname);
+  if (parsed.protocol !== "https:" && !(local && parsed.protocol === "http:")) {
+    throw new TypeError("companion product HTTP transport requires HTTPS except on loopback");
+  }
+  return baseUrl;
+}
+
+export function createHttpStarcraftTmgCompanionProductTransportV1(options = {}) {
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  if (typeof fetchImpl !== "function") throw new TypeError("fetchImpl is required");
+  const baseUrl = safeCompanionBaseUrl(options.baseUrl);
+  const apiPrefix = String(options.apiPrefix || STARCRAFT_TMG_COMPANION_PRODUCT_API_PREFIX)
+    .replace(/\/+$/u, "");
+  const timeoutMs = Math.max(250, Number(options.timeoutMs || 60_000));
+  const maxResponseBytes = Math.max(1024,
+    Number(options.maxResponseBytes || 4 * 1024 * 1024));
+
+  async function execute(input = {}) {
+    const request = assertCompanionProductRequest(input);
+    const endpoint = companionProductEndpoint(request);
+    const headers = { accept: "application/json" };
+    if (request.seatToken) headers.authorization = `Bearer ${request.seatToken}`;
+    const init = { method: endpoint.method, headers };
+    if (endpoint.body) {
+      headers["content-type"] = "application/json";
+      init.body = JSON.stringify(endpoint.body);
+    }
+    const controller = typeof AbortController === "function"
+      ? new AbortController()
+      : null;
+    const timeout = controller
+      ? setTimeout(() => controller.abort(), timeoutMs)
+      : null;
+    if (controller) init.signal = controller.signal;
+    try {
+      const response = await fetchImpl(`${baseUrl}${apiPrefix}/${endpoint.path}`, init);
+      const text = await response.text();
+      if (text.length > maxResponseBytes) {
+        throw new StarcraftTmgCompanionProductTransportError(
+          "COMPANION_TRANSPORT_RESPONSE_TOO_LARGE",
+          "companion product response exceeded the configured limit",
+        );
+      }
+      let body;
+      try {
+        body = JSON.parse(text);
+      } catch {
+        throw new StarcraftTmgCompanionProductTransportError(
+          "COMPANION_TRANSPORT_RESPONSE_INVALID",
+          "companion product response was not JSON",
+        );
+      }
+      if (body?.schemaVersion !== STARCRAFT_TMG_COMPANION_PRODUCT_HTTP_VERSION
+        || !body.result || typeof body.result !== "object") {
+        throw new StarcraftTmgCompanionProductTransportError(
+          "COMPANION_TRANSPORT_RESPONSE_INVALID",
+          "companion product response envelope is invalid",
+        );
+      }
+      return body.result;
+    } catch (error) {
+      if (error instanceof StarcraftTmgCompanionProductTransportError) throw error;
+      const timedOut = error?.name === "AbortError";
+      throw new StarcraftTmgCompanionProductTransportError(
+        timedOut ? "COMPANION_TRANSPORT_TIMEOUT" : "COMPANION_NETWORK_UNAVAILABLE",
+        timedOut
+          ? "companion product request timed out"
+          : "companion product transport is unavailable",
+      );
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
+  }
+
+  return Object.freeze({ execute });
+}
+
+function companionClientRejection(code, details = {}) {
+  return deepFreeze({
+    ok: false,
+    schemaVersion: `${STARCRAFT_TMG_COMPANION_PRODUCT_CLIENT_VERSION}.rejection`,
+    reason: String(code || "COMPANION_PRODUCT_CLIENT_REJECTED"),
+    ...clone(details),
+    trainingTruth: false,
+  });
+}
+
+/**
+ * Narrow companion product entry point (Ticket 26 / Slice 266c SS-3).
+ *
+ * A stateless async facade over the trusted Client Domain companion ingress:
+ * every operation re-derives the bound room/seat from the live Client Domain
+ * binding at call time, so a stale conversation can never outlive a rebind,
+ * and the seat credential is attached inside the Client Domain module — it
+ * never reaches this facade, the UI, or any storage. The facade fabricates
+ * nothing: every returned value is the server result, verbatim.
+ */
+export function createStarcraftTmgCompanionProductClientV1(options = {}) {
+  const clientDomain = options.clientDomain;
+  if (!clientDomain || typeof clientDomain !== "object") {
+    throw new TypeError("clientDomain is required");
+  }
+  const transport = assertStarcraftTmgCompanionProductTransportPort(options.transport);
+
+  async function invoke(operation, { conversationId, packageId, payload } = {}) {
+    try {
+      return await dispatchStarcraftTmgTrustedCompanionProductV1(clientDomain, {
+        operation,
+        ...(conversationId ? { conversationId } : {}),
+        ...(packageId ? { packageId } : {}),
+        ...(payload ? { payload } : {}),
+        transport,
+      });
+    } catch (error) {
+      return companionClientRejection(
+        String(error?.code || "COMPANION_PRODUCT_CLIENT_REJECTED"),
+        { message: error instanceof Error ? error.message : String(error) },
+      );
+    }
+  }
+
+  return Object.freeze({
+    schemaVersion: STARCRAFT_TMG_COMPANION_PRODUCT_CLIENT_VERSION,
+    status: () => invoke("status"),
+    catalogue: () => invoke("catalogue"),
+    openOrResume: ({ packageIds, versions, eraIds } = {}) => invoke("open_or_resume", {
+      payload: {
+        packageIds,
+        ...(versions ? { versions } : {}),
+        ...(eraIds ? { eraIds } : {}),
+      },
+    }),
+    readActive: () => invoke("read_active"),
+    read: ({ conversationId } = {}) => invoke("read", { conversationId }),
+    send: ({ conversationId, content, mentions } = {}) => invoke("send", {
+      conversationId,
+      payload: {
+        content,
+        ...(mentions !== undefined ? { mentions } : {}),
+      },
+    }),
+    continue: ({ conversationId } = {}) => invoke("continue", { conversationId }),
+    checkpoint: ({ conversationId, label } = {}) => invoke("checkpoint", {
+      conversationId,
+      payload: { label },
+    }),
+    resume: ({ conversationId, checkpointId } = {}) => invoke("resume", {
+      conversationId,
+      payload: checkpointId ? { checkpointId } : {},
+    }),
+    close: ({ conversationId } = {}) => invoke("close", { conversationId }),
+    // ── Slice 266d: Tavern-equivalent companion contracts ──
+    readPersona: () => invoke("persona_read"),
+    putPersona: ({ displayName, description, note } = {}) => invoke("persona_put", {
+      payload: { displayName, description, ...(note !== undefined ? { note } : {}) },
+    }),
+    rollbackPersona: ({ version, note } = {}) => invoke("persona_rollback", {
+      payload: { version, ...(note !== undefined ? { note } : {}) },
+    }),
+    readWorldbook: ({ conversationId } = {}) => invoke("worldbook_read", { conversationId }),
+    registerWorldbookEntry: ({ conversationId, entry } = {}) => invoke("worldbook_register", {
+      conversationId,
+      payload: { entry },
+    }),
+    exportWorldbook: ({ conversationId } = {}) => invoke("worldbook_export", { conversationId }),
+    importWorldbook: ({ conversationId, entries } = {}) => invoke("worldbook_import", {
+      conversationId,
+      payload: { entries },
+    }),
+    readMemory: ({ conversationId } = {}) => invoke("memory_read", { conversationId }),
+    writeSummary: ({ conversationId, content, coversTranscriptThrough, note } = {}) =>
+      invoke("memory_summary_write", {
+        conversationId,
+        payload: {
+          content,
+          ...(coversTranscriptThrough !== undefined ? { coversTranscriptThrough } : {}),
+          ...(note !== undefined ? { note } : {}),
+        },
+      }),
+    rollbackSummary: ({ conversationId, summaryVersion, note } = {}) =>
+      invoke("memory_summary_rollback", {
+        conversationId,
+        payload: { summaryVersion, ...(note !== undefined ? { note } : {}) },
+      }),
+    addEpisodicFact: ({ conversationId, content, factType } = {}) =>
+      invoke("memory_episodic_add", {
+        conversationId,
+        payload: { content, ...(factType !== undefined ? { factType } : {}) },
+      }),
+    applyRelationshipEvent: ({ conversationId, eventType, deltas, note } = {}) =>
+      invoke("memory_relationship_event", {
+        conversationId,
+        payload: { eventType, deltas, ...(note !== undefined ? { note } : {}) },
+      }),
+    listBranches: ({ conversationId } = {}) => invoke("branches_list", { conversationId }),
+    openBranch: ({ conversationId, kind, baseTurnSequence, note } = {}) =>
+      invoke("branch_open", {
+        conversationId,
+        payload: {
+          kind,
+          ...(baseTurnSequence !== undefined ? { baseTurnSequence } : {}),
+          ...(note !== undefined ? { note } : {}),
+        },
+      }),
+    rerollBranch: ({ conversationId, branchId } = {}) =>
+      invoke("branch_reroll", { conversationId, payload: { branchId } }),
+    submitBranchEdit: ({ conversationId, branchId, content } = {}) =>
+      invoke("branch_edit_submit", { conversationId, payload: { branchId, content } }),
+    acceptBranch: ({ conversationId, branchId, entryId } = {}) =>
+      invoke("branch_accept", { conversationId, payload: { branchId, entryId } }),
+    discardBranch: ({ conversationId, branchId } = {}) =>
+      invoke("branch_discard", { conversationId, payload: { branchId } }),
+    readAuthorsNote: ({ conversationId } = {}) => invoke("authors_note_read", { conversationId }),
+    putAuthorsNote: ({ conversationId, note, depth, frequency } = {}) =>
+      invoke("authors_note_put", {
+        conversationId,
+        payload: {
+          note,
+          ...(depth !== undefined ? { depth } : {}),
+          ...(frequency !== undefined ? { frequency } : {}),
+        },
+      }),
+    exportConversation: ({ conversationId } = {}) => invoke("conversation_export", { conversationId }),
+    restoreConversation: ({ export: exported } = {}) =>
+      invoke("conversation_restore", { payload: { export: exported } }),
+    exportPackage: ({ packageId } = {}) => invoke("package_export", { packageId }),
+    importPackage: ({ contract } = {}) => invoke("package_import", { payload: { contract } }),
+    readAuditExport: () => invoke("audit_export"),
+    verifyAudit: () => invoke("audit_verify"),
+    buildReplayCandidate: ({ sessionRef } = {}) =>
+      invoke("audit_replay_candidate", {
+        payload: sessionRef ? { sessionRef } : {},
+      }),
+    readPermissionSurfaces: () => invoke("permission_surfaces"),
+    guarantees: Object.freeze({
+      seatTokenPersistence: "never",
+      roomMutationAuthority: false,
+      previewConfirmApplyAuthority: false,
+      opponentPrivateAccess: false,
+      hiddenChainOfThought: "not_collected",
+      fabricatedReplies: "never",
+      trainingTruth: false,
+    }),
+    trainingTruth: false,
+  });
+}
+
 const SURFACES = new Set(["expo_web", "expo_native", "battle_lab", "verifier"]);
 const ACCESS_KINDS = new Set(["invite", "recovery"]);
 const INTENT_KEYS = Object.freeze({
@@ -3012,6 +3507,58 @@ export function createStarcraftTmgClientDomain(options = {}) {
     }
   }
 
+  async function performTrustedCompanionProductOperation(input = {}) {
+    if (!object(input) || !COMPANION_PRODUCT_OPERATIONS.has(input.operation)) {
+      return deepFreeze({
+        ok: false,
+        reason: "COMPANION_PRODUCT_REQUEST_INVALID",
+        trainingTruth: false,
+      });
+    }
+    const transport = input.transport;
+    try {
+      assertStarcraftTmgCompanionProductTransportPort(transport);
+    } catch {
+      return deepFreeze({
+        ok: false,
+        reason: "COMPANION_PRODUCT_NOT_MOUNTED",
+        trainingTruth: false,
+      });
+    }
+    if (!binding) {
+      return deepFreeze({
+        ok: false,
+        reason: "COMPANION_PRODUCT_BINDING_REQUIRED",
+        trainingTruth: false,
+      });
+    }
+    try {
+      const result = await transport.execute({
+        operation: input.operation,
+        roomId: binding.roomId,
+        seatToken: bindingCredential,
+        ...(input.conversationId ? { conversationId: input.conversationId } : {}),
+        ...(input.packageId ? { packageId: String(input.packageId) } : {}),
+        ...(object(input.payload) ? { payload: clone(input.payload) } : {}),
+      });
+      return deepFreeze(clone(result));
+    } catch (error) {
+      const code = error instanceof StarcraftTmgCompanionProductTransportError
+        || error instanceof StarcraftTmgClientTransportError
+        ? error.code
+        : String(error?.code || "COMPANION_PRODUCT_TRANSPORT_FAILED");
+      return deepFreeze({
+        ok: false,
+        reason: code,
+        details: scrubCredentialMaterial(
+          safeErrorDetails(error, sensitiveValues),
+          sensitiveValues,
+        ),
+        trainingTruth: false,
+      });
+    }
+  }
+
   async function confirmTrustedRoleAgentPreview(input = {}) {
     const blocked = ensureOperational({ mutation: true });
     if (blocked) return rejection(blocked, { mutationAllowed: false });
@@ -3691,5 +4238,8 @@ export function createStarcraftTmgClientDomain(options = {}) {
   const clientDomain = Object.freeze({ bootstrap, read, dispatch, subscribe });
   ROLE_AGENT_PREVIEW_INGRESS.set(clientDomain, (input) =>
     enqueue(() => confirmTrustedRoleAgentPreview(input)));
+  COMPANION_PRODUCT_INGRESS.set(clientDomain, (input) =>
+    enqueue(() => performTrustedCompanionProductOperation(input)));
+  COMPANION_PRODUCT_MOUNTED_DOMAINS.add(clientDomain);
   return clientDomain;
 }
