@@ -627,7 +627,11 @@ repairs, not Provider retries.
 
 ## 266f.8+ — REOPEN: persona differentiation, non-empty lore grounding, imagery/layout audit (2026-09-22)
 
-> Status: **frozen reopen plan.** The manifest taskBrief reopens this slice
+> Status: **COMPLETE (2026-09-23)** — all six sub-slices executed; gate
+> 37/14/17 (`27b3c3f0…e5c1`, 0 Provider calls); epoch-4 live acceptance
+> ACHIEVED (4 physical calls, reportHash `f5edaa5d…5be06f`). See the
+> execution record below. Original reopen framing kept for lineage: the
+> manifest taskBrief reopened this slice
 > after the passed 266f.7 continuity run: its own honest note records that the
 > two turn-1 acknowledgments were byte-identical prose, Kerrigan's formal
 > layers are empty by data, and companion imagery can overlap or be clipped.
@@ -717,6 +721,166 @@ Pre-fix state, proven against the CURRENT catalogue + mapper + package contract:
    persistence.
 6. **266f.13 closure**: this doc finalized with before/after evidence, gate
    receipt, live receipt and honest gaps.
+
+### Frozen numbered sub-slices (one scoped commit each)
+
+> **Execution record (2026-09-23): all six sub-slices are now COMPLETE.** The
+> results below supersede the "frozen plan" framing; the plan text is kept
+> verbatim for lineage.
+
+1. **266f.8 formal content for all six sealed companions** — DONE at
+   `13f4481` (see the commit and the catalogue/pack sources).
+2. **266f.9 speaker-specific prompt assembly + prompt-layer provenance** —
+   DONE at `10c1724`.
+3. **266f.10 participant header avatars + message speaker binding + layout
+   repairs** — DONE at `346ad3a`: speaker-order chips bind every participant
+   avatar (committed idle keyframe for companions, comms emblem for the
+   human) + name + era + state (`next`/`spoke`/`idle`); the ▶ highlight never
+   hides other chips; every transcript message binds its speaker
+   avatar/name/era; the transcript box gained the real `overflow: scroll`
+   rule (the audit's one clipping defect); the catalogue panel surfaces
+   Kerrigan's backend reference pointer. Every pre-existing testID preserved.
+4. **266f.11 verifier extension** — DONE at `713967f` + `c319607`. Gate
+   `node scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs`
+   run 2 (run 1 exposed and repaired a real gate-side race: the
+   continuity-memory wait's summary condition was already true before the
+   episodic write landed — `CONTINUITY_MEMORY_COUNTS_WRONG`; the wait now
+   requires BOTH projections): **37 checks / 14 claims / 17 artifacts,
+   reportHash `27b3c3f0db2a2bcfc7c174460be13990b101d8fa18a9ad497a83f287a151e5c1`**,
+   0 real Provider calls / ¥0. New coverage:
+   - Kerrigan era/worldbook assertions updated for her real sealed formal
+     content (`hots.primal.post_zerus.pre_lotv`; sealed package (formal) 6);
+   - `headless_six_companion_formal_content_audit`: 6/6 sealed packages
+     export non-empty persona profile / worldbook / author-note / era-detail
+     material, official-tier canon entries are source-linked, persona profile
+     hashes pairwise distinct;
+   - `headless_prompt_differentiation_audit`: the six captured deterministic
+     Provider requests carry pairwise-distinct per-speaker system prompts
+     (persona markers + era block + package author-note layer +
+     multi-companion distinctness instruction) and pairwise-distinct context
+     assemblies; reply-level `promptLayers` provenance (distinct
+     profileHash/noteHash, layer separation) proven on Kerrigan vs Zagara;
+   - `headless_genuine_memory_engine_durable_layer`: conversation-derived
+     durable candidate → approval without user consent fail-closed rejected
+     → candidate never enters context → explicit user approval → the NEXT
+     assembly carries `durable_memory` for BOTH companions. This phase
+     fail-first exposed a REAL engine gap (group-scope approved durable
+     records were invisible to per-companion assemblies because
+     `assembleContext` read durable memory only from the primary scope);
+     the engine now merges approved durable records from additional
+     conversation scopes exactly like rolling summary/episodic/relationship
+     (scratch preflights `build/266f11-preflight.mjs` / `-debug.mjs`,
+     uncommitted, 0 Provider calls);
+   - browser: `desktop_participant_avatar_name_era_binding` (desktop AND
+     390px assertions), `desktop_six_companion_group_chat_avatar_header`
+     (all seven chips + six idle keyframes + human emblem),
+     `desktop_long_transcript_bounded_scroll` (21-message six-companion
+     conversation renders the bounded last-16 window under the scroll rule),
+     `mid_width_indock_panel_layout` (900px keeps the in-dock layout, no
+     fixed sheet); new named screenshots
+     `12-desktop-speaker-avatar-binding.png`,
+     `13-desktop-six-companion-group-chat.png`,
+     `14-desktop-long-transcript-scroll.png`,
+     `15-midwidth-indock-panel.png`;
+   - epoch-4 execution read dynamically from the runner's report (like
+     epoch 3).
+5. **266f.12 live runner epoch 4 + live acceptance** — DONE at `301a081`
+   (runner) and EXECUTED once (below).
+6. **266f.13 closure** — this section.
+
+### Executed epoch-4 live run (the four authorized physical calls)
+
+- Flag: `--authorize-live-byok-companion-persona-differentiation`; run id
+  `463a750c-cfda-4c9a-b522-52d9f7d4c358`, 2026-09-22T16:14:38Z → 16:15:14Z;
+  report
+  `build/ticket-26-slice-266f-live-byok-companion-v1/live-report.persona.json`,
+  reportHash `f5edaa5d7760ad433c9398148303ffa318be44551678b1db056b31b16e5be06f`.
+  Lineage proven before anything: epoch-1/2 locks + PASSED epoch-2 report +
+  all four epoch-3 locks + PASSED epoch-3 report. Same secure path as epochs
+  1–3: Keychain (attested `/usr/bin/security`, empty environment, no shell) →
+  isolated Worker → four HTTPS POSTs to `api.deepseek.com` (TLS verified, DNS
+  pinned, no proxy, no redirect). Parent credential buffer asserted zeroed
+  after attach.
+- **FOUR physical calls, all HTTP 200, zero retry** (`physicalAttempts: 1`,
+  `automaticRetries: 0` per call; `persona-call-1..4.lock.json` O_EXCL claimed
+  immediately before each egress). A rerun now refuses with
+  `LIVE_BYOK_COMPANION_SUCCESS_ALREADY_RECORDED` (exit 2).
+- **Distinct roleplay on BOTH turns** (the reopen defect class closed):
+  turn 1 — Kerrigan challenges the plan's threat assessment and Medic
+  abandonment ("别把犹豫…" doctrine: names the 12-zergling flank threat and
+  the cost); Zagara answers in attrition/biomass framing ("白送生物质").
+  Turn 2 recall answers are likewise character-distinct. Neither pair is
+  byte-identical; the assemblies and persona profile/author-note hashes
+  differ (`dc9de5b26420`/`0aea8fdb7aa1`, `5bf8be8e3623`/`240b6ad693ba`).
+- **Formal worldbook retrieval for BOTH companions**: Kerrigan's three
+  sealed character-tier entries (`kerrigan.wb.primal_queen`,
+  `.queen_of_blades_history`, `.tmg_context`) fired only on her assembly;
+  Zagara's three only on hers — on both turns.
+- **Prompt-layer provenance** recorded per reply: personaProfile present
+  (styleExamples/doctrineHints counts), package author-note noteHash,
+  conversation author's note (none), static-canon vs session long-term
+  memory split (`layerSeparation`).
+- **Shared memory continuity INCLUDING the durable long-term layer**: turn-1
+  plan 「霆殛-6」 written as chat-tier worldbook entry + rolling summary v1 +
+  episodic fact (real UI contracts) + typed relationship event (real HTTP
+  contract); the conversation-derived durable candidate was proposed, its
+  consent-less promotion fail-closed rejected
+  (`COMPANION_DURABLE_PROMOTION_REQUIRES_USER_APPROVAL`), then explicitly
+  user-approved. Checkpoint + FULL companion server/session restart (HTTP
+  listener and SQLite connection closed; every module/session structure
+  recomposed; Room authority instance preserved, match binding hash stable,
+  state revision 0 → 0); transcript byte-identical after restart; turn-2
+  recall by BOTH companions grounded in the restored layers with
+  `durable_memory` present in BOTH assemblies and in both
+  `promptLayers.sessionLongTermMemory.layers`.
+- **Byte-identity**: every reply byte-matches across the isolated-Worker
+  output, the server transcript and the rendered DOM on desktop AND the
+  390×844 touch resume (six messages, avatar-bound header, zero horizontal
+  overflow).
+- **Usage/cost** (per call, DeepSeek-reported): call 1: 119,652+82 units,
+  $0.02637756; call 2: 119,675+53, $0.02636348; call 3: 120,858+86,
+  $0.026536464; call 4: 120,879+86, $0.026541084. Totals: 481,064 input +
+  307 output = 481,371 units, **$0.105818588** — explicitly-labelled
+  snapshot-rate estimate (`estimateOnly: true`): the Provider again reported
+  `deepseek-flash` against the requested `deepseek-v4-flash` (the drift
+  recorded since epoch 1), so the pinned pricing snapshot refuses an
+  authoritative receipt; the Provider invoice remains authoritative.
+- **Detach / zero persistence**: explicit `explicit_user_detach` with the
+  `sensitiveBytesZeroed` shutdown acknowledgement; worker tombstone
+  `state: "exited"`, `credentialPersistence: "none_after_process_exit"`;
+  worker process provably gone; parent buffer re-zeroed;
+  `rawCredentialPersisted: false`, `credentialHashPersisted: false`; the
+  report, all five screenshots and the encrypted SQLite artifact scanned for
+  credential-shaped material and for the per-run SQLite key (random,
+  memory-only, never persisted).
+- **Room safety**: zero Room mutations on the shared mutation-counting
+  facade across both compositions; state revision 0 → 0.
+- **Evidence** (sha256-indexed in the report):
+  `browser-evidence/epoch-4/live-01-desktop-two-companion-session-open.png`,
+  `live-02-desktop-turn1-both-replies.png`,
+  `live-03-desktop-turn1-checkpoint.png`,
+  `live-04-desktop-turn2-recall-after-restart.png`,
+  `live-05-narrow-mobile-resumed.png`, plus the encrypted durable store
+  `persona/companion-product.sqlite` (73,728 bytes).
+
+### 266f.13 closure accounting
+
+- Slice live total after epoch 4: **10 physical calls, 1,196,360 units,
+  ≈$0.2890 estimated** (epoch 1: 1 call, 118,975 units, $0.05240532;
+  epoch 2: 1 call, 118,990 units, $0.026021272; epoch 3: 4 calls, 477,024
+  units, $0.104819144; epoch 4: 4 calls, 481,371 units, $0.105818588 — all
+  snapshot-rate estimates under the recorded reported-model drift; invoices
+  authoritative). No ¥100 threshold crossed.
+- Focused gate: 2 runs total (run 1 failed on the gate-side
+  continuity-memory race — repaired; run 2 passed 37/14/17). No unrelated
+  gates were rerun. Scratch preflights under `build/` stay uncommitted.
+- **No open Critical/High finding.** The reopen defects (byte-identical
+  persona prose, empty formal Kerrigan layers, durable layer never
+  exercised, unbound speaker imagery, transcript clipping) are all closed
+  with live and deterministic evidence. The Provider reported-model drift
+  (`deepseek-flash` vs requested `deepseek-v4-flash`) remains a documented
+  nonblocking Provider-side reporting fact outside this manifest.
+- Kimi CLI exposes no token/currency telemetry; no Kimi cost is inferred.
 
 Verification discipline unchanged: the single focused gate runs at most once
 after the last relevant code change; scratch preflight mirrors live under
