@@ -190,6 +190,8 @@ interface StarcraftTmgCompanionProductClient {
   restoreConversation(input: { export?: unknown }): Promise<CompanionProductResult>;
   exportPackage(input?: { packageId?: string }): Promise<CompanionProductResult>;
   importPackage(input: { contract?: unknown }): Promise<CompanionProductResult>;
+  promotePackage(input: { packageId?: string }): Promise<CompanionProductResult>;
+  readPackagePromotions(): Promise<CompanionProductResult>;
   readAuditExport(): Promise<CompanionProductResult>;
   verifyAudit(): Promise<CompanionProductResult>;
   buildReplayCandidate(input?: { sessionRef?: unknown }): Promise<CompanionProductResult>;

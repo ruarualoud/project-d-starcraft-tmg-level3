@@ -121,6 +121,7 @@ interface CompanionChatState {
   authorsNote: any | null;
   auditResult: any | null;
   permissionSurfaces: any | null;
+  packagePromotions: any | null;
   transferNote: string | null;
   lastExport: any | null;
   personaNameDraft: string;
@@ -208,6 +209,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     authorsNote: null,
     auditResult: null,
     permissionSurfaces: null,
+    packagePromotions: null,
     transferNote: null,
     lastExport: null,
     personaNameDraft: "",
@@ -975,6 +977,27 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
       const result = await companionProduct!.readPermissionSurfaces();
       if (result?.ok) patchChat({ permissionSurfaces: result });
       else patchChat({ error: { code: String(result?.reason || "COMPANION_PERMISSION_SURFACES_FAILED") } });
+    });
+  }
+
+  // ── Slice 266e: package-to-backend promotion (real server contract) ──
+  async function loadPackagePromotions() {
+    await runChatOp("package_promotions", async () => {
+      const result = await companionProduct!.readPackagePromotions();
+      if (result?.ok) patchChat({ packagePromotions: result });
+      else patchChat({ error: { code: String(result?.reason || "COMPANION_PACKAGE_PROMOTIONS_FAILED") } });
+    });
+  }
+
+  async function promoteChatPackage(packageId: string) {
+    await runChatOp("package_promote", async () => {
+      const result = await companionProduct!.promotePackage({ packageId });
+      if (result?.ok) {
+        const refreshed = await companionProduct!.readPackagePromotions();
+        if (refreshed?.ok) patchChat({ packagePromotions: refreshed });
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_PACKAGE_PROMOTE_FAILED") } });
+      }
     });
   }
 
@@ -2249,6 +2272,56 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     );
   }
 
+  function renderChatPromotionsCard() {
+    const promotions: any[] = chat.packagePromotions?.promotions || [];
+    const presentationPacks = COMPANION_CATALOGUE_V1.entries.filter((entry: any) => entry.pack);
+    return (
+      <View style={styles.gapCard} testID="companion-chat-promotions">
+        <Text style={styles.gapTitle}>
+          {zh
+            ? "后端包晋升(持久封存 + 哈希钉 · 每次产品组成重校验)"
+            : "Backend pack promotion (durable seal + hash pins · re-verified every composition)"}
+        </Text>
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={chat.busy || !companionProduct}
+            label={zh ? "读取晋升列表" : "Read promotions"}
+            onPress={() => void loadPackagePromotions()}
+            testID="companion-chat-promotions-load"
+          />
+          {presentationPacks.map((entry: any) => {
+            const packageId = companionPackageIdFromCharacterId(entry.characterId);
+            const slug = entry.characterId.split(".")[1] || entry.characterId;
+            return (
+              <ActionButton
+                key={packageId}
+                disabled={chat.busy || !companionProduct}
+                label={zh ? `晋升 ${entry.displayNameZh}` : `Promote ${entry.displayName}`}
+                onPress={() => void promoteChatPackage(packageId)}
+                testID={`companion-chat-promote-${slug}`}
+              />
+            );
+          })}
+        </View>
+        <View testID="companion-chat-promotions-list">
+          {promotions.map((promotion: any) => {
+            const slug = String(promotion.packageId).replace(/^starcraft-tmg\.companion\./u, "");
+            return (
+              <Text key={promotion.packageId} style={styles.gapCode} testID={`companion-chat-promotion-${slug}`}>
+                {slug} · pin {String(promotion.pin).slice(0, 12)}… · verified: {String(promotion.pinVerified)} · registered: {String(promotion.registered)} · durable: {String(chat.packagePromotions?.durable === true)}
+              </Text>
+            );
+          })}
+        </View>
+        <Text style={styles.sectionMeta}>
+          {zh
+            ? "封存合同与其 sha256 完整性钉一起持久化;每次产品组成重派生每个钉并重新注册相同封存字节——钉不匹配或版本冲突即失败关闭。晋升绝不授予规则/房间/Provider 权限。"
+            : "The sealed contract is persisted with its sha256 integrity pin; every product composition re-derives each pin and re-registers the identical sealed bytes — a pin mismatch or version conflict fails closed. Promotion never grants Rules/room/Provider authority."}
+        </Text>
+      </View>
+    );
+  }
+
   function renderChatPermissionsCard() {
     const surfaces: any[] = chat.permissionSurfaces?.surfaces || [];
     return (
@@ -2561,6 +2634,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         {renderChatPersonaCard()}
         {renderChatAuditCard()}
         {renderChatPermissionsCard()}
+        {renderChatPromotionsCard()}
         {chat.conversation ? renderChatConversation(chat.conversation) : (
           <>
             <Text style={styles.fieldLabel}>

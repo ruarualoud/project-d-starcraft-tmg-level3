@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 
 import { hashStarcraftTmgContract } from "../authoritative-engine/transition-v1.mjs";
-import { createWorldbookEntry } from "../companion-backend-module-v1/index.mjs";
+import { createWorldbookEntry, importCompanionBackendContract } from
+  "../companion-backend-module-v1/index.mjs";
 
 export const STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION =
   "starcraft_tmg_companion_room_session_service_v1";
@@ -9,6 +10,12 @@ export const STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION =
 const BINDING_NAMESPACE = "product.companion-room-binding.v1";
 const PERSONA_NAMESPACE = "product.companion-persona.v1";
 const AUTHORS_NOTE_NAMESPACE = "product.companion-authors-note.v1";
+// Slice 266e: durable package-to-backend promotion records (sealed contract +
+// sha256 integrity pin). Exported so product construction can re-verify and
+// re-register promotions on every composition.
+export const STARCRAFT_TMG_COMPANION_PACKAGE_PROMOTION_NAMESPACE =
+  "product.companion-package-promotion.v1";
+const PACKAGE_PROMOTION_NAMESPACE = STARCRAFT_TMG_COMPANION_PACKAGE_PROMOTION_NAMESPACE;
 const MAX_COMPANIONS = 6;
 const MAX_USER_MESSAGE_CHARS = 8_192;
 const MAX_PROVIDER_OUTPUT_TOKENS = 4_096;
@@ -1903,6 +1910,143 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     }
   }
 
+  // ── Slice 266e: package-to-backend promotion (backend sealing + hash pins) ──
+
+  // Promoting a registered package persists the EXACT sealed backend contract
+  // with its sha256 integrity hash as the pin, so any later composition can
+  // re-verify the pin and re-register the identical sealed bytes (durable
+  // backend sealing). Promotion is idempotent on the same pin, a different
+  // pin for the same package fails closed, and a promotion never grants
+  // Rules, room-mutation, Provider or memory authority.
+  async function promotePackage(input = {}) {
+    try {
+      const authenticated = await authority(input);
+      if (authenticated.rejection) return authenticated.rejection;
+      const packageId = requiredString(input.packageId, "packageId", 160);
+      let contract;
+      try {
+        contract = backend.registry.get(packageId);
+      } catch (error) {
+        return rejection(error?.code || "PACKAGE_NOT_FOUND", { packageId });
+      }
+      try {
+        assertPortablePayload(contract, "packagePromotion");
+      } catch (error) {
+        return rejection(error?.code || "COMPANION_PACKAGE_PROMOTION_FORBIDDEN_CONTENT");
+      }
+      const pin = String(contract.integrity?.hash || "");
+      if (!/^[0-9a-f]{64}$/u.test(pin)) {
+        return rejection("COMPANION_PACKAGE_PROMOTION_PIN_INVALID", { packageId });
+      }
+      const stored = await backend.persistenceGateway.get(PACKAGE_PROMOTION_NAMESPACE, packageId);
+      if (stored?.found) {
+        if (String(stored.value?.pin || "") === pin) {
+          return deepFreeze({
+            ok: true,
+            schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.package-promotion`,
+            packageId,
+            version: String(contract.version),
+            pin,
+            duplicate: true,
+            durable: backend.persistenceGateway.durable === true,
+            durability: String(backend.persistenceGateway.durability || ""),
+            trainingTruth: false,
+          });
+        }
+        return rejection("COMPANION_PACKAGE_PROMOTION_CONFLICT", {
+          packageId,
+          pinnedHash: String(stored.value?.pin || ""),
+          requestedHash: pin,
+        });
+      }
+      const record = {
+        schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.package-promotion-record`,
+        packageId,
+        version: String(contract.version),
+        pin,
+        contract: clone(contract),
+        promotedAt: new Date(now()).toISOString(),
+        promotedBySeat: authenticated.binding.seatKey,
+        roomId: authenticated.binding.roomId,
+        authority: { canOverrideRules: false, canMutateRoom: false },
+        trainingTruth: false,
+      };
+      await backend.persistenceGateway.put(PACKAGE_PROMOTION_NAMESPACE, packageId, record);
+      return deepFreeze({
+        ok: true,
+        schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.package-promotion`,
+        packageId,
+        version: String(contract.version),
+        pin,
+        duplicate: false,
+        durable: backend.persistenceGateway.durable === true,
+        durability: String(backend.persistenceGateway.durability || ""),
+        trainingTruth: false,
+      });
+    } catch (error) {
+      return rejection(error?.code || "COMPANION_PACKAGE_PROMOTE_FAILED");
+    }
+  }
+
+  // Every listed pin is re-derived LIVE from the persisted sealed contract's
+  // sha256 integrity and cross-checked against the backend registry; a
+  // mismatch is surfaced fail-closed (pinVerified: false + reason), never
+  // hidden.
+  async function readPackagePromotions(input = {}) {
+    try {
+      const authenticated = await authority(input);
+      if (authenticated.rejection) return authenticated.rejection;
+      const keys = await backend.persistenceGateway.list(PACKAGE_PROMOTION_NAMESPACE);
+      const promotions = [];
+      for (const key of keys) {
+        const stored = await backend.persistenceGateway.get(PACKAGE_PROMOTION_NAMESPACE, key);
+        if (!stored?.found) continue;
+        const record = stored.value;
+        let contract = null;
+        let pinVerified = false;
+        let pinReason = null;
+        try {
+          contract = importCompanionBackendContract(record?.contract, "companion-package");
+          pinVerified = String(record?.pin || "") === String(contract.integrity?.hash || "");
+          if (!pinVerified) pinReason = "COMPANION_PACKAGE_PROMOTION_PIN_MISMATCH";
+        } catch (error) {
+          pinReason = error?.code || "COMPANION_PACKAGE_PROMOTION_RECORD_INVALID";
+        }
+        let registered = false;
+        if (contract && pinVerified) {
+          try {
+            registered = backend.registry.get(contract.packageId, contract.version)
+              .integrity.hash === contract.integrity.hash;
+          } catch {
+            registered = false;
+          }
+        }
+        promotions.push({
+          packageId: String(record?.packageId || key),
+          version: String(record?.version || ""),
+          pin: String(record?.pin || ""),
+          pinVerified,
+          ...(pinReason ? { pinReason } : {}),
+          registered,
+          promotedAt: String(record?.promotedAt || ""),
+          promotedBySeat: String(record?.promotedBySeat || ""),
+        });
+      }
+      promotions.sort((left, right) => left.packageId.localeCompare(right.packageId));
+      return deepFreeze({
+        ok: true,
+        schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.package-promotions`,
+        promotions,
+        verification: "every pin is re-derived live from the persisted sealed contract (sha256 integrity) and cross-checked against the backend registry; mismatch fails closed",
+        durable: backend.persistenceGateway.durable === true,
+        durability: String(backend.persistenceGateway.durability || ""),
+        trainingTruth: false,
+      });
+    } catch (error) {
+      return rejection(error?.code || "COMPANION_PACKAGE_PROMOTIONS_READ_FAILED");
+    }
+  }
+
   async function exportConversationWorldbook(input = {}) {
     try {
       const loaded = await loadBound(input);
@@ -2230,6 +2374,8 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         "conversation_restore",
         "package_export",
         "package_import",
+        "package_promote",
+        "package_promotions",
         "worldbook_export",
         "worldbook_import",
         "audit_export",
@@ -2246,6 +2392,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       branches: "swipe/reroll/edit-as-branch with lineage; accepting an entry appends a NEW turn and never overwrites accepted history",
       authorsNote: "depth/frequency system-message injection, deterministic from persisted state, versioned (32-version bound)",
       importExportRestore: "schema-validated, integrity-hashed exports of conversations/packages/chat worldbooks; restore is same-seat only and never overwrites; no credentials in either direction",
+      packagePromotion: "package-to-backend promotion: the exact sealed backend contract is persisted with its sha256 integrity hash as the pin (idempotent on the same pin, conflict fail-closed); every composition re-verifies each pin and re-registers the identical sealed bytes; no Rules/room/Provider authority is granted",
       audit: "hash-chained deterministic audit log of public companion operations; replay candidates are WikiSkill/EvoTest evidence only, never automatic promotion",
       permissionSurfaces: "human_vs_agent / human_vs_human / agent_vs_agent_observer / review_mode computed live through the CB-3 read policy; opponent-private always denied; no Preview/Confirm/Apply anywhere",
       storedSeatCredential: false,
@@ -2292,6 +2439,8 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     restoreConversation,
     exportPackage,
     importPackage,
+    promotePackage,
+    readPackagePromotions,
     exportConversationWorldbook,
     importConversationWorldbook,
     readAuditExport,

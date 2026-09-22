@@ -90,6 +90,9 @@ const COMPANION_PRODUCT_OPERATIONS = new Set([
   "permission_surfaces",
   "package_export",
   "package_import",
+  // Slice 266e: package-to-backend promotion (durable seal + hash pins).
+  "package_promote",
+  "package_promotions",
   "conversation_restore",
   "worldbook_read",
   "worldbook_register",
@@ -218,6 +221,9 @@ function companionProductEndpoint(request) {
       path: `packages/${encodeURIComponent(String(request.packageId || ""))}/export?${roomQuery}`,
     },
     package_import: { method: "POST", path: "packages/import", body },
+    // ── Slice 266e ──
+    package_promote: { method: "POST", path: "packages/promote", body },
+    package_promotions: { method: "GET", path: `packages/promotions?${roomQuery}` },
     conversation_restore: { method: "POST", path: "conversations/restore", body },
     worldbook_read: { method: "GET", path: `${conversation}/worldbook?${roomQuery}` },
     worldbook_register: { method: "POST", path: `${conversation}/worldbook`, body },
@@ -259,6 +265,8 @@ const COMPANION_PRODUCT_ROOM_SCOPED_OPERATIONS = new Set([
   "permission_surfaces",
   "package_export",
   "package_import",
+  "package_promote",
+  "package_promotions",
   "conversation_restore",
 ]);
 const COMPANION_PRODUCT_BRANCH_OPERATIONS = new Set([
@@ -294,6 +302,13 @@ function assertCompanionProductRequest(request) {
     throw new StarcraftTmgCompanionProductTransportError(
       "COMPANION_TRANSPORT_REQUEST_INVALID",
       "packageId is required and bounded",
+    );
+  }
+  if (request.operation === "package_promote"
+    && !COMPANION_PRODUCT_CONVERSATION_ID.test(String(request.payload?.packageId || ""))) {
+    throw new StarcraftTmgCompanionProductTransportError(
+      "COMPANION_TRANSPORT_REQUEST_INVALID",
+      "payload.packageId is required and bounded",
     );
   }
   if (COMPANION_PRODUCT_BRANCH_OPERATIONS.has(request.operation)
@@ -537,6 +552,9 @@ export function createStarcraftTmgCompanionProductClientV1(options = {}) {
       invoke("conversation_restore", { payload: { export: exported } }),
     exportPackage: ({ packageId } = {}) => invoke("package_export", { packageId }),
     importPackage: ({ contract } = {}) => invoke("package_import", { payload: { contract } }),
+    // ── Slice 266e: package-to-backend promotion ──
+    promotePackage: ({ packageId } = {}) => invoke("package_promote", { payload: { packageId } }),
+    readPackagePromotions: () => invoke("package_promotions"),
     readAuditExport: () => invoke("audit_export"),
     verifyAudit: () => invoke("audit_verify"),
     buildReplayCandidate: ({ sessionRef } = {}) =>

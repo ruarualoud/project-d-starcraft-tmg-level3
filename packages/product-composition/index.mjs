@@ -1,5 +1,6 @@
 export {
   STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION,
+  STARCRAFT_TMG_COMPANION_PACKAGE_PROMOTION_NAMESPACE,
   createStarcraftTmgCompanionRoomSessionServiceV1,
 } from "./companion-room-session-service-v1.mjs";
 

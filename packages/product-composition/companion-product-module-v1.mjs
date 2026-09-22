@@ -8,9 +8,12 @@ import {
   createCompanionPackageRegistry,
   createPostgresCompanionPersistenceAdapter,
   createSqliteCompanionPersistenceAdapter,
+  importCompanionBackendContract,
 } from "../companion-backend-module-v1/index.mjs";
-import { createStarcraftTmgCompanionRoomSessionServiceV1 } from
-  "./companion-room-session-service-v1.mjs";
+import {
+  STARCRAFT_TMG_COMPANION_PACKAGE_PROMOTION_NAMESPACE,
+  createStarcraftTmgCompanionRoomSessionServiceV1,
+} from "./companion-room-session-service-v1.mjs";
 
 export const STARCRAFT_TMG_COMPANION_PRODUCT_MODULE_VERSION =
   "starcraft_tmg_companion_product_module_v1";
@@ -277,6 +280,44 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
       ? { globalWorldbookEntries: clone(options.globalWorldbookEntries) } : {}),
   });
 
+  // Slice 266e: durable package promotions are re-sealed into the backend
+  // registry on the first request of each composition. Every persisted pin is
+  // re-derived from the stored contract's sha256 integrity; a pin mismatch,
+  // an integrity failure or a registry version conflict fails the request
+  // closed — a tampered or stale promotion can never be served.
+  let packagePromotionsReloaded = null;
+  async function ensurePackagePromotionsReloaded() {
+    if (packagePromotionsReloaded) return packagePromotionsReloaded;
+    const reloaded = [];
+    const keys = await backend.persistenceGateway
+      .list(STARCRAFT_TMG_COMPANION_PACKAGE_PROMOTION_NAMESPACE);
+    for (const key of keys) {
+      const stored = await backend.persistenceGateway
+        .get(STARCRAFT_TMG_COMPANION_PACKAGE_PROMOTION_NAMESPACE, key);
+      if (!stored?.found) continue;
+      const record = stored.value;
+      const contract = importCompanionBackendContract(record?.contract, "companion-package");
+      if (String(record?.pin || "") !== String(contract.integrity?.hash || "")) {
+        fail("COMPANION_PACKAGE_PROMOTION_PIN_MISMATCH",
+          `promotion pin mismatch for ${String(record?.packageId || key)}`,
+          { packageId: String(record?.packageId || key) });
+      }
+      const registered = backend.registry.register(contract);
+      if (!registered?.ok) {
+        fail("COMPANION_PACKAGE_PROMOTION_REGISTRATION_FAILED",
+          String(registered?.reason || key));
+      }
+      reloaded.push({
+        packageId: contract.packageId,
+        version: contract.version,
+        pin: contract.integrity.hash,
+        duplicate: registered.duplicate === true,
+      });
+    }
+    packagePromotionsReloaded = deepFreeze(reloaded);
+    return packagePromotionsReloaded;
+  }
+
   async function authority(roomId, seatToken) {
     if (!seatToken) return { rejection: rejection("authentication_required") };
     const room = await roomRuntime.readRoom({ roomId: String(roomId || ""), seatToken });
@@ -360,6 +401,12 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
       maximumCompanions: MAX_COMPANIONS,
       provider: providerStatus(),
       persistence: backend.persistenceGateway.durabilityDeclaration(),
+      packagePromotions: {
+        reloaded: (packagePromotionsReloaded || []).length,
+        pinVerification: "sha256 integrity pins re-derived from the persisted sealed contracts and re-registered on every composition; mismatch or version conflict fails closed",
+        durable: backend.persistenceGateway.durable === true,
+        durability: String(backend.persistenceGateway.durability || ""),
+      },
       service: service.metadata(),
       roomMutationAuthority: false,
       previewConfirmApplyAuthority: false,
@@ -416,6 +463,7 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
     const seatToken = bearerToken(input.headers || {});
     const roomId = String(body.roomId || query.roomId || "");
     try {
+      await ensurePackagePromotionsReloaded();
       if (method === "GET" && segments[0] === "status") {
         const auth = await authority(roomId, seatToken);
         if (auth.rejection) return envelope(auth.rejection, 401);
@@ -486,6 +534,20 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
             roomId: auth.roomId,
             seatToken,
             contract: body.contract,
+          }));
+        }
+        // Slice 266e: package-to-backend promotion (durable seal + hash pin).
+        if (method === "POST" && segments[1] === "promote") {
+          return envelope(await service.promotePackage({
+            roomId: auth.roomId,
+            seatToken,
+            packageId: body.packageId,
+          }));
+        }
+        if (method === "GET" && segments[1] === "promotions") {
+          return envelope(await service.readPackagePromotions({
+            roomId: auth.roomId,
+            seatToken,
           }));
         }
         const packageId = String(segments[1] || "");
@@ -698,6 +760,8 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
         "GET permissions/surfaces",
         "GET packages/{packageId}/export",
         "POST packages/import",
+        "POST packages/promote",
+        "GET packages/promotions",
         "POST conversations (open_or_resume)",
         "GET conversations/active",
         "POST conversations/restore",
