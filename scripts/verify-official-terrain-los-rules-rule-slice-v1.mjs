@@ -321,9 +321,9 @@ const diagonalState = prepare(fixture, terrainBundle, { actorPositions: [
 terrain: [terrain("diagonal", 2, { footprint: { shape: "axis_aligned_rectangle",
   minXMilliInches: 4000, maxXMilliInches: 8000,
   minYMilliInches: 4000, maxYMilliInches: 8000 } })] });
-assert.throws(() => evaluateOfficialTerrainLineOfSightV1(
-  losInput(diagonalState, terrainBundle)),
-/TERRAIN_LOS_UNSUPPORTED_RECTANGULAR_TRACE/u);
+assert.equal(evaluateOfficialTerrainLineOfSightV1(
+  losInput(diagonalState, terrainBundle)).visible, false,
+"the diagonal closed rectangle completely hides both physical bases");
 acceptance.push("a_partial_rectangle_that_does_not_hide_complete_bases_is_visible");
 
 const directState = prepare(fixture, terrainBundle, { actorPositions: [

@@ -6,6 +6,25 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — diagonal LOS repaired; reload at r35
+
+The real r33 geometry reproduced an axis-only rectangle proof limitation.
+Pure analytic support-angle decomposition now resolves closed rectangular
+terrain against round/rotated rectangular bases; prior known results stay
+unchanged, unresolved sight apertures/numerical ambiguity remain unknown.
+Focused real batch + Agent graph gate passed once after red and correcting
+one bad synthetic fixture: 76 reciprocal model pairs / zero unknown, 2.816 s,
+0 Provider or Room mutation. Do not rerun the passed gate or old Slice-84 suite.
+See `docs/ticket-23-slice-248-diagonal-los-repair-2026-09-23.md`.
+Old runner 95271 was suspended before another trigger; both Providers idle,
+r35 applied/replayed with no pending Apply. Service 70967 shut down cleanly.
+Finish old runner cleanup, then resume the same directory with new code and
+recover the missing r35 screenshot (actions.ndjson last r34), not a new game.
+93 calls / 9,188,732 accounted units / ¥12.335719 conservative estimate.
+Separate recovery TODO: durable boundary helper does not account for this
+branch's 7 replayed-prefix transitions; 28 Bot actions + 7 prefix = r35.
+T23 remains 33/36; current phase Round 1 Combat, no full-match claim.
+
 ### 2026-09-23 T23 / S248 — r29, Flash-only continuation
 
 At 19:24:16Z the same live branch reached r29 / Round 1 Assault: Marine 2

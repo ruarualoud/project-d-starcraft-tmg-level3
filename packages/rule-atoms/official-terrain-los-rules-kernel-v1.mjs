@@ -6,6 +6,8 @@ import {
   createOfficialPhysicalFootprintV1,
   evaluateOfficialPhysicalFootprintRelationV1,
 } from "./official-model-base-geometry-rules-kernel-v1.mjs";
+import { resolveConvexFootprintRectangleTraceV1 } from
+  "./convex-footprint-rectangle-trace-v1.mjs";
 
 export const OFFICIAL_TERRAIN_LOS_RULES_KERNEL_SCHEMA =
   "starcraft_tmg_official_terrain_los_rules_kernel_v1";
@@ -622,11 +624,24 @@ function evaluateTerrainLineOfSight(state, attacker, target, options = {}) {
     const elevationDeadZoneBlocks = highToGround && !closeQuarters;
     const topDownSurfaceExcluded = entry.standableHorizontalSurface
       && (attackerSupported || targetSupported);
-    const rawBarrierProof = topDownSurfaceExcluded ? null
+    let rawBarrierProof = topDownSurfaceExcluded ? null
       : completeBarrier(attacker, target, entry);
-    const visibilityWitness = topDownSurfaceExcluded
+    let visibilityWitness = topDownSurfaceExcluded
       ? "supported_horizontal_surface_excluded"
       : rawBarrierProof ? null : directVisibilityWitness(attacker, target, entry);
+    if (entry.size >= 1 && !rawBarrierProof && !visibilityWitness
+      && !entry.openings.some((opening) => opening.lineOfSightOpenAgreed)) {
+      // Preserve all previously certified proofs/witnesses and their receipt
+      // hashes. Only replace the old unsupported closed-rectangle branch;
+      // agreed apertures still require their own existing opening proof.
+      const trace = resolveConvexFootprintRectangleTraceV1(
+        attacker.footprint, target.footprint, entry.footprint);
+      if (trace.kind === "blocked") {
+        rawBarrierProof = "convex_rectangle_separates_complete_physical_base_footprints";
+      } else if (trace.kind === "clear") {
+        visibilityWitness = "convex_separating_line_physical_base_witness";
+      }
+    }
     if (entry.size >= 1 && !rawBarrierProof && !visibilityWitness) {
       fail("TERRAIN_LOS_UNSUPPORTED_RECTANGULAR_TRACE", entry.terrainId);
     }
