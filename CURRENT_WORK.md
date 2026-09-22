@@ -6,6 +6,21 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r23 output-capacity recovery
+
+Run `20260922172710914` stopped at r23 (Corpser deployed); no r24 Apply.
+57 calls / 5,032,332 units / estimated ¥6.675492, both Flash. Two native
+terminal outputs saturated 8192 and were misclassified as generic JSON;
+historical finish reasons were lost, so truncation is an inference. Native
+truncation is now explicit and never retries automatically at the same cap.
+Live server-owned request capacity is 32768 with per-attempt provenance,
+without changing the frozen model/profile, Skills or Prompt. Explicit recovery
+excludes only the two saturated capacity failures from semantic counting;
+the genuine unsupported threat claim remains. One focused bug gate passed
+after red and a duplicate length-check correction; no unrelated tests.
+Resume this Room, not a new fork; preserve screenshots and cost history.
+See `docs/ticket-23-slice-248-native-tool-output-capacity-repair-2026-09-23.md`.
+
 ### 2026-09-23 T23 / S248 — Flash match and evidence-only repair
 
 Formal branch `20260922172710914` has continued through r19, including Marine 2

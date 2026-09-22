@@ -94,6 +94,8 @@ function exactIntegerHeader(value) {
   return Number.isSafeInteger(normalized) ? normalized : null;
 }
 
+const MAX_TOOL_ARGUMENT_BYTES = 256 * 1024;
+
 function normalizeToolCall(value, field) {
   if (!object(value) || value.type !== "function" || !object(value.function)) {
     throw new TypeError(`${field} is invalid`);
@@ -103,7 +105,7 @@ function normalizeToolCall(value, field) {
   if (!SAFE_TOOL_NAME.test(name)) throw new TypeError(`${field}.function.name is invalid`);
   const rawArguments = typeof value.function.arguments === "string"
     ? value.function.arguments : JSON.stringify(value.function.arguments ?? {});
-  if (rawArguments.length > 64 * 1024) {
+  if (Buffer.byteLength(rawArguments, "utf8") > MAX_TOOL_ARGUMENT_BYTES) {
     throw new TypeError(`${field}.function.arguments is invalid`);
   }
   let parsedArguments;
@@ -136,7 +138,7 @@ function normalizeProviderResponseToolCall(value, field, index) {
   let parsedArguments = {};
   let argumentIssue = null;
   let argumentRecovery = null;
-  if (rawArguments.length > 64 * 1024) {
+  if (Buffer.byteLength(rawArguments, "utf8") > MAX_TOOL_ARGUMENT_BYTES) {
     argumentIssue = "arguments_too_large";
   } else {
     try {
@@ -469,7 +471,10 @@ function outputFromPayload(payload, physicalAttempts, allowSingleFence = false) 
           callId: normalized.id,
           name: normalized.function.name,
           arguments: JSON.parse(normalized.function.arguments),
-          argumentIssue: normalized.argumentIssue,
+          // Even syntactically complete JSON is not an accepted tool turn if
+          // the Provider explicitly says generation was cut off.
+          argumentIssue: finishReason === "length"
+            ? "output_truncated" : normalized.argumentIssue,
           ...(normalized.argumentRecovery ? {
             argumentRecovery: clone(normalized.argumentRecovery),
           } : {}),
@@ -482,7 +487,7 @@ function outputFromPayload(payload, physicalAttempts, allowSingleFence = false) 
           physicalAttempts,
         });
     }
-    return { providerTurn: { kind: "tool_calls", toolCalls } };
+    return { providerTurn: { kind: "tool_calls", finishReason, toolCalls } };
   }
   if (object(message?.parsed)) return clone(message.parsed);
   if (object(message?.content)) return clone(message.content);
@@ -816,6 +821,8 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
               egressPolicyHash: binding.policyHash,
               providerId: binding.providerId,
               requestedModel: binding.model,
+              requestedMaxOutputUnits: request.maxOutputUnits,
+              finishReason: String(payload?.choices?.[0]?.finish_reason || ""),
               reportedModel,
               ...(providerSystemFingerprint
                 && providerSystemFingerprint.length <= 240 ? {

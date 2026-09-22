@@ -39,6 +39,8 @@ import { createSqliteStarcraftTmgLiveDecisionStoreV1 } from
   "./sqlite-live-decision-store-v1.mjs";
 import { createStarcraftTmgLiveFlashDecisionPortV1 } from
   "./live-flash-decision-port-v1.mjs";
+import { STARCRAFT_TMG_LIVE_REQUEST_OUTPUT_LIMIT } from
+  "./live-output-capacity-policy-v1.mjs";
 
 export const STARCRAFT_TMG_LIVE_OPPONENT_PROVIDER_STACK_VERSION =
   "starcraft_tmg_live_opponent_provider_stack_v1";
@@ -140,6 +142,8 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
 
   const profiles = options.providerProfiles
     || STARCRAFT_TMG_TICKET_23_LIVE_PROVIDER_PROFILES_V1;
+  const requestOutputLimit = options.requestOutputLimit
+    ?? STARCRAFT_TMG_LIVE_REQUEST_OUTPUT_LIMIT;
   const bundle = options.characterBundle || createKerriganPrimalProductBundleV1();
   const strategySkillSnapshot = routedStrategySnapshot(strategyEntries,
     ownFaction, opponentFaction);
@@ -198,6 +202,7 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
       // same; every physical attempt records the exact compiled egress path.
       completionPath: "/beta/chat/completions",
       transportTimeoutMs: options.transportTimeoutMs ?? 300_000,
+      requestOutputLimit,
     })),
     allowedProviders: ["deepseek-openai-compatible-direct"],
   });
@@ -248,7 +253,7 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
       maxTotalUnits: Number(options.maxTotalUnits || 50_000_000),
       maxTurns: Number(options.maxProviderCalls || 1_024),
       maxInputUnitsPerTurn: Number(options.maxInputUnitsPerTurn || 1_000_000),
-      maxOutputUnitsPerTurn: Number(options.maxOutputUnitsPerTurn || 8_192),
+      maxOutputUnitsPerTurn: Number(options.maxOutputUnitsPerTurn || requestOutputLimit),
       timeoutMs: Number(options.providerTimeoutMs || 150_000),
     },
     now,
@@ -297,6 +302,7 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
     })),
     allowUnstartedProfileReselection:
       options.allowUnstartedProfileReselection === true,
+    requestOutputLimit,
     maxToolRounds: options.maxToolRounds,
     maxPlanningQueryRounds: options.maxPlanningQueryRounds,
     maxActionQueryRounds: options.maxActionQueryRounds,

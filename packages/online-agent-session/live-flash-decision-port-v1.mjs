@@ -6,6 +6,10 @@ import { priceStarcraftTmgDeepSeekCurrentUsageV2 } from
   "../secure-provider-runtime/provider-pricing-v2.mjs";
 import { normalizeProviderJsonDocumentV1 } from
   "../secure-provider-runtime/provider-response-outcome-v1.mjs";
+import { STARCRAFT_TMG_LIVE_OUTPUT_CAPACITY_POLICY_VERSION,
+  planStarcraftTmgOutputCapacityRecoveryV1,
+  effectiveStarcraftTmgSemanticCorrectionsV1 } from
+  "./live-output-capacity-policy-v1.mjs";
 import {
   STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS,
   STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
@@ -4840,6 +4844,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
   const profiles = (options.profileCandidates || []).map(profile);
   const allowUnstartedProfileReselection =
     options.allowUnstartedProfileReselection === true;
+  const requestOutputLimit = options.requestOutputLimit === undefined ? null
+    : integer(options.requestOutputLimit, "requestOutputLimit", 256, 1_000_000);
   const now = typeof options.now === "function"
     ? options.now : () => new Date().toISOString();
   const maxToolRounds = integer(options.maxToolRounds || 3,
@@ -5228,7 +5234,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     // artifact. Keep additional headroom for the transport's system/user
     // message wrapper instead of treating bytes/4 as a reservation guarantee.
     const inputUnits = Math.max(1, stored.bytes + 4_096);
-    const maxOutputUnits = match.selectedProfile.maxOutputUnits;
+    const maxOutputUnits = requestOutputLimit ?? match.selectedProfile.maxOutputUnits;
     const startedAt = instant(now(), "now");
     const projectedMicros = estimateCnyMicros(inputUnits,
       maxOutputUnits, startedAt, match.selectedProfile.model);
@@ -5276,6 +5282,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         status: "provider_call_may_have_started",
         promptPolicyVersion: PROMPT_POLICY_VERSION,
         terminalSubmissionProtocol: "strict_function_tool_required",
+        requestedMaxOutputUnits: maxOutputUnits,
+        outputCapacityPolicyVersion: STARCRAFT_TMG_LIVE_OUTPUT_CAPACITY_POLICY_VERSION,
         requestHash: boundedRequest.requestHash,
         promptArtifactHash: prompt.artifact.promptArtifactHash,
         promptByteLength: stored.bytes,
@@ -5862,7 +5870,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         role: "user",
         content: `The previous ${attempt.stage} submission failed typed validation: ${correction}. Correct only that defect, preserve supported facts, and call the required strict submit tool once.`,
       });
-      current.status = current.semanticCorrectionRounds
+      current.status = effectiveStarcraftTmgSemanticCorrectionsV1(current)
           >= maxSemanticCorrectionRounds
         || current.stageCorrectionRounds >= maxToolRounds
         || current.repeatedSemanticFailureCount >= 2
@@ -5871,7 +5879,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     const current = match.decisions[choice.choiceKey];
     return {
       match,
-      exhausted: current.semanticCorrectionRounds
+      exhausted: effectiveStarcraftTmgSemanticCorrectionsV1(current)
           >= maxSemanticCorrectionRounds
         || current.stageCorrectionRounds >= maxToolRounds
         || current.repeatedSemanticFailureCount >= 2,
@@ -5883,8 +5891,36 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     const crossed = [];
     while (true) {
       choice = match.decisions[choice.choiceKey];
+      const capacityRecovery = planStarcraftTmgOutputCapacityRecoveryV1(choice, {
+        baselineOutputUnits: match.selectedProfile.maxOutputUnits,
+        requestOutputLimit: requestOutputLimit ?? match.selectedProfile.maxOutputUnits,
+        retryApproved: input.retryApproved,
+      });
+      if (capacityRecovery) {
+        match = await commit(match, (draft) => {
+          const current = draft.decisions[choice.choiceKey];
+          current.outputCapacityRecoveries ||= [];
+          current.outputCapacityRecoveries.push({ ...capacityRecovery,
+            recordedAt: instant(now(), "now") });
+          current.warnings.push(`EXPLICIT_OUTPUT_CAPACITY_RECOVERY:${
+            capacityRecovery.evidenceKind}:${capacityRecovery.requestOutputLimit}`);
+        });
+        choice = match.decisions[choice.choiceKey];
+      }
       const lastKey = choice.attemptKeys.at(-1);
       let attempt = lastKey ? choice.attempts?.[lastKey] : null;
+      const stoppedForCapacity = attempt?.safeOutput?.providerTurn;
+      if (choice.status === "provider_output_invalid"
+        && (stoppedForCapacity?.finishReason === "length"
+          || stoppedForCapacity?.issue === "output_truncated")
+        && (requestOutputLimit ?? match.selectedProfile.maxOutputUnits)
+          <= Number(attempt.requestedMaxOutputUnits
+            ?? match.selectedProfile.maxOutputUnits)) {
+        return rejection("LIVE_DECISION_PROVIDER_OUTPUT_TRUNCATED", "High", {
+          choiceKey: choice.choiceKey, requiresLargerOutputCapacity: true,
+          automaticProviderRetryPerformed: false, projection: publicProjection(match),
+        });
+      }
       const interruptedLocalReplay = choice.status === "generating"
         && attempt?.status !== "completed"
         && choice.warnings.includes(`LOCAL_COMPLETED_OUTPUT_REVALIDATION:${
@@ -6087,7 +6123,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         });
       }
       if (EXPLICIT_RETRY_CHOICE_STATUSES.has(choice.status)
-        && Number(choice.semanticCorrectionRounds || 0)
+        && effectiveStarcraftTmgSemanticCorrectionsV1(choice)
           >= maxSemanticCorrectionRounds) {
         return rejection("LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED",
           "High", {
@@ -6317,6 +6353,25 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       }
       const nativeTurn = attempt.safeOutput?.providerTurn;
       const parts = responseParts(attempt.safeOutput);
+      if (nativeTurn?.finishReason === "length"
+        || nativeTurn?.issue === "output_truncated"
+        || parts.terminal?.issue === "output_truncated") {
+        match = await commit(match, (draft) => {
+          const current = draft.decisions[choice.choiceKey];
+          current.status = "provider_output_invalid";
+          current.terminalFormatRepairPending = true;
+          if (!current.processedAttemptKeys.includes(attempt.attemptKey)) {
+            current.processedAttemptKeys.push(attempt.attemptKey);
+          }
+          current.warnings.push(`PROVIDER_OUTPUT_TRUNCATED:${attempt.attemptKey}`);
+        });
+        return rejection("LIVE_DECISION_PROVIDER_OUTPUT_TRUNCATED", "High", {
+          choiceKey: choice.choiceKey,
+          requestedMaxOutputUnits: attempt.requestedMaxOutputUnits,
+          automaticProviderRetryPerformed: false,
+          projection: publicProjection(match),
+        });
+      }
       if (parts.terminal?.issue) {
         const correction = await recordSemanticCorrection(match, choice,
           attempt, correctionError("TERMINAL_TOOL_SUBMISSION_INVALID",

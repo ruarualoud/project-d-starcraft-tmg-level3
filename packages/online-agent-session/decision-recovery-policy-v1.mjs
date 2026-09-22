@@ -5,11 +5,13 @@ export const STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1 = Object.freeze
   "provider_worker_protocol_rejected",
   "provider_transport_failed",
   "provider_transport_timeout",
+  "LIVE_DECISION_PROVIDER_OUTPUT_TRUNCATED",
 ]);
 
 const explicitResumeCodes = new Set([
   "LIVE_DECISION_ACTION_DID_NOT_CONVERGE",
   "LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED",
+  "LIVE_DECISION_TERMINAL_TOOL_INVALID",
   ...STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1,
 ]);
 

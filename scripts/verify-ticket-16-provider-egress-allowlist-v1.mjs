@@ -391,6 +391,103 @@ function fakeWorkerFailure(code, physicalAttempts) {
   };
 }
 
+if (process.argv.includes("--live-tool-output-capacity-only")) {
+  // Load the changed consumers, without starting a stack or running old gates.
+  await import("../packages/online-agent-session/live-flash-decision-port-v1.mjs");
+  await import("../packages/online-agent-session/live-opponent-provider-stack-v1.mjs");
+  // Concrete r23 defect: two terminal calls spent exactly 8192 output units,
+  // but the tool branch discarded finish_reason and reported generic JSON.
+  const observed = [];
+  for (const [finishReason, args, expectedIssue] of [
+    ["length", '{"plan":{"objective":"unfinished', "output_truncated"],
+    ["length", '{"plan":{}}', "output_truncated"],
+    ["tool_calls", '{"plan":{"objective":"unfinished', "arguments_invalid_json"],
+    ["tool_calls", JSON.stringify({ plan: { objective: "x".repeat(70_000) } }), null],
+  ]) {
+    const fixture = await fixtureTransport({ plans: [{ payload: successPayload({
+      choices: [{ finish_reason: finishReason, message: { tool_calls: [{
+        id: "call_capacity_repro", type: "function", function: {
+          name: "submit_planning", arguments: args,
+        },
+      }] } }],
+      usage: { prompt_tokens: 110634, completion_tokens: 8192, total_tokens: 118826 },
+    }) }] });
+    const result = await completeFixture(fixture);
+    assert.equal(result.output.providerTurn.toolCalls[0].argumentIssue,
+      expectedIssue, "native tool truncation must not become a semantic JSON retry");
+    assert.equal(result.output.providerTurn.finishReason, finishReason);
+    assert.equal(result.usageReceipt.requestedMaxOutputUnits, 64);
+    assert.equal(result.usageReceipt.usage.outputUnits, 8192);
+    assert.equal(fixture.fixture.count(), 1);
+    observed.push({ finishReason, expectedIssue });
+  }
+  const { STARCRAFT_TMG_TICKET_23_LIVE_FLASH_PROVIDER_PROFILE_V1: frozen } =
+    await import("../content/provider/ticket-23-live-provider-profiles-v1.mjs");
+  const registry = createStarcraftTmgProviderProfileRegistryV1({
+    entries: [{ providerProfile: frozen, completionPath: "/beta/chat/completions",
+      requestOutputLimit: 32768 }], allowedProviders: [frozen.provider],
+  });
+  const binding = await registry.resolveEgressBinding({ profileRef: ref(frozen) });
+  assert.deepEqual(binding.providerProfile, frozen);
+  assert.equal(binding.egressBinding.maxOutputUnits, 32768);
+  assert.equal(registry.listPublic().profiles[0].maxOutputUnits, 32768);
+  await assert.rejects(registry.resolveEgressBinding({
+    profileRef: ref(frozen), requestOutputLimit: 32768,
+  }), /forbidden fields/u);
+  const raisedFixture = await fixtureTransport();
+  await completeFixture(raisedFixture, { egressBinding: binding.egressBinding,
+    providerRequest: providerRequest({ maxOutputUnits: 32768 }) });
+  assert.equal(JSON.parse(raisedFixture.fixture.observations[0].body).max_tokens, 32768);
+  const { DatabaseSync } = await import("node:sqlite");
+  const { planStarcraftTmgOutputCapacityRecoveryV1,
+    effectiveStarcraftTmgSemanticCorrectionsV1 } = await import(
+    "../packages/online-agent-session/live-output-capacity-policy-v1.mjs");
+  const runArgument = process.argv.find((value) => value.startsWith("--run-directory="));
+  assert(runArgument, "real saved r23 record required");
+  const db = new DatabaseSync(path.join(path.resolve(ROOT,
+    runArgument.slice("--run-directory=".length)),
+  "seats/player2/provider/live-decisions.sqlite"), { readOnly: true });
+  let record;
+  try { record = JSON.parse(db.prepare(
+    "SELECT record_json FROM sc_live_decision_records LIMIT 1").get().record_json); }
+  finally { db.close(); }
+  const choice = Object.values(record.decisions).find((entry) =>
+    entry.authority.stateRevision === 23);
+  const original = JSON.stringify(choice);
+  const recover = (value, limit = 32768, approved = true) =>
+    planStarcraftTmgOutputCapacityRecoveryV1(value, {
+      baselineOutputUnits: record.selectedProfile.maxOutputUnits,
+      requestOutputLimit: limit, retryApproved: approved,
+    });
+  const recovery = recover(choice);
+  assert.equal(recovery.excludedSemanticAttemptKeys.length, 2);
+  assert.equal(recovery.evidenceKind, "legacy_cap_saturation_inference");
+  assert.equal(effectiveStarcraftTmgSemanticCorrectionsV1(choice), 3);
+  const recovered = { ...choice, outputCapacityRecoveries: [recovery] };
+  assert.equal(effectiveStarcraftTmgSemanticCorrectionsV1(recovered), 1);
+  assert.equal(recover(recovered), null, "same increased capacity is admitted once");
+  assert.equal(recover(choice, 8192), null, "same-cap retries cannot be admitted");
+  assert.equal(recover(choice, 32768, false), null, "explicit retry required");
+  const lowerUsage = structuredClone(choice);
+  for (const attempt of Object.values(lowerUsage.attempts)) attempt.usage.outputUnits = 100;
+  assert.equal(recover(lowerUsage), null, "ordinary malformed JSON remains semantic");
+  assert.equal(JSON.stringify(choice), original, "paid records stay immutable");
+  const { isStarcraftTmgHistoricalResumeFindingV1 } = await import(
+    "../packages/online-agent-session/decision-recovery-policy-v1.mjs");
+  for (const code of ["LIVE_DECISION_TERMINAL_TOOL_INVALID",
+    "LIVE_DECISION_PROVIDER_OUTPUT_TRUNCATED"]) {
+    assert.equal(isStarcraftTmgHistoricalResumeFindingV1({ code,
+      occurredAt: "2026-09-22T18:45:33.793Z" }, {
+      allowExistingRetryableFinding: true, startedAt: "2026-09-23T00:00:00Z",
+    }), true);
+  }
+  console.log(JSON.stringify({ ok: true, observed, actualR23ExcludedCapacityAttempts: 2,
+    actualR23SemanticDefectsStillCounted: 1, requestOutputLimit: 32768,
+    frozenProfileUnchanged: true, providerCalls: 0, roomMutations: 0,
+    onlyInjectedHttps: true, unrelatedChecksRun: 0 }));
+  process.exit(0);
+}
+
 await check("contract_is_hash_sealed_and_binds_slice_155", () => {
   verifyHash(contract, "contractHash");
   assert.equal(contract.predecessorContractHash, predecessor.contractHash);

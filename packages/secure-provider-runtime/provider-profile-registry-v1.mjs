@@ -12,7 +12,8 @@ import {
 
 export const STARCRAFT_TMG_PROVIDER_PROFILE_REGISTRY_VERSION =
   "starcraft_tmg_provider_profile_registry_v1";
-const ENTRY_FIELDS = new Set(["providerProfile", "completionPath", "transportTimeoutMs"]);
+const ENTRY_FIELDS = new Set(["providerProfile", "completionPath", "transportTimeoutMs",
+  "requestOutputLimit"]);
 const RESOLVE_FIELDS = new Set(["profileRef"]);
 const SAFE_PATH = /^\/(?:[A-Za-z0-9._~!$&'()*+,;=:@%-]+\/?)*$/u;
 
@@ -108,7 +109,8 @@ function compileEntry(value, { allowedProviders, allowedPorts }) {
     temperature: profile.temperature,
     topP: profile.topP,
     maxContextUnits: profile.contextBudget,
-    maxOutputUnits: profile.outputBudget,
+    maxOutputUnits: value.requestOutputLimit === undefined ? profile.outputBudget
+      : positiveInteger(value.requestOutputLimit, "requestOutputLimit", 1_000_000),
     // Operational transport policy is server-owned and recorded per attempt.
     // Extending a deadline does not change the model/strategy profile pinned
     // by an already-open match. Request callers cannot supply this override.
@@ -203,7 +205,7 @@ export function createStarcraftTmgProviderProfileRegistryV1(options = {}) {
         providerId: record.profile.provider,
         model: record.profile.model,
         maxContextUnits: record.profile.contextBudget,
-        maxOutputUnits: record.profile.outputBudget,
+        maxOutputUnits: record.egressBinding.maxOutputUnits,
         timeoutMs: record.egressBinding.timeoutMs,
         trainingTruth: false,
       })),
