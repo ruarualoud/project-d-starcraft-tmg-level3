@@ -1946,8 +1946,10 @@ function claimsNoIncomingMoveThenFireThreat(fragment) {
 
 function currentIncomingThreatTargets(queryReceipts) {
   const stationary = new Set();
+  const stationaryUnknown = new Set();
   const moveThenFire = new Set();
   const stationaryFacts = [];
+  const stationaryUnknownFacts = [];
   const moveThenFireFacts = [];
   for (const receipt of queryReceipts || []) {
     if (receipt?.queryKind !== "space.inspect_relationships"
@@ -1980,6 +1982,17 @@ function currentIncomingThreatTargets(queryReceipts) {
           minimumBaseEdgeDistanceMilliInches: Number(relationship
             .nearestPhysicalEdges?.distanceMilliInches) || null });
       }
+      const currentStationaryUnknownProfileKeys = Object.hasOwn(incoming,
+        "currentRoundStationaryUnknownProfileKeys")
+        ? incoming.currentRoundStationaryUnknownProfileKeys || []
+        : incoming.stationaryUnknownProfileKeys || [];
+      if (currentStationaryUnknownProfileKeys.length > 0) {
+        stationaryUnknown.add(targetId);
+        stationaryUnknownFacts.push({ targetId, attackerId,
+          profileKeys: clone(currentStationaryUnknownProfileKeys),
+          minimumBaseEdgeDistanceMilliInches: Number(relationship
+            .nearestPhysicalEdges?.distanceMilliInches) || null });
+      }
       const hasLifecycleMoveThenFire = Object.hasOwn(incoming,
         "currentRoundMoveThenAttackProfileKeys");
       const currentMoveThenFireProfileKeys = hasLifecycleMoveThenFire
@@ -2001,8 +2014,10 @@ function currentIncomingThreatTargets(queryReceipts) {
       }
     }
   }
-  return { stationary: [...stationary], moveThenFire: [...moveThenFire],
-    stationaryFacts, moveThenFireFacts };
+  return { stationary: [...stationary],
+    stationaryUnknown: [...stationaryUnknown],
+    moveThenFire: [...moveThenFire], stationaryFacts,
+    stationaryUnknownFacts, moveThenFireFacts };
 }
 
 function threatContradictionDetail(contradiction = {}) {
@@ -2025,6 +2040,13 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
     .filter((entry) => Number(entry.enemyStationaryThreatProfileCount || 0) > 0)
     .map((entry) => String(entry.targetId || ""))
     .filter(Boolean);
+  const optionIncomingUnknownTargetIds = (option.relationshipComparison
+    ?.relationships || [])
+    .filter((entry) => (entry
+      .enemyCurrentRoundStationaryThreatUnknownProfileKeys
+      || entry.enemyStationaryThreatUnknownProfileKeys || []).length > 0)
+    .map((entry) => String(entry.targetId || ""))
+    .filter(Boolean);
   const optionClaims = formationThreatClaimFragments(input.raw,
     input.selection);
   const selectionClaims = selectionThreatClaimFragments(input.raw);
@@ -2043,11 +2065,33 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
             profileKeys: clone(fact.enemyStationaryThreatProfileKeys || []),
             minimumBaseEdgeDistanceMilliInches:
               fact.minimumBaseEdgeDistanceMilliInches ?? null })) })) : []),
+    ...(optionIncomingUnknownTargetIds.length > 0
+      ? optionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
+        entry.text)).map((entry) => ({ ...entry,
+        threatKind: "stationary_unknown_line_of_sight",
+        source: "formation_projection",
+        threatFacts: (option.relationshipComparison?.relationships || [])
+          .filter((fact) => (fact
+            .enemyCurrentRoundStationaryThreatUnknownProfileKeys
+            || fact.enemyStationaryThreatUnknownProfileKeys || []).length > 0)
+          .map((fact) => ({ targetId: fact.targetId,
+            attackerId: fact.enemyUnitId,
+            profileKeys: clone(fact
+              .enemyCurrentRoundStationaryThreatUnknownProfileKeys
+              || fact.enemyStationaryThreatUnknownProfileKeys || []),
+            minimumBaseEdgeDistanceMilliInches:
+              fact.minimumBaseEdgeDistanceMilliInches ?? null })) })) : []),
     ...(currentThreatTargets.stationary.length > 0
       ? selectionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
         entry.text)).map((entry) => ({ ...entry,
         threatKind: "stationary", source: "current_relationship_graph",
         threatFacts: clone(currentThreatTargets.stationaryFacts) })) : []),
+    ...(currentThreatTargets.stationaryUnknown.length > 0
+      ? selectionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
+        entry.text)).map((entry) => ({ ...entry,
+        threatKind: "stationary_unknown_line_of_sight",
+        source: "current_relationship_graph",
+        threatFacts: clone(currentThreatTargets.stationaryUnknownFacts) })) : []),
     ...(currentThreatTargets.moveThenFire.length > 0
       ? selectionClaims.filter((entry) => claimsNoIncomingMoveThenFireThreat(
         entry.text)).map((entry) => ({ ...entry,
@@ -2057,7 +2101,9 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
   ];
   return freeze({
     incomingTargetIds: [...new Set([
-      ...optionIncomingTargetIds, ...currentThreatTargets.stationary,
+      ...optionIncomingTargetIds, ...optionIncomingUnknownTargetIds,
+      ...currentThreatTargets.stationary,
+      ...currentThreatTargets.stationaryUnknown,
     ])],
     incomingMoveThenFireTargetIds: currentThreatTargets.moveThenFire,
     checkedClaimCount: optionClaims.length + selectionClaims.length,
@@ -4529,7 +4575,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       planning
         ? `Do not request ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME}, legal asset-placement options, final parameter instantiation, legal_full_path_movement, coherency_after_candidate_placement, or objective_score_after_candidate_action during Planning. Those require a selected candidate and complete Host-owned parameters. Select the best current candidate from current relationships first. For a formation action, set formationSearchRequested and provide a tacticalPurpose plus weighted formationObjectives with visible targetIds; the Host runs the spatial solver once.`
         : "Use the exact Host-supplied formation or asset-placement options for the selected candidate; do not restart a broad placement search in the Action stage.",
-      `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one spatially covering stationary weapon profile; use its current-round lifecycle fields before describing immediate exposure. Read incomingStationaryFireEstimate when present: compare expected casualties, every exact legal removed-model list, lost occupied positions/formation reach, lost ranged contributors, exact current Fighting/Supporting losses, marker-by-marker control changes, probability of Supply reduction/zero, Supply freed for later deployment, VP awarded, and every exact reaction choice/cost against objective or scoring gain. Read incomingMoveThenFireEstimate too: a reachable current-round row is a live threat even while legal path and post-move line of sight remain conditional; a reachable next-round row is future planning pressure, not an immediate legal action. Unknown path or line of sight is never safety or zero risk. A Ranged Attack itself never includes movement. Current Supply—not raw model count—controls marker strength. Do not default to the safest position: choose the highest expected net mission value after risk, and state why the accepted exposure is worth it. Preserve unknown probability as uncertainty and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
+      `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one spatially covering stationary weapon profile; use its current-round lifecycle fields before describing immediate exposure. Any enemyStationaryThreatUnknownProfileKeys or enemyCurrentRoundStationaryThreatUnknownProfileKeys means range/target eligibility is present but line of sight is unresolved; never describe that option as outside the fire band, no current threat, zero exposure or safe. Read incomingStationaryFireEstimate when present: compare expected casualties, every exact legal removed-model list, lost occupied positions/formation reach, lost ranged contributors, exact current Fighting/Supporting losses, marker-by-marker control changes, probability of Supply reduction/zero, Supply freed for later deployment, VP awarded, and every exact reaction choice/cost against objective or scoring gain. Read incomingMoveThenFireEstimate too: a reachable current-round row is a live threat even while legal path and post-move line of sight remain conditional; a reachable next-round row is future planning pressure, not an immediate legal action. Unknown path or line of sight is never safety or zero risk. A Ranged Attack itself never includes movement. Current Supply—not raw model count—controls marker strength. Do not default to the safest position: choose the highest expected net mission value after risk, and state why the accepted exposure is worth it. Preserve unknown probability as uncertainty and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
       "When an exact legal_asset_placement_options receipt is present, compare every returned option's tacticalMetrics and relationshipComparison before choosing exactly one placementOptionId. incomingCurrentRoundStationaryProfileCount and incomingCurrentRoundMoveThenFireProfileCount are current-round exposure after phase/activation/pass gates. incomingStationaryProfileCount and incomingMoveThenFireProfileCount are broader geometric planning bands and may be next-round pressure. Unknown hypothetical line of sight remains uncertainty, never safety. Compare the low-fire, objective, route and preferred-anchor facets instead of assuming the preferred anchor is best. Return assetPlacementSelection with that ID and one concise publicReason naming accepted current and future exposure, objective/route effect and plan continuity. Never call an option permanently safe or unthreatened when its selected relationshipComparison reports future profiles. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
       "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists and preserve every applicable effectContract fact, including sourceText, targetKind, resultKind/resultAssetKind, immediateEffect, ongoingEffect and delayedEffect. forbiddenSubstitution states what this action is not. You may compare or reject another ability, but never describe that other ability or another effect family as the action being selected, activated, used or placed.",
       "When selectedActionIdentity.effectContract.futurePlanRequirement.required is true, revise the active TurnPlan and add a futureActionPlans item bound to the selected candidate. Name the intended consumer Unit, earliest timing, action, route/target, purpose, benefit and risk evidence, prerequisites, cancellation conditions and fallback. A vague reservePolicy sentence is not an executable future plan. This is a structure requirement, not a Host preference for using the capability.",

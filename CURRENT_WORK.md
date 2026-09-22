@@ -42,6 +42,20 @@ classic-map art fidelity and are superseded by the semantic-map reset above.
 
 ### 2026-09-22 Ticket 23 / Slice 248 checkpoint
 
+The first post-spacing fork `20260922131200726` is Authority/Rules legal at
+r6 but is non-training strategy evidence. Its Hydralisk formation sat 21.075in
+from Goliath; Scatter Missiles has a 24in printed range, yet a failed special-
+terrain LOS batch yielded zero visible pairs and the old calculator collapsed
+that unknown into `no_current_position_stationary_attack_domain`. The tactical
+graph now preserves unknown LOS pairs and in-range weapon identities, formation
+options expose typed unknown stationary-fire profiles, the probability surface
+returns `unknown_current_position_stationary_attack_domain`, and the Action
+gate rejects prose that turns unknown LOS into safe/zero exposure. The existing
+formation diagnosis was extended for this concrete defect; it uses 0 Provider
+calls and 0 Room mutations. The failed branch cost 7 calls / 502,089 units /
+¥0.649321 and must not continue or train. Next fork again from safe r5 under
+the repaired observation contract.
+
 The fresh abstract-terrain Standard-2000 A-A run
 `20260922115126519` is now at revision/action 6. The first Zerg deployment
 compared four exact Host-solved formations and chose the 18-model Raptor

@@ -2366,6 +2366,7 @@ function relationshipRows(graph) {
         entry.nearestPhysicalEdges?.distanceMilliInches ?? null,
       engaged: entry.engagement?.engaged === true,
       visibleModelPairCount: entry.lineOfSight?.visibleModelPairCount ?? null,
+      unknownModelPairCount: entry.lineOfSight?.unknownModelPairCount ?? null,
       stationaryThreatProfileKeys:
         clone(entry.threats?.fromTo?.stationaryProfileKeys || []),
       stationaryThreatProfileCount:
@@ -2374,6 +2375,10 @@ function relationshipRows(graph) {
         ?.currentRoundStationaryProfileKeys || []),
       currentRoundStationaryThreatProfileCount:
         entry.threats?.fromTo?.currentRoundStationaryProfileKeys?.length || 0,
+      stationaryThreatUnknownProfileKeys: clone(entry.threats?.fromTo
+        ?.stationaryUnknownProfileKeys || []),
+      currentRoundStationaryThreatUnknownProfileKeys: clone(entry.threats
+        ?.fromTo?.currentRoundStationaryUnknownProfileKeys || []),
       moveThenAttackProfileKeys:
         clone(entry.threats?.fromTo?.moveThenAttackProfileKeys || []),
       currentRoundMoveThenAttackProfileKeys: clone(entry.threats?.fromTo
@@ -2390,6 +2395,10 @@ function relationshipRows(graph) {
         ?.currentRoundStationaryProfileKeys || []),
       enemyCurrentRoundStationaryThreatProfileCount:
         entry.threats?.toFrom?.currentRoundStationaryProfileKeys?.length || 0,
+      enemyStationaryThreatUnknownProfileKeys: clone(entry.threats?.toFrom
+        ?.stationaryUnknownProfileKeys || []),
+      enemyCurrentRoundStationaryThreatUnknownProfileKeys: clone(entry.threats
+        ?.toFrom?.currentRoundStationaryUnknownProfileKeys || []),
       enemyMoveThenAttackProfileKeys:
         clone(entry.threats?.toFrom?.moveThenAttackProfileKeys || []),
       enemyCurrentRoundMoveThenAttackProfileKeys: clone(entry.threats?.toFrom
@@ -2446,6 +2455,31 @@ export function projectStarcraftTmgIncomingStationaryFireEstimateV1(
   const completeOpponentCoverage = graph?.scope?.softTruncated === false
     && visibleOpponentIds.length > 0
     && visibleOpponentIds.every((pieceId) => representedOpponentIds.has(pieceId));
+  const unknownStationaryRelationships = opponentRelationships.filter((entry) =>
+    (entry.threats?.toFrom?.stationaryUnknownProfileKeys || []).length > 0);
+  if (unknownStationaryRelationships.length > 0) {
+    return {
+      status: "unknown_current_position_stationary_attack_domain",
+      reason: "stationary_line_of_sight_unknown",
+      opponentSideKey: otherSide(actor.sideKey),
+      opponentMovementIncluded: false,
+      opponentMovementBoundedSeparately: true,
+      possibleAttackProfiles: unknownStationaryRelationships.flatMap((entry) =>
+        (entry.threats?.toFrom?.stationaryUnknownProfileKeys || []).map(
+          (profileKey) => ({
+            enemyUnitId: entry.toUnitId,
+            profileKey,
+            currentRoundPossible: (entry.threats?.toFrom
+              ?.currentRoundStationaryUnknownProfileKeys || [])
+              .includes(profileKey),
+            reason: "line_of_sight_unknown",
+          }))),
+      unknownNeverPromotedToSafeOrZero: true,
+      tacticalProjection: "unknown",
+      mutationAuthority: false,
+      trainingTruth: false,
+    };
+  }
   if (completeOpponentCoverage
     && opponentRelationships.every((entry) =>
       (entry.threats?.toFrom?.stationaryProfileKeys || []).length === 0)) {

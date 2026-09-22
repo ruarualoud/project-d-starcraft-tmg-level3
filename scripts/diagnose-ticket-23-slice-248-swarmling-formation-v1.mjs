@@ -248,6 +248,39 @@ async function worker() {
       || (new Set(pairwiseClearances).size >= 2
         && pairwiseClearanceSpreadMilliInches >= 100
         && new Set(formationEnvelopeAreas).size >= 2);
+    const specialTerrainLosUnknownOptions = result.formationOptions
+      .filter((entry) => entry.relationshipComparison?.sourceReceipts
+        ?.specialTerrainLosBatchFailure)
+      .map((entry) => {
+        const relationships = entry.relationshipComparison?.relationships || [];
+        const unknownRelationships = relationships.filter((relationship) =>
+          Number(relationship.unknownModelPairCount || 0) > 0
+            && (relationship.enemyStationaryThreatUnknownProfileKeys || [])
+              .length > 0);
+        const estimate = entry.relationshipComparison
+          ?.incomingStationaryFireEstimate || null;
+        return {
+          formationOptionId: entry.formationOptionId,
+          specialTerrainLosBatchFailure: entry.relationshipComparison
+            .sourceReceipts.specialTerrainLosBatchFailure,
+          unknownRelationshipCount: unknownRelationships.length,
+          unknownEnemyStationaryProfileKeys: [...new Set(
+            unknownRelationships.flatMap((relationship) =>
+              relationship.enemyStationaryThreatUnknownProfileKeys || []),
+          )],
+          incomingStationaryFireEstimateStatus: estimate?.status || null,
+          unknownNeverPromotedToSafeOrZero:
+            estimate?.unknownNeverPromotedToSafeOrZero === true,
+        };
+      });
+    const specialTerrainLosUnknownPreserved =
+      specialTerrainLosUnknownOptions.length === 0
+      || specialTerrainLosUnknownOptions.every((entry) =>
+        entry.unknownRelationshipCount > 0
+          && entry.unknownEnemyStationaryProfileKeys.length > 0
+          && entry.incomingStationaryFireEstimateStatus
+            === "unknown_current_position_stationary_attack_domain"
+          && entry.unknownNeverPromotedToSafeOrZero);
     const report = {
       schema: "ticket23_slice248_swarmling_formation_diagnosis_v1",
       ok: durationMs <= maximumDurationMs && result.optionCount === 4,
@@ -271,6 +304,8 @@ async function worker() {
       pairwiseClearanceSpreadMilliInches,
       formationEnvelopeAreas,
       multiModelFormationStrategyDiversity,
+      specialTerrainLosUnknownOptions,
+      specialTerrainLosUnknownPreserved,
       providerCalls: 0,
       roomMutations: 0,
       trainingTruth: false,
@@ -280,6 +315,8 @@ async function worker() {
       `formation search exceeded ${maximumDurationMs}ms or lost options`);
     assert.equal(report.multiModelFormationStrategyDiversity, true,
       "multi-model formation options must expose materially different spacing and envelopes");
+    assert.equal(report.specialTerrainLosUnknownPreserved, true,
+      "special-terrain LOS failure must remain unknown, never safe or zero");
   } finally {
     decisions.close();
     roomDatabase.close();

@@ -531,7 +531,9 @@ function targetTagEligible(profile, target) {
 }
 
 function threatProjection(state, attacker, target, minimumDistance,
-  visiblePairCount) {
+  lineOfSightEvidence = {}) {
+  const visiblePairCount = Number(lineOfSightEvidence.visiblePairCount || 0);
+  const unknownPairCount = Number(lineOfSightEvidence.unknownPairCount || 0);
   const speed = movementProfile(state, attacker)?.speedMilliInches || 0;
   const actionWindow = projectStarcraftTmgThreatActionWindowV1(
     state, attacker);
@@ -539,11 +541,18 @@ function threatProjection(state, attacker, target, minimumDistance,
     const targetEligible = targetTagEligible(profile, target);
     const lineOfSightEligible = profile.rangeKind === "engagement"
       ? true : visiblePairCount > 0;
+    const lineOfSightUnknown = profile.rangeKind !== "engagement"
+      && visiblePairCount === 0 && unknownPairCount > 0;
+    const withinStationaryRange = targetEligible
+      && minimumDistance <= profile.rangeMilliInches;
     return {
       ...profile,
       targetEligible,
-      stationarySpatiallyEligible: targetEligible && lineOfSightEligible
-        && minimumDistance <= profile.rangeMilliInches,
+      lineOfSightUnknown,
+      stationarySpatiallyEligible: withinStationaryRange
+        && lineOfSightEligible,
+      stationarySpatiallyUnknown: withinStationaryRange
+        && lineOfSightUnknown,
       moveThenAttackBandEligible: targetEligible
         && minimumDistance <= speed + profile.rangeMilliInches,
       currentRoundAttackAvailable:
@@ -555,8 +564,12 @@ function threatProjection(state, attacker, target, minimumDistance,
     };
   });
   const stationary = profiles.filter((entry) => entry.stationarySpatiallyEligible);
+  const stationaryUnknown = profiles.filter((entry) =>
+    entry.stationarySpatiallyUnknown);
   const moving = profiles.filter((entry) => entry.moveThenAttackBandEligible);
   const currentRoundStationary = stationary.filter((entry) =>
+    entry.currentRoundAttackAvailable);
+  const currentRoundStationaryUnknown = stationaryUnknown.filter((entry) =>
     entry.currentRoundAttackAvailable);
   const currentRoundMoving = moving.filter((entry) =>
     entry.currentRoundMoveThenAttackAvailable);
@@ -566,6 +579,10 @@ function threatProjection(state, attacker, target, minimumDistance,
     moveThenAttackProfileKeys: moving.map((entry) => entry.profileKey),
     currentRoundStationaryProfileKeys:
       currentRoundStationary.map((entry) => entry.profileKey),
+    stationaryUnknownProfileKeys:
+      stationaryUnknown.map((entry) => entry.profileKey),
+    currentRoundStationaryUnknownProfileKeys:
+      currentRoundStationaryUnknown.map((entry) => entry.profileKey),
     currentRoundMoveThenAttackProfileKeys:
       currentRoundMoving.map((entry) => entry.profileKey),
     futureRoundMoveThenAttackProfileKeys:
@@ -573,7 +590,8 @@ function threatProjection(state, attacker, target, minimumDistance,
     actionWindow: {
       ...actionWindow,
       earliestStationaryAttackHorizon: stationary.length === 0
-        ? "not_in_current_spatial_band"
+        ? stationaryUnknown.length > 0 ? "unknown_line_of_sight"
+          : "not_in_current_spatial_band"
         : currentRoundStationary.length > 0 ? "current_round" : "next_round",
       earliestMoveThenAttackHorizon: moving.length === 0
         ? "not_in_geometric_move_then_attack_band"
@@ -603,18 +621,22 @@ function unitRelation(state, left, right, pairSearch, engagement,
     ? lineOfSightPairs(state, left, right, pairs, specialTerrainLineOfSight)
     : [];
   const visiblePairCount = los.filter((entry) => entry.visible === true).length;
+  const unknownPairCount = los.filter((entry) => entry.visible === null).length;
   const contactPairs = pairs.filter((entry) =>
     entry.result.minimumSeparationMilliInches <= 1);
   const engagementPairs = pairs.filter((entry) => engagement.edgeKeys.has(
     `${entry.left.model.id}:${entry.right.model.id}`));
   const leftThreat = threatProjection(state, left, right,
-    nearest.result.minimumSeparationMilliInches, visiblePairCount);
+    nearest.result.minimumSeparationMilliInches, {
+      visiblePairCount, unknownPairCount,
+    });
   const reverseLos = los.map((entry) => ({ ...entry,
     attackerModelId: entry.targetModelId,
     targetModelId: entry.attackerModelId }));
   const rightThreat = threatProjection(state, right, left,
     nearest.result.minimumSeparationMilliInches,
-    reverseLos.filter((entry) => entry.visible === true).length);
+    { visiblePairCount: reverseLos.filter((entry) => entry.visible === true).length,
+      unknownPairCount: reverseLos.filter((entry) => entry.visible === null).length });
   const leftStationary = leftThreat.stationaryProfileKeys.length > 0;
   const rightStationary = rightThreat.stationaryProfileKeys.length > 0;
   const leftCurrentStationary =
@@ -625,6 +647,14 @@ function unitRelation(state, left, right, pairSearch, engagement,
     leftThreat.currentRoundMoveThenAttackProfileKeys.length > 0;
   const rightCurrentMoving =
     rightThreat.currentRoundMoveThenAttackProfileKeys.length > 0;
+  const leftUnknownStationary =
+    leftThreat.stationaryUnknownProfileKeys.length > 0;
+  const rightUnknownStationary =
+    rightThreat.stationaryUnknownProfileKeys.length > 0;
+  const leftCurrentUnknownStationary =
+    leftThreat.currentRoundStationaryUnknownProfileKeys.length > 0;
+  const rightCurrentUnknownStationary =
+    rightThreat.currentRoundStationaryUnknownProfileKeys.length > 0;
   return {
     edgeId: `unit:${left.id}->unit:${right.id}`,
     edgeKind: "unit_spatial_relationship",
@@ -684,11 +714,17 @@ function unitRelation(state, left, right, pairSearch, engagement,
       class: leftStationary && rightStationary ? "mutual_stationary_fire"
         : leftStationary ? "from_only_stationary_fire"
           : rightStationary ? "to_only_stationary_fire"
+            : leftUnknownStationary || rightUnknownStationary
+              ? "stationary_fire_unknown_line_of_sight"
             : leftThreat.moveThenAttackProfileKeys.length
               && rightThreat.moveThenAttackProfileKeys.length
               ? "mutual_move_then_fire_band" : "no_mutual_current_fire_band",
       fromStationaryProfileCount: leftThreat.stationaryProfileKeys.length,
       toStationaryProfileCount: rightThreat.stationaryProfileKeys.length,
+      fromStationaryUnknownProfileCount:
+        leftThreat.stationaryUnknownProfileKeys.length,
+      toStationaryUnknownProfileCount:
+        rightThreat.stationaryUnknownProfileKeys.length,
       fromMoveThenFireProfileCount: leftThreat.moveThenAttackProfileKeys.length,
       toMoveThenFireProfileCount: rightThreat.moveThenAttackProfileKeys.length,
       currentRoundClass: leftCurrentStationary && rightCurrentStationary
@@ -700,11 +736,18 @@ function unitRelation(state, left, right, pairSearch, engagement,
               : leftCurrentMoving ? "from_only_current_round_move_then_fire"
                 : rightCurrentMoving
                   ? "to_only_current_round_move_then_fire"
+                  : leftCurrentUnknownStationary
+                    || rightCurrentUnknownStationary
+                    ? "current_round_stationary_fire_unknown_line_of_sight"
                   : "no_current_round_fire_band",
       fromCurrentRoundStationaryProfileCount:
         leftThreat.currentRoundStationaryProfileKeys.length,
       toCurrentRoundStationaryProfileCount:
         rightThreat.currentRoundStationaryProfileKeys.length,
+      fromCurrentRoundStationaryUnknownProfileCount:
+        leftThreat.currentRoundStationaryUnknownProfileKeys.length,
+      toCurrentRoundStationaryUnknownProfileCount:
+        rightThreat.currentRoundStationaryUnknownProfileKeys.length,
       fromCurrentRoundMoveThenFireProfileCount:
         leftThreat.currentRoundMoveThenAttackProfileKeys.length,
       toCurrentRoundMoveThenFireProfileCount:
