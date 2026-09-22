@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "id": "ticket-24-slices-254r3-254r5-semantic-map-terrain-reset",
+  "githubIssue": null,
+  "title": "Bind classic-map art to semantic terrain and add a themed tabletop terrain editor",
+  "owner": "kimi",
+  "agentProfile": "project-d-ui-lead",
+  "model": "project-d-k3",
+  "baseRef": "codex/starcraft-integration-20260921",
+  "branch": "agent/kimi/ticket-24-slices-254r3-254r5-semantic-map-terrain-reset",
+  "worktree": ".worktrees/ticket-24-slices-254r3-254r5-semantic-map-terrain-reset",
+  "allowedPaths": [
+    "content/competitive-map-semantic-geometry/",
+    "packages/product-composition/official-competitive-map-semantic-geometry-v1.mjs",
+    "packages/product-composition/official-competitive-map-semantic-geometry-v1.d.mts",
+    "packages/product-composition/official-competitive-map-terrain-library-v1.mjs",
+    "packages/product-composition/official-competitive-map-terrain-library-v1.d.mts",
+    "apps/starcraft-tmg-expo/components/battlefield/semantic-map-terrain-editor.tsx",
+    "apps/starcraft-tmg-expo/components/battlefield/semantic-map-terrain-layer.tsx",
+    "apps/starcraft-tmg-expo/lib/level3/semantic-map-terrain-v1.ts",
+    "scripts/verify-ticket-24-slice-254r3-semantic-map-geometry-v1.mjs",
+    "scripts/verify-ticket-24-slice-254r4-terrain-library-v1.mjs",
+    "scripts/verify-ticket-24-slice-254r5-semantic-map-browser-v1.mjs",
+    "docs/ticket-24-slices-254r3-254r5-semantic-map-terrain-reset-v1-2026-09-22.md"
+  ],
+  "verification": [
+    {
+      "name": "Lost Temple art-semantic geometry contract",
+      "command": "node scripts/verify-ticket-24-slice-254r3-semantic-map-geometry-v1.mjs"
+    },
+    {
+      "name": "official-guideline terrain library and deterministic editor",
+      "command": "node scripts/verify-ticket-24-slice-254r4-terrain-library-v1.mjs"
+    },
+    {
+      "name": "real-browser semantic terrain and editor screenshots",
+      "command": "node scripts/verify-ticket-24-slice-254r5-semantic-map-browser-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Own the isolated Ticket 24 semantic-map authoring and presentation vertical slice. The user rejected the current axis-aligned rectangles because their Rules boundaries do not follow the visible water, cliffs, high ground, ramps and foliage in the map art. Do not restyle or extend that rectangle approach. First inspect the current twenty-map catalogue, Lost Temple image, official terrain data bundle/rules kernels, configurator and battle workspace, then freeze a numbered plan in the allowed report. Design one small semantic-map interface whose reviewed normalized multipolygon/ring geometry is paired to a specific art asset and coordinate transform. Runtime computer vision is forbidden: contours are authored/reviewed build assets, and art plus Rules projection must consume the same coordinate system. Deliver Lost Temple as the first complete exemplar: water/void impassable regions, standable high-ground regions, cliffs, ramps/access connections, grass/sight regions and any ordinary cover must visibly follow the corresponding art contours rather than bounding boxes. Every effect boundary must be discoverable on the board with a precise StarCraft-consistent line/fill treatment, legend, hover/tap details and on/off control; the art remains recognisable. Include an alignment receipt that samples contour vertices and demonstrates their normalized-to-pixel-to-inch mapping; record honest unresolved ambiguity instead of inventing terrain. Keep the backend/Rules integration behind the new module interface and do not edit the current compiler or kernels in this isolated assignment; Codex will integrate the adapter after review. Also implement an official-guideline tabletop terrain library/editor behind the same interface: derive category/count/size choices from the existing official data contracts rather than duplicating constants; produce deterministic seeded random layouts; support manual add, drag, rotate, change type/style, disable and remove; expose live spacing, complete-base transit, mission reachability and certification status without claiming Rules authority before integration. Terrain visuals must adapt to each map theme/era through presentation-only style tokens while geometry and terrain semantics remain unchanged. At minimum demonstrate Brood War jungle/badlands/platform and StarCraft II technology/alien treatments. Desktop and 390px touch layouts must be usable. Capture named screenshots for Lost Temple semantic overlay, boundary-off comparison, random generated layout, manual edit, validation failure and restored certified state. Do not use paid Provider calls, modify Room state, refresh official source data, or overwrite existing map art. Use only the three declared focused gates after relevant changes, once each; if a gate fails after code changes, make at most one repair and rerun that gate once. Commit scoped sub-slices, do not push, and report claim-to-pixel evidence plus the exact integration seam for Codex."
+}
