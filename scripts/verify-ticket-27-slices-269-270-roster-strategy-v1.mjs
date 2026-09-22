@@ -55,6 +55,7 @@ import {
   verifyRosterStrategistOutputContractSetV1,
 } from "../packages/roster-strategist/roster-strategist-output-schemas-v1.mjs";
 import {
+  assertStarcraftTmgProviderJsonSchemaSubsetV1,
   validateStarcraftTmgProviderJsonSchemaValueV1,
 } from "../packages/structured-generation/output-contract-registry-v1.mjs";
 import {
@@ -1000,6 +1001,124 @@ await expectFailure(269, () => strategistA.planRoster(sessionInput, {
   "an alias conflicting with a present canonical field must fail closed; "
     + "the boundary never merges or drops keys");
 
+// --------------------------------------- round-6 schema integer bound
+// Offline replay of the exact saved live round-6 failure (live-report.json
+// repairRound 6, failureDetail
+// "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:$.informationNeeds[2]
+// .toolRequest.inputs.vespeneLimitNumerator:integer_too_large"): the strict
+// foundation schema's host-authored vespeneLimitNumerator cap of 1,000 was
+// tighter than the laboratory domain (any safe integer), so a domain-legal
+// value was rejected at the wire. The exact value the model wrote was never
+// persisted (rawResponsePersisted: false; the failure detail carries
+// path:code only), so the replay uses the smallest representative over-bound
+// value consistent with the saved path: 2000, the session's own mineral
+// budget. 0 Provider calls.
+const ROUND6_SAVED_FAILURE_DETAIL =
+  "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:$.informationNeeds[2]"
+    + ".toolRequest.inputs.vespeneLimitNumerator:integer_too_large";
+function capturedRound6FoundationOutput() {
+  const base = foundationOutput();
+  return {
+    ...base,
+    informationNeeds: [
+      ...base.informationNeeds,
+      { needId: "need-vespene-ratio", kind: "math",
+        questionText: "vespene ceiling ratio against the full mineral budget",
+        toolRequest: toolRequestWire({ mathKind: "budget_fit", inputs: {
+          ...PLACEHOLDER_MATH_INPUTS,
+          mineralBudget: 2000, mineralSpent: 1870, vespeneSpent: 115,
+          vespeneLimitNumerator: 2000, vespeneLimitDenominator: 10 } }) },
+    ],
+  };
+}
+// Reproduce the saved failure byte-identically against the preserved round-6
+// (contract set v1.0.0) bound: restoring the documented maximum of 1,000 on
+// exactly the implicated field must yield exactly the saved issue at the
+// saved path, formatted exactly as the runner records it.
+const round6SavedBoundSchema = JSON.parse(JSON.stringify(
+  foundationContract.providerSchema));
+round6SavedBoundSchema.properties.informationNeeds.items.properties
+  .toolRequest.properties.inputs.properties.vespeneLimitNumerator = {
+  type: "integer", minimum: 0, maximum: 1_000 };
+const round6SavedValidation = validateStarcraftTmgProviderJsonSchemaValueV1(
+  round6SavedBoundSchema, capturedRound6FoundationOutput());
+const round6SavedDetail = "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:"
+  + round6SavedValidation.issues.slice(0, 8)
+    .map((issue) => `${issue.path}:${issue.code}`).join(",");
+check(269, round6SavedValidation.ok === false
+  && round6SavedValidation.issues.length === 1
+  && round6SavedDetail === ROUND6_SAVED_FAILURE_DETAIL,
+  "offline replay must reproduce the exact saved round-6 schema-bound "
+    + "failure byte-identically "
+    + "(OFFLINE_REPLAY_MATCHES_SAVED_ROUND6_FAILURE)");
+// Post-repair acceptance (fail-first under the v1.0.0 bound): the identical
+// captured shape must satisfy the repaired strict schema, and every superset
+// math integer bound must be the domain-owned safe-integer rule clipped to
+// the strict-subset ceiling — never a re-authored value-specific cap.
+const round6RepairedValidation = validateStarcraftTmgProviderJsonSchemaValueV1(
+  foundationContract.providerSchema, capturedRound6FoundationOutput());
+const round6MathInputs = foundationContract.providerSchema.properties
+  .informationNeeds.items.properties.toolRequest.properties.inputs.properties;
+check(269, round6RepairedValidation.ok === true
+  && ["mineralBudget", "mineralSpent", "vespeneSpent",
+    "vespeneLimitNumerator", "vespeneLimitDenominator"].every((key) => (
+    round6MathInputs[key].minimum === 0
+      && round6MathInputs[key].maximum === 1_000_000_000))
+  && round6MathInputs.planned.items.properties.plannedCumulativeVp.minimum === 0
+  && round6MathInputs.planned.items.properties.plannedCumulativeVp.maximum
+    === 1_000_000_000
+  && round6MathInputs.projected.items.properties.cumulativeVp.minimum === 0
+  && round6MathInputs.projected.items.properties.cumulativeVp.maximum
+    === 1_000_000_000
+  && round6MathInputs.values.items.minimum === -1_000_000_000
+  && round6MathInputs.values.items.maximum === 1_000_000_000,
+  "the captured round-6 shape must pass the repaired schema, whose superset "
+    + "integer bounds are the domain safe-integer rules clipped to the "
+    + "strict-subset ceiling (no value-specific cap)");
+// The subset ceiling is the widest domain-faithful bound: the registry
+// rejects any schema declaring a wider integer range, while the domain rules
+// the bounds derive from accept any (non-negative/positive) safe integer.
+let round6SubsetCeilingError = null;
+try {
+  assertStarcraftTmgProviderJsonSchemaSubsetV1({
+    type: "object", additionalProperties: false,
+    properties: { probe: { type: "integer", minimum: 0,
+      maximum: 1_000_000_001 } },
+    required: ["probe"] });
+} catch (error) {
+  round6SubsetCeilingError = error;
+}
+check(269, round6SubsetCeilingError !== null,
+  "1,000,000,000 must be the strict subset's widest expressible integer "
+    + "bound, so the repaired schema sits exactly on the domain ceiling");
+// The domain computes the value the v1.0.0 schema rejected: the laboratory
+// accepts the captured numerator directly with exact integer arithmetic.
+const round6Lab = createLab("ticket27-s269-270-lab-round6");
+const round6DomainMath = round6Lab.queryMath({ queryId: "mq-round6-vespene",
+  mathKind: "budget_fit",
+  inputs: { mineralBudget: 2000, mineralSpent: 1870, vespeneSpent: 115,
+    vespeneLimitNumerator: 2000, vespeneLimitDenominator: 10 } });
+check(270, verifyPregameLabMathReceiptV1(round6DomainMath) === true
+  && round6DomainMath.result.vespeneLimit.numerator === 4_000_000
+  && round6DomainMath.result.vespeneWithinLimit === true
+  && round6DomainMath.result.exactIntegerArithmetic === true,
+  "the laboratory domain must compute the value the v1.0.0 schema rejected");
+// End-to-end: the captured round-6 foundation plans normally through the
+// runtime — canonicalization forwards the domain-legal integer unchanged and
+// the laboratory answers, proving only the generation schema was too tight.
+const round6Session = await strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    strategy_foundation: () => capturedRound6FoundationOutput() }) });
+const round6NeedOutcome = round6Session.planningTrace[0]
+  .informationNeedOutcomes.find((entry) => (
+    entry.needId === "need-vespene-ratio"));
+check(269, verifyRosterPlanRoundTripV1(round6Session.plan) === true
+  && round6Session.plan.rosterCandidate.legalityStatus === "legal"
+  && round6Session.planningTrace[0].informationNeedOutcomes.length === 3
+  && round6NeedOutcome?.status === "answered",
+  "the captured round-6 foundation must plan end-to-end: canonicalization "
+    + "forwards the domain-legal integer and the laboratory answers");
+
 check(269, bundle.bundleHash === bundleHashBefore
   && hashStarcraftTmgContract(authority.state)
     === labDescriptor.sourceStateHash,
@@ -1033,6 +1152,7 @@ const report = {
       ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash,
     structuredGenerationEnforced: true,
     round5OfflineReplayFailureDetail: String(round5ReplayError?.message || ""),
+    round6OfflineReplayFailureDetail: round6SavedDetail,
     hiddenChainOfThoughtIncluded: false,
     hostPreferenceWeights: false,
   },
