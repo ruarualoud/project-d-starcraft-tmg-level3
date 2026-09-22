@@ -13,6 +13,8 @@ const REPAIRED_DECISION_ISSUE_CODES = Object.freeze([
   "LIVE_DECISION_PROVIDER_OUTPUT_INVALID",
   "LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED",
   "LIVE_DECISION_TERMINAL_TOOL_INVALID",
+  "provider_worker_protocol_rejected",
+  "provider_transport_failed",
 ]);
 
 const ACTIVE_LIFECYCLES = new Set(["active", "waiting_human", "paused"]);
@@ -231,6 +233,27 @@ function resolveIssues(issues, codes, at, resolution) {
       resolvedAt: at,
       resolution,
     } : clone(issue));
+}
+
+export function reconcileStarcraftTmgBotSeatReplayIssuesV1(record, at) {
+  const trace = record.traces?.at(-1);
+  const lastOperationWasVerifiedApply = new Set([
+    "action_applied_replay_verified", "applied_recovered_idempotently",
+    "closed_by_host",
+  ]).has(record.driveStatus) && record.lastAttemptedStateHash === trace?.stateHash;
+  // An old successful action is not evidence that a later failed attempt was
+  // recovered. Only reconcile a persisted success boundary, never a restart
+  // alone, and leave unrelated Rules/authentication/security issues untouched.
+  if (!lastOperationWasVerifiedApply || record.inflight
+    || record.lastReplayMatchesCurrent !== true
+    || trace?.replayMatchesCurrent !== true
+    || trace.postStateRevision !== record.lastAppliedStateRevision
+    || !trace.applyReceiptHash || trace.applyReceiptHash !== record.lastReceiptHash) {
+    return clone(record.issues);
+  }
+  return resolveIssues(record.issues, ["REPLAY_MISMATCH",
+    ...REPAIRED_DECISION_ISSUE_CODES], at,
+  "persisted_apply_replay_was_verified");
 }
 
 function highSeverity(reason) {
@@ -1150,10 +1173,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
         driveStatus: "reattached",
         connectionEpoch: record.connectionEpoch + 1,
         lastPreviewFailure: null,
-        issues: record.lastReplayMatchesCurrent === true
-          ? resolveIssues(record.issues, ["REPLAY_MISMATCH"], reattachedAt,
-            "persisted_apply_replay_was_verified")
-          : clone(record.issues),
+        issues: reconcileStarcraftTmgBotSeatReplayIssuesV1(record, reattachedAt),
         closedAt: null,
       });
     }

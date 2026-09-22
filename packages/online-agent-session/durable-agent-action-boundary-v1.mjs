@@ -3,6 +3,19 @@ import { DatabaseSync } from "node:sqlite";
 export const STARCRAFT_TMG_DURABLE_AGENT_ACTION_BOUNDARY_VERSION =
   "starcraft_tmg_durable_agent_action_boundary_v1";
 
+export function isStarcraftTmgTransientControlPlaneReadFailureV1(error) {
+  if (error?.code === "SLICE248_MANIFEST_HTTP_FAILED") {
+    const status = Number(error.status);
+    return status === 408 || status === 429 || status >= 500 && status < 600;
+  }
+  if (error?.name === "AbortError" || error?.name === "TimeoutError") return true;
+  const transportCode = String(error?.cause?.code || error?.code || "");
+  if (new Set(["ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "EPIPE",
+    "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT", "UND_ERR_SOCKET"])
+    .has(transportCode)) return true;
+  return error?.name === "TypeError" && error?.message === "fetch failed";
+}
+
 function integer(value, field) {
   const normalized = Number(value);
   if (!Number.isSafeInteger(normalized) || normalized < 0) {

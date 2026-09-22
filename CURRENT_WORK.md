@@ -42,6 +42,22 @@ classic-map art fidelity and are superseded by the semantic-map reset above.
 
 ### 2026-09-22 Ticket 23 / Slice 248 checkpoint
 
+2026-09-23 recovery follow-up: branch `20260922133120597` has now applied and
+Replay-verified r6 (18-model Raptor), using 2 new Action calls / 176,085 units.
+Current conservative branch total is 7 calls / 884,206 units / ¥1.164198.
+Browser closure exposed a second concrete recovery defect: the bot retained
+old transport issues after successful Apply/Replay, and the runner swallowed
+that semantic High finding as a transient manifest read and polled forever.
+The bot now resolves the two transport codes on verified Apply and reconciles
+a persisted successful boundary on reattach, matching the last attempted state,
+receipt and Replay trace; an older success cannot clear a later failed attempt.
+The runner retries only typed read-transport failures, not Rules, budget or High
+findings. Existing durable-boundary diagnostic's `--transport-recovery-only`
+mode reproduced both defects, then passed on its third/final run (one repair
+needed to account for normal shutdown's `closed_by_host` status). No Provider
+or Room mutation in that gate. Resume is for capturing the already-durable r6,
+not re-applying it or making another paid decision.
+
 The special-terrain LOS root is now repaired: setup-agreed nonstandable
 impassable terrain does not need a fictional adjacent elevation pair. Actual
 access connections and Size 0/1 still cannot be labelled impassable. The

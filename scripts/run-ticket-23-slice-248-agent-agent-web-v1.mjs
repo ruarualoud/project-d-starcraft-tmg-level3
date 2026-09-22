@@ -10,7 +10,8 @@ import { fileURLToPath } from "node:url";
 
 import { chromium } from "playwright";
 
-import { readStarcraftTmgDurableAgentActionBoundaryV1 } from
+import { isStarcraftTmgTransientControlPlaneReadFailureV1,
+  readStarcraftTmgDurableAgentActionBoundaryV1 } from
   "../packages/online-agent-session/durable-agent-action-boundary-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -638,6 +639,7 @@ async function main() {
           return await manifest(300_000);
         } catch (error) {
           if (server?.processState?.exitObserved) throw error;
+          if (!isStarcraftTmgTransientControlPlaneReadFailureV1(error)) throw error;
           continue;
         }
       }

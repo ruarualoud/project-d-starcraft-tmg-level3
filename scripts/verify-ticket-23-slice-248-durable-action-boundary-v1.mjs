@@ -4,9 +4,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { DatabaseSync } from "node:sqlite";
 
-import { readStarcraftTmgDurableAgentActionBoundaryV1 } from
+import { isStarcraftTmgTransientControlPlaneReadFailureV1,
+  readStarcraftTmgDurableAgentActionBoundaryV1 } from
   "../packages/online-agent-session/durable-agent-action-boundary-v1.mjs";
+import { reconcileStarcraftTmgBotSeatReplayIssuesV1 } from
+  "../packages/online-agent-session/hosted-bot-seat-runtime-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const argument = process.argv.find((entry) =>
@@ -14,6 +18,55 @@ const argument = process.argv.find((entry) =>
 assert(argument, "--run-directory is required");
 const runDirectory = path.resolve(ROOT,
   argument.slice("--run-directory=".length));
+if (process.argv.includes("--transport-recovery-only")) {
+  const db = new DatabaseSync(path.join(runDirectory,
+    "seats/player2/bot-seat.sqlite"), { readOnly: true });
+  let record;
+  try {
+    record = JSON.parse(db.prepare(
+      "SELECT record_json FROM sc_hosted_bot_seat_records LIMIT 1",
+    ).get().record_json);
+  } finally { db.close(); }
+  assert.equal(record.lastAppliedStateRevision, 6);
+  assert.equal(record.lastReplayMatchesCurrent, true);
+  assert.equal(record.inflight, null);
+  const at = "2026-09-23T00:00:00.000Z";
+  const issues = reconcileStarcraftTmgBotSeatReplayIssuesV1(record, at);
+  const transportCodes = ["provider_worker_protocol_rejected", "provider_transport_failed"];
+  const failures = [];
+  if (!transportCodes.every((code) => issues.some((issue) =>
+    issue.code === code && issue.resolvedAt))) failures.push("successful_retry_keeps_old_transport_blockers");
+  if (isStarcraftTmgTransientControlPlaneReadFailureV1({
+    code: "SLICE248_CRITICAL_OR_HIGH_FINDING" })) failures.push("semantic_failure_is_retried_forever");
+  console.log(JSON.stringify({ regressionFailures: failures }));
+  assert.deepEqual(failures, []);
+  const withNewFailure = { ...record, driveStatus: "blocked_high_finding" };
+  assert(reconcileStarcraftTmgBotSeatReplayIssuesV1(withNewFailure, at)
+    .filter((issue) => transportCodes.includes(issue.code)).every((issue) => !issue.resolvedAt),
+  "an older successful action cannot clear a later failed attempt");
+  const withoutReplay = { ...record, lastReplayMatchesCurrent: false };
+  assert(reconcileStarcraftTmgBotSeatReplayIssuesV1(withoutReplay, at)
+    .filter((issue) => transportCodes.includes(issue.code)).every((issue) => !issue.resolvedAt));
+  const withSecurityIssue = { ...record,
+    issues: [...record.issues, { code: "SEAT_GRANT_INVALID", severity: "High" }] };
+  assert.equal(reconcileStarcraftTmgBotSeatReplayIssuesV1(withSecurityIssue, at)
+    .find((issue) => issue.code === "SEAT_GRANT_INVALID").resolvedAt, undefined);
+  assert.equal(issues.length, record.issues.length, "resolution preserves history");
+  assert.equal(isStarcraftTmgTransientControlPlaneReadFailureV1({ name: "AbortError" }), true);
+  assert.equal(isStarcraftTmgTransientControlPlaneReadFailureV1({
+    name: "TypeError", message: "fetch failed", cause: { code: "ECONNRESET" } }), true);
+  assert.equal(isStarcraftTmgTransientControlPlaneReadFailureV1({
+    code: "SLICE248_AA_BUDGET_EXCEEDED" }), false);
+  assert.equal(isStarcraftTmgTransientControlPlaneReadFailureV1({
+    code: "SLICE248_MANIFEST_HTTP_FAILED", status: 503 }), true);
+  assert.equal(isStarcraftTmgTransientControlPlaneReadFailureV1({
+    code: "SLICE248_MANIFEST_HTTP_FAILED", status: 403 }), false);
+  console.log(JSON.stringify({ ok: true, stateRevision: 6,
+    recoveredCodes: transportCodes, historyPreserved: true,
+    newFailuresStillBlock: true, semanticReadFailuresStop: true,
+    providerCalls: 0, roomMutations: 0 }));
+  process.exit(0);
+}
 const failure = JSON.parse(await readFile(path.join(runDirectory,
   "failure.json"), "utf8"));
 const previousStateRevision = Number(
