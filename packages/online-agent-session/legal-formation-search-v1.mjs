@@ -2722,8 +2722,10 @@ function incomingMoveThenFireEstimate(projected, actorId, graph) {
   }
 }
 
-function relationshipComparison(state, source, slots, objectives, baseline,
-  instantiatedAction) {
+export function projectStarcraftTmgFormationRelationshipComparisonV1({
+  state, source, slots, objectives, baseline, instantiatedAction,
+  comparisonObjectives = objectives,
+}) {
   if (!slots.length) return {
     status: "not_applicable",
     reason: "formation_has_no_placement_slots",
@@ -2792,6 +2794,9 @@ function relationshipComparison(state, source, slots, objectives, baseline,
         && entry.isDestroyed !== true
         && Number(entry.currentModels || 0) > 0).map((entry) => entry.id);
     const targetIds = [...new Set([
+      // Isolated search objectives change candidate generation/scoring, not
+      // the common facts needed to compare it with the Planner's other options.
+      ...(comparisonObjectives || []).flatMap((entry) => entry.targetIds || []),
       ...(objectives || []).flatMap((entry) => entry.targetIds || []),
       ...visibleEnemyUnitIds,
     ])];
@@ -3054,9 +3059,12 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
       });
       const optionCore = {
         ...optionSeed,
-        relationshipComparison: relationshipComparison(state, source,
-          projectedSlots, objectives, baselineRelationshipGraph,
-          instantiated.action),
+        relationshipComparison: projectStarcraftTmgFormationRelationshipComparisonV1({
+          state, source, slots: projectedSlots, objectives,
+          baseline: baselineRelationshipGraph,
+          instantiatedAction: instantiated.action,
+          comparisonObjectives: normalizedObjectives,
+        }),
       };
       progress("relationship_comparison_completed", {
         examinedGeneratedCandidateCount,

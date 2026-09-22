@@ -62,6 +62,19 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r76 — 18-model Raptor Host interval407.527s
+
+Planner23:24:15.044Z→Action23:31:02.571Z;1056generated/728examined/
+200exact instantiations/176base-overlap+20path-collision rejects/4options.
+At23:30:12Z server CPU~91%, Planning finished, no Action dispatch yet and Bot
+not applied: this is Host work, not a pending model response or merely a late
+screenshot. One-second native sample captured V8/hash/serialization work but
+lacks JS symbols, so a specific JS hot function is unproven. Keep stage timing,
+sound broad-phase filtering and request-scoped geometry reuse on the queue;
+retain candidate diversity, capacity and strategy facts. See the common-targets
+repair report and its retained CPU sample. That separate repair adds previously
+missing comparison facts, not a performance shortcut.
+
 ### r74–75 — retained Planner recovered, observation still measurable
 
 Repairc4725c2 is proven in the same live room: resume52348 locally revalidated

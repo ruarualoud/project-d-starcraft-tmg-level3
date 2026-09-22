@@ -6,6 +6,33 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — common formation targets repaired; r81 safe reload
+
+Main52348 reached r76Raptor move→r77finish→r78/79Pass→r80choose-first-actor,
+with Apply/Replay/screenshots through80 (r76 inspected). r81Terran Pass also
+Applied/Replayed; screenshot pending.200calls/22,312,441accounted units/
+estimated¥29.754001 was the last r80 runner checkpoint; r81 adds completed paid
+calls still to be reflected by resume, never reset them. BothFlash, Round2Assault.
+
+Found an engineering comparison gap: isolated-avoidance layouts omit the
+original Planner's marker/screen targets. Actual comparison consumer now unions
+original and option-local targets plus enemies; no score/weight/placement/Rules/
+Prompt change. Real saved c75 alternatives against immutable r72 fixture:
+red missing-marker→one green7.264s; all3alternatives gain both targets, existing
+enemy edges deeply equal, friendly target stays nonhostile,0Provider/Room/¥0.
+No old gates/search regeneration/build. This is consumer proof, not live-loaded
+acceptance. Read `docs/ticket-23-slice-248-formation-common-comparison-targets-2026-09-23.md`.
+Host stage407.527s/200exact instantiations and one-secondCPU sample recorded;
+no search-capacity reduction. T23 stays33/36:248full match/249review/250synthesis.
+
+At23:42:43Z safe-stop check found a new in-flight call and correctly did nothing.
+Driver86297 was then SIGSTOPped to prevent new triggers while server86338 finished
+that call/action. At23:45:18Z both latest decisions completed, no pendingApply,
+lastApplied81/79 and Replaytrue: SIGTERM server, SIGCONT driver to let it exit.
+Confirm52348 terminal before same-directory resume; r81 needs capture, not new
+generation. New repaired comparison will affect later new queries, not rewrite
+the accepted r76 receipt. K3 S271 remains stopped as described below.
+
 ### 2026-09-23 T23 / S248 — r75 live recovery completed; K3 partial handoff
 
 **52348 is the live main resume** (runner86297/server86338). Repairc4725c2
