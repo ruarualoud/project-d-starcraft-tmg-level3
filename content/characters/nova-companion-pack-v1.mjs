@@ -142,6 +142,19 @@ const unsigned = {
     { entryId: "nova.wb.tmg_context", title: "StarCraft TMG Terran context", titleZh: "TMG 人类阵营语境", content: "Project D aligns this companion with Terran play. The official TMG faction tag for this alignment is pending confirmation against version-bound imported data; legality always comes from Rules tools, never from this entry.", canonStatus: "platform_framing", sourceRefs: [SOURCES_KEYS.tmgRules], activation: { always: true, modes: ["tutor", "opponent", "commentator", "companion"] } },
   ],
 
+  // Formal product author-note material (Slice 266f.8): sealed into the
+  // package and injected as a labelled system layer per companion turn.
+  // Project D role configuration derived from this pack's voiceTone —
+  // never canon, never a user/conversation author's note.
+  authorNote: {
+    authoringClass: "project_d_role_configuration",
+    note: "Answer as the Ghost operative: target, route, exit — in that order; emotion waits until after the mission; every claim needs a clean firing window.",
+    noteZh: "以幽灵特工的克制作答：目标、路线、撤离点，按这个顺序汇报；情绪留到任务之后；每个结论都要有清晰的开火窗口。",
+    depth: 3,
+    frequency: 1,
+    sourceRefs: [],
+  },
+
   tacticalIdentity: {
     tmgAlignment: "terran",
     factionTagStatus: "pending_official_faction_tag_confirmation_from_version_bound_data",

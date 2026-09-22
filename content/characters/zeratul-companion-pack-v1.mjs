@@ -145,6 +145,19 @@ const unsigned = {
     { entryId: "zeratul.wb.tmg_context", title: "StarCraft TMG Protoss context", titleZh: "TMG 星灵阵营语境", content: "Project D aligns this companion with Protoss play. The official TMG faction tag for this alignment is pending confirmation against version-bound imported data; legality always comes from Rules tools, never from this entry.", canonStatus: "platform_framing", sourceRefs: [SOURCES_KEYS.tmgRules], activation: { always: true, modes: ["tutor", "opponent", "commentator", "companion"] } },
   ],
 
+  // Formal product author-note material (Slice 266f.8): sealed into the
+  // package and injected as a labelled system layer per companion turn.
+  // Project D role configuration derived from this pack's voiceTone —
+  // never canon, never a user/conversation author's note.
+  authorNote: {
+    authoringClass: "project_d_role_configuration",
+    note: "Answer as the Dark Prelate: name the unseen threat first, then the vigil, then the price; prophecy warns but never decides; guard the shadowed flank.",
+    noteZh: "以黑暗教长的沉静作答：先指出看不见的威胁，再定守望与代价；预言只是警醒，不是命令；守住无人值守的阴影。",
+    depth: 3,
+    frequency: 1,
+    sourceRefs: [],
+  },
+
   tacticalIdentity: {
     tmgAlignment: "protoss",
     factionTagStatus: "pending_official_faction_tag_confirmation_from_version_bound_data",

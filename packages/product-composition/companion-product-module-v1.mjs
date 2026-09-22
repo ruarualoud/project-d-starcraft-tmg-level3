@@ -80,6 +80,16 @@ function bearerToken(headers) {
  * `extensions.worldbookEntries` so the product can inject them as
  * character-tier worldbook triggers without copying content into the
  * service. Both are additive; old callers see no change.
+ *
+ * Slice 266f.8 (additive): a pack's formal voice/persona material seals into
+ * `extensions.personaProfile` (cadence/address/humor/warmth/teaching posture/
+ * tactical pattern/style examples + doctrine hints — all labelled Project D
+ * role configuration inside the packs), its formal product author-note
+ * material seals into `extensions.authorNote`, and per-era detail (title,
+ * timeline, knowledge cutoff, ranks) seals into `extensions.eraDetails`. The
+ * session service renders these into the speaker-specific prompt layers with
+ * provenance; they are static package-sealed canon/lore configuration, never
+ * session long-term memory.
  */
 export function companionProductPackageInputFromCatalogueEntryV1(entry, extras = {}) {
   if (!object(entry) || typeof entry.characterId !== "string") {
@@ -99,6 +109,53 @@ export function companionProductPackageInputFromCatalogueEntryV1(entry, extras =
       activation: object(worldbook.activation)
         ? { always: worldbook.activation.always === true }
         : { always: true },
+    }));
+  }
+  if (object(pack?.voiceTone)) {
+    const tone = pack.voiceTone;
+    extensions.personaProfile = {
+      authoringClass: String(tone.authoringClass || "project_d_role_configuration"),
+      cadence: String(tone.cadence || ""),
+      addressStyle: String(tone.addressStyle || ""),
+      humor: String(tone.humor || ""),
+      companionWarmth: String(tone.companionWarmth || ""),
+      teachingPosture: String(tone.teachingPosture || ""),
+      tacticalPattern: String(tone.tacticalPattern || ""),
+      styleExamples: (Array.isArray(tone.styleExamples) ? tone.styleExamples : [])
+        .map((line) => String(line)).filter((line) => line.trim().length > 0),
+      doctrineHints: (Array.isArray(pack?.tacticalIdentity?.doctrineHints)
+        ? pack.tacticalIdentity.doctrineHints : []).map((hint) => String(hint)),
+      tagline: String(pack?.identity?.tagline || ""),
+      taglineZh: String(pack?.identity?.taglineZh || ""),
+      copiedQuotesAllowed: tone.copiedQuotesAllowed === true,
+      actorVoiceImitationAllowed: tone.actorVoiceImitationAllowed === true,
+    };
+  }
+  if (object(pack?.authorNote) && String(pack.authorNote.note || "").trim()) {
+    const note = pack.authorNote;
+    extensions.authorNote = {
+      authoringClass: String(note.authoringClass || "project_d_role_configuration"),
+      note: String(note.note),
+      noteZh: String(note.noteZh || ""),
+      depth: Number.isSafeInteger(Number(note.depth))
+        ? Math.min(8, Math.max(0, Number(note.depth))) : 3,
+      frequency: Number.isSafeInteger(Number(note.frequency))
+        ? Math.min(16, Math.max(1, Number(note.frequency))) : 1,
+      sourceRefs: Array.isArray(note.sourceRefs) ? note.sourceRefs.map(String) : [],
+    };
+  }
+  if (eras.length) {
+    extensions.eraDetails = eras.map((era) => ({
+      personaState: String(era.personaState),
+      title: String(era.title || era.personaState),
+      titleZh: String(era.titleZh || era.title || era.personaState),
+      timeline: {
+        start: String(era.timeline?.start || ""),
+        end: String(era.timeline?.end || ""),
+      },
+      knowledgeCutoff: String(era.knowledgeCutoff || ""),
+      knowledgeRank: Number(era.knowledgeRank) || 0,
+      spoilerRank: Number(era.spoilerRank) || 0,
     }));
   }
   return {

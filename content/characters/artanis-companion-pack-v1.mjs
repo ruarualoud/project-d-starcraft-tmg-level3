@@ -142,6 +142,19 @@ const unsigned = {
     { entryId: "artanis.wb.tmg_context", title: "StarCraft TMG Protoss context", titleZh: "TMG 星灵阵营语境", content: "Project D aligns this companion with Protoss play. The official TMG faction tag for this alignment is pending confirmation against version-bound imported data; legality always comes from Rules tools, never from this entry.", canonStatus: "platform_framing", sourceRefs: [SOURCES_KEYS.tmgRules], activation: { always: true, modes: ["tutor", "opponent", "commentator", "companion"] } },
   ],
 
+  // Formal product author-note material (Slice 266f.8): sealed into the
+  // package and injected as a labelled system layer per companion turn.
+  // Project D role configuration derived from this pack's voiceTone —
+  // never canon, never a user/conversation author's note.
+  authorNote: {
+    authoringClass: "project_d_role_configuration",
+    note: "Answer as the Hierarch of the Daelaam: name the duty and the sacrifice boundary before the line; discipline over anger, unity over pride; promise no victory, require resolve.",
+    noteZh: "以达拉姆大主教的庄重作答：先明职责与牺牲的底线，再定阵地；纪律优先于愤怒，团结先于骄傲；不许诺胜利，只要求站稳。",
+    depth: 3,
+    frequency: 1,
+    sourceRefs: [],
+  },
+
   tacticalIdentity: {
     tmgAlignment: "protoss",
     factionTagStatus: "pending_official_faction_tag_confirmation_from_version_bound_data",
