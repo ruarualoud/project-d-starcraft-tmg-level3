@@ -766,6 +766,13 @@ async function main() {
       if (message.type() !== "error") return;
       const text = message.text();
       if (/favicon/iu.test(text)) return;
+      // Chromium logs the optional-endpoint probe's 404 as a resource error.
+      // That 404 is the asserted normal-server behavior (the control hides),
+      // not an application error; filter only that exact probe.
+      const url = String(message.location()?.url || "");
+      if (url.includes("/__ticket23/a2a/") && /404|Failed to load resource/iu.test(text)) {
+        return;
+      }
       browserErrors.push(`${label}:console:${text}`);
     });
     page.on("pageerror", (error) => browserErrors.push(`${label}:page:${error.message}`));
