@@ -149,15 +149,20 @@ Codex runs it exactly once); the implementer validates via `node --check`
 plus a headless preflight mirror of the gate's non-browser phases (scratch
 script under `build/`, never committed). 0 real Provider calls / ¥0.
 
-> Status: **implementation complete — closed (266f.4).** All four sub-slices
-> plus the frozen plan are committed in dependency order on
-> `agent/kimi/ticket-26-slice-266f-companion-live-product-acceptance`. Per the
-> slice rules the single browser gate run is reserved for the integrating
-> Codex (run exactly once); the implementer's evidence is the headless
-> preflight mirror (all green) recorded below. The user-authorized single
-> live Chinese BYOK conversation is an explicit, honest reservation — the
-> implementing agent is forbidden from calling paid Providers or reading
-> credentials.
+> Status: **implementation complete — closed (266f.4); 266f.5 live acceptance
+> executed once (2026-09-22).** All four sub-slices plus the frozen plan are
+> committed in dependency order on
+> `agent/kimi/ticket-26-slice-266f-companion-live-product-acceptance`. The
+> focused browser gate has now ACTUALLY run (first complete run 2026-09-22,
+> after three honest repair rounds exposed by its first-ever executions) and
+> **passed 28 checks / 10 claims / 12 artifacts** with 0 Provider calls / ¥0.
+> The user-authorized single live Chinese BYOK conversation was then executed
+> exactly once through
+> `scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs`: one real
+> physical Provider call was made and its redacted receipt retained, but the
+> reply exceeded the Ticket 16 profile's 64-unit output budget, so the run
+> stopped with `LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED`, zero retry, and
+> the one-call lock permanently claimed. See the 266f.5 section below.
 
 ## Evidence, commits, gaps
 
@@ -169,11 +174,19 @@ script under `build/`, never committed). 0 real Provider calls / ¥0.
 | 266f.1 conversation UI polish | `f1e2f18` | `apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx`, `apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx` |
 | 266f.2 secure-provider/BYOK product seam | `c68387e` | `apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx` |
 | 266f.3 real-content continuity acceptance | `92ba047` | `apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx` |
-| 266f.4 gate + closure | `daddb36` (verifier) · _(this commit)_ (closure) | `scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs`, this doc |
+| 266f.4 gate + closure | `daddb36` (verifier) · `797960b` (closure) | `scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs`, this doc |
+| 266f.5 live runner + gate scope/reservation | `0b5ca25` | `scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs`, verifier (manifest path list + reservation text) |
+| 266f.5 repair: sheet portal (gate run 1) | `e520eea` | `tactical-adjutant-panel.tsx`, verifier + runner page-scope selectors |
+| 266f.5 repair: gate ordering (gate run 2) | `41a6f8e` | verifier (provider-status hue asserted after chat section opens) |
+| 266f.5 repair: report assembly scope (gate run 3) | `3feb37b` | verifier (`durableProbe` hoisted to function scope) |
+| 266f.5 closure record | _(this commit)_ | this doc |
 
-`git diff --name-only fa1c83d..HEAD` touches exactly the four files above —
-all inside the manifest `allowedPaths`. No push performed. The new gate itself
-re-proves this at runtime (`SLICE_SCOPE_VIOLATION_OUTSIDE_MANIFEST_PATHS`).
+`git diff --name-only fa1c83d..HEAD` touches only the files in the table
+above plus the pre-existing `.kimi-code/agents/project-d-live-acceptance.md`
+authorization commit (`a910689`) — all inside the manifest `allowedPaths`. No
+push performed. The gate re-proves this at runtime
+(`SLICE_SCOPE_VIOLATION_OUTSIDE_MANIFEST_PATHS`; its manifest path list now
+includes the agent profile and the live runner).
 
 ### What each sub-slice delivers
 
@@ -186,9 +199,11 @@ re-proves this at runtime (`SLICE_SCOPE_VIOLATION_OUTSIDE_MANIFEST_PATHS`).
   stays materially visible; the compact launcher is never covered) and a
   full-screen fixed sheet on mobile web (< 768px); both sheets carry their
   own Collapse control; the compact chip is unchanged. Mid widths and native
-  keep the in-dock layout. DOM hierarchy and every 266c/266d/266e testID are
-  preserved — the sections are built once and rendered into the three
-  layouts, so the existing browser gate remains valid.
+  keep the in-dock layout. Every 266c/266d/266e testID is preserved; after
+  the first real gate run exposed the RNW ScrollView `translateZ(0)`
+  containing-block trap, the web sheet is portaled to `document.body` (see
+  266f.5), so sheet-mode DOM ancestry — but no testID or behavior — differs
+  from the in-dock layout.
 - **266f.2** — the BYOK card gains an explicit state chip derived only from
   the real Ticket 16 projection (`attached` / `missing` / `error` /
   `detached` / `awaiting_secret`), a redacted-receipt block (hash-pinned
@@ -278,40 +293,156 @@ fixed `openChatSection` toggling the launcher unconditionally (would have
 collapsed the already-expanded sheet); it is now idempotent. Non-converging
 rounds: 0 of max 3.
 
-### Live-call receipt (honest reservation)
+## 266f.5 — real BYOK live acceptance: execution record (2026-09-22)
 
-- User authorization on file: ONE bounded live Chinese BYOK conversation
-  acceptance. **Executed in this slice: no.** The implementing agent is
-  forbidden from calling paid Providers or reading credentials; the raw key
-  therefore never entered the K3 prompt, repository, command line,
-  stdout/stderr, screenshots, report, or logs — no live call exists to leak
-  it.
-- The reserved procedure (recorded in the gate report's
-  `liveByokAcceptance` field): the integrating run invokes only the existing
+User authorization on file: ONE bounded live Chinese BYOK conversation, hard
+maximum ONE physical Provider call. Executed exactly once; never retried.
+
+### Focused gate (prerequisite) — PASSED on its first complete run
+
+The 266f gate had never actually executed before this slice (the 266f.4
+closure recorded only the implementer's headless preflight mirror). Its
+first-ever runs exposed and repaired three real defects, one round each:
+
+1. **Run 1 — `FOCUS_SHEET_NOT_LEFT_ANCHORED` (product defect).**
+   react-native-web 0.21 gives every ScrollView base
+   `transform: translateZ(0)` for compositing; the floating dock's ScrollView
+   therefore became the containing block for the sheet's `position: fixed`,
+   anchoring it to the shrink-wrapped dock (measured box x=1060, y=993,
+   h=21) instead of the viewport. The dock chrome file is outside the
+   manifest, so the expanded sheet is now portaled to `document.body` on web
+   (`portalSheetToBody`, EXPO_OS-guarded literal `require("react-dom")`,
+   shaken out of native bundles). Every testID is unchanged; gate and live
+   runner sheet selectors moved to page scope accordingly. Native and
+   mid-widths keep the in-dock layout.
+2. **Run 2 — `COMMS_ACCENT_NOT_CYAN_BLUE` (gate ordering bug).** The gate
+   asserted the chat provider-status hue before the chat section was opened;
+   the element only exists once the section renders. The assertion now runs
+   immediately after `openChatSection`.
+3. **Run 3 — `ReferenceError: durableProbe is not defined` (gate report
+   assembly bug).** Every browser and headless phase had already passed; the
+   durable-fixture call counter was block-scoped inside `try` but referenced
+   by the post-`try` report. Hoisted to function scope.
+
+Run 4 (final): **passed — 28 checks, 10 claims, 12 artifacts**, report
+`build/ticket-26-slice-266f-companion-live-product-acceptance-v1/browser-report.json`,
+reportHash `6fc71a64f9823377d7694f1c594a3dba5cef9a244db7a3fa0197eda38f28b2ab`,
+22.7s (the current-sources export from run 1 was still fresh and reused;
+run 1 itself performed the full export). 0 real Provider calls / ¥0. All
+browser screenshots under
+`build/ticket-26-slice-266f-companion-live-product-acceptance-v1/browser-evidence/`
+(`01-…-11-*.png`, sha256-indexed in the report).
+
+### Live runner
+
+`scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs` (requires the
+explicit flag `--authorize-live-byok-companion-once`; refuses to run when a
+prior success report or a prior dispatch lock exists). Offline preflight
+before the live run (scratch `build/266f-live-preflight.mjs`, uncommitted,
+0 Provider calls): the adapter's Provider request passes the REAL egress
+transport normalization (wire body: model `deepseek-v4-flash`,
+`max_tokens: 64`, `response_format: json_object`, thinking disabled), a fake
+socket 401 maps to `PROVIDER_AUTHENTICATION_FAILED` with
+`physicalAttempts: 1 / automaticRetries: 0`, and the REAL companion product
+stack (module + session service + gateway) renders the reply with honest
+accounting (1 external network attempt / 1 paid inference) while a second
+turn is refused with zero dispatch.
+
+### Executed live run (the one authorized physical call)
+
+- Run id `e9aedc0e-def4-411c-aa19-9cab74e23c19`, started
+  2026-09-22T09:15:22Z. Credential read exclusively via the existing macOS
   Keychain → isolated-Worker path
-  (`packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs` +
-  the Ticket 16 Slice 162 pattern), inspects only redacted product receipts,
-  stops immediately on 401/402/403 or ambiguous dispatch, never silently
-  retries, records exact Provider calls / reported tokens / estimated cost,
-  detaches at the end, and proves credential absence from persistence and
-  artifacts. The gate proves the entire seam around that single step with
-  the deterministic fixture (0 real Provider calls, ¥0).
+  (`keychain-credential-ingress-v1.mjs` → `provider-egress-worker-port-v1.mjs`;
+  attested `/usr/bin/security`, no shell, empty environment, secret never in
+  arguments/environment/files/logs/screenshots/stdout). Parent credential
+  buffer asserted zeroed immediately after attach; the Keychain module zeroes
+  its own stdout buffer.
+- Real product path: two-seat room → real companion product module → session
+  service → provider gateway → isolated Worker → one HTTPS POST to
+  `api.deepseek.com` (TLS verified, DNS pinned, no proxy, no redirect).
+  One companion (Zagara, real sealed package worldbook), one bounded Chinese
+  prompt, pre-send denominator proven (exactly 1 companion, 0 calls).
+- **Outcome: the physical call succeeded (HTTP 200) but the reply exceeded
+  the profile's 64-unit output budget** (`outputUnits: 64`, finish-reason
+  truncation → not the sealed channel JSON), so the adapter returned
+  `LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED`, the UI rendered the explicit
+  interrupted card (accepted history preserved, no fabricated reply), and the
+  run stopped with **zero retry**; the one-call dispatch lock
+  (`build/ticket-26-slice-266f-live-byok-companion-v1/one-call-attempt.lock.json`)
+  is permanently claimed and a rerun requires new user authorization.
+- **Redacted receipt** (report
+  `build/ticket-26-slice-266f-live-byok-companion-v1/live-report.json`):
+  status 200; requestedModel `deepseek-v4-flash`; **reportedModel
+  `deepseek-flash` — a model-reporting drift recorded honestly** (the pinned
+  pricing snapshot therefore refuses an authoritative pricing receipt);
+  usage 118,911 input units (0 cache-hit / 118,911 cache-miss) + 64 output
+  units = 118,975 total; physicalAttempts 1; automaticRetries 0;
+  providerSystemFingerprintHash `09af7682…0c4602`; responseFingerprint
+  `343aed86…f88d5`; receiptHash
+  `603bebde253d74f6bb465cc7ac2ab7464c8cf8720c54e9610a214313297b29ee`.
+- **Estimated cost (non-invoice): $0.05240532** — arithmetic at the pinned
+  snapshot's peak-window rates (118,911 × 440 + 64 × 1,320 nano-USD); the
+  Provider invoice remains authoritative.
+- **Screenshots:**
+  `build/ticket-26-slice-266f-live-byok-companion-v1/browser-evidence/live-01-desktop-session-open.png`
+  (desktop 1500×1050: one-companion session open, provider status honestly
+  declaring `isolated_worker_https_egress`, 0 calls) and
+  `…/live-failure-interrupted.png` (the explicit interrupted card after the
+  single call). The 390px resume shot was not reached (the run correctly
+  stopped at the interruption).
+- **Detach/zero-persistence:** the runner's `finally` detached the Worker
+  (`explicit_user_detach`; the port requires the child's
+  `sensitiveBytesZeroed` shutdown acknowledgement) and re-zeroed the parent
+  buffer; nothing was persisted by the runner (`rawCredentialPersisted:
+  false`, `credentialHashPersisted: false`); report and artifacts were
+  scanned for credential-shaped material. Honest evidence gap: the failure
+  path writes its report before the tombstone read, so the worker-tombstone
+  proof is structural (finally-path detach + port enforcement) rather than a
+  recorded tombstone field; the success path records the full tombstone.
+- Zero Room mutations (mutation-counting facade) and the Room state revision
+  never moved.
+
+### What this means
+
+The secure seam worked end-to-end against the real Provider (Keychain →
+isolated Worker → pinned TLS → redacted receipt → detach), the stop rules
+fired exactly as specified, and the hard maximum of one physical call was
+kept. The product-level acceptance of a RENDERED live Chinese reply is
+**not** achieved: the Ticket 16 profile's 64-unit output budget cannot carry
+the companion channel JSON plus Chinese reply text. A productive retry needs
+new user authorization AND a larger output budget in the Provider profile —
+Provider infrastructure outside this slice's manifest and untouched here.
 
 ### Honest nonblocking gaps (no Critical/High findings open)
 
-- **Browser phase unexecuted by the implementer.** The desktop/390px
-  journeys (fixed focus sheet, mobile sheet, theme hues, Chinese
-  conversation rendering, continuity card, BYOK card, portrait pixels,
-  screenshots) are written into the gate and validated only headlessly /
-  statically; their first live-browser execution is the integrating Codex's
-  gate run. The viewport-fixed sheet relies on react-native-web's
-  `position: fixed` (standard on RNW 0.21; no transforms/filters on any
-  ancestor).
-- **Full tsc baseline delta** unverified in the worktree (no
-  `node_modules`); the integrating run compares against the 31-error
-  pre-existing baseline.
-- **Live BYOK conversation** remains the explicit reservation above — the
-  single authorized paid step is deliberately unspent.
+- **Browser phase: now executed.** The focused gate's desktop/390px journeys
+  ran for the first time in this slice and passed (28/28) after the three
+  repair rounds above. The viewport-fixed sheet is portaled to
+  `document.body` on web (the RNW ScrollView compositing transform traps
+  `position: fixed`); mid-width (768–1023px) and native keep the in-dock
+  layout by design.
+- **Legacy 266c/266e gates:** their dock-scoped sheet selectors
+  (`companionChip(page).getByTestId("companion-chat-section")` etc.) would
+  need the same page-level rescoping if they were ever rerun against this
+  branch, because the portaled sheet no longer sits under the dock in sheet
+  modes. Their passed runs remain valid historical evidence of their own
+  integrated state; they were not rerun here (out of this manifest's scope).
+- **Live BYOK conversation: executed once, acceptance not achieved.** The
+  single authorized physical call returned HTTP 200 but truncated at the
+  Ticket 16 profile's 64-unit output budget, so no live reply rendered
+  (explicit interrupted card instead; zero retry; dispatch lock claimed).
+  The Provider also reported `deepseek-flash` against the requested
+  `deepseek-v4-flash` — recorded drift; the pinned pricing snapshot refuses
+  an authoritative receipt for the drifted model, so the $0.05240532 figure
+  is an explicitly-labelled snapshot-rate estimate, not an invoice.
+  Productive retry requires new user authorization and a Provider-profile
+  output-budget change (outside this manifest).
+- **Full tsc baseline delta** unverified in the worktree (no local install;
+  `node_modules` was symlinked from the main checkout for the export step);
+  the new code's only typing accommodation is the guarded `as any` for
+  viewport-fixed positioning plus the EXPO_OS-guarded react-dom require; the
+  pre-existing baseline is 31 errors.
 - **Native and mid-width (768–1023px) layouts** intentionally keep the
   in-dock presentation (the sheet modes are web presentation geometry).
 - Kerrigan's character-tier worldbook stays empty by data (pre-existing
