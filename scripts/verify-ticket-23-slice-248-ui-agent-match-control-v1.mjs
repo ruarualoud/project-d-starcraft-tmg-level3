@@ -59,12 +59,12 @@ const ALLOWED_PATHS = new Set([
   "docs/ticket-23-slice-248-ui-agent-match-control-v1-2026-09-22.md",
 ]);
 const SCREENSHOT_EXPLANATIONS = {
-  "01-desktop-ready-command-strip.png": "Desktop battle surface on the formal-evidence mock: the board fills the first viewport and the Agent-match command strip sits below it with gate-passed and ready chips, round/phase/active-side context, usage/cost/state-revision/last-accepted facts and the single enabled drive button.",
+  "01-desktop-ready-command-strip.png": "Desktop battle surface, frame scrolled to the strip: the Agent-match command strip with gate-passed and ready chips, round/phase/active-side context, usage/cost/state-revision/last-accepted facts and the single enabled drive button. Board focus is proven geometrically: the 560px board renders above the 101px strip with zero overlap in the first viewport.",
   "02-desktop-running-thinking.png": "After one activation: the run chip reads Agent: thinking…, the drive button is disabled, and the mock POST counter proves exactly one queue request; the board is untouched.",
   "03-desktop-applied-refresh.png": "Job completed: the strip refreshes to state revision 10 with last accepted ventral_sacs → r10 and the bumped usage/cost, proving the accepted action and room revision visibly advance after a drive.",
   "04-desktop-blocked-gate.png": "Data-gate blocker: amber blocked banner with the blocking-finding count, gate chip flipped, drive button visibly disabled; a forced DOM click produced no POST.",
   "05-desktop-failed-recovery.png": "Typed failure: the failure card shows code/severity, explains that no state advanced, and the drive button is enabled again for a deliberate retry.",
-  "06-narrow-collapsed.png": "390px touch layout: one-line summary (gate chip, run chip, context, Details toggle, drive button) under the still-visible battlefield; fact chips stay collapsed and there is no horizontal overflow.",
+  "06-narrow-collapsed.png": "390px touch layout, frame scrolled to the strip: one-line summary (gate chip, run chip, context, Details toggle, drive button) with fact chips collapsed. Board visibility/no-overflow is proven geometrically at the natural scroll top: 260px board fully in the first viewport, document width ≤ viewport width.",
   "07-narrow-expanded.png": "390px expanded inline (frame scrolled down the natural column to the strip): usage facts, revision, last accepted action, audit/model/Skill evidence and the what-will-happen helper; measured at the natural scroll top the board position is pixel-identical and the strip begins below the board's bottom edge, so expansion never covers battlefield interaction.",
   "08-normal-server-hidden.png": "Normal product server (endpoint 404): the experimental control is entirely absent, the battle surface shows no alarming error, and the board remains the focus.",
 };
@@ -835,6 +835,9 @@ async function main() {
       && controlBox.y + 2 >= boardBox.y + boardBox.height
       && controlBox.height < boardBox.height,
     "BOARD_NOT_VISUAL_FOCUS", { boardBox, controlBox });
+    // Bring the strip into the evidence frame (it sits directly below the
+    // tall workspace block; the geometry above already proved board focus).
+    await control.scrollIntoViewIfNeeded();
     await capture(page, "01-desktop-ready-command-strip.png", artifacts);
     checks.push({ id: "ready_state_shows_gate_context_usage_and_last_action", passed: true });
     checks.push({ id: "desktop_layout_keeps_board_visual_focus", passed: true,
@@ -854,6 +857,7 @@ async function main() {
     await page.waitForTimeout(600);
     ensure(a2a.scenario.postCount === 1, "DUPLICATE_POST_WHILE_BUSY",
       { postCount: a2a.scenario.postCount });
+    await control.scrollIntoViewIfNeeded();
     await capture(page, "02-desktop-running-thinking.png", artifacts);
     checks.push({ id: "drive_posts_exactly_once_and_stays_disabled_while_busy", passed: true,
       postCount: a2a.scenario.postCount });
@@ -867,6 +871,7 @@ async function main() {
     ensure(appliedText.includes("Provider calls 21"), "APPLIED_USAGE_STALE");
     ensure(appliedText.includes("Cost ¥1.503445"), "APPLIED_COST_STALE");
     ensure(!(await ariaDisabled(driveButton)), "DRIVE_NOT_REENABLED_AFTER_APPLY");
+    await control.scrollIntoViewIfNeeded();
     await capture(page, "03-desktop-applied-refresh.png", artifacts);
     checks.push({ id: "applied_state_refreshes_revision_usage_and_last_action", passed: true });
 
@@ -882,6 +887,7 @@ async function main() {
     await page.waitForTimeout(600);
     ensure(a2a.scenario.postCount === 1, "POST_SENT_UNDER_GATE_BLOCK",
       { postCount: a2a.scenario.postCount });
+    await control.scrollIntoViewIfNeeded();
     await capture(page, "04-desktop-blocked-gate.png", artifacts);
     checks.push({ id: "data_gate_blocker_visibly_prevents_execution", passed: true });
 
@@ -896,6 +902,7 @@ async function main() {
     ensure(failedText.includes("severity: High"), "FAILURE_SEVERITY_MISSING");
     await waitBody(page, "Data gate: passed", 30_000);
     ensure(!(await ariaDisabled(driveButton)), "DRIVE_NOT_REENABLED_AFTER_FAILURE");
+    await control.scrollIntoViewIfNeeded();
     await capture(page, "05-desktop-failed-recovery.png", artifacts);
     checks.push({ id: "typed_failure_recovers_visibly", passed: true });
 
@@ -957,6 +964,9 @@ async function main() {
     const narrowCollapsedText = await narrowControl.innerText();
     ensure(!narrowCollapsedText.includes("Provider calls"),
       "NARROW_FACTS_NOT_COLLAPSED", { text: narrowCollapsedText.slice(0, 300) });
+    // Frame the compact strip itself; board adjacency is the geometric
+    // assertion above, not a pixel claim of this frame.
+    await narrowControl.scrollIntoViewIfNeeded();
     await capture(narrowPage, "06-narrow-collapsed.png", artifacts);
     checks.push({ id: "narrow_layout_compact_with_board_visible_no_overflow", passed: true });
 
@@ -1067,7 +1077,7 @@ async function main() {
     { claim: "The control exists only on the formal-evidence server",
       proof: "hidden_on_normal_server_without_alarming_error + 08-normal-server-hidden.png (no control pixels, no error copy)" },
     { claim: "Board stays the visual focus on desktop",
-      proof: "desktop_layout_keeps_board_visual_focus + 01-desktop-ready-command-strip.png (board box above, larger than, and not overlapped by the strip)" },
+      proof: "desktop_layout_keeps_board_visual_focus (geometric: 560px board above the 101px strip, zero overlap, first viewport) + 01-desktop-ready-command-strip.png (the compact strip itself)" },
     { claim: "Preflight/data-gate is visibly separate from Agent run state",
       proof: "ready/blocked checks + 01 vs 04 screenshots (gate chip + banner are distinct zones from the run chip)" },
     { claim: "One activation sends one and only one POST and locks while busy",
