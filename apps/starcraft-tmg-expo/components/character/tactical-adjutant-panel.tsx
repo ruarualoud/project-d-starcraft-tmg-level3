@@ -2,7 +2,9 @@ import { useIsFocused } from "@react-navigation/native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Image,
+  type ImageSourcePropType,
   Platform,
   Pressable,
   StyleSheet,
@@ -15,6 +17,10 @@ import { useI18n } from "@/lib/i18n";
 import { useLevel3ClientDomain } from "@/lib/level3/client-domain-provider";
 import { CompanionCataloguePanel } from "./companion-catalogue-panel";
 import { COMPANION_CATALOGUE_V1 } from "../../../../content/characters/companion-catalogue-v1.mjs";
+import {
+  companionPortraitAnimationTransitionV1,
+  resolveCompanionPortraitAnimationStateV1,
+} from "../../../../content/characters/companion-portrait-animation-binding-v1.mjs";
 import {
   companionPortraitFrameAssetV1,
   resolveCompanionPortraitAssetSourceV1,
@@ -2297,10 +2303,22 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     const speakerCharacterId = speakerCompanion
       ? characterIdFromCompanionPackageId(speakerCompanion.packageRef.id)
       : null;
-    const speakerState: CompanionPortraitStateId = speakerCompanion
-      && lastMessage?.participantId === speakerCompanion.participantId
-      ? "speaking"
-      : "listening";
+    // Slice 266e: the speaker portrait is bound to the deterministic
+    // six-state animation state machine over REAL session signals — never
+    // fabricated; unknown/absent signals fail closed to idle, and reduced
+    // motion renders the single static keyframe.
+    const speakerState = resolveCompanionPortraitAnimationStateV1({
+      sessionError: chat.error !== null,
+      interrupted: chat.interrupted !== null,
+      thinking: chat.busy
+        && (chat.lastOperation === "send" || chat.lastOperation === "continue"),
+      speaking: !!speakerCompanion
+        && lastMessage?.participantId === speakerCompanion.participantId,
+      composing: chat.draft.trim().length > 0,
+    }) as CompanionPortraitStateId;
+    const speakerTransition = companionPortraitAnimationTransitionV1(
+      speakerState, { reducedMotion },
+    );
     const speakerSource = speakerCharacterId
       ? resolveCompanionPortraitAssetSourceV1(speakerCharacterId, speakerState)
       : null;
@@ -2348,20 +2366,12 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
 
         <View style={styles.chatSpeakerRow}>
           {speakerSource ? (
-            <View
-              style={styles.chatSpeakerPortraitBox}
-              testID="companion-chat-speaker-portrait"
-            >
-              <Image
-                accessibilityIgnoresInvertColors
-                accessibilityLabel={`${speakerCompanion?.packageRef?.id || "companion"} · ${speakerState}`}
-                resizeMode="cover"
-                source={speakerSource}
-                style={styles.chatSpeakerPortrait}
-                testID="companion-chat-speaker-portrait-img"
-              />
-              <View pointerEvents="none" style={styles.scanlines} />
-            </View>
+            <ChatSpeakerPortraitFrame
+              accessibilityLabel={`${speakerCompanion?.packageRef?.id || "companion"} · ${speakerState}`}
+              reducedMotion={reducedMotion}
+              source={speakerSource}
+              state={speakerState}
+            />
           ) : (
             <View
               accessibilityLabel={zh ? "头像资产不可用（如实标注）" : "portrait asset unavailable (labelled honestly)"}
@@ -2377,6 +2387,14 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
               {zh ? "当前发言者" : "Current speaker"}: {speakerCompanion
                 ? chatParticipantLabel(conversation, speakerCompanion.participantId)
                 : (zh ? "你" : "You")}
+            </Text>
+            <Text style={styles.sectionMeta} testID="companion-chat-speaker-portrait-state">
+              portrait state: {speakerState}
+              {" · "}{speakerTransition.reducedMotionStatic
+                ? (zh ? "减少动态 · 单静态帧" : "reduced motion · single static frame")
+                : (zh
+                  ? `确定性 ${speakerTransition.durationMs}ms 淡入（仅状态切换；无循环帧）`
+                  : `deterministic ${speakerTransition.durationMs}ms crossfade (state change only; no frame loop)`)}
             </Text>
             {speakerFrameAsset && (
               <Text style={styles.sectionMeta} testID="companion-chat-speaker-asset-meta">
@@ -2821,6 +2839,55 @@ function StaticNeutralAdjutantPortrait({ label }: { label: string }) {
       <View style={styles.neutralHead} />
       <View style={styles.neutralShoulders} />
       <View style={styles.neutralCore} />
+    </View>
+  );
+}
+
+/**
+ * Slice 266e: six-state portrait animation binding (committed keyframes
+ * only). On a bound-state change the new committed keyframe fades in with
+ * the state's deterministic bounded duration; there is no frame loop and no
+ * generated in-between frame. Reduced motion collapses the transition and
+ * renders the single static keyframe, exactly as the portrait-state
+ * contracts prescribe. The image layer keeps the exact
+ * `companion-chat-speaker-portrait-img` structure the pixel gate proves.
+ */
+function ChatSpeakerPortraitFrame({ accessibilityLabel, reducedMotion, source, state }: {
+  accessibilityLabel: string;
+  reducedMotion: boolean;
+  source: ImageSourcePropType;
+  state: CompanionPortraitStateId;
+}) {
+  const fade = useRef(new Animated.Value(1)).current;
+  const previousState = useRef(state);
+  useEffect(() => {
+    if (previousState.current === state) return;
+    previousState.current = state;
+    const transition = companionPortraitAnimationTransitionV1(state, { reducedMotion });
+    if (transition.reducedMotionStatic || transition.durationMs <= 0) {
+      fade.setValue(1);
+      return;
+    }
+    fade.setValue(0.35);
+    Animated.timing(fade, {
+      toValue: 1,
+      duration: transition.durationMs,
+      useNativeDriver: true,
+    }).start();
+  }, [state, reducedMotion, fade]);
+  return (
+    <View style={styles.chatSpeakerPortraitBox} testID="companion-chat-speaker-portrait">
+      <Animated.View style={{ width: "100%", height: "100%", opacity: fade }}>
+        <Image
+          accessibilityIgnoresInvertColors
+          accessibilityLabel={accessibilityLabel}
+          resizeMode="cover"
+          source={source}
+          style={styles.chatSpeakerPortrait}
+          testID="companion-chat-speaker-portrait-img"
+        />
+      </Animated.View>
+      <View pointerEvents="none" style={styles.scanlines} />
     </View>
   );
 }

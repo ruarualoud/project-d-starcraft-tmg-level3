@@ -158,6 +158,48 @@ declare module "*/content/characters/zeratul-portrait-states-v1.mjs" {
   export const ZERATUL_PORTRAIT_STATE_CONTRACT_V1: CompanionPortraitStateContract;
 }
 
+declare module "*/content/characters/companion-portrait-animation-binding-v1.mjs" {
+  export const COMPANION_PORTRAIT_ANIMATION_STATE_IDS: readonly string[];
+  export const COMPANION_PORTRAIT_ANIMATION_SIGNAL_PRIORITY: readonly string[];
+  export function resolveCompanionPortraitAnimationStateV1(signals?: {
+    sessionError?: boolean;
+    interrupted?: boolean;
+    thinking?: boolean;
+    speaking?: boolean;
+    composing?: boolean;
+  }): string;
+  export function companionPortraitAnimationTransitionV1(
+    stateId: string,
+    options?: { reducedMotion?: boolean },
+  ): {
+    stateId: string;
+    requestedStateId: string;
+    failClosedToIdle: boolean;
+    durationMs: number;
+    curve: string;
+    motion: string;
+    reducedMotionStatic: boolean;
+    reducedMotion: string;
+  };
+  export function companionPortraitAnimationStatesV1(
+    characterId: string,
+  ): readonly string[] | null;
+  export const COMPANION_PORTRAIT_ANIMATION_BINDING_V1: {
+    schemaVersion: string;
+    bindingId: string;
+    version: string;
+    presentationOnly: boolean;
+    bindingHash: string;
+    entries: {
+      characterId: string;
+      packageId: string;
+      boundStateIds: string[];
+      complete: boolean;
+    }[];
+    honestyNotes: string[];
+  };
+}
+
 interface CompanionPortraitStateContract {
   schemaVersion: string;
   contractId: string;
