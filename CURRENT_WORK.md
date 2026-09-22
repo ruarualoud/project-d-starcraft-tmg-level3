@@ -6,6 +6,21 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r37; fork-prefix recovery accounting repaired
+
+Live runner 78441 continues. r36 Feral Rage on Hydralisk and r37 finish have
+Apply/Replay/screenshots. Actual r35 Planner saw fixed current LOS in both
+directions: Goliath versus Hydra/Swarm/Raptor has 2/18/18 blocked pairs, zero
+unknown and no batch failure. Future geometry remains explicitly unresolved.
+At 19:48:08Z: 96 calls / 9,529,523 accounted units / estimated ¥12.802140.
+The durable helper now counts explicit journal-matching replay prefix apart
+from new Bot actions; frozen real r37 (7 + 30) narrow mode red→one green0.83s,
+including missing/incorrect prefix negatives, 0 Provider/Room mutation.
+Runner passes cached provenance. Keep the live process; loads on next normal
+restart, no live-failure-recovery claim yet. See
+`docs/ticket-23-slice-248-replayed-prefix-boundary-repair-2026-09-23.md`.
+T23 stays 33/36, S248 full match / S249 review / S250 synthesis remain open.
+
 ### 2026-09-23 T23 / S248 — diagonal LOS repaired; reload at r35
 
 The real r33 geometry reproduced an axis-only rectangle proof limitation.
@@ -24,8 +39,8 @@ matching; no paid regeneration. Keep this runner alive for the full match.
 93 calls / 9,188,732 accounted units / ¥12.335719 conservative estimate at
 recovery. The next ordinary Web decision proceeds under the fixed geometry
 and previously passed named-target claim repair. No repeat verification.
-Separate recovery TODO: durable boundary helper does not account for this
-branch's 7 replayed-prefix transitions; 28 Bot actions + 7 prefix = r35.
+The separate replayed-prefix recovery count defect is repaired above;
+28 Bot actions + 7 prefix = r35, without fabricating old Bot executions.
 T23 remains 33/36; current phase Round 1 Combat, no full-match claim.
 
 ### 2026-09-23 T23 / S248 — r29, Flash-only continuation

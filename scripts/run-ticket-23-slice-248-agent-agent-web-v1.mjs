@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { appendFile, copyFile, mkdir, readFile, readdir, rename, writeFile } from
   "node:fs/promises";
 import path from "node:path";
@@ -249,8 +249,19 @@ function unseenTraces(manifest, recordedReceiptHashes) {
       - Number(right.trace.postStateRevision || 0));
 }
 
+const durableReplayPrefixes = new Map();
+function readDurableReplayPrefix(runDirectory) {
+  if (!durableReplayPrefixes.has(runDirectory)) {
+    const filename = path.join(runDirectory, "fork-provenance.json");
+    durableReplayPrefixes.set(runDirectory, existsSync(filename)
+      ? JSON.parse(readFileSync(filename, "utf8")) : null);
+  }
+  return durableReplayPrefixes.get(runDirectory);
+}
+
 function durableActionBoundary(runDirectory, previous) {
   return readStarcraftTmgDurableAgentActionBoundaryV1({
+    replayedPrefix: readDurableReplayPrefix(runDirectory),
     previousStateRevision: Number(previous?.room?.stateRevision || 0),
     previousActionCount: actionCount(previous),
     roomDatabaseFilename: path.join(runDirectory, "room.sqlite"),

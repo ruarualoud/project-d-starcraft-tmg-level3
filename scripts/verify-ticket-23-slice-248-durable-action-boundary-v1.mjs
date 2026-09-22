@@ -21,6 +21,66 @@ const argument = process.argv.find((entry) =>
 assert(argument, "--run-directory is required");
 const runDirectory = path.resolve(ROOT,
   argument.slice("--run-directory=".length));
+if (process.argv.includes("--fork-prefix-accounting-only")) {
+  const { backup } = await import("node:sqlite");
+  const { mkdir, access } = await import("node:fs/promises");
+  const fixtureDirectory = path.join(runDirectory, "fork-prefix-boundary-regression");
+  await mkdir(fixtureDirectory, { recursive: true, mode: 0o700 });
+  const files = ["room.sqlite", "seats/player1/bot-seat.sqlite",
+    "seats/player2/bot-seat.sqlite"];
+  const fixtures = [];
+  for (const [index, relative] of files.entries()) {
+    const destination = path.join(fixtureDirectory, `${index}.sqlite`);
+    try { await access(destination); }
+    catch (error) {
+      if (error.code !== "ENOENT") throw error;
+      const source = new DatabaseSync(path.join(runDirectory, relative), { readOnly: true });
+      try { await backup(source, destination); } finally { source.close(); }
+    }
+    fixtures.push(destination);
+  }
+  const db = new DatabaseSync(fixtures[0], { readOnly: true });
+  const revision = Number(db.prepare("SELECT state_revision FROM sc_rooms LIMIT 1").get().state_revision);
+  db.close();
+  const prefix = JSON.parse(await readFile(path.join(runDirectory, "fork-provenance.json"), "utf8"));
+  const input = { previousStateRevision: revision - 1, previousActionCount: 0,
+    roomDatabaseFilename: fixtures[0], replayedPrefix: prefix,
+    seatDatabaseFilenames: { player1: fixtures[1], player2: fixtures[2] } };
+  const boundary = readStarcraftTmgDurableAgentActionBoundaryV1(input);
+  console.log(JSON.stringify({ revision, replayedPrefixCount: prefix.throughStateRevision,
+    botActionCount: boundary.totalActionCount, replayCount: boundary.totalReplayVerifiedCount,
+    atomicBoundarySatisfied: boundary.atomicBoundarySatisfied }));
+  assert.equal(boundary.totalActionCount + prefix.throughStateRevision, revision,
+    "the captured real fixture must contain a settled prefix plus new Bot actions");
+  assert.equal(boundary.atomicBoundarySatisfied, true,
+    "verified replayed prefix is not a missing Bot execution");
+  assert.equal(boundary.replayedPrefixTransitionCount, prefix.throughStateRevision);
+  assert.equal(boundary.accountedTransitionCount, revision);
+  assert.equal(boundary.disposition, "restart_control_plane_without_replay");
+  assert.equal(boundary.providerCallAuthorized, false);
+  assert.equal(boundary.duplicateDriveAuthorized, false);
+  assert.equal(readStarcraftTmgDurableAgentActionBoundaryV1({ ...input,
+    replayedPrefix: null }).atomicBoundarySatisfied, false,
+  "never infer a valid prefix from the count discrepancy alone");
+  for (const mutate of [
+    (copy) => { copy.throughStateRevision += 1; },
+    (copy) => { copy.replayedTransitions[0].branchJournalHash = "wrong-room-receipt"; },
+    (copy) => { copy.replayedTransitions[1].branchStateRevision = 1; },
+    (copy) => { copy.replayedTransitions[0].branchStateHash = "wrong-state"; },
+  ]) {
+    const invalid = structuredClone(prefix); mutate(invalid);
+    assert.equal(readStarcraftTmgDurableAgentActionBoundaryV1({ ...input,
+      replayedPrefix: invalid }).atomicBoundarySatisfied, false);
+  }
+  const runner = await readFile(path.join(ROOT,
+    "scripts/run-ticket-23-slice-248-agent-agent-web-v1.mjs"), "utf8");
+  assert.match(runner, /replayedPrefix:\s*readDurableReplayPrefix\(runDirectory\)/u);
+  console.log(JSON.stringify({ ok: true, sourceRevision: revision,
+    prefixCount: boundary.replayedPrefixTransitionCount,
+    noMissingActionsForgiven: true, providerCalls: 0, roomMutations: 0,
+    existingPassedModesRepeated: false }));
+  process.exit(0);
+}
 if (process.argv.includes("--startup-model-recovery-only")) {
   const { createStarcraftTmgLiveFlashDecisionPortV1 } = await import(
     "../packages/online-agent-session/live-flash-decision-port-v1.mjs");
