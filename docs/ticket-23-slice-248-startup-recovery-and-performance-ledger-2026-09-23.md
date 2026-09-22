@@ -62,6 +62,30 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r61–64 — recovery and model-selected ability sequence
+
+76101 recovered r61 without paid regeneration. Marine2 move, Go!Go!Go! and
+Stimpack accepted/replayed/captured at62/63/64. At22:25:02Z160calls/
+17,508,025accounted units/estimated¥23.428180, bothFlash.
+
+| Revision | Manifest | Refresh | Capture | Observed subtotal |
+| --- | ---: | ---: | ---: | ---: |
+| r61 |3.923s|9.482s|32.582s|45.987s|
+| r62 |64.967s|10.490s|29.509s|104.966s|
+| r63 |34.542s|6.295s|29.287s|70.124s|
+| r64 |3.599s|7.765s|36.953s|48.317s|
+
+Concurrent execution may occupy part of manifest intervals. No blanket
+serialization attribution or demonstrated full-path speedup. No reduction of
+strategy facts, Skills, search, output allowance or screenshots.
+Detailed strategy and tool-contract findings are in
+`ticket-23-slice-248-r61-r64-live-evidence-2026-09-23.md`.
+
+Independent S271 probe: create/restart/retained-replay/read eventually planned
+with0Provider calls. Total119.083s through transport evidence versus243ms for
+the three measured requests. Profile initialization/reconstruction separately;
+the narrow probe did not reproduce or explain the old complete-rehearsal reset.
+
 ### r57–60 — irrelevant aura query removed; observation overhead persists
 
 A reserve coherency read invoked the entire characteristic/detection projection

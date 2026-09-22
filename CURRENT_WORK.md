@@ -6,6 +6,35 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r64 actual extra-move and Stimpack sequence
+
+**76101 remains live**, repair78d2fd8 loaded. Restored/captured r61 without paid
+regeneration; r62Marine2 move→r63Go!Go!Go! extra move→r64Stimpack all applied,
+replayed and captured. r61/63/64 pictures inspected.57new+7prefix=r64,
+Round2Movement;22:25:02Z160calls/17,508,025accounted units/estimated¥23.428180.
+BothFlash. No new main-code change or repeated passed gate/build this turn.
+Keep this process and paid history. New repaired Goliath2 deployment still
+awaits an actual selection, not claimed from the boundary test.
+
+Saved relationships explicitly say Marine2 movementspent and C-14 out of range,
+while the model claims unspent movement and Stimpack payoff on AGG-12/Rocket
+Launcher. Effect contract correctly names C-14/melee. Preserve legal action for
+S249; no missing-fact claim, fabricated rationale, strategy Prompt or reroll.
+Malformed primitive base-distance arguments yielded unknown but relationships
+supplied distances; Medium tool-contract item, not a stop condition.
+Report `docs/ticket-23-slice-248-r61-r64-live-evidence-2026-09-23.md`.
+T23 still33/36:248complete match/249review/250synthesis open.
+
+**K3 native59421/pid41406 is live** in the same S271 worktree. Stopped37154's
+unchanged rehearsal stays stopped. Reduced probe96520 exited0, isolated retained
+replay planned with0calls; transport root cause not proven, no passed-probe rerun.
+Continuation reads `docs/development/ticket-27-slice-271-k3-recovery-brief-v2.md`,
+preserves dirty partial work, fixes old1430/candidate assumptions and exact error
+attribution, then one secure Flash acceptance or blocker. No new doctor/old
+rehearsal/full-suite cycles. Log
+`.agent-runtime/runs/2026-09-22T22-22-25.400Z-recovery-v2.jsonl`.
+No handoff/acceptance yet; root does not edit K3 worktree while it runs.
+
 ### 2026-09-23 T23 / S248 — reserve coherency repair; safe r61 reload
 
 **78d2fd8 is committed; new live resume76101** (runner31120/server31154) is
