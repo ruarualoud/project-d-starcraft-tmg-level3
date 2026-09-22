@@ -62,6 +62,21 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r74–75 — retained Planner recovered, observation still measurable
+
+Repairc4725c2 is proven in the same live room: resume52348 locally revalidated
+the saved Planner, added only1normalFlash Action call, then Applied/Replayed
+r74Stimpack and r75finish with screenshots; the oldHigh closed after execution.
+Cost of this continuation:131,897units/estimated¥0.175910, no new Planner.
+The r75 checkpoint totals192calls/21,394,681units/estimated¥28.539689.
+
+r74manifest21.478s+refresh8.661s+capture31.561s=61.700s;
+r75manifest3.734s+refresh7.800s+capture36.240s=47.774s. The latter is a
+deterministic finish with no new model call. This keeps observation/capture
+latency on the optimization queue; manifest can overlap execution, so the sums
+do not isolate pure read overhead. Keep complete strategy evidence and paired
+screenshots when later profiling/cache changes are compared.
+
 ### r73 — comparison-subject false rejection stopped a completed Planner
 
 The resource checker treated `finish_activation costs0 CP` as Stimpack's price,

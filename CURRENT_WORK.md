@@ -6,6 +6,29 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r75 live recovery completed; K3 partial handoff
+
+**52348 is the live main resume** (runner86297/server86338). Repairc4725c2
+locally accepted the retained r73 Planner; only1newFlash Action was required.
+r74Marine3 Stimpack→r75finish Applied/Replayed/screenshotted, r74 inspected;
+previous player1 High closed, no pendingApply.23:22:54Z:68new+7prefix=r75,
+Round2Movement,192calls/21,394,681accounted units/estimated¥28.539689. Keep this
+process, history and usage. No repeated gate/build. The resource repair report
+contains live proof and61.700/47.774s observation timings. T23 stays33/36:
+248full match→249review→250synthesis still open.
+
+K3 S271 **59421 stopped, confirmed exit130**, after its third concrete-repair
+journey failed the static-only-server disconnected-card wait. Credential detach
+was already true before terminating leftover verifier80875.19checks/16screens,
+real initial plan3Flashcalls + explicitrevision1call succeeded; additiveTicket20
+mount check was not reached. Do not start a fourth full paid journey. Saved
+outputs support later zero-Provider isolated repair, preserving passed checks.
+Commit3252d5d/worktree retained, not integrated. Known8returns/134,266units/
+estimated¥0.258869 across3runs plus1ambiguous possibly billed dispatch; never
+reset the cumulative12call ceiling. Read
+`docs/ticket-27-slice-271-partial-live-evidence-2026-09-23.md` for screenshots,
+partial scope and next isolated deliverables. T27 stays4/6(S271/S272open).
+
 ### 2026-09-23 T23 / S248 — r73 resource-comparison checker repaired; resume next
 
 **76101 confirmed terminal exit1**. r70Marine1 finish→r71Corpser move→r72finish

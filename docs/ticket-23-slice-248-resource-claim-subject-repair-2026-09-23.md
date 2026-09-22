@@ -83,11 +83,24 @@ was performed in the match lane.
 
 ## Continuation
 
-Resume the original r73 room only after the stopped handle is confirmed.
-Historical Planner failure is already in the shared explicit-resume and
-verified-Apply closure policy. Retain all usage and responses; expect local
-Planner revalidation before any new Action call. Do not claim live recovery
-until its next Apply/Replay and screenshot are observed.
+Live resume52348 restored the original r73 room. The saved Planner output was
+revalidated locally (`LOCAL_PLANNER_OUTPUT_REVALIDATION:...v14`), without a new
+Planner call. One Flash Action return at23:18:36Z completed processing, then
+r74 Marine3 Stimpack and r75 finish_activation both Applied/Replayed and were
+captured. The r74 image was inspected. Player1 has no unresolved issue or
+pending Apply: the previous High closed after verified execution, not before.
+
+At23:22:54Z the same room is Round2Movement,68new+7prefix=r75,192calls,
+21,394,681accounted units, estimated¥28.539689. Recovery added exactly1call,
+131,897units and¥0.175910. No paid Planner repetition, cleared usage, changed
+selection, rerun of passed tests or Web rebuild. Keep52348 running.
+
+![Marine3 Stimpack, restored paid plan](../build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/screenshots/0560-r074-player1-use_active_ability-complete-board-applied.png)
+
+Observation stages remain a measured performance item: r74 manifest21.478s,
+refresh8.661s,capture31.561s (61.700s); r75 3.734+7.800+36.240=47.774s.
+Manifest time can overlap execution, so these sums are not pure read overhead.
+Strategy fields, formation capacity and per-action screenshots remain intact.
 
 `harnessLoopUsed:true`; game `starcraft-tmg`; route `selfplay_agent_prompt`;
 tools relationship/formation/instantiation, Rules preview/apply/replay; public
