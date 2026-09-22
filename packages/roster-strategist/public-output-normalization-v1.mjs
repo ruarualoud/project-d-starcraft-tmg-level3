@@ -17,9 +17,21 @@
 //   3. Rename admitted, semantically equivalent public field aliases to
 //      their contracted field names (registry below). Values move unchanged.
 //
+//   4. Reassign a stray top-level field to its schema-unique contracted home
+//      (registry 1.1.0, closing the saved live round-11 nesting drift where
+//      `selectedCandidateId` arrived at the top level while the contracted
+//      `comparison.selectedCandidateId` was absent). Admitted only when the
+//      field name occurs at exactly one contracted path in the round's
+//      strict schema, that path's parent object already exists in the
+//      output, and the home is absent. The value moves unchanged; a present
+//      home, an ambiguous or undeclared name, or a missing parent leaves
+//      everything untouched so strict validation fails closed. The move
+//      relocates the field — no strategy content is ever dropped.
+//
 // Hard prohibitions: never invent strategy, never fill missing semantic
 // content, never drop or merge keys (an alias/canonical conflict is left
-// untouched so strict validation fails closed), never convert value types,
+// untouched so strict validation fails closed; a reassignment relocates one
+// field with its value unchanged), never convert value types,
 // never weaken legality, never special-case one candidate or one Provider.
 // Full existing schema/Rules validation always runs after normalization;
 // this boundary never bypasses or replaces it. Every normalization emits a
@@ -32,7 +44,7 @@ export const ROSTER_STRATEGIST_OUTPUT_NORMALIZATION_MODULE =
   "packages/roster-strategist/public-output-normalization-v1.mjs";
 export const ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_SCHEMA =
   "starcraft_tmg_roster_strategist_output_alias_registry_v1";
-export const ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_VERSION = "1.0.0";
+export const ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_VERSION = "1.1.0";
 export const ROSTER_STRATEGIST_OUTPUT_NORMALIZATION_RECEIPT_SCHEMA =
   "starcraft_tmg_roster_strategist_output_normalization_receipt_v1";
 
@@ -41,6 +53,7 @@ const OPERATION_KINDS = new Set([
   "transport_envelope_unwrap",
   "request_owned_constant_stamp",
   "admitted_alias_rename",
+  "schema_unique_field_reassignment",
 ]);
 
 function fail(code, detail = "") {
@@ -151,6 +164,12 @@ const registryBody = {
     renamesOnlyAdmittedAliases: true,
     unwrapsOnlyAdmittedTransportEnvelopes: true,
     stampsOnlyAbsentRequestOwnedConstants: true,
+    // Schema-unique field reassignment (registry 1.1.0).
+    reassignsOnlySchemaUniqueContractedHomes: true,
+    reassignmentRequiresAbsentTargetAndPresentParent: true,
+    reassignmentNeverOverwritesPresentTarget: true,
+    reassignmentMovesValueUnchanged: true,
+    reassignmentNeverInventsMissingStructure: true,
     neverInventsStrategyContent: true,
     neverFillsMissingSemanticContent: true,
     neverDropsOrMergesKeys: true,
@@ -191,6 +210,35 @@ function renameKeyPreservingOrder(entry, alias, canonical) {
   return renamed;
 }
 
+// Collects every contracted path at which a field name occurs in a strict
+// round schema (object properties, descending into array items as "[]").
+// A path containing "[]" is not relocatable — an array element position can
+// never be chosen by the boundary.
+function schemaPropertyPaths(node, prefix, fieldName, found) {
+  if (!object(node)) return;
+  const properties = object(node.properties) ? node.properties : {};
+  for (const [key, child] of Object.entries(properties)) {
+    const childPath = `${prefix}.${key}`;
+    if (key === fieldName) found.push(childPath);
+    schemaPropertyPaths(child, childPath, fieldName, found);
+    if (object(child && child.items)) {
+      schemaPropertyPaths(child.items, `${childPath}[]`, fieldName, found);
+    }
+  }
+}
+
+// Resolves the parent object of a schema path inside the output. Every
+// parent segment must already exist as an object — the boundary never
+// invents missing structure. Returns null when any segment is absent.
+function resolveExistingParent(output, segments) {
+  let current = output;
+  for (const segment of segments) {
+    if (!object(current) || !object(current[segment])) return null;
+    current = current[segment];
+  }
+  return current;
+}
+
 // Normalizes one deliberation round's raw public output. Returns the
 // (possibly unchanged) output plus a hashed provenance receipt. The caller
 // must still run the full strict schema/Rules validation on the result; an
@@ -223,6 +271,39 @@ export function normalizeRosterStrategistPublicOutputV1(input = {}) {
         }));
         break;
       }
+    }
+  }
+
+  // 1.5. Schema-unique field reassignment (registry 1.1.0). A stray
+  // top-level key that is not a declared public field of the round is
+  // relocated to its contracted home only when the strict round schema
+  // (supplied by the caller as request.contractSchema) declares that field
+  // name at exactly one non-array path, that path's parent object already
+  // exists in the output, and the home is absent. The value moves
+  // unchanged; a present home, an ambiguous or undeclared name, a missing
+  // parent or an array-segment path leaves everything untouched so strict
+  // validation fails closed. No strategy content is dropped.
+  const contractSchema = object(request.contractSchema)
+    ? request.contractSchema : null;
+  if (object(output) && contractSchema) {
+    for (const key of Object.keys(output)) {
+      if (declaredFields.includes(key)) continue;
+      const found = [];
+      schemaPropertyPaths(contractSchema, "$", key, found);
+      if (found.length !== 1) continue;
+      const uniquePath = found[0];
+      if (uniquePath.includes("[]")) continue;
+      const segments = uniquePath.split(".").slice(1);
+      const fieldName = segments[segments.length - 1];
+      const parent = resolveExistingParent(output, segments.slice(0, -1));
+      if (!parent || parent[fieldName] !== undefined) continue;
+      parent[fieldName] = output[key];
+      delete output[key];
+      operations.push(freezeDeep({
+        kind: "schema_unique_field_reassignment",
+        path: `$.${key}`,
+        to: uniquePath,
+      }));
     }
   }
 

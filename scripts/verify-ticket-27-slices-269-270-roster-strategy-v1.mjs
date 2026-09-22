@@ -325,6 +325,8 @@ if (process.argv.includes("--nesting-reassignment-only")) {
     output: realComparison, request: reassignmentRequest });
   const wire = validateStarcraftTmgProviderJsonSchemaValueV1(
     comparisonSchema, normalization.output);
+  const { selectedCandidateId: _moved, ...comparisonRest } =
+    normalization.output.comparison;
   miniCheck(wire.ok === true
     && normalization.receipt.operations.some((operation) => (
       operation.kind === "schema_unique_field_reassignment"
@@ -337,9 +339,11 @@ if (process.argv.includes("--nesting-reassignment-only")) {
       normalization.receipt) === true
     && normalization.receipt.registryVersion === "1.1.0"
     && normalization.receipt.semanticContentModified === false
+    && isDeepStrictEqual(comparisonRest, realComparison.comparison)
     && Object.keys(realComparison).every((key) => (
-      key === "selectedCandidateId" || isDeepStrictEqual(
-        normalization.output[key], realComparison[key]))),
+      key === "selectedCandidateId" || key === "comparison"
+        || isDeepStrictEqual(
+          normalization.output[key], realComparison[key]))),
     "the real round-11 comparison output must be repaired by a schema-unique "
       + "reassignment that moves the value unchanged, keeps every other "
       + "strategy field and records provenance (red: identity normalization "

@@ -1277,6 +1277,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       request: {
         roundKind: roundRequest.roundKind,
         schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+        contractSchema: roundRequest.responseFormat?.schema,
       },
     });
     return freezeDeep({
