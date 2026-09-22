@@ -364,7 +364,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
         currentSupplyBefore: outcomes.currentSupplyBefore ?? null,
         reactionWindowCount: Array.isArray(estimate.reactionOpportunitySet?.windows)
           ? estimate.reactionOpportunitySet.windows.length : null,
-        rulesMechanicsPerOutcome: estimate.rulesMechanicsPerOutcome === true,
+        rulesMechanicsPerOutcome: estimate.rulesMechanicsPerOutcome ?? null,
         precision: estimate.precision ?? null,
         uncertainty: clone(estimate.uncertainty ?? null),
         assumptions: clone(estimate.assumptions ?? null),
@@ -391,9 +391,11 @@ export function createPregameSceneLaboratoryV1(input = {}) {
       currentLegalSpaceDomains: legal.parameterDomains || [],
       request: {
         maximumRelations: Number(query.maximumRelations || 16),
-        sampleBudget,
-        ...(Number.isSafeInteger(Number(query.maximumAttacks))
-          ? { maximumAttacks: Number(query.maximumAttacks) } : {}),
+        sampleBudgetPerAttack: sampleBudget,
+        ...(Array.isArray(query.subjectUnitIds)
+          ? { subjectUnitIds: [...query.subjectUnitIds] } : {}),
+        ...(Array.isArray(query.targetIds)
+          ? { targetIds: [...query.targetIds] } : {}),
       },
     });
     if (exchange.comparisonPolicy?.unknownValuesNeverPromotedToZero !== true) {

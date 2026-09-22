@@ -758,7 +758,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         const receipt = laboratory.queryThreatExchange({
           queryId: `need-${need.needId}`, base,
           seatKey: request.seatKey, sampleBudget: request.sampleBudget,
-          maximumAttacks: request.maximumAttacks,
+          subjectUnitIds: request.subjectUnitIds, targetIds: request.targetIds,
         });
         const reference = pushReceipt("simulation", receipt);
         traceEntry.informationNeedOutcomes.push(freezeDeep({
@@ -809,7 +809,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
               : laboratory.queryThreatExchange({
                 queryId: `need-${need.needId}-follow-${index + 1}`, base: followBase,
                 seatKey: followUp.seatKey, sampleBudget: followUp.sampleBudget,
-                maximumAttacks: followUp.maximumAttacks });
+                subjectUnitIds: followUp.subjectUnitIds,
+                targetIds: followUp.targetIds });
           referenceIds.push(pushReceipt(
             followKind === "probability" ? "probability"
               : followKind === "spatial" ? "spatial" : "simulation",

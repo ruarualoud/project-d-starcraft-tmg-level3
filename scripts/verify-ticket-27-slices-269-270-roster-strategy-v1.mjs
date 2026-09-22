@@ -1,0 +1,727 @@
+#!/usr/bin/env node
+
+import assert from "node:assert/strict";
+import { isDeepStrictEqual } from "node:util";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { hashStarcraftTmgContract } from
+  "../packages/authoritative-engine/referee-crypto-v1.mjs";
+import {
+  createOfficialStandardRoomInitialStateAuthorityV1,
+  OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1,
+} from "../packages/product-composition/official-standard-room-factory-v1.mjs";
+import { createOfficialCurrentProductMatchRuntimeV1 } from
+  "../packages/product-composition/official-current-product-match-runtime-v1.mjs";
+import { createOfficialUnitCompositionUpgradeDataBundleV1 } from
+  "../packages/source-data/official-unit-composition-upgrade-data-bundle-v1.mjs";
+import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from
+  "./support/official-development-tranche-source-lock-fixture-v1.mjs";
+import { loadPortableFoundationalStrategyPackV2 } from
+  "../packages/strategy-skills/portable-foundational-skill-pack-loader-v2.mjs";
+import { STARCRAFT_TMG_TICKET_18_PORTABLE_STRATEGY_PACK_V2 as packManifest } from
+  "../content/skill-generation/ticket-18-portable-strategy-pack-v2.mjs";
+import {
+  createOfficialArmyBuilderQueryPortV1,
+} from "../packages/roster-strategist/army-builder-query-port-v1.mjs";
+import {
+  createPregameSceneLaboratoryV1,
+  verifyPregameLabMathReceiptV1,
+  verifyPregameLabMutationZeroProofV1,
+  verifyPregameLabProbabilityReceiptV1,
+  verifyPregameLabSameStateABReceiptV1,
+  verifyPregameLabScenarioBranchReceiptV1,
+  verifyPregameLabSpatialReceiptV1,
+  verifyPregameLabThreatExchangeReceiptV1,
+  verifyPregameSceneLaboratoryDescriptorV1,
+} from "../packages/roster-strategist/pregame-scene-laboratory-v1.mjs";
+import {
+  createRosterStrategistRuntimeV1,
+  createScriptedRosterDeliberationPortV1,
+  ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+  verifyRosterStrategistDescriptorV1,
+  verifyRosterStrategistSessionReceiptV1,
+} from "../packages/roster-strategist/roster-strategist-runtime-v1.mjs";
+import {
+  parseRosterPlanV1,
+  serializeRosterPlanV1,
+  verifyRosterPlanRoundTripV1,
+} from "../packages/roster-strategist/roster-plan-contracts-v1.mjs";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const HASH_RX = /^[a-f0-9]{64}$/u;
+const checks = { slice269: 0, slice270: 0 };
+function check(slice, condition, label) {
+  assert(condition, label);
+  checks[`slice${slice}`] += 1;
+}
+function expectFailure(slice, thunk, codePrefix, label) {
+  return Promise.resolve()
+    .then(thunk)
+    .then(
+      () => check(slice, false, `${label}: must throw`),
+      (error) => {
+        check(slice, String(error?.message || "").startsWith(`${codePrefix}`),
+          `${label}: expected ${codePrefix}, got ${error?.message}`);
+      },
+    );
+}
+
+// ------------------------------------------------------------ infra
+
+const source = await loadOfficialDevelopmentTrancheSourceLockFixtureV1({
+  root: ROOT });
+const bundle = createOfficialUnitCompositionUpgradeDataBundleV1({
+  dataset: source.dataset });
+check(270, Object.isFrozen(bundle), "official data bundle must be deep-frozen");
+const bundleHashBefore = bundle.bundleHash;
+const port = createOfficialArmyBuilderQueryPortV1({
+  unitCompositionUpgradeDataBundle: bundle });
+const seatPlan = [
+  { label: "player1", seatKey: "player1", roleMode: "supervisor",
+    principalType: "human" },
+  { label: "player2", seatKey: "player2", roleMode: "supervisor",
+    principalType: "human" },
+];
+const authority = createOfficialStandardRoomInitialStateAuthorityV1({
+  dataset: source.dataset, snapshot: source.snapshot,
+  serverSeatPlan: seatPlan, roomId: "ticket27-slices-269-270-lab-room" });
+const rulesRuntime = createOfficialCurrentProductMatchRuntimeV1({
+  dataset: source.dataset, state: structuredClone(authority.state) });
+const mapTopologyHash = hashStarcraftTmgContract({
+  widthInches: authority.state.board.widthInches,
+  heightInches: authority.state.board.heightInches,
+  terrain: authority.state.board.terrain,
+  accessPoints: authority.state.board.accessPoints,
+  battlefieldMapManifestHash:
+    authority.compositionEvidence.battlefieldMapManifestHash,
+});
+const missionBinding = {
+  missionRecordKey: authority.compositionEvidence.selectedMissionRecordKey,
+  deploymentRecordKey: authority.compositionEvidence.selectedDeploymentRecordKey,
+  mapTopologyHash,
+};
+const versionPins = {
+  sourceLockHash: bundle.sourceLockHash,
+  sourceSnapshotHash: bundle.sourceSnapshotHash,
+  normalizedDatasetHash: bundle.normalizedDatasetHash,
+  officialRulesVersion: bundle.officialRulesVersion,
+  officialUnitsVersion: bundle.officialUnitsVersion,
+  officialCardsVersion: bundle.officialCardsVersion,
+};
+const pack = await loadPortableFoundationalStrategyPackV2({
+  root: ROOT, manifest: packManifest });
+check(269, pack.foundational.entries.length === 11
+  && pack.manifest.buildPathDependencies === false,
+  "portable strategy pack must load from committed content only");
+
+function createLab(id) {
+  return createPregameSceneLaboratoryV1({
+    laboratoryId: id,
+    sourceState: authority.state,
+    sourceRoomRef: { roomId: "ticket27-slices-269-270-lab-room", stateRevision: 0 },
+    rulesRuntime,
+    armyBuilderPort: port,
+    matchBinding: authority.matchBinding,
+  });
+}
+
+// ------------------------------------------------------------ Slice 270
+
+const lab = createLab("ticket27-s269-270-lab");
+const labDescriptor = lab.labDescriptor();
+check(270, verifyPregameSceneLaboratoryDescriptorV1(labDescriptor) === true
+  && labDescriptor.mutatesRoomState === false
+  && labDescriptor.mutatesBuilderState === false
+  && labDescriptor.resultsBoundToSourceState === true
+  && labDescriptor.hostPreferenceWeightsApplied === false,
+  "laboratory descriptor must prove read-only source-bound operation");
+check(270, labDescriptor.sourceStateHash
+    === hashStarcraftTmgContract(authority.state)
+  && labDescriptor.builderBundleHash === bundle.bundleHash,
+  "laboratory must bind the exact source Room state and Builder bundle");
+
+// Unknown-not-zero on the reserve source state.
+const spatialUnknown = lab.querySpatial({ queryId: "sq-source", seatKey: "player1" });
+check(270, verifyPregameLabSpatialReceiptV1(spatialUnknown) === true
+  && spatialUnknown.resultStatus === "unknown"
+  && spatialUnknown.unknownReason === "no_active_relationships_in_base_state"
+  && spatialUnknown.relationships.length === 0
+  && spatialUnknown.baseStateHash === labDescriptor.sourceStateHash,
+  "reserve source state must yield unknown spatial result, never zeroed distances");
+const probabilityUnknown = lab.queryProbability({
+  queryId: "pq-source-unknown", attackerUnitId: "player1-marine-1",
+  targetUnitId: "player2-corpser" });
+check(270, verifyPregameLabProbabilityReceiptV1(probabilityUnknown) === true
+  && probabilityUnknown.resultStatus === "unknown"
+  && probabilityUnknown.estimate === null
+  && probabilityUnknown.unknownNotZero === true,
+  "undeployed attacker must yield unknown probability with no fabricated estimate");
+await expectFailure(270, () => lab.querySpatial({
+  queryId: "sq-bad-branch", seatKey: "player1",
+  base: { kind: "branch", branchStateHash: hashStarcraftTmgContract("absent") } }),
+  "PREGAME_LAB_BRANCH_UNKNOWN", "query against an unregistered branch");
+
+// Bounded scenario branches A/B from the same source state.
+const branchA = lab.runScenarioBranch({ branchId: "branch-a", spec: {
+  kind: "hypothetical_geometry", phase: "assault", activeSideKey: "player1",
+  isolateToPlacedPieces: true, clearTerrain: true,
+  placements: [
+    { pieceId: "player1-marine-1", xInches: 27, yInches: 10 },
+    { pieceId: "player2-corpser", xInches: 27, yInches: 16 },
+  ] } });
+const branchB = lab.runScenarioBranch({ branchId: "branch-b", spec: {
+  kind: "hypothetical_geometry", phase: "assault", activeSideKey: "player1",
+  isolateToPlacedPieces: true, clearTerrain: true,
+  placements: [
+    { pieceId: "player1-marine-1", xInches: 27, yInches: 10 },
+    { pieceId: "player2-corpser", xInches: 27, yInches: 30 },
+  ] } });
+for (const [branch, label] of [[branchA, "A"], [branchB, "B"]]) {
+  check(270, verifyPregameLabScenarioBranchReceiptV1(branch) === true
+    && branch.parentStateHash === labDescriptor.sourceStateHash
+    && branch.baseStateHash === labDescriptor.sourceStateHash
+    && branch.advisoryOnly === true
+    && branch.authorityClaim
+      === "advisory_hypothetical_geometry_not_rules_legality",
+    `branch ${label} must be hash-bound to the source state and advisory-typed`);
+}
+check(270, branchA.branchStateHash !== branchB.branchStateHash
+  && branchA.branchStateHash !== labDescriptor.sourceStateHash,
+  "A/B branches must diverge from each other and from the source state");
+
+const spatialA = lab.querySpatial({
+  queryId: "sq-branch-a", base: { kind: "branch", branchStateHash: branchA.branchStateHash },
+  seatKey: "player1", intent: "threat_scan" });
+const spatialB = lab.querySpatial({
+  queryId: "sq-branch-b", base: { kind: "branch", branchStateHash: branchB.branchStateHash },
+  seatKey: "player1", intent: "threat_scan" });
+check(270, verifyPregameLabSpatialReceiptV1(spatialA) === true
+  && spatialA.resultStatus === "ok" && spatialA.relationshipCount > 0,
+  "branch A spatial query must return exact relationships");
+const edgeA = spatialA.relationships.find((entry) => (
+  entry.fromUnitId === "player1-marine-1"
+    && entry.toUnitId === "player2-corpser"));
+const edgeB = spatialB.relationships.find((entry) => (
+  entry.fromUnitId === "player1-marine-1"
+    && entry.toUnitId === "player2-corpser"));
+check(270, Number.isFinite(edgeA?.nearestPhysicalEdges?.distanceMilliInches)
+  && Number.isFinite(edgeB?.nearestPhysicalEdges?.distanceMilliInches)
+  && edgeB.nearestPhysicalEdges.distanceMilliInches
+    > edgeA.nearestPhysicalEdges.distanceMilliInches
+  && edgeA.nearestPhysicalEdges.precision === "exact_physical_footprints",
+  "A/B same-source branches must yield exact divergent geometry");
+
+const probabilityA = lab.queryProbability({
+  queryId: "pq-branch-a",
+  base: { kind: "branch", branchStateHash: branchA.branchStateHash },
+  attackerUnitId: "player1-marine-1", targetUnitId: "player2-corpser",
+  sampleBudget: 36 });
+check(270, verifyPregameLabProbabilityReceiptV1(probabilityA) === true
+  && probabilityA.resultStatus === "ok"
+  && HASH_RX.test(probabilityA.estimate.estimateHash)
+  && probabilityA.estimate.rulesMechanicsPerOutcome === "exact"
+  && Number(probabilityA.estimate.expectedDamage) > 0
+  && probabilityA.estimate.chanceCount >= 1,
+  "branch A probability must carry a Rules-mechanics estimate receipt");
+
+const threatExchangeA = lab.queryThreatExchange({
+  queryId: "tq-branch-a",
+  base: { kind: "branch", branchStateHash: branchA.branchStateHash },
+  seatKey: "player1", sampleBudget: 36,
+  subjectUnitIds: ["player1-marine-1"], targetIds: ["player2-corpser"] });
+check(270, verifyPregameLabThreatExchangeReceiptV1(threatExchangeA) === true
+  && threatExchangeA.resultStatus === "ok"
+  && threatExchangeA.exchange.unknownValuesNeverPromotedToZero === true
+  && threatExchangeA.exchange.alternatives.some((entry) => (
+    entry.kind === "attack" && entry.status === "current_attack_estimated"
+      && entry.mayBeRankedAsKnownValue === true))
+  && threatExchangeA.exchange.alternatives.every((entry) => (
+    entry.expectedDamageReceived === null)),
+  "threat exchange must estimate own attack while keeping return fire unknown");
+
+const mathFit = lab.queryMath({ queryId: "mq-budget", mathKind: "budget_fit",
+  inputs: { mineralBudget: 2000, mineralSpent: 1870, vespeneSpent: 115,
+    vespeneLimitNumerator: 1, vespeneLimitDenominator: 10 } });
+check(270, verifyPregameLabMathReceiptV1(mathFit) === true
+  && mathFit.result.mineralRemaining === 130
+  && mathFit.result.mineralWithinBudget === true
+  && mathFit.result.vespeneWithinLimit === true
+  && mathFit.result.exactIntegerArithmetic === true,
+  "budget-fit math must be exact integer arithmetic");
+const mathVp = lab.queryMath({ queryId: "mq-vp", mathKind: "vp_schedule_delta",
+  inputs: { planned: [{ window: "round:2", plannedCumulativeVp: 2 }],
+    projected: [] } });
+check(270, mathVp.result.deltas[0].projectionStatus === "unknown"
+  && mathVp.result.deltas[0].deltaVp === null,
+  "missing VP projection must stay unknown, never zero");
+
+// Same-state A/B candidate comparison through the Rules-owned port.
+const recipe = OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1.player1;
+const candidateInputFromRecipe = (mutate = null) => {
+  const candidate = {
+    sideKey: "player1", scaleId: "Standard", mineralBudget: 2000,
+    factionRecordKey: recipe.factionRecordKey,
+    tacticalCardRecordKeys: [...recipe.tacticalCardRecordKeys],
+    units: recipe.units.map((unit) => ({
+      unitInstanceId: unit.unitInstanceId, recordKey: unit.recordKey,
+      compositionKind: unit.compositionKind,
+      upgrades: unit.upgradeNames.map((upgradeName) => ({ upgradeName })),
+    })),
+  };
+  if (mutate) mutate(candidate);
+  return candidate;
+};
+const abReceipt = lab.compareCandidatesSameState({ comparisonId: "ab-preset",
+  candidates: [
+    { candidateRef: "full", candidateInput: candidateInputFromRecipe() },
+    { candidateRef: "lean", candidateInput: candidateInputFromRecipe(
+      (candidate) => {
+        candidate.units[0].upgrades = candidate.units[0].upgrades.slice(0, 1);
+      }) },
+  ] });
+check(270, verifyPregameLabSameStateABReceiptV1(abReceipt) === true
+  && abReceipt.sameSourceStateHash === labDescriptor.sourceStateHash
+  && abReceipt.sameBuilderBundleHash === bundle.bundleHash
+  && abReceipt.candidates.every((entry) => entry.legalityStatus === "legal")
+  && abReceipt.candidates[0].mineralSpent === 2000
+  && abReceipt.candidates[1].mineralSpent < 2000
+  && abReceipt.ranking === null,
+  "same-state A/B comparison must bind both candidates to one source/builder "
+    + "state and never rank them");
+
+const mutationProof = lab.proveMutationZero();
+check(270, verifyPregameLabMutationZeroProofV1(mutationProof) === true
+  && mutationProof.sourceStateMutationCount === 0
+  && mutationProof.operationCount === 11
+  && mutationProof.receiptLog.length === 11,
+  "mutation-zero proof must cover every laboratory operation");
+check(270, bundle.bundleHash === bundleHashBefore && Object.isFrozen(bundle)
+  && hashStarcraftTmgContract(authority.state)
+    === labDescriptor.sourceStateHash,
+  "source Room state and Builder bundle must be unchanged after all queries");
+
+// ------------------------------------------------------------ Slice 269
+
+const strategist = createRosterStrategistRuntimeV1({
+  armyBuilderPort: port, laboratory: createLab("ticket27-s269-lab-a"),
+  strategyPack: pack });
+const strategistDescriptor = strategist.runtimeDescriptor();
+check(269, verifyRosterStrategistDescriptorV1(strategistDescriptor) === true
+  && strategistDescriptor.hostPreferenceWeights === false
+  && strategistDescriptor.promptPreferenceWeights === false
+  && strategistDescriptor.runtimeRanksOrScoresCandidates === false
+  && strategistDescriptor.hiddenChainOfThoughtRequested === false,
+  "strategist descriptor must prove strategy comes only from Skills and "
+    + "Agent deliberation");
+
+const route = strategist.selectSkillRoute({
+  ownFactionRecordKey: "tactical_cards:terran_armed_forces",
+  opponentFactionRecordKey: "tactical_cards:kerrigan_s_swarm" });
+check(269, route.skillRefs.map((entry) => entry.role).join(",")
+    === "general,faction,matchup"
+  && route.skillRefs.every((entry) => HASH_RX.test(entry.skillHash))
+  && route.skillRefs[2].skillId
+    === "starcraft-tmg.matchup.terran_armed_forces-to-kerrigan_s_swarm"
+  && route.projections.general.guidance.length > 0
+  && route.projections.faction.guidance.length > 0
+  && route.projections.matchup.guidance.length > 0,
+  "skill route must bind the exact General, faction and directed matchup Skills");
+await expectFailure(269, async () => strategist.selectSkillRoute({
+  ownFactionRecordKey: "tactical_cards:terran_armed_forces",
+  opponentFactionRecordKey: "tactical_cards:nonexistent" }),
+  "ROSTER_STRATEGIST_SKILL_ROUTE_UNAVAILABLE",
+  "missing directed matchup Skill must fail closed");
+
+const unitsFrom = (units) => units.map((unit) => ({
+  recordKey: unit.recordKey, compositionKind: unit.compositionKind,
+  upgrades: unit.upgradeNames.map((upgradeName) => ({ upgradeName })) }));
+
+function foundationOutput() {
+  return {
+    schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+    roundKind: "strategy_foundation",
+    scoreRoute: {
+      routeKind: "mission_marker_control",
+      routeText: "win central marker windows behind Marine blocks",
+      scheduleStatus: "declared",
+      targetVpSchedule: [
+        { window: "round:2", plannedCumulativeVp: 2 },
+        { window: "round:4", plannedCumulativeVp: 5 }],
+      fallbackRouteText: "attrition through goliath trades" },
+    opponentHypotheses: [{
+      hypothesisId: "hyp-zerg-pressure", archetypeLabel: "zerg_early_pressure",
+      hypothesisText: "Kerrigan's Swarm races cheap units onto central markers",
+      confidence: "medium",
+      expectedCounterTexts: ["swarmling marker races", "creep-enabled flanks"],
+      ownCounterResponseIds: ["rsp-hold-center"],
+      falsificationText: "opponent deploys no cheap runner unit by round 2" }],
+    counterResponses: [{
+      responseId: "rsp-hold-center",
+      triggerText: "early cheap-unit marker pressure",
+      responseText: "hold central high ground with Marine blocks and "
+        + "Goliath overwatch",
+      linkedHypothesisIds: ["hyp-zerg-pressure"] }],
+    invalidationTriggers: [{
+      triggerId: "trg-vp-deficit", observationKind: "vp_deficit",
+      triggerText: "two or more VP behind schedule after round 2",
+      revisionRequiredText: "re-route to attrition scoring" }],
+    informationNeeds: [
+      { needId: "need-budget", kind: "math",
+        questionText: "exact budget fit of a 2000-mineral build",
+        toolRequest: { mathKind: "budget_fit", inputs: {
+          mineralBudget: 2000, mineralSpent: 2000, vespeneSpent: 115,
+          vespeneLimitNumerator: 1, vespeneLimitDenominator: 10 } } },
+      { needId: "need-central-exchange", kind: "scenario",
+        questionText: "Marine block vs Corpser central exchange",
+        toolRequest: {
+          spec: { kind: "hypothetical_geometry", phase: "assault",
+            activeSideKey: "player1", isolateToPlacedPieces: true,
+            clearTerrain: true,
+            placements: [
+              { pieceId: "player1-marine-1", xInches: 27, yInches: 10 },
+              { pieceId: "player2-corpser", xInches: 27, yInches: 16 }] },
+          followUps: [
+            { kind: "probability", attackerUnitId: "player1-marine-1",
+              targetUnitId: "player2-corpser", sampleBudget: 36 },
+            { kind: "spatial", seatKey: "player1", intent: "threat_scan" }] } },
+    ],
+  };
+}
+function proposalsOutput() {
+  return {
+    schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+    roundKind: "candidate_proposals",
+    proposals: [
+      { candidateId: "cand-full",
+        tacticalCardRecordKeys: [...recipe.tacticalCardRecordKeys],
+        units: unitsFrom(recipe.units),
+        rationaleText: "maximum firepower at exactly 2000 minerals" },
+      { candidateId: "cand-lean",
+        tacticalCardRecordKeys: [...recipe.tacticalCardRecordKeys],
+        units: unitsFrom(recipe.units).map((unit, index) => (index === 0
+          ? { ...unit, upgrades: unit.upgrades.slice(0, 1) } : unit)),
+        rationaleText: "trade one Marine upgrade for mineral headroom" },
+      { candidateId: "cand-over",
+        tacticalCardRecordKeys: [...recipe.tacticalCardRecordKeys],
+        units: [...unitsFrom(recipe.units), {
+          recordKey: "army_units:goliath", compositionKind: "small",
+          upgrades: [] }],
+        rationaleText: "stress candidate expected to fail Rules legality" },
+    ],
+  };
+}
+function comparisonOutput() {
+  return {
+    schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+    roundKind: "comparison_selection",
+    comparison: {
+      basisTexts: ["Rules legality is mandatory",
+        "cand-lean keeps central marker plan with 130-mineral headroom",
+        "probability receipt supports Marine block holding the center"],
+      tradeoffTexts: ["cand-full has more upgrades but zero headroom",
+        "cand-over is Rules-illegal and discarded"],
+      selectedCandidateId: "cand-lean" },
+    componentPurposes: [
+      { componentKind: "faction_card",
+        recordKey: "tactical_cards:terran_armed_forces",
+        instanceId: "player1-faction",
+        publicPurposeText: "faction anchor for the Terran build",
+        scoringRole: "support" },
+      { componentKind: "unit", recordKey: "army_units:marine",
+        instanceId: "agent-unit-1",
+        publicPurposeText: "central marker holder",
+        scoringRole: "primary_scorer" },
+      { componentKind: "upgrade", recordKey: "army_units:marine",
+        instanceId: "agent-unit-1-upgrade-1",
+        publicPurposeText: "retained Specialist extends anti-air reach",
+        scoringRole: "counter" }],
+    deploymentConcept: {
+      deploymentConceptText: "Marines deploy central, Goliaths flank",
+      activationOrderStatus: "declared",
+      activationOrder: [
+        { ordinal: 1, unitInstanceId: "agent-unit-1", phase: "movement" }],
+      reinforcementPolicyText: "reserve units enter round 2 at own edge",
+      threatTradeText: "trade Marine models for marker control time",
+      objectiveControlText: "hold two central markers through round 4" },
+    lossResourceBudget: {
+      lossBudgetStatus: "declared",
+      plannedLossBudget: [{ resourceKind: "supply", window: "round:2",
+        plannedMaximumLoss: 4 }] },
+    publicSummaryText:
+      "lean central marker-control roster with mineral headroom",
+  };
+}
+
+function createMock(handlerOverrides = {}) {
+  return createScriptedRosterDeliberationPortV1({
+    modelVersion: "scripted-mock-deepseek-flash-standin-v1",
+    promptVersion: "ticket27.roster_strategist.multi_round.v1",
+    handler: (request) => {
+      if (handlerOverrides[request.roundKind]) {
+        return handlerOverrides[request.roundKind](request);
+      }
+      if (request.roundKind === "strategy_foundation") return foundationOutput();
+      if (request.roundKind === "candidate_proposals") return proposalsOutput();
+      if (request.roundKind === "comparison_selection") return comparisonOutput();
+      throw new Error(`unexpected round ${request.roundKind}`);
+    },
+  });
+}
+
+const sessionInput = {
+  sessionId: "ticket27-s269-270-deterministic",
+  sideKey: "player1",
+  factionRecordKey: "tactical_cards:terran_armed_forces",
+  opponentFactionRecordKey: "tactical_cards:kerrigan_s_swarm",
+  engagementScale: "Standard",
+  mineralBudget: 2000,
+  missionBinding,
+  opponentInformationBoundary: "open_roster",
+  versionPins,
+};
+
+const labA = createLab("ticket27-s269-lab-run-a");
+const strategistA = createRosterStrategistRuntimeV1({
+  armyBuilderPort: port, laboratory: labA, strategyPack: pack });
+const result = await strategistA.planRoster(sessionInput, {
+  deliberation: createMock() });
+const { plan } = result;
+
+check(269, verifyRosterStrategistSessionReceiptV1(result.sessionReceipt) === true
+  && result.sessionReceipt.deliberationCallCount === 3
+  && result.sessionReceipt.deliberationKind === "scripted_mock_deterministic"
+  && result.sessionReceipt.selectedByAgentDeliberation === true,
+  "session receipt must record three mock deliberation rounds");
+check(269, verifyRosterPlanRoundTripV1(plan) === true
+  && plan.planStatus === "active"
+  && isDeepStrictEqual(parseRosterPlanV1(serializeRosterPlanV1(plan)), plan),
+  "final RosterPlan must round-trip losslessly");
+check(269, plan.rosterCandidate.legalityStatus === "legal"
+  && plan.rosterCandidate.candidateId === "cand-lean"
+  && result.finalVerdict.summary.mineralSpent === 1870
+  && result.finalVerdict.summary.mineralSpent <= 2000
+  && result.finalVerdict.summary.scaleId === "Standard",
+  "final roster must be a Rules-legal Standard-2000 roster chosen by the Agent");
+check(269, result.comparison.candidateHashes.length === 3
+  && result.comparison.selectedCandidateHash
+    === plan.rosterCandidate.candidateHash
+  && result.candidates[0].candidateId === "cand-full"
+  && plan.rosterCandidate.candidateId !== result.candidates[0].candidateId,
+  "the Agent must select a non-first candidate, proving no host preference");
+check(269, plan.provenance.missionBinding.status === "frozen"
+  && plan.provenance.missionBinding.missionRecordKey
+    === missionBinding.missionRecordKey
+  && plan.provenance.missionBinding.mapTopologyHash === mapTopologyHash
+  && plan.provenance.opponentInformationBoundary === "open_roster"
+  && plan.provenance.skillVersions.length === 3
+  && plan.provenance.modelVersion === "scripted-mock-deepseek-flash-standin-v1"
+  && plan.provenance.unitCompositionUpgradeDataBundleHash === bundle.bundleHash,
+  "provenance must freeze mission, map, boundary and all version pins");
+const needKinds = plan.toolReceiptReferences.map((entry) => entry.receiptKind)
+  .sort().join(",");
+check(269, needKinds === "math,probability,simulation,spatial"
+  && plan.toolReceiptReferences.every((entry) => entry.status === "attached"
+    && HASH_RX.test(entry.receiptHash) && entry.unknownNotZero === true),
+  "plan must attach probability, spatial, math and simulation tool receipts");
+const labAProof = labA.proveMutationZero();
+check(269, plan.toolReceiptReferences.every((entry) => (
+  labAProof.receiptLog.includes(entry.receiptHash)))
+  && labAProof.sourceStateMutationCount === 0,
+  "every plan tool receipt must exist in the laboratory receipt log with "
+    + "mutation-zero source state");
+check(269, plan.opponentHypotheses.length === 1
+  && plan.counterResponses.length === 1
+  && plan.invalidationTriggers.length === 1
+  && plan.opponentHypotheses[0].ownCounterResponseIds[0]
+    === plan.counterResponses[0].responseId
+  && plan.counterResponses[0].linkedHypothesisIds[0]
+    === plan.opponentHypotheses[0].hypothesisId,
+  "public hypotheses, predicted counters and counter-responses must link");
+check(269, plan.componentPurposes.length === 3
+  && plan.deploymentConcept.activationOrder[0].unitInstanceId === "agent-unit-1"
+  && plan.lossResourceBudget.mineralSpendIntent.plannedMineralSpend === 1870,
+  "component purposes, deployment concept and loss budget must bind the "
+    + "selected roster");
+check(269, result.rejections.length === 1
+  && result.rejections[0].silentRepairAttempted === false
+  && result.rejections[0].fallbackApplied === false
+  && result.candidates[2].legalityStatus === "illegal"
+  && result.candidates[2].legalityReceipt.rulesErrorCode
+    === "ARMY_SLOT_CAPACITY_EXCEEDED",
+  "the over-capacity candidate must carry a typed Rules rejection, never "
+    + "silent repair");
+check(269, result.planningTrace.map((entry) => entry.roundKind).join(">")
+    === "strategy_foundation>candidate_proposals>comparison_selection"
+  && result.planningTrace.every((entry) => (
+    entry.hiddenChainOfThoughtRequested === false
+      && entry.hostPreferenceWeightsApplied === false))
+  && result.planningTrace[0].informationNeedOutcomes.every((outcome) => (
+    outcome.status === "answered")),
+  "planning trace must record typed rounds and answered information needs");
+const serializedEvidence = JSON.stringify(plan) + JSON.stringify(result.planningTrace);
+check(269, !/"chain_of_thought"|"scratchpad"|"reasoning"|"internal_monologue"/iu
+  .test(serializedEvidence)
+  && plan.hiddenChainOfThoughtIncluded === false
+  && plan.planFabricated === false,
+  "no hidden chain-of-thought may be requested or persisted");
+
+// Determinism: an identical scripted session must reproduce the plan hash.
+// A fresh laboratory instance with the same identity and source state must
+// produce byte-identical receipts.
+const strategistB = createRosterStrategistRuntimeV1({
+  armyBuilderPort: port, laboratory: createLab("ticket27-s269-lab-run-a"),
+  strategyPack: pack });
+const resultB = await strategistB.planRoster(sessionInput, {
+  deliberation: createMock() });
+check(269, resultB.plan.planHash === plan.planHash
+  && resultB.sessionReceipt.receiptHash === result.sessionReceipt.receiptHash,
+  "the deterministic mocked session must reproduce identical plan and "
+    + "session hashes");
+
+// Revision chain.
+const revised = await strategistA.reviseRosterPlan({
+  plan,
+  reasonText: "declared VP schedule missed at round 2",
+  triggerIds: ["trg-vp-deficit"],
+  revisedSectionKeys: ["scoreRoute"],
+}, {
+  deliberation: createMock({
+    revision: () => ({
+      schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+      roundKind: "revision",
+      publicSummaryText: "revised toward attrition after VP deficit",
+      revisedScoreRoute: {
+        routeKind: "hybrid",
+        routeText: "blend marker control with Goliath attrition trades",
+        scheduleStatus: "declared",
+        targetVpSchedule: [{ window: "round:4", plannedCumulativeVp: 4 }],
+        fallbackRouteText: "pure attrition" },
+      revisedDeploymentConcept: null,
+    }),
+  }),
+});
+check(269, verifyRosterPlanRoundTripV1(revised.plan) === true
+  && revised.plan.planStatus === "revised"
+  && revised.plan.planVersion === 2
+  && revised.plan.revisions.length === 1
+  && revised.plan.revisions[0].previousPlanHash === plan.planHash
+  && revised.plan.scoreRoute.routeKind === "hybrid"
+  && revised.plan.rosterCandidate.candidateHash
+    === plan.rosterCandidate.candidateHash,
+  "revision must hash-bind the previous plan version and keep the legal roster");
+
+// Cheap math-only foundation for negative gates: the gate under test never
+// depends on scenario tool execution, so these sessions skip it.
+function cheapFoundationOutput() {
+  return {
+    ...foundationOutput(),
+    informationNeeds: [foundationOutput().informationNeeds[0]],
+  };
+}
+
+// Negative gates.
+await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    strategy_foundation: () => ({
+      ...cheapFoundationOutput(),
+      chain_of_thought: "hidden reasoning must be rejected",
+    }),
+  }),
+}), "ROSTER_STRATEGIST_HIDDEN_COT_REJECTED",
+  "hidden chain-of-thought output field");
+await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    strategy_foundation: () => cheapFoundationOutput(),
+    comparison_selection: () => ({
+      ...comparisonOutput(),
+      comparison: { ...comparisonOutput().comparison,
+        selectedCandidateId: "cand-over" },
+    }),
+  }),
+}), "ROSTER_STRATEGIST_SELECTION_NOT_RULES_LEGAL",
+  "selecting a Rules-illegal candidate");
+await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    strategy_foundation: () => cheapFoundationOutput(),
+    comparison_selection: () => ({
+      ...comparisonOutput(),
+      comparison: { ...comparisonOutput().comparison,
+        selectedCandidateId: "cand-nonexistent" },
+    }),
+  }),
+}), "ROSTER_STRATEGIST_SELECTION_UNKNOWN",
+  "selecting an unevaluated candidate");
+await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    strategy_foundation: () => cheapFoundationOutput(),
+    candidate_proposals: () => ({
+      schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+      roundKind: "candidate_proposals",
+      proposals: [
+        { candidateId: "bad-1", tacticalCardRecordKeys: [],
+          units: [{ recordKey: "army_units:not_in_menu",
+            compositionKind: "small", upgrades: [] }],
+          rationaleText: "off-menu unit" },
+        { candidateId: "bad-2", tacticalCardRecordKeys: [],
+          units: [{ recordKey: "army_units:also_not_in_menu",
+            compositionKind: "small", upgrades: [] }],
+          rationaleText: "off-menu unit" },
+      ],
+    }),
+  }),
+}), "ROSTER_STRATEGIST_PROPOSALS_INVALID",
+  "proposals must use only enumerated legal choices");
+
+check(269, bundle.bundleHash === bundleHashBefore
+  && hashStarcraftTmgContract(authority.state)
+    === labDescriptor.sourceStateHash,
+  "source Room state and Builder bundle must be unchanged after planning");
+
+const report = {
+  schema: "ticket27_slices_269_270_roster_strategy_report_v1",
+  ok: true,
+  slice269: {
+    strategistChecks: checks.slice269,
+    runtimeDescriptorHash: strategistDescriptor.descriptorHash,
+    skillRouteReceiptHash: route.receipt.receiptHash,
+    skillRefs: route.skillRefs.map((entry) => ({
+      role: entry.role, skillId: entry.skillId, version: entry.version,
+      skillHash: entry.skillHash })),
+    planHash: plan.planHash,
+    revisedPlanHash: revised.plan.planHash,
+    sessionReceiptHash: result.sessionReceipt.receiptHash,
+    finalAuditResultHash: result.finalVerdict.auditResultHash,
+    selectedCandidateId: plan.rosterCandidate.candidateId,
+    mineralSpent: result.finalVerdict.summary.mineralSpent,
+    vespeneSpent: result.finalVerdict.summary.vespeneSpent,
+    deliberationRounds: result.planningTrace.map((entry) => entry.roundKind),
+    toolReceiptKinds: plan.toolReceiptReferences.map((entry) => entry.receiptKind),
+    rejectionRulesErrorCodes: result.rejections.map((entry) => (
+      entry.rulesErrorCode || entry.portErrorCode)),
+    determinismIdenticalPlanHash: resultB.plan.planHash === plan.planHash,
+    hiddenChainOfThoughtIncluded: false,
+    hostPreferenceWeights: false,
+  },
+  slice270: {
+    laboratoryChecks: checks.slice270,
+    laboratoryDescriptorHash: labDescriptor.descriptorHash,
+    sourceStateHash: labDescriptor.sourceStateHash,
+    builderBundleHash: bundle.bundleHash,
+    branchAStateHash: branchA.branchStateHash,
+    branchBStateHash: branchB.branchStateHash,
+    spatialDistanceMilliInchesAB: [
+      edgeA.nearestPhysicalEdges.distanceMilliInches,
+      edgeB.nearestPhysicalEdges.distanceMilliInches],
+    probabilityEstimateHash: probabilityA.estimate.estimateHash,
+    threatExchangeEstimateHash: threatExchangeA.exchange.estimateHash,
+    sameStateABReceiptHash: abReceipt.receiptHash,
+    mutationZeroProofHash: mutationProof.receiptHash,
+    sourceStateMutationCount: mutationProof.sourceStateMutationCount,
+    unknownNotZero: true,
+  },
+  providerCalls: 0,
+  paidCostCny: 0,
+  trainingTruth: false,
+};
+process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
