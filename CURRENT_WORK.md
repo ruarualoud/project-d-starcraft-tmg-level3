@@ -6,6 +6,25 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — observer repair built; same-r51 resume running
+
+**72606 is now confirmed exited1**, including server/browser cleanup. r51
+Ventral Sacs remains accepted/replayed; do not regenerate it. Both Providers
+have no unfinished decisions and both Bots no pending Apply; 17+27new actions
++7prefix=r51.111calls/11,487,277accounted units/estimated¥15.447569.
+The preserved `r51-observer-timeout-evidence.json` contains63Hosted Opponent
+GETs taking72.981–394.101s, six still pending, new requests every1.5s. This is
+the separate HostedOpponentOperationsPanel, not the repaired A-A status poll.
+Actual callback red3→one green1 (0.372s) now shares a pending request, releases
+errors, cancels/ignores obsolete room responses; no fields trimmed.
+One directly affected Web export **65699 passed** (Web198.016s/1424modules,
+14routes), bundle `entry-6d5decda720334ef05afd14ea8b7c0e2.js`. Do not repeat
+the gate/build. New production resume **51562** started at the same r51,
+loading both this Web repair and committed summon projection **8458a81**.
+Preserve paid decisions and capture unseen r51; real resume evidence is still
+pending. No new Provider calls for either fix itself.
+Report `docs/ticket-23-slice-248-hosted-observer-poll-repair-2026-09-23.md`.
+
 ### 2026-09-23 T23 / S248 — summon relationship subject repaired on disk
 
 Live runner **72606** continues; r50 Roachling Infestation has Web screenshot

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useI18n } from "@/lib/i18n";
@@ -37,24 +37,45 @@ export function HostedOpponentOperationsPanel({ roomId }: {
   const [projection, setProjection] = useState<Record<string, any> | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const readRequestRef = useRef<{
+    url: string;
+    controller: AbortController;
+    promise: Promise<void>;
+  } | null>(null);
 
   const baseUrl = process.env.EXPO_PUBLIC_STARCRAFT_TMG_API_ORIGIN || "";
   const read = useCallback(async () => {
     if (!roomId) return;
-    try {
-      const response = await fetch(
-        `${baseUrl}${API_PREFIX}/rooms/${encodeURIComponent(roomId)}`,
-        { headers: { accept: "application/json" } },
-      );
-      const body = await response.json();
-      if (!response.ok || body?.result?.ok !== true || !body.result.projection) {
-        throw new Error(body?.result?.reason || "HOSTED_OPPONENT_READ_FAILED");
-      }
-      setProjection(body.result.projection);
-      setError(null);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+    const url = `${baseUrl}${API_PREFIX}/rooms/${encodeURIComponent(roomId)}`;
+    if (readRequestRef.current?.url === url) {
+      return readRequestRef.current.promise;
     }
+    readRequestRef.current?.controller.abort();
+    const pending = { url, controller: new AbortController(),
+      promise: Promise.resolve() };
+    readRequestRef.current = pending;
+    pending.promise = (async () => {
+      try {
+        const response = await fetch(url, {
+          headers: { accept: "application/json" },
+          signal: pending.controller.signal,
+        });
+        const body = await response.json();
+        if (readRequestRef.current !== pending) return;
+        if (!response.ok || body?.result?.ok !== true || !body.result.projection) {
+          throw new Error(body?.result?.reason || "HOSTED_OPPONENT_READ_FAILED");
+        }
+        setProjection(body.result.projection);
+        setError(null);
+      } catch (caught) {
+        if (readRequestRef.current === pending) {
+          setError(caught instanceof Error ? caught.message : String(caught));
+        }
+      } finally {
+        if (readRequestRef.current === pending) readRequestRef.current = null;
+      }
+    })();
+    return pending.promise;
   }, [baseUrl, roomId]);
 
   useEffect(() => {
@@ -62,7 +83,12 @@ export function HostedOpponentOperationsPanel({ roomId }: {
     if (!roomId) return undefined;
     void read();
     const timer = setInterval(() => void read(), 1_500);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      const pending = readRequestRef.current;
+      readRequestRef.current = null;
+      pending?.controller.abort();
+    };
   }, [read, roomId]);
 
   const operate = async (taskId: string, operation: "delegate" | "complete" | "dispute") => {

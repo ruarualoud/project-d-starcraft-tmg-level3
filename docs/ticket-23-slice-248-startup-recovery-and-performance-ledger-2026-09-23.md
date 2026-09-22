@@ -62,6 +62,20 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r51 — second polling lane reproduced and repaired
+
+The old runner72606 is confirmed terminal, not merely slow: it exited after
+the refresh UI timed out. r51 is accepted/replayed and neither seat has a
+pending Apply or unfinished Provider decision. Preserved failure evidence
+shows63Hosted Opponent GETs every1.5s with72.981–394.101s latency. This is a
+different endpoint/component from the fixed A-A2.5s status poll. Its actual
+callback red3→one green1 now coalesces pending reads, retains all projection
+fields, cancels room changes and ignores obsolete responses. One directly
+affected Web export passed198.016s; same-r51 resume51562 is running, still
+awaiting new live capture/latency evidence. No strategy reduction.
+Details: `ticket-23-slice-248-hosted-observer-poll-repair-2026-09-23.md`.
+Both Flash; boundary111calls/11,487,277accounted units/estimated¥15.447569.
+
 ### r49 — real reserve deployment; remaining observation overhead
 
 The existing runner 72606 continued without restart to Round 2 Movement.
