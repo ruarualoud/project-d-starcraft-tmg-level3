@@ -20,9 +20,25 @@
 // types, bounds and enums only — never roster content, candidate identity or
 // strategy. `toolRequest` is a closed superset of every laboratory query
 // family; fields a need kind does not consume carry schema-mandated
-// placeholders ("" / 0 / [] / false) which the runtime's canonicalization
-// drops before the laboratory call, so placeholder values never reach Rules
-// or tool receipts.
+// placeholder values never reach Rules or tool receipts.
+//
+// Sub-slice 269.9 (closing the saved live round-6 blocker
+// ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:...vespeneLimit
+// Numerator:integer_too_large): every integer bound below is now derived
+// from the domain-owned integer rules instead of a host-authored cap. The
+// Rules side owns the integer domain: the pregame laboratory accepts any
+// safe integer for every math input (`integer()` in
+// pregame-scene-laboratory-v1.mjs; its only tighter rule,
+// vespeneLimitDenominator >= 1, is enforced there after the runtime's
+// canonicalization drops the zero placeholder), and the plan contracts
+// accept any non-negative or positive safe integer (`nonNegativeInteger` /
+// `positiveInteger` in roster-plan-contracts-v1.mjs, echoed by the Army
+// Builder port). The strict Provider subset itself caps expressible integer
+// bounds at +/-1,000,000,000 (output-contract-registry-v1
+// `assertSchemaNode`), so that subset ceiling is the widest domain-faithful
+// bound a generation schema can declare. No narrower host-side cap is
+// authored anywhere below; nothing is special-cased to one value, one
+// response or one roster.
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -35,7 +51,7 @@ import {
 
 export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_SCHEMA =
   "starcraft_tmg_roster_strategist_output_contract_set_v1";
-export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.0.0";
+export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.1.0";
 
 const DELIBERATION_SCHEMA = "starcraft_tmg_roster_strategist_deliberation_v1";
 const MAX_TEXT = 2_000;
@@ -64,6 +80,19 @@ const integer = (minimum, maximum, description = "") => ({
   type: "integer", minimum, maximum,
   ...(description ? { description } : {}),
 });
+// Domain-owned integer bounds (sub-slice 269.9; see the module header).
+// 1,000,000,000 is the strict subset's widest expressible integer bound, so
+// these atoms map the domain's safe-integer rules onto the schema layer:
+// non-negative for resource/VP amounts and ratio fields (the laboratory and
+// plan contracts reject negatives), positive for domain-positive fields
+// (activation ordinals), signed for exact-sum inputs.
+const DOMAIN_INTEGER_MAX = 1_000_000_000;
+const domainNonNegativeInteger = (description = "") =>
+  integer(0, DOMAIN_INTEGER_MAX, description);
+const domainPositiveInteger = (description = "") =>
+  integer(1, DOMAIN_INTEGER_MAX, description);
+const domainSafeInteger = (description = "") =>
+  integer(-DOMAIN_INTEGER_MAX, DOMAIN_INTEGER_MAX, description);
 const stringList = (minItems, maxItems, itemMin = 1) => ({
   type: "array", minItems, maxItems,
   items: text(itemMin, MAX_ID),
@@ -108,7 +137,7 @@ const SCORE_ROUTE = closedObject({
     type: "array", minItems: 0, maxItems: 32,
     items: closedObject({
       window: text(1, 64),
-      plannedCumulativeVp: integer(0, 1_000),
+      plannedCumulativeVp: domainNonNegativeInteger(),
     }),
   },
   fallbackRouteText: text(),
@@ -123,7 +152,7 @@ const DEPLOYMENT_CONCEPT = closedObject({
   activationOrder: {
     type: "array", minItems: 0, maxItems: 32,
     items: closedObject({
-      ordinal: integer(1, 1_000),
+      ordinal: domainPositiveInteger(),
       unitInstanceId: identifier(),
       phase: {
         type: "string", minLength: 5, maxLength: 8,
@@ -137,32 +166,35 @@ const DEPLOYMENT_CONCEPT = closedObject({
 }, "Public deployment, initiative and resource plan.");
 
 const MATH_INPUTS = closedObject({
-  mineralBudget: integer(0, 1_000_000),
-  mineralSpent: integer(0, 1_000_000),
-  vespeneSpent: integer(0, 1_000_000),
-  vespeneLimitNumerator: integer(0, 1_000),
-  vespeneLimitDenominator: integer(0, 1_000),
+  mineralBudget: domainNonNegativeInteger(),
+  mineralSpent: domainNonNegativeInteger(),
+  vespeneSpent: domainNonNegativeInteger(),
+  vespeneLimitNumerator: domainNonNegativeInteger(),
+  vespeneLimitDenominator: domainNonNegativeInteger(),
   planned: {
     type: "array", minItems: 0, maxItems: 32,
     items: closedObject({
       window: text(1, 64),
-      plannedCumulativeVp: integer(0, 100_000),
+      plannedCumulativeVp: domainNonNegativeInteger(),
     }),
   },
   projected: {
     type: "array", minItems: 0, maxItems: 32,
     items: closedObject({
       window: text(1, 64),
-      cumulativeVp: integer(0, 100_000),
+      cumulativeVp: domainNonNegativeInteger(),
     }),
   },
   values: {
     type: "array", minItems: 0, maxItems: 128,
-    items: integer(-1_000_000_000, 1_000_000_000),
+    items: domainSafeInteger(),
   },
 }, "Closed superset over every laboratory math kind; fields a kind does "
   + "not consume carry zero/empty placeholders and are dropped by the "
-  + "runtime's kind-driven canonicalization before the laboratory call.");
+  + "runtime's kind-driven canonicalization before the laboratory call. "
+  + "Integer bounds are the domain-owned safe-integer rules clipped to the "
+  + "strict-subset ceiling; the placeholder zero denominator is dropped "
+  + "before the laboratory, which owns the denominator >= 1 rule.");
 
 const SCENARIO_SPEC = closedObject({
   kind: {
@@ -338,7 +370,7 @@ const COMPARISON_SCHEMA = closedObject({
       items: closedObject({
         resourceKind: text(1, 64),
         window: text(1, 64),
-        plannedMaximumLoss: integer(0, 1_000_000),
+        plannedMaximumLoss: domainNonNegativeInteger(),
       }),
     },
   }),
