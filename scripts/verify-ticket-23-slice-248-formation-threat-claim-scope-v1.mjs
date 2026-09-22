@@ -236,6 +236,8 @@ const impossibleActivatedMove =
 assert.equal(impossibleActivatedMove.status, "contradicted");
 assert.equal(impossibleActivatedMove.contradictions[0].reason,
   "actor_already_activated_for_predicted_phase");
+assert.equal(impossibleActivatedMove.contradictions[0].repairHint,
+  "use_bounded_public_transitions_for_later_round_or_choose_actor_unactivated_in_predicted_phase");
 
 const impossibleCurrentRoundRangedTarget =
   inspectStarcraftTmgOpponentPredictionFeasibilityV1({
@@ -257,6 +259,9 @@ const impossibleCurrentRoundRangedTarget =
 assert.equal(impossibleCurrentRoundRangedTarget.status, "contradicted");
 assert.equal(impossibleCurrentRoundRangedTarget.contradictions[0].reason,
   "ranged_target_not_in_current_round_fire_band");
+assert.equal(impossibleCurrentRoundRangedTarget.contradictions[0].repairHint,
+  "use_bounded_public_transitions_for_future_fire_or_choose_actor_target_with_current_round_fire_band",
+  "the concrete live failure must return a repairable horizon instruction");
 
 const currentRoundStationaryReceipt = structuredClone(
   futureOnlyMoveThenFireReceipt);

@@ -399,3 +399,21 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   rejected before Apply. Future horizons and missing relationship evidence are
   not guessed. The existing lifecycle/threat gate covered the captured failure
   and a legal positive case, ran once, and passed with `0` Provider calls.
+- Fresh r8 fork `20260922024626512` stopped before Apply after `8` calls:
+  the first prediction repeated an already-spent Move, then two corrections
+  kept a named Goliath Ranged Attack at `current_round` despite explicitly
+  citing zero current-round fire bands. The model therefore understood the
+  evidence but the correction contract did not say how to repair the horizon.
+- Prediction contradictions now return a typed repair hint: use a bounded
+  future horizon or choose an actor/target that actually has the required
+  current lifecycle/band. The ordinary prompt also defines a horizon as when
+  the named action itself can legally occur and rejects basis/horizon
+  contradictions. The captured failure assertions were added to the existing
+  focused gate; it ran once and passed with `0` Provider calls and `¥0`.
+- Failed-fork usage is `8 / 393,582 / ¥1.065288`. Recent recovery work is now
+  `97 / 4,611,533 / ¥7.375956`; including the original invalid suffix it is
+  `126 / 5,958,327 / ¥9.228677`. No ¥100 threshold was crossed.
+- K3 Ticket 26 / Slice 266e is merged and accepted at 45/45 checks with no
+  Critical/High findings. Ticket 27 / Slices 267–268 is delegated in an
+  isolated worktree; the main process waits for its completion notification
+  rather than polling it.

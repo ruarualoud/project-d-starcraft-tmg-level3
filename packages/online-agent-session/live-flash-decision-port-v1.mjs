@@ -1473,7 +1473,8 @@ function validateActionOutput(raw, input, planner, queryReceipts = []) {
     throw correctionError(
       "ACTION_OPPONENT_PREDICTION_LIFECYCLE_CONTRADICTED",
       `${first.responseId || first.index}:${first.actorId}:${
-        first.actionClass || "unknown"}:${first.reason}`,
+        first.actionClass || "unknown"}:${first.reason}:${
+        first.repairHint || "replace_with_lifecycle_consistent_prediction"}`,
     );
   }
   for (const [index, tradeoff] of
@@ -2049,7 +2050,9 @@ export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
           responseId: response.responseId || null,
           actorId, targetId, actionClass, submittedActionClass,
           predictedPhase, currentPhase,
-          reason: "ranged_target_not_in_current_round_fire_band" });
+          reason: "ranged_target_not_in_current_round_fire_band",
+          repairHint:
+            "use_bounded_public_transitions_for_future_fire_or_choose_actor_target_with_current_round_fire_band" });
         continue;
       }
     }
@@ -2058,7 +2061,9 @@ export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
         .has(horizonKind)) {
       contradictions.push({ index, responseId: response.responseId || null,
         actorId, actionClass, submittedActionClass, predictedPhase,
-        currentPhase, reason: "actor_already_activated_for_predicted_phase" });
+        currentPhase, reason: "actor_already_activated_for_predicted_phase",
+        repairHint:
+          "use_bounded_public_transitions_for_later_round_or_choose_actor_unactivated_in_predicted_phase" });
     }
   }
   return freeze({
@@ -4197,6 +4202,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
         ? "Assess the existing same-match plan before selecting a candidate. A changed or contradicted assumption must produce at_risk/invalid and revise/abandon, never silent continue/sound."
         : "Produce the ActionIntent for the already selected Planner candidate; do not replace the plan or candidate inside the Action stage.",
       "Predict a plausible opponent response as a typed hypothesis: actionClass, likely actor/target when visible, bounded horizon, confidence, evidence and invalidation criteria. State a counter-response and replan trigger.",
+      "A prediction horizon names when the predicted action itself can legally occur, not merely when its phase will eventually open. current_phase and current_round require current-lifecycle evidence for that exact actor, target and action. If a named ranged actor/target has zero currentRoundStationaryProfileKeys and zero currentRoundMoveThenAttackProfileKeys, do not predict that ranged attack in current_phase or current_round; use bounded_public_transitions for a conditional future-round attack, or choose a different actor/target with a current-round fire band. Never pair a current-round horizon with basis text that says the action starts next round or is outside the current fire band.",
       "Opponent predictions obey the current lifecycle. Read every visible Unit's activationStatus and offTableUnits. Activation is tracked independently per phase: activatedPhases.movement blocks another Move or Deploy in Movement only; it does not block that Unit from a later Run, Charge, Ranged Attack or Hold in Assault, or Fight in Combat, unless the corresponding phase is also activated. A Unit with activatedPhases[predicted action phase] = true cannot take another ordinary action in that same phase. A Reserve actor must use actionClass deploy; an on-table actor must not use reserve Deploy. Pass, choose_first_actor and phase_control are side-level actions and must leave likelyActorUnitId empty. Keep actionClass, named actor and horizon internally consistent; choose an actor unactivated in the predicted action's phase or an explicitly conditional later-round response instead.",
       "When match memory contains predictionCalibrations, cite their calibrationHash in assessment evidence, update changedAssumptions/opponentModelUpdates, and use assessment.verdict to explicitly retain or revise the plan. A hit does not force continuation and a miss does not force abandonment; calibrate against position and objective value.",
       forceTerminal
