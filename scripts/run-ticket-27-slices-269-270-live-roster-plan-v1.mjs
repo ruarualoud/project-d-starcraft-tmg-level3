@@ -6,6 +6,15 @@
 // repository, command line, stdout/stderr, report or logs. Stops immediately
 // on 401/402/403, ambiguous dispatch or missing secure attachment; never
 // silently retries.
+//
+// Round 6 generation-side repair (sub-slice 269.8+270.7): the deliberation
+// port now uses the existing structured Provider Worker
+// (structured-provider-worker-port-v1, DeepSeek Responses dialect
+// `deepseek_responses_v1`, capability `responses_json_schema`) with the
+// roster-strategist strict JSON-schema output contract set v1.0.0, so the
+// contracted public field set is enforced at generation time. The runtime's
+// normalization boundary and full schema/Rules validation still run on the
+// decoded output; nothing is invented, filled or waived.
 
 import { mkdir, open, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -43,16 +52,28 @@ import {
   verifyRosterStrategistSessionReceiptV1,
 } from "../packages/roster-strategist/roster-strategist-runtime-v1.mjs";
 import {
+  ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1,
+  rosterStrategistRoundOutputContractRefV1,
+  rosterStrategistRoundOutputContractV1,
+} from "../packages/roster-strategist/roster-strategist-output-schemas-v1.mjs";
+import {
+  outputContractRefStarcraftTmgV1,
+  validateStarcraftTmgProviderJsonSchemaValueV1,
+  STARCRAFT_TMG_JSON_SCHEMA_SUBSET_VERSION,
+} from "../packages/structured-generation/output-contract-registry-v1.mjs";
+import {
   createPresetRosterNoPregamePlanV1,
   serializeRosterPlanV1,
   verifyRosterPlanRoundTripV1,
 } from "../packages/roster-strategist/roster-plan-contracts-v1.mjs";
 import { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } from
   "../packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs";
-import { createStarcraftTmgProviderEgressWorkerPortV2 } from
-  "../packages/secure-provider-runtime/provider-egress-worker-port-v2.mjs";
-import { createStarcraftTmgProviderProfileRegistryV1 } from
-  "../packages/secure-provider-runtime/provider-profile-registry-v1.mjs";
+import { createStarcraftTmgStructuredProviderWorkerPortV1 } from
+  "../packages/secure-provider-runtime/structured-provider-worker-port-v1.mjs";
+import { createStarcraftTmgProviderProfileRegistryV2 } from
+  "../packages/secure-provider-runtime/provider-profile-registry-v2.mjs";
+import { normalizeProviderJsonDocumentV1 } from
+  "../packages/secure-provider-runtime/provider-response-outcome-v1.mjs";
 import { priceStarcraftTmgDeepSeekCurrentUsageV2 } from
   "../packages/secure-provider-runtime/provider-pricing-v2.mjs";
 
@@ -77,6 +98,7 @@ const REPAIR_FLAGS = new Map([
   ["--repair-round-3-after-envelope-diagnostics", 3],
   ["--repair-round-4-final-envelope-stamp", 4],
   ["--repair-round-5-after-output-alias-normalization", 5],
+  ["--repair-round-6-after-strict-schema-generation", 6],
 ]);
 const REPAIRABLE_FAILURE_CODES = new Set([
   "ROSTER_STRATEGIST_OUTPUT_INVALID",
@@ -206,31 +228,115 @@ async function writeSafeFailure(code, runId, startedAt, extra = {}) {
     encoding: "utf8", mode: 0o600 });
 }
 
-function redactedProviderReceipt(receipt, latencyMs) {
+// Redacted receipt for one structured-path call: transport receipt metadata,
+// parsed usage, schema/contract binding and output fingerprint only. Raw
+// payloads and raw output text are never persisted.
+function redactedStructuredReceipt({ result, payload, usage, latencyMs,
+  output, contractRef, validation, normalization }) {
   return {
-    receiptHash: receipt.receiptHash,
-    providerId: receipt.providerId,
-    requestedModel: receipt.requestedModel,
-    reportedModel: receipt.reportedModel,
-    providerRequestIdHash: receipt.providerRequestIdHash ?? null,
-    providerSystemFingerprintHash:
-      receipt.providerSystemFingerprintHash ?? null,
-    status: receipt.status,
-    usage: clone(receipt.usage),
-    dnsAddressSetHash: receipt.dnsAddressSetHash,
-    tlsServerName: receipt.tlsServerName,
+    receiptHash: result.transportReceipt.receiptHash,
+    providerId: providerProfile.provider,
+    requestedModel: result.transportReceipt.requestedModel,
+    reportedModel: typeof payload?.model === "string" ? payload.model : null,
+    providerRequestIdHash:
+      result.transportReceipt.providerRequestIdHash ?? null,
+    providerSystemFingerprintHash: null,
+    status: result.status,
+    usage: clone(usage),
+    dnsAddressSetHash: result.transportReceipt.dnsAddressSetHash,
+    tlsServerName: result.transportReceipt.tlsServerName,
     tlsCertificateVerificationDisabled: false,
     redirectFollowed: false,
     proxyUsed: false,
-    physicalAttempts: receipt.physicalAttempts,
-    automaticRetries: receipt.automaticRetries,
-    startedAt: receipt.startedAt,
-    finishedAt: receipt.finishedAt,
+    physicalAttempts: result.physicalAttempts,
+    automaticRetries: 0,
+    startedAt: result.transportReceipt.startedAt,
+    finishedAt: result.transportReceipt.finishedAt,
     latencyMs,
-    responseFingerprint: receipt.responseFingerprint,
+    responseFingerprint: output
+      ? hashStarcraftTmgContract(output) : null,
+    endpointDialect: result.transportReceipt.endpointDialect,
+    outputContractRef: clone(contractRef),
+    requestBodyHash: result.transportReceipt.requestBodyHash,
+    schemaHash: result.transportReceipt.schemaHash,
+    payloadHash: result.transportReceipt.payloadHash,
+    localSchemaValidation: validation ? {
+      ok: validation.ok === true,
+      valueHash: validation.valueHash,
+      schemaHash: validation.schemaHash,
+    } : null,
+    responseNormalization: normalization ? {
+      kind: normalization.kind,
+      changed: normalization.changed,
+    } : null,
+    rawPayloadPersisted: false,
+    rawOutputTextPersisted: false,
     trainingTruth: false,
   };
 }
+
+// DeepSeek Responses usage mapping (same fields as the structured adapter):
+// input_tokens/output_tokens/total_tokens plus optional cache and reasoning
+// breakdowns. Unknown stays unknown — a missing or inconsistent usage block
+// fails the call instead of inventing a zero.
+function responsesUsage(value) {
+  const integer = (candidate) => Number.isSafeInteger(candidate)
+    && candidate >= 0;
+  const inputUnits = value?.input_tokens;
+  const outputUnits = value?.output_tokens;
+  const totalUnits = value?.total_tokens;
+  if (![inputUnits, outputUnits, totalUnits].every(integer)
+    || totalUnits !== inputUnits + outputUnits) return null;
+  const cached = value?.input_tokens_details?.cached_tokens;
+  const reasoning = value?.output_tokens_details?.reasoning_tokens;
+  const result = { inputUnits, outputUnits, totalUnits };
+  if (integer(cached) && cached <= inputUnits) {
+    result.inputCacheHitUnits = cached;
+    result.inputCacheMissUnits = inputUnits - cached;
+  }
+  if (integer(reasoning) && reasoning <= outputUnits) {
+    result.reasoningOutputUnits = reasoning;
+  }
+  return result;
+}
+
+// Single completed assistant message with exactly one output_text part —
+// the same extraction discipline as the structured adapter v1.
+function responsesOutputText(payload) {
+  if (!Array.isArray(payload?.output)) return { text: null, refusal: false };
+  const messages = payload.output.filter((item) => item?.type === "message");
+  if (messages.length !== 1 || messages[0].status !== "completed"
+    || messages[0].role !== "assistant"
+    || !Array.isArray(messages[0].content)) {
+    return { text: null, refusal: false };
+  }
+  const refusals = messages[0].content.filter((part) => (
+    part?.type === "refusal"));
+  const texts = messages[0].content.filter((part) => (
+    part?.type === "output_text" && typeof part.text === "string"));
+  return {
+    text: texts.length === 1 && messages[0].content.length === 1
+      ? texts[0].text : null,
+    refusal: refusals.length > 0,
+  };
+}
+
+const LIVE_INSTRUCTIONS = [
+  "You are the StarCraft TMG Roster Strategist answering one bounded "
+    + "pregame roster-planning deliberation round.",
+  "Answer with a single JSON object that conforms EXACTLY to the JSON "
+    + "schema attached to this request. Emit every required field, including "
+    + "the request-owned constants schemaVersion and roundKind, with exactly "
+    + "the values declared in the input.",
+  "All output is public strategy. Never emit hidden chain-of-thought, "
+    + "scratchpads or private reasoning fields; the schema forbids them.",
+  "Strategy must come from the supplied Skills and your own deliberation. "
+    + "The Rules-owned Army Builder menu in the input is the sole legality "
+    + "authority: use only recordKeys, compositionKinds and upgradeNames "
+    + "from that menu.",
+  "Unknown stays unknown: use the declared unknown enums/statuses and "
+    + "empty placeholders instead of inventing values.",
+].join("\n");
 
 function estimatePricing(receipt) {
   const usage = receipt.usage || {};
@@ -353,8 +459,8 @@ async function main() {
     const keychainIngress = await readStarcraftTmgDeepSeekCredentialFromKeychainV1();
     credentialBytes = keychainIngress.credentialBytes;
     const keychainReceipt = clone(keychainIngress.receipt);
-    const registry = createStarcraftTmgProviderProfileRegistryV1({
-      entries: [{ providerProfile, completionPath: "/chat/completions" }],
+    const registry = createStarcraftTmgProviderProfileRegistryV2({
+      entries: [{ providerProfile, responsePath: "/responses" }],
       allowedProviders: ["deepseek-openai-compatible-direct"],
     });
     const resolved = await registry.resolveEgressBinding({
@@ -366,12 +472,10 @@ async function main() {
     });
     requireCondition(resolved.ok === true,
       "LIVE_ROSTER_PLAN_PROFILE_RESOLUTION_FAILED");
-    coreWorker = createStarcraftTmgProviderEgressWorkerPortV2({
+    const egressBinding = resolved.egressBinding;
+    coreWorker = createStarcraftTmgStructuredProviderWorkerPortV1({
       providerProfileRegistry: registry,
-      maxWorkers: 1,
-      maxOutputBytes: 256 * 1024,
       handshakeTimeoutMs: 5_000,
-      shutdownGraceMs: 1_000,
     });
     attached = await coreWorker.attachCredential({
       attachmentId: `ticket27-roster-attachment-${runId}`,
@@ -386,30 +490,62 @@ async function main() {
     const workerRef = attached.workerRef;
 
     // ---- live deliberation port (single flight, never retried)
+    // Strict native schema output: each round is sent through the structured
+    // Provider Worker with the round's strict JSON schema in
+    // `text.format` (DeepSeek Responses `json_schema`), so the contracted
+    // public field set is enforced at generation time. The decoded output is
+    // validated locally against the same schema subset, then handed to the
+    // runtime, whose normalization boundary and full schema/Rules validation
+    // still run. Nothing is invented, filled or repaired.
     const deliberation = Object.freeze({
       descriptor: () => Object.freeze({
-        kind: "live_keychain_isolated_worker_byok",
+        kind: "live_keychain_isolated_worker_byok_structured_json_schema",
         modelVersion: providerProfile.model,
         promptVersion: ROSTER_STRATEGIST_PROMPT_PACK_V1,
         providerProfileId: providerProfile.providerProfileId,
+        outputContractSetHash:
+          ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash,
         paidProviderCalls: true,
         trainingTruth: false,
       }),
       async deliberate(request) {
-        const providerRequest = {
-          schemaVersion: "starcraft_tmg_direct_provider_request_v1",
-          requestId: `ticket27-roster-${runId}-round-${request.roundIndex}`,
-          intent: "take_turn",
-          promptPack: request.promptPack,
-          promptNodes: clone(request.promptNodes),
-          userMessage: request.userMessage,
-          responseContract: clone(request.responseContract),
-          maxOutputUnits: request.maxOutputUnits,
+        const contract = rosterStrategistRoundOutputContractV1(
+          request.roundKind);
+        const contractRef = outputContractRefStarcraftTmgV1(contract);
+        const body = {
+          model: egressBinding.model,
+          instructions: LIVE_INSTRUCTIONS,
+          input: JSON.stringify({
+            promptPack: request.promptPack,
+            promptNodes: request.promptNodes,
+            userMessage: request.userMessage,
+            responseContract: request.responseContract,
+          }),
+          reasoning: { effort: "none" },
+          temperature: egressBinding.temperature,
+          top_p: egressBinding.topP,
+          max_output_tokens: Math.min(
+            Number(request.maxOutputUnits) || egressBinding.maxOutputUnits,
+            egressBinding.maxOutputUnits),
+          stream: false,
+          text: {
+            format: {
+              type: "json_schema",
+              name: contract.schemaName,
+              schema: clone(contract.providerSchema),
+            },
+          },
         };
         const callStarted = Date.now();
         let result;
         try {
-          result = await coreWorker.complete({ workerRef, providerRequest });
+          result = await coreWorker.send({
+            workerRef,
+            requestId: `ticket27-roster-${runId}-round-${request.roundIndex}`,
+            endpoint: clone(egressBinding.endpoint),
+            body,
+            outputContractRef: clone(contractRef),
+          });
         } catch (error) {
           const receipt = error?.safeReceipt || null;
           if (receipt && AUTH_STOP_CODES.has(Number(receipt.status))) {
@@ -428,39 +564,115 @@ async function main() {
           throw error;
         }
         const latencyMs = Date.now() - callStarted;
-        const usageReceipt = clone(result.usageReceipt);
-        providerReceipts.push(redactedProviderReceipt(usageReceipt, latencyMs));
-        // The raw model output is passed through untouched. The runtime's
-        // typed public-output normalization boundary (versioned alias
-        // registry v1.0.0) unwraps admitted transport envelopes, stamps
-        // absent request-owned constants and renames admitted aliases, with
-        // a hashed provenance receipt per round; strict schema/Rules
-        // validation always runs afterwards and fails closed on anything
-        // the boundary did not admit.
-        const output = result.output;
+        const payload = result.payload;
+        const usage = responsesUsage(payload?.usage);
+        const recordUsage = (output, validation, normalization) => {
+          if (usage) {
+            providerReceipts.push(redactedStructuredReceipt({
+              result, payload, usage, latencyMs, output,
+              contractRef, validation, normalization }));
+          }
+        };
+        if (AUTH_STOP_CODES.has(Number(result.status))) {
+          throw Object.assign(new Error(
+            "LIVE_ROSTER_PLAN_PROVIDER_AUTH_STOP"), {
+            code: "LIVE_ROSTER_PLAN_PROVIDER_AUTH_STOP",
+            safeStatus: result.status });
+        }
+        if (result.status < 200 || result.status >= 300) {
+          recordUsage(null, null, null);
+          throw Object.assign(new Error(
+            "ROSTER_STRATEGIST_STRUCTURED_HTTP_REJECTED"), {
+            code: "ROSTER_STRATEGIST_STRUCTURED_HTTP_REJECTED",
+            safeStatus: result.status });
+        }
+        if (!usage) {
+          throw Object.assign(new Error(
+            "ROSTER_STRATEGIST_STRUCTURED_USAGE_UNKNOWN"), {
+            code: "ROSTER_STRATEGIST_STRUCTURED_USAGE_UNKNOWN" });
+        }
+        if (payload.status === "incomplete") {
+          recordUsage(null, null, null);
+          throw Object.assign(new Error(
+            "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_INCOMPLETE"), {
+            code: "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_INCOMPLETE",
+          });
+        }
+        if (payload.status === "failed" || payload.status !== "completed") {
+          recordUsage(null, null, null);
+          throw Object.assign(new Error(
+            "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_NOT_COMPLETED"), {
+            code: "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_NOT_COMPLETED" });
+        }
+        const extracted = responsesOutputText(payload);
+        if (extracted.refusal) {
+          recordUsage(null, null, null);
+          throw Object.assign(new Error(
+            "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_REFUSED"), {
+            code: "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_REFUSED" });
+        }
+        if (!extracted.text) {
+          recordUsage(null, null, null);
+          throw Object.assign(new Error(
+            "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_MISSING"), {
+            code: "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_MISSING" });
+        }
+        // Lossless transport-level JSON normalization only (fence/trailing
+        // delimiter repair); semantic content is never altered.
+        const normalized = normalizeProviderJsonDocumentV1(extracted.text);
+        let output;
+        try {
+          output = JSON.parse(normalized.text);
+        } catch {
+          recordUsage(null, null, {
+            kind: normalized.kind, changed: normalized.text !== extracted.text,
+          });
+          throw Object.assign(new Error(
+            "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_UNPARSEABLE"), {
+            code: "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_UNPARSEABLE" });
+        }
+        const validation = validateStarcraftTmgProviderJsonSchemaValueV1(
+          contract.providerSchema, output);
+        if (!validation.ok) {
+          recordUsage(output, validation, {
+            kind: normalized.kind, changed: normalized.text !== extracted.text,
+          });
+          const detail = validation.issues.slice(0, 8)
+            .map((issue) => `${issue.path}:${issue.code}`).join(",");
+          throw Object.assign(new Error(
+            `ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:${detail}`), {
+            code: "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID" });
+        }
+        recordUsage(output, validation, {
+          kind: normalized.kind, changed: normalized.text !== extracted.text,
+        });
         return Object.freeze({
           output: clone(output),
           receipt: Object.freeze({
-            providerKind: "live_keychain_isolated_worker_byok",
-            modelVersion: usageReceipt.reportedModel
-              || providerProfile.model,
+            providerKind:
+              "live_keychain_isolated_worker_byok_structured_json_schema",
+            modelVersion: typeof payload.model === "string"
+              ? payload.model : providerProfile.model,
             promptVersion: ROSTER_STRATEGIST_PROMPT_PACK_V1,
             roundKind: request.roundKind,
             contextHash: request.contextHash,
             outputHash: hashStarcraftTmgContract(output),
+            outputContractRef: clone(contractRef),
+            localSchemaValidationHash: hashStarcraftTmgContract(validation),
             normalizationBoundary:
               "runtime_public_output_normalization_alias_registry_v1",
-            usage: clone(usageReceipt.usage),
+            usage: clone(usage),
             latencyMs,
-            providerReceiptHash: usageReceipt.receiptHash,
+            providerReceiptHash: result.transportReceipt.receiptHash,
             paidProviderCall: true,
             trainingTruth: false,
             receiptHash: hashStarcraftTmgContract({
-              providerKind: "live_keychain_isolated_worker_byok",
+              providerKind:
+                "live_keychain_isolated_worker_byok_structured_json_schema",
               roundKind: request.roundKind,
               contextHash: request.contextHash,
               outputHash: hashStarcraftTmgContract(output),
-              providerReceiptHash: usageReceipt.receiptHash,
+              providerReceiptHash: result.transportReceipt.receiptHash,
             }),
           }),
         });
@@ -659,7 +871,32 @@ async function main() {
         providerProfileId: providerProfile.providerProfileId,
         providerProfileHash: providerProfile.integrity.hash,
         egressPolicyHash: resolved.egressBinding.policyHash,
-        workerIsolation: "provider-egress-worker-port-v2",
+        workerIsolation: "structured-provider-worker-port-v1",
+        endpointDialect: "deepseek_responses_v1",
+        structuredOutputCapability: "responses_json_schema",
+      },
+      generationContract: {
+        kind: "deepseek_responses_json_schema_strict",
+        contractSetSchema: ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.schema,
+        contractSetVersion:
+          ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version,
+        contractSetHash:
+          ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash,
+        schemaSubsetVersion: STARCRAFT_TMG_JSON_SCHEMA_SUBSET_VERSION,
+        perRound: Object.fromEntries(Object.entries(
+          ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contracts)
+          .map(([roundKind, entry]) => [roundKind, {
+            schemaName: entry.schemaName,
+            outputContractHash: entry.outputContractRef.hash,
+          }])),
+        maxOutputUnitsPerRound: 8_192,
+        outputBudgetJustification:
+          "8192 units equals the frozen profile outputBudget ceiling and is "
+          + "about 6x the largest observed round output (1372 units in the "
+          + "round-3 attempt); schema-required fields are bounded text, so "
+          + "the budget is sufficient without inviting unbounded prose",
+        normalizationBoundaryStillRuns: true,
+        fullSchemaAndRulesValidationStillRuns: true,
       },
       usage: {
         calls: providerReceipts.length,
@@ -738,6 +975,8 @@ async function main() {
           + "of placements is not claimed",
         "provider usage cache breakdown is filled conservatively when the "
           + "provider omits it; currency cost is an estimate",
+        "strict schema output constrains field presence, types and bounds; "
+          + "it cannot judge the strategic quality of the public prose",
       ],
       automaticRetries: 0,
       silentRetryPerformed: false,
