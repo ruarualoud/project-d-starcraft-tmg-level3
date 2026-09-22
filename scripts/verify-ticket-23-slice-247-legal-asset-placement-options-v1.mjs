@@ -216,7 +216,7 @@ function main() {
           likelyActorUnitId: "player1-goliath-1",
         }], lifecycleAssessment: { currentPhase: "movement" },
         publicDecisionSummary: { plan: "Keep the corrected fire response." },
-        selection: { kind: "asset", optionId: threatened.placementOptionId,
+        selection: { kind: "asset", optionId: "corrected-safe-option",
           slotAssignments: [], parametersJson: "{}",
           publicReason: "Accept the exact projected exposure." },
         speech: "Omega correction." },
@@ -256,18 +256,22 @@ function main() {
       && correctionSubmission.liftedFields.includes("selection")
       && correctionSubmission.submission.selection?.kind === "asset"
       && correctionSubmission.submission.selection?.optionId
-        === threatened.placementOptionId,
+        === "corrected-safe-option",
     "CORRECTION_ASSET_SELECTION_NOT_RECOVERED", { correctionSubmission });
     ensure(correctionSubmission.submission.lifecycleAssessment?.currentPhase
       === "movement"
       && correctionSubmission.submission.publicDecisionSummary?.plan
         === "Keep the corrected fire response."
       && correctionSubmission.submission.speech === "Omega correction."
-      && correctionSubmission.submission.intent.tradeoffs[0]
-        === "prior tradeoff"
       && correctionSubmission.submission.intent.predictedOpponentResponses[0]
         .actionClass === "ranged_attack",
     "CORRECTION_DELTA_NOT_MERGED", { correctionSubmission });
+    ensure(correctionSubmission.selectionChanged === true
+      && correctionSubmission.submission.intent.tradeoffs === undefined
+      && correctionSubmission.submission.intent.risks === undefined
+      && correctionSubmission.submission.intent.nextDecisionFocus === undefined,
+    "CHANGED_SELECTION_INHERITED_STALE_STRATEGY",
+    { correctionSubmission });
     process.stdout.write(`${JSON.stringify({
       schema: "ticket23_slice247_legal_asset_placement_options_focused_v1",
       ok: true,
@@ -279,6 +283,7 @@ function main() {
       crossPhasePredictionRejected: true,
       correctionAssetSelectionRecovered: true,
       correctionDeltaMerged: true,
+      changedSelectionStaleStrategyRejected: true,
       attemptedCandidateCount: receipt.result.attemptedCandidateCount,
       providerCalls: 0,
       trainingTruth: false,

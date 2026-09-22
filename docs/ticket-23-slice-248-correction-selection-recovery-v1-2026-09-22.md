@@ -59,11 +59,26 @@ them); without success they remain active.
 
 ## Continuation
 
-Resume this exact failed fork for the third and final convergence attempt. Its
-already-paid completed Action candidate must be revalidated locally under
-normalization v28. No new Provider request is required. If the generic delta
-repair still does not converge, stop and report the blocker rather than adding
-another field-specific patch.
+The third local attempt reached revision 9 with zero new Provider calls. Rules
+Preview/Apply/Replay passed, both historical High findings were marked resolved,
+and the selected Omega Worm position and corrected opponent predictions were
+valid. The complete strategy audit nevertheless found stale inherited fields:
+`tradeoffs`, `risks` and `nextDecisionFocus` still described the first
+`(16772,12852)` objective-near option with `2/3` incoming profiles, while the
+applied option was `(47250,1600)` with `0/0` profiles. This would contaminate
+same-match plan memory.
+
+The branch is therefore Authority-valid but strategy-invalid/non-training and
+must not be resumed. Under the three-round convergence rule no fourth repair is
+attempted. Normalization v29 closes the safety hole for future work: when a
+correction changes selection identity, selection-sensitive intent fields are
+never inherited. Missing replacements fail the ordinary Action contract. The
+concrete changed-option case passed once with
+`changedSelectionStaleStrategyRejected=true`, zero Provider calls.
+
+Future match work must start from the safe revision-8 boundary and obtain one
+fresh, complete Action submission under v29. It may not reuse this branch's
+stale plan memory.
 
 ## Accounting
 

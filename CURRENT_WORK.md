@@ -232,8 +232,15 @@ explicit, isolated slice manifests.
   current Rules receipt. Explicit resume may ignore only this exact pre-start
   finding until the retry ends; success marks history resolved, while any new
   High still blocks. The exact delta gate passed once at 0 Provider calls.
-  Resume that fork for a third and final local revalidation; if it fails, stop
-  rather than adding another field-specific repair. See
+  The third local revalidation then applied r9 with 0 new Provider calls and
+  Replay parity, but audit found inherited tradeoffs/risks/next focus still
+  described the earlier `(16772,12852)` 2/3-exposure option while the actual
+  selection was `(47250,1600)` at 0/0 exposure. That stale plan memory is High:
+  the branch is Authority-valid but non-training and cannot continue. Per the
+  three-round rule there is no fourth recovery. Normalization v29 now refuses
+  to inherit selection-sensitive intent when selection identity changes; the
+  concrete fail-closed gate passed once at 0 Provider calls. A future attempt
+  must fork the safe r8 boundary and produce a fresh complete Action. See
   `docs/ticket-23-slice-248-terminal-tool-json-convergence-blocker-v1-2026-09-22.md`
   `docs/ticket-23-slice-248-terminal-tool-json-recovery-v1-2026-09-22.md` and
   `docs/ticket-23-slice-248-asset-placement-threat-strategy-repair-v1-2026-09-22.md`
@@ -325,7 +332,9 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   3,278,297 units and ¥4.519137; including the original invalid-suffix source:
   99 calls, 4,625,091 units and ¥6.371858. No ¥100 threshold was crossed.
 - Correction-lane fork `20260921231542474`: 6 calls, 316,804 units and
-  ¥0.448593; no action was applied. Recent recovery work is now 76 calls,
+  ¥0.448593. The third zero-call local replay applied r9 with Replay parity,
+  but stale selection-specific plan memory keeps the branch non-training and
+  non-continuable. Recent recovery work is now 76 calls,
   3,595,101 units and ¥4.967730; including the original invalid-suffix source:
   105 calls, 4,941,895 units and ¥6.820451. No ¥100 threshold was crossed.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.
