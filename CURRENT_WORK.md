@@ -21,6 +21,14 @@ after red and a duplicate length-check correction; no unrelated tests.
 Resume this Room, not a new fork; preserve screenshots and cost history.
 See `docs/ticket-23-slice-248-native-tool-output-capacity-repair-2026-09-23.md`.
 
+First paid resume then exposed an introduced egress/Worker receipt-field
+mismatch. Removed the two redundant receipt diagnostics (attempt capacity and
+tool finish reason still retained). Production transport→Worker consumer
+narrow reproduction is now green; do not rerun it or the prior capacity gate.
+r23 remains safe; 58 calls / 5,439,967 accounted units / ¥7.282619 upper-bound,
+including one lost-response reservation, not exact Provider usage. Resume
+after this boundary repair; no earlier action or paid record is discarded.
+
 ### 2026-09-23 T23 / S248 — Flash match and evidence-only repair
 
 Formal branch `20260922172710914` has continued through r19, including Marine 2

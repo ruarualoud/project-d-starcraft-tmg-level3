@@ -30,8 +30,8 @@ retroactively claim that they have become valid plans.
   larger request capacity.
 - Live request output capacity is server-owned 32,768, consistently wired
   through decision reservation, supervisor, registry and actual HTTP body.
-  Each attempt records its requested maximum/policy version; the egress
-  receipt records maximum and finish reason. The historical frozen profile,
+  Each attempt records its requested maximum/policy version; the tool output
+  records finish reason. The historical frozen profile,
   model, strategy Skills, Prompt and old receipts are unchanged.
 - Tool argument request/response transport envelopes now share a 256 KiB
   byte limit (within the existing 1 MiB worker envelope), replacing duplicate
@@ -81,3 +81,31 @@ Provider egress → live Planner/Action capacity and explicit recovery;
 Rules/Preview/Apply/Replay unchanged; memory records unchanged;
 rollback trigger: misclassified ordinary invalid output or any truncated
 output accepted for execution. T23 remains 33/36, S248 in progress.
+
+## Production boundary follow-up — regression introduced and corrected
+
+First resume issued one additional request with the intended 32,768 maximum,
+but failed at 19:02:52Z before the reply was retained. The initial repair added
+two diagnostic fields to the egress receipt without updating its Worker
+consumer's closed contract. The parent rejected an otherwise returned result
+as `provider_worker_failed`. This was an implementation regression, not a new
+model strategy failure. No r24 Apply occurred. The missing paid reply and
+actual usage cannot be recovered; the ledger conservatively reserved 407,635
+units / ¥0.607127. Combined accounting is 58 calls / 5,439,967 units /
+estimated upper-bound ¥7.282619, including that one unknown-usage reservation.
+
+Removed the redundant receipt fields: request capacity already exists on the
+attempt and finish reason in the safe tool output. Thus the existing Worker
+receipt contract stays compatible rather than growing another metadata gate.
+Historical `provider_worker_failed` is admitted only on explicit resume, with
+the same timestamp boundary and post-Apply closure as other transport failures.
+
+New concrete boundary reproduction (not a rerun of the passed capacity gate):
+`node scripts/verify-ticket-16-provider-egress-allowlist-v1.mjs --live-tool-worker-receipt-only`.
+It sends the **real transport-produced return** via injected IPC into the
+**real Worker consumer**. Red reproduced `usage receipt contains forbidden
+fields`. After removal, the fixture itself lacked a shutdown acknowledgment;
+that harness omission was corrected. One final green (0.44s) proves both normal
+and truncated tool outputs and actual usage survive this boundary. No network,
+paid calls, Room writes or old gates. Future Provider envelope changes must be
+checked at their immediate consuming boundary, not just at the producer.

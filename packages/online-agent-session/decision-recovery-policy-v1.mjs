@@ -3,6 +3,7 @@
 // dispatch settlement, credentials, budget and Rules remain separate gates.
 export const STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1 = Object.freeze([
   "provider_worker_protocol_rejected",
+  "provider_worker_failed",
   "provider_transport_failed",
   "provider_transport_timeout",
   "LIVE_DECISION_PROVIDER_OUTPUT_TRUNCATED",

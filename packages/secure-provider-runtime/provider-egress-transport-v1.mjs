@@ -821,8 +821,6 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
               egressPolicyHash: binding.policyHash,
               providerId: binding.providerId,
               requestedModel: binding.model,
-              requestedMaxOutputUnits: request.maxOutputUnits,
-              finishReason: String(payload?.choices?.[0]?.finish_reason || ""),
               reportedModel,
               ...(providerSystemFingerprint
                 && providerSystemFingerprint.length <= 240 ? {

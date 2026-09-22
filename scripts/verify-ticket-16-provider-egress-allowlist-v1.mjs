@@ -391,6 +391,83 @@ function fakeWorkerFailure(code, physicalAttempts) {
   };
 }
 
+if (process.argv.includes("--live-tool-worker-receipt-only")) {
+  // Reproduce the actual boundary, not a hand-authored receipt: production
+  // transport output is passed unchanged into production Worker validation.
+  const results = [];
+  for (const finishReason of ["tool_calls", "length"]) {
+    const fixture = await fixtureTransport({ plans: [{ payload: successPayload({
+      choices: [{ finish_reason: finishReason, message: { tool_calls: [{
+        id: "call_worker_repro", type: "function", function: {
+          name: "submit_planning", arguments: '{"plan":{"objective":"public"}}',
+        },
+      }] } }],
+    }) }] });
+    let binding;
+    const port = createStarcraftTmgProviderEgressWorkerPortV1({
+      providerProfileRegistry: registry(),
+      childPath: "/injected/transport-to-worker.mjs",
+      spawnProcess() {
+        return new FakeChild((message, child) => {
+          if (message.type === "initialize") {
+            binding = message.egressBinding;
+            emitValidInitialize(message, child);
+          }
+          if (message.type === "complete") {
+            fixture.transport.complete({ egressBinding: binding,
+              credentialBytes: syntheticBuffer(), providerRequest: message.providerRequest,
+            }).then((value) => child.emit("message", {
+              type: "provider_result", requestId: message.requestId, ok: true, value,
+              workerVersion: STARCRAFT_TMG_PROVIDER_EGRESS_WORKER_CHILD_VERSION,
+              trainingTruth: false,
+            }));
+          }
+          if (message.type === "shutdown") {
+            child.emit("message", {
+              type: "shutdown_complete", requestId: message.requestId,
+              ok: true, reason: message.reason,
+              workerVersion: STARCRAFT_TMG_PROVIDER_EGRESS_WORKER_CHILD_VERSION,
+              sensitiveBytesZeroed: true, trainingTruth: false,
+            });
+            child.kill("SIGTERM");
+          }
+        });
+      },
+      createId: deterministicIds("capacity-worker"),
+      handshakeTimeoutMs: 100, shutdownGraceMs: 1,
+    });
+    try {
+      const attached = await port.attachCredential({
+        attachmentId: "capacity-receipt-repro", providerProfile: profile(),
+        credentialBytes: syntheticBuffer(),
+      });
+      const result = await port.complete({ workerRef: attached.workerRef,
+        providerRequest: providerRequest() });
+      assert.equal(result.output.providerTurn.finishReason, finishReason);
+      assert.equal(result.output.providerTurn.toolCalls[0].argumentIssue,
+        finishReason === "length" ? "output_truncated" : null);
+      assert.equal(result.usageReceipt.usage.totalUnits, 16);
+      assert.equal(fixture.fixture.count(), 1);
+      results.push({ finishReason, acceptedAtWorkerBoundary: true });
+    } finally { await port.close(); }
+  }
+  const { isStarcraftTmgHistoricalResumeFindingV1 } = await import(
+    "../packages/online-agent-session/decision-recovery-policy-v1.mjs");
+  const finding = { code: "provider_worker_failed", occurredAt: "2026-09-22T19:02:52.368Z" };
+  assert.equal(isStarcraftTmgHistoricalResumeFindingV1(finding, {
+    allowExistingRetryableFinding: true, startedAt: "2026-09-22T20:00:00Z",
+  }), true);
+  assert.equal(isStarcraftTmgHistoricalResumeFindingV1(finding, {
+    allowExistingRetryableFinding: true, startedAt: "2026-09-22T19:00:00Z",
+  }), false);
+  assert.equal(isStarcraftTmgHistoricalResumeFindingV1(finding, {
+    allowExistingRetryableFinding: false, startedAt: "2026-09-22T20:00:00Z",
+  }), false);
+  console.log(JSON.stringify({ ok: true, results, providerCalls: 0,
+    roomMutations: 0, onlyInjectedHttpsAndIpc: true, oldGatesRerun: 0 }));
+  process.exit(0);
+}
+
 if (process.argv.includes("--live-tool-output-capacity-only")) {
   // Load the changed consumers, without starting a stack or running old gates.
   await import("../packages/online-agent-session/live-flash-decision-port-v1.mjs");
@@ -416,7 +493,7 @@ if (process.argv.includes("--live-tool-output-capacity-only")) {
     assert.equal(result.output.providerTurn.toolCalls[0].argumentIssue,
       expectedIssue, "native tool truncation must not become a semantic JSON retry");
     assert.equal(result.output.providerTurn.finishReason, finishReason);
-    assert.equal(result.usageReceipt.requestedMaxOutputUnits, 64);
+    assert.equal(JSON.parse(fixture.fixture.observations[0].body).max_tokens, 64);
     assert.equal(result.usageReceipt.usage.outputUnits, 8192);
     assert.equal(fixture.fixture.count(), 1);
     observed.push({ finishReason, expectedIssue });
