@@ -1964,7 +1964,14 @@ async function main() {
       depth: 2,
       frequency: 1,
     }, "PUT"), "AUTHORS_NOTE_PUT_FAILED");
-    const callsBeforeNote = providerProbe.calls;
+    // Slice 266e repair: the capture window is indexed by the REQUESTS array
+    // length, not the call counter. `calls` also counts the one verifier-armed
+    // outage earlier in the journey, which throws BEFORE its request is
+    // recorded, so `requests.length === calls - 1` here; slicing by `calls`
+    // silently dropped the first note-injected request (the 266d integrating
+    // run's NOTE_REQUESTS_NOT_CAPTURED with captured: 1). The denominator is
+    // unchanged: two companions × frequency 1 = exactly two requests.
+    const requestsBeforeNote = providerProbe.requests.length;
     const noteSend = ok266d(await post266d(`${convPath266d}/turns`, {
       content: "Status report please.",
     }), "AUTHORS_NOTE_SEND_FAILED");
@@ -1975,7 +1982,7 @@ async function main() {
     "AUTHORS_NOTE_INJECTION_FLAGS_WRONG", {
       injected: noteSend.replies.map((reply) => reply.authorsNoteInjected),
     });
-    const noteRequests = providerProbe.requests.slice(callsBeforeNote);
+    const noteRequests = providerProbe.requests.slice(requestsBeforeNote);
     ensure(noteRequests.length === 2, "NOTE_REQUESTS_NOT_CAPTURED",
       { captured: noteRequests.length });
     for (const [index, request] of noteRequests.entries()) {
