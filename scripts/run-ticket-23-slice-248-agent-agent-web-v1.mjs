@@ -439,7 +439,35 @@ async function main() {
     return `screenshots/${filename}`;
   }
 
-  async function recordUnseen(manifestValue, preActionScreenshot = null) {
+  async function captureElement(locator, seatKey, actionType, revision,
+    evidenceKind, phase = "applied") {
+    if (await locator.count() < 1) return null;
+    const target = locator.first();
+    await target.waitFor({ state: "visible", timeout: 30_000 });
+    await target.scrollIntoViewIfNeeded();
+    screenshotCount += 1;
+    const filename = `${String(screenshotCount).padStart(4, "0")}-r${
+      String(revision ?? "x").padStart(3, "0")}-${safeName(seatKey)}-${
+      safeName(actionType)}-${safeName(evidenceKind)}-${safeName(phase)}.png`;
+    await target.screenshot({
+      path: path.join(outputDirectory, "screenshots", filename),
+    });
+    return `screenshots/${filename}`;
+  }
+
+  async function captureReviewViews(seatKey, actionType, revision,
+    phase = "applied") {
+    return {
+      boardScreenshot: await captureElement(
+        page.locator("#battlefield-display-map-v1"), seatKey, actionType,
+        revision, "complete-board", phase),
+      controlScreenshot: await captureElement(
+        page.getByTestId("agent-agent-match-control"), seatKey, actionType,
+        revision, "agent-control", phase),
+    };
+  }
+
+  async function recordUnseen(manifestValue, preActionEvidence = null) {
     const recorded = new Set(actions.map((entryValue) =>
       entryValue.receiptHash).filter(Boolean));
     const unseen = unseenTraces(manifestValue, recorded);
@@ -452,6 +480,8 @@ async function main() {
       const actionType = transition?.action?.actionType
         || trace.actionType || trace.candidateId || "agent-action";
       const screenshot = await capture(seatKey, actionType,
+        trace.postStateRevision);
+      const reviewViews = await captureReviewViews(seatKey, actionType,
         trace.postStateRevision);
       const observedRevision = Number(manifestValue.room?.stateRevision);
       const record = {
@@ -488,7 +518,13 @@ async function main() {
         postStateHash: trace.postStateHash || null,
         replayMatchesCurrent: trace.replayMatchesCurrent === true,
         screenshot,
-        preActionScreenshot: unseenIndex === 0 ? preActionScreenshot : null,
+        ...reviewViews,
+        preActionScreenshot: unseenIndex === 0
+          ? preActionEvidence?.pageScreenshot || null : null,
+        preActionBoardScreenshot: unseenIndex === 0
+          ? preActionEvidence?.boardScreenshot || null : null,
+        preActionControlScreenshot: unseenIndex === 0
+          ? preActionEvidence?.controlScreenshot || null : null,
         screenshotObservedStateRevision: Number.isSafeInteger(observedRevision)
           ? observedRevision : null,
         historicalUiReconstructionRequired:
@@ -750,8 +786,14 @@ async function main() {
       && !current.state?.terminal && !current.state?.gameOver) {
       const preActionScreenshot = await capture("room", "next-agent-decision",
         current.room?.stateRevision ?? actions.length, "before");
+      const preActionReviewViews = await captureReviewViews("room",
+        "next-agent-decision", current.room?.stateRevision ?? actions.length,
+        "before");
       current = await driveOne(current, deadline);
-      await recordUnseen(current, preActionScreenshot);
+      await recordUnseen(current, {
+        pageScreenshot: preActionScreenshot,
+        ...preActionReviewViews,
+      });
       await progress("running", { manifest: current, roomId: entry.roomId });
     }
     if ((checkpointTargetActionCount !== null
