@@ -26,6 +26,12 @@
  *     zero automatic retry; epoch 3 refuses unless the epoch-1 and epoch-2
  *     locks AND the epoch-2 PASSED report prove the lineage, and any prior
  *     epoch-3 lock or passing report refuses a rerun;
+ *   - epoch 4 (266f.12, the manifest's persona-differentiation acceptance)
+ *     has a hard maximum of FOUR physical Provider calls (Kerrigan + Zagara
+ *     x two user turns), each separately locked (persona-call-1..4.lock.json),
+ *     zero automatic retry; epoch 4 refuses unless the epoch-1/2 lineage AND
+ *     every epoch-3 lock AND the epoch-3 PASSED report prove the lineage,
+ *     and any prior epoch-4 lock or passing report refuses a rerun;
  *   - the credential is read ONLY through the existing macOS Keychain →
  *     isolated-Worker path
  *     (packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs →
@@ -146,6 +152,46 @@ const CONTINUITY_RELATIONSHIP_EVENT = Object.freeze({
 const CONTINUITY_PLAN_DETAIL_KEYWORDS = Object.freeze([
   "山脊", "隘口", "Marine", "Medic", "黎明",
 ]);
+// Epoch 4 (266f.12): the manifest's persona-differentiation live acceptance.
+// Hard maximum FOUR physical Provider calls (Kerrigan + Zagara x two user
+// turns), each separately locked (persona-call-1..4.lock.json), zero retry;
+// durable-SQLite checkpoint + full companion server/session restart between
+// the turns; proves distinct roleplay, formal worldbook retrieval for BOTH
+// companions, exact prompt-layer provenance and shared memory continuity
+// including the durable long-term layer.
+const PERSONA_CALL_FLAGS = new Set(["--authorize-live-byok-companion-persona-differentiation"]);
+const REPORT_PATH_EPOCH4 = path.join(BUILD_ROOT, "live-report.persona.json");
+const LOCK_PATHS_EPOCH4 = Object.freeze([1, 2, 3, 4]
+  .map((index) => path.join(BUILD_ROOT, `persona-call-${index}.lock.json`)));
+const EVIDENCE_ROOT_EPOCH4 = path.join(EVIDENCE_ROOT, "epoch-4");
+const PERSONA_SQLITE_PATH = path.join(BUILD_ROOT, "persona", "companion-product.sqlite");
+const PERSONA_MAX_PHYSICAL_CALLS = 4;
+// A fresh distinctive public plan/fact (never reused from epoch 3).
+const PERSONA_PLAN_CODEWORD = "霆殛-6";
+const PERSONA_TURN1_PROMPT = "两位同伴，请记住并各自评估这个公开计划：行动代号「霆殛-6」——"
+  + "黄昏前将一个Goliath小队推进到东侧高地压制敌翼，Medic留守基地不随行。请各自用一句中文、以你自己的风格回应。";
+const PERSONA_TURN2_PROMPT = "两位同伴，请各自用一句中文回答：我上一轮公布的行动代号"
+  + "「霆殛-6」的要点是什么？以你本人的风格给出你的执行建议。";
+const PERSONA_CHAT_WORLDBOOK_ENTRY = Object.freeze({
+  entryId: "plan-thunderstrike-6",
+  keyword: PERSONA_PLAN_CODEWORD,
+  content: "公开计划（第1轮由指挥官公布）：行动代号「霆殛-6」；"
+    + "黄昏前将一个Goliath小队推进至东侧高地压制敌翼，Medic留守基地不随行。",
+});
+const PERSONA_SUMMARY = "第1轮：指挥官公布公开行动代号「霆殛-6」——"
+  + "黄昏前Goliath小队推进东侧高地压制敌翼、Medic留守；Kerrigan与Zagara均已回应。";
+const PERSONA_EPISODIC_FACT = "第1轮指挥官公布了行动代号「霆殛-6」的东侧高地推进计划。";
+const PERSONA_RELATIONSHIP_EVENT = Object.freeze({
+  eventType: "personal_shared",
+  deltas: Object.freeze([Object.freeze({ axis: "trust", delta: 1 })]),
+  note: "指挥官向两位同伴公开了作战计划「霆殛-6」。",
+});
+// The durable long-term layer: a conversation-derived commander preference,
+// proposed as a candidate and promoted ONLY by explicit user approval.
+const PERSONA_DURABLE_CANDIDATE = "指挥官的长期偏好：先侦察后接战，防线优先于冒进（由「霆殛-6」会话复盘确认）。";
+const PERSONA_PLAN_DETAIL_KEYWORDS = Object.freeze([
+  "高地", "Goliath", "Medic", "黄昏", "东侧",
+]);
 const ROOM_MUTATION_METHODS = [
   "previewAction",
   "confirmPreview",
@@ -213,6 +259,7 @@ function authorizedEpoch() {
   if (flags.length === 1 && FIRST_CALL_FLAGS.has(flags[0])) return 1;
   if (flags.length === 1 && SECOND_CALL_FLAGS.has(flags[0])) return 2;
   if (flags.length === 1 && CONTINUITY_CALL_FLAGS.has(flags[0])) return 3;
+  if (flags.length === 1 && PERSONA_CALL_FLAGS.has(flags[0])) return 4;
   return 0;
 }
 
@@ -301,6 +348,34 @@ async function assertContinuityCallContext() {
   };
 }
 
+// Epoch 4 exists only as the manifest-authorized persona-differentiation
+// acceptance continuing from the PASSED epoch-3 continuity run: prove the
+// epoch-1/2 lineage AND every epoch-3 dispatch lock plus the epoch-3 PASSED
+// report before anything else.
+async function assertPersonaCallContext() {
+  const continuityLineage = await assertContinuityCallContext();
+  for (const lockPath of LOCK_PATHS_EPOCH3) {
+    ensure(await priorDispatchClaimExists(lockPath),
+      "LIVE_BYOK_PERSONA_CONTEXT_MISSING", {
+        note: "every epoch-3 dispatch lock must already be consumed",
+        lock: path.relative(ROOT, lockPath),
+      });
+  }
+  const thirdReport = await readReport(REPORT_PATH_EPOCH3);
+  ensure(thirdReport && thirdReport.status === "passed",
+    "LIVE_BYOK_PERSONA_CONTEXT_MISSING", {
+      note: "epoch 4 is authorized only as the continuation of the PASSED epoch-3 two-companion continuity acceptance",
+      thirdReportStatus: thirdReport?.status ?? null,
+    });
+  return {
+    ...continuityLineage,
+    epoch3Locks: LOCK_PATHS_EPOCH3.map((lockPath) => path.relative(ROOT, lockPath)),
+    epoch3Report: path.relative(ROOT, REPORT_PATH_EPOCH3),
+    epoch3Status: thirdReport.status,
+    epoch3PhysicalProviderCalls: thirdReport.boundaries?.realProviderCalls ?? null,
+  };
+}
+
 async function claimDispatchLock(runId, startedAt, lockPath = LOCK_PATH, epoch = 1, extra = {}) {
   await mkdir(BUILD_ROOT, { recursive: true, mode: 0o700 });
   let handle;
@@ -318,9 +393,11 @@ async function claimDispatchLock(runId, startedAt, lockPath = LOCK_PATH, epoch =
     startedAt,
     attemptEpoch: epoch,
     physicalProviderCallBudget: 1,
-    sliceHardMaximumPhysicalProviderCalls: epoch === 3
-      ? 2 + CONTINUITY_MAX_PHYSICAL_CALLS
-      : 2,
+    sliceHardMaximumPhysicalProviderCalls: epoch === 4
+      ? 2 + CONTINUITY_MAX_PHYSICAL_CALLS + PERSONA_MAX_PHYSICAL_CALLS
+      : epoch === 3
+        ? 2 + CONTINUITY_MAX_PHYSICAL_CALLS
+        : 2,
     ...clone(extra),
     automaticRetryAllowed: false,
     ambiguousOutcomeNeedsNewUserAuthorization: true,
@@ -1044,6 +1121,10 @@ async function main() {
   }
   if (epoch === 3) {
     await mainContinuity();
+    return;
+  }
+  if (epoch === 4) {
+    await mainPersonaDifferentiation();
     return;
   }
   const { reportPath, lockPath, evidenceRoot } = epochPaths(epoch);
@@ -2865,6 +2946,1259 @@ async function mainContinuity() {
         }
       })(),
     }, REPORT_PATH_EPOCH3).catch(() => {});
+    console.error(code);
+    process.exitCode = 1;
+  } finally {
+    credentialBytes?.fill(0);
+    if (browser) await browser.close().catch(() => {});
+    if (stackA?.server) stackA.server.close();
+    if (stackB?.server) stackB.server.close();
+    if (persistenceA) await persistenceA.close().catch(() => {});
+    if (persistenceB) await persistenceB.close().catch(() => {});
+    if (workerRef) {
+      await workerPort.detachCredential({ workerRef, reason: "explicit_user_detach" })
+        .catch(() => {});
+    }
+    await workerPort.close().catch(() => {});
+  }
+}
+
+// ── Epoch 4 (266f.12): persona-differentiation live acceptance ───────────
+// Kerrigan+Zagara two-turn real Chinese BYOK through the REAL product path
+// over durable SQLite: distinct roleplay (NEVER byte-identical on either
+// turn), formal worldbook retrieval for BOTH companions (kerrigan.wb.* x3 +
+// zagara.* x3 character-tier, companion-scoped), exact prompt-layer
+// provenance (persona profile hash, package author-note hash, static
+// canon/lore vs session long-term memory split), and shared memory
+// continuity INCLUDING the durable long-term layer (conversation-derived
+// candidate + explicit user approval) across a checkpoint + full companion
+// server/session restart. Hard maximum FOUR physical calls, each separately
+// locked (persona-call-1..4.lock.json), zero automatic retry.
+
+async function mainPersonaDifferentiation() {
+  if (await priorSuccessExists(REPORT_PATH_EPOCH4)) {
+    console.error("LIVE_BYOK_COMPANION_SUCCESS_ALREADY_RECORDED");
+    process.exitCode = 2;
+    return;
+  }
+  for (const lockPath of LOCK_PATHS_EPOCH4) {
+    if (await priorDispatchClaimExists(lockPath)) {
+      console.error("LIVE_PROVIDER_ATTEMPT_ALREADY_CLAIMED");
+      process.exitCode = 2;
+      return;
+    }
+  }
+  // Epoch 4 continues the PASSED epoch-3 continuity acceptance; prove the
+  // lineage before anything else.
+  const previousEpochs = await assertPersonaCallContext();
+
+  const runId = randomUUID();
+  const startedAt = new Date().toISOString();
+
+  // Stale-store hygiene, identical discipline to epoch 3: only a provably
+  // PRE-dispatch previous epoch-4 failure (physicalProviderCalls === 0, no
+  // persona locks — verified above) may clear its durable store for a rerun.
+  const previousEpoch4Report = await readReport(REPORT_PATH_EPOCH4);
+  let stalePreDispatchStoreCleared = false;
+  if (previousEpoch4Report && previousEpoch4Report.status === "failed") {
+    ensure(previousEpoch4Report.physicalProviderCalls === 0,
+      "LIVE_BYOK_PERSONA_RERUN_AFTER_DISPATCH_REFUSED", {
+        physicalProviderCalls: previousEpoch4Report.physicalProviderCalls,
+      });
+    await rm(path.dirname(PERSONA_SQLITE_PATH), { recursive: true, force: true });
+    stalePreDispatchStoreCleared = true;
+  }
+  await mkdir(EVIDENCE_ROOT_EPOCH4, { recursive: true });
+  await mkdir(path.dirname(PERSONA_SQLITE_PATH), { recursive: true });
+
+  const { readStarcraftTmgDeepSeekCredentialFromKeychainV1 } =
+    await import(pathToFileURL(path.join(ROOT, "packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs")).href);
+  const { createStarcraftTmgProviderEgressWorkerPortV1 } =
+    await import(pathToFileURL(path.join(ROOT, "packages/secure-provider-runtime/provider-egress-worker-port-v1.mjs")).href);
+  const { createStarcraftTmgProviderProfileRegistryV1 } =
+    await import(pathToFileURL(path.join(ROOT, "packages/secure-provider-runtime/provider-profile-registry-v1.mjs")).href);
+  const {
+    priceStarcraftTmgDeepSeekV4FlashUsageV1,
+    verifyStarcraftTmgProviderPricingReceiptV1,
+    isStarcraftTmgDeepSeekPeakWindowV1,
+    STARCRAFT_TMG_DEEPSEEK_V4_FLASH_PRICING_SNAPSHOT_V1: pricingSnapshot,
+  } = await import(pathToFileURL(path.join(ROOT, "packages/secure-provider-runtime/provider-pricing-v1.mjs")).href);
+  const { STARCRAFT_TMG_TICKET_16_LIVE_PROVIDER_PROFILE_V1: providerProfile } =
+    await import(pathToFileURL(path.join(ROOT, "content/provider/ticket-16-live-provider-closure-v1.mjs")).href);
+  const { createProviderProfile } =
+    await import(pathToFileURL(path.join(ROOT, "packages/character-agent/contracts-v1.mjs")).href);
+  const { containsStarcraftTmgOnlineCredentialMaterialV1 } =
+    await import(pathToFileURL(path.join(ROOT, "packages/online-agent-session/portable-credential-material-v1.mjs")).href);
+  const { hashStarcraftTmgClientContract } =
+    await import(pathToFileURL(path.join(ROOT, "packages/client-domain/portable-contract-hash-v1.mjs")).href);
+  const { createStarcraftTmgCompanionProductPersistenceV1 } =
+    await import(pathToFileURL(path.join(ROOT, "packages/product-composition/index.mjs")).href);
+
+  const webExport = await assertFreshWebExport();
+
+  const acceptanceProfile = createProviderProfile({
+    providerProfileId: `${providerProfile.providerProfileId}.266f-acceptance-budget-v2`,
+    version: `${providerProfile.version}.266f-output-budget-v2`,
+    provider: providerProfile.provider,
+    baseUrl: providerProfile.baseUrl,
+    model: providerProfile.model,
+    thinkingMode: providerProfile.thinkingMode,
+    reasoningEffort: providerProfile.reasoningEffort,
+    temperature: providerProfile.temperature,
+    topP: providerProfile.topP,
+    contextBudget: providerProfile.contextBudget,
+    outputBudget: LIVE_OUTPUT_BUDGET.maxOutputUnits,
+    toolSupport: providerProfile.toolSupport,
+    timeoutMs: providerProfile.timeoutMs,
+    retryPolicy: clone(providerProfile.retryPolicy),
+    fallbackPolicy: providerProfile.fallbackPolicy,
+    extensions: clone(providerProfile.extensions || {}),
+  });
+  const estimateUsageAtSnapshotRates = createSnapshotRateEstimator({
+    pricingSnapshot,
+    isPeakWindow: isStarcraftTmgDeepSeekPeakWindowV1,
+  });
+
+  const registry = createStarcraftTmgProviderProfileRegistryV1({
+    entries: [{ providerProfile: acceptanceProfile, completionPath: "/chat/completions" }],
+    allowedProviders: ["deepseek-openai-compatible-direct"],
+  });
+  const workerPort = createStarcraftTmgProviderEgressWorkerPortV1({
+    providerProfileRegistry: registry,
+    maxWorkers: 1,
+    maxOutputBytes: 64 * 1024,
+    handshakeTimeoutMs: 5_000,
+    shutdownGraceMs: 1_000,
+  });
+
+  // Local durable-store encryption key: random per run, memory-only, never
+  // written anywhere. NOT the Provider credential.
+  const sqliteKey = randomBytes(32).toString("base64");
+  const createPersistence = () => createStarcraftTmgCompanionProductPersistenceV1({
+    kind: "sqlite",
+    filename: PERSONA_SQLITE_PATH,
+    encryption: { key: sqliteKey },
+  });
+
+  let credentialBytes = null;
+  let keychainReceipt = null;
+  let workerRef = null;
+  let detachProof = null;
+  let stackA = null;
+  let stackB = null;
+  let persistenceA = null;
+  let persistenceB = null;
+  let adapter = null;
+  let browser = null;
+  const browserErrors = [];
+  const artifacts = [];
+  const screenshots = [];
+  let conversationId = null;
+  let stateRevisionBefore = null;
+  const persona = {
+    turn1: null,
+    turn2: null,
+    memoryWrites: null,
+    durableLayer: null,
+    restart: null,
+    accounting: null,
+  };
+
+  async function capture(page, name, explanation) {
+    const filename = path.join(EVIDENCE_ROOT_EPOCH4, name);
+    await page.screenshot({ path: filename, fullPage: false });
+    const record = await artifactRecord(filename, explanation);
+    artifacts.push(record);
+    screenshots.push(record.path);
+  }
+
+  function watch(page, label) {
+    page.on("console", (message) => {
+      if (message.type() !== "error") return;
+      const text = message.text();
+      if (/favicon/iu.test(text)) return;
+      browserErrors.push(`${label}:console:${text}`);
+    });
+    page.on("pageerror", (error) => browserErrors.push(`${label}:page:${error.message}`));
+  }
+
+  const okResult = (response, code) => {
+    ensure(response?.envelope?.result?.ok === true, code, {
+      httpStatus: response?.status ?? null,
+      result: response?.envelope?.result ?? null,
+      raw: response?.envelope ? undefined : response?.rawExcerpt ?? null,
+    });
+    return response.envelope.result;
+  };
+
+  // 266f.10 added nested speaker/avatar testIDs inside each message row;
+  // count only the exact message-row testIDs.
+  const renderedMessageCount = async (page) => page.evaluate(() => (
+    [...document.querySelectorAll('[data-testid^="companion-chat-message-"]')]
+      .filter((el) => /^companion-chat-message-\d+$/u.test(el.getAttribute("data-testid") || ""))
+      .length
+  ));
+
+  async function sendTurnViaUi(page, chat, prompt, finalMessageTestId, turnLabel) {
+    const turnResponsePromise = page.waitForResponse(
+      (response) => response.request().method() === "POST"
+        && /\/conversations\/[^/]+\/turns$/u.test(new URL(response.url()).pathname),
+      { timeout: 300_000 },
+    );
+    await chat.getByTestId("companion-chat-mention-sarah_kerrigan").click();
+    await chat.getByTestId("companion-chat-input").fill(prompt);
+    await chat.getByTestId("companion-chat-send").click();
+    const finalMessage = chat.getByTestId(finalMessageTestId);
+    const interrupted = chat.getByTestId("companion-chat-interrupted");
+    const outcome = await Promise.race([
+      finalMessage.waitFor({ timeout: 300_000 }).then(() => "replied", () => null),
+      interrupted.waitFor({ timeout: 300_000 }).then(() => "interrupted", () => null),
+    ]);
+    ensure(outcome === "replied" || outcome === "interrupted",
+      "LIVE_TURN_OUTCOME_TIMEOUT", { turnLabel, observation: clone(adapter.observation.failure) });
+    const turnEnvelope = await turnResponsePromise
+      .then((response) => response.json())
+      .catch(() => null);
+    if (outcome === "interrupted") {
+      const interruptText = await interrupted.innerText();
+      await capture(page, `live-failure-${turnLabel}-interrupted.png`,
+        `The ${turnLabel} Provider call failed; the explicit interrupted card rendered, accepted history preserved, zero retry attempted.`);
+      throw Object.assign(new Error("LIVE_PROVIDER_TURN_FAILED"), {
+        code: "LIVE_PROVIDER_TURN_FAILED",
+        providerFailure: clone(adapter.observation.failure),
+        interruptText: interruptText.slice(0, 600),
+      });
+    }
+    return turnEnvelope;
+  }
+
+  // Epoch-4 reply proof: the epoch-3 denominator/byte-identity/Chinese
+  // assertions PLUS the persona-differentiation contract — distinct
+  // roleplay on THIS turn (never byte-identical), formal worldbook
+  // retrieval for BOTH companions (kerrigan.wb.* x3 + zagara.* x3,
+  // companion-scoped) and exact prompt-layer provenance (persona profile
+  // present, pairwise-distinct profileHash and package author-note noteHash,
+  // static-canon/session-memory layer separation).
+  async function proveTurnReplies(page, chat, turnEnvelope, {
+    turnLabel, companions, completionsBefore, messageIndexBase,
+  }) {
+    const completions = adapter.observation.completions;
+    ensure(completions.length === completionsBefore + 2
+      && adapter.observation.dispatchAttempts === completionsBefore + 2
+      && adapter.observation.physicalProviderCalls === completionsBefore + 2,
+    "LIVE_PROVIDER_ATTEMPT_DENOMINATOR_DRIFT", {
+      turnLabel,
+      dispatchAttempts: adapter.observation.dispatchAttempts,
+      physicalProviderCalls: adapter.observation.physicalProviderCalls,
+      completions: completions.length,
+    });
+    const pair = completions.slice(completionsBefore);
+    for (const [index, completion] of pair.entries()) {
+      ensure(completion.receipt.physicalAttempts === 1
+        && completion.receipt.automaticRetries === 0,
+      "LIVE_PROVIDER_ATTEMPT_DENOMINATOR_DRIFT", { turnLabel, index });
+      ensure(completion.receipt.requestedModel === providerProfile.model,
+        "LIVE_PROVIDER_REQUESTED_MODEL_DRIFT", {
+          requested: completion.receipt.requestedModel,
+        });
+      ensure(/[㐀-鿿]/u.test(completion.replyText),
+        "LIVE_REPLY_NOT_CHINESE", { turnLabel, index, actual: completion.replyText.slice(0, 200) });
+    }
+    const replies = turnEnvelope?.result?.replies || [];
+    ensure(replies.length === 2, "LIVE_TURN_REPLY_COUNT_WRONG", { turnLabel, count: replies.length });
+    ensure(replies[0].participantId === companions[0].participantId
+      && replies[1].participantId === companions[1].participantId,
+    "SPEAKER_ORDER_NOT_DETERMINISTIC", {
+      turnLabel,
+      replies: replies.map((reply) => reply.participantId),
+      expected: companions.map((companion) => companion.participantId),
+    });
+    for (const [index, reply] of replies.entries()) {
+      ensure(reply.content === pair[index].replyText,
+        "SERVER_REPLY_NOT_ACTUAL_PROVIDER_RESPONSE", {
+          turnLabel,
+          index,
+          server: String(reply.content || "").slice(0, 400),
+          actual: pair[index].replyText.slice(0, 400),
+        });
+      const rendered = await chat.getByTestId(`companion-chat-message-${messageIndexBase + index + 1}`).innerText();
+      ensure(rendered.includes(pair[index].replyText),
+        "RENDERED_REPLY_NOT_ACTUAL_PROVIDER_RESPONSE", {
+          turnLabel,
+          index,
+          rendered: rendered.slice(0, 400),
+          actual: pair[index].replyText.slice(0, 400),
+        });
+    }
+    // Distinct roleplay: the whole point of epoch 4 — the two companions
+    // must NOT return byte-identical prose on ANY turn (the epoch-3 turn-1
+    // defect class).
+    ensure(replies[0].content !== replies[1].content,
+      "LIVE_REPLIES_NOT_CHARACTER_DISTINCT", {
+        turnLabel,
+        kerrigan: replies[0].content.slice(0, 400),
+        zagara: replies[1].content.slice(0, 400),
+      });
+    // Formal worldbook retrieval for BOTH companions: Kerrigan's three
+    // sealed character-tier entries fire ONLY on her assembly, Zagara's
+    // three ONLY on hers.
+    const kerriganCharacter = (replies[0].contextAssembly?.worldbookFired || [])
+      .filter((entry) => entry.scopeTier === "character");
+    const zagaraCharacter = (replies[1].contextAssembly?.worldbookFired || [])
+      .filter((entry) => entry.scopeTier === "character");
+    ensure(kerriganCharacter.length === 3
+      && kerriganCharacter.every((entry) => entry.entryId.startsWith("kerrigan.wb."))
+      && zagaraCharacter.length === 3
+      && zagaraCharacter.every((entry) => entry.entryId.startsWith("zagara.")),
+    "LIVE_FORMAL_WORLDBOOK_NOT_FIRED_BOTH_COMPANIONS", {
+      turnLabel,
+      kerriganCharacter: kerriganCharacter.map((entry) => entry.entryId),
+      zagaraCharacter: zagaraCharacter.map((entry) => entry.entryId),
+    });
+    // Exact prompt-layer provenance per reply.
+    for (const [index, reply] of replies.entries()) {
+      const layers = reply.promptLayers;
+      ensure(layers?.systemPersona?.personaProfile?.present === true
+        && typeof layers.systemPersona.personaProfile.profileHash === "string"
+        && layers.systemPersona.personaProfile.profileHash.length > 0
+        && layers.systemPersona.personaProfile.styleExamples >= 1
+        && layers.systemPersona.personaProfile.doctrineHints >= 1
+        && typeof layers.packageAuthorsNote?.noteHash === "string"
+        && String(layers.layerSeparation || "").includes("never conflated"),
+      "LIVE_PROMPT_LAYER_PROVENANCE_MISSING", { turnLabel, index, layers: clone(layers) });
+    }
+    ensure(replies[0].promptLayers.systemPersona.personaProfile.profileHash
+      !== replies[1].promptLayers.systemPersona.personaProfile.profileHash
+      && replies[0].promptLayers.packageAuthorsNote.noteHash
+        !== replies[1].promptLayers.packageAuthorsNote.noteHash,
+    "LIVE_PROMPT_LAYERS_NOT_DISTINCT", {
+      turnLabel,
+      kerriganProfileHash: replies[0].promptLayers.systemPersona.personaProfile.profileHash,
+      zagaraProfileHash: replies[1].promptLayers.systemPersona.personaProfile.profileHash,
+    });
+    return { replies, pair };
+  }
+
+  try {
+    // Keychain read (attested /usr/bin/security binary, empty environment,
+    // no shell; the module zeroes its own stdout buffer). Identical secure
+    // path as epochs 1–3.
+    const ingress = await readStarcraftTmgDeepSeekCredentialFromKeychainV1();
+    credentialBytes = ingress.credentialBytes;
+    keychainReceipt = ingress.receipt;
+    ensure(keychainReceipt.secretInArguments === false
+      && keychainReceipt.secretInEnvironment === false
+      && keychainReceipt.secretPersistedByRunner === false,
+    "KEYCHAIN_INGRESS_RECEIPT_UNSAFE");
+
+    const attachmentId = `att-266f-persona-${runId}`;
+    const attached = await workerPort.attachCredential({
+      attachmentId,
+      providerProfile: acceptanceProfile,
+      credentialBytes,
+    });
+    ensure(attached?.ok === true && typeof attached.workerRef === "string",
+      "LIVE_PROVIDER_ATTACH_FAILED");
+    workerRef = attached.workerRef;
+    ensure(credentialBytes.every((byte) => byte === 0),
+      "LIVE_PARENT_CREDENTIAL_NOT_ZEROED");
+
+    adapter = createLiveCompanionProviderAdapter({
+      workerPort,
+      getAttachedWorkerRef: () => workerRef,
+      maxDispatches: PERSONA_MAX_PHYSICAL_CALLS,
+      claimDispatch: (dispatchIndex) => claimDispatchLock(runId, startedAt,
+        LOCK_PATHS_EPOCH4[dispatchIndex - 1], 4, { callIndex: dispatchIndex }),
+      containsCredentialMaterial: containsStarcraftTmgOnlineCredentialMaterialV1,
+      priceUsage(receipt) {
+        try {
+          const pricing = priceStarcraftTmgDeepSeekV4FlashUsageV1({
+            providerId: receipt.providerId,
+            requestedModel: receipt.requestedModel,
+            reportedModel: receipt.reportedModel,
+            startedAt: receipt.startedAt,
+            usage: receipt.usage,
+          });
+          return {
+            pricing,
+            authoritative: verifyStarcraftTmgProviderPricingReceiptV1(pricing),
+          };
+        } catch {
+          const estimate = estimateUsageAtSnapshotRates(receipt);
+          return estimate ? { pricing: estimate, authoritative: false } : null;
+        }
+      },
+    });
+
+    // ── Stack A: durable-SQLite-backed companion server/session ─────────
+    persistenceA = createPersistence();
+    stackA = await composeLiveCompanionStack({ providerAdapter: adapter, persistence: persistenceA });
+    const roomBefore = await stackA.roomRuntime.readRoom({
+      roomId: ROOM_ID,
+      seatToken: stackA.hostSeatToken,
+    });
+    ensure(roomBefore?.ok, "ROOM_READ_BEFORE_FAILED");
+    stateRevisionBefore = roomBefore.projection.room.stateRevision;
+    const matchBindingHashA = roomBefore.projection.matchBinding?.bindingHash ?? null;
+
+    const executablePath = resolveChromiumExecutable();
+    browser = await chromium.launch({
+      headless: true,
+      ...(executablePath ? { executablePath } : {}),
+    });
+    const chromiumVersion = browser.version();
+
+    const preferenceBody = {
+      schemaVersion: "starcraft_tmg_local_preferences_v1",
+      language: "en",
+      unitLabelOverrides: {},
+      unitLabelOverrideClassification: "user_local_unreviewed_label",
+      legacyUnitLabelsImported: false,
+      migrationScanHash: null,
+      canAffectRules: false,
+      trainingTruth: false,
+    };
+    const preferenceRecord = JSON.stringify({
+      ...preferenceBody,
+      recordHash: hashStarcraftTmgClientContract(preferenceBody),
+    });
+    const seedPreferences = async (context) => context.addInitScript(
+      ([key, value]) => {
+        try {
+          window.localStorage.setItem(key, value);
+        } catch {}
+      },
+      ["@project-d/starcraft-tmg/preferences/v1", preferenceRecord],
+    );
+
+    const openSheetAndChat = async (page) => {
+      const dock = page.getByTestId("tactical-adjutant-floating-dock");
+      const toggle = dock.getByRole("button", { name: /TACTICAL COMMS/iu });
+      await toggle.focus();
+      await page.keyboard.press("Enter");
+      await page.getByTestId("companion-focus-sheet").waitFor({ timeout: 60_000 });
+      if (await page.getByTestId("companion-chat-section").count() === 0) {
+        const chatSectionButton = page.getByRole("button", { name: /Companion group chat/iu });
+        await chatSectionButton.focus();
+        await page.keyboard.press("Enter");
+      }
+      const chat = page.getByTestId("companion-chat-section");
+      await chat.getByTestId("companion-chat-provider-status").waitFor({ timeout: 60_000 });
+      await page.waitForFunction(() => {
+        const el = document.querySelector('[data-testid="companion-chat-provider-status"]');
+        return el && !el.innerText.includes("loading");
+      }, null, { timeout: 60_000 });
+      return chat;
+    };
+
+    // ── Desktop A: open the TWO-companion session (both sealed packages) ──
+    const hostRecovery1 = await stackA.issueRecovery(stackA.hostSeatToken);
+    const desktopA = await browser.newContext({
+      viewport: { width: 1500, height: 1050 },
+      locale: "en-US",
+      reducedMotion: "reduce",
+    });
+    await seedPreferences(desktopA);
+    const pageA = await desktopA.newPage();
+    watch(pageA, "desktopA");
+    await pageA.goto(
+      `${stackA.origin}/room/${encodeURIComponent(ROOM_ID)}#recovery=${encodeURIComponent(hostRecovery1)}`,
+      { waitUntil: "domcontentloaded", timeout: 120_000 },
+    );
+    await waitBody(pageA, "Authoritative room connected", 120_000);
+    await waitBody(pageA, "TACTICAL COMMS", 120_000);
+    const chatA = await openSheetAndChat(pageA);
+    const providerStatusText = await chatA.getByTestId("companion-chat-provider-status").innerText();
+    ensure(/injected Provider port/iu.test(providerStatusText)
+      && providerStatusText.includes(`declared network ${LIVE_ADAPTER_NETWORK}`),
+    "LIVE_PROVIDER_STATUS_NOT_HONEST", { providerStatusText });
+
+    await chatA.getByTestId("companion-chat-select-zagara").waitFor({ timeout: 30_000 });
+    await chatA.getByTestId("companion-chat-select-zagara").click();
+    await chatA.getByTestId("companion-chat-open").click();
+    await chatA.getByTestId("companion-chat-conversation-meta").waitFor({ timeout: 60_000 });
+    const meta0 = await chatA.getByTestId("companion-chat-conversation-meta").innerText();
+    conversationId = meta0.match(/conversation:\s*(\S+)/u)?.[1];
+    ensure(conversationId, "CONVERSATION_ID_NOT_RENDERED", { meta0 });
+    const orderText = await chatA.getByTestId("companion-chat-speaker-order").innerText();
+    ensure(orderText.indexOf("Sarah Kerrigan") > -1
+      && orderText.indexOf("Sarah Kerrigan") < orderText.indexOf("Zagara"),
+    "SPEAKER_ORDER_NOT_DETERMINISTIC", { orderText });
+
+    const preSend = await stackA.companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}?roomId=${encodeURIComponent(ROOM_ID)}`,
+      { seatToken: stackA.hostSeatToken },
+    );
+    const preSendResult = okResult(preSend, "PRE_SEND_READ_FAILED");
+    ensure(preSendResult.companions?.length === 2
+      && preSendResult.companions[0]?.packageRef?.id === CONTINUITY_PACKAGE_IDS[0]
+      && preSendResult.companions[1]?.packageRef?.id === CONTINUITY_PACKAGE_IDS[1],
+    "LIVE_CONVERSATION_NOT_EXACTLY_TWO_COMPANIONS", {
+      companions: preSendResult.companions?.map((entry) => entry.packageRef?.id),
+    });
+    ensure(preSendResult.providerAccounting?.calls === 0,
+      "PROVIDER_CALL_BEFORE_SEND", { accounting: preSendResult.providerAccounting });
+    const companions = clone(preSendResult.companions);
+    // 266f.10 header binding is live in the REAL UI during the acceptance:
+    // every participant chip binds avatar/name/era; the ▶ marker hides no one.
+    for (const slug of ["player", "sarah_kerrigan", "zagara"]) {
+      await chatA.getByTestId(`companion-chat-order-avatar-${slug}`).waitFor({ timeout: 30_000 });
+    }
+    await capture(pageA, "live-01-desktop-two-companion-session-open.png",
+      "Desktop 1500×1050: two-companion (Kerrigan + Zagara, both sealed packages) epoch-4 live BYOK session open through the real product path over durable SQLite; avatar/name/era-bound participant header; zero Provider calls so far; deterministic speaker order rendered.");
+
+    // ── Turn 1 (physical calls 1–2): the distinctive public plan/fact ────
+    const turn1Envelope = await sendTurnViaUi(pageA, chatA,
+      PERSONA_TURN1_PROMPT, "companion-chat-message-3", "turn-1");
+    const turn1 = await proveTurnReplies(pageA, chatA, turn1Envelope, {
+      turnLabel: "turn-1",
+      companions,
+      completionsBefore: 0,
+      messageIndexBase: 1,
+    });
+    const messageCount1 = await renderedMessageCount(pageA);
+    ensure(messageCount1 === 3, "LIVE_MESSAGE_COUNT_WRONG", { turnLabel: "turn-1", messageCount1 });
+    const accountingTurn1 = clone((await stackA.companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}?roomId=${encodeURIComponent(ROOM_ID)}`,
+      { seatToken: stackA.hostSeatToken },
+    )).envelope?.result?.providerAccounting);
+    ensure(accountingTurn1?.calls === 2
+      && accountingTurn1?.externalNetworkAttemptsKnown === 2
+      && accountingTurn1?.paidInferencePerformed === 2,
+    "LIVE_PROVIDER_ACCOUNTING_WRONG", { turnLabel: "turn-1", accounting: accountingTurn1 });
+    persona.turn1 = {
+      userPrompt: PERSONA_TURN1_PROMPT,
+      replies: turn1.replies.map((reply, index) => ({
+        participantId: reply.participantId,
+        packageId: companions[index].packageRef.id,
+        content: reply.content,
+        turnHash: reply.turnHash,
+        contextAssemblyHash: reply.contextAssembly?.assemblyHash ?? null,
+        layersIncluded: clone(reply.contextAssembly?.layersIncluded) || [],
+        worldbookFired: clone(reply.contextAssembly?.worldbookFired) || [],
+        promptLayers: clone(reply.promptLayers),
+        providerReceipt: clone(reply.providerReceipt),
+      })),
+      repliesByteDistinct: true,
+      accountingAfter: accountingTurn1,
+    };
+    await capture(pageA, "live-02-desktop-turn1-both-replies.png",
+      "Desktop 1500×1050, turn 1: BOTH actual DeepSeek replies (Kerrigan then Zagara, deterministic order) rendered byte-identically to the isolated-Worker outputs, character-DISTINCT (never byte-identical), with kerrigan.wb.* x3 and zagara.* x3 character-tier worldbook retrieval provenance; server accounting shows exactly 2 external network attempts / 2 paid inferences.");
+
+    // ── Memory writes (real product contracts): chat-tier worldbook entry +
+    // rolling summary + episodic fact (UI), one typed observed relationship
+    // event (real HTTP memory contract; the UI is intentionally read-only
+    // there), and the durable long-term layer: a conversation-derived
+    // candidate whose promotion fails closed without explicit user approval
+    // and succeeds with it. ─────────────────────────────────────────────
+    await chatA.getByTestId("companion-chat-worldbook-id-input")
+      .fill(PERSONA_CHAT_WORLDBOOK_ENTRY.entryId);
+    await chatA.getByTestId("companion-chat-worldbook-keyword-input")
+      .fill(PERSONA_CHAT_WORLDBOOK_ENTRY.keyword);
+    await chatA.getByTestId("companion-chat-worldbook-content-input")
+      .fill(PERSONA_CHAT_WORLDBOOK_ENTRY.content);
+    await chatA.getByTestId("companion-chat-worldbook-register").click();
+    await pageA.waitForFunction((entryId) => (
+      document.querySelector('[data-testid="companion-chat-worldbook-list"]')
+        ?.innerText.includes(entryId)
+    ), PERSONA_CHAT_WORLDBOOK_ENTRY.entryId, { timeout: 60_000 });
+    await chatA.getByTestId("companion-chat-memory-summary-input").fill(PERSONA_SUMMARY);
+    await chatA.getByTestId("companion-chat-memory-summary-save").click();
+    await pageA.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-memory-status"]')
+        ?.innerText.includes("summary versions: 1")
+    ), null, { timeout: 60_000 });
+    await chatA.getByTestId("companion-chat-memory-episodic-input").fill(PERSONA_EPISODIC_FACT);
+    await chatA.getByTestId("companion-chat-memory-episodic-add").click();
+    await pageA.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-memory-status"]')
+        ?.innerText.includes("episodic facts: 1")
+    ), null, { timeout: 60_000 });
+    const relationshipWrite = await stackA.companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}/memory/relationship`,
+      {
+        method: "POST",
+        seatToken: stackA.hostSeatToken,
+        body: {
+          roomId: ROOM_ID,
+          eventType: PERSONA_RELATIONSHIP_EVENT.eventType,
+          deltas: clone(PERSONA_RELATIONSHIP_EVENT.deltas),
+          note: PERSONA_RELATIONSHIP_EVENT.note,
+        },
+      },
+    );
+    okResult(relationshipWrite, "LIVE_RELATIONSHIP_WRITE_FAILED");
+    const durablePropose = await stackA.companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}/memory/durable`,
+      {
+        method: "POST",
+        seatToken: stackA.hostSeatToken,
+        body: {
+          roomId: ROOM_ID,
+          content: PERSONA_DURABLE_CANDIDATE,
+          reason: "conversation-derived commander preference (「霆殛-6」复盘)",
+        },
+      },
+    );
+    const durableProposed = okResult(durablePropose, "LIVE_DURABLE_PROPOSE_FAILED");
+    ensure(durableProposed.proposed?.status === "candidate"
+      && typeof durableProposed.proposed?.candidateId === "string",
+    "LIVE_DURABLE_NOT_CANDIDATE", { proposed: durableProposed.proposed });
+    const durableCandidateId = durableProposed.proposed.candidateId;
+    // Promotion fails closed without the explicit user approval.
+    const durableRefused = await stackA.companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}/memory/durable/approve`,
+      {
+        method: "POST",
+        seatToken: stackA.hostSeatToken,
+        body: { roomId: ROOM_ID, candidateId: durableCandidateId, userApproved: false },
+      },
+    );
+    ensure(durableRefused.envelope?.result?.ok === false
+      && durableRefused.envelope.result.reason === "COMPANION_DURABLE_PROMOTION_REQUIRES_USER_APPROVAL",
+    "LIVE_DURABLE_APPROVAL_WITHOUT_CONSENT_NOT_REJECTED", {
+      result: durableRefused.envelope?.result,
+    });
+    const durableApproved = okResult(await stackA.companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}/memory/durable/approve`,
+      {
+        method: "POST",
+        seatToken: stackA.hostSeatToken,
+        body: {
+          roomId: ROOM_ID,
+          candidateId: durableCandidateId,
+          userApproved: true,
+          note: "user approved in the epoch-4 acceptance flow",
+        },
+      },
+    ), "LIVE_DURABLE_APPROVE_FAILED");
+    ensure(durableApproved.approved?.status === "approved_durable",
+      "LIVE_DURABLE_NOT_APPROVED", { approved: durableApproved.approved });
+    const memoryAfterWrites = okResult(await stackA.companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}/memory?roomId=${encodeURIComponent(ROOM_ID)}`,
+      { seatToken: stackA.hostSeatToken },
+    ), "LIVE_MEMORY_READ_FAILED");
+    const layersAfterWrites = memoryAfterWrites.layers || {};
+    ensure(layersAfterWrites.rollingSummary?.content === PERSONA_SUMMARY
+      && layersAfterWrites.rollingSummaryHonesty === "persisted"
+      && layersAfterWrites.rollingSummaryVersions?.length === 1
+      && layersAfterWrites.episodicFacts?.length === 1
+      && layersAfterWrites.episodicFacts[0]?.content === PERSONA_EPISODIC_FACT
+      && layersAfterWrites.relationshipState?.history?.length === 1
+      && layersAfterWrites.relationshipState?.axes?.trust?.status === "known"
+      && layersAfterWrites.relationshipState?.axes?.trust?.value === 1
+      && layersAfterWrites.chatWorldbookEntries?.some((entry) => (
+        entry.entryId === PERSONA_CHAT_WORLDBOOK_ENTRY.entryId
+        && entry.scopeTier === "chat"
+      ))
+      && layersAfterWrites.durableMemory?.approvedCount === 1
+      && layersAfterWrites.durableMemory?.candidateCount === 0
+      && layersAfterWrites.durableMemory?.records?.[0]?.content === PERSONA_DURABLE_CANDIDATE,
+    "LIVE_MEMORY_WRITE_PROOF_WRONG", {
+      layers: {
+        summary: layersAfterWrites.rollingSummary,
+        versions: layersAfterWrites.rollingSummaryVersions,
+        episodic: layersAfterWrites.episodicFacts,
+        relationship: layersAfterWrites.relationshipState,
+        chatWorldbook: layersAfterWrites.chatWorldbookEntries,
+        durableMemory: layersAfterWrites.durableMemory,
+      },
+    });
+    persona.memoryWrites = {
+      chatWorldbookEntry: clone(PERSONA_CHAT_WORLDBOOK_ENTRY),
+      rollingSummary: PERSONA_SUMMARY,
+      episodicFact: PERSONA_EPISODIC_FACT,
+      relationshipEvent: clone(PERSONA_RELATIONSHIP_EVENT),
+      durableCandidate: {
+        candidateId: durableCandidateId,
+        content: PERSONA_DURABLE_CANDIDATE,
+        approvalWithoutConsentRejected: true,
+        approvedWithExplicitUserConsent: true,
+      },
+      provenance: {
+        chatWorldbookEntry: "user-authored chat-tier entry via the real UI contract (conversation:// provenance attached server-side)",
+        rollingSummary: "memory/summary contract via the real UI (append-only version 1)",
+        episodicFact: "memory/episodic contract via the real UI (user_statement, authenticated-seat provenance)",
+        relationshipEvent: "memory/relationship real HTTP contract (typed observed event personal_shared; the UI intentionally exposes no relationship input — read-only projection there)",
+        durableCandidate: "memory/durable + memory/durable/approve real HTTP contracts (conversation-derived; explicit user approval only, never seeded, never automatic)",
+      },
+    };
+    persona.durableLayer = {
+      candidateId: durableCandidateId,
+      projectionAfterApproval: clone(layersAfterWrites.durableMemory),
+    };
+
+    // ── Checkpoint, then FULL server/session stack restart ──────────────
+    await chatA.getByTestId("companion-chat-checkpoint").click();
+    await pageA.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-section"]')
+        ?.innerText.includes("sessckpt-")
+    ), null, { timeout: 60_000 });
+    const checkpointId = (await chatA.innerText()).match(/sessckpt-\d+-[0-9a-f]{12}/u)?.[0];
+    ensure(checkpointId, "CHECKPOINT_NOT_RECORDED_IN_UI");
+    const turn1Transcript = (await stackA.companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}?roomId=${encodeURIComponent(ROOM_ID)}`,
+      { seatToken: stackA.hostSeatToken },
+    )).envelope?.result?.messages?.map((message) => ({
+      participantId: message.participantId,
+      content: message.content,
+      turnHash: message.turnHash,
+    }));
+    ensure(turn1Transcript?.length === 3, "TURN1_TRANSCRIPT_READ_FAILED");
+    await capture(pageA, "live-03-desktop-turn1-checkpoint.png",
+      "Desktop 1500×1050: checkpoint recorded after turn 1 with the distinctive plan/fact plus summary/episodic/relationship/durable-layer evidence persisted to durable SQLite; the server/session stack is about to be fully restarted.");
+    await desktopA.close();
+
+    // Full companion server/session restart (same discipline as epoch 3):
+    // HTTP server closed, SQLite connection closed, every companion structure
+    // recomposed; the sealed SQLite file is the ONLY companion state carrier;
+    // the Room authority instance is preserved.
+    const stackAOrigin = stackA.origin;
+    await new Promise((resolve) => stackA.server.close(resolve));
+    await persistenceA.close();
+    persistenceB = createPersistence();
+    stackB = await composeLiveCompanionStack({
+      providerAdapter: adapter,
+      persistence: persistenceB,
+      sharedRoom: {
+        roomRuntime: stackA.roomRuntime,
+        roomFacade: stackA.roomFacade,
+        roomMutations: stackA.roomMutations,
+        hostSeatToken: stackA.hostSeatToken,
+      },
+    });
+    ensure(stackB.origin !== stackAOrigin, "RESTART_NOT_A_NEW_SERVER", {
+      before: stackAOrigin,
+      after: stackB.origin,
+    });
+    ensure(stackB.roomRuntime === stackA.roomRuntime
+      && stackB.roomFacade === stackA.roomFacade,
+    "RESTART_ROOM_AUTHORITY_NOT_PRESERVED");
+    const roomRestart = await stackB.roomRuntime.readRoom({
+      roomId: ROOM_ID,
+      seatToken: stackB.hostSeatToken,
+    });
+    ensure(roomRestart?.ok
+      && roomRestart.projection.matchBinding?.bindingHash === matchBindingHashA
+      && roomRestart.projection.room.stateRevision === stateRevisionBefore,
+    "ROOM_READ_AFTER_RESTART_FAILED", {
+      matchBindingHashA,
+      matchBindingHashB: roomRestart?.projection?.matchBinding?.bindingHash ?? null,
+    });
+    const resumedRead = okResult(await stackB.companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}?roomId=${encodeURIComponent(ROOM_ID)}`,
+      { seatToken: stackB.hostSeatToken },
+    ), "RESTART_CONVERSATION_READ_FAILED");
+    ensure(resumedRead.status === "active" && resumedRead.turnCounter === 3
+      && resumedRead.checkpointCount >= 1,
+    "RESTART_RESUME_STATE_WRONG", {
+      status: resumedRead.status,
+      turnCounter: resumedRead.turnCounter,
+      checkpointCount: resumedRead.checkpointCount,
+    });
+    const restartedTranscript = resumedRead.messages.map((message) => ({
+      participantId: message.participantId,
+      content: message.content,
+      turnHash: message.turnHash,
+    }));
+    ensure(JSON.stringify(restartedTranscript) === JSON.stringify(turn1Transcript),
+      "RESTART_TRANSCRIPT_NOT_BYTE_IDENTICAL", {
+        before: turn1Transcript,
+        after: restartedTranscript,
+      });
+    const memoryAfterRestart = okResult(await stackB.companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}/memory?roomId=${encodeURIComponent(ROOM_ID)}`,
+      { seatToken: stackB.hostSeatToken },
+    ), "RESTART_MEMORY_READ_FAILED");
+    const layersAfterRestart = memoryAfterRestart.layers || {};
+    ensure(layersAfterRestart.rollingSummary?.content === PERSONA_SUMMARY
+      && layersAfterRestart.episodicFacts?.length === 1
+      && layersAfterRestart.relationshipState?.history?.length === 1
+      && layersAfterRestart.chatWorldbookEntries?.some((entry) => (
+        entry.entryId === PERSONA_CHAT_WORLDBOOK_ENTRY.entryId
+      ))
+      && layersAfterRestart.durableMemory?.approvedCount === 1
+      && layersAfterRestart.durableMemory?.records?.[0]?.content === PERSONA_DURABLE_CANDIDATE,
+    "RESTART_MEMORY_LAYERS_NOT_RESTORED", {
+      layers: {
+        summary: layersAfterRestart.rollingSummary,
+        episodic: layersAfterRestart.episodicFacts?.length,
+        relationship: layersAfterRestart.relationshipState?.history?.length,
+        chatWorldbook: layersAfterRestart.chatWorldbookEntries?.map((entry) => entry.entryId),
+        durableMemory: layersAfterRestart.durableMemory,
+      },
+    });
+    persona.restart = {
+      discipline: "HTTP server closed + SQLite connection closed + every companion module/session-runtime/persistence structure recomposed from scratch; the sealed SQLite file is the ONLY companion state carrier; the Room authority (a separate service) is provably the same instance across the restart",
+      checkpointId,
+      serverOriginBefore: stackAOrigin,
+      serverOriginAfter: stackB.origin,
+      roomAuthorityInstancePreserved: true,
+      matchBindingHashStable: true,
+      transcriptByteIdentical: true,
+      turnCounterRestored: resumedRead.turnCounter,
+      checkpointCountRestored: resumedRead.checkpointCount,
+      memoryLayersRestored: {
+        rollingSummary: true,
+        episodicFacts: layersAfterRestart.episodicFacts.length,
+        relationshipEvents: layersAfterRestart.relationshipState.history.length,
+        chatWorldbookEntries: layersAfterRestart.chatWorldbookEntries.map((entry) => entry.entryId),
+        durableMemoryApproved: layersAfterRestart.durableMemory.approvedCount,
+      },
+    };
+
+    // ── Desktop B (post-restart): auto-resume, then turn 2 (calls 3–4) ───
+    const hostRecovery2 = await stackB.issueRecovery(stackB.hostSeatToken);
+    const desktopB = await browser.newContext({
+      viewport: { width: 1500, height: 1050 },
+      locale: "en-US",
+      reducedMotion: "reduce",
+    });
+    await seedPreferences(desktopB);
+    const pageB = await desktopB.newPage();
+    watch(pageB, "desktopB");
+    await pageB.goto(
+      `${stackB.origin}/room/${encodeURIComponent(ROOM_ID)}#recovery=${encodeURIComponent(hostRecovery2)}`,
+      { waitUntil: "domcontentloaded", timeout: 120_000 },
+    );
+    await waitBody(pageB, "Authoritative room connected", 120_000);
+    await waitBody(pageB, "TACTICAL COMMS", 120_000);
+    const chatB = await openSheetAndChat(pageB);
+    await chatB.getByTestId("companion-chat-conversation-meta").waitFor({ timeout: 60_000 });
+    const metaB = await chatB.getByTestId("companion-chat-conversation-meta").innerText();
+    ensure(metaB.includes(conversationId) && metaB.includes("turn 3"),
+      "RESTARTED_UI_DID_NOT_RESUME", { metaB });
+    for (const [index, completion] of adapter.observation.completions.slice(0, 2).entries()) {
+      const rendered = await chatB.getByTestId(`companion-chat-message-${index + 2}`).innerText();
+      ensure(rendered.includes(completion.replyText),
+        "RESTARTED_UI_TRANSCRIPT_NOT_ACTUAL", { index, rendered: rendered.slice(0, 400) });
+    }
+
+    const turn2Envelope = await sendTurnViaUi(pageB, chatB,
+      PERSONA_TURN2_PROMPT, "companion-chat-message-6", "turn-2");
+    const turn2 = await proveTurnReplies(pageB, chatB, turn2Envelope, {
+      turnLabel: "turn-2",
+      companions,
+      completionsBefore: 2,
+      messageIndexBase: 4,
+    });
+    const messageCount2 = await renderedMessageCount(pageB);
+    ensure(messageCount2 === 6, "LIVE_MESSAGE_COUNT_WRONG", { turnLabel: "turn-2", messageCount2 });
+    // Recall + application from the restored layers INCLUDING the durable
+    // long-term layer; character-distinct; chat-tier codeword entry fired
+    // for both; assemblies advanced past turn 1.
+    for (const [index, reply] of turn2.replies.entries()) {
+      ensure(reply.content.includes(PERSONA_PLAN_CODEWORD),
+        "LIVE_RECALL_CODEWORD_MISSING", { turnLabel: "turn-2", index, content: reply.content.slice(0, 400) });
+      const detail = PERSONA_PLAN_DETAIL_KEYWORDS.find((keyword) => reply.content.includes(keyword));
+      ensure(detail !== undefined, "LIVE_RECALL_PLAN_DETAIL_MISSING", {
+        turnLabel: "turn-2",
+        index,
+        content: reply.content.slice(0, 400),
+      });
+      const fired = reply.contextAssembly?.worldbookFired || [];
+      ensure(fired.some((entry) => entry.entryId === PERSONA_CHAT_WORLDBOOK_ENTRY.entryId
+        && entry.scopeTier === "chat"),
+      "LIVE_CHAT_WORLDBOOK_NOT_FIRED_ON_RECALL", { turnLabel: "turn-2", index, fired });
+      const layersIncluded = reply.contextAssembly?.layersIncluded || [];
+      for (const layer of ["rolling_summary", "episodic_facts", "relationship_state", "worldbook", "durable_memory"]) {
+        ensure(layersIncluded.includes(layer),
+          "LIVE_MEMORY_LAYER_NOT_IN_RECALL_CONTEXT", { turnLabel: "turn-2", index, layer, layersIncluded });
+      }
+      ensure((reply.promptLayers?.sessionLongTermMemory?.layers || []).includes("durable_memory"),
+        "LIVE_DURABLE_LAYER_NOT_IN_PROMPT_PROVENANCE", {
+          turnLabel: "turn-2",
+          index,
+          layers: reply.promptLayers?.sessionLongTermMemory?.layers,
+        });
+      ensure(reply.contextAssembly?.assemblyHash
+        && reply.contextAssembly.assemblyHash !== turn1.replies[index].contextAssembly?.assemblyHash,
+      "LIVE_ASSEMBLY_NOT_ADVANCED_BY_MEMORY", { turnLabel: "turn-2", index });
+    }
+    const accountingTurn2 = clone((await stackB.companionFetch(
+      `conversations/${encodeURIComponent(conversationId)}?roomId=${encodeURIComponent(ROOM_ID)}`,
+      { seatToken: stackB.hostSeatToken },
+    )).envelope?.result?.providerAccounting);
+    ensure(accountingTurn2?.calls === 2
+      && accountingTurn2?.externalNetworkAttemptsKnown === 2
+      && accountingTurn2?.paidInferencePerformed === 2,
+    "LIVE_PROVIDER_ACCOUNTING_WRONG", { turnLabel: "turn-2", accounting: accountingTurn2 });
+    persona.turn2 = {
+      userPrompt: PERSONA_TURN2_PROMPT,
+      replies: turn2.replies.map((reply, index) => ({
+        participantId: reply.participantId,
+        packageId: companions[index].packageRef.id,
+        content: reply.content,
+        turnHash: reply.turnHash,
+        contextAssemblyHash: reply.contextAssembly?.assemblyHash ?? null,
+        layersIncluded: clone(reply.contextAssembly?.layersIncluded) || [],
+        worldbookFired: clone(reply.contextAssembly?.worldbookFired) || [],
+        promptLayers: clone(reply.promptLayers),
+        providerReceipt: clone(reply.providerReceipt),
+        recall: {
+          codewordEchoed: true,
+          planDetailKeyword: PERSONA_PLAN_DETAIL_KEYWORDS
+            .find((keyword) => reply.content.includes(keyword)),
+        },
+      })),
+      repliesByteDistinct: true,
+      durableMemoryLayerInBothAssemblies: true,
+      accountingAfter: accountingTurn2,
+    };
+    persona.accounting = {
+      note: "providerAccounting is module-gateway cumulative per composition and honestly resets across the restart; the run-level physical denominator is the adapter completion record",
+      stackAAfterTurn1: accountingTurn1,
+      stackBAfterTurn2: accountingTurn2,
+      runPhysicalProviderCalls: adapter.observation.physicalProviderCalls,
+      runDispatchAttempts: adapter.observation.dispatchAttempts,
+    };
+    await capture(pageB, "live-04-desktop-turn2-recall-after-restart.png",
+      "Desktop 1500×1050, turn 2 AFTER the full server/session restart: both companions recall and apply the turn-1 plan (「霆殛-6」) from the restored layered memory INCLUDING the approved durable long-term layer, character-distinct and formally worldbook-grounded; rendered replies byte-match the isolated-Worker outputs.");
+    await desktopB.close();
+
+    // ── 390px touch: resume the restarted persisted conversation ────────
+    const hostRecovery3 = await stackB.issueRecovery(stackB.hostSeatToken);
+    const narrow = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      locale: "en-US",
+      reducedMotion: "reduce",
+      hasTouch: true,
+      isMobile: true,
+    });
+    await seedPreferences(narrow);
+    const narrowPage = await narrow.newPage();
+    watch(narrowPage, "narrow");
+    await narrowPage.goto(
+      `${stackB.origin}/room/${encodeURIComponent(ROOM_ID)}#recovery=${encodeURIComponent(hostRecovery3)}`,
+      { waitUntil: "domcontentloaded", timeout: 120_000 },
+    );
+    await waitBody(narrowPage, "Authoritative room connected", 120_000);
+    await waitBody(narrowPage, "TACTICAL COMMS", 120_000);
+    const narrowDock = narrowPage.getByTestId("tactical-adjutant-floating-dock");
+    await narrowDock.getByRole("button", { name: /TACTICAL COMMS/iu }).tap();
+    await narrowPage.getByTestId("companion-mobile-sheet").waitFor({ timeout: 60_000 });
+    if (await narrowPage.getByTestId("companion-chat-section").count() === 0) {
+      await narrowPage.getByRole("button", { name: /Companion group chat/iu }).tap();
+    }
+    const narrowChat = narrowPage.getByTestId("companion-chat-section");
+    await narrowChat.getByTestId("companion-chat-conversation-meta").waitFor({ timeout: 60_000 });
+    const narrowMeta = await narrowChat.getByTestId("companion-chat-conversation-meta").innerText();
+    ensure(narrowMeta.includes(conversationId) && narrowMeta.includes("turn 6"),
+      "NARROW_DID_NOT_RESUME_LIVE_CONVERSATION", { narrowMeta });
+    const narrowCount = await renderedMessageCount(narrowPage);
+    ensure(narrowCount === 6, "NARROW_TRANSCRIPT_INCOMPLETE", { narrowCount });
+    for (const [index, completion] of adapter.observation.completions.entries()) {
+      const rendered = await narrowChat
+        .getByTestId(`companion-chat-message-${index + 2 + Math.floor(index / 2)}`)
+        .innerText();
+      ensure(rendered.includes(completion.replyText),
+        "NARROW_RESUME_REPLY_NOT_ACTUAL", { index, rendered: rendered.slice(0, 400) });
+    }
+    // The avatar/name/era binding holds at 390px too.
+    for (const slug of ["player", "sarah_kerrigan", "zagara"]) {
+      await narrowChat.getByTestId(`companion-chat-order-avatar-${slug}`).waitFor({ timeout: 30_000 });
+    }
+    const narrowOverflow = await narrowPage.evaluate(() => ({
+      viewportWidth: window.innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
+    }));
+    ensure(narrowOverflow.documentWidth <= narrowOverflow.viewportWidth + 1,
+      "NARROW_HORIZONTAL_OVERFLOW", narrowOverflow);
+    await capture(narrowPage, "live-05-narrow-mobile-resumed.png",
+      "390×844 touch: the full-screen mobile sheet resumes the restarted durable conversation at turn 6; all four actual Provider replies render byte-identically with the avatar/name/era-bound header and zero horizontal overflow.");
+    await narrow.close();
+
+    // ── Detach + zero-persistence proofs ────────────────────────────────
+    await workerPort.detachCredential({ workerRef, reason: "explicit_user_detach" });
+    const tombstone = await workerPort.readWorkerState({ workerRef });
+    ensure(tombstone?.ok === true && tombstone.worker?.state === "exited"
+      && tombstone.worker?.credentialPersistence === "none_after_process_exit",
+    "LIVE_DETACH_TOMBSTONE_WRONG", { worker: clone(tombstone?.worker) });
+    const pid = tombstone.worker.processId;
+    let processExited = null;
+    if (Number.isInteger(pid)) {
+      try {
+        process.kill(pid, 0);
+        processExited = false;
+      } catch {
+        processExited = true;
+      }
+    }
+    ensure(processExited === true, "LIVE_WORKER_PROCESS_STILL_RUNNING", { pid });
+    detachProof = {
+      detached: true,
+      detachReason: "explicit_user_detach",
+      shutdownAckRequiresSensitiveBytesZeroed: true,
+      workerTombstone: clone(tombstone.worker),
+      workerProcessExited: processExited,
+      parentCredentialBytesZeroed: credentialBytes.every((byte) => byte === 0),
+      keychainStdoutZeroedByModule: true,
+      sensitiveMaterialPersisted: false,
+    };
+    workerRef = null;
+
+    // ── Room safety (one shared mutation-counting facade across the restart)
+    ensure(Object.values(stackA.roomMutations).every((count) => count === 0),
+      "COMPANION_PATH_MUTATED_ROOM", { mutations: stackA.roomMutations });
+    const roomAfter = await stackB.roomRuntime.readRoom({
+      roomId: ROOM_ID,
+      seatToken: stackB.hostSeatToken,
+    });
+    ensure(roomAfter?.ok
+      && roomAfter.projection.room.stateRevision === stateRevisionBefore,
+    "ROOM_STATE_REVISION_MOVED", {
+      before: stateRevisionBefore,
+      after: roomAfter?.projection?.room?.stateRevision,
+    });
+
+    const unexpectedErrors = browserErrors.filter((entry) => !/favicon/iu.test(entry));
+    ensure(unexpectedErrors.length === 0, "BROWSER_ERRORS", {
+      unexpected: unexpectedErrors.slice(0, 10),
+    });
+
+    // ── Durable-store artifact (hash + credential scan) ─────────────────
+    await persistenceB.close();
+    const persistenceClosed = persistenceB;
+    persistenceB = null;
+    for (const entry of await readdir(path.dirname(PERSONA_SQLITE_PATH))) {
+      const filename = path.join(path.dirname(PERSONA_SQLITE_PATH), entry);
+      if (!(await stat(filename)).isFile()) continue;
+      artifacts.push(await artifactRecord(filename,
+        "Encrypted SQLite durable store (and WAL sidecar if present): the FULLY restarted companion server/session stack resumed the two-companion transcript, checkpoint, chat-tier worldbook entry, rolling summary, episodic fact, relationship state and the APPROVED durable long-term record from these bytes alone."));
+    }
+    void persistenceClosed;
+
+    const completions = adapter.observation.completions;
+    const perCall = completions.map((completion) => {
+      const receipt = completion.receipt;
+      const pricing = completion.pricing;
+      return {
+        dispatchIndex: completion.dispatchIndex,
+        physicalAttempts: receipt.physicalAttempts,
+        automaticRetries: receipt.automaticRetries,
+        httpStatus: receipt.status,
+        providerId: receipt.providerId,
+        requestedModel: receipt.requestedModel,
+        reportedModel: receipt.reportedModel,
+        providerRequestIdHash: receipt.providerRequestIdHash,
+        providerSystemFingerprintHash: receipt.providerSystemFingerprintHash ?? null,
+        dnsAddressSetHash: receipt.dnsAddressSetHash,
+        tlsServerName: receipt.tlsServerName,
+        tlsCertificateVerificationDisabled: false,
+        redirectFollowed: false,
+        proxyUsed: false,
+        responseFingerprint: receipt.responseFingerprint,
+        callStartedAt: receipt.startedAt,
+        callFinishedAt: receipt.finishedAt,
+        usage: clone(receipt.usage),
+        pricing: clone(pricing),
+        pricingAuthoritative: completion.pricingAuthoritative === true,
+        recoveredFromTruncatedEnvelope: completion.recoveredFromTruncatedEnvelope === true,
+        outputClassification: clone(completion.classification),
+        safeProviderReceiptHash: receipt.receiptHash,
+      };
+    });
+    const totalUsage = completions.reduce((sum, completion) => ({
+      inputUnits: sum.inputUnits + completion.receipt.usage.inputUnits,
+      outputUnits: sum.outputUnits + completion.receipt.usage.outputUnits,
+      totalUnits: sum.totalUnits + completion.receipt.usage.totalUnits,
+    }), { inputUnits: 0, outputUnits: 0, totalUnits: 0 });
+    const totalEstimateNanoUsd = completions.every((completion) => (
+      Number.isSafeInteger(completion.pricing?.calculatedCostNanoUsd)
+    ))
+      ? completions.reduce((sum, completion) => sum + completion.pricing.calculatedCostNanoUsd, 0)
+      : null;
+    const modelReportingDrift = completions.some((completion) => (
+      completion.receipt.reportedModel !== providerProfile.model
+    ))
+      ? {
+        requestedModel: providerProfile.model,
+        reportedModels: [...new Set(completions.map((completion) => completion.receipt.reportedModel))],
+        pricingAuthoritative: false,
+        note: "Provider-reported model differs from the pinned requested model; recorded honestly (first observed on the truncated epoch-1 call); per-call pricing is a snapshot-rate estimate, not an invoice",
+      }
+      : null;
+
+    const reportBody = {
+      schemaVersion: "starcraft_tmg_ticket_26_slice_266f_live_byok_companion_report_v1",
+      ticket: 26,
+      slice: "266f",
+      status: "passed",
+      runId,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      attemptEpoch: 4,
+      acceptance: "two-companion persona differentiation: distinct roleplay + formal worldbook retrieval for BOTH companions + exact prompt-layer provenance + shared memory continuity including the durable long-term layer across a full server/session restart",
+      previousEpochs: clone(previousEpochs),
+      stalePreDispatchStoreCleared,
+      userAuthorization: {
+        explicitFlag: "--authorize-live-byok-companion-persona-differentiation",
+        manifest: "ticket-26-slice-266f-companion-live-product-acceptance",
+        hardMaximumPhysicalProviderCalls: PERSONA_MAX_PHYSICAL_CALLS,
+        sliceHardMaximumPhysicalProviderCalls: 2 + CONTINUITY_MAX_PHYSICAL_CALLS + PERSONA_MAX_PHYSICAL_CALLS,
+        perCallDispatchLocks: LOCK_PATHS_EPOCH4.map((lockPath) => path.relative(ROOT, lockPath)),
+      },
+      outputBudgetContract: clone(LIVE_OUTPUT_BUDGET),
+      acceptanceProfile: {
+        note: "derived through the sealed createProviderProfile factory with outputBudget as the ONLY delta; no Provider infrastructure file modified",
+        derivedFromTicket16Profile: {
+          id: providerProfile.providerProfileId,
+          version: providerProfile.version,
+          hash: providerProfile.integrity.hash,
+          outputBudget: providerProfile.outputBudget,
+        },
+        providerProfileRef: clone(completions[0]?.receipt?.providerProfileRef),
+        outputBudget: acceptanceProfile.outputBudget,
+      },
+      modelReportingDrift: clone(modelReportingDrift),
+      webExport,
+      credentialIngress: clone(keychainReceipt),
+      attachment: {
+        attachmentId,
+        providerProfileRef: clone(completions[0]?.receipt?.providerProfileRef),
+        providerId: completions[0]?.receipt?.providerId,
+        requestedModel: completions[0]?.receipt?.requestedModel,
+        egressIsolation: "child_process_session_memory_only",
+      },
+      liveCalls: perCall,
+      usageTotals: {
+        ...totalUsage,
+        estimatedCostNanoUsdTotal: totalEstimateNanoUsd,
+        estimatedCostUsdTotal: totalEstimateNanoUsd === null ? null : (() => {
+          const whole = Math.floor(totalEstimateNanoUsd / 1_000_000_000);
+          const fractional = String(totalEstimateNanoUsd % 1_000_000_000)
+            .padStart(9, "0").replace(/0+$/u, "") || "0";
+          return `${whole}.${fractional}`;
+        })(),
+        estimateOnly: true,
+        providerInvoiceAuthoritative: true,
+      },
+      conversation: {
+        roomId: ROOM_ID,
+        conversationId,
+        companions: companions.map((companion) => companion.packageRef.id),
+        speakerOrder: "deterministic: Player → Sarah Kerrigan → Zagara (mention-first each turn)",
+        turn1: clone(persona.turn1),
+        turn2: clone(persona.turn2),
+        memoryWrites: clone(persona.memoryWrites),
+        durableLayer: clone(persona.durableLayer),
+        restart: clone(persona.restart),
+        accounting: clone(persona.accounting),
+        replyRenderedByteMatchDesktop: true,
+        replyRenderedByteMatchMobile: true,
+        noOpponentPrivateExposure: "companion contexts carry player-visible room material only; relationship events are typed observed events, never inferred",
+        hiddenChainOfThought: "not_collected",
+      },
+      browserEvidence: {
+        chromium: chromiumVersion,
+        viewports: [
+          { name: "desktop", width: 1500, height: 1050 },
+          { name: "desktop-post-restart", width: 1500, height: 1050 },
+          { name: "narrow-touch", width: 390, height: 844, hasTouch: true },
+        ],
+        screenshots,
+      },
+      detach: clone(detachProof),
+      roomSafety: {
+        mutations: clone(stackA.roomMutations),
+        mutationFacadeSharedAcrossRestart: stackB.roomMutations === stackA.roomMutations,
+        stateRevisionBefore,
+        stateRevisionAfter: roomAfter.projection.room.stateRevision,
+      },
+      boundaries: {
+        realProviderCalls: adapter.observation.physicalProviderCalls,
+        paidProviderUsed: true,
+        rawCredentialPersisted: false,
+        credentialHashPersisted: false,
+        credentialInArgumentsOrEnvironment: false,
+        sqliteKeyPersisted: false,
+        automaticRetries: 0,
+        silentRetry: false,
+        sourceRefreshPerformed: false,
+        roomMutationsByCompanionPath: 0,
+        hiddenChainOfThoughtCollected: false,
+        modelReplyFabricated: false,
+        otherPaidProviderPathInvoked: false,
+        trainingTruth: false,
+      },
+      artifacts,
+    };
+    const serialized = JSON.stringify(reportBody);
+    ensure(!containsStarcraftTmgOnlineCredentialMaterialV1(serialized),
+      "CREDENTIAL_SHAPED_MATERIAL_IN_REPORT");
+    ensure(!serialized.includes(sqliteKey), "SQLITE_KEY_IN_REPORT");
+    for (const artifact of artifacts) {
+      const bytes = await readFile(path.join(ROOT, artifact.path));
+      ensure(!containsStarcraftTmgOnlineCredentialMaterialV1(bytes.toString("latin1")),
+        "CREDENTIAL_SHAPED_MATERIAL_IN_ARTIFACT", { artifact: artifact.path });
+      ensure(!bytes.includes(Buffer.from(sqliteKey, "utf8")),
+        "SQLITE_KEY_IN_ARTIFACT", { artifact: artifact.path });
+    }
+    await writeFile(REPORT_PATH_EPOCH4, `${JSON.stringify({
+      ...reportBody,
+      reportHash: createHash("sha256").update(serialized).digest("hex"),
+    }, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+    console.log(JSON.stringify({
+      ok: true,
+      epoch: 4,
+      physicalProviderCalls: adapter.observation.physicalProviderCalls,
+      dispatchAttempts: adapter.observation.dispatchAttempts,
+      modelReportingDrift: modelReportingDrift !== null,
+      inputUnits: totalUsage.inputUnits,
+      outputUnits: totalUsage.outputUnits,
+      estimatedCostUsdTotal: reportBody.usageTotals.estimatedCostUsdTotal,
+      conversationId,
+      repliesByteDistinctBothTurns: true,
+      formalWorldbookBothCompanions: true,
+      durableLayerContinuity: true,
+      restartRestored: true,
+      recallProven: true,
+      detached: true,
+      report: path.relative(ROOT, REPORT_PATH_EPOCH4),
+    }, null, 2));
+  } catch (error) {
+    const providerCode = String(adapter?.observation?.failure?.code || "");
+    const thrownCode = String(error?.code || "");
+    const code = /^[A-Z][A-Z0-9_]{2,79}$/u.test(providerCode)
+      && ["PROVIDER_AUTHENTICATION_FAILED", "PROVIDER_PAYMENT_REQUIRED",
+        "PROVIDER_WORKER_NOT_ATTACHED", "LIVE_PROVIDER_ATTEMPT_ALREADY_CLAIMED",
+        "LIVE_CALL_DENOMINATOR_EXCEEDED",
+        "LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED",
+        "LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED"].includes(providerCode)
+      ? providerCode
+      : /^[A-Z][A-Z0-9_]{2,79}$/u.test(thrownCode)
+        ? thrownCode
+        : "LIVE_BYOK_COMPANION_RUN_FAILED";
+    await writeFailureReport(runId, startedAt, code, {
+      attemptEpoch: 4,
+      providerFailure: clone(adapter?.observation?.failure || null),
+      providerDispatchAttempts: adapter?.observation?.dispatchAttempts ?? 0,
+      physicalProviderCalls: adapter?.observation?.physicalProviderCalls ?? 0,
+      completedCallReceipts: (adapter?.observation?.completions || []).map((completion) => ({
+        dispatchIndex: completion.dispatchIndex,
+        usage: clone(completion.receipt?.usage),
+        safeProviderReceiptHash: completion.receipt?.receiptHash ?? null,
+      })),
+      conversationId,
+      persona: clone(persona),
+      screenshots,
+      errorMessage: (() => {
+        const message = String(error?.message || "").slice(0, 500);
+        return containsStarcraftTmgOnlineCredentialMaterialV1(message)
+          ? "[redacted: credential-shaped]" : message;
+      })(),
+      errorDetails: (() => {
+        try {
+          const details = Object.fromEntries(Object.entries(error || {})
+            .filter(([key]) => !["stack", "message", "name", "cause"].includes(key)));
+          const serialized = JSON.stringify(details).slice(0, 2000);
+          return containsStarcraftTmgOnlineCredentialMaterialV1(serialized)
+            ? "[redacted: credential-shaped]" : serialized;
+        } catch {
+          return null;
+        }
+      })(),
+    }, REPORT_PATH_EPOCH4).catch(() => {});
     console.error(code);
     process.exitCode = 1;
   } finally {
