@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "id": "ticket-27-slices-269-270-roster-strategy-and-live-plan",
+  "githubIssue": null,
+  "title": "Build and live-verify the multi-round Roster Strategist and isolated pregame laboratory",
+  "owner": "kimi",
+  "agentProfile": "project-d-slice-implementer",
+  "model": "project-d-k3",
+  "baseRef": "493488166bd55b38f3ee57d5317d869f14e95f00",
+  "branch": "agent/kimi/ticket-27-slices-269-270-roster-strategy-and-live-plan",
+  "worktree": ".worktrees/ticket-27-slices-269-270-roster-strategy-and-live-plan",
+  "allowedPaths": [
+    "packages/roster-strategist/",
+    "scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs",
+    "scripts/run-ticket-27-slices-269-270-live-roster-plan-v1.mjs",
+    "docs/ticket-27-slices-269-270-roster-strategy-and-live-plan-v1-2026-09-22.md"
+  ],
+  "verification": [
+    {
+      "name": "multi-round roster strategy and immutable pregame laboratory",
+      "command": "node scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Implement only Ticket 27 Slices 269 and 270 from docs/ticket-27-slices-267-272-roster-strategist-roadmap-v1-2026-09-21.md, building on completed Slices 267-268 at this branch base. Freeze numbered sub-slices before implementation and make one scoped commit per completed sub-slice. Slice 269 must deliver a real multi-round Roster Strategist that reads the current General, faction and directed matchup Skills; freezes the mission, deployment, map/terrain, opponent-information boundary and source/rules/Skill/model/prompt versions; chooses a score route; asks typed information-needs; obtains legal candidate choices through the existing read-only Army Builder port; calls probability, spatial, math and bounded scenario tools; compares candidates; and returns one Rules-legal 2000-point roster plus a public RosterPlan. Strategy must come from Skills and Agent deliberation, never from host or prompt preference weights. Record public hypotheses, evidence queries, candidate comparisons, purposes, predicted counters, counter-responses, invalidation triggers and plan revisions, but never request or persist hidden chain-of-thought. Slice 270 must deliver an isolated pregame scene laboratory for probability, geometry, threat exchange and bounded alternative match branches. It must prove source Room and Builder state mutation-zero, preserve unknown-not-zero semantics, bind every result to its source state and support same-state A/B candidate comparison. The deterministic acceptance uses an injected mocked Provider and is run exactly once after the final relevant code change. In addition, the user explicitly requires actual live verification: run one bounded live 2000-point Agent roster-planning session using the existing Keychain-to-isolated-Worker BYOK path, then validate the final roster through the Rules-owned port and retain the actual generated RosterPlan, typed tool receipts, redacted Provider receipt and comparison against the fixed preset roster with planStatus=no_pregame_plan. Raw credentials must never enter the K3 prompt, repository, command line, stdout/stderr, screenshots, report or logs. Stop immediately on 401/402/403, ambiguous dispatch or missing secure attachment; never silently retry. Record exact Provider calls, reported input/output tokens, estimated currency cost, latency, model/provider identity, prompt-pack/Skill routes and every honest gap. A fixture-only or hand-written plan does not satisfy live acceptance. Produce a committed verification report linking every claim to an artifact or receipt. Do not modify Rules, official source data, existing Skills, Room state, Provider infrastructure, UI or credentials. Only Critical/High findings block integration; stop after three non-converging repair rounds. Do not push."
+}

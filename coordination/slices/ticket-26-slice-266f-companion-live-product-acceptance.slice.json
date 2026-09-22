@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "id": "ticket-26-slice-266f-companion-live-product-acceptance",
+  "githubIssue": null,
+  "title": "Polish companion conversation UI and prepare the real BYOK product acceptance seam",
+  "owner": "kimi",
+  "agentProfile": "project-d-slice-implementer",
+  "model": "project-d-k3",
+  "baseRef": "fa1c83dc018ef1085b6926ddf1debe24ae65f03b",
+  "branch": "agent/kimi/ticket-26-slice-266f-companion-live-product-acceptance",
+  "worktree": ".worktrees/ticket-26-slice-266f-companion-live-product-acceptance",
+  "allowedPaths": [
+    "packages/companion-backend-module-v1/",
+    "packages/product-composition/companion-room-session-service-v1.mjs",
+    "packages/product-composition/companion-product-module-v1.mjs",
+    "packages/client-domain/client-domain-v1.mjs",
+    "apps/starcraft-tmg-expo/lib/level3/client-domain-provider.tsx",
+    "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+    "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+    "apps/starcraft-tmg-expo/components/character/companion-catalogue-content.d.ts",
+    "scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs",
+    "docs/ticket-26-slice-266f-companion-live-product-acceptance-v1-2026-09-22.md"
+  ],
+  "verification": [
+    {
+      "name": "companion desktop mobile conversation and secure-provider acceptance seam",
+      "command": "node scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Implement Ticket 26 Slice 266f only. Start by reading the 266d Tavern parity closure, the 266e final product closure, Ticket 16 secure BYOK/provider contracts, and the current companion browser verifier. Freeze four numbered sub-slices before implementation: 266f.1 conversation UI polish, 266f.2 secure-provider/BYOK product seam, 266f.3 real-content worldbook/persona/memory continuity acceptance, and 266f.4 responsive screenshots and closure. Preserve all existing companion contracts and do not touch Rules, formal match actions, spatial solving, strategy Skills, source snapshots or Provider implementation. The UI must restore a wide desktop focus mode and a mobile full-screen sheet, use a polished StarCraft blue/cyan communications language with amber only for warnings, retain the compact floating launcher, keep the battlefield materially visible, and avoid horizontal overflow or control interception. Conversation evidence must render actual Provider responses rather than placeholder assistant prose; support 1-6 companions in deterministic order, long-session continuation, branches, checkpoints, import/export/restore, and explicit permission/audit surfaces. Worldbook, persona, Author's Note, transcript/summary/episodic/relationship memory and era state must show real package/session content or an honest unavailable state, never fake data. Reuse Ticket 16's session-memory-only secure BYOK contracts and expose attached/missing/error/detached states, cleared secret input and redacted receipts. The user explicitly authorizes one bounded live Chinese BYOK conversation acceptance. The raw key must never enter the K3 prompt, repository, command line, stdout/stderr, screenshots, report or Kimi logs: invoke only the existing Keychain-to-isolated-Worker secure path, inspect only redacted product receipts, detach at the end, and prove credential absence from persistence and artifacts. Stop immediately on 401/402/403 or ambiguous dispatch; never silently retry; record exact Provider calls, reported tokens and estimated cost. Use the injected deterministic Provider for all other browser cases. Do not modify or generate portrait assets. Produce desktop and 390px screenshots plus a claim-to-pixel index. Make one scoped commit per sub-slice. Run the single focused verifier at most once after the final relevant code change. Only Critical/High findings block; stop after three non-converging repair rounds. Record exact commits, denominator, screenshot paths, live-call receipt and honest remaining gaps. Do not push."
+}
