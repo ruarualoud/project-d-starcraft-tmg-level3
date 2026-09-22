@@ -1339,10 +1339,6 @@ async function main() {
     const sheetBorderHue = rgbToHue(sheetColors?.borderColor);
     ensure(sheetBorderHue !== null && sheetBorderHue >= 190 && sheetBorderHue <= 215,
       "FOCUS_SHEET_BORDER_NOT_STARFLEET_BLUE", { sheetColors, sheetBorderHue });
-    const statusColors = await computedColors(page, "companion-chat-provider-status", ["borderColor"]);
-    const statusHue = rgbToHue(statusColors?.borderColor);
-    ensure(statusHue !== null && statusHue >= 190 && statusHue <= 215,
-      "COMMS_ACCENT_NOT_CYAN_BLUE", { statusColors, statusHue });
     await capture(page, "02-desktop-wide-focus-sheet.png", artifacts);
     claim({
       claimId: "wide_desktop_focus_sheet_battlefield_visible",
@@ -1351,14 +1347,20 @@ async function main() {
       precondition: "floating launcher expanded on desktop web",
       interaction: "activate the launcher chip",
       expected: "left-anchored viewport-fixed wide sheet ≤ 66% of the viewport; battlefield materially visible; compact launcher never covered; blue/cyan comms tokens",
-      observed: { sheetBox, chipBox, sheetPosition, sheetBorderHue, statusHue },
-      contract: "Slice 266f.1 wide desktop focus mode (presentation-only; DOM/testIDs unchanged)",
+      observed: { sheetBox, chipBox, sheetPosition, sheetBorderHue },
+      contract: "Slice 266f.1 wide desktop focus mode (presentation-only; testIDs unchanged; web sheet portaled to document.body)",
     });
     checks.push({ id: "desktop_wide_focus_sheet_layout_and_theme", passed: true });
 
     // ── Companion group chat: real deterministic Chinese responses ─────
     await openChatSection(page);
     await waitBody(page, "injected Provider port", 60_000);
+    // The cyan comms accent on the chat provider-status card (the element
+    // exists only once the chat section is open).
+    const statusColors = await computedColors(page, "companion-chat-provider-status", ["borderColor"]);
+    const statusHue = rgbToHue(statusColors?.borderColor);
+    ensure(statusHue !== null && statusHue >= 190 && statusHue <= 215,
+      "COMMS_ACCENT_NOT_CYAN_BLUE", { statusColors, statusHue });
     const chat = chatSection(page);
     await chat.getByTestId("companion-chat-select-sarah_kerrigan").waitFor({ timeout: 30_000 });
     await chat.getByTestId("companion-chat-select-zagara").click();
