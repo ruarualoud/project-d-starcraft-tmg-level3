@@ -427,7 +427,25 @@ async function main() {
     await enterBattle();
   }
 
+  async function settleBattlefieldVisuals() {
+    const background = page.locator("#battlefield-display-map-v1").first();
+    await background.waitFor({ state: "attached", timeout: 30_000 });
+    await page.evaluate(async () => {
+      const element = document.querySelector("#battlefield-display-map-v1");
+      const href = element?.getAttribute("href")
+        || element?.getAttribute("xlink:href");
+      if (href) {
+        const image = new Image();
+        image.src = href;
+        await image.decode().catch(() => {});
+      }
+      await new Promise((resolve) => requestAnimationFrame(() =>
+        requestAnimationFrame(resolve)));
+    });
+  }
+
   async function capture(seatKey, actionType, revision, phase = "applied") {
+    await settleBattlefieldVisuals();
     screenshotCount += 1;
     const filename = `${String(screenshotCount).padStart(4, "0")}-r${
       String(revision ?? "x").padStart(3, "0")}-${safeName(seatKey)}-${
@@ -441,7 +459,7 @@ async function main() {
 
   async function captureElement(locator, seatKey, actionType, revision,
     evidenceKind, phase = "applied") {
-    if (await locator.count() < 1) return null;
+    await settleBattlefieldVisuals();
     const target = locator.first();
     await target.waitFor({ state: "visible", timeout: 30_000 });
     await target.scrollIntoViewIfNeeded();
