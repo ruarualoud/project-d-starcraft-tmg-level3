@@ -14,6 +14,12 @@ import {
   ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_VERSION,
 } from "./public-output-normalization-v1.mjs";
 import {
+  ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1,
+  rosterStrategistRoundOutputContractRefV1,
+  rosterStrategistRoundOutputContractV1,
+  verifyRosterStrategistOutputContractSetV1,
+} from "./roster-strategist-output-schemas-v1.mjs";
+import {
   createOpponentArchetypeHypothesisV1,
   createRosterCandidateComparisonV1,
   createRosterCandidateV1,
@@ -32,7 +38,7 @@ import {
 
 export const ROSTER_STRATEGIST_RUNTIME_MODULE =
   "packages/roster-strategist/roster-strategist-runtime-v1.mjs";
-export const ROSTER_STRATEGIST_RUNTIME_VERSION = "1.0.0";
+export const ROSTER_STRATEGIST_RUNTIME_VERSION = "1.1.0";
 export const ROSTER_STRATEGIST_DELIBERATION_SCHEMA =
   "starcraft_tmg_roster_strategist_deliberation_v1";
 export const ROSTER_STRATEGIST_DESCRIPTOR_SCHEMA =
@@ -273,6 +279,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     || !HASH_PATTERN.test(String(pack?.receipt?.hash || ""))) {
     fail("ROSTER_STRATEGIST_STRATEGY_PACK_INVALID");
   }
+  verifyRosterStrategistOutputContractSetV1(
+    ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1);
 
   const descriptorBody = {
     schema: ROSTER_STRATEGIST_DESCRIPTOR_SCHEMA,
@@ -306,6 +314,27 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       neverWeakensLegality: true,
       neverSpecialCasesOneCandidateOrProvider: true,
       fullSchemaAndRulesValidationRunsAfterNormalization: true,
+    },
+    // Generation-side structured output contract (sub-slice 269.7): every
+    // deliberation round request carries the round's strict Provider JSON
+    // schema, so the contracted public field set is enforced at generation
+    // time. The schemas bind field names, types, bounds and enums only —
+    // never roster content or strategy. The normalization boundary and the
+    // full schema/Rules validation still run on every decoded output.
+    structuredGenerationOutput: {
+      contractSetSchema:
+        ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.schema,
+      contractSetVersion: ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version,
+      contractSetHash:
+        ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash,
+      contracts: clone(ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contracts),
+      generationSideFieldSetEnforcement: true,
+      schemaFieldSetsMatchRuntimeValidators: true,
+      placeholderFieldsNeverReachRulesOrToolReceipts: true,
+      normalizationBoundaryStillRunsAfterDecoding: true,
+      fullSchemaAndRulesValidationStillRunsAfterDecoding: true,
+      neverInventsStrategyContent: true,
+      neverWeakensLegality: true,
     },
     trainingTruth: false,
   };
@@ -705,6 +734,143 @@ export function createRosterStrategistRuntimeV1(input = {}) {
 
   // -------------------------------------------------- information needs
 
+  // Kind-driven canonicalization of the wire toolRequest. The strict
+  // generation schema is a closed superset over every laboratory query
+  // family, so fields a declared need kind does not consume arrive as
+  // schema-mandated placeholders ("" / 0 / [] / false). This projection
+  // keeps exactly the fields the declared kind consumes and drops the
+  // placeholders, so placeholder values never reach Rules or tool receipts
+  // and a canonical (already minimal) request passes through byte
+  // identically. It never invents or alters strategy content; malformed
+  // remnant values are left for the laboratory to reject typed, which the
+  // caller records as a failed need (unknown stays unknown).
+  function canonicalToolRequest(need) {
+    const raw = object(need.toolRequest) ? need.toolRequest : {};
+    const textOrNull = (value) => {
+      const normalized = String(value ?? "").trim();
+      return normalized || null;
+    };
+    const idList = (value) => (Array.isArray(value)
+      ? value.map(textOrNull).filter(Boolean).slice(0, MAX_LIST) : []);
+    const positiveBudget = (value) => {
+      const numeric = Number(value);
+      return Number.isSafeInteger(numeric) && numeric > 0 ? numeric : null;
+    };
+    const integerOrZero = (value) => {
+      const numeric = Number(value);
+      return Number.isSafeInteger(numeric) ? numeric : 0;
+    };
+    const scheduleEntries = (value, vpField) => (Array.isArray(value)
+      ? value.slice(0, MAX_LIST).map((entry) => ({
+        window: textOrNull(entry?.window) || "",
+        [vpField]: integerOrZero(entry?.[vpField]),
+      })).filter((entry) => entry.window)
+      : []);
+    const request = {};
+    const branchIdRef = textOrNull(raw.branchIdRef);
+    if (branchIdRef) request.branchIdRef = branchIdRef;
+    const putText = (key) => {
+      const valueText = textOrNull(raw[key]);
+      if (valueText) request[key] = valueText;
+    };
+    const putIdList = (key) => {
+      const list = idList(raw[key]);
+      if (list.length) request[key] = list;
+    };
+    const putBudget = () => {
+      const sample = positiveBudget(raw.sampleBudget);
+      if (sample) request.sampleBudget = sample;
+    };
+    if (need.kind === "probability") {
+      putText("attackerUnitId");
+      putText("targetUnitId");
+      putBudget();
+    } else if (need.kind === "spatial") {
+      putText("seatKey");
+      putText("intent");
+      putIdList("subjectUnitIds");
+      putIdList("targetIds");
+    } else if (need.kind === "threat_exchange") {
+      putText("seatKey");
+      putBudget();
+      putIdList("subjectUnitIds");
+      putIdList("targetIds");
+    } else if (need.kind === "math") {
+      const mathKind = textOrNull(raw.mathKind);
+      if (mathKind) request.mathKind = mathKind;
+      const inputs = object(raw.inputs) ? raw.inputs : {};
+      if (mathKind === "budget_fit") {
+        request.inputs = {
+          mineralBudget: integerOrZero(inputs.mineralBudget),
+          mineralSpent: integerOrZero(inputs.mineralSpent),
+          vespeneSpent: integerOrZero(inputs.vespeneSpent),
+          vespeneLimitNumerator: integerOrZero(inputs.vespeneLimitNumerator),
+          vespeneLimitDenominator:
+            integerOrZero(inputs.vespeneLimitDenominator),
+        };
+      } else if (mathKind === "vp_schedule_delta") {
+        request.inputs = {
+          planned: scheduleEntries(inputs.planned, "plannedCumulativeVp"),
+          projected: scheduleEntries(inputs.projected, "cumulativeVp"),
+        };
+      } else if (mathKind === "integer_sum") {
+        request.inputs = {
+          values: (Array.isArray(inputs.values) ? inputs.values : [])
+            .slice(0, 128).map((value) => integerOrZero(value)),
+        };
+      } else {
+        request.inputs = {};
+      }
+    } else if (need.kind === "scenario") {
+      const rawSpec = object(raw.spec) ? raw.spec : {};
+      const spec = {};
+      const specKind = textOrNull(rawSpec.kind);
+      if (specKind) spec.kind = specKind;
+      const steps = Number(rawSpec.lifecycleSteps);
+      if (Number.isSafeInteger(steps) && steps > 0) {
+        spec.lifecycleSteps = steps;
+      }
+      const phase = textOrNull(rawSpec.phase);
+      if (phase) {
+        spec.phase = phase;
+        const activeSideKey = textOrNull(rawSpec.activeSideKey);
+        if (activeSideKey) spec.activeSideKey = activeSideKey;
+      }
+      if (rawSpec.isolateToPlacedPieces === true) {
+        spec.isolateToPlacedPieces = true;
+      }
+      if (rawSpec.clearTerrain === true) spec.clearTerrain = true;
+      const placements = (Array.isArray(rawSpec.placements)
+        ? rawSpec.placements : []).slice(0, 4).map((placement) => ({
+        pieceId: textOrNull(placement?.pieceId) || "",
+        xInches: Number(placement?.xInches),
+        yInches: Number(placement?.yInches),
+      }));
+      if (placements.length) spec.placements = placements;
+      request.spec = spec;
+      const followUps = (Array.isArray(raw.followUps) ? raw.followUps : [])
+        .slice(0, 4).map((followUp) => {
+          const canonical = {};
+          const followKind = textOrNull(followUp?.kind);
+          if (followKind) canonical.kind = followKind;
+          for (const key of ["attackerUnitId", "targetUnitId", "seatKey",
+            "intent"]) {
+            const valueText = textOrNull(followUp?.[key]);
+            if (valueText) canonical[key] = valueText;
+          }
+          const sample = positiveBudget(followUp?.sampleBudget);
+          if (sample) canonical.sampleBudget = sample;
+          for (const key of ["subjectUnitIds", "targetIds"]) {
+            const list = idList(followUp?.[key]);
+            if (list.length) canonical[key] = list;
+          }
+          return canonical;
+        }).filter((followUp) => followUp.kind);
+      if (followUps.length) request.followUps = followUps;
+    }
+    return request;
+  }
+
   function executeInformationNeed(need, branchByNeedId, toolReceipts, traceEntry) {
     const referenceBase = {
       toolId: labDescriptor.laboratoryId,
@@ -737,7 +903,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         errorCode, receiptReferenceIds: [reference.referenceId],
       }));
     };
-    const request = object(need.toolRequest) ? need.toolRequest : {};
+    const request = canonicalToolRequest(need);
     const base = request.branchIdRef
       ? (() => {
         const branchHash = branchByNeedId.get(String(request.branchIdRef));
@@ -887,6 +1053,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
   function buildRoundRequest({ sessionId, roundIndex, roundKind, nodes,
     userMessage, contextSeed }) {
     const contextHash = hashStarcraftTmgContract(contextSeed);
+    const outputContract = rosterStrategistRoundOutputContractV1(roundKind);
     return {
       sessionId,
       roundIndex,
@@ -898,6 +1065,18 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         allowedChannels: ["roster_strategy"],
         decisionCandidateSource:
           "agent_deliberation_over_skills_and_rules_legal_choices_only",
+      },
+      // Strict generation-side contract: deliberation ports capable of
+      // Provider JSON-schema output must request exactly this schema, so
+      // the contracted public field set is structurally unavoidable. The
+      // schema binds field names/types/bounds/enums only; normalization and
+      // full schema/Rules validation still run on the decoded output.
+      responseFormat: {
+        kind: "provider_strict_json_schema",
+        schemaName: outputContract.schemaName,
+        outputContractRef:
+          rosterStrategistRoundOutputContractRefV1(roundKind),
+        schema: clone(outputContract.providerSchema),
       },
       maxOutputUnits: 8_192,
       contextHash,
@@ -1014,10 +1193,16 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         publicFieldsOnly: true,
         envelopeAtTopLevelNoChannelsWrapper: true,
         hiddenChainOfThoughtForbidden: true,
+        outputSchemaName:
+          rosterStrategistRoundOutputContractV1("strategy_foundation")
+            .schemaName,
+        strictProviderJsonSchemaEnforced: true,
       }),
     ];
     const foundationTrace = {
       roundIndex: 1, roundKind: "strategy_foundation",
+      outputContractRef:
+        rosterStrategistRoundOutputContractRefV1("strategy_foundation"),
       promptNodeHashes: foundationNodes.map((node) => node.nodeHash),
       informationNeedOutcomes: [],
     };
@@ -1100,10 +1285,16 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           rulesRemainSoleLegalityAuthority: true,
           publicFieldsOnly: true,
           envelopeAtTopLevelNoChannelsWrapper: true,
+          outputSchemaName:
+            rosterStrategistRoundOutputContractV1("candidate_proposals")
+              .schemaName,
+          strictProviderJsonSchemaEnforced: true,
         }),
       ];
       const proposalTrace = {
         roundIndex, roundKind: "candidate_proposals",
+        outputContractRef:
+          rosterStrategistRoundOutputContractRefV1("candidate_proposals"),
         promptNodeHashes: proposalNodes.map((node) => node.nodeHash),
         informationNeedOutcomes: [],
       };
@@ -1238,10 +1429,16 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         selectedCandidateMustBeRulesLegal: true,
         publicFieldsOnly: true,
         envelopeAtTopLevelNoChannelsWrapper: true,
+        outputSchemaName:
+          rosterStrategistRoundOutputContractV1("comparison_selection")
+            .schemaName,
+        strictProviderJsonSchemaEnforced: true,
       }),
     ];
     const comparisonTrace = {
       roundIndex: comparisonRoundIndex, roundKind: "comparison_selection",
+      outputContractRef:
+        rosterStrategistRoundOutputContractRefV1("comparison_selection"),
       promptNodeHashes: comparisonNodes.map((node) => node.nodeHash),
       informationNeedOutcomes: [],
     };
@@ -1363,6 +1560,9 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_VERSION,
       outputNormalizationReceiptHashes: trace.map((entry) => (
         entry.outputNormalizationReceipt?.receiptHash ?? null)),
+      outputContractSetHash:
+        ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash,
+      structuredGenerationEnforced: true,
       selectedByAgentDeliberation: true,
       hostPreferenceWeights: false,
       hiddenChainOfThoughtRequested: false,
@@ -1419,7 +1619,10 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         fields: ["publicSummaryText", "revisedScoreRoute",
           "revisedDeploymentConcept"],
         publicFieldsOnly: true,
-        envelopeAtTopLevelNoChannelsWrapper: true }),
+        envelopeAtTopLevelNoChannelsWrapper: true,
+        outputSchemaName:
+          rosterStrategistRoundOutputContractV1("revision").schemaName,
+        strictProviderJsonSchemaEnforced: true }),
     ];
     const sink = { deliberationReceipts: [] };
     const revisionDeliberation = await deliberateRound(deliberation,

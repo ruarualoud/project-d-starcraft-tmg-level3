@@ -49,6 +49,15 @@ import {
   verifyRosterStrategistOutputNormalizationReceiptV1,
 } from "../packages/roster-strategist/public-output-normalization-v1.mjs";
 import {
+  ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1,
+  rosterStrategistRoundOutputContractV1,
+  rosterStrategistRoundOutputContractRefV1,
+  verifyRosterStrategistOutputContractSetV1,
+} from "../packages/roster-strategist/roster-strategist-output-schemas-v1.mjs";
+import {
+  validateStarcraftTmgProviderJsonSchemaValueV1,
+} from "../packages/structured-generation/output-contract-registry-v1.mjs";
+import {
   parseRosterPlanV1,
   serializeRosterPlanV1,
   verifyRosterPlanRoundTripV1,
@@ -321,6 +330,68 @@ check(269, verifyRosterStrategistDescriptorV1(strategistDescriptor) === true
   "strategist descriptor must prove strategy comes only from Skills and "
     + "Agent deliberation");
 
+// Closed-superset toolRequest wire shape mandated by the strict
+// generation-side schema (sub-slice 269.7). Fields a need kind does not
+// consume carry the schema-mandated placeholders; the runtime's kind-driven
+// canonicalization drops them, so the laboratory sees exactly the minimal
+// per-kind request it always saw.
+const PLACEHOLDER_MATH_INPUTS = {
+  mineralBudget: 0, mineralSpent: 0, vespeneSpent: 0,
+  vespeneLimitNumerator: 0, vespeneLimitDenominator: 0,
+  planned: [], projected: [], values: [],
+};
+const PLACEHOLDER_SCENARIO_SPEC = {
+  kind: "", lifecycleSteps: 0, phase: "", activeSideKey: "",
+  isolateToPlacedPieces: false, clearTerrain: false, placements: [],
+};
+function toolRequestWire(overrides = {}) {
+  return {
+    branchIdRef: "", attackerUnitId: "", targetUnitId: "", seatKey: "",
+    intent: "", subjectUnitIds: [], targetIds: [], sampleBudget: 0,
+    mathKind: "", inputs: { ...PLACEHOLDER_MATH_INPUTS },
+    spec: { ...PLACEHOLDER_SCENARIO_SPEC }, followUps: [],
+    ...overrides,
+  };
+}
+function followUpWire(overrides = {}) {
+  return {
+    kind: "", attackerUnitId: "", targetUnitId: "", sampleBudget: 0,
+    seatKey: "", intent: "", subjectUnitIds: [], targetIds: [],
+    ...overrides,
+  };
+}
+
+// --------------------------------- strict generation-side output contracts
+// Sub-slice 269.7: closes the saved live round-5 blocker (the model omitted
+// contracted semantic fields outright; the alias boundary correctly refused
+// to invent them). Every deliberation round is now requested through a
+// strict Provider JSON schema so the contracted field set is structurally
+// unavoidable at generation time; the normalization boundary and full
+// schema/Rules validation still run afterwards.
+check(269, verifyRosterStrategistOutputContractSetV1(
+    ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1) === true
+  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.0.0"
+  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
+      .bindsOnlyFieldNamesTypesBoundsAndEnums === true
+  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
+      .neverBindsRosterContentCandidateIdentityOrStrategy === true,
+  "the strict output contract set must be explicit, versioned and "
+    + "content-free");
+check(269, strategistDescriptor.structuredGenerationOutput?.contractSetHash
+    === ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash
+  && strategistDescriptor.structuredGenerationOutput
+      ?.normalizationBoundaryStillRunsAfterDecoding === true
+  && strategistDescriptor.structuredGenerationOutput
+      ?.fullSchemaAndRulesValidationStillRunsAfterDecoding === true,
+  "the runtime descriptor must bind the strict output contract set while "
+    + "keeping the normalization boundary and full validation in force");
+const foundationContract = rosterStrategistRoundOutputContractV1(
+  "strategy_foundation");
+check(269, foundationContract.schemaName === "roster_strategy_foundation_v1"
+  && rosterStrategistRoundOutputContractRefV1("strategy_foundation").hash
+    === foundationContract.contractHash,
+  "each round kind must resolve one versioned strict output contract");
+
 const route = strategist.selectSkillRoute({
   ownFactionRecordKey: "tactical_cards:terran_armed_forces",
   opponentFactionRecordKey: "tactical_cards:kerrigan_s_swarm" });
@@ -375,22 +446,25 @@ function foundationOutput() {
     informationNeeds: [
       { needId: "need-budget", kind: "math",
         questionText: "exact budget fit of a 2000-mineral build",
-        toolRequest: { mathKind: "budget_fit", inputs: {
+        toolRequest: toolRequestWire({ mathKind: "budget_fit", inputs: {
+          ...PLACEHOLDER_MATH_INPUTS,
           mineralBudget: 2000, mineralSpent: 2000, vespeneSpent: 115,
-          vespeneLimitNumerator: 1, vespeneLimitDenominator: 10 } } },
+          vespeneLimitNumerator: 1, vespeneLimitDenominator: 10 } }) },
       { needId: "need-central-exchange", kind: "scenario",
         questionText: "Marine block vs Corpser central exchange",
-        toolRequest: {
-          spec: { kind: "hypothetical_geometry", phase: "assault",
-            activeSideKey: "player1", isolateToPlacedPieces: true,
-            clearTerrain: true,
+        toolRequest: toolRequestWire({
+          spec: { kind: "hypothetical_geometry", lifecycleSteps: 0,
+            phase: "assault", activeSideKey: "player1",
+            isolateToPlacedPieces: true, clearTerrain: true,
             placements: [
               { pieceId: "player1-marine-1", xInches: 27, yInches: 10 },
               { pieceId: "player2-corpser", xInches: 27, yInches: 16 }] },
           followUps: [
-            { kind: "probability", attackerUnitId: "player1-marine-1",
-              targetUnitId: "player2-corpser", sampleBudget: 36 },
-            { kind: "spatial", seatKey: "player1", intent: "threat_scan" }] } },
+            followUpWire({ kind: "probability",
+              attackerUnitId: "player1-marine-1",
+              targetUnitId: "player2-corpser", sampleBudget: 36 }),
+            followUpWire({ kind: "spatial", seatKey: "player1",
+              intent: "threat_scan" })] }) },
     ],
   };
 }
@@ -459,11 +533,14 @@ function comparisonOutput() {
   };
 }
 
-function createMock(handlerOverrides = {}) {
+function createMock(handlerOverrides = {}, recordedRequests = null) {
   return createScriptedRosterDeliberationPortV1({
     modelVersion: "scripted-mock-deepseek-flash-standin-v1",
     promptVersion: "ticket27.roster_strategist.multi_round.v1",
     handler: (request) => {
+      if (recordedRequests) {
+        recordedRequests.push(JSON.parse(JSON.stringify(request)));
+      }
       if (handlerOverrides[request.roundKind]) {
         return handlerOverrides[request.roundKind](request);
       }
@@ -473,6 +550,20 @@ function createMock(handlerOverrides = {}) {
       throw new Error(`unexpected round ${request.roundKind}`);
     },
   });
+}
+
+for (const [roundKind, output] of [
+  ["strategy_foundation", foundationOutput()],
+  ["candidate_proposals", proposalsOutput()],
+  ["comparison_selection", comparisonOutput()],
+]) {
+  const contract = rosterStrategistRoundOutputContractV1(roundKind);
+  const validation = validateStarcraftTmgProviderJsonSchemaValueV1(
+    contract.providerSchema, output);
+  check(269, validation.ok === true
+    && validation.schemaHash.length === 64,
+    `the scripted ${roundKind} output must satisfy its strict generation `
+      + "schema, proving schema and runtime validator field sets agree");
 }
 
 const sessionInput = {
@@ -490,9 +581,32 @@ const sessionInput = {
 const labA = createLab("ticket27-s269-lab-run-a");
 const strategistA = createRosterStrategistRuntimeV1({
   armyBuilderPort: port, laboratory: labA, strategyPack: pack });
+const recordedRequests = [];
 const result = await strategistA.planRoster(sessionInput, {
-  deliberation: createMock() });
+  deliberation: createMock({}, recordedRequests) });
 const { plan } = result;
+
+check(269, recordedRequests.map((entry) => entry.roundKind).join(">")
+    === "strategy_foundation>candidate_proposals>comparison_selection"
+  && recordedRequests.every((entry) => {
+    const contract = rosterStrategistRoundOutputContractV1(entry.roundKind);
+    return entry.responseFormat?.kind === "provider_strict_json_schema"
+      && entry.responseFormat.schemaName === contract.schemaName
+      && entry.responseFormat.outputContractRef?.hash
+        === contract.contractHash
+      && isDeepStrictEqual(entry.responseFormat.schema,
+        JSON.parse(JSON.stringify(contract.providerSchema)));
+  }),
+  "every deliberation round request must carry the round's strict Provider "
+    + "JSON schema, schema name and versioned output contract reference");
+check(269, result.planningTrace.every((entry) => (
+    entry.outputContractRef?.hash === rosterStrategistRoundOutputContractV1(
+      entry.roundKind).contractHash))
+  && result.sessionReceipt.outputContractSetHash
+    === ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash
+  && result.sessionReceipt.structuredGenerationEnforced === true,
+  "round receipts and the session receipt must bind the strict output "
+    + "contract set actually requested");
 
 check(269, verifyRosterStrategistSessionReceiptV1(result.sessionReceipt) === true
   && result.sessionReceipt.deliberationCallCount === 3
@@ -586,26 +700,38 @@ check(269, resultB.plan.planHash === plan.planHash
     + "session hashes");
 
 // Revision chain.
+function revisionOutput() {
+  return {
+    schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+    roundKind: "revision",
+    publicSummaryText: "revised toward attrition after VP deficit",
+    revisedScoreRoute: {
+      routeKind: "hybrid",
+      routeText: "blend marker control with Goliath attrition trades",
+      scheduleStatus: "declared",
+      targetVpSchedule: [{ window: "round:4", plannedCumulativeVp: 4 }],
+      fallbackRouteText: "pure attrition" },
+    // The strict schema has no null type; the runtime applies only the
+    // sections named by the declared revision triggers, so this complete
+    // object is emitted but unused for a scoreRoute-only revision.
+    revisedDeploymentConcept: {
+      deploymentConceptText: "central Marine deployment unchanged",
+      activationOrderStatus: "unknown",
+      activationOrder: [],
+      reinforcementPolicyText: "reserve policy unchanged",
+      threatTradeText: "threat trades unchanged",
+      objectiveControlText: "central marker plan unchanged" },
+  };
+}
+const revisionRequests = [];
 const revised = await strategistA.reviseRosterPlan({
   plan,
   reasonText: "declared VP schedule missed at round 2",
   triggerIds: ["trg-vp-deficit"],
   revisedSectionKeys: ["scoreRoute"],
 }, {
-  deliberation: createMock({
-    revision: () => ({
-      schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
-      roundKind: "revision",
-      publicSummaryText: "revised toward attrition after VP deficit",
-      revisedScoreRoute: {
-        routeKind: "hybrid",
-        routeText: "blend marker control with Goliath attrition trades",
-        scheduleStatus: "declared",
-        targetVpSchedule: [{ window: "round:4", plannedCumulativeVp: 4 }],
-        fallbackRouteText: "pure attrition" },
-      revisedDeploymentConcept: null,
-    }),
-  }),
+  deliberation: createMock({ revision: () => revisionOutput() },
+    revisionRequests),
 });
 check(269, verifyRosterPlanRoundTripV1(revised.plan) === true
   && revised.plan.planStatus === "revised"
@@ -616,6 +742,16 @@ check(269, verifyRosterPlanRoundTripV1(revised.plan) === true
   && revised.plan.rosterCandidate.candidateHash
     === plan.rosterCandidate.candidateHash,
   "revision must hash-bind the previous plan version and keep the legal roster");
+check(269, revisionRequests.length === 1
+  && revisionRequests[0].roundKind === "revision"
+  && revisionRequests[0].responseFormat?.schemaName
+    === "roster_strategy_revision_v1"
+  && revisionRequests[0].responseFormat?.outputContractRef?.hash
+    === rosterStrategistRoundOutputContractV1("revision").contractHash
+  && validateStarcraftTmgProviderJsonSchemaValueV1(
+    rosterStrategistRoundOutputContractV1("revision").providerSchema,
+    revisionOutput()).ok === true,
+  "the revision round must also carry and satisfy its strict output schema");
 
 // Cheap math-only foundation for negative gates: the gate under test never
 // depends on scenario tool execution, so these sessions skip it.
@@ -735,6 +871,55 @@ await expectFailure(269, () => strategistA.planRoster(sessionInput, {
 }), "ROSTER_STRATEGIST_FOUNDATION_INVALID",
   "the captured under-specified round-4 shape must still fail closed after "
     + "normalization: missing semantic content is never filled");
+
+// ---------------------------------------------- round-5 omitted fields
+// Offline replay of the exact saved live round-5 failure
+// (repair-round-5-report.json, failureDetail
+// "ROSTER_STRATEGIST_FOUNDATION_INVALID:evidence,hypothesisText,implication"):
+// the model answered hypothesis entries with only
+// evidence/hypothesisText/implication, omitting the contracted strategy
+// semantics, and the alias boundary correctly refused to invent them.
+// 0 Provider calls.
+function capturedRound5HypothesisOutput() {
+  return {
+    ...cheapFoundationOutput(),
+    opponentHypotheses: [{
+      evidence: "open roster shows cheap fast units and creep-spread cards",
+      hypothesisText: "Kerrigan's Swarm races cheap units onto central markers",
+      implication: "central marker pressure forces early Marine commitment" }],
+  };
+}
+const round5SchemaValidation = validateStarcraftTmgProviderJsonSchemaValueV1(
+  foundationContract.providerSchema, capturedRound5HypothesisOutput());
+check(269, round5SchemaValidation.ok === false
+  && round5SchemaValidation.issues.some((issue) => (
+    issue.path === "$.opponentHypotheses[0].hypothesisId"
+      && issue.code === "required_field_missing"))
+  && round5SchemaValidation.issues.some((issue) => (
+    issue.path === "$.opponentHypotheses[0].confidence"
+      && issue.code === "required_field_missing"))
+  && round5SchemaValidation.issues.some((issue) => (
+    issue.path === "$.opponentHypotheses[0].evidence"
+      && issue.code === "additional_property_forbidden"))
+  && round5SchemaValidation.issues.some((issue) => (
+    issue.path === "$.opponentHypotheses[0].implication"
+      && issue.code === "additional_property_forbidden")),
+  "the captured round-5 omitted-field shape must be a wire-level rejection "
+    + "under the strict generation schema: omitted contracted fields and "
+    + "unadmitted keys are both structurally excluded at generation time");
+let round5ReplayError = null;
+try {
+  await strategistA.planRoster(sessionInput, {
+    deliberation: createMock({
+      strategy_foundation: () => capturedRound5HypothesisOutput() }) });
+} catch (error) {
+  round5ReplayError = error;
+}
+check(269, String(round5ReplayError?.message || "")
+    === "ROSTER_STRATEGIST_FOUNDATION_INVALID:evidence,hypothesisText,"
+      + "implication",
+  "offline replay must reproduce the exact saved round-5 failure "
+    + "byte-identically (OFFLINE_REPLAY_MATCHES_SAVED_ROUND5_FAILURE)");
 function aliasedEnvelopeFoundationOutput() {
   const base = cheapFoundationOutput();
   return { channels: { roster_strategy: {
@@ -844,6 +1029,10 @@ const report = {
     determinismIdenticalPlanHash: resultB.plan.planHash === plan.planHash,
     outputNormalizationAliasRegistryVersion:
       ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.version,
+    outputContractSetHash:
+      ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash,
+    structuredGenerationEnforced: true,
+    round5OfflineReplayFailureDetail: String(round5ReplayError?.message || ""),
     hiddenChainOfThoughtIncluded: false,
     hostPreferenceWeights: false,
   },
