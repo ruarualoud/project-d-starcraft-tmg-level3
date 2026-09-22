@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "id": "ticket-27-slices-267-268-roster-foundation",
+  "githubIssue": null,
+  "title": "Build RosterPlan contracts and a read-only Rules-owned Army Builder query port",
+  "owner": "kimi",
+  "agentProfile": "project-d-slice-implementer",
+  "model": "project-d-k3",
+  "baseRef": "b28529f74ac2b3ca1d24cf7810a221baa2ce3d60",
+  "branch": "agent/kimi/ticket-27-slices-267-268-roster-foundation",
+  "worktree": ".worktrees/ticket-27-slices-267-268-roster-foundation",
+  "allowedPaths": [
+    "packages/roster-strategist/",
+    "scripts/verify-ticket-27-slices-267-268-roster-foundation-v1.mjs",
+    "docs/ticket-27-slices-267-268-roster-foundation-v1-2026-09-22.md"
+  ],
+  "verification": [
+    {
+      "name": "RosterPlan contracts and read-only Army Builder parity",
+      "command": "node scripts/verify-ticket-27-slices-267-268-roster-foundation-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Implement only Ticket 27 Slices 267 and 268 from docs/ticket-27-slices-267-272-roster-strategist-roadmap-v1-2026-09-21.md. Start by reading that roadmap, the current official unit composition/upgrade data bundle and Rules kernel/executor, the official army resource budget slice, and the fixed Standard-2000 room factory/audit. Do not modify those existing authorities. Freeze numbered sub-slices before implementation and make one scoped commit per completed sub-slice. Slice 267 delivers deep, versioned, hash-bound public contracts for RosterPlan, legal/illegal roster candidates, comparisons, score route and VP schedule, loss/resource budget, component purposes, deployment/activation/reinforcement concepts, opponent archetype hypotheses, counter-responses, invalidation/revision events, probability/spatial/math/simulation receipts and provenance. A preset roster must explicitly carry planStatus=no_pregame_plan; never fabricate a plan or hidden chain-of-thought. Slice 268 delivers a read-only Army Builder query port that delegates all faction/scale/budget/card/composition/upgrade/Specialist legality to the existing Rules-owned official kernels, enumerates bounded legal candidate choices, and returns typed immutable rejection receipts for illegal counterexamples. It must prove exact parity against the current fixed Standard-2000 Terran and Zerg acceptance rosters plus representative wrong-faction, over-budget, bad composition/upgrade and Specialist assignment failures. Unknown stays unknown; no silent repair, fallback, source refresh or rule reimplementation. No Provider calls, UI, formal Room mutation, Skill generation/promotion, source-data updates, credentials or network. Only Critical/High findings block; stop after three non-converging repair rounds. Run the one focused verifier at most once after the final relevant code change, record exact commits/denominators/hash receipts/remaining honest gaps and zero-cost accounting, and do not push."
+}
