@@ -296,6 +296,7 @@ async function main() {
     || (Number.isSafeInteger(checkpointAfterRoundInitialized)
       && checkpointAfterRoundInitialized > 0),
   "SLICE248_CHECKPOINT_ROUND_INVALID");
+  const abstractTerrainMode = process.argv.includes("--abstract-terrain");
   const startedAt = new Date().toISOString();
   const actions = [];
   const mediumFindings = [];
@@ -408,6 +409,16 @@ async function main() {
     if (await button.count()) await button.click();
     await page.getByText(/权威战场|Authoritative Battlefield/u)
       .waitFor({ timeout: 30_000 });
+    if (abstractTerrainMode) {
+      const background = page.locator("#battlefield-display-map-v1").first();
+      if (await background.count()) {
+        const toggle = page.getByRole("button", {
+          name: /^(地图背景|Map art)$/u,
+        });
+        await toggle.click();
+        await background.waitFor({ state: "detached", timeout: 30_000 });
+      }
+    }
   }
 
   async function refreshObservedRoom() {
@@ -428,6 +439,16 @@ async function main() {
   }
 
   async function settleBattlefieldVisuals() {
+    if (abstractTerrainMode) {
+      await page.getByRole("imagebutton", {
+        name: /战场|Battlefield/u,
+      }).waitFor({ state: "visible", timeout: 30_000 });
+      await page.evaluate(async () => {
+        await new Promise((resolve) => requestAnimationFrame(() =>
+          requestAnimationFrame(resolve)));
+      });
+      return;
+    }
     const background = page.locator("#battlefield-display-map-v1").first();
     await background.waitFor({ state: "attached", timeout: 30_000 });
     await page.evaluate(async () => {
@@ -477,7 +498,8 @@ async function main() {
     phase = "applied") {
     return {
       boardScreenshot: await captureElement(
-        page.locator("#battlefield-display-map-v1"), seatKey, actionType,
+        page.getByRole("imagebutton", { name: /战场|Battlefield/u }),
+        seatKey, actionType,
         revision, "complete-board", phase),
       controlScreenshot: await captureElement(
         page.getByTestId("agent-agent-match-control"), seatKey, actionType,
