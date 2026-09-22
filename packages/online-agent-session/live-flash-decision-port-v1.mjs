@@ -33,9 +33,9 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v23";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v36";
+  "starcraft_tmg_live_action_shape_normalization_v37";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_planner_shape_normalization_v13";
+  "starcraft_tmg_live_planner_shape_normalization_v14";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
 const NATIVE_QUERY_KINDS = Object.freeze([
   "space.inspect_relationships",
@@ -639,25 +639,79 @@ function selectedActionResourceClaimFragments(value, stage) {
   });
 }
 
-function falseFreeResourceClaim(fragment, resourceType) {
+function resourceClaimSubjects(actionSpace, candidateId) {
+  const entries = actionIndex(actionSpace).map((entry) => ({
+    id: entry.id, action: sourceActionDomain(entry.action),
+  }));
+  const selected = entries.find((entry) => entry.id === candidateId)?.action;
+  const subjects = new Map();
+  const add = (name, selectedSubject) => {
+    if (!name) return;
+    const key = String(name).normalize("NFC").toLowerCase();
+    // Shared action-type labels are not enough to distinguish two abilities.
+    subjects.set(key, subjects.has(key)
+      ? subjects.get(key) && selectedSubject : selectedSubject);
+  };
+  for (const type of [...FORMATION_ACTION_TYPES, ...PHASE_CONTROL_ACTIONS,
+    "finish_activation"]) add(type, type === selected?.actionType);
+  for (const entry of entries) {
+    add(entry.action?.abilityName, entry.id === candidateId);
+    add(entry.id, entry.id === candidateId);
+    add(entry.action?.actionType, entry.action?.actionType === selected?.actionType);
+  }
+  add("结束激活", selected?.actionType === "finish_activation");
+  add("部署", selected?.actionType === "deploy");
+  add("进场", selected?.actionType === "deploy");
+  return [...subjects].map(([name, isSelected]) => ({
+    isSelected,
+    pattern: new RegExp(`(?<![\\p{L}\\p{N}_])${name
+      .replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")
+      .replace(/[_ ]+/gu, "[_\\s-]+")}(?![\\p{L}\\p{N}_])`, "giu"),
+  }));
+}
+
+function resourceClaimTargetsSelected(fragment, offset, subjects) {
+  // Bind each cost occurrence, not its whole paragraph: comparisons can name
+  // several actions with different costs. An explicit "this action" rebinds
+  // the subject; otherwise retain the existing selected-field default.
+  const prefix = fragment.slice(0, offset).split(/[.;!?。；！？\n]/u).at(-1);
+  let last = { index: -1, isSelected: true };
+  for (const subject of subjects) {
+    for (const match of prefix.matchAll(subject.pattern)) {
+      if (match.index > last.index) last = {
+        index: match.index, isSelected: subject.isSelected,
+      };
+    }
+  }
+  const explicitSelected = /\b(?:this|the)\s+(?:(?:selected|chosen|current)\s+)?(?:action|ability|candidate|choice)\b|(?:本次|所选)(?:动作|能力|选择)/giu;
+  for (const match of prefix.matchAll(explicitSelected)) {
+    if (match.index > last.index) last = { index: match.index, isSelected: true };
+  }
+  return last.isSelected;
+}
+
+function falseFreeResourceClaim(fragment, resourceType, subjects) {
   const aliases = {
     BM: ["biomass", "bm", "生物质"],
     CP: ["command points?", "cp", "指挥点"],
     PE: ["psionic energy", "pe", "灵能"],
   }[resourceType] || [];
   return aliases.some((alias) => {
-    if (/[\u3400-\u9fff]/u.test(alias)) {
-      return new RegExp(`(?:零|0)\\s*${alias}|(?:不消耗|无需支付|无需消耗)\\s*${alias}`, "u")
-        .test(fragment);
-    }
     const boundaryAlias = `(?:${alias})`;
-    return new RegExp(
+    const pattern = /[\u3400-\u9fff]/u.test(alias)
+      ? new RegExp(`(?:零|0)\\s*${alias}|(?:不消耗|无需支付|无需消耗)\\s*${alias}`, "gu")
+      : new RegExp(
       `(?:\\b(?:zero|0)\\s*[- ]*${boundaryAlias}\\b|`
       + `\\b(?:costs?|spends?|pays?|requires?)\\s+(?:zero|no|0)\\s+${boundaryAlias}\\b|`
       + `\\bwithout\\s+(?:spending|paying|using)\\s+${boundaryAlias}\\b|`
       + `\\bno\\s+${boundaryAlias}\\s+(?:is\\s+)?(?:spent|required|paid|cost)\\b|`
-      + `\\bat\\s+(?:zero|no|0)\\s+${boundaryAlias}\\s+cost\\b)`, "iu",
-    ).test(fragment);
+      + `\\bat\\s+(?:zero|no|0)\\s+${boundaryAlias}\\s+cost\\b)`, "giu");
+    return [...fragment.matchAll(pattern)].some((match) => {
+      const prefix = fragment.slice(0, match.index);
+      if (/\b(?:not|never|isn't|doesn't)(?:\s+(?:a|an))?\s*$/iu.test(prefix)
+        || /(?:不是|并非|并不是)\s*$/u.test(prefix)) return false;
+      return resourceClaimTargetsSelected(fragment, match.index, subjects);
+    });
   });
 }
 
@@ -691,9 +745,11 @@ export function inspectStarcraftTmgSelectedActionResourceClaimsV1(input = {}) {
   }
   const fragments = selectedActionResourceClaimFragments(input.value,
     input.stage === "planning" ? "planning" : "action");
+  const subjects = resourceClaimSubjects(input.spatialActionSpace || {},
+    String(input.candidateId || ""));
   const contradictions = fragments.flatMap((entry) => (
     [...minimumNonzeroCosts.entries()].flatMap(([resourceType,
-      effectiveResourceCost]) => falseFreeResourceClaim(entry.text, resourceType)
+      effectiveResourceCost]) => falseFreeResourceClaim(entry.text, resourceType, subjects)
       ? [{ field: entry.field, text: entry.text, resourceType,
         claimedEffectiveResourceCost: 0, effectiveResourceCost }] : [])
   ));

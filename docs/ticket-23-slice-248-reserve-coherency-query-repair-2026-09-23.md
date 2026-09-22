@@ -65,7 +65,11 @@ No accepted action or paid output is erased or regenerated.
 Commit **78d2fd8** is loaded by new resume **76101** (runner31120/server31154),
 currently restoring the same room. At elapsed1m15s the server remained
 CPU-active; do not mistake the old failed progress timestamp for a new failure.
-No live repaired deployment acceptance is claimed yet.
+At r73 the subsequent **Marine3** deployment reached4exact formation options
+with4instantiations and no failures, then Rules Apply/Replay and an inspected
+Web screenshot. This supplies real subsequent reserve-deployment evidence for
+the shared repair, not a replay of historical Goliath2 or every reserve family.
+See `ticket-23-slice-248-resource-claim-subject-repair-2026-09-23.md`.
 
 The r57→r58 choice diversion must remain
 marked engineering-influenced in S249; do not silently score it as a pure

@@ -7,6 +7,65 @@ import {
 import { projectStarcraftTmgSpatialParameterDomainsV1 } from
   "../packages/online-agent-session/spatial-action-query-runtime-v1.mjs";
 
+// Concrete r73 regression only; do not rerun the historical resource suite.
+if (process.argv.includes("--comparison-subject-only")) {
+  const { DatabaseSync } = await import("node:sqlite");
+  const path = await import("node:path");
+  const directory = process.argv.find((arg) => arg.startsWith("--run-directory="))
+    ?.slice("--run-directory=".length);
+  assert.ok(directory, "saved run directory required");
+  const db = new DatabaseSync(path.join(directory,
+    "seats/player1/provider/live-decisions.sqlite"), { readOnly: true });
+  let choice;
+  try {
+    const record = JSON.parse(db.prepare(
+      "SELECT record_json FROM sc_live_decision_records").get().record_json);
+    choice = Object.values(record.decisions).find((entry) =>
+      entry.authority?.stateRevision === 73);
+  } finally { db.close(); }
+  const submission = Object.values(choice?.attempts || {}).flatMap((attempt) =>
+    attempt.safeOutput?.providerTurn?.toolCalls || [])
+    .filter((call) => call.name === "submit_planning").at(-1)?.arguments;
+  assert.ok(submission, "final paid Planner output must be retained");
+  const spatialActionSpace = {
+    finiteActions: choice.actionIndex.filter((entry) => entry.kind === "finite")
+      .map((entry) => ({ candidateId: entry.id, action: entry.action })),
+    parameterDomains: choice.actionIndex.filter((entry) => entry.kind === "parameterized")
+      .map((entry) => entry.action),
+  };
+  const inspect = (value, stage = "planning") =>
+    inspectStarcraftTmgSelectedActionResourceClaimsV1({ spatialActionSpace,
+      candidateId: submission.recommendedCandidateId, stage, value });
+  const actual = inspect(submission);
+  assert.equal(actual.status, "consistent",
+    `other actions' zero cost is not Stimpack's cost: ${JSON.stringify(actual.contradictions)}`);
+  const cases = [
+    ["finish_activation costs 0 CP; Stimpack costs 1 CP.", "consistent"],
+    ["Stimpack costs 1 CP, unlike finish_activation at zero CP cost.", "consistent"],
+    ["Deploy costs no CP and no damage, unlike Stimpack (1 CP).", "consistent"],
+    ["Stimpack does not cost 0 CP; it costs 1 CP.", "consistent"],
+    ["Stimpack is not a zero-CP action.", "consistent"],
+    ["Stimpack costs 0 CP, unlike Combat Shield (1 CP).", "contradicted"],
+    ["finish_activation is free, but Stimpack costs no CP too.", "contradicted"],
+    ["Use Stimpack without spending CP.", "contradicted"],
+    ["Combat Shield costs 1 CP; this selected action costs 0 CP.", "contradicted"],
+    ["This action requires no CP.", "contradicted"],
+    ["Stimpack costs 1 CP and zero Supply.", "consistent"],
+    ["结束激活无需支付指挥点；Stimpack 支付 1 指挥点。", "consistent"],
+    ["Stimpack 无需支付指挥点。", "contradicted"],
+  ];
+  for (const [text, expected] of cases) {
+    assert.equal(inspect({ publicPlanSummary: { calculations: [text] } }).status,
+      expected, `planning: ${text}`);
+    assert.equal(inspect({ selectedReason: text }, "action").status,
+      expected, `action: ${text}`);
+  }
+  console.log(JSON.stringify({ passed: true, revision: 73,
+    savedPlannerResourceClaims: actual.status, counterexamples: cases.length * 2,
+    fullPlannerAccepted: false, providerCalls: 0, roomMutations: 0, costCny: 0 }));
+  process.exit(0);
+}
+
 const actionSpace = {
   finiteActions: [],
   parameterDomains: [

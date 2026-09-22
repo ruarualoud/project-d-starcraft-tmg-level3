@@ -6,6 +6,35 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r73 resource-comparison checker repaired; resume next
+
+**76101 confirmed terminal exit1**. r70Marine1 finish→r71Corpser move→r72finish
+→r73Marine3 deploy accepted/replayed/captured; r71/73 inspected. Marine3 reserve
+formation4/4 exact without failure supplies live evidence for78d2fd8's shared
+coherency repair, not historical Goliath2.66new+7prefix=r73, Round2Movement;
+191calls/21,262,784units/estimated¥28.363779, bothFlash.
+
+Next Planner selected Stimpack and correctly stated1 CP, but the checker read
+finish_activation's0 CP as Stimpack's cost four times and stopped after3semantic
+submissions. Exact saved output red→one green2.570s plus26related cases now
+binds each cost occurrence to its action and handles negation.0Provider/Room/¥0;
+no old gates/builds. Local replay versions37/14 retain paid Planner recovery.
+Resume the same20260922172710914 directory, keep charges/history, observe actual
+local Planner→Action→Apply/Replay; do not mark recovery complete from this test.
+Report `docs/ticket-23-slice-248-resource-claim-subject-repair-2026-09-23.md`.
+T23 stays33/36:248full match/249review/250synthesis open.
+
+K3 native59421 remains live in S271. Commits1a5b3da/70a4168/3252d5d add the live
+verifier, correct per-round field instructions, then fresh HTTP connections and
+settlement-before-detach. First run2Flash returns/37,067units failed on extra
+resourceUtilization fields; second2returns/37,389units passed candidates but
+GET ECONNRESET aborted an in-flight comparison (usage unknown). Preserve both
+failed-run folders and all drafts. It has started third concrete-repair run
+`build/s271-live-acceptance-run3.log` (reportedPID80874); no handoff/success yet.
+Root did not interrupt it or launch an additional paid run. Earlier suspicion
+of an unchanged second run was corrected after inspecting70a4168. NativeK3
+staysK3, product requestsFlash; no edits to its live worktree by root.
+
 ### 2026-09-23 T23 / S248 — r69 Marine1 response; same live process
 
 **76101 remains live**, repair78d2fd8 loaded. r65Marine2 CombatShield→r66finish

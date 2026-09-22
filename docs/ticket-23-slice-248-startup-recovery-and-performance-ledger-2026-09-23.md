@@ -62,6 +62,21 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r73 — comparison-subject false rejection stopped a completed Planner
+
+The resource checker treated `finish_activation costs0 CP` as Stimpack's price,
+despite the same saved output declaring Stimpack1 CP. Three semantic submissions
+hit the stop limit; process76101 exited1. Subject-scoped matching and negation
+handling now pass the exact retained final response plus26 relevant cases in
+one2.570s post-change run,0Provider/Room/¥0. No strategy Prompt or old gate changed.
+Local replay versions37/14 permit reuse before another paid Planner request.
+Live recovery is still pending, not claimed from the narrow test.
+
+At stop191calls/21,262,784units/estimated¥28.363779, bothFlash; r73 itself is
+accepted/replayed/captured. r73 observation13.702+7.274+30.789=51.765s remains
+separate from the unnecessary semantic correction latency. See the dedicated
+`ticket-23-slice-248-resource-claim-subject-repair-2026-09-23.md` report.
+
 ### r65–68 — 18-model formation Host stage and observation timing
 
 At r68:168calls/18,430,674accounted units/estimated¥24.645064, bothFlash.
