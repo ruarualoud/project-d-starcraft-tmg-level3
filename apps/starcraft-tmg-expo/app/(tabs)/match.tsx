@@ -12,6 +12,8 @@ import {
 import * as Clipboard from "expo-clipboard";
 
 import { AuthoritativeBattleWorkspace } from "@/components/battlefield/authoritative-battle-workspace";
+import { AgentAgentMatchControl } from
+  "@/components/battlefield/agent-agent-match-control";
 import { CompetitiveMapConfigurator } from
   "@/components/battlefield/competitive-map-configurator";
 import { LearningConsolePanel } from "@/components/battlefield/learning-console-panel";
@@ -371,6 +373,7 @@ export default function MatchScreen() {
         {surface === "battle" && (
           <>
             <AuthoritativeBattleWorkspace onOpenRoomRules={() => setSurface("room")} />
+            <AgentAgentMatchControl />
             <HostedOpponentOperationsPanel roomId={connection.roomId} />
           </>
         )}
