@@ -2,6 +2,8 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import { resolveStarcraftTmgEffectiveActingSideV1 } from
   "./effective-acting-side-v1.mjs";
+import { STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1 } from
+  "./decision-recovery-policy-v1.mjs";
 
 export const STARCRAFT_TMG_HOSTED_BOT_SEAT_RUNTIME_VERSION =
   "starcraft_tmg_hosted_bot_seat_runtime_v1";
@@ -13,8 +15,7 @@ const REPAIRED_DECISION_ISSUE_CODES = Object.freeze([
   "LIVE_DECISION_PROVIDER_OUTPUT_INVALID",
   "LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED",
   "LIVE_DECISION_TERMINAL_TOOL_INVALID",
-  "provider_worker_protocol_rejected",
-  "provider_transport_failed",
+  ...STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1,
 ]);
 
 const ACTIVE_LIFECYCLES = new Set(["active", "waiting_human", "paused"]);

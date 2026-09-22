@@ -42,6 +42,17 @@ classic-map art fidelity and are superseded by the semantic-map reset above.
 
 ### 2026-09-22 Ticket 23 / Slice 248 checkpoint
 
+2026-09-23 r7 follow-up: Omega Network was applied and Replay-verified at
+(9.457, 9.704) inches, with four options compared using current exposure and
+future Entry Edge utility. The next decision hit `provider_transport_timeout`.
+Explicit-resume admission and successful-Apply issue closure now share one
+transport classification, including timeout; no automatic retries or weakened
+Rules/auth/budget checks. The real r7 defect failed first, then the single
+affected verifier mode passed once with no Provider/Room changes. Resume the
+same room from r7, not a new match. Stopped accounting: 12 calls / 1,426,177
+units / estimated ¥1.885395. Details and screenshots:
+`docs/ticket-23-slice-248-explicit-timeout-recovery-2026-09-23.md`.
+
 2026-09-23 recovery follow-up: branch `20260922133120597` has now applied and
 Replay-verified r6 (18-model Raptor), using 2 new Action calls / 176,085 units.
 Current conservative branch total is 7 calls / 884,206 units / ¥1.164198.

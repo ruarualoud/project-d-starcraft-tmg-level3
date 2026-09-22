@@ -13,6 +13,8 @@ import { chromium } from "playwright";
 import { isStarcraftTmgTransientControlPlaneReadFailureV1,
   readStarcraftTmgDurableAgentActionBoundaryV1 } from
   "../packages/online-agent-session/durable-agent-action-boundary-v1.mjs";
+import { isStarcraftTmgHistoricalResumeFindingV1 } from
+  "../packages/online-agent-session/decision-recovery-policy-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SERVER = path.join(ROOT,
@@ -21,12 +23,6 @@ const MAX_ACTIONS = 180;
 const MATCH_TIMEOUT_MS = 10 * 60 * 60_000;
 const SEATS = Object.freeze(["player1", "player2"]);
 const BLOCKING_SEVERITIES = new Set(["Critical", "High"]);
-const EXPLICIT_RESUME_RETRYABLE_FINDING_CODES = new Set([
-  "LIVE_DECISION_ACTION_DID_NOT_CONVERGE",
-  "LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED",
-  "provider_worker_protocol_rejected",
-  "provider_transport_failed",
-]);
 
 function ensure(condition, code, details = {}) {
   if (!condition) throw Object.assign(new Error(code), { code, ...details });
@@ -333,10 +329,10 @@ async function main() {
     lastManifest = result;
     const allFindings = findings(result);
     const ignoredForExplicitResume = allFindings.filter((finding) =>
-      options.allowExistingRetryableFinding === true
-        && EXPLICIT_RESUME_RETRYABLE_FINDING_CODES.has(String(finding.code))
-        && Date.parse(String(finding.occurredAt || "")) < Date.parse(startedAt)
-        && !finding.resolvedAt);
+      isStarcraftTmgHistoricalResumeFindingV1(finding, {
+        allowExistingRetryableFinding: options.allowExistingRetryableFinding,
+        startedAt,
+      }));
     const ignoredKeys = new Set(ignoredForExplicitResume.map(findingKey));
     const blocking = allFindings.filter((finding) =>
       BLOCKING_SEVERITIES.has(String(finding.severity))
