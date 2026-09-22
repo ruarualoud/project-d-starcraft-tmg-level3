@@ -38,7 +38,7 @@ import {
 
 export const ROSTER_STRATEGIST_RUNTIME_MODULE =
   "packages/roster-strategist/roster-strategist-runtime-v1.mjs";
-export const ROSTER_STRATEGIST_RUNTIME_VERSION = "1.2.0";
+export const ROSTER_STRATEGIST_RUNTIME_VERSION = "1.3.0";
 export const ROSTER_STRATEGIST_DELIBERATION_SCHEMA =
   "starcraft_tmg_roster_strategist_deliberation_v1";
 export const ROSTER_STRATEGIST_DESCRIPTOR_SCHEMA =
@@ -268,7 +268,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     || typeof laboratory?.querySpatial !== "function"
     || typeof laboratory?.queryMath !== "function"
     || typeof laboratory?.queryThreatExchange !== "function"
-    || typeof laboratory?.runScenarioBranch !== "function") {
+    || typeof laboratory?.runScenarioBranch !== "function"
+    || typeof laboratory?.missionScoringAuthority !== "function") {
     fail("ROSTER_STRATEGIST_LABORATORY_INVALID");
   }
   const labDescriptor = laboratory.labDescriptor();
@@ -300,6 +301,36 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     hiddenChainOfThoughtRequested: false,
     hiddenChainOfThoughtPersisted: false,
     unknownStaysUnknown: true,
+    // Schedule-grounding contract (sub-slice 269.13, closing the round-9
+    // list-quality gap of an unknown victory-point schedule): the
+    // authoritative mission task/scoring data frozen in the source Room
+    // state is sealed into the foundation-round request; when it is
+    // derivable the public schedule must be declared and mission-grounded,
+    // otherwise the schedule stays unknown and the missing authority is
+    // identified publicly. The runtime never fabricates scoring data.
+    missionScoringAuthority: {
+      sealedIntoFoundationRound: true,
+      declaredGroundedScheduleRequiredWhenDerivable: true,
+      unknownPreservedAndMissingAuthorityIdentifiedOtherwise: true,
+      runtimeNeverFabricatesScoringData: true,
+    },
+    // Budget-utilization contract (sub-slice 269.14, closing the round-9
+    // list-quality gap of 940/2000 minerals spent): unspent budget is lost,
+    // so budget residue is an explicit strategic opportunity cost. The
+    // near-cap threshold is derived from the Rules-owned menu (cheapest
+    // positive purchasable increment), never hard-coded per faction and
+    // never forced to exact budget equality; when an evaluated Rules-legal
+    // candidate is near-cap the selection must be near-cap or carry an
+    // explicit public justification tied to a legal retained-resource use.
+    budgetUtilizationContract: {
+      nearCapThresholdDerivation:
+        "cheapest_positive_purchasable_increment_in_rules_owned_menu",
+      unspentResourceDisposition: "lost",
+      unspentBudgetIsAnExplicitOpportunityCost: true,
+      nearCapSelectionOrDeclaredJustificationRequired: true,
+      exactBudgetEqualityNeverForced: true,
+      runtimeNeverRanksCandidates: true,
+    },
     publicOutputNormalization: {
       aliasRegistrySchema:
         ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.schema,
@@ -429,6 +460,37 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     });
   }
 
+  // Menu-derived near-cap threshold (sub-slice 269.14, closing the round-9
+  // list-quality gap of 940/2000 minerals spent): the cheapest positive
+  // purchasable mineral increment anywhere in the Rules-owned menu. The
+  // derivation is general — it reads the menu, is never hard-coded per
+  // faction and never forces exact budget equality. A candidate whose
+  // unspent minerals fall below this increment cannot purchase even the
+  // cheapest remaining item, so its residue is near-cap.
+  function nearCapThresholdMineralsFromMenu(menuValue) {
+    const costs = [];
+    const push = (value) => {
+      const numeric = Number(value);
+      if (Number.isSafeInteger(numeric) && numeric > 0) costs.push(numeric);
+    };
+    for (const unit of menuValue.units || []) {
+      for (const option of unit.compositionOptions || []) {
+        push(option.mineralCost);
+      }
+      for (const upgrade of unit.purchasableUpgrades || []) {
+        const byComposition = upgrade.mineralCostByComposition;
+        if (Array.isArray(byComposition)) {
+          for (const entry of byComposition) push(entry?.mineralCost ?? entry);
+        } else if (object(byComposition)) {
+          for (const value of Object.values(byComposition)) push(value);
+        }
+      }
+    }
+    // With no positive purchasable increment only an exact-budget roster is
+    // near-cap; a real menu always yields its cheapest composition/upgrade.
+    return costs.length ? Math.min(...costs) : 1;
+  }
+
   // ---------------------------------------------------- output validation
 
   function validateEnvelope(output, roundKind) {
@@ -461,12 +523,42 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     };
   }
 
-  function validateFoundation(output) {
+  function validateFoundation(output, { missionAuthorityDerivable } = {}) {
     validateEnvelope(output, "strategy_foundation");
     exactKeys(output, ["schemaVersion", "roundKind", "scoreRoute",
-      "opponentHypotheses", "counterResponses", "invalidationTriggers",
-      "informationNeeds"], "ROSTER_STRATEGIST_FOUNDATION_INVALID");
+      "scoreRouteAuthority", "opponentHypotheses", "counterResponses",
+      "invalidationTriggers", "informationNeeds"],
+      "ROSTER_STRATEGIST_FOUNDATION_INVALID");
     const code = "ROSTER_STRATEGIST_FOUNDATION_INVALID";
+    const scoreRoute = validateScoreRoute(output.scoreRoute, code);
+    // Schedule-grounding contract (sub-slice 269.13): a mission-grounded
+    // VP schedule is built from the authoritative task/scoring data when
+    // that authority is derivable; otherwise unknown is preserved and the
+    // missing authority is identified. Never fabricated either way.
+    const grounding = output.scoreRouteAuthority;
+    if (!object(grounding)) fail(code, "scoreRouteAuthority");
+    exactKeys(grounding, ["status", "authorityText"], code);
+    if (!["mission_grounded", "unknown_missing_authority"].includes(
+      grounding.status)) {
+      fail(code, "scoreRouteAuthority:status");
+    }
+    const groundingResult = {
+      status: grounding.status,
+      authorityText: nonEmpty(grounding.authorityText, code),
+    };
+    if (missionAuthorityDerivable === true
+      && (scoreRoute.scheduleStatus !== "declared"
+        || grounding.status !== "mission_grounded")) {
+      fail(code, "schedule_grounding:"
+        + "derivable_authority_requires_declared_mission_grounded_schedule");
+    }
+    if (missionAuthorityDerivable === false
+      && (scoreRoute.scheduleStatus !== "unknown"
+        || grounding.status !== "unknown_missing_authority")) {
+      fail(code, "schedule_grounding:"
+        + "missing_authority_preserves_unknown_and_identifies_"
+        + "missing_authority");
+    }
     const hypotheses = (output.opponentHypotheses || []).map((entry) => {
       exactKeys(entry, ["hypothesisId", "archetypeLabel", "hypothesisText",
         "confidence", "expectedCounterTexts", "ownCounterResponseIds",
@@ -523,7 +615,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       fail(code, "information_need_ids_unique");
     }
     return {
-      scoreRoute: validateScoreRoute(output.scoreRoute, code),
+      scoreRoute,
+      scoreRouteAuthority: groundingResult,
       opponentHypotheses: hypotheses,
       counterResponses: responses,
       invalidationTriggers: triggers,
@@ -597,11 +690,12 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     });
   }
 
-  function validateComparison(output, evaluated) {
+  function validateComparison(output, evaluated, budgetContract) {
     validateEnvelope(output, "comparison_selection");
     exactKeys(output, ["schemaVersion", "roundKind", "comparison",
-      "componentPurposes", "deploymentConcept", "lossResourceBudget",
-      "publicSummaryText"], "ROSTER_STRATEGIST_COMPARISON_INVALID");
+      "componentPurposes", "deploymentConcept", "resourceUtilization",
+      "lossResourceBudget", "publicSummaryText"],
+      "ROSTER_STRATEGIST_COMPARISON_INVALID");
     const code = "ROSTER_STRATEGIST_COMPARISON_INVALID";
     const comparison = output.comparison;
     if (!object(comparison)) fail(code);
@@ -613,6 +707,61 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     if (!selected) fail("ROSTER_STRATEGIST_SELECTION_UNKNOWN", selectedCandidateId);
     if (selected.candidate.legalityStatus !== "legal") {
       fail("ROSTER_STRATEGIST_SELECTION_NOT_RULES_LEGAL", selectedCandidateId);
+    }
+    // Budget-utilization contract (sub-slice 269.14): unspent budget is
+    // lost, so the near-cap facts are recomputed from the Rules verdicts
+    // and the menu-derived threshold; the model's echoes must match those
+    // computed values exactly, and declining an available near-cap
+    // candidate requires a declared public justification tied to a legal
+    // retained-resource use. The runtime computes but never ranks.
+    const { nearCapThresholdMinerals, mineralBudget } = budgetContract;
+    const utilizationFacts = new Map(evaluated
+      .filter((entry) => entry.candidate.legalityStatus === "legal")
+      .map((entry) => {
+        const mineralUnspent = mineralBudget
+          - entry.verdictOrRejection.summary.mineralSpent;
+        return [entry.proposal.candidateId, {
+          mineralUnspent,
+          nearCap: mineralUnspent < nearCapThresholdMinerals,
+        }];
+      }));
+    const computedNearCapAvailable = [...utilizationFacts.values()].some(
+      (fact) => fact.nearCap);
+    const computedSelectedNearCap =
+      utilizationFacts.get(selectedCandidateId)?.nearCap === true;
+    const utilization = output.resourceUtilization;
+    if (!object(utilization)) fail(code, "resourceUtilization");
+    exactKeys(utilization, ["nearCapCandidateAvailable",
+      "selectedCandidateNearCap", "unspentBudgetAcknowledgedLost",
+      "retainedResourceJustificationStatus",
+      "retainedResourceJustificationText"], code);
+    if (utilization.nearCapCandidateAvailable !== computedNearCapAvailable) {
+      fail(code, "resourceUtilization:near_cap_availability_echo_mismatch");
+    }
+    if (utilization.selectedCandidateNearCap !== computedSelectedNearCap) {
+      fail(code, "resourceUtilization:selected_near_cap_echo_mismatch");
+    }
+    if (utilization.unspentBudgetAcknowledgedLost !== true) {
+      fail(code, "resourceUtilization:unspent_budget_lost_not_acknowledged");
+    }
+    if (!["declared", "not_applicable"].includes(
+      utilization.retainedResourceJustificationStatus)) {
+      fail(code, "resourceUtilization:justification_status");
+    }
+    const justificationText = String(
+      utilization.retainedResourceJustificationText ?? "").trim();
+    if (utilization.retainedResourceJustificationStatus === "declared"
+      && !justificationText) {
+      fail(code, "resourceUtilization:justification_text_required");
+    }
+    if (utilization.retainedResourceJustificationStatus === "not_applicable"
+      && justificationText) {
+      fail(code, "resourceUtilization:justification_text_must_be_empty");
+    }
+    if (computedNearCapAvailable && !computedSelectedNearCap
+      && utilization.retainedResourceJustificationStatus !== "declared") {
+      fail(code,
+        "resourceUtilization:justification_required_when_near_cap_available");
     }
     const purposes = (output.componentPurposes || []).map((entry) => {
       exactKeys(entry, ["componentKind", "recordKey", "instanceId",
@@ -682,6 +831,15 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         objectiveControlText: nonEmpty(deployment.objectiveControlText, code),
       },
       lossResourceBudget: lossBudget,
+      resourceUtilization: {
+        nearCapCandidateAvailable: computedNearCapAvailable,
+        selectedCandidateNearCap: computedSelectedNearCap,
+        unspentBudgetAcknowledgedLost: true,
+        retainedResourceJustificationStatus:
+          utilization.retainedResourceJustificationStatus,
+        retainedResourceJustificationText: justificationText,
+        nearCapThresholdMinerals,
+      },
       publicSummaryText: nonEmpty(output.publicSummaryText, code),
     };
   }
@@ -1127,6 +1285,17 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     const enumeration = armyBuilderPort.enumerateArmyBuildingChoices({
       factionRecordKey, scaleId: engagementScale, mineralBudget });
     const menu = menuProjection(enumeration);
+    // Authoritative mission task/scoring data (sub-slice 269.13), sealed
+    // into the foundation-round request below: when derivable, the public
+    // VP schedule must be declared and mission-grounded; when missing,
+    // unknown is preserved and the missing authority is identified. The
+    // runtime never fabricates scoring data.
+    const missionAuthority = laboratory.missionScoringAuthority();
+    const missionAuthorityDerivable =
+      missionAuthority.resultStatus === "derivable";
+    // Menu-derived near-cap threshold (sub-slice 269.14): unspent budget is
+    // lost, so budget residue is an explicit strategic opportunity cost.
+    const nearCapThresholdMinerals = nearCapThresholdMineralsFromMenu(menu);
 
     const provenance = createRosterPlanProvenanceV1({
       sourceLockHash: sessionInput.versionPins?.sourceLockHash,
@@ -1184,11 +1353,26 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         denominators: clone(enumeration.denominators),
         vespeneLimitForBudget: clone(enumeration.vespeneLimitForBudget),
       }),
+      // Sub-slice 269.13: the authoritative mission task/scoring data
+      // frozen in the source Room state is sealed into the foundation
+      // round, so a mission-grounded VP schedule is derivable from the
+      // request itself; a missing authority is sealed as unknown with the
+      // missing authority named.
+      sealNode("mission-scoring-authority",
+        "rules_owned_mission_scoring_authority", {
+          resultStatus: missionAuthority.resultStatus,
+          unknownReason: missionAuthority.unknownReason ?? null,
+          missionScoringProfile: clone(missionAuthority.missionScoringProfile),
+          markerAffinity: clone(missionAuthority.markerAffinity),
+          scheduleDerivationNote: missionAuthority.scheduleDerivationNote,
+          authorityReceiptHash: missionAuthority.receiptHash,
+          runtimeNeverFabricatesScoringData: true,
+        }),
       sealNode("response-schema", "platform", {
         schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
         roundKind: "strategy_foundation",
-        fields: ["scoreRoute", "opponentHypotheses", "counterResponses",
-          "invalidationTriggers", "informationNeeds"],
+        fields: ["scoreRoute", "scoreRouteAuthority", "opponentHypotheses",
+          "counterResponses", "invalidationTriggers", "informationNeeds"],
         informationNeedKinds: [...NEED_KINDS],
         publicFieldsOnly: true,
         envelopeAtTopLevelNoChannelsWrapper: true,
@@ -1228,7 +1412,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       provenanceHash: provenance.provenanceHash,
       enumerationReceiptHash: enumeration.receiptHash,
       skillRouteReceiptHash: route.receipt.receiptHash });
-    const foundation = validateFoundation(foundationOutput);
+    const foundation = validateFoundation(foundationOutput,
+      { missionAuthorityDerivable });
     foundationTrace.outputHash = hashStarcraftTmgContract(foundationOutput);
     for (const need of foundation.informationNeeds) {
       executeInformationNeed(need, branchByNeedId, toolReceipts, foundationTrace);
@@ -1409,6 +1594,16 @@ export function createRosterStrategistRuntimeV1(input = {}) {
             ? entry.verdictOrRejection.summary.vespeneSpent : null,
           startingSupply: entry.candidate.legalityStatus === "legal"
             ? entry.verdictOrRejection.summary.startingSupply : null,
+          // Budget-utilization context (sub-slice 269.14): per-candidate
+          // unspent budget and near-cap flag derived from the Rules verdict
+          // and the menu-derived threshold below — never from the model.
+          mineralUnspent: entry.candidate.legalityStatus === "legal"
+            ? mineralBudget - entry.verdictOrRejection.summary.mineralSpent
+            : null,
+          nearCap: entry.candidate.legalityStatus === "legal"
+            ? (mineralBudget - entry.verdictOrRejection.summary.mineralSpent)
+              < nearCapThresholdMinerals
+            : null,
           rulesErrorCode: entry.candidate.legalityStatus === "illegal"
             ? entry.candidate.legalityReceipt.rulesErrorCode : null,
           // Deterministic component identities (sub-slice 269.11, closing
@@ -1434,6 +1629,26 @@ export function createRosterStrategistRuntimeV1(input = {}) {
             })),
           })),
         })),
+        // Budget-utilization contract (sub-slice 269.14): unspent minerals
+        // are lost (no carryover, no later spend), so budget residue is an
+        // explicit strategic opportunity cost, never headroom. The
+        // threshold is derived from the Rules-owned menu (cheapest positive
+        // purchasable increment), never hard-coded per faction and never
+        // forced to exact budget equality.
+        budgetGuidance: {
+          nearCapThresholdMinerals,
+          nearCapThresholdDerivation:
+            "cheapest_positive_purchasable_increment_in_rules_owned_menu",
+          unspentResourceDisposition: "lost",
+          unspentBudgetIsAnExplicitOpportunityCost: true,
+          selectionRule: "when any evaluated Rules-legal candidate is "
+            + "near-cap (mineralUnspent below the sealed threshold), select "
+            + "a near-cap candidate or declare an explicit public "
+            + "justification tied to a named legal retained-resource use in "
+            + "resourceUtilization; exact budget equality is never forced",
+          exactBudgetEqualityNeverForced: true,
+          runtimeNeverRanksCandidates: true,
+        },
         laboratoryNeverRanks: true,
         hostPreferenceWeights: false,
       }),
@@ -1447,7 +1662,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
         roundKind: "comparison_selection",
         fields: ["comparison", "componentPurposes", "deploymentConcept",
-          "lossResourceBudget", "publicSummaryText"],
+          "resourceUtilization", "lossResourceBudget", "publicSummaryText"],
         selectedCandidateMustBeRulesLegal: true,
         publicFieldsOnly: true,
         envelopeAtTopLevelNoChannelsWrapper: true,
@@ -1485,7 +1700,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       sessionId, roundKind: "comparison_selection",
       provenanceHash: provenance.provenanceHash,
       candidateHashes: evaluated.map((entry) => entry.candidate.candidateHash) });
-    const comparisonSelection = validateComparison(comparisonOutput, evaluated);
+    const comparisonSelection = validateComparison(comparisonOutput,
+      evaluated, { nearCapThresholdMinerals, mineralBudget });
     comparisonTrace.outputHash = hashStarcraftTmgContract(comparisonOutput);
     const selected = evaluated.find((entry) => (
       entry.proposal.candidateId
@@ -1585,6 +1801,19 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       outputContractSetHash:
         ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash,
       structuredGenerationEnforced: true,
+      // Schedule-grounding and budget-utilization outcomes (sub-slices
+      // 269.13/269.14), bound publicly in the session receipt.
+      missionScoringAuthorityStatus: missionAuthority.resultStatus,
+      missionScoringAuthorityReceiptHash: missionAuthority.receiptHash,
+      scoreRouteAuthorityStatus: foundation.scoreRouteAuthority.status,
+      nearCapThresholdMinerals,
+      nearCapLegalCandidateAvailable:
+        comparisonSelection.resourceUtilization.nearCapCandidateAvailable,
+      selectedCandidateNearCap:
+        comparisonSelection.resourceUtilization.selectedCandidateNearCap,
+      retainedResourceJustificationStatus:
+        comparisonSelection.resourceUtilization
+          .retainedResourceJustificationStatus,
       selectedByAgentDeliberation: true,
       hostPreferenceWeights: false,
       hiddenChainOfThoughtRequested: false,

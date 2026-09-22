@@ -71,11 +71,16 @@ function without(value, keys) {
 // version, never a silent edit.
 
 const DECLARED_PUBLIC_FIELDS_BY_ROUND_KIND = {
-  strategy_foundation: ["scoreRoute", "opponentHypotheses", "counterResponses",
+  // Declared field sets track the strict output contract set (v1.3.0 adds
+  // scoreRouteAuthority to the foundation and resourceUtilization to the
+  // comparison; sub-slices 269.13/269.14). Field names only — never content.
+  strategy_foundation: ["scoreRoute", "scoreRouteAuthority",
+    "opponentHypotheses", "counterResponses",
     "invalidationTriggers", "informationNeeds"],
   candidate_proposals: ["proposals"],
   comparison_selection: ["comparison", "componentPurposes",
-    "deploymentConcept", "lossResourceBudget", "publicSummaryText"],
+    "deploymentConcept", "resourceUtilization", "lossResourceBudget",
+    "publicSummaryText"],
   revision: ["publicSummaryText", "revisedScoreRoute",
     "revisedDeploymentConcept"],
 };
