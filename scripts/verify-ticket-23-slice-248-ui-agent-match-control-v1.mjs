@@ -65,7 +65,7 @@ const SCREENSHOT_EXPLANATIONS = {
   "04-desktop-blocked-gate.png": "Data-gate blocker: amber blocked banner with the blocking-finding count, gate chip flipped, drive button visibly disabled; a forced DOM click produced no POST.",
   "05-desktop-failed-recovery.png": "Typed failure: the failure card shows code/severity, explains that no state advanced, and the drive button is enabled again for a deliberate retry.",
   "06-narrow-collapsed.png": "390px touch layout: one-line summary (gate chip, run chip, context, Details toggle, drive button) under the still-visible battlefield; fact chips stay collapsed and there is no horizontal overflow.",
-  "07-narrow-expanded.png": "390px expanded inline: usage facts, revision, last accepted action, audit/model/Skill evidence and the what-will-happen helper push content down without covering the board.",
+  "07-narrow-expanded.png": "390px expanded inline (frame scrolled down the natural column to the strip): usage facts, revision, last accepted action, audit/model/Skill evidence and the what-will-happen helper; measured at the natural scroll top the board position is pixel-identical and the strip begins below the board's bottom edge, so expansion never covers battlefield interaction.",
   "08-normal-server-hidden.png": "Normal product server (endpoint 404): the experimental control is entirely absent, the battle surface shows no alarming error, and the board remains the focus.",
 };
 const BACKEND_PARITY_MODULES = [
@@ -588,6 +588,26 @@ async function capture(page, name, artifacts) {
   artifacts.push(await artifactRecord(filename, SCREENSHOT_EXPLANATIONS[name]));
 }
 
+// Return every scrollable ancestor (and the window) to the surface's natural
+// entry position. Touch taps center-scroll their target, which moves the
+// board within the viewport without moving it in the layout; layout claims
+// must be measured at the natural top position (Slice 262 lesson).
+async function resetScrollToSurfaceTop(page) {
+  await page.evaluate(() => {
+    const board = document.querySelector('[aria-label^="Battlefield;"]');
+    let node = board ? board.parentElement : null;
+    while (node) {
+      const style = getComputedStyle(node);
+      if (/(auto|scroll)/u.test(style.overflowY) && node.scrollHeight > node.clientHeight) {
+        node.scrollTop = 0;
+        node.scrollLeft = 0;
+      }
+      node = node.parentElement;
+    }
+    window.scrollTo(0, 0);
+  });
+}
+
 async function main() {
   const started = Date.now();
   await rm(BUILD_ROOT, { recursive: true, force: true });
@@ -942,11 +962,22 @@ async function main() {
       || narrowExpandedText.includes("exactly one authoritative Agent action"),
     "NARROW_EXPAND_HELPER_MISSING");
     ensure(narrowExpandedText.includes("audit:"), "NARROW_EXPAND_AUDIT_MISSING");
+    // Measure at the natural scroll position: the tap center-scrolled its
+    // target, which is test-induced viewport motion, not layout motion.
+    await resetScrollToSurfaceTop(narrowPage);
     const narrowBoardBoxAfter = await narrowBoard.boundingBox();
+    const narrowControlBox = await narrowControl.boundingBox();
     ensure(narrowBoardBoxAfter && Math.abs(narrowBoardBoxAfter.y - narrowBoardBox.y) < 2
       && Math.abs(narrowBoardBoxAfter.height - narrowBoardBox.height) < 2,
     "NARROW_EXPAND_MOVED_THE_BOARD", {
       before: narrowBoardBox, after: narrowBoardBoxAfter });
+    ensure(narrowControlBox
+      && narrowControlBox.y + 2 >= narrowBoardBoxAfter.y + narrowBoardBoxAfter.height,
+    "NARROW_EXPANDED_CONTROL_COVERS_BOARD", {
+      board: narrowBoardBoxAfter, control: narrowControlBox });
+    // Scroll the expanded strip into view for its own evidence frame; the
+    // geometry above already proved the board is never covered.
+    await narrowControl.scrollIntoViewIfNeeded();
     await capture(narrowPage, "07-narrow-expanded.png", artifacts);
     checks.push({ id: "narrow_expand_is_inline_and_preserves_board", passed: true });
 
