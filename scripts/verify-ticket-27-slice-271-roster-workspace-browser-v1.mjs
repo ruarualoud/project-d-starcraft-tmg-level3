@@ -621,7 +621,12 @@ async function waitForSession(origin, sessionId, predicate, timeoutMs = 240_000,
   for (;;) {
     let body = null;
     try {
-      const response = await fetch(`${origin}${route}`);
+      // `connection: close`: synchronous Rules evaluation between paid rounds
+      // blocks the event loop far beyond the server's 5s keep-alive idle
+      // timeout; reusing that pooled-but-closing socket is the measured
+      // ECONNRESET race. A fresh socket per poll removes it.
+      const response = await fetch(`${origin}${route}`,
+        { headers: { connection: "close" } });
       body = await response.json().catch(() => null);
     } catch (error) {
       throw Object.assign(new Error(`S271_HTTP_TRANSPORT_FAILURE:${stage}`), {
@@ -654,8 +659,10 @@ async function api(origin, method, subpath, body, opts = {}) {
   try {
     response = await fetch(`${origin}${route}`, {
       method,
-      headers: body !== undefined
-        ? { "content-type": "application/json" } : undefined,
+      headers: {
+        connection: "close",
+        ...(body !== undefined ? { "content-type": "application/json" } : {}),
+      },
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch (error) {
@@ -730,6 +737,8 @@ async function main() {
   let parentCredentialZeroed = "not_applicable_no_credential_loaded";
   let detached = false;
   let browser = null; // closed on every exit path so failures never linger
+  let workspace = null; // closed in finally AFTER any active run settles
+  let acceptanceSessionId = null; // used by the finally settle-before-detach
   const factory = { current: null };
   try {
     const keychainIngress = await readStarcraftTmgDeepSeekCredentialFromKeychainV1();
@@ -766,7 +775,7 @@ async function main() {
       workerPort, workerRef: attached.workerRef, egressBinding, receipts });
 
     // ---- workspace server with the live factory
-    const workspace = await createRosterWorkspaceServerV1({
+    workspace = await createRosterWorkspaceServerV1({
       fixtureRoot: FIXTURE_ROOT,
       dataDirectory: path.join(BUILD_ROOT, "workspace-data"),
       deliberationFactory: factory.current,
@@ -813,6 +822,7 @@ async function main() {
       "sessions", undefined, { stage: "list_sessions_after_create" }),
       "S271_SESSION_LIST_FAILED");
     const sessionId = sessionListBody.sessions[0].sessionId;
+    acceptanceSessionId = sessionId;
 
     // 05 — generate: real async progress against live Flash
     await desktop.getByTestId("session-generate").click();
@@ -1131,7 +1141,8 @@ async function main() {
       { stderr: ticket20Stderr.slice(-300) });
     const fetchJson = async (url, stage) => {
       try {
-        const response = await fetch(url);
+        const response = await fetch(url,
+          { headers: { connection: "close" } });
         return await response.json();
       } catch (error) {
         throw Object.assign(
@@ -1310,6 +1321,28 @@ async function main() {
   } finally {
     credentialBytes?.fill(0);
     await browser?.close().catch(() => {});
+    // NEVER tear down the credential lane while a paid round may still be in
+    // flight: the workspace's asynchronous planning task keeps running inside
+    // this process even after a journey failure, so give the active session a
+    // bounded chance to settle before detach. Otherwise closing the worker
+    // port mid-send converts a read-side failure into an ambiguous paid
+    // dispatch (measured: PROVIDER_WORKER_EXITED -> S271_AMBIGUOUS_DISPATCH_STOP).
+    if (workspace && acceptanceSessionId) {
+      const settleDeadline = Date.now() + 240_000;
+      for (;;) {
+        try {
+          const response = await fetch(
+            `${workspace.origin}${ROSTER_PLANNING_WORKSPACE_API_PREFIX}`
+              + `/sessions/${acceptanceSessionId}`,
+            { headers: { connection: "close" } });
+          const body = await response.json().catch(() => null);
+          if (body?.ok && body.session?.status !== "running") break;
+        } catch { /* keep waiting within the bound */ }
+        if (Date.now() > settleDeadline) break;
+        await new Promise((resolve) => setTimeout(resolve, 2_000));
+      }
+    }
+    await workspace?.close().catch(() => {});
     if (workerPort && attached?.workerRef) {
       await workerPort.detachCredential({
         workerRef: attached.workerRef,
