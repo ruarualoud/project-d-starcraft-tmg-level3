@@ -398,7 +398,7 @@ function staticCandidate(pathname) {
     relativePath: pathname.replace(/^\/+/, "") };
 }
 
-async function serveFile(response, descriptor) {
+async function serveFile(response, descriptor, extraHeaders = {}) {
   if (!descriptor) return false;
   const filename = safeFile(descriptor.root, descriptor.relativePath);
   if (!filename) return false;
@@ -413,6 +413,7 @@ async function serveFile(response, descriptor) {
         || "application/octet-stream",
       "referrer-policy": "no-referrer",
       "x-content-type-options": "nosniff",
+      ...extraHeaders,
     });
     response.end(body);
     return true;
@@ -450,6 +451,18 @@ function authorizeRunner(request, runnerToken) {
   const supplied = Buffer.from(String(
     request.headers["x-ticket23-runner-token"] || ""), "utf8");
   const expected = Buffer.from(runnerToken, "utf8");
+  return supplied.byteLength === expected.byteLength
+    && timingSafeEqual(supplied, expected);
+}
+
+function authorizeUiControl(request, uiControlToken) {
+  const cookie = String(request.headers.cookie || "").split(";")
+    .map((entry) => entry.trim()).find((entry) => (
+      entry.startsWith("ticket23_a2a_ui=")
+    ));
+  const supplied = Buffer.from(cookie
+    ? decodeURIComponent(cookie.slice("ticket23_a2a_ui=".length)) : "", "utf8");
+  const expected = Buffer.from(uiControlToken, "utf8");
   return supplied.byteLength === expected.byteLength
     && timingSafeEqual(supplied, expected);
 }
@@ -632,6 +645,7 @@ async function main() {
       });
   }
   const runnerToken = randomBytes(32).toString("base64url");
+  const uiControlToken = randomBytes(32).toString("base64url");
   const refereeCrypto = createStarcraftTmgRefereeCrypto({
     privateKey: privateState.refereePrivateKeyPem,
     publicKey: privateState.refereePublicKeyPem,
@@ -1042,6 +1056,14 @@ async function main() {
       promptPackBySeat: {
         player1: "selfplay_agent_prompt", player2: "selfplay_agent_prompt",
       },
+      dataWiringAudit: {
+        status: fixture.rulesRuntime.descriptor
+          .dataWiringAuditBlockingFindingCount === 0 ? "passed" : "blocked",
+        schema: fixture.rulesRuntime.descriptor.dataWiringAuditSchema || null,
+        hash: fixture.rulesRuntime.descriptor.dataWiringAuditHash || null,
+        blockingFindingCount: fixture.rulesRuntime.descriptor
+          .dataWiringAuditBlockingFindingCount ?? null,
+      },
       webBundle,
       fork,
       evolutionExport: evolutionExportSummary,
@@ -1083,6 +1105,37 @@ async function main() {
           retry: retryProviderOnResume || requestBody.body.retry === true,
         });
         sendJson(response, 202, { ok: true, job });
+        return;
+      }
+      if (url.pathname === "/__ticket23/a2a/ui-drive") {
+        if (request.method !== "POST") {
+          sendJson(response, 405, { ok: false, reason: "METHOD_NOT_ALLOWED" });
+          return;
+        }
+        if (!authorizeUiControl(request, uiControlToken)) {
+          sendJson(response, 403, { ok: false,
+            reason: "UI_A2A_DRIVE_FORBIDDEN" });
+          return;
+        }
+        const job = queueDrive();
+        sendJson(response, 202, { ok: true, job });
+        return;
+      }
+      if (url.pathname === "/__ticket23/a2a/ui-status") {
+        if (request.method !== "GET") {
+          sendJson(response, 405, { ok: false, reason: "METHOD_NOT_ALLOWED" });
+          return;
+        }
+        if (!authorizeUiControl(request, uiControlToken)) {
+          sendJson(response, 403, { ok: false,
+            reason: "UI_A2A_STATUS_FORBIDDEN" });
+          return;
+        }
+        sendJson(response, 200, {
+          ok: true,
+          job: publicDriveJob(),
+          manifest: await buildManifest(),
+        });
         return;
       }
       if (url.pathname === "/__ticket23/a2a/drive-status") {
@@ -1134,7 +1187,13 @@ async function main() {
         });
         return;
       }
-      if (await serveFile(response, staticCandidate(url.pathname))) return;
+      const roomEntry = request.method === "GET"
+        && (url.pathname === "/room" || url.pathname.startsWith("/room/"));
+      const staticHeaders = roomEntry ? {
+        "set-cookie": `ticket23_a2a_ui=${encodeURIComponent(uiControlToken)}; HttpOnly; SameSite=Strict; Path=/__ticket23/a2a; Max-Age=21600`,
+      } : {};
+      if (await serveFile(response, staticCandidate(url.pathname),
+        staticHeaders)) return;
       const body = Buffer.from("Not found", "utf8");
       response.writeHead(404, { "content-length": String(body.byteLength),
         "content-type": "text/plain; charset=utf-8" });

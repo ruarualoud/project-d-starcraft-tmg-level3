@@ -21,6 +21,12 @@ Current result:
 - semantic duplicate groups: `37`;
 - cross-adapter equivalent groups: `8`, all explicitly registered;
 - selected Room units: `15`, covering `12` record keys;
+- complete current Unit catalogue: `26/26` Supply, `26/26` Combat,
+  `26/26` base-geometry and `26/26` Attack-unit records;
+- complete Attack denominator: `51` profiles across those `26` Unit records;
+- catalogue denominator, duplicate-key, source/payload identity, Unit identity,
+  Supply-tier, base-geometry and Combat-index mismatches: `0` in every
+  category;
 - missing Supply profiles: `0`;
 - current model-count/Supply mismatches: `0`;
 - missing combat profiles: `0`;
@@ -65,10 +71,17 @@ Current result:
 
 ## Consumer-parity guardrail
 
-The gate no longer treats “a profile exists” as sufficient. For every selected
-Unit it now proves that the Piece instance, Supply profile, Combat profile,
-base-geometry profile and every Attack profile share one source-record and
-payload identity. It also proves:
+The gate no longer treats “a profile exists” as sufficient. Before it examines
+the selected Room, it compares the complete current official Unit catalogue:
+Supply, Combat, geometry and the Attack catalogue must expose the same exact 26
+record keys; their keys must be unique; and every one of the 51 Attack profiles
+must retain the same source-record and payload identity as its Unit's other
+profiles. It additionally checks Unit ID/name/faction, Supply tiers, base
+dimensions and the Combat index for every catalogue Unit.
+
+For every selected Room Unit it then proves that the Piece instance, Supply
+profile, Combat profile, base-geometry profile and every Attack profile share
+one source-record and payload identity. It also proves:
 
 - the Supply and Combat squad tiers are identical;
 - `currentModels` equals the living-model ledger, `maxModels` equals the model
@@ -119,3 +132,9 @@ performed.
 The new adapter/factory versions intentionally require a fresh fork/replay under
 the current contracts; the old r14 state must not be resumed as high-strategy
 evidence.
+
+The production current-product match runtime now performs this audit at room
+composition time. Any Critical/High finding fails closed before a formal match
+can start. Its audit schema, audit hash and blocking-finding count are included
+in the runtime descriptor and Web experiment manifest, so the browser evidence
+can prove which audited data wiring actually powered the match.

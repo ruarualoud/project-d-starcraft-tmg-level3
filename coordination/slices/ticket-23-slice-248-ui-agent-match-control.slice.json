@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "id": "ticket-23-slice-248-ui-agent-match-control",
+  "githubIssue": null,
+  "title": "Design and implement the formal Agent-match Web control surface",
+  "owner": "kimi",
+  "agentProfile": "project-d-ui-lead",
+  "model": "project-d-k3",
+  "baseRef": "codex/starcraft-integration-20260921",
+  "branch": "agent/kimi/ticket-23-slice-248-ui-agent-match-control",
+  "worktree": ".worktrees/ticket-23-slice-248-ui-agent-match-control",
+  "allowedPaths": [
+    "apps/starcraft-tmg-expo/app/(tabs)/match.tsx",
+    "apps/starcraft-tmg-expo/components/battlefield/agent-agent-match-control.tsx",
+    "scripts/verify-ticket-23-slice-248-ui-agent-match-control-v1.mjs",
+    "docs/ticket-23-slice-248-ui-agent-match-control-v1-2026-09-22.md"
+  ],
+  "verification": [
+    {
+      "name": "Expo frontend TypeScript contract",
+      "command": "COREPACK_ENABLE_PROJECT_SPEC=0 corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec tsc --noEmit"
+    },
+    {
+      "name": "real-browser formal Agent match control and screenshots",
+      "command": "node scripts/verify-ticket-23-slice-248-ui-agent-match-control-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Implement only the presentation and browser-interaction side of Ticket 23 Slice 248's formal Agent-vs-Agent match control. First study the current Match page, authoritative battlefield workspace, hosted-opponent panel, current StarCraft UI language, responsive layouts and existing browser verifiers; then freeze your own numbered UX plan in the allowed report before implementation. Codex owns and will keep the backend contract unchanged: GET /__ticket23/a2a/ui-status returns {ok, job, manifest}; POST /__ticket23/a2a/ui-drive queues exactly one authoritative Agent action; both use same-origin credentials and are available only to the local formal-evidence server. manifest exposes room.stateRevision, state round/phase/activeSideKey/terminal/gameOver, usage providerCalls/totalUnits/estimatedCostCnyMicros, dataWiringAudit status/schema/hash/blockingFindingCount, recentAcceptedTransitions and the already existing model/Skill evidence. Do not alter, emulate or recalculate Rules, data wiring, probability, legality, Agent strategy, Provider work, credentials, Room state or server endpoints. Design the interaction yourself for a tabletop player: it should feel like a compact StarCraft command surface integrated with the battle table, keep the board as the visual focus, clearly separate preflight/data-gate state from Agent thinking/running/applied/failed states, show round/phase/active side, model/cost usage and the last accepted action, and make the next action understandable before the user starts it. Normal product servers returning 403/404 must hide the experimental control without an alarming product error. A data-gate blocker must visibly prevent execution. The stable action control testID must be agent-agent-drive-next, and the root testID must be agent-agent-match-control. Each user activation must send one and only one POST, remain disabled while queued/running, poll GET status without duplicate submission, recover visibly from a typed failure, refresh the accepted action and room revision, and never expose a cookie/token or raw model content. Desktop Web should use an unobtrusive command strip or dock near the board; narrow/touch App Web should use a compact control that expands without covering required battlefield interaction. Respect reduced motion, keyboard, screen-reader and touch use. Build a focused real-browser verifier with same-origin mocked endpoint responses that proves hidden-on-normal-server, passed/blocked/running/failed/completed states, exactly-one POST, no duplicate click while busy, responsive layout and stable test IDs. Capture desktop and 390px screenshots and write a claim-to-pixel explanation. Run only the two declared gates once after final relevant changes, make scoped commits, do not push, and do not touch existing backend files."
+}

@@ -31,10 +31,12 @@ import {
   composeOfficialCurrentProductActionRuntimeV1,
   verifyOfficialCurrentProductActionRuntimeCompositionV1,
 } from "./official-current-product-action-runtime-composition-v1.mjs";
+import { auditOfficialCurrentProductDataWiringV1 } from
+  "./official-current-product-data-wiring-audit-v1.mjs";
 
 export const OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_ID =
   "starcraft-tmg-official-current-product-match-runtime-v1";
-export const OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_VERSION = "1.0.0";
+export const OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_VERSION = "1.0.1";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const ACTIVATION_PHASES = new Set(["movement", "assault", "combat"]);
@@ -331,6 +333,12 @@ export function createOfficialCurrentProductMatchRuntimeV1(input = {}) {
     composition.state,
     composition.evidence,
   );
+  const dataWiringAudit = auditOfficialCurrentProductDataWiringV1(state);
+  if (dataWiringAudit.blockingFindings.length > 0) {
+    fail("CURRENT_PRODUCT_MATCH_DATA_WIRING_AUDIT_FAILED",
+      dataWiringAudit.blockingFindings.map((entry) => entry.code).join(","));
+  }
+  const dataWiringAuditHash = hashStarcraftTmgContract(dataWiringAudit);
   const runtimes = composition.runtimes;
   const mission = createOfficialMissionRuntimeV2({
     missionEffectCatalogue: state.officialMissionEffectCatalogue,
@@ -352,6 +360,7 @@ export function createOfficialCurrentProductMatchRuntimeV1(input = {}) {
     abilityCoverageReleaseHash: state.officialCurrentProductAbilityCoverageRelease.releaseHash,
     missionRuntimeHash: mission.descriptor.runtimeHash,
     actionCompositionHash: composition.evidence.compositionHash,
+    dataWiringAuditHash,
     actionTypes: ACTION_TYPES,
     executableRuleAtomIds,
   });
@@ -363,6 +372,10 @@ export function createOfficialCurrentProductMatchRuntimeV1(input = {}) {
     gameId: "starcraft-tmg",
     rulesVersion: "official-current-product-standard-2000-match-v1",
     catalogueHash,
+    dataWiringAuditSchema: dataWiringAudit.schema,
+    dataWiringAuditHash,
+    dataWiringAuditBlockingFindingCount:
+      dataWiringAudit.blockingFindings.length,
     executorManifest: [{
       executorId: OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_ID,
       executorVersion: OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_VERSION,

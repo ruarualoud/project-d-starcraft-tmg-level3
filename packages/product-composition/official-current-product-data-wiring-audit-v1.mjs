@@ -169,6 +169,149 @@ function normalizedSquadProfile(profile) {
   })).sort((left, right) => left.tier - right.tier);
 }
 
+function recordKeys(rows) {
+  return (rows || []).map((entry) => String(entry?.recordKey || ""))
+    .filter(Boolean).sort();
+}
+
+function duplicateKeys(rows, key = "recordKey") {
+  const values = (rows || []).map((entry) => String(entry?.[key] || ""))
+    .filter(Boolean);
+  return [...new Set(values.filter((value, index) => (
+    values.indexOf(value) !== index
+  )))].sort();
+}
+
+function auditUnitCatalogueData(state, blockingFindings) {
+  const supplyProfiles = state?.officialUnitCardSupplyDataBundle
+    ?.unitProfiles || [];
+  const combatProfiles = state?.officialCombatProfileBundle?.profiles || [];
+  const geometryProfiles = state?.officialModelBaseGeometryDataBundle
+    ?.profiles || [];
+  const attackCatalogue = state?.officialAttackProfileCatalogueV2 || {};
+  const attackProfiles = attackCatalogue.profiles || [];
+  const supplyKeys = recordKeys(supplyProfiles);
+  const combatKeys = recordKeys(combatProfiles);
+  const geometryKeys = recordKeys(geometryProfiles);
+  const attackUnitKeys = [...(attackCatalogue.unitRecordKeys || [])]
+    .map(String).sort();
+  const denominatorMismatches = [];
+  for (const [name, keys] of [["combat", combatKeys],
+    ["geometry", geometryKeys], ["attack", attackUnitKeys]]) {
+    if (!sameJson(supplyKeys, keys)) denominatorMismatches.push(name);
+  }
+  const duplicateProfileKeys = {
+    supply: duplicateKeys(supplyProfiles),
+    combat: duplicateKeys(combatProfiles),
+    geometry: duplicateKeys(geometryProfiles),
+    attack: duplicateKeys(attackProfiles, "profileKey"),
+  };
+  const supplyByKey = new Map(supplyProfiles.map((entry) => [
+    entry.recordKey, entry,
+  ]));
+  const combatByKey = new Map(combatProfiles.map((entry) => [
+    entry.recordKey, entry,
+  ]));
+  const geometryByKey = new Map(geometryProfiles.map((entry) => [
+    entry.recordKey, entry,
+  ]));
+  const attacksByKey = new Map();
+  for (const attack of attackProfiles) {
+    const rows = attacksByKey.get(attack.recordKey) || [];
+    rows.push(attack);
+    attacksByKey.set(attack.recordKey, rows);
+  }
+  const sourceIdentityMismatches = [];
+  const unitIdentityMismatches = [];
+  const supplyProfileMismatches = [];
+  const baseGeometryMismatches = [];
+  const combatIndexMismatches = [];
+  for (const recordKey of supplyKeys) {
+    const supply = supplyByKey.get(recordKey);
+    const combat = combatByKey.get(recordKey);
+    const geometry = geometryByKey.get(recordKey);
+    const attacks = attacksByKey.get(recordKey) || [];
+    const rows = [supply, combat, geometry, ...attacks].filter(Boolean);
+    const identities = [...new Set(rows.map(identityOf))];
+    if (rows.some((entry) => identityOf(entry) === ":")
+      || identities.length !== 1) {
+      sourceIdentityMismatches.push({ recordKey, identities });
+    }
+    if (!combat || !geometry
+      || supply.unitId !== combat?.unitId
+      || supply.unitName !== combat?.unitName
+      || supply.unitName !== geometry?.unitName
+      || supply.factionTag !== combat?.faction
+      || attacks.some((attack) => attack.unitId !== supply.unitId
+        || attack.unitName !== supply.unitName)) {
+      unitIdentityMismatches.push(recordKey);
+    }
+    if (!combat || !sameJson(
+      normalizedSquadProfile(supply.supplyProfile),
+      normalizedSquadProfile(combat.squadProfile))) {
+      supplyProfileMismatches.push(recordKey);
+    }
+    if (!geometry
+      || supply.base?.shape !== geometry.baseShape
+      || Number(supply.base?.widthMillimetres)
+        !== Number(geometry.baseWidthMillimetres)
+      || Number(supply.base?.depthMillimetres)
+        !== Number(geometry.baseDepthMillimetres)) {
+      baseGeometryMismatches.push(recordKey);
+    }
+    const indexedCombat = state?.officialCombatProfileBundle
+      ?.profilesByRecordKey?.[recordKey];
+    if (!indexedCombat || identityOf(indexedCombat) !== identityOf(combat)
+      || indexedCombat.unitId !== combat?.unitId
+      || indexedCombat.unitName !== combat?.unitName) {
+      combatIndexMismatches.push(recordKey);
+    }
+  }
+  for (const name of denominatorMismatches) {
+    blockingFindings.push(finding("critical",
+      "UNIT_CATALOGUE_DENOMINATOR_MISMATCH", name));
+  }
+  for (const [family, keys] of Object.entries(duplicateProfileKeys)) {
+    for (const key of keys) {
+      blockingFindings.push(finding("critical",
+        "UNIT_CATALOGUE_PROFILE_KEY_DUPLICATE", `${family}:${key}`));
+    }
+  }
+  for (const [code, rows] of [["UNIT_CATALOGUE_SOURCE_IDENTITY_MISMATCH",
+    sourceIdentityMismatches.map((entry) => entry.recordKey)],
+  ["UNIT_CATALOGUE_IDENTITY_MISMATCH", unitIdentityMismatches],
+  ["UNIT_CATALOGUE_SUPPLY_PROFILE_MISMATCH", supplyProfileMismatches],
+  ["UNIT_CATALOGUE_BASE_GEOMETRY_MISMATCH", baseGeometryMismatches],
+  ["UNIT_CATALOGUE_COMBAT_INDEX_MISMATCH", combatIndexMismatches]]) {
+    for (const recordKey of rows) {
+      blockingFindings.push(finding("high", code, recordKey));
+    }
+  }
+  return Object.freeze({
+    unitRecordCount: supplyKeys.length,
+    supplyProfileCount: supplyProfiles.length,
+    combatProfileCount: combatProfiles.length,
+    geometryProfileCount: geometryProfiles.length,
+    attackUnitRecordCount: attackUnitKeys.length,
+    attackProfileCount: attackProfiles.length,
+    denominatorMismatchCount: denominatorMismatches.length,
+    duplicateProfileKeyCount: Object.values(duplicateProfileKeys)
+      .reduce((sum, keys) => sum + keys.length, 0),
+    sourceIdentityMismatchCount: sourceIdentityMismatches.length,
+    unitIdentityMismatchCount: unitIdentityMismatches.length,
+    supplyProfileMismatchCount: supplyProfileMismatches.length,
+    baseGeometryMismatchCount: baseGeometryMismatches.length,
+    combatIndexMismatchCount: combatIndexMismatches.length,
+    denominatorMismatches: Object.freeze(denominatorMismatches),
+    duplicateProfileKeys: Object.freeze(duplicateProfileKeys),
+    sourceIdentityMismatches: Object.freeze(sourceIdentityMismatches),
+    unitIdentityMismatches: Object.freeze(unitIdentityMismatches),
+    supplyProfileMismatches: Object.freeze(supplyProfileMismatches),
+    baseGeometryMismatches: Object.freeze(baseGeometryMismatches),
+    combatIndexMismatches: Object.freeze(combatIndexMismatches),
+  });
+}
+
 function auditOfficialBundleLineage(state, blockingFindings) {
   const lineageRows = Object.entries(state || {}).filter(([key, value]) => (
     key.startsWith("official") && value && typeof value === "object"
@@ -678,6 +821,7 @@ export function auditOfficialCurrentProductDataWiringV1(state) {
     }
   }
   const selectedPieceData = auditSelectedPieceData(state, blockingFindings);
+  const unitCatalogueData = auditUnitCatalogueData(state, blockingFindings);
   const publicCardData = auditPublicCardData(state, blockingFindings);
   const officialBundleLineage = auditOfficialBundleLineage(
     state, blockingFindings);
@@ -691,6 +835,7 @@ export function auditOfficialCurrentProductDataWiringV1(state) {
     runtimeInstanceCount: runtimeInstances.length,
     semanticDuplicateGroupCount: duplicates.length,
     crossAdapterSemanticGroups: Object.freeze(crossAdapterSemanticGroups),
+    unitCatalogueData,
     selectedPieceData,
     publicCardData,
     officialBundleLineage,

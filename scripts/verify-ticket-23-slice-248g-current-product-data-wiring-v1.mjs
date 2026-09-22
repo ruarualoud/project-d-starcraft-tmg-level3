@@ -111,6 +111,11 @@ const fixture = await createTicket20AgentAgentDemoFixtureV1({
 });
 
 try {
+  assert.equal(fixture.rulesRuntime.descriptor.runtimeVersion, "1.0.1");
+  assert.equal(
+    fixture.rulesRuntime.descriptor.dataWiringAuditBlockingFindingCount, 0);
+  assert.equal(fixture.rulesRuntime.descriptor.dataWiringAuditSchema,
+    "official_current_product_data_wiring_audit_v1");
   const aggregate = await fixture.roomRuntime.roomStore.loadRoom(fixture.roomId);
   const state = structuredClone(aggregate.envelope.state);
   const wiringAudit = auditOfficialCurrentProductDataWiringV1(state);
@@ -118,6 +123,19 @@ try {
   assert.equal(wiringAudit.executionBindingCount, 252);
   assert.equal(wiringAudit.runtimeInstanceCount >= wiringAudit.definitionCount, true);
   assert.equal(wiringAudit.selectedPieceData.pieceCount, state.pieces.length);
+  assert.equal(wiringAudit.unitCatalogueData.unitRecordCount, 26);
+  assert.equal(wiringAudit.unitCatalogueData.supplyProfileCount, 26);
+  assert.equal(wiringAudit.unitCatalogueData.combatProfileCount, 26);
+  assert.equal(wiringAudit.unitCatalogueData.geometryProfileCount, 26);
+  assert.equal(wiringAudit.unitCatalogueData.attackUnitRecordCount, 26);
+  assert.equal(wiringAudit.unitCatalogueData.attackProfileCount, 51);
+  assert.equal(wiringAudit.unitCatalogueData.denominatorMismatchCount, 0);
+  assert.equal(wiringAudit.unitCatalogueData.duplicateProfileKeyCount, 0);
+  assert.equal(wiringAudit.unitCatalogueData.sourceIdentityMismatchCount, 0);
+  assert.equal(wiringAudit.unitCatalogueData.unitIdentityMismatchCount, 0);
+  assert.equal(wiringAudit.unitCatalogueData.supplyProfileMismatchCount, 0);
+  assert.equal(wiringAudit.unitCatalogueData.baseGeometryMismatchCount, 0);
+  assert.equal(wiringAudit.unitCatalogueData.combatIndexMismatchCount, 0);
   assert.equal(wiringAudit.selectedPieceData.missingSupplyProfileCount, 0);
   assert.equal(wiringAudit.selectedPieceData.supplyStateMismatchCount, 0);
   assert.equal(wiringAudit.selectedPieceData.missingCombatProfileCount, 0);
@@ -315,6 +333,7 @@ try {
       semanticDuplicateGroupCount: wiringAudit.semanticDuplicateGroupCount,
       crossAdapterSemanticGroupCount:
         wiringAudit.crossAdapterSemanticGroups.length,
+      unitCatalogueData: wiringAudit.unitCatalogueData,
       selectedPieceData: wiringAudit.selectedPieceData,
       publicCardData: wiringAudit.publicCardData,
       officialBundleLineage: wiringAudit.officialBundleLineage,

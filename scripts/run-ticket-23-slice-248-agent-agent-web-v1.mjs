@@ -439,13 +439,13 @@ async function main() {
     return `screenshots/${filename}`;
   }
 
-  async function recordUnseen(manifestValue) {
+  async function recordUnseen(manifestValue, preActionScreenshot = null) {
     const recorded = new Set(actions.map((entryValue) =>
       entryValue.receiptHash).filter(Boolean));
     const unseen = unseenTraces(manifestValue, recorded);
     if (!unseen.length) return 0;
     await refreshObservedRoom();
-    for (const { seatKey, trace } of unseen) {
+    for (const [unseenIndex, { seatKey, trace }] of unseen.entries()) {
       const transition = (manifestValue.recentAcceptedTransitions || [])
         .find((entryValue) =>
           entryValue.journalHash === trace.applyReceiptHash) || null;
@@ -488,6 +488,7 @@ async function main() {
         postStateHash: trace.postStateHash || null,
         replayMatchesCurrent: trace.replayMatchesCurrent === true,
         screenshot,
+        preActionScreenshot: unseenIndex === 0 ? preActionScreenshot : null,
         screenshotObservedStateRevision: Number.isSafeInteger(observedRevision)
           ? observedRevision : null,
         historicalUiReconstructionRequired:
@@ -531,33 +532,23 @@ async function main() {
 
   async function driveOne(previous, matchDeadline) {
     const previousCount = actionCount(previous);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30_000);
     let result = null;
     let submissionTransportFailure = null;
     try {
-      const response = await fetch(`${entry.origin}/__ticket23/a2a/drive`, {
-        method: "POST",
-        headers: {
-          accept: "application/json",
-          "content-type": "application/json",
-          "x-ticket23-runner-token": entry.runnerToken,
-        },
-        body: JSON.stringify({ retry: false }),
-        signal: controller.signal,
-      });
-      result = await response.json();
+      const button = page.getByTestId("agent-agent-drive-next");
+      await button.waitFor({ state: "visible", timeout: 60_000 });
+      await button.click({ timeout: 30_000 });
+      result = { ok: true, job: null, triggeredBy: "product_web_ui" };
     } catch (error) {
       if (server?.processState?.exitObserved) throw error;
-      // The server queues the durable job before flushing its 202 response.
-      // A transport timeout therefore leaves acceptance unknown; observing the
-      // existing job/SQLite boundary is safe, submitting another job is not.
+      // A browser click can reach the same-origin server before Playwright sees
+      // the resulting render. Observe the durable job/SQLite boundary before
+      // deciding whether a retry would be safe.
       submissionTransportFailure = safeErrorDetails(error);
-    } finally {
-      clearTimeout(timeout);
     }
-    if (result) ensure(result?.ok === true && result?.job?.jobId,
-      "SLICE248_ASYNC_DRIVE_NOT_ACCEPTED", { result });
+    if (result) ensure(result?.ok === true
+      && result?.triggeredBy === "product_web_ui",
+    "SLICE248_UI_DRIVE_NOT_TRIGGERED", { result });
     let jobId = result?.job?.jobId || null;
     while (Date.now() < matchDeadline) {
       await sleep(2_000);
@@ -757,8 +748,10 @@ async function main() {
         || actions.length < checkpointTargetActionCount)
       && !requestedRoundInitialized(current)
       && !current.state?.terminal && !current.state?.gameOver) {
+      const preActionScreenshot = await capture("room", "next-agent-decision",
+        current.room?.stateRevision ?? actions.length, "before");
       current = await driveOne(current, deadline);
-      await recordUnseen(current);
+      await recordUnseen(current, preActionScreenshot);
       await progress("running", { manifest: current, roomId: entry.roomId });
     }
     if ((checkpointTargetActionCount !== null
