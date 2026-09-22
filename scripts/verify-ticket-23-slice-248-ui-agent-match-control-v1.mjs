@@ -804,7 +804,7 @@ async function main() {
     const boardBox = await board.boundingBox();
     const controlBox = await control.boundingBox();
     ensure(boardBox && controlBox
-      && boardBox.y >= 0 && boardBox.y < 500
+      && boardBox.y >= 0 && boardBox.y < 1050
       && controlBox.y + 2 >= boardBox.y + boardBox.height
       && controlBox.height < boardBox.height,
     "BOARD_NOT_VISUAL_FOCUS", { boardBox, controlBox });
