@@ -5,6 +5,7 @@ import { SectionDisclosure } from '@/components/ui/command-primitives';
 import { useData } from '@/lib/data-context';
 import { useI18n } from '@/lib/i18n';
 import { computeArmyState, createRosterUnit, createEmptyArmy, armyToText, textToArmy } from '@/lib/army-calc';
+import { RosterPlanningWorkspacePanel } from '@/components/roster-planning/roster-planning-workspace-panel';
 import type { Faction, ArmyList, UnitCard, TacticalCard, RosterUnit, UnitType, Upgrade, GameCard } from '@/lib/types';
 import { FACTION_COLORS, RESOURCE_META } from '@/lib/types';
 import * as Clipboard from 'expo-clipboard';
@@ -141,10 +142,10 @@ function compactAbilityPreview(upgrades: Upgrade[], lang: 'en' | 'zh'): string {
     .join(' / ');
 }
 
-type BuilderStep = 'list' | 'edit' | 'addUnit' | 'import';
+type BuilderStep = 'list' | 'edit' | 'addUnit' | 'import' | 'plan';
 
 export default function ArmyScreen() {
-  const { t, factionName } = useI18n();
+  const { t, factionName, lang } = useI18n();
   const {
     units,
     cards,
@@ -188,7 +189,18 @@ export default function ArmyScreen() {
     return (
       <ScreenContainer containerClassName="bg-background">
         <View style={s.header}>
-          <Text style={s.headerTitle}>{t('armyManage')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Text style={s.headerTitle}>{t('armyManage')}</Text>
+            {/* S271 workspace entry (top): reachable on 390px where the
+                floating companion dock overlays the bottom action bar. */}
+            <Pressable
+              onPress={() => setStep('plan')}
+              style={({ pressed }) => [s.planEntryBtn, pressed && { opacity: 0.7 }]}
+              testID="army-open-roster-planning-top"
+            >
+              <Text style={s.planEntryText}>{uiText(lang, 'AI Plan', '智能规划')}</Text>
+            </Pressable>
+          </View>
           <Text style={s.headerSub}>
             {armyLists.length} {t('armyCount')} · U{catalogueSource.dataVersions.unitsVersion}/C{catalogueSource.dataVersions.cardsVersion}
           </Text>
@@ -248,12 +260,33 @@ export default function ArmyScreen() {
             </Pressable>
           ))}
           <Pressable
+            onPress={() => { setStep('plan'); }}
+            style={({ pressed }) => [s.newBtn, { backgroundColor: '#22d3ee20', borderColor: '#22d3ee' }, pressed && { opacity: 0.7 }]}
+            testID="army-open-roster-planning"
+          >
+            <Text style={[s.newBtnText, { color: '#22d3ee' }]}>{uiText(lang, 'AI Planning', '智能规划')}</Text>
+          </Pressable>
+          <Pressable
             onPress={() => { setImportText(''); setStep('import'); }}
             style={({ pressed }) => [s.newBtn, { backgroundColor: '#22c55e20', borderColor: '#22c55e' }, pressed && { opacity: 0.7 }]}
           >
             <Text style={[s.newBtnText, { color: '#22c55e' }]}>{t('importArmy')}</Text>
           </Pressable>
         </View>
+      </ScreenContainer>
+    );
+  }
+
+  // --- AI Planning Workspace View (S271; additive — manual builder unchanged) ---
+  if (step === 'plan') {
+    return (
+      <ScreenContainer containerClassName="bg-background">
+        <View style={s.header}>
+          <Pressable onPress={() => setStep('list')} style={({ pressed }) => pressed && { opacity: 0.7 }}>
+            <Text style={s.backBtn}>{t('back')}</Text>
+          </Pressable>
+        </View>
+        <RosterPlanningWorkspacePanel />
       </ScreenContainer>
     );
   }
@@ -1190,6 +1223,8 @@ function AddUnitView({ army, units, allCards, onAdd, onBack }: {
 
 const s = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
+  planEntryBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#22d3ee', backgroundColor: '#22d3ee20' },
+  planEntryText: { color: '#22d3ee', fontSize: 12, fontWeight: '800' },
   headerTitle: { fontSize: 24, fontWeight: '800', color: '#e5e7eb' },
   headerSub: { fontSize: 12, color: '#64748b', marginTop: 2 },
   backBtn: { color: '#38bdf8', fontSize: 14, fontWeight: '600', marginBottom: 4 },
