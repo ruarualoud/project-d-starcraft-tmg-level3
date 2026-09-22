@@ -201,11 +201,61 @@ lockfile change) — done once before SS-1.
 | SS | Commit | Files | Summary |
 | --- | --- | --- | --- |
 | plan | (this commit) | this doc | Audit + frozen numbered plan; no code changed. |
+| SS-1 | `692e5a3` | `threat-overlay-v1.tsx`, `authoritative-battle-workspace.tsx`, `battle-workbench-read-panels.tsx` | Overlay layers, board-adjacent mode strip, legends, predicted-interaction panel. |
+| SS-2 | `87eabb4` | `scripts/verify-ticket-25-slice-262-threat-visualization-browser-v1.mjs` | Self-contained real-browser verifier. |
 
-## 6. Verification receipts
+## 6. Reopen 2026-09-22 — evidence and interaction gap closure
+
+### 6.1 Reopen reason and re-audit findings
+
+The slice was reopened because the only retained positive browser image was an
+unselected empty-page probe (`build/.../probe.png`); the committed browser gate
+had never produced its passing report and named screenshot set, and several
+promised proof points were missing entirely. Re-audit of the committed
+implementation (`87eabb4`) found these concrete gaps:
+
+1. **UI gap — many-to-one**: `PredictedInteractionCard` only renders outgoing
+   relations (`attackerUnitId === selected`); incoming relations
+   (`targetUnitId === selected`) that the projection already publishes are
+   never displayed, so "many-to-one" cannot be visibly proven.
+2. **Harness gap — pixel assertions**: the verifier asserts only DOM
+   attributes; no pixel-level measurement proves overlap intensity
+   brightening, so "both-side overlap intensity" is unproven.
+3. **Harness gap — precision labels**: exact/advisory/unknown legend copy is
+   rendered but never asserted.
+4. **Harness gap — narrow coverage**: no 390px move+fire or charge captures.
+5. **Doc gap**: no screenshot index with hashes and pixel-assertion values.
+
+No backend/Rules contract is touched by this reopen; all repairs are
+presentation-only UI or harness code.
+
+### 6.2 Numbered reopen sub-slice plan (executed in order)
+
+- **SS-R1 · Many-to-one incoming relations UI.** Extend
+  `PredictedInteractionCard` in `battle-workbench-read-panels.tsx` with a
+  labelled "Outgoing (one → many)" header and an "Incoming (many → one)"
+  section that lists every projected relationship whose `targetUnitId` is the
+  selected unit (attacker name, base-edge distance, reachable weapon counts,
+  charge candidate, coverage — verbatim projection receipts), with an honest
+  empty state ("unknown, not zero"). Presentation-only; no new gameplay truth.
+- **SS-R2 · Harness evidence closure.** Extend
+  `scripts/verify-ticket-25-slice-262-threat-visualization-browser-v1.mjs`:
+  assert the precision legend labels (solid = exact / dashed = advisory bound /
+  dotted = unknown); assert per-weapon stationary facts ("by weapon"); add a
+  named many-to-one desktop screenshot; add pixel-level overlap-intensity
+  assertions for the friendly union and the enemy union (projected-region
+  coincidence point vs single-coverage point vs background, sampled from the
+  rendered screenshot via in-page canvas readback, with measured RGB values
+  recorded in the report); add 390px move+fire and charge captures with radius
+  assertions; record a `pixelAssertions` section in the report JSON.
+- **SS-R3 · Closure document.** Extend §6 with the screenshot index (name →
+  explanation → sha256), the pixel-assertion values, and the verification
+  receipts (§7), then close.
+
+## 7. Verification receipts
 
 (filled after the named gates run)
 
-## 7. Unresolved Critical/High concerns
+## 8. Unresolved Critical/High concerns
 
 (filled at closure)
