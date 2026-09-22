@@ -625,6 +625,104 @@ repairs, not Provider retries.
   crossed. Kimi CLI exposes no token/currency telemetry; no Kimi cost is
   inferred.
 
+## 266f.8+ — REOPEN: persona differentiation, non-empty lore grounding, imagery/layout audit (2026-09-22)
+
+> Status: **frozen reopen plan.** The manifest taskBrief reopens this slice
+> after the passed 266f.7 continuity run: its own honest note records that the
+> two turn-1 acknowledgments were byte-identical prose, Kerrigan's formal
+> layers are empty by data, and companion imagery can overlap or be clipped.
+> These are product-quality defects, not receipt failures.
+
+### Offline failure reproduction (0 Provider calls / ¥0; scratch `build/266f8-defect-repro.mjs`, uncommitted)
+
+Pre-fix state, proven against the CURRENT catalogue + mapper + package contract:
+
+- Kerrigan's sealed package is a hollow reference: `personalitySummary` 0
+  chars, `worldbookEntries: []`, `identityEras: 0`, `defaultEraId: null` — the
+  catalogue entry is a descriptor pointer, so no formal content is sealed.
+- ALL SIX companions: `extensions.personaProfile` ABSENT and
+  `extensions.authorNote` ABSENT — no voice, doctrine, style or author-note
+  material ever reaches the Provider; the per-speaker system prompt differs
+  only by display name, a one-line tagline and the era id, so Kerrigan and
+  Zagara return near-identical tactical prose (the epoch-3 report's honest
+  note records byte-identical turn-1 acknowledgments).
+- No formal per-companion Author's Note material exists anywhere; the
+  long-term `durable_memory` engine layer is never exercised by any product
+  path.
+- The chat header is text-only chips and transcript rows carry no speaker
+  avatar/name/era binding; the transcript box has `maxHeight` without an
+  overflow scroll rule, so long transcripts can spill over the cards below.
+
+### Frozen numbered sub-slices (one scoped commit each)
+
+1. **266f.8 formal content for all six sealed companions**
+   (`content/characters/`, `companion-product-module-v1.mjs`, catalogue
+   `content.d.ts`): a new browser-safe `kerrigan-companion-pack-v1.mjs`
+   presentation pack derived strictly from the repository-sealed Kerrigan
+   material (`kerrigan-primal-v1.mjs`, `kerrigan-worldbook-catalog-v1.mjs`;
+   official sourceRefs preserved, derivation honestly labelled); the catalogue
+   Kerrigan entry carries the pack while remaining the backend-live reference;
+   every pack gains formal `authorNote` material (project role configuration,
+   never canon); the package mapper seals `extensions.personaProfile`
+   (voice/doctrine/style examples), `extensions.authorNote` and
+   `extensions.eraDetails` alongside the existing `worldbookEntries`. Static
+   canon/lore stays package-sealed; session long-term memory stays in the
+   engine layers — the two are never conflated.
+2. **266f.9 speaker-specific prompt assembly + prompt-layer provenance**
+   (`companion-room-session-service-v1.mjs`): the per-speaker system prompt
+   carries the sealed persona profile (cadence/address/humor/teaching posture/
+   tactical pattern/style examples), the era block (title, timeline, knowledge
+   cutoff), doctrine priorities, and an explicit multi-companion distinctness
+   instruction (own voice, own priorities, honest disagreement, own proposed
+   action; never another speaker's persona; opponent-private remains
+   inference-only). The sealed package author note is injected as its own
+   labelled system message (deterministic, provenance-recorded), distinct from
+   the conversation Author's Note mechanism. Every reply records exact
+   prompt-layer provenance: persona profile hash/fields, package author-note
+   hash, conversation author's note, worldbook fired (already), and memory
+   layers split into static canon/lore versus session long-term records.
+3. **266f.10 participant header avatars + message speaker binding + layout
+   repairs** (`tactical-adjutant-panel.tsx`): the speaker-order header binds
+   every participant's avatar/state/name/era (companions: committed idle
+   keyframe; the human: emblem), next-speaker highlighting never hides the
+   others; every transcript message binds the correct speaker avatar/name/era;
+   the transcript box gains a real scroll rule; layout audit repairs for
+   clipping/overlap/z-index/scroll/safe-area across collapsed chip, normal
+   side panel (in-dock mid width), desktop wide focus, settings/configuration
+   surfaces, long transcript, six-companion catalogue/group chat and the
+   390px full-screen sheet. Every existing testID is preserved.
+4. **266f.11 verifier extension** (the existing gate file only): updated
+   worldbook/era assertions for Kerrigan's now-real formal content; a
+   six-companion formal-content audit (non-empty persona/worldbook/author-note
+   per sealed package, source-linked canon, pairwise-distinct persona
+   profiles); a prompt-differentiation audit on the captured deterministic
+   Provider requests (per-speaker system prompts pairwise-distinct with
+   persona markers; assemblies distinct); a genuine-memory-engine phase
+   (conversation-derived summary/episodic/relationship writes plus a
+   user-approved durable long-term candidate entering the next assembly —
+   never seeded invented memories); browser state audits and named
+   desktop/mobile screenshots for every enumerated state including a
+   six-companion group-chat header and a long transcript; the epoch-4 live
+   record read dynamically like epoch-3.
+5. **266f.12 live runner epoch 4 + live acceptance** (the existing runner
+   file only): `--authorize-live-byok-companion-persona-differentiation`;
+   hard maximum FOUR separately-locked physical calls (O_EXCL
+   `persona-call-1..4.lock.json`); lineage requires the passed epoch-3 report
+   and all prior locks; Kerrigan+Zagara two-turn real Chinese BYOK with a
+   checkpoint + full companion server/session restart between turns (Room
+   authority preserved); proves distinct roleplay (never byte-identical),
+   formal worldbook retrieval for BOTH companions, prompt-layer provenance,
+   and shared memory continuity incl. the durable long-term layer; records
+   hashes, per-call usage/cost, Room mutation zero, detach and zero credential
+   persistence.
+6. **266f.13 closure**: this doc finalized with before/after evidence, gate
+   receipt, live receipt and honest gaps.
+
+Verification discipline unchanged: the single focused gate runs at most once
+after the last relevant code change; scratch preflight mirrors live under
+`build/` uncommitted; only Critical/High findings block; at most three review
+cycles.
+
 ## 266f.7 — multi-companion layered-memory continuity live acceptance (2026-09-22)
 
 Manifest continuation from clean `f13252f`: the 1/3/6-companion orchestration
