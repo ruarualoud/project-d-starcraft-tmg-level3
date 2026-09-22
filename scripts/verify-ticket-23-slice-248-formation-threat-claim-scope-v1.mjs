@@ -15,6 +15,47 @@ import { projectStarcraftTmgThreatActionWindowV1 } from
 import { projectStarcraftTmgUnitSupplyControlV1 } from
   "../packages/online-agent-session/player-spatial-observation-v1.mjs";
 
+if (process.argv.includes("--named-threat-target-only")) {
+  const { DatabaseSync } = await import("node:sqlite");
+  const directory = process.argv.find((arg) => arg.startsWith("--run-directory="))
+    ?.slice("--run-directory=".length);
+  assert(directory);
+  const db = new DatabaseSync(`${directory}/seats/player2/provider/live-decisions.sqlite`,
+    { readOnly: true });
+  let record;
+  try { record = JSON.parse(db.prepare(
+    "SELECT record_json FROM sc_live_decision_records LIMIT 1").get().record_json); }
+  finally { db.close(); }
+  const choice = Object.values(record.decisions).find((entry) =>
+    entry.authority.stateRevision === 23);
+  const attempt = Object.values(choice.attempts).find((entry) => entry.round === 7);
+  const planning = attempt.safeOutput.providerTurn.toolCalls[0].arguments;
+  const queryReceipts = choice.queryReceipts.filter((entry) =>
+    entry.queryKind === "space.inspect_relationships");
+  const spatialObservation = { units: queryReceipts[0].result.nodes.units.map((unit) => ({
+    unitId: unit.nodeId, unitName: unit.unitName, sideRelation: unit.sideRelation,
+  })) };
+  const inspectText = (risk) => inspectStarcraftTmgFormationThreatClaimsV1({
+    raw: { publicPlanSummary: { risk } }, queryReceipts, spatialObservation,
+  });
+  const savedRisk = planning.publicPlanSummary.risk;
+  assert(savedRisk.startsWith("No current-round enemy fire band reaches the Corpser, but"));
+  assert.equal(inspectText(savedRisk).contradicted, false,
+    "a Corpser claim cannot inherit the separately acknowledged Swarmling threat");
+  assert.equal(inspectText("No current-round enemy fire band reaches player2-corpser.").contradicted, false);
+  assert.equal(inspectText("No current-round enemy fire band reaches player2-swarmling.").contradicted, true);
+  assert.equal(inspectText("No current-round enemy fire band reaches the Swarmling.").contradicted, true);
+  assert.equal(inspectText("No current-round enemy fire band reaches the western lane.").contradicted, true);
+  assert.equal(inspectText("No enemy fire band reaches Corpser or Swarmling.").contradicted, true);
+  const realContradiction = inspectText("No enemy fire band reaches player2-swarmling.");
+  assert(realContradiction.contradictions.every((entry) =>
+    entry.threatFacts.every((fact) => fact.targetId === "player2-swarmling")));
+  console.log(JSON.stringify({ ok: true, realPaidAttemptRound: 7,
+    falseCrossUnitRejectionRemoved: true, actualUnknownThreatStillBlocks: true,
+    wholeOriginalPlanReaccepted: false, providerCalls: 0, roomMutations: 0 }));
+  process.exit(0);
+}
+
 if (process.argv.includes("--friendly-threat-only")) {
   const { readFile } = await import("node:fs/promises");
   const { DatabaseSync } = await import("node:sqlite");

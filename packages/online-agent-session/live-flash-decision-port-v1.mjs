@@ -1872,7 +1872,7 @@ function selectionThreatClaimFragments(raw) {
   const fragments = fields.flatMap(([field, value]) => {
     const values = Array.isArray(value) ? value : [value];
     return values.flatMap((entry) => String(entry || "")
-      .split(/[.;!?。；！？\n]+/u)
+      .split(/[.;!?。；！？\n]+|,\s*(?:but|whereas|while|however)\b/iu)
       .map((textValue) => textValue.trim())
       .filter(Boolean)
       .map((textValue) => ({ field, text: textValue })));
@@ -1897,6 +1897,30 @@ function selectionThreatClaimFragments(raw) {
     });
   }
   return fragments;
+}
+
+function threatFactsForNamedTargets(fragment, facts, units) {
+  const normalized = String(fragment || "").toLowerCase();
+  // Whole-side statements retain whole-side scope; otherwise bind only
+  // authoritative IDs/names. Shared names retain all matching instances.
+  if (/\b(?:all|every|entire|whole)\s+(?:(?:own|friendly|our|the)\s+)?(?:units?|army|force|lane|footprint)\b/iu
+    .test(normalized)) return facts;
+  const namesMentioned = new Set();
+  const names = (value) => [...new Set([String(value || "").trim(),
+    String(value || "").replace(/\s*\([^)]*\)/gu, "").trim()])].filter(Boolean);
+  const mentions = (value) => {
+    const escaped = value.toLowerCase().replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+    return new RegExp(`(?:^|[^\\p{L}\\p{N}_-])${escaped}(?=$|[^\\p{L}\\p{N}_-])`, "u")
+      .test(normalized);
+  };
+  for (const unit of units) {
+    if (!["own", "allied"].includes(unit.sideRelation)) continue;
+    if ([unit.unitId, ...names(unit.unitName)].filter(Boolean).some(mentions)) {
+      namesMentioned.add(unit.unitId);
+    }
+  }
+  return namesMentioned.size
+    ? facts.filter((fact) => namesMentioned.has(fact.targetId)) : facts;
 }
 
 function claimsNoIncomingStationaryThreat(fragment) {
@@ -2068,6 +2092,13 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
   const selectionClaims = selectionThreatClaimFragments(input.raw);
   const currentThreatTargets = currentIncomingThreatTargets(
     input.queryReceipts || [], friendlyUnitIds);
+  const currentClaimContradictions = (facts, predicate, threatKind) =>
+    selectionClaims.filter((entry) => predicate(entry.text)).flatMap((entry) => {
+      const scoped = threatFactsForNamedTargets(entry.text, facts,
+        input.spatialObservation?.units || []);
+      return scoped.length ? [{ ...entry, threatKind,
+        source: "current_relationship_graph", threatFacts: clone(scoped) }] : [];
+    });
   const contradictions = [
     ...(optionIncomingTargetIds.length > 0
       ? optionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
@@ -2097,23 +2128,12 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
               || fact.enemyStationaryThreatUnknownProfileKeys || []),
             minimumBaseEdgeDistanceMilliInches:
               fact.minimumBaseEdgeDistanceMilliInches ?? null })) })) : []),
-    ...(currentThreatTargets.stationary.length > 0
-      ? selectionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
-        entry.text)).map((entry) => ({ ...entry,
-        threatKind: "stationary", source: "current_relationship_graph",
-        threatFacts: clone(currentThreatTargets.stationaryFacts) })) : []),
-    ...(currentThreatTargets.stationaryUnknown.length > 0
-      ? selectionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
-        entry.text)).map((entry) => ({ ...entry,
-        threatKind: "stationary_unknown_line_of_sight",
-        source: "current_relationship_graph",
-        threatFacts: clone(currentThreatTargets.stationaryUnknownFacts) })) : []),
-    ...(currentThreatTargets.moveThenFire.length > 0
-      ? selectionClaims.filter((entry) => claimsNoIncomingMoveThenFireThreat(
-        entry.text)).map((entry) => ({ ...entry,
-        threatKind: "move_then_fire",
-        source: "current_relationship_graph",
-        threatFacts: clone(currentThreatTargets.moveThenFireFacts) })) : []),
+    ...currentClaimContradictions(currentThreatTargets.stationaryFacts,
+      claimsNoIncomingStationaryThreat, "stationary"),
+    ...currentClaimContradictions(currentThreatTargets.stationaryUnknownFacts,
+      claimsNoIncomingStationaryThreat, "stationary_unknown_line_of_sight"),
+    ...currentClaimContradictions(currentThreatTargets.moveThenFireFacts,
+      claimsNoIncomingMoveThenFireThreat, "move_then_fire"),
   ];
   return freeze({
     incomingTargetIds: [...new Set([

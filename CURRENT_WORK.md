@@ -6,6 +6,20 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r25 / Round 1 Assault reached
+
+Live runner session continued after Worker repair: r24 Corpser finish, r25
+Zerg Pass, both Apply/Replay and paired screenshots. At 19:13:37Z, 66 calls /
+6,249,505 accounted units / estimated ¥8.442024 including one unknown-usage
+reservation. Both seats Flash. Keep the active runner alive.
+Another narrow engineering defect was proven with the saved r23 public risk:
+Corpser's no-current-fire statement inherited Swarmling's unknown-LOS threat.
+Named-target/contrasting-clause binding now fixes it; one fail-first → green
+saved-payload gate, no Provider. Do not reaccept the whole old plan or reroll
+r24; other broad/stale prose remains S249 evidence. No forced process restart;
+the fix loads at the next natural checkpoint. See
+`docs/ticket-23-slice-248-named-target-threat-claim-repair-2026-09-23.md`.
+
 ### 2026-09-23 T23 / S248 — r23 output-capacity recovery
 
 Run `20260922172710914` stopped at r23 (Corpser deployed); no r24 Apply.

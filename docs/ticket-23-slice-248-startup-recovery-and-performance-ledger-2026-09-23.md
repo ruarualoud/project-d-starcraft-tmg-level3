@@ -106,6 +106,24 @@ scenario gate, other slice, Rules suite or frontend build was rerun.
 
 ### Observed after resume
 
+2026-09-23 capacity follow-up: two native tool responses each hit the old
+8192 output maximum, consuming 238,169 total units and about 67 seconds.
+Truncation metadata had been discarded, causing same-cap semantic retries.
+The 32768 request policy and typed stop are described in
+`ticket-23-slice-248-native-tool-output-capacity-repair-2026-09-23.md`.
+Completed production Planner outputs then reached 8905/8811 tokens and
+flowed through the repaired Worker boundary; r24/r25 applied. This supports
+more output headroom, not a smaller strategic contract. The initially
+introduced Worker receipt mismatch/lost response remains explicitly costed
+as unknown usage with a conservative reservation.
+
+Also queue measured Web observation overhead: r15 manifest 21.467 s and
+refresh 13.168 s; r23 manifest 14.034 s, refresh 16.703 s and capture 10.221 s.
+These are end-to-end operation timings, not a proven Rules CPU attribution.
+Keep exact revision/geometry and screenshots when optimizing. Named-target
+claim scope was separately repaired without Prompt or Skill strategy changes;
+its narrow gate and evidence are in the named-target repair report.
+
 Both persisted seats now identify `deepseek-flash`. r8 Ventral Sacs, r9 Creep
 Spread and r10 finish-activation were applied and Replay-verified with paired
 Web screenshots. Through that boundary the new branch accounts for 8 physical
