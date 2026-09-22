@@ -106,11 +106,15 @@ driver resumed to exit.52348 confirmed exit1 on the now-unavailable room refresh
 That observed timeout is the controlled reload, not a new transport-root-cause
 claim. No paid request was interrupted.
 
-Repair8dbf728 is committed; new resume76208 restores the same directory and
-must supplement r81's screenshot, not regenerate it. Stopped usage is203calls/
-22,675,017accounted units/estimated¥30.239410, retained. Startup itself and a
-later new formation comparison still need actual observations. Do not treat
-the old stored r76 receipt as newly repaired or repeat the passed consumer gate.
+Repair8dbf728 is committed; new resume76208 restored the same directory and
+supplemented r81's screenshot at23:49:33.873Z, inspected.203calls/
+22,675,017accounted units/estimated¥30.239410 unchanged:0newProvider calls,
+no action regeneration. It continues at74new+7prefix=r81, Round2Assault.
+A later new formation comparison still needs actual live observation; this
+Pass/capture proves recovery, not geometry comparison. Do not reinterpret the
+old r76 receipt or repeat the passed consumer gate.
+
+![Recovered r81 Pass](../build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/screenshots/0616-r081-player1-pass-complete-board-applied.png)
 
 `harnessLoopUsed:true`; route `selfplay_agent_prompt`; tools relationship,
 formation, instantiation and Rules Apply/Replay; room plan and prediction

@@ -6,6 +6,16 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r81 capture recovered,76208 continues
+
+**76208 live**, runner13903/server13934,8dbf728 loaded. At23:49:33.873Z
+supplemented existing r81Pass screenshot and inspected it;74new+7prefix=r81,
+Round2Assault,203calls/22,675,017units/estimated¥30.239410 unchanged. Recovery
+added0Provider calls, no action regeneration. Continue this process, not52348.
+The common-target consumer gate passed; actual later new formation-query proof
+is still pending, so don't claim this Pass verified the geometry fix. T23
+remains33/36,248full match/249review/250synthesis open. K3 remains stopped.
+
 ### 2026-09-23 T23 / S248 — 8dbf728 committed; same r81 resume76208 started
 
 Old52348 confirmed exit1 after the controlled server stop; its room-refresh
