@@ -230,6 +230,14 @@ function physicalFootprint(input) {
   });
 }
 
+export function terrainBlocksStarcraftTmgFormationPlacementV1(terrain = {}) {
+  if (terrain.blocksPlacement === true) return true;
+  if (terrain.blocksPlacement === false) return false;
+  if (terrain.standableHorizontalSurface === true) return false;
+  return String(terrain.terrainKind || "ordinary").toLowerCase()
+    === "impassable";
+}
+
 function blockingFootprints(state, actorPieceId) {
   const modelBlockers = (state.pieces || []).filter((piece) =>
     piece.id !== actorPieceId && piece.isOnField === true
@@ -257,7 +265,7 @@ function blockingFootprints(state, actorPieceId) {
     })));
   const terrainBlockers = (state.board?.terrain || []).filter((terrain) =>
     terrain.isRemoved !== true && terrain.isDestroyed !== true
-      && terrain.blocksPlacement !== false).flatMap((terrain) => {
+      && terrainBlocksStarcraftTmgFormationPlacementV1(terrain)).flatMap((terrain) => {
     const source = terrain.footprint || terrain;
     if (source.shape === "axis_aligned_rectangle") {
       const minimumX = Number(source.minXMilliInches);

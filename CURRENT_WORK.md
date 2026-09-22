@@ -6,6 +6,26 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-22 Ticket 24 / Slice 254-R1 checkpoint
+
+The historical 20-map topology/adapter work existed, but the Slice 254 compiler
+discarded enabled source footprints and placed them into generic balance slots.
+Compiler v1.3 now preserves map-specific Rules geometry, materializes passage
+openings and high-ground access, compiles blocking features as impassable, and
+records bounded balance translations. The formation prefilter now blocks only
+explicit or impassable terrain. The 20-map focused gate and a real Lost Temple
+Standard-2000 room certification passed; the latter contains nine certified
+terrain pieces and two central-temple ramp access points. The old fixed
+quadrant manoeuvre witness was found blocking the restored southwest geometry
+and has been replaced by a deterministic free-space witness solver.
+
+The next map sub-slice is 254-R2: K3 renders the authoritative footprint,
+opening and access geometry for all 20 maps in the gallery and live battle UI,
+with desktop/390px screenshot evidence. Background pixels remain display-only;
+they are never inferred into Rules geometry. The existing r6/r7 match remains
+immutable old-compiler evidence and cannot be mutated; high-strategy play must
+start in a fresh certified room after the UI boundary slice is integrated.
+
 ### 2026-09-22 Ticket 23 / Slice 248 checkpoint
 
 The live official Command Center record confirms that `Swarmling (Zergling)`

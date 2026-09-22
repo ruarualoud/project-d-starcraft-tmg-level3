@@ -65,7 +65,7 @@ function modeProfile(mode) {
       heightTier: "ground_level", standableHorizontalSurface: false };
   }
   if (mode === "blocking") {
-    return { category: "size2", size: 2, terrainKind: "ordinary",
+    return { category: "size2", size: 2, terrainKind: "impassable",
       heightTier: "ground_level", standableHorizontalSurface: false };
   }
   if (mode === "standable_high_ground") {
@@ -132,8 +132,8 @@ function normalizePassageSelections(adapter, rawSelections = []) {
       || lane.defaultPassageMode,
     selectionOrigin: supplied.has(lane.laneId) ? "user" : "default",
     availablePassageModes: [...lane.availablePassageModes],
-    displayLayerOnly: true,
-    rulesGeometryEffect: false,
+    displayLayerOnly: false,
+    rulesGeometryEffect: true,
   }));
 }
 
@@ -280,6 +280,102 @@ function footprintFor(slot, battlefield) {
     yMin: fixed(centreY - halfHeight), yMax: fixed(centreY + halfHeight) };
 }
 
+function rectangleDistance(left, right) {
+  const dx = Math.max(0, left.xMin - right.xMax, right.xMin - left.xMax);
+  const dy = Math.max(0, left.yMin - right.yMax, right.yMin - left.yMax);
+  return Math.hypot(dx, dy);
+}
+
+function translatedFootprint(source, dx, dy, battlefield) {
+  const width = source.xMax - source.xMin;
+  const height = source.yMax - source.yMin;
+  const xMin = Math.max(0, Math.min(battlefield.widthInches - width,
+    source.xMin + dx));
+  const yMin = Math.max(0, Math.min(battlefield.heightInches - height,
+    source.yMin + dy));
+  return { xMin: fixed(xMin), xMax: fixed(xMin + width),
+    yMin: fixed(yMin), yMax: fixed(yMin + height) };
+}
+
+function majorRow(row) {
+  return row.profile.size >= 2 && row.profile.terrainKind !== "grass";
+}
+
+function placementClear(row, footprint, placed) {
+  return placed.every((entry) => !rectanglesOverlap(footprint, entry.footprint)
+    && (!majorRow(row) || !entry.major
+      || rectangleDistance(footprint, entry.footprint) >= 3 - TOLERANCE));
+}
+
+function resolveSourceFootprint(row, placed, battlefield) {
+  const source = clone(row.sourceRulesFootprint);
+  if (placementClear(row, source, placed)) {
+    return { footprint: source, adjustment: { kind: "none",
+      translationInches: { x: 0, y: 0 } } };
+  }
+  const offsets = [{ x: 0, y: 0 }];
+  for (let distance = 0.25; distance <= 4 + TOLERANCE; distance += 0.25) {
+    offsets.push({ x: distance, y: 0 }, { x: -distance, y: 0 },
+      { x: 0, y: distance }, { x: 0, y: -distance },
+      { x: distance, y: distance }, { x: distance, y: -distance },
+      { x: -distance, y: distance }, { x: -distance, y: -distance });
+  }
+  for (const offset of offsets) {
+    const candidate = translatedFootprint(source, offset.x, offset.y, battlefield);
+    if (!placementClear(row, candidate, placed)) continue;
+    return { footprint: candidate, adjustment: {
+      kind: "minimum_translation_for_non_overlap_and_balance",
+      translationInches: { x: fixed(candidate.xMin - source.xMin),
+        y: fixed(candidate.yMin - source.yMin) },
+    } };
+  }
+  fail("COMPETITIVE_MAP_SOURCE_GEOMETRY_CONFLICT_UNRESOLVED",
+    row.sourceElementId);
+}
+
+function compensationCandidateSlots(row, battlefield, seedId) {
+  const category = row.profile.category === "grass" ? "size2"
+    : row.profile.category;
+  const capacity = category === "size3Plus" ? 3
+    : category === "size1" ? 6 : 10;
+  const preferred = slotsFor(category, battlefield, capacity, seedId);
+  const primary = preferred[(Number(row.compensationOrdinal || 1) - 1)
+    % preferred.length];
+  const ranked = [...preferred].sort((left, right) => (
+    ((left.xInches - primary.xInches) ** 2
+      + (left.yInches - primary.yInches) ** 2)
+    - ((right.xInches - primary.xInches) ** 2
+      + (right.yInches - primary.yInches) ** 2)
+      || left.role.localeCompare(right.role)));
+  const widthInches = category === "size1" ? 1 : 2;
+  const heightInches = category === "size1" ? 1 : 2;
+  const grid = [];
+  for (let y = heightInches / 2 + 1; y <= battlefield.heightInches
+    - heightInches / 2 - 1 + TOLERANCE; y += 1) {
+    for (let x = widthInches / 2 + 1; x <= battlefield.widthInches
+      - widthInches / 2 - 1 + TOLERANCE; x += 1) {
+      grid.push({ xInches: fixed(x), yInches: fixed(y), widthInches,
+        heightInches, role: "deterministic_free_space_compensation" });
+    }
+  }
+  grid.sort((left, right) => (
+    ((left.xInches - primary.xInches) ** 2
+      + (left.yInches - primary.yInches) ** 2)
+    - ((right.xInches - primary.xInches) ** 2
+      + (right.yInches - primary.yInches) ** 2)
+      || left.yInches - right.yInches || left.xInches - right.xInches));
+  return [...ranked, ...grid];
+}
+
+function resolveCompensationFootprint(row, placed, battlefield, seedId) {
+  for (const slot of compensationCandidateSlots(row, battlefield, seedId)) {
+    const footprint = footprintFor(slot, battlefield);
+    if (placementClear(row, footprint, placed)) return { footprint, slot };
+  }
+  fail("COMPETITIVE_MAP_COMPENSATION_GEOMETRY_UNAVAILABLE",
+    `${seedId}:${row.profile.category}:${row.compensationOrdinal}`);
+}
+
 function accessPointFor(pieceId, footprint) {
   const y = fixed((footprint.yMin + footprint.yMax) / 2);
   const insideX = fixed(footprint.xMin + Math.min(0.25,
@@ -292,38 +388,184 @@ function accessPointFor(pieceId, footprint) {
       { x: insideX, y }] };
 }
 
-function materializeTerrain(seedId, rows, battlefield) {
-  const byCategory = Object.fromEntries(["size3Plus", "grass", "size2", "size1"]
-    .map((category) => [category, rows.filter((entry) => (
-      entry.profile.category === category))]));
+function clippedSegmentToRectangle(start, end, rect) {
+  const dx = end.xInches - start.xInches;
+  const dy = end.yInches - start.yInches;
+  let entry = 0;
+  let exit = 1;
+  for (const [direction, offset] of [
+    [-dx, start.xInches - rect.xMin], [dx, rect.xMax - start.xInches],
+    [-dy, start.yInches - rect.yMin], [dy, rect.yMax - start.yInches],
+  ]) {
+    if (Math.abs(direction) <= TOLERANCE) {
+      if (offset < 0) return null;
+      continue;
+    }
+    const ratio = offset / direction;
+    if (direction < 0) entry = Math.max(entry, ratio);
+    else exit = Math.min(exit, ratio);
+    if (entry > exit) return null;
+  }
+  if (exit < 0 || entry > 1) return null;
+  const pointAt = (ratio) => ({ x: fixed(start.xInches + dx * ratio),
+    y: fixed(start.yInches + dy * ratio) });
+  return { entry: pointAt(entry), exit: pointAt(exit), dx, dy };
+}
+
+function laneCrossings(lane, footprint) {
+  const rows = [];
+  const onBoundary = (point) => Math.abs(point.x - footprint.xMin) <= TOLERANCE
+    || Math.abs(point.x - footprint.xMax) <= TOLERANCE
+    || Math.abs(point.y - footprint.yMin) <= TOLERANCE
+    || Math.abs(point.y - footprint.yMax) <= TOLERANCE;
+  for (let index = 1; index < lane.centreline.length; index += 1) {
+    const clipped = clippedSegmentToRectangle(lane.centreline[index - 1],
+      lane.centreline[index], footprint);
+    if (!clipped) continue;
+    const length = Math.hypot(clipped.dx, clipped.dy) || 1;
+    const direction = { x: clipped.dx / length, y: clipped.dy / length };
+    if (onBoundary(clipped.entry)) {
+      rows.push({ point: clipped.entry, inward: direction });
+    }
+    if (onBoundary(clipped.exit)) {
+      rows.push({ point: clipped.exit,
+        inward: { x: -direction.x, y: -direction.y } });
+    }
+  }
+  return [...new Map(rows.map((entry) => (
+    [`${entry.point.x}:${entry.point.y}`, entry]))).values()];
+}
+
+function accessPointsFor(row, terrainPieceId, footprint, adapter,
+  passageByLane) {
+  if (!row.profile.standableHorizontalSurface) return [];
+  const recommendations = adapter.passageRecommendations.filter((entry) => (
+    entry.terrainElementId === row.sourceElementId
+      && entry.passageKind === "access_point"));
+  const points = recommendations.flatMap((recommendation) => {
+    const lane = adapter.lanes.find((entry) => entry.laneId
+      === recommendation.laneId);
+    if (!lane) return [];
+    const selection = passageByLane.get(lane.laneId);
+    const clearance = selection?.selectedPassageMode
+      === "preserve_source_clearance" ? lane.sourceRequiredClearanceInches
+      : lane.requiredClearanceInches;
+    return laneCrossings(lane, footprint).map((crossing, index) => {
+      const inside = { x: fixed(crossing.point.x + crossing.inward.x * 0.25),
+        y: fixed(crossing.point.y + crossing.inward.y * 0.25) };
+      const outside = {
+        x: fixed(Math.max(0, Math.min(adapter.battlefield.widthInches,
+          crossing.point.x - crossing.inward.x * 3))),
+        y: fixed(Math.max(0, Math.min(adapter.battlefield.heightInches,
+          crossing.point.y - crossing.inward.y * 3))),
+      };
+      const vertical = Math.abs(crossing.inward.y) >= Math.abs(crossing.inward.x);
+      const ramp = vertical
+        ? { xMin: fixed(crossing.point.x - clearance / 2),
+          xMax: fixed(crossing.point.x + clearance / 2),
+          yMin: fixed(crossing.point.y - 0.25),
+          yMax: fixed(crossing.point.y + 0.25) }
+        : { xMin: fixed(crossing.point.x - 0.25),
+          xMax: fixed(crossing.point.x + 0.25),
+          yMin: fixed(crossing.point.y - clearance / 2),
+          yMax: fixed(crossing.point.y + clearance / 2) };
+      return { accessPointId: `${terrainPieceId}:${lane.laneId}:ramp-${index + 1}`,
+        laneId: lane.laneId, role: "ramp", footprint: {
+          xMin: fixed(Math.max(0, ramp.xMin)),
+          xMax: fixed(Math.min(adapter.battlefield.widthInches, ramp.xMax)),
+          yMin: fixed(Math.max(0, ramp.yMin)),
+          yMax: fixed(Math.min(adapter.battlefield.heightInches, ramp.yMax)),
+        }, connects: ["ground", "high"],
+        groundApproachPath: [outside, inside],
+        selectedClearanceInches: clearance };
+    });
+  });
+  return points.length > 0 ? points : [accessPointFor(terrainPieceId, footprint)];
+}
+
+function openingsFor(row, terrainPieceId, footprint, adapter, passageByLane) {
+  if (row.selectedRulesMode !== "blocking") return [];
+  return adapter.passageRecommendations.filter((entry) => (
+    entry.terrainElementId === row.sourceElementId
+      && entry.passageKind === "opening")).flatMap((recommendation) => {
+    const lane = adapter.lanes.find((entry) => entry.laneId
+      === recommendation.laneId);
+    const crossings = lane ? laneCrossings(lane, footprint) : [];
+    if (!lane || crossings.length < 2) return [];
+    const selection = passageByLane.get(lane.laneId);
+    const clearance = selection?.selectedPassageMode
+      === "preserve_source_clearance" ? lane.sourceRequiredClearanceInches
+      : lane.requiredClearanceInches;
+    const start = crossings[0].point;
+    const end = crossings.at(-1).point;
+    const vertical = Math.abs(end.y - start.y) >= Math.abs(end.x - start.x);
+    return [{ openingId: `${terrainPieceId}:${lane.laneId}:opening`,
+      laneId: lane.laneId, footprint: vertical
+        ? { xMin: fixed(Math.max(footprint.xMin, (start.x + end.x) / 2
+          - clearance / 2)),
+        xMax: fixed(Math.min(footprint.xMax, (start.x + end.x) / 2
+          + clearance / 2)), yMin: footprint.yMin, yMax: footprint.yMax }
+        : { xMin: footprint.xMin, xMax: footprint.xMax,
+          yMin: fixed(Math.max(footprint.yMin, (start.y + end.y) / 2
+            - clearance / 2)),
+          yMax: fixed(Math.min(footprint.yMax, (start.y + end.y) / 2
+            + clearance / 2)) },
+      movementPassableAgreed: true, lineOfSightOpenAgreed: true,
+      selectedClearanceInches: clearance }];
+  });
+}
+
+function materializeTerrain(adapter, rows, passageSelections) {
+  const seedId = adapter.seedId;
+  const battlefield = adapter.battlefield;
+  const passageByLane = new Map(passageSelections.map((entry) => (
+    [entry.laneId, entry])));
+  const sourceRows = rows.filter((entry) => entry.sourceRulesFootprint);
+  const compensationRows = rows.filter((entry) => !entry.sourceRulesFootprint);
+  const placed = [];
   const assignments = [];
-  const highSlots = slotsFor("size3Plus", battlefield,
-    byCategory.size3Plus.length, seedId);
-  assignments.push(...assignSlots(byCategory.size3Plus, highSlots, battlefield));
-  const sizeTwoRows = [...byCategory.grass, ...byCategory.size2];
-  const sizeTwoSlots = slotsFor("size2", battlefield, sizeTwoRows.length, seedId);
-  assignments.push(...assignSlots(sizeTwoRows, sizeTwoSlots, battlefield));
-  const sizeOneSlots = slotsFor("size1", battlefield, byCategory.size1.length, seedId);
-  assignments.push(...assignSlots(byCategory.size1, sizeOneSlots, battlefield));
-  return assignments.map(({ row, slot }, index) => {
+  for (const row of sourceRows) {
+    const resolved = resolveSourceFootprint(row, placed, battlefield);
+    placed.push({ footprint: resolved.footprint, major: majorRow(row) });
+    assignments.push({ row, footprint: resolved.footprint,
+      slot: { role: "map_topology_geometry" }, adjustment: resolved.adjustment });
+  }
+  for (const row of compensationRows) {
+    const resolved = resolveCompensationFootprint(row, placed, battlefield, seedId);
+    placed.push({ footprint: resolved.footprint, major: majorRow(row) });
+    assignments.push({ row, footprint: resolved.footprint, slot: resolved.slot,
+      adjustment: { kind: "balanced_compensation_placement",
+        translationInches: null } });
+  }
+  return assignments.map(({ row, slot, footprint, adjustment }, index) => {
     const sourceName = row.sourceElementId || `neutral-${row.profile.category}-${row.compensationOrdinal}`;
     const terrainPieceId = `${seedId}:${sourceName}`;
-    const footprint = footprintFor(slot, battlefield);
-    const accessPoints = row.profile.standableHorizontalSurface
-      ? [accessPointFor(terrainPieceId, footprint)] : [];
+    const accessPoints = accessPointsFor(row, terrainPieceId, footprint,
+      adapter, passageByLane);
+    const openings = openingsFor(row, terrainPieceId, footprint,
+      adapter, passageByLane);
     return { terrainPieceId, sourceType: row.sourceType,
       sourceElementId: row.sourceElementId, sourceGroupId: row.sourceGroupId,
       sourceFeature: row.sourceFeature, selectedRulesMode: row.selectedRulesMode,
       passabilityResolution: row.selectedRulesMode === "passable_difficult"
         ? "official_size_1_passable_cover_no_extra_movement_penalty"
         : row.selectedRulesMode === "blocking"
-          ? "official_size_2_blocks_without_opening" : "official_mode_direct",
+          ? openings.length > 0
+            ? "official_size_2_impassable_with_compiled_openings"
+            : "official_size_2_impassable_without_opening"
+          : "official_mode_direct",
       placementRole: slot.role, sourceAnchor: row.sourceCentre,
+      sourceRulesFootprint: clone(row.sourceRulesFootprint),
+      rulesFootprintOrigin: row.sourceRulesFootprint
+        ? "map_topology_candidate_rules_footprint"
+        : "balanced_compensation_placement",
+      geometryAdjustment: adjustment,
       size: row.profile.size, terrainKind: row.profile.terrainKind,
       originalFootprint: clone(footprint), footprint,
       heightTier: row.profile.heightTier,
       standableHorizontalSurface: row.profile.standableHorizontalSurface,
-      openings: [],
+      blocksPlacement: row.profile.terrainKind === "impassable",
+      openings,
       adjacentElevationPairs: row.profile.standableHorizontalSurface
         ? [["ground", "high"]] : [], accessPoints,
       compilationOrdinal: index + 1, rulesAuthorityBeforeRoomCertification: false };
@@ -370,20 +612,59 @@ function verifyPreviewGeometry(pieces, battlefield) {
   }
 }
 
-function manoeuvreLaneCandidates(battlefield) {
-  const width = battlefield.widthInches;
-  const height = battlefield.heightInches;
-  const rows = [
-    ["south_west", 0.148, 0.37, 0.278],
-    ["south_east", 0.63, 0.852, 0.278],
-    ["north_west", 0.148, 0.37, 0.722],
-    ["north_east", 0.63, 0.852, 0.722],
-  ];
-  return rows.map(([quadrant, startX, endX, y]) => ({ quadrant,
-    laneId: `compiled-manoeuvre-${quadrant}`,
-    start: { x: fixed(width * startX), y: fixed(height * y) },
-    end: { x: fixed(width * endX), y: fixed(height * y) },
-    widthInches: fixed(100 / 25.4) }));
+function manoeuvreLaneCandidates(battlefield, pieces) {
+  const widthInches = fixed(100 / 25.4);
+  const clearance = widthInches / 2;
+  const centreX = battlefield.widthInches / 2;
+  const centreY = battlefield.heightInches / 2;
+  const boundsByQuadrant = {
+    south_west: { xMin: 0, xMax: centreX, yMin: 0, yMax: centreY },
+    south_east: { xMin: centreX, xMax: battlefield.widthInches,
+      yMin: 0, yMax: centreY },
+    north_west: { xMin: 0, xMax: centreX, yMin: centreY,
+      yMax: battlefield.heightInches },
+    north_east: { xMin: centreX, xMax: battlefield.widthInches,
+      yMin: centreY, yMax: battlefield.heightInches },
+  };
+  const clear = (start, end) => pieces.every((entry) => (
+    segmentRectangleDistance(start, end, entry.footprint)
+      >= clearance - TOLERANCE));
+  return QUADRANTS.map((quadrant) => {
+    const bounds = boundsByQuadrant[quadrant];
+    const candidates = [];
+    for (const length of [8, 7, 6, 5, 4]) {
+      for (let y = bounds.yMin + clearance + 0.25;
+        y <= bounds.yMax - clearance - 0.25 + TOLERANCE; y += 0.5) {
+        for (let x = bounds.xMin + clearance + 0.25;
+          x + length <= bounds.xMax - clearance - 0.25 + TOLERANCE; x += 0.5) {
+          candidates.push({ start: { x: fixed(x), y: fixed(y) },
+            end: { x: fixed(x + length), y: fixed(y) }, length });
+        }
+      }
+      for (let x = bounds.xMin + clearance + 0.25;
+        x <= bounds.xMax - clearance - 0.25 + TOLERANCE; x += 0.5) {
+        for (let y = bounds.yMin + clearance + 0.25;
+          y + length <= bounds.yMax - clearance - 0.25 + TOLERANCE; y += 0.5) {
+          candidates.push({ start: { x: fixed(x), y: fixed(y) },
+            end: { x: fixed(x), y: fixed(y + length) }, length });
+        }
+      }
+      const available = candidates.filter((entry) => clear(entry.start, entry.end));
+      if (available.length > 0) {
+        available.sort((left, right) => right.length - left.length
+          || Math.hypot(((left.start.x + left.end.x) / 2) - centreX,
+            ((left.start.y + left.end.y) / 2) - centreY)
+          - Math.hypot(((right.start.x + right.end.x) / 2) - centreX,
+            ((right.start.y + right.end.y) / 2) - centreY)
+          || left.start.y - right.start.y || left.start.x - right.start.x);
+        const selected = available[0];
+        return { quadrant, laneId: `compiled-manoeuvre-${quadrant}`,
+          start: selected.start, end: selected.end, widthInches,
+          derivation: "authoritative_terrain_free_space_search_v1" };
+      }
+    }
+    fail("COMPETITIVE_MAP_QUADRANT_MANOEUVRE_LANE_UNAVAILABLE", quadrant);
+  });
 }
 
 function setupPlanTemplate(seedId, pieces, battlefield) {
@@ -397,7 +678,8 @@ function setupPlanTemplate(seedId, pieces, battlefield) {
       "compilationOrdinal", "rulesAuthorityBeforeRoomCertification",
     ])),
     size3PlusAvailable: pieces.some((entry) => entry.size >= 3),
-    quadrantManoeuvreLanes: manoeuvreLaneCandidates(battlefield), fireLanes: [],
+    quadrantManoeuvreLanes: manoeuvreLaneCandidates(battlefield, pieces),
+    fireLanes: [],
     fireLanesDerivedFromSelectedDeploymentAtRoomCreation: true,
     rulesTruth: "compiled_balanced_terrain_setup_plan_requires_room_certification",
     trainingTruth: false };
@@ -414,8 +696,8 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
   const passageSelections = normalizePassageSelections(adapter,
     input.passageSelections || []);
   const membership = compileRuleMembership(adapter, selections, targets);
-  const pieces = materializeTerrain(adapter.seedId, membership.rows,
-    adapter.battlefield);
+  const pieces = materializeTerrain(adapter, membership.rows,
+    passageSelections);
   verifyPreviewGeometry(pieces, adapter.battlefield);
   const actual = countPieces(pieces);
   const diagnostics = countDiagnostics(actual, targets);
@@ -503,8 +785,19 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
         && audit.sourceStraightTransitBaseProfilesBlocked.length > 0,
       displayOnly: true, rulesAuthority: false };
   });
+  const routeGeometryTreatments = routeTreatments.map((route) => ({
+    laneId: route.laneId,
+    centreline: clone(route.centreline),
+    selectedPassageMode: route.selectedPassageMode,
+    selectedClearanceInches: route.displayClearanceInches,
+    selectedStraightTransitBaseProfilesCovered:
+      clone(route.selectedStraightTransitBaseProfilesCovered),
+    selectedStraightTransitBaseProfilesBlocked:
+      clone(route.selectedStraightTransitBaseProfilesBlocked),
+    rulesAuthorityAfterRoomCertification: true,
+  }));
   const body = { schema: OFFICIAL_COMPETITIVE_MAP_TWO_LAYER_COMPILATION_V1_SCHEMA,
-    version: "1.2.0", compilationId: `${adapter.seedId}:default-or-user-recipe-v2`,
+    version: "1.3.0", compilationId: `${adapter.seedId}:map-geometry-recipe-v3`,
     seedId: adapter.seedId, adapterHash: adapter.adapterHash,
     engagementScale: adapter.engagementScale,
     sourceMapDimensions: clone(adapter.sourceMapDimensions),
@@ -513,6 +806,7 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
       elements: artElements, routeTreatments, backgroundRulesAuthority: false,
       pixelInferenceAllowed: false },
     rulesLayer: { terrainPieces: pieces, setupPlanTemplate: plan, planHash,
+      routeGeometryTreatments,
       targetCounts: clone(targets), actualCounts: actual,
       compensatingTerrainPieceIds: pieces.filter((entry) => (
         entry.sourceType === "neutral_tmg_compensation")).map((entry) => (
@@ -531,7 +825,7 @@ export function compileOfficialCompetitiveMapTwoLayerV1(input = {}) {
       adapter.currentMissionDeploymentGeometryCoverage,
     everySourceElementIndependentlyConfigurable: true,
     everyPassageIndependentlyConfigurable: true,
-    passageModeChangesRulesGeometry: false,
+    passageModeChangesRulesGeometry: true,
     artAndRulesLayersIndependent: true,
     deterministicCompilation: true,
     sourceRefreshPerformed: false,
@@ -547,7 +841,7 @@ export function verifyOfficialCompetitiveMapTwoLayerCompilationV1(compilation,
   verifyOfficialCompetitiveMapTabletopAdapterCatalogueV1(adapterCatalogue);
   if (!compilation
     || compilation.schema !== OFFICIAL_COMPETITIVE_MAP_TWO_LAYER_COMPILATION_V1_SCHEMA
-    || compilation.version !== "1.2.0"
+    || compilation.version !== "1.3.0"
     || compilation.compilationHash !== hashStarcraftTmgContract(without(compilation,
       ["compilationHash"]))
     || compilation.artLayer?.backgroundRulesAuthority !== false
@@ -556,7 +850,7 @@ export function verifyOfficialCompetitiveMapTwoLayerCompilationV1(compilation,
     || compilation.rulesLayer?.sourceRoutePixelsAreRulesAuthority !== false
     || compilation.everySourceElementIndependentlyConfigurable !== true
     || compilation.everyPassageIndependentlyConfigurable !== true
-    || compilation.passageModeChangesRulesGeometry !== false
+    || compilation.passageModeChangesRulesGeometry !== true
     || compilation.artAndRulesLayersIndependent !== true
     || compilation.trainingTruth !== false) {
     fail("COMPETITIVE_MAP_TWO_LAYER_COMPILATION_INVALID");
@@ -569,6 +863,8 @@ export function verifyOfficialCompetitiveMapTwoLayerCompilationV1(compilation,
     || compilation.selectionReceipt.length !== adapter.elements.length
     || compilation.passageSelectionReceipt?.length !== adapter.lanes.length
     || compilation.artLayer.routeTreatments.length !== adapter.lanes.length
+    || compilation.rulesLayer.routeGeometryTreatments?.length
+      !== adapter.lanes.length
     || compilation.rulesLayer.planHash !== hashStarcraftTmgContract(
       compilation.rulesLayer.setupPlanTemplate)) {
     fail("COMPETITIVE_MAP_TWO_LAYER_BINDING_INVALID", compilation.seedId);
@@ -586,6 +882,13 @@ export function verifyOfficialCompetitiveMapTwoLayerCompilationV1(compilation,
     if (!lane || !lane.availablePassageModes.includes(route.selectedPassageMode)
       || route.displayOnly !== true || route.rulesAuthority !== false) {
       fail("COMPETITIVE_MAP_TWO_LAYER_PASSAGE_INVALID", route?.laneId);
+    }
+  }
+  for (const route of compilation.rulesLayer.routeGeometryTreatments) {
+    const lane = adapter.lanes.find((entry) => entry.laneId === route.laneId);
+    if (!lane || route.rulesAuthorityAfterRoomCertification !== true
+      || !(route.selectedClearanceInches > 0)) {
+      fail("COMPETITIVE_MAP_RULES_ROUTE_GEOMETRY_INVALID", route?.laneId);
     }
   }
   return true;

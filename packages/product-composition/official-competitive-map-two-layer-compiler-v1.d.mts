@@ -19,7 +19,7 @@ export interface CompetitiveMapPassageSelectionInputV1 {
 
 export interface OfficialCompetitiveMapTwoLayerCompilationV1 {
   schema: "starcraft_tmg_official_competitive_map_two_layer_compilation_v1";
-  version: "1.2.0"; compilationId: string; seedId: string; adapterHash: string;
+  version: "1.3.0"; compilationId: string; seedId: string; adapterHash: string;
   engagementScale: "Skirmish" | "Standard" | "Grand Offensive";
   sourceMapDimensions: Readonly<{ widthTiles: number; heightTiles: number }>;
   battlefield: Readonly<{ widthInches: number; heightInches: 36 }>;
@@ -28,6 +28,7 @@ export interface OfficialCompetitiveMapTwoLayerCompilationV1 {
     routeTreatments: readonly Readonly<Record<string, unknown>>[];
     backgroundRulesAuthority: false; pixelInferenceAllowed: false }>;
   rulesLayer: Readonly<{ terrainPieces: readonly Readonly<Record<string, unknown>>[];
+    routeGeometryTreatments: readonly Readonly<Record<string, unknown>>[];
     setupPlanTemplate: Readonly<Record<string, unknown>>; planHash: string;
     targetCounts: Readonly<Record<string, number>>;
     actualCounts: Readonly<Record<string, number>>;
@@ -44,7 +45,7 @@ export interface OfficialCompetitiveMapTwoLayerCompilationV1 {
   currentMissionDeploymentGeometryCoverage: string;
   everySourceElementIndependentlyConfigurable: true;
   everyPassageIndependentlyConfigurable: true;
-  passageModeChangesRulesGeometry: false;
+  passageModeChangesRulesGeometry: true;
   artAndRulesLayersIndependent: true; deterministicCompilation: true;
   sourceRefreshPerformed: false; rulesTruth: string; trainingTruth: false;
   compilationHash: string;
