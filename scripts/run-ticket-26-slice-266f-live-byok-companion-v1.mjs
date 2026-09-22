@@ -935,7 +935,7 @@ async function main() {
   // report with both profile hashes.
   const acceptanceProfile = createProviderProfile({
     providerProfileId: `${providerProfile.providerProfileId}.266f-acceptance-budget-v2`,
-    version: `${providerProfile.version}+266f.output-budget-v2`,
+    version: `${providerProfile.version}.266f-output-budget-v2`,
     provider: providerProfile.provider,
     baseUrl: providerProfile.baseUrl,
     model: providerProfile.model,
@@ -1550,6 +1550,13 @@ async function main() {
       physicalProviderCalls: adapter?.observation?.physicalProviderCalls ?? 0,
       conversationId,
       screenshots,
+      // Redaction-checked local error message for diagnosability; never a
+      // credential carrier (anything credential-shaped is replaced).
+      errorMessage: (() => {
+        const message = String(error?.message || "").slice(0, 500);
+        return containsStarcraftTmgOnlineCredentialMaterialV1(message)
+          ? "[redacted: credential-shaped]" : message;
+      })(),
     }, reportPath).catch(() => {});
     console.error(code);
     process.exitCode = 1;
