@@ -6,12 +6,12 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
-### 2026-09-23 T23 / S248 — r64 actual extra-move and Stimpack sequence
+### 2026-09-23 T23 / S248 — r68 Swarmling response; same live process
 
-**76101 remains live**, repair78d2fd8 loaded. Restored/captured r61 without paid
-regeneration; r62Marine2 move→r63Go!Go!Go! extra move→r64Stimpack all applied,
-replayed and captured. r61/63/64 pictures inspected.57new+7prefix=r64,
-Round2Movement;22:25:02Z160calls/17,508,025accounted units/estimated¥23.428180.
+**76101 remains live**, repair78d2fd8 loaded. r65Marine2 CombatShield→r66finish
+→r67Swarmling18-model move→r68finish all applied/replayed/captured; r66/67
+pictures inspected.61new+7prefix=r68, Round2Movement;
+22:39:32Z168calls/18,430,674accounted units/estimated¥24.645064.
 BothFlash. No new main-code change or repeated passed gate/build this turn.
 Keep this process and paid history. New repaired Goliath2 deployment still
 awaits an actual selection, not claimed from the boundary test.
@@ -22,6 +22,14 @@ Launcher. Effect contract correctly names C-14/melee. Preserve legal action for
 S249; no missing-fact claim, fabricated rationale, strategy Prompt or reroll.
 Malformed primitive base-distance arguments yielded unknown but relationships
 supplied distances; Medium tool-contract item, not a stop condition.
+Zerg now acknowledges used Marine2 movement and actual Hydralisk exposure,
+but selects a mostly local Swarmling rearrangement, not the announced central
+advance. Its14.838in "largest gap" claim contradicts another option's14.910in;
+raw scores also span different objective contracts. Preserve forS249. Only
+avoidance/compact options were exposed; absence of an advancing option is not
+proof no advancing layout exists or proof the generator dropped one.
+c66Host interval266.107s with139exact instantiations/135overlap rejects is a
+performance profiling item, not permission to trim strategy facts/search.
 Report `docs/ticket-23-slice-248-r61-r64-live-evidence-2026-09-23.md`.
 T23 still33/36:248complete match/249review/250synthesis open.
 

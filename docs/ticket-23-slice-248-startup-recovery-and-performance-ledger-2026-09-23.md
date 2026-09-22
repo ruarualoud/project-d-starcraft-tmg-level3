@@ -62,6 +62,22 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r65–68 — 18-model formation Host stage and observation timing
+
+At r68:168calls/18,430,674accounted units/estimated¥24.645064, bothFlash.
+The c66 Planner-complete→Action-start interval is266.107s. Its exact search
+receipt has672generated/393examined/139instantiated/135overlap rejects and
+4legal options. This measures the whole intervening Host stage, not pure
+collision CPU. Profile preparation, exact instantiation, relationship comparison
+and persistence separately; investigate sound broad-phase filtering and reuse
+of unchanged geometry without removing whole-base/path checks or objectives.
+
+Observed manifest/refresh/capture subtotals are r65=51.467s, r66=62.139s,
+r67=42.688s and r68=26.450s. r68's2.214s capture alone is not a proved speedup.
+No main-code/test/build changes were made for this observation. Full figures,
+screenshots and plan-versus-formation limitations are in
+`ticket-23-slice-248-r61-r64-live-evidence-2026-09-23.md`.
+
 ### r61–64 — recovery and model-selected ability sequence
 
 76101 recovered r61 without paid regeneration. Marine2 move, Go!Go!Go! and

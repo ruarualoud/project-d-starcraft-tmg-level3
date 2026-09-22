@@ -1,4 +1,4 @@
-# T23 / S248 — same-room recovery and Marine ability sequence
+# T23 / S248 — same-room recovery, Marine abilities and Swarmling response
 
 ## Actual progress
 
@@ -71,6 +71,73 @@ adapter if supported; do not silently reinterpret ambiguous arguments. This is
 Medium, not grounds to halt the match or add another unrelated gate now.
 
 ## Performance and parallel work
+
+### r65–68 continuation — live evidence, not a strategic-success claim
+
+| Revision | Actor / actual action | Evidence |
+| --- | --- | --- |
+| 65 | Marine 2 activates Combat Shield | 1 CP; Apply/Replay and screenshot recorded |
+| 66 | Marine 2 finishes activation | Sole Rules continuation, zero model calls; board inspected |
+| 67 | Swarmling moves all 18 models | Four exact Host options; selected formation applied/replayed; board inspected |
+| 68 | Swarmling finishes activation | Sole Rules continuation, zero model calls; screenshot recorded |
+
+At **2026-09-22 22:39:32.740 UTC**: Round2 Movement,
+**61 new +7 prefix =r68**,168 physical calls,18,430,674 accounted units,
+estimated **¥24.645064**, both Flash. Process76101 continues the original room.
+No new main-code change, passed-gate rerun, source refresh or strategy reroll.
+
+![Terran activation finished at r66](../build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/screenshots/0495-r066-player1-finish_activation-complete-board-applied.png)
+
+![Swarmling formation after r67](../build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/screenshots/0504-r067-player2-move-complete-board-applied.png)
+
+The c66 Zerg Planner corrects parts of its inherited plan using fresh receipts:
+Marine2 cannot move again this round; Hydralisk is under Marine2's stationary
+AGG-12/Rocket Launcher bands; blocked Hydralisk-to-Goliath LOS does not become
+a current stationary shot. It chooses the Swarmling move instead of Pass,
+requesting advance4/control3/compact3/preserve-lane2/avoid-threat2 objectives.
+The Action stage makes another relationship query before selecting a formation.
+Thus query→plan revision→formation search→Action is observed, not a one-call
+decision. It does not establish that the resulting strategy is good.
+
+The four exposed exact options are two isolated avoidance and two isolated
+compact layouts. The model selects `isolate-avoid_threat` at(21,4)in. The
+footprint's maximum Y changes6.525→6.976in, mostly a local rearrangement;
+do not report the plan's intended central advance as an accomplished advance
+or objective capture. The selected minimum enemy gap is14.838in, whereas
+another avoidance option has14.910in. The public claim of the largest gap is
+incorrect despite correct option values. It also compares raw solver scores
+across differing objective contracts; the receipt's Pareto grouping explicitly
+compares only identical objective contracts.
+
+Preserve both findings for S249: plan/action alignment and correct metric
+comparison. Do not manufacture a stronger explanation or reroll an accepted
+legal action. Also retain bounded-search coverage: no combined-intent/advance
+option was exposed. That alone does not prove a feasible advancing layout was
+discarded; candidate-generation/selection coverage needs a separate experiment
+before attributing the whole conservative result to the Skill or to the solver.
+
+### Additional performance evidence
+
+For c66, the final Planner returned at22:31:47.494Z; the first Action request
+started22:36:13.601Z, an intervening **266.107s** Host-stage interval. The saved
+formation receipt reports672 generated candidates,393 examined,139 exact
+instantiations,135 overlap rejections,0 prefilter rejections and4 options.
+This interval includes formation preparation/comparison/persistence, not a
+profile proving all266s are collisions. Record staged timing, geometry-cache
+reuse and sound collision broad-phase filtering as optimization candidates.
+Preserve full-base/path legality, requested objectives and candidate diversity;
+do not shorten search or remove facts merely to improve latency.
+
+| Revision | Manifest | Refresh | Capture | Observed subtotal |
+| --- | ---: | ---: | ---: | ---: |
+| r65 |11.302s|8.052s|32.113s|51.467s|
+| r66 |16.649s|8.986s|36.504s|62.139s|
+| r67 |4.663s|7.316s|30.709s|42.688s|
+| r68 |18.539s|5.697s|2.214s|26.450s|
+
+A single faster screenshot batch at r68 is not a demonstrated performance fix.
+K3 native59421 remains live, correcting S271's verifier assumptions and session
+identity handling. Its real Flash/browser acceptance has not completed.
 
 Observed manifest/refresh/capture totals: r62 **104.966s**, r63 **70.124s**,
 r64 **48.317s**. Manifest intervals include overlapping execution; they do not
