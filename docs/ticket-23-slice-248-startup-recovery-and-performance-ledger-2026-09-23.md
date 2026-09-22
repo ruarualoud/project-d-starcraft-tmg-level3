@@ -86,6 +86,15 @@ not be mounted. No prompt, Skill, model budget, Rules calculation, strategy
 choice or timeout policy changes. This is instrumentation and resumability
 work, **not a claim that the intermittent refresh defect is fixed**.
 
+The next production resume recovered r14 through the real Web at
+2026-09-22T18:26:04Z with no additional Provider call: manifest 1,368 ms,
+projection refresh 5,174 ms, applied-action screenshots 924 ms. Screenshot
+`0054-r014-player2-deploy-complete-board-applied.png` shows the accepted
+Swarmling formation on the abstract Rules board. Ledger remains 30 calls /
+2,396,915 units / ¥3.152656; the next normal decision then started. The only
+code validation was one syntax check of the changed runner. No passed
+scenario gate, other slice, Rules suite or frontend build was rerun.
+
 | Item | Evidence / scope | Acceptance |
 | --- | --- | --- |
 | Startup failure feedback | Fixed: idle workers hid a fatal error until the 10-minute timeout | Real fatal-handler probe exits promptly; no hidden restart/retry |
