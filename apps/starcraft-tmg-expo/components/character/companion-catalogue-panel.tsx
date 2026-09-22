@@ -295,6 +295,11 @@ export function CompanionCataloguePanel({ zh }: { zh: boolean }) {
         <Text style={styles.meta}>
           characterId: {pack.characterId} · packHash: {pack.packHash.slice(0, 16)}…
         </Text>
+        {selectedEntry.referencePointer && (
+          <Text style={styles.meta} testID="companion-pack-reference-pointer">
+            {zh ? "后端参考(身份/时代真相)" : "backend reference (identity/era truth)"}: {selectedEntry.referencePointer.packageFile} · {selectedEntry.referencePointer.worldbookCatalogFile}
+          </Text>
+        )}
 
         <Text style={styles.fieldLabel}>{zh ? "传记(canon 事实 vs 角色配置)" : "Biography (canon facts vs role configuration)"}</Text>
         <Text style={styles.hint}>{zh ? pack.biography.summaryZh : pack.biography.summary}</Text>

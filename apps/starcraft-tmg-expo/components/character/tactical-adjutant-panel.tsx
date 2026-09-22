@@ -2603,8 +2603,69 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     return String(companion?.packageRef?.id || "").replace(/^starcraft-tmg\.companion\./u, "");
   }
 
+  // Slice 266f.10: participant identity binding. Every header chip and every
+  // transcript message binds its speaker's avatar (committed idle keyframe
+  // for companions; the comms emblem for the human), name and era — derived
+  // purely from the server conversation projection (participants /
+  // companions[].eraId / speakerOrder), never fabricated. Next-speaker
+  // highlighting adds a border + ▶ marker; it never hides other participants.
+  function chatParticipantIdentity(conversation: any, participantId: string) {
+    const participant = (conversation?.participants || []).find(
+      (entry: any) => entry.participantId === participantId,
+    );
+    const companion = (conversation?.companions || []).find(
+      (entry: any) => entry.participantId === participantId,
+    );
+    const isUser = participantId === conversation?.userParticipantId
+      || participant?.kind === "user";
+    const characterId = companion
+      ? characterIdFromCompanionPackageId(companion.packageRef.id)
+      : null;
+    return {
+      isUser,
+      label: participant?.label || participantId,
+      characterId,
+      eraId: companion?.eraId || null,
+      slug: isUser
+        ? "player"
+        : chatCompanionSlug(companion),
+      seatKey: conversation?.seatKey || null,
+    };
+  }
+
+  function ChatParticipantAvatar({ characterId, size, testID }: {
+    characterId: string | null;
+    size: number;
+    testID: string;
+  }) {
+    const source = characterId
+      ? resolveCompanionPortraitAssetSourceV1(characterId, "idle")
+      : null;
+    return (
+      <View
+        accessibilityLabel={characterId
+          ? `${characterId} · idle`
+          : "human commander emblem"}
+        accessibilityRole="image"
+        style={[styles.chatAvatarBox, { width: size, height: size }]}
+        testID={testID}
+      >
+        {source ? (
+          <Image
+            accessibilityIgnoresInvertColors
+            resizeMode="cover"
+            source={source}
+            style={styles.chatAvatarImage}
+            testID={`${testID}-img`}
+          />
+        ) : (
+          <Text style={styles.chatAvatarGlyph}>◈</Text>
+        )}
+      </View>
+    );
+  }
+
   function renderChatConversation(conversation: any) {
-    const participants: any[] = conversation.participants || [];
     const messages: any[] = conversation.messages || [];
     const boundCompanions: any[] = conversation.companions || [];
     const lastMessage = messages.length ? messages[messages.length - 1] : null;
@@ -2654,19 +2715,35 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         <View style={styles.choiceRow} testID="companion-chat-speaker-order">
           {(conversation.speakerOrder || []).map((participantId: string, index: number) => {
             const isNext = nextOwner === participantId;
-            const participant = participants.find((entry: any) => entry.participantId === participantId);
-            const slug = participant?.kind === "user"
-              ? "player"
-              : chatCompanionSlug(boundCompanions.find((entry: any) => entry.participantId === participantId));
+            const identity = chatParticipantIdentity(conversation, participantId);
+            const spokeLast = lastMessage?.participantId === participantId;
             return (
               <View
                 key={participantId}
                 style={[styles.chatOrderChip, isNext && styles.chatOrderChipNext]}
-                testID={`companion-chat-order-${slug}`}
+                testID={`companion-chat-order-${identity.slug}`}
               >
-                <Text style={[styles.chatOrderText, isNext && styles.chatOrderTextNext]}>
-                  {index + 1}. {participant?.label || participantId}{isNext ? " ▶" : ""}
-                </Text>
+                <ChatParticipantAvatar
+                  characterId={identity.characterId}
+                  size={22}
+                  testID={`companion-chat-order-avatar-${identity.slug}`}
+                />
+                <View style={styles.chatOrderChipTextBlock}>
+                  <Text style={[styles.chatOrderText, isNext && styles.chatOrderTextNext]}>
+                    {index + 1}. {identity.label}{isNext ? " ▶" : ""}
+                  </Text>
+                  <Text style={styles.chatOrderEraText}>
+                    {identity.isUser
+                      ? (zh ? `你 · 席位 ${identity.seatKey || "player"}` : `you · seat ${identity.seatKey || "player"}`)
+                      : (zh ? `时代 ${identity.eraId || "—"}` : `era ${identity.eraId || "—"}`)}
+                    {" · "}
+                    {isNext
+                      ? (zh ? "下一位" : "next")
+                      : spokeLast
+                        ? (zh ? "刚发言" : "spoke")
+                        : (zh ? "待命" : "idle")}
+                  </Text>
+                </View>
               </View>
             );
           })}
@@ -2722,18 +2799,34 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         <View style={styles.transcript} testID="companion-chat-transcript">
           {messages.length ? messages.slice(-16).map((message: any) => {
             const isUser = message.participantId === conversation.userParticipantId;
+            const identity = chatParticipantIdentity(conversation, message.participantId);
             return (
               <View
                 key={message.turnId}
                 style={isUser ? styles.humanMessage : styles.agentMessage}
                 testID={`companion-chat-message-${message.turnSequence}`}
               >
-                <Text style={styles.messageAuthor}>
-                  {chatParticipantLabel(conversation, message.participantId)}
-                  {message.mentions?.length
-                    ? `  ${message.mentions.map((participantId: string) => `@${chatParticipantLabel(conversation, participantId)}`).join(" ")}`
-                    : ""}
-                </Text>
+                <View
+                  style={styles.messageSpeakerRow}
+                  testID={`companion-chat-message-speaker-${message.turnSequence}`}
+                >
+                  <ChatParticipantAvatar
+                    characterId={identity.characterId}
+                    size={18}
+                    testID={`companion-chat-message-avatar-${message.turnSequence}`}
+                  />
+                  <Text style={styles.messageAuthor}>
+                    {identity.label}
+                    {message.mentions?.length
+                      ? `  ${message.mentions.map((participantId: string) => `@${chatParticipantLabel(conversation, participantId)}`).join(" ")}`
+                      : ""}
+                  </Text>
+                  <Text style={styles.messageEraText}>
+                    {identity.isUser
+                      ? (zh ? `席位 ${identity.seatKey || "player"}` : `seat ${identity.seatKey || "player"}`)
+                      : (zh ? `时代 ${identity.eraId || "—"}` : `era ${identity.eraId || "—"}`)}
+                  </Text>
+                </View>
                 <Text style={styles.messageText}>{message.content}</Text>
               </View>
             );
@@ -3426,7 +3519,7 @@ const styles = StyleSheet.create({
   choiceButtonActive: { borderColor: COMMS.cyan, backgroundColor: COMMS.panelAlt },
   choiceText: { color: COMMS.textDim, fontSize: 11, fontWeight: "800" },
   choiceTextActive: { color: COMMS.cyanBright },
-  transcript: { minHeight: 96, maxHeight: 320, padding: 10, gap: 8, borderWidth: 1, borderColor: COMMS.lineSoft, borderRadius: 10, backgroundColor: COMMS.spaceDeep },
+  transcript: { minHeight: 96, maxHeight: 320, padding: 10, gap: 8, borderWidth: 1, borderColor: COMMS.lineSoft, borderRadius: 10, backgroundColor: COMMS.spaceDeep, overflow: "scroll" },
   humanMessage: { alignSelf: "flex-end", maxWidth: "88%", padding: 9, borderRadius: 10, backgroundColor: COMMS.raised },
   agentMessage: { alignSelf: "flex-start", maxWidth: "92%", padding: 9, borderRadius: 10, borderWidth: 1, borderColor: COMMS.lineSoft, backgroundColor: COMMS.section },
   messageAuthor: { color: COMMS.cyanBright, fontSize: 9, fontWeight: "900", marginBottom: 4 },
@@ -3451,10 +3544,17 @@ const styles = StyleSheet.create({
   chatStatusCard: { gap: 6, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: COMMS.lineStrong, backgroundColor: COMMS.panelAlt },
   chatStatusTitle: { color: COMMS.cyanBright, fontSize: 12, fontWeight: "900" },
   chatStatusMeta: { color: COMMS.textDim, fontSize: 10, lineHeight: 15 },
-  chatOrderChip: { minHeight: 24, justifyContent: "center", paddingHorizontal: 8, borderRadius: 999, backgroundColor: COMMS.raised, borderWidth: 1, borderColor: COMMS.line },
+  chatOrderChip: { minHeight: 24, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, backgroundColor: COMMS.raised, borderWidth: 1, borderColor: COMMS.line, maxWidth: "100%" },
   chatOrderChipNext: { borderColor: COMMS.cyan, backgroundColor: COMMS.panelAlt },
+  chatOrderChipTextBlock: { flexShrink: 1, minWidth: 0 },
   chatOrderText: { color: COMMS.textDim, fontSize: 10, fontWeight: "800" },
   chatOrderTextNext: { color: COMMS.cyanBright },
+  chatOrderEraText: { color: COMMS.textFaint, fontSize: 7, fontWeight: "700", lineHeight: 10 },
+  chatAvatarBox: { borderWidth: 1, borderRadius: 5, borderColor: COMMS.line, backgroundColor: COMMS.spaceDeep, overflow: "hidden", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  chatAvatarImage: { width: "100%", height: "100%" },
+  chatAvatarGlyph: { color: COMMS.cyan, fontSize: 11 },
+  messageSpeakerRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4, flexWrap: "wrap" },
+  messageEraText: { color: COMMS.textFaint, fontSize: 8, fontWeight: "700", fontFamily: "monospace" },
   chatSpeakerRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, alignItems: "center" },
   chatSpeakerPortraitBox: { width: 72, height: 72, maxWidth: "100%", borderWidth: 1, borderRadius: 8, borderColor: COMMS.line, backgroundColor: COMMS.spaceDeep, overflow: "hidden", alignItems: "center", justifyContent: "center", position: "relative" },
   chatSpeakerPortrait: { width: "100%", height: "100%" },
