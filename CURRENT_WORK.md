@@ -6,6 +6,22 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r46 Round 2; Web polling overlap repaired
+
+Current resume session **72606**, replacing terminal5379. Same Room/branch,
+r46 = Round2/start_of_round, score0–0, Zerg first player after recorded tie then
+5vs7 dice. Both Providers have no unfinished decisions; 7prefix+39new actions
+all applied/replayed, pendingApply false before restart. 96calls /9,529,523
+accounted units /estimated¥12.802140, both Flash. New runner must capture any
+unseen r45/r46 evidence without regenerating actions, then continue normally.
+Web control now permits one pending status read, fixing 2.5-second overlapping
+polls against 10–35s responses. Actual-callback red3→one green1; one affected
+Web export passed (182.984s). No previous gates rerun, no strategy changes.
+Report `docs/ticket-23-slice-248-status-poll-single-flight-repair-2026-09-23.md`.
+Observe real post-reload latency before claiming a speedup. Blank portrait
+readiness and the default generated-Goliath override are tracked separately.
+K3 native37154 remains alive on S271; no acceptance claim yet.
+
 ### 2026-09-23 live checkpoint — r41 scoring; K3 S271 active
 
 Main session **5379** at 20:12:18Z: r40 marker control and r41 mission scoring

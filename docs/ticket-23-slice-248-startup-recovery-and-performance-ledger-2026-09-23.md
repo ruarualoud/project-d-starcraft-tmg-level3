@@ -62,6 +62,18 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r46 — overlapping status reads repaired
+
+The Web control's 2.5-second interval sent additional full status requests even
+while its prior request remained pending for 10–35 seconds. Actual callback
+reproduction: three simultaneous reads; after a pending-read ref: one. One
+focused red→green and one directly affected Web export passed. No decision
+material or model capacity changed. Read-only live manifest/portrait probes
+timed out at20s/30s before the repair; no post-repair speedup claimed yet.
+Runner72606 resumes r46 after all Apply/Provider work settled. Full report:
+`ticket-23-slice-248-status-poll-single-flight-repair-2026-09-23.md`.
+
+
 ### r39 — repeated non-progress engineering failure, repaired
 
 From 19:53Z Cleanup repeatedly rejected a valid impassable terrain kind in the

@@ -93,9 +93,13 @@ export function AgentAgentMatchControl() {
   const [expanded, setExpanded] = useState(false);
   const driveInFlightRef = useRef(false);
   const hiddenRef = useRef(false);
+  const statusReadInFlightRef = useRef(false);
 
   const readStatus = useCallback(async () => {
-    if (hiddenRef.current) return;
+    // A slow authority projection must not accumulate timer/post-drive reads.
+    // Preserve its complete response; the next ordinary tick reads fresh state.
+    if (hiddenRef.current || statusReadInFlightRef.current) return;
+    statusReadInFlightRef.current = true;
     try {
       const response = await fetch(STATUS_PATH, {
         credentials: "same-origin",
@@ -125,6 +129,8 @@ export function AgentAgentMatchControl() {
       setReadNote(null);
     } catch {
       setReadNote("A2A_STATUS_UNREACHABLE");
+    } finally {
+      statusReadInFlightRef.current = false;
     }
   }, []);
 
