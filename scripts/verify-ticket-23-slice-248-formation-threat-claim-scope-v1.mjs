@@ -11,6 +11,8 @@ import { createStarcraftTmgHostedBotSeatRuntimeV1 } from
   "../packages/online-agent-session/hosted-bot-seat-runtime-v1.mjs";
 import { projectStarcraftTmgThreatActionWindowV1 } from
   "../packages/online-agent-session/tactical-relationship-graph-v1.mjs";
+import { projectStarcraftTmgUnitSupplyControlV1 } from
+  "../packages/online-agent-session/player-spatial-observation-v1.mjs";
 
 const option = {
   relationshipComparison: {
@@ -381,6 +383,75 @@ const exactSwarmlingSupply = inspectStarcraftTmgUnitSupplyClaimsV1({
 assert.equal(exactSwarmlingSupply.status, "consistent",
   "an exact Supply-1 explanation must remain valid");
 
+const supplyState = {
+  officialUnitCardSupplyDataBundle: {
+    unitProfiles: [{
+      recordKey: "army_units:swarmling__zergling_",
+      profileHash: "swarmling-profile-hash",
+      supplyProfile: [
+        { minimumModels: 1, maximumModels: 6, supply: 0, applicable: true },
+        { minimumModels: 7, maximumModels: 18, supply: 1, applicable: true },
+      ],
+    }, {
+      recordKey: "army_units:zergling",
+      profileHash: "zergling-profile-hash",
+      supplyProfile: [
+        { minimumModels: 1, maximumModels: 6, supply: 0, applicable: true },
+        { minimumModels: 7, maximumModels: 12, supply: 1, applicable: true },
+        { minimumModels: 13, maximumModels: 18, supply: 2, applicable: true },
+      ],
+    }],
+  },
+};
+const swarmlingSupplyControl = projectStarcraftTmgUnitSupplyControlV1({
+  id: "player2-swarmling",
+  officialUnitRecordKey: "army_units:swarmling__zergling_",
+  currentModels: 18,
+  currentSupply: 1,
+}, supplyState);
+assert.deepEqual(swarmlingSupplyControl, {
+  status: "exact_rules_profile",
+  currentModels: 18,
+  currentSupply: 1,
+  currentStateMatchesProfile: true,
+  nextSupplyReduction: {
+    casualtiesRequired: 12,
+    remainingModels: 6,
+    currentSupplyAfter: 0,
+    supplyLost: 1,
+  },
+  supplyZeroThreshold: {
+    casualtiesRequired: 12,
+    remainingModels: 6,
+    currentSupplyAfter: 0,
+    supplyLost: 1,
+  },
+  futureSupplyReductions: [{
+    casualtiesRequired: 12,
+    remainingModels: 6,
+    currentSupplyAfter: 0,
+    supplyLost: 1,
+  }],
+  sourceProfileHash: "swarmling-profile-hash",
+  compositionLabelsExposed: false,
+  rulesAuthority: true,
+  trainingTruth: false,
+});
+const zerglingSupplyControl = projectStarcraftTmgUnitSupplyControlV1({
+  id: "player2-zergling",
+  officialUnitRecordKey: "army_units:zergling",
+  currentModels: 18,
+  currentSupply: 2,
+}, supplyState);
+assert.deepEqual(zerglingSupplyControl.futureSupplyReductions.map((entry) => ({
+  casualtiesRequired: entry.casualtiesRequired,
+  remainingModels: entry.remainingModels,
+  currentSupplyAfter: entry.currentSupplyAfter,
+})), [
+  { casualtiesRequired: 6, remainingModels: 12, currentSupplyAfter: 1 },
+  { casualtiesRequired: 12, remainingModels: 6, currentSupplyAfter: 0 },
+]);
+
 assert.equal(STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE, 3,
   "one decision cannot reopen more than three semantic correction rounds");
 
@@ -480,6 +551,11 @@ console.log(JSON.stringify({
     impossibleUnitBoundPhaseControl.status,
   falseModelCountSupplyStatus: falseModelCountSupply.status,
   exactSwarmlingSupplyStatus: exactSwarmlingSupply.status,
+  swarmlingSupplyZeroCasualties:
+    swarmlingSupplyControl.supplyZeroThreshold.casualtiesRequired,
+  zerglingSupplyReductionCasualties:
+    zerglingSupplyControl.futureSupplyReductions.map((entry) =>
+      entry.casualtiesRequired),
   semanticCorrectionLimit:
     STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE,
   rejectionSeverity: rejectedDrive.findingSeverity,

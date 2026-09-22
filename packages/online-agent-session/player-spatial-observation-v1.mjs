@@ -154,6 +154,81 @@ function formationEnvelope(models) {
   };
 }
 
+function supplyAtModelCount(profile, currentModels) {
+  if (currentModels <= 0) return 0;
+  const tier = (profile?.supplyProfile || []).find((entry) =>
+    entry?.applicable !== false
+      && Number.isSafeInteger(Number(entry.minimumModels))
+      && Number.isSafeInteger(Number(entry.maximumModels))
+      && currentModels >= Number(entry.minimumModels)
+      && currentModels <= Number(entry.maximumModels));
+  return tier ? Number(tier.supply) : null;
+}
+
+export function projectStarcraftTmgUnitSupplyControlV1(piece, state) {
+  const currentModels = Number(piece?.currentModels || 0);
+  const currentSupply = Number(piece?.currentSupply || 0);
+  const recordKey = String(piece?.officialUnitRecordKey || "");
+  const profile = state?.officialUnitCardSupplyDataBundle?.unitProfiles
+    ?.find((entry) => entry.recordKey === recordKey);
+  if (!profile || !recordKey) {
+    return deepFreeze({
+      status: "unknown_profile",
+      currentModels,
+      currentSupply,
+      currentStateMatchesProfile: null,
+      nextSupplyReduction: null,
+      supplyZeroThreshold: currentSupply === 0 ? {
+        casualtiesRequired: 0,
+        remainingModels: currentModels,
+        currentSupplyAfter: 0,
+        supplyLost: 0,
+      } : null,
+      futureSupplyReductions: [],
+      sourceProfileHash: null,
+      compositionLabelsExposed: false,
+      rulesAuthority: false,
+      trainingTruth: false,
+    });
+  }
+  const expectedCurrentSupply = supplyAtModelCount(profile, currentModels);
+  const futureSupplyReductions = [];
+  let previousSupply = currentSupply;
+  for (let remainingModels = currentModels - 1;
+    remainingModels >= 0; remainingModels -= 1) {
+    const supplyAfter = supplyAtModelCount(profile, remainingModels);
+    if (supplyAfter === null || supplyAfter >= previousSupply) continue;
+    futureSupplyReductions.push({
+      casualtiesRequired: currentModels - remainingModels,
+      remainingModels,
+      currentSupplyAfter: supplyAfter,
+      supplyLost: currentSupply - supplyAfter,
+    });
+    previousSupply = supplyAfter;
+  }
+  const supplyZeroThreshold = currentSupply === 0 ? {
+    casualtiesRequired: 0,
+    remainingModels: currentModels,
+    currentSupplyAfter: 0,
+    supplyLost: 0,
+  } : futureSupplyReductions.find((entry) =>
+    entry.currentSupplyAfter === 0) || null;
+  return deepFreeze({
+    status: expectedCurrentSupply === currentSupply
+      ? "exact_rules_profile" : "state_profile_mismatch",
+    currentModels,
+    currentSupply,
+    currentStateMatchesProfile: expectedCurrentSupply === currentSupply,
+    nextSupplyReduction: futureSupplyReductions[0] || null,
+    supplyZeroThreshold,
+    futureSupplyReductions,
+    sourceProfileHash: profile.profileHash || null,
+    compositionLabelsExposed: false,
+    rulesAuthority: true,
+    trainingTruth: false,
+  });
+}
+
 function unitObservation(piece, models, seatKey, state) {
   const envelope = formationEnvelope(models);
   return {
@@ -164,6 +239,7 @@ function unitObservation(piece, models, seatKey, state) {
     sideRelation: relationFor(piece, seatKey, state),
     currentModels: Number(piece.currentModels || models.length),
     currentSupply: Number(piece.currentSupply || 0),
+    supplyControl: projectStarcraftTmgUnitSupplyControlV1(piece, state),
     modelIds: models.map((entry) => entry.modelId),
     leadingModelId: piece.leadingModelId || piece.lastLeadingModelId || null,
     formationEnvelope: envelope,
@@ -357,6 +433,7 @@ export function createStarcraftTmgPlayerSpatialObservationV1(input = {}) {
       isDestroyed: piece.isDestroyed === true,
       currentModels: Number(piece.currentModels || 0),
       currentSupply: Number(piece.currentSupply || 0),
+      supplyControl: projectStarcraftTmgUnitSupplyControlV1(piece, state),
       positionAvailable: false,
     }));
   const terrain = (state.board?.terrain || []).map((entry) =>

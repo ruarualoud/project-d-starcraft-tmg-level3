@@ -21,6 +21,18 @@ once after the repair with 0 Provider calls / ¥0. Revision 11 remains Authority
 evidence but its contradicted strategy prose is non-training and continuation
 must fork from r10.
 
+The follow-up observation audit proved that r11 never exposed a composition
+label to the Planner: it already carried `18 models / currentSupply 1`, so the
+failure was a model-count-to-control-strength analogy rather than `small` versus
+`large` field leakage. The Host now projects a Rules-derived `supplyControl`
+summary per on-table and reserve Unit. It contains the exact current Supply,
+every future casualty breakpoint, the next Supply reduction and the Supply-zero
+threshold, while explicitly omitting army-composition labels. Swarmling at 18
+models therefore reports 12 casualties required to reach 6 models / Supply 0;
+ordinary 18-model Zergling reports 6 casualties to Supply 1 and 12 to Supply 0.
+The compact Planner/Action observation preserves this summary. The same focused
+gate passed once after the change with 0 Provider calls / ¥0.
+
 The collaboration environment is complete. Product work resumes from the
 ordered acceptance list below; Codex owns integration and Kimi receives only
 explicit, isolated slice manifests.
