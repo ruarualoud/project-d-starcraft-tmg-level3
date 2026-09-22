@@ -62,6 +62,50 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r29 checkpoint — Flash reconfirmed; observation overhead measured
+
+At 2026-09-22T19:24:16.579Z the same branch has reached r29, Round 1
+Assault: r27 Marine 2 Run, r28 deterministic finish-activation and r29 Zerg
+Pass all have accepted Apply/Replay records and paired Web screenshots.
+Both persisted seat profiles are `deepseek-flash`; the live server supplies
+only `STARCRAFT_TMG_TICKET_23_LIVE_FLASH_PROVIDER_PROFILE_V1`. No Pro fallback
+or model change is introduced. The frozen profile's historical 8192 field is
+not the operational request limit: current attempt records separately show
+the existing 32768 live-output policy. Do not conflate those two fields or
+rewrite paid history to make their metadata match.
+
+The branch ledger at that boundary is **78 physical calls / 7,591,424
+accounted units / estimated ¥10.281190**, including the previously documented
+unknown-usage reservation. This is not an exact Provider invoice or a claim
+that the entire match is finished. The next normal Terran decision started;
+the running process is not interrupted for a metadata-only update.
+
+Additional measured end-to-end observation costs:
+
+| Accepted revision | Manifest | Projection refresh | Applied-action capture | Subtotal |
+| --- | ---: | ---: | ---: | ---: |
+| r27 | 7.123 s | 39.055 s | 10.541 s | 56.719 s |
+| r28 | 11.642 s | 8.437 s | 5.764 s | 25.843 s |
+| r29 | 5.896 s | 9.273 s | 4.916 s | 20.085 s |
+
+Source: this run's `progress.json.observationTimings`, independently of
+Provider generation durations. `refreshObservedRoom` includes tab navigation,
+refresh-button interaction, waiting for the connected state and returning to
+the battlefield; its duration does not isolate HTTP, rendering or Rules CPU.
+Optimization work should first attribute those stages and then reuse a
+verified, revision-current projection where possible. Acceptance must retain
+the real Web action trigger, current complete-base geometry, terrain state,
+public decision evidence and both screenshots. Do not skip evidence or reduce
+planning, Skill context, query freedom or output capacity just to lower time.
+
+r29's legal Pass remains part of the strategic review, not a reroll target.
+Its value and the public claim that Run offers no realized benefit require
+evaluation against later outcomes. The named-target claim repair already on
+disk is not yet loaded by this long-running server; remaining old-checker
+corrections are retained in evidence rather than forcing a mid-call restart.
+This update is documentation only: no tests, build, new paid call or Room
+mutation was initiated for the update itself.
+
 ### r14 observation interruption (not a model decision failure)
 
 Both seats remain `deepseek-flash`. The authority and bot journals confirm

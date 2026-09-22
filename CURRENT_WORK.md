@@ -6,6 +6,21 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r29, Flash-only continuation
+
+At 19:24:16Z the same live branch reached r29 / Round 1 Assault: Marine 2
+Run (r27), finish (r28) and Zerg Pass (r29) all Apply/Replay verified with Web
+screenshots. Both persisted seats remain Flash. 78 calls / 7,591,424 accounted
+units / estimated ¥10.281190, including the old unknown-usage reservation.
+Keep runner session 95271 alive; the next normal decision has started.
+Measured r27 manifest/refresh/capture sum is 56.719 seconds, including a
+39.055-second refresh; r28/r29 sums are 25.843/20.085 seconds. These are
+observation overhead, not proven Rules CPU or model latency. The performance
+ledger records the evidence and quality-preserving acceptance criteria.
+No new code or test for this checkpoint. Preserve legal strategic choices for
+S249; no reroll, Prompt strategy injection or forced restart. T23 stays 33/36
+(S248 full match, S249 review, S250 synthesis remain open).
+
 ### 2026-09-23 T23 / S248 — r25 / Round 1 Assault reached
 
 Live runner session continued after Worker repair: r24 Corpser finish, r25
