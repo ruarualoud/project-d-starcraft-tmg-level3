@@ -1283,6 +1283,10 @@ async function main() {
     return chatSection(page).locator('[data-testid^="companion-chat-message-"]').count();
   }
 
+  // Hoisted: the final report aggregates the durable-fixture call count after
+  // the try block, so this counter must live at function scope.
+  const durableProbe = { calls: 0 };
+
   try {
     // ── Desktop journey ────────────────────────────────────────────────
     const hostRecovery1 = await issueRecovery(hostSeatToken);
@@ -2060,7 +2064,6 @@ async function main() {
     const durableFile = path.join(durableDir, "companion-product.sqlite");
     const durableKey = createHash("sha256")
       .update("ticket26-266f-durable-verifier-key").digest("base64");
-    const durableProbe = { calls: 0 };
     const durableResponder = async (request) => {
       durableProbe.calls += 1;
       const slug = String(request.companionRef?.id || "companion")
