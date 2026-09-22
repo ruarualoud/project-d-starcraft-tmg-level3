@@ -97,11 +97,20 @@ was silently bundled with this comparison repair.
 
 ## Loading boundary
 
-The focused gate proves the repaired comparison consumer. The active52348
-process predates this code change; no live-loaded claim yet. Wait for no pending
-Provider or Apply before a safe same-room reload; retain paid outputs, accepted
-actions and usage. Observe a later actual formation query for live confirmation.
-Do not regenerate r76 or treat its old stored receipt as newly repaired.
+The focused gate proves the repaired comparison consumer.52348 initially
+predated the change. At23:42:43Z a safe-stop check detected an in-flight request
+and did nothing. Its outer runner was subsequently paused, allowing the existing
+server request/action to drain without another trigger. At23:45:18Z both latest
+decisions were completed, no pendingApply, r81/79 Replaytrue: server stopped,
+driver resumed to exit.52348 confirmed exit1 on the now-unavailable room refresh.
+That observed timeout is the controlled reload, not a new transport-root-cause
+claim. No paid request was interrupted.
+
+Repair8dbf728 is committed; new resume76208 restores the same directory and
+must supplement r81's screenshot, not regenerate it. Stopped usage is203calls/
+22,675,017accounted units/estimated¥30.239410, retained. Startup itself and a
+later new formation comparison still need actual observations. Do not treat
+the old stored r76 receipt as newly repaired or repeat the passed consumer gate.
 
 `harnessLoopUsed:true`; route `selfplay_agent_prompt`; tools relationship,
 formation, instantiation and Rules Apply/Replay; room plan and prediction

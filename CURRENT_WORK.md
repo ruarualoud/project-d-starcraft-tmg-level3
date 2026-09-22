@@ -6,6 +6,18 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — 8dbf728 committed; same r81 resume76208 started
+
+Old52348 confirmed exit1 after the controlled server stop; its room-refresh
+timeout is the intentional reload boundary, not a newly diagnosed transport
+regression. No in-flight Provider or pendingApply was terminated. r81Pass is
+Applied/Replayed, capture pending. Final stopped ledger203calls/22,675,017units/
+estimated¥30.239410; preserve it. New **76208**, runner13903, is restoring the
+same20260922172710914 directory with8dbf728. Confirm live progress, supplement
+r81screenshot without generation, then continue. Never restart from the stale
+failedprogress alone. Actual later formation comparison evidence still pending;
+the7.264s consumer gate has passed and must not be rerun. No Web build.
+
 ### 2026-09-23 T23 / S248 — common formation targets repaired; r81 safe reload
 
 Main52348 reached r76Raptor move→r77finish→r78/79Pass→r80choose-first-actor,
