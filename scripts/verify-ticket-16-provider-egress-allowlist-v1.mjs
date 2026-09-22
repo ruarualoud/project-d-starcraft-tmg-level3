@@ -33,6 +33,43 @@ import {
   STARCRAFT_TMG_PROVIDER_EGRESS_WORKER_CHILD_VERSION,
 } from "../packages/secure-provider-runtime/provider-egress-worker-port-v1.mjs";
 
+if (process.argv.includes("--live-request-deadline-only")) {
+  const { STARCRAFT_TMG_TICKET_23_LIVE_FLASH_PROVIDER_PROFILE_V1: frozen } =
+    await import("../content/provider/ticket-23-live-provider-profiles-v1.mjs");
+  const makeRegistry = (timeoutMs) => createStarcraftTmgProviderProfileRegistryV1({
+    entries: [{ providerProfile: frozen, completionPath: "/beta/chat/completions",
+      ...(timeoutMs === undefined ? {} : { transportTimeoutMs: timeoutMs }) }],
+    allowedProviders: [frozen.provider],
+  });
+  const selected = { profileRef: { id: frozen.providerProfileId,
+    version: frozen.version, hash: frozen.integrity.hash } };
+  const old = await makeRegistry().resolveEgressBinding(selected);
+  assert.equal(old.egressBinding.timeoutMs, 120_000);
+  const registry = makeRegistry(300_000);
+  const next = await registry.resolveEgressBinding(selected);
+  assert.equal(next.egressBinding.timeoutMs, 300_000);
+  assert.deepEqual(next.providerProfile, old.providerProfile,
+    "operational deadline cannot change the open match's frozen model profile");
+  assert.equal(next.egressBinding.maxOutputUnits, old.egressBinding.maxOutputUnits);
+  assert.equal(next.egressBinding.physicalAttempts, 1);
+  assert.equal(next.egressBinding.automaticRetryAllowed, false);
+  assert.notEqual(next.egressBinding.policyHash, old.egressBinding.policyHash,
+    "each physical attempt records its actual transport policy");
+  assertStarcraftTmgProviderEgressBindingV1(next.egressBinding);
+  for (const value of [0, -1, 300_001, Number.NaN]) {
+    assert.throws(() => makeRegistry(value));
+  }
+  await assert.rejects(registry.resolveEgressBinding({
+    ...selected, transportTimeoutMs: 300_000 }),
+  /forbidden fields/u, "a request cannot override server-owned policy");
+  assert.equal(registry.listPublic().profiles[0].timeoutMs, 300_000);
+  console.log(JSON.stringify({ ok: true, oldTimeoutMs: 120_000,
+    transportTimeoutMs: 300_000, frozenProfileUnchanged: true,
+    modelPromptAndOutputBudgetUnchanged: true, automaticRetries: 0,
+    physicalProviderCalls: 0, unrelatedChecksRun: 0 }));
+  process.exit(0);
+}
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REPORT_ROOT = path.join(ROOT,
   "build/ticket-16-slice-156-provider-egress-allowlist-v1");

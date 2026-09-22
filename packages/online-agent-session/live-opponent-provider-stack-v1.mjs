@@ -197,6 +197,7 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
       // compatibility route. The frozen model/profile identity remains the
       // same; every physical attempt records the exact compiled egress path.
       completionPath: "/beta/chat/completions",
+      transportTimeoutMs: options.transportTimeoutMs ?? 300_000,
     })),
     allowedProviders: ["deepseek-openai-compatible-direct"],
   });

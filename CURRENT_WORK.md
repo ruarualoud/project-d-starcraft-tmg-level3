@@ -42,6 +42,17 @@ classic-map art fidelity and are superseded by the semantic-map reset above.
 
 ### 2026-09-22 Ticket 23 / Slice 248 checkpoint
 
+2026-09-23 network follow-up: a second 120-second timeout left the room at r7;
+13 attempts / 1,688,225 accounted units / estimated ¥2.229344. The live stack
+now uses a server-owned 300-second request deadline without changing the
+frozen model, Prompt, output budget or retry policy. Its directly affected
+existing verifier mode passed once after a fail-first reproduction; no old
+gates rerun. Continue the same r7 checkpoint. Companion closure `ca7607d` is
+integrated at `030cac9`. Threat closure `3d50353` preserves the prior mainline
+selection/unknown-value/mobile repairs; 21 combined interaction/visual checks
+passed, with only the legacy fixture's missing optional A-A status endpoint
+remaining as a documented Medium console-check gap. No more review reruns.
+
 2026-09-23 r7 follow-up: Omega Network was applied and Replay-verified at
 (9.457, 9.704) inches, with four options compared using current exposure and
 future Entry Edge utility. The next decision hit `provider_transport_timeout`.

@@ -12,7 +12,7 @@ import {
 
 export const STARCRAFT_TMG_PROVIDER_PROFILE_REGISTRY_VERSION =
   "starcraft_tmg_provider_profile_registry_v1";
-const ENTRY_FIELDS = new Set(["providerProfile", "completionPath"]);
+const ENTRY_FIELDS = new Set(["providerProfile", "completionPath", "transportTimeoutMs"]);
 const RESOLVE_FIELDS = new Set(["profileRef"]);
 const SAFE_PATH = /^\/(?:[A-Za-z0-9._~!$&'()*+,;=:@%-]+\/?)*$/u;
 
@@ -109,7 +109,11 @@ function compileEntry(value, { allowedProviders, allowedPorts }) {
     topP: profile.topP,
     maxContextUnits: profile.contextBudget,
     maxOutputUnits: profile.outputBudget,
-    timeoutMs: profile.timeoutMs,
+    // Operational transport policy is server-owned and recorded per attempt.
+    // Extending a deadline does not change the model/strategy profile pinned
+    // by an already-open match. Request callers cannot supply this override.
+    timeoutMs: value.transportTimeoutMs === undefined ? profile.timeoutMs
+      : positiveInteger(value.transportTimeoutMs, "transport timeoutMs", 300_000),
     responseFormatMode: profile.extensions?.responseFormatMode === "prompt_only"
       ? "prompt_only" : "json_object",
     maxOutputField: profile.extensions?.maxOutputField
@@ -200,7 +204,7 @@ export function createStarcraftTmgProviderProfileRegistryV1(options = {}) {
         model: record.profile.model,
         maxContextUnits: record.profile.contextBudget,
         maxOutputUnits: record.profile.outputBudget,
-        timeoutMs: record.profile.timeoutMs,
+        timeoutMs: record.egressBinding.timeoutMs,
         trainingTruth: false,
       })),
       trainingTruth: false,

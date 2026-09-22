@@ -69,3 +69,25 @@ Harness loop used: true. Route: `selfplay_agent_prompt`; tools observed:
 intent, alternatives and memory assessment are preserved; no hidden reasoning
 is collected. `trainingTruth: false`; failed/contradictory strategic claims are
 not promoted. Ticket 23 remains 33/36; Slice 248 is still open.
+
+## Second timeout and operational deadline recovery
+
+The next explicit continuation also timed out at exactly 120 seconds. No r8
+Apply occurred. The stopped branch now accounts for 13 attempts / 1,688,225
+units / estimated ¥2.229344; unknown-usage attempts retain conservative
+reservations, not invented provider-reported token counts.
+
+The live provider stack now allows one request to wait 300 seconds instead of
+120. This is an operational mitigation, not proof that the network's root
+cause is fixed. The registry accepts a server-owned `transportTimeoutMs`
+policy (positive integer, at most 300000); the frozen model/profile identity,
+Prompt, output budget and single physical attempt stay unchanged. Each
+attempt still records its actual egress policy. Callers cannot override the
+policy. No automatic retry or credential/rule/budget bypass was added.
+
+The existing egress verifier's `--live-request-deadline-only` mode failed on
+the unsupported entry before the repair, then passed once after it: 120→300s,
+identical frozen profile/output budget, recorded policy change, no automatic
+retry, invalid-policy rejection and no per-request override. Zero paid calls
+and no unrelated egress tests. Resume the same r7 room and retained planning/
+query receipts; a new transport failure must remain visible.
