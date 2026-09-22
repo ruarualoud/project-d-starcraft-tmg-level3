@@ -422,7 +422,7 @@ async function main() {
       await refresh.click();
       await page.getByText(
         /已连接权威房间|Authoritative room connected/u,
-      ).first().waitFor({ timeout: 60_000 });
+      ).first().waitFor({ state: "attached", timeout: 60_000 });
     }
     await enterBattle();
   }
@@ -552,7 +552,7 @@ async function main() {
     entry = server.entry;
     await page.goto(entry.url, { waitUntil: "networkidle", timeout: 60_000 });
     await page.getByText(/已连接权威房间|Authoritative room connected/u)
-      .first().waitFor({ timeout: 60_000 });
+      .first().waitFor({ state: "attached", timeout: 60_000 });
     await enterBattle();
     const recovered = await manifest();
     ensure(Number(recovered.room?.stateRevision || 0)
@@ -728,7 +728,7 @@ async function main() {
     page.on("pageerror", (error) => pageErrors.push(sanitize(error.message)));
     await page.goto(entry.url, { waitUntil: "networkidle", timeout: 60_000 });
     await page.getByText(/已连接权威房间|Authoritative room connected/u)
-      .first().waitFor({ timeout: 60_000 });
+      .first().waitFor({ state: "attached", timeout: 60_000 });
     await enterBattle();
     let current = await manifest(60_000, {
       allowExistingRetryableFinding: entry.resumed === true,
@@ -765,10 +765,11 @@ async function main() {
     });
     await capture("room", "connected", current.room?.stateRevision ?? 0,
       "initial");
+    const initialRecordedActionCount = actions.length;
     await recordUnseen(current);
     await progress("running", { manifest: current, roomId: entry.roomId });
     const checkpointTargetActionCount = checkpointAfterAdditionalActions === null
-      ? null : actions.length + checkpointAfterAdditionalActions;
+      ? null : initialRecordedActionCount + checkpointAfterAdditionalActions;
     const requestedRoundInitialized = (manifestValue) => {
       if (checkpointAfterRoundInitialized === null
         || Number(manifestValue?.state?.round || 0)
