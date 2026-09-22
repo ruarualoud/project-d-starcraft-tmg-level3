@@ -1,6 +1,12 @@
 # Ticket 27 / Slices 267–272 — Roster Strategist roadmap v1
 
-Date: 2026-09-21. Status: planned, `0/6`.
+Date: 2026-09-21. Updated: 2026-09-23. Status: `4/6` integrated;
+S271 workspace in progress, S272 formal paired matches pending.
+
+S267–270 merged through `ce57922`. The latest real Flash plan is Rules-legal
+1430/2000 with an explicit score route, not a completed full-budget or
+high-strategy list. Keep the three illegal alternatives and unspent-budget
+tradeoff in evidence; legality and strategy quality are separate acceptance.
 
 ## Product boundary
 

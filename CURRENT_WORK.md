@@ -6,6 +6,19 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 live checkpoint — r41 scoring; K3 S271 active
+
+Main session **5379** at 20:12:18Z: r40 marker control and r41 mission scoring
+both Apply/Replay/screenshots verified, unchanged 96 calls / ¥12.802140.
+Cleanup repair is live, not just a unit result. Continue the same match.
+K3 native session **37154** has started and read its S271 brief in isolated
+`.worktrees/ticket-27-slice-271-roster-planning-workspace`, base `1ee509f`.
+Manifest `coordination/slices/ticket-27-slice-271-roster-planning-workspace.slice.json`
+assigns actual army-tab planning, legal/manual overrides, resumable drafts,
+real Flash-only initial/revision flows and desktop/390px screenshot report.
+No T23, Rules, Provider-core or strategy edits; no remote push. This is in
+progress, not S271 acceptance. K3 runs doctor once in its fresh worktree.
+
 ### 2026-09-23 T23 / S248 — r39 Cleanup consumer repaired; resuming
 
 Cleanup was retrying `MISSION_MARKER_TERRAIN_KIND_UNSUPPORTED` for valid Size 2

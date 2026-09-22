@@ -60,3 +60,18 @@ No duplicate action, reroll or new room is authorized by the recovery itself.
 T23 remains 33/36: S248 full match, S249 review and S250 synthesis are open.
 This abstract map is not evidence for classic-art semantic geometry. Traces
 remain `trainingTruth: false`.
+
+## Live continuation observed
+
+At 20:12:18Z the ordinary product Web path had accepted r40
+`determine_current_product_mission_marker_control` and r41 `score_mission`,
+both with matching Replay and screenshots. Usage remains 96 calls /
+9,529,523 accounted units / estimated ¥12.802140: no paid regeneration.
+The old failure has therefore cleared in the real consumer, not only offline.
+The match remains running; Round 2 initialization is not claimed yet.
+
+The inspected board capture is
+`../build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/screenshots/0322-r040-player2-determine_current_product_mission_marker_control-complete-board-applied.png`.
+It preserves unit/base geometry and abstract terrain; portraits are blank in
+this capture (previous r35 captures loaded them). Image readiness/performance
+remains a separate UI/evidence issue, not a Rules or strategy failure.

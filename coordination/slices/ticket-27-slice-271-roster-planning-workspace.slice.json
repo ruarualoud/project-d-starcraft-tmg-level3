@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "id": "ticket-27-slice-271-roster-planning-workspace",
+  "githubIssue": null,
+  "title": "Ship the Web/App roster-planning workspace with real Flash evidence",
+  "owner": "kimi",
+  "agentProfile": "project-d-live-acceptance",
+  "model": "project-d-k3",
+  "baseRef": "1ee509f",
+  "branch": "agent/kimi/ticket-27-slice-271-roster-planning-workspace",
+  "worktree": ".worktrees/ticket-27-slice-271-roster-planning-workspace",
+  "allowedPaths": [
+    "packages/roster-planning-workspace/",
+    "packages/product-composition/roster-planning-product-module-v1.mjs",
+    "apps/starcraft-tmg-expo/components/roster-planning/",
+    "apps/starcraft-tmg-expo/lib/roster-planning/",
+    "apps/starcraft-tmg-expo/app/(tabs)/army.tsx",
+    "scripts/serve-ticket-20-human-agent-web-v1.mjs",
+    "scripts/serve-ticket-27-slice-271-roster-workspace-v1.mjs",
+    "scripts/verify-ticket-27-slice-271-roster-workspace-browser-v1.mjs",
+    "docs/ticket-27-slice-271-roster-planning-workspace-v1-2026-09-23.md"
+  ],
+  "verification": [
+    {
+      "name": "One targeted real desktop/mobile workspace journey; screenshots and redacted usage",
+      "command": "node scripts/verify-ticket-27-slice-271-roster-workspace-browser-v1.mjs --live-flash-authorized"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "liveAcceptance": {
+    "exactSecureRunner": "scripts/verify-ticket-27-slice-271-roster-workspace-browser-v1.mjs",
+    "model": "deepseek-flash",
+    "fallback": null,
+    "maximumPhysicalProviderCalls": 12,
+    "purpose": "One user-triggered initial planning sequence and one explicit edit/revision sequence, including at most three concrete repair cycles; not repeated strategy optimization",
+    "automaticPaidRetry": false,
+    "stopOn": ["401", "402", "403", "missing_secure_attachment", "ambiguous_dispatch", "three_nonconverging_review_rounds"]
+  },
+  "taskBrief": "Read docs/development/ticket-27-slice-271-k3-workspace-brief-v1.md in the integration checkout, then implement in this isolated worktree. This is the authorized continuation of your roster line, not a new Codex subagent. The S267-270 foundations and real legal-but-underfilled 1430/2000 plan are now integrated. Build a usable army-tab planning workspace, not a mock screenshot or read-only report. Reuse the existing Roster Strategist, Builder authority, Skills and isolated laboratory. Preserve the existing manual builder. Follow the brief's exact allowed scope and secure Flash-only acceptance. Run doctor once for this fresh worktree. Do not repeat old passed S267-270 gates. Each changed-path build/acceptance command runs once after the relevant change, new unit tests only for concrete fail-first bugs. Every delivered behavior needs honest real UI evidence; unavailable is not passed. Commit each coherent sub-slice locally, preserve raw/redacted paid results for free resume, return screenshots/report and stop. Do not modify main, Rules, Provider infrastructure or the current T23 Room/runner. No official refresh, remote push or agent delegation. New acceptance output stays under this worktree build directory."
+}
