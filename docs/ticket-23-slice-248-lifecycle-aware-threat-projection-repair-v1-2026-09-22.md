@@ -90,6 +90,14 @@ with the captured defect shape and run once after the change; it passed with
 `nestedHistoricalSelectionRecovered: true`, `providerCalls: 0` and no Room
 mutation. This is generic correction-delta recovery, not an Omega special case.
 
+The first resume performed no Provider call but still stopped at the correction
+ceiling because the normalization implementation had changed without advancing
+its durable replay version. The record therefore still appeared locally
+validated at v29. The Action normalization marker is now v30, causing the
+already-paid v29 candidates to be reconsidered before the three-round ceiling.
+The ceiling continues to prohibit a fourth Provider request; it does not block
+zero-cost local replay after a normalization upgrade.
+
 The recent recovery ledger is now `89` calls / `4,217,951` units /
 `¥6.310668`; including the original invalid suffix it is `118` calls /
 `5,564,745` units / `¥8.163389`. No `¥100` threshold was crossed.

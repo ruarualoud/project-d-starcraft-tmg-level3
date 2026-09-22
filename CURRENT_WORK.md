@@ -366,3 +366,7 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   candidates now receive the same field lift before inheritance. The existing
   asset/correction gate passed once with `nestedHistoricalSelectionRecovered`.
   Run cost: `7 / 345,548 / ¥0.948894`; next remains a fresh r8 one-action fork.
+- The first same-branch resume made no Provider call but skipped local replay
+  because the normalizer change had not advanced its durable v29 marker. Action
+  shape normalization is now v30. Existing paid v29 candidates are revalidated
+  before the correction ceiling; the ceiling still forbids a fourth egress.
