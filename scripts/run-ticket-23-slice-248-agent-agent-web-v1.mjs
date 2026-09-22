@@ -23,6 +23,8 @@ const BLOCKING_SEVERITIES = new Set(["Critical", "High"]);
 const EXPLICIT_RESUME_RETRYABLE_FINDING_CODES = new Set([
   "LIVE_DECISION_ACTION_DID_NOT_CONVERGE",
   "LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED",
+  "provider_worker_protocol_rejected",
+  "provider_transport_failed",
 ]);
 
 function ensure(condition, code, details = {}) {

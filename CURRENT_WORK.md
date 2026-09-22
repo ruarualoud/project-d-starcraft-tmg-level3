@@ -56,6 +56,18 @@ calls and 0 Room mutations. The failed branch cost 7 calls / 502,089 units /
 ¥0.649321 and must not continue or train. Next fork again from safe r5 under
 the repaired observation contract.
 
+The repaired follow-up branch `20260922133120597` remains at safe r5. Two
+initial query rounds completed; a network interruption left the third Provider
+attempt as `provider_worker_protocol_rejected`. Explicit resume initially
+stopped before egress because that historical transport finding was not in the
+precise pre-resume allowlist. After adding it, resume advanced one paid round
+and then the still-unstable network produced a new `provider_transport_failed`.
+No action was Previewed or Applied. The branch currently records 5 calls /
+708,121 units / ¥0.934974 under conservative unknown-usage accounting. Both
+typed transport failures are now allowed only when they predate an explicitly
+authorized resume; a newly occurring failure still blocks immediately. Do not
+retry again until transport is stable.
+
 The fresh abstract-terrain Standard-2000 A-A run
 `20260922115126519` is now at revision/action 6. The first Zerg deployment
 compared four exact Host-solved formations and chose the 18-model Raptor
