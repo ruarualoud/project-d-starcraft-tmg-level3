@@ -10,6 +10,7 @@
   "branch": "agent/kimi/ticket-27-slices-269-270-roster-strategy-and-live-plan",
   "worktree": ".worktrees/ticket-27-slices-269-270-roster-strategy-and-live-plan",
   "allowedPaths": [
+    ".kimi-code/agents/project-d-live-acceptance.md",
     "packages/roster-strategist/",
     "scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs",
     "scripts/run-ticket-27-slices-269-270-live-roster-plan-v1.mjs",

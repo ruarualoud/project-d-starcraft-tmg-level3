@@ -14,11 +14,13 @@
     "packages/product-composition/companion-room-session-service-v1.mjs",
     "packages/product-composition/companion-product-module-v1.mjs",
     "packages/client-domain/client-domain-v1.mjs",
+    ".kimi-code/agents/project-d-live-acceptance.md",
     "apps/starcraft-tmg-expo/lib/level3/client-domain-provider.tsx",
     "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
     "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
     "apps/starcraft-tmg-expo/components/character/companion-catalogue-content.d.ts",
     "scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs",
+    "scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs",
     "docs/ticket-26-slice-266f-companion-live-product-acceptance-v1-2026-09-22.md"
   ],
   "verification": [
