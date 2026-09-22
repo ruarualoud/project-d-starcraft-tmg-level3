@@ -62,6 +62,20 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r55 — real repaired placement and remaining control-plane latency
+
+After a terminal r54 proposal failure, the repaired same-room58038 run used
+one23.715s Flash Action (116,649units/estimated¥0.157857), preserving the
+Planner and all paid history. Host4contact options→r55Apply/Replay→historical
+issue closure→Web screenshot succeeded. No retry queue was cleared or strategy
+rerolled.128→129calls, totalestimated¥18.309693 at21:45:55.848Z.
+
+Manifest88.961s + refresh8.345s + captures27.340s =124.646s observation. This
+remains a significant measured delay; the manifest interval overlaps server
+Apply/Replay work, so do not label all88.961s as pure manifest construction.
+Keep read/projection/serialization and Rules execution profiling separate.
+No strategy, query, Skill or output capacity has been reduced.
+
 ### r52–53 — narrative retry removed on disk; observation still slow
 
 The live identity checker incorrectly treated an existing Omega Worm mentioned

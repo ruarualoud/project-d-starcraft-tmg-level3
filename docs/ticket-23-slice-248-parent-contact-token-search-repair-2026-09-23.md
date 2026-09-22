@@ -1,5 +1,38 @@
 # T23 / S248 — Queen token placement joins the shared Host search
 
+## Real recovery completed
+
+Resume **58038** is live. At 21:43:05Z the preserved r54 decision received an
+exact Host receipt with four parent-contact placements, without regenerating
+its Planner. One Flash Action request completed at 21:43:28.908Z and selected
+option `27da1481…` at (11582,12922). At 21:45:11.963Z r55 was applied/replayed;
+only then was the historical proposal failure marked resolved (not deleted).
+The Web screenshot was captured and inspected at the next checkpoint:
+
+`build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/screenshots/0421-r055-player2-resolve_unit_lifecycle_ability-complete-board-applied.png`.
+
+At 21:45:55.848Z: **48 new + 7 prefix = r55**, Round 2 Movement, 129 calls /
+13,625,660 accounted units / estimated **¥18.309693**. Recovery added one
+23.715s Flash call, 111,683 input + 4,966 output = 116,649 units, estimated
+¥0.157857. Historic uncertain-usage reservation remains in the total.
+
+This proves the actual Host query → choice → Rules Apply → Replay → issue
+closure → Web evidence chain. Queen stays put and the new token touches its
+base. No legal accepted action was rerolled. Both new repairs and 4fa061a are
+loaded; do not restart this live run or repeat the passed tests.
+
+The chosen point is closest to the model's preferred anchor, but its public
+claim “largest nearest-enemy distance” is false: selected16,859 versus an
+alternative17,514 milli-inches. It also is not the exact closest objective
+point: center distance6,484 versus6,474. All four numbers were provided
+correctly in the Host receipt. Record this as S249 comparison/rationale-quality
+evidence, not another transport defect and not a reason to reroll the legal
+choice or inject a strategy into the Prompt.
+
+Observation remains slow: manifest88.961s, refresh8.345s, captures27.340s.
+These timings include concurrent server work and do not alone identify an
+endpoint CPU bottleneck. Strategy materials and screenshots were not reduced.
+
 ## Actual failed boundary
 
 Runner 51562 exited 1 at 21:25:35.961Z, rather than merely having a stale

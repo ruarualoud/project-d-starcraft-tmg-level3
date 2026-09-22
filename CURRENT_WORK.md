@@ -6,6 +6,23 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r55 live recovery complete; keep58038
+
+**58038 is live**. Shared historical-retry registry and Queen contact-search
+loaded (f0af214/8ac73f5), as is4fa061a. Preserved r54 Planner→Host exact4options
+→one Flash Action→r55 Apply/Replay→old issue resolved at21:45:11.963Z→Web
+`0421-r055-player2-resolve_unit_lifecycle_ability-complete-board-applied.png`
+captured/inspected. No reapply/reroll;48new+7prefix=r55, Round2 Movement.
+21:45:55.848Z totals129calls/13,625,660accounted units/estimated¥18.309693;
+recovery+1call/116,649units/¥0.157857. BothFlash. No passed gates/build reruns.
+Keep the process continuing. Model comparison prose still overclaims largest
+enemy gap and exact closest objective despite correct four-option numbers;
+preserve forS249, do not patch strategy Prompt or reroll. Manifest88.961s /
+refresh8.345s /capture27.340s remains a performance item, not strategy trimming.
+Report `docs/ticket-23-slice-248-parent-contact-token-search-repair-2026-09-23.md`.
+K3 37154 has offline desktop/mobile workspace journey but still building actual
+Flash acceptance; no completed handoff. T23 stays33/36:248/249/250 open.
+
 ### 2026-09-23 T23 / S248 — r54 Queen token missing-search family repaired
 
 **Follow-up:**resume64256 also exited1, before any new call: historical proposal
