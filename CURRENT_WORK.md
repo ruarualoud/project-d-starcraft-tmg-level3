@@ -8,6 +8,13 @@ historical entry only when a linked task requires it.
 
 ### 2026-09-23 T23 / S248 — r46 Round 2; Web polling overlap repaired
 
+**Live follow-up20:30:06Z:**72606 recovered r46 screenshots, then r47
+`resolve_mission_start_of_round` Apply/Replay; Round2 Movement now open.
+Inspected r46 board portraits loaded. Usage unchanged96calls/¥12.802140.
+Manifest4.757s/refresh9.075s/capture27.271s; standalone asset probe still timed
+out30s. Pending-read amplification is fixed, entire performance/media issue
+is not. Keep live process; no repeat HTTP probe or passed gate.
+
 Current resume session **72606**, replacing terminal5379. Same Room/branch,
 r46 = Round2/start_of_round, score0–0, Zerg first player after recorded tie then
 5vs7 dice. Both Providers have no unfinished decisions; 7prefix+39new actions

@@ -59,6 +59,21 @@ No new latency improvement is claimed until the resumed live measurements are
 available. T23 stays 33/36; S248 full match, S249 review and S250 synthesis are
 open. Existing accepted actions and public plans are not rerolled.
 
+### Live follow-up at 20:30:06Z
+
+Runner72606 restored r46 with no paid regeneration, then accepted/replayed r47
+`resolve_mission_start_of_round`: **Round 2 Movement is now open**. The inspected
+r46 board capture `0359-r046-player2-resolve_current_product_next_round_initiative-complete-board-applied.png`
+shows Marine/Zerg/Goliath portraits loaded, unlike r40. This is one observed
+capture, not proof that all asset-readiness races are fixed.
+
+r46 observation measured manifest4.757s / refresh9.075s / capture27.271s.
+Before reload r45 was29.994s /31.581s /8.015s, so the snapshot/refresh improved
+in this observation while capture did not; no controlled whole-path speedup
+is claimed. A separate Marine-asset HTTP probe still exceeded30s after reload,
+therefore serialization/event-loop/asset-response attribution remains open.
+Do not keep repeating the same probe or restart the match for that observation.
+
 ## Remaining visual/performance work (non-blocking for strategy)
 
 - Some abstract-board captures contain empty portrait areas. The abstract
