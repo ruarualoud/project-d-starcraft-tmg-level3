@@ -292,7 +292,10 @@ const LIVE_INSTRUCTIONS = [
   "Answer with a single JSON object that conforms EXACTLY to the JSON "
     + "schema attached to this request. Emit every required field, including "
     + "the request-owned constants schemaVersion and roundKind, with exactly "
-    + "the values declared in the input.",
+    + "the values declared in the input. Emit ONLY the fields this round's "
+    + "attached schema declares: a field named in these instructions belongs "
+    + "exclusively to the round whose schema declares it, and any additional "
+    + "property is a hard failure.",
   "All output is public strategy. Never emit hidden chain-of-thought, "
     + "scratchpads or private reasoning fields; the schema forbids them.",
   "Strategy must come from the supplied Skills and your own deliberation. "
@@ -302,9 +305,11 @@ const LIVE_INSTRUCTIONS = [
   "Unknown stays unknown: use the declared unknown enums/statuses and "
     + "empty placeholders instead of inventing values.",
   "Unspent minerals are lost (no carryover, no later spend): treat budget "
-    + "residue as an explicit opportunity cost. When a near-cap Rules-legal "
-    + "candidate is available, select a near-cap candidate or declare the "
-    + "public justification in resourceUtilization.",
+    + "residue as an explicit opportunity cost. ONLY the comparison/selection "
+    + "round schema declares the resourceUtilization field: in that round, "
+    + "when a near-cap Rules-legal candidate is available, select a near-cap "
+    + "candidate or declare the public justification in resourceUtilization. "
+    + "Never emit resourceUtilization in any other round.",
   "Ground the public VP schedule in the sealed mission-scoring authority "
     + "when it is derivable (scheduleStatus declared, scoreRouteAuthority "
     + "mission_grounded); when the authority is missing, keep the schedule "
@@ -724,6 +729,7 @@ async function main() {
   let egressBinding = null;
   let parentCredentialZeroed = "not_applicable_no_credential_loaded";
   let detached = false;
+  let browser = null; // closed on every exit path so failures never linger
   const factory = { current: null };
   try {
     const keychainIngress = await readStarcraftTmgDeepSeekCredentialFromKeychainV1();
@@ -766,7 +772,7 @@ async function main() {
       deliberationFactory: factory.current,
     });
 
-    const browser = await chromium.launch();
+    browser = await chromium.launch();
     const desktop = await browser.newPage({
       viewport: { width: 1500, height: 1050 },
       reducedMotion: "reduce",
@@ -1279,8 +1285,8 @@ async function main() {
   } catch (error) {
     const code = String(error?.code || "S271_ACCEPTANCE_FAILED");
     // Retain the precise operation evidence (stage/method/route/status and
-    // the safe nested error/transport code) and stop — no blind restart and
-    // no automatic paid or ambiguous POST replay.
+    // the safe nested error/transport/session-failure code) and stop — no
+    // blind restart and no automatic paid or ambiguous POST replay.
     const httpEvidence = error?.http ? clone(error.http) : null;
     await writeJson(REPORT_PATH, {
       schemaVersion: "starcraft_tmg_s271_roster_workspace_acceptance_report_v1",
@@ -1289,6 +1295,8 @@ async function main() {
       failureCode: code,
       failureDetail: String(error?.message || "").slice(0, 300),
       safeStatus: error?.safeStatus ?? null,
+      stage: typeof error?.stage === "string" ? error.stage : null,
+      nestedSessionFailure: error?.failure ? clone(error.failure) : null,
       http: httpEvidence,
       checks,
       automaticRetries: 0,
@@ -1296,9 +1304,12 @@ async function main() {
       trainingTruth: false,
     }).catch(() => {});
     console.error(code, error?.checkId || "", String(error?.message || "").slice(0, 300));
+    // Failure path must not leave the concurrent mount-check child alive.
+    try { ticket20.kill("SIGTERM"); } catch { /* already exited */ }
     process.exitCode = 1;
   } finally {
     credentialBytes?.fill(0);
+    await browser?.close().catch(() => {});
     if (workerPort && attached?.workerRef) {
       await workerPort.detachCredential({
         workerRef: attached.workerRef,
