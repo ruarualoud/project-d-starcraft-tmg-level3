@@ -265,3 +265,19 @@ Author's Note request capture count or its expected denominator is wrong,
 preserve the already-passing 28 checks, and produce a new closure for one fresh
 acceptance round. No real Provider was called and no formal match Room was
 mutated.
+
+## Resolution addendum (2026-09-22, Slice 266e)
+
+Resolved by Ticket 26 / Slice 266e
+(`docs/ticket-26-slice-266e-companion-final-product-closure-v1-2026-09-22.md`).
+The diagnosis stood: the product emitted the correct two Author's
+Note-injected Provider requests; the verifier indexed its capture window by
+the call counter, which also counts the verifier-armed outage that throws
+before its request is recorded. The window is now indexed by
+`providerProbe.requests.length` with the denominator unchanged (2/2) and the
+per-request position proof intact. The extended gate (same command, extended
+— no second verifier) passed **45/45 checks** on its single Slice 266e run,
+report hash `ec6e261bfd70545436cf69886bcbbfc25e953137f237166414686645c174ecba`,
+with all 28 previously passing checks preserved and the two remaining
+catalogue gaps (six-state portrait animation binding, package-to-backend
+promotion) connected for real.

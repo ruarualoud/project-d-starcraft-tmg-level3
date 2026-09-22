@@ -4,10 +4,12 @@ Owner: Kimi · Worktree `.worktrees/ticket-26-slice-266e-companion-final-product
 Base: `7f504c970a0c065a39254b1a62e48d9ba37782a1` (merged 266d closure + acceptance stabilization) · Date: 2026-09-22
 Slice manifest: `.agent-runtime/slice.json` (`ticket-26-slice-266e-companion-final-product-closure`)
 
-> Status: **frozen plan (266e-SS-1).** Implementation proceeds in the numbered
-> sub-slices below, one scoped commit each, in dependency order. The single
-> focused browser gate is run at most once after the final relevant code
-> change (266e-SS-6); evidence, receipts and honest gaps are recorded below.
+> Status: **implementation complete — closed (266e-SS-6).** All six sub-slices
+> are committed in dependency order on
+> `agent/kimi/ticket-26-slice-266e-companion-final-product-closure`. The single
+> focused browser gate was run exactly once after the final relevant code
+> change (manifest `selfVerificationByImplementer: true`) and **passed 45/45
+> checks**; evidence, receipts and honest gaps are recorded below.
 
 ## Invariants honored for the whole slice
 
@@ -147,4 +149,108 @@ Only Critical/High findings block. 0 Provider calls / ¥0.
 
 ## Evidence, commits, gaps
 
-_(filled by 266e-SS-2 … 266e-SS-6)_
+### Commits (base `7f504c9` → HEAD, one scoped commit per sub-slice)
+
+| Sub-slice | Commit | Files |
+|---|---|---|
+| SS-1 frozen plan + diagnosis | `ed34a42` | `docs/ticket-26-slice-266e-companion-final-product-closure-v1-2026-09-22.md` |
+| SS-2 Author's Note capture repair | `62e2496` | `scripts/verify-ticket-26-slice-266c-companion-product-binding-v1.mjs` |
+| SS-3 six-state portrait animation binding | `7b83028` | `content/characters/companion-portrait-animation-binding-v1.mjs` (new), `apps/starcraft-tmg-expo/components/character/companion-catalogue-content.d.ts`, `apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx`, `apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx` |
+| SS-4 package-to-backend promotion | `6fcab1d` | `packages/product-composition/companion-room-session-service-v1.mjs`, `packages/product-composition/companion-product-module-v1.mjs`, `packages/product-composition/index.mjs`, `packages/client-domain/client-domain-v1.mjs`, `apps/starcraft-tmg-expo/lib/level3/client-domain-provider.tsx`, `apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx`, `apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx` |
+| SS-5 verifier extension | `2901c17` | `scripts/verify-ticket-26-slice-266c-companion-product-binding-v1.mjs` |
+| SS-6 this closure | _(this commit)_ | `docs/ticket-26-slice-266e-companion-final-product-closure-v1-2026-09-22.md`, `docs/ticket-26-slice-266d-companion-tavern-completion-v1-2026-09-22.md` (resolution addendum only) |
+
+Honesty note on SS-4: the implementing session was interrupted by a network
+loss mid-sub-slice; the recovered work was committed as
+`wip(ticket26-slice266e): recover package promotion after network loss`
+(`6fcab1d`). The diff is exactly the SS-4 scope and was validated before SS-5
+by a 27-check implementer preflight over the real service/module/binding
+contracts (scratch script under `build/`, not committed). The commit message
+is kept as-is — no history rewrite — and this row is its canonical record.
+
+`git diff --name-only 7f504c9..HEAD` touches exactly the 12 files above, all
+inside the manifest `allowedPaths`. No push performed.
+
+### Gate receipt (run exactly once, after the final relevant code change)
+
+- Command: `node scripts/verify-ticket-26-slice-266c-companion-product-binding-v1.mjs`
+- Result: **`ok: true` — 45/45 checks, 15 claim-to-pixel rows, 21 hashed
+  artifacts**, elapsed 177.2 s, report
+  `build/ticket-26-slice-266c-companion-product-binding-v1/browser-report.json`,
+  reportHash `ec6e261bfd70545436cf69886bcbbfc25e953137f237166414686645c174ecba`,
+  worktreeHead `2901c17`.
+- **NOTE_REQUESTS_NOT_CAPTURED resolved at the real contract**: the capture
+  window is indexed by `providerProbe.requests.length`; the passed denominator
+  is **2 captured / 2 expected** (two companions × frequency 1), with the
+  per-request position proof intact. All 28 previously passing checks still
+  pass, unchanged.
+- The gate re-ran the current-sources web export itself
+  (`exported: true, elapsedSeconds: 147.11`) — the served bundle is provably
+  current, never a stale export.
+- New 266e checks: `desktop_266e_speaker_portrait_state_machine_live`
+  (alert_combat on the verifier-armed interrupted turn → speaking after
+  explicit Continue), `desktop_266e_package_promotion_live_pins` (UI-driven
+  promote, verified+registered pin row, screenshot
+  `20-desktop-266e-pack-promotion.png`),
+  `headless_266e_portrait_animation_binding_state_machine` (priority,
+  fail-closed idle, reduced-motion static, six-companion coverage, hashed
+  binding document), `headless_266e_package_promotion_seal_hash_pins`
+  (idempotent same-pin, unknown package rejected, honest status surface),
+  durable restart reload of the persisted promotion with pin re-verification
+  inside `headless_266d_durable_sqlite_process_restart_resume_fail_closed_keys`,
+  and `headless_266e_tampered_promotion_store_fail_closed` (pin swap →
+  `COMPANION_PACKAGE_PROMOTION_PIN_MISMATCH` on every request; forged contract
+  with the original pin → `CONTRACT_INTEGRITY_MISMATCH`).
+- Boundaries re-proven: zero Room mutations and unchanged `stateRevision`,
+  no Preview/Confirm/Apply authority, opponent-private denied on all four
+  permission surfaces, no persisted seat tokens, no hidden chain-of-thought,
+  no fabricated replies, request-log hygiene intact.
+- Screenshots (sha256-hashed in the report): the full 266c/266d set plus
+  `20-desktop-266e-pack-promotion.png`; the 390px sweep now includes the
+  promotions card with zero horizontal overflow.
+
+### Repair-loop record
+
+- Gate runs this slice: **1** (passed first run). Non-converging rounds: 0 of
+  max 3.
+- Pre-gate implementer validation: 27/27 preflight checks (SS-3 state machine
+  + SS-4 promotion incl. durable restart and both tamper fail-closed paths)
+  on the first attempt; no repair needed.
+- Environment note: the gate's project-d root resolution was made robust
+  (adapter + data file both required) because `.worktrees/scripts` is a
+  symlink that false-matches an adapter-only check; the gate now runs
+  identically from the main checkout or a nested worktree. This hardens the
+  harness without touching any assertion.
+- tsc on the Expo app: 31 errors before the slice, 31 after — the identical
+  pre-existing baseline; no new type errors.
+
+### Honest nonblocking gaps (no Critical/High findings open)
+
+- **Kerrigan character-tier worldbook** remains empty by data (pre-existing
+  pack content; unchanged by this slice and asserted explicitly by the gate).
+- **Third-party extension marketplace** remains unimplemented (explicit
+  contract exclusion) — the catalogue parity matrix now lists it as the only
+  missing row.
+- **Portrait motion scope**: the binding is transition animation only
+  (bounded deterministic crossfade on state change); continuous frame loops
+  and generated in-between frames are deliberately not pretended. All pixels
+  are the committed audit/receipt-pinned keyframes.
+- **SS-4 commit message** retains its `wip(...)` prefix from the interrupted
+  session (see the honesty note above); content is complete and gate-proven.
+- **`verify-ticket-14-client-domain-module-v1.mjs`** still fails on the
+  pre-existing baseline (missing local
+  `.worktrees/starcraft-tmg-local/data/starcraft-tmg-data.json` in nested
+  worktrees) — a pre-existing environment issue, not introduced here.
+- The integrating Codex may rerun the gate at the merge boundary; this
+  closure's receipt is the implementer-side run recorded above.
+
+### Zero-cost accounting
+
+- Real Provider calls: **0**. Paid inference: **0**. Cost: **¥0**.
+- Fixture Provider calls: 13 (verifier-controlled deterministic in-process
+  responder; no network, no credentials), 1 verifier-armed deterministic
+  interruption.
+- No source-data refresh, no image generation, no credential read, no Room
+  mutation, no Git push, no dispatched agent. `trainingTruth: false`
+  everywhere. Kimi CLI exposes no token/currency telemetry, so no Kimi cost
+  is inferred.
