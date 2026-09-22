@@ -60,6 +60,8 @@ import {
   validateStarcraftTmgProviderJsonSchemaValueV1,
 } from "../packages/structured-generation/output-contract-registry-v1.mjs";
 import {
+  createRosterLossResourceBudgetV1,
+  createRosterScoreRouteV1,
   parseRosterPlanV1,
   serializeRosterPlanV1,
   verifyRosterPlanRoundTripV1,
@@ -82,6 +84,190 @@ function expectFailure(slice, thunk, codePrefix, label) {
           `${label}: expected ${codePrefix}, got ${error?.message}`);
       },
     );
+}
+
+// ------------------------------------------- --narrative-recovery-only
+// Minimal focused mode for sub-slice 269.17 (the round-10 narrative-capacity
+// repair): validates only the three schedule-window field kinds, the general
+// narrative-capacity policy and narrative transport into the domain plan
+// contracts. It never initializes the battlefield, the Rules-owned menu, the
+// strategy pack or any historical round replay, so it runs in constant small
+// time; the full gate below is unchanged and keeps every existing check.
+if (process.argv.includes("--narrative-recovery-only")) {
+  const mini = { checks: 0 };
+  const miniCheck = (condition, label) => {
+    assert(condition, label);
+    mini.checks += 1;
+  };
+  const miniFoundationSchema = rosterStrategistRoundOutputContractV1(
+    "strategy_foundation").providerSchema;
+  const miniComparisonSchema = rosterStrategistRoundOutputContractV1(
+    "comparison_selection").providerSchema;
+  const miniWindowNodes = {
+    scoreRouteWindow: miniFoundationSchema.properties.scoreRoute.properties
+      .targetVpSchedule.items.properties.window,
+    lossBudgetWindow: miniComparisonSchema.properties.lossResourceBudget
+      .properties.plannedLossBudget.items.properties.window,
+    mathPlannedWindow: miniFoundationSchema.properties.informationNeeds.items
+      .properties.toolRequest.properties.inputs.properties.planned.items
+      .properties.window,
+    mathProjectedWindow: miniFoundationSchema.properties.informationNeeds.items
+      .properties.toolRequest.properties.inputs.properties.projected.items
+      .properties.window,
+  };
+  // The three schedule-window field kinds (score route, loss budget and the
+  // math planned/projected schedules) carry the transport-level overall
+  // safety ceiling, never an arbitrary per-field cap, and publish the
+  // display target as a soft-warning policy.
+  miniCheck(Object.values(miniWindowNodes).every((node) => (
+    node.type === "string" && node.minLength === 1
+      && node.maxLength === 65_536
+      && String(node.description || "").includes("display target 64")
+      && String(node.description || "").includes("soft warning")
+      && String(node.description || "").includes(
+        "full public text is preserved")
+      && String(node.description || "").includes("transport-level"))),
+    "all three schedule-window field kinds must carry the transport-level "
+      + "overall safety ceiling with the soft-warning display-target policy");
+  // The policy is general: every free public narrative field follows it.
+  const miniNarrativeNodes = [
+    miniFoundationSchema.properties.scoreRoute.properties.routeText,
+    miniFoundationSchema.properties.scoreRoute.properties.fallbackRouteText,
+    miniFoundationSchema.properties.scoreRouteAuthority.properties
+      .authorityText,
+    miniFoundationSchema.properties.opponentHypotheses.items.properties
+      .hypothesisText,
+    miniFoundationSchema.properties.invalidationTriggers.items.properties
+      .revisionRequiredText,
+    miniFoundationSchema.properties.informationNeeds.items.properties
+      .questionText,
+    rosterStrategistRoundOutputContractV1("candidate_proposals")
+      .providerSchema.properties.proposals.items.properties.rationaleText,
+    miniComparisonSchema.properties.componentPurposes.items.properties
+      .publicPurposeText,
+    miniComparisonSchema.properties.deploymentConcept.properties
+      .deploymentConceptText,
+    miniComparisonSchema.properties.resourceUtilization.properties
+      .retainedResourceJustificationText,
+    miniComparisonSchema.properties.publicSummaryText,
+    rosterStrategistRoundOutputContractV1("revision").providerSchema
+      .properties.publicSummaryText,
+  ];
+  miniCheck(miniNarrativeNodes.every((node) => (
+    node.maxLength === 65_536
+      && String(node.description || "").includes("soft warning"))),
+    "every free public narrative field must follow the same capacity policy");
+  miniCheck(miniComparisonSchema.properties.comparison.properties.basisTexts
+    .items.maxLength === 65_536
+    && miniFoundationSchema.properties.opponentHypotheses.items.properties
+      .expectedCounterTexts.items.maxLength === 65_536,
+    "narrative list items must follow the same capacity policy");
+  // Identity, enum and legality-adjacent bounds are not loosened.
+  miniCheck(isDeepStrictEqual(miniFoundationSchema.properties.scoreRoute
+      .properties.routeKind.enum,
+      ["mission_marker_control", "attrition", "hybrid", "unknown"])
+    && miniFoundationSchema.properties.scoreRoute.properties.scheduleStatus
+      .maxLength === 8
+    && miniFoundationSchema.properties.opponentHypotheses.items.properties
+      .hypothesisId.maxLength === 200
+    && miniComparisonSchema.properties.comparison.properties
+      .selectedCandidateId.maxLength === 200
+    && miniComparisonSchema.properties.componentPurposes.items.properties
+      .instanceId.maxLength === 200
+    && miniComparisonSchema.properties.deploymentConcept.properties
+      .activationOrder.items.properties.phase.enum.length === 3
+    && miniComparisonSchema.properties.resourceUtilization.properties
+      .retainedResourceJustificationStatus.maxLength === 14
+    && miniComparisonSchema.properties.componentPurposes.items
+      .additionalProperties === false,
+    "identifier, enum, identity and legality bounds must be unchanged");
+  // Wire transport: long window labels and long narrative pass; an
+  // over-ceiling string still fails the transport bound.
+  const miniLongWindow = `round:2-marker-scoring-starts:${"x".repeat(200)}`;
+  const miniFoundationValue = {
+    schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+    roundKind: "strategy_foundation",
+    scoreRoute: { routeKind: "mission_marker_control",
+      routeText: "hold central markers behind a Marine screen",
+      scheduleStatus: "declared",
+      targetVpSchedule: [
+        { window: "round:2", plannedCumulativeVp: 2 },
+        { window: miniLongWindow, plannedCumulativeVp: 4 }],
+      fallbackRouteText: "attrition through goliath trades" },
+    scoreRouteAuthority: { status: "mission_grounded",
+      authorityText: "sealed Hold Position mission-scoring authority" },
+    opponentHypotheses: [{ hypothesisId: "hyp-1",
+      archetypeLabel: "zerg_early_pressure", hypothesisText: "cheap race",
+      confidence: "medium", expectedCounterTexts: [], ownCounterResponseIds: [],
+      falsificationText: "no cheap runner by round 2" }],
+    counterResponses: [],
+    invalidationTriggers: [{ triggerId: "trg-1", observationKind: "vp_deficit",
+      triggerText: "two VP behind", revisionRequiredText: "re-route" }],
+    informationNeeds: [{ needId: "need-1", kind: "math",
+      questionText: "schedule arithmetic",
+      toolRequest: { branchIdRef: "", attackerUnitId: "", targetUnitId: "",
+        seatKey: "", intent: "", subjectUnitIds: [], targetIds: [],
+        sampleBudget: 0, mathKind: "vp_schedule_delta", inputs: {
+          mineralBudget: 0, mineralSpent: 0, vespeneSpent: 0,
+          vespeneLimitNumerator: 0, vespeneLimitDenominator: 0,
+          planned: [{ window: miniLongWindow, plannedCumulativeVp: 4 }],
+          projected: [{ window: miniLongWindow, cumulativeVp: 3 }],
+          values: [] },
+        spec: { kind: "", lifecycleSteps: 0, phase: "", activeSideKey: "",
+          isolateToPlacedPieces: false, clearTerrain: false, placements: [] },
+        followUps: [] } }],
+  };
+  const miniWire = validateStarcraftTmgProviderJsonSchemaValueV1(
+    miniFoundationSchema, miniFoundationValue);
+  miniCheck(miniWire.ok === true,
+    "long schedule-window narrative must pass the repaired wire schema");
+  const miniOverCeiling = JSON.parse(JSON.stringify(miniFoundationValue));
+  miniOverCeiling.scoreRoute.targetVpSchedule[1].window =
+    `round:2:${"x".repeat(65_537)}`;
+  miniCheck(validateStarcraftTmgProviderJsonSchemaValueV1(
+      miniFoundationSchema, miniOverCeiling).ok === false,
+    "an over-ceiling window must still fail the transport safety bound");
+  // Narrative transports losslessly into the domain plan contracts: the
+  // domain accepts the long labels and preserves the full public text.
+  const miniScoreRoute = createRosterScoreRouteV1({
+    routeKind: "mission_marker_control", routeText: "hold central markers",
+    scheduleStatus: "declared",
+    targetVpSchedule: [
+      { window: "round:2", plannedCumulativeVp: 2 },
+      { window: miniLongWindow, plannedCumulativeVp: 4 }],
+    fallbackRouteText: "attrition through goliath trades" });
+  const miniLossBudget = createRosterLossResourceBudgetV1({
+    lossBudgetStatus: "declared",
+    plannedLossBudget: [{ resourceKind: "supply", window: miniLongWindow,
+      plannedMaximumLoss: 4 }],
+    mineralSpendIntent: { status: "declared", mineralBudget: 2000,
+      plannedMineralSpend: 1870 } });
+  miniCheck(miniScoreRoute.targetVpSchedule.some((entry) => (
+      entry.window === miniLongWindow))
+    && miniLossBudget.plannedLossBudget[0].window === miniLongWindow,
+    "the domain plan contracts must accept and preserve the full public "
+      + "narrative text");
+  // Contract set version and integrity.
+  miniCheck(verifyRosterStrategistOutputContractSetV1(
+      ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1) === true
+    && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.4.0"
+    && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
+      .narrativeTransportCeilingIsOverallSafetyBound === true,
+    "the contract set must be versioned 1.4.0 with the narrative-capacity "
+      + "policy invariants");
+  process.stdout.write(`${JSON.stringify({
+    schema: "ticket27_slices_269_270_narrative_recovery_report_v1",
+    ok: true,
+    checks: mini.checks,
+    contractSetVersion:
+      ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version,
+    contractSetHash:
+      ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash,
+    providerCalls: 0,
+    paidCostCny: 0,
+    trainingTruth: false,
+  }, null, 2)}\n`);
+  process.exit(0);
 }
 
 // ------------------------------------------------------------ infra
@@ -423,15 +609,19 @@ function followUpWire(overrides = {}) {
 // schema/Rules validation still run afterwards.
 check(269, verifyRosterStrategistOutputContractSetV1(
     ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1) === true
-  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.3.0"
+  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.4.0"
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .bindsOnlyFieldNamesTypesBoundsAndEnums === true
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
+      .narrativeDisplayTargetExceededIsSoftWarningOnly === true
+  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
+      .identifierEnumLegalityIdentityBoundsUnchanged === true
+  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .neverBindsRosterContentCandidateIdentityOrStrategy === true,
-  "the strict output contract set must be explicit, versioned (1.3.0 after "
-    + "the 269.9 integer-domain and 269.10 instance-identity repairs plus "
-    + "the 269.13 schedule-grounding and 269.14 budget-utilization "
-    + "contracts) and content-free");
+  "the strict output contract set must be explicit, versioned (1.4.0 after "
+    + "the 269.9 integer-domain and 269.10 instance-identity repairs, the "
+    + "269.13 schedule-grounding and 269.14 budget-utilization contracts and "
+    + "the 269.17 narrative-capacity policy) and content-free");
 check(269, strategistDescriptor.structuredGenerationOutput?.contractSetHash
     === ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash
   && strategistDescriptor.structuredGenerationOutput
@@ -1619,14 +1809,24 @@ await expectFailure(269, () => strategistNoAuthority.planRoster(
   "a declared mission-grounded schedule while the authority is missing "
     + "must fail closed");
 
-// ----------------------- round-10 schedule-window string bound (269.17)
+// ----------------------- round-10 narrative-capacity policy (269.17)
 // The single authorized round-10 live cycle (269.16+270.9) failed closed on
 // its first locked call: now grounding the schedule in the sealed mission
 // authority, the model wrote window labels above the strict schema's
 // 64-character cap, which 269.7 had authored without a domain basis — the
-// same defect class as the round-6 integer bound (269.9). Saved detail
-// (repair-round-10-report.json, failureDetail recorded truncated to 200
-// characters by the runner's failure-report discipline):
+// same defect class as the round-6 integer bound (269.9). The repair is the
+// general narrative-capacity policy, not another per-field cap swap: free
+// public narrative (scoring-window labels, plans, rationales,
+// justifications, summaries) is bounded only by the transport-level overall
+// safety ceiling (the strict subset's widest expressible string bound), the
+// display target stays published as a soft warning, and the full public text
+// is preserved; identifier/enum/legality/identity bounds are unchanged.
+// Saved detail (repair-round-10-report.json, failureDetail recorded
+// truncated to 200 characters by the runner's failure-report discipline).
+// Honesty note: the round-10 model's original output body was never
+// persisted (rawResponsePersisted: false), so the replay below uses
+// synthetic smallest-representative over-bound values at the saved issue
+// paths — it is a saved-detail replay, not the real round-10 payload.
 const ROUND10_SAVED_FAILURE_DETAIL =
   "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:$.scoreRoute"
     + ".targetVpSchedule[1].window:string_too_long,$.scoreRoute"
@@ -1677,20 +1877,67 @@ check(269, round10SavedValidation.ok === false
     + "failure byte-identically "
     + "(OFFLINE_REPLAY_MATCHES_SAVED_ROUND10_FAILURE)");
 // Post-repair acceptance (fail-first under the v1.3.0 bound): the identical
-// captured shape must satisfy the repaired strict schema, and every schedule
-// window bound must be the domain rule — the domain accepts any non-empty
-// window label, so the bound is the binding runtime validator's public-text
-// cap (2,000), never a re-authored value-specific cap.
+// captured shape must satisfy the repaired strict schema; every schedule
+// window field (score route, loss budget and the math toolRequest
+// planned/projected schedules) carries the transport-level overall safety
+// ceiling rather than an arbitrary per-field cap, with the display target
+// published as a soft-warning policy; an over-ceiling string still fails the
+// transport bound.
 const round10RepairedValidation = validateStarcraftTmgProviderJsonSchemaValueV1(
   foundationContract.providerSchema, capturedRound10FoundationOutput());
+const round10WindowNodes = [
+  foundationContract.providerSchema.properties.scoreRoute.properties
+    .targetVpSchedule.items.properties.window,
+  comparisonContract.providerSchema.properties.lossResourceBudget.properties
+    .plannedLossBudget.items.properties.window,
+  foundationContract.providerSchema.properties.informationNeeds.items
+    .properties.toolRequest.properties.inputs.properties.planned.items
+    .properties.window,
+  foundationContract.providerSchema.properties.informationNeeds.items
+    .properties.toolRequest.properties.inputs.properties.projected.items
+    .properties.window,
+];
 check(269, round10RepairedValidation.ok === true
+  && round10WindowNodes.every((node) => node.maxLength === 65_536
+    && node.minLength === 1
+    && String(node.description || "").includes("display target 64")
+    && String(node.description || "").includes("soft warning")
+    && String(node.description || "").includes("full public text is preserved")
+    && String(node.description || "").includes("transport-level")),
+  "the captured round-10 shape must pass the repaired schema, whose "
+    + "schedule-window fields carry the transport-level overall safety "
+    + "ceiling with the display target published as a soft-warning policy "
+    + "(no arbitrary per-field cap)");
+// The transport ceiling is a real bound, not an unbounded field: a window
+// label beyond it still fails closed.
+const overCeilingFoundation = capturedRound10FoundationOutput();
+overCeilingFoundation.scoreRoute.targetVpSchedule[1].window =
+  `round:2:${"x".repeat(65_537)}`;
+const round10CeilingValidation = validateStarcraftTmgProviderJsonSchemaValueV1(
+  foundationContract.providerSchema, overCeilingFoundation);
+check(269, round10CeilingValidation.ok === false
+  && round10CeilingValidation.issues.some((issue) => (
+    issue.path === "$.scoreRoute.targetVpSchedule[1].window"
+      && issue.code === "string_too_long")),
+  "a window label beyond the transport-level safety ceiling must still fail "
+    + "closed (the ceiling is a transport bound, not an arbitrary per-field "
+    + "content limit)");
+// Identity, enum and legality-adjacent bounds are untouched by the policy.
+check(269, isDeepStrictEqual(foundationContract.providerSchema.properties
+    .scoreRoute.properties.routeKind.enum,
+    ["mission_marker_control", "attrition", "hybrid", "unknown"])
   && foundationContract.providerSchema.properties.scoreRoute.properties
-    .targetVpSchedule.items.properties.window.maxLength === 2_000
-  && comparisonContract.providerSchema.properties.lossResourceBudget
-    .properties.plannedLossBudget.items.properties.window.maxLength === 2_000,
-  "the captured round-10 shape must pass the repaired schema, whose schedule "
-    + "window bounds are the domain rule (runtime public-text cap 2,000), "
-    + "not a value-specific cap");
+    .scheduleStatus.maxLength === 8
+  && comparisonContract.providerSchema.properties.comparison.properties
+    .selectedCandidateId.maxLength === 200
+  && comparisonContract.providerSchema.properties.componentPurposes.items
+    .properties.instanceId.maxLength === 200
+  && comparisonContract.providerSchema.properties.resourceUtilization
+    .properties.retainedResourceJustificationStatus.maxLength === 14
+  && comparisonContract.providerSchema.properties.componentPurposes.items
+    .additionalProperties === false,
+  "identifier, enum and identity bounds must be unchanged by the narrative "
+    + "policy");
 // End-to-end: the captured round-10 foundation plans normally through the
 // runtime — the runtime accepts the domain-legal window labels and the
 // grounding contract is satisfied, proving only the generation schema was

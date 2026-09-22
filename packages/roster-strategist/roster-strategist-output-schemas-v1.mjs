@@ -65,6 +65,25 @@
 // content, candidate identity or strategy — and the runtime's full
 // schema/Rules validation stays the strict enforcement point.
 
+// Sub-slice 269.17 (closing the saved live round-10 blocker
+// ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:...targetVpSchedule[N]
+// .window:string_too_long): free public narrative fields (score-route window
+// labels, route/fallback text, hypothesis/counter/trigger prose, rationales,
+// purposes, deployment concept text, loss-budget windows, justifications and
+// summaries) no longer carry arbitrary per-field length caps. The domain
+// accepts any non-empty public text (roster-plan-contracts nonEmpty;
+// pregame-scene-laboratory math schedule windows), so a per-field 64/2000
+// cap was a host-authored value limit, not a domain rule. The general
+// narrative-capacity policy: every narrative string is bounded only by one
+// transport-level overall safety ceiling — the strict subset's widest
+// expressible string bound (65,536, mirroring the 269.9 integer ceiling
+// pattern) — while each field publishes a display target in its description;
+// exceeding the display target is a soft public warning recorded by the
+// runtime, never a rejection, and the full public text is preserved.
+// Identifiers, enums, identities, legality-relevant fields and structured
+// tool-request fields keep their exact existing bounds — nothing about ID,
+// enum, legality or identity checking is loosened.
+
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import {
@@ -76,7 +95,18 @@ import {
 
 export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_SCHEMA =
   "starcraft_tmg_roster_strategist_output_contract_set_v1";
-export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.3.0";
+export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.4.0";
+
+// General narrative-capacity policy (sub-slice 269.17): one transport-level
+// overall safety ceiling for every free public narrative string — the strict
+// subset's widest expressible string bound — plus per-role display targets
+// that are soft warnings only. Exported so the runtime can bind the identical
+// policy in its descriptor and soft-warning receipts.
+export const NARRATIVE_TRANSPORT_CEILING = 65_536;
+export const NARRATIVE_DISPLAY_TARGETS = freezeDeep({
+  scheduleWindowLabel: 64,
+  publicProse: 2_000,
+});
 
 const DELIBERATION_SCHEMA = "starcraft_tmg_roster_strategist_deliberation_v1";
 const MAX_TEXT = 2_000;
@@ -126,6 +156,24 @@ const textList = (minItems, maxItems) => ({
   type: "array", minItems, maxItems,
   items: text(1, MAX_TEXT),
 });
+// Free public narrative (sub-slice 269.17): bounded only by the
+// transport-level overall safety ceiling; the display target is published in
+// the description and exceeding it is a soft warning only — the full public
+// text is preserved. Never used for identifiers, enums, identities or
+// structured tool-request fields, which keep their exact existing bounds.
+const narrativeText = (minLength = 1, role = "publicProse",
+  description = "") => ({
+  type: "string", minLength, maxLength: NARRATIVE_TRANSPORT_CEILING,
+  description: `${description}${description ? " " : ""}Free public `
+    + `narrative: display target ${NARRATIVE_DISPLAY_TARGETS[role]} `
+    + "characters; exceeding the display target is a soft warning only and "
+    + "the full public text is preserved. The maximum is the transport-level "
+    + "overall safety bound, not a per-field content limit.",
+});
+const narrativeList = (minItems, maxItems, role = "publicProse") => ({
+  type: "array", minItems, maxItems,
+  items: narrativeText(1, role),
+});
 const closedObject = (properties, description = "") => ({
   type: "object",
   properties,
@@ -153,7 +201,7 @@ const SCORE_ROUTE = closedObject({
     type: "string", minLength: 4, maxLength: 32,
     enum: ["mission_marker_control", "attrition", "hybrid", "unknown"],
   },
-  routeText: text(),
+  routeText: narrativeText(),
   scheduleStatus: {
     type: "string", minLength: 7, maxLength: 8,
     enum: ["declared", "unknown"],
@@ -161,15 +209,18 @@ const SCORE_ROUTE = closedObject({
   targetVpSchedule: {
     type: "array", minItems: 0, maxItems: 32,
     items: closedObject({
-      window: text(1, 64),
+      window: narrativeText(1, "scheduleWindowLabel",
+        "Public scoring-window label grounded in the sealed mission-scoring "
+          + "authority (for example \"round:2\"); the domain accepts any "
+          + "non-empty label."),
       plannedCumulativeVp: domainNonNegativeInteger(),
     }),
   },
-  fallbackRouteText: text(),
+  fallbackRouteText: narrativeText(),
 }, "Public win route and scoring schedule.");
 
 const DEPLOYMENT_CONCEPT = closedObject({
-  deploymentConceptText: text(),
+  deploymentConceptText: narrativeText(),
   activationOrderStatus: {
     type: "string", minLength: 7, maxLength: 8,
     enum: ["declared", "unknown"],
@@ -189,9 +240,9 @@ const DEPLOYMENT_CONCEPT = closedObject({
       },
     }),
   },
-  reinforcementPolicyText: text(),
-  threatTradeText: text(),
-  objectiveControlText: text(),
+  reinforcementPolicyText: narrativeText(),
+  threatTradeText: narrativeText(),
+  objectiveControlText: narrativeText(),
 }, "Public deployment, initiative and resource plan.");
 
 const MATH_INPUTS = closedObject({
@@ -203,14 +254,18 @@ const MATH_INPUTS = closedObject({
   planned: {
     type: "array", minItems: 0, maxItems: 32,
     items: closedObject({
-      window: text(1, 64),
+      window: narrativeText(1, "scheduleWindowLabel",
+        "Schedule-window label forwarded verbatim to the laboratory math "
+          + "query; the domain accepts any non-empty label."),
       plannedCumulativeVp: domainNonNegativeInteger(),
     }),
   },
   projected: {
     type: "array", minItems: 0, maxItems: 32,
     items: closedObject({
-      window: text(1, 64),
+      window: narrativeText(1, "scheduleWindowLabel",
+        "Schedule-window label forwarded verbatim to the laboratory math "
+          + "query; the domain accepts any non-empty label."),
       cumulativeVp: domainNonNegativeInteger(),
     }),
   },
@@ -300,7 +355,7 @@ const FOUNDATION_SCHEMA = closedObject({
         + "unknown_missing_authority requires scheduleStatus \"unknown\" "
         + "with an empty schedule, preserving unknown.",
     },
-    authorityText: text(1, MAX_TEXT,
+    authorityText: narrativeText(1, "publicProse",
       "When mission_grounded: name the sealed authoritative scoring data "
         + "the schedule is derived from. When unknown_missing_authority: "
         + "identify the missing authority; never fabricate scoring data."),
@@ -310,22 +365,22 @@ const FOUNDATION_SCHEMA = closedObject({
     items: closedObject({
       hypothesisId: identifier(),
       archetypeLabel: identifier(),
-      hypothesisText: text(),
+      hypothesisText: narrativeText(),
       confidence: {
         type: "string", minLength: 3, maxLength: 7,
         enum: ["unknown", "low", "medium", "high"],
       },
-      expectedCounterTexts: textList(0, 32),
+      expectedCounterTexts: narrativeList(0, 32),
       ownCounterResponseIds: stringList(0, 32),
-      falsificationText: text(),
+      falsificationText: narrativeText(),
     }),
   },
   counterResponses: {
     type: "array", minItems: 0, maxItems: 32,
     items: closedObject({
       responseId: identifier(),
-      triggerText: text(),
-      responseText: text(),
+      triggerText: narrativeText(),
+      responseText: narrativeText(),
       linkedHypothesisIds: stringList(0, 32),
     }),
   },
@@ -338,8 +393,8 @@ const FOUNDATION_SCHEMA = closedObject({
         enum: ["vp_deficit", "opponent_composition", "battlefield_event",
           "loss_budget", "unknown"],
       },
-      triggerText: text(),
-      revisionRequiredText: text(),
+      triggerText: narrativeText(),
+      revisionRequiredText: narrativeText(),
     }),
   },
   informationNeeds: {
@@ -351,7 +406,7 @@ const FOUNDATION_SCHEMA = closedObject({
         enum: ["probability", "spatial", "math", "threat_exchange",
           "scenario"],
       },
-      questionText: text(),
+      questionText: narrativeText(),
       toolRequest: TOOL_REQUEST,
     }),
   },
@@ -375,7 +430,7 @@ const PROPOSALS_SCHEMA = closedObject({
           },
         }),
       },
-      rationaleText: text(),
+      rationaleText: narrativeText(),
     }),
   },
 }, "Round 2 roster candidate proposals from the Rules-owned menu only.");
@@ -383,8 +438,8 @@ const PROPOSALS_SCHEMA = closedObject({
 const COMPARISON_SCHEMA = closedObject({
   ...envelope("comparison_selection"),
   comparison: closedObject({
-    basisTexts: textList(1, 32),
-    tradeoffTexts: textList(0, 32),
+    basisTexts: narrativeList(1, 32),
+    tradeoffTexts: narrativeList(0, 32),
     selectedCandidateId: identifier(),
   }),
   componentPurposes: {
@@ -412,7 +467,7 @@ const COMPARISON_SCHEMA = closedObject({
           + "\"<unitInstanceId>-composition\"; upgrade -> "
           + "\"<unitInstanceId>-upgrade-<n>\" with n the 1-based position "
           + "of the upgrade in the owning unit's upgrades array."),
-      publicPurposeText: text(),
+      publicPurposeText: narrativeText(),
       scoringRole: {
         type: "string", minLength: 4, maxLength: 32,
         enum: ["primary_scorer", "support", "counter", "flex", "unknown"],
@@ -445,7 +500,7 @@ const COMPARISON_SCHEMA = closedObject({
         + "candidate is available and the selected candidate is not "
         + "near-cap; otherwise \"not_applicable\".",
     },
-    retainedResourceJustificationText: text(0, MAX_TEXT,
+    retainedResourceJustificationText: narrativeText(0, "publicProse",
       "Required non-empty when declared: the explicit public justification "
         + "for declining an available near-cap candidate, tied to a named "
         + "legal retained-resource use. Empty when not_applicable."),
@@ -460,17 +515,19 @@ const COMPARISON_SCHEMA = closedObject({
       type: "array", minItems: 0, maxItems: 32,
       items: closedObject({
         resourceKind: text(1, 64),
-        window: text(1, 64),
+        window: narrativeText(1, "scheduleWindowLabel",
+          "Loss-budget observation-window label; the domain accepts any "
+            + "non-empty label."),
         plannedMaximumLoss: domainNonNegativeInteger(),
       }),
     },
   }),
-  publicSummaryText: text(),
+  publicSummaryText: narrativeText(),
 }, "Final round comparison, selection and public plan sections.");
 
 const REVISION_SCHEMA = closedObject({
   ...envelope("revision"),
-  publicSummaryText: text(),
+  publicSummaryText: narrativeText(),
   revisedScoreRoute: SCORE_ROUTE,
   revisedDeploymentConcept: DEPLOYMENT_CONCEPT,
 }, "Revision round public sections; the runtime applies only the sections "
@@ -537,6 +594,11 @@ const contractSetBody = {
     fullSchemaAndRulesValidationStillRunsAfterDecoding: true,
     neverInventsStrategyContent: true,
     neverWeakensLegality: true,
+    // Narrative-capacity policy (sub-slice 269.17).
+    narrativeTransportCeilingIsOverallSafetyBound: true,
+    narrativeDisplayTargetExceededIsSoftWarningOnly: true,
+    fullPublicNarrativeTextPreserved: true,
+    identifierEnumLegalityIdentityBoundsUnchanged: true,
     trainingTruth: false,
   },
 };

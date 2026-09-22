@@ -14,6 +14,8 @@ import {
   ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_VERSION,
 } from "./public-output-normalization-v1.mjs";
 import {
+  NARRATIVE_DISPLAY_TARGETS,
+  NARRATIVE_TRANSPORT_CEILING,
   ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1,
   rosterStrategistRoundOutputContractRefV1,
   rosterStrategistRoundOutputContractV1,
@@ -38,7 +40,7 @@ import {
 
 export const ROSTER_STRATEGIST_RUNTIME_MODULE =
   "packages/roster-strategist/roster-strategist-runtime-v1.mjs";
-export const ROSTER_STRATEGIST_RUNTIME_VERSION = "1.3.0";
+export const ROSTER_STRATEGIST_RUNTIME_VERSION = "1.3.1";
 export const ROSTER_STRATEGIST_DELIBERATION_SCHEMA =
   "starcraft_tmg_roster_strategist_deliberation_v1";
 export const ROSTER_STRATEGIST_DESCRIPTOR_SCHEMA =
@@ -331,6 +333,20 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       exactBudgetEqualityNeverForced: true,
       runtimeNeverRanksCandidates: true,
     },
+    // Narrative-capacity policy (sub-slice 269.17, closing the saved live
+    // round-10 window-bound blocker): free public narrative is bounded only
+    // by the transport-level overall safety ceiling; exceeding a display
+    // target is a soft public warning recorded in the round receipt, never
+    // a rejection, and the full public text is preserved. Identifier, enum,
+    // identity and legality bounds are unchanged.
+    narrativeCapacityPolicy: {
+      narrativeTransportCeiling: NARRATIVE_TRANSPORT_CEILING,
+      displayTargets: clone(NARRATIVE_DISPLAY_TARGETS),
+      exceedingDisplayTargetIsSoftWarningOnly: true,
+      fullPublicNarrativeTextPreserved: true,
+      identifierEnumLegalityIdentityBoundsUnchanged: true,
+      transportCeilingIsOverallSafetyBoundNotPerFieldContentLimit: true,
+    },
     publicOutputNormalization: {
       aliasRegistrySchema:
         ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.schema,
@@ -493,6 +509,39 @@ export function createRosterStrategistRuntimeV1(input = {}) {
 
   // ---------------------------------------------------- output validation
 
+  // General narrative-capacity policy (sub-slice 269.17, mirroring the
+  // strict output contract set v1.4.0): free public narrative is bounded
+  // only by the transport-level overall safety ceiling; exceeding a role's
+  // display target records a soft public warning in the round receipt,
+  // never a rejection, and the full public text is preserved. Identifiers,
+  // enums, identities and every legality check keep their exact existing
+  // rules — nonEmpty/textList are unchanged for them.
+  let activeNarrativeWarnings = null;
+  function narrative(value, code,
+    { path = "narrative", role = "publicProse" } = {}) {
+    const text = String(value || "").trim();
+    if (!text) fail(code);
+    if (text.length > NARRATIVE_TRANSPORT_CEILING) {
+      fail(code, "narrative_transport_ceiling_exceeded");
+    }
+    const displayTarget = NARRATIVE_DISPLAY_TARGETS[role];
+    if (activeNarrativeWarnings && text.length > displayTarget) {
+      activeNarrativeWarnings.push(freezeDeep({
+        path, role, displayTarget, observedLength: text.length,
+        severity: "soft_display_target_exceeded", fullTextPreserved: true,
+      }));
+    }
+    return text;
+  }
+  function narrativeList(value, code,
+    { allowEmpty = true, max = MAX_LIST, path = "narrative",
+      role = "publicProse" } = {}) {
+    if (!Array.isArray(value) || value.length > max) fail(code);
+    if (!allowEmpty && value.length === 0) fail(code);
+    return value.map((entry, index) => narrative(entry, code,
+      { path: `${path}[${index}]`, role }));
+  }
+
   function validateEnvelope(output, roundKind) {
     if (!object(output)) fail("ROSTER_STRATEGIST_OUTPUT_INVALID", roundKind);
     rejectForbiddenKeys(output);
@@ -513,13 +562,17 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     if (!SCHEDULE_STATUSES.has(value.scheduleStatus)) fail(code, "scheduleStatus");
     return {
       routeKind: value.routeKind,
-      routeText: nonEmpty(value.routeText, code),
+      routeText: narrative(value.routeText, code,
+        { path: "scoreRoute.routeText" }),
       scheduleStatus: value.scheduleStatus,
-      targetVpSchedule: (value.targetVpSchedule || []).map((entry) => ({
-        window: nonEmpty(entry?.window, code),
+      targetVpSchedule: (value.targetVpSchedule || []).map((entry, index) => ({
+        window: narrative(entry?.window, code, {
+          path: `scoreRoute.targetVpSchedule[${index}].window`,
+          role: "scheduleWindowLabel" }),
         plannedCumulativeVp: Number(entry?.plannedCumulativeVp),
       })),
-      fallbackRouteText: nonEmpty(value.fallbackRouteText, code),
+      fallbackRouteText: narrative(value.fallbackRouteText, code,
+        { path: "scoreRoute.fallbackRouteText" }),
     };
   }
 
@@ -544,7 +597,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     }
     const groundingResult = {
       status: grounding.status,
-      authorityText: nonEmpty(grounding.authorityText, code),
+      authorityText: narrative(grounding.authorityText, code,
+        { path: "scoreRouteAuthority.authorityText" }),
     };
     if (missionAuthorityDerivable === true
       && (scoreRoute.scheduleStatus !== "declared"
@@ -567,11 +621,14 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       return {
         hypothesisId: nonEmpty(entry.hypothesisId, code),
         archetypeLabel: nonEmpty(entry.archetypeLabel, code),
-        hypothesisText: nonEmpty(entry.hypothesisText, code),
+        hypothesisText: narrative(entry.hypothesisText, code,
+          { path: "opponentHypotheses.hypothesisText" }),
         confidence: entry.confidence,
-        expectedCounterTexts: textList(entry.expectedCounterTexts || [], code),
+        expectedCounterTexts: narrativeList(entry.expectedCounterTexts || [],
+          code, { path: "opponentHypotheses.expectedCounterTexts" }),
         ownCounterResponseIds: textList(entry.ownCounterResponseIds || [], code),
-        falsificationText: nonEmpty(entry.falsificationText, code),
+        falsificationText: narrative(entry.falsificationText, code,
+          { path: "opponentHypotheses.falsificationText" }),
       };
     });
     if (hypotheses.length < 1 || hypotheses.length > 8) fail(code, "hypotheses");
@@ -580,8 +637,10 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         "linkedHypothesisIds"], code);
       return {
         responseId: nonEmpty(entry.responseId, code),
-        triggerText: nonEmpty(entry.triggerText, code),
-        responseText: nonEmpty(entry.responseText, code),
+        triggerText: narrative(entry.triggerText, code,
+          { path: "counterResponses.triggerText" }),
+        responseText: narrative(entry.responseText, code,
+          { path: "counterResponses.responseText" }),
         linkedHypothesisIds: textList(entry.linkedHypothesisIds || [], code),
       };
     });
@@ -594,8 +653,10 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       return {
         triggerId: nonEmpty(entry.triggerId, code),
         observationKind: entry.observationKind,
-        triggerText: nonEmpty(entry.triggerText, code),
-        revisionRequiredText: nonEmpty(entry.revisionRequiredText, code),
+        triggerText: narrative(entry.triggerText, code,
+          { path: "invalidationTriggers.triggerText" }),
+        revisionRequiredText: narrative(entry.revisionRequiredText, code,
+          { path: "invalidationTriggers.revisionRequiredText" }),
       };
     });
     if (triggers.length < 1) fail(code, "invalidationTriggers_required");
@@ -605,7 +666,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       return {
         needId: nonEmpty(entry.needId, code),
         kind: entry.kind,
-        questionText: nonEmpty(entry.questionText, code),
+        questionText: narrative(entry.questionText, code,
+          { path: "informationNeeds.questionText" }),
         toolRequest: clone(entry.toolRequest),
       };
     });
@@ -685,7 +747,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         candidateId,
         tacticalCardRecordKeys,
         units: mappedUnits,
-        rationaleText: nonEmpty(proposal.rationaleText, code),
+        rationaleText: narrative(proposal.rationaleText, code,
+          { path: `proposals.${candidateId}.rationaleText` }),
       };
     });
   }
@@ -748,8 +811,12 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       utilization.retainedResourceJustificationStatus)) {
       fail(code, "resourceUtilization:justification_status");
     }
-    const justificationText = String(
+    const justificationRaw = String(
       utilization.retainedResourceJustificationText ?? "").trim();
+    const justificationText = justificationRaw
+      ? narrative(justificationRaw, code,
+        { path: "resourceUtilization.retainedResourceJustificationText" })
+      : "";
     if (utilization.retainedResourceJustificationStatus === "declared"
       && !justificationText) {
       fail(code, "resourceUtilization:justification_text_required");
@@ -772,7 +839,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         componentKind: entry.componentKind,
         recordKey: nonEmpty(entry.recordKey, code),
         instanceId: nonEmpty(entry.instanceId, code),
-        publicPurposeText: nonEmpty(entry.publicPurposeText, code),
+        publicPurposeText: narrative(entry.publicPurposeText, code,
+          { path: `componentPurposes.${entry.instanceId}.publicPurposeText` }),
         scoringRole: entry.scoringRole,
       };
     });
@@ -807,28 +875,36 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       }
       lossBudget = {
         lossBudgetStatus: budget.lossBudgetStatus,
-        plannedLossBudget: (budget.plannedLossBudget || []).map((entry) => ({
+        plannedLossBudget: (budget.plannedLossBudget || []).map((entry, i) => ({
           resourceKind: nonEmpty(entry?.resourceKind, code),
-          window: nonEmpty(entry?.window, code),
+          window: narrative(entry?.window, code, {
+            path: `lossResourceBudget.plannedLossBudget[${i}].window`,
+            role: "scheduleWindowLabel" }),
           plannedMaximumLoss: Number(entry?.plannedMaximumLoss),
         })),
       };
     }
     return {
       comparison: {
-        basisTexts: textList(comparison.basisTexts, code, { allowEmpty: false }),
-        tradeoffTexts: textList(comparison.tradeoffTexts || [], code),
+        basisTexts: narrativeList(comparison.basisTexts, code,
+          { allowEmpty: false, path: "comparison.basisTexts" }),
+        tradeoffTexts: narrativeList(comparison.tradeoffTexts || [], code,
+          { path: "comparison.tradeoffTexts" }),
         selectedCandidateId,
       },
       componentPurposes: purposes,
       deploymentConcept: {
-        deploymentConceptText: nonEmpty(deployment.deploymentConceptText, code),
+        deploymentConceptText: narrative(deployment.deploymentConceptText,
+          code, { path: "deploymentConcept.deploymentConceptText" }),
         activationOrderStatus: deployment.activationOrderStatus === "declared"
           ? "declared" : "unknown",
         activationOrder,
-        reinforcementPolicyText: nonEmpty(deployment.reinforcementPolicyText, code),
-        threatTradeText: nonEmpty(deployment.threatTradeText, code),
-        objectiveControlText: nonEmpty(deployment.objectiveControlText, code),
+        reinforcementPolicyText: narrative(deployment.reinforcementPolicyText,
+          code, { path: "deploymentConcept.reinforcementPolicyText" }),
+        threatTradeText: narrative(deployment.threatTradeText, code,
+          { path: "deploymentConcept.threatTradeText" }),
+        objectiveControlText: narrative(deployment.objectiveControlText, code,
+          { path: "deploymentConcept.objectiveControlText" }),
       },
       lossResourceBudget: lossBudget,
       resourceUtilization: {
@@ -840,7 +916,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         retainedResourceJustificationText: justificationText,
         nearCapThresholdMinerals,
       },
-      publicSummaryText: nonEmpty(output.publicSummaryText, code),
+      publicSummaryText: narrative(output.publicSummaryText, code,
+        { path: "publicSummaryText" }),
     };
   }
 
@@ -1412,8 +1489,16 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       provenanceHash: provenance.provenanceHash,
       enumerationReceiptHash: enumeration.receiptHash,
       skillRouteReceiptHash: route.receipt.receiptHash });
-    const foundation = validateFoundation(foundationOutput,
-      { missionAuthorityDerivable });
+    const foundationWarnings = [];
+    activeNarrativeWarnings = foundationWarnings;
+    let foundation;
+    try {
+      foundation = validateFoundation(foundationOutput,
+        { missionAuthorityDerivable });
+    } finally {
+      activeNarrativeWarnings = null;
+    }
+    foundationTrace.narrativeDisplayWarnings = foundationWarnings;
     foundationTrace.outputHash = hashStarcraftTmgContract(foundationOutput);
     for (const need of foundation.informationNeeds) {
       executeInformationNeed(need, branchByNeedId, toolReceipts, foundationTrace);
@@ -1503,7 +1588,15 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         sessionId, roundKind: "candidate_proposals", proposalRound,
         provenanceHash: provenance.provenanceHash,
         enumerationReceiptHash: enumeration.receiptHash });
-      const proposals = validateProposals(proposalOutput, menu);
+      const proposalWarnings = [];
+      activeNarrativeWarnings = proposalWarnings;
+      let proposals;
+      try {
+        proposals = validateProposals(proposalOutput, menu);
+      } finally {
+        activeNarrativeWarnings = null;
+      }
+      proposalTrace.narrativeDisplayWarnings = proposalWarnings;
       proposalTrace.outputHash = hashStarcraftTmgContract(proposalOutput);
       proposalFeedback.length = 0;
       for (const proposal of proposals) {
@@ -1700,8 +1793,16 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       sessionId, roundKind: "comparison_selection",
       provenanceHash: provenance.provenanceHash,
       candidateHashes: evaluated.map((entry) => entry.candidate.candidateHash) });
-    const comparisonSelection = validateComparison(comparisonOutput,
-      evaluated, { nearCapThresholdMinerals, mineralBudget });
+    const comparisonWarnings = [];
+    activeNarrativeWarnings = comparisonWarnings;
+    let comparisonSelection;
+    try {
+      comparisonSelection = validateComparison(comparisonOutput,
+        evaluated, { nearCapThresholdMinerals, mineralBudget });
+    } finally {
+      activeNarrativeWarnings = null;
+    }
+    comparisonTrace.narrativeDisplayWarnings = comparisonWarnings;
     comparisonTrace.outputHash = hashStarcraftTmgContract(comparisonOutput);
     const selected = evaluated.find((entry) => (
       entry.proposal.candidateId
@@ -1814,6 +1915,10 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       retainedResourceJustificationStatus:
         comparisonSelection.resourceUtilization
           .retainedResourceJustificationStatus,
+      narrativeCapacityPolicy:
+        "display_target_soft_warning_full_text_preserved_v1",
+      narrativeDisplayWarningCount: trace.reduce((sum, entry) => (
+        sum + (entry.narrativeDisplayWarnings?.length || 0)), 0),
       selectedByAgentDeliberation: true,
       hostPreferenceWeights: false,
       hiddenChainOfThoughtRequested: false,
@@ -1886,64 +1991,77 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           revisedSectionKeys },
       }), sink);
     const output = revisionDeliberation.output;
-    validateEnvelope(output, "revision");
-    exactKeys(output, ["schemaVersion", "roundKind", "publicSummaryText",
-      "revisedScoreRoute", "revisedDeploymentConcept"], code);
-    const revision = createRosterPlanRevisionEventV1({
-      revisionId: `${plan.planId}-revision-${plan.planVersion + 1}`,
-      planId: plan.planId,
-      fromPlanVersion: plan.planVersion,
-      toPlanVersion: plan.planVersion + 1,
-      previousPlanHash: plan.planHash,
-      reasonText,
-      triggerIds,
-      revisedSectionKeys,
-    });
-    const revised = createRosterPlanV1({
-      planId: plan.planId,
-      planVersion: plan.planVersion + 1,
-      planStatus: "revised",
-      sideKey: plan.sideKey,
-      provenance: plan.provenance,
-      rosterCandidate: plan.rosterCandidate,
-      scoreRoute: revisedSectionKeys.includes("scoreRoute")
-        && object(output.revisedScoreRoute)
-        ? createRosterScoreRouteV1(validateScoreRoute(output.revisedScoreRoute, code))
-        : plan.scoreRoute,
-      lossResourceBudget: plan.lossResourceBudget,
-      componentPurposes: plan.componentPurposes,
-      deploymentConcept: revisedSectionKeys.includes("deploymentConcept")
-        && object(output.revisedDeploymentConcept)
-        ? createRosterDeploymentConceptV1({
-          deploymentConceptText: nonEmpty(
-            output.revisedDeploymentConcept.deploymentConceptText, code),
-          activationOrderStatus:
-            output.revisedDeploymentConcept.activationOrderStatus === "declared"
-              ? "declared" : "unknown",
-          activationOrder: (output.revisedDeploymentConcept.activationOrder || [])
-            .map((entry) => ({
-              ordinal: Number(entry?.ordinal),
-              unitInstanceId: nonEmpty(entry?.unitInstanceId, code),
-              phase: nonEmpty(entry?.phase, code) })),
-          reinforcementPolicyText: nonEmpty(
-            output.revisedDeploymentConcept.reinforcementPolicyText, code),
-          threatTradeText: nonEmpty(
-            output.revisedDeploymentConcept.threatTradeText, code),
-          objectiveControlText: nonEmpty(
-            output.revisedDeploymentConcept.objectiveControlText, code) })
-        : plan.deploymentConcept,
-      opponentHypotheses: plan.opponentHypotheses,
-      counterResponses: plan.counterResponses,
-      invalidationTriggers: plan.invalidationTriggers,
-      revisions: [...(plan.revisions || []), revision],
-      comparisons: plan.comparisons,
-      toolReceiptReferences: plan.toolReceiptReferences,
-      publicSummaryText: nonEmpty(output.publicSummaryText, code),
-    });
-    verifyRosterPlanRoundTripV1(revised);
+    const revisionWarnings = [];
+    activeNarrativeWarnings = revisionWarnings;
+    let revised;
+    try {
+      validateEnvelope(output, "revision");
+      exactKeys(output, ["schemaVersion", "roundKind", "publicSummaryText",
+        "revisedScoreRoute", "revisedDeploymentConcept"], code);
+      const revision = createRosterPlanRevisionEventV1({
+        revisionId: `${plan.planId}-revision-${plan.planVersion + 1}`,
+        planId: plan.planId,
+        fromPlanVersion: plan.planVersion,
+        toPlanVersion: plan.planVersion + 1,
+        previousPlanHash: plan.planHash,
+        reasonText,
+        triggerIds,
+        revisedSectionKeys,
+      });
+      revised = createRosterPlanV1({
+        planId: plan.planId,
+        planVersion: plan.planVersion + 1,
+        planStatus: "revised",
+        sideKey: plan.sideKey,
+        provenance: plan.provenance,
+        rosterCandidate: plan.rosterCandidate,
+        scoreRoute: revisedSectionKeys.includes("scoreRoute")
+          && object(output.revisedScoreRoute)
+          ? createRosterScoreRouteV1(validateScoreRoute(output.revisedScoreRoute, code))
+          : plan.scoreRoute,
+        lossResourceBudget: plan.lossResourceBudget,
+        componentPurposes: plan.componentPurposes,
+        deploymentConcept: revisedSectionKeys.includes("deploymentConcept")
+          && object(output.revisedDeploymentConcept)
+          ? createRosterDeploymentConceptV1({
+            deploymentConceptText: narrative(
+              output.revisedDeploymentConcept.deploymentConceptText, code,
+              { path: "revisedDeploymentConcept.deploymentConceptText" }),
+            activationOrderStatus:
+              output.revisedDeploymentConcept.activationOrderStatus === "declared"
+                ? "declared" : "unknown",
+            activationOrder: (output.revisedDeploymentConcept.activationOrder || [])
+              .map((entry) => ({
+                ordinal: Number(entry?.ordinal),
+                unitInstanceId: nonEmpty(entry?.unitInstanceId, code),
+                phase: nonEmpty(entry?.phase, code) })),
+            reinforcementPolicyText: narrative(
+              output.revisedDeploymentConcept.reinforcementPolicyText, code,
+              { path: "revisedDeploymentConcept.reinforcementPolicyText" }),
+            threatTradeText: narrative(
+              output.revisedDeploymentConcept.threatTradeText, code,
+              { path: "revisedDeploymentConcept.threatTradeText" }),
+            objectiveControlText: narrative(
+              output.revisedDeploymentConcept.objectiveControlText, code,
+              { path: "revisedDeploymentConcept.objectiveControlText" }) })
+          : plan.deploymentConcept,
+        opponentHypotheses: plan.opponentHypotheses,
+        counterResponses: plan.counterResponses,
+        invalidationTriggers: plan.invalidationTriggers,
+        revisions: [...(plan.revisions || []), revision],
+        comparisons: plan.comparisons,
+        toolReceiptReferences: plan.toolReceiptReferences,
+        publicSummaryText: narrative(output.publicSummaryText, code,
+          { path: "publicSummaryText" }),
+      });
+      verifyRosterPlanRoundTripV1(revised);
+    } finally {
+      activeNarrativeWarnings = null;
+    }
     return freezeDeep({
       plan: revised,
-      revisionEvent: revision,
+      revisionEvent: revised.revisions[revised.revisions.length - 1],
+      narrativeDisplayWarnings: revisionWarnings,
       outputNormalizationReceipt:
         clone(revisionDeliberation.normalizationReceipt),
       deliberationReceipts: sink.deliberationReceipts.map((entry) => clone(entry)),
