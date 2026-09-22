@@ -51,9 +51,20 @@
  *      accounting for 1, 3 and 6 companions; long-session checkpoint
  *      isolation; swipe/edit branches with lineage; safe import/export/
  *      restore; audit verify + replay candidate; the four permission
- *      surfaces; the formal-versus-fixture worldbook audit (Zagara's sealed
- *      pack entries versus the honestly-labelled fixture global entry; the
- *      fixture entry never appears inside the sealed package export);
+ *      surfaces; the formal-versus-fixture worldbook audit (both companions'
+ *      sealed pack entries versus the honestly-labelled fixture global entry;
+ *      the fixture entry never appears inside the sealed package export);
+ *      the 266f.11 six-companion formal-content audit (non-empty persona
+ *      profile/worldbook/author-note/era details per sealed package,
+ *      source-linked canon, pairwise-distinct persona profiles); the
+ *      prompt-differentiation audit on the captured deterministic Provider
+ *      requests (six pairwise-distinct speaker system prompts with persona
+ *      markers, era block, package author-note layer and the multi-companion
+ *      distinctness instruction; pairwise-distinct assemblies; reply-level
+ *      promptLayers provenance); the genuine memory-engine phase
+ *      (conversation-derived relationship write + durable long-term candidate
+ *      whose promotion fails closed without explicit user approval and enters
+ *      BOTH companions' next assemblies as durable_memory once approved);
  *      durable encrypted-SQLite process-restart resume with fail-closed key
  *      handling; the full BYOK seam cycle; the versioned output-budget and
  *      truncation classification/recovery contract (fail-first reproduction
@@ -61,6 +72,9 @@
  *      with a fake socket, typed LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED
  *      classification with budget diagnostics, structural terminated-string
  *      recovery, and the resolved budget carried into the live request);
+ *      plus the 266f.10 browser surfaces: participant avatar/name/era binding
+ *      on desktop AND 390px, the six-companion group-chat header, the bounded
+ *      scrolling long transcript, and the mid-width in-dock layout;
  *   7. records the live BYOK acceptance honestly: epoch 1 executed once
  *      (HTTP 200, truncated at the 64-unit output budget, zero retry, lock
  *      claimed); epoch 2 — the single user-authorized repair call with the
@@ -71,8 +85,13 @@
  *      server/session restart between two user turns) — is proven here as a
  *      deterministic offline SEAM (the REAL runner adapter and stack against
  *      a fake Worker port) and recorded as executed or reserved by reading
- *      the runner's epoch-3 report (this gate never touches a real
- *      credential or Provider);
+ *      the runner's epoch-3 report; epoch 4 — the persona-differentiation
+ *      acceptance (hard maximum four physical calls, persona-call-1..4
+ *      locks, Kerrigan+Zagara two-turn with checkpoint + full restart,
+ *      distinct roleplay + formal worldbook retrieval for BOTH companions +
+ *      prompt-layer provenance + durable-layer memory continuity) — is
+ *      recorded as executed or reserved by reading the runner's epoch-4
+ *      report (this gate never touches a real credential or Provider);
  *   8. writes a claim-to-pixel index, sha256-hashed artifacts and a machine
  *      report under build/ticket-26-slice-266f-companion-live-product-acceptance-v1/,
  *      then scans the report AND every artifact for every secret handled in
@@ -127,6 +146,8 @@ const MANIFEST_ALLOWED_PATHS = [
   "packages/product-composition/companion-room-session-service-v1.mjs",
   "packages/product-composition/companion-product-module-v1.mjs",
   "packages/client-domain/client-domain-v1.mjs",
+  "packages/character-agent/",
+  "content/characters/",
   "apps/starcraft-tmg-expo/lib/level3/client-domain-provider.tsx",
   "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
   "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
@@ -149,6 +170,10 @@ const SCREENSHOT_EXPLANATIONS = {
   "09-narrow-mobile-sheet-resumed.png": "390px touch: the expanded body is a full-screen sheet; the persisted conversation resumes inside it with zero horizontal overflow.",
   "10-narrow-mobile-sheet-cards.png": "390px touch: the Tavern-equivalent cards (persona/worldbook/memory/branches/author's note/import-export/audit/permissions/promotions/continuity) render inside the full-screen sheet; four live permission surfaces deny opponent-private everywhere; zero horizontal overflow.",
   "11-narrow-collapsed-chip.png": "390px touch: after Collapse the compact launcher chip returns at the bottom-right; the battlefield is fully visible again.",
+  "12-desktop-speaker-avatar-binding.png": "266f.10/11 desktop: the two-companion conversation with the participant header binding every participant avatar/name/era/state (next-speaker ▶ highlight never hides the others) and every transcript message binding its speaker avatar/name/era.",
+  "13-desktop-six-companion-group-chat.png": "266f.10/11 desktop: the SIX-companion group chat — the header shows all seven participant chips (six companion committed idle keyframes + the human emblem) with name/era/state; no clipping or overlap at 1500×1050.",
+  "14-desktop-long-transcript-scroll.png": "266f.10/11 desktop: a 21-message six-companion transcript renders the bounded last-16 window inside the real scroll-ruled transcript box; speaker avatars/names/eras stay bound; zero horizontal overflow.",
+  "15-midwidth-indock-panel.png": "266f.10/11 mid width (900px): the expanded comms body keeps the in-dock layout (no fixed sheet), the resumed six-companion conversation renders with the avatar-bound header, zero horizontal overflow.",
 };
 const BACKEND_MODULES_RECORDED = [
   "packages/authoritative-engine/transition-v1.mjs",
@@ -1297,7 +1322,13 @@ async function main() {
   }
 
   async function messageCount(page) {
-    return chatSection(page).locator('[data-testid^="companion-chat-message-"]').count();
+    // 266f.10 added nested speaker/avatar testIDs inside each message row;
+    // count only the exact message-row testIDs.
+    return page.evaluate(() => (
+      [...document.querySelectorAll('[data-testid^="companion-chat-message-"]')]
+        .filter((el) => /^companion-chat-message-\d+$/u.test(el.getAttribute("data-testid") || ""))
+        .length
+    ));
   }
 
   // Hoisted: the final report aggregates the durable-fixture call count after
@@ -1528,6 +1559,47 @@ async function main() {
       { count: await messageCount(page) });
     checks.push({ id: "desktop_reload_resume_persisted_transcript", passed: true });
 
+    // ── 266f.10/11: participant avatar/name/era binding (desktop) ──────
+    // The speaker-order header binds EVERY participant (committed idle
+    // keyframe for companions, emblem for the human) plus name/era/state;
+    // the next-speaker ▶ highlight never hides the other chips. Every
+    // transcript message binds its speaker avatar/name/era.
+    for (const slug of ["player", "sarah_kerrigan", "zagara"]) {
+      const avatar = chat.getByTestId(`companion-chat-order-avatar-${slug}`);
+      await avatar.waitFor({ timeout: 30_000 });
+      ensure(await avatar.isVisible(), "ORDER_CHIP_AVATAR_HIDDEN", { slug });
+    }
+    const orderBindingText = await chat.getByTestId("companion-chat-speaker-order").innerText();
+    ensure(orderBindingText.includes("you · seat")
+      && orderBindingText.includes("era hots.primal.post_zerus.pre_lotv")
+      && (orderBindingText.match(/era \S+/gu) || []).length >= 2
+      && orderBindingText.includes("▶"),
+    "ORDER_CHIP_IDENTITY_BINDING_WRONG", { orderBindingText });
+    for (const sequence of [1, 2, 3]) {
+      await chat.getByTestId(`companion-chat-message-speaker-${sequence}`).waitFor({ timeout: 30_000 });
+      const messageAvatar = chat.getByTestId(`companion-chat-message-avatar-${sequence}`);
+      await messageAvatar.waitFor({ timeout: 30_000 });
+      ensure(await messageAvatar.isVisible(), "MESSAGE_AVATAR_HIDDEN", { sequence });
+    }
+    const messageOneSpeaker = await chat.getByTestId("companion-chat-message-speaker-1").innerText();
+    const messageTwoSpeaker = await chat.getByTestId("companion-chat-message-speaker-2").innerText();
+    ensure(messageOneSpeaker.includes("seat")
+      && messageTwoSpeaker.includes("Sarah Kerrigan")
+      && messageTwoSpeaker.includes("era hots.primal.post_zerus.pre_lotv"),
+    "MESSAGE_SPEAKER_BINDING_WRONG", { messageOneSpeaker, messageTwoSpeaker });
+    await capture(page, "12-desktop-speaker-avatar-binding.png", artifacts);
+    claim({
+      claimId: "participant_avatar_name_era_binding_desktop",
+      screenshot: "12-desktop-speaker-avatar-binding.png",
+      viewport: "1500x1050",
+      precondition: "resumed two-companion conversation at turn 3",
+      interaction: "none (assertion on rendered binding)",
+      expected: "header chips bind every participant avatar/name/era/state (next-speaker ▶ never hides others); every message binds speaker avatar/name/era",
+      observed: { orderBindingText, messageOneSpeaker, messageTwoSpeaker },
+      contract: "Slice 266f.10 participant identity binding (server conversation projection only; never fabricated)",
+    });
+    checks.push({ id: "desktop_participant_avatar_name_era_binding", passed: true });
+
     // ── 266f.3: session continuity card with real content ──────────────
     const continuity = chat.getByTestId("companion-chat-continuity");
     await continuity.waitFor({ timeout: 30_000 });
@@ -1536,19 +1608,22 @@ async function main() {
     ensure(eraRows.length === 2, "CONTINUITY_ERA_ROWS_WRONG", { eraText });
     ensure(eraText.includes("era · Sarah Kerrigan") && eraText.includes("era · Zagara"),
       "CONTINUITY_ERA_COMPANIONS_MISSING", { eraText });
-    // Zagara's pack carries a real default era; Kerrigan's reference package
-    // honestly reports the registered default.
+    // 266f.11: BOTH companions now carry real sealed default eras (266f.8
+    // sealed Kerrigan's browser-safe presentation pack into her package);
+    // neither falls back to the honest "registered default" label anymore.
     ensure(/era · Zagara: \S+/u.test(eraText)
       && !/era · Zagara: registered default/u.test(eraText),
     "CONTINUITY_ERA_ZAGARA_NOT_REAL_PACKAGE_STATE", { eraText });
-    ensure(eraText.includes("era · Sarah Kerrigan: registered default (package)"),
-      "CONTINUITY_ERA_KERRIGAN_NOT_HONEST_DEFAULT", { eraText });
-    // Worldbook origin classification after a live read: Zagara's three
-    // sealed package entries + the honestly-labelled fixture global entry.
+    ensure(eraText.includes("era · Sarah Kerrigan: hots.primal.post_zerus.pre_lotv")
+      && !/era · Sarah Kerrigan: registered default/u.test(eraText),
+    "CONTINUITY_ERA_KERRIGAN_NOT_REAL_SEALED_ERA", { eraText });
+    // Worldbook origin classification after a live read: Zagara's three +
+    // Kerrigan's three sealed package entries + the honestly-labelled fixture
+    // global entry.
     await chat.getByTestId("companion-chat-worldbook-refresh").click();
     await page.waitForFunction(() => (
       document.querySelector('[data-testid="companion-chat-continuity-worldbook"]')
-        ?.innerText.includes("sealed package (formal) 3")
+        ?.innerText.includes("sealed package (formal) 6")
     ), null, { timeout: 60_000 });
     const continuityWorldbook = await chat
       .getByTestId("companion-chat-continuity-worldbook").innerText();
@@ -1603,7 +1678,7 @@ async function main() {
       viewport: "1500x1050",
       precondition: "resumed conversation; persona/summary/episodic/author's note saved through real contracts",
       interaction: "read worldbook, save persona, save summary + episodic fact, save author's note",
-      expected: "continuity card shows per-companion era state, worldbook origin classification (sealed package 3 / persona-derived 1 / fixture-labelled global 1), memory counts and note version — real content or honest unavailable states, never fabricated",
+      expected: "continuity card shows per-companion era state (both companions on real sealed default eras), worldbook origin classification (sealed package 6 / persona-derived 1 / fixture-labelled global 1), memory counts and note version — real content or honest unavailable states, never fabricated",
       observed: { eraText, continuityWorldbook, continuityMemory },
       contract: "Slice 266f.3 real-content continuity (server projections only)",
     });
@@ -1728,6 +1803,15 @@ async function main() {
       "NARROW_DID_NOT_RESUME_CONVERSATION", { narrowMeta });
     ensure(await messageCount(narrowPage) === 3,
       "NARROW_TRANSCRIPT_INCOMPLETE", { count: await messageCount(narrowPage) });
+    // 266f.10/11: the same avatar/name/era binding holds at 390px touch.
+    for (const slug of ["player", "sarah_kerrigan", "zagara"]) {
+      await narrowChat.getByTestId(`companion-chat-order-avatar-${slug}`)
+        .waitFor({ timeout: 30_000 });
+    }
+    for (const sequence of [1, 2, 3]) {
+      await narrowChat.getByTestId(`companion-chat-message-avatar-${sequence}`)
+        .waitFor({ timeout: 30_000 });
+    }
     const narrowContinuity = await narrowChat
       .getByTestId("companion-chat-continuity-era").innerText();
     ensure(narrowContinuity.includes("era · Zagara"), "NARROW_CONTINUITY_MISSING",
@@ -1852,9 +1936,11 @@ async function main() {
     ];
     let rosterExpected = Number(okH(await getH("status"), "ROSTER_BASELINE_STATUS_FAILED")
       .provider?.accounting?.calls ?? 0);
+    let rosterSixConversationId = null;
     for (const run of rosterRuns) {
       const opened = okH(await postH("conversations", { packageIds: run.packageIds }),
         "ROSTER_OPEN_FAILED");
+      if (run.count === 6) rosterSixConversationId = opened.conversationId;
       ensure(opened.companions?.length === run.count
         && opened.speakerOrder?.length === run.count + 1,
       "ROSTER_SPEAKER_ORDER_LENGTH_WRONG", { count: run.count, opened: opened.speakerOrder });
@@ -2021,14 +2107,18 @@ async function main() {
     checks.push({ id: "headless_four_permission_surfaces_live", passed: true });
 
     // (G) Formal-versus-fixture worldbook audit on the live conversation.
-    // Zagara's sealed character-tier entries carry package provenance and
-    // fire only on her assembly; the fixture global entry is labelled by its
-    // own provenance and never appears inside the sealed package export.
+    // Both companions' sealed character-tier entries carry package provenance
+    // and fire only on their own assembly (266f.11: Kerrigan's three
+    // `kerrigan.wb.*` entries are real since 266f.8); the fixture global
+    // entry is labelled by its own provenance and never appears inside any
+    // sealed package export.
     const wbAuditRead = okH(await getH(
       `conversations/${encodeURIComponent(conversationId)}/worldbook`), "WB_AUDIT_READ_FAILED");
     const characterTier = wbAuditRead.entries.filter((entry) => entry.scopeTier === "character");
-    ensure(characterTier.length === 3
-      && characterTier.every((entry) => entry.entryId.startsWith("zagara."))
+    ensure(characterTier.length === 6
+      && characterTier.every((entry) => (
+        entry.entryId.startsWith("zagara.") || entry.entryId.startsWith("kerrigan.")
+      ))
       && characterTier.every((entry) => (
         !(entry.provenance?.sourceRefs || []).some((ref) => String(ref).startsWith("fixture://"))
       )),
@@ -2049,7 +2139,9 @@ async function main() {
     const firedSecond = wbAuditSend.replies[1].contextAssembly?.worldbookFired || [];
     const kerriganCharacter = firedFirst.filter((row) => row.scopeTier === "character");
     const zagaraCharacter = firedSecond.filter((row) => row.scopeTier === "character");
-    ensure(kerriganCharacter.length === 0 && zagaraCharacter.length === 3
+    ensure(kerriganCharacter.length === 3 && zagaraCharacter.length === 3
+      && kerriganCharacter.every((row) => row.entryId.startsWith("kerrigan.wb.")
+        && (row.matchedBy || []).includes("always"))
       && zagaraCharacter.every((row) => row.entryId.startsWith("zagara.")
         && (row.matchedBy || []).includes("always")),
     "CHARACTER_TIER_NOT_COMPANION_SCOPED", { kerriganCharacter, zagaraCharacter });
@@ -2072,6 +2164,419 @@ async function main() {
       entries: zagaraExport.export?.contract?.extensions?.worldbookEntries?.map((entry) => entry.entryId),
     });
     checks.push({ id: "headless_worldbook_formal_vs_fixture_audit", passed: true });
+
+    // ── 266f.11 (H): six-companion formal-content audit. Every sealed
+    // package exports non-empty persona profile / worldbook / author-note /
+    // era-detail material; canon entries are source-linked; persona profiles
+    // are pairwise distinct (no interchangeable voice). ──────────────────
+    const personaProfileHashes = new Map();
+    const formalAuditRows = [];
+    for (const packageId of allPackageIds) {
+      const pkgExport = okH(await getH(
+        `packages/${encodeURIComponent(packageId)}/export`),
+      `FORMAL_AUDIT_EXPORT_FAILED:${packageId}`);
+      const contract = pkgExport.export?.contract || {};
+      const ext = contract.extensions || {};
+      const persona = ext.personaProfile;
+      ensure(persona
+        && persona.authoringClass === "project_d_role_configuration"
+        && String(persona.cadence || "").trim()
+        && String(persona.addressStyle || "").trim()
+        && String(persona.tacticalPattern || "").trim()
+        && Array.isArray(persona.styleExamples) && persona.styleExamples.length >= 1
+        && Array.isArray(persona.doctrineHints) && persona.doctrineHints.length >= 1,
+      "FORMAL_AUDIT_PERSONA_PROFILE_EMPTY", { packageId, persona });
+      const profileHash = hashStarcraftTmgContract(persona);
+      ensure(!personaProfileHashes.has(profileHash),
+        "FORMAL_AUDIT_PERSONA_PROFILES_NOT_DISTINCT", {
+          packageId,
+          collidesWith: personaProfileHashes.get(profileHash),
+        });
+      personaProfileHashes.set(profileHash, packageId);
+      const worldbookEntries = Array.isArray(ext.worldbookEntries) ? ext.worldbookEntries : [];
+      ensure(worldbookEntries.length >= 1
+        && worldbookEntries.every((entry) => String(entry.content || "").trim().length > 0)
+        && worldbookEntries.every((entry) => (
+          !String(entry.canonStatus || "").startsWith("official")
+          || (Array.isArray(entry.sourceRefs) && entry.sourceRefs.length >= 1)
+        )),
+      "FORMAL_AUDIT_WORLDBOOK_EMPTY_OR_UNLINKED", {
+        packageId,
+        entries: worldbookEntries.map((entry) => [entry.entryId, entry.canonStatus, entry.sourceRefs]),
+      });
+      const authorNote = ext.authorNote;
+      ensure(authorNote
+        && authorNote.authoringClass === "project_d_role_configuration"
+        && String(authorNote.note || "").trim().length > 0
+        && Number.isSafeInteger(authorNote.depth)
+        && Number.isSafeInteger(authorNote.frequency),
+      "FORMAL_AUDIT_AUTHOR_NOTE_EMPTY", { packageId, authorNote });
+      const eraDetails = Array.isArray(ext.eraDetails) ? ext.eraDetails : [];
+      ensure(eraDetails.length >= 1
+        && eraDetails.every((era) => String(era.knowledgeCutoff || "").trim().length > 0)
+        && eraDetails.some((era) => era.personaState === contract.defaultEraId),
+      "FORMAL_AUDIT_ERA_DETAILS_WRONG", {
+        packageId,
+        defaultEraId: contract.defaultEraId,
+        eras: eraDetails.map((era) => era.personaState),
+      });
+      formalAuditRows.push({
+        packageId,
+        personaProfileHash: profileHash,
+        worldbookEntries: worldbookEntries.length,
+        authorNoteHash: hashStarcraftTmgContract({
+          note: authorNote.note,
+          noteZh: String(authorNote.noteZh || ""),
+        }),
+        eraCount: eraDetails.length,
+        defaultEraId: contract.defaultEraId,
+      });
+    }
+    ensure(formalAuditRows.length === 6, "FORMAL_AUDIT_ROSTER_WRONG", {
+      count: formalAuditRows.length,
+    });
+    checks.push({
+      id: "headless_six_companion_formal_content_audit",
+      passed: true,
+      companions: formalAuditRows,
+      personaProfilesPairwiseDistinct: true,
+      realProviderCalls: 0,
+    });
+
+    // ── 266f.11 (I): prompt-differentiation audit on the captured
+    // deterministic Provider requests from the SIX-companion roster turn.
+    // Every per-speaker system prompt carries the sealed persona profile
+    // markers, the era block with knowledge cutoff, the package author-note
+    // layer and the explicit multi-companion distinctness instruction; the
+    // six system prompts and the six context assemblies are pairwise
+    // distinct. The turn-2-style reply provenance (promptLayers) is asserted
+    // on the (G) wbAuditSend replies for Kerrigan vs Zagara. ──────────────
+    ensure(rosterSixConversationId, "SIX_ROSTER_CONVERSATION_NOT_RECORDED");
+    const sixRequests = providerProbe.requests.filter((request) => (
+      request.requestId.startsWith(`companion-${rosterSixConversationId}-`)
+    ));
+    ensure(sixRequests.length === 6, "PROMPT_AUDIT_SIX_REQUESTS_WRONG", {
+      count: sixRequests.length,
+      rosterSixConversationId,
+    });
+    const systemPrompts = new Map();
+    const assemblyHashes = new Map();
+    for (const request of sixRequests) {
+      const system = request.messages[0];
+      ensure(system?.role === "system", "PROMPT_AUDIT_FIRST_MESSAGE_NOT_SYSTEM", {
+        companionRef: request.companionRef,
+      });
+      const text = system.content;
+      ensure(text.includes("Persona voice (sealed package")
+        && text.includes("Doctrine priorities:")
+        && text.includes("Style examples (package-authored role configuration")
+        && /Era: \S+ — .+Knowledge cutoff: \S+/u.test(text)
+        && text.includes("This is a multi-companion conversation with:")
+        && text.includes("Answer ONLY as")
+        && text.includes("never merge another speaker's persona"),
+      "PROMPT_AUDIT_PERSONA_MARKERS_MISSING", {
+        companionRef: request.companionRef,
+        excerpt: text.slice(0, 400),
+      });
+      const authorNoteLayer = request.messages[2];
+      ensure(authorNoteLayer?.role === "system"
+        && authorNoteLayer.content.includes("Companion author note (sealed package"),
+      "PROMPT_AUDIT_PACKAGE_AUTHOR_NOTE_LAYER_MISSING", {
+        companionRef: request.companionRef,
+        second: String(authorNoteLayer?.content || "").slice(0, 200),
+      });
+      ensure(!systemPrompts.has(text), "PROMPT_AUDIT_SYSTEM_PROMPTS_NOT_DISTINCT", {
+        companionRef: request.companionRef,
+        collidesWith: systemPrompts.get(text),
+      });
+      systemPrompts.set(text, request.companionRef);
+      const contextLayer = JSON.parse(request.messages[1].content);
+      const assemblyHash = contextLayer?.contextAssembly?.assemblyHash;
+      ensure(typeof assemblyHash === "string" && assemblyHash.length > 0
+        && !assemblyHashes.has(assemblyHash),
+      "PROMPT_AUDIT_ASSEMBLIES_NOT_DISTINCT", {
+        companionRef: request.companionRef,
+        collidesWith: assemblyHashes.get(assemblyHash),
+      });
+      assemblyHashes.set(assemblyHash, request.companionRef);
+    }
+    // Reply-level prompt-layer provenance (Kerrigan vs Zagara, from (G)).
+    const wbReplies = wbAuditSend.replies || [];
+    const layerProofs = wbReplies.map((reply) => reply.promptLayers);
+    ensure(layerProofs.length === 2
+      && layerProofs.every((layers) => (
+        layers?.systemPersona?.personaProfile?.present === true
+        && typeof layers.systemPersona.personaProfile.profileHash === "string"
+        && layers.systemPersona.personaProfile.profileHash.length > 0
+        && layers.systemPersona.personaProfile.styleExamples >= 1
+        && layers.systemPersona.personaProfile.doctrineHints >= 1
+        && layers.packageAuthorsNote?.noteHash
+        && layers.layerSeparation.includes("never conflated")
+      )),
+    "PROMPT_LAYER_PROVENANCE_MISSING", { layerProofs });
+    ensure(layerProofs[0].systemPersona.personaProfile.profileHash
+      !== layerProofs[1].systemPersona.personaProfile.profileHash
+      && layerProofs[0].packageAuthorsNote.noteHash
+        !== layerProofs[1].packageAuthorsNote.noteHash,
+    "PROMPT_LAYER_PROVENANCE_NOT_DISTINCT", {
+      kerrigan: layerProofs[0].systemPersona.personaProfile.profileHash,
+      zagara: layerProofs[1].systemPersona.personaProfile.profileHash,
+    });
+    checks.push({
+      id: "headless_prompt_differentiation_audit",
+      passed: true,
+      sixCompanionRequests: sixRequests.length,
+      systemPromptsPairwiseDistinct: true,
+      assembliesPairwiseDistinct: true,
+      personaProfileHashesDistinct: true,
+      packageAuthorNoteLayerPresent: true,
+      realProviderCalls: 0,
+    });
+
+    // ── 266f.11 (J): genuine memory-engine phase on the live conversation.
+    // Conversation-derived writes only (never seeded invented memories): a
+    // typed relationship event, then a durable long-term candidate whose
+    // promotion fails closed without explicit user approval and succeeds with
+    // it; the NEXT assembly carries the durable_memory layer for BOTH
+    // companions with the static-canon/session-memory split provenance. ──
+    okH(await postH(
+      `conversations/${encodeURIComponent(conversationId)}/memory/relationship`,
+      {
+        eventType: "personal_shared",
+        deltas: [{ axis: "trust", delta: 1 }],
+        note: "指挥官分享了复盘偏好（验收写入）。",
+      },
+    ), "GENUINE_MEMORY_RELATIONSHIP_FAILED");
+    const durableCandidateContent = "指挥官偏好：先侦察、后接战，防线优先于冒进（由本会话复盘得出）。";
+    const proposed = okH(await postH(
+      `conversations/${encodeURIComponent(conversationId)}/memory/durable`,
+      { content: durableCandidateContent, reason: "conversation-derived commander preference" },
+    ), "GENUINE_MEMORY_DURABLE_PROPOSE_FAILED");
+    ensure(proposed.proposed?.status === "candidate"
+      && typeof proposed.proposed?.candidateId === "string",
+    "GENUINE_MEMORY_DURABLE_NOT_CANDIDATE", { proposed: proposed.proposed });
+    const durableCandidateId = proposed.proposed.candidateId;
+    rejectedH(
+      await postH(
+        `conversations/${encodeURIComponent(conversationId)}/memory/durable/approve`,
+        { candidateId: durableCandidateId, userApproved: false }),
+      "COMPANION_DURABLE_PROMOTION_REQUIRES_USER_APPROVAL",
+      "DURABLE_APPROVAL_WITHOUT_USER_CONSENT_NOT_REJECTED",
+    );
+    // Candidates never enter context: a turn sent now must NOT carry the
+    // durable_memory layer yet.
+    const preApprovalTurn = okH(await postH(
+      `conversations/${encodeURIComponent(conversationId)}/turns`,
+      { content: "简短确认当前态势。" },
+    ), "GENUINE_MEMORY_PRE_APPROVAL_TURN_FAILED");
+    for (const reply of preApprovalTurn.replies || []) {
+      ensure(!(reply.contextAssembly?.layersIncluded || []).includes("durable_memory"),
+        "DURABLE_CANDIDATE_LEAKED_INTO_CONTEXT", { layers: reply.contextAssembly?.layersIncluded });
+    }
+    const approved = okH(await postH(
+      `conversations/${encodeURIComponent(conversationId)}/memory/durable/approve`,
+      {
+        candidateId: durableCandidateId,
+        userApproved: true,
+        note: "user approved in acceptance flow",
+      },
+    ), "GENUINE_MEMORY_DURABLE_APPROVE_FAILED");
+    ensure(approved.approved?.status === "approved_durable",
+      "GENUINE_MEMORY_DURABLE_NOT_APPROVED", { approved: approved.approved });
+    const memoryWithDurable = okH(await getH(
+      `conversations/${encodeURIComponent(conversationId)}/memory`),
+    "GENUINE_MEMORY_READ_FAILED");
+    const durableProjection = memoryWithDurable.layers?.durableMemory;
+    ensure(durableProjection
+      && durableProjection.approvedCount === 1
+      && durableProjection.candidateCount === 0
+      && durableProjection.records?.[0]?.content === durableCandidateContent
+      && (durableProjection.records?.[0]?.provenance?.sourceRefs || [])
+        .some((ref) => String(ref).startsWith(`conversation://${conversationId}/`)),
+    "GENUINE_MEMORY_DURABLE_PROJECTION_WRONG", { durableProjection });
+    const postApprovalTurn = okH(await postH(
+      `conversations/${encodeURIComponent(conversationId)}/turns`,
+      { content: "再次简短确认当前态势。" },
+    ), "GENUINE_MEMORY_POST_APPROVAL_TURN_FAILED");
+    ensure(postApprovalTurn.replies?.length === 2, "GENUINE_MEMORY_REPLY_COUNT_WRONG");
+    for (const [index, reply] of postApprovalTurn.replies.entries()) {
+      ensure((reply.contextAssembly?.layersIncluded || []).includes("durable_memory"),
+        "DURABLE_LAYER_NOT_IN_NEXT_ASSEMBLY", {
+          index,
+          layers: reply.contextAssembly?.layersIncluded,
+        });
+      ensure((reply.promptLayers?.sessionLongTermMemory?.layers || []).includes("durable_memory"),
+        "DURABLE_LAYER_NOT_IN_PROMPT_PROVENANCE", {
+          index,
+          layers: reply.promptLayers?.sessionLongTermMemory?.layers,
+        });
+    }
+    checks.push({
+      id: "headless_genuine_memory_engine_durable_layer",
+      passed: true,
+      candidateId: durableCandidateId,
+      approvalWithoutConsentRejected: true,
+      candidateNeverEnteredContext: true,
+      approvedLayerInBothAssemblies: true,
+      provenance: "conversation-derived, authenticated-seat provenance; explicit user approval; never seeded",
+      realProviderCalls: 0,
+    });
+
+    // ── 266f.10/11 browser: SIX-companion group chat + long transcript ───
+    // Close the two-companion conversation (its headless phases are done),
+    // then open the full six-companion roster through the real UI and run
+    // three turns (21 messages) so the transcript exceeds its bounded
+    // last-16 window and must scroll.
+    okH(await postH(`conversations/${encodeURIComponent(conversationId)}/close`, {}),
+      "SIX_COMPANION_PREVIOUS_CLOSE_FAILED");
+    const hostRecovery4 = await issueRecovery(hostSeatToken);
+    secrets.push(hostRecovery4);
+    const desktopSix = await browser.newContext({
+      viewport: { width: 1500, height: 1050 },
+      locale: "en-US",
+      reducedMotion: "reduce",
+    });
+    await seedPreferences(desktopSix);
+    const pageSix = await desktopSix.newPage();
+    watch(pageSix, "desktopSix");
+    diagnosticPage = pageSix;
+    await pageSix.goto(
+      `${origin}/room/${encodeURIComponent(ROOM_ID)}#recovery=${encodeURIComponent(hostRecovery4)}`,
+      { waitUntil: "domcontentloaded", timeout: 120_000 },
+    );
+    await waitBody(pageSix, "Authoritative room connected", 120_000);
+    await waitBody(pageSix, "TACTICAL COMMS", 120_000);
+    await openChatSection(pageSix);
+    const chatSix = chatSection(pageSix);
+    await chatSix.getByTestId("companion-chat-selector").waitFor({ timeout: 60_000 });
+    for (const slug of ["zagara", "jim_raynor", "nova_terra", "artanis", "zeratul"]) {
+      await chatSix.getByTestId(`companion-chat-select-${slug}`).click();
+    }
+    await chatSix.getByTestId("companion-chat-open").click();
+    await chatSix.getByTestId("companion-chat-conversation-meta").waitFor({ timeout: 60_000 });
+    const metaSix = await conversationMeta(pageSix);
+    const sixConversationId = metaSix.match(/conversation:\s*(\S+)/u)?.[1];
+    ensure(sixConversationId && sixConversationId !== conversationId,
+      "SIX_COMPANION_CONVERSATION_NOT_OPENED", { metaSix });
+    // Header: all seven participants (human + six companions) with avatar,
+    // name, era/state — the next-speaker ▶ marker must not hide anyone.
+    const sixSlugs = ["player", "sarah_kerrigan", "zagara", "jim_raynor", "nova_terra", "artanis", "zeratul"];
+    for (const slug of sixSlugs) {
+      const avatar = chatSix.getByTestId(`companion-chat-order-avatar-${slug}`);
+      await avatar.waitFor({ timeout: 30_000 });
+      ensure(await avatar.isVisible(), "SIX_HEADER_AVATAR_HIDDEN", { slug });
+    }
+    const sixOrderText = await chatSix.getByTestId("companion-chat-speaker-order").innerText();
+    for (const label of ["Sarah Kerrigan", "Zagara", "Jim Raynor", "Nova", "Artanis", "Zeratul"]) {
+      ensure(sixOrderText.includes(label), "SIX_HEADER_PARTICIPANT_MISSING", { label, sixOrderText });
+    }
+    ensure((sixOrderText.match(/era \S+/gu) || []).length === 6
+      && sixOrderText.includes("you · seat")
+      && sixOrderText.includes("▶"),
+    "SIX_HEADER_ERA_OR_STATE_BINDING_WRONG", { sixOrderText });
+    const sixOverflowOpen = await documentOverflow(pageSix);
+    ensure(sixOverflowOpen.documentWidth <= sixOverflowOpen.viewportWidth + 1,
+      "SIX_COMPANION_HEADER_HORIZONTAL_OVERFLOW", sixOverflowOpen);
+    await capture(pageSix, "13-desktop-six-companion-group-chat.png", artifacts);
+    claim({
+      claimId: "six_companion_group_chat_header_all_avatars",
+      screenshot: "13-desktop-six-companion-group-chat.png",
+      viewport: "1500x1050",
+      precondition: "six-companion roster selected through the real UI (Kerrigan default + five toggles)",
+      interaction: "open the group chat",
+      expected: "header binds all seven participants (avatar/name/era/state); next-speaker ▶ never hides others; zero horizontal overflow",
+      observed: { sixConversationId, sixOrderText },
+      contract: "Slice 266f.10 participant header binding at the maximum roster",
+    });
+    checks.push({ id: "desktop_six_companion_group_chat_avatar_header", passed: true });
+
+    // Three turns → 21 messages: the transcript renders the bounded last-16
+    // window and must scroll (overflow rule), with speaker binding intact.
+    for (let turn = 0; turn < 3; turn += 1) {
+      await chatSix.getByTestId("companion-chat-input")
+        .fill(`六位同伴，第 ${turn + 1} 轮协同：各自用一句中文确认阵型。`);
+      await chatSix.getByTestId("companion-chat-send").click();
+      await chatSix.getByTestId(`companion-chat-message-${(turn + 1) * 7}`)
+        .waitFor({ timeout: 180_000 });
+    }
+    ensure(await messageCount(pageSix) === 16, "LONG_TRANSCRIPT_WINDOW_WRONG", {
+      count: await messageCount(pageSix),
+    });
+    // The window starts at turnSequence 6; every rendered row still binds its
+    // speaker avatar.
+    await chatSix.getByTestId("companion-chat-message-6").waitFor({ timeout: 30_000 });
+    for (const sequence of [6, 13, 21]) {
+      await chatSix.getByTestId(`companion-chat-message-avatar-${sequence}`)
+        .waitFor({ timeout: 30_000 });
+    }
+    const transcriptOverflow = await chatSix.getByTestId("companion-chat-transcript")
+      .evaluate((el) => getComputedStyle(el).overflowY);
+    ensure(["scroll", "auto"].includes(transcriptOverflow),
+      "TRANSCRIPT_SCROLL_RULE_MISSING", { transcriptOverflow });
+    await chatSix.getByTestId("companion-chat-transcript")
+      .evaluate((el) => { el.scrollTop = el.scrollHeight; });
+    const sixOverflowLong = await documentOverflow(pageSix);
+    ensure(sixOverflowLong.documentWidth <= sixOverflowLong.viewportWidth + 1,
+      "LONG_TRANSCRIPT_HORIZONTAL_OVERFLOW", sixOverflowLong);
+    await capture(pageSix, "14-desktop-long-transcript-scroll.png", artifacts);
+    claim({
+      claimId: "long_transcript_bounded_window_scrolls_speaker_bound",
+      screenshot: "14-desktop-long-transcript-scroll.png",
+      viewport: "1500x1050",
+      precondition: "six-companion conversation with 21 real deterministic messages",
+      interaction: "scroll the transcript to its tail",
+      expected: "bounded last-16 window (turns 6–21) inside a real scroll rule; every row binds speaker avatar/name/era; zero horizontal overflow",
+      observed: { renderedMessages: 16, transcriptOverflow },
+      contract: "Slice 266f.10 transcript scroll repair (maxHeight + overflow scroll; no spill onto cards below)",
+    });
+    checks.push({ id: "desktop_long_transcript_bounded_scroll", passed: true });
+    await desktopSix.close();
+
+    // ── 266f.10/11 browser: mid width keeps the in-dock layout ──────────
+    const hostRecovery5 = await issueRecovery(hostSeatToken);
+    secrets.push(hostRecovery5);
+    const midContext = await browser.newContext({
+      viewport: { width: 900, height: 900 },
+      locale: "en-US",
+      reducedMotion: "reduce",
+    });
+    await seedPreferences(midContext);
+    const pageMid = await midContext.newPage();
+    watch(pageMid, "midWidth");
+    diagnosticPage = pageMid;
+    await pageMid.goto(
+      `${origin}/room/${encodeURIComponent(ROOM_ID)}#recovery=${encodeURIComponent(hostRecovery5)}`,
+      { waitUntil: "domcontentloaded", timeout: 120_000 },
+    );
+    await waitBody(pageMid, "Authoritative room connected", 120_000);
+    await waitBody(pageMid, "TACTICAL COMMS", 120_000);
+    await openChatSection(pageMid);
+    // 900px sits between the mobile-sheet and wide-focus breakpoints: the
+    // expanded body must stay in-dock (no fixed sheet surfaces).
+    ensure(await pageMid.getByTestId("companion-focus-sheet").count() === 0
+      && await pageMid.getByTestId("companion-mobile-sheet").count() === 0,
+    "MID_WIDTH_UNEXPECTED_FIXED_SHEET");
+    const chatMid = chatSection(pageMid);
+    await chatMid.getByTestId("companion-chat-conversation-meta").waitFor({ timeout: 60_000 });
+    const metaMid = await conversationMeta(pageMid);
+    ensure(metaMid.includes(sixConversationId), "MID_WIDTH_DID_NOT_RESUME", { metaMid });
+    await chatMid.getByTestId("companion-chat-order-avatar-zeratul").waitFor({ timeout: 30_000 });
+    const midOverflow = await documentOverflow(pageMid);
+    ensure(midOverflow.documentWidth <= midOverflow.viewportWidth + 1,
+      "MID_WIDTH_HORIZONTAL_OVERFLOW", midOverflow);
+    await capture(pageMid, "15-midwidth-indock-panel.png", artifacts);
+    claim({
+      claimId: "mid_width_indock_panel_no_clipping",
+      screenshot: "15-midwidth-indock-panel.png",
+      viewport: "900x900",
+      precondition: "expanded comms dock at the mid-width breakpoint with the six-companion conversation active",
+      interaction: "expand the launcher, open the chat section",
+      expected: "in-dock layout (no fixed sheet); avatar-bound header renders; zero horizontal overflow",
+      observed: { meta: metaMid, overflow: midOverflow },
+      contract: "Slice 266f.1/266f.10 responsive in-dock mid-width layout",
+    });
+    checks.push({ id: "mid_width_indock_panel_layout", passed: true });
+    await midContext.close();
 
     // ── Durable encrypted-SQLite process-restart resume (trimmed 266d
     // discipline): two compositions over one file; transcript, persona and
@@ -2947,6 +3452,27 @@ async function main() {
     epoch3Execution = null;
   }
 
+  // 266f.11: the epoch-4 persona-differentiation live record is read
+  // dynamically exactly like epoch 3.
+  const epoch4ReportPath = path.join(
+    ROOT, "build/ticket-26-slice-266f-live-byok-companion-v1/live-report.persona.json");
+  let epoch4Execution = null;
+  try {
+    const parsed = JSON.parse(await readFile(epoch4ReportPath, "utf8"));
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      epoch4Execution = {
+        reportPath: path.relative(ROOT, epoch4ReportPath),
+        status: typeof parsed.status === "string" ? parsed.status : null,
+        attemptEpoch: parsed.attemptEpoch ?? null,
+        physicalProviderCalls: parsed.boundaries?.realProviderCalls
+          ?? parsed.physicalProviderCalls ?? null,
+        reportHash: typeof parsed.reportHash === "string" ? parsed.reportHash : null,
+      };
+    }
+  } catch {
+    epoch4Execution = null;
+  }
+
   const reportCore = {
     schemaVersion: "starcraft_tmg_ticket_26_slice_266f_browser_report_v1",    generatedAt: GENERATED_AT,
     ticket: 26,
@@ -2986,6 +3512,24 @@ async function main() {
           "detach at the end with the sensitiveBytesZeroed shutdown acknowledgement, prove no residual Worker process and zero credential persistence; record exact per-call usage and cost",
         ],
       },
+      epoch4PersonaDifferentiation: {
+        userAuthorized: "one bounded real Chinese Kerrigan+Zagara TWO-turn BYOK persona-differentiation acceptance, hard maximum FOUR physical Provider calls (persona-call-1..4.lock.json, separately locked, zero automatic retry), checkpoint + full companion server/session restart between turns; proves distinct roleplay (never byte-identical), formal worldbook retrieval for BOTH companions, exact prompt-layer provenance, and shared memory continuity including the durable long-term layer",
+        executedInThisGate: false,
+        realProviderCalls: 0,
+        execution: epoch4Execution || "reserved — not yet executed at gate time",
+        offlineProofsInThisGate: [
+          "headless_six_companion_formal_content_audit",
+          "headless_prompt_differentiation_audit",
+          "headless_genuine_memory_engine_durable_layer",
+        ],
+        reservedProcedure: [
+          "scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs --authorize-live-byok-companion-persona-differentiation refuses unless the epoch-1/epoch-2/epoch-3 dispatch locks AND the PASSED epoch-2 AND epoch-3 reports prove the lineage; any prior epoch-4 lock or passing report refuses a rerun",
+          "Kerrigan+Zagara two-turn real Chinese BYOK through the real product path; per-reply promptLayers provenance must show personaProfile present with pairwise-distinct profileHash, a distinct packageAuthorsNote noteHash and the static-canon/session-memory layer separation",
+          "formal worldbook retrieval for BOTH companions: kerrigan.wb.* x3 and zagara.* x3 character-tier entries, companion-scoped",
+          "turn-1 replies AND turn-2 replies character-distinct (never byte-identical); chat-tier worldbook entry + summary/episodic/relationship writes + a durable long-term candidate approved with explicit user consent; checkpoint + full companion server/session restart (Room authority preserved); turn-2 recall grounds in the restored layers including durable_memory",
+          "record exact per-call usage/cost, hashes, Room mutation zero, detach and zero credential persistence; stop immediately on 401/402/403, missing attachment or ambiguous dispatch; never silently retry",
+        ],
+      },
       reason: "this deterministic gate itself never touches a real credential or paid Provider; the authorized live steps are executed separately by scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs under the project-d-live-acceptance profile (epoch 1 executed once and truncated; epoch 2 is the single authorized repair call with the versioned output-budget contract proven in this gate's headless_output_budget_truncation_contract phase)",
       reservedProcedure: [
         "scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs --authorize-live-byok-companion-second-call reads the credential ONLY through the existing Keychain → isolated-Worker secure path (packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs + the Ticket 16 Slice 162 egress Worker pattern); the raw key never enters the agent prompt, repository, command line, stdout/stderr, screenshots, report, or logs",
@@ -3013,7 +3557,9 @@ async function main() {
         : "playwright-managed",
       viewports: [
         { name: "desktop", width: 1500, height: 1050 },
+        { name: "desktop-six-companion", width: 1500, height: 1050 },
         { name: "narrow-touch", width: 390, height: 844, hasTouch: true },
+        { name: "mid-width-in-dock", width: 900, height: 900 },
       ],
       reducedMotion: "reduce",
       locale: "en-US",

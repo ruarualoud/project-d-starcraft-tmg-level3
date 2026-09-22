@@ -735,6 +735,25 @@ export function createStarcraftTmgCompanionProductModuleV1(options = {}) {
               note: body.note,
             }));
           }
+          // Slice 266f.11: durable long-term memory — propose a
+          // conversation-derived candidate; promote only with the explicit
+          // user approval body (fail-closed otherwise).
+          if (method === "POST" && segments[3] === "durable" && segments.length === 4) {
+            return envelope(await service.proposeConversationDurableMemory({
+              ...scoped,
+              ...(body.candidateId !== undefined ? { candidateId: body.candidateId } : {}),
+              content: body.content,
+              reason: body.reason,
+            }));
+          }
+          if (method === "POST" && segments[3] === "durable" && segments[4] === "approve") {
+            return envelope(await service.approveConversationDurableMemory({
+              ...scoped,
+              candidateId: body.candidateId,
+              userApproved: body.userApproved,
+              note: body.note,
+            }));
+          }
           return envelope(rejection("COMPANION_PRODUCT_ROUTE_UNKNOWN"), 404);
         }
         if (segments[2] === "branches") {

@@ -939,15 +939,32 @@ export function createCompanionMemoryEngine(options = {}) {
       });
     }
 
-    // 2. durable memory: approved entries only; candidates never enter context
-    const durableRecords = await readAllRecords("durable_memory", sc.scopeKey);
-    const approvedDurable = durableRecords.filter((record) => record.status === "approved_durable")
-      .sort((left, right) => left.candidateId.localeCompare(right.candidateId));
-    const excludedDurableCandidates = durableRecords.filter((record) => record.status === "candidate").length;
-    for (const record of approvedDurable) {
+    // 2. durable memory: approved entries only; candidates never enter
+    //    context. Slice 266f.11: like rolling summary / episodic facts /
+    //    relationship state below, the conversation-shared scopes passed as
+    //    additionalScopes contribute their approved durable records too (the
+    //    session service writes conversation-level durable memory to the
+    //    group scope), deduplicated by candidateId, primary scope first.
+    const seenDurableIds = new Set();
+    const durableMerged = [];
+    let excludedDurableCandidates = 0;
+    for (const [scopeIndex, layerScope] of [sc, ...additionalScopes].entries()) {
+      const scopeRecords = await readAllRecords("durable_memory", layerScope.scopeKey);
+      excludedDurableCandidates += scopeRecords.filter((record) => record.status === "candidate").length;
+      for (const record of scopeRecords
+        .filter((entry) => entry.status === "approved_durable")
+        .sort((left, right) => left.candidateId.localeCompare(right.candidateId))) {
+        if (seenDurableIds.has(record.candidateId)) continue;
+        seenDurableIds.add(record.candidateId);
+        durableMerged.push({ scopeIndex, scopeKey: layerScope.scopeKey, record });
+      }
+    }
+    for (const { scopeIndex, scopeKey, record } of durableMerged) {
       includeWhole({
         layer: "durable_memory",
-        itemId: `durable:${record.candidateId}`,
+        itemId: scopeIndex === 0
+          ? `durable:${record.candidateId}`
+          : `durable:${record.candidateId}@${scopeKey}`,
         content: record.content,
         provenance: record.provenance ? clone(record.provenance) : null,
       });

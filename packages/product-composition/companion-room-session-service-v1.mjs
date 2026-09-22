@@ -296,7 +296,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
   for (const method of ["createSession", "getSessionState", "peekNextTurn", "submitTurn", "filterSessionState", "checkpointSession", "resumeSession", "closeSession", "openBranch", "submitBranchEntry", "acceptBranchEntry", "discardBranch", "listBranches", "exportSession", "importSession", "authorizeSessionRead"]) {
     assertMethod(backend?.sessionRuntime, method, "companionBackend.sessionRuntime");
   }
-  for (const method of ["assembleContext", "readTranscript", "replaceTranscript", "readRollingSummary", "writeRollingSummary", "listRollingSummaryVersions", "rollbackRollingSummary", "addEpisodicFact", "listEpisodicFacts", "initializeRelationshipState", "getRelationshipState", "applyRelationshipEvent", "listWorldbookEntries", "registerWorldbookEntry"]) assertMethod(backend?.memoryEngine, method, "companionBackend.memoryEngine");
+  for (const method of ["assembleContext", "readTranscript", "replaceTranscript", "readRollingSummary", "writeRollingSummary", "listRollingSummaryVersions", "rollbackRollingSummary", "addEpisodicFact", "listEpisodicFacts", "initializeRelationshipState", "getRelationshipState", "applyRelationshipEvent", "listWorldbookEntries", "registerWorldbookEntry", "proposeDurableMemoryCandidate", "approveDurableMemoryCandidate", "listDurableMemory"]) assertMethod(backend?.memoryEngine, method, "companionBackend.memoryEngine");
   for (const method of ["complete", "stats"]) assertMethod(backend?.providerGateway, method, "companionBackend.providerGateway");
   for (const method of ["record", "verify", "exportAuditLog", "buildReplayCandidate"]) assertMethod(backend?.auditLog, method, "companionBackend.auditLog");
 
@@ -1314,6 +1314,10 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       const relationship = await backend.memoryEngine.getRelationshipState(groupScope);
       const chatEntries = await backend.memoryEngine.listWorldbookEntries(
         chatWorldbookScope(loaded.conversationId));
+      // Slice 266f.11: the durable long-term layer is projected honestly —
+      // candidates and approved records are listed separately; nothing is
+      // seeded and promotion is never automatic.
+      const durableRecords = await backend.memoryEngine.listDurableMemory(groupScope);
       return deepFreeze({
         ok: true,
         schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.memory`,
@@ -1335,6 +1339,15 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
           relationshipState: clone(relationship),
           relationshipHonesty: "unknown_is_first_class_never_zero_filled; typed observed events only",
           chatWorldbookEntries: chatEntries.map((entry) => worldbookEntryProjection(entry)),
+          durableMemory: {
+            records: clone(durableRecords),
+            approvedCount: durableRecords.filter((record) => record.status === "approved_durable").length,
+            candidateCount: durableRecords.filter((record) => record.status === "candidate").length,
+            honesty: durableRecords.length
+              ? "persisted"
+              : "no_durable_records_yet_never_fabricated",
+            promotionDiscipline: "candidate → explicit user approval ({ approvedBy: \"user\", userApproved: true }) only; never automatic; never seeded; approved records enter every later assembly as the durable_memory layer",
+          },
         },
         contextBudgetPolicy: "companion_context_budget_policy_v1 (omissions and unknowns disclosed)",
         hiddenChainOfThought: "not_collected",
@@ -1456,6 +1469,78 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       });
     } catch (error) {
       return rejection(error?.code || "COMPANION_RELATIONSHIP_WRITE_FAILED");
+    }
+  }
+
+  // ── Slice 266f.11: durable long-term memory (the engine's only promotion
+  // path). A candidate is conversation-derived user content with provenance —
+  // never a seeded/invented memory — and only an explicit user approval turns
+  // it into durable memory that enters every later context assembly. ──
+
+  async function proposeConversationDurableMemory(input = {}) {
+    try {
+      const loaded = await loadBound(input);
+      if (loaded.rejection) return loaded.rejection;
+      const content = requiredString(input.content, "content", MAX_USER_MESSAGE_CHARS);
+      const proposed = await serialize(loaded.conversationId, () =>
+        backend.memoryEngine.proposeDurableMemoryCandidate(loaded.state.memoryScope, {
+          ...(input.candidateId !== undefined
+            ? { candidateId: requiredString(input.candidateId, "candidateId", 128) }
+            : {}),
+          content,
+          reason: String(input.reason || "user-proposed durable long-term memory from this conversation"),
+          provenance: {
+            sourceKind: "platform_original",
+            author: "authenticated_seat_user",
+            license: "user_owned_content",
+            sourceRefs: [`conversation://${loaded.conversationId}/durable-candidate`],
+            notes: "User-proposed durable long-term memory candidate derived from this conversation; enters context ONLY after explicit user approval.",
+          },
+        }));
+      return deepFreeze({
+        ok: true,
+        schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.memory-write`,
+        conversationId: loaded.conversationId,
+        proposed: clone(proposed),
+        status: "candidate",
+        entersContext: "only_after_explicit_user_approval",
+        trainingTruth: false,
+      });
+    } catch (error) {
+      return rejection(error?.code || "COMPANION_DURABLE_PROPOSE_FAILED");
+    }
+  }
+
+  async function approveConversationDurableMemory(input = {}) {
+    try {
+      const loaded = await loadBound(input);
+      if (loaded.rejection) return loaded.rejection;
+      const candidateId = requiredString(input.candidateId, "candidateId", 128);
+      // The engine is the fail-closed authority; the service additionally
+      // refuses early so a missing explicit approval never reaches the engine
+      // as anything but a typed rejection. No approval is ever synthesized.
+      if (input.userApproved !== true) {
+        return rejection("COMPANION_DURABLE_PROMOTION_REQUIRES_USER_APPROVAL", {
+          candidateId,
+          required: { approvedBy: "user", userApproved: true },
+        });
+      }
+      const approved = await serialize(loaded.conversationId, () =>
+        backend.memoryEngine.approveDurableMemoryCandidate(loaded.state.memoryScope, candidateId, {
+          approvedBy: "user",
+          userApproved: true,
+          note: String(input.note || ""),
+        }));
+      return deepFreeze({
+        ok: true,
+        schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.memory-write`,
+        conversationId: loaded.conversationId,
+        approved: clone(approved),
+        promotion: "explicit_user_approval_only_never_automatic",
+        trainingTruth: false,
+      });
+    } catch (error) {
+      return rejection(error?.code || "COMPANION_DURABLE_APPROVE_FAILED");
     }
   }
 
@@ -2499,6 +2584,8 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         "memory_summary_rollback",
         "memory_episodic_add",
         "memory_relationship_event",
+        "memory_durable_propose",
+        "memory_durable_approve",
         "branches_list",
         "branch_open",
         "branch_reroll",
@@ -2525,7 +2612,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       conversationScope: "room_seat_match_binding (credential revalidation per operation; a seat re-authenticating with a fresh credential resumes its own conversation; the creating credential principal scope hash stays recorded for audit)",
       userPersona: "versioned (append-only, 32-version bound), bound to the authenticated seat inside the exact match binding; names the human participant and derives the persona-tier worldbook entry deterministically",
       worldbook: "deterministic triggers (always/keyword/regex) across chat/persona/character/global tiers with bounded recursion (product depth 2, engine maximum 4), insertion priority and per-entry provenance",
-      layeredMemory: "transcript (append-only) / rolling summary (versioned, editable, append-only rollback) / episodic facts / typed observed relationship state; context budgeting with disclosed omissions; no hidden chain-of-thought",
+      layeredMemory: "transcript (append-only) / rolling summary (versioned, editable, append-only rollback) / episodic facts / typed observed relationship state / durable long-term memory (candidate → explicit user approval only, never automatic, never seeded); context budgeting with disclosed omissions; no hidden chain-of-thought",
       branches: "swipe/reroll/edit-as-branch with lineage; accepting an entry appends a NEW turn and never overwrites accepted history",
       authorsNote: "depth/frequency system-message injection, deterministic from persisted state, versioned (32-version bound)",
       importExportRestore: "schema-validated, integrity-hashed exports of conversations/packages/chat worldbooks; restore is same-seat only and never overwrites; no credentials in either direction",
@@ -2564,6 +2651,8 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     rollbackConversationSummary,
     addConversationEpisodicFact,
     applyConversationRelationshipEvent,
+    proposeConversationDurableMemory,
+    approveConversationDurableMemory,
     listConversationBranches,
     openConversationBranch,
     rerollConversationBranch,
