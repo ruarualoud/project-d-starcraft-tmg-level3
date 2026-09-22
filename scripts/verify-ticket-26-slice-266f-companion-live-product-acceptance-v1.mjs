@@ -64,8 +64,15 @@
  *   7. records the live BYOK acceptance honestly: epoch 1 executed once
  *      (HTTP 200, truncated at the 64-unit output budget, zero retry, lock
  *      claimed); epoch 2 — the single user-authorized repair call with the
- *      versioned output-budget contract — remains an explicit reserved
- *      procedure (this gate never touches a real credential or Provider);
+ *      versioned output-budget contract — executed once (rendered the actual
+ *      Chinese reply); epoch 3 — the manifest's two-companion layered-memory
+ *      continuity acceptance (hard maximum four physical calls, each
+ *      separately locked, durable-SQLite checkpoint + full companion
+ *      server/session restart between two user turns) — is proven here as a
+ *      deterministic offline SEAM (the REAL runner adapter and stack against
+ *      a fake Worker port) and recorded as executed or reserved by reading
+ *      the runner's epoch-3 report (this gate never touches a real
+ *      credential or Provider);
  *   8. writes a claim-to-pixel index, sha256-hashed artifacts and a machine
  *      report under build/ticket-26-slice-266f-companion-live-product-acceptance-v1/,
  *      then scans the report AND every artifact for every secret handled in
@@ -2565,6 +2572,267 @@ async function main() {
       realProviderCalls: 0,
     });
 
+    // ── 266f epoch-3 seam: two-companion layered-memory continuity across a
+    // FULL companion server/session restart — offline, deterministic fake
+    // Worker port (0 real Provider calls, no credential). Proves the exact
+    // seam the authorized live run uses: the REAL runner adapter with the
+    // four-call denominator and per-call dispatch locks, the REAL product
+    // module over the REAL durable SQLite adapter, checkpoint, full companion
+    // stack restart with the Room authority preserved (a FRESH room is
+    // correctly refused as a stale match binding), byte-identical transcript
+    // and memory-layer restore, the restored layers and the chat-tier
+    // codeword entry entering BOTH companions' turn-2 assemblies, and the
+    // fifth dispatch refused with zero additional Worker calls.
+    const { composeLiveCompanionStack } = await importWorktree(
+      "scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs");
+    const seamDir = path.join(BUILD_ROOT, "continuity-seam");
+    await mkdir(seamDir, { recursive: true });
+    const seamFile = path.join(seamDir, "companion-product.sqlite");
+    const seamKey = createHash("sha256")
+      .update("ticket26-266f-continuity-seam-verifier-key").digest("base64");
+    const seamPersistence = () => createStarcraftTmgCompanionProductPersistenceV1({
+      kind: "sqlite",
+      filename: seamFile,
+      encryption: { key: seamKey },
+    });
+    const seamCodeword = "霜刃-9";
+    const seamReplies = [
+      `已记录行动代号「${seamCodeword}」：黎明向北侧山脊隘口部署，Medic随行。——Kerrigan`,
+      `虫群确认「${seamCodeword}」，北侧山脊隘口部署将封锁敌翼。——Zagara`,
+      `「${seamCodeword}」要点：黎明两个Marine小队进驻北侧山脊隘口，Medic护航。——Kerrigan`,
+      `我记得「${seamCodeword}」：北侧山脊隘口部署加Medic随行；虫群守住侧翼。——Zagara`,
+    ];
+    const seamLockIndices = [];
+    let seamWorkerCalls = 0;
+    const seamAdapter = createLiveCompanionProviderAdapter({
+      workerPort: {
+        complete: async () => {
+          seamWorkerCalls += 1;
+          return {
+            output: {
+              channels: { companion_reply: { text: seamReplies[seamWorkerCalls - 1] } },
+            },
+            usageReceipt: {
+              receiptHash: createHash("sha256")
+                .update(`266f-continuity-seam-${seamWorkerCalls}`).digest("hex"),
+              status: 200,
+              providerId: "fixture",
+              requestedModel: "deepseek-v4-flash",
+              reportedModel: "deepseek-v4-flash",
+              physicalAttempts: 1,
+              automaticRetries: 0,
+              startedAt: GENERATED_AT,
+              finishedAt: GENERATED_AT,
+              usage: {
+                inputUnits: 1_000 + seamWorkerCalls,
+                outputUnits: 40,
+                totalUnits: 1_040 + seamWorkerCalls,
+                inputCacheHitUnits: 0,
+                inputCacheMissUnits: 1_000 + seamWorkerCalls,
+              },
+            },
+          };
+        },
+      },
+      getAttachedWorkerRef: () => "worker-gate-fixture",
+      maxDispatches: 4,
+      claimDispatch: async (dispatchIndex) => { seamLockIndices.push(dispatchIndex); },
+      containsCredentialMaterial: () => false,
+      priceUsage: () => null,
+    });
+    const seamRoomId = "ticket26-slice266f-live-byok-companion";
+    const seamPackages = [
+      "starcraft-tmg.companion.sarah_kerrigan",
+      "starcraft-tmg.companion.zagara",
+    ];
+    const seamCall = async (stack, sub, body) => {
+      const method = body ? "POST" : "GET";
+      const response = await stack.companionFetch(
+        method === "GET" && !sub.includes("?")
+          ? `${sub}?roomId=${encodeURIComponent(seamRoomId)}`
+          : sub,
+        {
+          method,
+          seatToken: stack.hostSeatToken,
+          ...(body ? { body: { roomId: seamRoomId, ...body } } : {}),
+        },
+      );
+      ensure(response.envelope?.result?.ok === true, `CONTINUITY_SEAM_CALL_FAILED:${sub}`, {
+        result: response.envelope?.result,
+      });
+      return response.envelope.result;
+    };
+    const seamPersistenceA = seamPersistence();
+    const seamStackA = await composeLiveCompanionStack({
+      providerAdapter: seamAdapter,
+      persistence: seamPersistenceA,
+      now: () => GENERATED_AT,
+    });
+    const seamOpened = await seamCall(seamStackA, "conversations", { packageIds: [...seamPackages] });
+    ensure(seamOpened.companions?.length === 2 && seamOpened.speakerOrder?.length === 3,
+      "CONTINUITY_SEAM_OPEN_WRONG");
+    const seamConv = (sub) => `conversations/${encodeURIComponent(seamOpened.conversationId)}${sub}`;
+    const seamTurn1 = await seamCall(seamStackA, seamConv("/turns"), {
+      content: `两位同伴，请记住并确认这个公开计划：行动代号「${seamCodeword}」——黎明时分将两个Marine小队部署到北侧山脊隘口，Medic随行护航。`,
+      mentions: [seamPackages[0]],
+    });
+    ensure(seamTurn1.replies?.length === 2
+      && seamTurn1.replies[0].participantId === seamOpened.companions[0].participantId
+      && seamTurn1.replies[1].participantId === seamOpened.companions[1].participantId
+      && seamTurn1.replies[0].content === seamReplies[0]
+      && seamTurn1.replies[1].content === seamReplies[1],
+    "CONTINUITY_SEAM_TURN1_ORDER_OR_BYTES_WRONG");
+    await seamCall(seamStackA, seamConv("/worldbook"), {
+      entry: {
+        entryId: "plan-frostblade-9",
+        label: "plan-frostblade-9",
+        content: `公开计划（第1轮由指挥官公布）：行动代号「${seamCodeword}」；黎明时分将两个Marine小队部署至北侧山脊隘口，Medic随行护航。`,
+        triggers: [{ kind: "keyword", keywords: [seamCodeword] }],
+        priority: 10,
+        tokenBudget: 256,
+      },
+    });
+    await seamCall(seamStackA, seamConv("/memory/summary"), {
+      content: `第1轮：指挥官公布「${seamCodeword}」计划。`,
+    });
+    await seamCall(seamStackA, seamConv("/memory/episodic"), {
+      content: `指挥官公布了「${seamCodeword}」。`,
+    });
+    await seamCall(seamStackA, seamConv("/memory/relationship"), {
+      eventType: "personal_shared",
+      deltas: [{ axis: "trust", delta: 1 }],
+      note: `公开「${seamCodeword}」。`,
+    });
+    const seamCheckpoint = await seamCall(seamStackA, seamConv("/checkpoint"), { label: "seam-turn-1" });
+    ensure(seamCheckpoint.checkpoint?.checkpointId, "CONTINUITY_SEAM_CHECKPOINT_FAILED");
+    const seamTranscriptA = (await seamCall(seamStackA, seamConv(`?roomId=${encodeURIComponent(seamRoomId)}`))).messages
+      .map((message) => ({
+        participantId: message.participantId,
+        content: message.content,
+        turnHash: message.turnHash,
+      }));
+    ensure(seamTranscriptA.length === 3, "CONTINUITY_SEAM_TRANSCRIPT_A_WRONG");
+    await new Promise((resolve) => seamStackA.server.close(resolve));
+    await seamPersistenceA.close();
+    // Full companion server/session restart: new listener, new module, new
+    // session runtime, new SQLite connection; the sealed file is the only
+    // companion state carrier; the Room authority instance is preserved.
+    const seamPersistenceB = seamPersistence();
+    const seamStackB = await composeLiveCompanionStack({
+      providerAdapter: seamAdapter,
+      persistence: seamPersistenceB,
+      now: () => GENERATED_AT,
+      sharedRoom: {
+        roomRuntime: seamStackA.roomRuntime,
+        roomFacade: seamStackA.roomFacade,
+        roomMutations: seamStackA.roomMutations,
+        hostSeatToken: seamStackA.hostSeatToken,
+      },
+    });
+    ensure(seamStackB.origin !== seamStackA.origin
+      && seamStackB.roomRuntime === seamStackA.roomRuntime,
+    "CONTINUITY_SEAM_RESTART_WRONG");
+    const seamResumed = await seamCall(seamStackB, seamConv(`?roomId=${encodeURIComponent(seamRoomId)}`));
+    ensure(seamResumed.status === "active" && seamResumed.turnCounter === 3
+      && seamResumed.checkpointCount >= 1,
+    "CONTINUITY_SEAM_RESUME_STATE_WRONG", {
+      status: seamResumed.status,
+      turnCounter: seamResumed.turnCounter,
+    });
+    ensure(JSON.stringify(seamResumed.messages.map((message) => ({
+      participantId: message.participantId,
+      content: message.content,
+      turnHash: message.turnHash,
+    }))) === JSON.stringify(seamTranscriptA),
+    "CONTINUITY_SEAM_TRANSCRIPT_NOT_BYTE_IDENTICAL");
+    const seamMemoryB = await seamCall(seamStackB, seamConv("/memory"));
+    ensure(seamMemoryB.layers?.rollingSummary?.content?.includes(seamCodeword)
+      && seamMemoryB.layers?.episodicFacts?.length === 1
+      && seamMemoryB.layers?.relationshipState?.history?.length === 1
+      && seamMemoryB.layers?.chatWorldbookEntries
+        ?.some((entry) => entry.entryId === "plan-frostblade-9"),
+    "CONTINUITY_SEAM_MEMORY_NOT_RESTORED");
+    const seamTurn2 = await seamCall(seamStackB, seamConv("/turns"), {
+      content: `两位同伴，请各自用一句中文回答：我上一轮公布的行动代号「${seamCodeword}」的要点是什么？`,
+      mentions: [seamPackages[0]],
+    });
+    ensure(seamTurn2.replies?.length === 2
+      && seamTurn2.replies[0].content === seamReplies[2]
+      && seamTurn2.replies[1].content === seamReplies[3],
+    "CONTINUITY_SEAM_TURN2_WRONG");
+    for (const [index, reply] of seamTurn2.replies.entries()) {
+      const layers = reply.contextAssembly?.layersIncluded || [];
+      for (const layer of ["rolling_summary", "episodic_facts", "relationship_state", "worldbook"]) {
+        ensure(layers.includes(layer), "CONTINUITY_SEAM_LAYER_MISSING", { index, layer, layers });
+      }
+      ensure((reply.contextAssembly?.worldbookFired || []).some((entry) => (
+        entry.entryId === "plan-frostblade-9" && entry.scopeTier === "chat"
+      )), "CONTINUITY_SEAM_CHAT_ENTRY_NOT_FIRED", { index });
+      ensure(reply.contextAssembly?.assemblyHash
+        && reply.contextAssembly.assemblyHash !== seamTurn1.replies[index].contextAssembly?.assemblyHash,
+      "CONTINUITY_SEAM_ASSEMBLY_NOT_ADVANCED", { index });
+    }
+    ensure(seamAdapter.observation.completions.length === 4
+      && seamAdapter.observation.physicalProviderCalls === 4
+      && seamAdapter.observation.dispatchAttempts === 4
+      && JSON.stringify(seamLockIndices) === JSON.stringify([1, 2, 3, 4]),
+    "CONTINUITY_SEAM_DENOMINATOR_WRONG", {
+      completions: seamAdapter.observation.completions.length,
+      seamLockIndices,
+    });
+    // The fifth dispatch is refused with zero additional Worker calls.
+    const seamFifth = await seamAdapter.complete({
+      requestId: "continuity-seam-5",
+      messages: [{ role: "user", content: "extra" }],
+    });
+    ensure(seamFifth.ok === false
+      && seamFifth.reason === "LIVE_CALL_DENOMINATOR_EXCEEDED"
+      && seamWorkerCalls === 4,
+    "CONTINUITY_SEAM_FIFTH_NOT_REFUSED", { reason: seamFifth.reason, seamWorkerCalls });
+    // A FRESH room authority (a different match) must refuse the persisted
+    // binding as stale — the restart discipline is honest, not a workaround.
+    const seamPersistenceX = seamPersistence();
+    const seamStackX = await composeLiveCompanionStack({
+      providerAdapter: seamAdapter,
+      persistence: seamPersistenceX,
+      now: () => GENERATED_AT,
+    });
+    const seamStale = await seamStackX.companionFetch(seamConv(`?roomId=${encodeURIComponent(seamRoomId)}`), {
+      seatToken: seamStackX.hostSeatToken,
+    });
+    ensure(seamStale.envelope?.result?.ok === false
+      && seamStale.envelope.result.reason === "COMPANION_MATCH_BINDING_STALE",
+    "CONTINUITY_SEAM_FRESH_ROOM_NOT_REFUSED", { result: seamStale.envelope?.result });
+    await new Promise((resolve) => seamStackX.server.close(resolve));
+    await seamPersistenceX.close();
+    const seamAccountingB = (await seamCall(seamStackB, seamConv(`?roomId=${encodeURIComponent(seamRoomId)}`))).providerAccounting;
+    ensure(seamAccountingB?.calls === 2, "CONTINUITY_SEAM_ACCOUNTING_B_WRONG", {
+      accounting: seamAccountingB,
+    });
+    for (const [label, stack] of [["A", seamStackA], ["B", seamStackB]]) {
+      ensure(Object.values(stack.roomMutations).every((count) => count === 0),
+        `CONTINUITY_SEAM_ROOM_MUTATED_${label}`);
+    }
+    await new Promise((resolve) => seamStackB.server.close(resolve));
+    await seamPersistenceB.close();
+    const seamFileRecord = await artifactRecord(seamFile,
+      "Epoch-3 continuity seam durable store: the restarted companion server/session stack resumed the two-companion transcript, checkpoint, chat-tier codeword entry, rolling summary, episodic fact and relationship state from these bytes alone (deterministic fake Worker; 0 real Provider calls).");
+    artifacts.push(seamFileRecord);
+    checks.push({
+      id: "headless_live_multi_companion_continuity_seam",
+      passed: true,
+      completions: seamAdapter.observation.completions.length,
+      perCallDispatchLockIndices: seamLockIndices,
+      fifthDispatchRefusedWithZeroRetry: true,
+      restartTranscriptByteIdentical: true,
+      restoredLayersInTurn2Assemblies: ["rolling_summary", "episodic_facts", "relationship_state", "worldbook"],
+      chatTierCodewordEntryFiredBothCompanions: true,
+      freshRoomRefusedAsStaleBinding: true,
+      durableFile: seamFileRecord.path,
+      durableFileSha256: seamFileRecord.sha256,
+      realProviderCalls: 0,
+    });
+
     // ── Final boundary assertions ────────────────────────────────────────
     const noAuth = await companionFetch(
       `conversations/active?roomId=${encodeURIComponent(ROOM_ID)}`,
@@ -2657,9 +2925,30 @@ async function main() {
     server.close();
   }
 
+  // Epoch-3 execution record is read dynamically from the runner's own
+  // report so this gate never needs a code edit after the live run: absent →
+  // honestly "reserved"; present → the recorded status/hash are cited.
+  const epoch3ReportPath = path.join(
+    ROOT, "build/ticket-26-slice-266f-live-byok-companion-v1/live-report.continuity.json");
+  let epoch3Execution = null;
+  try {
+    const parsed = JSON.parse(await readFile(epoch3ReportPath, "utf8"));
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      epoch3Execution = {
+        reportPath: path.relative(ROOT, epoch3ReportPath),
+        status: typeof parsed.status === "string" ? parsed.status : null,
+        attemptEpoch: parsed.attemptEpoch ?? null,
+        physicalProviderCalls: parsed.boundaries?.realProviderCalls
+          ?? parsed.physicalProviderCalls ?? null,
+        reportHash: typeof parsed.reportHash === "string" ? parsed.reportHash : null,
+      };
+    }
+  } catch {
+    epoch3Execution = null;
+  }
+
   const reportCore = {
-    schemaVersion: "starcraft_tmg_ticket_26_slice_266f_browser_report_v1",
-    generatedAt: GENERATED_AT,
+    schemaVersion: "starcraft_tmg_ticket_26_slice_266f_browser_report_v1",    generatedAt: GENERATED_AT,
     ticket: 26,
     slice: "266f",
     subSlice: "companion-live-product-acceptance (ui polish + byok seam + continuity + responsive)",
@@ -2681,6 +2970,21 @@ async function main() {
         failureCode: "LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED",
         zeroRetry: true,
         dispatchLockClaimed: true,
+      },
+      epoch3Continuity: {
+        userAuthorized: "one bounded real Chinese TWO-companion conversation (Kerrigan + Zagara, both sealed packages), two user turns, hard maximum FOUR physical Provider calls (two companions x two turns), each separately locked and costed, zero automatic retry; durable-SQLite checkpoint + full companion server/session restart between the turns (Room authority preserved)",
+        executedInThisGate: false,
+        realProviderCalls: 0,
+        execution: epoch3Execution || "reserved — not yet executed at gate time",
+        seamProofInThisGate: "headless_live_multi_companion_continuity_seam",
+        reservedProcedure: [
+          "scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs --authorize-live-byok-companion-memory-continuity refuses unless the epoch-1/epoch-2 dispatch locks AND the PASSED epoch-2 report prove the lineage; any prior epoch-3 lock or passing report refuses a rerun",
+          "turn 1 through the REAL browser UI: both companion replies (Kerrigan then Zagara, deterministic order), then the distinctive public plan/fact written as a chat-tier worldbook entry + rolling summary + episodic fact (real UI contracts) and one typed observed relationship event (real HTTP memory contract — the UI is intentionally read-only there)",
+          "checkpoint, then full companion server/session restart: HTTP server closed, SQLite connection closed, every module/session-runtime structure recomposed; the sealed SQLite file is the only companion state carrier; the Room authority instance is preserved",
+          "turn 2 after the restart: both companions must recall and apply the codeword plan from the restored layers (assembly provenance proves rolling_summary/episodic_facts/relationship_state entered both contexts and the chat-tier codeword entry fired for both), character-distinct, byte-identical between adapter, server transcript and rendered DOM on desktop and 390px",
+          "each of the four physical calls is separately locked (continuity-call-1..4.lock.json, O_EXCL) immediately before its single egress dispatch; stop immediately on 401/402/403, missing attachment or ambiguous dispatch; never silently retry",
+          "detach at the end with the sensitiveBytesZeroed shutdown acknowledgement, prove no residual Worker process and zero credential persistence; record exact per-call usage and cost",
+        ],
       },
       reason: "this deterministic gate itself never touches a real credential or paid Provider; the authorized live steps are executed separately by scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs under the project-d-live-acceptance profile (epoch 1 executed once and truncated; epoch 2 is the single authorized repair call with the versioned output-budget contract proven in this gate's headless_output_budget_truncation_contract phase)",
       reservedProcedure: [
