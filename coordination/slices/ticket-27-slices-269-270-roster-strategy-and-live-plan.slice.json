@@ -18,10 +18,25 @@
   ],
   "verification": [
     {
-      "name": "multi-round roster strategy and immutable pregame laboratory",
-      "command": "node scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs"
+      "name": "round-10 narrative recovery only; reuse completed broad gates",
+      "command": "node scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs --narrative-recovery-only"
     }
   ],
   "selfVerificationByImplementer": true,
+  "recoveryCheckpoint": {
+    "recordedOn": "2026-09-23",
+    "continueNativeSession": true,
+    "baseCheckpointCommit": "aad04a0",
+    "completedVerificationReused": "67 + 21 checks; do not rerun",
+    "defect": "round-10 HTTP-200 reply rejected by arbitrary 64-character schedule-window bounds",
+    "repair": "general narrative soft guidance with complete public text retained; keep identifiers, enums, required semantics and Rules legality strict",
+    "additionalPhysicalProviderCallsMaximum": 3,
+    "priorUsageAndLocksRetained": true,
+    "rawRound10ResponseAvailable": false,
+    "evidence": "persist subsequent redacted public outputs for zero-call revalidation; do not claim a synthetic reproduction is the missing paid response",
+    "sameFrozenInputs": "model profile, general/faction/matchup Skills, mission and authoritative tools",
+    "stopOn": ["401", "402", "403", "missing_secure_attachment", "ambiguous_dispatch", "three_nonconverging_review_rounds"],
+    "noAutomaticProviderRetry": true
+  },
   "taskBrief": "Continue from commit 65e80f2 and resume only the stopped live roster acceptance lane. Do not rewrite the completed deterministic implementation and do not rerun the already-passed 30/30 plus 18/18 full gate. The newest HTTP-200 response reached the strict native schema but was rejected because the live schema imposed an unjustified vespeneLimitNumerator maximum of 1000 while the domain and laboratory accept safe integers. Reproduce that exact schema-bound failure offline with the smallest focused check, then repair the generation contract generally from the domain-owned type/rules rather than special-casing one value, one response, or one roster. Do not add alias patches for extra fields; native structured output may ignore harmless unknown fields at the normalization boundary while all required semantics and Rules legality remain strict. The user now explicitly authorizes continued real BYOK attempts until one actual generated 2000-point roster plus initial RosterPlan passes the Rules-owned port. Each paid attempt must be separately locked, costed, retained and must have zero automatic retry; stop immediately on 401/402/403, missing secure attachment or ambiguous dispatch. Use at most three new repair/live cycles under the review convergence rule; after each concrete failure, change only the directly implicated generation contract and run its focused fail-first check once. Never repeat a passed check or the full gate. Success must retain the real Rules-legal roster, explicit win route, deployment/resource/initiative/matchup plan, math/simulation/spatial tool receipts, public reasoning, usage/cost, detach and zero persistence. Preserve all prior reports, update the acceptance document honestly, create scoped commits, and do not push."
 }
