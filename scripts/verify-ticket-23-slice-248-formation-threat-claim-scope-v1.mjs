@@ -15,6 +15,75 @@ import { projectStarcraftTmgThreatActionWindowV1 } from
 import { projectStarcraftTmgUnitSupplyControlV1 } from
   "../packages/online-agent-session/player-spatial-observation-v1.mjs";
 
+if (process.argv.includes("--friendly-threat-only")) {
+  const { readFile } = await import("node:fs/promises");
+  const { DatabaseSync } = await import("node:sqlite");
+  const { createStarcraftTmgPrivatePayloadCodec } = await import(
+    "../packages/room-store/room-store-v1.mjs");
+  const { buildStarcraftTmgTacticalRelationshipGraphV1 } = await import(
+    "../packages/online-agent-session/tactical-relationship-graph-v1.mjs");
+  const directory = process.argv.find((arg) => arg.startsWith("--run-directory="))
+    ?.slice("--run-directory=".length);
+  assert(directory);
+  const privateState = JSON.parse(await readFile(`${directory}/runner-private.json`, "utf8"));
+  const codec = createStarcraftTmgPrivatePayloadCodec({
+    key: privateState.storeEncryptionKeyBase64,
+    keyId: `ticket23-slice248-room-store-${directory.split("/").at(-1)}`,
+    trustLevel: "development_persistent",
+  });
+  const roomDb = new DatabaseSync(`${directory}/room.sqlite`, { readOnly: true });
+  const { envelope } = codec.decode(roomDb.prepare(
+    "SELECT aggregate_cipher FROM sc_rooms WHERE room_id = ?").get(privateState.roomId).aggregate_cipher,
+  `room:${privateState.roomId}:aggregate`);
+  roomDb.close();
+  assert.equal(envelope.stateRevision, 11);
+  const db = new DatabaseSync(`${directory}/seats/player1/provider/live-decisions.sqlite`, { readOnly: true });
+  const record = JSON.parse(db.prepare("SELECT record_json FROM sc_live_decision_records").get().record_json);
+  db.close();
+  const decision = Object.values(record.decisions).find((d) => d.authority.stateRevision === 11);
+  const action = Object.values(decision.attempts).at(-1).safeOutput.providerTurn
+    .toolCalls.find((call) => call.name === "submit_decision").arguments;
+  const selection = action.intent.selection;
+  const selected = decision.queryReceipts.find((receipt) => receipt.queryKind === "space.solve_formation")
+    .result.formationOptions.find((entry) => entry.formationOptionId === selection.optionId);
+  assert(selected.relationshipComparison.relationships.some((entry) =>
+    entry.targetId === "player1-goliath-1" && entry.enemyStationaryThreatProfileCount === 5));
+  const observation = { units: envelope.state.pieces.map((piece) => ({
+    unitId: piece.id, sideRelation: piece.sideKey === "player1" ? "own" : "opponent",
+  })) };
+  const failures = [];
+  const graphFor = (state) => buildStarcraftTmgTacticalRelationshipGraphV1({
+    state, seatKey: "player1", request: { intent: "preserve_lane",
+      subjectUnitIds: ["player1-marine-1"], targetIds: ["player1-goliath-1"] },
+  });
+  const friend = graphFor(envelope.state).relationships.find((edge) => edge.toUnitId === "player1-goliath-1");
+  if (friend.threats.toFrom.stationaryProfileKeys.length
+    || friend.threats.fromTo.stationaryProfileKeys.length
+    || friend.threats.toFrom.chargeBand.withinMaximumBand) failures.push("friendly_weapons_become_hostile_threat");
+  assert(friend.nearestPhysicalEdges.distanceMilliInches >= 0, "preserve friendly spacing geometry");
+  const inspection = inspectStarcraftTmgFormationThreatClaimsV1({
+    raw: action, selection, option: selected, spatialObservation: observation,
+  });
+  if (inspection.contradicted) failures.push("saved_correct_public_claim_rejected");
+  const opponent = structuredClone(envelope.state);
+  opponent.pieces.find((piece) => piece.id === "player1-goliath-1").sideKey = "player2";
+  const enemy = graphFor(opponent).relationships.find((edge) => edge.toUnitId === "player1-goliath-1");
+  assert(enemy.threats.toFrom.stationaryProfileKeys.length > 0, "real opposing fire is retained");
+  const enemyObservation = structuredClone(observation);
+  enemyObservation.units.find((unit) => unit.unitId === "player1-goliath-1").sideRelation = "opponent";
+  assert(inspectStarcraftTmgFormationThreatClaimsV1({ raw: action, selection,
+    option: selected, spatialObservation: enemyObservation }).contradicted,
+  "the same supported hostile profiles still contradict a no-fire claim");
+  opponent.rosterRegistryResolution = { ...opponent.rosterRegistryResolution,
+    teamMembershipByPlayer: { player1: "team-a", player2: "team-a" } };
+  const allied = graphFor(opponent).relationships.find((edge) => edge.toUnitId === "player1-goliath-1");
+  if (allied.threats.toFrom.stationaryProfileKeys.length) failures.push("allied_weapons_become_hostile_threat");
+  console.log(JSON.stringify({ regressionFailures: failures, stateRevision: 11,
+    savedSelectedFormation: selected.formationOptionId, providerCalls: 0, roomMutations: 0 }));
+  assert.deepEqual(failures, []);
+  process.exit(0);
+}
+
 const option = {
   relationshipComparison: {
     relationships: [

@@ -2362,6 +2362,8 @@ function relationshipRows(graph) {
       edgeId: entry.edgeId,
       edgeKind: entry.edgeKind,
       targetId: entry.toUnitId,
+      fromUnitId: entry.fromUnitId,
+      relation: entry.relation,
       minimumBaseEdgeDistanceMilliInches:
         entry.nearestPhysicalEdges?.distanceMilliInches ?? null,
       engaged: entry.engagement?.engaged === true,

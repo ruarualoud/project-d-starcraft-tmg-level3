@@ -27,7 +27,7 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v23";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v35";
+  "starcraft_tmg_live_action_shape_normalization_v36";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -1463,6 +1463,7 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
   const threatClaims = inspectStarcraftTmgFormationThreatClaimsV1({
     raw,
     queryReceipts,
+    spatialObservation: input.spatialObservation,
   });
   if (threatClaims.contradicted) {
     const first = threatClaims.contradictions[0];
@@ -1591,6 +1592,7 @@ function validateActionOutput(raw, input, planner, queryReceipts = []) {
   const threatClaims = inspectStarcraftTmgFormationThreatClaimsV1({
     raw,
     queryReceipts,
+    spatialObservation: input.spatialObservation,
   });
   if (threatClaims.contradicted) {
     const first = threatClaims.contradictions[0];
@@ -1944,7 +1946,7 @@ function claimsNoIncomingMoveThenFireThreat(fragment) {
     || chineseAbsent;
 }
 
-function currentIncomingThreatTargets(queryReceipts) {
+function currentIncomingThreatTargets(queryReceipts, friendlyUnitIds = new Set()) {
   const stationary = new Set();
   const stationaryUnknown = new Set();
   const moveThenFire = new Set();
@@ -1962,6 +1964,9 @@ function currentIncomingThreatTargets(queryReceipts) {
       const targetId = String(relationship.fromUnitId || "");
       const attackerId = String(relationship.toUnitId || "");
       if (!targetId) continue;
+      if (relationship.relation === "friendly"
+        || relationship.relation === "allied"
+        || (friendlyUnitIds.has(targetId) && friendlyUnitIds.has(attackerId))) continue;
       const incoming = relationship.threats?.toFrom || {};
       const hasLifecycleStationary = Object.hasOwn(incoming,
         "currentRoundStationaryProfileKeys");
@@ -2035,13 +2040,20 @@ function threatContradictionDetail(contradiction = {}) {
 
 export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
   const option = object(input.option) ? input.option : {};
-  const optionIncomingTargetIds = (option.relationshipComparison
-    ?.relationships || [])
+  const friendlyUnitIds = new Set((input.spatialObservation?.units || [])
+    .filter((unit) => unit.sideRelation === "own" || unit.sideRelation === "allied")
+    .map((unit) => unit.unitId));
+  // Old saved formation rows lost the graph's relation field and mislabeled
+  // friendly weapon coverage as enemy threat. Use current authoritative side
+  // identity for local revalidation; never guess allegiance from an ID prefix.
+  const hostileRows = (option.relationshipComparison?.relationships || [])
+    .filter((row) => row.relation !== "friendly" && row.relation !== "allied"
+      && !friendlyUnitIds.has(row.targetId));
+  const optionIncomingTargetIds = hostileRows
     .filter((entry) => Number(entry.enemyStationaryThreatProfileCount || 0) > 0)
     .map((entry) => String(entry.targetId || ""))
     .filter(Boolean);
-  const optionIncomingUnknownTargetIds = (option.relationshipComparison
-    ?.relationships || [])
+  const optionIncomingUnknownTargetIds = hostileRows
     .filter((entry) => (entry
       .enemyCurrentRoundStationaryThreatUnknownProfileKeys
       || entry.enemyStationaryThreatUnknownProfileKeys || []).length > 0)
@@ -2051,13 +2063,13 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
     input.selection);
   const selectionClaims = selectionThreatClaimFragments(input.raw);
   const currentThreatTargets = currentIncomingThreatTargets(
-    input.queryReceipts || []);
+    input.queryReceipts || [], friendlyUnitIds);
   const contradictions = [
     ...(optionIncomingTargetIds.length > 0
       ? optionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
         entry.text)).map((entry) => ({ ...entry,
         threatKind: "stationary", source: "formation_projection",
-        threatFacts: (option.relationshipComparison?.relationships || [])
+        threatFacts: hostileRows
           .filter((fact) => Number(
             fact.enemyStationaryThreatProfileCount || 0) > 0)
           .map((fact) => ({ targetId: fact.targetId,
@@ -2070,7 +2082,7 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
         entry.text)).map((entry) => ({ ...entry,
         threatKind: "stationary_unknown_line_of_sight",
         source: "formation_projection",
-        threatFacts: (option.relationshipComparison?.relationships || [])
+        threatFacts: hostileRows
           .filter((fact) => (fact
             .enemyCurrentRoundStationaryThreatUnknownProfileKeys
             || fact.enemyStationaryThreatUnknownProfileKeys || []).length > 0)
@@ -2353,7 +2365,7 @@ export function normalizeStarcraftTmgOpponentPredictionsV1(input = {}) {
   return action;
 }
 
-function bindFormationSelection(raw, queryReceipts) {
+function bindFormationSelection(raw, queryReceipts, spatialObservation) {
   if (!object(raw) || !object(raw.proposal)
     || raw.proposal.kind !== "parameterized") return raw;
   const normalized = clone(raw);
@@ -2375,6 +2387,7 @@ function bindFormationSelection(raw, queryReceipts) {
     raw: normalized,
     selection,
     option,
+    spatialObservation,
   });
   if (threatClaimInspection.contradicted) {
     throw correctionError(
@@ -3416,7 +3429,7 @@ function normalizeSubmittedAction(attempt, input, choice) {
   const plannerBoundAction = bindPlannerSelectedProposal(submittedAction,
     input, choice.plannerResult);
   const formationBoundAction = bindFormationSelection(
-    plannerBoundAction, choice.queryReceipts);
+    plannerBoundAction, choice.queryReceipts, input.spatialObservation);
   const assetBoundAction = bindAssetPlacementSelection(formationBoundAction,
     choice.queryReceipts);
   const boundAction = bindExactInstantiatedProposal(assetBoundAction,

@@ -42,6 +42,18 @@ classic-map art fidelity and are superseded by the semantic-map reset above.
 
 ### 2026-09-22 Ticket 23 / Slice 248 checkpoint
 
+2026-09-23 r11 friendly-threat repair: the resumed Flash match deployed Marine 1
+then incorrectly blocked its Go! Go! Go! relocation: the graph treated friendly
+Goliath profiles as hostile, and the formation adapter dropped relation identity.
+After three saved Action replies the runner stopped, 22 calls / 1,785,213 units /
+¥2.336185, no r12 Apply. Canonical weapon/Charge eligibility now respects opposing
+sides/teams; friendly spatial relations remain. Formation rows retain relation;
+legacy claim checking uses current authoritative own/allied identity. Existing
+verifier's real r11 mode failed then passed once, including true-enemy negative
+control, 0 Provider/Room mutation. Action normalization v36 enables local replay
+of the already-paid candidate. Same r11 resume is running for 12 more actions.
+See `docs/ticket-23-slice-248-friendly-threat-projection-repair-2026-09-23.md`.
+
 2026-09-23 startup recovery: fork `20260922172710914` is safely persisted at r7.
 Independent preflights selected Pro/Flash, then a parity error left IPC workers
 alive until the 10-minute runner timeout; no generation calls occurred. Both

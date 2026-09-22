@@ -537,8 +537,10 @@ function threatProjection(state, attacker, target, minimumDistance,
   const speed = movementProfile(state, attacker)?.speedMilliInches || 0;
   const actionWindow = projectStarcraftTmgThreatActionWindowV1(
     state, attacker);
+  const opposingTarget = sideRelation(target, attacker.sideKey, state)
+    === "opponent";
   const profiles = weaponProfiles(state, attacker).map((profile) => {
-    const targetEligible = targetTagEligible(profile, target);
+    const targetEligible = opposingTarget && targetTagEligible(profile, target);
     const lineOfSightEligible = profile.rangeKind === "engagement"
       ? true : visiblePairCount > 0;
     const lineOfSightUnknown = profile.rangeKind !== "engagement"
@@ -575,6 +577,7 @@ function threatProjection(state, attacker, target, minimumDistance,
     entry.currentRoundMoveThenAttackAvailable);
   return {
     profiles,
+    opposingTarget,
     stationaryProfileKeys: stationary.map((entry) => entry.profileKey),
     moveThenAttackProfileKeys: moving.map((entry) => entry.profileKey),
     currentRoundStationaryProfileKeys:
@@ -601,7 +604,7 @@ function threatProjection(state, attacker, target, minimumDistance,
       minimumBaseEdgeDistanceMilliInches: minimumDistance,
       minimumReachMilliInches: speed + 1000,
       maximumReachMilliInches: speed + 6000,
-      withinMaximumBand: minimumDistance <= speed + 6000,
+      withinMaximumBand: opposingTarget && minimumDistance <= speed + 6000,
       chanceAndPathUnresolved: true,
     },
     spatialThreatPrecision:
@@ -660,7 +663,8 @@ function unitRelation(state, left, right, pairSearch, engagement,
     edgeKind: "unit_spatial_relationship",
     fromUnitId: left.id,
     toUnitId: right.id,
-    relation: left.sideKey === right.sideKey ? "friendly" : "opposed",
+    relation: sideRelation(right, left.sideKey, state) === "opponent"
+      ? "opposed" : "friendly",
     nearestPhysicalEdges: {
       distanceMilliInches: nearest.result.minimumSeparationMilliInches,
       fromModelId: nearest.left.model.id,
