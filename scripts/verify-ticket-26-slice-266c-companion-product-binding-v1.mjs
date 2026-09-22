@@ -106,13 +106,14 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const PROJECT_D_ROOT = path.resolve(ROOT, "../../..");
+const PROJECT_D_ROOT = path.resolve(ROOT, "..");
 const EXPO_DIR = path.join(ROOT, "apps/starcraft-tmg-expo");
 const DIST_DIR = path.join(EXPO_DIR, "dist");
 const BUILD_ROOT = path.join(ROOT, "build/ticket-26-slice-266c-companion-product-binding-v1");
 const EVIDENCE_ROOT = path.join(BUILD_ROOT, "browser-evidence");
 const REPORT_PATH = path.join(BUILD_ROOT, "browser-report.json");
 const SLICE_266C_BASE_COMMIT = "e5ab22f267e85120862926682c9f331b1299c74e";
+const SLICE_266D_CLOSURE_COMMIT = "77d532dc6bd3b240934ec690ce3a1abb337ad133";
 const GENERATED_AT = "2026-09-22T00:00:00.000Z";
 const ROOM_ID = "ticket26-slice266c-companion-product";
 const AGENT_API_PREFIX = "/starcraft-tmg-level3/agent/api/v2";
@@ -230,8 +231,25 @@ function runGit(args, cwd) {
 }
 
 async function assertBackendScope() {
+  const closureIsIntegrated = spawnSync(
+    "git",
+    ["merge-base", "--is-ancestor", SLICE_266D_CLOSURE_COMMIT, "HEAD"],
+    { cwd: ROOT, encoding: "utf8" },
+  );
+  ensure(closureIsIntegrated.status === 0, "COMPANION_SLICE_CLOSURE_NOT_INTEGRATED", {
+    closureCommit: SLICE_266D_CLOSURE_COMMIT,
+    stderr: String(closureIsIntegrated.stderr || "").slice(-800),
+  });
   const drift = runGit(
-    ["diff", "--name-only", SLICE_266C_BASE_COMMIT, "--", "packages/", "scripts/support/"],
+    [
+      "diff",
+      "--name-only",
+      SLICE_266C_BASE_COMMIT,
+      SLICE_266D_CLOSURE_COMMIT,
+      "--",
+      "packages/",
+      "scripts/support/",
+    ],
     ROOT,
   ).trim().split("\n").filter(Boolean).filter((relative) => (
     !SLICE_OWNED_BACKEND_PREFIXES.some((owned) => (
@@ -2495,7 +2513,8 @@ async function main() {
       worktreeHead,
       backendModules,
       baseCommit: SLICE_266C_BASE_COMMIT,
-      scopeRule: "backend drift outside the slice-owned paths is rejected against the slice base; every loaded backend module is hash-recorded",
+      closureCommit: SLICE_266D_CLOSURE_COMMIT,
+      scopeRule: "the integrated K3 closure is proven as a HEAD ancestor; backend drift is audited only across the fixed slice base-to-closure range so parallel mainline work is not attributed to K3; every loaded backend module is hash-recorded",
       stalePinFix: "CHARACTER_PACKAGE_HASH_PIN_STALE closed by the registry-derived binding contract (current epoch validates the exact sealed CharacterPackage/catalogue/handoff/visual manifest; legacy projections readable only through the explicit assertStarcraftTmgClientCharacterProjectionV2Legacy path) — proven live in the browser by the rendered Sarah Kerrigan identity",
     },
     boundaries: {

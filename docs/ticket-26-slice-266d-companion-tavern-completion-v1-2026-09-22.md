@@ -235,3 +235,33 @@ converged. Total repair rounds: 1 of max 3.
   `.worktrees/starcraft-tmg-local/data/starcraft-tmg-data.json`) — a
   pre-existing environment issue, not introduced here.
 - No third-party extension marketplace was implemented (explicit exclusion).
+
+## Integrating-Codex browser acceptance (2026-09-22)
+
+The K3 closure commit `77d532dc6bd3b240934ec690ce3a1abb337ad133`
+was merged by `e7c25ff`. The integrating gate exposed and repaired two verifier
+integration defects before browser execution:
+
+1. the legacy adapter input resolved three directories above the nested
+   repository instead of the actual parent `project-d` root;
+2. backend scope was compared from the slice base to the moving current HEAD,
+   falsely attributing later Ticket 23 work to K3. It now proves that the fixed
+   closure commit is an ancestor of HEAD and audits only the fixed
+   base-to-closure range.
+
+The third and final run reached the real browser journey. It passed 28 checks,
+including the live identity pin repair, two-companion ordered conversation,
+checkpoint/interrupt/explicit-continue/reload, real portrait pixels, persona,
+four-tier worldbook, layered memory rollback, Author's Note save, accepted
+swipe/edit branches, safe export/restore, audit/replay permissions, desktop
+overflow, honest BYOK unavailability, six companion portraits, 390px resume,
+speaker pixels, responsive cards and close-conversation behavior. It then
+stopped on `NOTE_REQUESTS_NOT_CAPTURED` with `captured: 1`.
+
+Per the three-round convergence rule there is no fourth integrating repair in
+this round. Ticket 26 / Slice 266d remains implemented and merged but browser
+acceptance-blocked. K3 owns the next isolated repair: determine whether the
+Author's Note request capture count or its expected denominator is wrong,
+preserve the already-passing 28 checks, and produce a new closure for one fresh
+acceptance round. No real Provider was called and no formal match Room was
+mutated.

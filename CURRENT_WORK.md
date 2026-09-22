@@ -80,11 +80,14 @@ explicit, isolated slice manifests.
    SQLite checkpoint/restore and restart passed the focused gate, and durable
    construction rejects missing or malformed managed keys instead of silently
    accepting an ephemeral key. K3 completed and self-verified the isolated
-   six-companion Web/App roster (`18/18` browser checks), and now owns Slice
-   266-C for the stale Character package binding, Tavern-equivalent capability,
-   floating product surface, committed SC1-style dynamic portrait binding and
-   its own browser acceptance; image generation remains isolated in image
-   sub-agents. Slice 266-E now binds durable companion
+   six-companion Web/App roster (`18/18` browser checks) and delivered the
+   merged Slice 266-C/266-D closure for stale Character package binding,
+   Tavern-equivalent capability, floating product surface and committed
+   SC1-style dynamic portrait binding. Integrating browser acceptance passed 28
+   checks, then stopped at `NOTE_REQUESTS_NOT_CAPTURED` (`captured: 1`) on its
+   third/final round. The implementation remains merged; K3 owns the isolated
+   Author's Note capture repair and a fresh closure, while Ticket 23 continues
+   independently. Slice 266-E now binds durable companion
    conversations to the authenticated Room seat/principal/MatchBinding, supports
    1–6 ordered companion replies and session-isolated checkpoint restore, and
    never grants Room mutation. The remaining companion product work stays
