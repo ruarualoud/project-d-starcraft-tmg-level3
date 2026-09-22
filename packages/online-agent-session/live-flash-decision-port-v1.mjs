@@ -4812,6 +4812,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
   const memoryQueryPort = options.memoryQueryPort || null;
   const store = options.store || createInMemoryStarcraftTmgLiveDecisionStoreV1();
   const profiles = (options.profileCandidates || []).map(profile);
+  const allowUnstartedProfileReselection =
+    options.allowUnstartedProfileReselection === true;
   const now = typeof options.now === "function"
     ? options.now : () => new Date().toISOString();
   const maxToolRounds = integer(options.maxToolRounds || 3,
@@ -4888,7 +4890,20 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         "matchMode", 80);
       const checks = [];
       let selected = null;
-      for (const candidate of profiles) {
+      const existing = await loadRecord(scopeValue.scopeKey);
+      if (existing) {
+        selected = profiles.find((candidate) => candidate.profileRef.hash
+          === existing.selectedProfile.profileRef.hash) || null;
+        if (!selected && (!allowUnstartedProfileReselection
+          || Number(existing.usage?.providerCalls || 0) !== 0
+          || Object.keys(existing.decisions || {}).length !== 0)) {
+          return rejection("OPEN_MATCH_FROZEN_BINDING_MISMATCH", "High");
+        }
+      }
+      const selectionSource = selected ? "persisted_match" : "model_discovery";
+      // A resume reuses the already accepted model. Repeating optional model
+      // discovery here used to replace a frozen profile after transient failure.
+      for (const candidate of selected ? [] : profiles) {
         let result;
         try {
           result = await availabilityPort.check(freeze({
@@ -4933,6 +4948,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         scope: clone(scopeValue),
         matchMode,
         checks,
+        selectionSource,
         selectedProfile: clone(selected),
         fallbackSelected: selected.preference === "pre_game_fallback",
         modelSwitchAllowedAfterOpen: false,
@@ -4965,9 +4981,14 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       };
       const existing = await loadRecord(scopeValue.scopeKey);
       if (existing) {
+        const profileChanged = existing.selectedProfile.profileRef.hash
+          !== receipt.selectedProfile.profileRef.hash;
+        const unstartedProfileReselection = profileChanged
+          && allowUnstartedProfileReselection
+          && Number(existing.usage?.providerCalls || 0) === 0
+          && Object.keys(existing.decisions || {}).length === 0;
         if (existing.scope.matchBindingHash !== scopeValue.matchBindingHash
-          || existing.selectedProfile.profileRef.hash
-            !== receipt.selectedProfile.profileRef.hash
+          || (profileChanged && !unstartedProfileReselection)
           || existing.strategySkillSnapshot.skillSetHash
             !== receipt.strategySkillSnapshot.skillSetHash) {
           return rejection("OPEN_MATCH_FROZEN_BINDING_MISMATCH", "High");
@@ -4993,9 +5014,20 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           && Number(existing.usage?.totalUnits || 0) > 0;
         let resumed = existing;
         if (sessionChanged || reopenLegacyShutdown
-          || definitelyNotSentUsageRepair) {
+          || definitelyNotSentUsageRepair || unstartedProfileReselection) {
           resumed = await commit(existing, (draft) => {
             draft.providerSession = clone(providerSession);
+            if (unstartedProfileReselection) {
+              draft.selectedProfile = clone(receipt.selectedProfile);
+              draft.issues.push({
+                code: "LIVE_DECISION_UNSTARTED_PROFILE_RESELECTED",
+                severity: "Medium",
+                previousModel: existing.selectedProfile.model,
+                requestedModel: receipt.selectedProfile.model,
+                occurredAt: instant(now(), "now"),
+                providerCallsBeforeChange: 0,
+              });
+            }
             if (reopenLegacyShutdown) {
               draft.lifecycle = "open";
               draft.closedAt = null;

@@ -295,6 +295,8 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
       profileRef: profileRef(providerProfile),
       maxOutputUnits: providerProfile.outputBudget,
     })),
+    allowUnstartedProfileReselection:
+      options.allowUnstartedProfileReselection === true,
     maxToolRounds: options.maxToolRounds,
     maxPlanningQueryRounds: options.maxPlanningQueryRounds,
     maxActionQueryRounds: options.maxActionQueryRounds,

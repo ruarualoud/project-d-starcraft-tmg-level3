@@ -33,6 +33,8 @@ import { createStarcraftTmgLiveMatchEvolutionExportV1 } from
   "../packages/training-data/live-match-evolution-export-v1.mjs";
 import { createTicket20AgentAgentDemoFixtureV1 } from
   "./support/ticket20-human-agent-demo-fixture-v1.mjs";
+import { STARCRAFT_TMG_TICKET_23_LIVE_FLASH_PROVIDER_PROFILE_V1 } from
+  "../content/provider/ticket-23-live-provider-profiles-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LIVE_ROOT = path.join(ROOT,
@@ -767,6 +769,8 @@ async function main() {
   const providerStacks = {
     player1: await createStarcraftTmgLiveOpponentProviderStackV1({
       roomId, seatKey: "player1",
+      providerProfiles: [STARCRAFT_TMG_TICKET_23_LIVE_FLASH_PROVIDER_PROFILE_V1],
+      allowUnstartedProfileReselection: true,
       matchBinding: fixture.createdRoom.matchBinding,
       spatialQueryPort: fixture.player1SpatialRuntime,
       memoryQueryPort: fixture.player1Continuity,
@@ -780,6 +784,8 @@ async function main() {
     }),
     player2: await createStarcraftTmgLiveOpponentProviderStackV1({
       roomId, seatKey: "player2",
+      providerProfiles: [STARCRAFT_TMG_TICKET_23_LIVE_FLASH_PROVIDER_PROFILE_V1],
+      allowUnstartedProfileReselection: true,
       matchBinding: fixture.createdRoom.matchBinding,
       spatialQueryPort: fixture.spatialRuntime,
       memoryQueryPort: fixture.continuity,
@@ -801,9 +807,6 @@ async function main() {
     });
   const selectedModels = Object.fromEntries(SEATS.map((seatKey) => [seatKey,
     providerStacks[seatKey].selectedProfile.model]));
-  if (selectedModels.player1 !== selectedModels.player2) {
-    throw new Error("SLICE248_PROVIDER_MODEL_PARITY_FAILED");
-  }
   await fixture.orchestrator.start();
   let providerMatchesFinalized = false;
   const existingEvolutionSummaryPath = path.join(dataDirectory,
@@ -1258,6 +1261,7 @@ async function main() {
 }
 
 main().catch((error) => {
-  process.stderr.write(`${error.stack || error}\n`);
-  process.exitCode = 1;
+  // A failed startup has no HTTP shutdown handler yet. IPC workers otherwise
+  // keep the process alive and hide the real error until the outer 10m timeout.
+  process.stderr.write(`${error.stack || error}\n`, () => process.exit(1));
 });

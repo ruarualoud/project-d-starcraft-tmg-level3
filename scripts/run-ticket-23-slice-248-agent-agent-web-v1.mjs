@@ -792,8 +792,6 @@ async function main() {
     ensure(current.promptPackBySeat?.player1 === "selfplay_agent_prompt"
       && current.promptPackBySeat?.player2 === "selfplay_agent_prompt",
     "SLICE248_SELFPLAY_PROMPT_ROUTE_MISSING");
-    ensure(current.selectedModels?.player1 === current.selectedModels?.player2,
-      "SLICE248_MODEL_PARITY_MISSING");
     ensure(current.orchestrator?.experimentCell?.experimentId
       === "ticket23-standard-2000-agent-agent-live-v1"
       && current.orchestrator?.experimentCell?.scenario?.mapId

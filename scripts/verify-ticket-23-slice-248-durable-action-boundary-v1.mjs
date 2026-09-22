@@ -21,6 +21,106 @@ const argument = process.argv.find((entry) =>
 assert(argument, "--run-directory is required");
 const runDirectory = path.resolve(ROOT,
   argument.slice("--run-directory=".length));
+if (process.argv.includes("--startup-model-recovery-only")) {
+  const { createStarcraftTmgLiveFlashDecisionPortV1 } = await import(
+    "../packages/online-agent-session/live-flash-decision-port-v1.mjs");
+  const { spawn } = await import("node:child_process");
+  const records = ["player1", "player2"].map((seat) => {
+    const db = new DatabaseSync(path.join(runDirectory,
+      `seats/${seat}/provider/live-decisions.sqlite`), { readOnly: true });
+    try { return JSON.parse(db.prepare(
+      "SELECT record_json FROM sc_live_decision_records LIMIT 1").get().record_json);
+    } finally { db.close(); }
+  });
+  assert.notEqual(records[0].selectedProfile.model, records[1].selectedProfile.model,
+    "exercise the real divergent preflight startup failure");
+  const failures = [];
+  let networkProbes = 0;
+  for (const record of records) {
+    const port = createStarcraftTmgLiveFlashDecisionPortV1({
+      providerSupervisor: { sendTurn() { throw Error("no generation"); }, readState() {} },
+      promptArtifactStore: { put() {}, release() {} },
+      profileAvailabilityPort: { async check() {
+        networkProbes += 1; return { ok: false, reason: "MODEL_AVAILABILITY_TIMEOUT" };
+      } },
+      strategySkillPort: { async resolve() {
+        return { ok: true, snapshot: record.strategySkillSnapshot };
+      } },
+      spatialQueryPort: { query() { throw Error("no Rules query"); } },
+      store: { async load(key) {
+        return key === record.scope.scopeKey ? structuredClone(record) : null;
+      }, commit() { throw Error("read-only reproduction"); } },
+      profileCandidates: records.map((entry) => entry.selectedProfile),
+    });
+    const result = await port.preflight({ scope: record.scope, matchMode: record.matchMode });
+    if (!result.ok || result.selectedProfile?.model !== record.selectedProfile.model) {
+      failures.push(`${record.scope.seatKey}:resume_reselects_frozen_model`);
+    }
+    if (result.selectionSource !== "persisted_match") {
+      failures.push(`${record.scope.seatKey}:missing_resume_provenance`);
+    }
+  }
+  if (networkProbes) failures.push("resume_repeats_model_discovery");
+  const flash = records.find((entry) => entry.selectedProfile.model === "deepseek-flash");
+  for (const alreadyCalled of [false, true]) {
+    let record = structuredClone(records[0]);
+    if (alreadyCalled) record.usage.providerCalls = 1;
+    const port = createStarcraftTmgLiveFlashDecisionPortV1({
+      providerSupervisor: { sendTurn() { throw Error("no generation"); }, readState() {} },
+      promptArtifactStore: { put() {}, release() {} },
+      profileAvailabilityPort: { async check() { return { ok: true, available: true }; } },
+      strategySkillPort: { async resolve() {
+        return { ok: true, snapshot: record.strategySkillSnapshot };
+      } },
+      spatialQueryPort: { query() { throw Error("no Rules query"); } },
+      store: { async load() { return structuredClone(record); },
+        async commit(key, revision, next) {
+          assert.equal(revision, record.revision);
+          record = structuredClone(next); return { ok: true };
+        } },
+      profileCandidates: [flash.selectedProfile], allowUnstartedProfileReselection: true,
+    });
+    const receipt = await port.preflight({ scope: record.scope, matchMode: record.matchMode });
+    if (alreadyCalled) {
+      assert.equal(receipt.ok, false, "never relabel an existing paid request");
+    } else {
+      assert.equal(receipt.ok, true);
+      const opened = await port.openMatch({ scope: record.scope,
+        preflightReceipt: receipt, providerSession: record.providerSession });
+      assert.equal(opened.ok, true);
+      assert.equal(record.selectedProfile.model, "deepseek-flash");
+      assert.equal(record.usage.providerCalls, 0);
+      assert(record.issues.some((issue) =>
+        issue.code === "LIVE_DECISION_UNSTARTED_PROFILE_RESELECTED"));
+    }
+  }
+  const serverSource = await readFile(path.join(ROOT,
+    "scripts/serve-ticket-23-slice-248-agent-agent-web-v1.mjs"), "utf8");
+  const runnerSource = await readFile(path.join(ROOT,
+    "scripts/run-ticket-23-slice-248-agent-agent-web-v1.mjs"), "utf8");
+  if (serverSource.includes('throw new Error("SLICE248_PROVIDER_MODEL_PARITY_FAILED")')
+    || runnerSource.includes('"SLICE248_MODEL_PARITY_MISSING"')) {
+    failures.push("authorized_seat_models_block_integration");
+  }
+  assert.equal((serverSource.match(
+    /providerProfiles: \[STARCRAFT_TMG_TICKET_23_LIVE_FLASH_PROVIDER_PROFILE_V1\]/gu) || []).length, 2,
+  "both live seats use only the user-selected Flash model");
+  const fatalHandler = serverSource.slice(serverSource.lastIndexOf("main().catch("));
+  assert(fatalHandler.startsWith("main().catch("));
+  const outcome = await new Promise((resolve) => {
+    const child = spawn(process.execPath, ["--input-type=module", "-e",
+      `setInterval(() => {}, 1000); async function main() { throw Error("STARTUP_REPRO"); }\n${fatalHandler}`],
+    { stdio: "ignore" });
+    const timer = setTimeout(() => { child.kill("SIGTERM"); }, 1500);
+    child.once("exit", (code, signal) => { clearTimeout(timer); resolve({ code, signal }); });
+  });
+  if (outcome.code !== 1 || outcome.signal) failures.push("fatal_startup_keeps_process_alive");
+  console.log(JSON.stringify({ regressionFailures: failures, networkProbes,
+    modelSnapshots: records.map((entry) => entry.selectedProfile.model),
+    providerCalls: 0, roomMutations: 0 }));
+  assert.deepEqual(failures, []);
+  process.exit(0);
+}
 if (process.argv.includes("--provider-timeout-recovery-only")) {
   const db = new DatabaseSync(path.join(runDirectory,
     "seats/player2/bot-seat.sqlite"), { readOnly: true });

@@ -42,6 +42,18 @@ classic-map art fidelity and are superseded by the semantic-map reset above.
 
 ### 2026-09-22 Ticket 23 / Slice 248 checkpoint
 
+2026-09-23 startup recovery: fork `20260922172710914` is safely persisted at r7.
+Independent preflights selected Pro/Flash, then a parity error left IPC workers
+alive until the 10-minute runner timeout; no generation calls occurred. Both
+seats are now explicitly Flash-only per user. Resume retains its accepted
+profile; initialization-only records can be corrected with the explicit option
+before any call/decision, preserving an audit note. Fatal startup now exits
+promptly. The concrete existing-verifier mode failed first then passed once,
+0 Provider/Room mutations. Same r7 branch resumed for 8 additional actions.
+Only engineering faults justify correction; valid weaker choices stay for
+review. Strategy quality outranks speed; significant performance work is queued
+in `docs/ticket-23-slice-248-startup-recovery-and-performance-ledger-2026-09-23.md`.
+
 2026-09-23 r10 checkpoint: 20 attempts / 2,202,454 accounted units /
 estimated ¥2.926274, all applied actions Replay-verified. However r8/r9 exposed
 an Omega-only placement projection: non-unit assets had null metrics while the
