@@ -833,12 +833,16 @@ function chipToggleButton(page) {
   return companionChip(page).getByRole("button", { name: /TACTICAL COMMS/iu });
 }
 
+// Slice 266f sheet portal: the expanded sheet (and every section inside it)
+// is portaled to document.body on web to escape the dock ScrollView's RNW
+// compositing transform, so sheet content is queried at page scope. Only the
+// collapsed/expanded launcher header chip stays inside the dock.
 function sectionButton(page, name) {
-  return companionChip(page).getByRole("button", { name });
+  return page.getByRole("button", { name });
 }
 
 function chatSection(page) {
-  return companionChip(page).getByTestId("companion-chat-section");
+  return page.getByTestId("companion-chat-section");
 }
 
 async function documentOverflow(page) {

@@ -17,6 +17,25 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { useLevel3ClientDomain } from "@/lib/level3/client-domain-provider";
 import { CompanionCataloguePanel } from "./companion-catalogue-panel";
+
+// Slice 266f sheet-portal repair (found by the FIRST real run of the focused
+// 266f gate: FOCUS_SHEET_NOT_LEFT_ANCHORED). react-native-web 0.21 gives every
+// ScrollView base `transform: translateZ(0)` for compositing, so the floating
+// dock's ScrollView becomes the containing block for any `position: fixed`
+// descendant and the sheet anchored to the shrink-wrapped dock instead of the
+// viewport. The dock chrome file is outside this slice's manifest scope, so on
+// web the expanded sheet is portaled to document.body, escaping the
+// transformed ancestor entirely. The literal require below is evaluated only
+// on web and is shaken out of native bundles via the EXPO_OS platform
+// constant. Native and mid-widths keep the in-dock layout; every testID is
+// unchanged.
+function portalSheetToBody(node: React.ReactNode): React.ReactNode {
+  if (process.env.EXPO_OS !== "web" || typeof document === "undefined") {
+    return node;
+  }
+  const { createPortal } = require("react-dom") as typeof import("react-dom");
+  return createPortal(node, document.body);
+}
 import { COMPANION_CATALOGUE_V1 } from "../../../../content/characters/companion-catalogue-v1.mjs";
 import {
   companionPortraitAnimationTransitionV1,
@@ -304,11 +323,12 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   // Web-only presentation geometry. The expanded floating body renders as a
   // viewport-fixed sheet: left-anchored and ≤ 66% of the viewport width on
   // desktop (the battlefield stays materially visible on the right and the
-  // compact launcher chip is never covered), full-viewport on mobile. The
-  // DOM hierarchy and every testID are unchanged — only layout/styles — so
-  // the 266c/266d/266e browser journey remains valid. Mid widths and native
-  // keep the in-dock layout. The sheet receives events only inside its own
-  // box; the dock layer keeps its pointerEvents="box-none" discipline.
+  // compact launcher chip is never covered), full-viewport on mobile. Every
+  // testID is unchanged; on web the sheet is portaled to document.body
+  // (module-level portalSheetToBody) because the dock ScrollView's RNW
+  // compositing transform would otherwise trap position:fixed. Mid widths and
+  // native keep the in-dock layout. The sheet receives events only inside its
+  // own box; the dock layer keeps its pointerEvents="box-none" discipline.
   const { width: windowWidth } = useWindowDimensions();
   const webSheetCapable = floating && expanded && Platform.OS === "web";
   const wideFocusMode = webSheetCapable && windowWidth >= FOCUS_WIDE_MIN_WIDTH;
@@ -3134,33 +3154,35 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
 
       {expanded && (floating ? (
         wideFocusMode || mobileSheetMode ? (
-          <View
-            style={[
-              wideFocusMode ? styles.focusSheet : styles.mobileSheet,
-              fixedSheetPosition,
-              wideFocusMode ? { width: focusSheetWidth } : null,
-            ]}
-            testID={wideFocusMode ? "companion-focus-sheet" : "companion-mobile-sheet"}
-          >
-            {sheetHeader}
-            {wideFocusMode ? (
-              <View style={styles.focusColumnsRow}>
-                <View style={[styles.focusColumn, styles.focusColumnMain]}>
+          portalSheetToBody(
+            <View
+              style={[
+                wideFocusMode ? styles.focusSheet : styles.mobileSheet,
+                fixedSheetPosition,
+                wideFocusMode ? { width: focusSheetWidth } : null,
+              ]}
+              testID={wideFocusMode ? "companion-focus-sheet" : "companion-mobile-sheet"}
+            >
+              {sheetHeader}
+              {wideFocusMode ? (
+                <View style={styles.focusColumnsRow}>
+                  <View style={[styles.focusColumn, styles.focusColumnMain]}>
+                    {renderRejection()}
+                    {floatingMainSections}
+                  </View>
+                  <View style={styles.focusColumn}>
+                    {floatingSideSections}
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.mobileSheetColumn}>
                   {renderRejection()}
                   {floatingMainSections}
-                </View>
-                <View style={styles.focusColumn}>
                   {floatingSideSections}
                 </View>
-              </View>
-            ) : (
-              <View style={styles.mobileSheetColumn}>
-                {renderRejection()}
-                {floatingMainSections}
-                {floatingSideSections}
-              </View>
-            )}
-          </View>
+              )}
+            </View>,
+          )
         ) : (
           <View style={styles.bodyFloating}>
             {renderRejection()}
@@ -3330,8 +3352,8 @@ const styles = StyleSheet.create({
   bodyFloating: { gap: 8, padding: 10 },
   // Slice 266f: viewport-fixed sheet geometry (position applied inline as a
   // plain object; web-only branches).
-  focusSheet: { left: 16, top: 16, bottom: 18, borderRadius: 14, borderWidth: 1, borderColor: COMMS.lineStrong, backgroundColor: COMMS.panel, overflow: "hidden" },
-  mobileSheet: { left: 0, top: 0, right: 0, bottom: 0, backgroundColor: COMMS.panel },
+  focusSheet: { left: 16, top: 16, bottom: 18, zIndex: 1100, borderRadius: 14, borderWidth: 1, borderColor: COMMS.lineStrong, backgroundColor: COMMS.panel, overflow: "hidden" },
+  mobileSheet: { left: 0, top: 0, right: 0, bottom: 0, zIndex: 1100, backgroundColor: COMMS.panel },
   sheetHeader: { minHeight: 48, paddingHorizontal: 12, paddingVertical: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, backgroundColor: COMMS.panelAlt, borderBottomWidth: 1, borderBottomColor: COMMS.lineSoft },
   sheetHeaderTitle: { color: COMMS.cyanBright, fontSize: 12, fontWeight: "900", marginTop: 2 },
   sheetCloseButton: { minHeight: 34, justifyContent: "center", borderRadius: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: COMMS.lineStrong, backgroundColor: COMMS.action },

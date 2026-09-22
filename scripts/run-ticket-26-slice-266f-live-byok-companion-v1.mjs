@@ -968,12 +968,12 @@ async function main() {
     await toggle.focus();
     await page.keyboard.press("Enter");
     await page.getByTestId("companion-focus-sheet").waitFor({ timeout: 60_000 });
-    const chatSectionButton = dock.getByRole("button", { name: /Companion group chat/iu });
+    const chatSectionButton = page.getByRole("button", { name: /Companion group chat/iu });
     if (await page.getByTestId("companion-chat-section").count() === 0) {
       await chatSectionButton.focus();
       await page.keyboard.press("Enter");
     }
-    const chat = dock.getByTestId("companion-chat-section");
+    const chat = page.getByTestId("companion-chat-section");
     await chat.getByTestId("companion-chat-provider-status").waitFor({ timeout: 60_000 });
     const providerStatusText = await chat.getByTestId("companion-chat-provider-status").innerText();
     ensure(/injected Provider port/iu.test(providerStatusText)
@@ -1097,9 +1097,9 @@ async function main() {
     await narrowDock.getByRole("button", { name: /TACTICAL COMMS/iu }).tap();
     await narrowPage.getByTestId("companion-mobile-sheet").waitFor({ timeout: 60_000 });
     if (await narrowPage.getByTestId("companion-chat-section").count() === 0) {
-      await narrowDock.getByRole("button", { name: /Companion group chat/iu }).tap();
+      await narrowPage.getByRole("button", { name: /Companion group chat/iu }).tap();
     }
-    const narrowChat = narrowDock.getByTestId("companion-chat-section");
+    const narrowChat = narrowPage.getByTestId("companion-chat-section");
     await narrowChat.getByTestId("companion-chat-conversation-meta").waitFor({ timeout: 60_000 });
     const narrowMeta = await narrowChat.getByTestId("companion-chat-conversation-meta").innerText();
     ensure(narrowMeta.includes(conversationId) && narrowMeta.includes("turn 2"),
