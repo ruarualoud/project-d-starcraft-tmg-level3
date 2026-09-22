@@ -223,7 +223,8 @@ function main() {
         speech: "Omega correction." },
       }, {
         semanticCorrectionRounds: 1,
-        attemptKeys: ["prior-action-attempt", "current-action-attempt"],
+        attemptKeys: ["prior-action-attempt", "partial-action-attempt",
+          "current-action-attempt"],
         attempts: {
           "prior-action-attempt": { stage: "action", status: "completed",
             safeOutput: { providerTurn: { kind: "tool_calls", toolCalls: [{
@@ -241,6 +242,19 @@ function main() {
                   slotAssignments: [], parametersJson: "{}",
                   publicReason: "Accept the exact projected exposure." },
               } }] } } },
+          "partial-action-attempt": { stage: "action", status: "completed",
+            safeOutput: { providerTurn: { kind: "tool_calls", toolCalls: [{
+              name: "submit_decision", arguments: {
+                candidateId: omegaDomain.domainId,
+                intent: { predictedOpponentResponses: [{
+                  actionClass: "ranged_attack",
+                  likelyActorUnitId: "player1-goliath-1",
+                }] },
+                selection: { kind: "asset",
+                  optionId: threatened.placementOptionId,
+                  slotAssignments: [], parametersJson: "{}",
+                  publicReason: "Partial correction without stable refs." },
+              } }] } } },
           "current-action-attempt": { stage: "action", status: "completed",
             safeOutput: { providerTurn: { kind: "tool_calls", toolCalls: [{
               name: "submit_decision", arguments: {
@@ -253,7 +267,7 @@ function main() {
         },
       }, { currentAttemptKey: "current-action-attempt" });
     ensure(correctionSubmission.recovered === true
-      && correctionSubmission.sourceAttemptKey === "prior-action-attempt"
+      && correctionSubmission.sourceAttemptKey === "partial-action-attempt"
       && correctionSubmission.liftedFields.includes("selection")
       && correctionSubmission.submission.selection?.kind === "asset"
       && correctionSubmission.submission.selection?.optionId
@@ -265,7 +279,14 @@ function main() {
         === "Keep the corrected fire response."
       && correctionSubmission.submission.speech === "Omega correction."
       && correctionSubmission.submission.intent.predictedOpponentResponses[0]
-        .actionClass === "ranged_attack",
+        .actionClass === "ranged_attack"
+      && correctionSubmission.submission.intent.unitIds[0]
+        === "player2-swarmling"
+      && correctionSubmission.submission.intent.skillsUsed[0]
+        === "zerg-skill"
+      && correctionSubmission.submission.intent.abilitiesIntended[0]
+        === "Omega Network"
+      && correctionSubmission.submission.intent.resourcesIntended.length === 0,
     "CORRECTION_DELTA_NOT_MERGED", { correctionSubmission });
     ensure(correctionSubmission.selectionChanged === true
       && correctionSubmission.submission.intent.tradeoffs === undefined

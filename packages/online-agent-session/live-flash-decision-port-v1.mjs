@@ -27,7 +27,7 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v23";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v33";
+  "starcraft_tmg_live_action_shape_normalization_v34";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -3125,6 +3125,9 @@ const SELECTION_SENSITIVE_INTENT_FIELDS = new Set([
   "tradeoffs", "risks", "fallbacks", "stopOrReplanTriggers",
   "nextDecisionFocus",
 ]);
+const CORRECTION_STABLE_INTENT_ARRAY_FIELDS = Object.freeze([
+  "unitIds", "skillsUsed", "abilitiesIntended", "resourcesIntended",
+]);
 
 function correctionSelectionIdentity(selection) {
   if (!object(selection)) return null;
@@ -3184,6 +3187,20 @@ export function recoverStarcraftTmgCorrectionSubmissionV1(
     const inheritedFields = Object.keys(prior).filter((field) =>
       current[field] === undefined);
     const priorIntent = clone(prior.intent || {});
+    for (const field of CORRECTION_STABLE_INTENT_ARRAY_FIELDS) {
+      if (currentIntent[field] !== undefined
+        || Array.isArray(priorIntent[field])) continue;
+      for (const historical of attempts) {
+        const historicalRaw = responseParts(
+          historical.attempt.safeOutput).decision;
+        const historicalSubmission = object(historicalRaw)
+          ? liftCorrectionIntentFields(historicalRaw).submission : null;
+        if (String(historicalSubmission?.candidateId || "") !== candidateId
+          || !Array.isArray(historicalSubmission?.intent?.[field])) continue;
+        priorIntent[field] = clone(historicalSubmission.intent[field]);
+        break;
+      }
+    }
     if (selectionChanged) {
       for (const field of SELECTION_SENSITIVE_INTENT_FIELDS) {
         if (currentIntent[field] === undefined) delete priorIntent[field];
