@@ -6,6 +6,29 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — summon relationship subject repaired on disk
+
+Live runner **72606** continues; r50 Roachling Infestation has Web screenshot
+and Apply/Replay, r51 Ventral Sacs is applied/replayed in the Bot store while
+observation may still lag. Do not restart from an old progress timestamp.
+r50 checkpoint: 108 calls / 11,107,030 accounted units / ¥14.922166 estimate;
+later r50 decision usage is already additional. Both seats stay Flash.
+
+The r49 summon options correctly contained new Roachling IDs but all four
+relationship comparisons tried to bind them to Corpser, returning unknown.
+`legal-formation-search-v1.mjs` now reuses the actual pure Rules transition on
+a cloned state to compare the new subject and preserves its consumed Movement
+activation. Parent remains stationary; no synthetic copied caster or baseline.
+New concrete-bug gate: exact red, first repair reached a bad test-distance
+field, test-only correction then one green 26.719s / four edges / 0 Provider
+and Room mutation. Do not repeat it or run unrelated old gates/builds.
+Report `docs/ticket-23-slice-248-summoned-formation-subject-repair-2026-09-23.md`.
+**Not yet loaded by live72606**: use the next safe reload, retain current paid
+decisions and accepted actions. Historical summon strategy remains S249
+evidence, not reroll material. T23 stays33/36, remaining248/249/250.
+K3 native37154 remains active on the isolated S271 workspace/service; no
+acceptance report yet.
+
 ### 2026-09-23 T23 / S248 — r49 Round 2 reserve deployment verified
 
 Keep live session **72606**; no restart or duplicate match. At 20:38:44Z the

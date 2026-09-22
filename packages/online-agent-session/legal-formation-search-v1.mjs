@@ -10,6 +10,8 @@ import { deriveOfficialModelSurfacePlacementV2 } from
   "../rule-atoms/official-engagement-graph-v2.mjs";
 import { projectOfficialCharacteristicStatusFamilyModifiersV1 } from
   "../product-composition/official-characteristic-status-family-adapter-v1.mjs";
+import { createOfficialUnitLifecycleFamilyAdapterV1 } from
+  "../product-composition/official-unit-lifecycle-family-adapter-v1.mjs";
 import {
   enumerateOfficialSelectedRosterRangedActionsV1,
   projectOfficialSelectedRosterRangedFirepowerV1,
@@ -2731,24 +2733,48 @@ function incomingMoveThenFireEstimate(projected, actorId, graph) {
   }
 }
 
-function relationshipComparison(state, source, slots, objectives, baseline) {
+function relationshipComparison(state, source, slots, objectives, baseline,
+  instantiatedAction) {
   if (!slots.length) return {
     status: "not_applicable",
     reason: "formation_has_no_placement_slots",
   };
-  const actor = (state.pieces || []).find((entry) => entry.id === source.pieceId);
   const positions = new Map(slots.map((entry) => [entry.defaultModelId,
     entry.position]));
-  const actorModelIds = new Set((actor?.models || []).map((entry) => entry.id));
-  if (!actor || positions.size === 0
-    || [...positions.keys()].some((modelId) => !actorModelIds.has(modelId))) return {
-    status: "unknown",
-    reason: "placement_slots_do_not_belong_to_current_actor",
-  };
   try {
-    const projected = clone(state);
+    let projected = clone(state);
+    let subjectUnitId = source.pieceId;
+    const createsUnit = source.effectKind === "summon_roachling";
+    if (createsUnit) {
+      // Placement slots belong to a new Rules-created Unit, not its caster.
+      // Reuse the exact, pure Rules transition on a clone: this also retains
+      // Supply, model count, loadout and the summon activation lifecycle.
+      // A synthetic copy of the caster would silently invent those facts.
+      const action = instantiatedAction?.unitLifecyclePlan
+        ? instantiatedAction : instantiatedAction?.sourceAction;
+      const createdId = action?.unitLifecyclePlan?.canonicalParameters
+        ?.createdPieceId;
+      if (!createdId || action.pieceId !== source.pieceId
+        || action.effectKind !== source.effectKind) {
+        throw new TypeError("LEGAL_FORMATION_CREATED_SUBJECT_ACTION_MISSING");
+      }
+      const adapter = createOfficialUnitLifecycleFamilyAdapterV1(
+        state.officialUnitLifecycleFamilySourceBundle);
+      projected = clone(adapter.apply(projected, { action }).state);
+      subjectUnitId = createdId;
+      // The parent did not turn into the summon. There is no pre-existing
+      // subject baseline, so parent-to-enemy distances cannot be its deltas.
+      baseline = null;
+    }
     const projectedActor = projected.pieces.find((entry) =>
-      entry.id === source.pieceId);
+      entry.id === subjectUnitId);
+    const actorModelIds = new Set((projectedActor?.models || [])
+      .map((entry) => entry.id));
+    if (!projectedActor || positions.size === 0
+      || [...positions.keys()].some((modelId) => !actorModelIds.has(modelId))) {
+      return { status: "unknown",
+        reason: "placement_slots_do_not_belong_to_current_actor" };
+    }
     projectedActor.isOnField = true;
     projectedActor.isInReserves = false;
     projectedActor.inCoherency = true;
@@ -2799,6 +2825,8 @@ function relationshipComparison(state, source, slots, objectives, baseline) {
     return {
       status: "available",
       hypotheticalProjection: true,
+      ...(createsUnit ? { subjectUnitId, sourceActorUnitId: source.pieceId,
+        subjectProjectionSource: "official_unit_lifecycle_pure_transition" } : {}),
       baselineRelationshipGraphHash:
         baseline?.relationshipGraphHash || null,
       projectedRelationshipGraphHash: graph.relationshipGraphHash,
@@ -3038,7 +3066,8 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
       const optionCore = {
         ...optionSeed,
         relationshipComparison: relationshipComparison(state, source,
-          projectedSlots, objectives, baselineRelationshipGraph),
+          projectedSlots, objectives, baselineRelationshipGraph,
+          instantiated.action),
       };
       progress("relationship_comparison_completed", {
         examinedGeneratedCandidateCount,
