@@ -6,12 +6,13 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
-### 2026-09-23 T23 / S248 — r68 Swarmling response; same live process
+### 2026-09-23 T23 / S248 — r69 Marine1 response; same live process
 
 **76101 remains live**, repair78d2fd8 loaded. r65Marine2 CombatShield→r66finish
 →r67Swarmling18-model move→r68finish all applied/replayed/captured; r66/67
-pictures inspected.61new+7prefix=r68, Round2Movement;
-22:39:32Z168calls/18,430,674accounted units/estimated¥24.645064.
+pictures inspected. r69Marine1 move then applied/replayed/captured and inspected.
+62new+7prefix=r69, Round2Movement;
+22:45:55Z173calls/19,098,722accounted units/estimated¥25.507115.
 BothFlash. No new main-code change or repeated passed gate/build this turn.
 Keep this process and paid history. New repaired Goliath2 deployment still
 awaits an actual selection, not claimed from the boundary test.
@@ -30,6 +31,7 @@ avoidance/compact options were exposed; absence of an advancing option is not
 proof no advancing layout exists or proof the generator dropped one.
 c66Host interval266.107s with139exact instantiations/135overlap rejects is a
 performance profiling item, not permission to trim strategy facts/search.
+r69observation180.321s is also recorded; manifest time overlaps execution.
 Report `docs/ticket-23-slice-248-r61-r64-live-evidence-2026-09-23.md`.
 T23 still33/36:248complete match/249review/250synthesis open.
 

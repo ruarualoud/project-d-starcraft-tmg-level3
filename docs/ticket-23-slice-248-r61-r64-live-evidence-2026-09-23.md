@@ -139,6 +139,17 @@ A single faster screenshot batch at r68 is not a demonstrated performance fix.
 K3 native59421 remains live, correcting S271's verifier assumptions and session
 identity handling. Its real Flash/browser acceptance has not completed.
 
+Follow-up **r69**: Marine1 selected `isolate-advance` at(29,27)in, then
+Apply/Replay and Web screenshot completed. At22:45:55.094Z the same run has
+62new+7prefix=r69,173calls/19,098,722accounted units/estimated¥25.507115.
+The model acknowledges no immediate VP and shorter possible future charge
+distance. Its stated intent remains public rationale, not a proven optimal move.
+Manifest124.168s +refresh20.109s +capture36.044s =**180.321s**; the manifest
+interval overlaps execution, so component attribution still needs profiling.
+This significant latency is recorded without shrinking strategic capabilities.
+
+![Marine 1 after r69 movement](../build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/screenshots/0519-r069-player1-move-complete-board-applied.png)
+
 Observed manifest/refresh/capture totals: r62 **104.966s**, r63 **70.124s**,
 r64 **48.317s**. Manifest intervals include overlapping execution; they do not
 prove all time is serialization. Facts, Skills, search, output capacity and

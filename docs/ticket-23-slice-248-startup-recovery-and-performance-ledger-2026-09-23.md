@@ -78,6 +78,10 @@ No main-code/test/build changes were made for this observation. Full figures,
 screenshots and plan-versus-formation limitations are in
 `ticket-23-slice-248-r61-r64-live-evidence-2026-09-23.md`.
 
+Follow-up r69 Marine1 movement: manifest124.168s +refresh20.109s
++capture36.044s =180.321s. Keep execution overlap separate from read-only
+overhead attribution. Latest173calls/19,098,722units/estimated¥25.507115.
+
 ### r61–64 — recovery and model-selected ability sequence
 
 76101 recovered r61 without paid regeneration. Marine2 move, Go!Go!Go! and
