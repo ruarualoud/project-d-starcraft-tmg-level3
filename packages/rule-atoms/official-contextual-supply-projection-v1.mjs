@@ -2,8 +2,10 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { evaluateOfficialBaseMeasurementV1 } from
   "./official-model-base-geometry-rules-kernel-v1.mjs";
+import { resolveOfficialCurrentProductPieceCapabilityV1 } from
+  "../product-composition/official-current-product-state-facts-v1.mjs";
 
-export const OFFICIAL_CONTEXTUAL_SUPPLY_PROJECTION_VERSION = "1.0.0";
+export const OFFICIAL_CONTEXTUAL_SUPPLY_PROJECTION_VERSION = "1.1.0";
 
 const CONTEXTS = new Set([
   "supply_pool_calculation", "mission_marker_control",
@@ -73,12 +75,6 @@ function within(state, source, target, rangeMilliInches) {
       target: { kind: "model", unitId: target.id, modelId: targetModel.id },
     }).distanceMilliInches <= Number(rangeMilliInches))));
 }
-function legacySelectedCommander(state, piece) {
-  return state.officialSelectedRosterAbilitySourceBundle?.passiveBindings?.some((entry) => (
-    entry.effectKind === "commander" && entry.pieceId === piece.id
-      && entry.recordKey === piece.officialUnitRecordKey)) === true;
-}
-
 export function projectOfficialContextualSupplyValueV1(input = {}) {
   const { state } = input;
   const piece = state?.pieces?.find((entry) => entry.id === input.pieceId);
@@ -108,10 +104,13 @@ export function projectOfficialContextualSupplyValueV1(input = {}) {
     }
   }
   if (["mission_marker_control", "objective_completion", "disengage_check"].includes(context)) {
-    const commander = sourceRoutes.find((route) => route.effectKind === "commander_supply_bonus");
-    if (activePiece(piece) && (commander || legacySelectedCommander(state, piece))) {
+    const commander = resolveOfficialCurrentProductPieceCapabilityV1(state, {
+      pieceId: piece.id,
+      capability: "commander_contextual_supply_bonus",
+    });
+    if (activePiece(piece) && commander.enabled) {
       modifier += 1;
-      if (commander) applicableDefinitionIds.push(commander.definitionId);
+      applicableDefinitionIds.push(...commander.sources.map((entry) => entry.definitionId));
     }
   }
   if (["mission_marker_control", "objective_completion"].includes(context)) {

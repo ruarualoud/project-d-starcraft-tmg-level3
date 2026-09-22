@@ -161,7 +161,8 @@ const DECISION_STATE_FIELDS = Object.freeze([
   "scoringResolvedThisPhase", "scoringCleanupProgress",
   "supplyDestroyedThisRound", "supplyLossLedger", "selectedMission",
   "mission", "officialMissionRuntimeState", "officialRoundSupplyState",
-  "cardResources", "armyResourceBudgetsBySide", "pendingAction",
+  "cardResources", "publicRosterDisclosureBySide",
+  "armyResourceBudgetsBySide", "pendingAction",
   "pendingAbility", "pendingAttack", "pendingRangedAttackSequence",
   "activeAbilityUseHistory", "reactionUsage", "gameClock", "terminal",
   "terminalReason", "gameOver", "winner",
@@ -3671,7 +3672,7 @@ function compactProviderContinuationMessages(choice, stage) {
   });
 }
 
-function compactRoomProjection(projection) {
+export function projectStarcraftTmgLiveDecisionRoomProjectionV1(projection) {
   const state = object(projection?.state) ? projection.state : {};
   return {
     schemaVersion: `${STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION}.room-projection`,
@@ -3773,10 +3774,19 @@ function currentRangedCasualtyResolutionEvidence(input) {
   };
 }
 
-function strategySearchTerms(input) {
+export function deriveStarcraftTmgLiveStrategySearchTermsV1(input) {
   const state = input?.roomProjection?.state || {};
+  const publicCards = Object.values(state.publicRosterDisclosureBySide || {})
+    .flatMap((entry) => entry?.publicCards || []);
+  const boardObjects = [
+    ...(input?.spatialObservation?.tokens || []),
+    ...(input?.spatialObservation?.markers || []),
+  ];
   const values = [
     state.phase,
+    ...publicCards.flatMap((entry) => [
+      entry?.recordKey, entry?.cardName, entry?.factionName, entry?.cardKind,
+    ]),
     ...(input?.spatialObservation?.units || []).flatMap((entry) => [
       entry?.unitName, entry?.officialUnitRecordKey,
     ]),
@@ -3788,6 +3798,9 @@ function strategySearchTerms(input) {
     ...(input?.spatialActionSpace?.parameterDomains || []).flatMap((entry) => [
       entry?.actionType,
       entry?.pieceId,
+    ]),
+    ...boardObjects.flatMap((entry) => [
+      entry?.objectId, entry?.kind, entry?.label, entry?.source?.tokenKind,
     ]),
   ];
   return [...new Set(values.flatMap((value) => String(value || "")
@@ -3842,7 +3855,7 @@ function selectStrategyKnowledge(knowledge, terms, maximum) {
 }
 
 function compactStrategySkillSnapshot(snapshot, input) {
-  const terms = strategySearchTerms(input);
+  const terms = deriveStarcraftTmgLiveStrategySearchTermsV1(input);
   const skills = (snapshot?.skills || []).map((skill) => {
     const identityFields = [
       "skillId", "version", "hash", "skillType", "factionRecordKey",
@@ -4388,7 +4401,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       currentCorrections: clone(choice.warnings || []),
     }),
     makeNode("player-room-projection", "player-view", "room_service",
-      compactRoomProjection(input.roomProjection)),
+      projectStarcraftTmgLiveDecisionRoomProjectionV1(input.roomProjection)),
     makeNode("current-legal-space", "rules", "rules_service",
       compactLegalSpace(input.legalSpace)),
     ...(currentRangedCasualtyResolutionEvidence(input)

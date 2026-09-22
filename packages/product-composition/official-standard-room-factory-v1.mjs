@@ -62,6 +62,8 @@ import { createOfficialMissionDeploymentDraftDataBundleV1 } from
   "../source-data/official-mission-deployment-draft-data-bundle-v1.mjs";
 import { createOfficialMissionSetupBindingV1 } from
   "../source-data/official-mission-setup-binding-v1.mjs";
+import { validateOfficialFactionRequiredTacticalCardGroupsV1 } from
+  "./official-faction-army-building-card-requirements-v1.mjs";
 import { createOfficialModelBaseGeometryDataBundleV1,
   getOfficialModelBaseGeometryProfileV1 } from
   "../source-data/official-model-base-geometry-data-bundle-v1.mjs";
@@ -103,7 +105,7 @@ import { createOfficialStandardActionRouteCatalogueV1 } from
 
 export const OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_standard_room_initial_state_authority_v1";
-export const OFFICIAL_STANDARD_ROOM_FACTORY_VERSION = "2.1.0";
+export const OFFICIAL_STANDARD_ROOM_FACTORY_VERSION = "2.2.0";
 
 const HOLD_POSITION = "faction_cards:mission_hold_position";
 const GAUNTLET = "faction_cards:2NdngLtIeZAprsWr25hM";
@@ -367,18 +369,17 @@ export function buildOfficialRoomArmyAuditV1(bundle, sideKey, recipe,
   const faction = factionBundle.factionProfiles.find((entry) => (
     entry.recordKey === recipe.factionRecordKey));
   if (!faction) fail("STANDARD_ROOM_FACTION_UNKNOWN", recipe.factionRecordKey);
+  validateOfficialFactionRequiredTacticalCardGroupsV1({
+    dataset: configuration.dataset,
+    factionRecordKey: recipe.factionRecordKey,
+    selectedTacticalCardRecordKeys: recipe.tacticalCardRecordKeys,
+  });
   const tacticalCardInstances = recipe.tacticalCardRecordKeys.map((recordKey, index) => {
     const profile = armyBundle.tacticalBudgetProfiles.find((entry) => (
       entry.recordKey === recordKey));
     if (!profile) fail("STANDARD_ROOM_TACTICAL_CARD_UNKNOWN", recordKey);
     return tacticalReference(profile, sideKey, index + 1);
   });
-  if (recipe.factionRecordKey === "tactical_cards:kerrigan_s_swarm") {
-    const creepCards = recipe.tacticalCardRecordKeys.filter((recordKey) => (
-      ["tactical_cards:accelerating_creep", "tactical_cards:malignant_creep"]
-        .includes(recordKey)));
-    if (creepCards.length !== 1) fail("STANDARD_ROOM_KERRIGAN_CREEP_CARD_REQUIRED");
-  }
   const unitSelections = recipe.units.map((unitRecipe) => {
     const unit = bundle.unitCompositionProfiles.find((entry) => (
       entry.recordKey === unitRecipe.recordKey));
@@ -561,7 +562,9 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
   const rosterBundle = createOfficialRosterDisclosureDataBundleV1({ dataset });
   const compositionBundle = rosterBundle.unitCompositionUpgradeDataBundle;
   const audits = Object.fromEntries(SIDE_KEYS.map((sideKey) => [
-    sideKey, buildOfficialRoomArmyAuditV1(compositionBundle, sideKey, recipes[sideKey]),
+    sideKey, buildOfficialRoomArmyAuditV1(compositionBundle, sideKey, recipes[sideKey], {
+      dataset,
+    }),
   ]));
   const players = Object.fromEntries(SIDE_KEYS.map((sideKey) => [sideKey, {
     sideKey, playerId: sideKey,

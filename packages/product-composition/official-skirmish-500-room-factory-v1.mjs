@@ -173,7 +173,7 @@ import {
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
-export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "2.8.0";
+export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION = "2.9.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const MISSION_RECORD_KEY = "faction_cards:mission_hold_position__skirmish_";
@@ -380,7 +380,7 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   const compositionBundle = rosterBundle.unitCompositionUpgradeDataBundle;
   const audits = Object.fromEntries(SIDE_KEYS.map((sideKey) => [sideKey,
     buildOfficialRoomArmyAuditV1(compositionBundle, sideKey, recipes[sideKey], {
-      scaleId: "Skirmish", mineralBudget: 500,
+      scaleId: "Skirmish", mineralBudget: 500, dataset,
     })]));
   const players = Object.fromEntries(SIDE_KEYS.map((sideKey) => [sideKey, {
     sideKey, playerId: sideKey,

@@ -17,10 +17,21 @@ import { getOfficialCardBuildPaymentProfileV1 } from
   "../source-data/official-card-build-payment-data-bundle-v1.mjs";
 import { verifyOfficialCurrentProductAbilityDenominatorV1 } from
   "./official-current-product-ability-denominator-v1.mjs";
+import {
+  isOfficialCurrentProductUnitOnCreepV1,
+  resolveOfficialCurrentProductSideCapabilityV1,
+} from
+  "./official-current-product-state-facts-v1.mjs";
+
+export {
+  isOfficialCurrentProductUnitOnCreepV1,
+  resolveOfficialCurrentProductSideCapabilityV1,
+} from
+  "./official-current-product-state-facts-v1.mjs";
 
 export const OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_ID =
   "official-battlefield-asset-family-adapter-v1";
-export const OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_VERSION = "1.0.0";
+export const OFFICIAL_BATTLEFIELD_ASSET_FAMILY_ADAPTER_VERSION = "1.0.1";
 export const OFFICIAL_BATTLEFIELD_ASSET_FAMILY_BUNDLE_SCHEMA =
   "starcraft_tmg_official_battlefield_asset_family_source_bundle_v1";
 export const OFFICIAL_BATTLEFIELD_ASSET_FAMILY_PARAMETER_KIND =
@@ -960,31 +971,24 @@ function apply(bundle, stateInput, request = {}) {
 }
 
 function sideHasPassive(state, sideKey, effectKind) {
+  const canonicalCapability = {
+    creep_stay_displacement: "creep_tumor_stay_in_play_and_displacement",
+    creep_removal: "creep_tumor_enemy_action_removal",
+  }[effectKind];
+  if (canonicalCapability) {
+    return resolveOfficialCurrentProductSideCapabilityV1(state, {
+      sideKey,
+      capability: canonicalCapability,
+    }).enabled;
+  }
   const bundle = state.officialBattlefieldAssetFamilySourceBundle;
   if (!bundle) return false;
   return bundle.routes.some((route) => route.effectKind === effectKind
     && routeInstances(state, route).some((instance) => instance.sideKey === sideKey));
 }
-function zergGround(state, piece) {
-  const faction = normalized(state.players?.[piece.sideKey]?.faction || "");
-  return tags(piece).has("ground") && (tags(piece).has("zerg")
-    || faction.includes("zerg") || faction.includes("kerrigan"));
-}
 function structureSpecialAbilitiesAvailable(state, piece) {
   return Number(piece?.structureRules?.specialAbilitiesDisabledThroughRound
     ?? Number.NEGATIVE_INFINITY) < Number(state.round);
-}
-export function isOfficialCurrentProductUnitOnCreepV1(state, piece) {
-  if (!activePiece(piece) || !zergGround(state, piece)) return false;
-  const tumors = existingTokenRows(state).filter((entry) => (
-    entry.binding?.assetKind === "creep_tumor"));
-  const withinTumor = liveModels(piece).some((model) => tumors.some((token) => (
-    footprintGap(roundFootprint(pointForModel(model), modelRadius(model)),
-      token.footprint) <= 6.001)));
-  const omega = (state.pieces || []).filter((entry) => activePiece(entry)
-    && entry.officialUnitRecordKey === "army_units:omega_worm"
-    && structureSpecialAbilitiesAvailable(state, entry));
-  return withinTumor || omega.some((source) => unitWithin(source, piece, 6));
 }
 function markerDistance(state, piece) {
   const values = liveModels(piece).flatMap((model) => (

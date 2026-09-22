@@ -102,7 +102,9 @@ import {
 
 export const OFFICIAL_CURRENT_PRODUCT_ACTION_RUNTIME_COMPOSITION_SCHEMA =
   "starcraft_tmg_official_current_product_action_runtime_composition_v1";
-export const OFFICIAL_CURRENT_PRODUCT_ACTION_RUNTIME_COMPOSITION_VERSION = "1.0.0";
+export const OFFICIAL_CURRENT_PRODUCT_ACTION_RUNTIME_COMPOSITION_VERSION = "1.1.0";
+// 1.1.0 centralizes cross-adapter current-product facts and preserves their
+// exact source-definition lineage at consumers.
 
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);

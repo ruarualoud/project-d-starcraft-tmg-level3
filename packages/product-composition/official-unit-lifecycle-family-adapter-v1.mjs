@@ -32,7 +32,8 @@ import {
 } from "../source-data/official-summon-data-bundle-v1.mjs";
 import {
   isOfficialCurrentProductUnitOnCreepV1,
-} from "./official-battlefield-asset-family-adapter-v1.mjs";
+  resolveOfficialCurrentProductSideCapabilityV1,
+} from "./official-current-product-state-facts-v1.mjs";
 import {
   projectOfficialCharacteristicStatusFamilyModifiersV1,
 } from "./official-characteristic-status-family-adapter-v1.mjs";
@@ -43,7 +44,7 @@ import { resolveOfficialMatchLifecycleAbilityResourceCostV1 } from
 
 export const OFFICIAL_UNIT_LIFECYCLE_FAMILY_ADAPTER_ID =
   "official-unit-lifecycle-family-adapter-v1";
-export const OFFICIAL_UNIT_LIFECYCLE_FAMILY_ADAPTER_VERSION = "1.0.0";
+export const OFFICIAL_UNIT_LIFECYCLE_FAMILY_ADAPTER_VERSION = "1.0.1";
 export const OFFICIAL_UNIT_LIFECYCLE_FAMILY_BUNDLE_SCHEMA =
   "starcraft_tmg_official_unit_lifecycle_family_source_bundle_v1";
 export const OFFICIAL_UNIT_LIFECYCLE_FAMILY_PARAMETER_KIND =
@@ -1073,18 +1074,6 @@ function addPlacedPiece(state, pieceInput, placementPlan, options, events) {
     trainingTruth: false });
   return placed;
 }
-function sideHasBattlefieldPassive(state, sideKey, effectKind) {
-  const route = state.officialBattlefieldAssetFamilySourceBundle?.routes?.find((entry) => (
-    entry.effectKind === effectKind));
-  if (!route) return false;
-  if (route.sourceKind === "card_feature") {
-    return (state.cardResources?.[sideKey] || []).some((card) => (
-      card.officialCardRecordKey === route.recordKey));
-  }
-  return (state.pieces || []).some((piece) => piece.sideKey === sideKey
-    && piece.officialUnitRecordKey === route.recordKey && activePiece(piece)
-    && fieldedFeature(piece, route));
-}
 function applyPrimary(state, route, action, events) {
   const plan = action.unitLifecyclePlan;
   const parameters = plan.canonicalParameters;
@@ -1154,8 +1143,10 @@ function applyPrimary(state, route, action, events) {
   } else if (route.effectKind === "spawn_creep_tumor") {
     const planValue = tumorPlan(state, actor, parameters.coordinate);
     const tokenId = `asset:${state.round}:creep-tumor:${state.board.tokens.length + 1}`;
-    const stayInPlay = sideHasBattlefieldPassive(
-      state, action.sideKey, "creep_stay_displacement");
+    const stayInPlay = resolveOfficialCurrentProductSideCapabilityV1(state, {
+      sideKey: action.sideKey,
+      capability: "creep_tumor_stay_in_play_and_displacement",
+    }).enabled;
     const token = createOfficialBattlefieldTokenV1({
       registry: state.officialBattlefieldTokenMarkerRegistry,
       tokenId, tokenKind: "creep_tumor", coordinate: planValue.coordinate,

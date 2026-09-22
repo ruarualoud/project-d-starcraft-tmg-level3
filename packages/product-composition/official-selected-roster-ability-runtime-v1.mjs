@@ -21,10 +21,17 @@ import { getOfficialCurrentProductRecord } from
   "../source-data/official-command-center-adapter-v1.mjs";
 import { getOfficialModelBaseGeometryProfileV1 } from
   "../source-data/official-model-base-geometry-data-bundle-v1.mjs";
+import { isOfficialCurrentProductUnitOnCreepV1 as
+  isOfficialSelectedRosterUnitOnCreepV1 } from
+  "./official-current-product-state-facts-v1.mjs";
+
+export { isOfficialCurrentProductUnitOnCreepV1 as
+  isOfficialSelectedRosterUnitOnCreepV1 } from
+  "./official-current-product-state-facts-v1.mjs";
 
 export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ability-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION = "1.3.1";
+export const OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION = "1.3.2";
 export const OFFICIAL_SELECTED_ROSTER_ABILITY_PARAMETER_KIND =
   "official_selected_roster_active_ability_v1";
 export const OFFICIAL_SELECTED_ROSTER_FINISH_ACTIVATION_PARAMETER_KIND =
@@ -498,16 +505,6 @@ function wormForSide(state, sideKey) {
   return state.pieces.find((entry) => entry.isStructure === true
     && entry.officialUnitRecordKey === OMEGA_WORM_RECORD_KEY
     && entry.sideKey === sideKey && entry.isDestroyed !== true);
-}
-function wormSpecialAbilitiesAvailable(state, worm) {
-  return Number(worm?.structureRules?.specialAbilitiesDisabledThroughRound
-    ?? Number.NEGATIVE_INFINITY) < Number(state.round);
-}
-export function isOfficialSelectedRosterUnitOnCreepV1(state, piece) {
-  if (!activePiece(piece) || !piece.combatTags?.includes("ground")) return false;
-  const worm = wormForSide(state, piece.sideKey);
-  return Boolean(worm) && wormSpecialAbilitiesAvailable(state, worm)
-    && unitGap(piece, worm) <= 6.001;
 }
 function routeAvailable(state, route, actor) {
   phaseReady(state, route.sideKey, route, actor);

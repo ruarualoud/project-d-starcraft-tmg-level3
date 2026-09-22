@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import { STARCRAFT_TMG_TICKET_18_FOUNDATIONAL_STRATEGY_PACK_V1 } from
   "../../content/skill-generation/ticket-18-foundational-strategy-pack-v1.mjs";
+import { STARCRAFT_TMG_TICKET_18_PORTABLE_STRATEGY_PACK_V2 } from
+  "../../content/skill-generation/ticket-18-portable-strategy-pack-v2.mjs";
 import { createStarcraftTmgAuthoritativeEngine } from
   "../../packages/authoritative-engine/transition-v1.mjs";
 import {
@@ -51,6 +53,10 @@ import { createOfficialModelBaseGeometryDataBundleV1 } from
   "../../packages/source-data/official-model-base-geometry-data-bundle-v1.mjs";
 import { loadFormalFoundationalStrategyPackV1 } from
   "../../packages/strategy-skills/formal-foundational-skill-pack-loader-v1.mjs";
+import { loadPortableFoundationalStrategyPackV2 } from
+  "../../packages/strategy-skills/portable-foundational-skill-pack-loader-v2.mjs";
+import { routeOfficialCurrentProductStrategySkillsV1 } from
+  "../../packages/strategy-skills/current-product-strategy-routing-v1.mjs";
 import { hash } from "../../packages/skill-production/common.mjs";
 import { loadOfficialDevelopmentTrancheSourceLockFixtureV1 } from
   "./official-development-tranche-source-lock-fixture-v1.mjs";
@@ -957,33 +963,31 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
   });
 }
 
-function routedSkillRefs(allRefs, ownFaction, opponentFaction) {
-  const byId = new Map(allRefs.map((entry) => [entry.id, entry]));
-  return STARCRAFT_TMG_TICKET_18_FOUNDATIONAL_STRATEGY_PACK_V1.entries
-    .filter((entry) => entry.role === "general"
-      || (entry.role === "faction"
-        && entry.factionRecordKey === ownFaction)
-      || (entry.role === "matchup"
-        && entry.ownFaction === ownFaction
-        && entry.opponentFaction === opponentFaction))
-    .map((entry) => byId.get(entry.skillId))
-    .filter(Boolean);
-}
-
 export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
   const occurredAt = String(options.occurredAt
     || "2026-09-14T10:00:00.000Z");
   const now = typeof options.now === "function"
     ? options.now : () => new Date().toISOString();
-  const manifestRefs = STARCRAFT_TMG_TICKET_18_FOUNDATIONAL_STRATEGY_PACK_V1
+  const portable = await loadPortableFoundationalStrategyPackV2({
+    root: path.resolve(options.root || path.join(
+      path.dirname(fileURLToPath(import.meta.url)), "../..")),
+    manifest: STARCRAFT_TMG_TICKET_18_PORTABLE_STRATEGY_PACK_V2,
+  });
+  const strategySkillEntries = portable.foundational.entries;
+  const manifestRefs = STARCRAFT_TMG_TICKET_18_PORTABLE_STRATEGY_PACK_V2
     .entries.map((entry) => ({
       id: entry.skillId,
-      version: "ticket18-accepted-v1",
       hash: entry.skillHash,
     }));
-  const terranRefs = routedSkillRefs(manifestRefs, TERRAN, ZERG);
-  const zergRefs = routedSkillRefs(manifestRefs, ZERG, TERRAN);
   const requestedExperiment = options.agentAgentExperiment || {};
+  let resolvedBotDecisionPort = null;
+  const botDecisionPort = options.botDecisionPort || Object.freeze({
+    async decide(input) {
+      ensure(resolvedBotDecisionPort,
+        "TICKET20_DEMO_ROUTED_BOT_DECISION_PORT_NOT_READY");
+      return resolvedBotDecisionPort.decide(input);
+    },
+  });
   const base = await createTicket20HumanAgentDemoFixtureV1({
     ...options,
     occurredAt,
@@ -993,15 +997,32 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
     matchMode: "agent_vs_agent",
     title: options.title || "Ticket 20 · Agent vs Agent · Hold Position",
     surfaceMode: options.surfaceMode || "agent_agent_development",
-    botSkillRefs: zergRefs,
-    botDecisionProfile: {
-      agentLabel: "凯瑞甘",
-      ownFaction: "Zerg",
-      ownUnitName: "Zergling",
-      opponentFaction: "Terran",
-      opponentUnitName: "Marine",
-    },
+    botDecisionPort,
   });
+  const aggregate = await base.roomRuntime.roomStore.loadRoom(base.roomId);
+  const routesBySeat = Object.fromEntries(["player1", "player2"].map((seatKey) => [
+    seatKey,
+    routeOfficialCurrentProductStrategySkillsV1({
+      state: aggregate.envelope.state,
+      seatKey,
+      manifest: STARCRAFT_TMG_TICKET_18_PORTABLE_STRATEGY_PACK_V2,
+      loadedEntries: strategySkillEntries,
+    }),
+  ]));
+  const player1Refs = routesBySeat.player1.skillRefs;
+  const player2Refs = routesBySeat.player2.skillRefs;
+  if (!options.botDecisionPort) {
+    resolvedBotDecisionPort = createTicket20DeterministicSkillGuidedDecisionPortV1(
+      player2Refs,
+      {
+        agentLabel: "凯瑞甘",
+        ownFaction: aggregate.envelope.state.players.player2.factionName,
+        ownUnitName: "Zergling",
+        opponentFaction: aggregate.envelope.state.players.player1.factionName,
+        opponentUnitName: "Marine",
+      },
+    );
+  }
   const player1Scope = {
     gameId: "starcraft-tmg",
     roomId: base.roomId,
@@ -1080,7 +1101,7 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
   const player1RuntimeOptions = {
     roomPort: base.roomRuntime,
     decisionPort: options.player1DecisionPort
-      || createTicket20DeterministicSkillGuidedDecisionPortV1(terranRefs, {
+      || createTicket20DeterministicSkillGuidedDecisionPortV1(player1Refs, {
         agentLabel: "Terran 指挥官",
         ownFaction: "Terran",
         ownUnitName: "Marine",
@@ -1144,7 +1165,7 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
       versions: {
         source: `official-current:${base.sourceBinding.dataset}`,
         rules: `ticket11:${base.sourceBinding.rules}`,
-        strategy: `ticket18-foundational:${hash(manifestRefs)}`,
+        strategy: `ticket18-portable-v2:${hash(manifestRefs)}`,
       },
       scenario: {
         mapId: String(requestedExperiment.mapId
@@ -1172,24 +1193,24 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
             || (formalStandard2000
               ? "ticket23-terran-selfplay-agent-v1"
               : "ticket20-terran-command-agent-v1")),
-          factionRecordKey: TERRAN,
+          factionRecordKey: routesBySeat.player1.ownFactionRecordKey,
           providerId: String(requestedExperiment.player1ProviderId
             || (formalStandard2000
               ? "deepseek-live-opponent-provider-stack-v1"
               : "deterministic-skill-guided-development-v1")),
-          skillRefs: terranRefs,
+          skillRefs: player1Refs,
         },
         player2: {
           agentId: String(requestedExperiment.player2AgentId
             || (formalStandard2000
               ? "ticket23-kerrigan-swarm-selfplay-agent-v1"
               : "ticket20-kerrigan-swarm-agent-v1")),
-          factionRecordKey: ZERG,
+          factionRecordKey: routesBySeat.player2.ownFactionRecordKey,
           providerId: String(requestedExperiment.player2ProviderId
             || (formalStandard2000
               ? "deepseek-live-opponent-provider-stack-v1"
               : "deterministic-skill-guided-development-v1")),
-          skillRefs: zergRefs,
+          skillRefs: player2Refs,
         },
       },
     },
@@ -1199,18 +1220,21 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
       scope: player1Scope,
       seatToken: base.createdRoom.credentials.human.seatToken,
       automationConsent: consent,
-      strategySkillSetHash: hash(terranRefs),
+      strategySkillSetHash: hash(player1Refs),
     }, {
       seatKey: "player2",
       runtime: base.botRuntime,
       scope: base.botScope,
       seatToken: base.createdRoom.credentials.bot.seatToken,
       automationConsent: consent,
-      strategySkillSetHash: hash(zergRefs),
+      strategySkillSetHash: hash(player2Refs),
     }],
   });
   return Object.freeze({
     ...base,
+    strategySkillRefs: Object.freeze(manifestRefs),
+    strategySkillEntries: Object.freeze(strategySkillEntries),
+    strategySkills: Object.freeze(strategySkillEntries.map((entry) => entry.skill)),
     orchestrator,
     player1Runtime,
     player1Scope,
@@ -1219,8 +1243,12 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
     player1TurnPlanRuntime,
     player1Notifications,
     routedSkillRefsBySeat: Object.freeze({
-      player1: terranRefs,
-      player2: zergRefs,
+      player1: player1Refs,
+      player2: player2Refs,
+    }),
+    factionRecordKeysBySeat: Object.freeze({
+      player1: routesBySeat.player1.ownFactionRecordKey,
+      player2: routesBySeat.player2.ownFactionRecordKey,
     }),
     agentAgentCoverage: Object.freeze({
       denominator: formalStandard2000
