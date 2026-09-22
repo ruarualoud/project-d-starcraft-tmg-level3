@@ -1974,6 +1974,92 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     );
   }
 
+  /**
+   * Slice 266f.3: session continuity surface. Every value below is a REAL
+   * server projection (conversation binding, worldbook read, memory read,
+   * author's note read); an unloaded or empty layer renders an honest
+   * not-loaded / not-written state — never fabricated content. Worldbook
+   * entries are classified by origin: sealed package (formal pack content),
+   * persona-derived, chat-tier session entries, and product-global entries
+   * (a fixture-injected global entry is honestly labelled by its own
+   * provenance).
+   */
+  function worldbookOriginClass(entry: any) {
+    const tier = String(entry?.scopeTier || "");
+    if (tier === "character") return "sealed_package";
+    if (tier === "persona") return "persona_derived";
+    if (tier === "chat") return "chat_session";
+    const refs: string[] = entry?.provenance?.sourceRefs || [];
+    if (refs.some((ref) => String(ref).startsWith("fixture://"))) {
+      return "product_global_fixture";
+    }
+    return "product_global";
+  }
+
+  function renderChatContinuityCard(conversation: any) {
+    const companions: any[] = conversation?.companions || [];
+    const worldbookEntries: any[] = chat.worldbook?.entries || [];
+    const originCounts: Record<string, number> = {};
+    for (const entry of worldbookEntries) {
+      const origin = worldbookOriginClass(entry);
+      originCounts[origin] = (originCounts[origin] || 0) + 1;
+    }
+    const memory = chat.memoryDetail?.layers || null;
+    const summaryVersions: any[] = memory?.rollingSummaryVersions || [];
+    const episodicFacts: any[] = memory?.episodicFacts || [];
+    const relationshipHistory: any[] = memory?.relationshipState?.history || [];
+    const note = chat.authorsNote;
+    return (
+      <View style={styles.gapCard} testID="companion-chat-continuity">
+        <Text style={styles.gapTitle}>
+          {zh
+            ? "会话连续性（真实包/会话内容 · 空层如实标注）"
+            : "Session continuity (real package/session content · empty layers labelled honestly)"}
+        </Text>
+        <View testID="companion-chat-continuity-era">
+          {companions.map((companion: any) => (
+            <Text key={companion.participantId} style={styles.gapCode}>
+              {zh ? "时代" : "era"} · {chatParticipantLabel(conversation, companion.participantId)}
+              {": "}{companion.eraId || (zh ? "注册默认（包）" : "registered default (package)")}
+            </Text>
+          ))}
+        </View>
+        <Text style={styles.gapCode} testID="companion-chat-continuity-worldbook">
+          {chat.worldbook
+            ? `${zh ? "世界书来源" : "worldbook origins"}: `
+              + `${zh ? "封存包(正式内容)" : "sealed package (formal)"} ${originCounts.sealed_package || 0}`
+              + ` · ${zh ? "人设派生" : "persona-derived"} ${originCounts.persona_derived || 0}`
+              + ` · ${zh ? "会话注册" : "chat session"} ${originCounts.chat_session || 0}`
+              + ` · ${zh ? "产品全局" : "product global"} ${originCounts.product_global || 0}`
+              + (originCounts.product_global_fixture
+                ? ` · ${zh ? "产品全局(验收夹具注入,如实)" : "product global (acceptance-fixture injected, honest)"} ${originCounts.product_global_fixture}`
+                : "")
+            : (zh
+              ? "世界书：未载入 — 使用「读取世界书」；绝不伪造条目。"
+              : "worldbook: not loaded — use Read worldbook; entries are never fabricated.")}
+        </Text>
+        <Text style={styles.gapCode} testID="companion-chat-continuity-memory">
+          {memory
+            ? `${zh ? "记忆" : "memory"}: ${zh ? "摘要版本" : "summary versions"} ${summaryVersions.length}`
+              + ` · ${zh ? "情景事实" : "episodic facts"} ${episodicFacts.length}`
+              + ` · ${zh ? "关系事件" : "relationship events"} ${relationshipHistory.length}`
+              + ` · ${zh ? "转写" : "transcript"} ${conversation?.memorySummary?.transcriptEntries ?? 0}`
+              + (memory.rollingSummaryHonesty ? ` · ${memory.rollingSummaryHonesty}` : "")
+            : (zh
+              ? "记忆：未载入 — 使用「读取记忆」；空层保持第一等未知，绝不填零或编造。"
+              : "memory: not loaded — use Read memory; empty layers stay first-class unknown, never zero-filled or invented.")}
+        </Text>
+        <Text style={styles.gapCode} testID="companion-chat-continuity-authors-note">
+          {note
+            ? (note.configured
+              ? `${zh ? "作者注释" : "author's note"}: v${note.version} · ${note.injection}`
+              : (zh ? "作者注释：未配置（如实）" : "author's note: not configured (honest)"))
+            : (zh ? "作者注释：未载入" : "author's note: not loaded")}
+        </Text>
+      </View>
+    );
+  }
+
   function renderChatPersonaCard() {
     const persona = chat.persona;
     return (
@@ -2740,6 +2826,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         )}
 
         {renderChatMemorySummary(conversation)}
+        {renderChatContinuityCard(conversation)}
         {renderChatWorldbookCard()}
         {renderChatMemoryCard()}
         {renderChatBranchesCard()}
