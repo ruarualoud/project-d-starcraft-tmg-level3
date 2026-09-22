@@ -29,6 +29,63 @@ const runArgument = process.argv.find((value) =>
   value.startsWith("--run-directory="));
 const runDirectory = path.resolve(ROOT, runArgument
   ? runArgument.slice("--run-directory=".length) : DEFAULT_RUN);
+if (process.argv.includes("--calibration-evidence-envelope-only")) {
+  const { DatabaseSync } = await import("node:sqlite");
+  const { projectStarcraftTmgPredictionCalibrationEvidenceV1: project } =
+    await import("../packages/online-agent-session/live-flash-decision-port-v1.mjs");
+  const providerDb = new DatabaseSync(path.join(runDirectory,
+    "seats/player1/provider/live-decisions.sqlite"), { readOnly: true });
+  const memoryDb = new DatabaseSync(path.join(runDirectory,
+    "seats/player1/match-memory.sqlite"), { readOnly: true });
+  let match;
+  let records;
+  try {
+    match = JSON.parse(providerDb.prepare(
+      "SELECT record_json FROM sc_live_decision_records LIMIT 1").get().record_json);
+    records = memoryDb.prepare("SELECT record_json FROM sc_match_decision_journal ORDER BY sequence")
+      .all().map((row) => JSON.parse(row.record_json));
+  } finally { providerDb.close(); memoryDb.close(); }
+  const choice = Object.values(match.decisions).find((entry) =>
+    entry.authority?.stateRevision === 16 && entry.status === "completed");
+  assert(choice, "use the real paid r16 decision which applied Stimpack at r17");
+  const calibrations = records.filter((entry) =>
+    entry.kind === "prediction_calibration"
+      && entry.occurredAt <= choice.createdAt).slice(-6);
+  const memory = { workingMemory: { opponentModel: {
+    predictionCalibrations: calibrations,
+  } } };
+  assert(calibrations.length > 0, "the calibration records predate this choice");
+  const assessment = choice.plannerResult.assessment;
+  const quoted = assessment.opponentModelUpdates.join("\n");
+  const cited = calibrations.filter((row) => quoted.includes(row.payload.calibrationHash));
+  assert(cited.length > 0, "public Planner citations match real journal hashes");
+  const before = JSON.stringify({ memory, assessment });
+  const actual = project(memory, assessment);
+  console.log(JSON.stringify({ source: "actual_r16_paid_planner_and_prior_journal",
+    availableExpected: calibrations.length,
+    citedExpected: cited.length,
+    availableObserved: actual.predictionCalibrationsAvailable.length,
+    citedObserved: actual.predictionCalibrationsCited.length,
+    providerCalls: 0, roomMutations: 0 }));
+  assert.equal(actual.predictionCalibrationsAvailable.length, calibrations.length);
+  assert.deepEqual(actual.predictionCalibrationsCited.map((row) => row.calibrationHash),
+    cited.map((row) => row.payload.calibrationHash));
+  assert.equal(JSON.stringify({ memory, assessment }), before);
+  assert.deepEqual(project(memory, { opponentModelUpdates: ["invented-hash"] })
+    .predictionCalibrationsCited, [], "a claimed nonexistent citation is not evidence");
+  assert.equal(project(memory, {}).predictionCalibrationsAvailable.length,
+    calibrations.length, "availability is distinct from actually citing it");
+  assert.deepEqual(project(null, assessment).predictionCalibrationsCited, [],
+    "prose alone cannot prove that a calibration was supplied");
+  const flat = { workingMemory: { opponentModel: {
+    predictionCalibrations: calibrations.map((row) => row.payload),
+  } } };
+  assert.deepEqual(project(flat, assessment), actual,
+    "retain the old direct-payload representation");
+  console.log(JSON.stringify({ ok: true, focused: "calibration_evidence_envelope",
+    publicCitations: actual.predictionCalibrationsCited }));
+  process.exit(0);
+}
 const privateState = JSON.parse(await readFile(
   path.join(runDirectory, "runner-private.json"), "utf8"));
 const runId = path.basename(runDirectory);

@@ -2874,6 +2874,34 @@ function normalizeTradeoffs(value) {
   }];
 }
 
+export function projectStarcraftTmgPredictionCalibrationEvidenceV1(
+  matchMemory, assessment = {},
+) {
+  const records = matchMemory?.workingMemory?.opponentModel?.predictionCalibrations;
+  const available = (Array.isArray(records) ? records : [])
+    // Continuity supplies provenance-bearing compactRecord envelopes, not
+    // bare payloads. Preserve legacy direct payloads without changing memory.
+    .map((entry) => object(entry?.payload) ? entry.payload : entry)
+    .filter((entry) => object(entry) && entry.calibrationHash)
+    .map((entry) => ({
+      calibrationHash: String(entry.calibrationHash),
+      classification: entry.classification ? String(entry.classification) : null,
+      responseId: entry.responseId ? String(entry.responseId) : null,
+    }));
+  const evidenceText = [
+    ...strings(assessment.evidenceFor),
+    ...strings(assessment.evidenceAgainst),
+    ...strings(assessment.changedAssumptions),
+    ...strings(assessment.opponentModelUpdates),
+    assessment.revisionReason,
+  ].filter(Boolean).join("\n");
+  return {
+    predictionCalibrationsAvailable: available,
+    predictionCalibrationsCited: available.filter((entry) =>
+      evidenceText.includes(entry.calibrationHash)),
+  };
+}
+
 function normalizeDecision(raw, input, match, queryReceipts, providerTrace) {
   if (!object(raw)) {
     throw Object.assign(new TypeError("model returned no decision object"), {
@@ -2969,26 +2997,11 @@ function normalizeDecision(raw, input, match, queryReceipts, providerTrace) {
   const queryRefs = queryReceipts.filter((entry) => object(entry)
     && entry.authority?.stateHash === input.roomProjection.room.stateHash
     && entry.authority?.legalSpaceHash === input.legalSpace.legalSpaceHash);
-  const availablePredictionCalibrations = Array.isArray(
-    input.matchMemory?.workingMemory?.opponentModel?.predictionCalibrations)
-    ? input.matchMemory.workingMemory.opponentModel.predictionCalibrations
-      .filter((entry) => object(entry) && entry.calibrationHash)
-      .map((entry) => ({
-        calibrationHash: String(entry.calibrationHash),
-        classification: entry.classification
-          ? String(entry.classification) : null,
-        responseId: entry.responseId ? String(entry.responseId) : null,
-      }))
-    : [];
-  const assessmentEvidenceText = [
-    ...assessment.evidenceFor,
-    ...assessment.evidenceAgainst,
-    ...assessment.changedAssumptions,
-    ...assessment.opponentModelUpdates,
-    assessment.revisionReason,
-  ].filter(Boolean).join("\n");
-  const citedPredictionCalibrations = availablePredictionCalibrations.filter(
-    (entry) => assessmentEvidenceText.includes(entry.calibrationHash));
+  const {
+    predictionCalibrationsAvailable: availablePredictionCalibrations,
+    predictionCalibrationsCited: citedPredictionCalibrations,
+  } = projectStarcraftTmgPredictionCalibrationEvidenceV1(
+    input.matchMemory, assessment);
   const intent = {
     currentGoal: text(rawIntent.currentGoal, assessment.currentGoal),
     purpose: text(rawIntent.purpose, selectedReason),

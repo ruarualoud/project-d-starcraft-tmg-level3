@@ -6,6 +6,20 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — Flash match and evidence-only repair
+
+Formal branch `20260922172710914` has continued through r19, including Marine 2
+deployment, Stimpack and Combat Shield with actual Apply/Replay/screenshots;
+Hydralisk deployment is the following accepted authority action. Both seats
+use Flash. Keep the running match alive; do not reroll valid weaker choices.
+The prediction-calibration report read the wrong layer of continuity's compact
+record envelope. The real r16 Planner cited four prior records; the narrow
+read-only red→one-green check now reports four instead of zero. This reporting
+repair does not restart the current process, rewrite historical decisions or
+change model/strategy input. Use it at the next normal checkpoint. See
+`docs/ticket-23-slice-248-calibration-evidence-envelope-repair-2026-09-23.md`.
+T23 remains 33/36: S248 complete match, S249 review and S250 synthesis pending.
+
 ### 2026-09-22 Ticket 24 / Slices 254-R3–R5 checkpoint
 
 The old Slice 254-R2 branch rendered axis-aligned source footprints over the
