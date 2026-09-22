@@ -43,6 +43,12 @@ import {
   verifyRosterStrategistSessionReceiptV1,
 } from "../packages/roster-strategist/roster-strategist-runtime-v1.mjs";
 import {
+  normalizeRosterStrategistPublicOutputV1,
+  ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1,
+  verifyRosterStrategistOutputAliasRegistryV1,
+  verifyRosterStrategistOutputNormalizationReceiptV1,
+} from "../packages/roster-strategist/public-output-normalization-v1.mjs";
+import {
   parseRosterPlanV1,
   serializeRosterPlanV1,
   verifyRosterPlanRoundTripV1,
@@ -673,6 +679,142 @@ await expectFailure(269, () => strategistA.planRoster(sessionInput, {
 }), "ROSTER_STRATEGIST_PROPOSALS_INVALID",
   "proposals must use only enumerated legal choices");
 
+// ------------------------------------------------ round-4 alias drift
+// Focused regression for the saved live round-4 blocker
+// (repair-round-4-report.json,
+// ROSTER_STRATEGIST_FOUNDATION_INVALID:hypothesis,implication,observable).
+check(269, verifyRosterStrategistOutputAliasRegistryV1(
+    ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1) === true
+  && ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.version === "1.0.0"
+  && strategistDescriptor.publicOutputNormalization?.aliasRegistryHash
+    === ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.registryHash
+  && strategistDescriptor.publicOutputNormalization
+      .neverFillsMissingSemanticContent === true,
+  "the alias registry must be explicit, versioned and bound by the descriptor");
+const identityNormalization = normalizeRosterStrategistPublicOutputV1({
+  output: foundationOutput(),
+  request: { roundKind: "strategy_foundation",
+    schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA } });
+check(269, verifyRosterStrategistOutputNormalizationReceiptV1(
+    identityNormalization.receipt) === true
+  && identityNormalization.receipt.changed === false
+  && identityNormalization.receipt.operations.length === 0
+  && isDeepStrictEqual(identityNormalization.output, foundationOutput()),
+  "an already-contracted answer must normalize as an identity with a "
+    + "provenance receipt");
+function capturedRound4HypothesisOutput() {
+  return {
+    ...cheapFoundationOutput(),
+    opponentHypotheses: [{
+      hypothesis: "Kerrigan's Swarm races cheap units onto central markers",
+      implication: "central marker pressure forces early Marine commitment",
+      observable: "opponent deploys no cheap runner unit by round 2" }],
+  };
+}
+const capturedNormalization = normalizeRosterStrategistPublicOutputV1({
+  output: capturedRound4HypothesisOutput(),
+  request: { roundKind: "strategy_foundation",
+    schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA } });
+check(269, verifyRosterStrategistOutputNormalizationReceiptV1(
+    capturedNormalization.receipt) === true
+  && capturedNormalization.receipt.operations.filter((operation) => (
+    operation.kind === "admitted_alias_rename")).length === 2
+  && capturedNormalization.output.opponentHypotheses[0].hypothesisText
+    === "Kerrigan's Swarm races cheap units onto central markers"
+  && capturedNormalization.output.opponentHypotheses[0].falsificationText
+    === "opponent deploys no cheap runner unit by round 2"
+  && capturedNormalization.output.opponentHypotheses[0].implication
+    !== undefined
+  && capturedNormalization.output.opponentHypotheses[0].hypothesisId
+    === undefined,
+  "the boundary renames only admitted aliases and never invents the "
+    + "still-missing contracted content");
+await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    strategy_foundation: () => capturedRound4HypothesisOutput() }),
+}), "ROSTER_STRATEGIST_FOUNDATION_INVALID",
+  "the captured under-specified round-4 shape must still fail closed after "
+    + "normalization: missing semantic content is never filled");
+function aliasedEnvelopeFoundationOutput() {
+  const base = cheapFoundationOutput();
+  return { channels: { roster_strategy: {
+    scoreRoute: base.scoreRoute,
+    opponentHypotheses: [{
+      id: "hyp-zerg-pressure",
+      archetype: "zerg_early_pressure",
+      hypothesis: "Kerrigan's Swarm races cheap units onto central markers",
+      confidence: "medium",
+      expectedCounters: ["swarmling marker races", "creep-enabled flanks"],
+      counterResponseIds: ["rsp-hold-center"],
+      observable: "opponent deploys no cheap runner unit by round 2" }],
+    counterResponses: [{
+      id: "rsp-hold-center",
+      trigger: "early cheap-unit marker pressure",
+      response: "hold central high ground with Marine blocks and "
+        + "Goliath overwatch",
+      hypothesisIds: ["hyp-zerg-pressure"] }],
+    invalidationTriggers: [{
+      id: "trg-vp-deficit",
+      observationKind: "vp_deficit",
+      trigger: "two or more VP behind schedule after round 2",
+      revisionRequired: "re-route to attrition scoring" }],
+    informationNeeds: base.informationNeeds,
+  } } };
+}
+const aliasSession = await strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    strategy_foundation: () => aliasedEnvelopeFoundationOutput() }) });
+check(269, verifyRosterPlanRoundTripV1(aliasSession.plan) === true
+  && aliasSession.plan.rosterCandidate.legalityStatus === "legal"
+  && aliasSession.plan.opponentHypotheses[0].hypothesisId
+    === "hyp-zerg-pressure"
+  && aliasSession.plan.opponentHypotheses[0].ownCounterResponseIds[0]
+    === aliasSession.plan.counterResponses[0].responseId
+  && aliasSession.plan.counterResponses[0].linkedHypothesisIds[0]
+    === aliasSession.plan.opponentHypotheses[0].hypothesisId
+  && verifyRosterStrategistSessionReceiptV1(aliasSession.sessionReceipt)
+    === true,
+  "a fully alias-drifted but content-complete foundation inside the admitted "
+    + "transport envelope must validate and plan normally after normalization");
+const aliasRoundReceipt =
+  aliasSession.planningTrace[0].outputNormalizationReceipt;
+check(269, verifyRosterStrategistOutputNormalizationReceiptV1(
+    aliasRoundReceipt) === true
+  && aliasRoundReceipt.changed === true
+  && aliasRoundReceipt.semanticContentModified === false
+  && aliasRoundReceipt.missingSemanticContentFilled === false
+  && aliasRoundReceipt.operations.some((operation) => (
+    operation.kind === "transport_envelope_unwrap"
+      && operation.path === "channels.roster_strategy"))
+  && aliasRoundReceipt.operations.filter((operation) => (
+    operation.kind === "request_owned_constant_stamp")).length === 2
+  && aliasRoundReceipt.operations.filter((operation) => (
+    operation.kind === "admitted_alias_rename")).length === 13
+  && aliasSession.planningTrace.every((entry) => (
+    verifyRosterStrategistOutputNormalizationReceiptV1(
+      entry.outputNormalizationReceipt) === true))
+  && aliasSession.sessionReceipt.outputNormalizationAliasRegistryVersion
+    === "1.0.0",
+  "the provenance receipt must record the unwrap, both constant stamps and "
+    + "every admitted rename for the alias-drifted round");
+await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    strategy_foundation: () => ({
+      ...cheapFoundationOutput(),
+      opponentHypotheses: [{
+        hypothesisId: "hyp-zerg-pressure",
+        archetypeLabel: "zerg_early_pressure",
+        hypothesis: "alias naming must never merge or drop keys",
+        hypothesisText: "canonical value already present",
+        confidence: "medium",
+        expectedCounterTexts: ["swarmling marker races"],
+        ownCounterResponseIds: ["rsp-hold-center"],
+        falsificationText: "opponent deploys no cheap runner unit by round 2" }],
+    }) }),
+}), "ROSTER_STRATEGIST_FOUNDATION_INVALID",
+  "an alias conflicting with a present canonical field must fail closed; "
+    + "the boundary never merges or drops keys");
+
 check(269, bundle.bundleHash === bundleHashBefore
   && hashStarcraftTmgContract(authority.state)
     === labDescriptor.sourceStateHash,
@@ -700,6 +842,8 @@ const report = {
     rejectionRulesErrorCodes: result.rejections.map((entry) => (
       entry.rulesErrorCode || entry.portErrorCode)),
     determinismIdenticalPlanHash: resultB.plan.planHash === plan.planHash,
+    outputNormalizationAliasRegistryVersion:
+      ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.version,
     hiddenChainOfThoughtIncluded: false,
     hostPreferenceWeights: false,
   },
