@@ -341,3 +341,21 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   3,595,101 units and ¥4.967730; including the original invalid-suffix source:
   105 calls, 4,941,895 units and ¥6.820451. No ¥100 threshold was crossed.
 - Kimi CLI exposes no token or currency telemetry, so no Kimi cost is inferred.
+# 2026-09-22 — Ticket 23 / Slice 248 lifecycle-aware threat projection
+
+- The r8 recovery branch `20260922003116755` stopped before Apply after `6`
+  calls because the Host promoted Goliath's future `Speed + range` band to a
+  current-round move-then-fire action even though its Movement activation was
+  complete. The model's statement was correct; the projection was not.
+- Relationship, formation and asset-placement projections now separate broad
+  geometric/future bands from current-round threats using independent Move,
+  Ranged Attack, melee Fight and typed damage-ability gates. Ranged Attack does
+  not move. Delayed Token/end-of-round damage stays a separate typed channel.
+- The directly affected existing gate ran once and passed. Provider/cost delta
+  for the repair is `0/¥0`; the failed live reproducer cost was
+  `6 / 277,302 / ¥0.394044`.
+- Next: commit the repair, then fork the authoritative state only through r8
+  and request one live action. Do not resume the rejected suffix.
+- Ticket 26 / Slice 266e continues independently in the K3 worktree. Network
+  recovery checkpoint `6fcab1d` preserves package-promotion work; K3 resumed
+  to finish the final browser gate.

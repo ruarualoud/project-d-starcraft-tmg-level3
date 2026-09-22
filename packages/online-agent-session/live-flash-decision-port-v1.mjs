@@ -1766,21 +1766,41 @@ function currentIncomingThreatTargets(queryReceipts) {
       const attackerId = String(relationship.toUnitId || "");
       if (!targetId) continue;
       const incoming = relationship.threats?.toFrom || {};
-      if ((incoming.stationaryProfileKeys || []).length > 0
-        || Number(relationship.fireZoneExchange
-          ?.toStationaryProfileCount || 0) > 0) {
+      const hasLifecycleStationary = Object.hasOwn(incoming,
+        "currentRoundStationaryProfileKeys");
+      const currentStationaryProfileKeys = hasLifecycleStationary
+        ? incoming.currentRoundStationaryProfileKeys || []
+        : incoming.stationaryProfileKeys || [];
+      const currentStationaryCount = hasLifecycleStationary
+        ? Number(relationship.fireZoneExchange
+          ?.toCurrentRoundStationaryProfileCount
+          ?? currentStationaryProfileKeys.length)
+        : Number(relationship.fireZoneExchange
+          ?.toStationaryProfileCount || 0);
+      if (currentStationaryProfileKeys.length > 0
+        || currentStationaryCount > 0) {
         stationary.add(targetId);
         stationaryFacts.push({ targetId, attackerId,
-          profileKeys: clone(incoming.stationaryProfileKeys || []),
+          profileKeys: clone(currentStationaryProfileKeys),
           minimumBaseEdgeDistanceMilliInches: Number(relationship
             .nearestPhysicalEdges?.distanceMilliInches) || null });
       }
-      if ((incoming.moveThenAttackProfileKeys || []).length > 0
-        || Number(relationship.fireZoneExchange
-          ?.toMoveThenFireProfileCount || 0) > 0) {
+      const hasLifecycleMoveThenFire = Object.hasOwn(incoming,
+        "currentRoundMoveThenAttackProfileKeys");
+      const currentMoveThenFireProfileKeys = hasLifecycleMoveThenFire
+        ? incoming.currentRoundMoveThenAttackProfileKeys || []
+        : incoming.moveThenAttackProfileKeys || [];
+      const currentMoveThenFireCount = hasLifecycleMoveThenFire
+        ? Number(relationship.fireZoneExchange
+          ?.toCurrentRoundMoveThenFireProfileCount
+          ?? currentMoveThenFireProfileKeys.length)
+        : Number(relationship.fireZoneExchange
+          ?.toMoveThenFireProfileCount || 0);
+      if (currentMoveThenFireProfileKeys.length > 0
+        || currentMoveThenFireCount > 0) {
         moveThenFire.add(targetId);
         moveThenFireFacts.push({ targetId, attackerId,
-          profileKeys: clone(incoming.moveThenAttackProfileKeys || []),
+          profileKeys: clone(currentMoveThenFireProfileKeys),
           minimumBaseEdgeDistanceMilliInches: Number(relationship
             .nearestPhysicalEdges?.distanceMilliInches) || null });
       }
@@ -3799,6 +3819,13 @@ function compactQueryReceiptForPrompt(receipt) {
       stationaryProfileKeys: clone(value.stationaryProfileKeys || []),
       moveThenAttackProfileKeys:
         clone(value.moveThenAttackProfileKeys || []),
+      currentRoundStationaryProfileKeys:
+        clone(value.currentRoundStationaryProfileKeys || []),
+      currentRoundMoveThenAttackProfileKeys:
+        clone(value.currentRoundMoveThenAttackProfileKeys || []),
+      futureRoundMoveThenAttackProfileKeys:
+        clone(value.futureRoundMoveThenAttackProfileKeys || []),
+      actionWindow: clone(value.actionWindow || null),
       chargeBand: clone(value.chargeBand || null),
       spatialThreatPrecision: value.spatialThreatPrecision || null,
       currentLegalActionNotImplied:
@@ -4079,8 +4106,8 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       planning
         ? `Do not request ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME}, legal asset-placement options, final parameter instantiation, legal_full_path_movement, coherency_after_candidate_placement, or objective_score_after_candidate_action during Planning. Those require a selected candidate and complete Host-owned parameters. Select the best current candidate from current relationships first. For a formation action, set formationSearchRequested and provide a tacticalPurpose plus weighted formationObjectives with visible targetIds; the Host runs the spatial solver once.`
         : "Use the exact Host-supplied formation or asset-placement options for the selected candidate; do not restart a broad placement search in the Action stage.",
-      `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one current stationary weapon profile covering the placed Unit; never describe that option as outside the enemy fire envelope. Read incomingStationaryFireEstimate when present: compare expected casualties, every exact legal removed-model list, lost occupied positions/formation reach, lost ranged contributors, exact current Fighting/Supporting losses, marker-by-marker control changes, probability of Supply reduction/zero, Supply freed for later deployment, VP awarded, and every exact reaction choice/cost against objective or scoring gain. Read incomingMoveThenFireEstimate too: a reachable row is a live threat even while legal path and post-move line of sight remain conditional; unknown path or line of sight is never safety or zero risk. Current Supply—not raw model count—controls marker strength. Do not default to the safest position: choose the highest expected net mission value after risk, and state why the accepted exposure is worth it. Preserve unknown probability as uncertainty and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
-      "When an exact legal_asset_placement_options receipt is present, compare every returned option's tacticalMetrics and relationshipComparison before choosing exactly one placementOptionId. incomingStationaryProfileCount is immediate printed-range exposure; incomingMoveThenFireProfileCount is conditional future exposure; unknown hypothetical line of sight remains uncertainty, never safety. Compare the low-fire, objective, route and preferred-anchor facets instead of assuming the preferred anchor is best. Return assetPlacementSelection with that ID and one concise publicReason naming accepted exposure, objective/route effect and plan continuity. Never call an option far away, safe, outside fire or unthreatened when its selected relationshipComparison reports incoming profiles. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
+      `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one spatially covering stationary weapon profile; use its current-round lifecycle fields before describing immediate exposure. Read incomingStationaryFireEstimate when present: compare expected casualties, every exact legal removed-model list, lost occupied positions/formation reach, lost ranged contributors, exact current Fighting/Supporting losses, marker-by-marker control changes, probability of Supply reduction/zero, Supply freed for later deployment, VP awarded, and every exact reaction choice/cost against objective or scoring gain. Read incomingMoveThenFireEstimate too: a reachable current-round row is a live threat even while legal path and post-move line of sight remain conditional; a reachable next-round row is future planning pressure, not an immediate legal action. Unknown path or line of sight is never safety or zero risk. A Ranged Attack itself never includes movement. Current Supply—not raw model count—controls marker strength. Do not default to the safest position: choose the highest expected net mission value after risk, and state why the accepted exposure is worth it. Preserve unknown probability as uncertainty and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
+      "When an exact legal_asset_placement_options receipt is present, compare every returned option's tacticalMetrics and relationshipComparison before choosing exactly one placementOptionId. incomingCurrentRoundStationaryProfileCount and incomingCurrentRoundMoveThenFireProfileCount are current-round exposure after phase/activation/pass gates. incomingStationaryProfileCount and incomingMoveThenFireProfileCount are broader geometric planning bands and may be next-round pressure. Unknown hypothetical line of sight remains uncertainty, never safety. Compare the low-fire, objective, route and preferred-anchor facets instead of assuming the preferred anchor is best. Return assetPlacementSelection with that ID and one concise publicReason naming accepted current and future exposure, objective/route effect and plan continuity. Never call an option permanently safe or unthreatened when its selected relationshipComparison reports future profiles. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
       "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists and preserve every applicable effectContract fact, including sourceText, targetKind, resultKind/resultAssetKind, immediateEffect, ongoingEffect and delayedEffect. forbiddenSubstitution states what this action is not. You may compare or reject another ability, but never describe that other ability or another effect family as the action being selected, activated, used or placed.",
       "Treat selectedActionResourceContract and resourceCostsByChoice as Rules-owned. State every nonzero effective resource cost accurately. Never call a positive BM, CP or PE cost zero, free, or unspent; Supply is a separate contract.",
       "Treat strategicImmediateValue as Rules-derived current value. A zero-benefit heal is not productive merely because its printed resource cost is zero: source-card exhaustion and forfeited alternatives remain real costs.",
@@ -4088,7 +4115,8 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       "For Deploy, the Host prepends the Leading Model base-centre start just outside the selected battlefield edge. The complete Speed allowance includes that ingress distance. Do not add an artificial path point on the edge and do not measure only from the edge; choose an endpoint whose complete Host path remains within maxDistanceMilliInches.",
       "Never treat the remaining models as a unit centre: compare and choose a complete Host-solved final formation using every model's physical base, coherency, board edge, terrain, objective, line-of-sight, blocking, threat and fire-zone consequences.",
       "When candidate value depends materially on position, use space.inspect_relationships with a tactical intent and scoped subjectUnitIds/targetIds before choosing. Read field-level exact/advisory/unknown precision; use the returned one-to-many, many-to-one, fire-zone, objective and clearance relationships to justify the chosen intent. Do not infer geometry from the rendered pixels.",
-      "Candidate comparisons and rejected-alternative reasons influence selection and must obey the same current relationship facts as the selected reason. In a unit_spatial_relationship from an own Unit to an enemy Unit, threats.toFrom describes incoming enemy weapons: any moveThenAttackProfileKeys entry is an in-band move-then-fire threat even when legal path or post-move line of sight remains unresolved. Never turn unresolved path or line of sight into zero profiles, out-of-band, outside all enemy fire bands, or no protection value.",
+      "Candidate comparisons and rejected-alternative reasons influence selection and must obey the same relationship facts as the selected reason. In a unit_spatial_relationship from an own Unit to an enemy Unit, threats.toFrom describes incoming enemy weapons. stationaryProfileKeys and moveThenAttackProfileKeys are geometric bands across planning horizons; currentRoundStationaryProfileKeys and currentRoundMoveThenAttackProfileKeys are the only immediate current-round subsets. If Movement is already activated, passed, or closed, a geometric move-then-attack band is next-round pressure rather than a current action. A Ranged Attack never moves the attacker. Unresolved path or post-move line of sight remains uncertainty for the applicable horizon and must not be converted into safety or zero future risk.",
+      "Resolve threat availability through three independent gates: can Move; can Attack, split into Ranged Attack and melee Fight with their own phases and ranges; and can use a typed damage ability. Movement plus Ranged Attack is a two-phase plan, never one action. If Movement is unavailable, evaluate attacks only from the current bases. A damage ability that places a Token now and resolves damage later is neither a weapon attack nor zero threat: preserve its typed immediate placement, delayed timing, target area and removal/counterplay contract. If no typed damage-ability projection exists, keep that channel unknown rather than inferring safety.",
       "For a ranged candidate, read current-action-index.rangedContributionOverview before comparing firepower. contributingModelCount and totalCurrentHitDice are the exact current Rules-domain contribution; currentLiveModelCount, visible target count, Unit size, or weapon-profile count are never substitutes for the attack pool. Never call an attack high-volume when most live models are nonContributing unless another exact batch proves that volume.",
       "Before recommending Charge, query exact physical base-edge relationships from that Unit to every eligible target Unit. Compare minimum movement needed to reach 1-inch engagement against Speed plus the maximum current Charge roll and modifiers. Never select Charge when every eligible target is certainly beyond that maximum; compare Pass, a useful pre-Charge ability, or another current Unit instead. A roll-advantage ability such as Metabolic Boost changes probability but does not raise a D6's maximum face.",
       "When comparing a current ranged attack with Run or another reposition, state the immediate attack dice forfeited and the possible future weapon profiles gained. Future movement, path, line of sight and next-round availability remain advisory until queried; do not call reposition 'no positional gain' merely because a smaller current long-range batch exists.",

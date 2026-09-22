@@ -30,6 +30,14 @@ const INTENTS = new Set([
   "fire_zone_exchange", "retreat",
 ]);
 
+const ROUND_PHASE_ORDER = Object.freeze({
+  start_of_round: 0,
+  movement: 1,
+  assault: 2,
+  combat: 3,
+  cleanup: 4,
+});
+
 function clone(value) {
   return value === undefined ? undefined : structuredClone(value);
 }
@@ -166,6 +174,67 @@ function movementProfile(state, piece) {
       Math.round(Number(profile.horizontalCoherencyInches || 3) * 1000),
     precision: "exact_printed_branch_dynamic_modifiers_not_assumed",
   } : null;
+}
+
+function phaseActionAvailableThisRound(state, piece, phase) {
+  const currentOrder = ROUND_PHASE_ORDER[String(state?.phase || "")];
+  const actionOrder = ROUND_PHASE_ORDER[String(phase || "")];
+  if (!Number.isInteger(currentOrder) || !Number.isInteger(actionOrder)
+    || currentOrder > actionOrder) return false;
+  return piece?.activatedPhases?.[phase] !== true
+    && state?.players?.[piece?.sideKey]?.passedPhases?.[phase] !== true;
+}
+
+export function projectStarcraftTmgThreatActionWindowV1(state, piece) {
+  const movementCurrentRoundAvailable = phaseActionAvailableThisRound(
+    state, piece, "movement");
+  const assaultCurrentRoundAvailable = phaseActionAvailableThisRound(
+    state, piece, "assault");
+  const combatCurrentRoundAvailable = phaseActionAvailableThisRound(
+    state, piece, "combat");
+  return freeze({
+    round: Number(state?.round) || null,
+    currentPhase: String(state?.phase || "unknown"),
+    movementCurrentRoundAvailable,
+    assaultCurrentRoundAvailable,
+    combatCurrentRoundAvailable,
+    capabilityGates: {
+      move: {
+        canExecuteThisRound: movementCurrentRoundAvailable,
+        phase: "movement",
+      },
+      rangedAttack: {
+        canExecuteThisRound: assaultCurrentRoundAvailable,
+        phase: "assault",
+        includesMovement: false,
+      },
+      meleeAttack: {
+        canExecuteThisRound: combatCurrentRoundAvailable,
+        phase: "combat",
+        includesMovement: false,
+      },
+      damageAbility: {
+        canExecuteThisRound: null,
+        status: "requires_typed_damage_ability_effect_contract",
+        immediateAndDelayedDamageAreSeparateThreatChannels: true,
+        delayedDamageTokenTimingSupported: true,
+      },
+    },
+    activatedPhases: clone(piece?.activatedPhases || {}),
+    passedPhases: clone(state?.players?.[piece?.sideKey]?.passedPhases || {}),
+    rangedAttackIncludesMovement: false,
+    precision: "exact_phase_activation_and_pass_lifecycle",
+  });
+}
+
+function profileActionAvailableThisRound(actionWindow, profile) {
+  if (profile?.phase === "assault") {
+    return actionWindow.assaultCurrentRoundAvailable;
+  }
+  if (profile?.phase === "combat") {
+    return actionWindow.combatCurrentRoundAvailable;
+  }
+  return false;
 }
 
 function modelIndex(state) {
@@ -459,6 +528,8 @@ function targetTagEligible(profile, target) {
 function threatProjection(state, attacker, target, minimumDistance,
   visiblePairCount) {
   const speed = movementProfile(state, attacker)?.speedMilliInches || 0;
+  const actionWindow = projectStarcraftTmgThreatActionWindowV1(
+    state, attacker);
   const profiles = weaponProfiles(state, attacker).map((profile) => {
     const targetEligible = targetTagEligible(profile, target);
     const lineOfSightEligible = profile.rangeKind === "engagement"
@@ -470,15 +541,39 @@ function threatProjection(state, attacker, target, minimumDistance,
         && minimumDistance <= profile.rangeMilliInches,
       moveThenAttackBandEligible: targetEligible
         && minimumDistance <= speed + profile.rangeMilliInches,
+      currentRoundAttackAvailable:
+        profileActionAvailableThisRound(actionWindow, profile),
+      currentRoundMoveThenAttackAvailable:
+        actionWindow.movementCurrentRoundAvailable
+        && profileActionAvailableThisRound(actionWindow, profile),
       moveThenAttackPathAndPostMoveLosVerified: false,
     };
   });
   const stationary = profiles.filter((entry) => entry.stationarySpatiallyEligible);
   const moving = profiles.filter((entry) => entry.moveThenAttackBandEligible);
+  const currentRoundStationary = stationary.filter((entry) =>
+    entry.currentRoundAttackAvailable);
+  const currentRoundMoving = moving.filter((entry) =>
+    entry.currentRoundMoveThenAttackAvailable);
   return {
     profiles,
     stationaryProfileKeys: stationary.map((entry) => entry.profileKey),
     moveThenAttackProfileKeys: moving.map((entry) => entry.profileKey),
+    currentRoundStationaryProfileKeys:
+      currentRoundStationary.map((entry) => entry.profileKey),
+    currentRoundMoveThenAttackProfileKeys:
+      currentRoundMoving.map((entry) => entry.profileKey),
+    futureRoundMoveThenAttackProfileKeys:
+      moving.map((entry) => entry.profileKey),
+    actionWindow: {
+      ...actionWindow,
+      earliestStationaryAttackHorizon: stationary.length === 0
+        ? "not_in_current_spatial_band"
+        : currentRoundStationary.length > 0 ? "current_round" : "next_round",
+      earliestMoveThenAttackHorizon: moving.length === 0
+        ? "not_in_geometric_move_then_attack_band"
+        : currentRoundMoving.length > 0 ? "current_round" : "next_round",
+    },
     chargeBand: {
       minimumBaseEdgeDistanceMilliInches: minimumDistance,
       minimumReachMilliInches: speed + 1000,
@@ -487,7 +582,7 @@ function threatProjection(state, attacker, target, minimumDistance,
       chanceAndPathUnresolved: true,
     },
     spatialThreatPrecision:
-      "exact_current_range_los_and_target_tags; future_move_charge_and_action_availability_advisory",
+      "exact_current_range_los_target_tags_and_phase_lifecycle; future_move_charge_path_and_post_move_los_advisory",
     currentLegalActionNotImplied: true,
   };
 }
@@ -512,6 +607,14 @@ function unitRelation(state, left, right, leftRows, rightRows, engagement,
     reverseLos.filter((entry) => entry.visible === true).length);
   const leftStationary = leftThreat.stationaryProfileKeys.length > 0;
   const rightStationary = rightThreat.stationaryProfileKeys.length > 0;
+  const leftCurrentStationary =
+    leftThreat.currentRoundStationaryProfileKeys.length > 0;
+  const rightCurrentStationary =
+    rightThreat.currentRoundStationaryProfileKeys.length > 0;
+  const leftCurrentMoving =
+    leftThreat.currentRoundMoveThenAttackProfileKeys.length > 0;
+  const rightCurrentMoving =
+    rightThreat.currentRoundMoveThenAttackProfileKeys.length > 0;
   return {
     edgeId: `unit:${left.id}->unit:${right.id}`,
     edgeKind: "unit_spatial_relationship",
@@ -575,6 +678,24 @@ function unitRelation(state, left, right, leftRows, rightRows, engagement,
       toStationaryProfileCount: rightThreat.stationaryProfileKeys.length,
       fromMoveThenFireProfileCount: leftThreat.moveThenAttackProfileKeys.length,
       toMoveThenFireProfileCount: rightThreat.moveThenAttackProfileKeys.length,
+      currentRoundClass: leftCurrentStationary && rightCurrentStationary
+        ? "mutual_current_round_stationary_fire"
+        : leftCurrentStationary ? "from_only_current_round_stationary_fire"
+          : rightCurrentStationary ? "to_only_current_round_stationary_fire"
+            : leftCurrentMoving && rightCurrentMoving
+              ? "mutual_current_round_move_then_fire"
+              : leftCurrentMoving ? "from_only_current_round_move_then_fire"
+                : rightCurrentMoving
+                  ? "to_only_current_round_move_then_fire"
+                  : "no_current_round_fire_band",
+      fromCurrentRoundStationaryProfileCount:
+        leftThreat.currentRoundStationaryProfileKeys.length,
+      toCurrentRoundStationaryProfileCount:
+        rightThreat.currentRoundStationaryProfileKeys.length,
+      fromCurrentRoundMoveThenFireProfileCount:
+        leftThreat.currentRoundMoveThenAttackProfileKeys.length,
+      toCurrentRoundMoveThenFireProfileCount:
+        rightThreat.currentRoundMoveThenAttackProfileKeys.length,
       damageOutcomeRequiresProbabilityQuery: true,
       precision: "mixed_exact_spatial_bands_and_advisory_future_actions",
     },

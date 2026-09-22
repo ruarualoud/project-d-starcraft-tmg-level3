@@ -8,6 +8,8 @@ import {
 } from "../packages/online-agent-session/live-flash-decision-port-v1.mjs";
 import { createStarcraftTmgHostedBotSeatRuntimeV1 } from
   "../packages/online-agent-session/hosted-bot-seat-runtime-v1.mjs";
+import { projectStarcraftTmgThreatActionWindowV1 } from
+  "../packages/online-agent-session/tactical-relationship-graph-v1.mjs";
 
 const option = {
   relationshipComparison: {
@@ -100,11 +102,18 @@ const moveThenFireReceipt = {
             "army_units:goliath::assault::Autocannon",
             "army_units:goliath::assault::Scatter Missiles",
           ],
+          currentRoundStationaryProfileKeys: [],
+          currentRoundMoveThenAttackProfileKeys: [
+            "army_units:goliath::assault::Autocannon",
+            "army_units:goliath::assault::Scatter Missiles",
+          ],
         },
       },
       fireZoneExchange: {
         toStationaryProfileCount: 0,
         toMoveThenFireProfileCount: 2,
+        toCurrentRoundStationaryProfileCount: 0,
+        toCurrentRoundMoveThenFireProfileCount: 2,
       },
     }],
   },
@@ -126,6 +135,66 @@ assert.deepEqual(new Set(falseRejectedAlternative.contradictions.map(
   "candidateComparisons[0].evaluation",
   "rejectedAlternatives[0].reason",
 ]));
+
+const goliathLifecycleState = {
+  round: 1,
+  phase: "movement",
+  players: { player1: { passedPhases: {} } },
+};
+const goliathAfterMove = {
+  sideKey: "player1",
+  activatedPhases: { movement: true, assault: false, combat: false },
+};
+const activatedMovementWindow = projectStarcraftTmgThreatActionWindowV1(
+  goliathLifecycleState, goliathAfterMove);
+assert.equal(activatedMovementWindow.movementCurrentRoundAvailable, false);
+assert.equal(activatedMovementWindow.assaultCurrentRoundAvailable, true);
+assert.equal(activatedMovementWindow.rangedAttackIncludesMovement, false);
+assert.equal(activatedMovementWindow.capabilityGates.move.canExecuteThisRound,
+  false);
+assert.equal(activatedMovementWindow.capabilityGates.rangedAttack
+  .canExecuteThisRound, true);
+assert.equal(activatedMovementWindow.capabilityGates.meleeAttack
+  .canExecuteThisRound, true);
+assert.equal(activatedMovementWindow.capabilityGates.damageAbility
+  .canExecuteThisRound, null,
+  "damage abilities remain unknown until a typed effect contract projects them");
+
+const futureOnlyMoveThenFireReceipt = structuredClone(moveThenFireReceipt);
+futureOnlyMoveThenFireReceipt.result.relationships[0].threats.toFrom
+  .currentRoundMoveThenAttackProfileKeys = [];
+futureOnlyMoveThenFireReceipt.result.relationships[0].threats.toFrom.actionWindow
+  = {
+    ...activatedMovementWindow,
+    earliestMoveThenAttackHorizon: "next_round",
+  };
+futureOnlyMoveThenFireReceipt.result.relationships[0].fireZoneExchange
+  .toCurrentRoundMoveThenFireProfileCount = 0;
+const correctLifecycleClaim = inspect({
+  publicDecisionSummary: {
+    calculations: [
+      "The Goliath cannot close distance this round because its Movement activation is complete; its geometric move-then-fire band remains next-round pressure.",
+    ],
+  },
+}, "Rules-checked asset placement.", [futureOnlyMoveThenFireReceipt]);
+assert.equal(correctLifecycleClaim.contradicted, false,
+  "a future-only geometric band must not be promoted to current-round fire");
+
+const goliathBeforeMove = {
+  sideKey: "player1",
+  activatedPhases: { movement: false, assault: false, combat: false },
+};
+const openMovementWindow = projectStarcraftTmgThreatActionWindowV1(
+  goliathLifecycleState, goliathBeforeMove);
+assert.equal(openMovementWindow.movementCurrentRoundAvailable, true);
+assert.equal(openMovementWindow.assaultCurrentRoundAvailable, true);
+
+const goliathAfterPassState = structuredClone(goliathLifecycleState);
+goliathAfterPassState.players.player1.passedPhases.movement = true;
+const passedMovementWindow = projectStarcraftTmgThreatActionWindowV1(
+  goliathAfterPassState, goliathBeforeMove);
+assert.equal(passedMovementWindow.movementCurrentRoundAvailable, false,
+  "passing Movement closes current-round move-then-fire setup");
 
 const opponentPredictionObservation = {
   units: [
@@ -302,6 +371,10 @@ console.log(JSON.stringify({
     correctedRatherThanOutside.checkedClaimCount,
   moveThenFireAlternativeFields:
     falseRejectedAlternative.contradictions.map((entry) => entry.field),
+  activatedMovementWindow,
+  correctLifecycleClaimContradicted: correctLifecycleClaim.contradicted,
+  openMovementWindow,
+  passedMovementWindow,
   impossibleActivatedPredictionStatus: impossibleActivatedMove.status,
   impossibleReserveMoveStatus: impossibleReserveMove.status,
   possibleReserveDeployStatus: possibleReserveDeploy.status,

@@ -2338,14 +2338,34 @@ function relationshipRows(graph) {
         clone(entry.threats?.fromTo?.stationaryProfileKeys || []),
       stationaryThreatProfileCount:
         entry.threats?.fromTo?.stationaryProfileKeys?.length || 0,
+      currentRoundStationaryThreatProfileKeys: clone(entry.threats?.fromTo
+        ?.currentRoundStationaryProfileKeys || []),
+      currentRoundStationaryThreatProfileCount:
+        entry.threats?.fromTo?.currentRoundStationaryProfileKeys?.length || 0,
       moveThenAttackProfileKeys:
         clone(entry.threats?.fromTo?.moveThenAttackProfileKeys || []),
+      currentRoundMoveThenAttackProfileKeys: clone(entry.threats?.fromTo
+        ?.currentRoundMoveThenAttackProfileKeys || []),
+      futureRoundMoveThenAttackProfileKeys: clone(entry.threats?.fromTo
+        ?.futureRoundMoveThenAttackProfileKeys || []),
+      outgoingThreatActionWindow:
+        clone(entry.threats?.fromTo?.actionWindow || null),
       enemyStationaryThreatProfileKeys:
         clone(entry.threats?.toFrom?.stationaryProfileKeys || []),
       enemyStationaryThreatProfileCount:
         entry.threats?.toFrom?.stationaryProfileKeys?.length || 0,
+      enemyCurrentRoundStationaryThreatProfileKeys: clone(entry.threats?.toFrom
+        ?.currentRoundStationaryProfileKeys || []),
+      enemyCurrentRoundStationaryThreatProfileCount:
+        entry.threats?.toFrom?.currentRoundStationaryProfileKeys?.length || 0,
       enemyMoveThenAttackProfileKeys:
         clone(entry.threats?.toFrom?.moveThenAttackProfileKeys || []),
+      enemyCurrentRoundMoveThenAttackProfileKeys: clone(entry.threats?.toFrom
+        ?.currentRoundMoveThenAttackProfileKeys || []),
+      enemyFutureRoundMoveThenAttackProfileKeys: clone(entry.threats?.toFrom
+        ?.futureRoundMoveThenAttackProfileKeys || []),
+      enemyThreatActionWindow:
+        clone(entry.threats?.toFrom?.actionWindow || null),
       fireZoneExchangeClass: entry.fireZoneExchange?.class || null,
       precision: entry.precision,
     });
@@ -2373,7 +2393,7 @@ function normalizeProjectedSurfacePlacements(projected) {
   return projected;
 }
 
-function incomingStationaryFireEstimate(projected, actorId) {
+function incomingStationaryFireEstimate(projected, actorId, graph) {
   const actor = (projected.pieces || []).find((entry) => entry.id === actorId);
   if (!actor) return { status: "unknown", reason: "projected_actor_missing" };
   try {
@@ -2415,23 +2435,40 @@ function incomingStationaryFireEstimate(projected, actorId) {
       counterfactual, { sideKey: opponentSideKey, includeDisabled: true });
     const domains = enumeration.parameterDomains.filter((entry) =>
       entry.parameterSchema?.targetUnitId?.enum?.includes(actorId));
-    const estimates = domains.map((domain) =>
-      estimateStarcraftTmgAttackProbabilityV1({
+    const currentRoundEnemyIds = new Set((graph?.relationships || [])
+      .filter((entry) => entry.fromUnitId === actorId
+        && (entry.threats?.toFrom?.currentRoundStationaryProfileKeys || [])
+          .length > 0)
+      .map((entry) => entry.toUnitId));
+    const estimates = domains.map((domain) => ({
+      ...estimateStarcraftTmgAttackProbabilityV1({
         state: counterfactual,
         domain,
         parameters: { targetUnitId: actorId },
         sampleBudget: 216,
-      })).sort((left, right) =>
+      }),
+      enemyUnitId: domain.pieceId || null,
+      earliestHorizon: currentRoundEnemyIds.has(domain.pieceId)
+        ? "current_round" : "next_round",
+      currentRoundActionAvailable: currentRoundEnemyIds.has(domain.pieceId),
+    })).sort((left, right) =>
       right.outcomes.expectedCasualties - left.outcomes.expectedCasualties
         || right.outcomes.expectedDamage - left.outcomes.expectedDamage);
+    const currentRoundEstimateCount = estimates.filter((entry) =>
+      entry.currentRoundActionAvailable).length;
     return {
-      status: estimates.length > 0
-        ? "current_position_stationary_attacks_estimated"
+      status: currentRoundEstimateCount > 0
+        ? "current_round_stationary_attacks_estimated"
+        : estimates.length > 0
+          ? "future_round_stationary_attacks_estimated"
         : "no_current_position_stationary_attack_domain",
       opponentSideKey,
       opponentMovementIncluded: false,
       opponentMovementBoundedSeparately: true,
       attackEstimateCount: estimates.length,
+      currentRoundAttackEstimateCount: currentRoundEstimateCount,
+      futureRoundAttackEstimateCount:
+        estimates.length - currentRoundEstimateCount,
       attackEstimates: estimates,
       disabledAttackDiagnostics: clone((enumeration.candidates || [])
         .filter((entry) => entry.isEnabled === false).map((entry) => ({
@@ -2493,6 +2530,9 @@ function incomingMoveThenFireEstimate(projected, actorId, graph) {
       ]));
       const distance = Number(
         relationship.nearestPhysicalEdges?.distanceMilliInches);
+      const currentRoundProfileKeys = new Set(relationship.threats?.toFrom
+        ?.currentRoundMoveThenAttackProfileKeys || []);
+      const actionWindow = relationship.threats?.toFrom?.actionWindow || {};
       for (const profileKey of relationship.threats?.toFrom
         ?.moveThenAttackProfileKeys || []) {
         const profile = catalogueByProfile.get(profileKey);
@@ -2502,6 +2542,8 @@ function incomingMoveThenFireEstimate(projected, actorId, graph) {
           distance - maximumRangeMilliInches);
         const reachable = printedSpeedMilliInches !== null
           && minimumMovementRequiredMilliInches <= printedSpeedMilliInches;
+        const currentRoundReachable = reachable
+          && currentRoundProfileKeys.has(profileKey);
         const contributingModelCount = currentContribution
           ?.contributingModelIds?.length || 0;
         const rateOfAttack = Number(
@@ -2529,7 +2571,17 @@ function incomingMoveThenFireEstimate(projected, actorId, graph) {
           conditionalDamageRequiresLegalPathPostMoveLosAndAttackInstantiation:
             true,
           legalPathAndPostMoveLosResolved: false,
-          mustBeTreatedAsLiveThreatWhenReachable: reachable,
+          currentRoundMovementOpportunity:
+            actionWindow.movementCurrentRoundAvailable === true,
+          currentRoundAttackOpportunity:
+            profile?.phase === "combat"
+              ? actionWindow.combatCurrentRoundAvailable === true
+              : actionWindow.assaultCurrentRoundAvailable === true,
+          earliestHorizon: currentRoundReachable
+            ? "current_round" : "next_round",
+          mustBeTreatedAsLiveThreatWhenReachable: currentRoundReachable,
+          mustBeTreatedAsFutureThreatWhenReachable:
+            reachable && !currentRoundReachable,
         });
       }
     }
@@ -2539,14 +2591,22 @@ function incomingMoveThenFireEstimate(projected, actorId, graph) {
         - Number(left.printedAttackDiceAtCurrentContributorCount)
       || left.profileKey.localeCompare(right.profileKey));
     return {
-      status: rows.some((entry) => entry.canEnterMaximumRangeByPrintedMovement)
-        ? "bounded_move_then_fire_threats"
+      status: rows.some((entry) =>
+        entry.mustBeTreatedAsLiveThreatWhenReachable)
+        ? "bounded_current_round_move_then_fire_threats"
+        : rows.some((entry) =>
+          entry.mustBeTreatedAsFutureThreatWhenReachable)
+          ? "bounded_future_round_move_then_fire_threats"
         : "no_printed_move_then_fire_reach",
       opponentMovementRiskIncluded: true,
       exactCurrentDistanceAndPrintedReach: true,
       legalPathAndPostMoveLosResolved: false,
       reachableThreatCount: rows.filter((entry) =>
         entry.canEnterMaximumRangeByPrintedMovement).length,
+      currentRoundReachableThreatCount: rows.filter((entry) =>
+        entry.mustBeTreatedAsLiveThreatWhenReachable).length,
+      futureRoundReachableThreatCount: rows.filter((entry) =>
+        entry.mustBeTreatedAsFutureThreatWhenReachable).length,
       threats: rows,
       unknownPathOrLosNeverPromotedToSafeOrZero: true,
       mutationAuthority: false,
@@ -2656,7 +2716,7 @@ function relationshipComparison(state, source, slots, objectives, baseline) {
       }),
       clearances: clone(graph.aggregates?.clearances || []),
       incomingStationaryFireEstimate:
-        incomingStationaryFireEstimate(projected, projectedActor.id),
+        incomingStationaryFireEstimate(projected, projectedActor.id, graph),
       incomingMoveThenFireEstimate:
         incomingMoveThenFireEstimate(projected, projectedActor.id, graph),
       precisionPolicy: clone(graph.precisionPolicy),
