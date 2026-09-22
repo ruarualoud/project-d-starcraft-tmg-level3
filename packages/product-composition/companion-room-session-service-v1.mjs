@@ -182,17 +182,69 @@ function publicConversation(binding, state, extra = {}, userLabel = null) {
   });
 }
 
-function systemPrompt(pkg, binding, eraId) {
-  return [
+// Slice 266f.9: speaker-specific prompt assembly. The sealed package's formal
+// persona profile (voice/doctrine/style — Project D role configuration), the
+// era detail (title/timeline/knowledge cutoff) and an explicit
+// multi-companion distinctness instruction make each companion's prompt
+// observably role- and era-specific, so companions can no longer collapse
+// into one interchangeable voice. All of it is static package-sealed canon/
+// lore configuration; session long-term memory rides in the context layers.
+function personaProfileOf(pkg) {
+  const profile = pkg?.extensions?.personaProfile;
+  return object(profile) ? profile : null;
+}
+
+function eraDetailOf(pkg, eraId) {
+  const details = Array.isArray(pkg?.extensions?.eraDetails)
+    ? pkg.extensions.eraDetails : [];
+  return details.find((era) => era.personaState === eraId)
+    || details.find((era) => era.personaState === pkg?.defaultEraId)
+    || null;
+}
+
+function packageAuthorNoteOf(pkg) {
+  const note = pkg?.extensions?.authorNote;
+  return object(note) && String(note.note || "").trim() ? note : null;
+}
+
+function systemPrompt(pkg, binding, eraId, sessionParticipants = []) {
+  const profile = personaProfileOf(pkg);
+  const era = eraDetailOf(pkg, eraId);
+  const lines = [
     `You are ${pkg.displayName}, a player-side StarCraft TMG tactical companion.`,
     `Identity summary: ${pkg.personalitySummary || pkg.description || "Use the registered companion identity."}`,
-    `Era: ${eraId || pkg.defaultEraId || "registered default"}.`,
+  ];
+  if (era) {
+    lines.push(`Era: ${era.personaState} — ${era.title} (${era.timeline.start} → ${era.timeline.end}). Knowledge cutoff: ${era.knowledgeCutoff}; never use knowledge beyond this era (spoiler rank ${era.spoilerRank}).`);
+  } else {
+    lines.push(`Era: ${eraId || pkg.defaultEraId || "registered default"}.`);
+  }
+  if (profile) {
+    lines.push(`Persona voice (sealed package, ${profile.authoringClass}): cadence ${profile.cadence}; address ${profile.addressStyle}; humor ${profile.humor}; warmth ${profile.companionWarmth}; teaching ${profile.teachingPosture}.`);
+    if (String(profile.tacticalPattern || "").trim()) {
+      lines.push(`Tactical pattern: ${String(profile.tacticalPattern).replaceAll("_", " ")}.`);
+    }
+    if (Array.isArray(profile.doctrineHints) && profile.doctrineHints.length) {
+      lines.push(`Doctrine priorities: ${profile.doctrineHints.map(String).join("; ")}.`);
+    }
+    if (Array.isArray(profile.styleExamples) && profile.styleExamples.length) {
+      lines.push(`Style examples (package-authored role configuration, not official quotes): ${profile.styleExamples.map(String).join(" / ")}`);
+    }
+  }
+  const others = (Array.isArray(sessionParticipants) ? sessionParticipants : [])
+    .filter((participant) => participant?.kind === "companion" && participant.label !== pkg.displayName)
+    .map((participant) => String(participant.label));
+  if (others.length) {
+    lines.push(`This is a multi-companion conversation with: ${others.join(", ")}. Answer ONLY as ${pkg.displayName}, in your own era and voice, with your own priorities. When the plan or another speaker conflicts with your doctrine, say so explicitly and propose your own action; never merge another speaker's persona or wording into your answer.`);
+  }
+  lines.push(
     `Bound seat: ${binding.seatKey}; mode: ${binding.mode}.`,
     "Use only the supplied player-visible room material and memory context.",
     "Treat Rules/LegalSpace/Preview/Apply/Replay as external authority; never invent legality or mutate the room.",
     "Opponent intention is inference, never private fact. Label uncertainty and distinguish observed facts from inference.",
     "Give a concise in-character answer plus public tactical rationale; never reveal hidden chain-of-thought.",
-  ].join("\n");
+  );
+  return lines.join("\n");
 }
 
 function contextMessage(contextAssembly, roomContext) {
@@ -677,11 +729,43 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       ],
     });
     const requestId = `companion-${loaded.conversationId}-${loaded.state.turnCounter + 1}`;
+    const systemContent = systemPrompt(pkg, loaded.binding, companion.eraId,
+      loaded.state.participants);
     const messages = [
-      { role: "system", content: systemPrompt(pkg, loaded.binding, companion.eraId) },
+      { role: "system", content: systemContent },
       { role: "system", content: contextMessage(contextAssembly, roomContext) },
       ...transcriptMessages(loaded.state, participant.participantId),
     ];
+    // Slice 266f.9: the sealed package's formal author-note material is
+    // injected as its own labelled system layer directly behind the persona
+    // system prompt (deterministic; provenance-recorded). It is static
+    // package-sealed role configuration — distinct from the conversation
+    // Author's Note below, which is user-configured and depth/frequency-gated.
+    let packageAuthorsNoteInjected = null;
+    const packageAuthorNote = packageAuthorNoteOf(pkg);
+    if (packageAuthorNote) {
+      const noteText = `${packageAuthorNote.note}${String(packageAuthorNote.noteZh || "").trim()
+        ? ` ${packageAuthorNote.noteZh}` : ""}`;
+      const position = Math.min(2, messages.length);
+      messages.splice(position, 0, {
+        role: "system",
+        content: `Companion author note (sealed package ${pkg.packageId} v${pkg.version}; ${packageAuthorNote.authoringClass}): ${noteText}`,
+      });
+      packageAuthorsNoteInjected = {
+        packageId: pkg.packageId,
+        version: pkg.version,
+        authoringClass: String(packageAuthorNote.authoringClass || "project_d_role_configuration"),
+        noteHash: hashStarcraftTmgContract({
+          note: packageAuthorNote.note,
+          noteZh: String(packageAuthorNote.noteZh || ""),
+        }),
+        depth: packageAuthorNote.depth,
+        frequency: packageAuthorNote.frequency,
+        position,
+        layerKind: "static_package_sealed_role_configuration",
+        separation: "sealed package formal author note — distinct from the user-configured conversation author's note",
+      };
+    }
     // Author's Note depth/frequency injection (Slice 266d): the note is
     // inserted as a system message `depth` messages above the tail (never
     // above the two leading system messages) every `frequency` companion
@@ -732,26 +816,77 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     // Attach the deterministic assembly provenance so the product can
     // project exactly which worldbook entries fired (scope tier, matched
     // triggers, recursion depth) and whether the author's note injected.
+    const firedWorldbook = contextAssembly.sections
+      .filter((section) => section.layer === "worldbook")
+      .map((section) => ({
+        entryId: section.itemId.replace(/^worldbook:/u, ""),
+        scopeTier: section.scopeTier,
+        firedAtDepth: section.firedAtDepth,
+        matchedBy: clone(section.matchedBy),
+        tokens: section.tokens,
+        truncated: section.truncated === true,
+      }));
+    const personaProfile = personaProfileOf(pkg);
+    const sessionMemoryLayers = [...new Set(contextAssembly.sections
+      .map((section) => section.layer)
+      .filter((layer) => ["rolling_summary", "episodic_facts",
+        "relationship_state", "durable_memory"].includes(layer)))];
     return deepFreeze({
       ...clone(completed),
       contextAssembly: {
         assemblyHash: contextAssembly.assemblyHash,
         tokensUsed: contextAssembly.tokensUsed,
         tokensRemaining: contextAssembly.tokensRemaining,
-        worldbookFired: contextAssembly.sections
-          .filter((section) => section.layer === "worldbook")
-          .map((section) => ({
-            entryId: section.itemId.replace(/^worldbook:/u, ""),
-            scopeTier: section.scopeTier,
-            firedAtDepth: section.firedAtDepth,
-            matchedBy: clone(section.matchedBy),
-            tokens: section.tokens,
-            truncated: section.truncated === true,
-          })),
+        worldbookFired: firedWorldbook,
         layersIncluded: [...new Set(contextAssembly.sections.map((section) => section.layer))],
         omissions: contextAssembly.omissions.length,
       },
       authorsNoteInjected: clone(authorsNoteInjected),
+      // Slice 266f.9: exact prompt-layer provenance per reply. Static
+      // canon/lore (package character-tier + product-global worldbook +
+      // immutable canon) is never conflated with session long-term memory
+      // (rolling summary / episodic facts / relationship state / approved
+      // durable memory + chat/persona-tier worldbook).
+      promptLayers: {
+        systemPersona: {
+          packageId: pkg.packageId,
+          version: pkg.version,
+          eraId: companion.eraId,
+          systemPromptHash: hashStarcraftTmgContract(systemContent),
+          personaProfile: personaProfile
+            ? {
+              present: true,
+              authoringClass: String(personaProfile.authoringClass || "project_d_role_configuration"),
+              profileHash: hashStarcraftTmgContract(personaProfile),
+              styleExamples: Array.isArray(personaProfile.styleExamples)
+                ? personaProfile.styleExamples.length : 0,
+              doctrineHints: Array.isArray(personaProfile.doctrineHints)
+                ? personaProfile.doctrineHints.length : 0,
+            }
+            : { present: false },
+          otherCompanionLabels: loaded.state.participants
+            .filter((entry) => entry.kind === "companion"
+              && entry.participantId !== participant.participantId)
+            .map((entry) => String(entry.label)),
+        },
+        packageAuthorsNote: clone(packageAuthorsNoteInjected),
+        conversationAuthorsNote: clone(authorsNoteInjected),
+        staticCanonLore: {
+          canonSections: contextAssembly.sections
+            .filter((section) => section.layer === "canon")
+            .map((section) => section.itemId),
+          worldbookStaticTiers: firedWorldbook
+            .filter((entry) => ["character", "global"].includes(entry.scopeTier))
+            .map((entry) => ({ entryId: entry.entryId, scopeTier: entry.scopeTier })),
+        },
+        sessionLongTermMemory: {
+          layers: sessionMemoryLayers,
+          worldbookSessionTiers: firedWorldbook
+            .filter((entry) => ["chat", "persona"].includes(entry.scopeTier))
+            .map((entry) => ({ entryId: entry.entryId, scopeTier: entry.scopeTier })),
+        },
+        layerSeparation: "static canon/lore (package character-tier + product-global worldbook + immutable canon) is never conflated with session long-term memory (rolling summary / episodic facts / relationship state / approved durable memory + chat/persona-tier worldbook)",
+      },
     });
   }
 
@@ -832,6 +967,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         providerReceipt: safeProviderReceipt(completed.receipt),
         contextAssembly: clone(completed.contextAssembly),
         authorsNoteInjected: clone(completed.authorsNoteInjected),
+        promptLayers: clone(completed.promptLayers),
       });
     }
     const state = await backend.sessionRuntime.getSessionState(loaded.conversationId);
@@ -1468,6 +1604,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
           branchId,
           entry: clone(submitted.entry),
           contextAssembly: clone(completed.contextAssembly),
+          promptLayers: clone(completed.promptLayers),
           providerReceipt: safeProviderReceipt(completed.receipt),
           trainingTruth: false,
         });
