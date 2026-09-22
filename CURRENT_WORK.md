@@ -6,6 +6,23 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — effect-claim subject repair; r53 live
+
+Keep **51562** running. r52 Creep Tumor and r53 Kerrigan Omega deployment have
+Apply/Replay and screenshots; r53 inspected.46new+7prefix=r53, Round2 Movement,
+119calls/12,511,581accounted units/estimated¥16.823985 at21:16:48.718Z. Both
+configured seats Flash; provider response model metadata absent, not a blocker.
+The r51 checker falsely read a threatened existing Omega Worm as the selected
+Creep Spread effect. Automatic correction already converged; preserve it.
+Local saved-response red→one green with11counterexamples now distinguishes
+effect-producing predicates from neighboring/threatened assets.0Provider/Room
+mutation, no old gates/builds. This repair is on disk **not yet live-loaded**;
+use next safe reload, no restart of current paid work. No Prompt/Skill change.
+Report `docs/ticket-23-slice-248-effect-claim-subject-repair-2026-09-23.md`.
+r52/r53 observation92.598/87.962s recorded separately, not strategy trimming.
+K3 **37154** committed S271 workspace UI and is building/accepting, not yet a
+completed product handoff. T23 remains33/36:248full match,249review,250synthesis.
+
 ### 2026-09-23 T23 / S248 — observer repair built; same-r51 resume running
 
 **Recovered at21:05:42.932Z:**51562 appended the already accepted r51 and

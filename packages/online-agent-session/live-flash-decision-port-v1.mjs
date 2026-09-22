@@ -140,12 +140,35 @@ function effectClaimIsNegated(text, matchIndex) {
     || /(?:不是|并非|不要|不应|没有|无|而非)[^，]{0,36}$/u.test(clause);
 }
 
+function effectReferenceIsSelectedResult(text, match) {
+  // A noun in a risk/position comparison is not a declaration of the chosen
+  // action's effect. Bind a result-producing predicate to its first named
+  // effect instead of treating every asset mentioned in the paragraph as new.
+  const before = text.slice(0, match.index);
+  const prefix = before.split(/[.!?;:\n。！？；：]/u).at(-1);
+  const predicates = [...prefix.matchAll(
+    /\b(?:plac(?:e[sd]?|ing)|creat(?:e[sd]?|ing)|set(?:s|ting)?|summon(?:s|ed|ing)?|deploy(?:s|ed|ing)?|generat(?:e[sd]?|ing)|produc(?:e[sd]?|ing)|establish(?:es|ed|ing)?|provid(?:e[sd]?|ing)|us(?:e[sd]?|ing)|activat(?:e[sd]?|ing))\b|(?:放置|生成|召唤|部署|创建|产生|提供|使用|发动|激活)/giu)];
+  const predicate = predicates.at(-1);
+  if (predicate) {
+    const bridge = prefix.slice(predicate.index + predicate[0].length);
+    const alreadyNamedEffect = Object.values(SELECTED_ACTION_EFFECT_CLAIM_PATTERNS)
+      .some((candidate) => candidate.test(bridge));
+    const positionalReference = /\b(?:beside|near|behind|against|toward|towards|between|around|from|next\s+to|in\s+front\s+of)\b|(?:旁边|附近|后方|前方|朝向|针对|来自)/iu.test(bridge);
+    if (!alreadyNamedEffect && !positionalReference) return true;
+  }
+  const after = text.slice(match.index + match[0].length);
+  return /^\s+(?:(?:is|are|will\s+be|would\s+be|gets?)\s+(?:newly\s+)?(?:placed|created|summoned|deployed|generated|produced)\b)/iu.test(after)
+    || /^\s*(?:被|将被)(?:放置|生成|召唤|部署|创建)/u.test(after);
+}
+
 function assertedEffectClaim(text, pattern) {
   const flags = pattern.flags.includes("g") ? pattern.flags
     : `${pattern.flags}g`;
   const matcher = new RegExp(pattern.source, flags);
-  for (const match of String(text || "").matchAll(matcher)) {
-    if (!effectClaimIsNegated(text, match.index)) return true;
+  const value = String(text || "");
+  for (const match of value.matchAll(matcher)) {
+    if (!effectClaimIsNegated(value, match.index)
+      && effectReferenceIsSelectedResult(value, match)) return true;
   }
   return false;
 }

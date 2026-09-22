@@ -62,6 +62,30 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r52–53 — narrative retry removed on disk; observation still slow
+
+The live identity checker incorrectly treated an existing Omega Worm mentioned
+as an enemy-fire target as this Creep Spread action's new asset. One automatic
+correction converged, adding 27.387s / 130,936 reported units; r52 was applied
+without a manual reroll. A concrete saved-response red → single green repair
+now binds effect declarations to their predicates. It is awaiting the next safe
+server reload, not a reason to interrupt this live run. Details:
+`ticket-23-slice-248-effect-claim-subject-repair-2026-09-23.md`.
+
+| Accepted revision | Manifest | Projection refresh | Applied-action captures | Subtotal |
+| --- | ---: | ---: | ---: | ---: |
+| r52 |62.395s|7.809s|22.394s|92.598s|
+| r53 |53.579s|8.515s|25.868s|87.962s|
+
+The existing single-flight fixes eliminate overlapping calls from each panel,
+but these timings still show substantial observation overhead. Keep profiling
+read/projection construction separately from Provider planning and Rules
+geometry before optimizing. No fact, Skill, query, search or screenshot is
+dropped to improve these numbers. At r53 the checkpoint is 119 calls /
+12,511,581 accounted units / estimated ¥16.823985; both seats Flash, no Pro
+fallback. K3's separate development model remains native K3 and its product
+acceptance is explicitly Flash-only.
+
 ### r51 — second polling lane reproduced and repaired
 
 The old runner72606 is confirmed terminal, not merely slow: it exited after
