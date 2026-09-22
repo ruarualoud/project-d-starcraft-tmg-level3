@@ -8,10 +8,12 @@ import { buildStarcraftTmgTacticalRelationshipGraphV1 } from
   "../online-agent-session/tactical-relationship-graph-v1.mjs";
 import { verifyOfficialArmyBuilderQueryPortDescriptorV1 } from
   "./army-builder-query-port-v1.mjs";
+import { verifyOfficialMissionScoringProfileV1 } from
+  "../source-data/official-gameplay-data-bundle-v1.mjs";
 
 export const PREGAME_SCENE_LABORATORY_MODULE =
   "packages/roster-strategist/pregame-scene-laboratory-v1.mjs";
-export const PREGAME_SCENE_LABORATORY_VERSION = "1.0.0";
+export const PREGAME_SCENE_LABORATORY_VERSION = "1.1.0";
 
 export const PREGAME_LAB_DESCRIPTOR_SCHEMA =
   "starcraft_tmg_pregame_scene_laboratory_descriptor_v1";
@@ -27,6 +29,8 @@ export const PREGAME_LAB_SCENARIO_BRANCH_RECEIPT_SCHEMA =
   "starcraft_tmg_pregame_lab_scenario_branch_receipt_v1";
 export const PREGAME_LAB_SAME_STATE_AB_RECEIPT_SCHEMA =
   "starcraft_tmg_pregame_lab_same_state_ab_receipt_v1";
+export const PREGAME_LAB_MISSION_SCORING_AUTHORITY_SCHEMA =
+  "starcraft_tmg_pregame_lab_mission_scoring_authority_v1";
 export const PREGAME_LAB_MUTATION_ZERO_PROOF_SCHEMA =
   "starcraft_tmg_pregame_lab_mutation_zero_proof_v1";
 
@@ -162,6 +166,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
     unknownStaysUnknown: true,
     hostPreferenceWeightsApplied: false,
     sameStateABComparisonSupported: true,
+    missionScoringAuthorityProjectionSupported: true,
     scenarioBranchesOperateOnClonesOnly: true,
     hypotheticalPlacementsAreAdvisoryNotRulesLegality: true,
     providerCalls: 0,
@@ -664,6 +669,81 @@ export function createPregameSceneLaboratoryV1(input = {}) {
     }));
   }
 
+  // Read-only projection of the authoritative mission task/scoring data
+  // frozen into the source Room state (the Rules-owned mission scoring
+  // profile plus the mission marker affinity placement). The profile is
+  // re-verified through its own authoritative verifier: when it is absent or
+  // not verifiable the result stays unknown and names the missing authority
+  // instead of fabricating scoring data. Marker affinity is reported
+  // separately so a verifiable profile with an unverifiable placement keeps
+  // exactly that part unknown.
+  function missionScoringAuthority() {
+    const profile =
+      sourceState.officialGameplayDataBundle?.missionScoringProfile;
+    let profileProjection = null;
+    let unknownReason = null;
+    try {
+      if (!object(profile)) {
+        fail("profile_not_frozen_in_source_state");
+      }
+      verifyOfficialMissionScoringProfileV1(profile);
+      profileProjection = freezeDeep({
+        recordKey: profile.recordKey,
+        missionId: profile.missionId,
+        missionName: profile.missionName,
+        format: profile.format,
+        gameLengthRounds: profile.gameLengthRounds,
+        startingSupply: profile.startingSupply,
+        extraSupplyPerRound: profile.extraSupplyPerRound,
+        allMissionMarkersActivated: profile.allMissionMarkersActivated === true,
+        destroyedEnemySupplyVpPerSupply: profile.destroyedEnemySupplyVpPerSupply,
+        markerScoringStartsRound: profile.markerScoringStartsRound,
+        neutralOrOwnAffinityMarkerVp: profile.neutralOrOwnAffinityMarkerVp,
+        opponentAffinityMarkerVp: profile.opponentAffinityMarkerVp,
+        specialLeadWinThreshold: profile.specialLeadWinThreshold,
+        finalTiebreaker: profile.finalTiebreaker ?? null,
+        sourceText: clone(profile.sourceText),
+        sourceTextHash: profile.sourceTextHash,
+        missionScoringProfileHash: profile.missionScoringProfileHash,
+      });
+    } catch (error) {
+      unknownReason = "missing_authority:official_mission_scoring_profile:"
+        + String(error?.message || error).split(":")[0].slice(0, 120);
+    }
+    const markers =
+      sourceState.officialMissionMarkerPlacement?.missionMarkers;
+    const markerAffinity = Array.isArray(markers)
+      ? freezeDeep({
+        status: "derivable",
+        markers: markers.slice(0, 16).map((marker) => freezeDeep({
+          number: integer(marker?.number,
+            "PREGAME_LAB_MISSION_SCORING_INVALID"),
+          affinityPlayerId: marker?.affinityPlayerId === undefined
+            || marker?.affinityPlayerId === null
+            ? null : String(marker.affinityPlayerId),
+        })),
+      })
+      : freezeDeep({
+        status: "unknown",
+        unknownReason:
+          "missing_authority:official_mission_marker_placement",
+        markers: [],
+      });
+    return noteOperation(hashedReceipt({
+      schema: PREGAME_LAB_MISSION_SCORING_AUTHORITY_SCHEMA,
+      queryId: "mission-scoring-authority",
+      ...sharedFields(),
+      baseStateHash: sourceStateHash,
+      resultStatus: profileProjection ? "derivable" : "unknown",
+      unknownReason,
+      missionScoringProfile: profileProjection,
+      markerAffinity,
+      scheduleDerivationNote: profileProjection
+        ? "vp_schedule_is_grounded_in_this_authority_when_declared"
+        : "vp_schedule_stays_unknown_and_identifies_the_missing_authority",
+    }));
+  }
+
   function compareCandidatesSameState(request = {}) {
     const comparisonId = nonEmpty(request.comparisonId,
       "PREGAME_LAB_COMPARISON_ID_REQUIRED");
@@ -755,6 +835,7 @@ export function createPregameSceneLaboratoryV1(input = {}) {
     queryMath,
     runScenarioBranch,
     compareCandidatesSameState,
+    missionScoringAuthority,
     proveMutationZero,
   });
 }
@@ -840,6 +921,29 @@ export function verifyPregameLabSameStateABReceiptV1(receipt) {
       !== "agent_deliberation_only_laboratory_never_ranks"
     || !Array.isArray(receipt.candidates) || receipt.candidates.length !== 2) {
     fail("PREGAME_LAB_AB_RECEIPT_INVALID");
+  }
+  return true;
+}
+
+export function verifyPregameLabMissionScoringAuthorityReceiptV1(receipt) {
+  verifyReceipt(receipt, PREGAME_LAB_MISSION_SCORING_AUTHORITY_SCHEMA,
+    COMMON_FLAGS, "PREGAME_LAB_MISSION_SCORING_AUTHORITY_INVALID");
+  if (receipt.resultStatus === "derivable") {
+    if (!object(receipt.missionScoringProfile)
+      || !HASH_PATTERN.test(String(
+        receipt.missionScoringProfile.missionScoringProfileHash || ""))
+      || !HASH_PATTERN.test(String(
+        receipt.missionScoringProfile.sourceTextHash || ""))
+      || receipt.unknownReason !== null) {
+      fail("PREGAME_LAB_MISSION_SCORING_AUTHORITY_INVALID", "derivable");
+    }
+    return true;
+  }
+  if (receipt.resultStatus !== "unknown"
+    || receipt.missionScoringProfile !== null
+    || !String(receipt.unknownReason || "")
+      .startsWith("missing_authority:official_mission_scoring_profile")) {
+    fail("PREGAME_LAB_MISSION_SCORING_AUTHORITY_INVALID", "unknown");
   }
   return true;
 }

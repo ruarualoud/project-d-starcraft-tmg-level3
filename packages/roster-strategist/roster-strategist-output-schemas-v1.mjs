@@ -50,6 +50,20 @@
 // field descriptions. The convention is general (fixed per component kind,
 // never per value or roster); the runtime's binding validation stays
 // byte-for-byte strict.
+//
+// Sub-slices 269.13/269.14 (reopening the passed live round-9 plan for list
+// quality: 940/2000 minerals spent and an unknown victory-point schedule):
+// two general strategy-quality contracts join the field set. The foundation
+// schema gains `scoreRouteAuthority`, binding whether the public VP schedule
+// is grounded in the authoritative mission task/scoring data sealed into the
+// request or stays unknown with the missing authority identified; the
+// comparison schema gains `resourceUtilization`, binding the menu-derived
+// near-cap budget rule (select an available near-cap Rules-legal candidate
+// or declare an explicit public justification tied to a legal
+// retained-resource use) and the acknowledgment that unspent budget is lost.
+// Both bind field names, types, bounds and enums only — never roster
+// content, candidate identity or strategy — and the runtime's full
+// schema/Rules validation stays the strict enforcement point.
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -62,7 +76,7 @@ import {
 
 export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_SCHEMA =
   "starcraft_tmg_roster_strategist_output_contract_set_v1";
-export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.2.0";
+export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.3.0";
 
 const DELIBERATION_SCHEMA = "starcraft_tmg_roster_strategist_deliberation_v1";
 const MAX_TEXT = 2_000;
@@ -275,6 +289,22 @@ const TOOL_REQUEST = closedObject({
 const FOUNDATION_SCHEMA = closedObject({
   ...envelope("strategy_foundation"),
   scoreRoute: SCORE_ROUTE,
+  scoreRouteAuthority: closedObject({
+    status: {
+      type: "string", minLength: 16, maxLength: 25,
+      enum: ["mission_grounded", "unknown_missing_authority"],
+      description: "Grounding of the public VP schedule in the authoritative "
+        + "mission task/scoring data sealed into this request. "
+        + "mission_grounded requires scheduleStatus \"declared\" and a "
+        + "targetVpSchedule derived from the sealed authority; "
+        + "unknown_missing_authority requires scheduleStatus \"unknown\" "
+        + "with an empty schedule, preserving unknown.",
+    },
+    authorityText: text(1, MAX_TEXT,
+      "When mission_grounded: name the sealed authoritative scoring data "
+        + "the schedule is derived from. When unknown_missing_authority: "
+        + "identify the missing authority; never fabricate scoring data."),
+  }, "Public grounding receipt for the score route and VP schedule."),
   opponentHypotheses: {
     type: "array", minItems: 1, maxItems: 8,
     items: closedObject({
@@ -390,6 +420,37 @@ const COMPARISON_SCHEMA = closedObject({
     }, "Public purpose binding for one roster component."),
   },
   deploymentConcept: DEPLOYMENT_CONCEPT,
+  resourceUtilization: closedObject({
+    nearCapCandidateAvailable: {
+      type: "boolean",
+      description: "true iff at least one evaluated Rules-legal candidate "
+        + "has mineralUnspent below the sealed menu-derived near-cap "
+        + "threshold; copy the sealed evaluated-candidates value.",
+    },
+    selectedCandidateNearCap: {
+      type: "boolean",
+      description: "true iff the selected candidate has mineralUnspent "
+        + "below the sealed near-cap threshold; copy the sealed value.",
+    },
+    unspentBudgetAcknowledgedLost: {
+      type: "boolean",
+      description: "Must be true: unspent minerals are lost (no carryover, "
+        + "no later spend), so budget residue is an explicit strategic "
+        + "opportunity cost, never headroom.",
+    },
+    retainedResourceJustificationStatus: {
+      type: "string", minLength: 8, maxLength: 14,
+      enum: ["not_applicable", "declared"],
+      description: "\"declared\" is mandatory when a near-cap Rules-legal "
+        + "candidate is available and the selected candidate is not "
+        + "near-cap; otherwise \"not_applicable\".",
+    },
+    retainedResourceJustificationText: text(0, MAX_TEXT,
+      "Required non-empty when declared: the explicit public justification "
+        + "for declining an available near-cap candidate, tied to a named "
+        + "legal retained-resource use. Empty when not_applicable."),
+  }, "Public budget-utilization contract: near-cap selection or an "
+    + "explicit justified exception, with unspent budget treated as lost."),
   lossResourceBudget: closedObject({
     lossBudgetStatus: {
       type: "string", minLength: 7, maxLength: 8,
