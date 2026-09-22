@@ -1119,6 +1119,73 @@ check(269, verifyRosterPlanRoundTripV1(round6Session.plan) === true
   "the captured round-6 foundation must plan end-to-end: canonicalization "
     + "forwards the domain-legal integer and the laboratory answers");
 
+// ------------------------------------- round-7 component identity drift
+// Offline replay of the exact saved live round-7 failure
+// (repair-round-7-report.json, failureDetail
+// "ROSTER_STRATEGIST_COMPARISON_INVALID:faction_card_instance:mission_hold
+// _position" — recorded without the line break): the model invented a
+// semantic instanceId for the faction-card purpose instead of the
+// runtime-owned deterministic identity. The strict subset cannot express
+// per-value patterns, so the generation schema must publish the
+// deterministic instance-identity convention in its field descriptions; the
+// runtime's binding rule stays strict either way. 0 Provider calls.
+function capturedRound7ComparisonOutput() {
+  const base = comparisonOutput();
+  return {
+    ...base,
+    componentPurposes: base.componentPurposes.map((purpose, index) => (
+      index === 0 ? { ...purpose, instanceId: "mission_hold_position" }
+        : purpose)),
+  };
+}
+// The captured shape satisfies the wire schema (the subset cannot express
+// the convention) and still fails closed at the runtime's strict binding,
+// byte-identically to the saved report.
+const comparisonContract = rosterStrategistRoundOutputContractV1(
+  "comparison_selection");
+const round7SchemaValidation = validateStarcraftTmgProviderJsonSchemaValueV1(
+  comparisonContract.providerSchema, capturedRound7ComparisonOutput());
+check(269, round7SchemaValidation.ok === true,
+  "the captured round-7 drifted-instance shape is well-formed at the wire; "
+    + "only the runtime's deterministic binding rule rejects it");
+let round7ReplayError = null;
+try {
+  await strategistA.planRoster(sessionInput, {
+    deliberation: createMock({
+      comparison_selection: () => capturedRound7ComparisonOutput() }) });
+} catch (error) {
+  round7ReplayError = error;
+}
+check(269, String(round7ReplayError?.message || "")
+    === "ROSTER_STRATEGIST_COMPARISON_INVALID:faction_card_instance:"
+      + "mission_hold_position",
+  "offline replay must reproduce the exact saved round-7 failure "
+    + "byte-identically (OFFLINE_REPLAY_MATCHES_SAVED_ROUND7_FAILURE); the "
+    + "runtime binding rule stays strict after the generation-side repair");
+// Fail-first under the pre-repair schema: the comparison schema must publish
+// the runtime-owned deterministic instance-identity convention for every
+// component kind and for the activation order, so the wire contract itself
+// documents the formats the subset cannot pattern-enforce.
+const round7PurposeProps = comparisonContract.providerSchema.properties
+  .componentPurposes.items.properties;
+const round7ActivationProps = comparisonContract.providerSchema.properties
+  .deploymentConcept.properties.activationOrder.items.properties;
+check(269, String(round7PurposeProps.instanceId.description || "")
+    .includes("<sideKey>-faction")
+  && String(round7PurposeProps.instanceId.description || "")
+    .includes("<sideKey>-tactical-<n>")
+  && String(round7PurposeProps.instanceId.description || "")
+    .includes("agent-unit-<n>")
+  && String(round7PurposeProps.instanceId.description || "")
+    .includes("-composition")
+  && String(round7PurposeProps.instanceId.description || "")
+    .includes("-upgrade-<n>")
+  && String(round7ActivationProps.unitInstanceId.description || "")
+    .includes("agent-unit-<n>"),
+  "the comparison schema must publish the runtime-owned deterministic "
+    + "instance-identity convention for every component kind and the "
+    + "activation order (fail-first before the contract repair)");
+
 check(269, bundle.bundleHash === bundleHashBefore
   && hashStarcraftTmgContract(authority.state)
     === labDescriptor.sourceStateHash,
@@ -1153,6 +1220,7 @@ const report = {
     structuredGenerationEnforced: true,
     round5OfflineReplayFailureDetail: String(round5ReplayError?.message || ""),
     round6OfflineReplayFailureDetail: round6SavedDetail,
+    round7OfflineReplayFailureDetail: String(round7ReplayError?.message || ""),
     hiddenChainOfThoughtIncluded: false,
     hostPreferenceWeights: false,
   },
