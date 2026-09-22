@@ -2,7 +2,9 @@ import { useIsFocused } from "@react-navigation/native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Image,
+  type ImageSourcePropType,
   Platform,
   Pressable,
   StyleSheet,
@@ -15,6 +17,10 @@ import { useI18n } from "@/lib/i18n";
 import { useLevel3ClientDomain } from "@/lib/level3/client-domain-provider";
 import { CompanionCataloguePanel } from "./companion-catalogue-panel";
 import { COMPANION_CATALOGUE_V1 } from "../../../../content/characters/companion-catalogue-v1.mjs";
+import {
+  companionPortraitAnimationTransitionV1,
+  resolveCompanionPortraitAnimationStateV1,
+} from "../../../../content/characters/companion-portrait-animation-binding-v1.mjs";
 import {
   companionPortraitFrameAssetV1,
   resolveCompanionPortraitAssetSourceV1,
@@ -115,6 +121,7 @@ interface CompanionChatState {
   authorsNote: any | null;
   auditResult: any | null;
   permissionSurfaces: any | null;
+  packagePromotions: any | null;
   transferNote: string | null;
   lastExport: any | null;
   personaNameDraft: string;
@@ -202,6 +209,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     authorsNote: null,
     auditResult: null,
     permissionSurfaces: null,
+    packagePromotions: null,
     transferNote: null,
     lastExport: null,
     personaNameDraft: "",
@@ -969,6 +977,27 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
       const result = await companionProduct!.readPermissionSurfaces();
       if (result?.ok) patchChat({ permissionSurfaces: result });
       else patchChat({ error: { code: String(result?.reason || "COMPANION_PERMISSION_SURFACES_FAILED") } });
+    });
+  }
+
+  // ── Slice 266e: package-to-backend promotion (real server contract) ──
+  async function loadPackagePromotions() {
+    await runChatOp("package_promotions", async () => {
+      const result = await companionProduct!.readPackagePromotions();
+      if (result?.ok) patchChat({ packagePromotions: result });
+      else patchChat({ error: { code: String(result?.reason || "COMPANION_PACKAGE_PROMOTIONS_FAILED") } });
+    });
+  }
+
+  async function promoteChatPackage(packageId: string) {
+    await runChatOp("package_promote", async () => {
+      const result = await companionProduct!.promotePackage({ packageId });
+      if (result?.ok) {
+        const refreshed = await companionProduct!.readPackagePromotions();
+        if (refreshed?.ok) patchChat({ packagePromotions: refreshed });
+      } else {
+        patchChat({ error: { code: String(result?.reason || "COMPANION_PACKAGE_PROMOTE_FAILED") } });
+      }
     });
   }
 
@@ -2243,6 +2272,56 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     );
   }
 
+  function renderChatPromotionsCard() {
+    const promotions: any[] = chat.packagePromotions?.promotions || [];
+    const presentationPacks = COMPANION_CATALOGUE_V1.entries.filter((entry: any) => entry.pack);
+    return (
+      <View style={styles.gapCard} testID="companion-chat-promotions">
+        <Text style={styles.gapTitle}>
+          {zh
+            ? "后端包晋升(持久封存 + 哈希钉 · 每次产品组成重校验)"
+            : "Backend pack promotion (durable seal + hash pins · re-verified every composition)"}
+        </Text>
+        <View style={styles.actionRow}>
+          <ActionButton
+            disabled={chat.busy || !companionProduct}
+            label={zh ? "读取晋升列表" : "Read promotions"}
+            onPress={() => void loadPackagePromotions()}
+            testID="companion-chat-promotions-load"
+          />
+          {presentationPacks.map((entry: any) => {
+            const packageId = companionPackageIdFromCharacterId(entry.characterId);
+            const slug = entry.characterId.split(".")[1] || entry.characterId;
+            return (
+              <ActionButton
+                key={packageId}
+                disabled={chat.busy || !companionProduct}
+                label={zh ? `晋升 ${entry.displayNameZh}` : `Promote ${entry.displayName}`}
+                onPress={() => void promoteChatPackage(packageId)}
+                testID={`companion-chat-promote-${slug}`}
+              />
+            );
+          })}
+        </View>
+        <View testID="companion-chat-promotions-list">
+          {promotions.map((promotion: any) => {
+            const slug = String(promotion.packageId).replace(/^starcraft-tmg\.companion\./u, "");
+            return (
+              <Text key={promotion.packageId} style={styles.gapCode} testID={`companion-chat-promotion-${slug}`}>
+                {slug} · pin {String(promotion.pin).slice(0, 12)}… · verified: {String(promotion.pinVerified)} · registered: {String(promotion.registered)} · durable: {String(chat.packagePromotions?.durable === true)}
+              </Text>
+            );
+          })}
+        </View>
+        <Text style={styles.sectionMeta}>
+          {zh
+            ? "封存合同与其 sha256 完整性钉一起持久化;每次产品组成重派生每个钉并重新注册相同封存字节——钉不匹配或版本冲突即失败关闭。晋升绝不授予规则/房间/Provider 权限。"
+            : "The sealed contract is persisted with its sha256 integrity pin; every product composition re-derives each pin and re-registers the identical sealed bytes — a pin mismatch or version conflict fails closed. Promotion never grants Rules/room/Provider authority."}
+        </Text>
+      </View>
+    );
+  }
+
   function renderChatPermissionsCard() {
     const surfaces: any[] = chat.permissionSurfaces?.surfaces || [];
     return (
@@ -2297,10 +2376,22 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     const speakerCharacterId = speakerCompanion
       ? characterIdFromCompanionPackageId(speakerCompanion.packageRef.id)
       : null;
-    const speakerState: CompanionPortraitStateId = speakerCompanion
-      && lastMessage?.participantId === speakerCompanion.participantId
-      ? "speaking"
-      : "listening";
+    // Slice 266e: the speaker portrait is bound to the deterministic
+    // six-state animation state machine over REAL session signals — never
+    // fabricated; unknown/absent signals fail closed to idle, and reduced
+    // motion renders the single static keyframe.
+    const speakerState = resolveCompanionPortraitAnimationStateV1({
+      sessionError: chat.error !== null,
+      interrupted: chat.interrupted !== null,
+      thinking: chat.busy
+        && (chat.lastOperation === "send" || chat.lastOperation === "continue"),
+      speaking: !!speakerCompanion
+        && lastMessage?.participantId === speakerCompanion.participantId,
+      composing: chat.draft.trim().length > 0,
+    }) as CompanionPortraitStateId;
+    const speakerTransition = companionPortraitAnimationTransitionV1(
+      speakerState, { reducedMotion },
+    );
     const speakerSource = speakerCharacterId
       ? resolveCompanionPortraitAssetSourceV1(speakerCharacterId, speakerState)
       : null;
@@ -2348,20 +2439,12 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
 
         <View style={styles.chatSpeakerRow}>
           {speakerSource ? (
-            <View
-              style={styles.chatSpeakerPortraitBox}
-              testID="companion-chat-speaker-portrait"
-            >
-              <Image
-                accessibilityIgnoresInvertColors
-                accessibilityLabel={`${speakerCompanion?.packageRef?.id || "companion"} · ${speakerState}`}
-                resizeMode="cover"
-                source={speakerSource}
-                style={styles.chatSpeakerPortrait}
-                testID="companion-chat-speaker-portrait-img"
-              />
-              <View pointerEvents="none" style={styles.scanlines} />
-            </View>
+            <ChatSpeakerPortraitFrame
+              accessibilityLabel={`${speakerCompanion?.packageRef?.id || "companion"} · ${speakerState}`}
+              reducedMotion={reducedMotion}
+              source={speakerSource}
+              state={speakerState}
+            />
           ) : (
             <View
               accessibilityLabel={zh ? "头像资产不可用（如实标注）" : "portrait asset unavailable (labelled honestly)"}
@@ -2377,6 +2460,14 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
               {zh ? "当前发言者" : "Current speaker"}: {speakerCompanion
                 ? chatParticipantLabel(conversation, speakerCompanion.participantId)
                 : (zh ? "你" : "You")}
+            </Text>
+            <Text style={styles.sectionMeta} testID="companion-chat-speaker-portrait-state">
+              portrait state: {speakerState}
+              {" · "}{speakerTransition.reducedMotionStatic
+                ? (zh ? "减少动态 · 单静态帧" : "reduced motion · single static frame")
+                : (zh
+                  ? `确定性 ${speakerTransition.durationMs}ms 淡入（仅状态切换；无循环帧）`
+                  : `deterministic ${speakerTransition.durationMs}ms crossfade (state change only; no frame loop)`)}
             </Text>
             {speakerFrameAsset && (
               <Text style={styles.sectionMeta} testID="companion-chat-speaker-asset-meta">
@@ -2543,6 +2634,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         {renderChatPersonaCard()}
         {renderChatAuditCard()}
         {renderChatPermissionsCard()}
+        {renderChatPromotionsCard()}
         {chat.conversation ? renderChatConversation(chat.conversation) : (
           <>
             <Text style={styles.fieldLabel}>
@@ -2821,6 +2913,55 @@ function StaticNeutralAdjutantPortrait({ label }: { label: string }) {
       <View style={styles.neutralHead} />
       <View style={styles.neutralShoulders} />
       <View style={styles.neutralCore} />
+    </View>
+  );
+}
+
+/**
+ * Slice 266e: six-state portrait animation binding (committed keyframes
+ * only). On a bound-state change the new committed keyframe fades in with
+ * the state's deterministic bounded duration; there is no frame loop and no
+ * generated in-between frame. Reduced motion collapses the transition and
+ * renders the single static keyframe, exactly as the portrait-state
+ * contracts prescribe. The image layer keeps the exact
+ * `companion-chat-speaker-portrait-img` structure the pixel gate proves.
+ */
+function ChatSpeakerPortraitFrame({ accessibilityLabel, reducedMotion, source, state }: {
+  accessibilityLabel: string;
+  reducedMotion: boolean;
+  source: ImageSourcePropType;
+  state: CompanionPortraitStateId;
+}) {
+  const fade = useRef(new Animated.Value(1)).current;
+  const previousState = useRef(state);
+  useEffect(() => {
+    if (previousState.current === state) return;
+    previousState.current = state;
+    const transition = companionPortraitAnimationTransitionV1(state, { reducedMotion });
+    if (transition.reducedMotionStatic || transition.durationMs <= 0) {
+      fade.setValue(1);
+      return;
+    }
+    fade.setValue(0.35);
+    Animated.timing(fade, {
+      toValue: 1,
+      duration: transition.durationMs,
+      useNativeDriver: true,
+    }).start();
+  }, [state, reducedMotion, fade]);
+  return (
+    <View style={styles.chatSpeakerPortraitBox} testID="companion-chat-speaker-portrait">
+      <Animated.View style={{ width: "100%", height: "100%", opacity: fade }}>
+        <Image
+          accessibilityIgnoresInvertColors
+          accessibilityLabel={accessibilityLabel}
+          resizeMode="cover"
+          source={source}
+          style={styles.chatSpeakerPortrait}
+          testID="companion-chat-speaker-portrait-img"
+        />
+      </Animated.View>
+      <View pointerEvents="none" style={styles.scanlines} />
     </View>
   );
 }

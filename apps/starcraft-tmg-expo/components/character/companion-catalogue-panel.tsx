@@ -13,6 +13,9 @@ import {
   resolveCompanionPortraitAssetSourceV1,
   type CompanionPortraitStateId,
 } from "@/lib/level3/companion-portrait-assets-v1";
+import {
+  companionPortraitAnimationTransitionV1,
+} from "../../../../content/characters/companion-portrait-animation-binding-v1.mjs";
 import { useReducedMotion } from "@/lib/level3/use-reduced-motion";
 
 /**
@@ -32,9 +35,11 @@ import { useReducedMotion } from "@/lib/level3/use-reduced-motion";
  *   - Kerrigan's damaged_concerned state honestly shares her approved
  *     warning frame and says so; a missing asset renders a labelled
  *     unavailable fallback, never another character's frame.
- *   - The six states are admitted STATIC keyframes; they are never played as
- *     one continuous animation, and reduced motion always shows a single
- *     static frame.
+ *   - The six states stay committed STATIC keyframes; Slice 266e binds them
+ *     to the deterministic six-state animation state machine (live session
+ *     signals → state; bounded crossfade on state change only — no frame
+ *     loop, no generated in-between frame), and reduced motion always shows
+ *     a single static frame.
  *
  * Nothing here is gameplay truth, persistence, or a Provider call. Canon
  * facts, Project D role configuration, and admitted generated assets are
@@ -99,13 +104,13 @@ const CAPABILITY_ROWS = [
   { code: "COMPANION_AUTHORS_NOTE_CONTRACT", capability: "author's-note depth/frequency injection (product-side)", capabilityZh: "作者注释深度/频率注入(产品侧)", genericBackend: "absent", productBinding: "connected" },
   { code: "USER_PERSONA_CONTRACT", capability: "versioned seat-bound user persona (product-side)", capabilityZh: "版本化席位绑定用户人设(产品侧)", genericBackend: "absent", productBinding: "connected" },
   { code: "AGENT_VS_AGENT_COMPANION_POLICY_SURFACE", capability: "explicit human/agent/observer/review permission surfaces (live policy)", capabilityZh: "显式人类/Agent/观察者/复盘权限面(实时策略)", genericBackend: "absent", productBinding: "connected" },
-  { code: "COMPANION_PACK_BACKEND_PROMOTION", capability: "backend sealing + hash pins for the five presentation packs", capabilityZh: "五个纯呈现包的后端封存与哈希钉", genericBackend: "absent", productBinding: "pending" },
-  { code: "COMPANION_PORTRAIT_CONTINUOUS_ANIMATION", capability: "continuous portrait animation (six static keyframes admitted; loop not proven)", capabilityZh: "连续头像动画(六张静态关键帧已准入;循环未验证)", genericBackend: "absent", productBinding: "pending" },
+  { code: "COMPANION_PACK_BACKEND_PROMOTION", capability: "backend sealing + hash pins for the five presentation packs (durable promotion; pins re-verified every composition)", capabilityZh: "五个纯呈现包的后端封存与哈希钉(持久晋升;每次组成重校验)", genericBackend: "absent", productBinding: "connected", connectedSlice: "266e" },
+  { code: "COMPANION_PORTRAIT_CONTINUOUS_ANIMATION", capability: "deterministic six-state portrait animation binding (committed keyframes; bounded crossfade on state change; no generated frames)", capabilityZh: "确定性六状态头像动画绑定(已准入关键帧;状态切换有界淡入;无生成帧)", genericBackend: "absent", productBinding: "connected", connectedSlice: "266e" },
 ];
 
 const PARITY_SUMMARY = [
-  { status: "supported", zh: "产品内已支持", items: ["六同伴呈现名册(真实准入关键帧,哈希钉选)", "凯瑞甘动态头像合同(后端绑定)", "席位权限姿态", "BYOK 安全 Provider", "同伴群聊:多说话者回合/@提及/持久转写(Slice 266c)", "分层记忆/关系投影(Slice 266c)", "检查点/恢复(Slice 266c)", "注入式外部 Provider 端口(Slice 266c)", "世界书四层级触发+有界递归(Slice 266d)", "用户人设(版本化,席位绑定)(Slice 266d)", "摘要编辑/回滚+情景记忆+关系事件(Slice 266d)", "重roll/编辑分支谱系(Slice 266d)", "作者注释深度/频率注入(Slice 266d)", "导入/导出/恢复(完整性哈希,无凭据)(Slice 266d)", "审计导出/校验/回放候选(Slice 266d)", "四类权限面(实时策略判定)(Slice 266d)", "持久化重启恢复(加密 SQLite/PostgreSQL 端口)(Slice 266d)"], itemsEn: ["six-companion presentation roster (real admitted keyframes, hash-pinned)", "Kerrigan dynamic portrait contract (backend-bound)", "seat permission posture", "secure BYOK Provider", "companion group chat: multi-speaker turns/@mentions/persisted transcript (Slice 266c)", "layered memory/relationship projection (Slice 266c)", "checkpoint/resume (Slice 266c)", "injected external Provider port (Slice 266c)", "four-tier worldbook triggers with bounded recursion (Slice 266d)", "versioned seat-bound user persona (Slice 266d)", "summary edit/rollback + episodic memory + relationship events (Slice 266d)", "swipe/reroll/edit-as-branch lineage (Slice 266d)", "author's note depth/frequency injection (Slice 266d)", "import/export/restore (integrity-hashed, no credentials) (Slice 266d)", "audit export/verify/replay candidate (Slice 266d)", "four live permission surfaces (Slice 266d)", "durable process-restart resume (encrypted SQLite/PostgreSQL port) (Slice 266d)"] },
-  { status: "missing", zh: "仍缺失", items: ["五包后端封存(仍为呈现包,产品侧诚实注册)", "连续头像动画(未验证)"], itemsEn: ["backend sealing of the five presentation packs (they stay presentation packs, honestly registered product-side)", "continuous portrait animation (not proven)"] },
+  { status: "supported", zh: "产品内已支持", items: ["六同伴呈现名册(真实准入关键帧,哈希钉选)", "凯瑞甘动态头像合同(后端绑定)", "席位权限姿态", "BYOK 安全 Provider", "同伴群聊:多说话者回合/@提及/持久转写(Slice 266c)", "分层记忆/关系投影(Slice 266c)", "检查点/恢复(Slice 266c)", "注入式外部 Provider 端口(Slice 266c)", "世界书四层级触发+有界递归(Slice 266d)", "用户人设(版本化,席位绑定)(Slice 266d)", "摘要编辑/回滚+情景记忆+关系事件(Slice 266d)", "重roll/编辑分支谱系(Slice 266d)", "作者注释深度/频率注入(Slice 266d)", "导入/导出/恢复(完整性哈希,无凭据)(Slice 266d)", "审计导出/校验/回放候选(Slice 266d)", "四类权限面(实时策略判定)(Slice 266d)", "持久化重启恢复(加密 SQLite/PostgreSQL 端口)(Slice 266d)", "六状态头像动画绑定(确定性状态机+有界淡入,仅已准入关键帧)(Slice 266e)", "五呈现包后端封存+哈希钉持久晋升(每次组成重校验,失败关闭)(Slice 266e)"], itemsEn: ["six-companion presentation roster (real admitted keyframes, hash-pinned)", "Kerrigan dynamic portrait contract (backend-bound)", "seat permission posture", "secure BYOK Provider", "companion group chat: multi-speaker turns/@mentions/persisted transcript (Slice 266c)", "layered memory/relationship projection (Slice 266c)", "checkpoint/resume (Slice 266c)", "injected external Provider port (Slice 266c)", "four-tier worldbook triggers with bounded recursion (Slice 266d)", "versioned seat-bound user persona (Slice 266d)", "summary edit/rollback + episodic memory + relationship events (Slice 266d)", "swipe/reroll/edit-as-branch lineage (Slice 266d)", "author's note depth/frequency injection (Slice 266d)", "import/export/restore (integrity-hashed, no credentials) (Slice 266d)", "audit export/verify/replay candidate (Slice 266d)", "four live permission surfaces (Slice 266d)", "durable process-restart resume (encrypted SQLite/PostgreSQL port) (Slice 266d)", "six-state portrait animation binding (deterministic state machine + bounded crossfade, committed keyframes only) (Slice 266e)", "backend sealing + hash-pinned durable promotion of the five presentation packs (re-verified every composition, fail-closed) (Slice 266e)"] },
+  { status: "missing", zh: "仍缺失", items: ["第三方扩展市场(合同明确排除)"], itemsEn: ["third-party extension marketplace (explicitly excluded by contract)"] },
 ];
 
 function provenanceLabel(provenanceClass: string, zh: boolean) {
@@ -138,6 +143,7 @@ export function CompanionCataloguePanel({ zh }: { zh: boolean }) {
   const assetSet = companionPortraitAssetSetV1(selectedCharacterId);
   const selectedState = stateContract?.states.find((state: any) => state.stateId === selectedStateId) || null;
   const selectedFrameAsset = companionPortraitFrameAssetV1(selectedCharacterId, selectedStateId);
+  const selectedTransition = companionPortraitAnimationTransitionV1(selectedStateId, { reducedMotion });
 
   function markImageFailed(key: string) {
     setFailedImages((current) => (current.includes(key) ? current : [...current, key]));
@@ -325,8 +331,8 @@ export function CompanionCataloguePanel({ zh }: { zh: boolean }) {
         <Text style={styles.fieldLabel}>{zh ? "视觉资产状态" : "Visual asset status"}</Text>
         <Text style={styles.hint} testID={`companion-pack-assets-${slug(pack.characterId)}`}>
           {zh
-            ? `六张静态关键帧已准入并落盘(审计 ${pack.visualAssets.auditRef});每张经 96px 接触表复核。连续动画未验证:六状态绝不作为连续序列播放。后端封存/哈希钉仍待 Codex。`
-            : `Six static keyframes are admitted and committed (audit ${pack.visualAssets.auditRef}); each passed a real 96px contact-sheet review. Continuous animation is NOT proven: the six states are never played as one continuous sequence. Backend sealing/hash pins remain Codex-owned.`}
+            ? `六张静态关键帧已准入并落盘(审计 ${pack.visualAssets.auditRef});每张经 96px 接触表复核。Slice 266e 起六状态绑定到确定性动画状态机(实时会话信号 → 状态;仅状态切换的有界淡入,无循环帧、无生成帧;减少动态渲染单静态帧)。Slice 266e 起本包可经「后端包晋升」持久封存:封存合同随 sha256 完整性钉落盘,每次产品组成重校验并重新注册相同封存字节,钉不匹配即失败关闭。`
+            : `Six static keyframes are admitted and committed (audit ${pack.visualAssets.auditRef}); each passed a real 96px contact-sheet review. Since Slice 266e the six states are bound to the deterministic animation state machine (live session signals → state; bounded crossfade on state change only — no frame loop, no generated frames; reduced motion renders the single static frame). Since Slice 266e this pack can be durably sealed via Backend pack promotion: the sealed contract is persisted with its sha256 integrity pin, re-verified and re-registered as identical sealed bytes on every product composition, failing closed on any pin mismatch.`}
         </Text>
       </View>
     );
@@ -389,10 +395,14 @@ export function CompanionCataloguePanel({ zh }: { zh: boolean }) {
                     : (zh ? "准入静态关键帧(审计)" : "admitted static keyframe (audit)")}
                 </Text>
               )}
-              <Text style={styles.meta}>
+              <Text style={styles.meta} testID="companion-portrait-transition-meta">
                 {zh
-                  ? "呈现状态:静态关键帧;连续动画未验证,绝不当连续序列播放。"
-                  : "presentation: static keyframe; continuous animation not proven, never played as a sequence."}
+                  ? `动画绑定:${selectedTransition.reducedMotionStatic
+                    ? "减少动态 · 单静态帧"
+                    : `确定性 ${selectedTransition.durationMs}ms 淡入(仅状态切换)`};${selectedTransition.motion}。无循环帧、无生成中间帧;实时会话信号 → 状态的绑定见「同伴群聊」发言者头像。`
+                  : `animation binding: ${selectedTransition.reducedMotionStatic
+                    ? "reduced motion · single static frame"
+                    : `deterministic ${selectedTransition.durationMs}ms crossfade (state change only)`}; ${selectedTransition.motion}. No frame loop, no generated in-between frame; the live session-signal → state binding renders on the speaker portrait in Companion group chat.`}
               </Text>
             </View>
           </View>
@@ -472,7 +482,9 @@ export function CompanionCataloguePanel({ zh }: { zh: boolean }) {
               ? (zh ? "已支持(无头验证)" : "supported (headless-verified)")
               : (zh ? "不存在" : "absent")}
             {" · "}{zh ? "产品绑定" : "product binding"}: {row.productBinding === "connected"
-              ? (zh ? "已接通(Slice 266c/266d)" : "connected (Slice 266c/266d)")
+              ? (zh
+                ? `已接通(Slice ${(row as any).connectedSlice || "266c/266d"})`
+                : `connected (Slice ${(row as any).connectedSlice || "266c/266d"})`)
               : (zh ? "待 Codex(未接通)" : "pending Codex (not connected)")}
           </Text>
         ))}

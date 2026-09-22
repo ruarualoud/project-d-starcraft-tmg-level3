@@ -89,6 +89,28 @@
  *      cards are driven in the real browser at desktop AND 390px with zero
  *      horizontal overflow.
  *
+ * Slice 266e extension (same gate, extended — no second verifier):
+ *  10. NOTE_REQUESTS_NOT_CAPTURED repair: the Author's-Note capture window is
+ *      indexed by providerProbe.requests.length (completed invocations), not
+ *      the call counter that also counts the verifier-armed outage; the
+ *      two-companion × frequency-1 denominator and per-request position proof
+ *      are unchanged;
+ *  11. six-state portrait animation binding: the deterministic signal→state
+ *      machine is proven headlessly (priority, fail-closed idle, reduced-motion
+ *      static descriptors, six-companion data-driven coverage, hashed binding
+ *      document) and live in the browser (alert_combat on the interrupted
+ *      turn, speaking after explicit continue); both parity rows now read
+ *      connected (Slice 266e);
+ *  12. package-to-backend promotion: promoted live from the UI (pin rendered,
+ *      verified+registered), headlessly over HTTP (idempotent same-pin,
+ *      unknown-package rejected, honest status surface), across the durable
+ *      SQLite process restart (pin re-verified, identical sealed bytes
+ *      re-registered), and against a tampered store (pin swap →
+ *      COMPANION_PACKAGE_PROMOTION_PIN_MISMATCH on every request; forged
+ *      contract bytes with the original pin → CONTRACT_INTEGRITY_MISMATCH).
+ *      The gate also resolves the read-only legacy adapter input robustly
+ *      from either the main checkout or a nested .worktrees worktree.
+ *
  * No Provider call, no credential read, no source refresh, no Room mutation,
  * no hidden chain-of-thought, no fabricated model reply, and no gameplay
  * truth is computed here or in the UI under test.
@@ -106,7 +128,22 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const PROJECT_D_ROOT = path.resolve(ROOT, "..");
+// Slice 266e: resolve the read-only legacy adapter input robustly whether the
+// gate runs from the main checkout (ROOT's parent is the project-d root) or
+// from a nested .worktrees/<slice> worktree. Walk up until BOTH the adapter
+// script and its data file exist — `.worktrees/scripts` is a symlink, so the
+// adapter path alone can false-match a directory that lacks the data file.
+const PROJECT_D_ROOT = (() => {
+  let cursor = ROOT;
+  for (let depth = 0; depth < 6; depth += 1) {
+    cursor = path.resolve(cursor, "..");
+    if (existsSync(path.join(cursor, "scripts/starcraft-tmg-rules-v0.mjs"))
+      && existsSync(path.join(cursor, "starcraft-tmg-local/data/starcraft-tmg-data.json"))) {
+      return cursor;
+    }
+  }
+  return path.resolve(ROOT, "..");
+})();
 const EXPO_DIR = path.join(ROOT, "apps/starcraft-tmg-expo");
 const DIST_DIR = path.join(EXPO_DIR, "dist");
 const BUILD_ROOT = path.join(ROOT, "build/ticket-26-slice-266c-companion-product-binding-v1");
@@ -139,6 +176,7 @@ const SCREENSHOT_EXPLANATIONS = {
   "17-desktop-266d-audit-permissions.png": "Slice 266d: audit chain verified + exported + replay candidate built (automatic promotion forbidden), and the four live permission surfaces each denying opponent-private with no Preview/Confirm/Apply.",
   "18-narrow-266d-cards.png": "390px touch: the Slice 266d chat cards (persona/worldbook/memory/branches/author's note/import-export/audit/permissions) render inside the floating panel with zero horizontal overflow.",
   "19-desktop-catalogue-six-portraits.png": "All six registered companion portraits in the catalogue section: every one decoded from its committed 1254px keyframe with canvas variance and served-bytes sha256 equal to the committed file and the server registry contentHash.",
+  "20-desktop-266e-pack-promotion.png": "Slice 266e: backend pack promotion card driven live — Zagara's presentation pack sealed through the generic backend contract, persisted with its sha256 integrity pin, and listed with live pin verification (verified: true, registered: true); every composition re-verifies pins and fails closed on mismatch.",
 };
 const BACKEND_MODULES_RECORDED = [
   "packages/authoritative-engine/transition-v1.mjs",
@@ -156,6 +194,7 @@ const BACKEND_MODULES_RECORDED = [
   "packages/room-runtime/in-memory-room-v1.mjs",
   "content/characters/companion-catalogue-v1.mjs",
   "content/characters/companion-portrait-asset-registry-v1.mjs",
+  "content/characters/companion-portrait-animation-binding-v1.mjs",
 ];
 const SLICE_OWNED_BACKEND_PREFIXES = [
   "packages/client-domain/character-presentation-projection-v2.mjs",
@@ -847,6 +886,7 @@ async function main() {
   } = await importWorktree("packages/companion-backend-module-v1/index.mjs");
   const {
     STARCRAFT_TMG_COMPANION_PRODUCT_API_PREFIX,
+    STARCRAFT_TMG_COMPANION_PACKAGE_PROMOTION_NAMESPACE,
     companionProductPackageInputFromCatalogueEntryV1,
     companionPortraitAssetCatalogV1,
     companionPortraitPresentationAssetsV1,
@@ -857,6 +897,13 @@ async function main() {
     "content/characters/companion-catalogue-v1.mjs");
   const { COMPANION_PORTRAIT_ASSET_REGISTRY_V1 } = await importWorktree(
     "content/characters/companion-portrait-asset-registry-v1.mjs");
+  const {
+    COMPANION_PORTRAIT_ANIMATION_BINDING_V1,
+    COMPANION_PORTRAIT_ANIMATION_STATE_IDS,
+    companionPortraitAnimationStatesV1,
+    companionPortraitAnimationTransitionV1,
+    resolveCompanionPortraitAnimationStateV1,
+  } = await importWorktree("content/characters/companion-portrait-animation-binding-v1.mjs");
 
   const data = await loadStarcraftTmgData(PROJECT_D_ROOT);
   const sampleState = createStarcraftTmgSampleState(data);
@@ -1310,6 +1357,21 @@ async function main() {
     });
     checks.push({ id: "desktop_interrupted_turn_no_fabrication", passed: true });
 
+    // Slice 266e: the speaker portrait is bound to the deterministic
+    // six-state animation state machine over REAL session signals — while the
+    // interrupted card is up the bound state must be alert_combat
+    // (interruption pending explicit human confirmation). waitForFunction
+    // absorbs the busy-flag settle tick; interruption outranks thinking in
+    // the fixed signal priority.
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-speaker-portrait-state"]')
+        ?.innerText.includes("portrait state: alert_combat")
+    ), null, { timeout: 30_000 });
+    const interruptedPortraitState = await chat
+      .getByTestId("companion-chat-speaker-portrait-state").innerText();
+    ensure(interruptedPortraitState.includes("portrait state: alert_combat"),
+      "PORTRAIT_STATE_NOT_ALERT_ON_INTERRUPTION", { interruptedPortraitState });
+
     // Explicit Continue completes the turn.
     await chat.getByTestId("companion-chat-continue").click();
     await chat.getByTestId("companion-chat-message-6").waitFor({ timeout: 90_000 });
@@ -1321,6 +1383,32 @@ async function main() {
       "CONTINUE_REPLIES_WRONG_ORDER", { message5, message6 });
     ensure(providerProbe.interruptions === 1 && providerProbe.calls === 5,
       "PROVIDER_PROBE_UNEXPECTED", { probe: { ...providerProbe } });
+    // Slice 266e: after the accepted utterances the bound state is speaking
+    // (the last accepted turn belongs to the bound speaker companion); the
+    // wait absorbs the busy-flag settle tick (thinking → reflective is a
+    // transient while the continue drain closes).
+    await page.waitForFunction(() => (
+      document.querySelector('[data-testid="companion-chat-speaker-portrait-state"]')
+        ?.innerText.includes("portrait state: speaking")
+    ), null, { timeout: 30_000 });
+    const speakingPortraitState = await chat
+      .getByTestId("companion-chat-speaker-portrait-state").innerText();
+    ensure(speakingPortraitState.includes("portrait state: speaking"),
+      "PORTRAIT_STATE_NOT_SPEAKING_AFTER_CONTINUE", { speakingPortraitState });
+    claim({
+      claimId: "speaker_portrait_six_state_binding_live",
+      screenshot: "06-desktop-explicit-continue-complete.png",
+      viewport: "1500x1050",
+      precondition: "six-state portrait animation binding (Slice 266e) over committed keyframes",
+      interaction: "verifier-armed provider outage → explicit Continue",
+      expected: "bound portrait state alert_combat while interrupted, speaking after the accepted utterances; deterministic bounded crossfade only, reduced motion renders the single static frame",
+      observed: {
+        interrupted: interruptedPortraitState,
+        afterContinue: speakingPortraitState,
+      },
+      contract: "COMPANION_PORTRAIT_ANIMATION_BINDING_V1 (deterministic signal→state priority, fail-closed idle, committed keyframes only)",
+    });
+    checks.push({ id: "desktop_266e_speaker_portrait_state_machine_live", passed: true });
     await capture(page, "06-desktop-explicit-continue-complete.png", artifacts);
     claim({
       claimId: "explicit_continue_completes_interrupted_turn",
@@ -1575,6 +1663,36 @@ async function main() {
     await capture(page, "17-desktop-266d-audit-permissions.png", artifacts);
     checks.push({ id: "desktop_266d_audit_replay_permission_surfaces", passed: true });
 
+    // ── Slice 266e: backend pack promotion driven live from the UI ──────
+    // Load the promotion surface, then promote Zagara's presentation pack:
+    // the sealed backend contract is persisted with its sha256 integrity pin
+    // and listed with LIVE re-verification (verified + registered). The
+    // browser fixture's in-memory persistence is honestly labelled
+    // durable: false; the durable restart reload is proven headlessly below.
+    await chat.getByTestId("companion-chat-promotions").evaluate((el) => (
+      el.scrollIntoView({ block: "center" })
+    ));
+    await chat.getByTestId("companion-chat-promotions-load").click();
+    await chat.getByTestId("companion-chat-promote-zagara").click();
+    await chat.getByTestId("companion-chat-promotion-zagara").waitFor({ timeout: 60_000 });
+    const promotionRow = await chat.getByTestId("companion-chat-promotion-zagara").innerText();
+    ensure(promotionRow.includes("verified: true") && promotionRow.includes("registered: true"),
+      "PACKAGE_PROMOTION_NOT_LIVE_VERIFIED", { promotionRow });
+    ensure(/pin [0-9a-f]{12}/u.test(promotionRow),
+      "PACKAGE_PROMOTION_PIN_NOT_RENDERED", { promotionRow });
+    await capture(page, "20-desktop-266e-pack-promotion.png", artifacts);
+    claim({
+      claimId: "package_backend_promotion_live_pins",
+      screenshot: "20-desktop-266e-pack-promotion.png",
+      viewport: "1500x1050",
+      precondition: "promotions card visible; six packages registered",
+      interaction: "click Read promotions, click Promote Zagara",
+      expected: "the sealed backend contract is persisted with its sha256 pin and listed with live verification (verified: true, registered: true); durable flag honest (false on the volatile browser fixture)",
+      observed: { promotionRow },
+      contract: "companion-room-session-service-v1 promotePackage/readPackagePromotions + module pin re-verification on every composition (fail-closed)",
+    });
+    checks.push({ id: "desktop_266e_package_promotion_live_pins", passed: true });
+
     // Restore the checkpointed state (turn 3) server-side so the narrow
     // journey resumes the same persisted conversation the 266c flow expects.
     const resumeAfter266d = await companionFetch(
@@ -1621,18 +1739,24 @@ async function main() {
       && portraitProofs.every((proof) => proof.servedSha256MatchesCommitted
         && proof.registryPinMatchesCommittedFile),
     "SIX_PORTRAIT_PROOFS_INCOMPLETE", { count: portraitProofs.length });
-    // Parity matrix honesty: the 266d rows read connected; animation/pack
-    // sealing rows stay honestly pending.
+    // Parity matrix honesty: the 266d rows read connected; the two remaining
+    // gaps closed by Slice 266e now read connected with their real contracts
+    // (six-state animation binding; durable pack sealing + hash pins).
     const worldbookGap = await page.getByTestId("companion-gap-WORLDBOOK_DYNAMIC_TRIGGER_CONTRACT").innerText();
     const branchGap = await page.getByTestId("companion-gap-COMPANION_SWIPE_BRANCH_CONTRACT").innerText();
     const personaGap = await page.getByTestId("companion-gap-USER_PERSONA_CONTRACT").innerText();
     const animationGap = await page.getByTestId("companion-gap-COMPANION_PORTRAIT_CONTINUOUS_ANIMATION").innerText();
+    const promotionGap = await page.getByTestId("companion-gap-COMPANION_PACK_BACKEND_PROMOTION").innerText();
     ensure(worldbookGap.includes("connected (Slice 266c/266d)")
       && branchGap.includes("connected (Slice 266c/266d)")
       && personaGap.includes("connected (Slice 266c/266d)"),
     "PARITY_266D_ROWS_NOT_CONNECTED", { worldbookGap, branchGap, personaGap });
-    ensure(animationGap.includes("pending"), "PARITY_ANIMATION_NOT_HONESTLY_PENDING",
-      { animationGap });
+    ensure(animationGap.includes("connected (Slice 266e)")
+      && animationGap.includes("committed keyframes"),
+    "PARITY_ANIMATION_ROW_NOT_HONESTLY_CONNECTED", { animationGap });
+    ensure(promotionGap.includes("connected (Slice 266e)")
+      && promotionGap.includes("hash pins"),
+    "PARITY_PROMOTION_ROW_NOT_HONESTLY_CONNECTED", { promotionGap });
     await capture(page, "19-desktop-catalogue-six-portraits.png", artifacts);
     claim({
       claimId: "six_companion_portraits_real_pixels",
@@ -1715,8 +1839,8 @@ async function main() {
     });
     checks.push({ id: "narrow_chat_speaker_real_pixels", passed: true });
 
-    // Slice 266d at 390px: every Tavern-equivalent card renders inside the
-    // floating panel; zero horizontal overflow with them all present.
+    // Slice 266d/266e at 390px: every Tavern-equivalent card renders inside
+    // the floating panel; zero horizontal overflow with them all present.
     for (const cardTestId of [
       "companion-chat-persona",
       "companion-chat-worldbook",
@@ -1726,6 +1850,7 @@ async function main() {
       "companion-chat-import-export",
       "companion-chat-audit",
       "companion-chat-permissions",
+      "companion-chat-promotions",
     ]) {
       await narrowChat.getByTestId(cardTestId).waitFor({ timeout: 30_000 });
     }
@@ -1749,9 +1874,9 @@ async function main() {
       claimId: "narrow_266d_cards_no_overflow",
       screenshot: "18-narrow-266d-cards.png",
       viewport: "390x844 touch",
-      precondition: "chat open at 390px with all Slice 266d cards rendered",
+      precondition: "chat open at 390px with all Slice 266d/266e cards rendered",
       interaction: "scroll to the permission card, tap Read the four surfaces",
-      expected: "all eight 266d cards render; four live permission surfaces list with opponent-private denied everywhere; zero horizontal overflow",
+      expected: "all nine 266d/266e cards render (incl. the 266e backend pack promotion card); four live permission surfaces list with opponent-private denied everywhere; zero horizontal overflow",
       observed: { overflow: narrowOverflow266d, surfaces: 4 },
       contract: "responsive floating Web/App interaction (guardrail §9) at 390px",
     });
@@ -1964,7 +2089,14 @@ async function main() {
       depth: 2,
       frequency: 1,
     }, "PUT"), "AUTHORS_NOTE_PUT_FAILED");
-    const callsBeforeNote = providerProbe.calls;
+    // Slice 266e repair: the capture window is indexed by the REQUESTS array
+    // length, not the call counter. `calls` also counts the one verifier-armed
+    // outage earlier in the journey, which throws BEFORE its request is
+    // recorded, so `requests.length === calls - 1` here; slicing by `calls`
+    // silently dropped the first note-injected request (the 266d integrating
+    // run's NOTE_REQUESTS_NOT_CAPTURED with captured: 1). The denominator is
+    // unchanged: two companions × frequency 1 = exactly two requests.
+    const requestsBeforeNote = providerProbe.requests.length;
     const noteSend = ok266d(await post266d(`${convPath266d}/turns`, {
       content: "Status report please.",
     }), "AUTHORS_NOTE_SEND_FAILED");
@@ -1975,7 +2107,7 @@ async function main() {
     "AUTHORS_NOTE_INJECTION_FLAGS_WRONG", {
       injected: noteSend.replies.map((reply) => reply.authorsNoteInjected),
     });
-    const noteRequests = providerProbe.requests.slice(callsBeforeNote);
+    const noteRequests = providerProbe.requests.slice(requestsBeforeNote);
     ensure(noteRequests.length === 2, "NOTE_REQUESTS_NOT_CAPTURED",
       { captured: noteRequests.length });
     for (const [index, request] of noteRequests.entries()) {
@@ -2197,6 +2329,91 @@ async function main() {
     "READ_ONLY_SURFACES_CAN_SPEAK");
     checks.push({ id: "headless_266d_four_permission_surfaces_live", passed: true });
 
+    // ── Slice 266e headless: six-state portrait animation binding ────
+    // The deterministic signal→state machine, its fixed priority, the
+    // fail-closed idle fallback, the reduced-motion static descriptors and
+    // the data-driven six-companion coverage are proven directly against the
+    // server-safe binding module (the live browser binding is proven above).
+    ensure(COMPANION_PORTRAIT_ANIMATION_STATE_IDS.length === 6,
+      "PORTRAIT_BINDING_NOT_SIX_STATES", { ids: COMPANION_PORTRAIT_ANIMATION_STATE_IDS });
+    ensure(resolveCompanionPortraitAnimationStateV1({}) === "idle"
+      && resolveCompanionPortraitAnimationStateV1(null) === "idle"
+      && resolveCompanionPortraitAnimationStateV1({ composing: true }) === "listening"
+      && resolveCompanionPortraitAnimationStateV1({ speaking: true, composing: true }) === "speaking"
+      && resolveCompanionPortraitAnimationStateV1({ thinking: true, speaking: true }) === "reflective"
+      && resolveCompanionPortraitAnimationStateV1({ interrupted: true, thinking: true }) === "alert_combat"
+      && resolveCompanionPortraitAnimationStateV1({ sessionError: true, interrupted: true }) === "damaged_concerned",
+    "PORTRAIT_STATE_MACHINE_PRIORITY_WRONG");
+    const reducedDescriptor = companionPortraitAnimationTransitionV1(
+      "alert_combat", { reducedMotion: true });
+    ensure(reducedDescriptor.durationMs === 0 && reducedDescriptor.reducedMotionStatic === true,
+      "PORTRAIT_REDUCED_MOTION_NOT_STATIC", { reducedDescriptor });
+    const unknownDescriptor = companionPortraitAnimationTransitionV1("bogus_state");
+    ensure(unknownDescriptor.stateId === "idle" && unknownDescriptor.failClosedToIdle === true,
+      "PORTRAIT_UNKNOWN_STATE_NOT_FAIL_CLOSED");
+    for (const entry of COMPANION_CATALOGUE_V1.entries) {
+      const boundStates = companionPortraitAnimationStatesV1(entry.characterId);
+      ensure(boundStates !== null && boundStates.length === 6
+        && COMPANION_PORTRAIT_ANIMATION_STATE_IDS.every((id) => boundStates.includes(id)),
+      "PORTRAIT_BINDING_COVERAGE_INCOMPLETE", { characterId: entry.characterId });
+    }
+    ensure(companionPortraitAnimationStatesV1("character.unknown") === null,
+      "PORTRAIT_BINDING_UNKNOWN_CHARACTER_NOT_NULL");
+    ensure(/^[0-9a-f]{64}$/u.test(COMPANION_PORTRAIT_ANIMATION_BINDING_V1.bindingHash)
+      && COMPANION_PORTRAIT_ANIMATION_BINDING_V1.entries.length === 6
+      && COMPANION_PORTRAIT_ANIMATION_BINDING_V1.entries.every((row) => row.complete === true),
+    "PORTRAIT_BINDING_DOCUMENT_NOT_HASHED");
+    checks.push({ id: "headless_266e_portrait_animation_binding_state_machine", passed: true });
+
+    // ── Slice 266e headless: package-to-backend promotion (live HTTP) ──
+    // The desktop UI already promoted Zagara on this in-memory fixture, so
+    // the first-seal proof uses Artanis; Zagara proves idempotency.
+    const ARTANIS_PACKAGE = "starcraft-tmg.companion.artanis";
+    const promotedArtanis = ok266d(await post266d("packages/promote", {
+      packageId: ARTANIS_PACKAGE,
+    }), "PACKAGE_PROMOTE_266E_FAILED");
+    ensure(/^[0-9a-f]{64}$/u.test(String(promotedArtanis.pin || ""))
+      && promotedArtanis.duplicate === false
+      && promotedArtanis.durable === false
+      && promotedArtanis.trainingTruth === false,
+    "PACKAGE_PROMOTE_RESULT_WRONG", { promoted: promotedArtanis });
+    const promotedArtanisAgain = ok266d(await post266d("packages/promote", {
+      packageId: ARTANIS_PACKAGE,
+    }), "PACKAGE_PROMOTE_AGAIN_266E_FAILED");
+    ensure(promotedArtanisAgain.duplicate === true
+      && promotedArtanisAgain.pin === promotedArtanis.pin,
+    "PACKAGE_PROMOTE_NOT_IDEMPOTENT_ON_SAME_PIN", { promotedArtanisAgain });
+    rejected266d(await post266d("packages/promote", {
+      packageId: "starcraft-tmg.companion.unknown_companion",
+    }), "PACKAGE_NOT_FOUND", "UNKNOWN_PACKAGE_PROMOTE_NOT_REJECTED");
+    const promotions266e = ok266d(await get266d("packages/promotions"),
+      "PACKAGE_PROMOTIONS_READ_FAILED");
+    const promotedRows = Object.fromEntries(
+      (promotions266e.promotions || []).map((row) => [row.packageId, row]));
+    for (const packageId of [ARTANIS_PACKAGE, "starcraft-tmg.companion.zagara"]) {
+      const row = promotedRows[packageId];
+      ensure(row && row.pinVerified === true && row.registered === true
+        && /^[0-9a-f]{64}$/u.test(String(row.pin || "")),
+      "PACKAGE_PROMOTION_NOT_LIVE_VERIFIED_HEADLESS", { packageId, row });
+    }
+    ensure(promotedRows[ARTANIS_PACKAGE].pin === promotedArtanis.pin,
+      "PACKAGE_PROMOTION_PIN_DRIFTED");
+    const status266e = ok266d(await get266d("status"), "STATUS_266E_FAILED");
+    ensure(status266e.packagePromotions
+      && status266e.packagePromotions.durable === false
+      && status266e.packagePromotions.reloaded === 0
+      && typeof status266e.packagePromotions.pinVerification === "string"
+      && status266e.roomMutationAuthority === false
+      && status266e.previewConfirmApplyAuthority === false,
+    "STATUS_PROMOTION_SURFACE_NOT_HONEST", {
+      packagePromotions: status266e.packagePromotions,
+    });
+    checks.push({
+      id: "headless_266e_package_promotion_seal_hash_pins",
+      passed: true,
+      promoted: [ARTANIS_PACKAGE, "starcraft-tmg.companion.zagara"],
+    });
+
     // ── Slice 266d: durable encrypted-SQLite process-restart resume ──────
     const durableDir = path.join(BUILD_ROOT, "durable");
     await mkdir(durableDir, { recursive: true });
@@ -2275,6 +2492,14 @@ async function main() {
     ensure((await durableCall(
       moduleA, "POST", `conversations/${dConv}/branches/${dBranch.branch.branchId}/reroll`, {},
     )).ok === true, "DURABLE_REROLL_FAILED");
+    // Slice 266e: durable package-to-backend promotion on the same store —
+    // the sealed contract + sha256 pin must survive the simulated restart.
+    const dPromote = await durableCall(moduleA, "POST", "packages/promote", {
+      packageId: "starcraft-tmg.companion.sarah_kerrigan",
+    });
+    ensure(dPromote.ok === true && dPromote.durable === true
+      && /^[0-9a-f]{64}$/u.test(String(dPromote.pin || "")),
+    "DURABLE_PROMOTE_FAILED", { result: dPromote });
     await persistenceA.close();
 
     // Simulated process restart: a NEW adapter + module over the same file.
@@ -2311,9 +2536,30 @@ async function main() {
       && dBranches.branches[0].status === "open"
       && dBranches.branches[0].entryCount === 1,
     "DURABLE_BRANCH_RESUME_FAILED", { branches: dBranches.branches });
+    // Slice 266e: the restarted composition re-verified the persisted
+    // promotion pin against the sealed contract's live sha256 integrity and
+    // re-registered the identical sealed bytes (duplicate) — proven in the
+    // honest status surface and the live-verified listing.
+    const dStatusB = await durableCall(moduleB, "GET", "status");
+    ensure(dStatusB.ok === true && dStatusB.packagePromotions?.reloaded === 1
+      && dStatusB.packagePromotions.durable === true,
+    "DURABLE_PROMOTION_RELOAD_FAILED", { packagePromotions: dStatusB.packagePromotions });
+    const dPromotionsB = await durableCall(moduleB, "GET", "packages/promotions");
+    ensure(dPromotionsB.ok === true && dPromotionsB.promotions?.length === 1
+      && dPromotionsB.promotions[0].packageId === "starcraft-tmg.companion.sarah_kerrigan"
+      && dPromotionsB.promotions[0].pin === dPromote.pin
+      && dPromotionsB.promotions[0].pinVerified === true
+      && dPromotionsB.promotions[0].registered === true,
+    "DURABLE_PROMOTION_LISTING_FAILED", { promotions: dPromotionsB.promotions });
+    const dPromoteAgain = await durableCall(moduleB, "POST", "packages/promote", {
+      packageId: "starcraft-tmg.companion.sarah_kerrigan",
+    });
+    ensure(dPromoteAgain.ok === true && dPromoteAgain.duplicate === true
+      && dPromoteAgain.pin === dPromote.pin,
+    "DURABLE_PROMOTE_NOT_IDEMPOTENT_AFTER_RESTART", { result: dPromoteAgain });
     await persistenceB.close();
     const durableFileRecord = await artifactRecord(durableFile,
-      "Encrypted SQLite durable store (WAL, synchronous=FULL, AES-256-GCM private payload codec): the second composition (simulated process restart) resumed transcript, persona, author's note, summary versions and the open swipe branch from this file.");
+      "Encrypted SQLite durable store (WAL, synchronous=FULL, AES-256-GCM private payload codec): the second composition (simulated process restart) resumed transcript, persona, author's note, summary versions, the open swipe branch and the persisted package promotion (pin re-verified, identical sealed bytes re-registered) from this file.");
     artifacts.push(durableFileRecord);
 
     // Wrong key fails closed; missing key fails closed; unknown kind fails closed.
@@ -2354,6 +2600,66 @@ async function main() {
       durableFile: durableFileRecord.path,
       durableFileSha256: durableFileRecord.sha256,
       providerCalls: durableProbe.calls,
+    });
+
+    // ── Slice 266e: tampered promotion store fails closed ─────────────
+    // A separate durable store proves the composition-time pin re-verification
+    // is real: (1) a swapped pin (contract bytes untouched) →
+    // COMPANION_PACKAGE_PROMOTION_PIN_MISMATCH on EVERY request; (2) forged
+    // contract bytes with the original pin → CONTRACT_INTEGRITY_MISMATCH.
+    const tamperFile = path.join(durableDir, "companion-product-tampered.sqlite");
+    const persistenceT1 = createStarcraftTmgCompanionProductPersistenceV1({
+      kind: "sqlite", filename: tamperFile, encryption: { key: durableKey },
+    });
+    const moduleT1 = createStarcraftTmgCompanionProductModuleV1(
+      durableModuleOptions(persistenceT1));
+    const tamperPromote = await durableCall(moduleT1, "POST", "packages/promote", {
+      packageId: "starcraft-tmg.companion.zagara",
+    });
+    ensure(tamperPromote.ok === true, "TAMPER_FIXTURE_PROMOTE_FAILED",
+      { result: tamperPromote });
+    const storedPromotion = await persistenceT1.get(
+      STARCRAFT_TMG_COMPANION_PACKAGE_PROMOTION_NAMESPACE,
+      "starcraft-tmg.companion.zagara");
+    ensure(storedPromotion?.found === true, "TAMPER_FIXTURE_RECORD_MISSING");
+    await persistenceT1.put(STARCRAFT_TMG_COMPANION_PACKAGE_PROMOTION_NAMESPACE,
+      "starcraft-tmg.companion.zagara",
+      { ...storedPromotion.value, pin: "0".repeat(64) });
+    await persistenceT1.close();
+    const persistenceT2 = createStarcraftTmgCompanionProductPersistenceV1({
+      kind: "sqlite", filename: tamperFile, encryption: { key: durableKey },
+    });
+    const moduleT2 = createStarcraftTmgCompanionProductModuleV1(
+      durableModuleOptions(persistenceT2));
+    const tamperedActive = await durableCall(moduleT2, "GET", "conversations/active");
+    ensure(tamperedActive.ok === false
+      && tamperedActive.reason === "COMPANION_PACKAGE_PROMOTION_PIN_MISMATCH",
+    "TAMPERED_PIN_NOT_FAIL_CLOSED", { result: tamperedActive });
+    const tamperedStatus = await durableCall(moduleT2, "GET", "status");
+    ensure(tamperedStatus.ok === false
+      && tamperedStatus.reason === "COMPANION_PACKAGE_PROMOTION_PIN_MISMATCH",
+    "TAMPERED_PIN_NOT_FAIL_CLOSED_ON_STATUS", { result: tamperedStatus });
+    await persistenceT2.close().catch(() => {});
+    const persistenceT3 = createStarcraftTmgCompanionProductPersistenceV1({
+      kind: "sqlite", filename: tamperFile, encryption: { key: durableKey },
+    });
+    await persistenceT3.put(STARCRAFT_TMG_COMPANION_PACKAGE_PROMOTION_NAMESPACE,
+      "starcraft-tmg.companion.zagara",
+      {
+        ...storedPromotion.value,
+        contract: { ...storedPromotion.value.contract, displayName: "FORGED" },
+      });
+    const moduleT3 = createStarcraftTmgCompanionProductModuleV1(
+      durableModuleOptions(persistenceT3));
+    const forgedActive = await durableCall(moduleT3, "GET", "conversations/active");
+    ensure(forgedActive.ok === false
+      && String(forgedActive.reason || "").includes("CONTRACT_INTEGRITY_MISMATCH"),
+    "FORGED_PROMOTION_CONTRACT_NOT_FAIL_CLOSED", { result: forgedActive });
+    await persistenceT3.close().catch(() => {});
+    checks.push({
+      id: "headless_266e_tampered_promotion_store_fail_closed",
+      passed: true,
+      scenarios: ["pin_swapped", "contract_forged_original_pin"],
     });
 
     // ── Final headless contract assertions ─────────────────────────────
@@ -2466,8 +2772,8 @@ async function main() {
     generatedAt: GENERATED_AT,
     ticket: 26,
     slice: "266c",
-    sliceExtensions: ["266d"],
-    subSlice: "companion-product-binding + tavern-completion",
+    sliceExtensions: ["266d", "266e"],
+    subSlice: "companion-product-binding + tavern-completion + final-product-closure",
     status: "passed",
     assertionsPassed: checks.length,
     checks,
@@ -2487,6 +2793,13 @@ async function main() {
       permissionSurfaces: "human_vs_agent / human_vs_human / agent_vs_agent_observer / review_mode computed live; opponent-private denied everywhere; observer and review cannot speak; no Preview/Confirm/Apply",
       portraitPackages: "all six companions bound with receipt/hash-pinned presentation assets; six real-pixel browser proofs against committed 1254px keyframes",
       notImplemented: "third-party extension marketplace (out of scope by contract)",
+    },
+    slice266eContracts: {
+      noteCaptureRepair: "NOTE_REQUESTS_NOT_CAPTURED (captured: 1) was a verifier window-index defect, not a product defect: providerProbe.calls counts the verifier-armed outage that throws BEFORE its request is recorded, so requests.length === calls - 1 and the old slice-by-calls window silently dropped the first note-injected request; the window is now indexed by providerProbe.requests.length with the denominator unchanged (two companions × frequency 1) and the per-request position proof intact",
+      portraitAnimationBinding: "deterministic six-state signal→state machine (sessionError > interrupted > thinking > speaking > composing > idle, fail-closed idle) bound to the committed audit/receipt-pinned keyframes; bounded crossfade on state change only, no generated or looped frames, reduced motion renders the single static frame; proven headlessly (priority/fail-closed/coverage/hashed binding document) and live in the browser (alert_combat on the interrupted turn, speaking after explicit continue)",
+      packageBackendPromotion: "promotePackage seals the registered package through the generic backend contract and persists it with its sha256 integrity hash as the pin (idempotent on the same pin, conflict fail-closed); every composition re-derives each pin from the persisted contract and re-registers identical sealed bytes; proven live from the UI (verified+registered row), headlessly over HTTP (idempotency, unknown-package rejection, honest status surface), across a durable SQLite process restart (reload + pin verification), and against a tampered store (pin swap → COMPANION_PACKAGE_PROMOTION_PIN_MISMATCH on every request; forged contract with original pin → CONTRACT_INTEGRITY_MISMATCH)",
+      parityHonesty: "the COMPANION_PORTRAIT_CONTINUOUS_ANIMATION and COMPANION_PACK_BACKEND_PROMOTION rows flipped to connected (Slice 266e) only because the contracts above are real; the third-party extension marketplace stays honestly excluded",
+      notImplemented: "third-party extension marketplace (out of scope by contract); no continuous frame loops or generated frames (transition animation only, by design)",
     },
     environment: {
       playwright: "1.59.1",
@@ -2538,6 +2851,8 @@ async function main() {
       portraitPixelsProvenReal: true,
       sixCompanionPortraitPixelsProvenReal: true,
       durableProcessRestartResumeProven: true,
+      portraitAnimationBindingProven: "six-state deterministic state machine over committed keyframes; alert_combat/speaking proven live in the browser; priority, fail-closed idle, reduced-motion static and six-companion coverage proven headlessly",
+      packagePromotionPinsProven: "seal + sha256 pin persisted; live-verified listing in UI and headless; durable restart reload; pin-swap and forged-contract tampering both fail closed",
       extensionMarketplaceImplemented: false,
       trainingTruth: false,
     },
