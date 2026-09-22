@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   inspectStarcraftTmgFormationThreatClaimsV1,
   inspectStarcraftTmgOpponentPredictionFeasibilityV1,
+  normalizeStarcraftTmgOpponentPredictionsV1,
   inspectStarcraftTmgUnitSupplyClaimsV1,
   STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE,
 } from "../packages/online-agent-session/live-flash-decision-port-v1.mjs";
@@ -317,6 +318,79 @@ const possibleReserveDeploy =
     currentPhase: "movement",
   });
 assert.equal(possibleReserveDeploy.status, "consistent");
+
+const recoveredMixedReservePredictions =
+  normalizeStarcraftTmgOpponentPredictionsV1({
+    action: {
+      intent: {
+        predictedOpponentResponses: [
+          {
+            responseId: "resp-marine-deploy",
+            actionClass: "deploy",
+            opponentAction: "A Marine deploys from reserves.",
+            likelyActorUnitId: "player1-marine-1",
+            horizon: { kind: "current_phase", count: 1 },
+          },
+          {
+            responseId: "resp-marine-move",
+            actionClass: "move",
+            opponentAction: "A Marine moves from reserves.",
+            likelyActorUnitId: "player1-marine-1",
+            horizon: { kind: "current_phase", count: 1 },
+          },
+        ],
+      },
+    },
+    spatialObservation: opponentPredictionObservation,
+    currentPhase: "movement",
+  });
+assert.deepEqual(
+  recoveredMixedReservePredictions.intent.predictedOpponentResponses
+    .map((entry) => entry.responseId),
+  ["resp-marine-deploy"],
+  "a valid prediction must survive while an impossible auxiliary row is dropped",
+);
+assert.deepEqual(recoveredMixedReservePredictions.opponentPredictionNormalization,
+  {
+    schema: "starcraft_tmg_opponent_prediction_normalization_v1",
+    normalizationVersion: "starcraft_tmg_live_action_shape_normalization_v31",
+    operation: "drop_lifecycle_impossible_auxiliary_predictions",
+    inputCount: 2,
+    retainedCount: 1,
+    removed: [{
+      responseId: "resp-marine-move",
+      actorId: "player1-marine-1",
+      actionClass: "move",
+      reason: "reserve_actor_requires_deploy_action_class",
+    }],
+    rulesAuthority: false,
+    trainingTruth: false,
+  });
+
+const stillBlockedAllInvalidPredictions =
+  normalizeStarcraftTmgOpponentPredictionsV1({
+    action: {
+      intent: {
+        predictedOpponentResponses: [{
+          responseId: "resp-marine-move",
+          actionClass: "move",
+          opponentAction: "A Marine moves from reserves.",
+          likelyActorUnitId: "player1-marine-1",
+          horizon: { kind: "current_phase", count: 1 },
+        }],
+      },
+    },
+    spatialObservation: opponentPredictionObservation,
+    currentPhase: "movement",
+  });
+assert.equal(
+  stillBlockedAllInvalidPredictions.intent.predictedOpponentResponses[0]
+    .responseId,
+  "resp-marine-move",
+  "normalization must not invent a prediction when every row is impossible",
+);
+assert.equal(stillBlockedAllInvalidPredictions.opponentPredictionNormalization,
+  undefined);
 
 const impossibleUnitBoundPhaseControl =
   inspectStarcraftTmgOpponentPredictionFeasibilityV1({

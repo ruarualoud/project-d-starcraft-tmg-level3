@@ -27,7 +27,7 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v23";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v30";
+  "starcraft_tmg_live_action_shape_normalization_v31";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -2237,6 +2237,41 @@ export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
   });
 }
 
+export function normalizeStarcraftTmgOpponentPredictionsV1(input = {}) {
+  const action = clone(input.action);
+  const responses = action?.intent?.predictedOpponentResponses;
+  if (!Array.isArray(responses) || responses.length < 2) return action;
+  const inspection = inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+    responses,
+    spatialObservation: input.spatialObservation,
+    currentPhase: input.currentPhase,
+    queryReceipts: input.queryReceipts,
+  });
+  if (inspection.status !== "contradicted") return action;
+  const contradictedIndexes = new Set(inspection.contradictions.map((entry) =>
+    entry.index));
+  const retained = responses.filter((_, index) =>
+    !contradictedIndexes.has(index));
+  if (retained.length < 1) return action;
+  action.intent.predictedOpponentResponses = retained;
+  action.opponentPredictionNormalization = {
+    schema: "starcraft_tmg_opponent_prediction_normalization_v1",
+    normalizationVersion: ACTION_SHAPE_NORMALIZATION_VERSION,
+    operation: "drop_lifecycle_impossible_auxiliary_predictions",
+    inputCount: responses.length,
+    retainedCount: retained.length,
+    removed: inspection.contradictions.map((entry) => ({
+      responseId: entry.responseId || null,
+      actorId: entry.actorId,
+      actionClass: entry.actionClass || null,
+      reason: entry.reason,
+    })),
+    rulesAuthority: false,
+    trainingTruth: false,
+  };
+  return action;
+}
+
 function bindFormationSelection(raw, queryReceipts) {
   if (!object(raw) || !object(raw.proposal)
     || raw.proposal.kind !== "parameterized") return raw;
@@ -3224,7 +3259,13 @@ function normalizeSubmittedAction(attempt, input, choice) {
     choice.queryReceipts);
   const boundAction = bindExactInstantiatedProposal(assetBoundAction,
     choice.queryReceipts, choice.plannerResult);
-  const normalizedAction = normalizeActionOutputShape(boundAction);
+  const shapedAction = normalizeActionOutputShape(boundAction);
+  const normalizedAction = normalizeStarcraftTmgOpponentPredictionsV1({
+    action: shapedAction,
+    spatialObservation: input.spatialObservation,
+    currentPhase: input.roomProjection?.state?.phase,
+    queryReceipts: choice.queryReceipts,
+  });
   validateActionOutput(normalizedAction, input, choice.plannerResult,
     choice.queryReceipts);
   return normalizedAction;
