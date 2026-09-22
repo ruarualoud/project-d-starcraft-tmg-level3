@@ -387,7 +387,10 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     rejectForbiddenKeys(output);
     if (output.schemaVersion !== ROSTER_STRATEGIST_DELIBERATION_SCHEMA
       || output.roundKind !== roundKind) {
-      fail("ROSTER_STRATEGIST_OUTPUT_INVALID", `${roundKind}:envelope`);
+      fail("ROSTER_STRATEGIST_OUTPUT_INVALID",
+        `${roundKind}:envelope:keys=${Object.keys(output).join(",").slice(0, 200)}`
+          + `:schemaVersion=${String(output.schemaVersion).slice(0, 80)}`
+          + `:roundKind=${String(output.roundKind).slice(0, 80)}`);
     }
   }
 
@@ -974,6 +977,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           "invalidationTriggers", "informationNeeds"],
         informationNeedKinds: [...NEED_KINDS],
         publicFieldsOnly: true,
+        envelopeAtTopLevelNoChannelsWrapper: true,
         hiddenChainOfThoughtForbidden: true,
       }),
     ];
@@ -1057,6 +1061,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           proposalCount: "2_to_4",
           rulesRemainSoleLegalityAuthority: true,
           publicFieldsOnly: true,
+          envelopeAtTopLevelNoChannelsWrapper: true,
         }),
       ];
       const proposalTrace = {
@@ -1191,6 +1196,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           "lossResourceBudget", "publicSummaryText"],
         selectedCandidateMustBeRulesLegal: true,
         publicFieldsOnly: true,
+        envelopeAtTopLevelNoChannelsWrapper: true,
       }),
     ];
     const comparisonTrace = {
@@ -1364,7 +1370,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         roundKind: "revision",
         fields: ["publicSummaryText", "revisedScoreRoute",
           "revisedDeploymentConcept"],
-        publicFieldsOnly: true }),
+        publicFieldsOnly: true,
+        envelopeAtTopLevelNoChannelsWrapper: true }),
     ];
     const sink = { deliberationReceipts: [] };
     const output = await deliberateRound(deliberation, buildRoundRequest({
