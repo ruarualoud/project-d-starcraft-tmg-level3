@@ -182,17 +182,69 @@ function publicConversation(binding, state, extra = {}, userLabel = null) {
   });
 }
 
-function systemPrompt(pkg, binding, eraId) {
-  return [
+// Slice 266f.9: speaker-specific prompt assembly. The sealed package's formal
+// persona profile (voice/doctrine/style — Project D role configuration), the
+// era detail (title/timeline/knowledge cutoff) and an explicit
+// multi-companion distinctness instruction make each companion's prompt
+// observably role- and era-specific, so companions can no longer collapse
+// into one interchangeable voice. All of it is static package-sealed canon/
+// lore configuration; session long-term memory rides in the context layers.
+function personaProfileOf(pkg) {
+  const profile = pkg?.extensions?.personaProfile;
+  return object(profile) ? profile : null;
+}
+
+function eraDetailOf(pkg, eraId) {
+  const details = Array.isArray(pkg?.extensions?.eraDetails)
+    ? pkg.extensions.eraDetails : [];
+  return details.find((era) => era.personaState === eraId)
+    || details.find((era) => era.personaState === pkg?.defaultEraId)
+    || null;
+}
+
+function packageAuthorNoteOf(pkg) {
+  const note = pkg?.extensions?.authorNote;
+  return object(note) && String(note.note || "").trim() ? note : null;
+}
+
+function systemPrompt(pkg, binding, eraId, sessionParticipants = []) {
+  const profile = personaProfileOf(pkg);
+  const era = eraDetailOf(pkg, eraId);
+  const lines = [
     `You are ${pkg.displayName}, a player-side StarCraft TMG tactical companion.`,
     `Identity summary: ${pkg.personalitySummary || pkg.description || "Use the registered companion identity."}`,
-    `Era: ${eraId || pkg.defaultEraId || "registered default"}.`,
+  ];
+  if (era) {
+    lines.push(`Era: ${era.personaState} — ${era.title} (${era.timeline.start} → ${era.timeline.end}). Knowledge cutoff: ${era.knowledgeCutoff}; never use knowledge beyond this era (spoiler rank ${era.spoilerRank}).`);
+  } else {
+    lines.push(`Era: ${eraId || pkg.defaultEraId || "registered default"}.`);
+  }
+  if (profile) {
+    lines.push(`Persona voice (sealed package, ${profile.authoringClass}): cadence ${profile.cadence}; address ${profile.addressStyle}; humor ${profile.humor}; warmth ${profile.companionWarmth}; teaching ${profile.teachingPosture}.`);
+    if (String(profile.tacticalPattern || "").trim()) {
+      lines.push(`Tactical pattern: ${String(profile.tacticalPattern).replaceAll("_", " ")}.`);
+    }
+    if (Array.isArray(profile.doctrineHints) && profile.doctrineHints.length) {
+      lines.push(`Doctrine priorities: ${profile.doctrineHints.map(String).join("; ")}.`);
+    }
+    if (Array.isArray(profile.styleExamples) && profile.styleExamples.length) {
+      lines.push(`Style examples (package-authored role configuration, not official quotes): ${profile.styleExamples.map(String).join(" / ")}`);
+    }
+  }
+  const others = (Array.isArray(sessionParticipants) ? sessionParticipants : [])
+    .filter((participant) => participant?.kind === "companion" && participant.label !== pkg.displayName)
+    .map((participant) => String(participant.label));
+  if (others.length) {
+    lines.push(`This is a multi-companion conversation with: ${others.join(", ")}. Answer ONLY as ${pkg.displayName}, in your own era and voice, with your own priorities. When the plan or another speaker conflicts with your doctrine, say so explicitly and propose your own action; never merge another speaker's persona or wording into your answer.`);
+  }
+  lines.push(
     `Bound seat: ${binding.seatKey}; mode: ${binding.mode}.`,
     "Use only the supplied player-visible room material and memory context.",
     "Treat Rules/LegalSpace/Preview/Apply/Replay as external authority; never invent legality or mutate the room.",
     "Opponent intention is inference, never private fact. Label uncertainty and distinguish observed facts from inference.",
     "Give a concise in-character answer plus public tactical rationale; never reveal hidden chain-of-thought.",
-  ].join("\n");
+  );
+  return lines.join("\n");
 }
 
 function contextMessage(contextAssembly, roomContext) {
@@ -244,7 +296,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
   for (const method of ["createSession", "getSessionState", "peekNextTurn", "submitTurn", "filterSessionState", "checkpointSession", "resumeSession", "closeSession", "openBranch", "submitBranchEntry", "acceptBranchEntry", "discardBranch", "listBranches", "exportSession", "importSession", "authorizeSessionRead"]) {
     assertMethod(backend?.sessionRuntime, method, "companionBackend.sessionRuntime");
   }
-  for (const method of ["assembleContext", "readTranscript", "replaceTranscript", "readRollingSummary", "writeRollingSummary", "listRollingSummaryVersions", "rollbackRollingSummary", "addEpisodicFact", "listEpisodicFacts", "initializeRelationshipState", "getRelationshipState", "applyRelationshipEvent", "listWorldbookEntries", "registerWorldbookEntry"]) assertMethod(backend?.memoryEngine, method, "companionBackend.memoryEngine");
+  for (const method of ["assembleContext", "readTranscript", "replaceTranscript", "readRollingSummary", "writeRollingSummary", "listRollingSummaryVersions", "rollbackRollingSummary", "addEpisodicFact", "listEpisodicFacts", "initializeRelationshipState", "getRelationshipState", "applyRelationshipEvent", "listWorldbookEntries", "registerWorldbookEntry", "proposeDurableMemoryCandidate", "approveDurableMemoryCandidate", "listDurableMemory"]) assertMethod(backend?.memoryEngine, method, "companionBackend.memoryEngine");
   for (const method of ["complete", "stats"]) assertMethod(backend?.providerGateway, method, "companionBackend.providerGateway");
   for (const method of ["record", "verify", "exportAuditLog", "buildReplayCandidate"]) assertMethod(backend?.auditLog, method, "companionBackend.auditLog");
 
@@ -677,11 +729,43 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       ],
     });
     const requestId = `companion-${loaded.conversationId}-${loaded.state.turnCounter + 1}`;
+    const systemContent = systemPrompt(pkg, loaded.binding, companion.eraId,
+      loaded.state.participants);
     const messages = [
-      { role: "system", content: systemPrompt(pkg, loaded.binding, companion.eraId) },
+      { role: "system", content: systemContent },
       { role: "system", content: contextMessage(contextAssembly, roomContext) },
       ...transcriptMessages(loaded.state, participant.participantId),
     ];
+    // Slice 266f.9: the sealed package's formal author-note material is
+    // injected as its own labelled system layer directly behind the persona
+    // system prompt (deterministic; provenance-recorded). It is static
+    // package-sealed role configuration — distinct from the conversation
+    // Author's Note below, which is user-configured and depth/frequency-gated.
+    let packageAuthorsNoteInjected = null;
+    const packageAuthorNote = packageAuthorNoteOf(pkg);
+    if (packageAuthorNote) {
+      const noteText = `${packageAuthorNote.note}${String(packageAuthorNote.noteZh || "").trim()
+        ? ` ${packageAuthorNote.noteZh}` : ""}`;
+      const position = Math.min(2, messages.length);
+      messages.splice(position, 0, {
+        role: "system",
+        content: `Companion author note (sealed package ${pkg.packageId} v${pkg.version}; ${packageAuthorNote.authoringClass}): ${noteText}`,
+      });
+      packageAuthorsNoteInjected = {
+        packageId: pkg.packageId,
+        version: pkg.version,
+        authoringClass: String(packageAuthorNote.authoringClass || "project_d_role_configuration"),
+        noteHash: hashStarcraftTmgContract({
+          note: packageAuthorNote.note,
+          noteZh: String(packageAuthorNote.noteZh || ""),
+        }),
+        depth: packageAuthorNote.depth,
+        frequency: packageAuthorNote.frequency,
+        position,
+        layerKind: "static_package_sealed_role_configuration",
+        separation: "sealed package formal author note — distinct from the user-configured conversation author's note",
+      };
+    }
     // Author's Note depth/frequency injection (Slice 266d): the note is
     // inserted as a system message `depth` messages above the tail (never
     // above the two leading system messages) every `frequency` companion
@@ -732,26 +816,77 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     // Attach the deterministic assembly provenance so the product can
     // project exactly which worldbook entries fired (scope tier, matched
     // triggers, recursion depth) and whether the author's note injected.
+    const firedWorldbook = contextAssembly.sections
+      .filter((section) => section.layer === "worldbook")
+      .map((section) => ({
+        entryId: section.itemId.replace(/^worldbook:/u, ""),
+        scopeTier: section.scopeTier,
+        firedAtDepth: section.firedAtDepth,
+        matchedBy: clone(section.matchedBy),
+        tokens: section.tokens,
+        truncated: section.truncated === true,
+      }));
+    const personaProfile = personaProfileOf(pkg);
+    const sessionMemoryLayers = [...new Set(contextAssembly.sections
+      .map((section) => section.layer)
+      .filter((layer) => ["rolling_summary", "episodic_facts",
+        "relationship_state", "durable_memory"].includes(layer)))];
     return deepFreeze({
       ...clone(completed),
       contextAssembly: {
         assemblyHash: contextAssembly.assemblyHash,
         tokensUsed: contextAssembly.tokensUsed,
         tokensRemaining: contextAssembly.tokensRemaining,
-        worldbookFired: contextAssembly.sections
-          .filter((section) => section.layer === "worldbook")
-          .map((section) => ({
-            entryId: section.itemId.replace(/^worldbook:/u, ""),
-            scopeTier: section.scopeTier,
-            firedAtDepth: section.firedAtDepth,
-            matchedBy: clone(section.matchedBy),
-            tokens: section.tokens,
-            truncated: section.truncated === true,
-          })),
+        worldbookFired: firedWorldbook,
         layersIncluded: [...new Set(contextAssembly.sections.map((section) => section.layer))],
         omissions: contextAssembly.omissions.length,
       },
       authorsNoteInjected: clone(authorsNoteInjected),
+      // Slice 266f.9: exact prompt-layer provenance per reply. Static
+      // canon/lore (package character-tier + product-global worldbook +
+      // immutable canon) is never conflated with session long-term memory
+      // (rolling summary / episodic facts / relationship state / approved
+      // durable memory + chat/persona-tier worldbook).
+      promptLayers: {
+        systemPersona: {
+          packageId: pkg.packageId,
+          version: pkg.version,
+          eraId: companion.eraId,
+          systemPromptHash: hashStarcraftTmgContract(systemContent),
+          personaProfile: personaProfile
+            ? {
+              present: true,
+              authoringClass: String(personaProfile.authoringClass || "project_d_role_configuration"),
+              profileHash: hashStarcraftTmgContract(personaProfile),
+              styleExamples: Array.isArray(personaProfile.styleExamples)
+                ? personaProfile.styleExamples.length : 0,
+              doctrineHints: Array.isArray(personaProfile.doctrineHints)
+                ? personaProfile.doctrineHints.length : 0,
+            }
+            : { present: false },
+          otherCompanionLabels: loaded.state.participants
+            .filter((entry) => entry.kind === "companion"
+              && entry.participantId !== participant.participantId)
+            .map((entry) => String(entry.label)),
+        },
+        packageAuthorsNote: clone(packageAuthorsNoteInjected),
+        conversationAuthorsNote: clone(authorsNoteInjected),
+        staticCanonLore: {
+          canonSections: contextAssembly.sections
+            .filter((section) => section.layer === "canon")
+            .map((section) => section.itemId),
+          worldbookStaticTiers: firedWorldbook
+            .filter((entry) => ["character", "global"].includes(entry.scopeTier))
+            .map((entry) => ({ entryId: entry.entryId, scopeTier: entry.scopeTier })),
+        },
+        sessionLongTermMemory: {
+          layers: sessionMemoryLayers,
+          worldbookSessionTiers: firedWorldbook
+            .filter((entry) => ["chat", "persona"].includes(entry.scopeTier))
+            .map((entry) => ({ entryId: entry.entryId, scopeTier: entry.scopeTier })),
+        },
+        layerSeparation: "static canon/lore (package character-tier + product-global worldbook + immutable canon) is never conflated with session long-term memory (rolling summary / episodic facts / relationship state / approved durable memory + chat/persona-tier worldbook)",
+      },
     });
   }
 
@@ -832,6 +967,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         providerReceipt: safeProviderReceipt(completed.receipt),
         contextAssembly: clone(completed.contextAssembly),
         authorsNoteInjected: clone(completed.authorsNoteInjected),
+        promptLayers: clone(completed.promptLayers),
       });
     }
     const state = await backend.sessionRuntime.getSessionState(loaded.conversationId);
@@ -1178,6 +1314,10 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       const relationship = await backend.memoryEngine.getRelationshipState(groupScope);
       const chatEntries = await backend.memoryEngine.listWorldbookEntries(
         chatWorldbookScope(loaded.conversationId));
+      // Slice 266f.11: the durable long-term layer is projected honestly —
+      // candidates and approved records are listed separately; nothing is
+      // seeded and promotion is never automatic.
+      const durableRecords = await backend.memoryEngine.listDurableMemory(groupScope);
       return deepFreeze({
         ok: true,
         schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.memory`,
@@ -1199,6 +1339,15 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
           relationshipState: clone(relationship),
           relationshipHonesty: "unknown_is_first_class_never_zero_filled; typed observed events only",
           chatWorldbookEntries: chatEntries.map((entry) => worldbookEntryProjection(entry)),
+          durableMemory: {
+            records: clone(durableRecords),
+            approvedCount: durableRecords.filter((record) => record.status === "approved_durable").length,
+            candidateCount: durableRecords.filter((record) => record.status === "candidate").length,
+            honesty: durableRecords.length
+              ? "persisted"
+              : "no_durable_records_yet_never_fabricated",
+            promotionDiscipline: "candidate → explicit user approval ({ approvedBy: \"user\", userApproved: true }) only; never automatic; never seeded; approved records enter every later assembly as the durable_memory layer",
+          },
         },
         contextBudgetPolicy: "companion_context_budget_policy_v1 (omissions and unknowns disclosed)",
         hiddenChainOfThought: "not_collected",
@@ -1320,6 +1469,78 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       });
     } catch (error) {
       return rejection(error?.code || "COMPANION_RELATIONSHIP_WRITE_FAILED");
+    }
+  }
+
+  // ── Slice 266f.11: durable long-term memory (the engine's only promotion
+  // path). A candidate is conversation-derived user content with provenance —
+  // never a seeded/invented memory — and only an explicit user approval turns
+  // it into durable memory that enters every later context assembly. ──
+
+  async function proposeConversationDurableMemory(input = {}) {
+    try {
+      const loaded = await loadBound(input);
+      if (loaded.rejection) return loaded.rejection;
+      const content = requiredString(input.content, "content", MAX_USER_MESSAGE_CHARS);
+      const proposed = await serialize(loaded.conversationId, () =>
+        backend.memoryEngine.proposeDurableMemoryCandidate(loaded.state.memoryScope, {
+          ...(input.candidateId !== undefined
+            ? { candidateId: requiredString(input.candidateId, "candidateId", 128) }
+            : {}),
+          content,
+          reason: String(input.reason || "user-proposed durable long-term memory from this conversation"),
+          provenance: {
+            sourceKind: "platform_original",
+            author: "authenticated_seat_user",
+            license: "user_owned_content",
+            sourceRefs: [`conversation://${loaded.conversationId}/durable-candidate`],
+            notes: "User-proposed durable long-term memory candidate derived from this conversation; enters context ONLY after explicit user approval.",
+          },
+        }));
+      return deepFreeze({
+        ok: true,
+        schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.memory-write`,
+        conversationId: loaded.conversationId,
+        proposed: clone(proposed),
+        status: "candidate",
+        entersContext: "only_after_explicit_user_approval",
+        trainingTruth: false,
+      });
+    } catch (error) {
+      return rejection(error?.code || "COMPANION_DURABLE_PROPOSE_FAILED");
+    }
+  }
+
+  async function approveConversationDurableMemory(input = {}) {
+    try {
+      const loaded = await loadBound(input);
+      if (loaded.rejection) return loaded.rejection;
+      const candidateId = requiredString(input.candidateId, "candidateId", 128);
+      // The engine is the fail-closed authority; the service additionally
+      // refuses early so a missing explicit approval never reaches the engine
+      // as anything but a typed rejection. No approval is ever synthesized.
+      if (input.userApproved !== true) {
+        return rejection("COMPANION_DURABLE_PROMOTION_REQUIRES_USER_APPROVAL", {
+          candidateId,
+          required: { approvedBy: "user", userApproved: true },
+        });
+      }
+      const approved = await serialize(loaded.conversationId, () =>
+        backend.memoryEngine.approveDurableMemoryCandidate(loaded.state.memoryScope, candidateId, {
+          approvedBy: "user",
+          userApproved: true,
+          note: String(input.note || ""),
+        }));
+      return deepFreeze({
+        ok: true,
+        schemaVersion: `${STARCRAFT_TMG_COMPANION_ROOM_SESSION_SERVICE_VERSION}.memory-write`,
+        conversationId: loaded.conversationId,
+        approved: clone(approved),
+        promotion: "explicit_user_approval_only_never_automatic",
+        trainingTruth: false,
+      });
+    } catch (error) {
+      return rejection(error?.code || "COMPANION_DURABLE_APPROVE_FAILED");
     }
   }
 
@@ -1468,6 +1689,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
           branchId,
           entry: clone(submitted.entry),
           contextAssembly: clone(completed.contextAssembly),
+          promptLayers: clone(completed.promptLayers),
           providerReceipt: safeProviderReceipt(completed.receipt),
           trainingTruth: false,
         });
@@ -2362,6 +2584,8 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         "memory_summary_rollback",
         "memory_episodic_add",
         "memory_relationship_event",
+        "memory_durable_propose",
+        "memory_durable_approve",
         "branches_list",
         "branch_open",
         "branch_reroll",
@@ -2388,7 +2612,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
       conversationScope: "room_seat_match_binding (credential revalidation per operation; a seat re-authenticating with a fresh credential resumes its own conversation; the creating credential principal scope hash stays recorded for audit)",
       userPersona: "versioned (append-only, 32-version bound), bound to the authenticated seat inside the exact match binding; names the human participant and derives the persona-tier worldbook entry deterministically",
       worldbook: "deterministic triggers (always/keyword/regex) across chat/persona/character/global tiers with bounded recursion (product depth 2, engine maximum 4), insertion priority and per-entry provenance",
-      layeredMemory: "transcript (append-only) / rolling summary (versioned, editable, append-only rollback) / episodic facts / typed observed relationship state; context budgeting with disclosed omissions; no hidden chain-of-thought",
+      layeredMemory: "transcript (append-only) / rolling summary (versioned, editable, append-only rollback) / episodic facts / typed observed relationship state / durable long-term memory (candidate → explicit user approval only, never automatic, never seeded); context budgeting with disclosed omissions; no hidden chain-of-thought",
       branches: "swipe/reroll/edit-as-branch with lineage; accepting an entry appends a NEW turn and never overwrites accepted history",
       authorsNote: "depth/frequency system-message injection, deterministic from persisted state, versioned (32-version bound)",
       importExportRestore: "schema-validated, integrity-hashed exports of conversations/packages/chat worldbooks; restore is same-seat only and never overwrites; no credentials in either direction",
@@ -2427,6 +2651,8 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     rollbackConversationSummary,
     addConversationEpisodicFact,
     applyConversationRelationshipEvent,
+    proposeConversationDurableMemory,
+    approveConversationDurableMemory,
     listConversationBranches,
     openConversationBranch,
     rerollConversationBranch,

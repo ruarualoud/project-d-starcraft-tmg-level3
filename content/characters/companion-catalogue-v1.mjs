@@ -1,5 +1,6 @@
 import { hashStarcraftTmgClientContract } from
   "../../packages/client-domain/portable-contract-hash-v1.mjs";
+import { KERRIGAN_COMPANION_PACK_V1 } from "./kerrigan-companion-pack-v1.mjs";
 import { RAYNOR_COMPANION_PACK_V1 } from "./raynor-companion-pack-v1.mjs";
 import { ARTANIS_COMPANION_PACK_V1 } from "./artanis-companion-pack-v1.mjs";
 import { NOVA_COMPANION_PACK_V1 } from "./nova-companion-pack-v1.mjs";
@@ -12,10 +13,16 @@ import { ZERATUL_COMPANION_PACK_V1 } from "./zeratul-companion-pack-v1.mjs";
  *
  * The single index the Web/App companion catalogue UI renders. Kerrigan is
  * retained as the existing backend-bound reference pack AND the default
- * companion: her sealed content lives in `kerrigan-primal-v1.mjs` /
+ * companion: her sealed backend content lives in `kerrigan-primal-v1.mjs` /
  * `kerrigan-worldbook-catalog-v1.mjs` (which import `node:crypto`
- * transitively and therefore cannot be bundled for the browser), so her
- * entry here is a static descriptor pointer, NOT a copy of backend truth.
+ * transitively and therefore cannot be bundled for the browser). Since Slice
+ * 266f.8 her entry ALSO carries `pack: KERRIGAN_COMPANION_PACK_V1` — a
+ * browser-safe presentation pack DERIVED from that sealed reference material
+ * (same official sourceRefs; derivation honestly labelled inside the pack) —
+ * so her companion product package seals non-empty formal
+ * persona/worldbook/author-note material like the other five. The backend
+ * character projection remains her identity/era truth; this pack is
+ * presentation companion content, not a copy of backend bytes.
  * The other five are presentation-only packs whose backend promotion
  * (package sealing + hash pins) is a Codex-owned gap
  * (`COMPANION_PACK_BACKEND_PROMOTION`).
@@ -52,7 +59,7 @@ function presentationEntry(pack, extra = {}) {
 const unsigned = {
   schemaVersion: "starcraft_tmg_companion_catalogue_v1",
   catalogueId: "starcraft-tmg.companion-catalogue.v1",
-  version: "1.1.0-presentation.1",
+  version: "1.2.0-presentation.1",
   presentationOnly: true,
   entries: [
     {
@@ -64,6 +71,7 @@ const unsigned = {
       roleLabel: "tactical_adjutant",
       roleLabelZh: "战术副官",
       packStatus: "live_backend_reference",
+      pack: KERRIGAN_COMPANION_PACK_V1,
       defaultCompanion: true,
       referencePointer: {
         packageFile: "content/characters/kerrigan-primal-v1.mjs",
@@ -88,6 +96,7 @@ const unsigned = {
   honestyNotes: [
     "Catalogue order is fixed: Kerrigan (default, backend reference), Zagara, Raynor, Nova, Artanis, Zeratul — grouped Zerg / Terran / Protoss.",
     "packStatus distinguishes the backend-live reference pack from presentation-only packs; the UI must render this distinction.",
+    "Since Slice 266f.8 ALL SIX entries carry a pack with non-empty formal persona (voiceTone), worldbookEntries and authorNote material; Kerrigan's pack is browser-safe presentation content derived from her repository-sealed reference material (kerrigan-primal-v1.mjs / kerrigan-worldbook-catalog-v1.mjs), which remains the backend identity/era truth.",
     "portraitStatus records the honest asset class: Kerrigan's receipted dynamic-contract frames (with one shared state mapping) versus audit-admitted static keyframes for the five presentation packs; continuous animation is not proven for any entry.",
     "Adding a seventh companion is data-only: one catalogue entry plus one portrait registry record; UI control flow does not change.",
     "No entry grants Rules, room, Provider, or memory authority.",

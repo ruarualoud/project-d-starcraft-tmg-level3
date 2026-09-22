@@ -11,11 +11,31 @@ import {
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from "react-native";
 
 import { useI18n } from "@/lib/i18n";
 import { useLevel3ClientDomain } from "@/lib/level3/client-domain-provider";
 import { CompanionCataloguePanel } from "./companion-catalogue-panel";
+
+// Slice 266f sheet-portal repair (found by the FIRST real run of the focused
+// 266f gate: FOCUS_SHEET_NOT_LEFT_ANCHORED). react-native-web 0.21 gives every
+// ScrollView base `transform: translateZ(0)` for compositing, so the floating
+// dock's ScrollView becomes the containing block for any `position: fixed`
+// descendant and the sheet anchored to the shrink-wrapped dock instead of the
+// viewport. The dock chrome file is outside this slice's manifest scope, so on
+// web the expanded sheet is portaled to document.body, escaping the
+// transformed ancestor entirely. The literal require below is evaluated only
+// on web and is shaken out of native bundles via the EXPO_OS platform
+// constant. Native and mid-widths keep the in-dock layout; every testID is
+// unchanged.
+function portalSheetToBody(node: React.ReactNode): React.ReactNode {
+  if (process.env.EXPO_OS !== "web" || typeof document === "undefined") {
+    return node;
+  }
+  const { createPortal } = require("react-dom") as typeof import("react-dom");
+  return createPortal(node, document.body);
+}
 import { COMPANION_CATALOGUE_V1 } from "../../../../content/characters/companion-catalogue-v1.mjs";
 import {
   companionPortraitAnimationTransitionV1,
@@ -66,6 +86,49 @@ const CONTRACT_GAPS = {
 
 const MAX_TRANSCRIPT_MESSAGES = 64;
 const MAX_CHAT_COMPANIONS = 6;
+
+/**
+ * Slice 266f: StarCraft blue/cyan communications language. `COMMS` is the
+ * only palette non-warning surfaces may use; every amber literal lives in
+ * `WARN` and is referenced ONLY by warning surfaces (pending human
+ * confirmation, Provider interruption, risk lines, withheld/shared-frame
+ * honesty badges, parity gap rows). The 266f gate asserts this source-level
+ * invariant and the rendered computed colors.
+ */
+const COMMS = {
+  spaceDeep: "#04101d",
+  panel: "#071726",
+  panelAlt: "#0a2136",
+  section: "#081c2f",
+  raised: "#0d2740",
+  line: "#164a6e",
+  lineSoft: "#123c5a",
+  lineStrong: "#1f7ab5",
+  action: "#0f3d5f",
+  cyan: "#3cc4f2",
+  cyanBright: "#86e3ff",
+  cyanSoft: "#b9ecff",
+  ice: "#ecf7ff",
+  text: "#d9edf9",
+  textDim: "#93b8cc",
+  textFaint: "#6f95aa",
+  good: "#35d0a0",
+  offline: "#5b7484",
+} as const;
+
+const WARN = {
+  amber: "#f0b64c",
+  amberBright: "#ffd694",
+  amberDeep: "#33270f",
+  amberLine: "#96721f",
+  danger: "#ef8f80",
+  dangerDeep: "#3c201c",
+  dangerLine: "#8a5049",
+} as const;
+
+/** Desktop wide focus mode / mobile full-screen sheet breakpoints (web). */
+const FOCUS_WIDE_MIN_WIDTH = 1024;
+const MOBILE_SHEET_MAX_WIDTH = 768;
 
 /**
  * Registered companion package id ↔ catalogue character id. The product
@@ -255,6 +318,30 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   const viewerSeatKey = typeof viewer.seatKey === "string" ? viewer.seatKey : null;
   const viewerRoleMode = typeof viewer.roleMode === "string" ? viewer.roleMode : null;
   const humanPlayerSeat = viewerRoleMode === "player";
+
+  // ── Slice 266f: wide desktop focus mode / mobile full-screen sheet ──
+  // Web-only presentation geometry. The expanded floating body renders as a
+  // viewport-fixed sheet: left-anchored and ≤ 66% of the viewport width on
+  // desktop (the battlefield stays materially visible on the right and the
+  // compact launcher chip is never covered), full-viewport on mobile. Every
+  // testID is unchanged; on web the sheet is portaled to document.body
+  // (module-level portalSheetToBody) because the dock ScrollView's RNW
+  // compositing transform would otherwise trap position:fixed. Mid widths and
+  // native keep the in-dock layout. The sheet receives events only inside its
+  // own box; the dock layer keeps its pointerEvents="box-none" discipline.
+  const { width: windowWidth } = useWindowDimensions();
+  const webSheetCapable = floating && expanded && Platform.OS === "web";
+  const wideFocusMode = webSheetCapable && windowWidth >= FOCUS_WIDE_MIN_WIDTH;
+  const mobileSheetMode = webSheetCapable && windowWidth < MOBILE_SHEET_MAX_WIDTH;
+  const focusSheetWidth = Math.min(
+    940,
+    Math.max(600, Math.floor(windowWidth * 0.58)),
+  );
+  // react-native-web honors viewport-fixed positioning; RN's style typing
+  // does not list it, so it is applied as a plain object (native never
+  // reaches these branches).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fixedSheetPosition = { position: "fixed" } as any;
 
   const floatingSectionDefaults: Record<FloatingSectionKey, boolean> = {
     comms: true,
@@ -1065,14 +1152,14 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           : (zh ? "凯瑞甘副官 · 待连接" : "Kerrigan Adjutant · awaiting room");
 
   const chipStatus: { label: string; color: string } = roleAgent?.pendingConfirmation
-    ? { label: zh ? "等待确认" : "confirmation pending", color: "#f59e0b" }
+    ? { label: zh ? "等待确认" : "confirmation pending", color: WARN.amber }
     : secureProvider?.status === "awaiting_secret"
-      ? { label: zh ? "等待密钥" : "secret awaited", color: "#f59e0b" }
+      ? { label: zh ? "等待密钥" : "secret awaited", color: WARN.amber }
       : !connection.online
-        ? { label: zh ? "离线" : "offline", color: "#64748b" }
+        ? { label: zh ? "离线" : "offline", color: COMMS.offline }
         : agentSessionActive
-          ? { label: zh ? "在线" : "online", color: "#22c55e" }
-          : { label: zh ? "待命" : "standby", color: "#38bdf8" };
+          ? { label: zh ? "在线" : "online", color: COMMS.good }
+          : { label: zh ? "待命" : "standby", color: COMMS.cyan };
 
   function renderPortraitAndCopy() {
     return (
@@ -1204,6 +1291,25 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   }
 
   function renderProviderCard() {
+    // Slice 266f: explicit BYOK state surface derived ONLY from the real
+    // Ticket 16 projection — attached / missing / error / detached (plus the
+    // awaiting-secret ingress state); never inferred, never fabricated.
+    const attachmentState = secureProvider?.attachment?.state || null;
+    const providerStateSurface: { kind: string; tone: "ok" | "warn" | "error" | "plain" } = (() => {
+      if (!secureProvider) return { kind: "missing", tone: "plain" };
+      if (secureProvider.rejection) return { kind: "error", tone: "error" };
+      if (attachmentState === "attached") return { kind: "attached", tone: "ok" };
+      if (attachmentState === "detached" || attachmentState === "expired") {
+        return { kind: "detached", tone: "plain" };
+      }
+      if (attachmentState === "attach_failed" || attachmentState === "detach_failed") {
+        return { kind: "error", tone: "error" };
+      }
+      if (secureProvider.status === "awaiting_secret") {
+        return { kind: "awaiting_secret", tone: "warn" };
+      }
+      return { kind: "missing", tone: "plain" };
+    })();
     return (
       <View style={styles.providerCard} testID="secure-provider-console">
         <View style={styles.providerHeader}>
@@ -1217,10 +1323,35 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
                 : `Status ${secureProvider?.status || "not mounted"}`}
             </Text>
           </View>
-          {providerBusy && <ActivityIndicator color="#d2ae59" size="small" />}
+          {providerBusy && <ActivityIndicator color={COMMS.cyan} size="small" />}
         </View>
 
-        <Text style={styles.providerDisclosure}>
+        <View style={styles.providerStateRow}>
+          <View
+            style={[
+              styles.providerStateChip,
+              providerStateSurface.tone === "ok" && styles.providerStateChipAttached,
+              providerStateSurface.tone === "warn" && styles.providerStateChipWarning,
+              providerStateSurface.tone === "error" && styles.providerStateChipError,
+            ]}
+            testID="secure-provider-state-chip"
+          >
+            <Text style={styles.providerStateText}>
+              state: {providerStateSurface.kind}
+              {secureProvider?.rejection ? ` · ${secureProvider.rejection.code}` : ""}
+              {providerStateSurface.kind === "missing"
+                ? (secureProvider?.status === "session_required"
+                  ? (zh ? " · 需先接通副官会话（如实）" : " · agent session required (honest)")
+                  : (zh ? " · 未附加（如实）" : " · not attached (honest)"))
+                : ""}
+              {providerStateSurface.kind === "detached" && secureProvider?.attachment?.detachReason
+                ? ` · ${secureProvider.attachment.detachReason}`
+                : ""}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={styles.providerDisclosure} testID="secure-provider-secret-hygiene">
           {zh
             ? "所选 Provider 会收到本轮 Prompt 与响应合同。应用会在等待网络前清空密码输入，并在结束时清零可变字节；浏览器与服务端都不写持久存储。隔离 Worker 仅在绑定期间以内存持有密钥；没有自动重试。"
             : "The selected Provider receives the turn Prompt and response contract. The app clears this password field before awaiting the network and zeroes mutable bytes afterward; neither browser nor server writes it to persistent storage. An isolated Worker holds it only in session memory until detach, with no automatic retry."}
@@ -1327,7 +1458,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
               onChangeText={setProviderKeyDraft}
               onSubmitEditing={() => void attachProviderSecret()}
               placeholder={zh ? "仅本次交接；不会保存" : "One ingress only; never persisted"}
-              placeholderTextColor="#73806e"
+              placeholderTextColor={COMMS.textFaint}
               secureTextEntry
               spellCheck={false}
               style={styles.secretInput}
@@ -1366,6 +1497,29 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
             {secureProvider.attachment.detachReason
               ? ` · ${secureProvider.attachment.detachReason}` : ""}
           </Text>
+        )}
+        {secureProvider?.attachment && (
+          <View style={styles.providerReceiptCard} testID="secure-provider-redacted-receipt">
+            <Text style={styles.providerReceiptTitle}>
+              {zh ? "脱敏收据（绝不含密钥材料）" : "Redacted receipt (never any secret material)"}
+            </Text>
+            <Text style={styles.providerReceiptText}>
+              {secureProvider.attachment.provider.providerId}
+              {" · "}{secureProvider.attachment.provider.requestedModel}
+              {"\n"}profile {secureProvider.attachment.provider.profileRef.hash.slice(0, 12)}…
+              {" · "}{zh ? "状态" : "state"} {secureProvider.attachment.state}
+              {secureProvider.attachment.attachedAt
+                ? ` · attached ${secureProvider.attachment.attachedAt}` : ""}
+              {secureProvider.attachment.detachedAt
+                ? ` · detached ${secureProvider.attachment.detachedAt}` : ""}
+              {"\n"}{zh ? "会话最大额度" : "consent-time envelope"}
+              {" "}{secureProvider.attachment.budgetEnvelope.maxTotalUnits}
+              {" "}{secureProvider.attachment.budgetEnvelope.currency}
+              {" · "}{zh ? "非实时消费，精确账本在服务端" : "not live spend; exact ledger stays server-side"}
+              {"\n"}sensitiveMaterialPersisted: false · automaticRetryAllowed: false
+              {" · "}{zh ? "原始密钥绝不渲染、落盘或入日志" : "the raw key is never rendered, persisted, or logged"}
+            </Text>
+          </View>
         )}
         {secureProvider?.rejection && (
           <Text accessibilityRole="alert" style={styles.errorText}>
@@ -1490,7 +1644,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           onChangeText={setDraft}
           onSubmitEditing={() => void sendAgentMessage()}
           placeholder={zh ? "询问规则、局势，或让对手提出动作…" : "Ask about rules, position, or request an opponent move…"}
-          placeholderTextColor="#73806e"
+          placeholderTextColor={COMMS.textFaint}
           style={styles.input}
           value={draft}
         />
@@ -1840,6 +1994,92 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     );
   }
 
+  /**
+   * Slice 266f.3: session continuity surface. Every value below is a REAL
+   * server projection (conversation binding, worldbook read, memory read,
+   * author's note read); an unloaded or empty layer renders an honest
+   * not-loaded / not-written state — never fabricated content. Worldbook
+   * entries are classified by origin: sealed package (formal pack content),
+   * persona-derived, chat-tier session entries, and product-global entries
+   * (a fixture-injected global entry is honestly labelled by its own
+   * provenance).
+   */
+  function worldbookOriginClass(entry: any) {
+    const tier = String(entry?.scopeTier || "");
+    if (tier === "character") return "sealed_package";
+    if (tier === "persona") return "persona_derived";
+    if (tier === "chat") return "chat_session";
+    const refs: string[] = entry?.provenance?.sourceRefs || [];
+    if (refs.some((ref) => String(ref).startsWith("fixture://"))) {
+      return "product_global_fixture";
+    }
+    return "product_global";
+  }
+
+  function renderChatContinuityCard(conversation: any) {
+    const companions: any[] = conversation?.companions || [];
+    const worldbookEntries: any[] = chat.worldbook?.entries || [];
+    const originCounts: Record<string, number> = {};
+    for (const entry of worldbookEntries) {
+      const origin = worldbookOriginClass(entry);
+      originCounts[origin] = (originCounts[origin] || 0) + 1;
+    }
+    const memory = chat.memoryDetail?.layers || null;
+    const summaryVersions: any[] = memory?.rollingSummaryVersions || [];
+    const episodicFacts: any[] = memory?.episodicFacts || [];
+    const relationshipHistory: any[] = memory?.relationshipState?.history || [];
+    const note = chat.authorsNote;
+    return (
+      <View style={styles.gapCard} testID="companion-chat-continuity">
+        <Text style={styles.gapTitle}>
+          {zh
+            ? "会话连续性（真实包/会话内容 · 空层如实标注）"
+            : "Session continuity (real package/session content · empty layers labelled honestly)"}
+        </Text>
+        <View testID="companion-chat-continuity-era">
+          {companions.map((companion: any) => (
+            <Text key={companion.participantId} style={styles.gapCode}>
+              {zh ? "时代" : "era"} · {chatParticipantLabel(conversation, companion.participantId)}
+              {": "}{companion.eraId || (zh ? "注册默认（包）" : "registered default (package)")}
+            </Text>
+          ))}
+        </View>
+        <Text style={styles.gapCode} testID="companion-chat-continuity-worldbook">
+          {chat.worldbook
+            ? `${zh ? "世界书来源" : "worldbook origins"}: `
+              + `${zh ? "封存包(正式内容)" : "sealed package (formal)"} ${originCounts.sealed_package || 0}`
+              + ` · ${zh ? "人设派生" : "persona-derived"} ${originCounts.persona_derived || 0}`
+              + ` · ${zh ? "会话注册" : "chat session"} ${originCounts.chat_session || 0}`
+              + ` · ${zh ? "产品全局" : "product global"} ${originCounts.product_global || 0}`
+              + (originCounts.product_global_fixture
+                ? ` · ${zh ? "产品全局(验收夹具注入,如实)" : "product global (acceptance-fixture injected, honest)"} ${originCounts.product_global_fixture}`
+                : "")
+            : (zh
+              ? "世界书：未载入 — 使用「读取世界书」；绝不伪造条目。"
+              : "worldbook: not loaded — use Read worldbook; entries are never fabricated.")}
+        </Text>
+        <Text style={styles.gapCode} testID="companion-chat-continuity-memory">
+          {memory
+            ? `${zh ? "记忆" : "memory"}: ${zh ? "摘要版本" : "summary versions"} ${summaryVersions.length}`
+              + ` · ${zh ? "情景事实" : "episodic facts"} ${episodicFacts.length}`
+              + ` · ${zh ? "关系事件" : "relationship events"} ${relationshipHistory.length}`
+              + ` · ${zh ? "转写" : "transcript"} ${conversation?.memorySummary?.transcriptEntries ?? 0}`
+              + (memory.rollingSummaryHonesty ? ` · ${memory.rollingSummaryHonesty}` : "")
+            : (zh
+              ? "记忆：未载入 — 使用「读取记忆」；空层保持第一等未知，绝不填零或编造。"
+              : "memory: not loaded — use Read memory; empty layers stay first-class unknown, never zero-filled or invented.")}
+        </Text>
+        <Text style={styles.gapCode} testID="companion-chat-continuity-authors-note">
+          {note
+            ? (note.configured
+              ? `${zh ? "作者注释" : "author's note"}: v${note.version} · ${note.injection}`
+              : (zh ? "作者注释：未配置（如实）" : "author's note: not configured (honest)"))
+            : (zh ? "作者注释：未载入" : "author's note: not loaded")}
+        </Text>
+      </View>
+    );
+  }
+
   function renderChatPersonaCard() {
     const persona = chat.persona;
     return (
@@ -1860,7 +2100,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           maxLength={64}
           onChangeText={(value) => patchChat({ personaNameDraft: value })}
           placeholder={zh ? "人设显示名…" : "Persona display name…"}
-          placeholderTextColor="#73806e"
+          placeholderTextColor={COMMS.textFaint}
           style={styles.input}
           testID="companion-chat-persona-name-input"
           value={chat.personaNameDraft}
@@ -1872,7 +2112,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           multiline
           onChangeText={(value) => patchChat({ personaDescriptionDraft: value })}
           placeholder={zh ? "人设描述(注入人设层世界书,附来源)…" : "Persona description (injected as the persona-tier worldbook entry, with provenance)…"}
-          placeholderTextColor="#73806e"
+          placeholderTextColor={COMMS.textFaint}
           style={styles.input}
           testID="companion-chat-persona-description-input"
           value={chat.personaDescriptionDraft}
@@ -1927,7 +2167,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           maxLength={64}
           onChangeText={(value) => patchChat({ worldbookIdDraft: value })}
           placeholder={zh ? "新聊天层条目 id…" : "new chat-tier entry id…"}
-          placeholderTextColor="#73806e"
+          placeholderTextColor={COMMS.textFaint}
           style={styles.input}
           testID="companion-chat-worldbook-id-input"
           value={chat.worldbookIdDraft}
@@ -1938,7 +2178,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           maxLength={64}
           onChangeText={(value) => patchChat({ worldbookKeywordDraft: value })}
           placeholder={zh ? "触发关键字…" : "trigger keyword…"}
-          placeholderTextColor="#73806e"
+          placeholderTextColor={COMMS.textFaint}
           style={styles.input}
           testID="companion-chat-worldbook-keyword-input"
           value={chat.worldbookKeywordDraft}
@@ -1950,7 +2190,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           multiline
           onChangeText={(value) => patchChat({ worldbookContentDraft: value })}
           placeholder={zh ? "条目内容(附来源与收据)…" : "entry content (provenance + receipts attached server-side)…"}
-          placeholderTextColor="#73806e"
+          placeholderTextColor={COMMS.textFaint}
           style={styles.input}
           testID="companion-chat-worldbook-content-input"
           value={chat.worldbookContentDraft}
@@ -1994,7 +2234,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           multiline
           onChangeText={(value) => patchChat({ summaryDraft: value })}
           placeholder={zh ? "写入新摘要版本(绝不覆盖旧版本)…" : "write a new summary version (older versions are never overwritten)…"}
-          placeholderTextColor="#73806e"
+          placeholderTextColor={COMMS.textFaint}
           style={styles.input}
           testID="companion-chat-memory-summary-input"
           value={chat.summaryDraft}
@@ -2025,7 +2265,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           maxLength={2000}
           onChangeText={(value) => patchChat({ episodicDraft: value })}
           placeholder={zh ? "记录一条情景事实(附来源)…" : "record an episodic fact (with provenance)…"}
-          placeholderTextColor="#73806e"
+          placeholderTextColor={COMMS.textFaint}
           style={styles.input}
           testID="companion-chat-memory-episodic-input"
           value={chat.episodicDraft}
@@ -2091,7 +2331,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
               multiline
               onChangeText={(value) => patchChat({ branchEditDraft: value })}
               placeholder={zh ? "编辑后的消息内容…" : "edited message content…"}
-              placeholderTextColor="#73806e"
+              placeholderTextColor={COMMS.textFaint}
               style={styles.input}
               testID="companion-chat-branch-edit-input"
               value={chat.branchEditDraft}
@@ -2148,7 +2388,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           multiline
           onChangeText={(value) => patchChat({ authorsNoteDraft: value })}
           placeholder={zh ? "作者注释内容(以系统消息注入,位置由深度决定)…" : "author's note content (injected as a system message; position set by depth)…"}
-          placeholderTextColor="#73806e"
+          placeholderTextColor={COMMS.textFaint}
           style={styles.input}
           testID="companion-chat-authors-note-input"
           value={chat.authorsNoteDraft}
@@ -2161,7 +2401,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
             maxLength={1}
             onChangeText={(value) => patchChat({ authorsNoteDepthDraft: value })}
             placeholder="4"
-            placeholderTextColor="#73806e"
+            placeholderTextColor={COMMS.textFaint}
             style={[styles.input, styles.chatSmallInput]}
             testID="companion-chat-authors-note-depth-input"
             value={chat.authorsNoteDepthDraft}
@@ -2173,7 +2413,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
             maxLength={2}
             onChangeText={(value) => patchChat({ authorsNoteFrequencyDraft: value })}
             placeholder="1"
-            placeholderTextColor="#73806e"
+            placeholderTextColor={COMMS.textFaint}
             style={[styles.input, styles.chatSmallInput]}
             testID="companion-chat-authors-note-frequency-input"
             value={chat.authorsNoteFrequencyDraft}
@@ -2363,8 +2603,69 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     return String(companion?.packageRef?.id || "").replace(/^starcraft-tmg\.companion\./u, "");
   }
 
+  // Slice 266f.10: participant identity binding. Every header chip and every
+  // transcript message binds its speaker's avatar (committed idle keyframe
+  // for companions; the comms emblem for the human), name and era — derived
+  // purely from the server conversation projection (participants /
+  // companions[].eraId / speakerOrder), never fabricated. Next-speaker
+  // highlighting adds a border + ▶ marker; it never hides other participants.
+  function chatParticipantIdentity(conversation: any, participantId: string) {
+    const participant = (conversation?.participants || []).find(
+      (entry: any) => entry.participantId === participantId,
+    );
+    const companion = (conversation?.companions || []).find(
+      (entry: any) => entry.participantId === participantId,
+    );
+    const isUser = participantId === conversation?.userParticipantId
+      || participant?.kind === "user";
+    const characterId = companion
+      ? characterIdFromCompanionPackageId(companion.packageRef.id)
+      : null;
+    return {
+      isUser,
+      label: participant?.label || participantId,
+      characterId,
+      eraId: companion?.eraId || null,
+      slug: isUser
+        ? "player"
+        : chatCompanionSlug(companion),
+      seatKey: conversation?.seatKey || null,
+    };
+  }
+
+  function ChatParticipantAvatar({ characterId, size, testID }: {
+    characterId: string | null;
+    size: number;
+    testID: string;
+  }) {
+    const source = characterId
+      ? resolveCompanionPortraitAssetSourceV1(characterId, "idle")
+      : null;
+    return (
+      <View
+        accessibilityLabel={characterId
+          ? `${characterId} · idle`
+          : "human commander emblem"}
+        accessibilityRole="image"
+        style={[styles.chatAvatarBox, { width: size, height: size }]}
+        testID={testID}
+      >
+        {source ? (
+          <Image
+            accessibilityIgnoresInvertColors
+            resizeMode="cover"
+            source={source}
+            style={styles.chatAvatarImage}
+            testID={`${testID}-img`}
+          />
+        ) : (
+          <Text style={styles.chatAvatarGlyph}>◈</Text>
+        )}
+      </View>
+    );
+  }
+
   function renderChatConversation(conversation: any) {
-    const participants: any[] = conversation.participants || [];
     const messages: any[] = conversation.messages || [];
     const boundCompanions: any[] = conversation.companions || [];
     const lastMessage = messages.length ? messages[messages.length - 1] : null;
@@ -2414,19 +2715,35 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         <View style={styles.choiceRow} testID="companion-chat-speaker-order">
           {(conversation.speakerOrder || []).map((participantId: string, index: number) => {
             const isNext = nextOwner === participantId;
-            const participant = participants.find((entry: any) => entry.participantId === participantId);
-            const slug = participant?.kind === "user"
-              ? "player"
-              : chatCompanionSlug(boundCompanions.find((entry: any) => entry.participantId === participantId));
+            const identity = chatParticipantIdentity(conversation, participantId);
+            const spokeLast = lastMessage?.participantId === participantId;
             return (
               <View
                 key={participantId}
                 style={[styles.chatOrderChip, isNext && styles.chatOrderChipNext]}
-                testID={`companion-chat-order-${slug}`}
+                testID={`companion-chat-order-${identity.slug}`}
               >
-                <Text style={[styles.chatOrderText, isNext && styles.chatOrderTextNext]}>
-                  {index + 1}. {participant?.label || participantId}{isNext ? " ▶" : ""}
-                </Text>
+                <ChatParticipantAvatar
+                  characterId={identity.characterId}
+                  size={22}
+                  testID={`companion-chat-order-avatar-${identity.slug}`}
+                />
+                <View style={styles.chatOrderChipTextBlock}>
+                  <Text style={[styles.chatOrderText, isNext && styles.chatOrderTextNext]}>
+                    {index + 1}. {identity.label}{isNext ? " ▶" : ""}
+                  </Text>
+                  <Text style={styles.chatOrderEraText}>
+                    {identity.isUser
+                      ? (zh ? `你 · 席位 ${identity.seatKey || "player"}` : `you · seat ${identity.seatKey || "player"}`)
+                      : (zh ? `时代 ${identity.eraId || "—"}` : `era ${identity.eraId || "—"}`)}
+                    {" · "}
+                    {isNext
+                      ? (zh ? "下一位" : "next")
+                      : spokeLast
+                        ? (zh ? "刚发言" : "spoke")
+                        : (zh ? "待命" : "idle")}
+                  </Text>
+                </View>
               </View>
             );
           })}
@@ -2482,18 +2799,34 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         <View style={styles.transcript} testID="companion-chat-transcript">
           {messages.length ? messages.slice(-16).map((message: any) => {
             const isUser = message.participantId === conversation.userParticipantId;
+            const identity = chatParticipantIdentity(conversation, message.participantId);
             return (
               <View
                 key={message.turnId}
                 style={isUser ? styles.humanMessage : styles.agentMessage}
                 testID={`companion-chat-message-${message.turnSequence}`}
               >
-                <Text style={styles.messageAuthor}>
-                  {chatParticipantLabel(conversation, message.participantId)}
-                  {message.mentions?.length
-                    ? `  ${message.mentions.map((participantId: string) => `@${chatParticipantLabel(conversation, participantId)}`).join(" ")}`
-                    : ""}
-                </Text>
+                <View
+                  style={styles.messageSpeakerRow}
+                  testID={`companion-chat-message-speaker-${message.turnSequence}`}
+                >
+                  <ChatParticipantAvatar
+                    characterId={identity.characterId}
+                    size={18}
+                    testID={`companion-chat-message-avatar-${message.turnSequence}`}
+                  />
+                  <Text style={styles.messageAuthor}>
+                    {identity.label}
+                    {message.mentions?.length
+                      ? `  ${message.mentions.map((participantId: string) => `@${chatParticipantLabel(conversation, participantId)}`).join(" ")}`
+                      : ""}
+                  </Text>
+                  <Text style={styles.messageEraText}>
+                    {identity.isUser
+                      ? (zh ? `席位 ${identity.seatKey || "player"}` : `seat ${identity.seatKey || "player"}`)
+                      : (zh ? `时代 ${identity.eraId || "—"}` : `era ${identity.eraId || "—"}`)}
+                  </Text>
+                </View>
                 <Text style={styles.messageText}>{message.content}</Text>
               </View>
             );
@@ -2556,7 +2889,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           multiline
           onChangeText={(value) => patchChat({ draft: value })}
           placeholder={zh ? "对同伴说话；@提及决定谁先回应…" : "Speak to your companions; an @mention decides who answers first…"}
-          placeholderTextColor="#73806e"
+          placeholderTextColor={COMMS.textFaint}
           style={styles.input}
           testID="companion-chat-input"
           value={chat.draft}
@@ -2606,6 +2939,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         )}
 
         {renderChatMemorySummary(conversation)}
+        {renderChatContinuityCard(conversation)}
         {renderChatWorldbookCard()}
         {renderChatMemoryCard()}
         {renderChatBranchesCard()}
@@ -2722,7 +3056,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         </Text>
       </View>
       {(agentBusy || roleAgent?.status === "connecting") && (
-        <ActivityIndicator color="#d2ae59" size="small" />
+        <ActivityIndicator color={COMMS.cyan} size="small" />
       )}
     </View>
   );
@@ -2742,6 +3076,136 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           ? `epoch ${roleAgent.connectionEpoch}`
           : (zh ? "未连接" : "disconnected")}
       />
+    </View>
+  );
+
+  // Slice 266f: the floating sections are built once so the same tree can
+  // render inside the compact dock, the wide desktop focus sheet (two
+  // columns) or the mobile full-screen sheet (single column) without any
+  // DOM/testID change.
+  const floatingMainSections = [
+    renderFloatingSection(
+      "comms",
+      zh ? "战场通讯" : "Field comms",
+      <View style={styles.sectionBody}>
+        <View style={styles.commsRow}>
+          {renderPortraitAndCopy()}
+        </View>
+        {agentSessionActive ? renderConversation() : (
+          <Text style={styles.sectionHint}>
+            {zh
+              ? "会话未接通；在下方「会话控制」选择模式并接通后开始对话。"
+              : "No session is open; choose a mode under Session controls below to start the conversation."}
+          </Text>
+        )}
+      </View>,
+    ),
+    renderFloatingSection(
+      "chat",
+      zh ? "同伴群聊（已接通）" : "Companion group chat (connected)",
+      renderChatSection(),
+    ),
+  ];
+  const floatingSideSections = [
+    renderFloatingSection(
+      "identity",
+      zh ? "同伴与世界书" : "Companion & world book",
+      renderIdentitySection(),
+    ),
+    renderFloatingSection(
+      "catalogue",
+      zh ? "同伴目录与对等" : "Companion catalogue & parity",
+      <View style={styles.sectionBody} testID="companion-catalogue-section">
+        <CompanionCataloguePanel zh={zh} />
+      </View>,
+    ),
+    renderFloatingSection(
+      "memory",
+      zh ? "关系与记忆" : "Relationship & memory",
+      renderMemorySection(),
+    ),
+    renderFloatingSection(
+      "session",
+      zh ? "会话控制" : "Session controls",
+      <View style={styles.sectionBody} testID="companion-session-section">
+        {consoleHeader}
+        {sessionChips}
+        {!agentSessionActive ? renderSessionEntry() : (
+          <>
+            <Text style={styles.sectionHint}>
+              {zh
+                ? "对话内容在上方的「战场通讯」；此处管理会话生命周期。"
+                : "The conversation lives in Field comms above; manage the session lifecycle here."}
+            </Text>
+            <View style={styles.actionRow}>
+              {roleAgent.status === "reconnect_required" && (
+                <ActionButton
+                  disabled={submitting || agentReadOnly}
+                  label={zh ? "重新连接" : "Reconnect"}
+                  onPress={() => void runAgentIntent({ type: "reconnect_agent_session" })}
+                />
+              )}
+              <ActionButton
+                danger
+                disabled={agentBusy || agentReadOnly}
+                label={zh ? "结束会话" : "End session"}
+                onPress={() => void runAgentIntent({ type: "end_agent_session" })}
+              />
+            </View>
+          </>
+        )}
+        {renderPermissionPosture()}
+      </View>,
+    ),
+    renderFloatingSection(
+      "provider",
+      zh ? "安全 Provider 设置（BYOK）" : "Secure Provider setup (BYOK)",
+      <View style={styles.sectionBody}>{renderProviderCard()}</View>,
+    ),
+    renderFloatingSection(
+      "diagnostics",
+      zh ? "诊断" : "Diagnostics",
+      <View style={styles.sectionBody} testID="companion-diagnostics-section">
+        {renderTraceCard()}
+        <Text style={styles.diagMeta}>
+          sessionRef: {roleAgent?.sessionRef || "—"}
+        </Text>
+        <Text style={styles.diagMeta}>
+          {zh ? "角色投影状态" : "character status"}: {characterStatus?.status || "—"}
+          {" · "}{zh ? "拒绝码" : "rejection"}: {characterStatus?.rejectionCode || "none"}
+        </Text>
+        <Text style={styles.diagMeta}>
+          {zh ? "角色投影哈希" : "character projection hash"}: {projection?.projectionHash || "—"}
+        </Text>
+        <Text style={styles.diagMeta}>
+          {zh
+            ? "rawPromptExposed: false · rawProviderOutputExposed: false · trainingTruth: false"
+            : "rawPromptExposed: false · rawProviderOutputExposed: false · trainingTruth: false"}
+        </Text>
+      </View>,
+    ),
+  ];
+
+  const sheetHeader = (
+    <View style={styles.sheetHeader}>
+      <View style={styles.headerCopy}>
+        <Text style={styles.eyebrow}>{zh ? "战术通讯" : "TACTICAL COMMS"}</Text>
+        <Text numberOfLines={1} style={styles.sheetHeaderTitle}>
+          {wideFocusMode
+            ? (zh ? "宽幅焦点模式 · 战场保持可见" : "Wide focus mode · battlefield stays visible")
+            : (zh ? "全屏会话 · 收起返回战场" : "Full-screen conversation · collapse to return")}
+        </Text>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        onPress={toggleExpanded}
+        style={styles.sheetCloseButton}
+        testID={wideFocusMode
+          ? "companion-focus-sheet-close"
+          : "companion-mobile-sheet-close"}
+      >
+        <Text style={styles.sheetCloseText}>{zh ? "收起" : "Collapse"}</Text>
+      </Pressable>
     </View>
   );
 
@@ -2782,107 +3246,43 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
       </Pressable>
 
       {expanded && (floating ? (
-        <View style={styles.bodyFloating}>
-          {renderRejection()}
-          {renderFloatingSection(
-            "comms",
-            zh ? "战场通讯" : "Field comms",
-            <View style={styles.sectionBody}>
-              <View style={styles.commsRow}>
-                {renderPortraitAndCopy()}
-              </View>
-              {agentSessionActive ? renderConversation() : (
-                <Text style={styles.sectionHint}>
-                  {zh
-                    ? "会话未接通；在下方「会话控制」选择模式并接通后开始对话。"
-                    : "No session is open; choose a mode under Session controls below to start the conversation."}
-                </Text>
-              )}
-            </View>,
-          )}
-          {renderFloatingSection(
-            "chat",
-            zh ? "同伴群聊（已接通）" : "Companion group chat (connected)",
-            renderChatSection(),
-          )}
-          {renderFloatingSection(
-            "identity",
-            zh ? "同伴与世界书" : "Companion & world book",
-            renderIdentitySection(),
-          )}
-          {renderFloatingSection(
-            "catalogue",
-            zh ? "同伴目录与对等" : "Companion catalogue & parity",
-            <View style={styles.sectionBody} testID="companion-catalogue-section">
-              <CompanionCataloguePanel zh={zh} />
-            </View>,
-          )}
-          {renderFloatingSection(
-            "memory",
-            zh ? "关系与记忆" : "Relationship & memory",
-            renderMemorySection(),
-          )}
-          {renderFloatingSection(
-            "session",
-            zh ? "会话控制" : "Session controls",
-            <View style={styles.sectionBody} testID="companion-session-section">
-              {consoleHeader}
-              {sessionChips}
-              {!agentSessionActive ? renderSessionEntry() : (
-                <>
-                  <Text style={styles.sectionHint}>
-                    {zh
-                      ? "对话内容在上方的「战场通讯」；此处管理会话生命周期。"
-                      : "The conversation lives in Field comms above; manage the session lifecycle here."}
-                  </Text>
-                  <View style={styles.actionRow}>
-                    {roleAgent.status === "reconnect_required" && (
-                      <ActionButton
-                        disabled={submitting || agentReadOnly}
-                        label={zh ? "重新连接" : "Reconnect"}
-                        onPress={() => void runAgentIntent({ type: "reconnect_agent_session" })}
-                      />
-                    )}
-                    <ActionButton
-                      danger
-                      disabled={agentBusy || agentReadOnly}
-                      label={zh ? "结束会话" : "End session"}
-                      onPress={() => void runAgentIntent({ type: "end_agent_session" })}
-                    />
+        wideFocusMode || mobileSheetMode ? (
+          portalSheetToBody(
+            <View
+              style={[
+                wideFocusMode ? styles.focusSheet : styles.mobileSheet,
+                fixedSheetPosition,
+                wideFocusMode ? { width: focusSheetWidth } : null,
+              ]}
+              testID={wideFocusMode ? "companion-focus-sheet" : "companion-mobile-sheet"}
+            >
+              {sheetHeader}
+              {wideFocusMode ? (
+                <View style={styles.focusColumnsRow}>
+                  <View style={[styles.focusColumn, styles.focusColumnMain]}>
+                    {renderRejection()}
+                    {floatingMainSections}
                   </View>
-                </>
+                  <View style={styles.focusColumn}>
+                    {floatingSideSections}
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.mobileSheetColumn}>
+                  {renderRejection()}
+                  {floatingMainSections}
+                  {floatingSideSections}
+                </View>
               )}
-              {renderPermissionPosture()}
             </View>,
-          )}
-          {renderFloatingSection(
-            "provider",
-            zh ? "安全 Provider 设置（BYOK）" : "Secure Provider setup (BYOK)",
-            <View style={styles.sectionBody}>{renderProviderCard()}</View>,
-          )}
-          {renderFloatingSection(
-            "diagnostics",
-            zh ? "诊断" : "Diagnostics",
-            <View style={styles.sectionBody} testID="companion-diagnostics-section">
-              {renderTraceCard()}
-              <Text style={styles.diagMeta}>
-                sessionRef: {roleAgent?.sessionRef || "—"}
-              </Text>
-              <Text style={styles.diagMeta}>
-                {zh ? "角色投影状态" : "character status"}: {characterStatus?.status || "—"}
-                {" · "}{zh ? "拒绝码" : "rejection"}: {characterStatus?.rejectionCode || "none"}
-              </Text>
-              <Text style={styles.diagMeta}>
-                {zh ? "角色投影哈希" : "character projection hash"}: {projection?.projectionHash || "—"}
-              </Text>
-              <Text style={styles.diagMeta}>
-                {zh
-                  ? "rawPromptExposed: false · rawProviderOutputExposed: false · trainingTruth: false"
-                  : "rawPromptExposed: false · rawProviderOutputExposed: false · trainingTruth: false"}
-              </Text>
-            </View>,
-          )}
-        </View>
+          )
+        ) : (
+          <View style={styles.bodyFloating}>
+            {renderRejection()}
+            {floatingMainSections}
+            {floatingSideSections}
+          </View>
+        )
       ) : (
         <View style={styles.body}>
           {renderPortraitAndCopy()}
@@ -3029,113 +3429,141 @@ function ActionButton({
 }
 
 const styles = StyleSheet.create({
-  panel: { borderRadius: 14, overflow: "hidden", backgroundColor: "#080f0b", borderWidth: 1, borderColor: "#52624a" },
-  floatingPanel: { borderColor: "#2d839d", backgroundColor: "#060d12" },
-  header: { minHeight: 52, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: "#101912" },
+  panel: { borderRadius: 14, overflow: "hidden", backgroundColor: COMMS.spaceDeep, borderWidth: 1, borderColor: COMMS.line },
+  floatingPanel: { borderColor: COMMS.lineStrong, backgroundColor: COMMS.spaceDeep },
+  header: { minHeight: 52, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, backgroundColor: COMMS.panelAlt },
   headerCollapsedChip: { minHeight: 48, paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
   headerCopy: { flex: 1, flexShrink: 1, minWidth: 0 },
-  eyebrow: { color: "#a8bd7d", fontSize: 10, fontWeight: "900", letterSpacing: 1.4 },
-  title: { color: "#eef4df", fontSize: 16, fontWeight: "900", marginTop: 3 },
+  eyebrow: { color: COMMS.cyan, fontSize: 10, fontWeight: "900", letterSpacing: 1.4 },
+  title: { color: COMMS.ice, fontSize: 16, fontWeight: "900", marginTop: 3 },
   titleCollapsedChip: { fontSize: 13, marginTop: 1 },
-  toggle: { color: "#d2ae59", fontSize: 24, fontWeight: "700" },
-  chipEmblem: { width: 28, height: 28, borderRadius: 6, alignItems: "center", justifyContent: "center", backgroundColor: "#1b291c", borderWidth: 1, borderColor: "#4c6147" },
-  chipEmblemText: { color: "#a8bd7d", fontSize: 14 },
+  toggle: { color: COMMS.cyanBright, fontSize: 24, fontWeight: "700" },
+  chipEmblem: { width: 28, height: 28, borderRadius: 6, alignItems: "center", justifyContent: "center", backgroundColor: COMMS.raised, borderWidth: 1, borderColor: COMMS.line },
+  chipEmblemText: { color: COMMS.cyan, fontSize: 14 },
   chipStatusDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1, borderColor: "#020617" },
   body: { flexDirection: "row", flexWrap: "wrap", gap: 14, padding: 14 },
   bodyFloating: { gap: 8, padding: 10 },
+  // Slice 266f: viewport-fixed sheet geometry (position applied inline as a
+  // plain object; web-only branches).
+  focusSheet: { left: 16, top: 16, bottom: 18, zIndex: 1100, borderRadius: 14, borderWidth: 1, borderColor: COMMS.lineStrong, backgroundColor: COMMS.panel, overflow: "hidden" },
+  mobileSheet: { left: 0, top: 0, right: 0, bottom: 0, zIndex: 1100, backgroundColor: COMMS.panel },
+  sheetHeader: { minHeight: 48, paddingHorizontal: 12, paddingVertical: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, backgroundColor: COMMS.panelAlt, borderBottomWidth: 1, borderBottomColor: COMMS.lineSoft },
+  sheetHeaderTitle: { color: COMMS.cyanBright, fontSize: 12, fontWeight: "900", marginTop: 2 },
+  sheetCloseButton: { minHeight: 34, justifyContent: "center", borderRadius: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: COMMS.lineStrong, backgroundColor: COMMS.action },
+  sheetCloseText: { color: COMMS.cyanBright, fontSize: 11, fontWeight: "900" },
+  focusColumnsRow: { flex: 1, flexDirection: "row", gap: 10, padding: 10, minHeight: 0 },
+  focusColumn: { flex: 1, gap: 8, overflow: "scroll", minWidth: 0 },
+  focusColumnMain: { flexGrow: 1.3 },
+  mobileSheetColumn: { flex: 1, gap: 8, padding: 10, overflow: "scroll" },
   commsRow: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  section: { borderRadius: 10, borderWidth: 1, borderColor: "#354232", backgroundColor: "#0a120c", overflow: "hidden" },
-  sectionHeader: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: "#101912" },
-  sectionHeaderText: { flex: 1, color: "#d5e2c5", fontSize: 11, fontWeight: "900", letterSpacing: 0.6 },
-  sectionHeaderToggle: { color: "#d2ae59", fontSize: 18, fontWeight: "700" },
+  section: { borderRadius: 10, borderWidth: 1, borderColor: COMMS.lineSoft, backgroundColor: COMMS.section, overflow: "hidden" },
+  sectionHeader: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: COMMS.panelAlt },
+  sectionHeaderText: { flex: 1, color: COMMS.cyanSoft, fontSize: 11, fontWeight: "900", letterSpacing: 0.6 },
+  sectionHeaderToggle: { color: COMMS.cyanBright, fontSize: 18, fontWeight: "700" },
   sectionBody: { gap: 8, padding: 10 },
-  sectionValue: { color: "#f5f2df", fontSize: 14, fontWeight: "900" },
-  sectionRow: { color: "#e2e8f0", fontSize: 12, fontWeight: "800" },
-  sectionMeta: { color: "#9da994", fontSize: 10, lineHeight: 15, fontFamily: "monospace" },
-  sectionHint: { color: "#aeb9a4", fontSize: 11, lineHeight: 17 },
-  gapCard: { gap: 4, borderRadius: 8, padding: 9, borderWidth: 1, borderColor: "#66562d", backgroundColor: "#15150d" },
-  gapTitle: { color: "#f6dda0", fontSize: 11, fontWeight: "900" },
-  gapCode: { color: "#d4ceb3", fontSize: 10, lineHeight: 16, fontFamily: "monospace" },
-  postureCard: { gap: 6, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: "#2d839d", backgroundColor: "#08202d" },
-  postureTitle: { color: "#a5f3fc", fontSize: 12, fontWeight: "900" },
-  diagMeta: { color: "#92a08c", fontSize: 10, lineHeight: 15, fontFamily: "monospace" },
-  modeNote: { color: "#9da994", fontSize: 10, lineHeight: 16 },
-  portraitFrame: { width: 168, height: 168, maxWidth: "100%", position: "relative", overflow: "hidden", backgroundColor: "#071009", borderWidth: 1, borderColor: "#70805e" },
+  sectionValue: { color: COMMS.ice, fontSize: 14, fontWeight: "900" },
+  sectionRow: { color: COMMS.text, fontSize: 12, fontWeight: "800" },
+  sectionMeta: { color: COMMS.textDim, fontSize: 10, lineHeight: 15, fontFamily: "monospace" },
+  sectionHint: { color: COMMS.textDim, fontSize: 11, lineHeight: 17 },
+  gapCard: { gap: 4, borderRadius: 8, padding: 9, borderWidth: 1, borderColor: COMMS.lineSoft, backgroundColor: COMMS.section },
+  gapTitle: { color: COMMS.cyanBright, fontSize: 11, fontWeight: "900" },
+  gapCode: { color: COMMS.textDim, fontSize: 10, lineHeight: 16, fontFamily: "monospace" },
+  postureCard: { gap: 6, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: COMMS.lineStrong, backgroundColor: COMMS.panelAlt },
+  postureTitle: { color: COMMS.cyanBright, fontSize: 12, fontWeight: "900" },
+  diagMeta: { color: COMMS.textDim, fontSize: 10, lineHeight: 15, fontFamily: "monospace" },
+  modeNote: { color: COMMS.textDim, fontSize: 10, lineHeight: 16 },
+  portraitFrame: { width: 168, height: 168, maxWidth: "100%", position: "relative", overflow: "hidden", backgroundColor: COMMS.spaceDeep, borderWidth: 1, borderColor: COMMS.line },
   portrait: { width: "100%", height: "100%" },
   fallbackPortrait: { flex: 1, padding: 14, justifyContent: "center", alignItems: "center", gap: 8 },
-  fallbackGlyph: { color: "#7f946a", fontSize: 30 },
+  fallbackGlyph: { color: COMMS.cyan, fontSize: 30 },
   neutralPortrait: { width: 82, height: 82, position: "relative", alignItems: "center", justifyContent: "center" },
-  neutralHalo: { position: "absolute", width: 76, height: 76, borderRadius: 38, borderWidth: 1, borderColor: "#7f946a", opacity: 0.5 },
-  neutralHead: { position: "absolute", top: 15, width: 24, height: 30, borderRadius: 12, backgroundColor: "#93a77d" },
-  neutralShoulders: { position: "absolute", bottom: 13, width: 58, height: 28, borderTopLeftRadius: 26, borderTopRightRadius: 26, backgroundColor: "#52624a" },
-  neutralCore: { position: "absolute", bottom: 23, width: 9, height: 9, borderRadius: 5, backgroundColor: "#d2ae59" },
-  fallbackText: { color: "#aeb9a4", fontSize: 11, lineHeight: 17, textAlign: "center" },
-  scanlines: { ...StyleSheet.absoluteFillObject, opacity: 0.14, borderTopWidth: 1, borderBottomWidth: 1, borderColor: "#dcebc9" },
+  neutralHalo: { position: "absolute", width: 76, height: 76, borderRadius: 38, borderWidth: 1, borderColor: COMMS.cyan, opacity: 0.5 },
+  neutralHead: { position: "absolute", top: 15, width: 24, height: 30, borderRadius: 12, backgroundColor: COMMS.cyanSoft },
+  neutralShoulders: { position: "absolute", bottom: 13, width: 58, height: 28, borderTopLeftRadius: 26, borderTopRightRadius: 26, backgroundColor: COMMS.line },
+  neutralCore: { position: "absolute", bottom: 23, width: 9, height: 9, borderRadius: 5, backgroundColor: COMMS.cyanBright },
+  fallbackText: { color: COMMS.textDim, fontSize: 11, lineHeight: 17, textAlign: "center" },
+  scanlines: { ...StyleSheet.absoluteFillObject, opacity: 0.14, borderTopWidth: 1, borderBottomWidth: 1, borderColor: COMMS.cyanSoft },
   copy: { flex: 1, flexBasis: 240, minWidth: 0, justifyContent: "center" },
-  personaTitle: { color: "#f5f2df", fontSize: 16, lineHeight: 22, fontWeight: "900" },
-  timeline: { color: "#9da994", fontSize: 11, lineHeight: 17, marginTop: 5 },
+  personaTitle: { color: COMMS.ice, fontSize: 16, lineHeight: 22, fontWeight: "900" },
+  timeline: { color: COMMS.textDim, fontSize: 11, lineHeight: 17, marginTop: 5 },
   statusRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 11 },
-  chip: { minHeight: 24, justifyContent: "center", paddingHorizontal: 8, borderRadius: 999, backgroundColor: "#1b291c", borderWidth: 1, borderColor: "#4c6147" },
-  chipText: { color: "#c8d7b7", fontSize: 10, fontWeight: "800" },
-  boundary: { color: "#aeb9a4", fontSize: 11, lineHeight: 18, marginTop: 11 },
-  rights: { color: "#d2ae59", fontSize: 10, lineHeight: 16, marginTop: 7 },
-  agentConsole: { width: "100%", borderTopWidth: 1, borderTopColor: "#354232", paddingTop: 14, gap: 10 },
+  chip: { minHeight: 24, justifyContent: "center", paddingHorizontal: 8, borderRadius: 999, backgroundColor: COMMS.raised, borderWidth: 1, borderColor: COMMS.line },
+  chipText: { color: COMMS.cyanSoft, fontSize: 10, fontWeight: "800" },
+  boundary: { color: COMMS.textDim, fontSize: 11, lineHeight: 18, marginTop: 11 },
+  rights: { color: WARN.amber, fontSize: 10, lineHeight: 16, marginTop: 7 },
+  agentConsole: { width: "100%", borderTopWidth: 1, borderTopColor: COMMS.lineSoft, paddingTop: 14, gap: 10 },
   agentConsoleHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  agentConsoleTitle: { color: "#f5f2df", fontSize: 15, fontWeight: "900" },
-  agentMeta: { color: "#9da994", fontSize: 10, marginTop: 3 },
-  providerCard: { gap: 9, padding: 11, borderWidth: 1, borderColor: "#66562d", borderRadius: 10, backgroundColor: "#15150d" },
+  agentConsoleTitle: { color: COMMS.ice, fontSize: 15, fontWeight: "900" },
+  agentMeta: { color: COMMS.textDim, fontSize: 10, marginTop: 3 },
+  providerCard: { gap: 9, padding: 11, borderWidth: 1, borderColor: COMMS.lineStrong, borderRadius: 10, backgroundColor: COMMS.panelAlt },
   providerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  providerTitle: { color: "#f6dda0", fontSize: 13, fontWeight: "900" },
-  providerMeta: { color: "#a8ad98", fontSize: 10, lineHeight: 15 },
-  providerDisclosure: { color: "#d4ceb3", fontSize: 11, lineHeight: 17 },
-  consentRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 9, borderRadius: 8, borderWidth: 1, borderColor: "#4f4930", backgroundColor: "#0d110b" },
-  consentMark: { color: "#d2ae59", fontSize: 16, lineHeight: 18 },
-  consentText: { flex: 1, color: "#c8c5b2", fontSize: 10, lineHeight: 16 },
-  secretInput: { minHeight: 44, borderWidth: 1, borderColor: "#806b35", borderRadius: 8, padding: 10, color: "#eef4df", backgroundColor: "#080b07", fontSize: 12 },
-  fieldLabel: { color: "#a8bd7d", fontSize: 10, fontWeight: "900", letterSpacing: 0.8, marginTop: 2 },
+  providerTitle: { color: COMMS.cyanBright, fontSize: 13, fontWeight: "900" },
+  providerMeta: { color: COMMS.textDim, fontSize: 10, lineHeight: 15 },
+  providerDisclosure: { color: COMMS.text, fontSize: 11, lineHeight: 17 },
+  providerStateRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center" },
+  providerStateChip: { minHeight: 24, justifyContent: "center", paddingHorizontal: 8, borderRadius: 999, backgroundColor: COMMS.raised, borderWidth: 1, borderColor: COMMS.line },
+  providerStateChipAttached: { borderColor: COMMS.good },
+  providerStateChipWarning: { borderColor: WARN.amberLine, backgroundColor: WARN.amberDeep },
+  providerStateChipError: { borderColor: WARN.dangerLine, backgroundColor: WARN.dangerDeep },
+  providerStateText: { color: COMMS.cyanSoft, fontSize: 10, fontWeight: "800" },
+  providerReceiptCard: { gap: 4, borderRadius: 8, padding: 9, borderWidth: 1, borderColor: COMMS.lineSoft, backgroundColor: COMMS.section },
+  providerReceiptTitle: { color: COMMS.cyanBright, fontSize: 10, fontWeight: "900" },
+  providerReceiptText: { color: COMMS.textDim, fontSize: 10, lineHeight: 15, fontFamily: "monospace" },
+  consentRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 9, borderRadius: 8, borderWidth: 1, borderColor: COMMS.lineSoft, backgroundColor: COMMS.section },
+  consentMark: { color: COMMS.cyan, fontSize: 16, lineHeight: 18 },
+  consentText: { flex: 1, color: COMMS.text, fontSize: 10, lineHeight: 16 },
+  secretInput: { minHeight: 44, borderWidth: 1, borderColor: COMMS.lineStrong, borderRadius: 8, padding: 10, color: COMMS.ice, backgroundColor: COMMS.spaceDeep, fontSize: 12 },
+  fieldLabel: { color: COMMS.cyan, fontSize: 10, fontWeight: "900", letterSpacing: 0.8, marginTop: 2 },
   choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
-  choiceButton: { minHeight: 34, justifyContent: "center", borderRadius: 8, paddingHorizontal: 11, borderWidth: 1, borderColor: "#4c6147", backgroundColor: "#101912" },
-  choiceButtonActive: { borderColor: "#d2ae59", backgroundColor: "#31301b" },
-  choiceText: { color: "#aeb9a4", fontSize: 11, fontWeight: "800" },
-  choiceTextActive: { color: "#f6dda0" },
-  transcript: { minHeight: 96, maxHeight: 320, padding: 10, gap: 8, borderWidth: 1, borderColor: "#354232", borderRadius: 10, backgroundColor: "#060b08" },
-  humanMessage: { alignSelf: "flex-end", maxWidth: "88%", padding: 9, borderRadius: 10, backgroundColor: "#243222" },
-  agentMessage: { alignSelf: "flex-start", maxWidth: "92%", padding: 9, borderRadius: 10, borderWidth: 1, borderColor: "#57664d", backgroundColor: "#111912" },
-  messageAuthor: { color: "#d2ae59", fontSize: 9, fontWeight: "900", marginBottom: 4 },
-  messageText: { color: "#e3ead8", fontSize: 12, lineHeight: 18 },
-  emptyTranscript: { color: "#73806e", fontSize: 11, textAlign: "center", marginVertical: 28 },
-  decisionCard: { gap: 5, borderLeftWidth: 3, borderLeftColor: "#6f9364", padding: 10, backgroundColor: "#101912" },
-  decisionTitle: { color: "#e6efd8", fontSize: 12, fontWeight: "900" },
-  decisionText: { color: "#c4d0ba", fontSize: 11, lineHeight: 17 },
-  decisionRisk: { color: "#e5bd6a", fontSize: 11, lineHeight: 17 },
-  alternativeText: { color: "#8e9c87", fontSize: 10, lineHeight: 15 },
-  confirmCard: { gap: 7, borderWidth: 1, borderColor: "#d2ae59", borderRadius: 10, padding: 11, backgroundColor: "#282313" },
-  confirmTitle: { color: "#f6dda0", fontSize: 12, fontWeight: "900" },
-  confirmText: { color: "#d8ceb0", fontSize: 11 },
-  input: { minHeight: 72, maxHeight: 150, borderWidth: 1, borderColor: "#52624a", borderRadius: 10, padding: 10, color: "#eef4df", backgroundColor: "#0b120d", textAlignVertical: "top", fontSize: 12, lineHeight: 18 },
+  choiceButton: { minHeight: 34, justifyContent: "center", borderRadius: 8, paddingHorizontal: 11, borderWidth: 1, borderColor: COMMS.line, backgroundColor: COMMS.raised },
+  choiceButtonActive: { borderColor: COMMS.cyan, backgroundColor: COMMS.panelAlt },
+  choiceText: { color: COMMS.textDim, fontSize: 11, fontWeight: "800" },
+  choiceTextActive: { color: COMMS.cyanBright },
+  transcript: { minHeight: 96, maxHeight: 320, padding: 10, gap: 8, borderWidth: 1, borderColor: COMMS.lineSoft, borderRadius: 10, backgroundColor: COMMS.spaceDeep, overflow: "scroll" },
+  humanMessage: { alignSelf: "flex-end", maxWidth: "88%", padding: 9, borderRadius: 10, backgroundColor: COMMS.raised },
+  agentMessage: { alignSelf: "flex-start", maxWidth: "92%", padding: 9, borderRadius: 10, borderWidth: 1, borderColor: COMMS.lineSoft, backgroundColor: COMMS.section },
+  messageAuthor: { color: COMMS.cyanBright, fontSize: 9, fontWeight: "900", marginBottom: 4 },
+  messageText: { color: COMMS.text, fontSize: 12, lineHeight: 18 },
+  emptyTranscript: { color: COMMS.textFaint, fontSize: 11, textAlign: "center", marginVertical: 28 },
+  decisionCard: { gap: 5, borderLeftWidth: 3, borderLeftColor: COMMS.cyan, padding: 10, backgroundColor: COMMS.panelAlt },
+  decisionTitle: { color: COMMS.ice, fontSize: 12, fontWeight: "900" },
+  decisionText: { color: COMMS.text, fontSize: 11, lineHeight: 17 },
+  decisionRisk: { color: WARN.amber, fontSize: 11, lineHeight: 17 },
+  alternativeText: { color: COMMS.textFaint, fontSize: 10, lineHeight: 15 },
+  confirmCard: { gap: 7, borderWidth: 1, borderColor: WARN.amberLine, borderRadius: 10, padding: 11, backgroundColor: WARN.amberDeep },
+  confirmTitle: { color: WARN.amberBright, fontSize: 12, fontWeight: "900" },
+  confirmText: { color: WARN.amberBright, fontSize: 11 },
+  input: { minHeight: 72, maxHeight: 150, borderWidth: 1, borderColor: COMMS.line, borderRadius: 10, padding: 10, color: COMMS.ice, backgroundColor: COMMS.section, textAlignVertical: "top", fontSize: 12, lineHeight: 18 },
   chatSmallInput: { minHeight: 40, maxHeight: 48, width: 64, flexGrow: 0, textAlignVertical: "center" },
   actionRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  actionButton: { minHeight: 38, justifyContent: "center", alignItems: "center", borderRadius: 8, paddingHorizontal: 14, backgroundColor: "#40563b", borderWidth: 1, borderColor: "#70805e" },
-  dangerButton: { backgroundColor: "#4b2925", borderColor: "#8a5049" },
-  actionButtonText: { color: "#f5f2df", fontSize: 11, fontWeight: "900" },
+  actionButton: { minHeight: 38, justifyContent: "center", alignItems: "center", borderRadius: 8, paddingHorizontal: 14, backgroundColor: COMMS.action, borderWidth: 1, borderColor: COMMS.lineStrong },
+  dangerButton: { backgroundColor: WARN.dangerDeep, borderColor: WARN.dangerLine },
+  actionButtonText: { color: COMMS.ice, fontSize: 11, fontWeight: "900" },
   disabled: { opacity: 0.42 },
-  traceCard: { gap: 4, padding: 9, borderRadius: 8, backgroundColor: "#0d1410", borderWidth: 1, borderColor: "#2d3a2b" },
-  chatStatusCard: { gap: 6, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: "#2d839d", backgroundColor: "#08202d" },
-  chatStatusTitle: { color: "#a5f3fc", fontSize: 12, fontWeight: "900" },
-  chatStatusMeta: { color: "#9fb3bd", fontSize: 10, lineHeight: 15 },
-  chatOrderChip: { minHeight: 24, justifyContent: "center", paddingHorizontal: 8, borderRadius: 999, backgroundColor: "#101912", borderWidth: 1, borderColor: "#4c6147" },
-  chatOrderChipNext: { borderColor: "#d2ae59", backgroundColor: "#31301b" },
-  chatOrderText: { color: "#aeb9a4", fontSize: 10, fontWeight: "800" },
-  chatOrderTextNext: { color: "#f6dda0" },
+  traceCard: { gap: 4, padding: 9, borderRadius: 8, backgroundColor: COMMS.section, borderWidth: 1, borderColor: COMMS.lineSoft },
+  chatStatusCard: { gap: 6, borderRadius: 10, padding: 10, borderWidth: 1, borderColor: COMMS.lineStrong, backgroundColor: COMMS.panelAlt },
+  chatStatusTitle: { color: COMMS.cyanBright, fontSize: 12, fontWeight: "900" },
+  chatStatusMeta: { color: COMMS.textDim, fontSize: 10, lineHeight: 15 },
+  chatOrderChip: { minHeight: 24, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, backgroundColor: COMMS.raised, borderWidth: 1, borderColor: COMMS.line, maxWidth: "100%" },
+  chatOrderChipNext: { borderColor: COMMS.cyan, backgroundColor: COMMS.panelAlt },
+  chatOrderChipTextBlock: { flexShrink: 1, minWidth: 0 },
+  chatOrderText: { color: COMMS.textDim, fontSize: 10, fontWeight: "800" },
+  chatOrderTextNext: { color: COMMS.cyanBright },
+  chatOrderEraText: { color: COMMS.textFaint, fontSize: 7, fontWeight: "700", lineHeight: 10 },
+  chatAvatarBox: { borderWidth: 1, borderRadius: 5, borderColor: COMMS.line, backgroundColor: COMMS.spaceDeep, overflow: "hidden", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  chatAvatarImage: { width: "100%", height: "100%" },
+  chatAvatarGlyph: { color: COMMS.cyan, fontSize: 11 },
+  messageSpeakerRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4, flexWrap: "wrap" },
+  messageEraText: { color: COMMS.textFaint, fontSize: 8, fontWeight: "700", fontFamily: "monospace" },
   chatSpeakerRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, alignItems: "center" },
-  chatSpeakerPortraitBox: { width: 72, height: 72, maxWidth: "100%", borderWidth: 1, borderRadius: 8, borderColor: "#70805e", backgroundColor: "#071009", overflow: "hidden", alignItems: "center", justifyContent: "center", position: "relative" },
+  chatSpeakerPortraitBox: { width: 72, height: 72, maxWidth: "100%", borderWidth: 1, borderRadius: 8, borderColor: COMMS.line, backgroundColor: COMMS.spaceDeep, overflow: "hidden", alignItems: "center", justifyContent: "center", position: "relative" },
   chatSpeakerPortrait: { width: "100%", height: "100%" },
   chatSpeakerCopy: { flex: 1, flexBasis: 180, minWidth: 0, gap: 3 },
-  chatInterruptCard: { gap: 7, borderWidth: 1, borderColor: "#d2ae59", borderRadius: 10, padding: 11, backgroundColor: "#282313" },
-  chatInterruptTitle: { color: "#f6dda0", fontSize: 12, fontWeight: "900" },
-  chatInterruptText: { color: "#d8ceb0", fontSize: 11, lineHeight: 17 },
-  chatCheckpointRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: "#354232", borderRadius: 8, padding: 8, backgroundColor: "#0d1410" },
-  traceTitle: { color: "#829b76", fontSize: 9, fontWeight: "900", letterSpacing: 1.1 },
-  traceText: { color: "#92a08c", fontSize: 10, lineHeight: 15 },
-  errorText: { color: "#ef9a8c", fontSize: 11, lineHeight: 17 },
+  chatInterruptCard: { gap: 7, borderWidth: 1, borderColor: WARN.amberLine, borderRadius: 10, padding: 11, backgroundColor: WARN.amberDeep },
+  chatInterruptTitle: { color: WARN.amberBright, fontSize: 12, fontWeight: "900" },
+  chatInterruptText: { color: WARN.amberBright, fontSize: 11, lineHeight: 17 },
+  chatCheckpointRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: COMMS.lineSoft, borderRadius: 8, padding: 8, backgroundColor: COMMS.section },
+  traceTitle: { color: COMMS.cyan, fontSize: 9, fontWeight: "900", letterSpacing: 1.1 },
+  traceText: { color: COMMS.textDim, fontSize: 10, lineHeight: 15 },
+  errorText: { color: WARN.danger, fontSize: 11, lineHeight: 17 },
 });

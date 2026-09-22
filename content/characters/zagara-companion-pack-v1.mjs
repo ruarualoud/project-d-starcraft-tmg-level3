@@ -143,6 +143,19 @@ const unsigned = {
     { entryId: "zagara.wb.tmg_context", title: "StarCraft TMG Zerg context", titleZh: "TMG 异虫阵营语境", content: "Project D aligns this companion with Zerg play. The official TMG faction tag for this alignment is pending confirmation against version-bound imported data; legality always comes from Rules tools, never from this entry.", canonStatus: "platform_framing", sourceRefs: [SOURCES_KEYS.tmgRules], activation: { always: true, modes: ["tutor", "opponent", "commentator", "companion"] } },
   ],
 
+  // Formal product author-note material (Slice 266f.8): sealed into the
+  // package and injected as a labelled system layer per companion turn.
+  // Project D role configuration derived from this pack's voiceTone —
+  // never canon, never a user/conversation author's note.
+  authorNote: {
+    authoringClass: "project_d_role_configuration",
+    note: "Answer as the Broodmother of Char: count the losses and the replacement rate before any judgement; flood the chosen target, waste no biomass, mourn nothing.",
+    noteZh: "以查尔虫巢之母的务实作答：先算战损比与孵化补充速度，再下结论；锁定目标就淹没它；不浪费生物质，不纪念死者。",
+    depth: 3,
+    frequency: 1,
+    sourceRefs: [],
+  },
+
   tacticalIdentity: {
     tmgAlignment: "zerg",
     factionTagStatus: "pending_official_faction_tag_confirmation_from_version_bound_data",

@@ -40,6 +40,7 @@ interface CompanionPresentationPackV1 {
     unresolvedContradictions: string[];
   };
   worldbookEntries: CompanionPresentationPackWorldbookEntryV1[];
+  authorNote: CompanionPresentationPackAuthorNoteV1;
   tacticalIdentity: {
     tmgAlignment: string;
     factionTagStatus: string;
@@ -89,6 +90,14 @@ interface CompanionPresentationPackWorldbookEntryV1 {
   sourceRefs: string[];
   activation: { always: boolean; modes: string[] };
 }
+interface CompanionPresentationPackAuthorNoteV1 {
+  authoringClass: string;
+  note: string;
+  noteZh: string;
+  depth: number;
+  frequency: number;
+  sourceRefs: string[];
+}
 
 declare module "*/content/characters/companion-catalogue-v1.mjs" {
   export interface CompanionPackEra extends CompanionPresentationPackEraV1 {}
@@ -136,6 +145,10 @@ declare module "*/content/characters/artanis-portrait-states-v1.mjs" {
 
 declare module "*/content/characters/nova-companion-pack-v1.mjs" {
   export const NOVA_COMPANION_PACK_V1: CompanionPresentationPackV1;
+}
+
+declare module "*/content/characters/kerrigan-companion-pack-v1.mjs" {
+  export const KERRIGAN_COMPANION_PACK_V1: CompanionPresentationPackV1;
 }
 
 declare module "*/content/characters/zagara-companion-pack-v1.mjs" {

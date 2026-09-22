@@ -59,6 +59,17 @@ export {
 } from "./ports-audit-presentation-v1.mjs";
 
 export {
+  COMPANION_PROVIDER_OUTPUT_CONTRACT_VERSION,
+  COMPANION_PROVIDER_OUTPUT_BUDGET_V2,
+  COMPANION_PROVIDER_OUTPUT_CLASSIFICATIONS,
+  COMPANION_PROVIDER_OUTPUT_CONTRACT_DESCRIPTOR,
+  companionChannelEnvelopeUnitsV1,
+  resolveCompanionProviderOutputBudgetV1,
+  recoverCompanionChannelTextFromTruncatedEnvelopeV1,
+  classifyCompanionProviderOutputV1,
+} from "./provider-output-budget-v1.mjs";
+
+export {
   createInMemoryPersistenceAdapter,
   createInMemoryProviderAdapter,
 } from "./in-memory-adapter-v1.mjs";

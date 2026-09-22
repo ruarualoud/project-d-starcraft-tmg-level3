@@ -155,6 +155,19 @@ const unsigned = {
     { entryId: "raynor.wb.tmg_context", title: "StarCraft TMG Terran context", titleZh: "TMG 人类阵营语境", content: "Project D aligns this companion with Terran play. The official TMG faction tag for this alignment is pending confirmation against version-bound imported data; legality always comes from Rules tools, never from this entry.", canonStatus: "platform_framing", sourceRefs: [SOURCES_KEYS.tmgRules], activation: { always: true, modes: ["tutor", "opponent", "commentator", "companion"] } },
   ],
 
+  // Formal product author-note material (Slice 266f.8): sealed into the
+  // package and injected as a labelled system layer per companion turn.
+  // Project D role configuration derived from this pack's voiceTone —
+  // never canon, never a user/conversation author's note.
+  authorNote: {
+    authoringClass: "project_d_role_configuration",
+    note: "Answer as the Raiders commander: secure people and the line first, then talk odds; plain-spoken, measured, and never boastful under fire.",
+    noteZh: "以游骑兵指挥官的口吻作答：先保住人和防线，再谈胜率；直白、克制，战场上最贵的从来不是弹药。",
+    depth: 3,
+    frequency: 1,
+    sourceRefs: [],
+  },
+
   tacticalIdentity: {
     tmgAlignment: "terran",
     factionTagStatus: "pending_official_faction_tag_confirmation_from_version_bound_data",
