@@ -15,6 +15,15 @@
 // contracted public field set is enforced at generation time. The runtime's
 // normalization boundary and full schema/Rules validation still run on the
 // decoded output; nothing is invented, filled or waived.
+//
+// Round 7+ generation-contract repairs (sub-slice 269.10+270.8): the user
+// explicitly authorized continued real BYOK attempts until one actual
+// generated 2000-point roster plus initial RosterPlan passes the Rules-owned
+// port, bounded to three new repair/live cycles (rounds 7-9; the flag map
+// below is the hard maximum — no tenth flag exists). Each attempt is
+// separately locked, costed and retained with zero automatic retry; 401 /
+// 402 / 403, ambiguous dispatch and missing secure attachment still stop
+// immediately and are never repairable.
 
 import { mkdir, open, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -99,10 +108,22 @@ const REPAIR_FLAGS = new Map([
   ["--repair-round-4-final-envelope-stamp", 4],
   ["--repair-round-5-after-output-alias-normalization", 5],
   ["--repair-round-6-after-strict-schema-generation", 6],
+  ["--repair-round-7-after-domain-integer-bounds", 7],
+  ["--repair-round-8-after-generation-contract-repair", 8],
+  ["--repair-round-9-after-generation-contract-repair", 9],
 ]);
+// Failure classes a subsequent explicitly flagged repair attempt may chain
+// from: public-output contract violations only (typed validation on the
+// decoded output). Auth stops (401/402/403), ambiguous dispatch, missing
+// attachment, HTTP rejections, refusals, incomplete output and usage gaps
+// are never repairable — they stop the lane immediately.
 const REPAIRABLE_FAILURE_CODES = new Set([
   "ROSTER_STRATEGIST_OUTPUT_INVALID",
   "ROSTER_STRATEGIST_FOUNDATION_INVALID",
+  "ROSTER_STRATEGIST_PROPOSALS_INVALID",
+  "ROSTER_STRATEGIST_COMPARISON_INVALID",
+  "ROSTER_STRATEGIST_REVISION_INVALID",
+  "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID",
 ]);
 const AUTH_STOP_CODES = new Set([401, 402, 403]);
 
