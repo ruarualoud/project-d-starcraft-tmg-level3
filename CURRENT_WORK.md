@@ -8,6 +8,14 @@ historical entry only when a linked task requires it.
 
 ### 2026-09-23 T23 / S248 — r54 Queen token missing-search family repaired
 
+**Follow-up:**resume64256 also exited1, before any new call: historical proposal
+failure omitted from the observer's explicit-resume list but already present
+in Bot verified-Apply closure. Both now use one decision-outcome registry;
+old issues retained, new/auth/budget/replay failures still block. Existing
+durable verifier new`--proposal-recovery-parity-only` red→one green,0Provider,
+no other mode rerun.128calls/13,509,011accounted units/¥18.151836 unchanged.
+Both prior processes terminal; start the repaired same-r54 resume next.
+
 **51562 confirmed terminal exit1** at21:25:35Z. r54 is accepted/replayed;
 the next `spawn_creep_tumor` twice submitted(14000,13000), correctly rejected
 for missing Queen base contact. No Host asset option receipt: lifecycle

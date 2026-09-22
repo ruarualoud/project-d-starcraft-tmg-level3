@@ -9,12 +9,20 @@ export const STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1 = Object.freeze
   "LIVE_DECISION_PROVIDER_OUTPUT_TRUNCATED",
 ]);
 
-const explicitResumeCodes = new Set([
+// Keep admission and post-Apply closure on the same typed decision outcomes.
+// Admission never marks a finding resolved and applies only to an explicit
+// later run. New failures and Rules/auth/budget failures remain blocking.
+export const STARCRAFT_TMG_RECOVERABLE_DECISION_FINDING_CODES_V1 = Object.freeze([
   "LIVE_DECISION_ACTION_DID_NOT_CONVERGE",
+  "LIVE_DECISION_PARAMETERIZED_PROPOSAL_DID_NOT_CONVERGE",
+  "LIVE_DECISION_PLANNER_DID_NOT_CONVERGE",
+  "LIVE_DECISION_PROVIDER_OUTPUT_INVALID",
   "LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED",
   "LIVE_DECISION_TERMINAL_TOOL_INVALID",
   ...STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1,
 ]);
+const explicitResumeCodes = new Set(
+  STARCRAFT_TMG_RECOVERABLE_DECISION_FINDING_CODES_V1);
 
 export function isStarcraftTmgHistoricalResumeFindingV1(finding, input = {}) {
   return input.allowExistingRetryableFinding === true

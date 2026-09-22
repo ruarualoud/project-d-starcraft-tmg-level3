@@ -63,6 +63,25 @@ selection remain to be observed on the resumed run.
 
 ## Continuation and accounting
 
+The first resume (64256) subsequently exited before a new Provider call: the
+startup observer admitted historical action/semantic failures but omitted
+`LIVE_DECISION_PARAMETERIZED_PROPOSAL_DID_NOT_CONVERGE`, although the Bot's
+verified-replay closure list already included it. This was a separate recovery
+list drift, not another unsuccessful placement solve. The old finding and all
+paid evidence remain preserved.
+
+`decision-recovery-policy-v1.mjs` now owns the shared decision-outcome list for
+both explicit historical admission and verified-Apply issue closure. An old
+finding can reach the authorized retry without being prematurely marked
+resolved. New same-run failures, unknown High codes, auth, budget and replay
+failures still block. Existing transport exports remain compatible.
+
+Only the existing durable-boundary verifier's new
+`--proposal-recovery-parity-only` mode ran: real r54 finding red → one green,
+explicit/history guards, no premature closure and a subsequent verified-Apply
+closure fixture. **0 Provider / 0 Room mutation / ¥0**, no other mode repeated.
+Both failed processes are terminal; a new same-r54 resume may now proceed.
+
 Before resume: 47 new accepted/replayed actions + 7 explicit prefix = r54.
 128 physical calls / estimated **¥18.151836**; these include the two rejected
 paid Action submissions, which are preserved. Both seats remain Flash, no Pro

@@ -21,6 +21,50 @@ const argument = process.argv.find((entry) =>
 assert(argument, "--run-directory is required");
 const runDirectory = path.resolve(ROOT,
   argument.slice("--run-directory=".length));
+if (process.argv.includes("--proposal-recovery-parity-only")) {
+  const db = new DatabaseSync(path.join(runDirectory,
+    "seats/player2/bot-seat.sqlite"), { readOnly: true });
+  let record;
+  try {
+    record = JSON.parse(db.prepare(
+      "SELECT record_json FROM sc_hosted_bot_seat_records LIMIT 1").get().record_json);
+  } finally { db.close(); }
+  const finding = record.issues.find((entry) => entry.code
+    === "LIVE_DECISION_PARAMETERIZED_PROPOSAL_DID_NOT_CONVERGE" && !entry.resolvedAt);
+  assert(finding, "actual r54 unresolved proposal finding required");
+  assert.equal(record.lastAppliedStateRevision, 54);
+  assert.equal(record.inflight?.applyRequest ?? null, null);
+  const options = { allowExistingRetryableFinding: true,
+    startedAt: new Date(Date.parse(finding.occurredAt) + 1000).toISOString() };
+  assert.equal(isStarcraftTmgHistoricalResumeFindingV1(finding, options), true,
+    "explicit resume must reach the repaired proposal path, not block on its old finding");
+  assert.equal(isStarcraftTmgHistoricalResumeFindingV1(finding,
+    { ...options, allowExistingRetryableFinding: false }), false);
+  assert.equal(isStarcraftTmgHistoricalResumeFindingV1(finding,
+    { ...options, startedAt: finding.occurredAt }), false,
+  "a new same-run failure still blocks");
+  for (const code of ["REPLAY_MISMATCH", "SEAT_GRANT_INVALID",
+    "provider_http_403", "provider_budget_exceeded", "UNKNOWN_HIGH_FAILURE"]) {
+    assert.equal(isStarcraftTmgHistoricalResumeFindingV1({ ...finding, code }, options), false);
+  }
+  assert.equal(reconcileStarcraftTmgBotSeatReplayIssuesV1(record, options.startedAt)
+    .find((entry) => entry.code === finding.code).resolvedAt, undefined,
+  "resume admission is not successful recovery evidence");
+  const lastTrace = record.traces.at(-1);
+  const recovered = { ...record, driveStatus: "action_applied_replay_verified",
+    lastAppliedStateRevision: 55, lastReplayMatchesCurrent: true,
+    lastReceiptHash: "contact-recovery-fixture-receipt",
+    traces: [...record.traces, { ...lastTrace,
+      stateHash: record.lastAttemptedStateHash, postStateRevision: 55,
+      applyReceiptHash: "contact-recovery-fixture-receipt", replayMatchesCurrent: true }] };
+  assert(reconcileStarcraftTmgBotSeatReplayIssuesV1(recovered, options.startedAt)
+    .find((entry) => entry.code === finding.code).resolvedAt,
+  "a subsequent verified Apply closes but preserves the historical issue");
+  console.log(JSON.stringify({ passed: true, revision: 54,
+    explicitHistoricalResumeOnly: true, newAndAuthorityFailuresStillBlock: true,
+    noPrematureIssueResolution: true, providerCalls: 0, roomMutations: 0, costCny: 0 }));
+  process.exit(0);
+}
 if (process.argv.includes("--fork-prefix-accounting-only")) {
   const { backup } = await import("node:sqlite");
   const { mkdir, access } = await import("node:fs/promises");
