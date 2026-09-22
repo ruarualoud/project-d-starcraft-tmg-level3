@@ -2,15 +2,23 @@
 
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 
 import { createStarcraftTmgRefereeCrypto } from
   "../packages/authoritative-engine/referee-crypto-v1.mjs";
-import { searchStarcraftTmgLegalFormationOptionsV1 } from
+import { projectStarcraftTmgIncomingStationaryFireEstimateV1,
+  searchStarcraftTmgLegalFormationOptionsV1 } from
   "../packages/online-agent-session/legal-formation-search-v1.mjs";
+import { buildStarcraftTmgTacticalRelationshipGraphV1 } from
+  "../packages/online-agent-session/tactical-relationship-graph-v1.mjs";
+import { createOfficialSpecialTerrainAgreementV1,
+  evaluateOfficialSpecialTerrainLineOfSightBatchV1 } from
+  "../packages/rule-atoms/official-special-terrain-rules-kernel-v1.mjs";
+import { createOfficialTerrainPieceV1 } from
+  "../packages/rule-atoms/official-terrain-los-rules-kernel-v1.mjs";
 import { createStarcraftTmgPrivatePayloadCodec } from
   "../packages/room-store/room-store-v1.mjs";
 import { createSqliteStarcraftTmgRoomStore } from
@@ -324,5 +332,117 @@ async function worker() {
   }
 }
 
-if (process.argv.includes("--worker")) await worker();
+// This regression reads the already-applied failing scene, without rebuilding
+// the full room runtime, replaying actions, or opening its database for writes.
+async function specialTerrainLosRegression() {
+  const started = performance.now();
+  const privateState = JSON.parse(await readFile(
+    path.join(runDirectory, "runner-private.json"), "utf8"));
+  const codec = createStarcraftTmgPrivatePayloadCodec({
+    key: privateState.storeEncryptionKeyBase64,
+    keyId: `ticket23-slice248-room-store-${path.basename(runDirectory)}`,
+    trustLevel: "development_persistent",
+  });
+  const database = new DatabaseSync(path.join(runDirectory, "room.sqlite"),
+    { readOnly: true });
+  try {
+    const row = database.prepare(
+      "SELECT aggregate_cipher FROM sc_rooms WHERE room_id = ?",
+    ).get(privateState.roomId);
+    const { envelope } = codec.decode(row.aggregate_cipher,
+      `room:${privateState.roomId}:aggregate`);
+    assert.equal(envelope.stateRevision, targetStateRevision);
+    const state = envelope.state;
+    const onField = state.pieces.filter((piece) => piece.isOnField
+      && !piece.isDestroyed && piece.currentModels > 0);
+    const attacker = onField.find((piece) => /goliath/i.test(piece.name));
+    const target = onField.find((piece) => /hydralisk/i.test(piece.name));
+    assert(attacker && target, "the actual failed Goliath/Hydralisk scene is required");
+    const queries = attacker.models.filter((model) => !model.isDestroyed)
+      .flatMap((left) => target.models.filter((model) => !model.isDestroyed)
+        .map((right) => ({ queryId: `${left.id}:${right.id}`,
+          actorUnitId: attacker.id, attackerModelId: left.id,
+          targetUnitId: target.id, targetModelId: right.id })));
+    const los = (value) => evaluateOfficialSpecialTerrainLineOfSightBatchV1({
+      state: value, queries, dataBundle: value.officialTerrainLosDataBundle,
+    });
+    // Before repair, this exact persisted scene fails at context verification:
+    // SPECIAL_TERRAIN_IMPASSABLE_DERIVATION_INVALID (flat blocking terrain).
+    const batch = los(state);
+    assert.equal(batch.queryCount, queries.length);
+    assert(batch.results.every((entry) => typeof entry.result.visible === "boolean"));
+    const graphFor = (value) => buildStarcraftTmgTacticalRelationshipGraphV1({
+      state: value, seatKey: target.sideKey,
+      request: { subjectUnitIds: [target.id], targetIds: [attacker.id] },
+    });
+    const graph = graphFor(state);
+    assert.equal(graph.sourceReceipts.specialTerrainLosBatchFailure, null);
+    const edge = graph.relationships.find((entry) =>
+      entry.fromUnitId === target.id && entry.toUnitId === attacker.id);
+    assert(edge);
+    assert.equal(edge.lineOfSight.unknownModelPairCount, 0);
+    const visibleCount = batch.results.filter((entry) => entry.result.visible).length;
+    assert.equal(edge.lineOfSight.visibleModelPairCount, visibleCount);
+    assert.equal(edge.threats.toFrom.stationaryUnknownProfileKeys.length, 0);
+    if (visibleCount > 0) assert(edge.threats.toFrom.stationaryProfileKeys.length > 0,
+      "actual visible in-range fire must reach the Agent relationship surface");
+
+    const blocker = state.board.terrain.find((piece) => piece.terrainKind === "impassable"
+      && !piece.standableHorizontalSurface);
+    assert(blocker);
+    function changeBlocker(properties, agreementChanges = {}) {
+      const altered = structuredClone(state);
+      altered.board.terrain = altered.board.terrain.map((piece) => piece.id === blocker.id
+        ? createOfficialTerrainPieceV1({ ...piece,
+          openings: piece.setupAgreement.openings, ...properties }) : piece);
+      altered.board.specialTerrainAgreement = createOfficialSpecialTerrainAgreementV1({
+        terrainEntries: altered.board.specialTerrainAgreement.terrainEntries.map((entry) =>
+          entry.terrainId === blocker.id ? { ...entry, ...agreementChanges } : entry),
+      });
+      return altered;
+    }
+    assert.throws(() => los(changeBlocker({ standableHorizontalSurface: true })),
+      /SPECIAL_TERRAIN_IMPASSABLE_DERIVATION_INVALID/,
+      "an unbound standable upper surface is not a flat obstacle");
+    assert.throws(() => los(changeBlocker({ size: 1 })),
+      /SPECIAL_TERRAIN_IMPASSABLE_SIZE_INVALID/,
+      "flat obstacle support must not permit an impassable Size 0/1");
+    assert.throws(() => los(changeBlocker({}, {
+      adjacentElevationPairs: [["ground", "mid"]],
+      accessPoints: [{ accessPointId: "regression-access", role: "generic",
+        footprint: blocker.footprint, connects: ["ground", "mid"] }],
+    })), /SPECIAL_TERRAIN_IMPASSABLE_DERIVATION_INVALID/,
+    "impassable and an actual elevation access connection are contradictory");
+
+    const unresolved = changeBlocker({ standableHorizontalSurface: true });
+    const unknownGraph = graphFor(unresolved);
+    assert.match(unknownGraph.sourceReceipts.specialTerrainLosBatchFailure,
+      /SPECIAL_TERRAIN_IMPASSABLE_DERIVATION_INVALID/);
+    const unknownEstimate = projectStarcraftTmgIncomingStationaryFireEstimateV1(
+      unresolved, target.id, unknownGraph);
+    assert.equal(unknownEstimate.status,
+      "unknown_current_position_stationary_attack_domain");
+    assert.equal(unknownEstimate.unknownNeverPromotedToSafeOrZero, true);
+    assert(unknownEstimate.possibleAttackProfiles.length > 0);
+    const report = { schema: "ticket23_slice248_special_terrain_los_regression_v1",
+      ok: true, runId: path.basename(runDirectory), stateRevision: envelope.stateRevision,
+      stateHash: envelope.stateHash, terrainCount: state.board.terrain.length,
+      queryCount: batch.queryCount, visibleCount,
+      blockedCount: batch.queryCount - visibleCount,
+      minimumBaseEdgeDistanceMilliInches: Math.min(...batch.results.map((entry) =>
+        entry.result.modelEdgeDistanceMilliInches)),
+      stationaryProfileKeys: edge.threats.toFrom.stationaryProfileKeys,
+      specialTerrainLosBatchFailure: graph.sourceReceipts.specialTerrainLosBatchFailure,
+      invalidContextStillRejected: true, unknownEstimateStatus: unknownEstimate.status,
+      durationMs: Math.round(performance.now() - started),
+      providerCalls: 0, roomMutations: 0, trainingTruth: false };
+    await writeFile(path.join(ROOT,
+      "build/ticket23-slice248-special-terrain-los-repair-v1-report.json"),
+    `${JSON.stringify(report, null, 2)}\n`);
+    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  } finally { database.close(); }
+}
+
+if (process.argv.includes("--special-terrain-los-only")) await specialTerrainLosRegression();
+else if (process.argv.includes("--worker")) await worker();
 else parent();

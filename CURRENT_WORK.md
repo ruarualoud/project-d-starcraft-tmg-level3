@@ -42,6 +42,24 @@ classic-map art fidelity and are superseded by the semantic-map reset above.
 
 ### 2026-09-22 Ticket 23 / Slice 248 checkpoint
 
+The special-terrain LOS root is now repaired: setup-agreed nonstandable
+impassable terrain does not need a fictional adjacent elevation pair. Actual
+access connections and Size 0/1 still cannot be labelled impassable. The
+existing formation diagnostic now has a read-only `--special-terrain-los-only`
+mode over the persisted failing room, avoiding full runtime reconstruction.
+The original r6 reproduced the exact derivation failure before the fix, then
+passed once in 1,433ms after it (0 Provider calls/Room mutations). Both actual
+Goliath→Hydralisk pairs are blocked by the central Size 3 temple; the closest
+base gap of 21.075in is not proof of visibility. This corrects the earlier
+implication that the deployment was necessarily exposed. The old observation
+was still defective because it substituted failed LOS for a negative result;
+the old branch stays non-training. Deliberately invalid context still reports
+typed unknown, never zero threat. Report:
+`docs/ticket-23-slice-248-special-terrain-los-repair-2026-09-22.md`.
+The current r5 resume has a completed Raptor Planner and four cached formation
+options outside the 24in stationary band; none has a LOS failure. Its completed
+queries can be preserved and continuation starts at Action, not Planning.
+
 The first post-spacing fork `20260922131200726` is Authority/Rules legal at
 r6 but is non-training strategy evidence. Its Hydralisk formation sat 21.075in
 from Goliath; Scatter Missiles has a 24in printed range, yet a failed special-

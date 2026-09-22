@@ -338,8 +338,14 @@ function verifyContext(state) {
           pair.join(":") === accessPoint.connects.join(":")
         ))
       ))) fail("SPECIAL_TERRAIN_ENTRY_MISMATCH", terrainId);
-    const derivedImpassable = entry.adjacentElevationPairs.length > 0
-      && entry.accessPoints.length === 0;
+    // A setup-agreed flat obstacle has no standable upper level to connect.
+    // Do not require the compiler to invent an elevation pair for that case.
+    // Elevated surfaces still need the existing adjacency/access derivation;
+    // neither an access connection nor Size 0/1 may be labelled impassable.
+    const agreedFlatObstacle = terrainPiece.terrainKind === "impassable"
+      && !terrainPiece.standableHorizontalSurface;
+    const derivedImpassable = entry.accessPoints.length === 0
+      && (entry.adjacentElevationPairs.length > 0 || agreedFlatObstacle);
     if ((terrainPiece.terrainKind === "impassable") !== derivedImpassable) {
       fail("SPECIAL_TERRAIN_IMPASSABLE_DERIVATION_INVALID", terrainId);
     }
