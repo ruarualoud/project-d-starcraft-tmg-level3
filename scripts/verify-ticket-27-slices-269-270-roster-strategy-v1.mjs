@@ -993,6 +993,7 @@ function aliasedEnvelopeFoundationOutput() {
   const base = cheapFoundationOutput();
   return { channels: { roster_strategy: {
     scoreRoute: base.scoreRoute,
+    scoreRouteAuthority: base.scoreRouteAuthority,
     opponentHypotheses: [{
       id: "hyp-zerg-pressure",
       archetype: "zerg_early_pressure",
@@ -1618,6 +1619,94 @@ await expectFailure(269, () => strategistNoAuthority.planRoster(
   "a declared mission-grounded schedule while the authority is missing "
     + "must fail closed");
 
+// ----------------------- round-10 schedule-window string bound (269.17)
+// The single authorized round-10 live cycle (269.16+270.9) failed closed on
+// its first locked call: now grounding the schedule in the sealed mission
+// authority, the model wrote window labels above the strict schema's
+// 64-character cap, which 269.7 had authored without a domain basis — the
+// same defect class as the round-6 integer bound (269.9). Saved detail
+// (repair-round-10-report.json, failureDetail recorded truncated to 200
+// characters by the runner's failure-report discipline):
+const ROUND10_SAVED_FAILURE_DETAIL =
+  "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:$.scoreRoute"
+    + ".targetVpSchedule[1].window:string_too_long,$.scoreRoute"
+    + ".targetVpSchedule[2].window:string_too_long,$.scoreRoute"
+    + ".targetVpSchedule[4].wind";
+function capturedRound10FoundationOutput() {
+  const base = cheapFoundationOutput();
+  // The exact model window texts were never persisted
+  // (rawResponsePersisted: false; the failure detail carries path:code
+  // only), so the replay uses the smallest representative over-bound values
+  // (65 characters against the preserved v1.3.0 cap of 64) at exactly the
+  // saved issue paths [1], [2] and [4].
+  const overBound = (label) => `${label}:${"x".repeat(65)}`.slice(0, 65);
+  return {
+    ...base,
+    scoreRoute: { ...base.scoreRoute, scheduleStatus: "declared",
+      targetVpSchedule: [
+        { window: "round:2", plannedCumulativeVp: 2 },
+        { window: overBound("round:2-marker-scoring-starts"),
+          plannedCumulativeVp: 2 },
+        { window: overBound("round:3-midgame-marker-rotation"),
+          plannedCumulativeVp: 4 },
+        { window: "round:4", plannedCumulativeVp: 5 },
+        { window: overBound("round:5-final-marker-tally"),
+          plannedCumulativeVp: 7 },
+      ] },
+  };
+}
+// Reproduce the saved failure byte-identically against the preserved
+// round-10 (contract set v1.3.0) bound: restoring the documented maximum of
+// 64 on exactly the implicated field must yield exactly the saved issues at
+// the saved paths, formatted exactly as the runner records them (the saved
+// detail is the runner's 200-character truncation).
+const round10SavedBoundSchema = JSON.parse(JSON.stringify(
+  foundationContract.providerSchema));
+round10SavedBoundSchema.properties.scoreRoute.properties.targetVpSchedule
+  .items.properties.window = { type: "string", minLength: 1, maxLength: 64 };
+const round10SavedValidation = validateStarcraftTmgProviderJsonSchemaValueV1(
+  round10SavedBoundSchema, capturedRound10FoundationOutput());
+const round10SavedDetail =
+  "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:"
+  + round10SavedValidation.issues.slice(0, 8)
+    .map((issue) => `${issue.path}:${issue.code}`).join(",");
+check(269, round10SavedValidation.ok === false
+  && round10SavedValidation.issues.length === 3
+  && round10SavedDetail.slice(0, 200) === ROUND10_SAVED_FAILURE_DETAIL,
+  "offline replay must reproduce the exact saved round-10 schema-bound "
+    + "failure byte-identically "
+    + "(OFFLINE_REPLAY_MATCHES_SAVED_ROUND10_FAILURE)");
+// Post-repair acceptance (fail-first under the v1.3.0 bound): the identical
+// captured shape must satisfy the repaired strict schema, and every schedule
+// window bound must be the domain rule — the domain accepts any non-empty
+// window label, so the bound is the binding runtime validator's public-text
+// cap (2,000), never a re-authored value-specific cap.
+const round10RepairedValidation = validateStarcraftTmgProviderJsonSchemaValueV1(
+  foundationContract.providerSchema, capturedRound10FoundationOutput());
+check(269, round10RepairedValidation.ok === true
+  && foundationContract.providerSchema.properties.scoreRoute.properties
+    .targetVpSchedule.items.properties.window.maxLength === 2_000
+  && comparisonContract.providerSchema.properties.lossResourceBudget
+    .properties.plannedLossBudget.items.properties.window.maxLength === 2_000,
+  "the captured round-10 shape must pass the repaired schema, whose schedule "
+    + "window bounds are the domain rule (runtime public-text cap 2,000), "
+    + "not a value-specific cap");
+// End-to-end: the captured round-10 foundation plans normally through the
+// runtime — the runtime accepts the domain-legal window labels and the
+// grounding contract is satisfied, proving only the generation schema was
+// too tight.
+const round10Session = await strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    strategy_foundation: () => capturedRound10FoundationOutput() }) });
+check(269, verifyRosterPlanRoundTripV1(round10Session.plan) === true
+  && round10Session.plan.scoreRoute.scheduleStatus === "declared"
+  && round10Session.plan.scoreRoute.targetVpSchedule.length === 5
+  && round10Session.plan.rosterCandidate.legalityStatus === "legal"
+  && round10Session.sessionReceipt.scoreRouteAuthorityStatus
+    === "mission_grounded",
+  "the captured round-10 foundation must plan end-to-end: only the "
+    + "generation schema was too tight");
+
 check(269, bundle.bundleHash === bundleHashBefore
   && hashStarcraftTmgContract(authority.state)
     === labDescriptor.sourceStateHash,
@@ -1672,6 +1761,7 @@ const report = {
       String(round9ComparisonReplayError?.message || ""),
     round9JustificationReplayFailureDetail:
       String(justificationReplayError?.message || ""),
+    round10OfflineReplayFailureDetail: round10SavedDetail,
     hiddenChainOfThoughtIncluded: false,
     hostPreferenceWeights: false,
   },
