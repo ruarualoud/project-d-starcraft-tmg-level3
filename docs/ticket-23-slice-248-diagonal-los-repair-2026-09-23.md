@@ -91,6 +91,21 @@ Do not reroll r29 Pass, r30 Run or any other accepted move. New decisions after
 reload use the repaired geometry; this also loads the already-passed named-
 target claim repair. No Prompt strategy instruction, Skill or model changes.
 
+Live recovery completed at 2026-09-22T19:41:48Z. New runner session `78441`
+reopened the same Room and saved
+`screenshots/0218-r035-player2-choose_first_actor-complete-board-applied.png`;
+r35 is Replay-matching in `actions.ndjson`. Calls/units/cost remain exactly
+93 / 9,188,732 / ¥12.335719: no new generation for this recovery. The old
+runner's final screenshot wait error was caused by this controlled service
+shutdown, not a new Provider or Rules failure. The next normal Web-triggered
+decision proceeds under the newly loaded geometry.
+
+For a concrete geometric explanation, Goliath model 1 to Swarmling model 1
+in the fixed r33 scene has a 19.922-inch base-edge gap, but Size-3 central
+temple produces `convex_rectangle_separates_complete_physical_base_footprints`
+and Full Cover. Being within printed range does not make that model visible.
+This observation does not certify future positions or imply an optimal plan.
+
 `harnessLoopUsed: true`; route `selfplay_agent_prompt`; tools
 `space.inspect_relationships` and exact special-terrain LOS; public decision
 and same-match memory preserved; `trainingTruth: false`. Demote the repair on

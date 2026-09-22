@@ -64,6 +64,17 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ### r29 checkpoint — Flash reconfirmed; observation overhead measured
 
+r35 reload follow-up: recovery retained 93 calls / ¥12.335719, with no paid
+regeneration. Manifest 4.864 s, refresh 8.486 s and the three applied-action
+captures together 30.835 s. A one-second OS sample of the new service at
+19:41:02Z shows active HTTP callback processing and JSON serialization, not
+only an idle startup wait. JavaScript callers are not symbolized, so this
+does not identify the responsible endpoint/function or prove it accounts for
+the full delay. Retain the sample at
+`build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/resume-after-los-cpu-sample.txt`;
+next performance attribution should separate projection construction,
+serialization, UI render/settling and each capture without reducing evidence.
+
 At 2026-09-22T19:24:16.579Z the same branch has reached r29, Round 1
 Assault: r27 Marine 2 Run, r28 deterministic finish-activation and r29 Zerg
 Pass all have accepted Apply/Replay records and paired Web screenshots.

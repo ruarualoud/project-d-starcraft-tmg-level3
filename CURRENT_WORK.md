@@ -18,9 +18,12 @@ one bad synthetic fixture: 76 reciprocal model pairs / zero unknown, 2.816 s,
 See `docs/ticket-23-slice-248-diagonal-los-repair-2026-09-23.md`.
 Old runner 95271 was suspended before another trigger; both Providers idle,
 r35 applied/replayed with no pending Apply. Service 70967 shut down cleanly.
-Finish old runner cleanup, then resume the same directory with new code and
-recover the missing r35 screenshot (actions.ndjson last r34), not a new game.
-93 calls / 9,188,732 accounted units / ¥12.335719 conservative estimate.
+**Recovery complete at 19:41:48Z:** new live runner session 78441 restored r35
+and `0218-r035-player2-choose_first_actor-complete-board-applied.png`, Replay
+matching; no paid regeneration. Keep this runner alive for the full match.
+93 calls / 9,188,732 accounted units / ¥12.335719 conservative estimate at
+recovery. The next ordinary Web decision proceeds under the fixed geometry
+and previously passed named-target claim repair. No repeat verification.
 Separate recovery TODO: durable boundary helper does not account for this
 branch's 7 replayed-prefix transitions; 28 Bot actions + 7 prefix = r35.
 T23 remains 33/36; current phase Round 1 Combat, no full-match claim.
