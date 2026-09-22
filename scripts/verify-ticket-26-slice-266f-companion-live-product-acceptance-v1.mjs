@@ -55,13 +55,17 @@
  *      pack entries versus the honestly-labelled fixture global entry; the
  *      fixture entry never appears inside the sealed package export);
  *      durable encrypted-SQLite process-restart resume with fail-closed key
- *      handling; the full BYOK seam cycle;
- *   7. records the user-authorized ONE bounded live Chinese BYOK conversation
- *      acceptance as an explicit reservation (the implementing agent is
- *      forbidden from calling paid Providers or reading credentials; the
- *      integrating run invokes only the existing Keychain → isolated-Worker
- *      path, stops on 401/402/403 or ambiguous dispatch, never silently
- *      retries, detaches at the end, and records exact calls/tokens/cost);
+ *      handling; the full BYOK seam cycle; the versioned output-budget and
+ *      truncation classification/recovery contract (fail-first reproduction
+ *      of the captured 64-unit truncation through the REAL egress transport
+ *      with a fake socket, typed LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED
+ *      classification with budget diagnostics, structural terminated-string
+ *      recovery, and the resolved budget carried into the live request);
+ *   7. records the live BYOK acceptance honestly: epoch 1 executed once
+ *      (HTTP 200, truncated at the 64-unit output budget, zero retry, lock
+ *      claimed); epoch 2 — the single user-authorized repair call with the
+ *      versioned output-budget contract — remains an explicit reserved
+ *      procedure (this gate never touches a real credential or Provider);
  *   8. writes a claim-to-pixel index, sha256-hashed artifacts and a machine
  *      report under build/ticket-26-slice-266f-companion-live-product-acceptance-v1/,
  *      then scans the report AND every artifact for every secret handled in
@@ -74,6 +78,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { EventEmitter } from "node:events";
 import { existsSync, readdirSync } from "node:fs";
 import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import http from "node:http";
@@ -148,12 +153,17 @@ const BACKEND_MODULES_RECORDED = [
   "packages/companion-backend-module-v1/index.mjs",
   "packages/companion-backend-module-v1/in-memory-adapter-v1.mjs",
   "packages/companion-backend-module-v1/durable-persistence-adapters-v1.mjs",
+  "packages/companion-backend-module-v1/provider-output-budget-v1.mjs",
   "packages/companion-backend-module-v1/worldbook-memory-engine-v1.mjs",
   "packages/http-adapter/handler-v1.mjs",
   "packages/product-composition/companion-product-module-v1.mjs",
   "packages/product-composition/companion-room-session-service-v1.mjs",
   "packages/product-composition/index.mjs",
   "packages/room-runtime/in-memory-room-v1.mjs",
+  "packages/secure-provider-runtime/provider-egress-transport-v1.mjs",
+  "packages/secure-provider-runtime/provider-profile-registry-v1.mjs",
+  "content/provider/ticket-16-live-provider-closure-v1.mjs",
+  "scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs",
   "content/characters/companion-catalogue-v1.mjs",
   "content/characters/companion-portrait-asset-registry-v1.mjs",
   "content/characters/companion-portrait-animation-binding-v1.mjs",
@@ -2281,6 +2291,280 @@ async function main() {
       receipts: secureProvider.state.receipts,
     });
 
+    // ── 266f repair: versioned output-budget + truncation classification ──
+    // Fail-first reproduction of the exact captured live defect (HTTP 200,
+    // 118,911 input units, exactly 64 output units, finish_reason "length",
+    // sealed channel JSON cut mid-string) through the REAL egress transport
+    // against the REAL Ticket 16 profile binding with a fake socket, then
+    // through the REAL live runner adapter with a fake Worker port. 0 real
+    // Provider calls; synthetic credential bytes only.
+    const {
+      createLiveCompanionProviderAdapter,
+    } = await importWorktree("scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs");
+    const { createStarcraftTmgProviderEgressTransportV1 } = await importWorktree(
+      "packages/secure-provider-runtime/provider-egress-transport-v1.mjs");
+    const { createStarcraftTmgProviderProfileRegistryV1 } = await importWorktree(
+      "packages/secure-provider-runtime/provider-profile-registry-v1.mjs");
+    const { STARCRAFT_TMG_TICKET_16_LIVE_PROVIDER_PROFILE_V1: ticket16Profile } =
+      await importWorktree("content/provider/ticket-16-live-provider-closure-v1.mjs");
+    const {
+      classifyCompanionProviderOutputV1,
+      resolveCompanionProviderOutputBudgetV1,
+    } = await importWorktree("packages/companion-backend-module-v1/provider-output-budget-v1.mjs");
+
+    const TRUNCATION_REPRO_SECRET = "sk-266f-truncation-repro-synthetic-never-real";
+    secrets.push(TRUNCATION_REPRO_SECRET);
+    const truncatedMidString =
+      '{"channels":{"companion_reply":{"text":"指挥官，虫群已在科普卢星区外围完成集结，建议下一步';
+    const truncatedTerminatedText =
+      '{"channels":{"companion_reply":{"text":"指挥官，虫群已就绪。"';
+    const truncationPayload = (content, finishReason = "length") => ({
+      id: "chatcmpl-266f-gate-repro",
+      model: "deepseek-flash",
+      choices: [{
+        index: 0,
+        message: { role: "assistant", content },
+        finish_reason: finishReason,
+      }],
+      usage: {
+        prompt_tokens: 118_911,
+        completion_tokens: 64,
+        total_tokens: 118_975,
+        prompt_cache_hit_tokens: 0,
+        prompt_cache_miss_tokens: 118_911,
+      },
+    });
+    const fakeSocketTransport = (payload) => {
+      const payloadBytes = Buffer.from(JSON.stringify(payload), "utf8");
+      const captured = { requestBody: null };
+      const transport = createStarcraftTmgProviderEgressTransportV1({
+        resolveAddresses: async () => [{ address: "1.1.1.1", family: 4 }],
+        now: () => GENERATED_AT,
+        requestImplementation(options, callback) {
+          const request = new EventEmitter();
+          request.setTimeout = () => {};
+          request.destroy = () => {};
+          request.end = (body) => {
+            captured.requestBody = String(body);
+            const response = new EventEmitter();
+            response.statusCode = 200;
+            response.headers = { "content-type": "application/json" };
+            response.destroy = () => {};
+            callback(response);
+            response.emit("data", payloadBytes);
+            response.emit("end");
+          };
+          return request;
+        },
+      });
+      return { transport, captured };
+    };
+    const ticket16Registry = createStarcraftTmgProviderProfileRegistryV1({
+      entries: [{ providerProfile: ticket16Profile, completionPath: "/chat/completions" }],
+      allowedProviders: ["deepseek-openai-compatible-direct"],
+    });
+    const ticket16Binding = (await ticket16Registry.resolveEgressBinding({
+      profileRef: {
+        id: ticket16Profile.providerProfileId,
+        version: ticket16Profile.version,
+        hash: ticket16Profile.integrity.hash,
+      },
+    })).egressBinding;
+    ensure(ticket16Binding?.maxOutputUnits === 64,
+      "TICKET16_PROFILE_CAP_NOT_64", { cap: ticket16Binding?.maxOutputUnits });
+    const reproRequest = {
+      schemaVersion: "starcraft_tmg_direct_provider_request_v1",
+      requestId: "gate-truncation-repro-1",
+      intent: "chat",
+      promptPack: "companion_group_chat_live_v1",
+      promptNodes: [{
+        nodeType: "companion_user",
+        authority: "participant",
+        sequence: 0,
+        content: "Zagara，请用一句简短中文报告当前态势并给出下一步建议。",
+      }],
+      userMessage: "输出严格 JSON。",
+      responseContract: {
+        allowedChannels: ["companion_reply"],
+        decisionCandidateSource: "forbidden",
+      },
+      maxOutputUnits: 64,
+    };
+
+    // (1) The concrete bug condition, offline: the Ticket 16 binding caps the
+    // wire body at max_tokens 64 and the REAL transport classifies the
+    // truncated reply as output_truncated.
+    const truncA = fakeSocketTransport(truncationPayload(truncatedMidString));
+    const reproCredential = Buffer.from(TRUNCATION_REPRO_SECRET, "utf8");
+    let truncValue;
+    try {
+      truncValue = await truncA.transport.complete({
+        egressBinding: ticket16Binding,
+        credentialBytes: reproCredential,
+        providerRequest: reproRequest,
+      });
+    } finally {
+      reproCredential.fill(0);
+    }
+    ensure(reproCredential.every((byte) => byte === 0),
+      "TRUNCATION_REPRO_CREDENTIAL_NOT_ZEROED");
+    const reproWire = JSON.parse(truncA.captured.requestBody);
+    ensure(reproWire.max_tokens === 64
+      && reproWire.response_format?.type === "json_object",
+    "TRUNCATION_REPRO_WIRE_WRONG", { maxTokens: reproWire.max_tokens });
+    ensure(truncValue.output?.providerTurn?.kind === "invalid_json"
+      && truncValue.output?.providerTurn?.issue === "output_truncated"
+      && truncValue.usageReceipt?.usage?.outputUnits === 64
+      && truncValue.usageReceipt?.physicalAttempts === 1
+      && truncValue.usageReceipt?.automaticRetries === 0,
+    "TRUNCATION_REPRO_TRANSPORT_CLASSIFICATION_WRONG", {
+      output: truncValue.output,
+      usage: truncValue.usageReceipt?.usage,
+    });
+
+    // (2) The REAL live runner adapter now classifies the exact captured
+    // shape as a typed budget truncation with diagnostics; a second complete
+    // is refused without any further Worker dispatch (zero retry).
+    let workerCalls = 0;
+    let capturedLiveRequest = null;
+    const truncAdapter = createLiveCompanionProviderAdapter({
+      workerPort: {
+        complete: async ({ providerRequest }) => {
+          workerCalls += 1;
+          capturedLiveRequest = providerRequest;
+          return truncValue;
+        },
+      },
+      getAttachedWorkerRef: () => "worker-gate-fixture",
+      claimDispatch: async () => {},
+      containsCredentialMaterial: () => false,
+      priceUsage: () => null,
+    });
+    const truncResult = await truncAdapter.complete({
+      requestId: "gate-truncation-repro-1",
+      messages: [{ role: "user", content: "Zagara，请用一句简短中文报告当前态势并给出下一步建议。" }],
+    });
+    ensure(truncResult.ok === false
+      && truncResult.reason === "LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED",
+    "TRUNCATION_NOT_TYPED_CLASSIFIED", { reason: truncResult.reason });
+    const truncFailure = truncAdapter.observation.failure;
+    ensure(truncFailure?.classification?.kind === "output_budget_truncated"
+      && truncFailure.classification.truncation?.recovered === false
+      && truncFailure.classification.budgetUnits === 475
+      && truncFailure.budget?.budgetVersion === "companion_output_budget_v2"
+      && truncFailure.budget?.maxOutputUnits === 475
+      && truncFailure.budget?.supersedes?.maxOutputUnits === 64
+      && truncAdapter.observation.physicalProviderCalls === 1,
+    "TRUNCATION_CLASSIFICATION_DETAILS_WRONG", { failure: truncFailure });
+    const secondAttempt = await truncAdapter.complete({
+      requestId: "gate-truncation-repro-2",
+      messages: [{ role: "user", content: "retry probe" }],
+    });
+    ensure(secondAttempt.ok === false
+      && secondAttempt.reason === "LIVE_CALL_DENOMINATOR_EXCEEDED"
+      && workerCalls === 1,
+    "TRUNCATION_ZERO_RETRY_NOT_ENFORCED", {
+      reason: secondAttempt.reason,
+      workerCalls,
+    });
+    // The live request now carries the resolved versioned budget, not 64.
+    ensure(capturedLiveRequest?.maxOutputUnits === 475
+      && capturedLiveRequest.maxOutputUnits > 64,
+    "LIVE_REQUEST_BUDGET_NOT_VERSIONED", {
+      maxOutputUnits: capturedLiveRequest?.maxOutputUnits,
+    });
+
+    // (3) Structural recovery: a budget-truncated envelope whose channel text
+    // string IS terminated recovers the byte-exact text, honestly marked.
+    const recAdapter = createLiveCompanionProviderAdapter({
+      workerPort: {
+        complete: async () => ({
+          output: {
+            providerTurn: {
+              kind: "invalid_json",
+              issue: "output_truncated",
+              content: truncatedTerminatedText,
+            },
+          },
+          usageReceipt: truncValue.usageReceipt,
+        }),
+      },
+      getAttachedWorkerRef: () => "worker-gate-fixture",
+      claimDispatch: async () => {},
+      containsCredentialMaterial: () => false,
+      priceUsage: () => null,
+    });
+    const recovered = await recAdapter.complete({
+      requestId: "gate-truncation-repro-3",
+      messages: [{ role: "user", content: "ping" }],
+    });
+    ensure(recovered.ok === true
+      && recovered.response?.content === "指挥官，虫群已就绪。"
+      && recAdapter.observation.success?.recoveredFromTruncatedEnvelope === true
+      && recovered.receipt?.recoveredFromTruncatedEnvelope === true,
+    "TRUNCATION_RECOVERY_WRONG", {
+      ok: recovered.ok,
+      content: recovered.response?.content,
+      success: recAdapter.observation.success?.recoveredFromTruncatedEnvelope,
+    });
+
+    // (4) No misclassification: a NON-truncated invalid JSON reply still maps
+    // to the generic contract rejection, never to the truncation code.
+    const badJsonAdapter = createLiveCompanionProviderAdapter({
+      workerPort: {
+        complete: async () => ({
+          output: {
+            providerTurn: {
+              kind: "invalid_json",
+              issue: "response_json_invalid",
+              content: "not json at all",
+            },
+          },
+          usageReceipt: truncValue.usageReceipt,
+        }),
+      },
+      getAttachedWorkerRef: () => "worker-gate-fixture",
+      claimDispatch: async () => {},
+      containsCredentialMaterial: () => false,
+      priceUsage: () => null,
+    });
+    const badJson = await badJsonAdapter.complete({
+      requestId: "gate-truncation-repro-4",
+      messages: [{ role: "user", content: "ping" }],
+    });
+    ensure(badJson.ok === false
+      && badJson.reason === "LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED"
+      && badJsonAdapter.observation.failure?.classification?.kind === "response_json_invalid",
+    "NON_TRUNCATION_MISCLASSIFIED", { reason: badJson.reason });
+
+    // (5) The versioned budget contract itself: envelope-derived, clamped,
+    // character-agnostic.
+    const budget = resolveCompanionProviderOutputBudgetV1({
+      allowedChannels: ["companion_reply"],
+    });
+    ensure(budget.budgetVersion === "companion_output_budget_v2"
+      && budget.maxOutputUnits === 475
+      && budget.envelopeUnits > 0 && budget.envelopeBytes > 0
+      && budget.characterSpecific === false
+      && budget.supersedes?.budgetVersion === "companion_output_budget_v1",
+    "OUTPUT_BUDGET_CONTRACT_WRONG", { budget });
+    const emptyClassification = classifyCompanionProviderOutputV1(null, {
+      allowedChannels: ["companion_reply"],
+    });
+    ensure(emptyClassification.kind === "empty_output",
+      "EMPTY_OUTPUT_CLASSIFICATION_WRONG", { kind: emptyClassification.kind });
+    checks.push({
+      id: "headless_output_budget_truncation_contract",
+      passed: true,
+      bugCondition: { wireMaxTokens: 64, transportIssue: "output_truncated", outputUnits: 64 },
+      typedClassification: "LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED",
+      recoveredByteExact: true,
+      nonTruncationNotMisclassified: true,
+      zeroRetryWorkerCalls: workerCalls,
+      resolvedBudgetUnits: budget.maxOutputUnits,
+      realProviderCalls: 0,
+    });
+
     // ── Final boundary assertions ────────────────────────────────────────
     const noAuth = await companionFetch(
       `conversations/active?roomId=${encodeURIComponent(ROOM_ID)}`,
@@ -2388,17 +2672,26 @@ async function main() {
     requestLog,
     sourceContracts,
     liveByokAcceptance: {
-      userAuthorized: "one bounded live Chinese BYOK conversation acceptance",
+      userAuthorized: "one bounded live Chinese BYOK conversation acceptance, plus one user-authorized repair call after the recorded 64-unit truncation",
       executedInThisGate: false,
       realProviderCalls: 0,
-      reason: "this deterministic gate itself never touches a real credential or paid Provider; the single authorized live step is executed separately, exactly once, by scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs under the project-d-live-acceptance profile",
+      epoch1Executed: {
+        physicalProviderCalls: 1,
+        outcome: "http_200_truncated_at_64_unit_output_budget",
+        failureCode: "LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED",
+        zeroRetry: true,
+        dispatchLockClaimed: true,
+      },
+      reason: "this deterministic gate itself never touches a real credential or paid Provider; the authorized live steps are executed separately by scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs under the project-d-live-acceptance profile (epoch 1 executed once and truncated; epoch 2 is the single authorized repair call with the versioned output-budget contract proven in this gate's headless_output_budget_truncation_contract phase)",
       reservedProcedure: [
-        "scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs reads the credential ONLY through the existing Keychain → isolated-Worker secure path (packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs + the Ticket 16 Slice 162 egress Worker pattern); the raw key never enters the agent prompt, repository, command line, stdout/stderr, screenshots, report, or logs",
+        "scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs --authorize-live-byok-companion-second-call reads the credential ONLY through the existing Keychain → isolated-Worker secure path (packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs + the Ticket 16 Slice 162 egress Worker pattern); the raw key never enters the agent prompt, repository, command line, stdout/stderr, screenshots, report, or logs",
+        "epoch 2 refuses unless the epoch-1 dispatch lock and failure report prove the exact recorded truncation context; the slice-wide hard maximum is two physical calls, one per epoch, zero retry",
+        "the egress profile is derived from the pinned Ticket 16 profile through the sealed profile factory with outputBudget (companion_output_budget_v2 = 475 units) as the ONLY delta; no Provider infrastructure file is modified",
         "attach through the same isolated Worker contract proven in this gate (single-use ingress → child-process session memory only → explicit detach with sensitiveBytesZeroed acknowledgement)",
-        "run one bounded Chinese companion conversation through the real product path; inspect only redacted product receipts",
-        "stop immediately on 401/402/403, missing attachment or ambiguous dispatch; never silently retry; a one-attempt dispatch lock enforces the hard maximum of one physical Provider call",
-        "record exact Provider calls, reported tokens and estimated cost",
-        "detach at the end and prove credential absence from persistence and artifacts",
+        "run one bounded Chinese companion conversation through the real product path; inspect only redacted product receipts; the reply must be actual Chinese, persona/worldbook/memory-grounded (server-side worldbookFired provenance), byte-identical between adapter, server transcript and rendered DOM",
+        "stop immediately on 401/402/403, missing attachment or ambiguous dispatch; never silently retry; a per-epoch one-attempt dispatch lock enforces the hard maximum",
+        "record exact Provider calls, reported tokens and cost (authoritative pricing receipt, or an explicitly-labelled snapshot-rate estimate if the Provider's reported-model drift recurs)",
+        "detach at the end and prove credential absence from persistence and artifacts, with desktop and 390px evidence",
       ],
       seamProofsInThisGate: [
         "deterministic Ticket-16-contract fixture: metadata/prepare/attach/read/detach with single-use nonce and octet-stream ingress",
