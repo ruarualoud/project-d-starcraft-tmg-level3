@@ -27,6 +27,7 @@ import {
 import {
   createPregameSceneLaboratoryV1,
   verifyPregameLabMathReceiptV1,
+  verifyPregameLabMissionScoringAuthorityReceiptV1,
   verifyPregameLabMutationZeroProofV1,
   verifyPregameLabProbabilityReceiptV1,
   verifyPregameLabSameStateABReceiptV1,
@@ -272,6 +273,57 @@ check(270, mathVp.result.deltas[0].projectionStatus === "unknown"
   && mathVp.result.deltas[0].deltaVp === null,
   "missing VP projection must stay unknown, never zero");
 
+// Authoritative mission task/scoring data (sub-slice 269.13): the
+// laboratory projects the Rules-owned Hold Position scoring profile and the
+// mission marker affinity placement out of the frozen source Room state,
+// re-verified through the profile's own authoritative verifier; a missing
+// authority stays unknown and names the missing authority.
+const missionAuthority = lab.missionScoringAuthority();
+check(270, verifyPregameLabMissionScoringAuthorityReceiptV1(
+    missionAuthority) === true
+  && missionAuthority.resultStatus === "derivable"
+  && missionAuthority.baseStateHash === labDescriptor.sourceStateHash
+  && missionAuthority.missionScoringProfile.recordKey
+    === "faction_cards:mission_hold_position"
+  && missionAuthority.missionScoringProfile.gameLengthRounds === 5
+  && missionAuthority.missionScoringProfile.markerScoringStartsRound === 2
+  && missionAuthority.missionScoringProfile.neutralOrOwnAffinityMarkerVp === 1
+  && missionAuthority.missionScoringProfile.opponentAffinityMarkerVp === 2
+  && missionAuthority.missionScoringProfile.destroyedEnemySupplyVpPerSupply
+    === 1
+  && missionAuthority.missionScoringProfile.specialLeadWinThreshold === 10
+  && missionAuthority.missionScoringProfile.extraSupplyPerRound === 2
+  && missionAuthority.missionScoringProfile.sourceText.scoringConditions
+    .includes("Gain 1 VP")
+  && missionAuthority.markerAffinity.status === "derivable"
+  && isDeepStrictEqual(missionAuthority.markerAffinity.markers,
+    authority.state.officialMissionMarkerPlacement.missionMarkers
+      .map((marker) => ({
+        number: marker.number,
+        affinityPlayerId: marker.affinityPlayerId ?? null }))),
+  "the laboratory must publish the authoritative mission task/scoring data "
+    + "and marker affinity hash-bound to the frozen source state");
+const profilelessState = structuredClone(authority.state);
+delete profilelessState.officialGameplayDataBundle;
+const profilelessLab = createPregameSceneLaboratoryV1({
+  laboratoryId: "ticket27-s269-270-lab-no-authority",
+  sourceState: profilelessState,
+  sourceRoomRef: { roomId: "ticket27-slices-269-270-lab-room",
+    stateRevision: 0 },
+  rulesRuntime,
+  armyBuilderPort: port,
+  matchBinding: authority.matchBinding,
+});
+const missionAuthorityUnknown = profilelessLab.missionScoringAuthority();
+check(270, verifyPregameLabMissionScoringAuthorityReceiptV1(
+    missionAuthorityUnknown) === true
+  && missionAuthorityUnknown.resultStatus === "unknown"
+  && missionAuthorityUnknown.missionScoringProfile === null
+  && String(missionAuthorityUnknown.unknownReason)
+    .startsWith("missing_authority:official_mission_scoring_profile"),
+  "a missing scoring authority must stay unknown and identify the missing "
+    + "authority");
+
 // Same-state A/B candidate comparison through the Rules-owned port.
 const recipe = OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1.player1;
 const candidateInputFromRecipe = (mutate = null) => {
@@ -309,8 +361,8 @@ check(270, verifyPregameLabSameStateABReceiptV1(abReceipt) === true
 const mutationProof = lab.proveMutationZero();
 check(270, verifyPregameLabMutationZeroProofV1(mutationProof) === true
   && mutationProof.sourceStateMutationCount === 0
-  && mutationProof.operationCount === 11
-  && mutationProof.receiptLog.length === 11,
+  && mutationProof.operationCount === 12
+  && mutationProof.receiptLog.length === 12,
   "mutation-zero proof must cover every laboratory operation");
 check(270, bundle.bundleHash === bundleHashBefore && Object.isFrozen(bundle)
   && hashStarcraftTmgContract(authority.state)
@@ -371,14 +423,15 @@ function followUpWire(overrides = {}) {
 // schema/Rules validation still run afterwards.
 check(269, verifyRosterStrategistOutputContractSetV1(
     ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1) === true
-  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.2.0"
+  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.3.0"
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .bindsOnlyFieldNamesTypesBoundsAndEnums === true
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .neverBindsRosterContentCandidateIdentityOrStrategy === true,
-  "the strict output contract set must be explicit, versioned (1.2.0 after "
-    + "the 269.9 integer-domain and 269.10 instance-identity repairs) and "
-    + "content-free");
+  "the strict output contract set must be explicit, versioned (1.3.0 after "
+    + "the 269.9 integer-domain and 269.10 instance-identity repairs plus "
+    + "the 269.13 schedule-grounding and 269.14 budget-utilization "
+    + "contracts) and content-free");
 check(269, strategistDescriptor.structuredGenerationOutput?.contractSetHash
     === ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash
   && strategistDescriptor.structuredGenerationOutput
@@ -428,6 +481,10 @@ function foundationOutput() {
         { window: "round:2", plannedCumulativeVp: 2 },
         { window: "round:4", plannedCumulativeVp: 5 }],
       fallbackRouteText: "attrition through goliath trades" },
+    scoreRouteAuthority: {
+      status: "mission_grounded",
+      authorityText: "sealed Hold Position mission-scoring authority "
+        + "hash-bound to the frozen source Room state" },
     opponentHypotheses: [{
       hypothesisId: "hyp-zerg-pressure", archetypeLabel: "zerg_early_pressure",
       hypothesisText: "Kerrigan's Swarm races cheap units onto central markers",
@@ -526,6 +583,16 @@ function comparisonOutput() {
       reinforcementPolicyText: "reserve units enter round 2 at own edge",
       threatTradeText: "trade Marine models for marker control time",
       objectiveControlText: "hold two central markers through round 4" },
+    resourceUtilization: {
+      nearCapCandidateAvailable: true,
+      selectedCandidateNearCap: false,
+      unspentBudgetAcknowledgedLost: true,
+      retainedResourceJustificationStatus: "declared",
+      retainedResourceJustificationText:
+        "declared: cand-lean knowingly forfeits the lost 130-mineral "
+        + "residue for its named legal retained use — keeping the Marine "
+        + "unit's rules-owned specialist assignment nominations open "
+        + "instead of locking them into the dropped second upgrade" },
     lossResourceBudget: {
       lossBudgetStatus: "declared",
       plannedLossBudget: [{ resourceKind: "supply", window: "round:2",
@@ -1258,6 +1325,299 @@ check(269, Array.isArray(round8CandidatesNode?.content?.candidates)
     + "into the evaluated-candidates node (fail-first before the context "
     + "repair)");
 
+// ----------------------- round-9 list-quality reopening (269.13–269.15)
+// The passed live round-9 plan was Rules-legal but strategically
+// insufficient: 940/2000 minerals spent (unspent budget is lost, so 1,060
+// minerals of capability were silently discarded as "re-plan headroom")
+// and the victory-point schedule stayed unknown even though the
+// authoritative Hold Position scoring data was frozen in the source Room
+// state all along. Diagnosis: candidate enumeration, budget arithmetic and
+// the Rules boundary all worked; the defects were (a) model instructions
+// never stated the lost-unspent rule or the near-cap/justification
+// requirement, (b) the comparison context published mineralSpent without
+// the menu-derived near-cap frame, and (c) the authoritative mission
+// task/scoring data was never surfaced to deliberation. The checks below
+// bind the two general contracts closing those gaps; the captured round-9
+// output shapes are replayed offline (0 Provider calls).
+
+// Descriptor binding of both quality contracts.
+check(269, strategistDescriptor.missionScoringAuthority
+    ?.sealedIntoFoundationRound === true
+  && strategistDescriptor.missionScoringAuthority
+    ?.declaredGroundedScheduleRequiredWhenDerivable === true
+  && strategistDescriptor.missionScoringAuthority
+    ?.unknownPreservedAndMissingAuthorityIdentifiedOtherwise === true
+  && strategistDescriptor.budgetUtilizationContract
+    ?.nearCapThresholdDerivation
+    === "cheapest_positive_purchasable_increment_in_rules_owned_menu"
+  && strategistDescriptor.budgetUtilizationContract
+    ?.unspentResourceDisposition === "lost"
+  && strategistDescriptor.budgetUtilizationContract
+    ?.nearCapSelectionOrDeclaredJustificationRequired === true
+  && strategistDescriptor.budgetUtilizationContract
+    ?.runtimeNeverRanksCandidates === true,
+  "the runtime descriptor must bind the schedule-grounding and "
+    + "budget-utilization contracts");
+
+// The foundation-round request must seal the authoritative mission
+// task/scoring data so a mission-grounded VP schedule is derivable.
+const foundationRequest = recordedRequests.find((entry) => (
+  entry.roundKind === "strategy_foundation"));
+const authorityNode = (foundationRequest?.promptNodes || []).find(
+  (node) => node.nodeType === "mission-scoring-authority");
+check(269, authorityNode?.content?.resultStatus === "derivable"
+  && authorityNode.content.missionScoringProfile?.recordKey
+    === "faction_cards:mission_hold_position"
+  && authorityNode.content.missionScoringProfile?.gameLengthRounds === 5
+  && authorityNode.content.missionScoringProfile?.markerScoringStartsRound
+    === 2
+  && authorityNode.content.missionScoringProfile
+    ?.neutralOrOwnAffinityMarkerVp === 1
+  && authorityNode.content.missionScoringProfile?.opponentAffinityMarkerVp
+    === 2
+  && authorityNode.content.missionScoringProfile
+    ?.destroyedEnemySupplyVpPerSupply === 1
+  && authorityNode.content.missionScoringProfile?.specialLeadWinThreshold
+    === 10
+  && authorityNode.content.missionScoringProfile?.extraSupplyPerRound === 2
+  && HASH_RX.test(String(authorityNode.content.authorityReceiptHash || ""))
+  && authorityNode.content.authorityReceiptHash
+    === labA.missionScoringAuthority().receiptHash,
+  "the foundation round must seal the authoritative mission task/scoring "
+    + "data into the request");
+
+// The strict schemas must publish both rules in field descriptions (the
+// subset cannot pattern-enforce them).
+const utilizationSchemaProps = comparisonContract.providerSchema.properties
+  .resourceUtilization.properties;
+check(269, String(
+    utilizationSchemaProps.retainedResourceJustificationStatus.description
+      || "").includes("near-cap")
+  && String(utilizationSchemaProps.unspentBudgetAcknowledgedLost.description
+    || "").includes("lost")
+  && String(foundationContract.providerSchema.properties
+    .scoreRouteAuthority.properties.status.description || "")
+    .includes("unknown_missing_authority"),
+  "the strict schemas must publish the schedule-grounding and "
+    + "budget-utilization rules in field descriptions");
+
+// The session receipt must bind both outcomes.
+check(269, result.sessionReceipt.missionScoringAuthorityStatus === "derivable"
+  && result.sessionReceipt.scoreRouteAuthorityStatus === "mission_grounded"
+  && result.sessionReceipt.nearCapThresholdMinerals === 10
+  && result.sessionReceipt.nearCapLegalCandidateAvailable === true
+  && result.sessionReceipt.selectedCandidateNearCap === false
+  && result.sessionReceipt.retainedResourceJustificationStatus === "declared"
+  && HASH_RX.test(String(
+    result.sessionReceipt.missionScoringAuthorityReceiptHash || "")),
+  "the session receipt must bind the schedule grounding and "
+    + "budget-utilization outcomes");
+
+// The comparison-round context must publish per-candidate unspent budget,
+// near-cap flags and the menu-derived threshold, with the lost-disposition
+// fact and the selection rule.
+check(269, round8CandidatesNode.content.budgetGuidance
+    ?.nearCapThresholdMinerals === 10
+  && round8CandidatesNode.content.budgetGuidance?.nearCapThresholdDerivation
+    === "cheapest_positive_purchasable_increment_in_rules_owned_menu"
+  && round8CandidatesNode.content.budgetGuidance
+    ?.unspentResourceDisposition === "lost"
+  && typeof round8CandidatesNode.content.budgetGuidance?.selectionRule
+    === "string"
+  && round8CandidatesNode.content.candidates.every((candidate) => (
+    candidate.legalityStatus !== "legal"
+      || (typeof candidate.mineralUnspent === "number"
+        && typeof candidate.nearCap === "boolean")))
+  && round8CandidatesNode.content.candidates.find((candidate) => (
+    candidate.candidateId === "cand-full"))?.mineralUnspent === 0
+  && round8CandidatesNode.content.candidates.find((candidate) => (
+    candidate.candidateId === "cand-full"))?.nearCap === true
+  && round8CandidatesNode.content.candidates.find((candidate) => (
+    candidate.candidateId === "cand-lean"))?.mineralUnspent === 130
+  && round8CandidatesNode.content.candidates.find((candidate) => (
+    candidate.candidateId === "cand-lean"))?.nearCap === false,
+  "the comparison context must publish per-candidate unspent budget, "
+    + "near-cap flags and the menu-derived near-cap threshold");
+
+// Offline replay of the captured round-9 foundation shape (scheduleStatus
+// unknown, authority declared unconfirmed) — well-formed at the wire, but
+// the grounding rule fails it closed because the authority is derivable.
+function capturedRound9FoundationOutput() {
+  const base = cheapFoundationOutput();
+  return {
+    ...base,
+    scoreRoute: { ...base.scoreRoute, scheduleStatus: "unknown",
+      targetVpSchedule: [] },
+    scoreRouteAuthority: {
+      status: "unknown_missing_authority",
+      authorityText: "the exact Hold Position scoring windows, per-round "
+        + "supply growth and immediate-victory threshold are not confirmed "
+        + "in this pack" },
+  };
+}
+const round9FoundationWire = validateStarcraftTmgProviderJsonSchemaValueV1(
+  foundationContract.providerSchema, capturedRound9FoundationOutput());
+check(269, round9FoundationWire.ok === true,
+  "the captured round-9 unknown-schedule foundation is well-formed at the "
+    + "wire; only the grounding rule rejects it");
+let round9FoundationReplayError = null;
+try {
+  await strategistA.planRoster(sessionInput, {
+    deliberation: createMock({
+      strategy_foundation: () => capturedRound9FoundationOutput() }) });
+} catch (error) {
+  round9FoundationReplayError = error;
+}
+check(269, String(round9FoundationReplayError?.message || "")
+    === "ROSTER_STRATEGIST_FOUNDATION_INVALID:schedule_grounding:"
+      + "derivable_authority_requires_declared_mission_grounded_schedule",
+  "offline replay of the captured round-9 foundation must fail closed: a "
+    + "derivable scoring authority requires a declared mission-grounded "
+    + "schedule (OFFLINE_REPLAY_CLOSES_SAVED_ROUND9_SCHEDULE_GAP)");
+
+// Offline replay of the captured round-9 comparison shape (no
+// resourceUtilization contract at all): a wire-level rejection under the
+// v1.3.0 schema and a byte-exact fail-closed at the runtime validator.
+function capturedRound9ComparisonOutput() {
+  const base = comparisonOutput();
+  const { resourceUtilization, ...rest } = base;
+  return rest;
+}
+const round9ComparisonWire = validateStarcraftTmgProviderJsonSchemaValueV1(
+  comparisonContract.providerSchema, capturedRound9ComparisonOutput());
+check(269, round9ComparisonWire.ok === false
+  && round9ComparisonWire.issues.some((issue) => (
+    issue.path === "$.resourceUtilization"
+      && issue.code === "required_field_missing")),
+  "the captured round-9 comparison shape must be a wire-level rejection "
+    + "under the v1.3.0 strict schema (resourceUtilization missing)");
+let round9ComparisonReplayError = null;
+try {
+  await strategistA.planRoster(sessionInput, {
+    deliberation: createMock({
+      comparison_selection: () => capturedRound9ComparisonOutput() }) });
+} catch (error) {
+  round9ComparisonReplayError = error;
+}
+check(269, String(round9ComparisonReplayError?.message || "")
+    === "ROSTER_STRATEGIST_COMPARISON_INVALID:comparison,"
+      + "componentPurposes,deploymentConcept,lossResourceBudget,"
+      + "publicSummaryText,roundKind,schemaVersion",
+  "offline replay of the captured round-9 comparison must fail closed "
+    + "byte-identically "
+    + "(OFFLINE_REPLAY_CLOSES_SAVED_ROUND9_UTILIZATION_GAP)");
+
+// The budget-utilization contract: declining an available near-cap
+// candidate requires a declared public justification; the echoes must
+// match the computed values; unspent-lost must be acknowledged.
+let justificationReplayError = null;
+try {
+  await strategistA.planRoster(sessionInput, {
+    deliberation: createMock({
+      comparison_selection: () => ({
+        ...comparisonOutput(),
+        resourceUtilization: {
+          ...comparisonOutput().resourceUtilization,
+          retainedResourceJustificationStatus: "not_applicable",
+          retainedResourceJustificationText: "" } }) }) });
+} catch (error) {
+  justificationReplayError = error;
+}
+check(269, String(justificationReplayError?.message || "")
+    === "ROSTER_STRATEGIST_COMPARISON_INVALID:resourceUtilization:"
+      + "justification_required_when_near_cap_available",
+  "declining an available near-cap candidate without a declared "
+    + "justification must fail closed");
+await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    comparison_selection: () => ({
+      ...comparisonOutput(),
+      resourceUtilization: {
+        ...comparisonOutput().resourceUtilization,
+        nearCapCandidateAvailable: false } }) }),
+}), "ROSTER_STRATEGIST_COMPARISON_INVALID",
+  "a near-cap availability echo contradicting the computed value");
+await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    comparison_selection: () => ({
+      ...comparisonOutput(),
+      resourceUtilization: {
+        ...comparisonOutput().resourceUtilization,
+        selectedCandidateNearCap: true } }) }),
+}), "ROSTER_STRATEGIST_COMPARISON_INVALID",
+  "a selected-near-cap echo contradicting the computed value");
+await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    comparison_selection: () => ({
+      ...comparisonOutput(),
+      resourceUtilization: {
+        ...comparisonOutput().resourceUtilization,
+        unspentBudgetAcknowledgedLost: false } }) }),
+}), "ROSTER_STRATEGIST_COMPARISON_INVALID",
+  "refusing to acknowledge that unspent budget is lost");
+
+// Positive: selecting the available near-cap candidate needs no
+// justification and spends the full legal budget.
+function nearCapComparisonOutput() {
+  const base = comparisonOutput();
+  return {
+    ...base,
+    comparison: { ...base.comparison, selectedCandidateId: "cand-full" },
+    resourceUtilization: {
+      ...base.resourceUtilization,
+      selectedCandidateNearCap: true,
+      retainedResourceJustificationStatus: "not_applicable",
+      retainedResourceJustificationText: "" },
+  };
+}
+const nearCapSession = await strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    comparison_selection: () => nearCapComparisonOutput() }) });
+check(269, verifyRosterPlanRoundTripV1(nearCapSession.plan) === true
+  && nearCapSession.plan.rosterCandidate.candidateId === "cand-full"
+  && nearCapSession.finalVerdict.summary.mineralSpent === 2000
+  && nearCapSession.sessionReceipt.selectedCandidateNearCap === true
+  && nearCapSession.sessionReceipt.retainedResourceJustificationStatus
+    === "not_applicable",
+  "selecting an available near-cap candidate needs no justification and "
+    + "spends the full legal budget");
+
+// Missing authority: the schedule stays unknown with the missing authority
+// identified publicly, and a declared grounded schedule fails closed.
+const strategistNoAuthority = createRosterStrategistRuntimeV1({
+  armyBuilderPort: port, laboratory: profilelessLab, strategyPack: pack });
+function unknownAuthorityFoundationOutput() {
+  const base = cheapFoundationOutput();
+  return {
+    ...base,
+    scoreRoute: { ...base.scoreRoute, scheduleStatus: "unknown",
+      targetVpSchedule: [] },
+    scoreRouteAuthority: {
+      status: "unknown_missing_authority",
+      authorityText: "missing authority: official mission scoring profile "
+        + "not frozen in the source state" },
+  };
+}
+const noAuthoritySession = await strategistNoAuthority.planRoster(
+  sessionInput, {
+    deliberation: createMock({
+      strategy_foundation: () => unknownAuthorityFoundationOutput() }) });
+check(269, verifyRosterPlanRoundTripV1(noAuthoritySession.plan) === true
+  && noAuthoritySession.plan.scoreRoute.scheduleStatus === "unknown"
+  && noAuthoritySession.plan.scoreRoute.targetVpSchedule.length === 0
+  && noAuthoritySession.plan.rosterCandidate.legalityStatus === "legal"
+  && noAuthoritySession.sessionReceipt.missionScoringAuthorityStatus
+    === "unknown"
+  && noAuthoritySession.sessionReceipt.scoreRouteAuthorityStatus
+    === "unknown_missing_authority",
+  "a missing scoring authority must preserve the unknown schedule and "
+    + "identify the missing authority publicly");
+await expectFailure(269, () => strategistNoAuthority.planRoster(
+  sessionInput, { deliberation: createMock() }),
+  "ROSTER_STRATEGIST_FOUNDATION_INVALID",
+  "a declared mission-grounded schedule while the authority is missing "
+    + "must fail closed");
+
 check(269, bundle.bundleHash === bundleHashBefore
   && hashStarcraftTmgContract(authority.state)
     === labDescriptor.sourceStateHash,
@@ -1294,6 +1654,24 @@ const report = {
     round6OfflineReplayFailureDetail: round6SavedDetail,
     round7OfflineReplayFailureDetail: String(round7ReplayError?.message || ""),
     round8OfflineReplayFailureDetail: String(round8ReplayError?.message || ""),
+    missionScoringAuthorityStatus:
+      result.sessionReceipt.missionScoringAuthorityStatus,
+    scoreRouteAuthorityStatus:
+      result.sessionReceipt.scoreRouteAuthorityStatus,
+    nearCapThresholdMinerals:
+      result.sessionReceipt.nearCapThresholdMinerals,
+    nearCapLegalCandidateAvailable:
+      result.sessionReceipt.nearCapLegalCandidateAvailable,
+    selectedCandidateNearCap:
+      result.sessionReceipt.selectedCandidateNearCap,
+    retainedResourceJustificationStatus:
+      result.sessionReceipt.retainedResourceJustificationStatus,
+    round9FoundationReplayFailureDetail:
+      String(round9FoundationReplayError?.message || ""),
+    round9ComparisonReplayFailureDetail:
+      String(round9ComparisonReplayError?.message || ""),
+    round9JustificationReplayFailureDetail:
+      String(justificationReplayError?.message || ""),
     hiddenChainOfThoughtIncluded: false,
     hostPreferenceWeights: false,
   },
@@ -1312,6 +1690,9 @@ const report = {
     sameStateABReceiptHash: abReceipt.receiptHash,
     mutationZeroProofHash: mutationProof.receiptHash,
     sourceStateMutationCount: mutationProof.sourceStateMutationCount,
+    missionScoringAuthorityReceiptHash: missionAuthority.receiptHash,
+    missionAuthorityMarkerCount:
+      missionAuthority.markerAffinity.markers.length,
     unknownNotZero: true,
   },
   providerCalls: 0,
