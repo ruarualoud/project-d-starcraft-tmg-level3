@@ -16,17 +16,18 @@
 // normalization boundary and full schema/Rules validation still run on the
 // decoded output; nothing is invented, filled or waived.
 //
-// Round 7+ generation-contract repairs (sub-slice 269.10+270.8): the user
-// explicitly authorized continued real BYOK attempts until one actual
-// generated 2000-point roster plus initial RosterPlan passes the Rules-owned
-// port, bounded to three new repair/live cycles (rounds 7-9). Round 9 passed
-// legality but spent only 940/2000 minerals with an unknown VP schedule, so
-// the reopened slice (269.13-269.15 contracts) authorizes exactly one new
-// three-round BYOK generation cycle — repair round 10, chained to the
-// preserved round-9 success report. The flag map below is the hard maximum —
-// no eleventh flag exists. Each attempt is separately locked, costed and
-// retained with zero automatic retry; 401 / 402 / 403, ambiguous dispatch and
-// missing secure attachment still stop immediately and are never repairable.
+// Reopened list-quality lane (sub-slices 269.13-269.15) and the round-10
+// narrative-capacity repair (269.17): the manifest authorized exactly one new
+// three-round cycle (repair round 10), which failed closed on a wire-level
+// narrative-length bound; the round-10 report is preserved and the original
+// ledger and lock are never rewritten. The user then authorized at most
+// three additional physical calls recorded OUTSIDE that original ledger and
+// lock — one narrative-recovery attempt (recovery round 11) writing its own
+// recovery-* artifacts and lock, with local schema checks still first and no
+// automatic retry. No twelfth flag exists. Each attempt is separately locked,
+// costed and retained with zero automatic retry; 401 / 402 / 403, ambiguous
+// dispatch and missing secure attachment still stop immediately and are never
+// repairable.
 
 import { mkdir, open, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -100,7 +101,31 @@ const TOOL_RECEIPTS_PATH = path.join(REPORT_ROOT, "tool-receipts.json");
 const PROVIDER_RECEIPTS_PATH = path.join(REPORT_ROOT,
   "provider-receipts-redacted.json");
 const COMPARISON_PATH = path.join(REPORT_ROOT, "preset-comparison.json");
+const PUBLIC_OUTPUTS_PATH = path.join(REPORT_ROOT,
+  "public-round-outputs.json");
 const ROOM_ID = "ticket27-slices-269-270-live-roster-room";
+// Narrative-recovery lane (269.17 follow-up): separate ledger and lock, never
+// rewriting the original round-series artifacts.
+const RECOVERY_FLAG = "--narrative-recovery-after-capacity-policy";
+const RECOVERY_ROUND = 11;
+const RECOVERY_PATHS = {
+  report: path.join(REPORT_ROOT, "recovery-report.json"),
+  lock: path.join(REPORT_ROOT, "recovery-lock.json"),
+  plan: path.join(REPORT_ROOT, "recovery-roster-plan.json"),
+  trace: path.join(REPORT_ROOT, "recovery-planning-trace.json"),
+  toolReceipts: path.join(REPORT_ROOT, "recovery-tool-receipts.json"),
+  providerReceipts: path.join(REPORT_ROOT,
+    "recovery-provider-receipts-redacted.json"),
+  comparison: path.join(REPORT_ROOT, "recovery-preset-comparison.json"),
+  publicOutputs: path.join(REPORT_ROOT,
+    "recovery-public-round-outputs.json"),
+};
+const DEFAULT_PATHS = {
+  report: REPORT_PATH, lock: LOCK_PATH, plan: PLAN_PATH, trace: TRACE_PATH,
+  toolReceipts: TOOL_RECEIPTS_PATH, providerReceipts: PROVIDER_RECEIPTS_PATH,
+  comparison: COMPARISON_PATH, publicOutputs: PUBLIC_OUTPUTS_PATH,
+};
+let activePaths = DEFAULT_PATHS;
 const REQUIRED_FLAGS = new Set([
   "--ticket-27-slices-269-270-live-roster-plan-authorized",
   "--paid-deepseek-calls-accepted",
@@ -145,6 +170,11 @@ function requireCondition(condition, code) {
 }
 function flagsAuthorized() {
   const flags = process.argv.slice(2);
+  if (flags.includes(RECOVERY_FLAG)) {
+    return flags.length === REQUIRED_FLAGS.size + 1
+      && flags.every((flag) => REQUIRED_FLAGS.has(flag)
+        || flag === RECOVERY_FLAG);
+  }
   const base = flags.filter((flag) => REQUIRED_FLAGS.has(flag));
   const repairs = flags.filter((flag) => REPAIR_FLAGS.has(flag));
   return base.length === REQUIRED_FLAGS.size
@@ -176,7 +206,11 @@ async function claimAttempt(runId, startedAt, { repairRound = 1 } = {}) {
   await mkdir(REPORT_ROOT, { recursive: true, mode: 0o700 });
   let handle;
   try {
-    handle = await open(LOCK_PATH, repairRound > 1 ? "w" : "wx", 0o600);
+    // The recovery lock is exclusive-create: exactly one recovery attempt is
+    // admitted, ever. The original lane rewrites its lock per admitted
+    // repair round.
+    const exclusive = activePaths.lock !== LOCK_PATH || repairRound === 1;
+    handle = await open(activePaths.lock, exclusive ? "wx" : "w", 0o600);
   } catch (error) {
     throw Object.assign(new Error("LIVE_ROSTER_PLAN_ATTEMPT_ALREADY_CLAIMED"), {
       code: "LIVE_ROSTER_PLAN_ATTEMPT_ALREADY_CLAIMED", cause: error });
@@ -248,7 +282,7 @@ async function writeSafeFailure(code, runId, startedAt, extra = {}) {
     ...rest,
   };
   await mkdir(REPORT_ROOT, { recursive: true, mode: 0o700 });
-  await writeFile(REPORT_PATH, `${JSON.stringify({
+  await writeFile(activePaths.report, `${JSON.stringify({
     ...body, reportHash: hashStarcraftTmgContract(body) }, null, 2)}\n`, {
     encoding: "utf8", mode: 0o600 });
 }
@@ -297,6 +331,57 @@ function redactedStructuredReceipt({ result, payload, usage, latencyMs,
     rawPayloadPersisted: false,
     rawOutputTextPersisted: false,
     trainingTruth: false,
+  };
+}
+
+// Sanitized public deliberation output, persisted so a failure can be
+// revalidated offline at zero new Provider cost (sub-slice 269.17
+// follow-up). Only the decoded public JSON answer is stored, with any
+// hidden-reasoning-shaped key dropped recursively and a per-round byte cap;
+// the Provider request body, the raw response text and credentials are
+// never persisted. Full public narrative text is preserved by policy.
+const FORBIDDEN_PUBLIC_OUTPUT_KEYS = new Set([
+  "hidden", "chainofthought", "cot", "scratchpad", "reasoning",
+  "reasoningtrace", "internalmonologue", "privatereasoning", "thinking",
+  "internalnotes",
+]);
+const PUBLIC_OUTPUT_MAX_BYTES_PER_ROUND = 262_144;
+function sanitizePublicOutput(value, dropped, atPath) {
+  if (Array.isArray(value)) {
+    return value.map((entry, index) => sanitizePublicOutput(
+      entry, dropped, `${atPath}[${index}]`));
+  }
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const [key, child] of Object.entries(value)) {
+      const normalized = key.toLowerCase().replace(/[-_]/gu, "");
+      if (FORBIDDEN_PUBLIC_OUTPUT_KEYS.has(normalized)) {
+        dropped.push(`${atPath}.${key}`);
+        continue;
+      }
+      out[key] = sanitizePublicOutput(child, dropped, `${atPath}.${key}`);
+    }
+    return out;
+  }
+  return value;
+}
+function sanitizedPublicOutputRecord(request, output) {
+  const droppedForbiddenKeyPaths = [];
+  let sanitizedOutput = sanitizePublicOutput(
+    output, droppedForbiddenKeyPaths, "$");
+  let omittedForSizeCap = false;
+  if (Buffer.byteLength(JSON.stringify(sanitizedOutput), "utf8")
+    > PUBLIC_OUTPUT_MAX_BYTES_PER_ROUND) {
+    sanitizedOutput = null;
+    omittedForSizeCap = true;
+  }
+  return {
+    roundKind: request.roundKind,
+    roundIndex: request.roundIndex,
+    outputHash: hashStarcraftTmgContract(output),
+    omittedForSizeCap,
+    droppedForbiddenKeyPaths,
+    sanitizedOutput,
   };
 }
 
@@ -370,6 +455,10 @@ const LIVE_INSTRUCTIONS = [
     + "mission_grounded); when the authority is missing, keep the schedule "
     + "unknown and identify the missing authority. Never fabricate scoring "
     + "data.",
+  "Schedule-window labels and other narrative fields have display targets "
+    + "(64 characters for window labels): keep them concise, but never omit "
+    + "content to fit — exceeding a display target is only a soft warning "
+    + "and the full public text is preserved.",
 ].join("\n");
 
 function estimatePricing(receipt) {
@@ -402,7 +491,43 @@ async function main() {
   let repairRound = 1;
   let priorFailureReport = null;
   let priorPreservedPath = null;
-  if (await priorSuccessExists()) {
+  const recoveryMode = process.argv.includes(RECOVERY_FLAG);
+  let callCap = 4;
+  if (recoveryMode) {
+    // New authorization (269.17 follow-up): at most three additional
+    // physical calls recorded outside the original ledger and lock, to
+    // produce one valid complete plan after the narrative-capacity repair.
+    // Admitted only while the original ledger holds the repairable round-10
+    // failure; that report is preserved to repair-round-10-report.json and
+    // never rewritten, and the recovery lock is exclusive-create — no
+    // automatic retry, no twelfth flag.
+    callCap = 3;
+    let priorReport = null;
+    try {
+      priorReport = JSON.parse(await readFile(REPORT_PATH, "utf8"));
+    } catch {
+      priorReport = null;
+    }
+    if (priorReport?.status !== "failed"
+      || Number(priorReport?.repairRound || 1) !== 10
+      || !REPAIRABLE_FAILURE_CODES.has(priorReport?.failureCode)) {
+      console.error("LIVE_ROSTER_PLAN_RECOVERY_NOT_ADMITTED");
+      process.exitCode = 2;
+      return;
+    }
+    try {
+      await readFile(RECOVERY_PATHS.report);
+      console.error("LIVE_ROSTER_PLAN_RECOVERY_ALREADY_RECORDED");
+      process.exitCode = 2;
+      return;
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+    activePaths = RECOVERY_PATHS;
+    repairRound = RECOVERY_ROUND;
+    priorFailureReport = priorReport;
+    priorPreservedPath = await preserveAttemptReport(priorReport);
+  } else if (await priorSuccessExists()) {
     // Reopened list-quality lane (sub-slice 269.16+270.9): the manifest
     // authorizes exactly one new three-round BYOK generation cycle after
     // the round-9 legality pass (940/2000 minerals, unknown VP schedule),
@@ -442,6 +567,8 @@ async function main() {
   let coreWorker = null;
   let attached = null;
   const providerReceipts = [];
+  const publicOutputs = [];
+  let sentAttempts = 0;
   try {
     await claimAttempt(runId, startedAt, { repairRound });
 
@@ -584,6 +711,15 @@ async function main() {
           },
         };
         const callStarted = Date.now();
+        // Hard physical-call cap for this lane (4 for the original repair
+        // lane, 3 for the narrative-recovery lane): the cap is enforced
+        // locally before any byte is sent, so an over-cap round can never
+        // become a paid call.
+        if (sentAttempts >= callCap) {
+          throw Object.assign(new Error("LIVE_ROSTER_PLAN_PHYSICAL_CALL_CAP"),
+            { code: "LIVE_ROSTER_PLAN_PHYSICAL_CALL_CAP" });
+        }
+        sentAttempts += 1;
         let result;
         try {
           result = await coreWorker.send({
@@ -678,6 +814,11 @@ async function main() {
             "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_UNPARSEABLE"), {
             code: "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_UNPARSEABLE" });
         }
+        // Persist the sanitized public answer immediately — including when
+        // the strict schema below rejects it — so the failure can be
+        // revalidated offline at zero new Provider cost. Never the request
+        // body, the raw response text or any credential.
+        publicOutputs.push(sanitizedPublicOutputRecord(request, output));
         const validation = validateStarcraftTmgProviderJsonSchemaValueV1(
           contract.providerSchema, output);
         if (!validation.ok) {
@@ -753,7 +894,7 @@ async function main() {
     }, { deliberation, maxProposalRounds: 2 });
 
     requireCondition(providerReceipts.length >= 3
-      && providerReceipts.length <= 4,
+      && providerReceipts.length <= callCap,
       "LIVE_ROSTER_PLAN_CALL_DENOMINATOR_DRIFT");
     requireCondition(providerReceipts.every((receipt) => (
       receipt.physicalAttempts === 1 && receipt.automaticRetries === 0
@@ -841,24 +982,37 @@ async function main() {
       "LIVE_ROSTER_PLAN_SOURCE_MUTATION_DETECTED");
 
     // ---- artifacts
-    const planHashOnDisk = await writeJson(PLAN_PATH,
+    const planHashOnDisk = await writeJson(activePaths.plan,
       JSON.parse(serializeRosterPlanV1(session.plan)));
-    const traceHash = await writeJson(TRACE_PATH, {
+    const traceHash = await writeJson(activePaths.trace, {
       planningTrace: session.planningTrace,
       deliberationReceipts: session.deliberationReceipts,
       sessionReceipt: session.sessionReceipt,
       skillRouteReceipt: skillRoute.receipt,
     });
-    const toolReceiptsHash = await writeJson(TOOL_RECEIPTS_PATH, {
+    const toolReceiptsHash = await writeJson(activePaths.toolReceipts, {
       toolReceipts,
       mutationZeroProof: mutationProof,
     });
-    const providerReceiptsHash = await writeJson(PROVIDER_RECEIPTS_PATH, {
+    const providerReceiptsHash = await writeJson(activePaths.providerReceipts, {
       providerReceipts,
       keychainReceipt,
       egressPolicyHash: resolved.egressBinding.policyHash,
     });
-    const comparisonHash = await writeJson(COMPARISON_PATH, comparison);
+    const comparisonHash = await writeJson(activePaths.comparison, comparison);
+    const publicOutputsHash = await writeJson(activePaths.publicOutputs, {
+      schemaVersion: "starcraft_tmg_ticket_27_public_round_outputs_v1",
+      status: "passed",
+      publicOutputs,
+      sanitizedPublicOutputOnly: true,
+      hiddenReasoningKeyPathsDropped: publicOutputs.flatMap((entry) => (
+        entry.droppedForbiddenKeyPaths)),
+      rawRequestPersisted: false,
+      rawResponseTextPersisted: false,
+      rawCredentialPersisted: false,
+      fullPublicNarrativeTextPreserved: true,
+      trainingTruth: false,
+    });
 
     const pricingReceipts = providerReceipts.map((receipt) => (
       estimatePricing(receipt)));
@@ -881,7 +1035,8 @@ async function main() {
       runId, startedAt, finishedAt: new Date().toISOString(),
       repairRound,
       priorAttemptsChain: priorFailureReport ? {
-        admittedRepairFlag: `repair-round-${repairRound}`,
+        admittedRepairFlag: repairRound === RECOVERY_ROUND
+          ? RECOVERY_FLAG.slice(2) : `repair-round-${repairRound}`,
         immediatePriorReport: {
           runId: priorFailureReport.runId,
           reportHash: priorFailureReport.reportHash,
@@ -903,7 +1058,10 @@ async function main() {
         },
       } : null,
       userAuthorization: { explicitFlags: [...REQUIRED_FLAGS],
-        repairRoundFlag: repairRound > 1 ? `repair-round-${repairRound}` : null },
+        repairRoundFlag: repairRound > 1
+          ? (repairRound === RECOVERY_ROUND
+            ? RECOVERY_FLAG : `repair-round-${repairRound}`)
+          : null },
       credentialHygiene: {
         ingress: "macos_login_keychain_generic_password_via_security_binary",
         keychainReceiptHash: keychainReceipt.receiptHash,
@@ -1018,6 +1176,10 @@ async function main() {
         scoreRouteAuthorityStatus:
           session.sessionReceipt.scoreRouteAuthorityStatus,
         scheduleStatus: session.plan.scoreRoute.scheduleStatus,
+        narrativeCapacityPolicy:
+          session.sessionReceipt.narrativeCapacityPolicy,
+        narrativeDisplayWarningCount:
+          session.sessionReceipt.narrativeDisplayWarningCount,
       },
       laboratory: {
         descriptorHash: laboratoryCore.labDescriptor().descriptorHash,
@@ -1028,17 +1190,21 @@ async function main() {
       },
       presetComparison: comparison,
       artifacts: {
-        rosterPlanJson: { path: path.relative(ROOT, PLAN_PATH),
+        rosterPlanJson: { path: path.relative(ROOT, activePaths.plan),
           hash: planHashOnDisk },
-        planningTraceJson: { path: path.relative(ROOT, TRACE_PATH),
+        planningTraceJson: { path: path.relative(ROOT, activePaths.trace),
           hash: traceHash },
-        toolReceiptsJson: { path: path.relative(ROOT, TOOL_RECEIPTS_PATH),
+        toolReceiptsJson: { path: path.relative(ROOT, activePaths.toolReceipts),
           hash: toolReceiptsHash },
         providerReceiptsJson: {
-          path: path.relative(ROOT, PROVIDER_RECEIPTS_PATH),
+          path: path.relative(ROOT, activePaths.providerReceipts),
           hash: providerReceiptsHash },
-        presetComparisonJson: { path: path.relative(ROOT, COMPARISON_PATH),
+        presetComparisonJson: {
+          path: path.relative(ROOT, activePaths.comparison),
           hash: comparisonHash },
+        publicRoundOutputsJson: {
+          path: path.relative(ROOT, activePaths.publicOutputs),
+          hash: publicOutputsHash },
       },
       honestGaps: [
         "pregame list construction only: no match was played, so play-quality "
@@ -1060,7 +1226,7 @@ async function main() {
     };
     const report = { ...reportBody,
       reportHash: hashStarcraftTmgContract(reportBody) };
-    await writeFile(REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`, {
+    await writeFile(activePaths.report, `${JSON.stringify(report, null, 2)}\n`, {
       encoding: "utf8", mode: 0o600 });
     console.log(`Ticket 27 Slices 269-270 live roster plan passed; `
       + `calls=${providerReceipts.length}; model=${providerReceipts[0].reportedModel}; `
@@ -1068,6 +1234,34 @@ async function main() {
       + `costCnyMicros=${totalCostCnyMicros}; planHash=${session.plan.planHash}`);
   } catch (error) {
     const code = safeCode(error);
+    // Persist the sanitized public answers captured before the failure
+    // (including a schema-rejected final answer) so the failure can be
+    // revalidated offline at zero new Provider cost. Never the request
+    // body, the raw response text or any credential.
+    let failurePublicOutputsArtifact = null;
+    if (publicOutputs.length > 0) {
+      try {
+        const failureOutputsHash = await writeJson(activePaths.publicOutputs, {
+          schemaVersion: "starcraft_tmg_ticket_27_public_round_outputs_v1",
+          status: "failed_partial",
+          failureCode: code,
+          failureDetail: String(error?.message || "").slice(0, 200) || null,
+          publicOutputs,
+          sanitizedPublicOutputOnly: true,
+          hiddenReasoningKeyPathsDropped: publicOutputs.flatMap((entry) => (
+            entry.droppedForbiddenKeyPaths)),
+          rawRequestPersisted: false,
+          rawResponseTextPersisted: false,
+          rawCredentialPersisted: false,
+          fullPublicNarrativeTextPreserved: true,
+          trainingTruth: false,
+        });
+        failurePublicOutputsArtifact = {
+          path: path.relative(ROOT, activePaths.publicOutputs),
+          hash: failureOutputsHash,
+        };
+      } catch { /* best-effort evidence retention only */ }
+    }
     await writeSafeFailure(code, runId, startedAt, {
       failureDetail: String(error?.message || ""),
       repairRound,
@@ -1079,6 +1273,7 @@ async function main() {
         latencyMs: receipt.latencyMs,
         reportedModel: receipt.reportedModel,
       })),
+      publicOutputsArtifact: failurePublicOutputsArtifact,
       safeStatus: error?.safeStatus ?? null,
     }).catch(() => {});
     console.error(code);
