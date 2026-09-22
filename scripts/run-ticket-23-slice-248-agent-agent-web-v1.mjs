@@ -440,9 +440,9 @@ async function main() {
 
   async function settleBattlefieldVisuals() {
     if (abstractTerrainMode) {
-      await page.getByRole("imagebutton", {
-        name: /战场|Battlefield/u,
-      }).waitFor({ state: "visible", timeout: 30_000 });
+      await page.locator(
+        '[aria-label^="战场；"], [aria-label^="Battlefield;"]',
+      ).first().waitFor({ state: "visible", timeout: 30_000 });
       await page.evaluate(async () => {
         await new Promise((resolve) => requestAnimationFrame(() =>
           requestAnimationFrame(resolve)));
@@ -498,7 +498,7 @@ async function main() {
     phase = "applied") {
     return {
       boardScreenshot: await captureElement(
-        page.getByRole("imagebutton", { name: /战场|Battlefield/u }),
+        page.locator('[aria-label^="战场；"], [aria-label^="Battlefield;"]'),
         seatKey, actionType,
         revision, "complete-board", phase),
       controlScreenshot: await captureElement(
