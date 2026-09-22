@@ -150,12 +150,14 @@ plus a headless preflight mirror of the gate's non-browser phases (scratch
 script under `build/`, never committed). 0 real Provider calls / ¥0.
 
 > Status: **implementation complete — closed (266f.4); 266f.5 live acceptance
-> executed once (2026-09-22).** All four sub-slices plus the frozen plan are
+> executed once (2026-09-22, truncated at the 64-unit budget); 266f.6 repair +
+> second authorized live call executed once (2026-09-22) — product acceptance
+> ACHIEVED.** All four sub-slices plus the frozen plan are
 > committed in dependency order on
 > `agent/kimi/ticket-26-slice-266f-companion-live-product-acceptance`. The
-> focused browser gate has now ACTUALLY run (first complete run 2026-09-22,
+> focused browser gate has ACTUALLY run (first complete run 2026-09-22,
 > after three honest repair rounds exposed by its first-ever executions) and
-> **passed 28 checks / 10 claims / 12 artifacts** with 0 Provider calls / ¥0.
+> passed 28 checks / 10 claims / 12 artifacts with 0 Provider calls / ¥0.
 > The user-authorized single live Chinese BYOK conversation was then executed
 > exactly once through
 > `scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs`: one real
@@ -163,6 +165,13 @@ script under `build/`, never committed). 0 real Provider calls / ¥0.
 > reply exceeded the Ticket 16 profile's 64-unit output budget, so the run
 > stopped with `LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED`, zero retry, and
 > the one-call lock permanently claimed. See the 266f.5 section below.
+> The user then explicitly authorized the repair and ONE further live call:
+> the exact truncation was reproduced offline fail-first, a general versioned
+> output-budget + truncation classification/recovery contract landed
+> (`companion_output_budget_v2`, character-agnostic), the focused gate gained
+> the concrete fail-first phase and passed 29 checks, and the epoch-2 call
+> rendered the ACTUAL Chinese persona/worldbook-grounded reply end-to-end.
+> See the 266f.6 section below.
 
 ## Evidence, commits, gaps
 
@@ -179,7 +188,12 @@ script under `build/`, never committed). 0 real Provider calls / ¥0.
 | 266f.5 repair: sheet portal (gate run 1) | `e520eea` | `tactical-adjutant-panel.tsx`, verifier + runner page-scope selectors |
 | 266f.5 repair: gate ordering (gate run 2) | `41a6f8e` | verifier (provider-status hue asserted after chat section opens) |
 | 266f.5 repair: report assembly scope (gate run 3) | `3feb37b` | verifier (`durableProbe` hoisted to function scope) |
-| 266f.5 closure record | _(this commit)_ | this doc |
+| 266f.5 closure record | `92d71b6` | this doc |
+| 266f.6 output-budget/truncation contract | `f93432b` | `packages/companion-backend-module-v1/provider-output-budget-v1.mjs` (new), `packages/companion-backend-module-v1/index.mjs` |
+| 266f.6 live runner repair | `03fbb13` | `scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs` |
+| 266f.6 gate fail-first phase | `a9c2a3a` | `scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs` |
+| 266f.6 epoch-2 pre-dispatch repairs | `b8c7fb5` | `scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs` |
+| 266f.6 closure record | _(this commit)_ | this doc |
 
 `git diff --name-only fa1c83d..HEAD` touches only the files in the table
 above plus the pre-existing `.kimi-code/agents/project-d-live-acceptance.md`
@@ -413,6 +427,9 @@ kept. The product-level acceptance of a RENDERED live Chinese reply is
 the companion channel JSON plus Chinese reply text. A productive retry needs
 new user authorization AND a larger output budget in the Provider profile —
 Provider infrastructure outside this slice's manifest and untouched here.
+**(Superseded by 266f.6 below: the user authorized the repair and one further
+call; the budget was repaired through the versioned contract with the Ticket
+16 profile untouched, and the epoch-2 call achieved the rendered acceptance.)**
 
 ### Honest nonblocking gaps (no Critical/High findings open)
 
@@ -428,16 +445,16 @@ Provider infrastructure outside this slice's manifest and untouched here.
   branch, because the portaled sheet no longer sits under the dock in sheet
   modes. Their passed runs remain valid historical evidence of their own
   integrated state; they were not rerun here (out of this manifest's scope).
-- **Live BYOK conversation: executed once, acceptance not achieved.** The
-  single authorized physical call returned HTTP 200 but truncated at the
-  Ticket 16 profile's 64-unit output budget, so no live reply rendered
-  (explicit interrupted card instead; zero retry; dispatch lock claimed).
-  The Provider also reported `deepseek-flash` against the requested
-  `deepseek-v4-flash` — recorded drift; the pinned pricing snapshot refuses
-  an authoritative receipt for the drifted model, so the $0.05240532 figure
-  is an explicitly-labelled snapshot-rate estimate, not an invoice.
-  Productive retry requires new user authorization and a Provider-profile
-  output-budget change (outside this manifest).
+- **Live BYOK conversation: ACHIEVED on the second authorized call (epoch 2,
+  266f.6).** Epoch 1 returned HTTP 200 but truncated at the Ticket 16
+  profile's 64-unit output budget (zero retry; dispatch lock claimed). Epoch 2
+  (the single user-authorized repair call) rendered the actual Chinese reply
+  with the versioned 475-unit budget. The Provider again reported
+  `deepseek-flash` against the requested `deepseek-v4-flash` — the drift is
+  recorded in both live reports; the pinned pricing snapshot refuses an
+  authoritative receipt for the drifted model, so the epoch-2 cost figure is
+  an explicitly-labelled snapshot-rate estimate (`estimateOnly: true`), not an
+  invoice. See 266f.6.
 - **Full tsc baseline delta** unverified in the worktree (no local install;
   `node_modules` was symlinked from the main checkout for the export step);
   the new code's only typing accommodation is the guarded `as any` for
@@ -448,3 +465,157 @@ Provider infrastructure outside this slice's manifest and untouched here.
 - Kerrigan's character-tier worldbook stays empty by data (pre-existing
   pack content; the gate asserts Zagara's three sealed entries and
   Kerrigan's zero explicitly).
+
+## 266f.6 — output-budget repair + second authorized live call (2026-09-22)
+
+User authorization on file: repair the recorded 64-unit truncation and run
+exactly ONE further Chinese BYOK call, zero retry. Executed exactly once;
+never retried. Slice-wide physical-call total is now 2 (epoch 1 + epoch 2),
+the hard maximum the runner enforces (two epoch-scoped O_EXCL dispatch locks;
+epoch 2 refuses unless epoch 1's lock and failure report prove the exact
+recorded truncation context).
+
+### Fail-first offline reproduction (0 Provider calls / ¥0)
+
+Scratch `build/266f-truncation-repro.mjs` (uncommitted, same discipline as
+the 266f preflight mirrors) drove the REAL egress transport
+(`provider-egress-transport-v1.mjs`) against the REAL Ticket 16 profile
+binding with a fake socket returning the exact captured shape (HTTP 200,
+`finish_reason: "length"`, 118,911 input / exactly 64 output units, sealed
+channel JSON cut mid-string):
+
+- the wire body carried `max_tokens: 64` — the profile `outputBudget` cap is
+  the concrete bug condition;
+- the transport DID classify the truncation
+  (`providerTurn.issue === "output_truncated"`); the runner adapter then
+  flattened it into the generic `LIVE_PROVIDER_RESPONSE_CONTRACT_REJECTED`
+  with no typed classification, no budget diagnostics and no recovery
+  (fail-first: the repaired-contract assertions all failed pre-fix);
+- post-fix the same scratch is fully green: typed
+  `LIVE_PROVIDER_OUTPUT_BUDGET_TRUNCATED`, mid-string cut never recovered,
+  terminated-string envelope recovered byte-exact, budget 475 > 64.
+
+### The general versioned contract
+
+`packages/companion-backend-module-v1/provider-output-budget-v1.mjs`
+(`starcraft_tmg_companion_provider_output_contract_v1`,
+`companion_output_budget_v2`):
+
+- **Output budget**: derived from the response contract itself — serialized
+  sealed-envelope bytes (≈4 bytes/unit + 16 units/channel structure margin)
+  plus a bounded 448-unit reply-text floor, clamped to [64, 1024]. For the
+  `companion_reply` contract: 475 units. Character-agnostic (channel names
+  only); records the superseded flat 64-unit v1 budget and its defect.
+- **Classification**: `channel_text` / `output_budget_truncated` /
+  `response_json_invalid` / `provider_tool_turn` / `contract_missing_channel`
+  / `empty_output`, with truncation diagnostics (budget units, content bytes,
+  recovery outcome).
+- **Recovery**: strictly structural — an escape-aware JSON string scan
+  extracts a channel `text` value only when the string literal is fully
+  terminated (outer envelope closers may be budget-cut); a mid-string cut is
+  NEVER recovered and nothing is fabricated. Recovery is honestly marked
+  (`recoveredFromTruncatedEnvelope`).
+
+No Rules/Authority/match code, no Provider infrastructure file and no
+character-specific code was touched. The runner derives the egress profile
+through the SAME sealed `createProviderProfile` factory with `outputBudget`
+as the ONLY delta (Ticket 16 profile untouched; both hashes recorded in the
+report). The epoch-1 flat rejection path is preserved for genuine
+non-truncation contract violations (gate phase 4 proves no
+misclassification).
+
+### Focused gate (after the final relevant code change) — PASSED
+
+`node scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs`
+ran once after the verifier phase landed (29 checks / 10 claims / 12
+artifacts, reportHash `ea5d3359…d0c7`), and once more after the two epoch-2
+pre-dispatch runner repairs changed the hash-recorded runner file (29 checks
+/ 10 claims / 12 artifacts, reportHash
+`60feabf70651b047a1807597331d43b85bb26f4548bc543db3f932dca5c6a08d`, 39.2s).
+Both runs: 0 real Provider calls / ¥0. The new phase
+`headless_output_budget_truncation_contract` reproduces the concrete bug
+fail-first through the REAL transport + REAL runner adapter and proves: the
+64-unit wire cap, typed truncation with budget diagnostics, zero-retry
+denominator (second `complete` refused with zero Worker dispatches),
+byte-exact terminated-string recovery, no misclassification of non-truncated
+invalid JSON, and the live request now carrying the resolved 475-unit budget.
+
+### Epoch-2 pre-dispatch repairs (0 physical calls; lock never claimed)
+
+Two local defects surfaced before any dispatch and were repaired in one round
+each: (1) the derived profile version used `+`, which the egress contract's
+ID alphabet rejects (`providerProfileRef.version is invalid`); (2) the
+runner's failure report swallowed the local error message — it now records a
+redaction-checked message. Neither attempt dispatched anything:
+`physicalProviderCalls: 0`, the epoch-2 lock file was never created, and no
+credential left the Keychain→Worker path. These were pre-dispatch local
+repairs, not Provider retries.
+
+### Executed epoch-2 live run (the one authorized repair call)
+
+- Run id `05589b9c-12a2-49cc-bbaf-5381236fd4b1`, started
+  2026-09-22T10:17:43Z; report
+  `build/ticket-26-slice-266f-live-byok-companion-v1/live-report.second.json`,
+  reportHash
+  `cf2e24de29e6cfa80216d4f99e1258deda94e268604c1a4616b8a67564de156e`.
+  Same secure path as epoch 1: Keychain (attested `/usr/bin/security`, empty
+  environment, no shell) → isolated Worker → one HTTPS POST to
+  `api.deepseek.com` (TLS verified, DNS pinned, no proxy, no redirect).
+  Parent credential buffer asserted zeroed after attach.
+- **ONE physical call, HTTP 200, zero retry** (`physicalAttempts: 1`,
+  `automaticRetries: 0`, `dispatchAttempts: 1`; the second in-adapter
+  dispatch guard and the epoch-2 lock make another call impossible without
+  new user authorization).
+- **Actual Chinese persona/worldbook-grounded reply**, byte-identical across
+  the isolated-Worker output, the server transcript and the rendered DOM on
+  desktop AND the 390px resume:
+  「指挥官，当前我方Marine与Marauder已部署于左翼，敌方Zergling与Roach在右翼对峙，双方尚未接战；建议先让Marine与Marauder保持距离、利用射程优势待机，同时尽快部署Medic与Goliath以巩固阵线。」
+  — grounded in the real two-seat room state (Marine/Marauder vs
+  Zergling/Roach dispositions) and Zagara's sealed package worldbook: all
+  three character-tier entries fired (`zagara.wb.char`,
+  `zagara.wb.swarm_attrition`, `zagara.wb.tmg_context`, `scopeTier:
+  "character"`, depth 0). Honest note: the session was fresh, so the
+  memory layers had nothing written yet (`layersIncluded: ["worldbook"]`;
+  transcript tail carried in the messages) — no memory content was
+  fabricated.
+- **Usage/cost**: 118,912 input units (896 cache-hit + 118,016 cache-miss) +
+  78 output units = 118,990 total. The Provider again reported
+  `deepseek-flash` vs the requested `deepseek-v4-flash` (the drift first
+  recorded in epoch 1 recurs), so the pinned pricing snapshot refuses an
+  authoritative receipt and the report carries an explicitly-labelled
+  off-peak snapshot-rate estimate: **$0.026021272 (estimateOnly, not an
+  invoice)**; the Provider invoice remains authoritative. Server accounting:
+  exactly 1 external network attempt / 1 paid inference
+  (`providerAccountingAfter`).
+- **Output classification**: `channel_text`, `recoveredFromTruncatedEnvelope:
+  false` — the 475-unit budget carried the full sealed envelope (78 output
+  units used); no recovery was needed.
+- **Detach / no residual worker / zero persistence**: explicit
+  `explicit_user_detach` with the `sensitiveBytesZeroed` shutdown
+  acknowledgement; worker tombstone `state: "exited"`,
+  `credentialPersistence: "none_after_process_exit"`; the worker PID is
+  provably gone (`workerProcessExited: true`); parent buffer re-zeroed;
+  `rawCredentialPersisted: false`, `credentialHashPersisted: false`; report
+  and every artifact scanned for credential-shaped material.
+- **Evidence**: `browser-evidence/epoch-2/live-01-desktop-session-open.png`,
+  `live-02-desktop-chinese-reply.png` (desktop 1500×1050, the actual reply
+  rendered), `live-03-narrow-mobile-resumed.png` (390×844 touch resume,
+  zero horizontal overflow) — sha256-indexed in the report.
+- **Room safety**: zero Room mutations (mutation-counting facade), state
+  revision 0 → 0.
+
+### Honest nonblocking notes (no Critical/High findings opened by 266f.6)
+
+- The Provider-side reported-model drift (`deepseek-flash` vs requested
+  `deepseek-v4-flash`) recurred; it is recorded in both live reports and
+  degrades pricing to a labelled snapshot-rate estimate. It is a Provider
+  reporting fact, not a product-path defect; resolving it belongs to Provider
+  profile/pricing-snapshot governance outside this manifest.
+- Fresh-session memory layers were honestly empty (nothing written yet);
+  layered-memory content was proven in the deterministic gate phases instead.
+- Slice accounting: epoch 1 = 1 call, 118,975 units, $0.05240532 snapshot-rate
+  estimate; epoch 2 = 1 call, 118,990 units, $0.026021272 snapshot-rate
+  estimate; two pre-dispatch local failures with 0 calls. Total live: 2
+  physical calls, 237,965 units, ≈$0.0784 estimated. No ¥100 threshold
+  crossed. Kimi CLI exposes no token/currency telemetry; no Kimi cost is
+  inferred.
