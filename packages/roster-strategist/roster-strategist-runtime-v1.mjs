@@ -9,6 +9,11 @@ import {
   verifyPregameSceneLaboratoryDescriptorV1,
 } from "./pregame-scene-laboratory-v1.mjs";
 import {
+  normalizeRosterStrategistPublicOutputV1,
+  ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1,
+  ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_VERSION,
+} from "./public-output-normalization-v1.mjs";
+import {
   createOpponentArchetypeHypothesisV1,
   createRosterCandidateComparisonV1,
   createRosterCandidateV1,
@@ -287,6 +292,21 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     hiddenChainOfThoughtRequested: false,
     hiddenChainOfThoughtPersisted: false,
     unknownStaysUnknown: true,
+    publicOutputNormalization: {
+      aliasRegistrySchema:
+        ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.schema,
+      aliasRegistryVersion: ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_VERSION,
+      aliasRegistryHash:
+        ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1.registryHash,
+      renamesOnlyAdmittedAliases: true,
+      unwrapsOnlyAdmittedTransportEnvelopes: true,
+      stampsOnlyAbsentRequestOwnedConstants: true,
+      neverInventsStrategyContent: true,
+      neverFillsMissingSemanticContent: true,
+      neverWeakensLegality: true,
+      neverSpecialCasesOneCandidateOrProvider: true,
+      fullSchemaAndRulesValidationRunsAfterNormalization: true,
+    },
     trainingTruth: false,
   };
   const descriptor = freezeDeep({ ...descriptorBody,
@@ -846,7 +866,22 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     }
     rejectForbiddenKeys(response.output);
     trace.deliberationReceipts.push(clone(response.receipt || null));
-    return response.output;
+    // Typed public-output normalization boundary: unwraps admitted transport
+    // envelopes, stamps absent request-owned constants and renames admitted
+    // field aliases only. It never invents or fills semantic content; the
+    // strict schema/Rules validation below always runs on the normalized
+    // output and fails closed on anything the boundary did not admit.
+    const normalization = normalizeRosterStrategistPublicOutputV1({
+      output: response.output,
+      request: {
+        roundKind: roundRequest.roundKind,
+        schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+      },
+    });
+    return freezeDeep({
+      output: normalization.output,
+      normalizationReceipt: clone(normalization.receipt),
+    });
   }
 
   function buildRoundRequest({ sessionId, roundIndex, roundKind, nodes,
@@ -986,7 +1021,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       promptNodeHashes: foundationNodes.map((node) => node.nodeHash),
       informationNeedOutcomes: [],
     };
-    const foundationOutput = await deliberateRound(deliberation,
+    const foundationDeliberation = await deliberateRound(deliberation,
       buildRoundRequest({
         sessionId, roundIndex: 1, roundKind: "strategy_foundation",
         nodes: foundationNodes,
@@ -1000,6 +1035,9 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           enumerationReceiptHash: enumeration.receiptHash,
           skillRouteReceiptHash: route.receipt.receiptHash },
       }), traceSink);
+    const foundationOutput = foundationDeliberation.output;
+    foundationTrace.outputNormalizationReceipt =
+      foundationDeliberation.normalizationReceipt;
     foundationTrace.contextHash = hashStarcraftTmgContract({
       sessionId, roundKind: "strategy_foundation",
       provenanceHash: provenance.provenanceHash,
@@ -1069,7 +1107,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         promptNodeHashes: proposalNodes.map((node) => node.nodeHash),
         informationNeedOutcomes: [],
       };
-      const proposalOutput = await deliberateRound(deliberation,
+      const proposalDeliberation = await deliberateRound(deliberation,
         buildRoundRequest({
           sessionId, roundIndex, roundKind: "candidate_proposals",
           nodes: proposalNodes,
@@ -1082,6 +1120,9 @@ export function createRosterStrategistRuntimeV1(input = {}) {
             proposalRound, provenanceHash: provenance.provenanceHash,
             enumerationReceiptHash: enumeration.receiptHash },
         }), traceSink);
+      const proposalOutput = proposalDeliberation.output;
+      proposalTrace.outputNormalizationReceipt =
+        proposalDeliberation.normalizationReceipt;
       proposalTrace.contextHash = hashStarcraftTmgContract({
         sessionId, roundKind: "candidate_proposals", proposalRound,
         provenanceHash: provenance.provenanceHash,
@@ -1204,7 +1245,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       promptNodeHashes: comparisonNodes.map((node) => node.nodeHash),
       informationNeedOutcomes: [],
     };
-    const comparisonOutput = await deliberateRound(deliberation,
+    const comparisonDeliberation = await deliberateRound(deliberation,
       buildRoundRequest({
         sessionId, roundIndex: comparisonRoundIndex,
         roundKind: "comparison_selection",
@@ -1218,6 +1259,9 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           provenanceHash: provenance.provenanceHash,
           candidateHashes: evaluated.map((entry) => entry.candidate.candidateHash) },
       }), traceSink);
+    const comparisonOutput = comparisonDeliberation.output;
+    comparisonTrace.outputNormalizationReceipt =
+      comparisonDeliberation.normalizationReceipt;
     comparisonTrace.contextHash = hashStarcraftTmgContract({
       sessionId, roundKind: "comparison_selection",
       provenanceHash: provenance.provenanceHash,
@@ -1315,6 +1359,10 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       deliberationKind: deliberationDescriptor.kind,
       modelVersion: deliberationDescriptor.modelVersion,
       promptVersion: deliberationDescriptor.promptVersion,
+      outputNormalizationAliasRegistryVersion:
+        ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_VERSION,
+      outputNormalizationReceiptHashes: trace.map((entry) => (
+        entry.outputNormalizationReceipt?.receiptHash ?? null)),
       selectedByAgentDeliberation: true,
       hostPreferenceWeights: false,
       hiddenChainOfThoughtRequested: false,
@@ -1374,14 +1422,16 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         envelopeAtTopLevelNoChannelsWrapper: true }),
     ];
     const sink = { deliberationReceipts: [] };
-    const output = await deliberateRound(deliberation, buildRoundRequest({
-      sessionId: `${plan.planId}-revision-${plan.planVersion + 1}`,
-      roundIndex: plan.planVersion + 1, roundKind: "revision", nodes,
-      userMessage: "Publish the revised public plan sections for the declared "
-        + "revision triggers. Public fields only.",
-      contextSeed: { planHash: plan.planHash, roundKind: "revision",
-        revisedSectionKeys },
-    }), sink);
+    const revisionDeliberation = await deliberateRound(deliberation,
+      buildRoundRequest({
+        sessionId: `${plan.planId}-revision-${plan.planVersion + 1}`,
+        roundIndex: plan.planVersion + 1, roundKind: "revision", nodes,
+        userMessage: "Publish the revised public plan sections for the declared "
+          + "revision triggers. Public fields only.",
+        contextSeed: { planHash: plan.planHash, roundKind: "revision",
+          revisedSectionKeys },
+      }), sink);
+    const output = revisionDeliberation.output;
     validateEnvelope(output, "revision");
     exactKeys(output, ["schemaVersion", "roundKind", "publicSummaryText",
       "revisedScoreRoute", "revisedDeploymentConcept"], code);
@@ -1440,6 +1490,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     return freezeDeep({
       plan: revised,
       revisionEvent: revision,
+      outputNormalizationReceipt:
+        clone(revisionDeliberation.normalizationReceipt),
       deliberationReceipts: sink.deliberationReceipts.map((entry) => clone(entry)),
     });
   }
