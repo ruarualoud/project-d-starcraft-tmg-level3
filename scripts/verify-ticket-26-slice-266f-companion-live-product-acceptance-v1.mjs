@@ -110,6 +110,7 @@ const PROVIDER_API_PREFIX = "/starcraft-tmg-level3/provider/api/v1";
 const LEGACY_ADAPTER_PATH = path.join(PROJECT_D_ROOT, "scripts/starcraft-tmg-rules-v0.mjs");
 const SYNTHETIC_SECRET = "sk-266f-synthetic-fixture-credential-never-real";
 const MANIFEST_ALLOWED_PATHS = [
+  ".kimi-code/agents/project-d-live-acceptance.md",
   "packages/companion-backend-module-v1/",
   "packages/product-composition/companion-room-session-service-v1.mjs",
   "packages/product-composition/companion-product-module-v1.mjs",
@@ -119,6 +120,7 @@ const MANIFEST_ALLOWED_PATHS = [
   "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
   "apps/starcraft-tmg-expo/components/character/companion-catalogue-content.d.ts",
   "scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs",
+  "scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs",
   "docs/ticket-26-slice-266f-companion-live-product-acceptance-v1-2026-09-22.md",
 ];
 const ADJUTANT_PANEL_SOURCE = "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx";
@@ -2380,12 +2382,12 @@ async function main() {
       userAuthorized: "one bounded live Chinese BYOK conversation acceptance",
       executedInThisGate: false,
       realProviderCalls: 0,
-      reason: "the implementing agent is forbidden from calling paid Providers or reading credentials; the live acceptance is an explicit reservation, not a silently skipped step",
+      reason: "this deterministic gate itself never touches a real credential or paid Provider; the single authorized live step is executed separately, exactly once, by scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs under the project-d-live-acceptance profile",
       reservedProcedure: [
-        "the integrating run reads the credential ONLY through the existing Keychain → isolated-Worker secure path (packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs + the Ticket 16 Slice 162 pattern); the raw key never enters the agent prompt, repository, command line, stdout/stderr, screenshots, report, or logs",
-        "attach through the same Ticket 16 secure BYOK contracts proven in this gate (consent → single-use octet-stream ingress → isolated Worker session memory → detach)",
-        "run one bounded Chinese companion conversation; inspect only redacted product receipts",
-        "stop immediately on 401/402/403 or ambiguous dispatch; never silently retry",
+        "scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs reads the credential ONLY through the existing Keychain → isolated-Worker secure path (packages/secure-provider-runtime/keychain-credential-ingress-v1.mjs + the Ticket 16 Slice 162 egress Worker pattern); the raw key never enters the agent prompt, repository, command line, stdout/stderr, screenshots, report, or logs",
+        "attach through the same isolated Worker contract proven in this gate (single-use ingress → child-process session memory only → explicit detach with sensitiveBytesZeroed acknowledgement)",
+        "run one bounded Chinese companion conversation through the real product path; inspect only redacted product receipts",
+        "stop immediately on 401/402/403, missing attachment or ambiguous dispatch; never silently retry; a one-attempt dispatch lock enforces the hard maximum of one physical Provider call",
         "record exact Provider calls, reported tokens and estimated cost",
         "detach at the end and prove credential absence from persistence and artifacts",
       ],
