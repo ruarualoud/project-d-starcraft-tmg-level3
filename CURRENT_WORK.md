@@ -6,6 +6,34 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — reserve coherency repair; safe r61 reload
+
+58038 confirmed exited1 after controlled server shutdown. Before shutdown both
+Providers had no unfinished decisions and both Bots no pending Apply; r61
+accepted/replayed, r60 Web screenshot captured.145calls/15,689,641accounted
+units/estimated¥21.051052, bothFlash. Resume the same directory
+`20260922172710914`, preserve all paid outputs and capture r61; do not fork or
+regenerate accepted actions.
+
+At r57 the Host wrongly excluded Goliath2 deployment: the solver faked an
+on-field reserve without coordinates to query coherency, then the full modifier
+projection tried Queen detection geometry. Shared narrow intrinsic-coherency
+projection removes that dependency without changing auras/Rules/strategy.
+Concrete captured fixture red→one green0.593s,12fielded-unit parity including
+4inch exceptions, malformed full geometry still rejected.0Provider/Room/¥0;
+no old gates/builds. It reaches the instantiation boundary, not a certified
+deployment. Details `docs/ticket-23-slice-248-reserve-coherency-query-repair-2026-09-23.md`.
+r57→r58 remains engineering-influenced S249 evidence, not a pure Skill failure.
+T23 still33/36:248full match,249review,250synthesis remain.
+
+**K3 S27137154 is stopped**, confirmed exit1/native130. Its non-live rehearsal
+repeated ECONNRESET without relevant changes beyond the three-round limit;
+do not repeat the same command. Four scoped commits through53c2bfa and uncommitted
+UI/verifier work remain in its isolated worktree; no completed Flash acceptance
+or handoff. Diagnose the exact transport boundary before any new verification.
+This isolated blocker does not stop T23. Native K3 stays K3; all product paid
+acceptance and match calls remain Flash-only, no Pro fallback.
+
 ### 2026-09-23 T23 / S248 — r55 live recovery complete; keep58038
 
 **58038 is live**. Shared historical-retry registry and Queen contact-search

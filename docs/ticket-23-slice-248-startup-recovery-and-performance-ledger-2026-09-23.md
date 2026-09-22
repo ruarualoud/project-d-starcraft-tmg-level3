@@ -62,6 +62,22 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r57–60 — irrelevant aura query removed; observation overhead persists
+
+A reserve coherency read invoked the entire characteristic/detection projection
+after inventing an on-field flag without coordinates. Queen detection crashed
+the read, removed the originally selected Goliath2 deployment and forced a new
+Planner/Action path. The shared narrow coherency projection now reads only the
+needed intrinsic rules; no strategic facts or output capacity were trimmed.
+Concrete red→one green0.593s,0Provider calls. Do not attribute the whole r57
+generation cost to this fault without separating its normal queries/decisions.
+
+r60 observation: manifest14.080s + refresh7.250s + screenshots34.484s =55.814s.
+This remains a measured optimization item, not a reason to reduce screenshots
+or planning. At the safe r61 reload:145calls/15,689,641accounted units/estimated
+¥21.051052, bothFlash. The hypothetical change has not yet proved a full live
+deployment or an end-to-end latency improvement.
+
 ### r55 — real repaired placement and remaining control-plane latency
 
 After a terminal r54 proposal failure, the repaired same-room58038 run used

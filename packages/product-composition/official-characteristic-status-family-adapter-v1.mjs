@@ -1079,6 +1079,31 @@ function targetEngagedWithOtherFriendly(state, actor, target) {
     && piece.id !== actor.id && activePiece(piece)
     && unitWithin(state, piece, target, 1000).within);
 }
+function horizontalCoherencyFromPassives(passives) {
+  return Math.max(3000, ...passives.filter((entry) => (
+    entry.effectKind === "coherency_projection"))
+    .map((entry) => entry.horizontalCoherencyMilliInches));
+}
+
+// Coherency is intrinsic to the selected Unit's fielded features, not a
+// distance/aura query. A reserve-placement solver needs the post-entry rule
+// before it has positions; it must not fabricate a positioned battlefield Unit
+// merely to ask the full combat/visibility projection for this scalar.
+export function projectOfficialHorizontalCoherencyV1(bundle, state, request) {
+  const piece = state.pieces.find((entry) => entry.id === request.pieceId);
+  if (!piece) fail("CHARACTERISTIC_STATUS_QUERY_PIECE_UNKNOWN", String(request.pieceId || ""));
+  const projectedPiece = request.assumeDeployed === true
+    ? { ...piece, isOnField: true, isInReserves: false } : piece;
+  const passives = passiveRoutesForPiece(bundle, state, projectedPiece);
+  return {
+    pieceId: piece.id,
+    horizontalCoherencyMilliInches: horizontalCoherencyFromPassives(passives),
+    hypotheticalDeployment: request.assumeDeployed === true && !activePiece(piece),
+    spatialAurasEvaluated: false,
+    trainingTruth: false,
+  };
+}
+
 export function projectOfficialCharacteristicStatusFamilyModifiersV1(
   bundle, state, request,
 ) {
@@ -1165,9 +1190,7 @@ export function projectOfficialCharacteristicStatusFamilyModifiersV1(
     criticalHit: Math.max(0, ...firstWeapon.filter((entry) => (
       entry.keyword === "critical_hit")).map((entry) => Number(entry.value || 0))),
     tough,
-    horizontalCoherencyMilliInches: Math.max(3000, ...passives.filter((entry) => (
-      entry.effectKind === "coherency_projection"))
-      .map((entry) => entry.horizontalCoherencyMilliInches)),
+    horizontalCoherencyMilliInches: horizontalCoherencyFromPassives(passives),
     eligibleEvadeAgainstAllAttacks: passives.some((entry) => (
       entry.effectKind === "evade_eligibility")),
     crossEngagementTargetingAllowed: passives.some((entry) => (

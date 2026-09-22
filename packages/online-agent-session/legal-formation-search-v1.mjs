@@ -8,7 +8,7 @@ import {
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
 import { deriveOfficialModelSurfacePlacementV2 } from
   "../rule-atoms/official-engagement-graph-v2.mjs";
-import { projectOfficialCharacteristicStatusFamilyModifiersV1 } from
+import { projectOfficialHorizontalCoherencyV1 } from
   "../product-composition/official-characteristic-status-family-adapter-v1.mjs";
 import { createOfficialUnitLifecycleFamilyAdapterV1 } from
   "../product-composition/official-unit-lifecycle-family-adapter-v1.mjs";
@@ -315,21 +315,10 @@ function profileRadius(profile) {
 
 function horizontalCoherencyRange(state, piece) {
   if (!state.officialCharacteristicStatusFamilySourceBundle || !piece) return 3_000;
-  const projectedState = piece.isOnField === true ? state : clone(state);
-  if (projectedState !== state) {
-    const projectedPiece = projectedState.pieces.find((entry) =>
-      entry.id === piece.id);
-    projectedPiece.isOnField = true;
-    projectedPiece.isInReserves = false;
-    projectedPiece.models = projectedPiece.models.map((model) => ({
-      ...model,
-      isOnField: model.isDestroyed !== true,
-    }));
-  }
-  return Number(projectOfficialCharacteristicStatusFamilyModifiersV1(
-    projectedState.officialCharacteristicStatusFamilySourceBundle,
-    projectedState,
-    { pieceId: piece.id },
+  return Number(projectOfficialHorizontalCoherencyV1(
+    state.officialCharacteristicStatusFamilySourceBundle,
+    state,
+    { pieceId: piece.id, assumeDeployed: piece.isOnField !== true },
   ).horizontalCoherencyMilliInches || 3_000);
 }
 
