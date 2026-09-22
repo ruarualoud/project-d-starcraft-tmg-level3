@@ -42,6 +42,26 @@ classic-map art fidelity and are superseded by the semantic-map reset above.
 
 ### 2026-09-22 Ticket 23 / Slice 248 checkpoint
 
+2026-09-23 r10 checkpoint: 20 attempts / 2,202,454 accounted units /
+estimated ¥2.926274, all applied actions Replay-verified. However r8/r9 exposed
+an Omega-only placement projection: non-unit assets had null metrics while the
+selector falsely labelled them lowest fire / closest objective. The shared
+projection now supplies actual asset-coordinate geometry, separates source
+actor identity, preserves unknown physical size and non-unit attack bands,
+and assigns comparison facets only from known metrics. The saved six-option
+bug reproduced red then passed one focused existing-verifier mode with zero
+Provider/Room changes. Preserve r8–r10 as non-training evidence and fork the
+safe prefix through r7 for corrected decisions. Report:
+`docs/ticket-23-slice-248-non-unit-placement-evidence-repair-2026-09-23.md`.
+
+K3 map closure is NOT promoted: the user rejected high-ground traversal,
+missing central walls and oversized grass contours. Its original session now
+owns offline image segmentation plus reviewed correction, layered screenshots
+and then explicit Rules/Agent gap analysis; no expansion to the other 19 maps
+until geometry, Rules and Agent acceptance. K3 threat UI now also owns a
+convenient on/off interaction redesign and combined health/damage-allocation/
+deploy/action/companion compatibility, besides opacity/clipping repair.
+
 2026-09-23 network follow-up: a second 120-second timeout left the room at r7;
 13 attempts / 1,688,225 accounted units / estimated ¥2.229344. The live stack
 now uses a server-owned 300-second request deadline without changing the

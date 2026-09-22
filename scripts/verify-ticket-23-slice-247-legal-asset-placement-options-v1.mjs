@@ -2,7 +2,8 @@
 
 import { createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1 } from
   "../packages/online-agent-session/room-backed-spatial-rules-query-adapter-v1.mjs";
-import { searchStarcraftTmgLegalAssetPlacementOptionsV1 } from
+import { searchStarcraftTmgLegalAssetPlacementOptionsV1,
+  selectStarcraftTmgStrategicAssetPlacementOptionsV1 } from
   "../packages/online-agent-session/legal-asset-placement-search-v1.mjs";
 import {
   inspectStarcraftTmgFormationThreatClaimsV1,
@@ -19,6 +20,109 @@ const HASH_C = "c".repeat(64);
 function ensure(condition, code, details = {}) {
   if (!condition) throw Object.assign(new Error(
     `${code}:${JSON.stringify(details)}`), { code, ...details });
+}
+
+async function nonUnitPlacementProjectionOnly() {
+  const { DatabaseSync } = await import("node:sqlite");
+  const { readFile } = await import("node:fs/promises");
+  const path = await import("node:path");
+  const { createStarcraftTmgPrivatePayloadCodec } = await import(
+    "../packages/room-store/room-store-v1.mjs");
+  const { createSqliteStarcraftTmgRoomStore } = await import(
+    "../packages/room-store/sqlite-room-store-v1.mjs");
+  const root = path.resolve(new URL("..", import.meta.url).pathname);
+  const run = path.join(root,
+    "build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922133120597");
+  const privateState = JSON.parse(await readFile(path.join(run,
+    "runner-private.json"), "utf8"));
+  const db = new DatabaseSync(path.join(run,
+    "seats/player2/provider/live-decisions.sqlite"), { readOnly: true });
+  let decision;
+  try {
+    const saved = JSON.parse(db.prepare(
+      "SELECT record_json FROM sc_live_decision_records LIMIT 1").get().record_json);
+    decision = Object.values(saved.decisions).find((row) =>
+      row.authority?.stateRevision === 7);
+  } finally { db.close(); }
+  ensure(decision, "REAL_R7_DECISION_MISSING");
+  const old = decision.queryReceipts.find((row) =>
+    row.queryKind === "legal_asset_placement_options").result;
+  ensure(old.effectKind === "reserve_deploy_indicator"
+    && old.placementOptions.every((row) => row.tacticalMetrics === null),
+  "CAPTURED_NULL_METRICS_REPRODUCTION_MISSING");
+  const reselected = selectStarcraftTmgStrategicAssetPlacementOptionsV1(
+    old.placementOptions, 6, old.preferredAnchor);
+  ensure(reselected.every((row) => !/fire|risk|objective/u.test(row.selectionFacet)),
+    "UNKNOWN_ASSET_METRICS_MISLABELLED_AS_SAFE", {
+      facets: reselected.map((row) => row.selectionFacet),
+    });
+  const module = await import(
+    "../packages/online-agent-session/legal-asset-placement-search-v1.mjs");
+  const store = createSqliteStarcraftTmgRoomStore({
+    filename: path.join(run, "room.sqlite"),
+    privatePayloadCodec: createStarcraftTmgPrivatePayloadCodec({
+      key: privateState.storeEncryptionKeyBase64,
+      keyId: `ticket23-slice248-room-store-${path.basename(run)}`,
+      trustLevel: "development_persistent",
+    }),
+  });
+  try {
+    const record = await store.loadRoom(privateState.roomId);
+    const state = record.envelope.state;
+    const domain = decision.actionIndex.find((row) =>
+      row.action?.effectKind === "reserve_deploy_indicator").action;
+    const options = old.placementOptions.map((row) => ({ ...row,
+      ...module.projectStarcraftTmgAssetPlacementMetricsV1({
+        state, domain, coordinate: row.coordinate,
+      }) }));
+    const selected = options.find((row) => row.coordinate.xMilliInches === 15000
+      && row.coordinate.yMilliInches === 9000);
+    ensure(selected?.tacticalMetrics, "NON_UNIT_ASSET_GEOMETRY_MISSING");
+    const marker4 = selected.tacticalMetrics.objectiveDistances.find((row) =>
+      row.markerId === "mission-marker-4");
+    ensure(marker4?.centerDistanceMilliInches === 4243,
+      "PLACEMENT_MUST_NOT_REUSE_RAPTOR_DISTANCE", { marker4 });
+    ensure(marker4.baseEdgeToObjectiveCenterDistanceMilliInches === null,
+      "UNSIZED_INDICATOR_MUST_NOT_INVENT_BASE_GEOMETRY");
+    ensure(selected.tacticalMetrics.incomingStationaryProfileCount === null
+      && selected.tacticalMetrics.currentStationaryExposureKnown === false,
+    "NON_UNIT_UNKNOWN_THREAT_BECAME_ZERO");
+    ensure(selected.relationshipComparison.subject.kind === "hypothetical_placed_asset"
+      && selected.relationshipComparison.subject.effectKind === domain.effectKind
+      && selected.relationshipComparison.relationships.every((row) =>
+        !row.targetId.endsWith("omega-worm")), "ASSET_SUBJECT_IDENTITY_DRIFT");
+    const ordered = selectStarcraftTmgStrategicAssetPlacementOptionsV1(options,
+      6, old.preferredAnchor);
+    ensure(ordered.some((row) => row.selectionFacet === "closest_to_objective")
+      && ordered.every((row) => !/fire|risk/u.test(row.selectionFacet)),
+    "GEOMETRY_ONLY_ASSET_FACETS_INCORRECT");
+    const tokenDomain = structuredClone(domain);
+    tokenDomain.effectKind = "creep_token_place";
+    tokenDomain.constraints.physicalTokenProfile = {
+      shape: "round", widthMillimeters: 28, depthMillimeters: 28,
+    };
+    const token = module.projectStarcraftTmgAssetPlacementMetricsV1({
+      state, domain: tokenDomain, coordinate: selected.coordinate,
+    });
+    const tokenMarker4 = token.tacticalMetrics.objectiveDistances.find((row) =>
+      row.markerId === "mission-marker-4");
+    ensure(tokenMarker4.baseEdgeToObjectiveCenterDistanceMilliInches === 3692,
+      "PHYSICAL_TOKEN_BASE_EDGE_DISTANCE_WRONG", { tokenMarker4 });
+    ensure(token.tacticalMetrics.incomingStationaryProfileCount === null,
+      "TOKEN_MUST_NOT_BORROW_OMEGA_WEAPON_TARGET_TAGS");
+    const known = { ...options[0], placementOptionId: "known",
+      tacticalMetrics: { ...options[0].tacticalMetrics,
+        incomingStationaryProfileCount: 0, incomingMoveThenFireProfileCount: 1 } };
+    ensure(selectStarcraftTmgStrategicAssetPlacementOptionsV1([
+      ...options, known], 6, old.preferredAnchor)[0].placementOptionId === "known",
+    "KNOWN_UNIT_ATTACK_BAND_SELECTION_REGRESSED");
+    console.log(JSON.stringify({ ok: true, realHistoricalOptions: options.length,
+      marker4CenterDistanceMilliInches: marker4.centerDistanceMilliInches,
+      physical28mmTokenBaseEdgeToMarker4CenterMilliInches:
+        tokenMarker4.baseEdgeToObjectiveCenterDistanceMilliInches,
+      unknownThreatPreserved: true, actorAndPlacementSeparated: true,
+      providerCalls: 0, roomMutations: 0, unrelatedChecksRun: 0 }));
+  } finally { await store.close(); }
 }
 
 function main() {
@@ -373,7 +477,8 @@ function main() {
   });
 }
 
-main().catch((error) => {
+(process.argv.includes("--non-unit-placement-projection-only")
+  ? nonUnitPlacementProjectionOnly() : main()).catch((error) => {
   process.stderr.write(`${String(error?.stack || error)}\n`);
   process.exitCode = 1;
 });

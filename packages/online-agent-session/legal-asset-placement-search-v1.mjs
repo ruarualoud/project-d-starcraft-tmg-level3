@@ -265,22 +265,39 @@ function entryEdgeUtility(state, source, placedFootprint, markers) {
 }
 
 function tacticalPlacementProjection(state, source, contract, candidate) {
-  const targetTags = targetTagsForPlacement(state, source);
-  if (targetTags.length < 1) return null;
   const placedFootprint = footprintForProfile(candidate.coordinate,
     contract.physicalProfile);
-  if (!placedFootprint) return null;
+  const targetTags = targetTagsForPlacement(state, source);
+  const unitAttackBandsAvailable = targetTags.length > 0
+    && placedFootprint !== null;
+  const subject = {
+    kind: "hypothetical_placed_asset",
+    sourceActorUnitId: source.pieceId,
+    effectKind: source.effectKind,
+    coordinate: clone(candidate.coordinate),
+    physicalProfileAvailable: placedFootprint !== null,
+    attackProjectionStatus: unitAttackBandsAvailable
+      ? "advisory_unit_attack_bands" : "not_evaluated_for_this_asset_type",
+    futureDeployedUnitExposureEvaluated: false,
+  };
+  const precision = unitAttackBandsAvailable
+    ? "exact_base_edge_and_printed_range;line_of_sight_and_action_availability_advisory"
+    : "exact_reference_point_geometry;base_edge_requires_physical_profile;asset_and_future_unit_attack_not_evaluated";
   const relationships = [];
   for (const enemy of (state.pieces || []).filter((entry) =>
     activePiece(entry) && entry.sideKey !== source.sideKey)) {
     const enemyFootprints = liveModelFootprints(enemy);
     if (enemyFootprints.length < 1) continue;
-    const distance = Math.round(Math.min(...enemyFootprints.map((entry) =>
-      footprintGap(placedFootprint, entry))));
+    const referenceDistance = Math.round(Math.min(...enemyFootprints.map((entry) =>
+      footprintGap(roundFootprint(candidate.coordinate, 0), entry))));
+    const distance = placedFootprint
+      ? Math.round(Math.min(...enemyFootprints.map((entry) =>
+        footprintGap(placedFootprint, entry)))) : null;
     const speed = currentSpeedMilliInches(state, enemy);
     const actionWindow = projectStarcraftTmgThreatActionWindowV1(state, enemy);
-    const eligible = equippedWeaponProfiles(state, enemy).filter((profile) =>
-      profileCanTarget(profile, targetTags));
+    const eligible = unitAttackBandsAvailable
+      ? equippedWeaponProfiles(state, enemy).filter((profile) =>
+        profileCanTarget(profile, targetTags)) : [];
     const stationary = eligible.filter((profile) =>
       distance <= profile.rangeMilliInches);
     const moving = eligible.filter((profile) =>
@@ -291,27 +308,29 @@ function tacticalPlacementProjection(state, source, contract, candidate) {
     const currentRoundStationary = stationary.filter(attackAvailable);
     const currentRoundMoving = moving.filter((profile) =>
       actionWindow.movementCurrentRoundAvailable && attackAvailable(profile));
+    const count = (rows) => unitAttackBandsAvailable ? rows.length : null;
+    const keys = (rows) => unitAttackBandsAvailable
+      ? rows.map((entry) => entry.profileKey) : null;
     relationships.push({
-      targetId: `${source.sideKey}-omega-worm`,
+      targetId: source.effectKind === "omega_network"
+        ? source.sideKey + "-omega-worm"
+        : "hypothetical-asset:" + source.sideKey + ":" + source.effectKind,
       enemyUnitId: enemy.id,
       minimumBaseEdgeDistanceMilliInches: distance,
-      enemyStationaryThreatProfileCount: stationary.length,
-      enemyStationaryThreatProfileKeys: stationary.map((entry) =>
-        entry.profileKey),
-      enemyCurrentRoundStationaryThreatProfileCount:
-        currentRoundStationary.length,
-      enemyCurrentRoundStationaryThreatProfileKeys:
-        currentRoundStationary.map((entry) => entry.profileKey),
-      enemyMoveThenFireProfileCount: moving.length,
-      enemyMoveThenFireProfileKeys: moving.map((entry) => entry.profileKey),
-      enemyCurrentRoundMoveThenFireProfileCount: currentRoundMoving.length,
-      enemyCurrentRoundMoveThenFireProfileKeys:
-        currentRoundMoving.map((entry) => entry.profileKey),
+      referencePointToEnemyBaseDistanceMilliInches: referenceDistance,
+      attackProjectionStatus: subject.attackProjectionStatus,
+      enemyStationaryThreatProfileCount: count(stationary),
+      enemyStationaryThreatProfileKeys: keys(stationary),
+      enemyCurrentRoundStationaryThreatProfileCount: count(currentRoundStationary),
+      enemyCurrentRoundStationaryThreatProfileKeys: keys(currentRoundStationary),
+      enemyMoveThenFireProfileCount: count(moving),
+      enemyMoveThenFireProfileKeys: keys(moving),
+      enemyCurrentRoundMoveThenFireProfileCount: count(currentRoundMoving),
+      enemyCurrentRoundMoveThenFireProfileKeys: keys(currentRoundMoving),
       enemyThreatActionWindow: actionWindow,
       enemySpeedMilliInches: speed,
       lineOfSightStatus: "not_certified_for_hypothetical_placement",
-      precision:
-        "exact_base_edge_and_printed_range;line_of_sight_and_action_availability_advisory",
+      precision,
     });
   }
   const markers = [...(state.board?.missionMarkers || []),
@@ -323,47 +342,61 @@ function tacticalPlacementProjection(state, source, contract, candidate) {
       coordinate: entry.coordinate,
       centerDistanceMilliInches: Math.round(pointDistance(
         candidate.coordinate, entry.coordinate)),
+      baseEdgeToObjectiveCenterDistanceMilliInches: placedFootprint
+        ? Math.round(footprintGap(placedFootprint,
+          roundFootprint(entry.coordinate, 0))) : null,
     })).sort((left, right) => left.centerDistanceMilliInches
       - right.centerDistanceMilliInches || left.markerId.localeCompare(
         right.markerId));
-  const stationaryCount = relationships.reduce((sum, entry) => sum
-    + entry.enemyStationaryThreatProfileCount, 0);
-  const movingCount = relationships.reduce((sum, entry) => sum
-    + entry.enemyMoveThenFireProfileCount, 0);
-  const currentStationaryCount = relationships.reduce((sum, entry) => sum
-    + entry.enemyCurrentRoundStationaryThreatProfileCount, 0);
-  const currentMovingCount = relationships.reduce((sum, entry) => sum
-    + entry.enemyCurrentRoundMoveThenFireProfileCount, 0);
-  const nearestEnemy = relationships.length
+  const sum = (key) => unitAttackBandsAvailable
+    ? relationships.reduce((total, entry) => total + entry[key], 0) : null;
+  const nearestEnemy = placedFootprint && relationships.length
     ? Math.min(...relationships.map((entry) =>
       entry.minimumBaseEdgeDistanceMilliInches)) : null;
-  const marginalEntryEdgeUtility = entryEdgeUtility(
-    state, source, placedFootprint, markers);
+  const marginalEntryEdgeUtility = placedFootprint
+    ? entryEdgeUtility(state, source, placedFootprint, markers) : null;
   return {
     relationshipComparison: {
-      relationships,
-      hypotheticalPlacement: true,
-      rulesAuthority: false,
-      trainingTruth: false,
+      subject, relationships, hypotheticalPlacement: true,
+      rulesAuthority: false, trainingTruth: false,
     },
     tacticalMetrics: {
-      incomingStationaryProfileCount: stationaryCount,
-      incomingMoveThenFireProfileCount: movingCount,
-      incomingCurrentRoundStationaryProfileCount: currentStationaryCount,
-      incomingCurrentRoundMoveThenFireProfileCount: currentMovingCount,
+      incomingStationaryProfileCount: sum("enemyStationaryThreatProfileCount"),
+      incomingMoveThenFireProfileCount: sum("enemyMoveThenFireProfileCount"),
+      incomingCurrentRoundStationaryProfileCount:
+        sum("enemyCurrentRoundStationaryThreatProfileCount"),
+      incomingCurrentRoundMoveThenFireProfileCount:
+        sum("enemyCurrentRoundMoveThenFireProfileCount"),
       nearestEnemyBaseEdgeDistanceMilliInches: nearestEnemy,
+      nearestEnemyReferencePointToBaseDistanceMilliInches: relationships.length
+        ? Math.min(...relationships.map((entry) =>
+          entry.referencePointToEnemyBaseDistanceMilliInches)) : null,
       nearestObjectiveId: markers[0]?.markerId || null,
       nearestObjectiveCenterDistanceMilliInches:
         markers[0]?.centerDistanceMilliInches ?? null,
-      currentStationaryExposureKnown: relationships.length > 0,
+      objectiveDistances: markers,
+      currentStationaryExposureKnown: unitAttackBandsAvailable
+        && relationships.length > 0,
+      attackProjectionStatus: subject.attackProjectionStatus,
+      futureDeployedUnitExposureEvaluated: false,
       lineOfSightCertified: false,
       ...(marginalEntryEdgeUtility
         ? { entryEdgeUtility: marginalEntryEdgeUtility } : {}),
-      precision:
-        "exact_base_edge_and_printed_range;line_of_sight_and_action_availability_advisory",
-      trainingTruth: false,
+      precision, trainingTruth: false,
     },
   };
+}
+
+export function projectStarcraftTmgAssetPlacementMetricsV1({ state, domain,
+  coordinate }) {
+  const source = sourceDomain(domain);
+  const contract = placementContract(source);
+  return contract && object(coordinate)
+    ? tacticalPlacementProjection(state, source, contract, { coordinate }) : null;
+}
+
+function knownMetric(value) {
+  return typeof value === "number" && Number.isFinite(value);
 }
 
 function numberOrMax(value) {
@@ -382,7 +415,10 @@ export function selectStarcraftTmgStrategicAssetPlacementOptionsV1(
     || DEFAULT_MAX_OPTIONS));
   const preferredDistance = (entry) => preferred
     ? pointDistance(entry.coordinate, preferred) : 0;
-  const riskOrder = [...candidates].sort((left, right) =>
+  const riskOrder = candidates.filter((entry) =>
+    knownMetric(entry.tacticalMetrics?.incomingStationaryProfileCount)
+      && knownMetric(entry.tacticalMetrics?.incomingMoveThenFireProfileCount))
+    .sort((left, right) =>
     numberOrMax(left.tacticalMetrics?.incomingStationaryProfileCount)
       - numberOrMax(right.tacticalMetrics?.incomingStationaryProfileCount)
     || numberOrMax(left.tacticalMetrics?.incomingMoveThenFireProfileCount)
@@ -394,7 +430,9 @@ export function selectStarcraftTmgStrategicAssetPlacementOptionsV1(
   const anchorOrder = [...candidates].sort((left, right) =>
     preferredDistance(left) - preferredDistance(right)
       || left.placementOptionId.localeCompare(right.placementOptionId));
-  const objectiveOrder = [...candidates].sort((left, right) =>
+  const objectiveOrder = candidates.filter((entry) =>
+    knownMetric(entry.tacticalMetrics?.nearestObjectiveCenterDistanceMilliInches))
+    .sort((left, right) =>
     numberOrMax(left.tacticalMetrics?.nearestObjectiveCenterDistanceMilliInches)
       - numberOrMax(right.tacticalMetrics
         ?.nearestObjectiveCenterDistanceMilliInches)
@@ -437,6 +475,8 @@ export function selectStarcraftTmgStrategicAssetPlacementOptionsV1(
   add(anchorOrder[0], "closest_to_preferred_anchor");
   add(objectiveOrder[0], "closest_to_objective");
   for (const entry of riskOrder) add(entry, "risk_ordered_alternative");
+  for (const entry of anchorOrder) add(entry,
+    "geometry_only_alternative_threat_not_evaluated");
   return selected;
 }
 
@@ -828,8 +868,9 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
         rulesAuthority: true,
         trainingTruth: false,
       };
-      const tactical = tacticalPlacementProjection(
-        state, source, contract, candidate) || {};
+      const tactical = projectStarcraftTmgAssetPlacementMetricsV1({
+        state, domain, coordinate: candidate.coordinate,
+      }) || {};
       candidatePool.push({ ...optionCore,
         placementOptionId: hashStarcraftTmgContract(optionCore),
         relationshipComparison: clone(tactical.relationshipComparison || null),
