@@ -27,7 +27,7 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v23";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v32";
+  "starcraft_tmg_live_action_shape_normalization_v33";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -3151,7 +3151,8 @@ function liftCorrectionIntentFields(raw) {
   return { submission, liftedFields };
 }
 
-export function recoverStarcraftTmgCorrectionSubmissionV1(raw, choice) {
+export function recoverStarcraftTmgCorrectionSubmissionV1(
+  raw, choice, options = {}) {
   if (!object(raw)) return { submission: clone(raw), recovered: false,
     sourceAttemptKey: null, inheritedFields: [], liftedFields: [] };
   const liftedCurrent = liftCorrectionIntentFields(raw);
@@ -3166,7 +3167,9 @@ export function recoverStarcraftTmgCorrectionSubmissionV1(raw, choice) {
   const attempts = [...(choice?.attemptKeys || [])].reverse()
     .map((attemptKey) => ({ attemptKey,
       attempt: choice?.attempts?.[attemptKey] }))
-    .filter(({ attempt }) => attempt?.stage === "action"
+    .filter(({ attemptKey, attempt }) =>
+      attemptKey !== options.currentAttemptKey
+      && attempt?.stage === "action"
       && attempt?.status === "completed");
   for (const { attemptKey, attempt } of attempts) {
     const rawPrior = responseParts(attempt.safeOutput).decision;
@@ -3200,11 +3203,26 @@ export function recoverStarcraftTmgCorrectionSelectionV1(raw, choice) {
   return recoverStarcraftTmgCorrectionSubmissionV1(raw, choice);
 }
 
-function mapDecisionSubmission(raw, input, choice) {
+export function materializeStarcraftTmgCorrectionIntentArraysV1(
+  raw, recovery = {}) {
+  const submission = clone(raw);
+  if (recovery.selectionChanged !== true || !object(submission?.intent)) {
+    return submission;
+  }
+  for (const field of [
+    "tradeoffs", "risks", "fallbacks", "stopOrReplanTriggers",
+  ]) {
+    if (submission.intent[field] === undefined) submission.intent[field] = [];
+  }
+  return submission;
+}
+
+function mapDecisionSubmission(raw, input, choice, currentAttemptKey = null) {
   if (!object(raw)) return raw;
   const correctionRecovery = recoverStarcraftTmgCorrectionSubmissionV1(
-    raw, choice);
-  const result = correctionRecovery.submission;
+    raw, choice, { currentAttemptKey });
+  const result = materializeStarcraftTmgCorrectionIntentArraysV1(
+    correctionRecovery.submission, correctionRecovery);
   const candidateId = String(result.candidateId || "");
   const selected = actionIndex(input.spatialActionSpace).find((entry) =>
     entry.id === candidateId);
@@ -3253,7 +3271,7 @@ function normalizeSubmittedAction(attempt, input, choice) {
     throw correctionError("ACTION_FINAL_OUTPUT_MISSING");
   }
   const submittedAction = parts.terminal
-    ? mapDecisionSubmission(parts.decision, input, choice)
+    ? mapDecisionSubmission(parts.decision, input, choice, attempt.attemptKey)
     : parts.decision;
   const plannerBoundAction = bindPlannerSelectedProposal(submittedAction,
     input, choice.plannerResult);

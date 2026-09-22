@@ -8,6 +8,7 @@ import {
   inspectStarcraftTmgFormationThreatClaimsV1,
   inspectStarcraftTmgOpponentPredictionFeasibilityV1,
   recoverStarcraftTmgCorrectionSubmissionV1,
+  materializeStarcraftTmgCorrectionIntentArraysV1,
   resolveStarcraftTmgDeterministicSingletonActionV1,
 } from "../packages/online-agent-session/live-flash-decision-port-v1.mjs";
 
@@ -250,7 +251,7 @@ function main() {
                 }] },
               } }] } } },
         },
-      });
+      }, { currentAttemptKey: "current-action-attempt" });
     ensure(correctionSubmission.recovered === true
       && correctionSubmission.sourceAttemptKey === "prior-action-attempt"
       && correctionSubmission.liftedFields.includes("selection")
@@ -272,6 +273,14 @@ function main() {
       && correctionSubmission.submission.intent.nextDecisionFocus === undefined,
     "CHANGED_SELECTION_INHERITED_STALE_STRATEGY",
     { correctionSubmission });
+    const materializedCorrection =
+      materializeStarcraftTmgCorrectionIntentArraysV1(
+        correctionSubmission.submission, correctionSubmission);
+    ensure(["tradeoffs", "risks", "fallbacks", "stopOrReplanTriggers"]
+      .every((field) => Array.isArray(materializedCorrection.intent[field])
+        && materializedCorrection.intent[field].length === 0),
+    "CHANGED_SELECTION_MISSING_ARRAYS_NOT_STRUCTURALLY_MATERIALIZED",
+    { materializedCorrection });
     const nestedHistoricalSelectionRecovery =
       recoverStarcraftTmgCorrectionSubmissionV1({
         candidateId: omegaDomain.domainId,
