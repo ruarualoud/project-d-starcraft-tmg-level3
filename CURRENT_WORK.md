@@ -8,6 +8,12 @@ historical entry only when a linked task requires it.
 
 ### 2026-09-23 T23 / S248 — observer repair built; same-r51 resume running
 
+**Recovered at21:05:42.932Z:**51562 appended the already accepted r51 and
+`0391-r051-player2-resolve_battlefield_asset_ability-complete-board-applied.png`,
+Replay matching, unchanged111calls/¥15.447569. Manifest3.737s, refresh7.459s,
+captures27.625s: recovery proven, whole-path speedup not established. Both
+fixes are loaded. Keep this live runner; next ordinary action proceeds.
+
 **72606 is now confirmed exited1**, including server/browser cleanup. r51
 Ventral Sacs remains accepted/replayed; do not regenerate it. Both Providers
 have no unfinished decisions and both Bots no pending Apply; 17+27new actions

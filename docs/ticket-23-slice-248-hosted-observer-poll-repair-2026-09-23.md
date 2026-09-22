@@ -80,3 +80,20 @@ Harness loop: StarCraft TMG / `selfplay_agent_prompt`; unchanged authoritative
 action pipeline and memory; repair is only read-side observation scheduling.
 User-visible criterion: the existing room reconnects and displays the latest
 accepted revision, without an accumulating queue of Hosted Opponent GETs.
+
+### Real recovery observed
+
+Resume session **51562** recovered r51 at21:05:42.932Z, appended the accepted
+action and its matching Replay, and captured
+`screenshots/0391-r051-player2-resolve_battlefield_asset_ability-complete-board-applied.png`.
+The root session inspected the image. Recovery usage stayed111calls /
+11,487,277accounted units /¥15.447569: no paid regeneration. The next normal
+decision proceeds under the loaded fixes. The summon fix is loaded but a
+later real summon query is still needed to claim live use of that new branch.
+
+Measured recovery stages: manifest3.737s, refresh7.459s, captures27.625s.
+This proves successful UI recovery, not a controlled whole-path performance
+benchmark. The callback gate proves read coalescing; current evidence does
+not quantify every other server/browser bottleneck. Screenshot latency
+remains an optimization item. Keep the process alive rather than restarting
+to collect another sample.
