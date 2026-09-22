@@ -371,13 +371,14 @@ function followUpWire(overrides = {}) {
 // schema/Rules validation still run afterwards.
 check(269, verifyRosterStrategistOutputContractSetV1(
     ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1) === true
-  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.1.0"
+  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.2.0"
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .bindsOnlyFieldNamesTypesBoundsAndEnums === true
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .neverBindsRosterContentCandidateIdentityOrStrategy === true,
-  "the strict output contract set must be explicit, versioned (1.1.0 after "
-    + "the 269.9 domain-owned integer-bound repair) and content-free");
+  "the strict output contract set must be explicit, versioned (1.2.0 after "
+    + "the 269.9 integer-domain and 269.10 instance-identity repairs) and "
+    + "content-free");
 check(269, strategistDescriptor.structuredGenerationOutput?.contractSetHash
     === ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash
   && strategistDescriptor.structuredGenerationOutput

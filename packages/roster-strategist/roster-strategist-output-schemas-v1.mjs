@@ -39,6 +39,17 @@
 // bound a generation schema can declare. No narrower host-side cap is
 // authored anywhere below; nothing is special-cased to one value, one
 // response or one roster.
+//
+// Sub-slice 269.10 (closing the saved live round-7 blocker
+// ROSTER_STRATEGIST_COMPARISON_INVALID:faction_card_instance:...): the
+// strict subset cannot pattern-enforce the runtime-owned deterministic
+// instance identities, so the comparison schema now publishes the exact
+// per-kind instanceId formats ("<sideKey>-faction",
+// "<sideKey>-tactical-<n>", "agent-unit-<n>", "<unitInstanceId>-composition",
+// "<unitInstanceId>-upgrade-<n>") and the activation-order unit identity in
+// field descriptions. The convention is general (fixed per component kind,
+// never per value or roster); the runtime's binding validation stays
+// byte-for-byte strict.
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -51,7 +62,7 @@ import {
 
 export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_SCHEMA =
   "starcraft_tmg_roster_strategist_output_contract_set_v1";
-export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.1.0";
+export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.2.0";
 
 const DELIBERATION_SCHEMA = "starcraft_tmg_roster_strategist_deliberation_v1";
 const MAX_TEXT = 2_000;
@@ -153,7 +164,11 @@ const DEPLOYMENT_CONCEPT = closedObject({
     type: "array", minItems: 0, maxItems: 32,
     items: closedObject({
       ordinal: domainPositiveInteger(),
-      unitInstanceId: identifier(),
+      unitInstanceId: text(1, MAX_ID,
+        "One of the selected candidate's deterministic unit instance ids "
+          + "(\"agent-unit-<n>\", with n the 1-based position of the unit in "
+          + "the candidate's units array); never a record key or an "
+          + "invented name."),
       phase: {
         type: "string", minLength: 5, maxLength: 8,
         enum: ["movement", "assault", "combat"],
@@ -349,15 +364,30 @@ const COMPARISON_SCHEMA = closedObject({
         type: "string", minLength: 4, maxLength: 32,
         enum: ["faction_card", "tactical_card", "unit", "composition",
           "upgrade"],
+        description: "Component class; it fixes the required instanceId "
+          + "format (see instanceId).",
       },
-      recordKey: identifier(),
-      instanceId: identifier(),
+      recordKey: text(1, MAX_ID,
+        "Rules-owned record key of the component, exactly as it appears in "
+          + "the selected candidate; for composition and upgrade purposes "
+          + "this is the owning unit's recordKey."),
+      instanceId: text(1, MAX_ID,
+        "Deterministic instance identity owned by the runtime; copy the "
+          + "exact format fixed per componentKind, never invent a semantic "
+          + "name: faction_card -> \"<sideKey>-faction\"; tactical_card -> "
+          + "\"<sideKey>-tactical-<n>\" with n the 1-based position of "
+          + "recordKey in the selected candidate's tacticalCardRecordKeys; "
+          + "unit -> \"agent-unit-<n>\" with n the 1-based position of the "
+          + "unit in the selected candidate's units array; composition -> "
+          + "\"<unitInstanceId>-composition\"; upgrade -> "
+          + "\"<unitInstanceId>-upgrade-<n>\" with n the 1-based position "
+          + "of the upgrade in the owning unit's upgrades array."),
       publicPurposeText: text(),
       scoringRole: {
         type: "string", minLength: 4, maxLength: 32,
         enum: ["primary_scorer", "support", "counter", "flex", "unknown"],
       },
-    }),
+    }, "Public purpose binding for one roster component."),
   },
   deploymentConcept: DEPLOYMENT_CONCEPT,
   lossResourceBudget: closedObject({
