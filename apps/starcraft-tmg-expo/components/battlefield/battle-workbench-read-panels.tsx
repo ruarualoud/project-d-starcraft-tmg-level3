@@ -491,6 +491,9 @@ function PredictedInteractionCard({ snapshot, threat, unitId, probabilityRows, p
   const unitNames = new Map((snapshot.units || []).map((unit: any) => [unit.id, unit.name]));
   const relationships = (threat.relationships || [])
     .filter((entry: any) => entry.attackerUnitId === unitId);
+  const incoming = (threat.relationships || [])
+    .filter((entry: any) => entry.targetUnitId === unitId
+      && entry.attackerUnitId !== unitId);
   const probabilityByTarget = new Map<string, any[]>();
   for (const row of probabilityRows) {
     const list = probabilityByTarget.get(row.targetUnitId) || [];
@@ -513,7 +516,12 @@ function PredictedInteractionCard({ snapshot, threat, unitId, probabilityRows, p
         <Text style={styles.muted}>{zh
           ? "没有投影到对立的场上单位；预测交互为未知（不是零）。"
           : "No opposing battlefield units are projected; predicted interactions are unknown (not zero)."}</Text>
-      ) : relationships.map((relation: any) => {
+      ) : (
+        <Text style={styles.subtitle}>{zh
+          ? `对出去向（一对多）：${value(unitNames.get(unitId), unitId)} → 每个敌方单位`
+          : `Outgoing (one → many): ${value(unitNames.get(unitId), unitId)} → each enemy unit`}</Text>
+      )}
+      {!unitId || relationships.length === 0 ? null : relationships.map((relation: any) => {
         const rows = probabilityByTarget.get(relation.targetUnitId) || [];
         const targetName = value(unitNames.get(relation.targetUnitId), relation.targetUnitId);
         const distance = Number(relation.baseEdgeDistanceMilliInches);
@@ -556,6 +564,32 @@ function PredictedInteractionCard({ snapshot, threat, unitId, probabilityRows, p
           </View>
         );
       })}
+      {unitId ? (
+        <View style={styles.probabilityRow}>
+          <Text style={styles.subtitle}>{zh
+            ? `来袭关系（多对一）：每个敌方攻击者 → ${value(unitNames.get(unitId), unitId)}`
+            : `Incoming (many → one): each enemy attacker → ${value(unitNames.get(unitId), unitId)}`}</Text>
+          {incoming.length === 0 ? (
+            <Text style={styles.muted}>{zh
+              ? "当前投影没有以来袭方向指向所选单位的关系；未知（不是零）。"
+              : "No projected relation targets the selected unit; incoming threat is unknown (not zero)."}</Text>
+          ) : incoming.map((relation: any) => {
+            const distance = Number(relation.baseEdgeDistanceMilliInches);
+            return (
+              <Text key={`incoming:${relation.attackerUnitId}`} style={styles.meta}>
+                ← {value(unitNames.get(relation.attackerUnitId), relation.attackerUnitId)}
+                {" · "}{zh ? "基座边缘距离" : "base edge"} {Number.isFinite(distance) ? `${(distance / 1000).toFixed(1)} in` : "unknown"}
+                {" · "}{zh ? "原地可及武器" : "stationary weapons"}: {(relation.stationaryWeaponIds || []).length}
+                {" · "}{zh ? "走打可及武器" : "move+fire weapons"}: {(relation.moveThenFireWeaponIds || []).length}
+                {" · "}{zh ? "冲锋" : "charge"}: {relation.chargeCandidate === true
+                  ? (zh ? "在包络内（候选）" : "inside envelope (candidate)")
+                  : (zh ? "包络外/未知" : "outside envelope / unknown")}
+                {" · "}{relation.coverage || "unknown"}
+              </Text>
+            );
+          })}
+        </View>
+      ) : null}
       <Text style={styles.meta}>
         {zh ? "LegalSpace 动作引用" : "LegalSpace action refs"}: {sourceActionRefs.length}
         {" · "}r{value(snapshot.stateRevision)}

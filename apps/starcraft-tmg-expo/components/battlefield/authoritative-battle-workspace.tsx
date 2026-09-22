@@ -554,7 +554,6 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     ? 560
     : clamp((windowWidth - 56) * (scene.heightMilliInches / scene.widthMilliInches), 260, 430);
   const desktop = windowWidth >= 980;
-  const compactMobile = windowWidth < 600;
   const pathPoints = draft?.path || [];
   const placementPoints = draft?.placements || [];
   const modelsById = useMemo(
@@ -1100,6 +1099,59 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
   // model list). On desktop they stay under the board in the left pane; on
   // touch-first column layouts they render after the detail side panel so the
   // Unit/Actions/Threat panels are reachable without scrolling past them.
+  // Narrow battle-table focus: informational copy (flow subtitle, match
+  // contract card, map contract line) renders below the board on touch-first
+  // layouts so the battlefield itself stays inside the first viewport; the
+  // threat mode strip also moves below the board there so enabling a layer
+  // never pushes the table down. Nothing is removed — only reordered.
+  const flowSubtitleLine = (
+    <Text style={styles.subtitle}>
+      {zh
+        ? "所有底座、坐标和动作来自观察者投影；点按只编辑提案，不直接移动棋子。"
+        : "Bases, coordinates, and actions come from the viewer projection. Taps edit a proposal and never move state directly."}
+    </Text>
+  );
+  const mapContractLine = (
+    <Text style={styles.mapContractText} testID="battlefield-map-contract-v1">
+      {`${scene.board.mapDisplayName || scene.board.visualPresetName || activeVisualPresetId} · ${scene.board.engagementScale || "legacy scale"} · ${scene.board.terrainPresetId || "terrain preset pending"} · seed ${scene.board.mapSeedId || scene.board.terrainSeed || "legacy"} · ${terrainCount} authoritative terrain · ${scene.board.mapRoomFreezeHash ? "room frozen" : "legacy room"} · background has no Rules authority`}
+    </Text>
+  );
+  const threatModeStrip = showThreatReference ? (
+    <View
+      accessibilityRole="tablist"
+      accessibilityLabel={zh ? "威胁图层模式" : "Threat layer modes"}
+      style={styles.threatModeRow}
+    >
+      {threatModes.map((mode) => (
+        <Button
+          key={mode}
+          compact
+          active={threatMode === mode}
+          label={threatOverlayModeLabel(mode, zh)}
+          onPress={() => setThreatMode(mode)}
+        />
+      ))}
+    </View>
+  ) : null;
+  const matchContractCard = (
+    <View style={styles.matchContract} testID="standard-match-contract">
+      <Text style={styles.matchContractTitle}>
+        {actionText(productState.engagementScale)} · {scene.widthMilliInches / 1000}×{scene.heightMilliInches / 1000} in
+      </Text>
+      <View style={styles.matchContractMetrics}>
+        <Text style={styles.matchContractMetric}>{playerResourceText("player1")}</Text>
+        <Text style={styles.matchContractMetric}>{playerResourceText("player2")}</Text>
+        <Text style={styles.matchContractMetric}>{roomPieces.length} units</Text>
+        <Text style={styles.matchContractMetric}>{reserveCount} reserve</Text>
+        <Text style={styles.matchContractMetric}>{terrainCount} terrain</Text>
+      </View>
+      <Text style={styles.matchContractNote}>
+        {zh
+          ? "资源、模型底座、部署域、骰池和结算结果均由权威 Rules 投影；客户端与 Agent 不补算。"
+          : "Resources, base geometry, deployment domains, dice pools, and outcomes are authoritative Rules projections; neither client nor Agent fills them in."}
+      </Text>
+    </View>
+  );
   const boardExtras = (
     <>
       <View style={styles.mediaCard}>
@@ -1167,13 +1219,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         <View style={styles.titleCopy}>
           <Text style={styles.eyebrow}>LEGALSPACE → PREVIEW → CONFIRM → APPLY → REPLAY</Text>
           <Text style={styles.title}>{zh ? "权威战场" : "Authoritative Battlefield"}</Text>
-          {!compactMobile && (
-            <Text style={styles.subtitle}>
-              {zh
-                ? "所有底座、坐标和动作来自观察者投影；点按只编辑提案，不直接移动棋子。"
-                : "Bases, coordinates, and actions come from the viewer projection. Taps edit a proposal and never move state directly."}
-            </Text>
-          )}
+          {desktop ? flowSubtitleLine : null}
         </View>
         <View
           accessibilityLabel={`${zh ? "状态修订" : "State revision"} ${actionText(scene.stateRevision)}`}
@@ -1183,27 +1229,7 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         </View>
       </View>
 
-      <View style={styles.matchContract} testID="standard-match-contract">
-        <Text style={styles.matchContractTitle}>
-          {actionText(productState.engagementScale)} · {scene.widthMilliInches / 1000}×{scene.heightMilliInches / 1000} in
-        </Text>
-        {!compactMobile && (
-          <>
-            <View style={styles.matchContractMetrics}>
-              <Text style={styles.matchContractMetric}>{playerResourceText("player1")}</Text>
-              <Text style={styles.matchContractMetric}>{playerResourceText("player2")}</Text>
-              <Text style={styles.matchContractMetric}>{roomPieces.length} units</Text>
-              <Text style={styles.matchContractMetric}>{reserveCount} reserve</Text>
-              <Text style={styles.matchContractMetric}>{terrainCount} terrain</Text>
-            </View>
-            <Text style={styles.matchContractNote}>
-              {zh
-                ? "资源、模型底座、部署域、骰池和结算结果均由权威 Rules 投影；客户端与 Agent 不补算。"
-                : "Resources, base geometry, deployment domains, dice pools, and outcomes are authoritative Rules projections; neither client nor Agent fills them in."}
-            </Text>
-          </>
-        )}
-      </View>
+      {desktop ? matchContractCard : null}
 
       {!operational && (
         <View accessibilityRole="alert" style={styles.warning}>
@@ -1241,10 +1267,14 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
             <Button compact label="+" disabled={zoom >= 6} onPress={() => setZoom((value) => Math.min(6, value + 0.5))} />
             <Button compact label="Fit" onPress={() => resetView(false)} />
             <Button compact label="Reset" onPress={() => resetView(true)} />
-            <Button compact label="←" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, x: value.x - panStepX }))} />
-            <Button compact label="→" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, x: value.x + panStepX }))} />
-            <Button compact label="↑" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, y: value.y + panStepY }))} />
-            <Button compact label="↓" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, y: value.y - panStepY }))} />
+            {(desktop || zoom > 1) && (
+              <>
+                <Button compact label="←" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, x: value.x - panStepX }))} />
+                <Button compact label="→" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, x: value.x + panStepX }))} />
+                <Button compact label="↑" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, y: value.y + panStepY }))} />
+                <Button compact label="↓" disabled={zoom <= 1} onPress={() => setPan((value) => ({ ...value, y: value.y - panStepY }))} />
+              </>
+            )}
           </View>
           <View style={styles.displayControls}>
             <Text style={styles.displayGroupLabel}>{zh ? "显示图层" : "Display layers"}</Text>
@@ -1267,36 +1297,14 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               onPress={() => setShowThreatReference((value) => !value)}
             />
           </View>
-          {showThreatReference && (
-            <View
-              accessibilityRole="tablist"
-              accessibilityLabel={zh ? "威胁图层模式" : "Threat layer modes"}
-              style={styles.threatModeRow}
-            >
-              {threatModes.map((mode) => (
-                <Button
-                  key={mode}
-                  compact
-                  active={threatMode === mode}
-                  label={threatOverlayModeLabel(mode, zh)}
-                  onPress={() => setThreatMode(mode)}
-                />
-              ))}
-            </View>
-          )}
-          <Text style={styles.mapContractText} testID="battlefield-map-contract-v1">
-            {`${scene.board.mapDisplayName || scene.board.visualPresetName || activeVisualPresetId} · ${scene.board.engagementScale || "legacy scale"} · ${scene.board.terrainPresetId || "terrain preset pending"} · seed ${scene.board.mapSeedId || scene.board.terrainSeed || "legacy"} · ${terrainCount} authoritative terrain · ${scene.board.mapRoomFreezeHash ? "room frozen" : "legacy room"} · background has no Rules authority`}
-          </Text>
+          {desktop ? threatModeStrip : null}
+          {desktop ? mapContractLine : null}
           <Pressable
             accessibilityRole="imagebutton"
             accessibilityLabel={zh ? "战场；点按选择模型或添加当前参数步骤" : "Battlefield; tap to select a model or add the current parameter step"}
             onLayout={updateLayout}
             onPress={onBoardPress}
-            style={[
-              styles.boardFrame,
-              compactMobile && styles.boardFrameMobileFirst,
-              { height: boardHeight },
-            ]}
+            style={[styles.boardFrame, { height: boardHeight }]}
           >
             <Svg
               width="100%"
@@ -1381,6 +1389,9 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
             </Svg>
           </Pressable>
 
+          {!desktop ? mapContractLine : null}
+          {!desktop ? threatModeStrip : null}
+
           <View style={styles.legendRow}>
             <Text style={styles.legendText}>{zh ? "蓝：P1" : "Blue: P1"}</Text>
             <Text style={styles.legendText}>{zh ? "红：P2" : "Red: P2"}</Text>
@@ -1398,6 +1409,8 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
               viewerSideKey={view.battleWorkbench?.viewerSideKey || null}
             />
           )}
+
+          {!desktop ? flowSubtitleLine : null}
 
           {desktop ? boardExtras : null}
         </View>
@@ -1761,6 +1774,8 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
         ) : null}
       </View>
 
+      {!desktop ? matchContractCard : null}
+
       {(notice || errorCode) && (
         <View accessibilityLiveRegion="polite" style={styles.feedback}>
           {notice && <Text style={styles.noticeText}>{notice}</Text>}
@@ -1802,11 +1817,7 @@ const styles = StyleSheet.create({
   warningText: { color: "#fde68a", fontSize: 12, lineHeight: 18, marginTop: 4 },
   workspace: { gap: 14 },
   workspaceDesktop: { flexDirection: "row", alignItems: "flex-start" },
-  // Mobile column panes use intrinsic content height at full width. The
-  // desktop-only flex: 1 must never leak into the column layout, where a
-  // shrunk pane lets following siblings overlap the map contract and legend
-  // (Ticket 25/262 narrow false-green). maxWidth keeps every pane inside the
-  // column so the document cannot overflow horizontally.
+  // Keep the integrated mobile non-overlap repair; flex belongs to desktop only.
   boardPane: { minWidth: 0, maxWidth: "100%", gap: 10 },
   boardPaneDesktop: { flex: 1 },
   viewportControls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 7 },
@@ -1818,7 +1829,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "#0e7490", paddingHorizontal: 9, paddingVertical: 6 },
   zoomText: { minWidth: 44, color: "#cbd5e1", textAlign: "center", fontSize: 11, fontWeight: "800" },
   boardFrame: { width: "100%", overflow: "hidden", borderRadius: 10, backgroundColor: "#020617", borderWidth: 1, borderColor: "#334155" },
-  boardFrameMobileFirst: { order: -1 },
   legendRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   legendText: { color: "#64748b", fontSize: 10 },
   accessibleList: { borderRadius: 10, padding: 10, backgroundColor: "#0f172a", borderWidth: 1, borderColor: "#1e293b", gap: 8 },
