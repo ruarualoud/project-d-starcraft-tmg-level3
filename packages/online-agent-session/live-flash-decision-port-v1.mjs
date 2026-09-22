@@ -686,6 +686,151 @@ export function inspectStarcraftTmgSelectedActionResourceClaimsV1(input = {}) {
   });
 }
 
+function unitSupplyClaimFragments(value) {
+  const raw = object(value) ? value : {};
+  const assessment = object(raw.assessment) ? raw.assessment : {};
+  const plan = object(raw.planRevision) ? raw.planRevision
+    : object(raw.plan) ? raw.plan : {};
+  const intent = object(raw.intent) ? raw.intent : {};
+  const planSummary = parsedPublicPlanSummary(raw.publicPlanSummary);
+  const decisionSummary = object(raw.publicDecisionSummary)
+    ? raw.publicDecisionSummary : {};
+  const fragments = [];
+  const add = (field, fieldValue, contextUnitIds = []) => {
+    const values = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+    for (const entry of values) {
+      for (const textValue of String(entry || "").split(/[.;!?。；！？\n]+/u)) {
+        const text = textValue.trim();
+        if (text) fragments.push({ field, text,
+          contextUnitIds: [...new Set(contextUnitIds.map(String))] });
+      }
+    }
+  };
+  for (const [field, fieldValue] of [
+    ["assessment.currentGoal", assessment.currentGoal],
+    ["assessment.evidenceFor", assessment.evidenceFor],
+    ["assessment.evidenceAgainst", assessment.evidenceAgainst],
+    ["assessment.opponentModelUpdates", assessment.opponentModelUpdates],
+    ["assessment.unresolvedRisks", assessment.unresolvedRisks],
+    ["plan.currentGoal", plan.currentGoal],
+    ["plan.strategicApproach", plan.strategicApproach],
+    ["plan.assumptions", plan.assumptions],
+    ["plan.opponentModel", plan.opponentModel],
+    ["selectedReason", raw.selectedReason],
+    ["scoreOrPositionValue", raw.scoreOrPositionValue],
+    ["risk", raw.risk],
+    ["intent.currentGoal", intent.currentGoal],
+    ["intent.purpose", intent.purpose],
+    ["intent.expectedOwnOutcome", intent.expectedOwnOutcome],
+    ["intent.expectedEffects", intent.expectedEffects],
+    ["intent.tradeoffs", (intent.tradeoffs || []).flatMap((entry) => [
+      entry?.benefit, entry?.cost, entry?.acceptanceReason])],
+    ["intent.risks", intent.risks],
+    ["publicPlanSummary.plan", planSummary.plan],
+    ["publicPlanSummary.purpose", planSummary.purpose],
+    ["publicPlanSummary.visibleFacts", planSummary.visibleFacts],
+    ["publicPlanSummary.calculations", planSummary.calculations],
+    ["publicPlanSummary.risk", planSummary.risk],
+    ["publicDecisionSummary.plan", decisionSummary.plan],
+    ["publicDecisionSummary.purpose", decisionSummary.purpose],
+    ["publicDecisionSummary.visibleFacts", decisionSummary.visibleFacts],
+    ["publicDecisionSummary.calculations", decisionSummary.calculations],
+    ["publicDecisionSummary.risk", decisionSummary.risk],
+  ]) add(field, fieldValue);
+  for (const [index, comparison] of (raw.candidateComparisons || []).entries()) {
+    add(`candidateComparisons[${index}].evaluation`,
+      comparison?.evaluation || comparison?.reason);
+  }
+  for (const [index, alternative] of (raw.rejectedAlternatives || []).entries()) {
+    add(`rejectedAlternatives[${index}].reason`, alternative?.reason);
+  }
+  const responses = [
+    ...(Array.isArray(intent.predictedOpponentResponses)
+      ? intent.predictedOpponentResponses : []),
+    ...(Array.isArray(plan.predictedOpponentResponses)
+      ? plan.predictedOpponentResponses : []),
+  ];
+  for (const [index, response] of responses.entries()) {
+    const contextUnitIds = [response?.likelyActorUnitId,
+      response?.likelyTargetUnitId].filter(Boolean);
+    add(`predictedOpponentResponses[${index}].opponentAction`,
+      response?.opponentAction, contextUnitIds);
+    add(`predictedOpponentResponses[${index}].basis`, response?.basis,
+      contextUnitIds);
+    add(`predictedOpponentResponses[${index}].counterResponse`,
+      response?.counterResponse, contextUnitIds);
+    add(`predictedOpponentResponses[${index}].counterPurpose`,
+      response?.counterPurpose, contextUnitIds);
+  }
+  return fragments;
+}
+
+function unitSupplyAliases(unit) {
+  const name = String(unit?.unitName || unit?.name || "").trim();
+  const id = String(unit?.unitId || unit?.id || "").trim();
+  const aliases = [name, name.split("(")[0].trim(), id];
+  const idTail = id.replace(/^player\d+[-_]/iu, "").replaceAll(/[-_]+/gu, " ");
+  if (idTail) aliases.push(idTail);
+  return [...new Set(aliases.map((entry) => entry.toLowerCase())
+    .filter((entry) => entry.length >= 4))];
+}
+
+function fragmentMentionsSupplyUnit(fragment, unit) {
+  if ((fragment.contextUnitIds || []).includes(String(unit.unitId || unit.id))) {
+    return true;
+  }
+  const normalized = String(fragment.text || "").toLowerCase();
+  return unitSupplyAliases(unit).some((alias) => normalized.includes(alias));
+}
+
+function modelCountInflatedToLargeSupply(fragment) {
+  const value = String(fragment || "");
+  const explicitCorrection = /\b(?:do|does|did)\s+not\b[^.;!?]{0,80}\b(?:give|grant|provide|create|mean|yield)s?\b|\bnot\s+(?:a\s+)?(?:large|high|huge|massive|substantial|superior|deep)\b[^.;!?]{0,50}\bsupply\b|(?:并不|不能)[^。；！？]{0,80}(?:补给|占点)/iu;
+  if (explicitCorrection.test(value)) return false;
+  const english = /\b\d+\s+models?\b[^.;!?]{0,100}\b(?:give|grant|provide|create|mean|yield)s?\b[^.;!?]{0,100}\b(?:large|high|huge|massive|substantial|superior|deep)\b[^.;!?]{0,60}\b(?:marker[- ]contest(?:ing)?\s+)?supply(?:\s+pool)?\b/iu;
+  const chinese = /\d+\s*个?(?:模型|单位)[^。；！？]{0,100}(?:带来|提供|意味着|形成)[^。；！？]{0,100}(?:大量|很高|庞大|巨大|优势)[^。；！？]{0,50}(?:补给|占点)/u;
+  return english.test(value) || chinese.test(value);
+}
+
+export function inspectStarcraftTmgUnitSupplyClaimsV1(input = {}) {
+  const observation = object(input.spatialObservation)
+    ? input.spatialObservation : {};
+  const units = [...(observation.units || []),
+    ...(observation.offTableUnits || [])].filter((entry) =>
+    Number.isFinite(Number(entry?.currentSupply)));
+  const fragments = unitSupplyClaimFragments(input.value);
+  const contradictions = [];
+  for (const fragment of fragments) {
+    for (const unit of units) {
+      const currentSupply = Number(unit.currentSupply);
+      if (currentSupply > 1 || !fragmentMentionsSupplyUnit(fragment, unit)
+        || !modelCountInflatedToLargeSupply(fragment.text)) continue;
+      contradictions.push({
+        field: fragment.field,
+        text: fragment.text,
+        unitId: String(unit.unitId || unit.id),
+        unitName: String(unit.unitName || unit.name || ""),
+        currentModels: Number(unit.currentModels ?? 0),
+        currentSupply,
+        reason: "model_count_inferred_as_large_supply",
+      });
+    }
+  }
+  return freeze({
+    status: contradictions.length > 0 ? "contradicted" : "consistent",
+    checkedClaims: fragments,
+    contradictions,
+    rulesAuthority: false,
+    trainingTruth: false,
+  });
+}
+
+function unitSupplyContradictionDetail(entry = {}) {
+  return `${entry.field || "unknown_field"}:${entry.unitId
+    || "unknown_unit"}:models=${entry.currentModels ?? "unknown"}:currentSupply=${
+    entry.currentSupply ?? "unknown"}:${entry.reason || "supply_contradiction"}`;
+}
+
 function sourceActionDomain(value) {
   return object(value?.sourceDomain) ? value.sourceDomain : value;
 }
@@ -1294,6 +1439,14 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
       threatContradictionDetail(first),
     );
   }
+  const supplyClaims = inspectStarcraftTmgUnitSupplyClaimsV1({
+    spatialObservation: input.spatialObservation,
+    value: raw,
+  });
+  if (supplyClaims.status === "contradicted") {
+    throw correctionError("PLANNER_UNIT_SUPPLY_CLAIM_CONTRADICTED",
+      unitSupplyContradictionDetail(supplyClaims.contradictions[0]));
+  }
   const selectedCharge = inspectStarcraftTmgChargeReachabilityV1({
     spatialActionSpace: input.spatialActionSpace,
     candidateId: recommendedCandidateId,
@@ -1413,6 +1566,14 @@ function validateActionOutput(raw, input, planner, queryReceipts = []) {
       "ACTION_SELECTION_THREAT_CLAIM_CONTRADICTS_PROJECTION",
       threatContradictionDetail(first),
     );
+  }
+  const supplyClaims = inspectStarcraftTmgUnitSupplyClaimsV1({
+    spatialObservation: input.spatialObservation,
+    value: raw,
+  });
+  if (supplyClaims.status === "contradicted") {
+    throw correctionError("ACTION_UNIT_SUPPLY_CLAIM_CONTRADICTED",
+      unitSupplyContradictionDetail(supplyClaims.contradictions[0]));
   }
   const issues = [];
   const intent = object(raw.intent) ? raw.intent : {};
@@ -4191,7 +4352,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       "A resolve_ranged_casualties candidate with parameterKind official_selected_roster_ranged_casualty_selection_v1 is a defender-owned choice of casualties from the controlled side, not a new attack. Follow its current parameterSchema: submit one casualtySelectionHash for an enumerated_hashes domain, or exactly casualtyCount ordered casualtyModelIds from the compact explicit_model_ids contract. Compare model position, role, coherency, threat and objective value. Public reasons must say which own models are removed and preserved and why; never claim an attack target or weapon for this resolution stage. authorityActionType is only the frozen Rules transport identity and does not change this meaning.",
       "For resolve_ranged_casualties, read current-ranged-casualty-resolution as exact Rules evidence for the completed enemy weapon batch. surge.targetTypeMatched and surge.matchedCapacity describe eligibility/capacity; only surge.appliedBypassedArmourHits affected actual hits. Resolving casualties does not activate, close, move or spend the defending Unit and does not end the attacker's pending ranged sequence. Never describe it as closing the defender's activation or as the defender making an attack.",
       "For casualty choice, compare the exact removed-model list, loss of occupied positions and formation reach, lost specialist/upgrades, remaining ranged contributors, exact current Fighting/Supporting contributors, future melee potential, marker-by-marker controller/contact changes, Tactical Mass before/after, Current Supply/control strength, Supply freed for later deployment, VP awarded to the attacker by Supply loss, objective interaction, and follow-up activation value. Speed does not automatically decrease merely because models died, but crossing to one surviving model may select the card's single-model Speed. Current marker and engagement geometry in missionMarkerControlConsequences/tacticalMassConsequences is exact; future movement modifiers, future attack dice and future control geometry still require a fresh LegalSpace over the chosen survivors.",
-      "Before every strategic recommendation, check the current mission and score clock, phase and initiative/pass opportunity cost, Current and Available Supply plus reserves, terrain/LOS/elevation/base geometry, outgoing and incoming exchanges including reactions and attack-batch order, card/resource timing, and the most consequential opponent response. Explicitly mark irrelevant or unresolved dimensions instead of inventing them.",
+      "Before every strategic recommendation, check the current mission and score clock, phase and initiative/pass opportunity cost, Current and Available Supply plus reserves, terrain/LOS/elevation/base geometry, outgoing and incoming exchanges including reactions and attack-batch order, card/resource timing, and the most consequential opponent response. A Unit's currentSupply is the exact marker-control value at this state: never infer a large or high Supply pool from currentModels or from a small/large composition label. Model count may affect footprint, coherency and casualty buffer; keep those effects separate from Supply. Explicitly mark irrelevant or unresolved dimensions instead of inventing them.",
       "Use exact query receipts as facts, advisory estimates as preferences, and unknown as uncertainty.",
       "An unknown query receipt may include Rules-derived repairContext. Use it only to repair and re-submit the same candidate; it never proves that the repaired proposal is legal until a later exact receipt accepts it.",
       "A pre-selection parameter-shape failure is Harness uncertainty, not tactical evidence against a formation candidate and never a reason to prefer Pass. The Planner chooses the candidate and spatial intent; the Host supplies every model's path and placement parameters afterward.",

@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   inspectStarcraftTmgFormationThreatClaimsV1,
   inspectStarcraftTmgOpponentPredictionFeasibilityV1,
+  inspectStarcraftTmgUnitSupplyClaimsV1,
   STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE,
 } from "../packages/online-agent-session/live-flash-decision-port-v1.mjs";
 import { createStarcraftTmgHostedBotSeatRuntimeV1 } from
@@ -331,6 +332,55 @@ assert.equal(impossibleUnitBoundPhaseControl.status, "contradicted");
 assert.equal(impossibleUnitBoundPhaseControl.contradictions[0].reason,
   "side_level_action_must_not_name_unit_actor");
 
+const supplyObservation = {
+  units: [{
+    unitId: "player2-swarmling",
+    unitName: "Swarmling (Zergling)",
+    currentModels: 18,
+    currentSupply: 1,
+  }],
+  offTableUnits: [{
+    unitId: "player1-medic",
+    unitName: "Medic",
+    currentModels: 3,
+    currentSupply: 1,
+  }],
+};
+const falseModelCountSupply = inspectStarcraftTmgUnitSupplyClaimsV1({
+  spatialObservation: supplyObservation,
+  value: {
+    assessment: {
+      evidenceAgainst: [
+        "The Swarmling's 18 models give the opponent a large marker-contest Supply pool once it advances.",
+      ],
+    },
+  },
+});
+assert.equal(falseModelCountSupply.status, "contradicted",
+  "model count must not be promoted into marker-control Supply");
+assert.deepEqual(falseModelCountSupply.contradictions.map((entry) => ({
+  unitId: entry.unitId,
+  currentSupply: entry.currentSupply,
+  reason: entry.reason,
+})), [{
+  unitId: "player2-swarmling",
+  currentSupply: 1,
+  reason: "model_count_inferred_as_large_supply",
+}]);
+
+const exactSwarmlingSupply = inspectStarcraftTmgUnitSupplyClaimsV1({
+  spatialObservation: supplyObservation,
+  value: {
+    publicDecisionSummary: {
+      visibleFacts: [
+        "The Swarmling has 18 models but Current Supply 1; the models expand footprint and casualty buffer, not marker strength.",
+      ],
+    },
+  },
+});
+assert.equal(exactSwarmlingSupply.status, "consistent",
+  "an exact Supply-1 explanation must remain valid");
+
 assert.equal(STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE, 3,
   "one decision cannot reopen more than three semantic correction rounds");
 
@@ -428,6 +478,8 @@ console.log(JSON.stringify({
   possibleReserveDeployStatus: possibleReserveDeploy.status,
   impossibleUnitBoundPhaseControlStatus:
     impossibleUnitBoundPhaseControl.status,
+  falseModelCountSupplyStatus: falseModelCountSupply.status,
+  exactSwarmlingSupplyStatus: exactSwarmlingSupply.status,
   semanticCorrectionLimit:
     STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE,
   rejectionSeverity: rejectedDrive.findingSeverity,

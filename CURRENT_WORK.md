@@ -6,6 +6,21 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-22 Ticket 23 / Slice 248 checkpoint
+
+The live official Command Center record confirms that `Swarmling (Zergling)`
+has one purchasable 18-model composition at Supply 1; its `large` product field
+is unavailable. Ordinary `Zergling` is different: its 18-model large
+composition is Supply 2. The r11 Room state was therefore correct, but the
+Agent prose incorrectly promoted 18 models into a “large marker-contest Supply
+pool”. Planning and Action validation now reject that causal inference against
+the exact `currentSupply` observation, while allowing the correct distinction
+between physical footprint/casualty buffer and marker-control Supply. The
+existing Slice-248 focused gate reproduces the paid r11 sentence and passed
+once after the repair with 0 Provider calls / ¥0. Revision 11 remains Authority
+evidence but its contradicted strategy prose is non-training and continuation
+must fork from r10.
+
 The collaboration environment is complete. Product work resumes from the
 ordered acceptance list below; Codex owns integration and Kimi receives only
 explicit, isolated slice manifests.
