@@ -248,6 +248,7 @@ export default function ArmyScreen() {
           {FACTIONS.map(f => (
             <Pressable
               key={f}
+              testID={`army-new-${f}`}
               onPress={() => {
                 const army = createEmptyArmy(f, `${t('newArmyPrefix')} ${factionName(f)} ${t('armyPostfix')}`);
                 setCurrentArmy(army);

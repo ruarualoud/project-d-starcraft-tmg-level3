@@ -673,7 +673,9 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
             const result = await rosterPlanningClient.exportSession(session.sessionId);
             const text = JSON.stringify(result.export.exportDocument, null, 2);
             setExportText(text);
-            await Clipboard.setStringAsync(text);
+            // Clipboard is best-effort (headless/permission-gated browsers
+            // may refuse); the export text itself is already displayed.
+            try { await Clipboard.setStringAsync(text); } catch { /* best-effort */ }
             return result;
           })} style={({ pressed }) => [st.btn, { borderColor: GREEN, alignSelf: 'flex-start', marginTop: 6 }, pressed && { opacity: 0.7 }]}
             testID="session-export">
