@@ -2396,8 +2396,45 @@ function normalizeProjectedSurfacePlacements(projected) {
 function incomingStationaryFireEstimate(projected, actorId, graph) {
   const actor = (projected.pieces || []).find((entry) => entry.id === actorId);
   if (!actor) return { status: "unknown", reason: "projected_actor_missing" };
+  const visibleOpponentIds = (projected.pieces || []).filter((piece) =>
+    piece.sideKey !== actor.sideKey
+      && piece.isOnField === true
+      && piece.isDestroyed !== true
+      && Number(piece.currentModels || 0) > 0).map((piece) => piece.id);
+  const opponentRelationships = (graph?.relationships || []).filter((entry) =>
+    new Set(["unit_spatial_relationship", "unit_relationship"])
+      .has(entry.edgeKind)
+      && entry.fromUnitId === actorId
+      && (projected.pieces || []).some((piece) =>
+        piece.id === entry.toUnitId && piece.sideKey !== actor.sideKey));
+  const representedOpponentIds = new Set(opponentRelationships
+    .map((entry) => entry.toUnitId));
+  const completeOpponentCoverage = graph?.scope?.softTruncated === false
+    && visibleOpponentIds.length > 0
+    && visibleOpponentIds.every((pieceId) => representedOpponentIds.has(pieceId));
+  if (completeOpponentCoverage
+    && opponentRelationships.every((entry) =>
+      (entry.threats?.toFrom?.stationaryProfileKeys || []).length === 0)) {
+    return {
+      status: "no_current_position_stationary_attack_domain",
+      opponentSideKey: otherSide(actor.sideKey),
+      opponentMovementIncluded: false,
+      opponentMovementBoundedSeparately: true,
+      attackEstimateCount: 0,
+      currentRoundAttackEstimateCount: 0,
+      futureRoundAttackEstimateCount: 0,
+      attackEstimates: [],
+      disabledAttackDiagnostics: [],
+      boundedByTacticalRelationshipGraph: true,
+      exactCurrentRangeAndRequiredLineOfSightProof: true,
+      rulesMechanicsPerOutcome: "not_required_outside_stationary_band",
+      tacticalProjection: "advisory",
+      mutationAuthority: false,
+      trainingTruth: false,
+    };
+  }
   try {
-    const counterfactual = normalizeProjectedSurfacePlacements(clone(projected));
+    const counterfactual = clone(projected);
     const opponentSideKey = otherSide(actor.sideKey);
     counterfactual.phase = "assault";
     counterfactual.stage = "unit_activation";

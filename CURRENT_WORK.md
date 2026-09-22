@@ -460,3 +460,22 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   audit formal versus fixture worldbook content, restore a wide desktop focus
   mode/mobile full-screen sheet, and replace the companion yellow/olive theme
   with StarCraft-style blue/cyan while retaining warning amber.
+- Formal branch `20260922041417301` advanced r10→r11 with a Rules-legal
+  nine-model Marine deployment and Apply/Replay parity. It used `8` calls,
+  `530,197` reported units and `¥0.705834`; the Agent's own objective weights
+  produced a position 25.153 inches from the Swarmling and 6.870 inches from
+  the nearest marker, which remains review evidence for possible over-timidity
+  rather than a Host/prompt policy target.
+- The r11 production trace exposed a local formation-search delay of about
+  451 seconds. Exact pair search is now cached; stationary-range proof skips
+  irrelevant per-model LOS, complete-opponent gap proof can skip an impossible
+  engagement graph, and complete untruncated relationship evidence avoids a
+  duplicate incoming-fire enumeration. The unchanged r10 formation request
+  passed its one focused post-change gate in `11.437s` with `3180` generated,
+  `4` exact instantiations and `4` legal options, without lowering strategy
+  objectives/budget or mutating Room/using Provider. See
+  `docs/ticket-23-slice-248-formation-search-performance-repair-v1-2026-09-22.md`.
+- K3 now has two isolated active assignments: Ticket 26 / Slice 266f must
+  produce a real Chinese companion BYOK acceptance and visual/report evidence;
+  Ticket 27 / Slices 269–270 must produce a real 2000-point model-generated
+  RosterPlan, Rules legality receipt and immutable pregame laboratory report.
