@@ -76,21 +76,13 @@ const REPAIR_FLAGS = new Map([
   ["--repair-round-2-after-output-contract-repair", 2],
   ["--repair-round-3-after-envelope-diagnostics", 3],
   ["--repair-round-4-final-envelope-stamp", 4],
+  ["--repair-round-5-after-output-alias-normalization", 5],
 ]);
-const REPAIRABLE_FAILURE_CODE = "ROSTER_STRATEGIST_OUTPUT_INVALID";
+const REPAIRABLE_FAILURE_CODES = new Set([
+  "ROSTER_STRATEGIST_OUTPUT_INVALID",
+  "ROSTER_STRATEGIST_FOUNDATION_INVALID",
+]);
 const AUTH_STOP_CODES = new Set([401, 402, 403]);
-// Declared public field set per deliberation round; used only to recognize an
-// otherwise-complete model answer that omitted the two constant envelope
-// fields (schemaVersion/roundKind) so they can be stamped from the request.
-const ROUND_FIELD_SETS = new Map([
-  ["strategy_foundation", ["scoreRoute", "opponentHypotheses",
-    "counterResponses", "invalidationTriggers", "informationNeeds"]],
-  ["candidate_proposals", ["proposals"]],
-  ["comparison_selection", ["comparison", "componentPurposes",
-    "deploymentConcept", "lossResourceBudget", "publicSummaryText"]],
-  ["revision", ["publicSummaryText", "revisedScoreRoute",
-    "revisedDeploymentConcept"]],
-]);
 
 function clone(value) {
   return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
@@ -158,13 +150,30 @@ async function repairablePriorFailure() {
   try {
     const report = JSON.parse(await readFile(REPORT_PATH, "utf8"));
     return report?.status === "failed"
-      && report?.failureCode === REPAIRABLE_FAILURE_CODE
+      && REPAIRABLE_FAILURE_CODES.has(report?.failureCode)
       && report?.automaticRetries === 0
       && Number(report?.providerCallsObserved || 0) >= 0
       ? report : null;
   } catch {
     return null;
   }
+}
+
+// Preserve every attempt report instead of overwriting: before a new attempt
+// rewrites the single live-report path, the admitted prior failure report is
+// copied to its own repair-round file. Idempotent; an already-preserved round
+// is never overwritten.
+async function preserveAttemptReport(report) {
+  const round = Number(report?.repairRound || 1);
+  const fileName = `repair-round-${round}-report.json`;
+  try {
+    await writeFile(path.join(REPORT_ROOT, fileName),
+      `${JSON.stringify(report, null, 2)}\n`,
+      { encoding: "utf8", mode: 0o600, flag: "wx" });
+  } catch (error) {
+    if (error?.code !== "EEXIST") throw error;
+  }
+  return `build/ticket-27-slices-269-270-live-roster-plan-v1/${fileName}`;
 }
 
 async function writeJson(filePath, value) {
@@ -257,6 +266,7 @@ async function main() {
   }
   let repairRound = 1;
   let priorFailureReport = null;
+  let priorPreservedPath = null;
   if (await priorAttemptClaimed()) {
     const requestedRound = repairRoundRequested();
     if (!requestedRound) {
@@ -272,6 +282,7 @@ async function main() {
       return;
     }
     repairRound = requestedRound;
+    priorPreservedPath = await preserveAttemptReport(priorFailureReport);
   }
   const startedAt = new Date().toISOString();
   const runId = `ticket27-269-270-live-${randomUUID()}`;
@@ -419,41 +430,14 @@ async function main() {
         const latencyMs = Date.now() - callStarted;
         const usageReceipt = clone(result.usageReceipt);
         providerReceipts.push(redactedProviderReceipt(usageReceipt, latencyMs));
-        // The egress transport's system contract advertises channel-shaped
-        // responses; the model may therefore wrap the deliberation envelope
-        // in channels.roster_strategy. Unwrap exactly that transport shape;
-        // the runtime still validates the envelope strictly afterwards.
-        let output = result.output;
-        let channelUnwrapped = false;
-        let envelopeStamped = false;
-        if (output && typeof output === "object" && output.roundKind === undefined
-          && output.channels && typeof output.channels === "object"
-          && output.channels.roster_strategy
-          && typeof output.channels.roster_strategy === "object"
-          && (output.channels.roster_strategy.roundKind !== undefined
-            || output.channels.roster_strategy.schemaVersion !== undefined)) {
-          output = output.channels.roster_strategy;
-          channelUnwrapped = true;
-        }
-        if (output && typeof output === "object"
-          && output.schemaVersion === undefined && output.roundKind === undefined) {
-          const declared = ROUND_FIELD_SETS.get(request.roundKind) || [];
-          const keys = Object.keys(output);
-          if (declared.length > 0 && keys.length > 0
-            && keys.every((key) => declared.includes(key))
-            && declared.some((key) => keys.includes(key))) {
-            // The model returned exactly the declared public field set but
-            // omitted the two constant envelope fields. Stamp them from the
-            // request; the constants carry no strategy content and the
-            // stamping is recorded in the receipt.
-            output = {
-              schemaVersion: "starcraft_tmg_roster_strategist_deliberation_v1",
-              roundKind: request.roundKind,
-              ...output,
-            };
-            envelopeStamped = true;
-          }
-        }
+        // The raw model output is passed through untouched. The runtime's
+        // typed public-output normalization boundary (versioned alias
+        // registry v1.0.0) unwraps admitted transport envelopes, stamps
+        // absent request-owned constants and renames admitted aliases, with
+        // a hashed provenance receipt per round; strict schema/Rules
+        // validation always runs afterwards and fails closed on anything
+        // the boundary did not admit.
+        const output = result.output;
         return Object.freeze({
           output: clone(output),
           receipt: Object.freeze({
@@ -464,8 +448,8 @@ async function main() {
             roundKind: request.roundKind,
             contextHash: request.contextHash,
             outputHash: hashStarcraftTmgContract(output),
-            channelUnwrapped,
-            envelopeStamped,
+            normalizationBoundary:
+              "runtime_public_output_normalization_alias_registry_v1",
             usage: clone(usageReceipt.usage),
             latencyMs,
             providerReceiptHash: usageReceipt.receiptHash,
@@ -647,9 +631,7 @@ async function main() {
           repairRound: priorFailureReport.repairRound ?? null,
           providerCallsObserved: priorFailureReport.providerCallsObserved,
           providerReceipts: priorFailureReport.providerReceipts ?? null,
-          preservedCopyPath:
-            "build/ticket-27-slices-269-270-live-roster-plan-v1/"
-              + "repair-round-3-report.json",
+          preservedCopyPath: priorPreservedPath,
         },
         earlierRoundsEvidence: {
           round1ProviderReceiptHash:
