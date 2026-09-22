@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "id": "ticket-24-slice-254r2-authoritative-map-boundaries-ui",
+  "githubIssue": null,
+  "title": "Render authoritative terrain boundaries for all twenty classic maps",
+  "owner": "kimi",
+  "agentProfile": "project-d-ui-lead",
+  "model": "project-d-k3",
+  "baseRef": "codex/starcraft-integration-20260921",
+  "branch": "agent/kimi/ticket-24-slice-254r2-authoritative-map-boundaries-ui",
+  "worktree": ".worktrees/ticket-24-slice-254r2-authoritative-map-boundaries-ui",
+  "allowedPaths": [
+    "apps/starcraft-tmg-expo/",
+    "scripts/verify-ticket-24-slice-254r2-authoritative-map-boundaries-browser-v1.mjs",
+    "docs/ticket-24-slice-254r2-authoritative-map-boundaries-ui-v1-2026-09-22.md"
+  ],
+  "verification": [
+    {
+      "name": "Expo frontend TypeScript contract",
+      "command": "COREPACK_ENABLE_PROJECT_SPEC=0 corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec tsc --noEmit"
+    },
+    {
+      "name": "real-browser twenty-map boundary rendering and screenshots",
+      "command": "node scripts/verify-ticket-24-slice-254r2-authoritative-map-boundaries-browser-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Own only Ticket 24 Slice 254-R2's Web/App presentation of the now-stable compiler-v1.3 map geometry from base commit 67323e6. First read the map configurator, authoritative battle workspace, battlefield presentation projection and the Ticket24 254-R1 report, then freeze a numbered UI plan in the allowed report. Preserve backend, Rules, Authority, Room, source-data, Provider and compiler contracts. Do not infer collision, height, passage or legality from pixels. In both the 20-map configurator preview and a bound live battle table, render directly from Viewer/projected authoritative terrain footprint, opening and access-point geometry: a clearly discoverable semi-transparent fill plus exact boundary; distinct but StarCraft-consistent treatments for impassable, grass, ordinary Size-1 cover and standable high ground; visible ramp/access and opening cuts; source-derived versus neutral-compensation disclosure; and hover/selection details for terrain name/type, Size, height, passability and relevant passage. The background art must remain recognisable and dominant, while boundaries stay legible at every zoom. Scaling must preserve physical inch ratios; do not use a CSS/template approximation. Add one compact boundary legend/toggle without hiding the board, but authoritative boundaries should be on by default in formal rooms. Support keyboard, touch, screen reader and reduced motion; keep desktop and 390px layouts usable. Reuse current StarCraft visual language and do not regress unit selection, threats, models, markers or action controls. Build one focused real-browser verifier using current product code and deterministic local fixtures. It must iterate all 20 map seeds and prove every compiled Rules footprint is represented with the matching dimensions; prove Lost Temple's 9.72x4.32-inch central plateau plus two temple-axis ramps; prove one impassable opening, grass and high-ground styles; prove background art remains visible; and capture named desktop plus 390px screenshots from both gallery and live battle. Report claim-to-pixel paths/hashes and any honest projection gap. Run only the two declared gates after final relevant changes, at most one repair rerun per changed gate, create scoped commits, do not push, and do not edit backend/compiler files."
+}
