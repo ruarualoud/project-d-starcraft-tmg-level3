@@ -272,6 +272,57 @@ function main() {
       && correctionSubmission.submission.intent.nextDecisionFocus === undefined,
     "CHANGED_SELECTION_INHERITED_STALE_STRATEGY",
     { correctionSubmission });
+    const nestedHistoricalSelectionRecovery =
+      recoverStarcraftTmgCorrectionSubmissionV1({
+        candidateId: omegaDomain.domainId,
+        intent: {
+          tradeoffs: ["corrected tradeoff"],
+          risks: ["corrected risk"],
+          fallbacks: ["corrected fallback"],
+          stopOrReplanTriggers: ["corrected trigger"],
+          unitIds: ["player2-swarmling"],
+          skillsUsed: ["zerg-skill"],
+          abilitiesIntended: ["Omega Network"],
+          resourcesIntended: [],
+        },
+      }, {
+        semanticCorrectionRounds: 2,
+        attemptKeys: ["nested-selection-attempt"],
+        attempts: {
+          "nested-selection-attempt": {
+            stage: "action",
+            status: "completed",
+            safeOutput: { providerTurn: { kind: "tool_calls", toolCalls: [{
+              name: "submit_decision",
+              arguments: {
+                candidateId: omegaDomain.domainId,
+                intent: {
+                  selection: { kind: "asset",
+                    optionId: "paid-valid-option",
+                    slotAssignments: [], parametersJson: "{}",
+                    publicReason: "Preserve the already-paid legal option." },
+                  lifecycleAssessment: { currentPhase: "movement" },
+                  publicDecisionSummary: { plan: "Preserve paid choice." },
+                  tradeoffs: ["original tradeoff"],
+                },
+              },
+            }] } },
+          },
+        },
+      });
+    ensure(nestedHistoricalSelectionRecovery.recovered === true
+      && nestedHistoricalSelectionRecovery.sourceAttemptKey
+        === "nested-selection-attempt"
+      && nestedHistoricalSelectionRecovery.submission.selection?.optionId
+        === "paid-valid-option"
+      && nestedHistoricalSelectionRecovery.submission.lifecycleAssessment
+        ?.currentPhase === "movement"
+      && nestedHistoricalSelectionRecovery.submission.publicDecisionSummary
+        ?.plan === "Preserve paid choice."
+      && nestedHistoricalSelectionRecovery.submission.intent.tradeoffs[0]
+        === "corrected tradeoff",
+    "NESTED_HISTORICAL_SELECTION_NOT_NORMALIZED_BEFORE_RECOVERY",
+    { nestedHistoricalSelectionRecovery });
     process.stdout.write(`${JSON.stringify({
       schema: "ticket23_slice247_legal_asset_placement_options_focused_v1",
       ok: true,
@@ -283,6 +334,7 @@ function main() {
       crossPhasePredictionRejected: true,
       correctionAssetSelectionRecovered: true,
       correctionDeltaMerged: true,
+      nestedHistoricalSelectionRecovered: true,
       changedSelectionStaleStrategyRejected: true,
       attemptedCandidateCount: receipt.result.attemptedCandidateCount,
       providerCalls: 0,

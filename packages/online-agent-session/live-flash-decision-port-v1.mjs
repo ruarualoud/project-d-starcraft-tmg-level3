@@ -2879,20 +2879,28 @@ function correctionSelectionIdentity(selection) {
   });
 }
 
-export function recoverStarcraftTmgCorrectionSubmissionV1(raw, choice) {
-  if (!object(raw)) return { submission: clone(raw), recovered: false,
-    sourceAttemptKey: null, inheritedFields: [], liftedFields: [] };
-  const current = clone(raw);
-  const currentIntent = object(current.intent) ? clone(current.intent) : {};
+function liftCorrectionIntentFields(raw) {
+  const submission = clone(raw);
+  const intent = object(submission?.intent) ? clone(submission.intent) : {};
   const liftedFields = [];
   for (const field of CORRECTION_LIFTED_INTENT_FIELDS) {
-    if (current[field] === undefined && currentIntent[field] !== undefined) {
-      current[field] = clone(currentIntent[field]);
-      delete currentIntent[field];
+    if (submission[field] === undefined && intent[field] !== undefined) {
+      submission[field] = clone(intent[field]);
+      delete intent[field];
       liftedFields.push(field);
     }
   }
-  if (object(current.intent)) current.intent = currentIntent;
+  if (object(submission?.intent)) submission.intent = intent;
+  return { submission, liftedFields };
+}
+
+export function recoverStarcraftTmgCorrectionSubmissionV1(raw, choice) {
+  if (!object(raw)) return { submission: clone(raw), recovered: false,
+    sourceAttemptKey: null, inheritedFields: [], liftedFields: [] };
+  const liftedCurrent = liftCorrectionIntentFields(raw);
+  const current = liftedCurrent.submission;
+  const currentIntent = object(current.intent) ? clone(current.intent) : {};
+  const liftedFields = liftedCurrent.liftedFields;
   const candidateId = String(current.candidateId || "");
   if (!candidateId || Number(choice?.semanticCorrectionRounds || 0) < 1) {
     return { submission: current, recovered: liftedFields.length > 0,
@@ -2904,7 +2912,9 @@ export function recoverStarcraftTmgCorrectionSubmissionV1(raw, choice) {
     .filter(({ attempt }) => attempt?.stage === "action"
       && attempt?.status === "completed");
   for (const { attemptKey, attempt } of attempts) {
-    const prior = responseParts(attempt.safeOutput).decision;
+    const rawPrior = responseParts(attempt.safeOutput).decision;
+    const prior = object(rawPrior)
+      ? liftCorrectionIntentFields(rawPrior).submission : rawPrior;
     if (!object(prior) || String(prior.candidateId || "") !== candidateId
       || !object(prior.selection)) continue;
     const selectionChanged = Boolean(correctionSelectionIdentity(current.selection)

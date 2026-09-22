@@ -70,6 +70,30 @@ The next live step is a fresh one-action fork through authoritative revision 8.
 The failed branch is evidence only and is not resumed or promoted to training
 truth.
 
+## First post-repair live attempt and correction recovery
+
+Run `20260922015024919` confirmed that the lifecycle projection reached the
+model. It selected `(47250,1600)`, distinguished zero current-round Goliath
+fire from next-round movement pressure, and stated that Ranged Attack does not
+move. No action was applied.
+
+The run stopped after `7` calls / `345,548` units / `¥0.948894` for a separate
+Harness defect. The first Action submission carried its exact legal asset
+selection inside `intent.selection`; later semantic corrections supplied only
+field deltas. Current submissions lifted nested fields, but historical paid
+candidates were inspected before the same lift, so the final delta could not
+inherit the legal option and failed `DECISION_PROPOSAL_ILLEGAL`.
+
+Historical correction candidates now pass through the same normalization
+before inheritance. The existing asset-placement/correction gate was extended
+with the captured defect shape and run once after the change; it passed with
+`nestedHistoricalSelectionRecovered: true`, `providerCalls: 0` and no Room
+mutation. This is generic correction-delta recovery, not an Omega special case.
+
+The recent recovery ledger is now `89` calls / `4,217,951` units /
+`¥6.310668`; including the original invalid suffix it is `118` calls /
+`5,564,745` units / `¥8.163389`. No `¥100` threshold was crossed.
+
 ## Harness loop record
 
 - `harnessLoopUsed`: true

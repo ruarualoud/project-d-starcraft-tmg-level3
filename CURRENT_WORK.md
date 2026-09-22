@@ -359,3 +359,10 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
 - Ticket 26 / Slice 266e continues independently in the K3 worktree. Network
   recovery checkpoint `6fcab1d` preserves package-promotion work; K3 resumed
   to finish the final browser gate.
+- First post-repair live run `20260922015024919` proved the current/next-round
+  threat fields reached the Agent and produced the intended `(47250,1600)`
+  choice, but no action applied: correction deltas could not inherit a paid
+  selection that an earlier strict response nested below `intent`. Historical
+  candidates now receive the same field lift before inheritance. The existing
+  asset/correction gate passed once with `nestedHistoricalSelectionRecovered`.
+  Run cost: `7 / 345,548 / ¥0.948894`; next remains a fresh r8 one-action fork.
