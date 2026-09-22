@@ -417,3 +417,19 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   Critical/High findings. Ticket 27 / Slices 267–268 is delegated in an
   isolated worktree; the main process waits for its completion notification
   rather than polling it.
+- Post-repair fork `20260922031327201` completed r8→r9 and stopped at the
+  requested one-action checkpoint. Omega Network placed the Worm at
+  `(47250,1600)`; the exact option reported zero current stationary and
+  move-then-fire profiles at a 34-inch base-edge gap. Apply/Replay matched.
+- Both public opponent hypotheses now use
+  `bounded_public_transitions(count=2)`: Goliath movement/fire is explicitly
+  next-round pressure, while the off-table Raynor response is a typed Deploy.
+  No lifecycle/horizon contradiction or Critical/High finding remains.
+- The accepted action used `6 / 325,357 / ¥0.914067`. Recent recovery work is
+  now `103 / 4,936,890 / ¥8.290023`; including the original invalid suffix it
+  is `132 / 6,283,684 / ¥10.142744`. No ¥100 threshold was crossed.
+- Ticket 26 / Slice 266f is queued for K3 only after its current Ticket 27
+  assignment reports completion: prove a real Chinese Provider conversation,
+  audit formal versus fixture worldbook content, restore a wide desktop focus
+  mode/mobile full-screen sheet, and replace the companion yellow/olive theme
+  with StarCraft-style blue/cyan while retaining warning amber.
