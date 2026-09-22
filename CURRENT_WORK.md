@@ -97,6 +97,14 @@ explicit, isolated slice manifests.
    Tavern-equivalent cards/world books, layered long-term memory and
    relationship state, resumable long-running roleplay, multiple companions in
    one conversation, and no exposure of opponent-private agent state.
+   Slice 266e is now merged through `merge(ticket26): integrate companion final
+   product closure`. K3's one final focused browser run passed `45/45` checks,
+   `15` claims and `21` hashed artifacts: the Author's Note capture denominator
+   remains 2/2, six-state portrait animation is bound to real session signals,
+   and sealed package promotion persists/reloads with pin verification and
+   tamper rejection. It used 0 real Provider calls and ¥0. Ticket 26 product
+   closure has no open Critical/High finding; its explicitly documented
+   marketplace/continuous-motion/data-content gaps are nonblocking.
 7. Ticket 27 / Slices 267–272: build the independent Roster Strategist. The
    Rules-owned Army Builder remains the sole legality authority; the Agent uses
    General/faction/matchup Skills, scoring plans, spatial/probability/math tools
