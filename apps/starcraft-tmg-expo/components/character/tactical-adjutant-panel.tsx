@@ -1271,6 +1271,25 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   }
 
   function renderProviderCard() {
+    // Slice 266f: explicit BYOK state surface derived ONLY from the real
+    // Ticket 16 projection — attached / missing / error / detached (plus the
+    // awaiting-secret ingress state); never inferred, never fabricated.
+    const attachmentState = secureProvider?.attachment?.state || null;
+    const providerStateSurface: { kind: string; tone: "ok" | "warn" | "error" | "plain" } = (() => {
+      if (!secureProvider) return { kind: "missing", tone: "plain" };
+      if (secureProvider.rejection) return { kind: "error", tone: "error" };
+      if (attachmentState === "attached") return { kind: "attached", tone: "ok" };
+      if (attachmentState === "detached" || attachmentState === "expired") {
+        return { kind: "detached", tone: "plain" };
+      }
+      if (attachmentState === "attach_failed" || attachmentState === "detach_failed") {
+        return { kind: "error", tone: "error" };
+      }
+      if (secureProvider.status === "awaiting_secret") {
+        return { kind: "awaiting_secret", tone: "warn" };
+      }
+      return { kind: "missing", tone: "plain" };
+    })();
     return (
       <View style={styles.providerCard} testID="secure-provider-console">
         <View style={styles.providerHeader}>
@@ -1287,7 +1306,32 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
           {providerBusy && <ActivityIndicator color={COMMS.cyan} size="small" />}
         </View>
 
-        <Text style={styles.providerDisclosure}>
+        <View style={styles.providerStateRow}>
+          <View
+            style={[
+              styles.providerStateChip,
+              providerStateSurface.tone === "ok" && styles.providerStateChipAttached,
+              providerStateSurface.tone === "warn" && styles.providerStateChipWarning,
+              providerStateSurface.tone === "error" && styles.providerStateChipError,
+            ]}
+            testID="secure-provider-state-chip"
+          >
+            <Text style={styles.providerStateText}>
+              state: {providerStateSurface.kind}
+              {secureProvider?.rejection ? ` · ${secureProvider.rejection.code}` : ""}
+              {providerStateSurface.kind === "missing"
+                ? (secureProvider?.status === "session_required"
+                  ? (zh ? " · 需先接通副官会话（如实）" : " · agent session required (honest)")
+                  : (zh ? " · 未附加（如实）" : " · not attached (honest)"))
+                : ""}
+              {providerStateSurface.kind === "detached" && secureProvider?.attachment?.detachReason
+                ? ` · ${secureProvider.attachment.detachReason}`
+                : ""}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={styles.providerDisclosure} testID="secure-provider-secret-hygiene">
           {zh
             ? "所选 Provider 会收到本轮 Prompt 与响应合同。应用会在等待网络前清空密码输入，并在结束时清零可变字节；浏览器与服务端都不写持久存储。隔离 Worker 仅在绑定期间以内存持有密钥；没有自动重试。"
             : "The selected Provider receives the turn Prompt and response contract. The app clears this password field before awaiting the network and zeroes mutable bytes afterward; neither browser nor server writes it to persistent storage. An isolated Worker holds it only in session memory until detach, with no automatic retry."}
@@ -1433,6 +1477,29 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
             {secureProvider.attachment.detachReason
               ? ` · ${secureProvider.attachment.detachReason}` : ""}
           </Text>
+        )}
+        {secureProvider?.attachment && (
+          <View style={styles.providerReceiptCard} testID="secure-provider-redacted-receipt">
+            <Text style={styles.providerReceiptTitle}>
+              {zh ? "脱敏收据（绝不含密钥材料）" : "Redacted receipt (never any secret material)"}
+            </Text>
+            <Text style={styles.providerReceiptText}>
+              {secureProvider.attachment.provider.providerId}
+              {" · "}{secureProvider.attachment.provider.requestedModel}
+              {"\n"}profile {secureProvider.attachment.provider.profileRef.hash.slice(0, 12)}…
+              {" · "}{zh ? "状态" : "state"} {secureProvider.attachment.state}
+              {secureProvider.attachment.attachedAt
+                ? ` · attached ${secureProvider.attachment.attachedAt}` : ""}
+              {secureProvider.attachment.detachedAt
+                ? ` · detached ${secureProvider.attachment.detachedAt}` : ""}
+              {"\n"}{zh ? "会话最大额度" : "consent-time envelope"}
+              {" "}{secureProvider.attachment.budgetEnvelope.maxTotalUnits}
+              {" "}{secureProvider.attachment.budgetEnvelope.currency}
+              {" · "}{zh ? "非实时消费，精确账本在服务端" : "not live spend; exact ledger stays server-side"}
+              {"\n"}sensitiveMaterialPersisted: false · automaticRetryAllowed: false
+              {" · "}{zh ? "原始密钥绝不渲染、落盘或入日志" : "the raw key is never rendered, persisted, or logged"}
+            </Text>
+          </View>
         )}
         {secureProvider?.rejection && (
           <Text accessibilityRole="alert" style={styles.errorText}>
