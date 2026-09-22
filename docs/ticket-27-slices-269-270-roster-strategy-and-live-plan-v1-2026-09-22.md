@@ -38,11 +38,14 @@ three additional physical calls outside the original ledger/lock) proved
 the round-10 class closed live — the foundation round transported a long
 mission-grounded schedule and the proposals round passed — then failed
 closed on a separate comparison-round nesting drift
-(`selectedCandidateId` lifted to the top level). The three-call recovery
-budget is exhausted; per the no-retry rule the lane stops with that typed
-blocker open. Live acceptance per the original task brief remains **met by
-round 9** (legality lane); the reopened **live list-quality acceptance is
-NOT met** — see the unresolved High finding below.
+(`selectedCandidateId` lifted to the top level). That drift was closed
+generally in `269.18` (schema-unique reassignment, registry v1.1.0, red
+evidence from the real persisted payload) and the persisted-round resume
+lane (`269.19+270.10`) completed the round-11 session to a Rules-legal,
+mission-grounded `RosterPlan` at **zero new Provider calls / ¥0**.
+Live acceptance per the original task brief is met (round 9) and the
+reopened list-quality lane is closed end-to-end (rounds 10–12); no
+Critical/High finding remains open. Remaining honest gaps below.
 Slice manifest: `.agent-runtime/slice.json`
 (`ticket-27-slices-269-270-roster-strategy-and-live-plan`).
 Roadmap: `docs/ticket-27-slices-267-272-roster-strategist-roadmap-v1-2026-09-21.md`.
@@ -79,6 +82,8 @@ sub-slice.
 | 269.15 | Focused round-9 list-quality regression coverage: descriptor binding of both contracts, the sealed authority node, schema description publication, session-receipt binding, comparison-context budget guidance, offline replays of the captured round-9 shapes (unknown schedule despite derivable authority; comparison without `resourceUtilization`; justification/echo negative gates), the near-cap positive case and the missing-authority cases. Fail-first stopped in `validateFoundation` on the new contracted key set (combined SHA-256 `b8a03e0b…`); passed once after the 269.14 wiring (67+21 checks). 0 Provider calls. | `scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs` |
 | 269.16+270.9 | The manifest-authorized single round-10 list-quality live cycle (`--repair-round-10-after-list-quality-contracts`, chained to the preserved round-9 success report; the flag map remained the hard maximum). The runner exposes `missionScoringAuthority` through its laboratory wrapper, states the lost-unspent/near-cap and schedule-grounding rules in the live instructions and binds the list-quality outcomes in the success report. **Failed closed on its first locked call** — see the live section. | `scripts/run-ticket-27-slices-269-270-live-roster-plan-v1.mjs`, artifacts under `build/ticket-27-slices-269-270-live-roster-plan-v1/` (gitignored) |
 | 269.17 | General narrative-capacity policy closing the round-10 window-bound class (contract set v1.4.0, runtime 1.3.1): free public narrative (schedule-window labels, plans, rationales, justifications, summaries) is bounded only by the transport-level overall safety ceiling (65,536 — the strict subset's widest expressible string bound, mirroring the 269.9 integer-ceiling pattern); display targets stay published in descriptions and exceeding one is a soft public warning recorded in the runtime round receipt, never a rejection; the full public text is preserved; identifier/enum/identity/legality/structured-tool bounds are unchanged. The verifier gains a minimal `--narrative-recovery-only` mode (constant small time: no battlefield, Rules menu, pack or historical round replay). The runner persists every decoded public deliberation answer sanitized (hidden-reasoning-shaped keys dropped recursively, per-round byte cap, full public narrative preserved) on success and on failure for zero-new-cost revalidation, and gains the narrative-recovery lane: at most three additional physical calls outside the original ledger/lock, exclusive-create recovery lock, local pre-send call cap, same stop rules, no retry. | `packages/roster-strategist/roster-strategist-output-schemas-v1.mjs`, `packages/roster-strategist/roster-strategist-runtime-v1.mjs`, `scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs`, `scripts/run-ticket-27-slices-269-270-live-roster-plan-v1.mjs` |
+| 269.18 | Schema-unique field reassignment in the normalization boundary (registry v1.1.0), closing the saved round-11 nesting drift: a stray top-level field is relocated to its contracted home only when the round's strict schema declares that name at exactly one non-array path, the home's parent object already exists and the home is absent; the value moves unchanged, conflicts/ambiguity/undeclared names/missing parents fail closed untouched, and no strategy content is dropped. The verifier's `--nesting-reassignment-only` mode uses the REAL persisted round-11 comparison answer as red evidence. | `packages/roster-strategist/public-output-normalization-v1.mjs`, `packages/roster-strategist/roster-strategist-runtime-v1.mjs`, `scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs` |
+| 269.19+270.10 | Restricted persisted-round resume lane (`--resume-round-11-persisted-outputs`, flag-only, zero Provider calls by construction — no Keychain, credential or Worker access): replays the round-11 paid public answers byte-identically (hash fidelity per round, nothing dropped, behavioral wire binding to the current contract set reproducing the saved outcome) through the repaired boundary and full schema/Rules validation, completing the session to a Rules-legal `RosterPlan` with final port re-validation. Exclusive-create resume lock; one attempt; separate `resume-*` artifacts; the original and recovery ledgers are never rewritten. | `scripts/run-ticket-27-slices-269-270-live-roster-plan-v1.mjs`, artifacts under `build/ticket-27-slices-269-270-live-roster-plan-v1/` (gitignored) |
 | Closure | Receipts, denominators, hash records, live accounting (calls, reported input/output tokens, estimated currency cost, latency, model/provider identity, prompt-pack/Skill routes) and honest gaps, each claim linked to an artifact or receipt. | this document |
 
 ## Authorities read (never modified)
@@ -663,6 +668,38 @@ report chains the preserved round-8 failure report
     declared 5-entry VP schedule, and a `resourceUtilization` block
     acknowledging lost unspent budget. The three-call recovery budget is
     exhausted; per the no-retry rule the lane stops here.
+12. Resume round 12 (`--resume-round-11-persisted-outputs`, registry v1.1.0,
+    **0 new Provider calls / ¥0** by construction — the lane never touches
+    the Keychain, a credential or a Worker): the round-11 paid public
+    answers replayed byte-identically through the repaired normalization
+    boundary (one `schema_unique_field_reassignment` op:
+    `$.selectedCandidateId` → `$.comparison.selectedCandidateId`, value
+    unchanged, provenance receipt recorded) and the full schema/Rules
+    validation. **Passed.** The completed `RosterPlan`
+    (`resume-roster-plan.json`, planHash
+    `e540c1e934ff841f933eab991efed980c41a07af232546ac47260d944e646790`):
+    `cand_b_hero_raynor_double_elite` — Jim Raynor (C-14 rifle), two
+    Goliaths (Scatter/Haywire Missiles; Ares-Class Targeting
+    System/Scatter), two large Marine units (Combat Shield + Slugthrower;
+    Combat Shield + Frag Grenades), one Medic (Advanced Medic Facilities) —
+    Rules-legal Standard roster, 1,430/2,000 minerals, 120 vespene, final
+    audit result hash
+    `2869fca868297024591f0f5092cce0ab34ffaf0f4fa9cc7baa25acaf98173ee7`
+    re-proven through the Rules-owned port. The public summary is honest
+    about the selection: cand_a/cand_c/cand_d were all Rules-illegal
+    (`ARMY_SLOT_CAPACITY_EXCEEDED`), so cand_b was the only legal candidate
+    — and because **no evaluated Rules-legal candidate was near-cap**
+    (`nearCapLegalCandidateAvailable: false`), the budget-utilization
+    contract's justification requirement was correctly `not_applicable`
+    (unspent 570 minerals acknowledged lost in the declared loss budget).
+    The score route is declared and `mission_grounded` in the sealed Hold
+    Position authority (authority receipt `22a15155…`); 3 soft narrative
+    display warnings recorded, none rejecting. Session report
+    `resume-report.json`; `provider.reportedModel` is null there (failure
+    reports carry no provider block) — the `deepseek-flash` identity stays
+    bound through the round-11 receipt hashes. Credential hygiene: no
+    credential was loaded at all (`ingress:
+    none_resume_lane_never_touches_keychain_or_credential`).
 
 Credential hygiene for rounds 10–11 is identical to rounds 1–9: Keychain
 ingress via the existing secure path only, one isolated-Worker attachment,
@@ -680,29 +717,28 @@ host-side identity-contract gaps (269.10 convention publication, 269.11
 context sealing); round 9 passed end-to-end. No Critical/High finding
 remains open.
 
-**Unresolved High finding (blocking the reopened live list-quality
-acceptance):** the round-11 comparison-round nesting drift — the model
-lifted `selectedCandidateId` to the top level of the comparison output
-instead of nesting it under `comparison`
-(`$.comparison.selectedCandidateId:required_field_missing` +
-`$.selectedCandidateId:additional_property_forbidden`) — is a typed
-host-side public-output contract violation in the same repairable class as
-rounds 4–10, but the narrative-recovery lane's three-call budget is
-exhausted and no further paid call is authorized in this slice. Repairing
-it (comparison-schema nesting publication and/or a normalization admission
-for the exact observed lift) plus one new bounded live cycle requires new
-explicit user authorization. The round-9 legality pass remains the last
-passing live acceptance; the deterministic contracts, offline replays and
-the round-11 partial pass (foundation + proposals) are unaffected.
+**Resolved High finding (round-11 nesting drift):** the comparison-round
+`selectedCandidateId` lift was repaired generally in 269.18 (schema-unique
+reassignment, registry v1.1.0) with the real persisted payload as red
+evidence (fail-first stop SHA-256
+`8f07dbefb6d253ca5000b491bcb3fb54b1ec65890d2793a5cdec7c0805849f6e`; green
+once, 6/6 checks, SHA-256
+`0437a5ebb702820f63e12778e77126e001fff11c07313131312fd005f8a8f1f3`), and
+the 269.19+270.10 persisted-resume lane completed the round-11 session to a
+Rules-legal plan at zero new Provider cost. **No Critical/High finding
+remains open.** The strategy quality of the resumed plan (a legal-but-weak
+forced selection: only one of four proposed candidates was Rules-legal) is
+preserved publicly for postmortem review — it is not claimed as a near-cap
+or strong list.
 
-**Consequence:** a live-generated Rules-legal `RosterPlan` exists (round 9)
-and the preset-roster comparison with `planStatus=no_pregame_plan` has its
-passing live counterpart; live acceptance per the original task brief stays
-**met**. The reopened list-quality lane delivered the general contracts,
-the offline regression evidence and a live proof of the schedule-grounding
-repair, but a live-generated near-cap (or explicitly justified)
-mission-grounded complete plan is still outstanding under the unresolved
-High finding above.
+**Consequence:** the reopened list-quality lane is now closed end-to-end:
+a live-generated (round 11, real `deepseek-flash` paid answers),
+Rules-legal, mission-grounded Standard-2000 `RosterPlan` with public
+reasoning exists and the preset-roster comparison with
+`planStatus=no_pregame_plan` has its completed live counterpart. The old
+940/2,000 round-9 plan is not counted as this completion; the resumed plan
+(1,430/2,000, no near-cap legal candidate available, lost-unspent
+acknowledged) is the honest outcome of this cycle.
 
 ## Accounting
 
@@ -710,8 +746,13 @@ High finding above.
   passing run per repaired class — 269.7, 269.9, 269.10, 269.11, 269.15 —
   plus verifier-only repairs; for 269.17 the recorded fail-first stop under
   the v1.3.0 schema and one green `--narrative-recovery-only` run, 8 checks;
-  the 67+21 full gate was not rerun after 269.17 per the explicit user
-  directive; offline replays 0 calls).
+  for 269.18 the recorded fail-first stop with the real round-11 payload
+  and one green `--nesting-reassignment-only` run, 6 checks; the 67+21 full
+  gate was not rerun after 269.17/269.18 per the explicit user directive;
+  offline replays 0 calls).
+- Resume lane (round 12): 0 new Provider calls, ¥0 by construction (no
+  Keychain, credential or Worker access; `sentAttempts === 0` enforced); it
+  replayed the already-paid round-11 answers only.
 - Live attempts: 19 Provider calls total across 11 separately locked,
   costed and retained attempts (rounds 1–6: 1 call each; rounds 7–9: 3
   calls each; round 10: 1 call; recovery round 11: 3 calls), all DeepSeek
