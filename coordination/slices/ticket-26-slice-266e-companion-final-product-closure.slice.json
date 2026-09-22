@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "id": "ticket-26-slice-266e-companion-final-product-closure",
+  "githubIssue": null,
+  "title": "Close all remaining companion product gaps and browser acceptance",
+  "owner": "kimi",
+  "agentProfile": "project-d-slice-implementer",
+  "model": "project-d-k3",
+  "baseRef": "7f504c970a0c065a39254b1a62e48d9ba37782a1",
+  "branch": "agent/kimi/ticket-26-slice-266e-companion-final-product-closure",
+  "worktree": ".worktrees/ticket-26-slice-266e-companion-final-product-closure",
+  "allowedPaths": [
+    "packages/companion-backend-module-v1/",
+    "packages/product-composition/companion-room-session-service-v1.mjs",
+    "packages/product-composition/companion-product-module-v1.mjs",
+    "packages/product-composition/index.mjs",
+    "packages/client-domain/client-domain-v1.mjs",
+    "content/characters/",
+    "apps/starcraft-tmg-expo/lib/level3/client-domain-provider.tsx",
+    "apps/starcraft-tmg-expo/components/character/tactical-adjutant-panel.tsx",
+    "apps/starcraft-tmg-expo/components/character/companion-catalogue-panel.tsx",
+    "apps/starcraft-tmg-expo/components/character/companion-catalogue-content.d.ts",
+    "scripts/verify-ticket-26-slice-266c-companion-product-binding-v1.mjs",
+    "docs/ticket-26-slice-266d-companion-tavern-completion-v1-2026-09-22.md",
+    "docs/ticket-26-slice-266e-companion-final-product-closure-v1-2026-09-22.md"
+  ],
+  "verification": [
+    {
+      "name": "final companion product desktop and narrow browser journey",
+      "command": "node scripts/verify-ticket-26-slice-266c-companion-product-binding-v1.mjs"
+    }
+  ],
+  "selfVerificationByImplementer": true,
+  "taskBrief": "Work only in this isolated companion slice; do not touch Rules, battle actions, formal match strategy, replay/Skill evolution, source snapshots, credentials, Provider production, or the Codex main match. Start by reading the merged 266d closure and current verifier. The integrating browser run already passed 28 checks and then failed NOTE_REQUESTS_NOT_CAPTURED with captured: 1. Diagnose whether the product emitted too few Author's Note-injected Provider requests or the verifier expected the wrong denominator; repair the real contract rather than weakening evidence. Preserve every already-passing check. Then finish every remaining in-scope companion product gap currently labelled pending, especially six-state portrait animation binding and package-to-backend promotion, so catalogue claims match real service/UI behavior. Keep the full Tavern-equivalent contract: durable long-session roleplay, persona, deterministic four-tier Worldbook with bounded recursion and provenance, layered transcript/summary/episodic/relationship memory, rollback-safe summary, Author's Note depth/frequency, swipe/reroll/edit-as-branch, checkpoints, import/export/restore, public audit/replay, seat isolation, permission surfaces with no opponent-private access or Preview/Confirm/Apply, and 1–6 deterministic companions in one conversation. All six companions remain data-driven and extensible. Use only committed approved assets; do not generate images or refresh sources. Produce polished responsive desktop and 390px UI plus screenshot/machine evidence. No real Provider calls or formal Room mutation. Freeze numbered sub-slices first, make one scoped commit per sub-slice, then run the existing focused browser gate at most once after the final relevant code change. Only Critical/High findings block; stop after three non-converging repair rounds. Record exact commits, screenshots, passed denominator, remaining honest gaps and zero-cost accounting in the new 266e closure. Do not push."
+}
