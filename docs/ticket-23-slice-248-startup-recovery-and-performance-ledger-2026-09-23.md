@@ -62,6 +62,30 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r14 observation interruption (not a model decision failure)
+
+Both seats remain `deepseek-flash`. The authority and bot journals confirm
+Swarmling deployment at r14, with 18 models / Supply 1 and Replay matching.
+The Web runner stopped waiting for its connected label during projection
+refresh; it had recorded only through r13. This must resume from the accepted
+r14, not regenerate or reroll the paid decision. The branch ledger is
+30 calls / 2,396,915 reported units / approximately ¥3.152656.
+
+A read-only probe of this exact r14 measured `readRoom` at 440 ms and
+`readBattleWorkbench` at 620 ms. A fresh real browser connected normally;
+its Room and character reads took 514 ms and 206 ms. These observations rule
+out a consistently slow r14 workbench but do not explain the original
+intermittent refresh timeout. The earlier process sample showed JSON parsing
+in an HTTP handler, not enough evidence to identify its caller or total cost.
+
+The runner now records bounded same-origin request paths, status/timing and
+pending requests (no query strings, headers, credentials or payloads), plus
+manifest, refresh and screenshot durations. Failure capture reads the actual
+visible page rather than waiting again for the healthy battlefield that may
+not be mounted. No prompt, Skill, model budget, Rules calculation, strategy
+choice or timeout policy changes. This is instrumentation and resumability
+work, **not a claim that the intermittent refresh defect is fixed**.
+
 | Item | Evidence / scope | Acceptance |
 | --- | --- | --- |
 | Startup failure feedback | Fixed: idle workers hid a fatal error until the 10-minute timeout | Real fatal-handler probe exits promptly; no hidden restart/retry |

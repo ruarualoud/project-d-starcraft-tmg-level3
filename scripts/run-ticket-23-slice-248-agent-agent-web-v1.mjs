@@ -301,6 +301,9 @@ async function main() {
   const mediumFindings = [];
   const consoleErrors = [];
   const pageErrors = [];
+  const observationTimings = [];
+  const browserReads = [];
+  const pendingBrowserReads = new Map();
   let screenshotCount = 0;
   let nextCostNotificationCnyMicros = 100_000_000;
   let server = null;
@@ -310,7 +313,15 @@ async function main() {
   let entry = null;
   let lastManifest = null;
 
+  function observeTiming(operation, started, details = {}) {
+    observationTimings.push({ operation,
+      elapsedMs: Math.round(performance.now() - started),
+      recordedAt: new Date().toISOString(), ...details });
+    if (observationTimings.length > 96) observationTimings.shift();
+  }
+
   async function manifest(timeoutMs = 60_000, options = {}) {
+    const started = performance.now();
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     let response;
@@ -326,6 +337,9 @@ async function main() {
       status: response.status,
     });
     const result = await response.json();
+    observeTiming("manifest", started, {
+      stateRevision: result.room?.stateRevision ?? null,
+    });
     lastManifest = result;
     const allFindings = findings(result);
     const ignoredForExplicitResume = allFindings.filter((finding) =>
@@ -398,6 +412,7 @@ async function main() {
       round: manifestValue?.state?.round ?? null,
       phase: manifestValue?.state?.phase ?? null,
       strategyEvidence: summarizeStrategyEvidence(actions),
+      observationTimings,
       updatedAt: new Date().toISOString(),
       ...other,
     }, 0o644);
@@ -421,6 +436,7 @@ async function main() {
   }
 
   async function refreshObservedRoom() {
+    const started = performance.now();
     const roomTab = page.getByRole("button", {
       name: /^(房间与规则|Room & rules)$/u,
     });
@@ -435,6 +451,7 @@ async function main() {
       ).first().waitFor({ state: "attached", timeout: 60_000 });
     }
     await enterBattle();
+    observeTiming("refresh_observed_room", started);
   }
 
   async function settleBattlefieldVisuals() {
@@ -513,6 +530,7 @@ async function main() {
     if (!unseen.length) return 0;
     await refreshObservedRoom();
     for (const [unseenIndex, { seatKey, trace }] of unseen.entries()) {
+      const captureStarted = performance.now();
       const transition = (manifestValue.recentAcceptedTransitions || [])
         .find((entryValue) =>
           entryValue.journalHash === trace.applyReceiptHash) || null;
@@ -522,6 +540,9 @@ async function main() {
         trace.postStateRevision);
       const reviewViews = await captureReviewViews(seatKey, actionType,
         trace.postStateRevision);
+      observeTiming("capture_applied_action", captureStarted, {
+        stateRevision: trace.postStateRevision,
+      });
       const observedRevision = Number(manifestValue.room?.stateRevision);
       const record = {
         index: actions.length + 1,
@@ -762,6 +783,30 @@ async function main() {
       locale: "zh-CN", reducedMotion: "reduce",
     });
     page = await context.newPage();
+    page.on("request", (request) => {
+      const url = new URL(request.url());
+      if (url.origin !== entry.origin || !["fetch", "xhr"].includes(
+        request.resourceType())) return;
+      pendingBrowserReads.set(request, { method: request.method(),
+        pathname: url.pathname, startedAt: new Date().toISOString(),
+        started: performance.now() });
+    });
+    page.on("response", (response) => {
+      const row = pendingBrowserReads.get(response.request());
+      if (row) row.status = response.status();
+    });
+    const finishBrowserRead = (request, failed = false) => {
+      const row = pendingBrowserReads.get(request);
+      if (!row) return;
+      const { started, ...publicRow } = row;
+      browserReads.push({ ...publicRow,
+        elapsedMs: Math.round(performance.now() - started),
+        ...(failed ? { failure: request.failure()?.errorText || "failed" } : {}) });
+      if (browserReads.length > 64) browserReads.shift();
+      pendingBrowserReads.delete(request);
+    };
+    page.on("requestfinished", (request) => finishBrowserRead(request));
+    page.on("requestfailed", (request) => finishBrowserRead(request, true));
     page.on("console", (message) => {
       if (message.type() === "error") consoleErrors.push(sanitize(message.text()));
     });
@@ -1037,9 +1082,20 @@ async function main() {
   } catch (error) {
     if (outputDirectory) {
       let failureScreenshot = null;
+      let failureVisibleText = null;
       try {
-        failureScreenshot = await capture("runner",
-          error?.code || "failure", actions.length, "failure");
+        // The normal capture path waits for a healthy battlefield. A refresh
+        // failure may leave the Room pane visible, so capture the actual page
+        // directly instead of losing the failure evidence to that same wait.
+        failureVisibleText = sanitize(await page.locator("body").innerText({
+          timeout: 5_000,
+        })).slice(0, 8_000);
+        screenshotCount += 1;
+        const filename = `screenshots/${String(screenshotCount).padStart(
+          4, "0")}-runner-visible-failure.png`;
+        await page.screenshot({ path: path.join(outputDirectory,
+          filename), timeout: 10_000 });
+        failureScreenshot = filename;
       } catch {}
       await writeJsonAtomic(path.join(outputDirectory, "failure.json"), {
         schema: "ticket23_slice248_agent_agent_web_failure_v1",
@@ -1051,6 +1107,14 @@ async function main() {
         actionCount: actions.length,
         screenshotCount,
         failureScreenshot,
+        failureVisibleText,
+        observationTimings,
+        browserReads,
+        pendingBrowserReads: [...pendingBrowserReads.values()].map((row) => {
+          const { started, ...publicRow } = row;
+          return { ...publicRow,
+            elapsedMs: Math.round(performance.now() - started) };
+        }),
         serverStderr: sanitize(server?.stderr?.()),
         serverProcess: server?.processState || null,
         error: safeErrorDetails(error),
