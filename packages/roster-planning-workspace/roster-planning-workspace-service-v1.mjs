@@ -519,6 +519,7 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       status: "draft",
       progress: { phase: "idle", rounds: [], activeRoundKind: null },
       planSerialized: null,
+      generatedPlanHash: null,
       candidates: [],
       candidateInputs: [],
       candidateSummaries: [],
@@ -836,15 +837,18 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       wsFail("ROSTER_WORKSPACE_SOURCE_MUTATION_DETECTED", "laboratory", 500);
     }
 
-    const reconstructed = session.planSerialized !== null;
+    const reconstructed = session.generatedPlanHash !== null
+      || session.planSerialized !== null;
     if (reconstructed) {
-      // Replay resume over an already-planned session: the retained replies
-      // must reconstruct the exact same plan; usage stays untouched (zero
-      // new paid calls in the replayed rounds).
-      const prior = parseRosterPlanV1(session.planSerialized);
-      if (prior.planHash !== sessionResult.plan.planHash) {
+      // Replay resume over an already-generated session: the retained replies
+      // must reconstruct the exact GENERATED plan (a later revision bumps the
+      // version/hash, so compare against the generation-time hash). Usage
+      // stays untouched — replayed rounds are zero new paid calls.
+      const referenceHash = session.generatedPlanHash
+        || parseRosterPlanV1(session.planSerialized).planHash;
+      if (referenceHash !== sessionResult.plan.planHash) {
         wsFail("ROSTER_WORKSPACE_RESUME_PLAN_HASH_DRIFT",
-          `${prior.planHash}!=${sessionResult.plan.planHash}`, 500);
+          `${referenceHash}!=${sessionResult.plan.planHash}`, 500);
       }
       session.resumeReceipts.push({
         at: now(),
@@ -865,6 +869,7 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     }
 
     session.planSerialized = serializeRosterPlanV1(sessionResult.plan);
+    session.generatedPlanHash = sessionResult.plan.planHash;
     session.candidates = sessionResult.candidates.map((entry) => clone(entry));
     session.candidateInputs = sessionResult.candidateInputs.map(
       (entry) => clone(entry));
@@ -936,6 +941,7 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       // silently replayed as if they were new model output.
       session.publicOutputs = [];
       session.planSerialized = null;
+      session.generatedPlanHash = null;
       session.candidates = [];
       session.candidateInputs = [];
       session.candidateSummaries = [];
