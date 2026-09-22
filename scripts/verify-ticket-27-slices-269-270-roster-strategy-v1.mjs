@@ -1187,6 +1187,77 @@ check(269, String(round7PurposeProps.instanceId.description || "")
     + "instance-identity convention for every component kind and the "
     + "activation order (fail-first before the contract repair)");
 
+// ------------------------------------- round-8 unit identity mismatch
+// Offline replay of the exact saved live round-8 failure
+// (repair-round-8-report.json, failureDetail
+// "ROSTER_STRATEGIST_COMPARISON_INVALID:unit_binding:agent-unit-1"): the
+// faction-card identity was correct after 269.10, but the model paired a
+// unit purpose recordKey with the wrong deterministic unit id. The sealed
+// comparison-round context published only candidate hashes and verdicts —
+// never the candidates' unit lists — so the runtime-owned identities
+// (agent-unit-<n> positions, tactical positions, faction id) were not
+// derivable from the request at all. The exact recordKey the model wrote
+// was not persisted (rawResponsePersisted: false), so the replay uses the
+// smallest representative mismatch: the menu-known goliath recordKey
+// against agent-unit-1, whose true recordKey is marine. 0 Provider calls.
+function capturedRound8ComparisonOutput() {
+  const base = comparisonOutput();
+  return {
+    ...base,
+    componentPurposes: base.componentPurposes.map((purpose, index) => (
+      index === 1 ? { ...purpose, recordKey: "army_units:goliath" }
+        : purpose)),
+  };
+}
+const round8SchemaValidation = validateStarcraftTmgProviderJsonSchemaValueV1(
+  comparisonContract.providerSchema, capturedRound8ComparisonOutput());
+check(269, round8SchemaValidation.ok === true,
+  "the captured round-8 mismatched-binding shape is well-formed at the "
+    + "wire; only the runtime's deterministic binding rule rejects it");
+let round8ReplayError = null;
+try {
+  await strategistA.planRoster(sessionInput, {
+    deliberation: createMock({
+      comparison_selection: () => capturedRound8ComparisonOutput() }) });
+} catch (error) {
+  round8ReplayError = error;
+}
+check(269, String(round8ReplayError?.message || "")
+    === "ROSTER_STRATEGIST_COMPARISON_INVALID:unit_binding:agent-unit-1",
+  "offline replay must reproduce the exact saved round-8 failure "
+    + "byte-identically (OFFLINE_REPLAY_MATCHES_SAVED_ROUND8_FAILURE); the "
+    + "runtime binding rule stays strict after the context repair");
+// Fail-first under the pre-repair context: the comparison-round request must
+// seal the runtime-owned deterministic component identities of every
+// evaluated candidate into the evaluated-candidates node, so the identities
+// the strict binding rule requires are derivable from the request itself.
+const round8RecordedRequests = [];
+await strategistA.planRoster(sessionInput, {
+  deliberation: createMock({}, round8RecordedRequests) });
+const round8CandidatesNode = (round8RecordedRequests.find((entry) => (
+  entry.roundKind === "comparison_selection"))?.promptNodes || []).find(
+  (node) => node.nodeType === "evaluated-candidates");
+check(269, Array.isArray(round8CandidatesNode?.content?.candidates)
+  && round8CandidatesNode.content.candidates.length === 3
+  && round8CandidatesNode.content.candidates.every((candidate) => (
+    candidate.factionCardInstanceId === "player1-faction"
+      && Array.isArray(candidate.tacticalCards)
+      && candidate.tacticalCards.every((card, index) => (
+        card.instanceId === `player1-tactical-${index + 1}`
+          && typeof card.recordKey === "string" && card.recordKey.length > 0))
+      && Array.isArray(candidate.units)
+      && candidate.units.every((unit, unitIndex) => (
+        unit.unitInstanceId === `agent-unit-${unitIndex + 1}`
+          && typeof unit.recordKey === "string" && unit.recordKey.length > 0
+          && unit.compositionInstanceId === `${unit.unitInstanceId}-composition`
+          && unit.upgrades.every((upgrade, upgradeIndex) => (
+            upgrade.instanceId
+              === `${unit.unitInstanceId}-upgrade-${upgradeIndex + 1}`)))))),
+  "the comparison-round request must seal every evaluated candidate's "
+    + "deterministic faction/tactical/unit/composition/upgrade identities "
+    + "into the evaluated-candidates node (fail-first before the context "
+    + "repair)");
+
 check(269, bundle.bundleHash === bundleHashBefore
   && hashStarcraftTmgContract(authority.state)
     === labDescriptor.sourceStateHash,
@@ -1222,6 +1293,7 @@ const report = {
     round5OfflineReplayFailureDetail: String(round5ReplayError?.message || ""),
     round6OfflineReplayFailureDetail: round6SavedDetail,
     round7OfflineReplayFailureDetail: String(round7ReplayError?.message || ""),
+    round8OfflineReplayFailureDetail: String(round8ReplayError?.message || ""),
     hiddenChainOfThoughtIncluded: false,
     hostPreferenceWeights: false,
   },
