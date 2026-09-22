@@ -33,6 +33,15 @@ import { createSqliteStarcraftTmgHostedBotSeatStoreV1 } from
   "../packages/online-agent-session/sqlite-hosted-bot-seat-store-v1.mjs";
 import { createSqliteStarcraftTmgMatchDecisionJournalV1 } from
   "../packages/online-agent-session/sqlite-match-decision-journal-v1.mjs";
+// Ticket 27 / Slice 271 (additive mount only): the isolated roster-planning
+// workspace shares this server's static product surface. It is created lazily
+// on the first workspace request so startup of the live T23 path is
+// unchanged, it carries no live deliberation factory (planning reports its
+// explicit unavailable state), and it exposes no Room mutation route.
+import { createRosterPlanningProductModuleV1 } from
+  "../packages/product-composition/roster-planning-product-module-v1.mjs";
+import { ROSTER_PLANNING_WORKSPACE_API_PREFIX } from
+  "../packages/roster-planning-workspace/roster-planning-workspace-http-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEVELOPMENT_ROOM_ID = "ticket23-standard-2000-web";
@@ -365,6 +374,7 @@ async function main() {
     assetRoot: ROOT,
     mapConfigurationPort: createOfficialCompetitiveMapConfiguratorV1(),
   });
+  let rosterWorkspacePromise = null;
   const learning = await createTicket20LearningConsoleFixtureV1({
     root: ROOT,
     fixture,
@@ -439,6 +449,49 @@ async function main() {
           requestBody.body,
         );
         sendJson(response, 200, { ok: true, result });
+        return;
+      }
+      if (url.pathname.startsWith(ROSTER_PLANNING_WORKSPACE_API_PREFIX)) {
+        // Additive S271 mount (lazy): no live deliberation factory here, so
+        // paid planning is honestly unavailable; catalogue, drafts, manual
+        // Builder-port override evaluation, export/import and replay resume
+        // remain functional. No existing API response is changed. The
+        // hash-locked source cache is a read-only frozen artifact; an
+        // explicit fixture root may point at the integration checkout.
+        if (!rosterWorkspacePromise) {
+          rosterWorkspacePromise = createRosterPlanningProductModuleV1({
+            root: ROOT,
+            fixtureRoot: process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
+            dataDirectory: path.join(ROOT,
+              "build/ticket-27-slice-271-roster-workspace-v1/dev-server-data"),
+            deliberationFactory: null,
+          }).catch((error) => {
+            rosterWorkspacePromise = null;
+            throw error;
+          });
+        }
+        let rosterWorkspace = null;
+        try {
+          rosterWorkspace = await rosterWorkspacePromise;
+        } catch (error) {
+          sendJson(response, 503, {
+            schemaVersion: "starcraft_tmg_roster_planning_workspace_http_v1",
+            ok: false,
+            reason: "ROSTER_WORKSPACE_MODULE_UNAVAILABLE",
+            detail: String(error?.message || error || "").slice(0, 300),
+            automaticRetry: false,
+            trainingTruth: false,
+          });
+          return;
+        }
+        const result = await rosterWorkspace.handle({
+          method: request.method,
+          pathname: url.pathname,
+          query: url.searchParams,
+          headers: request.headers,
+          ...requestBody,
+        });
+        sendJson(response, result.status, result.response);
         return;
       }
       if (url.pathname.startsWith(STARCRAFT_TMG_LEVEL3_API_PREFIX)
