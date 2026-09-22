@@ -60,6 +60,26 @@ No strategy preference was added to the prompt. If a new decision still chooses
 the low-value corner after receiving the missing comparison, that choice will be
 fed to replay/Skill evolution rather than hidden behind a Host-authored score.
 
+The repair now also closes the two objective-input gaps exposed by the same
+counterexample:
+
+- every returned Omega option carries a typed projected stationary-fire risk
+  receipt over a hypothetical, mutation-zero placement state, rather than a
+  prose-only nearest-threat hint;
+- the option frontier distinguishes the lowest current fire, the largest
+  entry-edge gain at that minimum fire, and the largest observed approach gain;
+  "largest" is explicitly bounded to the searched candidate pool and never
+  claims a certified maximum over the continuous board;
+- selecting a durable reserve-entry capability requires the public turn plan to
+  add a structured future-action item naming the intended reserve unit, earliest
+  timing, route or target, purpose, evidence, prerequisites, cancellation rule
+  and fallback. A vague statement that the Worm may be useful later no longer
+  satisfies the plan contract.
+
+These are evidence and continuity requirements, not Host-authored utility
+weights. The Agent still decides how to trade immediate exposure against future
+entry value.
+
 ## Map authority audit
 
 The run is already bound to the two-layer `sc1_lost_temple_v1` compiler. The
@@ -90,6 +110,9 @@ ran once and passed:
 - low-fire option maximum approach gain: 12.808 inches;
 - largest-gain option maximum approach gain: 17.261 inches;
 - improved objectives: 4 for both reported representatives;
+- all six returned options expose typed current stationary-fire risk;
+- the safe-gain and best-gain facets carry different bounded evidence rather
+  than an unbounded global-maximum claim;
 - Provider calls: 0;
 - Room mutations: 0;
 - training truth: false.

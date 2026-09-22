@@ -218,6 +218,44 @@ function normalizePlanAssessment(value, authorityValue, plan) {
   };
 }
 
+function normalizeFutureActionPlans(value) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 16).map((entry, index) => {
+    if (!object(entry)) {
+      throw new TypeError(`plan.futureActionPlans[${index}] is invalid`);
+    }
+    const status = required(entry.status,
+      `plan.futureActionPlans[${index}].status`);
+    if (!new Set(["committed", "conditional", "needs_information"])
+      .has(status)) {
+      throw new TypeError(`plan.futureActionPlans[${index}].status is unsupported`);
+    }
+    return {
+      planItemId: required(entry.planItemId,
+        `plan.futureActionPlans[${index}].planItemId`),
+      status,
+      enablingCandidateId: required(entry.enablingCandidateId,
+        `plan.futureActionPlans[${index}].enablingCandidateId`),
+      intendedUnitId: required(entry.intendedUnitId,
+        `plan.futureActionPlans[${index}].intendedUnitId`),
+      actionType: required(entry.actionType,
+        `plan.futureActionPlans[${index}].actionType`),
+      earliestTiming: required(entry.earliestTiming,
+        `plan.futureActionPlans[${index}].earliestTiming`),
+      targetOrRoute: required(entry.targetOrRoute,
+        `plan.futureActionPlans[${index}].targetOrRoute`),
+      purpose: required(entry.purpose,
+        `plan.futureActionPlans[${index}].purpose`),
+      benefitEvidenceRefs: strings(entry.benefitEvidenceRefs),
+      riskEvidenceRefs: strings(entry.riskEvidenceRefs),
+      prerequisites: strings(entry.prerequisites),
+      cancelIf: strings(entry.cancelIf),
+      fallback: required(entry.fallback,
+        `plan.futureActionPlans[${index}].fallback`),
+    };
+  });
+}
+
 function planSpec(input) {
   const objective = required(input.objective, "plan.objective");
   return {
@@ -229,6 +267,7 @@ function planSpec(input) {
     resourcePolicy: strings(input.resourcePolicy),
     initiativePolicy: strings(input.initiativePolicy),
     reservePolicy: strings(input.reservePolicy),
+    futureActionPlans: normalizeFutureActionPlans(input.futureActionPlans),
     reviseIf: strings(input.reviseIf),
     assumptions: strings(input.assumptions),
     opponentModel: strings(input.opponentModel),
@@ -258,6 +297,7 @@ function planRecord(plan) {
     resourcePolicy: plan.resourcePolicy,
     initiativePolicy: plan.initiativePolicy,
     reservePolicy: plan.reservePolicy,
+    futureActionPlans: plan.futureActionPlans,
     reviseIf: plan.reviseIf,
     assumptions: plan.assumptions,
     opponentModel: plan.opponentModel,

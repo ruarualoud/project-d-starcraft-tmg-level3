@@ -1418,6 +1418,37 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
     throw correctionError("PLANNER_SELECTED_ACTION_IDENTITY_REQUIRED",
       identityClaims.selectedIdentity.abilityName);
   }
+  const futurePlanRequirement = identityClaims.selectedIdentity
+    ?.effectContract?.futurePlanRequirement;
+  if (futurePlanRequirement?.required === true) {
+    const resultingPlan = object(normalizedPlanRevision)
+      ? normalizedPlanRevision : object(normalizedPlan)
+        ? normalizedPlan : existingPlan;
+    const matchingFuturePlan = (Array.isArray(resultingPlan?.futureActionPlans)
+      ? resultingPlan.futureActionPlans : []).find((entry) =>
+      object(entry)
+        && String(entry.enablingCandidateId || "") === recommendedCandidateId);
+    if (!matchingFuturePlan) {
+      throw correctionError("PLANNER_REQUIRED_FUTURE_ACTION_PLAN_MISSING",
+        `${recommendedCandidateId}:${futurePlanRequirement.capabilityKind
+          || identityClaims.selectedIdentity.effectKind}`);
+    }
+    if (existingPlan && raw.assessment.verdict !== "revise") {
+      throw correctionError("PLANNER_REQUIRED_FUTURE_ACTION_PLAN_NOT_REVISED",
+        recommendedCandidateId);
+    }
+    const missingFields = ["planItemId", "intendedUnitId", "actionType",
+      "earliestTiming", "targetOrRoute", "purpose", "fallback"]
+      .filter((field) => !String(matchingFuturePlan[field] || "").trim());
+    const missingLists = ["benefitEvidenceRefs", "riskEvidenceRefs",
+      "prerequisites", "cancelIf"].filter((field) =>
+      !Array.isArray(matchingFuturePlan[field])
+        || matchingFuturePlan[field].length < 1);
+    if (missingFields.length || missingLists.length) {
+      throw correctionError("PLANNER_REQUIRED_FUTURE_ACTION_PLAN_INCOMPLETE",
+        [...missingFields, ...missingLists].join(","));
+    }
+  }
   const resourceClaims = inspectStarcraftTmgSelectedActionResourceClaimsV1({
     spatialActionSpace: input.spatialActionSpace,
     candidateId: recommendedCandidateId,
@@ -2786,6 +2817,8 @@ function normalizeDecision(raw, input, match, queryReceipts, providerTrace) {
     resourcePolicy: strings(rawPlan.resourcePolicy),
     initiativePolicy: strings(rawPlan.initiativePolicy),
     reservePolicy: strings(rawPlan.reservePolicy),
+    futureActionPlans: Array.isArray(rawPlan.futureActionPlans)
+      ? clone(rawPlan.futureActionPlans) : [],
     reviseIf: strings(rawPlan.reviseIf).length ? strings(rawPlan.reviseIf)
       : ["the expected response or positional value materially changes"],
     assumptions: strings(rawPlan.assumptions),
@@ -3401,6 +3434,28 @@ function planSubmissionSchema() {
     resourcePolicy: strictStringArray(0, 12),
     initiativePolicy: strictStringArray(0, 12),
     reservePolicy: strictStringArray(0, 12),
+    futureActionPlans: {
+      type: "array",
+      items: strictObject({
+        planItemId: strictString(1, 200),
+        status: strictString(1, 32, {
+          enum: ["committed", "conditional", "needs_information"],
+        }),
+        enablingCandidateId: strictString(1, 200),
+        intendedUnitId: strictString(1, 200),
+        actionType: strictString(1, 160),
+        earliestTiming: strictString(1, 500),
+        targetOrRoute: strictString(1, 2_000),
+        purpose: strictString(1, 2_000),
+        benefitEvidenceRefs: strictStringArray(1, 16),
+        riskEvidenceRefs: strictStringArray(1, 16),
+        prerequisites: strictStringArray(1, 16),
+        cancelIf: strictStringArray(1, 16),
+        fallback: strictString(1, 2_000),
+      }),
+      minItems: 0,
+      maxItems: 16,
+    },
     reviseIf: strictStringArray(1, 12),
     assumptions: strictStringArray(0, 12),
     opponentModel: strictStringArray(0, 12),
@@ -4430,6 +4485,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one spatially covering stationary weapon profile; use its current-round lifecycle fields before describing immediate exposure. Read incomingStationaryFireEstimate when present: compare expected casualties, every exact legal removed-model list, lost occupied positions/formation reach, lost ranged contributors, exact current Fighting/Supporting losses, marker-by-marker control changes, probability of Supply reduction/zero, Supply freed for later deployment, VP awarded, and every exact reaction choice/cost against objective or scoring gain. Read incomingMoveThenFireEstimate too: a reachable current-round row is a live threat even while legal path and post-move line of sight remain conditional; a reachable next-round row is future planning pressure, not an immediate legal action. Unknown path or line of sight is never safety or zero risk. A Ranged Attack itself never includes movement. Current Supply—not raw model count—controls marker strength. Do not default to the safest position: choose the highest expected net mission value after risk, and state why the accepted exposure is worth it. Preserve unknown probability as uncertainty and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
       "When an exact legal_asset_placement_options receipt is present, compare every returned option's tacticalMetrics and relationshipComparison before choosing exactly one placementOptionId. incomingCurrentRoundStationaryProfileCount and incomingCurrentRoundMoveThenFireProfileCount are current-round exposure after phase/activation/pass gates. incomingStationaryProfileCount and incomingMoveThenFireProfileCount are broader geometric planning bands and may be next-round pressure. Unknown hypothetical line of sight remains uncertainty, never safety. Compare the low-fire, objective, route and preferred-anchor facets instead of assuming the preferred anchor is best. Return assetPlacementSelection with that ID and one concise publicReason naming accepted current and future exposure, objective/route effect and plan continuity. Never call an option permanently safe or unthreatened when its selected relationshipComparison reports future profiles. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
       "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists and preserve every applicable effectContract fact, including sourceText, targetKind, resultKind/resultAssetKind, immediateEffect, ongoingEffect and delayedEffect. forbiddenSubstitution states what this action is not. You may compare or reject another ability, but never describe that other ability or another effect family as the action being selected, activated, used or placed.",
+      "When selectedActionIdentity.effectContract.futurePlanRequirement.required is true, revise the active TurnPlan and add a futureActionPlans item bound to the selected candidate. Name the intended consumer Unit, earliest timing, action, route/target, purpose, benefit and risk evidence, prerequisites, cancellation conditions and fallback. A vague reservePolicy sentence is not an executable future plan. This is a structure requirement, not a Host preference for using the capability.",
       "Treat selectedActionResourceContract and resourceCostsByChoice as Rules-owned. State every nonzero effective resource cost accurately. Never call a positive BM, CP or PE cost zero, free, or unspent; Supply is a separate contract.",
       "Treat strategicImmediateValue as Rules-derived current value. A zero-benefit heal is not productive merely because its printed resource cost is zero: source-card exhaustion and forfeited alternatives remain real costs.",
       "Position publicReason fields are auditable summaries, not hidden chain-of-thought. State the useful board fact and tactical purpose without private scratch work.",

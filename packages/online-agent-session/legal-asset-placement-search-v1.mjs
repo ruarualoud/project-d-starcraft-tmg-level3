@@ -2,11 +2,19 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import { projectStarcraftTmgThreatActionWindowV1 } from
   "./tactical-relationship-graph-v1.mjs";
+import { buildStarcraftTmgTacticalRelationshipGraphV1 } from
+  "./tactical-relationship-graph-v1.mjs";
+import { projectStarcraftTmgIncomingStationaryFireEstimateV1 } from
+  "./legal-formation-search-v1.mjs";
+import { projectOfficialOmegaWormPieceV1 } from
+  "../product-composition/official-selected-roster-ability-runtime-v1.mjs";
 
 export const STARCRAFT_TMG_LEGAL_ASSET_PLACEMENT_SEARCH_VERSION =
   "starcraft_tmg_legal_asset_placement_search_v1";
 export const STARCRAFT_TMG_ENTRY_EDGE_UTILITY_VERSION =
   "starcraft_tmg_entry_edge_utility_v1";
+export const STARCRAFT_TMG_OMEGA_RISK_PROJECTION_VERSION =
+  "starcraft_tmg_omega_risk_projection_v1";
 
 const DEFAULT_MAX_ATTEMPTS = 1_024;
 const DEFAULT_MAX_OPTIONS = 4;
@@ -402,6 +410,17 @@ export function selectStarcraftTmgStrategicAssetPlacementOptionsV1(
       - Number(left.tacticalMetrics.entryEdgeUtility.improvedObjectiveCount)
     || preferredDistance(left) - preferredDistance(right)
     || left.placementOptionId.localeCompare(right.placementOptionId));
+  const minimumCurrentFireCount = Math.min(...candidates.map((entry) =>
+    numberOrMax(entry.tacticalMetrics
+      ?.incomingCurrentRoundStationaryProfileCount)
+      + numberOrMax(entry.tacticalMetrics
+        ?.incomingCurrentRoundMoveThenFireProfileCount)));
+  const boundedSafeEntryGainOrder = entryEdgeGainOrder.filter((entry) =>
+    numberOrMax(entry.tacticalMetrics
+      ?.incomingCurrentRoundStationaryProfileCount)
+      + numberOrMax(entry.tacticalMetrics
+        ?.incomingCurrentRoundMoveThenFireProfileCount)
+      === minimumCurrentFireCount);
   const selected = [];
   const selectedIds = new Set();
   const add = (entry, facet) => {
@@ -411,11 +430,77 @@ export function selectStarcraftTmgStrategicAssetPlacementOptionsV1(
     selected.push({ ...entry, selectionFacet: facet });
   };
   add(riskOrder[0], "lowest_projected_incoming_fire");
-  add(entryEdgeGainOrder[0], "largest_entry_edge_approach_gain");
+  add(boundedSafeEntryGainOrder[0],
+    "largest_observed_entry_edge_gain_at_minimum_current_fire");
+  add(entryEdgeGainOrder[0],
+    "largest_observed_entry_edge_approach_gain");
   add(anchorOrder[0], "closest_to_preferred_anchor");
   add(objectiveOrder[0], "closest_to_objective");
   for (const entry of riskOrder) add(entry, "risk_ordered_alternative");
   return selected;
+}
+
+function omegaIncomingRiskProjection(state, source, option, estimateCache) {
+  if (source.effectKind !== "omega_network") return null;
+  try {
+    const projected = clone(state);
+    const worm = projectOfficialOmegaWormPieceV1(
+      projected, source.sideKey, option.coordinate);
+    projected.pieces.push(worm);
+    const enemyIds = projected.pieces.filter((piece) =>
+      activePiece(piece) && piece.sideKey !== source.sideKey)
+      .map((piece) => piece.id).sort();
+    const graph = buildStarcraftTmgTacticalRelationshipGraphV1({
+      state: projected,
+      seatKey: source.sideKey,
+      hypotheticalProjection: true,
+      request: {
+        intent: "estimate incoming stationary fire against a hypothetical Omega Worm placement",
+        subjectUnitIds: [worm.id],
+        targetIds: enemyIds,
+        maximumRelations: Math.max(16, enemyIds.length * 2),
+        knownMinimumOpponentGapMilliInchesExclusive: 10_000,
+      },
+    });
+    const attackSetKey = hashStarcraftTmgContract((graph.relationships || [])
+      .filter((entry) => entry.fromUnitId === worm.id)
+      .map((entry) => ({
+        enemyUnitId: entry.toUnitId,
+        currentRoundStationaryProfileKeys: clone(entry.threats?.toFrom
+          ?.currentRoundStationaryProfileKeys || []),
+      })).sort((left, right) => left.enemyUnitId.localeCompare(
+        right.enemyUnitId)));
+    let incomingStationaryFireEstimate = estimateCache.get(attackSetKey);
+    const reusedEstimate = Boolean(incomingStationaryFireEstimate);
+    if (!incomingStationaryFireEstimate) {
+      incomingStationaryFireEstimate =
+        projectStarcraftTmgIncomingStationaryFireEstimateV1(
+          projected, worm.id, graph, { sampleBudget: 36 });
+      estimateCache.set(attackSetKey, clone(incomingStationaryFireEstimate));
+    }
+    return {
+      schemaVersion: STARCRAFT_TMG_OMEGA_RISK_PROJECTION_VERSION,
+      hypotheticalUnitId: worm.id,
+      hypotheticalCoordinate: clone(option.coordinate),
+      incomingStationaryFireEstimate: clone(incomingStationaryFireEstimate),
+      incomingEstimateCacheKey: attackSetKey,
+      incomingEstimateReused: reusedEstimate,
+      synchronousSampleBudgetPerUniqueAttackSet: 36,
+      higherPrecisionCounterfactualMayRunAsynchronously: true,
+      relationshipGraphHash: graph.relationshipGraphHash,
+      lineOfSightEvaluatedByRelationshipGraph: true,
+      mutationAuthority: false,
+      trainingTruth: false,
+    };
+  } catch (error) {
+    return {
+      schemaVersion: STARCRAFT_TMG_OMEGA_RISK_PROJECTION_VERSION,
+      status: "unknown",
+      reason: String(error?.code || error?.message || error).split(":")[0],
+      mutationAuthority: false,
+      trainingTruth: false,
+    };
+  }
 }
 
 function liveModelFootprints(piece) {
@@ -755,8 +840,20 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
       failureCounts.set(code, Number(failureCounts.get(code) || 0) + 1);
     }
   }
-  const options = selectStarcraftTmgStrategicAssetPlacementOptionsV1(
+  const selectedOptions = selectStarcraftTmgStrategicAssetPlacementOptionsV1(
     candidatePool, maximumOptions, generated.preferred);
+  const omegaEstimateCache = new Map();
+  const options = selectedOptions.map((option) => {
+    const riskProjection = omegaIncomingRiskProjection(
+      state, source, option, omegaEstimateCache);
+    return riskProjection ? {
+      ...option,
+      tacticalMetrics: {
+        ...clone(option.tacticalMetrics || {}),
+        omegaIncomingRiskProjection: riskProjection,
+      },
+    } : option;
+  });
   return freeze({
     schemaVersion: STARCRAFT_TMG_LEGAL_ASSET_PLACEMENT_SEARCH_VERSION,
     domainId: domain.domainId,
@@ -785,7 +882,11 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
       strategyRequestOrOptionBudgetReducedForPerformance: false,
       betterOptionMayExist:
         attemptedCandidateCount < generated.candidates.length,
+      returnedMaximumMeansObservedBoundedCandidatePoolOnly: true,
+      globalContinuousMaximumCertified: false,
       returnedOptionsAreStrategicallyDiverse: true,
+      minimumCurrentFireEntryGainFrontierIncluded:
+        source.effectKind === "omega_network",
       preferredAnchorOrderDoesNotExcludeLowerThreatOptions: true,
       omegaEntryEdgeMarginalUtilityComparedWhenAvailable:
         source.effectKind === "omega_network",
@@ -803,6 +904,8 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
       prefilterNeverCertifiesLegality: true,
       hiddenChainOfThoughtRequested: false,
       omegaEntryEdgeUtilityIsAdvisoryNotSelectionAuthority:
+        source.effectKind === "omega_network",
+      omegaIncomingRiskProjectionIsAdvisoryNotSelectionAuthority:
         source.effectKind === "omega_network",
     },
     rulesAuthority: options.length > 0,

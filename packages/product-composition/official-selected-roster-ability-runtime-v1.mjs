@@ -146,6 +146,15 @@ const ACTIVE_EFFECT_CONTRACTS = new Map([
       "set an Omega Worm on Ground Level more than 10 inches from every Enemy model",
     ongoingEffect:
       "the Omega Worm is a non-contesting Structure and Source of Creep; from a later round its base is an Entry Edge for Ground reserves with combined Supply at most 2 per round",
+    futurePlanRequirement: {
+      required: true,
+      capabilityKind: "persistent_reserve_entry_edge",
+      earliestTiming: "later_round",
+      eligibleConsumer: "friendly Ground reserve Unit with combined Supply at most 2 per round",
+      mustNameIntendedConsumer: true,
+      mustStatePurposeAndRoute: true,
+      mustStateBenefitRiskPrerequisitesCancellationAndFallback: true,
+    },
     forbiddenSubstitution:
       "this does not place a Faction Indicator and is not an End-of-Round reserve-deploy beacon",
   }],
@@ -865,13 +874,17 @@ function applyStimpack(state, route, action, events) {
     pieceId: piece.id, effectHash: value.effectHash,
     nonLethalResolutionHash: damage.nonLethalResolutionHash, trainingTruth: false });
 }
-function createOmegaWorm(state, route, action, events) {
+export function projectOfficialOmegaWormPieceV1(state, sideKey, coordinate) {
   const template = state.officialSelectedRosterAbilitySourceBundle.omegaWormTemplate;
-  const point = action.abilityPlan.canonicalParameters.placement;
-  const pieceId = `${route.sideKey}-omega-worm`;
-  const piece = {
+  const point = coordinate;
+  const pieceId = `${sideKey}-omega-worm`;
+  if (!object(point) || !Number.isFinite(Number(point.xMilliInches))
+    || !Number.isFinite(Number(point.yMilliInches))) {
+    fail("SELECTED_ABILITY_OMEGA_PLACEMENT_REQUIRED");
+  }
+  return {
     id: pieceId, unitInstanceId: pieceId, name: template.unitName,
-    unitName: template.unitName, unitId: template.unitId, sideKey: route.sideKey,
+    unitName: template.unitName, unitId: template.unitId, sideKey,
     officialUnitRecordKey: template.recordKey,
     sourceRecordHash: template.sourceRecordHash,
     officialPayloadHash: template.payloadHash,
@@ -897,9 +910,15 @@ function createOmegaWorm(state, route, action, events) {
       specialAbilitiesDisabledThroughRound: Number(state.round) },
     trainingTruth: false,
   };
+}
+function createOmegaWorm(state, route, action, events) {
+  const point = action.abilityPlan.canonicalParameters.placement;
+  const piece = projectOfficialOmegaWormPieceV1(
+    state, route.sideKey, point);
   state.pieces.push(piece);
   events.push({ type: "omega_worm_set_on_battlefield", sideKey: route.sideKey,
-    pieceId, xMilliInches: point.xMilliInches, yMilliInches: point.yMilliInches,
+    pieceId: piece.id, xMilliInches: point.xMilliInches,
+    yMilliInches: point.yMilliInches,
     sourceFeatureHash: route.sourceFeatureHash, trainingTruth: false });
 }
 function applyEffect(state, route, action, events) {

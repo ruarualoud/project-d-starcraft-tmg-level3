@@ -2393,7 +2393,9 @@ function normalizeProjectedSurfacePlacements(projected) {
   return projected;
 }
 
-function incomingStationaryFireEstimate(projected, actorId, graph) {
+export function projectStarcraftTmgIncomingStationaryFireEstimateV1(
+  projected, actorId, graph, options = {},
+) {
   const actor = (projected.pieces || []).find((entry) => entry.id === actorId);
   if (!actor) return { status: "unknown", reason: "projected_actor_missing" };
   const visibleOpponentIds = (projected.pieces || []).filter((piece) =>
@@ -2482,7 +2484,7 @@ function incomingStationaryFireEstimate(projected, actorId, graph) {
         state: counterfactual,
         domain,
         parameters: { targetUnitId: actorId },
-        sampleBudget: 216,
+        sampleBudget: Number(options.sampleBudget || 216),
       }),
       enemyUnitId: domain.pieceId || null,
       earliestHorizon: currentRoundEnemyIds.has(domain.pieceId)
@@ -2753,7 +2755,8 @@ function relationshipComparison(state, source, slots, objectives, baseline) {
       }),
       clearances: clone(graph.aggregates?.clearances || []),
       incomingStationaryFireEstimate:
-        incomingStationaryFireEstimate(projected, projectedActor.id, graph),
+        projectStarcraftTmgIncomingStationaryFireEstimateV1(
+          projected, projectedActor.id, graph),
       incomingMoveThenFireEstimate:
         incomingMoveThenFireEstimate(projected, projectedActor.id, graph),
       precisionPolicy: clone(graph.precisionPolicy),

@@ -108,7 +108,10 @@ try {
   const lowFire = result.placementOptions.find((entry) =>
     entry.selectionFacet === "lowest_projected_incoming_fire");
   const bestGain = result.placementOptions.find((entry) =>
-    entry.selectionFacet === "largest_entry_edge_approach_gain");
+    entry.selectionFacet === "largest_observed_entry_edge_approach_gain");
+  const safeGain = result.placementOptions.find((entry) =>
+    entry.selectionFacet
+      === "largest_observed_entry_edge_gain_at_minimum_current_fire");
   const rows = result.placementOptions.map((entry) => ({
     placementOptionId: entry.placementOptionId,
     coordinate: entry.coordinate,
@@ -118,6 +121,14 @@ try {
         ?.maximumObjectiveApproachGainMilliInches ?? null,
     improvedObjectiveCount:
       entry.tacticalMetrics?.entryEdgeUtility?.improvedObjectiveCount ?? null,
+    currentRoundIncomingProfileCount:
+      Number(entry.tacticalMetrics
+        ?.incomingCurrentRoundStationaryProfileCount || 0)
+      + Number(entry.tacticalMetrics
+        ?.incomingCurrentRoundMoveThenFireProfileCount || 0),
+    incomingRiskStatus: entry.tacticalMetrics?.omegaIncomingRiskProjection
+      ?.incomingStationaryFireEstimate?.status
+      || entry.tacticalMetrics?.omegaIncomingRiskProjection?.status || null,
   }));
   const report = {
     schema: "ticket23_slice248_omega_entry_edge_value_v1",
@@ -127,6 +138,8 @@ try {
       === lowFire?.placementOptionId) || null,
     bestGainOption: rows.find((entry) => entry.placementOptionId
       === bestGain?.placementOptionId) || null,
+    safeGainOption: rows.find((entry) => entry.placementOptionId
+      === safeGain?.placementOptionId) || null,
     options: rows,
     providerCalls: 0,
     roomMutations: 0,
@@ -141,7 +154,20 @@ try {
       === "official_player_entry_edge"),
   "every Omega option must compare against the official player Entry Edge");
   assert(bestGain,
-    "returned options must include the largest Entry Edge approach gain facet");
+    "returned options must include the largest observed Entry Edge gain facet");
+  assert(safeGain,
+    "returned options must include the maximum observed Entry Edge gain at minimum current fire");
+  assert.equal(result.searchCoverage.globalContinuousMaximumCertified, false,
+    "bounded search must never claim the continuous global maximum");
+  assert.equal(
+    result.searchCoverage.returnedMaximumMeansObservedBoundedCandidatePoolOnly,
+    true, "maximum labels must disclose their bounded observed scope");
+  assert(result.placementOptions.every((entry) =>
+    entry.tacticalMetrics?.omegaIncomingRiskProjection
+      ?.incomingStationaryFireEstimate?.status
+      || entry.tacticalMetrics?.omegaIncomingRiskProjection?.status
+        === "unknown"),
+  "every returned Omega option must expose typed incoming-risk evidence");
   assert(Number(bestGain.tacticalMetrics.entryEdgeUtility
     .maximumObjectiveApproachGainMilliInches) > 0,
   "at least one Omega option must add positive objective approach value");
