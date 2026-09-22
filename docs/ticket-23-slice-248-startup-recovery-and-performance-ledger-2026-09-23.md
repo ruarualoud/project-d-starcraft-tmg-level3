@@ -62,6 +62,56 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r49 — real reserve deployment; remaining observation overhead
+
+The existing runner 72606 continued without restart to Round 2 Movement.
+r48 selects player2 as the first actor; r49 deploys the six-model Kerrigan
+Swarm Raptor. Both Apply/Replay receipts and before/after Web screenshots
+exist. Inspected board evidence:
+`build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/screenshots/0377-r049-player2-deploy-complete-board-applied.png`.
+
+The r49 Planner received 8 Supply capacity, 6 committed and 2 available, planned a
+1 Supply reserve deployment, and requested a complete formation with weighted
+objectives. Its one missing-formation-intent response was corrected through
+the existing semantic correction path; no operator patch or manual reroll.
+The selected exact option had 9.795 in minimum distance to marker 4, 0.908 in
+boundary clearance and 3.802 in terrain clearance. The Action retained five
+possible current-round move-then-fire weapon profiles from Goliath/Marine2,
+explicitly stating future legal path and LOS unresolved, rather than safe.
+This proves transport, reserve opportunity recognition and formation execution;
+it does not prove the best formation, immediate objective control or an
+optimal risk/reward trade. r48's stale "still-uncommitted Terran first wave"
+description and r49's future-control value belong to S249 outcome review.
+Do not reroll these legal choices or add strategy weights to the Prompt.
+
+At 20:38:44.909Z, this accepted-action checkpoint reports 104 physical calls /
+10,546,323 accounted units / estimated ¥14.181586. Both persisted seat profiles
+are `deepseek-flash`, no Pro fallback. Historical unknown-usage reservation is
+retained; this is not an exact invoice. Later in-flight calls are not included
+in this fixed checkpoint.
+
+| Accepted revision | Manifest | Projection refresh | Applied-action captures | Subtotal |
+| --- | ---: | ---: | ---: | ---: |
+| r48 |19.437s|10.092s|14.253s|43.782s|
+| r49 |17.995s|9.696s|26.653s|54.344s|
+
+The single-flight fix therefore does not establish acceptable whole-path
+latency. Read-only source inspection narrows future profiling: Decision Port
+`loadRecord` and Bot `read` both use process-local record caches, and Provider
+`publicProjection` emits a compact summary rather than the full decisions.
+The 6.7/7.8 MB persisted Provider rows alone do **not** prove repeated SQLite
+parse cost in live polling. `buildManifest` separately builds both Bot
+projections and calls orchestrator `publicResult`, which builds both again
+through `seatSummaries` and clones trajectory data that the manifest omits.
+That is a redundant construction candidate, not yet measured as the dominant
+cost. Profile construction/serialization/render/capture separately before
+choosing a repair. Preserve revision freshness, complete public facts and
+screenshots; do not trim Skill context, planning, tools or model output.
+
+This checkpoint changes documentation only: no new tests/builds/probes,
+no old passed gate rerun and no match restart. Native K3 S271 is actively
+implementing its isolated workspace; no acceptance result is implied.
+
 ### r46 — overlapping status reads repaired
 
 The Web control's 2.5-second interval sent additional full status requests even

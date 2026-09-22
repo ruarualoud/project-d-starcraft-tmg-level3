@@ -6,6 +6,31 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r49 Round 2 reserve deployment verified
+
+Keep live session **72606**; no restart or duplicate match. At 20:38:44Z the
+same branch has 42 new accepted/replayed actions plus 7 explicit prefix actions.
+r48 chose Zerg as Movement's first actor; r49 deployed the 6-model Kerrigan
+Swarm Raptor. Actual Planner saw capacity 8 / committed 6 / available 2, requested
+weighted formation objectives, accepted a Host exact formation and explicitly
+retained five possible enemy move-then-fire weapon bands with unresolved
+post-move path/LOS. The selected layout remains 9.795 in from marker 4: future
+advance, not current capture or proof of optimal strategy. r48's stale
+"still-uncommitted Terran first wave" wording remains S249 review evidence,
+not grounds to reroll a legal action. Both accepted revisions have Web images;
+r49 `screenshots/0377-r049-player2-deploy-complete-board-applied.png` inspected.
+Both seats persist `deepseek-flash`, no Pro fallback. r49 checkpoint: 104 calls /
+10,546,323 accounted units / estimated ¥14.181586; subsequent calls may already
+be running. Historical unknown-usage reservation remains in these estimates.
+Observation overhead r48=43.782s, r49=54.344s; recorded in the performance
+ledger. Source inspection shows Provider/Bot hot-record caches, so repeated
+full SQLite parses are not an established status-read cause. Duplicate Bot
+projection construction through orchestrator remains a profiling candidate,
+not a measured root cause. No code, test, build, strategy or source-data
+change this checkpoint. Native K3 **37154** is writing S271 workspace/service
+and server entry; still no UI/live acceptance claim. T23 remains 33/36,
+S248 full match / S249 review / S250 synthesis open.
+
 ### 2026-09-23 T23 / S248 — r46 Round 2; Web polling overlap repaired
 
 **Live follow-up20:30:06Z:**72606 recovered r46 screenshots, then r47
