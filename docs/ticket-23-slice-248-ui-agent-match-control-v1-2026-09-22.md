@@ -128,5 +128,142 @@ remains the visual focus (the strip is low-contrast chrome, not a hero).
 
 ---
 
-<!-- Implementation sections, verification receipts, and the claim-to-pixel
-     explanation are appended below as the sub-slices complete. -->
+## SS-2 — Component and Match-page mount (implemented)
+
+`apps/starcraft-tmg-expo/components/battlefield/agent-agent-match-control.tsx`
+(new, 516 lines with the mount edit) implements the frozen design exactly:
+
+- Same-origin `fetch` with `credentials: "same-origin"` against
+  `GET /__ticket23/a2a/ui-status` (poll every 2.5s, reads only) and
+  `POST /__ticket23/a2a/ui-drive` (single action per activation). The
+  component never sees a cookie, token, credential, or raw model content; it
+  renders server-provided values verbatim (cost micros ÷ 1e6 for ¥ display
+  only) and computes nothing about Rules, legality, probability, wiring,
+  strategy or Room state.
+- **Hidden on normal servers:** the first 403/404 flips a `hiddenRef`,
+  unmounts the control silently and stops polling. No banner, no product
+  error. Transient read failures keep the last good snapshot with a quiet
+  note.
+- **Fail-closed data gate:** absent audit, non-passed status, or any
+  `blockingFindingCount > 0` disables the drive button and shows the amber
+  blocker banner with the finding count. The gate chip (preflight) is a
+  separate zone from the run chip (Agent state).
+- **Run states:** ready / queued / thinking… / applied / failed /
+  Match terminal, each with distinct copy and color; terminal disables the
+  button; failure shows code + severity and re-enables the button for a
+  deliberate retry (visible recovery).
+- **Exactly one POST:** `driveInFlightRef` guard + disabled-while-busy button
+  (local in-flight OR server queued/running). After a POST the status is
+  refreshed immediately; applied jobs visibly advance `State revision` and
+  `Last accepted`.
+- **Layout:** inline strip mounted in `match.tsx` between
+  `AuthoritativeBattleWorkspace` and `HostedOpponentOperationsPanel` — the
+  board stays first and uncovered. Desktop (≥768px) shows the summary row +
+  fact chips with a Details disclosure for audit/model/Skill evidence; narrow
+  (<768px) starts collapsed to the summary row and expands inline. No
+  animation anywhere (reduced-motion safe), 44px targets, button/disabled/
+  busy/expanded accessibility states, polite live region on failure, zh/en
+  copy. Stable testIDs: root `agent-agent-match-control`, action
+  `agent-agent-drive-next` (plus `agent-agent-data-gate`,
+  `agent-agent-run-state`, `agent-agent-state-revision`,
+  `agent-agent-last-action`).
+
+## SS-3 — Real-browser verifier (implemented)
+
+`scripts/verify-ticket-23-slice-248-ui-agent-match-control-v1.mjs`:
+slice-scope assertion (only the four allowed paths changed vs base; zero
+`packages/`/`content/` drift), byte-parity hash check of every loaded backend
+module (all `identical`), worktree web export, read-only demo room from the
+unchanged legacy ticket-14/15/262 factory, and a scenario-driven in-process
+**mock** of the two A2A endpoints on the same loopback origin. Real Chromium
+(reduced motion, en-US) at 1500×1050 and 390×844-touch drives 13 assertions
+and 8 hashed PNG frames into `build/ticket-23-slice-248-ui-agent-match-control-v1/`.
+
+## SS-4 — Verification receipts
+
+| Gate | Command | Result | Covers |
+| --- | --- | --- | --- |
+| Expo frontend TypeScript contract | `COREPACK_ENABLE_PROJECT_SPEC=0 corepack pnpm@9.12.0 --dir apps/starcraft-tmg-expo exec tsc --noEmit` | exit 2 — **49 errors, all pre-existing at the clean base** (see concern C-1); zero errors in slice-owned files | SS-2 |
+| Real-browser formal Agent match control | `node scripts/verify-ticket-23-slice-248-ui-agent-match-control-v1.mjs` | **PASS** — 13 checks, 8 artifacts, reportHash `952f5fa4e6af5f5d6ea8d9cb05ffdfc21bfa47ed8d37c0832b18409fe6cc378e`, 0 Provider calls / ¥0 | SS-2, SS-3 |
+
+Browser-gate run history (each failure implicated only the verifier's own
+calibration; each repair converged its check, which never regressed):
+
+1. Attempt killed by the 300s tool ceiling during `expo export` — no verdict.
+2. `BOARD_NOT_VISUAL_FOCUS`: desktop board-top bound copied from the narrow
+   journey (actual 675px, limit 500px). Repair 1 (`9240ae6`) bound it to the
+   1050px desktop viewport.
+3. `NARROW_EXPAND_MOVED_THE_BOARD`: Playwright's tap center-scrolls its
+   target, so the board's viewport box moved while its layout did not.
+   Repair 2 (`5c4792c`) measures at the natural scroll top (Slice 262
+   lesson) and adds a strip-below-board-bottom geometry assertion.
+4. `no_unexpected_browser_errors`: Chromium logs the optional-endpoint 404
+   probe as a resource error — that 404 is the asserted normal-server
+   behavior. Repair 3 (`a11cd24`) allowlists only that exact probe URL.
+5. PASS (13/13). Post-pass diff inspection found the desktop evidence frames
+   were first-viewport captures with the strip below the fold (captions
+   overstated frame content). Repair 4 (`e8e9c8d`) scrolls the strip into
+   every control frame and rewrites the affected captions; one final run
+   after that relevant change: **PASS 13/13** (receipt above).
+
+Passed checks: `stable_test_ids_present`,
+`ready_state_shows_gate_context_usage_and_last_action`,
+`desktop_layout_keeps_board_visual_focus`,
+`drive_posts_exactly_once_and_stays_disabled_while_busy`,
+`applied_state_refreshes_revision_usage_and_last_action`,
+`data_gate_blocker_visibly_prevents_execution`,
+`typed_failure_recovers_visibly`, `terminal_state_disables_drive`,
+`narrow_layout_compact_with_board_visible_no_overflow`,
+`narrow_expand_is_inline_and_preserves_board`,
+`narrow_touch_drive_posts_exactly_once`,
+`hidden_on_normal_server_without_alarming_error`,
+`no_unexpected_browser_errors`.
+
+## Claim-to-pixel explanation
+
+| Claim | Proof |
+| --- | --- |
+| Control exists only on the formal-evidence server | `hidden_on_normal_server_without_alarming_error` + `08-normal-server-hidden.png`: no control pixels, no A2A copy, no product error after >2 poll cycles on a 404 server |
+| Board stays the visual focus (desktop) | geometry assertion (560px board above the 101px strip, zero overlap, first viewport) + `01-desktop-ready-command-strip.png` (the compact strip framed below the workspace) |
+| Preflight/data-gate visibly separate from Agent run state | ready/blocked checks + `01` vs `04` frames: gate chip + amber banner are distinct zones from the run chip |
+| One activation = exactly one POST, locked while busy | POST counter stayed 1 across force-click + DOM dispatch while running, desktop and touch; `02-desktop-running-thinking.png` shows the disabled busy button |
+| Accepted action and room revision refresh after apply | `03-desktop-applied-refresh.png`: revision 9→10, last accepted `omega_network → r9` becomes `ventral_sacs → r10`, usage 20→21 calls / ¥1.338574→¥1.503445 |
+| Data-gate blocker visibly prevents execution | `04-desktop-blocked-gate.png`: banner with blocking count + disabled button; forced clicks produced zero POSTs |
+| Typed failure recovers visibly | `05-desktop-failed-recovery.png`: failure card with `LIVE_DECISION_ACTION_DID_NOT_CONVERGE` / severity High and the re-enabled retry button |
+| Narrow/touch is compact, inline, non-covering | `06-narrow-collapsed.png` (one-line summary) + `07-narrow-expanded.png` (inline detail); geometry proves no horizontal overflow and a pixel-identical board after expansion |
+
+## Commits (scoped, not pushed)
+
+1. `956607d` — SS-1: frozen audit + numbered UX plan (this document).
+2. `739e1e4` — SS-2: `AgentAgentMatchControl` + battle-surface mount.
+3. `e2f10c6` — SS-3: real-browser verifier with mocked A2A endpoints.
+4. `9240ae6` — browser-gate repair 1 (desktop viewport bound).
+5. `5c4792c` — browser-gate repair 2 (natural-scroll measurement).
+6. `a11cd24` — browser-gate repair 3 (asserted 404-probe allowlist).
+7. `e8e9c8d` — browser-gate repair 4 (evidence-frame capture of the strip).
+8. final — SS-4: this closure section.
+
+## Changed files (exactly the allowed paths)
+
+- `apps/starcraft-tmg-expo/app/(tabs)/match.tsx` (import + one mount line)
+- `apps/starcraft-tmg-expo/components/battlefield/agent-agent-match-control.tsx` (new)
+- `scripts/verify-ticket-23-slice-248-ui-agent-match-control-v1.mjs` (new)
+- `docs/ticket-23-slice-248-ui-agent-match-control-v1-2026-09-22.md` (this file)
+
+Generated evidence (git-ignored):
+`build/ticket-23-slice-248-ui-agent-match-control-v1/browser-report.json` +
+8 hashed PNG frames.
+
+## Unresolved concerns
+
+- **C-1 (pre-existing, not caused by this slice, not repairable within the
+  allowed paths):** the declared `tsc --noEmit` gate exits 2 with 49 errors in
+  `components/character/*` and
+  `components/battlefield/authoritative-battle-workspace.tsx`. The failure set
+  is byte-identical on the clean base commit `fc463d2` (verified by running
+  the same command in the clean main checkout and diffing outputs), so the
+  slice introduces **zero** TypeScript errors; repairing the implicated files
+  is outside this manifest's allowed paths. Flagged for Codex/integration.
+- No Critical/High concern is open against this slice's own files; the browser
+  gate proves zero backend drift, 0 Provider calls, no rendered credentials,
+  no raw model content, and `trainingTruth: false`.
