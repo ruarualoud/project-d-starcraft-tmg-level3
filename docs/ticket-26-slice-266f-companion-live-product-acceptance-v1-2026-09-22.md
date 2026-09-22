@@ -152,7 +152,9 @@ script under `build/`, never committed). 0 real Provider calls / ¥0.
 > Status: **implementation complete — closed (266f.4); 266f.5 live acceptance
 > executed once (2026-09-22, truncated at the 64-unit budget); 266f.6 repair +
 > second authorized live call executed once (2026-09-22) — product acceptance
-> ACHIEVED.** All four sub-slices plus the frozen plan are
+> ACHIEVED; 266f.7 multi-companion memory-continuity live acceptance executed
+> once (2026-09-22, 4 physical calls) — ACHIEVED.** All four sub-slices plus
+> the frozen plan are
 > committed in dependency order on
 > `agent/kimi/ticket-26-slice-266f-companion-live-product-acceptance`. The
 > focused browser gate has ACTUALLY run (first complete run 2026-09-22,
@@ -193,7 +195,10 @@ script under `build/`, never committed). 0 real Provider calls / ¥0.
 | 266f.6 live runner repair | `03fbb13` | `scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs` |
 | 266f.6 gate fail-first phase | `a9c2a3a` | `scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs` |
 | 266f.6 epoch-2 pre-dispatch repairs | `b8c7fb5` | `scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs` |
-| 266f.6 closure record | _(this commit)_ | this doc |
+| 266f.6 closure record | `f13252f` | this doc |
+| 266f.7 continuity live seam + gate phase | `f7c29b6` | `scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs`, `scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs` |
+| 266f.7 pre-dispatch repairs | `5c69957` | `scripts/run-ticket-26-slice-266f-live-byok-companion-v1.mjs` |
+| 266f.7 closure record | _(this commit)_ | this doc |
 
 `git diff --name-only fa1c83d..HEAD` touches only the files in the table
 above plus the pre-existing `.kimi-code/agents/project-d-live-acceptance.md`
@@ -619,3 +624,154 @@ repairs, not Provider retries.
   physical calls, 237,965 units, ≈$0.0784 estimated. No ¥100 threshold
   crossed. Kimi CLI exposes no token/currency telemetry; no Kimi cost is
   inferred.
+
+## 266f.7 — multi-companion layered-memory continuity live acceptance (2026-09-22)
+
+Manifest continuation from clean `f13252f`: the 1/3/6-companion orchestration
+and layered memory had only been proven with the injected deterministic
+Provider, and the real BYOK run used one fresh Zagara session with empty
+memory layers. This sub-slice closes that gap with ONE bounded real Chinese
+TWO-companion conversation (Kerrigan + Zagara, both sealed packages), two
+user turns, hard maximum FOUR physical Provider calls, each separately
+locked, separately costed, zero automatic retry. User authorization on file
+(manifest taskBrief); executed exactly once; never retried.
+
+### Offline seam proofs (0 Provider calls / ¥0)
+
+- Scratch `build/266f-continuity-preflight.mjs` (uncommitted) drove the REAL
+  runner adapter (four-call denominator, per-call lock indices) through the
+  REAL product stack over REAL durable SQLite: turn 1 (2 calls), chat-tier
+  codeword worldbook entry + summary + episodic + relationship writes,
+  checkpoint, full companion server/session restart (HTTP listener closed,
+  SQLite connection closed, every module/session-runtime structure
+  recomposed — the sealed SQLite file is the only companion state carrier),
+  byte-identical transcript restore, turn 2 (calls 3–4) with the restored
+  layers and the chat-tier entry in BOTH assemblies, fifth dispatch refused
+  with zero further Worker calls. It also exposed the one real design
+  finding: the room match binding hash is referee-keyed per engine, so a
+  recomposed room is a DIFFERENT match and the persisted binding correctly
+  refuses it (`COMPANION_MATCH_BINDING_STALE`, proven as a negative check).
+  The restart therefore preserves the Room authority instance (a separate
+  service) and restarts the companion server/session stack completely.
+- New gate phase `headless_live_multi_companion_continuity_seam` proves the
+  same seam inside the focused gate with a deterministic fake Worker port.
+- Focused gate `node scripts/verify-ticket-26-slice-266f-companion-live-product-acceptance-v1.mjs`
+  ran once per final relevant code change: 30 checks / 10 claims / 13
+  artifacts (reportHash `7c6d09d3…d0c7`→`6d48187b…`→final
+  `3eca10014f7597988ad82005d5999e8fe59b52f15735dba5f3474a7d0a9944a4`), each
+  0 real Provider calls / ¥0; the report's epoch-3 record is read dynamically
+  from the runner's own report (absent → honestly "reserved"; after the live
+  run it cites status passed, 4 calls, reportHash `ec11d50c…a371d`).
+
+### Pre-dispatch repair rounds (0 physical calls; no lock ever claimed)
+
+Three local attempts failed BEFORE any dispatch and were repaired one round
+each: (1–2) `PRE_SEND_READ_FAILED` — the runner drove its API read while the
+chat-section bootstrap was still in flight; the failure report then lacked
+diagnostics, so failure reports now carry redaction-checked error details and
+raw response excerpts, and a provably pre-dispatch previous failure
+(`physicalProviderCalls: 0`, no continuity locks) clears its stale durable
+store before a rerun; (3) the instrumented run surfaced the shared root cause
+one assertion earlier — the provider-status card was read during its
+`loading…` bootstrap state (`LIVE_PROVIDER_STATUS_NOT_HONEST`); the runner
+now waits out the bootstrap before reading. All three: 0 dispatches, 0
+physical calls, no credential egress, no lock claimed. Run 4 (the first
+dispatching attempt) passed end-to-end. The exact run-1/2 server response
+body was not captured (instrumentation landed with run 3) — recorded
+honestly; the bootstrap-wait repair eliminated the class.
+
+### Executed live run (the four authorized physical calls)
+
+- Run id `fb27f99b-99bb-4074-97b1-15aa0eb4273e`, 2026-09-22T12:24:33Z →
+  12:25:12Z; report
+  `build/ticket-26-slice-266f-live-byok-companion-v1/live-report.continuity.json`,
+  reportHash `ec11d50c9bed274e451951c5656c72049ac14b8a5b1f005b5c62e1db203a371d`.
+  Same secure path as epochs 1–2: Keychain (attested `/usr/bin/security`,
+  empty environment, no shell) → isolated Worker → four HTTPS POSTs to
+  `api.deepseek.com` (TLS verified, DNS pinned, no proxy, no redirect).
+  Parent credential buffer asserted zeroed after attach.
+- **FOUR physical calls, all HTTP 200, zero retry** (`physicalAttempts: 1`,
+  `automaticRetries: 0` per call; dispatch indices locked separately in
+  `continuity-call-1..4.lock.json`, O_EXCL, claimed immediately before each
+  egress). A rerun now refuses with `LIVE_BYOK_COMPANION_SUCCESS_ALREADY_RECORDED`
+  (exit 2).
+- **Turn 1** (calls 1–2, deterministic order Kerrigan → Zagara, via the real
+  browser UI): the user published the distinctive public plan — codeword
+  「霜刃-9」, dawn deployment of two Marine squads to the northern ridge pass
+  with Medic escort. Both companions acknowledged AND grounded against the
+  real room state (both noted Medic is still in the reserve and must be
+  deployed first — a real two-seat room observation). Zagara's three sealed
+  character-tier entries fired only on her assembly
+  (`zagara.wb.char/.swarm_attrition/.tmg_context`); Kerrigan honestly has
+  none. Honest Provider-behavior note: the two turn-1 acknowledgments
+  happened to be byte-identical prose; the assemblies were still distinct
+  (assemblyHash `151499f2…` vs `9e3912aa…`, worldbook fired differs) and the
+  required character-distinctness proof is on the turn-2 recall replies,
+  which differ.
+- **Memory writes** (real product contracts): the plan as a chat-tier
+  worldbook entry `plan-frostblade-9` (keyword 「霜刃-9」, conversation://
+  provenance, via the UI), rolling summary v1 (UI, append-only,
+  coversTranscriptThrough 3), one episodic fact (UI, authenticated-seat
+  provenance), one typed observed relationship event (`personal_shared`,
+  trust +1, via the real HTTP memory contract — the UI is intentionally
+  read-only there). Counts and provenance recorded in the report.
+- **Checkpoint + full restart**: checkpoint `sessckpt-1-f367bfc61536` via the
+  UI; HTTP server closed, SQLite connection closed, every companion structure
+  recomposed (new listener origin 61393 → 61411); the restarted stack resumed
+  the conversation active at turn 3 with the transcript BYTE-IDENTICAL
+  (participantId/content/turnHash per message), checkpoint count 1, and all
+  memory layers intact. The Room authority instance is provably preserved
+  across the restart (match binding hash stable, state revision 0 → 0).
+- **Turn 2** (calls 3–4, post-restart, via a fresh desktop page that
+  auto-resumed the conversation): both companions recalled and applied the
+  plan from the restored layers — Kerrigan: 「霜刃-9」要点 + Medic-then-ridge
+  execution; Zagara: same codeword + details with distinct prose. Recall
+  assertions per reply: codeword echoed, plan-detail keyword present,
+  character-distinct (not byte-identical), assembly layers include
+  `rolling_summary` + `episodic_facts` + `relationship_state` + `worldbook`,
+  the chat-tier `plan-frostblade-9` entry fired for BOTH companions (scopeTier
+  chat), Zagara's three sealed character entries fired again, and each
+  assemblyHash advanced past its turn-1 counterpart (memory materially
+  entered the context).
+- **Byte-identity**: every reply byte-matches across the isolated-Worker
+  output, the server transcript and the rendered DOM on desktop AND the
+  390×844 touch resume (six messages, zero horizontal overflow).
+- **Usage/cost** (per call, DeepSeek-reported): call 1: 118,255+66 units,
+  $0.02605966; call 2: 119,135+66, $0.026062412; call 3: 119,243+71,
+  $0.026253056; call 4: 120,120+68, $0.026444016. Totals: 476,753 input +
+  271 output = 477,024 units, **$0.104819144** — explicitly-labelled
+  snapshot-rate estimate (`estimateOnly: true`): the Provider again reported
+  `deepseek-flash` against the requested `deepseek-v4-flash` (the drift first
+  recorded in epoch 1), so the pinned pricing snapshot refuses an
+  authoritative receipt; the Provider invoice remains authoritative.
+  Server accounting: 2+2 per composition (module-gateway cumulative honestly
+  resets across the restart); the run-level denominator is the adapter
+  completion record (4/4).
+- **Detach / no residual Worker / zero persistence**: explicit
+  `explicit_user_detach` with the `sensitiveBytesZeroed` shutdown
+  acknowledgement; tombstone `state: "exited"`,
+  `credentialPersistence: "none_after_process_exit"`; worker PID 40410
+  provably gone; parent buffer re-zeroed; `rawCredentialPersisted: false`,
+  `credentialHashPersisted: false`; the report, all five screenshots and the
+  encrypted SQLite artifact scanned for credential-shaped material (and the
+  report/artifacts proven free of the per-run SQLite key, which was random,
+  memory-only, never persisted).
+- **Room safety**: zero Room mutations on the shared mutation-counting facade
+  across both compositions; state revision 0 → 0.
+- **Evidence** (sha256-indexed in the report):
+  `browser-evidence/epoch-3/live-01-desktop-two-companion-session-open.png`,
+  `live-02-desktop-turn1-both-replies.png`,
+  `live-03-desktop-turn1-checkpoint.png`,
+  `live-04-desktop-turn2-recall-after-restart.png`,
+  `live-05-narrow-mobile-resumed.png`, plus the encrypted durable store
+  `continuity/companion-product.sqlite` (73,728 bytes).
+
+### Slice accounting after 266f.7
+
+Epoch 1 = 1 call, 118,975 units, $0.05240532 estimate; epoch 2 = 1 call,
+118,990 units, $0.026021272 estimate; epoch 3 = 4 calls, 477,024 units,
+$0.104819144 estimate (all snapshot-rate estimates under the recorded
+reported-model drift; invoices authoritative). Slice live total: 6 physical
+calls, 714,989 units, ≈$0.1832 estimated. No ¥100 threshold crossed. No open
+Critical/High finding. Kimi CLI exposes no token/currency telemetry; no Kimi
+cost is inferred.
