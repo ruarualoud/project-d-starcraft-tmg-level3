@@ -1466,6 +1466,7 @@ function validateActionOutput(raw, input, planner, queryReceipts = []) {
       responses: intent.predictedOpponentResponses || [],
       spatialObservation: input.spatialObservation,
       currentPhase: input.roomProjection?.state?.phase,
+      queryReceipts,
     });
   if (predictionFeasibility.status === "contradicted") {
     const first = predictionFeasibility.contradictions[0];
@@ -1936,6 +1937,40 @@ function observedUnitActivation(spatialObservation, unit) {
     entry?.unitId === unit?.unitId)?.status?.activatedPhases || {};
 }
 
+function opponentTargetThreatProjections(queryReceipts, actorId, targetId) {
+  const projections = [];
+  for (const receipt of queryReceipts || []) {
+    if (receipt?.queryKind !== "space.inspect_relationships"
+      || !new Set(["exact", "advisory_estimate"]).has(receipt?.status)) {
+      continue;
+    }
+    for (const relationship of receipt?.result?.relationships || []) {
+      if (!new Set(["unit_spatial_relationship", "unit_relationship"])
+        .has(relationship?.edgeKind)) continue;
+      if (relationship.fromUnitId === targetId
+        && relationship.toUnitId === actorId
+        && object(relationship.threats?.toFrom)) {
+        projections.push(relationship.threats.toFrom);
+      } else if (relationship.fromUnitId === actorId
+        && relationship.toUnitId === targetId
+        && object(relationship.threats?.fromTo)) {
+        projections.push(relationship.threats.fromTo);
+      }
+    }
+  }
+  return projections;
+}
+
+function hasCurrentRoundRangedBand(projection) {
+  return (projection.currentRoundStationaryProfileKeys || []).length > 0
+    || (projection.currentRoundMoveThenAttackProfileKeys || []).length > 0;
+}
+
+function hasLifecycleRangedBandContract(projection) {
+  return Object.hasOwn(projection, "currentRoundStationaryProfileKeys")
+    && Object.hasOwn(projection, "currentRoundMoveThenAttackProfileKeys");
+}
+
 export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
   input = {}) {
   const observation = input.spatialObservation || {};
@@ -2001,6 +2036,22 @@ export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
         actorId, actionClass, submittedActionClass, predictedPhase,
         currentPhase, reason: "action_class_not_available_in_current_phase" });
       continue;
+    }
+    const targetId = String(response?.likelyTargetUnitId || "").trim();
+    if (actionClass === "ranged_attack" && targetId
+      && horizonKind === "current_round") {
+      const projections = opponentTargetThreatProjections(
+        input.queryReceipts, actorId, targetId,
+      ).filter(hasLifecycleRangedBandContract);
+      if (projections.length > 0
+        && projections.every((entry) => !hasCurrentRoundRangedBand(entry))) {
+        contradictions.push({ index,
+          responseId: response.responseId || null,
+          actorId, targetId, actionClass, submittedActionClass,
+          predictedPhase, currentPhase,
+          reason: "ranged_target_not_in_current_round_fire_band" });
+        continue;
+      }
     }
     if (activatedPhases?.[predictedPhase] === true
       && new Set(["next_opponent_action", "current_phase", "current_round"])

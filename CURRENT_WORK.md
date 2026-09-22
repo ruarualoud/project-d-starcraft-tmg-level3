@@ -370,3 +370,24 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   because the normalizer change had not advanced its durable v29 marker. Action
   shape normalization is now v30. Existing paid v29 candidates are revalidated
   before the correction ceiling; the ceiling still forbids a fourth egress.
+- The next explicit resume still stopped before Decision Port because its old
+  finding had been refined to
+  `LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED`, while the runner admitted
+  only `LIVE_DECISION_ACTION_DID_NOT_CONVERGE`. Both typed convergence findings
+  are now admitted only when they predate an explicit resume. Any new
+  Critical/High finding still blocks, and successful Apply/Replay must resolve
+  rather than delete the historical finding.
+- The repaired explicit resume then completed r8→r9 through v30 local replay
+  with Apply/Replay parity and resolved both historical High findings. It made
+  `0` new Provider calls: the run remains `7 / 345,548 / ¥0.948894`. Audit found
+  one new strategy defect in the recovered paid candidate: the named Goliath
+  response used `horizon.kind=current_round` even though its own evidence and
+  current relationship receipt said no current-round fire band and earliest
+  pressure next round. The r9 Authority transition is retained, but its plan is
+  non-training and must not continue.
+- Opponent prediction validation now binds a named current-round ranged actor
+  and target to their current relationship receipt. At least one current-round
+  stationary or move-then-fire profile must exist; otherwise the prediction is
+  rejected before Apply. Future horizons and missing relationship evidence are
+  not guessed. The existing lifecycle/threat gate covered the captured failure
+  and a legal positive case, ran once, and passed with `0` Provider calls.

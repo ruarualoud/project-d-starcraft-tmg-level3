@@ -98,6 +98,31 @@ already-paid v29 candidates to be reconsidered before the three-round ceiling.
 The ceiling continues to prohibit a fourth Provider request; it does not block
 zero-cost local replay after a normalization upgrade.
 
+The following resume never reached that local replay. Its durable pre-start
+finding had become `LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED`, while the
+runner's explicit-resume allowlist admitted only the earlier
+`LIVE_DECISION_ACTION_DID_NOT_CONVERGE` label. The allowlist now includes both
+typed decision-convergence findings, but only when the finding predates the
+explicit resume. New Critical/High findings remain blocking, and old history
+is resolved only after Apply/Replay succeeds.
+
+That explicit resume subsequently completed r8→r9 through v30 local replay.
+Apply/Replay matched, both old High findings received `resolvedAt`, and no new
+Provider call was made; usage stayed at `7 / 345,548 / ¥0.948894`. The recovered
+paid Action still exposed a separate strategy defect: it labelled a named
+Goliath ranged response `current_round` while its own evidence and the current
+relationship receipt said the Swarmling was outside every current-round fire
+band and that movement pressure began next round. The authoritative transition
+is retained, but its strategy trace is non-training and the branch does not
+continue.
+
+Prediction feasibility now binds a named `current_round` ranged actor and
+target to the current `space.inspect_relationships` receipt. A current-round
+stationary or move-then-fire profile must exist. An explicit zero/zero contract
+is rejected before Apply; future horizons and missing relationship evidence
+remain unguessed. The existing lifecycle/threat focused gate added the captured
+failure plus a legal positive case and passed once with zero Provider calls.
+
 The recent recovery ledger is now `89` calls / `4,217,951` units /
 `¥6.310668`; including the original invalid suffix it is `118` calls /
 `5,564,745` units / `¥8.163389`. No `¥100` threshold was crossed.

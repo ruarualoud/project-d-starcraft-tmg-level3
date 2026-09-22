@@ -237,6 +237,49 @@ assert.equal(impossibleActivatedMove.status, "contradicted");
 assert.equal(impossibleActivatedMove.contradictions[0].reason,
   "actor_already_activated_for_predicted_phase");
 
+const impossibleCurrentRoundRangedTarget =
+  inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+    responses: [{
+      responseId: "resp-goliath-ranged-next-round",
+      actionClass: "ranged_attack",
+      opponentAction: "The Goliath fires once it can bring the Swarmling into range.",
+      likelyActorUnitId: "player1-goliath-1",
+      likelyTargetUnitId: "player2-swarmling",
+      horizon: { kind: "current_round", count: 1 },
+      basis: [
+        "No current-round fire band exists; movement pressure begins next round.",
+      ],
+    }],
+    spatialObservation: opponentPredictionObservation,
+    currentPhase: "movement",
+    queryReceipts: [futureOnlyMoveThenFireReceipt],
+  });
+assert.equal(impossibleCurrentRoundRangedTarget.status, "contradicted");
+assert.equal(impossibleCurrentRoundRangedTarget.contradictions[0].reason,
+  "ranged_target_not_in_current_round_fire_band");
+
+const currentRoundStationaryReceipt = structuredClone(
+  futureOnlyMoveThenFireReceipt);
+currentRoundStationaryReceipt.result.relationships[0].threats.toFrom
+  .currentRoundStationaryProfileKeys = [
+    "army_units:goliath::assault::Autocannon",
+  ];
+const possibleCurrentRoundRangedTarget =
+  inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+    responses: [{
+      responseId: "resp-goliath-current-fire",
+      actionClass: "ranged_attack",
+      opponentAction: "The Goliath fires its Autocannon at the Swarmling.",
+      likelyActorUnitId: "player1-goliath-1",
+      likelyTargetUnitId: "player2-swarmling",
+      horizon: { kind: "current_round", count: 1 },
+    }],
+    spatialObservation: opponentPredictionObservation,
+    currentPhase: "movement",
+    queryReceipts: [currentRoundStationaryReceipt],
+  });
+assert.equal(possibleCurrentRoundRangedTarget.status, "consistent");
+
 const impossibleReserveMove =
   inspectStarcraftTmgOpponentPredictionFeasibilityV1({
     responses: [{
