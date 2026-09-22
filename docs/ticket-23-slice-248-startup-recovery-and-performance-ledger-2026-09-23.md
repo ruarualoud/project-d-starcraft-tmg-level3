@@ -62,6 +62,19 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r39 — repeated non-progress engineering failure, repaired
+
+From 19:53Z Cleanup repeatedly rejected a valid impassable terrain kind in the
+marker-control LOS adapter. External resume reset the orchestrator's local
+retry count, producing at least 24 tracked findings and extra screenshots by
+20:00Z. This is not model slowness: no additional physical calls or token cost.
+The consumer is repaired; the runner now stops after three completed jobs with
+no revision/action advance across those resumes. See the Cleanup repair report.
+No planning/search limits or strategic-material reductions accompany this fix.
+Separately r39 observation took manifest29.566s + refresh35.587s + capture24.476s
+=89.629s; endpoint/serialization attribution remains a later optimization.
+
+
 ### r29 checkpoint — Flash reconfirmed; observation overhead measured
 
 r35 reload follow-up: recovery retained 93 calls / ¥12.335719, with no paid

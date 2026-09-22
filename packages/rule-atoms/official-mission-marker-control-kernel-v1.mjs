@@ -460,10 +460,13 @@ function terrainAsOrdinaryForControl(state) {
     if (terrain.isRemoved === true || terrain.terrainKind === "ordinary") {
       return clone(terrain);
     }
-    if (terrain.terrainKind !== "grass") {
+    // As in special-terrain LOS, movement kind does not replace the terrain's
+    // Size, agreed footprint or sight openings. Project only this LOS view;
+    // the authoritative board still owns impassability and ramp access.
+    if (!["grass", "impassable", "ramp"].includes(terrain.terrainKind)) {
       fail("MISSION_MARKER_TERRAIN_KIND_UNSUPPORTED", String(terrain.id || ""));
     }
-    grassTerrainIds.push(terrain.id);
+    if (terrain.terrainKind === "grass") grassTerrainIds.push(terrain.id);
     const body = {
       schema: terrain.schema,
       id: terrain.id,
@@ -482,7 +485,7 @@ function terrainAsOrdinaryForControl(state) {
       elevation: terrain.elevation,
       heightTier: terrain.heightTier,
       elevationSurface: terrain.elevationSurface,
-      impassable: false,
+      impassable: terrain.impassable === true,
       openings: clone(terrain.openings || []),
       accessPoints: clone(terrain.accessPoints || []),
       isRemoved: false,

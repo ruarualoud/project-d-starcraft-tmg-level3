@@ -6,6 +6,29 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r39 Cleanup consumer repaired; resuming
+
+Cleanup was retrying `MISSION_MARKER_TERRAIN_KIND_UNSUPPORTED` for valid Size 2
+impassable terrain, not waiting for Flash. Marker LOS now retains Size/geometry
+for grass, impassable and ramp. Three completed jobs without state/action
+progress stop across external resumes; model/tool latency is not a retry count.
+Real r39 narrow test red→test-seam correction→one green3.514s, zero Provider or
+Room mutation; do not repeat. Report:
+`docs/ticket-23-slice-248-cleanup-terrain-repair-2026-09-23.md`.
+Old 78441 stopped cleanly at r39 (7 prefix + 32 applied/replayed; both Providers
+idle). Live resume session **5379** uses the same Room. 96 calls / 9,529,523
+accounted units / estimated ¥12.802140 at restart; both seats Flash only.
+Keep the resumed match; verify actual Cleanup/next round via normal Web flow.
+
+### 2026-09-23 T27 / S267–270 — integrated, S271 workspace next
+
+K3 `2f9ef8d` is merged via `ce57922`, including the previously absent S267–268
+contracts/Builder port and S269–270 strategist/laboratory. No current-match
+consumer changed. Reuse completed focused evidence, no repeated suite.
+Real recovered Flash plan is legal **1430/2000**, not a high-quality full-scale
+list; the other three candidates are illegal. S271 Web workspace and S272
+paired full-match comparison remain open. Integration is not UI acceptance.
+
 ### 2026-09-23 T23 / S248 — r37; fork-prefix recovery accounting repaired
 
 Live runner 78441 continues. r36 Feral Rage on Hydralisk and r37 finish have

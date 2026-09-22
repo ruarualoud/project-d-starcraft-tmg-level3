@@ -15,6 +15,8 @@ import { isStarcraftTmgTransientControlPlaneReadFailureV1,
   "../packages/online-agent-session/durable-agent-action-boundary-v1.mjs";
 import { isStarcraftTmgHistoricalResumeFindingV1 } from
   "../packages/online-agent-session/decision-recovery-policy-v1.mjs";
+import { advanceCompletedDriveProgressV1 } from
+  "../packages/online-agent-session/completed-drive-progress-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SERVER = path.join(ROOT,
@@ -874,6 +876,8 @@ async function main() {
       return latest?.actionType === "choose_first_actor";
     };
     const deadline = Date.now() + MATCH_TIMEOUT_MS;
+    let completedDriveProgress = { stateRevision: Number(current.room?.stateRevision || 0),
+      actionCount: actionCount(current), noProgressCompletions: 0 };
     while (Date.now() < deadline && actions.length < MAX_ACTIONS
       && (checkpointTargetActionCount === null
         || actions.length < checkpointTargetActionCount)
@@ -885,6 +889,10 @@ async function main() {
         "next-agent-decision", current.room?.stateRevision ?? actions.length,
         "before");
       current = await driveOne(current, deadline);
+      completedDriveProgress = advanceCompletedDriveProgressV1(completedDriveProgress, {
+        stateRevision: Number(current.room?.stateRevision || 0),
+        actionCount: actionCount(current),
+      });
       await recordUnseen(current, {
         pageScreenshot: preActionScreenshot,
         ...preActionReviewViews,
