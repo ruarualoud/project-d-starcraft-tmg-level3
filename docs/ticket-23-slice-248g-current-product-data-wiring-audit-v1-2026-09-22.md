@@ -24,6 +24,17 @@ Current result:
 - missing Supply profiles: `0`;
 - current model-count/Supply mismatches: `0`;
 - missing combat profiles: `0`;
+- source/payload identity mismatches across Piece, Supply, Combat, Base and
+  Attack profiles: `0`;
+- Unit identity, Supply-tier, alive/destroyed model-ledger, base-geometry,
+  wound-state and Attack-profile mismatches: `0` in every category;
+- official lineage-bearing bundles: `40`, with exactly one normalized dataset
+  hash and one source-snapshot hash;
+- explicit cross-bundle dependency edges: `9/9` matched;
+- Attack catalogue migration: `51/51` v1 profiles have one identity-preserving
+  v2 successor and no orphan successor;
+- all `15` selected Units preserve current model count, Supply and exact Supply
+  profile through the Agent projection;
 - duplicate Unit, model, or card-instance identifiers: `0`;
 - public card/resource identity mismatches: `0`;
 - Provider calls and cost: `0 / ¥0`.
@@ -51,6 +62,32 @@ Current result:
    keys. It now compiles the “select exactly one … Card” group from the current
    official faction ability text and derives candidate cards from current
    official card names. Both Zerg Swarm and Kerrigan's Swarm are covered.
+
+## Consumer-parity guardrail
+
+The gate no longer treats “a profile exists” as sufficient. For every selected
+Unit it now proves that the Piece instance, Supply profile, Combat profile,
+base-geometry profile and every Attack profile share one source-record and
+payload identity. It also proves:
+
+- the Supply and Combat squad tiers are identical;
+- `currentModels` equals the living-model ledger, `maxModels` equals the model
+  denominator, and `destroyedModelIds` equals the destroyed-model rows;
+- every physical model uses the source-derived base shape and dimensions;
+- remaining wounds are consistent with the official hit-point profile;
+- every v2 Attack profile points to its exact v1 predecessor and retains unit,
+  source, payload and source-text identity;
+- Summon, Respawn, terrain, ranged, melee and current-gameplay bundles point to
+  the intended canonical Supply, geometry and Attack catalogues;
+- Agent projection does not substitute or omit current model count or Supply.
+
+Two superficially different hashes are deliberate scopes, not defects. The
+legacy gameplay bundle contains the selected-room combat subset while the
+current-product gameplay bundle contains the full product denominator. The
+ranged family compiles from Attack catalogue v1; catalogue v2 is a typed
+semantic successor and is used by the melee/current action path. Both
+relationships are now explicit edges, so an accidental substitution fails the
+gate instead of looking like an unexplained hash drift.
 
 ## Cross-adapter semantic groups
 

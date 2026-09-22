@@ -121,6 +121,22 @@ try {
   assert.equal(wiringAudit.selectedPieceData.missingSupplyProfileCount, 0);
   assert.equal(wiringAudit.selectedPieceData.supplyStateMismatchCount, 0);
   assert.equal(wiringAudit.selectedPieceData.missingCombatProfileCount, 0);
+  assert.equal(wiringAudit.selectedPieceData.sourceIdentityMismatchCount, 0);
+  assert.equal(wiringAudit.selectedPieceData.unitIdentityMismatchCount, 0);
+  assert.equal(wiringAudit.selectedPieceData.supplyProfileMismatchCount, 0);
+  assert.equal(wiringAudit.selectedPieceData.modelLedgerMismatchCount, 0);
+  assert.equal(wiringAudit.selectedPieceData.baseGeometryMismatchCount, 0);
+  assert.equal(wiringAudit.selectedPieceData.woundStateMismatchCount, 0);
+  assert.equal(wiringAudit.selectedPieceData.attackProfileMismatchCount, 0);
+  assert.equal(wiringAudit.officialBundleLineage.normalizedDatasetHashCount, 1);
+  assert.equal(wiringAudit.officialBundleLineage.sourceSnapshotHashCount, 1);
+  assert.equal(wiringAudit.officialBundleLineage.missingLineageCount, 0);
+  assert.equal(wiringAudit.officialBundleLineage.edgeMismatchCount, 0);
+  assert.equal(wiringAudit.officialBundleLineage.attackV1ProfileCount,
+    wiringAudit.officialBundleLineage.attackV2ProfileCount);
+  assert.equal(wiringAudit.officialBundleLineage.attackCatalogueMismatchCount, 0);
+  assert.equal(
+    wiringAudit.officialBundleLineage.missingLegacySelectedRecordCount, 0);
   assert.equal(wiringAudit.publicCardData.sideCount, 2);
   assert.equal(wiringAudit.publicCardData.identityMismatchCount, 0);
   assert.equal(wiringAudit.publicCardData.duplicateCardInstanceIdCount, 0);
@@ -199,6 +215,18 @@ try {
   assert.equal(observedSwarmling.currentModels, swarmling.currentModels);
   assert.equal(observedSwarmling.currentSupply, swarmling.currentSupply);
   assert.equal(observedSwarmling.supplyControl.status, "exact_rules_profile");
+  const projectedUnits = [...spatialObservation.units,
+    ...spatialObservation.offTableUnits];
+  for (const piece of state.pieces) {
+    const projected = projectedUnits.find((entry) => entry.unitId === piece.id);
+    assert(projected, `${piece.id} must reach the Agent projection`);
+    assert.equal(projected.currentModels, piece.currentModels,
+      `${piece.id} model count must reach the Agent projection`);
+    assert.equal(projected.currentSupply, piece.currentSupply,
+      `${piece.id} Supply must reach the Agent projection`);
+    assert.equal(projected.supplyControl.status, "exact_rules_profile",
+      `${piece.id} must use the exact Rules Supply profile`);
+  }
   assert(spatialObservation.tokens.some((entry) =>
     entry.source?.tokenKind === "creep_tumor"),
   "authoritative battlefield token must reach the Agent spatial projection");
@@ -289,6 +317,7 @@ try {
         wiringAudit.crossAdapterSemanticGroups.length,
       selectedPieceData: wiringAudit.selectedPieceData,
       publicCardData: wiringAudit.publicCardData,
+      officialBundleLineage: wiringAudit.officialBundleLineage,
     },
     factionRoutes: {
       player1: player1SkillIds,

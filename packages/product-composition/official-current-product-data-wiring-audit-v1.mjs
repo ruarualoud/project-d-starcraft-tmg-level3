@@ -149,6 +149,173 @@ function supplyAtModelCount(profile, modelCount) {
   return tier ? Number(tier.supply) : null;
 }
 
+function identityOf(value) {
+  return `${String(value?.sourceRecordHash || "")}:${String(
+    value?.payloadHash || value?.officialPayloadHash || "")}`;
+}
+
+function sameJson(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function normalizedSquadProfile(profile) {
+  return (profile || []).map((entry) => ({
+    tier: Number(entry?.tier),
+    minimumModels: entry?.applicable === false
+      ? null : entry?.minimumModels ?? null,
+    maximumModels: entry?.applicable === false
+      ? null : entry?.maximumModels ?? null,
+    supply: Number(entry?.supply || 0),
+  })).sort((left, right) => left.tier - right.tier);
+}
+
+function auditOfficialBundleLineage(state, blockingFindings) {
+  const lineageRows = Object.entries(state || {}).filter(([key, value]) => (
+    key.startsWith("official") && value && typeof value === "object"
+      && !Array.isArray(value)
+      && (value.normalizedDatasetHash || value.sourceSnapshotHash)
+  )).map(([stateKey, value]) => ({
+    stateKey,
+    normalizedDatasetHash: value.normalizedDatasetHash || null,
+    sourceSnapshotHash: value.sourceSnapshotHash || null,
+  }));
+  const datasetHashes = [...new Set(lineageRows.map((entry) => (
+    entry.normalizedDatasetHash)).filter(Boolean))];
+  const snapshotHashes = [...new Set(lineageRows.map((entry) => (
+    entry.sourceSnapshotHash)).filter(Boolean))];
+  const missingLineage = lineageRows.filter((entry) => (
+    !entry.normalizedDatasetHash || !entry.sourceSnapshotHash));
+  if (datasetHashes.length !== 1) {
+    blockingFindings.push(finding("critical", "OFFICIAL_DATASET_LINEAGE_SPLIT",
+      String(datasetHashes.length)));
+  }
+  if (snapshotHashes.length !== 1) {
+    blockingFindings.push(finding("critical", "OFFICIAL_SNAPSHOT_LINEAGE_SPLIT",
+      String(snapshotHashes.length)));
+  }
+  for (const entry of missingLineage) {
+    blockingFindings.push(finding("high", "OFFICIAL_BUNDLE_LINEAGE_INCOMPLETE",
+      entry.stateKey));
+  }
+
+  const edges = [{
+    edge: "current_product_gameplay_to_combat",
+    actual: state?.officialCurrentProductGameplayDataBundle
+      ?.combatProfileBundle?.bundleHash,
+    expected: state?.officialCombatProfileBundle?.bundleHash,
+  }, {
+    edge: "attack_catalogue_v2_to_v1",
+    actual: state?.officialAttackProfileCatalogueV2?.previousCatalogueHash,
+    expected: state?.officialAttackProfileCatalogue?.catalogueHash,
+  }, {
+    edge: "ranged_family_to_attack_catalogue_v1",
+    actual: state?.officialRangedFamilySourceBundle?.attackProfileCatalogueHash,
+    expected: state?.officialAttackProfileCatalogue?.catalogueHash,
+  }, {
+    edge: "melee_family_to_attack_catalogue_v2",
+    actual: state?.officialMeleeFamilySourceBundle?.attackProfileCatalogueHash,
+    expected: state?.officialAttackProfileCatalogueV2?.catalogueHash,
+  }, {
+    edge: "respawn_to_supply",
+    actual: state?.officialRespawnMorphDataBundle
+      ?.unitCardSupplyDataBundle?.bundleHash,
+    expected: state?.officialUnitCardSupplyDataBundle?.bundleHash,
+  }, {
+    edge: "respawn_to_geometry",
+    actual: state?.officialRespawnMorphDataBundle
+      ?.modelBaseGeometryDataBundle?.bundleHash,
+    expected: state?.officialModelBaseGeometryDataBundle?.bundleHash,
+  }, {
+    edge: "summon_to_supply",
+    actual: state?.officialSummonDataBundle?.unitCardSupplyDataBundle?.bundleHash,
+    expected: state?.officialUnitCardSupplyDataBundle?.bundleHash,
+  }, {
+    edge: "summon_to_geometry",
+    actual: state?.officialSummonDataBundle
+      ?.modelBaseGeometryDataBundle?.bundleHash,
+    expected: state?.officialModelBaseGeometryDataBundle?.bundleHash,
+  }, {
+    edge: "terrain_to_geometry",
+    actual: state?.officialBalancedTerrainRulesDataBundle
+      ?.modelBaseGeometryDataBundleHash,
+    expected: state?.officialModelBaseGeometryDataBundle?.bundleHash,
+  }].map((entry) => ({
+    ...entry,
+    present: Boolean(entry.actual && entry.expected),
+    matches: Boolean(entry.actual && entry.expected
+      && entry.actual === entry.expected),
+  }));
+  for (const entry of edges.filter((candidate) => !candidate.matches)) {
+    blockingFindings.push(finding("high", "OFFICIAL_BUNDLE_EDGE_MISMATCH",
+      entry.edge));
+  }
+
+  const attackV1 = state?.officialAttackProfileCatalogue?.profiles || [];
+  const attackV2 = state?.officialAttackProfileCatalogueV2?.profiles || [];
+  const attackV1ByKey = new Map(attackV1.map((entry) => [
+    entry.profileKey, entry,
+  ]));
+  const attackV2ByKey = new Map(attackV2.map((entry) => [
+    entry.profileKey, entry,
+  ]));
+  const attackCatalogueMismatches = [];
+  for (const profile of attackV1) {
+    const successor = attackV2ByKey.get(profile.profileKey);
+    if (!successor || successor.previousProfileHash !== profile.profileHash
+      || successor.recordKey !== profile.recordKey
+      || successor.sourceRecordHash !== profile.sourceRecordHash
+      || successor.payloadHash !== profile.payloadHash
+      || successor.sourceTextHash !== profile.sourceTextHash) {
+      attackCatalogueMismatches.push(profile.profileKey);
+    }
+  }
+  for (const profile of attackV2) {
+    if (!attackV1ByKey.has(profile.profileKey)) {
+      attackCatalogueMismatches.push(profile.profileKey);
+    }
+  }
+  if (!sameJson(
+    [...(state?.officialAttackProfileCatalogue?.unitRecordKeys || [])].sort(),
+    [...(state?.officialAttackProfileCatalogueV2?.unitRecordKeys || [])].sort())) {
+    attackCatalogueMismatches.push("unit_record_key_denominator");
+  }
+  for (const profileKey of [...new Set(attackCatalogueMismatches)]) {
+    blockingFindings.push(finding("high",
+      "ATTACK_CATALOGUE_MIGRATION_LINEAGE_MISMATCH", profileKey));
+  }
+
+  const selectedRecordKeys = [...new Set((state?.pieces || []).map((entry) => (
+    String(entry?.officialUnitRecordKey || ""))).filter(Boolean))];
+  const legacyCombatRecords = new Set(state?.officialGameplayDataBundle
+    ?.combatProfileBundle?.profiles?.map((entry) => entry.recordKey) || []);
+  const missingLegacySelectedRecords = selectedRecordKeys.filter((recordKey) => (
+    !legacyCombatRecords.has(recordKey)
+      && !(state?.officialSummonDataBundle?.summonedUnitProfiles || [])
+        .some((entry) => entry.recordKey === recordKey)
+  ));
+  for (const recordKey of missingLegacySelectedRecords) {
+    blockingFindings.push(finding("high",
+      "SELECTED_RECORD_LEGACY_GAMEPLAY_PROFILE_MISSING", recordKey));
+  }
+  return Object.freeze({
+    officialBundleCount: lineageRows.length,
+    normalizedDatasetHashCount: datasetHashes.length,
+    sourceSnapshotHashCount: snapshotHashes.length,
+    missingLineageCount: missingLineage.length,
+    edgeCount: edges.length,
+    edgeMismatchCount: edges.filter((entry) => !entry.matches).length,
+    missingLegacySelectedRecordCount: missingLegacySelectedRecords.length,
+    attackV1ProfileCount: attackV1.length,
+    attackV2ProfileCount: attackV2.length,
+    attackCatalogueMismatchCount:
+      new Set(attackCatalogueMismatches).size,
+    edges: Object.freeze(edges),
+    missingLegacySelectedRecords: Object.freeze(missingLegacySelectedRecords),
+    attackCatalogueMismatches: Object.freeze(
+      [...new Set(attackCatalogueMismatches)]),
+  });
+}
+
 function auditSelectedPieceData(state, blockingFindings) {
   const pieces = state?.pieces || [];
   const supplyByRecordKey = new Map((
@@ -159,6 +326,22 @@ function auditSelectedPieceData(state, blockingFindings) {
   const missingSupplyProfiles = [];
   const supplyStateMismatches = [];
   const missingCombatProfiles = [];
+  const sourceIdentityMismatches = [];
+  const unitIdentityMismatches = [];
+  const supplyProfileMismatches = [];
+  const modelLedgerMismatches = [];
+  const baseGeometryMismatches = [];
+  const woundStateMismatches = [];
+  const attackProfileMismatches = [];
+  const geometryByRecordKey = new Map((
+    state?.officialModelBaseGeometryDataBundle?.profiles || []
+  ).map((entry) => [entry.recordKey, entry]));
+  const attacksByRecordKey = new Map();
+  for (const attack of state?.officialAttackProfileCatalogueV2?.profiles || []) {
+    const rows = attacksByRecordKey.get(attack.recordKey) || [];
+    rows.push(attack);
+    attacksByRecordKey.set(attack.recordKey, rows);
+  }
   const pieceIds = pieces.map((entry) => String(entry?.id || ""));
   const modelIds = pieces.flatMap((entry) => (entry?.models || []).map((model) =>
     String(model?.id || "")));
@@ -194,6 +377,95 @@ function auditSelectedPieceData(state, blockingFindings) {
     if (!combatByRecordKey[recordKey]) {
       missingCombatProfiles.push({ pieceId: piece.id, recordKey });
     }
+    const combatProfile = combatByRecordKey[recordKey];
+    const geometryProfile = geometryByRecordKey.get(recordKey);
+    const attackProfiles = attacksByRecordKey.get(recordKey) || [];
+    const identityRows = [piece, supplyProfile, combatProfile, geometryProfile,
+      ...attackProfiles].filter(Boolean);
+    const identities = [...new Set(identityRows.map(identityOf))];
+    if (identityRows.some((entry) => identityOf(entry) === ":")
+      || identities.length !== 1) {
+      sourceIdentityMismatches.push({ pieceId: piece.id, recordKey, identities });
+    }
+    if (supplyProfile && combatProfile && (
+      piece.unitId !== supplyProfile.unitId
+      || piece.unitId !== combatProfile.unitId
+      || piece.unitName !== supplyProfile.unitName
+      || piece.unitName !== combatProfile.unitName
+      || piece.armySlotType !== supplyProfile.armySlotType
+      || !sameJson([...(piece.combatTags || [])].sort(),
+        [...(combatProfile.combatTags || [])].sort())
+    )) {
+      unitIdentityMismatches.push({ pieceId: piece.id, recordKey });
+    }
+    if (supplyProfile && combatProfile && !sameJson(
+      normalizedSquadProfile(supplyProfile.supplyProfile),
+      normalizedSquadProfile(combatProfile.squadProfile))) {
+      supplyProfileMismatches.push({ pieceId: piece.id, recordKey });
+    }
+    const aliveModelIds = (piece.models || []).filter((model) => (
+      model?.isDestroyed !== true)).map((model) => String(model.id)).sort();
+    const destroyedModelIds = (piece.models || []).filter((model) => (
+      model?.isDestroyed === true)).map((model) => String(model.id)).sort();
+    if (Number(piece.currentModels) !== aliveModelIds.length
+      || Number(piece.maxModels) !== (piece.models || []).length
+      || !sameJson(destroyedModelIds,
+        [...(piece.destroyedModelIds || [])].map(String).sort())) {
+      modelLedgerMismatches.push({
+        pieceId: piece.id,
+        recordKey,
+        currentModels: Number(piece.currentModels),
+        aliveModels: aliveModelIds.length,
+        maxModels: Number(piece.maxModels),
+        modelRows: (piece.models || []).length,
+      });
+    }
+    if (!geometryProfile) {
+      baseGeometryMismatches.push({ pieceId: piece.id, recordKey,
+        reason: "profile_missing" });
+    } else {
+      const expectedWidth = geometryProfile.baseWidthMilliInches / 1000;
+      const expectedDepth = geometryProfile.baseDepthMilliInches / 1000;
+      for (const model of piece.models || []) {
+        if (model.baseShape !== geometryProfile.baseShape
+          || Number(model.baseWidthInches) !== expectedWidth
+          || Number(model.baseDepthInches) !== expectedDepth) {
+          baseGeometryMismatches.push({ pieceId: piece.id, modelId: model.id,
+            recordKey, reason: "model_base_drift" });
+        }
+      }
+      if (supplyProfile && (
+        supplyProfile.base?.shape !== geometryProfile.baseShape
+        || Number(supplyProfile.base?.widthMillimetres)
+          !== Number(geometryProfile.baseWidthMillimetres)
+        || Number(supplyProfile.base?.depthMillimetres)
+          !== Number(geometryProfile.baseDepthMillimetres))) {
+        baseGeometryMismatches.push({ pieceId: piece.id, recordKey,
+          reason: "supply_geometry_drift" });
+      }
+    }
+    if (combatProfile) {
+      for (const model of piece.models || []) {
+        const wounds = Number(model.remainingWounds);
+        if (!Number.isFinite(wounds) || wounds < 0
+          || wounds > Number(combatProfile.hitPoints)
+          || (model.isDestroyed === true && wounds !== 0)
+          || (model.isDestroyed !== true && wounds <= 0)) {
+          woundStateMismatches.push({ pieceId: piece.id, modelId: model.id,
+            recordKey, remainingWounds: model.remainingWounds,
+            hitPoints: combatProfile.hitPoints });
+        }
+      }
+    }
+    for (const attack of attackProfiles) {
+      if (attack.recordKey !== recordKey
+        || attack.unitId !== piece.unitId
+        || attack.unitName !== piece.unitName
+        || identityOf(attack) !== identityOf(piece)) {
+        attackProfileMismatches.push({ pieceId: piece.id, recordKey,
+          profileKey: attack.profileKey });
+      }
+    }
   }
   for (const entry of missingSupplyProfiles) {
     blockingFindings.push(finding("high", "SELECTED_PIECE_SUPPLY_PROFILE_MISSING",
@@ -207,6 +479,21 @@ function auditSelectedPieceData(state, blockingFindings) {
     blockingFindings.push(finding("high", "SELECTED_PIECE_COMBAT_PROFILE_MISSING",
       `${entry.pieceId}:${entry.recordKey}`));
   }
+  for (const [code, rows] of [["SELECTED_PIECE_SOURCE_IDENTITY_MISMATCH",
+    sourceIdentityMismatches], ["SELECTED_PIECE_UNIT_IDENTITY_MISMATCH",
+    unitIdentityMismatches], ["SELECTED_PIECE_SUPPLY_PROFILE_MISMATCH",
+    supplyProfileMismatches], ["SELECTED_PIECE_MODEL_LEDGER_MISMATCH",
+    modelLedgerMismatches], ["SELECTED_PIECE_BASE_GEOMETRY_MISMATCH",
+    baseGeometryMismatches], ["SELECTED_PIECE_WOUND_STATE_MISMATCH",
+    woundStateMismatches], ["SELECTED_PIECE_ATTACK_PROFILE_MISMATCH",
+    attackProfileMismatches]]) {
+    for (const entry of rows) {
+      blockingFindings.push(finding("high", code,
+        `${entry.pieceId}:${entry.recordKey}${entry.modelId
+          ? `:${entry.modelId}` : ""}${entry.profileKey
+          ? `:${entry.profileKey}` : ""}`));
+    }
+  }
   return Object.freeze({
     pieceCount: pieces.length,
     uniqueUnitRecordCount: new Set(pieces.map((entry) =>
@@ -216,9 +503,23 @@ function auditSelectedPieceData(state, blockingFindings) {
     missingSupplyProfileCount: missingSupplyProfiles.length,
     supplyStateMismatchCount: supplyStateMismatches.length,
     missingCombatProfileCount: missingCombatProfiles.length,
+    sourceIdentityMismatchCount: sourceIdentityMismatches.length,
+    unitIdentityMismatchCount: unitIdentityMismatches.length,
+    supplyProfileMismatchCount: supplyProfileMismatches.length,
+    modelLedgerMismatchCount: modelLedgerMismatches.length,
+    baseGeometryMismatchCount: baseGeometryMismatches.length,
+    woundStateMismatchCount: woundStateMismatches.length,
+    attackProfileMismatchCount: attackProfileMismatches.length,
     missingSupplyProfiles: Object.freeze(missingSupplyProfiles),
     supplyStateMismatches: Object.freeze(supplyStateMismatches),
     missingCombatProfiles: Object.freeze(missingCombatProfiles),
+    sourceIdentityMismatches: Object.freeze(sourceIdentityMismatches),
+    unitIdentityMismatches: Object.freeze(unitIdentityMismatches),
+    supplyProfileMismatches: Object.freeze(supplyProfileMismatches),
+    modelLedgerMismatches: Object.freeze(modelLedgerMismatches),
+    baseGeometryMismatches: Object.freeze(baseGeometryMismatches),
+    woundStateMismatches: Object.freeze(woundStateMismatches),
+    attackProfileMismatches: Object.freeze(attackProfileMismatches),
   });
 }
 
@@ -378,6 +679,8 @@ export function auditOfficialCurrentProductDataWiringV1(state) {
   }
   const selectedPieceData = auditSelectedPieceData(state, blockingFindings);
   const publicCardData = auditPublicCardData(state, blockingFindings);
+  const officialBundleLineage = auditOfficialBundleLineage(
+    state, blockingFindings);
 
   return Object.freeze({
     schema: OFFICIAL_CURRENT_PRODUCT_DATA_WIRING_AUDIT_VERSION,
@@ -390,6 +693,7 @@ export function auditOfficialCurrentProductDataWiringV1(state) {
     crossAdapterSemanticGroups: Object.freeze(crossAdapterSemanticGroups),
     selectedPieceData,
     publicCardData,
+    officialBundleLineage,
     blockingFindings: Object.freeze(blockingFindings),
     reviewFindings: Object.freeze(reviewFindings),
     sourceDefinitionsRemainOneToOne: true,
