@@ -45,8 +45,27 @@ unrelated security issue preservation, timeout/reset/503 retry and 403/High/
 budget fail-fast. Provider calls 0; Room mutations 0. Do not rerun passed gates.
 
 The stalled process was stopped only after confirming the durable r6 boundary
-and completed async job. The resumed runner is to record the missing r6 UI
-evidence/checkpoint, not to repeat the action or paid decision.
+and completed async job. The resumed runner completed the r6 UI/checkpoint
+recovery with the same 7 calls / 884,206 units / ¥1.164198 and no extra Apply.
+Both historical transport issues now carry `resolvedAt` and the explicit
+persisted-Apply/Replay resolution. The checkpoint is `ok:true`, revision 6.
+
+Evidence below
+`build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922133120597/`:
+
+- `checkpoint.json`: successful r6 closure and strategy-use counters.
+- `actions.ndjson`: recovered r6 action, accepted receipt and Replay parity.
+- `screenshots/0019-r005-room-next-agent-decision-complete-board-before.png`:
+  actual pre-decision board retained from the original attempt.
+- `screenshots/0023-r006-player2-deploy-complete-board-applied.png`: actual
+  post-action board, all 18 Raptor bases inside the boundary; no background art
+  because this match deliberately uses the abstract authoritative terrain.
+- `screenshots/0024-r006-player2-deploy-agent-control-applied.png`: recovered
+  product control surface.
+
+One advisory `fire_zone_exchange` query was naturally used. Attack-probability
+and prediction-calibration use remain zero here; capability presence does not
+claim natural use or strategic impact.
 
 ## Strategy observation, not a Prompt patch
 

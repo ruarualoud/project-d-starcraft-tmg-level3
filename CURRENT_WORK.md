@@ -55,8 +55,14 @@ The runner retries only typed read-transport failures, not Rules, budget or High
 findings. Existing durable-boundary diagnostic's `--transport-recovery-only`
 mode reproduced both defects, then passed on its third/final run (one repair
 needed to account for normal shutdown's `closed_by_host` status). No Provider
-or Room mutation in that gate. Resume is for capturing the already-durable r6,
-not re-applying it or making another paid decision.
+or Room mutation in that gate. The real resumed Web run has now captured r6
+and written its passing checkpoint without another model call or Apply;
+accounting remains 7 / 884,206 / ¥1.164198. Screenshot:
+`build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922133120597/screenshots/0023-r006-player2-deploy-complete-board-applied.png`.
+Natural fire-zone exchange use is recorded once (advisory); no attack-probability
+query or prediction calibration use has yet occurred in this early branch.
+Next continue Terran's response from r6. Preserve the Raptor/Swarmling
+models-per-Supply comparison inconsistency as Medium strategy-review evidence.
 
 The special-terrain LOS root is now repaired: setup-agreed nonstandable
 impassable terrain does not need a fictional adjacent elevation pair. Actual
