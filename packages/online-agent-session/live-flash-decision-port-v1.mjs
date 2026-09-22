@@ -27,7 +27,7 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v23";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v34";
+  "starcraft_tmg_live_action_shape_normalization_v35";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v13";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -2547,7 +2547,7 @@ function bindExactInstantiatedProposal(raw, queryReceipts, planner) {
   return normalized;
 }
 
-function normalizeActionOutputShape(raw) {
+function normalizeActionOutputShape(raw, planner = null, selected = null) {
   if (!object(raw)) return raw;
   const normalized = clone(raw);
   const intent = object(normalized.intent) ? normalized.intent : null;
@@ -2575,6 +2575,50 @@ function normalizeActionOutputShape(raw) {
       || intent.purpose);
   intent.nextDecisionFocus = text(intent.nextDecisionFocus,
     summary.nextDecisionFocus || summary.replanTrigger || intent.currentGoal);
+  const publicRisk = text(normalized.risk || summary.risk,
+    "The expected exchange may change before the plan completes.");
+  const publicBenefit = text(normalized.scoreOrPositionValue
+    || intent.expectedOwnOutcome,
+  "Advances the selected current plan.");
+  const publicAcceptance = text(normalized.selectedReason || intent.purpose,
+    "The bounded benefit currently exceeds the cost.");
+  const planFallbacks = strings(planner?.plan?.contingencies);
+  const planReplanTriggers = strings(summary.reviseIf).length
+    ? strings(summary.reviseIf) : strings(planner?.plan?.reviseIf);
+  const selectedPieceId = String(selected?.action?.pieceId || "").trim();
+  const selectedAbilityName = String(
+    selected?.action?.abilityName || "").trim();
+  const selectedResourceKinds = Object.entries(
+    selected?.action?.resourceContract?.costs || {})
+    .filter(([, amount]) => Number(amount) > 0)
+    .map(([kind]) => String(kind));
+  if (!Array.isArray(intent.tradeoffs)) {
+    intent.tradeoffs = [{
+      benefit: publicBenefit,
+      cost: publicRisk,
+      acceptanceReason: publicAcceptance,
+    }];
+  }
+  if (!Array.isArray(intent.risks)) intent.risks = [publicRisk];
+  if (!Array.isArray(intent.fallbacks)) {
+    intent.fallbacks = planFallbacks.length
+      ? planFallbacks : ["Reassess and choose a current legal alternative."];
+  }
+  if (!Array.isArray(intent.stopOrReplanTriggers)) {
+    intent.stopOrReplanTriggers = planReplanTriggers.length
+      ? planReplanTriggers
+      : ["the current authority or expected exchange materially changes"];
+  }
+  if (!Array.isArray(intent.unitIds)) {
+    intent.unitIds = selectedPieceId ? [selectedPieceId] : [];
+  }
+  if (!Array.isArray(intent.skillsUsed)) intent.skillsUsed = [];
+  if (!Array.isArray(intent.abilitiesIntended)) {
+    intent.abilitiesIntended = selectedAbilityName ? [selectedAbilityName] : [];
+  }
+  if (!Array.isArray(intent.resourcesIntended)) {
+    intent.resourcesIntended = selectedResourceKinds;
+  }
   for (const field of ["expectedEffects", "predictedOpponentResponses",
     "tradeoffs", "risks", "fallbacks", "stopOrReplanTriggers", "unitIds",
     "skillsUsed", "abilitiesIntended", "resourcesIntended"]) {
@@ -3331,7 +3375,10 @@ function normalizeSubmittedAction(attempt, input, choice) {
     choice.queryReceipts);
   const boundAction = bindExactInstantiatedProposal(assetBoundAction,
     choice.queryReceipts, choice.plannerResult);
-  const shapedAction = normalizeActionOutputShape(boundAction);
+  const selected = actionIndex(input.spatialActionSpace).find((entry) =>
+    entry.id === choice.plannerResult?.recommendedCandidateId) || null;
+  const shapedAction = normalizeActionOutputShape(boundAction,
+    choice.plannerResult, selected);
   const normalizedAction = normalizeStarcraftTmgOpponentPredictionsV1({
     action: shapedAction,
     spatialObservation: input.spatialObservation,

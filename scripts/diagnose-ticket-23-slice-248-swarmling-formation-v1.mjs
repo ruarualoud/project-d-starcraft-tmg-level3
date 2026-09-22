@@ -234,6 +234,20 @@ async function worker() {
       },
     });
     const durationMs = Math.round(performance.now() - started);
+    const pairwiseClearances = result.formationOptions.map((entry) => Number(
+      entry.tacticalMetrics?.minimumPairwiseBaseSeparationMilliInches));
+    const finitePairwiseClearances = pairwiseClearances.filter(Number.isFinite);
+    const pairwiseClearanceSpreadMilliInches = finitePairwiseClearances.length
+      ? Math.max(...finitePairwiseClearances)
+        - Math.min(...finitePairwiseClearances) : 0;
+    const formationEnvelopeAreas = result.formationOptions.map((entry) =>
+      Number(entry.tacticalMetrics
+        ?.formationEnvelopeAreaSquareMilliInches)).filter(Number.isFinite);
+    const multiModelFormationStrategyDiversity =
+      Number(domain.constraints?.modelProfiles?.length || 0) <= 1
+      || (new Set(pairwiseClearances).size >= 2
+        && pairwiseClearanceSpreadMilliInches >= 100
+        && new Set(formationEnvelopeAreas).size >= 2);
     const report = {
       schema: "ticket23_slice248_swarmling_formation_diagnosis_v1",
       ok: durationMs <= maximumDurationMs && result.optionCount === 4,
@@ -253,6 +267,10 @@ async function worker() {
       searchCoverage: result.searchCoverage,
       failureCounts: result.failureCounts,
       optionIds: result.formationOptions.map((entry) => entry.formationOptionId),
+      pairwiseClearances,
+      pairwiseClearanceSpreadMilliInches,
+      formationEnvelopeAreas,
+      multiModelFormationStrategyDiversity,
       providerCalls: 0,
       roomMutations: 0,
       trainingTruth: false,
@@ -260,6 +278,8 @@ async function worker() {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     assert.equal(report.ok, true,
       `formation search exceeded ${maximumDurationMs}ms or lost options`);
+    assert.equal(report.multiModelFormationStrategyDiversity, true,
+      "multi-model formation options must expose materially different spacing and envelopes");
   } finally {
     decisions.close();
     roomDatabase.close();

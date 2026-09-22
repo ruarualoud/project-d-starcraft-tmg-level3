@@ -6,7 +6,24 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
-### 2026-09-22 Ticket 24 / Slice 254-R1 checkpoint
+### 2026-09-22 Ticket 24 / Slices 254-R3–R5 checkpoint
+
+The old Slice 254-R2 branch rendered axis-aligned source footprints over the
+map image. Lost Temple review proved those rectangles do not follow the visible
+water, cliffs, high ground, ramps or foliage, so that branch is stopped and is
+not integrated. K3 now owns an isolated semantic-map reset: a versioned art +
+reviewed multipolygon/ring/line geometry pair, shared normalized/pixel/inch
+transform, precise visible effect boundaries, and the Lost Temple exemplar.
+The same slice also derives an official-guideline terrain-piece library,
+deterministic seeded generation and a manual editor with live spacing,
+complete-base transit, mission reachability and certification previews. K3
+must self-verify every generated/editor state and deliver desktop plus 390px
+screenshots for semantic overlay, boundary-off, random generation, manual edit,
+invalid layout and restored valid layout. Runtime pixel inference and paid
+Provider work are forbidden. Remaining maps may be marked pending authoring,
+but no classic map may be promoted without its paired semantic geometry.
+
+### 2026-09-22 Ticket 24 / Slice 254-R1 historical checkpoint
 
 The historical 20-map topology/adapter work existed, but the Slice 254 compiler
 discarded enabled source footprints and placed them into generic balance slots.
@@ -19,14 +36,28 @@ terrain pieces and two central-temple ramp access points. The old fixed
 quadrant manoeuvre witness was found blocking the restored southwest geometry
 and has been replaced by a deterministic free-space witness solver.
 
-The next map sub-slice is 254-R2: K3 renders the authoritative footprint,
-opening and access geometry for all 20 maps in the gallery and live battle UI,
-with desktop/390px screenshot evidence. Background pixels remain display-only;
-they are never inferred into Rules geometry. The existing r6/r7 match remains
-immutable old-compiler evidence and cannot be mutated; high-strategy play must
-start in a fresh certified room after the UI boundary slice is integrated.
+Its rectangle-based source footprints remain valid only for abstract Rules
+harnesses and explicitly placed tabletop terrain. They are not sufficient for
+classic-map art fidelity and are superseded by the semantic-map reset above.
 
 ### 2026-09-22 Ticket 23 / Slice 248 checkpoint
+
+The fresh abstract-terrain Standard-2000 A-A run
+`20260922115126519` is now at revision/action 6. The first Zerg deployment
+compared four exact Host-solved formations and chose the 18-model Raptor
+requested-left option: minimum visible-enemy base-edge distance 25.633in,
+4.020in from marker 2, 16.813in from marker 3, and one bounded next-round
+move-then-fire profile. DeepSeek's three Action corrections omitted eight
+strategy explanation arrays even though the candidate, selection, public
+summary and Rules evidence were complete. Action normalization v35 now fills
+only those absent shapes from the same public benefit/risk, Planner
+contingencies/reviseIf and selected Rules identity. The already-paid eighth
+candidate then passed local revalidation, all 18 bases, Apply and Replay with
+zero new Provider work. Current ledger: 20 calls / 1,326,840 units /
+¥1.772189. Screenshot:
+`build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922115126519/screenshots/0044-r006-player2-deploy-complete-board-applied.png`.
+This abstract map is deliberate Rules/strategy evidence only; it cannot claim
+classic-map art/terrain alignment.
 
 The live official Command Center record confirms that `Swarmling (Zergling)`
 has one purchasable 18-model composition at Supply 1; its `large` product field
@@ -499,3 +530,34 @@ synthesis indexes later evidence without rerunning unrelated passed gates.
   produce a real Chinese companion BYOK acceptance and visual/report evidence;
   Ticket 27 / Slices 269–270 must produce a real 2000-point model-generated
   RosterPlan, Rules legality receipt and immutable pregame laboratory report.
+- Ticket 23 / Slice 248 formation-strategy finding: the current public flow is
+  already Agent objectives -> bounded legal formation options -> Agent option
+  selection/public reason -> Rules Preview/Apply/Replay. However, the r6
+  18-model Raptor option came from a fixed hex lattice spaced at max base
+  diameter + 20 milli-inches. Its 19-milli-inch minimum base gap is therefore
+  solver bias, not a four-inch coherency requirement. Authority legality is
+  retained, but r6 is strategy-provisional and non-training. Expand the
+  candidate family at one legal anchor to variable-spacing compact, dispersed,
+  screen, surround/max-engagement, threat-avoidance, marker/channel-preserving
+  variants; expose formation footprint/gap/threat/mission/future-mobility
+  metrics to the Agent; then fork the accepted run from r5 and recompute r6.
+  Formation placement is a first-class strategy decision and later replay/
+  Skill evolution may add or reweight candidate families for explicit scenes.
+- The first formation-diversity repair is implemented. The captured r5 Raptor
+  deploy fail-first proved the four exposed options had pairwise-clearance
+  values `19/20/19/19` milli-inches. Solver policies now carry bounded
+  tight/balanced/open spacing profiles and publish the preferred gap alongside
+  exact actual spacing/envelope metrics. The same focused diagnosis passed
+  after the change with `320/320/19/159`, four different legal option layouts,
+  4 exact Rules instantiations, 5.227s, Provider 0 and Room mutations 0. The
+  next live step is a fresh r5 fork and Agent re-selection of r6. Screen,
+  surround/max-engagement, lane-preservation and future-mobility candidate
+  families remain separate follow-up work rather than hidden Rules policy.
+- K3 Ticket 27 / Slices 269–270 is now complete at commit `2c058ae`: live
+  Foundation -> Proposals -> Comparison produced a Rules-legal Standard-2000
+  roster and active RosterPlan, with an immutable no-pregame-plan preset
+  comparison. Final passing round used 3 calls / 41,342 reported units / zero
+  automatic retries. Important nonblocking evidence remains: the selected list
+  spent only 940/2,000 minerals and its VP schedule stayed unknown, so match
+  play/review must judge strategic quality rather than treating legality as
+  quality.

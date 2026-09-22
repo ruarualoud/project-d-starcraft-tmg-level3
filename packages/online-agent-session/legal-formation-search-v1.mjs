@@ -468,16 +468,28 @@ function normalizeFormationObjectives(request = {}) {
 function formationSolverPolicies(objectives) {
   const requested = clone(objectives);
   const policies = [
-    { policyId: "requested-direct", objectives: requested, tieBreaker: 0 },
-    { policyId: "requested-left", objectives: requested, tieBreaker: -1 },
-    { policyId: "requested-right", objectives: requested, tieBreaker: 1 },
+    { policyId: "requested-direct", objectives: requested, tieBreaker: 0,
+      packingProfileId: "balanced_spacing",
+      preferredInterBaseGapMilliInches: 160 },
+    { policyId: "requested-left", objectives: requested, tieBreaker: -1,
+      packingProfileId: "tight_spacing",
+      preferredInterBaseGapMilliInches: 20 },
+    { policyId: "requested-right", objectives: requested, tieBreaker: 1,
+      packingProfileId: "open_spacing",
+      preferredInterBaseGapMilliInches: 320 },
   ];
   for (const objective of objectives) {
     if (objectives.length < 2) break;
+    const preferredGap = objective.kind === "compact" ? 20
+      : objective.kind === "disperse" ? 320 : 160;
     policies.push({
       policyId: `isolate-${objective.kind}`,
       objectives: [clone(objective)],
       tieBreaker: 0,
+      packingProfileId: objective.kind === "compact" ? "tight_spacing"
+        : objective.kind === "disperse" ? "open_spacing"
+          : "balanced_spacing",
+      preferredInterBaseGapMilliInches: preferredGap,
     });
   }
   if (objectives.length === 1 && objectives[0].kind === "balanced") {
@@ -485,14 +497,20 @@ function formationSolverPolicies(objectives) {
       policyId: "fallback-compact",
       objectives: [{ kind: "compact", weight: 3, targetIds: [] }],
       tieBreaker: 0,
+      packingProfileId: "tight_spacing",
+      preferredInterBaseGapMilliInches: 20,
     }, {
       policyId: "fallback-disperse",
       objectives: [{ kind: "disperse", weight: 3, targetIds: [] }],
       tieBreaker: 0,
+      packingProfileId: "open_spacing",
+      preferredInterBaseGapMilliInches: 320,
     }, {
       policyId: "fallback-advance",
       objectives: [{ kind: "advance", weight: 3, targetIds: [] }],
       tieBreaker: 0,
+      packingProfileId: "balanced_spacing",
+      preferredInterBaseGapMilliInches: 160,
     });
   }
   return policies;
@@ -753,6 +771,10 @@ function formationSolverMetrics(selected, input, solverScore) {
   return {
     solverScore: Number(solverScore.toFixed(6)),
     modelCount: selected.length,
+    packingProfileId: String(input.policy.packingProfileId
+      || "legacy_minimum_spacing"),
+    preferredInterBaseGapMilliInches: Number(
+      input.policy.preferredInterBaseGapMilliInches ?? 20),
     minimumPairwiseBaseSeparationMilliInches:
       pairwise.length > 0 ? Math.round(Math.min(...pairwise)) : null,
     maximumLeaderCenterDistanceMilliInches: Math.round(Math.max(...selected.map(
@@ -897,10 +919,12 @@ function solveIntentFormationRows(input) {
   }
   const selected = [{ profile: leaderProfile, footprint: leaderFootprint,
     point: leaderPoint, rotationDegrees: 0 }];
+  const preferredInterBaseGapMilliInches = Math.max(20, Math.min(800,
+    Number(policy.preferredInterBaseGapMilliInches ?? 20)));
   const spacing = Math.max(200, Math.round(Math.max(...profiles.flatMap((entry) => [
     dimension(entry, "baseWidthMilliInches", "widthMilliInches"),
     dimension(entry, "baseDepthMilliInches", "depthMilliInches"),
-  ])) + 20));
+  ])) + preferredInterBaseGapMilliInches));
   const maximumRing = Math.max(1,
     Math.ceil(coherencyRangeMilliInches / spacing) + 1);
   const rotation = angle + (policy.tieBreaker * Math.PI / 24);
