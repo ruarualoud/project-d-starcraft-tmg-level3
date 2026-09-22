@@ -5,6 +5,8 @@ import { projectStarcraftTmgThreatActionWindowV1 } from
 
 export const STARCRAFT_TMG_LEGAL_ASSET_PLACEMENT_SEARCH_VERSION =
   "starcraft_tmg_legal_asset_placement_search_v1";
+export const STARCRAFT_TMG_ENTRY_EDGE_UTILITY_VERSION =
+  "starcraft_tmg_entry_edge_utility_v1";
 
 const DEFAULT_MAX_ATTEMPTS = 1_024;
 const DEFAULT_MAX_OPTIONS = 4;
@@ -206,6 +208,54 @@ function markerCoordinate(marker) {
   return worldPoint(marker?.coordinate || marker);
 }
 
+function entryEdgeUtility(state, source, placedFootprint, markers) {
+  if (source.effectKind !== "omega_network") return null;
+  const segments = state.officialDeploymentGeometryBinding
+    ?.entryEdgesByPlayer?.[source.sideKey]?.segments || [];
+  const normalizedSegments = segments.map((segment) => ({
+    start: worldPoint(segment.startCoordinate || segment.start),
+    end: worldPoint(segment.endCoordinate || segment.end),
+  })).filter((segment) => segment.start && segment.end);
+  if (!placedFootprint || normalizedSegments.length < 1
+    || markers.length < 1) return null;
+  const objectiveComparisons = markers.map((marker) => {
+    const originalEntryEdgeDistanceMilliInches = Math.round(Math.min(
+      ...normalizedSegments.map((segment) => pointSegmentDistance(
+        marker.coordinate, segment.start, segment.end)),
+    ));
+    const candidateEntryEdgeDistanceMilliInches = Math.round(footprintGap(
+      placedFootprint, roundFootprint(marker.coordinate, 0)));
+    return {
+      markerId: marker.markerId,
+      originalEntryEdgeDistanceMilliInches,
+      candidateEntryEdgeDistanceMilliInches,
+      approachGainMilliInches: originalEntryEdgeDistanceMilliInches
+        - candidateEntryEdgeDistanceMilliInches,
+    };
+  }).sort((left, right) => right.approachGainMilliInches
+    - left.approachGainMilliInches || left.markerId.localeCompare(
+      right.markerId));
+  const gains = objectiveComparisons.map((entry) =>
+    entry.approachGainMilliInches);
+  return {
+    schemaVersion: STARCRAFT_TMG_ENTRY_EDGE_UTILITY_VERSION,
+    baselineKind: "official_player_entry_edge",
+    candidateKind: "omega_worm_base_entry_edge",
+    originalEntryEdgeSegmentCount: normalizedSegments.length,
+    maximumObjectiveApproachGainMilliInches: Math.max(...gains),
+    minimumObjectiveApproachGainMilliInches: Math.min(...gains),
+    improvedObjectiveCount: gains.filter((value) => value > 0).length,
+    worsenedObjectiveCount: gains.filter((value) => value < 0).length,
+    unchangedObjectiveCount: gains.filter((value) => value === 0).length,
+    objectiveComparisons,
+    pathAndFutureDeployLegalityEvaluated: false,
+    precision:
+      "exact_linear_base_edge_comparison;terrain_path_zone_and_future_deploy_legality_advisory",
+    rulesAuthority: false,
+    trainingTruth: false,
+  };
+}
+
 function tacticalPlacementProjection(state, source, contract, candidate) {
   const targetTags = targetTagsForPlacement(state, source);
   if (targetTags.length < 1) return null;
@@ -262,6 +312,7 @@ function tacticalPlacementProjection(state, source, contract, candidate) {
       coordinate: markerCoordinate(entry) })).filter((entry) =>
       entry.markerId && entry.coordinate).map((entry) => ({
       markerId: entry.markerId,
+      coordinate: entry.coordinate,
       centerDistanceMilliInches: Math.round(pointDistance(
         candidate.coordinate, entry.coordinate)),
     })).sort((left, right) => left.centerDistanceMilliInches
@@ -278,6 +329,8 @@ function tacticalPlacementProjection(state, source, contract, candidate) {
   const nearestEnemy = relationships.length
     ? Math.min(...relationships.map((entry) =>
       entry.minimumBaseEdgeDistanceMilliInches)) : null;
+  const marginalEntryEdgeUtility = entryEdgeUtility(
+    state, source, placedFootprint, markers);
   return {
     relationshipComparison: {
       relationships,
@@ -296,6 +349,8 @@ function tacticalPlacementProjection(state, source, contract, candidate) {
         markers[0]?.centerDistanceMilliInches ?? null,
       currentStationaryExposureKnown: relationships.length > 0,
       lineOfSightCertified: false,
+      ...(marginalEntryEdgeUtility
+        ? { entryEdgeUtility: marginalEntryEdgeUtility } : {}),
       precision:
         "exact_base_edge_and_printed_range;line_of_sight_and_action_availability_advisory",
       trainingTruth: false,
@@ -336,6 +391,17 @@ export function selectStarcraftTmgStrategicAssetPlacementOptionsV1(
       - numberOrMax(right.tacticalMetrics
         ?.nearestObjectiveCenterDistanceMilliInches)
     || left.placementOptionId.localeCompare(right.placementOptionId));
+  const entryEdgeGainOrder = [...candidates].filter((entry) =>
+    Number.isFinite(Number(entry.tacticalMetrics?.entryEdgeUtility
+      ?.maximumObjectiveApproachGainMilliInches))).sort((left, right) =>
+    Number(right.tacticalMetrics.entryEdgeUtility
+      .maximumObjectiveApproachGainMilliInches)
+      - Number(left.tacticalMetrics.entryEdgeUtility
+        .maximumObjectiveApproachGainMilliInches)
+    || Number(right.tacticalMetrics.entryEdgeUtility.improvedObjectiveCount)
+      - Number(left.tacticalMetrics.entryEdgeUtility.improvedObjectiveCount)
+    || preferredDistance(left) - preferredDistance(right)
+    || left.placementOptionId.localeCompare(right.placementOptionId));
   const selected = [];
   const selectedIds = new Set();
   const add = (entry, facet) => {
@@ -345,6 +411,7 @@ export function selectStarcraftTmgStrategicAssetPlacementOptionsV1(
     selected.push({ ...entry, selectionFacet: facet });
   };
   add(riskOrder[0], "lowest_projected_incoming_fire");
+  add(entryEdgeGainOrder[0], "largest_entry_edge_approach_gain");
   add(anchorOrder[0], "closest_to_preferred_anchor");
   add(objectiveOrder[0], "closest_to_objective");
   for (const entry of riskOrder) add(entry, "risk_ordered_alternative");
@@ -720,6 +787,8 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
         attemptedCandidateCount < generated.candidates.length,
       returnedOptionsAreStrategicallyDiverse: true,
       preferredAnchorOrderDoesNotExcludeLowerThreatOptions: true,
+      omegaEntryEdgeMarginalUtilityComparedWhenAvailable:
+        source.effectKind === "omega_network",
     },
     failureCounts: Object.fromEntries([...failureCounts.entries()]
       .sort(([left], [right]) => left.localeCompare(right))),
@@ -733,6 +802,8 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
       handWrittenReplacementCoordinateForbidden: true,
       prefilterNeverCertifiesLegality: true,
       hiddenChainOfThoughtRequested: false,
+      omegaEntryEdgeUtilityIsAdvisoryNotSelectionAuthority:
+        source.effectKind === "omega_network",
     },
     rulesAuthority: options.length > 0,
     mutationAuthority: false,
