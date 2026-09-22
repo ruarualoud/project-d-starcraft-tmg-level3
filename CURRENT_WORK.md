@@ -8,6 +8,12 @@ historical entry only when a linked task requires it.
 
 ### 2026-09-23 T23 / S248 — reserve coherency repair; safe r61 reload
 
+**78d2fd8 is committed; new live resume76101** (runner31120/server31154) is
+restoring the same room. At elapsed1m15s server was CPU-active; no terminal
+result yet. Old `progress.json` failed timestamp is the controlled58038
+shutdown, not proof this new process failed. Do not start a duplicate. r61
+capture and a new repaired deployment query remain pending.
+
 58038 confirmed exited1 after controlled server shutdown. Before shutdown both
 Providers had no unfinished decisions and both Bots no pending Apply; r61
 accepted/replayed, r60 Web screenshot captured.145calls/15,689,641accounted

@@ -62,7 +62,12 @@ r60 has an inspected Web screenshot; r61 still needs capture on resume.
 145 calls / 15,689,641 accounted units / estimated **¥21.051052**, both Flash.
 No accepted action or paid output is erased or regenerated.
 
-The continuation loads this repair. The r57→r58 choice diversion must remain
+Commit **78d2fd8** is loaded by new resume **76101** (runner31120/server31154),
+currently restoring the same room. At elapsed1m15s the server remained
+CPU-active; do not mistake the old failed progress timestamp for a new failure.
+No live repaired deployment acceptance is claimed yet.
+
+The r57→r58 choice diversion must remain
 marked engineering-influenced in S249; do not silently score it as a pure
 strategy failure or claim an uncontaminated high-strategy comparison.
 
