@@ -108,6 +108,23 @@ const ROOM_ID = "ticket27-slices-269-270-live-roster-room";
 // rewriting the original round-series artifacts.
 const RECOVERY_FLAG = "--narrative-recovery-after-capacity-policy";
 const RECOVERY_ROUND = 11;
+// Persisted-round resume (269.19+270.10): zero new Provider calls — the
+// round-11 paid public answers are replayed byte-identically through the
+// repaired normalization boundary and the full schema/Rules validation, so
+// the session can complete without re-asking the model.
+const RESUME_FLAG = "--resume-round-11-persisted-outputs";
+const RESUME_ROUND = 12;
+const RESUME_PATHS = {
+  report: path.join(REPORT_ROOT, "resume-report.json"),
+  lock: path.join(REPORT_ROOT, "resume-lock.json"),
+  plan: path.join(REPORT_ROOT, "resume-roster-plan.json"),
+  trace: path.join(REPORT_ROOT, "resume-planning-trace.json"),
+  toolReceipts: path.join(REPORT_ROOT, "resume-tool-receipts.json"),
+  providerReceipts: path.join(REPORT_ROOT,
+    "resume-provider-receipts-redacted.json"),
+  comparison: path.join(REPORT_ROOT, "resume-preset-comparison.json"),
+  publicOutputs: path.join(REPORT_ROOT, "resume-public-round-outputs.json"),
+};
 const RECOVERY_PATHS = {
   report: path.join(REPORT_ROOT, "recovery-report.json"),
   lock: path.join(REPORT_ROOT, "recovery-lock.json"),
@@ -170,6 +187,11 @@ function requireCondition(condition, code) {
 }
 function flagsAuthorized() {
   const flags = process.argv.slice(2);
+  if (flags.includes(RESUME_FLAG)) {
+    // The resume lane makes zero Provider calls by construction; it never
+    // carries the paid-call authorization flags.
+    return flags.length === 1;
+  }
   if (flags.includes(RECOVERY_FLAG)) {
     return flags.length === REQUIRED_FLAGS.size + 1
       && flags.every((flag) => REQUIRED_FLAGS.has(flag)
@@ -492,8 +514,88 @@ async function main() {
   let priorFailureReport = null;
   let priorPreservedPath = null;
   const recoveryMode = process.argv.includes(RECOVERY_FLAG);
+  const resumeMode = process.argv.includes(RESUME_FLAG);
+  let resumeSource = null;
   let callCap = 4;
-  if (recoveryMode) {
+  if (resumeMode) {
+    // Persisted-round resume (269.19+270.10): zero new Provider calls. The
+    // round-11 paid public answers are replayed byte-identically through the
+    // repaired normalization boundary and full schema/Rules validation.
+    // Admitted only while the recovery ledger holds the round-11 nesting
+    // failure, the persisted outputs are intact (hash fidelity, nothing
+    // dropped) and were generated against the current contract set; the
+    // resume lock is exclusive-create — one resume attempt, no retry.
+    callCap = 0;
+    let recoveryReport = null;
+    let recoveryOutputs = null;
+    try {
+      recoveryReport = JSON.parse(await readFile(
+        RECOVERY_PATHS.report, "utf8"));
+      recoveryOutputs = JSON.parse(await readFile(
+        RECOVERY_PATHS.publicOutputs, "utf8"));
+    } catch {
+      recoveryReport = null;
+    }
+    const ROUND_ORDER = ["strategy_foundation", "candidate_proposals",
+      "comparison_selection"];
+    let wireBindingOk = false;
+    if (Array.isArray(recoveryOutputs?.publicOutputs)
+      && recoveryOutputs.publicOutputs.length === 3) {
+      // Behavioral binding: each persisted answer is revalidated against the
+      // CURRENT contract set and must reproduce the round-11 outcome exactly
+      // (foundation and proposals pass; the comparison fails with the saved
+      // detail byte-identically). This binds the artifact to this code state
+      // without trusting any report-level hash field.
+      wireBindingOk = recoveryOutputs.publicOutputs.every((entry, index) => {
+        const contract = rosterStrategistRoundOutputContractV1(
+          entry.roundKind);
+        const validation = validateStarcraftTmgProviderJsonSchemaValueV1(
+          contract.providerSchema, entry.sanitizedOutput);
+        if (index < 2) return validation.ok === true;
+        if (validation.ok !== false) return false;
+        const detail = "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:"
+          + validation.issues.slice(0, 8)
+            .map((issue) => `${issue.path}:${issue.code}`).join(",");
+        return detail === recoveryReport?.failureDetail;
+      });
+    }
+    if (recoveryReport?.status !== "failed"
+      || Number(recoveryReport?.repairRound || 0) !== RECOVERY_ROUND
+      || recoveryReport?.failureCode
+        !== "ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID"
+      || !Array.isArray(recoveryOutputs?.publicOutputs)
+      || recoveryOutputs.publicOutputs.length !== 3
+      || recoveryOutputs.publicOutputs.some((entry, index) => (
+        entry.roundKind !== ROUND_ORDER[index]
+          || entry.droppedForbiddenKeyPaths.length !== 0
+          || hashStarcraftTmgContract(entry.sanitizedOutput)
+            !== entry.outputHash))
+      || wireBindingOk !== true) {
+      console.error("LIVE_ROSTER_PLAN_RESUME_NOT_ADMITTED");
+      process.exitCode = 2;
+      return;
+    }
+    try {
+      await readFile(RESUME_PATHS.report);
+      console.error("LIVE_ROSTER_PLAN_RESUME_ALREADY_RECORDED");
+      process.exitCode = 2;
+      return;
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+    activePaths = RESUME_PATHS;
+    repairRound = RESUME_ROUND;
+    priorFailureReport = recoveryReport;
+    resumeSource = {
+      outputs: recoveryOutputs,
+      outputsArtifactHash: recoveryReport.publicOutputsArtifact?.hash ?? null,
+      providerReceiptHashesByRoundKind: Object.fromEntries(
+        ROUND_ORDER.map((roundKind, index) => [roundKind,
+          recoveryReport.providerReceipts?.[index]?.receiptHash ?? null])),
+      reportedModel: recoveryReport.provider?.reportedModel
+        ?? recoveryReport.providerReceipts?.[0]?.reportedModel ?? null,
+    };
+  } else if (recoveryMode) {
     // New authorization (269.17 follow-up): at most three additional
     // physical calls recorded outside the original ledger and lock, to
     // produce one valid complete plan after the narrative-capacity repair.
@@ -629,49 +731,58 @@ async function main() {
       ownFactionRecordKey: "tactical_cards:terran_armed_forces",
       opponentFactionRecordKey: "tactical_cards:kerrigan_s_swarm" });
 
-    // ---- Keychain -> isolated Worker BYOK attachment
-    const keychainIngress = await readStarcraftTmgDeepSeekCredentialFromKeychainV1();
-    credentialBytes = keychainIngress.credentialBytes;
-    const keychainReceipt = clone(keychainIngress.receipt);
-    const registry = createStarcraftTmgProviderProfileRegistryV2({
-      entries: [{ providerProfile, responsePath: "/responses" }],
-      allowedProviders: ["deepseek-openai-compatible-direct"],
-    });
-    const resolved = await registry.resolveEgressBinding({
-      profileRef: {
-        id: providerProfile.providerProfileId,
-        version: providerProfile.version,
-        hash: providerProfile.integrity.hash,
-      },
-    });
-    requireCondition(resolved.ok === true,
-      "LIVE_ROSTER_PLAN_PROFILE_RESOLUTION_FAILED");
-    const egressBinding = resolved.egressBinding;
-    coreWorker = createStarcraftTmgStructuredProviderWorkerPortV1({
-      providerProfileRegistry: registry,
-      handshakeTimeoutMs: 5_000,
-    });
-    attached = await coreWorker.attachCredential({
-      attachmentId: `ticket27-roster-attachment-${runId}`,
-      providerProfile,
-      credentialBytes,
-    });
-    requireCondition(attached?.ok === true && attached.workerRef,
-      "LIVE_ROSTER_PLAN_SECURE_ATTACHMENT_MISSING");
-    requireCondition(credentialBytes.every((byte) => byte === 0),
-      "LIVE_ROSTER_PLAN_PARENT_CREDENTIAL_NOT_ZEROED");
-    credentialBytes = null;
-    const workerRef = attached.workerRef;
+    // ---- Keychain -> isolated Worker BYOK attachment (live lanes only; the
+    // resume lane never touches the Keychain, a credential or a Worker)
+    let keychainReceipt = null;
+    let egressBinding = null;
+    let resolved = null;
+    let workerRef = null;
+    if (!resumeMode) {
+      const keychainIngress =
+        await readStarcraftTmgDeepSeekCredentialFromKeychainV1();
+      credentialBytes = keychainIngress.credentialBytes;
+      keychainReceipt = clone(keychainIngress.receipt);
+      const registry = createStarcraftTmgProviderProfileRegistryV2({
+        entries: [{ providerProfile, responsePath: "/responses" }],
+        allowedProviders: ["deepseek-openai-compatible-direct"],
+      });
+      resolved = await registry.resolveEgressBinding({
+        profileRef: {
+          id: providerProfile.providerProfileId,
+          version: providerProfile.version,
+          hash: providerProfile.integrity.hash,
+        },
+      });
+      requireCondition(resolved.ok === true,
+        "LIVE_ROSTER_PLAN_PROFILE_RESOLUTION_FAILED");
+      egressBinding = resolved.egressBinding;
+      coreWorker = createStarcraftTmgStructuredProviderWorkerPortV1({
+        providerProfileRegistry: registry,
+        handshakeTimeoutMs: 5_000,
+      });
+      attached = await coreWorker.attachCredential({
+        attachmentId: `ticket27-roster-attachment-${runId}`,
+        providerProfile,
+        credentialBytes,
+      });
+      requireCondition(attached?.ok === true && attached.workerRef,
+        "LIVE_ROSTER_PLAN_SECURE_ATTACHMENT_MISSING");
+      requireCondition(credentialBytes.every((byte) => byte === 0),
+        "LIVE_ROSTER_PLAN_PARENT_CREDENTIAL_NOT_ZEROED");
+      credentialBytes = null;
+      workerRef = attached.workerRef;
+    }
 
-    // ---- live deliberation port (single flight, never retried)
-    // Strict native schema output: each round is sent through the structured
-    // Provider Worker with the round's strict JSON schema in
-    // `text.format` (DeepSeek Responses `json_schema`), so the contracted
-    // public field set is enforced at generation time. The decoded output is
-    // validated locally against the same schema subset, then handed to the
-    // runtime, whose normalization boundary and full schema/Rules validation
-    // still run. Nothing is invented, filled or repaired.
-    const deliberation = Object.freeze({
+    // ---- deliberation port
+    // Live lanes: strict native schema output through the structured
+    // Provider Worker (single flight, never retried), the round's strict
+    // JSON schema in `text.format` (DeepSeek Responses `json_schema`).
+    // Resume lane: the persisted round-11 paid public answers are replayed
+    // byte-identically (fidelity re-hashed per round), zero Provider calls
+    // by construction. In both lanes the runtime's normalization boundary
+    // and full schema/Rules validation still run on every output; nothing
+    // is invented, filled or repaired.
+    const liveDeliberation = Object.freeze({
       descriptor: () => Object.freeze({
         kind: "live_keychain_isolated_worker_byok_structured_json_schema",
         modelVersion: providerProfile.model,
@@ -867,9 +978,57 @@ async function main() {
       },
     });
 
-    // ---- one bounded live planning session
+    // ---- persisted-round replay port (resume lane; zero Provider calls)
+    const persistedDeliberation = !resumeMode ? null : Object.freeze({
+      descriptor: () => Object.freeze({
+        kind: "persisted_round_replay_zero_provider",
+        modelVersion: resumeSource.reportedModel || providerProfile.model,
+        promptVersion: ROSTER_STRATEGIST_PROMPT_PACK_V1,
+        outputContractSetHash:
+          ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash,
+        paidProviderCalls: 0,
+        realProviderCalls: 0,
+        resumedFromRepairRound: RECOVERY_ROUND,
+        sourcePublicOutputsArtifactHash: resumeSource.outputsArtifactHash,
+        trainingTruth: false,
+      }),
+      async deliberate(request) {
+        const entry = resumeSource.outputs.publicOutputs.find((candidate) => (
+          candidate.roundKind === request.roundKind));
+        requireCondition(entry, "LIVE_ROSTER_PLAN_RESUME_ROUND_MISSING");
+        // Fidelity: the replayed answer must re-hash to the exact bytes the
+        // paid call produced (the sanitizer dropped nothing — verified at
+        // admission), and the contract-set binding checked at admission
+        // proves the answer was generated against the current schema set.
+        requireCondition(hashStarcraftTmgContract(entry.sanitizedOutput)
+          === entry.outputHash, "LIVE_ROSTER_PLAN_RESUME_FIDELITY_FAILED");
+        const receiptBody = {
+          providerKind: "persisted_round_replay_zero_provider",
+          modelVersion: resumeSource.reportedModel || providerProfile.model,
+          promptVersion: ROSTER_STRATEGIST_PROMPT_PACK_V1,
+          roundKind: request.roundKind,
+          contextHash: request.contextHash,
+          outputHash: entry.outputHash,
+          sourceProviderReceiptHash: resumeSource
+            .providerReceiptHashesByRoundKind[request.roundKind] ?? null,
+          usage: null,
+          usageStatus: "not_applicable_persisted_replay",
+          latencyMs: null,
+          paidProviderCall: false,
+          trainingTruth: false,
+        };
+        return Object.freeze({
+          output: clone(entry.sanitizedOutput),
+          receipt: Object.freeze({ ...receiptBody,
+            receiptHash: hashStarcraftTmgContract(receiptBody) }),
+        });
+      },
+    });
+    const deliberation = resumeMode ? persistedDeliberation : liveDeliberation;
+
+    // ---- one bounded planning session (live lane or persisted resume)
     const session = await strategist.planRoster({
-      sessionId: `ticket27-269-270-live-${runId}`,
+      sessionId: `ticket27-269-270-${resumeMode ? "resume" : "live"}-${runId}`,
       sideKey: "player1",
       factionRecordKey: "tactical_cards:terran_armed_forces",
       opponentFactionRecordKey: "tactical_cards:kerrigan_s_swarm",
@@ -893,16 +1052,23 @@ async function main() {
       },
     }, { deliberation, maxProposalRounds: 2 });
 
-    requireCondition(providerReceipts.length >= 3
-      && providerReceipts.length <= callCap,
-      "LIVE_ROSTER_PLAN_CALL_DENOMINATOR_DRIFT");
-    requireCondition(providerReceipts.every((receipt) => (
-      receipt.physicalAttempts === 1 && receipt.automaticRetries === 0
-        && receipt.status >= 200 && receipt.status < 300)),
-      "LIVE_ROSTER_PLAN_PHYSICAL_ATTEMPT_DRIFT");
-    requireCondition(providerReceipts.every((receipt) => (
-      receipt.reportedModel === providerProfile.model)),
-      "LIVE_ROSTER_PLAN_REPORTED_MODEL_DRIFT");
+    if (resumeMode) {
+      // Zero new Provider calls by construction: no receipt may exist and
+      // the send path was never reachable (no credential was attached).
+      requireCondition(providerReceipts.length === 0 && sentAttempts === 0,
+        "LIVE_ROSTER_PLAN_RESUME_PROVIDER_CALL_FORBIDDEN");
+    } else {
+      requireCondition(providerReceipts.length >= 3
+        && providerReceipts.length <= callCap,
+        "LIVE_ROSTER_PLAN_CALL_DENOMINATOR_DRIFT");
+      requireCondition(providerReceipts.every((receipt) => (
+        receipt.physicalAttempts === 1 && receipt.automaticRetries === 0
+          && receipt.status >= 200 && receipt.status < 300)),
+        "LIVE_ROSTER_PLAN_PHYSICAL_ATTEMPT_DRIFT");
+      requireCondition(providerReceipts.every((receipt) => (
+        receipt.reportedModel === providerProfile.model)),
+        "LIVE_ROSTER_PLAN_REPORTED_MODEL_DRIFT");
+    }
     requireCondition(verifyRosterStrategistSessionReceiptV1(
       session.sessionReceipt) === true
       && verifyRosterPlanRoundTripV1(session.plan) === true,
@@ -997,7 +1163,14 @@ async function main() {
     const providerReceiptsHash = await writeJson(activePaths.providerReceipts, {
       providerReceipts,
       keychainReceipt,
-      egressPolicyHash: resolved.egressBinding.policyHash,
+      egressPolicyHash: resolved ? resolved.egressBinding.policyHash : null,
+      resumeBinding: resumeMode ? {
+        providerCalls: 0,
+        replayedFromRepairRound: RECOVERY_ROUND,
+        sourcePublicOutputsArtifactHash: resumeSource.outputsArtifactHash,
+        sourceProviderReceiptHashesByRoundKind:
+          resumeSource.providerReceiptHashesByRoundKind,
+      } : null,
     });
     const comparisonHash = await writeJson(activePaths.comparison, comparison);
     const publicOutputsHash = await writeJson(activePaths.publicOutputs, {
@@ -1027,6 +1200,9 @@ async function main() {
     const totalCostCnyMicros = pricingReceipts.reduce((sum, receipt) => (
       sum + (receipt.calculatedCostCnyMicros
         ?? Math.ceil(receipt.calculatedCostNanoUsd * 8 / 1_000))), 0);
+    // The resume lane makes no paid call; its cost is exactly zero and the
+    // round-11 paid usage stays recorded in the recovery report only.
+    const pricingSnapshotHash = pricingReceipts[0]?.snapshotHash ?? null;
 
     const reportBody = {
       schemaVersion: "starcraft_tmg_ticket_27_live_roster_plan_report_v1",
@@ -1035,8 +1211,9 @@ async function main() {
       runId, startedAt, finishedAt: new Date().toISOString(),
       repairRound,
       priorAttemptsChain: priorFailureReport ? {
-        admittedRepairFlag: repairRound === RECOVERY_ROUND
-          ? RECOVERY_FLAG.slice(2) : `repair-round-${repairRound}`,
+        admittedRepairFlag: repairRound === RESUME_ROUND
+          ? RESUME_FLAG.slice(2) : repairRound === RECOVERY_ROUND
+            ? RECOVERY_FLAG.slice(2) : `repair-round-${repairRound}`,
         immediatePriorReport: {
           runId: priorFailureReport.runId,
           reportHash: priorFailureReport.reportHash,
@@ -1057,12 +1234,21 @@ async function main() {
             + "not retained (honest gap)",
         },
       } : null,
-      userAuthorization: { explicitFlags: [...REQUIRED_FLAGS],
+      userAuthorization: { explicitFlags: resumeMode
+          ? [RESUME_FLAG] : [...REQUIRED_FLAGS],
         repairRoundFlag: repairRound > 1
-          ? (repairRound === RECOVERY_ROUND
-            ? RECOVERY_FLAG : `repair-round-${repairRound}`)
+          ? (repairRound === RESUME_ROUND
+            ? RESUME_FLAG : repairRound === RECOVERY_ROUND
+              ? RECOVERY_FLAG : `repair-round-${repairRound}`)
           : null },
-      credentialHygiene: {
+      credentialHygiene: resumeMode ? {
+        ingress: "none_resume_lane_never_touches_keychain_or_credential",
+        keychainReceiptHash: null,
+        secretInArguments: false, secretInEnvironment: false,
+        rawCredentialPersisted: false, credentialHashPersisted: false,
+        parentCredentialZeroed: "not_applicable_no_credential_loaded",
+        credentialEnteredPrompt: false,
+      } : {
         ingress: "macos_login_keychain_generic_password_via_security_binary",
         keychainReceiptHash: keychainReceipt.receiptHash,
         secretInArguments: false, secretInEnvironment: false,
@@ -1070,7 +1256,19 @@ async function main() {
         parentCredentialZeroed: true,
         credentialEnteredPrompt: false,
       },
-      provider: {
+      provider: resumeMode ? {
+        providerId: providerProfile.provider,
+        requestedModel: providerProfile.model,
+        reportedModel: resumeSource.reportedModel,
+        providerProfileId: providerProfile.providerProfileId,
+        providerProfileHash: providerProfile.integrity.hash,
+        egressPolicyHash: null,
+        workerIsolation: "none_persisted_round_replay",
+        endpointDialect: "deepseek_responses_v1",
+        structuredOutputCapability: "responses_json_schema",
+        deliberationTransport: "persisted_round_replay_zero_provider",
+        newProviderCalls: 0,
+      } : {
         providerId: providerReceipts[0].providerId,
         requestedModel: providerReceipts[0].requestedModel,
         reportedModel: providerReceipts[0].reportedModel,
@@ -1120,11 +1318,14 @@ async function main() {
         })),
       },
       pricing: {
-        estimated: true,
-        estimationNote:
-          "cache-hit/miss fields filled conservatively (all miss) when the "
-          + "provider omits the breakdown",
-        snapshotHash: pricingReceipts[0].snapshotHash,
+        estimated: !resumeMode,
+        estimationNote: resumeMode
+          ? "resume lane: zero new Provider calls, zero new cost; the "
+            + "round-11 paid usage and cost stay recorded in "
+            + "recovery-report.json only"
+          : "cache-hit/miss fields filled conservatively (all miss) when the "
+            + "provider omits the breakdown",
+        snapshotHash: pricingSnapshotHash,
         totalCalculatedCostNanoUsd: totalCostNanoUsd,
         totalCalculatedCostCnyMicros: totalCostCnyMicros,
         pricingReceiptHashes: pricingReceipts.map((receipt) => (
@@ -1228,8 +1429,10 @@ async function main() {
       reportHash: hashStarcraftTmgContract(reportBody) };
     await writeFile(activePaths.report, `${JSON.stringify(report, null, 2)}\n`, {
       encoding: "utf8", mode: 0o600 });
-    console.log(`Ticket 27 Slices 269-270 live roster plan passed; `
-      + `calls=${providerReceipts.length}; model=${providerReceipts[0].reportedModel}; `
+    console.log(`Ticket 27 Slices 269-270 roster plan passed `
+      + `(${resumeMode ? "persisted-resume" : "live"}); `
+      + `calls=${providerReceipts.length}; model=${resumeMode
+        ? resumeSource.reportedModel : providerReceipts[0].reportedModel}; `
       + `input=${totals.inputUnits}; output=${totals.outputUnits}; `
       + `costCnyMicros=${totalCostCnyMicros}; planHash=${session.plan.planHash}`);
   } catch (error) {
