@@ -38,7 +38,7 @@ import {
 
 export const ROSTER_STRATEGIST_RUNTIME_MODULE =
   "packages/roster-strategist/roster-strategist-runtime-v1.mjs";
-export const ROSTER_STRATEGIST_RUNTIME_VERSION = "1.1.0";
+export const ROSTER_STRATEGIST_RUNTIME_VERSION = "1.2.0";
 export const ROSTER_STRATEGIST_DELIBERATION_SCHEMA =
   "starcraft_tmg_roster_strategist_deliberation_v1";
 export const ROSTER_STRATEGIST_DESCRIPTOR_SCHEMA =
@@ -1411,6 +1411,28 @@ export function createRosterStrategistRuntimeV1(input = {}) {
             ? entry.verdictOrRejection.summary.startingSupply : null,
           rulesErrorCode: entry.candidate.legalityStatus === "illegal"
             ? entry.candidate.legalityReceipt.rulesErrorCode : null,
+          // Deterministic component identities (sub-slice 269.11, closing
+          // the saved live round-8 blocker unit_binding:agent-unit-1): the
+          // strict comparison binding rule requires these exact identities,
+          // so the sealed context must publish them; they are derived
+          // positionally from the candidate content, never invented, and
+          // match the formats documented by the strict comparison schema.
+          factionCardInstanceId: `${sideKey}-faction`,
+          tacticalCards: entry.proposal.tacticalCardRecordKeys.map(
+            (recordKey, tacticalIndex) => ({
+              instanceId: `${sideKey}-tactical-${tacticalIndex + 1}`,
+              recordKey })),
+          units: entry.proposal.units.map((unit) => ({
+            unitInstanceId: unit.unitInstanceId,
+            recordKey: unit.recordKey,
+            compositionKind: unit.compositionKind,
+            compositionInstanceId: `${unit.unitInstanceId}-composition`,
+            upgrades: unit.upgrades.map((upgrade, upgradeIndex) => ({
+              upgradeName: upgrade.upgradeName,
+              instanceId:
+                `${unit.unitInstanceId}-upgrade-${upgradeIndex + 1}`,
+            })),
+          })),
         })),
         laboratoryNeverRanks: true,
         hostPreferenceWeights: false,
