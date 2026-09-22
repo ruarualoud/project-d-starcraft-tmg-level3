@@ -62,7 +62,7 @@
 
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { existsSync, readdirSync } from "node:fs";
-import { mkdir, open, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, open, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -910,7 +910,14 @@ export async function composeLiveCompanionStack(options = {}) {
         ...(body ? { body: JSON.stringify(body) } : {}),
       },
     );
-    return { status: response.status, envelope: await response.json() };
+    const rawText = await response.text();
+    let envelope = null;
+    try {
+      envelope = JSON.parse(rawText);
+    } catch {
+      envelope = null;
+    }
+    return { status: response.status, envelope, rawExcerpt: rawText.slice(0, 400) };
   }
 
   return {
@@ -1725,6 +1732,22 @@ async function mainContinuity() {
 
   const runId = randomUUID();
   const startedAt = new Date().toISOString();
+
+  // Stale-store hygiene: a previous epoch-3 attempt that failed BEFORE any
+  // dispatch (provably: failure report with physicalProviderCalls === 0 and
+  // no continuity locks — verified above) may leave its durable file behind.
+  // A pre-dispatch repair rerun starts from a clean store and records it;
+  // any post-dispatch failure keeps its locks and can never be rerun.
+  const previousEpoch3Report = await readReport(REPORT_PATH_EPOCH3);
+  let stalePreDispatchStoreCleared = false;
+  if (previousEpoch3Report && previousEpoch3Report.status === "failed") {
+    ensure(previousEpoch3Report.physicalProviderCalls === 0,
+      "LIVE_BYOK_CONTINUITY_RERUN_AFTER_DISPATCH_REFUSED", {
+        physicalProviderCalls: previousEpoch3Report.physicalProviderCalls,
+      });
+    await rm(path.dirname(CONTINUITY_SQLITE_PATH), { recursive: true, force: true });
+    stalePreDispatchStoreCleared = true;
+  }
   await mkdir(EVIDENCE_ROOT_EPOCH3, { recursive: true });
   await mkdir(path.dirname(CONTINUITY_SQLITE_PATH), { recursive: true });
 
@@ -1844,9 +1867,13 @@ async function mainContinuity() {
     page.on("pageerror", (error) => browserErrors.push(`${label}:page:${error.message}`));
   }
 
-  const okResult = (envelope, code) => {
-    ensure(envelope?.result?.ok === true, code, { result: envelope?.result });
-    return envelope.result;
+  const okResult = (response, code) => {
+    ensure(response?.envelope?.result?.ok === true, code, {
+      httpStatus: response?.status ?? null,
+      result: response?.envelope?.result ?? null,
+      raw: response?.envelope ? undefined : response?.rawExcerpt ?? null,
+    });
+    return response.envelope.result;
   };
 
   // A turn sent through the REAL browser UI: mention Kerrigan first so the
@@ -2057,6 +2084,12 @@ async function mainContinuity() {
       }
       const chat = page.getByTestId("companion-chat-section");
       await chat.getByTestId("companion-chat-provider-status").waitFor({ timeout: 60_000 });
+      // The status card renders "loading…" while the chat bootstrap is in
+      // flight; wait for the resolved projection before reading it.
+      await page.waitForFunction(() => {
+        const el = document.querySelector('[data-testid="companion-chat-provider-status"]');
+        return el && !el.innerText.includes("loading");
+      }, null, { timeout: 60_000 });
       return chat;
     };
 
@@ -2664,6 +2697,7 @@ async function mainContinuity() {
       attemptEpoch: 3,
       acceptance: "two-companion layered-memory continuity across a full server/session restart",
       previousEpochs: clone(previousEpochs),
+      stalePreDispatchStoreCleared,
       userAuthorization: {
         explicitFlag: "--authorize-live-byok-companion-memory-continuity",
         manifest: "ticket-26-slice-266f-companion-live-product-acceptance",
@@ -2816,6 +2850,19 @@ async function mainContinuity() {
         const message = String(error?.message || "").slice(0, 500);
         return containsStarcraftTmgOnlineCredentialMaterialV1(message)
           ? "[redacted: credential-shaped]" : message;
+      })(),
+      // Redaction-checked own-property details (rejection payloads etc.) for
+      // pre-dispatch diagnosis; anything credential-shaped is replaced.
+      errorDetails: (() => {
+        try {
+          const details = Object.fromEntries(Object.entries(error || {})
+            .filter(([key]) => !["stack", "message", "name", "cause"].includes(key)));
+          const serialized = JSON.stringify(details).slice(0, 2000);
+          return containsStarcraftTmgOnlineCredentialMaterialV1(serialized)
+            ? "[redacted: credential-shaped]" : serialized;
+        } catch {
+          return null;
+        }
       })(),
     }, REPORT_PATH_EPOCH3).catch(() => {});
     console.error(code);
