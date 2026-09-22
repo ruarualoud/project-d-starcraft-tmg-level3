@@ -6,6 +6,24 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r54 Queen token missing-search family repaired
+
+**51562 confirmed terminal exit1** at21:25:35Z. r54 is accepted/replayed;
+the next `spawn_creep_tumor` twice submitted(14000,13000), correctly rejected
+for missing Queen base contact. No Host asset option receipt: lifecycle
+coordinate family was omitted from both routing and solver, not bad solver
+coordinates. Shared classifier now routes it into existing asset search; actual
+frozen profile and parent footprint generate contact candidates, all still
+Rules-instantiated. Concrete real-r54 test red unsupported→one green33.131s,
+17instantiations/4overlap rejects/4options, unchanged invalid coordinate rejects,
+Queen unmoved/private state only,0Provider/¥0. No old gates or Web rebuild.
+Report `docs/ticket-23-slice-248-parent-contact-token-search-repair-2026-09-23.md`.
+128physical calls/estimated¥18.151836 at stop;47new+7prefix=r54. BothFlash.
+Next: same-r54 durable resume, load this and4fa061a, retain paid outputs/costs;
+observe real Host search→selection→Apply/Replay. No reroll of accepted actions.
+T23 stays33/36. Native K3 37154 still active S271, real UI click occlusion
+repair underway, no finished acceptance report.
+
 ### 2026-09-23 T23 / S248 — effect-claim subject repair; r53 live
 
 Keep **51562** running. r52 Creep Tumor and r53 Kerrigan Omega deployment have

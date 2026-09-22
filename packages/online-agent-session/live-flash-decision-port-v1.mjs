@@ -14,6 +14,8 @@ import {
   STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS,
   STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
 } from "./legal-formation-search-v1.mjs";
+import { isStarcraftTmgAssetPlacementDomainV1 as isAssetPlacementDomain } from
+  "./legal-asset-placement-search-v1.mjs";
 
 export const STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION =
   "starcraft_tmg_live_flash_decision_port_v1";
@@ -935,18 +937,6 @@ export function inspectStarcraftTmgChargeReachabilityV1(input = {}) {
     rulesAuthority: false,
     trainingTruth: false,
   });
-}
-
-function isAssetPlacementDomain(value) {
-  const domain = sourceActionDomain(value);
-  return domain?.actionType === "resolve_battlefield_asset_ability"
-      && domain?.parameterSchema?.coordinate?.type
-        === "world_point_milli_inches"
-    || domain?.actionType === "use_active_ability"
-      && domain?.effectKind === "omega_network"
-      && object(domain?.parameterSchema?.groundPoint)
-      && domain.parameterSchema.required?.includes("xMilliInches")
-      && domain.parameterSchema.required?.includes("yMilliInches");
 }
 
 function isFormationPlacementDomain(value) {

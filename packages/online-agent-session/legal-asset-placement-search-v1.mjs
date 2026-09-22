@@ -8,6 +8,8 @@ import { projectStarcraftTmgIncomingStationaryFireEstimateV1 } from
   "./legal-formation-search-v1.mjs";
 import { projectOfficialOmegaWormPieceV1 } from
   "../product-composition/official-selected-roster-ability-runtime-v1.mjs";
+import { getOfficialBattlefieldAssetComponentFootprintV1 } from
+  "../source-data/official-battlefield-asset-component-profile-v1.mjs";
 
 export const STARCRAFT_TMG_LEGAL_ASSET_PLACEMENT_SEARCH_VERSION =
   "starcraft_tmg_legal_asset_placement_search_v1";
@@ -390,7 +392,7 @@ function tacticalPlacementProjection(state, source, contract, candidate) {
 export function projectStarcraftTmgAssetPlacementMetricsV1({ state, domain,
   coordinate }) {
   const source = sourceDomain(domain);
-  const contract = placementContract(source);
+  const contract = placementContract(source, state);
   return contract && object(coordinate)
     ? tacticalPlacementProjection(state, source, contract, { coordinate }) : null;
 }
@@ -645,21 +647,43 @@ function candidatePrefilterFailure(state, source, contract, candidate) {
   return null;
 }
 
-function placementContract(source) {
+function placementKind(source) {
   if (source.actionType === "resolve_battlefield_asset_ability"
     && source.parameterSchema?.coordinate?.type
       === "world_point_milli_inches") {
-    return { kind: "coordinate",
-      physicalProfile: source.constraints?.physicalTokenProfile };
+    return "coordinate";
+  }
+  if (source.actionType === "resolve_unit_lifecycle_ability"
+    && source.effectKind === "spawn_creep_tumor"
+    && source.parameterSchema?.coordinate?.type === "world_point_milli_inches") {
+    return "parent_contact_coordinate";
   }
   if (source.actionType === "use_active_ability"
     && source.effectKind === "omega_network"
     && object(source.parameterSchema?.groundPoint)
     && source.parameterSchema.required?.includes("xMilliInches")
     && source.parameterSchema.required?.includes("yMilliInches")) {
-    return { kind: "ground_point",
-      physicalProfile: source.parameterSchema.groundPoint };
+    return "ground_point";
   }
+  return null;
+}
+
+export function isStarcraftTmgAssetPlacementDomainV1(domain) {
+  const source = sourceDomain(domain);
+  return object(source) && placementKind(source) !== null;
+}
+
+function placementContract(source, state) {
+  const kind = placementKind(source);
+  if (kind === "parent_contact_coordinate") {
+    return { kind: "coordinate", parentBaseContactRequired: true,
+      physicalProfile: getOfficialBattlefieldAssetComponentFootprintV1(
+        state.officialBattlefieldAssetComponentProfile, "creep_tumor") };
+  }
+  if (kind === "coordinate") return { kind,
+    physicalProfile: source.constraints?.physicalTokenProfile };
+  if (kind === "ground_point") return { kind,
+    physicalProfile: source.parameterSchema.groundPoint };
   return null;
 }
 
@@ -728,6 +752,32 @@ function candidateGenerator(state, domain, request, contract) {
       }, sourceCandidateKind);
     }
   };
+
+  if (contract.parentBaseContactRequired) {
+    // This ability's legal manifold is contact with the parent, not a board
+    // lattice or Creep Spread's entry-edge range. Preserve the requested
+    // strategic anchor, but solve actual token centers on that contact ring.
+    const actor = (state.pieces || []).find((entry) => entry.id === source.pieceId);
+    const tokenRadius = Number(physicalTokenProfile.baseDiameterMm) / 25.4 * 500;
+    for (const model of actor?.models || []) {
+      if (model.isDestroyed === true || model.isOnField === false) continue;
+      const point = worldPoint(model);
+      if (!point) continue;
+      const parentRadius = Math.max(Number(model.baseWidthInches),
+        Number(model.baseDepthInches)) * 500;
+      const distance = parentRadius + tokenRadius;
+      const preferredDistance = pointDistance(point, preferred);
+      if (preferredDistance > 0) add({
+        xMilliInches: point.xMilliInches
+          + (preferred.xMilliInches - point.xMilliInches) * distance / preferredDistance,
+        yMilliInches: point.yMilliInches
+          + (preferred.yMilliInches - point.yMilliInches) * distance / preferredDistance,
+      }, "parent_base_contact_toward_preferred_anchor");
+      ring(point, [distance], "parent_base_contact_ring");
+    }
+    return { candidates: [...candidates.values()], preferred, width, height,
+      extent, physicalTokenProfileAvailable: true };
+  }
 
   ring(preferred, [0, 1_500, 3_000, 6_000], "preferred_anchor_neighborhood");
 
@@ -807,7 +857,7 @@ export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
     || typeof instantiate !== "function") {
     throw new TypeError("LEGAL_ASSET_PLACEMENT_SEARCH_INPUT_INVALID");
   }
-  const contract = placementContract(source);
+  const contract = placementContract(source, state);
   if (!contract) {
     throw new TypeError("LEGAL_ASSET_PLACEMENT_DOMAIN_UNSUPPORTED");
   }
