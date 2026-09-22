@@ -5,11 +5,20 @@ Date: 2026-09-22. Status: deterministic acceptance complete (`269.1`, `270.1`,
 reproduced offline and closed by a typed public-output normalization
 boundary (`269.4`, `269.5`); the saved live round-5 omitted-field blocker was
 reproduced offline byte-identically and addressed on the generation side by a
-strict Provider JSON-schema output contract set (`269.7`); the single
-authorized post-repair live attempt (`269.8+270.7`, repair round 6) was
-executed and **failed closed again** — live acceptance remains **blocked by
-one open High finding** (no further attempts authorized; see the live
-section for the changed failure class).
+strict Provider JSON-schema output contract set (`269.7`); the saved live
+round-6 schema integer-bound blocker was reproduced offline byte-identically
+and closed by domain-owned integer bounds (`269.9`, contract set v1.1.0);
+the saved live round-7 component identity-drift blocker was reproduced
+offline byte-identically and closed by publishing the deterministic
+instance-identity convention in the comparison schema (`269.10`, contract
+set v1.2.0); the saved live round-8 unit identity-mismatch blocker was
+reproduced offline byte-identically and closed by sealing the deterministic
+component identities into the comparison-round request context (`269.11`,
+runtime 1.2.0). The continued authorized live lane (`269.12+270.8`, repair
+rounds 7–9 under the three-cycle convergence budget) **passed on repair
+round 9**: one actual generated Standard-2000 roster plus initial
+`RosterPlan` passed the Rules-owned port with full retained artifacts.
+Live acceptance is **met**; no open Critical/High finding remains.
 Slice manifest: `.agent-runtime/slice.json`
 (`ticket-27-slices-269-270-roster-strategy-and-live-plan`).
 Roadmap: `docs/ticket-27-slices-267-272-roster-strategist-roadmap-v1-2026-09-21.md`.
@@ -34,6 +43,13 @@ sub-slice.
 | 269.7 | Strict generation-side output contract set v1.0.0 closing the saved live round-5 omitted-field blocker. One versioned strict Provider JSON schema (subset `project_d_provider_json_schema_strict_v1`) per deliberation round kind, derived from the runtime validators; schemas bind field names, types, bounds and enums only — never roster content, candidate identity or strategy. `toolRequest` is a closed superset over every laboratory query family; the runtime's new kind-driven canonicalization drops schema-mandated placeholder fields, so placeholders never reach Rules or tool receipts and the deterministic plan hash is byte-identical. Every round request now carries `responseFormat` (schema, schemaName, versioned output contract ref); the runtime descriptor, round receipts and session receipt bind the contract set. The normalization boundary and full schema/Rules validation still run on every decoded output. | `packages/roster-strategist/roster-strategist-output-schemas-v1.mjs`, `packages/roster-strategist/roster-strategist-runtime-v1.mjs`, `packages/roster-strategist/index.mjs` |
 | 269.5 continuation (269.7 gate) | Focused regression coverage for the captured round-5 failure: offline replay reproduces the exact saved failure (`ROSTER_STRATEGIST_FOUNDATION_INVALID:evidence,hypothesisText,implication`) byte-identically; the captured shape is a wire-level rejection under the strict foundation schema (`required_field_missing` for the omitted contracted fields, `additional_property_forbidden` for `evidence`/`implication`); every scripted round output (foundation/proposals/comparison/revision) satisfies its strict schema, proving schema and runtime validator field sets agree; every recorded round request carries the schema; new checks failed before the runtime wiring (descriptor-binding assertion) and passed once after. Zero paid Provider calls. | `scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs` |
 | 269.8+270.7 | Exactly one authorized post-strict-schema live attempt (`--repair-round-6-after-strict-schema-generation`, chained to the preserved round-5 report, hard stop afterwards). The live deliberation port now uses the existing structured Provider Worker (`structured-provider-worker-port-v1`, profile registry v2, DeepSeek Responses dialect, capability `responses_json_schema`) with the round's strict JSON schema in `text.format`; lossless JSON normalization, local subset validation, usage extraction and redacted receipts follow the existing adapter discipline; auth/ambiguity stops unchanged. | `scripts/run-ticket-27-slices-269-270-live-roster-plan-v1.mjs`, artifacts under `build/ticket-27-slices-269-270-live-roster-plan-v1/` (gitignored) |
+| 269.9 | Domain-owned integer bounds closing the saved live round-6 blocker (`…vespeneLimitNumerator:integer_too_large`). Every integer bound in the output contract set is derived from the Rules-side domain rules — the laboratory accepts any safe integer for every math input (`integer()` in `pregame-scene-laboratory-v1.mjs`; its only tighter rule, `vespeneLimitDenominator >= 1`, is enforced there after canonicalization drops the zero placeholder) and the plan contracts accept any non-negative/positive safe integer — clipped to the strict subset's widest expressible bound (±1,000,000,000, `output-contract-registry-v1` `assertSchemaNode`). No value-, response- or roster-specific special case; deterministic plan/revision hashes byte-identical. Contract set v1.1.0. | `packages/roster-strategist/roster-strategist-output-schemas-v1.mjs` |
+| 269.9 gate | Focused regression coverage for the captured round-6 failure: offline replay against the preserved v1.0.0 bound reproduces the saved failure byte-identically; the captured shape passes the repaired schema; every superset math integer bound equals the domain rule clipped to the subset ceiling (proven widest by a subset rejection probe); the laboratory computes the exact value the v1.0.0 schema rejected; the captured foundation plans end-to-end. Fail-first run stopped at the acceptance assertion. Zero paid Provider calls. | `scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs` |
+| 269.10 | Deterministic instance-identity convention closing the saved live round-7 blocker (`faction_card_instance:mission_hold_position`). The strict subset cannot pattern-enforce identities, so the comparison schema now publishes the exact runtime-owned formats in field descriptions (`<sideKey>-faction`, `<sideKey>-tactical-<n>`, `agent-unit-<n>`, `<unitInstanceId>-composition`, `<unitInstanceId>-upgrade-<n>`, activation-order unit identity). General per component kind; runtime binding validation stays byte-for-byte strict. Contract set v1.2.0. | `packages/roster-strategist/roster-strategist-output-schemas-v1.mjs` |
+| 269.10 gate | Focused regression coverage for the captured round-7 failure: the drifted-instance shape is wire-valid and fails closed at the runtime binding byte-identically; the convention-publication check failed before the repair (fail-first) and passed once after. Zero paid Provider calls. | `scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs` |
+| 269.11 | Deterministic component identities sealed into the comparison-round request context, closing the saved live round-8 blocker (`unit_binding:agent-unit-1`). The strict binding rule requires runtime-owned identities, but the evaluated-candidates node published only hashes and verdicts, so the identities were not derivable from the request; the node now seals each candidate's faction card id, positional tactical-card ids, unit instance ids, composition ids and per-upgrade ids, derived positionally from candidate content (never invented). Runtime 1.2.0; plan hash byte-identical. | `packages/roster-strategist/roster-strategist-runtime-v1.mjs` |
+| 269.11 gate | Focused regression coverage for the captured round-8 failure: the mismatched-binding shape is wire-valid and fails closed byte-identically; the context-sealing check failed before the repair (fail-first) and passed once after. Zero paid Provider calls. | `scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs` |
+| 269.12+270.8 | Continued authorized live lane (user-authorized until one actual generated 2000-point roster plus initial `RosterPlan` passes the Rules-owned port, at most three new repair/live cycles). The runner admits repair rounds 7–9 only — the flag map is the hard maximum, no tenth flag exists; every attempt is separately locked, costed and retained with zero automatic retry; repairable failures are the typed public-output contract violations only, while 401/402/403, ambiguous dispatch, missing attachment, HTTP rejections, refusals, incomplete output and usage gaps stop the lane immediately. Rounds 7 and 8 failed closed (preserved reports); **round 9 passed**. (The runner-admission commit used the working label `269.10+270.8`; the closure table numbers it `269.12+270.8` for uniqueness.) | `scripts/run-ticket-27-slices-269-270-live-roster-plan-v1.mjs`, artifacts under `build/ticket-27-slices-269-270-live-roster-plan-v1/` (gitignored) |
 | Closure | Receipts, denominators, hash records, live accounting (calls, reported input/output tokens, estimated currency cost, latency, model/provider identity, prompt-pack/Skill routes) and honest gaps, each claim linked to an artifact or receipt. | this document |
 
 ## Authorities read (never modified)
@@ -64,24 +80,36 @@ sub-slice.
 ## Receipts
 
 Focused verifier `node scripts/verify-ticket-27-slices-269-270-roster-strategy-v1.mjs`
-passed once after the final relevant code change of sub-slice 269.7 (the
-fail-first run against the unwired runtime stopped at the descriptor-binding
-assertion, combined-output SHA-256
-`d023a9d9eb8d15e87ac865368aad170e8ec4fb0cfa3682e32de7476abcb97161`; two
-verifier-only declaration-order repairs followed, then the single passing
-run). Report schema
+passed once after the final relevant code change of sub-slice 269.11 (three
+fail-first runs stopped at the exact implicated assertions — 269.9 combined
+stdout/stderr SHA-256
+`b67b6a37d070fb590dc53927fda9305d4de78cbdd7fd7b553a795909001361fc`, 269.10
+`fb73a9105c71629e04457172b453abba7fc96042796f210e1be51d661ee59973`, 269.11
+`a9b9c11d4c49f2924d40bb1757e62995200016eb785e3c3c41fd7bbda944a9fc`, plus one
+verifier-only parenthesis repair — then the single passing run). Report schema
 `ticket27_slices_269_270_roster_strategy_report_v1`, `ok: true`; stdout
-report SHA-256 `00e5eb76fab615f5819c3219ea82d84b7546b17019a086e093bbc484dcc0add0`.
-Earlier receipt: the 269.4/269.5 gate passed with stdout SHA-256
-`fe2e32e128f3ab53c05e5541cc6a405817e96ffa7f5dff43e2167de6f2e413c1`
-(superseded by the 269.7 run above).
+report SHA-256
+`b61ef23325dc95da2ebb97c2d2e9087afefc21323bcc863b5a26a4e2ef09d7de`.
+Earlier receipts: the 269.4/269.5 gate passed with stdout SHA-256
+`fe2e32e128f3ab53c05e5541cc6a405817e96ffa7f5dff43e2167de6f2e413c1`; the
+269.7 gate passed with stdout SHA-256
+`00e5eb76fab615f5819c3219ea82d84b7546b17019a086e093bbc484dcc0add0`; the
+269.9 gate passed with stdout SHA-256
+`3d15ecbca3253094e533bef988f4112d50cf63e54f1d718b6b671a909a704263`; the
+269.10 gate passed with stdout SHA-256
+`6a077114b26f064a4421135265e7db9af04d80cc5456687b467918df65f8ec10` (all
+superseded by the 269.11 run above).
 
 ### Denominators (deterministic, mocked Provider, 0 paid calls)
 
-- Slice 269 strategist checks: **41/41** (23 original + 7 round-4 alias-drift
+- Slice 269 strategist checks: **51/51** (23 original + 7 round-4 alias-drift
   regression checks from sub-slice 269.5 + 11 strict generation-schema and
-  round-5 replay checks from sub-slice 269.7).
-- Slice 270 laboratory checks: **18/18** (unchanged).
+  round-5 replay checks from sub-slice 269.7 + 4 round-6 schema-bound replay
+  checks from sub-slice 269.9 + 3 round-7 identity-drift replay checks from
+  sub-slice 269.10 + 3 round-8 identity-mismatch replay checks from
+  sub-slice 269.11).
+- Slice 270 laboratory checks: **19/19** (18 original + 1 round-6 domain
+  computation check from sub-slice 269.9).
 - Multi-round planning trace: `strategy_foundation > candidate_proposals >
   comparison_selection` — 3 scripted deliberation rounds, 1 typed Rules
   rejection (`ARMY_SLOT_CAPACITY_EXCEEDED`, over-capacity stress candidate,
@@ -97,10 +125,10 @@ Earlier receipt: the 269.4/269.5 gate passed with stdout SHA-256
   `925619d50a16a5e42529e49244b60ea4f4cdacbbe915a170c933eab84fe8d39a`
   (unchanged by the normalization boundary — mock outputs are contracted, so
   normalization is an identity there — and unchanged by the 269.7 strict
-  schema wiring: the runtime's kind-driven canonicalization drops the
-  schema-mandated placeholder fields, so the laboratory receives exactly the
-  minimal per-kind requests it always received and every tool receipt hash is
-  byte-identical).
+  schema wiring, the 269.9 integer-bound repair, the 269.10 identity
+  convention and the 269.11 context sealing: none of them alters the mock
+  outputs, the canonical per-kind laboratory requests or any tool receipt,
+  so every hash is byte-identical).
 - Revision chain: plan v2 `revised` hash-binds v1
   (`e938fa1b520aaa298e3f1091b2b814537ffb22af698aa032ed4cb824b8dc8d98`).
 - Negative gates: hidden chain-of-thought field rejected
@@ -133,6 +161,40 @@ Earlier receipt: the 269.4/269.5 gate passed with stdout SHA-256
   the revision round) carries the round's schema, schema name and versioned
   output contract ref, and the round receipts and session receipt bind the
   contract set.
+- Round-6 schema-bound regression (sub-slice 269.9): the captured shape (a
+  third math information need at `$.informationNeeds[2]` whose
+  `vespeneLimitNumerator` exceeds the v1.0.0 cap of 1,000; the exact model
+  value was never persisted, so the replay uses 2,000 — the session's own
+  mineral budget and the smallest representative over-bound value) replays
+  offline against the preserved v1.0.0 bound and fails with
+  `ROSTER_STRATEGIST_STRUCTURED_OUTPUT_SCHEMA_INVALID:$.informationNeeds[2].toolRequest.inputs.vespeneLimitNumerator:integer_too_large`
+  — byte-identical to `repair-round-6-report.json` `failureDetail`
+  (`OFFLINE_REPLAY_MATCHES_SAVED_ROUND6_FAILURE`, 0 Provider calls); the
+  identical shape passes the repaired v1.1.0+ schema; every superset math
+  integer bound is the domain non-negative safe-integer rule clipped to the
+  strict-subset ceiling ±1,000,000,000 (proven widest by a subset rejection
+  probe at 1,000,000,001); the laboratory computes the captured numerator
+  with exact integer arithmetic (`vespeneLimit.numerator` 4,000,000); the
+  captured foundation plans end-to-end with the need answered.
+- Round-7 identity-drift regression (sub-slice 269.10): the captured drifted
+  faction-card instance (`mission_hold_position`) is wire-valid and fails
+  closed at the strict runtime binding with
+  `ROSTER_STRATEGIST_COMPARISON_INVALID:faction_card_instance:mission_hold_position`
+  — byte-identical to `repair-round-7-report.json` `failureDetail`
+  (`OFFLINE_REPLAY_MATCHES_SAVED_ROUND7_FAILURE`, 0 Provider calls); the
+  comparison schema publishes the deterministic instance-identity convention
+  for every component kind and the activation order.
+- Round-8 identity-mismatch regression (sub-slice 269.11): the captured
+  mismatched unit binding (`agent-unit-1` paired with the goliath recordKey;
+  the exact recordKey the model wrote was never persisted, so the replay
+  uses the smallest representative menu-known mismatch) is wire-valid and
+  fails closed with
+  `ROSTER_STRATEGIST_COMPARISON_INVALID:unit_binding:agent-unit-1` —
+  byte-identical to `repair-round-8-report.json` `failureDetail`
+  (`OFFLINE_REPLAY_MATCHES_SAVED_ROUND8_FAILURE`, 0 Provider calls); the
+  comparison-round request now seals every evaluated candidate's
+  deterministic faction/tactical/unit/composition/upgrade identities into
+  the evaluated-candidates node.
 - Laboratory: reserve source state yields `unknown` spatial/probability
   receipts (never zeroed); A/B hypothetical-geometry branches from the same
   source state diverge exactly (Marine→Corpser base-edge distance 1385 vs
@@ -147,16 +209,18 @@ Earlier receipt: the 269.4/269.5 gate passed with stdout SHA-256
 ### Hash receipts (deterministic)
 
 - Strategist runtime descriptor:
-  `98be35832c3a5227bedf2bdbef59b1cfb9094c3de13aed32a8f44b3d0df669bd`
-  (supersedes `5c760a93…`: the descriptor now additionally binds the strict
-  generation-side output contract set; runtime version `1.1.0`).
-- Strict output contract set v1.0.0:
-  `0f6ddb04ded5a352cb897f2de5d73166eb819ef633ab83ccc17f89018231b5a1`
+  `932645677d03919fd9347ad5e3b5f43724c69c6326fe6c94d2de439dfb1bf45d`
+  (supersedes `98be3583…` and `633e670d…`: runtime version `1.2.0` binds the
+  v1.2.0 contract set and seals deterministic component identities into the
+  comparison-round context).
+- Strict output contract set v1.2.0:
+  `059f948091ce086c6025e06b06b019adb63d94fa41b6b5e6a54bef339b60587d`
   (`starcraft_tmg_roster_strategist_output_contract_set_v1`; per-round
-  contracts `roster_strategy_foundation_v1` `e874a5ae…`,
-  `roster_strategy_proposals_v1` `c612e3fd…`,
-  `roster_strategy_comparison_v1` `c6a5f0b3…`,
-  `roster_strategy_revision_v1` `9ccc4b18…`).
+  contracts `roster_strategy_foundation_v1` `d7ee89cb…`,
+  `roster_strategy_proposals_v1` `3c331e99…`,
+  `roster_strategy_comparison_v1` `55bd100a…`,
+  `roster_strategy_revision_v1` `96cbb621…`; supersedes v1.0.0
+  `0f6ddb04…` and v1.1.0 `993cc061…`).
 - Laboratory descriptor:
   `368eb71df81e62b3f1046e4ff929eebb80ab227bb60860010e0f3597817b604f`.
 - Source Room state: `c388ce539409ac4bad091a51b6e0431bf6e80fef284e98ef059fd31bd0430b5b`;
@@ -169,11 +233,11 @@ Earlier receipt: the 269.4/269.5 gate passed with stdout SHA-256
   `starcraft-tmg.matchup.terran_armed_forces-to-kerrigan_s_swarm`
   `1.0.0-offline-bounded-evaluation` — exact portable manifest only, Skills
   advisory (`canAffectRules: false`).
-- Session receipt `8abd047b88e353ba7b72b79fb02e60eaf576f6434715fbb0c751b3df9590ed83`
-  (supersedes `485da57e…`: it now records the output contract set hash,
-  `structuredGenerationEnforced: true` and the per-round contract refs; the
-  deliberation receipt hashes moved because the scripted mock outputs adopt
-  the schema's closed-superset `toolRequest` wire shape);
+- Session receipt `0a6635ec31d6f1c06ba3af2dc5990f82aa85c9e1e0f307e3d94e9809a39acfc2`
+  (supersedes `8abd047b…`, `afbf1827…` and `b85012b1…`: it binds the v1.2.0
+  contract set and the identity-sealed comparison-round context; the
+  deterministic plan hash `925619d5…` and revision hash `e938fa1b…` remain
+  byte-identical across every generation-contract repair);
   probability estimate `d0b04d0811f46ffe31bda04463795c2503ec2073f6c434c0fd0ff52e978fb77a`;
   threat-exchange estimate `ef4b0a299d715c6bcab82eb203602b11d30ec892550150fe9278d71742380cbf`;
   same-state A/B receipt `29b13a1fd237d7470e86a08e47f8eec5be8763fb427f5a8cb018a19124930ce2`;
@@ -219,19 +283,45 @@ Earlier receipt: the 269.4/269.5 gate passed with stdout SHA-256
   byte-identical to the pre-269.7 gate, so canonicalization keeps every
   laboratory call and receipt unchanged.
 
-## Live verification (269.3+270.3, 269.6+270.6 and 269.8+270.7) — blocked, High
+### Generation-contract repair receipts (sub-slices 269.9–269.11, 0 Provider calls)
+
+- 269.9 domain-owned integer bounds: fail-first run stopped at the round-6
+  acceptance assertion (combined stdout/stderr SHA-256
+  `b67b6a37d070fb590dc53927fda9305d4de78cbdd7fd7b553a795909001361fc`); the
+  gate passed once after the repair (stdout SHA-256
+  `3d15ecbca3253094e533bef988f4112d50cf63e54f1d718b6b671a909a704263`,
+  contract set v1.1.0 `993cc061…`, 45+19 checks).
+- 269.10 instance-identity convention: fail-first run stopped at the
+  convention-publication assertion (combined SHA-256
+  `fb73a9105c71629e04457172b453abba7fc96042796f210e1be51d661ee59973`); the
+  gate passed once after the repair (stdout SHA-256
+  `6a077114b26f064a4421135265e7db9af04d80cc5456687b467918df65f8ec10`,
+  contract set v1.2.0 `059f9480…`, 48+19 checks).
+- 269.11 identity sealing: fail-first run stopped at the context-sealing
+  assertion (combined SHA-256
+  `a9b9c11d4c49f2924d40bb1757e62995200016eb785e3c3c41fd7bbda944a9fc`, after
+  one verifier-only parenthesis repair); the gate passed once after the
+  repair (stdout SHA-256
+  `b61ef23325dc95da2ebb97c2d2e9087afefc21323bcc863b5a26a4e2ef09d7de`,
+  runtime descriptor `93264567…`, 51+19 checks).
+- Content-neutrality proof across all three repairs: deterministic plan hash
+  `925619d5…` and revision hash `e938fa1b…` are byte-identical in every
+  passing run; no runtime validator, Rules check or laboratory receipt moved.
+
+## Live verification (269.3+270.3, 269.6+270.6, 269.8+270.7 and 269.12+270.8) — passed on repair round 9
 
 Runner `scripts/run-ticket-27-slices-269-270-live-roster-plan-v1.mjs`
 (two explicit authorization flags, one-attempt lock, macOS Keychain →
 isolated Provider Worker BYOK, DeepSeek flash profile
 `starcraft-tmg.live-opponent.deepseek-v4-1-flash.v1`, no retry, stop on
-401/402/403/ambiguous dispatch/missing attachment). Six bounded attempts
-were made — the initial attempt, the three permitted repair rounds, the
-single authorized post-normalization-boundary retry, and the single
-authorized post-strict-schema attempt — each with exactly **1** physical
-Provider call, **0** automatic retries, reported model `deepseek-flash`,
-HTTP 2xx transport. All six failed the strategist's strict public output
-contract on the host side:
+401/402/403/ambiguous dispatch/missing attachment). Nine bounded attempts
+were made — the initial attempt, the three original repair rounds, the
+single authorized post-normalization-boundary retry, the single authorized
+post-strict-schema attempt, and the three user-authorized continuation
+cycles (rounds 7–9) — every attempt separately locked, costed and retained
+with **0** automatic retries, reported model `deepseek-flash`, HTTP 2xx
+transport. Attempts 1–6 each made exactly **1** physical Provider call and
+failed the strategist's strict public output contract on the host side:
 
 1. Round 1: model wrapped the answer in the transport's `channels` envelope
    (`ROSTER_STRATEGIST_OUTPUT_INVALID`); receipt
@@ -292,7 +382,7 @@ contract on the host side:
    at `build/ticket-27-slices-269-270-live-roster-plan-v1/live-report.json`
    (`383c61d06889de2dd438be1385ad2a6dd9fc9db6d3423970d41f8ac116e46534`, file
    SHA-256 `fc7eec8eaa0a3e6e99e7a0f83313defc1d3c17174d264b4fab5a24dda30838f7`;
-   it becomes `repair-round-6-report.json` on the next admitted attempt, per
+   preserved as `repair-round-6-report.json` when round 7 was admitted, per
    the preservation design); call receipt
    `112c38c0d200390313791b9e83b95aaba800d2c58db71d2411fa4b5da9d2f127`,
    19,634 in / 6,133 out / 25,767 total reported units (0 cache-hit /
@@ -300,89 +390,194 @@ contract on the host side:
    `roster_strategy_foundation_v1` bound in the transport receipt
    (`schemaHash`/`requestBodyHash`/`outputContractRef`).
 
-The authorization was for exactly one new attempt; **no seventh attempt was
-made and none is authorized.** Every attempt report is now preserved under
-its own `repair-round-N-report.json` (rounds 3–5 on disk; rounds 1–2 lost
-to the historical single-report-path design, honest gap below). The final
-Keychain attachment was detached (`detachCredential` in the runner's
-`finally` path) and the parent-side credential bytes verified zeroed in
-every attempt (`credentialBytes.every(byte === 0)` assertion before
-nulling, `fill(0)` in `finally`); every report records
-`rawCredentialPersisted: false`, `rawPromptPersisted: false`,
-`rawResponsePersisted: false`, and the report directory contains only the
-redacted JSON receipts inspected above — zero credential persistence. No
-raw credential entered the prompt, the repository, the command line,
-stdout/stderr, the reports or logs.
+The user then explicitly authorized continued real BYOK attempts until one
+actual generated 2000-point roster plus initial `RosterPlan` passes the
+Rules-owned port, bounded to three new repair/live cycles (the runner's
+repair-flag map is the hard maximum — no tenth flag exists). Each cycle
+changed only the directly implicated generation contract after a focused
+offline fail-first check:
 
-**Open High finding (blocks live acceptance):** the strict generation-side
-schema closed the round-5 failure class — round 6 proves the model can and
-does emit the complete contracted public field set when the Provider
-enforces the schema — but the session still failed closed on a
-schema-internal integer bound (`toolRequest.inputs.vespeneLimitNumerator`
-max 1,000) that is tighter than the laboratory domain (any safe integer).
-The failure is now a *schema calibration* defect authored on the host side,
-not a model omission: the minimal, general follow-up is to widen the
-placeholder/superset integer bounds to the laboratory's actual safe-integer
-domain (or move placeholder-free fields out of the superset), then run one
-newly authorized live attempt. No roster content, candidate identity or
-strategy is implicated; the bound is content-free. Follow-up scope requires
-new authorization, not silent retries.
+7. Repair round 7 (`--repair-round-7-after-domain-integer-bounds`, contract
+   set v1.1.0): the foundation round passed the repaired schema and the
+   proposals round passed; the comparison round failed closed at the strict
+   runtime binding — the model invented a semantic faction-card instanceId
+   (`mission_hold_position`, the mission record name) instead of the
+   runtime-owned deterministic identity →
+   `ROSTER_STRATEGIST_COMPARISON_INVALID:faction_card_instance:mission_hold_position`.
+   Report preserved at
+   `build/ticket-27-slices-269-270-live-roster-plan-v1/repair-round-7-report.json`;
+   3 calls, 40,335 total reported units, receipts
+   `ea27b3576f5f793e02…`, `c2299db8226138aa…`, `d3d629de25af77b53b…`.
+8. Repair round 8 (`--repair-round-8-after-generation-contract-repair`,
+   contract set v1.2.0 with the published identity convention): the
+   faction-card identity was now correct, but the model paired a unit
+   purpose recordKey with the wrong deterministic unit id →
+   `ROSTER_STRATEGIST_COMPARISON_INVALID:unit_binding:agent-unit-1`. Root
+   cause: the sealed comparison-round context published only candidate
+   hashes and verdicts, never the candidates' unit lists, so the
+   runtime-owned identities were not derivable from the request at all.
+   Report preserved at
+   `build/ticket-27-slices-269-270-live-roster-plan-v1/repair-round-8-report.json`;
+   3 calls, 39,682 total reported units, receipts
+   `379ff5f84c310a38…`, `c8d3ddf48bbedeaf…`, `038bf991987863e8…`.
+9. Repair round 9 (`--repair-round-9-after-generation-contract-repair`,
+   runtime 1.2.0 sealing deterministic component identities into the
+   evaluated-candidates node): **passed**. One actual generated
+   Standard-2000 roster plus initial `RosterPlan` went through the full
+   three-round deliberation (foundation → proposals → comparison), the
+   normalization boundary and full schema/Rules validation, and the final
+   roster was re-validated through the Rules-owned Army Builder port with a
+   matching audit result hash. 3 calls, 31,595 in / 9,747 out / 41,342
+   total reported units, 51,029 ms total latency, all HTTP 200,
+   `deepseek-flash`, 0 automatic retries. Live report
+   `build/ticket-27-slices-269-270-live-roster-plan-v1/live-report.json`
+   (`0bcba524184c8b7c91294f4739ffafc4dce169a3d7016b271b16706990ceb585`).
 
-**Consequence:** no live-generated `RosterPlan` artifact exists; the
-preset-roster comparison with `planStatus=no_pregame_plan` is implemented in
-the runner but has no passing live counterpart. Live acceptance per the task
-brief is **not** met; integration review should treat this as the single
-blocking finding for `269.3+270.3`/`269.6+270.6`/`269.8+270.7`.
+Round-9 retained success artifacts (all redacted; no raw prompt, response
+or credential anywhere):
+
+- `RosterPlan` `a1e5345090e0bb6355e11d6a4843a2b405dccc6f711fdd7c07c7975a3a2f5407`
+  (`roster-plan.json`, file hash
+  `bda8cb0d0dfdb10321dfd8168b9ef8d112d6d12b03f713642e4bd88ff0408bed`):
+  planStatus `active`, selected candidate
+  `terran_marker_hold_balanced_core`, Rules-legal Standard roster
+  (940/2,000 minerals, 90 vespene, final audit result hash
+  `3580ecbd13e825a376597a7ca7139bf065466dba6630e445d2030c4a3c76ed90`,
+  re-proven through the port at plan time and re-validated by the runner),
+  explicit win route `mission_marker_control` (schedule honestly `unknown`),
+  declared 8-step activation order, declared loss budget, 5 opponent
+  hypotheses, 9 counter-responses, 7 invalidation triggers, 17 component
+  purposes and a public summary — public reasoning throughout, no hidden
+  chain-of-thought.
+- Tool receipts: 8 references (math, spatial and simulation/probability
+  kinds; 5 attached with results, 3 honestly `unknown` — unknown is never
+  promoted to zero), `tool-receipts.json` hash
+  `494f113661dd3c4655b4e086991e8726280f7741ce56263c8e1b7ec70bed767f`;
+  laboratory mutation-zero proof `sourceStateMutationCount: 0` over 5
+  operations, source state hash unchanged
+  (`c388ce539409ac4bad091a51b6e0431bf6e80fef284e98ef059fd31bd0430b5b`).
+- Planning trace + session receipt (`planning-trace.json` hash
+  `e24cc094883e37c3c94df227171aa760a634efe15e2d4b61ca6153c15c10ad1a`,
+  session receipt `178ab72786e0228d155996387b2778d910594e965d732d69d82e6bed746d2f16`).
+- Redacted Provider receipts + Keychain ingress receipt
+  (`provider-receipts-redacted.json` hash
+  `151224d1bb43ed1df71021a6f2fb2da4fb3de5c13fdbf94f11ed62bef4363bd8`);
+  per-call receipt hashes
+  `0248a5c6b21fd9a94478a965dce37a090b8e32b00be9dec7c32201d4dd572cc4`,
+  `8260b2fb746fa0cc475ef511211d7d9327bbe6015670a5b4a024901be9f07819`,
+  `83c10dd8f3a87300d18c34a70583b39dd6a7fad4cbd8f945fec027662ee64f0d`.
+- Pricing receipt: snapshot
+  `b16568816783b8deb7d529aefbaaea723d998e9251f73ccaf9a56fe9bf0541db`,
+  7,407,546 nano-USD total, 59,262 CNY micros (≈ ¥0.0593); pricing receipt
+  hashes `bc762b03…`, `797efa4b…`, `aa0285f9…`.
+- Fixed preset-roster comparison (`preset-comparison.json` hash
+  `9983ceba9e1f7f452588c4bb1268c5998e3a7b54588cc2e9c2a065615f1a7bd6`):
+  preset arm `planStatus=no_pregame_plan` (2,000 minerals / 115 vespene,
+  audit `e5d86280…`) against the Agent arm above, matched on mission,
+  deployment, map topology, scale, budget, opponent faction and model;
+  list quality explicitly separated from play quality (no match played).
+- Credential hygiene for every attempt, including round 9: Keychain
+  ingress via the existing secure path only, one isolated-Worker
+  attachment, `detachCredential` in the runner's `finally` path and
+  parent-side credential bytes verified zeroed before nulling
+  (`credentialBytes.every(byte === 0)` assertion, `fill(0)` in `finally`);
+  every report records `rawCredentialPersisted: false`,
+  `rawPromptPersisted: false`, `rawResponsePersisted: false`; the report
+  directory contains only the redacted JSON receipts inspected above —
+  zero credential persistence.
+
+Every attempt report is now preserved under its own
+`repair-round-N-report.json` (rounds 3–8 on disk; rounds 1–2 lost to the
+historical single-report-path design, honest gap below). Round 9's success
+report chains the preserved round-8 failure report
+(`priorAttemptsChain.immediatePriorReport.reportHash`
+`a6f77abef61ddf70f4ea97651e1cee6adee1174d6d898d310b08284dec894e64`).
+
+**Resolved High finding (previously blocking):** the round-6 schema-internal
+integer bound (`vespeneLimitNumerator` max 1,000, tighter than the
+laboratory domain) was repaired generally in 269.9 by deriving every
+integer bound from the domain-owned safe-integer rules clipped to the
+strict-subset ceiling; rounds 7–8 exposed and closed the two remaining
+host-side identity-contract gaps (269.10 convention publication, 269.11
+context sealing); round 9 passed end-to-end. No Critical/High finding
+remains open.
+
+**Consequence:** a live-generated Rules-legal `RosterPlan` now exists and
+the preset-roster comparison with `planStatus=no_pregame_plan` has its
+passing live counterpart. Live acceptance per the task brief is **met**.
 
 ## Accounting
 
-- Deterministic gate: 0 Provider calls, ¥0 (one fail-first run, two
-  verifier-only declaration-order repairs, one passing run after the final
-  code change; offline replays 0 calls).
-- Live attempts: 6 Provider calls total (1 per attempt), all DeepSeek
-  `deepseek-flash`, HTTP 2xx, physical attempts 1, automatic retries 0.
-  Retained usage: round 3 — 16,561 in / 1,372 out / 17,933 total units,
+- Deterministic gate: 0 Provider calls, ¥0 (one fail-first run and one
+  passing run per repaired class — 269.7, 269.9, 269.10, 269.11 — plus
+  verifier-only repairs; offline replays 0 calls).
+- Live attempts: 15 Provider calls total across 9 separately locked,
+  costed and retained attempts (rounds 1–6: 1 call each; rounds 7–9: 3
+  calls each), all DeepSeek `deepseek-flash`, HTTP 2xx, automatic retries
+  0. Retained usage: round 3 — 16,561 in / 1,372 out / 17,933 total units,
   9,742 ms; round 4 — 17,612 total units; round 5 — 16,561 in / 1,316 out /
   17,877 total units (16,384 cache-hit / 177 cache-miss), 9,453 ms;
   round 6 — 19,634 in / 6,133 out / 25,767 total units (0 cache-hit /
-  19,634 cache-miss), 31,497 ms.
-  Rounds 1–2 usage not retained (report-format gap above). Estimated cost of
-  the retained calls at the current DeepSeek snapshot (pricing v2, snapshot
-  `b16568816783b8deb7d529aefbaaea723d998e9251f73ccaf9a56fe9bf0541db`): round 5
-  1,730,604 nano-USD (≈ ¥0.0138 at the conservative 8.0 fallback rate;
-  pricing v2 exposes no CNY figure), round 6 6,624,900 nano-USD
+  19,634 cache-miss), 31,497 ms; round 7 — 40,335 total units across 3
+  calls (25,367 + 5,914 + 9,054), 47,165 ms; round 8 — 39,682 total units
+  across 3 calls (24,500 + 6,169 + 9,013), 51,339 ms; round 9 (passed) —
+  31,595 in / 9,747 out / 41,342 total units across 3 calls
+  (24,889 + 5,702 + 10,751), 51,029 ms.
+  Rounds 1–2 usage not retained (report-format gap below). Estimated cost
+  at the current DeepSeek snapshot (pricing v2, snapshot
+  `b16568816783b8deb7d529aefbaaea723d998e9251f73ccaf9a56fe9bf0541db`):
+  round 5 1,730,604 nano-USD (≈ ¥0.0138 at the conservative 8.0 fallback
+  rate; pricing v2 exposes no CNY figure), round 6 6,624,900 nano-USD
   (≈ ¥0.0530, pricing receipt
-  `4b3101adf834b91fac545fe9c43748d033e0d5873edbb6f2614182940e4cdda2`,
-  computed offline from the redacted usage receipt), rounds 3–4 well under
-  ¥0.05 each; no ¥100 threshold crossed.
+  `4b3101adf834b91fac545fe9c43748d033e0d5873edbb6f2614182940e4cdda2`),
+  round 7 10,314,786 nano-USD (≈ ¥0.0825, computed offline from the
+  redacted usage receipts), round 8 7,138,890 nano-USD (≈ ¥0.0571,
+  computed offline the same way), round 9 7,407,546 nano-USD
+  (59,262 CNY micros ≈ ¥0.0593, runner pricing receipts `bc762b03…`,
+  `797efa4b…`, `aa0285f9…`); rounds 3–4 well under ¥0.05 each; no ¥100
+  threshold crossed.
 - No source refresh, no Room mutation (mutation-zero proof in both the gate
   and the live runner), no Skill generation/promotion, no training truth.
 - Credential hygiene for every attempt: Keychain ingress via the existing
   secure path only, one isolated-Worker attachment, `detachCredential` and
   parent-side zero-fill in the runner's `finally` path, zero credential
-  persistence (all six reports record `rawCredentialPersisted: false`,
+  persistence (all nine reports record `rawCredentialPersisted: false`,
   `rawPromptPersisted: false`, `rawResponsePersisted: false`).
 
 ## Remaining honest gaps (nonblocking)
 
 - The strategist runtime validates the structure, provenance and Rules
   legality of a plan; it cannot judge the strategic quality of public prose.
+  The passing live roster spent 940 of 2,000 minerals — Rules-legal with
+  large headroom; list quality vs play quality is separated in the
+  comparison artifact and match-play evidence remains Slice 272 scope.
 - Scenario branches are advisory hypothetical geometry (or Rules-legal
   lifecycle transitions on clones); hypothetical placements claim no Rules
   legality.
 - The laboratory reports opponent return fire as unknown by contract; it is
-  never promoted to zero.
+  never promoted to zero (three of the eight live round-9 tool receipts are
+  honestly `unknown`).
+- The round-9 win route declares `mission_marker_control` with
+  `scheduleStatus: unknown` — the contract permits declared-or-unknown and
+  the runtime never forces a fabricated schedule.
 - Live runner repair-round reports historically shared one report path, so
   the round-1/round-2 failure reports are lost (round-1 receipt hash
   retained); from sub-slice 269.6+270.6 every admitted prior failure report
   is preserved to its own `repair-round-N-report.json` before the single
-  live-report path is rewritten (rounds 3–5 preserved).
+  live-report path is rewritten (rounds 3–8 preserved).
+- The exact over-bound integer the round-6 model wrote and the exact
+  recordKey the round-8 model paired with `agent-unit-1` were never
+  persisted (`rawResponsePersisted: false`; failure details carry
+  path:code only), so the offline replays use the smallest representative
+  values consistent with the saved paths; both replays reproduce the saved
+  failure details byte-identically.
 - The normalization boundary admits naming drift and transport envelopes
   only; it deliberately cannot recover a model answer that omits contracted
   semantic fields (the round-5 outcome). Generation-side enforcement landed
-  in 269.7/269.8+270.7 and closed that class; the round-6 outcome is a
-  schema-internal bound calibration gap (open High finding above).
-- The strict schemas cap placeholder/superset integers (for example
-  `vespeneLimitNumerator` at 1,000) below the laboratory's full safe-integer
-  domain; that calibration gap is the recorded High blocker, not a strategy
-  or legality defect.
+  in 269.7/269.8+270.7 and closed that class; the round-6 outcome was a
+  schema-internal bound calibration gap, resolved in 269.9; rounds 7–8 were
+  host-side identity-contract gaps, resolved in 269.10/269.11.
+- The strict subset cannot pattern-enforce deterministic identities; the
+  269.10/269.11 repairs publish the convention in schema descriptions and
+  seal the concrete identities into the request context, while the runtime
+  binding rule remains the strict enforcement point.
