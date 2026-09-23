@@ -4,11 +4,9 @@
 // Serves the current Expo Web export plus the isolated roster-planning
 // workspace API (additive prefix only; no Room endpoints exist here at all,
 // so source Room mutation is impossible by construction). Live deliberation
-// is never created by this script: the manifest's authorized browser verifier
-// imports createRosterWorkspaceServerV1 and injects its own in-memory
-// Keychain→Worker deliberation factory. CLI mode runs the workspace with no
-// deliberation factory, so the planning surfaces render their explicit
-// unavailable state instead of pretending a model is present.
+// is only attached with the explicit CLI --enable-roster-flash flag. The
+// Keychain→isolated Worker attachment itself makes zero Provider calls; paid
+// requests require a subsequent explicit Generate action in the Web UI.
 
 import http from "node:http";
 import { mkdir, readFile, stat } from "node:fs/promises";
@@ -19,6 +17,8 @@ import { createRosterPlanningProductModuleV1 } from
   "../packages/product-composition/roster-planning-product-module-v1.mjs";
 import { ROSTER_PLANNING_WORKSPACE_API_PREFIX } from
   "../packages/roster-planning-workspace/roster-planning-workspace-http-v1.mjs";
+import { createRosterPlanningSecureDeliberationFactoryV1 } from
+  "../packages/roster-planning-workspace/roster-planning-secure-deliberation-factory-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_DATA_DIRECTORY = path.join(ROOT,
@@ -202,20 +202,32 @@ async function main() {
     : DEFAULT_DATA_DIRECTORY;
   const fixtureArgument = process.argv.find((entry) => (
     entry.startsWith("--fixture-root=")));
-  const handle = await createRosterWorkspaceServerV1({
-    dataDirectory,
-    fixtureRoot: fixtureArgument
-      ? path.resolve(fixtureArgument.slice("--fixture-root=".length))
-      : undefined,
-  });
+  const secureFlashEnabled = process.argv.includes("--enable-roster-flash");
+  const secure = secureFlashEnabled
+    ? await createRosterPlanningSecureDeliberationFactoryV1() : null;
+  let handle;
+  try {
+    handle = await createRosterWorkspaceServerV1({
+      dataDirectory,
+      fixtureRoot: fixtureArgument
+        ? path.resolve(fixtureArgument.slice("--fixture-root=".length))
+        : undefined,
+      deliberationFactory: secure?.factory || null,
+    });
+  } catch (error) {
+    await secure?.close();
+    throw error;
+  }
   process.stdout.write(`${JSON.stringify({
     schemaVersion: "ticket27_slice271_roster_workspace_server_entry_v1",
     origin: handle.origin,
     armyUrl: handle.armyUrl,
     apiPrefix: ROSTER_PLANNING_WORKSPACE_API_PREFIX,
     dataDirectory,
-    liveDeliberationAttached: false,
-    planningState: "unavailable_no_live_deliberation_factory",
+    liveDeliberationAttached: handle.liveDeliberationAttached,
+    planningState: handle.liveDeliberationAttached
+      ? "available_explicit_generate_only"
+      : "unavailable_no_live_deliberation_factory",
     productModule: handle.module.descriptor(),
     trainingTruth: false,
   })}\n`);
@@ -224,6 +236,7 @@ async function main() {
     if (closing) return;
     closing = true;
     await handle.close();
+    await secure?.close();
     process.exit(0);
   };
   process.once("SIGINT", close);

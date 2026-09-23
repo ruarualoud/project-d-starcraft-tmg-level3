@@ -22,6 +22,17 @@ function freezeDeep(value) {
   for (const child of Object.values(value)) freezeDeep(child);
   return Object.freeze(value);
 }
+function targetRegistry(foundation) {
+  return {
+    score_route: ["scoreRoute"],
+    opponent_hypothesis: (foundation.opponentHypotheses || [])
+      .map((item) => item.hypothesisId),
+    counter_response: (foundation.counterResponses || [])
+      .map((item) => item.responseId),
+    invalidation_trigger: (foundation.invalidationTriggers || [])
+      .map((item) => item.triggerId),
+  };
+}
 
 export function createRosterTeachRolePortsV1({ deliberation, sessionId } = {}) {
   if (typeof deliberation?.deliberate !== "function"
@@ -73,11 +84,15 @@ export function createRosterTeachRolePortsV1({ deliberation, sessionId } = {}) {
           { kind: "initial-small-plan",
             foundation: clone(input.initialFoundation),
             foundationHash: input.initialFoundationHash },
+          { kind: "allowed-challenge-targets",
+            targetIdsByKind: targetRegistry(input.initialFoundation) },
         ], "Challenge one to four falsifiable claims in this small victory "
           + (input.sourceContext?.presetRosterLock
             ? "plan for the already locked roster. "
             : "plan before units are chosen. ")
-          + "For every claim, identify its existing target and request "
+          + "For every claim, copy targetKind and targetId exactly from "
+          + "allowed-challenge-targets; the sole score_route targetId is "
+          + "scoreRoute, not the score route's narrative routeId. Request "
           + "one bounded read-only scene-lab query. Do not invent Rules "
           + (input.sourceContext?.presetRosterLock
             ? "or alter the fixed roster. " : "or choose a roster. ")
@@ -117,7 +132,53 @@ export function createRosterTeachRolePortsV1({ deliberation, sessionId } = {}) {
           fail("ROSTER_TEACH_REVISED_FOUNDATION_ENVELOPE_INVALID");
         }
         const { schemaVersion, roundKind, ...revisedFoundation } = foundation;
-        return { revisedFoundation, answers: result.output.answers,
+        const evidenceByHash = new Map(input.evidenceReceipts.flatMap(
+          (entry) => [entry.receiptHash, entry.sourceReceiptHash]
+            .filter(Boolean).map((hash) => [hash, entry])));
+        const allowedEvidenceRefs = new Set([
+          ...input.sourceHashes,
+          ...evidenceByHash.keys(),
+        ]);
+        const answerEvidenceNormalizations = [];
+        const answerDispositionDemotions = [];
+        const answers = result.output.answers.map((answer) => {
+          const evidenceRefs = answer.evidenceRefs.filter((reference) => {
+            if (allowedEvidenceRefs.has(reference)) return true;
+            answerEvidenceNormalizations.push({
+              challengeId: answer.challengeId,
+              unsupportedReferenceHash: reference,
+              reason: "not_in_delivered_source_or_evidence",
+            });
+            return false;
+          });
+          const challenge = input.challenges.find((entry) =>
+            entry.challengeId === answer.challengeId);
+          const usableQueryEvidence = evidenceRefs.some((reference) => {
+            const receipt = evidenceByHash.get(reference);
+            return receipt?.challengeId === answer.challengeId
+              && receipt.status !== "unknown";
+          });
+          if (answer.disposition !== "unresolved"
+            && (evidenceRefs.length === 0
+              || challenge?.evidenceRequest !== null
+                && !usableQueryEvidence)) {
+            answerDispositionDemotions.push({
+              challengeId: answer.challengeId,
+              from: answer.disposition, to: "unresolved",
+              reason: "supported_answer_lacks_delivered_evidence",
+            });
+            return { ...answer, disposition: "unresolved", evidenceRefs,
+              publicReason: "The supplied references do not establish this "
+                + "claim against delivered evidence. Treat it as an "
+                + "unresolved strategic assumption, not a verified result.",
+              replanTrigger: answer.replanTrigger?.trim()
+                || "Recheck this claim with a named read-only query before "
+                  + "relying on it in battle." };
+          }
+          return { ...answer, evidenceRefs };
+        });
+        return { revisedFoundation, answers,
+          answerEvidenceNormalizations, answerDispositionDemotions,
           receipt: result.receipt };
       },
     },

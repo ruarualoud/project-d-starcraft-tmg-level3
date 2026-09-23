@@ -42,6 +42,8 @@ import { createRosterPlanningProductModuleV1 } from
   "../packages/product-composition/roster-planning-product-module-v1.mjs";
 import { ROSTER_PLANNING_WORKSPACE_API_PREFIX } from
   "../packages/roster-planning-workspace/roster-planning-workspace-http-v1.mjs";
+import { createRosterPlanningSecureDeliberationFactoryV1 } from
+  "../packages/roster-planning-workspace/roster-planning-secure-deliberation-factory-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEVELOPMENT_ROOM_ID = "ticket23-standard-2000-web";
@@ -181,6 +183,7 @@ async function readRequestBody(request) {
 
 async function main() {
   const liveMode = process.argv.includes("--live");
+  const rosterFlashEnabled = process.argv.includes("--enable-roster-flash");
   const evidenceProfileArgument = process.argv.find((entry) =>
     entry.startsWith("--evidence-profile="));
   const evidenceProfile = evidenceProfileArgument
@@ -379,6 +382,7 @@ async function main() {
     mapConfigurationPort: createOfficialCompetitiveMapConfiguratorV1(),
   });
   let rosterWorkspacePromise = null;
+  let rosterSecure = null;
   const learning = await createTicket20LearningConsoleFixtureV1({
     // Same read-only frozen reference root as the demo fixture above.
     root: process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
@@ -457,20 +461,28 @@ async function main() {
         return;
       }
       if (url.pathname.startsWith(ROSTER_PLANNING_WORKSPACE_API_PREFIX)) {
-        // Additive S271 mount (lazy): no live deliberation factory here, so
-        // paid planning is honestly unavailable; catalogue, drafts, manual
-        // Builder-port override evaluation, export/import and replay resume
-        // remain functional. No existing API response is changed. The
+        // Additive S271 mount (lazy): the secure Flash adapter is opt-in.
+        // Attaching the local Keychain Worker makes no Provider request;
+        // only the Web Generate action can send one. Without the flag,
+        // planning remains honestly unavailable. The
         // hash-locked source cache is a read-only frozen artifact; an
         // explicit fixture root may point at the integration checkout.
         if (!rosterWorkspacePromise) {
-          rosterWorkspacePromise = createRosterPlanningProductModuleV1({
-            root: ROOT,
-            fixtureRoot: process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
-            dataDirectory: path.join(ROOT,
-              "build/ticket-27-slice-271-roster-workspace-v1/dev-server-data"),
-            deliberationFactory: null,
-          }).catch((error) => {
+          rosterWorkspacePromise = (async () => {
+            if (rosterFlashEnabled) {
+              rosterSecure = await
+                createRosterPlanningSecureDeliberationFactoryV1();
+            }
+            return createRosterPlanningProductModuleV1({
+              root: ROOT,
+              fixtureRoot: process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
+              dataDirectory: path.join(ROOT,
+                "build/ticket-27-slice-271-roster-workspace-v1/dev-server-data"),
+              deliberationFactory: rosterSecure?.factory || null,
+            });
+          })().catch(async (error) => {
+            await rosterSecure?.close().catch(() => {});
+            rosterSecure = null;
             rosterWorkspacePromise = null;
             throw error;
           });
@@ -702,6 +714,7 @@ async function main() {
     liveMode,
     liveDataDirectory: liveMode ? liveDataDirectory : null,
     providerModel: providerStack?.selectedProfile?.model || null,
+    rosterFlashEnabled,
     evidenceProfile,
     providerCalls: 0,
     costCny: 0,
@@ -713,6 +726,7 @@ async function main() {
     closing = true;
     try { await fixture.botRuntime.close(); } catch {}
     try { await providerStack?.close(); } catch {}
+    try { await rosterSecure?.close(); } catch {}
     try { matchDecisionJournal?.close(); } catch {}
     try { botStore?.close(); } catch {}
     try { roomStore?.close(); } catch {}

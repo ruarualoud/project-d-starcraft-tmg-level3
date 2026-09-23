@@ -14,6 +14,8 @@ import {
 
 export const VERIFIED_PRESET_ROSTER_LOCK_SCHEMA =
   "starcraft_tmg_verified_preset_roster_lock_v1";
+export const BUILDER_PRESET_RECIPE_V2 =
+  "starcraft_tmg_builder_preset_recipe_v2";
 
 const HASH = /^[a-f0-9]{64}$/u;
 
@@ -44,8 +46,12 @@ function withoutHash(value) {
 
 function candidateInputFromRecipe(baselinePlan, recipe, scaleId,
   mineralBudget) {
-  if (!exactKeys(recipe,
-    ["factionRecordKey", "tacticalCardRecordKeys", "units"])
+  const version2 = recipe?.schema === BUILDER_PRESET_RECIPE_V2;
+  if (!(version2
+    ? exactKeys(recipe, ["schema", "factionRecordKey",
+      "tacticalCardRecordKeys", "units"])
+    : exactKeys(recipe,
+      ["factionRecordKey", "tacticalCardRecordKeys", "units"]))
     || !name(recipe.factionRecordKey)
     || !Array.isArray(recipe.tacticalCardRecordKeys)
     || !recipe.tacticalCardRecordKeys.every(name)
@@ -56,11 +62,17 @@ function candidateInputFromRecipe(baselinePlan, recipe, scaleId,
   }
   const unitIds = new Set();
   const units = recipe.units.map((unit) => {
-    if (!exactKeys(unit, ["unitInstanceId", "recordKey",
-      "compositionKind", "upgradeNames"])
+    if (!(version2
+      ? exactKeys(unit, ["unitInstanceId", "recordKey",
+        "compositionKind", "upgradeSelections"])
+      : exactKeys(unit, ["unitInstanceId", "recordKey",
+        "compositionKind", "upgradeNames"]))
       || !name(unit.unitInstanceId) || !name(unit.recordKey)
-      || !name(unit.compositionKind) || !Array.isArray(unit.upgradeNames)
-      || !unit.upgradeNames.every(name)
+      || !name(unit.compositionKind)
+      || !(version2 ? Array.isArray(unit.upgradeSelections)
+        && unit.upgradeSelections.every(validBuilderUpgrade)
+        : Array.isArray(unit.upgradeNames)
+          && unit.upgradeNames.every(name))
       || unitIds.has(unit.unitInstanceId)) {
       fail("PRESET_ROSTER_RECIPE_INVALID");
     }
@@ -69,7 +81,9 @@ function candidateInputFromRecipe(baselinePlan, recipe, scaleId,
       unitInstanceId: unit.unitInstanceId,
       recordKey: unit.recordKey,
       compositionKind: unit.compositionKind,
-      upgrades: unit.upgradeNames.map((upgradeName) => ({ upgradeName })),
+      upgrades: version2
+        ? structuredClone(unit.upgradeSelections)
+        : unit.upgradeNames.map((upgradeName) => ({ upgradeName })),
     };
   });
   return {
@@ -80,6 +94,21 @@ function candidateInputFromRecipe(baselinePlan, recipe, scaleId,
     tacticalCardRecordKeys: [...recipe.tacticalCardRecordKeys],
     units,
   };
+}
+
+function validBuilderUpgrade(upgrade) {
+  if (!object(upgrade)) return false;
+  const keys = Object.keys(upgrade);
+  return keys.length > 0
+    && keys.every((key) => ["upgradeName",
+      "purchasableUpgradeProfileId", "nominatedModelId"].includes(key))
+    && (name(upgrade.upgradeName)
+      || name(upgrade.purchasableUpgradeProfileId))
+    && (upgrade.upgradeName === undefined || name(upgrade.upgradeName))
+    && (upgrade.purchasableUpgradeProfileId === undefined
+      || name(upgrade.purchasableUpgradeProfileId))
+    && (upgrade.nominatedModelId === undefined
+      || name(upgrade.nominatedModelId));
 }
 
 function validateBaseline(baselinePlan, recipe) {
@@ -106,9 +135,8 @@ function candidateFromVerdict(input, verdict, baselinePlan) {
       unitInstanceId: unit.unitInstanceId,
       recordKey: unit.recordKey,
       compositionKind: unit.compositionKind,
-      upgradeSelections: unit.upgrades.map(({ upgradeName }) => ({
-        upgradeName,
-      })),
+      upgradeSelections: unit.upgrades.map((upgrade) =>
+        structuredClone(upgrade)),
     })),
     legalityStatus: "legal",
     legalityReceipt: { auditResultHash: verdict.auditResultHash },
@@ -197,7 +225,7 @@ export function createVerifiedBuilderLockedRosterForTeachV1(input = {}) {
         "compositionKind", "upgrades"])
       || !Array.isArray(unit.upgrades)
       || unit.upgrades.some((upgrade) =>
-        !exactKeys(upgrade, ["upgradeName"])))) {
+        !validBuilderUpgrade(upgrade)))) {
     fail("BUILDER_LOCKED_ROSTER_INPUT_INVALID");
   }
   const verdict = armyBuilderPort.evaluateRosterCandidate(
@@ -206,14 +234,21 @@ export function createVerifiedBuilderLockedRosterForTeachV1(input = {}) {
     fail("BUILDER_LOCKED_ROSTER_NOT_LEGAL");
   }
   verifyArmyBuilderRosterVerdictV1(verdict);
+  const version2 = candidateInput.units.some((unit) =>
+    unit.upgrades.some((upgrade) =>
+      !exactKeys(upgrade, ["upgradeName"])));
   const recipe = {
+    ...(version2 ? { schema: BUILDER_PRESET_RECIPE_V2 } : {}),
     factionRecordKey: candidateInput.factionRecordKey,
     tacticalCardRecordKeys: [...candidateInput.tacticalCardRecordKeys],
     units: candidateInput.units.map((unit) => ({
       unitInstanceId: unit.unitInstanceId,
       recordKey: unit.recordKey,
       compositionKind: unit.compositionKind,
-      upgradeNames: unit.upgrades.map((upgrade) => upgrade.upgradeName),
+      ...(version2 ? { upgradeSelections:
+        structuredClone(unit.upgrades) }
+        : { upgradeNames: unit.upgrades.map((upgrade) =>
+          upgrade.upgradeName) }),
     })),
   };
   const baselinePlan = createPresetRosterNoPregamePlanV1({

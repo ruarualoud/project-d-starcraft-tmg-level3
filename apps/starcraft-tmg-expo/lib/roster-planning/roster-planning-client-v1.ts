@@ -87,6 +87,10 @@ export const rosterPlanningClient = {
     request<{ result: any }>('DELETE', `sessions/${encodeURIComponent(sessionId)}`),
   generate: (sessionId: string) =>
     request<{ session: any }>('POST', `sessions/${encodeURIComponent(sessionId)}/generate`, {}),
+  resumeLive: (sessionId: string) =>
+    request<{ session: any }>('POST', `sessions/${encodeURIComponent(sessionId)}/generate`, {
+      resume: true,
+    }),
   resumeReplay: (sessionId: string) =>
     request<{ session: any }>('POST', `sessions/${encodeURIComponent(sessionId)}/generate`, {
       resume: true,

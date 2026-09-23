@@ -13,6 +13,8 @@ import {
   ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_V1,
   ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_VERSION,
 } from "./public-output-normalization-v1.mjs";
+import { pruneRosterUndeclaredPublicFieldsV1 } from
+  "./public-output-pruning-v1.mjs";
 import {
   NARRATIVE_DISPLAY_TARGETS,
   NARRATIVE_TRANSPORT_CEILING,
@@ -1308,9 +1310,14 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         contractSchema: roundRequest.responseFormat?.schema,
       },
     });
-    return freezeDeep({
+    const pruning = pruneRosterUndeclaredPublicFieldsV1({
       output: normalization.output,
+      schema: roundRequest.responseFormat?.schema,
+    });
+    return freezeDeep({
+      output: pruning.output,
       normalizationReceipt: clone(normalization.receipt),
+      pruningReceipt: clone(pruning.receipt),
     });
   }
 
@@ -1550,6 +1557,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     const foundationOutput = foundationDeliberation.output;
     foundationTrace.outputNormalizationReceipt =
       foundationDeliberation.normalizationReceipt;
+    foundationTrace.outputPruningReceipt =
+      foundationDeliberation.pruningReceipt;
     foundationTrace.contextHash = hashStarcraftTmgContract({
       sessionId, roundKind: "strategy_foundation",
       provenanceHash: provenance.provenanceHash,
@@ -1769,6 +1778,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       const proposalOutput = proposalDeliberation.output;
       proposalTrace.outputNormalizationReceipt =
         proposalDeliberation.normalizationReceipt;
+      proposalTrace.outputPruningReceipt =
+        proposalDeliberation.pruningReceipt;
       proposalTrace.contextHash = hashStarcraftTmgContract({
         sessionId, roundKind: "candidate_proposals", proposalRound,
         provenanceHash: provenance.provenanceHash,
@@ -2006,6 +2017,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     const comparisonOutput = comparisonDeliberation.output;
     comparisonTrace.outputNormalizationReceipt =
       comparisonDeliberation.normalizationReceipt;
+    comparisonTrace.outputPruningReceipt =
+      comparisonDeliberation.pruningReceipt;
     comparisonTrace.contextHash = hashStarcraftTmgContract({
       sessionId, roundKind: comparisonRoundKind,
       provenanceHash: provenance.provenanceHash,
@@ -2124,7 +2137,17 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         presetDeepeningOutputContractHash:
           PLANNED_PRESET_DEEPENING_OUTPUT_CONTRACT_REF_V1.hash,
       } : {}),
-      ...(teachCycle ? { teachCycleHash: teachCycle.cycleHash } : {}),
+      ...(teachCycle ? { teachCycleHash: teachCycle.cycleHash,
+        teachReview: {
+          challengeTargetCanonicalizations:
+            teachCycle.challengeTargetNormalizations.length,
+          unsupportedEvidenceReferences:
+            teachCycle.answerEvidenceNormalizations.length,
+          unsupportedAnswerDemotions:
+            teachCycle.answerDispositionDemotions.length,
+          retainedTargetChangeWarnings:
+            clone(teachCycle.retainedTargetChangeWarnings),
+        } } : {}),
       roundReceiptHashes: trace.map((entry) => entry.receiptHash),
       toolReceiptReferenceHashes: toolReceipts.map((entry) => entry.referenceHash),
       rejectionReceiptHashes: rejections.map((entry) => entry.receiptHash),
@@ -2138,6 +2161,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         ROSTER_STRATEGIST_OUTPUT_ALIAS_REGISTRY_VERSION,
       outputNormalizationReceiptHashes: trace.map((entry) => (
         entry.outputNormalizationReceipt?.receiptHash ?? null)),
+      outputPruningReceiptHashes: trace.map((entry) => (
+        entry.outputPruningReceipt?.receiptHash ?? null)),
       outputContractSetHash:
         ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash,
       structuredGenerationEnforced: true,

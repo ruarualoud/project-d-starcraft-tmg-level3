@@ -66,6 +66,32 @@ function targetValue(foundation, challenge) {
     default: return null;
   }
 }
+function normalizeSingletonTargets(challenges) {
+  const normalizations = [];
+  const normalized = challenges.map((challenge) => {
+    if (challenge?.targetKind !== "score_route"
+      || challenge.targetId === "scoreRoute") return challenge;
+    normalizations.push({ challengeId: challenge.challengeId,
+      targetKind: "score_route", originalTargetId: challenge.targetId,
+      canonicalTargetId: "scoreRoute",
+      reason: "score_route_has_one_structural_target" });
+    return { ...challenge, targetId: "scoreRoute" };
+  });
+  return { challenges: normalized, normalizations };
+}
+function retainedTargetChangeWarnings(cycle) {
+  return cycle.answers.flatMap((answer) => {
+    if (answer.disposition !== "retain") return [];
+    const challenge = cycle.challenges.find((entry) =>
+      entry.challengeId === answer.challengeId);
+    if (!challenge || hashStarcraftTmgContract(targetValue(
+      cycle.initialFoundation, challenge) ?? null)
+      === hashStarcraftTmgContract(targetValue(
+        cycle.revisedFoundation, challenge) ?? null)) return [];
+    return [{ challengeId: answer.challengeId,
+      reason: "retained_claim_with_changed_structured_target_review_needed" }];
+  });
+}
 function verifyShape(cycle) {
   if (!object(cycle) || cycle.schema !== ROSTER_TEACH_CYCLE_SCHEMA
     || cycle.canAffectRules !== false || cycle.trainingTruth !== false
@@ -100,6 +126,10 @@ function verifyShape(cycle) {
   if (sourceHashes.size !== cycle.sourceHashes.length
     || sourceHashes.size < 1) fail("ROSTER_TEACH_SOURCE_INVALID");
   const challengeIds = new Set();
+  const normalizations = cycle.challengeTargetNormalizations || [];
+  if (!Array.isArray(normalizations)) {
+    fail("ROSTER_TEACH_TARGET_NORMALIZATION_INVALID");
+  }
   for (const challenge of cycle.challenges) {
     if (!object(challenge) || !TARGET_KINDS.has(challenge.targetKind)
       || !targetExists(cycle.initialFoundation, challenge)) {
@@ -116,6 +146,16 @@ function verifyShape(cycle) {
         || !text(challenge.evidenceRequest.kind,
           "ROSTER_TEACH_EVIDENCE_REQUEST_INVALID"))) {
       fail("ROSTER_TEACH_EVIDENCE_REQUEST_INVALID");
+    }
+  }
+  for (const entry of normalizations) {
+    if (!object(entry) || !challengeIds.has(entry.challengeId)
+      || entry.targetKind !== "score_route"
+      || entry.canonicalTargetId !== "scoreRoute"
+      || typeof entry.originalTargetId !== "string"
+      || entry.originalTargetId === "scoreRoute"
+      || entry.reason !== "score_route_has_one_structural_target") {
+      fail("ROSTER_TEACH_TARGET_NORMALIZATION_INVALID");
     }
   }
   const evidence = new Map();
@@ -178,16 +218,38 @@ function verifyShape(cycle) {
         fail("ROSTER_TEACH_TARGET_NOT_REVISED");
       }
       revised = true;
-    } else if (answer.disposition === "retain"
-      && hashStarcraftTmgContract(targetValue(cycle.initialFoundation,
-        challenge) ?? null) !== hashStarcraftTmgContract(targetValue(
-        cycle.revisedFoundation, challenge) ?? null)) {
-      fail("ROSTER_TEACH_RETAINED_TARGET_CHANGED");
     }
   }
   if (answers.size !== challengeIds.size
     || revised && cycle.initialFoundationHash === cycle.revisedFoundationHash) {
     fail("ROSTER_TEACH_REVISION_INCOMPLETE");
+  }
+  if (cycle.retainedTargetChangeWarnings !== undefined
+    && JSON.stringify(cycle.retainedTargetChangeWarnings)
+      !== JSON.stringify(retainedTargetChangeWarnings(cycle))) {
+    fail("ROSTER_TEACH_RETAINED_TARGET_WARNING_INVALID");
+  }
+  const evidenceNormalizations = cycle.answerEvidenceNormalizations || [];
+  if (!Array.isArray(evidenceNormalizations)
+    || evidenceNormalizations.some((entry) => !object(entry)
+      || !challengeIds.has(entry.challengeId)
+      || !HASH.test(String(entry.unsupportedReferenceHash || ""))
+      || entry.reason !== "not_in_delivered_source_or_evidence"
+      || cycle.answers.find((answer) => answer.challengeId
+        === entry.challengeId)?.evidenceRefs.includes(
+          entry.unsupportedReferenceHash))) {
+    fail("ROSTER_TEACH_EVIDENCE_NORMALIZATION_INVALID");
+  }
+  const demotions = cycle.answerDispositionDemotions || [];
+  if (!Array.isArray(demotions)
+    || demotions.some((entry) => !object(entry)
+      || !challengeIds.has(entry.challengeId)
+      || !["retain", "revise"].includes(entry.from)
+      || entry.to !== "unresolved"
+      || entry.reason !== "supported_answer_lacks_delivered_evidence"
+      || cycle.answers.find((answer) => answer.challengeId
+        === entry.challengeId)?.disposition !== "unresolved")) {
+    fail("ROSTER_TEACH_DISPOSITION_DEMOTION_INVALID");
   }
   return true;
 }
@@ -220,7 +282,9 @@ export async function runRosterTeachCycleV1(input = {}) {
     sourceContext: clone(sourceContext),
     canAffectRules: false, trainingTruth: false,
   }));
-  const challenges = clone(challengeOutput?.challenges || []);
+  const normalizedTargets = normalizeSingletonTargets(
+    clone(challengeOutput?.challenges || []));
+  const challenges = normalizedTargets.challenges;
   // Check all challenger targets before a tool is called or a student sees it.
   verifyShape({ schema: ROSTER_TEACH_CYCLE_SCHEMA,
     initialFoundation, initialFoundationHash,
@@ -269,8 +333,13 @@ export async function runRosterTeachCycleV1(input = {}) {
     revisedFoundation,
     revisedFoundationHash: hashStarcraftTmgContract(revisedFoundation),
     sourceHashes, challenges,
+    challengeTargetNormalizations: normalizedTargets.normalizations,
     evidenceReceipts,
     answers: clone(studentOutput?.answers || []),
+    answerEvidenceNormalizations:
+      clone(studentOutput?.answerEvidenceNormalizations || []),
+    answerDispositionDemotions:
+      clone(studentOutput?.answerDispositionDemotions || []),
     roleReceipts: {
       challenger: clone(challengeOutput?.receipt ?? null),
       student: clone(studentOutput?.receipt ?? null),
@@ -280,6 +349,7 @@ export async function runRosterTeachCycleV1(input = {}) {
     canAffectRules: false, trainingTruth: false,
     hiddenChainOfThoughtStored: false, humanReviewed: false,
   };
+  body.retainedTargetChangeWarnings = retainedTargetChangeWarnings(body);
   const cycle = { ...body, cycleHash: hashStarcraftTmgContract(body) };
   verifyRosterTeachCycleV1(cycle);
   return frozen(cycle);

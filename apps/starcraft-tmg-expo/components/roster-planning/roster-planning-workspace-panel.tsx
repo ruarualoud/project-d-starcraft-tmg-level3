@@ -588,22 +588,41 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
             testID="session-generate">
             <Text style={st.primaryBtnText}>
               {session.planningMode === 'locked_roster_teach_v1'
-                ? ui(L, '为锁定军表生成计划(真实付费 Flash 调用)',
-                  'Plan this locked roster (real paid Flash calls)')
-                : ui(L, 'Teach 写表并生成计划(真实付费 Flash 调用)',
-                  'Teach-build roster and plan (real paid Flash calls)')}
+                ? session.resumeAvailable
+                  ? ui(L, '从头重生成锁表计划(不复用旧回复，重新计费)',
+                    'Restart locked-roster plan (old replies not reused; paid again)')
+                  : ui(L, '为锁定军表生成计划(真实付费 Flash 调用)',
+                    'Plan this locked roster (real paid Flash calls)')
+                : session.resumeAvailable
+                  ? ui(L, '从头重生成军表(不复用旧回复，重新计费)',
+                    'Restart roster generation (old replies not reused; paid again)')
+                  : ui(L, 'Teach 写表并生成计划(真实付费 Flash 调用)',
+                    'Teach-build roster and plan (real paid Flash calls)')}
             </Text>
           </Pressable>
           {session.resumeAvailable && (
-            <Pressable
-              onPress={() => act(() => rosterPlanningClient.resumeReplay(session.sessionId))}
-              style={({ pressed }) => [st.btn, { borderColor: BLUE }, pressed && { opacity: 0.7 }]}
-              testID="session-resume-replay">
-              <Text style={[st.btnText, { color: BLUE }]}>
-                {ui(L, `本地回放恢复(${session.retainedReplyCount} 条已保留回复 · 0 新调用)`,
-                  `Resume from ${session.retainedReplyCount} retained replies · 0 new calls`)}
-              </Text>
-            </Pressable>
+            <>
+              {deliberation?.available && (
+                <Pressable
+                  onPress={() => act(() => rosterPlanningClient.resumeLive(session.sessionId))}
+                  style={({ pressed }) => [st.btn, { borderColor: BLUE }, pressed && { opacity: 0.7 }]}
+                  testID="session-resume-live">
+                  <Text style={[st.btnText, { color: BLUE }]}>
+                    {ui(L, `续接规划(复用 ${session.retainedReplyCount} 条已付费回复；仅缺失轮调用 Flash)`,
+                      `Continue planning (${session.retainedReplyCount} paid replies retained; Flash only for missing rounds)`)}
+                  </Text>
+                </Pressable>
+              )}
+              <Pressable
+                onPress={() => act(() => rosterPlanningClient.resumeReplay(session.sessionId))}
+                style={({ pressed }) => [st.btn, { borderColor: BLUE }, pressed && { opacity: 0.7 }]}
+                testID="session-resume-replay">
+                <Text style={[st.btnText, { color: BLUE }]}>
+                  {ui(L, `仅本地回放(${session.retainedReplyCount} 条已保留回复 · 0 新调用)`,
+                    `Local replay only (${session.retainedReplyCount} retained replies · 0 new calls)`)}
+                </Text>
+              </Pressable>
+            </>
           )}
         </View>
       )}
@@ -721,6 +740,22 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
             audit {session.evidence?.sessionReceipt?.finalAuditResultHash?.slice(0, 20)}… ·{' '}
             {ui(L, '源状态变异', 'source mutations')}: {session.evidence?.mutationZeroProof?.sourceStateMutationCount ?? '—'}
           </Text>
+          {!!session.evidence?.sessionReceipt?.teachReview && (
+            <Text style={[st.cardSub, {
+              color: session.evidence.sessionReceipt.teachReview.unsupportedEvidenceReferences
+                || session.evidence.sessionReceipt.teachReview.unsupportedAnswerDemotions
+                || session.evidence.sessionReceipt.teachReview.retainedTargetChangeWarnings?.length
+                ? AMBER : GREEN,
+            }]}>
+              {ui(L, 'Teach 复核', 'Teach review')}: {' '}
+              {session.evidence.sessionReceipt.teachReview.unsupportedEvidenceReferences} {' '}
+              {ui(L, '条无效引用', 'unsupported references')} · {' '}
+              {session.evidence.sessionReceipt.teachReview.unsupportedAnswerDemotions} {' '}
+              {ui(L, '条证据不足降为未决', 'claims demoted to unresolved')} · {' '}
+              {session.evidence.sessionReceipt.teachReview.retainedTargetChangeWarnings?.length || 0} {' '}
+              {ui(L, '条需人工复核', 'need human review')}
+            </Text>
+          )}
           <Pressable onPress={() => act(async () => {
             const result = await rosterPlanningClient.exportSession(session.sessionId);
             const text = JSON.stringify(result.export.exportDocument, null, 2);

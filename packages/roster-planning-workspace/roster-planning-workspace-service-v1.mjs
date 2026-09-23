@@ -126,15 +126,15 @@ export function deriveRosterWorkspaceCandidateInputV1(candidate) {
       unitInstanceId: unit.unitInstanceId,
       recordKey: unit.recordKey,
       compositionKind: unit.compositionKind,
-      upgrades: unit.upgradeSelections.map((upgrade) => (
-        upgrade.upgradeName !== null && upgrade.upgradeName !== undefined
-          ? { upgradeName: upgrade.upgradeName,
-            ...(upgrade.nominatedModelId
-              ? { nominatedModelId: upgrade.nominatedModelId } : {}) }
-          : { purchasableUpgradeProfileId:
-            upgrade.purchasableUpgradeProfileId,
-            ...(upgrade.nominatedModelId
-              ? { nominatedModelId: upgrade.nominatedModelId } : {}) })),
+      upgrades: unit.upgradeSelections.map((upgrade) => ({
+        ...(upgrade.upgradeName
+          ? { upgradeName: upgrade.upgradeName } : {}),
+        ...(upgrade.purchasableUpgradeProfileId
+          ? { purchasableUpgradeProfileId:
+            upgrade.purchasableUpgradeProfileId } : {}),
+        ...(upgrade.nominatedModelId
+          ? { nominatedModelId: upgrade.nominatedModelId } : {}),
+      })),
     })),
   };
 }
