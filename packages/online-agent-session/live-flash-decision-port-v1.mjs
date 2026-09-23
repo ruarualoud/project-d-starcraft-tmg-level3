@@ -16,6 +16,8 @@ import {
 } from "./legal-formation-search-v1.mjs";
 import { isStarcraftTmgAssetPlacementDomainV1 as isAssetPlacementDomain } from
   "./legal-asset-placement-search-v1.mjs";
+import { createStarcraftTmgNativeSpatialQueryToolV1 } from
+  "./spatial-action-query-runtime-v1.mjs";
 
 export const STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION =
   "starcraft_tmg_live_flash_decision_port_v1";
@@ -31,7 +33,7 @@ const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v23";
+  "starcraft_tmg_planner_action_spatial_intent_solver_v24";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_action_shape_normalization_v37";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
@@ -3920,24 +3922,9 @@ function nativeAgentLoop(choice, input, queryReceipts, stage,
     !HOST_DEFERRED_QUERY_KINDS.has(kind)
       && !(stage === "planning"
         && PLANNING_POST_SELECTION_QUERY_KINDS.has(kind)));
-  const interactiveTools = [{
-    type: "function",
-    function: {
-      name: NATIVE_QUERY_TOOL_NAME,
-      description:
-        "Ask the Host for one read-only Rules, geometry, probability, fire-zone, path, coherency, line-of-sight, threat or score query. Encode query-specific arguments as one JSON object string. Intent-driven formation solving, asset placement and final instantiation are deferred to the Host after candidate selection.",
-      parameters: {
-        type: "object",
-        properties: {
-          requestId: { type: "string" },
-          queryKind: { type: "string", enum: exposedQueryKinds },
-          argumentsJson: { type: "string" },
-        },
-        required: ["requestId", "queryKind", "argumentsJson"],
-        additionalProperties: false,
-      },
-    },
-  }, {
+  const interactiveTools = [createStarcraftTmgNativeSpatialQueryToolV1({
+    name: NATIVE_QUERY_TOOL_NAME, queryKinds: exposedQueryKinds,
+  }), {
     type: "function",
     function: {
       name: NATIVE_SKILL_TOOL_NAME,

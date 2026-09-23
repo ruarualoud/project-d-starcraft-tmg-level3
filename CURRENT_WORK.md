@@ -6,6 +6,25 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r87 live; direct-query repair awaits safe load
+
+**76208 still live**, runner13903/server13934. r85SwarmlingRun→r86finish→
+r87KerriganRaptorRun Applied/Replayed/captured; r85 inspected.00:23:02Z:
+80new+7prefix=r87,222calls/25,723,363units/estimated¥34.165061,bothFlash.
+Keep original room, paid history and screenshots. Strategy comparison errors
+are retained forS249: r85 calls12.317 the smallest despite11.284 alternative;
+r87 genuinely closes marker5 gap12.407→6.275. No strategy reroll.
+
+Captured malformed base-distance query now has a shared tool argument contract
+and repairable typed unknown/suggested relationship query, never silent routing
+or fabricated geometry. Realc81/r80fixture red→one green1.527s, canonical
+distance/within kernel parity, missing references remain unknown,0Provider/Room.
+Tool descriptor policyv24 only, no Skill/strategy/capacity changes. Already-passed
+gate must not repeat; no Web build needed. Existing server hasn't loaded it.
+Next safe drain/reload original run, then observe new actual query/strategy
+evidence. Read `docs/ticket-23-slice-248-direct-query-contract-repair-2026-09-23.md`.
+T23 remains33/36:248full match→249review→250synthesis. K3S271 still stopped.
+
 ### 2026-09-23 T23 / S248 — r84 live, common targets proven, partial PDF ready
 
 **76208 remains live**, runner13903/server13934, bothFlash. New c81 formation

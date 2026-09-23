@@ -52,6 +52,82 @@ function seal(value, hashField) {
   return deepFreeze({ ...unsigned, [hashField]: hashStarcraftTmgContract(unsigned) });
 }
 
+const PHYSICAL_OBJECT_KINDS = ["mission_marker", "token", "marker"];
+const REFERENCE_SCHEMA = deepFreeze({ anyOf: [{ type: "object", properties: {
+  kind: { enum: ["model"] }, unitId: { type: "string", minLength: 1 },
+  modelId: { type: "string", minLength: 1 },
+}, required: ["unitId", "modelId"] }, { type: "object", properties: {
+  kind: { enum: PHYSICAL_OBJECT_KINDS }, id: { type: "string", minLength: 1 },
+}, required: ["kind", "id"] }] });
+const DIRECT_ARGUMENT_CONTRACTS = deepFreeze({
+  base_edge_distance: { type: "object", properties: {
+    source: REFERENCE_SCHEMA, target: REFERENCE_SCHEMA,
+  }, required: ["source", "target"] },
+  within_and_wholly_within: { type: "object", properties: {
+    source: REFERENCE_SCHEMA, targetUnitId: { type: "string", minLength: 1 },
+    rangeMilliInches: { type: "integer", minimum: 0 },
+  }, required: ["source", "targetUnitId", "rangeMilliInches"] },
+});
+
+// The model-facing descriptor and recovery receipt share the direct-query
+// contract. Unit matrices belong to the existing relationship tool, not a
+// silent reinterpretation of a missing physical source/target reference.
+export function createStarcraftTmgNativeSpatialQueryToolV1({ name, queryKinds }) {
+  return {
+    type: "function",
+    function: {
+      name,
+      description: "Ask the Host for one read-only Rules, geometry, probability, fire-zone, path, coherency, line-of-sight, threat or score query. Encode query-specific arguments as one JSON object string. Intent-driven formation solving, asset placement and final instantiation are deferred to the Host after candidate selection.",
+      parameters: { type: "object", properties: {
+        requestId: { type: "string" },
+        queryKind: { type: "string", enum: [...queryKinds] },
+        argumentsJson: { type: "string", description:
+          "Direct geometry query contracts: " + JSON.stringify(DIRECT_ARGUMENT_CONTRACTS)
+          + ". Use IDs from the current visible spatial observation. base_edge_distance measures one physical source/target pair, not an entire unit matrix. For multiple units or unit-to-objective distances use space.inspect_relationships with {subjectUnitIds:[unitId],targetIds:[unitOrObjectiveId],intent:string}. Measurement does not prove attack or charge legality." },
+      }, required: ["requestId", "queryKind", "argumentsJson"],
+      additionalProperties: false },
+    },
+  };
+}
+
+function validReference(value) {
+  if (!object(value)) return false;
+  const kind = value.kind || "model";
+  const id = key => typeof value[key] === "string" && value[key].trim().length > 0;
+  return kind === "model" ? id("unitId") && id("modelId")
+    : PHYSICAL_OBJECT_KINDS.includes(kind) && id("id");
+}
+
+function directArgumentIssue(queryKind, args) {
+  const invalidFields = [];
+  if (!validReference(args.source)) invalidFields.push("source");
+  if (queryKind === "base_edge_distance") {
+    if (!validReference(args.target)) invalidFields.push("target");
+  } else {
+    if (typeof args.targetUnitId !== "string" || !args.targetUnitId.trim()) {
+      invalidFields.push("targetUnitId");
+    }
+    // Preserve the existing kernel's numeric-string compatibility, but do not
+    // interpret a missing/null/empty value as an explicitly requested range0.
+    const range = args.rangeMilliInches;
+    if (!["number", "string"].includes(typeof range) || String(range).trim() === ""
+      || !Number.isSafeInteger(Number(range)) || Number(range) < 0) {
+      invalidFields.push("rangeMilliInches");
+    }
+  }
+  if (!invalidFields.length) return null;
+  const idList = value => Array.isArray(value) && value.length > 0
+    && value.every(id => typeof id === "string" && id.trim().length > 0);
+  const suggestedQuery = idList(args.subjectUnitIds) && idList(args.targetIds)
+    ? { queryKind: "space.inspect_relationships", arguments: {
+      ...(typeof args.intent === "string" ? { intent: args.intent } : {}),
+      subjectUnitIds: clone(args.subjectUnitIds), targetIds: clone(args.targetIds),
+    } } : null;
+  return { invalidFields, expectedArguments: DIRECT_ARGUMENT_CONTRACTS[queryKind],
+    suggestedQuery, suggestionExecuted: false,
+    guidance: "Use physical model/token/marker references for direct measurement. Use the explicit relationship query for unit matrices; it remains read-only and does not establish action legality." };
+}
+
 function authority(input) {
   const projection = input.roomProjection;
   const legalSpace = input.legalSpace;
@@ -361,6 +437,16 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
     }
 
     if (DIRECT_QUERY_KINDS.has(queryKind)) {
+      const repairContext = directArgumentIssue(queryKind, args);
+      if (repairContext) {
+        const receipt = unknownResult(binding, queryKind,
+          "DIRECT_SPATIAL_QUERY_ARGUMENTS_INVALID", {
+            findingSeverity: "Medium", failureStage: "validate_query_arguments",
+            geometryEvaluationAttempted: false, repairContext,
+          });
+        rememberCompleted(snapshot, cacheKey, receipt);
+        return receipt;
+      }
       try {
         const dataBundle = state.officialModelBaseGeometryDataBundle;
         const result = queryKind === "base_edge_distance"
