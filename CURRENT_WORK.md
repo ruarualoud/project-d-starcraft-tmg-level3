@@ -6,6 +6,27 @@ historical entry only when a linked task requires it.
 
 ## Active phase: product development resumed
 
+### 2026-09-23 T23 / S248 — r84 live, common targets proven, partial PDF ready
+
+**76208 remains live**, runner13903/server13934, bothFlash. New c81 formation
+receipt proves8dbf728: all4options include original marker5+friendly Hydralisk,
+not just their isolated policy targets. r82RaptorRun→r83QueenCreepTumor→r84finish
+Applied/Replayed/screenshotted; r82/83 inspected.00:06:21Z totals77new+7prefix=r84,
+Round2Assault,212calls/24,031,959units/estimated¥32.007932. Keep this process.
+Chosen marker gap14.306→14.618in contradicts prose claiming advance; retain for
+S249, no reroll/strategyPrompt. Host441.795s/178exact attempts recorded as
+performance work, no capacity reduction. Repeated base-distance malformed args
+remain Medium/typedunknown, not fixed by this comparison repair.
+
+Additive exporter generated98-page `output/pdf/slice248-20260922172710914/partial-r001-r047.pdf`
+with47actual board screenshots, source-bound7prefixactions, public decisions and
+two initiative dice records. One initial missing-ancestry failure→resolver fix→
+one successful generation; all98rendered pages reviewed plus readable samples.
+0Provider/Room/¥0; no old gate/build repeat. Existing final H-A report gate is
+unchanged. Read `docs/ticket-23-slice-248-partial-round-pdf-2026-09-23.md`.
+This is partial evidence, not full-match or strategy acceptance. T23 stays33/36:
+248complete match→249review→250synthesis; K3S271 remains stopped/unintegrated.
+
 ### 2026-09-23 T23 / S248 — r81 capture recovered,76208 continues
 
 **76208 live**, runner13903/server13934,8dbf728 loaded. At23:49:33.873Z

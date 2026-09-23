@@ -114,6 +114,46 @@ A later new formation comparison still needs actual live observation; this
 Pass/capture proves recovery, not geometry comparison. Do not reinterpret the
 old r76 receipt or repeat the passed consumer gate.
 
+### Follow-up: actual c81 query and r82 Apply/Replay
+
+The same76208 later solved a new18-model Raptor Run and applied r82. Its saved
+`space.solve_formation` receipt now includes both original marker5 and friendly
+Hydralisk comparisons on **all four options**, including three `isolate-compact`
+alternatives whose local objective has no target IDs. Friendly relations keep
+zero hostile fire profiles. This is live consumer evidence, not another test
+run or a retroactive replacement of c75. r82 and r83 actual images were inspected.
+
+| Policy / anchor in inches | Marker5 gap | Hydralisk gap | Marker5 gap change |
+| --- | ---: | ---: | ---: |
+| isolate-compact /15,4 |14.970|5.763|+0.664|
+| requested-left /15,3.270 (selected) |14.618|5.535|+0.312|
+| isolate-compact /15,3.270 |15.217|5.633|+0.911|
+| isolate-compact /14,4 |15.823|6.178|+1.517|
+
+Positive changes mean farther from marker5. The selected layout is closest
+among the four exposed options, but **none advances toward that marker** from
+the14.306in baseline. The public reason nevertheless calls it an advance. Keep
+this as S249 plan/outcome and bounded-search-coverage evidence: the data are
+present, but the statement is unsupported. It neither proves that a better
+legal formation cannot exist nor justifies rerolling this legal selection.
+The model also carries a stale current-round Hydralisk-fire statement in its
+risk text; r83 subsequently recognizes those enemy bands as next-round pressure.
+
+Planner completed23:51:10.339Z; Action began23:58:32.134Z: Host interval441.795s.
+904generated/756examined/178exact instantiations,144overlap+30path-collision
+rejects,4options. Keep this measured performance issue separate from strategy
+quality. No search capacity, objective weights, facts, Prompt or Skill changed.
+
+r83 Queen Spawn Creep Tumor and r84 Raptor finish then Applied/Replayed and
+were captured. At00:06:21.113Z:77new+7prefix=r84, Round2Assault,
+212calls/24,031,959accounted units/estimated¥32.007932. Both seats Flash;
+76208 continues. The primitive `base_edge_distance` query still returns a
+typed unknown on malformed arguments while relationship queries supply the
+distances; retain the Medium contract-repair item rather than treating unknown
+as zero or claiming it repaired here.
+
+![Raptor after r82 Run](../build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/screenshots/0622-r082-player2-run-complete-board-applied.png)
+
 ![Recovered r81 Pass](../build/ticket-23-slice-248-standard-2000-aa-live-v1/20260922172710914/screenshots/0616-r081-player1-pass-complete-board-applied.png)
 
 `harnessLoopUsed:true`; route `selfplay_agent_prompt`; tools relationship,

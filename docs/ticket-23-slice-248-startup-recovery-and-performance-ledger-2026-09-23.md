@@ -62,6 +62,29 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r82 — common-target live proof, Host441.795s
+
+New c81 Planner23:51:10.339Z→Action23:58:32.134Z;904generated/756examined/
+178exact instantiations/144base-overlap+30path-collision rejects/4options.
+All four now expose the original marker5 and friendly Hydralisk measurements,
+so8dbf728 has actual live evidence. The chosen14.618in marker gap is0.312in
+worse than baseline even though public prose calls it an advance; preserve
+that strategy/coverage limitation forS249, do not optimize by hiding it.
+This is another whole Host interval, not an isolated collision timing. Keep
+per-stage profiling, immutable geometry reuse and sound broad-phase rejection
+queued without reducing search capacity, options, facts or planning capability.
+
+r83 observation refresh8.086s/capture35.303s; r84 refresh6.975s/capture32.183s.
+The r84 checkpoint is212calls/24,031,959accounted units/estimated¥32.007932.
+BothFlash; same76208 continues without restart. Repeated malformed primitive
+`base_edge_distance` arguments still yield typed unknown; the relationship
+query gives usable geometry. This is an existing Medium tool-contract repair,
+not evidence of a Rules geometry failure or permission to coerce unknown to0.
+
+The separate r1–47 partial PDF was produced entirely from retained receipts
+and actual screenshots:0newProvider/Room mutations/¥0, no source refresh. Its
+artifact/layout checks did not repeat any passed product gate or Web build.
+
 ### r76 — 18-model Raptor Host interval407.527s
 
 Planner23:24:15.044Z→Action23:31:02.571Z;1056generated/728examined/
