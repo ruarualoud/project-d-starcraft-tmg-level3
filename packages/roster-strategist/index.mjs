@@ -2,6 +2,7 @@ export * from "./roster-plan-contracts-v1.mjs";
 export * from "./planned-preset-roster-plan-v2.mjs";
 export * from "./verified-preset-roster-lock-v1.mjs";
 export * from "./planned-preset-deepening-output-v1.mjs";
+export * from "./planned-preset-revision-output-v1.mjs";
 export * from "./roster-teach-cycle-v1.mjs";
 export * from "./roster-teach-evidence-port-v1.mjs";
 export * from "./roster-teach-output-contracts-v1.mjs";

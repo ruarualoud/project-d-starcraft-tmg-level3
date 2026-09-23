@@ -3,7 +3,8 @@ import { hashStarcraftTmgContract } from
 import { ROSTER_PLAN_SCHEMA, verifyRosterPlanV1 } from
   "../roster-strategist/roster-plan-contracts-v1.mjs";
 import { PLANNED_PRESET_ROSTER_PLAN_SCHEMA,
-  verifyPlannedPresetRosterPlanV2 } from
+  verifyPlannedPresetRosterPlanV2,
+  verifyPlannedPresetRoundSupplyScheduleV1 } from
   "../roster-strategist/planned-preset-roster-plan-v2.mjs";
 import { verifyRosterStrategistSessionReceiptV1,
   verifyRosterStrategistPresetSessionReceiptV1 } from
@@ -49,6 +50,18 @@ function verifiedPlan(plan, receipt) {
   } else if (plan?.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA) {
     verifyPlannedPresetRosterPlanV2(plan);
     verifyRosterStrategistPresetSessionReceiptV1(receipt);
+    if (receipt.planHash !== plan.planHash) {
+      revisionEvent = plan.revisions?.length === 1
+        ? plan.revisions[0] : null;
+      if (plan.planStatus !== "revised" || !revisionEvent
+        || revisionEvent.planId !== plan.planId
+        || revisionEvent.previousPlanHash !== receipt.planHash
+        || revisionEvent.fromPlanVersion + 1 !== plan.planVersion
+        || revisionEvent.toPlanVersion !== plan.planVersion
+        || !plan.openingDeploymentSchedule) {
+        fail("ROSTER_TURN_PLAN_REVISION_LINEAGE_MISSING");
+      }
+    }
   } else {
     fail("ROSTER_TURN_PLAN_SCHEMA_UNSUPPORTED");
   }
@@ -123,6 +136,14 @@ export function createStarcraftTmgRosterTurnPlanSeedV1(input = {}) {
       !== hashStarcraftTmgContract({ sideKey: scope.seatKey, recipe })) {
       fail("ROSTER_TURN_PLAN_PRESET_ROSTER_MISMATCH");
     }
+    if (plan.openingDeploymentSchedule) {
+      try {
+        verifyPlannedPresetRoundSupplyScheduleV1(
+          plan.openingDeploymentSchedule, plan.rosterCandidate, ownAudit);
+      } catch {
+        fail("ROSTER_TURN_PLAN_ROUND_SUPPLY_AUDIT_MISMATCH");
+      }
+    }
   }
   const unitIds = new Set(plan.rosterCandidate.units.map((unit) =>
     unit.unitInstanceId));
@@ -168,6 +189,9 @@ export function createStarcraftTmgRosterTurnPlanSeedV1(input = {}) {
   const route = plan.scoreRoute;
   const deployment = plan.deploymentConcept;
   const loss = plan.lossResourceBudget;
+  const firstArrivalRoundByUnit = new Map(
+    (plan.openingDeploymentSchedule?.entries || []).map((entry) =>
+      [entry.unitInstanceId, entry.round]));
   const planSpec = {
     objective: String(route?.routeText || plan.publicSummaryText).trim(),
     currentGoal: String(route?.routeText || plan.publicSummaryText).trim(),
@@ -183,14 +207,24 @@ export function createStarcraftTmgRosterTurnPlanSeedV1(input = {}) {
       : [],
     activationPriorities: deployment?.activationOrderStatus === "declared"
       ? deployment.activationOrder.map((entry) =>
-        `${entry.ordinal}. ${entry.unitInstanceId} in ${entry.phase}`) : [],
+        `${entry.ordinal}. ${entry.unitInstanceId} in ${entry.phase}`
+          + (firstArrivalRoundByUnit.has(entry.unitInstanceId)
+            ? `; first roster arrival round ${firstArrivalRoundByUnit.get(
+              entry.unitInstanceId)}, check current LegalSpace before acting`
+            : "")) : [],
     resourcePolicy: loss?.lossBudgetStatus === "declared"
       ? loss.plannedLossBudget.map((entry) =>
         `${entry.window}: maximum ${entry.resourceKind} loss ${entry.plannedMaximumLoss}`)
       : [],
     initiativePolicy: [],
-    reservePolicy: unique([deployment?.reinforcementPolicyText]),
-    futureActionPlans: [],
+    reservePolicy: unique([deployment?.reinforcementPolicyText,
+      ...(plan.openingDeploymentSchedule?.rounds || []).map((entry) =>
+        `Round ${entry.round}: committed ${entry.committedSupply} Supply`
+          + (entry.capacity === null ? " (unlimited final round)"
+            : ` of ${entry.capacity} capacity`))]),
+    futureActionPlans: (plan.openingDeploymentSchedule?.entries || [])
+      .map((entry) => `Round ${entry.round}: deploy ${entry.unitInstanceId}`
+        + ` (${entry.startingSupply} Supply) — ${entry.publicReasonText}`),
     reviseIf: unique((plan.invalidationTriggers || []).map((entry) =>
       entry.triggerText)),
     assumptions: unique((plan.opponentHypotheses || []).map((entry) =>

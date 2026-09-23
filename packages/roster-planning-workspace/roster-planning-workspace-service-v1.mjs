@@ -432,6 +432,18 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
         !== plan.rosterCandidate.legalityReceipt?.auditResultHash) {
       return false;
     }
+    if (session.lockedRoster
+      && plan.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA) {
+      // The official audit sorts its semantic Unit rows; a user-locked
+      // candidate keeps its original list order. Both are the same immutable
+      // roster, but deriving a Builder input from the sorted plan and hashing
+      // it would mark every valid preset as stale before its first revision.
+      return session.lockedRoster.lock.candidate.candidateHash
+          === plan.rosterCandidate.candidateHash
+        && hashStarcraftTmgContract(working.candidateInput)
+          === hashStarcraftTmgContract(
+            session.lockedRoster.lock.candidateInput);
+    }
     return hashStarcraftTmgContract(working.candidateInput)
       === hashStarcraftTmgContract(
         candidateInputFromCandidate(plan.rosterCandidate));
@@ -1195,9 +1207,26 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       wsFail("ROSTER_WORKSPACE_REVISION_INVALID", "revisedSectionKeys");
     }
     const plan = parseWorkspacePlan(session.planSerialized);
-    if (plan.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA) {
-      wsFail("ROSTER_WORKSPACE_LOCKED_PLAN_REVISION_UNSUPPORTED",
-        "create_a_new_locked_plan_for_a_new_roster", 409);
+    const presetRevision = plan.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA;
+    let missionProfile = null;
+    if (presetRevision) {
+      if (!session.lockedRoster
+        || plan.revisions.length !== 0
+        || !revisedSectionKeys.includes("deploymentConcept")
+        || session.lockedRoster.baselinePlan.planHash
+          !== plan.presetBinding.baselinePlanHash
+        || session.lockedRoster.lock.verdict.auditResultHash
+          !== plan.presetBinding.armyAuditResultHash) {
+        wsFail("ROSTER_WORKSPACE_LOCKED_PLAN_REVISION_INVALID",
+          "single_supply_scoped_revision_requires_original_locked_list", 409);
+      }
+      const authority = laboratoryCore.missionScoringAuthority();
+      missionProfile = authority.resultStatus === "derivable"
+        ? authority.missionScoringProfile : null;
+      if (!missionProfile) {
+        wsFail("ROSTER_WORKSPACE_ROUND_SUPPLY_AUTHORITY_UNAVAILABLE",
+          "frozen_mission_profile_required", 409);
+      }
     }
     if (planEvidenceStale(session, plan)) {
       wsFail("ROSTER_WORKSPACE_REPLAN_REQUIRED_AFTER_ROSTER_EDIT",
@@ -1258,6 +1287,11 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
           reasonText,
           triggerIds,
           revisedSectionKeys,
+          ...(presetRevision ? {
+            baselinePlan: session.lockedRoster.baselinePlan,
+            armyAudit: session.lockedRoster.lock.verdict.audit,
+            missionProfile,
+          } : {}),
         }, { deliberation });
         session.planSerialized = serializeWorkspacePlan(result.plan);
         session.planEvidenceStale = !workingMatchesPlan(session, result.plan);

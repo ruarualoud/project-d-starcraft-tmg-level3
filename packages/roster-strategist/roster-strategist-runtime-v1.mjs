@@ -43,6 +43,8 @@ import { runRosterTeachCycleV1 } from "./roster-teach-cycle-v1.mjs";
 import { createRosterTeachEvidencePortV1 } from
   "./roster-teach-evidence-port-v1.mjs";
 import {
+  PLANNED_PRESET_ROSTER_PLAN_SCHEMA,
+  createPlannedPresetRoundSupplyScheduleV1,
   createPlannedPresetRosterPlanV2,
   verifyPlannedPresetRosterPlanRoundTripV2,
 } from "./planned-preset-roster-plan-v2.mjs";
@@ -51,6 +53,10 @@ import {
   PLANNED_PRESET_DEEPENING_OUTPUT_CONTRACT_V1,
   PLANNED_PRESET_DEEPENING_ROUND_KIND,
 } from "./planned-preset-deepening-output-v1.mjs";
+import {
+  PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_REF_V1,
+  PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_V1,
+} from "./planned-preset-revision-output-v1.mjs";
 import { verifyVerifiedPresetRosterLockV1 } from
   "./verified-preset-roster-lock-v1.mjs";
 
@@ -2242,6 +2248,38 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     const triggerIds = textList(request.triggerIds || [], code);
     const revisedSectionKeys = textList(request.revisedSectionKeys || [], code,
       { allowEmpty: false });
+    const presetRevision = plan.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA;
+    let supplyAuthority = null;
+    if (presetRevision) {
+      verifyPlannedPresetRosterPlanRoundTripV2(plan);
+      const baseline = request.baselinePlan;
+      const audit = request.armyAudit;
+      const mission = request.missionProfile;
+      if (baseline?.planHash !== plan.presetBinding?.baselinePlanHash
+        || audit?.resultHash !== plan.presetBinding?.armyAuditResultHash
+        || !HASH_PATTERN.test(String(mission?.missionScoringProfileHash || ""))
+        || !revisedSectionKeys.includes("deploymentConcept")) {
+        fail("ROSTER_STRATEGIST_PRESET_REVISION_SOURCE_INVALID");
+      }
+      supplyAuthority = {
+        armyAuditResultHash: audit.resultHash,
+        missionScoringProfileHash: mission.missionScoringProfileHash,
+        gameLengthRounds: mission.gameLengthRounds,
+        startingSupply: mission.startingSupply,
+        extraSupplyPerRound: mission.extraSupplyPerRound,
+        units: audit.units.map((unit) => ({
+          unitInstanceId: unit.unitInstanceId,
+          startingSupply: unit.unitCompositionResult.startingSupply,
+        })),
+        roundCapacity: Array.from({ length: mission.gameLengthRounds },
+          (_, index) => ({ round: index + 1,
+            capacity: index + 1 === mission.gameLengthRounds ? null
+              : mission.startingSupply
+                + mission.extraSupplyPerRound * index })),
+        finalRoundUnlimited: true,
+        modelMayChooseRoundsButNotSupplyValues: true,
+      };
+    }
     const nodes = [
       sealNode("current-plan", "agent_deliberation_public", {
         planHash: plan.planHash, planVersion: plan.planVersion,
@@ -2250,15 +2288,19 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         publicSummaryText: plan.publicSummaryText }),
       sealNode("revision-request", "agent_deliberation_public", {
         reasonText, triggerIds, revisedSectionKeys }),
+      ...(supplyAuthority ? [sealNode("round-supply-authority",
+        "rules_owned_army_and_mission_audits", supplyAuthority)] : []),
       sealNode("response-schema", "platform", {
         schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
         roundKind: "revision",
         fields: ["publicSummaryText", "revisedScoreRoute",
-          "revisedDeploymentConcept"],
+          "revisedDeploymentConcept",
+          ...(presetRevision ? ["openingDeploymentSchedule"] : [])],
         publicFieldsOnly: true,
         envelopeAtTopLevelNoChannelsWrapper: true,
-        outputSchemaName:
-          rosterStrategistRoundOutputContractV1("revision").schemaName,
+        outputSchemaName: presetRevision
+          ? PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_V1.schemaName
+          : rosterStrategistRoundOutputContractV1("revision").schemaName,
         strictProviderJsonSchemaEnforced: true }),
     ];
     const sink = { deliberationReceipts: [] };
@@ -2266,10 +2308,30 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       buildRoundRequest({
         sessionId: `${plan.planId}-revision-${plan.planVersion + 1}`,
         roundIndex: plan.planVersion + 1, roundKind: "revision", nodes,
-        userMessage: "Publish the revised public plan sections for the declared "
-          + "revision triggers. Public fields only.",
+        userMessage: presetRevision
+          ? "Revise the immutable roster's public deployment plan for the "
+            + "Rules-owned per-round Supply capacities. List every locked "
+            + "Unit exactly once in openingDeploymentSchedule with the first "
+            + "round it enters and a public strategic reason. All Units begin "
+            + "in Reserves; cumulative deployed Supply cannot exceed each "
+            + "finite round capacity, while the final round is unlimited. "
+            + "Keep prose and schedule consistent. Do not change the roster, "
+            + "invent Supply values, or claim placement/path legality."
+          : "Publish the revised public plan sections for the declared "
+            + "revision triggers. Public fields only.",
         contextSeed: { planHash: plan.planHash, roundKind: "revision",
-          revisedSectionKeys },
+          revisedSectionKeys,
+          ...(supplyAuthority ? { armyAuditResultHash:
+            supplyAuthority.armyAuditResultHash,
+            missionScoringProfileHash:
+              supplyAuthority.missionScoringProfileHash } : {}) },
+        ...(presetRevision ? {
+          outputContract: PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_V1,
+          outputContractRef: PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_REF_V1,
+          promptPack: ROSTER_STRATEGIST_PRESET_PROMPT_PACK_V1,
+          decisionCandidateSource:
+            "rules_verified_immutable_room_roster_only",
+        } : {}),
       }), sink);
     const output = revisionDeliberation.output;
     const revisionWarnings = [];
@@ -2278,7 +2340,15 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     try {
       validateEnvelope(output, "revision");
       exactKeys(output, ["schemaVersion", "roundKind", "publicSummaryText",
-        "revisedScoreRoute", "revisedDeploymentConcept"], code);
+        "revisedScoreRoute", "revisedDeploymentConcept",
+        ...(presetRevision ? ["openingDeploymentSchedule"] : [])], code);
+      const openingDeploymentSchedule = presetRevision
+        ? createPlannedPresetRoundSupplyScheduleV1({
+          proposedEntries: output.openingDeploymentSchedule,
+          rosterCandidate: plan.rosterCandidate,
+          armyAudit: request.armyAudit,
+          missionProfile: request.missionProfile,
+        }) : null;
       const revision = createRosterPlanRevisionEventV1({
         revisionId: `${plan.planId}-revision-${plan.planVersion + 1}`,
         planId: plan.planId,
@@ -2289,7 +2359,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         triggerIds,
         revisedSectionKeys,
       });
-      revised = createRosterPlanV1({
+      const revisedInput = {
         planId: plan.planId,
         planVersion: plan.planVersion + 1,
         planStatus: "revised",
@@ -2334,13 +2404,21 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         toolReceiptReferences: plan.toolReceiptReferences,
         publicSummaryText: narrative(output.publicSummaryText, code,
           { path: "publicSummaryText" }),
-      });
-      verifyRosterPlanRoundTripV1(revised);
+      };
+      revised = presetRevision
+        ? createPlannedPresetRosterPlanV2({ ...revisedInput,
+          baselinePlan: request.baselinePlan,
+          openingDeploymentSchedule })
+        : createRosterPlanV1(revisedInput);
+      if (presetRevision) verifyPlannedPresetRosterPlanRoundTripV2(revised);
+      else verifyRosterPlanRoundTripV1(revised);
     } finally {
       activeNarrativeWarnings = null;
     }
     return freezeDeep({
       plan: revised,
+      openingDeploymentSchedule:
+        presetRevision ? clone(revised.openingDeploymentSchedule) : null,
       revisionEvent: revised.revisions[revised.revisions.length - 1],
       narrativeDisplayWarnings: revisionWarnings,
       outputNormalizationReceipt:
