@@ -28,8 +28,11 @@ const GREEN = '#22c55e';
 
 const ROUND_LABELS: Record<string, { zh: string; en: string }> = {
   strategy_foundation: { zh: '战略基础', en: 'Strategy foundation' },
+  teach_challenge: { zh: '质询小计划', en: 'Challenge the small plan' },
+  teach_revision: { zh: '修订小计划', en: 'Revise the small plan' },
   candidate_proposals: { zh: '候选方案', en: 'Candidate proposals' },
   comparison_selection: { zh: '比较选定', en: 'Comparison & selection' },
+  preset_plan_deepening: { zh: '深化锁定军表的计划', en: 'Deepen the locked roster plan' },
   revision: { zh: '修订', en: 'Revision' },
 };
 
@@ -340,6 +343,7 @@ function SetupView({ L, catalogue, deliberation, onCancel, onCreated, onError }:
   const [opponent, setOpponent] = useState(defaults.opponentFactionRecordKey);
   const [boundary, setBoundary] = useState(defaults.opponentInformationBoundary);
   const [budgetText, setBudgetText] = useState(String(defaults.mineralBudget));
+  const [presetText, setPresetText] = useState('');
   const [busy, setBusy] = useState(false);
   const matchups = catalogue.matchupRoutes || [];
   const routeAvailable = matchups.some((m: any) => (
@@ -422,6 +426,15 @@ function SetupView({ L, catalogue, deliberation, onCancel, onCreated, onError }:
           {ui(L, '该对阵没有可用 Skill 路线,无法创建。', 'No Skill route for this matchup; cannot create.')}
         </Text>
       )}
+      <Text style={st.label}>
+        {ui(L, '已有军表(可选；粘贴 Army Builder 候选 JSON)',
+          'Existing roster (optional; paste Army Builder candidate JSON)')}
+      </Text>
+      <TextInput style={st.importInputSmall} multiline value={presetText}
+        onChangeText={setPresetText}
+        placeholder={ui(L, '留空则由 Teach 先规划再选模型；填入则锁定军表，只生成用法计划',
+          'Leave empty to plan before choosing models; provide a list to lock its models and plan their use')}
+        placeholderTextColor="#64748b" testID="setup-preset-candidate-json" />
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
         <Pressable onPress={onCancel} style={({ pressed }) => [st.btn, pressed && { opacity: 0.7 }]}>
           <Text style={st.btnText}>{ui(L, '取消', 'Cancel')}</Text>
@@ -431,13 +444,24 @@ function SetupView({ L, catalogue, deliberation, onCancel, onCreated, onError }:
           onPress={async () => {
             setBusy(true);
             try {
-              const result = await rosterPlanningClient.createSession({
+              const setup = {
                 factionRecordKey: own,
                 opponentFactionRecordKey: opponent,
                 engagementScale: 'Standard',
                 mineralBudget: budget,
                 opponentInformationBoundary: boundary,
-              });
+              };
+              let result;
+              if (presetText.trim()) {
+                let candidateInput;
+                try { candidateInput = JSON.parse(presetText); }
+                catch { throw new Error(ui(L, '预制军表不是有效 JSON',
+                  'Preset roster is not valid JSON')); }
+                result = await rosterPlanningClient.createPresetSession(setup,
+                  candidateInput);
+              } else {
+                result = await rosterPlanningClient.createSession(setup);
+              }
               onCreated(result.session);
             } catch (e) {
               onError(e);
@@ -490,6 +514,16 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
           {' · '}{ui(L, '任务', 'Mission')}: {session.setup.missionBinding?.missionRecordKey}
         </Text>
         <Text style={st.hashLine}>session {session.sessionId}</Text>
+        <Text style={st.cardSub}>
+          {session.planningMode === 'locked_roster_teach_v1'
+            ? ui(L, `军表已锁定 · ${session.lockedRoster?.unitCount || 0} 个单位；Teach 只规划用法，不重新选模型`,
+              `Roster locked · ${session.lockedRoster?.unitCount || 0} units; Teach plans its use without reselecting models`)
+            : ui(L, 'Skill → 小计划 → Teach 质询 → 选模型 → 深化计划',
+              'Skill → small plan → Teach challenge → model selection → deep plan')}
+        </Text>
+        {!!session.sourcePlanHash && (
+          <Text style={st.hashLine}>{ui(L, '源计划', 'Source plan')} {session.sourcePlanHash}</Text>
+        )}
       </View>
 
       {/* Failure banner */}
@@ -553,7 +587,11 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
               pressed && { opacity: 0.7 }]}
             testID="session-generate">
             <Text style={st.primaryBtnText}>
-              {ui(L, '生成规划(真实付费 Flash 调用)', 'Generate plan (real paid Flash calls)')}
+              {session.planningMode === 'locked_roster_teach_v1'
+                ? ui(L, '为锁定军表生成计划(真实付费 Flash 调用)',
+                  'Plan this locked roster (real paid Flash calls)')
+                : ui(L, 'Teach 写表并生成计划(真实付费 Flash 调用)',
+                  'Teach-build roster and plan (real paid Flash calls)')}
             </Text>
           </Pressable>
           {session.resumeAvailable && (
@@ -579,31 +617,45 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
       )}
 
       {/* Working list / manual override */}
-      {session.working && plan && (
+      {session.working && plan && !session.lockedRoster && (
         <WorkingListEditor L={L} session={session} catalogue={catalogue}
           onSession={onSession} onError={onError} act={act} />
       )}
 
-      {/* Stale banner + revision */}
+      {/* An edited list invalidates the old candidate and its prose. */}
       {session.planEvidenceStale && plan && !running && (
         <View style={st.staleBanner} testID="session-stale-banner">
           <Text style={[st.cardName, { color: AMBER }]}>
             {ui(L, '手动修改后计划证据已过期', 'Plan evidence is stale after manual edits')}
           </Text>
           <Text style={st.hint}>
-            {ui(L, '工作清单已不同于计划选定候选;显式修订前,得分路线/反制等证据不再对应当前清单。',
-              'The working list differs from the plan candidate; score route/counters no longer match until an explicit revision.')}
+            {ui(L, '当前清单与旧计划的规则审查不一致。旧计划仅供历史参考；恢复原名单或为当前名单重新生成完整计划，不能只改得分文字。',
+              'The current roster no longer matches the old plan’s Rules audit. Keep that plan as history; restore its roster or generate a complete new plan for this list. Editing score text alone is unsafe.')}
           </Text>
+          {session.working?.verdictSummary?.status === 'legal' && (
+            <Pressable onPress={() => act(() => rosterPlanningClient.lockAndReplan(session.sessionId))}
+              style={({ pressed }) => [st.btn, { borderColor: BLUE, alignSelf: 'flex-start', marginTop: 8 }, pressed && { opacity: 0.7 }]}
+              testID="session-lock-and-replan">
+              <Text style={[st.btnText, { color: BLUE }]}>
+                {ui(L, '锁定当前军表，重新 Teach 生成计划',
+                  'Lock this roster and Teach a new plan')}
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+      {plan && !session.lockedRoster && !session.planEvidenceStale && !running && (
+        <View style={{ marginBottom: 8 }}>
           <Pressable onPress={() => setShowRevise(!showRevise)}
             style={({ pressed }) => [st.btn, { borderColor: AMBER, alignSelf: 'flex-start', marginTop: 6 }, pressed && { opacity: 0.7 }]}
             testID="session-show-revise">
             <Text style={[st.btnText, { color: AMBER }]}>
-              {ui(L, '请求修订(1 次付费调用)', 'Request revision (1 paid call)')}
+              {ui(L, '修订当前名单的策略(1 次付费调用)', 'Revise strategy for this unchanged roster (1 paid call)')}
             </Text>
           </Pressable>
         </View>
       )}
-      {showRevise && !running && (
+      {showRevise && !session.lockedRoster && !session.planEvidenceStale && !running && (
         <View style={st.card} testID="session-revise-form">
           <Text style={st.sectionTitle}>{ui(L, '修订计划', 'Revise plan')}</Text>
           <TextInput style={st.importInputSmall} multiline value={revisionReason}

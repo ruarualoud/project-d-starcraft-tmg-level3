@@ -384,9 +384,14 @@ function createLiveFlashDeliberationFactory(live) {
               { code: "S271_PHYSICAL_CALL_CAP_REACHED" });
           }
           sentAttempts += 1;
-          const contract = rosterStrategistRoundOutputContractV1(
-            request.roundKind);
-          const contractRef = outputContractRefStarcraftTmgV1(contract);
+          const contract = request.responseFormat?.schema
+            ? {
+              schemaName: request.responseFormat.schemaName,
+              providerSchema: request.responseFormat.schema,
+            }
+            : rosterStrategistRoundOutputContractV1(request.roundKind);
+          const contractRef = request.responseFormat?.outputContractRef
+            || outputContractRefStarcraftTmgV1(contract);
           const body = {
             model: live.egressBinding.model,
             instructions: LIVE_INSTRUCTIONS,

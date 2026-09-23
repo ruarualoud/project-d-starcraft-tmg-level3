@@ -1,5 +1,16 @@
 # Ticket 27 / Slice 271 — Roster-planning workspace v1
 
+> 2026-09-24 correction: the acceptance claim below is historical and does
+> **not** close S271. The retained paid draft has a 5-unit structured plan
+> and a Rules-legal 4-unit working roster while `planEvidenceStale=false`;
+> its revised prose mentions the trim without rebinding the roster. This is
+> a High plan/list mismatch, not a valid post-edit plan. The Codex integration
+> branch now detects it, forbids prose-only rebind, and offers a fresh
+> locked-roster Teach route. A focused zero-Provider regression passed, but
+> fresh live Teach generation, product Web UI verification and the normal
+> server's secure live deliberation hookup remain open. See
+> `docs/ticket-27-slice-271-teach-workspace-integration-v1-2026-09-24.md`.
+
 Date: 2026-09-23. Status: **acceptance complete.** The army-tab
 roster-planning workspace is delivered with real Flash (BYOK) evidence: one
 actual generated Rules-legal Standard-2000 roster plus a public, versioned

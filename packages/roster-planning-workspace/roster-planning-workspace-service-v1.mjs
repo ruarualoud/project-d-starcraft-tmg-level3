@@ -30,6 +30,16 @@ import {
   serializeRosterPlanV1,
   verifyRosterPlanRoundTripV1,
 } from "../roster-strategist/roster-plan-contracts-v1.mjs";
+import {
+  PLANNED_PRESET_ROSTER_PLAN_SCHEMA,
+  parsePlannedPresetRosterPlanV2,
+  serializePlannedPresetRosterPlanV2,
+  verifyPlannedPresetRosterPlanRoundTripV2,
+} from "../roster-strategist/planned-preset-roster-plan-v2.mjs";
+import { createVerifiedBuilderLockedRosterForTeachV1 } from
+  "../roster-strategist/verified-preset-roster-lock-v1.mjs";
+import { createRosterTeachRolePortsV1 } from
+  "../roster-strategist/roster-teach-role-ports-v1.mjs";
 import { ROSTER_STRATEGIST_PROMPT_PACK_V1 } from
   "../roster-strategist/roster-strategist-runtime-v1.mjs";
 import { ROSTER_PLANNING_SESSION_SCHEMA } from
@@ -78,6 +88,27 @@ function errorCode(error, fallback = "ROSTER_WORKSPACE_INTERNAL_FAILURE") {
   if (/^[A-Z][A-Z0-9_]{2,95}$/u.test(value)) return value;
   const message = String(error?.message || "").split(":")[0];
   return /^[A-Z][A-Z0-9_]{2,95}$/u.test(message) ? message : fallback;
+}
+
+function parseWorkspacePlan(serialized) {
+  let shape;
+  try { shape = JSON.parse(String(serialized)); }
+  catch { wsFail("ROSTER_WORKSPACE_PLAN_SERIALIZATION_INVALID"); }
+  return shape?.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA
+    ? parsePlannedPresetRosterPlanV2(serialized)
+    : parseRosterPlanV1(serialized);
+}
+
+function serializeWorkspacePlan(plan) {
+  return plan?.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA
+    ? serializePlannedPresetRosterPlanV2(plan)
+    : serializeRosterPlanV1(plan);
+}
+
+function verifyWorkspacePlanRoundTrip(plan) {
+  return plan?.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA
+    ? verifyPlannedPresetRosterPlanRoundTripV2(plan)
+    : verifyRosterPlanRoundTripV1(plan);
 }
 
 // Re-derive the Builder candidate input shape from the public RosterCandidate
@@ -392,9 +423,28 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     return deriveRosterWorkspaceCandidateInputV1(candidate);
   }
 
+  function workingMatchesPlan(session, plan) {
+    const working = session.working;
+    if (!plan?.rosterCandidate || !working?.candidateInput
+      || working.verdict?.schema
+        !== "starcraft_tmg_army_builder_roster_verdict_v1"
+      || working.verdict.auditResultHash
+        !== plan.rosterCandidate.legalityReceipt?.auditResultHash) {
+      return false;
+    }
+    return hashStarcraftTmgContract(working.candidateInput)
+      === hashStarcraftTmgContract(
+        candidateInputFromCandidate(plan.rosterCandidate));
+  }
+
+  function planEvidenceStale(session, plan) {
+    return session.planEvidenceStale === true
+      || Boolean(plan && !workingMatchesPlan(session, plan));
+  }
+
   function projectSession(session) {
     const plan = session.planSerialized
-      ? parseRosterPlanV1(session.planSerialized) : null;
+      ? parseWorkspacePlan(session.planSerialized) : null;
     const availability = deliberationAvailability();
     const usage = session.usage;
     const estimatedCost = usage && estimateCost && usage.totalUnits > 0
@@ -403,6 +453,14 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       schema: ROSTER_WORKSPACE_SESSION_PROJECTION_SCHEMA,
       sessionId: session.sessionId,
       status: session.status,
+      planningMode: session.planningMode || "agent_legacy_v1",
+      sourcePlanHash: session.sourcePlanHash || null,
+      lockedRoster: session.lockedRoster ? {
+        baselinePlanHash: session.lockedRoster.baselinePlan.planHash,
+        auditResultHash: session.lockedRoster.lock.verdict.auditResultHash,
+        unitCount: session.lockedRoster.lock.candidate.units.length,
+        modelSelectionLocked: true,
+      } : null,
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
       setup: clone(session.setup),
@@ -427,7 +485,7 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
         verdictSummary: summarizeVerdict(session.working.verdict),
         overrideHistory: clone(session.working.overrideHistory),
       } : null,
-      planEvidenceStale: session.planEvidenceStale === true,
+      planEvidenceStale: planEvidenceStale(session, plan),
       evidence: {
         toolReceipts: clone(session.toolReceipts),
         sessionReceipt: clone(session.sessionReceipt),
@@ -524,6 +582,9 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       createdAt: now(),
       updatedAt: now(),
       setup: clone(setup),
+      planningMode: "agent_teach_v1",
+      sourcePlanHash: null,
+      lockedRoster: null,
       status: "draft",
       progress: { phase: "idle", rounds: [], activeRoundKind: null },
       planSerialized: null,
@@ -649,6 +710,85 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     return projectSession(session);
   }
 
+  async function createLockedReplanSession(sessionId) {
+    const source = requireSession(sessionId);
+    if (activeRun) {
+      wsFail("ROSTER_WORKSPACE_PLANNING_BUSY", activeRun.sessionId, 409);
+    }
+    if (source.status !== "planned" || !source.planSerialized
+      || !source.working?.candidateInput) {
+      wsFail("ROSTER_WORKSPACE_NOT_PLANNED", sessionId, 409);
+    }
+    const oldPlan = parseWorkspacePlan(source.planSerialized);
+    if (!planEvidenceStale(source, oldPlan)) {
+      wsFail("ROSTER_WORKSPACE_REPLAN_NOT_NEEDED",
+        "working_roster_still_matches_plan", 409);
+    }
+    const nextId = createSessionId();
+    let lockedRoster;
+    try {
+      lockedRoster = createVerifiedBuilderLockedRosterForTeachV1({
+        candidateInput: clone(source.working.candidateInput),
+        armyBuilderPort,
+        planId: `${nextId}-locked-plan`,
+        presetSource: "workspace_manual_roster_edit",
+      });
+    } catch (error) {
+      wsFail(errorCode(error, "ROSTER_WORKSPACE_LOCKED_ROSTER_INVALID"),
+        "Rules-legal roster with supported upgrade selections required", 409);
+    }
+    const session = newSessionRecord(source.setup, nextId);
+    session.planningMode = "locked_roster_teach_v1";
+    session.sourcePlanHash = oldPlan.planHash;
+    session.lockedRoster = clone(lockedRoster);
+    session.working = {
+      candidateInput: clone(lockedRoster.lock.candidateInput),
+      verdict: clone(lockedRoster.lock.verdict),
+      overrideHistory: [],
+    };
+    await persist(session);
+    sessions.set(session.sessionId, session);
+    return projectSession(session);
+  }
+
+  async function createPresetSession(request = {}) {
+    if (activeRun) {
+      wsFail("ROSTER_WORKSPACE_PLANNING_BUSY", activeRun.sessionId, 409);
+    }
+    const setup = validateSetup(request.setup);
+    const candidateInput = request.candidateInput;
+    if (!object(candidateInput)
+      || candidateInput.sideKey !== setup.sideKey
+      || candidateInput.factionRecordKey !== setup.factionRecordKey
+      || candidateInput.scaleId !== setup.engagementScale
+      || candidateInput.mineralBudget !== setup.mineralBudget) {
+      wsFail("ROSTER_WORKSPACE_PRESET_CONTEXT_DRIFT", "setup", 409);
+    }
+    const sessionId = createSessionId();
+    let lockedRoster;
+    try {
+      lockedRoster = createVerifiedBuilderLockedRosterForTeachV1({
+        candidateInput: clone(candidateInput), armyBuilderPort,
+        planId: `${sessionId}-locked-plan`,
+        presetSource: "workspace_user_preset_roster",
+      });
+    } catch (error) {
+      wsFail(errorCode(error, "ROSTER_WORKSPACE_PRESET_INVALID"),
+        "Rules-legal roster with supported upgrade selections required", 409);
+    }
+    const session = newSessionRecord(setup, sessionId);
+    session.planningMode = "locked_roster_teach_v1";
+    session.lockedRoster = clone(lockedRoster);
+    session.working = {
+      candidateInput: clone(lockedRoster.lock.candidateInput),
+      verdict: clone(lockedRoster.lock.verdict),
+      overrideHistory: [],
+    };
+    await persist(session);
+    sessions.set(session.sessionId, session);
+    return projectSession(session);
+  }
+
   async function listSessions() {
     return {
       schema: "starcraft_tmg_roster_workspace_session_list_v1",
@@ -658,6 +798,7 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
         .map((session) => ({
           sessionId: session.sessionId,
           status: session.status,
+          planningMode: session.planningMode || "agent_legacy_v1",
           createdAt: session.createdAt,
           updatedAt: session.updatedAt,
           factionRecordKey: session.setup.factionRecordKey,
@@ -665,10 +806,12 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
           engagementScale: session.setup.engagementScale,
           mineralBudget: session.setup.mineralBudget,
           planHash: session.planSerialized
-            ? parseRosterPlanV1(session.planSerialized).planHash : null,
+            ? parseWorkspacePlan(session.planSerialized).planHash : null,
           planVersion: session.planSerialized
-            ? parseRosterPlanV1(session.planSerialized).planVersion : null,
-          planEvidenceStale: session.planEvidenceStale === true,
+            ? parseWorkspacePlan(session.planSerialized).planVersion : null,
+          planEvidenceStale: planEvidenceStale(session,
+            session.planSerialized
+              ? parseWorkspacePlan(session.planSerialized) : null),
           providerCalls: session.usage?.calls || 0,
           failureCode: session.failure?.code || null,
         })),
@@ -810,8 +953,10 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       session.usage.deliberationKind = session.deliberationDescriptor.kind;
       session.usage.modelVersion = session.deliberationDescriptor.modelVersion;
     }
-    const sessionResult = await strategist.planRoster({
+    const sessionInput = {
       sessionId: session.sessionId,
+      ...(session.lockedRoster
+        ? { planId: session.lockedRoster.baselinePlan.planId } : {}),
       sideKey: session.setup.sideKey,
       factionRecordKey: session.setup.factionRecordKey,
       opponentFactionRecordKey: session.setup.opponentFactionRecordKey,
@@ -828,7 +973,19 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
         officialUnitsVersion: fixture.officialUnitsVersion,
         officialCardsVersion: fixture.officialCardsVersion,
       },
-    }, { deliberation, maxProposalRounds: 2 });
+    };
+    const teachPorts = session.planningMode === "agent_legacy_v1"
+      ? null : createRosterTeachRolePortsV1({
+        deliberation, sessionId: session.sessionId });
+    const sessionResult = session.lockedRoster
+      ? await strategist.planPresetRoster(sessionInput, {
+        deliberation, teachPorts,
+        presetRosterLock: session.lockedRoster.lock,
+      })
+      : await strategist.planRoster(sessionInput, {
+        deliberation, maxProposalRounds: 2,
+        ...(teachPorts ? { teachPorts } : {}),
+      });
 
     const candidateSummaries = sessionResult.candidateInputs.map(
       (candidateInput) => summarizeVerdict(
@@ -853,7 +1010,7 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       // version/hash, so compare against the generation-time hash). Usage
       // stays untouched — replayed rounds are zero new paid calls.
       const referenceHash = session.generatedPlanHash
-        || parseRosterPlanV1(session.planSerialized).planHash;
+        || parseWorkspacePlan(session.planSerialized).planHash;
       if (referenceHash !== sessionResult.plan.planHash) {
         wsFail("ROSTER_WORKSPACE_RESUME_PLAN_HASH_DRIFT",
           `${referenceHash}!=${sessionResult.plan.planHash}`, 500);
@@ -876,7 +1033,7 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       return { sessionResult, reconstructed: true };
     }
 
-    session.planSerialized = serializeRosterPlanV1(sessionResult.plan);
+    session.planSerialized = serializeWorkspacePlan(sessionResult.plan);
     session.generatedPlanHash = sessionResult.plan.planHash;
     session.candidates = sessionResult.candidates.map((entry) => clone(entry));
     session.candidateInputs = sessionResult.candidateInputs.map(
@@ -890,8 +1047,7 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     session.skillRouteReceipt = clone(sessionResult.skillRoute.receipt);
     session.mutationZeroProof = clone(mutationProof);
     session.working = {
-      candidateInput: candidateInputFromCandidate(
-        sessionResult.plan.rosterCandidate),
+      candidateInput: clone(selectedCandidateInput),
       verdict: armyBuilderPort.evaluateRosterCandidate(
         clone(selectedCandidateInput)),
       overrideHistory: [],
@@ -958,7 +1114,11 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       session.rejections = [];
       session.toolReceipts = [];
       session.sessionReceipt = null;
-      session.working = null;
+      session.working = session.lockedRoster ? {
+        candidateInput: clone(session.lockedRoster.lock.candidateInput),
+        verdict: clone(session.lockedRoster.lock.verdict),
+        overrideHistory: [],
+      } : null;
       session.planEvidenceStale = false;
       session.usage = null;
       session.resumeReceipts = [];
@@ -1023,10 +1183,6 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     if (session.status !== "planned" || !session.planSerialized) {
       wsFail("ROSTER_WORKSPACE_NOT_PLANNED", sessionId, 409);
     }
-    if (!deliberationFactory) {
-      wsFail("ROSTER_WORKSPACE_DELIBERATION_UNAVAILABLE",
-        "no_live_deliberation_factory_attached", 503);
-    }
     const reasonText = nonEmpty(request.reasonText,
       "ROSTER_WORKSPACE_REVISION_INVALID");
     const triggerIds = Array.isArray(request.triggerIds)
@@ -1038,7 +1194,19 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
         !ROSTER_WORKSPACE_REVISABLE_SECTION_KEYS.includes(key)))) {
       wsFail("ROSTER_WORKSPACE_REVISION_INVALID", "revisedSectionKeys");
     }
-    const plan = parseRosterPlanV1(session.planSerialized);
+    const plan = parseWorkspacePlan(session.planSerialized);
+    if (plan.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA) {
+      wsFail("ROSTER_WORKSPACE_LOCKED_PLAN_REVISION_UNSUPPORTED",
+        "create_a_new_locked_plan_for_a_new_roster", 409);
+    }
+    if (planEvidenceStale(session, plan)) {
+      wsFail("ROSTER_WORKSPACE_REPLAN_REQUIRED_AFTER_ROSTER_EDIT",
+        "prose_only_revision_cannot_rebind_changed_roster", 409);
+    }
+    if (!deliberationFactory) {
+      wsFail("ROSTER_WORKSPACE_DELIBERATION_UNAVAILABLE",
+        "no_live_deliberation_factory_attached", 503);
+    }
     for (const triggerId of triggerIds) {
       if (!plan.invalidationTriggers.some((entry) => (
         entry.triggerId === triggerId))) {
@@ -1091,8 +1259,8 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
           triggerIds,
           revisedSectionKeys,
         }, { deliberation });
-        session.planSerialized = serializeRosterPlanV1(result.plan);
-        session.planEvidenceStale = false;
+        session.planSerialized = serializeWorkspacePlan(result.plan);
+        session.planEvidenceStale = !workingMatchesPlan(session, result.plan);
         session.status = "planned";
         session.progress.phase = "completed";
         session.failure = null;
@@ -1111,6 +1279,10 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     if (session.status !== "planned" || !session.planSerialized) {
       wsFail("ROSTER_WORKSPACE_NOT_PLANNED", sessionId, 409);
     }
+    if (session.lockedRoster) {
+      wsFail("ROSTER_WORKSPACE_LOCKED_ROSTER_IMMUTABLE",
+        "create_a_new_workspace_session_for_a_different_roster", 409);
+    }
     const candidateInput = request.candidateInput;
     if (!object(candidateInput)) {
       wsFail("ROSTER_WORKSPACE_OVERRIDE_INVALID", "candidateInput");
@@ -1119,8 +1291,6 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     // verdict below is the Rules kernel's own audit, never a client guess.
     const verdict = armyBuilderPort.evaluateRosterCandidate(
       clone(candidateInput));
-    const selectedHash = session.selectedCandidateInput
-      ? hashStarcraftTmgContract(clone(session.selectedCandidateInput)) : null;
     const entry = {
       overrideId: `override-${session.working.overrideHistory.length + 1}`,
       at: now(),
@@ -1135,10 +1305,11 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       verdict,
       overrideHistory: [...session.working.overrideHistory, entry],
     };
-    // Plan evidence (score route, counters, tool receipts) was produced for
-    // the selected candidate; once the working list differs, that evidence is
-    // stale until an explicit revision refreshes the public plan sections.
-    session.planEvidenceStale = verdict.candidateHash !== selectedHash;
+    // Text-only revision never rebinds the structured candidate. Only an
+    // exact return to the plan's original Rules-audited list clears staleness;
+    // an edited list needs a fresh locked-list Teach/deepening plan.
+    session.planEvidenceStale = !workingMatchesPlan(session,
+      parseWorkspacePlan(session.planSerialized));
     await persist(session);
     return projectSession(session);
   }
@@ -1148,13 +1319,21 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
   function exportSession(sessionId) {
     const session = requireSession(sessionId);
     const plan = session.planSerialized
-      ? JSON.parse(serializeRosterPlanV1(
-        parseRosterPlanV1(session.planSerialized))) : null;
+      ? JSON.parse(serializeWorkspacePlan(
+        parseWorkspacePlan(session.planSerialized))) : null;
     const exportDocument = {
       schema: ROSTER_WORKSPACE_EXPORT_SCHEMA,
       exportId: `export-${randomUUID()}`,
       exportedAt: now(),
       setup: clone(session.setup),
+      planningMode: session.planningMode || "agent_legacy_v1",
+      sourcePlanHash: session.sourcePlanHash || null,
+      lockedRosterBaselinePlanId: session.lockedRoster
+        ? session.lockedRoster.baselinePlan.planId : null,
+      lockedRosterBaselinePlanHash: session.lockedRoster
+        ? session.lockedRoster.baselinePlan.planHash : null,
+      lockedRosterPresetSource: session.lockedRoster
+        ? session.lockedRoster.baselinePlan.presetBinding.presetSource : null,
       fixture: {
         sourceLockHash: fixture.sourceLockHash,
         sourceSnapshotHash: fixture.sourceSnapshotHash,
@@ -1203,6 +1382,18 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     assertNoSecretKeys(exportDocument);
     const setup = validateSetup(exportDocument.setup);
     const session = newSessionRecord(setup, createSessionId());
+    const importedMode = String(exportDocument.planningMode ||
+      "agent_legacy_v1");
+    if (!["agent_legacy_v1", "agent_teach_v1",
+      "locked_roster_teach_v1"].includes(importedMode)) {
+      wsFail("ROSTER_WORKSPACE_IMPORT_INVALID", "planningMode");
+    }
+    session.planningMode = importedMode;
+    session.sourcePlanHash = exportDocument.sourcePlanHash || null;
+    if (session.sourcePlanHash
+      && !HASH_PATTERN.test(String(session.sourcePlanHash))) {
+      wsFail("ROSTER_WORKSPACE_IMPORT_INVALID", "sourcePlanHash");
+    }
     if (object(exportDocument.workingCandidateInput)) {
       const verdict = armyBuilderPort.evaluateRosterCandidate(
         clone(exportDocument.workingCandidateInput));
@@ -1224,19 +1415,42 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     if (object(exportDocument.plan)) {
       // Round-trip through the frozen plan contract: a tampered or drifted
       // plan fails closed here instead of entering the workspace.
-      const plan = parseRosterPlanV1(JSON.stringify(exportDocument.plan));
-      verifyRosterPlanRoundTripV1(plan);
-      session.planSerialized = serializeRosterPlanV1(plan);
+      const plan = parseWorkspacePlan(JSON.stringify(exportDocument.plan));
+      verifyWorkspacePlanRoundTrip(plan);
+      if (plan.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA) {
+        if (importedMode !== "locked_roster_teach_v1") {
+          wsFail("ROSTER_WORKSPACE_IMPORT_INVALID", "lockedMode");
+        }
+        let lockedRoster;
+        try {
+          lockedRoster = createVerifiedBuilderLockedRosterForTeachV1({
+            candidateInput: candidateInputFromCandidate(
+              plan.rosterCandidate),
+            armyBuilderPort,
+            planId: plan.planId,
+            presetSource: plan.presetBinding.presetSource,
+          });
+        } catch (error) {
+          wsFail(errorCode(error, "ROSTER_WORKSPACE_IMPORT_RULES_DRIFT"),
+            "locked_roster", 409);
+        }
+        if (lockedRoster.baselinePlan.planHash
+          !== plan.presetBinding.baselinePlanHash) {
+          wsFail("ROSTER_WORKSPACE_IMPORT_RULES_DRIFT",
+            "baselinePlanHash", 409);
+        }
+        session.lockedRoster = clone(lockedRoster);
+      } else if (importedMode === "locked_roster_teach_v1") {
+        wsFail("ROSTER_WORKSPACE_IMPORT_INVALID", "planSchema");
+      }
+      session.planSerialized = serializeWorkspacePlan(plan);
       session.status = "planned";
       session.progress = { phase: "completed", rounds: [],
         activeRoundKind: null };
       session.selectedCandidateInput = candidateInputFromCandidate(
         plan.rosterCandidate);
       if (session.working) {
-        const selectedHash = hashStarcraftTmgContract(
-          clone(session.selectedCandidateInput));
-        session.planEvidenceStale =
-          session.working.verdict.candidateHash !== selectedHash;
+        session.planEvidenceStale = !workingMatchesPlan(session, plan);
       } else {
         session.working = {
           candidateInput: clone(session.selectedCandidateInput),
@@ -1246,6 +1460,32 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
         };
         session.planEvidenceStale = false;
       }
+    }
+    if (!session.planSerialized && importedMode === "locked_roster_teach_v1") {
+      if (!session.working?.candidateInput
+        || !nonEmpty(exportDocument.lockedRosterBaselinePlanId,
+          "ROSTER_WORKSPACE_IMPORT_INVALID")) {
+        wsFail("ROSTER_WORKSPACE_IMPORT_INVALID", "lockedDraft");
+      }
+      let lockedRoster;
+      try {
+        lockedRoster = createVerifiedBuilderLockedRosterForTeachV1({
+          candidateInput: clone(session.working.candidateInput),
+          armyBuilderPort,
+          planId: exportDocument.lockedRosterBaselinePlanId,
+          presetSource: nonEmpty(exportDocument.lockedRosterPresetSource,
+            "ROSTER_WORKSPACE_IMPORT_INVALID"),
+        });
+      } catch (error) {
+        wsFail(errorCode(error, "ROSTER_WORKSPACE_IMPORT_RULES_DRIFT"),
+          "lockedDraft", 409);
+      }
+      if (lockedRoster.baselinePlan.planHash
+        !== exportDocument.lockedRosterBaselinePlanHash) {
+        wsFail("ROSTER_WORKSPACE_IMPORT_RULES_DRIFT",
+          "lockedBaselinePlanHash", 409);
+      }
+      session.lockedRoster = clone(lockedRoster);
     }
     await persist(session);
     sessions.set(session.sessionId, session);
@@ -1311,6 +1551,8 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     readCatalogue,
     readEnumeration,
     createSession,
+    createPresetSession,
+    createLockedReplanSession,
     listSessions,
     readSession,
     deleteSession,

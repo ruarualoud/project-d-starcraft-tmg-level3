@@ -79,6 +79,8 @@ export const rosterPlanningClient = {
   listSessions: () => request<{ sessions: any[]; planningBusy: boolean; deliberation: any }>('GET', 'sessions'),
   createSession: (setup: WorkspaceSessionSetup) =>
     request<{ session: any }>('POST', 'sessions', { setup }),
+  createPresetSession: (setup: WorkspaceSessionSetup, candidateInput: unknown) =>
+    request<{ session: any }>('POST', 'sessions/preset', { setup, candidateInput }),
   readSession: (sessionId: string) =>
     request<{ session: any }>('GET', `sessions/${encodeURIComponent(sessionId)}`),
   deleteSession: (sessionId: string) =>
@@ -101,6 +103,9 @@ export const rosterPlanningClient = {
     request<{ session: any }>('POST', `sessions/${encodeURIComponent(sessionId)}/override`, {
       candidateInput,
     }),
+  lockAndReplan: (sessionId: string) =>
+    request<{ session: any }>('POST',
+      `sessions/${encodeURIComponent(sessionId)}/lock-and-replan`, {}),
   exportSession: (sessionId: string) =>
     request<{ export: { exportDocument: any; exportHash: string; exportBytes: number } }>(
       'POST', `sessions/${encodeURIComponent(sessionId)}/export`, {}),

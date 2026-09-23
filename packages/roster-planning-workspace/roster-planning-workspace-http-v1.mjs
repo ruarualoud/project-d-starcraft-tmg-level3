@@ -98,6 +98,10 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
           session: await service.importSession(body),
         }, 201);
       }
+      if (method === "POST" && segments.length === 2
+        && segments[0] === "sessions" && segments[1] === "preset") {
+        return ok({ session: await service.createPresetSession(body) }, 201);
+      }
       const sessionMatch = segments.length >= 2
         && segments[0] === "sessions" ? segments[1] : null;
       if (sessionMatch && segments.length === 2) {
@@ -131,6 +135,10 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
           return ok({
             session: await service.applyManualOverride(sessionMatch, body),
           });
+        }
+        if (operation === "lock-and-replan") {
+          return ok({ session: await service.createLockedReplanSession(
+            sessionMatch) }, 201);
         }
         if (operation === "export") {
           return ok({ export: service.exportSession(sessionMatch) });
