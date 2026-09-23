@@ -2,6 +2,9 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import { resolveStarcraftTmgEffectiveActingSideV1 } from
   "./effective-acting-side-v1.mjs";
+import { createStarcraftTmgRosterTurnPlanSeedV1,
+  verifyStarcraftTmgRosterTurnPlanOriginV1 } from
+  "./roster-plan-turn-plan-bridge-v1.mjs";
 
 export const STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION =
   "starcraft_tmg_turn_plan_runtime_v1";
@@ -306,6 +309,8 @@ function planRecord(plan) {
     revisionReason: plan.revisionReason,
     lastAssessmentRef: plan.lastAssessmentRef,
     lastValidatedAuthority: plan.lastValidatedAuthority,
+    ...(plan.pregamePlanOrigin
+      ? { pregamePlanOrigin: clone(plan.pregamePlanOrigin) } : {}),
   };
 }
 
@@ -418,6 +423,15 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       entry.kind === "turn_plan" || entry.kind === "plan_revision").at(-1);
     if (object(planSource?.payload)) {
       const payload = planSource.payload;
+      const pregamePlanOrigin = payload.pregamePlanOrigin || null;
+      if (pregamePlanOrigin) {
+        verifyStarcraftTmgRosterTurnPlanOriginV1(pregamePlanOrigin);
+        if (pregamePlanOrigin.roomId !== scopeValue.roomId
+          || pregamePlanOrigin.matchBindingHash !== scopeValue.matchBindingHash
+          || pregamePlanOrigin.seatKey !== scopeValue.seatKey) {
+          throw new TypeError("restored pregame plan belongs to another seat");
+        }
+      }
       const restoredAuthority = object(payload.lastValidatedAuthority)
         ? payload.lastValidatedAuthority
         : object(planSource.authority) ? planSource.authority : null;
@@ -429,6 +443,8 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
           ? Number(payload.version) : 1,
         parentVersion: payload.parentVersion ?? null,
         ...planSpec(payload),
+        ...(pregamePlanOrigin
+          ? { pregamePlanOrigin: clone(pregamePlanOrigin) } : {}),
         status: String(payload.status || "reflection_required"),
         revisionReason: "restored_from_same_match_journal",
         nextIntentRef: null,
@@ -473,7 +489,8 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     });
   }
 
-  function makePlan(state, spec, authorityValue, reason, parentVersion = null) {
+  function makePlan(state, spec, authorityValue, reason, parentVersion = null,
+    pregamePlanOrigin = null) {
     state.sequence += 1;
     const createdAt = new Date(now()).toISOString();
     const planId = state.plan?.planId || `turn-plan-${hashStarcraftTmgContract({
@@ -489,6 +506,8 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       version,
       parentVersion,
       ...clone(spec),
+      ...(pregamePlanOrigin
+        ? { pregamePlanOrigin: clone(pregamePlanOrigin) } : {}),
       status: "reflection_required",
       revisionReason: reason,
       nextIntentRef: null,
@@ -504,14 +523,43 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
   }
 
   async function openPlan(state, input, authorityValue) {
+    if (input.plan?.pregamePlanOrigin !== undefined) {
+      throw new TypeError("pregame plan origin requires a verified roster plan");
+    }
     const spec = planSpec(input.plan || {});
     state.plan = makePlan(state, spec, authorityValue,
-      state.plan ? "explicit_plan_replacement" : "initial_plan");
+      state.plan ? "explicit_plan_replacement" : "initial_plan",
+      state.plan?.version ?? null, state.plan?.pregamePlanOrigin || null);
     state.lastAssessment = null;
     state.reflectionRequired = true;
     state.nextIntent = null;
     const persistence = await persistPlan(state, input);
     return { event: "plan_opened", plan: planProjection(state), persistence };
+  }
+
+  async function openRosterPlan(state, input, authorityValue) {
+    const seed = createStarcraftTmgRosterTurnPlanSeedV1({
+      rosterPlan: input.rosterPlan,
+      sessionReceipt: input.rosterSessionReceipt,
+      roomProjection: input.roomProjection,
+      scope: state.scope,
+    });
+    if (state.plan) {
+      if (state.plan.pregamePlanOrigin?.rosterPlanHash
+        === seed.origin.rosterPlanHash) {
+        return { event: "roster_plan_already_open",
+          plan: planProjection(state), persistence: null };
+      }
+      throw new TypeError("a different TurnPlan already exists for this seat");
+    }
+    state.plan = makePlan(state, planSpec(seed.planSpec), authorityValue,
+      "verified_pregame_roster_plan", null, seed.origin);
+    state.lastAssessment = null;
+    state.reflectionRequired = true;
+    state.nextIntent = null;
+    const persistence = await persistPlan(state, input);
+    return { event: "roster_plan_opened", plan: planProjection(state),
+      persistence };
   }
 
   function cancelStaleSearch(state, authorityValue) {
@@ -716,7 +764,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
         currentGoal: input.planRevision.currentGoal || assessment.currentGoal });
       state.plan = makePlan(state, revised, authorityValue,
         assessment.revisionReason || "reflection_requested_revision",
-        sourcePlan.version);
+        sourcePlan.version, sourcePlan.pregamePlanOrigin || null);
     } else {
       const terminalStatus = assessment.verdict === "complete"
         ? "completed" : assessment.verdict === "abandon" ? "abandoned" : null;
@@ -1004,7 +1052,8 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     const revised = planSpec({ ...existing, ...updates });
     const previousVersion = state.plan.version;
     state.plan = makePlan(state, revised, authorityValue,
-      `counterfactual_adopted:${job.searchId}:${branchId}`, previousVersion);
+      `counterfactual_adopted:${job.searchId}:${branchId}`, previousVersion,
+      state.plan.pregamePlanOrigin || null);
     state.lastAssessment = null;
     state.reflectionRequired = true;
     state.nextIntent = null;
@@ -1135,6 +1184,8 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     let result;
     if (command === "open_plan") {
       result = await openPlan(state, input, authorityValue);
+    } else if (command === "open_roster_plan") {
+      result = await openRosterPlan(state, input, authorityValue);
     } else if (command === "observe_state") {
       result = await observeState(state, input, authorityValue);
     } else if (command === "reflect_plan") {
@@ -1194,7 +1245,8 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     metadata: Object.freeze({
       schemaVersion: `${STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION}.metadata`,
       interface: ["hydrate", "dispatch", "read"],
-      commands: ["open_plan", "observe_state", "reflect_plan", "create_intent",
+      commands: ["open_plan", "open_roster_plan", "observe_state",
+        "reflect_plan", "create_intent",
         "pause_counterfactual", "adopt_counterfactual", "record_outcome",
         "recall_history"],
       decisionCycle:

@@ -1141,6 +1141,11 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
     const requestedScope = scope(input.scope || input);
     const seatToken = required(input.seatToken, "seatToken");
     const consent = normalizeConsent(input.automationConsent, requestedScope);
+    const pregameRosterPlan = input.pregameRosterPlan || null;
+    if (pregameRosterPlan && (!turnPlanRuntime
+      || !pregameRosterPlan.plan || !pregameRosterPlan.sessionReceipt)) {
+      throw new TypeError("pregameRosterPlan requires a plan, receipt and TurnPlan runtime");
+    }
     let record = await store.load(requestedScope.scopeKey);
     const at = iso(now(), "now");
     if (!record) {
@@ -1173,7 +1178,26 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
     }
     records.set(requestedScope.scopeKey, record);
     credentials.set(requestedScope.scopeKey, { seatToken });
-    const authorityValue = await readAuthority(record, seatToken);
+    let authorityValue;
+    try {
+      authorityValue = await readAuthority(record, seatToken);
+      if (pregameRosterPlan) {
+        if (typeof turnPlanRuntime.hydrate === "function") {
+          await turnPlanRuntime.hydrate({ scope: requestedScope });
+        }
+        await turnPlanRuntime.dispatch({
+          ...authorityInput(requestedScope, authorityValue.projection,
+            authorityValue.legalSpace, authorityValue.spatialObservation,
+            authorityValue.spatialActionSpace),
+          command: "open_roster_plan",
+          rosterPlan: pregameRosterPlan.plan,
+          rosterSessionReceipt: pregameRosterPlan.sessionReceipt,
+        });
+      }
+    } catch (error) {
+      credentials.delete(requestedScope.scopeKey);
+      throw error;
+    }
     record = await persist(record, {
       lastObservedStateRevision: authorityValue.projection.room.stateRevision,
       lastObservedStateHash: authorityValue.projection.room.stateHash,
