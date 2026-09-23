@@ -49,6 +49,8 @@ import {
 import {
   createRosterPlanningWorkspaceHttpAdapterV1,
 } from "../roster-planning-workspace/roster-planning-workspace-http-v1.mjs";
+import { createStarcraftTmgRosterTurnPlanSeedV1 } from
+  "../online-agent-session/roster-plan-turn-plan-bridge-v1.mjs";
 
 export const ROSTER_PLANNING_PRODUCT_MODULE =
   "packages/product-composition/roster-planning-product-module-v1.mjs";
@@ -224,10 +226,50 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     trainingTruth: false,
   };
 
+  // Server-only handoff. Never accept a caller-supplied projection as proof
+  // of the current Room: read the exact seat from the RoomRuntime immediately
+  // before preparing the bundle that HostedBotSeat.attach will recheck.
+  async function preparePregamePlanForRoom(input = {}) {
+    const { sessionId, roomRuntime, roomId, seatToken, scope } = input;
+    if (typeof roomRuntime?.readRoom !== "function"
+      || typeof sessionId !== "string" || !sessionId
+      || typeof roomId !== "string" || !roomId
+      || typeof seatToken !== "string" || !seatToken
+      || scope?.gameId !== "starcraft-tmg"
+      || scope?.roomId !== roomId || !scope?.matchBindingHash
+      || !scope?.seatKey) {
+      throw new TypeError("ROSTER_PLAN_ROOM_HANDOFF_INPUT_INVALID");
+    }
+    const session = service.readSession(sessionId);
+    if (session.status !== "planned" || session.planEvidenceStale
+      || !session.plan || !session.evidence?.sessionReceipt
+      || session.working?.verdictSummary?.status !== "legal") {
+      throw new TypeError("ROSTER_PLAN_ROOM_HANDOFF_PLAN_UNAVAILABLE");
+    }
+    const roomRead = await roomRuntime.readRoom({ roomId, seatToken });
+    if (roomRead?.ok !== true || !roomRead.projection) {
+      throw new TypeError("ROSTER_PLAN_ROOM_HANDOFF_ROOM_READ_FAILED");
+    }
+    const seed = createStarcraftTmgRosterTurnPlanSeedV1({
+      rosterPlan: session.plan,
+      sessionReceipt: session.evidence.sessionReceipt,
+      roomProjection: roomRead.projection,
+      scope,
+    });
+    return Object.freeze({
+      plan: clone(session.plan),
+      sessionReceipt: clone(session.evidence.sessionReceipt),
+      originHash: seed.origin.originHash,
+      roomStateRevision: seed.origin.openedAtStateRevision,
+      trainingTruth: false,
+    });
+  }
+
   return Object.freeze({
     descriptor: () => Object.freeze({ ...descriptorBody,
       descriptorHash: hashStarcraftTmgContract(descriptorBody) }),
     service,
+    preparePregamePlanForRoom,
     handle: (request) => http.handle(request),
     httpDescriptor: http.httpDescriptor,
   });

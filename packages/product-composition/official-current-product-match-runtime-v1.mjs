@@ -322,10 +322,19 @@ function findCanonicalParameters(action, fallback) {
 export function createOfficialCurrentProductMatchRuntimeV1(input = {}) {
   const state = input.state;
   const dataset = input.dataset;
+  const auditedUnitIds = ["player1", "player2"].flatMap((sideKey) =>
+    state?.armyCompositionUpgradeAuditsBySide?.[sideKey]?.units?.map(
+      (unit) => unit.unitInstanceId) || []);
+  const pieceIds = Array.isArray(state?.pieces)
+    ? state.pieces.map((piece) => piece?.id) : [];
   if (!object(state) || !object(dataset)
     || state.engagementScale !== "Standard"
     || state.board?.widthInches !== 54 || state.board?.heightInches !== 36
-    || state.pieces?.length !== 15) {
+    || !auditedUnitIds.length
+    || auditedUnitIds.some((id) => typeof id !== "string" || !id)
+    || pieceIds.length !== auditedUnitIds.length
+    || new Set(pieceIds).size !== pieceIds.length
+    || pieceIds.some((id) => !auditedUnitIds.includes(id))) {
     fail("CURRENT_PRODUCT_MATCH_RUNTIME_INPUT_INVALID");
   }
   const composition = composeOfficialCurrentProductActionRuntimeV1({ dataset, state });
