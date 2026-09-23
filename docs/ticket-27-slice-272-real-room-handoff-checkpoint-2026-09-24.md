@@ -1,6 +1,6 @@
 # Ticket 27 / Slice 272 — 真实 Room 开局计划交接检查点
 
-Status: **S272 进行中，Ticket 27 仍 5/6。** 本片关闭了已生成 RosterPlan 到当前权威 Room、Hosted Bot Seat 开局 TurnPlan 及同局日志恢复的接线前置；没有声称 Bot 已作出多回合决策，也没有完成写表质量 A/B。Ticket 23 原房未变。
+Status: **S272 进行中，Ticket 27 仍 5/6。** 本片关闭了已生成 RosterPlan 到当前权威 Room、Hosted Bot Seat 开局 TurnPlan 及同局日志恢复的接线前置，并实产一份官方固定表的锁表 Teach 计划；没有声称 Bot 已作出多回合决策，也没有完成写表质量 A/B。Ticket 23 原房未变。
 
 ## 复现、修复及唯一对应复验
 
@@ -18,19 +18,34 @@ Status: **S272 进行中，Ticket 27 仍 5/6。** 本片关闭了已生成 Roste
 
 第三个独立观察专门检查**决策端输入**，不重复宣称计划已影响动作：使用 Standard 2000 产品所用的 `HostedOpponentRuntimeV2` 包装器，附着相同保存计划后让它对 revision 0 的真实 LegalSpace 驱动一次。安装的决策端口只摘录公开字段并以 `INTENTIONAL_STOP_AFTER_PLAN_READ` 主动停止，绝不返回动作。该端口恰好调用 1 次，收到 `opponent_prompt`、`planState.plan.pregamePlanOrigin.originHash=952abd8797579dba45aafc8e9c7588b9df6293ff71e9471269a53136da6732f1`，与交接 bundle 相同；当前目标存在，计划状态为 `reflection_required`，Room/LegalSpace 都是 revision 0（2 个 finite action、0 个参数域）。停止后 Room 仍 revision 0、Provider 调用 0。这证明计划确实越过 Bot 包装器进入下一次决策请求，而不是只在存储中；没有采样真实模型输出，不是策略效果验收。
 
+## 官方固定表的真实锁表 Teach 对照臂
+
+同一 Standard/Hold Position/地图拓扑/Kerrigan's Swarm 对手及 2000 矿预算下，使用 `OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1.player1` 而非 Agent 候选。Rules Builder 先锁定 7 单位、33 模型、12 总 Supply、2000/2000 矿、115 气，审查 hash `e5d862803472fda09a08351f08048f1d5837ef046bd72c60fb4071bea5a39c04`。基线版本明确是 `no_pregame_plan`，没有伪造赛前计划。旧比较输出合同 `componentPurposes.maxItems=32` 容不下这张合法表的 43 个 faction/card/unit/composition/upgrade 组件；将版本化合同的传输上限改为 128，并让锁表派生合同跟随新版本，超过上限的完整输出以后必须分块，不能静默省略。上一轮唯一聚焦合同检查已证实新合同有效、旧保存回执仍可读取；没有重跑无关门。
+
+首次启动因调用者误传安全连接器外层对象、没有传 `secure.factory`，在任何 Provider 发送前失败；保存的合法锁表草稿原样续用，0 调用/0 费用。纠正后同草稿真实 Flash 依次完成 `strategy_foundation → teach_challenge → teach_revision → preset_plan_deepening`，会话 `rws-7814d0d4-271c-4ddc-8888-511010ae7b3f` 为 `planned`，计划 hash `90d328d9d1dae80fc9a945f3c4d6a70fe4730ad4e3f7c4836a50ca1bedfe03a8`。最终输入和锁定名单完全相等，43 个组件用途均保留，审查 hash 未变，`selectedByAgentDeliberation=false`，隔离实验室源状态变更 0。4 次实际调用，输入 93,410、输出 24,577、合计 117,987 reported units，保守全未命中估算 **¥0.230062**（非账单实扣）；累计本片此前 Provider 0，本次费用低于 ¥100 提醒线。Teach 记录 1 个缺证据答复降未决、1 个目标变化需人工复核，未训练/晋升 Skill。
+
+**High 策略质量发现，阻止把此计划当成可执行的高策略对照：**计划文本在“Round 1”开局段要求 Marines×3、Goliaths×2、Raynor、Medic 同时承担部署/移动任务，`activationOrder` 也列出全部 7 单位的 Movement 激活；而 Rules 的 `createOfficialRoundSupplyStateV1` 对非末回合上桌 Supply 使用 `startingSupply + extraSupplyPerRound × (round−1)`，本任务首轮仅 6。锁定名单各单位 Supply 为 2+2+2+2+2+1+1=12；不能把全表在首轮摆上桌。该文字可能意图跨回合，但没有结构化轮次/上桌子集，玩家或 Bot 无法可靠执行；不能因军表本身合法就宣称开局计划合法。下一修复交付应给计划增加按轮次的部署子集和累计 Supply 校验，并在同一已付草稿/回执基础上作有界显式修订，不从头重复全部 Teach，也不得静默修改模型计划。真实对局 A/B 仍待。
+
 ## 尚未完成的 S272
 
 1. Bot attach、同局 SQLite 重启恢复以及真实 Hosted Opponent 决策请求收到 `planState` 已有实证；下一步才是让真实模型给出可执行动作，跟随对手动作和跨回合反思，比较其选择与无赛前计划控制组。已送达决策输入仍不等于策略影响。
-2. 同任务/地图/预算下对照预制 2000 分表、Agent 写表及有无赛前计划，比较合法候选率、资源利用、得分、击杀、动作时间和费用；S271 的 3 候选仅 1 合法、少花 500 矿是明确待检问题。
+2. 同任务/地图/预算下已有预制 2000 分的无计划基线与真实锁表 Teach 计划，以及 Agent 写表；先修上述首轮 Supply 可执行性，再比较合法候选率、资源利用、得分、击杀、动作时间和费用。S271 的 3 候选仅 1 合法、少花 500 矿是明确待检问题。
 3. 当前 Web 工作台仍缺从选定名单直接创建 Room/选择席位的用户入口；本次服务端 seam 不能冒充完整产品旅程。设备验收仍属 Ticket 14，需实体 Android/完整 Xcode 与最新产品包。
 
 ## Harness/evolution receipt
 
 - `harnessLoopUsed`: true；`targetGames`: StarCraft TMG Standard 2000。
-- `promptPackRoutes`: 使用保留的 `agent_teach_v1` 计划，没有新模型调用。
+- `promptPackRoutes`: Room 交接使用保留的 `agent_teach_v1`；新增 `locked_roster_teach_v1` 的 Foundation/Challenger/Student/深化四轮真实 Flash。
 - `harnessToolsCalled`: official source lock、Rules-owned Standard Room Factory、Current Product Match Runtime、真实内存 RoomRuntime seat read、RosterPlan→TurnPlan seed bridge。
 - `uiTraceEvidence`: 此片没有新的 UI 操作；S271 的浏览器截图不冒充本片产品交接证明。
-- `agentDecisionEvidence`: 保留的公开小计划/最终军表已进入 `opponent_prompt` 决策请求；哨兵端口在读取后停止，无新的模型选择或对局决策。
+- `agentDecisionEvidence`: 保留的公开小计划/最终军表已进入 `opponent_prompt` 决策请求；哨兵端口在读取后停止。新增固定表公开计划和 43 个组件用途，但首轮 Supply 安排不明确且按字面不可执行，不算成功对局决策。
 - `memoryTraceEvidence`: Hosted Bot Seat 实际开局 TurnPlan；SQLite WAL 重建后恢复相同来源 hash 和目标。后续动作、对手反应、跨回合反思仍待验证。
-- `trainingTraceCandidates`: none；`rollbackOrDemotionRules`: stale/非法/错席/错 Room/错 audit/来源漂移不得交接。
+- `trainingTraceCandidates`: none；`rollbackOrDemotionRules`: stale/非法/错席/错 Room/错 audit/来源漂移不得交接；首轮上桌容量未澄清前，固定表 Teach 计划不得标为可执行高策略对照或训练真值。
 - `userVisibleChecks`: 此片仅服务端入口；完整建房和计划状态的页面反馈仍待实现。
+
+## Ctx2Skill 使用边界
+
+- `ctx2skillLoopUsed`: true，限于读取已生成的 StarCraft TMG 总规则/Terran 本族/Terran→Kerrigan's Swarm 对抗 Skill 并审阅新计划；本轮没有启动离线 Skill 归纳。
+- `targetGames`: StarCraft TMG；`roleRoutes`: `rule_skill_builder` 的既有产物供锁表策略规划作建议，不替代 Rules。
+- `skillsRead`: 上述三件版本化 Skill；`skillsGenerated`: none；`judgeTestsRun`: 本轮仅已付计划的 Rules 审查、首轮 Supply 事实和局部合同检查，不是 Skill judge 套件。
+- `crossTimeReplayResult`: 未执行完整对局/held-out；`promotions`: none；`blocks`: 首轮部署计划按字面越过上桌 Supply，禁止作为高策略或训练真值晋升；`remainingRuleGaps`: 无新规则缺口，缺的是计划的按轮 Supply 可执行性表达与校验。

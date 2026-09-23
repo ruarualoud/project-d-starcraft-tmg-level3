@@ -11,9 +11,9 @@ import { rosterStrategistRoundOutputContractV1 } from
 export const PLANNED_PRESET_DEEPENING_ROUND_KIND =
   "preset_plan_deepening";
 
-// The legacy comparison schema is frozen. This opt-in derivative preserves
-// its full component/deployment/resource field semantics but removes the
-// candidate-selection field altogether. No model response can select a list.
+// This opt-in derivative follows the current versioned comparison schema's
+// component/deployment/resource field semantics while removing candidate
+// selection altogether. Historical receipts retain their own contract hash.
 const schema = structuredClone(rosterStrategistRoundOutputContractV1(
   "comparison_selection").providerSchema);
 delete schema.properties.comparison;
@@ -53,7 +53,7 @@ const ref = (name) => Object.freeze({
 export const PLANNED_PRESET_DEEPENING_OUTPUT_CONTRACT_V1 =
   createStarcraftTmgOutputContractV1({
     id: "ticket27.planned_preset.deepening.v1",
-    version: "1.0.0",
+    version: "1.0.1",
     schemaName: "roster_preset_plan_deepening_v1",
     providerSchema: schema,
     modelOwnedFields: Object.keys(schema.properties),

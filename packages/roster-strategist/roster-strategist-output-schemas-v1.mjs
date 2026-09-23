@@ -95,7 +95,7 @@ import {
 
 export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_SCHEMA =
   "starcraft_tmg_roster_strategist_output_contract_set_v1";
-export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.4.0";
+export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.4.1";
 
 // General narrative-capacity policy (sub-slice 269.17): one transport-level
 // overall safety ceiling for every free public narrative string — the strict
@@ -443,7 +443,12 @@ const COMPARISON_SCHEMA = closedObject({
     selectedCandidateId: identifier(),
   }),
   componentPurposes: {
-    type: "array", minItems: 1, maxItems: 32,
+    // A legal Standard-2000 preset already has over 32 separately named
+    // faction/card/unit/composition/upgrade components. 128 is the strict
+    // Provider schema transport ceiling, not a Rules roster limit. A roster
+    // with more components needs a separate chunk contract; do not silently
+    // omit lower-priority component purposes to fit this envelope.
+    type: "array", minItems: 1, maxItems: 128,
     items: closedObject({
       componentKind: {
         type: "string", minLength: 4, maxLength: 32,
