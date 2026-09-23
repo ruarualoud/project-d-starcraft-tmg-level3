@@ -105,14 +105,16 @@ export function createStarcraftTmgRosterTurnPlanSeedV1(input = {}) {
       !== plan.rosterCandidate.legalityReceipt.auditResultHash
     || binding?.status !== "frozen"
     // The viewer-safe V3 projection intentionally omits selected card
-    // profiles. These two Rules-owned public identifiers survive it.
+    // profiles. These Rules-owned public identifiers survive it.
     || binding.missionRecordKey
       !== state?.officialMissionRuntimeState?.missionRecordKey
     || binding.deploymentRecordKey !== state?.board?.deploymentId) {
     fail("ROSTER_TURN_PLAN_ROOM_BINDING_MISMATCH");
   }
+  // MatchBinding.sourceSnapshotHash is the hash of the registered dependency
+  // artifact, not the official dataset snapshot hash carried by RosterPlan.
   if (plan.provenance.sourceSnapshotHash
-      !== roomProjection.matchBinding?.sourceSnapshotHash) {
+      !== state?.officialMissionRuntimeState?.sourceSnapshotHash) {
     fail("ROSTER_TURN_PLAN_SOURCE_SNAPSHOT_MISMATCH");
   }
   if (plan.presetRoster) {
