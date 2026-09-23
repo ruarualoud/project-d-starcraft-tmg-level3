@@ -1,8 +1,11 @@
 // Ticket 27 / Slice 271 — roster-planning workspace client (Web/App).
 // Talks to the additive same-origin workspace API. Network failures surface
-// as the explicit `disconnected` state; typed server reasons are preserved
-// verbatim so the UI can render honest error/unavailable states. No
-// credential, seat token or Room mutation ever passes through this client.
+// as the explicit `disconnected` state; an origin that answers without
+// speaking the workspace JSON protocol (for example a static-only host with
+// no planning API mounted) is the same honest disconnected state. Typed
+// server reasons are preserved verbatim so the UI can render honest
+// error/unavailable states. No credential, seat token or Room mutation ever
+// passes through this client.
 
 export const ROSTER_PLANNING_API_PREFIX = '/starcraft-tmg-level3/roster-planning/v1';
 
@@ -45,7 +48,7 @@ async function request<T>(method: string, subpath: string, body?: unknown): Prom
   try {
     payload = await response.json();
   } catch {
-    throw new RosterPlanningClientError('typed', 'ROSTER_WORKSPACE_RESPONSE_INVALID', response.status);
+    throw new RosterPlanningClientError('disconnected', 'ROSTER_WORKSPACE_DISCONNECTED', response.status);
   }
   if (!payload?.ok) {
     throw new RosterPlanningClientError('typed',

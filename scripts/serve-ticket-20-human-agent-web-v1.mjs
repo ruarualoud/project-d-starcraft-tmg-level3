@@ -292,7 +292,11 @@ async function main() {
     });
   }
   const fixture = await createTicket20HumanAgentDemoFixtureV1({
-    root: ROOT,
+    // The hash-locked reference artifacts (source-intake cache, ticket-18
+    // strategy pack, ticket-11 report) are read-only frozen inputs; an
+    // explicit fixture root may point at the integration checkout, matching
+    // the roster-planning mount below.
+    root: process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
     roomId,
     roomProfile: liveMode ? "standard_2000_live" : "standard_2000",
     mapConfiguration: liveMode && evidenceProfile === "ticket24-slice258" ? {
@@ -376,7 +380,8 @@ async function main() {
   });
   let rosterWorkspacePromise = null;
   const learning = await createTicket20LearningConsoleFixtureV1({
-    root: ROOT,
+    // Same read-only frozen reference root as the demo fixture above.
+    root: process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
     fixture,
   });
   const server = http.createServer(async (request, response) => {

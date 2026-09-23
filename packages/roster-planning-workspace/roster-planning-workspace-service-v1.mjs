@@ -80,6 +80,34 @@ function errorCode(error, fallback = "ROSTER_WORKSPACE_INTERNAL_FAILURE") {
   return /^[A-Z][A-Z0-9_]{2,95}$/u.test(message) ? message : fallback;
 }
 
+// Re-derive the Builder candidate input shape from the public RosterCandidate
+// contract (manual override starts from this). Exported so the acceptance
+// harness can restore a working list to the exact plan candidate without
+// duplicating the mapping.
+export function deriveRosterWorkspaceCandidateInputV1(candidate) {
+  return {
+    sideKey: candidate.sideKey,
+    scaleId: candidate.scaleId,
+    mineralBudget: candidate.mineralBudget,
+    factionRecordKey: candidate.factionRecordKey,
+    tacticalCardRecordKeys: [...candidate.tacticalCardRecordKeys],
+    units: candidate.units.map((unit) => ({
+      unitInstanceId: unit.unitInstanceId,
+      recordKey: unit.recordKey,
+      compositionKind: unit.compositionKind,
+      upgrades: unit.upgradeSelections.map((upgrade) => (
+        upgrade.upgradeName !== null && upgrade.upgradeName !== undefined
+          ? { upgradeName: upgrade.upgradeName,
+            ...(upgrade.nominatedModelId
+              ? { nominatedModelId: upgrade.nominatedModelId } : {}) }
+          : { purchasableUpgradeProfileId:
+            upgrade.purchasableUpgradeProfileId,
+            ...(upgrade.nominatedModelId
+              ? { nominatedModelId: upgrade.nominatedModelId } : {}) })),
+    })),
+  };
+}
+
 // Secret-hygiene gate for imported export documents: any key that looks like
 // credential material AND carries a non-empty string value fails the import
 // closed. Boolean hygiene declarations (containsNoSecrets:false-style fields)
@@ -359,29 +387,9 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
   }
 
   function candidateInputFromCandidate(candidate) {
-    // Re-derive the Builder candidate input shape from the public
-    // RosterCandidate contract (manual override starts from this).
-    return {
-      sideKey: candidate.sideKey,
-      scaleId: candidate.scaleId,
-      mineralBudget: candidate.mineralBudget,
-      factionRecordKey: candidate.factionRecordKey,
-      tacticalCardRecordKeys: [...candidate.tacticalCardRecordKeys],
-      units: candidate.units.map((unit) => ({
-        unitInstanceId: unit.unitInstanceId,
-        recordKey: unit.recordKey,
-        compositionKind: unit.compositionKind,
-        upgrades: unit.upgradeSelections.map((upgrade) => (
-          upgrade.upgradeName !== null && upgrade.upgradeName !== undefined
-            ? { upgradeName: upgrade.upgradeName,
-              ...(upgrade.nominatedModelId
-                ? { nominatedModelId: upgrade.nominatedModelId } : {}) }
-            : { purchasableUpgradeProfileId:
-              upgrade.purchasableUpgradeProfileId,
-              ...(upgrade.nominatedModelId
-                ? { nominatedModelId: upgrade.nominatedModelId } : {}) })),
-      })),
-    };
+    // Manual override starts from the Builder candidate input shape derived
+    // from the public RosterCandidate contract.
+    return deriveRosterWorkspaceCandidateInputV1(candidate);
   }
 
   function projectSession(session) {
