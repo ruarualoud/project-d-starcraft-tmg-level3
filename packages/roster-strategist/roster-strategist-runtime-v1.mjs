@@ -1566,15 +1566,26 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         revisionPromptRoute: teachCycle.revisionPromptRoute,
         roleReceiptHash: teachRoleReceipts[1].receiptHash,
         promptNodeHashes: [], informationNeedOutcomes: [],
+        revisedInformationNeeds: [],
       };
       for (const need of revised.informationNeeds) {
         const prior = initialNeeds.get(need.needId);
         if (prior && hashStarcraftTmgContract(prior)
           !== hashStarcraftTmgContract(need)) {
-          fail("ROSTER_TEACH_INFORMATION_NEED_ID_REUSED", need.needId);
+          // A Student may revise a question under the same logical need ID.
+          // Keep both immutable query receipts and identify the reissue;
+          // the latest branch binding is used only by later explicit needs.
+          revisionTrace.revisedInformationNeeds.push({
+            needId: need.needId,
+            previousNeedHash: hashStarcraftTmgContract(prior),
+            revisedNeedHash: hashStarcraftTmgContract(need),
+          });
         }
-        if (!prior) executeInformationNeed(need, branchByNeedId,
-          toolReceipts, revisionTrace);
+        if (!prior || hashStarcraftTmgContract(prior)
+          !== hashStarcraftTmgContract(need)) {
+          executeInformationNeed(need, branchByNeedId,
+            toolReceipts, revisionTrace);
+        }
       }
       foundation = revised;
       trace.push(roundReceipt(challengeTrace), roundReceipt(revisionTrace));

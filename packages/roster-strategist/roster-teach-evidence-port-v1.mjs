@@ -80,25 +80,46 @@ export function createRosterTeachEvidencePortV1(laboratory) {
       }
       const common = { ...toolRequest, base: { kind: "source" } };
       const queryId = `teach-${challengeId}`;
-      let sourceReceipt;
-      switch (request.kind) {
-        case "probability":
-          sourceReceipt = laboratory.queryProbability({ ...common, queryId });
-          break;
-        case "spatial":
-          sourceReceipt = laboratory.querySpatial({ ...common, queryId });
-          break;
-        case "math":
-          sourceReceipt = laboratory.queryMath({ ...common, queryId });
-          break;
-        case "threat_exchange":
-          sourceReceipt = laboratory.queryThreatExchange({ ...common, queryId });
-          break;
-        case "scenario":
-          sourceReceipt = laboratory.runScenarioBranch({
-            ...common, branchId: queryId });
-          break;
-        default: fail("ROSTER_TEACH_EVIDENCE_REQUEST_INVALID");
+      let sourceReceipt = null;
+      let unknownReasonCode = null;
+      // The lab's lifecycle-branch shorthand advances an arbitrary first
+      // legal actor. It is not a forecast of a named opponent response.
+      if (request.kind === "math"
+        && toolRequest.mathKind === "budget_fit") {
+        unknownReasonCode =
+          "ROSTER_TEACH_BUDGET_FIT_REQUIRES_SELECTED_ROSTER_AUDIT";
+      } else if (request.kind === "scenario"
+        && Number(toolRequest.spec?.lifecycleSteps || 0) > 0) {
+        unknownReasonCode =
+          "ROSTER_TEACH_UNNAMED_LIFECYCLE_IS_NOT_OPPONENT_FORECAST";
+      } else {
+        try {
+          switch (request.kind) {
+            case "probability":
+              sourceReceipt = laboratory.queryProbability({
+                ...common, queryId });
+              break;
+            case "spatial":
+              sourceReceipt = laboratory.querySpatial({ ...common, queryId });
+              break;
+            case "math":
+              sourceReceipt = laboratory.queryMath({ ...common, queryId });
+              break;
+            case "threat_exchange":
+              sourceReceipt = laboratory.queryThreatExchange({
+                ...common, queryId });
+              break;
+            case "scenario":
+              sourceReceipt = laboratory.runScenarioBranch({
+                ...common, branchId: queryId });
+              break;
+            default: fail("ROSTER_TEACH_EVIDENCE_REQUEST_INVALID");
+          }
+        } catch (error) {
+          const code = String(error?.code || error?.message || "").split(":")[0];
+          if (!/^PREGAME_LAB_[A-Z0-9_]+$/u.test(code)) throw error;
+          unknownReasonCode = code;
+        }
       }
       const mutationProof = laboratory.proveMutationZero();
       if (mutationProof.sourceStateMutationCount !== 0
@@ -107,12 +128,12 @@ export function createRosterTeachEvidencePortV1(laboratory) {
         || mutationProof.rulesRuntimeHashUnchanged !== true) {
         fail("ROSTER_TEACH_EVIDENCE_MUTATION_DETECTED");
       }
-      if (!object(sourceReceipt)
-        || !HASH.test(String(sourceReceipt.receiptHash || ""))) {
+      if (unknownReasonCode === null && (!object(sourceReceipt)
+        || !HASH.test(String(sourceReceipt.receiptHash || "")))) {
         fail("ROSTER_TEACH_EVIDENCE_RECEIPT_INVALID");
       }
-      const status = sourceReceipt.resultStatus === "ok"
-        ? request.kind === "math" ? "exact" : "advisory"
+      const status = sourceReceipt?.resultStatus === "ok"
+        ? "advisory"
         : "unknown";
       const body = {
         schema: ROSTER_TEACH_EVIDENCE_RECEIPT_SCHEMA,
@@ -122,9 +143,14 @@ export function createRosterTeachEvidencePortV1(laboratory) {
         initialFoundationHash: query.initialFoundationHash,
         sourceHashes: clone(query.sourceHashes),
         sourceReceipt: clone(sourceReceipt),
-        sourceReceiptHash: sourceReceipt.receiptHash,
+        sourceReceiptHash: sourceReceipt?.receiptHash ?? null,
         mutationProofHash: hashStarcraftTmgContract(mutationProof),
         status,
+        unknownReasonCode: unknownReasonCode
+          ?? sourceReceipt?.unknownReason ?? null,
+        calculationPolicy: request.kind === "math"
+          ? "exact_arithmetic_over_model_supplied_inputs_not_rule_truth"
+          : null,
         canAffectRules: false,
         trainingTruth: false,
       };

@@ -128,6 +128,18 @@ function verifyShape(cycle) {
       "ROSTER_TEACH_EVIDENCE_INVALID");
     if (evidence.has(receiptHash)) fail("ROSTER_TEACH_EVIDENCE_DUPLICATE");
     evidence.set(receiptHash, receipt);
+    // Both the Teach wrapper and its delivered read-only laboratory source
+    // receipt are valid, challenge-bound citations. Do not rewrite either
+    // hash or accept an arbitrary model-invented reference.
+    if (receipt.sourceReceiptHash !== undefined
+      && receipt.sourceReceiptHash !== null) {
+      const sourceReceiptHash = hash(receipt.sourceReceiptHash,
+        "ROSTER_TEACH_EVIDENCE_INVALID");
+      if (evidence.has(sourceReceiptHash)) {
+        fail("ROSTER_TEACH_EVIDENCE_DUPLICATE");
+      }
+      evidence.set(sourceReceiptHash, receipt);
+    }
   }
   const answers = new Set();
   let revised = false;
