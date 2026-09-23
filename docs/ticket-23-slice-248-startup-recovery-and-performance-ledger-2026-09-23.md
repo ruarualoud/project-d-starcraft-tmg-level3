@@ -62,6 +62,27 @@ retaining per-action screenshots and Rules/Replay checks. This is still Slice
 
 ## Performance optimization queue — preserve strategy quality
 
+### r85/r87 — bounded search cost differs strongly by actual work
+
+c84 Swarmling18: Planner00:08:16.283Z→Action00:13:22.732Z =306.449s;
+756generated/593examined/129exact/125overlap failures/4options. c86 Kerrigan
+Raptor6: Planner00:19:45.552Z→Action00:20:05.705Z =20.153s;
+996generated/58examined/4exact/0failures/4options. These whole Host intervals
+suggest profiling the rejected-candidate workload, not merely reducing the
+nominal generated count. Different pieces/positions are not a controlled
+performance A/B; keep tactical diversity and all exact validation semantics.
+
+r85 chose12.317in to marker5 while calling it smaller than11.838/11.558/11.284;
+r87 genuinely reduced its gap12.407→6.275in. Preserve both outcomes forS249.
+At r87:222calls/25,723,363accounted units/estimated¥34.165061, bothFlash.
+
+The repeated malformed `base_edge_distance` call now has a direct-query argument
+contract shared with the native descriptor and an actionable typed failure;
+real saved call red→one green1.527s,0Provider/Room/¥0. It does not silently
+reroute to relationships or change strategy/search budgets.15aa31d awaits a
+safe loading boundary; no live latency or reduced retry claim yet. See
+`ticket-23-slice-248-direct-query-contract-repair-2026-09-23.md`.
+
 ### r82 — common-target live proof, Host441.795s
 
 New c81 Planner23:51:10.339Z→Action23:58:32.134Z;904generated/756examined/
