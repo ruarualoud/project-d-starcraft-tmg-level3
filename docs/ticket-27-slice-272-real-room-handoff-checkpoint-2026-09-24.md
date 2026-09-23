@@ -16,9 +16,11 @@ Status: **S272 进行中，Ticket 27 仍 5/6。** 本片关闭了已生成 Roste
 
 随后使用隔离的 SQLite WAL 决策日志重复上述**不同验收目的**的附着，并关闭原 Bot/日志，重新打开该日志、创建新的 Continuity 与 TurnPlanRuntime，再 `hydrate`。开局来源哈希与恢复后均为 `8daf13922443b0b0eec6083a0e340fb668abdde64f8f446138130c35fe8ca12a`，恢复目标存在、`restored=true`，原 RosterPlan hash 为 `2a0c5932689e945682e986eda2403140e86beb8dfa403f5e6416ee3efe8de162`。没有模型决策、房间动作或 Provider 费用。SQLite 文件只在本工作树的忽略构建目录；不是生产 PostgreSQL 或跨机器可用性证明。
 
+第三个独立观察专门检查**决策端输入**，不重复宣称计划已影响动作：使用 Standard 2000 产品所用的 `HostedOpponentRuntimeV2` 包装器，附着相同保存计划后让它对 revision 0 的真实 LegalSpace 驱动一次。安装的决策端口只摘录公开字段并以 `INTENTIONAL_STOP_AFTER_PLAN_READ` 主动停止，绝不返回动作。该端口恰好调用 1 次，收到 `opponent_prompt`、`planState.plan.pregamePlanOrigin.originHash=952abd8797579dba45aafc8e9c7588b9df6293ff71e9471269a53136da6732f1`，与交接 bundle 相同；当前目标存在，计划状态为 `reflection_required`，Room/LegalSpace 都是 revision 0（2 个 finite action、0 个参数域）。停止后 Room 仍 revision 0、Provider 调用 0。这证明计划确实越过 Bot 包装器进入下一次决策请求，而不是只在存储中；没有采样真实模型输出，不是策略效果验收。
+
 ## 尚未完成的 S272
 
-1. Bot attach 与同局 SQLite 重启恢复已有实证；下一步让决策端口真正看到 `planState`，再跟随合法动作、对手动作和跨回合反思，比较其选择与无赛前计划控制组。仅有开局/恢复 hash 不等于策略影响。
+1. Bot attach、同局 SQLite 重启恢复以及真实 Hosted Opponent 决策请求收到 `planState` 已有实证；下一步才是让真实模型给出可执行动作，跟随对手动作和跨回合反思，比较其选择与无赛前计划控制组。已送达决策输入仍不等于策略影响。
 2. 同任务/地图/预算下对照预制 2000 分表、Agent 写表及有无赛前计划，比较合法候选率、资源利用、得分、击杀、动作时间和费用；S271 的 3 候选仅 1 合法、少花 500 矿是明确待检问题。
 3. 当前 Web 工作台仍缺从选定名单直接创建 Room/选择席位的用户入口；本次服务端 seam 不能冒充完整产品旅程。设备验收仍属 Ticket 14，需实体 Android/完整 Xcode 与最新产品包。
 
@@ -28,7 +30,7 @@ Status: **S272 进行中，Ticket 27 仍 5/6。** 本片关闭了已生成 Roste
 - `promptPackRoutes`: 使用保留的 `agent_teach_v1` 计划，没有新模型调用。
 - `harnessToolsCalled`: official source lock、Rules-owned Standard Room Factory、Current Product Match Runtime、真实内存 RoomRuntime seat read、RosterPlan→TurnPlan seed bridge。
 - `uiTraceEvidence`: 此片没有新的 UI 操作；S271 的浏览器截图不冒充本片产品交接证明。
-- `agentDecisionEvidence`: 保留的公开小计划/最终军表；无新的对局决策。
+- `agentDecisionEvidence`: 保留的公开小计划/最终军表已进入 `opponent_prompt` 决策请求；哨兵端口在读取后停止，无新的模型选择或对局决策。
 - `memoryTraceEvidence`: Hosted Bot Seat 实际开局 TurnPlan；SQLite WAL 重建后恢复相同来源 hash 和目标。后续动作、对手反应、跨回合反思仍待验证。
 - `trainingTraceCandidates`: none；`rollbackOrDemotionRules`: stale/非法/错席/错 Room/错 audit/来源漂移不得交接。
 - `userVisibleChecks`: 此片仅服务端入口；完整建房和计划状态的页面反馈仍待实现。
