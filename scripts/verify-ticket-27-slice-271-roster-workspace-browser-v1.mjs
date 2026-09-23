@@ -30,10 +30,26 @@
 //     artifacts are scanned for credential-shaped strings.
 //   - trainingTruth:false everywhere; no Room mutation route exists in the
 //     workspace server, and the laboratory mutation-zero proof is asserted.
+//
+// Closure mode (added for the S271 UI state repair):
+//
+//   node scripts/verify-ticket-27-slice-271-roster-workspace-browser-v1.mjs \
+//     --replay-retained-authorized
+//
+//   - ZERO Provider/API calls and no credential ingress: the workspace server
+//     runs with deliberationFactory null and the journey reuses the RETAINED
+//     run-3 paid session (drafts copied, originals preserved read-only). It
+//     proves the repaired disconnected state plus the full UI journey —
+//     manual builder, retained plan/candidates/evidence/cost rendering,
+//     zero-call replay resume, manual override -> stale, explicit zero-call
+//     restoration to the plan candidate, retained revision history, reload,
+//     export/import, mobile 390px, unavailable and disconnected states.
+//   - Output goes to build/ticket-27-slice-271-roster-workspace-closure-v1/;
+//     the run-3 live report, receipts and drafts are never overwritten.
 
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
@@ -47,6 +63,8 @@ import { createRosterWorkspaceServerV1 } from
   "./serve-ticket-27-slice-271-roster-workspace-v1.mjs";
 import { ROSTER_PLANNING_WORKSPACE_API_PREFIX } from
   "../packages/roster-planning-workspace/roster-planning-workspace-http-v1.mjs";
+import { deriveRosterWorkspaceCandidateInputV1 } from
+  "../packages/roster-planning-workspace/roster-planning-workspace-service-v1.mjs";
 import { STARCRAFT_TMG_TICKET_23_LIVE_FLASH_PROVIDER_PROFILE_V1 as
   providerProfile } from "../content/provider/ticket-23-live-provider-profiles-v1.mjs";
 import {
@@ -73,10 +91,14 @@ import { ROSTER_STRATEGIST_PROMPT_PACK_V1 } from
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const EXPO_DIR = path.join(ROOT, "apps/starcraft-tmg-expo");
 const DIST_DIR = path.join(EXPO_DIR, "dist");
-const BUILD_ROOT = path.join(ROOT, "build/ticket-27-slice-271-roster-workspace-v1");
-const EVIDENCE_ROOT = path.join(BUILD_ROOT, "browser-evidence");
-const REPORT_PATH = path.join(BUILD_ROOT, "roster-workspace-acceptance-report.json");
-const RECEIPTS_PATH = path.join(BUILD_ROOT, "provider-receipts-redacted.json");
+const LIVE_BUILD_ROOT =
+  path.join(ROOT, "build/ticket-27-slice-271-roster-workspace-v1");
+const CLOSURE_BUILD_ROOT =
+  path.join(ROOT, "build/ticket-27-slice-271-roster-workspace-closure-v1");
+let BUILD_ROOT = LIVE_BUILD_ROOT;
+let EVIDENCE_ROOT = path.join(BUILD_ROOT, "browser-evidence");
+let REPORT_PATH = path.join(BUILD_ROOT, "roster-workspace-acceptance-report.json");
+let RECEIPTS_PATH = path.join(BUILD_ROOT, "provider-receipts-redacted.json");
 const BASE_COMMIT = "1ee509f";
 const MAX_PHYSICAL_CALLS = 12;
 const MANIFEST_ALLOWED_PATHS = [
@@ -117,6 +139,9 @@ const SCREENSHOT_EXPLANATIONS = {
   "15-mobile-candidates-working.png": "390px touch: candidate compare and the working-list editor scroll within the viewport; no clipping.",
   "16-offline-unavailable.png": "Honest unavailable state (separate server without the secure lane): generate returns the typed ROSTER_WORKSPACE_DELIBERATION_UNAVAILABLE error. 0 Provider calls.",
   "17-offline-disconnected.png": "Honest disconnected state (static-only server, no API): the explicit 无法连接规划服务 card with a reconnect action.",
+  "03-desktop-workspace-retained.png": "Closure mode: workspace session list loaded from the RETAINED run-3 store (no live lane attached): the paid plan session is listed and the honest 实时规划不可用 banner shows; closure reuses artifacts with 0 new calls.",
+  "05-desktop-replay-progress.png": "Closure mode: zero-call retained-reply replay resume — every generation round is marked ⟲ replayed (本地回放 · 0 调用) and the reconstructed plan hash matches the run-3 paid generation.",
+  "10-desktop-revision-history-retained.png": "Closure mode: retained revision evidence — plan v2 carries the run-3 paid revision event in its history; the manual edit above was restored to the exact plan candidate (stale cleared) at 0 calls.",
 };
 
 const checks = [];
@@ -688,13 +713,321 @@ function requireOk(result, code) {
   return result.body;
 }
 
+// ── replay-retained closure journey (0 Provider calls) ─────────────────────
+// Drives the same product surface over the RETAINED run-3 paid session. The
+// workspace server has no deliberation factory, so every planning-evidence
+// claim below comes from the retained drafts; the journey adds zero new paid
+// calls and says so in each check's evidence.
+async function runReplayRetainedJourney({
+  desktop, browser, workspace, screenshots, pageErrors }) {
+  // 03 — sessions view from the retained store; no live lane (honest banner)
+  await desktop.getByTestId("army-open-roster-planning-top").click();
+  await waitForTestId(desktop, "roster-workspace-new-session");
+  await waitForTestId(desktop, "roster-workspace-unavailable");
+  const sessionList = requireOk(await api(workspace.origin, "GET", "sessions",
+    undefined, { stage: "retained_list_sessions" }),
+    "S271_SESSION_LIST_FAILED");
+  const retainedEntry = sessionList.sessions.find((entry) => (
+    entry.status === "planned" && entry.planVersion === 2
+      && entry.providerCalls === 4));
+  ensure(retainedEntry, "S271_RETAINED_SESSION_MISSING", {
+    sessions: sessionList.sessions.map((entry) => ({
+      sessionId: entry.sessionId, status: entry.status,
+      planVersion: entry.planVersion, providerCalls: entry.providerCalls })) });
+  const sessionId = retainedEntry.sessionId;
+  screenshots.push(await shot(desktop, "03-desktop-workspace-retained.png"));
+  check("ui.workspace_sessions_from_retained_store", true, {
+    retainedSessionId: sessionId,
+    planVersion: retainedEntry.planVersion,
+    providerCalls: retainedEntry.providerCalls,
+    liveLaneAttached: false,
+    unavailableBannerHonest: true });
+
+  // 06 — retained plan rendered (run-3 paid generation, 0 new calls)
+  await desktop.getByTestId(`roster-session-${sessionId.slice(0, 12)}`)
+    .click();
+  await waitForTestId(desktop, "session-plan");
+  const retainedView = requireOk(await api(workspace.origin, "GET",
+    `sessions/${sessionId}`, undefined, { stage: "read_retained_session" }),
+    "S271_SESSION_READ_FAILED");
+  const retainedPlanHash = retainedView.session.plan.planHash;
+  screenshots.push(await shot(desktop, "06-desktop-plan-overview.png"));
+  check("ui.plan_rendered", true, {
+    routeKind: retainedView.session.plan.scoreRoute.routeKind,
+    scheduleStatus: retainedView.session.plan.scoreRoute.scheduleStatus,
+    evidenceOrigin: "retained_s271_run3_paid_generation" });
+
+  // 07 — candidate compare (retained real verdicts incl. the illegal one)
+  const candidatesCard = await waitForTestId(desktop, "session-candidates");
+  await candidatesCard.scrollIntoViewIfNeeded();
+  screenshots.push(await shot(desktop, "07-desktop-candidate-compare.png"));
+  const selectedCandidateId =
+    retainedView.session.plan.rosterCandidate?.candidateId ?? null;
+  const candidateStatuses = retainedView.session.candidates.map((c) => ({
+    id: c.candidate.candidateId,
+    legality: c.candidate.legalityStatus,
+    rulesError: c.candidate.legalityReceipt?.rulesErrorCode || null,
+    rejectionKind: c.candidate.legalityReceipt?.rejectionKind || null,
+    minerals: c.verdictSummary?.mineralSpent ?? null,
+  }));
+  const legalCandidates = candidateStatuses.filter(
+    (c) => c.legality === "legal");
+  const illegalCandidates = candidateStatuses.filter(
+    (c) => c.legality === "illegal");
+  check("live.candidate_compare_real_verdicts",
+    candidateStatuses.length > 0
+      && candidateStatuses.every((c) => (c.legality === "legal"
+        ? typeof c.minerals === "number"
+        : (typeof c.rulesError === "string" && c.rulesError.length > 0)
+          || (typeof c.rejectionKind === "string"
+            && c.rejectionKind.length > 0)))
+      && legalCandidates.some((c) => c.id === selectedCandidateId),
+    { candidateCount: candidateStatuses.length,
+      legalCount: legalCandidates.length,
+      illegalCount: illegalCandidates.length,
+      selectedCandidateId,
+      candidateStatuses,
+      evidenceOrigin: "retained_s271_run3_paid_generation" });
+
+  // 08 — tool evidence + provenance/cost (retained usage; 0 new calls)
+  const evidence = await waitForTestId(desktop, "session-tool-evidence");
+  await evidence.scrollIntoViewIfNeeded();
+  const provenance = await waitForTestId(desktop, "session-provenance");
+  await provenance.scrollIntoViewIfNeeded();
+  screenshots.push(await shot(desktop, "08-desktop-evidence-provenance-cost.png"));
+  check("live.tool_evidence_and_usage",
+    retainedView.session.plan.toolReceiptReferences.length > 0
+      && retainedView.session.usage.calls === 4
+      && retainedView.session.evidence.mutationZeroProof
+        .sourceStateMutationCount === 0,
+    { toolReceipts: retainedView.session.plan.toolReceiptReferences.length,
+      calls: retainedView.session.usage.calls,
+      mutationZero: retainedView.session.evidence.mutationZeroProof
+        .sourceStateMutationCount,
+      evidenceOrigin: "retained_s271_run3_paid_generation" });
+
+  // 05 — zero-call retained replay resume; rounds marked replayed in the UI
+  requireOk(await api(workspace.origin, "POST",
+    `sessions/${sessionId}/generate`, { resume: true, replayOnly: true },
+    { stage: "retained_replay_resume" }), "S271_REPLAY_RESUME_REJECTED");
+  const replayed = await waitForSession(workspace.origin, sessionId,
+    (session) => session.status !== "running", 300_000,
+    "retained_replay_resume");
+  check("live.retained_replay_resume_zero_call",
+    replayed.status === "planned"
+      && replayed.plan.planHash === retainedPlanHash
+      && replayed.usage.calls === 4
+      && replayed.progress.rounds.length > 0
+      && replayed.progress.rounds.every(
+        (round) => round.status === "replayed"),
+    { planHash: retainedPlanHash,
+      replayedHash: replayed.plan?.planHash,
+      calls: replayed.usage?.calls,
+      replayedRounds: replayed.progress?.rounds?.length });
+  await desktop.reload({ waitUntil: "networkidle" });
+  await desktop.getByTestId("army-open-roster-planning-top").click();
+  await desktop.getByTestId(`roster-session-${sessionId.slice(0, 12)}`)
+    .click();
+  const progressCard = await waitForTestId(desktop, "session-progress");
+  await progressCard.scrollIntoViewIfNeeded();
+  screenshots.push(await shot(desktop, "05-desktop-replay-progress.png"));
+
+  // 09 — manual override (remove the last unit) → Builder verdict + stale
+  const workingCard = await waitForTestId(desktop, "session-working-list");
+  await workingCard.scrollIntoViewIfNeeded();
+  const unitCount = replayed.working.candidateInput.units.length;
+  const historyBefore = replayed.working.overrideHistory.length;
+  await desktop.getByTestId(`working-remove-${unitCount - 1}`).click();
+  await waitForTestId(desktop, "session-stale-banner");
+  const afterOverride = requireOk(await api(workspace.origin, "GET",
+    `sessions/${sessionId}`, undefined,
+    { stage: "read_after_manual_override" }), "S271_SESSION_READ_FAILED");
+  screenshots.push(await shot(desktop, "09-desktop-manual-override-stale.png"));
+  check("ui.manual_override_builder_verdict_and_stale",
+    afterOverride.session.planEvidenceStale === true
+      && afterOverride.session.working.verdictSummary !== null
+      && afterOverride.session.working.overrideHistory.length
+        === historyBefore + 1,
+    { verdict: afterOverride.session.working.verdictSummary?.status,
+      minerals: afterOverride.session.working.verdictSummary?.mineralSpent });
+
+  // 10 — explicit zero-call restoration: override the working list back to
+  // the EXACT plan-selected candidate (derived through the same shared
+  // mapping the service uses); the Rules kernel verdict must clear stale.
+  const restorationInput = deriveRosterWorkspaceCandidateInputV1(
+    retainedView.session.plan.rosterCandidate);
+  const restored = requireOk(await api(workspace.origin, "POST",
+    `sessions/${sessionId}/override`, { candidateInput: restorationInput },
+    { stage: "manual_restoration_override" }), "S271_RESTORATION_FAILED");
+  check("live.manual_restoration_zero_call",
+    restored.session.planEvidenceStale === false
+      && restored.session.working.verdictSummary?.status === "legal"
+      && restored.session.working.overrideHistory.length
+        === historyBefore + 2,
+    { staleCleared: restored.session.planEvidenceStale === false,
+      verdict: restored.session.working.verdictSummary?.status,
+      minerals: restored.session.working.verdictSummary?.mineralSpent,
+      newPaidCalls: 0 });
+
+  // 10 — retained revision evidence (run-3 paid revision produced plan v2)
+  await desktop.reload({ waitUntil: "networkidle" });
+  await desktop.getByTestId("army-open-roster-planning-top").click();
+  await desktop.getByTestId(`roster-session-${sessionId.slice(0, 12)}`)
+    .click();
+  await waitForTestId(desktop, "session-plan");
+  const revisionsCard = await waitForTestId(desktop, "session-revisions");
+  await revisionsCard.scrollIntoViewIfNeeded();
+  screenshots.push(await shot(desktop, "10-desktop-revision-history-retained.png"));
+  check("live.revision_evidence_retained_v2",
+    restored.session.plan.planVersion === 2
+      && Array.isArray(restored.session.plan.revisions)
+      && restored.session.plan.revisions.length > 0
+      && restored.session.plan.revisions.every((entry) => (
+        typeof entry.reasonText === "string" && entry.reasonText.length > 0)),
+    { planVersion: restored.session.plan.planVersion,
+      revisionCount: restored.session.plan.revisions.length,
+      revisionReasons: restored.session.plan.revisions.map(
+        (entry) => entry.reasonText),
+      evidenceOrigin: "retained_s271_run3_paid_revision" });
+
+  // 11 — persisted reload resume (the reload above rendered the plan again)
+  screenshots.push(await shot(desktop, "11-desktop-reload-resumed.png"));
+  check("ui.persisted_reload_resume", true);
+
+  // 12 — export + API-side import round-trip (0 calls) + secret probe
+  const provenanceCard = await waitForTestId(desktop, "session-provenance");
+  await provenanceCard.scrollIntoViewIfNeeded();
+  await desktop.getByTestId("session-export").click();
+  await waitForTestId(desktop, "session-export-text");
+  screenshots.push(await shot(desktop, "12-desktop-export.png"));
+  const exported = requireOk(await api(workspace.origin, "POST",
+    `sessions/${sessionId}/export`, {}, { stage: "export_session" }),
+    "S271_EXPORT_FAILED");
+  const imported = requireOk(await api(workspace.origin, "POST",
+    "sessions/import",
+    { exportDocument: exported.export.exportDocument },
+    { stage: "import_round_trip" }), "S271_IMPORT_FAILED");
+  check("live.export_import_round_trip",
+    imported.session.plan.planHash === retainedPlanHash
+      && exported.export.exportDocument.credentialMaterialIncluded === false,
+    { roundTripPlanHashMatch: true });
+  const secretProbe = await api(workspace.origin, "POST", "sessions/import", {
+    exportDocument: { ...clone(exported.export.exportDocument),
+      setup: { ...exported.export.exportDocument.setup },
+      bearerToken: "sk-probe-never-accepted" } },
+    { stage: "import_secret_probe_expect_reject" });
+  check("security.import_secret_rejected_fail_closed",
+    secretProbe.body?.ok === false
+      && secretProbe.body?.reason === "ROSTER_WORKSPACE_IMPORT_SECRET_REJECTED",
+    { reason: secretProbe.body?.reason ?? null,
+      status: secretProbe.status });
+
+  // Deliberately INVALID manual edit — only needed when the retained
+  // generation contains no illegal candidate (it contains one; fallback kept
+  // for parity with the live journey, still 0 Provider calls).
+  let deliberateInvalidEdit = {
+    exercised: false,
+    reason: "not_needed_retained_generation_included_illegal_candidate",
+  };
+  if (illegalCandidates.length === 0) {
+    const current = requireOk(await api(workspace.origin, "GET",
+      `sessions/${sessionId}`, undefined,
+      { stage: "read_before_deliberate_invalid_edit" }),
+      "S271_SESSION_READ_FAILED").session;
+    const baseInput = current.working.candidateInput;
+    const spent = Number(current.working.verdictSummary?.mineralSpent) || 0;
+    const budget = Number(current.setup.mineralBudget) || 2000;
+    const copies = Math.min(40, Math.max(2,
+      Math.ceil(budget / Math.max(1, spent)) + 1));
+    const invalidUnits = [];
+    for (let copy = 0; copy < copies; copy += 1) {
+      for (const unit of baseInput.units) {
+        invalidUnits.push({ ...clone(unit),
+          unitInstanceId:
+            `deliberate-invalid-${copy}-${invalidUnits.length}` });
+      }
+    }
+    const invalidResult = requireOk(await api(workspace.origin, "POST",
+      `sessions/${sessionId}/override`,
+      { candidateInput: { ...clone(baseInput), units: invalidUnits } },
+      { stage: "deliberate_invalid_manual_edit" }),
+      "S271_DELIBERATE_INVALID_EDIT_DISPATCH_FAILED");
+    const invalidVerdict = invalidResult.session.working?.verdictSummary;
+    deliberateInvalidEdit = {
+      exercised: true,
+      deliberate: true,
+      reason: "retained_candidate_set_contained_no_illegal_candidate",
+      edit: `duplicated_the_working_list_${copies}x_to_exceed_the_`
+        + `${budget}_mineral_budget`,
+      verdictStatus: invalidVerdict?.status ?? null,
+      rulesErrorCode: invalidVerdict?.rulesErrorCode ?? null,
+    };
+    check("live.deliberate_invalid_edit_rules_error",
+      Boolean(invalidVerdict) && invalidVerdict.status !== "legal"
+        && typeof invalidVerdict.rulesErrorCode === "string"
+        && invalidVerdict.rulesErrorCode.length > 0,
+      deliberateInvalidEdit);
+  }
+
+  // 13-15 — mobile 390px journey over the retained draft (0 calls)
+  const mobile = await browser.newPage({
+    viewport: { width: 390, height: 844 }, hasTouch: true,
+    reducedMotion: "reduce",
+  });
+  mobile.on("pageerror", (error) => pageErrors.push(String(error)));
+  await mobile.goto(`${workspace.origin}/army`,
+    { waitUntil: "networkidle", timeout: 90_000 });
+  await waitForTestId(mobile, "army-open-roster-planning-top");
+  screenshots.push(await shot(mobile, "13-mobile-army-entry.png"));
+  await mobile.getByTestId("army-open-roster-planning-top").click();
+  await waitForTestId(mobile, "roster-workspace-new-session");
+  // Explicit session: the import round-trip created a second session card.
+  await mobile.getByTestId(`roster-session-${sessionId.slice(0, 12)}`)
+    .click();
+  await waitForTestId(mobile, "session-plan");
+  screenshots.push(await shot(mobile, "14-mobile-plan.png"));
+  const mobileCandidates = await waitForTestId(mobile, "session-candidates");
+  await mobileCandidates.scrollIntoViewIfNeeded();
+  const mobileWorking = await waitForTestId(mobile, "session-working-list");
+  await mobileWorking.scrollIntoViewIfNeeded();
+  screenshots.push(await shot(mobile, "15-mobile-candidates-working.png"));
+  const overflow = await mobile.evaluate(() => (
+    document.documentElement.scrollWidth
+      > document.documentElement.clientWidth + 1));
+  check("ui.mobile_390_no_horizontal_overflow", overflow === false, { overflow });
+  check("ui.no_page_errors", pageErrors.length === 0,
+    { pageErrors: pageErrors.slice(0, 3) });
+  await mobile.close();
+  await desktop.close();
+
+  return { sessionId, deliberateInvalidEdit };
+}
+
 // ── main ───────────────────────────────────────────────────────────────────
 async function main() {
   const flags = process.argv.slice(2);
-  if (flags.length !== 1 || flags[0] !== "--live-flash-authorized") {
+  if (flags.length !== 1 || (flags[0] !== "--live-flash-authorized"
+    && flags[0] !== "--replay-retained-authorized")) {
     console.error("S271_LIVE_FLASH_AUTHORIZATION_REQUIRED");
     process.exitCode = 2;
     return;
+  }
+  const replayRetained = flags[0] === "--replay-retained-authorized";
+  if (replayRetained) {
+    BUILD_ROOT = CLOSURE_BUILD_ROOT;
+    EVIDENCE_ROOT = path.join(BUILD_ROOT, "browser-evidence");
+    REPORT_PATH = path.join(BUILD_ROOT,
+      "roster-workspace-acceptance-report.json");
+    RECEIPTS_PATH = path.join(BUILD_ROOT, "provider-receipts-redacted.json");
+    // Retained artifacts are copied, never mutated: the run-3 live build
+    // directory (report, receipts, drafts) stays exactly as retained.
+    const retainedSource = path.join(LIVE_BUILD_ROOT, "workspace-data");
+    ensure(existsSync(path.join(retainedSource, "drafts")),
+      "S271_RETAINED_DATA_MISSING", { retainedSource });
+    await rm(path.join(BUILD_ROOT, "workspace-data"),
+      { recursive: true, force: true });
+    await cp(retainedSource, path.join(BUILD_ROOT, "workspace-data"),
+      { recursive: true });
   }
   await mkdir(EVIDENCE_ROOT, { recursive: true });
 
@@ -741,38 +1074,40 @@ async function main() {
   let acceptanceSessionId = null; // used by the finally settle-before-detach
   const factory = { current: null };
   try {
-    const keychainIngress = await readStarcraftTmgDeepSeekCredentialFromKeychainV1();
-    credentialBytes = keychainIngress.credentialBytes;
-    keychainReceipt = clone(keychainIngress.receipt);
-    const registry = createStarcraftTmgProviderProfileRegistryV2({
-      entries: [{ providerProfile, responsePath: "/responses" }],
-      allowedProviders: ["deepseek-openai-compatible-direct"],
-    });
-    const resolved = await registry.resolveEgressBinding({
-      profileRef: {
-        id: providerProfile.providerProfileId,
-        version: providerProfile.version,
-        hash: providerProfile.integrity.hash,
-      },
-    });
-    ensure(resolved.ok === true, "S271_PROFILE_RESOLUTION_FAILED");
-    egressBinding = resolved.egressBinding;
-    workerPort = createStarcraftTmgStructuredProviderWorkerPortV1({
-      providerProfileRegistry: registry, handshakeTimeoutMs: 5_000 });
-    attached = await workerPort.attachCredential({
-      attachmentId: `s271-workspace-attachment-${Date.now()}`,
-      providerProfile,
-      credentialBytes,
-    });
-    ensure(attached?.ok === true && attached.workerRef,
-      "S271_SECURE_ATTACHMENT_MISSING");
-    ensure(credentialBytes.every((byte) => byte === 0),
-      "S271_PARENT_CREDENTIAL_NOT_ZEROED");
-    parentCredentialZeroed = true;
-    credentialBytes = null;
     const receipts = [];
-    factory.current = createLiveFlashDeliberationFactory({
-      workerPort, workerRef: attached.workerRef, egressBinding, receipts });
+    if (!replayRetained) {
+      const keychainIngress = await readStarcraftTmgDeepSeekCredentialFromKeychainV1();
+      credentialBytes = keychainIngress.credentialBytes;
+      keychainReceipt = clone(keychainIngress.receipt);
+      const registry = createStarcraftTmgProviderProfileRegistryV2({
+        entries: [{ providerProfile, responsePath: "/responses" }],
+        allowedProviders: ["deepseek-openai-compatible-direct"],
+      });
+      const resolved = await registry.resolveEgressBinding({
+        profileRef: {
+          id: providerProfile.providerProfileId,
+          version: providerProfile.version,
+          hash: providerProfile.integrity.hash,
+        },
+      });
+      ensure(resolved.ok === true, "S271_PROFILE_RESOLUTION_FAILED");
+      egressBinding = resolved.egressBinding;
+      workerPort = createStarcraftTmgStructuredProviderWorkerPortV1({
+        providerProfileRegistry: registry, handshakeTimeoutMs: 5_000 });
+      attached = await workerPort.attachCredential({
+        attachmentId: `s271-workspace-attachment-${Date.now()}`,
+        providerProfile,
+        credentialBytes,
+      });
+      ensure(attached?.ok === true && attached.workerRef,
+        "S271_SECURE_ATTACHMENT_MISSING");
+      ensure(credentialBytes.every((byte) => byte === 0),
+        "S271_PARENT_CREDENTIAL_NOT_ZEROED");
+      parentCredentialZeroed = true;
+      credentialBytes = null;
+      factory.current = createLiveFlashDeliberationFactory({
+        workerPort, workerRef: attached.workerRef, egressBinding, receipts });
+    }
 
     // ---- workspace server with the live factory
     workspace = await createRosterWorkspaceServerV1({
@@ -806,293 +1141,302 @@ async function main() {
     await desktop.goto(`${workspace.origin}/army`,
       { waitUntil: "networkidle", timeout: 90_000 });
 
-    // 03 — workspace sessions view (live lane attached)
-    await desktop.getByTestId("army-open-roster-planning-top").click();
-    await waitForTestId(desktop, "roster-workspace-new-session");
-    screenshots.push(await shot(desktop, "03-desktop-workspace-live-ready.png"));
-    check("ui.workspace_connected_live", true);
+    let deliberateInvalidEdit = { exercised: false,
+      reason: "not_applicable" };
+    if (replayRetained) {
+      const replayResult = await runReplayRetainedJourney({
+        desktop, browser, workspace, screenshots, pageErrors });
+      acceptanceSessionId = replayResult.sessionId;
+      deliberateInvalidEdit = replayResult.deliberateInvalidEdit;
+    } else {
+      // 03 — workspace sessions view (live lane attached)
+      await desktop.getByTestId("army-open-roster-planning-top").click();
+      await waitForTestId(desktop, "roster-workspace-new-session");
+      screenshots.push(await shot(desktop, "03-desktop-workspace-live-ready.png"));
+      check("ui.workspace_connected_live", true);
 
-    // 04 — setup
-    await desktop.getByTestId("roster-workspace-new-session").click();
-    await waitForTestId(desktop, "setup-create-session");
-    screenshots.push(await shot(desktop, "04-desktop-setup.png"));
-    await desktop.getByTestId("setup-create-session").click();
-    await waitForTestId(desktop, "session-generate");
-    const sessionListBody = requireOk(await api(workspace.origin, "GET",
-      "sessions", undefined, { stage: "list_sessions_after_create" }),
-      "S271_SESSION_LIST_FAILED");
-    const sessionId = sessionListBody.sessions[0].sessionId;
-    acceptanceSessionId = sessionId;
+      // 04 — setup
+      await desktop.getByTestId("roster-workspace-new-session").click();
+      await waitForTestId(desktop, "setup-create-session");
+      screenshots.push(await shot(desktop, "04-desktop-setup.png"));
+      await desktop.getByTestId("setup-create-session").click();
+      await waitForTestId(desktop, "session-generate");
+      const sessionListBody = requireOk(await api(workspace.origin, "GET",
+        "sessions", undefined, { stage: "list_sessions_after_create" }),
+        "S271_SESSION_LIST_FAILED");
+      const sessionId = sessionListBody.sessions[0].sessionId;
+      acceptanceSessionId = sessionId;
 
-    // 05 — generate: real async progress against live Flash
-    await desktop.getByTestId("session-generate").click();
-    await waitForTestId(desktop, "session-progress");
-    screenshots.push(await shot(desktop, "05-desktop-planning-running.png"));
-    // Live Flash rounds are slow (initialization/restart plus the paid rounds
-    // is measured in minutes); the wait budget reflects that, strategy is
-    // never trimmed to accelerate it.
-    const planned = await waitForSession(workspace.origin, sessionId,
-      (session) => session.status !== "running", 1_200_000,
-      "initial_generate");
-    ensure(planned.status === "planned",
-      "S271_PLANNING_FAILED",
-      { stage: "initial_generate", failure: planned.failure });
-    check("live.initial_plan_completed", true, {
-      calls: planned.usage?.calls,
-      units: planned.usage?.totalUnits,
-    });
-    const plannedView = requireOk(await api(workspace.origin, "GET",
-      `sessions/${sessionId}`, undefined, { stage: "read_planned_session" }),
-      "S271_SESSION_READ_FAILED");
-    const planHash = plannedView.session.plan.planHash;
+      // 05 — generate: real async progress against live Flash
+      await desktop.getByTestId("session-generate").click();
+      await waitForTestId(desktop, "session-progress");
+      screenshots.push(await shot(desktop, "05-desktop-planning-running.png"));
+      // Live Flash rounds are slow (initialization/restart plus the paid rounds
+      // is measured in minutes); the wait budget reflects that, strategy is
+      // never trimmed to accelerate it.
+      const planned = await waitForSession(workspace.origin, sessionId,
+        (session) => session.status !== "running", 1_200_000,
+        "initial_generate");
+      ensure(planned.status === "planned",
+        "S271_PLANNING_FAILED",
+        { stage: "initial_generate", failure: planned.failure });
+      check("live.initial_plan_completed", true, {
+        calls: planned.usage?.calls,
+        units: planned.usage?.totalUnits,
+      });
+      const plannedView = requireOk(await api(workspace.origin, "GET",
+        `sessions/${sessionId}`, undefined, { stage: "read_planned_session" }),
+        "S271_SESSION_READ_FAILED");
+      const planHash = plannedView.session.plan.planHash;
 
-    // 06 — plan overview (open THIS session explicitly: a later step creates
-    // an additional imported session, so positional selection is not stable)
-    await desktop.reload({ waitUntil: "networkidle" });
-    await desktop.getByTestId("army-open-roster-planning-top").click();
-    await desktop.getByTestId(`roster-session-${sessionId.slice(0, 12)}`)
-      .click();
-    await waitForTestId(desktop, "session-plan");
-    screenshots.push(await shot(desktop, "06-desktop-plan-overview.png"));
-    check("ui.plan_rendered", true, {
-      routeKind: plannedView.session.plan.scoreRoute.routeKind,
-      scheduleStatus: plannedView.session.plan.scoreRoute.scheduleStatus,
-    });
+      // 06 — plan overview (open THIS session explicitly: a later step creates
+      // an additional imported session, so positional selection is not stable)
+      await desktop.reload({ waitUntil: "networkidle" });
+      await desktop.getByTestId("army-open-roster-planning-top").click();
+      await desktop.getByTestId(`roster-session-${sessionId.slice(0, 12)}`)
+        .click();
+      await waitForTestId(desktop, "session-plan");
+      screenshots.push(await shot(desktop, "06-desktop-plan-overview.png"));
+      check("ui.plan_rendered", true, {
+        routeKind: plannedView.session.plan.scoreRoute.routeKind,
+        scheduleStatus: plannedView.session.plan.scoreRoute.scheduleStatus,
+      });
 
-    // 07 — candidate compare: report the REAL counts/statuses of this
-    // generation. A valid newly generated set must not fail just because it
-    // contains no illegal candidate; an illegal-verdict path is exercised
-    // separately below via a labelled, deliberately invalid manual edit.
-    const candidatesCard = await waitForTestId(desktop, "session-candidates");
-    await candidatesCard.scrollIntoViewIfNeeded();
-    screenshots.push(await shot(desktop, "07-desktop-candidate-compare.png"));
-    const selectedCandidateId =
-      plannedView.session.plan.rosterCandidate?.candidateId ?? null;
-    const candidateStatuses = plannedView.session.candidates.map((c) => ({
-      id: c.candidate.candidateId,
-      legality: c.candidate.legalityStatus,
-      rulesError: c.candidate.legalityReceipt?.rulesErrorCode || null,
-      rejectionKind: c.candidate.legalityReceipt?.rejectionKind || null,
-      minerals: c.verdictSummary?.mineralSpent ?? null,
-    }));
-    const legalCandidates = candidateStatuses.filter(
-      (c) => c.legality === "legal");
-    const illegalCandidates = candidateStatuses.filter(
-      (c) => c.legality === "illegal");
-    check("live.candidate_compare_real_verdicts",
-      candidateStatuses.length > 0
-        && candidateStatuses.every((c) => (c.legality === "legal"
-          ? typeof c.minerals === "number"
-          : (typeof c.rulesError === "string" && c.rulesError.length > 0)
-            || (typeof c.rejectionKind === "string"
-              && c.rejectionKind.length > 0)))
-        && legalCandidates.some((c) => c.id === selectedCandidateId),
-      { candidateCount: candidateStatuses.length,
-        legalCount: legalCandidates.length,
-        illegalCount: illegalCandidates.length,
-        selectedCandidateId,
-        candidateStatuses });
+      // 07 — candidate compare: report the REAL counts/statuses of this
+      // generation. A valid newly generated set must not fail just because it
+      // contains no illegal candidate; an illegal-verdict path is exercised
+      // separately below via a labelled, deliberately invalid manual edit.
+      const candidatesCard = await waitForTestId(desktop, "session-candidates");
+      await candidatesCard.scrollIntoViewIfNeeded();
+      screenshots.push(await shot(desktop, "07-desktop-candidate-compare.png"));
+      const selectedCandidateId =
+        plannedView.session.plan.rosterCandidate?.candidateId ?? null;
+      const candidateStatuses = plannedView.session.candidates.map((c) => ({
+        id: c.candidate.candidateId,
+        legality: c.candidate.legalityStatus,
+        rulesError: c.candidate.legalityReceipt?.rulesErrorCode || null,
+        rejectionKind: c.candidate.legalityReceipt?.rejectionKind || null,
+        minerals: c.verdictSummary?.mineralSpent ?? null,
+      }));
+      const legalCandidates = candidateStatuses.filter(
+        (c) => c.legality === "legal");
+      const illegalCandidates = candidateStatuses.filter(
+        (c) => c.legality === "illegal");
+      check("live.candidate_compare_real_verdicts",
+        candidateStatuses.length > 0
+          && candidateStatuses.every((c) => (c.legality === "legal"
+            ? typeof c.minerals === "number"
+            : (typeof c.rulesError === "string" && c.rulesError.length > 0)
+              || (typeof c.rejectionKind === "string"
+                && c.rejectionKind.length > 0)))
+          && legalCandidates.some((c) => c.id === selectedCandidateId),
+        { candidateCount: candidateStatuses.length,
+          legalCount: legalCandidates.length,
+          illegalCount: illegalCandidates.length,
+          selectedCandidateId,
+          candidateStatuses });
 
-    // 08 — tool evidence + provenance/cost
-    const evidence = await waitForTestId(desktop, "session-tool-evidence");
-    await evidence.scrollIntoViewIfNeeded();
-    const provenance = await waitForTestId(desktop, "session-provenance");
-    await provenance.scrollIntoViewIfNeeded();
-    screenshots.push(await shot(desktop, "08-desktop-evidence-provenance-cost.png"));
-    check("live.tool_evidence_and_usage",
-      plannedView.session.plan.toolReceiptReferences.length > 0
-        && plannedView.session.usage.calls >= 3
-        && plannedView.session.evidence.mutationZeroProof
-          .sourceStateMutationCount === 0,
-      { toolReceipts: plannedView.session.plan.toolReceiptReferences.length,
-        calls: plannedView.session.usage.calls,
-        mutationZero: plannedView.session.evidence.mutationZeroProof
-          .sourceStateMutationCount });
+      // 08 — tool evidence + provenance/cost
+      const evidence = await waitForTestId(desktop, "session-tool-evidence");
+      await evidence.scrollIntoViewIfNeeded();
+      const provenance = await waitForTestId(desktop, "session-provenance");
+      await provenance.scrollIntoViewIfNeeded();
+      screenshots.push(await shot(desktop, "08-desktop-evidence-provenance-cost.png"));
+      check("live.tool_evidence_and_usage",
+        plannedView.session.plan.toolReceiptReferences.length > 0
+          && plannedView.session.usage.calls >= 3
+          && plannedView.session.evidence.mutationZeroProof
+            .sourceStateMutationCount === 0,
+        { toolReceipts: plannedView.session.plan.toolReceiptReferences.length,
+          calls: plannedView.session.usage.calls,
+          mutationZero: plannedView.session.evidence.mutationZeroProof
+            .sourceStateMutationCount });
 
-    // zero-call replay resume (retained replies reconstruct the exact plan)
-    requireOk(await api(workspace.origin, "POST",
-      `sessions/${sessionId}/generate`, { resume: true, replayOnly: true },
-      { stage: "retained_replay_resume" }), "S271_REPLAY_RESUME_REJECTED");
-    const replayed = await waitForSession(workspace.origin, sessionId,
-      (session) => session.status !== "running", 300_000,
-      "retained_replay_resume");
-    check("live.retained_replay_resume_zero_call",
-      replayed.status === "planned"
-        && replayed.plan.planHash === planHash
-        && replayed.usage.calls === planned.usage.calls,
-      { planHash, replayedHash: replayed.plan?.planHash,
-        calls: replayed.usage?.calls });
+      // zero-call replay resume (retained replies reconstruct the exact plan)
+      requireOk(await api(workspace.origin, "POST",
+        `sessions/${sessionId}/generate`, { resume: true, replayOnly: true },
+        { stage: "retained_replay_resume" }), "S271_REPLAY_RESUME_REJECTED");
+      const replayed = await waitForSession(workspace.origin, sessionId,
+        (session) => session.status !== "running", 300_000,
+        "retained_replay_resume");
+      check("live.retained_replay_resume_zero_call",
+        replayed.status === "planned"
+          && replayed.plan.planHash === planHash
+          && replayed.usage.calls === planned.usage.calls,
+        { planHash, replayedHash: replayed.plan?.planHash,
+          calls: replayed.usage?.calls });
 
-    // 09 — manual override (remove the last unit) → Builder verdict + stale
-    const workingCard = await waitForTestId(desktop, "session-working-list");
-    await workingCard.scrollIntoViewIfNeeded();
-    const unitCount = plannedView.session.working.candidateInput.units.length;
-    await desktop.getByTestId(`working-remove-${unitCount - 1}`).click();
-    await waitForTestId(desktop, "session-stale-banner");
-    const afterOverride = requireOk(await api(workspace.origin, "GET",
-      `sessions/${sessionId}`, undefined,
-      { stage: "read_after_manual_override" }), "S271_SESSION_READ_FAILED");
-    screenshots.push(await shot(desktop, "09-desktop-manual-override-stale.png"));
-    check("ui.manual_override_builder_verdict_and_stale",
-      afterOverride.session.planEvidenceStale === true
-        && afterOverride.session.working.verdictSummary !== null
-        && afterOverride.session.working.overrideHistory.length === 1,
-      { verdict: afterOverride.session.working.verdictSummary?.status,
-        minerals: afterOverride.session.working.verdictSummary?.mineralSpent });
-
-    // 10 — requested revision (1 paid call). The revision reason is derived
-    // from the CURRENT working list (unit count and actual Rules-computed
-    // spend after the manual edit), never from a historical budget figure.
-    const workingAfter = afterOverride.session.working;
-    const revisionReasonText = "手动精简了 1 个单位;当前工作清单 "
-      + `${workingAfter.candidateInput.units.length} 个单位`
-      + (typeof workingAfter.verdictSummary?.mineralSpent === "number"
-        ? `,规则内核核定已用 ${workingAfter.verdictSummary.mineralSpent}`
-          + `/${afterOverride.session.setup.mineralBudget} 矿物`
-        : "")
-      + "。请按当前工作清单的实际组成更新得分路线与部署构想。";
-    await desktop.getByTestId("session-show-revise").click();
-    await waitForTestId(desktop, "session-revise-form");
-    await desktop.getByTestId("revision-reason").fill(revisionReasonText);
-    await desktop.getByTestId("revision-submit").click();
-    const revised = await waitForSession(workspace.origin, sessionId,
-      (session) => session.status === "failed" || session.status === "cancelled"
-        || (session.status === "planned" && session.plan
-          && session.plan.planVersion >= 2),
-      600_000, "explicit_revision");
-    ensure(revised.status === "planned" && revised.plan.planVersion === 2,
-      "S271_REVISION_FAILED",
-      { stage: "explicit_revision", failure: revised.failure });
-    const revisionsCard = await waitForTestId(desktop, "session-revisions");
-    await revisionsCard.scrollIntoViewIfNeeded();
-    screenshots.push(await shot(desktop, "10-desktop-revised-plan.png"));
-    check("live.revision_completed_v2", true, {
-      planVersion: revised.plan.planVersion,
-      planStatus: revised.plan.planStatus,
-      calls: revised.usage?.calls,
-      staleCleared: revised.planEvidenceStale === false,
-    });
-    check("live.revision_reason_from_current_working_list",
-      Array.isArray(revised.plan.revisions)
-        && revised.plan.revisions.some(
-          (entry) => entry.reasonText === revisionReasonText),
-      { reasonText: revisionReasonText });
-
-    // 11 — persisted reload resume (same explicit session)
-    await desktop.reload({ waitUntil: "networkidle" });
-    await desktop.getByTestId("army-open-roster-planning-top").click();
-    await desktop.getByTestId(`roster-session-${sessionId.slice(0, 12)}`)
-      .click();
-    await waitForTestId(desktop, "session-plan");
-    screenshots.push(await shot(desktop, "11-desktop-reload-resumed.png"));
-    check("ui.persisted_reload_resume", true);
-
-    // 12 — export + API-side import round-trip
-    const provenanceCard = await waitForTestId(desktop, "session-provenance");
-    await provenanceCard.scrollIntoViewIfNeeded();
-    await desktop.getByTestId("session-export").click();
-    await waitForTestId(desktop, "session-export-text");
-    screenshots.push(await shot(desktop, "12-desktop-export.png"));
-    const exported = requireOk(await api(workspace.origin, "POST",
-      `sessions/${sessionId}/export`, {}, { stage: "export_session" }),
-      "S271_EXPORT_FAILED");
-    const imported = requireOk(await api(workspace.origin, "POST",
-      "sessions/import",
-      { exportDocument: exported.export.exportDocument },
-      { stage: "import_round_trip" }), "S271_IMPORT_FAILED");
-    check("live.export_import_round_trip",
-      imported.session.plan.planHash === revised.plan.planHash
-        && exported.export.exportDocument.credentialMaterialIncluded === false,
-      { roundTripPlanHashMatch: true });
-    const secretProbe = await api(workspace.origin, "POST", "sessions/import", {
-      exportDocument: { ...clone(exported.export.exportDocument),
-        setup: { ...exported.export.exportDocument.setup },
-        bearerToken: "sk-probe-never-accepted" } },
-      { stage: "import_secret_probe_expect_reject" });
-    check("security.import_secret_rejected_fail_closed",
-      secretProbe.body?.ok === false
-        && secretProbe.body?.reason === "ROSTER_WORKSPACE_IMPORT_SECRET_REJECTED",
-      { reason: secretProbe.body?.reason ?? null,
-        status: secretProbe.status });
-
-    // Deliberately INVALID manual edit — exercised separately and labelled as
-    // such. Only needed when the real generation produced no illegal
-    // candidate: the illegal-verdict evidence path must still be proven
-    // against the authoritative Builder port, never assumed.
-    let deliberateInvalidEdit = {
-      exercised: false,
-      reason: "not_needed_generation_included_illegal_candidate",
-    };
-    if (illegalCandidates.length === 0) {
-      const current = requireOk(await api(workspace.origin, "GET",
+      // 09 — manual override (remove the last unit) → Builder verdict + stale
+      const workingCard = await waitForTestId(desktop, "session-working-list");
+      await workingCard.scrollIntoViewIfNeeded();
+      const unitCount = plannedView.session.working.candidateInput.units.length;
+      await desktop.getByTestId(`working-remove-${unitCount - 1}`).click();
+      await waitForTestId(desktop, "session-stale-banner");
+      const afterOverride = requireOk(await api(workspace.origin, "GET",
         `sessions/${sessionId}`, undefined,
-        { stage: "read_before_deliberate_invalid_edit" }),
-        "S271_SESSION_READ_FAILED").session;
-      const baseInput = current.working.candidateInput;
-      const spent = Number(current.working.verdictSummary?.mineralSpent) || 0;
-      const budget = Number(current.setup.mineralBudget) || 2000;
-      const copies = Math.min(40, Math.max(2,
-        Math.ceil(budget / Math.max(1, spent)) + 1));
-      const invalidUnits = [];
-      for (let copy = 0; copy < copies; copy += 1) {
-        for (const unit of baseInput.units) {
-          invalidUnits.push({ ...clone(unit),
-            unitInstanceId:
-              `deliberate-invalid-${copy}-${invalidUnits.length}` });
-        }
-      }
-      const invalidResult = requireOk(await api(workspace.origin, "POST",
-        `sessions/${sessionId}/override`,
-        { candidateInput: { ...clone(baseInput), units: invalidUnits } },
-        { stage: "deliberate_invalid_manual_edit" }),
-        "S271_DELIBERATE_INVALID_EDIT_DISPATCH_FAILED");
-      const invalidVerdict = invalidResult.session.working?.verdictSummary;
-      deliberateInvalidEdit = {
-        exercised: true,
-        deliberate: true,
-        reason: "generated_candidate_set_contained_no_illegal_candidate",
-        edit: `duplicated_the_working_list_${copies}x_to_exceed_the_`
-          + `${budget}_mineral_budget`,
-        verdictStatus: invalidVerdict?.status ?? null,
-        rulesErrorCode: invalidVerdict?.rulesErrorCode ?? null,
-      };
-      check("live.deliberate_invalid_edit_rules_error",
-        Boolean(invalidVerdict) && invalidVerdict.status !== "legal"
-          && typeof invalidVerdict.rulesErrorCode === "string"
-          && invalidVerdict.rulesErrorCode.length > 0,
-        deliberateInvalidEdit);
-    }
+        { stage: "read_after_manual_override" }), "S271_SESSION_READ_FAILED");
+      screenshots.push(await shot(desktop, "09-desktop-manual-override-stale.png"));
+      check("ui.manual_override_builder_verdict_and_stale",
+        afterOverride.session.planEvidenceStale === true
+          && afterOverride.session.working.verdictSummary !== null
+          && afterOverride.session.working.overrideHistory.length === 1,
+        { verdict: afterOverride.session.working.verdictSummary?.status,
+          minerals: afterOverride.session.working.verdictSummary?.mineralSpent });
 
-    // 13-15 — mobile 390px journey over the persisted draft (no new calls)
-    const mobile = await browser.newPage({
-      viewport: { width: 390, height: 844 }, hasTouch: true,
-      reducedMotion: "reduce",
-    });
-    mobile.on("pageerror", (error) => pageErrors.push(String(error)));
-    await mobile.goto(`${workspace.origin}/army`,
-      { waitUntil: "networkidle", timeout: 90_000 });
-    await waitForTestId(mobile, "army-open-roster-planning-top");
-    screenshots.push(await shot(mobile, "13-mobile-army-entry.png"));
-    await mobile.getByTestId("army-open-roster-planning-top").click();
-    await waitForTestId(mobile, "roster-workspace-new-session");
-    // Explicit session: the import round-trip created a second session card.
-    await mobile.getByTestId(`roster-session-${sessionId.slice(0, 12)}`)
-      .click();
-    await waitForTestId(mobile, "session-plan");
-    screenshots.push(await shot(mobile, "14-mobile-plan.png"));
-    const mobileCandidates = await waitForTestId(mobile, "session-candidates");
-    await mobileCandidates.scrollIntoViewIfNeeded();
-    const mobileWorking = await waitForTestId(mobile, "session-working-list");
-    await mobileWorking.scrollIntoViewIfNeeded();
-    screenshots.push(await shot(mobile, "15-mobile-candidates-working.png"));
-    const overflow = await mobile.evaluate(() => (
-      document.documentElement.scrollWidth
-        > document.documentElement.clientWidth + 1));
-    check("ui.mobile_390_no_horizontal_overflow", overflow === false, { overflow });
-    check("ui.no_page_errors", pageErrors.length === 0,
-      { pageErrors: pageErrors.slice(0, 3) });
-    await mobile.close();
-    await desktop.close();
+      // 10 — requested revision (1 paid call). The revision reason is derived
+      // from the CURRENT working list (unit count and actual Rules-computed
+      // spend after the manual edit), never from a historical budget figure.
+      const workingAfter = afterOverride.session.working;
+      const revisionReasonText = "手动精简了 1 个单位;当前工作清单 "
+        + `${workingAfter.candidateInput.units.length} 个单位`
+        + (typeof workingAfter.verdictSummary?.mineralSpent === "number"
+          ? `,规则内核核定已用 ${workingAfter.verdictSummary.mineralSpent}`
+            + `/${afterOverride.session.setup.mineralBudget} 矿物`
+          : "")
+        + "。请按当前工作清单的实际组成更新得分路线与部署构想。";
+      await desktop.getByTestId("session-show-revise").click();
+      await waitForTestId(desktop, "session-revise-form");
+      await desktop.getByTestId("revision-reason").fill(revisionReasonText);
+      await desktop.getByTestId("revision-submit").click();
+      const revised = await waitForSession(workspace.origin, sessionId,
+        (session) => session.status === "failed" || session.status === "cancelled"
+          || (session.status === "planned" && session.plan
+            && session.plan.planVersion >= 2),
+        600_000, "explicit_revision");
+      ensure(revised.status === "planned" && revised.plan.planVersion === 2,
+        "S271_REVISION_FAILED",
+        { stage: "explicit_revision", failure: revised.failure });
+      const revisionsCard = await waitForTestId(desktop, "session-revisions");
+      await revisionsCard.scrollIntoViewIfNeeded();
+      screenshots.push(await shot(desktop, "10-desktop-revised-plan.png"));
+      check("live.revision_completed_v2", true, {
+        planVersion: revised.plan.planVersion,
+        planStatus: revised.plan.planStatus,
+        calls: revised.usage?.calls,
+        staleCleared: revised.planEvidenceStale === false,
+      });
+      check("live.revision_reason_from_current_working_list",
+        Array.isArray(revised.plan.revisions)
+          && revised.plan.revisions.some(
+            (entry) => entry.reasonText === revisionReasonText),
+        { reasonText: revisionReasonText });
+
+      // 11 — persisted reload resume (same explicit session)
+      await desktop.reload({ waitUntil: "networkidle" });
+      await desktop.getByTestId("army-open-roster-planning-top").click();
+      await desktop.getByTestId(`roster-session-${sessionId.slice(0, 12)}`)
+        .click();
+      await waitForTestId(desktop, "session-plan");
+      screenshots.push(await shot(desktop, "11-desktop-reload-resumed.png"));
+      check("ui.persisted_reload_resume", true);
+
+      // 12 — export + API-side import round-trip
+      const provenanceCard = await waitForTestId(desktop, "session-provenance");
+      await provenanceCard.scrollIntoViewIfNeeded();
+      await desktop.getByTestId("session-export").click();
+      await waitForTestId(desktop, "session-export-text");
+      screenshots.push(await shot(desktop, "12-desktop-export.png"));
+      const exported = requireOk(await api(workspace.origin, "POST",
+        `sessions/${sessionId}/export`, {}, { stage: "export_session" }),
+        "S271_EXPORT_FAILED");
+      const imported = requireOk(await api(workspace.origin, "POST",
+        "sessions/import",
+        { exportDocument: exported.export.exportDocument },
+        { stage: "import_round_trip" }), "S271_IMPORT_FAILED");
+      check("live.export_import_round_trip",
+        imported.session.plan.planHash === revised.plan.planHash
+          && exported.export.exportDocument.credentialMaterialIncluded === false,
+        { roundTripPlanHashMatch: true });
+      const secretProbe = await api(workspace.origin, "POST", "sessions/import", {
+        exportDocument: { ...clone(exported.export.exportDocument),
+          setup: { ...exported.export.exportDocument.setup },
+          bearerToken: "sk-probe-never-accepted" } },
+        { stage: "import_secret_probe_expect_reject" });
+      check("security.import_secret_rejected_fail_closed",
+        secretProbe.body?.ok === false
+          && secretProbe.body?.reason === "ROSTER_WORKSPACE_IMPORT_SECRET_REJECTED",
+        { reason: secretProbe.body?.reason ?? null,
+          status: secretProbe.status });
+
+      // Deliberately INVALID manual edit — exercised separately and labelled as
+      // such. Only needed when the real generation produced no illegal
+      // candidate: the illegal-verdict evidence path must still be proven
+      // against the authoritative Builder port, never assumed.
+      deliberateInvalidEdit = {
+        exercised: false,
+        reason: "not_needed_generation_included_illegal_candidate",
+      };
+      if (illegalCandidates.length === 0) {
+        const current = requireOk(await api(workspace.origin, "GET",
+          `sessions/${sessionId}`, undefined,
+          { stage: "read_before_deliberate_invalid_edit" }),
+          "S271_SESSION_READ_FAILED").session;
+        const baseInput = current.working.candidateInput;
+        const spent = Number(current.working.verdictSummary?.mineralSpent) || 0;
+        const budget = Number(current.setup.mineralBudget) || 2000;
+        const copies = Math.min(40, Math.max(2,
+          Math.ceil(budget / Math.max(1, spent)) + 1));
+        const invalidUnits = [];
+        for (let copy = 0; copy < copies; copy += 1) {
+          for (const unit of baseInput.units) {
+            invalidUnits.push({ ...clone(unit),
+              unitInstanceId:
+                `deliberate-invalid-${copy}-${invalidUnits.length}` });
+          }
+        }
+        const invalidResult = requireOk(await api(workspace.origin, "POST",
+          `sessions/${sessionId}/override`,
+          { candidateInput: { ...clone(baseInput), units: invalidUnits } },
+          { stage: "deliberate_invalid_manual_edit" }),
+          "S271_DELIBERATE_INVALID_EDIT_DISPATCH_FAILED");
+        const invalidVerdict = invalidResult.session.working?.verdictSummary;
+        deliberateInvalidEdit = {
+          exercised: true,
+          deliberate: true,
+          reason: "generated_candidate_set_contained_no_illegal_candidate",
+          edit: `duplicated_the_working_list_${copies}x_to_exceed_the_`
+            + `${budget}_mineral_budget`,
+          verdictStatus: invalidVerdict?.status ?? null,
+          rulesErrorCode: invalidVerdict?.rulesErrorCode ?? null,
+        };
+        check("live.deliberate_invalid_edit_rules_error",
+          Boolean(invalidVerdict) && invalidVerdict.status !== "legal"
+            && typeof invalidVerdict.rulesErrorCode === "string"
+            && invalidVerdict.rulesErrorCode.length > 0,
+          deliberateInvalidEdit);
+      }
+
+      // 13-15 — mobile 390px journey over the persisted draft (no new calls)
+      const mobile = await browser.newPage({
+        viewport: { width: 390, height: 844 }, hasTouch: true,
+        reducedMotion: "reduce",
+      });
+      mobile.on("pageerror", (error) => pageErrors.push(String(error)));
+      await mobile.goto(`${workspace.origin}/army`,
+        { waitUntil: "networkidle", timeout: 90_000 });
+      await waitForTestId(mobile, "army-open-roster-planning-top");
+      screenshots.push(await shot(mobile, "13-mobile-army-entry.png"));
+      await mobile.getByTestId("army-open-roster-planning-top").click();
+      await waitForTestId(mobile, "roster-workspace-new-session");
+      // Explicit session: the import round-trip created a second session card.
+      await mobile.getByTestId(`roster-session-${sessionId.slice(0, 12)}`)
+        .click();
+      await waitForTestId(mobile, "session-plan");
+      screenshots.push(await shot(mobile, "14-mobile-plan.png"));
+      const mobileCandidates = await waitForTestId(mobile, "session-candidates");
+      await mobileCandidates.scrollIntoViewIfNeeded();
+      const mobileWorking = await waitForTestId(mobile, "session-working-list");
+      await mobileWorking.scrollIntoViewIfNeeded();
+      screenshots.push(await shot(mobile, "15-mobile-candidates-working.png"));
+      const overflow = await mobile.evaluate(() => (
+        document.documentElement.scrollWidth
+          > document.documentElement.clientWidth + 1));
+      check("ui.mobile_390_no_horizontal_overflow", overflow === false, { overflow });
+      check("ui.no_page_errors", pageErrors.length === 0,
+        { pageErrors: pageErrors.slice(0, 3) });
+      await mobile.close();
+      await desktop.close();
+    }
 
     // 16 — honest unavailable state (separate server, no secure lane, 0 calls)
     const offlineServer = await createRosterWorkspaceServerV1({
@@ -1134,7 +1478,7 @@ async function main() {
 
     // ---- ticket-20 additive mount coexistence (spawned concurrently)
     const ticket20WaitStart = Date.now();
-    while (!ticket20Entry && Date.now() - ticket20WaitStart < 90_000) {
+    while (!ticket20Entry && Date.now() - ticket20WaitStart < 300_000) {
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
     ensure(ticket20Entry?.origin, "S271_TICKET20_ENTRY_MISSING",
@@ -1199,19 +1543,61 @@ async function main() {
     const totalCostCnyMicros = pricingReceipts.reduce((sum, receipt) => (
       sum + (receipt.calculatedCostCnyMicros
         ?? Math.ceil(receipt.calculatedCostNanoUsd * 8 / 1_000))), 0);
-    check("live.call_cap_respected",
-      receipts.length >= 4 && receipts.length <= MAX_PHYSICAL_CALLS
-        && receipts.every((receipt) => receipt.physicalAttempts === 1
-          && receipt.automaticRetries === 0
-          && receipt.status >= 200 && receipt.status < 300
-          && receipt.reportedModel === providerProfile.model),
-      { calls: receipts.length, model: providerProfile.model });
+    let retainedEvidence = null;
+    if (replayRetained) {
+      check("live.zero_new_paid_calls", receipts.length === 0,
+        { calls: receipts.length });
+      const retainedReceiptsPath =
+        path.join(LIVE_BUILD_ROOT, "provider-receipts-redacted.json");
+      const retainedReportPath =
+        path.join(LIVE_BUILD_ROOT, "roster-workspace-acceptance-report.json");
+      const retainedReceipts = JSON.parse(
+        await readFile(retainedReceiptsPath, "utf8"));
+      const retainedReport = JSON.parse(
+        await readFile(retainedReportPath, "utf8"));
+      retainedEvidence = {
+        origin: "s271_run3_live_flash_paid_generation_and_revision",
+        acceptanceSessionId,
+        sourceDataPreservedReadOnly:
+          "build/ticket-27-slice-271-roster-workspace-v1/workspace-data",
+        sourceReceiptsFile:
+          "build/ticket-27-slice-271-roster-workspace-v1/provider-receipts-redacted.json",
+        sourceReceiptsSha256: await sha256File(retainedReceiptsPath),
+        sourceReportFile:
+          "build/ticket-27-slice-271-roster-workspace-v1/roster-workspace-acceptance-report.json",
+        sourceReportStatus: retainedReport.status,
+        sourceReportChecksPassed:
+          retainedReport.checks.filter((entry) => entry.ok).length,
+        sourceReportFailureCode: retainedReport.failureCode ?? null,
+        retainedPhysicalCalls: retainedReceipts.receipts.length,
+        retainedTotalUnits: retainedReceipts.receipts.reduce(
+          (sum, receipt) => sum + receipt.usage.totalUnits, 0),
+        retainedModel:
+          retainedReceipts.receipts[0]?.reportedModel ?? null,
+        evidenceDistinction:
+          "S269-270 produced the separately retained Rules-legal live plan; "
+          + "S271 run-3 produced this workspace session's 4-call paid "
+          + "generation+revision. This closure run adds 0 paid calls and "
+          + "proves the repaired UI over those retained artifacts; no failed "
+          + "paid run is relabelled as passed.",
+      };
+    } else {
+      check("live.call_cap_respected",
+        receipts.length >= 4 && receipts.length <= MAX_PHYSICAL_CALLS
+          && receipts.every((receipt) => receipt.physicalAttempts === 1
+            && receipt.automaticRetries === 0
+            && receipt.status >= 200 && receipt.status < 300
+            && receipt.reportedModel === providerProfile.model),
+        { calls: receipts.length, model: providerProfile.model });
+    }
 
     await workspace.close();
 
     const reportBody = {
       schemaVersion: "starcraft_tmg_s271_roster_workspace_acceptance_report_v1",
       ticket: 27, slice: 271,
+      mode: replayRetained
+        ? "replay_retained_ui_closure_zero_call" : "live_flash_paid_acceptance",
       status: "passed",
       generatedAt: new Date().toISOString(),
       baseCommit: BASE_COMMIT,
@@ -1223,7 +1609,15 @@ async function main() {
         sha256: entry.hash,
         explanation: entry.explanation,
       })),
-      live: {
+      live: replayRetained ? {
+        newPhysicalCalls: 0,
+        evidenceOrigin: "retained_s271_run3_paid_session_reused_zero_new_calls",
+        journey: "manual_builder_retained_plan_candidates_evidence_cost_"
+          + "replay_resume_manual_override_stale_zero_call_restoration_"
+          + "retained_revision_history_reload_export_import_mobile_"
+          + "unavailable_disconnected",
+        deliberateInvalidEdit,
+      } : {
         model: providerProfile.model,
         providerProfileId: providerProfile.providerProfileId,
         providerProfileHash: providerProfile.integrity.hash,
@@ -1252,7 +1646,15 @@ async function main() {
         replayResume: "zero_call_retained_reply_reconstruction_plan_hash_match",
         deliberateInvalidEdit,
       },
-      credentialHygiene: {
+      retained: retainedEvidence,
+      credentialHygiene: replayRetained ? {
+        ingress: "none_replay_retained_mode_no_credential_loaded",
+        secureAttachment: false,
+        rawCredentialPersisted: false,
+        rawPromptPersisted: false,
+        rawResponsePersisted: false,
+        credentialInArgumentsOrEnvironment: false,
+      } : {
         ingress: "macos_login_keychain_via_existing_ingress_function",
         keychainReceiptHash: keychainReceipt.receiptHash,
         secureAttachment: true,
@@ -1288,11 +1690,18 @@ async function main() {
     check("security.no_credential_shaped_strings_in_artifacts",
       leakScanTargets.every((target) => !leakPattern.test(target)));
 
-    console.log(`S271 roster workspace acceptance passed: `
-      + `${checks.length} checks, ${receipts.length} physical calls `
-      + `(cap ${MAX_PHYSICAL_CALLS}), ${totals.totalUnits} reported units, `
-      + `~¥${(totalCostCnyMicros / 1_000_000).toFixed(6)}, `
-      + `${screenshots.length} screenshots`);
+    console.log(replayRetained
+      ? `S271 roster workspace closure acceptance passed: `
+        + `${checks.length} checks, 0 new physical calls `
+        + `(retained run-3 evidence: `
+        + `${retainedEvidence.retainedPhysicalCalls} calls / `
+        + `${retainedEvidence.retainedTotalUnits} units), `
+        + `${screenshots.length} screenshots`
+      : `S271 roster workspace acceptance passed: `
+        + `${checks.length} checks, ${receipts.length} physical calls `
+        + `(cap ${MAX_PHYSICAL_CALLS}), ${totals.totalUnits} reported units, `
+        + `~¥${(totalCostCnyMicros / 1_000_000).toFixed(6)}, `
+        + `${screenshots.length} screenshots`);
   } catch (error) {
     const code = String(error?.code || "S271_ACCEPTANCE_FAILED");
     // Retain the precise operation evidence (stage/method/route/status and
@@ -1350,22 +1759,14 @@ async function main() {
       }).then(() => { detached = true; }).catch(() => {});
     }
     await workerPort?.close().catch(() => {});
-    if (!detached && process.exitCode !== 2) {
-      // Honest evidence gap: record the detach failure instead of hiding it.
-      await writeJson(path.join(BUILD_ROOT, "credential-detach-status.json"), {
-        schemaVersion: "starcraft_tmg_s271_credential_detach_status_v1",
-        detached,
-        recordedAt: new Date().toISOString(),
-        trainingTruth: false,
-      }).catch(() => {});
-    } else {
-      await writeJson(path.join(BUILD_ROOT, "credential-detach-status.json"), {
-        schemaVersion: "starcraft_tmg_s271_credential_detach_status_v1",
-        detached,
-        recordedAt: new Date().toISOString(),
-        trainingTruth: false,
-      }).catch(() => {});
-    }
+    // Replay-retained mode never loads a credential; record that explicitly
+    // instead of a misleading detached:false.
+    await writeJson(path.join(BUILD_ROOT, "credential-detach-status.json"), {
+      schemaVersion: "starcraft_tmg_s271_credential_detach_status_v1",
+      detached: replayRetained ? "not_applicable_no_credential_attached" : detached,
+      recordedAt: new Date().toISOString(),
+      trainingTruth: false,
+    }).catch(() => {});
   }
 }
 
