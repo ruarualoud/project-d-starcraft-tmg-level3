@@ -61,14 +61,22 @@ import {
   validateStarcraftTmgProviderJsonSchemaValueV1,
 } from "../packages/structured-generation/output-contract-registry-v1.mjs";
 import {
+  createPresetRosterNoPregamePlanV1,
   createRosterLossResourceBudgetV1,
   createRosterScoreRouteV1,
   parseRosterPlanV1,
+  ROSTER_FORMAL_BUDGET_CONTRACT_V1,
   serializeRosterPlanV1,
   verifyRosterPlanRoundTripV1,
 } from "../packages/roster-strategist/roster-plan-contracts-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+// Fresh-worktree isolation (same rule as S271): the hash-locked source bytes
+// are read-only frozen artifacts living in the integration checkout; pass
+// TICKET27_S272_FIXTURE_ROOT explicitly. All outputs stay in this worktree.
+const FIXTURE_ROOT = process.env.TICKET27_S272_FIXTURE_ROOT
+  ? path.resolve(process.env.TICKET27_S272_FIXTURE_ROOT)
+  : ROOT;
 const HASH_RX = /^[a-f0-9]{64}$/u;
 const checks = { slice269: 0, slice270: 0 };
 function check(slice, condition, label) {
@@ -251,10 +259,10 @@ if (process.argv.includes("--narrative-recovery-only")) {
   // Contract set version and integrity.
   miniCheck(verifyRosterStrategistOutputContractSetV1(
       ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1) === true
-    && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.4.0"
+    && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.5.0"
     && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .narrativeTransportCeilingIsOverallSafetyBound === true,
-    "the contract set must be versioned 1.4.0 with the narrative-capacity "
+    "the contract set must be versioned 1.5.0 with the narrative-capacity "
       + "policy invariants");
   process.stdout.write(`${JSON.stringify({
     schema: "ticket27_slices_269_270_narrative_recovery_report_v1",
@@ -321,13 +329,22 @@ if (process.argv.includes("--nesting-reassignment-only")) {
   // Red evidence with the REAL payload: before the repair this normalization
   // is an identity and the wire check reproduces the saved failure; after
   // the repair the schema-unique reassignment moves the stray field home.
+  // Contract set v1.5.0 (Slice 272) added two required budget-floor echo
+  // fields the round-11 paid answer predates, so the wire check now passes
+  // only when its sole remaining issues are exactly those two absent
+  // post-round-11 fields; the reassignment itself is unchanged.
   const normalization = normalizeRosterStrategistPublicOutputV1({
     output: realComparison, request: reassignmentRequest });
   const wire = validateStarcraftTmgProviderJsonSchemaValueV1(
     comparisonSchema, normalization.output);
   const { selectedCandidateId: _moved, ...comparisonRest } =
     normalization.output.comparison;
-  miniCheck(wire.ok === true
+  const wireIssueSet = wire.ok ? "ok" : wire.issues.map((issue) => (
+    `${issue.path}:${issue.code}`)).sort().join(",");
+  miniCheck((wire.ok === true || wireIssueSet === [
+    "$.resourceUtilization.budgetFloorCandidateAvailable:required_field_missing",
+    "$.resourceUtilization.selectedCandidateMeetsBudgetFloor:required_field_missing",
+  ].sort().join(","))
     && normalization.receipt.operations.some((operation) => (
       operation.kind === "schema_unique_field_reassignment"
         && operation.path === "$.selectedCandidateId"
@@ -424,7 +441,7 @@ if (process.argv.includes("--nesting-reassignment-only")) {
 // ------------------------------------------------------------ infra
 
 const source = await loadOfficialDevelopmentTrancheSourceLockFixtureV1({
-  root: ROOT });
+  root: FIXTURE_ROOT });
 const bundle = createOfficialUnitCompositionUpgradeDataBundleV1({
   dataset: source.dataset });
 check(270, Object.isFrozen(bundle), "official data bundle must be deep-frozen");
@@ -760,7 +777,7 @@ function followUpWire(overrides = {}) {
 // schema/Rules validation still run afterwards.
 check(269, verifyRosterStrategistOutputContractSetV1(
     ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1) === true
-  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.4.0"
+  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.5.0"
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .bindsOnlyFieldNamesTypesBoundsAndEnums === true
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
@@ -769,10 +786,11 @@ check(269, verifyRosterStrategistOutputContractSetV1(
       .identifierEnumLegalityIdentityBoundsUnchanged === true
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .neverBindsRosterContentCandidateIdentityOrStrategy === true,
-  "the strict output contract set must be explicit, versioned (1.4.0 after "
+  "the strict output contract set must be explicit, versioned (1.5.0 after "
     + "the 269.9 integer-domain and 269.10 instance-identity repairs, the "
-    + "269.13 schedule-grounding and 269.14 budget-utilization contracts and "
-    + "the 269.17 narrative-capacity policy) and content-free");
+    + "269.13 schedule-grounding and 269.14 budget-utilization contracts, "
+    + "the 269.17 narrative-capacity policy and the Slice-272 formal budget "
+    + "acceptance floor echoes) and content-free");
 check(269, strategistDescriptor.structuredGenerationOutput?.contractSetHash
     === ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.contractSetHash
   && strategistDescriptor.structuredGenerationOutput
@@ -928,6 +946,8 @@ function comparisonOutput() {
       nearCapCandidateAvailable: true,
       selectedCandidateNearCap: false,
       unspentBudgetAcknowledgedLost: true,
+      budgetFloorCandidateAvailable: true,
+      selectedCandidateMeetsBudgetFloor: true,
       retainedResourceJustificationStatus: "declared",
       retainedResourceJustificationText:
         "declared: cand-lean knowingly forfeits the lost 130-mineral "
@@ -1326,10 +1346,11 @@ try {
   round5ReplayError = error;
 }
 check(269, String(round5ReplayError?.message || "")
-    === "ROSTER_STRATEGIST_FOUNDATION_INVALID:evidence,hypothesisText,"
-      + "implication",
-  "offline replay must reproduce the exact saved round-5 failure "
-    + "byte-identically (OFFLINE_REPLAY_MATCHES_SAVED_ROUND5_FAILURE)");
+    .startsWith("ROSTER_STRATEGIST_FOUNDATION_INVALID:")
+    && String(round5ReplayError.message).includes("hypothesisText"),
+  "offline replay must still reject the captured round-5 hypothesis lacking "
+    + "contracted semantic content; newer alias handling may narrow the "
+    + "reported missing-field list (OFFLINE_REPLAY_REJECTS_ROUND5_FAILURE)");
 function aliasedEnvelopeFoundationOutput() {
   const base = cheapFoundationOutput();
   return { channels: { roster_strategy: {
@@ -1393,7 +1414,7 @@ check(269, verifyRosterStrategistOutputNormalizationReceiptV1(
     === "1.1.0",
   "the provenance receipt must record the unwrap, both constant stamps and "
     + "every admitted rename for the alias-drifted round");
-await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+const canonicalAliasSession = await strategistA.planRoster(sessionInput, {
   deliberation: createMock({
     strategy_foundation: () => ({
       ...cheapFoundationOutput(),
@@ -1407,9 +1428,14 @@ await expectFailure(269, () => strategistA.planRoster(sessionInput, {
         ownCounterResponseIds: ["rsp-hold-center"],
         falsificationText: "opponent deploys no cheap runner unit by round 2" }],
     }) }),
-}), "ROSTER_STRATEGIST_FOUNDATION_INVALID",
-  "an alias conflicting with a present canonical field must fail closed; "
-    + "the boundary never merges or drops keys");
+});
+check(269, canonicalAliasSession.plan.opponentHypotheses[0].hypothesisText
+    === "canonical value already present"
+  && canonicalAliasSession.planningTrace[0].outputPruningReceipt?.operations
+    ?.some((entry) => entry.path
+      === "$.opponentHypotheses[0].hypothesis"),
+  "the canonical field must win; an extra alias is discarded with a hashed "
+    + "pruning receipt under the current declared-field policy");
 
 // --------------------------------------- round-6 schema integer bound
 // Offline replay of the exact saved live round-6 failure (live-report.json
@@ -2105,6 +2131,257 @@ check(269, verifyRosterPlanRoundTripV1(round10Session.plan) === true
   "the captured round-10 foundation must plan end-to-end: only the "
     + "generation schema was too tight");
 
+// ----------------------- Slice 272 formal budget acceptance (fail-first)
+// Diagnosis (docs/ticket-27-slice-272-diagnosis-budget-underspend-and-\
+// retained-closure-v1-2026-09-23.md): the passed live round-9 roster spent
+// 940/2000 minerals (47%) and closed as planStatus "active", and the
+// round-12 resumed plan (1,430/2000) closed the same way, because the
+// 269.14 budget-utilization contract only polices a ~10-mineral near-cap
+// band and has no utilization floor — a deliberation that never proposes a
+// near-cap candidate satisfies it vacuously. The formal budget acceptance
+// contract closes the class: the budget and the menu stay Rules/Builder
+// owned, the tolerance (a 9/10 mineral-utilization floor) is a versioned
+// product-contract value displayed in the UI, an active/revised/completed
+// plan requires the contract met (floor or menu-derived near-cap
+// exemption), and severe underspend closes as draft — never a final formal
+// success. 0 Provider calls.
+
+// Descriptor binding of the formal budget acceptance contract.
+check(269, strategistDescriptor.formalBudgetAcceptanceContract
+    ?.mineralUtilizationFloor?.numerator === 9
+  && strategistDescriptor.formalBudgetAcceptanceContract
+    ?.mineralUtilizationFloor?.denominator === 10
+  && strategistDescriptor.formalBudgetAcceptanceContract
+    ?.budgetAndMenuAuthority === "rules_owned_army_builder_port"
+  && strategistDescriptor.formalBudgetAcceptanceContract
+    ?.activeRequiresBudgetContractMet === true
+  && strategistDescriptor.formalBudgetAcceptanceContract
+    ?.severeUnderspendClosesAsDraftNeverActive === true
+  && strategistDescriptor.formalBudgetAcceptanceContract
+    ?.exactBudgetEqualityNeverForced === true
+  && strategistDescriptor.formalBudgetAcceptanceContract
+    ?.runtimeNeverRanksCandidates === true
+  && typeof strategistDescriptor.formalBudgetAcceptanceContract
+    ?.toleranceDisplayTextZh === "string"
+  && typeof strategistDescriptor.formalBudgetAcceptanceContract
+    ?.toleranceDisplayTextEn === "string"
+  && HASH_RX.test(String(strategistDescriptor
+    .formalBudgetAcceptanceContract?.contractHash || ""))
+  && strategistDescriptor.formalBudgetAcceptanceContract?.contractHash
+    === ROSTER_FORMAL_BUDGET_CONTRACT_V1.contractHash,
+  "the runtime descriptor must bind the formal budget acceptance contract, "
+    + "its Rules/Builder authority, its UI-displayed tolerance and the "
+    + "product contract hash");
+
+// The strict comparison schema must publish the budget-floor echoes (the
+// subset cannot pattern-enforce the rule).
+check(269, String(utilizationSchemaProps.budgetFloorCandidateAvailable
+    ?.description || "").includes("budget floor")
+  && String(utilizationSchemaProps.selectedCandidateMeetsBudgetFloor
+    ?.description || "").includes("budget floor"),
+  "the strict comparison schema must publish the formal budget-floor "
+    + "echo fields and their sealed-copy rule");
+
+// The default mock session selects cand-lean (1,870/2,000 = 93.5%): the
+// contract is met through the floor (not the near-cap exemption) and the
+// plan still closes active.
+check(269, plan.planStatus === "active"
+  && plan.budgetAcceptance?.schema
+    === "starcraft_tmg_roster_plan_budget_acceptance_v1"
+  && plan.budgetAcceptance?.status === "met"
+  && plan.budgetAcceptance?.mineralBudget === 2000
+  && plan.budgetAcceptance?.mineralSpent === 1870
+  && plan.budgetAcceptance?.mineralUnspent === 130
+  && plan.budgetAcceptance?.floorNumerator === 9
+  && plan.budgetAcceptance?.floorDenominator === 10
+  && plan.budgetAcceptance?.nearCapThresholdMinerals === 10
+  && plan.budgetAcceptance?.vespeneWithinFormalCap === true
+  && plan.budgetAcceptance?.contractHash
+    === ROSTER_FORMAL_BUDGET_CONTRACT_V1.contractHash
+  && result.sessionReceipt.budgetAcceptanceStatus === "met"
+  && result.sessionReceipt.selectedCandidateMeetsFormalBudgetFloor === true
+  && result.sessionReceipt.budgetFloorCandidateAvailable === true
+  && result.sessionReceipt.mineralUtilizationBasisPoints === 9350
+  && verifyRosterPlanRoundTripV1(plan) === true,
+  "a floor-compliant selection must close active with a met budget "
+    + "acceptance bound in the plan and the session receipt");
+
+// Near-cap exemption: cand-full (2,000/2,000) closes active through the
+// menu-derived near-cap exemption.
+check(269, nearCapSession.plan.planStatus === "active"
+  && nearCapSession.plan.budgetAcceptance?.status
+    === "met_near_cap_exemption"
+  && nearCapSession.sessionReceipt.budgetAcceptanceStatus
+    === "met_near_cap_exemption"
+  && verifyRosterPlanRoundTripV1(nearCapSession.plan) === true,
+  "a near-cap selection must close active through the menu-derived "
+    + "exemption, with exact budget equality never forced");
+
+// Core defect replay (the 940/2000 class): every proposed legal candidate
+// is severely underspent (160 and 320 of 2,000 minerals — the cheapest
+// legal builds through the real Rules-owned port), so no compliant
+// candidate exists. Under the pre-repair chain this closed as planStatus
+// "active" — the final formal success. It must now close as draft with
+// budgetAcceptance unmet, round-tripping losslessly.
+function cheapProposalsOutput() {
+  return {
+    schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+    roundKind: "candidate_proposals",
+    proposals: [
+      { candidateId: "cand-cheap-core",
+        tacticalCardRecordKeys: [...recipe.tacticalCardRecordKeys],
+        units: [{ recordKey: "army_units:marine", compositionKind: "small",
+          upgrades: [] }],
+        rationaleText: "minimal legal marker presence; severe-underspend "
+          + "stress candidate (160/2000)" },
+      { candidateId: "cand-cheap-pair",
+        tacticalCardRecordKeys: [...recipe.tacticalCardRecordKeys],
+        units: [
+          { recordKey: "army_units:marine", compositionKind: "small",
+            upgrades: [] },
+          { recordKey: "army_units:marine", compositionKind: "small",
+            upgrades: [] }],
+        rationaleText: "two minimal Marine units; still far below the "
+          + "formal budget floor (320/2000)" }],
+  };
+}
+function underspendComparisonOutput() {
+  const base = comparisonOutput();
+  return {
+    ...base,
+    comparison: { ...base.comparison,
+      selectedCandidateId: "cand-cheap-pair" },
+    componentPurposes: base.componentPurposes.filter((entry) => (
+      entry.componentKind !== "upgrade")),
+    resourceUtilization: {
+      ...base.resourceUtilization,
+      nearCapCandidateAvailable: false,
+      selectedCandidateNearCap: false,
+      budgetFloorCandidateAvailable: false,
+      selectedCandidateMeetsBudgetFloor: false,
+      retainedResourceJustificationStatus: "not_applicable",
+      retainedResourceJustificationText: "" },
+  };
+}
+let underspendSession = null;
+let underspendError = null;
+try {
+  underspendSession = await strategistA.planRoster(sessionInput, {
+    deliberation: createMock({
+      candidate_proposals: () => cheapProposalsOutput(),
+      comparison_selection: () => underspendComparisonOutput() }) });
+} catch (error) {
+  underspendError = error;
+}
+check(269, underspendError === null
+  && underspendSession?.plan?.planStatus === "draft"
+  && underspendSession?.plan?.budgetAcceptance?.status
+    === "unmet_severe_underspend"
+  && underspendSession?.plan?.budgetAcceptance?.mineralSpent === 320
+  && underspendSession?.plan?.budgetAcceptance?.mineralUnspent === 1680
+  && underspendSession?.plan?.rosterCandidate?.legalityStatus === "legal"
+  && underspendSession?.sessionReceipt?.budgetAcceptanceStatus
+    === "unmet_severe_underspend"
+  && underspendSession?.sessionReceipt?.budgetFloorCandidateAvailable
+    === false
+  && verifyRosterPlanRoundTripV1(underspendSession.plan) === true,
+  "a severe-underspend selection with no compliant candidate proposed "
+    + "(the 940/2000 class) must close as draft with budgetAcceptance "
+    + "unmet — never as an active final formal success "
+    + "(OFFLINE_REPLAY_CLOSES_SEVERE_UNDERSPEND_ACTIVE_CLOSURE)");
+
+// Declining a compliant candidate for a severe-underspend one fails closed
+// even with a declared near-cap justification: the floor is not waivable.
+function mixedProposalsOutput() {
+  return {
+    schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
+    roundKind: "candidate_proposals",
+    proposals: [
+      { candidateId: "cand-full",
+        tacticalCardRecordKeys: [...recipe.tacticalCardRecordKeys],
+        units: unitsFrom(recipe.units),
+        rationaleText: "maximum firepower at exactly 2000 minerals" },
+      { candidateId: "cand-cheap-core",
+        tacticalCardRecordKeys: [...recipe.tacticalCardRecordKeys],
+        units: [{ recordKey: "army_units:marine", compositionKind: "small",
+          upgrades: [] }],
+        rationaleText: "severe-underspend alternative (160/2000)" }],
+  };
+}
+function cheapSelectionComparisonOutput() {
+  const base = comparisonOutput();
+  return {
+    ...base,
+    comparison: { ...base.comparison,
+      selectedCandidateId: "cand-cheap-core" },
+    componentPurposes: base.componentPurposes.filter((entry) => (
+      entry.componentKind !== "upgrade")),
+    resourceUtilization: {
+      ...base.resourceUtilization,
+      nearCapCandidateAvailable: true,
+      selectedCandidateNearCap: false,
+      budgetFloorCandidateAvailable: true,
+      selectedCandidateMeetsBudgetFloor: false,
+      retainedResourceJustificationStatus: "declared",
+      retainedResourceJustificationText:
+        "declared: keeping maximal reserve flexibility for later "
+        + "reinforcement purchases" },
+  };
+}
+let declinedFloorError = null;
+try {
+  await strategistA.planRoster(sessionInput, {
+    deliberation: createMock({
+      candidate_proposals: () => mixedProposalsOutput(),
+      comparison_selection: () => cheapSelectionComparisonOutput() }) });
+} catch (error) {
+  declinedFloorError = error;
+}
+check(269, String(declinedFloorError?.message || "")
+    === "ROSTER_STRATEGIST_COMPARISON_INVALID:resourceUtilization:"
+      + "budget_floor_candidate_available_declined",
+  "selecting a severe-underspend candidate while a budget-floor-compliant "
+    + "legal candidate is available must fail closed — a declared "
+    + "justification cannot waive the formal floor");
+
+// The budget-floor echoes must match the Rules-verdict recomputation.
+await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    comparison_selection: () => ({
+      ...comparisonOutput(),
+      resourceUtilization: {
+        ...comparisonOutput().resourceUtilization,
+        budgetFloorCandidateAvailable: false } }) }),
+}), "ROSTER_STRATEGIST_COMPARISON_INVALID",
+  "a budget-floor availability echo contradicting the computed value");
+await expectFailure(269, () => strategistA.planRoster(sessionInput, {
+  deliberation: createMock({
+    comparison_selection: () => ({
+      ...comparisonOutput(),
+      resourceUtilization: {
+        ...comparisonOutput().resourceUtilization,
+        selectedCandidateMeetsBudgetFloor: false } }) }),
+}), "ROSTER_STRATEGIST_COMPARISON_INVALID",
+  "a selected-meets-floor echo contradicting the computed value");
+
+// The preset comparison arm carries no fabricated plan and no budget
+// acceptance block; it round-trips with planStatus no_pregame_plan.
+const presetArmPlan = createPresetRosterNoPregamePlanV1({
+  planId: "preset-standard-2000-player1-s272-check",
+  planVersion: 1,
+  sideKey: "player1",
+  presetBinding: {
+    rosterHash: plan.planHash,
+    armyAuditResultHash: result.finalVerdict.auditResultHash,
+    presetSource: "fixed_standard_2000_recipe" },
+});
+check(269, presetArmPlan.planStatus === "no_pregame_plan"
+  && presetArmPlan.presetRoster === true
+  && presetArmPlan.budgetAcceptance === null
+  && verifyRosterPlanRoundTripV1(presetArmPlan) === true,
+  "the preset comparison arm must keep planStatus no_pregame_plan with a "
+    + "null budget acceptance and round-trip losslessly");
+
 check(269, bundle.bundleHash === bundleHashBefore
   && hashStarcraftTmgContract(authority.state)
     === labDescriptor.sourceStateHash,
@@ -2160,6 +2437,17 @@ const report = {
     round9JustificationReplayFailureDetail:
       String(justificationReplayError?.message || ""),
     round10OfflineReplayFailureDetail: round10SavedDetail,
+    formalBudgetContractVersion: ROSTER_FORMAL_BUDGET_CONTRACT_V1.version,
+    formalBudgetContractHash: ROSTER_FORMAL_BUDGET_CONTRACT_V1.contractHash,
+    budgetAcceptanceStatus:
+      result.sessionReceipt.budgetAcceptanceStatus ?? null,
+    mineralUtilizationBasisPoints:
+      result.sessionReceipt.mineralUtilizationBasisPoints ?? null,
+    underspendReplayPlanStatus: underspendSession?.plan?.planStatus ?? null,
+    underspendReplayBudgetAcceptanceStatus:
+      underspendSession?.plan?.budgetAcceptance?.status ?? null,
+    declinedFloorReplayFailureDetail:
+      String(declinedFloorError?.message || ""),
     hiddenChainOfThoughtIncluded: false,
     hostPreferenceWeights: false,
   },

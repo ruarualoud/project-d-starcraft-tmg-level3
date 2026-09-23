@@ -16,8 +16,10 @@ import path from "node:path";
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
-import { createOfficialStandardRoomInitialStateAuthorityV1 } from
-  "./official-standard-room-factory-v1.mjs";
+import { createOfficialStandardRoomInitialStateAuthorityV1,
+  buildOfficialRoomArmyAuditV1,
+  OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1,
+} from "./official-standard-room-factory-v1.mjs";
 import { createOfficialCurrentProductMatchRuntimeV1 } from
   "./official-current-product-match-runtime-v1.mjs";
 import { createOfficialUnitCompositionUpgradeDataBundleV1 } from
@@ -31,6 +33,9 @@ import { STARCRAFT_TMG_TICKET_18_PORTABLE_STRATEGY_PACK_V2 as packManifest } fro
 import {
   createOfficialArmyBuilderQueryPortV1,
 } from "../roster-strategist/army-builder-query-port-v1.mjs";
+import {
+  createPresetRosterNoPregamePlanV1,
+} from "../roster-strategist/roster-plan-contracts-v1.mjs";
 import {
   createPregameSceneLaboratoryV1,
 } from "../roster-strategist/pregame-scene-laboratory-v1.mjs";
@@ -205,6 +210,34 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
 
   const draftStore = createRosterPlanningDraftStoreV1({
     directory: dataDirectory });
+  // Immutable Slice-272 preset comparison arm (explicitly no_pregame_plan),
+  // computed once from the frozen Rules-owned bundle/recipe — read-only,
+  // zero Provider cost. Every completed Agent plan is recorded against this
+  // arm identity in the session's immutable presetComparison record.
+  const presetAudit = buildOfficialRoomArmyAuditV1(bundle, "player1",
+    OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1.player1,
+    { dataset: source.dataset });
+  const presetPlan = createPresetRosterNoPregamePlanV1({
+    planId: "preset-standard-2000-player1-s272-comparison",
+    sideKey: "player1",
+    presetBinding: {
+      rosterHash: hashStarcraftTmgContract({
+        sideKey: "player1",
+        recipe: OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1.player1 }),
+      armyAuditResultHash: presetAudit.resultHash,
+      presetSource: "fixed_standard_2000_recipe",
+    },
+  });
+  const presetArm = {
+    planStatus: presetPlan.planStatus,
+    presetRoster: true,
+    planFabricated: false,
+    planHash: presetPlan.planHash,
+    armyAuditResultHash: presetAudit.resultHash,
+    mineralSpent: presetAudit.armyResourceBudgetResult.mineralSpent,
+    vespeneSpent: presetAudit.armyResourceBudgetResult.vespeneSpent,
+    presetSource: "fixed_standard_2000_recipe",
+  };
   const service = createRosterPlanningWorkspaceServiceV1({
     serviceId: input.serviceId || "roster-planning-workspace-v1",
     armyBuilderPort: builderPort,
@@ -230,6 +263,7 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     draftStore,
     deliberationFactory,
     estimateCost,
+    presetArm,
     now: input.now,
     createSessionId: input.createSessionId,
   });

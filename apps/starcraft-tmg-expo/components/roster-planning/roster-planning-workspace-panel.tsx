@@ -402,6 +402,20 @@ function SetupView({ L, catalogue, deliberation, onCancel, onCreated, onError }:
           onChangeText={setBudgetText} testID="setup-budget" />
         <Text style={st.hint}>Standard · {ui(L, '交战规模冻结', 'scale frozen')}</Text>
       </View>
+      {catalogue.budgetContract && (
+        <View style={st.card} testID="setup-budget-contract">
+          <Text style={st.cardSub}>
+            {ui(L, '正式预算合同', 'Formal budget contract')}: {ui(L, '矿物利用率下限', 'mineral utilization floor')}{' '}
+            {(catalogue.budgetContract.utilizationFloorBasisPoints / 100).toFixed(0)}%
+            {` · ${ui(L, '贴近上限豁免', 'near-cap exemption')} <${catalogue.budgetContract.nearCapThresholdMinerals}M`}
+            {` · ${ui(L, '瓦斯上限', 'vespene cap')} ${catalogue.budgetContract.vespeneFormalCap}`}
+          </Text>
+          <Text style={st.hint}>
+            {ui(L, catalogue.budgetContract.toleranceDisplayTextZh,
+              catalogue.budgetContract.toleranceDisplayTextEn)}
+          </Text>
+        </View>
+      )}
 
       <Text style={st.sectionTitle}>{ui(L, '冻结任务/地图溯源', 'Frozen mission/map provenance')}</Text>
       <View style={st.card}>
@@ -635,6 +649,11 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
         <CandidatesView L={L} session={session} catalogue={catalogue} />
       )}
 
+      {/* Immutable Slice-272 preset comparison arm identities */}
+      {session.presetComparison && (
+        <PresetComparisonView L={L} comparison={session.presetComparison} />
+      )}
+
       {/* Working list / manual override */}
       {session.working && plan && !session.lockedRoster && (
         <WorkingListEditor L={L} session={session} catalogue={catalogue}
@@ -822,6 +841,67 @@ function PlanView({ L, session, catalogue }: any) {
         ))}
       </View>
 
+      {/* Formal budget contract (Slice 272): the versioned product-contract
+          tolerance, the Rules/Builder-derived threshold/cap and the actual
+          acceptance outcome — displayed exactly as the chain enforces it. */}
+      {(plan.budgetAcceptance || session.budgetContract) && (
+        <View style={st.card} testID="session-budget-contract">
+          <Text style={st.sectionTitle}>{ui(L, '正式预算合同', 'Formal budget contract')}</Text>
+          {plan.budgetAcceptance ? (
+            <>
+              <Text style={[st.cardName, {
+                color: plan.budgetAcceptance.status === 'unmet_severe_underspend' ? RED
+                  : plan.budgetAcceptance.status === 'met_near_cap_exemption' ? BLUE : GREEN,
+              }]}>
+                {plan.budgetAcceptance.status === 'met'
+                  ? ui(L, '✓ 满足(利用率下限)', '✓ Met (utilization floor)')
+                  : plan.budgetAcceptance.status === 'met_near_cap_exemption'
+                    ? ui(L, '✓ 满足(贴近上限豁免)', '✓ Met (near-cap exemption)')
+                    : ui(L, '✗ 未满足:严重欠花费 — 仅以草稿收口,非最终正式成功',
+                        '✗ Unmet: severe underspend — closes as draft, never a final formal success')}
+              </Text>
+              <Text style={st.cardSub}>
+                {ui(L, '矿物', 'Minerals')}: {plan.budgetAcceptance.mineralSpent}/{plan.budgetAcceptance.mineralBudget}
+                {` · ${ui(L, '利用率', 'utilization')} ${(plan.budgetAcceptance.utilizationBasisPoints / 100).toFixed(1)}%`}
+                {` · ${ui(L, '未用(作废)', 'unspent (lost)')} ${plan.budgetAcceptance.mineralUnspent}`}
+              </Text>
+              <Text style={st.cardSub}>
+                {ui(L, '瓦斯', 'Vespene')}: {plan.budgetAcceptance.vespeneSpent}/{plan.budgetAcceptance.vespeneFormalCap}
+                {plan.budgetAcceptance.vespeneWithinFormalCap
+                  ? ui(L, ' · 正式上限内', ' · within formal cap')
+                  : ui(L, ' · 超出正式上限', ' · OVER formal cap')}
+              </Text>
+            </>
+          ) : (
+            <Text style={st.cardSub}>
+              {ui(L, '该计划早于预算合同 1.1.0 生成,未携带验收块(历史证据)。',
+                'This plan predates budget contract 1.1.0 (legacy evidence, no acceptance block).')}
+            </Text>
+          )}
+          {session.budgetContract && (
+            <>
+              <Text style={st.cardSub}>
+                {ui(L, '合同容差', 'Contract tolerance')}: {ui(L, '矿物利用率下限', 'mineral utilization floor')}{' '}
+                {(session.budgetContract.utilizationFloorBasisPoints / 100).toFixed(0)}%
+                ({session.budgetContract.mineralUtilizationFloor.numerator}/{session.budgetContract.mineralUtilizationFloor.denominator})
+                {` · ${ui(L, '贴近上限豁免阈值', 'near-cap exemption')} <${session.budgetContract.nearCapThresholdMinerals}M`}
+                {` · ${ui(L, '瓦斯正式上限', 'vespene formal cap')} ${session.budgetContract.vespeneFormalCap}`}
+              </Text>
+              <Text style={st.hint}>
+                {ui(L, session.budgetContract.toleranceDisplayTextZh,
+                  session.budgetContract.toleranceDisplayTextEn)}
+              </Text>
+              <Text style={st.hashLine}>
+                contract {String(session.budgetContract.contractHash || '').slice(0, 20)}… · v{session.budgetContract.contractVersion}
+                {plan.planStatus === 'draft' && plan.budgetAcceptance?.status === 'unmet_severe_underspend'
+                  ? ui(L, ' · 计划状态:草稿(预算合同未达标)', ' · plan status: draft (budget contract unmet)')
+                  : ''}
+              </Text>
+            </>
+          )}
+        </View>
+      )}
+
       <View style={st.card}>
         <Text style={st.sectionTitle}>{ui(L, '部署构想', 'Deployment concept')}</Text>
         <Text style={st.bodyText}>{plan.deploymentConcept?.deploymentConceptText}</Text>
@@ -918,6 +998,46 @@ function PlanView({ L, session, catalogue }: any) {
   );
 }
 
+// ── Immutable Slice-272 preset comparison ─────────────────────────────────
+function PresetComparisonView({ L, comparison }: any) {
+  const agent = comparison.agentArm || {};
+  const preset = comparison.presetArm || {};
+  return (
+    <View style={st.card} testID="session-preset-comparison">
+      <Text style={st.sectionTitle}>
+        {ui(L, '对照臂(不可变 · 仅写表对照,未进行对局)', 'Comparison arms (immutable · pregame only, no match played)')}
+      </Text>
+      <Text style={[st.cardName, { color: CYAN }]}>
+        {ui(L, 'Agent 臂(公开 RosterPlan)', 'Agent arm (public RosterPlan)')}
+      </Text>
+      <Text style={st.cardSub}>
+        {ui(L, '计划状态', 'planStatus')}: {agent.planStatus}
+        {agent.budgetAcceptanceStatus ? ` · ${ui(L, '预算合同', 'budget')}: ${agent.budgetAcceptanceStatus}` : ''}
+        {agent.mineralSpent != null ? ` · ${agent.mineralSpent}M/${agent.vespeneSpent}V` : ''}
+      </Text>
+      <Text style={st.hashLine}>
+        plan {String(agent.planHash || '').slice(0, 20)}… · audit {String(agent.armyAuditResultHash || '').slice(0, 20)}…
+      </Text>
+      <Text style={[st.cardName, { color: AMBER, marginTop: 6 }]}>
+        {ui(L, '预制军表臂(明确无赛前计划)', 'Preset roster arm (explicitly no pregame plan)')}
+      </Text>
+      <Text style={st.cardSub}>
+        {ui(L, '计划状态', 'planStatus')}: {preset.planStatus}
+        {preset.mineralSpent != null ? ` · ${preset.mineralSpent}M/${preset.vespeneSpent}V` : ''}
+        {preset.presetSource ? ` · ${preset.presetSource}` : ''}
+      </Text>
+      <Text style={st.hashLine}>
+        plan {String(preset.planHash || '').slice(0, 20)}… · audit {String(preset.armyAuditResultHash || '').slice(0, 20)}…
+      </Text>
+      <Text style={st.hint}>
+        {ui(L,
+          '两臂在任务/部署/地图/规模/预算/对手阵营上对齐;两臂均携带后续对局与复盘所需的军表输入与规则审计哈希。列表质量与对局质量分离。',
+          'Arms matched on mission/deployment/map/scale/budget/opponent; both carry the roster inputs and Rules audit hashes a later match and postgame review consume. List quality is separated from play quality.')}
+      </Text>
+    </View>
+  );
+}
+
 // ── Candidates compare ─────────────────────────────────────────────────────
 function CandidatesView({ L, session, catalogue }: any) {
   const selectedId = session.plan?.rosterCandidate?.candidateId;
@@ -940,6 +1060,20 @@ function CandidatesView({ L, session, catalogue }: any) {
               {legal ? costText(verdict) : `${entry.candidate.legalityReceipt?.rulesErrorCode || '—'}`}
               {legal && verdict ? ` · ${entry.candidate.units.length} ${ui(L, '单位', 'units')}` : ''}
             </Text>
+            {legal && verdict?.utilizationBasisPoints != null && (
+              <Text style={[st.cardSub, {
+                color: verdict.meetsFormalBudgetFloor ? GREEN : RED,
+              }]}>
+                {ui(L, '利用率', 'utilization')} {(verdict.utilizationBasisPoints / 100).toFixed(1)}%
+                {verdict.meetsFormalBudgetFloor
+                  ? (verdict.nearCap
+                    ? ui(L, ' · ✓ 达标(贴近上限豁免)', ' · ✓ floor met (near-cap exemption)')
+                    : ui(L, ' · ✓ 达标(预算合同)', ' · ✓ floor met (budget contract)'))
+                  : ui(L, ' · ✗ 严重欠花费(低于合同下限)', ' · ✗ severe underspend (below contract floor)')}
+                {verdict.vespeneWithinFormalCap === false
+                  ? ui(L, ' · 瓦斯超上限', ' · vespene over cap') : ''}
+              </Text>
+            )}
             {!legal && !!entry.candidate.legalityReceipt?.rejectionKind && (
               <Text style={st.cardSub}>{ui(L, '驳回类别', 'rejection')}: {entry.candidate.legalityReceipt.rejectionKind}</Text>
             )}
@@ -1033,6 +1167,14 @@ function WorkingListEditor({ L, session, catalogue, act }: any) {
           ? `${ui(L, '合法', 'LEGAL')} · ${costText(verdict)}`
           : `${ui(L, '非法/未知', 'ILLEGAL/UNKNOWN')} · ${verdict?.rulesErrorCode || verdict?.status || '—'}`}
       </Text>
+      {verdict?.status === 'legal' && verdict?.utilizationBasisPoints != null && (
+        <Text style={[st.cardSub, { color: verdict.meetsFormalBudgetFloor ? GREEN : RED }]}>
+          {ui(L, '利用率', 'utilization')} {(verdict.utilizationBasisPoints / 100).toFixed(1)}%
+          {verdict.meetsFormalBudgetFloor
+            ? ui(L, ' · ✓ 预算合同达标', ' · ✓ budget contract met')
+            : ui(L, ' · ✗ 严重欠花费(低于合同下限)', ' · ✗ severe underspend (below contract floor)')}
+        </Text>
+      )}
       {units.map((unit: any, index: number) => (
         <View key={`${unit.unitInstanceId}-${index}`} style={st.workingUnitRow}>
           <View style={{ flex: 1 }}>

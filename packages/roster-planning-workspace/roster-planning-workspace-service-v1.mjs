@@ -27,6 +27,7 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import {
   parseRosterPlanV1,
+  ROSTER_FORMAL_BUDGET_CONTRACT_V1,
   serializeRosterPlanV1,
   verifyRosterPlanRoundTripV1,
 } from "../roster-strategist/roster-plan-contracts-v1.mjs";
@@ -44,14 +45,15 @@ import { reviewRosterFinalPlanV1 } from
   "../roster-strategist/roster-final-plan-review-v1.mjs";
 import { ROSTER_PLAN_SOURCE_AUDIT_VERSION } from
   "../roster-strategist/roster-plan-source-audit-v1.mjs";
-import { ROSTER_STRATEGIST_PROMPT_PACK_V1 } from
+import { deriveNearCapThresholdMineralsV1,
+  ROSTER_STRATEGIST_PROMPT_PACK_V1 } from
   "../roster-strategist/roster-strategist-runtime-v1.mjs";
 import { ROSTER_PLANNING_SESSION_SCHEMA } from
   "./roster-planning-draft-store-v1.mjs";
 
 export const ROSTER_PLANNING_WORKSPACE_MODULE =
   "packages/roster-planning-workspace/roster-planning-workspace-service-v1.mjs";
-export const ROSTER_PLANNING_WORKSPACE_VERSION = "1.0.0";
+export const ROSTER_PLANNING_WORKSPACE_VERSION = "1.1.0";
 export const ROSTER_WORKSPACE_EXPORT_SCHEMA =
   "starcraft_tmg_roster_workspace_export_v1";
 export const ROSTER_WORKSPACE_SESSION_PROJECTION_SCHEMA =
@@ -422,6 +424,74 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     };
   }
 
+  // Formal budget contract view (Slice 272): the same versioned product
+  // contract the runtime enforces, with the Rules/Builder-derived threshold
+  // and vespene cap for this faction/scale/budget, so the UI can display
+  // the tolerance and per-list compliance exactly as the chain computes it.
+  const budgetContractViewCache = new Map();
+  function budgetContractView(factionRecordKey, scaleId, mineralBudget) {
+    const cacheKey = `${factionRecordKey}|${scaleId}|${mineralBudget}`;
+    if (budgetContractViewCache.has(cacheKey)) {
+      return budgetContractViewCache.get(cacheKey);
+    }
+    const enumeration = armyBuilderPort.enumerateArmyBuildingChoices({
+      factionRecordKey, scaleId, mineralBudget });
+    const nearCapThresholdMinerals = deriveNearCapThresholdMineralsV1({
+      units: enumeration.unitCandidates });
+    const vespeneFormalCap = Math.floor(
+      (enumeration.vespeneLimitForBudget?.numerator ?? 0)
+        / (enumeration.vespeneLimitForBudget?.denominator ?? 1));
+    const contract = ROSTER_FORMAL_BUDGET_CONTRACT_V1;
+    const view = Object.freeze({
+      contractSchema: contract.schema,
+      contractVersion: contract.version,
+      contractHash: contract.contractHash,
+      mineralBudget,
+      mineralUtilizationFloor: clone(contract.mineralUtilizationFloor),
+      utilizationFloorBasisPoints: Math.round(
+        (contract.mineralUtilizationFloor.numerator * 10_000)
+          / contract.mineralUtilizationFloor.denominator),
+      nearCapThresholdMinerals,
+      nearCapThresholdDerivation: contract.nearCapExemptionThresholdDerivation,
+      vespeneFormalCap,
+      unspentResourceDisposition: "lost",
+      severeUnderspendClosesAsDraftNeverActive:
+        contract.severeUnderspendClosesAsDraftNeverActive,
+      toleranceDisplayTextZh: contract.toleranceDisplayTextZh,
+      toleranceDisplayTextEn: contract.toleranceDisplayTextEn,
+      trainingTruth: false,
+    });
+    budgetContractViewCache.set(cacheKey, view);
+    return view;
+  }
+  function annotateBudget(verdictSummary, contractView) {
+    if (!object(verdictSummary) || verdictSummary.status !== "legal") {
+      return verdictSummary;
+    }
+    const floor = contractView.mineralUtilizationFloor;
+    const meetsFloor = verdictSummary.mineralSpent * floor.denominator
+      >= contractView.mineralBudget * floor.numerator;
+    const nearCap = verdictSummary.mineralUnspent
+      < contractView.nearCapThresholdMinerals;
+    return Object.freeze({
+      ...clone(verdictSummary),
+      utilizationBasisPoints: Math.round(
+        (verdictSummary.mineralSpent * 10_000) / contractView.mineralBudget),
+      meetsFormalBudgetFloor: nearCap || meetsFloor,
+      nearCap,
+      vespeneWithinFormalCap:
+        verdictSummary.vespeneSpent <= contractView.vespeneFormalCap,
+    });
+  }
+  // Immutable Slice-272 comparison arm identity (preset roster, explicitly
+  // no pregame plan), injected by the product composition and bound into
+  // every catalogue/projection so the UI can show both arm identities.
+  const presetArm = object(input.presetArm)
+    && input.presetArm.planStatus === "no_pregame_plan"
+    && HASH_PATTERN.test(String(input.presetArm.planHash || ""))
+    ? clone(input.presetArm)
+    : null;
+
   function candidateInputFromCandidate(candidate) {
     // Manual override starts from the Builder candidate input shape derived
     // from the public RosterCandidate contract.
@@ -479,6 +549,8 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     const currentReviewClean = session.planReview?.status === "completed"
       && session.planReview.planHash === plan?.planHash
       && !blockingHighFindings;
+    const contractView = budgetContractView(session.setup.factionRecordKey,
+      session.setup.engagementScale, session.setup.mineralBudget);
     return {
       schema: ROSTER_WORKSPACE_SESSION_PROJECTION_SCHEMA,
       sessionId: session.sessionId,
@@ -511,10 +583,12 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       planReviewBlockingHighFindings: blockingHighFindings,
       planReviewRequiredForHandoff: priorHighFindings
         && !currentReviewClean,
+      budgetContract: clone(contractView),
       candidates: session.candidates.map((entry, index) => ({
         candidate: clone(entry),
         candidateInput: clone(session.candidateInputs[index] || null),
-        verdictSummary: clone(session.candidateSummaries[index] || null),
+        verdictSummary: annotateBudget(
+          clone(session.candidateSummaries[index] || null), contractView),
         diffFromSelected: session.selectedCandidateInput
           && session.candidateInputs[index]
           && entry.candidateId !== plan?.rosterCandidate?.candidateId
@@ -526,10 +600,12 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       rejections: clone(session.rejections),
       working: session.working ? {
         candidateInput: clone(session.working.candidateInput),
-        verdictSummary: summarizeVerdict(session.working.verdict),
+        verdictSummary: annotateBudget(
+          summarizeVerdict(session.working.verdict), contractView),
         overrideHistory: clone(session.working.overrideHistory),
       } : null,
       planEvidenceStale: planEvidenceStale(session, plan),
+      presetComparison: clone(session.presetComparison || null),
       evidence: {
         toolReceipts: clone(session.toolReceipts),
         sessionReceipt: clone(session.sessionReceipt),
@@ -655,6 +731,7 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       cancelRequested: false,
       deliberationDescriptor: null,
       resumeReceipts: [],
+      presetComparison: null,
       trainingTruth: false,
     };
   }
@@ -721,6 +798,9 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
         entryCount: entries.length,
         skillsAdvisoryOnly: true,
       },
+      budgetContract: budgetContractView(
+        "tactical_cards:terran_armed_forces", "Standard", 2_000),
+      presetComparisonArm: presetArm ? clone(presetArm) : null,
       deliberation: deliberationAvailability(),
       versionPins: {
         sourceLockHash: fixture.sourceLockHash,
@@ -1104,6 +1184,55 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     session.status = "planned";
     session.progress.phase = "completed";
     session.failure = null;
+    if (presetArm && !session.presetComparison) {
+      // Immutable Slice-272 comparison record, frozen at plan completion:
+      // the Agent-built arm (public RosterPlan, budget acceptance bound)
+      // against the fixed preset roster arm (explicitly no_pregame_plan),
+      // matched on mission, deployment, map topology, scale, budget and
+      // opponent faction. Later overrides/revisions never rewrite it; both
+      // arms carry everything a later match or postgame review consumes
+      // (candidate input, Builder audit hashes, plan hash/status).
+      session.presetComparison = Object.freeze({
+        schema: "starcraft_tmg_s272_preset_comparison_v1",
+        createdAt: now(),
+        matchedConditions: {
+          missionRecordKey: fixture.missionRecordKey,
+          deploymentRecordKey: fixture.deploymentRecordKey,
+          mapTopologyHash: fixture.mapTopologyHash,
+          engagementScale: session.setup.engagementScale,
+          mineralBudget: session.setup.mineralBudget,
+          opponentFactionRecordKey: session.setup.opponentFactionRecordKey,
+          modelVersion: session.deliberationDescriptor?.modelVersion || null,
+          skillRouteReceiptHash: sessionResult.skillRoute.receipt.receiptHash,
+        },
+        presetArm: {
+          ...clone(presetArm),
+          consumableByLaterMatchAndReview: true,
+        },
+        agentArm: {
+          planStatus: sessionResult.plan.planStatus,
+          planHash: sessionResult.plan.planHash,
+          planFabricated: false,
+          hiddenChainOfThoughtIncluded: false,
+          sessionReceiptHash: sessionResult.sessionReceipt.receiptHash,
+          armyAuditResultHash: sessionResult.finalVerdict.auditResultHash,
+          mineralSpent: sessionResult.finalVerdict.summary.mineralSpent,
+          vespeneSpent: sessionResult.finalVerdict.summary.vespeneSpent,
+          selectedCandidateId:
+            sessionResult.plan.rosterCandidate.candidateId,
+          scoreRouteKind: sessionResult.plan.scoreRoute.routeKind,
+          budgetAcceptanceStatus:
+            sessionResult.plan.budgetAcceptance?.status ?? null,
+          candidateInput: clone(selectedCandidateInput),
+          toolReceiptReferenceCount:
+            sessionResult.plan.toolReceiptReferences.length,
+          consumableByLaterMatchAndReview: true,
+        },
+        comparisonSeparatedListQualityFromPlayQuality:
+          "pregame_list_construction_only_no_match_played",
+        trainingTruth: false,
+      });
+    }
     if (!session.usage) {
       session.usage = {
         calls: 0, inputUnits: 0, outputUnits: 0, totalUnits: 0, latencyMs: 0,
@@ -1724,6 +1853,9 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       automaticRetry: false,
       cancellationCheckedBeforeEverySend: true,
       retainedRepliesEnableLocalReplayResume: true,
+      formalBudgetContractDisplayedAndEnforced:
+        ROSTER_FORMAL_BUDGET_CONTRACT_V1.contractHash,
+      presetComparisonArmAvailable: presetArm !== null,
       hiddenChainOfThoughtRequested: false,
       hiddenChainOfThoughtPersisted: false,
       unknownStaysUnknown: true,

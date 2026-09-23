@@ -5,7 +5,7 @@ import { hashStarcraftTmgContract } from
 
 export const ROSTER_PLAN_CONTRACTS_MODULE =
   "packages/roster-strategist/roster-plan-contracts-v1.mjs";
-export const ROSTER_PLAN_CONTRACTS_VERSION = "1.0.0";
+export const ROSTER_PLAN_CONTRACTS_VERSION = "1.1.0";
 
 export const ROSTER_PLAN_SCHEMA = "starcraft_tmg_roster_plan_v1";
 export const ROSTER_PLAN_PROVENANCE_SCHEMA =
@@ -32,6 +32,10 @@ export const ROSTER_PLAN_CANDIDATE_SCHEMA =
   "starcraft_tmg_roster_candidate_v1";
 export const ROSTER_PLAN_CANDIDATE_COMPARISON_SCHEMA =
   "starcraft_tmg_roster_candidate_comparison_v1";
+export const ROSTER_PLAN_BUDGET_ACCEPTANCE_SCHEMA =
+  "starcraft_tmg_roster_plan_budget_acceptance_v1";
+export const ROSTER_FORMAL_BUDGET_CONTRACT_SCHEMA =
+  "starcraft_tmg_roster_formal_budget_contract_v1";
 
 export const ROSTER_PLAN_STATUSES = Object.freeze([
   "no_pregame_plan", "draft", "active", "revised", "abandoned", "completed",
@@ -45,6 +49,51 @@ export const ROSTER_PLAN_CONTRACT_BOUNDARY = Object.freeze({
   unknownStaysUnknown: true,
   trainingTruth: false,
 });
+
+// Formal budget acceptance contract (Slice 272, closing the 940/2000 class
+// diagnosed in docs/ticket-27-slice-272-diagnosis-budget-underspend-and-\
+// retained-closure-v1-2026-09-23.md): a Rules-legal roster is not
+// automatically a final formal success. The budget, the menu and the
+// near-cap exemption threshold stay Rules/Builder-owned (the Army Builder
+// enumeration's mineralBudget and its cheapest positive purchasable
+// increment); the utilization-floor TOLERANCE below is a versioned product
+// contract value, displayed in the planning UI — never hard-coded per
+// roster, per faction or per candidate, and exact budget equality is never
+// forced. A plan whose selected roster falls below the floor without the
+// menu-derived near-cap exemption cannot close as active/revised/completed;
+// it closes as draft with budgetAcceptance unmet. Vespene must stay within
+// the Rules-owned formal cap for the budget.
+export const ROSTER_PLAN_BUDGET_ACCEPTANCE_STATUSES = Object.freeze([
+  "met", "met_near_cap_exemption", "unmet_severe_underspend",
+]);
+export const ROSTER_FORMAL_BUDGET_CONTRACT_V1 = (() => {
+  const body = {
+    schema: ROSTER_FORMAL_BUDGET_CONTRACT_SCHEMA,
+    version: "1.0.0",
+    budgetAndMenuAuthority: "rules_owned_army_builder_port",
+    mineralUtilizationFloor: Object.freeze({ numerator: 9, denominator: 10 }),
+    nearCapExemptionThresholdDerivation:
+      "cheapest_positive_purchasable_increment_in_rules_owned_menu",
+    vespeneWithinFormalCapRequired: true,
+    activeRevisedCompletedRequireContractMet: true,
+    severeUnderspendClosesAsDraftNeverActive: true,
+    exactBudgetEqualityNeverForced: true,
+    toleranceDisplayedInProductUi: true,
+    toleranceDisplayTextZh:
+      "正式预算合同:矿物利用率不得低于 90%(9/10,产品合同容差,UI 公示);"
+        + "低于下限且不满足菜单推导的贴近上限豁免时,计划只能以草稿收口,"
+        + "不算最终正式成功;瓦斯不得超过规则正式上限;从不强制恰好花满预算。",
+    toleranceDisplayTextEn:
+      "Formal budget contract: mineral utilization must be at least 90% "
+        + "(9/10, a product-contract tolerance displayed in the UI); below "
+        + "the floor without the menu-derived near-cap exemption the plan "
+        + "closes as draft, never as a final formal success; vespene must "
+        + "stay within the Rules-owned formal cap; exact budget equality is "
+        + "never forced.",
+    trainingTruth: false,
+  };
+  return freezeDeep({ ...body, contractHash: hashStarcraftTmgContract(body) });
+})();
 
 const HASH_PATTERN = /^[a-f0-9]{64}$/u;
 const ENGAGEMENT_SCALES = new Set(["Skirmish", "Standard", "Grand Offensive"]);
@@ -719,6 +768,107 @@ const PLAN_KEYS = Object.freeze([
   "invalidationTriggers", "revisions", "comparisons", "toolReceiptReferences",
   "publicSummaryText", "authorityBoundary", "trainingTruth", "planHash",
 ]);
+// Contract 1.1.0 (Slice 272) adds the optional budgetAcceptance block. Plans
+// written before 1.1.0 remain valid without it (legacy key set); new plans
+// always carry the key (null for the preset arm and for unevaluated drafts).
+const PLAN_KEYS_WITH_ACCEPTANCE = Object.freeze([
+  ...PLAN_KEYS, "budgetAcceptance",
+]);
+
+export function createRosterPlanBudgetAcceptanceV1(input = {}) {
+  if (!object(input)) fail("ROSTER_PLAN_BUDGET_ACCEPTANCE_INVALID");
+  const code = "ROSTER_PLAN_BUDGET_ACCEPTANCE_INVALID";
+  const contract = input.contract ?? ROSTER_FORMAL_BUDGET_CONTRACT_V1;
+  if (contract.contractHash !== ROSTER_FORMAL_BUDGET_CONTRACT_V1.contractHash) {
+    fail(code, "contractHash");
+  }
+  const mineralBudget = positiveInteger(input.mineralBudget, code);
+  const mineralSpent = nonNegativeInteger(input.mineralSpent, code);
+  if (mineralSpent > mineralBudget) fail(code, "mineralSpent");
+  const mineralUnspent = mineralBudget - mineralSpent;
+  const utilizationBasisPoints = Math.round(
+    (mineralSpent * 10_000) / mineralBudget);
+  const nearCapThresholdMinerals = positiveInteger(
+    input.nearCapThresholdMinerals, code);
+  const vespeneSpent = nonNegativeInteger(input.vespeneSpent, code);
+  const vespeneLimitNumerator = positiveInteger(
+    input.vespeneLimitNumerator, code);
+  const vespeneLimitDenominator = positiveInteger(
+    input.vespeneLimitDenominator, code);
+  const vespeneFormalCap = Math.floor(
+    vespeneLimitNumerator / vespeneLimitDenominator);
+  const vespeneWithinFormalCap = vespeneSpent <= vespeneFormalCap;
+  if (!vespeneWithinFormalCap) fail(code, "vespene_formal_cap_exceeded");
+  const floor = contract.mineralUtilizationFloor;
+  const meetsFloor = mineralSpent * floor.denominator
+    >= mineralBudget * floor.numerator;
+  const nearCap = mineralUnspent < nearCapThresholdMinerals;
+  const expected = nearCap ? "met_near_cap_exemption"
+    : meetsFloor ? "met" : "unmet_severe_underspend";
+  // The status is always derived from the Rules-verdict facts; a caller may
+  // pin it explicitly, but a contradiction fails closed.
+  const status = input.status === undefined || input.status === null
+    ? expected
+    : nonEmpty(input.status, code);
+  if (!ROSTER_PLAN_BUDGET_ACCEPTANCE_STATUSES.includes(status)
+    || status !== expected) {
+    fail(code, `status:${status}!=${expected}`);
+  }
+  return freezeDeep({
+    schema: ROSTER_PLAN_BUDGET_ACCEPTANCE_SCHEMA,
+    contractVersion: contract.version,
+    contractHash: contract.contractHash,
+    status,
+    mineralBudget,
+    mineralSpent,
+    mineralUnspent,
+    utilizationBasisPoints,
+    floorNumerator: floor.numerator,
+    floorDenominator: floor.denominator,
+    nearCapThresholdMinerals,
+    vespeneSpent,
+    vespeneFormalCap,
+    vespeneWithinFormalCap,
+    toleranceDisplayTextZh: contract.toleranceDisplayTextZh,
+    toleranceDisplayTextEn: contract.toleranceDisplayTextEn,
+    trainingTruth: false,
+  });
+}
+
+export function verifyRosterPlanBudgetAcceptanceV1(value) {
+  const code = "ROSTER_PLAN_BUDGET_ACCEPTANCE_INVALID";
+  if (!object(value) || value.schema !== ROSTER_PLAN_BUDGET_ACCEPTANCE_SCHEMA
+    || value.contractVersion !== ROSTER_FORMAL_BUDGET_CONTRACT_V1.version
+    || value.contractHash !== ROSTER_FORMAL_BUDGET_CONTRACT_V1.contractHash
+    || !ROSTER_PLAN_BUDGET_ACCEPTANCE_STATUSES.includes(value.status)
+    || value.vespeneWithinFormalCap !== true
+    || value.trainingTruth !== false) {
+    fail(code);
+  }
+  const mineralBudget = positiveInteger(value.mineralBudget, code);
+  const mineralSpent = nonNegativeInteger(value.mineralSpent, code);
+  const nearCapThresholdMinerals = positiveInteger(
+    value.nearCapThresholdMinerals, code);
+  const vespeneSpent = nonNegativeInteger(value.vespeneSpent, code);
+  const vespeneFormalCap = nonNegativeInteger(value.vespeneFormalCap, code);
+  const floor = ROSTER_FORMAL_BUDGET_CONTRACT_V1.mineralUtilizationFloor;
+  if (mineralSpent > mineralBudget
+    || value.mineralUnspent !== mineralBudget - mineralSpent
+    || value.utilizationBasisPoints !== Math.round(
+      (mineralSpent * 10_000) / mineralBudget)
+    || value.floorNumerator !== floor.numerator
+    || value.floorDenominator !== floor.denominator
+    || vespeneSpent > vespeneFormalCap) {
+    fail(code, "facts_inconsistent");
+  }
+  const nearCap = value.mineralUnspent < nearCapThresholdMinerals;
+  const meetsFloor = mineralSpent * floor.denominator
+    >= mineralBudget * floor.numerator;
+  const expected = nearCap ? "met_near_cap_exemption"
+    : meetsFloor ? "met" : "unmet_severe_underspend";
+  if (value.status !== expected) fail(code, `status:${value.status}`);
+  return true;
+}
 
 function checkPresetEmptiness(plan, code) {
   if (plan.scoreRoute !== null || plan.lossResourceBudget !== null
@@ -778,6 +928,7 @@ export function createRosterPlanV1(input = {}) {
       : nonEmpty(input.publicSummaryText || ROSTER_PLAN_UNKNOWN, "ROSTER_PLAN_INVALID"),
     authorityBoundary: { ...ROSTER_PLAN_CONTRACT_BOUNDARY },
     trainingTruth: false,
+    budgetAcceptance: input.budgetAcceptance ?? null,
   };
   const draft = { ...plan, planHash: "" };
   plan.planHash = hashStarcraftTmgContract(without(draft, ["planHash"]));
@@ -798,7 +949,11 @@ export function createPresetRosterNoPregamePlanV1(input = {}) {
 
 export function verifyRosterPlanV1(plan) {
   verifyHashed(plan, ROSTER_PLAN_SCHEMA, "planHash", "ROSTER_PLAN_INVALID");
-  exactKeys(plan, PLAN_KEYS, "ROSTER_PLAN_INVALID");
+  const observedKeys = Object.keys(plan || {}).sort();
+  if (!isDeepStrictEqual(observedKeys, [...PLAN_KEYS].sort())
+    && !isDeepStrictEqual(observedKeys, [...PLAN_KEYS_WITH_ACCEPTANCE].sort())) {
+    fail("ROSTER_PLAN_INVALID", observedKeys.join(","));
+  }
   if (!ROSTER_PLAN_STATUSES.includes(plan.planStatus)
     || !Number.isSafeInteger(plan.planVersion) || plan.planVersion < 1
     || plan.planFabricated !== false || plan.hiddenChainOfThoughtIncluded !== false
@@ -811,7 +966,9 @@ export function verifyRosterPlanV1(plan) {
   if (plan.planStatus === "no_pregame_plan") {
     if (plan.presetRoster !== true || !object(plan.presetBinding)
       || !HASH_PATTERN.test(String(plan.presetBinding.rosterHash))
-      || plan.provenance !== null || plan.publicSummaryText !== null) {
+      || plan.provenance !== null || plan.publicSummaryText !== null
+      || (plan.budgetAcceptance !== null
+        && plan.budgetAcceptance !== undefined)) {
       fail("ROSTER_PLAN_PRESET_BINDING_INVALID");
     }
     checkPresetEmptiness(plan, "ROSTER_PLAN_PRESET_CONTENT_FORBIDDEN");
@@ -819,6 +976,25 @@ export function verifyRosterPlanV1(plan) {
   }
   if (plan.presetRoster !== false || plan.presetBinding !== null) {
     fail("ROSTER_PLAN_PRESET_BINDING_INVALID");
+  }
+  // Formal budget acceptance (contract 1.1.0, Slice 272): when the block is
+  // present its facts must verify; a met contract is mandatory for
+  // active/revised/completed, and an unmet (severe-underspend) acceptance
+  // can only ever close as draft — never as a final formal success. Plans
+  // written before 1.1.0 carry no block and stay valid as legacy evidence.
+  const budgetAcceptance = plan.budgetAcceptance ?? null;
+  if (budgetAcceptance !== null) {
+    verifyRosterPlanBudgetAcceptanceV1(budgetAcceptance);
+    if (budgetAcceptance.status === "unmet_severe_underspend"
+      && !["draft", "abandoned"].includes(plan.planStatus)) {
+      fail("ROSTER_PLAN_BUDGET_ACCEPTANCE_INVALID",
+        `unmet_requires_draft:${plan.planStatus}`);
+    }
+    if (["active", "revised", "completed"].includes(plan.planStatus)
+      && budgetAcceptance.status === "unmet_severe_underspend") {
+      fail("ROSTER_PLAN_BUDGET_ACCEPTANCE_INVALID",
+        `active_requires_met:${plan.planStatus}`);
+    }
   }
   verifyRosterPlanProvenanceV1(plan.provenance);
   verifyRosterCandidateV1(plan.rosterCandidate);

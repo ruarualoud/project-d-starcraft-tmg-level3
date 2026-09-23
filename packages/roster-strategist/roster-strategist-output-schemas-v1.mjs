@@ -84,6 +84,17 @@
 // tool-request fields keep their exact existing bounds — nothing about ID,
 // enum, legality or identity checking is loosened.
 
+// Slice 272 (closing the diagnosed 940/2000 severe-underspend class —
+// docs/ticket-27-slice-272-diagnosis-budget-underspend-and-retained-\
+// closure-v1-2026-09-23.md): the comparison schema's resourceUtilization
+// gains two formal-budget-floor echoes (budgetFloorCandidateAvailable,
+// selectedCandidateMeetsBudgetFloor), binding the versioned
+// product-contract utilization floor (9/10, displayed in the UI) and the
+// menu-derived near-cap exemption. Field names, types, bounds and enums
+// only — never roster content, candidate identity or strategy — and the
+// runtime's full schema/Rules validation stays the strict enforcement
+// point.
+
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import {
@@ -95,7 +106,7 @@ import {
 
 export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_SCHEMA =
   "starcraft_tmg_roster_strategist_output_contract_set_v1";
-export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.4.1";
+export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.5.0";
 
 // General narrative-capacity policy (sub-slice 269.17): one transport-level
 // overall safety ceiling for every free public narrative string — the strict
@@ -497,6 +508,22 @@ const COMPARISON_SCHEMA = closedObject({
       description: "Must be true: unspent minerals are lost (no carryover, "
         + "no later spend), so budget residue is an explicit strategic "
         + "opportunity cost, never headroom.",
+    },
+    budgetFloorCandidateAvailable: {
+      type: "boolean",
+      description: "true iff at least one evaluated Rules-legal candidate "
+        + "meets the formal budget floor — the sealed per-candidate "
+        + "meetsFormalBudgetFloor value (the versioned product-contract "
+        + "mineral-utilization floor or the menu-derived near-cap "
+        + "exemption); copy the sealed evaluated-candidates value.",
+    },
+    selectedCandidateMeetsBudgetFloor: {
+      type: "boolean",
+      description: "true iff the selected candidate meets the formal "
+        + "budget floor; copy the sealed per-candidate "
+        + "meetsFormalBudgetFloor value. Selecting false while an "
+        + "available candidate is true fails closed; with no compliant "
+        + "candidate the plan closes as draft, never a formal success.",
     },
     retainedResourceJustificationStatus: {
       type: "string", minLength: 8, maxLength: 14,

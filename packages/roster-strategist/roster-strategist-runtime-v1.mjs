@@ -36,11 +36,13 @@ import {
   createRosterDeploymentConceptV1,
   createRosterInvalidationTriggerV1,
   createRosterLossResourceBudgetV1,
+  createRosterPlanBudgetAcceptanceV1,
   createRosterPlanProvenanceV1,
   createRosterPlanRevisionEventV1,
   createRosterPlanV1,
   createRosterScoreRouteV1,
   createRosterToolReceiptReferenceV1,
+  ROSTER_FORMAL_BUDGET_CONTRACT_V1,
   verifyRosterPlanRoundTripV1,
 } from "./roster-plan-contracts-v1.mjs";
 import { runRosterTeachCycleV1 } from "./roster-teach-cycle-v1.mjs";
@@ -68,7 +70,7 @@ import { verifyVerifiedPresetRosterLockV1 } from
 
 export const ROSTER_STRATEGIST_RUNTIME_MODULE =
   "packages/roster-strategist/roster-strategist-runtime-v1.mjs";
-export const ROSTER_STRATEGIST_RUNTIME_VERSION = "1.3.1";
+export const ROSTER_STRATEGIST_RUNTIME_VERSION = "1.4.0";
 export const ROSTER_STRATEGIST_DELIBERATION_SCHEMA =
   "starcraft_tmg_roster_strategist_deliberation_v1";
 export const ROSTER_STRATEGIST_DESCRIPTOR_SCHEMA =
@@ -89,6 +91,34 @@ export const ROSTER_STRATEGIST_PROMPT_PACK_V1 =
   "ticket27.roster_strategist.multi_round.v1";
 
 const HASH_PATTERN = /^[a-f0-9]{64}$/u;
+// Menu-derived near-cap threshold, shared by the runtime and the planning
+// workspace (Slice 272: the UI displays the same Rules-derived threshold).
+// Reads any object with a `units` array of menu entries (the runtime's
+// projected menu or the Builder enumeration's unitCandidates); never
+// hard-coded per faction.
+export function deriveNearCapThresholdMineralsV1(menuValue) {
+  const costs = [];
+  const push = (value) => {
+    const numeric = Number(value);
+    if (Number.isSafeInteger(numeric) && numeric > 0) costs.push(numeric);
+  };
+  for (const unit of menuValue?.units || []) {
+    for (const option of unit.compositionOptions || []) {
+      push(option.mineralCost);
+    }
+    for (const upgrade of unit.purchasableUpgrades || []) {
+      const byComposition = upgrade.mineralCostByComposition;
+      if (Array.isArray(byComposition)) {
+        for (const entry of byComposition) push(entry?.mineralCost ?? entry);
+      } else if (byComposition && typeof byComposition === "object") {
+        for (const value of Object.values(byComposition)) push(value);
+      }
+    }
+  }
+  // With no positive purchasable increment only an exact-budget roster is
+  // near-cap; a real menu always yields its cheapest composition/upgrade.
+  return costs.length ? Math.min(...costs) : 1;
+}
 const ROUND_KINDS = new Set([
   "strategy_foundation", "candidate_proposals", "comparison_selection",
   "revision",
@@ -365,6 +395,37 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       exactBudgetEqualityNeverForced: true,
       runtimeNeverRanksCandidates: true,
     },
+    // Formal budget acceptance contract (Slice 272, closing the 940/2000
+    // severe-underspend class): Rules legality alone is not a final formal
+    // success. The budget/menu stay Rules/Builder-owned; the utilization
+    // floor tolerance is the versioned product contract
+    // ROSTER_FORMAL_BUDGET_CONTRACT_V1, displayed in the planning UI. A
+    // selection below the floor without the menu-derived near-cap
+    // exemption fails closed when a compliant legal candidate is
+    // available; with no compliant candidate the plan closes as draft with
+    // budgetAcceptance unmet — never active. Vespene must stay within the
+    // Rules-owned formal cap.
+    formalBudgetAcceptanceContract: {
+      contractSchema: ROSTER_FORMAL_BUDGET_CONTRACT_V1.schema,
+      contractVersion: ROSTER_FORMAL_BUDGET_CONTRACT_V1.version,
+      contractHash: ROSTER_FORMAL_BUDGET_CONTRACT_V1.contractHash,
+      mineralUtilizationFloor:
+        ROSTER_FORMAL_BUDGET_CONTRACT_V1.mineralUtilizationFloor,
+      budgetAndMenuAuthority:
+        ROSTER_FORMAL_BUDGET_CONTRACT_V1.budgetAndMenuAuthority,
+      vespeneWithinFormalCapRequired: true,
+      activeRequiresBudgetContractMet: true,
+      severeUnderspendClosesAsDraftNeverActive: true,
+      decliningCompliantCandidateFailsClosed: true,
+      floorEchoesRecomputedFromRulesVerdicts: true,
+      exactBudgetEqualityNeverForced: true,
+      toleranceDisplayedInProductUi: true,
+      toleranceDisplayTextZh:
+        ROSTER_FORMAL_BUDGET_CONTRACT_V1.toleranceDisplayTextZh,
+      toleranceDisplayTextEn:
+        ROSTER_FORMAL_BUDGET_CONTRACT_V1.toleranceDisplayTextEn,
+      runtimeNeverRanksCandidates: true,
+    },
     // Narrative-capacity policy (sub-slice 269.17, closing the saved live
     // round-10 window-bound blocker): free public narrative is bounded only
     // by the transport-level overall safety ceiling; exceeding a display
@@ -516,27 +577,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
   // unspent minerals fall below this increment cannot purchase even the
   // cheapest remaining item, so its residue is near-cap.
   function nearCapThresholdMineralsFromMenu(menuValue) {
-    const costs = [];
-    const push = (value) => {
-      const numeric = Number(value);
-      if (Number.isSafeInteger(numeric) && numeric > 0) costs.push(numeric);
-    };
-    for (const unit of menuValue.units || []) {
-      for (const option of unit.compositionOptions || []) {
-        push(option.mineralCost);
-      }
-      for (const upgrade of unit.purchasableUpgrades || []) {
-        const byComposition = upgrade.mineralCostByComposition;
-        if (Array.isArray(byComposition)) {
-          for (const entry of byComposition) push(entry?.mineralCost ?? entry);
-        } else if (object(byComposition)) {
-          for (const value of Object.values(byComposition)) push(value);
-        }
-      }
-    }
-    // With no positive purchasable increment only an exact-budget roster is
-    // near-cap; a real menu always yields its cheapest composition/upgrade.
-    return costs.length ? Math.min(...costs) : 1;
+    return deriveNearCapThresholdMineralsV1(menuValue);
   }
 
   // ---------------------------------------------------- output validation
@@ -820,24 +861,38 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     // candidate requires a declared public justification tied to a legal
     // retained-resource use. The runtime computes but never ranks.
     const { nearCapThresholdMinerals, mineralBudget } = budgetContract;
+    const floor = ROSTER_FORMAL_BUDGET_CONTRACT_V1.mineralUtilizationFloor;
     const utilizationFacts = new Map(evaluated
       .filter((entry) => entry.candidate.legalityStatus === "legal")
       .map((entry) => {
-        const mineralUnspent = mineralBudget
-          - entry.verdictOrRejection.summary.mineralSpent;
+        const mineralSpent = entry.verdictOrRejection.summary.mineralSpent;
+        const mineralUnspent = mineralBudget - mineralSpent;
+        const nearCap = mineralUnspent < nearCapThresholdMinerals;
+        // Formal budget acceptance (Slice 272): floor met, or the
+        // menu-derived near-cap exemption; recomputed from the Rules
+        // verdicts, never from the model.
+        const meetsBudgetFloor = nearCap
+          || mineralSpent * floor.denominator
+            >= mineralBudget * floor.numerator;
         return [entry.proposal.candidateId, {
           mineralUnspent,
-          nearCap: mineralUnspent < nearCapThresholdMinerals,
+          nearCap,
+          meetsBudgetFloor,
         }];
       }));
     const computedNearCapAvailable = [...utilizationFacts.values()].some(
       (fact) => fact.nearCap);
     const computedSelectedNearCap =
       utilizationFacts.get(selectedCandidateId)?.nearCap === true;
+    const computedBudgetFloorAvailable = [...utilizationFacts.values()].some(
+      (fact) => fact.meetsBudgetFloor);
+    const computedSelectedMeetsBudgetFloor =
+      utilizationFacts.get(selectedCandidateId)?.meetsBudgetFloor === true;
     const utilization = output.resourceUtilization;
     if (!object(utilization)) fail(code, "resourceUtilization");
     exactKeys(utilization, ["nearCapCandidateAvailable",
       "selectedCandidateNearCap", "unspentBudgetAcknowledgedLost",
+      "budgetFloorCandidateAvailable", "selectedCandidateMeetsBudgetFloor",
       "retainedResourceJustificationStatus",
       "retainedResourceJustificationText"], code);
     if (utilization.nearCapCandidateAvailable !== computedNearCapAvailable) {
@@ -845,6 +900,14 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     }
     if (utilization.selectedCandidateNearCap !== computedSelectedNearCap) {
       fail(code, "resourceUtilization:selected_near_cap_echo_mismatch");
+    }
+    if (utilization.budgetFloorCandidateAvailable
+      !== computedBudgetFloorAvailable) {
+      fail(code, "resourceUtilization:budget_floor_availability_echo_mismatch");
+    }
+    if (utilization.selectedCandidateMeetsBudgetFloor
+      !== computedSelectedMeetsBudgetFloor) {
+      fail(code, "resourceUtilization:selected_meets_floor_echo_mismatch");
     }
     if (utilization.unspentBudgetAcknowledgedLost !== true) {
       fail(code, "resourceUtilization:unspent_budget_lost_not_acknowledged");
@@ -871,6 +934,16 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       && utilization.retainedResourceJustificationStatus !== "declared") {
       fail(code,
         "resourceUtilization:justification_required_when_near_cap_available");
+    }
+    // Formal budget acceptance (Slice 272): a declared justification can
+    // explain declining a near-cap candidate, but it can never waive the
+    // formal floor — selecting a severe-underspend candidate while a
+    // budget-floor-compliant Rules-legal candidate is available fails
+    // closed. With no compliant candidate the selection stands and the
+    // plan closes as draft with budgetAcceptance unmet (never active).
+    if (computedBudgetFloorAvailable && !computedSelectedMeetsBudgetFloor) {
+      fail(code,
+        "resourceUtilization:budget_floor_candidate_available_declined");
     }
     const purposes = (output.componentPurposes || []).map((entry) => {
       exactKeys(entry, ["componentKind", "recordKey", "instanceId",
@@ -953,6 +1026,9 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         nearCapCandidateAvailable: computedNearCapAvailable,
         selectedCandidateNearCap: computedSelectedNearCap,
         unspentBudgetAcknowledgedLost: true,
+        budgetFloorCandidateAvailable: computedBudgetFloorAvailable,
+        selectedCandidateMeetsBudgetFloor:
+          computedSelectedMeetsBudgetFloor,
         retainedResourceJustificationStatus:
           utilization.retainedResourceJustificationStatus,
         retainedResourceJustificationText: justificationText,
@@ -1766,6 +1842,31 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         }),
         sealNode("legal-choice-menu", "rules_owned_army_builder_port", {
           enumerationReceiptHash: enumeration.receiptHash, menu }),
+        // Formal budget acceptance context (Slice 272): candidates must be
+        // proposed with the versioned product-contract utilization floor in
+        // view, so at least one candidate should spend within the floor or
+        // the menu-derived near-cap exemption; the budget and menu stay
+        // Rules/Builder-owned, only the tolerance is a product value.
+        sealNode("formal-budget-contract", "product_contract_displayed_in_ui", {
+          contractVersion: ROSTER_FORMAL_BUDGET_CONTRACT_V1.version,
+          contractHash: ROSTER_FORMAL_BUDGET_CONTRACT_V1.contractHash,
+          mineralBudget,
+          mineralUtilizationFloor:
+            ROSTER_FORMAL_BUDGET_CONTRACT_V1.mineralUtilizationFloor,
+          nearCapExemptionThresholdMinerals: nearCapThresholdMinerals,
+          vespeneFormalCap: Math.floor(
+            (menu.vespeneLimitForBudget?.numerator ?? 0)
+              / (menu.vespeneLimitForBudget?.denominator ?? 1)),
+          unspentResourceDisposition: "lost",
+          proposalGuidance: "propose candidates that use the budget: at "
+            + "least one candidate should meet the mineral-utilization "
+            + "floor or the near-cap exemption; a severe-underspend final "
+            + "selection closes as draft, never as a formal success",
+          toleranceDisplayTextZh:
+            ROSTER_FORMAL_BUDGET_CONTRACT_V1.toleranceDisplayTextZh,
+          toleranceDisplayTextEn:
+            ROSTER_FORMAL_BUDGET_CONTRACT_V1.toleranceDisplayTextEn,
+        }),
         sealNode("strategy-foundation", "agent_deliberation_public", {
           scoreRoute: foundation.scoreRoute,
           opponentHypotheses: foundation.opponentHypotheses.map((entry) => ({
@@ -1956,6 +2057,26 @@ export function createRosterStrategistRuntimeV1(input = {}) {
             ? (mineralBudget - entry.verdictOrRejection.summary.mineralSpent)
               < nearCapThresholdMinerals
             : null,
+          // Formal budget acceptance context (Slice 272): whether this
+          // candidate satisfies the versioned product-contract utilization
+          // floor or the menu-derived near-cap exemption, plus the exact
+          // utilization in basis points — recomputed from the Rules
+          // verdict, never from the model.
+          utilizationBasisPoints: entry.candidate.legalityStatus === "legal"
+            ? Math.round(
+              (entry.verdictOrRejection.summary.mineralSpent * 10_000)
+                / mineralBudget)
+            : null,
+          meetsFormalBudgetFloor: entry.candidate.legalityStatus === "legal"
+            ? ((mineralBudget - entry.verdictOrRejection.summary.mineralSpent)
+                < nearCapThresholdMinerals
+              || entry.verdictOrRejection.summary.mineralSpent
+                * ROSTER_FORMAL_BUDGET_CONTRACT_V1.mineralUtilizationFloor
+                  .denominator
+                >= mineralBudget
+                  * ROSTER_FORMAL_BUDGET_CONTRACT_V1.mineralUtilizationFloor
+                    .numerator)
+            : null,
           rulesErrorCode: entry.candidate.legalityStatus === "illegal"
             ? entry.candidate.legalityReceipt.rulesErrorCode : null,
           // Deterministic component identities (sub-slice 269.11, closing
@@ -1999,6 +2120,44 @@ export function createRosterStrategistRuntimeV1(input = {}) {
             + "justification tied to a named legal retained-resource use in "
             + "resourceUtilization; exact budget equality is never forced",
           exactBudgetEqualityNeverForced: true,
+          // Formal budget acceptance contract (Slice 272): the versioned
+          // product-contract utilization floor, displayed in the planning
+          // UI. Selecting a candidate that does not meet the floor while a
+          // compliant Rules-legal candidate is available fails closed; if
+          // no evaluated legal candidate meets the floor, the plan closes
+          // as draft with budgetAcceptance unmet — never as an active
+          // final formal success. The budget and menu stay
+          // Rules/Builder-owned; only the tolerance is a product value.
+          formalBudgetFloor: {
+            mineralUtilizationFloorNumerator:
+              ROSTER_FORMAL_BUDGET_CONTRACT_V1.mineralUtilizationFloor
+                .numerator,
+            mineralUtilizationFloorDenominator:
+              ROSTER_FORMAL_BUDGET_CONTRACT_V1.mineralUtilizationFloor
+                .denominator,
+            utilizationFloorBasisPoints: Math.round(
+              (ROSTER_FORMAL_BUDGET_CONTRACT_V1.mineralUtilizationFloor
+                .numerator * 10_000)
+                / ROSTER_FORMAL_BUDGET_CONTRACT_V1.mineralUtilizationFloor
+                  .denominator),
+            contractVersion: ROSTER_FORMAL_BUDGET_CONTRACT_V1.version,
+            contractHash: ROSTER_FORMAL_BUDGET_CONTRACT_V1.contractHash,
+            nearCapExemptionThresholdMinerals: nearCapThresholdMinerals,
+            vespeneFormalCap: Math.floor(
+              (menu.vespeneLimitForBudget?.numerator ?? 0)
+                / (menu.vespeneLimitForBudget?.denominator ?? 1)),
+            toleranceDisplayTextZh:
+              ROSTER_FORMAL_BUDGET_CONTRACT_V1.toleranceDisplayTextZh,
+            toleranceDisplayTextEn:
+              ROSTER_FORMAL_BUDGET_CONTRACT_V1.toleranceDisplayTextEn,
+          },
+          formalBudgetFloorSelectionRule: "select a candidate whose "
+            + "meetsFormalBudgetFloor is true whenever one is available; "
+            + "copy budgetFloorCandidateAvailable and "
+            + "selectedCandidateMeetsBudgetFloor in resourceUtilization "
+            + "from the sealed per-candidate values; a severe-underspend "
+            + "selection with no compliant candidate closes as draft, "
+            + "never as a final formal success",
           runtimeNeverRanksCandidates: true,
         },
         laboratoryNeverRanks: true,
@@ -2156,11 +2315,24 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         },
       });
 
+    // A locked preset keeps the exact existing roster and its version chain;
+    // formal budget acceptance controls only whether this deepened plan may
+    // close as active.
+    const budgetAcceptance = createRosterPlanBudgetAcceptanceV1({
+      mineralBudget,
+      mineralSpent: finalVerdict.summary.mineralSpent,
+      nearCapThresholdMinerals,
+      vespeneSpent: finalVerdict.summary.vespeneSpent,
+      vespeneLimitNumerator: menu.vespeneLimitForBudget?.numerator ?? 1,
+      vespeneLimitDenominator: menu.vespeneLimitForBudget?.denominator ?? 1,
+    });
+    const formalBudgetMet =
+      budgetAcceptance.status !== "unmet_severe_underspend";
     const planInput = {
       planId,
       planVersion: presetLock
         ? presetLock.baselinePlan.planVersion + 1 : 1,
-      planStatus: "active", sideKey,
+      planStatus: formalBudgetMet ? "active" : "draft", sideKey,
       provenance,
       rosterCandidate: selected.candidate,
       scoreRoute,
@@ -2174,6 +2346,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       comparisons: comparison ? [comparison] : [],
       toolReceiptReferences: toolReceipts,
       publicSummaryText: comparisonSelection.publicSummaryText,
+      budgetAcceptance,
     };
     const plan = presetLock
       ? createPlannedPresetRosterPlanV2({
@@ -2246,6 +2419,22 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         comparisonSelection.resourceUtilization.nearCapCandidateAvailable,
       selectedCandidateNearCap:
         comparisonSelection.resourceUtilization.selectedCandidateNearCap,
+      // Formal budget acceptance outcomes (Slice 272), bound publicly:
+      // whether the selection met the versioned product-contract floor (or
+      // the menu-derived near-cap exemption), the exact utilization, the
+      // vespene-cap compliance and the closing plan status consequence.
+      formalBudgetContractVersion: ROSTER_FORMAL_BUDGET_CONTRACT_V1.version,
+      formalBudgetContractHash: ROSTER_FORMAL_BUDGET_CONTRACT_V1.contractHash,
+      budgetFloorCandidateAvailable:
+        comparisonSelection.resourceUtilization.budgetFloorCandidateAvailable,
+      selectedCandidateMeetsFormalBudgetFloor:
+        comparisonSelection.resourceUtilization
+          .selectedCandidateMeetsBudgetFloor,
+      budgetAcceptanceStatus: budgetAcceptance.status,
+      mineralUtilizationBasisPoints:
+        budgetAcceptance.utilizationBasisPoints,
+      vespeneWithinFormalCap: budgetAcceptance.vespeneWithinFormalCap,
+      severeUnderspendClosedAsDraft: !formalBudgetMet,
       retainedResourceJustificationStatus:
         comparisonSelection.resourceUtilization
           .retainedResourceJustificationStatus,
@@ -2506,7 +2695,9 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       const revisedInput = {
         planId: plan.planId,
         planVersion: plan.planVersion + 1,
-        planStatus: "revised",
+        // A section revision never changes the roster, so a budget-unmet
+        // draft stays a draft; only a met plan advances to revised.
+        planStatus: plan.planStatus === "draft" ? "draft" : "revised",
         sideKey: plan.sideKey,
         provenance: plan.provenance,
         rosterCandidate: plan.rosterCandidate,
@@ -2555,6 +2746,9 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         toolReceiptReferences: plan.toolReceiptReferences,
         publicSummaryText: narrative(output.publicSummaryText, code,
           { path: "publicSummaryText" }),
+        // The roster is unchanged by a section revision, so the Rules-derived
+        // budget acceptance carries over byte-identically.
+        budgetAcceptance: plan.budgetAcceptance ?? null,
       };
       revised = presetRevision
         ? createPlannedPresetRosterPlanV2({ ...revisedInput,
