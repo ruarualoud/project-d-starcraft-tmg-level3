@@ -40,6 +40,17 @@ import {
 import { runRosterTeachCycleV1 } from "./roster-teach-cycle-v1.mjs";
 import { createRosterTeachEvidencePortV1 } from
   "./roster-teach-evidence-port-v1.mjs";
+import {
+  createPlannedPresetRosterPlanV2,
+  verifyPlannedPresetRosterPlanRoundTripV2,
+} from "./planned-preset-roster-plan-v2.mjs";
+import {
+  PLANNED_PRESET_DEEPENING_OUTPUT_CONTRACT_REF_V1,
+  PLANNED_PRESET_DEEPENING_OUTPUT_CONTRACT_V1,
+  PLANNED_PRESET_DEEPENING_ROUND_KIND,
+} from "./planned-preset-deepening-output-v1.mjs";
+import { verifyVerifiedPresetRosterLockV1 } from
+  "./verified-preset-roster-lock-v1.mjs";
 
 export const ROSTER_STRATEGIST_RUNTIME_MODULE =
   "packages/roster-strategist/roster-strategist-runtime-v1.mjs";
@@ -56,6 +67,10 @@ export const ROSTER_STRATEGIST_INFORMATION_NEED_SCHEMA =
   "starcraft_tmg_roster_strategist_information_need_v1";
 export const ROSTER_STRATEGIST_SESSION_RECEIPT_SCHEMA =
   "starcraft_tmg_roster_strategist_session_receipt_v1";
+export const ROSTER_STRATEGIST_PRESET_SESSION_RECEIPT_SCHEMA =
+  "starcraft_tmg_roster_strategist_preset_session_receipt_v1";
+export const ROSTER_STRATEGIST_PRESET_PROMPT_PACK_V1 =
+  "ticket27.roster_strategist.planned_preset.v1";
 export const ROSTER_STRATEGIST_PROMPT_PACK_V1 =
   "ticket27.roster_strategist.multi_round.v1";
 
@@ -756,18 +771,28 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     });
   }
 
-  function validateComparison(output, evaluated, budgetContract) {
-    validateEnvelope(output, "comparison_selection");
-    exactKeys(output, ["schemaVersion", "roundKind", "comparison",
-      "componentPurposes", "deploymentConcept", "resourceUtilization",
-      "lossResourceBudget", "publicSummaryText"],
-      "ROSTER_STRATEGIST_COMPARISON_INVALID");
+  function validateComparison(output, evaluated, budgetContract,
+    { lockedCandidateId = null } = {}) {
+    const preset = lockedCandidateId !== null;
+    validateEnvelope(output, preset
+      ? PLANNED_PRESET_DEEPENING_ROUND_KIND : "comparison_selection");
+    exactKeys(output, preset
+      ? ["schemaVersion", "roundKind", "componentPurposes",
+        "deploymentConcept", "resourceUtilization", "lossResourceBudget",
+        "publicSummaryText"]
+      : ["schemaVersion", "roundKind", "comparison",
+        "componentPurposes", "deploymentConcept", "resourceUtilization",
+        "lossResourceBudget", "publicSummaryText"],
+    "ROSTER_STRATEGIST_COMPARISON_INVALID");
     const code = "ROSTER_STRATEGIST_COMPARISON_INVALID";
-    const comparison = output.comparison;
-    if (!object(comparison)) fail(code);
-    exactKeys(comparison, ["basisTexts", "tradeoffTexts", "selectedCandidateId"],
-      code);
-    const selectedCandidateId = nonEmpty(comparison.selectedCandidateId, code);
+    const comparison = preset ? null : output.comparison;
+    if (!preset) {
+      if (!object(comparison)) fail(code);
+      exactKeys(comparison, ["basisTexts", "tradeoffTexts",
+        "selectedCandidateId"], code);
+    }
+    const selectedCandidateId = preset ? lockedCandidateId
+      : nonEmpty(comparison.selectedCandidateId, code);
     const selected = evaluated.find((entry) => (
       entry.proposal.candidateId === selectedCandidateId));
     if (!selected) fail("ROSTER_STRATEGIST_SELECTION_UNKNOWN", selectedCandidateId);
@@ -888,7 +913,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       };
     }
     return {
-      comparison: {
+      comparison: preset ? null : {
         basisTexts: narrativeList(comparison.basisTexts, code,
           { allowEmpty: false, path: "comparison.basisTexts" }),
         tradeoffTexts: narrativeList(comparison.tradeoffTexts || [], code,
@@ -1290,20 +1315,23 @@ export function createRosterStrategistRuntimeV1(input = {}) {
   }
 
   function buildRoundRequest({ sessionId, roundIndex, roundKind, nodes,
-    userMessage, contextSeed }) {
+    userMessage, contextSeed, outputContract = null,
+    outputContractRef = null, promptPack = ROSTER_STRATEGIST_PROMPT_PACK_V1,
+    decisionCandidateSource =
+      "agent_deliberation_over_skills_and_rules_legal_choices_only" }) {
     const contextHash = hashStarcraftTmgContract(contextSeed);
-    const outputContract = rosterStrategistRoundOutputContractV1(roundKind);
+    const contract = outputContract
+      || rosterStrategistRoundOutputContractV1(roundKind);
     return {
       sessionId,
       roundIndex,
       roundKind,
-      promptPack: ROSTER_STRATEGIST_PROMPT_PACK_V1,
+      promptPack,
       promptNodes: nodes,
       userMessage,
       responseContract: {
         allowedChannels: ["roster_strategy"],
-        decisionCandidateSource:
-          "agent_deliberation_over_skills_and_rules_legal_choices_only",
+        decisionCandidateSource,
       },
       // Strict generation-side contract: deliberation ports capable of
       // Provider JSON-schema output must request exactly this schema, so
@@ -1312,10 +1340,10 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       // full schema/Rules validation still run on the decoded output.
       responseFormat: {
         kind: "provider_strict_json_schema",
-        schemaName: outputContract.schemaName,
-        outputContractRef:
-          rosterStrategistRoundOutputContractRefV1(roundKind),
-        schema: clone(outputContract.providerSchema),
+        schemaName: contract.schemaName,
+        outputContractRef: outputContractRef
+          || rosterStrategistRoundOutputContractRefV1(roundKind),
+        schema: clone(contract.providerSchema),
       },
       maxOutputUnits: 8_192,
       contextHash,
@@ -1335,7 +1363,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
 
   // ------------------------------------------------------------ planRoster
 
-  async function planRoster(sessionInput = {}, options = {}) {
+  async function planRosterInternal(sessionInput = {}, options = {},
+    presetLock = null) {
     const code = "ROSTER_STRATEGIST_SESSION_INVALID";
     const sessionId = nonEmpty(sessionInput.sessionId, code);
     const sideKey = nonEmpty(sessionInput.sideKey, code);
@@ -1349,6 +1378,17 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       fail(code, "mineralBudget");
     }
     const boundary = nonEmpty(sessionInput.opponentInformationBoundary, code);
+    if (presetLock) {
+      verifyVerifiedPresetRosterLockV1(presetLock, armyBuilderPort);
+      if (presetLock.candidateInput.sideKey !== sideKey
+        || presetLock.candidateInput.factionRecordKey !== factionRecordKey
+        || presetLock.candidateInput.scaleId !== engagementScale
+        || presetLock.candidateInput.mineralBudget !== mineralBudget
+        || (sessionInput.planId !== undefined
+          && sessionInput.planId !== presetLock.baselinePlan.planId)) {
+        fail("ROSTER_STRATEGIST_PRESET_CONTEXT_DRIFT");
+      }
+    }
     const deliberation = options.deliberation;
     const deliberationDescriptor = deliberation?.descriptor?.();
     if (!object(deliberationDescriptor)
@@ -1407,8 +1447,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       promptVersion: deliberationDescriptor.promptVersion,
     });
 
-    const planId = nonEmpty(sessionInput.planId
-      || `roster-plan-${sessionId}`, code);
+    const planId = nonEmpty(presetLock?.baselinePlan.planId
+      || sessionInput.planId || `roster-plan-${sessionId}`, code);
     const trace = [];
     const toolReceipts = [];
     const branchByNeedId = new Map();
@@ -1434,6 +1474,15 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         denominators: clone(enumeration.denominators),
         vespeneLimitForBudget: clone(enumeration.vespeneLimitForBudget),
       }),
+      ...(presetLock ? [sealNode("locked-preset-roster",
+        "rules_verified_immutable_room_roster", {
+          lockHash: presetLock.lockHash,
+          baselinePlanHash: presetLock.baselinePlan.planHash,
+          candidateHash: presetLock.candidate.candidateHash,
+          auditResultHash: presetLock.verdict.auditResultHash,
+          recipe: clone(presetLock.recipe),
+          modelSelectionLocked: true,
+        })] : []),
       // Sub-slice 269.13: the authoritative mission task/scoring data
       // frozen in the source Room state is sealed into the foundation
       // round, so a mission-grounded VP schedule is derivable from the
@@ -1475,15 +1524,28 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       buildRoundRequest({
         sessionId, roundIndex: 1, roundKind: "strategy_foundation",
         nodes: foundationNodes,
-        userMessage: "Choose the public score route, opponent hypotheses, "
-          + "counter-responses, invalidation triggers and typed information "
-          + "needs for this roster planning session. Strategy must come from "
-          + "the supplied Skills and your own deliberation. Public fields "
-          + "only; never emit hidden chain-of-thought.",
+        userMessage: presetLock
+          ? "This roster is Rules-verified and immutable. Form a small "
+            + "public victory-route plan for its exact models and upgrades; "
+            + "do not select or change them. State opponent hypotheses, "
+            + "counter-responses, invalidation triggers and typed information "
+            + "needs. Strategy must come from the supplied Skills and your "
+            + "own deliberation. Public fields only; never emit hidden "
+            + "chain-of-thought."
+          : "Choose the public score route, opponent hypotheses, "
+            + "counter-responses, invalidation triggers and typed information "
+            + "needs for this roster planning session. Strategy must come from "
+            + "the supplied Skills and your own deliberation. Public fields "
+            + "only; never emit hidden chain-of-thought.",
         contextSeed: { sessionId, roundKind: "strategy_foundation",
           provenanceHash: provenance.provenanceHash,
           enumerationReceiptHash: enumeration.receiptHash,
-          skillRouteReceiptHash: route.receipt.receiptHash },
+          skillRouteReceiptHash: route.receipt.receiptHash,
+          ...(presetLock ? { presetLockHash: presetLock.lockHash } : {}) },
+        ...(presetLock ? { promptPack:
+          ROSTER_STRATEGIST_PRESET_PROMPT_PACK_V1,
+          decisionCandidateSource:
+            "rules_verified_immutable_room_roster_only" } : {}),
       }), traceSink);
     const foundationOutput = foundationDeliberation.output;
     foundationTrace.outputNormalizationReceipt =
@@ -1492,7 +1554,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       sessionId, roundKind: "strategy_foundation",
       provenanceHash: provenance.provenanceHash,
       enumerationReceiptHash: enumeration.receiptHash,
-      skillRouteReceiptHash: route.receipt.receiptHash });
+      skillRouteReceiptHash: route.receipt.receiptHash,
+      ...(presetLock ? { presetLockHash: presetLock.lockHash } : {}) });
     const foundationWarnings = [];
     activeNarrativeWarnings = foundationWarnings;
     let foundation;
@@ -1522,6 +1585,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         sourceHashes: [provenance.provenanceHash,
           route.receipt.receiptHash, enumeration.receiptHash,
           missionAuthority.receiptHash,
+          ...(presetLock ? [presetLock.lockHash] : []),
           ...route.skillRefs.map((ref) => ref.skillHash)],
         sourceContext: {
           engagementScale, mineralBudget,
@@ -1530,6 +1594,14 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           legalChoiceDenominators: clone(enumeration.denominators),
           foundationToolReferences: clone(toolReceipts),
           opponentInformationBoundary: boundary,
+          ...(presetLock ? { presetRosterLock: {
+            lockHash: presetLock.lockHash,
+            candidateHash: presetLock.candidate.candidateHash,
+            auditResultHash: presetLock.verdict.auditResultHash,
+            recipe: clone(presetLock.recipe),
+            rulesAuditSummary: clone(presetLock.verdict.summary),
+            modelSelectionLocked: true,
+          } } : {}),
         },
       });
       const teachRoleReceipts = [teachCycle.roleReceipts.challenger,
@@ -1605,7 +1677,33 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     let legalProposals = [];
     let proposalRound = 0;
     const proposalFeedback = [];
-    while (legalProposals.length === 0 && proposalRound < maxProposalRounds) {
+    if (presetLock) {
+      // There is exactly one already audited candidate. No proposal or
+      // selection model call is made, and no substitute list can enter.
+      const proposal = freezeDeep({
+        candidateId: presetLock.candidate.candidateId,
+        tacticalCardRecordKeys:
+          clone(presetLock.candidateInput.tacticalCardRecordKeys),
+        units: presetLock.candidateInput.units.map((unit) => ({
+          unitInstanceId: unit.unitInstanceId,
+          recordKey: unit.recordKey,
+          compositionKind: unit.compositionKind,
+          upgrades: clone(unit.upgrades),
+        })),
+        rationaleText: "Immutable Rules-verified preset roster",
+        sideKeySafe: sideKey,
+      });
+      const row = freezeDeep({
+        proposal,
+        candidateInput: clone(presetLock.candidateInput),
+        candidate: presetLock.candidate,
+        verdictOrRejection: presetLock.verdict,
+        proposalOrder: 0,
+      });
+      evaluated.push(row);
+      legalProposals = [row];
+    } else while (legalProposals.length === 0
+      && proposalRound < maxProposalRounds) {
       proposalRound += 1;
       const roundIndex = 1 + 2 * Number(Boolean(teachCycle))
         + proposalRound;
@@ -1758,6 +1856,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     // ---------------------------------------- final round: comparison
     const comparisonRoundIndex = 2 + 2 * Number(Boolean(teachCycle))
       + proposalRound;
+    const comparisonRoundKind = presetLock
+      ? PLANNED_PRESET_DEEPENING_ROUND_KIND : "comparison_selection";
     const comparisonNodes = [
       sealNode("frozen-context", "rules_and_source_frozen", {
         provenanceHash: provenance.provenanceHash,
@@ -1839,64 +1939,96 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         counterResponses: foundation.counterResponses,
         invalidationTriggers: foundation.invalidationTriggers,
       }),
+      ...(presetLock ? [sealNode("locked-preset-roster",
+        "rules_verified_immutable_room_roster", {
+          lockHash: presetLock.lockHash,
+          baselinePlanHash: presetLock.baselinePlan.planHash,
+          candidateHash: presetLock.candidate.candidateHash,
+          auditResultHash: presetLock.verdict.auditResultHash,
+          candidateSelectionAllowed: false,
+        })] : []),
       sealNode("response-schema", "platform", {
         schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
-        roundKind: "comparison_selection",
-        fields: ["comparison", "componentPurposes", "deploymentConcept",
-          "resourceUtilization", "lossResourceBudget", "publicSummaryText"],
+        roundKind: comparisonRoundKind,
+        fields: presetLock
+          ? ["componentPurposes", "deploymentConcept",
+            "resourceUtilization", "lossResourceBudget", "publicSummaryText"]
+          : ["comparison", "componentPurposes", "deploymentConcept",
+            "resourceUtilization", "lossResourceBudget", "publicSummaryText"],
         selectedCandidateMustBeRulesLegal: true,
+        ...(presetLock ? { candidateSelectionAllowed: false } : {}),
         publicFieldsOnly: true,
         envelopeAtTopLevelNoChannelsWrapper: true,
-        outputSchemaName:
-          rosterStrategistRoundOutputContractV1("comparison_selection")
+        outputSchemaName: presetLock
+          ? PLANNED_PRESET_DEEPENING_OUTPUT_CONTRACT_V1.schemaName
+          : rosterStrategistRoundOutputContractV1("comparison_selection")
             .schemaName,
         strictProviderJsonSchemaEnforced: true,
       }),
     ];
     const comparisonTrace = {
-      roundIndex: comparisonRoundIndex, roundKind: "comparison_selection",
-      outputContractRef:
-        rosterStrategistRoundOutputContractRefV1("comparison_selection"),
+      roundIndex: comparisonRoundIndex, roundKind: comparisonRoundKind,
+      outputContractRef: presetLock
+        ? PLANNED_PRESET_DEEPENING_OUTPUT_CONTRACT_REF_V1
+        : rosterStrategistRoundOutputContractRefV1("comparison_selection"),
       promptNodeHashes: comparisonNodes.map((node) => node.nodeHash),
       informationNeedOutcomes: [],
     };
     const comparisonDeliberation = await deliberateRound(deliberation,
       buildRoundRequest({
         sessionId, roundIndex: comparisonRoundIndex,
-        roundKind: "comparison_selection",
+        roundKind: comparisonRoundKind,
         nodes: comparisonNodes,
-        userMessage: "Compare the evaluated candidates on the public evidence "
-          + "(score route, hypotheses, tool receipts, Rules verdicts), select "
-          + "exactly one Rules-legal candidate, and declare public component "
-          + "purposes, deployment concept, loss budget and a public summary. "
-          + "Public fields only; never emit hidden chain-of-thought.",
-        contextSeed: { sessionId, roundKind: "comparison_selection",
+        userMessage: presetLock
+          ? "The Rules-verified preset roster is immutable. Deepen the "
+            + "revised score route into public component purposes, deployment, "
+            + "reinforcement, threat/trade and loss-resource plans for this "
+            + "exact roster. Acknowledge unspent minerals as lost. Do not "
+            + "propose, compare, select or modify any roster. Public fields "
+            + "only; never emit hidden chain-of-thought."
+          : "Compare the evaluated candidates on the public evidence "
+            + "(score route, hypotheses, tool receipts, Rules verdicts), "
+            + "select exactly one Rules-legal candidate, and declare public "
+            + "component purposes, deployment concept, loss budget and a "
+            + "public summary. Public fields only; never emit hidden "
+            + "chain-of-thought.",
+        contextSeed: { sessionId, roundKind: comparisonRoundKind,
           provenanceHash: provenance.provenanceHash,
-          candidateHashes: evaluated.map((entry) => entry.candidate.candidateHash) },
+          candidateHashes: evaluated.map((entry) => entry.candidate.candidateHash),
+          ...(presetLock ? { presetLockHash: presetLock.lockHash } : {}) },
+        ...(presetLock ? {
+          outputContract: PLANNED_PRESET_DEEPENING_OUTPUT_CONTRACT_V1,
+          outputContractRef: PLANNED_PRESET_DEEPENING_OUTPUT_CONTRACT_REF_V1,
+          promptPack: ROSTER_STRATEGIST_PRESET_PROMPT_PACK_V1,
+          decisionCandidateSource: "rules_verified_immutable_room_roster_only",
+        } : {}),
       }), traceSink);
     const comparisonOutput = comparisonDeliberation.output;
     comparisonTrace.outputNormalizationReceipt =
       comparisonDeliberation.normalizationReceipt;
     comparisonTrace.contextHash = hashStarcraftTmgContract({
-      sessionId, roundKind: "comparison_selection",
+      sessionId, roundKind: comparisonRoundKind,
       provenanceHash: provenance.provenanceHash,
-      candidateHashes: evaluated.map((entry) => entry.candidate.candidateHash) });
+      candidateHashes: evaluated.map((entry) => entry.candidate.candidateHash),
+      ...(presetLock ? { presetLockHash: presetLock.lockHash } : {}) });
     const comparisonWarnings = [];
     activeNarrativeWarnings = comparisonWarnings;
     let comparisonSelection;
     try {
       comparisonSelection = validateComparison(comparisonOutput,
-        evaluated, { nearCapThresholdMinerals, mineralBudget });
+        evaluated, { nearCapThresholdMinerals, mineralBudget },
+        { lockedCandidateId: presetLock?.candidate.candidateId ?? null });
     } finally {
       activeNarrativeWarnings = null;
     }
     comparisonTrace.narrativeDisplayWarnings = comparisonWarnings;
     comparisonTrace.outputHash = hashStarcraftTmgContract(comparisonOutput);
-    const selected = evaluated.find((entry) => (
-      entry.proposal.candidateId
-        === comparisonSelection.comparison.selectedCandidateId));
+    const selected = presetLock ? evaluated[0]
+      : evaluated.find((entry) => (
+        entry.proposal.candidateId
+          === comparisonSelection.comparison.selectedCandidateId));
 
-    const comparison = createRosterCandidateComparisonV1({
+    const comparison = presetLock ? null : createRosterCandidateComparisonV1({
       comparisonId: `${sessionId}-comparison-1`,
       candidateHashes: evaluated.map((entry) => entry.candidate.candidateHash),
       basisTexts: comparisonSelection.comparison.basisTexts,
@@ -1905,7 +2037,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       selectedCandidateHash: selected.candidate.candidateHash,
       receiptReferenceIds: toolReceipts.map((receipt) => receipt.referenceId),
     });
-    comparisonTrace.comparisonHash = comparison.comparisonHash;
+    comparisonTrace.comparisonHash = comparison?.comparisonHash ?? null;
     trace.push(roundReceipt(comparisonTrace));
 
     // Final legality is re-proven through the Rules-owned port at plan time.
@@ -1941,8 +2073,11 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         },
       });
 
-    const plan = createRosterPlanV1({
-      planId, planVersion: 1, planStatus: "active", sideKey,
+    const planInput = {
+      planId,
+      planVersion: presetLock
+        ? presetLock.baselinePlan.planVersion + 1 : 1,
+      planStatus: "active", sideKey,
       provenance,
       rosterCandidate: selected.candidate,
       scoreRoute,
@@ -1953,14 +2088,22 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       counterResponses,
       invalidationTriggers,
       revisions: [],
-      comparisons: [comparison],
+      comparisons: comparison ? [comparison] : [],
       toolReceiptReferences: toolReceipts,
       publicSummaryText: comparisonSelection.publicSummaryText,
-    });
-    verifyRosterPlanRoundTripV1(plan);
+    };
+    const plan = presetLock
+      ? createPlannedPresetRosterPlanV2({
+        ...planInput, baselinePlan: presetLock.baselinePlan,
+      })
+      : createRosterPlanV1(planInput);
+    if (presetLock) verifyPlannedPresetRosterPlanRoundTripV2(plan);
+    else verifyRosterPlanRoundTripV1(plan);
 
     const sessionReceipt = hashedReceipt({
-      schema: ROSTER_STRATEGIST_SESSION_RECEIPT_SCHEMA,
+      schema: presetLock
+        ? ROSTER_STRATEGIST_PRESET_SESSION_RECEIPT_SCHEMA
+        : ROSTER_STRATEGIST_SESSION_RECEIPT_SCHEMA,
       sessionId,
       planId: plan.planId,
       planHash: plan.planHash,
@@ -1973,7 +2116,14 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       provenanceHash: provenance.provenanceHash,
       enumerationReceiptHash: enumeration.receiptHash,
       skillRouteReceiptHash: route.receipt.receiptHash,
-      comparisonHash: comparison.comparisonHash,
+      comparisonHash: comparison?.comparisonHash ?? null,
+      ...(presetLock ? {
+        planningMode: "planned_preset_locked_roster",
+        baselinePlanHash: presetLock.baselinePlan.planHash,
+        presetRosterLockHash: presetLock.lockHash,
+        presetDeepeningOutputContractHash:
+          PLANNED_PRESET_DEEPENING_OUTPUT_CONTRACT_REF_V1.hash,
+      } : {}),
       ...(teachCycle ? { teachCycleHash: teachCycle.cycleHash } : {}),
       roundReceiptHashes: trace.map((entry) => entry.receiptHash),
       toolReceiptReferenceHashes: toolReceipts.map((entry) => entry.referenceHash),
@@ -2008,7 +2158,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         "display_target_soft_warning_full_text_preserved_v1",
       narrativeDisplayWarningCount: trace.reduce((sum, entry) => (
         sum + (entry.narrativeDisplayWarnings?.length || 0)), 0),
-      selectedByAgentDeliberation: true,
+      selectedByAgentDeliberation: !presetLock,
       hostPreferenceWeights: false,
       hiddenChainOfThoughtRequested: false,
       hiddenChainOfThoughtPersisted: false,
@@ -2027,12 +2177,28 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       candidateInputs: evaluated.map((entry) => clone(entry.candidateInput)),
       rejections,
       comparison,
+      ...(presetLock ? { presetRosterLock: presetLock } : {}),
       toolReceiptReferences: toolReceipts,
       planningTrace: trace,
       ...(teachCycle ? { teachCycle } : {}),
       deliberationReceipts: deliberationReceipts.map((entry) => clone(entry)),
       sessionReceipt,
     });
+  }
+
+  async function planRoster(sessionInput = {}, options = {}) {
+    return planRosterInternal(sessionInput, options);
+  }
+
+  async function planPresetRoster(sessionInput = {}, options = {}) {
+    if (!options.presetRosterLock) {
+      fail("ROSTER_STRATEGIST_PRESET_LOCK_REQUIRED");
+    }
+    if (!options.teachPorts) {
+      fail("ROSTER_STRATEGIST_PRESET_TEACH_REQUIRED");
+    }
+    return planRosterInternal(sessionInput, options,
+      options.presetRosterLock);
   }
 
   // -------------------------------------------------------- revise plan
@@ -2162,6 +2328,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     runtimeDescriptor: () => descriptor,
     selectSkillRoute,
     planRoster,
+    planPresetRoster,
     reviseRosterPlan,
   });
 }
@@ -2197,6 +2364,29 @@ export function verifyRosterStrategistSessionReceiptV1(value) {
     || !HASH_PATTERN.test(String(value.planHash || ""))
     || !HASH_PATTERN.test(String(value.finalAuditResultHash || ""))) {
     fail("ROSTER_STRATEGIST_SESSION_RECEIPT_INVALID");
+  }
+  return true;
+}
+
+export function verifyRosterStrategistPresetSessionReceiptV1(value) {
+  if (!object(value)
+    || value.schema !== ROSTER_STRATEGIST_PRESET_SESSION_RECEIPT_SCHEMA
+    || value.receiptHash !== hashStarcraftTmgContract(
+      without(value, ["receiptHash"]))
+    || value.planningMode !== "planned_preset_locked_roster"
+    || value.selectedByAgentDeliberation !== false
+    || value.hostPreferenceWeights !== false
+    || value.hiddenChainOfThoughtRequested !== false
+    || value.hiddenChainOfThoughtPersisted !== false
+    || value.rulesRemainSoleLegalityAuthority !== true
+    || value.unknownStaysUnknown !== true
+    || value.trainingTruth !== false
+    || ![value.planHash, value.baselinePlanHash,
+      value.presetRosterLockHash, value.finalAuditResultHash]
+      .every((entry) => HASH_PATTERN.test(String(entry || "")))
+    || value.comparisonHash !== null
+    || value.rejectionReceiptHashes?.length !== 0) {
+    fail("ROSTER_STRATEGIST_PRESET_SESSION_RECEIPT_INVALID");
   }
   return true;
 }

@@ -74,10 +74,15 @@ export function createRosterTeachRolePortsV1({ deliberation, sessionId } = {}) {
             foundation: clone(input.initialFoundation),
             foundationHash: input.initialFoundationHash },
         ], "Challenge one to four falsifiable claims in this small victory "
-          + "plan before units are chosen. For every claim, identify its "
-          + "existing target and request one bounded read-only scene-lab "
-          + "query. Do not invent Rules or choose a roster. Return public "
-          + "questions and counterexamples, not hidden reasoning.", 2);
+          + (input.sourceContext?.presetRosterLock
+            ? "plan for the already locked roster. "
+            : "plan before units are chosen. ")
+          + "For every claim, identify its existing target and request "
+          + "one bounded read-only scene-lab query. Do not invent Rules "
+          + (input.sourceContext?.presetRosterLock
+            ? "or alter the fixed roster. " : "or choose a roster. ")
+          + "Return public questions and counterexamples, not hidden "
+          + "reasoning.", 2);
         return { challenges: result.output.challenges,
           receipt: result.receipt };
       },
@@ -98,8 +103,11 @@ export function createRosterTeachRolePortsV1({ deliberation, sessionId } = {}) {
           + "only delivered source/evidence hashes. Publish a complete "
           + "revised Foundation; retain means the target is unchanged, "
           + "revise means it changed, and unresolved needs a replan trigger. "
-          + "An unknown result is not proof. Do not choose units yet, alter "
-          + "Rules, or emit hidden reasoning.", 3);
+          + "An unknown result is not proof. "
+          + (input.sourceContext?.presetRosterLock
+            ? "Do not alter the fixed roster, Rules, or emit hidden reasoning."
+            : "Do not choose units yet, alter Rules, or emit hidden reasoning."),
+        3);
         const foundation = result.output.revisedFoundation;
         if (foundation.schemaVersion
             !== rosterStrategistRoundOutputContractV1(
