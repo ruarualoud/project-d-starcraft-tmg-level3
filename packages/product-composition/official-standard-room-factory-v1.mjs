@@ -106,6 +106,8 @@ import { createOfficialStandardActionRouteCatalogueV1 } from
 export const OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_standard_room_initial_state_authority_v1";
 export const OFFICIAL_STANDARD_ROOM_FACTORY_VERSION = "2.2.0";
+export const OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_VERSION = "2.3.0";
+export const OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY = "rules_legal_unspent_lost";
 
 const HOLD_POSITION = "faction_cards:mission_hold_position";
 const GAUNTLET = "faction_cards:2NdngLtIeZAprsWr25hM";
@@ -364,6 +366,11 @@ export function buildOfficialRoomArmyAuditV1(bundle, sideKey, recipe,
   configuration = {}) {
   const scaleId = String(configuration.scaleId || "Standard");
   const mineralBudget = Number(configuration.mineralBudget ?? 2000);
+  const armySpendPolicy = configuration.armySpendPolicy || "exact_budget";
+  if (armySpendPolicy !== "exact_budget"
+    && armySpendPolicy !== OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY) {
+    fail("STANDARD_ROOM_ARMY_SPEND_POLICY_UNKNOWN", armySpendPolicy);
+  }
   const armyBundle = bundle.armyResourceBudgetDataBundle;
   const factionBundle = armyBundle.factionArmyEligibilityDataBundle;
   const faction = factionBundle.factionProfiles.find((entry) => (
@@ -430,9 +437,17 @@ export function buildOfficialRoomArmyAuditV1(bundle, sideKey, recipe,
       unspentResourceDisposition: "lost", resourceConversionRequested: false,
     },
   });
-  if (audit.armyResourceBudgetResult.mineralSpent !== mineralBudget) {
+  const budgetResult = audit.armyResourceBudgetResult;
+  if (armySpendPolicy === OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY) {
+    if (!(budgetResult.mineralSpent > 0)
+      || budgetResult.mineralSpent > mineralBudget
+      || budgetResult.mineralUnspent !== mineralBudget - budgetResult.mineralSpent
+      || budgetResult.mineralUnspentDisposition !== "lost") {
+      fail("STANDARD_ROOM_UNSPENT_LOST_AUDIT_INVALID", sideKey);
+    }
+  } else if (budgetResult.mineralSpent !== mineralBudget) {
     fail("STANDARD_ROOM_EXACT_MINERAL_SPEND_REQUIRED",
-      `${sideKey}:${audit.armyResourceBudgetResult.mineralSpent}`);
+      `${sideKey}:${budgetResult.mineralSpent}`);
   }
   return audit;
 }
@@ -550,6 +565,11 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
   const dataset = input.dataset;
   const snapshot = input.snapshot;
   if (!object(dataset) || !object(snapshot)) fail("STANDARD_ROOM_SOURCE_INPUT_REQUIRED");
+  const armySpendPolicy = input.armySpendPolicy || "exact_budget";
+  if (armySpendPolicy !== "exact_budget"
+    && armySpendPolicy !== OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY) {
+    fail("STANDARD_ROOM_ARMY_SPEND_POLICY_UNKNOWN", armySpendPolicy);
+  }
   const recipes = clone(input.recipes || OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1);
   if (!isDeepStrictEqual(Object.keys(recipes).sort(), [...SIDE_KEYS])) {
     fail("STANDARD_ROOM_TWO_SIDE_RECIPES_REQUIRED");
@@ -563,7 +583,7 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
   const compositionBundle = rosterBundle.unitCompositionUpgradeDataBundle;
   const audits = Object.fromEntries(SIDE_KEYS.map((sideKey) => [
     sideKey, buildOfficialRoomArmyAuditV1(compositionBundle, sideKey, recipes[sideKey], {
-      dataset,
+      dataset, armySpendPolicy,
     }),
   ]));
   const players = Object.fromEntries(SIDE_KEYS.map((sideKey) => [sideKey, {
@@ -953,7 +973,10 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
   };
   const authorityBody = {
     schema: OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA,
-    version: OFFICIAL_STANDARD_ROOM_FACTORY_VERSION, source: "server_factory",
+    version: armySpendPolicy === OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY
+      ? OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_VERSION
+      : OFFICIAL_STANDARD_ROOM_FACTORY_VERSION,
+    source: "server_factory",
     setupId: String(input.setupId || "official-standard-2000-hold-gauntlet-v1"),
     state, dataVersion: versionFor(dataset), dependencies,
     serverSeatPlan: clone(input.serverSeatPlan || [
@@ -963,6 +986,8 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
         principalType: "human" },
     ]),
     compositionEvidence: {
+      ...(armySpendPolicy === OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY
+        ? { armySpendPolicy } : {}),
       scale: "Standard", mineralBudgetBySide: { player1: 2000, player2: 2000 },
       mineralSpentBySide: Object.fromEntries(SIDE_KEYS.map((sideKey) => [
         sideKey, audits[sideKey].armyResourceBudgetResult.mineralSpent,
@@ -1019,21 +1044,41 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
 export function verifyOfficialStandardRoomInitialStateAuthorityV1(authority) {
   const state = authority?.state;
   const evidence = authority?.compositionEvidence;
+  const unspentLost = authority?.version === OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_VERSION;
+  const audits = state?.armyCompositionUpgradeAuditsBySide;
+  const auditedUnits = SIDE_KEYS.flatMap((sideKey) => audits?.[sideKey]?.units || []);
+  const auditedUnitIds = auditedUnits.map((unit) => unit.unitInstanceId);
+  const pieceIds = state?.pieces?.map((piece) => piece.id);
   if (!object(authority)
     || authority.schema !== OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA
-    || authority.version !== OFFICIAL_STANDARD_ROOM_FACTORY_VERSION
+    || (!unspentLost && authority.version !== OFFICIAL_STANDARD_ROOM_FACTORY_VERSION)
     || authority.source !== "server_factory"
     || authority.receiptHash !== hashStarcraftTmgContract(
       without(authority, ["receiptHash"]))
     || state?.engagementScale !== "Standard"
     || state?.board?.widthInches !== 54 || state?.board?.heightInches !== 36
-    || state?.pieces?.length !== 15
+    || (unspentLost
+      ? (evidence?.armySpendPolicy !== OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY
+        || !Array.isArray(pieceIds)
+        || !auditedUnitIds.length
+        || !auditedUnitIds.every((id) => typeof id === "string" && id.length > 0)
+        || !isDeepStrictEqual([...pieceIds].sort(), [...auditedUnitIds].sort()))
+      : state?.pieces?.length !== 15 || evidence?.armySpendPolicy !== undefined)
     || state.pieces.some((piece) => (
       piece.isOnField !== false || piece.isInReserves !== true))
     || state?.officialBalancedTerrainSetupCertificate?.balancedTerrainCertified !== true
     || state?.board?.terrain?.length !== 9
-    || evidence?.mineralSpentBySide?.player1 !== 2000
-    || evidence?.mineralSpentBySide?.player2 !== 2000
+    || SIDE_KEYS.some((sideKey) => {
+      const budget = state?.armyResourceBudgetsBySide?.[sideKey];
+      const spent = evidence?.mineralSpentBySide?.[sideKey];
+      return !budget || !Number.isFinite(spent)
+        || spent !== budget.mineralSpent
+        || (unspentLost
+          ? spent <= 0 || spent > 2000
+            || budget.mineralUnspent !== 2000 - spent
+            || budget.mineralUnspentDisposition !== "lost"
+          : spent !== 2000);
+    })
     || evidence?.maximumVespenePerSide !== 200
     || SIDE_KEYS.some((sideKey) => !Number.isFinite(
       evidence?.vespeneSpentBySide?.[sideKey])
