@@ -83,12 +83,20 @@ function verifyShape(cycle) {
     || !Array.isArray(cycle.challenges) || cycle.challenges.length < 1
     || !Array.isArray(cycle.answers)
     || !Array.isArray(cycle.evidenceReceipts)
+    || !object(cycle.roleReceipts)
     || cycle.challengePromptRoute !== ROSTER_TEACH_CHALLENGER_ROUTE
     || cycle.revisionPromptRoute !== ROSTER_TEACH_STUDENT_ROUTE) {
     fail("ROSTER_TEACH_CYCLE_INVALID");
   }
   const sourceHashes = new Set(cycle.sourceHashes.map((value) =>
     hash(value, "ROSTER_TEACH_SOURCE_INVALID")));
+  for (const role of ["challenger", "student"]) {
+    const receipt = cycle.roleReceipts[role];
+    if (receipt !== null && (!object(receipt)
+      || !HASH.test(String(receipt.receiptHash || "")))) {
+      fail("ROSTER_TEACH_ROLE_RECEIPT_INVALID");
+    }
+  }
   if (sourceHashes.size !== cycle.sourceHashes.length
     || sourceHashes.size < 1) fail("ROSTER_TEACH_SOURCE_INVALID");
   const challengeIds = new Set();
@@ -213,6 +221,7 @@ export async function runRosterTeachCycleV1(input = {}) {
       evidenceRefs: [], replanTrigger: "Pending student response",
     })),
     evidenceReceipts: [],
+    roleReceipts: { challenger: null, student: null },
     challengePromptRoute: ROSTER_TEACH_CHALLENGER_ROUTE,
     revisionPromptRoute: ROSTER_TEACH_STUDENT_ROUTE,
     canAffectRules: false, trainingTruth: false,
@@ -250,6 +259,10 @@ export async function runRosterTeachCycleV1(input = {}) {
     sourceHashes, challenges,
     evidenceReceipts,
     answers: clone(studentOutput?.answers || []),
+    roleReceipts: {
+      challenger: clone(challengeOutput?.receipt ?? null),
+      student: clone(studentOutput?.receipt ?? null),
+    },
     challengePromptRoute: ROSTER_TEACH_CHALLENGER_ROUTE,
     revisionPromptRoute: ROSTER_TEACH_STUDENT_ROUTE,
     canAffectRules: false, trainingTruth: false,

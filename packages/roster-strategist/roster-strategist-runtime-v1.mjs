@@ -38,6 +38,8 @@ import {
   verifyRosterPlanRoundTripV1,
 } from "./roster-plan-contracts-v1.mjs";
 import { runRosterTeachCycleV1 } from "./roster-teach-cycle-v1.mjs";
+import { createRosterTeachEvidencePortV1 } from
+  "./roster-teach-evidence-port-v1.mjs";
 
 export const ROSTER_STRATEGIST_RUNTIME_MODULE =
   "packages/roster-strategist/roster-strategist-runtime-v1.mjs";
@@ -1509,12 +1511,13 @@ export function createRosterStrategistRuntimeV1(input = {}) {
 
     // Optional Teach lane: the small plan is challenged and revised before
     // any model/composition/upgrade proposal. Existing three-round callers
-    // keep their frozen behavior until they explicitly provide the two roles
-    // and a read-only evidence port.
+    // keep their frozen behavior until they explicitly provide the two roles;
+    // evidence is always routed through this runtime's frozen laboratory.
     let teachCycle = null;
     if (options.teachPorts) {
       teachCycle = await runRosterTeachCycleV1({
         ...options.teachPorts,
+        evidencePort: createRosterTeachEvidencePortV1(laboratory),
         initialFoundation: foundation,
         sourceHashes: [provenance.provenanceHash,
           route.receipt.receiptHash, enumeration.receiptHash,
@@ -1525,9 +1528,19 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           missionScoringAuthority: clone(missionAuthority),
           skillGuidance: clone(route.projections),
           legalChoiceDenominators: clone(enumeration.denominators),
+          foundationToolReferences: clone(toolReceipts),
           opponentInformationBoundary: boundary,
         },
       });
+      const teachRoleReceipts = [teachCycle.roleReceipts.challenger,
+        teachCycle.roleReceipts.student];
+      if (teachRoleReceipts.some((receipt) =>
+        !object(receipt)
+          || !HASH_PATTERN.test(String(receipt.receiptHash || "")))) {
+        fail("ROSTER_TEACH_ROLE_RECEIPT_REQUIRED");
+      }
+      deliberationReceipts.push(...teachRoleReceipts.map((receipt) =>
+        clone(receipt)));
       const revised = validateFoundation({
         schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
         roundKind: "strategy_foundation",
@@ -1535,14 +1548,23 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       }, { missionAuthorityDerivable });
       const initialNeeds = new Map(foundation.informationNeeds.map((need) =>
         [need.needId, need]));
-      const teachTrace = {
-        roundIndex: 2, roundKind: "teach_challenge_revision",
+      const challengeTrace = {
+        roundIndex: 2, roundKind: "teach_challenge",
         teachCycleHash: teachCycle.cycleHash,
         initialFoundationHash: teachCycle.initialFoundationHash,
-        revisedFoundationHash: teachCycle.revisedFoundationHash,
         challengeCount: teachCycle.challenges.length,
         challengePromptRoute: teachCycle.challengePromptRoute,
+        roleReceiptHash: teachRoleReceipts[0].receiptHash,
+        evidenceReceiptHashes: teachCycle.evidenceReceipts.map((receipt) =>
+          receipt.receiptHash),
+        promptNodeHashes: [], informationNeedOutcomes: [],
+      };
+      const revisionTrace = {
+        roundIndex: 3, roundKind: "teach_revision",
+        teachCycleHash: teachCycle.cycleHash,
+        revisedFoundationHash: teachCycle.revisedFoundationHash,
         revisionPromptRoute: teachCycle.revisionPromptRoute,
+        roleReceiptHash: teachRoleReceipts[1].receiptHash,
         promptNodeHashes: [], informationNeedOutcomes: [],
       };
       for (const need of revised.informationNeeds) {
@@ -1552,10 +1574,10 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           fail("ROSTER_TEACH_INFORMATION_NEED_ID_REUSED", need.needId);
         }
         if (!prior) executeInformationNeed(need, branchByNeedId,
-          toolReceipts, teachTrace);
+          toolReceipts, revisionTrace);
       }
       foundation = revised;
-      trace.push(roundReceipt(teachTrace));
+      trace.push(roundReceipt(challengeTrace), roundReceipt(revisionTrace));
     }
 
     const scoreRoute = createRosterScoreRouteV1(foundation.scoreRoute);
@@ -1574,7 +1596,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     const proposalFeedback = [];
     while (legalProposals.length === 0 && proposalRound < maxProposalRounds) {
       proposalRound += 1;
-      const roundIndex = 1 + Number(Boolean(teachCycle)) + proposalRound;
+      const roundIndex = 1 + 2 * Number(Boolean(teachCycle))
+        + proposalRound;
       const proposalNodes = [
         sealNode("frozen-context", "rules_and_source_frozen", {
           engagementScale, mineralBudget, provenanceHash: provenance.provenanceHash,
@@ -1722,7 +1745,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     }
 
     // ---------------------------------------- final round: comparison
-    const comparisonRoundIndex = 2 + Number(Boolean(teachCycle))
+    const comparisonRoundIndex = 2 + 2 * Number(Boolean(teachCycle))
       + proposalRound;
     const comparisonNodes = [
       sealNode("frozen-context", "rules_and_source_frozen", {
