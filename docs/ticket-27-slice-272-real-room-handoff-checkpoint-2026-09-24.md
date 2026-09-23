@@ -24,7 +24,7 @@ Status: **S272 进行中，Ticket 27 仍 5/6。** 本片关闭了已生成 Roste
 
 首次启动因调用者误传安全连接器外层对象、没有传 `secure.factory`，在任何 Provider 发送前失败；保存的合法锁表草稿原样续用，0 调用/0 费用。纠正后同草稿真实 Flash 依次完成 `strategy_foundation → teach_challenge → teach_revision → preset_plan_deepening`，会话 `rws-7814d0d4-271c-4ddc-8888-511010ae7b3f` 为 `planned`，计划 hash `90d328d9d1dae80fc9a945f3c4d6a70fe4730ad4e3f7c4836a50ca1bedfe03a8`。最终输入和锁定名单完全相等，43 个组件用途均保留，审查 hash 未变，`selectedByAgentDeliberation=false`，隔离实验室源状态变更 0。4 次实际调用，输入 93,410、输出 24,577、合计 117,987 reported units，保守全未命中估算 **¥0.230062**（非账单实扣）；累计本片此前 Provider 0，本次费用低于 ¥100 提醒线。Teach 记录 1 个缺证据答复降未决、1 个目标变化需人工复核，未训练/晋升 Skill。
 
-**High 策略质量发现，阻止把此计划当成可执行的高策略对照：**计划文本在“Round 1”开局段要求 Marines×3、Goliaths×2、Raynor、Medic 同时承担部署/移动任务，`activationOrder` 也列出全部 7 单位的 Movement 激活；而 Rules 的 `createOfficialRoundSupplyStateV1` 对非末回合上桌 Supply 使用 `startingSupply + extraSupplyPerRound × (round−1)`，本任务首轮仅 6。锁定名单各单位 Supply 为 2+2+2+2+2+1+1=12；不能把全表在首轮摆上桌。该文字可能意图跨回合，但没有结构化轮次/上桌子集，玩家或 Bot 无法可靠执行；不能因军表本身合法就宣称开局计划合法。下一修复交付应给计划增加按轮次的部署子集和累计 Supply 校验，并在同一已付草稿/回执基础上作有界显式修订，不从头重复全部 Teach，也不得静默修改模型计划。真实对局 A/B 仍待。
+**High 策略质量发现，阻止把此计划当成可执行的高策略对照：**计划文本在“Round 1”开局段要求 Marines×3、Goliaths×2、Raynor、Medic 同时承担部署/移动任务，`activationOrder` 也列出全部 7 单位的 Movement 激活；而 Rules 的 `createOfficialRoundSupplyStateV1` 对非末回合上桌 Supply 使用 `startingSupply + extraSupplyPerRound × (round−1)`，本任务首轮仅 6。锁定名单各单位 Supply 为 2+2+2+2+2+1+1=12；不能把全表在首轮摆上桌。该文字可能意图跨回合，但没有结构化轮次/上桌子集，玩家或 Bot 无法可靠执行；不能因军表本身合法就宣称开局计划合法。下一修复交付应给计划增加按轮次的部署子集和累计 Supply 校验。当前 `revisePlan` 明确拒绝 planned-preset v2，故“只对已付计划做有界显式修订而不重跑 Foundation/Teach”是尚需新增的能力，不能写成已有恢复入口；不得静默修改模型计划。真实对局 A/B 仍待。
 
 ## 尚未完成的 S272
 
