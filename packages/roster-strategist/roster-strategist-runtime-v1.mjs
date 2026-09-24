@@ -1480,6 +1480,9 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     const branchByNeedId = new Map();
     const deliberationReceipts = [];
     const traceSink = { deliberationReceipts };
+    const mapSummary = typeof laboratory.summarizeMap === "function"
+      ? laboratory.summarizeMap({ queryId: `${sessionId}:foundation-map` })
+      : null;
 
     // ------------------------------------------------ round 1: foundation
     const foundationNodes = [
@@ -1524,6 +1527,12 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           authorityReceiptHash: missionAuthority.receiptHash,
           runtimeNeverFabricatesScoringData: true,
         }),
+      ...(mapSummary ? [sealNode("pregame-map-evidence",
+        "rules_frozen_map_evidence_or_typed_unknown", {
+          receipt: clone(mapSummary),
+          mapHashAloneNeverProvesRouteUnderstanding: true,
+          halfInchGridWitnessIsNotExactMovementLegality: true,
+        })] : []),
       sealNode("response-schema", "platform", {
         schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
         roundKind: "strategy_foundation",
@@ -1567,6 +1576,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           provenanceHash: provenance.provenanceHash,
           enumerationReceiptHash: enumeration.receiptHash,
           skillRouteReceiptHash: route.receipt.receiptHash,
+          ...(mapSummary ? {
+            mapEvidenceReceiptHash: mapSummary.receiptHash } : {}),
           ...(presetLock ? { presetLockHash: presetLock.lockHash } : {}) },
         ...(presetLock ? { promptPack:
           ROSTER_STRATEGIST_PRESET_PROMPT_PACK_V1,
@@ -1583,6 +1594,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       provenanceHash: provenance.provenanceHash,
       enumerationReceiptHash: enumeration.receiptHash,
       skillRouteReceiptHash: route.receipt.receiptHash,
+      ...(mapSummary ? {
+        mapEvidenceReceiptHash: mapSummary.receiptHash } : {}),
       ...(presetLock ? { presetLockHash: presetLock.lockHash } : {}) });
     const foundationWarnings = [];
     activeNarrativeWarnings = foundationWarnings;
@@ -1613,11 +1626,13 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         sourceHashes: [provenance.provenanceHash,
           route.receipt.receiptHash, enumeration.receiptHash,
           missionAuthority.receiptHash,
+          ...(mapSummary ? [mapSummary.receiptHash] : []),
           ...(presetLock ? [presetLock.lockHash] : []),
           ...route.skillRefs.map((ref) => ref.skillHash)],
         sourceContext: {
           engagementScale, mineralBudget,
           missionScoringAuthority: clone(missionAuthority),
+          ...(mapSummary ? { mapEvidence: clone(mapSummary) } : {}),
           skillGuidance: clone(route.projections),
           legalChoiceDenominators: clone(enumeration.denominators),
           foundationToolReferences: clone(toolReceipts),

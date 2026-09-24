@@ -34,6 +34,8 @@ import {
 import {
   createPregameSceneLaboratoryV1,
 } from "../roster-strategist/pregame-scene-laboratory-v1.mjs";
+import { createPregameMapEvidencePortV1 } from
+  "../roster-strategist/pregame-map-evidence-port-v1.mjs";
 import {
   createRosterStrategistRuntimeV1,
 } from "../roster-strategist/roster-strategist-runtime-v1.mjs";
@@ -98,7 +100,13 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
   const authority = createOfficialStandardRoomInitialStateAuthorityV1({
     dataset: source.dataset, snapshot: source.snapshot,
     serverSeatPlan: seatPlan,
-    roomId: ROSTER_PLANNING_WORKSPACE_LAB_ROOM_ID });
+    roomId: ROSTER_PLANNING_WORKSPACE_LAB_ROOM_ID,
+    ...(input.mapConfiguration
+      ? { mapConfiguration: clone(input.mapConfiguration) } : {}),
+  });
+  const mapEvidencePort = createPregameMapEvidencePortV1({
+    sourceState: authority.state,
+  });
   const rulesRuntime = createOfficialCurrentProductMatchRuntimeV1({
     dataset: source.dataset, state: structuredClone(authority.state) });
   const mapTopologyHash = hashStarcraftTmgContract({
@@ -136,6 +144,21 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
         sink.toolReceipts.push(clone(receipt));
         return receipt;
       }])),
+      summarizeMap(query) {
+        const receipt = mapEvidencePort.summarizeMap(query);
+        sink.toolReceipts.push(clone(receipt));
+        return receipt;
+      },
+      routeToObjective(query) {
+        const receipt = mapEvidencePort.routeToObjective(query);
+        sink.toolReceipts.push(clone(receipt));
+        return receipt;
+      },
+      compareObjectiveAccess(query) {
+        const receipt = mapEvidencePort.compareObjectiveAccess(query);
+        sink.toolReceipts.push(clone(receipt));
+        return receipt;
+      },
     });
   }
   function createStrategist({ laboratory }) {
@@ -219,6 +242,9 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     liveRoomTouched: false,
     builderPortDescriptorHash: builderPort.portDescriptor().descriptorHash,
     laboratoryDescriptorHash: laboratoryCore.labDescriptor().descriptorHash,
+    mapEvidenceBinding: clone(mapEvidencePort.mapBinding),
+    mapEvidenceStatus: mapEvidencePort.mapBinding.roomFreezeHash
+      ? "certified_map_bound" : "abstract_fixture_unknown",
     strategyPackReceiptHash: pack.receipt.hash,
     draftStoreLoadedSessions: loaded.loaded,
     draftStoreQuarantined: loaded.quarantined,
@@ -273,6 +299,7 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     descriptor: () => Object.freeze({ ...descriptorBody,
       descriptorHash: hashStarcraftTmgContract(descriptorBody) }),
     service,
+    mapEvidencePort,
     preparePregamePlanForRoom,
     handle: (request) => http.handle(request),
     httpDescriptor: http.httpDescriptor,
