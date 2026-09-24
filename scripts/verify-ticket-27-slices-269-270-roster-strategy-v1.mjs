@@ -2290,6 +2290,33 @@ check(269, underspendError === null
     + "unmet — never as an active final formal success "
     + "(OFFLINE_REPLAY_CLOSES_SEVERE_UNDERSPEND_ACTIVE_CLOSURE)");
 
+// A legal but severely underspent first batch must not end candidate search.
+// The bounded second round can use its Rules verdict and budget shortfall to
+// produce a compliant roster without replaying Foundation or Teach.
+let rescueProposalRounds = 0;
+let rescuedBudgetSession = null;
+let rescuedBudgetError = null;
+try {
+  rescuedBudgetSession = await strategistA.planRoster(sessionInput, {
+    deliberation: createMock({
+      candidate_proposals: () => {
+        rescueProposalRounds += 1;
+        return rescueProposalRounds === 1
+          ? cheapProposalsOutput() : proposalsOutput();
+      },
+    }),
+  });
+} catch (error) {
+  rescuedBudgetError = error;
+}
+check(269, rescuedBudgetError === null
+  && rescueProposalRounds === 2
+  && rescuedBudgetSession?.plan?.planStatus === "active"
+  && rescuedBudgetSession?.plan?.budgetAcceptance?.status === "met"
+  && rescuedBudgetSession?.plan?.budgetAcceptance?.mineralSpent === 1870,
+  "a severe-underspend legal first batch must receive a bounded second "
+    + "proposal round and recover to a formal-budget-compliant active plan");
+
 // Declining a compliant candidate for a severe-underspend one fails closed
 // even with a declared near-cap justification: the floor is not waivable.
 function mixedProposalsOutput() {

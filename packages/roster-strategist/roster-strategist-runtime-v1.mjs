@@ -1805,6 +1805,14 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     let legalProposals = [];
     let proposalRound = 0;
     const proposalFeedback = [];
+    const budgetFeedback = [];
+    const seenCandidateIds = new Set();
+    const meetsFormalBudgetFloor = (entry) => {
+      const spent = entry.verdictOrRejection.summary.mineralSpent;
+      const floor = ROSTER_FORMAL_BUDGET_CONTRACT_V1.mineralUtilizationFloor;
+      return spent * floor.denominator >= mineralBudget * floor.numerator
+        || mineralBudget - spent < nearCapThresholdMinerals;
+    };
     if (presetLock) {
       // There is exactly one already audited candidate. No proposal or
       // selection model call is made, and no substitute list can enter.
@@ -1830,7 +1838,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       });
       evaluated.push(row);
       legalProposals = [row];
-    } else while (legalProposals.length === 0
+    } else while (!legalProposals.some(meetsFormalBudgetFloor)
       && proposalRound < maxProposalRounds) {
       proposalRound += 1;
       const roundIndex = 1 + 2 * Number(Boolean(teachCycle))
@@ -1866,6 +1874,11 @@ export function createRosterStrategistRuntimeV1(input = {}) {
             ROSTER_FORMAL_BUDGET_CONTRACT_V1.toleranceDisplayTextZh,
           toleranceDisplayTextEn:
             ROSTER_FORMAL_BUDGET_CONTRACT_V1.toleranceDisplayTextEn,
+          priorLegalBudgetGaps: clone(budgetFeedback),
+          priorCandidateIds: [...seenCandidateIds],
+          nextRoundGuidance: "Legal but severely underspent candidates remain "
+            + "available as drafts. Propose distinct new candidates that "
+            + "close the displayed shortfall; do not repeat prior IDs.",
         }),
         sealNode("strategy-foundation", "agent_deliberation_public", {
           scoreRoute: foundation.scoreRoute,
@@ -1939,7 +1952,20 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       proposalTrace.narrativeDisplayWarnings = proposalWarnings;
       proposalTrace.outputHash = hashStarcraftTmgContract(proposalOutput);
       proposalFeedback.length = 0;
+      budgetFeedback.length = 0;
       for (const proposal of proposals) {
+        if (seenCandidateIds.has(proposal.candidateId)) {
+          proposalFeedback.push({
+            candidateId: proposal.candidateId,
+            feedbackKind: "duplicate_prior_candidate_id",
+            rulesErrorCode: null,
+            portErrorCode: null,
+            rejectionKind: null,
+            silentRepairAttempted: false,
+          });
+          continue;
+        }
+        seenCandidateIds.add(proposal.candidateId);
         const candidateInput = {
           sideKey, scaleId: engagementScale, mineralBudget, factionRecordKey,
           tacticalCardRecordKeys: proposal.tacticalCardRecordKeys,
@@ -1987,6 +2013,23 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         evaluated.push(row);
         if (legal) {
           legalProposals.push(row);
+          if (!meetsFormalBudgetFloor(row)) {
+            const spent = verdict.summary.mineralSpent;
+            const floor = ROSTER_FORMAL_BUDGET_CONTRACT_V1
+              .mineralUtilizationFloor;
+            budgetFeedback.push({
+              candidateId: proposal.candidateId,
+              feedbackKind: "legal_but_below_product_budget_floor",
+              mineralBudget,
+              mineralSpent: spent,
+              minimumSpendForFloor: Math.ceil(
+                mineralBudget * floor.numerator / floor.denominator),
+              shortfallToFloor: Math.max(0, Math.ceil(
+                mineralBudget * floor.numerator / floor.denominator) - spent),
+              nearCapThresholdMinerals,
+              rulesLegal: true,
+            });
+          }
         } else {
           rejections.push(verdict);
           proposalFeedback.push({
