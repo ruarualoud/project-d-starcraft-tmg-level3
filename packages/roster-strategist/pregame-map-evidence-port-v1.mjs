@@ -161,6 +161,67 @@ export function createPregameMapEvidencePortV1({ sourceState,
     });
   }
 
+  function evaluateRosterRoute(query = {}) {
+    const sideId = String(query.sideId || "");
+    const candidateInput = query.candidateInput;
+    if (!Array.isArray(candidateInput?.units)
+      || candidateInput.units.length === 0
+      || candidateInput.sideKey !== sideId) {
+      throw new TypeError("PREGAME_MAP_ROSTER_CANDIDATE_REQUIRED");
+    }
+    const geometryProfiles = sourceState
+      .officialModelBaseGeometryDataBundle?.profiles || [];
+    const units = candidateInput.units.map((unit) => {
+      const geometry = geometryProfiles.find((profile) =>
+        profile.recordKey === unit.recordKey);
+      const width = geometry?.baseWidthMillimetres;
+      const depth = geometry?.baseDepthMillimetres;
+      const baseId = geometry?.baseShape === "round"
+        ? `round_${width}mm`
+        : geometry?.baseShape === "rectangle"
+          ? `rectangle_${width}x${depth}mm` : null;
+      return { unitInstanceId: unit.unitInstanceId,
+        recordKey: unit.recordKey,
+        compositionKind: unit.compositionKind,
+        baseId: audit?.baseProfileIds.includes(baseId) ? baseId : null,
+        geometrySourceRecordHash: geometry?.sourceRecordHash || null };
+    });
+    const uniqueBases = [...new Set(units.map((unit) => unit.baseId)
+      .filter(Boolean))];
+    const targetIds = audit?.targetIds || [];
+    const accessByBase = uniqueBases.map((baseId) => {
+      const sideAudit = audit.baseProfileAudits
+        .find((row) => row.baseId === baseId)?.sideAudits
+        .find((row) => row.sideId === sideId);
+      return { baseId, targets: targetIds.map((targetId) => {
+        const target = sideAudit?.targetAudits.find((row) =>
+          row.targetId === targetId);
+        return { targetId, reachable: target?.reachable ?? null,
+          failureCode: target?.failureCode || null,
+          approximateRouteLengthInches:
+            target?.witness?.approximateRouteLengthInches ?? null,
+          accessPointId: target?.witness?.accessPointId || null,
+          witnessCoordinate: clone(target?.witness?.coordinate || null) };
+      }) };
+    });
+    const unresolvedUnits = units.filter((unit) => !unit.baseId)
+      .map((unit) => unit.unitInstanceId);
+    return receipt(query.queryId, "evaluate_roster_route", {
+      resultStatus: unknownReason || unresolvedUnits.length
+        ? "unknown" : "certified_base_clearance_audit",
+      unknownReason: unknownReason || (unresolvedUnits.length
+        ? "unit_base_profile_not_audited" : null),
+      sideId,
+      candidateInputHash: hashStarcraftTmgContract(candidateInput),
+      units,
+      accessByBase,
+      unresolvedUnits,
+      formationCoherencyAndEndingFitChecked: false,
+      flyingAndAbilityTransitChecked: false,
+      exactMoveOrDeploymentLegality: false,
+    });
+  }
+
   return Object.freeze({ mapBinding, summarizeMap, routeToObjective,
-    compareObjectiveAccess });
+    compareObjectiveAccess, evaluateRosterRoute });
 }

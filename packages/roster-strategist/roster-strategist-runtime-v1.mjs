@@ -1483,6 +1483,15 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     const mapSummary = typeof laboratory.summarizeMap === "function"
       ? laboratory.summarizeMap({ queryId: `${sessionId}:foundation-map` })
       : null;
+    if (mapSummary) {
+      toolReceipts.push(createRosterToolReceiptReferenceV1({
+        referenceId: "mapref-foundation",
+        receiptKind: "spatial", status: "attached",
+        receiptHash: mapSummary.receiptHash,
+        toolId: "pregame-map-evidence-port-v1",
+        querySummaryText: "Frozen Rules map and mission terrain summary",
+      }));
+    }
 
     // ------------------------------------------------ round 1: foundation
     const foundationNodes = [
@@ -1898,6 +1907,23 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         JSON.stringify(proposalFeedback));
     }
 
+    const candidateMapAccess = typeof laboratory.evaluateRosterRoute === "function"
+      ? legalProposals.map((entry, index) => {
+        const receipt = laboratory.evaluateRosterRoute({
+          queryId: `${sessionId}:candidate-map-${index + 1}`,
+          sideId: sideKey, candidateInput: entry.candidateInput,
+        });
+        toolReceipts.push(createRosterToolReceiptReferenceV1({
+          referenceId: `mapref-candidate-${index + 1}`,
+          receiptKind: "spatial", status: "attached",
+          receiptHash: receipt.receiptHash,
+          toolId: "pregame-map-evidence-port-v1",
+          querySummaryText: `Rules base-clearance access for ${entry.proposal.candidateId}`,
+        }));
+        return { candidateId: entry.proposal.candidateId,
+          receipt: clone(receipt) };
+      }) : [];
+
     // ---------------------------------------- final round: comparison
     const comparisonRoundIndex = 2 + 2 * Number(Boolean(teachCycle))
       + proposalRound;
@@ -1984,6 +2010,12 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         counterResponses: foundation.counterResponses,
         invalidationTriggers: foundation.invalidationTriggers,
       }),
+      ...(candidateMapAccess.length ? [sealNode("candidate-map-access",
+        "rules_frozen_base_clearance_audit_advisory", {
+          candidates: candidateMapAccess,
+          routeWitnessesAreNotExactMovesOrFormationProof: true,
+          unknownAccessMustRemainUnknown: true,
+        })] : []),
       ...(presetLock ? [sealNode("locked-preset-roster",
         "rules_verified_immutable_room_roster", {
           lockHash: presetLock.lockHash,
@@ -2040,6 +2072,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         contextSeed: { sessionId, roundKind: comparisonRoundKind,
           provenanceHash: provenance.provenanceHash,
           candidateHashes: evaluated.map((entry) => entry.candidate.candidateHash),
+          mapAccessReceiptHashes: candidateMapAccess.map((entry) =>
+            entry.receipt.receiptHash),
           ...(presetLock ? { presetLockHash: presetLock.lockHash } : {}) },
         ...(presetLock ? {
           outputContract: PLANNED_PRESET_DEEPENING_OUTPUT_CONTRACT_V1,
@@ -2057,6 +2091,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       sessionId, roundKind: comparisonRoundKind,
       provenanceHash: provenance.provenanceHash,
       candidateHashes: evaluated.map((entry) => entry.candidate.candidateHash),
+      mapAccessReceiptHashes: candidateMapAccess.map((entry) =>
+        entry.receipt.receiptHash),
       ...(presetLock ? { presetLockHash: presetLock.lockHash } : {}) });
     const comparisonWarnings = [];
     activeNarrativeWarnings = comparisonWarnings;

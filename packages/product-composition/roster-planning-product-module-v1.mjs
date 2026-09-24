@@ -159,6 +159,11 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
         sink.toolReceipts.push(clone(receipt));
         return receipt;
       },
+      evaluateRosterRoute(query) {
+        const receipt = mapEvidencePort.evaluateRosterRoute(query);
+        sink.toolReceipts.push(clone(receipt));
+        return receipt;
+      },
     });
   }
   function createStrategist({ laboratory }) {

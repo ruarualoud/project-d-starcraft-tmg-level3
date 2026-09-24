@@ -109,3 +109,15 @@ model-specific movement, a finished 2000-point roster, or a plan-quality
 claim. Remaining: bind selected candidate units to actual base/speed/entry
 routes after composition, review route claims, run fresh full-budget and
 locked-preset live plans on K3's certified pilot map, and compare in play.
+
+The next focused slice binds every Rules-legal candidate Unit's official base
+profile to the same frozen map audit before final candidate comparison. Its
+`evaluate_roster_route` receipt includes per-base, per-marker reachability and
+an approximate route witness. An unrecognized base is `unknown`, not
+impassable. The seven-Unit Standard-2000 fixture resolved `round_32mm`,
+`round_40mm`, and `round_80mm` across nine targets with 0 Provider calls. This
+is **base-clearance evidence only**: flying/ability transit, movement speed,
+round-of-entry, complete formation fit, alternate paths, attack/LoS exposure
+and exact scored arrival remain unresolved. The final roster review cannot
+call this a complete map-aware plan until those missing checks and live
+comparison are attached.
