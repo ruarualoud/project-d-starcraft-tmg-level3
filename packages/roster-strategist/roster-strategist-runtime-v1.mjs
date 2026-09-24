@@ -15,6 +15,10 @@ import {
 } from "./public-output-normalization-v1.mjs";
 import { pruneRosterUndeclaredPublicFieldsV1 } from
   "./public-output-pruning-v1.mjs";
+import { liftSchemaUniqueTopLevelFieldsV1 } from
+  "./roster-repair-output-shape-v1.mjs";
+import { auditRosterPlanVpReceiptsV1 } from
+  "./roster-plan-source-audit-v1.mjs";
 import {
   NARRATIVE_DISPLAY_TARGETS,
   NARRATIVE_TRANSPORT_CEILING,
@@ -54,6 +58,8 @@ import {
   PLANNED_PRESET_DEEPENING_ROUND_KIND,
 } from "./planned-preset-deepening-output-v1.mjs";
 import {
+  PLANNED_PRESET_REPAIR_OUTPUT_CONTRACT_REF_V1,
+  PLANNED_PRESET_REPAIR_OUTPUT_CONTRACT_V1,
   PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_REF_V1,
   PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_V1,
 } from "./planned-preset-revision-output-v1.mjs";
@@ -1308,8 +1314,14 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     // field aliases only. It never invents or fills semantic content; the
     // strict schema/Rules validation below always runs on the normalized
     // output and fails closed on anything the boundary did not admit.
+    const shapeRecovery = roundRequest.responseFormat?.schemaName
+        === PLANNED_PRESET_REPAIR_OUTPUT_CONTRACT_V1.schemaName
+      ? liftSchemaUniqueTopLevelFieldsV1({
+        output: response.output,
+        schema: roundRequest.responseFormat.schema,
+      }) : null;
     const normalization = normalizeRosterStrategistPublicOutputV1({
-      output: response.output,
+      output: shapeRecovery?.output ?? response.output,
       request: {
         roundKind: roundRequest.roundKind,
         schemaVersion: ROSTER_STRATEGIST_DELIBERATION_SCHEMA,
@@ -1322,6 +1334,7 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     });
     return freezeDeep({
       output: pruning.output,
+      outputShapeRecoveryReceipt: clone(shapeRecovery?.receipt ?? null),
       normalizationReceipt: clone(normalization.receipt),
       pruningReceipt: clone(pruning.receipt),
     });
@@ -2249,6 +2262,11 @@ export function createRosterStrategistRuntimeV1(input = {}) {
     const revisedSectionKeys = textList(request.revisedSectionKeys || [], code,
       { allowEmpty: false });
     const presetRevision = plan.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA;
+    const repairRevision = presetRevision
+      && plan.revisions.length > 0;
+    const sourceAudit = repairRevision
+      ? auditRosterPlanVpReceiptsV1({ plan,
+        toolReceipts: request.toolReceipts || [] }) : null;
     let supplyAuthority = null;
     if (presetRevision) {
       verifyPlannedPresetRosterPlanRoundTripV2(plan);
@@ -2260,6 +2278,18 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         || !HASH_PATTERN.test(String(mission?.missionScoringProfileHash || ""))
         || !revisedSectionKeys.includes("deploymentConcept")) {
         fail("ROSTER_STRATEGIST_PRESET_REVISION_SOURCE_INVALID");
+      }
+      if (repairRevision && (!plan.openingDeploymentSchedule
+        || plan.openingDeploymentSchedule.armyAuditResultHash
+          !== audit.resultHash
+        || plan.openingDeploymentSchedule.missionScoringProfileHash
+          !== mission.missionScoringProfileHash)) {
+        fail("ROSTER_STRATEGIST_PRESET_REPAIR_SCHEDULE_INVALID");
+      }
+      if (request.finalPlanReview
+        && (request.finalPlanReview.planHash !== plan.planHash
+          || request.finalPlanReview.review?.planHash !== plan.planHash)) {
+        fail("ROSTER_STRATEGIST_PRESET_REVIEW_BINDING_INVALID");
       }
       supplyAuthority = {
         armyAuditResultHash: audit.resultHash,
@@ -2288,6 +2318,22 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         publicSummaryText: plan.publicSummaryText }),
       sealNode("revision-request", "agent_deliberation_public", {
         reasonText, triggerIds, revisedSectionKeys }),
+      ...(repairRevision ? [sealNode("locked-arrival-schedule",
+        "rules_checked_immutable_schedule", {
+          schedule: clone(plan.openingDeploymentSchedule),
+          scheduleMustRemainUnchanged: true,
+        }), sealNode("component-purposes",
+        "current_plan_public", {
+          purposes: clone(plan.componentPurposes),
+        }), sealNode("math-source-audit",
+        "read_only_receipt_evidence", {
+          audit: clone(sourceAudit),
+        }), ...(request.finalPlanReview ? [sealNode("final-plan-review",
+          "advisory_cited_challenges", {
+            reviewHash: request.finalPlanReview.review.reviewHash,
+            findings: clone(request.finalPlanReview.review.findings),
+            modelReviewDoesNotOverrideRules: true,
+          })] : [])] : []),
       ...(supplyAuthority ? [sealNode("round-supply-authority",
         "rules_owned_army_and_mission_audits", supplyAuthority)] : []),
       sealNode("response-schema", "platform", {
@@ -2295,11 +2341,15 @@ export function createRosterStrategistRuntimeV1(input = {}) {
         roundKind: "revision",
         fields: ["publicSummaryText", "revisedScoreRoute",
           "revisedDeploymentConcept",
-          ...(presetRevision ? ["openingDeploymentSchedule"] : [])],
+          ...(presetRevision && !repairRevision
+            ? ["openingDeploymentSchedule"] : []),
+          ...(repairRevision ? ["componentPurposeRevisions"] : [])],
         publicFieldsOnly: true,
         envelopeAtTopLevelNoChannelsWrapper: true,
-        outputSchemaName: presetRevision
-          ? PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_V1.schemaName
+        outputSchemaName: repairRevision
+          ? PLANNED_PRESET_REPAIR_OUTPUT_CONTRACT_V1.schemaName
+          : presetRevision
+            ? PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_V1.schemaName
           : rosterStrategistRoundOutputContractV1("revision").schemaName,
         strictProviderJsonSchemaEnforced: true }),
     ];
@@ -2308,8 +2358,22 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       buildRoundRequest({
         sessionId: `${plan.planId}-revision-${plan.planVersion + 1}`,
         roundIndex: plan.planVersion + 1, roundKind: "revision", nodes,
-        userMessage: presetRevision
-          ? "Revise the immutable roster's public deployment plan for the "
+        userMessage: repairRevision
+          ? "Repair the already scheduled immutable roster plan in light "
+            + "of the cited final-plan review. Keep every Unit, upgrade, "
+            + "card and first-arrival round unchanged. Correct timing and "
+            + "scoring assumptions consistently across score route, "
+            + "deployment, summary and any affected component purposes. "
+            + "Publish componentPurposeRevisions only for existing component "
+            + "kind/instance IDs, with exact identities from the supplied "
+            + "plan. The review is advisory; Rules and verified arrival "
+            + "facts are authoritative. Any math receipt marked stale for "
+            + "the current VP schedule must not be cited as validation; "
+            + "remove its old proof claim or state that it is obsolete. "
+            + "Do not claim unproven path or "
+            + "position legality. Public reasons only, no hidden reasoning."
+          : presetRevision
+            ? "Revise the immutable roster's public deployment plan for the "
             + "Rules-owned per-round Supply capacities. List every locked "
             + "Unit exactly once in openingDeploymentSchedule with the first "
             + "round it enters and a public strategic reason. All Units begin "
@@ -2321,13 +2385,22 @@ export function createRosterStrategistRuntimeV1(input = {}) {
             + "revision triggers. Public fields only.",
         contextSeed: { planHash: plan.planHash, roundKind: "revision",
           revisedSectionKeys,
+          ...(repairRevision ? { lockedScheduleHash:
+            plan.openingDeploymentSchedule.scheduleHash,
+            mathSourceAuditHash: sourceAudit.auditHash,
+            finalPlanReviewHash:
+              request.finalPlanReview?.review.reviewHash || null } : {}),
           ...(supplyAuthority ? { armyAuditResultHash:
             supplyAuthority.armyAuditResultHash,
             missionScoringProfileHash:
               supplyAuthority.missionScoringProfileHash } : {}) },
         ...(presetRevision ? {
-          outputContract: PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_V1,
-          outputContractRef: PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_REF_V1,
+          outputContract: repairRevision
+            ? PLANNED_PRESET_REPAIR_OUTPUT_CONTRACT_V1
+            : PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_V1,
+          outputContractRef: repairRevision
+            ? PLANNED_PRESET_REPAIR_OUTPUT_CONTRACT_REF_V1
+            : PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_REF_V1,
           promptPack: ROSTER_STRATEGIST_PRESET_PROMPT_PACK_V1,
           decisionCandidateSource:
             "rules_verified_immutable_room_roster_only",
@@ -2341,14 +2414,34 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       validateEnvelope(output, "revision");
       exactKeys(output, ["schemaVersion", "roundKind", "publicSummaryText",
         "revisedScoreRoute", "revisedDeploymentConcept",
-        ...(presetRevision ? ["openingDeploymentSchedule"] : [])], code);
+        ...(presetRevision && !repairRevision
+          ? ["openingDeploymentSchedule"] : []),
+        ...(repairRevision ? ["componentPurposeRevisions"] : [])], code);
       const openingDeploymentSchedule = presetRevision
-        ? createPlannedPresetRoundSupplyScheduleV1({
-          proposedEntries: output.openingDeploymentSchedule,
-          rosterCandidate: plan.rosterCandidate,
-          armyAudit: request.armyAudit,
-          missionProfile: request.missionProfile,
-        }) : null;
+        ? repairRevision ? plan.openingDeploymentSchedule
+          : createPlannedPresetRoundSupplyScheduleV1({
+            proposedEntries: output.openingDeploymentSchedule,
+            rosterCandidate: plan.rosterCandidate,
+            armyAudit: request.armyAudit,
+            missionProfile: request.missionProfile,
+          }) : null;
+      const purposeChanges = new Map();
+      if (repairRevision) {
+        const existing = new Set(plan.componentPurposes.map((entry) => (
+          `${entry.componentKind}:${entry.instanceId}`)));
+        for (const entry of output.componentPurposeRevisions) {
+          const key = `${entry.componentKind}:${entry.instanceId}`;
+          if (!existing.has(key) || purposeChanges.has(key)) {
+            fail("ROSTER_STRATEGIST_PURPOSE_REPAIR_TARGET_INVALID");
+          }
+          purposeChanges.set(key, narrative(entry.publicPurposeText, code,
+            { path: `componentPurposeRevisions.${key}` }));
+        }
+        if (purposeChanges.size > 0
+          && !revisedSectionKeys.includes("componentPurposes")) {
+          fail("ROSTER_STRATEGIST_PURPOSE_REPAIR_SCOPE_INVALID");
+        }
+      }
       const revision = createRosterPlanRevisionEventV1({
         revisionId: `${plan.planId}-revision-${plan.planVersion + 1}`,
         planId: plan.planId,
@@ -2371,7 +2464,14 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           ? createRosterScoreRouteV1(validateScoreRoute(output.revisedScoreRoute, code))
           : plan.scoreRoute,
         lossResourceBudget: plan.lossResourceBudget,
-        componentPurposes: plan.componentPurposes,
+        componentPurposes: purposeChanges.size > 0
+          ? plan.componentPurposes.map((entry) => {
+            const replacement = purposeChanges.get(
+              `${entry.componentKind}:${entry.instanceId}`);
+            return replacement
+              ? createRosterComponentPurposeV1({ ...entry,
+                publicPurposeText: replacement }) : entry;
+          }) : plan.componentPurposes,
         deploymentConcept: revisedSectionKeys.includes("deploymentConcept")
           && object(output.revisedDeploymentConcept)
           ? createRosterDeploymentConceptV1({
@@ -2423,6 +2523,8 @@ export function createRosterStrategistRuntimeV1(input = {}) {
       narrativeDisplayWarnings: revisionWarnings,
       outputNormalizationReceipt:
         clone(revisionDeliberation.normalizationReceipt),
+      outputShapeRecoveryReceipt:
+        clone(revisionDeliberation.outputShapeRecoveryReceipt),
       deliberationReceipts: sink.deliberationReceipts.map((entry) => clone(entry)),
     });
   }

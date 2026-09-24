@@ -28,44 +28,72 @@ function strings(value) {
 
 function unique(value) { return [...new Set(strings(value))]; }
 
-function verifiedPlan(plan, receipt) {
-  let revisionEvent = null;
+function verifiedPlan(plan, receipt, priorPlans = []) {
   if (plan?.schema === ROSTER_PLAN_SCHEMA) {
     verifyRosterPlanV1(plan);
     if (plan.planStatus === "no_pregame_plan" || plan.presetRoster !== false) {
       fail("ROSTER_TURN_PLAN_NO_PREGAME_PLAN");
     }
     verifyRosterStrategistSessionReceiptV1(receipt);
-    if (receipt.planHash !== plan.planHash) {
-      // The current workspace retains one public revision event, not a
-      // multi-hop plan snapshot chain. Admit that exact one-hop case only.
-      revisionEvent = plan.revisions?.length === 1
-        ? plan.revisions[0] : null;
-      if (plan.planStatus !== "revised" || !revisionEvent
-        || revisionEvent.planId !== plan.planId
-        || revisionEvent.previousPlanHash !== receipt.planHash
-        || revisionEvent.fromPlanVersion + 1 !== plan.planVersion
-        || revisionEvent.toPlanVersion !== plan.planVersion) {
-        fail("ROSTER_TURN_PLAN_REVISION_LINEAGE_MISSING");
-      }
-    }
   } else if (plan?.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA) {
     verifyPlannedPresetRosterPlanV2(plan);
     verifyRosterStrategistPresetSessionReceiptV1(receipt);
-    if (receipt.planHash !== plan.planHash) {
-      revisionEvent = plan.revisions?.length === 1
-        ? plan.revisions[0] : null;
-      if (plan.planStatus !== "revised" || !revisionEvent
-        || revisionEvent.planId !== plan.planId
-        || revisionEvent.previousPlanHash !== receipt.planHash
-        || revisionEvent.fromPlanVersion + 1 !== plan.planVersion
-        || revisionEvent.toPlanVersion !== plan.planVersion
-        || !plan.openingDeploymentSchedule) {
-        fail("ROSTER_TURN_PLAN_REVISION_LINEAGE_MISSING");
-      }
-    }
   } else {
     fail("ROSTER_TURN_PLAN_SCHEMA_UNSUPPORTED");
+  }
+  let revisionEvent = null;
+  if (receipt.planHash !== plan.planHash) {
+    const revisions = plan.revisions || [];
+    if (plan.planStatus !== "revised" || revisions.length < 1
+      || !Array.isArray(priorPlans)
+      || (plan.presetRoster && !plan.openingDeploymentSchedule)) {
+      fail("ROSTER_TURN_PLAN_REVISION_LINEAGE_MISSING");
+    }
+    let previousHash = receipt.planHash;
+    let previousVersion = revisions[0].fromPlanVersion;
+    for (const [index, event] of revisions.entries()) {
+      if (event.planId !== plan.planId
+        || event.previousPlanHash !== previousHash
+        || event.fromPlanVersion !== previousVersion
+        || event.toPlanVersion !== previousVersion + 1) {
+        fail("ROSTER_TURN_PLAN_REVISION_LINEAGE_MISSING");
+      }
+      if (index < revisions.length - 1) {
+        const matching = priorPlans.filter((entry) => (
+          entry?.planVersion === event.toPlanVersion));
+        if (matching.length !== 1) {
+          fail("ROSTER_TURN_PLAN_REVISION_SNAPSHOT_MISSING");
+        }
+        const snapshot = matching[0];
+        if (snapshot.schema === ROSTER_PLAN_SCHEMA) {
+          verifyRosterPlanV1(snapshot);
+        } else if (snapshot.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA) {
+          verifyPlannedPresetRosterPlanV2(snapshot);
+        } else {
+          fail("ROSTER_TURN_PLAN_REVISION_SNAPSHOT_INVALID");
+        }
+        if (snapshot.schema !== plan.schema
+          || snapshot.planId !== plan.planId
+          || snapshot.planStatus !== "revised"
+          || snapshot.rosterCandidate.candidateHash
+            !== plan.rosterCandidate.candidateHash
+          || snapshot.provenance.provenanceHash
+            !== plan.provenance.provenanceHash
+          || snapshot.revisions.length !== index + 1
+          || snapshot.revisions.some((prior, priorIndex) => (
+            prior.revisionHash !== revisions[priorIndex].revisionHash))
+          || (plan.presetRoster
+            && snapshot.openingDeploymentSchedule?.scheduleHash
+              !== plan.openingDeploymentSchedule.scheduleHash)) {
+          fail("ROSTER_TURN_PLAN_REVISION_SNAPSHOT_INVALID");
+        }
+        previousHash = snapshot.planHash;
+      } else if (event.toPlanVersion !== plan.planVersion) {
+        fail("ROSTER_TURN_PLAN_REVISION_LINEAGE_MISSING");
+      }
+      previousVersion = event.toPlanVersion;
+    }
+    revisionEvent = revisions[revisions.length - 1];
   }
   if (receipt.planId !== plan.planId
     || (revisionEvent === null && (receipt.planHash !== plan.planHash
@@ -103,7 +131,8 @@ export function verifyStarcraftTmgRosterTurnPlanOriginV1(origin) {
 export function createStarcraftTmgRosterTurnPlanSeedV1(input = {}) {
   const { rosterPlan: plan, sessionReceipt: receipt, roomProjection,
     scope } = input;
-  const revisionEvent = verifiedPlan(plan, receipt);
+  const revisionEvent = verifiedPlan(plan, receipt,
+    input.priorPlans || []);
   const state = roomProjection?.state;
   const ownAudit = state?.armyCompositionUpgradeAuditsBySide?.[scope?.seatKey];
   const binding = plan.provenance?.missionBinding;

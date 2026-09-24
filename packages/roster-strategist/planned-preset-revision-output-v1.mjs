@@ -62,3 +62,50 @@ assertStarcraftTmgOutputContractV1(
 export const PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_REF_V1 =
   outputContractRefStarcraftTmgV1(
     PLANNED_PRESET_REVISION_OUTPUT_CONTRACT_V1);
+
+// A later repair does not ask the model to choose the already Rules-checked
+// arrival schedule again. It may revise public strategy and named component
+// purposes while the host preserves the immutable roster and schedule.
+const repairSchema = structuredClone(rosterStrategistRoundOutputContractV1(
+  "revision").providerSchema);
+repairSchema.properties.componentPurposeRevisions = {
+  type: "array", minItems: 0, maxItems: 128,
+  items: {
+    type: "object", additionalProperties: false,
+    properties: {
+      componentKind: { type: "string", minLength: 4, maxLength: 13,
+        enum: ["faction_card", "tactical_card", "unit", "composition",
+          "upgrade"] },
+      instanceId: { type: "string", minLength: 1, maxLength: 256 },
+      publicPurposeText: { type: "string", minLength: 1,
+        maxLength: 65536 },
+    },
+    required: ["componentKind", "instanceId", "publicPurposeText"],
+  },
+};
+repairSchema.required = [...repairSchema.required,
+  "componentPurposeRevisions"];
+repairSchema.description = "Repair public strategy in an already revised "
+  + "locked roster plan. The Rules-owned arrival schedule is immutable and "
+  + "does not appear in this model output.";
+
+export const PLANNED_PRESET_REPAIR_OUTPUT_CONTRACT_V1 =
+  createStarcraftTmgOutputContractV1({
+    id: "ticket27.planned_preset.repair.v1",
+    version: "1.0.0",
+    schemaName: "roster_preset_plan_repair_v1",
+    providerSchema: repairSchema,
+    modelOwnedFields: Object.keys(repairSchema.properties),
+    hostOwnedFields: [],
+    mapperRef: ref("repair_public_output"),
+    semanticValidatorRef: ref("validate_preset_repair"),
+    description: "Public plan-only repair with host-locked roster and "
+      + "arrival schedule; model may replace named component prose only.",
+  });
+
+assertStarcraftTmgOutputContractV1(
+  PLANNED_PRESET_REPAIR_OUTPUT_CONTRACT_V1);
+
+export const PLANNED_PRESET_REPAIR_OUTPUT_CONTRACT_REF_V1 =
+  outputContractRefStarcraftTmgV1(
+    PLANNED_PRESET_REPAIR_OUTPUT_CONTRACT_V1);

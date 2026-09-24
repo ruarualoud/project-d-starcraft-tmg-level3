@@ -578,6 +578,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     const seed = createStarcraftTmgRosterTurnPlanSeedV1({
       rosterPlan: input.rosterPlan,
       sessionReceipt: input.rosterSessionReceipt,
+      priorPlans: input.rosterPriorPlans || [],
       roomProjection: input.roomProjection,
       scope: state.scope,
     });

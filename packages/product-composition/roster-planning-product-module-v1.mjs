@@ -243,6 +243,7 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     const session = service.readSession(sessionId);
     if (session.status !== "planned" || session.planEvidenceStale
       || session.planReviewBlockingHighFindings === true
+      || session.planReviewRequiredForHandoff === true
       || !session.plan || !session.evidence?.sessionReceipt
       || session.working?.verdictSummary?.status !== "legal") {
       throw new TypeError("ROSTER_PLAN_ROOM_HANDOFF_PLAN_UNAVAILABLE");
@@ -254,12 +255,14 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     const seed = createStarcraftTmgRosterTurnPlanSeedV1({
       rosterPlan: session.plan,
       sessionReceipt: session.evidence.sessionReceipt,
+      priorPlans: session.planVersionHistory,
       roomProjection: roomRead.projection,
       scope,
     });
     return Object.freeze({
       plan: clone(session.plan),
       sessionReceipt: clone(session.evidence.sessionReceipt),
+      priorPlans: clone(session.planVersionHistory),
       originHash: seed.origin.originHash,
       roomStateRevision: seed.origin.openedAtStateRevision,
       trainingTruth: false,

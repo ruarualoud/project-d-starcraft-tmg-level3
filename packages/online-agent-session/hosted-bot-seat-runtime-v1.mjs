@@ -1192,6 +1192,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
           command: "open_roster_plan",
           rosterPlan: pregameRosterPlan.plan,
           rosterSessionReceipt: pregameRosterPlan.sessionReceipt,
+          rosterPriorPlans: pregameRosterPlan.priorPlans || [],
         });
       }
     } catch (error) {

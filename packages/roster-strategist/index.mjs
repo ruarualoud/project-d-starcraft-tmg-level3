@@ -8,6 +8,7 @@ export * from "./roster-teach-evidence-port-v1.mjs";
 export * from "./roster-teach-output-contracts-v1.mjs";
 export * from "./roster-teach-role-ports-v1.mjs";
 export * from "./roster-final-plan-review-v1.mjs";
+export * from "./roster-repair-output-shape-v1.mjs";
 export * from "./army-builder-query-port-v1.mjs";
 export * from "./pregame-scene-laboratory-v1.mjs";
 export * from "./public-output-normalization-v1.mjs";

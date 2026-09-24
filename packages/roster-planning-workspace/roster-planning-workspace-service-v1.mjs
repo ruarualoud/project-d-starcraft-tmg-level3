@@ -42,6 +42,8 @@ import { createRosterTeachRolePortsV1 } from
   "../roster-strategist/roster-teach-role-ports-v1.mjs";
 import { reviewRosterFinalPlanV1 } from
   "../roster-strategist/roster-final-plan-review-v1.mjs";
+import { ROSTER_PLAN_SOURCE_AUDIT_VERSION } from
+  "../roster-strategist/roster-plan-source-audit-v1.mjs";
 import { ROSTER_STRATEGIST_PROMPT_PACK_V1 } from
   "../roster-strategist/roster-strategist-runtime-v1.mjs";
 import { ROSTER_PLANNING_SESSION_SCHEMA } from
@@ -61,6 +63,7 @@ export const ROSTER_WORKSPACE_OPPONENT_INFORMATION_BOUNDARIES = Object.freeze([
 export const ROSTER_WORKSPACE_REVISABLE_SECTION_KEYS = Object.freeze([
   "scoreRoute",
   "deploymentConcept",
+  "componentPurposes",
   "publicSummaryText",
 ]);
 
@@ -468,6 +471,14 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       entry?.status === "completed" && entry.planHash === plan?.planHash
         && entry.review?.findings.some((finding) => (
           finding.severity === "high")) === true));
+    const priorHighFindings = [session.planReview,
+      ...(session.planReviewHistory || [])].some((entry) => (
+      entry?.status === "completed"
+        && entry.review?.findings.some((finding) => (
+          finding.severity === "high")) === true));
+    const currentReviewClean = session.planReview?.status === "completed"
+      && session.planReview.planHash === plan?.planHash
+      && !blockingHighFindings;
     return {
       schema: ROSTER_WORKSPACE_SESSION_PROJECTION_SCHEMA,
       sessionId: session.sessionId,
@@ -486,6 +497,10 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       fixture: clone(fixture),
       progress: clone(session.progress),
       plan: plan ? clone(plan) : null,
+      planVersionHistory: (session.planVersionHistory || []).map((entry) => (
+        clone(parseWorkspacePlan(entry)))),
+      revisionOutputShapeReceipts:
+        clone(session.revisionOutputShapeReceipts || []),
       planReview: session.planReview ? {
         ...clone(session.planReview),
         stale: session.planReview.planHash !== plan?.planHash
@@ -494,6 +509,8 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       } : null,
       planReviewHistory: clone(session.planReviewHistory || []),
       planReviewBlockingHighFindings: blockingHighFindings,
+      planReviewRequiredForHandoff: priorHighFindings
+        && !currentReviewClean,
       candidates: session.candidates.map((entry, index) => ({
         candidate: clone(entry),
         candidateInput: clone(session.candidateInputs[index] || null),
@@ -615,6 +632,8 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       status: "draft",
       progress: { phase: "idle", rounds: [], activeRoundKind: null },
       planSerialized: null,
+      planVersionHistory: [],
+      revisionOutputShapeReceipts: [],
       planReview: null,
       planReviewHistory: [],
       generatedPlanHash: null,
@@ -1221,6 +1240,8 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     }
     if (session.planReview?.status === "completed"
       && session.planReview.planHash === plan.planHash
+      && session.planReview.review?.evidenceAuditVersion
+        === ROSTER_PLAN_SOURCE_AUDIT_VERSION
       && request.fresh !== true) return projectSession(session);
     const retained = request.fresh !== true
       && session.planReview?.planHash === plan.planHash
@@ -1232,7 +1253,11 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       wsFail("ROSTER_WORKSPACE_DELIBERATION_UNAVAILABLE",
         "no_live_deliberation_factory_attached", 503);
     }
-    if (request.fresh === true && session.planReview?.status === "completed") {
+    if (session.planReview?.status === "completed"
+      && (request.fresh === true
+        || session.planReview.planHash !== plan.planHash
+        || session.planReview.review?.evidenceAuditVersion
+          !== ROSTER_PLAN_SOURCE_AUDIT_VERSION)) {
       session.planReviewHistory ||= [];
       session.planReviewHistory.push(clone(session.planReview));
     }
@@ -1261,7 +1286,8 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
             sessionId: session.sessionId, runKind: "final-plan-review",
             control, onEvent });
         const review = await reviewRosterFinalPlanV1({ plan,
-          deliberation, sessionId: session.sessionId });
+          deliberation, sessionId: session.sessionId,
+          toolReceipts: session.toolReceipts });
         if (session.cancelRequested) {
           wsFail("ROSTER_WORKSPACE_CANCELLED", "final_plan_review", 409);
         }
@@ -1289,7 +1315,8 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     if (activeRun) {
       wsFail("ROSTER_WORKSPACE_PLANNING_BUSY", activeRun.sessionId, 409);
     }
-    if (session.status !== "planned" || !session.planSerialized) {
+    if (!["planned", "failed", "cancelled"].includes(session.status)
+      || !session.planSerialized) {
       wsFail("ROSTER_WORKSPACE_NOT_PLANNED", sessionId, 409);
     }
     const reasonText = nonEmpty(request.reasonText,
@@ -1308,14 +1335,15 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
     let missionProfile = null;
     if (presetRevision) {
       if (!session.lockedRoster
-        || plan.revisions.length !== 0
+        || (plan.revisions.length > 0
+          && !plan.openingDeploymentSchedule)
         || !revisedSectionKeys.includes("deploymentConcept")
         || session.lockedRoster.baselinePlan.planHash
           !== plan.presetBinding.baselinePlanHash
         || session.lockedRoster.lock.verdict.auditResultHash
           !== plan.presetBinding.armyAuditResultHash) {
         wsFail("ROSTER_WORKSPACE_LOCKED_PLAN_REVISION_INVALID",
-          "single_supply_scoped_revision_requires_original_locked_list", 409);
+          "revision_requires_same_locked_list_and_schedule", 409);
       }
       const authority = laboratoryCore.missionScoringAuthority();
       missionProfile = authority.resultStatus === "derivable"
@@ -1329,7 +1357,12 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
       wsFail("ROSTER_WORKSPACE_REPLAN_REQUIRED_AFTER_ROSTER_EDIT",
         "prose_only_revision_cannot_rebind_changed_roster", 409);
     }
-    if (!deliberationFactory) {
+    const retainedRevision = request.fresh !== true
+      ? (session.publicOutputs || []).filter((entry) => (
+        entry.roundKind === "revision"
+          && Number(entry.roundIndex) === plan.planVersion + 1
+          && object(entry.sanitizedOutput))).slice(-1) : [];
+    if (retainedRevision.length === 0 && !deliberationFactory) {
       wsFail("ROSTER_WORKSPACE_DELIBERATION_UNAVAILABLE",
         "no_live_deliberation_factory_attached", 503);
     }
@@ -1376,9 +1409,14 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
             await persist(session).catch(() => {});
           }
         };
-        const deliberation = await deliberationFactory.createForRun({
-          sessionId: session.sessionId, runKind: "revision", control,
-          onEvent });
+        const deliberation = retainedRevision.length > 0
+          ? createRetainedReplayDeliberationPortV1({
+            retainedOutputs: retainedRevision, onEvent,
+            modelVersion: session.deliberationDescriptor?.modelVersion
+              || "retained-replay" })
+          : await deliberationFactory.createForRun({
+            sessionId: session.sessionId, runKind: "revision", control,
+            onEvent });
         const result = await strategist.reviseRosterPlan({
           plan,
           reasonText,
@@ -1388,8 +1426,19 @@ export function createRosterPlanningWorkspaceServiceV1(input = {}) {
             baselinePlan: session.lockedRoster.baselinePlan,
             armyAudit: session.lockedRoster.lock.verdict.audit,
             missionProfile,
+            toolReceipts: session.toolReceipts,
+            ...(session.planReview?.status === "completed"
+              && session.planReview.planHash === plan.planHash
+              ? { finalPlanReview: session.planReview } : {}),
           } : {}),
         }, { deliberation });
+        session.planVersionHistory ||= [];
+        session.planVersionHistory.push(session.planSerialized);
+        if (result.outputShapeRecoveryReceipt) {
+          session.revisionOutputShapeReceipts ||= [];
+          session.revisionOutputShapeReceipts.push(
+            clone(result.outputShapeRecoveryReceipt));
+        }
         session.planSerialized = serializeWorkspacePlan(result.plan);
         session.planEvidenceStale = !workingMatchesPlan(session, result.plan);
         session.status = "planned";

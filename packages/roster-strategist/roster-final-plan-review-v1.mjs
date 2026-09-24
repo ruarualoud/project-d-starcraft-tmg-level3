@@ -8,6 +8,9 @@ import {
   validateStarcraftTmgProviderJsonSchemaValueV1,
 } from "../structured-generation/output-contract-registry-v1.mjs";
 import { verifyRosterPlanV1 } from "./roster-plan-contracts-v1.mjs";
+import { auditRosterPlanVpReceiptsV1,
+  ROSTER_PLAN_SOURCE_AUDIT_VERSION } from
+  "./roster-plan-source-audit-v1.mjs";
 import {
   PLANNED_PRESET_ROSTER_PLAN_SCHEMA,
   verifyPlannedPresetRosterPlanV2,
@@ -16,7 +19,7 @@ import {
 export const ROSTER_FINAL_PLAN_REVIEW_SCHEMA =
   "starcraft_tmg_roster_final_plan_review_v1";
 export const ROSTER_FINAL_PLAN_REVIEW_PROMPT_PACK =
-  "ticket27.roster_final_plan_review.v1";
+  "ticket27.roster_final_plan_review.v2";
 
 const choice = (values) => ({ type: "string", enum: values,
   minLength: Math.min(...values.map((value) => value.length)),
@@ -78,7 +81,7 @@ function reviewSources(plan) {
 }
 
 export async function reviewRosterFinalPlanV1({ plan, deliberation,
-  sessionId } = {}) {
+  sessionId, toolReceipts = [] } = {}) {
   if (plan?.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA) {
     verifyPlannedPresetRosterPlanV2(plan);
   } else {
@@ -91,6 +94,7 @@ export async function reviewRosterFinalPlanV1({ plan, deliberation,
   }
   const sources = reviewSources(plan);
   const schedule = plan.openingDeploymentSchedule || null;
+  const sourceAudit = auditRosterPlanVpReceiptsV1({ plan, toolReceipts });
   const sourceFacts = {
     planHash: plan.planHash,
     candidateHash: plan.rosterCandidate.candidateHash,
@@ -105,6 +109,9 @@ export async function reviewRosterFinalPlanV1({ plan, deliberation,
       placementAndPathVerified: schedule.placementAndPathVerified,
     } : null,
     targetVpSchedule: plan.scoreRoute?.targetVpSchedule ?? null,
+    citedMathReceipts: sourceAudit.citedMathReceipts,
+    staleMathCitationHashes: sourceAudit.staleCitationHashes,
+    misappliedMathCitationHashes: sourceAudit.misappliedCitationHashes,
     sourceScoringIsNotProofOfMarkerControl: true,
     noDeploymentPositionOrPathProof: true,
   };
@@ -129,6 +136,9 @@ export async function reviewRosterFinalPlanV1({ plan, deliberation,
       + "verified firstArrivalRound. A unit still in Reserves cannot be "
       + "lost on-table, react, heal, contest, attack or screen. Also check "
       + "whether each claimed scoring-round route names an available unit. "
+      + "For each cited arithmetic receipt, compare its original VP rows "
+      + "with the CURRENT target VP schedule. A stale receipt cannot "
+      + "validate a revised schedule, even if its old deltas were zero. "
       + "Do not flag a correct timing statement, a clearly conditional "
       + "target position, or geometry already labeled unverified merely "
       + "to ask for clarification. Quote an exact substring from one named "
@@ -159,10 +169,22 @@ export async function reviewRosterFinalPlanV1({ plan, deliberation,
     }
     cited.push(structuredClone(finding));
   }
+  for (const receiptHash of sourceAudit.misappliedCitationHashes) {
+    cited.push({ claimPath: "scoreRoute.routeText",
+      claimQuote: receiptHash,
+      category: "unsupported_claim", severity: "high",
+      publicReason: "This cited arithmetic receipt was calculated for "
+        + "different VP targets and cannot validate the current target "
+        + "schedule. Arithmetic never proves marker control.",
+      correctionQuestion: "Remove the stale validation claim or obtain "
+        + "a new receipt for the current target schedule." });
+  }
   const body = { schema: ROSTER_FINAL_PLAN_REVIEW_SCHEMA,
     sessionId, planHash: plan.planHash, contextHash,
     reviewerReceipt: structuredClone(result.receipt ?? null),
     findings: cited, discardedUncitedFindings,
+    evidenceAuditVersion: ROSTER_PLAN_SOURCE_AUDIT_VERSION,
+    sourceAudit,
     publicSummary: output.publicSummary,
     reviewIsAdvisory: true, planMutation: false, trainingTruth: false };
   return Object.freeze({ ...body,
