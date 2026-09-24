@@ -5,6 +5,8 @@ import { resolveStarcraftTmgEffectiveActingSideV1 } from
 import { createStarcraftTmgRosterTurnPlanSeedV1,
   verifyStarcraftTmgRosterTurnPlanOriginV1 } from
   "./roster-plan-turn-plan-bridge-v1.mjs";
+import { verifyPlannedPresetRoundSupplyScheduleV1 } from
+  "../roster-strategist/planned-preset-roster-plan-v2.mjs";
 
 export const STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION =
   "starcraft_tmg_turn_plan_runtime_v1";
@@ -259,6 +261,26 @@ function normalizeFutureActionPlans(value) {
   });
 }
 
+function verifiedPregameRosterArrivalSchedule(value, origin) {
+  if (value === undefined || value === null) return null;
+  if (!object(value) || !object(origin)
+    || origin.rosterMode !== "planned_preset"
+    || value.armyAuditResultHash !== origin.rulesAuditResultHash) {
+    throw new TypeError("pregame roster arrival schedule origin is invalid");
+  }
+  // At first opening the bridge checks this schedule against the current
+  // Room's Rules audit. On journal restoration, recheck its sealed internal
+  // Supply calculation and immutable audit binding without inventing a new
+  // source roster or treating the schedule as current LegalSpace.
+  verifyPlannedPresetRoundSupplyScheduleV1(value, {
+    candidateHash: value.candidateHash,
+    legalityReceipt: { auditResultHash: origin.rulesAuditResultHash },
+    units: value.entries?.map((entry) => ({
+      unitInstanceId: entry.unitInstanceId })) || [],
+  });
+  return clone(value);
+}
+
 function planSpec(input) {
   const objective = required(input.objective, "plan.objective");
   return {
@@ -301,6 +323,9 @@ function planRecord(plan) {
     initiativePolicy: plan.initiativePolicy,
     reservePolicy: plan.reservePolicy,
     futureActionPlans: plan.futureActionPlans,
+    ...(plan.pregameRosterArrivalSchedule ? {
+      pregameRosterArrivalSchedule: clone(plan.pregameRosterArrivalSchedule),
+    } : {}),
     reviseIf: plan.reviseIf,
     assumptions: plan.assumptions,
     opponentModel: plan.opponentModel,
@@ -445,6 +470,11 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
         ...planSpec(payload),
         ...(pregamePlanOrigin
           ? { pregamePlanOrigin: clone(pregamePlanOrigin) } : {}),
+        ...(payload.pregameRosterArrivalSchedule ? {
+          pregameRosterArrivalSchedule:
+            verifiedPregameRosterArrivalSchedule(
+              payload.pregameRosterArrivalSchedule, pregamePlanOrigin),
+        } : {}),
         status: String(payload.status || "reflection_required"),
         revisionReason: "restored_from_same_match_journal",
         nextIntentRef: null,
@@ -490,7 +520,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
   }
 
   function makePlan(state, spec, authorityValue, reason, parentVersion = null,
-    pregamePlanOrigin = null) {
+    pregamePlanOrigin = null, pregameRosterArrivalSchedule = null) {
     state.sequence += 1;
     const createdAt = new Date(now()).toISOString();
     const planId = state.plan?.planId || `turn-plan-${hashStarcraftTmgContract({
@@ -500,12 +530,19 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       sequence: state.sequence,
     })}`;
     const version = state.plan ? state.plan.version + 1 : 1;
+    const arrivalSchedule = verifiedPregameRosterArrivalSchedule(
+      pregameRosterArrivalSchedule
+        || state.plan?.pregameRosterArrivalSchedule || null,
+      pregamePlanOrigin || state.plan?.pregamePlanOrigin || null);
     return seal({
       schemaVersion: `${STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION}.plan`,
       planId,
       version,
       parentVersion,
       ...clone(spec),
+      ...(arrivalSchedule ? {
+        pregameRosterArrivalSchedule: arrivalSchedule,
+      } : {}),
       ...(pregamePlanOrigin
         ? { pregamePlanOrigin: clone(pregamePlanOrigin) } : {}),
       status: "reflection_required",
@@ -553,7 +590,8 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       throw new TypeError("a different TurnPlan already exists for this seat");
     }
     state.plan = makePlan(state, planSpec(seed.planSpec), authorityValue,
-      "verified_pregame_roster_plan", null, seed.origin);
+      "verified_pregame_roster_plan", null, seed.origin,
+      seed.planSpec.pregameRosterArrivalSchedule || null);
     state.lastAssessment = null;
     state.reflectionRequired = true;
     state.nextIntent = null;

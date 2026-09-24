@@ -30,7 +30,13 @@ Bot 桥从同一真实计划及原会话回执接受唯一修订事件，形成 
 
 把上述已付计划接入新建的独立 Standard-2000 权威 Room 时，第一次服务端 `preparePregamePlanForRoom` 在 `ROSTER_TURN_PLAN_PRESET_ROSTER_MISMATCH` 停下，Room revision 仍为 0，没有模型请求或动作。最小复现显示：锁定 recipe 与官方 Room 默认 recipe 内容及哈希完全相同，均为 `510e1a94…482375`；玩家 V3 安全投影却把本席 `armyBuildingConfigurationBySide.player1` 裁成 `{}`，`armyCompositionUpgradeAuditsBySide.player1` 只剩结果 hash、丢掉逐单位 Supply。根因是对私有树套用了通用展示字段白名单，不是模型改表、建房改表或错席。
 
-RoomRuntime 现在只为本席／同队产生版本化 `rosterPlanEvidenceBySide`，包含固定 recipe hash、Rules audit 结果 hash、每单位 ID/起始 Supply 及内容 hash。V3 只显式投影这些小字段，不开放完整私有 Builder recipe/audit；无席位观察者和对手不获得这份证据。RosterPlan→TurnPlan 桥保持严格同表检查，并用该证明重新核对逐轮 Supply。针对这一具体 bug，一次本地投影→桥聚焦门通过（7 个本席单位、对手证据 0、原私有 recipe 仍不可见）；修改后只重跑一次原始**完整权威 Room 交接**，版本 3 计划 `b8b7a713…edbc4a` 与房间 Rules audit `e5d86280…39c04`、recipe hash `510e1a94…482375` 均一致，`roomStateRevision=0`，Provider/动作调用仍为 0。尚未进行 Bot attach 或模型作战，不能据此声称跨回合策略有效。
+RoomRuntime 现在只为本席／同队产生版本化 `rosterPlanEvidenceBySide`，包含固定 recipe hash、Rules audit 结果 hash、每单位 ID/起始 Supply 及内容 hash。V3 只显式投影这些小字段，不开放完整私有 Builder recipe/audit；无席位观察者和对手不获得这份证据。RosterPlan→TurnPlan 桥保持严格同表检查，并用该证明重新核对逐轮 Supply。针对这一具体 bug，一次本地投影→桥聚焦门通过（7 个本席单位、对手证据 0、原私有 recipe 仍不可见）；修改后只重跑一次原始**完整权威 Room 交接**，版本 3 计划 `b8b7a713…edbc4a` 与房间 Rules audit `e5d86280…39c04`、recipe hash `510e1a94…482375` 均一致，`roomStateRevision=0`，Provider/动作调用仍为 0。此阶段仅证明 Room 交接；下节记录后续 Bot 附着，仍不声称模型作战或跨回合策略有效。
+
+## TurnPlan 类型与 Bot 实际读取：第二个红→绿
+
+在实际附着之前，直接调用 `TurnPlan.open_roster_plan` 暴露第二个 High 合同错接：桥把逐轮进场日程写成 7 条文字 `futureActionPlans`，而 TurnPlan 该字段的既有接口只接受由当前动作开启、绑定候选 ID 的结构化后续行动。零 Provider 红复现为 `plan.futureActionPlans[0] is invalid`。不伪造当前不存在的 LegalSpace 候选，也不把普通文字伪装成可执行后续动作；桥现在只把真正的动作计划留在 `futureActionPlans`，将原 Rules 校验过的日程放入独立的 `pregameRosterArrivalSchedule`。TurnPlan 保留此来源绑定的日程于显式计划替换、反思/反事实更新及本局日志恢复，并在恢复时复核日程的内容 hash 与审查来源。
+
+修改后唯一对应接口门通过：`open_roster_plan` 收到 7 条日程、原 `futureActionPlans` 为空，显式替换计划后日程不丢。随后新建独立 Standard-2000 权威 Room，真实 `HostedOpponentRuntimeV2.attach(autoDrive=false)` 将这份计划打开；`opponent_prompt` 的决策端口在 revision 0 读取到相同的来源 hash `c807246b…7f882e32`、日程 hash `28233dd7…9f63847` 和 7 条进场项。端口故意在选动作前停止，Room 仍 revision 0，Provider 0。最后用同局 DecisionContinuity 建新 TurnPlanRuntime 并 `hydrate`，恢复 `true`、1 条日志，来源及日程 hash 均保持不变。这里证明**真实 Bot 能读到并恢复计划**，仍不证明模型会遵照计划作出好动作，也不是对局 A/B。
 
 本次新增真实 Provider **1 调用，输入 6,443、输出 4,860、合计 11,303 reported units，保守全未命中估算 ¥0.031060**；该固定表会话累计 5 调用、129,290 units、估算 ¥0.261122，非账单实扣。无重跑已通过的全量门，无新测试文件，无 Room mutation、训练真值或 Skill 晋升。
 
@@ -38,6 +44,6 @@ RoomRuntime 现在只为本席／同队产生版本化 `rosterPlanEvidenceBySide
 
 - `harnessLoopUsed=true`；`targetGames=[starcraft-tmg]`；`promptPackRoutes=[agent_teach_v1,locked_roster_teach_v1]`，本次修订沿用锁表 prompt pack 的 `revision` 轮次与独立严格输出合同。
 - `harnessToolsCalled=[ArmyBuilder, frozen mission scoring, read-only pregame laboratory, planned-preset revision, RosterPlan→TurnPlan seed]`；`uiTraceEvidence=none in this sub-slice`。
-- `agentDecisionEvidence=real paid public revision and structured round schedule, no game action`；`memoryTraceEvidence=one-hop pregame revision origin enters TurnPlan seed, cross-round use not yet observed`。
+- `agentDecisionEvidence=real paid public revision and structured round schedule reach the opponent_prompt, no model game action`；`memoryTraceEvidence=one-hop pregame revision origin and schedule enter TurnPlan and survive same-match journal hydration; opponent response/cross-round plan reflection not yet observed`。
 - `trainingTraceCandidates=none`；`rollbackOrDemotionRules=changed locked roster/audit or round Supply overflow rejects; stale/unsupported multi-hop rejects; unresolved Medic timing stays open`。
 - `ctx2skillLoopUsed=true` only for reading the existing general/faction/matchup Skill route and reviewing the plan; `skillsGenerated=none`、`judgeTestsRun=focused Rules/bridge checks only`、`promotions=none`。`canAffectRules=false`、`trainingTruth=false`。

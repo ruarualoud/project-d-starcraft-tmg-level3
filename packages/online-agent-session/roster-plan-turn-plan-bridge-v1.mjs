@@ -239,9 +239,14 @@ export function createStarcraftTmgRosterTurnPlanSeedV1(input = {}) {
         `Round ${entry.round}: committed ${entry.committedSupply} Supply`
           + (entry.capacity === null ? " (unlimited final round)"
             : ` of ${entry.capacity} capacity`))]),
-    futureActionPlans: (plan.openingDeploymentSchedule?.entries || [])
-      .map((entry) => `Round ${entry.round}: deploy ${entry.unitInstanceId}`
-        + ` (${entry.startingSupply} Supply) — ${entry.publicReasonText}`),
+    // FutureActionPlans describes a selected action enabling a later action.
+    // Pregame arrivals have no current LegalSpace candidate and must remain a
+    // separate typed schedule rather than fabricated enabling candidates.
+    futureActionPlans: [],
+    ...(plan.openingDeploymentSchedule ? {
+      pregameRosterArrivalSchedule: structuredClone(
+        plan.openingDeploymentSchedule),
+    } : {}),
     reviseIf: unique((plan.invalidationTriggers || []).map((entry) =>
       entry.triggerText)),
     assumptions: unique((plan.opponentHypotheses || []).map((entry) =>
