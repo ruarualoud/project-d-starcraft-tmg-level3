@@ -1447,7 +1447,11 @@ export function createRosterStrategistRuntimeV1(input = {}) {
           || rosterStrategistRoundOutputContractRefV1(roundKind),
         schema: clone(contract.providerSchema),
       },
-      maxOutputUnits: 8_192,
+      // A full post-review revision republishes the complete plan sections.
+      // The saved v4->v5 Flash response exhausted 8,192 units and returned
+      // incomplete; a higher ceiling only for this round avoids re-running
+      // Foundation, Teach or candidate generation. Billing remains actual use.
+      maxOutputUnits: roundKind === "revision" ? 24_576 : 8_192,
       contextHash,
     };
   }

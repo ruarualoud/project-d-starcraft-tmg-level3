@@ -239,6 +239,10 @@ export async function createRosterPlanningSecureDeliberationFactoryV1(
           if (AUTH_STOP.has(Number(result.status))) {
             await failure("ROSTER_WORKSPACE_PROVIDER_AUTH_STOP");
           }
+          if (result.status >= 200 && result.status < 300
+            && payload?.status === "incomplete") {
+            await failure("ROSTER_WORKSPACE_PROVIDER_OUTPUT_INCOMPLETE");
+          }
           if (result.status < 200 || result.status >= 300
             || payload?.status !== "completed") {
             await failure("ROSTER_WORKSPACE_PROVIDER_RESPONSE_REJECTED");
