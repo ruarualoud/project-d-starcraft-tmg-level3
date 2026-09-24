@@ -131,6 +131,10 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
           return ok({ session: await service.revisePlan(sessionMatch, body) },
             202);
         }
+        if (operation === "review") {
+          return ok({ session: await service.reviewFinalPlan(sessionMatch,
+            body) }, 202);
+        }
         if (operation === "override") {
           return ok({
             session: await service.applyManualOverride(sessionMatch, body),

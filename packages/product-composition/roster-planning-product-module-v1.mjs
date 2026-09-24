@@ -242,6 +242,7 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
     }
     const session = service.readSession(sessionId);
     if (session.status !== "planned" || session.planEvidenceStale
+      || session.planReviewBlockingHighFindings === true
       || !session.plan || !session.evidence?.sessionReceipt
       || session.working?.verdictSummary?.status !== "legal") {
       throw new TypeError("ROSTER_PLAN_ROOM_HANDOFF_PLAN_UNAVAILABLE");
