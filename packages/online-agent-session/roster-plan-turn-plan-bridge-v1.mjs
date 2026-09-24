@@ -9,6 +9,8 @@ import { PLANNED_PRESET_ROSTER_PLAN_SCHEMA,
 import { verifyRosterStrategistSessionReceiptV1,
   verifyRosterStrategistPresetSessionReceiptV1 } from
   "../roster-strategist/roster-strategist-runtime-v1.mjs";
+import { STARCRAFT_TMG_ROSTER_PLAN_ROOM_EVIDENCE_SCHEMA } from
+  "../client-domain/viewer-projection-v3.mjs";
 
 export const STARCRAFT_TMG_ROSTER_TURN_PLAN_ORIGIN_SCHEMA =
   "starcraft_tmg_roster_turn_plan_origin_v1";
@@ -131,15 +133,30 @@ export function createStarcraftTmgRosterTurnPlanSeedV1(input = {}) {
     fail("ROSTER_TURN_PLAN_SOURCE_SNAPSHOT_MISMATCH");
   }
   if (plan.presetRoster) {
-    const recipe = state?.armyBuildingConfigurationBySide?.[scope.seatKey];
-    if (!object(recipe) || plan.presetBinding.rosterHash
-      !== hashStarcraftTmgContract({ sideKey: scope.seatKey, recipe })) {
+    const evidence = state?.rosterPlanEvidenceBySide?.[scope.seatKey];
+    if (!object(evidence)
+      || evidence.schema !== STARCRAFT_TMG_ROSTER_PLAN_ROOM_EVIDENCE_SCHEMA
+      || evidence.recipeHash !== plan.presetBinding.rosterHash
+      || evidence.auditResultHash !== ownAudit.resultHash
+      || evidence.trainingTruth !== false
+      || !Array.isArray(evidence.units)
+      || evidence.evidenceHash !== hashStarcraftTmgContract(
+        Object.fromEntries(Object.entries(evidence).filter(([key]) =>
+          key !== "evidenceHash")))) {
       fail("ROSTER_TURN_PLAN_PRESET_ROSTER_MISMATCH");
     }
     if (plan.openingDeploymentSchedule) {
       try {
         verifyPlannedPresetRoundSupplyScheduleV1(
-          plan.openingDeploymentSchedule, plan.rosterCandidate, ownAudit);
+          plan.openingDeploymentSchedule, plan.rosterCandidate, {
+            resultHash: evidence.auditResultHash,
+            units: evidence.units.map((unit) => ({
+              unitInstanceId: unit.unitInstanceId,
+              unitCompositionResult: {
+                startingSupply: unit.startingSupply,
+              },
+            })),
+          });
       } catch {
         fail("ROSTER_TURN_PLAN_ROUND_SUPPLY_AUDIT_MISMATCH");
       }

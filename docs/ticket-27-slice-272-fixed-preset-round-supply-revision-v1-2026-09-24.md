@@ -26,6 +26,12 @@ Bot 桥从同一真实计划及原会话回执接受唯一修订事件，形成 
 
 **策略质量未通过最终验收。** 计划正文讨论 Medic 的早期治疗反应，甚至写“若第 3 回合前 Medic 损失”，但结构化计划将 Medic 首次进场设在第 5 回合；模型同时把第 2 回合累计 3 VP 作为路线基线，却没有证明当时可控制对方高分点的空间路径。前者是计划内部时序矛盾，后者是未经几何验证的假设；规则器只证明 Supply，不证明得分或走位。不得把此计划宣传为已验证的高策略对局、更不得晋升 Skill。后续需在模型选择与深化之后加入针对最终名单、部署时序、技能可用窗和任务得分的反证/复核，再以真实对局观测取舍。
 
+## 真实 Room 交接：红→诊断→绿
+
+把上述已付计划接入新建的独立 Standard-2000 权威 Room 时，第一次服务端 `preparePregamePlanForRoom` 在 `ROSTER_TURN_PLAN_PRESET_ROSTER_MISMATCH` 停下，Room revision 仍为 0，没有模型请求或动作。最小复现显示：锁定 recipe 与官方 Room 默认 recipe 内容及哈希完全相同，均为 `510e1a94…482375`；玩家 V3 安全投影却把本席 `armyBuildingConfigurationBySide.player1` 裁成 `{}`，`armyCompositionUpgradeAuditsBySide.player1` 只剩结果 hash、丢掉逐单位 Supply。根因是对私有树套用了通用展示字段白名单，不是模型改表、建房改表或错席。
+
+RoomRuntime 现在只为本席／同队产生版本化 `rosterPlanEvidenceBySide`，包含固定 recipe hash、Rules audit 结果 hash、每单位 ID/起始 Supply 及内容 hash。V3 只显式投影这些小字段，不开放完整私有 Builder recipe/audit；无席位观察者和对手不获得这份证据。RosterPlan→TurnPlan 桥保持严格同表检查，并用该证明重新核对逐轮 Supply。针对这一具体 bug，一次本地投影→桥聚焦门通过（7 个本席单位、对手证据 0、原私有 recipe 仍不可见）；修改后只重跑一次原始**完整权威 Room 交接**，版本 3 计划 `b8b7a713…edbc4a` 与房间 Rules audit `e5d86280…39c04`、recipe hash `510e1a94…482375` 均一致，`roomStateRevision=0`，Provider/动作调用仍为 0。尚未进行 Bot attach 或模型作战，不能据此声称跨回合策略有效。
+
 本次新增真实 Provider **1 调用，输入 6,443、输出 4,860、合计 11,303 reported units，保守全未命中估算 ¥0.031060**；该固定表会话累计 5 调用、129,290 units、估算 ¥0.261122，非账单实扣。无重跑已通过的全量门，无新测试文件，无 Room mutation、训练真值或 Skill 晋升。
 
 ## Harness / Skill 边界

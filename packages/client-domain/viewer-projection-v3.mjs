@@ -22,6 +22,12 @@ export const STARCRAFT_TMG_VIEWER_PROJECTION_V3_TOP_LEVEL_KEYS = Object.freeze([
   "authorityVersion", "state", "training",
 ]);
 
+// Optional, own-team-only extension. A plan may verify a locked roster
+// against the current Room without exposing the full private Builder recipe
+// or the unreviewed nested Rules audit through the browser-safe V3 shape.
+export const STARCRAFT_TMG_ROSTER_PLAN_ROOM_EVIDENCE_SCHEMA =
+  "starcraft_tmg_roster_plan_room_evidence_v1";
+
 export const STARCRAFT_TMG_VIEWER_STATE_V3_FIELDS = Object.freeze([
   "schemaVersion", "schema", "gameId", "dataVersion", "dataBundleHash",
   "sourceRefreshPerformed", "repositoryFallbackUsed", "rulesTruth", "round",
@@ -101,6 +107,7 @@ export const STARCRAFT_TMG_VIEWER_STATE_V3_FIELDS = Object.freeze([
   "armyBuildingConfigurationBySide", "armyResourceBudgetsBySide",
   "unitCompositionSelectionsBySide", "unitUpgradeSelectionsBySide",
   "armyCompositionUpgradeAuditsBySide", "ownTeamArmyRostersBySide",
+  "rosterPlanEvidenceBySide",
   "equipmentReminderPermitsByActionHash", "privateRosterDisclosureConductIncidents",
 ]);
 
@@ -450,6 +457,14 @@ function field(fieldName, value, state) {
   }
   if (fieldName === "armyResourceBudgetsBySide") {
     return participantMap(value, state, armyResourceBudget);
+  }
+  if (fieldName === "rosterPlanEvidenceBySide") {
+    const evidenceKeys = new Set(["schema", "recipeHash", "auditResultHash",
+      "units", "trainingTruth", "evidenceHash"]);
+    const unitKeys = new Set(["unitInstanceId", "startingSupply"]);
+    return participantMap(value, state, (evidence) => pick(evidence,
+      evidenceKeys, (child, key) => key === "units" && Array.isArray(child)
+        ? child.map((unit) => pick(unit, unitKeys)) : clone(child)));
   }
   if (["scores", "colourByPlayer", "controllerByDraft", "submissionsByPlayer",
     "armyCardOpenInformationBySide", "cardResources", "armyBuildingConfigurationBySide",

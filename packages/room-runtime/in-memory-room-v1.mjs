@@ -11,6 +11,7 @@ import {
 } from "../room-store/room-store-v1.mjs";
 import {
   projectStarcraftTmgViewerStateShapeV3,
+  STARCRAFT_TMG_ROSTER_PLAN_ROOM_EVIDENCE_SCHEMA,
   STARCRAFT_TMG_VIEWER_STATE_V3_FIELDS,
 } from "../client-domain/viewer-projection-v3.mjs";
 import { createStarcraftTmgClientCharacterPresentationRuntimeV2 } from
@@ -244,6 +245,29 @@ export function projectStarcraftTmgStateForViewerV2(state, seatKey = null) {
       projection[field] = filteredBySide(state[field], visiblePrivateSideKeys);
     }
   }
+  projection.rosterPlanEvidenceBySide = Object.fromEntries(
+    [...alliedSideKeys].flatMap((sideKey) => {
+      const recipe = state.armyBuildingConfigurationBySide?.[sideKey];
+      const audit = state.armyCompositionUpgradeAuditsBySide?.[sideKey];
+      if (!object(recipe) || !object(audit)
+        || !Array.isArray(audit.units)) return [];
+      const units = audit.units.map((unit) => ({
+        unitInstanceId: unit.unitInstanceId,
+        startingSupply: unit.unitCompositionResult?.startingSupply,
+      }));
+      if (units.some((unit) => typeof unit.unitInstanceId !== "string"
+        || !Number.isSafeInteger(unit.startingSupply)
+        || unit.startingSupply < 0)) return [];
+      const body = {
+        schema: STARCRAFT_TMG_ROSTER_PLAN_ROOM_EVIDENCE_SCHEMA,
+        recipeHash: hashStarcraftTmgContract({ sideKey, recipe }),
+        auditResultHash: audit.resultHash,
+        units,
+        trainingTruth: false,
+      };
+      return [[sideKey, { ...body,
+        evidenceHash: hashStarcraftTmgContract(body) }]];
+    }));
   delete projection.authoritativeRosterRegistry;
   delete projection.authoritativeArmyRostersBySide;
   projection.ownTeamArmyRostersBySide = filteredBySide(
