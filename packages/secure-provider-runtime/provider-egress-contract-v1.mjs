@@ -9,6 +9,15 @@ export const STARCRAFT_TMG_PROVIDER_EGRESS_POLICY_VERSION =
 export const STARCRAFT_TMG_PROVIDER_EGRESS_TRANSPORT_VERSION =
   "starcraft_tmg_provider_egress_transport_v1";
 
+const TRANSPORT_PROGRESS_PHASES = new Set([
+  "tcp_connect", "tls_handshake", "writing_request",
+  "waiting_response_headers", "reading_response_body",
+]);
+const TRANSPORT_MILESTONE_FIELDS = new Set([
+  "dnsResolved", "tcpConnected", "tlsConnected", "requestWritten",
+  "responseHeaders", "responseCompleted",
+]);
+
 const REF_FIELDS = new Set(["id", "version", "hash"]);
 const POLICY_FIELDS = new Set([
   "schemaVersion", "providerProfileRef", "providerId", "endpoint", "model",
@@ -63,6 +72,30 @@ function integer(value, field, maximum) {
   if (!Number.isSafeInteger(normalized) || normalized < 1
     || normalized > maximum) throw new TypeError(`${field} is invalid`);
   return normalized;
+}
+
+export function assertStarcraftTmgProviderTransportProgressV1(value) {
+  exactFields(value, new Set(["phase", "elapsedMs", "milestonesMs"]),
+    "transport progress");
+  if (!TRANSPORT_PROGRESS_PHASES.has(value.phase)
+    || !Number.isSafeInteger(value.elapsedMs) || value.elapsedMs < 0
+    || value.elapsedMs > 86_400_000) {
+    throw new TypeError("transport progress phase or elapsedMs is invalid");
+  }
+  exactFields(value.milestonesMs, TRANSPORT_MILESTONE_FIELDS,
+    "transport milestones");
+  if (TRANSPORT_MILESTONE_FIELDS.size
+    !== Object.keys(value.milestonesMs).length) {
+    throw new TypeError("transport milestones are incomplete");
+  }
+  for (const field of TRANSPORT_MILESTONE_FIELDS) {
+    const millis = value.milestonesMs[field];
+    if (millis !== null && (!Number.isSafeInteger(millis) || millis < 0
+      || millis > value.elapsedMs)) {
+      throw new TypeError(`transport milestone ${field} is invalid`);
+    }
+  }
+  return freeze(clone(value));
 }
 
 function boundedNumber(value, field, minimum, maximum) {
@@ -172,6 +205,10 @@ export class StarcraftTmgProviderEgressError extends Error {
         ? details.physicalAttempts : 0,
       automaticRetries: 0,
       trainingTruth: false,
+      ...(details.transportProgress ? {
+        transportProgress: assertStarcraftTmgProviderTransportProgressV1(
+          details.transportProgress),
+      } : {}),
       ...(details.responseOutcome && assertProviderResponseOutcomeV1(details.responseOutcome)
         ? { responseOutcome: clone(details.responseOutcome) } : {}),
     };

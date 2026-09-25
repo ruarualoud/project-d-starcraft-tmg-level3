@@ -192,6 +192,7 @@ function createHttpsFixture(plans = [{}]) {
     request.end = (body) => {
       observations.push({ options, body, request });
       if (plan.throwOnEnd) throw new Error("injected end failure");
+      request.emit("finish");
       if (plan.hang) return;
       queueMicrotask(() => {
         const response = new EventEmitter();
@@ -207,6 +208,7 @@ function createHttpsFixture(plans = [{}]) {
         response.destroy = () => { response.destroyed = true; };
         response.resume = () => {};
         callback(response);
+        if (plan.hangAfterHeaders) return;
         if (response.destroyed) return;
         queueMicrotask(() => {
           for (const chunk of plan.chunks || [Buffer.from(payload)]) {
@@ -249,6 +251,34 @@ async function completeFixture(fixture, overrides = {}) {
     providerRequest: providerRequest(),
     ...overrides,
   });
+}
+
+if (process.argv.includes("--timeout-phase-only")) {
+  const providerProfile = profile({ timeoutMs: 20 });
+  for (const [plan, expectedPhase] of [
+    [{ hang: true }, "waiting_response_headers"],
+    [{ hangAfterHeaders: true }, "reading_response_body"],
+  ]) {
+    const fixture = await fixtureTransport({ providerProfile, plans: [plan] });
+    await assert.rejects(completeFixture(fixture), (error) => {
+      assert.equal(error.code, "PROVIDER_TRANSPORT_TIMEOUT");
+      assert.equal(error.safeReceipt.requestMayHaveBeenSent, true);
+      assert.equal(error.safeReceipt.transportProgress?.phase, expectedPhase);
+      assert.equal(typeof error.safeReceipt.transportProgress?.elapsedMs,
+        "number");
+      assert.equal(typeof error.safeReceipt.transportProgress
+        ?.milestonesMs?.requestWritten, "number");
+      if (expectedPhase === "reading_response_body") {
+        assert.equal(typeof error.safeReceipt.transportProgress
+          ?.milestonesMs?.responseHeaders, "number");
+        assert.equal(error.safeReceipt.status, 200);
+      }
+      return true;
+    });
+  }
+  console.log(JSON.stringify({ ok: true, focusedChecks: 2,
+    providerCalls: 0, roomMutations: 0 }));
+  process.exit(0);
 }
 
 function deterministicIds(prefix) {

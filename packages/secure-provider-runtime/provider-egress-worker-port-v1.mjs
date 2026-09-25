@@ -10,6 +10,7 @@ import { containsStarcraftTmgOnlineCredentialMaterialV1 } from
   "../online-agent-session/portable-credential-material-v1.mjs";
 import {
   assertStarcraftTmgProviderEgressBindingV1,
+  assertStarcraftTmgProviderTransportProgressV1,
   StarcraftTmgProviderEgressError,
 } from "./provider-egress-contract-v1.mjs";
 
@@ -66,7 +67,7 @@ const USAGE_FIELDS = new Set([
 const FAILURE_RECEIPT_FIELDS = new Set([
   "schemaVersion", "code", "requestDefinitelyNotSent", "requestMayHaveBeenSent",
   "status", "physicalAttempts", "automaticRetries", "trainingTruth",
-  "receiptHash",
+  "receiptHash", "transportProgress",
 ]);
 const SHUTDOWN_FIELDS = new Set([
   "type", "requestId", "ok", "reason", "workerVersion",
@@ -426,6 +427,10 @@ export function createStarcraftTmgProviderEgressWorkerPortV1(options = {}) {
       "Provider Worker failure receipt");
     const { receiptHash, ...failureBody } = message.safeReceipt;
     const attemptCount = message.safeReceipt.physicalAttempts;
+    if (message.safeReceipt.transportProgress) {
+      assertStarcraftTmgProviderTransportProgressV1(
+        message.safeReceipt.transportProgress);
+    }
     if (message.safeReceipt.schemaVersion
         !== "starcraft_tmg_provider_egress_transport_v1.failure"
       || message.safeReceipt.code !== message.code
@@ -452,6 +457,7 @@ export function createStarcraftTmgProviderEgressWorkerPortV1(options = {}) {
       requestMayHaveBeenSent: message.safeReceipt.requestMayHaveBeenSent,
       status: message.safeReceipt.status,
       physicalAttempts: message.safeReceipt.physicalAttempts,
+      transportProgress: message.safeReceipt.transportProgress,
     });
   }
 

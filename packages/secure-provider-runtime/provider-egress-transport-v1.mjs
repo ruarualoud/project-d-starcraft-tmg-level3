@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { lookup as dnsLookup } from "node:dns/promises";
 import https from "node:https";
 import net from "node:net";
+import { performance } from "node:perf_hooks";
 import { captureProviderResponseOutcomeV1, normalizeProviderJsonDocumentV1 } from "./provider-response-outcome-v1.mjs";
 
 import { hashStarcraftTmgContract } from
@@ -637,6 +638,7 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
         requestDefinitelyNotSent: true,
       });
     }
+    const transportStartedAt = performance.now();
     let records;
     try {
       records = normalizeAddressRecords(await resolveAddresses(
@@ -655,11 +657,33 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
     const selected = records[0];
     const addressSetHash = hashStarcraftTmgContract(records);
     const startedAt = safeTime(now);
+    const milestonesMs = {
+      dnsResolved: Math.max(0, Math.floor(performance.now() - transportStartedAt)),
+      tcpConnected: null,
+      tlsConnected: null,
+      requestWritten: null,
+      responseHeaders: null,
+      responseCompleted: null,
+    };
+    const elapsedMs = () => Math.max(0, Math.floor(
+      performance.now() - transportStartedAt));
+    const mark = (field) => { milestonesMs[field] = elapsedMs(); };
+    // Only phase timings cross the worker boundary; no endpoint, prompt, or key.
+    const transportProgress = () => ({
+      phase: milestonesMs.responseHeaders !== null
+        ? "reading_response_body" : milestonesMs.requestWritten !== null
+          ? "waiting_response_headers" : milestonesMs.tlsConnected !== null
+            ? "writing_request" : milestonesMs.tcpConnected !== null
+              ? "tls_handshake" : "tcp_connect",
+      elapsedMs: elapsedMs(),
+      milestonesMs: { ...milestonesMs },
+    });
     let physicalAttempts = 0;
 
     return await new Promise((resolve, reject) => {
       let settled = false;
       let providerRequest;
+      let observedStatus = null;
       const finish = (operation, value) => {
         if (settled) return;
         settled = true;
@@ -676,11 +700,12 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
         }));
       };
       const totalTimer = setTimeout(() => {
-        providerRequest?.destroy?.();
         fail(new StarcraftTmgProviderEgressError("PROVIDER_TRANSPORT_TIMEOUT", {
           requestMayHaveBeenSent: physicalAttempts === 1,
-          physicalAttempts,
+          physicalAttempts, status: observedStatus,
+          transportProgress: transportProgress(),
         }));
+        providerRequest?.destroy?.();
       }, binding.timeoutMs);
       input.signal?.addEventListener?.("abort", abort, { once: true });
       const lookup = (_hostname, lookupOptions, callback) => {
@@ -711,6 +736,9 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
           },
         }, (response) => {
           const status = Number(response?.statusCode || 0);
+          observedStatus = Number.isInteger(status) && status >= 100
+            && status <= 599 ? status : null;
+          mark("responseHeaders");
           if (!Number.isInteger(status) || status < 100 || status > 599) {
             response?.destroy?.();
             fail(new StarcraftTmgProviderEgressError(
@@ -766,6 +794,7 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
             })));
           response.on("end", () => {
             if (settled) return;
+            mark("responseCompleted");
             let payload;
             const rawPayload = Buffer.concat(chunks);
             try {
@@ -865,7 +894,9 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
         return;
       }
       providerRequest.once?.("socket", (socket) => {
+        socket.once?.("connect", () => mark("tcpConnected"));
         socket.once?.("secureConnect", () => {
+          mark("tlsConnected");
           const observed = String(socket.remoteAddress || "").toLowerCase();
           if (!sameNetworkAddress(observed, selected.address)) {
             providerRequest.destroy?.();
@@ -881,11 +912,13 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
           requestMayHaveBeenSent: physicalAttempts === 1,
           physicalAttempts,
         })));
+      providerRequest.once?.("finish", () => mark("requestWritten"));
       providerRequest.setTimeout?.(binding.timeoutMs, () => {
-        providerRequest.destroy?.();
         fail(new StarcraftTmgProviderEgressError("PROVIDER_TRANSPORT_TIMEOUT", {
           requestMayHaveBeenSent: true, physicalAttempts,
+          status: observedStatus, transportProgress: transportProgress(),
         }));
+        providerRequest.destroy?.();
       });
       try {
         providerRequest.end(body);
