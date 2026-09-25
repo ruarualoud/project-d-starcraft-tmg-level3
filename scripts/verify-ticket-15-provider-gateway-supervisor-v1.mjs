@@ -19,6 +19,8 @@ import {
   createStarcraftTmgProviderGatewaySupervisorV1,
   createStarcraftTmgProviderGatewayUsageReceiptV1,
 } from "../packages/online-agent-session/provider-gateway-supervisor-v1.mjs";
+import { StarcraftTmgProviderEgressError } from
+  "../packages/secure-provider-runtime/provider-egress-contract-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUTPUT = path.join(ROOT,
@@ -257,6 +259,45 @@ function createConfiguredHarness(options = {}) {
     },
   });
   return { supervisor, scheduler, gatewayCalls, controller };
+}
+
+if (process.argv.includes("--transport-progress-only")) {
+  const session = await createSession();
+  const transportError = new StarcraftTmgProviderEgressError(
+    "PROVIDER_TRANSPORT_TIMEOUT", {
+      requestMayHaveBeenSent: true, physicalAttempts: 1,
+      transportProgress: {
+        phase: "waiting_response_headers",
+        elapsedMs: 300_000,
+        milestonesMs: {
+          dnsResolved: 4, tcpConnected: 8, tlsConnected: 15,
+          requestWritten: 20, responseHeaders: null,
+          responseCompleted: null,
+        },
+      },
+    });
+  const harness = createConfiguredHarness({
+    handler: async () => {
+      throw Object.assign(new Error("simulated durable gateway failure"), {
+        code: transportError.code,
+        durableReceipt: transportError.safeReceipt,
+      });
+    },
+  });
+  const result = await harness.supervisor.sendTurn(turnInput(session), context());
+  assert.equal(result.reason, "provider_transport_timeout");
+  assert.deepEqual(result.turn.failure.transportProgress,
+    transportError.safeReceipt.transportProgress);
+  assert.deepEqual(result.receipt.failure.transportProgress,
+    transportError.safeReceipt.transportProgress);
+  createConfiguredHarness({ budgetPolicy: {
+    maxTotalUnits: 5_000, maxTurns: 20,
+    maxInputUnitsPerTurn: 500, maxOutputUnitsPerTurn: 500,
+    timeoutMs: 315_000,
+  } });
+  console.log(JSON.stringify({ ok: true, focusedChecks: 2,
+    providerCalls: 0, roomMutations: 0 }));
+  process.exit(0);
 }
 
 const acceptance = [];

@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
+import { assertStarcraftTmgProviderTransportProgressV1 } from
+  "../secure-provider-runtime/provider-egress-contract-v1.mjs";
 
 export const STARCRAFT_TMG_PROVIDER_GATEWAY_SUPERVISOR_VERSION =
   "starcraft_tmg_provider_gateway_supervisor_v1";
@@ -199,7 +201,7 @@ function normalizeBudgetPolicy(value = {}) {
       "budgetPolicy.maxInputUnitsPerTurn", 1_000_000),
     maxOutputUnitsPerTurn: positiveInteger(value.maxOutputUnitsPerTurn,
       "budgetPolicy.maxOutputUnitsPerTurn", 1_000_000),
-    timeoutMs: positiveInteger(value.timeoutMs, "budgetPolicy.timeoutMs", 300_000),
+    timeoutMs: positiveInteger(value.timeoutMs, "budgetPolicy.timeoutMs", 315_000),
     cancellationSettlement: "consume_full_reservation_when_usage_is_unknown",
     timeoutSettlement: "consume_full_reservation_when_usage_is_unknown",
     automaticRetryAllowed: false,
@@ -280,10 +282,26 @@ function normalizeUsageReceipt(value, reservation) {
 
 function safeFailure(error, fallback = "provider_gateway_failed") {
   const raw = String(error?.code || "").trim().toLowerCase();
+  let transportProgress = null;
+  const receipt = error?.durableReceipt;
+  if (raw === "provider_transport_timeout" && object(receipt)
+    && receipt.code === "PROVIDER_TRANSPORT_TIMEOUT"
+    && HASH_PATTERN.test(String(receipt.receiptHash || ""))) {
+    const { receiptHash, ...body } = receipt;
+    if (receiptHash === hashStarcraftTmgContract(body)) {
+      try {
+        transportProgress = assertStarcraftTmgProviderTransportProgressV1(
+          receipt.transportProgress);
+      } catch {
+        // Never surface unverified or non-numeric Provider error material.
+      }
+    }
+  }
   return deepFreeze({
     code: SAFE_FAILURE_PATTERN.test(raw) ? raw : fallback,
     retryable: false,
     messageExposed: false,
+    ...(transportProgress ? { transportProgress } : {}),
   });
 }
 

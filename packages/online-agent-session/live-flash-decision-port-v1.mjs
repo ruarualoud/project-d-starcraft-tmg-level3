@@ -1,5 +1,7 @@
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
+import { assertStarcraftTmgProviderTransportProgressV1 } from
+  "../secure-provider-runtime/provider-egress-contract-v1.mjs";
 import { priceStarcraftTmgDeepSeekV4FlashUsageV1 } from
   "../secure-provider-runtime/provider-pricing-v1.mjs";
 import { priceStarcraftTmgDeepSeekCurrentUsageV2 } from
@@ -5374,6 +5376,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         safeOutput: null,
         outputHash: null,
         failure: null,
+        providerTransportProgress: null,
       };
       draft.usage.providerCalls += 1;
     });
@@ -5397,6 +5400,16 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         ?? result?.receipt?.chargedUnits);
       const providerMayHaveBeenCalled = Number.isFinite(chargedUnits)
         ? chargedUnits > 0 : Boolean(result?.turn || result?.receipt);
+      let providerTransportProgress = null;
+      if (result?.reason === "provider_transport_timeout") {
+        try {
+          providerTransportProgress =
+            assertStarcraftTmgProviderTransportProgressV1(
+              result?.turn?.failure?.transportProgress);
+        } catch {
+          // The decision journal accepts only the typed numeric safe receipt.
+        }
+      }
       match = await commit(match, (draft) => {
         const current = draft.decisions[choice.choiceKey];
         const attempt = current.attempts[attemptKey];
@@ -5404,6 +5417,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           ? "provider_failed_after_possible_egress" : "provider_failed_not_sent";
         attempt.completedAt = completedAt;
         attempt.failure = String(result?.reason || "provider_turn_failed");
+        attempt.providerTransportProgress = providerTransportProgress;
         current.status = providerMayHaveBeenCalled
           ? "provider_failed_requires_explicit_retry" : "retry_ready";
         if (providerMayHaveBeenCalled) {

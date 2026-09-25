@@ -144,6 +144,11 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
     || STARCRAFT_TMG_TICKET_23_LIVE_PROVIDER_PROFILES_V1;
   const requestOutputLimit = options.requestOutputLimit
     ?? STARCRAFT_TMG_LIVE_REQUEST_OUTPUT_LIMIT;
+  const transportTimeoutMs = Number(options.transportTimeoutMs ?? 300_000);
+  // The supervisor must allow the worker's own timeout receipt to return.
+  // Explicit caller deadlines remain authoritative; the default gets grace.
+  const supervisorTimeoutMs = Number(options.providerTimeoutMs
+    ?? Math.min(315_000, transportTimeoutMs + 15_000));
   const bundle = options.characterBundle || createKerriganPrimalProductBundleV1();
   const strategySkillSnapshot = routedStrategySnapshot(strategyEntries,
     ownFaction, opponentFaction);
@@ -254,7 +259,9 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
       maxTurns: Number(options.maxProviderCalls || 1_024),
       maxInputUnitsPerTurn: Number(options.maxInputUnitsPerTurn || 1_000_000),
       maxOutputUnitsPerTurn: Number(options.maxOutputUnitsPerTurn || requestOutputLimit),
-      timeoutMs: Number(options.providerTimeoutMs || 150_000),
+      // Match the server-owned egress deadline. A shorter supervisor timer
+      // marks an in-flight request timed out before transport can settle it.
+      timeoutMs: supervisorTimeoutMs,
     },
     now,
   });
