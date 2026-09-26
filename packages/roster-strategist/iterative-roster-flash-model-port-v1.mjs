@@ -82,6 +82,21 @@ const contract = createStarcraftTmgOutputContractV1({
   description: "Strict shape for one iterative public roster decision. "
     + "Builder, map and final review remain separate authorities.",
 });
+const proposalOnlySchema = {
+  ...schema, properties: { ...schema.properties,
+    kind: { ...schema.properties.kind, enum: ["propose"] } },
+};
+const proposalOnlyContract = createStarcraftTmgOutputContractV1({
+  id: "ticket27.iterative_roster_rebuild_decision.v1",
+  version: "1.0.0", schemaName: "iterative_roster_rebuild_v1",
+  providerSchema: proposalOnlySchema,
+  modelOwnedFields: Object.keys(proposalOnlySchema.properties),
+  hostOwnedFields: [],
+  mapperRef: componentRef("public_rebuild_mapper"),
+  semanticValidatorRef: componentRef("builder_rebuild_validation"),
+  description: "After bounded local search saturates, submit a changed roster "
+    + "for complete Builder judgment; no new Rules authority is implied.",
+});
 
 // Provider extras are harmless, but absent or wrong fields are never filled
 // with invented plan content. The strict schema is rechecked after pruning.
@@ -149,6 +164,79 @@ function decisionFromOutput(raw) {
     assumptionDisposition: output.assumptionDisposition };
 }
 
+function compactObservation(entry) {
+  if (entry.query?.kind !== "budget_branches") return entry;
+  const receipt = entry.receipt || {};
+  return { ...entry, receipt: {
+    status: receipt.status,
+    receiptHash: receipt.receiptHash,
+    sourceCandidateHash: receipt.sourceCandidateHash,
+    sourceMineralShortfall: receipt.sourceMineralShortfall,
+    branches: (receipt.branches || []).map((branch) => ({
+      branchId: branch.branchId,
+      steps: branch.steps,
+      candidateHash: branch.candidateHash,
+      mineralSpent: branch.mineralSpent,
+      mineralShortfall: branch.mineralShortfall,
+      exactBudget: branch.exactBudget,
+      menuSlotOverflowAdvisory: branch.menuSlotOverflowAdvisory,
+    })),
+    capacityDirections: receipt.capacityDirections || [],
+    capacityDirectionsAreMenuOnly:
+      receipt.capacityDirectionsAreMenuOnly === true,
+    nextPage: receipt.nextPage,
+    truncated: receipt.truncated,
+    strategyRankingPerformed: false,
+  } };
+}
+
+function requiredDecisionReason(state) {
+  if (!state.currentCandidate
+    || state.currentCandidate.mineralSpent >= state.mineralBudget) {
+    return null;
+  }
+  const latest = state.iterations.at(-1);
+  if (state.modelContextVersion === 2
+    && latest?.decisionKind === "propose"
+    && latest.rulesVerdictStatus === "illegal"
+    && state.observations.some((entry) =>
+      entry.requestKey === latest.requestKey
+        && entry.query?.kind === "builder_verdict")) {
+    return "latest_builder_rejected_candidate_requires_revision";
+  }
+  if (state.modelContextVersion === 2
+    && state.observations.some((entry) =>
+      entry.query?.kind === "exact_budget_repairs"
+        && entry.query.candidateHash
+          === state.currentCandidate.candidateHash
+        && entry.receipt?.matches?.length > 0)) {
+    return "builder_certified_exact_budget_options_available";
+  }
+  let sameCandidatePages = 0;
+  for (const iteration of [...state.iterations].reverse()) {
+    if (iteration.decisionKind !== "query") break;
+    if (!state.observations.some((entry) =>
+      entry.requestKey === iteration.requestKey
+        && entry.query?.kind === "budget_branches"
+        && entry.query.candidateHash
+          === state.currentCandidate.candidateHash)) break;
+    sameCandidatePages += 1;
+  }
+  if (sameCandidatePages >= 3) {
+    return "three_consecutive_budget_pages_without_roster_change";
+  }
+  if (state.modelContextVersion === 2
+    && latest?.decisionKind === "propose"
+    && state.observations.some((entry) =>
+      entry.requestKey === latest.requestKey
+        && entry.query?.kind === "budget_branches"
+        && entry.query.candidateHash
+          === state.currentCandidate.candidateHash)) {
+    return "new_draft_under_budget_with_bounded_branch_evidence";
+  }
+  return null;
+}
+
 function decisionContext(state, skillGuidance, missionEvidence) {
   // Operational pause/recovery flags must not change a paid reply's context.
   // Candidate, map evidence and prior decisions must change it.
@@ -157,17 +245,100 @@ function decisionContext(state, skillGuidance, missionEvidence) {
     mineralBudget: state.mineralBudget,
     frozenContext: state.frozenContext,
     currentCandidate: state.currentCandidate,
-    plan: state.plan, observations: state.observations,
+    plan: state.plan,
+    observations: state.modelContextVersion === 2
+      ? state.observations.map(compactObservation)
+      : state.observations,
     iterations: state.iterations,
   };
+  if (state.modelContextVersion === 2) {
+    decisionState.modelContextVersion = 2;
+  }
   return { decisionState, skillGuidance, missionEvidence,
+    ...(requiredDecisionReason(state)
+      ? { requiredDecisionKind: "propose",
+        localSearchSaturation: {
+          currentMineralSpent: state.currentCandidate.mineralSpent,
+          requiredMineralSpent: state.mineralBudget,
+          mineralShortfall: state.mineralBudget
+            - state.currentCandidate.mineralSpent,
+          reason: requiredDecisionReason(state),
+        } } : {}),
     exactMineralBudget: state.mineralBudget,
     rulesAuthority: "official_army_builder_only",
     mapAuthority: "frozen_read_only_room_evidence_only" };
 }
 
+function menuSlotProjection(candidateInput, observations) {
+  const menu = observations.find((entry) =>
+    entry.query?.kind === "candidate_menu")?.receipt;
+  if (!menu?.faction?.startingArmySlots) return null;
+  const available = { ...menu.faction.startingArmySlots };
+  const used = {};
+  const cards = new Map((menu.tacticalCandidates || []).map((entry) =>
+    [entry.recordKey, entry]));
+  const units = new Map((menu.unitCandidates || []).map((entry) =>
+    [entry.recordKey, entry]));
+  for (const key of candidateInput.tacticalCardRecordKeys || []) {
+    const grants = cards.get(key)?.armySlotsAdded;
+    if (!grants) return null;
+    for (const [kind, count] of Object.entries(grants)) {
+      available[kind] = (available[kind] || 0) + count;
+    }
+  }
+  for (const selected of candidateInput.units || []) {
+    const unit = units.get(selected.recordKey);
+    const option = unit?.compositionOptions.find((entry) =>
+      entry.compositionKind === selected.compositionKind);
+    if (!unit?.armySlotType || !Number.isSafeInteger(
+      option?.occupiedArmySlots)) return null;
+    used[unit.armySlotType] = (used[unit.armySlotType] || 0)
+      + option.occupiedArmySlots;
+  }
+  return { source: "official_builder_menu_arithmetic_not_a_rules_verdict",
+    available, used,
+    overflow: Object.fromEntries(Object.entries(used)
+      .filter(([kind, count]) => count > (available[kind] || 0))
+      .map(([kind, count]) => [kind, count - (available[kind] || 0)])) };
+}
+
+async function decisionContextWithRejectedProposal(state, skillGuidance,
+  missionEvidence, replyStore) {
+  const context = decisionContext(state, skillGuidance, missionEvidence);
+  if (state.modelContextVersion !== 2) return context;
+  const latest = state.iterations.at(-1);
+  if (latest?.decisionKind !== "propose"
+    || latest.rulesVerdictStatus === "legal") return context;
+  const rejection = state.observations.findLast((entry) =>
+    entry.requestKey === latest.requestKey
+      && entry.query?.kind === "builder_verdict");
+  if (!rejection || rejection.receipt?.status !== "illegal") return context;
+  const retained = await replyStore.loadRetainedReply(latest.requestKey);
+  const candidateInput = retained?.output?.candidateInput;
+  if (retained?.outcome !== "completed"
+    || retained.output?.kind !== "propose"
+    || !candidateInput
+    || hashStarcraftTmgContract(candidateInput)
+      !== rejection.query.candidateHash) return context;
+  return { ...context, lastRejectedProposal: {
+    candidateInput,
+    rejectedCandidateHash: rejection.query.candidateHash,
+    officialBuilderRejection: {
+      rejectionKind: rejection.receipt.rejectionKind,
+      rulesErrorCode: rejection.receipt.rulesErrorCode,
+      rulesErrorDetail: rejection.receipt.rulesErrorDetail,
+    },
+    slotProjection: menuSlotProjection(candidateInput, state.observations),
+    status: "rejected_not_current_roster",
+  } };
+}
+
 function decisionFailure(decision, state) {
   const current = state.currentCandidate;
+  if (requiredDecisionReason(state)
+    && decision.kind !== "propose") {
+    return "ITERATIVE_ROSTER_FLASH_REBUILD_REQUIRED";
+  }
   const routeObserved = (candidateHash, receiptHash) =>
     state.observations.some((entry) => entry.query?.kind === "map_route"
       && entry.query.candidateHash === candidateHash
@@ -175,7 +346,10 @@ function decisionFailure(decision, state) {
       && ["exact", "certified", "advisory"].includes(
         entry.receipt.status));
   if (decision.kind === "query") {
-    if (!decision.question.trim() || decision.queries.length === 0) {
+    // The query's typed parameters, not its optional prose label, determine
+    // the tool call. A blank label must not discard an otherwise valid paid
+    // decision (observed at revision 19).
+    if (decision.queries.length === 0) {
       return "ITERATIVE_ROSTER_FLASH_QUERY_INVALID";
     }
   }
@@ -189,17 +363,25 @@ function decisionFailure(decision, state) {
       || !decision.plan.victoryRoute.trim()) {
       return "ITERATIVE_ROSTER_FLASH_PROPOSAL_INVALID";
     }
+    if (current && current.mineralSpent < state.mineralBudget
+      && hashStarcraftTmgContract(decision.candidateInput)
+        === current.candidateHash) {
+      return "ITERATIVE_ROSTER_FLASH_UNCHANGED_UNDER_BUDGET";
+    }
   }
   if (decision.kind === "finish") {
-    if (!current || current.mineralSpent !== state.mineralBudget
-      || !decision.plan.victoryRoute.trim()
+    if (!current) return "ITERATIVE_ROSTER_FLASH_FINISH_NO_CANDIDATE";
+    if (current.mineralSpent !== state.mineralBudget) {
+      return "ITERATIVE_ROSTER_FLASH_FINISH_BUDGET_SHORTFALL";
+    }
+    if (!decision.plan.victoryRoute.trim()
       || !decision.plan.mapEvidenceHash
       || !routeObserved(current.candidateHash,
         decision.plan.mapEvidenceHash)) {
-      return "ITERATIVE_ROSTER_FLASH_FINISH_INVALID";
+      return "ITERATIVE_ROSTER_FLASH_FINISH_MAP_ROUTE_UNBOUND";
     }
   }
-  if (state.plan && decision.kind !== "query"
+  if (state.plan && decision.kind === "finish"
     && decision.plan.victoryRoute !== state.plan.victoryRoute
     && decision.assumptionDisposition !== "revise") {
     return "ITERATIVE_ROSTER_FLASH_ROUTE_REVISION_UNDECLARED";
@@ -208,6 +390,31 @@ function decisionFailure(decision, state) {
 }
 
 function admissibleQueries(decision, state) {
+  if (decision.kind === "finish" && state.currentCandidate) {
+    const currentHash = state.currentCandidate.candidateHash;
+    const route = state.observations.findLast((entry) =>
+      entry.query?.kind === "map_route"
+        && entry.query.candidateHash === currentHash
+        && entry.receipt?.status === "certified");
+    const supplied = decision.plan.mapEvidenceHash;
+    const summaryIsBound = !supplied
+      || supplied === state.frozenContext.mapHash
+      || state.observations.some((entry) =>
+      entry.query?.kind === "map_summary"
+        && entry.receipt?.status === "certified"
+        && entry.receipt.receiptHash === supplied
+        && entry.receipt.mapBinding?.roomFreezeHash
+          === state.frozenContext.mapHash);
+    // The model may cite the map-summary receipt after a current-candidate
+    // route audit was fetched. Rebind only this known summary alias to the
+    // certified route; keep the original pointer visible for final review.
+    if (route && summaryIsBound && supplied !== route.receipt.receiptHash) {
+      return { ...decision, plan: { ...decision.plan,
+        mapEvidenceHash: route.receipt.receiptHash },
+      originalMapEvidenceHash: supplied || null,
+      evidenceBindingKind: "certified_current_candidate_route" };
+    }
+  }
   if (decision.kind === "propose") {
     const supplied = decision.plan.mapEvidenceHash;
     if (supplied && !state.observations.some((entry) => (
@@ -272,12 +479,20 @@ export function createIterativeRosterFlashModelPortV1({
     const repair = (failureCode) => ({ outcome: "completed",
       receiptHash: reply.receiptHash,
       decision: { kind: "repair_needed", failureCode,
+        diagnostics: failureCode === "ITERATIVE_ROSTER_FLASH_FINISH_BUDGET_SHORTFALL"
+          ? { currentMineralSpent: state.currentCandidate?.mineralSpent ?? null,
+            requiredMineralSpent: state.mineralBudget,
+            mineralShortfall: state.mineralBudget
+              - Number(state.currentCandidate?.mineralSpent || 0),
+            requiredNextAction: "revise_roster_or_query_budget_branches" }
+          : null,
         providerReplyHash: reply.output
           ? hashStarcraftTmgContract(reply.output)
           : reply.failedOutputRecord?.rawTextHash || null },
       reconciledFromRequestKey: reply.reconciledFromRequestKey || null });
     const expectedContextHash = hashStarcraftTmgContract(
-      decisionContext(state, skillGuidance, missionEvidence));
+      await decisionContextWithRejectedProposal(state, skillGuidance,
+        missionEvidence, replyStore));
     if (reply.contextHash !== expectedContextHash) {
       fail("ITERATIVE_ROSTER_RETAINED_CONTEXT_MISMATCH");
     }
@@ -321,7 +536,8 @@ export function createIterativeRosterFlashModelPortV1({
     const prior = await replyStore.loadRetainedReply(requestKey);
     if (!prior) {
       const contextHash = hashStarcraftTmgContract(
-        decisionContext(state, skillGuidance, missionEvidence));
+        await decisionContextWithRejectedProposal(state, skillGuidance,
+          missionEvidence, replyStore));
       await replyStore.retainReply(requestKey, {
         outcome: "completed", requestKey, contextHash,
         receiptHash: hashStarcraftTmgContract({ requestKey,
@@ -343,9 +559,11 @@ export function createIterativeRosterFlashModelPortV1({
     decide: async ({ requestKey, state }) => {
       const previous = await replyStore.loadRetainedReply(requestKey);
       if (previous) return recovered(requestKey, state);
-      const context = decisionContext(state, skillGuidance,
-        missionEvidence);
+      const context = await decisionContextWithRejectedProposal(state,
+        skillGuidance, missionEvidence, replyStore);
       const contextHash = hashStarcraftTmgContract(context);
+      const rebuildOnly = context.requiredDecisionKind === "propose";
+      const activeContract = rebuildOnly ? proposalOnlyContract : contract;
       const deliberation = await deliberationFactory.createForRun({
         sessionId: state.sessionId,
         runKind: "iterative_roster_step",
@@ -377,14 +595,39 @@ export function createIterativeRosterFlashModelPortV1({
         roundIndex: state.revision + 1,
         promptPack: ITERATIVE_ROSTER_FLASH_MODEL_PORT_V1,
         promptNodes: [{ role: "frozen_context", content: context }],
-        userMessage: "Choose one public decision. Query the official Builder "
+        userMessage: rebuildOnly
+          ? "This under-budget roster has bounded local budget evidence. "
+            + "If lastRejectedProposal is present, repair that exact "
+            + "candidate against the official Builder rejection and its "
+            + "menu-derived slot ledger; rejected proposals are not current "
+            + "rosters. "
+            + "If exact_budget_repairs contains Builder-certified 2000-point "
+            + "options, select or strategically revise one of those complete "
+            + "candidates rather than recomputing its costs yourself. "
+            + "Submit a NEW, "
+            + "complete candidateInput now; querying another page or "
+            + "finishing cannot advance this step. You may add or replace "
+            + "tactical cards, add units, change compositions and upgrades "
+            + "using the official menu. Capacity directions are menu-only, "
+            + "not legal verdicts; the complete Builder will judge your "
+            + "proposal. Explain its scoring route, opening, map use and "
+            + "opponent contingencies in public plan fields. Aim for the "
+            + "exact mineralBudget, but do not invent Rules results or "
+            + "private chain of thought."
+          : "Choose one public decision. Query the official Builder "
           + "menu or frozen map when needed; propose a complete candidate, "
           + "inspect exact budget branches only after a Rules-legal current "
           + "candidate exists, and ask map_route only for that candidate's "
           + "hash. Before a candidate exists, use candidate_menu and/or "
           + "map_summary; do not mix budget_branches into that first query. "
           + "Revise your route as evidence "
-          + "changes. Finish only with an exact-budget legal candidate, "
+          + "changes. This task requires exactly 2000 minerals spent; "
+          + "the Builder's legal maximum-budget verdict alone is not enough. "
+          + "If the current legal roster is under 2000, enlarge or redesign "
+          + "the roster and inspect budget branches as advisory choices. "
+          + "Do not repeat the unchanged candidate or choose finish while "
+          + "mineralSpent is below mineralBudget. Finish only with an "
+          + "exact-budget legal candidate, "
           + "current-candidate map evidence and a substantive scoring/opening/"
           + "opponent-response plan. Use empty placeholders for fields that "
           + "the chosen kind does not consume. Do not invent Rules outcomes "
@@ -392,14 +635,15 @@ export function createIterativeRosterFlashModelPortV1({
         responseContract: {
           schemaVersion: ITERATIVE_ROSTER_FLASH_MODEL_PORT_V1,
           finalAuthority: "Builder plus map route plus host final review",
-          queryKinds: ["candidate_menu", "budget_branches",
-            "map_summary", "map_route"],
+          queryKinds: rebuildOnly ? [] : ["candidate_menu",
+            "budget_branches", "map_summary", "map_route"],
         },
         contextHash,
         responseFormat: { kind: "provider_strict_json_schema",
-          schemaName: contract.schemaName,
-          schema: contract.providerSchema,
-          outputContractRef: outputContractRefStarcraftTmgV1(contract) },
+          schemaName: activeContract.schemaName,
+          schema: activeContract.providerSchema,
+          outputContractRef:
+            outputContractRefStarcraftTmgV1(activeContract) },
       }); } catch (error) {
         if (!await replyStore.loadRetainedReply(requestKey)) throw error;
       }

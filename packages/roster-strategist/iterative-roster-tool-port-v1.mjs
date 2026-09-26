@@ -2,6 +2,8 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { queryRosterBudgetBranchesV1 } from
   "./roster-budget-branch-query-v1.mjs";
+import { searchRosterExactBudgetRepairsV1 } from
+  "./roster-exact-budget-repair-search-v1.mjs";
 
 function fail(code) {
   throw Object.assign(new Error(code), { code });
@@ -60,7 +62,11 @@ export function createIterativeRosterToolPortV1({ armyBuilderPort,
           candidateInput: current.input,
           expectedSourceCandidateHash: current.candidateHash,
           startOffset: query.startOffset ?? 0,
-          maximumEvaluations: query.maximumEvaluations ?? 16,
+          // A paid model query must not synchronously audit dozens of full
+          // armies. Four exact branches plus menu-only capacity directions
+          // give useful evidence without turning one turn into minutes of
+          // speculative Builder work.
+          maximumEvaluations: Math.min(query.maximumEvaluations ?? 4, 4),
           maximumMutationDepth: query.maximumMutationDepth ?? 3,
         }));
         return { status: "bounded_rules_branches",
@@ -69,7 +75,30 @@ export function createIterativeRosterToolPortV1({ armyBuilderPort,
           sourceCandidateHash: receipt.sourceCandidateHash,
           sourceMineralShortfall: receipt.sourceMineralShortfall,
           branches: receipt.branches, nextPage: receipt.nextPage,
+          capacityDirections: receipt.capacityDirections,
+          capacityDirectionsAreMenuOnly: true,
           truncated: receipt.truncated,
+          strategyRankingPerformed: false };
+      }
+      if (query?.kind === "exact_budget_repairs") {
+        const current = currentCandidate(query, state);
+        const receipt = verifiedReceipt(searchRosterExactBudgetRepairsV1({
+          armyBuilderPort,
+          sourceCandidateInput: current.input,
+          maximumMatches: 4,
+          maximumBuilderEvaluations: 12,
+          maximumMenuNodes: 250_000,
+        }));
+        return { status: "builder_certified_exact_budget_options",
+          receiptHash: receipt.receiptHash,
+          sourceCandidateHash: receipt.sourceCandidateHash,
+          sourceMineralSpent: receipt.sourceMineralSpent,
+          sourceMineralShortfall: receipt.sourceMineralShortfall,
+          matches: receipt.matches,
+          menuPathsVisited: receipt.menuPathsVisited,
+          builderEvaluations: receipt.builderEvaluations,
+          searchTruncated: receipt.searchTruncated,
+          exactBudgetImpossibilityClaimed: false,
           strategyRankingPerformed: false };
       }
       if (query?.kind === "map_summary") {

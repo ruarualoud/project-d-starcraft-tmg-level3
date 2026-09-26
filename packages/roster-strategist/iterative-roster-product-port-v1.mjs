@@ -121,6 +121,7 @@ export function createIterativeRosterProductPortV1({ directory,
       return session.start({ sessionId: input.sessionId,
         mineralBudget: input.mineralBudget, frozenContext });
     },
-    resume: session.resume, pause: session.pause, read: session.read,
+    resume: session.resume, pause: session.pause,
+    prepare: session.prepare, read: session.read,
   });
 }

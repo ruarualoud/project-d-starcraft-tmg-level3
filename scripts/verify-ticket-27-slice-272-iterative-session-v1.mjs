@@ -7,6 +7,13 @@ import { createIterativeRosterPlanSessionV1 } from
   "../packages/roster-strategist/iterative-roster-plan-session-v1.mjs";
 
 const saved = new Map();
+// These scripted decisions exercise the original v1 query ordering. Newly
+// opened production sessions use v2 deterministic budget/route preflights;
+// preserve the legacy fixture as an explicit versioned compatibility case.
+const useLegacyQueryOrder = (records, id) => {
+  const state = records.get(id);
+  records.set(id, { ...state, modelContextVersion: 1 });
+};
 const decisions = [
   { kind: "propose", candidateInput: { id: "first", minerals: 1870 },
     plan: { victoryRoute: "hold marker 1", mapEvidenceHash: null,
@@ -68,6 +75,7 @@ const session = createIterativeRosterPlanSessionV1({
 const opened = await session.start({ sessionId: "iterative-2000-fixture",
   mineralBudget: 2000, frozenContext: { mapHash: "frozen-map-v1",
     taskHash: "frozen-task-v1", sourceHash: "frozen-source-v1" } });
+useLegacyQueryOrder(saved, "iterative-2000-fixture");
 assert.equal(opened.status, "active");
 const first = await session.resume("iterative-2000-fixture");
 assert.equal(first.status, "active");
@@ -114,6 +122,7 @@ const staleMap = createIterativeRosterPlanSessionV1({
 await staleMap.start({ sessionId: "iterative-stale-map-fixture",
   mineralBudget: 2000, frozenContext: { mapHash: "frozen-map-v1",
     taskHash: "frozen-task-v1", sourceHash: "frozen-source-v1" } });
+useLegacyQueryOrder(staleSaved, "iterative-stale-map-fixture");
 await staleMap.resume("iterative-stale-map-fixture");
 await assert.rejects(staleMap.resume("iterative-stale-map-fixture"),
   (error) => error?.code === "ITERATIVE_ROSTER_MAP_QUERY_STALE_CANDIDATE");
@@ -148,6 +157,7 @@ const recoverable = createIterativeRosterPlanSessionV1({
 await recoverable.start({ sessionId: "iterative-recovery-fixture",
   mineralBudget: 2000, frozenContext: { mapHash: "frozen-map-v1",
     taskHash: "frozen-task-v1", sourceHash: "frozen-source-v1" } });
+useLegacyQueryOrder(ambiguousSaved, "iterative-recovery-fixture");
 await assert.rejects(recoverable.resume("iterative-recovery-fixture"),
   /ambiguous_after_dispatch/u);
 const recovered = await recoverable.resume("iterative-recovery-fixture");
@@ -189,6 +199,7 @@ const forged = createIterativeRosterPlanSessionV1({
 await forged.start({ sessionId: "iterative-forgery-fixture",
   mineralBudget: 2000, frozenContext: { mapHash: "frozen-map-v1",
     taskHash: "frozen-task-v1", sourceHash: "frozen-source-v1" } });
+useLegacyQueryOrder(forgedSaved, "iterative-forgery-fixture");
 await forged.resume("iterative-forgery-fixture");
 await assert.rejects(forged.resume("iterative-forgery-fixture"),
   (error) => error?.code === "ITERATIVE_ROSTER_MAP_EVIDENCE_UNBOUND");

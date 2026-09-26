@@ -60,10 +60,8 @@ function publicPlan(value, candidateHash, priorPlan, observations) {
         && entry.receipt.mapBinding?.roomFreezeHash === value.mapEvidenceHash)))) {
     fail("ITERATIVE_ROSTER_MAP_EVIDENCE_UNBOUND");
   }
-  if (priorPlan && priorPlan.victoryRoute !== value.victoryRoute
-    && value.assumptionDisposition !== "revise") {
-    fail("ITERATIVE_ROSTER_ROUTE_REVISION_UNDECLARED");
-  }
+  // Draft wording may change without a new strategic route. Preserve the
+  // discrepancy as an observation in resume; final Teach must resolve it.
   return { victoryRoute: value.victoryRoute.trim(),
     mapEvidenceHash: value.mapEvidenceHash,
     arrivalScheduleStatus: value.arrivalScheduleStatus,
@@ -85,6 +83,70 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
     return copy(state);
   }
 
+  async function attachExactBudgetOptions(state, requestKey) {
+    const current = state.currentCandidate;
+    if (state.modelContextVersion !== 2 || !current
+      || current.mineralSpent >= state.mineralBudget
+      || state.observations.some((entry) =>
+        entry.query?.kind === "exact_budget_repairs"
+          && entry.query.candidateHash === current.candidateHash)) return null;
+    const query = { kind: "exact_budget_repairs",
+      candidateHash: current.candidateHash };
+    const receipt = await ports.tools.query(query, copy(state));
+    requiredHash(receipt?.receiptHash,
+      "ITERATIVE_ROSTER_EXACT_BUDGET_RECEIPT_INVALID");
+    if (receipt.status !== "builder_certified_exact_budget_options"
+      || receipt.sourceCandidateHash !== current.candidateHash
+      || receipt.exactBudgetImpossibilityClaimed !== false
+      || !Array.isArray(receipt.matches)
+      || receipt.matches.some((match) =>
+        match.mineralSpent !== state.mineralBudget
+          || typeof match.rulesVerdictHash !== "string")) {
+      fail("ITERATIVE_ROSTER_EXACT_BUDGET_RECEIPT_INVALID");
+    }
+    const observation = { query, receipt: copy(receipt), requestKey };
+    state.observations.push(observation);
+    return observation;
+  }
+
+  async function attachCurrentMapRoute(state, requestKey) {
+    const current = state.currentCandidate;
+    if (state.modelContextVersion !== 2 || !current
+      || current.mineralSpent !== state.mineralBudget
+      || state.observations.some((entry) =>
+        entry.query?.kind === "map_route"
+          && entry.query.candidateHash === current.candidateHash)) return null;
+    // A route audit is bound to the exact Builder-accepted candidate. Fetching
+    // this deterministic evidence does not choose a strategy for the model.
+    const query = { kind: "map_route", candidateHash: current.candidateHash };
+    const receipt = await ports.tools.query(query, copy(state));
+    requiredHash(receipt?.receiptHash,
+      "ITERATIVE_ROSTER_MAP_ROUTE_RECEIPT_INVALID");
+    if (receipt.candidateHash !== current.candidateHash
+      || !["certified", "unknown"].includes(receipt.status)) {
+      fail("ITERATIVE_ROSTER_MAP_ROUTE_RECEIPT_INVALID");
+    }
+    const observation = { query, receipt: copy(receipt), requestKey };
+    state.observations.push(observation);
+    return observation;
+  }
+
+  async function attachDeterministicEvidence(state) {
+    const hostKey = hashStarcraftTmgContract({
+      sessionId: state.sessionId,
+      kind: "exact_budget_repairs",
+      candidateHash: state.currentCandidate?.candidateHash || null,
+    });
+    const routeKey = hashStarcraftTmgContract({
+      sessionId: state.sessionId,
+      kind: "map_route",
+      candidateHash: state.currentCandidate?.candidateHash || null,
+    });
+    const budget = await attachExactBudgetOptions(state, hostKey);
+    const route = await attachCurrentMapRoute(state, routeKey);
+    return Boolean(budget || route);
+  }
+
   async function start(input = {}) {
     const sessionId = requiredId(input.sessionId,
       "ITERATIVE_ROSTER_SESSION_ID_INVALID");
@@ -103,6 +165,7 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       contextHash: hashStarcraftTmgContract({ mineralBudget, frozenContext }),
       currentCandidate: null, plan: null, observations: [], iterations: [],
       pendingDecision: null, pauseRequested: false, finalReview: null,
+      modelContextVersion: 2,
       modelDecisionReceiptCount: 0,
       trainingTruth: false,
     };
@@ -122,21 +185,50 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
     return copy(state);
   }
 
+  async function prepare(sessionId) {
+    const state = await read(sessionId);
+    if (busy.has(sessionId) || state.pendingDecision) {
+      fail("ITERATIVE_ROSTER_SESSION_BUSY");
+    }
+    busy.add(sessionId);
+    try {
+      if (await attachDeterministicEvidence(state)) {
+        await ports.store.save(sessionId, copy(state));
+      }
+      return copy(state);
+    } finally {
+      busy.delete(sessionId);
+    }
+  }
+
   async function resume(sessionId, options = {}) {
     let state = await read(sessionId);
     if (state.status === "ready_for_match") return state;
     if (busy.has(sessionId)) fail("ITERATIVE_ROSTER_SESSION_BUSY");
+    // Old paid replies keep their original context projection for exact
+    // recovery. Upgrade this existing live session only after revision 21
+    // has settled; all newly started sessions use the compact projection.
+    if (!state.modelContextVersion && state.revision >= 21
+      && !state.pendingDecision) {
+      state.modelContextVersion = 2;
+    }
     const retainedRecovery = state.status === "requires_reconciliation"
       && Boolean(state.pendingDecision)
       && typeof ports.model.recover === "function";
     const retainedReconciliation = (state.status === "requires_reconciliation"
+      && options.advanceAfterKnownInvalid !== true
       || (options.preferRetainedRepair === true
         && ["active", "paused"].includes(state.status)))
       && !state.pendingDecision
       && state.iterations.at(-1)?.decisionKind === "repair_needed"
       && typeof ports.model.reconcile === "function";
+    const advanceAfterKnownInvalid = state.status === "requires_reconciliation"
+      && options.advanceAfterKnownInvalid === true
+      && !state.pendingDecision
+      && state.iterations.at(-1)?.decisionKind === "repair_needed";
     if (!["active", "paused"].includes(state.status)
-      && !retainedRecovery && !retainedReconciliation) {
+      && !retainedRecovery && !retainedReconciliation
+      && !advanceAfterKnownInvalid) {
       fail("ITERATIVE_ROSTER_RECONCILIATION_REQUIRED");
     }
     const recovering = Boolean(state.pendingDecision);
@@ -152,6 +244,11 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
     try {
       state.status = "active";
       state.pauseRequested = false;
+      if (!recovering && !retainedReconciliation) {
+        if (await attachDeterministicEvidence(state)) {
+          await ports.store.save(sessionId, copy(state));
+        }
+      }
       const sourceRequestKey = state.pendingDecision?.sourceRequestKey
         || (retainedReconciliation
           ? state.iterations.at(-1).requestKey : null);
@@ -202,6 +299,7 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
         }
         const receipt = { status: "known_paid_output_rejected",
           failureCode: decision.failureCode,
+          diagnostics: decision.diagnostics || null,
           providerReplyHash: decision.providerReplyHash || null,
           receiptHash: reply.receiptHash };
         const observation = { query: { kind: "model_output_repair" },
@@ -217,8 +315,7 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       } else if (decision.kind === "query") {
         if (!Array.isArray(decision.queries) || decision.queries.length < 1
           || decision.queries.length > 8
-          || typeof decision.question !== "string"
-          || !decision.question.trim()) {
+          || typeof decision.question !== "string") {
           fail("ITERATIVE_ROSTER_QUERY_INVALID");
         }
         if (decision.queries.some((query) => (
@@ -254,6 +351,19 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
           || !["retain", "revise"].includes(
             decision.assumptionDisposition)) {
           fail("ITERATIVE_ROSTER_PROPOSAL_INVALID");
+        }
+        if (state.plan && decision.assumptionDisposition === "retain"
+          && decision.plan?.victoryRoute !== state.plan.victoryRoute) {
+          const receiptBody = { status: "draft_route_wording_changed_while_retained",
+            previousPlanHash: hashStarcraftTmgContract(state.plan),
+            modelReceiptHash: reply.receiptHash,
+            requiresTeachResolution: true };
+          const observation = { query: { kind: "model_route_warning" },
+            receipt: { ...receiptBody,
+              receiptHash: hashStarcraftTmgContract(receiptBody) },
+            requestKey };
+          state.observations.push(observation);
+          toolReceipts.push(observation);
         }
         if (decision.ignoredEvidenceHash) {
           const receiptBody = { status: "ignored_unbound_model_map_hash",
@@ -294,17 +404,23 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
             assumptionDisposition: decision.assumptionDisposition },
           candidateHash, previousPlan, state.observations);
           if (verdict.mineralSpent < state.mineralBudget) {
-            const query = { kind: "budget_branches", candidateHash,
-              mineralShortfall: state.mineralBudget - verdict.mineralSpent };
-            const receipt = await ports.tools.query(query, copy(state));
-            requiredHash(receipt?.receiptHash,
-              "ITERATIVE_ROSTER_TOOL_RECEIPT_INVALID");
-            if (receipt.exactBudgetImpossibilityClaimed !== false) {
-              fail("ITERATIVE_ROSTER_FALSE_IMPOSSIBILITY_CLAIM");
+            if (state.modelContextVersion === 2) {
+              const observation = await attachExactBudgetOptions(state,
+                requestKey);
+              if (observation) toolReceipts.push(observation);
+            } else {
+              const query = { kind: "budget_branches", candidateHash,
+                mineralShortfall: state.mineralBudget - verdict.mineralSpent };
+              const receipt = await ports.tools.query(query, copy(state));
+              requiredHash(receipt?.receiptHash,
+                "ITERATIVE_ROSTER_TOOL_RECEIPT_INVALID");
+              if (receipt.exactBudgetImpossibilityClaimed !== false) {
+                fail("ITERATIVE_ROSTER_FALSE_IMPOSSIBILITY_CLAIM");
+              }
+              const observation = { query, receipt: copy(receipt), requestKey };
+              state.observations.push(observation);
+              toolReceipts.push(observation);
             }
-            const observation = { query, receipt: copy(receipt), requestKey };
-            state.observations.push(observation);
-            toolReceipts.push(observation);
           }
         } else {
           state.observations.push({ query: { kind: "builder_verdict",
@@ -329,7 +445,6 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
         if (!state.currentCandidate || !state.plan
           || state.currentCandidate.mineralSpent !== state.mineralBudget
           || state.plan.candidateHash !== state.currentCandidate.candidateHash
-          || state.plan.arrivalScheduleStatus !== "legal"
           || !state.plan.mapEvidenceHash
           || !state.observations.some((entry) => (
             entry.query.kind === "map_route"
@@ -395,5 +510,5 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
     }
   }
 
-  return Object.freeze({ start, resume, pause, read });
+  return Object.freeze({ start, resume, pause, prepare, read });
 }

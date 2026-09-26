@@ -105,6 +105,51 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     return { available, used };
   };
   const baselineSlots = slotTotals();
+  // Structural capacity is often the real obstacle to spending a large
+  // shortfall. Expose menu-derived card changes separately from Rules-legal
+  // nearby branches: the Agent can redesign its list, while the complete
+  // Builder still judges any subsequent proposal.
+  const capacityDirections = [];
+  if (baselineSlots) {
+    const chosenCards = new Set(current.tacticalCardRecordKeys);
+    const fits = (available, unit, option) =>
+      baselineSlots.used[unit.armySlotType] + option.occupiedArmySlots
+        <= (available[unit.armySlotType] || 0);
+    for (const tactical of menu.tacticalCandidates) {
+      if (chosenCards.has(tactical.recordKey)) continue;
+      for (const replacedCardRecordKey of [null,
+        ...current.tacticalCardRecordKeys]) {
+        const replaced = replacedCardRecordKey
+          ? tacticalByKey.get(replacedCardRecordKey) : null;
+        const available = { ...baselineSlots.available };
+        for (const [kind, count] of Object.entries(
+          tactical.armySlotsAdded || {})) {
+          available[kind] = (available[kind] || 0) + count
+            - (replaced?.armySlotsAdded?.[kind] || 0);
+        }
+        const newlyFittingUnits = menu.unitCandidates.flatMap((unit) =>
+          unit.compositionOptions.filter((option) =>
+            !fits(baselineSlots.available, unit, option)
+              && fits(available, unit, option)).map((option) => ({
+            recordKey: unit.recordKey,
+            compositionKind: option.compositionKind,
+            mineralCost: menuCost(option.mineralCost),
+            armySlotType: unit.armySlotType,
+            occupiedArmySlots: option.occupiedArmySlots,
+          })));
+        if (!newlyFittingUnits.length) continue;
+        capacityDirections.push({
+          change: replacedCardRecordKey ? "replace_tactical_card"
+            : "add_tactical_card",
+          tacticalCardRecordKey: tactical.recordKey,
+          replacedCardRecordKey,
+          availableArmySlotsAfterMenuProjection: available,
+          newlyFittingUnits,
+          legal: "not_rules_audited",
+        });
+      }
+    }
+  }
   const slotOverflowAdvisory = (steps) => {
     if (!baselineSlots) return null;
     const { available } = baselineSlots;
@@ -291,6 +336,8 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     sourceMineralSpent: baseline.summary.mineralSpent,
     sourceMineralShortfall: shortfall,
     branches,
+    capacityDirections,
+    capacityDirectionsAreMenuOnly: true,
     totalOneStepMutations: singleStepCount,
     totalGeneratedMutationPaths: candidates.length,
     maximumMutationDepth,

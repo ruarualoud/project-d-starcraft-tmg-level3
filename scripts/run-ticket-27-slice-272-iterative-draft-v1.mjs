@@ -4,6 +4,7 @@
 // active RosterPlan until the separate Rules schedule and Teach review exist.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createInterface } from "node:readline";
 
 import { createRosterPlanningProductModuleV1 } from
   "../packages/product-composition/roster-planning-product-module-v1.mjs";
@@ -25,11 +26,18 @@ const argument = (name) => process.argv.find((value) =>
 const sessionId = argument("session") || "iterative-standard-2000-live-v1";
 const steps = Number(argument("steps") || 1);
 const preferRetainedRepair = argument("reconcile-last") === "true";
+const advanceAfterKnownInvalid = argument("advance-after-repair") === "true";
+const prepareOnly = argument("prepare-only") === "true";
+const interactive = argument("interactive") === "true";
 if (!Number.isSafeInteger(steps) || steps < 1 || steps > 12) {
   throw new Error("ITERATIVE_LIVE_STEPS_INVALID");
 }
 
-const secure = await createRosterPlanningSecureDeliberationFactoryV1();
+const secure = (preferRetainedRepair && steps === 1) || prepareOnly
+  ? { factory: { createForRun: async () => {
+      throw new Error("RETAINED_RECONCILIATION_MUST_NOT_CALL_PROVIDER");
+    } }, close: async () => {} }
+  : await createRosterPlanningSecureDeliberationFactoryV1();
 try {
   const product = await createRosterPlanningProductModuleV1({
     root, fixtureRoot, dataDirectory,
@@ -50,13 +58,74 @@ try {
         OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1.player2.factionRecordKey,
       scaleId: "Standard", mineralBudget: 2000 });
   }
-  for (let step = 0; step < steps
+  if (prepareOnly) {
+    state = await port.prepare(sessionId);
+    const receipt = state.observations.findLast((entry) =>
+      entry.query?.kind === "exact_budget_repairs"
+        && entry.query.candidateHash
+          === state.currentCandidate?.candidateHash)?.receipt;
+    process.stdout.write(`${JSON.stringify({
+      event: "iterative_roster_exact_budget_prepared", sessionId,
+      revision: state.revision, status: state.status,
+      sourceMineralSpent: receipt?.sourceMineralSpent ?? null,
+      exactBuilderCertifiedOptions: receipt?.matches?.length ?? 0,
+      menuPathsVisited: receipt?.menuPathsVisited ?? null,
+      builderEvaluations: receipt?.builderEvaluations ?? null,
+      providerCalls: 0,
+    })}\n`);
+  }
+  if (interactive) {
+    process.stdout.write(`${JSON.stringify({ event: "iterative_roster_ready",
+      sessionId, revision: state.revision, status: state.status })}\n`);
+    const lines = createInterface({ input: process.stdin,
+      crlfDelay: Infinity });
+    for await (const raw of lines) {
+      const command = raw.trim();
+      if (command === "quit") break;
+      try {
+        state = command === "status" ? await port.read(sessionId)
+          : command === "prepare" ? await port.prepare(sessionId)
+          : command === "step" ? await port.resume(sessionId)
+          : command === "advance" ? await port.resume(sessionId,
+            { advanceAfterKnownInvalid: true })
+          : command === "reconcile" ? await port.resume(sessionId,
+            { preferRetainedRepair: true })
+          : null;
+        if (!state) {
+          process.stdout.write(`${JSON.stringify({
+            event: "iterative_roster_command_invalid", command })}\n`);
+          continue;
+        }
+        process.stdout.write(`${JSON.stringify({
+          event: "iterative_roster_command_complete", command,
+          revision: state.revision, status: state.status,
+          decisionKind: state.iterations.at(-1)?.decisionKind || null,
+          rulesVerdictStatus:
+            state.iterations.at(-1)?.rulesVerdictStatus || null,
+          mineralSpent: state.currentCandidate?.mineralSpent ?? null,
+          blockingFinding: state.blockingFinding || null,
+          exactOptions: state.observations.findLast((entry) =>
+            entry.query?.kind === "exact_budget_repairs"
+              && entry.query.candidateHash
+                === state.currentCandidate?.candidateHash)
+            ?.receipt?.matches?.length ?? 0,
+        })}\n`);
+      } catch (error) {
+        process.stdout.write(`${JSON.stringify({
+          event: "iterative_roster_command_failed", command,
+          code: error?.code || error?.message || "UNKNOWN" })}\n`);
+      }
+    }
+  }
+  for (let step = 0; !interactive && !prepareOnly && step < steps
     && (["active", "paused"].includes(state.status)
       || (state.status === "requires_reconciliation"
-        && state.iterations.at(-1)?.decisionKind === "repair_needed"));
+        && state.iterations.at(-1)?.decisionKind === "repair_needed"
+        && (step === 0 || !advanceAfterKnownInvalid)));
     step += 1) {
     state = await port.resume(sessionId,
-      { preferRetainedRepair: preferRetainedRepair && step === 0 });
+      { preferRetainedRepair: preferRetainedRepair && step === 0,
+        advanceAfterKnownInvalid: advanceAfterKnownInvalid && step === 0 });
     process.stdout.write(`${JSON.stringify({
       event: "iterative_roster_step",
       sessionId, revision: state.revision,
