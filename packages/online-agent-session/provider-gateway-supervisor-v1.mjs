@@ -63,7 +63,10 @@ const USAGE_FIELDS = new Set([
 const GATEWAY_RESULT_FIELDS = new Set(["output", "usageReceipt"]);
 const SENSITIVE_KEY_PATTERN = /(?:api.?key|authorization|bearer|cookie|credential|secret|access.?token|refresh.?token)/iu;
 const SENSITIVE_VALUE_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]{8,}|\bsk-[A-Za-z0-9_-]{12,}|(?:api[_-]?key|authorization|credential|secret)\s*[:=]\s*[^\s,;}]{6,}/iu;
-const MAX_SAFE_OUTPUT_BYTES = 64 * 1024;
+// The isolated worker admits up to 1 MiB. Its bounded 64 KiB content may
+// acquire a JSON envelope and receipt fields before reaching this supervisor;
+// a second 64 KiB cap incorrectly classified that valid result as unsafe.
+const MAX_SAFE_OUTPUT_BYTES = 1024 * 1024;
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);

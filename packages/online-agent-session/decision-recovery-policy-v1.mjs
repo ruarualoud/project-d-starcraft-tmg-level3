@@ -6,6 +6,17 @@ export const STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1 = Object.freeze
   "provider_worker_failed",
   "provider_transport_failed",
   "provider_transport_timeout",
+  // An unsafe gateway envelope is never consumed as a decision. After a
+  // concrete normalization fix, only an explicit later run may retry the
+  // saved choice; a fresh occurrence in that run still blocks immediately.
+  "unsafe_provider_result",
+  // A previously settled pre-dispatch policy-shape failure may be retried only
+  // in an explicit later run after the configuration has been repaired. A new
+  // occurrence in that run remains blocking.
+  "provider_attempt_integer_invalid",
+  // The supervisor emits this code when its own deadline expires after
+  // dispatch; explicit later runs must be able to retry the saved choice.
+  "timed_out",
   "LIVE_DECISION_PROVIDER_OUTPUT_TRUNCATED",
 ]);
 
