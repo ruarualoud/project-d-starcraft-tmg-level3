@@ -71,6 +71,9 @@ const CANCEL_RESULT_FIELDS = new Set([
   "type", "requestId", "targetRequestId", "ok", "matched", "workerVersion",
   "trainingTruth",
 ]);
+const WORKER_FAILURE_FIELDS = new Set([
+  "type", "requestId", "ok", "code", "workerVersion", "trainingTruth",
+]);
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -487,6 +490,24 @@ export function createStarcraftTmgProviderEgressWorkerPortV2(options = {}) {
           if (message.ok !== false) {
             kill(record, "Provider Worker emitted an unsafe result", false);
           }
+        }
+        return;
+      }
+      if (record.pending && message?.type === "worker_failure") {
+        try {
+          exactFields(message, WORKER_FAILURE_FIELDS,
+            "Provider Worker handler failure");
+          if (message.requestId !== record.pending.requestId
+            || message.ok !== false
+            || message.code !== "PROVIDER_WORKER_PROTOCOL_REJECTED"
+            || message.workerVersion !== WIRE_VERSION
+            || message.trainingTruth !== false) {
+            throw new TypeError("Provider Worker handler failure is invalid");
+          }
+          kill(record, "Provider Worker request handler failed", false,
+            "PROVIDER_WORKER_CHILD_HANDLER_FAILED");
+        } catch {
+          kill(record, "Provider Worker emitted an invalid handler failure");
         }
         return;
       }

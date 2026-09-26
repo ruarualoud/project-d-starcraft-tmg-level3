@@ -279,6 +279,17 @@ process.on("message", (message) => {
     return;
   }
   if (message?.type === "complete" && initialized) {
+    if (MODE === "child_handler_failure") {
+      reply({
+        type: "worker_failure",
+        requestId: message.requestId,
+        ok: false,
+        code: "PROVIDER_WORKER_PROTOCOL_REJECTED",
+        workerVersion: WIRE_VERSION,
+        trainingTruth: false,
+      });
+      return;
+    }
     if (MODE === "provider_response_contract_failure") {
       const body = {
         schemaVersion: "starcraft_tmg_provider_egress_transport_v1.failure",
