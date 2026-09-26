@@ -584,7 +584,8 @@ function candidatePrefilterFailure(state, source, contract, candidate) {
     || footprint.point.yMilliInches + halfDepth > height) {
     return "BATTLEFIELD_ASSET_FULL_BASE_OUTSIDE_BATTLEFIELD";
   }
-  if (["creep_token_place", "force_field_place", "shade_token_place"]
+  if (["creep_token_place", "force_field_place", "shade_token_place",
+    "spawn_creep_tumor"]
     .includes(source.effectKind)) {
     for (const piece of (state.pieces || []).filter(activePiece)) {
       if (liveModelFootprints(piece).some((entry) =>

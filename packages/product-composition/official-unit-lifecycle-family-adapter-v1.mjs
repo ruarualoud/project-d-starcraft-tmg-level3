@@ -817,6 +817,24 @@ function tumorPlan(state, actor, point) {
         Number(model.yInches) - center.yInches) < modelRadius + radius - 0.001;
     });
   if (overlapsModel) fail("UNIT_LIFECYCLE_TUMOR_OVERLAP");
+  const overlapsToken = (state.board?.tokens || []).some((token) => {
+    if (token.isRemoved === true) return false;
+    const tokenX = Number(token.coordinate?.x);
+    const tokenY = Number(token.coordinate?.y);
+    if (!Number.isFinite(tokenX) || !Number.isFinite(tokenY)) return false;
+    if (token.baseShape === "square") {
+      const halfWidth = Number(token.baseWidthInches) / 2;
+      const halfDepth = Number(token.baseDepthInches) / 2;
+      const dx = Math.max(0, Math.abs(center.xInches - tokenX) - halfWidth);
+      const dy = Math.max(0, Math.abs(center.yInches - tokenY) - halfDepth);
+      return Math.hypot(dx, dy) < radius - 0.001;
+    }
+    const tokenRadius = Number(token.baseDiameterInches) / 2;
+    return Number.isFinite(tokenRadius) && tokenRadius > 0
+      && Math.hypot(center.xInches - tokenX,
+        center.yInches - tokenY) < radius + tokenRadius - 0.001;
+  });
+  if (overlapsToken) fail("UNIT_LIFECYCLE_TUMOR_OVERLAP");
   return { profile, coordinate: { x: center.xInches, y: center.yInches } };
 }
 function validateMassRecallPoint(state, point) {
