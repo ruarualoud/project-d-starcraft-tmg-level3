@@ -24,4 +24,8 @@
 
 新增 `iterative-roster-tool-port-v1.mjs`，给持续会话四类只读查询：当前势力/规模的官方 Builder 备选菜单、当前合法名单的分页预算邻域、冻结地图摘要、**当前名单 hash** 的底盘—目标路线审计。预算邻域只是有界 Rules 合法分支，回执明确“不宣称预算不可达、非策略排序”；地图 Port 的证书必须同时匹配房间地图 freeze、官方来源 snapshot 及任务/部署组合 hash，旧名单或错房间直接拒绝。针对冻结真实 Terran 2000 Builder 菜单和同名单路线合同假件，唯一相关门通过，0 Provider/Room。实际路线尚未使用正式 Room `createPregameMapEvidencePortV1`，也未让 Flash 选择菜单/工具；此片不能充当产品验收。
 
+## 同日增量：可恢复状态与已付返回的文件存储
+
+新增 `iterative-roster-file-store-v1.mjs`，会话状态与模型已付返回分目录按安全 ID 定址，采用同目录临时文件加原子 rename；记录只用简单 schema/version 管理，不把内容 hash 作为跨版本生存条件。相同请求 key 的已存返回可复读，冲突内容禁止静默覆盖。一次聚焦重建实例的读回检查通过 `iterative_store_reload_ok`，0 Provider/Room。此存储尚未连接正式 Flash 和产品 Workspace；因此它证明断点的持久载体存在，**不证明**模型未知发送结果都可自动恢复。
+
 `harnessLoopUsed=true`; `targetGames=[starcraft-tmg]`; `promptPackRoutes=[ticket27.roster_strategist.iterative.v1（待正式接线）]`; `harnessToolsCalled=[假模型 Adapter, 假 Builder Adapter, 假地图/预算工具, 最终复核 Adapter]`; `uiTraceEvidence=null`; `agentDecisionEvidence=四轮合成公开决策，非真实模型`; `memoryTraceEvidence=持久会话、不可变迭代收据和同 requestKey 恢复`; `trainingTraceCandidates=[]`; `rollbackOrDemotionRules=未知发送禁重发、非地图证据拒绝、未满 2000 或最终 High 禁晋升`; `userVisibleChecks=模块级聚焦通过，正式 Web/模型未验`。
