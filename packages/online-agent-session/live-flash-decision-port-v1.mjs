@@ -37,7 +37,7 @@ const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
   "starcraft_tmg_planner_action_spatial_intent_solver_v24";
 const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v37";
+  "starcraft_tmg_live_action_shape_normalization_v40";
 const PLANNER_SHAPE_NORMALIZATION_VERSION =
   "starcraft_tmg_live_planner_shape_normalization_v14";
 export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
@@ -6662,7 +6662,13 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       let decision;
       let normalizedAction;
       try {
-        normalizedAction = normalizeSubmittedAction(attempt, input, choice);
+        // Planner and the model prompt have already removed parameter domains
+        // that the Host proved uninstantiable. Action validation must see the
+        // same current candidates; otherwise a legal Pass is repeatedly
+        // rejected for not forfeiting an unavailable ability.
+        const activeInput = decisionInputForChoice(input, choice);
+        normalizedAction = normalizeSubmittedAction(attempt, activeInput,
+          choice);
         const composed = {
           ...clone(normalizedAction),
           plannerResult: clone(choice.plannerResult),
@@ -6670,7 +6676,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           assessment: clone(choice.plannerResult.assessment),
           planRevision: clone(choice.plannerResult.planRevision),
         };
-        decision = normalizeDecision(composed, input, match,
+        decision = normalizeDecision(composed, activeInput, match,
           choice.queryReceipts, providerTrace(match, choice, crossed));
       } catch (error) {
         const correction = await recordSemanticCorrection(match, choice,
@@ -6758,7 +6764,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           assessment: clone(choice.plannerResult.assessment),
           planRevision: clone(choice.plannerResult.planRevision),
         };
-        decision = normalizeDecision(composed, input, match,
+        decision = normalizeDecision(composed,
+          decisionInputForChoice(input, choice), match,
           choice.queryReceipts, providerTrace(match, choice, crossed));
       }
       decision = freeze({
