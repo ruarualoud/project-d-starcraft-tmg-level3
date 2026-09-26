@@ -40,7 +40,9 @@ export function createIterativeRosterBuilderAdapterV1(officialBuilderPort) {
           verdictHash: null, receiptHash: receipt.receiptHash,
           rejectionKind: receipt.rejectionKind,
           rulesErrorCode: receipt.rulesErrorCode,
-          portErrorCode: receipt.portErrorCode };
+          rulesErrorDetail: receipt.rulesErrorDetail,
+          portErrorCode: receipt.portErrorCode,
+          portErrorDetail: receipt.portErrorDetail };
       }
       fail("ITERATIVE_ROSTER_BUILDER_RECEIPT_UNKNOWN");
     },

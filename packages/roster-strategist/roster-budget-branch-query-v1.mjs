@@ -80,11 +80,11 @@ export function queryRosterBudgetBranchesV1(input = {}) {
   // Menu-derived slot arithmetic changes inspection order only. It never
   // admits or rejects a branch: the complete Rules audit below remains the
   // sole authority, including for branches whose menu projection is unknown.
-  const slotOverflowAdvisory = (draft) => {
+  const slotTotals = () => {
     const starting = menu.faction.startingArmySlots;
     if (!starting || typeof starting !== "object") return null;
     const available = { ...starting };
-    for (const key of draft.tacticalCardRecordKeys) {
+    for (const key of current.tacticalCardRecordKeys) {
       const grants = tacticalByKey.get(key)?.armySlotsAdded;
       if (!grants || typeof grants !== "object") return null;
       for (const [kind, count] of Object.entries(grants)) {
@@ -93,7 +93,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
       }
     }
     const used = {};
-    for (const unit of draft.units) {
+    for (const unit of current.units) {
       const menuUnit = unitByKey.get(unit.recordKey);
       const option = menuUnit?.compositionOptions.find((entry) => (
         entry.compositionKind === unit.compositionKind));
@@ -101,6 +101,38 @@ export function queryRosterBudgetBranchesV1(input = {}) {
       const occupied = option?.occupiedArmySlots;
       if (!kind || !Number.isSafeInteger(occupied)) return null;
       used[kind] = (used[kind] || 0) + occupied;
+    }
+    return { available, used };
+  };
+  const baselineSlots = slotTotals();
+  const slotOverflowAdvisory = (steps) => {
+    if (!baselineSlots) return null;
+    const { available } = baselineSlots;
+    const used = { ...baselineSlots.used };
+    for (const step of steps) {
+      if (step.mutationKind === "add_upgrade") continue;
+      let kind;
+      let delta;
+      if (step.mutationKind === "add_unit") {
+        const unit = unitByKey.get(step.subjectId);
+        const option = unit?.compositionOptions.find((entry) => (
+          entry.compositionProfileId === step.detailId));
+        kind = unit?.armySlotType;
+        delta = option?.occupiedArmySlots;
+      } else if (step.mutationKind === "change_composition") {
+        const selected = current.units.find((entry) => (
+          entry.unitInstanceId === step.subjectId));
+        const unit = unitByKey.get(selected?.recordKey);
+        const before = unit?.compositionOptions.find((entry) => (
+          entry.compositionKind === selected?.compositionKind));
+        const after = unit?.compositionOptions.find((entry) => (
+          entry.compositionProfileId === step.detailId));
+        kind = unit?.armySlotType;
+        delta = Number(after?.occupiedArmySlots)
+          - Number(before?.occupiedArmySlots);
+      } else return null;
+      if (!kind || !Number.isSafeInteger(delta)) return null;
+      used[kind] = (used[kind] || 0) + delta;
     }
     return Object.entries(used).reduce((sum, [kind, count]) => (
       sum + Math.max(0, count - (available[kind] || 0))), 0);
@@ -208,9 +240,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
   // menu projections are advisory ordering signals, never a strategy score,
   // legality ruling, or exact-budget feasibility certificate.
   for (const candidate of candidates) {
-    const draft = clone(current);
-    candidate.transform(draft);
-    candidate.menuSlotOverflowAdvisory = slotOverflowAdvisory(draft);
+    candidate.menuSlotOverflowAdvisory = slotOverflowAdvisory(candidate.steps);
   }
   candidates.sort((a, b) => {
     const distance = (entry) => entry.expectedDelta === null

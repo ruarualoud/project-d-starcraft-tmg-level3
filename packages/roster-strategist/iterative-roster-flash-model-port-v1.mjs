@@ -99,8 +99,25 @@ function projectKnownFields(value, node) {
   return value;
 }
 
+export function inspectIterativeRosterOutputV1(raw) {
+  return validateStarcraftTmgProviderJsonSchemaValueV1(schema,
+    projectKnownFields(normalizeDisposition(raw), schema));
+}
+
+function normalizeDisposition(raw) {
+  // Older prompt examples led the provider to place this one decision-level
+  // field inside plan. Preserve the explicit value; never infer it.
+  if (raw && typeof raw === "object"
+    && !Object.hasOwn(raw, "assumptionDisposition")
+    && Object.hasOwn(raw.plan || {}, "assumptionDisposition")) {
+    return { ...raw,
+      assumptionDisposition: raw.plan.assumptionDisposition };
+  }
+  return raw;
+}
+
 function decisionFromOutput(raw) {
-  const output = projectKnownFields(raw, schema);
+  const output = projectKnownFields(normalizeDisposition(raw), schema);
   const verdict = validateStarcraftTmgProviderJsonSchemaValueV1(schema,
     output);
   if (!verdict.ok || output.schemaVersion
@@ -158,28 +175,18 @@ function decisionFailure(decision, state) {
       && ["exact", "certified", "advisory"].includes(
         entry.receipt.status));
   if (decision.kind === "query") {
-    if (!decision.question.trim() || decision.queries.length === 0
-      || decision.queries.some((query) => {
-        if (query.kind === "candidate_menu") return (
-          query.factionRecordKey !== state.frozenContext.factionRecordKey
-          || query.scaleId !== state.frozenContext.scaleId);
-        if (query.kind === "budget_branches") return !current
-          || query.candidateHash !== current.candidateHash;
-        if (query.kind === "map_route") return !current
-          || query.candidateHash !== current.candidateHash;
-        return false;
-      })) return "ITERATIVE_ROSTER_FLASH_QUERY_INVALID";
+    if (!decision.question.trim() || decision.queries.length === 0) {
+      return "ITERATIVE_ROSTER_FLASH_QUERY_INVALID";
+    }
   }
   if (decision.kind === "propose") {
     if (decision.candidateInput.units.length === 0
       || decision.candidateInput.mineralBudget !== state.mineralBudget
+      || decision.candidateInput.sideKey !== state.frozenContext.sideKey
       || decision.candidateInput.factionRecordKey
         !== state.frozenContext.factionRecordKey
       || decision.candidateInput.scaleId !== state.frozenContext.scaleId
-      || !decision.plan.victoryRoute.trim()
-      || (decision.plan.mapEvidenceHash
-        && !routeObserved(hashStarcraftTmgContract(decision.candidateInput),
-          decision.plan.mapEvidenceHash))) {
+      || !decision.plan.victoryRoute.trim()) {
       return "ITERATIVE_ROSTER_FLASH_PROPOSAL_INVALID";
     }
   }
@@ -198,6 +205,52 @@ function decisionFailure(decision, state) {
     return "ITERATIVE_ROSTER_FLASH_ROUTE_REVISION_UNDECLARED";
   }
   return null;
+}
+
+function admissibleQueries(decision, state) {
+  if (decision.kind === "propose") {
+    const supplied = decision.plan.mapEvidenceHash;
+    if (supplied && !state.observations.some((entry) => (
+      (entry.query?.kind === "map_summary"
+        && entry.receipt?.status === "certified"
+        && entry.receipt.mapBinding?.roomFreezeHash === supplied
+        && supplied === state.frozenContext.mapHash)
+      || (entry.query?.kind === "map_route"
+        && entry.query.candidateHash
+          === hashStarcraftTmgContract(decision.candidateInput)
+        && ["exact", "certified", "advisory"].includes(entry.receipt.status)
+        && entry.receipt.receiptHash === supplied)))) {
+      return { ...decision,
+        plan: { ...decision.plan, mapEvidenceHash: null },
+        ignoredEvidenceHash: supplied };
+    }
+    return decision;
+  }
+  if (decision.kind !== "query") return decision;
+  const queries = [];
+  const ignoredQueries = [];
+  for (const query of decision.queries) {
+    let reason = null;
+    if (query.kind === "candidate_menu"
+      && (query.factionRecordKey
+          !== state.frozenContext.factionRecordKey
+        || query.scaleId !== state.frozenContext.scaleId)) {
+      reason = "MENU_CONTEXT_MISMATCH";
+    }
+    if (query.kind === "budget_branches"
+      && (!state.currentCandidate
+        || query.candidateHash !== state.currentCandidate.candidateHash)) {
+      reason = "BUDGET_BRANCHES_REQUIRE_CURRENT_CANDIDATE";
+    }
+    if (query.kind === "map_route"
+      && (!state.currentCandidate
+        || query.candidateHash !== state.currentCandidate.candidateHash)) {
+      reason = "MAP_ROUTE_REQUIRES_CURRENT_CANDIDATE";
+    }
+    if (reason) ignoredQueries.push({ kind: query.kind, reason });
+    else queries.push(query);
+  }
+  return { ...decision, queries, ignoredQueries };
 }
 
 export function createIterativeRosterFlashModelPortV1({
@@ -221,7 +274,8 @@ export function createIterativeRosterFlashModelPortV1({
       decision: { kind: "repair_needed", failureCode,
         providerReplyHash: reply.output
           ? hashStarcraftTmgContract(reply.output)
-          : reply.failedOutputRecord?.rawTextHash || null } });
+          : reply.failedOutputRecord?.rawTextHash || null },
+      reconciledFromRequestKey: reply.reconciledFromRequestKey || null });
     const expectedContextHash = hashStarcraftTmgContract(
       decisionContext(state, skillGuidance, missionEvidence));
     if (reply.contextHash !== expectedContextHash) {
@@ -231,15 +285,61 @@ export function createIterativeRosterFlashModelPortV1({
       return repair(reply.failureCode);
     }
     let decision;
-    try { decision = decisionFromOutput(reply.output); }
+    try { decision = admissibleQueries(decisionFromOutput(reply.output),
+      state); }
     catch { return repair("ITERATIVE_ROSTER_FLASH_OUTPUT_INVALID"); }
     const failureCode = decisionFailure(decision, state);
     if (failureCode) return repair(failureCode);
     return { outcome: "completed", receiptHash: reply.receiptHash,
-      decision };
+      decision, reconciledFromRequestKey:
+        reply.reconciledFromRequestKey || null };
+  };
+  const reconcile = async ({ requestKey, sourceRequestKey, state }) => {
+    if (!state.iterations.some((entry) => (
+      entry.requestKey === sourceRequestKey
+        && entry.decisionKind === "repair_needed"))) {
+      fail("ITERATIVE_ROSTER_RECONCILIATION_SOURCE_INVALID");
+    }
+    let source = await replyStore.loadRetainedReply(sourceRequestKey);
+    if (source?.reconciledFromRequestKey) {
+      sourceRequestKey = source.reconciledFromRequestKey;
+      if (!state.iterations.some((entry) => (
+        entry.requestKey === sourceRequestKey
+          && entry.decisionKind === "repair_needed"))) {
+        fail("ITERATIVE_ROSTER_RECONCILIATION_SOURCE_INVALID");
+      }
+      source = await replyStore.loadRetainedReply(sourceRequestKey);
+    }
+    if (source?.paidProviderCall !== true || source.outcome !== "completed"
+      || !source.output) {
+      fail("ITERATIVE_ROSTER_RECONCILIATION_SOURCE_INVALID");
+    }
+    if (state.iterations.filter((entry) => (
+      entry.reconciledFromRequestKey === sourceRequestKey)).length >= 3) {
+      fail("ITERATIVE_ROSTER_RECONCILIATION_LIMIT_REACHED");
+    }
+    const prior = await replyStore.loadRetainedReply(requestKey);
+    if (!prior) {
+      const contextHash = hashStarcraftTmgContract(
+        decisionContext(state, skillGuidance, missionEvidence));
+      await replyStore.retainReply(requestKey, {
+        outcome: "completed", requestKey, contextHash,
+        receiptHash: hashStarcraftTmgContract({ requestKey,
+          sourceRequestKey, sourceReceiptHash: source.receiptHash,
+          contextHash, reuseKind: "retained_paid_output_revalidation" }),
+        output: source.output,
+        usage: { inputUnits: 0, outputUnits: 0, totalUnits: 0 },
+        paidProviderCall: false, reconciledFromRequestKey: sourceRequestKey,
+      });
+    }
+    return recovered(requestKey, state);
   };
   return Object.freeze({
-    recover: async ({ requestKey, state }) => recovered(requestKey, state),
+    reconcile,
+    recover: async ({ requestKey, sourceRequestKey, state }) => (
+      sourceRequestKey
+        ? reconcile({ requestKey, sourceRequestKey, state })
+        : recovered(requestKey, state)),
     decide: async ({ requestKey, state }) => {
       const previous = await replyStore.loadRetainedReply(requestKey);
       if (previous) return recovered(requestKey, state);
@@ -279,7 +379,11 @@ export function createIterativeRosterFlashModelPortV1({
         promptNodes: [{ role: "frozen_context", content: context }],
         userMessage: "Choose one public decision. Query the official Builder "
           + "menu or frozen map when needed; propose a complete candidate, "
-          + "inspect exact budget branches, and revise your route as evidence "
+          + "inspect exact budget branches only after a Rules-legal current "
+          + "candidate exists, and ask map_route only for that candidate's "
+          + "hash. Before a candidate exists, use candidate_menu and/or "
+          + "map_summary; do not mix budget_branches into that first query. "
+          + "Revise your route as evidence "
           + "changes. Finish only with an exact-budget legal candidate, "
           + "current-candidate map evidence and a substantive scoring/opening/"
           + "opponent-response plan. Use empty placeholders for fields that "

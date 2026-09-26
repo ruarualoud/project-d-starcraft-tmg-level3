@@ -58,6 +58,8 @@ import {
 } from "../roster-planning-workspace/roster-planning-workspace-http-v1.mjs";
 import { createStarcraftTmgRosterTurnPlanSeedV1 } from
   "../online-agent-session/roster-plan-turn-plan-bridge-v1.mjs";
+import { createIterativeRosterProductPortV1 } from
+  "../roster-strategist/iterative-roster-product-port-v1.mjs";
 
 export const ROSTER_PLANNING_PRODUCT_MODULE =
   "packages/product-composition/roster-planning-product-module-v1.mjs";
@@ -269,6 +271,14 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
   });
   const http = createRosterPlanningWorkspaceHttpAdapterV1({ service });
   const loaded = await service.loadPersisted();
+  const iterativeDraft = input.enableIterativeDraft === true
+    ? createIterativeRosterProductPortV1({
+      directory: path.join(dataDirectory, "iterative-draft"),
+      deliberationFactory, armyBuilderPort: builderPort,
+      mapEvidencePort,
+      strategist: createStrategist({ laboratory: laboratoryCore }),
+      missionScoringAuthority: laboratoryCore.missionScoringAuthority(),
+    }) : null;
 
   const descriptorBody = {
     schema: "starcraft_tmg_roster_planning_product_module_descriptor_v1",
@@ -339,6 +349,7 @@ export async function createRosterPlanningProductModuleV1(input = {}) {
       descriptorHash: hashStarcraftTmgContract(descriptorBody) }),
     service,
     mapEvidencePort,
+    iterativeDraft,
     preparePregamePlanForRoom,
     handle: (request) => http.handle(request),
     httpDescriptor: http.httpDescriptor,

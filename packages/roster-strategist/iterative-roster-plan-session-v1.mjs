@@ -51,11 +51,13 @@ function publicPlan(value, candidateHash, priorPlan, observations) {
   }
   if (value.mapEvidenceHash !== null
     && !observations.some((entry) => (
-      entry.query.kind === "map_route"
-      && entry.query.candidateHash === candidateHash
-      && ["exact", "certified", "advisory"].includes(entry.receipt.status)
-      &&
-      entry.receipt.receiptHash === value.mapEvidenceHash))) {
+      (entry.query.kind === "map_route"
+        && entry.query.candidateHash === candidateHash
+        && ["exact", "certified", "advisory"].includes(entry.receipt.status)
+        && entry.receipt.receiptHash === value.mapEvidenceHash)
+      || (entry.query.kind === "map_summary"
+        && entry.receipt.status === "certified"
+        && entry.receipt.mapBinding?.roomFreezeHash === value.mapEvidenceHash)))) {
     fail("ITERATIVE_ROSTER_MAP_EVIDENCE_UNBOUND");
   }
   if (priorPlan && priorPlan.victoryRoute !== value.victoryRoute
@@ -120,14 +122,21 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
     return copy(state);
   }
 
-  async function resume(sessionId) {
+  async function resume(sessionId, options = {}) {
     let state = await read(sessionId);
     if (state.status === "ready_for_match") return state;
     if (busy.has(sessionId)) fail("ITERATIVE_ROSTER_SESSION_BUSY");
     const retainedRecovery = state.status === "requires_reconciliation"
       && Boolean(state.pendingDecision)
       && typeof ports.model.recover === "function";
-    if (!["active", "paused"].includes(state.status) && !retainedRecovery) {
+    const retainedReconciliation = (state.status === "requires_reconciliation"
+      || (options.preferRetainedRepair === true
+        && ["active", "paused"].includes(state.status)))
+      && !state.pendingDecision
+      && state.iterations.at(-1)?.decisionKind === "repair_needed"
+      && typeof ports.model.reconcile === "function";
+    if (!["active", "paused"].includes(state.status)
+      && !retainedRecovery && !retainedReconciliation) {
       fail("ITERATIVE_ROSTER_RECONCILIATION_REQUIRED");
     }
     const recovering = Boolean(state.pendingDecision);
@@ -143,17 +152,26 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
     try {
       state.status = "active";
       state.pauseRequested = false;
+      const sourceRequestKey = state.pendingDecision?.sourceRequestKey
+        || (retainedReconciliation
+          ? state.iterations.at(-1).requestKey : null);
       const requestKey = state.pendingDecision?.requestKey
         || hashStarcraftTmgContract({ sessionId,
           contextHash: state.contextHash, nextRevision: state.revision + 1,
-          precedingReceiptHash: state.iterations.at(-1)?.receiptHash || null });
+          precedingReceiptHash: state.iterations.at(-1)?.receiptHash || null,
+          sourceRequestKey });
       state.pendingDecision = { requestKey,
-        nextRevision: state.revision + 1 };
+        nextRevision: state.revision + 1,
+        ...(sourceRequestKey ? { sourceRequestKey } : {}) };
       await ports.store.save(sessionId, copy(state));
       let reply;
       try {
         reply = recovering
-          ? await ports.model.recover({ requestKey, state: copy(state) })
+          ? await ports.model.recover({ requestKey, sourceRequestKey,
+            state: copy(state) })
+          : retainedReconciliation
+            ? await ports.model.reconcile({ requestKey, sourceRequestKey,
+              state: copy({ ...state, pendingDecision: null }) })
           : await ports.model.decide({ requestKey,
             state: copy({ ...state, pendingDecision: null }) });
       } catch (error) {
@@ -174,6 +192,7 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       }
       state = await read(sessionId);
       const decision = copy(reply.decision);
+      if (decision.kind !== "repair_needed") state.blockingFinding = null;
       const toolReceipts = [];
       let verdict = null;
       if (decision.kind === "repair_needed") {
@@ -208,6 +227,17 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
             || query.candidateHash !== state.currentCandidate.candidateHash)))) {
           fail("ITERATIVE_ROSTER_MAP_QUERY_STALE_CANDIDATE");
         }
+        for (const ignored of decision.ignoredQueries || []) {
+          const receiptBody = { status: "ignored_invalid_subquery",
+            queryKind: ignored.kind, reason: ignored.reason,
+            modelReceiptHash: reply.receiptHash };
+          const observation = { query: { kind: "ignored_model_query" },
+            receipt: { ...receiptBody,
+              receiptHash: hashStarcraftTmgContract(receiptBody) },
+            requestKey };
+          state.observations.push(observation);
+          toolReceipts.push(observation);
+        }
         const receipts = await Promise.all(decision.queries.map((query) => (
           ports.tools.query(copy(query), copy(state)))));
         for (let index = 0; index < receipts.length; index += 1) {
@@ -224,6 +254,17 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
           || !["retain", "revise"].includes(
             decision.assumptionDisposition)) {
           fail("ITERATIVE_ROSTER_PROPOSAL_INVALID");
+        }
+        if (decision.ignoredEvidenceHash) {
+          const receiptBody = { status: "ignored_unbound_model_map_hash",
+            ignoredHash: decision.ignoredEvidenceHash,
+            modelReceiptHash: reply.receiptHash };
+          const observation = { query: { kind: "model_evidence_warning" },
+            receipt: { ...receiptBody,
+              receiptHash: hashStarcraftTmgContract(receiptBody) },
+            requestKey };
+          state.observations.push(observation);
+          toolReceipts.push(observation);
         }
         verdict = await ports.builder.evaluate(
           copy(decision.candidateInput), copy(state));
@@ -271,7 +312,9 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
             receiptHash: verdict.receiptHash,
             rejectionKind: verdict.rejectionKind ?? null,
             rulesErrorCode: verdict.rulesErrorCode ?? null,
-            portErrorCode: verdict.portErrorCode ?? null }, requestKey });
+            rulesErrorDetail: verdict.rulesErrorDetail ?? null,
+            portErrorCode: verdict.portErrorCode ?? null,
+            portErrorDetail: verdict.portErrorDetail ?? null }, requestKey });
         }
       } else if (decision.kind === "finish") {
         if (!state.currentCandidate || !object(decision.plan)
@@ -299,18 +342,33 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
           fail("ITERATIVE_ROSTER_NOT_READY_FOR_MATCH");
         }
         const review = await ports.review.final(copy(state));
-        if (!Array.isArray(review?.blockingFindings)
-          || review.blockingFindings.length > 0) {
-          fail("ITERATIVE_ROSTER_FINAL_REVIEW_BLOCKED");
+        if (!Array.isArray(review?.blockingFindings)) {
+          fail("ITERATIVE_ROSTER_FINAL_REVIEW_INVALID");
         }
-        state.finalReview = { reviewHash: requiredHash(review.reviewHash,
-          "ITERATIVE_ROSTER_FINAL_REVIEW_INVALID"), blockingFindings: [] };
-        state.status = "ready_for_match";
+        const reviewHash = requiredHash(review.reviewHash,
+          "ITERATIVE_ROSTER_FINAL_REVIEW_INVALID");
+        state.finalReview = { reviewHash,
+          blockingFindings: copy(review.blockingFindings) };
+        if (review.blockingFindings.length > 0) {
+          // A known completed model call and a review rejection are both
+          // durable evidence. They cannot be retried under the same key.
+          const observation = { query: { kind: "final_review" },
+            receipt: { status: "blocked", receiptHash: reviewHash,
+              blockingFindings: copy(review.blockingFindings) }, requestKey };
+          state.observations.push(observation);
+          toolReceipts.push(observation);
+          state.status = "paused";
+          state.blockingFinding = "ITERATIVE_ROSTER_FINAL_REVIEW_BLOCKED";
+        } else {
+          state.status = "ready_for_match";
+          state.blockingFinding = null;
+        }
       } else {
         fail("ITERATIVE_ROSTER_DECISION_KIND_INVALID");
       }
       const receiptBody = { revision: state.revision + 1, requestKey,
         modelReceiptHash: reply.receiptHash,
+        reconciledFromRequestKey: reply.reconciledFromRequestKey || null,
         decisionHash: hashStarcraftTmgContract(decision),
         decisionKind: decision.kind,
         rulesVerdictHash: verdict?.verdictHash || verdict?.receiptHash || null,
