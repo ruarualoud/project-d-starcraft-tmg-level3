@@ -29,3 +29,9 @@
 新增 `iterative-roster-file-store-v1.mjs`，会话状态与模型已付返回分目录按安全 ID 定址，采用同目录临时文件加原子 rename；记录只用简单 schema/version 管理，不把内容 hash 作为跨版本生存条件。相同请求 key 的已存返回可复读，冲突内容禁止静默覆盖。一次聚焦重建实例的读回检查通过 `iterative_store_reload_ok`，0 Provider/Room。此存储尚未连接正式 Flash 和产品 Workspace；因此它证明断点的持久载体存在，**不证明**模型未知发送结果都可自动恢复。
 
 `harnessLoopUsed=true`; `targetGames=[starcraft-tmg]`; `promptPackRoutes=[ticket27.roster_strategist.iterative.v1（待正式接线）]`; `harnessToolsCalled=[假模型 Adapter, 假 Builder Adapter, 假地图/预算工具, 最终复核 Adapter]`; `uiTraceEvidence=null`; `agentDecisionEvidence=四轮合成公开决策，非真实模型`; `memoryTraceEvidence=持久会话、不可变迭代收据和同 requestKey 恢复`; `trainingTraceCandidates=[]`; `rollbackOrDemotionRules=未知发送禁重发、非地图证据拒绝、未满 2000 或最终 High 禁晋升`; `userVisibleChecks=模块级聚焦通过，正式 Web/模型未验`。
+
+## 同日增量：正式 Flash 单步决策与已付输出本地修正边界
+
+新增 `iterative-roster-flash-model-port-v1.mjs`。每个 `resume` 的已付模型回复先按 request key 落盘，再解析为 `query/propose/finish`，多余字段仅投影到已声明 schema，不补造缺字段；无效结构、过期名单查询、错误势力/预算、未绑定的地图回执、过早 `finish` 都保留原回复并成为一条可见的 `repair_needed` 观察，让下一轮可按错误继续修正。连续三轮仍不能收敛才停在人工对账，不在一次失败时从头写表或重发同一已付请求。恢复时用名单、任务、地图、技能、先前观察及迭代收据重算上下文，拒绝同 request key 跨上下文复用。
+
+唯一相关内联门使用假的安全 Worker 回调复现已付坏 JSON：首次及同 key 重读均返回同一已保存的修正事件，改动预算后重读拒绝，模型调用计数仍 1；会话连续 3 次已知坏回复进入 `requires_reconciliation`。结果 `iterative_retained_repair_replay_ok`，0 真 Provider/Room/费用。尚未把这个 Adapter 接到正式产品组合，也未验证真实 Flash 返回或产出新的合法 2000 分表。`arrivalScheduleStatus` 仍只是模型输出字段，最终完整进场日程必须继续交现有 Rules 审计，不能凭模型自称合法晋升。

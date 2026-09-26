@@ -65,7 +65,8 @@ function publicPlan(value, candidateHash, priorPlan, observations) {
   return { victoryRoute: value.victoryRoute.trim(),
     mapEvidenceHash: value.mapEvidenceHash,
     arrivalScheduleStatus: value.arrivalScheduleStatus,
-    candidateHash, assumptionDisposition: value.assumptionDisposition };
+    candidateHash, assumptionDisposition: value.assumptionDisposition,
+    strategy: object(value.strategy) ? copy(value.strategy) : null };
 }
 
 export function createIterativeRosterPlanSessionV1(ports = {}) {
@@ -152,7 +153,7 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       let reply;
       try {
         reply = recovering
-          ? await ports.model.recover({ requestKey })
+          ? await ports.model.recover({ requestKey, state: copy(state) })
           : await ports.model.decide({ requestKey,
             state: copy({ ...state, pendingDecision: null }) });
       } catch (error) {
@@ -175,7 +176,26 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       const decision = copy(reply.decision);
       const toolReceipts = [];
       let verdict = null;
-      if (decision.kind === "query") {
+      if (decision.kind === "repair_needed") {
+        if (typeof decision.failureCode !== "string"
+          || !decision.failureCode.trim()) {
+          fail("ITERATIVE_ROSTER_REPAIR_RECEIPT_INVALID");
+        }
+        const receipt = { status: "known_paid_output_rejected",
+          failureCode: decision.failureCode,
+          providerReplyHash: decision.providerReplyHash || null,
+          receiptHash: reply.receiptHash };
+        const observation = { query: { kind: "model_output_repair" },
+          receipt, requestKey };
+        state.observations.push(observation);
+        toolReceipts.push(observation);
+        const latestRepairs = state.iterations.slice(-2).every((entry) =>
+          entry.decisionKind === "repair_needed");
+        if (state.iterations.length >= 2 && latestRepairs) {
+          state.status = "requires_reconciliation";
+          state.blockingFinding = "ITERATIVE_ROSTER_OUTPUT_DID_NOT_CONVERGE";
+        }
+      } else if (decision.kind === "query") {
         if (!Array.isArray(decision.queries) || decision.queries.length < 1
           || decision.queries.length > 8
           || typeof decision.question !== "string"
