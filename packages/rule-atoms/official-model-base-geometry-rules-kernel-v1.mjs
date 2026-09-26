@@ -15,6 +15,16 @@ const TOLERANCE = 1;
 const COHERENCY_RANGE_MILLI_INCHES = 3000;
 const ENGAGEMENT_RANGE_MILLI_INCHES = 1000;
 
+// Older frozen Rooms omitted this compiled field. Missing must inherit the
+// terrain kind, not silently turn every grass/cover/high-ground area into a
+// placement wall. Explicit setup choices always win.
+export function officialTerrainBlocksModelPlacementV1(terrain = {}) {
+  if (terrain.blocksPlacement === true) return true;
+  if (terrain.blocksPlacement === false) return false;
+  return String(terrain.terrainKind || "ordinary").toLowerCase()
+    === "impassable";
+}
+
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
 }
@@ -699,6 +709,21 @@ function accessPointAllowsLink(state, terrainId, start, end) {
   ));
 }
 
+function terrainBlocksCoherencyLink(state, blocker, start, end) {
+  const { entry: terrain, footprint } = blocker;
+  if (!segmentBlockedByFootprint(start, end, footprint)) return false;
+  if (!officialTerrainBlocksModelPlacementV1(terrain)
+    && terrain.standableHorizontalSurface !== true) return false;
+  if (terrain.standableHorizontalSurface === true) {
+    const inside = (pointValue) => footprint.shape === "round"
+      ? distance(pointValue, footprint.center)
+        <= footprint.radiusMilliInches + TOLERANCE
+      : pointInPolygon(pointValue, footprint.vertices);
+    if (inside(start) && inside(end)) return false;
+  }
+  return !accessPointAllowsLink(state, terrain.id, start, end);
+}
+
 export function evaluateOfficialCoherencyPlacementV1(input = {}) {
   const { state, actor, plan, dataBundle } = input;
   verifyOfficialModelBaseGeometryDataBundleV1(dataBundle);
@@ -775,7 +800,7 @@ export function evaluateOfficialCoherencyPlacementV1(input = {}) {
       }
     }
     for (const blocker of terrain) {
-      if (blocker.entry.blocksPlacement !== false
+      if (officialTerrainBlocksModelPlacementV1(blocker.entry)
         && overlaps(row.footprint, blocker.footprint)) {
         fail("MODEL_BASE_GEOMETRY_PLACEMENT_OVERLAP",
           `${row.modelId}/${blocker.entry.id}`);
@@ -801,10 +826,8 @@ export function evaluateOfficialCoherencyPlacementV1(input = {}) {
             blocker.footprint)
       ));
       const terrainBlocked = !flying && terrain.some((blocker) => (
-        segmentBlockedByFootprint(a.footprint.center, b.footprint.center,
-          blocker.footprint)
-          && !accessPointAllowsLink(state, blocker.entry.id,
-            a.footprint.center, b.footprint.center)
+        terrainBlocksCoherencyLink(state, blocker,
+          a.footprint.center, b.footprint.center)
       ));
       if (!otherModelBlocked && !terrainBlocked) {
         adjacency.get(a.modelId).push(b.modelId);

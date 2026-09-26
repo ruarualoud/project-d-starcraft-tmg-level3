@@ -2,6 +2,8 @@ import { isDeepStrictEqual } from "node:util";
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { officialTerrainBlocksModelPlacementV1 } from
+  "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
 import { resolveOfficialAbilityResourcePaymentV1 } from
   "../rule-atoms/official-card-build-payment-rules-kernel-v1.mjs";
 import {
@@ -658,7 +660,8 @@ function assertUnoccupied(state, footprint) {
     }
   }
   for (const terrain of state.board?.terrain || []) {
-    if (terrain.isRemoved === true || terrain.blocksPlacement === false) continue;
+    if (terrain.isRemoved === true
+      || !officialTerrainBlocksModelPlacementV1(terrain)) continue;
     if (rectangleGap(footprint, terrain) < 0.001) {
       fail("BATTLEFIELD_ASSET_TOKEN_OVERLAPS_TERRAIN", terrain.id);
     }

@@ -59,6 +59,7 @@ function parent() {
   let stderr = "";
   let lineBuffer = "";
   const progressEvents = [];
+  const instantiationFailureDetails = [];
   let timer = null;
   let timedOut = false;
   child.stdout.on("data", (chunk) => {
@@ -80,6 +81,9 @@ function parent() {
           progressEvents.push(event.progress);
           if (progressEvents.length > 24) progressEvents.shift();
         }
+        if (event.event === "instantiation_failure_detail") {
+          instantiationFailureDetails.push(event.message);
+        }
       } catch {}
     }
   });
@@ -97,6 +101,7 @@ function parent() {
         targetStateRevision,
         signal,
         progressEvents,
+        instantiationFailureDetails,
         providerCalls: 0,
         roomMutations: 0,
         trainingTruth: false,
@@ -167,7 +172,7 @@ async function worker() {
       trustLevel: "development_persistent",
     });
     const fixture = await createTicket20HumanAgentDemoFixtureV1({
-      root: ROOT,
+      root: process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
       roomId: privateState.roomId,
       roomProfile: "standard_2000_live",
       mapConfiguration: {
@@ -227,11 +232,24 @@ async function worker() {
       maximumOptions: request.maximumOptions,
     })}\n`);
     const started = performance.now();
+    let reportedInstantiationFailures = 0;
     const result = searchStarcraftTmgLegalFormationOptionsV1({
       state: replay.envelope.state,
       domain,
       request,
-      instantiate: (...args) => fixture.rulesRuntime.instantiate(...args),
+      instantiate: (...args) => {
+        try { return fixture.rulesRuntime.instantiate(...args); }
+        catch (error) {
+          if (reportedInstantiationFailures < 12) {
+            reportedInstantiationFailures += 1;
+            process.stdout.write(`${JSON.stringify({
+              event: "instantiation_failure_detail",
+              message: String(error?.message || error).slice(0, 240),
+            })}\n`);
+          }
+          throw error;
+        }
+      },
       instantiateOptions: {
         matchBinding: replay.envelope.matchBinding,
       },

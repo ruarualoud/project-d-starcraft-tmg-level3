@@ -323,6 +323,8 @@ function terrainBoardRows(artifacts, plan) {
       standableHorizontalSurface: entry.standableHorizontalSurface,
       elevationSurface: entry.standableHorizontalSurface,
       impassable: entry.terrainKind === "impassable",
+      blocksPlacement: source?.blocksPlacement
+        ?? entry.terrainKind === "impassable",
       openings: clone(source?.openings || []),
       accessPoints: clone(source?.accessPoints || []),
       terrainHash: runtime?.terrainHash, isRemoved: false,

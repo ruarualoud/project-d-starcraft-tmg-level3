@@ -1,5 +1,7 @@
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { officialTerrainBlocksModelPlacementV1 } from
+  "./official-model-base-geometry-rules-kernel-v1.mjs";
 
 export const OFFICIAL_GAP_PLACE_GEOMETRY_KERNEL_SCHEMA =
   "starcraft_tmg_official_gap_place_geometry_kernel_v1";
@@ -102,7 +104,8 @@ function terrainFootprint(terrain) {
     if (!Number.isSafeInteger(radius) || radius <= 0) {
       fail("GAP_PLACE_TERRAIN_FOOTPRINT_INVALID", objectId);
     }
-    return { ...roundFootprint(objectId, center, radius, "terrain", terrain),
+    return { ...roundFootprint(objectId, center, radius, "terrain", {
+      blocksPlacement: officialTerrainBlocksModelPlacementV1(terrain) }),
       openings: terrainOpenings(terrain, objectId) };
   }
   if (shape === "axis_aligned_rectangle") {
@@ -116,7 +119,7 @@ function terrainFootprint(terrain) {
       fail("GAP_PLACE_TERRAIN_FOOTPRINT_INVALID", objectId);
     }
     return { objectId, kind: "terrain", shape, minX, maxX, minY, maxY,
-      blocksPlacement: terrain.blocksPlacement !== false,
+      blocksPlacement: officialTerrainBlocksModelPlacementV1(terrain),
       openings: terrainOpenings(terrain, objectId) };
   }
   fail("GAP_PLACE_TERRAIN_FOOTPRINT_UNSUPPORTED", objectId);

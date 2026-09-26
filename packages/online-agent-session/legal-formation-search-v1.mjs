@@ -5,6 +5,7 @@ import { getOfficialModelBaseGeometryProfileV1 } from
 import {
   createOfficialPhysicalFootprintV1,
   evaluateOfficialPhysicalFootprintRelationV1,
+  officialTerrainBlocksModelPlacementV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
 import { deriveOfficialModelSurfacePlacementV2 } from
   "../rule-atoms/official-engagement-graph-v2.mjs";
@@ -233,11 +234,38 @@ function physicalFootprint(input) {
 }
 
 export function terrainBlocksStarcraftTmgFormationPlacementV1(terrain = {}) {
-  if (terrain.blocksPlacement === true) return true;
-  if (terrain.blocksPlacement === false) return false;
-  if (terrain.standableHorizontalSurface === true) return false;
-  return String(terrain.terrainKind || "ordinary").toLowerCase()
-    === "impassable";
+  // The selected-roster spatial adapter also rejects endpoints overlapping
+  // ordinary terrain that has no standable surface. Search must not offer a
+  // formation that its authority cannot instantiate, even when an older
+  // compiled map called that visual cover ``blocksPlacement: false``.
+  return officialTerrainBlocksModelPlacementV1(terrain)
+    || (String(terrain.terrainKind || "ordinary").toLowerCase() === "ordinary"
+      && terrain.standableHorizontalSurface !== true);
+}
+
+function surfacePlacementForFootprint(state, footprint) {
+  const bounds = footprintBounds(footprint);
+  const supportTerrainIds = [];
+  let highestSize = 0;
+  for (const terrain of state.board?.terrain || []) {
+    if (terrain.isRemoved === true || terrain.isDestroyed === true
+      || terrain.standableHorizontalSurface !== true) continue;
+    const rectangle = terrain.footprint || terrain;
+    if (rectangle.shape !== "axis_aligned_rectangle") continue;
+    const minX = Number(rectangle.minXMilliInches);
+    const maxX = Number(rectangle.maxXMilliInches);
+    const minY = Number(rectangle.minYMilliInches);
+    const maxY = Number(rectangle.maxYMilliInches);
+    if (bounds.maximumX <= minX || bounds.minimumX >= maxX
+      || bounds.maximumY <= minY || bounds.minimumY >= maxY) continue;
+    if (bounds.minimumX < minX || bounds.maximumX > maxX
+      || bounds.minimumY < minY || bounds.maximumY > maxY) return null;
+    supportTerrainIds.push(terrain.id);
+    highestSize = Math.max(highestSize, Number(terrain.size || 0));
+  }
+  return { supportTerrainIds: supportTerrainIds.sort(),
+    elevation: highestSize >= 3 ? "high"
+      : highestSize >= 1 ? "mid" : "ground" };
 }
 
 function blockingFootprints(state, actorPieceId) {
@@ -368,18 +396,20 @@ function minimumEnemyGapFailure(footprint, blocker, input = {}) {
 function availablePackedFootprint(footprint, state, blockers, selected,
   hardConstraints = {}) {
   if (!footprintInsideBattlefield(footprint, state)) return false;
+  if (!surfacePlacementForFootprint(state, footprint)) return false;
+  const bounds = footprintBounds(footprint);
   for (const blocker of blockers) {
-    const relation = evaluateOfficialPhysicalFootprintRelationV1({
-      left: footprint,
-      right: blocker.footprint,
-    });
-    if (relation.overlappingInteriors) return false;
+    if (boundsMayOverlap(bounds, blocker.bounds)
+      && evaluateOfficialPhysicalFootprintRelationV1({
+        left: footprint, right: blocker.footprint,
+      }).overlappingInteriors) return false;
     if (minimumEnemyGapFailure(footprint, blocker, hardConstraints)) {
       return false;
     }
   }
   return selected.every((entry) => (
-    !evaluateOfficialPhysicalFootprintRelationV1({
+    !boundsMayOverlap(bounds, entry.bounds || footprintBounds(entry.footprint))
+    || !evaluateOfficialPhysicalFootprintRelationV1({
       left: footprint,
       right: entry.footprint,
     }).overlappingInteriors
@@ -909,6 +939,7 @@ function solveIntentFormationRows(input) {
     return null;
   }
   const selected = [{ profile: leaderProfile, footprint: leaderFootprint,
+    bounds: footprintBounds(leaderFootprint),
     point: leaderPoint, rotationDegrees: 0 }];
   const preferredInterBaseGapMilliInches = Math.max(20, Math.min(800,
     Number(policy.preferredInterBaseGapMilliInches ?? 20)));
@@ -997,6 +1028,7 @@ function solveIntentFormationRows(input) {
     used.add(candidate.index);
     solverScore += candidate.score;
     selected.push({ profile, footprint: candidate.footprint, point: candidate.point,
+      bounds: footprintBounds(candidate.footprint),
       rotationDegrees: candidate.rotationDegrees });
   }
   const rows = selected.map((entry) => ({
@@ -1004,6 +1036,7 @@ function solveIntentFormationRows(input) {
     xMilliInches: entry.point.xMilliInches,
     yMilliInches: entry.point.yMilliInches,
     rotationDegrees: entry.rotationDegrees,
+    ...surfacePlacementForFootprint(state, entry.footprint),
   }));
   return {
     rows,
