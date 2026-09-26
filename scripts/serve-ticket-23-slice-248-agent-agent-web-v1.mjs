@@ -355,6 +355,15 @@ async function replayForkPrefix({ fixture, roomId, forkSource }) {
       actionType: applied.receipt.action.actionType,
       sideKey: seatKey,
     });
+    if (replayedTransitions.length % 5 === 0
+      || replayedTransitions.length === forkSource.receipts.length) {
+      process.stdout.write(`${JSON.stringify({
+        schemaVersion: "ticket23_slice248_fork_start_progress_v1",
+        replayed: replayedTransitions.length,
+        total: forkSource.receipts.length,
+        providerCalls: 0,
+      })}\n`);
+    }
   }
   return {
     schema: "ticket25_slice265_high_strategy_fork_v1",

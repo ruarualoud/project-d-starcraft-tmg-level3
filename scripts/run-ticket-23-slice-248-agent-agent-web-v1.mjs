@@ -174,15 +174,21 @@ async function startServer(resumeDirectory = null, fork = null) {
   });
   const lines = readline.createInterface({ input: child.stdout });
   const entry = await new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
+    let timeout;
+    const onTimeout = () => {
       lines.close();
       if (!processState.exitObserved) child.kill("SIGTERM");
       reject(Object.assign(
-        new Error(`SLICE248_SERVER_START_TIMEOUT:${stderr}`),
+        new Error(`SLICE248_SERVER_START_STALLED:${stderr}`),
         { code: "SLICE248_SERVER_START_TIMEOUT",
           childTerminationRequested: true },
       ));
-    }, 600_000);
+    };
+    const refreshTimeout = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(onTimeout, 600_000);
+    };
+    refreshTimeout();
     const finish = (callback) => (...values) => {
       clearTimeout(timeout);
       callback(...values);
@@ -193,6 +199,10 @@ async function startServer(resumeDirectory = null, fork = null) {
         if (parsed.schemaVersion
           === "ticket23_slice248_standard_2000_aa_live_entry_v1") {
           finish(resolve)(parsed);
+        } else if (parsed.schemaVersion
+          === "ticket23_slice248_fork_start_progress_v1") {
+          refreshTimeout();
+          process.stdout.write(`${line}\n`);
         } else process.stdout.write(`${line}\n`);
       } catch {
         process.stdout.write(`${line}\n`);
