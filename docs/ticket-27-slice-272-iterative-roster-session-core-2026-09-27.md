@@ -16,4 +16,8 @@
 
 这只关闭真实 Builder 的 seam；会话尚未接 Workspace 的持久草稿、Flash、地图/预算工具与最终计划产物，不能声称正式 2000 分新鲜写表已经成功。
 
+## 同日增量：最终名单与地图回执绑定
+
+聚焦检查又发现旧假 Adapter 路径能把 1870 草案的地图回执附给修改后的 2000 军表；这会伪装成“最终名单已读图”。将正向流程改为 **1870 → 2000 → 用 2000 名单 hash 查询地图 → 模型在 `finish` 中显式确认路线和回执**，先红 `ITERATIVE_ROSTER_NOT_READY_FOR_MATCH`。会话现在拒绝与当前名单 hash 不同的地图查询，计划只接受同一名单 hash 的地图观察，最终 `finish` 必须明确提交计划而非隐式沿用旧版；另外一个独立反例证实旧 1870 hash 不能触达地图工具。修改后的内核单项门一次通过，0 Provider/Room。真实地图 Port 仍待接入，不把本次假地图回执视为地图验收。
+
 `harnessLoopUsed=true`; `targetGames=[starcraft-tmg]`; `promptPackRoutes=[ticket27.roster_strategist.iterative.v1（待正式接线）]`; `harnessToolsCalled=[假模型 Adapter, 假 Builder Adapter, 假地图/预算工具, 最终复核 Adapter]`; `uiTraceEvidence=null`; `agentDecisionEvidence=四轮合成公开决策，非真实模型`; `memoryTraceEvidence=持久会话、不可变迭代收据和同 requestKey 恢复`; `trainingTraceCandidates=[]`; `rollbackOrDemotionRules=未知发送禁重发、非地图证据拒绝、未满 2000 或最终 High 禁晋升`; `userVisibleChecks=模块级聚焦通过，正式 Web/模型未验`。

@@ -52,6 +52,7 @@ function publicPlan(value, candidateHash, priorPlan, observations) {
   if (value.mapEvidenceHash !== null
     && !observations.some((entry) => (
       entry.query.kind === "map_route"
+      && entry.query.candidateHash === candidateHash
       && ["exact", "certified", "advisory"].includes(entry.receipt.status)
       &&
       entry.receipt.receiptHash === value.mapEvidenceHash))) {
@@ -181,6 +182,12 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
           || !decision.question.trim()) {
           fail("ITERATIVE_ROSTER_QUERY_INVALID");
         }
+        if (decision.queries.some((query) => (
+          query?.kind === "map_route"
+          && (!state.currentCandidate
+            || query.candidateHash !== state.currentCandidate.candidateHash)))) {
+          fail("ITERATIVE_ROSTER_MAP_QUERY_STALE_CANDIDATE");
+        }
         const receipts = await Promise.all(decision.queries.map((query) => (
           ports.tools.query(copy(query), copy(state)))));
         for (let index = 0; index < receipts.length; index += 1) {
@@ -247,6 +254,15 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
             portErrorCode: verdict.portErrorCode ?? null }, requestKey });
         }
       } else if (decision.kind === "finish") {
+        if (!state.currentCandidate || !object(decision.plan)
+          || !["retain", "revise"].includes(
+            decision.assumptionDisposition)) {
+          fail("ITERATIVE_ROSTER_FINISH_PLAN_INVALID");
+        }
+        state.plan = publicPlan({ ...decision.plan,
+          assumptionDisposition: decision.assumptionDisposition },
+        state.currentCandidate.candidateHash, state.plan,
+        state.observations);
         if (!state.currentCandidate || !state.plan
           || state.currentCandidate.mineralSpent !== state.mineralBudget
           || state.plan.candidateHash !== state.currentCandidate.candidateHash
@@ -254,6 +270,8 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
           || !state.plan.mapEvidenceHash
           || !state.observations.some((entry) => (
             entry.query.kind === "map_route"
+            && entry.query.candidateHash
+              === state.currentCandidate.candidateHash
             && ["exact", "certified", "advisory"].includes(
               entry.receipt.status)
             &&

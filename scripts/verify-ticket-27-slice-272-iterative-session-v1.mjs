@@ -11,13 +11,16 @@ const decisions = [
   { kind: "propose", candidateInput: { id: "first", minerals: 1870 },
     plan: { victoryRoute: "hold marker 1", mapEvidenceHash: null,
       arrivalScheduleStatus: "unknown" }, assumptionDisposition: "retain" },
-  { kind: "query", queries: [{ kind: "map_route", targetId: "marker-1" }],
-    question: "Can the selected base reach marker 1?" },
   { kind: "propose", candidateInput: { id: "revised", minerals: 2000 },
     plan: { victoryRoute: "hold marker 1 and contest marker 5",
-      mapEvidenceHash: "route-evidence-v1", arrivalScheduleStatus: "legal" },
+      mapEvidenceHash: null, arrivalScheduleStatus: "legal" },
     assumptionDisposition: "revise" },
-  { kind: "finish" },
+  { kind: "query", queries: [{ kind: "map_route", targetId: "marker-1",
+    candidateHash: hashStarcraftTmgContract({ id: "revised", minerals: 2000 }) }],
+    question: "Can this exact 2000-point roster reach marker 1?" },
+  { kind: "finish", plan: { victoryRoute: "hold marker 1 and contest marker 5",
+    mapEvidenceHash: "route-evidence-v1", arrivalScheduleStatus: "legal" },
+  assumptionDisposition: "retain" },
 ];
 let modelCalls = 0;
 let builderCalls = 0;
@@ -74,8 +77,8 @@ const paused = await session.pause("iterative-2000-fixture");
 assert.equal(paused.status, "paused");
 assert.equal((await session.read("iterative-2000-fixture")).iterations.length, 1);
 await session.resume("iterative-2000-fixture");
-assert.equal(routeQueries, 1);
 await session.resume("iterative-2000-fixture");
+assert.equal(routeQueries, 1);
 const ready = await session.resume("iterative-2000-fixture");
 assert.equal(ready.status, "ready_for_match");
 assert.equal(ready.currentCandidate.mineralSpent, 2000);
@@ -85,6 +88,35 @@ assert.equal(modelCalls, 4);
 assert.equal(builderCalls, 2);
 assert.equal(branchQueries, 1);
 assert.equal(routeQueries, 1);
+const staleSaved = new Map();
+let staleRound = 0;
+const staleMap = createIterativeRosterPlanSessionV1({
+  store: {
+    load: async (id) => structuredClone(staleSaved.get(id) || null),
+    save: async (id, value) => staleSaved.set(id, structuredClone(value)),
+  },
+  model: { decide: async () => ({ outcome: "completed",
+    receiptHash: `stale-model-${++staleRound}`,
+    decision: staleRound === 1
+      ? { kind: "propose", candidateInput: { id: "final", minerals: 2000 },
+        plan: { victoryRoute: "hold marker 1", mapEvidenceHash: null,
+          arrivalScheduleStatus: "legal" }, assumptionDisposition: "retain" }
+      : { kind: "query", question: "Reuse the old roster route?",
+        queries: [{ kind: "map_route", targetId: "marker-1",
+          candidateHash: hashStarcraftTmgContract({ id: "old", minerals: 1870 }) }] } }) },
+  builder: { evaluate: async (candidateInput) => ({ legal: true,
+    status: "legal", mineralSpent: 2000, mineralBudget: 2000,
+    candidateHash: hashStarcraftTmgContract(candidateInput),
+    verdictHash: "stale-rules-verdict" }) },
+  tools: { query: async () => assert.fail("stale query must not reach tools") },
+  review: { final: async () => assert.fail("stale evidence cannot finish") },
+});
+await staleMap.start({ sessionId: "iterative-stale-map-fixture",
+  mineralBudget: 2000, frozenContext: { mapHash: "frozen-map-v1",
+    taskHash: "frozen-task-v1", sourceHash: "frozen-source-v1" } });
+await staleMap.resume("iterative-stale-map-fixture");
+await assert.rejects(staleMap.resume("iterative-stale-map-fixture"),
+  (error) => error?.code === "ITERATIVE_ROSTER_MAP_QUERY_STALE_CANDIDATE");
 const ambiguousSaved = new Map();
 let ambiguousDispatches = 0;
 let exactRecoveries = 0;
@@ -104,8 +136,8 @@ const recoverable = createIterativeRosterPlanSessionV1({
       exactRecoveries += 1;
       assert.equal(typeof requestKey, "string");
       return { outcome: "completed", receiptHash: "retained-model-receipt",
-        decision: { kind: "query", question: "Check frozen route",
-          queries: [{ kind: "map_route", targetId: "marker-1" }] } };
+        decision: { kind: "query", question: "Check frozen scenario",
+          queries: [{ kind: "scenario", targetId: "marker-1" }] } };
     },
   },
   builder: { evaluate: async () => assert.fail("builder not requested") },
