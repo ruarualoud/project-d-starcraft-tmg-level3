@@ -203,10 +203,17 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
         const candidateHash = hashStarcraftTmgContract(decision.candidateInput);
         if (!object(verdict) || typeof verdict.legal !== "boolean"
           || verdict.candidateHash !== candidateHash
-          || !Number.isSafeInteger(verdict.mineralSpent)
           || verdict.mineralBudget !== state.mineralBudget
-          || verdict.mineralSpent > state.mineralBudget
-          || verdict.mineralSpent < 0) {
+          || !["legal", "illegal", "invalid_candidate", "unknown"]
+            .includes(verdict.status)
+          || (verdict.legal && (verdict.status !== "legal"
+            || !Number.isSafeInteger(verdict.mineralSpent)
+            || verdict.mineralSpent > state.mineralBudget
+            || verdict.mineralSpent < 0
+            || typeof verdict.verdictHash !== "string"))
+          || (!verdict.legal && (verdict.status === "legal"
+            || verdict.mineralSpent !== null
+            || typeof verdict.receiptHash !== "string"))) {
           fail("ITERATIVE_ROSTER_RULES_VERDICT_INVALID");
         }
         if (verdict.legal) {
@@ -231,6 +238,13 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
             state.observations.push(observation);
             toolReceipts.push(observation);
           }
+        } else {
+          state.observations.push({ query: { kind: "builder_verdict",
+            candidateHash }, receipt: { status: verdict.status,
+            receiptHash: verdict.receiptHash,
+            rejectionKind: verdict.rejectionKind ?? null,
+            rulesErrorCode: verdict.rulesErrorCode ?? null,
+            portErrorCode: verdict.portErrorCode ?? null }, requestKey });
         }
       } else if (decision.kind === "finish") {
         if (!state.currentCandidate || !state.plan
@@ -261,7 +275,8 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
         modelReceiptHash: reply.receiptHash,
         decisionHash: hashStarcraftTmgContract(decision),
         decisionKind: decision.kind,
-        rulesVerdictHash: verdict?.verdictHash || null,
+        rulesVerdictHash: verdict?.verdictHash || verdict?.receiptHash || null,
+        rulesVerdictStatus: verdict?.status || null,
         toolReceiptHashes: toolReceipts.map((entry) => (
           entry.receipt.receiptHash)),
         currentCandidateHash: state.currentCandidate?.candidateHash || null,

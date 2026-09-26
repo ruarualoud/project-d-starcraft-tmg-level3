@@ -38,7 +38,8 @@ const session = createIterativeRosterPlanSessionV1({
   builder: {
     evaluate: async (candidateInput) => {
       builderCalls += 1;
-      return { legal: true, mineralSpent: candidateInput.minerals,
+      return { legal: true, status: "legal",
+        mineralSpent: candidateInput.minerals,
         mineralBudget: 2000,
         candidateHash: hashStarcraftTmgContract(candidateInput),
         verdictHash: `rules-verdict-${builderCalls}` };
@@ -144,6 +145,7 @@ const forged = createIterativeRosterPlanSessionV1({
           assumptionDisposition: "retain" } };
   } },
   builder: { evaluate: async (candidateInput) => ({ legal: true,
+    status: "legal",
     mineralSpent: candidateInput.minerals, mineralBudget: 2000,
     candidateHash: hashStarcraftTmgContract(candidateInput),
     verdictHash: "forged-rules-verdict" }) },

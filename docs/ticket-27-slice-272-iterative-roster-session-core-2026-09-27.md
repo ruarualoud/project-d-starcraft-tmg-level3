@@ -10,4 +10,10 @@
 
 模块级结论仅是“正确的会话 seam 可承载持续查询与计划修订”；真实从头写表仍不稳定，Ticket 27 保持 **5/6**。下一片把新版本会话接入正式 Workspace 的持久草稿和 Keychain→Flash Adapter，用原冻结 Standard-2000/地图作一次新鲜生成，观察真实查询、Builder 军表、复核与成本；失败时只从已结算轮续接。
 
+## 同日增量：正式 Builder 判定接线
+
+在上述内核之后，用冻结官方 Standard-2000 recipe 做真实 Builder 回执复现。迭代会话原先只接受假 Adapter 的 `{legal,mineralSpent}`，正式 `evaluateRosterCandidate` 返回已签合法判定或类型化拒绝，聚焦命令先红 `ITERATIVE_ROSTER_RULES_VERDICT_INVALID`。新增 `iterative-roster-builder-adapter-v1.mjs`：对正式合法回执验证内容 hash 与 Rules audit，对拒绝回执验证 receipt hash；拒绝时不伪造 mineralSpent，保留 `rejectionKind` 与规则/寻址错误码供下一轮模型查询。会话仅把 `legal` 且精确预算的候选存作当前名单，拒绝不是完成也不是训练真值。冻结真实 Terran 2000 recipe 和错误势力候选的唯一聚焦门通过；旧内核假 Adapter 门因合同字段直接受影响，各跑一次也通过。两门均 0 Provider/Room。
+
+这只关闭真实 Builder 的 seam；会话尚未接 Workspace 的持久草稿、Flash、地图/预算工具与最终计划产物，不能声称正式 2000 分新鲜写表已经成功。
+
 `harnessLoopUsed=true`; `targetGames=[starcraft-tmg]`; `promptPackRoutes=[ticket27.roster_strategist.iterative.v1（待正式接线）]`; `harnessToolsCalled=[假模型 Adapter, 假 Builder Adapter, 假地图/预算工具, 最终复核 Adapter]`; `uiTraceEvidence=null`; `agentDecisionEvidence=四轮合成公开决策，非真实模型`; `memoryTraceEvidence=持久会话、不可变迭代收据和同 requestKey 恢复`; `trainingTraceCandidates=[]`; `rollbackOrDemotionRules=未知发送禁重发、非地图证据拒绝、未满 2000 或最终 High 禁晋升`; `userVisibleChecks=模块级聚焦通过，正式 Web/模型未验`。
