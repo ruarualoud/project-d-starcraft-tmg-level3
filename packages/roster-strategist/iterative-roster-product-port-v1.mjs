@@ -4,6 +4,8 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { createIterativeRosterBuilderAdapterV1 } from
   "./iterative-roster-builder-adapter-v1.mjs";
+import { createIterativeRosterArrivalPortV1 } from
+  "./iterative-roster-arrival-port-v1.mjs";
 import { createIterativeRosterFileStoreV1 } from
   "./iterative-roster-file-store-v1.mjs";
 import { createIterativeRosterFlashModelPortV1 } from
@@ -43,6 +45,10 @@ export function createIterativeRosterProductPortV1({ directory,
   const tools = createIterativeRosterToolPortV1({ armyBuilderPort,
     mapEvidencePort });
   const builder = createIterativeRosterBuilderAdapterV1(armyBuilderPort);
+  const arrival = missionScoringAuthority.resultStatus === "derivable"
+    ? createIterativeRosterArrivalPortV1({ store,
+      builder: armyBuilderPort, missionAuthority: missionScoringAuthority,
+      deliberationFactory }) : null;
   const modelFor = (state) => {
     const route = strategist.selectSkillRoute({
       ownFactionRecordKey: state.frozenContext.factionRecordKey,
@@ -123,5 +129,13 @@ export function createIterativeRosterProductPortV1({ directory,
     },
     resume: session.resume, pause: session.pause,
     prepare: session.prepare, read: session.read,
+    proposeSchedule: (sessionId) => {
+      if (!arrival) fail("ITERATIVE_ROSTER_ARRIVAL_MISSION_UNKNOWN");
+      return arrival.propose(sessionId);
+    },
+    reviseSchedulePublicPlan: (sessionId) => {
+      if (!arrival) fail("ITERATIVE_ROSTER_ARRIVAL_MISSION_UNKNOWN");
+      return arrival.revisePublicPlan(sessionId);
+    },
   });
 }

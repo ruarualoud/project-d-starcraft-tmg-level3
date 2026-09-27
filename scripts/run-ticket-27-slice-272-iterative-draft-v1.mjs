@@ -28,6 +28,8 @@ const steps = Number(argument("steps") || 1);
 const preferRetainedRepair = argument("reconcile-last") === "true";
 const advanceAfterKnownInvalid = argument("advance-after-repair") === "true";
 const prepareOnly = argument("prepare-only") === "true";
+const scheduleOnly = argument("schedule") === "true";
+const reviseSchedulePublicOnly = argument("revise-schedule-public") === "true";
 const interactive = argument("interactive") === "true";
 if (!Number.isSafeInteger(steps) || steps < 1 || steps > 12) {
   throw new Error("ITERATIVE_LIVE_STEPS_INVALID");
@@ -74,6 +76,33 @@ try {
       providerCalls: 0,
     })}\n`);
   }
+  if (scheduleOnly) {
+    const result = await port.proposeSchedule(sessionId);
+    state = await port.read(sessionId);
+    process.stdout.write(`${JSON.stringify({
+      event: "iterative_roster_arrival_schedule", sessionId,
+      status: result.status,
+      scheduleHash: result.schedule?.scheduleHash || null,
+      rounds: result.schedule?.rounds || null,
+      publicAudit: result.publicAudit || null,
+      rejection: result.rejection || null,
+      providerCallsThisCommand: result.providerCalls,
+      readyForMatch: state.status === "ready_for_match",
+    })}\n`);
+  }
+  if (reviseSchedulePublicOnly) {
+    const result = await port.reviseSchedulePublicPlan(sessionId);
+    state = await port.read(sessionId);
+    process.stdout.write(`${JSON.stringify({
+      event: "iterative_roster_arrival_public_revision", sessionId,
+      status: result.status,
+      publicAudit: result.publicAudit || null,
+      rejection: result.rejection || null,
+      providerCallsThisCommand: result.providerCalls,
+      scheduleHash: state.openingDeploymentSchedule?.scheduleHash || null,
+      readyForMatch: state.status === "ready_for_match",
+    })}\n`);
+  }
   if (interactive) {
     process.stdout.write(`${JSON.stringify({ event: "iterative_roster_ready",
       sessionId, revision: state.revision, status: state.status })}\n`);
@@ -117,7 +146,9 @@ try {
       }
     }
   }
-  for (let step = 0; !interactive && !prepareOnly && step < steps
+  for (let step = 0; !interactive && !prepareOnly && !scheduleOnly
+    && !reviseSchedulePublicOnly
+    && step < steps
     && (["active", "paused"].includes(state.status)
       || (state.status === "requires_reconciliation"
         && state.iterations.at(-1)?.decisionKind === "repair_needed"
@@ -145,8 +176,10 @@ try {
   let inputUnits = 0;
   let outputUnits = 0;
   let inputCacheHitUnits = 0;
-  for (const iteration of state.iterations) {
-    const reply = await replyStore.loadRetainedReply(iteration.requestKey);
+  for (const requestKey of [...state.iterations.map((iteration) =>
+    iteration.requestKey), ...(state.arrivalRequestKeys || []),
+    ...(state.publicRevisionRequestKeys || [])]) {
+    const reply = await replyStore.loadRetainedReply(requestKey);
     if (reply?.paidProviderCall !== true) continue;
     paidReplies += 1;
     inputUnits += Number(reply.usage?.inputUnits || 0);
