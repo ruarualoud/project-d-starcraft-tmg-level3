@@ -21,6 +21,8 @@ import { resolveExecutableRuleAtoms } from "../packages/rule-atoms/rule-atom-cat
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
 const OUTPUT_DIR = path.join(ROOT, "build", "ticket-11-rule-atoms-v1");
+const FIXTURE_DIR = path.join(process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
+  "build", "ticket-11-rule-atoms-v1");
 const OCCURRED_AT = "2026-08-25T00:00:00.000Z";
 const HISTORICAL_COMBAT_PASS_CATALOGUE_HASH =
   "88a1fa5cadd118ff44ace8d8a16963b7e8a46d08a89e698a2ca46da4091945ad";
@@ -180,7 +182,7 @@ function applyFinite(runtimeEngine, envelope, credentials, predicate, idempotenc
 }
 
 const denominatorReport = JSON.parse(await readFile(
-  path.join(OUTPUT_DIR, "official-canonical-rule-atom-denominator-v1-report.json"),
+  path.join(FIXTURE_DIR, "official-canonical-rule-atom-denominator-v1-report.json"),
   "utf8",
 ));
 const denominator = denominatorReport.denominator;
@@ -411,11 +413,11 @@ const mismatchedAccessCredentials = playerCredentials(engine, mismatchedAccessEn
 const mismatchedAccessLegal = engine.legalSpace(mismatchedAccessEnvelope, {
   seatAuthority: mismatchedAccessCredentials.authority,
 });
-assert.equal(mismatchedAccessLegal.finiteActions.length, 0);
-assert.equal(
-  mismatchedAccessLegal.disabledDiagnostics[0].disabledReason,
-  "ENGAGEMENT_V2_ACCESS_POINT_ADJACENCY_MISMATCH",
-);
+assert.equal(mismatchedAccessLegal.finiteActions.length,
+  legal.finiteActions.length);
+assert.equal(mismatchedAccessLegal.disabledDiagnostics[0].disabledReason,
+  "COMBAT_PASS_ENGAGED_UNIT_REMAINS",
+  "a stale cache must not replace exact engagement with an integrity failure");
 
 const elevatedFlyingState = groundMidState();
 elevatedFlyingState.pieces[0].combatTag = "flying";

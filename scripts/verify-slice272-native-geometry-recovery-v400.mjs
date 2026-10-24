@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {reprojectRosterTeachNativeQueryRepairV1} from '../packages/roster-strategist/roster-teach-evidence-port-v1.mjs';
+const draft=JSON.parse(await fs.readFile(process.argv[2],'utf8'));
+const state=draft.teachFramework.state;
+const op=state.queryRecovery.operations.find(row=>row.originalQueryId==='teach-native-move-marine1-toward-marker2');
+const receipt=op.result;
+assert.match(receipt.queryErrorDetail,/MODEL_BASE_GEOMETRY_PLACEMENT_OVERLAP/);
+const context=state.investigation.evidence.find(row=>row.challengeId===op.request.toolRequest.branchIdRef).branchQueryContext;
+const before=JSON.stringify(receipt);
+const view=reprojectRosterTeachNativeQueryRepairV1({request:op.request,receipt,queryContext:context});
+assert.equal(view.queryRepair?.correctable,true,'actual shape repair must not terminate on the next Native geometry denial');
+assert.equal(view.queryRepair.failureStage,'instantiate_current_rules_domain');
+assert.equal(view.queryRepair.repairContext.requiredRemainingPlacementCount,8);
+assert.equal(view.queryRepair.repairContext.leadingModelBase.widthMilliInches,1260);
+assert.match(view.queryRepair.repairContext.failureCode,/MODEL_BASE_GEOMETRY_PLACEMENT_OVERLAP/);
+assert.equal(view.nativeInputRepairProjection.nativeExecutions,0);
+assert.equal(view.nativeInputRepairProjection.originalReceiptHash,receipt.receiptHash);
+assert.equal(JSON.stringify(receipt),before);
+console.log(JSON.stringify({passed:true,actualReply:185,retainedNativeGeometryFeedback:true,
+  providerCalls:0,nativeExecutions:0,originalFailureUnchanged:true}));

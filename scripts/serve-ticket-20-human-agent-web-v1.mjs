@@ -259,6 +259,7 @@ async function main() {
         refereeHmacSecret: randomBytes(32).toString("base64url"),
         storeEncryptionKeyBase64: randomBytes(32).toString("base64"),
         resumeCredentials: null,
+        currentProductRuntimeVariant: "singleton_identity_v6",
         credentialMaterialStored: "development_room_seat_tokens_only_mode_0600",
         apiCredentialStored: false,
         trainingTruth: false,
@@ -294,6 +295,11 @@ async function main() {
       filename: path.join(liveDataDirectory, "provider", "match-memory.sqlite"),
     });
   }
+  const rosterMapConfiguration =
+    liveMode && evidenceProfile === "ticket24-slice258" ? {
+      seedId: "sc1_lost_temple_v1",
+      elementSelections: [], passageSelections: [],
+    } : null;
   const fixture = await createTicket20HumanAgentDemoFixtureV1({
     // The hash-locked reference artifacts (source-intake cache, ticket-18
     // strategy pack, ticket-11 report) are read-only frozen inputs; an
@@ -302,11 +308,7 @@ async function main() {
     root: process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
     roomId,
     roomProfile: liveMode ? "standard_2000_live" : "standard_2000",
-    mapConfiguration: liveMode && evidenceProfile === "ticket24-slice258" ? {
-      seedId: "sc1_lost_temple_v1",
-      elementSelections: [],
-      passageSelections: [],
-    } : null,
+    mapConfiguration: rosterMapConfiguration,
     autoDrive: !liveMode,
     attachBot: !liveMode,
     // Live acceptance captures the Web surface after every authoritative
@@ -332,6 +334,9 @@ async function main() {
       matchDecisionJournal,
       resumeRoom: Boolean(requestedResumeDirectory),
       resumeCredentials: privateState?.resumeCredentials || null,
+      // Older saved rooms without this field retain their original binding.
+      // Only explicitly new rooms opt into nonreused summon identities.
+      currentProductRuntimeVariant: privateState?.currentProductRuntimeVariant || "legacy_v1",
       refereeCrypto,
     } : {}),
   });
@@ -478,7 +483,10 @@ async function main() {
               fixtureRoot: process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
               dataDirectory: path.join(ROOT,
                 "build/ticket-27-slice-271-roster-workspace-v1/dev-server-data"),
+              mapConfiguration: rosterMapConfiguration,
               deliberationFactory: rosterSecure?.factory || null,
+              enableIterativeDraft: rosterFlashEnabled
+                && Boolean(rosterMapConfiguration),
             });
           })().catch(async (error) => {
             await rosterSecure?.close().catch(() => {});

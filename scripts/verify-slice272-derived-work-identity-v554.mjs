@@ -1,0 +1,20 @@
+// Actual46 was paid and saved, then publication rejected the Host's own title.
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createRosterDecisionWorkflowV1} from '../packages/roster-strategist/roster-decision-workflow-v1.mjs';
+const run=path.resolve(process.argv[2]),base=path.join(run,'workspace/decision-workflows/candidate-capability');
+const original=await fs.readFile(path.join(base,'workflow.json'),'utf8'),state=JSON.parse(original),memory=new Map();
+const get=async ref=>memory.has(ref)?structuredClone(memory.get(ref)):JSON.parse(await fs.readFile(path.join(base,'artifacts',ref+'.json'),'utf8'));
+const req=JSON.parse(await fs.readFile(path.join(run,'46.request.json'),'utf8')).request;
+const id=req.promptNodes.find(node=>node.kind==='workflow_role_assignment').workId,work=state.work.find(row=>row.id===id);
+const result=await get(work.resultRef),title=`${work.role}: ${work.id}`;
+assert.ok(title.length>300);assert.equal(work.status,'evidence_ready');
+const store={load:async()=>structuredClone(state),save:async()=>{},get,put:async value=>{const ref='proof-'+memory.size;memory.set(ref,structuredClone(value));return ref;}};
+const runProof=await createRosterDecisionWorkflowV1({store,execute:async()=>{throw Error('NO_DISPATCH');}});
+await runProof.dispatch({type:'publish_evidence',id:`role:${id}`,title,kind:result.kind,bindings:work.bindings,conditions:result.conditions,value:result.value});
+const nextId=`${id}:order0:long-enough-recorded-child-dependency`;assert.ok(nextId.length>300);
+await runProof.dispatch({type:'enqueue',work:[{id:nextId,role:'roster_workflow_fact_summary',bindings:work.bindings,inputs:{parent:{source:'work',id:work.id,pointer:'/value'}}}]});
+assert.equal((await runProof.inspect()).work.find(row=>row.id===nextId).status,'ready');
+assert.equal(await fs.readFile(path.join(base,'workflow.json'),'utf8'),original);
+console.log(JSON.stringify({pass:true,savedActual46Publishable:true,derivedChildAddressRetained:true,providerCalls:0,productionWrites:0}));

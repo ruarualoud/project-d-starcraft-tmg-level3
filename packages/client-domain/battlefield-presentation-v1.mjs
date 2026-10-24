@@ -531,12 +531,15 @@ export function projectStarcraftTmgBattlefieldPresentationV1(input) {
         || visualPresetId)
         || resolveStarcraftTmgBattlefieldMapMediaV2("lost_temple_inspired_v1");
     const terrain = areas(board?.terrain, "terrain");
+    // Prefer current Rules markers to frozen setup snapshots and demo circles.
+    const missionMarkers = rows(board?.missionMarkers).length
+        ? rows(board.missionMarkers)
+        : rows(record(state?.officialMissionMarkerPlacement)?.missionMarkers);
     const markers = areas([
-        ...rows(board?.centerMarkers),
+        ...(missionMarkers.length ? [] : rows(board?.centerMarkers)),
         ...rows(board?.markers),
-        ...rows(board?.missionMarkers),
+        ...missionMarkers,
         ...rows(board?.effectMarkers),
-        ...rows(record(state?.officialMissionMarkerPlacement)?.missionMarkers),
         ...rows(state?.officialBattlefieldMarkers),
     ], "marker");
     const tokens = areas([
@@ -559,6 +562,12 @@ export function projectStarcraftTmgBattlefieldPresentationV1(input) {
             mapGameEra: text(mapManifest?.mapGameEra) || mapMedia?.era || null,
             mapArtAssetPath: text(mapManifest?.mapArtAssetPath)
                 || mapMedia?.path || null,
+            mapArtOverlays: Object.freeze(rows(mapManifest?.mapArtOverlays)
+                .filter((entry) => typeof entry?.assetPath === "string")
+                .map((entry) => ({ overlayId: text(entry.overlayId),
+                    assetPath: entry.assetPath, sha256: text(entry.sha256),
+                    rectangleNormalized: { ...entry.rectangleNormalized },
+                    ...(entry.flipX === true ? { flipX: true } : {}) }))),
             engagementScale: text(mapManifest?.engagementScale)
                 || mapMedia?.engagementScale || null,
             visualPresetId: mapMedia?.visualPresetId || null,

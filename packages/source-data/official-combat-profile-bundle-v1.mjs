@@ -8,6 +8,10 @@ import {
 export const OFFICIAL_COMBAT_PROFILE_BUNDLE_SCHEMA =
   "starcraft_tmg_official_combat_profile_bundle_v1";
 
+// Only a fully verified private copy produced below may reuse validation.
+// Public hashes, frozen caller objects and decoded bundles never grant trust.
+const OWNED_VERIFIED_COMBAT_PROFILE_BUNDLES = new WeakSet();
+
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
 }
@@ -176,6 +180,7 @@ export function createOfficialCombatProfileBundleV1(input = {}) {
 }
 
 export function verifyOfficialCombatProfileBundleV1(bundle) {
+  if (OWNED_VERIFIED_COMBAT_PROFILE_BUNDLES.has(bundle)) return true;
   if (!object(bundle) || bundle.schema !== OFFICIAL_COMBAT_PROFILE_BUNDLE_SCHEMA) {
     fail("official_combat_profile_bundle_invalid");
   }
@@ -192,6 +197,14 @@ export function verifyOfficialCombatProfileBundleV1(bundle) {
     fail("official_combat_profile_bundle_index_mismatch");
   }
   return true;
+}
+
+export function createOwnedOfficialCombatProfileBundleV1(bundle) {
+  const snapshot = structuredClone(bundle);
+  verifyOfficialCombatProfileBundleV1(snapshot);
+  deepFreeze(snapshot);
+  OWNED_VERIFIED_COMBAT_PROFILE_BUNDLES.add(snapshot);
+  return snapshot;
 }
 
 export function getOfficialCombatProfileV1(bundle, recordKey) {

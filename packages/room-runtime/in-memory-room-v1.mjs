@@ -306,7 +306,10 @@ const VIEWER_STATE_V3_INPUT_FIELDS = Object.freeze([
 export function projectStarcraftTmgStateForViewerV3(state, seatKey = null) {
   const bounded = Object.fromEntries(VIEWER_STATE_V3_INPUT_FIELDS
     .filter((field) => Object.prototype.hasOwnProperty.call(state || {}, field))
-    .map((field) => [field, clone(state[field])]));
+    // V2 immediately clones this bounded input before applying privacy rules.
+    // Copying every admitted field here as well duplicated the large map and
+    // audit snapshots on every read; no authority reference escapes V2/V3.
+    .map((field) => [field, state[field]]));
   // V2 owns the frozen seat/private-field semantics. The browser-safe shared
   // V3 shape is the final network boundary and recursively drops any field
   // that has not been explicitly reviewed for viewer visibility.
@@ -505,9 +508,32 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
   const checkpointInterval = Math.max(1, Number(options.checkpointInterval || 16));
   const inviteTtlMs = boundedTtl(options.inviteTtlMs, 15 * 60 * 1000, "inviteTtlMs");
   const recoveryTtlMs = boundedTtl(options.recoveryTtlMs, 10 * 60 * 1000, "recoveryTtlMs");
+  const statesFromOwnedReads = new WeakSet();
+  const ownedStateProjections = new Map();
 
   async function load(roomId) {
-    return roomStore.loadRoom(String(roomId || ""));
+    if (typeof roomStore.loadOwnedRoom !== "function") {
+      return roomStore.loadRoom(String(roomId || ""));
+    }
+    const aggregate = await roomStore.loadOwnedRoom(String(roomId || ""));
+    if (aggregate?.envelope?.state) statesFromOwnedReads.add(aggregate.envelope.state);
+    return aggregate;
+  }
+
+  function projectOwnedState(state, seatKey) {
+    // Reuse only an actual state obtained through the private immutable reader,
+    // not caller-supplied revision/hash/frozen flags. Grant/control authentication
+    // is still performed on the newly loaded aggregate for EVERY operation.
+    if (!statesFromOwnedReads.has(state)) return projectState(state, seatKey);
+    let bySeat = ownedStateProjections.get(state);
+    if (!bySeat) bySeat = new Map();
+    ownedStateProjections.delete(state);
+    ownedStateProjections.set(state, bySeat);
+    while (ownedStateProjections.size > 4) {
+      ownedStateProjections.delete(ownedStateProjections.keys().next().value);
+    }
+    if (!bySeat.has(seatKey)) bySeat.set(seatKey, deepFreeze(projectState(state, seatKey)));
+    return bySeat.get(seatKey);
   }
 
   function authenticate(aggregate, seatToken, capability = null) {
@@ -540,7 +566,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
   }
 
   async function commitRejection(aggregate, grant, operation, rejected) {
-    const next = clone(aggregate);
+    const next = { ...aggregate };
     next.roomRevision += 1;
     next.privateJournalSequence += 1;
     next.updatedAtAudit = now();
@@ -1168,7 +1194,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       },
       matchBinding: publicMatchBinding(aggregate.envelope.matchBinding),
       authorityVersion: STARCRAFT_TMG_AUTHORITY_VERSION,
-      state: projectState(aggregate.envelope.state, grant?.seatKey || null),
+      state: projectOwnedState(aggregate.envelope.state, grant?.seatKey || null),
       training: { eligibleForTraining: false, trainingTruth: false, reviewStatus: "raw" },
     };
     if (input.includeJournal === true) {
@@ -1232,7 +1258,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       control: { visible: Boolean(grant) },
       matchBinding: publicMatchBinding(aggregate.envelope.matchBinding),
       authorityVersion: STARCRAFT_TMG_AUTHORITY_VERSION,
-      state: projectState(aggregate.envelope.state, grant?.seatKey || null),
+      state: projectOwnedState(aggregate.envelope.state, grant?.seatKey || null),
       training: { eligibleForTraining: false, trainingTruth: false, reviewStatus: "raw" },
     };
     const scoreForecast = projectStarcraftTmgScoreForecastV1({
@@ -1279,7 +1305,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       occurredAt: input.occurredAt || now(),
     });
     if (!result.ok) return commitRejection(aggregate, grant, "preview", result);
-    const next = clone(aggregate);
+    const next = { ...aggregate, previews: { ...aggregate.previews } };
     next.previews[result.preview.previewId] = {
       preview: result.preview,
       actorGrantId: grant.grantId,
@@ -1324,7 +1350,7 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     }
     const result = authorityEngine.confirmPreview({ envelope: aggregate.envelope, preview: previewRecord.preview, seatAuthority: grant.authority, occurredAt: input.occurredAt || now() });
     if (!result.ok) return commitRejection(aggregate, grant, "confirm", result);
-    const next = clone(aggregate);
+    const next = { ...aggregate, confirmations: { ...aggregate.confirmations } };
     next.confirmations[result.confirmation.confirmationId] = result.confirmation;
     next.roomRevision += 1;
     next.privateJournalSequence += 1;
@@ -1358,7 +1384,8 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     } catch (error) {
       return rejection(error.code || "CONTROL_LEASE_REQUIRED", { message: error.message });
     }
-    const next = clone(aggregate);
+    const next = { ...aggregate, leases: { ...aggregate.leases },
+      leaseFences: { ...aggregate.leaseFences } };
     next.leases[grant.seatKey] = lease;
     next.leaseFences[grant.seatKey] = fence;
     next.roomRevision += 1;
@@ -1414,8 +1441,10 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
       envelope: applied.envelope,
       trainingTruth: false,
     });
-    const next = clone(aggregate);
-    next.envelope = applied.envelope;
+    const next = { ...aggregate, envelope: applied.envelope,
+      previews: { ...aggregate.previews,
+        [input.previewId]: { ...aggregate.previews[input.previewId] } },
+      idempotency: { ...aggregate.idempotency } };
     next.stateRevision = applied.envelope.stateRevision;
     next.roomRevision += 1;
     next.privateJournalSequence += 1;
@@ -1451,7 +1480,9 @@ export function createStarcraftTmgRoomRuntime(options = {}) {
     if (input.seatToken) {
       try { grant = authenticate(aggregate, input.seatToken, "read_room"); } catch (error) { return rejection(error.code, { message: error.message }); }
     }
-    const bundle = await roomStore.loadReplayBundle(aggregate.roomId);
+    const bundle = typeof roomStore.loadOwnedReplayBundle === "function"
+      ? await roomStore.loadOwnedReplayBundle(aggregate.roomId)
+      : await roomStore.loadReplayBundle(aggregate.roomId);
     if (bundle.latestCheckpoint) {
       const checkpointVerification = authorityEngine.verifyCheckpoint(bundle.latestCheckpoint, aggregate.envelope.matchBinding);
       if (!checkpointVerification.ok) return checkpointVerification;

@@ -247,7 +247,7 @@ export function createProviderProfile(input = {}) {
     contextBudget: positiveInteger(input.contextBudget || 32768, "contextBudget", 2000000),
     outputBudget: positiveInteger(input.outputBudget || 2048, "outputBudget", 1000000),
     toolSupport: input.toolSupport !== false,
-    timeoutMs: positiveInteger(input.timeoutMs || 60000, "timeoutMs", 300000),
+    timeoutMs: positiveInteger(input.timeoutMs || 60000, "timeoutMs", 600000),
     retryPolicy,
     fallbackPolicy: input.fallbackPolicy || "fail_closed",
     credentialPolicy: "session_memory_only_byok",

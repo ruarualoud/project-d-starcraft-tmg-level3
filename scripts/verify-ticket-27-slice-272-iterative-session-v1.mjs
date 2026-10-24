@@ -6,6 +6,117 @@ import { hashStarcraftTmgContract } from
 import { createIterativeRosterPlanSessionV1 } from
   "../packages/roster-strategist/iterative-roster-plan-session-v1.mjs";
 
+// Actual fresh B: a Builder-legal 1000-point roster and four certified
+// replacements existed, but the next Provider contract prohibited all scene
+// queries. Exercise only this bug seam, not the old broad session gates.
+if (process.argv[2] === "--budget-deliberation-only") {
+  const { readFile, writeFile } = await import("node:fs/promises");
+  const { createIterativeRosterFlashModelPortV1 } = await import(
+    "../packages/roster-strategist/iterative-roster-flash-model-port-v1.mjs");
+  const { createIterativeRosterToolPortV1 } = await import(
+    "../packages/roster-strategist/iterative-roster-tool-port-v1.mjs");
+  const { validateStarcraftTmgProviderJsonSchemaValueV1 } = await import(
+    "../packages/structured-generation/output-contract-registry-v1.mjs");
+  const capture = JSON.parse(await readFile(process.argv[3], "utf8"));
+  const original = JSON.stringify(capture);
+  assert.equal(capture.state.currentCandidate.mineralSpent, 1000);
+  assert.equal(capture.state.iterations.at(-1).rulesVerdictStatus, "legal");
+  const snapshots = new Map();
+  const fresh = createIterativeRosterPlanSessionV1({
+    store: { load: async id => snapshots.get(id) || null,
+      save: async (id, value) => snapshots.set(id, structuredClone(value)) },
+    model: { decide: async () => assert.fail("opening a session is not generation") },
+    builder: { evaluate: async () => assert.fail("not auditing a new roster") },
+    tools: { query: async () => assert.fail("opening cannot execute a tool") },
+    review: { final: async () => assert.fail("not claiming match readiness") },
+  });
+  const opened = await fresh.start({ sessionId: "captured-budget-deliberation",
+    mineralBudget: capture.state.mineralBudget,
+    frozenContext: capture.state.frozenContext });
+  const state = { ...structuredClone(capture.state),
+    modelContextVersion: opened.modelContextVersion };
+  const queryOutput = { ...structuredClone(capture.originalFirstProposal),
+    kind: "query", question: "Inspect the current legal roster before choosing a replacement.",
+    queries: [{ kind: "scene_context", candidateHash: state.currentCandidate.candidateHash,
+      factionRecordKey: "", scaleId: "", startOffset: 0, maximumEvaluations: 0,
+      maximumMutationDepth: 0, queryKind: "", argumentsJson: "{}", branchStateHash: "" }] };
+  let stubbedDeliberations = 0;
+  async function probe(current, output, expectQueries) {
+    const replies = new Map();
+    const requestKey = hashStarcraftTmgContract({ version: current.modelContextVersion,
+      kind: output.kind, purpose: "isolated_contract_probe" });
+    const port = createIterativeRosterFlashModelPortV1({
+      skillGuidance: { source: "captured_contract_probe_not_strategy_evidence" },
+      missionEvidence: current.frozenContext,
+      replyStore: { loadRetainedReply: async key => replies.get(key) || null,
+        retainReply: async (key, value) => replies.set(key, value) },
+      deliberationFactory: { createForRun: async options => ({
+        deliberate: async request => {
+          stubbedDeliberations += 1;
+          assert.equal(request.responseContract.queryKinds.includes("scene_context"),
+            expectQueries, "a legal under-budget candidate must not lose tactical/map queries");
+          assert.equal(request.responseFormat.schema.properties.kind.enum.includes("query"),
+            expectQueries, "the Provider schema must agree with the advertised tools");
+          const verdict = validateStarcraftTmgProviderJsonSchemaValueV1(
+            request.responseFormat.schema, output);
+          assert.equal(verdict.ok, true, "probe uses the real generated Provider schema");
+          await options.onEvent({ type: "round_completed",
+            receiptHash: hashStarcraftTmgContract({ requestKey, output }),
+            sanitizedOutputRecord: { sanitizedOutput: output },
+            usage: { inputUnits: 0, outputUnits: 0, totalUnits: 0 } });
+        },
+      }) },
+    });
+    return port.decide({ requestKey, state: current });
+  }
+  const queried = await probe(state, queryOutput, true);
+  assert.equal(queried.decision.kind, "query");
+  assert.equal(queried.decision.queries[0].candidateHash,
+    capture.state.currentCandidate.candidateHash);
+  let scenesOpened = 0;
+  const tools = createIterativeRosterToolPortV1({
+    armyBuilderPort: { evaluateRosterCandidate: () => assert.fail("not replacing a roster"),
+      enumerateArmyBuildingChoices: () => assert.fail("not querying the menu") },
+    mapEvidencePort: { summarizeMap: () => assert.fail("not querying map summary"),
+      evaluateRosterRoute: () => assert.fail("not auditing a route") },
+    createSceneLaboratory: ({ candidateInput }) => {
+      scenesOpened += 1;
+      assert.deepEqual(candidateInput, capture.state.currentCandidate.input);
+      return { describeQueryContext: () => ({
+        scope: "stubbed_context_query_not_geometric_certification" }) };
+    },
+  });
+  const evidence = await tools.query(queried.decision.queries[0], state);
+  assert.equal(evidence.candidateHash, capture.state.currentCandidate.candidateHash);
+  assert.equal(evidence.mutationAuthority, false);
+  assert.equal(scenesOpened, 1);
+  await assert.rejects(tools.query({ ...queried.decision.queries[0],
+    candidateHash: "0".repeat(64) }, state),
+  error => error.code === "ITERATIVE_ROSTER_TOOL_STALE_CANDIDATE");
+  assert.equal(scenesOpened, 1, "a stale query does not create a substituted scene");
+  const finished = await probe(state, { ...queryOutput, kind: "finish", queries: [] }, true);
+  assert.equal(finished.decision.kind, "repair_needed");
+  assert.equal(finished.decision.failureCode,
+    "ITERATIVE_ROSTER_FLASH_FINISH_BUDGET_SHORTFALL");
+  // Saved v4 decisions retain their old context/schema, not silent migration.
+  const legacy = await probe(capture.state, capture.originalFirstProposal, false);
+  assert.equal(legacy.decision.kind, "repair_needed");
+  assert.equal(legacy.decision.failureCode, "ITERATIVE_ROSTER_FLASH_UNCHANGED_UNDER_BUDGET");
+  assert.equal(JSON.stringify(capture), original);
+  const report = { passed: true, capturedLegalMinerals: 1000, requiredMinerals: 2000,
+    newSessionVersion: opened.modelContextVersion,
+    freshSessionTacticalQueriesReachCurrentCandidateScene: true,
+    providerContractAndRuntimeAcceptSameQuery: true,
+    underBudgetFinishStillRejected: true, staleCandidateStillRejected: true,
+    legacyPaidContextUnchanged: true, originalCaptureUnchanged: true,
+    stubbedDeliberations, realProviderCalls: 0, roomMutations: 0,
+    scope: "actual_B_budget_query_contract_not_fresh_model_army_or_strategy_certification",
+    trainingTruth: false };
+  await writeFile(process.argv[4], JSON.stringify(report, null, 2) + "\n", { mode: 0o600 });
+  console.log(JSON.stringify(report));
+  process.exit(0);
+}
+
 const saved = new Map();
 // These scripted decisions exercise the original v1 query ordering. Newly
 // opened production sessions use v2 deterministic budget/route preflights;

@@ -7,8 +7,9 @@
 // army builder is untouched; this panel is an additive workspace view.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Alert, Linking, Platform } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { RosterDecisionWorkflowPanel } from './roster-decision-workflow-panel';
 import { useI18n } from '@/lib/i18n';
 import {
   rosterPlanningClient,
@@ -53,12 +54,22 @@ export function RosterPlanningWorkspacePanel() {
   const [connection, setConnection] = useState<'loading' | 'connected' | 'disconnected'>('loading');
   const [catalogue, setCatalogue] = useState<any>(null);
   const [sessions, setSessions] = useState<any[]>([]);
+  const [iterativeSessions, setIterativeSessions] = useState<any[]>([]);
+  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [workflow, setWorkflow] = useState<any>(null);
+  const [decisionAvailable, setDecisionAvailable] = useState(false);
+  const decisionAvailableRef = useRef(false);
+  const [iterativeAvailable, setIterativeAvailable] = useState(false);
+  const [roomLaunchAvailable, setRoomLaunchAvailable] = useState(false);
+  const iterativeAvailableRef = useRef(false);
   const [planningBusy, setPlanningBusy] = useState(false);
   const [deliberation, setDeliberation] = useState<any>(null);
   const [session, setSession] = useState<any>(null);
+  const [journey, setJourney] = useState<any>(null);
   const [error, setError] = useState<{ code: string; detail?: string } | null>(null);
-  const [view, setView] = useState<'sessions' | 'setup' | 'session'>('sessions');
+  const [view, setView] = useState<'sessions' | 'setup' | 'session' | 'iterative' | 'workflow'>('sessions');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const iterativePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const applyError = useCallback((e: unknown) => {
     if (!e) {
@@ -78,8 +89,15 @@ export function RosterPlanningWorkspacePanel() {
   }, []);
 
   const refreshSessions = useCallback(async () => {
-    const list = await rosterPlanningClient.listSessions();
+    const [list, iterative, decisions] = await Promise.all([
+      rosterPlanningClient.listSessions(),
+      iterativeAvailableRef.current
+        ? rosterPlanningClient.listIterativeSessions() : Promise.resolve(null),
+      decisionAvailableRef.current ? rosterPlanningClient.listWorkflows() : Promise.resolve(null),
+    ]);
     setSessions(list.sessions || []);
+    setIterativeSessions(iterative?.journeys || []);
+    setWorkflows(decisions?.workflows || []);
     setPlanningBusy(list.planningBusy === true);
     setDeliberation(list.deliberation || null);
   }, []);
@@ -92,6 +110,12 @@ export function RosterPlanningWorkspacePanel() {
       ]);
       setCatalogue(cat.catalogue);
       setDeliberation(health.descriptor?.deliberation || null);
+      decisionAvailableRef.current = health.descriptor?.decisionJourney?.sameDecisionRun === true;
+      setDecisionAvailable(decisionAvailableRef.current);
+      iterativeAvailableRef.current =
+        health.descriptor?.iterativeJourney?.draftAndTeachAvailable === true;
+      setIterativeAvailable(iterativeAvailableRef.current);
+      setRoomLaunchAvailable(health.descriptor?.roomLaunchAvailable === true);
       await refreshSessions();
       setConnection('connected');
       setError(null);
@@ -104,6 +128,7 @@ export function RosterPlanningWorkspacePanel() {
     void loadInitial();
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (iterativePollRef.current) clearInterval(iterativePollRef.current);
     };
   }, [loadInitial]);
 
@@ -118,18 +143,40 @@ export function RosterPlanningWorkspacePanel() {
     }
   }, [applyError]);
 
-  // Poll while the session is running (asynchronous planning progress).
+  const openIterativeSession = useCallback(async (sessionId: string) => {
+    try {
+      const result = await rosterPlanningClient.readIterativeSession(sessionId);
+      setJourney(result.journey);
+      setView('iterative');
+      setError(null);
+    } catch (e) { applyError(e); }
+  }, [applyError]);
+
+  const openWorkflow = useCallback(async (id: string) => {
+    try {
+      setWorkflow((await rosterPlanningClient.readWorkflow(id)).workflow);
+      setView('workflow'); setError(null);
+    } catch (error) { applyError(error); }
+  }, [applyError]);
+
+  // Planning and final review are separate asynchronous jobs. A planned
+  // session must keep polling while its final review shards are running.
   useEffect(() => {
     if (pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
     }
-    if (session?.status === 'running') {
+    if (session?.status === 'running'
+      || session?.planReview?.status === 'running'
+      || session?.presetJourney?.status === 'running') {
       pollRef.current = setInterval(async () => {
         try {
           const result = await rosterPlanningClient.readSession(session.sessionId);
           setSession(result.session);
-          if (result.session.status !== 'running' && pollRef.current) {
+          if (result.session.status !== 'running'
+            && result.session.planReview?.status !== 'running'
+            && result.session.presetJourney?.status !== 'running'
+            && pollRef.current) {
             clearInterval(pollRef.current);
             pollRef.current = null;
             void refreshSessions();
@@ -143,7 +190,33 @@ export function RosterPlanningWorkspacePanel() {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [session?.sessionId, session?.status, refreshSessions]);
+  }, [session?.sessionId, session?.status,
+    session?.planReview?.status, session?.presetJourney?.status, refreshSessions]);
+
+  useEffect(() => {
+    if (iterativePollRef.current) {
+      clearInterval(iterativePollRef.current);
+      iterativePollRef.current = null;
+    }
+    if (view === 'iterative' && journey?.sessionId
+      && (journey.running || journey.stage === 'teaching')) {
+      iterativePollRef.current = setInterval(async () => {
+        try {
+          const result = await rosterPlanningClient.readIterativeSession(
+            journey.sessionId);
+          setJourney(result.journey);
+          if (!result.journey.running
+            && result.journey.stage !== 'teaching') {
+            void refreshSessions();
+          }
+        } catch { /* Keep the visible last state until the next user action. */ }
+      }, 1500);
+    }
+    return () => {
+      if (iterativePollRef.current) clearInterval(iterativePollRef.current);
+    };
+  }, [view, journey?.sessionId, journey?.running, journey?.stage,
+    refreshSessions]);
 
   // ── Disconnected / loading states ──────────────────────────────────────
   if (connection === 'loading') {
@@ -187,7 +260,7 @@ export function RosterPlanningWorkspacePanel() {
           </Text>
         </View>
         {view !== 'sessions' && (
-          <Pressable onPress={() => { setView('sessions'); setSession(null); void refreshSessions(); }}
+          <Pressable onPress={() => { setView('sessions'); setSession(null); setJourney(null); setWorkflow(null); void refreshSessions(); }}
             style={({ pressed }) => [st.btn, pressed && { opacity: 0.7 }]} testID="roster-workspace-back">
             <Text style={st.btnText}>{ui(L, '返回列表', 'Back')}</Text>
           </Pressable>
@@ -206,9 +279,12 @@ export function RosterPlanningWorkspacePanel() {
 
       {view === 'sessions' && (
         <SessionsView L={L} catalogue={catalogue} sessions={sessions}
+          iterativeSessions={iterativeSessions}
+          workflows={workflows} onOpenWorkflow={openWorkflow}
           deliberation={deliberation}
           onNew={() => setView('setup')}
           onOpen={openSession}
+          onOpenIterative={openIterativeSession}
           onDelete={async (id: string) => {
             try {
               await rosterPlanningClient.deleteSession(id);
@@ -226,22 +302,41 @@ export function RosterPlanningWorkspacePanel() {
       )}
       {view === 'setup' && catalogue && (
         <SetupView L={L} catalogue={catalogue} deliberation={deliberation}
+          iterativeAvailable={iterativeAvailable}
+          decisionAvailable={decisionAvailable}
+          onCreatedWorkflow={(created: any) => { setWorkflow(created); setView('workflow'); void refreshSessions(); }}
           onCancel={() => setView('sessions')}
           onCreated={(created: any) => { setSession(created); setView('session'); }}
+          onCreatedIterative={(created: any) => {
+            setJourney(created); setView('iterative'); void refreshSessions();
+          }}
           onError={applyError} />
       )}
       {view === 'session' && session && (
         <SessionView L={L} session={session} catalogue={catalogue}
           deliberation={deliberation}
+          roomLaunchAvailable={roomLaunchAvailable}
           onSession={setSession} onError={applyError}
           onRefreshSessions={refreshSessions} />
+      )}
+      {view === 'iterative' && journey && (
+        <IterativeSessionView L={L} journey={journey}
+          catalogue={catalogue} onJourney={setJourney}
+          roomLaunchAvailable={roomLaunchAvailable}
+          onOpenTeach={openSession}
+          onError={applyError} onRefreshSessions={refreshSessions} />
+      )}
+      {view === 'workflow' && workflow && (
+        <RosterDecisionWorkflowPanel initialWorkflow={workflow} lang={L}
+          onError={applyError} onChanged={refreshSessions} />
       )}
     </View>
   );
 }
 
 // ── Sessions list ──────────────────────────────────────────────────────────
-function SessionsView({ L, catalogue, sessions, deliberation, onNew, onOpen, onDelete, onImport }: any) {
+function SessionsView({ L, catalogue, sessions, iterativeSessions, workflows = [], onOpenWorkflow,
+  deliberation, onNew, onOpen, onOpenIterative, onDelete, onImport }: any) {
   const [importText, setImportText] = useState('');
   const [showImport, setShowImport] = useState(false);
   return (
@@ -267,7 +362,40 @@ function SessionsView({ L, catalogue, sessions, deliberation, onNew, onOpen, onD
           </Text>
         </View>
       )}
-      {sessions.length === 0 ? (
+      {workflows.length > 0 && <View style={{ marginTop: 12 }} testID="decision-workflow-list">
+        <Text style={st.sectionTitle}>{ui(L, '军表＋Plan＋Teach · 新流程', 'Roster + Plan + Teach · scoped workflow')}</Text>
+        {workflows.map((entry: any) => <Pressable key={entry.workflowId} onPress={() => onOpenWorkflow(entry.workflowId)}
+          style={st.sessionCard} testID={`decision-workflow-${entry.workflowId}`}>
+          <Text style={st.cardName}>{factionShort(entry.setup.factionRecordKey, catalogue)} vs {factionShort(entry.setup.opponentFactionRecordKey, catalogue)}</Text>
+          <Text style={st.cardSub}>{entry.status} · r{entry.draftRevision} · {entry.setup.mineralBudget}M · {entry.mode}</Text>
+        </Pressable>)}
+      </View>}
+      {iterativeSessions.length > 0 && (
+        <View style={{ marginTop: 12 }} testID="iterative-roster-session-list">
+          <Text style={st.sectionTitle}>
+            {ui(L, 'AI 从头写表 · 多轮 Builder 裁决',
+              'AI roster from scratch · iterative Builder verdicts')}
+          </Text>
+          {iterativeSessions.map((entry: any) => (
+            <Pressable key={entry.sessionId}
+              onPress={() => onOpenIterative(entry.sessionId)}
+              style={({ pressed }) => [st.sessionCard,
+                pressed && { opacity: 0.7 }]}
+              testID={`iterative-roster-${entry.sessionId.slice(0, 12)}`}>
+              <Text style={st.cardName}>
+                {factionShort(entry.factionRecordKey, catalogue)} vs{' '}
+                {factionShort(entry.opponentFactionRecordKey, catalogue)}
+              </Text>
+              <Text style={st.cardSub}>
+                {entry.stage} · {entry.mineralSpent ?? '—'}/{entry.mineralBudget}
+                {' · '}r{entry.revision}
+              </Text>
+              <Text style={st.hashLine}>{entry.sessionId}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+      {sessions.length === 0 && iterativeSessions.length === 0 && workflows.length === 0 ? (
         <View style={st.emptyBox} testID="roster-workspace-empty">
           <Text style={st.emptyText}>{ui(L, '还没有规划会话', 'No planning sessions yet')}</Text>
           <Text style={st.hint}>
@@ -337,7 +465,8 @@ function SessionsView({ L, catalogue, sessions, deliberation, onNew, onOpen, onD
 }
 
 // ── Setup view ─────────────────────────────────────────────────────────────
-function SetupView({ L, catalogue, deliberation, onCancel, onCreated, onError }: any) {
+function SetupView({ L, catalogue, deliberation, iterativeAvailable, decisionAvailable,
+  onCancel, onCreated, onCreatedIterative, onCreatedWorkflow, onError }: any) {
   const defaults = catalogue.defaults;
   const [own, setOwn] = useState(defaults.factionRecordKey);
   const [opponent, setOpponent] = useState(defaults.opponentFactionRecordKey);
@@ -446,15 +575,27 @@ function SetupView({ L, catalogue, deliberation, onCancel, onCreated, onError }:
       </Text>
       <TextInput style={st.importInputSmall} multiline value={presetText}
         onChangeText={setPresetText}
-        placeholder={ui(L, '留空则由 Teach 先规划再选模型；填入则锁定军表，只生成用法计划',
-          'Leave empty to plan before choosing models; provide a list to lock its models and plan their use')}
+        placeholder={ui(L, '留空则由 AI 多轮查询并写满 2000 分军表；填入则锁定军表，只生成用法计划',
+          'Leave empty for iterative AI 2000-point selection; provide a list to lock its models and plan their use')}
         placeholderTextColor="#64748b" testID="setup-preset-candidate-json" />
+      {decisionAvailable && <Text style={st.hint} testID="setup-decision-workflow-route">
+        {ui(L, '使用新分块流程：形成军表与初步计划 → 工具查证 → 局部 Teach → 同步修订 → 来源与发布审核。不会转回旧规划链路。',
+          'Scoped workflow: roster + initial plan → tool evidence → local Teach → joint revision → release review. No fallback to the legacy planner.')}
+      </Text>}
+      {!presetText.trim() && !iterativeAvailable && !decisionAvailable && (
+        <Text style={[st.hint, { color: AMBER }]} testID="setup-iterative-unavailable">
+          {ui(L, '从头写表需要已认证的地图和安全 Flash 通道；当前服务未接通，不能以旧规划冒充完整 2000 分军表。',
+            'From-scratch planning requires a certified map and secure Flash lane; the legacy planner is not an exact-2000 substitute.')}
+        </Text>
+      )}
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
         <Pressable onPress={onCancel} style={({ pressed }) => [st.btn, pressed && { opacity: 0.7 }]}>
           <Text style={st.btnText}>{ui(L, '取消', 'Cancel')}</Text>
         </Pressable>
         <Pressable
-          disabled={!routeAvailable || !Number.isSafeInteger(budget) || budget < 1 || busy}
+          disabled={!routeAvailable || !Number.isSafeInteger(budget)
+            || budget < 1 || busy || (!presetText.trim()
+              && ((!iterativeAvailable && !decisionAvailable) || budget !== 2000))}
           onPress={async () => {
             setBusy(true);
             try {
@@ -466,6 +607,18 @@ function SetupView({ L, catalogue, deliberation, onCancel, onCreated, onError }:
                 opponentInformationBoundary: boundary,
               };
               let result;
+              if (decisionAvailable) {
+                let candidateInput;
+                if (presetText.trim()) {
+                  try { candidateInput = JSON.parse(presetText); }
+                  catch { throw new Error(ui(L, '预制军表不是有效 JSON', 'Preset roster is not valid JSON')); }
+                }
+                const created = await rosterPlanningClient.createWorkflow(setup, candidateInput);
+                onCreatedWorkflow(created.workflow);
+                const started = await rosterPlanningClient.runWorkflow(created.workflow.workflowId);
+                onCreatedWorkflow(started.workflow);
+                return;
+              }
               if (presetText.trim()) {
                 let candidateInput;
                 try { candidateInput = JSON.parse(presetText); }
@@ -473,10 +626,16 @@ function SetupView({ L, catalogue, deliberation, onCancel, onCreated, onError }:
                   'Preset roster is not valid JSON')); }
                 result = await rosterPlanningClient.createPresetSession(setup,
                   candidateInput);
+                onCreated(result.session);
+                result = await rosterPlanningClient.runPresetSession(result.session.sessionId);
+                onCreated(result.session);
               } else {
-                result = await rosterPlanningClient.createSession(setup);
+                const created = await rosterPlanningClient
+                  .createIterativeSession(setup);
+                result = await rosterPlanningClient.runIterativeSession(
+                  created.journey.sessionId);
+                onCreatedIterative(result.journey);
               }
-              onCreated(result.session);
             } catch (e) {
               onError(e);
             } finally {
@@ -484,9 +643,13 @@ function SetupView({ L, catalogue, deliberation, onCancel, onCreated, onError }:
             }
           }}
           style={({ pressed }) => [st.primaryBtn, { flex: 1, marginTop: 0 },
-            (!routeAvailable || busy) && { opacity: 0.4 }, pressed && { opacity: 0.7 }]}
+            (!routeAvailable || busy || (!presetText.trim()
+              && ((!iterativeAvailable && !decisionAvailable) || budget !== 2000)))
+              && { opacity: 0.4 }, pressed && { opacity: 0.7 }]}
           testID="setup-create-session">
-          <Text style={st.primaryBtnText}>{ui(L, '创建会话', 'Create session')}</Text>
+          <Text style={st.primaryBtnText}>{presetText.trim()
+            ? ui(L, '锁表并创建计划', 'Lock roster and plan')
+            : ui(L, 'AI 从头写表并深化计划', 'AI build roster and deepen plan')}</Text>
         </Pressable>
       </View>
       <View style={{ height: 60 }} />
@@ -494,14 +657,276 @@ function SetupView({ L, catalogue, deliberation, onCancel, onCreated, onError }:
   );
 }
 
+// The iterative AI route is a separate evidence chain from the older
+// workspace's bounded planner. Show every gate honestly; a legal roster or
+// Teach plan is not yet an admitted Room plan.
+function IterativeSessionView({ L, journey, catalogue, onJourney, onError,
+  onOpenTeach, onRefreshSessions, roomLaunchAvailable }: any) {
+  const [busy, setBusy] = useState(false);
+  const [launching, setLaunching] = useState(false);
+  const operate = async (operation: 'run' | 'pause') => {
+    setBusy(true);
+    try {
+      const result = operation === 'run'
+        ? await rosterPlanningClient.runIterativeSession(journey.sessionId)
+        : await rosterPlanningClient.pauseIterativeSession(journey.sessionId);
+      onJourney(result.journey);
+      onError(null);
+      void onRefreshSessions();
+    } catch (error) { onError(error); }
+    finally { setBusy(false); }
+  };
+  const resumable = !journey.running && !busy
+    && journey.sourceReviewFailure
+      !== 'ROSTER_WORKSPACE_AMBIGUOUS_DISPATCH_STOP'
+    && journey.stoppedReason
+      !== 'AGENT_SELECTED_JOURNEY_SOURCE_REVIEW_NONCONVERGENT'
+    && !['teaching', 'reviewing_source',
+      'source_review_completed_clean',
+      'source_review_completed_with_findings',
+      'source_review_nonconvergent',
+      'reconciliation_required'].includes(journey.stage);
+  const launchable = Platform.OS === 'web' && roomLaunchAvailable
+    && journey.stage === 'source_review_completed_clean'
+    && journey.sourceReviewHighCount === 0;
+  const launch = async () => {
+    if (!launchable || launching) return;
+    setLaunching(true);
+    try {
+      const result = await rosterPlanningClient.launchIterativeRoom(
+        journey.sessionId);
+      if (!result.match?.roomId || !result.match?.joinUrl) {
+        throw new Error('ROSTER_ROOM_LAUNCH_RESPONSE_INVALID');
+      }
+      await Linking.openURL(result.match.joinUrl);
+      onError(null);
+    } catch (error) { onError(error); }
+    finally { setLaunching(false); }
+  };
+  return (
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12 }}
+      testID="iterative-roster-session">
+      <View style={st.card}>
+        <Text style={st.sectionTitle}>
+          {ui(L, 'AI 从头写表与计划', 'AI roster and plan from scratch')}
+        </Text>
+        <Text style={st.cardName}>
+          {factionShort(journey.factionRecordKey, catalogue)} vs{' '}
+          {factionShort(journey.opponentFactionRecordKey, catalogue)}
+        </Text>
+        <Text style={st.cardSub} testID="iterative-roster-progress">
+          {ui(L, '阶段', 'Stage')}: {journey.stage}
+          {' · '}r{journey.revision}
+          {' · '}{journey.mineralSpent ?? '—'}/{journey.mineralBudget}
+          {journey.exactBudget ? ui(L, ' · Builder 满额合法',
+            ' · exact Builder budget') : ''}
+        </Text>
+        <Text style={st.hashLine}>{journey.sessionId}</Text>
+        {journey.stoppedReason && (
+          <Text style={[st.cardSub, { color: RED }]}>
+            {journey.stoppedReason
+              === 'AGENT_SELECTED_JOURNEY_SOURCE_REVIEW_NONCONVERGENT'
+              ? ui(L, '三轮来源审核仍有高风险问题；已停止模型调用，不能继续自动审核或开局',
+                'Three source reviews still have High findings; model calls and room entry are stopped')
+              : ui(L, '已停止；未自动重发模型请求',
+                'Stopped; no automatic model retry')}: {journey.stoppedReason}
+          </Text>
+        )}
+        {journey.blockingFinding && (
+          <Text style={[st.cardSub, { color: AMBER }]}>
+            {journey.blockingFinding}
+          </Text>
+        )}
+        <View style={st.chipRow}>
+          {resumable && (
+            <Pressable onPress={() => void operate('run')}
+              style={({ pressed }) => [st.btn, { borderColor: BLUE },
+                pressed && { opacity: 0.7 }]}
+              testID="iterative-roster-resume">
+              <Text style={[st.btnText, { color: BLUE }]}>
+                {journey.stage === 'source_review_required'
+                  ? ui(L, '继续审查这份计划的来源',
+                    'Continue this plan’s source review')
+                  : ui(L, '继续写表与规则审核',
+                    'Continue roster and Rules audit')}
+              </Text>
+            </Pressable>
+          )}
+          {journey.running && (
+            <Pressable onPress={() => void operate('pause')}
+              style={({ pressed }) => [st.btn, pressed && { opacity: 0.7 }]}
+              testID="iterative-roster-pause">
+              <Text style={st.btnText}>
+                {ui(L, '在当前模型回合后暂停',
+                  'Pause after current model decision')}
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+      {journey.decisions?.length > 0 && (
+        <View style={st.card} testID="iterative-roster-decisions">
+          <Text style={st.sectionTitle}>
+            {ui(L, '模型决策与规则裁决', 'Model decisions and Rules verdicts')}
+          </Text>
+          {journey.decisions.map((decision: any) => (
+            <Text key={decision.revision} style={st.cardSub}>
+              r{decision.revision} · {decision.decisionKind}
+              {decision.rulesVerdictStatus
+                ? ` · Builder: ${decision.rulesVerdictStatus}` : ''}
+            </Text>
+          ))}
+        </View>
+      )}
+      {journey.selectedUnits?.length > 0 && (
+        <View style={st.card} testID="iterative-roster-selected-units">
+          <Text style={st.sectionTitle}>
+            {ui(L, '当前已选军表', 'Current selected roster')}
+          </Text>
+          {journey.selectedUnits.map((unit: any) => (
+            <Text key={unit.unitInstanceId} style={st.cardSub}>
+              {unit.unitInstanceId} · {unit.recordKey}
+              {' · '}{unit.compositionKind}
+            </Text>
+          ))}
+        </View>
+      )}
+      {journey.publicPlan && (
+        <View style={st.card} testID="iterative-roster-public-plan">
+          <Text style={st.sectionTitle}>
+            {ui(L, '胜利路线草稿', 'Victory-route draft')}
+          </Text>
+          <Text style={st.cardSub}>{journey.publicPlan.victoryRoute}</Text>
+          <Text style={st.cardSub}>
+            {ui(L, '地图证据', 'Map evidence')}: {' '}
+            {journey.publicPlan.mapEvidenceHash || '—'}
+          </Text>
+        </View>
+      )}
+      {journey.arrivalSchedule && (
+        <View style={st.card} testID="iterative-roster-arrival-schedule">
+          <Text style={st.sectionTitle}>
+            {ui(L, '进场安排 · 规则审核',
+              'Arrival schedule · Rules-audited')}
+          </Text>
+          {journey.arrivalSchedule.entries?.map((entry: any) => (
+            <Text key={entry.unitInstanceId} style={st.cardSub}>
+              R{entry.round} · {entry.unitInstanceId}
+              {' · '}{entry.publicReasonText}
+            </Text>
+          ))}
+          <Text style={st.cardSub}>
+            {journey.arrivalPublicAudit?.status || '—'}
+          </Text>
+        </View>
+      )}
+      {journey.teachSessionId && (
+        <View style={st.card} testID="iterative-roster-teach-link">
+          <Text style={st.sectionTitle}>
+            {ui(L, '锁表 Teach', 'Locked-roster Teach')}
+          </Text>
+          <Text style={st.cardSub}>
+            {journey.teachStatus} · {journey.teachSessionId}
+          </Text>
+          {journey.teachPlanHash && (
+            <Text style={st.hashLine}>plan {journey.teachPlanHash}</Text>
+          )}
+          <Text style={st.cardSub}>
+            {ui(L, '来源审查', 'Source review')}: {' '}
+            {journey.sourceReviewStatus || 'required'}
+            {typeof journey.sourceReviewHighCount === 'number'
+              ? ` · High/Critical ${journey.sourceReviewHighCount}` : ''}
+          </Text>
+          {journey.sourceReviewFailure && (
+            <Text style={[st.cardSub, { color: AMBER }]}>
+              {journey.sourceReviewFailure}
+            </Text>
+          )}
+          <Pressable onPress={() => void onOpenTeach(journey.teachSessionId)}
+            style={({ pressed }) => [st.btn, { borderColor: BLUE,
+              alignSelf: 'flex-start', marginTop: 8 },
+              pressed && { opacity: 0.7 }]}
+            testID="iterative-roster-open-teach">
+            <Text style={[st.btnText, { color: BLUE }]}>
+              {ui(L, '查看计划、审查结果与修订',
+                'Inspect plan, review findings and revise')}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+      {launchable && (
+        <View style={[st.card, { marginTop: 10 }]}
+          testID="iterative-roster-room-launch-ready">
+          <Text style={st.sectionTitle}>
+            {ui(L, '计划已通过来源审查', 'Plan passed source review')}
+          </Text>
+          <Text style={st.cardSub}>
+            {ui(L, '开局时服务器将再次核对军表、地图与计划，并创建可恢复的正式对局。',
+              'The server rechecks roster, map and plan before creating a recoverable authoritative match.')}
+          </Text>
+          <Pressable onPress={() => void launch()}
+            disabled={launching}
+            style={({ pressed }) => [st.primaryBtn,
+              { alignSelf: 'flex-start', marginTop: 8 },
+              (pressed || launching) && { opacity: 0.7 }]}
+            testID="iterative-roster-launch-room">
+            <Text style={st.primaryBtnText}>
+              {launching
+                ? ui(L, '正在创建正式对局…', 'Creating the match…')
+                : ui(L, '用此军表开始 AI 对局', 'Start AI match with this roster')}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+      {!launchable && <View style={[st.unavailableBox, { marginTop: 10 }]}
+        testID="iterative-roster-not-room-admitted">
+        <Text style={[st.cardName, { color: AMBER }]}>
+          {ui(L, '尚不可用此表开局',
+            'This roster is not yet admitted to a match')}
+        </Text>
+        <Text style={st.hint}>
+          {ui(L, '即使军表满 2000 分并完成 Teach，仍需审查晋升后的计划、处理 High 问题，再绑定正式房间。当前页面绝不把草稿当作可对局结果。',
+            'Even after exact budget and Teach, the promoted plan needs source review, High-finding resolution and formal Room binding.')}
+        </Text>
+      </View>}
+      <View style={{ height: 60 }} />
+    </ScrollView>
+  );
+}
+
 // ── Session view ───────────────────────────────────────────────────────────
-function SessionView({ L, session, catalogue, deliberation, onSession, onError, onRefreshSessions }: any) {
+function SessionView({ L, session, catalogue, deliberation, roomLaunchAvailable, onSession, onError, onRefreshSessions }: any) {
   const [exportText, setExportText] = useState('');
+  const [launching, setLaunching] = useState(false);
   const [revisionReason, setRevisionReason] = useState('');
   const [revisionSections, setRevisionSections] = useState<string[]>(['scoreRoute', 'deploymentConcept']);
   const [showRevise, setShowRevise] = useState(false);
-  const running = session.status === 'running';
+  const running = session.status === 'running'
+    || session.presetJourney?.status === 'running';
   const plan = session.plan;
+  const agentSelectedPlan = plan?.schema
+    === 'starcraft_tmg_agent_scheduled_roster_plan_v1';
+  const plannedPresetPlan = plan?.schema
+    === 'starcraft_tmg_roster_plan_v2';
+  const canRevisePlan = !!plan && !session.planEvidenceStale && !running
+    && (!session.lockedRoster || agentSelectedPlan || plannedPresetPlan);
+  // This only enables the control. The product service rechecks the persisted
+  // current Plan, Teach, Builder verdict and map before creating any Room.
+  const presetLaunchable = Platform.OS === 'web' && roomLaunchAvailable
+    && !!session.lockedRoster && !session.agentSelectionHandoffHash && !running
+    && session.presetJourney?.status === 'completed' && !!plan?.planHash
+    && session.presetJourney.acceptedPlanHash === plan.planHash
+    && !session.planEvidenceStale && !session.planReviewRequiredForHandoff
+    && !session.planReviewBlockingHighFindings;
+  const launchPreset = async () => {
+    setLaunching(true);
+    try {
+      const result = await rosterPlanningClient.launchPresetRoom(session.sessionId);
+      onError(null);
+      await Linking.openURL(result.match.joinUrl);
+    } catch (error) { onError(error); }
+    finally { setLaunching(false); }
+  };
 
   const act = useCallback(async (fn: () => Promise<any>) => {
     try {
@@ -551,6 +976,18 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
           {!!session.failure.detail && <Text style={st.errorDetail}>{session.failure.detail}</Text>}
         </View>
       )}
+      {session.status === 'paused' && (
+        <View style={st.errorBanner} testID="session-paused">
+          <Text style={st.errorText}>
+            {ui(L, '已在模型回合边界暂停，可续接，不会重付已保存的回复',
+              'Paused at a model-round boundary; retained replies are reused on resume')}
+          </Text>
+          <Text style={st.errorDetail}>
+            {ui(L, `已保存 ${session.pauseReceipt?.retainedReplyCount || 0} 条回复`,
+              `${session.pauseReceipt?.retainedReplyCount || 0} replies retained`)}
+          </Text>
+        </View>
+      )}
 
       {/* Progress timeline */}
       {(session.progress.rounds.length > 0 || running) && (
@@ -583,17 +1020,54 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
             </View>
           ))}
           {running && (
-            <Pressable onPress={() => act(() => rosterPlanningClient.cancel(session.sessionId))}
-              style={({ pressed }) => [st.btn, { borderColor: RED, alignSelf: 'flex-start', marginTop: 6 }, pressed && { opacity: 0.7 }]}
-              testID="session-cancel">
-              <Text style={[st.btnText, { color: RED }]}>{ui(L, '取消规划', 'Cancel planning')}</Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+              <Pressable onPress={() => act(() => rosterPlanningClient.pause(session.sessionId))}
+                disabled={session.pauseRequested === true}
+                style={({ pressed }) => [st.btn, { borderColor: BLUE }, pressed && { opacity: 0.7 }]}
+                testID="session-pause">
+                <Text style={[st.btnText, { color: BLUE }]}>
+                  {session.pauseRequested
+                    ? ui(L, '等待当前回合结算…', 'Waiting for the current round…')
+                    : ui(L, '暂停并保存断点', 'Pause and save checkpoint')}
+                </Text>
+              </Pressable>
+              <Pressable onPress={() => act(() => rosterPlanningClient.cancel(session.sessionId))}
+                style={({ pressed }) => [st.btn, { borderColor: RED }, pressed && { opacity: 0.7 }]}
+                testID="session-cancel">
+                <Text style={[st.btnText, { color: RED }]}>{ui(L, '取消规划', 'Cancel planning')}</Text>
+              </Pressable>
+            </View>
           )}
         </View>
       )}
 
       {/* Generate / resume controls */}
-      {!running && !plan && (
+      {session.lockedRoster && !session.agentSelectionHandoffHash && (
+        <View style={st.card} testID="preset-product-journey">
+          <Text style={st.sectionTitle}>{ui(L, '固定军表 · 完整计划与 Teach', 'Fixed army · complete Plan and Teach')}</Text>
+          <Text style={st.cardSub}>{session.presetJourney?.stage || ui(L, '尚未启动', 'Not started')}</Text>
+          {!!session.presetJourney?.failure?.code && <Text style={st.hint}>{session.presetJourney.failure.code}</Text>}
+          {!running && <Pressable
+            onPress={() => act(() => rosterPlanningClient.runPresetSession(session.sessionId))}
+            disabled={!deliberation?.available}
+            style={st.primaryBtn} testID="preset-product-run">
+            <Text style={st.primaryBtnText}>{ui(L, '生成／续接完整计划流程', 'Generate / resume complete planning')}</Text>
+          </Pressable>}
+          <Text style={st.hint}>{ui(L, '自动完成计划、进场、来源审核、Teach 与修订；断点复用已付费回复。开局仍需正式房间准入。',
+            'Plan, arrival, source review, Teach and revision use one product workflow. Paid replies survive restart; Room admission is still required.')}</Text>
+          {presetLaunchable && <Pressable onPress={() => void launchPreset()}
+            disabled={launching} style={[st.primaryBtn, launching && { opacity: 0.7 }]}
+            testID="preset-roster-launch-room">
+            <Text style={st.primaryBtnText}>{launching
+              ? ui(L, '正在创建正式对局…', 'Creating the match…')
+              : ui(L, '用此军表与计划开始 AI 对局', 'Start AI match with this roster and plan')}</Text>
+          </Pressable>}
+          {session.presetJourney?.status === 'completed' && Platform.OS !== 'web'
+            && <Text style={st.hint}>{ui(L, '计划流程已完成；App 内对局导航尚未开放，请勿视为已开始对局。',
+              'Planning is complete; in-app match navigation is not available yet. No match has started.')}</Text>}
+        </View>
+      )}
+      {!running && !plan && !session.lockedRoster && (
         <View style={{ gap: 8 }} >
           <Pressable
             onPress={() => act(() => rosterPlanningClient.generate(session.sessionId))}
@@ -627,15 +1101,17 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
                   </Text>
                 </Pressable>
               )}
-              <Pressable
-                onPress={() => act(() => rosterPlanningClient.resumeReplay(session.sessionId))}
-                style={({ pressed }) => [st.btn, { borderColor: BLUE }, pressed && { opacity: 0.7 }]}
-                testID="session-resume-replay">
-                <Text style={[st.btnText, { color: BLUE }]}>
-                  {ui(L, `仅本地回放(${session.retainedReplyCount} 条已保留回复 · 0 新调用)`,
-                    `Local replay only (${session.retainedReplyCount} retained replies · 0 new calls)`)}
-                </Text>
-              </Pressable>
+              {session.retainedReplyCount > 0 && (
+                <Pressable
+                  onPress={() => act(() => rosterPlanningClient.resumeReplay(session.sessionId))}
+                  style={({ pressed }) => [st.btn, { borderColor: BLUE }, pressed && { opacity: 0.7 }]}
+                  testID="session-resume-replay">
+                  <Text style={[st.btnText, { color: BLUE }]}>
+                    {ui(L, `仅本地回放(${session.retainedReplyCount} 条已保留回复 · 0 新调用)`,
+                      `Local replay only (${session.retainedReplyCount} retained replies · 0 new calls)`)}
+                  </Text>
+                </Pressable>
+              )}
             </>
           )}
         </View>
@@ -682,7 +1158,7 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
           )}
         </View>
       )}
-      {plan && !session.lockedRoster && !session.planEvidenceStale && !running && (
+      {canRevisePlan && (
         <View style={{ marginBottom: 8 }}>
           <Pressable onPress={() => setShowRevise(!showRevise)}
             style={({ pressed }) => [st.btn, { borderColor: AMBER, alignSelf: 'flex-start', marginTop: 6 }, pressed && { opacity: 0.7 }]}
@@ -693,7 +1169,7 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
           </Pressable>
         </View>
       )}
-      {showRevise && !session.lockedRoster && !session.planEvidenceStale && !running && (
+      {showRevise && canRevisePlan && (
         <View style={st.card} testID="session-revise-form">
           <Text style={st.sectionTitle}>{ui(L, '修订计划', 'Revise plan')}</Text>
           <TextInput style={st.importInputSmall} multiline value={revisionReason}
@@ -704,10 +1180,13 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
           <View style={st.chipRow}>
             {[
               ['scoreRoute', ui(L, '得分路线', 'Score route')],
+              ['componentPurposes', ui(L, '角色、组件用途', 'Roles and component purposes')],
               ['deploymentConcept', ui(L, '部署构想', 'Deployment concept')],
               ['publicSummaryText', ui(L, '公开摘要', 'Public summary')],
             ].map(([key, label]) => (
               <Pressable key={key} onPress={() => {
+                if ((agentSelectedPlan || plannedPresetPlan)
+                  && key === 'deploymentConcept') return;
                 setRevisionSections((current) => current.includes(key)
                   ? current.filter((entry) => entry !== key)
                   : [...current, key]);
@@ -722,7 +1201,9 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
               const result = await rosterPlanningClient.revise(session.sessionId, {
                 reasonText: revisionReason,
                 triggerIds: [],
-                revisedSectionKeys: revisionSections,
+                revisedSectionKeys: agentSelectedPlan || plannedPresetPlan
+                  ? [...new Set([...revisionSections, 'deploymentConcept'])]
+                  : revisionSections,
               });
               setShowRevise(false);
               return result;
@@ -740,6 +1221,52 @@ function SessionView({ L, session, catalogue, deliberation, onSession, onError, 
       {plan && (
         <View style={st.card} testID="session-provenance">
           <Text style={st.sectionTitle}>{ui(L, '溯源与成本', 'Provenance & cost')}</Text>
+          <Text style={st.cardSub} testID="session-final-review-status">
+            {ui(L, '最终计划审查', 'Final plan review')}: {' '}
+            {session.planReview?.status === 'completed' && !session.planReview?.stale
+              ? ui(L,
+                `完成 · ${session.planReview.review?.reviewedClaimCount ?? '—'} 条主张 / ${session.planReview.review?.shardCount ?? '—'} 片 · High ${session.planReview.review?.findings?.filter((finding: any) => finding.severity === 'high').length ?? 0}`,
+                `Complete · ${session.planReview.review?.reviewedClaimCount ?? '—'} claims / ${session.planReview.review?.shardCount ?? '—'} shards · High ${session.planReview.review?.findings?.filter((finding: any) => finding.severity === 'high').length ?? 0}`)
+              : session.planReview?.status === 'running'
+                ? ui(L, '进行中；已完成片段会保存', 'Running; completed shards are retained')
+                : session.planReview?.status === 'failed'
+                  ? `${ui(L, '未完成', 'Incomplete')}: ${session.planReview.failure?.code || '—'}`
+                  : ui(L, '尚未审查；不能据此视作可开局计划',
+                    'Not reviewed; not yet an admitted match plan')}
+          </Text>
+          {session.planReview?.status === 'completed'
+            && !session.planReview?.stale
+            && session.planReview.review?.findings?.filter(
+              (finding: any) => finding.severity === 'high').slice(0, 5)
+                .map((finding: any, index: number) => (
+                  <Text key={`${finding.claimPath}-${index}`} style={[st.cardSub, { color: RED }]}>
+                    High · {finding.claimPath}: {finding.publicReason}
+                  </Text>
+                ))}
+          {session.status === 'planned'
+            && session.planReview?.status !== 'running'
+            && session.planReview?.failure?.code
+              !== 'ROSTER_WORKSPACE_AMBIGUOUS_DISPATCH_STOP'
+            && (session.planReview?.status !== 'completed'
+              || session.planReview?.stale) && (
+                <Pressable
+                  onPress={() => act(() => rosterPlanningClient.reviewFinalPlan(session.sessionId))}
+                  style={({ pressed }) => [st.btn, { borderColor: BLUE, alignSelf: 'flex-start', marginTop: 6 },
+                    pressed && { opacity: 0.7 }]}
+                  testID="session-review-final-plan">
+                  <Text style={[st.btnText, { color: BLUE }]}>
+                    {ui(L, '审查最终计划（分片调用模型；已保存回复可续接）',
+                      'Review final plan (sharded model calls; saved replies resume)')}
+                  </Text>
+                </Pressable>
+              )}
+          {session.planReview?.failure?.code
+            === 'ROSTER_WORKSPACE_AMBIGUOUS_DISPATCH_STOP' && (
+              <Text style={[st.cardSub, { color: AMBER }]}>
+                {ui(L, '请求可能已发送但没有用量回执；已停止自动重发，请先核对这次调用。',
+                  'The request may have been sent without a usage receipt. Automatic resend is stopped pending reconciliation.')}
+              </Text>
+            )}
           <Text style={st.cardSub}>
             {ui(L, '模型', 'Model')}: {session.usage?.modelVersion || '—'}
             {' · '}{ui(L, '付费调用', 'Paid calls')}: {session.usage?.calls ?? 0}

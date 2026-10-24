@@ -4,6 +4,7 @@ import { projectStarcraftTmgViewerStateShapeV3 } from
   "../client-domain/viewer-projection-v3.mjs";
 import { createOfficialModelBaseFootprintV1 } from
   "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import { STARCRAFT_TMG_SPATIAL_QUERY_KINDS_V1 } from "./spatial-query-contracts-v1.mjs";
 
 export const STARCRAFT_TMG_PLAYER_SPATIAL_OBSERVATION_VERSION =
   "starcraft_tmg_player_spatial_observation_v1";
@@ -516,17 +517,7 @@ export function createStarcraftTmgPlayerSpatialObservationV1(input = {}) {
         "visible_formation_envelopes_when_geometry_status_exact",
         "visible_terrain_marker_and_token_footprints_when_projected",
       ],
-      rulesQueryRequired: [
-        "base_edge_distance",
-        "within_and_wholly_within",
-        "legal_full_path_movement",
-        "coherency_after_candidate_placement",
-        "intervening_model_or_terrain_blocking",
-        "line_of_sight_cover_and_elevation",
-        "stationary_move_attack_charge_and_weapon_specific_threat",
-        "one_to_many_many_to_one_and_fire_zone_exchange",
-        "objective_score_after_candidate_action",
-      ],
+      rulesQueryRequired: [...STARCRAFT_TMG_SPATIAL_QUERY_KINDS_V1],
       unsupportedMustReturnUnknown: true,
     },
     coordinateSeparation: {

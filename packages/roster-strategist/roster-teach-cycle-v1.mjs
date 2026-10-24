@@ -66,6 +66,56 @@ function targetValue(foundation, challenge) {
     default: return null;
   }
 }
+function resolveRevisionTarget(initialFoundation, revisedFoundation, challenge) {
+  const before = targetValue(initialFoundation, challenge);
+  const after = targetValue(revisedFoundation, challenge);
+  if (hashStarcraftTmgContract(before ?? null)
+    !== hashStarcraftTmgContract(after ?? null)) {
+    return { challengeId: challenge.challengeId, targetKind: challenge.targetKind,
+      declaredTargetId: challenge.targetId, kind: "declared_target",
+      changedTargetIds: [challenge.targetId] };
+  }
+  // An opponent hypothesis explicitly names its own counter-response policy.
+  // Revising that linked policy can answer a challenge without falsifying the
+  // hypothesis. Record the actual changed response; never pretend its parent
+  // hypothesis text changed, infer links from prose, or accept an unrelated edit.
+  if (challenge.targetKind !== "opponent_hypothesis"
+    || !Array.isArray(before?.ownCounterResponseIds)) return null;
+  const changedTargetIds = [...new Set(before.ownCounterResponseIds)].filter(id => {
+    const oldMatches = (initialFoundation.counterResponses || [])
+      .filter(item => item.responseId === id);
+    const newMatches = (revisedFoundation.counterResponses || [])
+      .filter(item => item.responseId === id);
+    return oldMatches.length === 1 && newMatches.length === 1
+      && hashStarcraftTmgContract(oldMatches[0])
+        !== hashStarcraftTmgContract(newMatches[0]);
+  });
+  return changedTargetIds.length ? {
+    challengeId: challenge.challengeId, targetKind: challenge.targetKind,
+    declaredTargetId: challenge.targetId,
+    kind: "explicit_linked_counter_response", changedTargetIds,
+  } : null;
+}
+function revisionTargetResolutions(cycle) {
+  return cycle.answers.flatMap(answer => {
+    if (answer.disposition !== "revise") return [];
+    const challenge = cycle.challenges.find(item => item.challengeId === answer.challengeId);
+    const resolution = challenge && resolveRevisionTarget(cycle.initialFoundation,
+      cycle.revisedFoundation, challenge);
+    return resolution ? [resolution] : [];
+  });
+}
+function unchangedRevisionTargets(initialFoundation, challenges, output) {
+  return (output?.answers || []).flatMap(answer => {
+    if (answer.disposition !== "revise") return [];
+    const challenge = challenges.find(item => item.challengeId === answer.challengeId);
+    if (!challenge || resolveRevisionTarget(initialFoundation,
+      output.revisedFoundation || {}, challenge)) return [];
+    return [{ code: "ROSTER_TEACH_TARGET_NOT_REVISED",
+      challengeId: challenge.challengeId, targetKind: challenge.targetKind,
+      targetId: challenge.targetId }];
+  });
+}
 function normalizeSingletonTargets(challenges) {
   const normalizations = [];
   const normalized = challenges.map((challenge) => {
@@ -159,6 +209,13 @@ function verifyShape(cycle) {
     }
   }
   const evidence = new Map();
+  const wrappers = new Set();
+  const sources = new Map();
+  const bindEvidence = (key, receipt) => {
+    const bindings = evidence.get(key) || [];
+    bindings.push(receipt);
+    evidence.set(key, bindings);
+  };
   for (const receipt of cycle.evidenceReceipts) {
     if (!object(receipt) || !challengeIds.has(receipt.challengeId)
       || !EVIDENCE_STATUSES.has(receipt.status)) {
@@ -166,8 +223,9 @@ function verifyShape(cycle) {
     }
     const receiptHash = hash(receipt.receiptHash,
       "ROSTER_TEACH_EVIDENCE_INVALID");
-    if (evidence.has(receiptHash)) fail("ROSTER_TEACH_EVIDENCE_DUPLICATE");
-    evidence.set(receiptHash, receipt);
+    if (wrappers.has(receiptHash)) fail("ROSTER_TEACH_EVIDENCE_DUPLICATE");
+    wrappers.add(receiptHash);
+    bindEvidence(receiptHash, receipt);
     // Both the Teach wrapper and its delivered read-only laboratory source
     // receipt are valid, challenge-bound citations. Do not rewrite either
     // hash or accept an arbitrary model-invented reference.
@@ -175,10 +233,16 @@ function verifyShape(cycle) {
       && receipt.sourceReceiptHash !== null) {
       const sourceReceiptHash = hash(receipt.sourceReceiptHash,
         "ROSTER_TEACH_EVIDENCE_INVALID");
-      if (evidence.has(sourceReceiptHash)) {
-        fail("ROSTER_TEACH_EVIDENCE_DUPLICATE");
+      // Distinct challenges/retries may legitimately cite one source. Keep
+      // every challenge binding; only contradictory content under one source
+      // identity is a conflict. Unknown evidence remains unknown.
+      const sourceContentHash = hashStarcraftTmgContract(receipt.sourceReceipt ?? null);
+      if (sources.has(sourceReceiptHash)
+        && sources.get(sourceReceiptHash) !== sourceContentHash) {
+        fail("ROSTER_TEACH_EVIDENCE_SOURCE_CONFLICT");
       }
-      evidence.set(sourceReceiptHash, receipt);
+      sources.set(sourceReceiptHash, sourceContentHash);
+      bindEvidence(sourceReceiptHash, receipt);
     }
   }
   const answers = new Set();
@@ -202,8 +266,9 @@ function verifyShape(cycle) {
     const challenge = cycle.challenges.find((entry) =>
       entry.challengeId === answer.challengeId);
     const queryEvidence = [...refs].filter((reference) =>
-      evidence.get(reference)?.challengeId === answer.challengeId
-        && evidence.get(reference)?.status !== "unknown");
+      (evidence.get(reference) || []).some(receipt =>
+        receipt.challengeId === answer.challengeId
+          && receipt.status !== "unknown"));
     if (answer.disposition === "unresolved") {
       text(answer.replanTrigger, "ROSTER_TEACH_UNRESOLVED_TRIGGER_REQUIRED");
     } else if (refs.size === 0
@@ -212,9 +277,8 @@ function verifyShape(cycle) {
     }
     if (answer.disposition === "revise") {
       text(answer.revisedClaimText, "ROSTER_TEACH_REVISION_REQUIRED");
-      if (hashStarcraftTmgContract(targetValue(cycle.initialFoundation,
-          challenge) ?? null) === hashStarcraftTmgContract(targetValue(
-          cycle.revisedFoundation, challenge) ?? null)) {
+      if (!resolveRevisionTarget(cycle.initialFoundation,
+        cycle.revisedFoundation, challenge)) {
         fail("ROSTER_TEACH_TARGET_NOT_REVISED");
       }
       revised = true;
@@ -228,6 +292,11 @@ function verifyShape(cycle) {
     && JSON.stringify(cycle.retainedTargetChangeWarnings)
       !== JSON.stringify(retainedTargetChangeWarnings(cycle))) {
     fail("ROSTER_TEACH_RETAINED_TARGET_WARNING_INVALID");
+  }
+  if (cycle.revisionTargetResolutions !== undefined
+    && JSON.stringify(cycle.revisionTargetResolutions)
+      !== JSON.stringify(revisionTargetResolutions(cycle))) {
+    fail("ROSTER_TEACH_REVISION_TARGET_RESOLUTION_INVALID");
   }
   const evidenceNormalizations = cycle.answerEvidenceNormalizations || [];
   if (!Array.isArray(evidenceNormalizations)
@@ -304,8 +373,9 @@ export async function runRosterTeachCycleV1(input = {}) {
     hiddenChainOfThoughtStored: false, humanReviewed: false,
   });
   const evidenceReceipts = [];
-  for (const challenge of challenges) {
-    if (challenge.evidenceRequest === null) continue;
+  const evidenceRepairHistory = [];
+  const queryChallenge = async (challenge) => {
+    if (challenge.evidenceRequest === null) return null;
     const receipt = await input.evidencePort.query(frozen({
       challengeId: challenge.challengeId,
       request: clone(challenge.evidenceRequest),
@@ -315,16 +385,93 @@ export async function runRosterTeachCycleV1(input = {}) {
     }));
     evidenceReceipts.push({ ...clone(receipt),
       challengeId: challenge.challengeId });
+    return receipt;
+  };
+  const pendingRepairs = new Map();
+  for (const challenge of challenges) {
+    if (challenge.evidenceRequest === null) continue;
+    const receipt = await queryChallenge(challenge);
+    if (receipt.queryRepair?.correctable === true) {
+      pendingRepairs.set(challenge.challengeId, receipt);
+    }
   }
-  const studentOutput = await input.studentPort.revise(frozen({
+  // Correction is model-owned, scoped to the failed queries, and bounded by
+  // the same three-round convergence policy. Genuine unknown outcomes do not
+  // trigger speculative retries or acquire a fabricated numeric result.
+  for (let round = 1; round <= 3 && pendingRepairs.size; round += 1) {
+    const requested = challenges.filter(challenge =>
+      pendingRepairs.has(challenge.challengeId));
+    const repairs = requested.map(challenge => ({
+      challenge: clone(challenge),
+      ...clone(pendingRepairs.get(challenge.challengeId).queryRepair),
+      failedReceiptHash: pendingRepairs.get(challenge.challengeId).receiptHash,
+    }));
+    const corrected = await input.challengerPort.challenge(frozen({
+      promptRoute: ROSTER_TEACH_CHALLENGER_ROUTE,
+      initialFoundation: clone(initialFoundation), initialFoundationHash,
+      sourceHashes: clone(sourceHashes), sourceContext: clone(sourceContext),
+      evidenceRepair: { round, repairs },
+      canAffectRules: false, trainingTruth: false,
+    }));
+    const replacements = corrected?.challenges || [];
+    if (replacements.length !== requested.length
+      || new Set(replacements.map(x => x.challengeId)).size !== requested.length) {
+      fail("ROSTER_TEACH_QUERY_REPAIR_TARGET_MISMATCH");
+    }
+    pendingRepairs.clear();
+    for (const replacement of replacements) {
+      const original = requested.find(x => x.challengeId === replacement.challengeId);
+      if (!original || ["targetKind", "targetId", "claimText", "questionText",
+        "falsificationText"].some(field => replacement[field] !== original[field])
+        || !object(replacement.evidenceRequest)) {
+        fail("ROSTER_TEACH_QUERY_REPAIR_TARGET_MISMATCH");
+      }
+      const index = challenges.findIndex(x => x.challengeId === original.challengeId);
+      const previousRequest = clone(original.evidenceRequest);
+      challenges[index] = { ...original,
+        evidenceRequest: clone(replacement.evidenceRequest) };
+      const receipt = await queryChallenge(challenges[index]);
+      evidenceRepairHistory.push({ round, challengeId: original.challengeId,
+        previousRequest, correctedRequest: clone(replacement.evidenceRequest),
+        failure: clone(repairs.find(x => x.challenge.challengeId === original.challengeId)),
+        receiptHash: receipt.receiptHash, status: receipt.status,
+        roleReceipt: clone(corrected.receipt ?? null) });
+      if (receipt.queryRepair?.correctable === true) {
+        pendingRepairs.set(original.challengeId, receipt);
+      }
+    }
+  }
+  const studentInput = {
     promptRoute: ROSTER_TEACH_STUDENT_ROUTE,
     initialFoundation: clone(initialFoundation), initialFoundationHash,
     challenges: clone(challenges),
-    evidenceReceipts: clone(evidenceReceipts),
+    evidenceReceipts: clone([...new Map(evidenceReceipts.map(receipt =>
+      [receipt.receiptHash, receipt])).values()]),
     sourceHashes: clone(sourceHashes),
     sourceContext: clone(sourceContext),
     canAffectRules: false, trainingTruth: false,
-  }));
+  };
+  let studentOutput = await input.studentPort.revise(frozen(clone(studentInput)));
+  const revisionRepairHistory = [];
+  // A paid response may describe changing one item while leaving its declared
+  // target untouched. Let the model correct that protocol mismatch, preserving
+  // the whole Foundation/evidence and the paid response. Never patch strategy
+  // text, mark a nonexistent change as accepted, or regenerate the Foundation.
+  for (let round = 1; round <= 2; round += 1) {
+    const issues = unchangedRevisionTargets(initialFoundation, challenges, studentOutput);
+    if (!issues.length) break;
+    const previous = clone(studentOutput);
+    studentOutput = await input.studentPort.revise(frozen({
+      ...clone(studentInput), revisionRepair: { round, issues,
+        previousOutput: previous, previousOutputHash: hashStarcraftTmgContract(previous),
+        maximumStudentResponses: 3 },
+    }));
+    revisionRepairHistory.push({ round, issues,
+      previousOutputHash: hashStarcraftTmgContract(previous),
+      previousRoleReceipt: previous.receipt ?? null,
+      correctedOutputHash: hashStarcraftTmgContract(studentOutput),
+      correctedRoleReceipt: clone(studentOutput?.receipt ?? null) });
+  }
   const revisedFoundation = clone(studentOutput?.revisedFoundation);
   if (!object(revisedFoundation)) fail("ROSTER_TEACH_REVISION_INVALID");
   const body = {
@@ -334,12 +481,23 @@ export async function runRosterTeachCycleV1(input = {}) {
     revisedFoundationHash: hashStarcraftTmgContract(revisedFoundation),
     sourceHashes, challenges,
     challengeTargetNormalizations: normalizedTargets.normalizations,
-    evidenceReceipts,
+    ...(challengeOutput?.outputNormalizationReceipt ? {
+      challengeOutputNormalizationReceipt:
+        clone(challengeOutput.outputNormalizationReceipt),
+    } : {}),
+    evidenceReceipts: [...new Map(evidenceReceipts.map(receipt =>
+      [receipt.receiptHash, receipt])).values()],
+    ...(evidenceRepairHistory.length ? { evidenceRepairHistory } : {}),
+    ...(revisionRepairHistory.length ? { revisionRepairHistory } : {}),
     answers: clone(studentOutput?.answers || []),
     answerEvidenceNormalizations:
       clone(studentOutput?.answerEvidenceNormalizations || []),
     answerDispositionDemotions:
       clone(studentOutput?.answerDispositionDemotions || []),
+    ...(studentOutput?.outputNormalizationReceipt ? {
+      outputNormalizationReceipt:
+        clone(studentOutput.outputNormalizationReceipt),
+    } : {}),
     roleReceipts: {
       challenger: clone(challengeOutput?.receipt ?? null),
       student: clone(studentOutput?.receipt ?? null),
@@ -350,6 +508,8 @@ export async function runRosterTeachCycleV1(input = {}) {
     hiddenChainOfThoughtStored: false, humanReviewed: false,
   };
   body.retainedTargetChangeWarnings = retainedTargetChangeWarnings(body);
+  body.targetBindingInterpretationVersion = "explicit_hypothesis_counter_bundle_v2";
+  body.revisionTargetResolutions = revisionTargetResolutions(body);
   const cycle = { ...body, cycleHash: hashStarcraftTmgContract(body) };
   verifyRosterTeachCycleV1(cycle);
   return frozen(cycle);

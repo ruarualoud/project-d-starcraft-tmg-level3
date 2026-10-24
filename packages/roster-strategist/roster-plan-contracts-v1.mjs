@@ -389,6 +389,27 @@ export function verifyRosterComponentPurposeV1(value) {
   return true;
 }
 
+// Shared by generation preflight and the final Plan verifier. Duplicate
+// identities are a contract failure, never a request to silently drop prose.
+export function verifyRosterComponentPurposesV1(purposes) {
+  if (!Array.isArray(purposes)) fail("ROSTER_PLAN_COMPONENT_PURPOSE_INVALID");
+  const purposeKeys = new Map();
+  for (const [index, purpose] of purposes.entries()) {
+    verifyRosterComponentPurposeV1(purpose);
+    const key = `${purpose.componentKind}:${purpose.instanceId}`;
+    purposeKeys.set(key, [...(purposeKeys.get(key) || []), index]);
+  }
+  const duplicates = [...purposeKeys].filter(([, indexes]) => indexes.length > 1)
+    .map(([key, indexes]) => ({ key, indexes }));
+  if (duplicates.length) {
+    const error = new Error(`ROSTER_PLAN_COMPONENT_PURPOSE_DUPLICATE:${
+      duplicates[0].key}`);
+    error.details = { field: "componentPurposes", duplicates };
+    throw error;
+  }
+  return true;
+}
+
 export function createRosterDeploymentConceptV1(input = {}) {
   if (!object(input)) fail("ROSTER_PLAN_DEPLOYMENT_CONCEPT_INVALID");
   const activationOrderStatus = String(input.activationOrderStatus || "");
@@ -1009,13 +1030,7 @@ export function verifyRosterPlanV1(plan) {
   if (plan.deploymentConcept !== null) {
     verifyRosterDeploymentConceptV1(plan.deploymentConcept);
   }
-  const purposeKeys = new Set();
-  for (const purpose of plan.componentPurposes) {
-    verifyRosterComponentPurposeV1(purpose);
-    const key = `${purpose.componentKind}:${purpose.instanceId}`;
-    if (purposeKeys.has(key)) fail("ROSTER_PLAN_COMPONENT_PURPOSE_DUPLICATE", key);
-    purposeKeys.add(key);
-  }
+  verifyRosterComponentPurposesV1(plan.componentPurposes);
   const hypothesisIds = new Set();
   for (const hypothesis of plan.opponentHypotheses) {
     verifyOpponentArchetypeHypothesisV1(hypothesis);

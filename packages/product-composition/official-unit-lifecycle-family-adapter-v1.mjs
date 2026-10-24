@@ -381,6 +381,26 @@ function used(state, route, sourceInstanceId, scope) {
       && entry.sourceInstanceId === sourceInstanceId
       && (scope === "game" || Number(entry.round) === Number(state.round))));
 }
+function repeatableNamedActive(route) {
+  return /\bREPEATABLE\b/iu.test(`${route.activationText || ""}\n${route.sourceText || ""}`);
+}
+function namedActiveUsedThisRound(state, route, pieceId) {
+  const name = normalized(route.abilityName);
+  const currentUse = (entry) => Number(entry.round) === Number(state.round)
+    && entry.pieceId === pieceId;
+  if ((state.activeAbilityUseHistory || []).some((entry) => currentUse(entry)
+    && normalized(entry.abilityName) === name)) return true;
+  // Old persisted lifecycle entries did not carry abilityName. Resolve their
+  // immutable definition binding, rather than resetting history on restart or
+  // treating a second card copy as a different unit's named ability.
+  return (state.unitLifecycleUseHistory || []).some((entry) => {
+    if (!currentUse(entry)) return false;
+    const priorRoute = state.officialUnitLifecycleFamilySourceBundle?.routes
+      ?.find((candidate) => candidate.definitionId === entry.definitionId);
+    return priorRoute?.actionKind === "active_ability"
+      && normalized(priorRoute.abilityName) === name;
+  });
+}
 function available(state, route, instance, actor) {
   if (!SIDE_KEYS.has(instance.sideKey) || state.activeSideKey !== instance.sideKey
     || (route.phase !== "any" && route.phase !== state.phase)) {
@@ -391,6 +411,10 @@ function available(state, route, instance, actor) {
   }
   if (route.oncePerGame && used(state, route, instance.sourceInstanceId, "game")) {
     fail("UNIT_LIFECYCLE_ONCE_PER_GAME_USED", route.definitionId);
+  }
+  if (route.actionKind === "active_ability" && !repeatableNamedActive(route)
+    && namedActiveUsedThisRound(state, route, actor.id)) {
+    fail("UNIT_LIFECYCLE_ONCE_PER_ROUND_USED", route.abilityName);
   }
   if (route.effectKind === "phase_prism_swap") {
     if (!reservePiece(actor)) fail("UNIT_LIFECYCLE_PHASE_PRISM_NOT_IN_RESERVES");

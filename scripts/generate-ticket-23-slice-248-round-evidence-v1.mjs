@@ -75,6 +75,29 @@ async function resolveScreenshot(action, run, seen = new Set()) {
 const images = await Promise.all(actions.map(action =>
   resolveScreenshot(action, action.screenshotDirectory)));
 const privateState = JSON.parse(await readFile(path.join(directory, "runner-private.json"), "utf8"));
+const roomManifestArgument = argument("room-manifest", "");
+const roomManifestPath = roomManifestArgument
+  ? path.resolve(ROOT, roomManifestArgument) : null;
+const roomManifest = roomManifestPath
+  ? JSON.parse(await readFile(roomManifestPath, "utf8")) : null;
+if (roomManifest) assert.equal(roomManifest.roomId, privateState.roomId,
+  "report metadata must belong to the captured room");
+const mapEvidence = roomManifest?.map ? {
+  sourceManifest: path.relative(ROOT, roomManifestPath),
+  sourceManifestStateRevision: roomManifest.room?.stateRevision ?? null,
+  roomId: roomManifest.roomId,
+  matchBindingHash: roomManifest.room?.matchBindingHash ?? null,
+  mapSourceFamily: roomManifest.map.mapSourceFamily ?? null,
+  mapSeedId: roomManifest.map.mapSeedId ?? null,
+  mapDisplayName: roomManifest.map.mapDisplayName ?? null,
+  engagementScale: roomManifest.map.engagementScale ?? null,
+  rulesTerrainPieceCount: roomManifest.map.rulesTerrainPieceCount ?? null,
+  mapRoomFreezeHash: roomManifest.map.mapRoomFreezeHash ?? null,
+  authoritativeTerrainLayer: roomManifest.map.authoritativeTerrainLayer === true,
+  backgroundRulesAuthority: roomManifest.map.backgroundRulesAuthority === true,
+  mutationAfterRoomCreationAllowed:
+    roomManifest.map.roomFreezeSummary?.mutationAfterRoomCreationAllowed ?? null,
+} : null;
 const codec = createStarcraftTmgPrivatePayloadCodec({
   key: privateState.storeEncryptionKeyBase64,
   keyId: `ticket23-slice248-room-store-${path.basename(directory)}`,
@@ -132,13 +155,15 @@ await mkdir(output, { recursive: true });
 const snapshot = { schema: "ticket23_slice248_partial_round_evidence_v1",
   roomId: privateState.roomId, createdAt: new Date().toISOString(), throughRevision: through,
   matchComplete: false, acceptanceComplete: false, rows,
+  mapEvidence,
   sourceRefreshPerformed: false, providerCallsForReport: 0, roomMutations: 0,
   trainingTruth: false };
 await writeFile(path.join(output, `${stem}.json`), `${JSON.stringify(snapshot, null, 2)}\n`);
 const actionLabel = (row) => `r${row.revision} · ${row.side} · ${row.actionType}`;
 const pages = rows.map((row) => {
   const summary = row.publicDecisionSummary || {};
-  const dice = row.dice.length ? row.dice.map((r) => `D${r.faces}=${r.outcome}`).join(" · ")
+  const dice = row.dice.length ? "权威随机池（包含预分配；不表示全部实际使用）："
+    + row.dice.map((r) => `D${r.faces}=${r.outcome}`).join(" · ")
     : "本动作没有骰子结算";
   const source = row.inherited ? `历史前缀截图 / 来源 ${row.screenshotSourceRun}；已绑定本分支回放`
     : "当前分支实际 Web 截图";
@@ -169,15 +194,16 @@ p,li {overflow-wrap:anywhere} .cover,.shot-page,.detail {break-after:page} .cove
 .shot-page {height:181mm;display:flex;flex-direction:column} header p {margin:0;font-size:10px}
 .dice {background:#e8f3f8;border-left:3px solid #0a7c9e;padding:2mm;margin:2mm 0;font-size:10px}
 .shot-page img {width:100%;height:137mm;object-fit:contain;background:#07111f;border:1px solid #557a91}
-.source {font-size:9px;color:#536878;margin:2mm 0} .detail {padding:3mm 2mm;font-size:11px;line-height:1.55}
-.detail p {margin:1mm 0 3mm} ul {padding-left:5mm;margin:1mm 0} li {margin:1mm 0;break-inside:avoid}
+.source {font-size:9px;color:#536878;margin:2mm 0} .detail {padding:3mm 2mm;font-size:11px;line-height:1.45}
+.detail h3 {margin:3mm 0 1mm} .detail p {margin:1mm 0 2mm} ul {padding-left:5mm;margin:1mm 0} li {margin:1mm 0;break-inside:avoid}
 .muted {color:#637589} .detail:last-child {break-after:auto}
 </style></head><body><section class="cover"><h1>StarCraft TMG / Standard 2000 A-A</h1>
 <h2>第一回合及第二回合启动 · r1-r${through} 分段证据</h2>
-<p class="tag">对局仍在进行。本文件不是完整对局验收，也不是策略效果通过报告。</p>
+<p class="tag">对局尚未完成。本文件不是完整对局验收，也不是策略效果通过报告。</p>
 <p>覆盖 ${rows.length} 个连续权威动作，每个动作包含实际棋盘截图与回执绑定。前 ${rows.filter(r => r.inherited).length} 步使用已回放历史前缀的原始截图，并逐项标注来源；后续为当前分支实图。</p>
-<p>实际骰子取自本分支权威记录；公开决策理由原样保留，可能有判断错误。合法执行、模型策略质量和训练可用性是三件不同的事。</p>
-<p>本局使用抽象权威地形，不声称背景美术已绑定天然地形。军表为固定 2000 分规模实验配置，不含 Agent 写表初始计划。当前正式分支双席 Flash；历史前缀不算本分支新增调用。</p>
+<p>随机池取自本房间权威记录，包含预分配且不代表全部实际使用；实际攻击结算仍以公开规则事件为准。公开决策理由原样保留，可能有判断错误。合法执行、模型策略质量和训练可用性是三件不同的事。</p>
+<p>${mapEvidence ? e(`冻结地图：${mapEvidence.mapDisplayName || "未命名"} / ${mapEvidence.mapSeedId || "未记录"}；来源${mapEvidence.mapSourceFamily || "未记录"}；规模${mapEvidence.engagementScale || "未记录"}；规则几何记录${mapEvidence.rulesTerrainPieceCount ?? "未记录"}条（编译记录数，不是独立美术地形件数）；冻结${mapEvidence.mapRoomFreezeHash || "未记录"}。规则地形层${mapEvidence.authoritativeTerrainLayer ? "为权威" : "未证明为权威"}，背景像素${mapEvidence.backgroundRulesAuthority ? "声明有规则权威" : "本身不赋予规则权威"}。元数据来自本房间保存的manifest，不由图片推断。`) : "未提供本房间冻结地图manifest，地图绑定在本报告中未证明；不据截图推断其为抽象地形或已绑定天然地形。"}</p>
+<p>军表来源、赛前计划与模型版本见对应实验记录；本报告不从军表规模推断是否有赛前计划。历史前缀不算本分支新增调用。</p>
 <p>未为报告重跑动作或模型、未刷新官方数据、未增加费用。最终整局、机机复盘与 Skill 升级验收仍待后续完成。</p>
 <p class="muted">房间 ${e(privateState.roomId)}<br>保留的逐动作 JSON：${e(stem)}.json<br>trainingTruth: false / hiddenChainOfThoughtStored: false</p></section>${pages}</body></html>`;
 const htmlPath = path.join(output, `${stem}.html`);

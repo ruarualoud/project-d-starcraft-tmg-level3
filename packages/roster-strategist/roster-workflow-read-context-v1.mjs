@@ -1,0 +1,322 @@
+import {projectRosterExperimentSourceFactsV1,ROSTER_RECEIPT_STRUCTURE_PROJECTION_VERSION_V1,
+  ROSTER_SOURCE_FACTS_PROJECTION_VERSION_V1} from './roster-experiment-source-facts-v1.mjs';
+import {collectPregameNativeActionEvidenceV1} from './pregame-native-action-evidence-v1.mjs';
+import {rosterWorkflowBindingsMatchV1} from './roster-decision-workflow-v1.mjs';
+import {rosterAuditedCandidateSourceV1} from './roster-workflow-candidate-source-v1.mjs';
+import {projectRosterMeasuredComparisonMeaningV1} from './roster-measured-comparison-v1.mjs';
+import {isDeepStrictEqual} from 'node:util';
+import {rosterExactReadRowsV1} from './roster-comparison-control-command-v1.mjs';
+
+const readKey=row=>JSON.stringify([row.evidenceId,row.pointer]);
+// Product discovery already inspected the immutable formal source. Surface its
+// saved identity, not the last experiment's successor as an implicit world.
+// No new Native query or reset occurs; the ordinary scoped reader delivers the
+// selected fields. Bindings and the original root identity must both agree.
+export async function projectRosterWorkflowRootContextReferenceV1({directory,scope,store}){
+  if(!scope?.source)return null;
+  for(const entry of [...directory].reverse()){
+    if(entry.kind!=='tool_receipt'||entry.validity!=='current'
+      ||!/^tool:discovery:r\d+:context$/u.test(entry.id)
+      ||['army','rules','map','source'].some(key=>!scope[key]||entry.bindings?.[key]!==scope[key]))continue;
+    const source=await store.get(entry.artifactRef),receipt=source?.receipt;
+    if(source?.operation!=='inspect'||source.status!=='completed'
+      ||source.contextRef!=null||source.stateRef?.contextRef!=null
+      ||source.stateRef?.sourceStateHash!==scope.source||source.stateRef?.stateHash!==scope.source
+      ||receipt?.sourceStateHash!==scope.source||receipt.baseStateHash!==scope.source
+      ||typeof receipt.scenarioConstruction?.firstRoundInitialization?.sourceEligible!=='boolean')continue;
+    return {schema:'roster_current_root_scene_v1',version:1,
+      sourceEvidenceId:entry.id,evidenceNumber:entry.number,
+      sourceStateHash:scope.source,
+      reads:['/stateRef','/receipt/phase','/receipt/round','/receipt/scenarioConstruction/firstRoundInitialization']
+        .map(pointer=>({evidenceNumber:entry.number,pointer})),
+      replacesSelectedSuccessor:false,approvesArrival:false,wholeBodyRead:false,
+      instruction:'This is the current formal army/map immutable ROOT already inspected by product discovery, not your last experiment successor. The exact named fields are delivered through the normal source reader. sourceEligible describes ONLY the inspected state: false on a successor does not establish that the root or the tool is unavailable. Conversely root eligibility does not grant an action, prove an arrival, authorize a repeated experiment or replace an explicitly selected predecessor. Choose the source appropriate to the current authorized method; reuse completed matching work when it exists. Bind the chosen saved stateRef explicitly and use its real Native menu. Do not reset cards/resources, teleport units, cross the permitted round boundary or replay a successful action merely to escape an exhausted successor. Other root fields remain readable at this evidence number.'};
+  }
+  return null;
+}
+// Inspect the reply's ACTUAL request, not fetch history. An immutable parent
+// covers a child only when that child's value was really present in the exact
+// body. A compact projection, partial parent, or missing path grants no such
+// proof. This classifies transport progress, never truth or strategy quality.
+export function projectRosterReadRequestProgressV1({request,reads=[],catalogueQueries=[],directory=[]}){
+  const delivered=(request.promptNodes??[]).filter(node=>node.kind==='exact_read_results')
+    .flatMap(rosterExactReadRowsV1).filter(row=>row.status==='read');
+  const contains=(row,pointer)=>{
+    if(row.pointer===pointer)return true;
+    if(typeof pointer!=='string'||typeof row.pointer!=='string'
+      ||!pointer.startsWith(row.pointer+'/'))return false;
+    let value=row.value;
+    for(const token of pointer.slice(row.pointer.length+1).split('/')){
+      if(/~(?![01])/u.test(token))return false;
+      const key=token.replaceAll('~1','/').replaceAll('~0','~');
+      if(value===null||typeof value!=='object'||!Object.hasOwn(value,key))return false;
+      value=value[key];
+    }
+    return true;
+  };
+  const alreadyDelivered=[],notDelivered=[];
+  const selected=new Map(reads.map(read=>[JSON.stringify([read.evidenceNumber,read.pointer]),read]));
+  for(const read of selected.values()){
+    const entry=directory.find(e=>e.number===read.evidenceNumber);
+    const source=entry&&delivered.find(row=>row.evidenceId===entry.id&&contains(row,read.pointer));
+    (source?alreadyDelivered:notDelivered).push({...structuredClone(read),
+      ...(source?{deliveredPointer:source.pointer}:{})});
+  }
+  return {version:1,alreadyDelivered,notDelivered,
+    noNewInformation:selected.size>0&&notDelivered.length===0&&catalogueQueries.length===0,
+    deliveryContextHash:request.contextHash,acceptanceGranted:false};
+}
+// The bounded transport window must not repeatedly spend its entire allowance
+// on old root prefixes while newly fetched sources remain unseen forever.
+// This orders delivery only; it does not grant a read, rank strategy/evidence
+// truth, change a value, or discard old source navigation/qualification.
+function orderReadDeliveries(rows,knownDelivered){
+  const completed=knownDelivered.filter(row=>row.status==='read');
+  const seenSources=new Set(completed.map(row=>row.evidenceId));
+  const covers=row=>completed.some(prior=>prior.evidenceId===row.evidenceId
+    &&(!prior.pointer||prior.pointer===row.pointer||row.pointer.startsWith(prior.pointer+'/')));
+  return rows.map((row,index)=>({row,index,
+    fresh:row.status==='read'&&(!seenSources.has(row.evidenceId)||row.pointer!==''&&!covers(row)),
+    characters:row.status==='read'?JSON.stringify(row.value).length:0}))
+    .sort((a,b)=>Number(b.fresh)-Number(a.fresh)||(a.fresh?a.characters-b.characters:0)||a.index-b.index)
+    .map(entry=>entry.row);
+}
+// A withheld action array must remain discoverable without guessing an index.
+// Copy Native identity/phase labels only: do not infer eligibility, select a
+// weapon, rank options, or manufacture a second action/phase rules table.
+function nativeActionReadDirectory(value,pointer){
+  const kind=pointer.endsWith('/actionSpace/actionCapabilityReference/routes')?'capability':
+    pointer.endsWith('/actionSpace/actionAvailability/disabledActions')?'disabled':
+    pointer.endsWith('/actionSpace/parameterDomains')?'domain':
+    pointer.endsWith('/actionSpace/finiteActions')?'finite':null;
+  if(!kind||!Array.isArray(value))return null;
+  const units=new Map();
+  for(const [index,entry]of value.entries()){
+    const source=kind==='finite'?entry?.action:entry;
+    if(!source||typeof source.actionType!=='string')return null;
+    const pieceId=source.pieceId??null;
+    if(pieceId!==null&&typeof pieceId!=='string')return null;
+    const unit=units.get(pieceId)??{pieceId,actions:[]};
+    unit.actions.push({index,...Object.fromEntries(['actionType','phase','weaponName','abilityName',
+      ...(kind==='disabled'?['disabledReason']:[])]
+      .filter(key=>typeof source[key]==='string').map(key=>[key,source[key]]))});
+    units.set(pieceId,unit);
+  }
+  return {schema:'roster_native_action_read_directory_v1',kind,itemCount:value.length,
+    itemPointerPattern:pointer+'/{zeroBasedIndex}',units:[...units.values()],
+    directoryIsBodyRead:false,executionEligibilityProven:false,
+    instruction:'Exact labels from the withheld Native array, grouped by unit for discovery. Replace {zeroBasedIndex} with the chosen index and read that original item. Capability phases are source-declared, not current legal domains; a matching phase does not prove engagement, range, readiness or payment. This directory neither changes the scene nor authorizes an action. Read the original entry before selecting a domain or designing its prerequisite scene.'};
+}
+// Transport-sized exact JSON children, never arbitrary text truncation. Large
+// arrays remain addressable by their existing zero-based JSON Pointers. Fetch
+// success and whole-body model delivery are deliberately different states.
+function chunkExactReads(rows,{maximumChildCharacters=16384,maximumBatchCharacters=262144}={}){
+  const exactReads=[],sourceReadNavigation=[];let used=0;
+  for(const row of rows){
+    if(row.status!=='read'){exactReads.push(row);continue;}
+    const visit=(value,pointer)=>{
+      const characters=JSON.stringify(value).length;
+      if(characters<=maximumChildCharacters&&used+characters<=maximumBatchCharacters){
+        exactReads.push({...row,pointer,value:structuredClone(value),
+          ...(pointer!==row.pointer?{requestedPointer:row.pointer,deliveryKind:'exact_json_child_v1'}:{})});
+        used+=characters;return;
+      }
+      if(value&&typeof value==='object'&&!Array.isArray(value)&&used<maximumBatchCharacters){
+        for(const [key,child]of Object.entries(value))visit(child,pointer+'/'+key.replaceAll('~','~0').replaceAll('/','~1'));
+        return;
+      }
+      // A giant string cannot be addressed in smaller JSON children. Keep it
+      // intact as a soft overrun rather than silently changing its contents.
+      if(typeof value==='string'){
+        exactReads.push({...row,pointer,value,deliveryKind:'exact_scalar_soft_overrun_v1'});used+=characters;return;
+      }
+      sourceReadNavigation.push({evidenceId:row.evidenceId,evidenceNumber:row.evidenceNumber,pointer,
+        requestedPointer:row.pointer,status:'fetched_not_delivered',characters,
+        valueType:Array.isArray(value)?'array':value===null?'null':typeof value,
+        ...(Array.isArray(value)?{length:value.length,itemPointerPattern:pointer+'/{zeroBasedIndex}'}:{}),
+        ...(nativeActionReadDirectory(value,pointer)?{nativeActionDirectory:nativeActionReadDirectory(value,pointer)}:{}),
+        read:{evidenceNumber:row.evidenceNumber,pointer},
+        instruction:'The complete value is saved but NOT delivered here. Read a needed exact child pointer (array indexes are zero-based), or a smaller field. This is not a missing source, zero result, complete body read or permission to infer omitted contents.'});
+    };
+    visit(row.value,row.pointer);
+  }
+  return {exactReads,sourceReadNavigation};
+}
+
+// Called ONLY after an actual Provider reply (valid or malformed). A rejected
+// input/pending dispatch must never grant delivery merely because Host fetched it.
+export async function recordRosterWorkflowReadDeliveryV1({request,operation,store,previousDeliveredReads=[]}){
+  const records=new Map((operation.deliveredReads??[]).map(row=>[readKey(row),row]));
+  for(const row of previousDeliveredReads)if(!records.has(readKey(row)))records.set(readKey(row),{
+    evidenceId:row.evidenceId,pointer:row.pointer,resultRef:await store.put(row),legacyCompletedDelivery:true});
+  for(const node of request.promptNodes??[])if(node.kind==='exact_read_results')for(const row of rosterExactReadRowsV1(node)){
+    if(row.status!=='read')continue;
+    records.set(readKey(row),{evidenceId:row.evidenceId,pointer:row.pointer,resultRef:await store.put(row),
+      completedContextHash:request.contextHash});
+  }
+  operation.deliveredReads=[...records.values()];
+}
+
+// A completed request is delivery evidence; a selected/fetched read alone is
+// not. New results remain full once. Only repeat Native root context is compacted,
+// using the same deterministic projection as source review and discovery.
+export async function projectRosterWorkflowReadContextV1({collected,operation,directory,store,assignmentInputs={},assignmentScope={}}){
+  const previousCall=operation.calls.at(-1);
+  const previous=previousCall?await store.get(previousCall.requestRef):null;
+  const key=(id,pointer)=>JSON.stringify([id,pointer]);
+  const delivered=new Set();
+  for(const node of previous?.promptNodes??[]){
+    if(node.kind==='exact_read_results')for(const row of rosterExactReadRowsV1(node))
+      if(row.status==='read')delivered.add(key(row.evidenceId,row.pointer));
+    if(node.kind==='previously_delivered_source_facts')for(const row of node.sources??[])
+      delivered.add(key(row.evidenceId,row.originalPointer));
+  }
+  const exactReads=[],previousSourceFacts=[],knownDelivered=[];
+  for(const row of operation.deliveredReads??[])knownDelivered.push(await store.get(row.resultRef));
+  // Read-only migration of old completed calls; never include pending requests.
+  if(!operation.deliveredReads)for(const node of previous?.promptNodes??[]){
+    if(node.kind==='exact_read_results')knownDelivered.push(...rosterExactReadRowsV1(node).filter(row=>row.status==='read'));
+    if(node.kind==='previously_delivered_source_facts')for(const source of node.sources??[]){
+      const original=collected.find(row=>row.evidenceId===source.evidenceId&&row.pointer===source.originalPointer);
+      if(original)knownDelivered.push(original);
+    }
+  }
+  for(const row of collected){
+    const body=row.value?.value??row.value;
+    const evidence=directory.find(e=>e.id===row.evidenceId);
+    if(row.status!=='read'||row.pointer!==''||!body?.operation||!body.receipt||!evidence
+      ||!delivered.has(key(row.evidenceId,row.pointer))||JSON.stringify(body).length<=16384){
+      exactReads.push(row);continue;
+    }
+    previousSourceFacts.push({evidenceId:row.evidenceId,evidenceNumber:row.evidenceNumber,
+      originalPointer:row.pointer,validity:row.validity,conditions:row.conditions,
+      priorCompletedRequestRef:previousCall.requestRef,
+      projection:projectRosterExperimentSourceFactsV1({evidence,value:body})});
+  }
+  const chunked=chunkExactReads(orderReadDeliveries(exactReads,knownDelivered));
+  const deliveredReads=[...new Map([...knownDelivered,...chunked.exactReads.filter(row=>row.status==='read')]
+    .map(row=>[readKey(row),row])).values()];
+  // Old immutable views/v2 projections remain valid navigation. Supply the
+  // omitted Native scope from their REGISTERED original, without rewriting them
+  // or pretending an alias/section read delivered the complete original body.
+  const nativeSources=new Map(),nativeMeasurements=new Map(),sourceRecords=new Map(),cache=new Map();
+  const auditedCandidateApplicability=new Map();
+  const get=async entry=>{
+    if(!cache.has(entry.id))cache.set(entry.id,await store.get(entry.artifactRef));
+    return cache.get(entry.id);
+  };
+  const supplement=async(readViaEvidenceId,body,fullOriginalBodyDelivered=false)=>{
+    let sourceId=readViaEvidenceId,source=body?.value??body;
+    const visited=new Set();let needsSourceRecord=false,needsNativeMeasurements=false;
+    while(source&&typeof source==='object'){
+      const alias=source.schema==='roster_workflow_receipt_view_v1'?source.evidenceId:
+        source.schema==='roster_experiment_source_facts_v1'?source.sourceEvidenceId:null;
+      if(!alias)break;
+      if(!Object.hasOwn(source,'sourceRecord'))needsSourceRecord=true;
+      if(source.structureProjectionVersion!==ROSTER_RECEIPT_STRUCTURE_PROJECTION_VERSION_V1
+        ||!Object.hasOwn(source,'receiptStructures')
+        ||source.schema==='roster_experiment_source_facts_v1'
+          &&source.projectionVersion!==ROSTER_SOURCE_FACTS_PROJECTION_VERSION_V1)needsNativeMeasurements=true;
+      if(visited.has(alias))return;visited.add(alias);
+      const original=directory.find(e=>e.id===alias);if(!original)return;
+      sourceId=alias;source=await get(original);source=source?.value??source;
+      fullOriginalBodyDelivered=false;
+    }
+    const entry=directory.find(e=>e.id===sourceId);
+    if(!entry||!source||typeof source!=='object')return;
+    const audited=rosterAuditedCandidateSourceV1(source);
+    if(audited&&assignmentScope.army){
+      const audit=audited.historicalAudit,prior=auditedCandidateApplicability.get(sourceId);
+      auditedCandidateApplicability.set(sourceId,{
+        sourceEvidenceId:sourceId,sourceEvidenceNumber:entry.number,
+        sourceArtifactRef:entry.artifactRef,
+        readViaEvidenceIds:[...new Set([...(prior?.readViaEvidenceIds??[]),readViaEvidenceId])],
+        auditedCandidateHash:audit.candidateHash,
+        currentFormalCandidateHash:assignmentScope.army,
+        applicability:audit.candidateHash===assignmentScope.army
+          ?'same_candidate_identity_not_fresh_audit':'different_audited_candidate',
+        auditSummary:structuredClone(audit.summary),
+        originalViewUnchanged:true,acceptanceGranted:false,
+        instruction:'Exact Native candidate identity comparison only, not a strategy verdict or fresh audit. A different audited candidate does not prove the current army spent its budget, has its upgrades, or was adopted. Both original sources remain readable; never replace current facts with another candidate’s totals.',
+      });
+    }
+    if(needsSourceRecord&&(!source.operation||!source.receipt)){
+      const prior=sourceRecords.get(sourceId);
+      sourceRecords.set(sourceId,{sourceEvidenceId:sourceId,sourceEvidenceNumber:entry.number,
+        sourceArtifactRef:entry.artifactRef,validity:entry.validity,conditions:entry.conditions??[],
+        readViaEvidenceIds:[...new Set([...(prior?.readViaEvidenceIds??[]),readViaEvidenceId])],
+        projection:projectRosterExperimentSourceFactsV1({evidence:entry,value:source}),
+        originalViewUnchanged:true,acceptanceGranted:false});
+    }
+    if(!source.receipt)return;
+    // Reading an old ORIGINAL must not lose a contract upgrade that an alias
+    // reader receives. A predicate-only read also needs its named operands,
+    // without granting a full-original read. Use the SAME arithmetic projector,
+    // never rewrite a paid result, reverse its sides, or infer a strategy winner.
+    // Current aliases already contain this projection and are not duplicated.
+    const comparisonMeaning=projectRosterMeasuredComparisonMeaningV1(source.receipt);
+    if(!visited.size&&comparisonMeaning&&(!fullOriginalBodyDelivered
+      ||!isDeepStrictEqual(source.receipt.comparisonMeaning,comparisonMeaning)))needsNativeMeasurements=true;
+    if(needsNativeMeasurements&&typeof source.operation==='string'){
+      const prior=nativeMeasurements.get(sourceId);
+      nativeMeasurements.set(sourceId,{sourceEvidenceId:sourceId,sourceEvidenceNumber:entry.number,
+        sourceArtifactRef:entry.artifactRef,validity:entry.validity,conditions:entry.conditions??[],
+        readViaEvidenceIds:[...new Set([...(prior?.readViaEvidenceIds??[]),readViaEvidenceId])],
+        projection:projectRosterExperimentSourceFactsV1({evidence:entry,value:source}),
+        originalViewUnchanged:true,acceptanceGranted:false});
+    }
+    const evidence=collectPregameNativeActionEvidenceV1(source.receipt);
+    if(!evidence.length)return;
+    const prior=nativeSources.get(sourceId);
+    nativeSources.set(sourceId,{sourceEvidenceId:sourceId,sourceEvidenceNumber:entry.number,
+      sourceArtifactRef:entry.artifactRef,validity:entry.validity,conditions:entry.conditions??[],
+      readViaEvidenceIds:[...new Set([...(prior?.readViaEvidenceIds??[]),readViaEvidenceId])],
+      fullOriginalBodyDelivered:fullOriginalBodyDelivered||prior?.fullOriginalBodyDelivered===true,
+      evidence,acceptanceGranted:false});
+  };
+  for(const row of deliveredReads){
+    if(row.status!=='read')continue;
+    const entry=directory.find(e=>e.id===row.evidenceId);if(!entry)continue;
+    await supplement(row.evidenceId,row.pointer===''?row.value:await get(entry),row.pointer==='');
+  }
+  for(const input of Object.values(assignmentInputs)){
+    if(input.source==='evidence'&&input.status==='read')
+      await supplement(input.evidenceId,input.value,input.pointer==='');
+    else if(input.source==='literal'&&['roster_experiment_source_facts_v1','roster_workflow_receipt_view_v1'].includes(input.value?.schema))
+      await supplement(null,input.value,false);
+  }
+  return {exactReads:chunked.exactReads,sourceReadNavigation:chunked.sourceReadNavigation,deliveredReads,previousDeliveredReads:knownDelivered,
+    previousSourceFacts,nativeSources:[...nativeSources.values()],
+    nativeMeasurements:[...nativeMeasurements.values()],sourceRecords:[...sourceRecords.values()],
+    auditedCandidateApplicability:[...auditedCandidateApplicability.values()]};
+}
+
+// A concrete delivery-source repair permits ONE ordinary author-confirmation
+// continuation. It never revalidates/approves an old reply against facts that
+// its author had not received, or retries a pending Provider request.
+export async function projectRosterWorkflowReadDeliveryRecoveryV1({state,work,store}){
+  const operation=work?.operationState,errors=operation?.correction?.errors;
+  if(work?.status!=='needs_repair'||work.failure?.code!=='ROSTER_WORKFLOW_ROLE_CORRECTION_NOT_CONVERGED'
+    ||work.failure.dispatchOutcome!=='completed_invalid'||operation?.pending
+    ||!rosterWorkflowBindingsMatchV1(work.bindings,state.scope)
+    ||!errors?.length||errors.some(error=>error.code!=='evidence_not_read'))return null;
+  const originalReplyRef=operation.correction.originalReplyRef;
+  const call=operation.calls.findLast(row=>row.replyRef===originalReplyRef);if(!call)return null;
+  const request=await store.get(call.requestRef);
+  const oldReadNumbers=new Set(request.promptNodes?.find(node=>node.kind==='citation_access')?.directlyReadEvidenceNumbers??[]);
+  const directory=state.evidence.map((entry,index)=>({number:index+1,...entry}));
+  const affectedEvidenceNumbers=[...new Set(errors.map(error=>error.number))];
+  if(affectedEvidenceNumbers.some(number=>!directory[number-1]||oldReadNumbers.has(number)))return null;
+  const collected=await Promise.all(operation.reads.map(async row=>({
+    ...await store.get(row.resultRef),evidenceNumber:directory.find(entry=>entry.id===row.evidenceId)?.number})));
+  if(affectedEvidenceNumbers.some(number=>!collected.some(row=>row.status==='read'
+    &&row.evidenceId===directory[number-1].id)))return null;
+  const current=await projectRosterWorkflowReadContextV1({collected,operation,directory,store});
+  if(affectedEvidenceNumbers.some(number=>!current.exactReads.some(row=>row.status==='read'
+    &&row.evidenceId===directory[number-1].id)))return null;
+  return {repairKind:'read_delivery_starvation',
+    recoveryKey:'fresh_read_delivery_v706:'+work.id,workId:work.id,originalReplyRef,
+    originalContextHash:request.contextHash,affectedEvidenceNumbers,
+    requiresAuthorConfirmation:true,maximumAdditionalInvalidResults:1,
+    historyReset:false,acceptanceGranted:false};
+}

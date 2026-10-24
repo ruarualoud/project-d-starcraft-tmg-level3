@@ -74,14 +74,134 @@ function normalizeSingleUnescapedQuote(text) {
     parseErrorUtf16Offset: parseOffset,
   } };
 }
+function recoverSingleMissingObjectCloseBeforeArray(text) {
+  const stack = [];
+  let quoted = false;
+  let escaped = false;
+  let insertionOffset = null;
+  for (let offset = 0; offset < text.length; offset += 1) {
+    const char = text[offset];
+    if (quoted) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === '"') quoted = false;
+      continue;
+    }
+    if (char === '"') { quoted = true; continue; }
+    if (char === '{' || char === '[') { stack.push(char); continue; }
+    if (char !== '}' && char !== ']') continue;
+    const expected = char === '}' ? '{' : '[';
+    if (stack.at(-1) === expected) { stack.pop(); continue; }
+    if (char !== ']' || insertionOffset !== null
+      || stack.at(-1) !== '{' || stack.at(-2) !== '[') return null;
+    insertionOffset = offset;
+    stack.pop();
+    stack.pop();
+  }
+  if (quoted || stack.length || insertionOffset === null) return null;
+  const candidate = text.slice(0, insertionOffset) + '}'
+    + text.slice(insertionOffset);
+  try {
+    const parsed = JSON.parse(candidate);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return null;
+    }
+  } catch { return null; }
+  return { text: candidate,
+    kind: 'single_missing_object_close_before_array_v1',
+    evidence: {
+      schemaVersion: 'provider_json_single_delimiter_recovery_v1',
+      originalTextHash: hash(text), normalizedTextHash: hash(candidate),
+      insertedDelimiter: '}', insertedUtf16Offset: insertionOffset,
+    } };
+}
 // Grammar-only recovery for observed, completed JSON defects. Never infer
-// fields or alter visible scalar content. Missing-inner-structure repair is
-// forbidden; every accepted result must parse as one complete object.
+// fields or alter visible scalar content. One missing object close may be
+// inserted only at a unique array boundary and only when the entire result
+// then parses as one complete object.
+function recoverSingleUnmatchedClosingDelimiter(text) {
+  let offset;
+  try { JSON.parse(text); return null; } catch (error) {
+    offset = Number(/position (\d+)/u.exec(String(error.message))?.[1] ?? -1);
+  }
+  if (!Number.isSafeInteger(offset) || offset < 0
+    || ![']', '}'].includes(text[offset])) return null;
+  const stack = []; let quoted = false, escaped = false;
+  for (let index = 0; index < offset; index += 1) {
+    const char = text[index];
+    if (quoted) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === '"') quoted = false;
+    } else if (char === '"') quoted = true;
+    else if (char === '{' || char === '[') stack.push(char);
+    else if (char === '}' || char === ']') {
+      if (stack.pop() !== (char === '}' ? '{' : '[')) return null;
+    }
+  }
+  // Only remove a delimiter with no matching container at the parser's
+  // exact error boundary. Scalars, keys and every array member stay intact.
+  if (quoted || stack.at(-1) === (text[offset] === '}' ? '{' : '[')) {
+    return null;
+  }
+  const candidate = text.slice(0, offset) + text.slice(offset + 1);
+  try {
+    const parsed = JSON.parse(candidate);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return null;
+    }
+  } catch { return null; }
+  return { text: candidate, kind: 'single_unmatched_closing_delimiter_v1',
+    evidence: {
+      schemaVersion: 'provider_json_single_delimiter_removal_v1',
+      originalTextHash: hash(text), normalizedTextHash: hash(candidate),
+      removedDelimiter: text[offset], removedUtf16Offset: offset,
+      scalarContentUnchanged: true,
+    } };
+}
+function recoverSingleMissingContainerClose(text) {
+  let offset;
+  try { JSON.parse(text); return null; } catch(error) {
+    offset=Number(/position (\d+)/u.exec(String(error.message))?.[1]??-1);
+  }
+  if(!Number.isSafeInteger(offset)||offset<0)return null;
+  // Local grammar repair only. Search outside strings near the parser's
+  // failure, insert ONE container close, and require one distinct parse tree.
+  // Nothing is deleted or inferred; schema/Rules validation still follows.
+  const start=Math.max(0,offset-160),end=Math.min(text.length,offset+16),candidates=new Map();
+  let quoted=false,escaped=false;
+  for(let i=0;i<=end;i++){
+    if(i>=start&&!quoted&&[',','}',']'].includes(text[i]))for(const delimiter of [']','}']){
+      const candidate=text.slice(0,i)+delimiter+text.slice(i);
+      try{
+        const parsed=JSON.parse(candidate);
+        if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))
+          candidates.set(JSON.stringify(parsed),{text:candidate,offset:i,delimiter});
+      }catch{}
+    }
+    const char=text[i];
+    if(quoted){if(escaped)escaped=false;else if(char==='\\')escaped=true;else if(char==='"')quoted=false;}
+    else if(char==='"')quoted=true;
+  }
+  if(candidates.size!==1)return null;
+  const recovered=candidates.values().next().value;
+  return {text:recovered.text,kind:'single_missing_container_close_v1',evidence:{
+    schemaVersion:'provider_json_single_missing_container_close_v1',originalTextHash:hash(text),
+    normalizedTextHash:hash(recovered.text),insertedDelimiter:recovered.delimiter,
+    insertedUtf16Offset:recovered.offset,parseErrorUtf16Offset:offset,
+    searchStartUtf16Offset:start,searchEndUtf16Offset:end,scalarContentUnchanged:true}};
+}
 export function normalizeProviderJsonDocumentV1(value) {
   const legacy = normalizeLegacyDocument(value);
   try { JSON.parse(legacy.text); return legacy; } catch {}
   const text = normalizeSingleJsonFenceV1(value).text;
   if (typeof text !== 'string' || !text.trimStart().startsWith('{') || !text.trimEnd().endsWith('}')) return legacy;
+  const containerCloseRecovered=recoverSingleMissingContainerClose(text);
+  if(containerCloseRecovered)return containerCloseRecovered;
+  const missingCloseRecovered = recoverSingleMissingObjectCloseBeforeArray(text);
+  if (missingCloseRecovered) return missingCloseRecovered;
+  const unmatchedCloseRecovered = recoverSingleUnmatchedClosingDelimiter(text);
+  if (unmatchedCloseRecovered) return unmatchedCloseRecovered;
   let trailingOffset = null;
   try { JSON.parse(text); }
   catch (error) {
@@ -95,10 +215,10 @@ export function normalizeProviderJsonDocumentV1(value) {
     try {
       const parsed = JSON.parse(prefix);
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-        && /^\}+$/.test(suffix)) {
-        return { text: prefix, kind: 'redundant_trailing_object_closers_v1',
+        && /^[}\]]+$/.test(suffix)) {
+        return { text: prefix, kind: 'redundant_trailing_container_closers_v2',
           evidence: {
-            schemaVersion: 'provider_json_trailing_delimiter_recovery_v1',
+            schemaVersion: 'provider_json_trailing_delimiter_recovery_v2',
             originalTextHash: hash(text), normalizedTextHash: hash(prefix),
             removedUtf16Offset: trailingOffset,
             removedClosingDelimiterCount: suffix.length,

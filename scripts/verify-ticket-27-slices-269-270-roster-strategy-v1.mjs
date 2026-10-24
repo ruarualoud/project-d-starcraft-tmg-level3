@@ -259,10 +259,10 @@ if (process.argv.includes("--narrative-recovery-only")) {
   // Contract set version and integrity.
   miniCheck(verifyRosterStrategistOutputContractSetV1(
       ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1) === true
-    && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.5.0"
+    && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.5.2"
     && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .narrativeTransportCeilingIsOverallSafetyBound === true,
-    "the contract set must be versioned 1.5.0 with the narrative-capacity "
+    "the contract set must be versioned 1.5.2 with the narrative-capacity "
       + "policy invariants");
   process.stdout.write(`${JSON.stringify({
     schema: "ticket27_slices_269_270_narrative_recovery_report_v1",
@@ -777,7 +777,7 @@ function followUpWire(overrides = {}) {
 // schema/Rules validation still run afterwards.
 check(269, verifyRosterStrategistOutputContractSetV1(
     ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1) === true
-  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.5.0"
+  && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.version === "1.5.2"
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .bindsOnlyFieldNamesTypesBoundsAndEnums === true
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
@@ -786,7 +786,7 @@ check(269, verifyRosterStrategistOutputContractSetV1(
       .identifierEnumLegalityIdentityBoundsUnchanged === true
   && ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_V1.invariants
       .neverBindsRosterContentCandidateIdentityOrStrategy === true,
-  "the strict output contract set must be explicit, versioned (1.5.0 after "
+  "the strict output contract set must be explicit, versioned (1.5.2 after "
     + "the 269.9 integer-domain and 269.10 instance-identity repairs, the "
     + "269.13 schedule-grounding and 269.14 budget-utilization contracts, "
     + "the 269.17 narrative-capacity policy and the Slice-272 formal budget "
@@ -2316,6 +2316,63 @@ check(269, rescuedBudgetError === null
   && rescuedBudgetSession?.plan?.budgetAcceptance?.mineralSpent === 1870,
   "a severe-underspend legal first batch must receive a bounded second "
     + "proposal round and recover to a formal-budget-compliant active plan");
+
+// A 1870/2000 candidate clears the historical 9/10 floor, but it is not a
+// completed full-budget Agent roster when a Rules-legal 2000 option exists.
+// The product's explicit exact-budget target must reject that selection.
+let declinedExactBudgetError = null;
+try {
+  await strategistA.planRoster(sessionInput, {
+    requireExactBudgetForActive: true,
+    deliberation: createMock({
+      candidate_proposals: () => proposalsOutput(),
+      comparison_selection: () => comparisonOutput(),
+    }),
+  });
+} catch (error) {
+  declinedExactBudgetError = error;
+}
+check(269, String(declinedExactBudgetError?.message || "").includes(
+  "agent_exact_budget_candidate_available_declined"),
+"when a Rules-legal 2000/2000 candidate is available, 1870/2000 may not "
+  + "close as the Agent-generated full-budget plan");
+const exactBudgetSession = await strategistA.planRoster(sessionInput, {
+  requireExactBudgetForActive: true,
+  deliberation: createMock({
+    candidate_proposals: () => proposalsOutput(),
+    comparison_selection: () => nearCapComparisonOutput(),
+  }),
+});
+check(269, exactBudgetSession.plan.planStatus === "active"
+  && exactBudgetSession.finalVerdict.summary.mineralSpent === 2000
+  && exactBudgetSession.sessionReceipt.agentExactBudgetTargetMet === true
+  && exactBudgetSession.sessionReceipt.agentExactBudgetShortfallMinerals === 0,
+"the versioned Agent completion policy accepts the Rules-legal exact "
+  + "2000/2000 choice without changing the historical floor contract");
+const leanOnlyOutput = () => ({ ...proposalsOutput(),
+  proposals: proposalsOutput().proposals.filter((proposal) =>
+    proposal.candidateId === "cand-lean"
+      || proposal.candidateId === "cand-over") });
+const leanOnlyComparison = () => {
+  const base = comparisonOutput();
+  return { ...base, resourceUtilization: {
+    ...base.resourceUtilization, nearCapCandidateAvailable: false } };
+};
+const leanOnlySession = await strategistA.planRoster(sessionInput, {
+  requireExactBudgetForActive: true,
+  maxProposalRounds: 1,
+  deliberation: createMock({
+    candidate_proposals: leanOnlyOutput,
+    comparison_selection: leanOnlyComparison,
+  }),
+});
+check(269, leanOnlySession.plan.planStatus === "draft"
+  && leanOnlySession.plan.budgetAcceptance.status === "met"
+  && leanOnlySession.sessionReceipt.agentExactBudgetTargetMet === false
+  && leanOnlySession.sessionReceipt.agentExactBudgetShortfallMinerals === 130
+  && leanOnlySession.sessionReceipt.agentExactBudgetClosedAsDraft === true,
+"a 1870/2000 selection without an exact proposal remains a legal draft, "
+  + "never an Agent-complete roster, despite the historical 90% floor");
 
 // Declining a compliant candidate for a severe-underspend one fails closed
 // even with a declared near-cap justification: the floor is not waivable.

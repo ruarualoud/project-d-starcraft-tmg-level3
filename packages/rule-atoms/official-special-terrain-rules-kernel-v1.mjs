@@ -1,5 +1,10 @@
-import { hashStarcraftTmgContract } from
+import { hashStarcraftTmgContract, canonicalStarcraftTmgJson,
+  STARCRAFT_TMG_HASH_ALGORITHM } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { constants as bufferConstants } from "node:buffer";
+import { createHash } from "node:crypto";
+import { normalizeOfficialRectangleUnionFootprintCellsV1, officialRectangleUnionCoversBasesV1 } from
+  "./official-footprint-rectangle-union-geometry-v1.mjs";
 import { verifyOfficialTerrainLosDataBundleV1 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
 import { certifyOfficialFlyingRulePlanV1 } from
@@ -10,6 +15,10 @@ import {
   createOfficialTerrainPieceV1,
   evaluateOfficialLeadingModelTerrainV1,
   evaluateOfficialTerrainLineOfSightV1,
+  evaluateOfficialTerrainLineOfSightBatchV1,
+  evaluateOfficialTerrainLineOfSightBatchOutcomesV1,
+  visitNativeOfficialTerrainLosOutcomesV1,
+  canonicalNativeTerrainLineOfSightAssessmentsV1,
 } from "./official-terrain-los-rules-kernel-v1.mjs";
 
 export const OFFICIAL_SPECIAL_TERRAIN_RULES_KERNEL_SCHEMA =
@@ -19,6 +28,10 @@ export const OFFICIAL_SPECIAL_TERRAIN_AGREEMENT_SCHEMA =
   "starcraft_tmg_official_special_terrain_agreement_v1";
 
 const TOLERANCE = 1;
+// Only native, fully sealed and frozen JSON results can prove the aggregate's
+// serialization size without normalizing/copying its whole assessment tree.
+const NATIVE_GRASS_LOS_RESULTS = new WeakSet();
+const NATIVE_GRASS_LOS_SERIALIZATIONS = new WeakMap();
 const ELEVATIONS = Object.freeze(["ground", "mid", "high"]);
 const MOVEMENT_TYPES = Object.freeze([
   "move", "run", "charge", "disengage", "close_ranks",
@@ -88,6 +101,7 @@ function terrainBody(terrain) {
   return { schema: terrain.schema, id: terrain.id,
     terrainKind: terrain.terrainKind, size: terrain.size,
     footprint: terrain.footprint,
+    ...(terrain.footprintCells ? { footprintCells: terrain.footprintCells } : {}),
     standableHorizontalSurface: terrain.standableHorizontalSurface,
     setupAgreement: terrain.setupAgreement,
     rulesTruth: terrain.rulesTruth, trainingTruth: terrain.trainingTruth };
@@ -96,6 +110,7 @@ function setupAgreementBody(agreement) {
   return { schema: agreement.schema,
     footprintAgreed: agreement.footprintAgreed,
     footprintHash: agreement.footprintHash,
+    ...(agreement.footprintCellsHash ? { footprintCellsHash: agreement.footprintCellsHash } : {}),
     openingDenominatorComplete: agreement.openingDenominatorComplete,
     openings: agreement.openings,
     agreedDuringBattlefieldSetup: agreement.agreedDuringBattlefieldSetup,
@@ -107,6 +122,8 @@ function verifyTerrainPiece(raw) {
   const size = Number(raw?.size);
   const footprint = rectangle(raw?.footprint,
     "SPECIAL_TERRAIN_FOOTPRINT_INVALID", terrainId);
+  const footprintCells = raw?.footprintCells === undefined ? undefined
+    : normalizeOfficialRectangleUnionFootprintCellsV1(raw.footprintCells, footprint);
   if (!terrainId || raw?.schema !== "starcraft_tmg_official_terrain_piece_v1"
     || !["ordinary", "grass", "impassable", "ramp"].includes(terrainKind)
     || !Number.isSafeInteger(size) || size < 0 || size > 9
@@ -125,6 +142,7 @@ function verifyTerrainPiece(raw) {
     fail("SPECIAL_TERRAIN_PIECE_INVALID", terrainId);
   }
   return { terrainId, terrainKind, size, footprint,
+    ...(footprintCells ? { footprintCells } : {}),
     standableHorizontalSurface: raw.standableHorizontalSurface === true,
     terrainHash: raw.terrainHash, raw };
 }
@@ -333,7 +351,7 @@ function verifyContext(state) {
     const entry = agreementById.get(terrainId);
     if (entry.terrainKind !== terrainPiece.terrainKind
       || entry.accessPoints.some((accessPoint) => (
-        !rectanglesOverlap(accessPoint.footprint, terrainPiece.footprint)
+        !(terrainPiece.footprintCells || [terrainPiece.footprint]).some(cell => rectanglesOverlap(accessPoint.footprint, cell))
         || !entry.adjacentElevationPairs.some((pair) => (
           pair.join(":") === accessPoint.connects.join(":")
         ))
@@ -413,7 +431,10 @@ function adaptedGapState(state, context) {
 }
 function adaptedLineOfSightState(state, context) {
   const clone = structuredClone(state);
-  clone.board.terrain = context.terrain.map((terrain) => (
+  clone.board.terrain = context.terrain.flatMap((terrain) => (
+    terrain.footprintCells ? terrain.footprintCells.map((footprint, index) =>
+      createOfficialTerrainPieceV1({ id: `${terrain.terrainId}:sight-cell-${index + 1}`, terrainKind: "ordinary",
+        size: terrain.size, footprint, standableHorizontalSurface: terrain.standableHorizontalSurface, openings: [] })) :
     terrain.terrainKind === "ordinary" ? structuredClone(terrain.raw)
       : createOfficialTerrainPieceV1({ id: terrain.terrainId, terrainKind: "ordinary",
         size: terrain.size, footprint: terrain.footprint,
@@ -509,11 +530,11 @@ function evaluateMovement(input, context, profile) {
   const terrainInteractions = [];
   for (const terrain of context.terrain) {
     const agreementEntry = context.agreementById.get(terrain.terrainId);
-    const pathIntersects = pathSweepsRectangle(path, leading.radiusMilliInches,
-      terrain.footprint);
+    const actualCells = terrain.footprintCells || [terrain.footprint];
+    const pathIntersects = actualCells.some(cell => pathSweepsRectangle(path, leading.radiusMilliInches, cell));
     const endpointModelIds = placements.filter((entry) => (
-      pointRectangleDistance(entry.point, terrain.footprint)
-        < entry.radiusMilliInches - TOLERANCE
+      actualCells.some(cell => pointRectangleDistance(entry.point, cell)
+        < entry.radiusMilliInches - TOLERANCE)
     )).map((entry) => entry.modelId);
     if (terrain.terrainKind === "impassable"
       && ((!flying && pathIntersects) || endpointModelIds.length > 0)) {
@@ -532,10 +553,10 @@ function evaluateMovement(input, context, profile) {
         )) used.add(accessPointId);
       }
       accessPointIdsUsedForTransit = [...used].sort();
-      const startInside = pointInside(path[0], terrain.footprint);
-      const endInside = pointInside(path.at(-1), terrain.footprint);
+      const startInside = actualCells.some(cell => pointInside(path[0], cell));
+      const endInside = actualCells.some(cell => pointInside(path.at(-1), cell));
       const insidePathPoints = path.filter((entry) => (
-        pointInside(entry, terrain.footprint)
+        actualCells.some(cell => pointInside(entry, cell))
       ));
       const requiredAccessPointCount = terrain.terrainKind === "ramp"
         ? startInside && endInside ? 0 : startInside || endInside ? 1 : 2
@@ -554,7 +575,10 @@ function evaluateMovement(input, context, profile) {
       for (const modelId of endpointModelIds) {
         const placement = placements.find((entry) => entry.modelId === modelId);
         if (placement.elevation !== "mid"
-          || !placement.supportTerrainIds.includes(terrain.terrainId)) {
+          || !placement.supportTerrainIds.includes(terrain.terrainId)
+          || terrain.footprintCells && !officialRectangleUnionCoversBasesV1(terrain.footprintCells, [{
+            shape: "round", center: placement.point, radiusMilliInches: placement.radiusMilliInches,
+          }])) {
           fail("SPECIAL_TERRAIN_RAMP_ENDPOINT_INVALID", modelId);
         }
       }
@@ -653,11 +677,55 @@ function evaluateMovement(input, context, profile) {
   };
   return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
 }
-function evaluateGrassLineOfSight(input, context, adaptedState = null) {
+function sealGrassResultWithScalarIdentity(body, scalarPlanId) {
+  // Only this privately assembled grass-result body enters here. Its root
+  // fields are fixed, named non-index keys; each value uses the SAME canonical
+  // serializer and both identities use the SAME SHA-256 algorithm. Stream the
+  // exact canonical root bytes. Hash the common prefix once and fork the native
+  // digest only at planId, where the two identities first differ.
+  const primaryHash = createHash(STARCRAFT_TMG_HASH_ALGORITHM);
+  let scalarHash = null;
+  primaryHash.update("{");
+  let canonicalBodyLength = 2;
+  let separator = "";
+  for (const key of Object.keys(body).sort()) {
+    if (body[key] === undefined) continue;
+    const prefix = `${separator}${JSON.stringify(key)}:`;
+    const value = key === "assessments" || key === "grassAssessments"
+      ? canonicalNativeTerrainLineOfSightAssessmentsV1(body[key])
+      : canonicalStarcraftTmgJson(body[key]);
+    if (key === "planId" && scalarPlanId) scalarHash = primaryHash.copy();
+    primaryHash.update(prefix).update(value);
+    scalarHash?.update(prefix).update(key === "planId"
+      ? JSON.stringify(scalarPlanId) : value);
+    canonicalBodyLength += prefix.length + value.length;
+    separator = ",";
+  }
+  primaryHash.update("}");
+  scalarHash?.update("}");
+  const primary = freezeDeep({ ...body, resultHash: primaryHash.digest("hex") });
+  if (!scalarHash) return primary;
+  const scalar = freezeDeep({ ...body, planId: scalarPlanId,
+    resultHash: scalarHash.digest("hex") });
+  // Adding the one resultHash property changes length independently of key
+  // order. These native-only lengths can prove capacity without serializing
+  // hundreds of MB again. No caller can supply a trusted length or result.
+  NATIVE_GRASS_LOS_SERIALIZATIONS.set(primary, {
+    scalarEquivalentResult: scalar,
+    nativeBodySerializationCount: 1,
+    nativeResultJsonCharacterLength: canonicalBodyLength
+      + 1 + JSON.stringify("resultHash").length + 1
+      + JSON.stringify(primary.resultHash).length,
+  });
+  return primary;
+}
+
+function evaluateGrassLineOfSight(input, context, adaptedState = null,
+  preparedResult = null) {
   const { state, actor, plan, dataBundle } = input;
   const target = state.pieces?.find((piece) => piece.id === plan.targetUnitId);
   if (!activePiece(target)) fail("SPECIAL_TERRAIN_LOS_TARGET_INVALID");
-  const result = evaluateOfficialTerrainLineOfSightV1({
+  const result = preparedResult || evaluateOfficialTerrainLineOfSightV1({
     state: adaptedState || adaptedLineOfSightState(state, context),
     attacker: actor, attackerModelId: plan.attackerModelId,
     target, targetModelId: plan.targetModelId, dataBundle,
@@ -683,15 +751,52 @@ function evaluateGrassLineOfSight(input, context, adaptedState = null) {
     rulesTruth: "official_grass_line_of_sight_conformance",
     trainingTruth: false,
   };
-  if (!body.planId || grassAssessments.length === 0) {
+  // This adapter also resolves deferred impassable/ramp terrain. After
+  // movement removes the last grass piece, an empty grass subset is a
+  // valid ordinary-terrain LOS result, not an invalid plan.
+  if (!body.planId) {
     fail("SPECIAL_TERRAIN_GRASS_LOS_PLAN_INVALID");
   }
-  return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
+  const scalarPlanId = String(input.scalarFallbackPlanId || "");
+  const sealed = sealGrassResultWithScalarIdentity(body, scalarPlanId);
+  NATIVE_GRASS_LOS_RESULTS.add(sealed);
+  return sealed;
 }
 
-export function evaluateOfficialSpecialTerrainLineOfSightBatchV1(input = {}) {
+function rejectProvablyOversizedNativeLosAggregate(results, input) {
+  if (!results.every(entry => entry.result === null
+    || NATIVE_GRASS_LOS_RESULTS.has(entry.result))) return;
+  // The native results are plain JSON values already accepted by canonical
+  // hashing. Sorting object keys cannot change their JSON character count.
+  // Count one bounded entry at a time, not one giant duplicate object/string.
+  // The results ARRAY ALONE is a lower bound for the complete batch body.
+  let lowerBoundChars = 2 + Math.max(0, results.length - 1);
+  for (const entry of results) {
+    const length = NATIVE_GRASS_LOS_SERIALIZATIONS.get(entry.result)
+      ?.nativeResultJsonCharacterLength;
+    lowerBoundChars += length === undefined ? JSON.stringify(entry).length
+      : JSON.stringify({ ...entry, result: null }).length - 4 + length;
+    // A partial sum already above the actual runtime cap is sufficient proof.
+    // All physical pairs have completed before this capacity check starts.
+    if (lowerBoundChars > bufferConstants.MAX_STRING_LENGTH) break;
+  }
+  if (lowerBoundChars <= bufferConstants.MAX_STRING_LENGTH) return;
+  try { input.observeCapacityDiagnostic?.({
+    aggregateSealSkippedForProvenCapacity: true,
+    aggregateLowerBoundChars: lowerBoundChars,
+    maximumStringLength: bufferConstants.MAX_STRING_LENGTH,
+  }); } catch { /* diagnostics never change the capacity outcome */ }
+  // Same actual JS capacity failure as the normal aggregate seal; all native
+  // pairs have ALREADY completed. No data/search limit or alternate hash.
+  throw new RangeError("Invalid string length");
+}
+
+function prepareNativeLineOfSightBatch(input) {
   const state = input.state;
   const queries = input.queries;
+  const isolatePairFailures = input.isolatePairFailures === true;
+  const cachedResults = input.cachedResults instanceof Map
+    ? input.cachedResults : null;
   if (!object(state) || !Array.isArray(queries) || queries.length < 1) {
     fail("SPECIAL_TERRAIN_LOS_BATCH_INVALID");
   }
@@ -699,7 +804,7 @@ export function evaluateOfficialSpecialTerrainLineOfSightBatchV1(input = {}) {
   const adaptedState = adaptedLineOfSightState(state, context);
   const verifiedActorIds = new Set();
   const seenQueryIds = new Set();
-  const results = queries.map((query) => {
+  const checkedQueries = queries.map((query) => {
     const queryId = String(query?.queryId || "").trim();
     const actor = state.pieces?.find((piece) => piece.id === query.actorUnitId);
     const plan = {
@@ -716,13 +821,136 @@ export function evaluateOfficialSpecialTerrainLineOfSightBatchV1(input = {}) {
       officialProfile(actor, input.dataBundle);
       verifiedActorIds.add(actor.id);
     }
-    return {
-      queryId,
-      result: evaluateGrassLineOfSight({
-        state, actor, plan, dataBundle: input.dataBundle,
-      }, context, adaptedState),
-    };
+    const cached = cachedResults?.get(queryId);
+    const samePhysicalPair = cached?.actorUnitId === query.actorUnitId
+      && cached?.attackerModelId === plan.attackerModelId
+      && cached?.targetUnitId === plan.targetUnitId
+      && cached?.targetModelId === plan.targetModelId
+      && (isolatePairFailures || !cached?.failure);
+    return { queryId, actor, plan, cached, samePhysicalPair,
+      scalarFallbackPlanId: String(query.scalarFallbackPlanId || "") };
   });
+  const pending = checkedQueries.filter((query) => !query.samePhysicalPair);
+  return { state, context, adaptedState, checkedQueries, pending,
+    isolatePairFailures, cachedResults };
+}
+
+// Internal CPU boundary: validate the COMPLETE request before partitioning it.
+// Duplicate IDs and global source/actor/target failures must not become valid
+// merely because they were sent to different workers.
+export function validateNativeSpecialTerrainLosBatchV1(input = {}) {
+  const prepared = prepareNativeLineOfSightBatch(input);
+  for (const { plan } of prepared.pending) {
+    const target = prepared.state.pieces?.find(piece => piece.id === plan.targetUnitId);
+    if (!activePiece(target)) fail("SPECIAL_TERRAIN_LOS_TARGET_INVALID");
+  }
+}
+
+// Same native evaluations, but no aggregate seal. Workers retain these FULL
+// sealed pair results; compact tactical rows are projections, not Rules truth.
+export function evaluateNativeSpecialTerrainLosEntriesV1(input = {}) {
+  const { state, context, adaptedState, checkedQueries, pending,
+    isolatePairFailures, cachedResults } = prepareNativeLineOfSightBatch(input);
+  const evaluateOrdinaryBatch = isolatePairFailures
+    ? evaluateOfficialTerrainLineOfSightBatchOutcomesV1
+    : evaluateOfficialTerrainLineOfSightBatchV1;
+  const ordinaryResults = pending.length === 0 ? []
+    : evaluateOrdinaryBatch({ state: adaptedState,
+      dataBundle: input.dataBundle,
+      queries: pending.map(({ actor, plan }) => {
+        const target = state.pieces?.find((piece) => piece.id === plan.targetUnitId);
+        if (!activePiece(target)) fail("SPECIAL_TERRAIN_LOS_TARGET_INVALID");
+        return { attacker: actor, attackerModelId: plan.attackerModelId,
+          target, targetModelId: plan.targetModelId };
+      }),
+    });
+  let ordinaryIndex = 0;
+  const results = checkedQueries.map(({ queryId, actor, plan, cached,
+    samePhysicalPair, scalarFallbackPlanId }) => {
+    let result = samePhysicalPair ? cached.result : null;
+    let failure = samePhysicalPair ? cached.failure || null : null;
+    if (!samePhysicalPair) {
+      const ordinary = ordinaryResults[ordinaryIndex++];
+      failure = isolatePairFailures ? ordinary.failure : null;
+      if (!failure) {
+        result = evaluateGrassLineOfSight({
+          state, actor, plan, dataBundle: input.dataBundle, scalarFallbackPlanId,
+        }, context, adaptedState, isolatePairFailures ? ordinary.result : ordinary);
+      }
+    }
+    if (!samePhysicalPair && cachedResults && cachedResults.size < 8192) {
+      cachedResults.set(queryId, {
+        actorUnitId: actor.id,
+        attackerModelId: plan.attackerModelId,
+        targetUnitId: plan.targetUnitId,
+        targetModelId: plan.targetModelId,
+        result,
+        ...(failure ? { failure } : {}),
+      });
+    }
+    const completed = { queryId, result, ...(failure ? { failure } : {}) };
+    // Report only actually completed native work, before the aggregate seal.
+    // A capacity failure while serializing that seal must not force consumers
+    // to recalculate these same physical pairs. This observer supplies no
+    // prepared state/results to the kernel and cannot change a rules outcome.
+    try { input.observeCompletedPair?.(Object.freeze({ ...completed,
+      ...(NATIVE_GRASS_LOS_SERIALIZATIONS.get(result) || {}),
+    })); }
+    catch { /* observation must not reject completed rules work */ }
+    return completed;
+  });
+  return results;
+}
+
+export function visitNativeSpecialTerrainLosEntriesV1(input = {}) {
+  // Existing reusable/external cache semantics stay in the original batch.
+  if (input.cachedResults instanceof Map) {
+    evaluateNativeSpecialTerrainLosEntriesV1(input);
+    return;
+  }
+  const { state, context, adaptedState, checkedQueries } = prepareNativeLineOfSightBatch(input);
+  const ordinaryQueries = checkedQueries.map(({ actor, plan }) => {
+    const target = state.pieces?.find(piece => piece.id === plan.targetUnitId);
+    if (!activePiece(target)) fail("SPECIAL_TERRAIN_LOS_TARGET_INVALID");
+    return { attacker: actor, attackerModelId: plan.attackerModelId,
+      target, targetModelId: plan.targetModelId };
+  });
+  visitNativeOfficialTerrainLosOutcomesV1({ state: adaptedState,
+    dataBundle: input.dataBundle, queries: ordinaryQueries }, (ordinary, index) => {
+    const { queryId, actor, plan, scalarFallbackPlanId } = checkedQueries[index];
+    const result = ordinary.failure ? null : evaluateGrassLineOfSight({
+      state, actor, plan, dataBundle: input.dataBundle, scalarFallbackPlanId,
+    }, context, adaptedState, ordinary.result);
+    const completed = { queryId, result,
+      ...(ordinary.failure ? { failure: ordinary.failure } : {}) };
+    try { input.observeCompletedPair?.(Object.freeze({ ...completed,
+      ...(NATIVE_GRASS_LOS_SERIALIZATIONS.get(result) || {}),
+    })); } catch { /* observations never alter native pair facts */ }
+    // No full ordinaryResults/results array survives this iteration. Native
+    // result/assessment WeakMaps do not retain unreferenced pair trees either.
+  });
+}
+
+// Internal worker text transport uses the native frozen assessments' existing
+// canonical bytes. Foreign values retain the ordinary canonical serializer.
+export function canonicalNativeSpecialTerrainLosEntryV1(entry) {
+  if (!NATIVE_GRASS_LOS_RESULTS.has(entry?.result)) {
+    return canonicalStarcraftTmgJson(entry);
+  }
+  const result = entry.result;
+  const resultText = "{" + Object.keys(result).sort()
+    .filter(key => result[key] !== undefined)
+    .map(key => `${JSON.stringify(key)}:${key === "assessments" || key === "grassAssessments"
+      ? canonicalNativeTerrainLineOfSightAssessmentsV1(result[key])
+      : canonicalStarcraftTmgJson(result[key])}`).join(",") + "}";
+  return "{" + Object.keys(entry).sort()
+    .filter(key => entry[key] !== undefined)
+    .map(key => `${JSON.stringify(key)}:${key === "result"
+      ? resultText : canonicalStarcraftTmgJson(entry[key])}`).join(",") + "}";
+}
+
+export function evaluateOfficialSpecialTerrainLineOfSightBatchV1(input = {}) {
+  const results = evaluateNativeSpecialTerrainLosEntriesV1(input);
   const body = {
     schema: "starcraft_tmg_official_special_terrain_los_batch_v1",
     queryCount: results.length,
@@ -730,10 +958,15 @@ export function evaluateOfficialSpecialTerrainLineOfSightBatchV1(input = {}) {
     results,
     contextVerifiedOnce: true,
     adaptedStateBuiltOnce: true,
+    ...(results.some((entry) => entry.failure) ? {
+      isolatedPairFailureCount: results.filter((entry) => entry.failure).length,
+      failedPairsRemainUnknown: true,
+    } : {}),
     everyModelPairStillEvaluatedByOfficialTerrainLos: true,
     rulesTruth: "official_grass_line_of_sight_batch_conformance",
     trainingTruth: false,
   };
+  rejectProvablyOversizedNativeLosAggregate(results, input);
   return freezeDeep({ ...body, batchHash: hashStarcraftTmgContract(body) });
 }
 

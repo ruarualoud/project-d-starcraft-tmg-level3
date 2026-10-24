@@ -9,6 +9,18 @@ export const STARCRAFT_TMG_PROVIDER_EGRESS_POLICY_VERSION =
 export const STARCRAFT_TMG_PROVIDER_EGRESS_TRANSPORT_VERSION =
   "starcraft_tmg_provider_egress_transport_v1";
 
+// Bytes are not model context tokens. Keep one artifact capacity for storage
+// and conservative reservation, and allow the outer wire JSON to escape the
+// artifact once more. Actual Provider context/output policies stay unchanged.
+export const STARCRAFT_TMG_PROVIDER_PROMPT_ARTIFACT_MAX_BYTES = 8 * 1024 * 1024;
+export const STARCRAFT_TMG_PROVIDER_INPUT_HEADROOM_UNITS = 4_096;
+export const STARCRAFT_TMG_PROVIDER_EGRESS_MAX_REQUEST_BYTES =
+  2 * STARCRAFT_TMG_PROVIDER_PROMPT_ARTIFACT_MAX_BYTES
+    + STARCRAFT_TMG_PROVIDER_INPUT_HEADROOM_UNITS;
+export const STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS =
+  STARCRAFT_TMG_PROVIDER_PROMPT_ARTIFACT_MAX_BYTES
+    + STARCRAFT_TMG_PROVIDER_INPUT_HEADROOM_UNITS;
+
 const TRANSPORT_PROGRESS_PHASES = new Set([
   "tcp_connect", "tls_handshake", "writing_request",
   "waiting_response_headers", "reading_response_body",
@@ -75,7 +87,7 @@ function integer(value, field, maximum) {
 }
 
 export function assertStarcraftTmgProviderTransportProgressV1(value) {
-  exactFields(value, new Set(["phase", "elapsedMs", "milestonesMs"]),
+  exactFields(value, new Set(["phase", "elapsedMs", "milestonesMs", "responseBody", "timeoutCause"]),
     "transport progress");
   if (!TRANSPORT_PROGRESS_PHASES.has(value.phase)
     || !Number.isSafeInteger(value.elapsedMs) || value.elapsedMs < 0
@@ -93,6 +105,39 @@ export function assertStarcraftTmgProviderTransportProgressV1(value) {
     if (millis !== null && (!Number.isSafeInteger(millis) || millis < 0
       || millis > value.elapsedMs)) {
       throw new TypeError(`transport milestone ${field} is invalid`);
+    }
+  }
+  if (value.timeoutCause !== undefined
+    && !["total_deadline", "socket_inactivity"].includes(value.timeoutCause)) {
+    throw new TypeError("transport timeout cause is invalid");
+  }
+  // Optional for historical receipts and other existing transports. Only
+  // numeric observations cross the worker boundary, never response text.
+  if (value.responseBody !== undefined) {
+    const body = value.responseBody;
+    const fields = new Set(["receivedBytes", "nonWhitespaceBytes", "chunkCount",
+      "firstByteMs", "lastByteMs", "lastNonWhitespaceByteMs"]);
+    exactFields(body, fields, "transport response body progress");
+    if (Object.keys(body).length !== fields.size) throw new TypeError("transport response body progress is incomplete");
+    for (const field of ["receivedBytes", "nonWhitespaceBytes", "chunkCount"]) {
+      if (!Number.isSafeInteger(body[field]) || body[field] < 0) throw new TypeError(`transport response body ${field} is invalid`);
+    }
+    if (body.nonWhitespaceBytes > body.receivedBytes || body.chunkCount > body.receivedBytes) {
+      throw new TypeError("transport response body counts are inconsistent");
+    }
+    for (const field of ["firstByteMs", "lastByteMs", "lastNonWhitespaceByteMs"]) {
+      if (body[field] !== null && (!Number.isSafeInteger(body[field]) || body[field] < 0
+        || body[field] > value.elapsedMs)) throw new TypeError(`transport response body ${field} is invalid`);
+    }
+    if ((body.receivedBytes === 0) !== (body.chunkCount === 0)
+      || (body.receivedBytes === 0) !== (body.firstByteMs === null)
+      || (body.receivedBytes === 0) !== (body.lastByteMs === null)
+      || (body.nonWhitespaceBytes === 0) !== (body.lastNonWhitespaceByteMs === null)
+      || (body.receivedBytes > 0 && (value.milestonesMs.responseHeaders === null
+        || body.firstByteMs < value.milestonesMs.responseHeaders || body.lastByteMs < body.firstByteMs))
+      || (body.lastNonWhitespaceByteMs !== null && (body.lastNonWhitespaceByteMs < body.firstByteMs
+        || body.lastNonWhitespaceByteMs > body.lastByteMs))) {
+      throw new TypeError("transport response body timestamps are inconsistent");
     }
   }
   return freeze(clone(value));
@@ -186,9 +231,11 @@ export function assertStarcraftTmgProviderEgressBindingV1(value) {
   boundedNumber(body.topP, "topP", 0, 1);
   integer(body.maxContextUnits, "egress maxContextUnits", 2_000_000);
   integer(body.maxOutputUnits, "egress maxOutputUnits", 1_000_000);
-  integer(body.timeoutMs, "egress timeoutMs", 300_000);
+  integer(body.timeoutMs, "egress timeoutMs", 600_000);
   return freeze(clone(value));
 }
+
+import { safeProviderDnsRecoveryV1 } from './provider-network-resilience-v1.mjs';
 
 export class StarcraftTmgProviderEgressError extends Error {
   constructor(code, details = {}) {
@@ -204,6 +251,7 @@ export class StarcraftTmgProviderEgressError extends Error {
       physicalAttempts: Number.isInteger(details.physicalAttempts)
         ? details.physicalAttempts : 0,
       automaticRetries: 0,
+      ...(details.dnsRecovery ? { dnsRecovery: safeProviderDnsRecoveryV1(details.dnsRecovery) } : {}),
       trainingTruth: false,
       ...(details.transportProgress ? {
         transportProgress: assertStarcraftTmgProviderTransportProgressV1(

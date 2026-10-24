@@ -1,4 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
+import {remainingOfficialSelectedRosterSpatialModelIdsV1} from './official-selected-roster-spatial-parameter-contract-v1.mjs';
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -15,6 +16,8 @@ import {
   evaluateOfficialPhysicalFootprintRelationV1,
   evaluateOfficialSweptPhysicalFootprintCollisionV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import { deriveOfficialSemanticSurfaceSupportV1 } from
+  "../rule-atoms/official-semantic-surface-support-v1.mjs";
 import { projectOfficialContextualSupplyValueV1 } from
   "../rule-atoms/official-contextual-supply-projection-v1.mjs";
 import { OFFICIAL_RESERVE_DEPLOY_V5_ACTION_ATOM_IDS } from
@@ -38,6 +41,12 @@ import {
 } from "./official-selected-roster-ability-runtime-v1.mjs";
 import { projectOfficialBattlefieldAssetFamilyModifiersV1 } from
   "./official-battlefield-asset-family-adapter-v1.mjs";
+import { resolveOfficialLogicalGrassRemovalV1 } from
+  "./official-logical-terrain-groups-v1.mjs";
+import { resolveOfficialLogicalTerrainSurfaceCoverageV1 } from
+  "./official-logical-terrain-surface-geometry-v1.mjs";
+import { officialRectangleUnionCoversBasesV1 } from
+  "../rule-atoms/official-footprint-rectangle-union-geometry-v1.mjs";
 
 export const OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-spatial-action-runtime-v1";
@@ -55,6 +64,48 @@ const SIDE_KEYS = new Set(["player1", "player2"]);
 const TOLERANCE = 1;
 const MAX_RAW_PATH_POINTS = 64;
 const MAX_CANONICAL_PATH_POINTS = 32;
+
+// Exact object identity only: never reuse domains across revisions, rooms or
+// mutable caller state. Weak ownership does not retain completed Room graphs.
+const immutableSpatialRecords = new WeakSet();
+const spatialEnumerationByState = new WeakMap();
+const verifiedSpatialStates = new WeakSet();
+const terrainFootprintsByRecord = new WeakMap();
+const physicalBoundsByFootprint = new WeakMap();
+function deeplyImmutableSpatialRecord(value, visiting = new WeakSet()) {
+  if (value === null || value === undefined) return true;
+  if (typeof value !== "object") return ["string", "boolean"].includes(typeof value)
+    || (typeof value === "number" && Number.isFinite(value));
+  if (immutableSpatialRecords.has(value)) return true;
+  if (!Object.isFrozen(value) || visiting.has(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  if (Array.isArray(value) ? prototype !== Array.prototype
+    : prototype !== Object.prototype && prototype !== null) return false;
+  visiting.add(value);
+  for (const key of Reflect.ownKeys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (typeof key !== "string" || !descriptor || !("value" in descriptor)
+      || !deeplyImmutableSpatialRecord(descriptor.value, visiting)) {
+      visiting.delete(value);
+      return false;
+    }
+  }
+  visiting.delete(value);
+  immutableSpatialRecords.add(value);
+  return true;
+}
+function spatialEnumerationKey(state, options) {
+  if (!object(options) || ![Object.prototype, null].includes(
+    Object.getPrototypeOf(options))) return null;
+  for (const key of ["sideKey", "includeDisabled"]) {
+    const descriptor = Object.getOwnPropertyDescriptor(options, key);
+    if (descriptor && !("value" in descriptor)) return null;
+  }
+  if (options.sideKey !== undefined && typeof options.sideKey !== "string") return null;
+  if (options.includeDisabled !== undefined
+    && typeof options.includeDisabled !== "boolean") return null;
+  return `${String(options.sideKey || state.activeSideKey)}:${options.includeDisabled === true}`;
+}
 
 const ATOMS_BY_ACTION = Object.freeze({
   deploy: OFFICIAL_RESERVE_DEPLOY_V5_ACTION_ATOM_IDS,
@@ -204,6 +255,16 @@ function terrainRectangle(terrain) {
   }
   return { minX, maxX, minY, maxY };
 }
+function terrainPhysicalFootprints(terrain) {
+  const cached = terrainFootprintsByRecord.get(terrain);
+  if (cached) return cached;
+  const footprints = (terrain.footprintCells || [terrain.footprint]).map((footprint, index) =>
+    terrainPhysicalFootprint({ ...terrain, id: `${terrain.id}:geometry-${index}`, footprint }));
+  if (deeplyImmutableSpatialRecord(terrain)) {
+    terrainFootprintsByRecord.set(terrain, Object.freeze(footprints));
+  }
+  return footprints;
+}
 function terrainPhysicalFootprint(terrain) {
   const rectangle = terrainRectangle(terrain);
   return createOfficialPhysicalFootprintV1({
@@ -231,13 +292,67 @@ function modelFootprintAt(state, piece, model, value) {
     },
   });
 }
+// Private boolean broad phase only. Public exact Kernel results and their
+// hashes are never approximated. Every argument here is a constructed physical
+// footprint; malformed/unsupported or non-rigid inputs still reach the Kernel.
+function physicalBounds(footprint) {
+  const cached = physicalBoundsByFootprint.get(footprint);
+  if (cached) return cached;
+  let bounds;
+  if (footprint.shape === "round") {
+    const { xMilliInches: x, yMilliInches: y } = footprint.center;
+    const r = footprint.radiusMilliInches;
+    bounds = { minX: x - r, maxX: x + r, minY: y - r, maxY: y + r };
+  } else if (footprint.shape === "rectangle" && footprint.vertices?.length === 4) {
+    const xs = footprint.vertices.map(p => p.xMilliInches);
+    const ys = footprint.vertices.map(p => p.yMilliInches);
+    bounds = { minX: Math.min(...xs), maxX: Math.max(...xs),
+      minY: Math.min(...ys), maxY: Math.max(...ys) };
+  }
+  if (!bounds || !Object.values(bounds).every(Number.isFinite)) return null;
+  if (deeplyImmutableSpatialRecord(footprint)) physicalBoundsByFootprint.set(footprint, bounds);
+  return bounds;
+}
+function boundsMayTouch(left, right) {
+  return !left || !right || (left.minX <= right.maxX + TOLERANCE
+    && left.maxX >= right.minX - TOLERANCE
+    && left.minY <= right.maxY + TOLERANCE
+    && left.maxY >= right.minY - TOLERANCE);
+}
+function sweptFootprintsCollide(input) {
+  const { movingStart: start, movingEnd: end, blocker } = input;
+  if (start.shape === end.shape && start.widthMilliInches === end.widthMilliInches
+    && start.depthMilliInches === end.depthMilliInches
+    && ["round", "rectangle"].includes(start.shape)) {
+    const radius = start.shape === "round" ? start.radiusMilliInches
+      : Math.ceil(Math.hypot(start.widthMilliInches, start.depthMilliInches) / 2);
+    const sweepBounds = {
+      minX: Math.min(start.center.xMilliInches, end.center.xMilliInches) - radius,
+      maxX: Math.max(start.center.xMilliInches, end.center.xMilliInches) + radius,
+      minY: Math.min(start.center.yMilliInches, end.center.yMilliInches) - radius,
+      maxY: Math.max(start.center.yMilliInches, end.center.yMilliInches) + radius,
+    };
+    if (Object.values(sweepBounds).every(Number.isFinite)
+      && !boundsMayTouch(sweepBounds, physicalBounds(blocker))) return false;
+  }
+  return evaluateOfficialSweptPhysicalFootprintCollisionV1(input).collides;
+}
+function physicalInteriorsOverlap(left, right) {
+  return boundsMayTouch(physicalBounds(left), physicalBounds(right))
+    && evaluateOfficialPhysicalFootprintRelationV1({ left, right }).overlappingInteriors;
+}
+function physicalSeparationWithinTolerance(left, right) {
+  return boundsMayTouch(physicalBounds(left), physicalBounds(right))
+    && evaluateOfficialPhysicalFootprintRelationV1({ left, right })
+      .minimumSeparationMilliInches <= TOLERANCE;
+}
 function pathSweepsFootprint(state, piece, model, points, blocker) {
   return points.slice(1).some((entry, index) => (
-    evaluateOfficialSweptPhysicalFootprintCollisionV1({
+    sweptFootprintsCollide({
       movingStart: modelFootprintAt(state, piece, model, points[index]),
       movingEnd: modelFootprintAt(state, piece, model, entry),
       blocker,
-    }).collides
+    })
   ));
 }
 function footprintWhollyInsideRectangle(footprint, rectangle) {
@@ -285,7 +400,8 @@ function segmentIntersectsRectangle(start, end, rectangle, expansion = 0) {
   return to >= 0 && from <= 1;
 }
 function segmentBlockedByTerrain(start, end, terrain) {
-  return segmentIntersectsRectangle(start, end, terrainRectangle(terrain), 0);
+  return (terrain.footprintCells || [terrain.footprint]).some(footprint =>
+    segmentIntersectsRectangle(start, end, terrainRectangle({ ...terrain, footprint }), 0));
 }
 function pointRectangleDistance(value, rectangle) {
   const x = Math.max(rectangle.minX, Math.min(value.xMilliInches, rectangle.maxX));
@@ -416,6 +532,7 @@ function modelProfiles(piece) {
   }));
 }
 function verifyRuntimeState(state) {
+  if (verifiedSpatialStates.has(state)) return;
   if (!object(state) || !Array.isArray(state.pieces) || !object(state.board)
     || !["Skirmish", "Standard"].includes(state.engagementScale)
     || !SIDE_KEYS.has(state.activeSideKey)
@@ -446,6 +563,7 @@ function verifyRuntimeState(state) {
     || !object(state.board.specialTerrainAgreement)) {
     fail("SELECTED_SPATIAL_BOARD_SCOPE_INVALID");
   }
+  if (deeplyImmutableSpatialRecord(state)) verifiedSpatialStates.add(state);
 }
 function phaseReady(state, sideKey, actionType) {
   const phase = actionType === "run" ? "assault" : "movement";
@@ -476,6 +594,9 @@ function supplyAvailable(state, sideKey) {
   }).effectiveSupply, 0);
   return { capacity, committed, available: Math.max(0, capacity - committed) };
 }
+// Read ports use the EXACT deployment validator calculation, even when the
+// selected seat currently has no enabled deploy domain. No second calculator.
+export {supplyAvailable as projectOfficialSelectedRosterDeploymentSupplyV1};
 function actionContext(state, sideKey, piece, actionType) {
   phaseReady(state, sideKey, actionType);
   if (!piece || piece.sideKey !== sideKey || !livePiece(piece)) {
@@ -632,6 +753,12 @@ function diagnostic(sideKey, pieceId, actionType, error) {
 }
 
 export function enumerateOfficialSelectedRosterSpatialActionsV1(state, options = {}) {
+  const retained = spatialEnumerationByState.get(state);
+  if (retained) {
+    const key = spatialEnumerationKey(state, options);
+    const cached = key === null ? null : retained.get(key);
+    if (cached) return cached;
+  }
   verifyRuntimeState(state);
   const sideKey = String(options.sideKey || state.activeSideKey);
   if (!SIDE_KEYS.has(sideKey)) fail("SELECTED_SPATIAL_SIDE_INVALID", sideKey);
@@ -653,7 +780,7 @@ export function enumerateOfficialSelectedRosterSpatialActionsV1(state, options =
       }
     }
   }
-  return freezeDeep({
+  const result = freezeDeep({
     schemaVersion: "starcraft_tmg_official_executable_legal_enumeration_v1",
     runtimeId: OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_ID,
     runtimeVersion: OFFICIAL_SELECTED_ROSTER_SPATIAL_ACTION_RUNTIME_VERSION,
@@ -667,6 +794,13 @@ export function enumerateOfficialSelectedRosterSpatialActionsV1(state, options =
     searchAndStrategyExcludedFromAuthority: true,
     trainingTruth: false,
   });
+  const key = spatialEnumerationKey(state, options);
+  if (key !== null && deeplyImmutableSpatialRecord(state)) {
+    const byOptions = retained || new Map();
+    byOptions.set(key, result);
+    if (!retained) spatialEnumerationByState.set(state, byOptions);
+  }
+  return result;
 }
 
 function canonicalPath(start, raw, domain, actionType) {
@@ -760,14 +894,7 @@ function verifyDeployInward(segment, path) {
   if (!inward) fail("SELECTED_SPATIAL_DEPLOY_PATH_NOT_INWARD");
 }
 function canonicalPlacements(domain, leadingModelId, raw, endpoint) {
-  if (!Array.isArray(raw)
-    || raw.length !== domain.constraints.modelProfiles.length - 1) {
-    fail("SELECTED_SPATIAL_PLACEMENT_DENOMINATOR_INVALID");
-  }
-  const remaining = new Set(domain.constraints.modelProfiles.map((entry) => entry.modelId));
-  if (!remaining.delete(leadingModelId)) {
-    fail("SELECTED_SPATIAL_LEADING_MODEL_INVALID", leadingModelId);
-  }
+  const remaining = remainingOfficialSelectedRosterSpatialModelIdsV1(domain, leadingModelId, raw);
   const rows = [{ modelId: leadingModelId,
     xMilliInches: endpoint.xMilliInches, yMilliInches: endpoint.yMilliInches,
     elevation: endpoint.elevation,
@@ -823,7 +950,7 @@ function assertPathBoardAndModels(state, piece, leadingModel, path, domain, acti
   })));
   for (let index = 1; index < path.points.length; index += 1) {
     for (const blocker of blockers) {
-      const collision = evaluateOfficialSweptPhysicalFootprintCollisionV1({
+      const collision = sweptFootprintsCollide({
         movingStart: modelFootprintAt(
           state, piece, leadingModel, path.points[index - 1],
         ),
@@ -832,7 +959,7 @@ function assertPathBoardAndModels(state, piece, leadingModel, path, domain, acti
         ),
         blocker: blocker.footprint,
       });
-      if (collision.collides) {
+      if (collision) {
         fail("SELECTED_SPATIAL_PATH_MODEL_COLLISION", blocker.modelId);
       }
     }
@@ -873,18 +1000,28 @@ function deployTerrainResult(state, piece, path) {
   const leadingModel = piece.models.find((entry) => (
     entry.id === path.leadingModelId
   ));
+  const points = path.canonicalPath.points;
+  // Reuse only within this evaluation. Prepare lazily to retain the original
+  // terrain/segment failure order and avoid constructing unvisited segments.
+  const pathFootprints = [];
+  const pathFootprintAt = (index) => (
+    pathFootprints[index] ??= modelFootprintAt(
+      state, piece, leadingModel, points[index],
+    )
+  );
   const interactions = [];
   const grassRemovedTerrainIds = [];
   for (const terrain of (state.board?.terrain || []).filter((entry) => (
     entry.isRemoved !== true && entry.isDestroyed !== true
   ))) {
-    const pathIntersects = pathSweepsFootprint(
-      state,
-      piece,
-      leadingModel,
-      path.canonicalPath.points,
-      terrainPhysicalFootprint(terrain),
-    );
+    const blockers = terrainPhysicalFootprints(terrain);
+    const pathIntersects = blockers.some(blocker => points.slice(1).some((entry, index) => (
+      sweptFootprintsCollide({
+        movingStart: pathFootprintAt(index),
+        movingEnd: pathFootprintAt(index + 1),
+        blocker,
+      })
+    )));
     const kind = String(terrain.terrainKind || "ordinary").toLowerCase();
     if (pathIntersects && kind === "grass") grassRemovedTerrainIds.push(terrain.id);
     if (pathIntersects && (kind === "impassable"
@@ -895,17 +1032,32 @@ function deployTerrainResult(state, piece, path) {
       size: Number(terrain.size), pathIntersects,
       grassRemoved: grassRemovedTerrainIds.includes(terrain.id) });
   }
+  const removal = resolveOfficialLogicalGrassRemovalV1(state, grassRemovedTerrainIds);
+  if (removal.logicalGrassRemoval) {
+    const removed = new Set(removal.grassRemovedTerrainIds);
+    interactions.forEach(row => { row.grassRemoved = removed.has(row.terrainId); });
+  }
   return seal({ schema: "starcraft_tmg_selected_deploy_terrain_result_v1",
     pieceId: piece.id, interactions,
-    grassRemovedTerrainIds: grassRemovedTerrainIds.sort(),
+    ...removal,
     currentScenarioAccessPointTransitionRequired: false,
     fullLeadingBaseSwept: true,
     rulesTruth: "official_selected_roster_deploy_terrain_adapter",
     trainingTruth: false }, "resultHash");
 }
 function geometryProjection(state, piece, placements) {
-  const projected = clone(state);
-  const actor = projected.pieces.find((entry) => entry.id === piece.id);
+  // The coherency kernel only reads cold context. Share it only after proving
+  // deep immutability, while retaining a fully private actor and writable board.
+  // Mutable callers keep the original independent full-copy behavior.
+  const shareImmutable = deeplyImmutableSpatialRecord(state);
+  const projected = shareImmutable
+    ? { ...state, pieces: [...state.pieces], board: { ...state.board } }
+    : clone(state);
+  const actorIndex = projected.pieces.findIndex((entry) => entry.id === piece.id);
+  if (shareImmutable && actorIndex >= 0) {
+    projected.pieces[actorIndex] = clone(projected.pieces[actorIndex]);
+  }
+  const actor = projected.pieces[actorIndex];
   actor.isOnField = true;
   actor.isInReserves = false;
   for (const model of actor.models) {
@@ -1011,45 +1163,108 @@ function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
   const grassRemoved = new Set();
   const interactions = [];
   const leadingModel = piece.models.find((entry) => entry.id === leadingModelId);
-  for (const terrain of (state.board.terrain || []).filter((entry) => (
+  const activeTerrain = (state.board.terrain || []).filter((entry) => (
     entry.isRemoved !== true && entry.isDestroyed !== true
-  ))) {
+  ));
+  // These bases do not change while checking terrain. Reuse their exact
+  // geometry within this evaluation; do not cache across room revisions.
+  const pathFootprints = activeTerrain.length === 0 ? [] : path.points.map(
+    (point) => modelFootprintAt(state, piece, leadingModel, point),
+  );
+  const endpointFootprints = activeTerrain.length === 0 ? [] : placements.map(
+    (placement) => ({ placement, footprint: modelFootprintAt(state, piece,
+      piece.models.find((entry) => entry.id === placement.modelId), placement) }),
+  );
+  const logicalSweep = pathFootprints.length === 0 ? null
+    : resolveOfficialLogicalTerrainSurfaceCoverageV1(state, pathFootprints);
+  const logicalEndpoints = new Map(endpointFootprints.map(({ placement, footprint }) => (
+    [placement.modelId, resolveOfficialLogicalTerrainSurfaceCoverageV1(state, [footprint])]
+  )));
+  // Native top ports belong to the physical incline, not individual stripes
+  // of the platform. Only its connected surface union can support this sweep.
+  const nativeTopTraversals = new Map();
+  if (logicalSweep) for (const use of accessPointUses.filter(use => use.accessPointId)) {
+    const owner = state.board.terrain.find(row => row.id === use.terrainId);
+    if (owner?.terrainKind !== "ramp" || !owner.footprintCells
+      || owner.overlayRole !== "premade_profile_actual_cell") continue;
+    const port = agreementEntries.find(entry => entry.terrainId === owner.id).accessPoints
+      .find(entry => entry.accessPointId === use.accessPointId);
+    if (port.role !== "top") continue;
+    const portRect = terrainRectangle({ id: port.accessPointId, footprint: port.footprint });
+    const connected = new Set(activeTerrain.filter(row => (
+      row.overlayRole === "premade_profile_actual_cell" && row.standableHorizontalSurface === true
+      && row.heightTier === "high_ground" && (row.footprintCells || [row.footprint]).some(cell => {
+        const r = terrainRectangle({ id: row.id, footprint: cell });
+        return r.minX <= portRect.maxX + TOLERANCE && r.maxX >= portRect.minX - TOLERANCE
+          && r.minY <= portRect.maxY + TOLERANCE && r.maxY >= portRect.minY - TOLERANCE;
+      })
+    )).map(row => row.terrainGroupId));
+    if (!connected.size) fail("SELECTED_SPATIAL_NATIVE_RAMP_TOP_SURFACE_REQUIRED", port.accessPointId);
+    connected.add(owner.terrainGroupId);
+    const cells = activeTerrain.filter(row => connected.has(row.terrainGroupId))
+      .flatMap(row => row.footprintCells || [row.footprint]);
+    const segmentBases = [pathFootprints[use.segmentIndex], pathFootprints[use.segmentIndex + 1]];
+    if (!officialRectangleUnionCoversBasesV1(cells, segmentBases)) {
+      fail("SELECTED_SPATIAL_NATIVE_RAMP_TOP_SWEEP_UNSUPPORTED", port.accessPointId);
+    }
+    nativeTopTraversals.set(use.segmentIndex, connected);
+  }
+  for (const terrain of activeTerrain) {
     const rectangle = terrainRectangle(terrain);
-    const terrainFootprint = terrainPhysicalFootprint(terrain);
+    const terrainFootprints = terrainPhysicalFootprints(terrain);
     const kind = String(terrain.terrainKind || "ordinary").toLowerCase();
-    const pathIntersects = pathSweepsFootprint(
-      state, piece, leadingModel, path.points, terrainFootprint,
-    );
-    const endpointModelIds = placements.filter((placement) => {
-      const model = piece.models.find((entry) => entry.id === placement.modelId);
-      return evaluateOfficialPhysicalFootprintRelationV1({
-        left: modelFootprintAt(state, piece, model, placement),
-        right: terrainFootprint,
-      }).overlappingInteriors;
-    }).map((entry) => entry.modelId).sort();
-    const supportedEndpointModelIds = placements.filter((placement) => {
-      const model = piece.models.find((entry) => entry.id === placement.modelId);
-      return footprintWhollyInsideRectangle(
-        modelFootprintAt(state, piece, model, placement), rectangle,
-      )
+    const pathIntersects = terrainFootprints.some(blocker => pathFootprints.slice(1).some((footprint, index) => (
+      sweptFootprintsCollide({
+        movingStart: pathFootprints[index], movingEnd: footprint,
+        blocker,
+      })
+    )));
+    const endpointModelIds = endpointFootprints.filter(({ footprint }) => (
+      terrainFootprints.some(right => physicalInteriorsOverlap(footprint, right))
+    )).map(({ placement }) => placement.modelId).sort();
+    const supportedEndpointModelIds = endpointFootprints.filter(
+      ({ placement, footprint }) => {
+        const logicalSurface = logicalEndpoints.get(placement.modelId)?.groups.find(group => (
+          group.covered && group.terrainGroupId === terrain.terrainGroupId
+        ));
+        if (logicalSurface) return placement.elevation === logicalSurface.elevation
+          && terrainFootprints.some(right => physicalSeparationWithinTolerance(footprint, right))
+          && placement.supportTerrainIds.includes(terrain.id);
+        return footprintWhollyInsideRectangle(footprint, rectangle)
         && terrain.standableHorizontalSurface === true
         && placement.supportTerrainIds.includes(terrain.id);
-    }).map((entry) => entry.modelId).sort();
+      },
+    ).map(({ placement }) => placement.modelId).sort();
     if (kind === "grass" && (pathIntersects || endpointModelIds.length > 0)) {
       grassRemoved.add(terrain.id);
     }
     const accessUsed = accessPointUses.some((entry) => entry.terrainId === terrain.id);
+    const sameLogicalSurfaceSweep = logicalSweep?.groups.some(group => group.covered
+      && group.terrainGroupId === terrain.terrainGroupId
+      && path.points.every(value => value.elevation === group.elevation)) === true;
     const raptorElevationOverrideUsed = accessPointUses.some((entry) => (
       entry.sourceFeature === "Raptor Strain"
-        && pathSweepsFootprint(state, piece, leadingModel, [
-          path.points[entry.segmentIndex],
-          path.points[entry.segmentIndex + 1],
-        ], terrainFootprint)
+        && terrainFootprints.some(blocker => sweptFootprintsCollide({
+          movingStart: pathFootprints[entry.segmentIndex],
+          movingEnd: pathFootprints[entry.segmentIndex + 1],
+          blocker,
+        }))
     ));
+    const nativeTopSurfaceSweep = nativeTopTraversals.size > 0
+      && path.points.slice(1).every((to, index) => {
+        const from = path.points[index];
+        if (!terrainFootprints.some(blocker => sweptFootprintsCollide({
+          movingStart: pathFootprints[index], movingEnd: pathFootprints[index + 1], blocker,
+        }))) return true;
+        if (nativeTopTraversals.get(index)?.has(terrain.terrainGroupId)) return true;
+        return from.elevation === to.elevation && resolveOfficialLogicalTerrainSurfaceCoverageV1(state,
+          [pathFootprints[index], pathFootprints[index + 1]])?.groups
+          .some(group => group.covered && group.elevation === from.elevation && group.terrainGroupId === terrain.terrainGroupId);
+      });
     const pathBlocked = (kind === "impassable" && pathIntersects
       && !(raptorStrain && Number(terrain.size) <= 4))
       || (kind === "ordinary" && Number(terrain.size) >= 2 && pathIntersects
-        && !accessUsed && !raptorElevationOverrideUsed);
+        && !accessUsed && !raptorElevationOverrideUsed && !sameLogicalSurfaceSweep && !nativeTopSurfaceSweep);
     if (pathBlocked) fail("SELECTED_SPATIAL_TERRAIN_PATH_BLOCKED", terrain.id);
     if (endpointModelIds.some((modelId) => !supportedEndpointModelIds.includes(modelId))
       && kind !== "grass") {
@@ -1058,6 +1273,7 @@ function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
     interactions.push({ terrainId: terrain.id, terrainKind: kind,
       size: Number(terrain.size), pathIntersects, pathBlocked,
       endpointModelIds, supportedEndpointModelIds, accessUsed,
+      ...(logicalSweep ? { sameLogicalSurfaceSweep, nativeTopSurfaceSweep } : {}),
       raptorStrainUsed: raptorStrain
         && ((kind === "impassable" && pathIntersects)
           || raptorElevationOverrideUsed),
@@ -1073,21 +1289,36 @@ function specialTerrainResult(state, piece, actionType, domain, leadingModelId,
       actualSupportByModel.get(placement.modelId))) {
       fail("SELECTED_SPATIAL_TERRAIN_SUPPORT_DECLARATION_MISMATCH", placement.modelId);
     }
+    const model = piece.models.find((entry) => entry.id === placement.modelId);
+    const semanticSurface = deriveOfficialSemanticSurfaceSupportV1(state,
+      modelFootprintAt(state, piece, model, placement));
+    if (semanticSurface && !isDeepStrictEqual(
+      semanticSurface.supportTerrainIds, actualSupportByModel.get(placement.modelId))) {
+      fail("SELECTED_SPATIAL_SEMANTIC_BOARD_SUPPORT_DRIFT", placement.modelId);
+    }
     const highest = placement.supportTerrainIds.reduce((value, terrainId) => (
       Math.max(value, Number(state.board.terrain.find((entry) => (
         entry.id === terrainId
       ))?.size || 0))
     ), 0);
-    const expectedElevation = highest >= 3 ? "high" : highest >= 1 ? "mid" : "ground";
+    const expectedElevation = semanticSurface?.elevation
+      || (highest >= 3 ? "high" : highest >= 1 ? "mid" : "ground");
     if (placement.elevation !== expectedElevation) {
       fail("SELECTED_SPATIAL_TERRAIN_ELEVATION_MISMATCH", placement.modelId);
     }
+  }
+  const removal = resolveOfficialLogicalGrassRemovalV1(state, [...grassRemoved]);
+  if (removal.logicalGrassRemoval) {
+    const removed = new Set(removal.grassRemovedTerrainIds);
+    interactions.forEach(row => { row.grassRemoved = removed.has(row.terrainId); });
   }
   const body = {
     schema: "starcraft_tmg_selected_roster_terrain_movement_result_v1",
     semanticVersion: "1.0.0", pieceId: piece.id, actionType, leadingModelId,
     pathHash: hashStarcraftTmgContract(path), interactions,
-    accessPointUses, grassRemovedTerrainIds: [...grassRemoved].sort(),
+    accessPointUses, ...removal,
+    ...(logicalSweep ? { logicalSurfaceSweep: logicalSweep,
+      logicalSurfaceEndpoints: Object.fromEntries(logicalEndpoints) } : {}),
     coherencyRangeMilliInches: domain.constraints.coherencyRangeMilliInches,
     fullLeadingBaseSwept: true, allEndpointBasesChecked: true,
     raptorStrainObserved: raptorStrain,
@@ -1191,6 +1422,8 @@ export function validateOfficialSelectedRosterRelocationGeometryV1(input = {}) {
     specialTerrainPlanHash: terrainPlan.planHash,
     terrainResultHash: terrainPlan.result.resultHash,
     grassRemovedTerrainIds: terrainPlan.result.grassRemovedTerrainIds,
+    ...(terrainPlan.result.logicalGrassRemoval
+      ? { logicalGrassRemoval: terrainPlan.result.logicalGrassRemoval } : {}),
     fullBaseBoundaryAndSweptPathChecked: true,
     completeFormationPlacementChecked: true,
     terrainElevationAndAccessChecked: true,
@@ -1291,6 +1524,9 @@ export function instantiateOfficialSelectedRosterSpatialActionV1(
     grassRemovedTerrainIds: domain.actionType === "deploy"
       ? terrainResult.grassRemovedTerrainIds
       : terrainResult.result.grassRemovedTerrainIds,
+    ...((domain.actionType === "deploy" ? terrainResult : terrainResult.result).logicalGrassRemoval
+      ? { logicalGrassRemoval: (domain.actionType === "deploy"
+        ? terrainResult : terrainResult.result).logicalGrassRemoval } : {}),
     crossedForceFieldTokenIds: crossedForceFieldTokenIdsValue,
     forceFieldsRemovedBySizeThreeOrHigher:
       crossedForceFieldTokenIdsValue.length > 0,
@@ -1415,7 +1651,15 @@ export function applyOfficialSelectedRosterSpatialActionV1(
   }
   for (const terrainId of actionInput.spatialPlan.grassRemovedTerrainIds) {
     const terrain = state.board.terrain.find((entry) => entry.id === terrainId);
-    if (terrain) terrain.isRemoved = true;
+    if (terrain) {
+      terrain.isRemoved = true;
+      if (actionInput.spatialPlan.logicalGrassRemoval) terrain.removedBy = {
+        rule: "official_grass_movement_or_endpoint", actorUnitId: piece.id,
+        round: Number(state.round), phase: state.phase,
+        logicalTerrainGroupId: terrain.terrainGroupId || null,
+        policy: actionInput.spatialPlan.logicalGrassRemoval.policy,
+      };
+    }
   }
   const removedForceFieldTokenIds = actionInput.spatialPlan.crossedForceFieldTokenIds || [];
   if (removedForceFieldTokenIds.length > 0) {
@@ -1442,6 +1686,8 @@ export function applyOfficialSelectedRosterSpatialActionV1(
     speedAllowanceInches: actionInput.spatialPlan.speedAllowanceInches,
     modelPositionCount: positions.size,
     grassRemovedTerrainIds: clone(actionInput.spatialPlan.grassRemovedTerrainIds),
+    ...(actionInput.spatialPlan.logicalGrassRemoval
+      ? { logicalGrassRemoval: clone(actionInput.spatialPlan.logicalGrassRemoval) } : {}),
     removedForceFieldTokenIds: clone(removedForceFieldTokenIds),
     movementActivated: piece.activatedPhases.movement === true,
     assaultActivated: piece.activatedPhases.assault === true,

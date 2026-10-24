@@ -97,6 +97,8 @@
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { STARCRAFT_TMG_TACTICAL_RELATIONSHIP_INTENTS_V1 } from
+  "../online-agent-session/tactical-relationship-graph-v1.mjs";
 import {
   createStarcraftTmgOutputContractV1,
   assertStarcraftTmgOutputContractV1,
@@ -106,7 +108,19 @@ import {
 
 export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_SCHEMA =
   "starcraft_tmg_roster_strategist_output_contract_set_v1";
-export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.5.0";
+export const ROSTER_STRATEGIST_OUTPUT_CONTRACT_SET_VERSION = "1.5.5";
+
+// Scheduling guidance, never a reason to discard a valid paid reply or a
+// task's ninth query. Request/egress budgets remain transport-owned.
+export function rosterInformationNeedCountWarningV1(count) {
+  if (!Number.isSafeInteger(count) || count < 1) {
+    throw new Error("ROSTER_STRATEGIST_INFORMATION_NEEDS_REQUIRED");
+  }
+  return count > 8 ? Object.freeze({ path: "informationNeeds",
+    severity: "soft_information_need_count_target_exceeded",
+    softTarget: 8, observedCount: count, fullQueriesPreserved: true,
+    hostTrimmingApplied: false }) : null;
+}
 
 // General narrative-capacity policy (sub-slice 269.17): one transport-level
 // overall safety ceiling for every free public narrative string — the strict
@@ -142,6 +156,15 @@ const text = (minLength = 1, maxLength = MAX_TEXT, description = "") => ({
   ...(description ? { description } : {}),
 });
 const identifier = (minLength = 1) => text(minLength, MAX_ID);
+const spatialIntent = () => ({
+  type: "string", minLength: 0,
+  maxLength: Math.max(...STARCRAFT_TMG_TACTICAL_RELATIONSHIP_INTENTS_V1
+    .map((value) => value.length)),
+  enum: ["", ...STARCRAFT_TMG_TACTICAL_RELATIONSHIP_INTENTS_V1],
+  description: "Execution selector for a spatial relationship query. Use "
+    + "one exact listed intent; use empty only when this field is not "
+    + "consumed. Put the full question in questionText, not here.",
+});
 const integer = (minimum, maximum, description = "") => ({
   type: "integer", minimum, maximum,
   ...(description ? { description } : {}),
@@ -294,7 +317,7 @@ const MATH_INPUTS = closedObject({
 const SCENARIO_SPEC = closedObject({
   kind: {
     type: "string", minLength: 0, maxLength: 32,
-    enum: ["", "hypothetical_geometry", "rules_lifecycle"],
+    enum: ["", "hypothetical_geometry", "rules_lifecycle", "native_action"],
   },
   lifecycleSteps: integer(0, 8),
   phase: {
@@ -305,15 +328,16 @@ const SCENARIO_SPEC = closedObject({
   isolateToPlacedPieces: { type: "boolean" },
   clearTerrain: { type: "boolean" },
   placements: {
-    type: "array", minItems: 0, maxItems: 4,
+    type: "array", minItems: 0,
     items: closedObject({
       pieceId: identifier(),
       xInches: integer(0, 1_000),
       yInches: integer(0, 1_000),
     }),
   },
-}, "Advisory scenario branch on an isolated clone; hypothetical placements "
-  + "claim no Rules legality.");
+}, "Scenario branch on an isolated clone. hypothetical_geometry places named units without arrival proof; "
+  + "native_action uses toolRequest.argumentsJson={domainId,parameters,outcome?:{chanceReveals,precisionConvertedFailedHitDieIndices?}} to apply one selected Native action, with no placement/phase overrides, then allows follow-up queries. Random actions require an explicit conditional roll from the Native dice contract, not expected losses; inspect the successor for any defender-owned casualty choice and settle it through its Native domain before querying survivors. No branch is live game truth. Placement capacity follows the actual scenario "
+  + "piece denominator, not a fixed four-unit subset.");
 
 const FOLLOW_UP = closedObject({
   kind: {
@@ -321,10 +345,13 @@ const FOLLOW_UP = closedObject({
     enum: ["", "probability", "spatial", "threat_exchange"],
   },
   attackerUnitId: text(0, MAX_ID),
+  domainId: text(0, MAX_ID, "Exact action domain from the queried scene; empty only for an unambiguous legacy actor/target query."),
+  queryKind: text(0, MAX_ID, "For spatial queries: a canonical scene query kind from queryContracts, e.g. mission_marker_control or legal_full_path_movement. Empty means space.inspect_relationships."),
+  argumentsJson: text(0, 65_536, "Canonical query arguments as JSON, following the scene's queryContracts and actionSpace. Empty for legacy relationship arguments."),
   targetUnitId: text(0, MAX_ID),
   sampleBudget: integer(0, 100_000),
   seatKey: text(0, MAX_ID),
-  intent: text(0, MAX_ID),
+  intent: spatialIntent(),
   subjectUnitIds: stringList(0, 24),
   targetIds: stringList(0, 24),
 }, "Bounded follow-up query against the scenario branch state.");
@@ -334,15 +361,24 @@ const TOOL_REQUEST = closedObject({
     "needId of a prior scenario need whose branch state is the query base; "
       + "empty for the source state"),
   attackerUnitId: text(0, MAX_ID),
+  domainId: text(0, MAX_ID, "Exact action domain from the queried scene; no implicit weapon choice."),
+  queryKind: text(0, MAX_ID, "For spatial queries use the same canonical query kind as live play, from the scene's queryContracts."),
+  argumentsJson: text(0, 65_536, "Canonical query arguments as JSON. For math mission_marker_schedule: {sideKey,windows:[{round,controlledMarkersBySide:{player1:[marker numbers],player2:[marker numbers]}}]}. Rules calculate VP; declare controls, not scoring values. Hypothetical results are not live control or placement proof."),
   targetUnitId: text(0, MAX_ID),
   seatKey: text(0, MAX_ID),
-  intent: text(0, MAX_ID),
+  sideId: text(0, MAX_ID,
+    "Map-route side ID from the frozen map evidence; empty for other kinds."),
+  baseId: text(0, MAX_ID,
+    "Audited base profile ID from the frozen map evidence; empty for other kinds."),
+  targetId: text(0, MAX_ID,
+    "Mission target ID from the frozen map evidence; empty for other kinds."),
+  intent: spatialIntent(),
   subjectUnitIds: stringList(0, 24),
   targetIds: stringList(0, 24),
   sampleBudget: integer(0, 100_000),
   mathKind: {
     type: "string", minLength: 0, maxLength: 32,
-    enum: ["", "budget_fit", "vp_schedule_delta", "integer_sum"],
+    enum: ["", "budget_fit", "vp_schedule_delta", "integer_sum", "mission_marker_schedule", "builder_candidate_comparison"],
   },
   inputs: MATH_INPUTS,
   spec: SCENARIO_SPEC,
@@ -409,13 +445,13 @@ const FOUNDATION_SCHEMA = closedObject({
     }),
   },
   informationNeeds: {
-    type: "array", minItems: 1, maxItems: 8,
+    type: "array", minItems: 1,
     items: closedObject({
       needId: identifier(),
       kind: {
         type: "string", minLength: 4, maxLength: 32,
-        enum: ["probability", "spatial", "math", "threat_exchange",
-          "scenario"],
+        enum: ["probability", "spatial", "map_route", "math",
+          "threat_exchange", "scenario"],
       },
       questionText: narrativeText(),
       toolRequest: TOOL_REQUEST,

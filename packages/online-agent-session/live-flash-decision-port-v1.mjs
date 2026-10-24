@@ -1,6 +1,12 @@
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
-import { assertStarcraftTmgProviderTransportProgressV1 } from
+import { evaluateOfficialPhysicalFootprintRelationV1 } from
+  "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import {
+  assertStarcraftTmgProviderTransportProgressV1,
+  STARCRAFT_TMG_PROVIDER_INPUT_HEADROOM_UNITS,
+  STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS,
+} from
   "../secure-provider-runtime/provider-egress-contract-v1.mjs";
 import { priceStarcraftTmgDeepSeekV4FlashUsageV1 } from
   "../secure-provider-runtime/provider-pricing-v1.mjs";
@@ -15,11 +21,44 @@ import { STARCRAFT_TMG_LIVE_OUTPUT_CAPACITY_POLICY_VERSION,
 import {
   STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS,
   STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
+  STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION,
+  projectStarcraftTmgFormationPaymentsV1,
 } from "./legal-formation-search-v1.mjs";
 import { isStarcraftTmgAssetPlacementDomainV1 as isAssetPlacementDomain } from
   "./legal-asset-placement-search-v1.mjs";
+import { STARCRAFT_TMG_PARENT_CONTACT_SEARCH_RECOVERY_VERSION,
+  planStarcraftTmgParentContactSearchRecoveryV1,
+  applyStarcraftTmgParentContactSearchRecoveryV1 } from
+  "./parent-contact-search-source-recovery-v1.mjs";
 import { createStarcraftTmgNativeSpatialQueryToolV1 } from
   "./spatial-action-query-runtime-v1.mjs";
+import { STARCRAFT_TMG_INDEPENDENT_READONLY_QUERY_KINDS_V1 } from
+  "./readonly-query-kinds-v1.mjs";
+import { STARCRAFT_TMG_SPATIAL_QUERY_KINDS_V1 } from "./spatial-query-contracts-v1.mjs";
+import { OFFICIAL_SELECTED_ROSTER_RANGED_PARAMETER_KIND } from
+  "../product-composition/official-selected-roster-ranged-action-runtime-v1.mjs";
+import { spatialQueryReceiptRejectionV1 } from
+  "./spatial-query-receipt-contract-v1.mjs";
+import { deduplicateStarcraftTmgSpatialPromptReceiptsV1,
+  encodeStarcraftTmgGeometryTableV1,
+  projectStarcraftTmgIncomingFireEstimateForPromptV1,
+  shareStarcraftTmgFormationFireFactsForPromptV1,
+  EXACT_EVIDENCE_RECORD_ROWS_MEANING,
+  projectStarcraftTmgTerrainFactsForPromptV1 } from
+  "./spatial-query-prompt-projection-v1.mjs";
+import { encodeStarcraftTmgGeometryColumnReuseV2 } from
+  "./exact-geometry-column-reuse-v2.mjs";
+import { planStarcraftTmgPromptRepairRecoveryV1,
+  applyStarcraftTmgPromptRepairRecoveryV1 } from
+  "./live-prompt-repair-recovery-v1.mjs";
+import {
+  compileStarcraftTmgActionParameterContractV1,
+  materializeStarcraftTmgActionParameterOptionV1,
+  planStarcraftTmgParameterFailureRecoveryV1,
+  applyStarcraftTmgParameterFailureRecoveryV1,
+  planStarcraftTmgLegacyParameterReplanV1,
+  applyStarcraftTmgLegacyParameterReplanV1,
+} from "./action-parameter-contract-v1.mjs";
 
 export const STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION =
   "starcraft_tmg_live_flash_decision_port_v1";
@@ -32,32 +71,24 @@ const QUERY_CHANNEL_NAMES = ["query_requests", "queryRequests", "queries"];
 const NATIVE_QUERY_TOOL_NAME = "query_spatial_rules";
 const NATIVE_SKILL_TOOL_NAME = "retrieve_strategy_skill";
 const NATIVE_MEMORY_TOOL_NAME = "retrieve_match_memory";
+const INDEPENDENT_READONLY_QUERY_KINDS = new Set(
+  STARCRAFT_TMG_INDEPENDENT_READONLY_QUERY_KINDS_V1,
+);
 const NATIVE_PLANNING_SUBMIT_TOOL_NAME = "submit_planning";
 const NATIVE_DECISION_SUBMIT_TOOL_NAME = "submit_decision";
 const PROMPT_POLICY_VERSION =
-  "starcraft_tmg_planner_action_spatial_intent_solver_v24";
-const ACTION_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_action_shape_normalization_v40";
-const PLANNER_SHAPE_NORMALIZATION_VERSION =
-  "starcraft_tmg_live_planner_shape_normalization_v14";
-export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
-const NATIVE_QUERY_KINDS = Object.freeze([
-  "space.inspect_relationships",
-  STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
-  "legal_formation_options",
-  "legal_asset_placement_options",
-  "base_edge_distance",
-  "within_and_wholly_within",
-  "instantiate_parameterized_action",
-  "legal_full_path_movement",
-  "coherency_after_candidate_placement",
-  "intervening_model_or_terrain_blocking",
-  "line_of_sight_cover_and_elevation",
-  "action_specific_threat",
-  "attack_probability",
-  "fire_zone_exchange",
-  "objective_score_after_candidate_action",
+  "starcraft_tmg_planner_action_spatial_intent_solver_v55_resource_correction_facts";
+const JSON_CHANNEL_PROMPT_POLICY_VERSION =
+  "starcraft_tmg_planner_action_spatial_intent_solver_v56_json_resource_correction_facts";
+const PROVIDER_INTERACTION_MODES = new Set([
+  "native_tools", "json_channels_v1",
 ]);
+const ACTION_SHAPE_NORMALIZATION_VERSION =
+  "starcraft_tmg_live_action_shape_normalization_v67";
+const PLANNER_SHAPE_NORMALIZATION_VERSION =
+  "starcraft_tmg_live_planner_shape_normalization_v40";
+export const STARCRAFT_TMG_MAX_SEMANTIC_CORRECTION_ROUNDS_PER_CHOICE = 3;
+const NATIVE_QUERY_KINDS = STARCRAFT_TMG_SPATIAL_QUERY_KINDS_V1;
 const HOST_DEFERRED_QUERY_KINDS = new Set([
   STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
   "legal_formation_options",
@@ -67,7 +98,6 @@ const HOST_DEFERRED_QUERY_KINDS = new Set([
 const PLANNING_POST_SELECTION_QUERY_KINDS = new Set([
   "legal_full_path_movement",
   "coherency_after_candidate_placement",
-  "objective_score_after_candidate_action",
 ]);
 const PHASE_CONTROL_ACTIONS = new Set(["pass", "choose_first_actor"]);
 const FORMATION_ACTION_TYPES = new Set([
@@ -130,7 +160,9 @@ const SELECTED_ACTION_EFFECT_CLAIM_PATTERNS = Object.freeze({
   shade_token_place:
     /\bshade\s+token\b|\bshade\s+displacement\b|暗影(?:标记|位移)/iu,
   omega_network:
-    /\bomega\s+worm\b|\bsource\s+of\s+creep\b|\bentry\s+edge\b.{0,80}\b(?:supply|ground\s+reserves?)\b|欧米伽虫道|虫道(?:底盘|入口边缘)/iu,
+    // Entry edges and Ground-reserve deployment are shared with Ventral
+    // Sacs. Only distinctive assets/effects identify an Omega Network claim.
+    /\bomega\s+worm\b|\bsource\s+of\s+creep\b|欧米伽虫道|虫道(?:底盘|入口边缘)/iu,
 });
 
 function effectClaimIsNegated(text, matchIndex) {
@@ -146,7 +178,7 @@ function effectClaimIsNegated(text, matchIndex) {
     || /(?:不是|并非|不要|不应|没有|无|而非)[^，]{0,36}$/u.test(clause);
 }
 
-function effectReferenceIsSelectedResult(text, match) {
+function effectReferenceIsSelectedResult(text, match, selectedIdentity) {
   // A noun in a risk/position comparison is not a declaration of the chosen
   // action's effect. Bind a result-producing predicate to its first named
   // effect instead of treating every asset mentioned in the paragraph as new.
@@ -160,21 +192,41 @@ function effectReferenceIsSelectedResult(text, match) {
     const alreadyNamedEffect = Object.values(SELECTED_ACTION_EFFECT_CLAIM_PATTERNS)
       .some((candidate) => candidate.test(bridge));
     const positionalReference = /\b(?:beside|near|behind|against|toward|towards|between|around|from|next\s+to|in\s+front\s+of)\b|(?:旁边|附近|后方|前方|朝向|针对|来自)/iu.test(bridge);
-    if (!alreadyNamedEffect && !positionalReference) return true;
+    // B r6: "establish ... while keeping Kerrigan and the Omega Worm safe"
+    // preserves an existing asset rather than producing another one. A later
+    // production predicate still binds its object ("keep ... and place ...").
+    // Passive production below remains checked independently; never discard
+    // the entire field merely because it also mentions protection.
+    const preservationReference = /\b(?:keep(?:s|ing)?|protect(?:s|ed|ing)?|preserv(?:e[sd]?|ing)|defend(?:s|ed|ing)?|safeguard(?:s|ed|ing)?)\b|(?:保护|保留|保全|守护|维持)/iu.test(bridge);
+    if (!alreadyNamedEffect && !positionalReference && !preservationReference) return true;
+  }
+  // B r6's calculation said "The Faction Indicator becomes ... Source of
+  // Creep" without a placement verb. Bind an attributed property to the actual
+  // selected asset, not every foreign asset mentioned in a position/risk fact.
+  const asset = selectedIdentity?.effectContract?.placedAssetKind
+    || selectedIdentity?.effectContract?.resultAssetKind;
+  if (asset) {
+    const words = String(asset).split("_").map(word =>
+      word.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")).join("\\s+");
+    const attribution = new RegExp(`\\b${words}\\b[^.!?;\\n。！？；]{0,320}?`
+      + "\\b(?:is|are|becomes?|becoming|will\\s+be|would\\s+be)\\b(.*)$", "iu")
+      .exec(prefix);
+    if (attribution && !/\b(?:near|beside|behind|against|from|next\s+to|keep(?:s|ing)?|protect(?:s|ed|ing)?)\b/iu
+      .test(attribution[1])) return true;
   }
   const after = text.slice(match.index + match[0].length);
   return /^\s+(?:(?:is|are|will\s+be|would\s+be|gets?)\s+(?:newly\s+)?(?:placed|created|summoned|deployed|generated|produced)\b)/iu.test(after)
     || /^\s*(?:被|将被)(?:放置|生成|召唤|部署|创建)/u.test(after);
 }
 
-function assertedEffectClaim(text, pattern) {
+function assertedEffectClaim(text, pattern, selectedIdentity) {
   const flags = pattern.flags.includes("g") ? pattern.flags
     : `${pattern.flags}g`;
   const matcher = new RegExp(pattern.source, flags);
   const value = String(text || "");
   for (const match of value.matchAll(matcher)) {
     if (!effectClaimIsNegated(value, match.index)
-      && effectReferenceIsSelectedResult(value, match)) return true;
+      && effectReferenceIsSelectedResult(value, match, selectedIdentity)) return true;
   }
   return false;
 }
@@ -373,8 +425,29 @@ function actionIndex(actionSpace) {
   return freeze([...finite, ...domains]);
 }
 
+export function inspectStarcraftTmgCertainFailedChargeCandidatesV1(input = {}) {
+  return freeze(actionIndex(input.spatialActionSpace || {})
+    .filter((entry) => sourceActionDomain(entry.action)?.actionType === "charge")
+    .map((entry) => inspectStarcraftTmgChargeReachabilityV1({
+      spatialActionSpace: input.spatialActionSpace,
+      candidateId: entry.id,
+      queryReceipts: input.queryReceipts || [],
+      spatialObservation: input.spatialObservation,
+    }))
+    .filter((entry) => entry.status === "exact"
+      && entry.certainDistanceShortfall === true));
+}
+
 function decisionInputForChoice(input, choice) {
-  const unavailable = new Set((choice?.unavailableCandidateIds || []).map(String));
+  const certainFailedCharges = inspectStarcraftTmgCertainFailedChargeCandidatesV1({
+    spatialActionSpace: input.spatialActionSpace,
+    spatialObservation: input.spatialObservation,
+    queryReceipts: choice?.queryReceipts || [],
+  });
+  const unavailable = new Set([
+    ...(choice?.unavailableCandidateIds || []).map(String),
+    ...certainFailedCharges.map((entry) => entry.candidateId),
+  ]);
   if (unavailable.size === 0) return input;
   const spatialActionSpace = {
     ...clone(input.spatialActionSpace),
@@ -390,7 +463,76 @@ function decisionInputForChoice(input, choice) {
     parameterDomains: (input.legalSpace?.parameterDomains || []).filter((entry) =>
       !unavailable.has(String(entry.domainId))),
   };
-  return { ...input, spatialActionSpace, legalSpace };
+  return { ...input, spatialActionSpace, legalSpace,
+    hostCandidateExclusions: certainFailedCharges.map((entry) => ({
+      candidateId: entry.candidateId,
+      pieceId: entry.pieceId,
+      reason: "CERTAIN_CHARGE_DISTANCE_SHORTFALL_FOR_EVERY_TARGET",
+      maximumDistanceMilliInches: entry.maximumDistanceMilliInches,
+      targetDistances: clone(entry.targetDistances),
+      source: entry.evidenceKind,
+      rulesLegalSpaceUnchanged: true,
+      trainingTruth: false,
+    })) };
+}
+
+export function planStarcraftTmgUnavailableFormationRecoveryV1(choice,
+  options = {}) {
+  const stoppedDraftApproved = choice?.status === "provider_output_invalid"
+    && options.retryApproved === true;
+  if ((!stoppedDraftApproved && choice?.status !== "generating")
+    || choice.stage !== "planning"
+    || choice.plannerResult || choice.actionIndex?.length !== 1
+    || choice.unavailableCandidateIds?.length !== 1) return null;
+  const authority = options.authority || choice.authority;
+  if (["roomId", "matchBindingHash", "seatKey", "stateRevision",
+    "stateHash", "legalSpaceHash"].some(key =>
+    !Object.hasOwn(choice.authority || {}, key)
+      || authority?.[key] !== choice.authority[key])) return null;
+  const selected = choice.actionIndex[0];
+  const candidateId = String(selected?.id || "");
+  if (selected?.kind !== "parameterized"
+    || !isFormationPlacementDomain(selected.action)
+    || choice.unavailableCandidateIds[0] !== candidateId) return null;
+  // Local paid-draft replay is protocol independent and bounded per recovery
+  // implementation. An old unknown search is not a permanent Rules verdict.
+  const warning = `LOCAL_FORMATION_SEARCH_RECOVERY:v2-json-stopped-draft:${
+    STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION}:${candidateId}`;
+  if (choice.warnings?.includes(warning)) return null;
+  const attemptKey = [...(choice.attemptKeys || [])].reverse().find(key => {
+    const attempt = choice.attempts?.[key];
+    if (attempt?.stage !== "planning" || attempt.status !== "completed"
+      || !choice.processedAttemptKeys?.includes(key)) return false;
+    const planning = responseParts(attempt.safeOutput).planning;
+    if (planning?.recommendedCandidateId !== candidateId) return false;
+    const intent = object(planning.formationSearchRequest)
+      ? planning.formationSearchRequest
+      : planning.formationSearchRequested === true ? {
+        tacticalPurpose: planning.formationTacticalPurpose,
+        formationObjectives: planning.formationObjectives,
+      } : null;
+    return isStarcraftTmgFormationIntentReadyV1(selected, {
+      formationSearchRequest: intent,
+    });
+  });
+  if (!attemptKey) return null;
+  const failed = [...(choice.queryReceipts || [])].reverse().find((entry) =>
+    FORMATION_QUERY_KINDS.has(entry.queryKind)
+      && entry.status === "unknown"
+      && entry.reason === "RULES_QUERY_NO_LEGAL_FORMATION_OPTION"
+      && entry.authority?.roomId === choice.authority?.roomId
+      && entry.authority?.matchBindingHash
+        === choice.authority?.matchBindingHash
+      && entry.authority?.stateRevision
+        === choice.authority?.stateRevision
+      && entry.authority?.stateHash === choice.authority?.stateHash
+      && entry.authority?.legalSpaceHash
+        === choice.authority?.legalSpaceHash);
+  if (!failed) return null;
+  return freeze({ candidateId, attemptKey,
+    solverVersion: STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION,
+    oldReceiptReason: failed.reason, warning,
+    providerRetryAllowed: false, roomMutationAllowed: false });
 }
 
 function selectedActionIdentity(actionSpace, candidateId) {
@@ -419,7 +561,7 @@ function claimedActionEffects(fragments, selectedIdentity) {
   return fragments.flatMap((entry) => Object.entries(
     SELECTED_ACTION_EFFECT_CLAIM_PATTERNS).flatMap(([claimedEffectKind, pattern]) => (
     claimedEffectKind !== expectedEffectKind
-      && assertedEffectClaim(entry.text, pattern) ? [{
+      && assertedEffectClaim(entry.text, pattern, selectedIdentity) ? [{
       field: entry.field,
       text: entry.text,
       claimedEffectKind,
@@ -439,7 +581,7 @@ function parsedPublicPlanSummary(value) {
   }
 }
 
-function selectedActionIdentityClaimFragments(value, stage) {
+function selectedActionIdentityClaimFragments(value, stage, candidateId) {
   const input = object(value) ? value : {};
   const intent = object(input.intent) ? input.intent : {};
   const assessment = object(input.assessment) ? input.assessment : {};
@@ -457,13 +599,25 @@ function selectedActionIdentityClaimFragments(value, stage) {
     ["publicPlanSummary.currentGoal", summary.currentGoal],
     ["publicPlanSummary.purpose", summary.purpose],
     ["publicPlanSummary.summary", summary.summary],
+    ...(Array.isArray(summary.calculations) ? summary.calculations.map((text, index) =>
+      [`publicPlanSummary.calculations.${index}`, text]) : []),
     ["assetPlacementSearchRequest.tacticalPurpose",
       input.assetPlacementSearchRequest?.tacticalPurpose],
+    // A current, explicitly selected comparison is part of the public
+    // rationale too. Do not require the same ability name in a second prose
+    // field, and never bind it from another candidate's comparison.
+    ...(Array.isArray(input.candidateComparisons)
+      ? input.candidateComparisons.flatMap((comparison, index) => (
+        String(comparison?.candidateId || "") === candidateId
+          ? [[`candidateComparisons.${index}.evaluation`,
+            comparison.evaluation || comparison.reason]] : [])) : []),
   ] : [
     ["selectedReason", input.selectedReason],
     ["intent.currentGoal", intent.currentGoal],
     ["intent.purpose", intent.purpose],
     ["intent.expectedOwnOutcome", intent.expectedOwnOutcome],
+    ...(Array.isArray(intent.expectedEffects) ? intent.expectedEffects.map((text, index) =>
+      [`intent.expectedEffects.${index}`, text]) : []),
     ["publicDecisionSummary.plan", summary.plan],
     ["publicDecisionSummary.purpose", summary.purpose],
     ["assetPlacementSelection.publicReason", selection.publicReason],
@@ -472,6 +626,24 @@ function selectedActionIdentityClaimFragments(value, stage) {
     field,
     text: String(fieldValue || "").trim(),
   })).filter((entry) => entry.text);
+}
+
+function abilityNameMentions(fragment, abilityNames) {
+  const normalized = String(fragment || "").normalize("NFC").toLowerCase();
+  return abilityNames.flatMap((abilityName) => {
+    const name = abilityName.normalize("NFC").toLowerCase();
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+    // Whole Latin words, not substrings: Leap is not Leaping Strike.
+    // Chinese surrounding prose need not insert whitespace around a name.
+    const pattern = new RegExp(
+      `(?<![\\p{Script=Latin}\\p{N}_])${escaped}(?![\\p{Script=Latin}\\p{N}_])`,
+      "gu");
+    return [...normalized.matchAll(pattern)].map((match) => ({
+      abilityName, index: match.index, length: match[0].length,
+    }));
+  }).sort((left, right) => left.index - right.index
+    || right.length - left.length
+    || left.abilityName.localeCompare(right.abilityName));
 }
 
 function claimedAbilityAfterActionVerb(fragment, abilityNames) {
@@ -485,12 +657,7 @@ function claimedAbilityAfterActionVerb(fragment, abilityNames) {
     }
     const suffix = normalized.slice(match.index + match[0].length,
       match.index + match[0].length + 180);
-    const matches = abilityNames.map((abilityName) => ({
-      abilityName,
-      index: suffix.indexOf(abilityName.normalize("NFC").toLowerCase()),
-    })).filter((entry) => entry.index >= 0)
-      .sort((left, right) => left.index - right.index
-        || left.abilityName.localeCompare(right.abilityName));
+    const matches = abilityNameMentions(suffix, abilityNames);
     if (matches.length > 0) return matches[0].abilityName;
   }
   return null;
@@ -505,7 +672,7 @@ export function inspectStarcraftTmgSelectedActionIdentityClaimsV1(input = {}) {
       selectedIdentityMentioned: false, checkedClaims: [], contradictions: [] });
   }
   const fragments = selectedActionIdentityClaimFragments(input.value,
-    input.stage === "planning" ? "planning" : "action");
+    input.stage === "planning" ? "planning" : "action", candidateId);
   const abilityNames = [...new Set((input.spatialActionSpace?.parameterDomains || [])
     .filter((entry) => entry.actionType === selectedIdentity.actionType
       && String(entry.abilityName || "").trim())
@@ -515,9 +682,12 @@ export function inspectStarcraftTmgSelectedActionIdentityClaimsV1(input = {}) {
       selectedIdentityMentioned: true, checkedClaims: fragments,
       contradictions: [] });
   }
-  const selectedName = selectedIdentity.abilityName.normalize("NFC").toLowerCase();
-  const selectedIdentityMentioned = fragments.some((entry) =>
-    entry.text.normalize("NFC").toLowerCase().includes(selectedName));
+  const selectedIdentityMentioned = fragments.some((entry) => {
+    const mentions = abilityNameMentions(entry.text, abilityNames);
+    return mentions.some((mention, index) => (
+      mention.abilityName === selectedIdentity.abilityName
+        && (index === 0 || mentions[index - 1].index !== mention.index)));
+  });
   const contradictions = fragments.flatMap((entry) => {
     const claimedAbilityName = claimedAbilityAfterActionVerb(
       entry.text, abilityNames);
@@ -531,12 +701,34 @@ export function inspectStarcraftTmgSelectedActionIdentityClaimsV1(input = {}) {
   });
   contradictions.push(...claimedActionEffects(fragments, selectedIdentity));
   return freeze({
-    status: contradictions.length > 0 ? "contradicted"
-      : selectedIdentityMentioned ? "consistent" : "unbound",
+    // The selected current Rules candidate already binds action identity.
+    // Literal title repetition in a particular prose field is observability,
+    // not legality: A r12 said "deploy ... through the Omega Worm" and selected
+    // the exact Omega Network candidate, but this wording gate rejected all
+    // three paid drafts. Explicit contradictory names/effects still reject.
+    status: contradictions.length > 0 ? "contradicted" : "consistent",
+    identityBinding: "rules_candidate_id",
     selectedIdentity,
     selectedIdentityMentioned,
     checkedClaims: fragments,
     contradictions,
+    correctionIssues: contradictions.map(contradiction => ({
+      code: input.stage === "planning"
+        ? "PLANNER_SELECTED_ACTION_IDENTITY_CONTRADICTED"
+        : "ACTION_SELECTED_ACTION_IDENTITY_CONTRADICTED",
+      field: contradiction.field,
+      claimText: contradiction.text,
+      ...(contradiction.claimedEffectKind ? {
+        claimedEffectKind: contradiction.claimedEffectKind,
+        expectedEffectKind: contradiction.expectedEffectKind,
+      } : {
+        claimedAbilityName: contradiction.claimedAbilityName,
+        expectedAbilityName: contradiction.expectedAbilityName,
+      }),
+      selectedActionIdentity: clone(selectedIdentity),
+      correctionScope: "selected_action_factual_claims",
+      repairInstruction: "Replace the contradictory claim using this selected candidate's effectContract. Reconcile every occurrence of the selected effect across the full submitted object; a corrected expectedEffects array does not repair a conflicting outcome or calculation. Keep unrelated supported facts and strategic choices model-owned.",
+    })),
   });
 }
 
@@ -547,6 +739,200 @@ function selectedActionIdentityContradictionDetail(contradiction) {
   }
   return `${contradiction.field}:${contradiction.claimedAbilityName}->${
     contradiction.expectedAbilityName}`;
+}
+
+// A stale accepted Planner can seed the same false effect through repeated
+// Actions. Return to that upstream seam only for an explicitly approved,
+// changed-contract recovery at the SAME authority, once. Never edit paid prose.
+export function planStarcraftTmgSelectedEffectPlannerRecoveryV1(choice, input,
+  { retryApproved, promptPolicyVersion } = {}) {
+  const last = choice?.attempts?.[choice.attemptKeys?.at(-1)];
+  if (retryApproved !== true || choice?.status !== "provider_output_invalid"
+    || choice.completedDecision || !choice.plannerResult
+    || last?.status !== "completed" || last.stage !== "action"
+    || !promptPolicyVersion || promptPolicyVersion === last.promptPolicyVersion
+    || choice.selectedEffectPlannerRecoveries?.length) return null;
+  const authority = choice.authority || {};
+  if (input.roomProjection?.room?.stateRevision !== authority.stateRevision
+    || input.roomProjection?.room?.stateHash !== authority.stateHash
+    || input.spatialActionSpace?.actionSpaceHash !== authority.spatialActionSpaceHash) return null;
+  const inspected = inspectStarcraftTmgSelectedActionIdentityClaimsV1({
+    spatialActionSpace: input.spatialActionSpace,
+    candidateId: choice.plannerResult.recommendedCandidateId,
+    stage: "planning", value: choice.plannerResult,
+  });
+  if (inspected.status !== "contradicted") return null;
+  return freeze({ version: "selected_effect_planner_recovery_v1",
+    promptPolicyVersion, authority: clone(authority),
+    issues: clone(inspected.correctionIssues),
+    previousStage: choice.stage,
+    previousPlannerResult: clone(choice.plannerResult),
+    previousStageCorrectionRounds: choice.stageCorrectionRounds,
+    maximumNewSemanticCorrections: 1,
+    paidHistoryRewritten: false, roomMutationAllowed: false });
+}
+
+export function applyStarcraftTmgSelectedEffectPlannerRecoveryV1(choice, recovery,
+  recordedAt) {
+  if (!recovery || choice.status !== "provider_output_invalid"
+    || choice.selectedEffectPlannerRecoveries?.length
+    || JSON.stringify(choice.authority) !== JSON.stringify(recovery.authority)) {
+    throw new Error("LIVE_DECISION_SELECTED_EFFECT_RECOVERY_NOT_ADMITTED");
+  }
+  choice.selectedEffectPlannerRecoveries = [{ ...clone(recovery), recordedAt }];
+  choice.stage = "planning";
+  choice.plannerResult = null;
+  // Keep the exhausted counter and context. The existing explicit prompt-repair
+  // contract below owns the one new window and stores all previous history.
+  choice.warnings.push("SELECTED_EFFECT_UPSTREAM_PLANNER_REPAIR_REQUIRED");
+}
+
+function semanticCorrectionExhausted(choice, maximumRounds) {
+  const repairLimit = choice.actionCorrectionContextRepairs?.at(-1)
+    ?.maximumNewSemanticCorrections
+    ?? choice.promptRepairHistory?.at(-1)?.maximumNewSemanticCorrections;
+  return repairLimit !== undefined
+    ? Number(choice.semanticCorrectionRounds || 0) >= repairLimit
+    : effectiveStarcraftTmgSemanticCorrectionsV1(choice) >= maximumRounds;
+}
+
+function currentPlannerAttemptKey(choice) {
+  if (choice.plannerResultAttemptKey) return choice.plannerResultAttemptKey;
+  // Legacy accepted Planner records predate the explicit attempt binding.
+  return [...(choice.attemptKeys || [])].reverse().find(key => {
+    const attempt = choice.attempts?.[key];
+    return attempt?.stage === "planning" && attempt.status === "completed"
+      && choice.processedAttemptKeys?.includes(key)
+      && responseParts(attempt.safeOutput).planning?.recommendedCandidateId
+        === choice.plannerResult?.recommendedCandidateId;
+  }) || null;
+}
+
+export function isStarcraftTmgActionReplayForCurrentPlannerV1(choice, attemptKey) {
+  const plannerKey = currentPlannerAttemptKey(choice);
+  return !plannerKey || (choice.attemptKeys || []).indexOf(attemptKey)
+    > choice.attemptKeys.indexOf(plannerKey);
+}
+
+// v36 locally revalidated an already-rejected old Action after the repaired
+// Planner returned. No new Action was requested; do not charge that old local
+// error against the new model's single correction window. Narrow, once-only
+// admission leaves a genuinely new failed Action and all historical data alone.
+export function planStarcraftTmgSupersededActionReplayRepairV1(choice, input,
+  { retryApproved } = {}) {
+  const plannerKey = currentPlannerAttemptKey(choice);
+  const revalidation = choice?.localOutputRevalidationHistory?.at(-1);
+  if (retryApproved !== true || choice?.status !== "provider_output_invalid"
+    || !choice.plannerResult || !choice.selectedEffectPlannerRecoveries?.length
+    || choice.supersededActionReplayRepairs?.length
+    || choice.promptRepairHistory?.at(-1)?.maximumNewSemanticCorrections !== 1
+    || choice.semanticCorrectionRounds !== 1 || choice.stageCorrectionRounds !== 1
+    || !revalidation || isStarcraftTmgActionReplayForCurrentPlannerV1(
+      choice, revalidation.attemptKey)
+    || choice.attemptKeys.at(-1) !== plannerKey) return null;
+  const authority = choice.authority;
+  if (input.roomProjection?.room?.stateRevision !== authority.stateRevision
+    || input.roomProjection?.room?.stateHash !== authority.stateHash
+    || input.spatialActionSpace?.actionSpaceHash !== authority.spatialActionSpaceHash) return null;
+  return freeze({ version: "superseded_action_replay_repair_v1",
+    authority: clone(authority), currentPlannerAttemptKey: plannerKey,
+    supersededActionAttemptKey: revalidation.attemptKey,
+    priorSemanticCorrectionRounds: choice.semanticCorrectionRounds,
+    priorStageCorrectionRounds: choice.stageCorrectionRounds,
+    newProviderResponseFailed: false, paidHistoryRewritten: false });
+}
+
+export function applyStarcraftTmgSupersededActionReplayRepairV1(choice, repair,
+  recordedAt) {
+  if (!repair || choice.status !== "provider_output_invalid"
+    || choice.supersededActionReplayRepairs?.length
+    || JSON.stringify(choice.authority) !== JSON.stringify(repair.authority)) {
+    throw new Error("LIVE_DECISION_SUPERSEDED_ACTION_REPLAY_REPAIR_NOT_ADMITTED");
+  }
+  choice.supersededActionReplayRepairs = [{ ...clone(repair), recordedAt }];
+  choice.plannerResultAttemptKey = repair.currentPlannerAttemptKey;
+  choice.status = "generating";
+  choice.semanticCorrectionRounds = 0;
+  choice.stageCorrectionRounds = 0;
+  choice.lastSemanticFailureSignature = null;
+  choice.repeatedSemanticFailureCount = 0;
+  choice.warnings.push("SUPERSEDED_ACTION_LOCAL_ERROR_EXCLUDED_FROM_NEW_WINDOW");
+}
+
+// Rebuild legacy enum-only feedback from the actual rejected paid Action at the
+// same authority. This is not an exemption for a model given complete evidence,
+// nor a version-triggered unlimited retry. Any source-bound semantic validator
+// can use this seam; one repaired context permits at most one new response error.
+export function planStarcraftTmgActionCorrectionContextRepairV1(choice, input,
+  { retryApproved, providerInteractionMode = "native_tools" } = {}) {
+  if (retryApproved !== true || choice?.status !== "provider_output_invalid"
+    || !choice.plannerResult || choice.stage !== "action"
+    || choice.actionCorrectionContextRepairs?.length) return null;
+  const authority = choice.authority;
+  if (input.roomProjection?.room?.stateRevision !== authority.stateRevision
+    || input.roomProjection?.room?.stateHash !== authority.stateHash
+    || input.spatialActionSpace?.actionSpaceHash !== authority.spatialActionSpaceHash
+    || input.spatialObservation?.observationHash !== authority.spatialObservationHash) return null;
+  const key = choice.attemptKeys?.at(-1);
+  const attempt = choice.attempts?.[key];
+  const previous = choice.semanticCorrectionFeedbackHistory?.at(-1);
+  if (attempt?.status !== "completed" || attempt.stage !== "action"
+    || !isStarcraftTmgActionReplayForCurrentPlannerV1(choice, key)
+    || !object(responseParts(attempt.safeOutput).decision)
+    || previous?.stage !== "action"
+    || previous.issues?.some(issue => issue.field || issue.facts
+      || issue.selectedActionIdentity)) return null;
+  try {
+    normalizeSubmittedAction(attempt, decisionInputForChoice(input, choice), choice);
+    return null;
+  } catch (error) {
+    if (error.severity !== "High" || !error.correctionIssues?.length
+      || error.code !== String(previous.correction || "").split(":", 1)[0]
+      || !error.correctionIssues.some(issue => issue.field
+        && (issue.facts || issue.selectedActionIdentity))) return null;
+    const feedback = buildStarcraftTmgSemanticCorrectionFeedbackV1({
+      stage: "action", correction: error.correction || error.code,
+      issues: error.correctionIssues,
+      history: choice.semanticCorrectionFeedbackHistory || [],
+      providerInteractionMode,
+    });
+    return freeze({ version: "source_bound_action_correction_context_repair_v1",
+      authority: clone(authority), sourceAttemptKey: key, feedback,
+      priorSemanticCorrectionRounds: choice.semanticCorrectionRounds || 0,
+      priorStageCorrectionRounds: choice.stageCorrectionRounds || 0,
+      previousContinuationMessages: clone(choice.providerContinuationMessages || []),
+      normalizationVersion: ACTION_SHAPE_NORMALIZATION_VERSION,
+      maximumNewSemanticCorrections: 1, paidHistoryRewritten: false,
+      strategyRecommendationProvided: false, trainingTruth: false });
+  }
+}
+
+export function applyStarcraftTmgActionCorrectionContextRepairV1(choice, repair,
+  recordedAt) {
+  if (!repair || choice.status !== "provider_output_invalid"
+    || choice.actionCorrectionContextRepairs?.length
+    || choice.attemptKeys?.at(-1) !== repair.sourceAttemptKey
+    || JSON.stringify(choice.authority) !== JSON.stringify(repair.authority)) {
+    throw new Error("LIVE_DECISION_ACTION_CORRECTION_CONTEXT_REPAIR_NOT_ADMITTED");
+  }
+  const attempt = choice.attempts[repair.sourceAttemptKey];
+  choice.actionCorrectionContextRepairs = [{ ...clone(repair), recordedAt }];
+  choice.providerContinuationMessages.push({ role: "assistant",
+    content: JSON.stringify(attempt.safeOutput) }, { role: "user",
+    content: JSON.stringify(repair.feedback) });
+  choice.semanticCorrectionFeedbackHistory.push({ stage: "action",
+    sourceAttemptKey: repair.sourceAttemptKey,
+    correction: repair.feedback.current.detail,
+    issues: clone(repair.feedback.current.issues) });
+  // The original response was just rechecked. Do not replay/charge its same
+  // local error again before requesting the one source-grounded correction.
+  attempt.localSemanticReplayVersion = repair.normalizationVersion;
+  choice.status = "generating";
+  choice.semanticCorrectionRounds = 0;
+  choice.stageCorrectionRounds = 0;
+  choice.lastSemanticFailureSignature = null;
+  choice.repeatedSemanticFailureCount = 0;
+  choice.warnings.push("SOURCE_BOUND_ACTION_CORRECTION_CONTEXT_REBUILT_ONCE");
 }
 
 function normalizedResourceCostsByChoice(action) {
@@ -597,6 +983,8 @@ function selectedActionResourceContract(actionSpace, candidateId) {
     })).sort((left, right) => left.choice.localeCompare(right.choice));
   return freeze({
     candidateId: selected.id,
+    actionType: action?.actionType || null,
+    abilityName: action?.abilityName || null,
     costs,
     sourceCardExhaustedOnCommit,
     sourceInstanceId,
@@ -719,10 +1107,37 @@ function falseFreeResourceClaim(fragment, resourceType, subjects) {
   });
 }
 
-function falseNoSourceCardExhaustionClaim(fragment) {
+function falseNoSourceCardExhaustionClaim(fragment, resourceContract, subjects) {
   const value = String(fragment || "");
-  return /\b(?:no|without)\s+(?:source[- ]card\s+)?exhaust(?:ion|ing)?\b|\b(?:does|do|will)\s+not\s+exhaust\b|\bsource\s+card\s+(?:is|remains)\s+(?:ready|unexhausted)\b|(?:不|无需|不会)\s*(?:横置|耗竭|消耗)\s*(?:来源)?卡/u
-    .test(value);
+  // A negative verb alone cannot certify a false claim about the source card.
+  // Bind the action, the card object and any explicit exception in that clause.
+  // In particular, "no OTHER cards beyond the faction card" preserves its cost.
+  const sourceCard = /\b(?:source[- ]card|(?:its|the)\s+source\s+card)\b|来源卡/iu;
+  const factionSource = /^faction[:_-]/iu.test(
+    String(resourceContract.sourceInstanceId || ""));
+  const excludedSource = text => sourceCard.test(text)
+    || (factionSource && /\bfaction\s+card\b|势力卡/iu.test(text))
+    || (resourceContract.sourceInstanceId && text.includes(
+      resourceContract.sourceInstanceId));
+  const pattern = /\b(?:no|without)\s+(?:source[- ]card\s+)?exhaust(?:ion|ing)?\b|\b(?:does|do|will)\s+not\s+exhaust\b|\bsource\s+card\s+(?:(?:is|remains)\s+(?:ready|unexhausted)|is\s+not\s+exhausted)\b|(?:不|无需|不会)\s*(?:横置|耗竭|消耗)/giu;
+  return [...value.matchAll(pattern)].some(match => {
+    if (!resourceClaimTargetsSelected(value, match.index, subjects)) return false;
+    const tail = value.slice(match.index).split(/[.;!?。；！？\n]/u)[0];
+    const exception = tail.match(
+      /\b(?:beyond|except(?:\s+for)?|other\s+than|apart\s+from)\s+(.+)|除(.+?)(?:以外|之外|外)/iu);
+    if (exception && excludedSource(exception[1] || exception[2] || "")) {
+      return false;
+    }
+    // "other" excludes the selected source, unless the same object explicitly
+    // includes/denies that source too. Later clauses are inspected independently.
+    if (/\b(?:other|additional)\s+(?:resource\s+)?cards?\b|其他(?:资源)?卡/iu
+      .test(tail) && !sourceCard.test(tail)
+      && !/\binclud(?:e|es|ing)\b|包括/iu.test(tail)) return false;
+    if (sourceCard.test(tail) || /\bcards?\b|卡/iu.test(tail)) return true;
+    // Preserve unqualified "no exhaustion" denials, but do not interpret a
+    // denial about a different resource (Supply, Biomass, etc.) as card exhaustion.
+    return /\b(?:no|without)\s+exhaustion\b/iu.test(tail);
+  });
 }
 
 function resourceContradictionDetail(entry) {
@@ -759,7 +1174,8 @@ export function inspectStarcraftTmgSelectedActionResourceClaimsV1(input = {}) {
   ));
   if (resourceContract.sourceCardExhaustedOnCommit) {
     contradictions.push(...fragments.filter((entry) =>
-      falseNoSourceCardExhaustionClaim(entry.text)).map((entry) => ({
+      falseNoSourceCardExhaustionClaim(entry.text, resourceContract, subjects))
+      .map((entry) => ({
       field: entry.field,
       text: entry.text,
       resourceType: "SOURCE_CARD",
@@ -768,11 +1184,29 @@ export function inspectStarcraftTmgSelectedActionResourceClaimsV1(input = {}) {
       expectedSourceCardExhaustedOnCommit: true,
     })));
   }
+  // The selected current domain supplies the facts; this is not a tactical
+  // recommendation or a claim that the source card is already exhausted.
+  // Keep point payment and the on-commit readiness transition separate.
+  const code = input.stage === "planning"
+    ? "PLANNER_SELECTED_ACTION_RESOURCE_CONTRADICTED"
+    : "ACTION_SELECTED_ACTION_RESOURCE_CONTRADICTED";
+  const correctionIssues = contradictions.map(entry => ({
+    code,
+    field: entry.field,
+    claimText: entry.text,
+    claimKind: entry.claimKind || "resource_point_cost",
+    source: "selected_current_rules_action_domain",
+    facts: { ...clone(resourceContract), stateScope: "on_commit" },
+    correction: entry.claimKind === "source_card_exhaustion"
+      ? `Zero resource-point cost does not mean no source-card exhaustion. On committing this selected action, source card ${resourceContract.sourceInstanceId} becomes exhausted. This describes the result of payment/use, not its current readiness. Correct the claim and reassess the opportunity cost; retain or change the action by your own strategy.`
+      : `This selected action requires ${entry.effectiveResourceCost} ${entry.resourceType} at minimum under the supplied choices, not zero. Use the current choice-specific payment facts; retain or change the action by your own strategy.`,
+  }));
   return freeze({
     status: contradictions.length > 0 ? "contradicted" : "consistent",
     resourceContract,
     checkedClaims: fragments,
     contradictions,
+    correctionIssues,
   });
 }
 
@@ -925,6 +1359,34 @@ function sourceActionDomain(value) {
   return object(value?.sourceDomain) ? value.sourceDomain : value;
 }
 
+function isExactForcedChargeFailureDomain(value) {
+  const domain = sourceActionDomain(value);
+  const schema = domain?.parameterSchema;
+  const proofKind = String(schema?.failureProofKind || "");
+  const certificateFlag = new Map([
+    ["continuous_leading_endpoint_excluded",
+      "exactContinuousLeadingEndpointExclusion"],
+    ["mandatory_elevation_access_shortfall",
+      "exactMandatoryAccessShortfall"],
+    ["occupied_cross_section_distance_shortfall",
+      "allActiveTargetModelsCovered"],
+    ["integer_round_leading_path_excluded",
+      "allIntegerEndpointsExcluded"],
+  ]).get(proofKind);
+  const exactProof = Boolean(certificateFlag)
+    && domain?.constraints?.[certificateFlag] === true;
+  return domain?.actionType === "resolve_charge"
+    && Array.isArray(schema?.required)
+    && schema.required.length === 2
+    && schema.required.includes("outcome")
+    && schema.required.includes("failureProof")
+    && Array.isArray(schema.outcome)
+    && schema.outcome.length === 1
+    && schema.outcome[0] === "failure"
+    && exactProof
+    && /^[a-f0-9]{64}$/u.test(String(domain.constraints.certificateHash || ""));
+}
+
 function maximumChargeRoll(constraints) {
   const roll = constraints?.chargeDistanceRoll || {};
   const diceCount = Math.max(1, Number(roll.diceCount || 1));
@@ -948,6 +1410,198 @@ function exactUnitDistance(receipts, fromUnitId, toUnitId) {
     entry.nearestPhysicalEdges.distanceMilliInches)));
 }
 
+function exactUnitDistanceFromObservation(observation, authority,
+  fromUnitId, toUnitId) {
+  if (!object(observation) || !object(authority)
+    || !["roomId", "matchBindingHash", "stateRevision", "stateHash"]
+      .every((key) => observation[key] != null
+        && observation[key] === authority[key])
+    || observation.viewer?.seatKey !== authority.seatKey
+    || (authority.spatialObservationHash
+      && observation.observationHash !== authority.spatialObservationHash)) {
+    return null;
+  }
+  const modelsFor = (unitId) => {
+    const unit = (observation.units || []).find((entry) =>
+      entry.unitId === unitId);
+    const rows = (observation.models || []).filter((entry) =>
+      entry.unitId === unitId);
+    return unit && Number.isSafeInteger(Number(unit.currentModels))
+      && Number(unit.currentModels) > 0
+      && rows.length === Number(unit.currentModels)
+      && rows.every((entry) => entry.geometryStatus === "exact_rules_profile"
+        && object(entry.footprint)) ? rows : null;
+  };
+  const from = modelsFor(fromUnitId);
+  const to = modelsFor(toUnitId);
+  if (!from || !to) return null;
+  try {
+    return Math.min(...from.flatMap((left) => to.map((right) =>
+      evaluateOfficialPhysicalFootprintRelationV1({
+        left: left.footprint, right: right.footprint,
+      }).minimumSeparationMilliInches)));
+  } catch {
+    return null;
+  }
+}
+
+function currentExactUnitDistance(input, fromUnitId, toUnitId) {
+  const observed = exactUnitDistanceFromObservation(
+    input.spatialObservation,
+    input.spatialActionSpace?.authority,
+    fromUnitId, toUnitId);
+  return observed === null
+    ? exactUnitDistance(input.queryReceipts || [], fromUnitId, toUnitId)
+    : observed;
+}
+
+function currentSelectedChargePathEvidence(input, selected, targetUnitId) {
+  const authority = input.spatialActionSpace?.authority;
+  const leadingModelId = String(input.leadingModelId || "");
+  if (!object(authority) || !leadingModelId) return null;
+  const receipt = [...(input.queryReceipts || [])].reverse().find(entry => {
+    const evidence = entry?.result?.chargePathEvidence;
+    return entry?.queryKind === "instantiate_parameterized_action"
+      && (entry.status === "exact" || entry.precision === "exact")
+      && entry.result?.proposalAccepted === true
+      && entry.result.domainId === selected.id
+      && ["roomId", "matchBindingHash", "stateRevision", "stateHash",
+        "legalSpaceHash", "seatKey"].every(key => entry.authority?.[key] === authority[key])
+      && evidence?.pieceId === sourceActionDomain(selected.action)?.pieceId
+      && evidence.leadingModelId === leadingModelId
+      && entry.result.canonicalParameters?.leadingModelId === leadingModelId
+      && evidence.declaredTargets?.some(reference => reference.unitId === targetUnitId)
+      && hashStarcraftTmgContract(evidence.declaredTargets)
+        === hashStarcraftTmgContract(entry.result.canonicalParameters.targets);
+  });
+  return receipt ? clone(receipt.result.chargePathEvidence) : null;
+}
+
+// A final Host-only validation can discover a fact the model never saw.
+// Give that fact back before completing the decision; do not invent an
+// illegal Charge declaration or silently select a different action/leader.
+export function planStarcraftTmgChargePathEvidenceReviewV1(input = {}) {
+  const proposal = input.proposal;
+  if (proposal?.kind !== "parameterized" || !proposal.parameters?.targets?.length) return null;
+  const selected = actionIndex(input.spatialActionSpace || {}).find(entry => entry.id === proposal.domainId);
+  if (sourceActionDomain(selected?.action)?.actionType !== "charge") return null;
+  const queryInput = { ...input, leadingModelId: proposal.parameters.leadingModelId };
+  const targetUnitId = proposal.parameters.targets[0].unitId;
+  const evidence = currentSelectedChargePathEvidence(queryInput, selected, targetUnitId);
+  if (evidence?.pathStatus !== "certain_failure") return null;
+  if (hashStarcraftTmgContract(evidence.declaredTargets)
+    !== hashStarcraftTmgContract(proposal.parameters.targets)) return null;
+  const previous = currentSelectedChargePathEvidence({ ...queryInput,
+    queryReceipts: input.previousQueryReceipts || [] }, selected, targetUnitId);
+  if (previous && hashStarcraftTmgContract(previous) === hashStarcraftTmgContract(evidence)) return null;
+  const signature = hashStarcraftTmgContract({ authority: input.spatialActionSpace.authority,
+    proposal, evidence });
+  const history = input.history || [];
+  if (history.some(entry => entry.signature === signature)) return null;
+  const maximumRounds = Math.min(3, Math.max(1, Number(input.maximumRounds || 3)));
+  return freeze({ kind: "charge_path_evidence_review", signature,
+    action: history.length >= maximumRounds ? "needs_attention" : "replan",
+    evidence, candidateId: selected.id, proposal: clone(proposal),
+    legalDeclarationUnchanged: true, entireChargeDomainExcluded: false,
+    feedback: { kind: "same_execution_charge_path_evidence", evidence,
+      declarationIsLegalButSuccessfulEngagementIsProvenImpossible: true,
+      evidenceAppliesOnlyToThisLeaderAndDeclaredTargets: true,
+      otherLeadersAndTargetsRemainUnproved: true },
+    maximumRounds, mayApply: false, trainingTruth: false });
+}
+
+export function applyStarcraftTmgChargePathEvidenceReviewV1(choice, review,
+  { attemptKey, recordedAt } = {}) {
+  choice.chargePathReviewHistory = [...(choice.chargePathReviewHistory || []),
+    { ...clone(review), attemptKey, recordedAt }];
+  if (attemptKey && !choice.processedAttemptKeys.includes(attemptKey)) {
+    choice.processedAttemptKeys.push(attemptKey);
+  }
+  if (review.action === "replan") {
+    if (choice.plannerResult) {
+      choice.failedPlannerResults = [...(choice.failedPlannerResults || []), {
+        plannerResult: clone(choice.plannerResult), reason: review.kind,
+        failureSignature: review.signature, recordedAt,
+      }];
+    }
+    choice.stage = "planning";
+    choice.plannerResult = null;
+    choice.stageQueryRounds = 0;
+    choice.stageCorrectionRounds = 0;
+  }
+  choice.providerContinuationMessages.push({ role: "user",
+    content: JSON.stringify(review.feedback) });
+  choice.warnings.push("CHARGE_PATH_EXECUTION_EVIDENCE_READY");
+  choice.status = review.action === "needs_attention" ? "provider_output_invalid" : "generating";
+}
+
+export function inspectStarcraftTmgSelectedChargeReachabilityV1(input = {}) {
+  const selected = actionIndex(input.spatialActionSpace || {}).find((entry) =>
+    entry.id === input.candidateId);
+  const domain = sourceActionDomain(selected?.action);
+  if (!selected || domain?.actionType !== "charge"
+    || domain?.parameterKind
+      !== "official_selected_roster_charge_declaration_v1") {
+    return freeze({ status: "not_applicable", candidateId: input.candidateId || null,
+      certainDistanceShortfall: false, trainingTruth: false });
+  }
+  const targetUnitId = String(input.targetUnitId || "").trim();
+  if (!Object.hasOwn(domain.constraints?.eligibleTargetModelIdsByUnitId || {},
+    targetUnitId)) {
+    return freeze({ status: "invalid_target", candidateId: selected.id,
+      targetUnitId, certainDistanceShortfall: false, trainingTruth: false });
+  }
+  const baseEdgeDistanceMilliInches = currentExactUnitDistance(
+    input, domain.pieceId, targetUnitId);
+  const maximumDistanceMilliInches = Math.round(1_000 * (
+    Number(domain.constraints?.speedInches || 0)
+      + Number(domain.constraints?.chargeDistanceModifier || 0)
+      + maximumChargeRoll(domain.constraints)));
+  const minimumMoveToEngageMilliInches = baseEdgeDistanceMilliInches === null
+    ? null : Math.max(0, baseEdgeDistanceMilliInches - 1_000);
+  const path = currentSelectedChargePathEvidence(input, selected, targetUnitId);
+  return freeze({ status: baseEdgeDistanceMilliInches === null
+    ? "unknown" : "exact", candidateId: selected.id,
+  pieceId: domain.pieceId, targetUnitId, baseEdgeDistanceMilliInches,
+  minimumMoveToEngageMilliInches, maximumDistanceMilliInches,
+  certainDistanceShortfall: minimumMoveToEngageMilliInches !== null
+    && minimumMoveToEngageMilliInches > maximumDistanceMilliInches + 1,
+  evidenceKind: baseEdgeDistanceMilliInches === null
+    ? "selected_target_exact_base_edge_missing"
+    : "selected_target_exact_physical_base_edges_and_charge_domain",
+  precisionScope: "distance_only_not_path_or_charge_success",
+  distanceDoesNotProvePath: true,
+  distanceScope: "unit_minimum_physical_base_edges",
+  leadingModelId: input.leadingModelId || null,
+  pathStatus: path?.pathStatus || "unknown",
+  pathLowerBoundMilliInches: path?.pathLowerBoundMilliInches ?? null,
+  certainPathShortfall: path?.pathStatus === "certain_failure",
+  selectedLeaderPathEvidence: path,
+  rulesAuthority: false, trainingTruth: false });
+}
+
+export async function completeStarcraftTmgSelectedChargeEvidenceV1(input = {}) {
+  const initial = inspectStarcraftTmgSelectedChargeReachabilityV1(input);
+  if (initial.status !== "unknown") {
+    return freeze({ reachability: initial, receipts: [], queryAttempted: false });
+  }
+  const receipt = await input.spatialQueryPort.query({
+    roomProjection: input.roomProjection,
+    legalSpace: input.legalSpace,
+    spatialObservation: input.spatialObservation,
+    request: { requestId: `host-charge-target-${initial.candidateId}`,
+      queryKind: "space.inspect_relationships",
+      arguments: { subjectUnitIds: [initial.pieceId],
+        targetIds: [initial.targetUnitId],
+        intent: "selected_charge_target_exact_base_edge" } },
+  });
+  const receipts = object(receipt)
+    && HASH.test(String(receipt.queryReceiptHash || "")) ? [clone(receipt)] : [];
+  return freeze({ reachability: inspectStarcraftTmgSelectedChargeReachabilityV1({
+    ...input, queryReceipts: [...(input.queryReceipts || []), ...receipts],
+  }), receipts, queryAttempted: true });
+}
+
 export function inspectStarcraftTmgChargeReachabilityV1(input = {}) {
   const actions = actionIndex(input.spatialActionSpace || {});
   const selected = actions.find((entry) => entry.id === input.candidateId);
@@ -966,8 +1620,8 @@ export function inspectStarcraftTmgChargeReachabilityV1(input = {}) {
       + maximumChargeRoll(domain.constraints)
   ));
   const targetDistances = targetUnitIds.map((targetUnitId) => {
-    const baseEdgeDistanceMilliInches = exactUnitDistance(
-      input.queryReceipts || [], domain.pieceId, targetUnitId);
+    const baseEdgeDistanceMilliInches = currentExactUnitDistance(
+      input, domain.pieceId, targetUnitId);
     return {
       targetUnitId,
       baseEdgeDistanceMilliInches,
@@ -991,6 +1645,11 @@ export function inspectStarcraftTmgChargeReachabilityV1(input = {}) {
         entry.baseEdgeDistanceMilliInches)) : null,
     targetDistances,
     certainDistanceShortfall,
+    precisionScope: "distance_only_not_path_or_charge_success",
+    distanceDoesNotProvePath: true,
+    distanceScope: "unit_minimum_physical_base_edges",
+    pathStatus: "unknown",
+    successCertified: false,
     evidenceKind: exact
       ? "exact_physical_base_edges_and_current_charge_domain"
       : "missing_exact_relationship_for_one_or_more_eligible_targets",
@@ -1001,12 +1660,29 @@ export function inspectStarcraftTmgChargeReachabilityV1(input = {}) {
 
 function isFormationPlacementDomain(value) {
   const domain = sourceActionDomain(value);
+  if (isExactForcedChargeFailureDomain(domain)) return false;
+  if (domain?.actionType === "use_active_ability"
+    && domain?.effectContract?.targetKind === "self_place"
+    && Array.isArray(domain?.parameterSchema?.placements?.modelIds)) {
+    return true;
+  }
   return FORMATION_ACTION_TYPES.has(String(domain?.actionType || ""))
     || domain?.parameterSchema?.placementPlan?.type
       === "complete_model_placement_plan"
     || Array.isArray(domain?.parameterSchema?.placements?.exactModelIds)
       && domain.parameterSchema.required?.includes("leadingModelId")
       && domain.parameterSchema.required?.includes("placements");
+}
+
+export function isStarcraftTmgFormationIntentReadyV1(selected,
+  plannerResult) {
+  if (selected?.kind !== "parameterized"
+    || !isFormationPlacementDomain(selected.action)) return true;
+  const intent = plannerResult?.formationSearchRequest;
+  return object(intent)
+    && String(intent.tacticalPurpose || "").trim().length > 0
+    && Array.isArray(intent.formationObjectives)
+    && intent.formationObjectives.length > 0;
 }
 
 function candidateEvidenceRequirements(input) {
@@ -1026,12 +1702,13 @@ function candidateEvidenceRequirements(input) {
       usefulQueries.push("space.inspect_relationships", "fire_zone_exchange");
     }
     if (/attack|fight|charge|impact/u.test(actionType)) {
-      usefulQueries.push("action_specific_threat", "attack_probability",
-        "fire_zone_exchange");
+      usefulQueries.push("action_specific_threat", "fire_zone_exchange");
+      if (entry.action?.parameterKind === OFFICIAL_SELECTED_ROSTER_RANGED_PARAMETER_KIND) {
+        usefulQueries.push("attack_probability");
+      }
     }
-    if (entry.kind !== "parameterized"
-      && /move|run|deploy|charge|attack|fight/u.test(actionType)) {
-      usefulQueries.push("objective_score_after_candidate_action");
+    if (/move|run|deploy|charge|attack|fight/u.test(actionType)) {
+      usefulQueries.push("mission_marker_control");
     }
     const successor = preexecution.get(entry.id);
     return {
@@ -1216,6 +1893,15 @@ export function projectStarcraftTmgPlanningActionSpaceForPromptV1(
       supply: clone(entry.constraints?.supply || null),
       resourceCostsByChoice:
         normalizedResourceCostsByChoice(entry),
+      parameterContract: (() => {
+        const contract = compileStarcraftTmgActionParameterContractV1(entry);
+        return { selectableChoices: contract.selectableChoices,
+          unavailableChoices: contract.unavailableChoices,
+          targetUnitIds: clone(contract.fieldContracts.targetUnitId?.enum || null),
+          paymentCombinationsByChoice: contract.paymentCombinationsByChoice,
+          noPaymentCombinationMeansUnavailable: true,
+          rulesInstantiationRequired: true };
+      })(),
       strategicImmediateValue:
         clone(entry.constraints?.strategicImmediateValue || null),
       modelCount: entry.constraints?.modelProfiles?.length || 0,
@@ -1230,6 +1916,22 @@ export function projectStarcraftTmgPlanningActionSpaceForPromptV1(
   });
 }
 
+function casualtyDomainForPrompt(domain) {
+  const projected = clone(domain);
+  if (!["official_selected_roster_ranged_casualty_selection_v1",
+    "official_selected_roster_melee_casualty_selection_v1"].includes(
+      domain?.parameterKind)) return projected;
+  // Presentation only: share identical JSON columns, never truncate legal
+  // selections or pick casualties for the player. The full domain remains in
+  // Rules, the durable choice and the Host's parameter materializer.
+  for (const field of ["strategicLossOptions", "legalSelections"]) {
+    const rows = domain.constraints?.[field];
+    if (Array.isArray(rows)) projected.constraints[field] =
+      encodeStarcraftTmgGeometryColumnReuseV2(rows);
+  }
+  return projected;
+}
+
 function selectedActionSpace(actionSpace, candidateId) {
   return freeze({
     schemaVersion:
@@ -1238,7 +1940,8 @@ function selectedActionSpace(actionSpace, candidateId) {
     finiteActions: (actionSpace?.finiteActions || []).filter((entry) =>
       entry.candidateId === candidateId).map(clone),
     parameterDomains: (actionSpace?.parameterDomains || []).filter((entry) =>
-      entry.domainId === candidateId).map(clone),
+      entry.domainId === candidateId).map(entry => ({ ...casualtyDomainForPrompt(entry),
+        parameterContract: compileStarcraftTmgActionParameterContractV1(entry) })),
     selectedActionIdentity: selectedActionIdentity(actionSpace, candidateId),
     selectedActionResourceContract:
       selectedActionResourceContract(actionSpace, candidateId),
@@ -1248,12 +1951,88 @@ function selectedActionSpace(actionSpace, candidateId) {
   });
 }
 
-function correctionError(code, detail = "") {
+function correctionError(code, detail = "", issues = []) {
   return Object.assign(new TypeError(detail || code), {
     code,
     correction: detail ? `${code}:${detail}` : code,
+    correctionIssues: clone(issues),
     severity: "High",
   });
+}
+
+function threatCorrectionIssues(threatClaims, code) {
+  return (threatClaims.contradictions || []).map(entry => ({
+    code, field: entry.field, claimText: entry.text,
+    source: entry.source, threatKind: entry.threatKind,
+    facts: clone(entry.threatFacts || []),
+  }));
+}
+
+// Consumed by the real persistence path. Historical findings are regression
+// guards, not new verdicts, strategy recommendations, or Rules authority.
+export function buildStarcraftTmgSemanticCorrectionFeedbackV1({
+  stage, correction, issues = [], history = [],
+  providerInteractionMode = "native_tools",
+} = {}) {
+  const code = String(correction || "DECISION_SEMANTIC_CORRECTION_REQUIRED")
+    .split(":", 1)[0];
+  const currentIssues = issues.length ? clone(issues)
+    : [{ code, detail: String(correction || code) }];
+  const regressionGuards = [];
+  const seen = new Set();
+  for (const previous of history.filter(entry => entry.stage === stage)) {
+    const priorIssues = previous.issues?.length ? previous.issues : [{
+      code: String(previous.correction || "").split(":", 1)[0],
+      detail: previous.correction,
+    }];
+    for (const issue of priorIssues) {
+      const key = JSON.stringify(issue);
+      if (!seen.has(key)) {
+        seen.add(key);
+        regressionGuards.push(clone(issue));
+      }
+    }
+  }
+  const planning = stage === "planning";
+  return freeze({
+    schemaVersion: "starcraft_tmg_semantic_correction_feedback_v1",
+    stage,
+    current: { code, detail: String(correction || code), issues: currentIssues },
+    regressionGuards,
+    historicalConstraintsAreNotCurrentVerdicts: true,
+    instructions: [
+      "Correct all current issues together, not just the first reported issue.",
+      "Preserve supported facts and recheck previous constraints against current evidence; do not reintroduce earlier defects.",
+      "Current-position facts are not post-placement safety proofs. Keep unverified future geometry separate from current facts.",
+      "Do not copy prior rejected text or invent evidence. The action and strategic tradeoff remain your decision.",
+      "Submit the required current stage using its declared protocol; this feedback does not authorize extra retries.",
+    ],
+    submissionProtocol: providerInteractionMode === "json_channels_v1"
+      ? { mode: providerInteractionMode,
+        requiredChannel: planning ? "planning" : "decision",
+        outputFormat: "one_json_object_using_declared_channel" }
+      : { mode: providerInteractionMode,
+        requiredTool: planning ? NATIVE_PLANNING_SUBMIT_TOOL_NAME
+          : NATIVE_DECISION_SUBMIT_TOOL_NAME },
+    strategyRecommendationProvided: false,
+    rulesAuthority: false, mayOverrideRules: false, trainingTruth: false,
+  });
+}
+
+export function describeStarcraftTmgFormationIntentCorrectionV1({
+  selected, recommendedCandidateId,
+} = {}) {
+  const candidateId = String(recommendedCandidateId || selected?.id || "");
+  const actionType = String(selected?.action?.actionType || "unknown");
+  const pieceId = String(selected?.action?.pieceId || "unknown Unit");
+  return `Selected current candidate ${candidateId} is a parameterized ${
+    actionType} for ${pieceId}. If retaining this candidate, set `
+    + "formationSearchRequested=true and supply a nonempty "
+    + "formationTacticalPurpose and weighted formationObjectives with "
+    + "visible targetIds. If the intended immediate action differs, select "
+    + "its actual candidate from the current action index and align the "
+    + "plan, assessment, and public summary with that choice; do not name "
+    + "an action absent from the current index.";
 }
 
 function validateLifecycleAssessment(value, input, candidateId) {
@@ -1425,6 +2204,15 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
     };
     reconstructedPlanRevision = true;
   }
+  if (!existingPlan && raw.assessment.verdict === "revise"
+    && !normalizedPlanRevision && normalizedPlan) {
+    normalizedPlanRevision = {
+      ...clone(normalizedPlan),
+      revisionReason: String(normalizedPlan.revisionReason
+        || raw.assessment.continuitySummary).trim(),
+    };
+    reconstructedPlanRevision = true;
+  }
   if (raw.assessment.verdict === "revise" && !normalizedPlanRevision) {
     throw correctionError("PLANNER_REVISION_OBJECT_REQUIRED");
   }
@@ -1469,11 +2257,22 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
       recommendedCandidateId);
   }
   const pass = actions.find((entry) => entry.action?.actionType === "pass");
+  const selected = actions.find((entry) => entry.id === recommendedCandidateId);
+  const threatClaims = inspectStarcraftTmgFormationThreatClaimsV1({
+    raw, queryReceipts,
+    spatialObservation: input.spatialObservation,
+    plannerSelectedAction: sourceActionDomain(selected?.action),
+    roomProjection: input.roomProjection,
+    matchMemory: input.matchMemory,
+    currentPlan: input.planState?.plan,
+  });
   if (pass && actions.length > 1 && !compared.has(pass.id)) {
     throw correctionError("PLANNER_PASS_OPPORTUNITY_COST_NOT_COMPARED",
-      pass.id);
+      pass.id, [{ code: "PLANNER_PASS_OPPORTUNITY_COST_NOT_COMPARED",
+        field: "candidateComparisons", missingCandidateId: pass.id,
+        actionType: "pass" }, ...threatCorrectionIssues(threatClaims,
+        "PLANNER_SELECTION_THREAT_CLAIM_CONTRADICTS_PROJECTION")]);
   }
-  const selected = actions.find((entry) => entry.id === recommendedCandidateId);
   const immediateValue = sourceActionDomain(selected?.action)
     ?.constraints?.strategicImmediateValue || null;
   if (immediateValue?.zeroBenefit === true && actions.length > 1) {
@@ -1489,18 +2288,17 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
   if (identityClaims.status === "contradicted") {
     const first = identityClaims.contradictions[0];
     throw correctionError("PLANNER_SELECTED_ACTION_IDENTITY_CONTRADICTED",
-      selectedActionIdentityContradictionDetail(first));
-  }
-  if (identityClaims.status === "unbound") {
-    throw correctionError("PLANNER_SELECTED_ACTION_IDENTITY_REQUIRED",
-      identityClaims.selectedIdentity.abilityName);
+      selectedActionIdentityContradictionDetail(first), identityClaims.correctionIssues);
   }
   const futurePlanRequirement = identityClaims.selectedIdentity
     ?.effectContract?.futurePlanRequirement;
   if (futurePlanRequirement?.required === true) {
     const resultingPlan = object(normalizedPlanRevision)
       ? normalizedPlanRevision : object(normalizedPlan)
-        ? normalizedPlan : existingPlan;
+        ? normalizedPlan : raw.futureActionPlanAmendment ? {
+          ...existingPlan,
+          futureActionPlans: raw.futureActionPlanAmendment.futureActionPlans,
+        } : existingPlan;
     const matchingFuturePlan = (Array.isArray(resultingPlan?.futureActionPlans)
       ? resultingPlan.futureActionPlans : []).find((entry) =>
       object(entry)
@@ -1510,7 +2308,8 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
         `${recommendedCandidateId}:${futurePlanRequirement.capabilityKind
           || identityClaims.selectedIdentity.effectKind}`);
     }
-    if (existingPlan && raw.assessment.verdict !== "revise") {
+    if (existingPlan && raw.assessment.verdict !== "revise"
+      && !raw.futureActionPlanAmendment) {
       throw correctionError("PLANNER_REQUIRED_FUTURE_ACTION_PLAN_NOT_REVISED",
         recommendedCandidateId);
     }
@@ -1535,18 +2334,15 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
   if (resourceClaims.status === "contradicted") {
     const first = resourceClaims.contradictions[0];
     throw correctionError("PLANNER_SELECTED_ACTION_RESOURCE_CONTRADICTED",
-      resourceContradictionDetail(first));
+      resourceContradictionDetail(first), resourceClaims.correctionIssues);
   }
-  const threatClaims = inspectStarcraftTmgFormationThreatClaimsV1({
-    raw,
-    queryReceipts,
-    spatialObservation: input.spatialObservation,
-  });
   if (threatClaims.contradicted) {
     const first = threatClaims.contradictions[0];
     throw correctionError(
       "PLANNER_SELECTION_THREAT_CLAIM_CONTRADICTS_PROJECTION",
       threatContradictionDetail(first),
+      threatCorrectionIssues(threatClaims,
+        "PLANNER_SELECTION_THREAT_CLAIM_CONTRADICTS_PROJECTION"),
     );
   }
   const supplyClaims = inspectStarcraftTmgUnitSupplyClaimsV1({
@@ -1557,21 +2353,39 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
     throw correctionError("PLANNER_UNIT_SUPPLY_CLAIM_CONTRADICTED",
       unitSupplyContradictionDetail(supplyClaims.contradictions[0]));
   }
-  const selectedCharge = inspectStarcraftTmgChargeReachabilityV1({
+  const selectedChargeTargetUnitId = String(
+    raw.selectedChargeTargetUnitId || "").trim();
+  const selectedCharge = inspectStarcraftTmgSelectedChargeReachabilityV1({
     spatialActionSpace: input.spatialActionSpace,
     candidateId: recommendedCandidateId,
+    targetUnitId: selectedChargeTargetUnitId,
     queryReceipts,
+    spatialObservation: input.spatialObservation,
   });
+  if (selected?.action?.actionType === "charge"
+    && !selectedChargeTargetUnitId) {
+    throw correctionError("PLANNER_CHARGE_TARGET_REQUIRED",
+      "Name one eligible intended target Unit in selectedChargeTargetUnitId before selecting Charge.");
+  }
+  if (selected?.action?.actionType === "charge"
+    && selectedCharge.status === "invalid_target") {
+    throw correctionError("PLANNER_CHARGE_TARGET_NOT_ELIGIBLE",
+      selectedChargeTargetUnitId);
+  }
   if (selected?.action?.actionType === "charge"
     && selectedCharge.status !== "exact") {
     throw correctionError("PLANNER_CHARGE_REACHABILITY_EVIDENCE_REQUIRED",
-      `Query exact physical base-edge relationships from ${selectedCharge.pieceId
-        || selected?.action?.pieceId || "selected Unit"} to every eligible target before selecting Charge.`);
+      `Exact physical base-edge distance from ${selectedCharge.pieceId
+        || selected?.action?.pieceId || "selected Unit"} to intended target ${
+        selectedChargeTargetUnitId} is unavailable; do not assert reachability.`);
   }
   if (selected?.action?.actionType === "charge"
     && selectedCharge.certainDistanceShortfall === true) {
     throw correctionError("PLANNER_CERTAIN_CHARGE_DISTANCE_SHORTFALL",
-      `Nearest target base edge ${selectedCharge.nearestTargetBaseEdgeDistanceMilliInches} milli-inches; maximum Charge move ${selectedCharge.maximumDistanceMilliInches} milli-inches before the 1-inch engagement allowance. Select Pass, a useful ability before Charge, or another current candidate; do not declare a certainly failed Charge.`);
+      `Intended target ${selectedChargeTargetUnitId} base edge ${
+        selectedCharge.baseEdgeDistanceMilliInches} milli-inches requires ${
+        selectedCharge.minimumMoveToEngageMilliInches} milli-inches to engage; maximum Charge move ${
+        selectedCharge.maximumDistanceMilliInches} milli-inches. Select another current candidate or a genuinely reachable target; do not declare this certainly failed Charge.`);
   }
   const formationAlternatives = actions.filter((entry) =>
     entry.id !== pass?.id && entry.kind === "parameterized"
@@ -1600,7 +2414,9 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
       || !Array.isArray(formationSearchRequest.formationObjectives)
       || formationSearchRequest.formationObjectives.length < 1) {
       throw correctionError("PLANNER_FORMATION_INTENT_REQUIRED",
-        "tacticalPurpose,formationObjectives");
+        describeStarcraftTmgFormationIntentCorrectionV1({
+          selected, recommendedCandidateId,
+        }));
     }
   }
   if (!publicPlanSummary.trim()) {
@@ -1610,9 +2426,20 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
     raw.lifecycleAssessment, input, recommendedCandidateId);
   return freeze({
     recommendedCandidateId,
+    selectedChargeTargetUnitId: selected?.action?.actionType === "charge"
+      ? selectedChargeTargetUnitId : null,
     plan: object(normalizedPlan) ? clone(normalizedPlan) : null,
+    ...(plannerOpponentModelSnapshot(raw, input) ? {
+      opponentModelSnapshot: plannerOpponentModelSnapshot(raw, input),
+    } : {}),
     assessment: clone(raw.assessment),
+    ...(object(raw.plannerGoalContract) ? {
+      plannerGoalContract: clone(raw.plannerGoalContract),
+    } : {}),
     planRevision: normalizedPlanRevision,
+    ...(raw.futureActionPlanAmendment ? {
+      futureActionPlanAmendment: clone(raw.futureActionPlanAmendment),
+    } : {}),
     reconstructedPlanRevision,
     informationNeeds: Array.isArray(raw.informationNeeds)
       ? clone(raw.informationNeeds) : [],
@@ -1625,6 +2452,7 @@ function normalizePlannerOutput(raw, input, queryReceipts = []) {
       entry.candidateId === recommendedCandidateId) || null,
     selectedActionIdentity: identityClaims.selectedIdentity,
     selectedActionResourceContract: resourceClaims.resourceContract,
+    advisoryFindings: clone(threatClaims.advisoryFindings),
     lifecycleAssessment,
     publicPlanSummary,
     hiddenChainOfThoughtStored: false,
@@ -1649,11 +2477,7 @@ function validateActionOutput(raw, input, planner, queryReceipts = []) {
   if (identityClaims.status === "contradicted") {
     const first = identityClaims.contradictions[0];
     throw correctionError("ACTION_SELECTED_ACTION_IDENTITY_CONTRADICTED",
-      selectedActionIdentityContradictionDetail(first));
-  }
-  if (identityClaims.status === "unbound") {
-    throw correctionError("ACTION_SELECTED_ACTION_IDENTITY_REQUIRED",
-      identityClaims.selectedIdentity.abilityName);
+      selectedActionIdentityContradictionDetail(first), identityClaims.correctionIssues);
   }
   const resourceClaims = inspectStarcraftTmgSelectedActionResourceClaimsV1({
     spatialActionSpace: input.spatialActionSpace,
@@ -1664,12 +2488,13 @@ function validateActionOutput(raw, input, planner, queryReceipts = []) {
   if (resourceClaims.status === "contradicted") {
     const first = resourceClaims.contradictions[0];
     throw correctionError("ACTION_SELECTED_ACTION_RESOURCE_CONTRADICTED",
-      resourceContradictionDetail(first));
+      resourceContradictionDetail(first), resourceClaims.correctionIssues);
   }
   const threatClaims = inspectStarcraftTmgFormationThreatClaimsV1({
     raw,
     queryReceipts,
     spatialObservation: input.spatialObservation,
+    plannerSelectedAction: selected.action,
   });
   if (threatClaims.contradicted) {
     const first = threatClaims.contradictions[0];
@@ -1739,6 +2564,7 @@ function validateActionOutput(raw, input, planner, queryReceipts = []) {
       spatialObservation: input.spatialObservation,
       currentPhase: input.roomProjection?.state?.phase,
       queryReceipts,
+      ownAction: raw,
     });
   if (predictionFeasibility.status === "contradicted") {
     const first = predictionFeasibility.contradictions[0];
@@ -1747,6 +2573,7 @@ function validateActionOutput(raw, input, planner, queryReceipts = []) {
       `${first.responseId || first.index}:${first.actorId}:${
         first.actionClass || "unknown"}:${first.reason}:${
         first.repairHint || "replace_with_lifecycle_consistent_prediction"}`,
+      predictionFeasibility.correctionIssues,
     );
   }
   for (const [index, tradeoff] of
@@ -1805,7 +2632,41 @@ function exactInstantiationReceipt(queryReceipts, domainId) {
 }
 
 function singletonDomainParameters(domain) {
-  const schema = domain?.parameterSchema;
+  if (isExactForcedChargeFailureDomain(domain)) {
+    return {
+      outcome: "failure",
+      failureProof: { kind: domain.parameterSchema.failureProofKind },
+    };
+  }
+  const source = sourceActionDomain(domain);
+  const schema = source?.parameterSchema;
+  if (source?.actionType === "resolve_impact"
+    && schema?.singleTargetForcedAllocation === true
+    && Array.isArray(schema.required) && schema.required.length === 1
+    && schema.required[0] === "allocations"
+    && Array.isArray(schema.targetUnitIds)
+    && schema.targetUnitIds.length === 1
+    && Array.isArray(schema.eligibleModels)
+    && schema.eligibleModels.length > 0) {
+    const targetUnitId = schema.targetUnitIds[0];
+    const seen = new Set();
+    const allocations = [];
+    for (const model of schema.eligibleModels) {
+      const modelId = String(model?.modelId || "");
+      const dice = Number(model?.impactDice);
+      if (!modelId || seen.has(modelId)
+        || !Number.isSafeInteger(dice) || dice <= 0
+        || !Array.isArray(model?.eligibleTargetUnitIds)
+        || model.eligibleTargetUnitIds.length !== 1
+        || model.eligibleTargetUnitIds[0] !== targetUnitId) return null;
+      seen.add(modelId);
+      allocations.push({ modelId, targetUnitId, dice });
+    }
+    if (allocations.reduce((sum, entry) => sum + entry.dice, 0)
+      !== Number(schema.exactTotal)) return null;
+    return { allocations: allocations.sort((left, right) => (
+      left.modelId.localeCompare(right.modelId))) };
+  }
   if (!object(schema) || !Array.isArray(schema.required)) return null;
   const parameters = {};
   for (const field of schema.required) {
@@ -1837,7 +2698,11 @@ export function resolveStarcraftTmgDeterministicSingletonActionV1(
   if (!object(parameters)) return null;
   return freeze({ selected: clone(selected), proposal: {
     kind: "parameterized", domainId: selected.id, parameters,
-  }, parameterBinding: "singleton_domain", trainingTruth: false });
+  }, parameterBinding: sourceActionDomain(selected.action)?.actionType === "resolve_impact"
+    && sourceActionDomain(selected.action)?.parameterSchema
+      ?.singleTargetForcedAllocation === true
+    ? "single_target_forced_impact" : "singleton_domain",
+  trainingTruth: false });
 }
 
 function bindPlannerSelectedProposal(raw, input, planner) {
@@ -1912,7 +2777,9 @@ function formationThreatClaimFragments(raw, selection) {
   return fields.flatMap(([field, value]) => {
     const values = Array.isArray(value) ? value : [value];
     return values.flatMap((entry) => String(entry || "")
-      .split(/[.;!?。；！？\n]+/u)
+      // Match Planner claim boundaries: an accepted threat in a contrasted
+      // clause does not widen the enemy scope of the preceding denial.
+      .split(/[.;!?。；！？\n]+|,\s*(?:but|whereas|while|however)\b/iu)
       .map((textValue) => textValue.trim())
       .filter(Boolean)
       .map((textValue) => ({ field, text: textValue })));
@@ -1944,21 +2811,26 @@ function selectionThreatClaimFragments(raw) {
   ];
   const fragments = fields.flatMap(([field, value]) => {
     const values = Array.isArray(value) ? value : [value];
-    return values.flatMap((entry) => String(entry || "")
-      .split(/[.;!?。；！？\n]+|,\s*(?:but|whereas|while|however)\b/iu)
-      .map((textValue) => textValue.trim())
-      .filter(Boolean)
-      .map((textValue) => ({ field, text: textValue })));
+    return values.flatMap((entry) => {
+      const scopeText = String(entry || "");
+      return scopeText
+        .split(/[.;!?。；！？\n]+|,\s*(?:but|whereas|while|however)\b/iu)
+        .map((textValue) => textValue.trim())
+        .filter(Boolean)
+        .map((textValue) => ({ field, text: textValue, scopeText }));
+    });
   });
   for (const [index, comparison] of
     (Array.isArray(raw?.candidateComparisons)
       ? raw.candidateComparisons : []).entries()) {
     const textValue = String(comparison?.evaluation
       || comparison?.reason || "").trim();
-    if (textValue) fragments.push({
-      field: `candidateComparisons[${index}].evaluation`,
-      text: textValue,
-    });
+    if (textValue) fragments.push(...textValue
+      .split(/[.;!?。；！？\n]+|,\s*(?:but|whereas|while|however)\b/iu)
+      .map(text => text.trim()).filter(Boolean).map(text => ({
+        field: `candidateComparisons[${index}].evaluation`,
+        text, scopeText: textValue, candidateId: comparison.candidateId,
+      })));
   }
   for (const [index, alternative] of
     (Array.isArray(raw?.rejectedAlternatives)
@@ -1972,28 +2844,69 @@ function selectionThreatClaimFragments(raw) {
   return fragments;
 }
 
-function threatFactsForNamedTargets(fragment, facts, units) {
+function threatFactsForNamedTargets(fragment, facts, units, scopeText = "") {
   const normalized = String(fragment || "").toLowerCase();
+  // Current graph facts and solved-formation rows describe the same directed
+  // threat. Resolve the hostile attacker with the shared observed-identity
+  // matcher before resolving friendly targets. Another enemy's fire cannot
+  // disprove a denial explicitly limited to Marine (or any other named Unit).
+  const attackerScopedFacts = formationThreatRowsForClaim(fragment,
+    facts.map(fact => ({ ...fact, enemyUnitId: fact.attackerId })), units)
+    .map(({ enemyUnitId, ...fact }) => fact);
   // Whole-side statements retain whole-side scope; otherwise bind only
   // authoritative IDs/names. Shared names retain all matching instances.
   if (/\b(?:all|every|entire|whole)\s+(?:(?:own|friendly|our|the)\s+)?(?:units?|army|force|lane|footprint)\b/iu
-    .test(normalized)) return facts;
-  const namesMentioned = new Set();
-  const names = (value) => [...new Set([String(value || "").trim(),
-    String(value || "").replace(/\s*\([^)]*\)/gu, "").trim()])].filter(Boolean);
-  const mentions = (value) => {
+    .test(normalized)) return { facts: attackerScopedFacts,
+      resolvedTargetUnitIds: [], targetScope: "whole_side" };
+  const names = (value) => {
+    const full = String(value || "").trim();
+    const plain = full.replace(/\s*\([^)]*\)/gu, "").trim();
+    // Natural shorthand uses the final name token (e.g. "Raptor"). Resolve
+    // it against this seat's observed identities, never a game-specific name
+    // table. Shared suffixes retain all matching instances, just like names.
+    const suffix = plain.split(/\s+/u).at(-1);
+    return [...new Set([full, plain, suffix])].filter(Boolean);
+  };
+  const mentions = (textValue, value) => {
     const escaped = value.toLowerCase().replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
     return new RegExp(`(?:^|[^\\p{L}\\p{N}_-])${escaped}(?=$|[^\\p{L}\\p{N}_-])`, "u")
-      .test(normalized);
+      .test(textValue);
   };
-  for (const unit of units) {
-    if (!["own", "allied"].includes(unit.sideRelation)) continue;
-    if ([unit.unitId, ...names(unit.unitName)].filter(Boolean).some(mentions)) {
-      namesMentioned.add(unit.unitId);
+  const namedTargets = textValue => {
+    const result = new Set();
+    for (const unit of units) {
+      if (!["own", "allied"].includes(unit.sideRelation)) continue;
+      if ([unit.unitId, ...names(unit.unitName)].filter(Boolean)
+        .some(value => mentions(textValue, value))) result.add(unit.unitId);
     }
+    return result;
+  };
+  let namesMentioned = namedTargets(normalized);
+  // Only a pronoun with one unambiguous same-item antecedent may inherit
+  // identity. Explicit names win; ambiguous/whole-army claims stay strict.
+  if (!namesMentioned.size && /^(?:it|they|its|their)\b|^(?:它|它们|该单位)/iu
+    .test(normalized)) {
+    const antecedents = namedTargets(String(scopeText || "").toLowerCase());
+    if (antecedents.size === 1) namesMentioned = antecedents;
   }
-  return namesMentioned.size
-    ? facts.filter((fact) => namesMentioned.has(fact.targetId)) : facts;
+  return {
+    facts: namesMentioned.size
+      ? attackerScopedFacts.filter((fact) => namesMentioned.has(fact.targetId))
+      : attackerScopedFacts,
+    resolvedTargetUnitIds: [...namesMentioned],
+    targetScope: namesMentioned.size ? "named_units" : "unresolved",
+  };
+}
+
+function unspecifiedPossessedThreatProfiles(fragment) {
+  const text = String(fragment || "");
+  // A Unit's own profiles and profiles received from an enemy are distinct
+  // graph directions. This possessive wording alone proves neither safety
+  // nor an incoming-fire contradiction. Keep it for review, not authority.
+  return /\b(?:has|have|possesses?)\s+(?:no|zero)\s+(?:current\s+)?(?:stationary\s+)?(?:weapon|fire|threat)\s+profiles?\b/iu
+    .test(text)
+    && !/\b(?:incoming|enemy|opponent|hostile|against|by|received|covering|targeting)\b/iu
+      .test(text);
 }
 
 function claimsNoIncomingStationaryThreat(fragment) {
@@ -2011,21 +2924,49 @@ function claimsNoIncomingStationaryThreat(fragment) {
   const escapeTerm = /\b(?:outside|beyond|out of)\b/iu;
   const positiveEscape = escapeTerm.test(withoutMovementOnlyBands)
     && stationaryThreatTerm.test(withoutMovementOnlyBands);
-  const positiveDenial =
-    /\b(?:no|zero)\b[^.;!?]{0,50}\b(?:stationary\s+)?(?:weapon|fire|threat)\b[^.;!?]{0,50}\b(?:cover|target|reach|profile)/iu
-    .test(withoutMovementOnlyBands)
+  // Do not join an own outgoing-fire statement to an unrelated objective
+  // sentence ("has no fire band and cannot reach a marker").
+  const positiveDenial = withoutMovementOnlyBands
+    .split(/\b(?:and|but|so)\b|[.;!?]/iu).some((clause) =>
+      !unspecifiedPossessedThreatProfiles(clause) &&
+      /\b(?:no|zero)\b[^.;!?]{0,50}\b(?:stationary\s+)?(?:weapon|fire|threat)\b[^.;!?]{0,50}\b(?:cover|target|reach|profile)/iu
+        .test(clause))
     || /\b(?:cannot|can't|unable to)\b[^.;!?]{0,50}\b(?:target|shoot|fire at)\b/iu
       .test(withoutMovementOnlyBands);
   const chineseEscape =
     /(?:火力(?:圈|范围|区|带)|射程|威胁(?:圈|范围))外|无法(?:成为目标|被射击)/u
       .test(withoutMovementOnlyBands);
-  return positiveEscape || positiveDenial || chineseEscape;
+  const incomingDenial =
+    /\b(?:is|are)\s+not\s+(?:currently\s+)?(?:threatened|targeted|covered)\s+by\b[^.;!?]*\b(?:current[- ]round\s+)?stationary\s+(?:fire|weapon|attack|threat)/iu
+      .test(withoutMovementOnlyBands);
+  return positiveEscape || positiveDenial || chineseEscape || incomingDenial;
+}
+
+function claimsClearedEnemyStationaryFire(fragment) {
+  return /\b(?:clears?|removes?|eliminates?)\b[^.;!?]{0,80}\b(?:enemy|opponent|hostile)\b[^.;!?]{0,45}\bstationary\s+(?:fire|weapon|threat)\s+(?:bands?|zones?|ranges?|envelopes?)\b/iu
+    .test(String(fragment || ""));
+}
+
+function deniesOnlyCurrentRoundStationaryThreat(fragment) {
+  const normalized = String(fragment || "").toLowerCase();
+  return /\b(?:no|zero|0|outside|beyond|out of)\b[^.;!?]{0,45}\b(?:current[- ]round|this round|immediate)\b/iu
+    .test(normalized)
+    && !/\b(?:no|zero|0)\s+(?:future[- ]round|next[- ]round|any[- ]round|all[- ]round|stationary)\b/iu
+      .test(normalized);
 }
 
 function claimsNoIncomingMoveThenFireThreat(fragment) {
-  const normalized = String(fragment || "").replaceAll("&lt;", "<")
+  let normalized = String(fragment || "").replaceAll("&lt;", "<")
     .replaceAll("&gt;", ">").toLowerCase();
   if (!normalized) return false;
+  // A conditional downside ("if no fire band opens this round") does not
+  // assert that the currently projected enemy band is absent. Strip only
+  // that antecedent; any separate, unconditional safety claim in the same
+  // fragment still reaches the contradiction checks below.
+  normalized = normalized.replace(
+    /\bif\s+no\s+(?:(?:enemy|current[- ]round)\s+)?(?:fire|threat|weapon)\s+bands?\s+(?:opens?|appears?|emerges?|develops?)\b/giu,
+    " ",
+  );
   const moveThenFire = String.raw`move[- ]then[- ](?:fire|attack)`;
   const explicitZero = new RegExp(
     String.raw`\b(?:no|zero|0)\s+(?:current\s+)?(?:in[- ]band\s+)?${moveThenFire}(?:\s+(?:weapon|threat|profile)s?)?\b`,
@@ -2064,7 +3005,11 @@ function currentIncomingThreatTargets(queryReceipts, friendlyUnitIds = new Set()
         .has(relationship?.edgeKind)) continue;
       const targetId = String(relationship.fromUnitId || "");
       const attackerId = String(relationship.toUnitId || "");
-      if (!targetId) continue;
+      // `toFrom` is fire received by the graph's `from` unit. An opponent
+      // `from` unit is the target of our *outgoing* fire, not an own unit
+      // under enemy threat. Never infer an incoming band without an explicit
+      // own/allied target in the seat-scoped observation.
+      if (!targetId || !friendlyUnitIds.has(targetId)) continue;
       if (relationship.relation === "friendly"
         || relationship.relation === "allied"
         || (friendlyUnitIds.has(targetId) && friendlyUnitIds.has(attackerId))) continue;
@@ -2086,7 +3031,12 @@ function currentIncomingThreatTargets(queryReceipts, friendlyUnitIds = new Set()
         stationaryFacts.push({ targetId, attackerId,
           profileKeys: clone(currentStationaryProfileKeys),
           minimumBaseEdgeDistanceMilliInches: Number(relationship
-            .nearestPhysicalEdges?.distanceMilliInches) || null });
+            .nearestPhysicalEdges?.distanceMilliInches) || null,
+          earliestStationaryAttackHorizon:
+            incoming.actionWindow?.earliestStationaryAttackHorizon ?? null,
+          actionWindow: clone(incoming.actionWindow || null),
+          relationshipEdgeId: relationship.edgeId || null,
+          queryReceiptHash: receipt.queryReceiptHash || null });
       }
       const currentStationaryUnknownProfileKeys = Object.hasOwn(incoming,
         "currentRoundStationaryUnknownProfileKeys")
@@ -2097,7 +3047,12 @@ function currentIncomingThreatTargets(queryReceipts, friendlyUnitIds = new Set()
         stationaryUnknownFacts.push({ targetId, attackerId,
           profileKeys: clone(currentStationaryUnknownProfileKeys),
           minimumBaseEdgeDistanceMilliInches: Number(relationship
-            .nearestPhysicalEdges?.distanceMilliInches) || null });
+            .nearestPhysicalEdges?.distanceMilliInches) || null,
+          earliestStationaryAttackHorizon:
+            incoming.actionWindow?.earliestStationaryAttackHorizon ?? null,
+          actionWindow: clone(incoming.actionWindow || null),
+          relationshipEdgeId: relationship.edgeId || null,
+          queryReceiptHash: receipt.queryReceiptHash || null });
       }
       const hasLifecycleMoveThenFire = Object.hasOwn(incoming,
         "currentRoundMoveThenAttackProfileKeys");
@@ -2116,7 +3071,12 @@ function currentIncomingThreatTargets(queryReceipts, friendlyUnitIds = new Set()
         moveThenFireFacts.push({ targetId, attackerId,
           profileKeys: clone(currentMoveThenFireProfileKeys),
           minimumBaseEdgeDistanceMilliInches: Number(relationship
-            .nearestPhysicalEdges?.distanceMilliInches) || null });
+            .nearestPhysicalEdges?.distanceMilliInches) || null,
+          earliestMoveThenAttackHorizon:
+            incoming.actionWindow?.earliestMoveThenAttackHorizon ?? null,
+          actionWindow: clone(incoming.actionWindow || null),
+          relationshipEdgeId: relationship.edgeId || null,
+          queryReceiptHash: receipt.queryReceiptHash || null });
       }
     }
   }
@@ -2132,16 +3092,227 @@ function threatContradictionDetail(contradiction = {}) {
       .split("::").at(-1)).join(",");
     return `${entry.targetId || "unknown_target"}<-${entry.attackerId
       || "unknown_attacker"}[${profiles || "profile_count_nonzero"}]@${
-      entry.minimumBaseEdgeDistanceMilliInches ?? "unknown"}`;
+      entry.minimumBaseEdgeDistanceMilliInches ?? "unknown"}#${
+      (contradiction.threatKind === "move_then_fire"
+        ? entry.earliestMoveThenAttackHorizon
+        : entry.earliestStationaryAttackHorizon) || "horizon_unknown"}`;
   }).join(";");
   return `${contradiction.field || "unknown_field"}:${
     contradiction.threatKind || "unknown_threat"}:${facts || contradiction.source
       || "projection"}`;
 }
 
+function prospectiveThreatMitigationInstruction(fragment, field) {
+  if (field !== "plan.strategicApproach") return false;
+  const text = String(fragment || "").trim();
+  // This structured field contains instructions for an unexecuted plan, not
+  // certified current positions. Keep current facts/calculations and selected
+  // formation outcomes on their existing strict checks.
+  const instruction = /^(?:(?:keep|move|reposition|seek|aim|try|attempt|plan|avoid|maintain)\b|保持|移动|重新部署|尝试|争取|计划|避开)/iu;
+  const separatePresentSafetyClaim =
+    /\b(?:currently|already|now|is|are|has|have)\b[^,;!?()]*\b(?:outside|beyond|out of|no\s+(?:current[- ]round\s+)?(?:stationary\s+)?(?:fire|threat|weapon)|cannot\s+(?:target|shoot))\b|(?:当前|现在|已经)[^，；！？（）]*(?:射程外|火力圈外|没有威胁)/iu;
+  return instruction.test(text) && !separatePresentSafetyClaim.test(text);
+}
+
+function unverifiedProspectivePositionClaim(entry, selectedAction, raw) {
+  if (!["deploy", "redeploy", "move", "run", "charge",
+    "resolve_relocation_ability"].includes(selectedAction?.actionType)) return false;
+  // A query of current positions cannot disprove safety at a not-yet-solved
+  // intended zone. Preserve the assertion as uncertainty, never certify it.
+  // Separate actual-position sentences still reach ordinary strict checks.
+  const text = String(entry.text || "");
+  const explicitZone = /\b(?:intended|planned|proposed)\s+(?:[\p{L}\p{N}_-]+\s+){0,5}(?:deployment|placement|destination)\s+(?:zone|area|position|location)\b|(?:拟定|计划|预定)的?(?:部署|摆放|移动)(?:区域|位置|地点)/iu
+    .test(text);
+  const selectedFutureComparison = entry.candidateId
+    && entry.candidateId === raw?.recommendedCandidateId
+    && /^(?:adds?|deploys?|moves?|runs?|charges?|repositions?|would|will)\b/iu.test(text)
+    && !/\b(?:currently|already|now)\b/iu.test(text);
+  return explicitZone || Boolean(selectedFutureComparison);
+}
+
+function inheritedPlanStatementOrigin(input, finding) {
+  // Only the Host's same-match memory can date unchanged canonical plan text.
+  // A Provider-authored date, changed sentence, assessment, alternative or
+  // post-placement safety assertion cannot acquire this historical scope.
+  if (finding.field !== "plan.strategicApproach"
+    || finding.source !== "current_relationship_graph"
+    || !finding.resolvedTargetUnitIds?.length) return null;
+  const memory = input.matchMemory;
+  const room = input.roomProjection;
+  const lineage = memory?.workingMemory?.planStatementLineage;
+  const currentPlan = input.currentPlan;
+  const currentRound = Number(room?.state?.round);
+  if (lineage?.source !== "same_match_plan_journal"
+    || lineage.field !== finding.field
+    || !currentPlan?.planId || lineage.planId !== currentPlan.planId
+    || !currentPlan.strategicApproach?.includes(finding.scopeText)
+    || memory.scope?.roomId !== room?.room?.roomId
+    || memory.scope?.seatKey !== room?.viewer?.seatKey
+    || memory.scope?.matchBindingHash !== room?.matchBinding?.bindingHash
+    || memory.authority?.stateRevision !== room?.room?.stateRevision
+    || memory.authority?.stateHash !== room?.room?.stateHash
+    || memory.authority?.round !== currentRound
+    || memory.authority?.phase !== room?.state?.phase
+    || !Number.isSafeInteger(currentRound) || currentRound < 1) return null;
+  const statement = lineage.statements?.find(entry =>
+    entry.text === finding.scopeText);
+  const origin = statement?.originAuthority;
+  if (!Number.isSafeInteger(origin?.round) || origin.round < 1
+    || origin.round >= currentRound
+    || !Number.isSafeInteger(origin.stateRevision)
+    || origin.stateRevision >= room.room.stateRevision) return null;
+  return origin;
+}
+
+function mentionsThreatIdentity(text, identity) {
+  if (!identity) return false;
+  // Natural numbered names use spaces, hyphens or underscores interchangeably.
+  // Preserve token boundaries: Goliath-1 must never bind Goliath-10 or an
+  // unnumbered card name followed by a different instance suffix.
+  const escaped = String(identity).split(/[\s_-]+/u).map(token =>
+    token.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")).join("[\\s_-]+");
+  return new RegExp(`(?:^|[^\\p{L}\\p{N}_-])${escaped}(?=$|[^\\p{L}\\p{N}_-])`, "iu")
+    .test(text);
+}
+
+function coordinatedEnemyClaimFragments(entry, units) {
+  // A complete new subject clause has its own predicate: "Goliath threatens,
+  // and Marine has no fire" does not deny Goliath. Split only at a comma-and
+  // followed by an observed enemy subject + finite verb. Never split a shared
+  // noun list such as "Goliath and Marine have no fire", nor guess pronouns.
+  const names = units.filter(unit => unit.sideRelation === "opponent")
+    .flatMap(unit => [unit.unitId, unit.unitName]).filter(Boolean);
+  const startsEnemyClause = text => names.some(name => {
+    const escaped = String(name).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+    return new RegExp(`^(?:the\\s+)?${escaped}\\s+(?:has|have|is|are|can|cannot|does|do|will|would)\\b`, "iu").test(text);
+  });
+  const text = String(entry.text || ""), parts = [];
+  let start = 0;
+  for (const match of text.matchAll(/,\s*and\s+/giu)) {
+    const next = match.index + match[0].length;
+    if (!startsEnemyClause(text.slice(next))) continue;
+    parts.push(text.slice(start, match.index).trim());
+    start = next;
+  }
+  if (!parts.length) return [entry];
+  parts.push(text.slice(start).trim());
+  return parts.filter(Boolean).map(part => ({ ...entry, text: part,
+    scopeText: entry.scopeText || text }));
+}
+
+function formationThreatRowsForClaim(text, rows, units) {
+  // A projected row goes from the selected Unit to the enemy. Resolve the
+  // attacker independently of friendly-target scope in the current graph.
+  const enemies = units.filter(unit => unit.sideRelation === "opponent");
+  const exception = /\b(?:except(?:\s+for)?|excluding|other than)\b/iu.exec(text);
+  const head = exception ? text.slice(0, exception.index) : text;
+  const exceptionText = exception ? text.slice(exception.index
+    + exception[0].length) : "";
+  // The seat already supplies the authoritative sideKey and unique unitId.
+  // Bind a numbered side-local shorthand only when its side-prefixed identity
+  // is exact and the shorthand identifies one observed enemy. Do not invent
+  // instance numbers from the shared card name or guess a side from a prefix.
+  const aliases = enemies.map(unit => {
+    const prefix = unit.sideKey ? `${unit.sideKey}-` : "";
+    const id = String(unit.unitId || "");
+    return prefix && id.startsWith(prefix)
+      ? { id, value: id.slice(prefix.length) } : null;
+  }).filter(Boolean);
+  const aliasKey = value => value.toLowerCase().replace(/[\s_-]+/gu, " ");
+  const aliasesByKey = new Map();
+  for (const alias of aliases) {
+    const key = aliasKey(alias.value);
+    if (!aliasesByKey.has(key)) aliasesByKey.set(key, new Set());
+    aliasesByKey.get(key).add(alias.id);
+  }
+  const namesFor = id => [id, ...enemies.filter(unit => unit.unitId === id)
+    .map(unit => unit.unitName).filter(Boolean), ...aliases.filter(alias =>
+      alias.id === id && aliasesByKey.get(aliasKey(alias.value)).size === 1)
+      .map(alias => alias.value)];
+  // Quantify the threat noun phrase, not arbitrary text between "every model"
+  // and "fire". Generic modifiers may describe whole-enemy fire; an observed
+  // Unit identity (e.g. "all current-round Marine fire") instead narrows it.
+  // A separate explicit "all enemy fire, including Marine" remains universal.
+  const wholeEnemyScope = /\b(?:all|every|entire|whole)(?:[\s-]+(?:the|of|current|this|round|enemy|opponent|hostile|stationary|ranged|confirmed|available|remaining|reachable|known))*[\s-]+(?:fire(?:[\s-]+bands?)?|threats?|weapons?|enemies|opponents|hostiles)\b/iu
+    .test(head) || /\b(?:no|zero)(?:[\s-]+(?:current|this|round|stationary|ranged))*[\s-]+(?:enemy|opponent|hostile)(?:[\s-]+(?:stationary|ranged|fire|threat|weapon|bands?))*\b/iu.test(head);
+  // "Marine has no fire band" has an explicit subject. The negative
+  // determiner alone is not a universal quantifier over other attackers.
+  const namedEnemyIds = new Set(enemies.filter(unit =>
+    namesFor(unit.unitId).some(name => mentionsThreatIdentity(head, name)))
+    .map(unit => unit.unitId));
+  const scopedRows = !wholeEnemyScope && namedEnemyIds.size
+    ? rows.filter(row => namedEnemyIds.has(row.enemyUnitId || row.targetId))
+    : rows;
+  if (!exceptionText) return scopedRows;
+  return scopedRows.map(row => {
+    const attackerNames = namesFor(row.enemyUnitId || row.targetId);
+    if (!attackerNames.some(name => mentionsThreatIdentity(exceptionText, name))) {
+      return row;
+    }
+    const profileFields = [
+      "enemyStationaryThreatProfileKeys",
+      "enemyCurrentRoundStationaryThreatProfileKeys",
+      "enemyStationaryThreatUnknownProfileKeys",
+      "enemyCurrentRoundStationaryThreatUnknownProfileKeys",
+    ];
+    const keys = [...new Set(profileFields.flatMap(field => row[field] || []))];
+    const exceptedKeys = new Set(keys.filter(key =>
+      mentionsThreatIdentity(exceptionText, String(key).split("::").at(-1))));
+    // Only explicit weapon exceptions are removed. An unknown/ambiguous
+    // exception must not conceal another weapon or an unresolved LOS band.
+    if (!exceptedKeys.size) return row;
+    const scoped = { ...row };
+    for (const field of profileFields) {
+      if (!Array.isArray(row[field])) continue;
+      scoped[field] = row[field].filter(key => !exceptedKeys.has(key));
+      const countField = field.replace(/Keys$/u, "Count");
+      if (Object.hasOwn(row, countField)) {
+        scoped[countField] = Math.max(scoped[field].length,
+          Number(row[countField] || 0) - (row[field].length - scoped[field].length));
+      }
+    }
+    return scoped;
+  });
+}
+
+function sourceBoundFormationOptionForThreatClaims(input) {
+  const selection = input.raw?.formationSelection;
+  const domainId = input.raw?.proposal?.domainId;
+  if (!object(selection) || !domainId) return null;
+  const receipt = exactFormationReceipt(input.queryReceipts, domainId);
+  if (!receipt || receipt.queryReceiptHash !== selection.formationReceiptHash) {
+    return null;
+  }
+  return receipt.result.formationOptions.find(option =>
+    option.formationOptionId === selection.formationOptionId
+      && option.domainId === domainId
+      && (!input.plannerSelectedAction?.pieceId
+        || option.pieceId === input.plannerSelectedAction.pieceId)) || null;
+}
+
+function refersToChosenFormationGeometry(entry, option, units) {
+  if (!option.pieceId || !option.completeFormationPlacementChecked) return false;
+  const text = String(entry.text || "");
+  // An explicit solved-placement result is not a claim about the old board.
+  // Keep other-Unit, whole-army and separate current-position statements on
+  // the current graph. A mere future action or loose safety intention cannot
+  // acquire post-placement evidence through this boundary.
+  if (!/\bformation(?:\s+option)?\b[^.;!?]{0,120}\b(?:places?|positions?|keeps?|leaves?|is|are)\b|(?:选定|所选|该)队形[^。；！？]{0,80}(?:摆放|位置|处于)/iu.test(text)
+    || /\b(?:all|every|entire|whole)\s+(?:(?:own|friendly|our|the)\s+)?(?:units?|army|force|lane|footprint)\b/iu.test(text)) return false;
+  const targets = threatFactsForNamedTargets(text, [], units,
+    entry.scopeText).resolvedTargetUnitIds;
+  return targets.length > 0 && targets.every(id => id === option.pieceId);
+}
+
 export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
-  const option = object(input.option) ? input.option : {};
-  const friendlyUnitIds = new Set((input.spatialObservation?.units || [])
+  const option = object(input.option) ? input.option
+    : sourceBoundFormationOptionForThreatClaims(input) || {};
+  // Reserves still have authoritative identities even though no current
+  // position/threat edge exists for them. Missing them from identity binding
+  // widened a Swarmling claim to current Kerrigan/Worm edges.
+  const units = [...(input.spatialObservation?.units || []),
+    ...(input.spatialObservation?.offTableUnits || [])];
+  const friendlyUnitIds = new Set(units
     .filter((unit) => unit.sideRelation === "own" || unit.sideRelation === "allied")
     .map((unit) => unit.unitId));
   // Old saved formation rows lost the graph's relation field and mislabeled
@@ -2150,8 +3321,20 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
   const hostileRows = (option.relationshipComparison?.relationships || [])
     .filter((row) => row.relation !== "friendly" && row.relation !== "allied"
       && !friendlyUnitIds.has(row.targetId));
+  const hasStationaryThreat = (entry, currentRoundOnly) => {
+    if (currentRoundOnly && (Object.hasOwn(entry,
+      "enemyCurrentRoundStationaryThreatProfileCount")
+      || Object.hasOwn(entry,
+        "enemyCurrentRoundStationaryThreatProfileKeys"))) {
+      return Number(entry.enemyCurrentRoundStationaryThreatProfileCount || 0)
+        > 0 || (entry.enemyCurrentRoundStationaryThreatProfileKeys || [])
+          .length > 0;
+    }
+    return Number(entry.enemyStationaryThreatProfileCount || 0) > 0
+      || (entry.enemyStationaryThreatProfileKeys || []).length > 0;
+  };
   const optionIncomingTargetIds = hostileRows
-    .filter((entry) => Number(entry.enemyStationaryThreatProfileCount || 0) > 0)
+    .filter((entry) => hasStationaryThreat(entry, false))
     .map((entry) => String(entry.targetId || ""))
     .filter(Boolean);
   const optionIncomingUnknownTargetIds = hostileRows
@@ -2161,53 +3344,168 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
     .map((entry) => String(entry.targetId || ""))
     .filter(Boolean);
   const optionClaims = formationThreatClaimFragments(input.raw,
-    input.selection);
-  const selectionClaims = selectionThreatClaimFragments(input.raw);
+    input.selection).flatMap(entry => coordinatedEnemyClaimFragments(entry, units)).filter(entry => {
+      const targets = threatFactsForNamedTargets(entry.text, [], units)
+        .resolvedTargetUnitIds;
+      return !option.pieceId || !targets.length || targets.includes(option.pieceId);
+    });
+  const selectionClaims = selectionThreatClaimFragments(input.raw)
+    .flatMap(entry => coordinatedEnemyClaimFragments(entry, units));
+  const chosenGeometryClaims = new Set(selectionClaims.filter(entry =>
+    refersToChosenFormationGeometry(entry, option, units)));
   const currentThreatTargets = currentIncomingThreatTargets(
     input.queryReceipts || [], friendlyUnitIds);
+  const prospectiveClaims = new Set(
+    !(option.relationshipComparison?.relationships || []).length
+      ? selectionClaims.filter(entry =>
+        (claimsNoIncomingStationaryThreat(entry.text)
+          || claimsNoIncomingMoveThenFireThreat(entry.text))
+        && unverifiedProspectivePositionClaim(entry,
+          input.plannerSelectedAction, input.raw)) : []);
+  const unresolvedTargetClaims = new Map();
   const currentClaimContradictions = (facts, predicate, threatKind) =>
-    selectionClaims.filter((entry) => predicate(entry.text)).flatMap((entry) => {
+    selectionClaims.filter((entry) => !prospectiveClaims.has(entry)
+      && !chosenGeometryClaims.has(entry)
+      && predicate(entry.text, entry.field)).flatMap((entry) => {
       const scoped = threatFactsForNamedTargets(entry.text, facts,
-        input.spatialObservation?.units || []);
-      return scoped.length ? [{ ...entry, threatKind,
-        source: "current_relationship_graph", threatFacts: clone(scoped) }] : [];
+        units, entry.scopeText);
+      // A missing subject is not a universal quantifier. Current graph edges
+      // cannot contradict a sentence until its friendly target scope binds.
+      // Keep ambiguous narration visible as unknown, never certify safety or
+      // silently turn another Unit's danger into a blocking contradiction.
+      // Solved-formation claims retain their explicit option target above.
+      if (scoped.targetScope === "unresolved") {
+        unresolvedTargetClaims.set(`${entry.field}:${entry.text}`, {
+          ...entry, severity: "Medium", blocksApply: false,
+          reasonCode: "threat_claim_target_scope_unresolved",
+          source: "model_statement_without_bound_friendly_target",
+          reason: "No named friendly Unit or explicit whole-side scope. The statement is unverified, not evidence of safety and not contradicted by an unrelated Unit's threat edge.",
+        });
+        return [];
+      }
+      return scoped.facts.length ? [{ ...entry, threatKind,
+        source: "current_relationship_graph",
+        resolvedTargetUnitIds: scoped.resolvedTargetUnitIds,
+        threatFacts: clone(scoped.facts) }] : [];
     });
+  const deniesCurrentStationaryPosition = (fragment, field) =>
+    !prospectiveThreatMitigationInstruction(fragment, field)
+    && !/\b(?:a|the|this)\s+move\s+that\s+(?:keeps?|would\s+keep|could\s+keep)\b[^.;!?]{0,120}\b(?:outside|beyond|out of)\b/iu
+      .test(String(fragment || ""))
+    && claimsNoIncomingStationaryThreat(fragment);
   const contradictions = [
-    ...(optionIncomingTargetIds.length > 0
-      ? optionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
-        entry.text)).map((entry) => ({ ...entry,
-        threatKind: "stationary", source: "formation_projection",
-        threatFacts: hostileRows
-          .filter((fact) => Number(
-            fact.enemyStationaryThreatProfileCount || 0) > 0)
-          .map((fact) => ({ targetId: fact.targetId,
-            attackerId: fact.enemyUnitId,
-            profileKeys: clone(fact.enemyStationaryThreatProfileKeys || []),
-            minimumBaseEdgeDistanceMilliInches:
-              fact.minimumBaseEdgeDistanceMilliInches ?? null })) })) : []),
+    ...optionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
+      entry.text) || claimsClearedEnemyStationaryFire(entry.text))
+      .flatMap((entry) => {
+      const currentRoundOnly = deniesOnlyCurrentRoundStationaryThreat(
+        entry.text);
+       const threatened = formationThreatRowsForClaim(entry.text, hostileRows,
+         units).filter((fact) =>
+        hasStationaryThreat(fact, currentRoundOnly));
+      return threatened.length ? [{ ...entry,
+        threatKind: currentRoundOnly ? "current_round_stationary"
+          : "stationary",
+        source: "formation_projection",
+         threatFacts: threatened.map((fact) => ({ targetId: fact.fromUnitId || null,
+           attackerId: fact.enemyUnitId || fact.targetId,
+          profileKeys: clone(currentRoundOnly
+            ? fact.enemyCurrentRoundStationaryThreatProfileKeys || []
+            : fact.enemyStationaryThreatProfileKeys || []),
+          minimumBaseEdgeDistanceMilliInches:
+            fact.minimumBaseEdgeDistanceMilliInches ?? null,
+          earliestStationaryAttackHorizon:
+            fact.enemyThreatActionWindow?.earliestStationaryAttackHorizon
+              ?? null })) }] : [];
+    }),
     ...(optionIncomingUnknownTargetIds.length > 0
       ? optionClaims.filter((entry) => claimsNoIncomingStationaryThreat(
-        entry.text)).map((entry) => ({ ...entry,
-        threatKind: "stationary_unknown_line_of_sight",
-        source: "formation_projection",
-        threatFacts: hostileRows
-          .filter((fact) => (fact
-            .enemyCurrentRoundStationaryThreatUnknownProfileKeys
-            || fact.enemyStationaryThreatUnknownProfileKeys || []).length > 0)
-          .map((fact) => ({ targetId: fact.targetId,
-            attackerId: fact.enemyUnitId,
+        entry.text) || claimsClearedEnemyStationaryFire(entry.text))
+         .flatMap((entry) => {
+           const scopedUnknownRows = formationThreatRowsForClaim(entry.text,
+             hostileRows, units)
+             .filter((fact) => (fact
+               .enemyCurrentRoundStationaryThreatUnknownProfileKeys
+               || fact.enemyStationaryThreatUnknownProfileKeys || []).length > 0);
+           return scopedUnknownRows.length ? [{ ...entry,
+         threatKind: "stationary_unknown_line_of_sight",
+         source: "formation_projection",
+         threatFacts: scopedUnknownRows
+           .map((fact) => ({ targetId: fact.fromUnitId || null,
+             attackerId: fact.enemyUnitId || fact.targetId,
             profileKeys: clone(fact
               .enemyCurrentRoundStationaryThreatUnknownProfileKeys
               || fact.enemyStationaryThreatUnknownProfileKeys || []),
             minimumBaseEdgeDistanceMilliInches:
-              fact.minimumBaseEdgeDistanceMilliInches ?? null })) })) : []),
+               fact.minimumBaseEdgeDistanceMilliInches ?? null })) }] : [];
+         }) : []),
+    ...optionClaims.filter(entry => claimsNoIncomingMoveThenFireThreat(entry.text))
+      .flatMap(entry => {
+        const currentRoundOnly = deniesOnlyCurrentRoundStationaryThreat(entry.text);
+        const threatened = formationThreatRowsForClaim(entry.text, hostileRows, units)
+          .filter(row => (currentRoundOnly
+            ? row.enemyCurrentRoundMoveThenAttackProfileKeys || []
+            : row.enemyMoveThenAttackProfileKeys || []).length > 0);
+        return threatened.length ? [{ ...entry, threatKind: "move_then_fire",
+          source: "formation_projection", threatFacts: threatened.map(row => ({
+            targetId: row.fromUnitId || option.pieceId,
+            attackerId: row.enemyUnitId || row.targetId,
+            profileKeys: clone(currentRoundOnly
+              ? row.enemyCurrentRoundMoveThenAttackProfileKeys || []
+              : row.enemyMoveThenAttackProfileKeys || []),
+            minimumBaseEdgeDistanceMilliInches:
+              row.minimumBaseEdgeDistanceMilliInches ?? null,
+            earliestMoveThenAttackHorizon:
+              row.enemyThreatActionWindow?.earliestMoveThenAttackHorizon ?? null,
+          })) }] : [];
+      }),
     ...currentClaimContradictions(currentThreatTargets.stationaryFacts,
-      claimsNoIncomingStationaryThreat, "stationary"),
+      deniesCurrentStationaryPosition, "stationary"),
     ...currentClaimContradictions(currentThreatTargets.stationaryUnknownFacts,
-      claimsNoIncomingStationaryThreat, "stationary_unknown_line_of_sight"),
+      deniesCurrentStationaryPosition, "stationary_unknown_line_of_sight"),
     ...currentClaimContradictions(currentThreatTargets.moveThenFireFacts,
       claimsNoIncomingMoveThenFireThreat, "move_then_fire"),
   ];
+  const selectedAction = input.plannerSelectedAction;
+  const selectedUnitId = String(selectedAction?.pieceId || "");
+  // The scope boundary is the selected Unit, not the action verb. A Queen
+  // ability must not be blocked by a Kerrigan plan claim any more than a Move
+  // would be. Keep selected/whole-side/ambiguous claims and option projections
+  // blocking; preserve unambiguously other-Unit plan claims as review evidence.
+  const canRetainOtherUnitPlanAsAdvisory = friendlyUnitIds.has(selectedUnitId);
+  const advisoryFindings = [...prospectiveClaims].map(entry => ({
+    ...entry, severity: "Medium", blocksApply: false,
+    reasonCode: "unverified_prospective_position_claim",
+    source: "model_prediction_without_post_placement_evidence",
+    reason: "Current-position relationship queries neither establish nor contradict the intended position. Recheck the solved placement; this is not certified safety or Rules authority.",
+  }));
+  advisoryFindings.push(...unresolvedTargetClaims.values());
+  advisoryFindings.push(...[...optionClaims, ...selectionClaims]
+    .filter(entry => unspecifiedPossessedThreatProfiles(entry.text))
+    .map(entry => ({ ...entry, severity: "Medium", blocksApply: false,
+      reasonCode: "threat_profile_direction_unspecified",
+      source: "model_statement_without_explicit_fire_direction",
+      reason: "Possessing no threat profiles is not an assertion that no enemy profiles cover this Unit. Retained for review; not certified outgoing coverage, safety or Rules authority.",
+    })));
+  const blockingContradictions = contradictions.filter(entry => {
+    const historicalOrigin = canRetainOtherUnitPlanAsAdvisory
+      ? inheritedPlanStatementOrigin(input, entry) : null;
+    if (historicalOrigin) {
+      advisoryFindings.push({ ...entry, severity: "Medium", blocksApply: false,
+        reasonCode: "inherited_prior_round_plan_statement",
+        originAuthority: clone(historicalOrigin),
+        reason: "Unchanged prior-round plan narration; retained as stale historical strategy, not a current safety fact or Rules authority." });
+      return false;
+    }
+    const nonselectedPlan = canRetainOtherUnitPlanAsAdvisory
+      && entry.field === "plan.strategicApproach"
+      && entry.source === "current_relationship_graph"
+      && entry.resolvedTargetUnitIds?.length > 0
+      && entry.resolvedTargetUnitIds.every(id => id !== selectedUnitId);
+    if (!nonselectedPlan) return true;
+    advisoryFindings.push({ ...entry, severity: "Medium", blocksApply: false,
+      reason: "Nonselected Unit plan claim; retained for review, not current selected-Unit action authority." });
+    return false;
+  });
   return freeze({
     incomingTargetIds: [...new Set([
       ...optionIncomingTargetIds, ...optionIncomingUnknownTargetIds,
@@ -2216,8 +3514,9 @@ export function inspectStarcraftTmgFormationThreatClaimsV1(input = {}) {
     ])],
     incomingMoveThenFireTargetIds: currentThreatTargets.moveThenFire,
     checkedClaimCount: optionClaims.length + selectionClaims.length,
-    contradictions,
-    contradicted: contradictions.length > 0,
+    contradictions: blockingContradictions,
+    advisoryFindings,
+    contradicted: blockingContradictions.length > 0,
   });
 }
 
@@ -2286,7 +3585,69 @@ function observedUnitActivation(spatialObservation, unit) {
     entry?.unitId === unit?.unitId)?.status?.activatedPhases || {};
 }
 
-function opponentTargetThreatProjections(queryReceipts, actorId, targetId) {
+// One lifecycle projection is consumed by generation, diagnostics and the
+// narrowly evidenced metadata repair below. It does not predict strategy or
+// certify a future action's range/path/LOS.
+export function projectStarcraftTmgOpponentPredictionTimingFactsV1(input = {}) {
+  const observation = input.spatialObservation || {};
+  return {
+    schemaVersion: "starcraft_tmg_opponent_prediction_timing_facts_v1",
+    currentPhase: String(input.currentPhase || "").toLowerCase(),
+    phaseOrder: ["movement", "assault", "combat"],
+    actionPhaseByClass: clone(PREDICTED_ORDINARY_ACTION_PHASES),
+    opponents: (observation.units || []).filter(unit =>
+      unit.sideRelation === "opponent").map(unit => {
+      const activated = observedUnitActivation(observation, unit);
+      return { unitId: unit.unitId, activatedPhases: Object.fromEntries(
+        ["movement", "assault", "combat"].map(phase => [phase,
+          typeof activated[phase] === "boolean" ? activated[phase] : null])),
+      };
+    }),
+    horizonMeaning: {
+      current_phase: "The predicted action occurs in the phase currently open.",
+      current_round: "The predicted action can occur in this round, including a later phase.",
+      bounded_public_transitions: "Conditional later public transitions; prerequisites remain explicit.",
+    },
+    phaseAvailabilityDoesNotProveRangePathOrLineOfSight: true,
+    rulesAuthority: false, trainingTruth: false,
+  };
+}
+
+function postFormationOpponentThreatProjections(queryReceipts, ownAction,
+  actorId, targetId) {
+  const selection = ownAction?.formationSelection;
+  const domainId = String(ownAction?.proposal?.domainId || "");
+  if (!object(selection) || !domainId) return null;
+  const receipt = exactFormationReceipt(queryReceipts, domainId);
+  if (!receipt || receipt.queryReceiptHash !== selection.formationReceiptHash) {
+    return null;
+  }
+  const option = receipt.result.formationOptions.find(entry =>
+    entry.formationOptionId === selection.formationOptionId);
+  if (!option || option.pieceId !== targetId) return null;
+  // The target changes position before the predicted response. Read the
+  // selected, source-bound result, never a Provider-authored comparison or
+  // another option. Missing/unknown projected facts cannot prove absence.
+  return (option.relationshipComparison?.relationships || [])
+    .filter(row => row.fromUnitId === targetId && row.targetId === actorId
+      && row.relation === "opposed"
+      && Array.isArray(row.enemyCurrentRoundStationaryThreatProfileKeys)
+      && Array.isArray(row.enemyCurrentRoundMoveThenAttackProfileKeys))
+    .map(row => ({
+      currentRoundStationaryProfileKeys:
+        row.enemyCurrentRoundStationaryThreatProfileKeys,
+      currentRoundMoveThenAttackProfileKeys:
+        row.enemyCurrentRoundMoveThenAttackProfileKeys,
+      currentRoundStationaryUnknownProfileKeys:
+        row.enemyCurrentRoundStationaryThreatUnknownProfileKeys || [],
+    }));
+}
+
+function opponentTargetThreatProjections(queryReceipts, actorId, targetId,
+  ownAction = null) {
+  const projected = postFormationOpponentThreatProjections(queryReceipts,
+    ownAction, actorId, targetId);
+  if (projected !== null) return projected;
   const projections = [];
   for (const receipt of queryReceipts || []) {
     if (receipt?.queryKind !== "space.inspect_relationships"
@@ -2312,12 +3673,69 @@ function opponentTargetThreatProjections(queryReceipts, actorId, targetId) {
 
 function hasCurrentRoundRangedBand(projection) {
   return (projection.currentRoundStationaryProfileKeys || []).length > 0
-    || (projection.currentRoundMoveThenAttackProfileKeys || []).length > 0;
+    || (projection.currentRoundMoveThenAttackProfileKeys || []).length > 0
+    || (projection.currentRoundStationaryUnknownProfileKeys || []).length > 0;
 }
 
 function hasLifecycleRangedBandContract(projection) {
   return Object.hasOwn(projection, "currentRoundStationaryProfileKeys")
     && Object.hasOwn(projection, "currentRoundMoveThenAttackProfileKeys");
+}
+
+function predictionCorrectionIssues(input, contradictions, units, offTableUnits) {
+  const observation = input.spatialObservation || {};
+  return contradictions.map(entry => {
+    const response = input.responses[entry.index];
+    const actor = units.get(entry.actorId) || offTableUnits.get(entry.actorId);
+    const targetId = String(response?.likelyTargetUnitId || "");
+    const target = units.get(targetId) || offTableUnits.get(targetId);
+    const unitFacts = unit => unit ? { unitId: unit.unitId,
+      sideRelation: unit.sideRelation,
+      isInReserves: unit.isInReserves === true,
+      isDestroyed: unit.isDestroyed === true,
+      activatedPhases: clone(observedUnitActivation(observation, unit)),
+    } : null;
+    const sourceReceipts = (input.queryReceipts || []).filter(receipt =>
+      receipt.queryKind === "space.inspect_relationships"
+        && (receipt.result?.relationships || []).some(row =>
+          new Set(["unit_spatial_relationship", "unit_relationship"]).has(row.edgeKind)
+            && (row.fromUnitId === entry.actorId && row.toUnitId === targetId
+              || row.fromUnitId === targetId && row.toUnitId === entry.actorId)))
+      .map(receipt => ({ queryKind: receipt.queryKind,
+        queryReceiptHash: receipt.queryReceiptHash, status: receipt.status,
+        authority: clone(receipt.result.authority),
+        hypotheticalProjection: receipt.result.hypotheticalProjection === true,
+      }));
+    const formation = input.ownAction?.formationSelection;
+    if (formation) {
+      const receipt = exactFormationReceipt(input.queryReceipts,
+        String(input.ownAction.proposal?.domainId || ""));
+      if (receipt?.queryReceiptHash === formation.formationReceiptHash) {
+        sourceReceipts.push({ queryKind: receipt.queryKind,
+          queryReceiptHash: receipt.queryReceiptHash, status: receipt.status,
+          formationOptionId: formation.formationOptionId,
+          postSelectedFormationProjection: true });
+      }
+    }
+    return { code: "ACTION_OPPONENT_PREDICTION_LIFECYCLE_CONTRADICTED",
+      field: `intent.predictedOpponentResponses.${entry.index}`,
+      claim: clone(response), reason: entry.reason,
+      source: "current_player_observation_and_bound_query_receipts",
+      observationAuthority: { roomId: observation.roomId,
+        stateRevision: observation.stateRevision, stateHash: observation.stateHash,
+        observationHash: observation.observationHash },
+      facts: { currentPhase: String(input.currentPhase || "").toLowerCase(),
+        predictedPhase: entry.predictedPhase || null,
+        actor: unitFacts(actor), target: unitFacts(target),
+        rangedTargetProjections: clone(opponentTargetThreatProjections(
+          input.queryReceipts, entry.actorId, targetId, input.ownAction) || []),
+        currentPositionDoesNotCertifyFutureTransitions: true },
+      sourceReceipts,
+      correctionScope: "reconcile_response_actor_target_action_horizon_and_basis",
+      repairInstruction: "Reconcile the submitted prediction with the actor/target activation and source-bound range facts. Preserve supported risks and counterplay. If retaining a conditional future hypothesis, state its public prerequisites and bounded transition horizon; do not invent current range or LOS. The selected action and strategy remain your choice within the existing Planner contract.",
+      strategyRecommendationProvided: false, rulesAuthority: false,
+      trainingTruth: false };
+  });
 }
 
 export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
@@ -2387,14 +3805,17 @@ export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
       && predictedPhase !== currentPhase) {
       contradictions.push({ index, responseId: response.responseId || null,
         actorId, actionClass, submittedActionClass, predictedPhase,
-        currentPhase, reason: "action_class_not_available_in_current_phase" });
+        currentPhase, reason: "action_class_not_available_in_current_phase",
+        repairHint: `current_phase_is_${currentPhase}_but_${actionClass}_occurs_in_${predictedPhase};`
+          + "use_current_round_only_with_same_round_actor_target_evidence;"
+          + "otherwise_keep_future_prerequisites_conditional;preserve_actor_target_risk_and_counterplay" });
       continue;
     }
     const targetId = String(response?.likelyTargetUnitId || "").trim();
     if (actionClass === "ranged_attack" && targetId
       && horizonKind === "current_round") {
       const projections = opponentTargetThreatProjections(
-        input.queryReceipts, actorId, targetId,
+        input.queryReceipts, actorId, targetId, input.ownAction,
       ).filter(hasLifecycleRangedBandContract);
       if (projections.length > 0
         && projections.every((entry) => !hasCurrentRoundRangedBand(entry))) {
@@ -2422,6 +3843,7 @@ export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
     status: contradictions.length ? "contradicted" : "consistent",
     currentPhase,
     contradictions,
+    correctionIssues: predictionCorrectionIssues(input, contradictions, units, offTableUnits),
     rulesAuthority: false,
     trainingTruth: false,
   });
@@ -2430,14 +3852,119 @@ export function inspectStarcraftTmgOpponentPredictionFeasibilityV1(
 export function normalizeStarcraftTmgOpponentPredictionsV1(input = {}) {
   const action = clone(input.action);
   const responses = action?.intent?.predictedOpponentResponses;
-  if (!Array.isArray(responses) || responses.length < 2) return action;
+  if (!Array.isArray(responses) || responses.length < 1) return action;
   const inspection = inspectStarcraftTmgOpponentPredictionFeasibilityV1({
     responses,
     spatialObservation: input.spatialObservation,
     currentPhase: input.currentPhase,
     queryReceipts: input.queryReceipts,
+    ownAction: action,
   });
   if (inspection.status !== "contradicted") return action;
+  const observation = input.spatialObservation || {};
+  const timing = projectStarcraftTmgOpponentPredictionTimingFactsV1(input);
+  const currentPhaseIndex = timing.phaseOrder.indexOf(timing.currentPhase);
+  const sameRoundPhaseRepairs = inspection.contradictions.filter(entry => {
+    const response = responses[entry.index];
+    if (entry.reason !== "action_class_not_available_in_current_phase"
+      || entry.actionClass !== "ranged_attack"
+      || response.horizon?.kind !== "current_phase"
+      || Number(response.horizon.count) !== 1
+      || currentPhaseIndex < 0
+      || timing.phaseOrder.indexOf(entry.predictedPhase) <= currentPhaseIndex) return false;
+    const actor = timing.opponents.find(unit => unit.unitId === entry.actorId);
+    if (actor?.activatedPhases?.[entry.predictedPhase] !== false) return false;
+    const basis = [response.opponentAction, ...(response.basis || [])].join("\n");
+    if (!/\bassault\s+phase\b|\bphase\s+assault\b|突击阶段/iu.test(basis)
+      || /\b(?:next|later|future|following)\s+round\b|下(?:一)?回合|未来回合/iu.test(basis)) return false;
+    // Never fall back to pre-placement positions for an unbound formation.
+    if (action.formationSelection && postFormationOpponentThreatProjections(
+      input.queryReceipts, action, entry.actorId,
+      String(response.likelyTargetUnitId || "")) === null) return false;
+    const projections = opponentTargetThreatProjections(input.queryReceipts,
+      entry.actorId, String(response.likelyTargetUnitId || ""), action);
+    return projections.length > 0 && projections.every(projection =>
+      hasLifecycleRangedBandContract(projection)
+        && ((projection.currentRoundStationaryProfileKeys || []).length > 0
+          || (projection.currentRoundMoveThenAttackProfileKeys || []).length > 0));
+  });
+  if (sameRoundPhaseRepairs.length === inspection.contradictions.length) {
+    const repaired = clone(action);
+    for (const entry of sameRoundPhaseRepairs) {
+      repaired.intent.predictedOpponentResponses[entry.index].horizon = {
+        kind: "current_round", count: 1,
+      };
+    }
+    if (inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+      ...input, responses: repaired.intent.predictedOpponentResponses,
+      ownAction: repaired,
+    }).status === "consistent") {
+      repaired.opponentPredictionNormalization = {
+        schema: "starcraft_tmg_opponent_prediction_normalization_v1",
+        normalizationVersion: ACTION_SHAPE_NORMALIZATION_VERSION,
+        operation: "bind_explicit_same_round_future_phase_horizon",
+        inputCount: responses.length, retainedCount: responses.length,
+        repaired: sameRoundPhaseRepairs.map(entry => ({
+          responseId: entry.responseId || null, actorId: entry.actorId,
+          predictedPhase: entry.predictedPhase, currentPhase: entry.currentPhase,
+          from: "current_phase", to: "current_round",
+        })),
+        selectedFormationOptionId: action.formationSelection?.formationOptionId || null,
+        formationReceiptHash: action.formationSelection?.formationReceiptHash || null,
+        originalActionChanged: false, rulesAuthority: false, trainingTruth: false,
+      };
+      return repaired;
+    }
+  }
+  const opponentReserves = (observation.offTableUnits || []).filter((unit) =>
+    unit.sideRelation === "opponent" && unit.isInReserves === true
+      && unit.isDestroyed !== true);
+  const canUnbindGenericReserveActor = opponentReserves.length > 0
+    && inspection.contradictions.every((entry) => {
+      if (entry.reason !== "on_table_actor_cannot_use_reserve_deploy_action_class") {
+        return false;
+      }
+      const response = responses[entry.index];
+      const actionText = String(response?.opponentAction || "");
+      const actorId = String(response?.likelyActorUnitId || "");
+      return actorId && !actionText.includes(actorId)
+        && (response?.basis || []).some((line) =>
+          String(line).includes(actorId)
+            && /\b(?:on the table|on-table|already deployed|already on field)\b/iu
+              .test(String(line)));
+    });
+  if (canUnbindGenericReserveActor) {
+    const repaired = clone(action);
+    for (const entry of inspection.contradictions) {
+      repaired.intent.predictedOpponentResponses[entry.index]
+        .likelyActorUnitId = "";
+    }
+    const reinspection = inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+      responses: repaired.intent.predictedOpponentResponses,
+      spatialObservation: observation,
+      currentPhase: input.currentPhase,
+      queryReceipts: input.queryReceipts,
+      ownAction: repaired,
+    });
+    if (reinspection.status === "consistent") {
+      repaired.opponentPredictionNormalization = {
+        schema: "starcraft_tmg_opponent_prediction_normalization_v1",
+        normalizationVersion: ACTION_SHAPE_NORMALIZATION_VERSION,
+        operation: "unbind_impossible_actor_from_generic_reserve_prediction",
+        inputCount: responses.length,
+        retainedCount: responses.length,
+        unbound: inspection.contradictions.map((entry) => ({
+          responseId: entry.responseId || null,
+          actorId: entry.actorId,
+          reason: entry.reason,
+        })),
+        rulesAuthority: false,
+        trainingTruth: false,
+      };
+      return repaired;
+    }
+  }
+  if (responses.length < 2) return action;
   const contradictedIndexes = new Set(inspection.contradictions.map((entry) =>
     entry.index));
   const retained = responses.filter((_, index) =>
@@ -2462,7 +3989,8 @@ export function normalizeStarcraftTmgOpponentPredictionsV1(input = {}) {
   return action;
 }
 
-function bindFormationSelection(raw, queryReceipts, spatialObservation) {
+export function bindStarcraftTmgFormationSelectionV1(raw, queryReceipts,
+  spatialObservation) {
   if (!object(raw) || !object(raw.proposal)
     || raw.proposal.kind !== "parameterized") return raw;
   const normalized = clone(raw);
@@ -2480,16 +4008,89 @@ function bindFormationSelection(raw, queryReceipts, spatialObservation) {
     throw correctionError("ACTION_FORMATION_OPTION_SELECTION_REQUIRED",
       domainId);
   }
-  const threatClaimInspection = inspectStarcraftTmgFormationThreatClaimsV1({
+  const declaredPayments = receipt.result.legalPaymentChoices || [];
+  const recoveredPayments = declaredPayments.length ? null
+    : projectStarcraftTmgFormationPaymentsV1(undefined,
+      receipt.result.formationOptions);
+  const legalPaymentChoices = declaredPayments.length ? declaredPayments
+    : recoveredPayments.legalPaymentChoices;
+  if (!declaredPayments.length && legalPaymentChoices.length) {
+    normalized.formationPaymentEvidenceReconciliation = {
+      source: "rules_instantiated_canonical_formation_options",
+      formationReceiptHash: receipt.queryReceiptHash,
+      formationOptionId,
+      normalizationVersion: ACTION_SHAPE_NORMALIZATION_VERSION,
+      retainedReceiptUnchanged: true,
+      finalRulesInstantiationStillRequired: true,
+      trainingTruth: false,
+    };
+  }
+  const submittedPayment = selection.paymentCardInstanceIds;
+  let chosenPayment = null;
+  if (legalPaymentChoices.length > 0) {
+    if (!Array.isArray(submittedPayment)
+      && legalPaymentChoices.length !== 1) {
+      throw correctionError("ACTION_FORMATION_PAYMENT_SELECTION_REQUIRED",
+        domainId);
+    }
+    const requested = Array.isArray(submittedPayment)
+      ? submittedPayment : legalPaymentChoices[0];
+    chosenPayment = legalPaymentChoices.find((choice) =>
+      choice.length === requested.length
+        && new Set(requested).size === requested.length
+        && choice.every((cardId) => requested.includes(cardId)));
+    if (!chosenPayment) {
+      throw correctionError("ACTION_FORMATION_PAYMENT_SELECTION_INVALID",
+        domainId);
+    }
+  } else if (Array.isArray(submittedPayment)
+    && submittedPayment.length > 0) {
+    throw correctionError("ACTION_FORMATION_PAYMENT_NOT_APPLICABLE", domainId);
+  }
+  let threatClaimInspection = inspectStarcraftTmgFormationThreatClaimsV1({
     raw: normalized,
     selection,
     option,
     spatialObservation,
   });
+  // A corrected strict submission can contain both a stale top-level reason
+  // and a correct, model-authored reason for the *same exact option*. Reuse
+   // that second statement only when it is the sole contradiction and a full
+  // reinspection clears every claim. Never invent a safer interpretation or
+  // turn an actually exposed formation into a no-threat assertion.
+  const authoredReason = String(selection.publicReason || "").trim();
+   const replacementField = threatClaimInspection.contradictions.length === 1
+     ? threatClaimInspection.contradictions[0].field : null;
+   if (["selectedReason", "scoreOrPositionValue"].includes(replacementField)
+     && authoredReason && authoredReason !== normalized[replacementField]) {
+     const staleReason = normalized[replacementField];
+     normalized[replacementField] = authoredReason;
+    const reinspection = inspectStarcraftTmgFormationThreatClaimsV1({
+      raw: normalized, selection, option, spatialObservation,
+    });
+    if (reinspection.contradicted) {
+       normalized[replacementField] = staleReason;
+    } else {
+      normalized.formationReasonReconciliation = {
+        schemaVersion: "starcraft_tmg_same_submission_formation_reason_reconciliation_v1",
+        normalizationVersion: ACTION_SHAPE_NORMALIZATION_VERSION,
+        formationOptionId,
+        sourceField: "formationSelection.publicReason",
+         replacedField: replacementField,
+        originalReasonHash: hashStarcraftTmgContract(staleReason),
+        replacementReasonHash: hashStarcraftTmgContract(authoredReason),
+        allThreatClaimsReinspected: true,
+        rulesAuthority: false,
+        trainingTruth: false,
+      };
+      threatClaimInspection = reinspection;
+    }
+  }
   if (threatClaimInspection.contradicted) {
+    const first = threatClaimInspection.contradictions[0];
     throw correctionError(
       "ACTION_FORMATION_THREAT_CLAIM_CONTRADICTS_PROJECTION",
-      threatClaimInspection.incomingTargetIds.join(","),
+      threatContradictionDetail(first),
     );
   }
   const submittedAssignments = Array.isArray(selection.slotAssignments)
@@ -2528,6 +4129,7 @@ function bindFormationSelection(raw, queryReceipts, spatialObservation) {
       position: clone(slot.position), publicReason: publicReason.slice(0, 1_000) });
   }
   const parameters = clone(option.canonicalParameters);
+  if (chosenPayment) parameters.paymentCardInstanceIds = clone(chosenPayment);
   const leading = rationales.find((entry) => entry.isLeading);
   if (parameters.outcome === "failure" && option.slots.length === 0) {
     normalized.proposal = {
@@ -2537,6 +4139,7 @@ function bindFormationSelection(raw, queryReceipts, spatialObservation) {
     };
     normalized.formationSelection = {
       formationOptionId,
+      paymentCardInstanceIds: clone(chosenPayment || []),
       formationReceiptHash: receipt.queryReceiptHash,
       patternId: option.patternId,
       solverPolicyId: option.solverPolicyId || null,
@@ -2563,6 +4166,12 @@ function bindFormationSelection(raw, queryReceipts, spatialObservation) {
       modelId: entry.modelId,
       ...clone(entry.position),
     }));
+  } else if (Array.isArray(parameters.placement)) {
+    // Self-place Rules returns the complete layout under this native key.
+    // Do not leave an old placement array while writing ignored placements.
+    parameters.placement = rationales.map((entry) => ({
+      modelId: entry.modelId, ...clone(entry.position),
+    }));
   } else if (option.actionType === "resolve_charge") {
     if (leading.modelId !== option.fixedLeadingModelId) {
       throw correctionError("ACTION_FORMATION_FIXED_LEADER_REASSIGNED",
@@ -2586,6 +4195,7 @@ function bindFormationSelection(raw, queryReceipts, spatialObservation) {
   };
   normalized.formationSelection = {
     formationOptionId,
+    paymentCardInstanceIds: clone(chosenPayment || []),
     formationReceiptHash: receipt.queryReceiptHash,
     patternId: option.patternId,
     solverPolicyId: option.solverPolicyId || null,
@@ -3234,7 +4844,9 @@ function responseParts(output) {
   const planningPayload = terminal?.name === NATIVE_PLANNING_SUBMIT_TOOL_NAME
     && object(terminal.arguments) ? terminal.arguments
     : object(channels.planning) ? channels.planning
-    : object(output?.planning) ? output.planning : null;
+    : object(output?.planning) ? output.planning
+      : typeof output?.recommendedCandidateId === "string"
+        && object(output?.plan) ? output : null;
   const planningEnvelope = object(channels.planning) ? channels : output;
   const planning = planningPayload ? {
     ...clone(planningPayload),
@@ -3317,12 +4929,120 @@ function bindLifecycleEvidence(value, input, candidateId) {
   return result;
 }
 
+function plannerOpponentModelSnapshot(raw, input) {
+  if (raw?.currentGoalSource !== "plan.currentGoal"
+    || !Array.isArray(raw.plan?.opponentModel)) return null;
+  return {
+    schemaVersion: "starcraft_tmg_opponent_model_snapshot_v1",
+    source: "declared_planner_plan_opponent_model",
+    authority: {
+      roomId: input.roomProjection?.room?.roomId,
+      matchBindingHash: input.roomProjection?.matchBinding?.bindingHash,
+      stateRevision: input.roomProjection?.room?.stateRevision,
+      stateHash: input.roomProjection?.room?.stateHash,
+      legalSpaceHash: input.legalSpace?.legalSpaceHash,
+    },
+    statements: strings(raw.plan.opponentModel),
+    strategicPlanReplacementAllowed: false,
+    rulesAuthority: false,
+  };
+}
+
 function mapPlanningSubmission(raw, input) {
   if (!object(raw)) return raw;
   const result = clone(raw);
+  const delta = result.planUpdateMode === "field_delta_v1";
+  if (result.planUpdateMode !== undefined && !delta) {
+    throw correctionError("PLANNER_PLAN_UPDATE_MODE_UNSUPPORTED");
+  }
+  if (delta) {
+    if (!object(input.planState?.plan)) {
+      throw correctionError("PLANNER_DELTA_BASE_REQUIRED");
+    }
+    if (!object(result.plan)) throw correctionError("PLANNER_PLAN_TYPE_INVALID");
+    // Null/omitted means retain; [] is an explicit replacement. Do not expand
+    // inherited opponent beliefs before snapshot binding: that would forge
+    // freshness for unchanged historical beliefs.
+    result.plan = Object.fromEntries(Object.entries(result.plan)
+      .filter(([, value]) => value !== null && value !== undefined));
+    if (result.assessment?.verdict === "revise") {
+      result.planRevision = { ...clone(input.planState.plan), ...clone(result.plan),
+        revisionReason: result.plan.revisionReason
+          || result.assessment.continuitySummary };
+    }
+  }
+  // The Host derives this advisory observation from the declared full plan;
+  // a model cannot supply its own source/authority wrapper.
+  delete result.opponentModelSnapshot;
+  const opponentSnapshot = plannerOpponentModelSnapshot(result, input);
+  if (opponentSnapshot) result.opponentModelSnapshot = opponentSnapshot;
+  // A new submission explicitly declares ONE goal source. A deprecated extra
+  // assessment.currentGoal is not a second vote. Legacy paid replies without
+  // this declaration retain their old semantics; never silently choose between
+  // their competing model-authored fields or rewrite an accepted history.
+  if (result.currentGoalSource !== undefined) {
+    if (result.currentGoalSource !== "plan.currentGoal") {
+      throw correctionError("PLANNER_CURRENT_GOAL_SOURCE_UNSUPPORTED");
+    }
+    const goal = String(result.plan?.currentGoal || "").trim();
+    if (!goal) throw correctionError("PLANNER_CURRENT_GOAL_REQUIRED");
+    if (!object(result.assessment)) {
+      throw correctionError("PLANNER_ASSESSMENT_OBJECT_REQUIRED");
+    }
+    const deprecatedGoal = result.assessment.currentGoal;
+    result.assessment.currentGoal = goal;
+    result.plannerGoalContract = {
+      version: "single_current_goal_v1",
+      goalSource: "plan.currentGoal",
+      candidateId: result.recommendedCandidateId,
+      authority: {
+        roomId: input.roomProjection?.room?.roomId || null,
+        stateRevision: input.roomProjection?.room?.stateRevision ?? null,
+        stateHash: input.roomProjection?.room?.stateHash || null,
+      },
+      ...(typeof deprecatedGoal === "string" && deprecatedGoal !== goal ? {
+        ignoredDeprecatedGoal: deprecatedGoal,
+        advisory: "deprecated_assessment_goal_not_a_second_source",
+      } : {}),
+      strategicRevisionRequested: result.assessment.verdict === "revise",
+      hiddenChainOfThoughtStored: false,
+      trainingTruth: false,
+    };
+  }
   result.lifecycleAssessment = bindLifecycleEvidence(
     result.lifecycleAssessment, input, result.recommendedCandidateId);
   if (result.assessment?.verdict !== "revise") delete result.planRevision;
+  // Continuing a strategy is compatible with adding a concrete future use of
+  // the selected capability. Do not silently replace the whole strategy, or
+  // call the model's explicitly submitted item missing because verdict is
+  // continue. Only this declared protocol and current Rules capability may
+  // produce the bounded amendment; historical ambiguous replies stay unchanged.
+  delete result.futureActionPlanAmendment;
+  const identity = selectedActionIdentity(input.spatialActionSpace,
+    result.recommendedCandidateId);
+  if (result.currentGoalSource === "plan.currentGoal"
+    && result.assessment?.verdict === "continue" && input.planState?.plan
+    && identity?.effectContract?.futurePlanRequirement?.required === true) {
+    const items = (Array.isArray(result.plan?.futureActionPlans)
+      ? result.plan.futureActionPlans : []).filter(entry => object(entry)
+        && entry.enablingCandidateId === result.recommendedCandidateId);
+    if (items.length) result.futureActionPlanAmendment = {
+      schemaVersion: "starcraft_tmg_bounded_future_action_plan_amendment_v1",
+      candidateId: result.recommendedCandidateId,
+      basePlanHash: input.planState.plan.planHash,
+      authority: {
+        roomId: input.roomProjection?.room?.roomId,
+        matchBindingHash: input.roomProjection?.matchBinding?.bindingHash,
+        stateRevision: input.roomProjection?.room?.stateRevision,
+        stateHash: input.roomProjection?.room?.stateHash,
+        legalSpaceHash: input.legalSpace?.legalSpaceHash,
+      },
+      futureActionPlans: clone(items),
+      modelVerdict: "continue",
+      strategicPlanReplacementAllowed: false,
+      trainingTruth: false,
+    };
+  }
   if (result.formationSearchRequested === true) {
     result.formationSearchRequest = {
       preferredAnchor: {
@@ -3353,6 +5073,219 @@ function mapPlanningSubmission(raw, input) {
   return result;
 }
 
+export function projectStarcraftTmgSubmittedPlanningV1(raw, input,
+  { terminal = false } = {}) {
+  const structuredSubmission = object(raw)
+    && (Object.hasOwn(raw, "formationSearchRequested")
+      || Object.hasOwn(raw, "assetPlacementSearchRequested")
+      || Object.hasOwn(raw, "currentGoalSource"));
+  return terminal || structuredSubmission
+    ? mapPlanningSubmission(raw, input) : raw;
+}
+
+// Same-view facts, not a strategy score or an enforced opening queue. Keep the
+// original arrival forecast separate from accepted deployment events and the
+// CURRENT Rules supply; a zero planned pool cost is not zero marker strength.
+export function projectStarcraftTmgPlanProgressFactsV1(input = {}) {
+  const projection = input.roomProjection || {};
+  const state = projection.state || {};
+  const seatKey = projection.viewer?.seatKey || null;
+  const plan = input.planState?.plan || null;
+  const pieces = (Array.isArray(state.pieces) ? state.pieces : [])
+    .filter(piece => seatKey && piece.sideKey === seatKey);
+  const own = new Map(pieces.map(piece => [piece.id || piece.unitInstanceId, piece]));
+  const logs = (Array.isArray(state.log) ? state.log : []).filter(row =>
+    row.action?.sideKey === seatKey && own.has(row.action?.pieceId));
+  const deployments = new Map();
+  const latestActions = new Map();
+  for (const row of logs) {
+    const unitId = row.action.pieceId;
+    latestActions.set(unitId, {
+      sourceLogId: row.id || null,
+      round: row.round ?? null,
+      phase: row.phase || null,
+      actionType: row.action.actionType || null,
+    });
+    if (row.action.actionType === "deploy"
+      && row.events?.some(event => event.type === "unit_deploy_resolved")
+      && !deployments.has(unitId)) {
+      deployments.set(unitId, {
+        round: row.round ?? null, sourceLogId: row.id || null,
+      });
+    }
+  }
+  const origin = plan?.pregamePlanOrigin;
+  const schedule = plan?.pregameRosterArrivalSchedule;
+  const scheduleInScope = !origin || origin.seatKey === seatKey;
+  const entries = scheduleInScope && Array.isArray(schedule?.entries)
+    ? schedule.entries : [];
+  const numeric = value => typeof value === "number" && Number.isFinite(value)
+    ? value : null;
+  const presentState = piece => !piece ? "unknown"
+    : piece.isDestroyed === true ? "destroyed"
+      : piece.isOnField === true ? "on_field"
+        : piece.isInReserves === true ? "reserves" : "unknown";
+  return freeze({
+    schemaVersion: "starcraft_tmg_plan_progress_facts_v1",
+    authority: {
+      roomId: projection.room?.roomId || null,
+      stateRevision: projection.room?.stateRevision ?? null,
+      stateHash: projection.room?.stateHash || null,
+      seatKey,
+      round: numeric(state.round),
+      phase: state.phase || null,
+    },
+    strategicPlanRef: plan ? {
+      planId: plan.planId || null,
+      version: plan.version ?? null,
+      planHash: plan.planHash || null,
+    } : null,
+    arrivalForecastSource: schedule ? {
+      scheduleHash: schedule.scheduleHash || null,
+      fromOriginalPregamePlan: true,
+      currentLegalityAuthority: false,
+    } : null,
+    arrivalRows: entries.map(entry => {
+      const unitId = entry.unitInstanceId;
+      const piece = own.get(unitId);
+      const deployed = deployments.get(unitId);
+      return {
+        unitId,
+        sideKey: seatKey,
+        plannedFirstArrivalRound: numeric(entry.round),
+        plannedStartingSupply: numeric(entry.startingSupply),
+        plannedPoolSupply: numeric(entry.poolSupply),
+        observedFirstDeploymentRound: deployed?.round ?? null,
+        deploymentSourceLogId: deployed?.sourceLogId || null,
+        presentState: presentState(piece),
+        currentSupply: numeric(piece?.currentSupply),
+        currentModels: numeric(piece?.currentModels),
+        latestAcceptedAction: latestActions.get(unitId) || null,
+      };
+    }),
+    ownUnits: pieces.map(piece => ({
+      unitId: piece.id || piece.unitInstanceId,
+      presentState: presentState(piece),
+      currentSupply: numeric(piece.currentSupply),
+      currentModels: numeric(piece.currentModels),
+      latestAcceptedAction: latestActions.get(piece.id || piece.unitInstanceId)
+        || null,
+    })),
+    unknownDeploymentRoundIsNotNeverDeployed: true,
+    originalArrivalRoundsAreAdvisory: true,
+    noStrategyPreferenceWeights: true,
+    mayOverrideRules: false,
+    trainingTruth: false,
+  });
+}
+
+export function selectStarcraftTmgPlannerLocalReplayAttemptV1(choice, input, {
+  eligibleAlreadyRevalidatedAttemptKeys = null, onlyValid = false,
+} = {}) {
+  const scopedKeys = Array.isArray(eligibleAlreadyRevalidatedAttemptKeys)
+    ? new Set(eligibleAlreadyRevalidatedAttemptKeys) : null;
+  const candidates = [...(choice.attemptKeys || [])].reverse().filter((key) => {
+    const attempt = choice.attempts?.[key];
+    return attempt?.status === "completed"
+      && object(responseParts(attempt.safeOutput).planning)
+      && (scopedKeys ? scopedKeys.has(key)
+        : attempt.localPlannerSemanticReplayVersion
+          !== PLANNER_SHAPE_NORMALIZATION_VERSION);
+  });
+  const currentInput = decisionInputForChoice(input, choice);
+  const valid = candidates.find((key) => {
+    try {
+      const parts = responseParts(choice.attempts[key].safeOutput);
+      normalizePlannerOutput(projectStarcraftTmgSubmittedPlanningV1(
+        parts.planning, currentInput, { terminal: Boolean(parts.terminal) }),
+      currentInput, choice.queryReceipts || []);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  // Exactly as for Action recovery: preserve all original paid returns and
+  // use the latest fully valid one at the SAME current authority. If none is
+  // valid, retain the existing rejection/three-correction boundary.
+  return valid || (!onlyValid ? candidates[0] : null) || null;
+}
+
+// Explicit contract recovery must not erase the corrective context. Recheck
+// original paid planning replies against the SAME current authority and rebuild
+// feedback using the current normalizer, not obsolete error-only protocol text.
+export function applyStarcraftTmgPlanningPromptRepairRecoveryV1(
+  choice, repairPlan, input, recordedAt, providerInteractionMode) {
+  if (input.roomProjection?.room?.stateRevision !== choice.authority.stateRevision
+    || input.roomProjection?.room?.stateHash !== choice.authority.stateHash
+    || input.spatialActionSpace?.actionSpaceHash
+      !== choice.authority.spatialActionSpaceHash) {
+    throw new Error("LIVE_DECISION_PROMPT_REPAIR_AUTHORITY_CHANGED");
+  }
+  const currentInput = decisionInputForChoice(input, choice);
+  const history = [];
+  let lastRejected = null;
+  for (const key of choice.attemptKeys || []) {
+    const attempt = choice.attempts?.[key];
+    if (attempt?.status !== "completed" || attempt.stage !== "planning") continue;
+    const parts = responseParts(attempt.safeOutput);
+    if (!object(parts.planning)) continue;
+    try {
+      normalizePlannerOutput(projectStarcraftTmgSubmittedPlanningV1(
+        parts.planning, currentInput, { terminal: Boolean(parts.terminal) }),
+      currentInput, choice.queryReceipts || []);
+    } catch (error) {
+      if (!String(error.code || "").startsWith("PLANNER_")) throw error;
+      const correction = error.correction || error.code;
+      const feedback = buildStarcraftTmgSemanticCorrectionFeedbackV1({
+        stage: "planning", correction,
+        issues: error.correctionIssues || [], history, providerInteractionMode,
+      });
+      history.push({ stage: "planning", sourceAttemptKey: key, correction,
+        issues: clone(feedback.current.issues) });
+      lastRejected = { attemptKey: key, output: attempt.safeOutput, feedback };
+    }
+  }
+  if (!lastRejected && repairPlan.reason
+    === "typed_truncation_after_output_contract_change") {
+    const previousMessages = clone(choice.providerContinuationMessages || []);
+    applyStarcraftTmgPromptRepairRecoveryV1(choice, repairPlan, recordedAt);
+    choice.providerContinuationMessages = [...previousMessages, { role: "user",
+      content: JSON.stringify({ issue: "output_truncated",
+        sourceAttemptKey: repairPlan.lastAttemptKey,
+        correction: "Use the current output contract. The complete existing plan remains available; return the current intention and changed fields instead of copying unchanged source prose. Do not infer a finished decision from the truncated reply. Strategy selection, reflection and queries remain yours." }) }];
+    Object.assign(choice.promptRepairHistory.at(-1), {
+      authorityRevision: choice.authority.stateRevision,
+      authorityStateHash: choice.authority.stateHash,
+      correctiveContextRebuilt: true, strategyRecommendationProvided: false });
+    return;
+  }
+  if (!lastRejected) {
+    throw new Error("LIVE_DECISION_PROMPT_REPAIR_NO_CURRENT_CORRECTION");
+  }
+  const oldMessages = clone(choice.providerContinuationMessages || []);
+  const oldFeedbackHistory = clone(choice.semanticCorrectionFeedbackHistory || []);
+  applyStarcraftTmgPromptRepairRecoveryV1(choice, repairPlan, recordedAt);
+  const outputText = JSON.stringify(lastRejected.output);
+  choice.providerContinuationMessages = [{ role: "assistant",
+    content: outputText.length <= 64_000 ? outputText : JSON.stringify({
+      previousOutputHash: hashStarcraftTmgContract(lastRejected.output),
+      omittedOversizeOutput: true,
+    }) }, { role: "user", content: JSON.stringify(lastRejected.feedback) }];
+  choice.semanticCorrectionFeedbackHistory = [...oldFeedbackHistory, ...history];
+  Object.assign(choice.promptRepairHistory.at(-1), {
+    previousContinuationMessages: oldMessages,
+    previousSemanticCorrectionFeedbackHistory: oldFeedbackHistory,
+    correctiveContextRebuilt: true,
+    correctionSourceAttemptKeys: history.map(entry => entry.sourceAttemptKey),
+    lastRejectedAttemptKey: lastRejected.attemptKey,
+    authorityRevision: choice.authority.stateRevision,
+    authorityStateHash: choice.authority.stateHash,
+    strategyRecommendationProvided: false,
+    ...(choice.selectedEffectPlannerRecoveries?.at(-1)?.promptPolicyVersion
+      === repairPlan.nextPromptPolicyVersion ? { maximumNewSemanticCorrections: 1 } : {}),
+  });
+}
+
 function parseSubmittedParametersJson(value) {
   const normalized = normalizeProviderJsonDocumentV1(String(value || ""));
   try {
@@ -3362,6 +5295,30 @@ function parseSubmittedParametersJson(value) {
   } catch {
     throw correctionError("ACTION_PARAMETER_JSON_INVALID");
   }
+}
+
+export function canonicalizeStarcraftTmgSubmittedParameterAliasesV1(
+  candidate, parameters) {
+  const domain = sourceActionDomain(candidate);
+  if (domain?.actionType !== "charge"
+    || domain?.parameterKind
+      !== "official_selected_roster_charge_declaration_v1"
+    || !object(parameters) || !Array.isArray(parameters.targets)
+    || Object.keys(parameters).some((key) =>
+      !["leadingModelId", "targets"].includes(key))) return parameters;
+  const eligible = domain.constraints?.eligibleTargetModelIdsByUnitId || {};
+  const targets = parameters.targets.map((entry) => {
+    if (!object(entry)
+      || Object.keys(entry).sort().join(",")
+        !== "targetModelId,targetUnitId") return null;
+    const unitId = String(entry.targetUnitId || "");
+    const modelId = String(entry.targetModelId || "");
+    return eligible[unitId]?.includes(modelId)
+      ? { unitId, modelId } : null;
+  });
+  // Ambiguous or unknown values go unchanged to the authoritative Rules gate.
+  return targets.length > 0 && targets.every(Boolean)
+    ? { ...parameters, targets } : parameters;
 }
 
 const CORRECTION_LIFTED_INTENT_FIELDS = Object.freeze([
@@ -3382,6 +5339,7 @@ function correctionSelectionIdentity(selection) {
     optionId: selection.optionId || null,
     parametersJson: selection.parametersJson || null,
     slotAssignments: clone(selection.slotAssignments || []),
+    paymentCardInstanceIds: clone(selection.paymentCardInstanceIds || []),
   });
 }
 
@@ -3499,6 +5457,7 @@ function mapDecisionSubmission(raw, input, choice, currentAttemptKey = null) {
     result.formationSelection = {
       formationOptionId: String(selection.optionId || ""),
       slotAssignments: clone(selection.slotAssignments || []),
+      paymentCardInstanceIds: clone(selection.paymentCardInstanceIds || []),
       publicReason: String(selection.publicReason || ""),
     };
   } else if (selection.kind === "asset") {
@@ -3507,11 +5466,34 @@ function mapDecisionSubmission(raw, input, choice, currentAttemptKey = null) {
       publicReason: String(selection.publicReason || ""),
     };
   } else if (selection.kind === "parameters") {
+    const parameters = canonicalizeStarcraftTmgSubmittedParameterAliasesV1(
+      selected.action, parseSubmittedParametersJson(selection.parametersJson));
+    const payment = selection.paymentCardInstanceIds;
+    if (Array.isArray(payment)) {
+      const nested = parameters.paymentCardInstanceIds;
+      // Payment is model-owned in the shared selection schema. Preserve old
+      // JSON-only submissions whose wrapper was necessarily empty, but never
+      // decide between contradictory explicit payments on the model's behalf.
+      if (payment.length > 0 && nested !== undefined
+        && (!Array.isArray(nested) || JSON.stringify([...payment].sort())
+          !== JSON.stringify([...nested].sort()))) {
+        throw correctionError("ACTION_PARAMETER_PAYMENT_CONFLICT");
+      }
+      if (nested === undefined && (payment.length > 0
+        || sourceActionDomain(selected.action)?.parameterSchema?.required
+          ?.includes("paymentCardInstanceIds"))) {
+        parameters.paymentCardInstanceIds = clone(payment);
+      }
+    }
     result.proposal = {
       kind: "parameterized",
       domainId: candidateId,
-      parameters: parseSubmittedParametersJson(selection.parametersJson),
+      parameters,
     };
+  } else if (selection.kind === "parameter_option") {
+    result.proposal = { kind: "parameterized", domainId: candidateId,
+      parameters: materializeStarcraftTmgActionParameterOptionV1(selected.action,
+        String(selection.optionId || "")) };
   }
   if (correctionRecovery.recovered) {
     result.correctionFieldRecovery = {
@@ -3528,17 +5510,25 @@ function mapDecisionSubmission(raw, input, choice, currentAttemptKey = null) {
   return result;
 }
 
+export function projectStarcraftTmgSubmittedActionV1(raw, input, choice,
+  { terminal = false, currentAttemptKey = null } = {}) {
+  return terminal || object(raw?.selection)
+    ? mapDecisionSubmission(raw, input, choice, currentAttemptKey) : raw;
+}
+
 function normalizeSubmittedAction(attempt, input, choice) {
   const parts = responseParts(attempt?.safeOutput);
   if (!object(parts.decision)) {
     throw correctionError("ACTION_FINAL_OUTPUT_MISSING");
   }
-  const submittedAction = parts.terminal
-    ? mapDecisionSubmission(parts.decision, input, choice, attempt.attemptKey)
-    : parts.decision;
+  const submittedAction = projectStarcraftTmgSubmittedActionV1(
+    parts.decision, input, choice, {
+      terminal: Boolean(parts.terminal),
+      currentAttemptKey: attempt.attemptKey,
+    });
   const plannerBoundAction = bindPlannerSelectedProposal(submittedAction,
     input, choice.plannerResult);
-  const formationBoundAction = bindFormationSelection(
+  const formationBoundAction = bindStarcraftTmgFormationSelectionV1(
     plannerBoundAction, choice.queryReceipts, input.spatialObservation);
   const assetBoundAction = bindAssetPlacementSelection(formationBoundAction,
     choice.queryReceipts);
@@ -3640,8 +5630,8 @@ function lifecycleSubmissionSchema(input) {
   });
 }
 
-function planSubmissionSchema() {
-  return strictObject({
+function planSubmissionSchema(input) {
+  const schema = strictObject({
     objective: strictString(1, 2_000),
     currentGoal: strictString(1, 2_000),
     strategicApproach: strictStringArray(0, 12),
@@ -3678,6 +5668,14 @@ function planSubmissionSchema() {
     contingencies: strictStringArray(0, 12),
     revisionReason: strictString(0, 2_000),
   });
+  if (object(input?.planState?.plan)) {
+    for (const [field, definition] of Object.entries(schema.properties)) {
+      if (field === "currentGoal") continue;
+      schema.properties[field] = { anyOf: [definition, { type: "null" }],
+        description: "null retains this existing plan field without copying it. A supplied value replaces it on revise; [] explicitly clears an array. opponentModel, if supplied, is a fresh declared snapshot; null preserves its original observation date." };
+    }
+  }
+  return schema;
 }
 
 function assessmentSubmissionSchema() {
@@ -3689,7 +5687,6 @@ function assessmentSubmissionSchema() {
       enum: ["sound", "at_risk", "invalid", "achieved"],
     }),
     continuitySummary: strictString(1, 2_000),
-    currentGoal: strictString(1, 2_000),
     evidenceFor: strictStringArray(0, 16),
     evidenceAgainst: strictStringArray(0, 16),
     changedAssumptions: strictStringArray(0, 16),
@@ -3701,18 +5698,31 @@ function assessmentSubmissionSchema() {
 
 function planningSubmissionTool(input) {
   const ids = actionIndex(input.spatialActionSpace).map((entry) => entry.id);
+  const chargeTargetIds = [...new Set(actionIndex(input.spatialActionSpace)
+    .filter((entry) => sourceActionDomain(entry.action)?.actionType === "charge")
+    .flatMap((entry) => Object.keys(sourceActionDomain(entry.action)
+      ?.constraints?.eligibleTargetModelIdsByUnitId || {})))].sort();
   const comparisonMinimum = ids.length > 1 ? 1 : 0;
   return {
     type: "function",
     function: {
       name: NATIVE_PLANNING_SUBMIT_TOOL_NAME,
       description:
-        "Finish the Planner stage. Select exactly one current candidate and submit concise public plan, comparison, lifecycle and evidence summaries. This does not execute an action.",
+        "Finish the Planner stage. Select one current candidate and submit plan changes, reflection, comparison, lifecycle and evidence summaries. With an existing plan use field_delta_v1: keep unchanged fields null, write the current intention in currentGoal, and change strategic fields only with verdict revise. Continue retains strategy and can append required current-candidate futureActionPlans. Do not copy the source plan. This does not execute an action.",
       strict: true,
       parameters: strictObject({
         recommendedCandidateId: strictString(1, 200, { enum: ids }),
-        plan: planSubmissionSchema(),
-        planRevision: planSubmissionSchema(),
+        currentGoalSource: strictString(1, 32, {
+          enum: ["plan.currentGoal"],
+          description: "plan.currentGoal is the single model-authored current intention; assessment has no separate currentGoal.",
+        }),
+        selectedChargeTargetUnitId: strictString(0, 200, {
+          enum: ["", ...chargeTargetIds],
+          description: "For Charge, choose exactly one eligible intended target Unit; for every other action use an empty string.",
+        }),
+        ...(object(input.planState?.plan) ? { planUpdateMode:
+          strictString(1, 32, { enum: ["field_delta_v1"] }) } : {}),
+        plan: planSubmissionSchema(input),
         assessment: assessmentSubmissionSchema(),
         informationNeeds: {
           type: "array",
@@ -3784,6 +5794,9 @@ function actionSelectionContract(input, choice, queryReceipts) {
       (entry.slots || []).map((slot) => slot.slotId)))],
     modelIds: [...new Set(formation.result.formationOptions.flatMap((entry) =>
       (entry.slots || []).flatMap((slot) => slot.compatibleModelIds || [])))],
+    paymentChoices: clone(formation.result.paymentChoicesForDecision || []),
+    paymentCardInstanceIds: [...new Set(
+      (formation.result.paymentChoicesForDecision || []).flat())],
   };
   const asset = exactAssetPlacementReceipt(queryReceipts, selected.id);
   if (asset) return {
@@ -3795,7 +5808,19 @@ function actionSelectionContract(input, choice, queryReceipts) {
   if (exactInstantiationReceipt(queryReceipts, selected.id)) {
     return { kind: "host_exact", optionIds: [""] };
   }
-  return { kind: "parameters", optionIds: [""] };
+  const contract = compileStarcraftTmgActionParameterContractV1(selected.action);
+  if (contract.fullyEnumerated && contract.finiteOptions.length > 0) {
+    return { kind: "parameter_option", optionIds: contract.finiteOptions.map(
+      entry => entry.parameterOptionId) };
+  }
+  const payments = contract.paymentCombinationsByChoice
+    ? Object.values(contract.paymentCombinationsByChoice).flat()
+    : contract.fieldContracts.paymentCardInstanceIds?.enum || [];
+  const paymentChoices = payments.filter(row => Array.isArray(row));
+  return { kind: "parameters", optionIds: [""],
+    paymentChoices,
+    paymentCardInstanceIds: [...new Set(paymentChoices.flat())],
+    maximumPaymentCards: paymentChoices.reduce((n, row) => Math.max(n, row.length), 0) };
 }
 
 function actionSubmissionTool(input, choice, queryReceipts) {
@@ -3905,6 +5930,18 @@ function actionSubmissionTool(input, choice, queryReceipts) {
             minItems: 0,
             maxItems: 128,
           },
+          paymentCardInstanceIds: {
+            type: "array",
+            items: selection.paymentCardInstanceIds?.length
+              ? strictString(1, 200, {
+                  enum: selection.paymentCardInstanceIds,
+                }) : strictString(1, 200),
+            minItems: selection.paymentChoices?.some(row => row.length === 0)
+              ? 0 : selection.paymentCardInstanceIds?.length ? 1 : 0,
+            maxItems: selection.maximumPaymentCards
+              ?? (selection.paymentCardInstanceIds?.length
+                ? Math.min(32, selection.paymentCardInstanceIds.length) : 0),
+          },
           parametersJson: selection.kind === "parameters"
             ? strictString(2, 64 * 1024) : strictString(2, 2, { enum: ["{}"] }),
           publicReason: strictString(1, 2_000),
@@ -3948,11 +5985,13 @@ function nativeAgentLoop(choice, input, queryReceipts, stage,
     function: {
       name: NATIVE_MEMORY_TOOL_NAME,
       description:
-        "Retrieve a bounded slice of the complete same-match event ledger when the fixed working summary is insufficient. This memory is advisory and never Rules authority.",
+        "Retrieve a bounded slice of the complete same-match event ledger when the fixed working summary is insufficient. In a versioned Room fork, historyLane=frozen_source_room reads same-seat pre-fork history without treating old actions as new Room receipts. This memory is advisory and never Rules authority.",
       parameters: {
         type: "object",
         properties: {
           kinds: { type: "array", items: { type: "string" } },
+          historyLane: { type: "string", enum: ["combined",
+            "current_versioned_room", "frozen_source_room"] },
           round: { type: "integer" },
           phase: { type: "string" },
           unitId: { type: "string" },
@@ -3972,6 +6011,57 @@ function nativeAgentLoop(choice, input, queryReceipts, stage,
     tools: [...(forceTerminal ? [] : interactiveTools), terminalTool]
       .map(deepSeekStrictTool),
     continuationMessages: compactProviderContinuationMessages(choice, stage),
+  };
+}
+
+function interactionMode(value) {
+  const mode = value === undefined || value === null
+    ? "native_tools" : String(value);
+  if (!PROVIDER_INTERACTION_MODES.has(mode)) {
+    throw new TypeError("providerInteractionMode is invalid");
+  }
+  return mode;
+}
+
+function promptPolicyVersion(mode) {
+  return mode === "json_channels_v1"
+    ? JSON_CHANNEL_PROMPT_POLICY_VERSION : PROMPT_POLICY_VERSION;
+}
+
+export function shouldPreferStarcraftTmgPromptRepairOverPlannerReplayV1(
+  choice, options = {}) {
+  return Boolean(planStarcraftTmgPromptRepairRecoveryV1(choice, options));
+}
+
+function jsonAgentQueryInterface(nativeLoop, stage) {
+  const tools = nativeLoop.tools;
+  const byName = (name) => tools.find((entry) =>
+    entry.function.name === name)?.function || null;
+  const terminalName = stage === "planning"
+    ? NATIVE_PLANNING_SUBMIT_TOOL_NAME : NATIVE_DECISION_SUBMIT_TOOL_NAME;
+  return {
+    schemaVersion:
+      `${STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION}.json-query-interface-v1`,
+    oneChannelPerTurn: true,
+    queryChannel: "query_requests",
+    queryShape: { requests: [{ requestId: "string", queryKind: "string",
+      arguments: "object" }] },
+    spatialQueryKinds: byName(NATIVE_QUERY_TOOL_NAME)
+      ?.parameters?.properties?.queryKind?.enum || [],
+    spatialArgumentsContract: byName(NATIVE_QUERY_TOOL_NAME)
+      ?.parameters?.properties?.argumentsJson?.description || null,
+    skillQueryKind: byName(NATIVE_SKILL_TOOL_NAME)
+      ? NATIVE_SKILL_TOOL_NAME : null,
+    skillArgumentsSchema: byName(NATIVE_SKILL_TOOL_NAME)?.parameters || null,
+    memoryQueryKind: byName(NATIVE_MEMORY_TOOL_NAME)
+      ? NATIVE_MEMORY_TOOL_NAME : null,
+    memoryArgumentsSchema: byName(NATIVE_MEMORY_TOOL_NAME)?.parameters || null,
+    terminalChannel: stage,
+    terminalShape: byName(terminalName)?.parameters || null,
+    queryResultsReturnInNextPromptAsHostOwnedReceipts: true,
+    rulesAuthority: false,
+    mutationAuthority: false,
+    trainingTruth: false,
   };
 }
 
@@ -4008,6 +6098,24 @@ function compactProviderContinuationMessages(choice, stage) {
   });
 }
 
+function compactArmyResourceBudgetsForDecisionPrompt(budgets) {
+  if (!object(budgets)) return clone(budgets);
+  const retainedFields = [
+    "schema", "sideKey", "scale", "mineralBudget", "mineralSpent",
+    "mineralUnspent", "mineralUnspentDisposition", "mineralRetained",
+    "vespeneLimit", "vespeneSpent", "vespeneUnspent",
+    "vespeneUnspentDisposition", "vespeneRetained",
+    "resourceConversionAllowed", "resourceConversionApplied",
+    "fullResourceArithmeticValidated",
+    "fullCompositionUpgradeAndFieldingLegalityValidated",
+    "armySlotAuditResultHash", "resultHash",
+  ];
+  return Object.fromEntries(Object.entries(budgets).map(([sideKey, budget]) =>
+    [sideKey, !object(budget) ? clone(budget) : Object.fromEntries(
+      retainedFields.filter((field) => budget[field] !== undefined)
+        .map((field) => [field, clone(budget[field])]))]));
+}
+
 export function projectStarcraftTmgLiveDecisionRoomProjectionV1(projection) {
   const state = object(projection?.state) ? projection.state : {};
   return {
@@ -4018,11 +6126,14 @@ export function projectStarcraftTmgLiveDecisionRoomProjectionV1(projection) {
     matchBinding: clone(projection?.matchBinding || null),
     state: Object.fromEntries(DECISION_STATE_FIELDS
       .filter((field) => state[field] !== undefined)
-      .map((field) => [field, clone(state[field])])),
+      .map((field) => [field, field === "armyResourceBudgetsBySide"
+        ? compactArmyResourceBudgetsForDecisionPrompt(state[field])
+        : clone(state[field])])),
     omittedFromPrompt: [
       "duplicate_piece_geometry_projected_by_spatial_observation",
       "frozen_rules_and_gameplay_data_bundles",
       "historical_resolution_ledgers_not_needed_for_current_choice",
+      "duplicate_army_cost_audit_rows_public_roster_preserved",
     ],
     currentAuthorityPreserved: true,
     trainingTruth: false,
@@ -4047,18 +6158,35 @@ function compactLegalSpace(legalSpace) {
 
 function currentRangedCasualtyResolutionEvidence(input) {
   const casualtyDomain = (input?.legalSpace?.parameterDomains || []).find(
-    (domain) => domain?.parameterKind
-      === "official_selected_roster_ranged_casualty_selection_v1",
+    (domain) => ["official_selected_roster_ranged_casualty_selection_v1",
+      "official_selected_roster_melee_casualty_selection_v1"].includes(domain?.parameterKind),
   );
   if (!casualtyDomain) return null;
   const pendingHash = casualtyDomain.constraints?.pendingHash || null;
   const event = [...(input?.roomProjection?.state?.log || [])]
     .reverse().flatMap((entry) => [...(entry?.events || [])].reverse())
-    .find((entry) => entry?.type
-      === "ranged_attack_roll_resolved_pending_defender_casualty"
+    .find((entry) => ["ranged_attack_roll_resolved_pending_defender_casualty",
+      "melee_attack_roll_resolved_pending_defender_casualty"].includes(entry?.type)
       && (!pendingHash || entry.pendingHash === pendingHash));
   const stages = event?.stages;
   if (!stages) return null;
+  if (casualtyDomain.parameterKind === "official_selected_roster_melee_casualty_selection_v1") {
+    return {
+      schemaVersion: `${STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION}.melee-casualty-resolution-evidence`,
+      attackKind: "melee", candidateId: casualtyDomain.domainId,
+      attackerSideKey: event.attackerSideKey, defenderSideKey: event.defenderSideKey,
+      attackerPieceId: event.attackerPieceId, targetPieceId: event.targetPieceId,
+      stages: clone(stages), totalDamage: Number(stages.totalDamage || 0),
+      casualtyCount: Number(event.casualtyCount || 0),
+      strategicLossOptions: encodeStarcraftTmgGeometryColumnReuseV2(
+        casualtyDomain.constraints?.strategicLossOptions || []),
+      explicitSelectionStrategicContract: clone(
+        casualtyDomain.constraints?.explicitSelectionStrategicContract || null),
+      defenderActivationConsumed: false, defenderActivationClosed: false,
+      diceRerolledBySelection: false, source: "current_authoritative_resolution_log",
+      includedInStateOrLegalSpaceHash: false, rulesAuthority: true, trainingTruth: false,
+    };
+  }
   return {
     schemaVersion:
       `${STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION}.ranged-casualty-resolution-evidence`,
@@ -4097,7 +6225,8 @@ function currentRangedCasualtyResolutionEvidence(input) {
     totalDamage: Number(stages.damage?.totalDamage || 0),
     casualtyCount: Number(event.casualtyCount || 0),
     strategicLossOptions:
-      clone(casualtyDomain.constraints?.strategicLossOptions || []),
+      encodeStarcraftTmgGeometryColumnReuseV2(
+        casualtyDomain.constraints?.strategicLossOptions || []),
     explicitSelectionStrategicContract: clone(
       casualtyDomain.constraints?.explicitSelectionStrategicContract || null),
     defenderActivationConsumed: false,
@@ -4372,7 +6501,8 @@ function compactSpatialObservation(observation) {
     units,
     models,
     offTableUnits: clone(observation.offTableUnits || []),
-    terrain: (observation.terrain || []).map(compactBoardObject),
+    terrain: encodeStarcraftTmgGeometryColumnReuseV2(
+      (observation.terrain || []).map(compactBoardObject)),
     tokens: (observation.tokens || []).map(compactBoardObject),
     markers: (observation.markers || []).map(compactBoardObject),
     objectiveState: clone(observation.objectiveState || null),
@@ -4387,27 +6517,16 @@ function compactSpatialObservation(observation) {
   };
 }
 
-function compactQueryReceiptForPrompt(receipt) {
+export function compactQueryReceiptForPrompt(receipt) {
   if (object(receipt)
     && receipt.queryKind === "space.inspect_relationships"
     && object(receipt.result)) {
     const result = receipt.result;
-    const compactThreat = (value) => !object(value) ? null : {
-      stationaryProfileKeys: clone(value.stationaryProfileKeys || []),
-      moveThenAttackProfileKeys:
-        clone(value.moveThenAttackProfileKeys || []),
-      currentRoundStationaryProfileKeys:
-        clone(value.currentRoundStationaryProfileKeys || []),
-      currentRoundMoveThenAttackProfileKeys:
-        clone(value.currentRoundMoveThenAttackProfileKeys || []),
-      futureRoundMoveThenAttackProfileKeys:
-        clone(value.futureRoundMoveThenAttackProfileKeys || []),
-      actionWindow: clone(value.actionWindow || null),
-      chargeBand: clone(value.chargeBand || null),
-      spatialThreatPrecision: value.spatialThreatPrecision || null,
-      currentLegalActionNotImplied:
-        value.currentLegalActionNotImplied === true,
-    };
+    const overviewScope = (result.scope?.subjectUnitIds?.length || 0) > 1;
+    // These are small scoped facts, not a heavyweight geometry tree. Keep
+    // unknown-profile lists and future/current horizon qualifiers intact;
+    // dropping them makes "unresolved" look like an empty threat set.
+    const compactThreat = value => !object(value) ? null : clone(value);
     const relationships = (result.relationships || []).map((entry) => {
       if (entry.edgeKind === "objective_relationship") return {
         edgeId: entry.edgeId,
@@ -4421,6 +6540,7 @@ function compactQueryReceiptForPrompt(receipt) {
           clone(entry.modelIdsWithinThreeInchesSameElevation || []),
         canGeometricallyContestNow:
           entry.canGeometricallyContestNow === true,
+        markerQualification: clone(entry.markerQualification || null),
         currentControlSideKey: entry.currentControlSideKey || null,
         unitCoherencyStatus: clone(entry.unitCoherencyStatus || null),
         exactControlStillRequiresCurrentMissionEligibilityAndLos:
@@ -4428,7 +6548,7 @@ function compactQueryReceiptForPrompt(receipt) {
             === true,
         precision: entry.precision || null,
       };
-      return {
+      const projected = {
         edgeId: entry.edgeId,
         edgeKind: entry.edgeKind,
         fromUnitId: entry.fromUnitId,
@@ -4452,6 +6572,52 @@ function compactQueryReceiptForPrompt(receipt) {
         },
         fireZoneExchange: clone(entry.fireZoneExchange || null),
         precision: entry.precision || null,
+      };
+      // Overview queries answer "which unit/pair should I inspect next?".
+      // Their per-model threat/LoS arrays are also available through the
+      // agent's focused query; do not repeat those bulky details for every
+      // pair in a many-subject overview. Preserve exact base-edge distance,
+      // threat keys with time horizon, and scoped exchange evidence here.
+      if (!overviewScope) return projected;
+      const summaryThreat = (threat) => !threat ? null : {
+        stationaryProfileKeys: threat.stationaryProfileKeys,
+        moveThenAttackProfileKeys: threat.moveThenAttackProfileKeys,
+        currentRoundStationaryProfileKeys:
+          threat.currentRoundStationaryProfileKeys,
+        currentRoundMoveThenAttackProfileKeys:
+          threat.currentRoundMoveThenAttackProfileKeys,
+        futureRoundMoveThenAttackProfileKeys:
+          threat.futureRoundMoveThenAttackProfileKeys,
+        chargeBand: threat.chargeBand,
+        spatialThreatPrecision: threat.spatialThreatPrecision,
+      };
+      return {
+        edgeId: projected.edgeId,
+        edgeKind: projected.edgeKind,
+        fromUnitId: projected.fromUnitId,
+        toUnitId: projected.toUnitId,
+        relation: projected.relation,
+        nearestPhysicalEdges: {
+          distanceMilliInches:
+            projected.nearestPhysicalEdges?.distanceMilliInches ?? null,
+          precision: projected.nearestPhysicalEdges?.precision ?? null,
+        },
+        engagement: projected.engagement,
+        lineOfSight: projected.lineOfSight,
+        threats: { fromTo: summaryThreat(projected.threats.fromTo),
+          toFrom: summaryThreat(projected.threats.toFrom) },
+        fireZoneExchange: projected.fireZoneExchange ? {
+          class: projected.fireZoneExchange.class,
+          currentRoundClass:
+            projected.fireZoneExchange.currentRoundClass,
+          precision: projected.fireZoneExchange.precision,
+          damageOutcomeRequiresProbabilityQuery:
+            projected.fireZoneExchange
+              .damageOutcomeRequiresProbabilityQuery,
+        } : null,
+        precision: projected.precision,
+        overviewOnly: true,
+        focusedQueryAvailable: true,
       };
     });
     return {
@@ -4477,18 +6643,27 @@ function compactQueryReceiptForPrompt(receipt) {
             currentModels: entry.currentModels,
             currentSupply: entry.currentSupply,
             movement: clone(entry.movement || null),
-            coherency: clone(entry.coherency || null),
-            envelope: clone(entry.envelope || null),
+            // Full per-model envelopes and coherency are already in the
+            // current spatial observation and durable tool receipt. Here
+            // the unit node is only an identity/supply cross-reference.
           })),
           objectives: clone(result.nodes?.objectives || []),
-          terrain: clone(result.nodes?.terrain || []),
+          terrain: encodeStarcraftTmgGeometryColumnReuseV2(
+            projectStarcraftTmgTerrainFactsForPromptV1(
+              clone(result.nodes?.terrain || []))),
         },
         relationships,
+        unitEnvelopeAndCoherencyInSpatialObservation: true,
+        relationshipDetailLevel: overviewScope
+          ? "many_subject_overview" : "focused_relationships",
         aggregates: clone(result.aggregates || null),
+        mapReachabilityCertificate:
+          clone(result.mapReachabilityCertificate || null),
         overlay: clone(result.overlay || null),
         precisionPolicy: clone(result.precisionPolicy || null),
         sourceReceipts: clone(result.sourceReceipts || null),
         fullRelationshipGraphStoredDurably: true,
+        terrainProofMetadataRetainedByHost: true,
         exactFieldsDerivedFromRulesKernels:
           result.exactFieldsDerivedFromRulesKernels === true,
         rulesAuthority: result.rulesAuthority === true,
@@ -4545,9 +6720,9 @@ function compactQueryReceiptForPrompt(receipt) {
           option.relationshipComparison.relationships || []
         ).slice(0, 24)),
         clearances: clone(option.relationshipComparison.clearances || []),
-        incomingStationaryFireEstimate: clone(
+        incomingStationaryFireEstimate: projectStarcraftTmgIncomingFireEstimateForPromptV1(
           option.relationshipComparison.incomingStationaryFireEstimate || null),
-        incomingMoveThenFireEstimate: clone(
+        incomingMoveThenFireEstimate: projectStarcraftTmgIncomingFireEstimateForPromptV1(
           option.relationshipComparison.incomingMoveThenFireEstimate || null),
         precisionPolicy:
           clone(option.relationshipComparison.precisionPolicy || null),
@@ -4564,10 +6739,14 @@ function compactQueryReceiptForPrompt(receipt) {
       compatibilityGroups,
       completeFormationPlacementChecked:
         option.completeFormationPlacementChecked === true,
-      canonicalParametersHeldByHost: true,
-      actionHashHeldByHost: Boolean(option.actionHash),
+      canonicalSpatialParametersHeldByHost: true,
+      representativePaymentMayBeOverriddenByAgent:
+        (receipt.result.legalPaymentChoices || []).length > 0,
+      actionHashHeldByHost: Boolean(option.actionHash)
+        && !(receipt.result.legalPaymentChoices || []).length,
     };
   });
+  const sharedFire = shareStarcraftTmgFormationFireFactsForPromptV1(formationOptions);
   return {
     schemaVersion: receipt.schemaVersion,
     requestId: receipt.requestId || null,
@@ -4581,7 +6760,14 @@ function compactQueryReceiptForPrompt(receipt) {
       pieceId: receipt.result.pieceId,
       toolName: receipt.result.toolName || STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME,
       preferredAnchor: clone(receipt.result.preferredAnchor || null),
-      formationOptions,
+      paymentChoicesForDecision: clone(
+        receipt.result.paymentChoicesForDecision || []),
+      legalPaymentChoiceCount:
+        (receipt.result.legalPaymentChoices || []).length,
+      formationOptions: sharedFire.formationOptions,
+      incomingFireEvidenceEncoding: EXACT_EVIDENCE_RECORD_ROWS_MEANING,
+      ...(sharedFire.sharedIncomingFireFacts
+        ? { sharedIncomingFireFacts: sharedFire.sharedIncomingFireFacts } : {}),
       optionCount: receipt.result.optionCount,
       attemptedCandidateCount: receipt.result.attemptedCandidateCount,
       duplicateIntentCandidateCount:
@@ -4591,7 +6777,8 @@ function compactQueryReceiptForPrompt(receipt) {
       failureCounts: clone(receipt.result.failureCounts || {}),
       assignmentContract: clone(receipt.result.assignmentContract || null),
       formationIntent: clone(receipt.result.formationIntent || null),
-      exactCanonicalParametersRemainBoundToFormationOptionId: true,
+      exactCanonicalParametersRemainBoundToFormationOptionId:
+        !(receipt.result.legalPaymentChoices || []).length,
       rulesAuthority: true,
       mutationAuthority: false,
       trainingTruth: false,
@@ -4619,6 +6806,118 @@ function continuationReceiptHashes(choice) {
   return hashes;
 }
 
+function postPlacementPredictionFacts(input, choice, queryReceipts) {
+  const candidateId = choice.plannerResult?.recommendedCandidateId || null;
+  const receipt = exactFormationReceipt(queryReceipts, candidateId);
+  if (!receipt) return null;
+  const authority = {
+    roomId: input.roomProjection?.room?.roomId,
+    matchBindingHash: input.roomProjection?.matchBinding?.bindingHash,
+    stateRevision: input.roomProjection?.room?.stateRevision,
+    stateHash: input.roomProjection?.room?.stateHash,
+    legalSpaceHash: input.legalSpace?.legalSpaceHash,
+  };
+  const current = Object.entries(authority).every(([key, value]) =>
+    value !== undefined && receipt.authority?.[key] === value);
+  return {
+    schemaVersion: "starcraft_tmg_post_placement_prediction_facts_v1",
+    status: current ? "available" : "unknown",
+    ...(current ? {} : { reason: "formation_receipt_not_current_authority" }),
+    authority,
+    candidateId,
+    formationReceiptHash: receipt.queryReceiptHash,
+    evidenceScope: "hypothetical_after_selected_own_formation",
+    prePlacementFactsMayProvePostPlacementThreat: false,
+    selectionStillOwnedByModel: true,
+    strategyPreferenceApplied: false,
+    formationOptions: current ? receipt.result.formationOptions.map(option => ({
+      formationOptionId: option.formationOptionId,
+      ownUnitId: option.pieceId,
+      comparisonStatus: option.relationshipComparison?.status || "unknown",
+      opponentTargets: (option.relationshipComparison?.relationships || [])
+        .filter(row => row.relation === "opposed"
+          && row.fromUnitId === option.pieceId)
+        .map(row => ({
+          actorUnitId: row.targetId,
+          targetUnitId: row.fromUnitId,
+          minimumBaseEdgeDistanceMilliInches:
+            row.minimumBaseEdgeDistanceMilliInches ?? null,
+          visibleModelPairCount: row.visibleModelPairCount ?? null,
+          unknownLineOfSightPairCount: row.unknownLineOfSightPairCount ?? null,
+          currentRoundStationaryProfileKeys:
+            clone(row.enemyCurrentRoundStationaryThreatProfileKeys ?? null),
+          currentRoundMoveThenAttackProfileKeys:
+            clone(row.enemyCurrentRoundMoveThenAttackProfileKeys ?? null),
+          currentRoundStationaryUnknownProfileKeys:
+            clone(row.enemyCurrentRoundStationaryThreatUnknownProfileKeys ?? null),
+          futureRoundMoveThenAttackProfileKeys:
+            clone(row.enemyFutureRoundMoveThenAttackProfileKeys ?? null),
+        })),
+    })) : [],
+    missingOrNullFieldMeansUnknown: true,
+    fullReceiptsStillRetained: true,
+    rulesAuthority: false,
+    trainingTruth: false,
+  };
+}
+
+function currentIncomingFireFacts(input, queryReceipts) {
+  const authority = {
+    roomId: input.roomProjection?.room?.roomId,
+    matchBindingHash: input.roomProjection?.matchBinding?.bindingHash,
+    stateRevision: input.roomProjection?.room?.stateRevision,
+    stateHash: input.roomProjection?.room?.stateHash,
+    legalSpaceHash: input.legalSpace?.legalSpaceHash,
+  };
+  const friendlyIds = new Set((input.spatialObservation?.units || [])
+    .filter(unit => ["own", "allied"].includes(unit.sideRelation))
+    .map(unit => unit.unitId));
+  const receipts = (queryReceipts || []).filter(receipt =>
+    receipt.queryKind === "space.inspect_relationships"
+    && ["exact", "advisory_estimate"].includes(receipt.status)
+    && Object.entries(authority).every(([key, value]) =>
+      value !== undefined && receipt.authority?.[key] === value));
+  if (!receipts.length) return null;
+  return {
+    schemaVersion: "starcraft_tmg_current_incoming_fire_facts_v1",
+    authority,
+    evidenceScope: "queried_current_positions_before_selected_action",
+    relationships: receipts.flatMap(receipt =>
+      (receipt.result?.relationships || [])
+        .filter(row => ["unit_spatial_relationship", "unit_relationship"]
+          .includes(row.edgeKind) && row.relation === "opposed"
+          && friendlyIds.has(row.fromUnitId)
+          && !friendlyIds.has(row.toUnitId))
+        .map(row => {
+          const incoming = row.threats?.toFrom;
+          return {
+            actorUnitId: row.toUnitId,
+            targetUnitId: row.fromUnitId,
+            queryReceiptHash: receipt.queryReceiptHash,
+            relationshipGraphHash: receipt.result?.relationshipGraphHash,
+            minimumBaseEdgeDistanceMilliInches:
+              row.nearestPhysicalEdges?.distanceMilliInches ?? null,
+            currentRoundStationaryProfileKeys:
+              clone(incoming?.currentRoundStationaryProfileKeys ?? null),
+            currentRoundMoveThenAttackProfileKeys:
+              clone(incoming?.currentRoundMoveThenAttackProfileKeys ?? null),
+            currentRoundStationaryUnknownProfileKeys:
+              clone(incoming?.currentRoundStationaryUnknownProfileKeys ?? null),
+            futureRoundMoveThenAttackProfileKeys:
+              clone(incoming?.futureRoundMoveThenAttackProfileKeys ?? null),
+            earliestStationaryAttackHorizon:
+              incoming?.actionWindow?.earliestStationaryAttackHorizon ?? null,
+          };
+        })),
+    eachRowIsOnePairNotWholeSideSafety: true,
+    outgoingFireIsNotIncomingFire: true,
+    missingOrNullFieldMeansUnknown: true,
+    fullReceiptsStillRetained: true,
+    strategyPreferenceApplied: false,
+    rulesAuthority: false, trainingTruth: false,
+  };
+}
+
 function makeNode(nodeId, nodeType, authority, content) {
   const body = { nodeId, nodeType, authority, content: clone(content) };
   return freeze({ ...body, nodeHash: hashStarcraftTmgContract(body) });
@@ -4628,10 +6927,33 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
   memoryQueryAvailable = false, forceTerminal = false,
   terminalForceReason = null) {
   const planning = stage === "planning";
+  const providerInteractionMode = interactionMode(match.providerInteractionMode);
+  const nativeTools = providerInteractionMode === "native_tools";
+  const policyVersion = promptPolicyVersion(providerInteractionMode);
+  const nativeLoop = nativeAgentLoop(choice, input, queryReceipts, stage,
+    memoryQueryAvailable && planning, forceTerminal);
   const selectedId = choice.plannerResult?.recommendedCandidateId || null;
-  const continuedReceiptHashes = continuationReceiptHashes(choice);
+  // Only native Tools deliver receipt-bearing tool messages separately. JSON
+  // channels must retain their receipts in the artifact; agentLoop is null.
+  const continuedReceiptHashes = nativeTools
+    ? continuationReceiptHashes(choice) : new Set();
   const promptQueryReceipts = queryReceipts.filter((entry) =>
     !continuedReceiptHashes.has(entry.queryReceiptHash));
+  const projectedQueryReceipts =
+    deduplicateStarcraftTmgSpatialPromptReceiptsV1(
+      promptQueryReceipts.map(compactQueryReceiptForPrompt));
+  const postPlacementFacts = planning ? null
+    : postPlacementPredictionFacts(input, choice, queryReceipts);
+  const incomingFireFacts = currentIncomingFireFacts(input, queryReceipts);
+  const exactChargeReachability = planning
+    ? actionIndex(input.spatialActionSpace).filter((entry) =>
+      sourceActionDomain(entry.action)?.actionType === "charge")
+      .map((entry) =>
+      inspectStarcraftTmgChargeReachabilityV1({
+        spatialActionSpace: input.spatialActionSpace,
+        candidateId: entry.id, queryReceipts,
+        spatialObservation: input.spatialObservation,
+      })).filter((entry) => entry.status === "exact") : [];
   const contract = seal({
     schemaVersion:
       `${STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION}.response-contract`,
@@ -4640,16 +6962,27 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       ? ["planning", "query_requests"] : ["decision", "query_requests"],
     decisionCandidateSource: "current_spatial_action_space_only",
     plannerOwnsCandidateSelection: true,
+    ...(planning ? {
+      currentGoalSource: "plan.currentGoal",
+      currentGoalProtocolVersion: "single_current_goal_v1",
+      assessmentGoalOwnedByHostProjection: true,
+    } : {}),
     actionMustConsumePlannerCandidate: !planning,
     stageOutputRequiredAfterQueries: true,
-    terminalSubmissionTool: planning
-      ? NATIVE_PLANNING_SUBMIT_TOOL_NAME : NATIVE_DECISION_SUBMIT_TOOL_NAME,
+    terminalSubmissionTool: nativeTools ? planning
+      ? NATIVE_PLANNING_SUBMIT_TOOL_NAME : NATIVE_DECISION_SUBMIT_TOOL_NAME
+      : null,
+    terminalSubmissionChannel: nativeTools ? null : stage,
+    providerInteractionMode,
     queryMode: forceTerminal
       ? terminalForceReason === "terminal_tool_argument_format_repair"
         ? "format_repair_terminal_submission_only"
+        : terminalForceReason === "repeated_query_no_new_evidence"
+          ? "known_evidence_terminal_submission_only"
         : "safety_ceiling_terminal_submission_only"
-      : "evidence_queries_or_terminal_submission",
-    promptPolicyVersion: PROMPT_POLICY_VERSION,
+      : nativeTools ? "evidence_queries_or_terminal_submission"
+        : "json_query_or_terminal_channel",
+    promptPolicyVersion: policyVersion,
     hiddenChainOfThoughtForbidden: true,
     extraProviderFieldsIgnored: true,
     rulesAuthority: "external_rules_service",
@@ -4660,33 +6993,48 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       ? "Assess or establish the match plan, identify information needs, compare current candidates, and recommend exactly one current candidate. Do not instantiate or execute it yet."
       : "Consume the planner's selected current candidate, instantiate it when parameterized, and produce one auditable ActionIntent.",
     output: {
-      protocol: forceTerminal
+      protocol: !nativeTools
+        ? forceTerminal
+          ? `Return exactly one JSON object with only the ${stage} object. Repair syntax if needed, retain uncertainty, and do not request further evidence.`
+          : `Return exactly one JSON object with either query_requests.requests (read-only evidence queries) or a ${stage} object (terminal submission), never both. No markdown or hidden reasoning.`
+        : forceTerminal
         ? terminalForceReason === "terminal_tool_argument_format_repair"
           ? "The previous terminal tool arguments were malformed JSON. Preserve the selected plan and supported facts, regenerate only one concise valid argument object, JSON-escape quotes, backslashes and newlines, and call only the declared stage-specific strict submit tool."
           : "The query safety ceiling is reached. Call only the declared stage-specific strict submit tool, preserve uncertainty explicitly, and do not invent missing evidence."
         : "Every turn must call exactly one declared tool. Use query tools while material evidence is missing; finish by calling only the stage-specific strict submit tool.",
-      queryRound: forceTerminal
+      queryRound: !nativeTools
+        ? forceTerminal
+          ? terminalForceReason === "repeated_query_no_new_evidence"
+            ? "The previous query returned no new evidence. Submit the stage object using the existing receipts and state any remaining uncertainty."
+            : "The query safety ceiling is reached; submit the stage object with unresolved uncertainty."
+          : `Use query_requests.requests with each query's declared scope and precision: geometry/native qualification are exact, probability/fire exchange are advisory, Skill is advice and memory is recorded history. Unknown is not zero. Each request needs requestId, queryKind and an arguments object. Retrieve Strategy Skill only if frozen excerpts are insufficient${memoryQueryAvailable && planning ? "; retrieve same-match memory only if the working summary is insufficient" : ""}. The Host returns typed receipts in the next prompt.`
+        : forceTerminal
         ? terminalForceReason === "terminal_tool_argument_format_repair"
           ? "No query tool is exposed during format repair. Reuse the existing plan and receipts; change only JSON syntax and concision."
           : "No query tool is available after the safety ceiling; preserve every unresolved item as uncertainty in the terminal submission."
-        : `Use ${NATIVE_QUERY_TOOL_NAME} for exact spatial, probability, fire-zone, path, LOS, coherency or score evidence. Use ${NATIVE_SKILL_TOOL_NAME} only when the default frozen Skill excerpts do not answer the strategy question.${memoryQueryAvailable && planning ? ` Use ${NATIVE_MEMORY_TOOL_NAME} only when the fixed same-match working summary does not answer a history question.` : ""}`,
-      terminalTool: planning
-        ? NATIVE_PLANNING_SUBMIT_TOOL_NAME : NATIVE_DECISION_SUBMIT_TOOL_NAME,
+        : `Use ${NATIVE_QUERY_TOOL_NAME} according to each kind's scope: geometry and native qualification are exact; probability/fire exchange are advisory; unknown is not zero. None awards VP or guarantees a future outcome. Use ${NATIVE_SKILL_TOOL_NAME} only when the default frozen Skill excerpts do not answer the strategy question.${memoryQueryAvailable && planning ? ` Use ${NATIVE_MEMORY_TOOL_NAME} only when the fixed same-match working summary does not answer a history question.` : ""}`,
+      terminalTool: nativeTools ? planning
+        ? NATIVE_PLANNING_SUBMIT_TOOL_NAME : NATIVE_DECISION_SUBMIT_TOOL_NAME
+        : null,
+      terminalChannel: nativeTools ? null : stage,
       canonicalActionOwnedByHost: true,
-      toolSchemaIsTheOutputShape: true,
+      toolSchemaIsTheOutputShape: nativeTools,
     },
     requirements: [
+      ...(planning ? ["Declare currentGoalSource as plan.currentGoal and write the current intention only in plan.currentGoal, not assessment. With verdict continue, this intention advances while the established strategic plan remains unchanged; use revise for a strategic change. Reconcile the current intention with the selected candidate and the current authority. plan-progress-facts separates the original arrival forecast from accepted actions and current Supply; it is factual evidence, never an enforced schedule or a strategy preference."] : []),
+      ...(planning && object(input.planState?.plan) ? ["Use planUpdateMode field_delta_v1. The Host retains the complete existing strategic plan; do not reproduce it or its audit hashes. Submit this decision's currentGoal and current reflection/comparisons. Null or omitted plan fields retain their exact prior values; [] explicitly clears an array on revise. Supply changed strategic fields with verdict revise. Supply opponentModel only when publishing a fresh complete belief snapshot; null keeps old beliefs dated. No strategic branch is forbidden or preferred by this transport protocol."] : []),
       planning
         ? "The Planner, not the Action stage, selects one candidateId from the current compact action index."
         : "Use exactly the Planner's recommended candidate. Submit only model-owned choices; the Host constructs the finite or parameterized proposal.",
       "For a Unit reposition, give a physical path only for the nominated Leading Model; the remaining models do not travel paths under the rules and must each receive an explicit final placement through the domain's placements field.",
       planning
-        ? `Do not request ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME}, legal asset-placement options, final parameter instantiation, legal_full_path_movement, coherency_after_candidate_placement, or objective_score_after_candidate_action during Planning. Those require a selected candidate and complete Host-owned parameters. Select the best current candidate from current relationships first. For a formation action, set formationSearchRequested and provide a tacticalPurpose plus weighted formationObjectives with visible targetIds; the Host runs the spatial solver once.`
+        ? `Do not request ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME}, legal asset-placement options, final parameter instantiation, legal_full_path_movement or coherency_after_candidate_placement during Planning. Those require a selected candidate and complete Host-owned parameters. mission_marker_control with no candidate checks current native qualification/control, not future VP. Select the best current candidate from current relationships first. For a formation action, set formationSearchRequested and provide a tacticalPurpose plus weighted formationObjectives with visible targetIds; the Host runs the spatial solver once.`
         : "Use the exact Host-supplied formation or asset-placement options for the selected candidate; do not restart a broad placement search in the Action stage.",
       `When an exact ${STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME} receipt is present, compare its weighted objectives, tacticalMetrics and relationshipComparison, then choose exactly one formationOptionId. relationshipComparison is the Host's hypothetical post-placement view and includes every visible enemy Unit as well as requested objectives. Any enemyStationaryThreatProfileCount above zero means that enemy has at least one spatially covering stationary weapon profile; use its current-round lifecycle fields before describing immediate exposure. Any enemyStationaryThreatUnknownProfileKeys or enemyCurrentRoundStationaryThreatUnknownProfileKeys means range/target eligibility is present but line of sight is unresolved; never describe that option as outside the fire band, no current threat, zero exposure or safe. Read incomingStationaryFireEstimate when present: compare expected casualties, every exact legal removed-model list, lost occupied positions/formation reach, lost ranged contributors, exact current Fighting/Supporting losses, marker-by-marker control changes, probability of Supply reduction/zero, Supply freed for later deployment, VP awarded, and every exact reaction choice/cost against objective or scoring gain. Read incomingMoveThenFireEstimate too: a reachable current-round row is a live threat even while legal path and post-move line of sight remain conditional; a reachable next-round row is future planning pressure, not an immediate legal action. Unknown path or line of sight is never safety or zero risk. A Ranged Attack itself never includes movement. Current Supply—not raw model count—controls marker strength. Do not default to the safest position: choose the highest expected net mission value after risk, and state why the accepted exposure is worth it. Preserve unknown probability as uncertainty and give one concise publicReason. Leave slotAssignments empty to accept the Host's complete canonical identity assignment and per-slot public reasons; only submit assignments when a specific model identity must occupy a specific compatible slot, in which case cover every slot and model exactly once. Do not mix slots across options or hand-write replacement coordinates; the Host binds and revalidates the chosen formation.`,
+      "For any formation action, paymentChoicesForDecision lists exact minimal-card legal payments separately from spatial options when payment applies. Choose one paymentCardInstanceIds set from that list in the Action selection; choose [] only when no payment is required. The Host validates the chosen set against the full Rules domain and reinstantiates the final position-plus-payment action.",
       "When an exact legal_asset_placement_options receipt is present, compare every returned option's tacticalMetrics and relationshipComparison before choosing exactly one placementOptionId. incomingCurrentRoundStationaryProfileCount and incomingCurrentRoundMoveThenFireProfileCount are current-round exposure after phase/activation/pass gates. incomingStationaryProfileCount and incomingMoveThenFireProfileCount are broader geometric planning bands and may be next-round pressure. Unknown hypothetical line of sight remains uncertainty, never safety. Compare the low-fire, objective, route and preferred-anchor facets instead of assuming the preferred anchor is best. Return assetPlacementSelection with that ID and one concise publicReason naming accepted current and future exposure, objective/route effect and plan continuity. Never call an option permanently safe or unthreatened when its selected relationshipComparison reports future profiles. Do not hand-write a replacement coordinate; the Host binds and revalidates the selected option.",
       "Treat selectedActionIdentity as Rules-owned. The central currentGoal, selectedReason, plan and purpose must name its abilityName when one exists and preserve every applicable effectContract fact, including sourceText, targetKind, resultKind/resultAssetKind, immediateEffect, ongoingEffect and delayedEffect. forbiddenSubstitution states what this action is not. You may compare or reject another ability, but never describe that other ability or another effect family as the action being selected, activated, used or placed.",
-      "When selectedActionIdentity.effectContract.futurePlanRequirement.required is true, revise the active TurnPlan and add a futureActionPlans item bound to the selected candidate. Name the intended consumer Unit, earliest timing, action, route/target, purpose, benefit and risk evidence, prerequisites, cancellation conditions and fallback. A vague reservePolicy sentence is not an executable future plan. This is a structure requirement, not a Host preference for using the capability.",
+      "When selectedActionIdentity.effectContract.futurePlanRequirement.required is true, submit a futureActionPlans item bound to the selected candidate. Continue keeps the existing strategy and persists only these bound items; revise replaces the plan. Name the intended consumer Unit, earliest timing, action, route/target, purpose, benefit and risk evidence, prerequisites, cancellation conditions and fallback. A vague reservePolicy sentence is not an executable future plan. This is a structure requirement, not a Host preference for using the capability.",
       "Treat selectedActionResourceContract and resourceCostsByChoice as Rules-owned. State every nonzero effective resource cost accurately. Never call a positive BM, CP or PE cost zero, free, or unspent; Supply is a separate contract.",
       "Treat strategicImmediateValue as Rules-derived current value. A zero-benefit heal is not productive merely because its printed resource cost is zero: source-card exhaustion and forfeited alternatives remain real costs.",
       "Position publicReason fields are auditable summaries, not hidden chain-of-thought. State the useful board fact and tactical purpose without private scratch work.",
@@ -4696,16 +7044,19 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       "Candidate comparisons and rejected-alternative reasons influence selection and must obey the same relationship facts as the selected reason. In a unit_spatial_relationship from an own Unit to an enemy Unit, threats.toFrom describes incoming enemy weapons. stationaryProfileKeys and moveThenAttackProfileKeys are geometric bands across planning horizons; currentRoundStationaryProfileKeys and currentRoundMoveThenAttackProfileKeys are the only immediate current-round subsets. If Movement is already activated, passed, or closed, a geometric move-then-attack band is next-round pressure rather than a current action. A Ranged Attack never moves the attacker. Unresolved path or post-move line of sight remains uncertainty for the applicable horizon and must not be converted into safety or zero future risk.",
       "Resolve threat availability through three independent gates: can Move; can Attack, split into Ranged Attack and melee Fight with their own phases and ranges; and can use a typed damage ability. Movement plus Ranged Attack is a two-phase plan, never one action. If Movement is unavailable, evaluate attacks only from the current bases. A damage ability that places a Token now and resolves damage later is neither a weapon attack nor zero threat: preserve its typed immediate placement, delayed timing, target area and removal/counterplay contract. If no typed damage-ability projection exists, keep that channel unknown rather than inferring safety.",
       "For a ranged candidate, read current-action-index.rangedContributionOverview before comparing firepower. contributingModelCount and totalCurrentHitDice are the exact current Rules-domain contribution; currentLiveModelCount, visible target count, Unit size, or weapon-profile count are never substitutes for the attack pool. Never call an attack high-volume when most live models are nonContributing unless another exact batch proves that volume.",
-      "Before recommending Charge, query exact physical base-edge relationships from that Unit to every eligible target Unit. Compare minimum movement needed to reach 1-inch engagement against Speed plus the maximum current Charge roll and modifiers. Never select Charge when every eligible target is certainly beyond that maximum; compare Pass, a useful pre-Charge ability, or another current Unit instead. A roll-advantage ability such as Metabolic Boost changes probability but does not raise a D6's maximum face.",
+      "Before recommending Charge, name one eligible intended target Unit in selectedChargeTargetUnitId (use an empty string for non-Charge). The Host checks that exact Unit-to-target physical base-edge distance before accepting the plan; never claim a target is reachable when its minimum move to 1-inch engagement exceeds Speed plus the maximum current Charge roll and modifiers. If the intended target is too far, revise to a genuinely reachable target or another current action. A roll-advantage ability such as Metabolic Boost changes probability but does not raise a D6's maximum face.",
       "When comparing a current ranged attack with Run or another reposition, state the immediate attack dice forfeited and the possible future weapon profiles gained. Future movement, path, line of sight and next-round availability remain advisory until queried; do not call reposition 'no positional gain' merely because a smaller current long-range batch exists.",
       "Claim an active ability or status improves the selected attack only when an exact action_specific_threat or instantiated-action receipt shows the modifier on that weapon batch. A status that applies to another weapon, or a Speed bonus used after movement is complete, is not realized attack value for the current batch.",
       "A typed query for a parameterized candidate must put domainId and the complete parameters object in the query tool arguments; the Host automatically Rules-checks every final parameterized proposal.",
+      "Read the selected domain's parameterContract. If selection.kind is parameter_option, choose its current finiteOptions parameterOptionId in optionId and leave parametersJson as {}: the Host materializes exactly that option and Rules-checks it. An empty payment-combinations list [] means unavailable; only an explicit empty combination [[]] permits no payment. Unavailable choices are not executable. Field-feedback may require the Planner to re-evaluate an impossible intent; the Host never silently changes its target or effect.",
+      "For selection.kind parameters, put the chosen payment cards in selection.paymentCardInstanceIds; the Host transports that exact selection into the Rules parameters. Legacy payment inside parametersJson is accepted too, but two explicit payment sets must agree. The available cards come from the current domain; the final exact Rules check still decides legality.",
       "A resolve_ranged_casualties candidate with parameterKind official_selected_roster_ranged_casualty_selection_v1 is a defender-owned choice of casualties from the controlled side, not a new attack. Follow its current parameterSchema: submit one casualtySelectionHash for an enumerated_hashes domain, or exactly casualtyCount ordered casualtyModelIds from the compact explicit_model_ids contract. Compare model position, role, coherency, threat and objective value. Public reasons must say which own models are removed and preserved and why; never claim an attack target or weapon for this resolution stage. authorityActionType is only the frozen Rules transport identity and does not change this meaning.",
       "For resolve_ranged_casualties, read current-ranged-casualty-resolution as exact Rules evidence for the completed enemy weapon batch. surge.targetTypeMatched and surge.matchedCapacity describe eligibility/capacity; only surge.appliedBypassedArmourHits affected actual hits. Resolving casualties does not activate, close, move or spend the defending Unit and does not end the attacker's pending ranged sequence. Never describe it as closing the defender's activation or as the defender making an attack.",
+      "A resolve_melee_casualties candidate is the defender-owned removal choice after a fight or impact has already rolled, not a new fight, Close Ranks, movement or defending activation. Submit only its current casualtySelectionHash or ordered casualtyModelIds contract. The current-melee-casualty-resolution evidence retains the actual hit, Surge, armour, evade and damage results; removals never re-roll them. The current loss options use the same casualty and strategic-loss Rules as ranged removals.",
       "For casualty choice, compare the exact removed-model list, loss of occupied positions and formation reach, lost specialist/upgrades, remaining ranged contributors, exact current Fighting/Supporting contributors, future melee potential, marker-by-marker controller/contact changes, Tactical Mass before/after, Current Supply/control strength, Supply freed for later deployment, VP awarded to the attacker by Supply loss, objective interaction, and follow-up activation value. Speed does not automatically decrease merely because models died, but crossing to one surviving model may select the card's single-model Speed. Current marker and engagement geometry in missionMarkerControlConsequences/tacticalMassConsequences is exact; future movement modifiers, future attack dice and future control geometry still require a fresh LegalSpace over the chosen survivors.",
       "Before every strategic recommendation, check the current mission and score clock, phase and initiative/pass opportunity cost, Current and Available Supply plus reserves, terrain/LOS/elevation/base geometry, outgoing and incoming exchanges including reactions and attack-batch order, card/resource timing, and the most consequential opponent response. Read each Unit's exact supplyControl: currentSupply is its marker-control value now, nextSupplyReduction gives the casualties required for the next drop, and supplyZeroThreshold gives the casualties and remaining models at Supply 0. The Host already resolved army-composition labels; do not infer Supply from currentModels. Model count may affect footprint, coherency and casualty buffer; keep those effects separate from Supply. Explicitly mark irrelevant or unresolved dimensions instead of inventing them.",
       "Use exact query receipts as facts, advisory estimates as preferences, and unknown as uncertainty.",
-      "An unknown query receipt may include Rules-derived repairContext. Use it only to repair and re-submit the same candidate; it never proves that the repaired proposal is legal until a later exact receipt accepts it.",
+      "An unknown query receipt may include Rules-derived repairContext. Use fieldIssues and allowedValues to repair the submitted fields; if requiresReplan is true, re-evaluate the intent through the Planner. Geometry feedback alone applies only to the same candidate. None of this proves proposal legality until a later exact receipt accepts it.",
       "A pre-selection parameter-shape failure is Harness uncertainty, not tactical evidence against a formation candidate and never a reason to prefer Pass. The Planner chooses the candidate and spatial intent; the Host supplies every model's path and placement parameters afterward.",
       "The phase lifecycle node is Rules-owned. Ordinary actions exist only in their listed phase. Never defer Deploy, Move, Charge, Ranged Attack, Run, Hold, or Fight into another phase unless exact successor Rules evidence explicitly exposes it.",
       "Before recommending Pass, enumerate every current non-Pass actionType that will be forfeited and compare that opportunity cost with initiative value.",
@@ -4714,12 +7065,15 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
         ? "Assess the existing same-match plan before selecting a candidate. A changed or contradicted assumption must produce at_risk/invalid and revise/abandon, never silent continue/sound."
         : "Produce the ActionIntent for the already selected Planner candidate; do not replace the plan or candidate inside the Action stage.",
       "Predict a plausible opponent response as a typed hypothesis: actionClass, likely actor/target when visible, bounded horizon, confidence, evidence and invalidation criteria. State a counter-response and replan trigger.",
+      ...(!planning ? ["For a formation selection, post-placement-prediction-facts explicitly names enemy actor, own target and current/future fire bands for EACH option at the SAME current authority. Use the row for the option you actually select when predicting an opponent response after your reposition. A pre-move space.inspect_relationships receipt describes the old target position and cannot establish a post-move fire band. Null/missing remains unknown; an empty known band differs from unknown. Keep the selected option, actor, target, horizon and cited evidence consistent. An invalidation condition already true in the chosen projection is not a live prediction; revise that hypothesis using the available facts, without changing the Planner candidate or inventing future legality."] : []),
       "A prediction horizon names when the predicted action itself can legally occur, not merely when its phase will eventually open. current_phase and current_round require current-lifecycle evidence for that exact actor, target and action. If a named ranged actor/target has zero currentRoundStationaryProfileKeys and zero currentRoundMoveThenAttackProfileKeys, do not predict that ranged attack in current_phase or current_round; use bounded_public_transitions for a conditional future-round attack, or choose a different actor/target with a current-round fire band. Never pair a current-round horizon with basis text that says the action starts next round or is outside the current fire band.",
       "Opponent predictions obey the current lifecycle. Read every visible Unit's activationStatus and offTableUnits. Activation is tracked independently per phase: activatedPhases.movement blocks another Move or Deploy in Movement only; it does not block that Unit from a later Run, Charge, Ranged Attack or Hold in Assault, or Fight in Combat, unless the corresponding phase is also activated. A Unit with activatedPhases[predicted action phase] = true cannot take another ordinary action in that same phase. A Reserve actor must use actionClass deploy; an on-table actor must not use reserve Deploy. Pass, choose_first_actor and phase_control are side-level actions and must leave likelyActorUnitId empty. Keep actionClass, named actor and horizon internally consistent; choose an actor unactivated in the predicted action's phase or an explicitly conditional later-round response instead.",
       "When match memory contains predictionCalibrations, cite their calibrationHash in assessment evidence, update changedAssumptions/opponentModelUpdates, and use assessment.verdict to explicitly retain or revise the plan. A hit does not force continuation and a miss does not force abandonment; calibrate against position and objective value.",
       forceTerminal
         ? "If strategy context remains insufficient, record it as uncertainty and a replan trigger; never invent a missing Skill passage."
-        : `If strategy context is insufficient, call ${NATIVE_SKILL_TOOL_NAME}; never invent a missing Skill passage.`,
+        : nativeTools
+          ? `If strategy context is insufficient, call ${NATIVE_SKILL_TOOL_NAME}; never invent a missing Skill passage.`
+          : `If strategy context is insufficient, request ${NATIVE_SKILL_TOOL_NAME} through query_requests; never invent a missing Skill passage.`,
       "Do not return hidden chain-of-thought; return only concise public reasons and evidence.",
       "The model cannot confirm, apply, mutate, or override Rules-owned truth.",
     ],
@@ -4735,18 +7089,50 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
       plannerControlsAction: true,
       terminalSubmissionForced: forceTerminal,
       terminalForceReason: forceTerminal ? terminalForceReason : null,
-      currentCorrections: clone(choice.warnings || []),
+      currentCorrections: clone((choice.warnings || []).slice(
+        Number(choice.activeWarningStartIndex || 0))),
     }),
+    ...((choice.parameterRecoveryHistory || []).length ? [makeNode(
+      "current-decision-recovery", "typed-current-failure", "host", {
+        failures: clone(choice.parameterRecoveryHistory.slice(-3)),
+        priorPlannerGoals: (choice.failedPlannerResults || []).slice(-3).map(entry => ({
+          reason: entry.reason,
+          plan: clone(entry.plannerResult.plan),
+          publicPlanSummary: clone(entry.plannerResult.publicPlanSummary),
+        })),
+        failureCountersPersistAcrossReplanning: true,
+        ruleTruthUnchanged: true,
+        noFallbackActionSelectedByHost: true,
+      })] : []),
+    ...(!nativeTools ? [makeNode("json-agent-query-interface", "platform",
+      "host", jsonAgentQueryInterface(nativeLoop, stage))] : []),
+    ...(!nativeTools && nativeLoop.continuationMessages.some(message =>
+      ["assistant", "user"].includes(message.role)
+        && typeof message.content === "string") ? [makeNode(
+      "json-agent-continuation", "typed-current-failure", "host", {
+        messages: nativeLoop.continuationMessages.filter(message =>
+          ["assistant", "user"].includes(message.role)
+            && typeof message.content === "string"),
+        priorRejectedOutputsAreNotFacts: true,
+        historicalMessagesAreNotRulesAuthority: true,
+        mayOverrideRules: false,
+      })] : []),
     makeNode("player-room-projection", "player-view", "room_service",
       projectStarcraftTmgLiveDecisionRoomProjectionV1(input.roomProjection)),
     makeNode("current-legal-space", "rules", "rules_service",
       compactLegalSpace(input.legalSpace)),
     ...(currentRangedCasualtyResolutionEvidence(input)
-      ? [makeNode("current-ranged-casualty-resolution", "rules-observation",
+      ? [makeNode(currentRangedCasualtyResolutionEvidence(input).attackKind === "melee"
+        ? "current-melee-casualty-resolution" : "current-ranged-casualty-resolution", "rules-observation",
         "rules_service", currentRangedCasualtyResolutionEvidence(input))]
       : []),
     makeNode("round-phase-lifecycle", "rules", "rules_service",
       phaseLifecycleContract(input)),
+    makeNode("opponent-prediction-timing", "derived-lifecycle-facts", "host",
+      projectStarcraftTmgOpponentPredictionTimingFactsV1({
+        spatialObservation: input.spatialObservation,
+        currentPhase: input.roomProjection?.state?.phase,
+      })),
     makeNode("current-spatial-observation", "rules-observation", "rules_service",
       compactSpatialObservation(input.spatialObservation)),
     makeNode("required-evidence-by-candidate", "host-evidence-policy", "host", {
@@ -4767,16 +7153,41 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
         input.matchMemory || null),
       makeNode("turn-plan-state", "same-match-advisory", "turn_plan_runtime",
         input.planState || null),
+      makeNode("plan-progress-facts", "derived-same-view-facts", "host",
+        projectStarcraftTmgPlanProgressFactsV1(input)),
       makeNode("asynchronous-preexecution", "hypothetical-advisory",
         "preexecution_runtime", input.preexecutionSearch || null),
     ] : []),
     ...(!planning ? [makeNode("planner-output", "plan-authority", "planner",
       choice.plannerResult)] : []),
     makeNode("current-query-receipts", "typed-query-results", "rules_or_math",
-      promptQueryReceipts.map(compactQueryReceiptForPrompt)),
+      projectedQueryReceipts),
+    ...(incomingFireFacts ? [makeNode("current-incoming-fire-facts",
+      "derived-current-position-facts", "host", incomingFireFacts)] : []),
+    ...(postPlacementFacts ? [makeNode("post-placement-prediction-facts",
+      "hypothetical-post-placement-facts", "host", postPlacementFacts)] : []),
+    ...(exactChargeReachability.length ? [makeNode(
+      "current-charge-distance-facts", "derived-current-facts", "host",
+      { entries: exactChargeReachability,
+        derivedFrom: "exact_base_edges_and_current_charge_domains",
+        precisionScope: "distance_only_not_path_or_charge_success",
+        distanceDoesNotProvePath: true,
+        notReportedMeansUnknown: true,
+        legalSpaceUnchanged: true,
+        fullQueryReceiptsRetainedByHost: true })] : []),
+    ...(input.hostCandidateExclusions?.length ? [makeNode(
+      "host-certain-failure-exclusions", "derived-current-facts", "host",
+      { entries: clone(input.hostCandidateExclusions),
+        physicalLowerBoundOnly: true,
+        rulesLegalSpaceUnchanged: true,
+        excludedFromAgentSelectionOnly: true })] : []),
     makeNode("user-message", "user-message", "host", {
       text: `Decision ${choice.choiceKey}, ${stage} stage. `
-        + (forceTerminal
+        + (!nativeTools
+          ? forceTerminal
+            ? `Submit only a concise ${stage} JSON object now; preserve uncertainty and existing evidence.`
+            : `Return query_requests.requests for missing read-only evidence or submit the final ${stage} JSON object. Never combine the two channels.`
+          : forceTerminal
           ? terminalForceReason === "terminal_tool_argument_format_repair"
             ? `Repair only the previous malformed JSON arguments. Preserve the selected plan and evidence, use concise JSON-escaped strings, and call only the strict ${planning
               ? NATIVE_PLANNING_SUBMIT_TOOL_NAME
@@ -4799,7 +7210,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
     legalSpaceHash: choice.authority.legalSpaceHash,
     actionSpaceHash: choice.authority.spatialActionSpaceHash,
     strategySkillSetHash: match.strategySkillSnapshot.skillSetHash,
-    promptPolicyVersion: PROMPT_POLICY_VERSION,
+    promptPolicyVersion: policyVersion,
     queryReceiptHashes: queryReceipts.map((entry) => entry.queryReceiptHash),
     nodeHashes: nodes.map((entry) => entry.nodeHash),
     trainingTruth: false,
@@ -4811,8 +7222,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
     sessionBindingHash: match.providerSession.sessionBindingHash,
     promptPack: input.promptPack || match.promptPack,
     nodes,
-    agentLoop: nativeAgentLoop(choice, input, queryReceipts, stage,
-      memoryQueryAvailable && planning, forceTerminal),
+    agentLoop: nativeTools ? nativeLoop : null,
     responseContract: contract,
     receipt,
     retentionPolicy: "release_after_durable_decision_attempt",
@@ -4822,7 +7232,7 @@ function makePromptArtifact(match, input, choice, round, queryReceipts, stage,
   const artifact = seal(body, "promptArtifactHash");
   return { artifact, contract, responseRef: {
     id: "starcraft-tmg.live-flash-decision.v1",
-    version: "1.0.0",
+    version: nativeTools ? "1.0.0" : "1.1.0",
     hash: contract.contractHash,
   } };
 }
@@ -4834,6 +7244,10 @@ function usage(value = {}) {
     totalUnits: integer(value.totalUnits || 0, "usage.totalUnits"),
   };
 }
+
+// Read-only construction seam for captured protocol regressions. This is the
+// same builder used by production, not a second prompt implementation.
+export { makePromptArtifact as buildStarcraftTmgLivePromptArtifactV1 };
 
 function estimateCnyMicros(inputUnits, outputUnits, at, model) {
   const pricingInput = {
@@ -4865,6 +7279,7 @@ function publicProjection(record) {
     scope: clone(record.scope),
     lifecycle: record.lifecycle,
     selectedProfile: clone(record.selectedProfile),
+    providerInteractionMode: interactionMode(record.providerInteractionMode),
     strategySkillSetHash: record.strategySkillSnapshot.skillSetHash,
     promptPack: record.promptPack,
     budget: clone(record.budget),
@@ -4922,6 +7337,9 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
   const profiles = (options.profileCandidates || []).map(profile);
   const allowUnstartedProfileReselection =
     options.allowUnstartedProfileReselection === true;
+  const providerInteractionMode = interactionMode(options.providerInteractionMode);
+  const allowFailedInteractionModeMigration =
+    options.allowFailedInteractionModeMigration === true;
   const requestOutputLimit = options.requestOutputLimit === undefined ? null
     : integer(options.requestOutputLimit, "requestOutputLimit", 256, 1_000_000);
   const now = typeof options.now === "function"
@@ -4976,8 +7394,28 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     return record;
   }
 
-  async function commit(record, change) {
-    const next = clone(record);
+  async function commit(record, change, mutableChoiceKey = null) {
+    // SQLite decoding gives this port a private graph. Only one choice (or
+    // match metadata) changes per update; never copy the entire match history.
+    // Cold choices are shared read-only, while the selected choice and root
+    // metadata remain private drafts. CAS failure cannot change cached values.
+    const next = structuredClone({ ...record, decisions: {} });
+    for (const [key, decision] of Object.entries(record.decisions)) {
+      next.decisions[key] = key === mutableChoiceKey
+        ? structuredClone(decision) : freeze(decision);
+      if (key !== mutableChoiceKey) {
+        Object.defineProperty(next.decisions, key, {
+          writable: false, configurable: false,
+        });
+      }
+    }
+    if (mutableChoiceKey !== null
+      && !Object.hasOwn(next.decisions, mutableChoiceKey)) {
+      Object.defineProperty(next.decisions, mutableChoiceKey, {
+        value: undefined, enumerable: true, writable: true, configurable: false,
+      });
+    }
+    Object.preventExtensions(next.decisions);
     change(next);
     next.revision = record.revision + 1;
     next.updatedAt = instant(now(), "now");
@@ -4991,6 +7429,10 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     }
     hotRecords.set(record.scope.scopeKey, next);
     return next;
+  }
+
+  function commitChoice(record, choiceKey, change) {
+    return commit(record, change, choiceKey);
   }
 
   async function preflight(input = {}) {
@@ -5091,6 +7533,47 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       };
       const existing = await loadRecord(scopeValue.scopeKey);
       if (existing) {
+        // Only an explicit operator-owned configuration may change this
+        // limit. Reopening a match must neither ignore that configuration
+        // nor reset cumulative usage, choices or the paid-attempt ledger.
+        const requestedLimit = input.budget?.limitCnyMicros === undefined
+          ? existing.budget.limitCnyMicros
+          : input.budget.limitCnyMicros === null ? null : integer(input.budget.limitCnyMicros,
+            "budget.limitCnyMicros", 1, 10_000_000_000);
+        const budgetLimitChanged = requestedLimit !== existing.budget.limitCnyMicros;
+        if (budgetLimitChanged
+          && requestedLimit !== null
+          && requestedLimit < existing.usage.estimatedCostCnyMicros) {
+          return rejection("LIVE_DECISION_BUDGET_BELOW_ACCRUED_COST", "High");
+        }
+        const budgetLimitTightened = budgetLimitChanged && requestedLimit !== null
+          && (existing.budget.limitCnyMicros === null
+            || requestedLimit < existing.budget.limitCnyMicros);
+        if (budgetLimitTightened && (inFlight.size
+          || Object.values(existing.decisions).some(choice =>
+            choice.status === "provider_call_may_have_started"))) {
+          return rejection("LIVE_DECISION_BUDGET_UPDATE_REQUIRES_IDLE", "High");
+        }
+        const previousInteractionMode = interactionMode(
+          existing.providerInteractionMode);
+        const interactionModeChanged = previousInteractionMode
+          !== providerInteractionMode;
+        const failedOnlyInteractionMigration = interactionModeChanged
+          && allowFailedInteractionModeMigration
+          && previousInteractionMode === "native_tools"
+          && providerInteractionMode === "json_channels_v1"
+          && Object.values(existing.decisions || {}).every((decision) =>
+            (!decision.completedDecision
+              || decision.completedDecision.providerTrace
+                ?.deterministicHostStep === true)
+            && (decision.providerContinuationMessages || []).length === 0
+            && Object.values(decision.attempts || {}).every((attempt) =>
+              ["provider_failed_not_sent",
+                "provider_failed_after_possible_egress"].includes(
+                attempt.status)));
+        if (interactionModeChanged && !failedOnlyInteractionMigration) {
+          return rejection("OPEN_MATCH_INTERACTION_MODE_MISMATCH", "High");
+        }
         const profileChanged = existing.selectedProfile.profileRef.hash
           !== receipt.selectedProfile.profileRef.hash;
         const unstartedProfileReselection = profileChanged
@@ -5124,9 +7607,36 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           && Number(existing.usage?.totalUnits || 0) > 0;
         let resumed = existing;
         if (sessionChanged || reopenLegacyShutdown
-          || definitelyNotSentUsageRepair || unstartedProfileReselection) {
+          || definitelyNotSentUsageRepair || unstartedProfileReselection
+          || failedOnlyInteractionMigration || budgetLimitChanged) {
           resumed = await commit(existing, (draft) => {
             draft.providerSession = clone(providerSession);
+            if (budgetLimitChanged) {
+              const change = {
+                scopeKey: scopeValue.scopeKey,
+                previousLimitCnyMicros: existing.budget.limitCnyMicros,
+                limitCnyMicros: requestedLimit,
+                spentAtUpdateCnyMicros: existing.usage.estimatedCostCnyMicros,
+                occurredAt: instant(now(), "now"),
+                source: "explicit_operator_configuration",
+                cumulativeUsageAndPaidHistoryPreserved: true,
+              };
+              draft.budget.limitCnyMicros = requestedLimit;
+              draft.budget.authorizedLimitChanges ||= [];
+              draft.budget.authorizedLimitChanges.push(change);
+            }
+            if (failedOnlyInteractionMigration) {
+              draft.providerInteractionMode = providerInteractionMode;
+              draft.issues.push({
+                code: "LIVE_DECISION_FAILED_INTERACTION_MODE_MIGRATED",
+                severity: "Medium",
+                previousMode: previousInteractionMode,
+                nextMode: providerInteractionMode,
+                priorProviderCalls: existing.usage.providerCalls,
+                occurredAt: instant(now(), "now"),
+                historicalAttemptsAndUsagePreserved: true,
+              });
+            }
             if (unstartedProfileReselection) {
               draft.selectedProfile = clone(receipt.selectedProfile);
               draft.issues.push({
@@ -5174,8 +7684,9 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           legacyShutdownReopened: reopenLegacyShutdown,
           projection: publicProjection(resumed), trainingTruth: false });
       }
-      const budgetLimitCnyMicros = integer(
-        input.budget?.limitCnyMicros || 80_000_000,
+      // null means no currency cap; it is not a fresh zero-cost allowance.
+      const budgetLimitCnyMicros = input.budget?.limitCnyMicros == null ? null : integer(
+        input.budget.limitCnyMicros,
         "budget.limitCnyMicros", 1, 10_000_000_000);
       const maxProviderCalls = integer(input.budget?.maxProviderCalls || 1_024,
         "budget.maxProviderCalls", 1, 100_000);
@@ -5191,6 +7702,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           ? "selfplay_agent_prompt" : "opponent_prompt"),
         providerSession,
         selectedProfile: clone(receipt.selectedProfile),
+        providerInteractionMode,
         strategySkillSnapshot: clone(receipt.strategySkillSnapshot),
         budget: {
           epoch: 1,
@@ -5271,7 +7783,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     if (match.decisions[candidate.choiceKey]) {
       return { match, choice: match.decisions[candidate.choiceKey] };
     }
-    const next = await commit(match, (draft) => {
+    const next = await commitChoice(match, candidate.choiceKey, (draft) => {
       draft.decisions[candidate.choiceKey] = candidate;
     });
     return { match: next, choice: next.decisions[candidate.choiceKey] };
@@ -5283,6 +7795,9 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       ? maxPlanningQueryRounds : maxActionQueryRounds;
     const terminalForceReason = choice.terminalFormatRepairPending === true
       ? "terminal_tool_argument_format_repair"
+      : choice.warnings.includes(
+        `QUERY_RETURNED_ONLY_KNOWN_RECEIPTS_TERMINAL_FORCED:${stage}`)
+        ? "repeated_query_no_new_evidence"
       : choice.stageQueryRounds >= queryRoundLimit
         ? "query_safety_ceiling_reached" : null;
     const forceTerminal = terminalForceReason !== null;
@@ -5311,7 +7826,18 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     // UTF-8 bytes are a conservative token upper bound for the serialized
     // artifact. Keep additional headroom for the transport's system/user
     // message wrapper instead of treating bytes/4 as a reservation guarantee.
-    const inputUnits = Math.max(1, stored.bytes + 4_096);
+    const inputUnits = Math.max(1, stored.bytes + STARCRAFT_TMG_PROVIDER_INPUT_HEADROOM_UNITS);
+    // A deterministic local capacity failure is not a retryable Provider outage.
+    // Check the shared supervisor contract before journaling/counting dispatch.
+    if (inputUnits > STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS) {
+      promptArtifactStore.release(stored.ref);
+      throw Object.assign(new Error("LIVE_DECISION_PROVIDER_INPUT_CAPACITY_EXCEEDED"), {
+        code: "LIVE_DECISION_PROVIDER_INPUT_CAPACITY_EXCEEDED", severity: "High",
+        requestDefinitelyNotSent: true, automaticRetryAllowed: false,
+        promptByteLength: stored.bytes,
+        inputReservationLimit: STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS,
+      });
+    }
     const maxOutputUnits = requestOutputLimit ?? match.selectedProfile.maxOutputUnits;
     const startedAt = instant(now(), "now");
     const projectedMicros = estimateCnyMicros(inputUnits,
@@ -5323,7 +7849,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         severity: "High",
       });
     }
-    if (match.usage.estimatedCostCnyMicros + projectedMicros
+    if (match.budget.limitCnyMicros !== null
+      && match.usage.estimatedCostCnyMicros + projectedMicros
       > match.budget.limitCnyMicros) {
       promptArtifactStore.release(stored.ref);
       throw Object.assign(new Error("Per-match CNY budget would be exceeded"), {
@@ -5348,7 +7875,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       stage,
       requestHash: boundedRequest.requestHash,
     })}`;
-    match = await commit(match, (draft) => {
+    match = await commitChoice(match, choice.choiceKey, (draft) => {
       const current = draft.decisions[choice.choiceKey];
       current.status = "provider_call_may_have_started";
       current.attemptKeys.push(attemptKey);
@@ -5358,8 +7885,11 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         round,
         stage,
         status: "provider_call_may_have_started",
-        promptPolicyVersion: PROMPT_POLICY_VERSION,
-        terminalSubmissionProtocol: "strict_function_tool_required",
+        promptPolicyVersion: promptPolicyVersion(interactionMode(
+          match.providerInteractionMode)),
+        terminalSubmissionProtocol: interactionMode(match.providerInteractionMode)
+          === "native_tools" ? "strict_function_tool_required"
+          : "json_channel_terminal_required",
         requestedMaxOutputUnits: maxOutputUnits,
         outputCapacityPolicyVersion: STARCRAFT_TMG_LIVE_OUTPUT_CAPACITY_POLICY_VERSION,
         requestHash: boundedRequest.requestHash,
@@ -5401,7 +7931,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       const providerMayHaveBeenCalled = Number.isFinite(chargedUnits)
         ? chargedUnits > 0 : Boolean(result?.turn || result?.receipt);
       let providerTransportProgress = null;
-      if (result?.reason === "provider_transport_timeout") {
+      if (["provider_transport_timeout", "provider_transport_failed"]
+        .includes(result?.reason)) {
         try {
           providerTransportProgress =
             assertStarcraftTmgProviderTransportProgressV1(
@@ -5410,7 +7941,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           // The decision journal accepts only the typed numeric safe receipt.
         }
       }
-      match = await commit(match, (draft) => {
+      match = await commitChoice(match, choice.choiceKey, (draft) => {
         const current = draft.decisions[choice.choiceKey];
         const attempt = current.attempts[attemptKey];
         attempt.status = providerMayHaveBeenCalled
@@ -5418,6 +7949,14 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         attempt.completedAt = completedAt;
         attempt.failure = String(result?.reason || "provider_turn_failed");
         attempt.providerTransportProgress = providerTransportProgress;
+        const httpStatus = result?.turn?.failure?.httpStatus;
+        if (Number.isSafeInteger(httpStatus) && httpStatus >= 100 && httpStatus <= 599) {
+          attempt.providerHttpStatus = httpStatus;
+        }
+        const failureReceiptHash = result?.turn?.failure?.safeProviderReceiptHash;
+        if (HASH.test(String(failureReceiptHash || ""))) {
+          attempt.safeProviderReceiptHash = failureReceiptHash;
+        }
         current.status = providerMayHaveBeenCalled
           ? "provider_failed_requires_explicit_retry" : "retry_ready";
         if (providerMayHaveBeenCalled) {
@@ -5447,7 +7986,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     const modelDrift = reportedModel !== null
       && reportedModel !== match.selectedProfile.model;
     let thresholds = [];
-    match = await commit(match, (draft) => {
+    match = await commitChoice(match, choice.choiceKey, (draft) => {
       const current = draft.decisions[choice.choiceKey];
       const attempt = current.attempts[attemptKey];
       attempt.status = "completed";
@@ -5532,7 +8071,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         attempt.startedAt, match.selectedProfile.model)
         : Number(attempt.projectedCostCnyMicros || 0);
     const thresholds = [];
-    match = await commit(match, (draft) => {
+    match = await commitChoice(match, choice.choiceKey, (draft) => {
       const current = draft.decisions[choice.choiceKey];
       const storedAttempt = current.attempts[attempt.attemptKey];
       storedAttempt.status = definitelyNotSent
@@ -5590,28 +8129,50 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
   async function runQueries(input, requests) {
     const receipts = [];
     const warnings = [];
+    const outcomes = [];
     const bounded = requests.slice(0, maxQueriesPerRound);
     if (requests.length > bounded.length) {
       warnings.push("QUERY_REQUEST_COUNT_SOFT_TRUNCATED");
     }
-    for (const request of bounded) {
+    let batchReplies = null;
+    let batchError = null;
+    if (bounded.length > 1 && typeof spatialQueryPort.queryBatch === "function") {
       try {
-        const receipt = await spatialQueryPort.query({
+        batchReplies = await spatialQueryPort.queryBatch({
+          roomProjection: input.roomProjection,
+          legalSpace: input.legalSpace,
+          spatialObservation: input.spatialObservation,
+          requests: bounded,
+        });
+        if (!Array.isArray(batchReplies) || batchReplies.length !== bounded.length) {
+          throw new TypeError("spatial query batch reply count mismatch");
+        }
+      } catch (error) { batchError = error; }
+    }
+    for (const [index, request] of bounded.entries()) {
+      const outcome = { receipts: [], warnings: [] };
+      try {
+        if (batchError) throw batchError;
+        const receipt = batchReplies ? batchReplies[index] : await spatialQueryPort.query({
           roomProjection: input.roomProjection,
           legalSpace: input.legalSpace,
           spatialObservation: input.spatialObservation,
           request,
         });
-        if (object(receipt) && HASH.test(String(receipt.queryReceiptHash || ""))) {
-          receipts.push(clone(receipt));
+        const rejection = spatialQueryReceiptRejectionV1({ input, request, receipt });
+        if (!rejection) {
+          outcome.receipts.push(clone(receipt));
         } else {
-          warnings.push(`QUERY_RESULT_REJECTED:${request.queryKind}`);
+          outcome.warnings.push(`QUERY_RESULT_REJECTED:${request.queryKind}:${rejection}`);
         }
       } catch {
-        warnings.push(`QUERY_FAILED:${request.queryKind}`);
+        outcome.warnings.push(`QUERY_FAILED:${request.queryKind}`);
       }
+      receipts.push(...outcome.receipts);
+      warnings.push(...outcome.warnings);
+      outcomes.push(outcome);
     }
-    return { receipts, warnings };
+    return { receipts, warnings, outcomes };
   }
 
   async function runNativeToolCalls(match, input, providerTurn) {
@@ -5624,7 +8185,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     const receipts = [];
     const normalizedCalls = [];
     const toolMessages = [];
-    for (const [index, call] of calls.entries()) {
+    const preparedCalls = calls.map((call, index) => {
       const callId = String(call?.callId || `native-tool-${index + 1}`);
       const toolName = String(call?.name || "");
       const args = object(call?.arguments) ? clone(call.arguments) : {};
@@ -5640,6 +8201,27 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           queryArguments = parsed;
         } catch {
           argumentIssue = "arguments_json_invalid";
+        }
+      }
+      return { callId, toolName, args, argumentIssue, queryArguments };
+    });
+    const batchedQueries = new Map();
+    const independentCall = call => !call.argumentIssue
+      && call.toolName === NATIVE_QUERY_TOOL_NAME
+      && INDEPENDENT_READONLY_QUERY_KINDS.has(String(call.args.queryKind || ""));
+    for (const [index, prepared] of preparedCalls.entries()) {
+      const { callId, toolName, args, argumentIssue, queryArguments } = prepared;
+      if (independentCall(prepared) && !batchedQueries.has(index)) {
+        const requests = [];
+        for (let next = index; next < preparedCalls.length
+          && independentCall(preparedCalls[next]); next += 1) {
+          const entry = preparedCalls[next];
+          requests.push({ requestId: String(entry.args.requestId || entry.callId),
+            queryKind: String(entry.args.queryKind), arguments: entry.queryArguments });
+        }
+        const grouped = await runQueries(input, requests);
+        for (const [offset, outcome] of grouped.outcomes.entries()) {
+          batchedQueries.set(index + offset, outcome);
         }
       }
       normalizedCalls.push({
@@ -5658,6 +8240,9 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           const memoryQuery = {
             ...(Array.isArray(args.kinds) && args.kinds.length
               ? { kinds: clone(args.kinds) } : {}),
+            ...(["combined", "current_versioned_room",
+              "frozen_source_room"].includes(args.historyLane)
+              ? { historyLane: args.historyLane } : {}),
             ...(Number(args.round) > 0 ? { round: Number(args.round) } : {}),
             ...Object.fromEntries(["phase", "unitId", "abilityId",
               "resourceId", "text"].filter((field) =>
@@ -5672,7 +8257,10 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
             query: memoryQuery,
           });
           if (!object(queried)
-            || !HASH.test(String(queried.queryResultHash || ""))) {
+            || !HASH.test(String(queried.queryResultHash || ""))
+            || queried.scope?.roomId !== match.scope.roomId
+            || queried.scope?.matchBindingHash !== match.scope.matchBindingHash
+            || queried.scope?.seatKey !== match.scope.seatKey) {
             warnings.push("NATIVE_MEMORY_QUERY_RESULT_REJECTED");
           } else {
             receipt = seal({
@@ -5681,7 +8269,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
               queryKind: "match_memory",
               status: "exact",
               result: clone(queried),
-              source: "complete_same_match_event_log",
+              source: String(queried.source
+                || "complete_same_match_event_log"),
               rulesAuthority: false,
               mutationAuthority: false,
               trainingTruth: false,
@@ -5711,7 +8300,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         || !NATIVE_QUERY_KINDS.includes(String(args.queryKind || ""))) {
         warnings.push(`NATIVE_TOOL_UNSUPPORTED:${toolName || "missing"}`);
       } else {
-        const query = await runQueries(input, [{
+        const query = batchedQueries.get(index) || await runQueries(input, [{
           requestId: String(args.requestId || callId),
           queryKind: String(args.queryKind),
           arguments: queryArguments,
@@ -5748,6 +8337,45 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     };
   }
 
+  async function runJsonQueryRequests(match, input, requests, stage) {
+    const allowed = new Set([
+      ...NATIVE_QUERY_KINDS.filter((kind) =>
+        // Both protocols use runNativeTools below. Known host-deferred
+        // requests receive its typed deferred receipt, not an invented
+        // unsupported-tool error; the solver still does not execute here.
+        !(stage === "planning"
+          && PLANNING_POST_SELECTION_QUERY_KINDS.has(kind))),
+      NATIVE_SKILL_TOOL_NAME,
+      ...(stage === "planning" && memoryQueryPort
+        ? [NATIVE_MEMORY_TOOL_NAME] : []),
+    ]);
+    const bounded = requests.slice(0, maxQueriesPerRound);
+    const warnings = requests.length > bounded.length
+      ? ["JSON_QUERY_REQUEST_COUNT_SOFT_TRUNCATED"] : [];
+    const permitted = bounded.filter((request) => {
+      if (allowed.has(String(request.queryKind || ""))) return true;
+      warnings.push(`JSON_QUERY_KIND_UNSUPPORTED:${request.queryKind}`);
+      return false;
+    });
+    const syntheticTurn = { toolCalls: permitted.map((request, index) => {
+      const queryKind = String(request.queryKind || "");
+      const retrieval = [NATIVE_SKILL_TOOL_NAME,
+        NATIVE_MEMORY_TOOL_NAME].includes(queryKind);
+      return {
+        callId: `json-query-${index + 1}`,
+        name: retrieval ? queryKind : NATIVE_QUERY_TOOL_NAME,
+        arguments: retrieval ? clone(request.arguments) : {
+          requestId: request.requestId,
+          queryKind,
+          argumentsJson: JSON.stringify(request.arguments),
+        },
+      };
+    }) };
+    const result = await runNativeToolCalls(match, input, syntheticTurn);
+    return { receipts: result.receipts,
+      warnings: [...warnings, ...result.warnings] };
+  }
+
   function providerTrace(match, choice, notificationThresholds = []) {
     const attempts = choice.attemptKeys.map((key) => choice.attempts[key]);
     const used = attempts.reduce((sum, entry) => ({
@@ -5757,8 +8385,12 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     }), { inputUnits: 0, outputUnits: 0, totalUnits: 0 });
     return freeze({
       agentVersion: STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION,
-      promptPolicyVersion: PROMPT_POLICY_VERSION,
-      terminalSubmissionProtocol: "strict_function_tool_required",
+      promptPolicyVersion: promptPolicyVersion(interactionMode(
+        match.providerInteractionMode)),
+      providerInteractionMode: interactionMode(match.providerInteractionMode),
+      terminalSubmissionProtocol: interactionMode(match.providerInteractionMode)
+        === "native_tools" ? "strict_function_tool_required"
+        : "json_channel_terminal_required",
       providerCalls: choice.attemptKeys.length,
       paidProviderUsed: used.totalUnits > 0,
       providerId: match.selectedProfile.providerId,
@@ -5863,10 +8495,12 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     return freeze({
       schemaVersion:
         `${STARCRAFT_TMG_LIVE_FLASH_DECISION_PORT_VERSION}.prompt-policy-observation`,
-      promptPolicyVersion: PROMPT_POLICY_VERSION,
+      promptPolicyVersion: promptPolicyVersion(interactionMode(
+        match.providerInteractionMode)),
       previousPolicyVersion,
       policyChanged: previousPolicyVersion !== null
-        && previousPolicyVersion !== PROMPT_POLICY_VERSION,
+        && previousPolicyVersion !== promptPolicyVersion(interactionMode(
+          match.providerInteractionMode)),
       strategyStatus: signals.length
         ? "review_required" : "no_observed_negative_strategy_effect",
       strategyRegressionSignals: signals,
@@ -5917,7 +8551,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         || hashStarcraftTmgContract(attempt.safeOutput),
       correction,
     });
-    match = await commit(match, (draft) => {
+    match = await commitChoice(match, choice.choiceKey, (draft) => {
       const current = draft.decisions[choice.choiceKey];
       const storedAttempt = current.attempts[attempt.attemptKey];
       if (attempt.stage === "planning") {
@@ -5956,12 +8590,19 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           }),
         });
       }
-      current.providerContinuationMessages.push({
-        role: "user",
-        content: `The previous ${attempt.stage} submission failed typed validation: ${correction}. Correct only that defect, preserve supported facts, and call the required strict submit tool once.`,
+      const feedbackHistory = current.semanticCorrectionFeedbackHistory || [];
+      const feedback = buildStarcraftTmgSemanticCorrectionFeedbackV1({
+        stage: attempt.stage, correction,
+        issues: error?.correctionIssues || [], history: feedbackHistory,
+        providerInteractionMode,
       });
-      current.status = effectiveStarcraftTmgSemanticCorrectionsV1(current)
-          >= maxSemanticCorrectionRounds
+      current.providerContinuationMessages.push({ role: "user",
+        content: JSON.stringify(feedback) });
+      current.semanticCorrectionFeedbackHistory = [...feedbackHistory, {
+        stage: attempt.stage, correction,
+        issues: clone(feedback.current.issues),
+      }];
+      current.status = semanticCorrectionExhausted(current, maxSemanticCorrectionRounds)
         || current.stageCorrectionRounds >= maxToolRounds
         || current.repeatedSemanticFailureCount >= 2
         ? "provider_output_invalid" : "generating";
@@ -5969,25 +8610,120 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
     const current = match.decisions[choice.choiceKey];
     return {
       match,
-      exhausted: effectiveStarcraftTmgSemanticCorrectionsV1(current)
-          >= maxSemanticCorrectionRounds
+      exhausted: semanticCorrectionExhausted(current, maxSemanticCorrectionRounds)
         || current.stageCorrectionRounds >= maxToolRounds
         || current.repeatedSemanticFailureCount >= 2,
       correction,
     };
   }
 
+  async function completeCurrentSingleton(match, input, choice,
+    notificationThresholds = []) {
+    const currentInput = decisionInputForChoice(input, choice);
+    const forcedSingleton = resolveStarcraftTmgDeterministicSingletonActionV1(
+      actionIndex(currentInput.spatialActionSpace));
+    if (!forcedSingleton) return null;
+    const actionType = forcedSingleton.selected.action?.actionType
+      || "rules continuation";
+    const excludedCount = Number(choice.unavailableCandidateIds?.length || 0);
+    const trace = providerTrace(match, choice, notificationThresholds);
+    const decision = normalizeDecision({
+      proposal: clone(forcedSingleton.proposal),
+      selectedReason: excludedCount > 0
+        ? `Host verified ${excludedCount} current candidate(s) unavailable; ${
+          actionType} is the only remaining fully bound Rules continuation.`
+        : `Rules exposes exactly one fully bound continuation (${actionType}); no strategic model choice exists.`,
+      scoreOrPositionValue:
+        "Preserves the authoritative lifecycle and reaches the next real decision point.",
+      risk: "No alternative current legal action exists.",
+      publicDecisionSummary: {
+        visibleFacts: [excludedCount > 0
+          ? "The Host ruled out the other current candidates using exact Rules query receipts; one fully bound candidate remains."
+          : "Current ActionSpace contains one action and every required parameter has exactly one Rules-owned value."],
+        plan: "Advance the Rules-owned lifecycle without a further model call.",
+      },
+    }, currentInput, match, choice.queryReceipts, freeze({
+      ...clone(trace), deterministicHostStep: true,
+      deterministicParameterBinding: forcedSingleton.parameterBinding,
+    }));
+    const updated = await commitChoice(match, choice.choiceKey, (draft) => {
+      const current = draft.decisions[choice.choiceKey];
+      current.status = "completed";
+      current.completedDecision = clone(decision);
+      current.completedAt = instant(now(), "now");
+    });
+    return freeze({ match: updated, decision: freeze({ ...clone(decision),
+      ok: true, idempotentReplay: false, choiceKey: choice.choiceKey }) });
+  }
+
   async function generate(match, input, choice) {
     const crossed = [];
     while (true) {
       choice = match.decisions[choice.choiceKey];
+      const selectedEffectRecovery = planStarcraftTmgSelectedEffectPlannerRecoveryV1(
+        choice, input, { retryApproved: input.retryApproved,
+          promptPolicyVersion: promptPolicyVersion(interactionMode(match.providerInteractionMode)) });
+      if (selectedEffectRecovery) {
+        match = await commitChoice(match, choice.choiceKey, draft => {
+          applyStarcraftTmgSelectedEffectPlannerRecoveryV1(
+            draft.decisions[choice.choiceKey], selectedEffectRecovery, instant(now(), "now"));
+        });
+        choice = match.decisions[choice.choiceKey];
+      }
+      const supersededActionRepair = planStarcraftTmgSupersededActionReplayRepairV1(
+        choice, input, { retryApproved: input.retryApproved });
+      if (supersededActionRepair) {
+        match = await commitChoice(match, choice.choiceKey, draft => {
+          applyStarcraftTmgSupersededActionReplayRepairV1(
+            draft.decisions[choice.choiceKey], supersededActionRepair, instant(now(), "now"));
+        });
+        choice = match.decisions[choice.choiceKey];
+      }
+      const correctionContextRepair = planStarcraftTmgActionCorrectionContextRepairV1(
+        choice, input, { retryApproved: input.retryApproved,
+          providerInteractionMode: interactionMode(match.providerInteractionMode) });
+      if (correctionContextRepair) {
+        match = await commitChoice(match, choice.choiceKey, draft => {
+          applyStarcraftTmgActionCorrectionContextRepairV1(
+            draft.decisions[choice.choiceKey], correctionContextRepair, instant(now(), "now"));
+        });
+        choice = match.decisions[choice.choiceKey];
+      }
+      const legacyParameterReplan = planStarcraftTmgLegacyParameterReplanV1(choice, {
+        retryApproved: input.retryApproved,
+        authority: currentAuthority(input, match.scope),
+        promptPolicyVersion: promptPolicyVersion(interactionMode(match.providerInteractionMode)),
+        maximumRounds: maxToolRounds,
+        submissions: choice.status === "provider_output_invalid"
+          ? choice.attemptKeys.flatMap(attemptKey => {
+            const stored = choice.attempts?.[attemptKey];
+            if (stored?.status !== "completed" || stored.stage !== "action"
+              || !choice.processedAttemptKeys.includes(attemptKey)) return [];
+            const decision = responseParts(stored.safeOutput).decision;
+            if (decision?.selection?.kind !== "parameters"
+              || typeof decision.selection.parametersJson !== "string") return [];
+            try {
+              return [{ attemptKey, outputHash: stored.outputHash,
+                promptPolicyVersion: stored.promptPolicyVersion,
+                candidateId: decision.candidateId,
+                parameters: JSON.parse(decision.selection.parametersJson) }];
+            } catch { return []; }
+          }) : [],
+      });
+      if (legacyParameterReplan) {
+        match = await commitChoice(match, choice.choiceKey, draft => {
+          applyStarcraftTmgLegacyParameterReplanV1(draft.decisions[choice.choiceKey],
+            legacyParameterReplan, instant(now(), "now"));
+        });
+        continue;
+      }
       const capacityRecovery = planStarcraftTmgOutputCapacityRecoveryV1(choice, {
         baselineOutputUnits: match.selectedProfile.maxOutputUnits,
         requestOutputLimit: requestOutputLimit ?? match.selectedProfile.maxOutputUnits,
         retryApproved: input.retryApproved,
       });
       if (capacityRecovery) {
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           current.outputCapacityRecoveries ||= [];
           current.outputCapacityRecoveries.push({ ...capacityRecovery,
@@ -5997,12 +8733,85 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         });
         choice = match.decisions[choice.choiceKey];
       }
+      const parentContactRecovery = planStarcraftTmgParentContactSearchRecoveryV1(choice, {
+        retryApproved: input.retryApproved,
+        authority: currentAuthority(input, match.scope),
+        submittedPlanningByAttemptKey: Object.fromEntries(choice.attemptKeys.map(key =>
+          [key, responseParts(choice.attempts[key]?.safeOutput).planning])),
+      });
+      if (parentContactRecovery) {
+        const queried = await runQueries(input, [parentContactRecovery.request]);
+        const receipt = queried.receipts.find(entry =>
+          entry.queryKind === "legal_asset_placement_options") || null;
+        const eligible = clone(choice);
+        eligible.unavailableCandidateIds = eligible.unavailableCandidateIds
+          .filter(id => id !== parentContactRecovery.candidateId);
+        if (receipt) eligible.queryReceipts.push(receipt);
+        const replayAttemptKey = receipt?.status === "exact"
+          && receipt.result?.domainId === parentContactRecovery.candidateId
+          && receipt.result.placementOptions?.length > 0
+          ? selectStarcraftTmgPlannerLocalReplayAttemptV1(eligible, input, {
+            eligibleAlreadyRevalidatedAttemptKeys: parentContactRecovery.candidateAttemptKeys,
+            onlyValid: true,
+          }) : null;
+        match = await commitChoice(match, choice.choiceKey, draft => {
+          const current = draft.decisions[choice.choiceKey];
+          applyStarcraftTmgParentContactSearchRecoveryV1(current, parentContactRecovery,
+            { receipt, replayAttemptKey, recordedAt: instant(now(), "now") });
+          current.warnings.push(...queried.warnings);
+        });
+        choice = match.decisions[choice.choiceKey];
+      }
+      const failedContactRecovery = choice.parentContactSearchRecoveries?.find(entry =>
+        entry.version === STARCRAFT_TMG_PARENT_CONTACT_SEARCH_RECOVERY_VERSION
+          && entry.recovered === false);
+      if (failedContactRecovery) {
+        return rejection("LIVE_DECISION_PARENT_CONTACT_SEARCH_RECOVERY_FAILED", "High", {
+          choiceKey: choice.choiceKey, reason: failedContactRecovery.reason,
+          automaticProviderRetryPerformed: false, projection: publicProjection(match),
+        });
+      }
       const lastKey = choice.attemptKeys.at(-1);
       let attempt = lastKey ? choice.attempts?.[lastKey] : null;
+      const formationRecovery =
+        planStarcraftTmgUnavailableFormationRecoveryV1(choice, {
+          retryApproved: input.retryApproved,
+          authority: currentAuthority(input, match.scope),
+        });
+      if (formationRecovery) {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
+          const current = draft.decisions[choice.choiceKey];
+          current.unavailableCandidateIds = current.unavailableCandidateIds
+            .filter((id) => id !== formationRecovery.candidateId);
+          current.processedAttemptKeys = current.processedAttemptKeys
+            .filter((key) => key !== formationRecovery.attemptKey);
+          // Later empty/error drafts cannot replace the paid intention that
+          // requested this failed search. The existing same-authority Planner
+          // normalizer revalidates this exact draft before any new query/action.
+          current.pendingSearchRecoveryPlannerAttemptKey =
+            formationRecovery.attemptKey;
+          current.status = "generating";
+          current.stageQueryRounds = 0;
+          current.stageCorrectionRounds = 0;
+          current.lastSemanticFailureSignature = null;
+          current.repeatedSemanticFailureCount = 0;
+          current.warnings.push(formationRecovery.warning);
+        });
+        continue;
+      }
       const stoppedForCapacity = attempt?.safeOutput?.providerTurn;
+      const truncatedPromptRepair = planStarcraftTmgPromptRepairRecoveryV1(choice, {
+        retryApproved: input.retryApproved,
+        promptPolicyVersion: promptPolicyVersion(interactionMode(
+          match.providerInteractionMode)),
+        effectiveSemanticCorrectionRounds:
+          effectiveStarcraftTmgSemanticCorrectionsV1(choice),
+        maxSemanticCorrectionRounds,
+      });
       if (choice.status === "provider_output_invalid"
         && (stoppedForCapacity?.finishReason === "length"
           || stoppedForCapacity?.issue === "output_truncated")
+        && !truncatedPromptRepair
         && (requestOutputLimit ?? match.selectedProfile.maxOutputUnits)
           <= Number(attempt.requestedMaxOutputUnits
             ?? match.selectedProfile.maxOutputUnits)) {
@@ -6026,23 +8835,39 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         && choice.processedAttemptKeys.includes(attempt.attemptKey)
         && attempt.localSemanticReplayVersion
           !== ACTION_SHAPE_NORMALIZATION_VERSION;
-      const replayablePlannerKey = !choice.plannerResult
+      const pendingSearchReplayKey = choice.pendingSearchRecoveryPlannerAttemptKey
+        ? selectStarcraftTmgPlannerLocalReplayAttemptV1(choice, input, {
+          eligibleAlreadyRevalidatedAttemptKeys: [choice.pendingSearchRecoveryPlannerAttemptKey],
+          onlyValid: true,
+        }) : null;
+      if (choice.pendingSearchRecoveryPlannerAttemptKey && !pendingSearchReplayKey) {
+        return rejection("LIVE_DECISION_PARENT_CONTACT_PAID_DRAFT_INVALID", "High", {
+          choiceKey: choice.choiceKey, automaticProviderRetryPerformed: false,
+          projection: publicProjection(match),
+        });
+      }
+      const replayablePlannerKey = pendingSearchReplayKey || (!choice.plannerResult
+        && !shouldPreferStarcraftTmgPromptRepairOverPlannerReplayV1(choice, {
+          retryApproved: input.retryApproved,
+          promptPolicyVersion: promptPolicyVersion(interactionMode(
+            match.providerInteractionMode)),
+          effectiveSemanticCorrectionRounds:
+            effectiveStarcraftTmgSemanticCorrectionsV1(choice),
+          maxSemanticCorrectionRounds,
+        })
         && (["provider_failed_requires_explicit_retry", "provider_output_invalid",
           "provider_call_may_have_started"]
           .includes(choice.status)
           || attempt?.status === "provider_call_may_have_started"
           || interruptedPlannerReplay)
-        ? [...choice.attemptKeys].reverse().find((attemptKey) => {
-          const candidate = choice.attempts?.[attemptKey];
-          return candidate?.status === "completed"
-            && object(responseParts(candidate.safeOutput).planning)
-            && candidate.localPlannerSemanticReplayVersion
-              !== PLANNER_SHAPE_NORMALIZATION_VERSION;
-        }) : null;
+        ? selectStarcraftTmgPlannerLocalReplayAttemptV1(choice, input) : null);
       if (replayablePlannerKey) {
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           const storedAttempt = current.attempts[replayablePlannerKey];
+          if (current.pendingSearchRecoveryPlannerAttemptKey === replayablePlannerKey) {
+            delete current.pendingSearchRecoveryPlannerAttemptKey;
+          }
           storedAttempt.localPlannerSemanticReplayVersion =
             PLANNER_SHAPE_NORMALIZATION_VERSION;
           current.processedAttemptKeys = current.processedAttemptKeys
@@ -6069,6 +8894,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           const candidate = choice.attempts?.[attemptKey];
           return candidate?.status === "completed"
             && object(responseParts(candidate.safeOutput).decision)
+            && isStarcraftTmgActionReplayForCurrentPlannerV1(choice, attemptKey)
             && candidate.localSemanticReplayVersion
               !== ACTION_SHAPE_NORMALIZATION_VERSION
             ? [{ attemptKey, candidate }] : [];
@@ -6084,9 +8910,19 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       const replayableCompletedKey = locallyValidReplay?.attemptKey
         || replayableCompletedCandidates[0]?.attemptKey || null;
       if (replayableCompletedKey) {
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           const storedAttempt = current.attempts[replayableCompletedKey];
+          current.localOutputRevalidationHistory ||= [];
+          current.localOutputRevalidationHistory.push({
+            attemptKey: replayableCompletedKey,
+            previousVersion: storedAttempt.localSemanticReplayVersion || null,
+            nextVersion: ACTION_SHAPE_NORMALIZATION_VERSION,
+            priorProposalValidationRounds: current.proposalValidationRounds || 0,
+            priorParameterRecoveryCount: current.parameterRecoveryHistory?.length || 0,
+            recordedAt: instant(now(), "now"),
+            paidBytesAndCostLedgerUnchanged: true,
+          });
           storedAttempt.localSemanticReplayVersion =
             ACTION_SHAPE_NORMALIZATION_VERSION;
           current.processedAttemptKeys = current.processedAttemptKeys
@@ -6100,7 +8936,6 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           current.terminalFormatRepairPending = false;
           current.lastSemanticFailureSignature = null;
           current.repeatedSemanticFailureCount = 0;
-          current.proposalValidationRounds = 0;
           current.warnings.push(
             `LOCAL_COMPLETED_OUTPUT_REVALIDATION:${
               ACTION_SHAPE_NORMALIZATION_VERSION}`);
@@ -6118,7 +8953,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           if (object(candidate)) recovered = candidate;
         } catch {}
         if (recovered) {
-          match = await commit(match, (draft) => {
+          match = await commitChoice(match, choice.choiceKey, (draft) => {
             const current = draft.decisions[choice.choiceKey];
             const storedAttempt = current.attempts[attempt.attemptKey];
             storedAttempt.safeOutput = clone(recovered);
@@ -6145,9 +8980,10 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         && choice.status === "provider_output_invalid"
         && choice.plannerResult
         && object(responseParts(attempt.safeOutput).decision)
+        && isStarcraftTmgActionReplayForCurrentPlannerV1(choice, attempt.attemptKey)
         && attempt.localSemanticReplayVersion
           !== ACTION_SHAPE_NORMALIZATION_VERSION) {
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           const storedAttempt = current.attempts[attempt.attemptKey];
           storedAttempt.localSemanticReplayVersion =
@@ -6176,7 +9012,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       if (attempt?.status === "provider_call_may_have_started"
         && attempt.stage && attempt.stage !== stage) {
         const supersededAttemptKey = attempt.attemptKey;
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           const storedAttempt = current.attempts[supersededAttemptKey];
           storedAttempt.status = "superseded_after_stage_recovery";
@@ -6212,9 +9048,31 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           projection: publicProjection(match),
         });
       }
+      const promptRepair = planStarcraftTmgPromptRepairRecoveryV1(choice, {
+        retryApproved: input.retryApproved,
+        promptPolicyVersion: promptPolicyVersion(interactionMode(
+          match.providerInteractionMode)),
+        effectiveSemanticCorrectionRounds:
+          effectiveStarcraftTmgSemanticCorrectionsV1(choice),
+        maxSemanticCorrectionRounds,
+      });
+      if (promptRepair) {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
+          const current = draft.decisions[choice.choiceKey];
+          if (current.stage === "planning") {
+            applyStarcraftTmgPlanningPromptRepairRecoveryV1(current,
+              promptRepair, input, instant(now(), "now"),
+              interactionMode(match.providerInteractionMode));
+          } else {
+            applyStarcraftTmgPromptRepairRecoveryV1(current,
+              promptRepair, instant(now(), "now"));
+          }
+        });
+        choice = match.decisions[choice.choiceKey];
+        attempt = null;
+      }
       if (EXPLICIT_RETRY_CHOICE_STATUSES.has(choice.status)
-        && effectiveStarcraftTmgSemanticCorrectionsV1(choice)
-          >= maxSemanticCorrectionRounds) {
+        && semanticCorrectionExhausted(choice, maxSemanticCorrectionRounds)) {
         return rejection("LIVE_DECISION_SEMANTIC_CORRECTION_LIMIT_REACHED",
           "High", {
             choiceKey: choice.choiceKey,
@@ -6227,7 +9085,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       if (choice.status === "retry_ready"
         || input.retryApproved === true
           && EXPLICIT_RETRY_CHOICE_STATUSES.has(choice.status)) {
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           current.status = "generating";
           current.stageQueryRounds = 0;
@@ -6241,10 +9099,44 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         choice = match.decisions[choice.choiceKey];
         attempt = null;
       }
+      if ((choice.unavailableCandidateIds || []).length > 0
+        && attempt?.status !== "provider_call_may_have_started") {
+        const singleton = await completeCurrentSingleton(match, input,
+          choice, crossed);
+        if (singleton) return singleton.decision;
+      }
       if (stage === "action") {
         const selected = actionIndex(input.spatialActionSpace).find((entry) =>
           entry.id === choice.plannerResult.recommendedCandidateId);
         const actionType = String(selected?.action?.actionType || "");
+        if (!isStarcraftTmgFormationIntentReadyV1(selected,
+          choice.plannerResult)) {
+          // A persisted Planner result may predate a new spatial action
+          // family. Never turn that absent intention into a balanced fallback.
+          match = await commitChoice(match, choice.choiceKey, (draft) => {
+            const current = draft.decisions[choice.choiceKey];
+            current.queryReceipts = current.queryReceipts.filter((entry) =>
+              !(FORMATION_QUERY_KINDS.has(entry.queryKind)
+                && entry.result?.domainId === selected.id));
+            if (attempt?.status === "completed"
+              && !current.processedAttemptKeys.includes(attempt.attemptKey)) {
+              current.processedAttemptKeys.push(attempt.attemptKey);
+            }
+            current.stage = "planning";
+            current.plannerResult = null;
+            current.providerContinuationMessages = [];
+            current.stageQueryRounds = 0;
+            current.stageCorrectionRounds = 0;
+            current.lastSemanticFailureSignature = null;
+            current.repeatedSemanticFailureCount = 0;
+            current.proposalValidationRounds = 0;
+            current.warnings.push(
+              `HOST_PERSISTED_FORMATION_INTENT_MISSING_REPLAN:${selected.id}`);
+            current.status = "generating";
+          });
+          choice = match.decisions[choice.choiceKey];
+          continue;
+        }
         if (selected?.kind === "parameterized"
           && isFormationPlacementDomain(selected.action)
           && !exactFormationReceipt(choice.queryReceipts, selected.id)) {
@@ -6267,7 +9159,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           if (receipt?.status !== "exact"
             || !Array.isArray(receipt?.result?.formationOptions)
             || receipt.result.formationOptions.length < 1) {
-            match = await commit(match, (draft) => {
+            match = await commitChoice(match, choice.choiceKey, (draft) => {
               const current = draft.decisions[choice.choiceKey];
               current.unavailableCandidateIds = [...new Set([
                 ...(current.unavailableCandidateIds || []), selected.id,
@@ -6311,7 +9203,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
             }
             continue;
           }
-          match = await commit(match, (draft) => {
+          match = await commitChoice(match, choice.choiceKey, (draft) => {
             const current = draft.decisions[choice.choiceKey];
             const known = new Set(current.queryReceipts.map((entry) =>
               entry.queryReceiptHash));
@@ -6355,7 +9247,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           if (receipt?.status !== "exact"
             || !Array.isArray(receipt?.result?.placementOptions)
             || receipt.result.placementOptions.length < 1) {
-            match = await commit(match, (draft) => {
+            match = await commitChoice(match, choice.choiceKey, (draft) => {
               const current = draft.decisions[choice.choiceKey];
               current.unavailableCandidateIds = [...new Set([
                 ...(current.unavailableCandidateIds || []), selected.id,
@@ -6399,7 +9291,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
             }
             continue;
           }
-          match = await commit(match, (draft) => {
+          match = await commitChoice(match, choice.choiceKey, (draft) => {
             const current = draft.decisions[choice.choiceKey];
             const known = new Set(current.queryReceipts.map((entry) =>
               entry.queryReceiptHash));
@@ -6446,7 +9338,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
       if (nativeTurn?.finishReason === "length"
         || nativeTurn?.issue === "output_truncated"
         || parts.terminal?.issue === "output_truncated") {
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           current.status = "provider_output_invalid";
           current.terminalFormatRepairPending = true;
@@ -6508,7 +9400,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
             }
             continue;
           }
-          match = await commit(match, (draft) => {
+          match = await commitChoice(match, choice.choiceKey, (draft) => {
             const current = draft.decisions[choice.choiceKey];
             if (!current.processedAttemptKeys.includes(attempt.attemptKey)) {
               current.processedAttemptKeys.push(attempt.attemptKey);
@@ -6520,7 +9412,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           continue;
         }
         const toolResult = await runNativeToolCalls(match, input, nativeTurn);
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           if (!current.processedAttemptKeys.includes(attempt.attemptKey)) {
             current.processedAttemptKeys.push(attempt.attemptKey);
@@ -6557,19 +9449,43 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         continue;
       }
       if (parts.queries.length && choice.stageQueryRounds < queryRoundLimit) {
-        const query = await runQueries(input, parts.queries);
-        match = await commit(match, (draft) => {
+        if (attempt.terminalSubmissionForced === true) {
+          const correction = await recordSemanticCorrection(match, choice,
+            attempt, correctionError(
+              "QUERY_AFTER_NO_NEW_EVIDENCE_TERMINAL_REQUIRED"));
+          match = correction.match;
+          if (correction.exhausted) {
+            return rejection("LIVE_DECISION_JSON_QUERY_LOOP_DID_NOT_CONVERGE",
+              "High", { choiceKey: choice.choiceKey,
+                queryRounds: choice.stageQueryRounds,
+                automaticProviderRetryPerformed: true,
+                projection: publicProjection(match) });
+          }
+          continue;
+        }
+        const query = interactionMode(match.providerInteractionMode)
+          === "json_channels_v1"
+          ? await runJsonQueryRequests(match, input, parts.queries, stage)
+          : await runQueries(input, parts.queries);
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           current.processedAttemptKeys.push(attempt.attemptKey);
           current.queryRounds += 1;
           current.stageQueryRounds += 1;
           const known = new Set(current.queryReceipts.map((entry) =>
             entry.queryReceiptHash));
+          let newReceiptCount = 0;
           for (const receipt of query.receipts) {
             if (!known.has(receipt.queryReceiptHash)) {
               known.add(receipt.queryReceiptHash);
               current.queryReceipts.push(receipt);
+              newReceiptCount += 1;
             }
+          }
+          if (query.receipts.length > 0 && newReceiptCount === 0
+            && query.warnings.length === 0) {
+            current.warnings.push(
+              `QUERY_RETURNED_ONLY_KNOWN_RECEIPTS_TERMINAL_FORCED:${stage}`);
           }
           current.warnings.push(...query.warnings);
           current.status = "generating";
@@ -6577,7 +9493,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         continue;
       }
       if (parts.queries.length && choice.stageQueryRounds >= queryRoundLimit) {
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           if (!current.processedAttemptKeys.includes(attempt.attemptKey)) {
             current.processedAttemptKeys.push(attempt.attemptKey);
@@ -6605,12 +9521,78 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           }
           continue;
         }
+        const activeInput = decisionInputForChoice(input, choice);
+        const submittedCandidateId = String(
+          parts.planning.recommendedCandidateId || "");
+        const submittedTargetUnitId = String(
+          parts.planning.selectedChargeTargetUnitId || "").trim();
+        const submittedCandidate = actionIndex(activeInput.spatialActionSpace)
+          .find((entry) => entry.id === submittedCandidateId);
+        if (sourceActionDomain(submittedCandidate?.action)?.actionType === "charge"
+          && submittedTargetUnitId) {
+          let completedEvidence;
+          try {
+            completedEvidence =
+              await completeStarcraftTmgSelectedChargeEvidenceV1({
+                spatialActionSpace: activeInput.spatialActionSpace,
+                candidateId: submittedCandidateId,
+                targetUnitId: submittedTargetUnitId,
+                queryReceipts: choice.queryReceipts,
+                spatialQueryPort,
+                roomProjection: activeInput.roomProjection,
+                legalSpace: activeInput.legalSpace,
+                spatialObservation: activeInput.spatialObservation,
+              });
+          } catch (error) {
+            return rejection("LIVE_DECISION_CHARGE_GEOMETRY_QUERY_FAILED",
+              "High", { choiceKey: choice.choiceKey,
+                reason: String(error?.message || error),
+                automaticProviderRetryPerformed: false,
+                projection: publicProjection(match) });
+          }
+          if (completedEvidence.queryAttempted) {
+            if (completedEvidence.reachability.status !== "exact") {
+              return rejection("LIVE_DECISION_CHARGE_GEOMETRY_UNAVAILABLE",
+                "High", { choiceKey: choice.choiceKey,
+                  targetUnitId: submittedTargetUnitId,
+                  automaticProviderRetryPerformed: false,
+                  projection: publicProjection(match) });
+            }
+            match = await commitChoice(match, choice.choiceKey, (draft) => {
+              const current = draft.decisions[choice.choiceKey];
+              const known = new Set(current.queryReceipts.map((entry) =>
+                entry.queryReceiptHash));
+              for (const receipt of completedEvidence.receipts) {
+                if (!known.has(receipt.queryReceiptHash)) {
+                  known.add(receipt.queryReceiptHash);
+                  current.queryReceipts.push(receipt);
+                }
+              }
+              if (!current.processedAttemptKeys.includes(attempt.attemptKey)) {
+                current.processedAttemptKeys.push(attempt.attemptKey);
+              }
+              current.providerContinuationMessages.push({ role: "user",
+                content: `The Host has measured intended Charge target ${
+                  submittedTargetUnitId}: exact base-edge ${
+                  completedEvidence.reachability.baseEdgeDistanceMilliInches} milli-inches; minimum move to engagement ${
+                  completedEvidence.reachability.minimumMoveToEngageMilliInches} milli-inches; maximum Charge move ${
+                  completedEvidence.reachability.maximumDistanceMilliInches} milli-inches. Reassess the current candidates with this exact fact and submit a new planning decision.`,
+              });
+              current.warnings.push(
+                `HOST_SELECTED_CHARGE_TARGET_DISTANCE_READY:${
+                  submittedTargetUnitId}`);
+              current.status = "generating";
+            });
+            continue;
+          }
+        }
         let plannerResult;
         try {
-          const activeInput = decisionInputForChoice(input, choice);
           plannerResult = normalizePlannerOutput(
-            parts.terminal ? mapPlanningSubmission(parts.planning, activeInput)
-              : parts.planning,
+            projectStarcraftTmgSubmittedPlanningV1(
+              parts.planning, activeInput, {
+                terminal: Boolean(parts.terminal),
+              }),
             activeInput,
             choice.queryReceipts);
         } catch (error) {
@@ -6629,10 +9611,11 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           }
           continue;
         }
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           current.stage = "action";
           current.plannerResult = clone(plannerResult);
+          current.plannerResultAttemptKey = attempt.attemptKey;
           current.providerContinuationMessages = [];
           current.stageQueryRounds = 0;
           current.stageCorrectionRounds = 0;
@@ -6693,6 +9676,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           });
         }
       if (decision.proposal.kind === "parameterized") {
+        const previousChargeQueryReceipts = choice.queryReceipts;
         const validation = await runQueries(input, [{
           requestId: `validate-final-proposal-${
             Number(choice.proposalValidationRounds || 0) + 1}`,
@@ -6704,12 +9688,12 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         }]);
         const receipt = validation.receipts[0] || null;
         const exact = receipt?.status === "exact";
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           const storedAttempt = current.attempts[attempt.attemptKey];
           storedAttempt.localSemanticReplayVersion =
             ACTION_SHAPE_NORMALIZATION_VERSION;
-          current.proposalValidationRounds =
+          if (exact) current.proposalValidationRounds =
             Number(current.proposalValidationRounds || 0) + 1;
           const known = new Set(current.queryReceipts.map((entry) =>
             entry.queryReceiptHash));
@@ -6721,39 +9705,50 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           }
           current.warnings.push(...validation.warnings);
           if (!exact) {
-            if (!current.processedAttemptKeys.includes(attempt.attemptKey)) {
-              current.processedAttemptKeys.push(attempt.attemptKey);
-            }
-            const failureSignature = hashStarcraftTmgContract({
-              candidateId: decision.candidateId,
-              parameters: decision.proposal.parameters,
-              reason: receipt?.reason || "validation_receipt_missing",
+            const selected = actionIndex(input.spatialActionSpace).find(entry =>
+              entry.id === decision.candidateId);
+            const recovery = planStarcraftTmgParameterFailureRecoveryV1({
+              domain: selected?.action, parameters: decision.proposal.parameters,
+              receipt, history: current.parameterRecoveryHistory || [],
+              maximumRounds: Math.min(3, maxToolRounds),
             });
-            current.repeatedProposalValidationFailureCount =
-              current.lastProposalValidationFailureSignature === failureSignature
-                ? Number(current.repeatedProposalValidationFailureCount || 0) + 1
-                : 1;
-            current.lastProposalValidationFailureSignature = failureSignature;
+            applyStarcraftTmgParameterFailureRecoveryV1(current, recovery, {
+              attemptKey: attempt.attemptKey, recordedAt: instant(now(), "now"),
+            });
             current.warnings.push(`PARAMETERIZED_PROPOSAL_REJECTED:${
               receipt?.reason || "validation_receipt_missing"}`);
-            current.status = Number(current.proposalValidationRounds)
-              >= maxToolRounds
-              || current.repeatedProposalValidationFailureCount >= 2
-              ? "provider_output_invalid" : "generating";
           }
         });
         choice = match.decisions[choice.choiceKey];
         if (!exact) {
-          if (choice.proposalValidationRounds >= maxToolRounds
-            || choice.repeatedProposalValidationFailureCount >= 2) {
+          if (choice.status === "provider_output_invalid") {
             return rejection("LIVE_DECISION_PARAMETERIZED_PROPOSAL_DID_NOT_CONVERGE",
               "High", {
                 choiceKey: choice.choiceKey,
                 proposalValidationRounds: choice.proposalValidationRounds,
                 lastRulesReason: receipt?.reason || "validation_receipt_missing",
+                recovery: clone(choice.parameterRecoveryHistory?.at(-1) || null),
                 automaticProviderRetryPerformed: true,
                 projection: publicProjection(match),
               });
+          }
+          continue;
+        }
+        const pathReview = planStarcraftTmgChargePathEvidenceReviewV1({
+          spatialActionSpace: input.spatialActionSpace, proposal: decision.proposal,
+          queryReceipts: choice.queryReceipts, previousQueryReceipts: previousChargeQueryReceipts,
+          history: choice.chargePathReviewHistory || [], maximumRounds: 3,
+        });
+        if (pathReview) {
+          match = await commitChoice(match, choice.choiceKey, draft => {
+            applyStarcraftTmgChargePathEvidenceReviewV1(draft.decisions[choice.choiceKey],
+              pathReview, { attemptKey: attempt.attemptKey, recordedAt: instant(now(), "now") });
+          });
+          if (pathReview.action === "needs_attention") {
+            return rejection("LIVE_DECISION_CHARGE_PATH_REVIEW_DID_NOT_CONVERGE", "High", {
+              choiceKey: choice.choiceKey, review: pathReview,
+              automaticProviderRetryPerformed: false, projection: publicProjection(match),
+            });
           }
           continue;
         }
@@ -6774,9 +9769,18 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           promptPolicyObservation(match, choice, decision, input),
       });
       try {
-        match = await commit(match, (draft) => {
+        match = await commitChoice(match, choice.choiceKey, (draft) => {
           const current = draft.decisions[choice.choiceKey];
           current.status = "completed";
+          // Keep every failed submission and abandoned plan, closing only this
+          // decision's recovery records with the actually validated successor.
+          for (const recovery of current.parameterRecoveryHistory || []) {
+            recovery.resolved = true;
+            recovery.resolvedByCandidateId = decision.candidateId;
+            recovery.resolvedByDecisionHash = decision.decisionHash || null;
+            recovery.resolutionKind = "rules_instantiated_decision_only";
+            recovery.applyAndReplayStillRequired = true;
+          }
           current.processedAttemptKeys.push(attempt.attemptKey);
           current.completedDecision = clone(decision);
           current.completedAt = instant(now(), "now");
@@ -6812,40 +9816,8 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
         return freeze({ ...clone(choice.completedDecision), ok: true,
           idempotentReplay: true, choiceKey: choice.choiceKey });
       }
-      const forcedSingleton =
-        resolveStarcraftTmgDeterministicSingletonActionV1(choice.actionIndex);
-      if (forcedSingleton) {
-        const actionType = forcedSingleton.selected.action?.actionType
-          || "rules continuation";
-        const decision = normalizeDecision({
-          proposal: clone(forcedSingleton.proposal),
-          selectedReason:
-            `Rules exposes exactly one fully bound continuation (${actionType}); no strategic model choice exists.`,
-          scoreOrPositionValue:
-            "Preserves the authoritative lifecycle and reaches the next real decision point.",
-          risk: "No alternative current legal action exists.",
-          publicDecisionSummary: {
-            visibleFacts: [
-              "Current ActionSpace contains one action and every required parameter has exactly one Rules-owned value.",
-            ],
-            plan: "Advance the Rules-owned lifecycle without spending a model call.",
-          },
-        }, input, match, [], freeze({
-          ...clone(providerTrace(match, choice, [])),
-          deterministicHostStep: true,
-          deterministicParameterBinding: forcedSingleton.parameterBinding,
-          providerCalls: 0,
-          paidProviderUsed: false,
-        }));
-        match = await commit(match, (draft) => {
-          const current = draft.decisions[choice.choiceKey];
-          current.status = "completed";
-          current.completedDecision = clone(decision);
-          current.completedAt = instant(now(), "now");
-        });
-        return freeze({ ...clone(decision), ok: true,
-          idempotentReplay: false, choiceKey: choice.choiceKey });
-      }
+      const singleton = await completeCurrentSingleton(match, input, choice);
+      if (singleton) return singleton.decision;
       if (!inFlight.has(choice.choiceKey)) {
         inFlight.set(choice.choiceKey, generate(match, clone(input), choice)
           .finally(() => inFlight.delete(choice.choiceKey)));
@@ -6874,7 +9846,7 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           acceptedResolution: "definitely_not_sent",
         });
       }
-      match = await commit(match, (draft) => {
+      match = await commitChoice(match, input.choiceKey, (draft) => {
         const current = draft.decisions[input.choiceKey];
         current.attempts[input.attemptKey].status = "manually_resolved_not_sent";
         current.attempts[input.attemptKey].completedAt = instant(now(), "now");
@@ -6948,9 +9920,11 @@ export function createStarcraftTmgLiveFlashDecisionPortV1(options = {}) {
           ...(spatialQueryPort.metadata.delegatedQueries || [])] : "adapter_owned",
       publicReasoningPolicy:
         "public_summary_and_evidence_only_no_hidden_chain_of_thought",
-      promptPolicyVersion: PROMPT_POLICY_VERSION,
-      terminalSubmissionProtocol:
-        "deepseek_beta_strict_function_tools_required",
+      promptPolicyVersion: promptPolicyVersion(providerInteractionMode),
+      providerInteractionMode,
+      terminalSubmissionProtocol: providerInteractionMode === "native_tools"
+        ? "deepseek_beta_strict_function_tools_required"
+        : "deepseek_standard_json_channels_v1",
       promptPolicyRegressionObservation:
         "every_policy_change_compares_strategy_invariants_and_cost_against_up_to_five_prior_paid_decisions",
       extraProviderFields: "ignored_not_blocking",

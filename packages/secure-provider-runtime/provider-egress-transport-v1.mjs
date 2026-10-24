@@ -4,6 +4,8 @@ import https from "node:https";
 import net from "node:net";
 import { performance } from "node:perf_hooks";
 import { captureProviderResponseOutcomeV1, normalizeProviderJsonDocumentV1 } from "./provider-response-outcome-v1.mjs";
+import { resolveProviderAddressesWithRecoveryV1, keepProviderSocketAliveV1 } from
+  './provider-network-resilience-v1.mjs';
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -11,6 +13,7 @@ import {
   assertStarcraftTmgProviderEgressBindingV1,
   StarcraftTmgProviderEgressError,
   STARCRAFT_TMG_PROVIDER_EGRESS_TRANSPORT_VERSION,
+  STARCRAFT_TMG_PROVIDER_EGRESS_MAX_REQUEST_BYTES,
 } from "./provider-egress-contract-v1.mjs";
 import { containsStarcraftTmgKnownCredentialEchoV1 } from
   "../online-agent-session/portable-credential-material-v1.mjs";
@@ -20,7 +23,7 @@ export {
   STARCRAFT_TMG_PROVIDER_EGRESS_TRANSPORT_VERSION,
 };
 
-const DEFAULT_MAX_REQUEST_BYTES = 2 * 1024 * 1024;
+const DEFAULT_MAX_REQUEST_BYTES = STARCRAFT_TMG_PROVIDER_EGRESS_MAX_REQUEST_BYTES;
 const DEFAULT_MAX_RESPONSE_BYTES = 1024 * 1024;
 const DEFAULT_MAX_HEADER_BYTES = 32 * 1024;
 const COMPLETE_FIELDS = new Set([
@@ -216,7 +219,11 @@ function normalizeContinuationMessage(value, field) {
       role: "tool",
       tool_call_id: safeId(value.tool_call_id, `${field}.tool_call_id`),
       name,
-      content: requiredString(content, `${field}.content`, 256 * 1024),
+      // Host-owned query evidence can exceed 256 KiB while the complete wire
+      // request is still within its existing envelope. Preserve it verbatim;
+      // complete() validates the serialized aggregate before DNS/dispatch.
+      content: requiredString(content, `${field}.content`,
+        STARCRAFT_TMG_PROVIDER_EGRESS_MAX_REQUEST_BYTES),
     };
   }
   throw new TypeError(`${field}.role is invalid`);
@@ -574,7 +581,7 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
   const now = options.now || (() => new Date().toISOString());
   const maxRequestBytes = positiveInteger(
     options.maxRequestBytes || DEFAULT_MAX_REQUEST_BYTES,
-    "maxRequestBytes", 16 * 1024 * 1024);
+    "maxRequestBytes", 32 * 1024 * 1024);
   const maxResponseBytes = positiveInteger(
     options.maxResponseBytes || DEFAULT_MAX_RESPONSE_BYTES,
     "maxResponseBytes", 16 * 1024 * 1024);
@@ -639,14 +646,18 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
       });
     }
     const transportStartedAt = performance.now();
-    let records;
+    let records, dnsRecovery;
     try {
-      records = normalizeAddressRecords(await resolveAddresses(
-        binding.endpoint.hostname));
+      const resolved = await resolveProviderAddressesWithRecoveryV1({
+        hostname: binding.endpoint.hostname, resolveAddresses, signal: input.signal });
+      dnsRecovery = resolved.recovery;
+      records = normalizeAddressRecords(resolved.records);
     } catch (error) {
       if (error instanceof StarcraftTmgProviderEgressError) throw error;
-      throw new StarcraftTmgProviderEgressError("PROVIDER_DNS_RESOLUTION_FAILED", {
+      throw new StarcraftTmgProviderEgressError(error?.code === 'ABORT_ERR'
+        ? 'PROVIDER_ABORTED' : "PROVIDER_DNS_RESOLUTION_FAILED", {
         requestDefinitelyNotSent: true,
+        dnsRecovery: error?.dnsRecovery || dnsRecovery,
       });
     }
     if (input.signal?.aborted) {
@@ -867,6 +878,7 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
               })() : {}),
               responseFingerprint: sha256(JSON.stringify(output)),
               dnsAddressSetHash: addressSetHash,
+              dnsRecovery,
               tlsServerName: binding.endpoint.hostname,
               tlsCertificateVerificationDisabled: false,
               redirectFollowed: false,
@@ -890,10 +902,12 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
         fail(new StarcraftTmgProviderEgressError("PROVIDER_TRANSPORT_FAILED", {
           requestMayHaveBeenSent: physicalAttempts === 1,
           physicalAttempts,
+          status: observedStatus, transportProgress: transportProgress(),
         }));
         return;
       }
       providerRequest.once?.("socket", (socket) => {
+        keepProviderSocketAliveV1(socket);
         socket.once?.("connect", () => mark("tcpConnected"));
         socket.once?.("secureConnect", () => {
           mark("tlsConnected");
@@ -911,6 +925,7 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
         new StarcraftTmgProviderEgressError("PROVIDER_TRANSPORT_FAILED", {
           requestMayHaveBeenSent: physicalAttempts === 1,
           physicalAttempts,
+          status: observedStatus, transportProgress: transportProgress(),
         })));
       providerRequest.once?.("finish", () => mark("requestWritten"));
       providerRequest.setTimeout?.(binding.timeoutMs, () => {
@@ -926,6 +941,7 @@ export function createStarcraftTmgProviderEgressTransportV1(options = {}) {
         fail(new StarcraftTmgProviderEgressError("PROVIDER_TRANSPORT_FAILED", {
           requestMayHaveBeenSent: physicalAttempts === 1,
           physicalAttempts,
+          status: observedStatus, transportProgress: transportProgress(),
         }));
       }
     });

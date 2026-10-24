@@ -1,13 +1,21 @@
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
-import { ARMY_BUILDER_ROSTER_VERDICT_SCHEMA } from
+import { ARMY_BUILDER_ROSTER_VERDICT_SCHEMA,ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1 } from
   "./army-builder-query-port-v1.mjs";
 
 export const ROSTER_BUDGET_BRANCH_QUERY_V1_SCHEMA =
   "starcraft_tmg_roster_budget_branch_query_v1";
+export const ROSTER_BUDGET_CURRENT_GENERATION_POLICY = 'breadth_first_v3';
 
 function fail(code) { throw new Error(code); }
 function clone(value) { return structuredClone(value); }
+export function projectRosterBudgetBranchBaselineRepairV1({candidateInput,baselineAudit=null}={}){
+  return {correctable:true,sourceContract:'native_builder_branch_legal_baseline_v1',
+    originalQueryNotAnswered:true,reasonCode:'ROSTER_BUDGET_BRANCH_BASELINE_NOT_RULES_LEGAL',
+    candidateInput:clone(candidateInput),baselineAudit:clone(baselineAudit),
+    candidateInputContract:clone(ARMY_BUILDER_CANDIDATE_INPUT_CONTRACT_V1),
+    instruction:'builder_branches is a neighbourhood query around a Native-LEGAL baseline, not a constructor from an empty/invalid army. The baseline may be a legal partial-budget army; it need not already spend the full 2000. Choose an explicit starting candidate using the exact Builder menu and candidateInputContract, audit it, then query its budget branches. Preserve the current strategic question and existing successful work. Missing candidate identities/upgrades are input addressing, not a Rules illegality verdict. A genuinely illegal baseline remains illegal; this repair does not admit it or choose units/cards/upgrades for you. An older retained error without baselineAudit did not expose its exact audit: do not invent one.'};
+}
 function menuCost(value) {
   if (value === null || value === undefined || value === "") return null;
   const cost = Number(value);
@@ -53,6 +61,11 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     : Number(input.startOffset);
   const maximumMutationDepth = input.maximumMutationDepth === undefined ? 5
     : Number(input.maximumMutationDepth);
+  // Retained unversioned cursors keep their original candidate population.
+  // New product discovery opts into breadth-first coverage explicitly.
+  const generationPolicy = input.generationPolicy ?? 'legacy_depth_first_v1';
+  if (!['legacy_depth_first_v1', 'breadth_first_v2', 'breadth_first_v3'].includes(generationPolicy))
+    fail('ROSTER_BUDGET_BRANCH_GENERATION_POLICY_INVALID');
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 256
     || !Number.isSafeInteger(startOffset) || startOffset < 0
     || !Number.isSafeInteger(maximumMutationDepth)
@@ -61,7 +74,9 @@ export function queryRosterBudgetBranchesV1(input = {}) {
   }
   const baseline = port.evaluateRosterCandidate(current);
   if (baseline.schema !== ARMY_BUILDER_ROSTER_VERDICT_SCHEMA) {
-    fail("ROSTER_BUDGET_BRANCH_BASELINE_NOT_RULES_LEGAL");
+    const code='ROSTER_BUDGET_BRANCH_BASELINE_NOT_RULES_LEGAL';
+    throw Object.assign(Error(code),{code,detail:{baselineAudit:clone(baseline)},
+      queryRepair:projectRosterBudgetBranchBaselineRepairV1({candidateInput:current,baselineAudit:baseline})});
   }
   const shortfall = current.mineralBudget - baseline.summary.mineralSpent;
   const menu = port.enumerateArmyBuildingChoices({
@@ -77,6 +92,22 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     [entry.recordKey, entry])));
   const tacticalByKey = new Map(menu.tacticalCandidates.map((entry) => (
     [entry.recordKey, entry])));
+  // v3 consumes the SAME complete Native audit that admitted the baseline.
+  // Profile-ID and name input forms must not become different selections.
+  // Old explicit policies retain their population/cursors; no saved page moves.
+  const nativeSelections = generationPolicy === 'breadth_first_v3'
+    ? new Map((baseline.audit?.units ?? []).map(unit => [unit.unitInstanceId, unit])) : null;
+  if (nativeSelections && (nativeSelections.size !== current.units.length
+    || current.units.some(unit => {
+      const selected = nativeSelections.get(unit.unitInstanceId);
+      return selected?.recordKey !== unit.recordKey
+        || !selected.unitCompositionResult?.compositionProfileId
+        || !Array.isArray(selected.selectedUpgrades);
+    }))) fail('ROSTER_BUDGET_NATIVE_SELECTION_MISSING');
+  const selectedComposition = (unit, menuUnit) => nativeSelections
+    ? menuUnit?.compositionOptions.find(option => option.compositionProfileId
+      === nativeSelections.get(unit.unitInstanceId).unitCompositionResult.compositionProfileId)
+    : menuUnit?.compositionOptions.find(option => option.compositionKind === unit.compositionKind);
   // Menu-derived slot arithmetic changes inspection order only. It never
   // admits or rejects a branch: the complete Rules audit below remains the
   // sole authority, including for branches whose menu projection is unknown.
@@ -95,8 +126,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     const used = {};
     for (const unit of current.units) {
       const menuUnit = unitByKey.get(unit.recordKey);
-      const option = menuUnit?.compositionOptions.find((entry) => (
-        entry.compositionKind === unit.compositionKind));
+      const option = selectedComposition(unit, menuUnit);
       const kind = menuUnit?.armySlotType;
       const occupied = option?.occupiedArmySlots;
       if (!kind || !Number.isSafeInteger(occupied)) return null;
@@ -168,8 +198,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
         const selected = current.units.find((entry) => (
           entry.unitInstanceId === step.subjectId));
         const unit = unitByKey.get(selected?.recordKey);
-        const before = unit?.compositionOptions.find((entry) => (
-          entry.compositionKind === selected?.compositionKind));
+        const before = selected ? selectedComposition(selected, unit) : null;
         const after = unit?.compositionOptions.find((entry) => (
           entry.compositionProfileId === step.detailId));
         kind = unit?.armySlotType;
@@ -194,10 +223,10 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     a.unitInstanceId.localeCompare(b.unitInstanceId)))) {
     const menuUnit = unitByKey.get(unit.recordKey);
     if (!menuUnit) continue;
-    const presentComposition = menuUnit.compositionOptions.find((option) => (
-      option.compositionKind === unit.compositionKind));
+    const presentComposition = selectedComposition(unit, menuUnit);
     for (const option of menuUnit.compositionOptions) {
-      if (option.compositionKind === unit.compositionKind) continue;
+      if (nativeSelections ? option.compositionProfileId === presentComposition?.compositionProfileId
+        : option.compositionKind === unit.compositionKind) continue;
       add("change_composition", unit.unitInstanceId,
         option.compositionProfileId,
         menuCost(option.mineralCost) === null
@@ -211,13 +240,14 @@ export function queryRosterBudgetBranchesV1(input = {}) {
           delete selected.startingModelIds;
         });
     }
-    const selectedNames = new Set(unit.upgrades.map((entry) => (
+    const selectedNames = new Set((nativeSelections
+      ? nativeSelections.get(unit.unitInstanceId).selectedUpgrades : unit.upgrades).map((entry) => (
       entry.upgradeName)));
     for (const upgrade of menuUnit.purchasableUpgrades) {
       if (selectedNames.has(upgrade.upgradeName)) continue;
       add("add_upgrade", unit.unitInstanceId,
         upgrade.purchasableUpgradeProfileId,
-        upgradeCost(upgrade, unit.compositionKind), (draft) => {
+        upgradeCost(upgrade, nativeSelections ? presentComposition?.compositionKind : unit.compositionKind), (draft) => {
           draft.units.find((entry) => (
             entry.unitInstanceId === unit.unitInstanceId)).upgrades.push({
             upgradeName: upgrade.upgradeName,
@@ -255,8 +285,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     .sort((a, b) => a.branchId.localeCompare(b.branchId));
   const MAX_COMBINATION_PATHS = 20_000;
   let combinationGenerationTruncated = false;
-  const addCombinations = (from, path, sum) => {
-    if (path.length >= 2) {
+  const addCompound = (path, sum) => {
       const steps = path.flatMap((entry) => entry.steps);
       const branchId = `compound:${hashStarcraftTmgContract(
         steps).slice(0, 20)}`;
@@ -265,9 +294,11 @@ export function queryRosterBudgetBranchesV1(input = {}) {
         transform: (draft) => path.forEach((entry) => entry.transform(draft)) });
       if (candidates.length - singleStepCount >= MAX_COMBINATION_PATHS) {
         combinationGenerationTruncated = true;
-        return;
       }
-    }
+  };
+  const addCombinations = (from, path, sum) => {
+    if (path.length >= 2) addCompound(path, sum);
+    if (combinationGenerationTruncated) return;
     if (path.length >= maximumMutationDepth) return;
     for (let index = from; index < additive.length; index += 1) {
       const next = additive[index];
@@ -277,7 +308,34 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     }
   };
   if (maximumMutationDepth > 1 && shortfall > 0) {
-    addCombinations(0, [], 0);
+    if (generationPolicy === 'legacy_depth_first_v1') addCombinations(0, [], 0);
+    else {
+      // Cover every affordable shallow combination before spending the finite
+      // population on deeper prefixes. No faction/unit preference or strategy
+      // score is added; the same complete Rules audit still admits branches.
+      let frontier = [{ from: 0, path: [], sum: 0 }];
+      for (let depth = 1; depth <= maximumMutationDepth && !combinationGenerationTruncated; depth += 1) {
+        const nextFrontier = [];
+        for (const node of frontier) {
+          for (let index = node.from; index < additive.length; index += 1) {
+            const entry = additive[index], sum = node.sum + entry.expectedDelta;
+            if (sum > shortfall) continue;
+            const path = [...node.path, entry];
+            if (path.length >= 2) addCompound(path, sum);
+            if (combinationGenerationTruncated) break;
+            if (depth < maximumMutationDepth) nextFrontier.push({ from: index + 1, path, sum });
+          }
+          if (combinationGenerationTruncated) break;
+        }
+        frontier = nextFrontier;
+      }
+    }
+  }
+  const generationCoverage = { compoundCount: 0, upgradeOnlyCompounds: 0, byDepth: {} };
+  for (const candidate of candidates.slice(singleStepCount)) {
+    generationCoverage.compoundCount += 1;
+    generationCoverage.byDepth[candidate.steps.length] = (generationCoverage.byDepth[candidate.steps.length] || 0) + 1;
+    if (candidate.steps.every(step => step.mutationKind === 'add_upgrade')) generationCoverage.upgradeOnlyCompounds += 1;
   }
   // Inspect projected slot-fitting branches before arithmetic-near branches.
   // The saved 1100/2000 draft had 24/24 closest-price paths rejected by
@@ -300,7 +358,7 @@ export function queryRosterBudgetBranchesV1(input = {}) {
   if (startOffset > candidates.length) {
     fail("ROSTER_BUDGET_BRANCH_OFFSET_INVALID");
   }
-  const branches = [];
+  const branches = [], rejectedBranches = [], rejectionGroups = new Map();
   let evaluated = 0;
   for (const candidate of candidates.slice(startOffset)) {
     if (evaluated >= limit) break;
@@ -308,7 +366,21 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     candidate.transform(draft);
     const verdict = port.evaluateRosterCandidate(draft);
     evaluated += 1;
-    if (verdict.schema !== ARMY_BUILDER_ROSTER_VERDICT_SCHEMA) continue;
+    if (verdict.schema !== ARMY_BUILDER_ROSTER_VERDICT_SCHEMA) {
+      // A rejection is useful source evidence, not an unexplained absence.
+      // Keep the exact Builder receipt and mutation; never turn it into a
+      // legal branch, a guessed repair, or a global impossibility claim.
+      rejectedBranches.push({ branchId: candidate.branchId,
+        mutationKind: candidate.kind, steps: candidate.steps,
+        candidateHash: hashStarcraftTmgContract(draft), builderVerdict: clone(verdict) });
+      const reason = { status: verdict.status ?? 'unknown',
+        rejectionKind: verdict.rejectionKind ?? 'unrecognized_builder_outcome',
+        rulesErrorCode: verdict.rulesErrorCode ?? null, rulesErrorDetail: verdict.rulesErrorDetail ?? null,
+        portErrorCode: verdict.portErrorCode ?? null, portErrorDetail: verdict.portErrorDetail ?? null };
+      const key = JSON.stringify(reason), group = rejectionGroups.get(key) ?? { ...reason, count: 0, branchIds: [] };
+      group.count += 1; group.branchIds.push(candidate.branchId); rejectionGroups.set(key, group);
+      continue;
+    }
     const mineralSpent = verdict.summary.mineralSpent;
     branches.push({
       branchId: candidate.branchId,
@@ -335,7 +407,19 @@ export function queryRosterBudgetBranchesV1(input = {}) {
     mineralBudget: current.mineralBudget,
     sourceMineralSpent: baseline.summary.mineralSpent,
     sourceMineralShortfall: shortfall,
+    generationPolicy,
+    generationCoverage,
+    searchScope: { kind: 'bounded_mutation_page',
+      includedOperations: ['change_composition', 'add_upgrade', 'add_unit'],
+      compoundOperations: 'positive_cost_additions_only',
+      excludedOperations: ['remove_unit', 'remove_upgrade', 'replace_tactical_card'],
+      cardCapacityDirectionsAreNotCertifiedBranches: true,
+      bounds: { maximumMutationDepth, maximumEvaluations: limit, startOffset },
+      emptyResultMeaning: 'No legal branch in this evaluated page; other pages and complete roster redesign remain possible.' },
     branches,
+    rejectedBranches,
+    rejectionSummary: { total: rejectedBranches.length, byReason: [...rejectionGroups.values()],
+      instruction: 'These are exact rejections of this evaluated page. Use their actual constraints to choose a different permitted draft/mutation or a necessary new query; pagination is not mandatory merely because nextPage exists. No strategy ranking, silent repair or proof of global impossibility is supplied.' },
     capacityDirections,
     capacityDirectionsAreMenuOnly: true,
     totalOneStepMutations: singleStepCount,
@@ -348,7 +432,12 @@ export function queryRosterBudgetBranchesV1(input = {}) {
       startOffset: nextOffset,
       expectedSourceCandidateHash: sourceCandidateHash,
       expectedMenuReceiptHash: menu.receiptHash,
+      ...(generationPolicy !== 'legacy_depth_first_v1' ? { generationPolicy, maximumMutationDepth, maximumEvaluations: limit } : {}),
     } : null,
+    alternateGenerationQueries: generationPolicy === 'legacy_depth_first_v1' && combinationGenerationTruncated
+      ? [{ generationPolicy: ROSTER_BUDGET_CURRENT_GENERATION_POLICY, startOffset: 0, maximumMutationDepth, maximumEvaluations: limit,
+        expectedSourceCandidateHash: sourceCandidateHash, expectedMenuReceiptHash: menu.receiptHash,
+        meaning: 'A NEW finite population with shallow mutation-family coverage, not continuation of the old cursor, a strategy ranking or exhaustive proof.' }] : [],
     evaluatedMutationCount: evaluated,
     truncated: nextOffset < candidates.length,
     inspectionOrder: "menu_slot_overflow_then_delta_distance_to_shortfall_then_branch_id",

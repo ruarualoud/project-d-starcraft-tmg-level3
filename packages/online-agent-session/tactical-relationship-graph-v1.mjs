@@ -18,17 +18,25 @@ import {
   evaluateOfficialSpecialTerrainLineOfSightBatchV1,
 } from
   "../rule-atoms/official-special-terrain-rules-kernel-v1.mjs";
+import { isMainThread } from "node:worker_threads";
+import { types } from "node:util";
+import { evaluateNativeSpecialTerrainLosInWorkersV1 } from
+  "./native-special-terrain-los-worker-batch-v1.mjs";
+import { projectStarcraftTmgTacticalLosPairRowV1 } from "./tactical-los-pair-row-v1.mjs";
+import { inspectOfficialMissionMarkerControlV2 } from
+  "../rule-atoms/official-mission-marker-control-kernel-v1.mjs";
 
 export const STARCRAFT_TMG_TACTICAL_RELATIONSHIP_GRAPH_VERSION =
   "starcraft_tmg_tactical_relationship_graph_v1";
 export const STARCRAFT_TMG_RELATIONSHIP_QUERY_KIND =
   "space.inspect_relationships";
 
-const INTENTS = new Set([
+export const STARCRAFT_TMG_TACTICAL_RELATIONSHIP_INTENTS_V1 = Object.freeze([
   "overview", "engage", "avoid_threat", "control_objective",
   "surround_target", "screen", "preserve_lane", "focus_fire",
   "fire_zone_exchange", "retreat",
 ]);
+const INTENTS = new Set(STARCRAFT_TMG_TACTICAL_RELATIONSHIP_INTENTS_V1);
 
 const ROUND_PHASE_ORDER = Object.freeze({
   start_of_round: 0,
@@ -99,6 +107,16 @@ function footprintBounds(footprint) {
     maxYMilliInches: Math.max(...footprint.vertices.map((entry) =>
       entry.yMilliInches)),
   };
+}
+
+// Axis-aligned bounds enclose every physical base. Their separation is a
+// lower bound, never a substitute for the exact Rules distance.
+function footprintBoundsLowerGap(left, right) {
+  const dx = Math.max(0, left.minXMilliInches - right.maxXMilliInches,
+    right.minXMilliInches - left.maxXMilliInches);
+  const dy = Math.max(0, left.minYMilliInches - right.maxYMilliInches,
+    right.minYMilliInches - left.maxYMilliInches);
+  return Math.hypot(dx, dy);
 }
 
 function terrainFootprint(entry) {
@@ -328,7 +346,15 @@ function nearestPair(leftRows, rightRows) {
   return { nearest, pairs };
 }
 
-function engagementLookup(state, request = {}) {
+function cachedPhysicalValue(cache, key, create, maximumEntries = 4096) {
+  if (!(cache instanceof Map)) return create();
+  if (cache.has(key)) return cache.get(key);
+  const value = create();
+  if (cache.size < maximumEntries) cache.set(key, value);
+  return value;
+}
+
+function engagementLookup(state, request = {}, lineOfSightCache = null) {
   const knownMinimumOpponentGap = Number(
     request.knownMinimumOpponentGapMilliInchesExclusive,
   );
@@ -348,11 +374,20 @@ function engagementLookup(state, request = {}) {
     };
   }
   try {
-    const graph = deriveOfficialEngagementGraphV2(state);
-    return { graph, edgeKeys: new Set(graph.modelEdges.flatMap((edge) => [
-      `${edge.leftModelId}:${edge.rightModelId}`,
-      `${edge.rightModelId}:${edge.leftModelId}`,
-    ])), precision: "exact_rules_graph", proof: null };
+    const graph = lineOfSightCache?.engagementGraph
+      || deriveOfficialEngagementGraphV2(state);
+    if (lineOfSightCache && !lineOfSightCache.engagementGraph) {
+      lineOfSightCache.engagementGraph = graph;
+    }
+    const edgeKeys = lineOfSightCache?.engagementEdgeKeys
+      || new Set(graph.modelEdges.flatMap((edge) => [
+        `${edge.leftModelId}:${edge.rightModelId}`,
+        `${edge.rightModelId}:${edge.leftModelId}`,
+      ]));
+    if (lineOfSightCache && !lineOfSightCache.engagementEdgeKeys) {
+      lineOfSightCache.engagementEdgeKeys = edgeKeys;
+    }
+    return { graph, edgeKeys, precision: "exact_rules_graph", proof: null };
   } catch (error) {
     return { graph: null, edgeKeys: new Set(),
       precision: "unknown", proof: null,
@@ -373,11 +408,12 @@ function stationaryRangedLineOfSightRequired(state, attacker, target,
       && minimumDistanceMilliInches <= profile.rangeMilliInches);
 }
 
-function specialTerrainLineOfSightLookup(state, pairContexts) {
-  const hasGrass = (state.board?.terrain || []).some((entry) =>
+function specialTerrainLineOfSightQueries(state, pairContexts) {
+  const hasDeferredTerrain = (state.board?.terrain || []).some((entry) =>
     entry.isRemoved !== true && entry.isDestroyed !== true
-      && String(entry.terrainKind || "ordinary").toLowerCase() === "grass");
-  if (!hasGrass) return { results: null, batchHash: null, failure: null };
+      && ["grass", "impassable", "ramp"].includes(
+        String(entry.terrainKind || "ordinary").toLowerCase()));
+  if (!hasDeferredTerrain) return null;
   const queries = [];
   for (const context of pairContexts.filter((entry) =>
     entry.stationaryRangedLineOfSightRequired)) {
@@ -387,6 +423,8 @@ function specialTerrainLineOfSightLookup(state, pairContexts) {
       queries.push({
         queryId,
         planId: `relationship-los:${queryId}`,
+        scalarFallbackPlanId: `relationship-los:${context.left.id}:${pair.left.model.id}`
+          + `:${context.right.id}:${pair.right.model.id}`,
         actorUnitId: context.left.id,
         attackerModelId: pair.left.model.id,
         targetUnitId: context.right.id,
@@ -394,44 +432,124 @@ function specialTerrainLineOfSightLookup(state, pairContexts) {
       });
       }
   }
+  return queries;
+}
+
+function specialTerrainLineOfSightLookup(state, pairContexts,
+  lineOfSightCache = null) {
+  const queries = specialTerrainLineOfSightQueries(state, pairContexts);
+  if (queries === null) return { results: null, batchHash: null, failure: null };
   if (queries.length === 0) {
     return { results: new Map(), batchHash: null, failure: null };
   }
+  // Same-call native completions only, not the caller's reusable cache. They
+  // remain available if sealing the COMPLETE batch exceeds the JS string cap.
+  const completedPairs = new Map();
+  let capacityDiagnostic = null;
   try {
     const batch = evaluateOfficialSpecialTerrainLineOfSightBatchV1({
       state,
       dataBundle: state.officialTerrainLosDataBundle,
       queries,
+      isolatePairFailures: true,
+      observeCompletedPair: (entry) => completedPairs.set(entry.queryId, entry),
+      observeCapacityDiagnostic: (entry) => { capacityDiagnostic = entry; },
+      ...(lineOfSightCache?.specialTerrainResults ? {
+        cachedResults: lineOfSightCache.specialTerrainResults,
+      } : {}),
     });
     return {
-      results: new Map(batch.results.map((entry) =>
+      results: new Map(batch.results.filter((entry) => entry.result).map((entry) =>
         [entry.queryId, entry.result])),
+      failures: new Map(batch.results.filter((entry) => entry.failure).map((entry) =>
+        [entry.queryId, entry.failure])),
       batchHash: batch.batchHash,
-      failure: null,
+      failure: batch.results.find((entry) => entry.failure)?.failure || null,
     };
   } catch (error) {
+    const failure = String(error?.message || error).split(":")[0];
+    if (error instanceof RangeError && failure === "Invalid string length"
+      && completedPairs.size > 0) {
+      const results = new Map();
+      const failures = new Map();
+      let precomputedScalarIdentityReuseCount = 0;
+      let scalarIdentityRetagCount = 0;
+      for (const query of queries) {
+        const completed = completedPairs.get(query.queryId);
+        if (completed?.failure) failures.set(query.queryId, completed.failure);
+        if (!completed?.result) continue;
+        if (completed.scalarEquivalentResult?.planId === query.scalarFallbackPlanId) {
+          results.set(query.queryId, completed.scalarEquivalentResult);
+          precomputedScalarIdentityReuseCount++;
+          continue;
+        }
+        // The historical capacity fallback used the scalar plan identity.
+        // Keep that COMPLETE result identity (and adapter label below), while
+        // reusing all native assessments rather than executing geometry again.
+        const body = { ...completed.result };
+        delete body.resultHash;
+        body.planId = `relationship-los:${query.actorUnitId}:${query.attackerModelId}`
+          + `:${query.targetUnitId}:${query.targetModelId}`;
+        results.set(query.queryId, freeze({
+          ...body, resultHash: hashStarcraftTmgContract(body),
+        }));
+        scalarIdentityRetagCount++;
+      }
+      return {
+        results, failures, batchHash: null, failure,
+        recovery: {
+          requestedPairCount: queries.length,
+          completedPairCount: completedPairs.size,
+          recoveredCompletedPairCount: results.size,
+          failedPairCount: failures.size,
+          scalarFallbackCount: 0,
+          precomputedScalarIdentityReuseCount,
+          scalarIdentityRetagCount,
+          ...(capacityDiagnostic || {}),
+        },
+      };
+    }
     return {
       results: null,
       batchHash: null,
-      failure: String(error?.message || error).split(":")[0],
+      failure,
     };
   }
 }
 
 function lineOfSightPairs(state, leftPiece, rightPiece, pairs,
-  specialTerrainLineOfSight) {
+  specialTerrainLineOfSight, lineOfSightCache = null) {
   const rows = [];
+  const cachedRows = lineOfSightCache?.rows || null;
   for (const pair of pairs) {
+    const pairKey = lineOfSightPairKey(leftPiece.id, pair.left.model.id,
+      rightPiece.id, pair.right.model.id);
+    const cached = cachedRows?.get(pairKey);
+    if (cached) {
+      rows.push(cached);
+      continue;
+    }
+    const prepared = specialTerrainLineOfSight?.preparedRows?.get(pairKey);
+    if (prepared) {
+      rows.push(prepared);
+      if (cachedRows && cachedRows.size < 8192) cachedRows.set(pairKey, prepared);
+      continue;
+    }
     try {
+      const pairFailure = specialTerrainLineOfSight?.failures?.get(pairKey);
+      if (pairFailure) throw new Error(pairFailure);
       let result;
       let adapter = "official_terrain_los_rules_kernel_v1";
-      const pairKey = lineOfSightPairKey(leftPiece.id, pair.left.model.id,
-        rightPiece.id, pair.right.model.id);
       const batched = specialTerrainLineOfSight?.results?.get(pairKey);
       if (batched) {
         result = batched;
-        adapter = "official_special_terrain_grass_los_batch_adapter_v1";
+        adapter = specialTerrainLineOfSight.recovery
+          ? "official_special_terrain_grass_los_adapter_v1"
+          : "official_special_terrain_grass_los_batch_adapter_v1";
       } else try {
+        if (specialTerrainLineOfSight?.recovery) {
+          specialTerrainLineOfSight.recovery.scalarFallbackCount++;
+        }
         result = evaluateOfficialTerrainLineOfSightV1({
           state,
           attacker: leftPiece,
@@ -459,36 +577,24 @@ function lineOfSightPairs(state, leftPiece, rightPiece, pairs,
         result = certified.result;
         adapter = "official_special_terrain_grass_los_adapter_v1";
       }
-      const assessments = result.assessments || result.grassAssessments || [];
-      rows.push({
-        attackerModelId: pair.left.model.id,
-        targetModelId: pair.right.model.id,
-        visible: result.visible,
-        baseEdgeDistanceMilliInches: result.modelEdgeDistanceMilliInches,
-        blockingTerrainIds: clone(result.blockingTerrainIds),
-        coverAssessments: assessments.filter((entry) =>
-          entry.blockingTerrainTrace || entry.attackerDirectCover
-            || entry.targetDirectCover || entry.elevationDeadZoneBlocks)
-          .map((entry) => ({
-            terrainId: entry.terrainId,
-            attackerDirectCover: entry.attackerDirectCover,
-            targetDirectCover: entry.targetDirectCover,
-            closeQuarters: entry.closeQuarters,
-            elevationDeadZoneBlocks: entry.elevationDeadZoneBlocks,
-            blocksLineOfSight: entry.blocksLineOfSight,
-          })),
-        resultHash: result.resultHash,
-        adapter,
-        precision: "exact_current_geometry",
-      });
+      const row = projectStarcraftTmgTacticalLosPairRowV1(result,
+        pair.left.model.id, pair.right.model.id, adapter);
+      rows.push(row);
+      if (cachedRows && cachedRows.size < 8192) {
+        cachedRows.set(pairKey, row);
+      }
     } catch (error) {
-      rows.push({
+      const row = {
         attackerModelId: pair.left.model.id,
         targetModelId: pair.right.model.id,
         visible: null,
         reason: String(error?.message || error).split(":")[0],
         precision: "unknown",
-      });
+      };
+      rows.push(row);
+      if (cachedRows && cachedRows.size < 8192) {
+        cachedRows.set(pairKey, row);
+      }
     }
   }
   return rows;
@@ -614,14 +720,15 @@ function threatProjection(state, attacker, target, minimumDistance,
 }
 
 function unitRelation(state, left, right, pairSearch, engagement,
-  specialTerrainLineOfSight) {
+  specialTerrainLineOfSight, lineOfSightCache = null) {
   const { nearest, pairs } = pairSearch;
   const rangedLosRequired = stationaryRangedLineOfSightRequired(
     state, left, right, nearest.result.minimumSeparationMilliInches)
     || stationaryRangedLineOfSightRequired(
       state, right, left, nearest.result.minimumSeparationMilliInches);
   const los = rangedLosRequired
-    ? lineOfSightPairs(state, left, right, pairs, specialTerrainLineOfSight)
+    ? lineOfSightPairs(state, left, right, pairs,
+      specialTerrainLineOfSight, lineOfSightCache)
     : [];
   const visiblePairCount = los.filter((entry) => entry.visible === true).length;
   const unknownPairCount = los.filter((entry) => entry.visible === null).length;
@@ -763,7 +870,7 @@ function unitRelation(state, left, right, pairSearch, engagement,
   };
 }
 
-function objectiveRelation(piece, rows, marker, footprint) {
+function objectiveRelation(piece, rows, marker, footprint, controlInspection) {
   const distances = rows.map((entry) => ({
     modelId: entry.model.id,
     result: evaluateOfficialPhysicalFootprintRelationV1({
@@ -777,6 +884,10 @@ function objectiveRelation(piece, rows, marker, footprint) {
   const eligible = distances.filter((entry) =>
     entry.result.minimumSeparationMilliInches <= 3000
       && entry.elevation === markerElevation);
+  const native = controlInspection.markerResults?.find(entry => entry.markerId === marker.id);
+  const contender = native && Object.values(native.contestingUnitsBySide).flat()
+    .find(entry => entry.unitId === piece.id);
+  const exclusion = native?.ineligibleUnits.find(entry => entry.unitId === piece.id);
   return {
     edgeId: `unit:${piece.id}->objective:${marker.id}`,
     edgeKind: "objective_relationship",
@@ -789,33 +900,66 @@ function objectiveRelation(piece, rows, marker, footprint) {
     canGeometricallyContestNow: eligible.length > 0,
     unitCoherencyStatus: clone(piece.coherencyStatus || null),
     currentControlSideKey: marker.controlSideKey || null,
-    exactControlStillRequiresCurrentMissionEligibilityAndLos: true,
-    precision: "exact_base_distance_and_elevation; control_eligibility_not_recomputed",
+    markerQualification: native ? {
+      status: "exact", scope: controlInspection.scope,
+      eligibleToContest: Boolean(contender),
+      exclusionReason: exclusion?.reason || null,
+      eligibleModelIds: clone(contender?.eligibleModelIds || []),
+      effectiveSupplyContribution: contender?.currentSupply ?? 0,
+      supplyTotals: clone(native.supplyTotals),
+      contestingUnitsBySide: clone(native.contestingUnitsBySide),
+      currentControlSideKey: native.previousControlSideKey,
+      projectedCleanupControlSideKey: native.nextControlSideKey,
+      controlResult: native.result,
+      awardedVictoryPoints: false,
+    } : { status: "unknown", reason: controlInspection.reason,
+      geometryMustNotBePromotedToControl: true, awardedVictoryPoints: false },
+    exactControlStillRequiresCurrentMissionEligibilityAndLos: !native,
+    precision: native ? "exact_geometry_and_native_conditional_marker_control"
+      : "exact_base_distance_and_elevation; control_eligibility_unknown",
   };
+}
+
+function inspectCurrentMarkerControl(state) {
+  try { return inspectOfficialMissionMarkerControlV2({ state }); }
+  catch (error) { return { status: "unknown",
+    reason: String(error?.code || error?.message || "marker_control_unavailable").split(":")[0],
+    markerResults: [] }; }
 }
 
 function unitClearance(state, piece, rows, allRows, terrain) {
   const width = Math.round(Number(state.board.widthInches) * 1000);
   const height = Math.round(Number(state.board.heightInches) * 1000);
+  function minimumExactGap(source, candidates) {
+    const ranked = candidates.map((candidate) => ({ candidate,
+      lowerGap: footprintBoundsLowerGap(source.bounds, candidate.bounds) }))
+      .sort((left, right) => left.lowerGap - right.lowerGap);
+    let minimum = Infinity;
+    for (const { candidate, lowerGap } of ranked) {
+      // The one-milli-inch margin also covers rounding in the Rules result.
+      if (lowerGap > minimum + 1) break;
+      minimum = Math.min(minimum,
+        evaluateOfficialPhysicalFootprintRelationV1({
+          left: source.footprint, right: candidate.footprint,
+        }).minimumSeparationMilliInches);
+    }
+    return Number.isFinite(minimum) ? Math.round(minimum) : null;
+  }
+  const terrainWithBounds = terrain.map((entry) => ({
+    ...entry, bounds: footprintBounds(entry.footprint),
+  }));
   const values = rows.map((entry) => {
     const bounds = entry.bounds;
     const boundary = Math.min(bounds.minXMilliInches, bounds.minYMilliInches,
       width - bounds.maxXMilliInches, height - bounds.maxYMilliInches);
-    const other = allRows.filter((candidate) => candidate.piece.id !== piece.id)
-      .map((candidate) => evaluateOfficialPhysicalFootprintRelationV1({
-        left: entry.footprint, right: candidate.footprint,
-      }).minimumSeparationMilliInches);
-    const obstacles = terrain.map((candidate) =>
-      evaluateOfficialPhysicalFootprintRelationV1({
-        left: entry.footprint, right: candidate.footprint,
-      }).minimumSeparationMilliInches);
+    const nearestOther = minimumExactGap(entry,
+      allRows.filter((candidate) => candidate.piece.id !== piece.id));
+    const nearestTerrain = minimumExactGap(entry, terrainWithBounds);
     return {
       modelId: entry.model.id,
       boundaryClearanceMilliInches: Math.round(boundary),
-      nearestOtherModelClearanceMilliInches:
-        other.length ? Math.round(Math.min(...other)) : null,
-      nearestTerrainClearanceMilliInches:
-        obstacles.length ? Math.round(Math.min(...obstacles)) : null,
+      nearestOtherModelClearanceMilliInches: nearestOther,
+      nearestTerrainClearanceMilliInches: nearestTerrain,
     };
   });
   const minimumOther = values.map((entry) =>
@@ -862,7 +1006,7 @@ function relationPriority(edge, intent) {
   return 100000 - distance;
 }
 
-export function buildStarcraftTmgTacticalRelationshipGraphV1(input = {}) {
+function prepareRelationshipGraph(input) {
   const state = input.state;
   const seatKey = String(input.seatKey || "");
   const request = input.request || {};
@@ -872,10 +1016,20 @@ export function buildStarcraftTmgTacticalRelationshipGraphV1(input = {}) {
   const intent = normalizeIntent(request);
   const requestedSubjects = new Set(normalizeIds(request.subjectUnitIds));
   const requestedTargets = new Set(normalizeIds(request.targetIds));
-  const allModelRows = modelIndex(state);
+  const lineOfSightCache = input.lineOfSightCache?.rows instanceof Map
+    && input.lineOfSightCache?.specialTerrainResults instanceof Map
+    ? input.lineOfSightCache : null;
+  const allModelRows = lineOfSightCache?.modelRows || modelIndex(state);
+  if (lineOfSightCache && !lineOfSightCache.modelRows) {
+    lineOfSightCache.modelRows = allModelRows;
+  }
   const pieces = (state.pieces || []).filter(activePiece);
-  const rowsByUnit = new Map(pieces.map((piece) => [piece.id,
-    allModelRows.filter((entry) => entry.piece.id === piece.id)]));
+  const rowsByUnit = lineOfSightCache?.rowsByUnit || new Map(pieces.map(
+    (piece) => [piece.id, allModelRows.filter((entry) =>
+      entry.piece.id === piece.id)]));
+  if (lineOfSightCache && !lineOfSightCache.rowsByUnit) {
+    lineOfSightCache.rowsByUnit = rowsByUnit;
+  }
   const subjects = pieces.filter((piece) => requestedSubjects.size
     ? requestedSubjects.has(piece.id)
     : sideRelation(piece, seatKey, state) === "own");
@@ -887,8 +1041,10 @@ export function buildStarcraftTmgTacticalRelationshipGraphV1(input = {}) {
   const pairContexts = subjects.flatMap((subject) => targets.map((target) => ({
     left: subject,
     right: target,
-    pairSearch: nearestPair(rowsByUnit.get(subject.id) || [],
-      rowsByUnit.get(target.id) || []),
+    pairSearch: cachedPhysicalValue(lineOfSightCache?.pairSearches,
+      `${subject.id}->${target.id}`,
+      () => nearestPair(rowsByUnit.get(subject.id) || [],
+        rowsByUnit.get(target.id) || [])),
   }))).map((context) => ({
     ...context,
     stationaryRangedLineOfSightRequired:
@@ -911,14 +1067,28 @@ export function buildStarcraftTmgTacticalRelationshipGraphV1(input = {}) {
       knownMinimumOpponentGapMilliInchesExclusive:
         derivedMinimumOpponentGap,
     } : {}),
-  });
-  const specialTerrainLineOfSight = specialTerrainLineOfSightLookup(
-    state, pairContexts,
-  );
+  }, lineOfSightCache);
+  return { state, seatKey, request, intent, requestedTargets, lineOfSightCache,
+    allModelRows, rowsByUnit, subjects, targets, pairContexts, engagement };
+}
+
+function finishRelationshipGraph(input, prepared, specialTerrainLineOfSight) {
+  const { state, seatKey, request, intent, requestedTargets, lineOfSightCache,
+    allModelRows, rowsByUnit, subjects, targets, pairContexts, engagement } = prepared;
   const unitEdges = pairContexts.map((context) => unitRelation(
     state, context.left, context.right, context.pairSearch,
-    engagement, specialTerrainLineOfSight,
+    engagement, specialTerrainLineOfSight, lineOfSightCache,
   ));
+  if (specialTerrainLineOfSight.recovery) {
+    try { input.observeLineOfSightDiagnostic?.({
+      schemaVersion: "starcraft_tmg_special_terrain_los_recovery_diagnostic_v1",
+      operation: "special_terrain_los_capacity_recovery",
+      stage: "special_terrain_los_completed_pairs_recovered",
+      batchFailure: specialTerrainLineOfSight.failure,
+      ...specialTerrainLineOfSight.recovery,
+      rulesAuthority: false, trainingTruth: false,
+    }); } catch { /* private diagnostics never reject geometry */ }
+  }
   const markers = (state.board.missionMarkers || [])
     .filter((entry) => entry.isRemoved !== true)
     .map((marker) => ({ marker, footprint: markerFootprint(marker) }))
@@ -926,9 +1096,16 @@ export function buildStarcraftTmgTacticalRelationshipGraphV1(input = {}) {
     .filter((entry) => !requestedTargets.size
       || requestedTargets.has(entry.marker.id)
       || intent === "control_objective");
+  // The adapter owns this cache for one exact revision. All units and both
+  // sides remain in the native calculation; a requested subset is only a view.
+  const controlInspection = markers.length ? (lineOfSightCache
+    ? (lineOfSightCache.markerControlInspection ||= inspectCurrentMarkerControl(state))
+    : inspectCurrentMarkerControl(state)) : { markerResults: [] };
   const objectiveEdges = subjects.flatMap((piece) => markers.map((entry) =>
-    objectiveRelation(piece, rowsByUnit.get(piece.id), entry.marker,
-      entry.footprint)));
+    cachedPhysicalValue(lineOfSightCache?.objectiveRelations,
+      `${piece.id}->${entry.marker.id}`,
+      () => objectiveRelation(piece, rowsByUnit.get(piece.id), entry.marker,
+        entry.footprint, controlInspection))));
   const terrain = (state.board.terrain || [])
     .filter((entry) => entry.isRemoved !== true && entry.isDestroyed !== true)
     .map((entry) => ({ entry, footprint: terrainFootprint(entry) }))
@@ -940,7 +1117,9 @@ export function buildStarcraftTmgTacticalRelationshipGraphV1(input = {}) {
   const selectedEdges = allEdges.slice(0, limit);
   const clearances = subjects.map((piece) => ({
     unitId: piece.id,
-    ...unitClearance(state, piece, rowsByUnit.get(piece.id), allModelRows, terrain),
+    ...cachedPhysicalValue(lineOfSightCache?.clearances, piece.id,
+      () => unitClearance(state, piece, rowsByUnit.get(piece.id),
+        allModelRows, terrain)),
     enemyEngagementEdgeCount: unitEdges.filter((entry) =>
       entry.fromUnitId === piece.id && entry.engagement.engaged).length,
   }));
@@ -982,7 +1161,9 @@ export function buildStarcraftTmgTacticalRelationshipGraphV1(input = {}) {
     },
     nodes: {
       units: [...new Set([...subjects, ...targets])].map((piece) =>
-        unitNode(state, piece, rowsByUnit.get(piece.id), seatKey)),
+        cachedPhysicalValue(lineOfSightCache?.unitNodes,
+          `${seatKey}:${piece.id}`,
+          () => unitNode(state, piece, rowsByUnit.get(piece.id), seatKey))),
       objectives: markers.map(({ marker, footprint }) => ({
         nodeId: marker.id,
         nodeKind: "mission_marker",
@@ -1057,4 +1238,72 @@ export function buildStarcraftTmgTacticalRelationshipGraphV1(input = {}) {
     eligibleForTraining: false,
     trainingTruth: false,
   }, "relationshipGraphHash");
+}
+
+export function buildStarcraftTmgTacticalRelationshipGraphV1(input = {}) {
+  const prepared = prepareRelationshipGraph(input);
+  return finishRelationshipGraph(input, prepared, specialTerrainLineOfSightLookup(
+    prepared.state, prepared.pairContexts, prepared.lineOfSightCache));
+}
+
+function canOwnJsonSnapshot(value, ancestors = new Set()) {
+  if (value === null || value === undefined || typeof value === "string"
+    || typeof value === "boolean") return true;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value !== "object" || types.isProxy(value) || ancestors.has(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  if (Array.isArray(value) ? prototype !== Array.prototype
+    : prototype !== Object.prototype && prototype !== null) return false;
+  ancestors.add(value);
+  for (const key of Reflect.ownKeys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (typeof key !== "string" || !Object.hasOwn(descriptor, "value")
+      || (!descriptor.enumerable && !(Array.isArray(value) && key === "length"))
+      || !canOwnJsonSnapshot(descriptor.value, ancestors)) {
+      ancestors.delete(value);
+      return false;
+    }
+  }
+  ancestors.delete(value);
+  return true;
+}
+
+export async function buildStarcraftTmgTacticalRelationshipGraphAsyncV1(input = {}) {
+  const previousCache = input.lineOfSightCache;
+  const warmed = previousCache && (previousCache.modelRows
+    || Object.values(previousCache).some(value => value instanceof Map && value.size > 0));
+  // Dynamic/caller-owned exotic values retain their original synchronous
+  // semantics. Outer query workers never create nested pools. Warm caches are
+  // already cheaper than sending native pair work to fresh CPU workers.
+  if (!isMainThread || warmed || !canOwnJsonSnapshot(input.state)
+    || !canOwnJsonSnapshot(input.request) || !canOwnJsonSnapshot(input.authority)) {
+    return buildStarcraftTmgTacticalRelationshipGraphV1(input);
+  }
+  const cache = { rows: new Map(), specialTerrainResults: new Map(),
+    modelRows: null, rowsByUnit: null, pairSearches: new Map(), unitNodes: new Map(),
+    objectiveRelations: new Map(), clearances: new Map() };
+  const ownedInput = { ...input, state: freeze(clone(input.state)),
+    authority: clone(input.authority), request: clone(input.request), lineOfSightCache: cache };
+  const prepared = prepareRelationshipGraph(ownedInput);
+  const queries = specialTerrainLineOfSightQueries(prepared.state, prepared.pairContexts);
+  let specialTerrainLineOfSight;
+  if (queries?.length > 1) {
+    try {
+      specialTerrainLineOfSight = await evaluateNativeSpecialTerrainLosInWorkersV1({
+        state: prepared.state, queries, observeProgress: event => {
+          try { input.observeLineOfSightDiagnostic?.({ ...event,
+            rulesAuthority: false, trainingTruth: false }); } catch { /* diagnostics */ }
+        },
+      });
+    } catch {
+      // A transport/global validation failure is not a new Rules verdict.
+      // Ordinary pair failures have already been isolated by the native loop.
+      specialTerrainLineOfSight = specialTerrainLineOfSightLookup(
+        prepared.state, prepared.pairContexts, cache);
+    }
+  } else specialTerrainLineOfSight = specialTerrainLineOfSightLookup(
+    prepared.state, prepared.pairContexts, cache);
+  const result = finishRelationshipGraph(ownedInput, prepared, specialTerrainLineOfSight);
+  try { input.observeOwnedCalculationCache?.(cache); } catch { /* cache is optional */ }
+  return result;
 }

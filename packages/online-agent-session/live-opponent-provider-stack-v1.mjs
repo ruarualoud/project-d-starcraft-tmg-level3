@@ -41,6 +41,9 @@ import { createStarcraftTmgLiveFlashDecisionPortV1 } from
   "./live-flash-decision-port-v1.mjs";
 import { STARCRAFT_TMG_LIVE_REQUEST_OUTPUT_LIMIT } from
   "./live-output-capacity-policy-v1.mjs";
+import { STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS,
+  STARCRAFT_TMG_PROVIDER_PROMPT_ARTIFACT_MAX_BYTES } from
+  "../secure-provider-runtime/provider-egress-contract-v1.mjs";
 
 export const STARCRAFT_TMG_LIVE_OPPONENT_PROVIDER_STACK_VERSION =
   "starcraft_tmg_live_opponent_provider_stack_v1";
@@ -142,6 +145,12 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
 
   const profiles = options.providerProfiles
     || STARCRAFT_TMG_TICKET_23_LIVE_PROVIDER_PROFILES_V1;
+  const providerInteractionMode = options.providerInteractionMode
+    || "native_tools";
+  if (!["native_tools", "json_channels_v1"].includes(
+    providerInteractionMode)) {
+    throw new TypeError("providerInteractionMode is invalid");
+  }
   const requestOutputLimit = options.requestOutputLimit
     ?? STARCRAFT_TMG_LIVE_REQUEST_OUTPUT_LIMIT;
   const transportTimeoutMs = Number(options.transportTimeoutMs ?? 300_000);
@@ -202,11 +211,11 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
   const registry = createStarcraftTmgProviderProfileRegistryV1({
     entries: profiles.map((providerProfile) => ({
       providerProfile,
-      // DeepSeek strict Function Calling is exposed on the official beta
-      // compatibility route. The frozen model/profile identity remains the
-      // same; every physical attempt records the exact compiled egress path.
-      completionPath: "/beta/chat/completions",
-      transportTimeoutMs: options.transportTimeoutMs ?? 300_000,
+      // Strict tools use the beta route; JSON channels use the standard route.
+      // The exact egress path remains server-owned and is recorded per attempt.
+      completionPath: providerInteractionMode === "native_tools"
+        ? "/beta/chat/completions" : "/chat/completions",
+      transportTimeoutMs,
       requestOutputLimit,
     })),
     allowedProviders: ["deepseek-openai-compatible-direct"],
@@ -224,7 +233,7 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
   });
   const promptArtifactStore = createInMemoryStarcraftTmgPromptArtifactStoreV1({
     maxArtifacts: 8,
-    maxArtifactBytes: 8 * 1024 * 1024,
+    maxArtifactBytes: STARCRAFT_TMG_PROVIDER_PROMPT_ARTIFACT_MAX_BYTES,
   });
   let supervisorCore;
   const executionScope = createStarcraftTmgProviderGatewayExecutionScopeV1({
@@ -257,7 +266,8 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
     budgetPolicy: {
       maxTotalUnits: Number(options.maxTotalUnits || 50_000_000),
       maxTurns: Number(options.maxProviderCalls || 1_024),
-      maxInputUnitsPerTurn: Number(options.maxInputUnitsPerTurn || 1_000_000),
+      maxInputUnitsPerTurn: Number(options.maxInputUnitsPerTurn
+        || STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS),
       maxOutputUnitsPerTurn: Number(options.maxOutputUnitsPerTurn || requestOutputLimit),
       // Match the server-owned egress deadline. A shorter supervisor timer
       // marks an in-flight request timed out before transport can settle it.
@@ -309,6 +319,9 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
     })),
     allowUnstartedProfileReselection:
       options.allowUnstartedProfileReselection === true,
+    providerInteractionMode,
+    allowFailedInteractionModeMigration:
+      options.allowFailedInteractionModeMigration === true,
     requestOutputLimit,
     maxToolRounds: options.maxToolRounds,
     maxPlanningQueryRounds: options.maxPlanningQueryRounds,
@@ -372,7 +385,8 @@ export async function createStarcraftTmgLiveOpponentProviderStackV1(
     promptPack: options.matchMode === "agent_vs_agent"
       ? "selfplay_agent_prompt" : "opponent_prompt",
     budget: {
-      limitCnyMicros: Number(options.budgetLimitCnyMicros || 80_000_000),
+      limitCnyMicros: options.budgetLimitCnyMicros == null
+        ? null : Number(options.budgetLimitCnyMicros),
       maxProviderCalls: Number(options.maxProviderCalls || 1_024),
     },
     // Before Slice 247, process shutdown incorrectly closed the durable agent

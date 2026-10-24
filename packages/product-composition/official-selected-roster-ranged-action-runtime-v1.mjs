@@ -1,6 +1,9 @@
-import { isDeepStrictEqual } from "node:util";
+import { isDeepStrictEqual, types as nodeUtilTypes } from "node:util";
+import { createHash } from "node:crypto";
+import { constants as bufferConstants } from "node:buffer";
 
-import { hashStarcraftTmgContract } from
+import { hashStarcraftTmgContract, canonicalStarcraftTmgJson,
+  STARCRAFT_TMG_HASH_ALGORITHM } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { deriveOfficialEngagementGraphV2 } from
   "../rule-atoms/official-engagement-graph-v2.mjs";
@@ -13,13 +16,17 @@ import {
 } from "../rule-atoms/official-elevation-effective-size-rules-executor-v1.mjs";
 import {
   createOfficialTerrainElevationAgreementV1,
+  createOfficialElevatedLineOfSightBatchV1,
   evaluateOfficialElevatedLineOfSightV1,
+  evaluateOfficialElevatedLineOfSightBatchV1,
+  canonicalNativeOfficialElevatedLosResultV1,
 } from "../rule-atoms/official-elevation-effective-size-rules-kernel-v1.mjs";
 import { createOfficialMultiModelCasualtyResolutionKernelV1 } from
   "../rule-atoms/official-multi-model-casualty-resolution-kernel-v1.mjs";
 import { projectOfficialContextualSupplyValueV1 } from
   "../rule-atoms/official-contextual-supply-projection-v1.mjs";
-import { resolveOfficialMissionMarkerControlV2 } from
+import { resolveOfficialMissionMarkerControlV2,
+  createOfficialMissionMarkerControlUnitBatchV2 } from
   "../rule-atoms/official-mission-marker-control-kernel-v1.mjs";
 import {
   OFFICIAL_RANGED_ATTACK_V6_ACTION_ATOM_IDS,
@@ -61,10 +68,13 @@ import {
   consumeOfficialProtossUniqueFirstWeaponEffectV1,
   projectOfficialProtossUniqueFamilyModifiersV1,
 } from "./official-protoss-unique-family-adapter-v1.mjs";
+import {createOfficialReactionFamilyAdapterV1,openOfficialReactionFamilyWindowV1,
+  consumeOfficialReactionFamilyResolutionV1} from './official-reaction-family-adapter-v1.mjs';
+import {resolveOfficialTotalDamagePoolReductionV1} from '../rule-atoms/official-total-damage-reaction-kernel-v1.mjs';
 
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID =
   "starcraft-tmg-official-selected-roster-ranged-action-runtime-v1";
-export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.8.0";
+export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION = "1.9.0";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_TYPE = "ranged_attack";
 export const OFFICIAL_SELECTED_ROSTER_RANGED_FINISH_ACTION_TYPE =
   "finish_ranged_attack_sequence";
@@ -79,6 +89,14 @@ export const OFFICIAL_SELECTED_ROSTER_RANGED_PLAN_SCHEMA =
 
 const SIDE_KEYS = new Set(["player1", "player2"]);
 const CASUALTY_KERNEL = createOfficialMultiModelCasualtyResolutionKernelV1();
+// Only privately cloned/frozen native preparations or preview batches register here. Public states,
+// enumerations and caller-supplied domains cannot opt into verified reuse.
+const PREVIEW_CONTEXTS_BY_OWNED_STATE = new WeakMap();
+// Two complete, privately owned snapshots only. A caller's hash/ID/prepared
+// object never grants reuse: current source checks, a complete state hash and
+// deep value equality are required on every public enumeration invocation.
+const NATIVE_RANGED_PREPARATIONS = new Map();
+const NATIVE_PREPARATION_BY_ENUMERATION = new WeakMap();
 const RULE_ATOM_IDS = Object.freeze([...new Set([
   ...OFFICIAL_RANGED_ATTACK_V6_ACTION_ATOM_IDS,
   ...OFFICIAL_REPLACEMENT_WEAPON_LOADOUT_ATOM_IDS,
@@ -107,6 +125,74 @@ function without(value, keys) {
 }
 function seal(body, field) {
   return freezeDeep({ ...body, [field]: hashStarcraftTmgContract(body) });
+}
+function plainRangedDataTree(value, active = new WeakSet(), complete = new WeakSet()) {
+  if (value === null || typeof value !== "object") {
+    return ["string", "boolean", "undefined"].includes(typeof value)
+      || (typeof value === "number" && Number.isFinite(value))
+      || value === null;
+  }
+  if (nodeUtilTypes.isProxy(value) || active.has(value)) return false;
+  if (complete.has(value)) return true;
+  const prototype = Object.getPrototypeOf(value);
+  const nativeArray = Array.isArray(value);
+  if (nativeArray ? prototype !== Array.prototype
+    : prototype !== Object.prototype && prototype !== null) return false;
+  // Inspect the same complete own-key set, without allocating a descriptor map
+  // and an entries array for every node of a large terrain/state tree.
+  const keys = Reflect.ownKeys(value);
+  if (keys.some(key => typeof key !== "string")) return false;
+  active.add(value);
+  for (const key of keys) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    const nativeArrayLength = nativeArray && key === "length";
+    // structuredClone omits non-enumerable data properties. Such callers must
+    // retain the original scalar path, never prepare an incomplete snapshot.
+    if (!descriptor || !("value" in descriptor) || (!descriptor.enumerable && !nativeArrayLength)
+      || !plainRangedDataTree(descriptor.value, active, complete)) {
+      active.delete(value);
+      return false;
+    }
+  }
+  active.delete(value);
+  complete.add(value);
+  return true;
+}
+
+function nativeRangedPreparationFromVerifiedState(state, options) {
+  // Existing readonly batches already own their snapshot and diagnostic lane.
+  // Keep that path unchanged rather than importing another batch's contexts.
+  if (PREVIEW_CONTEXTS_BY_OWNED_STATE.has(state)
+    || !plainRangedDataTree(state) || !plainRangedDataTree(options)) return null;
+  const sideKey = String(options.sideKey || state.activeSideKey || "");
+  if (!SIDE_KEYS.has(sideKey)) fail("SELECTED_RANGED_SIDE_INVALID", sideKey);
+  const key = `${sideKey}:${options.includeDisabled === true}:${hashStarcraftTmgContract(state)}`;
+  const prior = NATIVE_RANGED_PREPARATIONS.get(key);
+  if (prior && isDeepStrictEqual(state, prior.snapshot)) {
+    NATIVE_RANGED_PREPARATIONS.delete(key);
+    NATIVE_RANGED_PREPARATIONS.set(key, prior);
+    return prior;
+  }
+  // No caller code/getter can run during this copy; the guard above inspects
+  // data descriptors without invoking them. Never freeze the mutable caller.
+  const snapshot = freezeDeep(clone(state));
+  PREVIEW_CONTEXTS_BY_OWNED_STATE.set(snapshot, { contexts: new Map(), observe: null });
+  const enumeration = enumerateRangedFromVerifiedState(snapshot, options);
+  const prepared = Object.freeze({ snapshot, enumeration });
+  NATIVE_PREPARATION_BY_ENUMERATION.set(enumeration, prepared);
+  NATIVE_RANGED_PREPARATIONS.set(key, prepared);
+  while (NATIVE_RANGED_PREPARATIONS.size > 2) {
+    NATIVE_RANGED_PREPARATIONS.delete(NATIVE_RANGED_PREPARATIONS.keys().next().value);
+  }
+  return prepared;
+}
+
+function nativeContextStateForEnumeration(state, enumeration) {
+  const prepared = NATIVE_PREPARATION_BY_ENUMERATION.get(enumeration);
+  // The identity is module-private, and the COMPLETE current state must still
+  // match. A previously returned public enumeration is not a prepared argument.
+  return prepared && plainRangedDataTree(state)
+    && isDeepStrictEqual(state, prepared.snapshot) ? prepared.snapshot : state;
 }
 function activePiece(piece) {
   return piece?.isOnField === true && piece?.isDestroyed !== true
@@ -165,6 +251,8 @@ function pendingCasualtyChoice(state) {
     || pending.attackerSideKey !== pending.attackAction?.sideKey
     || pending.defenderSideKey === pending.attackerSideKey
     || pending.targetPieceId !== pending.attackAction?.targetId
+    || pending.resolvedChance?.resolution?.resolutionHash !== pending.attackResolutionHash
+    || pending.resolvedChance?.casualtyDomain?.domainHash !== pending.casualtyDomainHash
     || !Array.isArray(pending.chanceReveals)) {
     fail("SELECTED_RANGED_PENDING_CASUALTY_INVALID");
   }
@@ -263,11 +351,15 @@ function currentMeleeRanks(state, target) {
   }
 }
 
-function projectMissionMarkerControl(state) {
+function projectMissionMarkerControl(state, ownedImmutableState = false, controlBatch = null) {
   try {
-    const projected = clone(state);
+    // Only the private query batch can supply an owned immutable snapshot.
+    // The Rules resolver owns its terrain projection; changing this root's
+    // phase needs no second copy of every unit/catalogue/terrain payload.
+    const projected = ownedImmutableState ? { ...state } : clone(state);
     projected.phase = "cleanup";
-    const resolution = resolveOfficialMissionMarkerControlV2({
+    const resolution = controlBatch ? controlBatch.resolvePieces(projected.pieces)
+      : resolveOfficialMissionMarkerControlV2({
       state: projected,
       terrainLosDataBundle: projected.officialTerrainLosDataBundle,
       matchBinding: {
@@ -290,8 +382,11 @@ function projectMissionMarkerControl(state) {
   }
 }
 
-function casualtyProjectedState(state, targetPieceId, casualtyModelIds) {
-  const projected = clone(state);
+function casualtyProjectedState(state, targetPieceId, casualtyModelIds,
+  ownedImmutableState = false) {
+  const projected = ownedImmutableState ? { ...state,
+    pieces: state.pieces.map(piece => piece.id === targetPieceId ? clone(piece) : piece),
+  } : clone(state);
   const target = projected.pieces.find((piece) => piece.id === targetPieceId);
   if (!target) fail("SELECTED_RANGED_CASUALTY_TARGET_UNKNOWN", targetPieceId);
   const casualties = new Set(casualtyModelIds);
@@ -311,13 +406,19 @@ function casualtyProjectedState(state, targetPieceId, casualtyModelIds) {
     target.isDestroyed = true;
     target.isOnField = false;
   }
-  return projected;
+  return ownedImmutableState ? freezeDeep(projected) : projected;
 }
 
-function missionMarkerControlConsequences(state, targetPieceId, casualtyModelIds) {
-  const before = projectMissionMarkerControl(state);
-  const after = projectMissionMarkerControl(casualtyProjectedState(
-    state, targetPieceId, casualtyModelIds));
+function missionMarkerControlConsequences(
+  state, targetPieceId, casualtyModelIds, prepared = null,
+  ownedPostCasualtyState = null,
+) {
+  const before = prepared ? prepared.missionControlBefore()
+    : projectMissionMarkerControl(state);
+  const after = ownedPostCasualtyState
+    ? prepared.missionControl(ownedPostCasualtyState)
+    : projectMissionMarkerControl(casualtyProjectedState(
+      state, targetPieceId, casualtyModelIds));
   if (before.status !== "exact_current_geometry"
     || after.status !== "exact_current_geometry") {
     return {
@@ -509,7 +610,7 @@ function strategicLossContext(state, target) {
   };
 }
 
-function strategicLossOption(pending, selection, state) {
+function strategicLossOption(pending, selection, state, prepared = null) {
   const context = pending.targetStrategicLossContext || { models: [] };
   const casualties = new Set(selection.casualtyModelIds || []);
   const lostModels = (context.models || []).filter((model) =>
@@ -594,9 +695,10 @@ function strategicLossOption(pending, selection, state) {
       ? context.movementProfile?.singleModelInches ?? null
       : context.movementProfile?.multiModelInches ?? null;
   const postCasualtyState = casualtyProjectedState(
-    state, pending.targetPieceId, selection.casualtyModelIds);
-  const tacticalMassBefore = tacticalMassProjection(
-    state, pending.targetPieceId);
+    state, pending.targetPieceId, selection.casualtyModelIds, Boolean(prepared));
+  const tacticalMassBefore = prepared
+    ? prepared.tacticalMassBefore(pending.targetPieceId)
+    : tacticalMassProjection(state, pending.targetPieceId);
   const tacticalMassAfter = tacticalMassProjection(
     postCasualtyState, pending.targetPieceId);
   return {
@@ -620,7 +722,8 @@ function strategicLossOption(pending, selection, state) {
     movementModifiersRequireFreshLegalSpace: true,
     movementAndPlacementReachMustBeResolvedFromSurvivorFootprints: true,
     missionMarkerControlConsequences: missionMarkerControlConsequences(
-      state, pending.targetPieceId, selection.casualtyModelIds),
+      state, pending.targetPieceId, selection.casualtyModelIds, prepared,
+      prepared ? postCasualtyState : null),
     tacticalMassConsequences: {
       before: tacticalMassBefore,
       after: tacticalMassAfter,
@@ -643,7 +746,31 @@ function destroyedSupplyVictoryPointRate(state) {
   return rule ? Number(rule.vpPerDestroyedEnemySupply || 0) : null;
 }
 
-function casualtyChoiceDomain(pending, state) {
+// Shared loss/selection projection; the caller supplies only its transport identity.
+export function createOfficialSelectedRosterCasualtyChoiceContextV1(state, target) {
+  return {
+    currentSupplyBefore: Number(target.currentSupply),
+    targetLeadingModelId: target.leadingModelId || null,
+    targetSquadProfile: clone(getOfficialCombatProfileV1(
+      state.officialCombatProfileBundle, target.officialUnitRecordKey).squadProfile || []),
+    targetStrategicLossContext: strategicLossContext(state, target),
+    destroyedSupplyVictoryPointRate: destroyedSupplyVictoryPointRate(state),
+  };
+}
+
+export function createOfficialSelectedRosterCasualtyChoiceDomainV1(
+  pending, state, owner,
+) {
+  return casualtyChoiceDomain(pending, state, owner);
+}
+
+function casualtyChoiceDomain(pending, state, owner = {}) {
+  // Catalogue construction is also a casualty strategy batch. The original
+  // query path shared immutable map/control facts, but enumeration and exact
+  // instantiation rebuilt them for every selection (C9:306 choices). Keep all
+  // original outcomes and stale-domain checks; only share private owned inputs.
+  const snapshot = freezeDeep(clone(state));
+  const prepared = createCasualtyStrategyContextFromOwnedState(snapshot);
   const explicitModelSelection = pending.casualtyDomain.selectionMode
     === "explicit_model_ids";
   const strategicSupplyAfter = (currentModels) =>
@@ -699,14 +826,14 @@ function casualtyChoiceDomain(pending, state) {
   const body = {
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
     semanticVersion: "1.0.0",
-    parameterKind: OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_PARAMETER_KIND,
-    actionType: OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_ACTION_TYPE,
+    parameterKind: owner.parameterKind || OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_PARAMETER_KIND,
+    actionType: owner.actionType || OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_ACTION_TYPE,
     sideKey: pending.defenderSideKey,
-    phase: "assault",
+    phase: owner.phase || "assault",
     pieceId: pending.targetPieceId,
-    executorId: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID,
-    executorVersion: OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION,
-    ruleAtomIds: [...RULE_ATOM_IDS],
+    executorId: owner.executorId || OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID,
+    executorVersion: owner.executorVersion || OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION,
+    ruleAtomIds: [...(owner.ruleAtomIds || RULE_ATOM_IDS)],
     parameterSchema,
     constraints: {
       pendingHash: pending.pendingHash,
@@ -732,7 +859,7 @@ function casualtyChoiceDomain(pending, state) {
             selection.remainingModelIds.length);
           const supplyLost = supplyDelta(currentSupplyAfter);
           return {
-            ...strategicLossOption(pending, selection, state),
+            ...strategicLossOption(pending, selection, snapshot, prepared),
             selectionHash: selection.selectionHash,
             casualtyModelIds: clone(selection.casualtyModelIds),
             remainingModelIds: clone(selection.remainingModelIds),
@@ -808,7 +935,7 @@ function casualtyChoiceDomain(pending, state) {
     },
     confirmationClass: "explicit_human",
     searchAndStrategyExcludedFromAuthority: true,
-    rulesTruth: "official_defender_owned_ranged_casualty_selection",
+    rulesTruth: owner.rulesTruth || "official_defender_owned_ranged_casualty_selection",
     trainingTruth: false,
   };
   return freezeDeep({ ...body,
@@ -978,6 +1105,10 @@ export function projectOfficialSelectedRosterRangedFirepowerV1(
 export function projectOfficialSelectedRosterCasualtyStrategyV1(
   state, pieceId, casualtyModelIds,
 ) {
+  return projectCasualtyStrategy(state, pieceId, casualtyModelIds);
+}
+
+function projectCasualtyStrategy(state, pieceId, casualtyModelIds, prepared = null) {
   const target = (state?.pieces || []).find((entry) => entry.id === pieceId);
   if (!target) fail("SELECTED_RANGED_CONTRIBUTION_PIECE_UNKNOWN", pieceId);
   const casualties = [...new Set((casualtyModelIds || []).map(String))].sort();
@@ -985,21 +1116,82 @@ export function projectOfficialSelectedRosterCasualtyStrategyV1(
   if (casualties.some((modelId) => !currentIds.includes(modelId))) {
     fail("SELECTED_RANGED_CASUALTY_MODEL_UNKNOWN", casualties.join("|"));
   }
-  return freezeDeep({
+  const key = JSON.stringify([pieceId, casualties]);
+  if (prepared?.strategies.has(key)) return prepared.strategies.get(key);
+  const result = freezeDeep({
     schemaVersion:
       "starcraft_tmg_official_selected_roster_casualty_strategy_v1",
     pieceId,
     casualtyModelIds: casualties,
     ...strategicLossOption({
       targetPieceId: pieceId,
-      targetStrategicLossContext: strategicLossContext(state, target),
+      targetStrategicLossContext: prepared ? prepared.lossContext(target)
+        : strategicLossContext(state, target),
     }, {
       casualtyModelIds: casualties,
       remainingModelIds: currentIds.filter((modelId) =>
         !casualties.includes(modelId)),
-    }, state),
+    }, state, prepared),
     rulesAuthority: true,
     trainingTruth: false,
+  });
+  prepared?.strategies.set(key, result);
+  return result;
+}
+
+// Private immutable query ownership is essential: no caller-supplied prepared
+// facts, cross-revision cache, mutable Room reference or weapon outcome is trusted.
+// Every new loss still gets its full post-casualty geometry/control projection.
+export function createOfficialSelectedRosterCasualtyStrategyBatchV1(state) {
+  const snapshot = freezeDeep(clone(state));
+  return createCasualtyStrategyBatchFromOwnedState(snapshot);
+}
+
+function createCasualtyStrategyContextFromOwnedState(snapshot) {
+  const lossContexts = new Map();
+  const tacticalMass = new Map();
+  let beforeControl;
+  let controlBatch;
+  const prepared = {
+    strategies: new Map(),
+    lossContext(target) {
+      if (!lossContexts.has(target.id)) {
+        lossContexts.set(target.id, freezeDeep(strategicLossContext(snapshot, target)));
+      }
+      return lossContexts.get(target.id);
+    },
+    missionControlBefore() {
+      if (beforeControl === undefined) {
+        beforeControl = freezeDeep(prepared.missionControl(snapshot));
+      }
+      return beforeControl;
+    },
+    missionControl(state) {
+      controlBatch ||= createOfficialMissionMarkerControlUnitBatchV2({
+        state: { ...snapshot, phase: "cleanup" },
+        terrainLosDataBundle: snapshot.officialTerrainLosDataBundle,
+        matchBinding: { rulesRuntimeBinding: {
+          runtimeHash: snapshot.officialMissionRuntimeDescriptor?.runtimeHash,
+        } },
+      });
+      return projectMissionMarkerControl(state, true, controlBatch);
+    },
+    tacticalMassBefore(pieceId) {
+      if (!tacticalMass.has(pieceId)) {
+        tacticalMass.set(pieceId, freezeDeep(tacticalMassProjection(snapshot, pieceId)));
+      }
+      return tacticalMass.get(pieceId);
+    },
+  };
+  return prepared;
+}
+
+function createCasualtyStrategyBatchFromOwnedState(snapshot) {
+  const prepared = createCasualtyStrategyContextFromOwnedState(snapshot);
+  return Object.freeze({
+    project(pieceId, casualtyModelIds) {
+      return projectCasualtyStrategy(snapshot, pieceId, casualtyModelIds, prepared);
+    },
   });
 }
 function profilesAllowedByPending(state, piece, profiles) {
@@ -1097,13 +1289,13 @@ function terrainAsOrdinaryForLos(state) {
   return { projected, grassTerrainIds: grassTerrainIds.sort() };
 }
 function lineOfSightFor(state, attacker, attackerModel, target, targetModel,
-  adapted = terrainAsOrdinaryForLos(state)) {
-  const result = evaluateOfficialElevatedLineOfSightV1({
+  adapted = terrainAsOrdinaryForLos(state), preparedResult = null) {
+  const result = preparedResult || evaluateOfficialElevatedLineOfSightV1({
     state: adapted.projected, attacker, attackerModelId: attackerModel.id,
     target, targetModelId: targetModel.id,
     dataBundle: state.officialTerrainLosDataBundle,
   });
-  return seal({
+  const body = {
     schemaVersion: "starcraft_tmg_selected_roster_ranged_los_v1",
     result, elevatedLineOfSightResultHash: result.resultHash,
     grassTerrainIds: adapted.grassTerrainIds,
@@ -1114,7 +1306,24 @@ function lineOfSightFor(state, attacker, attackerModel, target, targetModel,
     sourceRefreshPerformed: false,
     rulesTruth: "official_elevated_los_with_grass_cover_adapter",
     trainingTruth: false,
-  }, "lineOfSightHash");
+  };
+  const nativeResultText = canonicalNativeOfficialElevatedLosResultV1(result);
+  if (nativeResultText === null) return seal(body, "lineOfSightHash");
+  // The complete result has already been canonically serialized by its owning
+  // kernel. Only that exact immutable object's private bytes can be reused;
+  // foreign/dynamic/prepared values remain on the original generic path.
+  const fields = Object.keys(body).sort().map(key => `${JSON.stringify(key)}:${
+    key === "result" ? nativeResultText : canonicalStarcraftTmgJson(body[key])}`);
+  const bodyCharacters = 2 + Math.max(0, fields.length - 1)
+    + fields.reduce((total, value) => total + value.length, 0);
+  if (bodyCharacters > bufferConstants.MAX_STRING_LENGTH) throw new RangeError("Invalid string length");
+  const digest = createHash(STARCRAFT_TMG_HASH_ALGORITHM).update("{");
+  let separator = "";
+  for (const text of fields) {
+    digest.update(separator).update(text);
+    separator = ",";
+  }
+  return freezeDeep({ ...body, lineOfSightHash: digest.update("}").digest("hex") });
 }
 function baseGapInches(state, leftPiece, leftModel, rightPiece, rightModel) {
   const relation = evaluateOfficialPhysicalFootprintRelationV1({
@@ -1131,6 +1340,97 @@ function baseGapInches(state, leftPiece, leftModel, rightPiece, rightModel) {
   });
   return Number((relation.minimumSeparationMilliInches / 1000).toFixed(3));
 }
+function createEnumerationPhysicalGeometryBatch(state) {
+  // Private to ONE synchronous enumeration. Ordered piece AND model references
+  // identify a physical pair; public IDs are not a cache key across snapshots.
+  // Retain only the small fields candidateGeometry actually consumes, not the
+  // full per-terrain assessment body that is already bound by lineOfSightHash.
+  let adapted = null;
+  let elevatedGeometry = null;
+  const byPiece = new WeakMap();
+  function adaptedTerrain() {
+    return adapted ||= terrainAsOrdinaryForLos(state);
+  }
+  function elevatedGeometryBatch() {
+    return elevatedGeometry ||= createOfficialElevatedLineOfSightBatchV1({
+      state: adaptedTerrain().projected,
+      dataBundle: state.officialTerrainLosDataBundle,
+    });
+  }
+  function pairCache(piece, attackerModel, target) {
+    let byModel = byPiece.get(piece);
+    if (!byModel) byPiece.set(piece, byModel = new WeakMap());
+    let byTarget = byModel.get(attackerModel);
+    if (!byTarget) byModel.set(attackerModel, byTarget = new WeakMap());
+    let byTargetModel = byTarget.get(target);
+    if (!byTargetModel) byTarget.set(target, byTargetModel = new WeakMap());
+    return byTargetModel;
+  }
+  function distancesFor(piece, target, modelPairs) {
+    return modelPairs.map(({ attackerModel, targetModel }) => {
+      const cache = pairCache(piece, attackerModel, target);
+      if (!cache.has(targetModel)) cache.set(targetModel, freezeDeep({
+        distanceInches: baseGapInches(state, piece, attackerModel, target, targetModel),
+      }));
+      return cache.get(targetModel).distanceInches;
+    });
+  }
+  function verifyPairs(piece, target, modelPairs) {
+    const missing = modelPairs.filter(({ attackerModel, targetModel }) => (
+      !pairCache(piece, attackerModel, target).get(targetModel)?.inputsValidated
+    ));
+    if (missing.length === 0) return;
+    elevatedGeometryBatch().verifyInputs(
+      missing.map(({ attackerModel, targetModel }) => ({
+        attacker: piece, attackerModelId: attackerModel.id,
+        target, targetModelId: targetModel.id })));
+    for (const { attackerModel, targetModel } of missing) {
+      const cache = pairCache(piece, attackerModel, target);
+      cache.set(targetModel, freezeDeep({ ...cache.get(targetModel), inputsValidated: true }));
+    }
+  }
+  function forPairs(piece, target, modelPairs) {
+    const terrain = adaptedTerrain();
+    const missing = [];
+    const scheduled = new Map();
+    for (const { attackerModel, targetModel } of modelPairs) {
+      const cache = pairCache(piece, attackerModel, target);
+      if (cache.get(targetModel)?.lineOfSightHash) continue;
+      let models = scheduled.get(cache);
+      if (!models) scheduled.set(cache, models = new Set());
+      if (!models.has(targetModel)) {
+        models.add(targetModel);
+        missing.push({ attackerModel, targetModel, cache });
+      }
+    }
+    const rows = missing.length === 0 ? []
+      : elevatedGeometryBatch().project(
+        missing.map(({ attackerModel, targetModel }) => ({
+          attacker: piece, attackerModelId: attackerModel.id,
+          target, targetModelId: targetModel.id })), (result, index) => {
+          const { attackerModel, targetModel, cache } = missing[index];
+          const los = lineOfSightFor(
+            state, piece, attackerModel, target, targetModel, terrain, result,
+          );
+          return freezeDeep({
+            distanceInches: cache.get(targetModel)?.distanceInches
+              ?? baseGapInches(state, piece, attackerModel, target, targetModel),
+            visible: los.visible, highGroundEvadeEligible: los.highGroundEvadeEligible,
+            lineOfSightHash: los.lineOfSightHash, blockingTerrainIds: los.blockingTerrainIds,
+            inputsValidated: true,
+          });
+        });
+    // Publish only after all pairs succeed: a later native failure must not
+    // leave a partially accepted visibility batch in the private pair cache.
+    for (const [index, { targetModel, cache }] of missing.entries()) {
+      cache.set(targetModel, rows[index]);
+    }
+    return modelPairs.map(({ attackerModel, targetModel }) => (
+      pairCache(piece, attackerModel, target).get(targetModel)
+    ));
+  }
+  return { adaptedTerrain, distancesFor, verifyPairs, forPairs };
+}
 function maximumRangeFor(profile, characteristicModifiers, rangedModifiers) {
   const printedNormal = Number(profile.range.normalRangeInches);
   const rangeModifier = Number(characteristicModifiers.rangeModifier || 0);
@@ -1146,30 +1446,48 @@ function maximumRangeFor(profile, characteristicModifiers, rangedModifiers) {
     longRangeSuppressed: characteristicModifiers.longRangeAllowed === false };
 }
 function candidateGeometry(state, piece, target, profile, characteristicModifiers,
-  rangedModifiers) {
+  rangedModifiers, physicalGeometry = null) {
   const pairs = [];
-  const adapted = terrainAsOrdinaryForLos(state);
+  const adapted = physicalGeometry?.adaptedTerrain() || terrainAsOrdinaryForLos(state);
   const ranges = maximumRangeFor(profile, characteristicModifiers, rangedModifiers);
   const indirectFire = Boolean(effectById(profile, "attack-effect:indirect-fire-v1"));
   const contributingModelIds = new Set(contributingModelIdsFor(state, piece, profile));
-  for (const attackerModel of activeModels(piece).filter((entry) => (
-    contributingModelIds.has(entry.id)))) {
-    for (const targetModel of activeModels(target)) {
-      const lineOfSight = lineOfSightFor(
-        state, piece, attackerModel, target, targetModel, adapted,
-      );
-      const distanceInches = baseGapInches(
-        state, piece, attackerModel, target, targetModel,
-      );
-      pairs.push({ attackerModelId: attackerModel.id, targetModelId: targetModel.id,
-        distanceInches, withinMaximumRange: distanceInches
-          <= ranges.maximumRangeInches,
-        rangeBand: distanceInches <= ranges.normalRangeInches ? "normal" : "extended",
-        visible: lineOfSight.visible, highGroundEvadeEligible:
-          lineOfSight.highGroundEvadeEligible,
-        lineOfSightHash: lineOfSight.lineOfSightHash,
-        blockingTerrainIds: lineOfSight.blockingTerrainIds });
-    }
+  const modelPairs = activeModels(piece).filter((entry) => (
+    contributingModelIds.has(entry.id)
+  )).flatMap((attackerModel) => activeModels(target).map((targetModel) => (
+    { attackerModel, targetModel }
+  )));
+  if (physicalGeometry && modelPairs.length > 0
+    && physicalGeometry.distancesFor(piece, target, modelPairs)
+      .every((distance) => distance > ranges.maximumRangeInches)) {
+    // A necessary condition is false for EVERY contributing physical model
+    // pair. Validate original inputs, then retain the original rejection;
+    // no positive visibility/cover/attack fact is inferred from this shortcut.
+    physicalGeometry.verifyPairs(piece, target, modelPairs);
+    fail("SELECTED_RANGED_NO_VISIBLE_TARGET_IN_RANGE", target.id);
+  }
+  const physicalPairs = physicalGeometry?.forPairs(piece, target, modelPairs);
+  const losResults = (physicalPairs || modelPairs.length === 0) ? []
+    : evaluateOfficialElevatedLineOfSightBatchV1({ state: adapted.projected,
+      dataBundle: state.officialTerrainLosDataBundle,
+      queries: modelPairs.map(({ attackerModel, targetModel }) => ({
+        attacker: piece, attackerModelId: attackerModel.id,
+        target, targetModelId: targetModel.id })) });
+  for (const [index, { attackerModel, targetModel }] of modelPairs.entries()) {
+    const lineOfSight = physicalPairs?.[index] || lineOfSightFor(
+      state, piece, attackerModel, target, targetModel, adapted, losResults[index],
+    );
+    const distanceInches = physicalPairs?.[index].distanceInches ?? baseGapInches(
+      state, piece, attackerModel, target, targetModel,
+    );
+    pairs.push({ attackerModelId: attackerModel.id, targetModelId: targetModel.id,
+      distanceInches, withinMaximumRange: distanceInches
+        <= ranges.maximumRangeInches,
+      rangeBand: distanceInches <= ranges.normalRangeInches ? "normal" : "extended",
+      visible: lineOfSight.visible, highGroundEvadeEligible:
+        lineOfSight.highGroundEvadeEligible,
+      lineOfSightHash: lineOfSight.lineOfSightHash,
+      blockingTerrainIds: lineOfSight.blockingTerrainIds });
   }
   const eligiblePairs = pairs.filter((pair) => (pair.visible || indirectFire)
     && pair.withinMaximumRange);
@@ -1562,7 +1880,25 @@ function planAttackResolution(state, piece, target, profile, geometry, targetPro
         battlefieldAttackerModifiers.applicableDefinitionIds || [] },
     rangedModifiers };
 }
+function previewContextKey(sideKey, pieceId, targetId, profileKey, choices = {}) {
+  return JSON.stringify([sideKey, pieceId, targetId,
+    profileKey, choices.pointDefenseSourcePieceIds || [],
+    choices.pointDefenseRemovedDieIds || []]);
+}
 function contextFor(state, sideKey, piece, target, profileKey, shared = {}) {
+  const prepared = PREVIEW_CONTEXTS_BY_OWNED_STATE.get(state);
+  const contextKey = prepared ? previewContextKey(sideKey, piece.id, target.id,
+    profileKey, shared.pointDefenseChoices) : null;
+  const observe = (kind) => {
+    if (typeof prepared?.observe !== "function") return;
+    try { prepared.observe({ stage: kind, sideKey, pieceId: piece.id,
+      targetUnitId: target.id, profileKey }); } catch { /* Diagnostics only. */ }
+  };
+  if (prepared?.contexts.has(contextKey)) {
+    observe("ranged_preview_context_reused");
+    return prepared.contexts.get(contextKey);
+  }
+  observe("ranged_preview_context_started");
   const graph = shared.graph || deriveOfficialEngagementGraphV2(state);
   const { loadout, profiles: allProfiles } = shared.loadoutAndProfiles
     || activeProfilesFor(state, piece);
@@ -1587,13 +1923,24 @@ function contextFor(state, sideKey, piece, target, profileKey, shared = {}) {
       { pieceId: piece.id, context: { weaponName: profile.weaponName,
         targetPieceId: target.id } },
     ) : {};
+  observe("ranged_preview_geometry_started");
   const geometry = candidateGeometry(state, piece, target, profile,
-    characteristicModifiers, rangedModifiers);
+    characteristicModifiers, rangedModifiers, shared.physicalGeometry);
+  observe("ranged_preview_geometry_completed");
+  observe("ranged_preview_plan_started");
   const attack = planAttackResolution(
     state, piece, target, profile, geometry, targetProfile, engagement, graph,
     shared.pointDefenseChoices || {},
   );
-  return { graph, engagement, loadout, profile, targetProfile, geometry, ...attack };
+  observe("ranged_preview_plan_completed");
+  const context = { graph, engagement, loadout, profile, targetProfile, geometry, ...attack };
+  if (prepared) {
+    // The enum and later previews use identical native context on this one
+    // owned snapshot. Non-default point-defense choices have separate keys.
+    prepared.contexts.set(contextKey, freezeDeep(context));
+    observe("ranged_preview_context_constructed");
+  }
+  return context;
 }
 function domainFor(state, sideKey, piece, profile, targets) {
   const pointDefenseSourceIds = [...new Set(targets.flatMap((entry) => (
@@ -1664,6 +2011,11 @@ function diagnostic(sideKey, piece, profile, error) {
 
 export function enumerateOfficialSelectedRosterRangedActionsV1(state, options = {}) {
   verifyRuntimeState(state);
+  const prepared = nativeRangedPreparationFromVerifiedState(state, options);
+  return prepared?.enumeration || enumerateRangedFromVerifiedState(state, options);
+}
+
+function enumerateRangedFromVerifiedState(state, options = {}) {
   const sideKey = String(options.sideKey || state.activeSideKey || "");
   if (!SIDE_KEYS.has(sideKey)) fail("SELECTED_RANGED_SIDE_INVALID", sideKey);
   const parameterDomains = [];
@@ -1702,6 +2054,7 @@ export function enumerateOfficialSelectedRosterRangedActionsV1(state, options = 
   try { graph = deriveOfficialEngagementGraphV2(state); } catch (error) {
     if (options.includeDisabled !== true) throw error;
   }
+  const physicalGeometry = createEnumerationPhysicalGeometryBatch(state);
   for (const piece of state.pieces.filter((entry) => (
     entry.sideKey === sideKey && livePiece(entry)
       && (!pending || pending.pieceId === entry.id)
@@ -1728,7 +2081,7 @@ export function enumerateOfficialSelectedRosterRangedActionsV1(state, options = 
         try {
           targets.push({ target, context: contextFor(
             state, sideKey, piece, target, profile.profileKey,
-            { graph, loadoutAndProfiles },
+            { graph, loadoutAndProfiles, physicalGeometry },
           ) });
         } catch (error) {
           firstError ||= error;
@@ -1762,6 +2115,12 @@ export function instantiateOfficialSelectedRosterRangedActionV1(
   state, domain, parameters,
 ) {
   verifyRuntimeState(state);
+  return instantiateRangedFromVerifiedState(state, domain, parameters);
+}
+
+function instantiateRangedFromVerifiedState(
+  state, domain, parameters, preparedEnumeration = null,
+) {
   if (domain?.parameterKind
     === OFFICIAL_SELECTED_ROSTER_RANGED_CASUALTY_PARAMETER_KIND) {
     const pending = pendingCasualtyChoice(state);
@@ -1822,9 +2181,11 @@ export function instantiateOfficialSelectedRosterRangedActionV1(
       "pointDefenseSourcePieceIds", "pointDefenseRemovedDieIds"].includes(key))) {
     fail("SELECTED_RANGED_PARAMETER_DOMAIN_INVALID");
   }
-  const current = enumerateOfficialSelectedRosterRangedActionsV1(state, {
+  const enumeration = preparedEnumeration
+    || enumerateOfficialSelectedRosterRangedActionsV1(state, {
     sideKey: domain.sideKey, includeDisabled: true,
-  }).parameterDomains.find((entry) => entry.domainId === domain.domainId);
+  });
+  const current = enumeration.parameterDomains.find((entry) => entry.domainId === domain.domainId);
   if (!current || !isDeepStrictEqual(current, domain)) {
     fail("SELECTED_RANGED_PARAMETER_DOMAIN_STALE");
   }
@@ -1852,7 +2213,13 @@ export function instantiateOfficialSelectedRosterRangedActionV1(
   }
   const canonicalParameters = { targetUnitId,
     pointDefenseSourcePieceIds, pointDefenseRemovedDieIds };
-  const context = contextFor(state, domain.sideKey, piece, target, domain.profileKey, {
+  const contextState = plainRangedDataTree(parameters)
+    ? nativeContextStateForEnumeration(state, enumeration) : state;
+  const contextPiece = contextState === state ? piece
+    : contextState.pieces.find(entry => entry.id === piece.id);
+  const contextTarget = contextState === state ? target
+    : contextState.pieces.find(entry => entry.id === target.id);
+  const context = contextFor(contextState, domain.sideKey, contextPiece, contextTarget, domain.profileKey, {
     pointDefenseChoices: canonicalParameters,
   });
   const planBody = {
@@ -1913,6 +2280,84 @@ export function previewOfficialSelectedRosterRangedActionV1(state, domain, param
   const instantiated = instantiateOfficialSelectedRosterRangedActionV1(
     state, domain, parameters,
   );
+  return previewRangedInstantiation(instantiated);
+}
+
+// Read-only queries on one fixed counterfactual need one COMPLETE enumeration,
+// not a fresh all-side enumeration per target/profile. Never accept a caller's
+// enumeration as authority: this factory derives its own from a private snapshot.
+export function createOfficialSelectedRosterRangedPreviewBatchV1(state, options = {}) {
+  const snapshot = freezeDeep(clone(state));
+  return createRangedPreviewBatchFromOwnedState(snapshot, options);
+}
+
+function createRangedPreviewBatchFromOwnedState(snapshot, options) {
+  PREVIEW_CONTEXTS_BY_OWNED_STATE.set(snapshot, { contexts: new Map(),
+    observe: typeof options.observeContext === "function" ? options.observeContext : null });
+  const enumeration = enumerateOfficialSelectedRosterRangedActionsV1(snapshot, {
+    ...options, includeDisabled: true,
+  });
+  return Object.freeze({
+    enumeration,
+    preview(domain, parameters) {
+      return previewRangedInstantiation(instantiateRangedFromVerifiedState(
+        snapshot, domain, parameters, enumeration,
+      ));
+    },
+    // Internal readonly CPU work only. A domain/parameter still passes the
+    // COMPLETE native instantiation above; callers cannot supply a context.
+    // Transfer the same native facts to the owned worker instead of recomputing
+    // geometry after the parent has already done it on this fixed snapshot.
+    previewWork(domain, parameters) {
+      const instantiated = instantiateRangedFromVerifiedState(
+        snapshot, domain, parameters, enumeration);
+      const action = instantiated.action;
+      const chanceContext = PREVIEW_CONTEXTS_BY_OWNED_STATE.get(snapshot).contexts
+        .get(previewContextKey(action.sideKey, action.pieceId, action.targetId,
+          action.rangedPlan.profileKey, action.rangedPlan.canonicalParameters));
+      if (!chanceContext) fail("SELECTED_RANGED_OWNED_PREVIEW_CONTEXT_MISSING");
+      return freezeDeep({ preview: previewRangedInstantiation(instantiated), chanceContext });
+    },
+  });
+}
+
+// One in-process readonly query owns one COMPLETE fixed snapshot. Its native
+// preview, chance and casualty projections cannot substitute caller-provided
+// state/context. The standalone and transferred-worker factories above/below
+// still own and validate independent copies at their external seams.
+export function createOfficialSelectedRosterRangedQueryBatchV1(state, options = {}) {
+  const snapshot = freezeDeep(clone(state));
+  const previews = createRangedPreviewBatchFromOwnedState(snapshot, options);
+  const casualties = createCasualtyStrategyBatchFromOwnedState(snapshot);
+  return Object.freeze({
+    snapshot,
+    enumeration: previews.enumeration,
+    projectCasualty: casualties.project,
+    previewWork(domain, parameters) {
+      // Both action and context were just derived by the SAME native private
+      // batch, not imported from a worker. Retain their actual owned objects;
+      // no public flags, IDs or hashes authorize snapshot/context reuse.
+      const work = previews.previewWork(domain, parameters);
+      return Object.freeze({
+        preview: work.preview,
+        createChanceResolver(resolverOptions = {}) {
+          const startedAtMs = Date.now();
+          const resolver = fixedRangedChanceResolver(
+            snapshot, work.preview.action, work.chanceContext);
+          try { resolverOptions.observeContext?.({
+            stage: "ranged_chance_context_reused_from_preview",
+            pieceId: work.preview.action.pieceId,
+            targetUnitId: work.preview.action.targetId,
+            startedAtMs, completedAtMs: Date.now(),
+          }); } catch { /* Diagnostics only. */ }
+          return resolver;
+        },
+      });
+    },
+  });
+}
+
+function previewRangedInstantiation(instantiated) {
   return seal({
     schemaVersion: "starcraft_tmg_selected_roster_ranged_preview_v1",
     semanticVersion: "1.0.0", action: instantiated.action,
@@ -1927,16 +2372,92 @@ export function previewOfficialSelectedRosterRangedActionV1(state, domain, param
   }, "previewHash");
 }
 
-export function resolveOfficialSelectedRosterRangedChanceV1(
-  state, action, options = {},
-) {
+function rangedChanceContextForAction(state, action) {
   const piece = state.pieces.find((entry) => entry.id === action.pieceId);
   const target = state.pieces.find((entry) => entry.id === action.targetId);
-  const context = contextFor(
+  return contextFor(
     state, action.sideKey, piece, target, action.rangedPlan.profileKey, {
       pointDefenseChoices: action.rangedPlan.canonicalParameters,
     },
   );
+}
+
+export function resolveOfficialSelectedRosterRangedChanceV1(
+  state, action, options = {},
+) {
+  return resolveRangedChanceWithContext(state, action, options,
+    rangedChanceContextForAction(state, action));
+}
+
+// Probability sampling changes only dice/Precision choices, not the board,
+// loadout or LOS. Own one private snapshot per experiment; never cache it by
+// public unit ids or reuse it across Room revisions. The scalar API above keeps
+// reading its caller's current state on every independent resolution.
+export function createOfficialSelectedRosterRangedChanceResolverV1(state, action, options = {}) {
+  const startedAtMs = Date.now();
+  const snapshot = freezeDeep(clone(state));
+  const fixedAction = freezeDeep(clone(action));
+  const context = freezeDeep(rangedChanceContextForAction(snapshot, fixedAction));
+  try { options.observeContext?.({ stage: "ranged_chance_context_constructed",
+    pieceId: fixedAction.pieceId, targetUnitId: fixedAction.targetId,
+    startedAtMs, completedAtMs: Date.now() }); } catch { /* Diagnostics only. */ }
+  return fixedRangedChanceResolver(snapshot, fixedAction, context);
+}
+
+// Private readonly-work protocol, never consumed by public preview/Apply or a
+// query argument. The Room adapter produced this native context and transferred
+// it alongside its validated preview to a worker owning that same frozen state.
+// Keep independent owned copies and the original resolver/sample stream. These
+// consistency checks catch an internal crossed job; they grant no Rules authority.
+export function createOfficialSelectedRosterRangedWorkChanceResolverV1(
+  state, action, preparedContext, options = {},
+) {
+  const startedAtMs = Date.now();
+  const snapshot = freezeDeep(clone(state));
+  const fixedAction = freezeDeep(clone(action));
+  const context = freezeDeep(clone(preparedContext));
+  const plan = fixedAction.rangedPlan;
+  if (!context || !plan
+    || context.mechanicalPlan?.planHash !== plan.attackPlanHash
+    || context.profile?.profileKey !== plan.profileKey
+    || context.profile?.profileHash !== plan.sourceProfileHash
+    || context.profileForBatch?.profileHash !== plan.batchProfileHash
+    || context.loadout?.loadoutHash !== plan.weaponLoadoutHash
+    || context.graph?.graphHash !== plan.engagementGraphHash
+    || !isDeepStrictEqual(context.geometry?.pairs, plan.modelPairEvidence)
+    || !isDeepStrictEqual(context.geometry?.eligibleAttackerModelIds,
+      plan.eligibleAttackerModelIds)
+    || !isDeepStrictEqual(context.geometry?.visibleTargetModelIds,
+      plan.visibleTargetModelIds)) {
+    fail("SELECTED_RANGED_OWNED_CHANCE_CONTEXT_MISMATCH");
+  }
+  try { options.observeContext?.({ stage: "ranged_chance_context_reused_from_preview",
+    pieceId: fixedAction.pieceId, targetUnitId: fixedAction.targetId,
+    startedAtMs, completedAtMs: Date.now() }); } catch { /* Diagnostics only. */ }
+  return fixedRangedChanceResolver(snapshot, fixedAction, context);
+}
+
+function fixedRangedChanceResolver(snapshot, fixedAction, context) {
+  const resolve = (options = {}) => resolveRangedChanceWithContext(
+    snapshot, fixedAction, options, context,
+  );
+  return Object.freeze(Object.assign(resolve, {
+    resolvePool: (options = {}) => resolveRangedPoolWithContext(context, options),
+    casualtyDomainForResolution: (resolution) => rangedCasualtyDomainForResolution(
+      snapshot, fixedAction, context, resolution,
+    ),
+  }));
+}
+
+function resolveRangedChanceWithContext(state, action, options, context) {
+  const { resolution } = resolveRangedPoolWithContext(context, options);
+  const casualtyDomain = rangedCasualtyDomainForResolution(
+    state, action, context, resolution,
+  );
+  return freezeDeep({ context, resolution, casualtyDomain });
+}
+
+function resolveRangedPoolWithContext(context, options) {
   const mechanicalResolution = resolveMechanicalPlan(
     context.mechanicalPlan, options.chanceReveals,
   );
@@ -2009,14 +2530,19 @@ export function resolveOfficialSelectedRosterRangedChanceV1(
     rulesTruth: "official_selected_roster_ranged_pool_resolution",
     trainingTruth: false,
   }, "resolutionHash");
-  const casualtyDomain = createOfficialCurrentProductCasualtyDomainV1({
+  return freezeDeep({ context, resolution });
+}
+
+function rangedCasualtyDomainForResolution(state, action, context, resolution) {
+  const target = state.pieces.find((entry) => entry.id === action.targetId);
+  return createOfficialCurrentProductCasualtyDomainV1({
     targetPiece: target, targetProfile: context.targetProfile,
-    incomingDamage: Number(stages.damage.totalDamage),
+    incomingDamage: Number(resolution.stages.damage.totalDamage),
+    damagePoolReduction: resolution.stages.damage.reactionDamagePool || null,
     visibleModelIds: context.geometry.visibleTargetModelIds,
     engagementGraph: context.graph, attackResolutionHash: resolution.resolutionHash,
     rulesRuntimeHash: state.officialMissionRuntimeDescriptor.runtimeHash,
   });
-  return freezeDeep({ context, resolution, casualtyDomain });
 }
 
 export function createOfficialCurrentProductCasualtyDomainV1(input) {
@@ -2029,7 +2555,13 @@ export function createOfficialCurrentProductCasualtyDomainV1(input) {
   const shieldCapacityApplied = shieldValue > 0
     && targetPiece.firstModelShieldCapacityApplied !== false;
   const firstModelHitPoints = hitPoints + (shieldCapacityApplied ? shieldValue : 0);
-  const totalDamage = priorDamageMarker + incomingDamage;
+  const pool = input.damagePoolReduction;
+  if (pool && (pool.priorDamageMarker !== priorDamageMarker
+    || pool.incomingDamage !== incomingDamage
+    || pool.resolutionHash !== hashStarcraftTmgContract(without(pool,['resolutionHash'])))) {
+    fail('SELECTED_RANGED_DAMAGE_POOL_BINDING_INVALID');
+  }
+  const totalDamage = pool ? pool.totalDamageAfterReduction : priorDamageMarker + incomingDamage;
   const uncappedCasualtyCount = totalDamage < firstModelHitPoints ? 0
     : 1 + Math.floor((totalDamage - firstModelHitPoints) / hitPoints);
   const remainder = totalDamage < firstModelHitPoints
@@ -2070,6 +2602,7 @@ export function createOfficialCurrentProductCasualtyDomainV1(input) {
     firstModelHitPoints,
     priorDamageMarker,
     incomingDamage,
+    ...(pool ? {damagePoolReduction:clone(pool)} : {}),
     totalDamage,
     casualtyCount,
     postDamageMarker,
@@ -2246,7 +2779,7 @@ function openOfficialSelectedRosterRangedCasualtyChoiceV1(
   const pendingBody = {
     schema:
       "starcraft_tmg_official_current_product_ranged_casualty_choice_v1",
-    semanticVersion: "1.0.0",
+    semanticVersion: "1.1.0",
     round: Number(state.round),
     phase: state.phase,
     attackerSideKey: actionInput.sideKey,
@@ -2256,6 +2789,7 @@ function openOfficialSelectedRosterRangedCasualtyChoiceV1(
     attackAction: clone(actionInput),
     attackActionHash: hashStarcraftTmgContract(actionInput),
     attackResolutionHash: chance.resolution.resolutionHash,
+    resolvedChance: clone(chance),
     chanceReveals: clone(chance.resolution.reveals),
     casualtyDomain: clone(chance.casualtyDomain),
     casualtyDomainHash: chance.casualtyDomain.domainHash,
@@ -2351,9 +2885,10 @@ export function applyOfficialSelectedRosterRangedCasualtyChoiceV1(
   const restored = clone(stateInput);
   delete restored.pendingCurrentProductRangedCasualtyChoice;
   restored.activeSideKey = pending.attackerSideKey;
-  const settled = applyOfficialSelectedRosterRangedActionV1(
+  const settled = settleOfficialSelectedRosterRangedResolvedChanceV1(
     restored,
     pending.attackAction,
+    pending.resolvedChance,
     {
       ...options,
       chanceReveals: clone(pending.chanceReveals),
@@ -2396,6 +2931,153 @@ export function applyOfficialSelectedRosterRangedCasualtyChoiceV1(
   });
 }
 
+function openOfficialSelectedRosterRangedDamageReactionV1(state,action,chance) {
+  if (Number(chance.resolution.stages.damage.totalDamage) <= 0
+    || !state.officialReactionFamilySourceBundle) return null;
+  if (state.pendingCurrentProductRangedDamageReaction)
+    fail('SELECTED_RANGED_DAMAGE_REACTION_ALREADY_PENDING');
+  const bundle=state.officialReactionFamilySourceBundle;
+  const adapter=createOfficialReactionFamilyAdapterV1(bundle);
+  const activationId=state.selectedRosterActivationWindow
+    ? `${Number(state.round)}:${state.phase}:${state.selectedRosterActivationWindow.sideKey}:${state.selectedRosterActivationWindow.pieceId}`
+    : `${Number(state.round)}:${state.phase}:${action.sideKey}:${action.pieceId}`;
+  const sourceActionHash=hashStarcraftTmgContract(action);
+  const opened=openOfficialReactionFamilyWindowV1(bundle,state,{
+    triggerKind:'damage_received',activeSideKey:action.sideKey,phase:state.phase,
+    activationId,sourceActionHash,resumeActionHash:sourceActionHash,
+    context:{attackerPieceId:action.pieceId,actorPieceId:action.pieceId,
+      targetPieceId:action.targetId,affectedPieceId:action.targetId,
+      validTargetUnitIds:[action.targetId],
+      incomingDamage:chance.resolution.stages.damage.totalDamage,
+      enemyReactionAllowed:action.rangedPlan.reactionPolicy?.enemyDeclarationAllowed!==false}});
+  const first=adapter.legalSpace(opened.state,{sideKey:action.sideKey});
+  const pass=first.parameterDomains.find(d=>d.actionType==='pass_reaction_family_window');
+  const defender=pass ? adapter.apply(opened.state,{action:adapter.preview(opened.state,
+    {domain:pass,parameters:{}}).action}) : null;
+  const second=defender ? adapter.legalSpace(defender.state,{sideKey:otherSide(action.sideKey)}) : null;
+  const hasReaction=[...first.parameterDomains,...(second?.parameterDomains||[])]
+    .some(d=>d.actionType==='resolve_reaction_family_ability');
+  if (!hasReaction) return null; // No optional choice is invented or paid.
+  const next=clone(opened.state);
+  next.pendingCurrentProductRangedDamageReaction=seal({
+    schema:'starcraft_tmg_official_ranged_damage_reaction_checkpoint_v1',
+    attackAction:clone(action),resolvedChance:clone(chance),
+    triggerHash:next.pendingOfficialReactionWindow.triggerHash,
+    sourceActionHash,round:Number(state.round),phase:state.phase,
+    rulesTruth:'native_ranged_damage_before_casualty_checkpoint',trainingTruth:false,
+  },'checkpointHash');
+  next.activeSideKey=next.pendingOfficialReactionWindow.prioritySideKeys[0];
+  return freezeDeep({...opened,state:next,action:clone(action),
+    runtimeId:OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_ID,
+    runtimeVersion:OFFICIAL_SELECTED_ROSTER_RANGED_ACTION_RUNTIME_VERSION});
+}
+
+function applyNativeDamageReactionProjection(state,action,resolvedChance,projection) {
+  const chance=clone(resolvedChance);
+  const target=state.pieces.find(p=>p.id===action.targetId);
+  const pool=resolveOfficialTotalDamagePoolReductionV1({
+    priorDamageMarker:Number(target.damageMarker||0),
+    incomingDamage:Number(chance.resolution.stages.damage.totalDamage),
+    requestedReduction:projection.damageReduction,
+    minimumDamage:projection.minimumDamage,
+    reductionSourceHash:projection.resolutionHash});
+  const stages=clone(chance.resolution.stages);
+  stages.damage.reactionDamagePool=clone(pool);
+  chance.resolution=seal({...without(chance.resolution,['resolutionHash']),stages,
+    damageReactionResolutionHash:projection.resolutionHash},'resolutionHash');
+  chance.casualtyDomain=rangedCasualtyDomainForResolution(state,action,chance.context,chance.resolution);
+  return freezeDeep(chance);
+}
+
+export function validateOfficialRangedDamageReactionChoicesV1(choices) {
+  const keys=['sideKey','choiceKind','definitionId','sourceInstanceId','paymentCardInstanceIds'];
+  if (!Array.isArray(choices)||choices.length!==2||new Set(choices.map(c=>c?.sideKey)).size!==2
+    ||choices.some(c=>!object(c)||!SIDE_KEYS.has(c.sideKey)
+      ||Object.keys(c).some(k=>!keys.includes(k))||keys.some(k=>!Object.hasOwn(c,k))
+      ||!['pass','reaction'].includes(c.choiceKind)||!Array.isArray(c.paymentCardInstanceIds)
+      ||c.paymentCardInstanceIds.some(id=>typeof id!=='string'||!id)
+      ||new Set(c.paymentCardInstanceIds).size!==c.paymentCardInstanceIds.length
+      ||(c.choiceKind==='pass'?(c.definitionId!==null||c.sourceInstanceId!==null||c.paymentCardInstanceIds.length!==0)
+        :typeof c.definitionId!=='string'||!c.definitionId||typeof c.sourceInstanceId!=='string'||!c.sourceInstanceId))) {
+    fail('SELECTED_RANGED_DAMAGE_REACTION_POLICY_INVALID');
+  }
+  return clone(choices);
+}
+
+// Read-only counterfactual policy on one actual sampled roll. Reuses the SAME
+// window, payment, effect and pooled-casualty implementation as public Apply.
+// No implicit best reaction, replacement choice or full-match continuation.
+export function resolveOfficialSelectedRosterRangedDamageReactionPolicyV1({state,action,chance,choices}) {
+  const selected=validateOfficialRangedDamageReactionChoicesV1(choices);
+  const opened=openOfficialSelectedRosterRangedDamageReactionV1(state,action,chance);
+  if (!opened) {
+    if (Number(chance.resolution.stages.damage.totalDamage)>0
+      &&selected.some(c=>c.choiceKind!=='pass')) fail('SELECTED_RANGED_DAMAGE_REACTION_CHOICE_NOT_LEGAL');
+    return {chance,effects:[],payments:[],cardExhaustions:[],nativeReactionResolutionHash:null,
+      positiveDamageTriggered:false,trainingTruth:false};
+  }
+  const adapter=createOfficialReactionFamilyAdapterV1(state.officialReactionFamilySourceBundle);
+  let current=opened.state;
+  const events=[];
+  while (current.pendingOfficialReactionWindow) {
+    const window=current.pendingOfficialReactionWindow;
+    const sideKey=window.prioritySideKeys[window.priorityIndex];
+    const choice=selected.find(c=>c.sideKey===sideKey);
+    const domains=adapter.legalSpace(current,{sideKey}).parameterDomains;
+    const domain=domains.find(d=>choice.choiceKind==='pass'
+      ?d.actionType==='pass_reaction_family_window'
+      :d.actionType==='resolve_reaction_family_ability'&&d.definitionId===choice.definitionId
+        &&d.sourceInstanceId===choice.sourceInstanceId
+        &&isDeepStrictEqual(d.parameterSchema.paymentCardInstanceIds.const,
+          [...choice.paymentCardInstanceIds].sort()));
+    if (!domain) fail('SELECTED_RANGED_DAMAGE_REACTION_CHOICE_NOT_LEGAL',sideKey);
+    const parameters=choice.choiceKind==='pass'?{}:{paymentCardInstanceIds:choice.paymentCardInstanceIds};
+    const result=adapter.apply(current,{action:adapter.preview(current,{domain,parameters}).action});
+    events.push(...result.events.map(e=>({...e,policySideKey:sideKey})));current=result.state;
+  }
+  const consumed=consumeOfficialReactionFamilyResolutionV1(current,
+    opened.state.pendingOfficialReactionWindow.triggerHash);
+  const payments=events.filter(e=>e.type==='reaction_resource_paid').map(e=>({
+    sideKey:e.policySideKey,
+    resourceType:e.resourceType,cost:e.resourceCost,printedCost:e.printedResourceCost,
+    exhaustedCardInstanceIds:clone(e.exhaustedCardInstanceIds)}));
+  const cardExhaustions=Object.entries(state.cardResources||{}).flatMap(([sideKey,cards])=>cards
+    .filter(c=>c.readiness==='ready'&&consumed.state.cardResources[sideKey].find(n=>n.cardInstanceId===c.cardInstanceId)?.readiness==='exhausted')
+    .map(c=>({sideKey,cardInstanceId:c.cardInstanceId,resourceType:c.resourceType,printedResource:c.resource})));
+  return freezeDeep({chance:applyNativeDamageReactionProjection(consumed.state,action,chance,consumed.projection),
+    effects:clone(consumed.projection.effects),payments,cardExhaustions,
+    nativeReactionResolutionHash:consumed.projection.resolutionHash,
+    positiveDamageTriggered:true,trainingTruth:false});
+}
+
+// Called after the real reaction adapter closes BOTH priority choices. The
+// recorded dice are not rolled again and payment is not replayed. A casualty
+// choice stores this resolved chance and returns here only through settlement.
+export function resumeOfficialSelectedRosterRangedDamageReactionV1(stateInput,options={}) {
+  const pending=stateInput.pendingCurrentProductRangedDamageReaction;
+  if (!pending || stateInput.pendingOfficialReactionWindow) return null;
+  if (pending.schema!=='starcraft_tmg_official_ranged_damage_reaction_checkpoint_v1'
+    || pending.checkpointHash!==hashStarcraftTmgContract(without(pending,['checkpointHash']))
+    || pending.sourceActionHash!==hashStarcraftTmgContract(pending.attackAction)
+    || pending.round!==Number(stateInput.round) || pending.phase!==stateInput.phase) {
+    fail('SELECTED_RANGED_DAMAGE_REACTION_CHECKPOINT_INVALID');
+  }
+  const consumed=consumeOfficialReactionFamilyResolutionV1(stateInput,pending.triggerHash);
+  const state=clone(consumed.state);
+  delete state.pendingCurrentProductRangedDamageReaction;
+  state.activeSideKey=pending.attackAction.sideKey;
+  const chance=applyNativeDamageReactionProjection(state,pending.attackAction,pending.resolvedChance,consumed.projection);
+  const pool=chance.resolution.stages.damage.reactionDamagePool;
+  const settled=settleOfficialSelectedRosterRangedResolvedChanceV1(state,
+    pending.attackAction,chance,options);
+  const next=clone(settled.state);
+  const event={type:'ranged_damage_reaction_resumed',triggerHash:pending.triggerHash,
+    reactionResolutionHash:consumed.projection.resolutionHash,
+    damagePool:clone(pool),chanceReusedWithoutReroll:true,trainingTruth:false};
+  if (next.log?.length) next.log.at(-1).events=[event,...(next.log.at(-1).events||[])];
+  return freezeDeep({...settled,state:next,events:[event,...settled.events]});
+}
+
 export function applyOfficialSelectedRosterRangedActionV1(
   stateInput, actionInput, options = {},
 ) {
@@ -2406,19 +3088,29 @@ export function applyOfficialSelectedRosterRangedActionV1(
     || actionInput.rangedPlan?.schemaVersion !== OFFICIAL_SELECTED_ROSTER_RANGED_PLAN_SCHEMA) {
     fail("SELECTED_RANGED_ACTION_INVALID");
   }
-  const domain = enumerateOfficialSelectedRosterRangedActionsV1(stateInput, {
+  const enumeration = enumerateOfficialSelectedRosterRangedActionsV1(stateInput, {
     sideKey: actionInput.sideKey, includeDisabled: true,
-  }).parameterDomains.find((entry) => entry.domainId === actionInput.rangedPlan.domainId);
+  });
+  const domain = enumeration.parameterDomains.find((entry) =>
+    entry.domainId === actionInput.rangedPlan.domainId);
   if (!domain) fail("SELECTED_RANGED_PARAMETER_DOMAIN_STALE");
-  const current = instantiateOfficialSelectedRosterRangedActionV1(
-    stateInput, domain, actionInput.rangedPlan.canonicalParameters,
+  // Enumeration already verified this state, and no mutation or caller hook
+  // occurs before instantiation. Reuse only this private local result; public
+  // callers cannot supply prepared facts or bypass the exact action comparison.
+  const current = instantiateRangedFromVerifiedState(
+    stateInput, domain, actionInput.rangedPlan.canonicalParameters, enumeration,
   );
   if (!isDeepStrictEqual(current.action, actionInput)) {
     fail("SELECTED_RANGED_ACTION_STALE");
   }
-  const chance = resolveOfficialSelectedRosterRangedChanceV1(
-    stateInput, actionInput, options,
-  );
+  const chanceState = nativeContextStateForEnumeration(stateInput, enumeration);
+  const chance = resolveOfficialSelectedRosterRangedChanceV1(chanceState, actionInput, options);
+  const interrupted = openOfficialSelectedRosterRangedDamageReactionV1(stateInput,actionInput,chance);
+  if (interrupted) return interrupted;
+  return settleOfficialSelectedRosterRangedResolvedChanceV1(stateInput,actionInput,chance,options);
+}
+
+function settleOfficialSelectedRosterRangedResolvedChanceV1(stateInput,actionInput,chance,options={}) {
   const selectionHash = String(options.casualtySelectionHash
     || (chance.casualtyDomain.legalSelections.length === 1
       ? chance.casualtyDomain.legalSelections[0].selectionHash : ""));
@@ -2718,6 +3410,7 @@ export function createOfficialSelectedRosterRangedActionRuntimeV1(state) {
     defenderPointDefenseChoiceBoundIntoActionPlan: true,
     sequentialWeaponBatchesAndVoluntaryFinishExact: true,
     afterActionAbilityWindowIntegrated: true,
+    damageReactionBeforeCasualtyIntegrated: true,
     legalSpacePreviewApplyAndQueryShareInstantiation: true,
     sourceRefreshPerformed: false, productionRoomEligible: false,
     rulesTruth: "official_selected_roster_ranged_runtime",

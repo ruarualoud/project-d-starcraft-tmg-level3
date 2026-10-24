@@ -2,6 +2,7 @@
 
 import assert from "node:assert/strict";
 import {
+  bindStarcraftTmgFormationSelectionV1,
   inspectStarcraftTmgFormationThreatClaimsV1,
   inspectStarcraftTmgOpponentPredictionFeasibilityV1,
   normalizeStarcraftTmgOpponentPredictionsV1,
@@ -14,6 +15,259 @@ import { projectStarcraftTmgThreatActionWindowV1 } from
   "../packages/online-agent-session/tactical-relationship-graph-v1.mjs";
 import { projectStarcraftTmgUnitSupplyControlV1 } from
   "../packages/online-agent-session/player-spatial-observation-v1.mjs";
+import { effectiveStarcraftTmgSemanticCorrectionsV1 } from
+  "../packages/online-agent-session/live-output-capacity-policy-v1.mjs";
+
+if (process.argv.includes("--saved-e-r21-action-prediction-only")) {
+  const { readFileSync } = await import("node:fs");
+  const { basename } = await import("node:path");
+  const { DatabaseSync } = await import("node:sqlite");
+  const { gunzipSync } = await import("node:zlib");
+  const { createStarcraftTmgPrivatePayloadCodec } = await import(
+    "../packages/room-store/room-store-v1.mjs");
+  const directory = process.argv.find((arg) => arg.startsWith("--run-directory="))
+    ?.slice("--run-directory=".length);
+  assert(directory);
+  const privateState = JSON.parse(readFileSync(
+    `${directory}/runner-private.json`, "utf8"));
+  const codec = createStarcraftTmgPrivatePayloadCodec({
+    key: privateState.storeEncryptionKeyBase64,
+    keyId: `ticket23-slice248-room-store-${basename(directory)}`,
+    trustLevel: "development_persistent",
+  });
+  const roomDb = new DatabaseSync(`${directory}/room.sqlite`, { readOnly: true });
+  const { envelope } = codec.decode(roomDb.prepare(
+    "SELECT aggregate_cipher FROM sc_rooms WHERE room_id = ?")
+    .get(privateState.roomId).aggregate_cipher,
+  `room:${privateState.roomId}:aggregate`);
+  roomDb.close();
+  assert.equal(envelope.stateRevision, 21);
+  const db = new DatabaseSync(
+    `${directory}/seats/player1/provider/live-decisions.sqlite`,
+    { readOnly: true });
+  let outer;
+  try { outer = JSON.parse(db.prepare(
+    "SELECT record_json FROM sc_live_decision_records ORDER BY revision DESC LIMIT 1"
+  ).get().record_json); }
+  finally { db.close(); }
+  const record = JSON.parse(gunzipSync(Buffer.from(outer.payload, "base64")));
+  const choice = Object.values(record.decisions).find((entry) =>
+    entry.authority.stateRevision === 21
+      && entry.status === "provider_output_invalid");
+  assert(choice);
+  assert.equal(choice.stage, "action");
+  assert.equal(choice.semanticCorrectionRounds, 4);
+  assert.equal(choice.stageCorrectionRounds, 1);
+  assert.equal(effectiveStarcraftTmgSemanticCorrectionsV1(choice), 1,
+    "Planner corrections must not consume the Action correction budget");
+  const submission = choice.attempts[choice.attemptKeys.at(-1)]
+    .safeOutput.providerTurn.toolCalls.find((call) =>
+      call.name === "submit_decision").arguments;
+  const observation = {
+    units: envelope.state.pieces.filter((piece) => piece.isOnField === true)
+      .map((piece) => ({ unitId: piece.id,
+        sideRelation: piece.sideKey === "player1" ? "own" : "opponent" })),
+    offTableUnits: envelope.state.pieces.filter((piece) =>
+      piece.isInReserves === true).map((piece) => ({ unitId: piece.id,
+        sideRelation: piece.sideKey === "player1" ? "own" : "opponent",
+        isInReserves: true, isDestroyed: piece.isDestroyed === true })),
+  };
+  const original = submission.intent.predictedOpponentResponses[0];
+  assert.equal(original.likelyActorUnitId, "player2-swarmling");
+  assert.equal(inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+    responses: [original], spatialObservation: observation,
+    currentPhase: envelope.state.phase,
+  }).status, "contradicted");
+  const normalized = normalizeStarcraftTmgOpponentPredictionsV1({
+    action: submission, spatialObservation: observation,
+    currentPhase: envelope.state.phase,
+  });
+  assert.equal(normalized.intent.predictedOpponentResponses.length, 1);
+  assert.equal(normalized.intent.predictedOpponentResponses[0].likelyActorUnitId,
+    "", "retain the generic prediction without inventing an exact reserve actor");
+  assert.equal(inspectStarcraftTmgOpponentPredictionFeasibilityV1({
+    responses: normalized.intent.predictedOpponentResponses,
+    spatialObservation: observation, currentPhase: envelope.state.phase,
+  }).status, "consistent");
+  assert.equal(normalized.opponentPredictionNormalization?.rulesAuthority, false);
+  const named = structuredClone(submission);
+  named.intent.predictedOpponentResponses[0].opponentAction =
+    "player2-swarmling deploys from reserve.";
+  const stillBlocked = normalizeStarcraftTmgOpponentPredictionsV1({
+    action: named, spatialObservation: observation,
+    currentPhase: envelope.state.phase,
+  });
+  assert.equal(stillBlocked.intent.predictedOpponentResponses[0]
+    .likelyActorUnitId, "player2-swarmling",
+  "an explicit impossible actor claim must remain blocked");
+  console.log(JSON.stringify({ ok: true, stateRevision: 21,
+    stageCorrectionBudget: 1, genericPredictionReconciled: true,
+    explicitImpossibleActorStillBlocked: true, providerCalls: 0,
+    roomMutations: 0 }));
+  process.exit(0);
+}
+
+if (process.argv.includes("--saved-e-r21-outgoing-only")) {
+  const { DatabaseSync } = await import("node:sqlite");
+  const { gunzipSync } = await import("node:zlib");
+  const directory = process.argv.find((arg) => arg.startsWith("--run-directory="))
+    ?.slice("--run-directory=".length);
+  assert(directory);
+  const db = new DatabaseSync(
+    `${directory}/seats/player1/provider/live-decisions.sqlite`,
+    { readOnly: true });
+  let outer;
+  try { outer = JSON.parse(db.prepare(
+    "SELECT record_json FROM sc_live_decision_records ORDER BY revision DESC LIMIT 1"
+  ).get().record_json); }
+  finally { db.close(); }
+  assert.equal(outer.encoding, "gzip-base64");
+  const record = JSON.parse(gunzipSync(Buffer.from(outer.payload, "base64")));
+  const choice = Object.values(record.decisions).find((entry) =>
+    entry.authority.stateRevision === 21
+      && entry.status === "provider_output_invalid");
+  assert(choice, "saved E r21 failed Planner exists");
+  const lastSubmission = choice.attempts[choice.attemptKeys.at(-1)]
+    .safeOutput.providerTurn.toolCalls.find((call) =>
+      call.name === "submit_planning").arguments;
+  assert(lastSubmission.assessment.opponentModelUpdates.some((line) =>
+    line.includes("our outgoing bands, not enemy threats")));
+  const relationshipReceipts = choice.queryReceipts.filter((entry) =>
+    entry.queryKind === "space.inspect_relationships"
+      && Array.isArray(entry.result?.nodes?.units));
+  assert(relationshipReceipts.length > 0);
+  const spatialObservation = { units: relationshipReceipts[0].result.nodes.units
+    .map((unit) => ({ unitId: unit.nodeId, unitName: unit.unitName,
+      sideRelation: unit.sideRelation })) };
+  const inspection = inspectStarcraftTmgFormationThreatClaimsV1({
+    raw: lastSubmission, queryReceipts: choice.queryReceipts,
+    spatialObservation,
+  });
+  assert.equal(inspection.contradicted, false,
+    "own outgoing Goliath fire must not be rejected as incoming enemy threat");
+  assert.equal(inspection.incomingTargetIds.includes("player2-swarmling"),
+    false, "opposing target must not appear in own incoming threat set");
+  console.log(JSON.stringify({ ok: true, stateRevision: 21,
+    retainedPlannerOutputAccepted: true, providerCalls: 0,
+    roomMutations: 0 }));
+  process.exit(0);
+}
+
+if (process.argv.includes("--saved-a-r49-reason-reconciliation-only")) {
+  const { DatabaseSync } = await import("node:sqlite");
+  const { gunzipSync } = await import("node:zlib");
+  const directory = process.argv.find((arg) => arg.startsWith("--run-directory="))
+    ?.slice("--run-directory=".length);
+  assert(directory);
+  const db = new DatabaseSync(
+    `${directory}/seats/player2/provider/live-decisions.sqlite`,
+    { readOnly: true });
+  let outer;
+  try { outer = JSON.parse(db.prepare(
+    "SELECT record_json FROM sc_live_decision_records ORDER BY revision DESC LIMIT 1"
+  ).get().record_json); }
+  finally { db.close(); }
+  assert.equal(outer.encoding, "gzip-base64");
+  const record = JSON.parse(gunzipSync(Buffer.from(outer.payload, "base64")));
+  const choice = Object.values(record.decisions).find((entry) =>
+    entry.authority.stateRevision === 49
+      && entry.status === "provider_output_invalid");
+  assert(choice, "saved A r49 failed decision exists");
+  const finalAttempt = choice.attempts[choice.attemptKeys.at(-1)];
+  const submission = finalAttempt.safeOutput.providerTurn.toolCalls.find(
+    (call) => call.name === "submit_decision").arguments;
+  const formationReceipt = choice.queryReceipts.findLast((entry) =>
+    entry.queryKind === "space.solve_formation");
+  const option = formationReceipt.result.formationOptions.find((entry) =>
+    entry.formationOptionId === submission.selection.optionId);
+  assert(option);
+  const relationshipReceipt = choice.queryReceipts.find((entry) =>
+    entry.queryKind === "space.inspect_relationships"
+      && Array.isArray(entry.result?.nodes?.units));
+  assert(relationshipReceipt);
+  const spatialObservation = { units: relationshipReceipt.result.nodes.units
+    .map((unit) => ({ unitId: unit.nodeId, unitName: unit.unitName,
+      sideRelation: unit.sideRelation })) };
+  const raw = { ...structuredClone(submission), proposal: {
+    kind: "parameterized", domainId: option.domainId },
+  formationSelection: {
+    formationOptionId: option.formationOptionId,
+    slotAssignments: submission.selection.slotAssignments,
+    paymentCardInstanceIds: submission.selection.paymentCardInstanceIds,
+    publicReason: submission.selection.publicReason,
+  } };
+  const original = inspectStarcraftTmgFormationThreatClaimsV1({
+    raw, selection: raw.formationSelection, option, spatialObservation,
+    queryReceipts: choice.queryReceipts,
+  });
+  assert.deepEqual(original.contradictions.map((entry) => entry.field),
+    ["selectedReason"]);
+  const repaired = bindStarcraftTmgFormationSelectionV1(raw,
+    choice.queryReceipts, spatialObservation);
+  assert.equal(repaired.selectedReason, submission.selection.publicReason);
+  assert.equal(repaired.formationReasonReconciliation?.sourceField,
+    "formationSelection.publicReason");
+  assert.throws(() => bindStarcraftTmgFormationSelectionV1({ ...raw,
+    formationSelection: { ...raw.formationSelection,
+      publicReason: "The Queen is outside all stationary fire bands." },
+  }, choice.queryReceipts, spatialObservation),
+  (error) => error.code
+    === "ACTION_FORMATION_THREAT_CLAIM_CONTRADICTS_PROJECTION");
+  assert.throws(() => bindStarcraftTmgFormationSelectionV1({ ...raw,
+    speech: "The Queen is outside all stationary fire bands." },
+  choice.queryReceipts, spatialObservation),
+  (error) => error.code
+    === "ACTION_FORMATION_THREAT_CLAIM_CONTRADICTS_PROJECTION");
+  console.log(JSON.stringify({ ok: true, stateRevision: 49,
+    sameSubmissionReasonReconciled: true, otherFalseClaimsStillBlocked: true,
+    providerCalls: 0, roomMutations: 0 }));
+  process.exit(0);
+}
+
+if (process.argv.includes("--saved-r72-conditional-threat-only")) {
+  const { DatabaseSync } = await import("node:sqlite");
+  const directory = process.argv.find((arg) => arg.startsWith("--run-directory="))
+    ?.slice("--run-directory=".length);
+  assert(directory);
+  const db = new DatabaseSync(`${directory}/seats/player1/provider/live-decisions.sqlite`,
+    { readOnly: true });
+  let record;
+  try { record = JSON.parse(db.prepare(
+    "SELECT record_json FROM sc_live_decision_records LIMIT 1").get().record_json); }
+  finally { db.close(); }
+  const choice = Object.values(record.decisions).find((entry) =>
+    entry.authority.stateRevision === 72
+      && entry.status === "provider_output_invalid");
+  assert(choice, "saved r72 rejected Planner choice exists");
+  const evidenceAgainst = choice.lastRejectedSubmission.arguments.assessment
+    .evidenceAgainst;
+  assert(evidenceAgainst.some((value) =>
+    value.includes("if no fire band opens this round")));
+  assert(evidenceAgainst.some((value) =>
+    value.includes("Marine 1 is NOT free of enemy fire")));
+  const queryReceipts = choice.queryReceipts.filter((entry) =>
+    entry.queryKind === "space.inspect_relationships");
+  assert(queryReceipts.length > 0);
+  const spatialObservation = { units: queryReceipts[0].result.nodes.units.map((unit) => ({
+    unitId: unit.nodeId, unitName: unit.unitName, sideRelation: unit.sideRelation,
+  })) };
+  const inspectEvidence = (rows) => inspectStarcraftTmgFormationThreatClaimsV1({
+    raw: { assessment: { evidenceAgainst: rows } }, queryReceipts,
+    spatialObservation,
+  });
+  const saved = inspectEvidence(evidenceAgainst);
+  assert.equal(saved.contradicted, false,
+    "saved conditional downside plus explicit threat acknowledgement is not a denial");
+  const falseDenial = inspectEvidence([
+    "player1-marine-1 has zero current move-then-fire profiles this round.",
+  ]);
+  assert.equal(falseDenial.contradicted, true,
+    "an unconditional false safety claim must remain blocked");
+  console.log(JSON.stringify({ ok: true, stateRevision: 72,
+    savedConditionalAccepted: true, unconditionalFalseDenialBlocked: true,
+    providerCalls: 0, roomMutations: 0 }));
+  process.exit(0);
+}
 
 if (process.argv.includes("--named-threat-target-only")) {
   const { DatabaseSync } = await import("node:sqlite");
@@ -200,6 +454,72 @@ const correctedRatherThanOutside = inspect({
 }, "This formation is inside the enemy fire envelope rather than outside it.");
 assert.equal(correctedRatherThanOutside.contradicted, false,
   "inside-rather-than-outside wording is an explicit correction, not an escape claim");
+
+// Paid A r22 Planner text described a possible future endpoint and a unit's
+// own lack of fire. Neither denies the incoming fire on the current board.
+const liveIncomingReceipt = { queryKind: "space.inspect_relationships",
+  status: "advisory_estimate", result: { relationships: [
+    { edgeKind: "unit_spatial_relationship", relation: "opposed",
+      fromUnitId: "player2-swarmling", toUnitId: "player1-marine-1",
+      threats: { toFrom: { currentRoundStationaryProfileKeys: [
+        "army_units:marine::assault::C-14 rifle"] } } },
+    { edgeKind: "unit_spatial_relationship", relation: "opposed",
+      fromUnitId: "player2-corpser", toUnitId: "player1-goliath-2",
+      threats: { toFrom: { currentRoundStationaryProfileKeys: [
+        "army_units:goliath::assault::Scatter Missiles"] } } },
+  ] } };
+const liveObservation = { units: [
+  { unitId: "player2-swarmling", unitName: "Swarmling",
+    sideRelation: "own" },
+  { unitId: "player2-corpser", unitName: "Corpser",
+    sideRelation: "own" },
+] };
+const inspectLiveSelection = (evaluation) =>
+  inspectStarcraftTmgFormationThreatClaimsV1({
+    raw: { candidateComparisons: [{ evaluation }] },
+    queryReceipts: [liveIncomingReceipt],
+    spatialObservation: liveObservation,
+  });
+assert.equal(inspectLiveSelection(
+  "Its own threat band to marine-1 is move-then-attack only (Claws), and it has no current-round stationary band, so a Move that keeps it outside the Marine/Goliath stationary bands is a low-risk forward push.",
+).contradicted, false,
+"a conditional post-move aspiration must not deny current incoming fire");
+assert.equal(inspectLiveSelection(
+  "Corpser is far from the Terran line; it has no current-round fire band and cannot reach a contestable marker this round.",
+).contradicted, false,
+"own outgoing fire and objective reach must not be parsed as incoming safety");
+assert.equal(inspectLiveSelection(
+  "No enemy fire band reaches Swarmling at its current position.",
+).contradicted, true,
+"a genuine current-position denial must still be rejected");
+if (process.argv.includes("--a-r22-threat-claims-only")) {
+  process.stdout.write("A_R22_THREAT_CLAIM_SCOPE_OK\n");
+  process.exit(0);
+}
+const selectedR23Threat = inspectStarcraftTmgFormationThreatClaimsV1({
+  raw: { selectedReason:
+    "Move Hydralisk to a legal formation that clears the current-round enemy stationary fire bands." },
+  option: { relationshipComparison: { relationships: [{
+    relation: "opposed", targetId: "player1-marine-1",
+    enemyUnitId: "player1-marine-1",
+    enemyStationaryThreatProfileCount: 3,
+    enemyStationaryThreatProfileKeys: [
+      "army_units:marine::assault::C-14 rifle"],
+    enemyCurrentRoundStationaryThreatProfileCount: 3,
+    enemyCurrentRoundStationaryThreatProfileKeys: [
+      "army_units:marine::assault::C-14 rifle"],
+  }] } },
+  spatialObservation: { units: [
+    { unitId: "player2-hydralisk", sideRelation: "own" },
+    { unitId: "player1-marine-1", sideRelation: "opponent" },
+  ] },
+});
+assert.equal(selectedR23Threat.contradicted, true,
+  "the chosen formation still in Marine fire cannot claim it cleared that fire");
+if (process.argv.includes("--a-r23-selected-formation-only")) {
+  process.stdout.write("A_R23_SELECTED_FORMATION_CLAIM_OK\n");
+  process.exit(0);
+}
 
 const moveThenFireReceipt = {
   queryKind: "space.inspect_relationships",

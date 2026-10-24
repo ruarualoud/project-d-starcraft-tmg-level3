@@ -1,3 +1,4 @@
+import { assertProviderDnsRecoveryV1 } from './provider-network-resilience-v1.mjs';
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { containsStarcraftTmgOnlineCredentialMaterialV1 } from
@@ -17,7 +18,7 @@ const RECEIPT_FIELDS = new Set([
   "schemaVersion", "requestId", "providerProfileRef", "egressPolicyHash",
   "providerId", "requestedModel", "reportedModel", "providerRequestIdHash",
   "providerSystemFingerprintHash", "status", "usage", "responseFingerprint",
-  "dnsAddressSetHash", "tlsServerName",
+  "dnsAddressSetHash", "dnsRecovery", "tlsServerName",
   "tlsCertificateVerificationDisabled", "redirectFollowed", "proxyUsed",
   "physicalAttempts", "automaticRetries", "startedAt", "finishedAt",
   "trainingTruth", "receiptHash", "responseNormalization", "responseNormalizationEvidence",
@@ -61,6 +62,7 @@ export function assertStarcraftTmgProviderWorkerSuccessV1(
     fail("PROVIDER_SUCCESS_OUTPUT_SIZE_REJECTED");
   }
   const { receiptHash, ...receiptBody } = receipt;
+  assertProviderDnsRecoveryV1(receipt.dnsRecovery);
   if (!HASH.test(String(receiptHash || ""))
     || receiptHash !== hashStarcraftTmgContract(receiptBody)) {
     fail("PROVIDER_SUCCESS_RECEIPT_HASH_REJECTED");

@@ -16,9 +16,13 @@ import { OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1 } from
   "../packages/product-composition/official-standard-room-factory-v1.mjs";
 import { STARCRAFT_TMG_DEEPSEEK_CURRENT_PRICING_SNAPSHOT_V2 } from
   "../packages/secure-provider-runtime/provider-pricing-v2.mjs";
+import { resolveOfficialDevelopmentTrancheFixtureRootV1 } from
+  "./support/official-development-tranche-source-lock-fixture-v1.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const fixtureRoot = process.env.TICKET27_S271_FIXTURE_ROOT || root;
+const fixtureRoot = await resolveOfficialDevelopmentTrancheFixtureRootV1({
+  root, overrideRoot: process.env.TICKET27_S271_FIXTURE_ROOT || null,
+});
 const dataDirectory = path.join(root,
   "build/ticket-27-slice-272-iterative-live-v1");
 const argument = (name) => process.argv.find((value) =>
@@ -27,12 +31,36 @@ const sessionId = argument("session") || "iterative-standard-2000-live-v1";
 const steps = Number(argument("steps") || 1);
 const preferRetainedRepair = argument("reconcile-last") === "true";
 const advanceAfterKnownInvalid = argument("advance-after-repair") === "true";
+const advanceAfterBuilderRepair =
+  argument("advance-after-builder-repair") === "true";
 const prepareOnly = argument("prepare-only") === "true";
 const scheduleOnly = argument("schedule") === "true";
 const reviseSchedulePublicOnly = argument("revise-schedule-public") === "true";
 const interactive = argument("interactive") === "true";
 if (!Number.isSafeInteger(steps) || steps < 1 || steps > 12) {
   throw new Error("ITERATIVE_LIVE_STEPS_INVALID");
+}
+if (advanceAfterBuilderRepair && steps !== 1) {
+  throw new Error("ITERATIVE_BUILDER_REPAIR_REQUIRES_ONE_STEP");
+}
+
+function repeatedBuilderRejection(state) {
+  if (state.currentCandidate) return null;
+  let code = null;
+  let count = 0;
+  for (const iteration of [...state.iterations].reverse()) {
+    if (iteration.decisionKind !== "propose"
+      || iteration.rulesVerdictStatus !== "illegal") break;
+    const rejection = state.observations.findLast((entry) =>
+      entry.requestKey === iteration.requestKey
+        && entry.query?.kind === "builder_verdict"
+        && entry.receipt?.status === "illegal");
+    const nextCode = rejection?.receipt?.rulesErrorCode;
+    if (!nextCode || (code && nextCode !== code)) break;
+    code = nextCode;
+    count += 1;
+  }
+  return count >= 3 ? { code, consecutiveRejections: count } : null;
 }
 
 const secure = (preferRetainedRepair && steps === 1) || prepareOnly
@@ -146,7 +174,13 @@ try {
       }
     }
   }
-  for (let step = 0; !interactive && !prepareOnly && !scheduleOnly
+  let operatorStop = null;
+  if (!interactive && !prepareOnly && !scheduleOnly
+    && !reviseSchedulePublicOnly && !advanceAfterBuilderRepair) {
+    operatorStop = repeatedBuilderRejection(state);
+    if (operatorStop) state = await port.pause(sessionId);
+  }
+  for (let step = 0; !operatorStop && !interactive && !prepareOnly && !scheduleOnly
     && !reviseSchedulePublicOnly
     && step < steps
     && (["active", "paused"].includes(state.status)
@@ -169,7 +203,18 @@ try {
       blockingFinding: state.blockingFinding || null,
       trainingTruth: false,
     })}\n`);
+    operatorStop = repeatedBuilderRejection(state);
+    if (operatorStop) {
+      state = await port.pause(sessionId);
+      break;
+    }
   }
+  if (operatorStop) process.stdout.write(`${JSON.stringify({
+    event: "iterative_roster_builder_rejection_nonconvergent",
+    sessionId, revision: state.revision, status: state.status,
+    ...operatorStop, providerCallsAfterStop: 0,
+    resumeRequiresExplicitBuilderRepair: true,
+  })}\n`);
   const replyStore = createIterativeRosterFileStoreV1({
     directory: path.join(dataDirectory, "iterative-draft") });
   let paidReplies = 0;
@@ -203,6 +248,7 @@ try {
     exact2000BuilderLegal: state.currentCandidate?.mineralSpent === 2000,
     selectedMapEvidenceBound: Boolean(state.plan?.mapEvidenceHash),
     readyForMatch: state.status === "ready_for_match",
+    operatorStop,
     draftOnly: true, trainingTruth: false,
   })}\n`);
 } finally {

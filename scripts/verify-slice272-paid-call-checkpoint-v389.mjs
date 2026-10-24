@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {gunzipSync} from 'node:zlib';
+const directory=process.argv[2];
+const read=async n=>JSON.parse(gunzipSync(await fs.readFile(path.join(directory,`call-${n}.product-request.json.gz`))));
+const before=await read(168),after=await read(169);
+assert.notEqual(before.contextHash,after.contextHash,'actual restored branch catalog must reproduce drift');
+const session=JSON.parse(await fs.readFile(path.join(path.dirname(directory),'workspace/drafts',before.sessionId+'.json'),'utf8'));
+const source=await fs.readFile(new URL('../packages/roster-strategist/roster-teach-framework-v1.mjs',import.meta.url),'utf8');
+assert.ok(source.includes('prepareRosterTeachModelCallV1'),'Teach must save a pending request and consume its completed reply before rebuilding a new one');
+const {prepareRosterTeachModelCallV1}=await import('../packages/roster-strategist/roster-teach-call-checkpoint-v1.mjs');
+const state=structuredClone(session.teachFramework.state);
+const scope={state,request:after,sourceHash:state.sourceHash,planHash:session.teachFramework.planHash,
+  retainedPublicOutputs:session.publicOutputs,retainedDispatches:session.providerDispatches};
+const restored=prepareRosterTeachModelCallV1(scope);
+assert.equal(restored.retained.contextHash,before.contextHash);
+assert.equal(restored.retained.roundKind,before.roundKind);
+assert.equal(restored.providerCallRequired,false);
+const fresh={calls:[]};
+const first=prepareRosterTeachModelCallV1({...scope,state:fresh,retainedPublicOutputs:[],retainedDispatches:[],request:before});
+assert.deepEqual(first.request,before);
+const resumed=prepareRosterTeachModelCallV1({...scope,state:fresh,retainedPublicOutputs:[],retainedDispatches:[],request:after});
+assert.deepEqual(resumed.request,before,'must preserve exact dispatched prompt, including order and context');
+assert.throws(()=>prepareRosterTeachModelCallV1({...scope,state:fresh,planHash:'b'.repeat(64)}),/SOURCE_CHANGED/);
+const wrongPlan=prepareRosterTeachModelCallV1({...scope,state:{calls:[]},planHash:'b'.repeat(64)});
+assert.equal(wrongPlan.retained,null);
+console.log(JSON.stringify({passed:true,actualDrift:[168,169],savedReplyReused:true,exactPendingRequestPreserved:true,changedPlanRejected:true}));

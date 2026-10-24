@@ -7,6 +7,77 @@ import {
 import { projectStarcraftTmgSpatialParameterDomainsV1 } from
   "../packages/online-agent-session/spatial-action-query-runtime-v1.mjs";
 
+// Actual v33 C r5: a denial about OTHER cards is not a denial about the source.
+// Run only this captured regression, not the already-passed historical modes.
+if (process.argv.includes("--source-card-exception-only")) {
+  const { DatabaseSync } = await import("node:sqlite");
+  const path = await import("node:path");
+  const { decodeStarcraftTmgLiveDecisionRecordV1 } = await import(
+    "../packages/online-agent-session/sqlite-live-decision-store-v1.mjs");
+  const directory = process.argv.find(arg => arg.startsWith("--run-directory="))
+    ?.slice("--run-directory=".length);
+  assert.ok(directory, "saved run directory required");
+  const db = new DatabaseSync(path.join(directory,
+    "seats/player2/provider/live-decisions.sqlite"), { readOnly: true });
+  let choice;
+  try {
+    const record = decodeStarcraftTmgLiveDecisionRecordV1(db.prepare(
+      "SELECT record_json FROM sc_live_decision_records").get().record_json);
+    choice = Object.values(record.decisions).find(entry =>
+      entry.authority?.stateRevision === 5 && entry.status === "provider_output_invalid");
+  } finally { db.close(); }
+  assert.ok(choice, "actual stopped r5 choice required");
+  const submission = choice.attempts[choice.attemptKeys.at(-1)].safeOutput;
+  const before = JSON.stringify(submission);
+  const spatialActionSpace = {
+    finiteActions: choice.actionIndex.filter(entry => entry.kind === "finite")
+      .map(entry => ({ candidateId: entry.id, action: entry.action })),
+    parameterDomains: choice.actionIndex.filter(entry => entry.kind === "parameterized")
+      .map(entry => entry.action),
+  };
+  const inspect = (value, stage = "planning", space = spatialActionSpace) =>
+    inspectStarcraftTmgSelectedActionResourceClaimsV1({ spatialActionSpace: space,
+      candidateId: submission.recommendedCandidateId, stage, value });
+  const actual = inspect(submission);
+  assert.equal(actual.status, "consistent",
+    `paid exception excludes the actual faction source: ${JSON.stringify(actual.contradictions)}`);
+  const cases = [
+    ["Omega Network does not exhaust any resource card beyond the faction card.", "consistent"],
+    ["Omega Network exhausts the source card but does not exhaust any other card.", "consistent"],
+    ["Omega Network's source card is exhausted on commit.", "consistent"],
+    ["Omega Network does not exhaust any cards except its source card.", "consistent"],
+    ["Omega Network 不横置除势力卡以外的其他资源卡。", "consistent"],
+    ["Finish Activation does not exhaust any card; Omega Network exhausts its source card.", "consistent"],
+    ["Omega Network does not exhaust its source card.", "contradicted"],
+    ["Omega Network costs zero Biomass and does not exhaust any card.", "contradicted"],
+    ["Omega Network does not exhaust any cards except a tactical card.", "contradicted"],
+    ["Omega Network does not exhaust any other card; its source card remains unexhausted.", "contradicted"],
+    ["Use Omega Network without exhausting the source card.", "contradicted"],
+    ["Use Omega Network at no source-card exhaustion.", "contradicted"],
+    ["Omega Network 不横置来源卡。", "contradicted"],
+  ];
+  for (const [text, expected] of cases) {
+    assert.equal(inspect({ publicPlanSummary: { calculations: [text] } }).status,
+      expected, `planning: ${text}`);
+    assert.equal(inspect({ selectedReason: text }, "action").status,
+      expected, `action: ${text}`);
+  }
+  const tacticalSpace = structuredClone(spatialActionSpace);
+  const tacticalSource = tacticalSpace.parameterDomains.find(entry =>
+    entry.domainId === submission.recommendedCandidateId);
+  tacticalSource.sourceInstanceId = "tactical:player2:omega";
+  tacticalSource.constraints.sourceCardInstanceId = tacticalSource.sourceInstanceId;
+  assert.equal(inspect({ publicPlanSummary: { calculations: [
+    "Omega Network does not exhaust any resource card beyond the faction card.",
+  ] } }, "planning", tacticalSpace).status, "contradicted",
+  "excluding a faction card must not exempt a tactical source");
+  assert.equal(JSON.stringify(submission), before, "paid output remains untouched");
+  console.log(JSON.stringify({ passed: true, revision: 5,
+    savedPlannerResourceClaims: actual.status, focusedCases: cases.length * 2 + 2,
+    fullPlannerAccepted: false, providerCalls: 0, roomMutations: 0, costCny: 0 }));
+  process.exit(0);
+}
+
 // Concrete r73 regression only; do not rerun the historical resource suite.
 if (process.argv.includes("--comparison-subject-only")) {
   const { DatabaseSync } = await import("node:sqlite");

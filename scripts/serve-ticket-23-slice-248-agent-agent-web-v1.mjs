@@ -3,8 +3,9 @@
 import http from "node:http";
 import { generateKeyPairSync, randomBytes, timingSafeEqual } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -17,14 +18,30 @@ import {
 } from "../packages/client-domain/hosted-bot-seat-transport-v1.mjs";
 import { createStarcraftTmgRefereeCrypto } from
   "../packages/authoritative-engine/referee-crypto-v1.mjs";
+import { hashStarcraftTmgContract } from
+  "../packages/authoritative-engine/referee-crypto-v1.mjs";
 import { createStarcraftTmgLiveOpponentProviderStackV1 } from
   "../packages/online-agent-session/live-opponent-provider-stack-v1.mjs";
 import { createSqliteStarcraftTmgHostedBotSeatStoreV1 } from
   "../packages/online-agent-session/sqlite-hosted-bot-seat-store-v1.mjs";
 import { createSqliteStarcraftTmgMatchDecisionJournalV1 } from
   "../packages/online-agent-session/sqlite-match-decision-journal-v1.mjs";
+import { prepareVersionedRoomMemoryHandoffV1 } from
+  "../packages/online-agent-session/versioned-room-memory-handoff-v1.mjs";
 import { createOfficialCompetitiveMapConfiguratorV1 } from
   "../packages/product-composition/official-competitive-map-configurator-v1.mjs";
+import { createRosterPlanningProductModuleV1 } from
+  "../packages/product-composition/roster-planning-product-module-v1.mjs";
+import { loadPregameResumeDraftV1, loadReviewedPregameRevisionV1 } from
+  "../packages/roster-planning-workspace/pregame-resume-draft-v1.mjs";
+import { adoptReviewedPregameResumeRevisionV1 } from
+  "../packages/product-composition/roster-plan-resume-revision-v1.mjs";
+import { verifyAgentScheduledRosterPlanV1 } from
+  "../packages/roster-strategist/agent-scheduled-roster-plan-v1.mjs";
+import {
+  OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1,
+  OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY,
+} from "../packages/product-composition/official-standard-room-factory-v1.mjs";
 import { createStarcraftTmgPrivatePayloadCodec } from
   "../packages/room-store/room-store-v1.mjs";
 import { createSqliteStarcraftTmgRoomStore } from
@@ -33,13 +50,21 @@ import { createStarcraftTmgLiveMatchEvolutionExportV1 } from
   "../packages/training-data/live-match-evolution-export-v1.mjs";
 import { createTicket20AgentAgentDemoFixtureV1 } from
   "./support/ticket20-human-agent-demo-fixture-v1.mjs";
+import { resolveOfficialDevelopmentTrancheFixtureRootV1 } from
+  "./support/official-development-tranche-source-lock-fixture-v1.mjs";
+import { resolveTicket23AgentAgentInteractionModeV1 } from
+  "./support/ticket23-agent-agent-resume-interaction-mode-v1.mjs";
 import { STARCRAFT_TMG_TICKET_23_LIVE_FLASH_PROVIDER_PROFILE_V1 } from
   "../content/provider/ticket-23-live-provider-profiles-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const LIVE_ROOT = path.join(ROOT,
   "build/ticket-23-slice-248-standard-2000-aa-live-v1");
-const CURRENT_WEB_ROOT = path.join(ROOT, "apps/starcraft-tmg-expo/dist");
+const VERSIONED_FORK_ROOT = path.join(ROOT,
+  "build/ticket-23-slice-248-versioned-charge-room-forks-v1");
+const CURRENT_WEB_ROOT = process.env.STARCRAFT_TMG_PRODUCT_WEB_ROOT
+  ? path.resolve(process.env.STARCRAFT_TMG_PRODUCT_WEB_ROOT)
+  : path.join(ROOT, "apps/starcraft-tmg-expo/dist");
 const PRODUCT_WEB_ROOT = CURRENT_WEB_ROOT;
 const WEB_SOURCE_ROOT = path.join(ROOT, "apps/starcraft-tmg-expo");
 const WEB_SOURCE_DIRECTORIES = Object.freeze([
@@ -88,6 +113,25 @@ const PUBLIC_BROWSER_CONTENT_MODULES = new Set([
 ]);
 const MAX_BODY_BYTES = 256 * 1024;
 const SEATS = Object.freeze(["player1", "player2"]);
+
+function reviewedPlanArtifactPath(filename) {
+  if (typeof filename !== "string" || !filename.trim()
+    || path.isAbsolute(filename)) {
+    throw new Error("SLICE272_REVIEWED_PLAN_ARTIFACT_PATH_INVALID");
+  }
+  const absolute = path.resolve(ROOT, filename);
+  const relative = path.relative(ROOT, absolute);
+  if (!relative || relative === ".."
+    || relative.startsWith(`..${path.sep}`)) {
+    throw new Error("SLICE272_REVIEWED_PLAN_ARTIFACT_PATH_INVALID");
+  }
+  return absolute;
+}
+
+async function readReviewedPlanArtifact(filename) {
+  return JSON.parse(await readFile(reviewedPlanArtifactPath(filename),
+    "utf8"));
+}
 
 function sourceDomain(value) {
   return value?.sourceDomain || value;
@@ -567,6 +611,8 @@ function compactSeatProjection(projection = {}) {
 
 function compactProviderProjection(projection = {}) {
   return {
+    scope: projection.scope || null,
+    budget: projection.budget || null,
     lifecycle: projection.lifecycle || null,
     issues: Array.isArray(projection.issues) ? projection.issues : [],
     usage: projection.usage || {},
@@ -574,9 +620,30 @@ function compactProviderProjection(projection = {}) {
 }
 
 async function main() {
+  const budgetArgument = process.argv.find((entry) =>
+    entry.startsWith("--per-room-budget-cny="));
+  const perRoomBudgetCny = process.argv.includes("--no-cost-limit") || !budgetArgument
+    ? null : Number(budgetArgument.slice("--per-room-budget-cny=".length));
+  const perSeatBudgetCnyMicros = perRoomBudgetCny === null
+    ? null : perRoomBudgetCny * 1_000_000 / 2;
+  if (perSeatBudgetCnyMicros !== null && (!Number.isSafeInteger(perSeatBudgetCnyMicros)
+    || perSeatBudgetCnyMicros <= 0)) {
+    throw new Error("SLICE248_PER_ROOM_BUDGET_INVALID");
+  }
   const forkPreflightOnly = process.argv.includes("--fork-preflight-only");
-  const webBundle = forkPreflightOnly ? {
-    status: "skipped_for_rules_only_fork_preflight",
+  const versionedForkPreflightOnly = process.argv.includes(
+    "--versioned-fork-preflight-only");
+  const versionedForkMemoryHandoffOnly = process.argv.includes(
+    "--versioned-fork-memory-handoff-only");
+  const pregamePreflightOnly = process.argv.includes(
+    "--pregame-preflight-only");
+  const webBundle = forkPreflightOnly || pregamePreflightOnly
+    || versionedForkPreflightOnly || versionedForkMemoryHandoffOnly ? {
+    status: pregamePreflightOnly
+      ? "skipped_for_pregame_room_preflight"
+      : versionedForkPreflightOnly || versionedForkMemoryHandoffOnly
+        ? "skipped_for_versioned_fork_preflight"
+        : "skipped_for_rules_only_fork_preflight",
     sourceRefreshPerformed: false,
     trainingTruth: false,
   } : await verifyCurrentWebBundle();
@@ -584,7 +651,96 @@ async function main() {
     entry.startsWith("--resume-directory="));
   const requestedResumeDirectory = resumeArgument
     ? path.resolve(resumeArgument.slice("--resume-directory=".length)) : null;
+  const adoptPlanArgument = process.argv.find(entry => entry.startsWith("--adopt-reviewed-plan-hash="));
+  const requestedPlanRevisionHash = adoptPlanArgument?.slice("--adopt-reviewed-plan-hash=".length) || null;
+  const planRevisionOnly = process.argv.includes("--plan-revision-only");
+  if ((requestedPlanRevisionHash && (!requestedResumeDirectory
+    || !/^[a-f0-9]{64}$/.test(requestedPlanRevisionHash)))
+    || (planRevisionOnly && !requestedPlanRevisionHash)) {
+    throw new Error("SLICE272_PLAN_REVISION_REQUIRES_EXPLICIT_RESUME_TARGET");
+  }
+  const runtimeVariantArgument = process.argv.find((entry) =>
+    entry.startsWith("--current-product-runtime-variant="));
+  const requestedRuntimeVariant = runtimeVariantArgument
+    ?.slice("--current-product-runtime-variant=".length) || null;
+  if (runtimeVariantArgument && (requestedResumeDirectory
+    || !["charge_endpoint_v2", "charge_access_v3",
+      "charge_cross_section_v4", "charge_round_path_v5", "singleton_identity_v6"].includes(
+      requestedRuntimeVariant))) {
+    throw new Error("SLICE248_RUNTIME_VARIANT_OVERRIDE_INVALID");
+  }
+  const admissionManifestArgument = process.argv.find((entry) =>
+    entry.startsWith("--pregame-agent-selected-admission-manifest="));
+  const admissionManifest = admissionManifestArgument
+    ? await readReviewedPlanArtifact(admissionManifestArgument.slice(
+      "--pregame-agent-selected-admission-manifest=".length)) : null;
+  if (admissionManifest && (requestedResumeDirectory
+    || admissionManifest.schemaVersion
+      !== "ticket27_slice272_reviewed_plan_room_admission_v1"
+    || admissionManifest.trainingTruth !== false
+    || !admissionManifest.iterativeSessionId
+    || !admissionManifest.teachSessionId
+    || !Array.isArray(admissionManifest.intermediatePlanArtifactPaths))) {
+    throw new Error("SLICE272_REVIEWED_PLAN_ADMISSION_MANIFEST_INVALID");
+  }
+  const plannedSessionArgument = process.argv.find((entry) =>
+    entry.startsWith("--pregame-roster-session-id="));
+  const requestedPlannedSessionId = plannedSessionArgument
+    ? plannedSessionArgument.slice("--pregame-roster-session-id=".length)
+    : null;
+  const opponentPlanArgument = process.argv.find((entry) =>
+    entry.startsWith("--opponent-pregame-roster-session-id="));
+  const opponentPlanDirectoryArgument = process.argv.find((entry) =>
+    entry.startsWith("--opponent-roster-plan-data-directory="));
+  const agentSelectedIterativeArgument = process.argv.find((entry) =>
+    entry.startsWith("--pregame-agent-selected-iterative-session-id="));
+  const agentSelectedTeachArgument = process.argv.find((entry) =>
+    entry.startsWith("--pregame-agent-selected-teach-session-id="));
+  const agentSelectedIterativeSessionId = agentSelectedIterativeArgument
+    ?.slice("--pregame-agent-selected-iterative-session-id=".length)
+    || admissionManifest?.iterativeSessionId || null;
+  const agentSelectedTeachSessionId = agentSelectedTeachArgument
+    ?.slice("--pregame-agent-selected-teach-session-id=".length)
+    || admissionManifest?.teachSessionId || null;
+  const requestedAgentSelected = Boolean(agentSelectedIterativeSessionId
+    && agentSelectedTeachSessionId);
+  const autoDriveOnLaunch = process.argv.includes("--auto-drive-on-launch");
+  const pregameStartupAt = Date.now();
+  const reportPregameStartup = (stage) => {
+    if (!requestedAgentSelected) return;
+    process.stdout.write(`${JSON.stringify({
+      schemaVersion: "ticket27_slice272_pregame_startup_progress_v1",
+      stage,
+      elapsedMs: Date.now() - pregameStartupAt,
+      providerCalls: 0,
+      trainingTruth: false,
+    })}\n`);
+  };
+  if (Boolean(agentSelectedIterativeSessionId)
+    !== Boolean(agentSelectedTeachSessionId)
+    || (admissionManifest && (agentSelectedIterativeArgument
+      || agentSelectedTeachArgument))
+    || (requestedAgentSelected && (requestedPlannedSessionId
+      || requestedResumeDirectory))
+    || (autoDriveOnLaunch && (!requestedAgentSelected
+      || requestedResumeDirectory))) {
+    throw new Error("SLICE272_AGENT_SELECTED_PREGAME_MODE_INVALID");
+  }
+  if (pregamePreflightOnly && !requestedPlannedSessionId
+    && !requestedAgentSelected) {
+    throw new Error("SLICE272_PREGAME_PREFLIGHT_SESSION_REQUIRED");
+  }
+  const versionedForkDirectory = requestedResumeDirectory
+    && requestedResumeDirectory.startsWith(`${VERSIONED_FORK_ROOT}${path.sep}`)
+    ? requestedResumeDirectory : null;
+  if (versionedForkPreflightOnly && !versionedForkDirectory) {
+    throw new Error("SLICE248_VERSIONED_FORK_PREFLIGHT_DIRECTORY_REQUIRED");
+  }
+  if (versionedForkMemoryHandoffOnly && !versionedForkDirectory) {
+    throw new Error("SLICE248_VERSIONED_FORK_HANDOFF_DIRECTORY_REQUIRED");
+  }
   if (requestedResumeDirectory
+    && !versionedForkDirectory
     && requestedResumeDirectory !== LIVE_ROOT
     && !requestedResumeDirectory.startsWith(`${LIVE_ROOT}${path.sep}`)) {
     throw new Error("SLICE248_RESUME_DIRECTORY_OUTSIDE_LIVE_ROOT");
@@ -617,20 +773,164 @@ async function main() {
   }
   const retryProviderOnResume = process.argv.includes(
     "--retry-provider-on-resume");
+  const interactionModeArgument = process.argv.find((entry) =>
+    entry.startsWith("--provider-interaction-mode="));
+  const providerInteractionMode = resolveTicket23AgentAgentInteractionModeV1({
+    resumeDirectory: requestedResumeDirectory,
+    requestedMode: interactionModeArgument
+      ? interactionModeArgument.slice("--provider-interaction-mode=".length)
+      : null,
+    allowFailedInteractionModeMigration: process.argv.includes(
+      "--allow-failed-interaction-mode-migration"),
+  });
+  if (!["native_tools", "json_channels_v1"].includes(
+    providerInteractionMode)) {
+    throw new Error("SLICE248_PROVIDER_INTERACTION_MODE_INVALID");
+  }
+  const allowFailedInteractionModeMigration = process.argv.includes(
+    "--allow-failed-interaction-mode-migration");
+  if (allowFailedInteractionModeMigration
+    && providerInteractionMode !== "json_channels_v1") {
+    throw new Error("SLICE248_INTERACTION_MIGRATION_MODE_INVALID");
+  }
+  const runIdArgument = process.argv.find((entry) =>
+    entry.startsWith("--run-id="));
+  if (requestedResumeDirectory && runIdArgument) {
+    throw new Error("SLICE248_RESUME_RUN_ID_OVERRIDE_INVALID");
+  }
   const runId = requestedResumeDirectory
     ? path.basename(requestedResumeDirectory)
-    : new Date().toISOString().replace(/[^0-9]/gu, "");
+    : runIdArgument?.slice("--run-id=".length)
+      || new Date().toISOString().replace(/[^0-9]/gu, "");
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/u.test(runId)) {
+    throw new Error("SLICE248_RUN_ID_INVALID");
+  }
   const dataDirectory = requestedResumeDirectory || path.join(LIVE_ROOT, runId);
-  await mkdir(dataDirectory, { recursive: true, mode: 0o700 });
+  if (!requestedResumeDirectory) {
+    await mkdir(dataDirectory, { recursive: true, mode: 0o700 });
+  }
+  const observeBotStages = process.argv.includes("--observe-bot-stages");
+  let stageObservationTail = Promise.resolve();
+  const observeBotStage = observeBotStages ? (event) => {
+    const row = { diagnostic: "slice248_bot_stage_timing", ...event };
+    stageObservationTail = stageObservationTail.then(() => appendFile(
+      path.join(dataDirectory, "bot-stage-timings.ndjson"),
+      `${JSON.stringify(row)}\n`, { mode: 0o600 },
+    )).catch(() => undefined);
+  } : undefined;
   let privateState = null;
+  let versionedFork = null;
   if (requestedResumeDirectory) {
-    privateState = JSON.parse(await readFile(path.join(dataDirectory,
-      "runner-private.json"), "utf8"));
+    if (versionedForkDirectory) {
+      const forkPrivate = JSON.parse(await readFile(path.join(dataDirectory,
+        "fork-private.json"), "utf8"));
+      const forkReceipt = JSON.parse(await readFile(path.join(dataDirectory,
+        "fork-receipt.json"), "utf8"));
+      const sourceDirectory = path.resolve(forkPrivate.sourceDirectory || "");
+      const trustedSourceDirectory = (directory) =>
+        directory.startsWith(`${LIVE_ROOT}${path.sep}`)
+          || directory.startsWith(`${VERSIONED_FORK_ROOT}${path.sep}`);
+      const legalPrefixRecovery = forkReceipt.schemaVersion
+        === "ticket23_slice248_legal_prefix_recovery_v1"
+        && forkReceipt.recoveryKind === "named_active_once_per_round_v8";
+      const singletonIdentityRecovery = forkReceipt.schemaVersion
+        === "ticket23_slice248_singleton_identity_recovery_v1"
+        && forkReceipt.recoveryKind === "singleton_summon_identity_v6";
+      if (!trustedSourceDirectory(sourceDirectory)
+        || forkPrivate.targetRoomId !== forkReceipt.targetRoomId
+        || forkPrivate.sourceRoomId !== forkReceipt.sourceRoomId
+        || forkReceipt.targetStateRevision !== (legalPrefixRecovery
+          || singletonIdentityRecovery ? 0 : 1)
+        || (legalPrefixRecovery && (forkPrivate.recoveryKind
+          !== forkReceipt.recoveryKind || forkReceipt.sameLogicalRoomId !== true
+          || forkReceipt.sourceRoomId !== forkReceipt.targetRoomId
+          || forkReceipt.sourceStateRevision >= forkReceipt.sourceCurrentStateRevision
+          || forkReceipt.excludedFirstStateRevision !== forkReceipt.sourceStateRevision + 1
+          || !forkReceipt.excludedReceiptHashes?.length))
+        || (singletonIdentityRecovery && (forkPrivate.recoveryKind
+          !== forkReceipt.recoveryKind || forkReceipt.sameLogicalRoomId !== true
+          || forkReceipt.sourceRoomId !== forkReceipt.targetRoomId
+          || forkReceipt.sourceStateRevision !== forkReceipt.sourceCurrentStateRevision
+          || forkReceipt.physicalLiveBoardUnchanged !== true
+          || forkReceipt.originalAcceptedHistoryPreserved !== true
+          || !forkReceipt.sourceJournalHeadHash))
+        || forkReceipt.targetReplayMatchesCurrent !== true) {
+        throw new Error("SLICE248_VERSIONED_FORK_PROVENANCE_INVALID");
+      }
+      let credentialDirectory = sourceDirectory;
+      let expectedSourceRoomId = forkPrivate.sourceRoomId;
+      const sourceForkChain = [];
+      for (let depth = 0; depth < 8; depth += 1) {
+        const ancestorFork = await readFile(path.join(credentialDirectory,
+          "fork-private.json"), "utf8").then(JSON.parse, (error) => {
+            if (error?.code === "ENOENT") return null;
+            throw error;
+          });
+        if (!ancestorFork) break;
+        if (ancestorFork.targetRoomId !== expectedSourceRoomId) {
+          throw new Error("SLICE248_VERSIONED_FORK_ANCESTRY_MISMATCH");
+        }
+        sourceForkChain.push(ancestorFork);
+        expectedSourceRoomId = ancestorFork.sourceRoomId;
+        credentialDirectory = path.resolve(ancestorFork.sourceDirectory || "");
+        if (!trustedSourceDirectory(credentialDirectory)) {
+          throw new Error("SLICE248_VERSIONED_FORK_ANCESTRY_OUTSIDE_ROOT");
+        }
+      }
+      const sourcePrivate = JSON.parse(await readFile(path.join(
+        credentialDirectory, "runner-private.json"), "utf8"));
+      if (sourcePrivate.roomId !== expectedSourceRoomId
+        || [forkPrivate, ...sourceForkChain].some((entry) =>
+          entry.storeEncryptionKeyBase64
+            !== sourcePrivate.storeEncryptionKeyBase64
+          || entry.refereePrivateKeyPem
+            !== sourcePrivate.refereePrivateKeyPem
+          || entry.refereeHmacSecret
+            !== sourcePrivate.refereeHmacSecret)) {
+        throw new Error("SLICE248_VERSIONED_FORK_CREDENTIALS_MISMATCH");
+      }
+      const targetRuntimeVariant = forkReceipt.targetRulesRuntimeVariant
+        || "charge_endpoint_v2";
+      if (!["charge_endpoint_v2", "charge_access_v3",
+        "charge_cross_section_v4", "charge_round_path_v5"]
+        .includes(targetRuntimeVariant)
+        && !(legalPrefixRecovery && targetRuntimeVariant === "base_current_v1")
+        && !(singletonIdentityRecovery && targetRuntimeVariant === "singleton_identity_v6")) {
+        throw new Error("SLICE248_VERSIONED_FORK_RUNTIME_VARIANT_INVALID");
+      }
+      versionedFork = { ...forkReceipt, sourceDirectory,
+        sourceRootDirectory: credentialDirectory,
+        sourceRunId: path.basename(credentialDirectory),
+        setupRoomId: sourcePrivate.roomId,
+        targetRuntimeVariant,
+        sourceRoomId: forkPrivate.sourceRoomId,
+        targetRoomId: forkPrivate.targetRoomId };
+      privateState = { ...sourcePrivate,
+        roomId: forkPrivate.targetRoomId,
+        resumeCredentials: forkPrivate.resumeCredentials };
+    } else {
+      privateState = JSON.parse(await readFile(path.join(dataDirectory,
+        "runner-private.json"), "utf8"));
+    }
     if (!privateState?.roomId
       || !privateState?.resumeCredentials?.human?.seatToken
       || !privateState?.resumeCredentials?.bot?.seatToken) {
       throw new Error("SLICE248_RESUME_CREDENTIALS_UNAVAILABLE");
     }
+  }
+  if (requestedResumeDirectory && requestedPlannedSessionId
+    && requestedPlannedSessionId !== privateState.plannedSessionId) {
+    throw new Error("SLICE272_RESUME_PREGAME_SESSION_MISMATCH");
+  }
+  const plannedSessionId = requestedResumeDirectory
+    ? privateState.plannedSessionId || null
+    : requestedAgentSelected
+      ? agentSelectedTeachSessionId : requestedPlannedSessionId;
+  const plannedMode = requestedResumeDirectory
+    ? privateState.plannedMode || "workspace_session"
+    : requestedAgentSelected ? "agent_selected_teach" : "workspace_session";
+  if (requestedPlanRevisionHash && !plannedSessionId) {
+    throw new Error("SLICE272_PLAN_REVISION_REQUIRES_ORIGINAL_PLAN");
   }
   const roomId = privateState?.roomId || `ticket23-slice248-aa-${runId}`;
   if (!privateState) {
@@ -647,6 +947,10 @@ async function main() {
       refereeHmacSecret: randomBytes(32).toString("base64url"),
       storeEncryptionKeyBase64: randomBytes(32).toString("base64"),
       resumeCredentials: null,
+      plannedSessionId,
+      plannedMode,
+      plannedPlanHash: null,
+      currentProductRuntimeVariant: requestedRuntimeVariant || "singleton_identity_v6",
       apiCredentialStored: false,
       trainingTruth: false,
     };
@@ -661,12 +965,12 @@ async function main() {
     privateKey: privateState.refereePrivateKeyPem,
     publicKey: privateState.refereePublicKeyPem,
     hmacSecret: privateState.refereeHmacSecret,
-    keyId: `ticket23-slice248-referee-${runId}`,
+    keyId: `ticket23-slice248-referee-${versionedFork?.sourceRunId || runId}`,
     trustLevel: "development_persistent",
   });
   const privatePayloadCodec = createStarcraftTmgPrivatePayloadCodec({
     key: privateState.storeEncryptionKeyBase64,
-    keyId: `ticket23-slice248-room-store-${runId}`,
+    keyId: `ticket23-slice248-room-store-${versionedFork?.sourceRunId || runId}`,
     trustLevel: "development_persistent",
   });
   const roomStore = createSqliteStarcraftTmgRoomStore({
@@ -701,14 +1005,280 @@ async function main() {
         evidenceRefs: [`web-virtual-table:${task.taskId}:authoritative-projection`] };
     },
   });
-  const fixture = await createTicket20AgentAgentDemoFixtureV1({
-    root: ROOT,
-    roomId,
-    roomProfile: "standard_2000_live",
-    mapConfiguration: {
+  const mapConfigurationArgument = process.argv.find((entry) =>
+    entry.startsWith("--pregame-map-configuration-json="));
+  const mapConfigurationFileArgument = process.argv.find((entry) =>
+    entry.startsWith("--pregame-map-configuration-file="));
+  if (mapConfigurationArgument && mapConfigurationFileArgument) {
+    throw new Error("SLICE272_PREGAME_MAP_CONFIGURATION_SOURCES_CONFLICT");
+  }
+  if (requestedResumeDirectory
+    && (mapConfigurationArgument || mapConfigurationFileArgument)) {
+    throw new Error("SLICE272_RESUME_MAP_OVERRIDE_INVALID");
+  }
+  const mapConfiguration = requestedResumeDirectory
+    ? privateState.mapConfiguration || {
       seedId: "sc1_lost_temple_v1",
       elementSelections: [], passageSelections: [],
+    }
+    : mapConfigurationFileArgument
+      ? JSON.parse(await readFile(path.resolve(ROOT,
+        mapConfigurationFileArgument.slice(
+          "--pregame-map-configuration-file=".length)), "utf8"))
+      : mapConfigurationArgument
+      ? JSON.parse(mapConfigurationArgument.slice(
+        "--pregame-map-configuration-json=".length))
+      : { seedId: "sc1_lost_temple_v1",
+        elementSelections: [], passageSelections: [] };
+  if (typeof mapConfiguration?.seedId !== "string"
+    || !mapConfiguration.seedId
+    || !Array.isArray(mapConfiguration.elementSelections)
+    || !Array.isArray(mapConfiguration.passageSelections)) {
+    throw new Error("SLICE272_PREGAME_MAP_CONFIGURATION_INVALID");
+  }
+  if (!requestedResumeDirectory) {
+    privateState.mapConfiguration = mapConfiguration;
+    await writeFile(path.join(dataDirectory, "runner-private.json"),
+      `${JSON.stringify(privateState, null, 2)}\n`, {
+        encoding: "utf8", mode: 0o600,
+      });
+  }
+  if (admissionManifest
+    && admissionManifest.mapSeedId !== mapConfiguration.seedId) {
+    throw new Error("SLICE272_REVIEWED_PLAN_MAP_MISMATCH");
+  }
+  const rosterPlanDataDirectory =
+    (admissionManifest
+      ? path.dirname(reviewedPlanArtifactPath(
+        admissionManifest.planArtifactPath)) : null)
+    || process.env.STARCRAFT_TMG_ROSTER_PLAN_DATA_DIRECTORY
+      || path.join(ROOT, "build/ticket-27-slice-272-output-capacity-v2");
+  const plannedProduct = plannedSessionId && !requestedResumeDirectory
+    ? await createRosterPlanningProductModuleV1({
+      root: ROOT,
+      fixtureRoot: await resolveOfficialDevelopmentTrancheFixtureRootV1({
+        root: ROOT,
+        overrideRoot: process.env.TICKET27_S271_FIXTURE_ROOT || null,
+      }),
+      dataDirectory: rosterPlanDataDirectory,
+      mapConfiguration,
+      enableIterativeDraft: requestedAgentSelected,
+      ...(requestedAgentSelected ? {
+        deliberationFactory: { createForRun: async () => {
+          throw new Error("SLICE272_ROOM_PREFLIGHT_MUST_NOT_CALL_PROVIDER");
+        } },
+      } : {}),
+    }) : null;
+  const opponentPlannedSessionId = requestedResumeDirectory
+    ? privateState.opponentPlannedSessionId || null
+    : opponentPlanArgument?.slice("--opponent-pregame-roster-session-id=".length) || null;
+  const opponentPlanDataDirectory = requestedResumeDirectory
+    ? privateState.opponentPlanDataDirectory || rosterPlanDataDirectory
+    : opponentPlanDirectoryArgument
+      ? path.resolve(opponentPlanDirectoryArgument.slice(
+        "--opponent-roster-plan-data-directory=".length)) : rosterPlanDataDirectory;
+  const opponentPlannedProduct = opponentPlannedSessionId && !requestedResumeDirectory
+    ? path.resolve(opponentPlanDataDirectory) === path.resolve(rosterPlanDataDirectory) && plannedProduct
+      ? plannedProduct
+      : await createRosterPlanningProductModuleV1({ root: ROOT,
+        fixtureRoot: await resolveOfficialDevelopmentTrancheFixtureRootV1({
+          root: ROOT, overrideRoot: process.env.TICKET27_S271_FIXTURE_ROOT || null }),
+        dataDirectory: opponentPlanDataDirectory, mapConfiguration })
+    : null;
+  if (opponentPlannedProduct?.service.readSession(opponentPlannedSessionId)
+    ?.setup.sideKey !== "player2" && opponentPlannedProduct) {
+    throw new Error("SLICE248_OPPONENT_PREGAME_PLAN_SIDE_MISMATCH");
+  }
+  if (!requestedResumeDirectory) {
+    privateState.opponentPlannedSessionId = opponentPlannedSessionId;
+    privateState.opponentPlanDataDirectory = opponentPlannedSessionId ? opponentPlanDataDirectory : null;
+    await writeFile(path.join(dataDirectory, "runner-private.json"),
+      `${JSON.stringify(privateState, null, 2)}\n`, {
+        encoding: "utf8", mode: 0o600,
+      });
+  }
+  reportPregameStartup("planning_product_loaded");
+  const agentSelectedSnapshotPath = path.join(
+    versionedFork?.sourceRootDirectory || dataDirectory,
+    "agent-selected-pregame-snapshot.json");
+  let agentSelectedReview = null;
+  let agentSelectedHandoff = null;
+  let agentSelectedPriorPlans = [];
+  let plannedSession = null;
+  if (plannedSessionId && plannedMode === "agent_selected_teach") {
+    let plan;
+    let candidateInput;
+    if (requestedResumeDirectory) {
+      const snapshot = JSON.parse(await readFile(
+        agentSelectedSnapshotPath, "utf8"));
+      plan = snapshot.plan;
+      candidateInput = snapshot.selectedCandidateInput;
+    } else if (admissionManifest) {
+      const planArtifact = await readReviewedPlanArtifact(
+        admissionManifest.planArtifactPath);
+      plan = planArtifact.plan;
+      agentSelectedReview = await readReviewedPlanArtifact(
+        admissionManifest.finalReviewArtifactPath);
+      agentSelectedPriorPlans = await Promise.all(
+        admissionManifest.intermediatePlanArtifactPaths.map(
+          async (filename) => (await readReviewedPlanArtifact(filename)).plan));
+      if (plan?.planHash !== admissionManifest.planHash
+        || agentSelectedReview.reviewHash
+          !== admissionManifest.finalReviewHash
+        || agentSelectedReview.reviewAdjudication?.parentReviewHash
+          !== admissionManifest.sourceReviewHash
+        || plan.revisions.length !== admissionManifest.revisionCount
+        || plan.revisions[0]?.previousPlanHash
+          !== admissionManifest.initialPlanHash) {
+        throw new Error("SLICE272_REVIEWED_PLAN_MANIFEST_DRIFT");
+      }
+      agentSelectedHandoff = await plannedProduct.iterativeDraft
+        .prepareTeachHandoff(agentSelectedIterativeSessionId);
+      reportPregameStartup("agent_selection_handoff_verified");
+      candidateInput = agentSelectedHandoff.lockedRoster.lock.candidateInput;
+    } else {
+      // A Web-created roster is admitted from its own persisted journey and
+      // reviewed Teach session. Historical claim-repair artifacts are not a
+      // source of authority for a newly generated plan or Room.
+      const admitted = await plannedProduct.prepareAgentSelectedTeachRoomLaunch({
+        iterativeSessionId: agentSelectedIterativeSessionId,
+        teachSessionId: agentSelectedTeachSessionId,
+      });
+      plan = admitted.plan;
+      agentSelectedReview = admitted.finalReview;
+      agentSelectedPriorPlans = admitted.priorPlans;
+      agentSelectedHandoff = admitted.handoff;
+      reportPregameStartup("agent_selection_handoff_verified");
+      candidateInput = agentSelectedHandoff.lockedRoster.lock.candidateInput;
+    }
+    verifyAgentScheduledRosterPlanV1(plan);
+    if (!candidateInput || plan.sideKey !== candidateInput.sideKey
+      || (requestedResumeDirectory
+        && plan.planHash !== privateState.plannedPlanHash)) {
+      throw new Error("SLICE272_AGENT_SELECTED_PREGAME_SNAPSHOT_INVALID");
+    }
+    plannedSession = { status: "planned", plan,
+      candidates: [{ candidate: plan.rosterCandidate,
+        candidateInput }] };
+    if (!requestedResumeDirectory) {
+      await writeFile(agentSelectedSnapshotPath,
+        `${JSON.stringify({ plan, selectedCandidateInput: candidateInput,
+          iterativeSessionId: agentSelectedIterativeSessionId,
+          teachSessionId: agentSelectedTeachSessionId,
+          ...(admissionManifest ? { admissionManifestHash:
+            hashStarcraftTmgContract(admissionManifest),
+            finalReviewHash: agentSelectedReview.reviewHash,
+            priorPlanHashes: agentSelectedPriorPlans.map((prior) =>
+              prior.planHash) } : {}) })}\n`,
+        { encoding: "utf8", mode: 0o600 });
+    }
+  } else if (plannedSessionId) {
+    plannedSession = requestedResumeDirectory
+      ? await loadPregameResumeDraftV1({
+        dataDirectory: rosterPlanDataDirectory,
+        sessionId: plannedSessionId,
+        expectedPlanHash: privateState.plannedPlanHash,
+      })
+      : plannedProduct.service.readSession(plannedSessionId);
+  }
+  if (plannedSession && (plannedSession.status !== "planned"
+    || !plannedSession.plan
+    || !["active", "revised"].includes(plannedSession.plan.planStatus)
+    || (requestedResumeDirectory && privateState.plannedPlanHash
+      !== plannedSession.plan.planHash))) {
+    throw new Error("SLICE272_PREGAME_PLAN_UNAVAILABLE_OR_DRIFTED");
+  }
+  const selectedInput = plannedSession?.candidates.find((entry) =>
+    entry.candidate.candidateId
+      === plannedSession.plan.rosterCandidate.candidateId)?.candidateInput
+    || null;
+  if (plannedSession && !selectedInput) {
+    throw new Error("SLICE272_PREGAME_SELECTED_ROSTER_UNAVAILABLE");
+  }
+  const preparedResumeRevision = requestedPlanRevisionHash
+    ? await loadReviewedPregameRevisionV1({ dataDirectory: rosterPlanDataDirectory,
+      sessionId: plannedSessionId,
+      expectedPlanHash: privateState.activeRosterPlanHash || privateState.plannedPlanHash,
+      requestedPlanHash: requestedPlanRevisionHash }) : null;
+  const plannedRecipe = selectedInput ? {
+    factionRecordKey: selectedInput.factionRecordKey,
+    tacticalCardRecordKeys: selectedInput.tacticalCardRecordKeys,
+    units: selectedInput.units.map((unit) => ({
+      unitInstanceId: unit.unitInstanceId,
+      recordKey: unit.recordKey,
+      compositionKind: unit.compositionKind,
+      upgradeNames: unit.upgrades.map((upgrade) => upgrade.upgradeName),
+    })),
+  } : null;
+  let preparedPregamePlan = null;
+  let preparedOpponentPregamePlan = null;
+  const prepareOpponentPlanForRoom = async ({ roomRuntime, roomId: currentRoomId, seats }) => {
+    preparedOpponentPregamePlan = await opponentPlannedProduct.preparePregamePlanForRoom({
+      sessionId: opponentPlannedSessionId, roomRuntime, roomId: currentRoomId,
+      seatToken: seats.player2.seatToken, scope: seats.player2.scope,
+    });
+    return { player2: preparedOpponentPregamePlan };
+  };
+  const fixture = await createTicket20AgentAgentDemoFixtureV1({
+    observeBotStage,
+    root: await resolveOfficialDevelopmentTrancheFixtureRootV1({
+      root: ROOT,
+      overrideRoot: process.env.TICKET27_S271_FIXTURE_ROOT || null,
+    }),
+    roomId,
+    ...(versionedFork ? {
+      setupRoomId: versionedFork.setupRoomId,
+      currentProductRuntimeVariant: versionedFork.targetRuntimeVariant,
+    } : privateState.currentProductRuntimeVariant ? {
+      currentProductRuntimeVariant: privateState.currentProductRuntimeVariant,
+    } : {}),
+    roomProfile: "standard_2000_live",
+    mapConfiguration,
+    onAuthoritativeRoomCreated: async ({ credentials }) => {
+      privateState.resumeCredentials = credentials;
+      await writeFile(path.join(dataDirectory, "runner-private.json"),
+        `${JSON.stringify(privateState, null, 2)}\n`, {
+          encoding: "utf8", mode: 0o600,
+        });
     },
+    ...(plannedRecipe ? {
+      standard2000Recipes: { player1: plannedRecipe,
+        player2: OFFICIAL_STANDARD_2000_ROOM_RECIPES_V1.player2 },
+      armySpendPolicy: OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY,
+      ...(!requestedResumeDirectory ? {
+        preparePregameRosterPlans: async ({ roomRuntime,
+          roomId: currentRoomId, seats }) => {
+          preparedPregamePlan = requestedAgentSelected
+            ? await plannedProduct.prepareAgentSelectedTeachPlanForRoom({
+              iterativeSessionId: agentSelectedIterativeSessionId,
+              teachSessionId: agentSelectedTeachSessionId,
+              plan: plannedSession.plan,
+              finalReview: agentSelectedReview,
+              priorPlans: agentSelectedPriorPlans,
+              handoff: agentSelectedHandoff,
+              roomRuntime,
+              roomId: currentRoomId,
+              seatToken: seats.player1.seatToken,
+              scope: seats.player1.scope,
+            })
+            : await plannedProduct.preparePregamePlanForRoom({
+              sessionId: plannedSessionId,
+              roomRuntime,
+              roomId: currentRoomId,
+              seatToken: seats.player1.seatToken,
+              scope: seats.player1.scope,
+            });
+          return { player1: preparedPregamePlan,
+            ...(opponentPlannedProduct ? await prepareOpponentPlanForRoom({
+              roomRuntime, roomId: currentRoomId, seats }) : {}) };
+        },
+      } : {}),
+    } : {}),
+    ...(!requestedResumeDirectory && !plannedRecipe && opponentPlannedProduct ? {
+      // The no-opening-plan arm omits PLAYER1's plan only. Its opponent uses
+      // the same reviewed plan and existing machine-seat bridge as A and B.
+      preparePregameRosterPlans: prepareOpponentPlanForRoom,
+    } : {}),
     maxAppliedActions: 180,
     enableSpatialPreexecution: true,
     autoDriveIntervalMs: 2_500,
@@ -729,9 +1299,95 @@ async function main() {
     title: "Ticket 23 · Standard 2000 · Agent vs Agent",
     surfaceMode: "agent_agent_live_evidence",
   });
+  reportPregameStartup("authoritative_room_created_and_plan_bound");
+  if (versionedFork) {
+    const replay = await fixture.roomRuntime.replayRoom({ roomId });
+    const aggregate = await roomStore.loadRoom(roomId);
+    if (!replay.ok || !replay.matchesCurrent
+      || aggregate?.envelope?.state?.officialRulesVersionFork
+        ?.sourceStateHash !== versionedFork.sourceStateHash
+      || fixture.rulesRuntime.descriptor.runtimeHash
+        !== versionedFork.targetRulesRuntimeHash) {
+      throw new Error("SLICE248_VERSIONED_FORK_RESUME_REPLAY_MISMATCH");
+    }
+  }
   const fork = forkSource ? await replayForkPrefix({
     fixture, roomId, forkSource,
   }) : null;
+  const memoryHandoff = versionedFork && !versionedForkPreflightOnly
+    ? await prepareVersionedRoomMemoryHandoffV1({
+      sourceDirectory: versionedFork.sourceDirectory,
+      targetDirectory: dataDirectory,
+      sourceRoomId: versionedFork.sourceRoomId,
+      sourceMatchBindingHash: versionedFork.sourceMatchBindingHash,
+      sourceStateHash: versionedFork.sourceStateHash,
+      sourceStateRevision: versionedFork.sourceStateRevision,
+      targetRoomId: roomId,
+      targetMatchBindingHash: fixture.createdRoom.matchBinding.bindingHash,
+      targetInitialStateHash: versionedFork.targetStateHash,
+      ...(versionedFork.schemaVersion === "ticket23_slice248_legal_prefix_recovery_v1"
+        ? { legalPrefixRecovery: versionedFork } : {}),
+      ...(versionedFork.schemaVersion === "ticket23_slice248_singleton_identity_recovery_v1"
+        ? { singletonIdentityRecovery: versionedFork } : {}),
+      roomRuntime: fixture.roomRuntime,
+      targetContinuities: {
+        player1: fixture.player1Continuity,
+        player2: fixture.continuity,
+      },
+      seatTokens: {
+        player1: fixture.createdRoom.credentials.human.seatToken,
+        player2: fixture.createdRoom.credentials.bot.seatToken,
+      },
+    }) : null;
+  if (requestedResumeDirectory && plannedSession
+    && !versionedForkPreflightOnly) {
+    // Once play has started, casualties and deployment may change the live
+    // Room roster projection. Resume the original, room-bound plan from its
+    // same-seat journal instead of pretending this is another pregame open.
+    await fixture.player1TurnPlanRuntime.hydrate({
+      scope: fixture.player1Scope,
+    });
+    const restored = fixture.player1TurnPlanRuntime.read({
+      scope: fixture.player1Scope,
+    }).plan;
+    const expectedActivePlanHash = privateState.activeRosterPlanHash || privateState.plannedPlanHash;
+    if (restored?.pregamePlanOrigin?.rosterPlanHash !== expectedActivePlanHash
+      && !(preparedResumeRevision
+        && restored?.pregamePlanOrigin?.rosterPlanHash === preparedResumeRevision.plan.planHash
+        && restored.pregamePlanOrigin.previousRosterPlanHash === expectedActivePlanHash)) {
+      throw new Error("SLICE272_RESUMED_PREGAME_PLAN_JOURNAL_MISMATCH");
+    }
+    if (preparedResumeRevision) {
+      const adoption = await adoptReviewedPregameResumeRevisionV1({
+        prepared: preparedResumeRevision, roomRuntime: fixture.roomRuntime,
+        roomId, seatToken: fixture.createdRoom.credentials.human.seatToken,
+        scope: fixture.player1Scope, turnPlanRuntime: fixture.player1TurnPlanRuntime,
+        spatialRuntime: fixture.player1SpatialRuntime, journal: memoryJournals.player1,
+      });
+      // Keep the original pregame hash/snapshot immutable. The journal is the
+      // authority for current strategy; metadata follows a proven durable append.
+      privateState.activeRosterPlanHash = adoption.toPlanHash;
+      privateState.pregamePlanRevisions ||= [];
+      if (!privateState.pregamePlanRevisions.some(row => row.toPlanHash === adoption.toPlanHash)) {
+        privateState.pregamePlanRevisions.push(adoption);
+      }
+      const target = path.join(dataDirectory, "runner-private.json");
+      await writeFile(target + ".plan-revision.tmp", `${JSON.stringify(privateState, null, 2)}\n`,
+        { encoding: "utf8", mode: 0o600 });
+      await rename(target + ".plan-revision.tmp", target);
+      process.stdout.write(`${JSON.stringify(adoption)}\n`);
+    }
+  }
+  if (planRevisionOnly) {
+    try { await fixture.player1Runtime.close(); } catch {}
+    try { await fixture.botRuntime.close(); } catch {}
+    for (const seatKey of SEATS) {
+      try { memoryJournals[seatKey].close(); } catch {}
+      try { botStores[seatKey].close(); } catch {}
+    }
+    try { roomStore.close(); } catch {}
+    return;
+  }
   if (fork) {
     fork.continuitySeeds = await seedForkContinuity({
       fixture, roomId, forkSource, fork,
@@ -741,14 +1397,166 @@ async function main() {
       `${JSON.stringify(fork, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
   }
   if (!requestedResumeDirectory) {
+    if (plannedSession && preparedPregamePlan?.plan?.planHash
+      !== plannedSession.plan.planHash) {
+      throw new Error("SLICE272_PREGAME_PLAN_HANDOFF_MISMATCH");
+    }
     privateState.resumeCredentials = {
       human: { seatToken: fixture.createdRoom.credentials.human.seatToken },
       bot: { seatToken: fixture.createdRoom.credentials.bot.seatToken },
     };
+    privateState.plannedPlanHash = preparedPregamePlan?.plan?.planHash || null;
+    privateState.opponentPlannedPlanHash = preparedOpponentPregamePlan?.plan?.planHash || null;
     await writeFile(path.join(dataDirectory, "runner-private.json"),
       `${JSON.stringify(privateState, null, 2)}\n`, {
         encoding: "utf8", mode: 0o600,
       });
+  }
+  if (pregamePreflightOnly) {
+    await fixture.orchestrator.start();
+    const plan = fixture.player1TurnPlanRuntime.read({
+      scope: fixture.player1Scope,
+    }).plan;
+    const roomRead = await fixture.roomRuntime.readRoom({ roomId,
+      seatToken: fixture.createdRoom.credentials.human.seatToken });
+    if (!plan || plan.pregamePlanOrigin?.rosterPlanHash
+      !== privateState.plannedPlanHash
+      || plan.pregameRosterArrivalSchedule?.entries?.length
+        !== plannedRecipe.units.length
+      || roomRead?.projection?.room?.stateRevision !== 0) {
+      throw new Error("SLICE272_PREGAME_PREFLIGHT_BINDING_FAILED");
+    }
+    process.stdout.write(`${JSON.stringify({
+      schemaVersion: "ticket27_slice272_pregame_selfplay_preflight_v1",
+      roomId, dataDirectory, plannedSessionId,
+      plannedPlanHash: privateState.plannedPlanHash,
+      rosterUnitCount: plannedRecipe.units.length,
+      botArrivalCount: plan.pregameRosterArrivalSchedule.entries.length,
+      roomStateRevision: roomRead.projection.room.stateRevision,
+      providerCalls: 0, providerStacksCreated: false,
+      webServerCreated: false, trainingTruth: false,
+    })}\n`);
+    try { await fixture.player1Runtime.close(); } catch {}
+    try { await fixture.botRuntime.close(); } catch {}
+    for (const seatKey of SEATS) {
+      try { memoryJournals[seatKey].close(); } catch {}
+      try { botStores[seatKey].close(); } catch {}
+    }
+    try { roomStore.close(); } catch {}
+    return;
+  }
+  if (versionedForkMemoryHandoffOnly) {
+    const restored = await Promise.all([
+      fixture.player1TurnPlanRuntime.hydrate({ scope: fixture.player1Scope }),
+      fixture.turnPlanRuntime.hydrate({ scope: fixture.botScope }),
+    ]);
+    if (restored.some((entry) => !entry.restored)) {
+      throw new Error("SLICE248_VERSIONED_FORK_PLAN_RESTORE_FAILED");
+    }
+    const memoryScopes = { player1: fixture.player1Scope,
+      player2: fixture.botScope };
+    const sourceQueryEvidence = {};
+    for (const seatKey of SEATS) {
+      const query = await memoryHandoff.queryPorts[seatKey].query({
+        scope: memoryScopes[seatKey],
+        query: { kinds: ["decision_purpose"],
+          historyLane: "frozen_source_room", limit: 2 },
+      });
+      if (query.returnedCount < 1
+        || query.records.some((entry) => entry.recordOrigin
+          !== "frozen_source_room")) {
+        throw new Error("SLICE248_VERSIONED_FORK_HISTORY_QUERY_FAILED");
+      }
+      let crossSeatRejected = false;
+      try {
+        await memoryHandoff.queryPorts[seatKey].query({
+          scope: memoryScopes[seatKey === "player1" ? "player2" : "player1"],
+          query: { limit: 1 },
+        });
+      } catch (error) {
+        crossSeatRejected = error?.code
+          === "FORK_MEMORY_QUERY_SCOPE_MISMATCH";
+      }
+      if (!crossSeatRejected) {
+        throw new Error("SLICE248_VERSIONED_FORK_CROSS_SEAT_QUERY_ACCEPTED");
+      }
+      sourceQueryEvidence[seatKey] = {
+        sourceHistoryQueryable: true, crossSeatRejected: true,
+        sourceDecisionCount: query.matchedCount,
+      };
+    }
+    const handoffReceipt = {
+      schemaVersion: "ticket23_slice248_versioned_fork_memory_handoff_v1",
+      roomId,
+      sourceRoomId: versionedFork.sourceRoomId,
+      sourceStateHash: versionedFork.sourceStateHash,
+      targetRulesRuntimeHash: fixture.rulesRuntime.descriptor.runtimeHash,
+      lockHash: memoryHandoff.lockHash,
+      ancestorRoomIds: memoryHandoff.ancestorRoomIds || [],
+      ancestorLockHashes: memoryHandoff.ancestorLockHashes || [],
+      seats: memoryHandoff.seatReports,
+      sourceQueryEvidence,
+      restoredPlans: restored.map((entry) => ({
+        planId: entry.plan?.planId || null,
+        pregameRosterPlanHash:
+          entry.plan?.pregamePlanOrigin?.rosterPlanHash || null,
+        reflectionRequired: true,
+      })),
+      providerCalls: 0, providerStacksCreated: false,
+      webServerCreated: false, trainingTruth: false,
+    };
+    await writeFile(path.join(dataDirectory, "memory-handoff-receipt.json"),
+      `${JSON.stringify(handoffReceipt, null, 2)}\n`, {
+        encoding: "utf8", mode: 0o600,
+      });
+    process.stdout.write(`${JSON.stringify({ ...handoffReceipt,
+      dataDirectory })}\n`);
+    try { await fixture.player1Runtime.close(); } catch {}
+    try { await fixture.botRuntime.close(); } catch {}
+    for (const seatKey of SEATS) {
+      try { memoryJournals[seatKey].close(); } catch {}
+      try { botStores[seatKey].close(); } catch {}
+    }
+    try { roomStore.close(); } catch {}
+    return;
+  }
+  if (versionedForkPreflightOnly) {
+    const aggregate = await roomStore.loadRoom(roomId);
+    const activeSeatToken = aggregate.envelope.state.activeSideKey === "player1"
+      ? fixture.createdRoom.credentials.human.seatToken
+      : fixture.createdRoom.credentials.bot.seatToken;
+    const legal = await fixture.roomRuntime.legalSpace({ roomId,
+      seatToken: activeSeatToken });
+    if (!legal.ok || aggregate.stateRevision !== versionedFork.targetStateRevision) {
+      throw new Error("SLICE248_VERSIONED_FORK_NEXT_ACTION_UNAVAILABLE");
+    }
+    process.stdout.write(`${JSON.stringify({
+      schemaVersion: "ticket23_slice248_versioned_fork_server_preflight_v1",
+      roomId, dataDirectory, sourceRoomId: versionedFork.sourceRoomId,
+      stateRevision: aggregate.stateRevision,
+      stateHash: aggregate.envelope.stateHash,
+      targetRulesRuntimeHash: fixture.rulesRuntime.descriptor.runtimeHash,
+      replayMatchesCurrent: true,
+      nextLegalCandidateCount: legal.legalSpace.finiteActions.length
+        + legal.legalSpace.parameterDomains.length,
+      pregamePlanRequired: Boolean(plannedSession),
+      roomMemoryContinuityReady: (await Promise.all([
+        fixture.player1Continuity.query({ scope: fixture.player1Scope,
+          query: { kinds: ["turn_plan"], limit: 1 } }),
+        fixture.continuity.query({ scope: fixture.botScope,
+          query: { kinds: ["turn_plan"], limit: 1 } }),
+      ])).every((entry) => entry.returnedCount > 0),
+      providerCalls: 0, providerStacksCreated: false,
+      webServerCreated: false, trainingTruth: false,
+    })}\n`);
+    try { await fixture.player1Runtime.close(); } catch {}
+    try { await fixture.botRuntime.close(); } catch {}
+    for (const seatKey of SEATS) {
+      try { memoryJournals[seatKey].close(); } catch {}
+      try { botStores[seatKey].close(); } catch {}
+    }
+    try { roomStore.close(); } catch {}
+    return;
   }
   if (forkPreflightOnly) {
     const roomRead = await fixture.roomRuntime.readRoom({ roomId,
@@ -780,30 +1588,36 @@ async function main() {
       roomId, seatKey: "player1",
       providerProfiles: [STARCRAFT_TMG_TICKET_23_LIVE_FLASH_PROVIDER_PROFILE_V1],
       allowUnstartedProfileReselection: true,
+      providerInteractionMode,
+      allowFailedInteractionModeMigration,
       matchBinding: fixture.createdRoom.matchBinding,
       spatialQueryPort: fixture.player1SpatialRuntime,
-      memoryQueryPort: fixture.player1Continuity,
+      memoryQueryPort: memoryHandoff?.queryPorts.player1
+        || fixture.player1Continuity,
       strategyEntries: fixture.strategySkillEntries,
       ownFaction: fixture.factionRecordKeysBySeat.player1,
       opponentFaction: fixture.factionRecordKeysBySeat.player2,
       dataDirectory: path.join(seatRoots.player1, "provider"),
       matchMode: "agent_vs_agent",
-      budgetLimitCnyMicros: 80_000_000,
+      budgetLimitCnyMicros: perSeatBudgetCnyMicros,
       maxProviderCalls: 1_024,
     }),
     player2: await createStarcraftTmgLiveOpponentProviderStackV1({
       roomId, seatKey: "player2",
       providerProfiles: [STARCRAFT_TMG_TICKET_23_LIVE_FLASH_PROVIDER_PROFILE_V1],
       allowUnstartedProfileReselection: true,
+      providerInteractionMode,
+      allowFailedInteractionModeMigration,
       matchBinding: fixture.createdRoom.matchBinding,
       spatialQueryPort: fixture.spatialRuntime,
-      memoryQueryPort: fixture.continuity,
+      memoryQueryPort: memoryHandoff?.queryPorts.player2
+        || fixture.continuity,
       strategyEntries: fixture.strategySkillEntries,
       ownFaction: fixture.factionRecordKeysBySeat.player2,
       opponentFaction: fixture.factionRecordKeysBySeat.player1,
       dataDirectory: path.join(seatRoots.player2, "provider"),
       matchMode: "agent_vs_agent",
-      budgetLimitCnyMicros: 80_000_000,
+      budgetLimitCnyMicros: perSeatBudgetCnyMicros,
       maxProviderCalls: 1_024,
     }),
   };
@@ -817,6 +1631,7 @@ async function main() {
   const selectedModels = Object.fromEntries(SEATS.map((seatKey) => [seatKey,
     providerStacks[seatKey].selectedProfile.model]));
   await fixture.orchestrator.start();
+  reportPregameStartup("bot_seats_ready");
   let providerMatchesFinalized = false;
   const existingEvolutionSummaryPath = path.join(dataDirectory,
     "training/summary.json");
@@ -829,6 +1644,12 @@ async function main() {
   let evolutionExportPromise = null;
   let driveJobSequence = 0;
   let driveJob = null;
+  let driveJobCompletion = null;
+  let autoLoopPromise = null;
+  const autoDrive = {
+    status: "idle", stopRequested: false, completedActions: 0,
+    startedAt: null, stoppedAt: null, stopReason: null,
+  };
 
   async function writeTerminalEvolutionArtifacts(orchestratorResult) {
     if (evolutionExportSummary) return evolutionExportSummary;
@@ -923,12 +1744,14 @@ async function main() {
     }
   }
 
-  async function driveOne() {
+  async function driveOne({ retry = false } = {}) {
     const before = await fixture.orchestrator.read();
     let result = before;
-    if (before.status === "paused") {
+    if (before.status === "paused"
+      || (before.status === "blocked" && retry === true)) {
       result = await fixture.orchestrator.resume({
         maxAdditionalActions: 1, pauseAfterAppliedActions: 1,
+        retryProvider: retry === true,
       });
     } else if (before.status === "running") {
       result = await fixture.orchestrator.run({
@@ -962,7 +1785,7 @@ async function main() {
     };
   }
 
-  function queueDrive() {
+  function queueDrive({ retry = false } = {}) {
     if (driveJob?.status === "queued" || driveJob?.status === "running") {
       return publicDriveJob();
     }
@@ -976,51 +1799,184 @@ async function main() {
       result: null,
       failure: null,
     };
-    setImmediate(async () => {
-      driveJob.status = "running";
-      driveJob.startedAt = new Date().toISOString();
-      try {
-        const result = await driveOne();
-        driveJob.result = {
-          status: result.status,
-          appliedActionCount: result.appliedActionCount,
-          failureAccounting: result.failureAccounting,
-        };
-        driveJob.status = "completed";
-      } catch (error) {
-        driveJob.failure = {
-          code: String(error?.code || error?.name || "SLICE248_DRIVE_FAILED"),
-          message: String(error?.message || error),
-          severity: String(error?.severity || "High"),
-        };
-        driveJob.status = "failed";
-      } finally {
-        driveJob.completedAt = new Date().toISOString();
-      }
+    driveJobCompletion = new Promise((resolve) => {
+      setImmediate(async () => {
+        driveJob.status = "running";
+        driveJob.startedAt = new Date().toISOString();
+        try {
+          const result = await driveOne({ retry });
+          driveJob.result = {
+            status: result.status,
+            appliedActionCount: result.appliedActionCount,
+            failureAccounting: result.failureAccounting,
+          };
+          driveJob.status = "completed";
+        } catch (error) {
+          driveJob.failure = {
+            code: String(error?.code || error?.name || "SLICE248_DRIVE_FAILED"),
+            message: String(error?.message || error),
+            severity: String(error?.severity || "High"),
+          };
+          driveJob.status = "failed";
+        } finally {
+          driveJob.completedAt = new Date().toISOString();
+          resolve(publicDriveJob());
+        }
+      });
     });
     return publicDriveJob();
   }
 
+  function publicAutoDrive() {
+    return {
+      schemaVersion: "ticket23_slice248_continuous_auto_drive_v1",
+      status: autoDrive.status,
+      completedActions: autoDrive.completedActions,
+      currentJobId: driveJob?.status === "queued"
+        || driveJob?.status === "running" ? driveJob.jobId : null,
+      startedAt: autoDrive.startedAt,
+      stoppedAt: autoDrive.stoppedAt,
+      stopReason: autoDrive.stopReason,
+      trainingTruth: false,
+    };
+  }
+
+  async function roomProgress() {
+    const result = await fixture.roomRuntime.readRoom({ roomId });
+    const revision = Number(result?.projection?.room?.stateRevision);
+    if (result?.ok !== true || !Number.isSafeInteger(revision)) {
+      throw Object.assign(new Error("A2A_AUTO_ROOM_READ_FAILED"), {
+        code: "A2A_AUTO_ROOM_READ_FAILED", severity: "High",
+      });
+    }
+    return { revision, terminal: result.projection.state?.terminal === true
+      || result.projection.state?.gameOver === true };
+  }
+
+  async function runAutoDrive() {
+    try {
+      while (!autoDrive.stopRequested) {
+        const before = await roomProgress();
+        if (before.terminal) {
+          autoDrive.status = "completed";
+          autoDrive.stopReason = "ROOM_TERMINAL";
+          break;
+        }
+        if (autoDrive.stopRequested) break;
+        queueDrive();
+        await driveJobCompletion;
+        if (driveJob.status === "failed") {
+          autoDrive.status = "failed";
+          autoDrive.stopReason = driveJob.failure?.code
+            || "A2A_AUTO_ACTION_FAILED";
+          break;
+        }
+        const blockingFinding = driveJob.result?.failureAccounting?.findings
+          ?.find((entry) => entry.integrationBlocking === true
+            || entry.severity === "Critical" || entry.severity === "High");
+        if (blockingFinding || driveJob.result?.status === "blocked") {
+          autoDrive.status = "failed";
+          autoDrive.stopReason = blockingFinding?.code
+            || "A2A_AUTO_ACTION_BLOCKED";
+          break;
+        }
+        const after = await roomProgress();
+        if (after.revision <= before.revision) {
+          autoDrive.status = "failed";
+          autoDrive.stopReason = "A2A_AUTO_ACTION_DID_NOT_ADVANCE";
+          break;
+        }
+        autoDrive.completedActions += 1;
+        if (after.terminal || driveJob.result?.status === "completed") {
+          autoDrive.status = "completed";
+          autoDrive.stopReason = "ROOM_TERMINAL";
+          break;
+        }
+        // Yield after each sealed Apply/Replay so pause and status requests
+        // can be observed before the next potentially paid decision.
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+    } catch (error) {
+      autoDrive.status = "failed";
+      autoDrive.stopReason = String(error?.code || error?.message
+        || "A2A_AUTO_DRIVE_FAILED");
+    } finally {
+      if (autoDrive.status === "running" || autoDrive.status === "pausing") {
+        autoDrive.status = "paused";
+        autoDrive.stopReason = "USER_PAUSED_AFTER_CURRENT_ACTION";
+      }
+      autoDrive.stoppedAt = new Date().toISOString();
+      autoLoopPromise = null;
+    }
+  }
+
+  function startAutoDrive() {
+    if (autoDrive.status === "running" || autoDrive.status === "pausing") {
+      return publicAutoDrive();
+    }
+    if (driveJob?.status === "queued" || driveJob?.status === "running") {
+      return { ...publicAutoDrive(), status: "busy",
+        stopReason: "A2A_AUTO_SINGLE_ACTION_IN_FLIGHT" };
+    }
+    if (fixture.rulesRuntime.descriptor
+      .dataWiringAuditBlockingFindingCount !== 0) {
+      return { ...publicAutoDrive(), status: "blocked",
+        stopReason: "A2A_AUTO_DATA_WIRING_BLOCKED" };
+    }
+    autoDrive.status = "running";
+    autoDrive.stopRequested = false;
+    autoDrive.startedAt = new Date().toISOString();
+    autoDrive.stoppedAt = null;
+    autoDrive.stopReason = null;
+    autoLoopPromise = new Promise((resolve) => {
+      setImmediate(() => { void runAutoDrive().finally(resolve); });
+    });
+    return publicAutoDrive();
+  }
+
+  function pauseAutoDrive() {
+    if (autoDrive.status === "running") {
+      autoDrive.stopRequested = true;
+      autoDrive.status = "pausing";
+    }
+    return publicAutoDrive();
+  }
+
   async function buildManifest() {
-    const roomRead = await fixture.roomRuntime.readRoom({ roomId });
+    const observationPhaseTimings = [];
+    const observe = async (operation, task) => {
+      const started = performance.now();
+      const result = await task();
+      observationPhaseTimings.push({ operation,
+        elapsedMs: Math.round(performance.now() - started) });
+      return result;
+    };
+    const roomRead = await observe("room_read", () =>
+      fixture.roomRuntime.readRoom({ roomId }));
     const seatReads = {
-      player1: await fixture.player1Runtime.read({ scope: fixture.player1Scope }),
-      player2: await fixture.botRuntime.read({ scope: fixture.botScope }),
+      player1: await observe("player1_seat_read", () =>
+        fixture.player1Runtime.read({ scope: fixture.player1Scope })),
+      player2: await observe("player2_seat_read", () =>
+        fixture.botRuntime.read({ scope: fixture.botScope })),
     };
     const providerReads = {
-      player1: await providerStacks.player1.decisionPort.read({
+      player1: await observe("player1_provider_read", () =>
+        providerStacks.player1.decisionPort.read({
         scope: fixture.player1Scope,
-      }),
-      player2: await providerStacks.player2.decisionPort.read({
+      })),
+      player2: await observe("player2_provider_read", () =>
+        providerStacks.player2.decisionPort.read({
         scope: fixture.botScope,
-      }),
+      })),
     };
     const providers = Object.fromEntries(SEATS.map((seatKey) => [seatKey,
       compactProviderProjection(providerReads[seatKey]?.projection || {})]));
-    const recentAcceptedTransitions = (await fixture.roomRuntime.roomStore
-      .readJournal(roomId, "public", 0))
+    const recentAcceptedTransitions = (await observe("public_journal_read", () =>
+      fixture.roomRuntime.roomStore.readJournal(roomId, "public", 0)))
       .filter((entry) => entry.payload?.type === "accepted_transition")
       .map((entry) => entry.payload.payload).slice(-64);
+    const orchestratorSummary = await observe("orchestrator_summary_read", () =>
+      fixture.orchestrator.readStatusSummary());
     const state = roomRead.projection.state || {};
     return {
       schemaVersion: "ticket23_slice248_standard_2000_aa_live_manifest_v1",
@@ -1041,17 +1997,17 @@ async function main() {
         roomFreezeSummary: state.board.competitiveMapRoomFreezeSummary || null,
       } : null,
       coverage: fixture.coverage,
-      orchestrator: ((orchestrator) => ({
-        status: orchestrator.status || null,
-        experimentCell: orchestrator.experimentCell || null,
-        failureAccounting: orchestrator.failureAccounting || null,
-      }))(await fixture.orchestrator.read()),
+      orchestrator: orchestratorSummary,
+      observationPhaseTimings,
       driveJob: publicDriveJob(),
+      autoDrive: publicAutoDrive(),
       seats: Object.fromEntries(SEATS.map((seatKey) => [seatKey,
         compactSeatProjection(seatReads[seatKey]?.projection || {})])),
       providers,
       usage: sumUsage(providers),
       selectedModels,
+      currentProductRuntimeVariant: versionedFork?.targetRuntimeVariant
+        || privateState.currentProductRuntimeVariant || "legacy_v1",
       strategySkillRefsBySeat: fixture.routedSkillRefsBySeat,
       recentAcceptedTransitions,
       isolation: {
@@ -1061,7 +2017,8 @@ async function main() {
         independentMatchDecisionJournals: true,
         independentProviderAttemptAndDecisionStores: true,
         independentBudgetLimitCnyMicrosBySeat: {
-          player1: 80_000_000, player2: 80_000_000,
+          player1: perSeatBudgetCnyMicros,
+          player2: perSeatBudgetCnyMicros,
         },
         sharedRoomOnly: true,
       },
@@ -1078,6 +2035,18 @@ async function main() {
       },
       webBundle,
       fork,
+      versionedRulesFork: versionedFork ? {
+        sourceRoomId: versionedFork.sourceRoomId,
+        sourceStateRevision: versionedFork.sourceStateRevision,
+        sourceStateHash: versionedFork.sourceStateHash,
+        sourceAcceptedReceiptCount:
+          versionedFork.sourceAcceptedReceiptCount,
+        targetRulesRuntimeHash: versionedFork.targetRulesRuntimeHash,
+        memorySourceLockHash: memoryHandoff?.lockHash || null,
+        oldJournalCopied: false,
+        productionRoomEligible: false,
+        trainingTruth: false,
+      } : null,
       evolutionExport: evolutionExportSummary,
       serviceProcess: {
         pid: process.pid,
@@ -1113,6 +2082,12 @@ async function main() {
             reason: "RUNNER_A2A_DRIVE_FORBIDDEN" });
           return;
         }
+        if (autoDrive.status === "running"
+          || autoDrive.status === "pausing") {
+          sendJson(response, 409, { ok: false,
+            reason: "A2A_AUTO_DRIVE_ALREADY_RUNNING" });
+          return;
+        }
         const job = queueDrive({
           retry: retryProviderOnResume || requestBody.body.retry === true,
         });
@@ -1129,8 +2104,33 @@ async function main() {
             reason: "UI_A2A_DRIVE_FORBIDDEN" });
           return;
         }
-        const job = queueDrive();
+        if (autoDrive.status === "running"
+          || autoDrive.status === "pausing") {
+          sendJson(response, 409, { ok: false,
+            reason: "A2A_AUTO_DRIVE_ALREADY_RUNNING" });
+          return;
+        }
+        const job = queueDrive({ retry: requestBody.body.retry === true });
         sendJson(response, 202, { ok: true, job });
+        return;
+      }
+      if (url.pathname === "/__ticket23/a2a/ui-auto-start"
+        || url.pathname === "/__ticket23/a2a/ui-auto-pause") {
+        if (request.method !== "POST") {
+          sendJson(response, 405, { ok: false,
+            reason: "METHOD_NOT_ALLOWED" });
+          return;
+        }
+        if (!authorizeUiControl(request, uiControlToken)) {
+          sendJson(response, 403, { ok: false,
+            reason: "UI_A2A_AUTO_FORBIDDEN" });
+          return;
+        }
+        const auto = url.pathname.endsWith("auto-start")
+          ? startAutoDrive() : pauseAutoDrive();
+        const denied = auto.status === "busy" || auto.status === "blocked";
+        sendJson(response, denied ? 409 : 202, { ok: !denied,
+          auto, ...(denied ? { reason: auto.stopReason } : {}) });
         return;
       }
       if (url.pathname === "/__ticket23/a2a/ui-status") {
@@ -1146,6 +2146,7 @@ async function main() {
         sendJson(response, 200, {
           ok: true,
           job: publicDriveJob(),
+          auto: publicAutoDrive(),
           manifest: await buildManifest(),
         });
         return;
@@ -1242,19 +2243,44 @@ async function main() {
     roomId,
     runnerToken,
     dataDirectory,
+    plannedPlanHash: privateState.plannedPlanHash,
+    activeRosterPlanHash: privateState.activeRosterPlanHash || privateState.plannedPlanHash || null,
+    pregamePlanRevisionCount: privateState.pregamePlanRevisions?.length || 0,
+    opponentPlannedPlanHash: privateState.opponentPlannedPlanHash || null,
     selectedModels,
+    currentProductRuntimeVariant: versionedFork?.targetRuntimeVariant
+      || privateState.currentProductRuntimeVariant || "legacy_v1",
     webBundle,
-    budgetLimitCny: 160,
+    budgetLimitCny: perRoomBudgetCny,
     providerCalls: startupUsage.providerCalls,
     totalUnits: startupUsage.totalUnits,
     costCny: startupUsage.estimatedCostCnyMicros / 1_000_000,
     resumed: Boolean(requestedResumeDirectory),
     fork,
+    versionedRulesFork: versionedFork ? {
+      sourceRoomId: versionedFork.sourceRoomId,
+      sourceStateRevision: versionedFork.sourceStateRevision,
+      sourceStateHash: versionedFork.sourceStateHash,
+      sourceAcceptedReceiptCount:
+        versionedFork.sourceAcceptedReceiptCount,
+      targetRulesRuntimeHash: versionedFork.targetRulesRuntimeHash,
+      memorySourceLockHash: memoryHandoff?.lockHash || null,
+      oldJournalCopied: false,
+      productionRoomEligible: false,
+      trainingTruth: false,
+    } : null,
   })}\n`);
+  if (autoDriveOnLaunch) startAutoDrive();
   let closing = false;
   const close = async () => {
     if (closing) return;
     closing = true;
+    pauseAutoDrive();
+    // Never tear down the Provider or Room store during a paid in-flight
+    // action. The current sealed Apply/Replay finishes before shutdown.
+    if (autoLoopPromise) await autoLoopPromise;
+    else if (driveJob?.status === "queued"
+      || driveJob?.status === "running") await driveJobCompletion;
     try { await fixture.player1Runtime.close(); } catch {}
     try { await fixture.botRuntime.close(); } catch {}
     for (const seatKey of SEATS) {
@@ -1263,6 +2289,7 @@ async function main() {
       try { botStores[seatKey].close(); } catch {}
     }
     try { roomStore.close(); } catch {}
+    await stageObservationTail;
     server.close(() => process.exit(0));
   };
   process.once("SIGINT", close);

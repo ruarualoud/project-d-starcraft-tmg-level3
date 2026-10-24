@@ -13,10 +13,8 @@ import {
 } from "../../packages/online-agent-session/match-decision-continuity-v1.mjs";
 import { createStarcraftTmgPlayerSpatialObservationV1 } from
   "../../packages/online-agent-session/player-spatial-observation-v1.mjs";
-import { createStarcraftTmgSpatialActionQueryRuntimeV1 } from
-  "../../packages/online-agent-session/spatial-action-query-runtime-v1.mjs";
-import { createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1 } from
-  "../../packages/online-agent-session/room-backed-spatial-rules-query-adapter-v1.mjs";
+import { createStarcraftTmgSceneQueryServiceV1 } from
+  "../../packages/online-agent-session/scene-query-service-v1.mjs";
 import { createStarcraftTmgTurnPlanRuntimeV1 } from
   "../../packages/online-agent-session/turn-plan-runtime-v1.mjs";
 import { createStarcraftTmgSpatialPreexecutionSearchV1 } from
@@ -41,6 +39,18 @@ import { createOfficialStandardActionRuntimeV1 } from
   "../../packages/product-composition/official-standard-action-runtime-v1.mjs";
 import { createOfficialCurrentProductMatchRuntimeV1 } from
   "../../packages/product-composition/official-current-product-match-runtime-v1.mjs";
+import { createOfficialCurrentProductMatchRuntimeV2 } from
+  "../../packages/product-composition/official-current-product-match-runtime-v2.mjs";
+import { createOfficialCurrentProductMatchRuntimeV3 } from
+  "../../packages/product-composition/official-current-product-match-runtime-v3.mjs";
+import { createOfficialCurrentProductMatchRuntimeV4 } from
+  "../../packages/product-composition/official-current-product-match-runtime-v4.mjs";
+import { createOfficialCurrentProductMatchRuntimeV5 } from
+  "../../packages/product-composition/official-current-product-match-runtime-v5.mjs";
+import { createOfficialCurrentProductMatchRuntimeV6 } from
+  "../../packages/product-composition/official-current-product-match-runtime-v6.mjs";
+import {prepareOfficialCurrentProductFirstRoundV1} from
+  '../../packages/product-composition/official-first-round-setup-v1.mjs';
 import { createOfficialStandardRoomInitialStateAuthorityV1 } from
   "../../packages/product-composition/official-standard-room-factory-v1.mjs";
 import { getOfficialCurrentProductRecord } from
@@ -534,21 +544,27 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     || "2026-09-11T16:00:00.000Z");
   const now = typeof options.now === "function"
     ? options.now : () => new Date().toISOString();
-  const loaded = await loadFormalFoundationalStrategyPackV1({
-    root,
-    manifest: STARCRAFT_TMG_TICKET_18_FOUNDATIONAL_STRATEGY_PACK_V1,
-  });
+  const formalStandard2000 = options.roomProfile === "standard_2000_live";
+  const loaded = formalStandard2000
+    ? (await loadPortableFoundationalStrategyPackV2({
+      root,
+      manifest: STARCRAFT_TMG_TICKET_18_PORTABLE_STRATEGY_PACK_V2,
+    })).foundational
+    : await loadFormalFoundationalStrategyPackV1({
+      root,
+      manifest: STARCRAFT_TMG_TICKET_18_FOUNDATIONAL_STRATEGY_PACK_V1,
+    });
   const source = await loadOfficialDevelopmentTrancheSourceLockFixtureV1({ root });
   ensure(source.dataset.datasetHash === loaded.manifest.sourceBinding.dataset,
     "TICKET20_DEMO_DATASET_DRIFT");
-  const report11 = JSON.parse(await readFile(path.join(root,
+  const report11 = formalStandard2000 ? null : JSON.parse(await readFile(path.join(
+    root,
     "build/ticket-11-rule-atoms-v1/official-dispute-resolution-rules-rule-slice-v1-report.json"),
   "utf8"));
   const get = (recordKey) => getOfficialCurrentProductRecord(source.dataset,
     recordKey);
   const terranCard = get(TERRAN);
   const zergCard = get(ZERG);
-  const formalStandard2000 = options.roomProfile === "standard_2000_live";
   const standard2000 = formalStandard2000
     || options.roomProfile === "standard_2000";
   const serverSeatPlan = [{
@@ -575,21 +591,49 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
       dataset: source.dataset,
       snapshot: source.snapshot,
       serverSeatPlan,
-      roomId,
+      // A versioned Room fork keeps its source's frozen map/setup identity.
+      // The target roomId still owns the new match binding and journal.
+      roomId: options.setupRoomId || roomId,
+      ...(options.standard2000Recipes
+        ? { recipes: structuredClone(options.standard2000Recipes) } : {}),
+      ...(options.armySpendPolicy
+        ? { armySpendPolicy: options.armySpendPolicy } : {}),
       ...(options.mapConfiguration
         ? { mapConfiguration: structuredClone(options.mapConfiguration) }
         : {}),
     });
     state = structuredClone(standardAuthority.state);
     if (formalStandard2000) {
-      rulesRuntime = createOfficialCurrentProductMatchRuntimeV1({
+      const originalRuntime = createOfficialCurrentProductMatchRuntimeV1({
         dataset: source.dataset,
         state,
       });
-      state.phase = "start_of_round";
-      state.stage = "mission_start_of_round";
-      state.phaseFirstActorByRound = {};
-      delete state.officialRoundSupplyState;
+      const endpointRuntime = options.currentProductRuntimeVariant
+        === "charge_endpoint_v2"
+        || options.currentProductRuntimeVariant === "charge_access_v3"
+        || options.currentProductRuntimeVariant === "charge_cross_section_v4"
+        || options.currentProductRuntimeVariant === "charge_round_path_v5"
+        ? createOfficialCurrentProductMatchRuntimeV2({
+          legacyRuntime: originalRuntime,
+        }) : null;
+      const accessRuntime = options.currentProductRuntimeVariant
+        === "charge_access_v3"
+        || options.currentProductRuntimeVariant === "charge_cross_section_v4"
+        ? createOfficialCurrentProductMatchRuntimeV3({
+          legacyRuntime: endpointRuntime,
+        }) : null;
+      rulesRuntime = options.currentProductRuntimeVariant
+        === "charge_cross_section_v4"
+        ? createOfficialCurrentProductMatchRuntimeV4({
+          legacyRuntime: accessRuntime,
+        }) : options.currentProductRuntimeVariant === "charge_round_path_v5"
+          ? createOfficialCurrentProductMatchRuntimeV5({
+            legacyRuntime: endpointRuntime,
+          }) : options.currentProductRuntimeVariant === "singleton_identity_v6"
+            ? createOfficialCurrentProductMatchRuntimeV6({
+              legacyRuntime: originalRuntime,
+            }) : accessRuntime || endpointRuntime || originalRuntime;
+      state = prepareOfficialCurrentProductFirstRoundV1(state);
     } else {
       const baseRuntime = createOfficialExecutableRuleRuntimeV1({
         catalogue: report11.slice.catalogue,
@@ -656,10 +700,14 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
         : "standard_2000_current_product_web_exploration",
       engagementScale: "Standard",
       battlefieldInches: { width: 54, height: 36 },
-      mineralSpentBySide: { player1: 2000, player2: 2000 },
-      vespeneSpentBySide: { player1: 115, player2: 140 },
-      selectedUnitCount: 15,
-      terrainPieceCount: 9,
+      mineralSpentBySide: structuredClone(
+        standardAuthority.compositionEvidence.mineralSpentBySide),
+      vespeneSpentBySide: structuredClone(
+        standardAuthority.compositionEvidence.vespeneSpentBySide),
+      selectedUnitCount: Object.values(
+        state.authoritativeArmyRostersBySide).reduce((sum, roster) =>
+        sum + roster.units.length, 0),
+      terrainPieceCount: state.board?.terrain?.length || 0,
       rosterHashBySide: structuredClone(
         standardAuthority.compositionEvidence.rosterHashBySide,
       ),
@@ -856,21 +904,24 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
       }),
     } : {}),
   });
-  const spatialRulesQuery =
-    createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1({
+  const spatialRuntime =
+    createStarcraftTmgSceneQueryServiceV1({
       roomStore: roomRuntime.roomStore,
       rulesRuntime,
       seatKey: "player2",
+      observeQueryDiagnostic: options.observeBotStage,
+      observeQueryBatchDiagnostic: options.observeBotStage,
     });
-  const humanSpatialRulesQuery =
-    createStarcraftTmgRoomBackedSpatialRulesQueryAdapterV1({
+  const player1SceneQuery =
+    createStarcraftTmgSceneQueryServiceV1({
       roomStore: roomRuntime.roomStore,
       rulesRuntime,
       seatKey: "player1",
+      observeQueryDiagnostic: options.observeBotStage,
+      observeQueryBatchDiagnostic: options.observeBotStage,
     });
-  const spatialRuntime = createStarcraftTmgSpatialActionQueryRuntimeV1({
-    rulesQuery: spatialRulesQuery.query,
-  });
+  const spatialRulesQuery = spatialRuntime.rulesQueryAdapter;
+  const humanSpatialRulesQuery = player1SceneQuery.rulesQueryAdapter;
   const turnPlanRuntime = createStarcraftTmgTurnPlanRuntimeV1({
     decisionContinuity: continuity,
     now,
@@ -895,6 +946,7 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     turnPlanRuntime,
     matchMode: options.matchMode || "user_vs_agent",
     now,
+    observeStage: options.observeBotStage,
     autoDriveIntervalMs: options.autoDriveIntervalMs || 500,
     deferForPreexecution: options.enableSpatialPreexecution === true,
     ...(options.physicalAgentPort ? {
@@ -937,6 +989,7 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
   return Object.freeze({
     roomId,
     authorityEngine,
+    initialStateAuthority,
     roomRuntime,
     rulesRuntime,
     createdRoom,
@@ -946,6 +999,7 @@ export async function createTicket20HumanAgentDemoFixtureV1(options = {}) {
     spatialRuntime,
     spatialRulesQuery,
     humanSpatialRulesQuery,
+    player1SceneQuery,
     turnPlanRuntime,
     notifications,
     roomProfile: formalStandard2000 ? "standard_2000_live"
@@ -1091,9 +1145,7 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
       }),
     } : {}),
   });
-  const player1SpatialRuntime = createStarcraftTmgSpatialActionQueryRuntimeV1({
-    rulesQuery: base.humanSpatialRulesQuery.query,
-  });
+  const player1SpatialRuntime = base.player1SceneQuery;
   const player1TurnPlanRuntime = createStarcraftTmgTurnPlanRuntimeV1({
     decisionContinuity: player1Continuity,
     now,
@@ -1116,6 +1168,7 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
     turnPlanRuntime: player1TurnPlanRuntime,
     matchMode: "agent_vs_agent",
     now,
+    observeStage: options.observeBotStage,
     autoDriveIntervalMs: options.autoDriveIntervalMs || 500,
     deferForPreexecution: options.enableSpatialPreexecution === true,
     ...(options.player1PhysicalAgentPort ? {
@@ -1147,6 +1200,27 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
       player1: "bounded:army_units:marine@1",
       player2: "bounded:army_units:zergling@1",
     };
+  // This callback is server-owned and runs only after the authoritative
+  // Room exists. A plan cannot be certified against a guessed Room ID or a
+  // caller-supplied projection before the seat's real binding is available.
+  if (typeof options.onAuthoritativeRoomCreated === "function") {
+    // Persist server-only recovery credentials before a fallible pregame
+    // plan bridge. They never enter browser projections or public traces.
+    await options.onAuthoritativeRoomCreated({ roomId: base.roomId,
+      credentials: structuredClone(base.createdRoom.credentials) });
+  }
+  const pregameRosterPlans = typeof options.preparePregameRosterPlans
+    === "function"
+    ? await options.preparePregameRosterPlans({
+      roomRuntime: base.roomRuntime,
+      roomId: base.roomId,
+      seats: {
+        player1: { scope: player1Scope,
+          seatToken: base.createdRoom.credentials.human.seatToken },
+        player2: { scope: base.botScope,
+          seatToken: base.createdRoom.credentials.bot.seatToken },
+      },
+    }) : null;
   const orchestrator = createStarcraftTmgAgentAgentExperimentOrchestratorV1({
     roomPort: base.roomRuntime,
     now,
@@ -1221,6 +1295,8 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
       seatToken: base.createdRoom.credentials.human.seatToken,
       automationConsent: consent,
       strategySkillSetHash: hash(player1Refs),
+      ...(pregameRosterPlans?.player1
+        ? { pregameRosterPlan: pregameRosterPlans.player1 } : {}),
     }, {
       seatKey: "player2",
       runtime: base.botRuntime,
@@ -1228,6 +1304,8 @@ export async function createTicket20AgentAgentDemoFixtureV1(options = {}) {
       seatToken: base.createdRoom.credentials.bot.seatToken,
       automationConsent: consent,
       strategySkillSetHash: hash(player2Refs),
+      ...(pregameRosterPlans?.player2
+        ? { pregameRosterPlan: pregameRosterPlans.player2 } : {}),
     }],
   });
   return Object.freeze({

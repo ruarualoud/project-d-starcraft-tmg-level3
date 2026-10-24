@@ -2,9 +2,10 @@
 
 // Ticket 27 / Slice 271 — standalone roster-planning workspace server.
 // Serves the current Expo Web export plus the isolated roster-planning
-// workspace API (additive prefix only; no Room endpoints exist here at all,
-// so source Room mutation is impossible by construction). Live deliberation
-// is only attached with the explicit CLI --enable-roster-flash flag. The
+// workspace API (additive prefix only). The optional explicit
+// --enable-room-launch attaches a real, separate authoritative Room process;
+// without it no Room mutation route is mounted. Live deliberation is only
+// attached with the explicit CLI --enable-roster-flash flag. The
 // Keychain→isolated Worker attachment itself makes zero Provider calls; paid
 // requests require a subsequent explicit Generate action in the Web UI.
 
@@ -19,6 +20,10 @@ import { ROSTER_PLANNING_WORKSPACE_API_PREFIX } from
   "../packages/roster-planning-workspace/roster-planning-workspace-http-v1.mjs";
 import { createRosterPlanningSecureDeliberationFactoryV1 } from
   "../packages/roster-planning-workspace/roster-planning-secure-deliberation-factory-v1.mjs";
+import { createTicket27RosterRoomProcessHostV1 } from
+  "./support/ticket27-roster-room-process-host-v1.mjs";
+import { STARCRAFT_TMG_TICKET_27_ROSTER_TEACH_FLASH_PROFILE_V3 } from
+  '../content/provider/ticket-27-roster-teach-provider-profile-v1.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_DATA_DIRECTORY = path.join(ROOT,
@@ -135,7 +140,11 @@ export async function createRosterWorkspaceServerV1(input = {}) {
     root: input.root || ROOT,
     fixtureRoot: input.fixtureRoot || input.root || ROOT,
     dataDirectory,
+    mapConfiguration: input.mapConfiguration || null,
     deliberationFactory: input.deliberationFactory || null,
+    roomLaunchPort: input.roomLaunchPort || null,
+    enableIterativeDraft: Boolean(input.deliberationFactory
+      && input.mapConfiguration),
   });
   const server = http.createServer(async (request, response) => {
     try {
@@ -188,8 +197,10 @@ export async function createRosterWorkspaceServerV1(input = {}) {
     origin,
     armyUrl: `${origin}/army`,
     liveDeliberationAttached: Boolean(input.deliberationFactory),
+    liveRoomLaunchAttached: Boolean(input.roomLaunchPort),
     async close() {
       await new Promise((resolve) => server.close(resolve));
+      await module.closeDecisionWorkflows();
     },
   };
 }
@@ -202,17 +213,72 @@ async function main() {
     : DEFAULT_DATA_DIRECTORY;
   const fixtureArgument = process.argv.find((entry) => (
     entry.startsWith("--fixture-root=")));
+  const webRootArgument = process.argv.find((entry) => (
+    entry.startsWith("--web-root=")));
+  const webRoot = webRootArgument
+    ? path.resolve(webRootArgument.slice("--web-root=".length))
+    : undefined;
+  const mapSeedArgument = process.argv.find((entry) => (
+    entry.startsWith("--map-seed-id=")));
+  const mapConfigurationFileArgument = process.argv.find((entry) => (
+    entry.startsWith("--map-configuration-file=")));
+  if (mapSeedArgument && mapConfigurationFileArgument) {
+    throw new Error("ROSTER_WORKSPACE_MAP_CONFIGURATION_SOURCES_CONFLICT");
+  }
+  // The reviewed native setup is frozen once, then shared byte-for-byte by
+  // the workspace and match host. A seed alone is not its terrain agreement.
+  const mapConfiguration = mapConfigurationFileArgument
+    ? JSON.parse(await readFile(path.resolve(mapConfigurationFileArgument.slice(
+      "--map-configuration-file=".length)), "utf8"))
+    : mapSeedArgument ? {
+      seedId: mapSeedArgument.slice("--map-seed-id=".length),
+      elementSelections: [], passageSelections: [],
+    } : null;
   const secureFlashEnabled = process.argv.includes("--enable-roster-flash");
+  const roomLaunchEnabled = process.argv.includes("--enable-room-launch");
+  const offlineRecovery600s = process.argv.includes('--offline-recovery-600s');
+  if (offlineRecovery600s && (roomLaunchEnabled || !secureFlashEnabled)) {
+    throw Error('OFFLINE_RECOVERY_REQUIRES_FLASH_WITHOUT_ROOM_LAUNCH');
+  }
+  const roomInteractionModeArgument = process.argv.find((entry) =>
+    entry.startsWith("--room-provider-interaction-mode="));
+  const opponentSessionArgument = process.argv.find((entry) =>
+    entry.startsWith("--opponent-pregame-roster-session-id="));
+  const opponentHashArgument = process.argv.find((entry) =>
+    entry.startsWith("--opponent-roster-plan-hash="));
+  const opponentDirectoryArgument = process.argv.find((entry) =>
+    entry.startsWith("--opponent-roster-plan-data-directory="));
+  if (roomLaunchEnabled && !secureFlashEnabled) {
+    throw new Error("ROSTER_ROOM_LAUNCH_REQUIRES_LIVE_FLASH");
+  }
   const secure = secureFlashEnabled
-    ? await createRosterPlanningSecureDeliberationFactoryV1() : null;
+    ? await createRosterPlanningSecureDeliberationFactoryV1(offlineRecovery600s
+      ? { profile: STARCRAFT_TMG_TICKET_27_ROSTER_TEACH_FLASH_PROFILE_V3 } : {}) : null;
+  const fixtureRoot = fixtureArgument
+    ? path.resolve(fixtureArgument.slice("--fixture-root=".length))
+    : ROOT;
   let handle;
   try {
     handle = await createRosterWorkspaceServerV1({
       dataDirectory,
-      fixtureRoot: fixtureArgument
-        ? path.resolve(fixtureArgument.slice("--fixture-root=".length))
-        : undefined,
+      webRoot,
+      fixtureRoot,
+      mapConfiguration,
       deliberationFactory: secure?.factory || null,
+      roomLaunchPort: roomLaunchEnabled
+        ? createTicket27RosterRoomProcessHostV1({ root: ROOT,
+          dataDirectory, fixtureRoot, webRoot,
+          providerInteractionMode: roomInteractionModeArgument?.slice(
+            "--room-provider-interaction-mode=".length) || "native_tools",
+          opponentRosterPlanSessionId: opponentSessionArgument?.slice(
+            "--opponent-pregame-roster-session-id=".length) || null,
+          opponentRosterPlanHash: opponentHashArgument?.slice(
+            "--opponent-roster-plan-hash=".length) || null,
+          opponentRosterPlanDataDirectory: opponentDirectoryArgument?.slice(
+            "--opponent-roster-plan-data-directory=".length) || null,
+          autoDriveOnLaunch: !process.argv.includes(
+            "--no-auto-drive-on-room-launch"),
+        }) : null,
     });
   } catch (error) {
     await secure?.close();
@@ -225,6 +291,8 @@ async function main() {
     apiPrefix: ROSTER_PLANNING_WORKSPACE_API_PREFIX,
     dataDirectory,
     liveDeliberationAttached: handle.liveDeliberationAttached,
+    offlineRecovery600s,
+    liveRoomLaunchAttached: handle.liveRoomLaunchAttached,
     planningState: handle.liveDeliberationAttached
       ? "available_explicit_generate_only"
       : "unavailable_no_live_deliberation_factory",

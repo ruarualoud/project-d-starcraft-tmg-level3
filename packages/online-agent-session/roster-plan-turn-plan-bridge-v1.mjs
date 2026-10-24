@@ -6,11 +6,20 @@ import { PLANNED_PRESET_ROSTER_PLAN_SCHEMA,
   verifyPlannedPresetRosterPlanV2,
   verifyPlannedPresetRoundSupplyScheduleV1 } from
   "../roster-strategist/planned-preset-roster-plan-v2.mjs";
+import { AGENT_SCHEDULED_ROSTER_PLAN_SCHEMA,
+  verifyAgentScheduledRosterPlanV1 } from
+  "../roster-strategist/agent-scheduled-roster-plan-v1.mjs";
+import { AGENT_SELECTED_TEACH_SESSION_RECEIPT_V1,
+  verifyAgentSelectedTeachSessionReceiptV1 } from
+  "../roster-strategist/agent-selected-teach-plan-bridge-v1.mjs";
 import { verifyRosterStrategistSessionReceiptV1,
   verifyRosterStrategistPresetSessionReceiptV1 } from
   "../roster-strategist/roster-strategist-runtime-v1.mjs";
 import { STARCRAFT_TMG_ROSTER_PLAN_ROOM_EVIDENCE_SCHEMA } from
   "../client-domain/viewer-projection-v3.mjs";
+import { ROSTER_DECISION_SESSION_RECEIPT_SCHEMA_V1,
+  verifyRosterDecisionSessionReceiptV1 } from
+  '../roster-planning-workspace/roster-workflow-acceptance-v1.mjs';
 
 export const STARCRAFT_TMG_ROSTER_TURN_PLAN_ORIGIN_SCHEMA =
   "starcraft_tmg_roster_turn_plan_origin_v1";
@@ -34,7 +43,22 @@ function verifiedPlan(plan, receipt, priorPlans = []) {
     if (plan.planStatus === "no_pregame_plan" || plan.presetRoster !== false) {
       fail("ROSTER_TURN_PLAN_NO_PREGAME_PLAN");
     }
-    verifyRosterStrategistSessionReceiptV1(receipt);
+    // The new product accepts a reviewed CONDITIONAL intent, not a played
+    // whole-army arrival schedule. Only that server-owned acceptance enters
+    // this lane; historical unscheduled plans remain rejected. Actual moves,
+    // supply windows and arrivals are still chosen through current LegalSpace.
+    if(receipt?.schema!==ROSTER_DECISION_SESSION_RECEIPT_SCHEMA_V1)
+      fail("ROSTER_TURN_PLAN_ROUND_SUPPLY_SCHEDULE_REQUIRED");
+    verifyRosterDecisionSessionReceiptV1(receipt);
+  } else if (plan?.schema === AGENT_SCHEDULED_ROSTER_PLAN_SCHEMA) {
+    verifyAgentScheduledRosterPlanV1(plan);
+    if (receipt?.schema === AGENT_SELECTED_TEACH_SESSION_RECEIPT_V1) {
+      verifyAgentSelectedTeachSessionReceiptV1(receipt);
+    } else verifyRosterStrategistSessionReceiptV1(receipt);
+    if (receipt.openingDeploymentScheduleHash
+      !== plan.openingDeploymentSchedule.scheduleHash) {
+      fail("ROSTER_TURN_PLAN_ROUND_SUPPLY_SESSION_MISMATCH");
+    }
   } else if (plan?.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA) {
     verifyPlannedPresetRosterPlanV2(plan);
     verifyRosterStrategistPresetSessionReceiptV1(receipt);
@@ -67,6 +91,8 @@ function verifiedPlan(plan, receipt, priorPlans = []) {
         const snapshot = matching[0];
         if (snapshot.schema === ROSTER_PLAN_SCHEMA) {
           verifyRosterPlanV1(snapshot);
+        } else if (snapshot.schema === AGENT_SCHEDULED_ROSTER_PLAN_SCHEMA) {
+          verifyAgentScheduledRosterPlanV1(snapshot);
         } else if (snapshot.schema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA) {
           verifyPlannedPresetRosterPlanV2(snapshot);
         } else {
@@ -83,6 +109,9 @@ function verifiedPlan(plan, receipt, priorPlans = []) {
           || snapshot.revisions.some((prior, priorIndex) => (
             prior.revisionHash !== revisions[priorIndex].revisionHash))
           || (plan.presetRoster
+            && snapshot.openingDeploymentSchedule?.scheduleHash
+              !== plan.openingDeploymentSchedule.scheduleHash)
+          || (plan.schema === AGENT_SCHEDULED_ROSTER_PLAN_SCHEMA
             && snapshot.openingDeploymentSchedule?.scheduleHash
               !== plan.openingDeploymentSchedule.scheduleHash)) {
           fail("ROSTER_TURN_PLAN_REVISION_SNAPSHOT_INVALID");
@@ -161,34 +190,37 @@ export function createStarcraftTmgRosterTurnPlanSeedV1(input = {}) {
       !== state?.officialMissionRuntimeState?.sourceSnapshotHash) {
     fail("ROSTER_TURN_PLAN_SOURCE_SNAPSHOT_MISMATCH");
   }
-  if (plan.presetRoster) {
-    const evidence = state?.rosterPlanEvidenceBySide?.[scope.seatKey];
+  const evidence = state?.rosterPlanEvidenceBySide?.[scope.seatKey];
+  if (plan.presetRoster || plan.openingDeploymentSchedule) {
     if (!object(evidence)
       || evidence.schema !== STARCRAFT_TMG_ROSTER_PLAN_ROOM_EVIDENCE_SCHEMA
-      || evidence.recipeHash !== plan.presetBinding.rosterHash
       || evidence.auditResultHash !== ownAudit.resultHash
       || evidence.trainingTruth !== false
       || !Array.isArray(evidence.units)
       || evidence.evidenceHash !== hashStarcraftTmgContract(
         Object.fromEntries(Object.entries(evidence).filter(([key]) =>
           key !== "evidenceHash")))) {
+      fail("ROSTER_TURN_PLAN_ROSTER_AUDIT_MISMATCH");
+    }
+    if (plan.presetRoster
+      && evidence.recipeHash !== plan.presetBinding.rosterHash) {
       fail("ROSTER_TURN_PLAN_PRESET_ROSTER_MISMATCH");
     }
-    if (plan.openingDeploymentSchedule) {
-      try {
-        verifyPlannedPresetRoundSupplyScheduleV1(
-          plan.openingDeploymentSchedule, plan.rosterCandidate, {
-            resultHash: evidence.auditResultHash,
-            units: evidence.units.map((unit) => ({
-              unitInstanceId: unit.unitInstanceId,
-              unitCompositionResult: {
-                startingSupply: unit.startingSupply,
-              },
-            })),
-          });
-      } catch {
-        fail("ROSTER_TURN_PLAN_ROUND_SUPPLY_AUDIT_MISMATCH");
-      }
+  }
+  if (plan.openingDeploymentSchedule) {
+    try {
+      verifyPlannedPresetRoundSupplyScheduleV1(
+        plan.openingDeploymentSchedule, plan.rosterCandidate, {
+          resultHash: evidence.auditResultHash,
+          units: evidence.units.map((unit) => ({
+            unitInstanceId: unit.unitInstanceId,
+            unitCompositionResult: {
+              startingSupply: unit.startingSupply,
+            },
+          })),
+        });
+    } catch {
+      fail("ROSTER_TURN_PLAN_ROUND_SUPPLY_AUDIT_MISMATCH");
     }
   }
   const unitIds = new Set(plan.rosterCandidate.units.map((unit) =>
@@ -207,7 +239,8 @@ export function createStarcraftTmgRosterTurnPlanSeedV1(input = {}) {
     seatKey: scope.seatKey,
     openedAtStateRevision: roomProjection.room.stateRevision,
     openedAtStateHash: roomProjection.room.stateHash,
-    rosterMode: plan.presetRoster ? "planned_preset" : "agent_built",
+    rosterMode: plan.presetRoster || receipt.schema===ROSTER_DECISION_SESSION_RECEIPT_SCHEMA_V1&&receipt.mode==='fixed'
+      ? "planned_preset" : "agent_built",
     rosterPlanSchema: plan.schema,
     rosterPlanId: plan.planId,
     rosterPlanVersion: plan.planVersion,
@@ -220,7 +253,8 @@ export function createStarcraftTmgRosterTurnPlanSeedV1(input = {}) {
     rulesAuditResultHash: ownAudit.resultHash,
     provenanceHash: plan.provenance.provenanceHash,
     sourceSnapshotHash: plan.provenance.sourceSnapshotHash,
-    skillRouteReceiptHash: receipt.skillRouteReceiptHash,
+    skillRouteReceiptHash: receipt.skillRouteReceiptHash
+      ??(receipt.schema===ROSTER_DECISION_SESSION_RECEIPT_SCHEMA_V1?hashStarcraftTmgContract(plan.provenance.skillVersions):null),
     missionRecordKey: binding.missionRecordKey,
     deploymentRecordKey: binding.deploymentRecordKey,
     presetBaselinePlanHash: plan.presetRoster
@@ -232,6 +266,73 @@ export function createStarcraftTmgRosterTurnPlanSeedV1(input = {}) {
     originHash: hashStarcraftTmgContract(originBody) });
   verifyStarcraftTmgRosterTurnPlanOriginV1(origin);
 
+  return seededPlan(plan, origin);
+}
+
+// An explicit, same-match revision is not a second pregame opening. The Room
+// may already contain casualties: compare against its admitted immutable origin,
+// never against a newly reconstructed full army at the current turn.
+export function createStarcraftTmgRosterTurnPlanRevisionSeedV1(input = {}) {
+  const { rosterPlan: plan, sessionReceipt: receipt, previousOrigin: previous,
+    roomProjection: projection, scope } = input;
+  verifyStarcraftTmgRosterTurnPlanOriginV1(previous);
+  const revision = verifiedPlan(plan, receipt, input.priorPlans || []);
+  const same = plan.planHash === previous.rosterPlanHash;
+  const expected = input.replacesRosterPlanHash;
+  if (expected !== previous.rosterPlanHash
+    && !(same && expected === previous.previousRosterPlanHash)) {
+    fail("ROSTER_TURN_PLAN_REVISION_SOURCE_MISMATCH");
+  }
+  if (scope?.gameId !== previous.gameId || scope?.roomId !== previous.roomId
+    || scope?.matchBindingHash !== previous.matchBindingHash
+    || scope?.seatKey !== previous.seatKey
+    || projection?.room?.roomId !== previous.roomId
+    || projection?.matchBinding?.bindingHash !== previous.matchBindingHash
+    || projection?.viewer?.seatKey !== previous.seatKey
+    || !Number.isSafeInteger(projection?.room?.stateRevision)
+    || !projection?.room?.stateHash
+    || projection?.state?.officialMissionRuntimeState?.missionRecordKey
+      !== previous.missionRecordKey
+    || projection?.state?.officialMissionRuntimeState?.sourceSnapshotHash
+      !== previous.sourceSnapshotHash
+    || projection?.state?.board?.deploymentId !== previous.deploymentRecordKey) {
+    fail("ROSTER_TURN_PLAN_REVISION_ROOM_MISMATCH");
+  }
+  if (plan.planId !== previous.rosterPlanId
+    || plan.schema !== previous.rosterPlanSchema
+    || plan.sideKey !== previous.seatKey
+    || plan.rosterCandidate.candidateHash !== previous.rosterCandidateHash
+    || plan.rosterCandidate.legalityReceipt.auditResultHash
+      !== previous.rulesAuditResultHash
+    || plan.provenance.provenanceHash !== previous.provenanceHash
+    || receipt.receiptHash !== previous.sessionReceiptHash
+    || plan.openingDeploymentSchedule?.scheduleHash
+      !== input.previousArrivalSchedule?.scheduleHash) {
+    fail("ROSTER_TURN_PLAN_REVISION_FROZEN_BINDING_MISMATCH");
+  }
+  if (same) return seededPlan(plan, previous);
+  if (!revision || plan.planVersion <= previous.rosterPlanVersion
+    || !plan.revisions.some(event => event.previousPlanHash
+      === previous.rosterPlanHash
+      && event.fromPlanVersion === previous.rosterPlanVersion)) {
+    fail("ROSTER_TURN_PLAN_REVISION_NOT_DESCENDANT");
+  }
+  const { originHash: _oldHash, ...body } = previous;
+  Object.assign(body, {
+    rosterPlanVersion: plan.planVersion,
+    rosterPlanHash: plan.planHash,
+    previousRosterPlanHash: previous.rosterPlanHash,
+    pregameRevisionHash: revision.revisionHash,
+    revisedAtStateRevision: projection.room.stateRevision,
+    revisedAtStateHash: projection.room.stateHash,
+  });
+  const origin = Object.freeze({ ...body,
+    originHash: hashStarcraftTmgContract(body) });
+  verifyStarcraftTmgRosterTurnPlanOriginV1(origin);
+  return seededPlan(plan, origin);
+}
+
+function seededPlan(plan, origin) {
   const route = plan.scoreRoute;
   const deployment = plan.deploymentConcept;
   const loss = plan.lossResourceBudget;

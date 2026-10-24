@@ -25,6 +25,12 @@ export function officialTerrainBlocksModelPlacementV1(terrain = {}) {
     === "impassable";
 }
 
+// Admission constraint for a NON-ENGAGED placement, not a constraint on every
+// possible battlefield snapshot (a combat snapshot can already be engaged).
+export function officialNonEngagedBaseSeparationAllowedV1(left, right) {
+  return minimumSeparation(left, right) >= ENGAGEMENT_RANGE_MILLI_INCHES - TOLERANCE;
+}
+
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
 }
@@ -724,7 +730,68 @@ function terrainBlocksCoherencyLink(state, blocker, start, end) {
   return !accessPointAllowsLink(state, terrain.id, start, end);
 }
 
+function coherencyLinkClear(state, otherModels, terrain, flying,
+  engagedEnemyUnitIds, left, right) {
+  const otherModelBlocked = !flying && otherModels.some((blocker) => (
+    !engagedEnemyUnitIds.has(blocker.piece.id)
+      && segmentBlockedByFootprint(left.center, right.center, blocker.footprint)
+  ));
+  const terrainBlocked = !flying && terrain.some((blocker) => (
+    terrainBlocksCoherencyLink(state, blocker, left.center, right.center)
+  ));
+  return !otherModelBlocked && !terrainBlocked;
+}
+
+// Search uses the execution predicate; this is not a second coherency rule.
+// The caller still submits every final placement to the full Rules validator.
+export function createOfficialCoherencyLinkEvaluatorV1(input = {}) {
+  return createCoherencyLinkEvaluator(input, false);
+}
+
+// Snapshot search derives engagement from proposed base geometry. Neither the
+// caller nor the model may supply a claim that waives physical overlap checks.
+export function createOfficialHypotheticalCoherencyLinkEvaluatorV1(input = {}) {
+  return createCoherencyLinkEvaluator(input, true);
+}
+
+function snapshotEngagedEnemies(actor, otherModels, footprints) {
+  return new Set(otherModels.filter(blocker => blocker.piece.sideKey !== actor.sideKey
+    && footprints.some(footprint => minimumSeparation(footprint, blocker.footprint)
+      <= ENGAGEMENT_RANGE_MILLI_INCHES + TOLERANCE)).map(blocker => blocker.piece.id));
+}
+
+function createCoherencyLinkEvaluator(input, snapshot) {
+  const { state, actor, dataBundle } = input;
+  verifyOfficialModelBaseGeometryDataBundleV1(dataBundle);
+  if (!activePiece(actor)) fail("MODEL_BASE_GEOMETRY_COHERENCY_INPUT_INVALID");
+  const otherModels = (state.pieces || []).filter(piece =>
+    activePiece(piece) && piece.id !== actor.id).flatMap(piece =>
+    activeModels(piece).map(model => ({ piece, model,
+      footprint: createOfficialModelBaseFootprintV1({ piece, model, dataBundle }) })));
+  const terrain = (state.board?.terrain || []).filter(entry =>
+    entry.isRemoved !== true && entry.isDestroyed !== true)
+    .map(entry => ({ entry, footprint: terrainFootprint(entry) }));
+  const flying = (actor.combatTags || []).some(entry =>
+    String(entry).toLowerCase() === "flying");
+  const engagedEnemyUnitIds = new Set((input.currentlyEngagedEnemyUnitIds || [])
+    .map(String));
+  return (left, right, selected = []) => coherencyLinkClear(state, otherModels, terrain,
+    flying, snapshot ? snapshotEngagedEnemies(actor, otherModels,
+      [...selected.map(row => row.footprint), left, right]) : engagedEnemyUnitIds, left, right);
+}
+
 export function evaluateOfficialCoherencyPlacementV1(input = {}) {
+  return evaluateCoherencyGeometry(input, false);
+}
+
+// Separate proof type; this cannot certify a move, charge, deployment or Place.
+// It shares all physical/coherency predicates with the live validator while
+// accepting already-engaged positions as a declared hypothetical premise.
+export function evaluateOfficialHypotheticalCoherencySnapshotV1(input = {}) {
+  return evaluateCoherencyGeometry(input, true);
+}
+
+function evaluateCoherencyGeometry(input, snapshot) {
   const { state, actor, plan, dataBundle } = input;
   verifyOfficialModelBaseGeometryDataBundleV1(dataBundle);
   if (!activePiece(actor) || !object(plan)) fail("MODEL_BASE_GEOMETRY_COHERENCY_INPUT_INVALID");
@@ -744,6 +811,7 @@ export function evaluateOfficialCoherencyPlacementV1(input = {}) {
     }
     const outcome = String(placement.outcome || "placed");
     if (outcome === "casualty") {
+      if (snapshot) fail("MODEL_BASE_GEOMETRY_SNAPSHOT_CASUALTY_NOT_ALLOWED");
       if (modelId === leadingModelId) fail("MODEL_BASE_GEOMETRY_LEADING_CASUALTY_INVALID");
       verifyCasualtyCertificate(placement.noLegalPositionCertificate, {
         modelId, leadingModelId, stateGeometryHash: geometryHash,
@@ -793,9 +861,8 @@ export function evaluateOfficialCoherencyPlacementV1(input = {}) {
         fail("MODEL_BASE_GEOMETRY_PLACEMENT_OVERLAP",
           `${row.modelId}/${blocker.model.id}`);
       }
-      if (blocker.piece.sideKey !== actor.sideKey
-        && minimumSeparation(row.footprint, blocker.footprint)
-          < ENGAGEMENT_RANGE_MILLI_INCHES - TOLERANCE) {
+      if (!snapshot && blocker.piece.sideKey !== actor.sideKey
+        && !officialNonEngagedBaseSeparationAllowedV1(row.footprint, blocker.footprint)) {
         fail("MODEL_BASE_GEOMETRY_ENEMY_SEPARATION_REQUIRED", row.modelId);
       }
     }
@@ -814,22 +881,16 @@ export function evaluateOfficialCoherencyPlacementV1(input = {}) {
   const flying = (actor.combatTags || []).some((entry) => (
     String(entry).toLowerCase() === "flying"
   ));
-  const engagedEnemyUnitIds = new Set((plan.currentlyEngagedEnemyUnitIds || []).map(String));
+  const engagedEnemyUnitIds = snapshot
+    ? snapshotEngagedEnemies(actor, otherModels, placed.map(row => row.footprint))
+    : new Set((plan.currentlyEngagedEnemyUnitIds || []).map(String));
   const adjacency = new Map(placed.map((entry) => [entry.modelId, []]));
   const linkEdges = [];
   for (let left = 0; left < placed.length; left += 1) {
     for (let right = left + 1; right < placed.length; right += 1) {
       const a = placed[left]; const b = placed[right];
-      const otherModelBlocked = !flying && otherModels.some((blocker) => (
-        !engagedEnemyUnitIds.has(blocker.piece.id)
-          && segmentBlockedByFootprint(a.footprint.center, b.footprint.center,
-            blocker.footprint)
-      ));
-      const terrainBlocked = !flying && terrain.some((blocker) => (
-        terrainBlocksCoherencyLink(state, blocker,
-          a.footprint.center, b.footprint.center)
-      ));
-      if (!otherModelBlocked && !terrainBlocked) {
+      if (coherencyLinkClear(state, otherModels, terrain, flying,
+        engagedEnemyUnitIds, a.footprint, b.footprint)) {
         adjacency.get(a.modelId).push(b.modelId);
         adjacency.get(b.modelId).push(a.modelId);
         linkEdges.push({ fromModelId: a.modelId, toModelId: b.modelId });
@@ -844,13 +905,14 @@ export function evaluateOfficialCoherencyPlacementV1(input = {}) {
   }
   if (linked.size !== placed.length) fail("MODEL_BASE_GEOMETRY_COHERENCY_LINK_INVALID");
   const inCoherency = assessments.every((entry) => entry.whollyWithinLeading);
-  if (!inCoherency && plan.closestLegalPlacementDenominatorComplete !== true) {
+  if (!snapshot && !inCoherency && plan.closestLegalPlacementDenominatorComplete !== true) {
     fail("MODEL_BASE_GEOMETRY_WHOLLY_WITHIN_REQUIRED");
   }
   const casualtyModelIds = rows.filter((entry) => entry.outcome === "casualty")
     .map((entry) => entry.modelId).sort();
   const body = {
-    schema: "starcraft_tmg_official_coherency_placement_result_v1",
+    schema: snapshot ? "starcraft_tmg_hypothetical_coherency_snapshot_result_v1"
+      : "starcraft_tmg_official_coherency_placement_result_v1",
     planId: String(plan.planId || ""), actorUnitId: actor.id, leadingModelId,
     stateGeometryHash: geometryHash,
     placements: placed.map((entry) => ({ modelId: entry.modelId,
@@ -860,10 +922,14 @@ export function evaluateOfficialCoherencyPlacementV1(input = {}) {
     flyingLinkExceptionsApplied: flying,
     inCoherency, outOfCoherency: !inCoherency,
     canControlOrContestMissionMarkers: inCoherency,
-    leadingModelNominationEndsOnActionResolution: true,
-    casualtyOnlyAfterNoLegalLinkedPositionCertificate: true,
+    ...(snapshot ? { geometrySnapshotOnly: true, placementLegalityProven: false,
+      arrivalOrMovementLegalityProven: false,
+      engagedEnemyUnitIds: [...engagedEnemyUnitIds].sort() }
+      : { leadingModelNominationEndsOnActionResolution: true,
+        casualtyOnlyAfterNoLegalLinkedPositionCertificate: true }),
     currentOfficialRoundAndRectangularBasesExecutable: true,
-    rulesTruth: "official_coherency_placement_and_mission_capability",
+    rulesTruth: snapshot ? "conditional_snapshot_physical_geometry_and_coherency_only"
+      : "official_coherency_placement_and_mission_capability",
     trainingTruth: false,
   };
   if (!body.planId) fail("MODEL_BASE_GEOMETRY_PLAN_ID_REQUIRED");

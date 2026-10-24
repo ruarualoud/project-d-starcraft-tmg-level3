@@ -1,0 +1,12 @@
+import fs from 'node:fs/promises';
+import {gunzipSync} from 'node:zlib';
+import assert from 'node:assert/strict';
+import {verifyRetainedFormalDebugReplyV1} from './retained-formal-debug-reply-v1.mjs';
+const session=JSON.parse(await fs.readFile(process.argv[2],'utf8'));
+const request=JSON.parse(gunzipSync(await fs.readFile(process.argv[3])));
+const reply=JSON.parse(gunzipSync(await fs.readFile(process.argv[4])));
+const input={request,reply,session,expectedSessionId:session.sessionId,expectedReceiptHash:reply.receipt.receiptHash};
+assert.equal(verifyRetainedFormalDebugReplyV1(input),true,'actual paid shard belongs to its persisted formal session');
+assert.equal(verifyRetainedFormalDebugReplyV1({...input,request:{...request,sessionId:'other-'+request.sessionId}}),false);
+assert.equal(verifyRetainedFormalDebugReplyV1({...input,request:{...request,sessionId:request.sessionId.replace('-shard-1-','-shard-2-')}}),false);
+console.log(JSON.stringify({pass:true,actualPaidBoundary:321,cases:3,providerCalls:0,originalWrites:0}));

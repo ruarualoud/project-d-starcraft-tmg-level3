@@ -43,7 +43,7 @@ const schemas = {
         questionText: str(),
         falsificationText: str(),
         evidenceRequest: closed({
-          kind: choice(["probability", "spatial", "math",
+          kind: choice(["probability", "spatial", "map_route", "math",
             "threat_exchange", "scenario"]),
           toolRequest: toolRequestSchema,
         }),
@@ -69,14 +69,14 @@ const schemas = {
 
 const componentRef = (kind, part) => Object.freeze({
   id: `ticket27.roster_teach.${kind}.${part}.v1`,
-  version: "1.0.0",
+  version: "1.0.4",
   hash: hashStarcraftTmgContract(
     `ticket27.roster_teach.${kind}.${part}.v1`),
 });
 const contracts = Object.fromEntries(Object.entries(schemas).map(
   ([kind, providerSchema]) => [kind, createStarcraftTmgOutputContractV1({
     id: `ticket27.roster_teach.${kind}.v1`,
-    version: "1.0.0",
+    version: "1.0.4",
     schemaName: `roster_${kind}_v1`,
     providerSchema,
     modelOwnedFields: Object.keys(providerSchema.properties),

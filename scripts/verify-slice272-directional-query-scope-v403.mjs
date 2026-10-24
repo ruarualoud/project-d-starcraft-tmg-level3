@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {assessRosterTeachQueryCorrectionScopeV1,reconcileRosterTeachRecoverySceneScopeV1} from '../packages/roster-strategist/roster-teach-query-recovery-v1.mjs';
+const draft=JSON.parse(await fs.readFile(process.argv[2],'utf8'));
+const state=draft.teachFramework.state;
+const id='teach-kerrigan-exchange-return-fire-same-scene';
+const original=state.investigation.operations.find(o=>o.queryId===id).request;
+const operation=structuredClone(state.queryRecovery.operations.find(o=>o.originalQueryId===id));
+assert.equal(operation.result.status,'advisory');
+const assessment=assessRosterTeachQueryCorrectionScopeV1(original,operation.request);
+assert.equal(assessment.sameNamedScope,false,'same units with reversed attack direction are not the same query');
+assert.equal(assessment.missingDirectionalPairs.length,2);
+assert.equal(assessRosterTeachQueryCorrectionScopeV1(original,structuredClone(original)).sameNamedScope,true);
+const seatOnly=structuredClone(original);seatOnly.toolRequest.seatKey='player2';
+assert.equal(assessRosterTeachQueryCorrectionScopeV1(original,seatOnly).sameNamedScope,true);
+const oldHash=operation.result.receiptHash;
+assert.equal(reconcileRosterTeachRecoverySceneScopeV1(operation,original),true);
+assert.equal(operation.result.status,'unknown');
+assert.equal(operation.result.reclassifiedSavedResultHash,oldHash);
+assert.equal(operation.previousResults.at(-1).receiptHash,oldHash);
+assert.equal(operation.result.queryNotExecuted,false);
+assert.equal(reconcileRosterTeachRecoverySceneScopeV1(operation,original),false);
+console.log(JSON.stringify({passed:true,actualReply:187,attackDirectionPreserved:true,
+  oldWrongDirectionNotAccepted:true,oldExecutionPreserved:true,providerCalls:0,nativeExecutions:0}));

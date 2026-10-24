@@ -1,0 +1,17 @@
+import fs from 'node:fs/promises';
+import zlib from 'node:zlib';
+import assert from 'node:assert/strict';
+import {projectRosterTeachRolePromptV1} from '../packages/roster-strategist/roster-teach-framework-v1.mjs';
+const request=JSON.parse(zlib.gunzipSync(await fs.readFile(`${process.argv[2]}/call-263.product-request.json.gz`)));
+const original=request.promptNodes.find(n=>n.kind==='fact_probe_source_material').context.previousInquiry;
+const archive=new Map();
+const projected=projectRosterTeachRolePromptV1('teach_framework_investigate',request.promptNodes,archive);
+const prior=projected.find(n=>n.kind==='fact_probe_source_material').context.previousInquiry;
+assert.equal(prior.scope,'historical_advice_not_current_army_or_action_state','Formal Plan history must use the same isolated history lane as provisional army history');
+assert.equal(prior.sourcePlanHash,original.planHash);
+assert.equal(prior.synthesis,undefined,'Obsolete revision verdicts must not be inline current facts');
+assert.equal(prior.agenda,undefined);
+assert.deepEqual(archive.get(prior.originalInquiry.evidenceObjectHash),original,'All previous arguments, evidence and costs remain retrievable byte-for-byte');
+assert.deepEqual(projected.find(n=>n.kind==='fact_probe_questions'),request.promptNodes.find(n=>n.kind==='fact_probe_questions'));
+assert(prior.answerDirectory.find(a=>a.questionId==='q-timing-round4-committed').original.retrieval);
+console.log(JSON.stringify({pass:true,currentQuestionsUnchanged:21,oldPlan:prior.sourcePlanHash,allHistoryRetrievable:true,providerCalls:0,sourceMutation:false}));

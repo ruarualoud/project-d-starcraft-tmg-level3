@@ -26,6 +26,12 @@ function parsePublic(value) {
   return JSON.parse(String(value));
 }
 
+function freezeOwned(value) {
+  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
+  for (const child of Object.values(value)) freezeOwned(child);
+  return Object.freeze(value);
+}
+
 export function createSqliteStarcraftTmgRoomStore(options = {}) {
   const filename = String(options.filename || ":memory:");
   const now = typeof options.now === "function" ? options.now : () => new Date().toISOString();
@@ -84,12 +90,83 @@ export function createSqliteStarcraftTmgRoomStore(options = {}) {
 
   const selectRoom = database.prepare(`
     SELECT room_id, room_revision, state_revision, private_sequence, public_sequence,
-           recovery_revision, aggregate_cipher, initial_envelope_cipher
+           recovery_revision, aggregate_cipher
       FROM sc_rooms WHERE room_id = ?
   `);
+  const selectReplayRoom = database.prepare(`
+    SELECT room_id, aggregate_cipher, initial_envelope_cipher
+      FROM sc_rooms WHERE room_id = ?
+  `);
+  // Journal cursors only need existence. Do not materialize the encrypted
+  // multi-megabyte aggregate and initial envelope for every read-only query.
+  const roomExists = database.prepare(
+    "SELECT 1 FROM sc_rooms WHERE room_id = ?");
 
   function decodeAggregate(row) {
     return codec.decode(row.aggregate_cipher, `room:${row.room_id}:aggregate`);
+  }
+
+  // Internal read ownership, not a new public authority contract. Always read
+  // the actual persisted row FIRST, then compare its COMPLETE cipher. Grants,
+  // control and rejection changes can retain the same Rules revision/hash.
+  // The ordinary loadRoom interface continues to return a fresh mutable value.
+  const ownedAggregates = new Map();
+  function decodeOwnedAggregate(row) {
+    const prior = ownedAggregates.get(row.room_id);
+    if (prior?.cipher === row.aggregate_cipher) return prior.aggregate;
+    const decoded = decodeAggregate(row);
+    const envelopeText = JSON.stringify(decoded.envelope);
+    // Room-only changes (preview/confirmation/leases) need not manufacture a
+    // new Rules owner. Compare the ENTIRE persisted envelope, not its hash.
+    if (prior?.envelopeText === envelopeText) decoded.envelope = prior.aggregate.envelope;
+    const aggregate = freezeOwned(decoded);
+    if (Buffer.byteLength(row.aggregate_cipher) <= 64 * 1024 * 1024) {
+      ownedAggregates.delete(row.room_id);
+      ownedAggregates.set(row.room_id, { cipher: row.aggregate_cipher,
+        envelopeText, aggregate });
+      while (ownedAggregates.size > 2) {
+        ownedAggregates.delete(ownedAggregates.keys().next().value);
+      }
+    } else ownedAggregates.delete(row.room_id);
+    return aggregate;
+  }
+
+  async function loadOwnedRoom(roomId) {
+    const row = selectRoom.get(String(roomId || ""));
+    return row ? decodeOwnedAggregate(row) : null;
+  }
+
+  // Complete persisted bytes are checked before each private replay read. This
+  // bounded cache avoids parsing unchanged large journal rows repeatedly; a
+  // changed cipher still takes the ordinary authenticated decode, never a hash
+  // or sequence shortcut. Public journal/RoomStore results stay fresh/mutable.
+  const ownedReplayPayloads = new Map();
+  const replayPayloadByteLimit = 64 * 1024 * 1024;
+  let replayPayloadBytes = 0;
+  function decodeOwnedReplayPayload(cipher, identity) {
+    const previous = ownedReplayPayloads.get(identity);
+    if (previous?.cipher === cipher) {
+      ownedReplayPayloads.delete(identity);
+      ownedReplayPayloads.set(identity, previous);
+      return previous.value;
+    }
+    if (previous) {
+      replayPayloadBytes -= previous.bytes;
+      ownedReplayPayloads.delete(identity);
+    }
+    const decoded = codec.decode(cipher, identity);
+    const bytes = Buffer.byteLength(cipher) + Buffer.byteLength(JSON.stringify(decoded));
+    const value = freezeOwned(decoded);
+    if (bytes <= replayPayloadByteLimit) {
+      ownedReplayPayloads.set(identity, { cipher, value, bytes });
+      replayPayloadBytes += bytes;
+      while (replayPayloadBytes > replayPayloadByteLimit || ownedReplayPayloads.size > 256) {
+        const key = ownedReplayPayloads.keys().next().value;
+        replayPayloadBytes -= ownedReplayPayloads.get(key).bytes;
+        ownedReplayPayloads.delete(key);
+      }
+    }
+    return value;
   }
 
   async function createRoom(bundle = {}) {
@@ -161,7 +238,7 @@ export function createSqliteStarcraftTmgRoomStore(options = {}) {
         error.code = "ROOM_NOT_FOUND";
         throw error;
       }
-      const currentAggregate = decodeAggregate(row);
+      const currentAggregate = decodeOwnedAggregate(row);
       const observed = counters(currentAggregate);
       const expectedRoomRevision = integer(expected.roomRevision, "expected.roomRevision");
       const expectedStateRevision = integer(expected.stateRevision, "expected.stateRevision");
@@ -224,6 +301,8 @@ export function createSqliteStarcraftTmgRoomStore(options = {}) {
           String(bundle.checkpoint.checkpointHash || ""),
         );
       }
+      const aggregateIdentity = `room:${roomId}:aggregate`;
+      const aggregateCipher = codec.encode(bundle.nextAggregate, aggregateIdentity);
       const updated = database.prepare(`
         UPDATE sc_rooms
            SET room_revision = ?, state_revision = ?, private_sequence = ?, public_sequence = ?,
@@ -235,7 +314,7 @@ export function createSqliteStarcraftTmgRoomStore(options = {}) {
         next.privateJournalSequence,
         next.publicJournalSequence,
         next.seatRecoveryRevision,
-        codec.encode(bundle.nextAggregate, `room:${roomId}:aggregate`),
+        aggregateCipher,
         now(),
         roomId,
         observed.roomRevision,
@@ -247,7 +326,9 @@ export function createSqliteStarcraftTmgRoomStore(options = {}) {
         throw error;
       }
       database.exec("COMMIT");
-      return cloneRoomStoreValue(bundle.nextAggregate);
+      // Return a fresh value of the exact persisted JSON. The native codec
+      // already owns its serialized text; do not serialize the aggregate again.
+      return codec.decode(aggregateCipher, aggregateIdentity);
     } catch (error) {
       try { database.exec("ROLLBACK"); } catch {}
       throw error;
@@ -257,7 +338,7 @@ export function createSqliteStarcraftTmgRoomStore(options = {}) {
   async function readJournal(roomIdInput, view = "public", cursor = 0) {
     const roomId = String(roomIdInput || "");
     const minimum = integer(cursor, "cursor");
-    if (!selectRoom.get(roomId)) return null;
+    if (!roomExists.get(roomId)) return null;
     if (view === "public") {
       return database.prepare("SELECT sequence, payload_json FROM sc_public_journal WHERE room_id = ? AND sequence > ? ORDER BY sequence")
         .all(roomId, minimum)
@@ -282,7 +363,7 @@ export function createSqliteStarcraftTmgRoomStore(options = {}) {
 
   async function loadReplayBundle(roomIdInput) {
     const roomId = String(roomIdInput || "");
-    const row = selectRoom.get(roomId);
+    const row = selectReplayRoom.get(roomId);
     if (!row) return null;
     const checkpointRow = database.prepare(`
       SELECT state_revision, private_sequence, checkpoint_cipher, checkpoint_hash
@@ -298,6 +379,29 @@ export function createSqliteStarcraftTmgRoomStore(options = {}) {
       privateJournal,
       currentAggregate: decodeAggregate(row),
     };
+  }
+
+  async function loadOwnedReplayBundle(roomIdInput) {
+    const roomId = String(roomIdInput || "");
+    const row = selectReplayRoom.get(roomId);
+    if (!row) return null;
+    const checkpointRow = database.prepare(`
+      SELECT state_revision, private_sequence, checkpoint_cipher, checkpoint_hash
+        FROM sc_checkpoints WHERE room_id = ? ORDER BY state_revision DESC LIMIT 1
+    `).get(roomId);
+    const privateJournal = database.prepare(`SELECT sequence, payload_cipher
+      FROM sc_private_journal WHERE room_id = ? ORDER BY sequence`).all(roomId)
+      .map(entry => ({ sequence: Number(entry.sequence),
+        payload: decodeOwnedReplayPayload(entry.payload_cipher,
+          `room:${roomId}:private:${entry.sequence}`) }));
+    return freezeOwned({
+      initialEnvelope: decodeOwnedReplayPayload(row.initial_envelope_cipher,
+        `room:${roomId}:initial-envelope`),
+      latestCheckpoint: checkpointRow ? decodeOwnedReplayPayload(checkpointRow.checkpoint_cipher,
+        `room:${roomId}:checkpoint:${checkpointRow.state_revision}`) : null,
+      privateJournal,
+      currentAggregate: decodeOwnedAggregate(row),
+    });
   }
 
   async function health() {
@@ -318,8 +422,21 @@ export function createSqliteStarcraftTmgRoomStore(options = {}) {
   }
 
   function close() {
+    ownedAggregates.clear();
+    ownedReplayPayloads.clear();
+    replayPayloadBytes = 0;
     database.close();
   }
 
-  return assertStarcraftTmgRoomStore(Object.freeze({ createRoom, loadRoom, commit, readJournal, loadReplayBundle, health, close }));
+  const port = { createRoom, loadRoom, commit, readJournal,
+    loadReplayBundle, health, close };
+  // Ownership belongs to this concrete adapter, not its public loadRoom
+  // contract. A decorator replacing loadRoom must not accidentally retain
+  // an internal reader bound to the undecorated database via object spread.
+  // Direct owners (and deliberate instrumentation) opt in explicitly.
+  Object.defineProperty(port, "loadOwnedRoom", { value: loadOwnedRoom,
+    enumerable: false });
+  Object.defineProperty(port, "loadOwnedReplayBundle", { value: loadOwnedReplayBundle,
+    enumerable: false });
+  return assertStarcraftTmgRoomStore(Object.freeze(port));
 }

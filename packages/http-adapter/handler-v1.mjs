@@ -19,6 +19,7 @@ const BASE_ENDPOINTS = Object.freeze([
   "GET /starcraft-tmg-level3/api/v1/health",
   "GET /starcraft-tmg-level3/api/v1/metadata",
   "GET /starcraft-tmg-level3/api/v1/map-configurator",
+  "GET /starcraft-tmg-level3/api/v1/room-setups",
   "POST /starcraft-tmg-level3/api/v1/map-configurator/preview",
   "POST /starcraft-tmg-level3/api/v1/rooms",
   "POST /starcraft-tmg-level3/api/v1/rooms/:roomId/join",
@@ -136,7 +137,8 @@ function unexpectedBodyFields(body, allowed) {
 }
 
 export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
-  const runtime = options.roomRuntime || createStarcraftTmgRoomRuntime(options.roomRuntimeOptions);
+  const roomSetupPort = options.roomSetupPort;
+  const runtime = roomSetupPort?.roomRuntime || options.roomRuntime || createStarcraftTmgRoomRuntime(options.roomRuntimeOptions);
   const characterPresentationEnabled = typeof runtime.readCharacterPresentation === "function"
     && typeof runtime.selectCharacterPersona === "function"
     && typeof runtime.setCharacterSpoilerAccess === "function"
@@ -155,7 +157,8 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
     path.dirname(fileURLToPath(import.meta.url)),
     "../..",
   ));
-  const initialStateFactory = typeof options.initialStateFactory === "function" ? options.initialStateFactory : null;
+  const initialStateFactory = typeof options.initialStateFactory === "function" ? options.initialStateFactory
+    : typeof roomSetupPort?.initialStateFactory === "function" ? roomSetupPort.initialStateFactory : null;
   const mapConfigurationPort = options.mapConfigurationPort
     && typeof options.mapConfigurationPort.readCatalogue === "function"
     && typeof options.mapConfigurationPort.preview === "function"
@@ -264,6 +267,11 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
       });
     }
 
+    if (endpoint === "room-setups" && method === "GET") {
+      if (typeof roomSetupPort?.readCatalogue !== "function") return failure(503, endpoint, "ROOM_SETUP_CATALOGUE_UNAVAILABLE");
+      return response(200, endpoint, { ok: true, catalogue: await roomSetupPort.readCatalogue() });
+    }
+
     if (endpoint === "map-configurator" && method === "GET") {
       if (!mapConfigurationPort) {
         return failure(503, endpoint, "MAP_CONFIGURATOR_UNAVAILABLE");
@@ -285,7 +293,7 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
         return failure(503, endpoint, "MAP_CONFIGURATOR_UNAVAILABLE");
       }
       const rejectedFields = unexpectedBodyFields(body,
-        ["seedId", "elementSelections", "passageSelections"]);
+        ["seedId", "elementSelections", "passageSelections", "terrainSetup"]);
       if (rejectedFields.length) {
         return failure(400, endpoint, "CLIENT_AUTHORITY_FIELD_REJECTED", {
           rejectedFields,
@@ -315,13 +323,18 @@ export function createStarcraftTmgLevel3HttpAdapter(options = {}) {
       const roomId = String(createRoomId());
       let initialStateAuthority;
       try {
+        const mapConfiguration = body.mapConfiguration !== undefined
+          && typeof mapConfigurationPort?.prepareRoomConfiguration === "function"
+          ? await mapConfigurationPort.prepareRoomConfiguration(body.mapConfiguration, {
+            roomId, setupRequestedAt: new Date().toISOString(),
+          }) : body.mapConfiguration;
         initialStateAuthority = await initialStateFactory({
           roomId,
           setupId: body.setupId,
           rosterRefs: body.rosterRefs,
           scenarioRef: body.scenarioRef,
           surfaceMode: body.surfaceMode,
-          mapConfiguration: body.mapConfiguration,
+          mapConfiguration,
         });
       } catch (error) {
         return failure(400, endpoint, "INITIAL_STATE_FACTORY_FAILED", { message: error instanceof Error ? error.message : String(error) });

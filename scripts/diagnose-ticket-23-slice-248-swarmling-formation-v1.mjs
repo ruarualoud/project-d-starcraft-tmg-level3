@@ -9,6 +9,8 @@ import { fileURLToPath } from "node:url";
 
 import { createStarcraftTmgRefereeCrypto } from
   "../packages/authoritative-engine/referee-crypto-v1.mjs";
+import { decodeStarcraftTmgLiveDecisionRecordV1 } from
+  "../packages/online-agent-session/sqlite-live-decision-store-v1.mjs";
 import { projectStarcraftTmgIncomingStationaryFireEstimateV1,
   searchStarcraftTmgLegalFormationOptionsV1 } from
   "../packages/online-agent-session/legal-formation-search-v1.mjs";
@@ -25,6 +27,10 @@ import { createSqliteStarcraftTmgRoomStore } from
   "../packages/room-store/sqlite-room-store-v1.mjs";
 import { createTicket20HumanAgentDemoFixtureV1 } from
   "./support/ticket20-human-agent-demo-fixture-v1.mjs";
+import { createTicket20AgentAgentDemoFixtureV1 } from
+  "./support/ticket20-human-agent-demo-fixture-v1.mjs";
+import { resolveOfficialDevelopmentTrancheFixtureRootV1 } from
+  "./support/official-development-tranche-source-lock-fixture-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SELF = fileURLToPath(import.meta.url);
@@ -42,6 +48,8 @@ const maximumDurationMs = Number(maxArgument?.slice("--max-ms=".length)
 const seatKey = seatArgument?.slice("--seat=".length) || "player2";
 const targetStateRevision = Number(revisionArgument
   ?.slice("--state-revision=".length) || 16);
+const chargeResolutionDiagnostic = process.argv.includes(
+  "--charge-resolution-diagnostic");
 assert(Number.isFinite(maximumDurationMs) && maximumDurationMs > 0,
   "--max-ms must be positive");
 assert(new Set(["player1", "player2"]).has(seatKey),
@@ -52,7 +60,9 @@ assert(Number.isSafeInteger(targetStateRevision) && targetStateRevision > 0,
 function parent() {
   const child = spawn(process.execPath, [SELF, `--run-directory=${runDirectory}`,
     `--max-ms=${maximumDurationMs}`, `--seat=${seatKey}`,
-    `--state-revision=${targetStateRevision}`, "--worker"], {
+    `--state-revision=${targetStateRevision}`,
+    ...(chargeResolutionDiagnostic ? ["--charge-resolution-diagnostic"] : []),
+    "--worker"], {
     cwd: ROOT, stdio: ["ignore", "pipe", "pipe"],
   });
   let stdout = "";
@@ -116,12 +126,38 @@ function parent() {
 }
 
 async function worker() {
-  const privateState = JSON.parse(await readFile(
-    path.join(runDirectory, "runner-private.json"), "utf8"));
+  const forkChain = [];
+  let ancestryDirectory = runDirectory;
+  const visitedDirectories = new Set();
+  while (true) {
+    assert(!visitedDirectories.has(ancestryDirectory),
+      "versioned fork ancestry cycle");
+    visitedDirectories.add(ancestryDirectory);
+    const fork = await readFile(path.join(ancestryDirectory,
+      "fork-private.json"), "utf8").then(JSON.parse, (error) => {
+      if (error?.code === "ENOENT") return null;
+      throw error;
+    });
+    if (!fork) break;
+    forkChain.push(fork);
+    ancestryDirectory = path.resolve(fork.sourceDirectory || "");
+    assert(forkChain.length <= 4, "versioned fork ancestry is too deep");
+  }
+  const forkPrivate = forkChain[0] || null;
+  const sourceDirectory = forkPrivate ? ancestryDirectory : null;
+  const sourcePrivate = JSON.parse(await readFile(path.join(
+    ancestryDirectory, "runner-private.json"), "utf8"));
+  const privateState = forkPrivate ? {
+    ...sourcePrivate,
+    roomId: forkPrivate.targetRoomId,
+    resumeCredentials: forkPrivate.resumeCredentials,
+  } : sourcePrivate;
   const runId = path.basename(runDirectory);
+  const cryptoRunId = sourceDirectory
+    ? path.basename(sourceDirectory) : runId;
   const codec = createStarcraftTmgPrivatePayloadCodec({
     key: privateState.storeEncryptionKeyBase64,
-    keyId: `ticket23-slice248-room-store-${runId}`,
+    keyId: `ticket23-slice248-room-store-${cryptoRunId}`,
     trustLevel: "development_persistent",
   });
   const roomStore = createSqliteStarcraftTmgRoomStore({
@@ -133,7 +169,7 @@ async function worker() {
   const roomDatabase = new DatabaseSync(path.join(runDirectory,
     "room.sqlite"), { readOnly: true });
   try {
-    const record = JSON.parse(String(decisions.prepare(
+    const record = decodeStarcraftTmgLiveDecisionRecordV1(String(decisions.prepare(
       "SELECT record_json FROM sc_live_decision_records LIMIT 1",
     ).get()?.record_json || "{}"));
     const decision = Object.values(record.decisions || {}).find((entry) =>
@@ -145,8 +181,13 @@ async function worker() {
       .find((attempt) => attempt?.status === "completed"
         && attempt.safeOutput?.providerTurn?.toolCalls?.[0]?.name
           === "submit_planning");
-    const planning = decision.plannerResult || lastAttempt?.safeOutput
-      ?.providerTurn?.toolCalls?.[0]?.arguments;
+    const lastPlanningOutput = [...(decision.attemptKeys || [])].reverse()
+      .map((key) => decision.attempts?.[key]?.safeOutput)
+      .find((output) => output?.recommendedCandidateId
+        || output?.planning?.recommendedCandidateId);
+    const planning = decision.plannerResult
+      || lastPlanningOutput?.planning || lastPlanningOutput
+      || lastAttempt?.safeOutput?.providerTurn?.toolCalls?.[0]?.arguments;
     assert(planning?.recommendedCandidateId,
       `completed revision-${targetStateRevision} planning submission is required`);
     const replayBundle = await roomStore.loadReplayBundle(privateState.roomId);
@@ -168,12 +209,22 @@ async function worker() {
       privateKey: privateState.refereePrivateKeyPem,
       publicKey: privateState.refereePublicKeyPem,
       hmacSecret: privateState.refereeHmacSecret,
-      keyId: `ticket23-slice248-referee-${runId}`,
+      keyId: `ticket23-slice248-referee-${cryptoRunId}`,
       trustLevel: "development_persistent",
     });
-    const fixture = await createTicket20HumanAgentDemoFixtureV1({
-      root: process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
+    const fixtureFactory = forkPrivate
+      ? createTicket20AgentAgentDemoFixtureV1
+      : createTicket20HumanAgentDemoFixtureV1;
+    const fixture = await fixtureFactory({
+      root: forkPrivate
+        ? await resolveOfficialDevelopmentTrancheFixtureRootV1({ root: ROOT })
+        : process.env.TICKET27_S271_FIXTURE_ROOT || ROOT,
       roomId: privateState.roomId,
+      ...(forkPrivate ? {
+        setupRoomId: forkChain.at(-1).sourceRoomId,
+        currentProductRuntimeVariant: forkChain.length > 1
+          ? "charge_access_v3" : "charge_endpoint_v2",
+      } : {}),
       roomProfile: "standard_2000_live",
       mapConfiguration: {
         seedId: "sc1_lost_temple_v1",
@@ -230,6 +281,21 @@ async function worker() {
       pieceId: domain.pieceId,
       modelCount: domain.constraints?.modelProfiles?.length || 18,
       maximumOptions: request.maximumOptions,
+      ...(chargeResolutionDiagnostic ? {
+        maxDistanceMilliInches:
+          domain.constraints?.maxDistanceMilliInches,
+        leadingModelId: domain.constraints?.leadingModelId,
+        leadingProfile: domain.constraints?.modelProfiles?.find((entry) =>
+          entry.modelId === domain.constraints?.leadingModelId),
+        declaredTargets: domain.constraints?.declaredTargets,
+        targetModels: (domain.constraints?.declaredTargets || []).map((target) => {
+          const piece = replay.envelope.state.pieces.find((entry) =>
+            entry.id === target.unitId);
+          return { unitId: target.unitId, modelId: target.modelId,
+            model: piece?.models?.find((entry) =>
+              entry.id === target.modelId) || null };
+        }),
+      } : {}),
     })}\n`);
     const started = performance.now();
     let reportedInstantiationFailures = 0;
@@ -309,7 +375,8 @@ async function worker() {
           && entry.unknownNeverPromotedToSafeOrZero);
     const report = {
       schema: "ticket23_slice248_swarmling_formation_diagnosis_v1",
-      ok: durationMs <= maximumDurationMs && result.optionCount === 4,
+      ok: durationMs <= maximumDurationMs && (chargeResolutionDiagnostic
+        ? result.optionCount > 0 : result.optionCount === 4),
       reproduced: durationMs > maximumDurationMs,
       stateRevision: targetStateRevision,
       seatKey,
@@ -339,9 +406,11 @@ async function worker() {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     assert.equal(report.ok, true,
       `formation search exceeded ${maximumDurationMs}ms or lost options`);
-    assert.equal(report.multiModelFormationStrategyDiversity, true,
+    if (!chargeResolutionDiagnostic) assert.equal(
+      report.multiModelFormationStrategyDiversity, true,
       "multi-model formation options must expose materially different spacing and envelopes");
-    assert.equal(report.specialTerrainLosUnknownPreserved, true,
+    if (!chargeResolutionDiagnostic) assert.equal(
+      report.specialTerrainLosUnknownPreserved, true,
       "special-terrain LOS failure must remain unknown, never safe or zero");
   } finally {
     decisions.close();

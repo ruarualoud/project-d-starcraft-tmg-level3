@@ -12,6 +12,51 @@ const CONTEXTS = new Set([
   "objective_completion", "disengage_check",
 ]);
 
+// Read-only batch facade over the SAME per-context atom used by deployment,
+// marker control and other Native consumers. Never infer Supply from ability prose.
+export function inspectOfficialContextualSupplyV1({state,arguments:args={}}={}) {
+  const invalid = !args || typeof args!=='object' || Array.isArray(args)
+    || Object.keys(args).some(key=>!['unitIds','contexts'].includes(key))
+    || !Array.isArray(args.unitIds) || !args.unitIds.length
+    || args.unitIds.some(id=>typeof id!=='string'||!id)
+    || new Set(args.unitIds).size!==args.unitIds.length
+    || (args.contexts!==undefined && (!Array.isArray(args.contexts)||!args.contexts.length
+      || args.contexts.some(context=>!CONTEXTS.has(context))
+      || new Set(args.contexts).size!==args.contexts.length));
+  if(invalid)fail('CONTEXTUAL_SUPPLY_QUERY_ARGUMENTS_INVALID');
+  const contexts=args.contexts??[...CONTEXTS];
+  const units=args.unitIds.map(unitId=>{
+    const piece=state?.pieces?.find(p=>p.id===unitId);
+    if(!piece)fail('CONTEXTUAL_SUPPLY_UNIT_NOT_FOUND',unitId);
+    return {unitId,recordKey:piece.officialUnitRecordKey,currentModels:piece.currentModels,
+      onBattlefield:activePiece(piece),baseSupply:piece.currentSupply,
+      contexts:Object.fromEntries(contexts.map(context=>[context,
+        projectOfficialContextualSupplyValueV1({state,pieceId:unitId,context})]))};
+  });
+  return freezeDeep({schema:'starcraft_tmg_contextual_supply_inspection_v1',units,
+    semanticVersion:OFFICIAL_CONTEXTUAL_SUPPLY_PROJECTION_VERSION,
+    markerControlProven:false,mutationAuthority:false,trainingTruth:false,
+    scope:'Exact supplied Native state only. Contextual Supply is not marker eligibility/control, future arrival, or a different casualty/aura state.'});
+}
+
+// Public field semantics shared by Plan generation/revision/review. This is
+// not a new Supply calculation and does not assert future marker control.
+export function describeOfficialContextualSupplySemanticsV1() {
+  return freezeDeep({version:'official_contextual_supply_field_semantics_v1',
+    supportedContexts:[...CONTEXTS],
+    startingSupply:{meaning:'printed_supply_of_selected_starting_composition',
+      afterCasualtiesMayDiffer:true,provesMarkerControl:false},
+    poolSupply:{context:'supply_pool_calculation',
+      meaning:'contextual_contribution_used_only_when_calculating_the_supply_pool',
+      replacesCurrentSupply:false,provesMarkerControl:false},
+    missionControl:{context:'mission_marker_control',requiresCurrentNativeState:true,
+      meaning:'Native current Supply plus applicable contextual effects; actual marker control also requires current eligibility, footprint range and opponent comparison',
+      inferFromPoolSupply:false},
+    instruction:'A Supply-Pool-only replacement does not change Current Supply or automatically change marker-control, objective or disengage Supply. Do not call a unit generally Supply-0 from poolSupply=0. Use each rule in its stated context; arrival schedule entries are not live control evidence.',
+    rulesAuthority:'existing_contextual_supply_projection_semantics',
+    newRulesOrStrategyIntroduced:false});
+}
+
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
 }

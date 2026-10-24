@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { types as nodeUtilTypes } from "node:util";
 
 export const STARCRAFT_TMG_ROOM_STORE_VERSION = "starcraft_tmg_room_store_v1";
 export const STARCRAFT_TMG_ROOM_STORE_METHODS = Object.freeze([
@@ -63,15 +64,52 @@ export function createStarcraftTmgPrivatePayloadCodec(options = {}) {
   const keyFingerprint = createHash("sha256").update(key).digest("hex");
   const keyId = String(options.keyId || `sc-room-data-${keyFingerprint.slice(0, 20)}`);
   const trustLevel = String(options.trustLevel || (options.key ? "externally_managed" : "development_ephemeral"));
+  const aggregateTexts = new Map();
+  const aggregateCacheByteLimit = 64 * 1024 * 1024;
+  const aggregateCacheEntryLimit = 4;
+  let aggregateCacheBytes = 0;
+
+  function forgetAggregateText(identity) {
+    const previous = aggregateTexts.get(identity);
+    if (!previous) return;
+    aggregateCacheBytes -= previous.bytes;
+    aggregateTexts.delete(identity);
+  }
+
+  function rememberAggregateText(identity, encoded, text) {
+    forgetAggregateText(identity);
+    const bytes = Buffer.byteLength(encoded, "utf8") + Buffer.byteLength(text, "utf8");
+    // Retention limits never limit an accepted payload's size.
+    if (bytes > aggregateCacheByteLimit) return;
+    while (aggregateTexts.size >= aggregateCacheEntryLimit
+      || aggregateCacheBytes + bytes > aggregateCacheByteLimit) {
+      forgetAggregateText(aggregateTexts.keys().next().value);
+    }
+    aggregateTexts.set(identity, { encoded, text, bytes });
+    aggregateCacheBytes += bytes;
+  }
+
+  function mayRememberOwnAggregateEncoding() {
+    // Do not add getter/Proxy evaluations to encode. Dynamic configurations
+    // keep the existing decode-only lane; ordinary explicit false stays off.
+    if (nodeUtilTypes.isProxy(options)) return false;
+    const prototype = Object.getPrototypeOf(options);
+    if (prototype !== Object.prototype && prototype !== null) return false;
+    const descriptor = Object.getOwnPropertyDescriptor(options, "cacheAggregatePayloads")
+      || (prototype && Object.getOwnPropertyDescriptor(prototype, "cacheAggregatePayloads"));
+    return !descriptor || ("value" in descriptor && descriptor.value !== false);
+  }
 
   function encode(value, aadIdentity) {
     const iv = randomBytes(12);
     const cipher = createCipheriv("aes-256-gcm", key, iv);
-    const aad = Buffer.from(String(aadIdentity || "starcraft-tmg-private-payload"), "utf8");
+    const identity = String(aadIdentity || "starcraft-tmg-private-payload");
+    const aad = Buffer.from(identity, "utf8");
     cipher.setAAD(aad);
-    const ciphertext = Buffer.concat([cipher.update(JSON.stringify(value), "utf8"), cipher.final()]);
+    const text = JSON.stringify(value);
+    const ciphertext = Buffer.concat([cipher.update(text, "utf8"), cipher.final()]);
     const tag = cipher.getAuthTag();
-    return JSON.stringify({
+    const encoded = JSON.stringify({
       schemaVersion: "starcraft_tmg_aes_256_gcm_payload_v1",
       keyId,
       algorithm: "aes-256-gcm",
@@ -79,22 +117,51 @@ export function createStarcraftTmgPrivatePayloadCodec(options = {}) {
       tag: tag.toString("base64url"),
       ciphertext: ciphertext.toString("base64url"),
     });
+    if (identity.startsWith("room:") && identity.endsWith(":aggregate")
+      && mayRememberOwnAggregateEncoding()) {
+      // These exact bytes/tag/AAD were just produced by this private AES-GCM
+      // instance. Retain only the serialized text, never the caller's object.
+      // Changed or externally produced ciphertext still requires authentication.
+      rememberAggregateText(identity, encoded, text);
+    }
+    return encoded;
   }
 
   function decode(encoded, aadIdentity) {
+    const identity = String(aadIdentity || "starcraft-tmg-private-payload");
+    const cacheAggregate = options.cacheAggregatePayloads !== false
+      && typeof encoded === "string"
+      && identity.startsWith("room:") && identity.endsWith(":aggregate");
+    if (cacheAggregate) {
+      const previous = aggregateTexts.get(identity);
+      if (previous?.encoded === encoded) {
+        aggregateTexts.delete(identity);
+        aggregateTexts.set(identity, previous);
+        // Only validated text is shared; every caller owns a fresh object.
+        return JSON.parse(previous.text);
+      }
+      // Compare the complete persisted ciphertext, not just state counters:
+      // seat/control changes can leave the Rules state revision unchanged.
+      forgetAggregateText(identity);
+    }
     const payload = typeof encoded === "string" ? JSON.parse(encoded) : encoded;
     if (!object(payload)
       || payload.schemaVersion !== "starcraft_tmg_aes_256_gcm_payload_v1"
       || payload.keyId !== keyId
       || payload.algorithm !== "aes-256-gcm") throw new Error("private payload encryption metadata is invalid");
     const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(payload.iv, "base64url"));
-    decipher.setAAD(Buffer.from(String(aadIdentity || "starcraft-tmg-private-payload"), "utf8"));
+    decipher.setAAD(Buffer.from(identity, "utf8"));
     decipher.setAuthTag(Buffer.from(payload.tag, "base64url"));
     const plaintext = Buffer.concat([
       decipher.update(Buffer.from(payload.ciphertext, "base64url")),
       decipher.final(),
     ]);
-    return JSON.parse(plaintext.toString("utf8"));
+    const text = plaintext.toString("utf8");
+    const value = JSON.parse(text);
+    if (cacheAggregate) {
+      rememberAggregateText(identity, encoded, text);
+    }
+    return value;
   }
 
   return Object.freeze({

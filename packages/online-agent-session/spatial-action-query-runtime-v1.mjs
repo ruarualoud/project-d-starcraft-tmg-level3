@@ -2,10 +2,20 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import { projectStarcraftTmgViewerStateShapeV3 } from
   "../client-domain/viewer-projection-v3.mjs";
+import {projectNativeActionCapabilityReferenceV1} from "./native-action-capability-reference-v1.mjs";
 import {
   evaluateOfficialBaseMeasurementV1,
   evaluateOfficialWithinWhollyWithinV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
+import { STARCRAFT_TMG_INDEPENDENT_READONLY_QUERY_KINDS_V1 } from
+  "./readonly-query-kinds-v1.mjs";
+import { STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1,
+  STARCRAFT_TMG_DELEGATED_SPATIAL_QUERY_KINDS_V1,
+  STARCRAFT_TMG_RETIRED_SPATIAL_QUERY_KINDS_V1,
+  STARCRAFT_TMG_CURRENT_ACTION_REFERENCE_CONTRACT_V1,
+  inspectStarcraftTmgCurrentActionReferenceV1,
+  starcraftTmgSpatialQueryRequiresDomainV1,
+  inspectStarcraftTmgSpatialQueryResultV1 } from "./spatial-query-contracts-v1.mjs";
 
 export const STARCRAFT_TMG_SPATIAL_ACTION_QUERY_RUNTIME_VERSION =
   "starcraft_tmg_spatial_action_query_runtime_v1";
@@ -14,21 +24,10 @@ const DIRECT_QUERY_KINDS = new Set([
   "base_edge_distance",
   "within_and_wholly_within",
 ]);
-const DELEGATED_QUERY_KINDS = new Set([
-  "space.inspect_relationships",
-  "space.solve_formation",
-  "legal_formation_options",
-  "legal_asset_placement_options",
-  "instantiate_parameterized_action",
-  "legal_full_path_movement",
-  "coherency_after_candidate_placement",
-  "intervening_model_or_terrain_blocking",
-  "line_of_sight_cover_and_elevation",
-  "action_specific_threat",
-  "attack_probability",
-  "fire_zone_exchange",
-  "objective_score_after_candidate_action",
-]);
+const INDEPENDENT_READONLY_QUERY_KINDS = new Set(
+  STARCRAFT_TMG_INDEPENDENT_READONLY_QUERY_KINDS_V1,
+);
+const DELEGATED_QUERY_KINDS = new Set(STARCRAFT_TMG_DELEGATED_SPATIAL_QUERY_KINDS_V1);
 const RANGED_CASUALTY_SELECTION_PARAMETER_KIND =
   "official_selected_roster_ranged_casualty_selection_v1";
 
@@ -52,7 +51,10 @@ function seal(value, hashField) {
   return deepFreeze({ ...unsigned, [hashField]: hashStarcraftTmgContract(unsigned) });
 }
 
-const PHYSICAL_OBJECT_KINDS = ["mission_marker", "token", "marker"];
+export const STARCRAFT_TMG_PHYSICAL_OBJECT_KINDS_V1 = Object.freeze([
+  "mission_marker", "token", "marker",
+]);
+const PHYSICAL_OBJECT_KINDS = STARCRAFT_TMG_PHYSICAL_OBJECT_KINDS_V1;
 const REFERENCE_SCHEMA = deepFreeze({ anyOf: [{ type: "object", properties: {
   kind: { enum: ["model"] }, unitId: { type: "string", minLength: 1 },
   modelId: { type: "string", minLength: 1 },
@@ -77,13 +79,15 @@ export function createStarcraftTmgNativeSpatialQueryToolV1({ name, queryKinds })
     type: "function",
     function: {
       name,
-      description: "Ask the Host for one read-only Rules, geometry, probability, fire-zone, path, coherency, line-of-sight, threat or score query. Encode query-specific arguments as one JSON object string. Intent-driven formation solving, asset placement and final instantiation are deferred to the Host after candidate selection.",
+      description: "Ask the Host for a read-only query. Each kind has a precise scope; geometry alone does not prove control or attack legality, estimates are not execution outcomes. Intent-driven formation solving, asset placement and final instantiation are deferred until selection.",
       parameters: { type: "object", properties: {
         requestId: { type: "string" },
         queryKind: { type: "string", enum: [...queryKinds] },
         argumentsJson: { type: "string", description:
-          "Direct geometry query contracts: " + JSON.stringify(DIRECT_ARGUMENT_CONTRACTS)
-          + ". Use IDs from the current visible spatial observation. base_edge_distance measures one physical source/target pair, not an entire unit matrix. For multiple units or unit-to-objective distances use space.inspect_relationships with {subjectUnitIds:[unitId],targetIds:[unitOrObjectiveId],intent:string}. Measurement does not prove attack or charge legality." },
+          "Query meanings: " + JSON.stringify(Object.fromEntries(queryKinds.map(kind =>
+            [kind, STARCRAFT_TMG_SPATIAL_QUERY_CONTRACTS_V1[kind]])))
+          + ". mission_marker_control accepts {} or {markerIds:[id],unitIds:[id]} for current qualification/control; add {domainId,parameters} only for a supplied native spatial candidate. It does not award or predict VP. Direct geometry query contracts: " + JSON.stringify(DIRECT_ARGUMENT_CONTRACTS)
+          + ". Current-action queries bind {domainId:currentDomainId,parameters:{...actualDomainParameters}}. attack_probability uses a ranged domain OR an explicit single-target fight domain. Ranged parameters include targetUnitId; melee parameters must include all Native fight choices (closeRanksMode, allocations and required effect targets), plus targetUnitId as the measurement selector matching that one allocation. sampleBudget is optional. Baselines exclude optional reactions; melee does NOT accept damageReactionChoices. For ranged only, an explicit damage-reaction policy has exactly one choice per side: {sideKey,choiceKind:pass|reaction,definitionId,sourceInstanceId,paymentCardInstanceIds}. Pass uses null IDs and []; copy reaction definition/source/payment from reactionOpportunitySet damage_received choices. Native applies payment and damage effects, reporting resource/card costs; other reaction stages remain excluded. Keep scene/domain/parameters/sampleBudget identical when comparing policies and compare outcomeSampleHash. An enemy-response estimate requires explicitly chosen legal enemy scene/domain/parameters, never automatic future play. Use the selected domain's parameterSchema, not an attacker or weapon name; candidateId is an exact-ID compatibility alias. Never supply currentLegalSpaceDomain: the Host binds it. Formation and asset queries also bind domainId; intent/search arguments are query-specific. Use current visible IDs. base_edge_distance measures one physical pair; for unit matrices use space.inspect_relationships with {subjectUnitIds:[unitId],targetIds:[unitOrObjectiveId],intent:string}. Measurement does not prove charge/arrival legality." },
       }, required: ["requestId", "queryKind", "argumentsJson"],
       additionalProperties: false },
     },
@@ -128,6 +132,58 @@ function directArgumentIssue(queryKind, args) {
     guidance: "Use physical model/token/marker references for direct measurement. Use the explicit relationship query for unit matrices; it remains read-only and does not establish action legality." };
 }
 
+// The action menu calls the same exact Rules-domain ID a candidateId. Bind
+// that transport alias once here, for every consumer of the shared query
+// runtime. Do not guess a domain, choose a target, or reinterpret a weapon.
+function currentDomainArguments(args, legalSpace, seatKey) {
+  const issue = reason => ({ issue: { reason, repairContext: {
+    expectedArguments: STARCRAFT_TMG_CURRENT_ACTION_REFERENCE_CONTRACT_V1.expectedArguments,
+    suggestionExecuted: false,
+    guidance: "Use one matching current-domain reference and its declared parameters. Conflicting references are not automatically resolved.",
+  } } });
+  const reference=inspectStarcraftTmgCurrentActionReferenceV1(args);
+  if(reference.issue)return {issue:reference.issue};
+  const domainId=reference.domainId;
+  const domain = (legalSpace.parameterDomains || []).find(entry =>
+    entry.domainId === domainId && entry.sideKey === seatKey);
+  if (!domain) return issue("CURRENT_ACTION_QUERY_DOMAIN_UNKNOWN");
+  const proposalParameters = args.proposal?.parameters;
+  if ((args.parameters !== undefined && !object(args.parameters))
+    || (proposalParameters !== undefined && !object(proposalParameters))) {
+    return issue("CURRENT_ACTION_QUERY_PARAMETERS_OBJECT_REQUIRED");
+  }
+  if (args.parameters && proposalParameters
+    && hashStarcraftTmgContract(args.parameters)
+      !== hashStarcraftTmgContract(proposalParameters)) {
+    return issue("CURRENT_ACTION_QUERY_PARAMETERS_CONFLICT");
+  }
+  const parameters = clone(args.parameters || proposalParameters || {});
+  const identity = { attackerUnitId: domain.pieceId, pieceId: domain.pieceId,
+    sideKey: domain.sideKey, actionType: domain.actionType,
+    weaponName: domain.weaponName, profileKey: domain.profileKey };
+  for (const [key, expected] of Object.entries(identity)) {
+    if (Object.hasOwn(args, key) && args[key] !== expected) {
+      return issue("CURRENT_ACTION_QUERY_IDENTITY_CONFLICT");
+    }
+  }
+  const schema = domain.parameterSchema || {};
+  const declarations = object(schema.properties) ? schema.properties : schema;
+  for (const [key, declaration] of Object.entries(declarations)) {
+    if (!object(declaration) || !Object.hasOwn(args, key)) continue;
+    if (Object.hasOwn(parameters, key)
+      && hashStarcraftTmgContract(parameters[key])
+        !== hashStarcraftTmgContract(args[key])) {
+      return issue("CURRENT_ACTION_QUERY_PARAMETERS_CONFLICT");
+    }
+    // Copy only explicitly provided, Rules-declared parameters. In particular
+    // no default target, sample-budget reduction, or tactical choice is added.
+    parameters[key] = clone(args[key]);
+  }
+  return { arguments: { ...clone(args), domainId, parameters,
+    ...(object(args.proposal) ? { proposal: { ...clone(args.proposal),
+      domainId, parameters: clone(parameters) } } : {}) } };
+}
+
 function authority(input) {
   const projection = input.roomProjection;
   const legalSpace = input.legalSpace;
@@ -158,6 +214,7 @@ function authority(input) {
     seatKey: projection.viewer.seatKey,
     visibilityScope: projection.viewer.visibilityScope,
     spatialObservationHash: input.spatialObservation?.observationHash || null,
+    sceneScope: clone(input.sceneScope || { kind: "live_room" }),
   });
 }
 
@@ -199,19 +256,26 @@ function unknownResult(binding, queryKind, reason, details = {}) {
   }, "queryReceiptHash");
 }
 
-function delegatedResult(binding, queryKind, response) {
+function delegatedResult(binding, queryKind, response, args) {
   const responseBinding = response?.authority || response?.binding || {};
   if (response?.ok !== true
     || responseBinding.roomId !== binding.roomId
     || responseBinding.matchBindingHash !== binding.matchBindingHash
     || responseBinding.stateRevision !== binding.stateRevision
     || responseBinding.stateHash !== binding.stateHash
-    || responseBinding.legalSpaceHash !== binding.legalSpaceHash) {
+    || responseBinding.legalSpaceHash !== binding.legalSpaceHash
+    || hashStarcraftTmgContract(responseBinding.sceneScope || { kind: "live_room" })
+      !== hashStarcraftTmgContract(binding.sceneScope)
+    || responseBinding.seatKey !== binding.seatKey) {
     return unknownResult(binding, queryKind, "rules_query_binding_mismatch", {
       findingSeverity: "High",
       adapterResponseRetained: false,
     });
   }
+  const contractIssue = inspectStarcraftTmgSpatialQueryResultV1(queryKind, response);
+  if (contractIssue) return unknownResult(binding, queryKind, contractIssue, {
+    findingSeverity: "High", adapterResponseRetained: false,
+  });
   const precision = String(response.precision || response.status || "unknown");
   if (precision === "unknown") {
     return unknownResult(binding, queryKind,
@@ -222,6 +286,26 @@ function delegatedResult(binding, queryKind, response) {
         mayRepairSameChoice: response.mayRepairSameChoice === true,
         repairContext: clone(response.repairContext || null),
       });
+  }
+  const domain = args?.currentLegalSpaceDomain;
+  if (domain && queryKind !== "mission_marker_control"
+    && response.result?.domainId !== domain.domainId) {
+    return unknownResult(binding, queryKind, "rules_query_domain_mismatch", {
+      findingSeverity: "High", adapterResponseRetained: false,
+    });
+  }
+  if (queryKind === "attack_probability" && domain
+    && (response.result?.attackerUnitId !== domain.pieceId
+      || response.result?.targetUnitId !== args.parameters?.targetUnitId)) {
+    return unknownResult(binding, queryKind, "rules_query_attack_identity_mismatch", {
+      findingSeverity: "High", adapterResponseRetained: false,
+    });
+  }
+  if (queryKind==='attack_probability'&&args.damageReactionChoices!==undefined
+    &&(response.result?.damageReactionPolicy?.status!=='native_explicit_policy_applied'
+      ||JSON.stringify(response.result.damageReactionPolicy.choices)!==JSON.stringify(args.damageReactionChoices))) {
+    return unknownResult(binding,queryKind,'rules_query_damage_reaction_policy_mismatch',{
+      findingSeverity:'High',adapterResponseRetained:false});
   }
   if (!new Set(["exact", "advisory_estimate"]).has(precision)) {
     return unknownResult(binding, queryKind, "rules_query_precision_invalid", {
@@ -270,7 +354,9 @@ export function projectStarcraftTmgSpatialParameterDomainsV1(legalSpace) {
     parameterKind: domain.parameterKind || null,
     actionType: domain.parameterKind
         === RANGED_CASUALTY_SELECTION_PARAMETER_KIND
-      ? "resolve_ranged_casualties" : domain.actionType,
+      ? "resolve_ranged_casualties"
+      : domain.parameterKind === "official_selected_roster_melee_casualty_selection_v1"
+        ? "resolve_melee_casualties" : domain.actionType,
     authorityActionType: domain.actionType,
     abilityName: domain.abilityName || null,
     effectKind: domain.effectKind || null,
@@ -304,6 +390,10 @@ export function projectStarcraftTmgSpatialParameterDomainsV1(legalSpace) {
 export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
   const rulesQuery = typeof options.rulesQuery === "function"
     ? options.rulesQuery : null;
+  const rulesQueryBatch = typeof options.rulesQueryBatch === "function"
+    ? options.rulesQueryBatch : null;
+  const observeQueryDiagnostic = typeof options.observeQueryDiagnostic === "function"
+    ? options.observeQueryDiagnostic : null;
   const configuredMaximumScopes = Number(options.maximumCachedScopes || 64);
   const maximumCachedScopes = Number.isSafeInteger(configuredMaximumScopes)
     ? Math.max(1, Math.min(1_024, configuredMaximumScopes)) : 64;
@@ -316,6 +406,44 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
   const completed = new Map();
   const snapshotByScope = new Map();
   const cacheKeysByScope = new Map();
+
+  function observeDelegatedDiagnostic(binding, queryKind, response, receipt,
+    startedAt) {
+    if (!observeQueryDiagnostic) return;
+    // Diagnostics are a separate backend lane, not receipt/model fields.
+    // Whitelist counts/codes; never forward arbitrary Adapter payloads.
+    try {
+      const trusted = receipt.reason !== "rules_query_binding_mismatch";
+      const count = value => Number.isSafeInteger(value) && value >= 0
+        ? value : null;
+      const failureCounts = trusted && object(response?.failureCounts)
+        ? Object.fromEntries(Object.entries(response.failureCounts).filter(
+          ([code, value]) => /^[A-Z][A-Z0-9_]{0,120}$/u.test(code)
+            && count(value) !== null,
+        )) : {};
+      const event = deepFreeze({
+        schemaVersion: "starcraft_tmg_spatial_query_backend_diagnostic_v1",
+        operation: "spatial_query_backend",
+        roomId: binding.roomId,
+        seatKey: binding.seatKey,
+        stateRevision: binding.stateRevision,
+        queryKind,
+        status: receipt.status,
+        queryReceiptHash: receipt.queryReceiptHash,
+        elapsedMs: Math.round(performance.now() - startedAt),
+        attemptedCandidateCount: trusted
+          ? count(response?.attemptedCandidateCount) : null,
+        failureCounts,
+        recordedAt: new Date().toISOString(),
+        rulesAuthority: false,
+        trainingTruth: false,
+      });
+      const observed = observeQueryDiagnostic(event);
+      if (observed && typeof observed.then === "function") {
+        Promise.resolve(observed).catch(() => undefined);
+      }
+    } catch { /* A diagnostic sink must never alter the query verdict. */ }
+  }
 
   function evictScope(scopeKey) {
     for (const cacheKey of cacheKeysByScope.get(scopeKey) || []) {
@@ -386,6 +514,7 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
     const legalSpace = input.legalSpace;
     const finite = finiteActions(legalSpace);
     const domains = projectStarcraftTmgSpatialParameterDomainsV1(legalSpace);
+    const actionCapabilityReference=projectNativeActionCapabilityReferenceV1(input.roomProjection?.state);
     const suggestions = (legalSpace.searchSuggestions || []).map((entry) => ({
       suggestionId: entry.suggestionId,
       proposal: clone(entry.proposal),
@@ -401,6 +530,19 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
       authority: binding,
       finiteActions: finite,
       parameterDomains: domains,
+      ...(actionCapabilityReference?{actionCapabilityReference}:{}),
+      // These are the same Native eligibility failures, not a second rules
+      // implementation. Keep diagnostics separate from selectable actions.
+      actionAvailability: {
+        schema: 'starcraft_tmg_native_action_availability_v1',
+        source: 'same_native_legal_enumeration',
+        phase: input.roomProjection?.state?.phase ?? null,
+        sideKey: binding.seatKey,
+        disabledActions: clone((legalSpace.candidates || []).filter(entry => entry.isEnabled === false)),
+        disabledActionsAreExecutable: false,
+        reasonsCompleteForAllAbsentActions: false,
+        instruction: 'A disabled action is unavailable on THIS state for its exact Native disabledReason; it is not a missing system capability. Read actionCapabilityReference for supported routes/phases and the original disabled entry for the reason. Missing diagnostics do not prove impossibility or a capability gap. This is not permission to change geometry, phase, activation, or execute an action; select any needed conditional scene explicitly and inspect its new Native domains.',
+      },
       searchSuggestions: suggestions,
       counts: {
         finite: finite.length,
@@ -419,15 +561,13 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
     }, "actionSpaceHash");
   }
 
-  async function query(input = {}) {
+  async function queryWithDelegate(input = {}, delegate = rulesQuery) {
     const binding = authority(input);
     const snapshot = rotateSnapshot(binding);
     const legalSpace = input.legalSpace;
     const request = object(input.request) ? input.request : {};
     const queryKind = String(request.queryKind || request.kind || "unknown");
     const args = object(request.arguments) ? request.arguments : {};
-    const state = projectStarcraftTmgViewerStateShapeV3(
-      input.roomProjection.state || {});
     const cacheKey = hashStarcraftTmgContract({ binding, queryKind, args });
     const cacheable = DIRECT_QUERY_KINDS.has(queryKind)
       || (DELEGATED_QUERY_KINDS.has(queryKind) && Boolean(rulesQuery));
@@ -448,6 +588,11 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
         return receipt;
       }
       try {
+        // Only direct geometry consumes the viewer state. Delegated queries
+        // use the authority-bound Rules adapter, and a completed cache hit
+        // must not rebuild this whole projection before returning its receipt.
+        const state = projectStarcraftTmgViewerStateShapeV3(
+          input.roomProjection.state || {});
         const dataBundle = state.officialModelBaseGeometryDataBundle;
         const result = queryKind === "base_edge_distance"
           ? evaluateOfficialBaseMeasurementV1({
@@ -481,6 +626,8 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
     if (!DELEGATED_QUERY_KINDS.has(queryKind)) {
       return unknownResult(binding, queryKind, "unsupported_query_kind", {
         findingSeverity: "Medium",
+        repairContext: { guidance: STARCRAFT_TMG_RETIRED_SPATIAL_QUERY_KINDS_V1[queryKind]
+          || "Use a currently advertised query kind", suggestionExecuted: false },
       });
     }
     if (!rulesQuery) {
@@ -489,11 +636,29 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
           findingSeverity: "Medium",
         });
     }
+    const normalized = starcraftTmgSpatialQueryRequiresDomainV1(queryKind, args)
+      ? currentDomainArguments(args, legalSpace, binding.seatKey)
+      : { arguments: args };
+    if (normalized.issue) {
+      const receipt = unknownResult(binding, queryKind,
+        normalized.issue.reason, { findingSeverity: "Medium",
+          failureStage: "validate_query_arguments",
+          safeFailureClass: "parameter_contract_invalid",
+          mayRepairSameChoice: true,
+          rulesEvaluationAttempted: false,
+          repairContext: normalized.issue.repairContext });
+      rememberCompleted(snapshot, cacheKey, receipt);
+      return receipt;
+    }
     if (!inFlight.has(cacheKey)) {
       inFlight.set(cacheKey, (async () => {
         try {
-          const delegatedArguments = clone(args);
-          const domainId = String(args.domainId || args.proposal?.domainId || "");
+          const delegatedStartedAt = performance.now();
+          const delegatedArguments = clone(normalized.arguments);
+          // Only the current viewer's Host-owned LegalSpace is authoritative.
+          delete delegatedArguments.currentLegalSpaceDomain;
+          const domainId = String(delegatedArguments.domainId
+            || delegatedArguments.proposal?.domainId || "");
           const currentDomain = domainId
             ? (legalSpace.parameterDomains || []).find((entry) => (
                 entry.domainId === domainId
@@ -523,7 +688,7 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
               }
             }
           }
-          const response = await rulesQuery(deepFreeze({
+          const response = await delegate(deepFreeze({
             schemaVersion:
               `${STARCRAFT_TMG_SPATIAL_ACTION_QUERY_RUNTIME_VERSION}.request`,
             authority: clone(binding),
@@ -533,7 +698,9 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
             confirmationAuthority: false,
             trainingTruth: false,
           }));
-          const receipt = delegatedResult(binding, queryKind, response);
+          const receipt = delegatedResult(binding, queryKind, response, delegatedArguments);
+          observeDelegatedDiagnostic(binding, queryKind, response, receipt,
+            delegatedStartedAt);
           rememberCompleted(snapshot, cacheKey, receipt);
           return receipt;
         } catch (error) {
@@ -552,13 +719,62 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
     return inFlight.get(cacheKey);
   }
 
+  async function query(input = {}) {
+    return queryWithDelegate(input);
+  }
+
+  async function queryBatch(input = {}) {
+    const requests = input.requests;
+    if (!Array.isArray(requests)) throw new TypeError("spatial query requests are required");
+    const results = [];
+    for (let index = 0; index < requests.length;) {
+      if (!rulesQueryBatch || !INDEPENDENT_READONLY_QUERY_KINDS.has(
+        String(requests[index]?.queryKind || requests[index]?.kind || ""))) {
+        results.push(await query({ ...input, request: requests[index++] }));
+        continue;
+      }
+      const group = [];
+      while (index < requests.length && INDEPENDENT_READONLY_QUERY_KINDS.has(
+        String(requests[index]?.queryKind || requests[index]?.kind || ""))) {
+        group.push(requests[index++]);
+      }
+      const pending = [];
+      const enqueue = request => new Promise((resolve, reject) => {
+        pending.push({ request, resolve, reject });
+      });
+      // Normal validation, Host-domain binding and exact-authority cache all
+      // run before queueing. Identical in-flight arguments enqueue only once.
+      const tasks = group.map(request => queryWithDelegate({ ...input, request }, enqueue)
+        .then(receipt => ({ receipt }), error => ({ error })));
+      if (pending.length) {
+        try {
+          const replies = await rulesQueryBatch(pending.map(entry => entry.request));
+          if (!Array.isArray(replies) || replies.length !== pending.length) {
+            throw new TypeError("rules query batch reply count mismatch");
+          }
+          for (const [i, entry] of pending.entries()) entry.resolve(replies[i]);
+        } catch (error) {
+          // Never replay a completed batch blindly. The existing typed
+          // adapter-failed receipt handles each rejected delegated promise.
+          for (const entry of pending) entry.reject(error);
+        }
+      }
+      for (const outcome of await Promise.all(tasks)) {
+        if (outcome.error) throw outcome.error;
+        results.push(outcome.receipt);
+      }
+    }
+    return results;
+  }
+
   return Object.freeze({
     metadata: Object.freeze({
       schemaVersion:
         `${STARCRAFT_TMG_SPATIAL_ACTION_QUERY_RUNTIME_VERSION}.metadata`,
-      interface: ["actionSpace", "query"],
+      interface: ["actionSpace", "query", "queryBatch"],
       directExactQueries: [...DIRECT_QUERY_KINDS],
       delegatedQueries: [...DELEGATED_QUERY_KINDS],
+      independentReadonlyQueryKinds: [...INDEPENDENT_READONLY_QUERY_KINDS],
       unsupportedPolicy: "return_unknown_never_approximate_as_exact",
       parameterizedActionPolicy:
         "preserve_domain_then_rules_instantiate_then_preview",
@@ -574,5 +790,6 @@ export function createStarcraftTmgSpatialActionQueryRuntimeV1(options = {}) {
     }),
     actionSpace,
     query,
+    queryBatch,
   });
 }

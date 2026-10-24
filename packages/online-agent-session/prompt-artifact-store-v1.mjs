@@ -3,6 +3,9 @@ import { randomUUID } from "node:crypto";
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 
+import { STARCRAFT_TMG_PROVIDER_PROMPT_ARTIFACT_MAX_BYTES } from
+  "../secure-provider-runtime/provider-egress-contract-v1.mjs";
+
 export const STARCRAFT_TMG_PROMPT_ARTIFACT_STORE_VERSION =
   "starcraft_tmg_prompt_artifact_store_v1";
 
@@ -74,7 +77,8 @@ export function createInMemoryStarcraftTmgPromptArtifactStoreV1(options = {}) {
     throw new TypeError("maxArtifacts is invalid");
   }
   if (!Number.isSafeInteger(maxArtifactBytes)
-    || maxArtifactBytes < 1_024 || maxArtifactBytes > 8 * 1024 * 1024) {
+    || maxArtifactBytes < 1_024
+    || maxArtifactBytes > STARCRAFT_TMG_PROVIDER_PROMPT_ARTIFACT_MAX_BYTES) {
     throw new TypeError("maxArtifactBytes is invalid");
   }
   const artifacts = new Map();

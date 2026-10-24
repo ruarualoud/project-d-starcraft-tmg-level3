@@ -1,4 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
+import {inspectOfficialRelocationPlacementIdsV1} from './official-relocation-parameter-contract-v1.mjs';
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -575,20 +576,20 @@ function enumerate(bundle, state, options = {}) {
 
 function canonicalPlacements(actor, parameters) {
   const models = liveModels(actor);
-  const remaining = new Set(models.map((entry) => entry.id));
+  const identity=inspectOfficialRelocationPlacementIdsV1(models.map(entry=>entry.id),parameters.placements);
   if (!Array.isArray(parameters.placements)
     || parameters.placements.length !== models.length) {
     fail("RELOCATION_PLACEMENT_DENOMINATOR_INVALID", actor.id);
   }
+  if(identity.duplicateOrUnexpectedModelIds.length)fail("RELOCATION_PLACEMENT_MODEL_INVALID",identity.duplicateOrUnexpectedModelIds[0]);
+  if(!identity.valid)fail("RELOCATION_PLACEMENT_DENOMINATOR_INVALID",actor.id);
   const placements = parameters.placements.map((entry) => {
     const modelId = String(entry?.modelId || "");
-    if (!remaining.delete(modelId)) fail("RELOCATION_PLACEMENT_MODEL_INVALID", modelId);
     return { modelId, ...point(entry, "RELOCATION_PLACEMENT_POINT_INVALID", modelId),
       rotationDegrees: canonicalRotation(entry.rotationDegrees),
       elevation: elevation(entry.elevation),
       supportTerrainIds: [...new Set((entry.supportTerrainIds || []).map(String))].sort() };
   }).sort((left, right) => left.modelId.localeCompare(right.modelId));
-  if (remaining.size > 0) fail("RELOCATION_PLACEMENT_DENOMINATOR_INVALID", actor.id);
   const leadingModelId = String(parameters.leadingModelId || "");
   if (!placements.some((entry) => entry.modelId === leadingModelId)) {
     fail("RELOCATION_LEADING_MODEL_INVALID", leadingModelId);

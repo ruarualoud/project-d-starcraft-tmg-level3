@@ -1,0 +1,30 @@
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import {gunzipSync} from 'node:zlib';
+import * as framework from '../packages/roster-strategist/roster-teach-framework-v1.mjs';
+const input=JSON.parse(gunzipSync(await fs.readFile(process.argv[2]+'/call-135.product-request.json.gz')));
+const evidence=input.promptNodes.find(n=>n.nodeType==='queried-evidence-results').content;
+const sessionResult={comparison:{},rejections:[],planningTrace:[{informationNeedOutcomes:evidence.outcomes}],teachCycle:{evidenceReceipts:evidence.teachEvidence}};
+const source=await fs.readFile(new URL('../packages/roster-planning-workspace/roster-planning-workspace-service-v1.mjs',import.meta.url),'utf8');
+const begin=source.indexOf('    session.comparison = clone(sessionResult.comparison);');
+const end=source.indexOf('    session.budgetBranchReceipts =',begin);
+assert.ok(begin>0&&end>begin);
+const session={};
+// Execute the actual publication assignments, isolating only unrelated Builder,
+// serialization and storage setup. The payload is the real unsent135 evidence.
+new Function('session','sessionResult','sink','clone',source.slice(begin,end))(session,sessionResult,{toolReceipts:[]},structuredClone);
+assert.ok(session.planningTrace,'Product publication dropped actual failed-query requests/receipts');
+assert.deepEqual(session.planningTrace,sessionResult.planningTrace);
+assert.deepEqual(session.generationTeachCycle,sessionResult.teachCycle);
+const state={agenda:{questions:[],coverage:framework.ROSTER_TEACH_AXES_V1.map(axisId=>({axisId,status:'not_applicable',reason:'fixture'}))},evidence:[]};
+const changed=framework.attachRosterGenerationQueryIssuesV1(state,session.planningTrace.flatMap(r=>r.informationNeedOutcomes));
+assert.equal(changed,true);
+assert.equal(state.agenda.questions.length,3,'All3 concrete failures must survive the handoff');
+assert.equal(state.evidence.length,3);
+assert.ok(state.evidence.every(e=>e.status==='unknown'&&e.queryNotExecuted===true&&e.originalQueryNotAnswered===true));
+assert.ok(state.agenda.questions.every(q=>q.axisIds.includes('robustness_and_replanning')));
+const saved=JSON.stringify(state);
+assert.equal(framework.attachRosterGenerationQueryIssuesV1(state,evidence.outcomes),false);
+assert.equal(JSON.stringify(state),saved,'Restart must not append duplicate investigations');
+assert.ok(state.generationQueryHandoffs.every(h=>h.originalFailureReceiptHash&&h.queryReexecuted===false));
+console.log(JSON.stringify({status:'passed',actualBoundary:135,persistedFailures:3,duplicateReplay:false,providerCalls:0}));

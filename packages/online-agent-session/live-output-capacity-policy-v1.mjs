@@ -7,6 +7,15 @@ export const STARCRAFT_TMG_LIVE_REQUEST_OUTPUT_LIMIT = 32_768;
 export function effectiveStarcraftTmgSemanticCorrectionsV1(choice) {
   const excluded = new Set((choice.outputCapacityRecoveries || [])
     .flatMap((entry) => entry.excludedSemanticAttemptKeys || []));
+  const stage = choice.stage;
+  if (["planning", "action"].includes(stage)
+    && Number.isSafeInteger(choice.stageCorrectionRounds)) {
+    const excludedInStage = [...excluded].filter((key) =>
+      choice.processedAttemptKeys?.includes(key)
+        && choice.attempts?.[key]?.stage === stage).length;
+    return Math.max(0, choice.stageCorrectionRounds - excludedInStage);
+  }
+  // Legacy records without a stage-local counter retain their old budget.
   return Math.max(0, Number(choice.semanticCorrectionRounds || 0) - excluded.size);
 }
 

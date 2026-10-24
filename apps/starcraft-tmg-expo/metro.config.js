@@ -5,6 +5,11 @@ const path = require("node:path");
 const config = getDefaultConfig(__dirname);
 const workspaceRoot = path.resolve(__dirname, "../..");
 
+// Shared node_modules contains Router modules transformed with a project-root
+// caller. Keep those transformations isolated across worktrees without clearing
+// any other worktree's cache or generated evidence.
+config.cacheVersion = `${config.cacheVersion ?? "1"}:${workspaceRoot}`;
+
 // Keep one repository-owned Client Domain Module and its presentation media;
 // never vendor client copies. Watching the whole Level-3 workspace makes
 // Metro's node crawler enumerate large rule/probe artifacts that cannot be

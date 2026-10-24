@@ -291,6 +291,22 @@ function contains(footprint, coordinate) {
     && coordinate.y >= footprint.yMin && coordinate.y <= footprint.yMax;
 }
 
+function markerDiscOverlaps(footprint, marker) {
+  const radiusInches = Number(marker.diameterInches) / 2;
+  if (!Number.isFinite(radiusInches) || radiusInches <= 0) {
+    fail("DEPLOYMENT_GEOMETRY_MISSION_MARKER_SIZE_INVALID",
+      String(marker.number));
+  }
+  const nearestX = Math.max(footprint.xMin,
+    Math.min(marker.coordinate.x, footprint.xMax));
+  const nearestY = Math.max(footprint.yMin,
+    Math.min(marker.coordinate.y, footprint.yMax));
+  const dx = marker.coordinate.x - nearestX;
+  const dy = marker.coordinate.y - nearestY;
+  // Tangency is permitted; an intersecting physical marker is not.
+  return dx * dx + dy * dy < radiusInches * radiusInches;
+}
+
 export function finalizeOfficialMissionMarkerPlacementV1(input = {}) {
   const binding = input.deploymentGeometryBinding;
   const ledger = input.terrainHeightTierLedger;
@@ -299,7 +315,8 @@ export function finalizeOfficialMissionMarkerPlacementV1(input = {}) {
   const missionMarkers = binding.markerTargets.map((marker) => {
     const supports = ledger.terrainPieces.filter((piece) => (
       contains(piece.footprint, marker.coordinate)));
-    if (supports.some((piece) => piece.impassable)) {
+    if (ledger.terrainPieces.some((piece) => piece.impassable
+      && markerDiscOverlaps(piece.footprint, marker))) {
       fail("DEPLOYMENT_GEOMETRY_MISSION_MARKER_IMPASSABLE_OVERLAP",
         String(marker.number));
     }

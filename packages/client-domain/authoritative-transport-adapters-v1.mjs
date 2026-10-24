@@ -152,7 +152,16 @@ export function createHttpStarcraftTmgAuthoritativeTransportAdapter(options = {}
   if (typeof fetchImpl !== "function") throw new TypeError("fetchImpl is required");
   const baseUrl = safeBaseUrl(options.baseUrl);
   const apiPrefix = String(options.apiPrefix || STARCRAFT_TMG_CLIENT_HTTP_API_PREFIX).replace(/\/+$/, "");
-  const maxResponseBytes = Math.max(1024, Number(options.maxResponseBytes || 4 * 1024 * 1024));
+  // Frozen official catalogues and a growing Room are valid larger responses.
+  // The old unconfigured 4 MiB rejection happened after buffering the whole
+  // response, so it neither bounded allocation nor made the payload safer.
+  // Retain explicit caller hard limits; default capacity is an observable
+  // warning, independent of envelope/domain validation and mutation authority.
+  const maxResponseBytes = options.maxResponseBytes === undefined
+    ? null : Math.max(1024, Number(options.maxResponseBytes));
+  const responseSizeWarningBytes = Math.max(1024,
+    Number(options.responseSizeWarningBytes || 4 * 1024 * 1024));
+  const responseWarningLevels = new Map();
   const timeoutMs = Math.max(250, Number(options.timeoutMs || 15_000));
   // A replay re-executes the receipt tail after the latest signed checkpoint.
   // That is intentionally more expensive than an ordinary room read or
@@ -185,7 +194,8 @@ export function createHttpStarcraftTmgAuthoritativeTransportAdapter(options = {}
     try {
       const response = await fetchImpl(`${baseUrl}${apiPrefix}/${endpoint.path}`, init);
       const text = await response.text();
-      if (utf8Length(text) > maxResponseBytes) {
+      const responseBytes = utf8Length(text);
+      if (maxResponseBytes !== null && responseBytes > maxResponseBytes) {
         throw new StarcraftTmgClientTransportError("TRANSPORT_RESPONSE_TOO_LARGE", "authoritative response exceeded the configured limit");
       }
       let body;
@@ -196,6 +206,22 @@ export function createHttpStarcraftTmgAuthoritativeTransportAdapter(options = {}
       }
       if (body?.schemaVersion !== "starcraft_tmg_level3_http_v2" || !body.result || typeof body.result !== "object") {
         throw new StarcraftTmgClientTransportError("TRANSPORT_RESPONSE_INVALID", "authoritative response envelope is invalid");
+      }
+      if (responseBytes > responseSizeWarningBytes) {
+        const level = Math.floor(Math.log2(responseBytes / responseSizeWarningBytes)) + 1;
+        if (level > (responseWarningLevels.get(request.operation) || 0)) {
+          responseWarningLevels.set(request.operation, level);
+          const warning = { code: "TRANSPORT_RESPONSE_SIZE_WARNING",
+            operation: request.operation, bytes: responseBytes,
+            thresholdBytes: responseSizeWarningBytes };
+          // Never disclose payload/credentials, and never let an observer
+          // failure reject an otherwise validated authoritative response.
+          try {
+            if (typeof options.onResponseSizeWarning === "function") {
+              options.onResponseSizeWarning(warning);
+            } else console.warn(warning.code, warning);
+          } catch {}
+        }
       }
       return body.result;
     } catch (error) {

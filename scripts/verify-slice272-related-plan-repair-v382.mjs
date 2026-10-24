@@ -1,0 +1,31 @@
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import { gunzipSync } from 'node:zlib';
+import * as claims from '../packages/roster-strategist/roster-public-claim-paths-v1.mjs';
+const [directory, formalFile] = process.argv.slice(2);
+const request = JSON.parse(gunzipSync(await fs.readFile(`${directory}/call-150.product-request.json.gz`)));
+const saved = JSON.parse(await fs.readFile(formalFile, 'utf8'));
+const plan = JSON.parse(saved.planSerialized);
+const before = JSON.stringify(plan);
+const seeds = request.promptNodes.find(n => n.nodeType === 'reviewed-current-claims').content.claims.map(c => c.claimPath);
+const response = 'counterResponses.resp-accept-denied-activation.responseText';
+assert(!seeds.includes(response), 'Actual unsent request omits the linked response');
+assert.match(plan.counterResponses.find(r => r.responseId === 'resp-accept-denied-activation').responseText, /unmeasured/i);
+assert.equal(typeof claims.rosterRelatedRepairClaimPathsV1, 'function',
+  'Actual150 repair excludes a stale response explicitly linked to its challenged hypothesis');
+const expand = claims.rosterRelatedRepairClaimPathsV1;
+const paths = expand(plan, seeds);
+assert(paths.includes(response));
+assert(paths.includes('counterResponses.resp-terran-tenacity-initiative.responseText'));
+assert(!paths.some(p => p.includes('omega') || p.includes('creep') || p.includes('queen') || p.includes('roach')));
+assert.deepEqual(expand(plan, paths), paths, 'Closure is idempotent');
+assert.deepEqual(expand(plan, [...seeds, ...seeds]), paths, 'Duplicate seeds do not expand twice');
+assert.deepEqual(expand(plan, ['scoreRoute.routeText']), ['scoreRoute.routeText']);
+assert.deepEqual(expand(plan, ['counterResponses.unknown.responseText']), ['counterResponses.unknown.responseText']);
+assert(expand(plan, [response]).includes(seeds[0]), 'Explicit links work in either direction');
+const ambiguous = structuredClone(plan);
+ambiguous.counterResponses.push(structuredClone(ambiguous.counterResponses[0]));
+assert.throws(() => expand(ambiguous, seeds), /IDENTITY_AMBIGUOUS/);
+assert.equal(JSON.stringify(plan), before, 'Original paid Plan is never rewritten by scope calculation');
+console.log(JSON.stringify({passed:true,actualUnsentRequest:150,seedPaths:seeds.length,
+  relatedPaths:paths.length,unrelatedBranchesUntouched:true,providerCalls:0}));

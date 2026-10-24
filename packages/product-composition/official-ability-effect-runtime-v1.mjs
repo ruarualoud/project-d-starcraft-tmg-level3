@@ -50,6 +50,7 @@ function seal(body, field) {
 
 export function createOfficialSelectedRosterAbilityDefinitionBindingsV1(bundle) {
   verifyOfficialSelectedRosterAbilitySourceBundleV1(bundle);
+  if (bundle.implementationBindings) return freezeDeep(clone(bundle.implementationBindings));
   const byHash = new Map();
   for (const route of bundle.routes) byHash.set(route.sourceFeatureHash, {
     sourceFeatureHash: route.sourceFeatureHash,

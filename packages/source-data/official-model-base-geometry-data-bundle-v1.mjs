@@ -59,6 +59,26 @@ function fail(code, detail = "") {
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
+const verifiedImmutableBundles = new WeakSet();
+function immutablePlainGraph(value, visiting = new WeakSet()) {
+  if (value === null) return true;
+  if (typeof value !== "object") return ["string", "boolean"].includes(typeof value)
+    || (typeof value === "number" && Number.isFinite(value));
+  if (!Object.isFrozen(value) || visiting.has(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  if (Array.isArray(value) ? prototype !== Array.prototype
+    : prototype !== Object.prototype && prototype !== null) return false;
+  visiting.add(value);
+  for (const key of Reflect.ownKeys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (typeof key !== "string" || !descriptor || !("value" in descriptor)
+      || !immutablePlainGraph(descriptor.value, visiting)) {
+      visiting.delete(value); return false;
+    }
+  }
+  visiting.delete(value);
+  return true;
+}
 function freezeDeep(value) {
   if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
   for (const child of Object.values(value)) freezeDeep(child);
@@ -142,6 +162,7 @@ export function createOfficialModelBaseGeometryDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialModelBaseGeometryDataBundleV1(bundle) {
+  if (verifiedImmutableBundles.has(bundle)) return true;
   if (!object(bundle)
     || bundle.schema !== OFFICIAL_MODEL_BASE_GEOMETRY_DATA_BUNDLE_SCHEMA
     || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
@@ -177,6 +198,9 @@ export function verifyOfficialModelBaseGeometryDataBundleV1(bundle) {
     }
     ids.add(profile.recordKey);
   }
+  // Only successful, recursively frozen plain data may reuse verification.
+  // A matching hash or a shallow freeze is not a cache admission proof.
+  if (immutablePlainGraph(bundle)) verifiedImmutableBundles.add(bundle);
   return true;
 }
 

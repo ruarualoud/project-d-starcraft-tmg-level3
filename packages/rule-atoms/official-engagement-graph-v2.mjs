@@ -386,8 +386,11 @@ function normalizeModels(state, boardWidth, boardHeight, terrain, accessPoints) 
         "ENGAGEMENT_V2_ACCESS_POINT_ADJACENCY_REQUIRED",
         modelId,
       );
-      if (declaredAdjacentAccessPointIds.some((value) => !accessPointById.has(value))
-        || !isDeepStrictEqual(declaredAdjacentAccessPointIds, derivedAdjacentAccessPointIds)) {
+      // Adjacency is a position-derived cache, not a second authority. Older
+      // spatial transitions could retain a ramp ID after a rotated base moved
+      // away from it. Validate the cache's shape/IDs, but use only the exact
+      // physical-footprint derivation for combat eligibility.
+      if (declaredAdjacentAccessPointIds.some((value) => !accessPointById.has(value))) {
         fail("ENGAGEMENT_V2_ACCESS_POINT_ADJACENCY_MISMATCH", modelId);
       }
       models.push({

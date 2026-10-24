@@ -1,4 +1,9 @@
 import { isDeepStrictEqual } from "node:util";
+import { canonicalOfficialSelectedRosterAttackAllocationsV1 as canonicalAllocations,
+  createOfficialSelectedRosterFightParameterSchemaV1 }
+  from "./official-selected-roster-attack-allocation-contract-v1.mjs";
+import { canonicalOfficialSelectedRosterChargeParametersV1 } from
+  "./official-selected-roster-charge-parameter-contract-v1.mjs";
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -9,6 +14,8 @@ import { createOfficialCriticalHitResolutionKernelV2 } from
   "../rule-atoms/official-critical-hit-resolution-kernel-v2.mjs";
 import { deriveOfficialEngagementGraphV2 } from
   "../rule-atoms/official-engagement-graph-v2.mjs";
+import { evaluateOfficialChargeOccupiedCrossSectionShortfallProofV1 } from
+  "../rule-atoms/official-charge-occupied-cross-section-proof-v1.mjs";
 import {
   OFFICIAL_IMPACT_EXECUTOR_ATOM_IDS,
 } from "../rule-atoms/official-impact-executor-v1.mjs";
@@ -51,6 +58,8 @@ import {
 import {
   createOfficialCurrentProductCasualtyDomainV1,
   resolveOfficialCurrentProductCasualtyDomainV1,
+  createOfficialSelectedRosterCasualtyChoiceContextV1,
+  createOfficialSelectedRosterCasualtyChoiceDomainV1,
 } from "./official-selected-roster-ranged-action-runtime-v1.mjs";
 import {
   validateOfficialSelectedRosterRelocationGeometryV1,
@@ -75,6 +84,8 @@ export const OFFICIAL_SELECTED_ROSTER_IMPACT_PARAMETER_KIND =
   "official_selected_roster_impact_allocation_v1";
 export const OFFICIAL_SELECTED_ROSTER_FIGHT_PARAMETER_KIND =
   "official_selected_roster_fight_v1";
+export const OFFICIAL_SELECTED_ROSTER_MELEE_CASUALTY_PARAMETER_KIND =
+  "official_selected_roster_melee_casualty_selection_v1";
 export const OFFICIAL_SELECTED_ROSTER_MELEE_PENDING_SCHEMA =
   "starcraft_tmg_official_selected_roster_melee_pending_v1";
 
@@ -408,33 +419,8 @@ function chargeDeclarationDomain(state, sideKey, piece) {
   };
   return seal(body, "domainId");
 }
-function canonicalTargets(domain, value) {
-  if (!Array.isArray(value) || value.length === 0) {
-    fail("SELECTED_MELEE_CHARGE_TARGETS_REQUIRED");
-  }
-  const seen = new Set();
-  return value.map((entry) => {
-    const unitId = String(entry?.unitId || "");
-    const modelId = String(entry?.modelId || "");
-    if (seen.has(unitId)
-      || !domain.constraints.eligibleTargetModelIdsByUnitId?.[unitId]?.includes(modelId)
-      || Object.keys(entry || {}).some((key) => !["unitId", "modelId"].includes(key))) {
-      fail("SELECTED_MELEE_CHARGE_TARGET_INVALID", `${unitId}:${modelId}`);
-    }
-    seen.add(unitId);
-    return { unitId, modelId };
-  }).sort((left, right) => left.unitId.localeCompare(right.unitId));
-}
 function instantiateChargeDeclaration(state, domain, parameters) {
-  if (!object(parameters)
-    || Object.keys(parameters).some((key) => !["leadingModelId", "targets"].includes(key))) {
-    fail("SELECTED_MELEE_CHARGE_DECLARATION_PARAMETERS_INVALID");
-  }
-  const leadingModelId = String(parameters.leadingModelId || "");
-  if (!domain.constraints.leadingModelIds.includes(leadingModelId)) {
-    fail("SELECTED_MELEE_CHARGE_LEADING_MODEL_INVALID", leadingModelId);
-  }
-  const targets = canonicalTargets(domain, parameters.targets);
+  const { leadingModelId, targets } = canonicalOfficialSelectedRosterChargeParametersV1(domain, parameters);
   const plan = seal({
     schemaVersion: "starcraft_tmg_selected_roster_charge_declaration_plan_v1",
     semanticVersion: "1.0.0", sideKey: domain.sideKey,
@@ -473,9 +459,79 @@ function revealDice(value, count, code) {
     return outcome;
   });
 }
+const OCCUPIED_PATH_FAILURE = "occupied_cross_section_distance_shortfall";
+
+function supplementalChargePathFailure(state, current) {
+  // Existing distance/spread failures keep their exact historical domain.
+  // This supplements the BASE melee path used by production v1 -> v6; a v4
+  // wrapper elsewhere is not evidence that the live parent received the proof.
+  if (current.chargePlan.targets.length !== 1) return null;
+  const piece = state.pieces.find(entry => entry.id === current.pieceId);
+  const leading = activeModels(piece).find(entry =>
+    entry.id === current.chargePlan.leadingModelId);
+  const declared = current.chargePlan.targets[0];
+  const target = state.pieces.find(entry => entry.id === declared.unitId);
+  const targetModel = activeModels(target).find(entry => entry.id === declared.modelId);
+  if (Math.max(0, baseGap(leading, targetModel) - 1000)
+    > current.maxDistanceMilliInches + TOLERANCE) return null;
+  const proof = evaluateOfficialChargeOccupiedCrossSectionShortfallProofV1(state, current);
+  return proof.allLegalChargePathsExcluded === true
+    && proof.allActiveTargetModelsCovered === true
+    && proof.omittedConstraintsCanOnlyEnlargeDomain === true
+    && proof.certificateKind === OCCUPIED_PATH_FAILURE ? proof : null;
+}
+
+// Read-only pre-declaration evidence, not a new action or a second executor.
+// Feed the canonical declaration into the SAME failure proof used after rolls.
+// No failed finite formation search is a proof, and no straight-line distance
+// alone certifies a successful path or a complete remaining-model placement.
+export function inspectOfficialSelectedRosterChargePathEvidenceV1(state, chargePlan) {
+  const roll = chargePlan.chargeDistanceRoll;
+  const maximumRoll = roll.keepHighest ? 6 : Number(roll.diceCount) * 6;
+  const maximum = milli(chargePlan.speedInches
+    + chargePlan.chargeDistanceModifier + maximumRoll);
+  const current = { stage: "resolve_charge_after_roll", pieceId: chargePlan.pieceId,
+    chargePlan, maxDistanceMilliInches: maximum };
+  const piece = state.pieces.find(entry => entry.id === chargePlan.pieceId);
+  const leading = activeModels(piece).find(entry => entry.id === chargePlan.leadingModelId);
+  const distances = chargePlan.targets.map(reference => {
+    const target = state.pieces.find(entry => entry.id === reference.unitId);
+    const model = activeModels(target).find(entry => entry.id === reference.modelId);
+    const distance = baseGap(leading, model);
+    return { ...clone(reference), baseEdgeDistanceMilliInches: distance,
+      minimumMoveToEngageMilliInches: Math.max(0, distance - 1000) };
+  });
+  const distanceFailure = distances.some(entry =>
+    entry.minimumMoveToEngageMilliInches > maximum + TOLERANCE);
+  const proof = distanceFailure ? null : supplementalChargePathFailure(state, current);
+  return freezeDeep({
+    schemaVersion: "starcraft_tmg_selected_charge_path_evidence_v1",
+    pieceId: piece.id, leadingModelId: leading.id,
+    declaredTargets: clone(chargePlan.targets), targetDistances: distances,
+    maximumDistanceMilliInches: maximum,
+    distanceScope: "nominated_leader_to_declared_target_models",
+    pathStatus: distanceFailure || proof ? "certain_failure" : "unknown",
+    pathLowerBoundMilliInches: proof
+      ? Math.min(...proof.targetCertificates.map(entry => entry.lowerBoundMilliInches))
+      : distanceFailure ? Math.max(...distances.map(entry =>
+        entry.minimumMoveToEngageMilliInches)) : null,
+    failureKind: distanceFailure ? "distance_shortfall" : proof ? OCCUPIED_PATH_FAILURE : null,
+    failureCertificateHash: proof ? hashStarcraftTmgContract(proof) : null,
+    declarationLegalityUnchanged: true,
+    everyDiceResultFails: Boolean(distanceFailure || proof),
+    successCertified: false,
+    completeFormationPlacementChecked: false,
+    distanceDoesNotProvePath: true,
+    otherLeadingModelsNotCertifiedByThisEvidence: true,
+    executionProofSource: "official_selected_roster_melee_failure_rules",
+    rulesAuthority: true, mutationAuthority: false, trainingTruth: false,
+  });
+}
+
 function chargeResolutionDomain(state) {
   const current = pending(state, "resolve_charge_after_roll");
   const piece = state.pieces.find((entry) => entry.id === current.pieceId);
+  const pathFailure = supplementalChargePathFailure(state, current);
   const body = {
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
     semanticVersion: "1.0.0",
@@ -485,7 +541,10 @@ function chargeResolutionDomain(state) {
     executorId: OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_ID,
     executorVersion: OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION,
     ruleAtomIds: [...CHARGE_ATOMS],
-    parameterSchema: { type: "object", required: ["outcome"],
+    parameterSchema: pathFailure ? {
+      type: "object", required: ["outcome", "failureProof"],
+      outcome: ["failure"], failureProofKind: OCCUPIED_PATH_FAILURE,
+    } : { type: "object", required: ["outcome"],
       outcome: ["success", "failure"],
       successRequires: ["path", "placements"],
       failureRequires: ["failureProof"] },
@@ -499,7 +558,13 @@ function chargeResolutionDomain(state) {
       maxDistanceMilliInches: current.maxDistanceMilliInches,
       exactRemainingPlacementCount: activeModels(piece).length - 1,
       coherencyRangeMilliInches: coherencyRange(state, piece),
-      acceptedFailureProofs: ["distance_shortfall", "declared_target_spread"],
+      acceptedFailureProofs: pathFailure ? [OCCUPIED_PATH_FAILURE]
+        : ["distance_shortfall", "declared_target_spread"],
+      ...(pathFailure ? {
+        certificateSchemaVersion: pathFailure.schemaVersion,
+        certificateHash: hashStarcraftTmgContract(pathFailure),
+        allActiveTargetModelsCovered: true,
+      } : {}),
       allDeclaredTargetsMustBeEngaged: true,
       undeclaredEnemyEngagementProhibited: true,
       remainingPlacementPriority: ["base_to_base", "engagement", "coherency"],
@@ -646,6 +711,18 @@ function failureProof(state, current, proof) {
       Math.max(0, baseGap(leading, model) - 1000) };
   });
   const kind = String(proof?.kind || "");
+  if (kind === OCCUPIED_PATH_FAILURE) {
+    const certificate = supplementalChargePathFailure(state, current);
+    if (!certificate) fail("SELECTED_MELEE_CHARGE_FAILURE_PROOF_INVALID", kind);
+    return { kind, certificateSchemaVersion: certificate.schemaVersion,
+      certificateHash: hashStarcraftTmgContract(certificate),
+      certificateKind: certificate.certificateKind,
+      leadingModelId: certificate.leadingModelId,
+      declaredTargetUnitId: certificate.declaredTargetUnitId,
+      targetCertificates: clone(certificate.targetCertificates),
+      maximumChargeDistanceMilliInches: current.maxDistanceMilliInches,
+      recomputedByRules: true, trainingTruth: false };
+  }
   if (kind === "distance_shortfall") {
     const impossible = targets.filter((entry) => (
       entry.minimumMoveToEngageMilliInches > current.maxDistanceMilliInches + TOLERANCE
@@ -680,13 +757,25 @@ function instantiateChargeResolution(state, domain, parameters) {
   const allowed = new Set(["outcome", "path", "placements", "failureProof",
     "elevationTransitions", "gapMouths", "coherencyGapMouths"]);
   if (!object(parameters) || Object.keys(parameters).some((key) => !allowed.has(key))
-    || !["success", "failure"].includes(outcome)) {
+    || !domain.parameterSchema.outcome.includes(outcome)) {
+    fail("SELECTED_MELEE_CHARGE_RESOLUTION_PARAMETERS_INVALID");
+  }
+  if (domain.parameterSchema.failureProofKind === OCCUPIED_PATH_FAILURE
+    && (Object.keys(parameters).sort().join(",") !== "failureProof,outcome"
+      || !object(parameters.failureProof)
+      || Object.keys(parameters.failureProof).join(",") !== "kind"
+      || parameters.failureProof.kind !== OCCUPIED_PATH_FAILURE)) {
     fail("SELECTED_MELEE_CHARGE_RESOLUTION_PARAMETERS_INVALID");
   }
   const success = outcome === "success"
     ? validateChargeSuccess(state, current, parameters) : null;
   const proof = outcome === "failure"
     ? failureProof(state, current, parameters.failureProof) : null;
+  if (parameters.failureProof?.kind === OCCUPIED_PATH_FAILURE
+    && (domain.parameterSchema.failureProofKind !== OCCUPIED_PATH_FAILURE
+      || proof?.certificateHash !== domain.constraints.certificateHash)) {
+    fail("SELECTED_MELEE_CHARGE_FAILURE_PROOF_INVALID", OCCUPIED_PATH_FAILURE);
+  }
   const plan = seal({
     schemaVersion: "starcraft_tmg_selected_roster_charge_resolution_plan_v1",
     semanticVersion: "1.0.0", sideKey: current.sideKey,
@@ -727,7 +816,7 @@ function impactDomain(state) {
   const targetUnitIds = current.targetUnitIds;
   const body = {
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
-    semanticVersion: "1.0.0",
+    semanticVersion: "1.1.0",
     parameterKind: OFFICIAL_SELECTED_ROSTER_IMPACT_PARAMETER_KIND,
     actionType: "resolve_impact", sideKey: current.sideKey,
     phase: "assault", pieceId: current.pieceId,
@@ -735,6 +824,15 @@ function impactDomain(state) {
     executorVersion: OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION,
     ruleAtomIds: [...IMPACT_ATOMS],
     parameterSchema: { type: "object", required: ["allocations"],
+      allocations: { type: "array", minItems: 1,
+        items: { type: "object",
+          required: ["modelId", "targetUnitId", "dice"],
+          additionalProperties: false,
+          properties: {
+            modelId: { type: "string" },
+            targetUnitId: { type: "string" },
+            dice: { type: "integer", minimum: 1 },
+          } } },
       allocationUnit: "impact_die_per_eligible_model", targetUnitIds,
       eligibleModels: clone(current.eligibleImpactModels),
       exactTotal: current.impactDice,
@@ -785,23 +883,6 @@ function canonicalImpactAllocations(value, eligibleModels) {
   }
   return rows;
 }
-function canonicalAllocations(value, targetUnitIds, total, code) {
-  if (!Array.isArray(value) || value.length === 0) fail(code);
-  const seen = new Set();
-  const rows = value.map((entry) => {
-    const targetUnitId = String(entry?.targetUnitId || "");
-    const dice = Number(entry?.dice);
-    if (!targetUnitIds.includes(targetUnitId) || seen.has(targetUnitId)
-      || !Number.isSafeInteger(dice) || dice <= 0
-      || Object.keys(entry || {}).some((key) => !["targetUnitId", "dice"].includes(key))) {
-      fail(code, targetUnitId);
-    }
-    seen.add(targetUnitId);
-    return { targetUnitId, dice };
-  }).sort((left, right) => left.targetUnitId.localeCompare(right.targetUnitId));
-  if (rows.reduce((sum, entry) => sum + entry.dice, 0) !== total) fail(code);
-  return rows;
-}
 function impactChancePlan(state, current, allocations) {
   const targets = allocations.map((allocation) => {
     const target = state.pieces.find((entry) => entry.id === allocation.targetUnitId);
@@ -830,7 +911,8 @@ function impactChancePlan(state, current, allocations) {
     const evadeThreshold = profile.evadeThreshold === null ? null
       : Math.max(2, Number(profile.evadeThreshold) - modifiers.evadeModifier);
     return { targetUnitId: target.id, dice: allocation.dice,
-      targetProfileHash: profile.profileHash,
+      ...(profile.profileHash === undefined ? {}
+        : { targetProfileHash: profile.profileHash }),
       armourThreshold: Math.max(2, Number(profile.armourThreshold)
         - Number(battlefield.armourModifier || 0)), evadeThreshold,
       evadeEligible,
@@ -838,15 +920,17 @@ function impactChancePlan(state, current, allocations) {
       layout: { hit: allocation.dice, armour: allocation.dice,
         evade: evadeEligible ? allocation.dice : 0 } };
   });
+  const layout = { hit: targets.reduce((sum, target) => sum + target.layout.hit, 0),
+    armour: targets.reduce((sum, target) => sum + target.layout.armour, 0),
+    evade: targets.reduce((sum, target) => sum + target.layout.evade, 0) };
   return seal({ schemaVersion: "starcraft_tmg_selected_roster_impact_chance_plan_v1",
-    semanticVersion: "1.0.0", impactDice: current.impactDice,
+    semanticVersion: "1.1.0", impactDice: current.impactDice,
     baseHitThreshold: current.baseHitThreshold,
     hitRollModifier: current.hitRollModifier,
     effectiveHitThreshold: current.effectiveHitThreshold,
     targets, chance: { kind: "fixed_roll_sequence", faces: 6,
-      count: targets.reduce((sum, target) => (
-        sum + target.layout.hit + target.layout.armour + target.layout.evade
-      ), 0), revealOrder: ["target_order", "hit", "armour", "evade"] },
+      count: Object.values(layout).reduce((sum, value) => sum + value, 0),
+      layout, revealOrder: ["target_order", "hit", "armour", "evade"] },
     rulesTruth: "official_selected_roster_impact_chance_plan",
     trainingTruth: false }, "impactPlanHash");
 }
@@ -980,18 +1064,7 @@ function fightDomain(state, sideKey, piece, catalogueV2, profileKey) {
     ) : {};
   const effectiveRateOfAttack = Math.max(0, Number(context.profile.rateOfAttack)
     + Number(characteristic.rateOfAttackModifier || 0));
-  const zerg = state.officialZergUniqueFamilySourceBundle
-    ? projectOfficialZergUniqueFamilyModifiersV1(
-      state.officialZergUniqueFamilySourceBundle, state,
-      { pieceId: piece.id, attackKind: "close_combat", weaponPhase: "combat",
-        weaponName: context.profile.weaponName })
-    : { closeCombatInstant: false };
-  const protoss = state.officialProtossUniqueFamilySourceBundle
-    ? projectOfficialProtossUniqueFamilyModifiersV1(
-      state.officialProtossUniqueFamilySourceBundle, state,
-      { pieceId: piece.id, attackKind: "close_combat",
-        weaponName: context.profile.weaponName })
-    : { firstWeaponInstant: false };
+  const effects = fightEffectContext(state, piece, context.profile);
   const body = {
     schemaVersion: "starcraft_tmg_official_parameter_domain_v1",
     semanticVersion: "1.0.0",
@@ -1001,10 +1074,11 @@ function fightDomain(state, sideKey, piece, catalogueV2, profileKey) {
     executorId: OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_ID,
     executorVersion: OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION,
     ruleAtomIds: [...FIGHT_ATOMS],
-    parameterSchema: { type: "object", required: ["closeRanksMode", "allocations"],
-      closeRanksMode: ["decline", "move"],
-      allocationUnit: "attack_die", targetUnitIds: context.targetUnitIds,
-      moveRequires: ["leadingModelId", "path", "placements"] },
+    parameterSchema: createOfficialSelectedRosterFightParameterSchemaV1({
+      targetUnitIds: context.targetUnitIds,
+      leadingModelIds: activeModels(piece).map(model => model.id).sort(),
+      surgeRequired: Boolean(effects.surge), criticalRequired: Boolean(effects.critical),
+    }),
     constraints: { engagementGraphHash: context.graph.graphHash,
       targetUnitIds: context.targetUnitIds,
       printedRateOfAttack: context.profile.rateOfAttack,
@@ -1020,9 +1094,7 @@ function fightDomain(state, sideKey, piece, catalogueV2, profileKey) {
       allocationDeclaredBeforeHitRoll: true,
       surgeDieCannotBeSplit: true,
       criticalHitTransfersExistingDiceOnly: true,
-      enemyReactionAllowed: !(context.profile.effects.some((effect) => (
-        effect.effectAtomId === "attack-effect:instant-v1"))
-        || zerg.closeCombatInstant || protoss.firstWeaponInstant),
+      enemyReactionAllowed: !effects.instant,
     },
     confirmationClass: "agent_owned_legal_action_auto_apply_or_human_direct_choice",
     rulesTruth: "official_selected_roster_fight_domain",
@@ -1030,8 +1102,9 @@ function fightDomain(state, sideKey, piece, catalogueV2, profileKey) {
   };
   return seal(body, "domainId");
 }
-function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitId,
-  criticalTargetUnitId) {
+// The public domain and post-Close-Ranks executor share this effect owner.
+// Printed and granted effects must not have separate required-field policies.
+function fightEffectContext(state, attacker, profile) {
   const surge = profile.effects.find((effect) => (
     effect.effectAtomId === "attack-effect:surge-armour-bypass-v1"
   ));
@@ -1069,6 +1142,12 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
     || protoss.firstWeaponInstant ? {
     effectAtomId: "attack-effect:instant-v1", sourceKind: "weapon_keyword", parameters: {},
   } : null);
+  return { surge, printedCritical, critical, printedInstant, instant, zerg, protoss };
+}
+function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitId,
+  criticalTargetUnitId) {
+  const { surge, printedCritical, critical, printedInstant, instant, zerg, protoss }
+    = fightEffectContext(state, attacker, profile);
   if (Boolean(surge) !== Boolean(surgeTargetUnitId)
     || Boolean(critical) !== Boolean(criticalTargetUnitId)) {
     fail("SELECTED_MELEE_EFFECT_TARGET_REQUIRED");
@@ -1125,7 +1204,8 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
     const damagePerDie = Number(characteristicAttacker.damageSetTo
       || (pierceMatched ? pierce.parameters.damage : profile.damage));
     return { targetUnitId: target.id, dice: allocation.dice,
-      targetProfileHash: targetProfile.profileHash,
+      ...(targetProfile.profileHash === undefined ? {}
+        : { targetProfileHash: targetProfile.profileHash }),
       armourThreshold: Math.max(2, Number(targetProfile.armourThreshold)
         - Number(battlefieldTarget.armourModifier || 0)),
       evadeEligible,
@@ -1165,8 +1245,12 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
     return { ...body, profileHash: hashStarcraftTmgContract(body) };
   })() : profile;
   const instantPlan = instant ? INSTANT.plan({ profile: instantProfile }) : null;
+  const layout = { hit: targets.reduce((sum, target) => sum + target.layout.hit, 0),
+    surge: targets.reduce((sum, target) => sum + target.layout.surge, 0),
+    armour: targets.reduce((sum, target) => sum + target.layout.armour, 0),
+    evade: targets.reduce((sum, target) => sum + target.layout.evade, 0) };
   return seal({ schemaVersion: "starcraft_tmg_selected_roster_fight_chance_plan_v1",
-    semanticVersion: "1.0.0", profileKey: profile.profileKey,
+    semanticVersion: "1.1.0", profileKey: profile.profileKey,
     profileHash: profile.profileHash, targets,
     surgeTargetUnitId: surgeTargetUnitId || null,
     criticalTargetUnitId: criticalTargetUnitId || null,
@@ -1179,9 +1263,8 @@ function fightChancePlan(state, attacker, profile, allocations, surgeTargetUnitI
     activePrecisionValue: Math.max(0, ...targets.map((entry) => entry.precision)),
     precisionChoicePolicy: "failed_hit_die_indices_up_to_active_precision_value",
     chance: { kind: "fixed_roll_sequence", faces: 6,
-      count: targets.reduce((sum, target) => sum + target.layout.hit
-        + target.layout.surge + target.layout.armour + target.layout.evade, 0),
-      revealOrder: ["target_order", "hit", "surge", "armour", "evade"] },
+      count: Object.values(layout).reduce((sum, value) => sum + value, 0),
+      layout, revealOrder: ["target_order", "hit", "surge", "armour", "evade"] },
     rulesTruth: "official_selected_roster_fight_chance_plan",
     trainingTruth: false }, "fightChancePlanHash");
 }
@@ -1276,8 +1359,10 @@ export function enumerateOfficialSelectedRosterMeleeActionsV1(state, options = {
       parameterDomains, pendingOwnedBySideKey: state.pendingAction.sideKey,
       trainingTruth: false });
     try {
-      parameterDomains.push(state.pendingAction.stage === "resolve_charge_after_roll"
-        ? chargeResolutionDomain(state) : impactDomain(state));
+      parameterDomains.push(state.pendingAction.stage === "defender_casualty_selection"
+        ? meleeCasualtyChoiceDomain(state)
+        : state.pendingAction.stage === "resolve_charge_after_roll"
+          ? chargeResolutionDomain(state) : impactDomain(state));
     } catch (error) {
       if (options.includeDisabled === true) {
         const actionType = state.pendingAction.stage === "resolve_charge_after_roll"
@@ -1358,6 +1443,9 @@ export function instantiateOfficialSelectedRosterMeleeActionV1(
   if (domain.parameterKind === OFFICIAL_SELECTED_ROSTER_FIGHT_PARAMETER_KIND) {
     return instantiateFight(state, domain, parameters, catalogueV2);
   }
+  if (domain.parameterKind === OFFICIAL_SELECTED_ROSTER_MELEE_CASUALTY_PARAMETER_KIND) {
+    return instantiateMeleeCasualtyChoice(state, domain, parameters);
+  }
   fail("SELECTED_MELEE_PARAMETER_KIND_UNSUPPORTED", domain.parameterKind);
 }
 
@@ -1433,14 +1521,14 @@ function surgeValue(expression, roll) {
   if (expression === "D6") return roll;
   fail("SELECTED_MELEE_SURGE_EXPRESSION_UNSUPPORTED", expression);
 }
-function resolvePools(state, action, plan, options, kind) {
+function resolvePools(state, action, plan, options, kind, preparedGraph = null) {
   const profile = kind === "fight"
     ? getOfficialAttackProfileV2(state.officialAttackProfileCatalogueV2,
       action.meleePlan.profileKey) : null;
   const rolls = revealDice(options.chanceReveals, plan.chance.count,
     "SELECTED_MELEE_CHANCE_REVEALS_INVALID");
   let offset = 0;
-  const graph = deriveOfficialEngagementGraphV2(state);
+  const graph = preparedGraph || deriveOfficialEngagementGraphV2(state);
   const rows = [];
   let precisionRemaining = kind === "fight" ? Number(plan.activePrecisionValue || 0) : 0;
   for (const targetPlan of plan.targets) {
@@ -1529,11 +1617,157 @@ function resolvePools(state, action, plan, options, kind) {
 }
 function selectionFor(row, options) {
   const requested = options.casualtySelectionHashesByTarget?.[row.target.id];
+  const modelIds = options.casualtyModelIdsByTarget?.[row.target.id];
   const hash = String(requested || (row.casualtyDomain.legalSelections.length === 1
     ? row.casualtyDomain.legalSelections[0].selectionHash : ""));
-  if (!hash) fail("SELECTED_MELEE_CASUALTY_SELECTION_REQUIRED", row.target.id);
+  if (!hash && !Array.isArray(modelIds)) {
+    fail("SELECTED_MELEE_CASUALTY_SELECTION_REQUIRED", row.target.id);
+  }
   return resolveOfficialCurrentProductCasualtyDomainV1(
-    row.casualtyDomain, hash);
+    row.casualtyDomain, hash, Array.isArray(modelIds) ? modelIds : null);
+}
+
+function meleeCasualtyChoiceDomain(state) {
+  const current = pending(state, "defender_casualty_selection");
+  return createOfficialSelectedRosterCasualtyChoiceDomainV1(current, state, {
+    parameterKind: OFFICIAL_SELECTED_ROSTER_MELEE_CASUALTY_PARAMETER_KIND,
+    actionType: current.attackAction.actionType,
+    phase: current.phase,
+    executorId: OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_ID,
+    executorVersion: OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION,
+    ruleAtomIds: current.attackAction.ruleAtomIds,
+    rulesTruth: "official_defender_owned_melee_casualty_selection",
+  });
+}
+
+function instantiateMeleeCasualtyChoice(state, domain, parameters) {
+  const current = pending(state, "defender_casualty_selection");
+  const explicit = current.casualtyDomain.selectionMode === "explicit_model_ids";
+  const key = explicit ? "casualtyModelIds" : "casualtySelectionHash";
+  if (!object(parameters) || Object.keys(parameters).some(field => field !== key)) {
+    fail("SELECTED_MELEE_CASUALTY_PARAMETERS_INVALID");
+  }
+  const resolved = resolveOfficialCurrentProductCasualtyDomainV1(
+    current.casualtyDomain, explicit ? "" : String(parameters.casualtySelectionHash || ""),
+    explicit ? parameters.casualtyModelIds : null);
+  const canonicalParameters = explicit
+    ? { casualtyModelIds: clone(resolved.casualtyModelIds) }
+    : { casualtySelectionHash: resolved.selectionHash };
+  return freezeDeep({ schemaVersion: "starcraft_tmg_official_parameter_instantiation_v1",
+    canonicalParameters,
+    action: {
+      actionType: domain.actionType, resolutionStage: "defender_casualty_selection",
+      sideKey: current.defenderSideKey, phase: current.phase,
+      pieceId: current.targetPieceId, attackerPieceId: current.attackerPieceId,
+      pendingHash: current.pendingHash, casualtyDomainHash: current.casualtyDomainHash,
+      casualtySelectionHash: resolved.selectionHash,
+      ...(explicit ? { casualtyModelIds: clone(resolved.casualtyModelIds) } : {}),
+      ruleAtomIds: clone(domain.ruleAtomIds),
+      executorId: OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_ID,
+      executorVersion: OFFICIAL_SELECTED_ROSTER_MELEE_ACTION_RUNTIME_VERSION,
+    }, rulesTruth: "official_defender_owned_melee_casualty_selection", trainingTruth: false });
+}
+
+function nextMeleeCasualtyPending(state, body, row) {
+  const pendingBody = { ...body,
+    sideKey: body.defenderSideKey, pieceId: row.target.id,
+    targetPieceId: row.target.id, casualtyDomain: clone(row.casualtyDomain),
+    casualtyDomainHash: row.casualtyDomain.domainHash,
+    ...createOfficialSelectedRosterCasualtyChoiceContextV1(state,
+      state.pieces.find(piece => piece.id === row.target.id)),
+  };
+  return { ...pendingBody, pendingHash: hashStarcraftTmgContract(pendingBody) };
+}
+
+function openMeleeCasualtyChoice(baseState, action, resolved, options, kind) {
+  const selected = clone(options.casualtySelectionHashesByTarget || {});
+  const selectedModelIds = clone(options.casualtyModelIdsByTarget || {});
+  const missing = resolved.rows.filter(row => {
+    if (selected[row.target.id] || Array.isArray(selectedModelIds[row.target.id])
+      || row.casualtyDomain.legalSelections.length === 1) {
+      selectionFor(row, options); // Invalid caller selections remain a real rejection.
+      return false;
+    }
+    return true;
+  });
+  if (missing.length === 0) return null;
+  const state = clone(baseState);
+  const body = {
+    schema: OFFICIAL_SELECTED_ROSTER_MELEE_PENDING_SCHEMA,
+    stage: "defender_casualty_selection", round: Number(state.round), phase: state.phase,
+    attackerSideKey: action.sideKey, defenderSideKey: otherSide(action.sideKey),
+    attackerPieceId: action.pieceId, attackAction: clone(action),
+    attackActionHash: hashStarcraftTmgContract(action), kind,
+    originalPendingAction: clone(state.pendingAction || null),
+    chanceReveals: clone(resolved.rolls), resolvedPools: clone(resolved),
+    casualtySelectionHashesByTarget: selected,
+    casualtyModelIdsByTarget: selectedModelIds,
+    defenderOwnsSelection: true, trainingTruth: false,
+  };
+  state.pendingAction = nextMeleeCasualtyPending(state, body, missing[0]);
+  state.activeSideKey = body.defenderSideKey;
+  const event = {
+    type: "melee_attack_roll_resolved_pending_defender_casualty",
+    attackerSideKey: body.attackerSideKey, defenderSideKey: body.defenderSideKey,
+    attackerPieceId: body.attackerPieceId, targetPieceId: missing[0].target.id,
+    pendingHash: state.pendingAction.pendingHash,
+    chanceReveals: clone(resolved.rolls), stages: clone(missing[0].resolution),
+    casualtyDomainHash: missing[0].casualtyDomain.domainHash,
+    casualtyCount: missing[0].casualtyDomain.casualtyCount,
+    legalSelectionCount: missing[0].casualtyDomain.legalSelectionCount,
+    trainingTruth: false,
+  };
+  appendLog(state, action, [event]);
+  return { state, events: [event] };
+}
+
+function applyMeleeCasualtyChoice(stateInput, action, options) {
+  const current = pending(stateInput, "defender_casualty_selection");
+  const selected = { ...current.casualtySelectionHashesByTarget,
+    [current.targetPieceId]: action.casualtySelectionHash };
+  const selectedModelIds = { ...current.casualtyModelIdsByTarget,
+    ...(Array.isArray(action.casualtyModelIds)
+      ? { [current.targetPieceId]: clone(action.casualtyModelIds) } : {}) };
+  const state = clone(stateInput);
+  const events = [{ type: "melee_defender_casualty_selection_resolved",
+    attackerSideKey: current.attackerSideKey, defenderSideKey: current.defenderSideKey,
+    attackerPieceId: current.attackerPieceId, targetPieceId: current.targetPieceId,
+    pendingHash: current.pendingHash, casualtyDomainHash: current.casualtyDomainHash,
+    casualtySelectionHash: action.casualtySelectionHash,
+    casualtyModelIds: clone(resolveOfficialCurrentProductCasualtyDomainV1(
+      current.casualtyDomain, action.casualtySelectionHash,
+      action.casualtyModelIds || null).casualtyModelIds),
+    defenderOwnedSelection: true, trainingTruth: false }];
+  const next = current.resolvedPools.rows.find(row => !selected[row.target.id]
+    && !Array.isArray(selectedModelIds[row.target.id])
+    && row.casualtyDomain.legalSelections.length !== 1);
+  if (next) {
+    const body = { ...without(current, ["pendingHash"]),
+      casualtySelectionHashesByTarget: selected,
+      casualtyModelIdsByTarget: selectedModelIds };
+    state.pendingAction = nextMeleeCasualtyPending(state, body, next);
+    events.push({ type: "melee_attack_roll_resolved_pending_defender_casualty",
+      attackerSideKey: current.attackerSideKey, defenderSideKey: current.defenderSideKey,
+      attackerPieceId: current.attackerPieceId, targetPieceId: next.target.id,
+      pendingHash: state.pendingAction.pendingHash, stages: clone(next.resolution),
+      casualtyDomainHash: next.casualtyDomain.domainHash,
+      casualtyCount: next.casualtyDomain.casualtyCount,
+      legalSelectionCount: next.casualtyDomain.legalSelectionCount, trainingTruth: false });
+    appendLog(state, action, events);
+    return { state, events };
+  }
+  if (current.originalPendingAction) state.pendingAction = clone(current.originalPendingAction);
+  else delete state.pendingAction;
+  state.activeSideKey = current.attackerSideKey;
+  // Dice and pool resolutions are retained: selecting removals never re-rolls.
+  const settled = settleDamageAction(state, state, current.attackAction,
+    { ...options, casualtySelectionHashesByTarget: selected,
+      casualtyModelIdsByTarget: selectedModelIds }, current.kind,
+    current.resolvedPools);
+  const combined = [...events, ...settled.events];
+  const log = settled.state.log.at(-1);
+  log.action = clone(action); log.events = clone(combined);
+  return { state: settled.state, events: combined };
 }
 function consumeRestriction(piece, state, action) {
   if (!piece.disengageAssaultRestriction) return null;
@@ -1622,7 +1856,11 @@ function impactEligibility(state, piece, declaredTargetUnitIds) {
     targetUnitIds: [...new Set(eligibleImpactModels.flatMap((entry) => (
       entry.eligibleTargetUnitIds)))].sort() };
 }
-function applyChargeResolution(stateInput, action) {
+// The v2 match runtime reuses this already-established failed-Charge settlement
+// only after its own versioned domain has recomputed and sealed the proof.
+export function applyOfficialSelectedRosterChargeResolutionTransitionV1(
+  stateInput, action,
+) {
   const current = pending(stateInput, "resolve_charge_after_roll");
   const plan = action.chargeResolutionPlan;
   let state = plan.outcome === "success"
@@ -1642,6 +1880,7 @@ function applyChargeResolution(stateInput, action) {
     ? impactEligibility(state, piece, plan.declaredTargetUnitIds) : null;
   if (impact?.eligibleImpactModels.length > 0) {
     const profile = impact.modifiers.devastatingCharge;
+    const impactHitModifier = Number(current.chargePlan.impactHitModifier || 0);
     const impactDice = impact.eligibleImpactModels.reduce((sum, entry) => (
       sum + entry.impactDice), 0);
     const pendingBody = { schema: OFFICIAL_SELECTED_ROSTER_MELEE_PENDING_SCHEMA,
@@ -1657,9 +1896,9 @@ function applyChargeResolution(stateInput, action) {
       sourceDefinitionId: profile.definitionId,
       sourceFeatureHash: profile.sourceFeatureHash,
       baseHitThreshold: profile.hitThreshold,
-      hitRollModifier: Number(action.chargePlan.impactHitModifier || 0),
+      hitRollModifier: impactHitModifier,
       effectiveHitThreshold: Math.max(2, profile.hitThreshold
-        - Number(action.chargePlan.impactHitModifier || 0)),
+        - impactHitModifier),
       chargeResolutionPlanHash: plan.chargeResolutionPlanHash,
       activeChargeModifiersApplied: true,
       sourceRefreshPerformed: false, trainingTruth: false };
@@ -1695,6 +1934,12 @@ function applyDamageAction(stateInput, action, options, kind) {
       action.meleePlan.closeRanksGeometry);
   }
   const resolved = resolvePools(baseState, action, plan, options, kind);
+  const casualtyChoice = openMeleeCasualtyChoice(baseState, action, resolved, options, kind);
+  if (casualtyChoice) return casualtyChoice;
+  return settleDamageAction(stateInput, baseState, action, options, kind, resolved);
+}
+function settleDamageAction(stateInput, baseState, action, options, kind, resolved) {
+  const plan = kind === "impact" ? action.impactPlan : action.meleePlan.fightChancePlan;
   const state = clone(baseState);
   const events = [];
   for (const row of resolved.rows) {
@@ -1783,7 +2028,11 @@ export function applyOfficialSelectedRosterMeleeActionV1(
           === actionInput.chargeResolutionPlan.pendingHash)
   ));
   if (!domain) fail("SELECTED_MELEE_PARAMETER_DOMAIN_STALE");
-  const parameters = actionInput.chargePlan
+  const parameters = actionInput.resolutionStage === "defender_casualty_selection"
+    ? (Array.isArray(actionInput.casualtyModelIds)
+      ? { casualtyModelIds: actionInput.casualtyModelIds }
+      : { casualtySelectionHash: actionInput.casualtySelectionHash })
+    : actionInput.chargePlan
     ? { leadingModelId: actionInput.chargePlan.leadingModelId,
       targets: actionInput.chargePlan.targets }
     : actionInput.chargeResolutionPlan
@@ -1798,10 +2047,13 @@ export function applyOfficialSelectedRosterMeleeActionV1(
     fail("SELECTED_MELEE_ACTION_STALE");
   }
   let result;
-  if (actionInput.actionType === "charge") {
+  if (actionInput.resolutionStage === "defender_casualty_selection") {
+    result = applyMeleeCasualtyChoice(stateInput, actionInput, options);
+  } else if (actionInput.actionType === "charge") {
     result = applyChargeDeclaration(stateInput, actionInput, options);
   } else if (actionInput.actionType === "resolve_charge") {
-    result = applyChargeResolution(stateInput, actionInput);
+    result = applyOfficialSelectedRosterChargeResolutionTransitionV1(
+      stateInput, actionInput);
   } else if (actionInput.actionType === "resolve_impact") {
     result = applyDamageAction(stateInput, actionInput, options, "impact");
   } else if (actionInput.actionType === "fight") {
@@ -1815,6 +2067,29 @@ export function applyOfficialSelectedRosterMeleeActionV1(
     state: result.state, action: clone(actionInput), events: result.events,
     rulesTruth: "official_selected_roster_melee_transition",
     trainingTruth: false });
+}
+
+// A read-only chance query owns ONE immutable Native action/geometry. Reuse the
+// same resolver as Apply; callers cannot inject a profile, graph or damage.
+export function createOfficialSelectedRosterMeleeChanceResolverV1(state, domain, parameters) {
+  const snapshot = freezeDeep(clone(state));
+  const preview = previewOfficialSelectedRosterMeleeActionV1(snapshot, domain, parameters);
+  if (preview.action.actionType !== "fight") fail("SELECTED_MELEE_CHANCE_FIGHT_REQUIRED");
+  const action = preview.action;
+  const chanceState = freezeDeep(action.meleePlan.closeRanksGeometry
+    ? applyGeometry(snapshot, action.pieceId, action.meleePlan.closeRanksGeometry) : snapshot);
+  const graph = deriveOfficialEngagementGraphV2(chanceState);
+  return Object.freeze({
+    preview, snapshot: chanceState,
+    resolve(options = {}) {
+      const resolved = resolvePools(chanceState, action, action.meleePlan.fightChancePlan,
+        options, "fight", graph);
+      return freezeDeep({ rows: resolved.rows.map(row => ({
+        targetUnitId: row.target.id, targetProfile: row.targetProfile,
+        resolution: row.resolution, casualtyDomain: row.casualtyDomain,
+      })) });
+    },
+  });
 }
 
 export function queryOfficialSelectedRosterMeleeActionV1(input = {}) {

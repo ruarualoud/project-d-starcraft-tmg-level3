@@ -68,6 +68,35 @@ export interface WorkspaceSessionSetup {
 
 export const rosterPlanningClient = {
   health: () => request<{ descriptor: any }>('GET', 'health'),
+  listWorkflows: () => request<{ workflows: any[] }>('GET', 'workflows'),
+  createWorkflow: (setup: WorkspaceSessionSetup, candidateInput?: unknown) =>
+    request<{ workflow: any }>('POST', 'workflows', { setup,
+      ...(candidateInput ? { candidateInput, mode: 'fixed' } : { mode: 'editable' }) }),
+  readWorkflow: (id: string) => request<{ workflow: any }>('GET', `workflows/${encodeURIComponent(id)}`),
+  runWorkflow: (id: string) => request<{ workflow: any }>('POST', `workflows/${encodeURIComponent(id)}/run`, {}),
+  pauseWorkflow: (id: string) => request<{ workflow: any }>('POST', `workflows/${encodeURIComponent(id)}/pause`, {}),
+  workflowTrace: (id: string) => request<{ trace: any[] }>('GET', `workflows/${encodeURIComponent(id)}/trace`),
+  readWorkflowTrace: (id: string, traceId: string) => request<{ trace: any }>('GET',
+    `workflows/${encodeURIComponent(id)}/trace/${encodeURIComponent(traceId)}`),
+  readWorkflowEvidence: (id: string, number: number) => request<{ evidence: any }>('GET',
+    `workflows/${encodeURIComponent(id)}/evidence/${number}`),
+  listIterativeSessions: () =>
+    request<{ journeys: any[] }>('GET', 'iterative/sessions'),
+  createIterativeSession: (setup: WorkspaceSessionSetup) =>
+    request<{ journey: any }>('POST', 'iterative/sessions', { setup }),
+  readIterativeSession: (sessionId: string) =>
+    request<{ journey: any }>('GET',
+      `iterative/sessions/${encodeURIComponent(sessionId)}`),
+  runIterativeSession: (sessionId: string) =>
+    request<{ journey: any }>('POST',
+      `iterative/sessions/${encodeURIComponent(sessionId)}/run`, {}),
+  pauseIterativeSession: (sessionId: string) =>
+    request<{ journey: any }>('POST',
+      `iterative/sessions/${encodeURIComponent(sessionId)}/pause`, {}),
+  launchIterativeRoom: (sessionId: string) =>
+    request<{ match: { roomId: string; joinUrl: string;
+      matchMode: 'agent_vs_agent'; planHash: string } }>('POST',
+      `iterative/sessions/${encodeURIComponent(sessionId)}/launch-room`, {}),
   catalogue: () => request<{ catalogue: any }>('GET', 'catalogue'),
   enumeration: (query: { factionRecordKey: string; scaleId?: string; mineralBudget?: number }) =>
     request<{ enumeration: any }>(
@@ -83,6 +112,11 @@ export const rosterPlanningClient = {
     request<{ session: any }>('POST', 'sessions/preset', { setup, candidateInput }),
   readSession: (sessionId: string) =>
     request<{ session: any }>('GET', `sessions/${encodeURIComponent(sessionId)}`),
+  runPresetSession: (sessionId: string) =>
+    request<{ session: any }>('POST', `sessions/${encodeURIComponent(sessionId)}/run`, {}),
+  launchPresetRoom: (sessionId: string) =>
+    request<{ match: { roomId: string; joinUrl: string; matchMode: 'agent_vs_agent'; planHash: string } }>(
+      'POST', `sessions/${encodeURIComponent(sessionId)}/launch-room`, {}),
   deleteSession: (sessionId: string) =>
     request<{ result: any }>('DELETE', `sessions/${encodeURIComponent(sessionId)}`),
   generate: (sessionId: string) =>
@@ -96,8 +130,13 @@ export const rosterPlanningClient = {
       resume: true,
       replayOnly: true,
     }),
+  reviewFinalPlan: (sessionId: string) =>
+    request<{ session: any }>('POST',
+      `sessions/${encodeURIComponent(sessionId)}/review`, {}),
   cancel: (sessionId: string) =>
     request<{ session: any }>('POST', `sessions/${encodeURIComponent(sessionId)}/cancel`, {}),
+  pause: (sessionId: string) =>
+    request<{ session: any }>('POST', `sessions/${encodeURIComponent(sessionId)}/pause`, {}),
   revise: (sessionId: string, input: {
     reasonText: string;
     triggerIds?: string[];

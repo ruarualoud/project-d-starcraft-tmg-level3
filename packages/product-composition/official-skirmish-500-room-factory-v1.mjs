@@ -1,4 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
+import { projectCompetitiveMapRoomFreezeSummaryV1 } from
+  "../client-domain/competitive-map-admission-contract-v1.mjs";
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -170,6 +172,28 @@ import {
   createOfficialRoomCardResourcesV1,
   createOfficialRoomPieceFromRosterUnitV1,
 } from "./official-standard-room-factory-v1.mjs";
+import { createOfficialBattlefieldMapManifestV1,
+  verifyOfficialBattlefieldMapManifestV1 } from
+  "./official-battlefield-map-manifest-v1.mjs";
+import { resolveOfficialBroodWarMapGalleryArtAssetV1 } from
+  "./official-brood-war-map-gallery-v1.mjs";
+import { compileOfficialCompetitiveMapTwoLayerV1 } from
+  "./official-competitive-map-two-layer-compiler-v1.mjs";
+import {
+  certifyAndFreezeOfficialCompetitiveMapSemanticRoomV1,
+  OFFICIAL_COMPETITIVE_MAP_SEMANTIC_ROOM_FREEZE_V1_SCHEMA,
+  verifyOfficialCompetitiveMapSemanticRoomFreezeV1,
+} from "./official-competitive-map-semantic-room-freeze-v1.mjs";
+import { createOfficialCompetitiveMapTabletopAdapterCatalogueV1 } from
+  "./official-competitive-map-tabletop-adapter-v1.mjs";
+import { createOfficialCompetitiveMapSeedCatalogueV1 } from
+  "./official-competitive-map-seed-catalogue-v1.mjs";
+import { compileOfficialPremadeMapRoomSourceV1, getOfficialPremadeMapRoomSeedV1 } from
+  "./official-premade-map-room-source-v1.mjs";
+import { createOfficialPremadeMapConfiguratorV1 } from
+  "./official-premade-map-configurator-v1.mjs";
+import { resolveOfficialStarcraft2MapGalleryArtAssetV1 } from
+  "./official-starcraft-2-map-gallery-v1.mjs";
 
 export const OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA =
   "starcraft_tmg_official_skirmish_500_room_initial_state_authority_v1";
@@ -323,7 +347,7 @@ function terrainBoardRows(artifacts, plan) {
       standableHorizontalSurface: entry.standableHorizontalSurface,
       elevationSurface: entry.standableHorizontalSurface,
       impassable: entry.terrainKind === "impassable",
-      blocksPlacement: source?.blocksPlacement
+      blocksPlacement: runtime?.blocksPlacement ?? source?.blocksPlacement
         ?? entry.terrainKind === "impassable",
       openings: clone(source?.openings || []),
       accessPoints: clone(source?.accessPoints || []),
@@ -425,8 +449,11 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     })),
   });
   const draftBundle = createOfficialMissionDeploymentDraftDataBundleV1({ dataset });
+  // An explicit frozen Skirmish deployment must survive the product route;
+  // omitted input keeps the historical CHAR PLAINS state byte-identical.
+  const deploymentRecordKey = String(input.deploymentRecordKey || DEPLOYMENT_RECORD_KEY);
   const draft = completeOfficialRoomDraftV1(
-    draftBundle, MISSION_RECORD_KEY, DEPLOYMENT_RECORD_KEY, "Skirmish");
+    draftBundle, MISSION_RECORD_KEY, deploymentRecordKey, "Skirmish");
   const geometryBundle = createOfficialDeploymentGeometryDataBundleV1({
     dataset, missionDeploymentDraftDataBundle: draftBundle,
   });
@@ -438,18 +465,147 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
   const terrainBundle = createOfficialBalancedTerrainRulesDataBundleV1({
     dataset, deploymentGeometryDataBundle: geometryBundle,
   });
-  const terrainPlan = clone(input.terrainPlan
+  // Ticket 24 / Slice 254-R8-12: opt-in semantic-map terrain route, mirroring
+  // the R8-11 Standard factory wiring. When the caller pins a registered
+  // semantic binding, the room freeze certifies the same-version semantic map
+  // terrain (authored art-true geometry) instead of the generic premade
+  // balanced-terrain layout. `mapConfiguration` without `semanticTerrain`
+  // fails closed: the two-layer rectangular-layout invariants are
+  // category-specific to generic premade arrangements and no such route is
+  // introduced for Skirmish. With no `mapConfiguration` the default path
+  // below is byte-identical.
+  const requestedMapConfiguration = object(input.mapConfiguration)
+    ? clone(input.mapConfiguration) : null;
+  const mapConfiguration = requestedMapConfiguration
+    && getOfficialPremadeMapRoomSeedV1(requestedMapConfiguration.seedId)
+    && !object(requestedMapConfiguration.semanticTerrain)
+    ? createOfficialPremadeMapConfiguratorV1().prepareRoomConfiguration(
+      requestedMapConfiguration, { roomId: input.roomId })
+    : requestedMapConfiguration;
+  let competitiveMapCompilation = null;
+  let competitiveMapRoomFreeze = null;
+  let competitiveMapMetadata = null;
+  let semanticRoomFreezeResult = null;
+  if (mapConfiguration) {
+    const roomId = String(input.roomId || "").trim();
+    if (!roomId) fail("SKIRMISH_500_ROOM_COMPETITIVE_MAP_ROOM_ID_REQUIRED");
+    const semanticTerrain = object(mapConfiguration.semanticTerrain)
+      ? mapConfiguration.semanticTerrain : null;
+    if (!semanticTerrain) {
+      fail("SKIRMISH_500_ROOM_MAP_CONFIGURATION_REQUIRES_SEMANTIC_TERRAIN",
+        String(mapConfiguration.seedId || ""));
+    }
+    let adapterCatalogue;
+    if (getOfficialPremadeMapRoomSeedV1(mapConfiguration.seedId)) {
+      const source = compileOfficialPremadeMapRoomSourceV1({
+        seedId: mapConfiguration.seedId, semanticTerrain,
+      });
+      adapterCatalogue = source.adapterCatalogue;
+      competitiveMapCompilation = source.compilation;
+      competitiveMapMetadata = source.metadata;
+    } else {
+      adapterCatalogue = createOfficialCompetitiveMapTabletopAdapterCatalogueV1();
+      competitiveMapCompilation = compileOfficialCompetitiveMapTwoLayerV1({
+        adapterCatalogue,
+        seedId: mapConfiguration.seedId,
+        elementSelections: mapConfiguration.elementSelections || [],
+        passageSelections: mapConfiguration.passageSelections || [],
+      });
+      const seedEntry = createOfficialCompetitiveMapSeedCatalogueV1().seeds
+        .find((entry) => entry.seedId === competitiveMapCompilation.seedId);
+      if (!seedEntry) {
+        fail("SKIRMISH_500_ROOM_COMPETITIVE_MAP_GALLERY_ENTRY_MISSING",
+          competitiveMapCompilation.seedId);
+      }
+      const classicRestrictedVariant = competitiveMapCompilation.artLayer
+        .routeTreatments.some((entry) => (
+          entry.restrictionDisclosureRequired === true));
+      const artAsset = seedEntry.gameEra === "brood_war"
+        ? resolveOfficialBroodWarMapGalleryArtAssetV1(seedEntry.seedId, {
+          classicRestrictedVariant,
+        })
+        : resolveOfficialStarcraft2MapGalleryArtAssetV1(seedEntry.seedId);
+      competitiveMapMetadata = {
+        displayName: seedEntry.displayName,
+        gameEra: seedEntry.gameEra,
+        artAssetPath: artAsset.path,
+      };
+    }
+    if (competitiveMapCompilation.engagementScale !== "Skirmish") {
+      fail("SKIRMISH_500_ROOM_COMPETITIVE_MAP_SCALE_MISMATCH",
+        competitiveMapCompilation.seedId);
+    }
+    semanticRoomFreezeResult =
+      certifyAndFreezeOfficialCompetitiveMapSemanticRoomV1({
+        adapterCatalogue,
+        compilation: competitiveMapCompilation,
+        roomId,
+        semanticTerrain,
+        dataset,
+        participantIds: [...SIDE_KEYS],
+        deploymentGeometryBinding: geometryBinding,
+        deploymentGeometryDataBundle: geometryBundle,
+        quarterProbeSnapLimitInches:
+          semanticTerrain.quarterProbeSnapLimitInches,
+        supersededTwoLayerFreezeCode: mapConfiguration
+          .supersededTwoLayerFreezeCode,
+      });
+    competitiveMapRoomFreeze = semanticRoomFreezeResult.freeze;
+    // Keep the visible board on the art revision certified with the terrain.
+    competitiveMapMetadata.artAssetPath = semanticTerrain.binding.art.assetPath;
+  }
+  const terrainPlan = clone(competitiveMapRoomFreeze?.setupPlan
+    || input.terrainPlan
     || createOfficialSkirmish500BalancedTerrainPlanV1());
-  const terrainArtifacts = certifyOfficialBalancedTerrainSetupV1({
-    deploymentGeometryBinding: geometryBinding,
-    deploymentGeometryDataBundle: geometryBundle,
-    balancedTerrainRulesDataBundle: terrainBundle,
-    setupPlan: terrainPlan,
-  });
-  verifyOfficialBalancedTerrainArtifactsV1({ ...terrainArtifacts,
-    deploymentGeometryBinding: geometryBinding,
-    balancedTerrainRulesDataBundle: terrainBundle,
-  });
+  const terrainArtifacts = semanticRoomFreezeResult?.terrainArtifacts
+    || certifyOfficialBalancedTerrainSetupV1({
+      deploymentGeometryBinding: geometryBinding,
+      deploymentGeometryDataBundle: geometryBundle,
+      balancedTerrainRulesDataBundle: terrainBundle,
+      setupPlan: terrainPlan,
+    });
+  if (semanticRoomFreezeResult) {
+    verifyOfficialCompetitiveMapSemanticRoomFreezeV1(
+      semanticRoomFreezeResult.freeze, {
+        deploymentGeometryBinding: geometryBinding,
+        deploymentGeometryDataBundle: geometryBundle,
+      });
+  } else {
+    verifyOfficialBalancedTerrainArtifactsV1({ ...terrainArtifacts,
+      deploymentGeometryBinding: geometryBinding,
+      balancedTerrainRulesDataBundle: terrainBundle,
+    });
+  }
+  const battlefieldMapManifest = mapConfiguration
+    ? createOfficialBattlefieldMapManifestV1({
+      mapSeedId: competitiveMapCompilation?.seedId,
+      mapDisplayName: competitiveMapMetadata?.displayName,
+      mapGameEra: competitiveMapMetadata?.gameEra,
+      mapSourceFamily: competitiveMapMetadata?.mapSourceFamily,
+      mapArtAssetPath: competitiveMapMetadata?.artAssetPath,
+      mapArtOverlays: mapConfiguration.semanticTerrain?.binding?.art?.overlays,
+      engagementScale: competitiveMapCompilation?.engagementScale,
+      visualPresetId: competitiveMapCompilation?.artLayer.visualPresetId
+        || input.visualPresetId,
+      terrainPresetId: input.terrainPresetId,
+      terrainSeed: input.terrainSeed,
+      terrainGenerationMode: input.terrainGenerationMode,
+      terrainPlan,
+      mapCompilationHash: competitiveMapCompilation?.compilationHash,
+      mapRoomFreezeHash: competitiveMapRoomFreeze?.roomFreezeHash,
+      missionSpatialReachabilityAuditHash:
+        competitiveMapRoomFreeze?.missionSpatialReachabilityAuditHash,
+      elementSelectionCount:
+        competitiveMapCompilation?.selectionReceipt.length,
+      passageSelectionCount:
+        competitiveMapCompilation?.passageSelectionReceipt.length,
+      formalTaskRoomEligible:
+        competitiveMapCompilation?.roomCertificationEligible,
+    })
+    : null;
+  if (battlefieldMapManifest) {
+    verifyOfficialBattlefieldMapManifestV1(battlefieldMapManifest, terrainPlan);
+  }
   const unitRecordKeys = dataset.recordIndex.filter((entry) => (
     entry.recordType === "unit"
       && entry.authorityDisposition === "official_current_product_candidate"
@@ -516,6 +672,9 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     officialDeploymentGeometryBinding: geometryBinding,
     officialBalancedTerrainRulesDataBundle: terrainBundle,
     officialBalancedTerrainSetupCertificate: terrainArtifacts.certificate,
+    ...(mapConfiguration ? {
+      officialCompetitiveMapRoomFreeze: competitiveMapRoomFreeze,
+    } : {}),
     officialTerrainHeightTierLedger: terrainArtifacts.terrainHeightTierLedger,
     officialMissionMarkerPlacement: terrainArtifacts.missionMarkerPlacement,
     officialMissionSetupBinding: missionSetupBinding,
@@ -568,6 +727,11 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
       deploymentName: draft.selectedDeployment.profile.name,
       deploymentImageUrl: draft.selectedDeployment.profile.frontUrl,
       mapSourceType: "official_current_deployment_card",
+      ...(battlefieldMapManifest ? {
+        battlefieldMapManifest,
+        competitiveMapRoomFreezeSummary:
+          projectCompetitiveMapRoomFreezeSummaryV1(competitiveMapRoomFreeze),
+      } : {}),
       terrain: terrainBoardRows(terrainArtifacts, terrainPlan),
       specialTerrainAgreement: terrainArtifacts.specialTerrainAgreement,
       terrainElevationAgreement,
@@ -905,13 +1069,20 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
     geometryArtifact: { artifactId: "official-skirmish-500-balanced-geometry-v1",
       content: { geometryBinding, terrainCertificate: terrainArtifacts.certificate,
         terrainHeightTierLedger: terrainArtifacts.terrainHeightTierLedger,
-        missionMarkerPlacement: terrainArtifacts.missionMarkerPlacement } },
+        missionMarkerPlacement: terrainArtifacts.missionMarkerPlacement,
+        ...(mapConfiguration ? {
+          battlefieldMapManifest,
+          competitiveMapRoomFreeze,
+        } : {}) } },
   };
   const body = {
     schema: OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA,
     version: OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION,
     source: "server_factory",
-    setupId: String(input.setupId || "official-skirmish-500-hold-char-plains-v1"),
+    setupId: String(input.setupId || (deploymentRecordKey === DEPLOYMENT_RECORD_KEY
+      ? "official-skirmish-500-hold-char-plains-v1"
+      : `official-skirmish-500-hold-${draft.selectedDeployment.profile.name
+        .toLowerCase().replace(/[^a-z0-9]+/gu, "-")}-v1`)),
     state, dataVersion: versionFor(dataset), dependencies,
     serverSeatPlan: clone(input.serverSeatPlan || [
       { label: "host", seatKey: "player1", roleMode: "supervisor",
@@ -931,10 +1102,18 @@ export function createOfficialSkirmish500RoomInitialStateAuthorityV1(input = {})
         sideKey, registry.rostersByPlayer[sideKey].rosterHash,
       ])),
       selectedMissionRecordKey: MISSION_RECORD_KEY,
-      selectedDeploymentRecordKey: DEPLOYMENT_RECORD_KEY,
+      selectedDeploymentRecordKey: deploymentRecordKey,
       battlefield: clone(geometryBinding.battlefield),
       balancedTerrainCertificateHash: terrainArtifacts.certificate.certificateHash,
       balancedTerrainPieceCount: terrainArtifacts.terrainPieces.length,
+      ...(mapConfiguration ? {
+        battlefieldMapManifestHash: battlefieldMapManifest.manifestHash,
+        competitiveMapSeedId: competitiveMapCompilation?.seedId || null,
+        competitiveMapCompilationHash:
+          competitiveMapCompilation?.compilationHash || null,
+        competitiveMapRoomFreezeHash:
+          competitiveMapRoomFreeze?.roomFreezeHash || null,
+      } : {}),
       allArmyListUnitsBeginInReserves: true,
       initialReserveReceiptHash: reserveReceipt.resultHash,
       missionRuntimeHash: missionRuntime.descriptor.runtimeHash,
@@ -1019,6 +1198,20 @@ export function createOfficialSkirmish500RoomViewerProjectionsV1(authority) {
 export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) {
   const state = authority?.state;
   const evidence = authority?.compositionEvidence;
+  // Ticket 24 / Slice 254-R8-12: semantic-map rooms carry authored map
+  // terrain (hundreds of cells) instead of the generic seven-piece balanced
+  // layout; the fixed seven-piece expectations apply only to the default
+  // route. The branch is keyed on the freeze schema; the default route is
+  // byte-identical.
+  const semanticRoomFreeze = state?.officialCompetitiveMapRoomFreeze?.schema
+    === OFFICIAL_COMPETITIVE_MAP_SEMANTIC_ROOM_FREEZE_V1_SCHEMA;
+  const expectedTerrainPieceCount = semanticRoomFreeze
+    ? state?.board?.terrain?.length : 7;
+  const terrainCertificateOk = semanticRoomFreeze
+    ? state?.officialBalancedTerrainSetupCertificate?.semanticTerrainCertified
+      === true
+    : state?.officialBalancedTerrainSetupCertificate?.balancedTerrainCertified
+      === true;
   if (!object(authority)
     || authority.schema !== OFFICIAL_SKIRMISH_500_ROOM_FACTORY_SCHEMA
     || authority.version !== OFFICIAL_SKIRMISH_500_ROOM_FACTORY_VERSION
@@ -1027,10 +1220,14 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
       without(authority, ["receiptHash"]))
     || state?.engagementScale !== "Skirmish"
     || state?.mission?.recordKey !== MISSION_RECORD_KEY
-    || state?.selectedDeployment?.profile?.recordKey !== DEPLOYMENT_RECORD_KEY
+    || state?.selectedDeployment?.profile?.engagementScale !== "Skirmish"
+    || state?.selectedDeployment?.profile?.recordKey
+      !== state?.officialDeploymentGeometryBinding?.deploymentRecordKey
+    || evidence?.selectedDeploymentRecordKey
+      !== state?.selectedDeployment?.profile?.recordKey
     || state?.board?.widthInches !== 36 || state?.board?.heightInches !== 36
-    || state?.board?.terrain?.length !== 7
-    || state?.officialBalancedTerrainSetupCertificate?.balancedTerrainCertified !== true
+    || state?.board?.terrain?.length !== expectedTerrainPieceCount
+    || !terrainCertificateOk
     || state?.pieces?.length !== 5
     || state.pieces.some((piece) => piece.isOnField !== false
       || piece.isInReserves !== true)
@@ -1039,7 +1236,7 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
     || evidence?.vespeneSpentBySide?.player1 !== 0
     || evidence?.vespeneSpentBySide?.player2 !== 0
     || evidence?.allArmyListUnitsBeginInReserves !== true
-    || evidence?.balancedTerrainPieceCount !== 7
+    || evidence?.balancedTerrainPieceCount !== expectedTerrainPieceCount
     || evidence?.viewerProjectionEvidence?.publicCardResourceSideCount !== 0
     || !isDeepStrictEqual(
       evidence?.viewerProjectionEvidence?.player1PrivateCardResourceSideKeys,
@@ -1104,6 +1301,28 @@ export function verifyOfficialSkirmish500RoomInitialStateAuthorityV1(authority) 
     || evidence?.currentProductAbilityPendingCount !== 0
     || authority.trainingTruth !== false) {
     fail("SKIRMISH_500_ROOM_INITIAL_STATE_AUTHORITY_INVALID");
+  }
+  if (evidence.competitiveMapSeedId) {
+    if (state.officialCompetitiveMapRoomFreeze?.seedId
+        !== evidence.competitiveMapSeedId
+      || state.officialCompetitiveMapRoomFreeze?.compilationHash
+        !== evidence.competitiveMapCompilationHash
+      || state.officialCompetitiveMapRoomFreeze?.roomFreezeHash
+        !== evidence.competitiveMapRoomFreezeHash
+      || state.board.competitiveMapRoomFreezeSummary?.roomFreezeHash
+        !== evidence.competitiveMapRoomFreezeHash) {
+      fail("SKIRMISH_500_ROOM_COMPETITIVE_MAP_BINDING_INVALID");
+    }
+    verifyOfficialBattlefieldMapManifestV1(
+      state.board.battlefieldMapManifest,
+      state.officialCompetitiveMapRoomFreeze.setupPlan,
+    );
+    verifyOfficialCompetitiveMapSemanticRoomFreezeV1(
+      state.officialCompetitiveMapRoomFreeze,
+      { deploymentGeometryBinding: state.officialDeploymentGeometryBinding,
+        deploymentGeometryDataBundle:
+          state.officialDeploymentGeometryDataBundle },
+    );
   }
   verifyOfficialSelectedRosterSpatialRuntimeDescriptorV1(
     state.officialSelectedRosterSpatialRuntimeDescriptor,

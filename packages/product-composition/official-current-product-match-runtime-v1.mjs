@@ -33,10 +33,11 @@ import {
 } from "./official-current-product-action-runtime-composition-v1.mjs";
 import { auditOfficialCurrentProductDataWiringV1 } from
   "./official-current-product-data-wiring-audit-v1.mjs";
+import {resumeOfficialSelectedRosterRangedDamageReactionV1} from './official-selected-roster-ranged-action-runtime-v1.mjs';
 
 export const OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_ID =
   "starcraft-tmg-official-current-product-match-runtime-v1";
-export const OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_VERSION = "1.0.1";
+export const OFFICIAL_CURRENT_PRODUCT_MATCH_RUNTIME_VERSION = "1.1.0";
 
 const SIDE_KEYS = Object.freeze(["player1", "player2"]);
 const ACTIVATION_PHASES = new Set(["movement", "assault", "combat"]);
@@ -436,7 +437,13 @@ export function createOfficialCurrentProductMatchRuntimeV1(input = {}) {
         "mission", [MISSION_ATOM_ID])
       )));
     } else if (ACTIVATION_PHASES.has(currentState.phase)) {
-      if (currentState.pendingCurrentProductRangedCasualtyChoice) {
+      if (currentState.pendingOfficialReactionWindow) {
+        const reactions=abilityEnumerations(runtimes.ability,currentState,sideKey,includeDisabled);
+        addEnumeration(output,{
+          candidates:reactions.candidates.filter(c=>c.sourceAction?.executorId==='official-reaction-family-adapter-v1'),
+          parameterDomains:reactions.parameterDomains.filter(d=>d.sourceDomain?.executorId==='official-reaction-family-adapter-v1'),
+        });
+      } else if (currentState.pendingCurrentProductRangedCasualtyChoice) {
         addEnumeration(output, runtimeEnumeration(
           runtimes.ranged, "ranged", currentState, sideKey, includeDisabled,
         ));
@@ -778,6 +785,15 @@ export function createOfficialCurrentProductMatchRuntimeV1(input = {}) {
     }
     let stateAfter = clone(transition.state);
     let events = clone(transition.events || []);
+    if (action.sourceRuntimeKind==='ability'
+      && source.executorId==='official-reaction-family-adapter-v1') {
+      const resumed=resumeOfficialSelectedRosterRangedDamageReactionV1(stateAfter,options);
+      if (resumed) { stateAfter=clone(resumed.state); events.push(...clone(resumed.events||[])); }
+      else if (stateAfter.pendingOfficialReactionWindow) {
+        const window=stateAfter.pendingOfficialReactionWindow;
+        stateAfter.activeSideKey=window.prioritySideKeys[window.priorityIndex];
+      }
+    }
     if (action.sourceRuntimeKind === "mission"
       && source.actionType === OFFICIAL_MISSION_ACTION_TYPES.START_ROUND) {
       nextRoundSupply(stateAfter);

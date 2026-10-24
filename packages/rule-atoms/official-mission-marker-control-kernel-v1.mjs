@@ -1,11 +1,13 @@
 import { hashStarcraftTmgContract } from "../authoritative-engine/referee-crypto-v1.mjs";
 import {
+  createOwnedOfficialCombatProfileBundleV1,
   getOfficialCombatProfileV1,
   verifyOfficialCombatProfileBundleV1,
 } from "../source-data/official-combat-profile-bundle-v1.mjs";
 import { verifyOfficialTerrainLosDataBundleV1 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
-import { evaluateOfficialEffectiveSizeV1 } from
+import { evaluateOfficialEffectiveSizeSubjectsBatchV1,
+  createOfficialEffectiveSizeSubjectsUnitBatchV1 } from
   "./official-elevation-effective-size-rules-kernel-v1.mjs";
 import { projectOfficialContextualSupplyValueV1 } from
   "./official-contextual-supply-projection-v1.mjs";
@@ -14,7 +16,8 @@ import {
   evaluateOfficialPhysicalFootprintRelationV1,
   isOfficialPhysicalFootprintInsideBoardV1,
 } from "./official-model-base-geometry-rules-kernel-v1.mjs";
-import { evaluateOfficialTerrainLineOfSightToMissionMarkerV1 } from
+import { projectOfficialMissionMarkerVisibilityBatchV1,
+  createOfficialMissionMarkerVisibilityBatchV1 } from
   "./official-terrain-los-rules-kernel-v1.mjs";
 
 export const OFFICIAL_MISSION_MARKER_CONTROL_KERNEL_V1_SCHEMA =
@@ -57,6 +60,12 @@ function object(value) {
 
 function clone(value) {
   return structuredClone(value);
+}
+
+function freezeDeep(value) {
+  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
+  for (const child of Object.values(value)) freezeDeep(child);
+  return Object.freeze(value);
 }
 
 function milli(value, code, detail) {
@@ -454,7 +463,11 @@ export function resolveOfficialMissionMarkerControlV1(input = {}) {
 }
 
 function terrainAsOrdinaryForControl(state) {
-  const projected = clone(state);
+  // This synchronous control view replaces only terrain. Its size/visibility
+  // consumers read units and markers without mutating or returning them;
+  // borrow those facts instead of copying the full Rules state per loss choice.
+  // Terrain entries retain their existing owned copies and complete validation.
+  const projected = { ...state, board: { ...state.board } };
   const grassTerrainIds = [];
   projected.board.terrain = (state.board?.terrain || []).map((terrain) => {
     if (terrain.isRemoved === true || terrain.terrainKind === "ordinary") {
@@ -494,23 +507,20 @@ function terrainAsOrdinaryForControl(state) {
   return { projected, grassTerrainIds: grassTerrainIds.sort() };
 }
 
-function terrainAwareEvidence(state, adaptedState, dataBundle, marker, unit,
+function terrainAwareSightQueries(adaptedState, marker, unit,
   pieceById, effectiveSizeByModelId) {
   if (!unit.isOnBattlefield) {
-    return { eligible: false, reason: "not_on_battlefield", modelIds: [],
-      lineOfSightResultHashes: [] };
+    return { reason: "not_on_battlefield", queries: [] };
   }
   if (!unit.inCoherency) {
-    return { eligible: false, reason: "out_of_coherency", modelIds: [],
-      lineOfSightResultHashes: [] };
+    return { reason: "out_of_coherency", queries: [] };
   }
   if (unit.prohibitedStatus) {
-    return { eligible: false, reason: unit.prohibitedStatus, modelIds: [],
-      lineOfSightResultHashes: [] };
+    return { reason: unit.prohibitedStatus, queries: [] };
   }
   const piece = pieceById.get(unit.id);
-  const markerState = state.board.missionMarkers.find((entry) => entry.id === marker.id);
-  const visible = [];
+  const markerState = adaptedState.board.missionMarkers.find(entry => entry.id === marker.id);
+  const queries = [];
   for (const model of unit.models) {
     if (model.elevation !== marker.elevation
       || evaluateOfficialPhysicalFootprintRelationV1({
@@ -525,19 +535,27 @@ function terrainAwareEvidence(state, adaptedState, dataBundle, marker, unit,
       ...(rawModel.supportTerrainIds || []),
       ...(marker.supportTerrainPieceId ? [marker.supportTerrainPieceId] : []),
     ])];
-    const lineOfSight = evaluateOfficialTerrainLineOfSightToMissionMarkerV1({
-      state: adaptedState,
+    queries.push({
       attacker: piece,
       attackerModelId: model.id,
       attackerEffectiveSize: effectiveSizeByModelId.get(model.id),
-      marker: adaptedState.board.missionMarkers.find((entry) => (
-        entry.id === markerState.id
-      )),
+      marker: markerState,
       excludedTerrainIds,
-      dataBundle,
     });
+  }
+  return { reason: null, queries };
+}
+
+function terrainAwareEvidence(group, resultByQuery) {
+  if (group.reason) {
+    return { eligible: false, reason: group.reason, modelIds: [],
+      lineOfSightResultHashes: [] };
+  }
+  const visible = [];
+  for (const query of group.queries) {
+    const lineOfSight = resultByQuery.get(query);
     if (lineOfSight.visible) {
-      visible.push({ modelId: model.id, resultHash: lineOfSight.resultHash });
+      visible.push({ modelId: query.attackerModelId, resultHash: lineOfSight.resultHash });
     }
   }
   return visible.length > 0
@@ -550,19 +568,48 @@ function terrainAwareEvidence(state, adaptedState, dataBundle, marker, unit,
 }
 
 export function resolveOfficialMissionMarkerControlV2(input = {}) {
-  const state = input.state;
+  return resolveMissionMarkerControlV2(input);
+}
+
+// Read-only analysis uses the EXACT execution calculation, without inventing
+// a cleanup phase, appending an executed event, or granting Apply authority.
+export function inspectOfficialMissionMarkerControlV2(input = {}) {
+  const resolution = resolveMissionMarkerControlV2(input, null, true);
+  const { controlResolutionHash, ...facts } = resolution;
+  return freezeDeep({
+    ...facts,
+    schemaVersion: "starcraft_tmg_mission_marker_control_inspection_v1",
+    phase: input.state.phase,
+    observedPhase: input.state.phase,
+    calculationHash: controlResolutionHash,
+    scope: "control_at_cleanup_if_positions_statuses_and_supply_unchanged",
+    awardedVictoryPoints: false,
+    mutationAuthority: false,
+    applyAuthority: false,
+    trainingTruth: false,
+  });
+}
+
+function resolveMissionMarkerControlV2(input, owned = null, inspection = false) {
+  let state = input.state;
   const dataBundle = input.terrainLosDataBundle || state?.officialTerrainLosDataBundle;
   verifyOfficialTerrainLosDataBundleV1(dataBundle);
   const rulesRuntimeHash = String(
     input.matchBinding?.rulesRuntimeBinding?.runtimeHash || "",
   ).trim();
-  if (!object(state) || !Array.isArray(state.pieces) || state.phase !== "cleanup") {
+  if (!object(state) || !Array.isArray(state.pieces)
+    || (!inspection && state.phase !== "cleanup")) {
     fail("MISSION_MARKER_CONTROL_STATE_INVALID");
   }
-  if (!/^[a-f0-9]{64}$/u.test(rulesRuntimeHash)) {
+  if ((!inspection || rulesRuntimeHash) && !/^[a-f0-9]{64}$/u.test(rulesRuntimeHash)) {
     fail("MISSION_MARKER_CONTROL_RUNTIME_BINDING_REQUIRED");
   }
   const { board, width, height } = validateGeometry(state, { terrainAware: true });
+  if (owned) {
+    owned.profileBundle ||= createOwnedOfficialCombatProfileBundleV1(
+      state.officialCombatProfileBundle);
+    state = { ...state, officialCombatProfileBundle: owned.profileBundle };
+  }
   const bundle = state.officialCombatProfileBundle;
   verifyOfficialCombatProfileBundleV1(bundle);
   const markers = normalizeMarkers(board, width, height, { terrainAware: true });
@@ -570,33 +617,68 @@ export function resolveOfficialMissionMarkerControlV2(input = {}) {
     terrainAware: true,
     rectangularBases: true,
   });
-  const adapted = terrainAsOrdinaryForControl(state);
+  // Keep the scalar's source, board, marker and complete-unit validation above
+  // before terrain adaptation. The fixed owner never skips a failed check.
+  if (owned && !owned.adapted) {
+    owned.adapted = freezeDeep(terrainAsOrdinaryForControl(state));
+    owned.visibility = createOfficialMissionMarkerVisibilityBatchV1({
+      state: owned.adapted.projected, dataBundle,
+    });
+  }
+  const adapted = owned ? { projected: { ...state, board: owned.adapted.projected.board },
+    grassTerrainIds: owned.adapted.grassTerrainIds } : terrainAsOrdinaryForControl(state);
   const pieceById = new Map(adapted.projected.pieces.map((piece) => [piece.id, piece]));
   const effectiveSizeByModelId = new Map();
-  for (const piece of adapted.projected.pieces.filter(activePiece)) {
-    for (const model of activeModels(piece)) {
-      const result = evaluateOfficialEffectiveSizeV1({
+  const sizeSubjects = adapted.projected.pieces.filter(activePiece).flatMap((piece) => (
+    activeModels(piece).map((model) => ({ unitId: piece.id, modelId: model.id }))
+  ));
+  // An empty battlefield previously did not invoke elevation-size validation.
+  if (sizeSubjects.length > 0) {
+    // Only this fixed board/source owner can share preparation across loss
+    // branches. Keep empty-field laziness and revalidate all actual live models.
+    if (owned && !owned.effectiveSizes) {
+      owned.effectiveSizes = createOfficialEffectiveSizeSubjectsUnitBatchV1({
         state: adapted.projected,
-        subjectKind: "model",
-        unitId: piece.id,
-        modelId: model.id,
         dataBundle,
       });
-      effectiveSizeByModelId.set(model.id, result.subject.effectiveSize);
     }
+    const subjects = owned
+      ? owned.effectiveSizes.evaluatePieces(adapted.projected.pieces, sizeSubjects)
+      : evaluateOfficialEffectiveSizeSubjectsBatchV1({
+        state: adapted.projected, subjects: sizeSubjects, dataBundle,
+      });
+    for (const subject of subjects) {
+      effectiveSizeByModelId.set(subject.modelId, subject.effectiveSize);
+    }
+  }
+  const sightGroups = new Map();
+  const sightQueries = [];
+  for (const marker of markers) {
+    // Removed markers previously bypassed LOS entirely.
+    if (marker.isRemoved) continue;
+    const groupsByUnit = new Map();
+    sightGroups.set(marker, groupsByUnit);
+    for (const unit of units) {
+      const group = terrainAwareSightQueries(adapted.projected, marker, unit,
+        pieceById, effectiveSizeByModelId);
+      groupsByUnit.set(unit, group);
+      sightQueries.push(...group.queries);
+    }
+  }
+  const resultByQuery = new Map();
+  // Preserve the old empty/off-field/out-of-range no-LOS path.
+  if (sightQueries.length > 0) {
+    const results = owned ? owned.visibility.project(sightQueries)
+      : projectOfficialMissionMarkerVisibilityBatchV1({
+        state: adapted.projected, dataBundle, queries: sightQueries,
+      });
+    sightQueries.forEach((query, index) => resultByQuery.set(query, results[index]));
   }
   const markerResults = markers.map((marker) => markerResolution(
     marker,
     units,
     (currentMarker, unit) => terrainAwareEvidence(
-      state,
-      adapted.projected,
-      dataBundle,
-      currentMarker,
-      unit,
-      pieceById,
-      effectiveSizeByModelId,
-    ),
+      sightGroups.get(currentMarker).get(unit), resultByQuery),
   ));
   const body = {
     schemaVersion: OFFICIAL_MISSION_MARKER_CONTROL_KERNEL_V2_SCHEMA,
@@ -622,5 +704,21 @@ export function resolveOfficialMissionMarkerControlV2(input = {}) {
   return Object.freeze({
     ...body,
     controlResolutionHash: hashStarcraftTmgContract(body),
+  });
+}
+
+// Readonly fixed-map counterfactuals vary ONLY the complete unit collection.
+// Keep all Rules/source/marker facts in our own snapshot. Supply, statuses,
+// coherency, survivors, support, eligibility, totals and control are evaluated
+// afresh; only identical native model-marker geometry reuses its visibility.
+export function createOfficialMissionMarkerControlUnitBatchV2(input = {}) {
+  const snapshot = freezeDeep(clone(input));
+  const owned = { adapted: null, visibility: null, effectiveSizes: null };
+  return Object.freeze({
+    resolvePieces(pieces) {
+      if (!Array.isArray(pieces)) fail("MISSION_MARKER_CONTROL_STATE_INVALID");
+      const request = { ...snapshot, state: { ...snapshot.state, pieces: clone(pieces) } };
+      return resolveMissionMarkerControlV2(request, owned);
+    },
   });
 }

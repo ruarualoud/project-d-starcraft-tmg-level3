@@ -72,6 +72,9 @@ export interface BattlefieldSceneV1 {
     scenarioMapId: string | null; scenarioMapName: string | null;
     mapSeedId: string | null; mapDisplayName: string | null;
     mapGameEra: string | null; mapArtAssetPath: string | null;
+    mapArtOverlays: readonly { overlayId: string; assetPath: string;
+      sha256: string; rectangleNormalized: { xMin: number; yMin: number;
+        xMax: number; yMax: number }; flipX?: boolean }[];
     engagementScale: string | null; visualPresetId: string | null;
     visualPresetName: string | null;
     displayMapAssetKey: string | null;

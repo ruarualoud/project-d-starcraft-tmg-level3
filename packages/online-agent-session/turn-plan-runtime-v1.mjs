@@ -3,9 +3,14 @@ import { hashStarcraftTmgContract } from
 import { resolveStarcraftTmgEffectiveActingSideV1 } from
   "./effective-acting-side-v1.mjs";
 import { createStarcraftTmgRosterTurnPlanSeedV1,
+  createStarcraftTmgRosterTurnPlanRevisionSeedV1,
   verifyStarcraftTmgRosterTurnPlanOriginV1 } from
   "./roster-plan-turn-plan-bridge-v1.mjs";
 import { verifyPlannedPresetRoundSupplyScheduleV1 } from
+  "../roster-strategist/planned-preset-roster-plan-v2.mjs";
+import { AGENT_SCHEDULED_ROSTER_PLAN_SCHEMA } from
+  "../roster-strategist/agent-scheduled-roster-plan-v1.mjs";
+import { PLANNED_PRESET_ROSTER_PLAN_SCHEMA } from
   "../roster-strategist/planned-preset-roster-plan-v2.mjs";
 
 export const STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION =
@@ -101,6 +106,93 @@ function authority(input, expectedScope) {
 function strings(value) {
   return Array.isArray(value)
     ? value.map((entry) => String(entry || "").trim()).filter(Boolean) : [];
+}
+
+function opponentObservationAuthority(value) {
+  return object(value) ? {
+    stateRevision: value.stateRevision,
+    stateHash: value.stateHash,
+    round: value.round ?? null,
+    phase: value.phase ?? null,
+  } : null;
+}
+
+// This dates the model's beliefs; it never certifies their factual truth.
+// In particular, observe_state must not make old prose fresh by rebinding it.
+function opponentModelContext(statements, previous, authorityValue,
+  originKind = null) {
+  const scopeValue = {
+    roomId: authorityValue.roomId,
+    matchBindingHash: authorityValue.matchBindingHash,
+    seatKey: authorityValue.seatKey,
+  };
+  const usablePrevious = previous?.schemaVersion
+    === "starcraft_tmg_opponent_model_observation_v1"
+    && Object.keys(scopeValue).every(key => previous.scope?.[key]
+      === scopeValue[key]);
+  const origins = new Map((usablePrevious && Array.isArray(previous.claims)
+    ? previous.claims : []).map(entry => [entry.statementHash, entry]));
+  return {
+    schemaVersion: "starcraft_tmg_opponent_model_observation_v1",
+    scope: scopeValue,
+    truthStatus: "model_authored_hypotheses_not_rules_facts",
+    rulesAuthority: false,
+    currentFactsSource: "current_rules_projection_or_query",
+    claims: strings(statements).map(statement => {
+      const statementHash = hashStarcraftTmgContract(statement);
+      const prior = origins.get(statementHash);
+      const observedAuthority = originKind
+        ? opponentObservationAuthority(authorityValue)
+        : object(prior?.observedAuthority)
+          ? clone(prior.observedAuthority) : null;
+      return {
+        statementHash,
+        observedAuthority,
+        originKind: originKind || prior?.originKind || "legacy_unverified",
+        freshness: !observedAuthority ? "unverified"
+          : observedAuthority.stateHash === authorityValue.stateHash
+            && observedAuthority.stateRevision === authorityValue.stateRevision
+            ? "current_authority" : "historical_authority",
+      };
+    }),
+  };
+}
+
+function updateOpponentModel(plan, assessment, snapshot, authorityValue) {
+  const snapshotCurrent = snapshot?.schemaVersion
+    === "starcraft_tmg_opponent_model_snapshot_v1"
+    && snapshot.source === "declared_planner_plan_opponent_model"
+    && snapshot.strategicPlanReplacementAllowed === false
+    && snapshot.rulesAuthority === false
+    && Array.isArray(snapshot.statements)
+    && ["roomId", "matchBindingHash", "stateRevision", "stateHash",
+      "legalSpaceHash"].every(key => snapshot.authority?.[key]
+        === authorityValue[key]);
+  if (snapshotCurrent) {
+    const opponentModel = [...new Set(strings(snapshot.statements))];
+    return { opponentModel,
+      opponentModelContext: opponentModelContext(opponentModel, null,
+        authorityValue, "planner_snapshot"),
+      status: "snapshot_replaced",
+    };
+  }
+  // Legacy deltas cannot identify which old statement they retract. Preserve
+  // them as distinct dated hypotheses instead of silently declaring all fresh.
+  const previous = opponentModelContext(plan.opponentModel,
+    plan.opponentModelContext, authorityValue);
+  const updates = [...new Set(strings(assessment.opponentModelUpdates))];
+  const datedUpdates = opponentModelContext(updates, null, authorityValue,
+    "assessment_delta");
+  const byStatement = new Map(previous.claims.map(entry =>
+    [entry.statementHash, entry]));
+  for (const entry of datedUpdates.claims) byStatement.set(entry.statementHash, entry);
+  const opponentModel = [...new Set([...strings(plan.opponentModel), ...updates])];
+  return { opponentModel,
+    opponentModelContext: opponentModelContext(opponentModel, {
+      ...previous, claims: [...byStatement.values()],
+    }, authorityValue),
+    status: snapshot ? "stale_snapshot_ignored" : "dated_delta_applied",
+  };
 }
 
 function objects(value, field) {
@@ -264,8 +356,12 @@ function normalizeFutureActionPlans(value) {
 function verifiedPregameRosterArrivalSchedule(value, origin) {
   if (value === undefined || value === null) return null;
   if (!object(value) || !object(origin)
-    || origin.rosterMode !== "planned_preset"
-    || value.armyAuditResultHash !== origin.rulesAuditResultHash) {
+    || !((origin.rosterMode === "planned_preset"
+      && origin.rosterPlanSchema === PLANNED_PRESET_ROSTER_PLAN_SCHEMA)
+      || (origin.rosterMode === "agent_built"
+        && origin.rosterPlanSchema === AGENT_SCHEDULED_ROSTER_PLAN_SCHEMA))
+    || value.armyAuditResultHash !== origin.rulesAuditResultHash
+    || value.candidateHash !== origin.rosterCandidateHash) {
     throw new TypeError("pregame roster arrival schedule origin is invalid");
   }
   // At first opening the bridge checks this schedule against the current
@@ -314,6 +410,7 @@ function planRecord(plan) {
   return {
     planId: plan.planId,
     version: plan.version,
+    parentVersion: plan.parentVersion,
     objective: plan.objective,
     currentGoal: plan.currentGoal,
     strategicApproach: plan.strategicApproach,
@@ -329,6 +426,7 @@ function planRecord(plan) {
     reviseIf: plan.reviseIf,
     assumptions: plan.assumptions,
     opponentModel: plan.opponentModel,
+    opponentModelContext: clone(plan.opponentModelContext),
     contingencies: plan.contingencies,
     status: plan.status,
     revisionReason: plan.revisionReason,
@@ -468,6 +566,12 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
           ? Number(payload.version) : 1,
         parentVersion: payload.parentVersion ?? null,
         ...planSpec(payload),
+        opponentModelContext: opponentModelContext(payload.opponentModel,
+          payload.opponentModelContext, restoredAuthority || {
+            roomId: scopeValue.roomId,
+            matchBindingHash: scopeValue.matchBindingHash,
+            seatKey: scopeValue.seatKey,
+          }),
         ...(pregamePlanOrigin
           ? { pregamePlanOrigin: clone(pregamePlanOrigin) } : {}),
         ...(payload.pregameRosterArrivalSchedule ? {
@@ -540,6 +644,8 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       version,
       parentVersion,
       ...clone(spec),
+      opponentModelContext: opponentModelContext(spec.opponentModel, null,
+        authorityValue, "explicit_plan"),
       ...(arrivalSchedule ? {
         pregameRosterArrivalSchedule: arrivalSchedule,
       } : {}),
@@ -575,6 +681,10 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
   }
 
   async function openRosterPlan(state, input, authorityValue) {
+    if (state.plan && state.plan.pregamePlanOrigin?.rosterPlanHash
+      !== input.rosterPlan?.planHash) {
+      throw new TypeError("a different TurnPlan already exists for this seat");
+    }
     const seed = createStarcraftTmgRosterTurnPlanSeedV1({
       rosterPlan: input.rosterPlan,
       sessionReceipt: input.rosterSessionReceipt,
@@ -599,6 +709,47 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     const persistence = await persistPlan(state, input);
     return { event: "roster_plan_opened", plan: planProjection(state),
       persistence };
+  }
+
+  async function adoptRosterPlanRevision(state, input, authorityValue) {
+    if (!state.plan?.pregamePlanOrigin) {
+      throw new TypeError("ROSTER_TURN_PLAN_REVISION_ORIGINAL_PLAN_REQUIRED");
+    }
+    const seed = createStarcraftTmgRosterTurnPlanRevisionSeedV1({
+      rosterPlan: input.rosterPlan,
+      sessionReceipt: input.rosterSessionReceipt,
+      priorPlans: input.rosterPriorPlans || [],
+      previousOrigin: state.plan.pregamePlanOrigin,
+      previousArrivalSchedule: state.plan.pregameRosterArrivalSchedule,
+      replacesRosterPlanHash: input.replacesRosterPlanHash,
+      roomProjection: input.roomProjection,
+      scope: state.scope,
+    });
+    if (seed.origin.rosterPlanHash
+      === state.plan.pregamePlanOrigin.rosterPlanHash) {
+      return { event: "roster_plan_already_open",
+        plan: planProjection(state), persistence: null };
+    }
+    const next = { ...state };
+    next.plan = makePlan(next, planSpec(seed.planSpec), authorityValue,
+      "verified_same_match_roster_plan_revision", state.plan.version,
+      seed.origin, seed.planSpec.pregameRosterArrivalSchedule);
+    next.lastAssessment = null;
+    next.reflectionRequired = true;
+    next.nextIntent = null;
+    // Retain intents/outcomes/calibration and the original journal. Only the
+    // next decision must reflect against the changed strategy and current turn.
+    const persistence = await persistPlan(next, input);
+    if (state.searchJob && ["queued", "running", "completed"]
+      .includes(state.searchJob.status)) {
+      state.searchJob.status = "stale";
+      state.searchJob.failure = { code: "roster_plan_revision_adopted" };
+      state.searchJob.completedAt = new Date(now()).toISOString();
+      state.searchJob.controller.abort();
+    }
+    Object.assign(state, next);
+    return { event: "roster_plan_revision_adopted",
+      plan: planProjection(state), persistence };
   }
 
   function cancelStaleSearch(state, authorityValue) {
@@ -754,6 +905,8 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
         intentHash: state.nextIntent.intentHash,
       } : null,
       lastValidatedAuthority: clone(authorityValue),
+      opponentModelContext: opponentModelContext(state.plan.opponentModel,
+        state.plan.opponentModelContext, authorityValue),
       updatedAt: new Date(now()).toISOString(),
     });
     if (state.nextIntent) state.nextIntent = null;
@@ -777,6 +930,41 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     const sourcePlan = state.plan;
     const normalized = normalizePlanAssessment(input.assessment, authorityValue,
       sourcePlan);
+    const amendment = input.futureActionPlanAmendment;
+    let futureActionPlans = null;
+    if (amendment !== undefined) {
+      const candidate = (input.spatialActionSpace.parameterDomains || []).find(
+        entry => entry.domainId === amendment?.candidateId);
+      const domain = candidate?.sourceDomain || candidate;
+      if (!object(amendment)
+        || amendment.schemaVersion
+          !== "starcraft_tmg_bounded_future_action_plan_amendment_v1"
+        || normalized.verdict !== "continue" || amendment.modelVerdict !== "continue"
+        || amendment.strategicPlanReplacementAllowed !== false
+        || amendment.basePlanHash !== sourcePlan.planHash
+        || !domain?.effectContract?.futurePlanRequirement?.required
+        || ["roomId", "matchBindingHash", "stateRevision", "stateHash",
+          "legalSpaceHash"].some(key => amendment.authority?.[key]
+            !== authorityValue[key])
+        || !Array.isArray(amendment.futureActionPlans)
+        || !amendment.futureActionPlans.length
+        || amendment.futureActionPlans.some(entry =>
+          entry.enablingCandidateId !== amendment.candidateId)) {
+        throw new TypeError("future action plan amendment is not current and source-bound");
+      }
+      const supplied = normalizeFutureActionPlans(amendment.futureActionPlans);
+      if (supplied.some(entry => ["benefitEvidenceRefs", "riskEvidenceRefs",
+        "prerequisites", "cancelIf"].some(key => !entry[key].length))) {
+        throw new TypeError("future action plan amendment requires complete evidence");
+      }
+      const byId = new Map(normalizeFutureActionPlans(sourcePlan.futureActionPlans)
+        .map(entry => [entry.planItemId, entry]));
+      for (const entry of supplied) byId.set(entry.planItemId, entry);
+      futureActionPlans = [...byId.values()];
+      if (futureActionPlans.length > 16) {
+        throw new TypeError("future action plan amendment exceeds the current plan schema");
+      }
+    }
     const createdAt = new Date(now()).toISOString();
     const assessment = seal({
       schemaVersion:
@@ -793,6 +981,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       trainingTruth: false,
     }, "assessmentHash");
     state.sequence += 1;
+    let opponentModelUpdateStatus = "strategic_revision";
 
     if (assessment.verdict === "revise") {
       if (!object(input.planRevision)) {
@@ -807,12 +996,17 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     } else {
       const terminalStatus = assessment.verdict === "complete"
         ? "completed" : assessment.verdict === "abandon" ? "abandoned" : null;
-      state.plan = resealPlan(sourcePlan, {
+      const continued = futureActionPlans ? makePlan(state, {
+        ...planSpec(sourcePlan), futureActionPlans,
+      }, authorityValue, "model_submitted_future_action_plan_amendment",
+      sourcePlan.version, sourcePlan.pregamePlanOrigin || null) : sourcePlan;
+      const opponentUpdate = updateOpponentModel(sourcePlan, assessment,
+        input.opponentModelSnapshot, authorityValue);
+      opponentModelUpdateStatus = opponentUpdate.status;
+      state.plan = resealPlan(continued, {
         currentGoal: assessment.currentGoal,
-        opponentModel: [...new Set([
-          ...strings(sourcePlan.opponentModel),
-          ...assessment.opponentModelUpdates,
-        ])],
+        opponentModel: opponentUpdate.opponentModel,
+        opponentModelContext: opponentUpdate.opponentModelContext,
         status: terminalStatus || (authorityValue.effectiveActingSideKey
           === state.scope.seatKey
           ? "active" : "waiting_for_activation"),
@@ -846,9 +1040,12 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
           ...clone(assessment),
           planId: sourcePlan.planId,
         } },
-        ...(assessment.verdict === "revise" ? [{
+        ...(assessment.verdict === "revise" || futureActionPlans ? [{
           kind: "plan_revision",
-          payload: planRecord(state.plan),
+          payload: { ...planRecord(state.plan), ...(futureActionPlans ? {
+            revisionKind: "future_action_plan_amendment",
+            futureActionPlanAmendment: clone(amendment),
+          } : {}) },
         }] : []),
       ],
     }) : null;
@@ -856,6 +1053,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       event: "plan_reflected",
       assessment,
       plan: planProjection(state),
+      opponentModelUpdateStatus,
       reflectionRequired: false,
       persistence,
     };
@@ -1225,6 +1423,8 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
       result = await openPlan(state, input, authorityValue);
     } else if (command === "open_roster_plan") {
       result = await openRosterPlan(state, input, authorityValue);
+    } else if (command === "adopt_roster_plan_revision") {
+      result = await adoptRosterPlanRevision(state, input, authorityValue);
     } else if (command === "observe_state") {
       result = await observeState(state, input, authorityValue);
     } else if (command === "reflect_plan") {
@@ -1284,7 +1484,7 @@ export function createStarcraftTmgTurnPlanRuntimeV1(options = {}) {
     metadata: Object.freeze({
       schemaVersion: `${STARCRAFT_TMG_TURN_PLAN_RUNTIME_VERSION}.metadata`,
       interface: ["hydrate", "dispatch", "read"],
-      commands: ["open_plan", "open_roster_plan", "observe_state",
+      commands: ["open_plan", "open_roster_plan", "adopt_roster_plan_revision", "observe_state",
         "reflect_plan", "create_intent",
         "pause_counterfactual", "adopt_counterfactual", "record_outcome",
         "recall_history"],

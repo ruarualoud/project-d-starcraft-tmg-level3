@@ -1,0 +1,37 @@
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import {compileRosterWorkflowExperimentV1} from '../packages/roster-strategist/roster-workflow-laboratory-v1.mjs';
+import {prepareRosterWorkflowMethodCompilationV1,projectRosterUnissuedOrderRecoveryV1,projectRosterOrderCorrectionTaskV1} from '../packages/roster-planning-workspace/roster-decision-workspace-run-v1.mjs';
+const [directory,output]=process.argv.slice(2),copy=structuredClone;
+const report={schema:'slice272_json_recovery_v921',providerCalls:0,nativeCalls:0,productionWrites:0,checks:[]};
+try{
+  const original=await fs.readFile(directory+'/workflow.json','utf8'),state=JSON.parse(original);
+  const resultRef='65500e7b0b180e7101eda3b444d5e5c23db2fc3e9e443d0b250a4d3b76272372';
+  const work=state.work.find(w=>w.resultRef===resultRef);
+  assert.ok(work);assert.equal(work.orderRepairGeneration,3);
+  const readArtifact=async ref=>JSON.parse(await fs.readFile(`${directory}/artifacts/${ref}.json`,'utf8'));
+  const result=await readArtifact(resultRef),failure=result.value.failedWorkOrders[0];
+  const context=await prepareRosterWorkflowMethodCompilationV1({state,work,result,readArtifact});
+  const validateOrder=order=>compileRosterWorkflowExperimentV1({order,scope:work.bindings,namespace:'json-diagnostic-recovery',evidenceDirectory:state.evidence,...context});
+  const project=(overrides={})=>projectRosterUnissuedOrderRecoveryV1({state,work,failure,index:0,limit:3,validateOrder,...overrides});
+  const recovery=project();
+  assert.ok(recovery,'Saved detail:null failure needs one bounded correction with the repaired source diagnostic');
+  assert.equal(recovery.limit,4);assert.equal(recovery.contractRecovery.additionalConfirmationLimit,1);
+  assert.equal(recovery.contractRecovery.historyReset,false);assert.equal(recovery.contractRecovery.providerReplayed,false);
+  const task=projectRosterOrderCorrectionTaskV1({failure,recovery});
+  assert.equal(task.error.detail.layer,'spatial_arguments_json');
+  assert.equal(task.error.detail.stepId,'s1');
+  assert.equal(task.error.detail.receivedType,'object');
+  assert.deepEqual(task.failedOrder,failure.order);assert.deepEqual(task.historicalError,failure.error);
+  assert.equal(task.currentOrderValidation.status,'needs_input_repair');
+  report.checks.push('Actual stopped A method gets exactly one author correction with new precise diagnostic and untouched old order/error');
+  const paidAgain=copy(state),paidWork=paidAgain.work.find(w=>w.id===work.id);paidWork.contractRecovery=copy(recovery.contractRecovery);
+  assert.equal(project({state:paidAgain,work:paidWork}),null,'Same diagnostic repair cannot reopen another window');
+  assert.equal(project({failure:{...copy(failure),error:copy(task.error)}}),null,'Already-delivered exact diagnostic must not earn another retry');
+  assert.equal(project({work:{...work,operationState:{...work.operationState,pending:{requestRef:'unknown'}}}}),null);
+  assert.equal(project({validateOrder:()=>{throw Object.assign(Error('network'),{code:'NETWORK_ERROR'});}}),null);
+  report.checks.push('Previously delivered diagnostic, repeated recovery, pending request and unrelated error do not reopen');
+  assert.equal(await fs.readFile(directory+'/workflow.json','utf8'),original);
+  report.pass=true;
+}catch(error){report.pass=false;report.error=error.message;report.stack=error.stack.split('\n').slice(0,5);process.exitCode=1;}
+await fs.writeFile(output,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));

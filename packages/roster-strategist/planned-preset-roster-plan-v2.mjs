@@ -2,6 +2,8 @@ import { isDeepStrictEqual } from "node:util";
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { projectOfficialContextualSupplyValueV1 } from
+  "../rule-atoms/official-contextual-supply-projection-v1.mjs";
 import {
   ROSTER_PLAN_SCHEMA,
   createRosterPlanV1,
@@ -14,6 +16,8 @@ export const PLANNED_PRESET_ROSTER_PLAN_SCHEMA =
   "starcraft_tmg_roster_plan_v2";
 export const PLANNED_PRESET_ROUND_SUPPLY_SCHEDULE_SCHEMA =
   "starcraft_tmg_planned_preset_round_supply_schedule_v1";
+export const PLANNED_PRESET_ROUND_SUPPLY_SCHEDULE_V2_SCHEMA =
+  "starcraft_tmg_planned_preset_round_supply_schedule_v2";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const PLANNED_STATUSES = new Set(["active", "revised", "completed"]);
@@ -22,7 +26,11 @@ const BINDING_KEYS = [
   "rosterHash", "armyAuditResultHash", "presetSource", "candidateHash",
 ].sort();
 
-function reject(code) { throw new Error(code); }
+function reject(code, details = null) {
+  const error = new Error(code);
+  if (details) error.details = Object.freeze(details);
+  throw error;
+}
 function object(value) {
   return value !== null && typeof value === "object"
     && !Array.isArray(value);
@@ -105,7 +113,11 @@ export function createPlannedPresetRoundSupplyScheduleV1(input = {}) {
       const committedSupply = entries.filter((entry) => entry.round <= round)
         .reduce((sum, entry) => sum + entry.startingSupply, 0);
       if (capacity !== null && committedSupply > capacity) {
-        reject("PLANNED_PRESET_ROUND_SUPPLY_EXCEEDED");
+        reject("PLANNED_PRESET_ROUND_SUPPLY_EXCEEDED", {
+          round, capacity, committedSupply,
+          overflow: committedSupply - capacity,
+          capacityIsCumulativeOnTable: true,
+        });
       }
       return { round, capacity, committedSupply };
     });
@@ -124,7 +136,12 @@ export function createPlannedPresetRoundSupplyScheduleV1(input = {}) {
 }
 
 export function verifyPlannedPresetRoundSupplyScheduleV1(schedule,
-  rosterCandidate, armyAudit = null, missionProfile = null) {
+  rosterCandidate, armyAudit = null, missionProfile = null,
+  contextualSupplyRoutes = null) {
+  if (schedule?.schema === PLANNED_PRESET_ROUND_SUPPLY_SCHEDULE_V2_SCHEMA) {
+    return verifyPlannedPresetRoundSupplyScheduleV2(schedule,
+      rosterCandidate, armyAudit, missionProfile, contextualSupplyRoutes);
+  }
   if (!object(schedule)
     || schedule.schema !== PLANNED_PRESET_ROUND_SUPPLY_SCHEDULE_SCHEMA
     || hashStarcraftTmgContract(scheduleBodyWithoutHash(schedule))
@@ -167,6 +184,187 @@ export function verifyPlannedPresetRoundSupplyScheduleV1(schedule,
   });
   if (!isDeepStrictEqual(replayed, schedule)) {
     reject("PLANNED_PRESET_ROUND_SUPPLY_SCHEDULE_DRIFT");
+  }
+  return true;
+}
+
+// v1 is retained exactly for existing Room/plan replay. New pregame plans use
+// the same source-backed contextual projection as the live Supply Pool: the
+// printed value remains visible, but only poolSupply consumes round capacity.
+export function createPlannedPresetRoundSupplyScheduleV2(input = {}) {
+  const { proposedEntries, rosterCandidate, armyAudit, missionProfile,
+    contextualSupplyRoutes } = input;
+  if (!Array.isArray(proposedEntries)
+    || !Array.isArray(rosterCandidate?.units)
+    || !Array.isArray(armyAudit?.units)
+    || !Array.isArray(contextualSupplyRoutes)
+    || armyAudit.resultHash
+      !== rosterCandidate.legalityReceipt?.auditResultHash
+    || !HASH.test(String(missionProfile?.missionScoringProfileHash || ""))
+    || !Number.isSafeInteger(missionProfile.gameLengthRounds)
+    || missionProfile.gameLengthRounds < 2
+    || !Number.isSafeInteger(missionProfile.startingSupply)
+    || missionProfile.startingSupply < 0
+    || !Number.isSafeInteger(missionProfile.extraSupplyPerRound)
+    || missionProfile.extraSupplyPerRound < 0) {
+    reject("PLANNED_PRESET_ROUND_SUPPLY_V2_SOURCE_INVALID");
+  }
+  const auditById = new Map(armyAudit.units.map((unit) => [
+    unit.unitInstanceId, unit]));
+  const rosterIds = rosterCandidate.units.map((unit) => unit.unitInstanceId);
+  if (new Set(rosterIds).size !== rosterIds.length
+    || auditById.size !== rosterIds.length
+    || rosterIds.some((id) => !auditById.has(id))) {
+    reject("PLANNED_PRESET_ROUND_SUPPLY_V2_UNIT_SET_INVALID");
+  }
+  const pieces = rosterCandidate.units.map((unit) => {
+    const currentSupply = Number(auditById.get(unit.unitInstanceId)
+      .unitCompositionResult?.startingSupply);
+    if (!Number.isSafeInteger(currentSupply) || currentSupply < 0) {
+      reject("PLANNED_PRESET_ROUND_SUPPLY_V2_PRINTED_INVALID");
+    }
+    return { id: unit.unitInstanceId,
+      officialUnitRecordKey: unit.recordKey,
+      compositionKind: unit.compositionKind,
+      selectedUpgradeNames: (unit.upgradeSelections || []).map((entry) =>
+        String(entry.upgradeName || entry.name || "")),
+      currentSupply, currentModels: 1, isDestroyed: false,
+      isOnField: false };
+  });
+  const sourceState = { pieces,
+    officialContextualSupplyModifierRoutes: contextualSupplyRoutes };
+  const supplyByUnit = new Map(pieces.map((piece) => {
+    const projection = projectOfficialContextualSupplyValueV1({
+      state: sourceState, pieceId: piece.id,
+      context: "supply_pool_calculation" });
+    return [piece.id, { startingSupply: piece.currentSupply,
+      poolSupply: projection.effectiveSupply,
+      applicableDefinitionIds: projection.applicableDefinitionIds }];
+  }));
+  const entries = proposedEntries.map((entry, index) => {
+    const round = Number(entry?.round);
+    const unitInstanceId = String(entry?.unitInstanceId || "").trim();
+    const publicReasonText = String(entry?.publicReasonText || "").trim();
+    if (!Number.isSafeInteger(round) || round < 1
+      || round > missionProfile.gameLengthRounds
+      || !supplyByUnit.has(unitInstanceId) || !publicReasonText) {
+      reject("PLANNED_PRESET_ROUND_SUPPLY_V2_ENTRY_INVALID");
+    }
+    return { ordinal: index + 1, round, unitInstanceId,
+      ...supplyByUnit.get(unitInstanceId), publicReasonText };
+  });
+  if (entries.length !== rosterIds.length
+    || new Set(entries.map((entry) => entry.unitInstanceId)).size
+      !== rosterIds.length) {
+    reject("PLANNED_PRESET_ROUND_SUPPLY_V2_COVERAGE_INVALID");
+  }
+  const rounds = Array.from({ length: missionProfile.gameLengthRounds },
+    (_, index) => {
+      const round = index + 1;
+      const capacity = round === missionProfile.gameLengthRounds
+        ? null : missionProfile.startingSupply
+          + missionProfile.extraSupplyPerRound * index;
+      const committedSupply = entries.filter((entry) => entry.round <= round)
+        .reduce((sum, entry) => sum + entry.poolSupply, 0);
+      if (capacity !== null && committedSupply > capacity) {
+        reject("PLANNED_PRESET_ROUND_SUPPLY_EXCEEDED", {
+          round, capacity, committedSupply,
+          overflow: committedSupply - capacity,
+          capacityIsCumulativeOnTable: true,
+        });
+      }
+      return { round, capacity, committedSupply };
+    });
+  const body = {
+    schema: PLANNED_PRESET_ROUND_SUPPLY_SCHEDULE_V2_SCHEMA,
+    candidateHash: rosterCandidate.candidateHash,
+    armyAuditResultHash: armyAudit.resultHash,
+    missionScoringProfileHash: missionProfile.missionScoringProfileHash,
+    contextualSupplyRouteBundleHash:
+      hashStarcraftTmgContract(contextualSupplyRoutes),
+    gameLengthRounds: missionProfile.gameLengthRounds,
+    startingSupply: missionProfile.startingSupply,
+    extraSupplyPerRound: missionProfile.extraSupplyPerRound,
+    entries, rounds, placementAndPathVerified: false,
+    trainingTruth: false,
+  };
+  return frozen({ ...body, scheduleHash: hashStarcraftTmgContract(body) });
+}
+
+export function verifyPlannedPresetRoundSupplyScheduleV2(schedule,
+  rosterCandidate, armyAudit = null, missionProfile = null,
+  contextualSupplyRoutes = null) {
+  const rosterIds = rosterCandidate?.units?.map((unit) =>
+    unit.unitInstanceId) || [];
+  if (!object(schedule)
+    || schedule.schema !== PLANNED_PRESET_ROUND_SUPPLY_SCHEDULE_V2_SCHEMA
+    || hashStarcraftTmgContract(scheduleBodyWithoutHash(schedule))
+      !== schedule.scheduleHash
+    || schedule.candidateHash !== rosterCandidate?.candidateHash
+    || schedule.armyAuditResultHash
+      !== rosterCandidate?.legalityReceipt?.auditResultHash
+    || !HASH.test(String(schedule.contextualSupplyRouteBundleHash || ""))
+    || !Number.isSafeInteger(schedule.gameLengthRounds)
+    || schedule.gameLengthRounds < 2
+    || !Number.isSafeInteger(schedule.startingSupply)
+    || schedule.startingSupply < 0
+    || !Number.isSafeInteger(schedule.extraSupplyPerRound)
+    || schedule.extraSupplyPerRound < 0
+    || schedule.trainingTruth !== false
+    || schedule.placementAndPathVerified !== false
+    || !Array.isArray(schedule.entries)
+    || schedule.entries.length !== rosterIds.length
+    || new Set(schedule.entries.map((entry) => entry.unitInstanceId)).size
+      !== rosterIds.length
+    || schedule.entries.some((entry, index) =>
+      entry.ordinal !== index + 1
+      || !rosterIds.includes(entry.unitInstanceId)
+      || !Number.isSafeInteger(entry.startingSupply)
+      || entry.startingSupply < 0
+      || !Number.isSafeInteger(entry.poolSupply)
+      || entry.poolSupply < 0
+      || !Array.isArray(entry.applicableDefinitionIds)
+      || !Number.isSafeInteger(entry.round)
+      || entry.round < 1 || entry.round > schedule.gameLengthRounds
+      || !String(entry.publicReasonText || "").trim())
+    || (armyAudit && (armyAudit.resultHash
+      !== schedule.armyAuditResultHash
+      || schedule.entries.some((entry) =>
+        Number(armyAudit.units.find((unit) =>
+          unit.unitInstanceId === entry.unitInstanceId)
+          ?.unitCompositionResult?.startingSupply) !== entry.startingSupply)))
+    || (missionProfile && missionProfile.missionScoringProfileHash
+      !== schedule.missionScoringProfileHash)
+    || !Array.isArray(schedule.rounds)
+    || schedule.rounds.length !== schedule.gameLengthRounds
+    || schedule.rounds.some((entry, index) => {
+      const round = index + 1;
+      const capacity = round === schedule.gameLengthRounds ? null
+        : schedule.startingSupply
+          + schedule.extraSupplyPerRound * index;
+      const committedSupply = schedule.entries.filter((unit) =>
+        unit.round <= round).reduce((sum, unit) =>
+        sum + unit.poolSupply, 0);
+      return entry.round !== round || entry.capacity !== capacity
+        || entry.committedSupply !== committedSupply
+        || (capacity !== null && committedSupply > capacity);
+    })) {
+    reject("PLANNED_PRESET_ROUND_SUPPLY_SCHEDULE_V2_INVALID");
+  }
+  if (contextualSupplyRoutes) {
+    if (hashStarcraftTmgContract(contextualSupplyRoutes)
+      !== schedule.contextualSupplyRouteBundleHash
+      || !armyAudit || !missionProfile) {
+      reject("PLANNED_PRESET_ROUND_SUPPLY_SCHEDULE_V2_SOURCE_DRIFT");
+    }
+    const replayed = createPlannedPresetRoundSupplyScheduleV2({
+      proposedEntries: schedule.entries.map((entry) => ({
+        round: entry.round, unitInstanceId: entry.unitInstanceId,
+        publicReasonText: entry.publicReasonText })),
+      rosterCandidate, armyAudit, missionProfile, contextualSupplyRoutes });
+    if (!isDeepStrictEqual(replayed, schedule)) {
+      reject("PLANNED_PRESET_ROUND_SUPPLY_SCHEDULE_V2_DRIFT");
+    }
   }
   return true;
 }

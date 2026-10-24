@@ -108,7 +108,7 @@ function normalizeInput(input) {
       input.maxContextUnits, "maxContextUnits", 1, 2_000_000),
     maxOutputUnits: integer(
       input.maxOutputUnits, "maxOutputUnits", 1, 1_000_000),
-    timeoutMs: integer(input.timeoutMs, "timeoutMs", 1, 300_000),
+    timeoutMs: integer(input.timeoutMs, "timeoutMs", 1, 600_000),
     endpointDialect,
     structuredOutputCapabilities: capabilities.sort(),
     schemaSubsetVersion,

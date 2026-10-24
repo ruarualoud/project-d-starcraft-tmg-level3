@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { assertProviderDnsRecoveryV1 } from './provider-network-resilience-v1.mjs';
 import { assertProviderResponseOutcomeV1 } from "./provider-response-outcome-v1.mjs";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -61,7 +62,7 @@ const FAILURE_RECEIPT_FIELDS = new Set([
   "schemaVersion", "code", "requestDefinitelyNotSent",
   "requestMayHaveBeenSent", "status", "physicalAttempts",
   "automaticRetries", "trainingTruth", "receiptHash", "responseOutcome",
-  "transportProgress",
+  "transportProgress", "dnsRecovery",
 ]);
 const SHUTDOWN_FIELDS = new Set([
   "type", "requestId", "ok", "reason", "workerVersion",
@@ -317,6 +318,7 @@ export function createStarcraftTmgProviderEgressWorkerPortV2(options = {}) {
     exactFields(message.safeReceipt, FAILURE_RECEIPT_FIELDS,
       "Provider Worker failure receipt");
     const { receiptHash, ...body } = message.safeReceipt;
+    assertProviderDnsRecoveryV1(message.safeReceipt.dnsRecovery);
     const attempts = message.safeReceipt.physicalAttempts;
     if (message.safeReceipt.responseOutcome) assertProviderResponseOutcomeV1(message.safeReceipt.responseOutcome);
     if (message.safeReceipt.transportProgress) {
@@ -354,6 +356,7 @@ export function createStarcraftTmgProviderEgressWorkerPortV2(options = {}) {
       physicalAttempts: attempts,
       responseOutcome: message.safeReceipt.responseOutcome,
       transportProgress: message.safeReceipt.transportProgress,
+      dnsRecovery: message.safeReceipt.dnsRecovery,
     });
   }
 

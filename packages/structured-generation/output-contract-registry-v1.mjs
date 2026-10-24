@@ -122,6 +122,20 @@ function assertSchemaNode(value, path = "$", depth = 0, root = false) {
   if (!object(value) || depth > 12) {
     throw new TypeError(`${path} is outside the JSON Schema subset`);
   }
+  // Standard nullable tool arguments: null means "no edit", never an invented
+  // default. Keep the supported union narrow; all prior schemas are unchanged.
+  if (Object.hasOwn(value, "anyOf")) {
+    if (root || Object.keys(value).length !== 1 || !Array.isArray(value.anyOf)
+      || value.anyOf.length !== 2 || value.anyOf.filter(s => s?.type === "null").length !== 1) {
+      throw new TypeError(`${path} must be a two-branch nullable schema`);
+    }
+    for (const branch of value.anyOf) {
+      if (branch.type === "null") {
+        if (Object.keys(branch).length !== 1) throw new TypeError(`${path} null branch must contain only type`);
+      } else assertSchemaNode(branch, path, depth + 1, false);
+    }
+    return value;
+  }
   const type = value.type;
   const allowed = type === "object" ? OBJECT_SCHEMA_KEYS
     : type === "array" ? ARRAY_SCHEMA_KEYS
@@ -158,8 +172,11 @@ function assertSchemaNode(value, path = "$", depth = 0, root = false) {
     }
   } else if (type === "array") {
     const minimum = boundedInteger(value.minItems, `${path}.minItems`, 0, 128);
-    const maximum = boundedInteger(value.maxItems, `${path}.maxItems`, 1, 128);
-    if (minimum > maximum || !object(value.items)
+    // Zero is a valid maximum for a read-only/control return that cannot submit
+    // actions. Omitted maxima remain unbounded; min/max consistency is checked below.
+    const maximum = value.maxItems === undefined ? null
+      : boundedInteger(value.maxItems, `${path}.maxItems`, 0, 128);
+    if (maximum !== null && minimum > maximum || !object(value.items)
       || value.uniqueItems !== undefined && value.uniqueItems !== true) {
       throw new TypeError(`${path} array bounds are invalid`);
     }
@@ -203,6 +220,11 @@ export function assertStarcraftTmgProviderJsonSchemaSubsetV1(value) {
 
 function collectValidationIssues(schema, value, path, issues) {
   if (issues.length >= 32) return;
+  if (schema.anyOf) {
+    if (value === null) return;
+    collectValidationIssues(schema.anyOf.find(s => s.type !== "null"), value, path, issues);
+    return;
+  }
   if (schema.type === "object") {
     if (!object(value)) {
       issues.push({ path, code: "type_object_required",
@@ -237,7 +259,7 @@ function collectValidationIssues(schema, value, path, issues) {
     if (value.length < schema.minItems) issues.push({ path,
       code: "array_too_short", actualItems: value.length,
       minItems: schema.minItems, maxItems: schema.maxItems });
-    if (value.length > schema.maxItems) issues.push({ path,
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) issues.push({ path,
       code: "array_too_long", actualItems: value.length,
       minItems: schema.minItems, maxItems: schema.maxItems });
     if (schema.uniqueItems === true

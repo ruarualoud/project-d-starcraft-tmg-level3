@@ -1,5 +1,9 @@
-import { hashStarcraftTmgContract } from
+import { normalizeOfficialRectangleUnionFootprintCellsV1 } from
+  "./official-footprint-rectangle-union-geometry-v1.mjs";
+import { hashStarcraftTmgContract, canonicalStarcraftTmgJson,
+  STARCRAFT_TMG_HASH_ALGORITHM } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { types, isDeepStrictEqual } from "node:util";
 import { verifyOfficialTerrainLosDataBundleV1 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
 import {
@@ -8,6 +12,8 @@ import {
 } from "./official-model-base-geometry-rules-kernel-v1.mjs";
 import { resolveConvexFootprintRectangleTraceV1 } from
   "./convex-footprint-rectangle-trace-v1.mjs";
+import { createNativeAssessmentPrefixDigestV1 } from
+  "./native-assessment-prefix-digest-v1.mjs";
 
 export const OFFICIAL_TERRAIN_LOS_RULES_KERNEL_SCHEMA =
   "starcraft_tmg_official_terrain_los_rules_kernel_v1";
@@ -18,6 +24,10 @@ export const OFFICIAL_TERRAIN_PIECE_SCHEMA =
 const TOLERANCE = 1;
 const INCH = 1000;
 const CLOSE_QUARTERS_RANGE = 3000;
+// Exact canonical text of ONLY this module's own frozen assessment records.
+// This is serialization reuse, never externally supplied visibility authority.
+const NATIVE_ASSESSMENT_JSON = new WeakMap();
+const NATIVE_ASSESSMENT_ARRAY_JSON = new WeakMap();
 
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
@@ -29,6 +39,94 @@ function freezeDeep(value) {
   if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
   for (const child of Object.values(value)) freezeDeep(child);
   return Object.freeze(value);
+}
+
+// Internal cross-module seam for the grass adapter. Foreign/dynamic arrays or
+// records retain the normal canonical serializer. A filtered subset can borrow
+// text only for actual native immutable entries, and is not cached itself.
+export function canonicalNativeTerrainLineOfSightAssessmentsV1(assessments) {
+  const native = NATIVE_ASSESSMENT_ARRAY_JSON.get(assessments);
+  if (native !== undefined) return native;
+  if (!Array.isArray(assessments) || types.isProxy(assessments)
+    || Object.getPrototypeOf(assessments) !== Array.prototype
+    || Reflect.ownKeys(assessments).length !== assessments.length + 1) {
+    return canonicalStarcraftTmgJson(assessments);
+  }
+  const parts = [];
+  for (let index = 0; index < assessments.length; index++) {
+    const descriptor = Object.getOwnPropertyDescriptor(assessments, String(index));
+    const text = descriptor && "value" in descriptor
+      ? NATIVE_ASSESSMENT_JSON.get(descriptor.value) : undefined;
+    if (text === undefined) return canonicalStarcraftTmgJson(assessments);
+    parts.push(text);
+  }
+  return `[${parts.join(",")}]`;
+}
+
+function canonicalNativeTerrainAssessment(assessment, context) {
+  // Only this evaluator's own complete records reach here. Reuse an exact
+  // property layout, never a guessed whitelist/schema subset. A future extra,
+  // missing or reordered field rebuilds the layout; published bytes still use
+  // the original lexical key order. The context is private to verified terrain.
+  const keys = Object.keys(assessment);
+  let layout = context.nativeAssessmentFieldLayout;
+  if (!layout || keys.length !== layout.keys.length
+    || keys.some((key, index) => key !== layout.keys[index])) {
+    layout = context.nativeAssessmentFieldLayout = {
+      keys, orderedKeys: [...keys].sort(),
+    };
+  }
+  const ordered = {};
+  for (const key of layout.orderedKeys) {
+    const value = assessment[key];
+    if (value === undefined) continue;
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        if (typeof entry !== "string") return canonicalStarcraftTmgJson(assessment);
+      }
+    } else if (value !== null && typeof value !== "string"
+      && typeof value !== "boolean"
+      && !(typeof value === "number" && Number.isFinite(value))) {
+      // Non-flat/exceptional fields retain the complete original normalizer,
+      // including exact diagnostic paths. No public record populates this seam.
+      return canonicalStarcraftTmgJson(assessment);
+    }
+    ordered[key] = value;
+  }
+  return JSON.stringify(ordered);
+}
+
+function sealNativeTerrainLineOfSightResult(body, context) {
+  // Only the evaluator's actual immutable records can reuse their exact bytes.
+  // No external hash/frozen flag can populate this private native text cache.
+  const assessmentTexts = body.assessments.map(entry => {
+    const prior = NATIVE_ASSESSMENT_JSON.get(entry);
+    if (prior !== undefined) return prior;
+    const text = canonicalNativeTerrainAssessment(entry, context);
+    freezeDeep(entry);
+    NATIVE_ASSESSMENT_JSON.set(entry, text);
+    return text;
+  });
+  // All current assessments remain present. Reuse only exact prefix bytes in
+  // the same privately prepared terrain context, never a visibility verdict.
+  const prefix = (context.nativeAssessmentPrefixDigest ||=
+    createNativeAssessmentPrefixDigestV1(STARCRAFT_TMG_HASH_ALGORITHM))
+    .digest(assessmentTexts);
+  const assessmentText = prefix.text;
+  const digest = prefix.digest;
+  let separator = ",";
+  // Native result roots have fixed named non-index keys. These are the exact
+  // canonical root bytes; no change to generic hashing or result contracts.
+  for (const key of Object.keys(body).sort()) {
+    if (body[key] === undefined || key === "assessments") continue;
+    digest.update(`${separator}${JSON.stringify(key)}:`)
+      .update(canonicalStarcraftTmgJson(body[key]));
+    separator = ",";
+  }
+  digest.update("}");
+  const result = freezeDeep({ ...body, resultHash: digest.digest("hex") });
+  NATIVE_ASSESSMENT_ARRAY_JSON.set(result.assessments, assessmentText);
+  return result;
 }
 function point(value, code = "TERRAIN_LOS_POINT_INVALID", detail = "") {
   const xMilliInches = Number(value?.xMilliInches);
@@ -75,6 +173,7 @@ function terrainBody(terrain) {
   return { schema: terrain.schema, id: terrain.id,
     terrainKind: terrain.terrainKind, size: terrain.size,
     footprint: terrain.footprint,
+    ...(terrain.footprintCells ? { footprintCells: terrain.footprintCells } : {}),
     standableHorizontalSurface: terrain.standableHorizontalSurface,
     setupAgreement: terrain.setupAgreement,
     rulesTruth: terrain.rulesTruth, trainingTruth: terrain.trainingTruth };
@@ -83,6 +182,7 @@ function agreementBody(agreement) {
   return { schema: agreement.schema,
     footprintAgreed: agreement.footprintAgreed,
     footprintHash: agreement.footprintHash,
+    ...(agreement.footprintCellsHash ? { footprintCellsHash: agreement.footprintCellsHash } : {}),
     openingDenominatorComplete: agreement.openingDenominatorComplete,
     openings: agreement.openings,
     agreedDuringBattlefieldSetup: agreement.agreedDuringBattlefieldSetup,
@@ -123,6 +223,14 @@ function verifyTerrain(raw) {
   }
   const footprint = rectangle(raw.footprint,
     "TERRAIN_LOS_TERRAIN_FOOTPRINT_INVALID", terrainId);
+  const footprintCells = raw.footprintCells === undefined ? undefined
+    : normalizeOfficialRectangleUnionFootprintCellsV1(raw.footprintCells, footprint);
+  if (footprintCells && (terrainKind !== "ramp"
+    || JSON.stringify(footprintCells) !== JSON.stringify(raw.footprintCells)
+    || raw.setupAgreement.footprintCellsHash !== hashStarcraftTmgContract(footprintCells))
+    || !footprintCells && raw.setupAgreement.footprintCellsHash !== undefined) {
+    fail("TERRAIN_LOS_UNION_PROFILE_INVALID", terrainId);
+  }
   if (raw.setupAgreement.footprintHash !== hashStarcraftTmgContract(footprint)
     || !Array.isArray(raw.setupAgreement.openings)) {
     fail("TERRAIN_LOS_SETUP_AGREEMENT_INVALID", terrainId);
@@ -134,6 +242,7 @@ function verifyTerrain(raw) {
     fail("TERRAIN_LOS_OPENING_ID_DUPLICATE", terrainId);
   }
   return { terrainId, terrainKind, size, footprint, openings,
+    ...(footprintCells ? { footprintCells } : {}),
     standableHorizontalSurface: raw.standableHorizontalSurface === true,
     terrainHash: raw.terrainHash };
 }
@@ -141,6 +250,8 @@ function verifyTerrain(raw) {
 export function createOfficialTerrainPieceV1(input = {}) {
   const footprint = rectangle(input.footprint,
     "TERRAIN_LOS_TERRAIN_FOOTPRINT_INVALID", String(input.id || ""));
+  const footprintCells = input.footprintCells === undefined ? undefined
+    : normalizeOfficialRectangleUnionFootprintCellsV1(input.footprintCells, footprint);
   const openings = (input.openings || []).map((entry) => ({
     openingId: String(entry.openingId || "").trim(),
     footprint: rectangle(entry.footprint,
@@ -151,6 +262,7 @@ export function createOfficialTerrainPieceV1(input = {}) {
   const agreementBodyValue = {
     schema: "starcraft_tmg_terrain_setup_agreement_v1",
     footprintAgreed: true, footprintHash: hashStarcraftTmgContract(footprint),
+    ...(footprintCells ? { footprintCellsHash: hashStarcraftTmgContract(footprintCells) } : {}),
     openingDenominatorComplete: true, openings,
     agreedDuringBattlefieldSetup: true, trainingTruth: false,
   };
@@ -161,6 +273,7 @@ export function createOfficialTerrainPieceV1(input = {}) {
     id: String(input.id || "").trim(),
     terrainKind: String(input.terrainKind || "ordinary").toLowerCase(),
     size: Number(input.size), footprint,
+    ...(footprintCells ? { footprintCells } : {}),
     standableHorizontalSurface: input.standableHorizontalSurface === true,
     setupAgreement, rulesTruth: "official_core_terrain_setup_agreement",
     trainingTruth: false,
@@ -597,7 +710,7 @@ function missionMarkerTarget(state, markerInput) {
   };
 }
 
-function evaluateTerrainLineOfSight(state, attacker, target, options = {}) {
+function prepareTerrainLineOfSight(state, options = {}) {
   const excludedTerrainIds = new Set(options.excludedTerrainIds || []);
   const terrain = (state.board?.terrain || []).filter((entry) => (
     entry?.isRemoved !== true && !excludedTerrainIds.has(entry.id)
@@ -608,10 +721,70 @@ function evaluateTerrainLineOfSight(state, attacker, target, options = {}) {
       ["grass", "impassable", "ramp"].includes(entry.terrainKind)
     )).terrainId);
   }
+  return { excludedTerrainIds, terrain, proximityByModel: new WeakMap(),
+    distantAssessmentByTerrain: new WeakMap() };
+}
+
+function withinOneInchOfTerrain(model, bounds, terrain) {
+  const rect = terrain.footprint;
+  const dx = Math.max(0, rect.minXMilliInches - bounds.maxX,
+    bounds.minX - rect.maxXMilliInches);
+  const dy = Math.max(0, rect.minYMilliInches - bounds.maxY,
+    bounds.minY - rect.maxYMilliInches);
+  // Bounding boxes enclose complete bases. A gap beyond the threshold is
+  // an exact negative proof; near cases still use the original base kernel.
+  return Math.hypot(dx, dy) <= INCH + TOLERANCE
+    && baseEdgeToTerrain(model, terrain) <= INCH + TOLERANCE;
+}
+
+function preparedTerrainProximity(model, bounds, terrain, context) {
+  // This context belongs to one synchronous LOS batch. Model and terrain
+  // objects are privately prepared for that batch, never reused across states.
+  const cache = context.proximityByModel;
+  let entries = cache.get(model);
+  if (!entries) {
+    entries = new Map();
+    cache.set(model, entries);
+  }
+  if (entries.has(terrain)) return entries.get(terrain);
+  const near = withinOneInchOfTerrain(model, bounds, terrain);
+  entries.set(terrain, near);
+  return near;
+}
+
+function evaluateTerrainLineOfSight(state, attacker, target, options = {},
+  preparedContext = null) {
+  const context = preparedContext || prepareTerrainLineOfSight(state, options);
+  const { excludedTerrainIds, terrain } = context;
   const modelDistance = modelEdgeDistance(attacker, target);
+  const attackerBounds = footprintBounds(attacker.footprint);
+  const targetBounds = footprintBounds(target.footprint);
+  const pairBounds = {
+    minX: Math.min(attackerBounds.minX, targetBounds.minX),
+    maxX: Math.max(attackerBounds.maxX, targetBounds.maxX),
+    minY: Math.min(attackerBounds.minY, targetBounds.minY),
+    maxY: Math.max(attackerBounds.maxY, targetBounds.maxY),
+  };
   const assessments = terrain.map((entry) => {
-    const attackerNear = baseEdgeToTerrain(attacker, entry) <= INCH + TOLERANCE;
-    const targetNear = baseEdgeToTerrain(target, entry) <= INCH + TOLERANCE;
+    // A separating coordinate outside the COMPLETE pair-base bounds expanded
+    // by one inch proves both proximity tests false and every connecting base
+    // segment clear. No declared support may be hidden by this proof. Preserve
+    // every assessment row; reuse only the immutable native record for the same
+    // verified terrain in this private context, never omit a distant terrain.
+    const margin = INCH + TOLERANCE;
+    const distant = !attacker.supportTerrainIds.includes(entry.terrainId)
+      && !target.supportTerrainIds.includes(entry.terrainId)
+      && (entry.footprint.minXMilliInches > pairBounds.maxX + margin
+        || entry.footprint.maxXMilliInches < pairBounds.minX - margin
+        || entry.footprint.minYMilliInches > pairBounds.maxY + margin
+        || entry.footprint.maxYMilliInches < pairBounds.minY - margin);
+    if (distant && context.distantAssessmentByTerrain.has(entry)) {
+      return context.distantAssessmentByTerrain.get(entry);
+    }
+    const attackerNear = preparedTerrainProximity(attacker, attackerBounds, entry,
+      context);
+    const targetNear = preparedTerrainProximity(target, targetBounds, entry,
+      context);
     const closeQuarters = attackerNear && targetNear
       && modelDistance <= CLOSE_QUARTERS_RANGE + TOLERANCE;
     const attackerSupported = attacker.supportTerrainIds.includes(entry.terrainId);
@@ -624,10 +797,17 @@ function evaluateTerrainLineOfSight(state, attacker, target, options = {}) {
     const elevationDeadZoneBlocks = highToGround && !closeQuarters;
     const topDownSurfaceExcluded = entry.standableHorizontalSurface
       && (attackerSupported || targetSupported);
-    let rawBarrierProof = topDownSurfaceExcluded ? null
+    const outsideAllBaseConnectingSegments = entry.footprint.minXMilliInches
+      > pairBounds.maxX + TOLERANCE
+      || entry.footprint.maxXMilliInches < pairBounds.minX - TOLERANCE
+      || entry.footprint.minYMilliInches > pairBounds.maxY + TOLERANCE
+      || entry.footprint.maxYMilliInches < pairBounds.minY - TOLERANCE;
+    let rawBarrierProof = topDownSurfaceExcluded
+      || outsideAllBaseConnectingSegments ? null
       : completeBarrier(attacker, target, entry);
     let visibilityWitness = topDownSurfaceExcluded
       ? "supported_horizontal_surface_excluded"
+      : outsideAllBaseConnectingSegments ? "center_to_center_clear"
       : rawBarrierProof ? null : directVisibilityWitness(attacker, target, entry);
     if (entry.size >= 1 && !rawBarrierProof && !visibilityWitness
       && !entry.openings.some((opening) => opening.lineOfSightOpenAgreed)) {
@@ -666,7 +846,7 @@ function evaluateTerrainLineOfSight(state, attacker, target, options = {}) {
       && entry.size >= targetSize;
     const directCoverBlocks = !closeQuarters
       && (attackerDirectCover || targetDirectCover);
-    return { terrainId: entry.terrainId, terrainSize: entry.size,
+    const assessment = { terrainId: entry.terrainId, terrainSize: entry.size,
       blockingTerrain: entry.size >= 1, rawBarrierProof, visibilityWitness,
       topDownSurfaceExcluded, openSightOpeningIds,
       defaultAperturesBlockLineOfSight: entry.openings.some((opening) => (
@@ -678,6 +858,8 @@ function evaluateTerrainLineOfSight(state, attacker, target, options = {}) {
       fullCoverBlocks, attackerDirectCover, targetDirectCover,
       directCoverBlocks, elevationDeadZoneBlocks,
       blocksLineOfSight: fullCoverBlocks || directCoverBlocks || elevationDeadZoneBlocks };
+    if (distant) context.distantAssessmentByTerrain.set(entry, freezeDeep(assessment));
+    return assessment;
   });
   const blockers = assessments.filter((entry) => entry.blocksLineOfSight)
     .map((entry) => entry.terrainId);
@@ -695,7 +877,7 @@ function evaluateTerrainLineOfSight(state, attacker, target, options = {}) {
     lineOfSightStatus: blockers.length === 0 ? "visible" : "blocked_by_one_qualifying_terrain",
     deferredTerrainKinds: ["grass", "impassable", "ramp"],
     productionQuarantined: true, trainingTruth: false };
-  return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
+  return sealNativeTerrainLineOfSightResult(body, context);
 }
 
 export function evaluateOfficialTerrainLineOfSightV1(input = {}) {
@@ -703,6 +885,133 @@ export function evaluateOfficialTerrainLineOfSightV1(input = {}) {
   const attacker = physicalModel(input.attacker, input.attackerModelId, input.dataBundle);
   const target = physicalModel(input.target, input.targetModelId, input.dataBundle);
   return evaluateTerrainLineOfSight(state, attacker, target);
+}
+
+// The prepared terrain never escapes this synchronous batch. It is not
+// cached across states/revisions, and every pair retains every assessment.
+function prepareTerrainLineOfSightBatch(input, preparedContext = null) {
+  if (!Array.isArray(input.queries) || input.queries.length === 0) {
+    fail("TERRAIN_LOS_BATCH_INVALID");
+  }
+  const context = preparedContext || prepareTerrainLineOfSight(input.state);
+  const modelsByPiece = new WeakMap();
+  const modelFor = (piece, modelId) => {
+    if (!object(piece)) return physicalModel(piece, modelId, input.dataBundle);
+    // Key by the actual piece object, not its public id: distinct/corrupt input
+    // objects must still be checked even when they claim the same identity.
+    let models = modelsByPiece.get(piece);
+    if (!models) {
+      models = new Map();
+      modelsByPiece.set(piece, models);
+    }
+    if (models.has(modelId)) return models.get(modelId);
+    const model = physicalModel(piece, modelId, input.dataBundle);
+    models.set(modelId, model);
+    return model;
+  };
+  return { context, modelFor };
+}
+
+function createTerrainLineOfSightBatchEvaluator(input, isolatePairFailures,
+  preparedContext = null) {
+  const { context, modelFor } = prepareTerrainLineOfSightBatch(input, preparedContext);
+  const evaluate = (query) => {
+    const attacker = modelFor(query.attacker, query.attackerModelId);
+    const target = modelFor(query.target, query.targetModelId);
+    return evaluateTerrainLineOfSight(input.state, attacker, target, {}, context);
+  };
+  return query => {
+    if (!isolatePairFailures) return evaluate(query);
+    try {
+      return Object.freeze({ result: evaluate(query), failure: null });
+    } catch (error) {
+      // Context validation above remains fatal. A pair-specific geometry
+      // limitation is unknown for that pair, not invalidity of its siblings.
+      return Object.freeze({ result: null,
+        failure: String(error?.message || error).split(":")[0] });
+    }
+  };
+}
+
+function evaluateTerrainLineOfSightBatch(input, isolatePairFailures,
+  preparedContext = null) {
+  const evaluate = createTerrainLineOfSightBatchEvaluator(input, isolatePairFailures,
+    preparedContext);
+  return Object.freeze(input.queries.map(evaluate));
+}
+
+// Internal native streaming boundary: same verified context, same model cache,
+// same complete per-pair result/failure, without retaining every assessment tree.
+export function visitNativeOfficialTerrainLosOutcomesV1(input, visit) {
+  const evaluate = createTerrainLineOfSightBatchEvaluator(input, true);
+  for (const [index, query] of input.queries.entries()) visit(evaluate(query), index);
+}
+
+// Input validation only. This produces NO visibility or cover verdict and
+// cannot certify an attack. It shares the evaluator's original preparation.
+function verifyTerrainLineOfSightBatchInputs(input, preparedContext = null) {
+  const { modelFor } = prepareTerrainLineOfSightBatch(input, preparedContext);
+  for (const query of input.queries) {
+    const attacker = modelFor(query.attacker, query.attackerModelId);
+    const target = modelFor(query.target, query.targetModelId);
+    modelEdgeDistance(attacker, target);
+    footprintBounds(attacker.footprint);
+    footprintBounds(target.footprint);
+  }
+  return Object.freeze({ inputsValidated: true, queryCount: input.queries.length });
+}
+
+export function verifyOfficialTerrainLineOfSightBatchInputsV1(input = {}) {
+  return verifyTerrainLineOfSightBatchInputs(input);
+}
+
+export function evaluateOfficialTerrainLineOfSightBatchV1(input = {}) {
+  return evaluateTerrainLineOfSightBatch(input, false);
+}
+
+export function evaluateOfficialTerrainLineOfSightBatchOutcomesV1(input = {}) {
+  return evaluateTerrainLineOfSightBatch(input, true);
+}
+
+// Own the complete source/map, not an externally supplied "already verified"
+// flag. Only this immutable snapshot can reuse its terrain preparation. Incoming
+// queries still get fresh copies and all model/base checks on every operation.
+export function createOfficialTerrainLineOfSightBatchV1(input = {}) {
+  const snapshot = freezeDeep(structuredClone({ state: input.state,
+    dataBundle: input.dataBundle }));
+  let context = null;
+  const prepare = queries => {
+    if (!Array.isArray(queries) || queries.length === 0) {
+      fail("TERRAIN_LOS_BATCH_INVALID");
+    }
+    const request = { ...snapshot, queries: structuredClone(queries) };
+    context ||= prepareTerrainLineOfSight(snapshot.state);
+    return request;
+  };
+  return Object.freeze({
+    verifyInputs(queries) {
+      const request = prepare(queries);
+      return verifyTerrainLineOfSightBatchInputs(request, context);
+    },
+    evaluate(queries) {
+      const request = prepare(queries);
+      return evaluateTerrainLineOfSightBatch(request, false, context);
+    },
+    // Keep the copied queries and model cache private. The elevated consumer
+    // can finish one complete native result before allocating the next tree.
+    prepareEvaluation(queries) {
+      const request = prepare(queries);
+      const evaluate = createTerrainLineOfSightBatchEvaluator(request, false, context);
+      return Object.freeze({
+        evaluateAt(index) {
+          if (!Number.isSafeInteger(index) || index < 0 || index >= request.queries.length) {
+            fail("TERRAIN_LOS_BATCH_INDEX_INVALID");
+          }
+          return evaluate(request.queries[index]);
+        },
+      });
+    },
+  });
 }
 
 export function evaluateOfficialTerrainLineOfSightToMissionMarkerV1(input = {}) {
@@ -722,6 +1031,109 @@ export function evaluateOfficialTerrainLineOfSightToMissionMarkerV1(input = {}) 
   }
   return evaluateTerrainLineOfSight(state, attacker, target, {
     excludedTerrainIds,
+  });
+}
+
+// One synchronous marker-control calculation owns all prepared objects. Different
+// support exclusions keep independent contexts: a row excluded by the scalar
+// must not be newly validated, while another query may still need that row.
+function evaluateTerrainLineOfSightToMissionMarkerBatch(input, projectResult, owned = null) {
+  if (!Array.isArray(input.queries) || input.queries.length === 0) {
+    fail("TERRAIN_LOS_BATCH_INVALID");
+  }
+  const state = input.state;
+  const modelsByPiece = new WeakMap();
+  const targetsByMarker = owned?.targetsByMarker || new WeakMap();
+  const contextsByExclusions = owned?.contextsByExclusions || new Map();
+  const availableTerrainIds = owned?.availableTerrainIds
+    || new Set((state.board?.terrain || []).map(entry => entry.id));
+  const modelFor = (piece, modelId, effectiveSize) => {
+    let models = object(piece) ? modelsByPiece.get(piece) : null;
+    if (!models) {
+      models = new Map();
+      if (object(piece)) modelsByPiece.set(piece, models);
+    }
+    let entry = models.get(modelId);
+    if (!entry) {
+      entry = { physical: physicalModel(piece, modelId, input.dataBundle), sizes: new Map() };
+      models.set(modelId, entry);
+    }
+    const size = Number(effectiveSize);
+    if (!Number.isSafeInteger(size) || size < entry.physical.printedSize) {
+      fail("TERRAIN_LOS_ATTACKER_EFFECTIVE_SIZE_INVALID", String(modelId || ""));
+    }
+    if (!entry.sizes.has(size)) entry.sizes.set(size, { ...entry.physical, effectiveSize: size });
+    return entry.sizes.get(size);
+  };
+  return Object.freeze(input.queries.map(query => {
+    const attacker = modelFor(query.attacker, query.attackerModelId,
+      query.attackerEffectiveSize);
+    let target = object(query.marker) ? targetsByMarker.get(query.marker) : null;
+    if (!target) {
+      target = missionMarkerTarget(state, query.marker);
+      targetsByMarker.set(query.marker, target);
+    }
+    const excludedTerrainIds = [...new Set((query.excludedTerrainIds || []).map(String))];
+    if (excludedTerrainIds.some(id => !availableTerrainIds.has(id))) {
+      fail("TERRAIN_LOS_EXCLUDED_TERRAIN_INVALID");
+    }
+    const key = JSON.stringify([...excludedTerrainIds].sort());
+    let context = contextsByExclusions.get(key);
+    if (!context) {
+      context = prepareTerrainLineOfSight(state, { excludedTerrainIds });
+      contextsByExclusions.set(key, context);
+    }
+    // Model, profile, size, marker and exclusions above are still verified for
+    // every incoming query. Only this private fixed-map owner may reuse the
+    // projection of the exact complete derived physical inputs.
+    const geometryKey = owned ? canonicalStarcraftTmgJson({ attacker, target,
+      excludedTerrainIds: [...excludedTerrainIds].sort() }) : null;
+    if (owned?.visibilityByGeometry.has(geometryKey)) {
+      return owned.visibilityByGeometry.get(geometryKey);
+    }
+    const projection = projectResult(evaluateTerrainLineOfSight(state, attacker, target,
+      { excludedTerrainIds }, context));
+    if (owned) owned.visibilityByGeometry.set(geometryKey, projection);
+    return projection;
+  }));
+}
+
+export function evaluateOfficialTerrainLineOfSightToMissionMarkerBatchV1(input = {}) {
+  return evaluateTerrainLineOfSightToMissionMarkerBatch(input, result => result);
+}
+
+// Control needs visibility plus the ORIGINAL full-result hash, not all terrain
+// assessments alive at once. This folds the same complete evaluator, not a
+// shortcut that omits blockers, cover, exclusions or source validation.
+export function projectOfficialMissionMarkerVisibilityBatchV1(input = {}) {
+  return evaluateTerrainLineOfSightToMissionMarkerBatch(input, result => Object.freeze({
+    visible: result.visible, resultHash: result.resultHash,
+  }));
+}
+
+// An operation owns its complete map/source, not an external prepared flag.
+// Queries may change models; each one still passes the native physical checks.
+// Marker input must match the COMPLETE owned marker, not just its public ID.
+export function createOfficialMissionMarkerVisibilityBatchV1(input = {}) {
+  const snapshot = freezeDeep(structuredClone({ state: input.state,
+    dataBundle: input.dataBundle }));
+  const owned = { targetsByMarker: new WeakMap(), contextsByExclusions: new Map(),
+    availableTerrainIds: new Set((snapshot.state.board?.terrain || []).map(entry => entry.id)),
+    visibilityByGeometry: new Map() };
+  return Object.freeze({
+    project(queries) {
+      if (!Array.isArray(queries) || queries.length === 0) fail("TERRAIN_LOS_BATCH_INVALID");
+      const copied = structuredClone(queries);
+      for (const query of copied) {
+        const marker = snapshot.state.board?.missionMarkers?.find(entry => entry.id === query.marker?.id);
+        if (!marker || !isDeepStrictEqual(marker, query.marker)) {
+          fail("TERRAIN_LOS_MISSION_MARKER_INVALID", String(query.marker?.id || ""));
+        }
+        query.marker = marker;
+      }
+      return evaluateTerrainLineOfSightToMissionMarkerBatch({ ...snapshot, queries: copied },
+        result => Object.freeze({ visible: result.visible, resultHash: result.resultHash }), owned);
+    },
   });
 }
 

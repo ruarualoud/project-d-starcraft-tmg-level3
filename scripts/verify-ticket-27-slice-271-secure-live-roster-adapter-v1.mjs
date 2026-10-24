@@ -14,6 +14,7 @@ let closed = false;
 let credentialReference = null;
 let nextSendError = null;
 let nextOutput = null;
+let nextRawText = null;
 const profile = {
   providerProfileId: "test-roster-flash", version: "1",
   integrity: { hash: "a".repeat(64) }, provider: "test-provider",
@@ -42,6 +43,8 @@ const worker = {
     const output = nextOutput || { schemaVersion: "test.v1",
       roundKind: kind };
     nextOutput = null;
+    const text = nextRawText ?? JSON.stringify(output);
+    nextRawText = null;
     return {
       status: 200,
       payload: {
@@ -50,7 +53,7 @@ const worker = {
           total_tokens: 20 },
         output: [{ type: "message", role: "assistant",
           status: "completed", content: [{ type: "output_text",
-            text: JSON.stringify(output) }] }],
+            text }] }],
       },
       transportReceipt: { receiptHash: "b".repeat(64) },
       physicalAttempts: 1,
@@ -70,6 +73,77 @@ const secure = await createRosterPlanningSecureDeliberationFactoryV1({
 assert.equal(credentialReference.every((byte) => byte === 0), true);
 assert.equal(calls.length, 0, "attach must not call the Provider");
 assert.equal(secure.factory.availability().available, true);
+if (process.argv.includes("--parallel-busy-repro")) {
+  // Concrete Web repro: iterative selection and final review share this
+  // factory, but its physical Worker accepts only one pending request.
+  const originalSend = worker.send;
+  let pending = false;
+  let peakPending = 0;
+  worker.send = async (input) => {
+    if (pending) throw Object.assign(new Error("PROVIDER_WORKER_BUSY"), {
+      code: "PROVIDER_WORKER_BUSY",
+      safeReceipt: { requestDefinitelyNotSent: true,
+        requestMayHaveBeenSent: false, physicalAttempts: 0 },
+    });
+    pending = true;
+    peakPending = Math.max(peakPending, Number(pending));
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      return await originalSend(input);
+    } finally { pending = false; }
+  };
+  const round = (sessionId) => ({ sessionId, roundIndex: 1,
+    roundKind: "teach_challenge", promptPack: "parallel-busy-repro",
+    promptNodes: [], userMessage: "test", responseContract: {},
+    contextHash: "c".repeat(64), maxOutputUnits: 16_384,
+    responseFormat: {
+      kind: "provider_strict_json_schema", schemaName: "test_round",
+      outputContractRef: { id: "test", version: "1", hash: "d".repeat(64) },
+      schema: { type: "object", additionalProperties: false,
+        properties: {
+          schemaVersion: { type: "string", minLength: 7,
+            maxLength: 7, enum: ["test.v1"] },
+          roundKind: { type: "string", minLength: 15,
+            maxLength: 15, enum: ["teach_challenge"] },
+        }, required: ["schemaVersion", "roundKind"] },
+    },
+  });
+  const first = await secure.factory.createForRun({ sessionId: "selecting",
+    runKind: "iterative", onEvent: (event) => events.push(event) });
+  const second = await secure.factory.createForRun({ sessionId: "reviewing",
+    runKind: "review", onEvent: (event) => events.push(event) });
+  const results = await Promise.allSettled([
+    first.deliberate(round("selecting")),
+    second.deliberate(round("reviewing")),
+  ]);
+  assert.deepEqual(results.map((result) => result.status),
+    ["fulfilled", "fulfilled"],
+    "normal concurrent jobs must queue, not fail before Provider send");
+  assert.equal(calls.length, 2);
+  assert.equal(new Set(calls.map((call) => call.requestId)).size, 2);
+  let pause = false;
+  const queuedPause = await secure.factory.createForRun({
+    sessionId: "queued-pause", runKind: "review",
+    control: { paused: () => pause },
+    onEvent: (event) => events.push(event),
+  });
+  const inFlight = first.deliberate(round("selecting"));
+  const stopped = queuedPause.deliberate(round("queued-pause"));
+  pause = true;
+  await inFlight;
+  await assert.rejects(() => stopped,
+    (error) => error.code === "ROSTER_WORKSPACE_PAUSED");
+  assert.equal(calls.length, 3, "queued pause never sends");
+  await second.deliberate(round("reviewing"));
+  assert.equal(calls.length, 4, "queue releases after a stop");
+  assert.equal(peakPending, 1);
+  await secure.close();
+  console.log(JSON.stringify({ status: "passed", providerCalls: 0,
+    fakeWorkerCalls: calls.length, maxPhysicalPending: peakPending,
+    bothConcurrentJobsCompleted: true, queuedPauseNotSent: true,
+    queueReleasedAfterStop: true, credentialZeroed: true }));
+  process.exit(0);
+}
 const port = await secure.factory.createForRun({
   sessionId: "test-session", runKind: "initial",
   control: { cancelled: () => false },
@@ -133,6 +207,14 @@ const rawAlias = await port.deliberate(request);
 assert.equal(rawAlias.output.unexpectedPublicAlias, "test");
 assert.equal(events.at(-1).sanitizedOutputRecord
   .transportSchemaIssues.length, 1);
+nextRawText = '{"schemaVersion":"test.v1","roundKind":["teach_challenge"}';
+await assert.rejects(() => port.deliberate(request),
+  (error) => error.code === "ROSTER_WORKSPACE_OUTPUT_UNPARSEABLE");
+assert.equal(events.at(-1).type, "round_failed");
+assert.equal(events.at(-1).failedOutputRecord.rawText,
+  '{"schemaVersion":"test.v1","roundKind":["teach_challenge"}');
+assert.equal(events.at(-1).failedOutputRecord.transportReceiptHash,
+  "b".repeat(64));
 for (const [receipt, expected] of [
   [{ status: 403, requestMayHaveBeenSent: true },
     "ROSTER_WORKSPACE_PROVIDER_AUTH_STOP"],

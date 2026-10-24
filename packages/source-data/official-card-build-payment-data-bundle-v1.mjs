@@ -1,5 +1,6 @@
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { types } from "node:util";
 import {
   OFFICIAL_DEVELOPMENT_TRANCHE_DATASET_HASH,
   OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH,
@@ -12,6 +13,9 @@ export const OFFICIAL_CARD_BUILD_PAYMENT_CORE_RULEBOOK_HASH =
   "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54";
 
 const SLOT_KEYS = Object.freeze(["Air", "Core", "Elite", "Hero", "Support"]);
+// Only complete successfully verified immutable JSON trees can retain source
+// verification. A hash/id, shallow freeze, accessor or Proxy is not ownership.
+const VERIFIED_IMMUTABLE_BUNDLES = new WeakSet();
 const RACES = new Set(["Protoss", "Terran", "Zerg"]);
 const RESOURCE_BY_RACE = Object.freeze({ Protoss: "PE", Terran: "CP", Zerg: "BM" });
 const RULE_RECORDS = Object.freeze([
@@ -67,6 +71,23 @@ function freezeDeep(value) {
   if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
   for (const child of Object.values(value)) freezeDeep(child);
   return Object.freeze(value);
+}
+function immutableJsonTree(value, seen = new WeakSet()) {
+  if (value === null || typeof value !== "object") {
+    return value === null || value === undefined
+      || ["string", "number", "boolean"].includes(typeof value);
+  }
+  if (types.isProxy(value) || !Object.isFrozen(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== Array.prototype
+    && prototype !== null) return false;
+  if (seen.has(value)) return true;
+  seen.add(value);
+  return Reflect.ownKeys(value).every((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return descriptor && Object.hasOwn(descriptor, "value")
+      && immutableJsonTree(descriptor.value, seen);
+  });
 }
 function uniqueStrings(values) {
   return [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))];
@@ -212,6 +233,7 @@ export function createOfficialCardBuildPaymentDataBundleV1(input = {}) {
 }
 
 export function verifyOfficialCardBuildPaymentDataBundleV1(bundle) {
+  if (VERIFIED_IMMUTABLE_BUNDLES.has(bundle)) return true;
   if (!object(bundle) || bundle.schema !== OFFICIAL_CARD_BUILD_PAYMENT_DATA_BUNDLE_SCHEMA
     || bundle.sourceLockHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SOURCE_LOCK_HASH
     || bundle.sourceSnapshotHash !== OFFICIAL_DEVELOPMENT_TRANCHE_SNAPSHOT_HASH
@@ -251,6 +273,7 @@ export function verifyOfficialCardBuildPaymentDataBundleV1(bundle) {
       fail("CARD_BUILD_PAYMENT_RULE_RECORD_INVALID", expected.recordKey);
     }
   }
+  if (immutableJsonTree(bundle)) VERIFIED_IMMUTABLE_BUNDLES.add(bundle);
   return true;
 }
 

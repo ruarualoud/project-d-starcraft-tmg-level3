@@ -10,6 +10,8 @@ import {
 } from "./official-competitive-map-tabletop-adapter-v1.mjs";
 import { compileOfficialCompetitiveMapTwoLayerV1 } from
   "./official-competitive-map-two-layer-compiler-v1.mjs";
+import { createOfficialPremadeMapConfiguratorV1 } from
+  "./official-premade-map-configurator-v1.mjs";
 
 export const OFFICIAL_COMPETITIVE_MAP_CONFIGURATOR_V1_SCHEMA =
   "starcraft_tmg_official_competitive_map_configurator_v1";
@@ -89,22 +91,23 @@ function mapProjection(entry, gameEra, adapter) {
     runtimePixelInferenceAllowed: false,
   };
 }
-function catalogueBody(adapterCatalogue, broodWar, starcraft2) {
+function catalogueBody(adapterCatalogue, broodWar, starcraft2, premadeMaps) {
   const galleryRows = [
     ...broodWar.entries.map((entry) => ({ entry, gameEra: "brood_war" })),
     ...starcraft2.entries.map((entry) => ({ entry, gameEra: "starcraft_2" })),
   ];
-  const maps = galleryRows.map(({ entry, gameEra }) => mapProjection(entry,
+  const maps = [...premadeMaps, ...galleryRows.map(({ entry, gameEra }) => mapProjection(entry,
     gameEra, getOfficialCompetitiveMapTabletopAdapterV1(adapterCatalogue,
-      entry.seedId)));
+      entry.seedId)))];
   return {
     schema: OFFICIAL_COMPETITIVE_MAP_CONFIGURATOR_V1_SCHEMA,
-    version: "1.0.0",
+    version: "1.1.0",
     maps,
     counts: {
       total: maps.length,
       broodWar: maps.filter((entry) => entry.gameEra === "brood_war").length,
       starcraft2: maps.filter((entry) => entry.gameEra === "starcraft_2").length,
+      officialPremade: premadeMaps.length,
       roomReady: maps.filter((entry) => entry.formalTaskRoomEligible).length,
       previewOnly: maps.filter((entry) => !entry.formalTaskRoomEligible).length,
     },
@@ -114,6 +117,7 @@ function catalogueBody(adapterCatalogue, broodWar, starcraft2) {
       passageMode: ["preserve_source_clearance", "widen_all_current_bases"],
       artAndRulesIndependent: true,
       passageModeIsDisplayDisclosureOnly: true,
+      officialPremadeSetup: "explicit_attribute_edits_on_server_pinned_native_source",
     },
     roomFreezePolicy: {
       selectionMutableBeforeRoomCreation: true,
@@ -156,21 +160,31 @@ function previewProjection(compilation, catalogueMap) {
 }
 
 export function createOfficialCompetitiveMapConfiguratorV1(input = {}) {
+  const premade = createOfficialPremadeMapConfiguratorV1();
   const adapterCatalogue = input.adapterCatalogue
     || createOfficialCompetitiveMapTabletopAdapterCatalogueV1();
   const broodWar = input.broodWarGallery
     || createOfficialBroodWarMapGalleryV1({ adapterCatalogue });
   const starcraft2 = input.starcraft2Gallery
     || createOfficialStarcraft2MapGalleryV1({ adapterCatalogue });
-  const body = catalogueBody(adapterCatalogue, broodWar, starcraft2);
+  const body = catalogueBody(adapterCatalogue, broodWar, starcraft2, premade.readMaps());
   const catalogue = deepFreeze({ ...body,
     catalogueHash: hashStarcraftTmgContract(body) });
   const bySeedId = new Map(catalogue.maps.map((entry) => (
     [entry.seedId, entry])));
   return Object.freeze({
     readCatalogue() { return catalogue; },
+    prepareRoomConfiguration(raw, context = {}) {
+      const seedId = String(raw?.seedId || "").trim();
+      // Preserve the existing classic/default request exactly. This seam only
+      // composes newly selected official-native setup commands.
+      return premade.hasMap(seedId)
+        ? premade.prepareRoomConfiguration({ ...raw, seedId }, context) : raw;
+    },
     preview(raw = {}) {
       const seedId = String(raw.seedId || "").trim();
+      if (premade.hasMap(seedId)) return deepFreeze(premade.preview({ ...raw, seedId }));
+      if (raw.terrainSetup !== undefined) fail("COMPETITIVE_MAP_CONFIGURATOR_NATIVE_SETUP_NOT_APPLICABLE", seedId);
       const catalogueMap = bySeedId.get(seedId);
       if (!catalogueMap) fail("COMPETITIVE_MAP_CONFIGURATOR_SEED_UNKNOWN", seedId);
       const elementSelections = raw.elementSelections || [];

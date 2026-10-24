@@ -1,0 +1,54 @@
+// Reproduce the actual A nested JSON ambiguity at the shared compiler boundary.
+// Corrected variants below are explicit test inputs, never edits to model output.
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import {compileRosterWorkflowExperimentV1} from '../packages/roster-strategist/roster-workflow-laboratory-v1.mjs';
+const [directory,output]=process.argv.slice(2),copy=structuredClone;
+const ref='229c1249534041882bc1c3c4d11e023c8c08fa926ccc398db5ff642e07d19ac2';
+const sourcePath=`${directory}/artifacts/${ref}.json`,sourceText=await fs.readFile(sourcePath,'utf8');
+const source=JSON.parse(sourceText),original=source.value.failedWorkOrders[0].order;
+const scope={source:'test-source',rules:'test-rules',map:'test-map',army:'test-army',plan:'test-plan'};
+const compile=order=>compileRosterWorkflowExperimentV1({order,scope,namespace:'diagnostic-v921'});
+const errorOf=order=>{try{compile(order);}catch(error){return error;}throw Error('Expected compiler rejection');};
+const report={schema:'slice272_json_diagnostic_v921',sourceRef:ref,providerCalls:0,nativeCalls:0,productionWrites:0,steps:[]};
+try{
+  const e=errorOf(copy(original));
+  assert.equal(e.code,'ROSTER_WORKFLOW_TOOL_ARGUMENT_JSON_INVALID');
+  assert.equal(e.detail?.stepId,'s1','JSON rejection must identify the actual failing step');
+  assert.equal(e.detail.layer,'spatial_arguments_json');
+  assert.equal(e.detail.decodedPointer,'/argumentsJson');
+  assert.equal(e.detail.receivedType,'object');
+  assert.equal(e.detail.expectedEncoding,'json_string');
+  assert.equal(e.detail.preferredEncoding,'queryArguments_object');
+  assert.ok(e.detail.nativeInputContract.required.includes('unitId'));
+  assert.equal(e.dispatchOutcome,'not_dispatched');
+  report.steps.push('Actual A failure identifies inner object/string mismatch and exact Native contract, not guessed anchor errors');
+  const one=copy(original);one.steps=[one.steps[0]];one.completionStepId='s1';
+  const raw=JSON.parse(one.steps[0].argumentsJson),inner=raw.argumentsJson;
+  const {base,...queryArguments}=inner;
+  const typed={queryKind:raw.queryKind,base,queryArguments};
+  one.steps[0].argumentsJson=JSON.stringify(typed);
+  const good=compile(one);
+  const jobs=Array.isArray(good)?good:good.work??good.jobs;
+  assert.ok(Array.isArray(jobs));
+  const prepared=jobs.find(w=>w.inputs?.request?.value?.operation==='spatial');
+  assert.ok(prepared);
+  assert.deepEqual(prepared.inputs.request.value.args,typed,'No chosen parent/coordinates/unit changed by compiler');
+  report.steps.push('Explicitly corrected preparation step compiles with exact selected parent and Native values; no query executed');
+  const malformed=copy(one);malformed.steps[0].argumentsJson='{"unclosed"';
+  const outer=errorOf(malformed);
+  assert.equal(outer.detail.layer,'step_arguments_json');
+  assert.equal(outer.detail.decodedPointer,'');
+  assert.equal(outer.detail.receivedType,'string');
+  const misplaced=copy(one);misplaced.steps[0].argumentsJson=JSON.stringify({queryKind:raw.queryKind,queryArguments:inner});
+  const placement=errorOf(misplaced);
+  assert.equal(placement.code,'ROSTER_WORKFLOW_SPATIAL_ENVELOPE_INVALID','Type diagnostics must not silently switch the intended parent');
+  assert.ok(placement.detail.misplacedEnvelopeFields.includes('base'));
+  const invalid=copy(one);const invalidArgs=copy(typed);delete invalidArgs.queryArguments.unitId;
+  invalid.steps[0].argumentsJson=JSON.stringify(invalidArgs);
+  assert.equal(errorOf(invalid).code,'ROSTER_WORKFLOW_SPATIAL_ARGUMENT_CONTRACT');
+  report.steps.push('Malformed outer JSON, misplaced parent and missing Native field remain distinct rejections');
+  assert.equal(await fs.readFile(sourcePath,'utf8'),sourceText);
+  report.pass=true;
+}catch(error){report.pass=false;report.error=error.message;report.stack=error.stack.split('\n').slice(0,5);process.exitCode=1;}
+await fs.writeFile(output,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));

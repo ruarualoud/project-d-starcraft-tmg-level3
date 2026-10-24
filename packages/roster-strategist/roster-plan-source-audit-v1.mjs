@@ -5,7 +5,7 @@ import { hashStarcraftTmgContract } from
 
 export const ROSTER_PLAN_SOURCE_AUDIT_SCHEMA =
   "starcraft_tmg_roster_plan_source_audit_v1";
-export const ROSTER_PLAN_SOURCE_AUDIT_VERSION = "1.1.0";
+export const ROSTER_PLAN_SOURCE_AUDIT_VERSION = "1.2.0";
 
 function scheduleRows(values) {
   return Array.isArray(values) ? values.map((entry) => ({
@@ -36,17 +36,31 @@ export function auditRosterPlanVpReceiptsV1({ plan,
       || seen.has(receipt.receiptHash)
       || !routeText.includes(receipt.receiptHash)) continue;
     seen.add(receipt.receiptHash);
-    const receiptRows = scheduleRows(receipt.result?.deltas);
-    const matchesCurrentTarget = receipt.resultStatus === "ok"
-      && target.length > 0 && receiptRows.length === target.length
-      && target.every((entry, index) => (
-        entry.window === receiptRows[index].window
-          && entry.plannedCumulativeVp
-            === receiptRows[index].plannedCumulativeVp));
+    const inputRows = scheduleRows(receipt.result?.deltas);
+    const projectedRows = (receipt.result?.deltas || []).map((entry) => ({
+      window: entry.window,
+      projectedCumulativeVp: entry.projectedCumulativeVp ?? null,
+      projectionStatus: entry.projectionStatus ?? null,
+    }));
+    const targetByWindow = new Map(target.map((entry) => (
+      [entry.window, entry.plannedCumulativeVp])));
+    const inputWindows = new Set(inputRows.map((entry) => entry.window));
+    const missingTargetRows = target.filter((entry) => (
+      !inputWindows.has(entry.window)));
+    const inputScheduleMatchesCurrentTarget = receipt.resultStatus === "ok"
+      && target.length > 0 && inputRows.length > 0
+      && inputRows.every((entry) => targetByWindow.has(entry.window)
+        && targetByWindow.get(entry.window) === entry.plannedCumulativeVp)
+      && missingTargetRows.every((entry) => entry.plannedCumulativeVp === 0);
     citedMathReceipts.push({ receiptHash: receipt.receiptHash,
       resultStatus: receipt.resultStatus,
-      receiptRows,
-      matchesCurrentTarget,
+      inputRows, projectedRows,
+      inputScheduleMatchesCurrentTarget,
+      missingZeroTargetWindows: missingTargetRows.filter((entry) =>
+        entry.plannedCumulativeVp === 0).map((entry) => entry.window),
+      missingScoringTargetWindows: missingTargetRows.filter((entry) =>
+        entry.plannedCumulativeVp !== 0).map((entry) => entry.window),
+      projectionIsNotObservedScore: true,
       claimsCurrentValidation: claimsCurrentValidation(routeText,
         receipt.receiptHash) });
   }
@@ -56,9 +70,11 @@ export function auditRosterPlanVpReceiptsV1({ plan,
     targetVpSchedule: target,
     citedMathReceipts,
     staleCitationHashes: citedMathReceipts.filter((entry) => (
-      !entry.matchesCurrentTarget)).map((entry) => entry.receiptHash),
+      !entry.inputScheduleMatchesCurrentTarget)).map((entry) =>
+      entry.receiptHash),
     misappliedCitationHashes: citedMathReceipts.filter((entry) => (
-      !entry.matchesCurrentTarget && entry.claimsCurrentValidation))
+      !entry.inputScheduleMatchesCurrentTarget
+        && entry.claimsCurrentValidation))
       .map((entry) => entry.receiptHash),
     arithmeticDoesNotProveMarkerControl: true,
     planMutation: false,

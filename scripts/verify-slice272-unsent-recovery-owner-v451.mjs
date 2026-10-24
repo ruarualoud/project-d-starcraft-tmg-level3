@@ -1,0 +1,30 @@
+// Live274 exposed a real startup seam omitted by the earlier window-only gate.
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import * as capability from '../packages/roster-strategist/roster-teach-capability-guide-v1.mjs';
+const draft=JSON.parse(await fs.readFile(process.argv[2],'utf8'));
+const state=draft.teachFramework.state,pending=state.pendingModelCall;
+assert.equal(pending.kind,'teach_framework_synthesis_step');
+assert.equal(state.synthesisReader.status,'reading');
+assert.equal(state.investigation.completed,true);
+const resume=capability.resumeRosterTeachRepairedQuestionInvestigationV1;
+assert.equal(typeof resume,'function','Actual saved synthesis owner bypasses repaired-query feedback');
+const contextHash=pending.request.contextHash;
+const receipts={retainedPublicOutputs:draft.publicOutputs,retainedDispatches:draft.providerDispatches};
+assert(!receipts.retainedDispatches.some(row=>row.contextHash===contextHash));
+assert(!receipts.retainedPublicOutputs.some(row=>row.contextHash===contextHash));
+const originalReceipt=JSON.stringify(state.queryRecovery.operations[0].result);
+// A sent or paid downstream operation is consumed in place, not retired.
+assert.equal(resume({state,...receipts,retainedDispatches:[...receipts.retainedDispatches,{contextHash,status:'sent'}]}),false);
+assert.equal(state.pendingModelCall,pending);
+assert.equal(resume({state,...receipts,retainedPublicOutputs:[...receipts.retainedPublicOutputs,{contextHash}]}),false);
+assert.equal(state.pendingModelCall,pending);
+assert.equal(resume({state,...receipts}),true);
+assert.equal(state.pendingModelCall,undefined);
+assert.equal(state.investigation.completed,false);
+assert.equal(state.investigation.recoveryReplanHistory.at(-1).recoveryReceiptHashes[0],state.queryRecovery.operations[0].result.receiptHash);
+assert.equal(state.supersededUnsentModelCalls.at(-1).previousRequest.contextHash,contextHash);
+assert.equal(state.synthesisReader.status,'reading','Reader evidence must remain saved');
+assert.equal(resume({state,...receipts}),false);
+assert.equal(JSON.stringify(state.queryRecovery.operations[0].result),originalReceipt);
+console.log(JSON.stringify({ok:true,actualUnsentBoundary:274,unsentOwnerRetired:true,paidAndSentPreserved:true,oneContinuation:true,originalEvidencePreserved:true,providerCalls:0,nativeExecutions:0}));

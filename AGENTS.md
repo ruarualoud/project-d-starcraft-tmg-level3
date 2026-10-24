@@ -17,6 +17,21 @@
 
 ## Work isolation
 
+### Active roster/Plan/Teach mainline (user decision 2026-10-19)
+
+- Execute the seven P0–P6 deliverables in
+  `docs/ticket-27-slice-272-decision-workflow-subprojects-v1-2026-10-19.md`.
+  This is a long-running replacement workflow, not continuation of the old inquiry.
+- Use historical inputs/replies as read-only fixtures and comparison evidence.
+  Keep old production/A–F/games held until the new release gates pass.
+- Before each change, name the P item and failing acceptance criterion it serves.
+  Finish its implementation and usability proof, report it, then advance.
+- Completion requires real roster/Plan production, six capability proofs, the
+  Chinese step-by-step report, and starting the agreed battle experiments in that
+  order. Shape tests, mock transitions and reports alone do not complete a P item.
+- Only failures of this new workflow justify corrective work. Keep unrelated
+  historical defects in the backlog instead of resuming their old repair loops.
+
 - One GitHub Issue owns one branch, one worktree, one agent and one focused
   verification command. The slice manifest records all four.
 - Codex owns integration. Kimi Code works only in its assigned worktree and

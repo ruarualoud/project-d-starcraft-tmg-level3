@@ -82,6 +82,22 @@ function freezeDeep(value) {
   for (const child of Object.values(value)) freezeDeep(child);
   return Object.freeze(value);
 }
+// Only this producer's complete private snapshot can reuse its state hash.
+// A caller-provided label, decoded copy or frozen object is not provenance.
+const ownedInstantiationStateHashes = new WeakMap();
+export function createOwnedOfficialBattlefieldAssetInstantiationStateV1(input) {
+  if (!object(input)) fail("BATTLEFIELD_ASSET_OWNED_STATE_INVALID");
+  const state = freezeDeep(clone(input));
+  ownedInstantiationStateHashes.set(state, { hash: null });
+  return state;
+}
+function instantiationStateHash(state) {
+  const owned = ownedInstantiationStateHashes.get(state);
+  if (!owned) return hashStarcraftTmgContract(state);
+  // Remain lazy: invalid coordinates/payments fail at their original point.
+  owned.hash ??= hashStarcraftTmgContract(state);
+  return owned.hash;
+}
 function without(value, keys) {
   return Object.fromEntries(Object.entries(value).filter(([key]) => !keys.includes(key)));
 }
@@ -776,7 +792,7 @@ function instantiate(bundle, state, domain, parameters) {
     canonicalParameters: canonical.result, assetId,
     selectedChoice: canonical.choice ? clone(canonical.choice) : null,
     sourceRouteHash: route.routeHash,
-    stateHashBefore: hashStarcraftTmgContract(state),
+    stateHashBefore: instantiationStateHash(state),
     rulesTruth: "official_current_product_battlefield_asset_plan",
     trainingTruth: false,
   }, "planHash");

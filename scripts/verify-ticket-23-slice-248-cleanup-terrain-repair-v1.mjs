@@ -11,6 +11,75 @@ import { resolveOfficialMissionMarkerControlV2 } from
 import { createOfficialTerrainPieceV1 } from
   "../packages/rule-atoms/official-terrain-los-rules-kernel-v1.mjs";
 
+// Isolated regression for A r25: a completed job containing a fresh DNS
+// transport pause must not consume the unknown-stall budget. No terrain gate
+// or previously passed room verification is run in this mode.
+const dnsMode = process.argv.indexOf("--dns-pause-only");
+if (dnsMode >= 0) {
+  const capturePath = process.argv[dnsMode + 1];
+  const reportPath = process.argv[dnsMode + 2];
+  assert(capturePath && reportPath, "DNS capture and report paths required");
+  const raw = await readFile(capturePath, "utf8");
+  const captured = JSON.parse(raw);
+  const { advanceCompletedDriveProgressV1 } = await import(
+    "../packages/online-agent-session/completed-drive-progress-v1.mjs");
+  let tracked = { ...captured.previous };
+  for (let i = 1; i <= 3; i += 1) {
+    tracked = advanceCompletedDriveProgressV1(tracked, captured.current);
+    assert.equal(tracked.noProgressCompletions, 0,
+      "fresh DNS pauses are not unknown engine stalls");
+    assert(tracked.retryAfterMs >= 5_000 && tracked.retryAfterMs <= 60_000,
+      "DNS retry must back off instead of rapid re-submission");
+  }
+  const unknown = { ...captured.current, driveJob: null };
+  let stalled = { ...captured.previous };
+  for (let i = 0; i < 2; i += 1) {
+    stalled = advanceCompletedDriveProgressV1(stalled, unknown);
+  }
+  assert.throws(() => advanceCompletedDriveProgressV1(stalled, unknown),
+    /SLICE248_COMPLETED_DRIVES_WITHOUT_PROGRESS/);
+  const stale = structuredClone(captured.current);
+  stale.driveJob.requestedAt = stale.driveJob.completedAt;
+  assert.equal(advanceCompletedDriveProgressV1(captured.previous, stale)
+    .noProgressCompletions, 1, "old DNS history must not conceal a later stall");
+  const mixed = structuredClone(captured.current);
+  mixed.driveJob.result.failureAccounting.findings.push({
+    code: "RULES_ACTION_ILLEGAL", severity: "High", integrationBlocking: true,
+    stateRevision: captured.current.stateRevision,
+    occurredAt: mixed.driveJob.completedAt,
+  });
+  assert.equal(advanceCompletedDriveProgressV1(captured.previous, mixed)
+    .noProgressCompletions, 1, "DNS must not waive a simultaneous Rules failure");
+  const auth = structuredClone(captured.current);
+  auth.driveJob.result.failureAccounting.findings = [{
+    code: "provider_authentication_failed", severity: "High",
+    integrationBlocking: true, stateRevision: captured.current.stateRevision,
+    occurredAt: auth.driveJob.completedAt,
+  }];
+  assert.equal(advanceCompletedDriveProgressV1(captured.previous, auth)
+    .noProgressCompletions, 1, "credentials are not a transport retry");
+  const advanced = advanceCompletedDriveProgressV1(tracked, {
+    stateRevision: captured.current.stateRevision + 1,
+    actionCount: captured.current.actionCount + 1,
+  });
+  assert.equal(advanced.noProgressCompletions, 0);
+  assert.equal(advanced.retryAfterMs, 0);
+  assert.equal(await readFile(capturePath, "utf8"), raw);
+  const runner = await readFile(new URL(
+    "./run-ticket-23-slice-248-agent-agent-web-v1.mjs", import.meta.url), "utf8");
+  assert.match(runner, /driveJob: current\.driveJob/u);
+  assert.match(runner, /sleep\(completedDriveProgress\.retryAfterMs\)/u);
+  const report = { schema: "ticket23_completed_dns_pause_regression_v1",
+    ok: true, stateRevision: captured.current.stateRevision,
+    freshDnsBackoff: true, staleHistoryRejected: true,
+    unknownStallStillStopsAt: 3, rulesAndAuthNotWaived: true,
+    providerCalls: 0, roomMutations: 0, trainingTruth: false };
+  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`,
+    { mode: 0o600 });
+  console.log(JSON.stringify(report));
+  process.exit(0);
+}
+
 const directory = process.argv.find((arg) => arg.startsWith("--run-directory="))
   ?.slice("--run-directory=".length);
 assert(directory, "--run-directory required");

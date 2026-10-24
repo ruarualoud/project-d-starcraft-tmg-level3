@@ -14,6 +14,9 @@ import { createIterativeRosterPlanSessionV1 } from
   "./iterative-roster-plan-session-v1.mjs";
 import { createIterativeRosterToolPortV1 } from
   "./iterative-roster-tool-port-v1.mjs";
+import { prepareIterativeRosterTeachHandoffV1 } from
+  "./iterative-roster-teach-handoff-v1.mjs";
+import { createIterativeRosterDraftTeachV1 } from './iterative-roster-draft-teach-v1.mjs';
 
 export const ITERATIVE_ROSTER_PRODUCT_PORT_V1 =
   "starcraft_tmg_iterative_roster_product_port_v1";
@@ -24,13 +27,16 @@ function fail(code) {
 
 export function createIterativeRosterProductPortV1({ directory,
   deliberationFactory, armyBuilderPort, mapEvidencePort, strategist,
-  missionScoringAuthority } = {}) {
+  missionScoringAuthority, contextualSupplyRoutes, createSceneLaboratory } = {}) {
   if (typeof directory !== "string" || !path.isAbsolute(directory)
     || typeof deliberationFactory?.createForRun !== "function"
     || typeof armyBuilderPort?.evaluateRosterCandidate !== "function"
     || typeof mapEvidencePort?.summarizeMap !== "function"
     || typeof strategist?.selectSkillRoute !== "function"
-    || !missionScoringAuthority) fail("ITERATIVE_ROSTER_PRODUCT_PORT_MISSING");
+    || !missionScoringAuthority
+    || !Array.isArray(contextualSupplyRoutes)) {
+    fail("ITERATIVE_ROSTER_PRODUCT_PORT_MISSING");
+  }
 
   const mapSummary = mapEvidencePort.summarizeMap({
     queryId: "iterative-roster-frozen-map-summary" });
@@ -43,12 +49,20 @@ export function createIterativeRosterProductPortV1({ directory,
   }
   const store = createIterativeRosterFileStoreV1({ directory });
   const tools = createIterativeRosterToolPortV1({ armyBuilderPort,
-    mapEvidencePort });
+    mapEvidencePort, createSceneLaboratory });
   const builder = createIterativeRosterBuilderAdapterV1(armyBuilderPort);
+  const selectSkillGuidance = state => {
+    const route = strategist.selectSkillRoute({ ownFactionRecordKey: state.frozenContext.factionRecordKey,
+      opponentFactionRecordKey: state.frozenContext.opponentFactionRecordKey });
+    return { selection: route.receipt, projections: route.projections };
+  };
+  const draftTeach = createIterativeRosterDraftTeachV1({ deliberationFactory,
+    createSceneLaboratory, selectSkillGuidance,
+    missionEvidence: { scoring: missionScoringAuthority, map: mapSummary } });
   const arrival = missionScoringAuthority.resultStatus === "derivable"
     ? createIterativeRosterArrivalPortV1({ store,
       builder: armyBuilderPort, missionAuthority: missionScoringAuthority,
-      deliberationFactory }) : null;
+      deliberationFactory, contextualSupplyRoutes }) : null;
   const modelFor = (state) => {
     const route = strategist.selectSkillRoute({
       ownFactionRecordKey: state.frozenContext.factionRecordKey,
@@ -57,6 +71,7 @@ export function createIterativeRosterProductPortV1({ directory,
     });
     return createIterativeRosterFlashModelPortV1({ deliberationFactory,
       replyStore: store,
+      queryCapabilities: tools.describeCapabilities,
       skillGuidance: { selection: route.receipt,
         projections: route.projections },
       missionEvidence: { scoring: missionScoringAuthority,
@@ -66,6 +81,8 @@ export function createIterativeRosterProductPortV1({ directory,
   const session = createIterativeRosterPlanSessionV1({
     store,
     model: {
+      proveUnsentRequest: ({requestKey,state}) =>
+        modelFor(state).proveUnsentRequest({requestKey,state}),
       decide: ({ requestKey, state }) => modelFor(state).decide({
         requestKey, state }),
       recover: ({ requestKey, sourceRequestKey, state }) =>
@@ -75,6 +92,7 @@ export function createIterativeRosterProductPortV1({ directory,
     },
     builder, tools,
     review: {
+      draft: draftTeach,
       final: async (state) => {
         // Draft selection is not a complete RosterPlan. In particular the
         // model's `arrivalScheduleStatus` is not Rules supply evidence.
@@ -125,10 +143,16 @@ export function createIterativeRosterProductPortV1({ directory,
           frozenContext.opponentFactionRecordKey,
       });
       return session.start({ sessionId: input.sessionId,
-        mineralBudget: input.mineralBudget, frozenContext });
+        mineralBudget: input.mineralBudget, frozenContext,
+        teachFeedbackPolicy: input.teachFeedbackPolicy });
     },
     resume: session.resume, pause: session.pause,
     prepare: session.prepare, read: session.read,
+    attachTeachFeedback: session.attachTeachFeedback,
+    recordJourneyCheckpoint: session.recordJourneyCheckpoint,
+    releaseUnsentDecision: session.releaseUnsentDecision,
+    loadRetainedReply: store.loadRetainedReply,
+    listSessions: store.listSessions,
     proposeSchedule: (sessionId) => {
       if (!arrival) fail("ITERATIVE_ROSTER_ARRIVAL_MISSION_UNKNOWN");
       return arrival.propose(sessionId);
@@ -137,5 +161,11 @@ export function createIterativeRosterProductPortV1({ directory,
       if (!arrival) fail("ITERATIVE_ROSTER_ARRIVAL_MISSION_UNKNOWN");
       return arrival.revisePublicPlan(sessionId);
     },
+    prepareTeachHandoff: async (sessionId) =>
+      prepareIterativeRosterTeachHandoffV1({
+        state: await session.read(sessionId),
+        armyBuilderPort,
+        missionProfile: missionScoringAuthority.missionScoringProfile,
+      }),
   });
 }

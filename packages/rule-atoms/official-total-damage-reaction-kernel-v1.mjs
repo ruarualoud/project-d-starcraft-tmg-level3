@@ -45,6 +45,31 @@ function positiveInteger(value, code) {
   return parsed;
 }
 
+// Unit-wide damage pool, before choosing ANY casualty. The older one-visible-
+// model interface below remains intact; both paths use this same arithmetic.
+export function resolveOfficialTotalDamagePoolReductionV1(input = {}) {
+  const priorDamageMarker = nonNegativeInteger(input.priorDamageMarker,
+    'TOTAL_DAMAGE_PRIOR_MARKER_INVALID');
+  const incomingDamage = nonNegativeInteger(input.incomingDamage,
+    'TOTAL_DAMAGE_INCOMING_INVALID');
+  const requestedReduction = nonNegativeInteger(input.requestedReduction || 0,
+    'TOTAL_DAMAGE_REDUCTION_INVALID');
+  const minimumDamage = nonNegativeInteger(input.minimumDamage || 0,
+    'TOTAL_DAMAGE_MINIMUM_INVALID');
+  const reductionSourceHash = input.reductionSourceHash ?? null;
+  if (requestedReduction > 0 && !HASH_PATTERN.test(String(reductionSourceHash || '')))
+    fail('TOTAL_DAMAGE_REDUCTION_SOURCE_REQUIRED');
+  const totalDamageBeforeReduction = priorDamageMarker + incomingDamage;
+  const appliedReduction = Math.min(requestedReduction,
+    Math.max(0, totalDamageBeforeReduction - minimumDamage));
+  const body = {schema:'starcraft_tmg_official_total_damage_pool_reduction_v1',
+    priorDamageMarker,incomingDamage,requestedReduction,minimumDamage,
+    reductionSourceHash,totalDamageBeforeReduction,appliedReduction,
+    totalDamageAfterReduction:totalDamageBeforeReduction-appliedReduction,
+    reductionAppliedBeforeCasualtyAllocation:true,trainingTruth:false};
+  return freezeDeep({...body,resolutionHash:hashStarcraftTmgContract(body)});
+}
+
 function planBody(input) {
   const priorDamageMarker = nonNegativeInteger(
     input.priorDamageMarker,
@@ -119,12 +144,9 @@ function resolvePlan(planInput, input = {}) {
   if (requestedReduction > 0 && reductionSourceHash === null) {
     fail("TOTAL_DAMAGE_REDUCTION_SOURCE_REQUIRED");
   }
-  const appliedReduction = Math.min(
-    requestedReduction,
-    plan.totalDamageBeforeReduction,
-  );
-  const totalDamageAfterReduction =
-    plan.totalDamageBeforeReduction - appliedReduction;
+  const {appliedReduction,totalDamageAfterReduction} = resolveOfficialTotalDamagePoolReductionV1({
+    priorDamageMarker:plan.priorDamageMarker,incomingDamage:plan.incomingDamage,
+    requestedReduction,reductionSourceHash});
   const targetDestroyed = totalDamageAfterReduction >= plan.targetHitPoints;
   const discardedOverflowDamage = targetDestroyed
     ? totalDamageAfterReduction - plan.targetHitPoints

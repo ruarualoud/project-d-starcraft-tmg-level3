@@ -300,6 +300,61 @@ if (process.argv.includes("--transport-progress-only")) {
   process.exit(0);
 }
 
+if (process.argv.includes("--transport-failed-progress-only")) {
+  const session = await createSession();
+  const transportError = new StarcraftTmgProviderEgressError(
+    "PROVIDER_TRANSPORT_FAILED", {
+      requestMayHaveBeenSent: true, physicalAttempts: 1, status: 200,
+      transportProgress: {
+        phase: "reading_response_body", elapsedMs: 76_000,
+        milestonesMs: {
+          dnsResolved: 4, tcpConnected: 8, tlsConnected: 15,
+          requestWritten: 20, responseHeaders: 30,
+          responseCompleted: null,
+        },
+      },
+    });
+  const harness = createConfiguredHarness({ handler: async () => {
+    throw Object.assign(new Error("simulated connection loss"), {
+      code: transportError.code,
+      durableReceipt: transportError.safeReceipt,
+    });
+  } });
+  const result = await harness.supervisor.sendTurn(turnInput(session), context());
+  assert.equal(result.reason, "provider_transport_failed");
+  assert.deepEqual(result.turn.failure.transportProgress,
+    transportError.safeReceipt.transportProgress);
+  assert.deepEqual(result.receipt.failure.transportProgress,
+    transportError.safeReceipt.transportProgress);
+  console.log(JSON.stringify({ ok: true, focusedChecks: 1,
+    providerCalls: 0, roomMutations: 0 }));
+  process.exit(0);
+}
+
+if (process.argv.includes("--http-status-receipt-only")) {
+  const session = await createSession();
+  const error = new StarcraftTmgProviderEgressError("PROVIDER_HTTP_REJECTED", {
+    requestMayHaveBeenSent: true, physicalAttempts: 1, status: 400,
+  });
+  // This is exactly the safe receipt hash saved by A r129's two rejections.
+  assert.equal(error.safeReceipt.receiptHash,
+    "4b8b5c4c32fdbbc6f1b9d4f19d28eaaa2bc70fb202f93f0e7527e403954cc1ed");
+  const harness = createConfiguredHarness({ handler: async () => {
+    throw Object.assign(new Error("untrusted response body must not escape"), {
+      code: error.code, durableReceipt: error.safeReceipt,
+    });
+  } });
+  const result = await harness.supervisor.sendTurn(turnInput(session), context());
+  assert.equal(result.reason, "provider_http_rejected");
+  assert.equal(result.turn.failure.httpStatus, 400);
+  assert.equal(result.receipt.failure.httpStatus, 400);
+  assert.equal(result.turn.failure.safeProviderReceiptHash, error.safeReceipt.receiptHash);
+  assert.equal(JSON.stringify(result).includes("untrusted response body"), false);
+  console.log(JSON.stringify({ok:true,httpStatus:400,savedReceiptMatched:true,
+    providerCalls:0,roomMutations:0}));
+  process.exit(0);
+}
+
 const acceptance = [];
 async function accept(name, operation) {
   await operation();

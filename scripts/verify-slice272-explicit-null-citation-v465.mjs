@@ -1,0 +1,22 @@
+import fs from 'node:fs/promises';
+import zlib from 'node:zlib';
+import assert from 'node:assert/strict';
+import {inspectRosterTeachReaderCitationsV1 as inspect} from '../packages/roster-strategist/roster-teach-framework-v1.mjs';
+import {readRosterTeachTypedEvidenceV1 as read} from '../packages/roster-strategist/roster-teach-typed-evidence-v1.mjs';
+const formal=JSON.parse(await fs.readFile(process.argv[3], 'utf8'));
+const reply=JSON.parse(zlib.gunzipSync(await fs.readFile(process.argv[2]+'/call-306.reply.json.gz')));
+const answer=reply.output.answers.find(a=>a.questionId==='q-post-loss-marker5-contestant');
+const before=JSON.stringify(answer);
+assert.equal(formal.teachFramework.context.mission.markerAffinity.markers[4].affinityPlayerId,null);
+const review=inspect({answers:[answer],evidence:[],sourceEvidence:[formal.teachFramework.context]});
+assert.equal(review.correctableFailures.length,0,'Explicit neutral-owner null is a real qualitative value, not a missing path');
+const bound=read({owner:null},'/owner');
+assert.equal(bound.ok,true);assert.equal(bound.category,'qualitativeEvidence');
+assert.equal(bound.valueType,'null');assert.equal(bound.value,null);
+assert.deepEqual(bound.values,[null]);
+assert.equal(read({},'/owner').code,'ROSTER_TEACH_EVIDENCE_PATH_NOT_FOUND');
+assert.equal(read({owner:undefined},'/owner').ok,false);
+assert.equal(read({owner:null},'/owner/value').ok,false);
+assert.equal(JSON.stringify(answer),before);
+console.log(JSON.stringify({pass:true,actualReply:306,explicitNullBound:true,missingStillRejected:true,
+  modelMeaningUnchanged:true,providerCalls:0,nativeCalls:0,originalWrites:0}));

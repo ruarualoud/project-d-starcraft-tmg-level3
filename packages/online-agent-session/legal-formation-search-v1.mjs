@@ -4,8 +4,11 @@ import { getOfficialModelBaseGeometryProfileV1 } from
   "../source-data/official-model-base-geometry-data-bundle-v1.mjs";
 import {
   createOfficialPhysicalFootprintV1,
+  createOfficialCoherencyLinkEvaluatorV1,
+  createOfficialHypotheticalCoherencyLinkEvaluatorV1,
   evaluateOfficialPhysicalFootprintRelationV1,
   officialTerrainBlocksModelPlacementV1,
+  officialNonEngagedBaseSeparationAllowedV1,
 } from "../rule-atoms/official-model-base-geometry-rules-kernel-v1.mjs";
 import { deriveOfficialModelSurfacePlacementV2 } from
   "../rule-atoms/official-engagement-graph-v2.mjs";
@@ -14,38 +17,32 @@ import { projectOfficialHorizontalCoherencyV1 } from
 import { createOfficialUnitLifecycleFamilyAdapterV1 } from
   "../product-composition/official-unit-lifecycle-family-adapter-v1.mjs";
 import {
-  enumerateOfficialSelectedRosterRangedActionsV1,
   projectOfficialSelectedRosterRangedFirepowerV1,
 } from
   "../product-composition/official-selected-roster-ranged-action-runtime-v1.mjs";
-import { estimateStarcraftTmgAttackProbabilityV1 } from
+import { createStarcraftTmgAttackProbabilityBatchV1 } from
   "./combat-estimation-runtime-v1.mjs";
 import { buildStarcraftTmgTacticalRelationshipGraphV1 } from
   "./tactical-relationship-graph-v1.mjs";
+import { createStarcraftTmgModelObstacleRoutePlannerV1 } from
+  "./model-obstacle-route-planner-v1.mjs";
+import { applyOfficialSelectedRosterSpatialActionV1 } from
+  "../product-composition/official-selected-roster-spatial-action-runtime-v1.mjs";
+import { STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS,
+  normalizeExplicitStaticFormationObjectivesV1 } from './formation-intent-contract-v1.mjs';
+export { STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS } from './formation-intent-contract-v1.mjs';
 
 export const STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION =
-  "starcraft_tmg_legal_formation_search_v1";
+  "starcraft_tmg_legal_formation_search_v4";
 
 export const STARCRAFT_TMG_FORMATION_SOLVER_TOOL_NAME =
   "space.solve_formation";
-
-export const STARCRAFT_TMG_FORMATION_OBJECTIVE_KINDS = Object.freeze([
-  "balanced",
-  "advance",
-  "compact",
-  "disperse",
-  "maximize_engagement",
-  "surround_target",
-  "avoid_threat",
-  "control_objective",
-  "screen",
-  "preserve_lane",
-]);
 
 const SUPPORTED_ACTION_TYPES = new Set([
   "deploy", "move", "run", "disengage", "resolve_charge",
   "resolve_relocation_ability",
   "resolve_unit_lifecycle_ability", "resolve_unit_lifecycle_consumer",
+  "use_active_ability",
 ]);
 const RELOCATION_FORMATION_EFFECTS = new Set([
   "entry_edge_place", "extra_move", "direct_place",
@@ -305,7 +302,9 @@ function blockingFootprints(state, actorPieceId) {
       if (![minimumX, maximumX, minimumY, maximumY]
         .every(Number.isSafeInteger)) return [];
       return [{ sideKey: null, pieceId: null, modelId: null,
-        objectId: terrain.id, kind: "terrain", footprint: physicalFootprint({
+        objectId: terrain.id, kind: "terrain",
+        terrainGroupId: terrain.terrainGroupId || terrain.id,
+        footprint: physicalFootprint({
         objectId: terrain.id,
         kind: "terrain",
         shape: "rectangle",
@@ -365,6 +364,10 @@ function footprintAt(profile, point, rotationDegrees = 0) {
 }
 
 function minimumEnemyGapFailure(footprint, blocker, input = {}) {
+  if (blocker.kind !== "model" || !blocker.sideKey
+    || blocker.sideKey === input.sideKey) return false;
+  if (input.requireNativeNonEngagedClearance
+    && !officialNonEngagedBaseSeparationAllowedV1(footprint, blocker.footprint)) return true;
   const minimumExclusive = Number(
     input.minimumEnemyGapMilliInchesExclusive,
   );
@@ -462,10 +465,15 @@ function contactAnchor(profile, targetFootprint, angle, rotationDegrees = 0) {
 }
 
 function normalizeFormationObjectives(request = {}) {
+  // Tool discovery has always allowed a single objective object. Preserve that
+  // explicit model intent instead of treating it as omitted and choosing the
+  // balanced default. Array/legacy input keeps its existing ordering/weights.
   const source = Array.isArray(request.formationObjectives)
     ? request.formationObjectives
-    : Array.isArray(request.formationIntent?.objectives)
-      ? request.formationIntent.objectives : [];
+    : request.formationObjectives && typeof request.formationObjectives === "object"
+      ? [request.formationObjectives]
+      : Array.isArray(request.formationIntent?.objectives)
+        ? request.formationIntent.objectives : [];
   const objectives = [];
   for (const entry of source.slice(0, 8)) {
     const kind = String(entry?.kind || "");
@@ -773,8 +781,14 @@ function formationSolverMetrics(selected, input, solverScore) {
   const objectiveMetrics = input.policy.objectives.map((objective) => {
     const targets = targetsForObjective(input.targetIndex, objective,
       input.sideKey);
-    const distances = selected.flatMap((entry) => targets.map((target) =>
+    // An own model contributes once even when it is near several models of
+    // the requested Unit. Pair counts overstate engagement/control and also
+    // corrupt the models-within-range Pareto axis consumed by the Agent.
+    const distancesByModel = selected.map((entry) => targets.map((target) =>
       targetEdgeDistance(entry.footprint, target)));
+    const distances = distancesByModel.flat();
+    const nearestTargetDistances = distancesByModel.map((entries) =>
+      entries.length > 0 ? Math.min(...entries) : Infinity);
     return {
       kind: objective.kind,
       weight: objective.weight,
@@ -782,8 +796,10 @@ function formationSolverMetrics(selected, input, solverScore) {
       resolvedTargetCount: targets.length,
       minimumTargetBaseEdgeDistanceMilliInches:
         distances.length > 0 ? Math.round(Math.min(...distances)) : null,
-      modelsWithinOneInchOfTarget: distances.filter((entry) => entry <= 1_000).length,
-      modelsWithinThreeInchesOfTarget: distances.filter((entry) => entry <= 3_000).length,
+      modelsWithinOneInchOfTarget: nearestTargetDistances
+        .filter((entry) => entry <= 1_000).length,
+      modelsWithinThreeInchesOfTarget: nearestTargetDistances
+        .filter((entry) => entry <= 3_000).length,
       threatMetricPrecision: objective.kind === "avoid_threat"
         ? "advisory_visible_source_clearance_not_exact_attack_legality"
         : "not_applicable",
@@ -921,6 +937,7 @@ function formationParetoDiversity(options) {
 function solveIntentFormationRows(input) {
   const { state, profiles, anchor, angle, coherencyRangeMilliInches,
     excludedPieceId, sideKey, policy } = input;
+  const diagnostic = input.diagnostic || null;
   const blockers = Array.isArray(input.blockers)
     ? input.blockers : blockingFootprints(state, excludedPieceId);
   const targetIndex = Array.isArray(input.targetIndex)
@@ -931,11 +948,49 @@ function solveIntentFormationRows(input) {
   const leaderFootprint = footprintAt(leaderProfile, leaderPoint);
   const hardConstraints = {
     sideKey,
+    requireNativeNonEngagedClearance: input.requireNativeNonEngagedClearance === true,
     minimumEnemyGapMilliInchesExclusive:
       input.minimumEnemyGapMilliInchesExclusive,
   };
   if (!availablePackedFootprint(leaderFootprint, state, blockers, [],
     hardConstraints)) {
+    if (diagnostic) {
+      diagnostic.leaderFootprintRejected += 1;
+      if (!footprintInsideBattlefield(leaderFootprint, state)) {
+        diagnostic.leaderOutOfBounds += 1;
+      } else if (!surfacePlacementForFootprint(state, leaderFootprint)) {
+        diagnostic.leaderNoSurface += 1;
+      } else {
+        diagnostic.leaderBlockedByModelOrTerrain += 1;
+      }
+      // Optional query diagnostics explain the SAME predicate that rejected
+      // this fixed anchor. No substitute anchor or global impossibility claim.
+      // Keep this work off the ordinary formation-search hot path.
+      if (diagnostic.explainAnchorRejection && !diagnostic.anchorRejection) {
+        const bounds = footprintBounds(leaderFootprint);
+        if (!footprintInsideBattlefield(leaderFootprint, state)) {
+          diagnostic.anchorRejection = { reason: 'base_outside_battlefield',
+            modelId: leaderProfile.modelId, footprintBoundsMilliInches: bounds,
+            battlefieldMilliInches: { width: Math.round(state.board.widthInches * 1000),
+              height: Math.round(state.board.heightInches * 1000) } };
+        } else if (!surfacePlacementForFootprint(state, leaderFootprint)) {
+          diagnostic.anchorRejection = { reason: 'base_not_supported_by_surface',
+            modelId: leaderProfile.modelId, footprintBoundsMilliInches: bounds };
+        } else {
+          const rejectedBy = blockers.filter(blocker =>
+            boundsMayOverlap(bounds, blocker.bounds)
+              && evaluateOfficialPhysicalFootprintRelationV1({ left: leaderFootprint,
+                right: blocker.footprint }).overlappingInteriors
+            || minimumEnemyGapFailure(leaderFootprint, blocker, hardConstraints));
+          diagnostic.anchorRejection = { reason: 'base_overlaps_blocker',
+            modelId: leaderProfile.modelId, footprintBoundsMilliInches: bounds,
+            blockers: rejectedBy.map(blocker => ({ kind: blocker.kind,
+              objectId: blocker.objectId || blocker.modelId, pieceId: blocker.pieceId,
+              modelId: blocker.modelId, terrainGroupId: blocker.terrainGroupId || null,
+              footprintBoundsMilliInches: blocker.bounds })) };
+        }
+      }
+    }
     return null;
   }
   const selected = [{ profile: leaderProfile, footprint: leaderFootprint,
@@ -1023,8 +1078,20 @@ function solveIntentFormationRows(input) {
       || left.rotationDegrees - right.rotationDegrees
       || left.point.xMilliInches - right.point.xMilliInches
       || left.point.yMilliInches - right.point.yMilliInches);
-    const candidate = candidates[0];
-    if (!candidate) return null;
+    // Keep the model's objective-score ordering, but require each added model
+    // to join the already connected formation using the execution predicate.
+    const candidate = input.coherencyLinkAllows
+      ? candidates.find(entry => selected.some(placed =>
+        input.coherencyLinkAllows(placed.footprint, entry.footprint, selected)))
+      : candidates[0];
+    if (!candidate) {
+      if (diagnostic) {
+        diagnostic.followerUnplaceable += 1;
+        diagnostic.maxFollowersPlaced = Math.max(
+          diagnostic.maxFollowersPlaced, selected.length - 1);
+      }
+      return null;
+    }
     used.add(candidate.index);
     solverScore += candidate.score;
     selected.push({ profile, footprint: candidate.footprint, point: candidate.point,
@@ -1049,6 +1116,65 @@ function solveIntentFormationRows(input) {
       sideKey,
     }, solverScore),
   };
+}
+
+// Read-only scene construction reuses the live formation geometry primitives,
+// but has no action domain and therefore makes NO arrival/path legality claim.
+// The caller owns the anchor and objectives; failed packing never moves it.
+export function solveStarcraftTmgHypotheticalFormationV1({ state, pieceId,
+  anchor, formationObjectives, modelSpreadInches, diagnostic } = {}) {
+  let actor = state?.pieces?.find(piece => piece.id === pieceId);
+  if (!actor || !Number.isSafeInteger(anchor?.xMilliInches)
+    || !Number.isSafeInteger(anchor?.yMilliInches)) {
+    throw new TypeError("HYPOTHETICAL_FORMATION_INPUT_INVALID");
+  }
+  const models = actor.models.filter(model => !model.isDestroyed);
+  if (actor.isDestroyed === true || Number(actor.currentModels || 0) <= 0 || !models.length) {
+    throw new TypeError("HYPOTHETICAL_FORMATION_EMPTY_UNIT");
+  }
+  // Static layout is also used before a living reserve unit has entered play.
+  // Evaluate that hypothetical presence on a private projection, not by
+  // weakening the live Rules predicate or mutating the source room/branch.
+  if (actor.isOnField !== true) {
+    actor = { ...actor, isOnField: true, models: actor.models.map(model =>
+      model.isDestroyed ? model : { ...model, isOnField: true }) };
+    state = { ...state, pieces: state.pieces.map(piece => piece.id === pieceId ? actor : piece) };
+  }
+  const byId = new Map(profilesForPieceModels(state, actor, models)
+    .map(profile => [profile.modelId, profile]));
+  const profiles = models.map(model => byId.get(model.id));
+  const explicitObjectives = normalizeExplicitStaticFormationObjectivesV1(formationObjectives);
+  const objectives = explicitObjectives?.length
+    ? explicitObjectives
+    : [{ kind: "compact", weight: 3, targetIds: [] }];
+  const policies = formationSolverPolicies(objectives);
+  if (modelSpreadInches !== undefined) {
+    const spread = Number(modelSpreadInches) * 1000;
+    if (!Number.isFinite(spread) || spread <= 0) {
+      throw new TypeError("HYPOTHETICAL_FORMATION_SPREAD_INVALID");
+    }
+    const diameter = Math.max(...profiles.flatMap(profile => [
+      profile.baseWidthMilliInches, profile.baseDepthMilliInches]));
+    for (const policy of policies) {
+      policy.preferredInterBaseGapMilliInches = Math.max(20, spread - diameter);
+    }
+  }
+  const blockers = blockingFootprints(state, pieceId);
+  const targetIndex = formationIntentTargetIndex(state, blockers);
+  const coherencyLinkAllows = createOfficialHypotheticalCoherencyLinkEvaluatorV1({
+    state, actor, dataBundle: state.officialModelBaseGeometryDataBundle,
+  });
+  for (const policy of policies) {
+    const solved = solveIntentFormationRows({ state, profiles, anchor, angle: 0,
+      coherencyRangeMilliInches: horizontalCoherencyRange(state, actor),
+      excludedPieceId: pieceId, sideKey: actor.sideKey, policy,
+      blockers, targetIndex, coherencyLinkAllows, diagnostic,
+      requireNativeNonEngagedClearance: false });
+    if (solved) return { ...solved, solverVersion: STARCRAFT_TMG_LEGAL_FORMATION_SEARCH_VERSION,
+      anchorPreserved: true, geometryWitnessOnly: true,
+      arrivalOrMovementLegalityProven: false, trainingTruth: false };
+  }
+  return null; // A bounded search miss, not proof no legal formation exists.
 }
 
 function candidatePlacementRows(candidate) {
@@ -1322,6 +1448,90 @@ function boundedRelocationAbilityCandidates(state, domain, request) {
   }));
 }
 
+function selfPlaceAbilityCandidates(state, domain, request) {
+  const source = sourceDomain(domain);
+  if (source.effectContract?.targetKind !== "self_place"
+    || !Array.isArray(source.parameterSchema?.placements?.modelIds)) {
+    throw new TypeError("LEGAL_FORMATION_ACTIVE_ABILITY_NOT_SELF_PLACE");
+  }
+  const profiles = relocationModelProfiles(state, domain);
+  const expectedModelIds = source.parameterSchema.placements.modelIds;
+  if (profiles.length !== expectedModelIds.length
+    || profiles.some((profile, index) =>
+      profile.modelId !== expectedModelIds[index])) {
+    throw new TypeError("LEGAL_FORMATION_ACTIVE_ABILITY_MODELS_STALE");
+  }
+  const maximum = Number(source.parameterSchema.placements
+    .maxDistanceMilliInches);
+  if (!Number.isSafeInteger(maximum) || maximum < 1) {
+    throw new TypeError("LEGAL_FORMATION_ACTIVE_ABILITY_RANGE_INVALID");
+  }
+  const payments = source.parameterSchema.paymentCardInstanceIds?.enum;
+  if (!Array.isArray(payments) || payments.length < 1) {
+    throw new TypeError("LEGAL_FORMATION_ACTIVE_ABILITY_PAYMENT_MISSING");
+  }
+  const constraints = {
+    ...source.constraints,
+    modelProfiles: profiles,
+    maxDistanceMilliInches: maximum,
+    battlefieldWidthMilliInches:
+      Math.round(Number(state.board.widthInches) * 1000),
+    battlefieldHeightMilliInches:
+      Math.round(Number(state.board.heightInches) * 1000),
+  };
+  const representativePayment = firstPaymentSelection(source);
+  return relocationCandidates({ ...source, constraints }, request)
+    .map((candidate) => ({
+      ...candidate,
+      patternId: `self-place:${candidate.patternId}`,
+      leadingModelId: profiles[0].modelId,
+      modelProfiles: profiles,
+      parameters: {
+        activeUnitId: source.pieceId,
+        paymentCardInstanceIds: clone(representativePayment),
+        placements: [
+          { modelId: candidate.parameters.leadingModelId,
+            ...clone(candidate.parameters.path.at(-1)) },
+          ...clone(candidate.parameters.placements),
+        ],
+      },
+    }));
+}
+
+function selfPlaceSearchRequest(state, domain, request) {
+  const supplied = request.preferredAnchor;
+  if (Number.isSafeInteger(supplied?.xMilliInches)
+    && Number.isSafeInteger(supplied?.yMilliInches)) return request;
+  const source = sourceDomain(domain);
+  const actor = (state.pieces || []).find((entry) =>
+    entry.id === source.pieceId);
+  const leading = (actor?.models || []).find((entry) =>
+    entry.isDestroyed !== true && entry.isOnField !== false);
+  if (!leading || !Number.isFinite(Number(leading.xInches))
+    || !Number.isFinite(Number(leading.yInches))) return request;
+  const objective = normalizeFormationObjectives(request)
+    .filter((entry) => entry.kind === "control_objective")
+    .sort((left, right) => right.weight - left.weight)[0];
+  if (!objective) return request;
+  const requestedIds = new Set(objective.targetIds);
+  const markers = (state.board?.missionMarkers || []).filter((entry) =>
+    entry.isRemoved !== true
+      && (requestedIds.size === 0 || requestedIds.has(entry.id))
+      && Number.isFinite(Number(entry.xInches))
+      && Number.isFinite(Number(entry.yInches)));
+  if (markers.length === 0) return request;
+  const target = markers.sort((left, right) => Math.hypot(
+    Number(left.xInches) - Number(leading.xInches),
+    Number(left.yInches) - Number(leading.yInches)) - Math.hypot(
+    Number(right.xInches) - Number(leading.xInches),
+    Number(right.yInches) - Number(leading.yInches))
+    || String(left.id).localeCompare(String(right.id)))[0];
+  return { ...request, preferredAnchor: {
+    xMilliInches: Math.round(Number(target.xInches) * 1000),
+    yMilliInches: Math.round(Number(target.yInches) * 1000),
+  } };
+}
+
 function friendlyAnchorRelocationCandidates(state, domain) {
   const source = sourceDomain(domain);
   const profiles = relocationModelProfiles(state, domain);
@@ -1466,7 +1676,50 @@ function relocationCandidates(domain, request) {
   ) || left.patternId.localeCompare(right.patternId));
 }
 
-function chargeResolutionCandidates(state, domain, request) {
+function segmentCrossesAxisAlignedAccessPoint(start, end, footprint) {
+  if (footprint?.shape !== "axis_aligned_rectangle") return false;
+  let first = 0;
+  let last = 1;
+  for (const [axis, minimum, maximum] of [
+    ["xMilliInches", footprint.minXMilliInches,
+      footprint.maxXMilliInches],
+    ["yMilliInches", footprint.minYMilliInches,
+      footprint.maxYMilliInches],
+  ]) {
+    const origin = Number(start[axis]);
+    const delta = Number(end[axis]) - origin;
+    if (![origin, delta, Number(minimum), Number(maximum)]
+      .every(Number.isFinite)) return false;
+    if (delta === 0) {
+      if (origin < minimum || origin > maximum) return false;
+      continue;
+    }
+    const near = (Number(minimum) - origin) / delta;
+    const far = (Number(maximum) - origin) / delta;
+    first = Math.max(first, Math.min(near, far));
+    last = Math.min(last, Math.max(near, far));
+    if (first > last) return false;
+  }
+  return true;
+}
+
+function directChargeAccessTransitions(state, leadingProfile, endpoint) {
+  const fromElevation = String(leadingProfile.startElevation || "ground");
+  const toElevation = String(endpoint.elevation || "ground");
+  if (fromElevation === toElevation) return [[]];
+  return (state.board?.specialTerrainAgreement?.terrainEntries || [])
+    .flatMap((entry) => entry.accessPoints || [])
+    .filter((accessPoint) => {
+      const connects = new Set(accessPoint.connects || []);
+      return connects.has(fromElevation) && connects.has(toElevation)
+        && segmentCrossesAxisAlignedAccessPoint(
+          leadingProfile.startPoint, endpoint, accessPoint.footprint);
+    })
+    .map((accessPoint) => [{ segmentIndex: 0,
+      accessPointId: accessPoint.accessPointId }]);
+}
+
+function chargeResolutionCandidates(state, domain, request, progress = null) {
   const source = sourceDomain(domain);
   const constraints = source.constraints;
   const actor = (state.pieces || []).find((entry) => entry.id === source.pieceId);
@@ -1480,7 +1733,44 @@ function chargeResolutionCandidates(state, domain, request) {
   }
   const profiles = [leadingProfile, ...allProfiles.filter((entry) =>
     entry.modelId !== leadingModelId)];
+  // Rules has already excluded the whole legal endpoint/path domain. Emit its
+  // exact typed failure parameters; the ordinary instantiate/apply path still
+  // recomputes that certificate. Zero heuristic candidates is never this proof.
+  if (source.parameterSchema?.outcome?.length === 1
+    && source.parameterSchema.outcome[0] === "failure"
+    && source.parameterSchema.failureProofKind
+      === "occupied_cross_section_distance_shortfall"
+    && constraints.allActiveTargetModelsCovered === true
+    && typeof constraints.certificateHash === "string") {
+    return [{ parameters: { outcome: "failure", failureProof: {
+      kind: source.parameterSchema.failureProofKind } },
+      patternId: "charge-failure:occupied-cross-section",
+      solverPolicyId: "rules-proven-occupied-cross-section",
+      formationObjectives: normalizeFormationObjectives(request),
+      tacticalMetrics: { outcome: "failure",
+        proofKind: source.parameterSchema.failureProofKind,
+        physicalGeometryMetricsExact: true,
+        tacticalOutcomeIsAdvisoryUntilPreviewAndOpponentResponse: false },
+      anchor: clone(leadingProfile.startPoint),
+      modelProfiles: profiles,
+      leadingModelId,
+      sameAnchorAlternativesMeaningful: false }];
+  }
+  const coherencyLinkAllows = createOfficialCoherencyLinkEvaluatorV1({
+    state, actor, dataBundle: state.officialModelBaseGeometryDataBundle,
+    currentlyEngagedEnemyUnitIds: [],
+  });
   const blockers = blockingFootprints(state, source.pieceId);
+  const leadingModel = (actor.models || []).find(model => model.id === leadingModelId);
+  const routePlanner = createStarcraftTmgModelObstacleRoutePlannerV1({
+    start: leadingProfile.startPoint,
+    movingFootprint: footprintAt(leadingProfile, leadingProfile.startPoint,
+      Number(leadingModel?.baseRotationDegrees || 0)),
+    modelBlockers: blockers,
+    battlefieldWidthMilliInches: Math.round(Number(state.board.widthInches) * 1000),
+    battlefieldHeightMilliInches: Math.round(Number(state.board.heightInches) * 1000),
+  });
+  const modelRoutesByEndpoint = new Map();
   const declaredTargets = (constraints.declaredTargets || []).map((target) => {
     const blocker = blockers.find((entry) => entry.kind === "model"
       && entry.pieceId === target.unitId && entry.modelId === target.modelId);
@@ -1538,6 +1828,9 @@ function chargeResolutionCandidates(state, domain, request) {
     }];
   }
   const requestedObjectives = normalizeFormationObjectives(request);
+  // One synchronous query owns this immutable geometry. Each policy still
+  // solves every original anchor; no cross-query/state cache is introduced.
+  const intentTargetIndex = formationIntentTargetIndex(state, blockers);
   const requiredEngagementObjective = {
     kind: "maximize_engagement",
     weight: 5,
@@ -1548,16 +1841,47 @@ function chargeResolutionCandidates(state, domain, request) {
     ...requestedObjectives.filter((entry) => entry.kind !== "maximize_engagement"
       || entry.targetIds.join("\u0000") !== targetIds.join("\u0000")),
   ]);
-  const angles = Array.from({ length: 48 }, (_, index) =>
-    (Math.PI * 2 * index) / 48);
+  // Visit coarse directions before refining them. A bounded search must cover
+  // both sides of a target, rather than spend its budget on adjacent angles.
+  const angleIndices = [];
+  for (const step of [24, 12, 6, 3, 1]) {
+    for (let index = 0; index < 48; index += step) {
+      if (!angleIndices.includes(index)) angleIndices.push(index);
+    }
+  }
+  const angles = angleIndices.map(index => (Math.PI * 2 * index) / 48);
   const rotations = String(leadingProfile.baseShape || leadingProfile.shape)
     === "round" ? [0] : [0, 45, 90, 135];
   const candidates = [];
+  let originalCandidateCount = 0;
+  const diagnostic = { contactSeeds: 0, closestPositionSeeds: 0,
+    uniqueAnchors: 0, anchorsOutsideRolledMove: 0,
+    intentFormationUnsolved: 0, solvedFormations: 0,
+    modelProfiles: profiles.length,
+    leaderFootprintRejected: 0, leaderOutOfBounds: 0,
+    leaderNoSurface: 0, leaderBlockedByModelOrTerrain: 0,
+    followerUnplaceable: 0, maxFollowersPlaced: 0,
+    modelObstacleRouteRequests: 0, modelObstacleDetoursFound: 0,
+    modelObstacleRoutesUnknown: 0, additionalDetourCandidates: 0 };
   const generationLimit = Math.max(24, Math.min(192,
     Number(request.maximumOptions || DEFAULT_MAX_OPTIONS) * 24));
-  for (const target of declaredTargets) {
+  // Keep nominated-model seeds first. The execution kernel checks engagement
+  // and base contact with each declared *Unit*, not only its nominated model.
+  // A screened nomination must not hide contact with another live model of
+  // that same Unit. All generated layouts still require full Rules validation;
+  // declaration identity, target Units and distance-failure proofs stay intact.
+  const declaredUnitIds = new Set(declaredTargets.map(target => target.unitId));
+  const nominatedModelIds = new Set(declaredTargets.map(target => target.modelId));
+  const contactTargets = [...declaredTargets, ...blockers.filter(blocker =>
+    blocker.kind === "model" && declaredUnitIds.has(blocker.pieceId)
+      && !nominatedModelIds.has(blocker.modelId)).map(blocker => ({
+    unitId: blocker.pieceId, modelId: blocker.modelId, blocker,
+  }))];
+  const perTargetGenerationLimit = Math.ceil(generationLimit / contactTargets.length);
+  for (const target of contactTargets) {
     const targetPoint = footprintCenter(target.blocker.footprint);
-    for (const rotationDegrees of rotations) {
+    let targetCandidateCount = 0;
+    targetSeedSearch: for (const rotationDegrees of rotations) {
       const contactSeeds = angles.map((angle) => ({
         kind: "base_contact",
         anchor: contactAnchor(leadingProfile, target.blocker.footprint,
@@ -1575,18 +1899,24 @@ function chargeResolutionCandidates(state, domain, request) {
             Number(constraints.maxDistanceMilliInches)),
         }));
       const seenAnchors = new Set();
+      diagnostic.contactSeeds += contactSeeds.length;
+      diagnostic.closestPositionSeeds += closestPositionSeeds.length;
       for (const seed of [...contactSeeds, ...closestPositionSeeds]) {
         const anchor = seed.anchor;
         if (!anchor) continue;
         const anchorKey = `${anchor.xMilliInches}:${anchor.yMilliInches}`;
         if (seenAnchors.has(anchorKey)) continue;
         seenAnchors.add(anchorKey);
+        diagnostic.uniqueAnchors += 1;
         const travelled = Math.hypot(
           anchor.xMilliInches - leadingProfile.startPoint.xMilliInches,
           anchor.yMilliInches - leadingProfile.startPoint.yMilliInches,
         );
         if (travelled <= 1
-          || travelled > Number(constraints.maxDistanceMilliInches) + 1) continue;
+          || travelled > Number(constraints.maxDistanceMilliInches) + 1) {
+          diagnostic.anchorsOutsideRolledMove += 1;
+          continue;
+        }
         const movementAngle = Math.atan2(
           anchor.yMilliInches - leadingProfile.startPoint.yMilliInches,
           anchor.xMilliInches - leadingProfile.startPoint.xMilliInches,
@@ -1602,38 +1932,86 @@ function chargeResolutionCandidates(state, domain, request) {
             excludedPieceId: source.pieceId,
             sideKey: source.sideKey || actor.sideKey,
             policy,
+            diagnostic,
+            coherencyLinkAllows,
+            blockers,
+            targetIndex: intentTargetIndex,
           });
-          if (!solved) continue;
+          if (!solved) {
+            diagnostic.intentFormationUnsolved += 1;
+            continue;
+          }
+          diagnostic.solvedFormations += 1;
           const rows = solved.rows;
           const pathEndpoint = Object.fromEntries(Object.entries(rows[0])
             .filter(([key]) => key !== "modelId"));
-          candidates.push({
-            parameters: {
-              outcome: "success",
-              path: [pathEndpoint],
-              placements: rows.slice(1),
-            },
-            patternId: `intent-solver:${solved.policyId}`,
-            solverPolicyId: solved.policyId,
-            formationObjectives: solved.objectives,
-            tacticalMetrics: solved.metrics,
-            anchor,
-            modelProfiles: profiles,
-            leadingModelId,
-            requiredSpatialConstraints,
-            targetAnchor: {
-              unitId: target.unitId,
-              modelId: target.modelId,
-              point: targetPoint,
-              seedKind: seed.kind,
-            },
-            sameAnchorAlternativesMeaningful: true,
-          });
-          if (candidates.length >= generationLimit) return candidates;
+          const sameElevation = String(leadingProfile.startElevation || "ground")
+            === String(pathEndpoint.elevation || "ground");
+          const endpointKey = JSON.stringify(pathEndpoint);
+          if (sameElevation && !modelRoutesByEndpoint.has(endpointKey)) {
+            diagnostic.modelObstacleRouteRequests += 1;
+            const route = routePlanner.routeTo({
+              endpoint: pathEndpoint,
+              maxDistanceMilliInches: Number(constraints.maxDistanceMilliInches),
+            });
+            modelRoutesByEndpoint.set(endpointKey, route);
+            if (route.status === "unknown") diagnostic.modelObstacleRoutesUnknown += 1;
+            else if (route.path.length > 1) diagnostic.modelObstacleDetoursFound += 1;
+          }
+          const modelRoute = modelRoutesByEndpoint.get(endpointKey);
+          for (const elevationTransitions of directChargeAccessTransitions(
+            state, leadingProfile, pathEndpoint)) {
+            const originalCandidate = {
+              parameters: {
+                outcome: "success",
+                path: [pathEndpoint],
+                placements: rows.slice(1),
+                ...(elevationTransitions.length ? { elevationTransitions } : {}),
+              },
+              patternId: `intent-solver:${solved.policyId}`,
+              solverPolicyId: solved.policyId,
+              formationObjectives: solved.objectives,
+              tacticalMetrics: solved.metrics,
+              anchor,
+              modelProfiles: profiles,
+              leadingModelId,
+              requiredSpatialConstraints,
+              targetAnchor: {
+                unitId: target.unitId,
+                modelId: target.modelId,
+                point: targetPoint,
+                seedKind: seed.kind,
+              },
+              sameAnchorAlternativesMeaningful: true,
+            };
+            candidates.push(originalCandidate);
+            originalCandidateCount += 1;
+            targetCandidateCount += 1;
+            // Additional geometric candidates do not spend the original
+            // formation-generation budget or remove old intent alternatives.
+            // Exact terrain/engagement/coherency still run in instantiate().
+            if (modelRoute?.status === "candidate_found"
+              && modelRoute.path.length > 1) {
+              candidates.push({ ...originalCandidate,
+                parameters: { ...originalCandidate.parameters,
+                  path: clone(modelRoute.path) },
+                patternId: `${originalCandidate.patternId}:model-obstacle-route`,
+              });
+              diagnostic.additionalDetourCandidates += 1;
+            }
+            if (originalCandidateCount >= generationLimit) {
+              progress?.("charge_candidate_generation_diagnostic", diagnostic);
+              return candidates;
+            }
+            if (targetCandidateCount >= perTargetGenerationLimit) {
+              break targetSeedSearch;
+            }
+          }
         }
       }
     }
   }
+  progress?.("charge_candidate_generation_diagnostic", diagnostic);
   return candidates;
 }
 
@@ -1664,6 +2042,36 @@ function firstPaymentSelection(source) {
     ?.paymentCardInstanceIds?.enum || [])].sort((left, right) =>
     left.length - right.length || left.join("|").localeCompare(right.join("|")));
   return clone(options[0] || []);
+}
+
+function minimumPaymentChoices(source) {
+  const choices = source.parameterSchema?.paymentCardInstanceIds?.enum || [];
+  return clone(choices.filter((choice) => !choices.some((other) =>
+    other.length < choice.length
+      && other.every((cardId) => choice.includes(cardId)))));
+}
+
+export function projectStarcraftTmgFormationPaymentsV1(parameterSchema,
+  formationOptions = []) {
+  const declared = parameterSchema?.paymentCardInstanceIds?.enum;
+  // New queries use the Rules domain for every formation action family.
+  // Retained legacy receipts may have omitted the menu: recover only payment
+  // sets already present in complete, Rules-instantiated canonical options.
+  const choices = Array.isArray(declared) ? clone(declared)
+    : formationOptions.filter((option) =>
+      option.rulesAuthority === true
+      && option.completeFormationPlacementChecked === true
+      && Array.isArray(option.canonicalParameters?.paymentCardInstanceIds))
+      .map((option) => clone(option.canonicalParameters.paymentCardInstanceIds));
+  const unique = [...new Map(choices.map((choice) => [
+    [...choice].sort().join('|'), choice,
+  ])).values()];
+  return {
+    legalPaymentChoices: unique,
+    paymentChoicesForDecision: unique.filter((choice) =>
+      !unique.some((other) => other.length < choice.length
+        && other.every((cardId) => choice.includes(cardId)))),
+  };
 }
 
 function summonCandidates(state, domain, request) {
@@ -2295,6 +2703,12 @@ function solveGeneratedCandidateIntent(state, source, candidate, request,
     parameters.leadingModelId = rows[0].modelId;
     parameters.placements = rows;
     if (source.effectKind === "extra_move") parameters.path = [rows[0]];
+  } else if (source.actionType === "use_active_ability") {
+    parameters.placements = rows.map((row) => ({
+      modelId: row.modelId,
+      xMilliInches: row.xMilliInches,
+      yMilliInches: row.yMilliInches,
+    }));
   } else {
     parameters.leadingModelId = rows[0].modelId;
     parameters.path = [rows[0]];
@@ -2316,7 +2730,10 @@ function slotsFor(option, profiles) {
   const parameters = option.canonicalParameters;
   if (parameters.outcome === "failure") return [];
   const plan = object(parameters.placementPlan)
-    ? parameters.placementPlan : parameters;
+    ? parameters.placementPlan
+    : Array.isArray(parameters.placement)
+      ? { ...parameters, placements: parameters.placement }
+      : parameters;
   const leadingModelId = plan.leadingModelId || option.fixedLeadingModelId;
   const endpoint = Array.isArray(plan.path) ? plan.path.at(-1) : null;
   const placementsIncludeLeading = (plan.placements || []).some((entry) =>
@@ -2381,6 +2798,7 @@ function relationshipRows(graph) {
         entry.minimumBaseEdgeDistanceMilliInches,
       modelsWithinThreeInchesSameElevation:
         entry.modelIdsWithinThreeInchesSameElevation?.length || 0,
+      markerQualification: clone(entry.markerQualification || null),
       precision: entry.precision,
     } : {
       edgeId: entry.edgeId,
@@ -2562,8 +2980,11 @@ export function projectStarcraftTmgIncomingStationaryFireEstimateV1(
         chosenFirstActorSideKey: opponentSideKey,
       },
     };
-    const enumeration = enumerateOfficialSelectedRosterRangedActionsV1(
-      counterfactual, { sideKey: opponentSideKey, includeDisabled: true });
+    const probabilityBatch = createStarcraftTmgAttackProbabilityBatchV1({
+      state: counterfactual, sideKey: opponentSideKey,
+      observePreparation: options.observePreparation,
+    });
+    const enumeration = probabilityBatch.enumeration;
     const domains = enumeration.parameterDomains.filter((entry) =>
       entry.parameterSchema?.targetUnitId?.enum?.includes(actorId));
     const currentRoundEnemyIds = new Set((graph?.relationships || [])
@@ -2572,8 +2993,7 @@ export function projectStarcraftTmgIncomingStationaryFireEstimateV1(
           .length > 0)
       .map((entry) => entry.toUnitId));
     const estimates = domains.map((domain) => ({
-      ...estimateStarcraftTmgAttackProbabilityV1({
-        state: counterfactual,
+      ...probabilityBatch.estimate({
         domain,
         parameters: { targetUnitId: actorId },
         sampleBudget: Number(options.sampleBudget || 216),
@@ -2758,7 +3178,14 @@ function incomingMoveThenFireEstimate(projected, actorId, graph) {
 export function projectStarcraftTmgFormationRelationshipComparisonV1({
   state, source, slots, objectives, baseline, instantiatedAction,
   comparisonObjectives = objectives,
+  observeProgress,
 }) {
+  const comparisonStartedAtMs = Date.now();
+  const observe = (stage, detail = {}) => {
+    try { observeProgress?.({ ...detail, stage, observedAtMs: Date.now(),
+      elapsedMs: Date.now() - comparisonStartedAtMs,
+      mutationAuthority: false, trainingTruth: false }); } catch { /* Diagnostics only. */ }
+  };
   if (!slots.length) return {
     status: "not_applicable",
     reason: "formation_has_no_placement_slots",
@@ -2766,7 +3193,16 @@ export function projectStarcraftTmgFormationRelationshipComparisonV1({
   const positions = new Map(slots.map((entry) => [entry.defaultModelId,
     entry.position]));
   try {
+    observe("formation_projection_started");
     let projected = clone(state);
+    const nativeSpatialAction = instantiatedAction?.sourceAction || instantiatedAction;
+    const nativeSpatialProjection = Boolean(nativeSpatialAction?.spatialPlan);
+    if (nativeSpatialProjection) {
+      // Use the actual pure transition, including surface/support, statuses,
+      // grass and force-field removal. Coordinates alone are not a successor.
+      projected = clone(applyOfficialSelectedRosterSpatialActionV1(
+        state, nativeSpatialAction).state);
+    }
     let subjectUnitId = source.pieceId;
     const createsUnit = source.effectKind === "summon_roachling";
     if (createsUnit) {
@@ -2799,6 +3235,7 @@ export function projectStarcraftTmgFormationRelationshipComparisonV1({
       return { status: "unknown",
         reason: "placement_slots_do_not_belong_to_current_actor" };
     }
+    if (!nativeSpatialProjection) {
     projectedActor.isOnField = true;
     projectedActor.isInReserves = false;
     projectedActor.inCoherency = true;
@@ -2821,6 +3258,7 @@ export function projectStarcraftTmgFormationRelationshipComparisonV1({
     projectedActor.currentModels = projectedActor.models.filter((model) =>
       model.isDestroyed !== true && model.isOnField !== false).length;
     normalizeProjectedSurfacePlacements(projected);
+    }
     const visibleEnemyUnitIds = (projected.pieces || []).filter((entry) =>
       entry.sideKey !== projectedActor.sideKey
         && entry.isOnField === true
@@ -2833,6 +3271,7 @@ export function projectStarcraftTmgFormationRelationshipComparisonV1({
       ...(objectives || []).flatMap((entry) => entry.targetIds || []),
       ...visibleEnemyUnitIds,
     ])];
+    observe("formation_graph_started");
     const graph = buildStarcraftTmgTacticalRelationshipGraphV1({
       state: projected,
       seatKey: projectedActor.sideKey,
@@ -2846,9 +3285,19 @@ export function projectStarcraftTmgFormationRelationshipComparisonV1({
           source.constraints?.minimumEnemyGapMilliInchesExclusive || null,
       },
     });
+    observe("formation_graph_completed");
     const beforeRows = relationshipRows(baseline);
     const afterRows = relationshipRows(graph);
     const beforeById = new Map(beforeRows.map((entry) => [entry.edgeId, entry]));
+    observe("formation_stationary_fire_started");
+    const incomingStationaryFireEstimate = projectStarcraftTmgIncomingStationaryFireEstimateV1(
+      projected, projectedActor.id, graph, {
+        observePreparation: event => observe(event.stage, event),
+      });
+    observe("formation_stationary_fire_completed");
+    const incomingMoveThenFire = incomingMoveThenFireEstimate(
+      projected, projectedActor.id, graph);
+    observe("formation_move_then_fire_completed");
     return {
       status: "available",
       hypotheticalProjection: true,
@@ -2877,11 +3326,8 @@ export function projectStarcraftTmgFormationRelationshipComparisonV1({
         };
       }),
       clearances: clone(graph.aggregates?.clearances || []),
-      incomingStationaryFireEstimate:
-        projectStarcraftTmgIncomingStationaryFireEstimateV1(
-          projected, projectedActor.id, graph),
-      incomingMoveThenFireEstimate:
-        incomingMoveThenFireEstimate(projected, projectedActor.id, graph),
+      incomingStationaryFireEstimate,
+      incomingMoveThenFireEstimate: incomingMoveThenFire,
       precisionPolicy: clone(graph.precisionPolicy),
       sourceReceipts: clone(graph.sourceReceipts),
       rulesInstantiationStillFinalAuthority: true,
@@ -2895,7 +3341,7 @@ export function projectStarcraftTmgFormationRelationshipComparisonV1({
   }
 }
 
-export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
+function searchLegalFormationOptions(input, compareFormation) {
   const domain = input.domain;
   const source = sourceDomain(domain);
   const state = input.state;
@@ -2904,14 +3350,24 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
   const searchStartedAt = performance.now();
   const observeProgress = typeof input.observeProgress === "function"
     ? input.observeProgress : null;
+  let searchThreadCpuStart;
+  if (observeProgress) {
+    try { searchThreadCpuStart = process.threadCpuUsage?.(); } catch {}
+  }
   const progress = (stage, detail = {}) => {
     if (!observeProgress) return;
     try {
+      let threadCpuElapsedMs;
+      if (searchThreadCpuStart) {
+        const usage = process.threadCpuUsage(searchThreadCpuStart);
+        threadCpuElapsedMs = (usage.user + usage.system) / 1000;
+      }
       observeProgress({
         schemaVersion: "starcraft_tmg_formation_search_progress_v1",
         stage,
         elapsedMs: Math.round(performance.now() - searchStartedAt),
         ...clone(detail),
+        ...(threadCpuElapsedMs !== undefined ? { threadCpuElapsedMs } : {}),
         mutationAuthority: false,
         trainingTruth: false,
       });
@@ -2924,6 +3380,10 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
   if (!SUPPORTED_ACTION_TYPES.has(String(source.actionType || ""))) {
     throw new TypeError("LEGAL_FORMATION_ACTION_TYPE_UNSUPPORTED");
   }
+  if (source.actionType === "use_active_ability"
+    && source.effectContract?.targetKind !== "self_place") {
+    throw new TypeError("LEGAL_FORMATION_ACTIVE_ABILITY_NOT_SELF_PLACE");
+  }
   const requestedOptions = Number(request.maximumOptions
     ?? DEFAULT_MAX_OPTIONS);
   const maximumOptions = Number.isSafeInteger(requestedOptions)
@@ -2932,12 +3392,16 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
     ?? DEFAULT_MAX_ATTEMPTS);
   const maximumCandidateAttempts = Number.isSafeInteger(requestedAttempts)
     ? Math.max(1, Math.min(20_000, requestedAttempts)) : DEFAULT_MAX_ATTEMPTS;
+  const candidateRequest = source.actionType === "use_active_ability"
+    ? selfPlaceSearchRequest(state, domain, request) : request;
   const generated = source.actionType === "deploy"
     ? deployCandidates(domain, request)
     : source.actionType === "resolve_charge"
-      ? chargeResolutionCandidates(state, domain, request)
+      ? chargeResolutionCandidates(state, domain, request, progress)
     : source.actionType === "resolve_relocation_ability"
       ? relocationAbilityCandidates(state, domain, request)
+    : source.actionType === "use_active_ability"
+      ? selfPlaceAbilityCandidates(state, domain, candidateRequest)
     : source.actionType === "resolve_unit_lifecycle_ability"
       ? lifecycleAbilityCandidates(state, domain, request)
       : source.actionType === "resolve_unit_lifecycle_consumer"
@@ -3014,6 +3478,15 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
         optionCount: options.length,
         patternId: candidate.patternId,
       });
+    }
+    if (source.actionType === "use_active_ability"
+      && candidate.modelProfiles?.length === 1
+      && options.some((entry) => Math.hypot(
+        entry.anchor.xMilliInches - candidate.anchor.xMilliInches,
+        entry.anchor.yMilliInches - candidate.anchor.yMilliInches,
+      ) < 1_000 && JSON.stringify(entry.paymentCardInstanceIds)
+        === JSON.stringify(candidate.parameters.paymentCardInstanceIds))) {
+      continue;
     }
     if (candidate.sameAnchorAlternativesMeaningful !== true
       && options.some((entry) => Math.hypot(
@@ -3092,7 +3565,7 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
       });
       const optionCore = {
         ...optionSeed,
-        relationshipComparison: projectStarcraftTmgFormationRelationshipComparisonV1({
+        relationshipComparison: compareFormation({
           state, source, slots: projectedSlots, objectives,
           baseline: baselineRelationshipGraph,
           instantiatedAction: instantiated.action,
@@ -3141,11 +3614,12 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
     domainId: domain.domainId,
     actionType: source.actionType,
     pieceId: source.pieceId,
-    preferredAnchor: preferredAnchor(request, {
+    preferredAnchor: preferredAnchor(candidateRequest, {
       battlefieldWidthMilliInches: Math.round(Number(state.board.widthInches) * 1000),
       battlefieldHeightMilliInches: Math.round(Number(state.board.heightInches) * 1000),
       ...source.constraints,
     }),
+    ...projectStarcraftTmgFormationPaymentsV1(source.parameterSchema, options),
     formationOptions: options,
     optionCount: options.length,
     attemptedCandidateCount,
@@ -3194,4 +3668,41 @@ export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
     mutationAuthority: false,
     trainingTruth: false,
   });
+}
+
+export function searchStarcraftTmgLegalFormationOptionsV1(input = {}) {
+  return searchLegalFormationOptions(input,
+    projectStarcraftTmgFormationRelationshipComparisonV1);
+}
+
+export async function searchStarcraftTmgLegalFormationOptionsAsyncV1(
+  input = {}, { compareBatch } = {},
+) {
+  if (typeof compareBatch !== "function") {
+    throw new TypeError("LEGAL_FORMATION_COMPARISON_BATCH_REQUIRED");
+  }
+  const jobs = [];
+  // Generation, physical prefilters and Rules instantiation remain identical.
+  // Only independent advisory comparisons are deferred, never exposed to the
+  // caller or model before the complete ordered batch has finished.
+  const collected = searchLegalFormationOptions(input, job => {
+    const internalJobIndex = jobs.push(job) - 1;
+    return { status: "backend_internal_deferred", internalJobIndex };
+  });
+  const selectedJobs = collected.formationOptions.map(option =>
+    jobs[option.relationshipComparison.internalJobIndex]);
+  const comparisons = selectedJobs.length ? await compareBatch(selectedJobs) : [];
+  if (!Array.isArray(comparisons) || comparisons.length !== selectedJobs.length
+    || comparisons.some(value => !object(value) || typeof value.status !== "string")) {
+    throw new TypeError("LEGAL_FORMATION_COMPARISON_BATCH_INVALID");
+  }
+  const options = collected.formationOptions.map((option, index) => {
+    const { formationOptionId: _deferredId, slots, relationshipComparison:
+      _deferredComparison, ...seed } = option;
+    const core = { ...seed, relationshipComparison: comparisons[index] };
+    return { ...core, formationOptionId: hashStarcraftTmgContract(core),
+      slots: clone(slots) };
+  });
+  return freeze({ ...collected, formationOptions: options,
+    paretoDiversity: formationParetoDiversity(options) });
 }

@@ -2,6 +2,8 @@ import { isDeepStrictEqual } from "node:util";
 
 import { hashStarcraftTmgContract } from "../authoritative-engine/referee-crypto-v1.mjs";
 import { verifyOfficialGameplayDataBundleV1 } from "../source-data/official-gameplay-data-bundle-v1.mjs";
+import { projectOfficialContextualSupplyValueV1 } from
+  "./official-contextual-supply-projection-v1.mjs";
 
 export const OFFICIAL_ROUND_SUPPLY_STATE_SCHEMA =
   "starcraft_tmg_official_round_supply_state_v1";
@@ -25,12 +27,15 @@ function live(piece) {
   return piece?.isDestroyed !== true && Number(piece?.currentModels || 0) > 0;
 }
 
-function exactSupply(piece) {
+function exactSupply(state, piece) {
   const value = Number(piece?.currentSupply);
   if (!Number.isSafeInteger(value) || value < 0) {
     fail("ROUND_SUPPLY_CURRENT_SUPPLY_INVALID", String(piece?.id || ""));
   }
-  return value;
+  // Printed/current Supply and Supply Pool contribution differ when a
+  // source-backed contextual route (e.g. Advanced Medic Facilities) applies.
+  return projectOfficialContextualSupplyValueV1({ state,
+    pieceId: piece.id, context: "supply_pool_calculation" }).effectiveSupply;
 }
 
 function runtimeHash(value) {
@@ -57,13 +62,13 @@ export function createOfficialRoundSupplyStateV1(input = {}) {
     sideKey,
     state.pieces.filter((piece) => (
       piece?.sideKey === sideKey && piece?.isOnField === true && live(piece)
-    )).reduce((sum, piece) => sum + exactSupply(piece), 0),
+    )).reduce((sum, piece) => sum + exactSupply(state, piece), 0),
   ]));
   const reserveSupplyBySide = Object.fromEntries(SIDE_KEYS.map((sideKey) => [
     sideKey,
     state.pieces.filter((piece) => (
       piece?.sideKey === sideKey && piece?.isOnField !== true && live(piece)
-    )).reduce((sum, piece) => sum + exactSupply(piece), 0),
+    )).reduce((sum, piece) => sum + exactSupply(state, piece), 0),
   ]));
   if (!finalRound && SIDE_KEYS.some((sideKey) => onTableSupplyBySide[sideKey] > finitePool)) {
     fail("ROUND_SUPPLY_CAP_EXCEEDED");

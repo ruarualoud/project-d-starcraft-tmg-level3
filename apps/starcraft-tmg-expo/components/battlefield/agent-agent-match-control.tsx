@@ -15,7 +15,8 @@ import { useI18n } from "@/lib/i18n";
  * only). Talks to the local formal-evidence server contract owned by Codex:
  *
  *   GET  /__ticket23/a2a/ui-status -> { ok, job, manifest }
- *   POST /__ticket23/a2a/ui-drive  -> queues exactly one authoritative action
+ *   POST /__ticket23/a2a/ui-auto-start / ui-auto-pause -> continuous play
+ *   POST /__ticket23/a2a/ui-drive  -> one debugging action only
  *
  * Both calls are same-origin with ambient credentials; this component never
  * sees, stores or renders a cookie, token, or raw model content, and never
@@ -26,6 +27,8 @@ import { useI18n } from "@/lib/i18n";
 
 const STATUS_PATH = "/__ticket23/a2a/ui-status";
 const DRIVE_PATH = "/__ticket23/a2a/ui-drive";
+const AUTO_START_PATH = "/__ticket23/a2a/ui-auto-start";
+const AUTO_PAUSE_PATH = "/__ticket23/a2a/ui-auto-pause";
 const POLL_MS = 2_500;
 const BUSY_JOB_STATUSES = new Set(["queued", "running"]);
 const GATE_PASS_STATUSES = new Set(["passed", "pass", "ok"]);
@@ -34,6 +37,7 @@ type Availability = "unknown" | "hidden" | "available";
 
 interface A2aSnapshot {
   job: Record<string, any> | null;
+  auto: Record<string, any> | null;
   manifest: Record<string, any>;
 }
 
@@ -90,6 +94,8 @@ export function AgentAgentMatchControl() {
   const [readNote, setReadNote] = useState<string | null>(null);
   const [drivePending, setDrivePending] = useState(false);
   const [driveError, setDriveError] = useState<string | null>(null);
+  const [autoPending, setAutoPending] = useState(false);
+  const [autoError, setAutoError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const driveInFlightRef = useRef(false);
   const hiddenRef = useRef(false);
@@ -123,6 +129,7 @@ export function AgentAgentMatchControl() {
       }
       setSnapshot({
         job: body.job && typeof body.job === "object" ? body.job : null,
+        auto: body.auto && typeof body.auto === "object" ? body.auto : null,
         manifest: asRecord(body.manifest),
       });
       setAvailability("available");
@@ -165,6 +172,9 @@ export function AgentAgentMatchControl() {
     const job = snapshot?.job || null;
     const jobStatus = String(job?.status || "").toLowerCase();
     const busy = drivePending || BUSY_JOB_STATUSES.has(jobStatus);
+    const auto = asRecord(snapshot?.auto || manifest.autoDrive);
+    const autoStatus = String(auto.status || "idle").toLowerCase();
+    const autoRunning = autoStatus === "running" || autoStatus === "pausing";
     const terminal = state.terminal === true || state.gameOver === true;
     const transitions = Array.isArray(manifest.recentAcceptedTransitions)
       ? manifest.recentAcceptedTransitions
@@ -187,16 +197,47 @@ export function AgentAgentMatchControl() {
       job,
       jobStatus,
       busy,
+      auto,
+      autoStatus,
+      autoRunning,
       terminal,
       lastAccepted,
       lastActionLabel,
     };
   }, [snapshot, drivePending]);
 
+  const controlAuto = useCallback(async () => {
+    if (autoPending || view.gateBlocked || view.terminal
+      || view.autoStatus === "pausing" || view.autoStatus === "failed"
+      || (!view.autoRunning && view.busy)) return;
+    setAutoPending(true);
+    setAutoError(null);
+    try {
+      const response = await fetch(view.autoRunning
+        ? AUTO_PAUSE_PATH : AUTO_START_PATH, {
+        method: "POST", credentials: "same-origin",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: "{}",
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || body?.ok !== true) {
+        setAutoError(typeof body?.reason === "string"
+          ? body.reason : "A2A_AUTO_CONTROL_REJECTED");
+      }
+    } catch {
+      setAutoError("A2A_AUTO_CONTROL_UNREACHABLE");
+    } finally {
+      setAutoPending(false);
+      void readStatus();
+    }
+  }, [autoPending, readStatus, view.autoRunning, view.autoStatus,
+    view.busy, view.gateBlocked, view.terminal]);
+
   const drive = useCallback(async () => {
     // Exactly one POST per user activation: the in-flight ref plus the
     // disabled-while-busy button make duplicate submission impossible here.
-    if (driveInFlightRef.current || view.busy || view.gateBlocked || view.terminal) {
+    if (driveInFlightRef.current || view.busy || view.autoRunning
+      || view.gateBlocked || view.terminal) {
       return;
     }
     driveInFlightRef.current = true;
@@ -227,7 +268,7 @@ export function AgentAgentMatchControl() {
       setDrivePending(false);
       void readStatus();
     }
-  }, [readStatus, view.busy, view.gateBlocked, view.terminal]);
+  }, [readStatus, view.autoRunning, view.busy, view.gateBlocked, view.terminal]);
 
   if (Platform.OS !== "web" || availability !== "available" || !snapshot) {
     return null;
@@ -261,7 +302,21 @@ export function AgentAgentMatchControl() {
     ? (zh ? "排队中…" : "Queueing…")
     : view.busy
       ? (zh ? "Agent 思考中…" : "Agent thinking…")
-      : (zh ? "推进一个 Agent 动作" : "Drive next Agent action");
+      : (zh ? "单步推进（调试）" : "Single step (debug)");
+  const autoLabel = view.autoStatus === "pausing"
+    ? (zh ? "本动作完成后暂停…" : "Pausing after this action…")
+    : view.autoRunning
+      ? (zh ? "暂停自动对局" : "Pause automatic match")
+      : view.autoStatus === "failed"
+        ? (zh ? "自动对局已停止" : "Automatic match stopped")
+        : (zh ? "自动对局至终局" : "Play automatically to the end");
+  const autoDisabled = view.gateBlocked || view.terminal || autoPending
+    || view.autoStatus === "pausing" || view.autoStatus === "failed"
+    || (!view.autoRunning && view.busy);
+  const autoStateLabel = zh ? ({ idle: "待启动", running: "运行中",
+    pausing: "暂停中", paused: "已暂停", completed: "已结束",
+    failed: "需检查" }[view.autoStatus] || view.autoStatus)
+    : view.autoStatus;
   const showFacts = wide || expanded;
 
   return (
@@ -270,9 +325,28 @@ export function AgentAgentMatchControl() {
         <View style={styles.summaryChips}>
           <Chip testID="agent-agent-data-gate" color={gateColor} label={gateLabel} />
           <Chip testID="agent-agent-run-state" color={runColor} label={runLabel} />
+          <Chip testID="agent-agent-auto-state"
+            color={view.autoStatus === "failed" ? "#ef4444"
+              : view.autoRunning ? "#22c55e" : "#94a3b8"}
+            label={zh ? `自动对局: ${autoStateLabel}`
+              : `Auto match: ${view.autoStatus}`} />
           <Text style={styles.contextText} numberOfLines={1}>{contextLabel}</Text>
         </View>
         <View style={styles.summaryActions}>
+          <Pressable
+            testID="agent-agent-auto-control"
+            accessibilityRole="button"
+            accessibilityLabel={autoLabel}
+            accessibilityState={{ disabled: autoDisabled,
+              busy: autoPending }}
+            disabled={autoDisabled}
+            onPress={() => void controlAuto()}
+            style={({ pressed }) => [styles.driveButton,
+              autoDisabled && styles.driveDisabled,
+              pressed && !autoDisabled && styles.pressed]}
+          >
+            <Text style={styles.driveText}>{autoLabel}</Text>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={zh ? "展开或收起 Agent 控制台详情" : "Toggle Agent control details"}
@@ -284,23 +358,24 @@ export function AgentAgentMatchControl() {
               {expanded ? (zh ? "收起" : "Less") : (zh ? "详情" : "Details")}
             </Text>
           </Pressable>
-          <Pressable
+          {expanded && <Pressable
             testID="agent-agent-drive-next"
             accessibilityRole="button"
             accessibilityLabel={zh
               ? "为行动方排队一个权威 Agent 动作"
               : "Queue one authoritative Agent action for the active side"}
-            accessibilityState={{ disabled: driveDisabled, busy: view.busy }}
-            disabled={driveDisabled}
+            accessibilityState={{ disabled: driveDisabled || view.autoRunning,
+              busy: view.busy }}
+            disabled={driveDisabled || view.autoRunning}
             onPress={() => void drive()}
             style={({ pressed }) => [
               styles.driveButton,
-              driveDisabled && styles.driveDisabled,
-              pressed && !driveDisabled && styles.pressed,
+              (driveDisabled || view.autoRunning) && styles.driveDisabled,
+              pressed && !driveDisabled && !view.autoRunning && styles.pressed,
             ]}
           >
             <Text style={styles.driveText}>{driveLabel}</Text>
-          </Pressable>
+          </Pressable>}
         </View>
       </View>
 
@@ -353,6 +428,18 @@ export function AgentAgentMatchControl() {
           {zh ? `推进请求被拒:${driveError}` : `Drive request rejected: ${driveError}`}
         </Text>
       )}
+      {autoError && (
+        <Text accessibilityRole="alert" style={styles.driveError}>
+          {zh ? `自动对局请求被拒: ${autoError}`
+            : `Automatic match request rejected: ${autoError}`}
+        </Text>
+      )}
+      {view.autoStatus === "failed" && (
+        <Text accessibilityRole="alert" style={styles.driveError}>
+          {zh ? `自动对局已安全停止: ${String(view.auto.stopReason || "待检查")}`
+            : `Automatic match stopped safely: ${String(view.auto.stopReason || "review required")}`}
+        </Text>
+      )}
 
       {showFacts && (
         <View style={styles.factsRow}>
@@ -380,8 +467,8 @@ export function AgentAgentMatchControl() {
         <View style={styles.detailZone}>
           <Text style={styles.helper}>
             {zh
-              ? "按下后为行动方排队恰好一个权威 Agent 动作;服务器可能产生一次付费 Provider 调用。合法性、Apply 与 Replay 全部在服务器侧;上方成本为服务器报告的累计值。本面板不计算、不预测、不覆盖任何规则结果。"
-              : "Pressing queues exactly one authoritative Agent action for the active side; the server may make one paid Provider call. Legality, Apply and Replay stay server-side; the cost above is the server-reported running total. This panel computes, predicts and overrides nothing."}
+              ? "自动对局逐动作执行，暂停会等当前动作完成；High、无进展或预算故障会停止而不自动重试。单步仅供调试；每个动作可能调用 Provider 多次。合法性、Apply 与 Replay 全部在服务器侧。"
+              : "Automatic play runs one authoritative action at a time; pause waits for the current action. High findings, no progress or budget faults stop without retry. Single-step is for debugging; one action may make multiple paid Provider calls. Legality, Apply and Replay remain server-side."}
           </Text>
           <Text selectable style={styles.mono}>
             audit: {String(view.audit?.schema || "—")} · status {String(view.audit?.status || "missing")} · blocking {Number.isFinite(view.blockingFindings) ? view.blockingFindings : "—"} · hash {shortHash(view.audit?.hash)}

@@ -829,7 +829,7 @@ function closeOrAdvanceWindow(state, window, events) {
     resolutionHash: resolution.resolutionHash, effectCount: resolution.effects.length,
     resumeActionHash: resolution.resumeActionHash, trainingTruth: false });
 }
-function apply(bundle, stateInput, request = {}) {
+function apply(bundle, stateInput, request = {}, copyOwnedPassState = null) {
   const action = request.action;
   const domainId = action?.reactionPlan?.domainId;
   const domain = enumerate(bundle, stateInput, { sideKey: action?.sideKey })
@@ -838,7 +838,9 @@ function apply(bundle, stateInput, request = {}) {
   const expected = instantiate(bundle, stateInput, domain,
     action.reactionPlan.canonicalParameters);
   if (!isDeepStrictEqual(expected.action, action)) fail("REACTION_ACTION_STALE");
-  const state = clone(stateInput);
+  const state = copyOwnedPassState
+    && action.actionType === "pass_reaction_family_window"
+    ? copyOwnedPassState(stateInput) : clone(stateInput);
   const window = currentWindow(state);
   const events = [];
   if (action.actionType === "pass_reaction_family_window") {
@@ -888,6 +890,10 @@ function apply(bundle, stateInput, request = {}) {
 }
 
 export function openOfficialReactionFamilyWindowV1(bundle, stateInput, input = {}) {
+  return openReactionFamilyWindow(bundle, stateInput, input);
+}
+
+function openReactionFamilyWindow(bundle, stateInput, input = {}, copyOwnedState = null) {
   verifyOfficialReactionFamilySourceBundleV1(bundle);
   if (currentWindow(stateInput)) fail("REACTION_WINDOW_ALREADY_OPEN");
   const triggerKind = String(input.triggerKind || "");
@@ -905,7 +911,7 @@ export function openOfficialReactionFamilyWindowV1(bundle, stateInput, input = {
     input.context.enemyReactionAllowed !== false };
   const triggerHash = hashStarcraftTmgContract({ triggerKind, activationId,
     sourceActionHash, context });
-  const state = clone(stateInput);
+  const state = copyOwnedState ? copyOwnedState(stateInput) : clone(stateInput);
   const window = seal({ schema: OFFICIAL_REACTION_FAMILY_WINDOW_SCHEMA,
     semanticVersion: "1.0.0", triggerKind, triggerHash,
     sourceActionHash, resumeActionHash, activationId,
@@ -933,6 +939,49 @@ export function openOfficialReactionFamilyWindowV1(bundle, stateInput, input = {
     state: freezeDeep(state), events: [event],
     rulesTruth: "official_current_product_reaction_window_opened",
     trainingTruth: false });
+}
+
+// Readonly opportunity queries can open a window and pass its first priority
+// without changing units, resources, terrain or source data. Own ONE complete
+// immutable snapshot; copy every field these two native transitions can mutate.
+// The callback stays private: public Apply/Open still copy their entire caller.
+export function createOfficialReactionWindowOpportunityBatchV1(input = {}) {
+  const snapshot = freezeDeep(structuredClone({ state: input.state,
+    bundle: input.bundle || input.state?.officialReactionFamilySourceBundle }));
+  verifyOfficialReactionFamilySourceBundleV1(snapshot.bundle);
+  function copyOwnedWindowState(state) {
+    const next = { ...state };
+    for (const key of ["pendingOfficialReactionWindow", "log",
+      "officialReactionResolutionHistory"]) {
+      if (Object.hasOwn(state, key)) next[key] = clone(state[key]);
+    }
+    return next;
+  }
+  return Object.freeze({
+    projectWindow(windowInput) {
+      const opened = openReactionFamilyWindow(snapshot.bundle, snapshot.state,
+        windowInput, copyOwnedWindowState);
+      const activeLegal = enumerate(snapshot.bundle, opened.state, {
+        sideKey: windowInput.activeSideKey,
+      });
+      const passDomain = activeLegal.parameterDomains.find(domain =>
+        domain.actionType === "pass_reaction_family_window");
+      let defenderLegal = { parameterDomains: [], prioritySideKey: null };
+      if (passDomain) {
+        const passPreview = preview(snapshot.bundle, opened.state, {
+          domain: passDomain, parameters: {},
+        });
+        const advanced = apply(snapshot.bundle, opened.state, {
+          action: passPreview.action,
+        }, copyOwnedWindowState);
+        const pending = advanced.state.pendingOfficialReactionWindow;
+        defenderLegal = enumerate(snapshot.bundle, advanced.state, {
+          sideKey: pending?.prioritySideKeys?.[pending?.priorityIndex],
+        });
+      }
+      return freezeDeep({ activeLegal, defenderLegal });
+    },
+  });
 }
 
 export function projectOfficialReactionFamilyResolutionV1(state, triggerHash) {

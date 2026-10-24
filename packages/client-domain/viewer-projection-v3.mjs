@@ -2,6 +2,9 @@
 // Client Domain re-projects untrusted responses through the same function;
 // any structural difference is a fail-closed schema violation.
 
+import { projectCompetitiveMapRoomFreezeSummaryV1 } from
+  "./competitive-map-admission-contract-v1.mjs";
+
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -411,9 +414,18 @@ function armyResourceBudget(value) {
 
 function field(fieldName, value, state) {
   if (WHOLE_TREE.has(fieldName)) return clone(value);
-  if (fieldName === "board") return pick(value, BOARD_KEYS, (child, key) => (
-    BOARD_COLLECTIONS.has(key) ? (Array.isArray(child) ? child.map(area) : []) : clone(child)
-  ));
+  if (fieldName === "board") {
+    const board = pick(value, BOARD_KEYS, (child, key) => (
+      BOARD_COLLECTIONS.has(key) ? (Array.isArray(child) ? child.map(area) : []) : clone(child)
+    ));
+    const freeze = state.officialCompetitiveMapRoomFreeze;
+    if (freeze?.roomFreezeHash && freeze.roomFreezeHash
+      === value?.competitiveMapRoomFreezeSummary?.roomFreezeHash) {
+      board.competitiveMapRoomFreezeSummary =
+        projectCompetitiveMapRoomFreezeSummaryV1(freeze);
+    }
+    return board;
+  }
   if (fieldName === "pieces") return Array.isArray(value) ? value.map((piece) => game(piece)) : [];
   if (fieldName === "players") {
     if (!object(value)) return {};

@@ -1,0 +1,361 @@
+{
+  "schema": "paused_workflow_handoff_v1",
+  "pausedByUser": true,
+  "processExit": {
+    "code": 0,
+    "signal": null
+  },
+  "sourceWorkflow": "/Users/rualoud/Downloads/codex_project/project-d/starcraft-tmg-level3/.worktrees/ticket-27-slice-271-codex-integration/build/slice272-product-generation-v645-8aBuEV/workspace/decision-workflows/decision-7f410254-23ff-42dd-8470-e63d4e2c3dac",
+  "scope": "derived narrow projection; no acceptance",
+  "snapshot": {
+    "revision": 23,
+    "event": {
+      "sequence": 12227,
+      "type": "work_failed",
+      "workId": "product:after-teach:r22:subject-v1:investigation:strategy-frontier:followup:r23:capability-delivery-reconsideration:v1:investigation:capability-delivery-reconsideration:v2:investigation:frontier-return:2b83f4b15da270fc:strategy-frontier",
+      "failure": {
+        "code": "ROSTER_WORKFLOW_ROLE_NO_PROGRESS",
+        "detail": {
+          "version": 1,
+          "reason": "unchanged_investigation_authorization",
+          "workId": "product:after-teach:r22:subject-v1:investigation:strategy-frontier:followup:r23:capability-delivery-reconsideration:v1:investigation:capability-delivery-reconsideration:v2:investigation:frontier-return:2b83f4b15da270fc:strategy-frontier",
+          "scopeHash": "1dad32b59a4cb1857511e5d93930a6b73608ddbcba7d327ad401a447e44e0c54",
+          "previousReplyRef": "f673d26fd6483e504dd665d1fdd5219056e71d605d17f63afdf2ff7637c93269",
+          "previousWorkId": "product:after-teach:r22:subject-v1:investigation:strategy-frontier:followup:r23:capability-delivery-reconsideration:v1:investigation:capability-delivery-reconsideration:v2",
+          "previousResultRef": "b96a6ddf4c641fd55f81b5e08e08985423afc4d232ccca46c6338185bc1d4fcf",
+          "repeatedReplyRef": "217deb6b036182e68d012bc299e9a7daffb15743042b74299caf91cb624457c7",
+          "errors": [
+            {
+              "code": "unchanged_investigation_authorization",
+              "previousWorkId": "product:after-teach:r22:subject-v1:investigation:strategy-frontier:followup:r23:capability-delivery-reconsideration:v1:investigation:capability-delivery-reconsideration:v2",
+              "previousResultRef": "b96a6ddf4c641fd55f81b5e08e08985423afc4d232ccca46c6338185bc1d4fcf",
+              "instruction": "This is the SAME selected question, reason, expected observation and stop condition as your prior authorization on this explicit continuation. Read the actual method return and reconcile its failure/results before authorizing again. If continuing is necessary, explain the concrete changed method, prerequisite or new evidence in whyExistingEvidenceInsufficient and why it can now answer the remaining predicate; keep the same question if appropriate. Merely renaming/rewording the old request is not progress. Alternatively revise/retain only with honest supported reasons and unresolved facts preserved. No forced strategy edit, fabricated answer, whole-match expansion or automatic repeat is authorized."
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2091
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2092
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2098
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2099
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2202
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2091
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2092
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2098
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2099
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2202
+            }
+          ],
+          "stoppedAtTurn": 3,
+          "acceptanceGranted": false,
+          "historyReset": false,
+          "automaticRetry": false
+        },
+        "dispatchOutcome": "completed_no_progress"
+      }
+    },
+    "pending": [],
+    "work": {
+      "id": "product:after-teach:r22:subject-v1:investigation:strategy-frontier:followup:r23:capability-delivery-reconsideration:v1:investigation:capability-delivery-reconsideration:v2:investigation:frontier-return:2b83f4b15da270fc:strategy-frontier",
+      "status": "needs_repair",
+      "resultRef": "316fd3384338ec84821073a15f4e6b80c280289bd7bf0df55ba5e769d84237c0",
+      "repairRef": "d02b61382313e2971c1fb94cee3ae73a53d7d0139926c73976287758af893bf3",
+      "calls": [
+        {
+          "turn": 1,
+          "requestRef": "0f54719b3bde8253ad73c3c772d88a1e6a7a14ab7e9c3e07f1944f9cc7894bcd",
+          "replyRef": "6f676f60abf0daf5a8c277eb96bc97f84020395ad184b6e041c9cef9c563d1ef",
+          "receipt": {
+            "providerKind": "keychain_isolated_worker_structured_flash",
+            "modelVersion": "deepseek-flash",
+            "promptVersion": "ticket27.roster_strategist.multi_round.v1",
+            "sessionId": "decision-7f410254-23ff-42dd-8470-e63d4e2c3dac",
+            "roundIndex": 1,
+            "roundKind": "roster_workflow_strategy_decision",
+            "contextHash": "00fd62f2aabab01789fd73e8076b2dbf07c38f86840dfcdd1550336c8722afdf",
+            "outputHash": "2e83b78eb5f249b6db4de4e82d22a0930af32f696a1e66ab44f002f8993daf16",
+            "outputContractRef": {
+              "id": "roster.workflow_strategy_decision",
+              "version": "1.15.0",
+              "hash": "e4bcc3d40bb77defb835a23f1b14871785a15c62fd0daa3d99c20f7596b1f29f"
+            },
+            "providerSchemaValid": true,
+            "providerSchemaIssueCount": 0,
+            "usage": {
+              "inputUnits": 152850,
+              "outputUnits": 1612,
+              "totalUnits": 154462,
+              "inputCacheHitUnits": 7296,
+              "inputCacheMissUnits": 145554,
+              "reasoningOutputUnits": 0
+            },
+            "latencyMs": 13168,
+            "providerReceiptHash": "3f1a3bceeb82d3fb4523902cc95e8be6dba1ee70b9a7a6a3a709dc71a9d70ad4",
+            "paidProviderCall": true,
+            "trainingTruth": false,
+            "receiptHash": "cd68f2afe7f5402d58f0364867d1bbe1525578d0d320d8c19f76fe57c653c411"
+          }
+        },
+        {
+          "turn": 2,
+          "requestRef": "05beb9ef5720605d2f79476189b0129097ace25c7bd7a89af651c08d90eacb47",
+          "replyRef": "f673d26fd6483e504dd665d1fdd5219056e71d605d17f63afdf2ff7637c93269",
+          "receipt": {
+            "providerKind": "keychain_isolated_worker_structured_flash",
+            "modelVersion": "deepseek-flash",
+            "promptVersion": "ticket27.roster_strategist.multi_round.v1",
+            "sessionId": "decision-7f410254-23ff-42dd-8470-e63d4e2c3dac",
+            "roundIndex": 2,
+            "roundKind": "roster_workflow_strategy_decision",
+            "contextHash": "3edd4b270ce0632955a46035ddb0f9aab7f2f6b00221fe7372523ca93b2d9d69",
+            "outputHash": "dfcbbb3d2ff53feed9869912d39e11ee6ddc4efc3faf8ab5408d9ff274e04c79",
+            "outputContractRef": {
+              "id": "roster.workflow_author_command",
+              "version": "1.1.0",
+              "hash": "528b1ea5541115e42bf3ba8d215be2d4e81a09398832a53cc76bf8df01316552"
+            },
+            "providerSchemaValid": true,
+            "providerSchemaIssueCount": 0,
+            "usage": {
+              "inputUnits": 308331,
+              "outputUnits": 1343,
+              "totalUnits": 309674,
+              "inputCacheHitUnits": 640,
+              "inputCacheMissUnits": 307691,
+              "reasoningOutputUnits": 0
+            },
+            "latencyMs": 13446,
+            "providerReceiptHash": "837aab60770d37f61d2e06f55ae72d55eaceb97f84892af9231736b1d97fd7bb",
+            "paidProviderCall": true,
+            "trainingTruth": false,
+            "receiptHash": "cba6062a97bc9b1907b9b6ff4d319ed8ab9158b1ddb294917b2656b9086dfc7e"
+          }
+        },
+        {
+          "turn": 3,
+          "requestRef": "1b3effd3c7d5a40e212544ca26d1712c765d30e7d3eba7be609e7a94785a45c7",
+          "replyRef": "217deb6b036182e68d012bc299e9a7daffb15743042b74299caf91cb624457c7",
+          "receipt": {
+            "providerKind": "keychain_isolated_worker_structured_flash",
+            "modelVersion": "deepseek-flash",
+            "promptVersion": "ticket27.roster_strategist.multi_round.v1",
+            "sessionId": "decision-7f410254-23ff-42dd-8470-e63d4e2c3dac",
+            "roundIndex": 3,
+            "roundKind": "roster_workflow_strategy_decision",
+            "contextHash": "769960a7c6924d3f2e42e04696b1f68191a821c912a85e0f961efd9849251b6f",
+            "outputHash": "b6ce250d04767cdc252ef3eb5d145ee8714cc375a040b7d40f39db4dbeac5d7e",
+            "outputContractRef": {
+              "id": "roster.workflow_author_command",
+              "version": "1.2.0",
+              "hash": "938d23bcad25aa5605ca4f843beb650fe477cc52caf2c5cfe0898893ca97b25d"
+            },
+            "providerSchemaValid": true,
+            "providerSchemaIssueCount": 0,
+            "usage": {
+              "inputUnits": 316194,
+              "outputUnits": 1840,
+              "totalUnits": 318034,
+              "inputCacheHitUnits": 640,
+              "inputCacheMissUnits": 315554,
+              "reasoningOutputUnits": 0
+            },
+            "latencyMs": 14898,
+            "providerReceiptHash": "02e33a0e98d8ef497d910693cc67006233dfb77f0750f00640cd1901b824f102",
+            "paidProviderCall": true,
+            "trainingTruth": false,
+            "receiptHash": "8fb739c321d9bd1947fd883867c4d688bf2aeae0b0f351e35fe3e4ab2cab4c3d"
+          }
+        }
+      ],
+      "turn": 3,
+      "failure": {
+        "code": "ROSTER_WORKFLOW_ROLE_NO_PROGRESS",
+        "detail": {
+          "version": 1,
+          "reason": "unchanged_investigation_authorization",
+          "workId": "product:after-teach:r22:subject-v1:investigation:strategy-frontier:followup:r23:capability-delivery-reconsideration:v1:investigation:capability-delivery-reconsideration:v2:investigation:frontier-return:2b83f4b15da270fc:strategy-frontier",
+          "scopeHash": "1dad32b59a4cb1857511e5d93930a6b73608ddbcba7d327ad401a447e44e0c54",
+          "previousReplyRef": "f673d26fd6483e504dd665d1fdd5219056e71d605d17f63afdf2ff7637c93269",
+          "previousWorkId": "product:after-teach:r22:subject-v1:investigation:strategy-frontier:followup:r23:capability-delivery-reconsideration:v1:investigation:capability-delivery-reconsideration:v2",
+          "previousResultRef": "b96a6ddf4c641fd55f81b5e08e08985423afc4d232ccca46c6338185bc1d4fcf",
+          "repeatedReplyRef": "217deb6b036182e68d012bc299e9a7daffb15743042b74299caf91cb624457c7",
+          "errors": [
+            {
+              "code": "unchanged_investigation_authorization",
+              "previousWorkId": "product:after-teach:r22:subject-v1:investigation:strategy-frontier:followup:r23:capability-delivery-reconsideration:v1:investigation:capability-delivery-reconsideration:v2",
+              "previousResultRef": "b96a6ddf4c641fd55f81b5e08e08985423afc4d232ccca46c6338185bc1d4fcf",
+              "instruction": "This is the SAME selected question, reason, expected observation and stop condition as your prior authorization on this explicit continuation. Read the actual method return and reconcile its failure/results before authorizing again. If continuing is necessary, explain the concrete changed method, prerequisite or new evidence in whyExistingEvidenceInsufficient and why it can now answer the remaining predicate; keep the same question if appropriate. Merely renaming/rewording the old request is not progress. Alternatively revise/retain only with honest supported reasons and unresolved facts preserved. No forced strategy edit, fabricated answer, whole-match expansion or automatic repeat is authorized."
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2091
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2092
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2098
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2099
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2202
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2091
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2092
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2098
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2099
+            },
+            {
+              "code": "evidence_not_read",
+              "number": 2202
+            }
+          ],
+          "stoppedAtTurn": 3,
+          "acceptanceGranted": false,
+          "historyReset": false,
+          "automaticRetry": false
+        },
+        "dispatchOutcome": "completed_no_progress"
+      },
+      "stop": {
+        "version": 1,
+        "reason": "unchanged_investigation_authorization",
+        "workId": "product:after-teach:r22:subject-v1:investigation:strategy-frontier:followup:r23:capability-delivery-reconsideration:v1:investigation:capability-delivery-reconsideration:v2:investigation:frontier-return:2b83f4b15da270fc:strategy-frontier",
+        "scopeHash": "1dad32b59a4cb1857511e5d93930a6b73608ddbcba7d327ad401a447e44e0c54",
+        "previousReplyRef": "f673d26fd6483e504dd665d1fdd5219056e71d605d17f63afdf2ff7637c93269",
+        "previousWorkId": "product:after-teach:r22:subject-v1:investigation:strategy-frontier:followup:r23:capability-delivery-reconsideration:v1:investigation:capability-delivery-reconsideration:v2",
+        "previousResultRef": "b96a6ddf4c641fd55f81b5e08e08985423afc4d232ccca46c6338185bc1d4fcf",
+        "repeatedReplyRef": "217deb6b036182e68d012bc299e9a7daffb15743042b74299caf91cb624457c7",
+        "errors": [
+          {
+            "code": "unchanged_investigation_authorization",
+            "previousWorkId": "product:after-teach:r22:subject-v1:investigation:strategy-frontier:followup:r23:capability-delivery-reconsideration:v1:investigation:capability-delivery-reconsideration:v2",
+            "previousResultRef": "b96a6ddf4c641fd55f81b5e08e08985423afc4d232ccca46c6338185bc1d4fcf",
+            "instruction": "This is the SAME selected question, reason, expected observation and stop condition as your prior authorization on this explicit continuation. Read the actual method return and reconcile its failure/results before authorizing again. If continuing is necessary, explain the concrete changed method, prerequisite or new evidence in whyExistingEvidenceInsufficient and why it can now answer the remaining predicate; keep the same question if appropriate. Merely renaming/rewording the old request is not progress. Alternatively revise/retain only with honest supported reasons and unresolved facts preserved. No forced strategy edit, fabricated answer, whole-match expansion or automatic repeat is authorized."
+          },
+          {
+            "code": "evidence_not_read",
+            "number": 2091
+          },
+          {
+            "code": "evidence_not_read",
+            "number": 2092
+          },
+          {
+            "code": "evidence_not_read",
+            "number": 2098
+          },
+          {
+            "code": "evidence_not_read",
+            "number": 2099
+          },
+          {
+            "code": "evidence_not_read",
+            "number": 2202
+          },
+          {
+            "code": "evidence_not_read",
+            "number": 2091
+          },
+          {
+            "code": "evidence_not_read",
+            "number": 2092
+          },
+          {
+            "code": "evidence_not_read",
+            "number": 2098
+          },
+          {
+            "code": "evidence_not_read",
+            "number": 2099
+          },
+          {
+            "code": "evidence_not_read",
+            "number": 2202
+          }
+        ],
+        "stoppedAtTurn": 3,
+        "acceptanceGranted": false,
+        "historyReset": false,
+        "automaticRetry": false
+      }
+    }
+  },
+  "overnight": {
+    "from": "2026-10-23T18:00:00+08:00",
+    "to": "2026-10-24T07:50:27.114+08:00",
+    "requests": 208,
+    "replies": 207,
+    "input": 29282841,
+    "output": 257930,
+    "total": 29540771,
+    "providerMs": 2197256,
+    "first": "2026-10-23T10:07:49.412Z",
+    "last": "2026-10-23T23:50:06.245Z"
+  },
+  "exports": [
+    {
+      "file": "latest-request.json",
+      "artifactRef": "1b3effd3c7d5a40e212544ca26d1712c765d30e7d3eba7be609e7a94785a45c7"
+    },
+    {
+      "file": "latest-reply.json",
+      "artifactRef": "217deb6b036182e68d012bc299e9a7daffb15743042b74299caf91cb624457c7"
+    },
+    {
+      "file": "current-draft-r23.json",
+      "artifactRef": "b358103f6cb89e284cbe00cb602895fc74a7e12faa214a1ec92673d98598c139"
+    },
+    {
+      "file": "original-author-decision.json",
+      "artifactRef": "640413bb6d6568eb1ca1bf3f13faa0abc44aa6e589621fdf4f7209400931d4a3"
+    },
+    {
+      "file": "previous-investigation-authorization.json",
+      "artifactRef": "b96a6ddf4c641fd55f81b5e08e08985423afc4d232ccca46c6338185bc1d4fcf"
+    }
+  ]
+}

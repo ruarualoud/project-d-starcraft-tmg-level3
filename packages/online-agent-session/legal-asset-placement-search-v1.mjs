@@ -10,6 +10,8 @@ import { projectOfficialOmegaWormPieceV1 } from
   "../product-composition/official-selected-roster-ability-runtime-v1.mjs";
 import { getOfficialBattlefieldAssetComponentFootprintV1 } from
   "../source-data/official-battlefield-asset-component-profile-v1.mjs";
+import { createOwnedOfficialBattlefieldAssetInstantiationStateV1 } from
+  "../product-composition/official-battlefield-asset-family-adapter-v1.mjs";
 
 export const STARCRAFT_TMG_LEGAL_ASSET_PLACEMENT_SEARCH_VERSION =
   "starcraft_tmg_legal_asset_placement_search_v1";
@@ -587,17 +589,23 @@ function candidatePrefilterFailure(state, source, contract, candidate) {
   if (["creep_token_place", "force_field_place", "shade_token_place",
     "spawn_creep_tumor"]
     .includes(source.effectKind)) {
-    for (const piece of (state.pieces || []).filter(activePiece)) {
-      if (liveModelFootprints(piece).some((entry) =>
-        footprintGap(footprint, entry) < 1)) {
-        return "BATTLEFIELD_ASSET_TOKEN_OVERLAPS_MODEL";
+    // Contact abilities require a zero parent gap. footprintGap deliberately
+    // clamps penetration and contact to zero, so it cannot reject collisions
+    // for this manifold. The unchanged lifecycle Rules own contact tolerance
+    // AND collisions with every parent/other model/token for each survivor.
+    if (!contract.parentBaseContactRequired) {
+      for (const piece of (state.pieces || []).filter(activePiece)) {
+        if (liveModelFootprints(piece).some((entry) =>
+          footprintGap(footprint, entry) < 1)) {
+          return "BATTLEFIELD_ASSET_TOKEN_OVERLAPS_MODEL";
+        }
       }
-    }
-    for (const token of state.board?.tokens || []) {
-      if (token?.isRemoved === true) continue;
-      const other = existingTokenFootprint(token);
-      if (other && footprintGap(footprint, other) < 1) {
-        return "BATTLEFIELD_ASSET_TOKEN_OVERLAPS_TOKEN";
+      for (const token of state.board?.tokens || []) {
+        if (token?.isRemoved === true) continue;
+        const other = existingTokenFootprint(token);
+        if (other && footprintGap(footprint, other) < 1) {
+          return "BATTLEFIELD_ASSET_TOKEN_OVERLAPS_TOKEN";
+        }
       }
     }
     for (const terrain of state.board?.terrain || []) {
@@ -851,13 +859,17 @@ function candidateGenerator(state, domain, request, contract) {
 export function searchStarcraftTmgLegalAssetPlacementOptionsV1(input = {}) {
   const domain = input.domain;
   const source = sourceDomain(domain);
-  const state = input.state;
+  let state = input.state;
   const instantiate = input.instantiate;
   const request = object(input.request) ? input.request : {};
   if (!object(state) || !object(domain) || !object(source?.parameterSchema)
     || typeof instantiate !== "function") {
     throw new TypeError("LEGAL_ASSET_PLACEMENT_SEARCH_INPUT_INVALID");
   }
+  // All candidates belong to this one read-only query. Own the complete state
+  // once so native source validators can reuse immutable verified data without
+  // trusting/fixing/freezing the caller's mutable Room aggregate or old results.
+  state = createOwnedOfficialBattlefieldAssetInstantiationStateV1(state);
   const contract = placementContract(source, state);
   if (!contract) {
     throw new TypeError("LEGAL_ASSET_PLACEMENT_DOMAIN_UNSUPPORTED");

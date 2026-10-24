@@ -1,0 +1,62 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>写表与 Plan：P0 分角色可行性试验</title>
+<style>
+:root{color-scheme:light;font-family:system-ui,"PingFang SC",sans-serif;background:#f4f7fa;color:#1e3042}*{box-sizing:border-box}body{max-width:1140px;margin:28px auto;padding:0 20px 60px;line-height:1.65}h1{font-size:28px}h2{font-size:21px;margin-top:32px}h3{font-size:17px}.note{border-left:4px solid #1775a5;padding:10px 16px;background:#eaf3fa}.warning{border-left-color:#b67614;background:#fff6e5}.panel{background:white;border:1px solid #d8e0e7;border-radius:10px;padding:18px;margin:14px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.label{color:#5b7082;font-size:13px}.value{font-size:19px;font-weight:600}.bad{color:#a43d2b}.good{color:#166047}button{font:inherit;cursor:pointer;color:#165575;background:#fff;border:1px solid #9fbacb;border-radius:6px;padding:8px 12px;margin:4px}button.active{background:#176e9c;color:white}button:hover{border-color:#135a80}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.6;background:#f3f6f8;border-radius:5px;padding:14px;max-height:620px;overflow:auto}summary{cursor:pointer;color:#176388;padding:6px}table{border-collapse:collapse;width:100%;font-size:14px}td,th{text-align:left;border-bottom:1px solid #e0e6eb;padding:9px;vertical-align:top}ul{padding-left:22px}.subtle{color:#5b7082;font-size:13px}.events{max-height:250px;overflow:auto}a{color:#176388}code{overflow-wrap:anywhere}.hidden{display:none}
+</style>
+<h1>写表与 Plan：分角色流程是否可行？</h1>
+<p class="note">这是 P0 可行性原型，不是最终产品验收。上半部分展示真实 Flash 调用及其输入/输出；下半部分是明确标注的状态模拟。问题是：基于已有事实，分块角色能否给总体决策提供足够信息，并避免把未证实假设当成可发布 Plan？</p>
+<div id="overview" class="grid"></div>
+<div class="panel"><h3>本次已有证据</h3><p>当前是私有假设分支中的 Combat Pass 回执。它证明一个阶段动作已执行，不证明单位已到达目标点、最早到达时间或实际得分。原正式军表和 Plan 未被本试验修改。</p><details><summary>来源、分数和可证明范围</summary><pre id="source"></pre></details></div>
+<h2>一、真实三角色交接记录</h2><p>事实汇总 → 局部 Teach → 总体决策。点击每一步查看真实 Prompt、公开回复、工具证据引用与用量。没有新调用原生规则工具；已有原生回执作为输入。</p>
+<div id="roles"></div><div id="checks" class="panel"></div>
+<h2>二、状态模型交互演示 <small>（模拟，不是生产记录）</small></h2>
+<p class="note warning">按钮只改变浏览器里的模拟状态，不调用模型、不改真实表/Plan，也不执行规则器。“模拟查证完成”不是给实际未知项补证据。正式改造必须使用真实工具结果替换这些演示事件。</p>
+<div id="state" class="panel"></div><div id="buttons"></div>
+<h3>按场景逐步体验</h3><div id="tabs"></div><p id="scenario"></p><div id="steps"></div>
+<div class="panel"><h3>刚才发生了什么</h3><div id="events" class="events"></div></div>
+<h2>三、这次能得出什么</h2><p>真实模型交接通过只能支持分工方向可行；它不证明完整写表成功、不会遗漏所有依赖、策略胜率提升或实际产品恢复可靠。后续 P1–P6 分别完成状态合同、调度、实验执行、联动修改、恢复验收与真实全流程报告。</p><div id="manual"></div>
+<script id="evidence" type="application/json">__EVIDENCE_JSON__</script>
+<script id="state-model">
+// Pure, portable state logic. Synthetic events are never historical evidence.
+const WorkflowPrototype=(()=>{
+  const start=()=>({mode:'agent',candidate:1,plan:1,phase:'候选',facts:'待查证',teach:false,decision:false,
+    ledgerVersion:1,published:false,events:[]});
+  function reduce(old,action){const s=structuredClone(old);let message='';
+    const block=why=>{message='拒绝：'+why;};
+    if(action==='reset')return start();
+    if(action==='preset'){s.mode='preset';message='模拟切换固定表模式：后续不可改表，Plan仍可修改。';}
+    if(action==='facts'){s.facts='已有局部事实，必要到达结论未解决';s.phase='事实已交接';message='局部成功不等于全路径或控点成功。';}
+    if(action==='teach'){if(s.facts==='待查证')block('先提供相关事实。');else{s.teach=true;s.phase='局部Teach提案';message='记录建议，尚未修改军表或Plan。';}}
+    if(action==='decide'){if(!s.teach)block('没有局部审视结果。');else{s.decision=true;s.phase='总体决策';message='由总体决策决定下一工作；必要事实仍未解决，不能发布。';}}
+    if(action==='revisePlan'){if(!s.decision)block('编辑器不能替代总体决策。');else{s.plan++;s.phase='Plan待复审';s.teach=false;s.decision=false;s.published=false;message='模拟修改Plan：失效相关策略审视，保留原始事实及来源。';}}
+    if(action==='reviseRoster'){if(s.mode==='preset')block('用户锁定军表。');else if(!s.decision)block('没有获准改表的决策。');else{s.candidate++;s.plan++;s.ledgerVersion++;s.facts='待查证';s.teach=false;s.decision=false;s.published=false;s.phase='新表＋新Plan草案';message='模拟改表：关联Plan一起升版，依赖旧单位/能力的结论必须重查。';}}
+    if(action==='checked'){s.facts='模拟：必要事实已查证';s.phase='等待整体复审';message='仅演示外部工具交回完整证据；本项目实际未知项并未因此解决。';}
+    if(action==='publish'){if(!s.decision||!s.teach||s.facts!=='模拟：必要事实已查证')block('需要当前版本事实、审视和总体决策同时满足。');else{s.published=true;s.phase='模拟发布';message='仅模拟状态可发布，真实Plan仍未验收。';}}
+    if(action==='stale')block('回执属于旧候选版本，不得贴到当前候选。');
+    s.events.push({action,message,synthetic:true});return s;}
+  return {start,reduce};
+})();
+</script>
+<script>
+const data=JSON.parse(document.getElementById('evidence').textContent);
+const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
+const num=n=>Number(n||0).toLocaleString('zh-CN');
+for(const [label,value] of [['真实调用',data.result.roles.length+' 次'],['本试验 Token',num(data.result.usage.totalUnits)],['正式数据改动','0'],['最终Plan验收','未完成']]){const n=el('div',undefined,'panel');n.append(el('div',label,'label'),el('div',value,'value'));document.getElementById('overview').append(n);}
+document.getElementById('source').textContent=JSON.stringify(data.source,null,2);
+const names={facts:'1. 事实汇总',teach:'2. 局部 Teach',decision:'3. 总体决策'};
+for(const role of ['facts','teach','decision']){const item=data.roles[role];if(!item)continue;const n=el('section',undefined,'panel');n.append(el('h3',names[role]));
+  n.append(el('p',item.reply?.output?.publicReason||'尚未取得完整回复。'));
+  const usage=item.reply?.receipt?.usage;const reused=data.result.roles.find(r=>r.role===role)?.reusedPaidReply;
+  n.append(el('p',usage?`${num(usage.inputUnits)} 输入 + ${num(usage.outputUnits)} 输出；${(item.reply.receipt.latencyMs/1000).toFixed(2)} 秒${reused?'（复用已付回复，本轮未再次调用）':''}`:'未取得已知费用回执','subtle'));
+  for(const [title,value] of [['完整公开回复',item.reply?.output],['完整脱敏 Prompt（含实际 Provider 指令）',item.request],['调用回执与用量',item.reply?.receipt]]){if(!value)continue;const d=el('details');d.append(el('summary',title),el('pre',JSON.stringify(value,null,2)));n.append(d);}document.getElementById('roles').append(n);}
+document.getElementById('checks').append(el('h3','自动核对（不等于策略质量判定）'));
+for(const c of data.result.checks)document.getElementById('checks').append(el('div',(c.ok?'✓ ':'✗ ')+c.name,c.ok?'good':'bad'));
+if(data.result.failure)document.getElementById('checks').append(el('pre',JSON.stringify(data.result.failure,null,2)));
+if(data.manualReview){const box=document.getElementById('manual');box.append(el('p',data.manualReview.verdict,'note warning'));for(const f of data.manualReview.findings){const n=el('div',undefined,'panel');n.append(el('h3',f.id+' · '+f.severity),el('p',f.evidence),el('p',f.fix));box.append(n);}const d=el('details');d.append(el('summary','失败过程与总费用（含此前试验，不重复计算复用回复）'),el('pre',JSON.stringify(data.manualReview,null,2)));box.append(d);}
+let state=WorkflowPrototype.start();const actions={reset:'重置模拟',preset:'设为固定表',facts:'交回局部事实',teach:'形成局部提案',decide:'总体决策',revisePlan:'模拟修改Plan',reviseRoster:'模拟改表＋更新Plan',checked:'模拟必要事实已查明',publish:'尝试发布',stale:'尝试使用旧版回执'};
+function draw(){const box=document.getElementById('state');box.replaceChildren();const list=[['模式',state.mode==='preset'?'固定表':'可改表'],['候选 / Plan版本',state.candidate+' / '+state.plan],['当前环节',state.phase],['事实状态',state.facts],['当前Teach',state.teach?'存在':'需审视'],['当前决策',state.decision?'存在':'待决策'],['依赖版本',state.ledgerVersion],['模拟发布',state.published?'是（非真实验收）':'否']];const g=el('div',undefined,'grid');for(const [k,v]of list){const n=el('div');n.append(el('div',k,'label'),el('div',String(v)));g.append(n);}box.append(g);document.getElementById('events').replaceChildren(...state.events.map((e,i)=>el('div',`${i+1}. ${e.message}`)));}
+function act(a){state=WorkflowPrototype.reduce(state,a);draw();}
+for(const [a,label]of Object.entries(actions)){const b=el('button',label);b.onclick=()=>act(a);document.getElementById('buttons').append(b);}
+const scenarios=[['未知不能发布','局部事实与Teach完成，也不能把尚未查证的到达计划发布。',['facts','teach','decide','publish']],['改表后证据失效','模拟改表时Plan同步变更；旧审视和单位相关结论不能继续作为当前通过依据。',['facts','teach','decide','reviseRoster','publish','stale']],['固定表的权限','固定表不能改表，但不能因此免除Plan修订。',['preset','facts','teach','decide','reviseRoster','revisePlan']],['完整状态顺序','这是模拟完整证据到达后的状态顺序，不代表实际流程已产出。',['facts','teach','decide','checked','teach','decide','publish']]];
+for(const [i,s]of scenarios.entries()){const b=el('button',s[0]);b.onclick=()=>{state=WorkflowPrototype.start();draw();document.getElementById('scenario').textContent=s[1];document.getElementById('steps').replaceChildren(...s[2].map((a,j)=>{const x=el('button',`${j+1}. ${actions[a]}`);x.onclick=()=>act(a);return x;}));[...document.getElementById('tabs').children].forEach((x,j)=>x.classList.toggle('active',i===j));};document.getElementById('tabs').append(b);}draw();document.getElementById('tabs').firstChild.click();
+</script></html>

@@ -1,5 +1,7 @@
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS } from
+  "./provider-egress-contract-v1.mjs";
 
 export const STARCRAFT_TMG_PROVIDER_ATTEMPT_STORE_VERSION =
   "starcraft_tmg_provider_attempt_store_v1";
@@ -202,12 +204,13 @@ export function assertStarcraftTmgProviderBudgetPolicyV1(value) {
       maximum: 100_000,
     }),
     maxInputUnitsPerTurn: integer(value.maxInputUnitsPerTurn,
-      "policy.maxInputUnitsPerTurn", { minimum: 1, maximum: 1_000_000 }),
+      "policy.maxInputUnitsPerTurn", { minimum: 1,
+        maximum: STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS }),
     maxOutputUnitsPerTurn: integer(value.maxOutputUnitsPerTurn,
       "policy.maxOutputUnitsPerTurn", { minimum: 1, maximum: 1_000_000 }),
     timeoutMs: integer(value.timeoutMs, "policy.timeoutMs", {
       minimum: 1,
-      maximum: 300_000,
+      maximum: 315_000,
     }),
     cancellationSettlement: requiredString(value.cancellationSettlement,
       "policy.cancellationSettlement"),
@@ -270,7 +273,7 @@ export function prepareStarcraftTmgProviderAttemptReservationV1(input = {}) {
   if (!INTENTS.has(intent)) fail("PROVIDER_ATTEMPT_INTENT_INVALID");
   const inputUnits = integer(input.inputUnits, "inputUnits", {
     minimum: 1,
-    maximum: 1_000_000,
+    maximum: STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS,
   });
   const maxOutputUnits = integer(input.maxOutputUnits, "maxOutputUnits", {
     minimum: 1,
@@ -326,7 +329,8 @@ export function prepareStarcraftTmgProviderAttemptSettlementV1(input = {}) {
   const terminalStatus = requiredString(input.terminalStatus, "terminalStatus", 32);
   if (!TERMINAL.has(terminalStatus)) fail("PROVIDER_ATTEMPT_TERMINAL_STATUS_INVALID");
   if (typeof input.usageKnown !== "boolean") fail("PROVIDER_ATTEMPT_USAGE_KNOWN_INVALID");
-  const inputUnits = integer(input.inputUnits, "inputUnits", { maximum: 1_000_000 });
+  const inputUnits = integer(input.inputUnits, "inputUnits", {
+    maximum: STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS });
   const outputUnits = integer(input.outputUnits, "outputUnits", { maximum: 1_000_000 });
   if (!input.usageKnown && (inputUnits !== 0 || outputUnits !== 0)) {
     fail("PROVIDER_ATTEMPT_UNKNOWN_USAGE_MUST_BE_ZERO");

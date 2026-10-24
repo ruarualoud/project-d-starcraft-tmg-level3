@@ -7,9 +7,12 @@ import { STARCRAFT_TMG_RECOVERABLE_DECISION_FINDING_CODES_V1 } from
 
 export const STARCRAFT_TMG_HOSTED_BOT_SEAT_RUNTIME_VERSION =
   "starcraft_tmg_hosted_bot_seat_runtime_v1";
-const PREVIEW_REPLAY_VERSION = "hosted_bot_preview_replay_v2";
+const PREVIEW_REPLAY_VERSION = "hosted_bot_preview_replay_v3";
 const REPAIRED_DECISION_ISSUE_CODES =
-  STARCRAFT_TMG_RECOVERABLE_DECISION_FINDING_CODES_V1;
+  [...STARCRAFT_TMG_RECOVERABLE_DECISION_FINDING_CODES_V1,
+    // This list closes history ONLY after a sealed Apply and matching Replay.
+    // Resume admission independently requires an actual authorized cap update.
+    "LIVE_DECISION_CNY_BUDGET_EXHAUSTED"];
 
 const ACTIVE_LIFECYCLES = new Set(["active", "waiting_human", "paused"]);
 const MATCH_MODES = Object.freeze({
@@ -59,6 +62,79 @@ function seal(value, hashField) {
   return deepFreeze({
     ...unsigned,
     [hashField]: hashStarcraftTmgContract(unsigned),
+  });
+}
+
+export function projectStarcraftTmgRosterPlanAttachmentV1(prepared) {
+  return {
+    command: prepared.replacesRosterPlanHash
+      ? "adopt_roster_plan_revision" : "open_roster_plan",
+    replacesRosterPlanHash: prepared.replacesRosterPlanHash,
+    rosterPlan: prepared.plan,
+    rosterSessionReceipt: prepared.sessionReceipt,
+    rosterPriorPlans: prepared.priorPlans || [],
+  };
+}
+
+export function projectStarcraftTmgTurnPlanReflectionInputV1(decision) {
+  return {
+    assessment: clone(decision.assessment),
+    ...(decision.plannerResult?.opponentModelSnapshot ? {
+      opponentModelSnapshot: clone(decision.plannerResult.opponentModelSnapshot),
+    } : {}),
+    ...(decision.plannerResult?.futureActionPlanAmendment ? {
+      futureActionPlanAmendment:
+        clone(decision.plannerResult.futureActionPlanAmendment),
+    } : {}),
+    ...(decision.assessment?.verdict === "revise"
+      ? { planRevision: clone(decision.planRevision || decision.plan) } : {}),
+  };
+}
+
+// Keep the next decision informed by the signed, public Rules result. The
+// generic "Applied <domain id>" acknowledgement hides a failed Charge even
+// though its roll and no-movement result are already in the Room receipt.
+export function summarizeStarcraftTmgAppliedOutcomeV1({ receipt,
+  candidateId } = {}) {
+  const action = object(receipt?.action) ? receipt.action : {};
+  const events = Array.isArray(receipt?.events)
+    ? receipt.events.filter((entry) => object(entry)
+      && typeof entry.type === "string") : [];
+  const chargeEvent = events.find((entry) => new Set([
+    "charge_failed", "charge_succeeded", "charge_declared_and_rolled",
+  ]).has(entry.type)) || null;
+  const eventTypes = [...new Set(events.map((entry) => entry.type))];
+  const observedSignals = ["authoritative_state_changed",
+    ...(chargeEvent ? [chargeEvent.type] : []),
+    ...eventTypes.filter((type) => type !== chargeEvent?.type)]
+    .slice(0, 12);
+  const pieceId = String(chargeEvent?.pieceId || action.pieceId
+    || action.sourceAction?.pieceId || "").trim();
+  const roll = Number.isSafeInteger(chargeEvent?.chargeRoll)
+    ? `; roll ${chargeEvent.chargeRoll}` : "";
+  const movementCap = Number.isSafeInteger(chargeEvent?.maxDistanceMilliInches)
+    ? `${chargeEvent.maxDistanceMilliInches} milli-inch`
+    : "unknown";
+  const movement = typeof chargeEvent?.modelPositionsChanged === "boolean"
+    ? `; models ${chargeEvent.modelPositionsChanged ? "moved" : "did not move"}`
+    : "";
+  const resultSummary = chargeEvent?.type === "charge_failed"
+    ? `Charge failed for ${pieceId || "selected Unit"}${roll}${movement}.`
+    : chargeEvent?.type === "charge_succeeded"
+      ? `Charge succeeded for ${pieceId || "selected Unit"}${roll}${movement}.`
+      : chargeEvent?.type === "charge_declared_and_rolled"
+        ? `Charge declared for ${pieceId || "selected Unit"}${roll}; `
+          + `rolled movement cap ${movementCap}.`
+        : `Applied ${String(action.actionType || candidateId || "action")}`
+          + `${pieceId ? ` for ${pieceId}` : ""}`
+          + `${eventTypes.length ? `; events: ${eventTypes.slice(0, 8).join(", ")}` : ""}.`;
+  return Object.freeze({ resultSummary, observedSignals,
+    planImpact: chargeEvent?.type === "charge_failed"
+      ? "reassess_failed_charge_before_next_choice"
+      : "reflect_again_at_next_decision_boundary",
+    unitIntentResults: chargeEvent?.type === "charge_failed" && pieceId
+      ? [{ unitId: pieceId, outcome: "charge_failed",
+        result: resultSummary, purposeAchieved: false }] : [],
   });
 }
 
@@ -393,6 +469,8 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
   const deferForPreexecution = options.deferForPreexecution === true;
   const now = typeof options.now === "function"
     ? options.now : () => new Date().toISOString();
+  const stageObserver = typeof options.observeStage === "function"
+    ? options.observeStage : null;
   const configuredMatchMode = matchMode(options.matchMode);
   const configuredPromptPack = MATCH_MODES[configuredMatchMode];
   const autoDriveIntervalMs = Math.max(100,
@@ -430,6 +508,30 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
   const drives = new Map();
   const timers = new Map();
   let runtimeClosed = false;
+
+  async function observeStage(record, operation, task) {
+    if (!stageObserver) return task();
+    const started = performance.now();
+    try {
+      return await task();
+    } finally {
+      // Diagnostic metadata only: never pass task inputs/results, credentials,
+      // model messages or timing observations into the decision material.
+      try {
+        stageObserver({
+          schemaVersion: "starcraft_tmg_hosted_bot_stage_observation_v1",
+          roomId: record.scope.roomId,
+          seatKey: record.scope.seatKey,
+          lastObservedStateRevision: record.lastObservedStateRevision ?? null,
+          operation,
+          elapsedMs: Math.round(performance.now() - started),
+          recordedAt: new Date().toISOString(),
+        });
+      } catch {
+        // An optional observer cannot alter the action or its failure contract.
+      }
+    }
+  }
 
   async function persist(record, update = {}) {
     const next = {
@@ -477,7 +579,8 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
   }
 
   async function readProjection(record, seatToken) {
-    const read = await room.readRoom({ roomId: record.scope.roomId, seatToken });
+    const read = await observeStage(record, "read_room", () =>
+      room.readRoom({ roomId: record.scope.roomId, seatToken }));
     if (read?.ok !== true) {
       throw Object.assign(new Error(read?.reason || "BOT_ROOM_READ_FAILED"), {
         code: read?.reason || "BOT_ROOM_READ_FAILED",
@@ -499,10 +602,10 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
   async function readAuthority(record, seatToken, currentProjection = null) {
     const projection = currentProjection
       || await readProjection(record, seatToken);
-    const legal = await room.legalSpace({
+    const legal = await observeStage(record, "legal_space", () => room.legalSpace({
       roomId: record.scope.roomId,
       seatToken,
-    });
+    }));
     if (legal?.ok !== true) {
       throw Object.assign(new Error(legal?.message || legal?.reason
         || "BOT_LEGAL_SPACE_FAILED"), {
@@ -519,11 +622,13 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
     // part of decision/memory/replay provenance and must not disappear merely
     // because Rules currently exposes one legal choice.
     const spatialObservation = spatialObservationProjector
-      ? await spatialObservationProjector({ roomProjection: projection,
-        legalSpace }) : null;
+      ? await observeStage(record, "spatial_observation", () =>
+        spatialObservationProjector({ roomProjection: projection,
+          legalSpace })) : null;
     const spatialActionSpace = !forcedFiniteOnly && spatialRuntime
-      ? await spatialRuntime.actionSpace({ roomProjection: projection,
-        legalSpace, spatialObservation })
+      ? await observeStage(record, "spatial_action_space", () =>
+        spatialRuntime.actionSpace({ roomProjection: projection,
+          legalSpace, spatialObservation }))
       : seal({
         schemaVersion:
           `${STARCRAFT_TMG_HOSTED_BOT_SEAT_RUNTIME_VERSION}.fallback-action-space`,
@@ -563,9 +668,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
     const reflected = await turnPlanRuntime.dispatch({
       ...base,
       command: "reflect_plan",
-      assessment: decision.assessment,
-      ...(decision.assessment.verdict === "revise"
-        ? { planRevision: decision.planRevision || decision.plan } : {}),
+      ...projectStarcraftTmgTurnPlanReflectionInputV1(decision),
     });
     if (!decision.intent) {
       throw new TypeError("Bot decision requires an ActionIntent");
@@ -587,16 +690,20 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
     try {
       const nextAuthority = await readAuthority(record,
         credentials.get(record.scope.scopeKey).seatToken);
+      const publicResult = summarizeStarcraftTmgAppliedOutcomeV1({
+        receipt: applied.receipt,
+        candidateId: record.inflight.decision.candidateId,
+      });
       const outcome = {
         intentId: actionIntent?.intentId,
         status: "applied_and_replay_verified",
         receiptHash: applied.receipt?.journalHash || null,
-        resultSummary: `Applied ${record.inflight.decision.candidateId}`,
-        observedSignals: ["authoritative_state_changed"],
-        planImpact: "reflect_again_at_next_decision_boundary",
+        resultSummary: publicResult.resultSummary,
+        observedSignals: publicResult.observedSignals,
+        planImpact: publicResult.planImpact,
         abilitiesUsed: [],
         resourcesSpent: [],
-        unitIntentResults: [],
+        unitIntentResults: publicResult.unitIntentResults,
         opponentResponsesObserved: [],
         counterResponsesUsed: [],
       };
@@ -627,29 +734,30 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
   async function executeApply(record, seatToken) {
     const request = record.inflight?.applyRequest;
     if (!request) throw new Error("BOT_APPLY_REQUEST_MISSING");
-    const applied = await room.applyAction({
+    const applied = await observeStage(record, "apply_action", () => room.applyAction({
       roomId: record.scope.roomId,
       seatToken,
       ...clone(request),
-    });
+    }));
     if (applied?.ok !== true) {
       throw Object.assign(new Error(applied?.reason || "BOT_APPLY_FAILED"), {
         code: applied?.reason || "BOT_APPLY_FAILED",
         severity: highSeverity(applied?.reason) ? "High" : "Medium",
       });
     }
-    const replay = await room.replayRoom({
+    const replay = await observeStage(record, "replay_room", () => room.replayRoom({
       roomId: record.scope.roomId,
       seatToken,
-    });
+    }));
     if (replay?.ok !== true || replay.matchesCurrent !== true) {
       throw Object.assign(new Error("Room replay does not match current state"), {
         code: "REPLAY_MISMATCH",
         severity: "High",
       });
     }
-    const memory = await recordOutcome(record, record.inflight.authority,
-      applied, record.inflight.actionIntent);
+    const memory = await observeStage(record, "record_outcome", () =>
+      recordOutcome(record, record.inflight.authority,
+        applied, record.inflight.actionIntent));
     const trace = seal({
       schemaVersion:
         `${STARCRAFT_TMG_HOSTED_BOT_SEAT_RUNTIME_VERSION}.trace`,
@@ -756,7 +864,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
     const decision = record.inflight.decision;
     const authority = record.inflight.authority;
     record = await persist(record, { driveStatus: "previewing" });
-    const preview = await room.previewAction({
+    const preview = await observeStage(record, "preview_action", () => room.previewAction({
       roomId: scopeValue.roomId,
       seatToken,
       ...(decision.proposal.kind === "finite"
@@ -767,7 +875,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
       expectedStateRevision: authority.stateRevision,
       expectedStateHash: authority.stateHash,
       occurredAt: iso(now(), "now"),
-    });
+    }));
     if (preview?.ok !== true) {
       const code = typedRejectedCode(preview, "BOT_PREVIEW_FAILED");
       throw Object.assign(new Error(preview?.message || preview?.reason
@@ -779,14 +887,14 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
     }
     let confirmationId = null;
     if (preview.confirmationRequired) {
-      const confirmed = await room.confirmPreview({
+      const confirmed = await observeStage(record, "confirm_preview", () => room.confirmPreview({
         roomId: scopeValue.roomId,
         seatToken,
         previewId: preview.preview.previewId,
         previewToken: preview.preview.previewToken,
         previewContentHash: preview.preview.previewSeal.contentHash,
         occurredAt: iso(now(), "now"),
-      });
+      }));
       if (confirmed?.ok !== true) {
         throw Object.assign(new Error(
           confirmed?.reason || "BOT_CONFIRM_FAILED"), {
@@ -984,14 +1092,14 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
       }
       let continuityContext = null;
       if (continuity) {
-        continuityContext = await continuity.observe({
+        continuityContext = await observeStage(record, "continuity_observe", () => continuity.observe({
           scope: scopeValue,
           roomProjection: authorityValue.projection,
           legalSpace: authorityValue.legalSpace,
           spatialObservation: authorityValue.spatialObservation,
           spatialActionSpace: authorityValue.spatialActionSpace,
           strategySkillSetHash: input.strategySkillSetHash || null,
-        });
+        }));
       }
       const preexecutionStatus = continuityContext?.preexecutionSearch?.status;
       if (deferForPreexecution
@@ -1029,14 +1137,14 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
       }
       if (continuity
         && planObservation?.result?.predictionCalibrations?.length) {
-        continuityContext = await continuity.observe({
+        continuityContext = await observeStage(record, "continuity_observe_after_plan", () => continuity.observe({
           scope: scopeValue,
           roomProjection: authorityValue.projection,
           legalSpace: authorityValue.legalSpace,
           spatialObservation: authorityValue.spatialObservation,
           spatialActionSpace: authorityValue.spatialActionSpace,
           strategySkillSetHash: input.strategySkillSetHash || null,
-        });
+        }));
       }
       record = await persist(record, {
         lifecycle: "active",
@@ -1044,7 +1152,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
         lastAttemptedStateHash: authorityValue.projection.room.stateHash,
         preexecutionDeferralStateHash: null,
       });
-      const rawDecision = await decisionPort.decide(deepFreeze({
+      const rawDecision = await observeStage(record, "agent_decision", () => decisionPort.decide(deepFreeze({
         schemaVersion:
           `${STARCRAFT_TMG_HOSTED_BOT_SEAT_RUNTIME_VERSION}.decision-request`,
         scope: clone(scopeValue),
@@ -1064,9 +1172,10 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
         confirmationAuthority: false,
         applyAuthority: false,
         trainingTruth: false,
-      }));
+      })));
       const decision = normalizeDecision(rawDecision, authorityValue);
-      const planned = await preparePlan(record, authorityValue, decision);
+      const planned = await observeStage(record, "prepare_plan", () =>
+        preparePlan(record, authorityValue, decision));
       const authority = {
         stateRevision: authorityValue.projection.room.stateRevision,
         stateHash: authorityValue.projection.room.stateHash,
@@ -1189,10 +1298,7 @@ export function createStarcraftTmgHostedBotSeatRuntimeV1(options = {}) {
           ...authorityInput(requestedScope, authorityValue.projection,
             authorityValue.legalSpace, authorityValue.spatialObservation,
             authorityValue.spatialActionSpace),
-          command: "open_roster_plan",
-          rosterPlan: pregameRosterPlan.plan,
-          rosterSessionReceipt: pregameRosterPlan.sessionReceipt,
-          rosterPriorPlans: pregameRosterPlan.priorPlans || [],
+          ...projectStarcraftTmgRosterPlanAttachmentV1(pregameRosterPlan),
         });
       }
     } catch (error) {

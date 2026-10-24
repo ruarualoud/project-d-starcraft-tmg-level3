@@ -40,6 +40,7 @@ import {
 import {
   STARCRAFT_TMG_BATTLEFIELD_MAP_SOURCE,
   randomStarcraftTmgPresentationMediaEntryV1,
+  starcraftTmgBattlefieldMapOverlaySourceV1,
   starcraftTmgBattlefieldMapSourceV2,
   starcraftTmgBattlefieldUnitMediaAssetsV1,
 } from "@/lib/level3/battlefield-media-assets-v1";
@@ -119,7 +120,7 @@ function sceneViewBox(
   };
 }
 
-function areaGlyph(area: BattlefieldAreaV1) {
+function areaGlyph(area: BattlefieldAreaV1, denseTerrain = false) {
   if (!area.geometryRenderable || !area.shape
     || !area.widthMilliInches || !area.depthMilliInches) {
     if (area.kind === "marker") {
@@ -141,13 +142,16 @@ function areaGlyph(area: BattlefieldAreaV1) {
         ? { fill: "#7e22ce99", stroke: "#e9d5ff", strokeDasharray: "180 120" }
         : { fill: "#475569cc", stroke: "#e2e8f0", strokeDasharray: undefined };
   const common = area.kind === "terrain"
-    ? { ...terrainStyle, strokeWidth: 150 }
+    ? { ...terrainStyle,
+        fillOpacity: denseTerrain ? 0.14 : 1,
+        strokeOpacity: denseTerrain ? 0.28 : 1,
+        strokeWidth: denseTerrain ? 55 : 150 }
     : {
         fill: area.kind === "marker" ? "#fbbf2433" : "#22d3ee33",
         stroke: area.kind === "marker" ? "#fbbf24" : "#22d3ee",
         strokeWidth: 100,
       };
-  const terrainLabel = area.kind === "terrain"
+  const terrainLabel = area.kind === "terrain" && !denseTerrain
     ? `${area.label} · S${area.terrainSize ?? "?"}${area.elevationSurface ? " · HIGH" : ""}`
     : null;
   if (area.shape === "rectangle") {
@@ -164,7 +168,7 @@ function areaGlyph(area: BattlefieldAreaV1) {
         />
         {terrainLabel && (
           <G transform={`translate(${area.xMilliInches} ${area.yMilliInches}) scale(1 -1)`}>
-            <SvgText x={0} y={90} textAnchor="middle" fill="#ffffff" stroke="#020617" strokeWidth={35} fontSize={420} fontWeight="700">
+            <SvgText id={`battlefield-terrain-label-${area.id}`} x={0} y={90} textAnchor="middle" fill="#ffffff" stroke="#020617" strokeWidth={35} fontSize={420} fontWeight="700">
               {terrainLabel}
             </SvgText>
           </G>
@@ -185,7 +189,7 @@ function areaGlyph(area: BattlefieldAreaV1) {
       />
       {terrainLabel && (
         <G transform={`translate(${area.xMilliInches} ${area.yMilliInches}) scale(1 -1)`}>
-          <SvgText x={0} y={90} textAnchor="middle" fill="#ffffff" stroke="#020617" strokeWidth={35} fontSize={420} fontWeight="700">
+          <SvgText id={`battlefield-terrain-label-${area.id}`} x={0} y={90} textAnchor="middle" fill="#ffffff" stroke="#020617" strokeWidth={35} fontSize={420} fontWeight="700">
             {terrainLabel}
           </SvgText>
         </G>
@@ -499,6 +503,12 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
     selectedModelId,
   }), [view.roomProjection, view.legalSpace, view.pendingPreview, selectedModelId]);
   const projection = view.roomProjection || {};
+  useEffect(() => {
+    // A compiler-backed map can contain thousands of exact collision cells.
+    // Keep its art legible at first view; the Rules terrain button still
+    // exposes those authoritative cells on demand.
+    setShowAuthoritativeTerrain(scene.terrain.length <= 100);
+  }, [projection.room?.roomId, scene.board.mapSeedId]);
   const productState = projection.state || {};
   const armyBudgets = productState.armyResourceBudgetsBySide || {};
   const roomPieces = Array.isArray(productState.pieces) ? productState.pieces : [];
@@ -1324,6 +1334,30 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                   opacity={0.82}
                 />
               )}
+              {showBattlefieldBackground && scene.board.mapArtOverlays.map((overlay) => {
+                const source = starcraftTmgBattlefieldMapOverlaySourceV1(
+                  overlay.assetPath);
+                const rect = overlay.rectangleNormalized;
+                const left = scene.widthMilliInches * rect.xMin / 1000;
+                const width = scene.widthMilliInches * (rect.xMax - rect.xMin) / 1000;
+                return source ? (
+                  <SvgImage
+                    key={overlay.overlayId}
+                    id={`battlefield-display-overlay-${overlay.overlayId}`}
+                    href={source}
+                    x={left}
+                    y={scene.heightMilliInches * (1000 - rect.yMax) / 1000}
+                    width={width}
+                    height={scene.heightMilliInches * (rect.yMax - rect.yMin) / 1000}
+                    transform={overlay.flipX
+                      ? `translate(${2 * left + width} 0) scale(-1 1)`
+                      : undefined}
+                    preserveAspectRatio="none"
+                    opacity={rect.xMin === 0 && rect.xMax === 1000
+                      && rect.yMin === 0 && rect.yMax === 1000 ? 1 : 0.82}
+                  />
+                ) : null;
+              })}
               <G transform={`translate(0 ${scene.heightMilliInches}) scale(1 -1)`}>
                 <Rect x={0} y={0} width={scene.widthMilliInches} height={scene.heightMilliInches} fill="#07111f99" stroke="#38bdf8" strokeWidth={140} />
                 {Array.from({ length: Math.floor(scene.widthMilliInches / 6000) + 1 }, (_, index) => (
@@ -1332,9 +1366,10 @@ export function AuthoritativeBattleWorkspace({ onOpenRoomRules }: {
                 {Array.from({ length: Math.floor(scene.heightMilliInches / 6000) + 1 }, (_, index) => (
                   <Line key={`grid-y-${index}`} x1={0} y1={index * 6000} x2={scene.widthMilliInches} y2={index * 6000} stroke="#1e3a4f" strokeWidth={50} />
                 ))}
-                {showAuthoritativeTerrain && scene.terrain.map(areaGlyph)}
-                {scene.markers.map(areaGlyph)}
-                {scene.tokens.map(areaGlyph)}
+                {showAuthoritativeTerrain && scene.terrain.map((area) => (
+                  areaGlyph(area, scene.terrain.length > 100)))}
+                {scene.markers.map((area) => areaGlyph(area))}
+                {scene.tokens.map((area) => areaGlyph(area))}
                 <ThreatOverlayLayer regions={threatRegions} />
                 {showThreatReference && !threatMode.includes("aggregate")
                   && threatRegions.length === 0

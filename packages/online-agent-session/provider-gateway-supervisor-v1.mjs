@@ -2,7 +2,10 @@ import { randomUUID } from "node:crypto";
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
-import { assertStarcraftTmgProviderTransportProgressV1 } from
+import {
+  assertStarcraftTmgProviderTransportProgressV1,
+  STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS,
+} from
   "../secure-provider-runtime/provider-egress-contract-v1.mjs";
 
 export const STARCRAFT_TMG_PROVIDER_GATEWAY_SUPERVISOR_VERSION =
@@ -181,7 +184,8 @@ function normalizeBoundedRequest(value) {
     intent: requiredString(value.intent, "boundedRequest.intent", 32).toLowerCase(),
     requestPayloadHash: hash(value.requestPayloadHash,
       "boundedRequest.requestPayloadHash"),
-    inputUnits: positiveInteger(value.inputUnits, "boundedRequest.inputUnits", 1_000_000),
+    inputUnits: positiveInteger(value.inputUnits, "boundedRequest.inputUnits",
+      STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS),
     maxOutputUnits: positiveInteger(value.maxOutputUnits,
       "boundedRequest.maxOutputUnits", 1_000_000),
   };
@@ -201,7 +205,7 @@ function normalizeBudgetPolicy(value = {}) {
     maxTotalUnits: positiveInteger(value.maxTotalUnits, "budgetPolicy.maxTotalUnits", 100_000_000),
     maxTurns: positiveInteger(value.maxTurns, "budgetPolicy.maxTurns", 100_000),
     maxInputUnitsPerTurn: positiveInteger(value.maxInputUnitsPerTurn,
-      "budgetPolicy.maxInputUnitsPerTurn", 1_000_000),
+      "budgetPolicy.maxInputUnitsPerTurn", STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS),
     maxOutputUnitsPerTurn: positiveInteger(value.maxOutputUnitsPerTurn,
       "budgetPolicy.maxOutputUnitsPerTurn", 1_000_000),
     timeoutMs: positiveInteger(value.timeoutMs, "budgetPolicy.timeoutMs", 315_000),
@@ -237,7 +241,8 @@ function normalizeSafeOutput(value) {
 export function createStarcraftTmgProviderGatewayUsageReceiptV1(input = {}) {
   const reservation = input.reservation;
   if (!object(reservation)) throw new TypeError("reservation is required");
-  const inputUnits = nonNegativeInteger(input.inputUnits, "inputUnits", 1_000_000);
+  const inputUnits = nonNegativeInteger(input.inputUnits, "inputUnits",
+    STARCRAFT_TMG_PROVIDER_INPUT_RESERVATION_LIMIT_UNITS);
   const outputUnits = nonNegativeInteger(input.outputUnits, "outputUnits", 1_000_000);
   const totalUnits = inputUnits + outputUnits;
   if (totalUnits > reservation.reservedUnits) {
@@ -286,17 +291,24 @@ function normalizeUsageReceipt(value, reservation) {
 function safeFailure(error, fallback = "provider_gateway_failed") {
   const raw = String(error?.code || "").trim().toLowerCase();
   let transportProgress = null;
+  let httpStatus = null;
+  let safeProviderReceiptHash = null;
   const receipt = error?.durableReceipt;
-  if (raw === "provider_transport_timeout" && object(receipt)
-    && receipt.code === "PROVIDER_TRANSPORT_TIMEOUT"
+  if (object(receipt)
+    && receipt.code === raw.toUpperCase()
     && HASH_PATTERN.test(String(receipt.receiptHash || ""))) {
     const { receiptHash, ...body } = receipt;
     if (receiptHash === hashStarcraftTmgContract(body)) {
-      try {
-        transportProgress = assertStarcraftTmgProviderTransportProgressV1(
-          receipt.transportProgress);
-      } catch {
-        // Never surface unverified or non-numeric Provider error material.
+      safeProviderReceiptHash = receiptHash;
+      if (Number.isSafeInteger(receipt.status)
+        && receipt.status >= 100 && receipt.status <= 599) httpStatus = receipt.status;
+      if (["provider_transport_timeout", "provider_transport_failed"].includes(raw)) {
+        try {
+          transportProgress = assertStarcraftTmgProviderTransportProgressV1(
+            receipt.transportProgress);
+        } catch {
+          // Never surface unverified or non-numeric Provider error material.
+        }
       }
     }
   }
@@ -304,6 +316,8 @@ function safeFailure(error, fallback = "provider_gateway_failed") {
     code: SAFE_FAILURE_PATTERN.test(raw) ? raw : fallback,
     retryable: false,
     messageExposed: false,
+    ...(httpStatus !== null ? { httpStatus } : {}),
+    ...(safeProviderReceiptHash ? { safeProviderReceiptHash } : {}),
     ...(transportProgress ? { transportProgress } : {}),
   });
 }

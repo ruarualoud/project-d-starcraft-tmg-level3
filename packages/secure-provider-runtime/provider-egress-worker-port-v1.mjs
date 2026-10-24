@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { assertProviderDnsRecoveryV1 } from './provider-network-resilience-v1.mjs';
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
@@ -55,7 +56,7 @@ const SUCCESS_RECEIPT_FIELDS = new Set([
   "schemaVersion", "requestId", "providerProfileRef", "egressPolicyHash",
   "providerId", "requestedModel", "reportedModel", "providerRequestIdHash",
   "providerSystemFingerprintHash", "status", "usage", "responseFingerprint",
-  "dnsAddressSetHash",
+  "dnsAddressSetHash", "dnsRecovery",
   "tlsServerName", "tlsCertificateVerificationDisabled", "redirectFollowed",
   "proxyUsed", "physicalAttempts", "automaticRetries", "startedAt",
   "finishedAt", "trainingTruth", "receiptHash",
@@ -67,7 +68,7 @@ const USAGE_FIELDS = new Set([
 const FAILURE_RECEIPT_FIELDS = new Set([
   "schemaVersion", "code", "requestDefinitelyNotSent", "requestMayHaveBeenSent",
   "status", "physicalAttempts", "automaticRetries", "trainingTruth",
-  "receiptHash", "transportProgress",
+  "receiptHash", "transportProgress", "dnsRecovery",
 ]);
 const SHUTDOWN_FIELDS = new Set([
   "type", "requestId", "ok", "reason", "workerVersion",
@@ -299,13 +300,14 @@ export function createStarcraftTmgProviderEgressWorkerPortV1(options = {}) {
     }
   }
 
-  function kill(record, reason, expectedExit = true) {
+  function kill(record, reason, expectedExit = true,
+    pendingCode = "PROVIDER_WORKER_PROTOCOL_REJECTED") {
     if (!record.attached && !record.attachRejected) {
       record.attachRejected = true;
       record.rejectAttach(new Error(reason));
     }
     record.expectedExit = expectedExit;
-    rejectPending(record, "PROVIDER_WORKER_PROTOCOL_REJECTED");
+    rejectPending(record, pendingCode);
     if (record.child.exitCode === null && record.child.signalCode === null) {
       record.child.kill("SIGKILL");
     }
@@ -358,6 +360,7 @@ export function createStarcraftTmgProviderEgressWorkerPortV1(options = {}) {
       exactFields(message.value.usageReceipt.providerProfileRef, REF_FIELDS,
         "Provider Worker profile ref");
       const { receiptHash, ...receiptBody } = message.value.usageReceipt;
+      assertProviderDnsRecoveryV1(message.value.usageReceipt.dnsRecovery);
       const usage = message.value.usageReceipt.usage;
       const reportedModel = message.value.usageReceipt.reportedModel;
       const fingerprintHash =
@@ -426,6 +429,7 @@ export function createStarcraftTmgProviderEgressWorkerPortV1(options = {}) {
     exactFields(message.safeReceipt, FAILURE_RECEIPT_FIELDS,
       "Provider Worker failure receipt");
     const { receiptHash, ...failureBody } = message.safeReceipt;
+    assertProviderDnsRecoveryV1(message.safeReceipt.dnsRecovery);
     const attemptCount = message.safeReceipt.physicalAttempts;
     if (message.safeReceipt.transportProgress) {
       assertStarcraftTmgProviderTransportProgressV1(
@@ -458,6 +462,7 @@ export function createStarcraftTmgProviderEgressWorkerPortV1(options = {}) {
       status: message.safeReceipt.status,
       physicalAttempts: message.safeReceipt.physicalAttempts,
       transportProgress: message.safeReceipt.transportProgress,
+      dnsRecovery: message.safeReceipt.dnsRecovery,
     });
   }
 
@@ -663,7 +668,8 @@ export function createStarcraftTmgProviderEgressWorkerPortV1(options = {}) {
         abort,
         timer: setTimeout(() => {
           if (record.pending?.requestId === requestId) {
-            kill(record, "Provider Worker result timed out", false);
+            kill(record, "Provider Worker result timed out", false,
+              "PROVIDER_WORKER_RESULT_TIMEOUT");
           }
         }, record.binding.timeoutMs + handshakeTimeoutMs),
       };

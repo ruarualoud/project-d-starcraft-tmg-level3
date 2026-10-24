@@ -96,6 +96,8 @@ const BATTLEFIELD_MAP_SOURCES: Partial<
 };
 
 const BATTLEFIELD_MAP_VARIANT_SOURCES: Record<string, number> = {
+  "/assets/client/battlefield/maps/brood-war/lost-temple-display-v4.png":
+    require("../../../../assets/client/battlefield/maps/brood-war/lost-temple-display-v4.png") as number,
   "/assets/client/battlefield/maps/brood-war/blue-storm-display-classic-v2.png":
     require("../../../../assets/client/battlefield/maps/brood-war/blue-storm-display-classic-v2.png") as number,
 };
@@ -128,15 +130,22 @@ export function starcraftTmgBattlefieldMapSourceV2(
   visualPresetId: StarcraftTmgBattlefieldMapVisualPresetIdV2 | null | undefined,
   assetPath?: string | null,
 ): MapSource {
-  if (assetPath && BATTLEFIELD_MAP_VARIANT_SOURCES[assetPath]) {
-    return BATTLEFIELD_MAP_VARIANT_SOURCES[assetPath];
+  // A frozen Room's exact art version takes precedence over the seed's gallery
+  // default. Otherwise newer Rules contours silently render on older artwork.
+  if (assetPath) {
+    const exactSource = BATTLEFIELD_MAP_VARIANT_SOURCES[assetPath]
+      || STARCRAFT_TMG_BATTLEFIELD_MAP_OPTIONS.find(entry => (
+        entry.path === assetPath
+      ))?.source;
+    if (exactSource) return exactSource;
+    const uri = mediaUri(assetPath);
+    if (uri) return { uri };
+    return STARCRAFT_TMG_BATTLEFIELD_MAP_SOURCE;
   }
   return STARCRAFT_TMG_BATTLEFIELD_MAP_OPTIONS.find((entry) => (
     entry.visualPresetId === visualPresetId
       || entry.assetKey === visualPresetId
-  ))?.source || (assetPath && mediaUri(assetPath)
-    ? { uri: mediaUri(assetPath) as string }
-    : STARCRAFT_TMG_BATTLEFIELD_MAP_SOURCE);
+  ))?.source || STARCRAFT_TMG_BATTLEFIELD_MAP_SOURCE;
 }
 
 function releaseChannel(): StarcraftTmgBattlefieldMediaReleaseChannelV1 {
@@ -213,6 +222,19 @@ export function starcraftTmgBattlefieldUnitMediaAssetsV1(unitId: unknown): {
       : null,
     releaseChannel: originalActive ? selectedChannel : "public",
   };
+}
+
+const BATTLEFIELD_MAP_OVERLAY_SOURCES: Record<string, number> = {
+  "/assets/client/battlefield/maps/starcraft-2/daybreak-industrial-ramp-sprite-v1.png":
+    require("../../../../assets/client/battlefield/maps/starcraft-2/daybreak-industrial-ramp-sprite-v1.png") as number,
+};
+
+export function starcraftTmgBattlefieldMapOverlaySourceV1(
+  assetPath: string,
+): MapSource | null {
+  return BATTLEFIELD_MAP_OVERLAY_SOURCES[assetPath]
+    || STARCRAFT_TMG_BATTLEFIELD_MAP_OPTIONS.find(entry => entry.path === assetPath)?.source
+    || null;
 }
 
 export function randomStarcraftTmgPresentationMediaEntryV1(

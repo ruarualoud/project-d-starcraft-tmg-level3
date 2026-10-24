@@ -24,3 +24,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Generated local debug/report copies are retained on disk, not source snapshots.
+/tmp/
+/output/
+/docs/model-interactions-*/
+/docs/reports/roster-plan-debug-*/
+# Small, selected handoff evidence below docs/handoffs remains explicitly tracked.

@@ -1,11 +1,16 @@
 import { resolveStarcraftTmgEffectiveActingSideV1 } from
   "./effective-acting-side-v1.mjs";
+import { STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1 } from
+  "./decision-recovery-policy-v1.mjs";
 
 export const STARCRAFT_TMG_AGENT_AGENT_EXPERIMENT_ORCHESTRATOR_VERSION =
   "starcraft_tmg_agent_agent_experiment_orchestrator_v1";
 
 const SEAT_KEYS = Object.freeze(["player1", "player2"]);
 const BLOCKING_SEVERITIES = new Set(["Critical", "High"]);
+const EXPLICIT_PROVIDER_RETRY_CODES = new Set(
+  STARCRAFT_TMG_RECOVERABLE_PROVIDER_FINDING_CODES_V1,
+);
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -134,6 +139,8 @@ function normalizeSeatBinding(value, cell, seatKey) {
     automationConsent: clone(value.automationConsent),
     strategySkillSetHash: required(value.strategySkillSetHash,
       `${seatKey}.strategySkillSetHash`),
+    pregameRosterPlan: value.pregameRosterPlan
+      ? clone(value.pregameRosterPlan) : null,
   };
 }
 
@@ -366,6 +373,23 @@ export function createStarcraftTmgAgentAgentExperimentOrchestratorV1(
     });
   }
 
+  // Observation-only status for a frequently polled experiment dashboard.
+  // The full public result intentionally includes the complete trajectory;
+  // cloning that history on every manifest poll scales with match length.
+  function readStatusSummary() {
+    const blockingFindings = issues.filter((entry) => entry.integrationBlocking);
+    return deepFreeze({
+      status,
+      experimentCell: clone(cell),
+      failureAccounting: {
+        total: issues.length,
+        blocking: blockingFindings.length,
+        trackedNonBlocking: issues.length - blockingFindings.length,
+        findings: clone(issues),
+      },
+    });
+  }
+
   async function start() {
     if (status !== "created") return publicResult();
     for (const seatKey of SEAT_KEYS) {
@@ -375,6 +399,8 @@ export function createStarcraftTmgAgentAgentExperimentOrchestratorV1(
         seatToken: binding.seatToken,
         automationConsent: clone(binding.automationConsent),
         autoDrive: false,
+        ...(binding.pregameRosterPlan
+          ? { pregameRosterPlan: clone(binding.pregameRosterPlan) } : {}),
       });
     }
     const durableSeatReads = await Promise.all(SEAT_KEYS.map((seatKey) => (
@@ -420,6 +446,7 @@ export function createStarcraftTmgAgentAgentExperimentOrchestratorV1(
         "pauseAfterAppliedActions");
     const batchStart = appliedActionCount;
     let noProgressPasses = 0;
+    const creditedPreexecutionStates = new Set();
 
     while (status === "running") {
       const projection = await readAuthority();
@@ -432,6 +459,7 @@ export function createStarcraftTmgAgentAgentExperimentOrchestratorV1(
         break;
       }
       let progressed = false;
+      let preexecutionStartedThisPass = false;
       for (const seatKey of SEAT_KEYS) {
         if (status !== "running") break;
         const binding = bindings[seatKey];
@@ -449,6 +477,9 @@ export function createStarcraftTmgAgentAgentExperimentOrchestratorV1(
           recoverableFailuresByState.clear();
         } else if (outcome?.ok === true) {
           waitObservationCount += 1;
+          if (outcome.outcome === "preexecution_search_started") {
+            preexecutionStartedThisPass = true;
+          }
         } else {
           const current = await readAuthority();
           const issue = issueFromOutcome(outcome, seatKey,
@@ -482,17 +513,26 @@ export function createStarcraftTmgAgentAgentExperimentOrchestratorV1(
         }
       }
       if (!progressed && status === "running") {
-        noProgressPasses += 1;
-        if (noProgressPasses >= 2) {
-          issues.push(deepFreeze({
-            seatKey: null,
-            stateRevision: lastProjection?.room?.stateRevision ?? null,
-            code: "A2A_NO_PROGRESS_AT_CURRENT_STATE",
-            severity: "Medium",
-            occurredAt: iso(now(), "now"),
-            integrationBlocking: false,
-          }));
-          await pause({ reason: "no_progress_requires_operator_review" });
+        const stateHash = lastProjection?.room?.stateHash || null;
+        if (preexecutionStartedThisPass && stateHash
+          && !creditedPreexecutionStates.has(stateHash)) {
+          // The Bot intentionally yields one background-search tick per state.
+          // Count it once without hiding a genuinely repeated no-progress loop.
+          creditedPreexecutionStates.add(stateHash);
+          noProgressPasses = 0;
+        } else {
+          noProgressPasses += 1;
+          if (noProgressPasses >= 2) {
+            issues.push(deepFreeze({
+              seatKey: null,
+              stateRevision: lastProjection?.room?.stateRevision ?? null,
+              code: "A2A_NO_PROGRESS_AT_CURRENT_STATE",
+              severity: "Medium",
+              occurredAt: iso(now(), "now"),
+              integrationBlocking: false,
+            }));
+            await pause({ reason: "no_progress_requires_operator_review" });
+          }
         }
       } else if (progressed) {
         noProgressPasses = 0;
@@ -502,6 +542,46 @@ export function createStarcraftTmgAgentAgentExperimentOrchestratorV1(
   }
 
   async function resume(input = {}) {
+    if (status === "blocked" && input.retryProvider === true) {
+      const blockingIndexes = issues.flatMap((issue, index) =>
+        issue.integrationBlocking ? [index] : []);
+      // Only a known transport stop may be acknowledged. Never treat a
+      // Rules, replay, source-binding or arbitrary High failure as retryable.
+      if (blockingIndexes.length === 0 || blockingIndexes.some((index) =>
+        !EXPLICIT_PROVIDER_RETRY_CODES.has(issues[index].code))) {
+        return publicResult();
+      }
+      const expectedRevision = lastProjection?.room?.stateRevision;
+      const expectedHash = lastProjection?.room?.stateHash;
+      const current = await readAuthority();
+      if (current.room?.stateRevision !== expectedRevision
+        || current.room?.stateHash !== expectedHash
+        || blockingIndexes.some((index) =>
+          issues[index].stateRevision !== expectedRevision)) {
+        throw Object.assign(new Error("provider retry authority changed"), {
+          code: "A2A_PROVIDER_RETRY_AUTHORITY_CHANGED", severity: "High",
+        });
+      }
+      const receipt = deepFreeze({
+        kind: "explicit_provider_transport_retry",
+        stateRevision: expectedRevision, stateHash: expectedHash,
+        acknowledgedFindingIndexes: clone(blockingIndexes),
+        recoveredAt: iso(now(), "now"), unknownUsagePreserved: true,
+        providerBudgetReset: false, sameRoom: true,
+        trainingTruth: false,
+      });
+      recoveryReceipts.push(receipt);
+      for (const index of blockingIndexes) {
+        issues[index] = deepFreeze({ ...issues[index],
+          originallyIntegrationBlocking: true, integrationBlocking: false,
+          resolution: "explicit_retry_authorized_not_a_success_verdict",
+          resolutionReceiptIndex: recoveryReceipts.length - 1,
+        });
+      }
+      // The runtime owns retained stages and unknown-use accounting. A new
+      // failure creates a fresh blocking finding; no blind retry loop here.
+      status = "paused";
+    }
     if (status !== "paused") return publicResult();
     status = "running";
     resumeCount += 1;
@@ -522,6 +602,8 @@ export function createStarcraftTmgAgentAgentExperimentOrchestratorV1(
       seatToken: binding.seatToken,
       automationConsent: clone(binding.automationConsent),
       autoDrive: false,
+      ...(binding.pregameRosterPlan
+        ? { pregameRosterPlan: clone(binding.pregameRosterPlan) } : {}),
     });
     const receipt = deepFreeze({
       seatKey,
@@ -540,5 +622,5 @@ export function createStarcraftTmgAgentAgentExperimentOrchestratorV1(
   }
 
   return Object.freeze({ start, run, pause, resume, recoverSeat,
-    read: publicResult });
+    read: publicResult, readStatusSummary });
 }

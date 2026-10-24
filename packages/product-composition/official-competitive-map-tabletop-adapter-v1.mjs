@@ -61,6 +61,12 @@ function baseClearanceSpans(profile) {
     inPlaceTurnInches: fixed(turningMm / MILLIMETRES_PER_INCH) };
 }
 
+// Shared current-chassis input, independent of the classic RTS topology
+// catalogue. Native official TMG layouts have no invented RTS lane graph.
+export function createOfficialCompetitiveMapBaseProfilesV1() {
+  return BASE_PROFILES.map((profile) => ({ ...profile }));
+}
+
 function coveredBaseIds(clearanceInches, spanKey) {
   return BASE_PROFILES.filter((profile) => (
     baseClearanceSpans(profile)[spanKey] <= clearanceInches + TOLERANCE

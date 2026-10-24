@@ -1,5 +1,10 @@
-import { hashStarcraftTmgContract } from
+import { hashStarcraftTmgContract, canonicalStarcraftTmgJson,
+  STARCRAFT_TMG_HASH_ALGORITHM } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { createHash } from "node:crypto";
+import { constants as bufferConstants } from "node:buffer";
+import { createNativeAssessmentPrefixDigestV1 } from
+  "./native-assessment-prefix-digest-v1.mjs";
 import { verifyOfficialTerrainLosDataBundleV1 } from
   "../source-data/official-terrain-los-data-bundle-v1.mjs";
 import { evaluateOfficialFlyingCoverV1 } from
@@ -8,7 +13,12 @@ import {
   createOfficialPhysicalFootprintV1,
   evaluateOfficialPhysicalFootprintRelationV1,
 } from "./official-model-base-geometry-rules-kernel-v1.mjs";
-import { evaluateOfficialTerrainLineOfSightV1 } from
+import {
+  evaluateOfficialTerrainLineOfSightV1,
+  evaluateOfficialTerrainLineOfSightBatchV1,
+  verifyOfficialTerrainLineOfSightBatchInputsV1,
+  createOfficialTerrainLineOfSightBatchV1,
+} from
   "./official-terrain-los-rules-kernel-v1.mjs";
 
 export const OFFICIAL_ELEVATION_EFFECTIVE_SIZE_RULES_KERNEL_SCHEMA =
@@ -20,6 +30,82 @@ export const OFFICIAL_TERRAIN_ELEVATION_AGREEMENT_SCHEMA =
 const TOLERANCE = 1;
 const INCH = 1000;
 const CLOSE_QUARTERS_RANGE = 3000;
+// Exact text of this module's own fully sealed/frozen results only. No caller
+// can enroll a prepared result, digest, length, similar ID or mutable value.
+const NATIVE_ELEVATED_LOS_TEXT = new WeakMap();
+
+export function canonicalNativeOfficialElevatedLosResultV1(result) {
+  return NATIVE_ELEVATED_LOS_TEXT.get(result) || null;
+}
+
+// Only our newly assembled assessment records enter this private seam. Their
+// values are scalars or string-ID arrays: canonical key order plus native JSON
+// retains the exact old bytes without copying/normalizing those arrays again.
+// Any future non-flat value retains the original full canonical diagnostics.
+function canonicalNativeElevatedAssessment(assessment) {
+  const ordered = {};
+  for (const key of Object.keys(assessment).sort()) {
+    const value = assessment[key];
+    if (value === undefined) continue;
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        if (typeof entry !== "string") return canonicalStarcraftTmgJson(assessment);
+      }
+    } else if (value !== null && typeof value !== "string"
+      && typeof value !== "boolean"
+      && !(typeof value === "number" && Number.isFinite(value))) {
+      return canonicalStarcraftTmgJson(assessment);
+    }
+    ordered[key] = value;
+  }
+  return JSON.stringify(ordered);
+}
+
+function sealNativeElevatedLosResult(body, nativeAssessmentTexts = null, context = null) {
+  const keys = Object.keys(body).sort().filter(key => body[key] !== undefined);
+  const sharedPrefix = context && nativeAssessmentTexts !== null
+    && keys[0] === "assessments";
+  const prefix = sharedPrefix ? (context.nativeAssessmentPrefixDigest ||=
+    createNativeAssessmentPrefixDigestV1(STARCRAFT_TMG_HASH_ALGORITHM))
+    .digest(nativeAssessmentTexts) : null;
+  const nativeAssessmentText = nativeAssessmentTexts === null ? null
+    : prefix?.text || `[${nativeAssessmentTexts.join(",")}]`;
+  let fields;
+  try {
+    // Private result roots have fixed named (non-index) keys. Canonicalize
+    // each value ONCE; retain those exact fragments for the enclosing result.
+    fields = new Map(keys
+      .map(key => [key, `${JSON.stringify(key)}:${key === "assessments" && nativeAssessmentText !== null
+        ? nativeAssessmentText : canonicalStarcraftTmgJson(body[key])}`]));
+  } catch {
+    // Exceptional non-JSON values retain the old full diagnostic path.
+    return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
+  }
+  const bodyCharacters = 2 + Math.max(0, fields.size - 1)
+    + [...fields.values()].reduce((total, value) => total + value.length, 0);
+  // Streaming is not permission to bypass the old actual JS string capacity.
+  if (bodyCharacters > bufferConstants.MAX_STRING_LENGTH) throw new RangeError("Invalid string length");
+  const digest = sharedPrefix
+    ? prefix.digest
+    : createHash(STARCRAFT_TMG_HASH_ALGORITHM).update("{");
+  let separator = sharedPrefix ? "," : "";
+  for (const [key, text] of fields) {
+    if (sharedPrefix && key === "assessments") continue;
+    digest.update(separator).update(text);
+    separator = ",";
+  }
+  const resultHash = digest.update("}").digest("hex");
+  const result = freezeDeep({ ...body, resultHash });
+  const resultHashText = `${JSON.stringify("resultHash")}:${JSON.stringify(resultHash)}`;
+  if (bodyCharacters + 1 + resultHashText.length <= bufferConstants.MAX_STRING_LENGTH) {
+    fields.set("resultHash", resultHashText);
+    NATIVE_ELEVATED_LOS_TEXT.set(result, "{" + [...fields.keys()].sort()
+      .map(key => fields.get(key)).join(",") + "}");
+  }
+  // A too-large enclosing result cannot be cached; publishing this native
+  // result still retains the original evaluator's body-only seal semantics.
+  return result;
+}
 
 function fail(code, detail = "") {
   throw new Error(detail ? `${code}:${detail}` : code);
@@ -238,6 +324,12 @@ function elevationBandForSize(size) {
   return size >= 3 ? "high" : size >= 1 ? "mid" : "ground";
 }
 function canonicalModel(piece, modelId, dataBundle, context) {
+  // Only a factory-owned context with deeply frozen, freshly copied queries can
+  // reuse a model. Actual piece identity, not an ID/name or caller-prepared flag,
+  // owns this cache; scalar and mutable counterfactual paths remain uncached.
+  const ownedCache = Object.isFrozen(piece) ? context.ownedCanonicalModelsByPiece : null;
+  const cachedModels = ownedCache?.get(piece);
+  if (cachedModels?.has(modelId)) return cachedModels.get(modelId);
   if (!activePiece(piece)) fail("ELEVATION_UNIT_INVALID", String(piece?.id || ""));
   const model = (piece.models || []).find((entry) => entry.id === modelId && activeModel(entry));
   const profile = officialProfile(piece, dataBundle);
@@ -284,7 +376,7 @@ function canonicalModel(piece, modelId, dataBundle, context) {
   if (!flying && normalizedElevation(model.elevation) !== elevationBand) {
     fail("ELEVATION_MODEL_BAND_MISMATCH", modelId);
   }
-  return { unitId: piece.id, modelId, sideKey: piece.sideKey, center,
+  const result = { unitId: piece.id, modelId, sideKey: piece.sideKey, center,
     footprint, baseShape: shape, officialRecordKey: profile.recordKey,
     printedSize: profile.printedSize, flying, supportTerrainId,
     supportTerrainIds, supportingTerrainEffectiveSize,
@@ -294,6 +386,12 @@ function canonicalModel(piece, modelId, dataBundle, context) {
     elevationBand,
     effectiveSize: flying ? "higher_than_every_terrain"
       : profile.printedSize + supportingTerrainEffectiveSize };
+  if (ownedCache) {
+    const models = cachedModels || new Map();
+    if (!cachedModels) ownedCache.set(piece, models);
+    models.set(modelId, freezeDeep(result));
+  }
+  return result;
 }
 function activeCanonicalModels(piece, dataBundle, context) {
   return (piece.models || []).filter(activeModel).map((model) => (
@@ -301,12 +399,15 @@ function activeCanonicalModels(piece, dataBundle, context) {
   ));
 }
 function terrainEffectiveSizeEvidence(context) {
-  return context.terrain.map((terrain) => ({
+  // This context is created only by native full-map/source verification; it is
+  // never caller-provided and its support graph is complete before publication.
+  // Every ray retains the FULL rows, but immutable map evidence is built once.
+  return context.terrainEffectiveSizeEvidence ||= freezeDeep(context.terrain.map((terrain) => ({
     terrainId: terrain.terrainId, printedSize: terrain.size,
     supportTerrainId: context.directSupport.get(terrain.terrainId) || null,
     supportTerrainChain: context.supportChainByTerrainId.get(terrain.terrainId),
     effectiveSize: context.effectiveSizeByTerrainId.get(terrain.terrainId),
-  }));
+  })));
 }
 
 export function evaluateOfficialEffectiveSizeV1(input = {}) {
@@ -332,6 +433,64 @@ export function evaluateOfficialEffectiveSizeV1(input = {}) {
   return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
 }
 
+// Model-only projections for one owned synchronous batch. Callers cannot supply
+// a trusted context; terrain and source facts are verified once from the snapshot.
+// This is not the scalar's complete terrain-proof result or an LOS verdict.
+function projectEffectiveSizeSubjects(pieces, subjects, dataBundle, context) {
+  return freezeDeep(subjects.map((subject) => {
+    const piece = pieces?.find((entry) => entry.id === subject?.unitId);
+    return canonicalModel(piece, subject?.modelId, dataBundle, context);
+  }));
+}
+
+export function evaluateOfficialEffectiveSizeSubjectsBatchV1(input = {}) {
+  if (!Array.isArray(input.subjects)) {
+    fail("ELEVATION_EFFECTIVE_SIZE_SUBJECT_BATCH_INVALID");
+  }
+  const snapshot = structuredClone({
+    state: {
+      board: {
+        terrain: input.state?.board?.terrain,
+        terrainElevationAgreement: input.state?.board?.terrainElevationAgreement,
+      },
+      pieces: input.state?.pieces,
+    },
+    dataBundle: input.dataBundle,
+    subjects: input.subjects,
+  });
+  const context = verifyElevationContext(snapshot.state, snapshot.dataBundle);
+  return projectEffectiveSizeSubjects(snapshot.state.pieces, snapshot.subjects,
+    snapshot.dataBundle, context);
+}
+
+// Fixed-map casualty branches vary only the complete piece collection. Own and
+// verify map/source facts once; callers receive no prepared context or trusted
+// model cache. Every invocation copies its actual pieces/subjects and repeats
+// canonicalModel's source, live-model, footprint, support and elevation checks.
+// The caller cannot replace or mutate this owner's board/data after creation.
+export function createOfficialEffectiveSizeSubjectsUnitBatchV1(input = {}) {
+  const snapshot = freezeDeep(structuredClone({
+    state: {
+      board: {
+        terrain: input.state?.board?.terrain,
+        terrainElevationAgreement: input.state?.board?.terrainElevationAgreement,
+      },
+    },
+    dataBundle: input.dataBundle,
+  }));
+  const context = verifyElevationContext(snapshot.state, snapshot.dataBundle);
+  return Object.freeze({
+    evaluatePieces(pieces, subjects) {
+      if (!Array.isArray(subjects)) {
+        fail("ELEVATION_EFFECTIVE_SIZE_SUBJECT_BATCH_INVALID");
+      }
+      const current = structuredClone({ pieces, subjects });
+      return projectEffectiveSizeSubjects(current.pieces, current.subjects,
+        snapshot.dataBundle, context);
+    },
+  });
+}
+
 export function evaluateOfficialHorizontalElevationDistanceV1(input = {}) {
   const context = verifyElevationContext(input.state, input.dataBundle);
   const leftPiece = input.state.pieces?.find((entry) => entry.id === input.leftUnitId);
@@ -352,7 +511,8 @@ export function evaluateOfficialHorizontalElevationDistanceV1(input = {}) {
   return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
 }
 
-function geometryProjection(state, supportIds, dataBundle, participantIds) {
+function geometryProjection(state, supportIds, dataBundle, participantIds,
+  ownedTerrain = null) {
   // Geometry projection is deliberately minimal. The prior implementation
   // cloned and hashed the complete multi-megabyte room state for every
   // attacker/target model pair even though LoS reads only these participants
@@ -360,7 +520,7 @@ function geometryProjection(state, supportIds, dataBundle, participantIds) {
   // avoiding quadratic work as journals and catalogues grow.
   const projected = {
     board: {
-      terrain: structuredClone(state.board?.terrain || []),
+      terrain: ownedTerrain || structuredClone(state.board?.terrain || []),
     },
     pieces: (state.pieces || []).filter((piece) => participantIds.has(piece.id))
       .map((piece) => structuredClone(piece)),
@@ -385,10 +545,56 @@ function geometryProjection(state, supportIds, dataBundle, participantIds) {
       piece.officialPayloadHash = geometryProfile.payloadHash;
     }
   }
-  for (const terrain of projected.board?.terrain || []) {
-    if (supportIds.has(terrain.id)) terrain.isRemoved = true;
+  if (!ownedTerrain) {
+    for (const terrain of projected.board?.terrain || []) {
+      if (supportIds.has(terrain.id)) terrain.isRemoved = true;
+    }
   }
   return { projected, substitutions };
+}
+
+// Only a factory-owned, already verified complete map can share this storage.
+// Participant pairs affect pieces, not terrain: the exact excluded support set
+// is the only varying terrain input within this one private immutable batch.
+// Public one-shot operations keep their original copies and validation order.
+function ownedGeometryTerrain(owned, supportIds) {
+  const key = JSON.stringify([...supportIds].sort());
+  if (!owned.terrainBySupportSet.has(key)) {
+    const terrain = structuredClone(owned.snapshot.state.board?.terrain || []);
+    for (const entry of terrain) {
+      if (supportIds.has(entry.id)) entry.isRemoved = true;
+    }
+    owned.terrainBySupportSet.set(key, freezeDeep(terrain));
+  }
+  return owned.terrainBySupportSet.get(key);
+}
+
+function ownedGeometryProjectionHash(owned, geometry) {
+  const projected = geometry.projected;
+  // The complete canonical native body is {board:{terrain},pieces}. Future
+  // shape extensions retain the generic path rather than losing a field.
+  if (Object.keys(projected).length !== 2
+    || Object.keys(projected.board).length !== 1) {
+    return hashStarcraftTmgContract(projected);
+  }
+  const terrain = projected.board.terrain;
+  // Validate/serialize every participant before constructing a possibly large
+  // terrain string. The terrain is already our completely verified own copy.
+  const piecesText = canonicalStarcraftTmgJson(projected.pieces);
+  let prefix = owned.geometryHashPrefixByTerrain.get(terrain);
+  if (!prefix) {
+    const text = `{"board":{"terrain":${canonicalStarcraftTmgJson(terrain)}},"pieces":`;
+    prefix = { characters: text.length,
+      digest: createHash(STARCRAFT_TMG_HASH_ALGORITHM).update(text) };
+    owned.geometryHashPrefixByTerrain.set(terrain, prefix);
+  }
+  if (prefix.characters + piecesText.length + 1 > bufferConstants.MAX_STRING_LENGTH) {
+    throw new RangeError("Invalid string length");
+  }
+  // Copy SHA256's native state, not an accepted identity or a caller proof.
+  // ALL original canonical bytes still enter the original full-body digest;
+  // only the identical private terrain prefix is normalized/hashed once.
+  return prefix.digest.copy().update(piecesText).update("}").digest("hex");
 }
 function supportAssessment(terrain, attacker, target) {
   const attackerNear = modelEdgeToTerrain(attacker, terrain) <= INCH + TOLERANCE;
@@ -427,9 +633,7 @@ function highGroundDeadZone(terrain, assessment, attacker, target) {
   return regular || flyingRetained;
 }
 
-export function evaluateOfficialElevatedLineOfSightV1(input = {}) {
-  const state = input.state;
-  const context = verifyElevationContext(state, input.dataBundle);
+function prepareElevatedLineOfSight(input, context) {
   const attackerPiece = input.attacker;
   const targetPiece = input.target;
   const attacker = canonicalModel(attackerPiece, input.attackerModelId,
@@ -444,6 +648,15 @@ export function evaluateOfficialElevatedLineOfSightV1(input = {}) {
   )).map((terrain) => terrain.terrainId);
   const supportIds = new Set([...attacker.supportTerrainChain, ...target.supportTerrainChain,
     ...flyingOverlappedTerrainIds]);
+  return { attackerPiece, targetPiece, attacker, target, supportIds,
+    flyingOverlappedTerrainIds };
+}
+
+export function evaluateOfficialElevatedLineOfSightV1(input = {}) {
+  const state = input.state;
+  const context = verifyElevationContext(state, input.dataBundle);
+  const prepared = prepareElevatedLineOfSight(input, context);
+  const { attackerPiece, targetPiece, supportIds } = prepared;
   const geometry = geometryProjection(state, supportIds, input.dataBundle,
     new Set([attackerPiece.id, targetPiece.id]));
   const projectedState = geometry.projected;
@@ -453,8 +666,217 @@ export function evaluateOfficialElevatedLineOfSightV1(input = {}) {
     attacker: projectedAttacker, attackerModelId: input.attackerModelId,
     target: projectedTarget, targetModelId: input.targetModelId,
     dataBundle: input.dataBundle });
+  return finishElevatedLineOfSight(input, context, prepared, geometry, base);
+}
+
+// Private snapshot and grouping live only for this synchronous invocation.
+// No state/revision cache survives; distinct query objects are validated even
+// if they repeat a unit id. Every model pair still receives its full result.
+function prepareElevatedLineOfSightBatch(input, owned = null) {
+  if (!Array.isArray(input.queries) || input.queries.length === 0) {
+    fail("ELEVATION_LOS_BATCH_INVALID");
+  }
+  const snapshot = owned
+    ? { ...owned.snapshot, queries: structuredClone(input.queries) }
+    : structuredClone({ state: input.state,
+      dataBundle: input.dataBundle, queries: input.queries });
+  const context = owned?.context
+    || verifyElevationContext(snapshot.state, snapshot.dataBundle);
+  if (owned) {
+    // Neither callers nor a projection callback can mutate the private query
+    // participants. A later evaluate/verify call clones NEW actual objects,
+    // so even same-ID pieces with changed source/position/support never alias.
+    freezeDeep(snapshot.queries);
+    context.ownedCanonicalModelsByPiece ||= new WeakMap();
+  }
+  const groups = new Map();
+  const preparedQueries = snapshot.queries.map((query) => {
+    const request = { ...query, state: snapshot.state, dataBundle: snapshot.dataBundle };
+    const prepared = prepareElevatedLineOfSight(request, context);
+    const participantIds = new Set([prepared.attackerPiece.id, prepared.targetPiece.id]);
+    const key = JSON.stringify([[...participantIds].sort(), [...prepared.supportIds].sort()]);
+    let group = groups.get(key);
+    if (!group) {
+      let geometry = owned?.geometryByKey.get(key);
+      if (!geometry) {
+        geometry = geometryProjection(snapshot.state, prepared.supportIds,
+          snapshot.dataBundle, participantIds,
+          owned ? ownedGeometryTerrain(owned, prepared.supportIds) : null);
+        geometry.projectionHash = owned
+          ? ownedGeometryProjectionHash(owned, geometry)
+          : hashStarcraftTmgContract(geometry.projected);
+        if (owned) owned.geometryByKey.set(key, freezeDeep(geometry));
+      }
+      group = { geometry, queries: [], results: null };
+      groups.set(key, group);
+    }
+    const index = group.queries.length;
+    group.queries.push({ attacker: group.geometry.projected.pieces.find((piece) => (
+      piece.id === prepared.attackerPiece.id
+    )), attackerModelId: request.attackerModelId,
+    target: group.geometry.projected.pieces.find((piece) => (
+      piece.id === prepared.targetPiece.id
+    )), targetModelId: request.targetModelId });
+    return { request, prepared, group, index };
+  });
+  return { snapshot, context, groups, preparedQueries, owned };
+}
+
+// This seam is available only to our privately owned geometry, after the whole
+// elevated query preparation has succeeded. Public one-shot paths retain their
+// original preparation/error order, and callers never supply a prepared context.
+function ownedOrdinaryLineOfSightBatch(owned, geometry, dataBundle) {
+  if (!owned) return null;
+  // Ordinary LOS reads its owned terrain context and each freshly copied query's
+  // physical participants, not the projected state's participant list. Different
+  // participant projections therefore share preparation ONLY when their actual
+  // factory-owned terrain array is the same; excluded support sets remain apart.
+  const terrain = geometry.projected.board.terrain;
+  let batch = owned.ordinaryByTerrain.get(terrain);
+  if (!batch) {
+    batch = createOfficialTerrainLineOfSightBatchV1({ state: geometry.projected,
+      dataBundle });
+    owned.ordinaryByTerrain.set(terrain, batch);
+  }
+  return batch;
+}
+
+// Shares all source, terrain, support and physical-model preparation with the
+// full evaluator. NO LOS/cover outcome is asserted by this input-only seam.
+function verifyElevatedLineOfSightPreparedInputs({ snapshot, context, groups, preparedQueries,
+  owned }) {
+  for (const group of groups.values()) {
+    const native = ownedOrdinaryLineOfSightBatch(owned, group.geometry, snapshot.dataBundle);
+    if (native) native.verifyInputs(group.queries);
+    else verifyOfficialTerrainLineOfSightBatchInputsV1({ state: group.geometry.projected,
+      dataBundle: snapshot.dataBundle, queries: group.queries });
+  }
+  const checkedPieces = new Set();
+  for (const { prepared } of preparedQueries) {
+    for (const piece of [prepared.attackerPiece, prepared.targetPiece]) {
+      if (checkedPieces.has(piece)) continue;
+      activeCanonicalModels(piece, snapshot.dataBundle, context);
+      checkedPieces.add(piece);
+    }
+  }
+  return Object.freeze({ inputsValidated: true, queryCount: preparedQueries.length });
+}
+
+function evaluateElevatedLineOfSightPrepared({ snapshot, context, groups, preparedQueries,
+  owned }) {
+  for (const group of groups.values()) {
+    const native = ownedOrdinaryLineOfSightBatch(owned, group.geometry, snapshot.dataBundle);
+    group.results = native ? native.evaluate(group.queries)
+      : evaluateOfficialTerrainLineOfSightBatchV1({
+        state: group.geometry.projected, dataBundle: snapshot.dataBundle,
+        queries: group.queries });
+  }
+  return Object.freeze(preparedQueries.map(({ request, prepared, group, index }) => (
+    finishElevatedLineOfSight(request, context, prepared, group.geometry,
+      group.results[index])
+  )));
+}
+
+// Only an owned batch reaches this projection seam. Every query is prepared
+// against the complete immutable source before any result is projected. Native
+// full results and seals are unchanged; only their retention lifetime differs.
+function projectOwnedElevatedLineOfSightPrepared({ snapshot, context, groups,
+  preparedQueries, owned }, project) {
+  for (const group of groups.values()) {
+    group.operation = ownedOrdinaryLineOfSightBatch(owned, group.geometry,
+      snapshot.dataBundle).prepareEvaluation(group.queries);
+  }
+  return Object.freeze(preparedQueries.map(({ request, prepared, group, index }, queryIndex) => {
+    const base = group.operation.evaluateAt(index);
+    const result = finishElevatedLineOfSight(request, context, prepared, group.geometry, base);
+    return project(result, queryIndex);
+  }));
+}
+
+export function verifyOfficialElevatedLineOfSightBatchInputsV1(input = {}) {
+  return verifyElevatedLineOfSightPreparedInputs(prepareElevatedLineOfSightBatch(input));
+}
+
+export function evaluateOfficialElevatedLineOfSightBatchV1(input = {}) {
+  return evaluateElevatedLineOfSightPrepared(prepareElevatedLineOfSightBatch(input));
+}
+
+// A caller receives operations, never a trusted/prepared context. Own and verify
+// the complete map/source snapshot once. Each call still clones its query objects
+// and runs all native model, support and ordinary-geometry validation. Geometry
+// reuse is bound to this one immutable snapshot, participant IDs and support set;
+// mutable caller objects, results and authority never enter the private cache.
+export function createOfficialElevatedLineOfSightBatchV1(input = {}) {
+  const snapshot = freezeDeep(structuredClone({ state: input.state,
+    dataBundle: input.dataBundle }));
+  const owned = { snapshot,
+    context: verifyElevationContext(snapshot.state, snapshot.dataBundle),
+    geometryByKey: new Map(), ordinaryByTerrain: new WeakMap(),
+    terrainBySupportSet: new Map(), geometryHashPrefixByTerrain: new WeakMap() };
+  return Object.freeze({
+    verifyInputs(queries) {
+      return verifyElevatedLineOfSightPreparedInputs(
+        prepareElevatedLineOfSightBatch({ queries }, owned));
+    },
+    evaluate(queries) {
+      return evaluateElevatedLineOfSightPrepared(
+        prepareElevatedLineOfSightBatch({ queries }, owned));
+    },
+    project(queries, project) {
+      if (typeof project !== "function") fail("ELEVATION_LOS_PROJECTOR_INVALID");
+      return projectOwnedElevatedLineOfSightPrepared(
+        prepareElevatedLineOfSightBatch({ queries }, owned), project);
+    },
+  });
+}
+
+function nativeElevatedAssessmentLookupKey(overrides) {
+  // A PRIVATE lookup, not an authority hash/canonical assessment fragment. The
+  // one native producer creates plain scalar/string-array fields in fixed order.
+  // JSON preserves every key and value; differing order can only miss reuse,
+  // never alias different fields. Keep the old canonical path for non-flat data.
+  for (const value of Object.values(overrides)) {
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        if (typeof entry !== "string") return canonicalNativeElevatedAssessment(overrides);
+      }
+    } else if (value !== null && typeof value !== "string"
+      && typeof value !== "boolean"
+      && !(typeof value === "number" && Number.isFinite(value))) {
+      return canonicalNativeElevatedAssessment(overrides);
+    }
+  }
+  return JSON.stringify(overrides);
+}
+
+function nativeElevatedAssessmentProjection(context, geometry, overrides) {
+  const build = () => {
+    const assessment = freezeDeep({ ...geometry, ...overrides });
+    return Object.freeze({ assessment, text: canonicalNativeElevatedAssessment(assessment) });
+  };
+  // Capture ALL overrides, not a guessed subset of Size/cover flags. Undefined
+  // overrides can erase inherited fields and must retain the old uncached path.
+  if (Object.values(overrides).some(value => value === undefined)) return build();
+  let key;
+  // Reuse need not sort/re-encode authority fragments before a cache lookup.
+  // Published assessment text still uses its unchanged canonical serializer.
+  try { key = nativeElevatedAssessmentLookupKey(overrides); }
+  catch { return build(); }
+  const cache = context.nativeAssessmentProjectionByGeometry ||= new WeakMap();
+  let variants = cache.get(geometry);
+  if (!variants) cache.set(geometry, variants = new Map());
+  if (!variants.has(key)) variants.set(key, build());
+  // Actual native geometry identity + complete freshly computed overrides,
+  // private to this source context. No caller-supplied result/ID/hash is trusted.
+  return variants.get(key);
+}
+
+function finishElevatedLineOfSight(input, context, prepared, geometry, base) {
+  const { attackerPiece, targetPiece, attacker, target, supportIds,
+    flyingOverlappedTerrainIds } = prepared;
   const baseById = new Map(base.assessments.map((entry) => [entry.terrainId, entry]));
   const terrainRows = terrainEffectiveSizeEvidence(context);
+  const assessmentTexts = [];
   const assessments = terrainRows.map((terrainEvidence) => {
     const terrain = context.terrainById.get(terrainEvidence.terrainId);
     const geometry = supportIds.has(terrain.terrainId)
@@ -475,7 +897,7 @@ export function evaluateOfficialElevatedLineOfSightV1(input = {}) {
     const elevationDeadZoneBlocks = highGroundDeadZone(
       terrainEvidence, geometry, attacker, target,
     );
-    return { ...geometry, terrainPrintedSize: terrainEvidence.printedSize,
+    const overrides = { terrainPrintedSize: terrainEvidence.printedSize,
       terrainEffectiveSize: terrainEvidence.effectiveSize,
       terrainSupportChain: terrainEvidence.supportTerrainChain,
       attackerEffectiveSize: attacker.effectiveSize,
@@ -484,6 +906,10 @@ export function evaluateOfficialElevatedLineOfSightV1(input = {}) {
       fullCoverBlocks, attackerDirectCover, targetDirectCover,
       directCoverBlocks, elevationDeadZoneBlocks,
       blocksLineOfSight: fullCoverBlocks || directCoverBlocks || elevationDeadZoneBlocks };
+    const projection = nativeElevatedAssessmentProjection(context, geometry, overrides);
+    const assessment = projection.assessment;
+    assessmentTexts.push(projection.text);
+    return assessment;
   });
   const attackerModels = activeCanonicalModels(attackerPiece, input.dataBundle, context);
   const targetModels = activeCanonicalModels(targetPiece, input.dataBundle, context);
@@ -529,7 +955,7 @@ export function evaluateOfficialElevatedLineOfSightV1(input = {}) {
     flyingCoverIntegration,
     geometryAdapter: { sourceKernel: "official_terrain_los_rules_kernel_v1",
       projectionKind: "remove_verified_support_surfaces_for_geometry_only",
-      projectionHash: hashStarcraftTmgContract(projectedState),
+      projectionHash: geometry.projectionHash || hashStarcraftTmgContract(geometry.projected),
       inheritedResultHash: base.resultHash,
       flyingNullSizeGeometrySubstitutions: geometry.substitutions,
       flyingOverlappedSurfaceExclusions: flyingOverlappedTerrainIds.sort(),
@@ -539,7 +965,7 @@ export function evaluateOfficialElevatedLineOfSightV1(input = {}) {
     lineOfSightStatus: blockingTerrainIds.length === 0
       ? "visible" : "blocked_by_one_qualifying_terrain",
     productionQuarantined: true, trainingTruth: false };
-  return freezeDeep({ ...body, resultHash: hashStarcraftTmgContract(body) });
+  return sealNativeElevatedLosResult(body, assessmentTexts, context);
 }
 
 export function certifyOfficialElevationEffectiveSizePlanV1(input = {}) {

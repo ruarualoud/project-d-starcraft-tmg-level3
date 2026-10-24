@@ -12,7 +12,7 @@ import { AGENT_ARRIVAL_PUBLIC_REVISION_OUTPUT_CONTRACT_V1 } from
   "./agent-arrival-public-revision-output-v1.mjs";
 import { auditIterativeRosterArrivalPublicRevisionV1 } from
   "./iterative-roster-arrival-public-audit-v1.mjs";
-import { createPlannedPresetRoundSupplyScheduleV1 } from
+import { createPlannedPresetRoundSupplyScheduleV2 } from
   "./planned-preset-roster-plan-v2.mjs";
 import { createRosterCandidateV1 } from
   "./roster-plan-contracts-v1.mjs";
@@ -22,6 +22,28 @@ export const ITERATIVE_ROSTER_ARRIVAL_PORT_V1 =
 
 function fail(code) { throw Object.assign(new Error(code), { code }); }
 const copy = (value) => structuredClone(value);
+
+function attemptLane(state) {
+  return Number(state.modelContextVersion || 0) >= 6
+    ? hashStarcraftTmgContract({ candidateHash: state.currentCandidate.candidateHash,
+      feedbackCycle: state.teachFeedbackHistory?.length || 0 }) : null;
+}
+function nextAttempt(state, field) {
+  const lane = attemptLane(state);
+  const prior = lane ? state[`${field}BySnapshot`]?.[lane]
+    ?? ((state.teachFeedbackHistory?.length || 0) === 0 ? state[field] || 0 : 0)
+    : state[field] || 0;
+  return Number(prior) + 1;
+}
+function recordAttempt(state, field, attempt) {
+  const lane = attemptLane(state);
+  if (!lane) { state[field] = attempt; return; }
+  state[`${field}BySnapshot`] ||= {};
+  const prior = state[`${field}BySnapshot`][lane]
+    ?? ((state.teachFeedbackHistory?.length || 0) === 0 ? state[field] || 0 : 0);
+  state[field] = Number(state[field] || 0) + Math.max(0, attempt - Number(prior));
+  state[`${field}BySnapshot`][lane] = attempt;
+}
 
 function candidateFromVerdict(input, verdict) {
   return createRosterCandidateV1({
@@ -41,7 +63,7 @@ function candidateFromVerdict(input, verdict) {
 }
 
 function feasibleScheduleMenu(units, capacityRounds, rosterCandidate,
-  armyAudit, missionProfile) {
+  armyAudit, missionProfile, contextualSupplyRoutes) {
   const options = [];
   const signatures = new Set();
   const finite = capacityRounds.filter((entry) => entry.capacity !== null);
@@ -63,12 +85,13 @@ function feasibleScheduleMenu(units, capacityRounds, rosterCandidate,
       });
       const key = JSON.stringify(signature);
       if (signatures.has(key)) return;
-      const schedule = createPlannedPresetRoundSupplyScheduleV1({
+      const schedule = createPlannedPresetRoundSupplyScheduleV2({
         proposedEntries: assigned.map((entry) => ({
           round: entry.round, unitInstanceId: entry.unitInstanceId,
           publicReasonText: "numeric feasibility witness only",
         })),
         rosterCandidate, armyAudit, missionProfile,
+        contextualSupplyRoutes,
       });
       signatures.add(key);
       options.push({ optionId: `numeric-arrivals-${options.length + 1}`,
@@ -86,9 +109,9 @@ function feasibleScheduleMenu(units, capacityRounds, rosterCandidate,
       const affected = finite.map((entry, position) => ({ entry,
         position })).filter(({ entry }) => entry.round >= round.round);
       if (affected.some(({ entry, position }) =>
-        committed[position] + unit.startingSupply > entry.capacity)) continue;
+        committed[position] + unit.poolSupply > entry.capacity)) continue;
       for (const { position } of affected) {
-        committed[position] += unit.startingSupply;
+        committed[position] += unit.poolSupply;
       }
       assigned.push({ round: round.round,
         unitInstanceId: unit.unitInstanceId,
@@ -96,7 +119,7 @@ function feasibleScheduleMenu(units, capacityRounds, rosterCandidate,
       visit(index + 1);
       assigned.pop();
       for (const { position } of affected) {
-        committed[position] -= unit.startingSupply;
+        committed[position] -= unit.poolSupply;
       }
       if (options.length >= 6 || visited >= 100_000) break;
     }
@@ -107,13 +130,14 @@ function feasibleScheduleMenu(units, capacityRounds, rosterCandidate,
 }
 
 export function createIterativeRosterArrivalPortV1({ store, builder,
-  missionAuthority, deliberationFactory } = {}) {
+  missionAuthority, deliberationFactory, contextualSupplyRoutes } = {}) {
   if (typeof store?.load !== "function"
     || typeof store?.save !== "function"
     || typeof store?.loadRetainedReply !== "function"
     || typeof store?.retainReply !== "function"
     || typeof builder?.evaluateRosterCandidate !== "function"
     || typeof deliberationFactory?.createForRun !== "function"
+    || !Array.isArray(contextualSupplyRoutes)
     || missionAuthority?.resultStatus !== "derivable") {
     fail("ITERATIVE_ROSTER_ARRIVAL_PORT_MISSING");
   }
@@ -165,15 +189,18 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
           publicAudit: copy(state.arrivalPublicRevision.publicAudit),
           providerCalls: 0 };
       }
-      const capacityWitness = createPlannedPresetRoundSupplyScheduleV1({
+      const capacityWitness = createPlannedPresetRoundSupplyScheduleV2({
         proposedEntries: current.input.units.map((unit) => ({
           round: missionProfile.gameLengthRounds,
           unitInstanceId: unit.unitInstanceId,
           publicReasonText: "capacity witness only; not an Agent choice",
         })),
         rosterCandidate, armyAudit: verdict.audit, missionProfile,
+        contextualSupplyRoutes,
       });
-      const attempt = Number(state.arrivalAttemptCount || 0) + 1;
+      const poolSupplyByUnit = new Map(capacityWitness.entries.map((entry) =>
+        [entry.unitInstanceId, entry.poolSupply]));
+      const attempt = nextAttempt(state, "arrivalAttemptCount");
       if (attempt > 3) fail("ITERATIVE_ROSTER_ARRIVAL_REVIEW_LIMIT");
       const route = state.observations.findLast((entry) =>
         entry.query?.kind === "map_route"
@@ -200,8 +227,10 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
           compositionKind: current.input.units.find((entry) =>
             entry.unitInstanceId === unit.unitInstanceId)?.compositionKind,
           startingSupply: unit.unitCompositionResult.startingSupply,
+          poolSupply: poolSupplyByUnit.get(unit.unitInstanceId),
         })),
         currentPublicPlan: state.plan,
+        ...(attemptLane(state) ? { snapshotAttemptLane: attemptLane(state) } : {}),
         certifiedMapRoute: { receiptHash: route.receipt.receiptHash,
           accessByBase: route.receipt.accessByBase,
           unresolvedUnits: route.receipt.unresolvedUnits,
@@ -211,9 +240,9 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
           feasibleScheduleMenu(verdict.audit.units.map((unit) => ({
             unitInstanceId: unit.unitInstanceId,
             recordKey: unit.recordKey,
-            startingSupply: unit.unitCompositionResult.startingSupply,
+            poolSupply: poolSupplyByUnit.get(unit.unitInstanceId),
           })), capacityWitness.rounds, rosterCandidate, verdict.audit,
-          missionProfile) } : {}),
+          missionProfile, contextualSupplyRoutes) } : {}),
       };
       const contextHash = hashStarcraftTmgContract(context);
       const requestKey = hashStarcraftTmgContract({ sessionId,
@@ -296,7 +325,7 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
       state.arrivalRequestKeys = [...new Set([
         ...(state.arrivalRequestKeys || []), requestKey ])];
       if (retained.outcome !== "completed") {
-        state.arrivalAttemptCount = attempt;
+        recordAttempt(state, "arrivalAttemptCount", attempt);
         state.arrivalRejection = { code: retained.failureCode
             || "MODEL_OUTPUT_REPAIR_REQUIRED",
           outputHash: retained.failedOutputRecord?.rawTextHash || null };
@@ -319,7 +348,7 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
       const shape = validateStarcraftTmgProviderJsonSchemaValueV1(
         contract.providerSchema, output);
       if (!shape.ok) {
-        state.arrivalAttemptCount = attempt;
+        recordAttempt(state, "arrivalAttemptCount", attempt);
         state.arrivalRejection = {
           code: "ITERATIVE_ROSTER_ARRIVAL_OUTPUT_INVALID",
           outputHash: hashStarcraftTmgContract(rawOutput),
@@ -332,9 +361,10 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
           providerCalls: dispatchedNow ? 1 : 0 };
       }
       try {
-        const schedule = createPlannedPresetRoundSupplyScheduleV1({
+        const schedule = createPlannedPresetRoundSupplyScheduleV2({
           proposedEntries: output.openingDeploymentSchedule,
           rosterCandidate, armyAudit: verdict.audit, missionProfile,
+          contextualSupplyRoutes,
         });
         const publicAudit = auditIterativeRosterArrivalPublicRevisionV1({
           rosterCandidate,
@@ -349,7 +379,7 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
           outputHash: hashStarcraftTmgContract(rawOutput),
           transportVersionAliasNormalized: transportVersionAlias,
         };
-        state.arrivalAttemptCount = attempt;
+        recordAttempt(state, "arrivalAttemptCount", attempt);
         state.arrivalRejection = null;
         state.pendingArrivalRequestKey = null;
         await store.save(sessionId, copy(state));
@@ -358,16 +388,14 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
           schedule: copy(schedule), publicAudit: copy(publicAudit),
           providerCalls: dispatchedNow ? 1 : 0 };
       } catch (error) {
-        const supplyByUnit = new Map(verdict.audit.units.map((unit) => [
-          unit.unitInstanceId, unit.unitCompositionResult.startingSupply]));
         const cumulativeSupplyViolations = capacityWitness.rounds.filter(
           (round) => round.capacity !== null).map((round) => ({
             round: round.round, capacity: round.capacity,
             committedSupply: output.openingDeploymentSchedule.filter((entry) =>
               entry.round <= round.round).reduce((sum, entry) =>
-                sum + Number(supplyByUnit.get(entry.unitInstanceId) || 0), 0),
+                sum + Number(poolSupplyByUnit.get(entry.unitInstanceId) || 0), 0),
           })).filter((round) => round.committedSupply > round.capacity);
-        state.arrivalAttemptCount = attempt;
+        recordAttempt(state, "arrivalAttemptCount", attempt);
         state.arrivalRejection = { code: String(error?.message || error),
           details: copy(error?.details || null),
           cumulativeSupplyViolations,
@@ -410,7 +438,7 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
         !== state.openingDeploymentSchedule.candidateHash) {
         fail("ITERATIVE_ROSTER_PUBLIC_REVISION_CANDIDATE_DRIFT");
       }
-      const attempt = Number(state.publicRevisionAttemptCount || 0) + 1;
+      const attempt = nextAttempt(state, "publicRevisionAttemptCount");
       if (attempt > 3) fail("ITERATIVE_ROSTER_PUBLIC_REVISION_REVIEW_LIMIT");
       const context = {
         schema: ITERATIVE_ROSTER_ARRIVAL_PORT_V1,
@@ -424,6 +452,7 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
         priorPublicRevision: state.arrivalPublicRevision,
         priorRejection: state.publicRevisionRejection || null,
         sourceMapRouteEvidenceHash: state.plan?.mapEvidenceHash || null,
+        ...(attemptLane(state) ? { snapshotAttemptLane: attemptLane(state) } : {}),
       };
       const contextHash = hashStarcraftTmgContract(context);
       const requestKey = hashStarcraftTmgContract({ sessionId,
@@ -506,7 +535,7 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
         ? validateStarcraftTmgProviderJsonSchemaValueV1(
           outputContract.providerSchema, output) : { ok: false };
       if (!shape.ok) {
-        state.publicRevisionAttemptCount = attempt;
+        recordAttempt(state, "publicRevisionAttemptCount", attempt);
         state.publicRevisionRejection = {
           code: retained.failureCode
             || "ITERATIVE_ROSTER_PUBLIC_REVISION_OUTPUT_INVALID",
@@ -536,7 +565,7 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
           correctedFromOutputHash:
             state.arrivalPublicRevision.outputHash,
         };
-        state.publicRevisionAttemptCount = attempt;
+        recordAttempt(state, "publicRevisionAttemptCount", attempt);
         state.publicRevisionRejection = null;
         state.pendingPublicRevisionRequestKey = null;
         await store.save(sessionId, copy(state));
@@ -544,7 +573,7 @@ export function createIterativeRosterArrivalPortV1({ store, builder,
           publicAudit: copy(audit),
           providerCalls: dispatchedNow ? 1 : 0 };
       } catch (error) {
-        state.publicRevisionAttemptCount = attempt;
+        recordAttempt(state, "publicRevisionAttemptCount", attempt);
         state.publicRevisionRejection = {
           code: String(error?.message || error),
           outputHash: hashStarcraftTmgContract(output),

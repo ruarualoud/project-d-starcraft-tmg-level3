@@ -226,6 +226,37 @@ function cleanLogEntry(entry, logicalSequence) {
   return { ...deterministic, logicalSequence };
 }
 
+// A canonical fingerprint is an exact replay input identity only for ordinary
+// JSON records. Accessors, custom prototypes, holes and hidden properties must
+// retain the uncached path; they can carry behavior not represented by JSON.
+function replayMemoPlainData(value, visiting = new WeakSet()) {
+  if (value === null) return true;
+  if (typeof value !== "object") return typeof value === "string"
+    || typeof value === "boolean"
+    || (typeof value === "number" && Number.isFinite(value) && !Object.is(value, -0));
+  try {
+    const array = Array.isArray(value);
+    if (Object.getPrototypeOf(value) !== (array ? Array.prototype : Object.prototype)
+      || visiting.has(value)) return false;
+    const keys = Reflect.ownKeys(value);
+    if (array && keys.length !== value.length + 1) return false;
+    visiting.add(value);
+    try {
+      for (const key of keys) {
+        if (typeof key !== "string") return false;
+        const descriptor = Object.getOwnPropertyDescriptor(value, key);
+        if (!descriptor || !("value" in descriptor)) return false;
+        if (array && key === "length") continue;
+        if (!descriptor.enumerable || key === "__proto__") return false;
+        if (array && (!Number.isSafeInteger(Number(key)) || Number(key) < 0
+          || Number(key) >= value.length || String(Number(key)) !== key)) return false;
+        if (!replayMemoPlainData(descriptor.value, visiting)) return false;
+      }
+      return true;
+    } finally { visiting.delete(value); }
+  } catch { return false; }
+}
+
 function normalizeAuthorityState(input, stateRevision = 0) {
   const state = normalizeStarcraftTmgState(input || {});
   // The legacy v0 normalizer knows only its historical `scoring` label and
@@ -548,6 +579,16 @@ function confirmationClassFor(action) {
 
 function finiteActionIdentity(matchBindingHash, stateHash, stateRevision, sideKey, action) {
   return `sc-finite-${hashStarcraftTmgContract({ matchBindingHash, stateHash, stateRevision, sideKey, action })}`;
+}
+
+// Shared transport projection for live rooms and immutable pregame snapshots.
+// Native enumeration remains the authority; this never creates an action.
+export function projectStarcraftTmgFiniteActionV1(candidate, binding) {
+  const action = contractAction(candidate);
+  if (!candidate.isEnabled || MOVEMENT_ACTION_TYPES.has(action.actionType)) return null;
+  const { matchBindingHash, stateHash, stateRevision, sideKey } = binding;
+  return { actionKey: finiteActionIdentity(matchBindingHash, stateHash, stateRevision, sideKey, action),
+    action, confirmationClass: confirmationClassFor(action) };
 }
 
 function rulesRuntimeDescriptorCore(descriptor = {}) {
@@ -992,6 +1033,13 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     }
   }
 
+  // Only this engine's own deeply frozen Envelope can reuse normalization.
+  // A decoded/caller-frozen value has no provenance and always takes the full
+  // path. Capture the FIRST successful validation, not the producer's initial
+  // normalization: legacy normalization need not be assumed idempotent.
+  const ownedEnvelopes = new WeakSet();
+  const ownedEnvelopeValidatedStates = new WeakMap();
+
   function validateEnvelope(envelope) {
     if (!object(envelope) || envelope.schemaVersion !== `${STARCRAFT_TMG_AUTHORITY_VERSION}.envelope`) {
       throw new AuthorityError("PROPOSAL_INVALID", "authority envelope schema is invalid");
@@ -1008,8 +1056,19 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     if (!HASH_PATTERN.test(String(envelope.stateHash || "")) || !HASH_PATTERN.test(String(envelope.journalHeadHash || ""))) {
       throw new AuthorityError("PROPOSAL_INVALID", "envelope hash is invalid");
     }
+    const ownedState = ownedEnvelopeValidatedStates.get(envelope);
+    if (ownedState) return structuredClone(ownedState);
     const state = normalizeAuthorityState(envelope.state, stateRevision);
     if (hashStarcraftTmgContract(state) !== envelope.stateHash) throw new AuthorityError("SIGNATURE_INVALID", "envelope state hash does not match state");
+    if (ownedEnvelopes.has(envelope)) {
+      // Never share a mutable state with Rules or the caller. The memo is an
+      // owned complete value; header/MatchBinding checks above still run EVERY
+      // time and no hash label or external verified flag grants a cache hit.
+      // This copy is inaccessible outside the closure and is ONLY cloned on
+      // read. Recursively freezing it adds another full traversal without any
+      // ownership protection: the actual public Envelope is already frozen.
+      ownedEnvelopeValidatedStates.set(envelope, structuredClone(state));
+    }
     return state;
   }
 
@@ -1043,7 +1102,9 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       state,
     };
     if (!HASH_PATTERN.test(envelope.journalHeadHash)) throw new AuthorityError("PROPOSAL_INVALID", "journalHeadHash must be a SHA-256 hash");
-    return deepFreeze(envelope);
+    deepFreeze(envelope);
+    ownedEnvelopes.add(envelope);
+    return envelope;
   }
 
   function issueSeatAuthority(input = {}) {
@@ -1246,8 +1307,9 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
       const action = contractAction(candidate);
       if (MOVEMENT_ACTION_TYPES.has(action.actionType)) continue;
       if (candidate.isEnabled) {
-        const actionKey = finiteActionIdentity(envelope.matchBindingHash, envelope.stateHash, envelope.stateRevision, sideKey, action);
-        finiteActions.push({ actionKey, action, confirmationClass: confirmationClassFor(action) });
+        finiteActions.push(projectStarcraftTmgFiniteActionV1(candidate, {
+          matchBindingHash: envelope.matchBindingHash, stateHash: envelope.stateHash,
+          stateRevision: envelope.stateRevision, sideKey }));
       } else {
         disabledDiagnostics.push({ action, disabledReason: candidate.disabledReason || "disabled_by_rules" });
       }
@@ -2001,6 +2063,10 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     }
   }
 
+  // One successful content verification per engine, never a caller-owned state.
+  // Room replay checks its checkpoint before replay checks it again. Compare the
+  // complete body AND signature on reuse; supplied hash labels are not evidence.
+  let verifiedCheckpointMemo = null;
   function verifyCheckpoint(checkpoint, matchBinding) {
     try {
       validateMatchBinding(matchBinding);
@@ -2008,13 +2074,27 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
         throw new AuthorityError("SIGNATURE_INVALID", "checkpoint schema is invalid");
       }
       const { checkpointHash, refereeSignature, ...core } = checkpoint;
+      const memoEligible = replayMemoPlainData(checkpoint);
+      const verifiedContentHash = memoEligible
+        ? hashStarcraftTmgContract({ checkpoint: core, refereeSignature }) : null;
+      if (memoEligible && core.matchBindingHash === matchBinding.bindingHash
+        && checkpointHash === verifiedContentHash
+        && verifiedCheckpointMemo?.contentHash === verifiedContentHash
+        && verifiedCheckpointMemo.bindingHash === matchBinding.bindingHash) {
+        return deepFreeze({ ...verifiedCheckpointMemo.result });
+      }
       if (core.matchBindingHash !== matchBinding.bindingHash
         || !crypto.verify(core, refereeSignature, "checkpoint")
-        || checkpointHash !== hashStarcraftTmgContract({ checkpoint: core, refereeSignature })
+        || checkpointHash !== (verifiedContentHash
+          ?? hashStarcraftTmgContract({ checkpoint: core, refereeSignature }))
         || hashStarcraftTmgContract(normalizeAuthorityState(core.state, core.stateRevision)) !== core.stateHash) {
         throw new AuthorityError("SIGNATURE_INVALID", "checkpoint signature or state identity is invalid");
       }
-      return deepFreeze({ ok: true, checkpointHash, stateRevision: core.stateRevision, privateJournalSequence: core.privateJournalSequence });
+      const result = deepFreeze({ ok: true, checkpointHash, stateRevision: core.stateRevision, privateJournalSequence: core.privateJournalSequence });
+      if (memoEligible) verifiedCheckpointMemo = {
+        contentHash: verifiedContentHash, bindingHash: matchBinding.bindingHash, result,
+      };
+      return result;
     } catch (error) {
       return rejectedFrom(error, "SIGNATURE_INVALID");
     }
@@ -2034,6 +2114,11 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
     });
   }
 
+  // One private successful prefix per engine, not an unbounded state history.
+  // Every call still validates the supplied initial state, frozen dependencies
+  // and checkpoint. Complete receipt bodies, not caller-provided hash labels,
+  // must match before an already verified prefix can be reused.
+  let replayPrefixMemo = null;
   function replay(input = {}) {
     try {
       const initialEnvelope = input.initialEnvelope;
@@ -2046,6 +2131,32 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
         const checkpointVerification = verifyCheckpoint(input.checkpoint, initialEnvelope.matchBinding);
         if (!checkpointVerification.ok) return checkpointVerification;
         checkpointStateRevision = input.checkpoint.stateRevision;
+      }
+      const journal = Array.isArray(input.journal) ? input.journal : [];
+      const memoEligible = journal.length > 0
+        && replayMemoPlainData(initialEnvelope)
+        && replayMemoPlainData(input.checkpoint || null)
+        && replayMemoPlainData(journal);
+      const memoBasis = memoEligible ? hashStarcraftTmgContract({
+        initialEnvelope, checkpoint: input.checkpoint || null,
+      }) : null;
+      const receiptFingerprints = memoEligible
+        ? journal.map((receipt) => hashStarcraftTmgContract(receipt)) : [];
+      let verifiedPrefixLength = 0;
+      if (memoBasis && replayPrefixMemo?.basis === memoBasis
+        && replayPrefixMemo.receiptFingerprints.length <= journal.length
+        && replayPrefixMemo.receiptFingerprints.every((fingerprint, index) => (
+          fingerprint === receiptFingerprints[index]
+        ))) {
+        // This is the native deeply frozen Envelope, never a caller-owned copy.
+        // Sharing that immutable value retains private validation provenance;
+        // Rules still receive independent mutable states via validateEnvelope.
+        envelope = replayPrefixMemo.envelope;
+        verifiedPrefixLength = replayPrefixMemo.receiptFingerprints.length;
+      } else if (input.checkpoint) {
+        // The checkpoint is already verified above. Restore it only when no
+        // exact verified prefix supplies the starting envelope; on a memo hit
+        // this full-map normalization would be immediately discarded.
         envelope = createEnvelope({
           gameId: initialEnvelope.gameId,
           roomId: initialEnvelope.roomId,
@@ -2056,8 +2167,8 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
           state: input.checkpoint.state,
         });
       }
-      const journal = Array.isArray(input.journal) ? input.journal : [];
       for (const [index, receipt] of journal.entries()) {
+        if (index < verifiedPrefixLength) continue;
         const core = verifyReceipt(receipt, envelope);
         const resolved = resolveProposal(envelope, core.applyingSeatKey, { proposal: core.proposal });
         const proposalHash = hashStarcraftTmgContract(resolved.canonicalProposal);
@@ -2085,6 +2196,8 @@ export function createStarcraftTmgAuthoritativeEngine(options = {}) {
           state: transition.nextState,
         });
       }
+      if (memoBasis && ownedEnvelopes.has(envelope)) replayPrefixMemo = {
+        basis: memoBasis, receiptFingerprints, envelope };
       return deepFreeze({
         ok: true,
         schemaVersion: `${STARCRAFT_TMG_AUTHORITY_VERSION}.replay`,

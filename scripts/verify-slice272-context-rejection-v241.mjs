@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {gunzipSync} from 'node:zlib';
+import {createIterativeRosterFlashModelPortV1} from '../packages/roster-strategist/iterative-roster-flash-model-port-v1.mjs';
+const base=process.argv[2];
+const dir=base+'/B/fresh-generation-v240';
+const req=JSON.parse(gunzipSync(await fs.readFile(dir+'/request-008.private.json.gz')));
+const ctx=req.promptNodes[0].content;
+const progress=JSON.parse(await fs.readFile(dir+'/progress.private.json','utf8'));
+const dispatch=progress.dispatches.at(-1);
+const sessionDirectory=dir+'/workspace/iterative-draft/sessions';
+const state=JSON.parse(await fs.readFile(sessionDirectory+'/'+(await fs.readdir(sessionDirectory))[0],'utf8')).value;
+const store=new Map();let calls=0;
+const replyStore={loadRetainedReply:async key=>store.get(key),retainReply:async(key,value)=>{
+  if(store.has(key))assert.deepEqual(store.get(key),value);else store.set(key,value);
+}};
+const port=createIterativeRosterFlashModelPortV1({replyStore,skillGuidance:ctx.skillGuidance,missionEvidence:ctx.missionEvidence,
+  deliberationFactory:{createForRun:async()=>{calls++;throw Error('NO_PROVIDER');}}});
+const requestKey=state.pendingDecision.requestKey;
+assert.equal(typeof port.retainRejectedRequest,'function','explicit known HTTP rejection must be recoverable');
+await assert.rejects(port.retainRejectedRequest({requestKey,state,dispatch:{...dispatch,status:'dispatched'}}),/REJECTION_NOT_CONFIRMED/);
+await assert.rejects(port.retainRejectedRequest({requestKey,state,dispatch:{...dispatch,contextHash:'0'.repeat(64)}}),/REJECTION_CONTEXT_MISMATCH/);
+await port.retainRejectedRequest({requestKey,state,dispatch});
+const recovered=await port.recover({requestKey,state});
+assert.equal(recovered.outcome,'completed');
+assert.equal(recovered.decision.kind,'repair_needed');
+assert.equal(recovered.decision.failureCode,'ITERATIVE_ROSTER_PROVIDER_CONTEXT_REJECTED');
+assert.equal(store.get(requestKey).costStatus,'unknown');
+assert.deepEqual(store.get(requestKey).providerDispatch,dispatch);
+assert.equal(calls,0);assert.equal(store.size,1);
+console.log(JSON.stringify({status:'pass',providerCalls:calls,unknownFeePreserved:true,requestKey}));

@@ -1,5 +1,12 @@
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
+import { projectRosterTeachPromptEvidenceV1, readRosterTeachRetainedEvidenceV1 }
+  from "./roster-teach-framework-v1.mjs";
+import { rosterRepairProgressV1, rosterTeachAcceptanceIssuesV1, rosterReviewProgressV1 }
+  from './roster-progress-supervisor-v1.mjs';
+import { recordRosterPlanningCheckpointV1 } from './roster-planning-workflow-v1.mjs';
+import { createIterativeRosterTeachHistoryEvidenceV1 } from './roster-teach-history-view-v1.mjs';
+import { executeRosterQueryBatchV1 } from './roster-query-batch-checkpoint-v1.mjs';
 
 export const ITERATIVE_ROSTER_PLAN_SESSION_V1 =
   "starcraft_tmg_iterative_roster_plan_session_v1";
@@ -16,6 +23,24 @@ function object(value) {
 
 function copy(value) {
   return structuredClone(value);
+}
+
+export function readIterativeRosterTeachEvidenceV1(state, request) {
+  const archive = new Map();
+  for (const feedback of [state.teachFeedback, state.draftTeachFeedback]) {
+    if (feedback?.candidateHash === state.currentCandidate?.candidateHash) {
+      projectRosterTeachPromptEvidenceV1(feedback, archive);
+    }
+  }
+  for (const [reference, original] of createIterativeRosterTeachHistoryEvidenceV1(state).originals) {
+    archive.set(reference, original);
+  }
+  let body;
+  try { body = { status: 'advisory', readOnly: true,
+    result: readRosterTeachRetainedEvidenceV1([], request, archive), trainingTruth: false }; }
+  catch (error) { body = { status: 'unknown', readOnly: true,
+    reason: String(error.code || error.message), trainingTruth: false }; }
+  return { ...body, receiptHash: hashStarcraftTmgContract(body) };
 }
 
 function requiredId(value, label) {
@@ -69,9 +94,84 @@ function publicPlan(value, candidateHash, priorPlan, observations) {
     strategy: object(value.strategy) ? copy(value.strategy) : null };
 }
 
+function operationalPlanIdentity(plan) {
+  const { assumptionDisposition: _disposition, ...body } = plan;
+  const { revisionReason: _explanation, ...strategy } = plan.strategy || {};
+  return hashStarcraftTmgContract({ ...body, strategy });
+}
+
+// A Builder-legal purchase is not proof that copied Plan text describes it.
+// Return the concrete roster delta to the selecting Agent BEFORE buying another
+// Teach. This schedules an authoring decision, never chooses a strategy or
+// rejects a justified decision to retain one. Existing paid Teach stays saved.
+export function projectIterativeRosterPlanAlignmentV1(state) {
+  if (Number(state.modelContextVersion || 0) < 12 || !state.currentCandidate || !state.plan) return null;
+  const current = state.currentCandidate;
+  const history = state.iterations || [];
+  const previous = history.findLast(row => row.candidateSnapshot && row.planSnapshot
+    && row.currentCandidateHash !== current.candidateHash);
+  if (!previous) return null;
+  // Actual r6 changed two timing words but retained the old army rationale.
+  // Neither editing only victoryRoute nor submitting finish acknowledges it.
+  if (state.plan.strategy?.rosterRationale !== previous.planSnapshot.strategy?.rosterRationale
+    || state.plan.strategy?.revisionReason !== previous.planSnapshot.strategy?.revisionReason) return null;
+  const oldUnits = previous.candidateSnapshot.input.units;
+  const units = current.input.units;
+  return { status: 'needs_plan_alignment', sourceRevision: previous.revision,
+    previousCandidateHash: previous.currentCandidateHash, candidateHash: current.candidateHash,
+    previousMineralSpent: previous.candidateSnapshot.mineralSpent, mineralSpent: current.mineralSpent,
+    addedUnitIds: units.filter(u => !oldUnits.some(old => old.unitInstanceId === u.unitInstanceId)).map(u => u.unitInstanceId),
+    removedUnitIds: oldUnits.filter(u => !units.some(now => now.unitInstanceId === u.unitInstanceId)).map(u => u.unitInstanceId),
+    changedUnitIds: units.filter(u => oldUnits.some(old => old.unitInstanceId === u.unitInstanceId
+      && hashStarcraftTmgContract(old) !== hashStarcraftTmgContract(u))).map(u => u.unitInstanceId),
+    previousTacticalCardRecordKeys: previous.candidateSnapshot.input.tacticalCardRecordKeys,
+    tacticalCardRecordKeys: current.input.tacticalCardRecordKeys,
+    instruction: 'The army changed but your victoryRoute and strategy were copied unchanged. Use the current army, printed costs, retained Teach and tools to author its Plan before another Teach. Explain the added/removed/changed units, purposes, budget and schedule. revise_plan can retain a justified strategy with an explicit current-army rationale; propose can change both. This is not a tactical veto or final acceptance.',
+    strategyChosenByHost: false, oldEvidenceRetainedWithOriginalScope: true };
+}
+
 export function createIterativeRosterPlanSessionV1(ports = {}) {
   requirePorts(ports);
   const busy = new Set();
+  const pauseRequests = new Set();
+  const pendingWrites = new Map();
+
+  function serializeWrite(sessionId, write) {
+    const task = (pendingWrites.get(sessionId) || Promise.resolve()).catch(() => {}).then(write);
+    pendingWrites.set(sessionId, task);
+    const release = () => { if (pendingWrites.get(sessionId) === task) pendingWrites.delete(sessionId); };
+    void task.then(release, release);
+    return task;
+  }
+
+  function saveState(sessionId, value) {
+    recordRosterPlanningCheckpointV1(value, { stage: value.planAlignment ? 'align_plan'
+      : value.pendingDecision ? 'author_decision' : value.draftTeachSnapshots?.at(-1)?.status === 'running'
+        ? 'teach' : value.blockingFinding === 'ITERATIVE_ROSTER_TEACH_ACCEPTED' ? 'accepted_candidate' : 'co_design',
+      runStatus: value.status, revision: value.revision,
+      candidateHash: value.currentCandidate?.candidateHash || null,
+      planHash: value.plan ? hashStarcraftTmgContract(value.plan) : null,
+      requestKey: value.pendingDecision?.requestKey || null,
+      blockingFinding: value.blockingFinding || null,
+      teachSnapshotId: value.draftTeachSnapshots?.at(-1)?.snapshotId || null,
+      teachPhase: value.draftTeachSnapshots?.at(-1)?.state?.phase || null });
+    // File-backed stores can snapshot into immutable encoded bytes before the
+    // asynchronous queue, avoiding a full graph clone followed by JSON encode.
+    // Legacy/shared stores retain the existing defensive-copy contract.
+    const prepared = typeof ports.store.prepareSave === 'function'
+      ? ports.store.prepareSave(sessionId, value) : null;
+    const snapshot = prepared ? null : copy(value);
+    return serializeWrite(sessionId, async () => {
+      // Pause is a control intent, not part of a stale model/checkpoint snapshot.
+      // A later explicit Run clears it; ordinary saves may never revoke it.
+      if (prepared) {
+        await prepared.commit({ forcePause: pauseRequests.has(sessionId) });
+        return;
+      }
+      if (pauseRequests.has(sessionId)) snapshot.pauseRequested = true;
+      await ports.store.save(sessionId, snapshot);
+    });
+  }
 
   async function read(sessionId) {
     requiredId(sessionId, "ITERATIVE_ROSTER_SESSION_ID_INVALID");
@@ -80,12 +180,12 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       || state.sessionId !== sessionId) {
       fail("ITERATIVE_ROSTER_SESSION_NOT_FOUND");
     }
-    return copy(state);
+    return ports.store.loadReturnsOwnedValue === true ? state : copy(state);
   }
 
   async function attachExactBudgetOptions(state, requestKey) {
     const current = state.currentCandidate;
-    if (state.modelContextVersion !== 2 || !current
+    if (Number(state.modelContextVersion || 0) < 2 || !current
       || current.mineralSpent >= state.mineralBudget
       || state.observations.some((entry) =>
         entry.query?.kind === "exact_budget_repairs"
@@ -111,7 +211,7 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
 
   async function attachCurrentMapRoute(state, requestKey) {
     const current = state.currentCandidate;
-    if (state.modelContextVersion !== 2 || !current
+    if (Number(state.modelContextVersion || 0) < 2 || !current
       || current.mineralSpent !== state.mineralBudget
       || state.observations.some((entry) =>
         entry.query?.kind === "map_route"
@@ -165,25 +265,230 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       contextHash: hashStarcraftTmgContract({ mineralBudget, frozenContext }),
       currentCandidate: null, plan: null, observations: [], iterations: [],
       pendingDecision: null, pauseRequested: false, finalReview: null,
-      modelContextVersion: 2,
+      modelContextVersion: input.teachFeedbackPolicy === "locked_roster_teach_v1" ? 5 : 20,
+      teachFeedbackPolicy: input.teachFeedbackPolicy || "skill_teach_roster_coevolution_v1",
+      ...(input.teachFeedbackPolicy !== "locked_roster_teach_v1" ? {
+        selectionJustificationPolicyVersion: "unit_role_comparison_v1" } : {}),
       modelDecisionReceiptCount: 0,
       trainingTruth: false,
     };
-    await ports.store.save(sessionId, copy(state));
+    await saveState(sessionId, state);
     return copy(state);
   }
 
   async function pause(sessionId) {
+    requiredId(sessionId, "ITERATIVE_ROSTER_SESSION_ID_INVALID");
+    pauseRequests.add(sessionId);
+    return serializeWrite(sessionId, async () => {
+      // Read after older saves settle, so pausing cannot erase a paid reply.
+      const state = await read(sessionId);
+      if (state.status === "ready_for_match") return state;
+      if (!["active", "paused"].includes(state.status)) {
+        fail("ITERATIVE_ROSTER_RECONCILIATION_REQUIRED");
+      }
+      state.pauseRequested = true;
+      if (!busy.has(sessionId)) state.status = "paused";
+      await ports.store.save(sessionId, copy(state));
+      return copy(state);
+    });
+  }
+
+  async function attachTeachFeedback(sessionId, teach) {
     const state = await read(sessionId);
-    if (state.status === "ready_for_match") return state;
-    if (!["active", "paused"].includes(state.status)) {
-      fail("ITERATIVE_ROSTER_RECONCILIATION_REQUIRED");
+    if (busy.has(sessionId) || state.pendingDecision) fail("ITERATIVE_ROSTER_SESSION_BUSY");
+    const source = teach?.agentSelectedStrategySource;
+    if (state.teachFeedbackPolicy !== "skill_teach_roster_coevolution_v1"
+      || teach?.status !== "planned" || !teach.plan?.planHash
+      || teach.agentSelectedCandidateHash !== state.currentCandidate?.candidateHash
+      || source?.planHash !== hashStarcraftTmgContract(state.plan)
+      || source?.iterativeSessionId !== sessionId) {
+      fail("ITERATIVE_ROSTER_TEACH_FEEDBACK_SOURCE_INVALID");
     }
-    state.pauseRequested = true;
-    if (!busy.has(sessionId)) state.status = "paused";
-    await ports.store.save(sessionId, copy(state));
+    const acceptanceIssues = rosterTeachAcceptanceIssuesV1(teach);
+    const correctiveFeedback = Number(state.modelContextVersion || 0) >= 13 && acceptanceIssues.length > 0;
+    if (!correctiveFeedback && state.selectionJustificationPolicyVersion === "unit_role_comparison_v1"
+      && (!teach.selectionJustification?.coverageComplete
+        || !teach.selectionJustification?.referencesResolved)) {
+      fail("ROSTER_SELECTION_JUSTIFICATION_INCOMPLETE");
+    }
+    state.teachFeedbackHistory ||= [];
+    const prior = state.teachFeedbackHistory.findLast(entry =>
+      entry.teachSessionId === teach.sessionId);
+    const frameworkPolicyVersion = teach.teachFramework?.policyVersion || null;
+    if (prior?.taughtPlan.planHash === teach.plan.planHash
+      && (prior.frameworkPolicyVersion || null) === frameworkPolicyVersion
+      && hashStarcraftTmgContract(prior.teachFramework?.revisionWorkOrder || null)
+        === hashStarcraftTmgContract(teach.teachFramework?.state?.revisionWorkOrder || null)
+      && hashStarcraftTmgContract(prior.acceptanceIssues || []) === hashStarcraftTmgContract(acceptanceIssues)) return copy(state);
+    // A source repair creates a new decision snapshot, not a new army/session.
+    // Preserve the accepted historical version; never overwrite a pending or
+    // reopened decision while it is being evaluated.
+    if (prior && !['accepted', 'pending'].includes(prior.disposition)) {
+      fail("ITERATIVE_ROSTER_TEACH_FEEDBACK_CONFLICT");
+    }
+    if (prior?.disposition === 'pending') prior.disposition = 'superseded_evidence';
+    if (Number(state.modelContextVersion || 0) < 13 && state.teachFeedbackHistory.length >= 3) {
+      fail("ITERATIVE_ROSTER_TEACH_FEEDBACK_NONCONVERGENT");
+    }
+    const feedback = {
+      teachSessionId: teach.sessionId, disposition: "pending",
+      ...(Number(state.modelContextVersion || 0) >= 13 ? {
+        acceptanceBlocked: correctiveFeedback, acceptanceIssues,
+        instruction: correctiveFeedback
+          ? 'The listed source or Teach evidence issues require resolution before acceptance. Query evidence, revise_plan, or propose a new army and Plan through Builder. An unknown query is not proof; conditional opponent hypotheses remain allowed. Reopening is permitted; a tactical preference is not a source fact. Final review remains mandatory.'
+          : 'Evaluate this reviewed Plan; acceptance still applies only to this version.',
+      } : {}),
+      candidateHash: state.currentCandidate.candidateHash,
+      sourceStrategy: copy(source), taughtPlan: copy(teach.plan),
+      evidence: copy(teach.evidence || {}),
+      teachCycle: copy(teach.teachCycle || teach.evidence?.teachCycle || null),
+      frameworkPolicyVersion,
+      ...(teach.teachFramework?.state ? { teachFramework: {
+        framework: copy(teach.teachFramework.state.framework),
+        coverage: copy(teach.teachFramework.state.coverage),
+        agenda: copy(teach.teachFramework.state.agenda),
+        evidence: copy(teach.teachFramework.state.evidence),
+        investigation: copy(teach.teachFramework.state.investigation || null),
+        queryRecovery: copy(teach.teachFramework.state.queryRecovery || null),
+        synthesis: copy(teach.teachFramework.state.synthesis),
+        revisionWorkOrder: copy(teach.teachFramework.state.revisionWorkOrder || null),
+        rosterAndPlanCanBeReopened: true,
+        frameworkIsNotRulesOrTacticalVeto: true,
+      } } : {}),
+      ...(teach.planReview?.status === "completed"
+        && teach.planReview.planHash === teach.plan.planHash ? {
+          feedbackReason: "post_source_review",
+          sourceReview: copy(teach.planReview),
+        } : {}),
+      ...(prior ? { supersedesTaughtPlanHash: prior.taughtPlan.planHash } : {}),
+      ...(teach.selectionJustification ? {
+        selectionJustification: copy(teach.selectionJustification) } : {}),
+      attachedAfterRevision: state.revision, trainingTruth: false,
+    };
+    if (correctiveFeedback) {
+      const progress = rosterReviewProgressV1([...state.teachFeedbackHistory
+        .map(entry => ({ issues: entry.acceptanceIssues || [] })), { issues: acceptanceIssues }]);
+      if (progress.stop) fail('ITERATIVE_ROSTER_TEACH_FEEDBACK_NONCONVERGENT');
+      feedback.progress = progress;
+    }
+    state.teachFeedbackHistory.push(feedback);
+    state.teachFeedback = copy(feedback);
+    if (teach.teachFramework?.state) state.modelContextVersion = Math.max(8, state.modelContextVersion || 0);
+    state.status = "active";
+    state.pauseRequested = false;
+    state.blockingFinding = null;
+    await saveState(sessionId, state);
     return copy(state);
   }
+
+  function reopenTeachSnapshot(state, publicReason) {
+    if (state.teachFeedback?.disposition !== "pending") return;
+    const feedback = state.teachFeedbackHistory.findLast(entry =>
+      entry.teachSessionId === state.teachFeedback.teachSessionId
+        && entry.taughtPlan.planHash === state.teachFeedback.taughtPlan.planHash);
+    feedback.disposition = "reopened";
+    feedback.publicReason = publicReason;
+    feedback.decidedAtRevision = state.revision + 1;
+    state.teachFeedback = copy(feedback);
+    // Only the current snapshot becomes obsolete; paid history never resets.
+    state.arrivalSnapshotHistory ||= [];
+    state.arrivalSnapshotHistory.push({ candidateHash: feedback.candidateHash,
+      strategyHash: feedback.sourceStrategy.planHash,
+      schedule: copy(state.openingDeploymentSchedule || null),
+      publicRevision: copy(state.arrivalPublicRevision || null),
+      arrivalAttemptCount: state.arrivalAttemptCount || 0,
+      publicRevisionAttemptCount: state.publicRevisionAttemptCount || 0 });
+    state.openingDeploymentSchedule = null;
+    state.arrivalPublicRevision = null;
+    state.arrivalRejection = null;
+    state.publicRevisionRejection = null;
+    state.finalReview = null;
+  }
+
+  function upgradeSettledFeedbackContext(state) {
+    if (state.modelContextVersion === 19 && !state.pendingDecision) {
+      const body = { fromVersion: 19, toVersion: 20, afterRevision: state.revision,
+        reason: 'typed_plan_field_edits_instead_of_claimed_whole_document_revisions',
+        existingIterationsRetained: state.iterations.length,
+        existingPaidReceiptCountRetained: state.modelDecisionReceiptCount };
+      state.feedbackContextMigrations ||= [];
+      state.feedbackContextMigrations.push({ ...body, receiptHash: hashStarcraftTmgContract(body) });
+      state.modelContextVersion = 20;
+      return true;
+    }
+    if (state.modelContextVersion === 18 && !state.pendingDecision) {
+      const body = { fromVersion: 18, toVersion: 19, afterRevision: state.revision,
+        reason: 'evidence_driven_draft_handoff_after_plan_revision',
+        existingIterationsRetained: state.iterations.length,
+        existingPaidReceiptCountRetained: state.modelDecisionReceiptCount };
+      state.feedbackContextMigrations ||= [];
+      state.feedbackContextMigrations.push({ ...body, receiptHash: hashStarcraftTmgContract(body) });
+      state.modelContextVersion = 19;
+      return true;
+    }
+    if (state.modelContextVersion === 17 && !state.pendingDecision) {
+      const body = { fromVersion: 17, toVersion: 18, afterRevision: state.revision,
+        reason: 'current_operation_failure_separate_from_prior_query_evidence',
+        existingIterationsRetained: state.iterations.length,
+        existingPaidReceiptCountRetained: state.modelDecisionReceiptCount };
+      state.feedbackContextMigrations ||= [];
+      state.feedbackContextMigrations.push({ ...body, receiptHash: hashStarcraftTmgContract(body) });
+      state.modelContextVersion = 18;
+      return true;
+    }
+    if (state.modelContextVersion === 16 && !state.pendingDecision) {
+      const body = { fromVersion: 16, toVersion: 17, afterRevision: state.revision,
+        reason: 'explicit_latest_query_result_turn_before_retained_history',
+        existingIterationsRetained: state.iterations.length,
+        existingPaidReceiptCountRetained: state.modelDecisionReceiptCount };
+      state.feedbackContextMigrations ||= [];
+      state.feedbackContextMigrations.push({ ...body, receiptHash: hashStarcraftTmgContract(body) });
+      state.modelContextVersion = 17;
+      return true;
+    }
+    if (state.modelContextVersion === 15 && !state.pendingDecision) {
+      const body = { fromVersion: 15, toVersion: 16, afterRevision: state.revision,
+        reason: 'source_bound_teach_scenes_available_to_roster_selector',
+        existingIterationsRetained: state.iterations.length,
+        existingPaidReceiptCountRetained: state.modelDecisionReceiptCount };
+      state.feedbackContextMigrations ||= [];
+      state.feedbackContextMigrations.push({ ...body, receiptHash: hashStarcraftTmgContract(body) });
+      state.modelContextVersion = 16;
+      return true;
+    }
+    if (state.modelContextVersion === 14 && !state.pendingDecision) {
+      const body = { fromVersion: 14, toVersion: 15, afterRevision: state.revision,
+        reason: 'typed_query_arm_decoding_and_semantic_evidence_identity',
+        existingIterationsRetained: state.iterations.length,
+        existingPaidReceiptCountRetained: state.modelDecisionReceiptCount };
+      state.feedbackContextMigrations ||= [];
+      state.feedbackContextMigrations.push({ ...body, receiptHash: hashStarcraftTmgContract(body) });
+      state.modelContextVersion = 15;
+      return true;
+    }
+    if ([7, 8, 9, 10, 11, 12, 13].includes(state.modelContextVersion) && !state.pendingDecision) {
+      const body = { fromVersion: state.modelContextVersion, toVersion: 14,
+        afterRevision: state.revision,
+        reason: "lossless_same_prompt_evidence_interning_and_issue_scoped_progress",
+        existingIterationsRetained: state.iterations.length,
+        existingPaidReceiptCountRetained: state.modelDecisionReceiptCount };
+      state.feedbackContextMigrations ||= [];
+      state.feedbackContextMigrations.push({ ...body, receiptHash: hashStarcraftTmgContract(body) });
+      state.modelContextVersion = 14;
+      return true;
+    }
+    if (state.modelContextVersion !== 3 || state.pendingDecision) return false;
+    const body = { fromVersion: 3, toVersion: 4, afterRevision: state.revision,
+      reason: "official_menu_gas_ledger_added_to_rejected_proposal",
+      existingIterationsRetained: state.iterations.length,
+      existingPaidReceiptCountRetained: state.modelDecisionReceiptCount };
+    state.feedbackContextMigrations ||= [];
+    state.feedbackContextMigrations.push({ ...body,
+      receiptHash: hashStarcraftTmgContract(body) });
+    state.modelContextVersion = 4;
+    return true;
+  }
+
 
   async function prepare(sessionId) {
     const state = await read(sessionId);
@@ -192,8 +497,9 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
     }
     busy.add(sessionId);
     try {
-      if (await attachDeterministicEvidence(state)) {
-        await ports.store.save(sessionId, copy(state));
+      const upgraded = upgradeSettledFeedbackContext(state);
+      if (await attachDeterministicEvidence(state) || upgraded) {
+        await saveState(sessionId, state);
       }
       return copy(state);
     } finally {
@@ -202,6 +508,10 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
   }
 
   async function resume(sessionId, options = {}) {
+    if (busy.has(sessionId)) fail("ITERATIVE_ROSTER_SESSION_BUSY");
+    // Clear only the intent that predates this Run, not a pause arriving while
+    // its initial read or subsequent checkpoint is in flight.
+    pauseRequests.delete(sessionId);
     let state = await read(sessionId);
     if (state.status === "ready_for_match") return state;
     if (busy.has(sessionId)) fail("ITERATIVE_ROSTER_SESSION_BUSY");
@@ -212,6 +522,21 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       && !state.pendingDecision) {
       state.modelContextVersion = 2;
     }
+    // The rejected-candidate repair prompt changes the paid context. Upgrade
+    // only between decisions; an in-flight v2 reply must recover under v2.
+    if (state.modelContextVersion === 2 && !state.pendingDecision) {
+      state.modelContextVersion = 3;
+    }
+    upgradeSettledFeedbackContext(state);
+    const lastIteration = state.iterations.at(-1);
+    const capacityRejection = state.observations.findLast(row =>
+      row.requestKey === lastIteration?.requestKey
+      && row.receipt?.status === 'known_provider_context_rejection');
+    const correctedCapacityContext = state.status === 'requires_reconciliation'
+      && !state.pendingDecision && lastIteration?.decisionKind === 'repair_needed'
+      && capacityRejection?.receipt.failureCode === 'ITERATIVE_ROSTER_PROVIDER_CONTEXT_REJECTED'
+      && lastIteration.modelContextVersion < state.modelContextVersion
+      && Number(state.modelContextVersion || 0) >= 14;
     const retainedRecovery = state.status === "requires_reconciliation"
       && Boolean(state.pendingDecision)
       && typeof ports.model.recover === "function";
@@ -219,11 +544,11 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       && options.advanceAfterKnownInvalid !== true
       || (options.preferRetainedRepair === true
         && ["active", "paused"].includes(state.status)))
-      && !state.pendingDecision
+      && !correctedCapacityContext && !state.pendingDecision
       && state.iterations.at(-1)?.decisionKind === "repair_needed"
       && typeof ports.model.reconcile === "function";
     const advanceAfterKnownInvalid = state.status === "requires_reconciliation"
-      && options.advanceAfterKnownInvalid === true
+      && (options.advanceAfterKnownInvalid === true || correctedCapacityContext)
       && !state.pendingDecision
       && state.iterations.at(-1)?.decisionKind === "repair_needed";
     if (!["active", "paused"].includes(state.status)
@@ -242,11 +567,38 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
     }
     busy.add(sessionId);
     try {
+      const hadPersistedPause = state.pauseRequested === true || state.status === 'paused';
       state.status = "active";
-      state.pauseRequested = false;
+      state.pauseRequested = pauseRequests.has(sessionId);
+      if (state.pauseRequested) {
+        state.status = 'paused';
+        await saveState(sessionId, state);
+        return copy(state);
+      }
+      if (hadPersistedPause) await saveState(sessionId, state);
       if (!recovering && !retainedReconciliation) {
         if (await attachDeterministicEvidence(state)) {
-          await ports.store.save(sessionId, copy(state));
+          await saveState(sessionId, state);
+        }
+        state.planAlignment = projectIterativeRosterPlanAlignmentV1(state);
+        if (!state.planAlignment && state.teachFeedback?.disposition !== 'pending'
+          && Number(state.modelContextVersion || 0) >= 12 && state.currentCandidate && state.plan
+          && state.teachFeedbackPolicy !== 'locked_roster_teach_v1') {
+          if (typeof ports.review.draft !== 'function') fail('ITERATIVE_DRAFT_TEACH_PORT_MISSING');
+          const shouldPause = async () => pauseRequests.has(sessionId)
+            || (await read(sessionId)).pauseRequested === true;
+          state = await ports.review.draft(copy(state), async next => {
+            const latest = await read(sessionId);
+            next.pauseRequested ||= latest.pauseRequested;
+            await saveState(sessionId, next);
+          }, { shouldPause });
+          state.blockingFinding = null;
+          if (await shouldPause()) {
+            state.status = 'paused'; state.pauseRequested = false;
+            await saveState(sessionId, state);
+            return copy(state);
+          }
+          await saveState(sessionId, state);
         }
       }
       const sourceRequestKey = state.pendingDecision?.sourceRequestKey
@@ -260,7 +612,7 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       state.pendingDecision = { requestKey,
         nextRevision: state.revision + 1,
         ...(sourceRequestKey ? { sourceRequestKey } : {}) };
-      await ports.store.save(sessionId, copy(state));
+      await saveState(sessionId, state);
       let reply;
       try {
         reply = recovering
@@ -274,8 +626,21 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       } catch (error) {
         state = await read(sessionId);
         state.status = "requires_reconciliation";
+        if (!recovering && retainedReconciliation
+          && error.code === 'ITERATIVE_ROSTER_RECONCILIATION_LIMIT_REACHED') {
+          // The model port emitted this BEFORE retaining or dispatching a new
+          // request. It is known invalid evidence, not an unknown paid send.
+          state.retainedRevalidationHistory ||= [];
+          state.retainedRevalidation = { sourceRequestKey,
+            requestKey, modelContextVersion: state.modelContextVersion,
+            code: error.code, paidProviderCall: false, sourceReplyUnchanged: true };
+          state.retainedRevalidationHistory.push(copy(state.retainedRevalidation));
+          state.pendingDecision = null;
+          await saveState(sessionId, state);
+          throw error;
+        }
         state.pendingDecision.recoveryRequired = true;
-        await ports.store.save(sessionId, copy(state));
+        await saveState(sessionId, state);
         throw error;
       }
       if (reply?.outcome !== "completed"
@@ -284,20 +649,68 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
         state = await read(sessionId);
         state.status = "requires_reconciliation";
         state.pendingDecision.recoveryRequired = true;
-        await ports.store.save(sessionId, copy(state));
+        await saveState(sessionId, state);
         fail("ITERATIVE_ROSTER_MODEL_OUTCOME_UNKNOWN");
       }
       state = await read(sessionId);
-      const decision = copy(reply.decision);
+      let decision = copy(reply.decision);
+      const formalEvidenceTransfer = decision.kind === 'revise_plan'
+        && state.teachFeedback?.acceptanceIssues?.some(i => i.kind === 'teach_question')
+        && !state.teachFeedback?.formalEvidenceRepairRequested;
+      const formalRepairTransfer = decision.kind === 'revise_plan'
+        && state.teachFeedback?.disposition === 'pending'
+        && state.teachFeedback.acceptanceBlocked === true
+        && state.teachFeedback.feedbackReason === 'post_source_review'
+        && state.teachFeedback.candidateHash === state.currentCandidate?.candidateHash
+        && state.teachFeedback.sourceStrategy?.planHash === hashStarcraftTmgContract(state.plan)
+        && (formalEvidenceTransfer
+          || state.teachFeedback.acceptanceIssues?.some(i => i.kind === 'source_finding'));
+      if (!formalRepairTransfer && decision.kind === 'revise_plan' && state.currentCandidate && state.plan
+        && ['retain', 'revise'].includes(decision.assumptionDisposition)) {
+        const proposed = publicPlan({ ...decision.plan,
+          assumptionDisposition: decision.assumptionDisposition },
+        state.currentCandidate.candidateHash, state.plan, state.observations);
+        if (operationalPlanIdentity(proposed) === operationalPlanIdentity(state.plan)) {
+          // A parsed reply is not progress. Feed an exact no-op back through the
+          // SAME bounded output-repair lane, before reopening Teach or changing
+          // Plan state. Keep the paid reply/receipt and let the agent choose.
+          decision = { kind: 'repair_needed',
+            failureCode: 'ITERATIVE_ROSTER_PLAN_REVISION_UNCHANGED',
+            providerReplyHash: hashStarcraftTmgContract(reply.decision),
+            diagnostics: { canonicalPlanUnchanged: true, armyUnchanged: true,
+              revisionExplanationChanged: proposed.strategy?.revisionReason !== state.plan.strategy?.revisionReason,
+              currentPlanHash: hashStarcraftTmgContract(state.plan),
+              inputAdjustments: copy(decision.inputAdjustments || []),
+              hostChoosesNextDecision: false,
+              instruction: 'This revise_plan changes no operational Plan field. Editing revisionReason or retain/revise labels alone cannot count as strategy progress; the original explanation is retained with the paid reply. Do not resend or merely paraphrase it. Read the retained Teach/issues and choose a relevant query, an actual Plan/army change, or finish only when its existing requirements are met. If new evidence changes an opening, role, counterplan or assumption, update that actual field, not just revisionReason. Keeping a defensible strategy is allowed; facts and unresolved evidence must not be invented to force a change.' } };
+        }
+      }
       if (decision.kind !== "repair_needed") state.blockingFinding = null;
       const toolReceipts = [];
       let verdict = null;
-      if (decision.kind === "repair_needed") {
+      if (formalRepairTransfer) {
+        // An old in-flight selector reply cannot edit formal component claims.
+        // Retain it verbatim as an unapplied proposal, then resume the owning
+        // Plan tools. Do not reset the army, arrival schedule or paid review.
+        const body = { status:'rerouted_unapplied',routedTo:formalEvidenceTransfer ? 'formal_teach_evidence' : 'formal_plan_tools',
+          proposedDecisionHash:hashStarcraftTmgContract(decision),
+          modelReceiptHash:reply.receiptHash,teachSessionId:state.teachFeedback.teachSessionId,
+          currentPlanHash:hashStarcraftTmgContract(state.plan),armyUnchanged:true,
+          reason:formalEvidenceTransfer
+            ? 'Formal factual questions require their retained evidence investigation before Plan edits; the provisional draft is not the current formal Plan'
+            : 'Formal source claim paths cannot be written by provisional planEdits',trainingTruth:false };
+        if (formalEvidenceTransfer) state.teachFeedback.formalEvidenceRepairRequested = true;
+        const observation={query:{kind:'formal_plan_repair_transfer'},requestKey,
+          receipt:{...body,receiptHash:hashStarcraftTmgContract(body)}};
+        state.observations.push(observation);toolReceipts.push(observation);
+        state.status='paused';state.blockingFinding='ITERATIVE_ROSTER_FORMAL_SOURCE_REPAIR_REQUIRED';
+      } else if (decision.kind === "repair_needed") {
         if (typeof decision.failureCode !== "string"
           || !decision.failureCode.trim()) {
           fail("ITERATIVE_ROSTER_REPAIR_RECEIPT_INVALID");
         }
-        const receipt = { status: "known_paid_output_rejected",
+        const receipt = { status: decision.failureCode === "ITERATIVE_ROSTER_PROVIDER_CONTEXT_REJECTED"
+          ? "known_provider_context_rejection" : "known_paid_output_rejected",
           failureCode: decision.failureCode,
           diagnostics: decision.diagnostics || null,
           providerReplyHash: decision.providerReplyHash || null,
@@ -306,9 +719,14 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
           receipt, requestKey };
         state.observations.push(observation);
         toolReceipts.push(observation);
+        const progress = Number(state.modelContextVersion || 0) >= 13
+          ? rosterRepairProgressV1(state, decision.failureCode) : null;
+        if (progress) { observation.receipt.progress = progress; state.progress = copy(progress); }
         const latestRepairs = state.iterations.slice(-2).every((entry) =>
           entry.decisionKind === "repair_needed");
-        if (state.iterations.length >= 2 && latestRepairs) {
+        if (advanceAfterKnownInvalid
+          || decision.failureCode === 'ITERATIVE_ROSTER_PROVIDER_CONTEXT_REJECTED'
+          || (progress ? progress.stop : state.iterations.length >= 2 && latestRepairs)) {
           state.status = "requires_reconciliation";
           state.blockingFinding = "ITERATIVE_ROSTER_OUTPUT_DID_NOT_CONVERGE";
         }
@@ -327,6 +745,8 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
         for (const ignored of decision.ignoredQueries || []) {
           const receiptBody = { status: "ignored_invalid_subquery",
             queryKind: ignored.kind, reason: ignored.reason,
+            ...(ignored.capabilityOutcome ? { capabilityOutcome: copy(ignored.capabilityOutcome),
+              originalQuery: copy(ignored.query) } : {}),
             modelReceiptHash: reply.receiptHash };
           const observation = { query: { kind: "ignored_model_query" },
             receipt: { ...receiptBody,
@@ -335,8 +755,31 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
           state.observations.push(observation);
           toolReceipts.push(observation);
         }
-        const receipts = await Promise.all(decision.queries.map((query) => (
-          ports.tools.query(copy(query), copy(state)))));
+        const separatedStore = typeof ports.store.loadQueryBatch === 'function'
+          && typeof ports.store.saveQueryBatch === 'function';
+        const receipts = await executeRosterQueryBatchV1({ requestKey,
+          candidateHash: state.currentCandidate?.candidateHash || null,
+          frozenContext: state.frozenContext, queries: decision.queries,
+          load: key => separatedStore ? ports.store.loadQueryBatch(key)
+            : Promise.resolve(state.queryBatchCheckpoint?.binding.requestKey === key
+              ? state.queryBatchCheckpoint : null),
+          save: async (key, batch) => {
+            if (separatedStore) return ports.store.saveQueryBatch(key, batch);
+            // Legacy in-memory adapters use the same checkpoint contract.
+            const saved = await read(sessionId);
+            saved.queryBatchCheckpoint = batch;
+            await saveState(sessionId, saved);
+          },
+          execute: async query => {
+          if (query.kind !== "teach_evidence") return ports.tools.query(copy(query), copy(state));
+          try { return readIterativeRosterTeachEvidenceV1(state, JSON.parse(query.argumentsJson)); }
+          catch (error) {
+            const body = { status: 'unknown', readOnly: true,
+              reason: String(error.code || error.message), trainingTruth: false };
+            return { ...body, receiptHash: hashStarcraftTmgContract(body) };
+          }
+        } });
+        state.queryBatchFailure = null;
         for (let index = 0; index < receipts.length; index += 1) {
           const receipt = receipts[index];
           requiredHash(receipt?.receiptHash,
@@ -396,15 +839,18 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
         }
         if (verdict.legal) {
           const previousPlan = state.plan;
+          const proposedPlan = publicPlan({ ...decision.plan,
+            assumptionDisposition: decision.assumptionDisposition }, candidateHash,
+          previousPlan, state.observations);
+          reopenTeachSnapshot(state, decision.plan?.strategy?.revisionReason
+            || decision.plan?.victoryRoute);
           state.currentCandidate = { input: copy(decision.candidateInput),
             candidateHash, mineralSpent: verdict.mineralSpent,
             verdictHash: requiredHash(verdict.verdictHash,
               "ITERATIVE_ROSTER_RULES_VERDICT_INVALID") };
-          state.plan = publicPlan({ ...decision.plan,
-            assumptionDisposition: decision.assumptionDisposition },
-          candidateHash, previousPlan, state.observations);
+          state.plan = proposedPlan;
           if (verdict.mineralSpent < state.mineralBudget) {
-            if (state.modelContextVersion === 2) {
+            if (Number(state.modelContextVersion || 0) >= 2) {
               const observation = await attachExactBudgetOptions(state,
                 requestKey);
               if (observation) toolReceipts.push(observation);
@@ -432,16 +878,35 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
             portErrorCode: verdict.portErrorCode ?? null,
             portErrorDetail: verdict.portErrorDetail ?? null }, requestKey });
         }
+      } else if (decision.kind === 'revise_plan') {
+        if (Number(state.modelContextVersion || 0) < 12 || !state.currentCandidate
+          || !object(decision.plan) || !['retain', 'revise'].includes(decision.assumptionDisposition)) {
+          fail('ITERATIVE_ROSTER_PLAN_REVISION_INVALID');
+        }
+        reopenTeachSnapshot(state, decision.plan.strategy?.revisionReason || decision.plan.victoryRoute);
+        state.plan = publicPlan({ ...decision.plan, assumptionDisposition: decision.assumptionDisposition },
+          state.currentCandidate.candidateHash, state.plan, state.observations);
       } else if (decision.kind === "finish") {
         if (!state.currentCandidate || !object(decision.plan)
           || !["retain", "revise"].includes(
             decision.assumptionDisposition)) {
           fail("ITERATIVE_ROSTER_FINISH_PLAN_INVALID");
         }
+        reopenTeachSnapshot(state, decision.plan?.strategy?.revisionReason
+          || decision.plan?.victoryRoute);
         state.plan = publicPlan({ ...decision.plan,
           assumptionDisposition: decision.assumptionDisposition },
         state.currentCandidate.candidateHash, state.plan,
         state.observations);
+        state.planAlignment = projectIterativeRosterPlanAlignmentV1(state);
+        if (state.planAlignment) {
+          const body = { status: 'plan_alignment_required', ...copy(state.planAlignment),
+            modelReceiptHash: reply.receiptHash, finalAcceptance: false };
+          const observation = { query: { kind: 'plan_alignment' },
+            receipt: { ...body, receiptHash: hashStarcraftTmgContract(body) }, requestKey };
+          state.observations.push(observation); toolReceipts.push(observation);
+          state.status = 'active'; state.blockingFinding = null;
+        } else {
         if (!state.currentCandidate || !state.plan
           || state.currentCandidate.mineralSpent !== state.mineralBudget
           || state.plan.candidateHash !== state.currentCandidate.candidateHash
@@ -478,14 +943,38 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
           state.status = "ready_for_match";
           state.blockingFinding = null;
         }
+        }
+      } else if (decision.kind === "accept_teach") {
+        const feedback = state.teachFeedback;
+        if (feedback?.acceptanceBlocked) fail('ITERATIVE_ROSTER_TEACH_SOURCE_REPAIR_REQUIRED');
+        if (feedback?.disposition !== "pending"
+          || feedback.candidateHash !== state.currentCandidate?.candidateHash
+          || typeof decision.publicReason !== "string" || !decision.publicReason.trim()) {
+          fail("ITERATIVE_ROSTER_TEACH_ACCEPTANCE_INVALID");
+        }
+        const entry = state.teachFeedbackHistory.findLast(value =>
+          value.teachSessionId === feedback.teachSessionId
+            && value.taughtPlan.planHash === feedback.taughtPlan.planHash);
+        entry.disposition = "accepted";
+        entry.publicReason = decision.publicReason;
+        entry.decidedAtRevision = state.revision + 1;
+        state.teachFeedback = copy(entry);
+        state.status = "paused";
+        state.blockingFinding = "ITERATIVE_ROSTER_TEACH_ACCEPTED";
       } else {
         fail("ITERATIVE_ROSTER_DECISION_KIND_INVALID");
       }
       const receiptBody = { revision: state.revision + 1, requestKey,
+        modelContextVersion: state.modelContextVersion || null,
         modelReceiptHash: reply.receiptHash,
         reconciledFromRequestKey: reply.reconciledFromRequestKey || null,
         decisionHash: hashStarcraftTmgContract(decision),
         decisionKind: decision.kind,
+        ...(Number(state.modelContextVersion || 0) >= 6 ? {
+          publicDecision: copy(decision),
+          candidateSnapshot: copy(state.currentCandidate),
+          planSnapshot: copy(state.plan),
+        } : {}),
         rulesVerdictHash: verdict?.verdictHash || verdict?.receiptHash || null,
         rulesVerdictStatus: verdict?.status || null,
         toolReceiptHashes: toolReceipts.map((entry) => (
@@ -496,19 +985,74 @@ export function createIterativeRosterPlanSessionV1(ports = {}) {
       state.iterations.push({ ...receiptBody,
         receiptHash: hashStarcraftTmgContract(receiptBody) });
       state.revision += 1;
+      state.planAlignment = projectIterativeRosterPlanAlignmentV1(state);
       state.pendingDecision = null;
       state.modelDecisionReceiptCount += 1;
       const latest = await read(sessionId);
-      if (latest.pauseRequested && state.status === "active") {
+      if ((pauseRequests.has(sessionId) || latest.pauseRequested) && state.status === "active") {
         state.status = "paused";
       }
       state.pauseRequested = false;
-      await ports.store.save(sessionId, copy(state));
+      await saveState(sessionId, state);
       return copy(state);
+    } catch (error) {
+      if (error.capabilityReceipt || error.queryBatchFailure) {
+        // Keep the failed native operation observable even when its authority
+        // failure must stop this step. The paid reply remains recoverable;
+        // no network request or Builder verdict is silently substituted.
+        const saved = await read(sessionId);
+        saved.toolExecutionFailures ||= [];
+        if (error.capabilityReceipt && !saved.toolExecutionFailures.some(row => row.receipt?.receiptHash === error.capabilityReceipt.receiptHash
+          && row.requestKey === saved.pendingDecision?.requestKey)) {
+          saved.toolExecutionFailures.push({ query: copy(error.capabilityQuery),
+            receipt: copy(error.capabilityReceipt),
+            requestKey: saved.pendingDecision?.requestKey || null });
+        }
+        if (error.queryBatchFailure) saved.queryBatchFailure = copy(error.queryBatchFailure);
+        saved.status = 'requires_reconciliation';
+        saved.blockingFinding = 'ITERATIVE_ROSTER_TOOL_EXECUTION_FAILED';
+        if (saved.pendingDecision) saved.pendingDecision.recoveryRequired = true;
+        await saveState(sessionId, saved);
+      }
+      throw error;
     } finally {
       busy.delete(sessionId);
     }
   }
 
-  return Object.freeze({ start, resume, pause, prepare, read });
+  async function releaseUnsentDecision(sessionId) {
+    if (busy.has(sessionId)) fail('ITERATIVE_ROSTER_SESSION_BUSY');
+    busy.add(sessionId);
+    try {
+      const state=await read(sessionId), pending=state.pendingDecision;
+      if (!pending || pending.sourceRequestKey
+        || typeof ports.model.proveUnsentRequest!=='function') return state;
+      const proof=await ports.model.proveUnsentRequest({requestKey:pending.requestKey,state:copy(state)});
+      if (proof?.status!=='not_dispatched' || proof.requestKey!==pending.requestKey
+        || proof.sessionId!==sessionId || proof.nextRevision!==pending.nextRevision
+        || pending.nextRevision!==state.revision+1) return state;
+      const current=await read(sessionId);
+      if (current.revision!==state.revision || hashStarcraftTmgContract(current.pendingDecision)
+        !==hashStarcraftTmgContract(pending)) fail('ITERATIVE_ROSTER_UNSENT_RELEASE_STALE');
+      current.unsentDecisionReleases ||= [];
+      current.unsentDecisionReleases.push({requestKey:pending.requestKey,proof:copy(proof),
+        revision:current.revision,reason:'recheck_persisted_stage_before_new_dispatch',
+        paidReplyDiscarded:false,armyOrPlanChanged:false});
+      current.pendingDecision=null;
+      await saveState(sessionId,current);
+      return copy(current);
+    } finally {busy.delete(sessionId);}
+  }
+
+  async function recordJourneyCheckpoint(sessionId, detail) {
+    if (busy.has(sessionId)) fail('ITERATIVE_ROSTER_SESSION_BUSY');
+    const state = await read(sessionId);
+    state.journeyCheckpoint ||= {};
+    recordRosterPlanningCheckpointV1(state.journeyCheckpoint, { ...copy(detail),
+      revision: state.revision, candidateHash: state.currentCandidate?.candidateHash || null,
+      planHash: state.plan ? hashStarcraftTmgContract(state.plan) : null,
+      pendingRequestKey: state.pendingDecision?.requestKey || null });
+    await saveState(sessionId, state);
+  }
+  return Object.freeze({ start, resume, pause, prepare, read, attachTeachFeedback, recordJourneyCheckpoint, releaseUnsentDecision });
 }

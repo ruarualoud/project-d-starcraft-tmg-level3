@@ -279,6 +279,7 @@ process.on("message", (message) => {
     return;
   }
   if (message?.type === "complete" && initialized) {
+    if (MODE === "no_result") return;
     if (MODE === "child_handler_failure") {
       reply({
         type: "worker_failure",

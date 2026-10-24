@@ -2,17 +2,27 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/transition-v1.mjs";
 import {
   OFFICIAL_SELECTED_ROSTER_RANGED_PARAMETER_KIND,
+  createOfficialSelectedRosterRangedChanceResolverV1,
+  createOfficialSelectedRosterRangedWorkChanceResolverV1,
+  createOfficialSelectedRosterRangedPreviewBatchV1,
+  createOfficialSelectedRosterCasualtyStrategyBatchV1,
+  createOfficialSelectedRosterRangedQueryBatchV1,
   previewOfficialSelectedRosterRangedActionV1,
   projectOfficialSelectedRosterCasualtyStrategyV1,
   projectOfficialSelectedRosterRangedContributionV1,
-  resolveOfficialSelectedRosterRangedChanceV1,
+  validateOfficialRangedDamageReactionChoicesV1,
+  resolveOfficialSelectedRosterRangedDamageReactionPolicyV1,
 } from "../product-composition/official-selected-roster-ranged-action-runtime-v1.mjs";
 import {
   createOfficialReactionFamilyAdapterV1,
+  createOfficialReactionWindowOpportunityBatchV1,
   openOfficialReactionFamilyWindowV1,
 } from "../product-composition/official-reaction-family-adapter-v1.mjs";
 import { buildStarcraftTmgTacticalRelationshipGraphV1 } from
   "./tactical-relationship-graph-v1.mjs";
+import { OFFICIAL_SELECTED_ROSTER_FIGHT_PARAMETER_KIND,
+  createOfficialSelectedRosterMeleeChanceResolverV1 } from
+  "../product-composition/official-selected-roster-melee-action-runtime-v1.mjs";
 
 export const STARCRAFT_TMG_COMBAT_ESTIMATION_RUNTIME_VERSION =
   "starcraft_tmg_combat_estimation_runtime_v1";
@@ -167,8 +177,8 @@ function normalizedParameters(domain, value = {}) {
   };
 }
 
-function resolveWithOptimalPrecision(state, action, reveals) {
-  let resolved = resolveOfficialSelectedRosterRangedChanceV1(state, action, {
+function resolveWithOptimalPrecision(resolveChance, reveals) {
+  let resolved = resolveChance.resolvePool({
     chanceReveals: reveals,
     precisionConvertedFailedHitDieIndices: [],
   });
@@ -176,7 +186,7 @@ function resolveWithOptimalPrecision(state, action, reveals) {
   const converted = (choice?.failedHitDieIndices || [])
     .slice(0, Number(choice?.maximumConvertedDice || 0));
   if (converted.length) {
-    resolved = resolveOfficialSelectedRosterRangedChanceV1(state, action, {
+    resolved = resolveChance.resolvePool({
       chanceReveals: reveals,
       precisionConvertedFailedHitDieIndices: converted,
     });
@@ -228,7 +238,8 @@ function compactReactionChoice(domain, route) {
   };
 }
 
-function projectReactionOpportunitySet(state, domain, preview, parameters) {
+function projectReactionOpportunitySet(state, domain, preview, parameters,
+  windowBatch = null) {
   const bundle = state.officialReactionFamilySourceBundle;
   if (!bundle) return {
     status: "unavailable",
@@ -238,7 +249,7 @@ function projectReactionOpportunitySet(state, domain, preview, parameters) {
   const enemyReactionAllowed = preview.action.rangedPlan
     ?.reactionPolicy?.enemyDeclarationAllowed
     ?? true;
-  const adapter = createOfficialReactionFamilyAdapterV1(bundle);
+  const adapter = windowBatch ? null : createOfficialReactionFamilyAdapterV1(bundle);
   const validTargetUnitIds = clone(
     domain.parameterSchema?.targetUnitId?.enum || [parameters.targetUnitId]);
   const activationId = state.selectedRosterActivationWindow
@@ -250,7 +261,7 @@ function projectReactionOpportunitySet(state, domain, preview, parameters) {
   const windows = [];
   for (const triggerKind of RANGED_REACTION_TRIGGERS) {
     try {
-      const opened = openOfficialReactionFamilyWindowV1(bundle, state, {
+      const windowInput = {
         triggerKind,
         activeSideKey: preview.action.sideKey,
         phase: state.phase,
@@ -265,25 +276,32 @@ function projectReactionOpportunitySet(state, domain, preview, parameters) {
           validTargetUnitIds,
           enemyReactionAllowed,
         },
-      });
-      const activeLegal = adapter.legalSpace(opened.state, {
-        sideKey: preview.action.sideKey,
-      });
-      const passDomain = activeLegal.parameterDomains.find((domain) =>
-        domain.actionType === "pass_reaction_family_window");
-      let defenderLegal = { parameterDomains: [], prioritySideKey: null };
-      if (passDomain) {
-        const passPreview = adapter.preview(opened.state, {
-          domain: passDomain, parameters: {},
+      };
+      let activeLegal;
+      let defenderLegal;
+      if (windowBatch) {
+        ({ activeLegal, defenderLegal } = windowBatch.projectWindow(windowInput));
+      } else {
+        const opened = openOfficialReactionFamilyWindowV1(bundle, state, windowInput);
+        activeLegal = adapter.legalSpace(opened.state, {
+          sideKey: preview.action.sideKey,
         });
-        const advanced = adapter.apply(opened.state, {
-          action: passPreview.action,
-        });
-        defenderLegal = adapter.legalSpace(advanced.state, {
-          sideKey: advanced.state.pendingOfficialReactionWindow
-            ?.prioritySideKeys?.[advanced.state.pendingOfficialReactionWindow
-              ?.priorityIndex],
-        });
+        const passDomain = activeLegal.parameterDomains.find((domain) =>
+          domain.actionType === "pass_reaction_family_window");
+        defenderLegal = { parameterDomains: [], prioritySideKey: null };
+        if (passDomain) {
+          const passPreview = adapter.preview(opened.state, {
+            domain: passDomain, parameters: {},
+          });
+          const advanced = adapter.apply(opened.state, {
+            action: passPreview.action,
+          });
+          defenderLegal = adapter.legalSpace(advanced.state, {
+            sideKey: advanced.state.pendingOfficialReactionWindow
+              ?.prioritySideKeys?.[advanced.state.pendingOfficialReactionWindow
+                ?.priorityIndex],
+          });
+        }
       }
       const routeById = new Map(bundle.routes.map((route) => [
         route.definitionId, route,
@@ -333,15 +351,171 @@ function projectReactionOpportunitySet(state, domain, preview, parameters) {
 }
 
 export function estimateStarcraftTmgAttackProbabilityV1(input = {}) {
+  return estimateAttackProbability(input, previewOfficialSelectedRosterRangedActionV1);
+}
+
+// A batch owns its fixed query state; it cannot follow subsequent caller/Room
+// mutations. All domains, disabled diagnostics and target plans remain complete.
+export function createStarcraftTmgAttackProbabilityBatchV1({ state, sideKey,
+  observePreparation } = {}) {
+  const observe = typeof observePreparation === "function"
+    ? event => { try { observePreparation(event); } catch {} } : null;
+  const clock = () => {
+    let cpu;
+    try { cpu = process.threadCpuUsage?.(); } catch {}
+    return { wall: performance.now(), cpu };
+  };
+  const elapsed = start => {
+    let threadCpuMs = null;
+    try { if (start.cpu) {
+      const cpu = process.threadCpuUsage(start.cpu);
+      threadCpuMs = (cpu.user + cpu.system) / 1000;
+    } } catch {}
+    return { wallMs: performance.now() - start.wall, threadCpuMs };
+  };
+  const preparationStart = observe ? clock() : null;
+  const prepared = createOfficialSelectedRosterRangedQueryBatchV1(state, {
+    sideKey, includeDisabled: true, observeContext: observe,
+  });
+  if (observe) observe({ stage: "ranged_probability_batch_prepared", sideKey,
+    ...elapsed(preparationStart) });
+  const snapshot = prepared.snapshot;
+  let reactionWindows;
+  return Object.freeze({
+    enumeration: prepared.enumeration,
+    estimate(input = {}) {
+      if (sourceDomain(input.domain)?.parameterKind === OFFICIAL_SELECTED_ROSTER_FIGHT_PARAMETER_KIND) {
+        return estimateStarcraftTmgAttackProbabilityV1({ ...input, state: snapshot });
+      }
+      // The native preview derives and validates this context on the batch's
+      // private fixed state. Keep it local to this estimate; neither the caller
+      // nor another domain/target may supply or replace prepared chance facts.
+      let work;
+      // Diagnostics stay outside Rules results and model inputs. Aggregate each
+      // category once per estimate rather than emitting every sampled outcome.
+      const timings = observe ? new Map() : null;
+      const measured = (category, run) => {
+        if (!timings) return run();
+        const start = clock();
+        try { return run(); }
+        finally {
+          const duration = elapsed(start);
+          const total = timings.get(category) || {
+            callCount: 0, wallMs: 0, threadCpuMs: 0, cpuAvailable: true,
+          };
+          total.callCount += 1;
+          total.wallMs += duration.wallMs;
+          total.cpuAvailable &&= duration.threadCpuMs !== null;
+          if (duration.threadCpuMs !== null) total.threadCpuMs += duration.threadCpuMs;
+          timings.set(category, total);
+        }
+      };
+      const estimateStart = observe ? clock() : null;
+      try { return estimateAttackProbability({ ...input, state: snapshot },
+        (_state, domain, parameters) => {
+          work = measured("preview", () => prepared.previewWork(domain, parameters));
+          return work.preview;
+        },
+        (_state, pieceId, casualtyIds) => measured("strategic_casualty_control",
+          () => prepared.projectCasualty(pieceId, casualtyIds)),
+        (_state, _action, options) => {
+          const resolver = measured("chance_preparation",
+            () => work.createChanceResolver(options));
+          if (!timings) return resolver;
+          return {
+            resolvePool: (...args) => measured("dice_pool",
+              () => resolver.resolvePool(...args)),
+            casualtyDomainForResolution: (...args) => measured("casualty_domain",
+              () => resolver.casualtyDomainForResolution(...args)),
+          };
+        },
+        (_state, domain, preview, parameters) => measured("reaction_opportunities", () => {
+          if (snapshot.officialReactionFamilySourceBundle) {
+            reactionWindows ||= createOfficialReactionWindowOpportunityBatchV1({
+              state: snapshot, bundle: snapshot.officialReactionFamilySourceBundle,
+            });
+          }
+          return projectReactionOpportunitySet(snapshot, domain, preview,
+            parameters, reactionWindows);
+        })); }
+      finally { if (observe) {
+        observe({ stage: "ranged_probability_estimate_measured", sideKey,
+          pieceId: input.domain?.pieceId || input.domain?.sourceDomain?.pieceId || null,
+          targetUnitId: input.parameters?.targetUnitId || null,
+          ...elapsed(estimateStart), categories: [...timings].map(([category, total]) => ({
+            category, callCount: total.callCount, wallMs: total.wallMs,
+            threadCpuMs: total.cpuAvailable ? total.threadCpuMs : null,
+          })) });
+      } }
+    },
+  });
+}
+
+function attackProbabilityPreview(input, previewAction) {
   const state = input.state;
   const domain = sourceDomain(input.domain);
+  if (object(state) && domain?.parameterKind === OFFICIAL_SELECTED_ROSTER_FIGHT_PARAMETER_KIND) {
+    const { targetUnitId, ...parameters } = input.parameters || {};
+    // Allocation, weapon, Close Ranks and effects remain explicit Agent choices.
+    // Multi-target Precision allocation needs a separately declared policy.
+    if (!targetUnitId || parameters.allocations?.length !== 1
+      || parameters.allocations[0].targetUnitId !== targetUnitId) {
+      throw new TypeError("MELEE_PROBABILITY_TARGET_ALLOCATION_REQUIRED");
+    }
+    if (input.damageReactionChoices !== undefined) {
+      throw new TypeError("MELEE_PROBABILITY_REACTION_POLICY_NOT_SUPPORTED");
+    }
+    const meleeWork = createOfficialSelectedRosterMeleeChanceResolverV1(state, domain, parameters);
+    return { domain, parameters: { ...clone(meleeWork.preview.action.meleePlan.canonicalParameters),
+      targetUnitId }, preview: meleeWork.preview, meleeWork };
+  }
   if (!object(state) || !object(domain)
     || domain.parameterKind !== OFFICIAL_SELECTED_ROSTER_RANGED_PARAMETER_KIND) {
     throw new TypeError("ATTACK_PROBABILITY_CURRENT_RANGED_DOMAIN_REQUIRED");
   }
   const parameters = normalizedParameters(domain, input.parameters);
-  const preview = previewOfficialSelectedRosterRangedActionV1(
+  const preview = previewAction(
     state, domain, parameters);
+  return { domain, parameters, preview };
+}
+
+function meleeProbabilityChanceAdapter(work, targetUnitId) {
+  const casualtyByResolution = new Map();
+  return {
+    resolvePool({ chanceReveals, precisionConvertedFailedHitDieIndices = [] }) {
+      const row = work.resolve({ chanceReveals,
+        precisionConvertedFailedDieIndicesByTarget: {
+          [targetUnitId]: precisionConvertedFailedHitDieIndices,
+        } }).rows.find(entry => entry.targetUnitId === targetUnitId);
+      if (!row) throw new TypeError("MELEE_PROBABILITY_NATIVE_TARGET_MISSING");
+      const targetPlan = work.preview.action.meleePlan.fightChancePlan.targets
+        .find(entry => entry.targetUnitId === targetUnitId);
+      // Only a transport projection of Native results; no hit/damage formula.
+      const resolution = { ...row.resolution,
+        stages: { damage: { totalDamage: row.resolution.totalDamage } },
+        precisionChoiceDomain: {
+          failedHitDieIndices: row.resolution.failedHitDieIndices,
+          maximumConvertedDice: Math.min(row.resolution.activePrecisionValue,
+            Number(targetPlan.precision || 0)),
+        } };
+      casualtyByResolution.set(resolution.resolutionHash, row.casualtyDomain);
+      return { resolution, context: { targetProfile: row.targetProfile } };
+    },
+    casualtyDomainForResolution(resolution) {
+      const domain = casualtyByResolution.get(resolution.resolutionHash);
+      if (!domain) throw new TypeError("MELEE_PROBABILITY_NATIVE_CASUALTY_MISSING");
+      return domain;
+    },
+  };
+}
+
+function estimateAttackProbability(
+  input, previewAction, projectCasualty = projectOfficialSelectedRosterCasualtyStrategyV1,
+  createChanceResolver = createOfficialSelectedRosterRangedChanceResolverV1,
+  projectReactions = projectReactionOpportunitySet,
+) {
+  const { domain, parameters, preview, meleeWork } = attackProbabilityPreview(input, previewAction);
+  const state = meleeWork?.snapshot || input.state;
   const chanceCount = Number(preview.chance?.count || 0);
   if (!Number.isSafeInteger(chanceCount) || chanceCount < 1) {
     throw new TypeError("ATTACK_PROBABILITY_CHANCE_LAYOUT_REQUIRED");
@@ -376,11 +550,67 @@ export function estimateStarcraftTmgAttackProbabilityV1(input = {}) {
   const targetRangedContribution = target
     ? projectOfficialSelectedRosterRangedContributionV1(state, target.id)
     : { profiles: [] };
-  const reactionOpportunitySet = projectReactionOpportunitySet(
-    state, domain, preview, parameters);
+  const reactionOpportunitySet = meleeWork ? {
+    status: "baseline_excludes_optional_melee_reactions", windows: [],
+    baselineOutcomeDistributionExcludesOptionalReactionEffects: true,
+    optionalReactionEffectsMustBeComparedBeforeActionSelection: true,
+    mutationAuthority: false, trainingTruth: false,
+  } : projectReactions(state, domain, preview, parameters);
+  const damageReactionChoices=input.damageReactionChoices===undefined?null
+    :validateOfficialRangedDamageReactionChoicesV1(input.damageReactionChoices);
+  if (damageReactionChoices) {
+    const opportunities=reactionOpportunitySet.windows.find(w=>w.triggerKind==='damage_received');
+    for (const choice of damageReactionChoices) {
+      const available=opportunities?.prioritySequence?.find(p=>p.sideKey===choice.sideKey)?.choices||[];
+      const matched=available.some(c=>choice.choiceKind==='pass'?c.choiceKind==='pass'
+        :c.choiceKind==='reaction'&&c.definitionId===choice.definitionId
+          &&c.sourceInstanceId===choice.sourceInstanceId
+          &&JSON.stringify([...(c.paymentCardInstanceIds||[])].sort())===JSON.stringify([...choice.paymentCardInstanceIds].sort()));
+      if (!matched) throw new TypeError('ATTACK_PROBABILITY_DAMAGE_REACTION_CHOICE_NOT_IN_CURRENT_OPPORTUNITIES');
+    }
+  }
+  const resolveChance = meleeWork ? meleeProbabilityChanceAdapter(meleeWork, parameters.targetUnitId)
+    : createChanceResolver(state, preview.action, { observeContext: input.observeChanceContext });
+  // Dice and Precision remain exact for EVERY row. Only physical casualties
+  // are shared: with the same immutable target/visibility/engagement and damage,
+  // their legal model choices, markers and Supply are identical. Per-roll receipt
+  // hashes are not probability output; ordinary Rules resolution still binds
+  // each full casualty domain to its own resolution hash.
+  const casualtyByDamage = new Map();
+  const reactionByDamage=new Map();
+  const resourcePayments=new Map();
+  const cardExhaustions=new Map();
+  let totalFinalDamagePool=0;
   for (const reveals of revealRows) {
-    const resolved = resolveWithOptimalPrecision(state, preview.action, reveals);
-    const damage = Number(resolved.resolution.stages.damage.totalDamage || 0);
+    const pool = resolveWithOptimalPrecision(resolveChance, reveals);
+    const rawDamage = Number(pool.resolution.stages.damage.totalDamage || 0);
+    let reaction=null;
+    if (damageReactionChoices) {
+      if (!reactionByDamage.has(rawDamage)) reactionByDamage.set(rawDamage,{
+        ...resolveOfficialSelectedRosterRangedDamageReactionPolicyV1({
+          state,action:preview.action,chance:pool,choices:damageReactionChoices}),sampleCount:0});
+      reaction=reactionByDamage.get(rawDamage);
+      reaction.sampleCount+=1;
+      for (const payment of reaction.payments) {
+        const key=`${payment.sideKey}:${payment.resourceType}`;
+        const current=resourcePayments.get(key)||{sideKey:payment.sideKey,resourceType:payment.resourceType,totalCost:0};
+        current.totalCost+=payment.cost;resourcePayments.set(key,current);
+      }
+      for (const card of reaction.cardExhaustions) {
+        const current=cardExhaustions.get(card.cardInstanceId)||{...card,count:0};
+        current.count+=1;cardExhaustions.set(card.cardInstanceId,current);
+      }
+    }
+    const reduction=reaction?.chance.resolution.stages.damage.reactionDamagePool;
+    const finalDamagePool=reduction?.totalDamageAfterReduction
+      ??Number(target?.damageMarker||0)+rawDamage;
+    const damage=reduction?Math.max(0,finalDamagePool-Number(target?.damageMarker||0)):rawDamage;
+    totalFinalDamagePool+=finalDamagePool;
+    if (!casualtyByDamage.has(rawDamage)) {
+      casualtyByDamage.set(rawDamage,reaction?.chance.casualtyDomain
+        ||resolveChance.casualtyDomainForResolution(pool.resolution));
+    }
+    const resolved = { ...pool, casualtyDomain: casualtyByDamage.get(rawDamage) };
     const casualties = Number(resolved.casualtyDomain.casualtyCount || 0);
     const remainingModels = Math.max(0,
       Number(target?.currentModels || 0) - casualties);
@@ -421,7 +651,7 @@ export function estimateStarcraftTmgAttackProbabilityV1(input = {}) {
         const selectionKey = casualtyIds.join("|");
         if (lossState.selectionExamples.size < 12
           && !lossState.selectionExamples.has(selectionKey)) {
-          const exactStrategic = projectOfficialSelectedRosterCasualtyStrategyV1(
+          const exactStrategic = projectCasualty(
             state, target.id, casualtyIds);
           const lost = new Set(casualtyIds);
           const lostModels = (targetRangedContribution.models || []).filter(
@@ -545,26 +775,48 @@ export function estimateStarcraftTmgAttackProbabilityV1(input = {}) {
   const resultBody = {
     schemaVersion: STARCRAFT_TMG_COMBAT_ESTIMATION_RUNTIME_VERSION,
     queryKind: "attack_probability",
+    ...(meleeWork ? { attackKind: "melee" } : {}),
     domainId: input.domain?.domainId || domain.domainId,
     sourceDomainId: domain.domainId,
     sideKey: domain.sideKey,
     attackerUnitId: domain.pieceId,
     targetUnitId: parameters.targetUnitId,
     weaponName: domain.weaponName || preview.action.weaponName || null,
-    profileKey: domain.profileKey || preview.action.rangedPlan?.profileKey || null,
+    profileKey: domain.profileKey || preview.action.rangedPlan?.profileKey
+      || preview.action.meleePlan?.profileKey || null,
     canonicalParameters: clone(parameters),
     actionHash: preview.actionHash,
-    attackPlanHash: preview.action.rangedPlan?.attackPlanHash || null,
+    attackPlanHash: preview.action.rangedPlan?.attackPlanHash
+      || preview.action.meleePlan?.fightPlanHash || null,
     chance: clone(preview.chance),
-    contributingModelIds: clone(preview.eligibleAttackerModelIds || []),
-    visibleTargetModelIds: clone(preview.visibleTargetModelIds || []),
+    outcomeSampleHash:hashStarcraftTmgContract(revealRows),
+    contributingModelIds: clone(preview.eligibleAttackerModelIds
+      || preview.action.meleePlan?.contributingModelIds || []),
+    visibleTargetModelIds: clone(preview.visibleTargetModelIds
+      || (meleeWork ? (target?.models || []).filter(m => !m.isDestroyed).map(m => m.id) : [])),
     reactionOpportunitySet,
+    damageReactionPolicy:damageReactionChoices?{
+      status:'native_explicit_policy_applied',choices:clone(damageReactionChoices),
+      trigger:'positive_damage_received',nativePaymentAndEffectResolution:true,
+      otherOptionalReactionStagesExcluded:true,
+      expectedResourcePayments:[...resourcePayments.values()].map(({totalCost,...row})=>
+        ({...row,expectedCost:sampleCount?totalCost/sampleCount:null})),
+      expectedCardExhaustions:[...cardExhaustions.values()].map(({count,...row})=>
+        ({...row,probability:probability(count,sampleCount,exactDistribution)})),
+      effectCases:[...reactionByDamage].map(([rawDamage,r])=>({rawDamage,sampleCount:r.sampleCount,
+        probability:probability(r.sampleCount,sampleCount,exactDistribution),
+        damagePool:clone(r.chance.resolution.stages.damage.reactionDamagePool||null),
+        nativeReactionResolutionHash:r.nativeReactionResolutionHash,
+        effects:clone(r.effects),payments:clone(r.payments),positiveDamageTriggered:r.positiveDamageTriggered})),
+      mutatesSourceState:false,trainingTruth:false,
+    }:null,
     outcomes: {
       distribution: exactDistribution
         ? "exact_full_enumeration" : "deterministic_stratified_sample",
       sampleCount,
       exhaustiveOutcomeCount,
       expectedDamage: sampleCount ? totalDamage / sampleCount : 0,
+      expectedTotalDamagePoolAfterReactions:sampleCount?totalFinalDamagePool/sampleCount:null,
       expectedCasualties: sampleCount ? totalCasualties / sampleCount : 0,
       minimumDamage: Number.isFinite(minimumDamage) ? minimumDamage : 0,
       maximumDamage,
@@ -665,7 +917,11 @@ export function estimateStarcraftTmgAttackProbabilityV1(input = {}) {
         }),
     },
     assumptions: [
-      "The current authoritative ranged domain, target and point-defence choices stay frozen.",
+      ...(meleeWork ? [
+        "The current Native melee domain, one target, allocation and Close Ranks choices stay frozen.",
+        "Optional reactions are excluded; this is a conditional single-attack baseline, not an automatic exchange or predicted opponent response.",
+        "Charge reach, arrival history and sequential multi-attacker damage are not measured.",
+      ] : ["The current authoritative ranged domain, target and point-defence choices stay frozen."]),
       "Every sampled outcome is resolved by the exact Rules hit, surge, armour, evade, damage and casualty runtime.",
       "Available Precision converts the maximum legal failed hit dice for this estimate.",
       "Supply-after outcomes use the target's frozen official squad-profile tiers after the exact casualty count.",
@@ -694,7 +950,8 @@ export function estimateStarcraftTmgAttackProbabilityV1(input = {}) {
 
 function relationshipExchangeSummary(graph) {
   const relations = (graph.relationships || []).filter((entry) =>
-    entry.edgeKind === "unit_relationship");
+    entry.edgeKind === "unit_spatial_relationship"
+      || entry.edgeKind === "unit_relationship");
   return {
     relationshipGraphHash: graph.relationshipGraphHash,
     ownStationaryProfileCount: relations.reduce((sum, entry) => sum
@@ -712,9 +969,8 @@ function relationshipExchangeSummary(graph) {
   };
 }
 
-function currentAttackEstimates(state, domains, request) {
-  const estimates = [];
-  const failures = [];
+function currentAttackQueries(domains, request) {
+  const queries = [];
   const requestedDomainIds = new Set((request.domainIds || []).map(String));
   const requestedSubjectIds = new Set((request.subjectUnitIds || []).map(String));
   for (const domain of domains) {
@@ -733,26 +989,52 @@ function currentAttackEstimates(state, domains, request) {
         request.targetIds.map(String).includes(id))
       : source.parameterSchema.targetUnitId.enum;
     for (const targetUnitId of targets) {
-      try {
-        estimates.push(estimateStarcraftTmgAttackProbabilityV1({
-          state,
-          domain,
-          parameters: { targetUnitId },
-          sampleBudget: request.sampleBudgetPerAttack,
-        }));
-      } catch (error) {
-        failures.push({
-          domainId: domain.domainId,
-          targetUnitId,
-          reason: String(error?.message || error).split(":")[0],
-        });
-      }
+      queries.push({ domain, parameters: { targetUnitId },
+        sampleBudget: request.sampleBudgetPerAttack });
     }
   }
-  estimates.sort((left, right) =>
+  return queries;
+}
+
+function sortAttackEstimates(estimates) {
+  return estimates.sort((left, right) =>
     right.outcomes.expectedDamage - left.outcomes.expectedDamage
       || left.domainId.localeCompare(right.domainId)
       || left.targetUnitId.localeCompare(right.targetUnitId));
+}
+
+function attackFailure(query, error) {
+  return { domainId: query.domain.domainId,
+    targetUnitId: query.parameters.targetUnitId,
+    reason: String(error?.message || error).split(":")[0] };
+}
+
+function currentAttackEstimates(state, domains, request) {
+  const estimates = [];
+  const failures = [];
+  // All targets for one side share this immutable query snapshot. Reuse the
+  // ordinary Rules enumeration and casualty projections, not sampled outcomes
+  // or strategic rankings. A later query owns a fresh batch.
+  const probabilityBatchesBySide = new Map();
+  for (const query of currentAttackQueries(domains, request)) {
+    const source = sourceDomain(query.domain);
+    try {
+      if (!source.sideKey) {
+        // Preserve the standalone validation/error contract for malformed
+        // legacy domains instead of substituting the requesting seat.
+        estimates.push(estimateStarcraftTmgAttackProbabilityV1({ state, ...query }));
+        continue;
+      }
+      if (!probabilityBatchesBySide.has(source.sideKey)) {
+        probabilityBatchesBySide.set(source.sideKey,
+          createStarcraftTmgAttackProbabilityBatchV1({ state, sideKey: source.sideKey }));
+      }
+      estimates.push(probabilityBatchesBySide.get(source.sideKey).estimate(query));
+    } catch (error) {
+      failures.push(attackFailure(query, error));
+    }
+  }
+  sortAttackEstimates(estimates);
   return { estimates, failures };
 }
 
@@ -815,6 +1097,46 @@ export function estimateStarcraftTmgFireZoneExchangeV1(input = {}) {
   const graphSummary = relationshipExchangeSummary(graph);
   const attacks = currentAttackEstimates(input.state,
     input.currentLegalSpaceDomains || [], request);
+  return fireZoneExchangeResult(input, request, graph, graphSummary, attacks);
+}
+
+// Explain the same domain/subject/target selection used by estimation. A missing
+// current attack is not zero damage, a missing tool, or proof about another turn.
+// This is factual query feedback; it never changes side, phase or strategy.
+export function describeStarcraftTmgFireAttackSelectionV1(input, request, attacks) {
+  const domains = input.currentLegalSpaceDomains || [];
+  const ranged = domains.filter(domain => sourceDomain(domain).parameterKind
+    === OFFICIAL_SELECTED_ROSTER_RANGED_PARAMETER_KIND);
+  const selected = currentAttackQueries(domains, request);
+  const subjects = [...new Set(request.subjectUnitIds?.length
+    ? request.subjectUnitIds.map(String) : ranged.map(domain => sourceDomain(domain).pieceId))];
+  const subjectDetails = subjects.map(unitId => {
+    const piece = input.state?.pieces?.find(entry => entry.id === unitId);
+    const current = ranged.filter(domain => sourceDomain(domain).pieceId === unitId);
+    return { unitId, ownerSideKey: piece?.sideKey ?? null,
+      sameSideAsQuerySeat: piece?.sideKey ? piece.sideKey === input.seatKey : null,
+      currentRangedDomainIds: current.map(domain => domain.domainId),
+      selectedPairs: selected.filter(query => sourceDomain(query.domain).pieceId === unitId)
+        .map(query => ({ domainId: query.domain.domainId, targetUnitId: query.parameters.targetUnitId })) };
+  });
+  let emptyReason = null;
+  if (!attacks.estimates.length) {
+    emptyReason = !ranged.length ? 'no_current_ranged_domains'
+      : subjectDetails.length && subjectDetails.every(subject => !subject.currentRangedDomainIds.length)
+        ? 'requested_subject_has_no_current_ranged_domain'
+        : !selected.length ? 'requested_filters_match_no_current_attack_pair'
+          : attacks.failures.length ? 'selected_attack_estimation_failed'
+            : 'selected_attack_result_missing';
+  }
+  return { phase: input.state?.phase ?? null, querySeatKey: input.seatKey,
+    availableRangedDomainCount: ranged.length, selectedPairCount: selected.length,
+    requestedDomainIds: clone(request.domainIds || []), requestedTargetIds: clone(request.targetIds || []),
+    subjects: subjectDetails, emptyReason,
+    scope: 'current_native_ranged_domain_selection_only',
+    instruction: 'Only selected current ranged domains are estimated. A unit owned by another side may have no domain in this branch. Choose and verify explicit scenario prerequisites if needed; this diagnostic does not choose a phase, authorize an action, predict return fire or prove zero damage.' };
+}
+
+function fireZoneExchangeResult(input, request, graph, graphSummary, attacks) {
   const bestAttack = attacks.estimates[0] || null;
   const hold = {
     kind: "hold",
@@ -864,6 +1186,7 @@ export function estimateStarcraftTmgFireZoneExchangeV1(input = {}) {
     currentGeometry: graphSummary,
     attackEstimates: attacks.estimates,
     attackEstimateFailures: attacks.failures,
+    attackSelection: describeStarcraftTmgFireAttackSelectionV1(input, request, attacks),
     alternatives,
     comparisonPolicy: {
       currentAttackOutcomes: "exact_rules_per_outcome_advisory_distribution",
@@ -884,4 +1207,116 @@ export function estimateStarcraftTmgFireZoneExchangeV1(input = {}) {
     ...resultBody,
     estimateHash: hashStarcraftTmgContract(resultBody),
   });
+}
+
+// Internal CPU work protocol. The Room adapter owns/validates the snapshot;
+// no public query accepts these prepared previews as authority or an action.
+// Shared native preview enumeration is performed once per side before ATTACK
+// jobs fan out. The independent graph can start while previews are prepared.
+// Each attack still executes its entire original deterministic sample
+// stream and all casualty consequences, so no sample/first-example merge occurs.
+export function createStarcraftTmgFireExchangeWorkV1(input = {}) {
+  return createFireExchangeWork(input, new Map());
+}
+
+// One private fixed-state owner for all fire queries in a readonly batch. The
+// caller can provide requests, never an enumeration or prepared Chance context.
+export function createStarcraftTmgFireExchangeWorkPlannerV1({ state } = {}) {
+  const snapshot = freeze(clone(state));
+  const previewBatchesBySide = new Map();
+  return input => createFireExchangeWork({ ...input, state: snapshot },
+    previewBatchesBySide);
+}
+
+function createFireExchangeWork(input, previewBatchesBySide) {
+  if (!object(input.state) || !String(input.seatKey || "")) {
+    throw new TypeError("FIRE_ZONE_EXCHANGE_STATE_AND_SEAT_REQUIRED");
+  }
+  const request = object(input.request) ? input.request : {};
+  const jobs = [{ kind: "fire_relationships", seatKey: input.seatKey,
+    authority: clone(input.authority), request: { ...clone(request),
+      intent: "fire_zone_exchange",
+      maximumRelations: Number(request.maximumRelations || 128) } }];
+  // Only the internally owned scheduler receives this job. It needs no ranged
+  // preview, and must use the same complete snapshot as all later attack jobs.
+  input.onIndependentWork?.(jobs[0]);
+  for (const query of currentAttackQueries(input.currentLegalSpaceDomains || [], request)) {
+    try {
+      const source = sourceDomain(query.domain);
+      let previewAction = previewOfficialSelectedRosterRangedActionV1;
+      let chanceContext;
+      if (source.sideKey) {
+        if (!previewBatchesBySide.has(source.sideKey)) {
+          previewBatchesBySide.set(source.sideKey,
+            createOfficialSelectedRosterRangedPreviewBatchV1(input.state, {
+              sideKey: source.sideKey, includeDisabled: true,
+              observeContext: input.observePreparation,
+            }));
+        }
+        const batch = previewBatchesBySide.get(source.sideKey);
+        previewAction = (_state, domain, parameters) => {
+          const work = batch.previewWork(domain, parameters);
+          chanceContext = work.chanceContext;
+          return work.preview;
+        };
+      }
+      const { preview } = attackProbabilityPreview({ state: input.state, ...query }, previewAction);
+      jobs.push({ kind: "fire_attack", query: clone(query), preview,
+        ...(chanceContext ? { chanceContext } : {}) });
+    } catch (error) {
+      jobs.push({ kind: "fire_attack_failure", failure: attackFailure(query, error) });
+    }
+  }
+  return freeze(jobs);
+}
+
+export function createStarcraftTmgFireExchangeWorkEvaluatorV1({ state, observeChanceContext } = {}) {
+  let casualtyStrategies = null;
+  return function evaluate(job) {
+    if (job?.kind === "fire_relationships") {
+      try {
+        return { graph: buildStarcraftTmgTacticalRelationshipGraphV1({ state,
+          seatKey: job.seatKey, authority: job.authority, request: job.request }) };
+      } catch (error) {
+        // Preserve a Rules/domain failure, not a worker-transport retry signal.
+        return { error: { name: error?.name, message: String(error?.message || error),
+          ...(error?.code ? { code: error.code } : {}) } };
+      }
+    }
+    if (job?.kind === "fire_attack_failure") return { failure: clone(job.failure) };
+    if (job?.kind !== "fire_attack") throw new TypeError("FIRE_EXCHANGE_WORK_KIND_INVALID");
+    try {
+      if (!casualtyStrategies) {
+        casualtyStrategies = createOfficialSelectedRosterCasualtyStrategyBatchV1(state);
+      }
+      return { estimate: estimateAttackProbability({ state, ...job.query, observeChanceContext },
+        () => job.preview,
+        (_state, pieceId, casualtyIds) => casualtyStrategies.project(pieceId, casualtyIds),
+        job.chanceContext ? (_state, action, options) =>
+          createOfficialSelectedRosterRangedWorkChanceResolverV1(
+            _state, action, job.chanceContext, options)
+          : createOfficialSelectedRosterRangedChanceResolverV1) };
+    } catch (error) { return { failure: attackFailure(job.query, error) }; }
+  };
+}
+
+export function finishStarcraftTmgFireExchangeWorkV1(input, parts) {
+  if (parts[0]?.error) {
+    const error = new Error(parts[0].error.message);
+    error.name = parts[0].error.name || "Error";
+    if (parts[0].error.code) error.code = parts[0].error.code;
+    throw error;
+  }
+  const graph = parts[0]?.graph;
+  if (!graph) throw new TypeError("FIRE_EXCHANGE_GRAPH_RESULT_REQUIRED");
+  const estimates = [];
+  const failures = [];
+  for (const part of parts.slice(1)) {
+    if (part?.estimate) estimates.push(part.estimate);
+    else if (part?.failure) failures.push(part.failure);
+    else throw new TypeError("FIRE_EXCHANGE_ATTACK_RESULT_REQUIRED");
+  }
+  return fireZoneExchangeResult(input, object(input.request) ? input.request : {},
+    graph, relationshipExchangeSummary(graph),
+    { estimates: sortAttackEstimates(estimates), failures });
 }

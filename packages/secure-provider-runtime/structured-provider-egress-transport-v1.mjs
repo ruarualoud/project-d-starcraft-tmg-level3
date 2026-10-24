@@ -7,10 +7,15 @@ import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
 import { assertStarcraftTmgProviderEgressBindingV2 } from
   "./provider-egress-contract-v2.mjs";
+import { STARCRAFT_TMG_PROVIDER_EGRESS_MAX_REQUEST_BYTES,
+  assertStarcraftTmgProviderTransportProgressV1 } from
+  "./provider-egress-contract-v1.mjs";
 import { isStarcraftTmgGloballyRoutableAddressV1 } from
   "./provider-egress-transport-v1.mjs";
 import { normalizeStarcraftTmgOutputContractRefV1 } from
   "../structured-generation/output-contract-registry-v1.mjs";
+import { resolveProviderAddressesWithRecoveryV1, safeProviderDnsRecoveryV1,
+  keepProviderSocketAliveV1 } from './provider-network-resilience-v1.mjs';
 
 export const STARCRAFT_TMG_STRUCTURED_PROVIDER_EGRESS_TRANSPORT_VERSION =
   "starcraft_tmg_structured_provider_egress_transport_v1";
@@ -27,9 +32,15 @@ const BODY_FIELDS = new Set([
   "max_output_tokens", "stream", "text",
 ]);
 const ID = /^[A-Za-z0-9._:-]{8,200}$/u;
-const MAX_REQUEST_BYTES = 2 * 1024 * 1024;
+const MAX_REQUEST_BYTES = STARCRAFT_TMG_PROVIDER_EGRESS_MAX_REQUEST_BYTES;
 const MAX_RESPONSE_BYTES = 1024 * 1024;
 const MAX_HEADER_BYTES = 32 * 1024;
+const NETWORK_ERROR_CODES = new Set([
+  "ECONNRESET", "ECONNREFUSED", "ECONNABORTED", "ENETUNREACH", "EHOSTUNREACH",
+  "ETIMEDOUT", "EPIPE", "ENOTFOUND", "EAI_AGAIN", "ERR_SOCKET_CLOSED",
+  "ERR_TLS_HANDSHAKE_TIMEOUT", "ERR_TLS_CERT_ALTNAME_INVALID",
+  "CERT_HAS_EXPIRED", "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+]);
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -164,6 +175,13 @@ export class StarcraftTmgStructuredTransportError extends Error {
         ? details.physicalAttempts : 0,
       outputContractRef: details.outputContractRef
         ? normalizeStarcraftTmgOutputContractRefV1(details.outputContractRef) : null,
+      ...(details.transportProgress ? {
+        transportProgress: assertStarcraftTmgProviderTransportProgressV1(details.transportProgress),
+      } : {}),
+      networkErrorCode: details.networkErrorCode === undefined ? null
+        : NETWORK_ERROR_CODES.has(details.networkErrorCode)
+          ? details.networkErrorCode : "UNCLASSIFIED_NETWORK_ERROR",
+      ...(details.dnsRecovery ? { dnsRecovery: safeProviderDnsRecoveryV1(details.dnsRecovery) } : {}),
       automaticRetries: 0,
       trainingTruth: false,
     };
@@ -183,6 +201,7 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
   const maxHeaderBytes = options.maxHeaderBytes || MAX_HEADER_BYTES;
 
   async function send(input = {}) {
+    const transportStartedAt = performance.now();
     exactFields(input, INPUT_FIELDS, "Structured egress input");
     const binding = assertStarcraftTmgProviderEgressBindingV2(input.egressBinding);
     if (!printableCredential(input.credentialBytes)) {
@@ -217,23 +236,47 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
           outputContractRef: request.outputContractRef,
         });
     }
-    let addresses;
+    let addresses, dnsRecovery;
     try {
-      addresses = normalizeAddresses(await resolveAddresses(
-        binding.endpoint.hostname));
-    } catch {
+      const resolved = await resolveProviderAddressesWithRecoveryV1({
+        hostname: binding.endpoint.hostname, resolveAddresses, signal: input.signal });
+      dnsRecovery = resolved.recovery;
+      addresses = normalizeAddresses(resolved.records);
+    } catch (error) {
       throw new StarcraftTmgStructuredTransportError(
-        "PROVIDER_DNS_RESOLUTION_FAILED", {
+        error?.code === 'ABORT_ERR' ? 'PROVIDER_ABORTED' : "PROVIDER_DNS_RESOLUTION_FAILED", {
           requestDefinitelyNotSent: true,
+          networkErrorCode: error?.code,
+          dnsRecovery: error?.dnsRecovery || dnsRecovery,
           outputContractRef: request.outputContractRef,
         });
     }
+    if (input.signal?.aborted) throw new StarcraftTmgStructuredTransportError('PROVIDER_ABORTED', {
+      requestDefinitelyNotSent: true, dnsRecovery, outputContractRef: request.outputContractRef });
     const selected = addresses[0];
     const startedAt = new Date(now()).toISOString();
+    const elapsedMs = () => Math.max(0, Math.floor(performance.now() - transportStartedAt));
+    const milestonesMs = { dnsResolved: elapsedMs(), tcpConnected: null, tlsConnected: null,
+      requestWritten: null, responseHeaders: null, responseCompleted: null };
+    const responseBody = { receivedBytes: 0, nonWhitespaceBytes: 0, chunkCount: 0,
+      firstByteMs: null, lastByteMs: null, lastNonWhitespaceByteMs: null };
+    let timeoutCause;
+    const mark = field => { milestonesMs[field] = elapsedMs(); };
+    // Same phase contract as ordinary egress. No key, request/response body,
+    // arbitrary error message or address crosses the worker boundary.
+    const transportProgress = () => ({
+      phase: milestonesMs.responseHeaders !== null ? "reading_response_body"
+        : milestonesMs.requestWritten !== null ? "waiting_response_headers"
+          : milestonesMs.tlsConnected !== null ? "writing_request"
+            : milestonesMs.tcpConnected !== null ? "tls_handshake" : "tcp_connect",
+      elapsedMs: elapsedMs(), milestonesMs: { ...milestonesMs },
+      responseBody: { ...responseBody }, ...(timeoutCause ? { timeoutCause } : {}),
+    });
     let physicalAttempts = 0;
     return await new Promise((resolve, reject) => {
       let settled = false;
       let outbound;
+      let observedStatus = null;
       const finish = (operation, value) => {
         if (settled) return;
         settled = true;
@@ -244,21 +287,23 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
       const fail = (code, details = {}) => finish(reject,
         new StarcraftTmgStructuredTransportError(code, {
           outputContractRef: request.outputContractRef,
-          physicalAttempts,
+          physicalAttempts, dnsRecovery,
+          status: observedStatus, transportProgress: transportProgress(),
           ...details,
         }));
       const abort = () => {
-        outbound?.destroy?.();
         fail("PROVIDER_ABORTED", {
           requestDefinitelyNotSent: physicalAttempts === 0,
           requestMayHaveBeenSent: physicalAttempts === 1,
         });
+        outbound?.destroy?.();
       };
       const timer = setTimeout(() => {
-        outbound?.destroy?.();
+        timeoutCause = "total_deadline";
         fail("PROVIDER_TRANSPORT_TIMEOUT", {
           requestMayHaveBeenSent: physicalAttempts === 1,
         });
+        outbound?.destroy?.();
       }, binding.timeoutMs);
       input.signal?.addEventListener?.("abort", abort, { once: true });
       const lookup = (_hostname, lookupOptions, callback) => {
@@ -289,6 +334,8 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
           },
         }, (response) => {
           const status = Number(response?.statusCode || 0);
+          observedStatus = Number.isInteger(status) ? status : null;
+          mark("responseHeaders");
           const type = String(response.headers?.["content-type"] || "")
             .toLowerCase();
           const encoding = String(response.headers?.["content-encoding"]
@@ -309,7 +356,23 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
           const chunks = [];
           let bytes = 0;
           response.on("data", (chunk) => {
+            if (settled) return;
             const buffer = Buffer.from(chunk);
+            if (buffer.length > 0) {
+              const at = elapsedMs();
+              responseBody.receivedBytes += buffer.length;
+              responseBody.chunkCount += 1;
+              responseBody.firstByteMs ??= at;
+              responseBody.lastByteMs = at;
+              // Count JSON whitespace only. This is a byte observation, not
+              // a claim that the remaining data is a valid model answer.
+              let contentBytes = 0;
+              for (const byte of buffer) {
+                if (byte !== 0x20 && byte !== 0x09 && byte !== 0x0a && byte !== 0x0d) contentBytes++;
+              }
+              responseBody.nonWhitespaceBytes += contentBytes;
+              if (contentBytes > 0) responseBody.lastNonWhitespaceByteMs = at;
+            }
             bytes += buffer.length;
             if (bytes > maxResponseBytes) {
               response.destroy?.(); outbound.destroy?.();
@@ -320,11 +383,13 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
             }
             chunks.push(buffer);
           });
-          response.on("error", () => fail("PROVIDER_RESPONSE_STREAM_FAILED", {
+          response.on("error", error => fail("PROVIDER_RESPONSE_STREAM_FAILED", {
             status, requestMayHaveBeenSent: true,
+            networkErrorCode: error?.code,
           }));
           response.on("end", () => {
             if (settled) return;
+            mark("responseCompleted");
             const raw = Buffer.concat(chunks);
             let payload;
             try {
@@ -362,12 +427,14 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
               providerRequestIdHash: typeof response.headers?.["x-request-id"]
                 === "string" ? sha256(response.headers["x-request-id"]) : null,
               dnsAddressSetHash: hashStarcraftTmgContract(addresses),
+              dnsRecovery,
               tlsServerName: binding.endpoint.hostname,
               status,
               physicalAttempts: 1,
               automaticRetries: 0,
               startedAt,
               finishedAt: new Date(now()).toISOString(),
+              transportProgress: transportProgress(),
               trainingTruth: false,
             };
             finish(resolve, freeze({
@@ -380,15 +447,19 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
             }));
           });
         });
-      } catch {
+      } catch (error) {
         fail("PROVIDER_TRANSPORT_FAILED", {
+          networkErrorCode: error?.code,
           requestMayHaveBeenSent: physicalAttempts === 1,
           requestDefinitelyNotSent: physicalAttempts === 0,
         });
         return;
       }
       outbound.once?.("socket", (socket) => {
+        keepProviderSocketAliveV1(socket);
+        socket.once?.("connect", () => mark("tcpConnected"));
         socket.once?.("secureConnect", () => {
+          mark("tlsConnected");
           if (!sameAddress(String(socket.remoteAddress || "").toLowerCase(),
             selected.address)) {
             outbound.destroy?.();
@@ -398,17 +469,21 @@ export function createStarcraftTmgStructuredProviderEgressTransportV1(
           }
         });
       });
-      outbound.once?.("error", () => fail("PROVIDER_TRANSPORT_FAILED", {
+      outbound.once?.("error", error => fail("PROVIDER_TRANSPORT_FAILED", {
         requestMayHaveBeenSent: physicalAttempts === 1,
+        networkErrorCode: error?.code,
       }));
+      outbound.once?.("finish", () => mark("requestWritten"));
       outbound.setTimeout?.(binding.timeoutMs, () => {
-        outbound.destroy?.();
+        timeoutCause = "socket_inactivity";
         fail("PROVIDER_TRANSPORT_TIMEOUT", { requestMayHaveBeenSent: true });
+        outbound.destroy?.();
       });
       try { outbound.end(body); }
-      catch {
+      catch (error) {
         fail("PROVIDER_TRANSPORT_FAILED", {
           requestMayHaveBeenSent: physicalAttempts === 1,
+          networkErrorCode: error?.code,
         });
       }
     });

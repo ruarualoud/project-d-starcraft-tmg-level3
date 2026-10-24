@@ -1,4 +1,8 @@
 import { isDeepStrictEqual } from "node:util";
+import { createOfficialArmyBuilderQueryPortV1 } from
+  "../roster-strategist/army-builder-query-port-v1.mjs";
+import { projectCompetitiveMapRoomFreezeSummaryV1 } from
+  "../client-domain/competitive-map-admission-contract-v1.mjs";
 
 import { hashStarcraftTmgContract } from
   "../authoritative-engine/referee-crypto-v1.mjs";
@@ -94,10 +98,19 @@ import {
   compileOfficialCompetitiveMapTwoLayerV1,
   verifyOfficialCompetitiveMapRoomFreezeV1,
 } from "./official-competitive-map-two-layer-compiler-v1.mjs";
+import {
+  certifyAndFreezeOfficialCompetitiveMapSemanticRoomV1,
+  OFFICIAL_COMPETITIVE_MAP_SEMANTIC_ROOM_FREEZE_V1_SCHEMA,
+  verifyOfficialCompetitiveMapSemanticRoomFreezeV1,
+} from "./official-competitive-map-semantic-room-freeze-v1.mjs";
 import { createOfficialCompetitiveMapTabletopAdapterCatalogueV1 } from
   "./official-competitive-map-tabletop-adapter-v1.mjs";
 import { createOfficialCompetitiveMapSeedCatalogueV1 } from
   "./official-competitive-map-seed-catalogue-v1.mjs";
+import { compileOfficialPremadeMapRoomSourceV1, getOfficialPremadeMapRoomSeedV1 } from
+  "./official-premade-map-room-source-v1.mjs";
+import { createOfficialPremadeMapConfiguratorV1 } from
+  "./official-premade-map-configurator-v1.mjs";
 import { resolveOfficialStarcraft2MapGalleryArtAssetV1 } from
   "./official-starcraft-2-map-gallery-v1.mjs";
 import { createOfficialStandardActionRouteCatalogueV1 } from
@@ -215,7 +228,7 @@ function terrainBoardRows(artifacts, plan) {
       standableHorizontalSurface: entry.standableHorizontalSurface,
       elevationSurface: entry.standableHorizontalSurface,
       impassable: entry.terrainKind === "impassable",
-      blocksPlacement: source?.blocksPlacement
+      blocksPlacement: runtime?.blocksPlacement ?? source?.blocksPlacement
         ?? entry.terrainKind === "impassable",
       openings: clone(source?.openings || []),
       accessPoints: clone(source?.accessPoints || []),
@@ -383,6 +396,20 @@ export function buildOfficialRoomArmyAuditV1(bundle, sideKey, recipe,
     factionRecordKey: recipe.factionRecordKey,
     selectedTacticalCardRecordKeys: recipe.tacticalCardRecordKeys,
   });
+  if(recipe.nativeCandidateInput){
+    const candidate=recipe.nativeCandidateInput;
+    if(candidate.sideKey!==sideKey||candidate.scaleId!==scaleId||candidate.mineralBudget!==mineralBudget
+      ||candidate.factionRecordKey!==recipe.factionRecordKey
+      ||!isDeepStrictEqual(candidate.tacticalCardRecordKeys,recipe.tacticalCardRecordKeys)
+      ||!isDeepStrictEqual(candidate.units,recipe.units))
+      fail("STANDARD_ROOM_NATIVE_CANDIDATE_SCOPE_MISMATCH",sideKey);
+    const verdict=createOfficialArmyBuilderQueryPortV1({
+      unitCompositionUpgradeDataBundle:bundle}).evaluateRosterCandidate(candidate);
+    if(verdict.status!=="legal")throw Object.assign(
+      new Error("STANDARD_ROOM_NATIVE_CANDIDATE_REJECTED"),
+      {code:"STANDARD_ROOM_NATIVE_CANDIDATE_REJECTED",detail:verdict});
+    return requireRoomAuditSpend(verdict.audit,sideKey,mineralBudget,armySpendPolicy);
+  }
   const tacticalCardInstances = recipe.tacticalCardRecordKeys.map((recordKey, index) => {
     const profile = armyBundle.tacticalBudgetProfiles.find((entry) => (
       entry.recordKey === recordKey));
@@ -439,6 +466,10 @@ export function buildOfficialRoomArmyAuditV1(bundle, sideKey, recipe,
       unspentResourceDisposition: "lost", resourceConversionRequested: false,
     },
   });
+  return requireRoomAuditSpend(audit,sideKey,mineralBudget,armySpendPolicy);
+}
+
+function requireRoomAuditSpend(audit,sideKey,mineralBudget,armySpendPolicy) {
   const budgetResult = audit.armyResourceBudgetResult;
   if (armySpendPolicy === OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY) {
     if (!(budgetResult.mineralSpent > 0)
@@ -644,74 +675,132 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
     createOfficialBalancedTerrainRulesDataBundleV1({
       dataset, deploymentGeometryDataBundle: geometryBundle,
     });
-  const mapConfiguration = object(input.mapConfiguration)
+  const requestedMapConfiguration = object(input.mapConfiguration)
     ? clone(input.mapConfiguration) : null;
+  // Public native setup and internal frozen setup converge before the same
+  // Rules/task factory. Neither host nor roster workspace infers attributes.
+  const mapConfiguration = requestedMapConfiguration
+    && getOfficialPremadeMapRoomSeedV1(requestedMapConfiguration.seedId)
+    && !object(requestedMapConfiguration.semanticTerrain)
+    ? createOfficialPremadeMapConfiguratorV1().prepareRoomConfiguration(
+      requestedMapConfiguration, { roomId: input.roomId })
+    : requestedMapConfiguration;
   let competitiveMapCompilation = null;
   let competitiveMapRoomFreeze = null;
   let competitiveMapMetadata = null;
+  let semanticRoomFreezeResult = null;
   if (mapConfiguration) {
     const roomId = String(input.roomId || "").trim();
     if (!roomId) fail("STANDARD_ROOM_COMPETITIVE_MAP_ROOM_ID_REQUIRED");
-    const adapterCatalogue =
-      createOfficialCompetitiveMapTabletopAdapterCatalogueV1();
-    competitiveMapCompilation = compileOfficialCompetitiveMapTwoLayerV1({
-      adapterCatalogue,
-      seedId: mapConfiguration.seedId,
-      elementSelections: mapConfiguration.elementSelections || [],
-      passageSelections: mapConfiguration.passageSelections || [],
-    });
-    const seedEntry = createOfficialCompetitiveMapSeedCatalogueV1().seeds
-      .find((entry) => entry.seedId === competitiveMapCompilation.seedId);
-    if (!seedEntry) {
-      fail("STANDARD_ROOM_COMPETITIVE_MAP_GALLERY_ENTRY_MISSING",
-        competitiveMapCompilation.seedId);
-    }
-    const classicRestrictedVariant = competitiveMapCompilation.artLayer
-      .routeTreatments.some((entry) => (
-        entry.restrictionDisclosureRequired === true));
-    const artAsset = seedEntry.gameEra === "brood_war"
-      ? resolveOfficialBroodWarMapGalleryArtAssetV1(seedEntry.seedId, {
-        classicRestrictedVariant,
-      })
-      : resolveOfficialStarcraft2MapGalleryArtAssetV1(seedEntry.seedId);
-    competitiveMapMetadata = {
-      displayName: seedEntry.displayName,
-      gameEra: seedEntry.gameEra,
-      artAssetPath: artAsset.path,
-    };
-    competitiveMapRoomFreeze =
-      certifyAndFreezeOfficialCompetitiveMapForRoomV1({
-        adapterCatalogue,
-        compilation: competitiveMapCompilation,
-        roomId,
-        deploymentGeometryBinding: geometryBinding,
-        deploymentGeometryDataBundle: geometryBundle,
-        balancedTerrainRulesDataBundle,
+    const semanticTerrain = object(mapConfiguration.semanticTerrain)
+      ? mapConfiguration.semanticTerrain : null;
+    let adapterCatalogue;
+    if (getOfficialPremadeMapRoomSeedV1(mapConfiguration.seedId)) {
+      const source = compileOfficialPremadeMapRoomSourceV1({
+        seedId: mapConfiguration.seedId, semanticTerrain,
       });
+      adapterCatalogue = source.adapterCatalogue;
+      competitiveMapCompilation = source.compilation;
+      competitiveMapMetadata = source.metadata;
+    } else {
+      adapterCatalogue = createOfficialCompetitiveMapTabletopAdapterCatalogueV1();
+      competitiveMapCompilation = compileOfficialCompetitiveMapTwoLayerV1({
+        adapterCatalogue,
+        seedId: mapConfiguration.seedId,
+        elementSelections: mapConfiguration.elementSelections || [],
+        passageSelections: mapConfiguration.passageSelections || [],
+      });
+      const seedEntry = createOfficialCompetitiveMapSeedCatalogueV1().seeds
+        .find((entry) => entry.seedId === competitiveMapCompilation.seedId);
+      if (!seedEntry) {
+        fail("STANDARD_ROOM_COMPETITIVE_MAP_GALLERY_ENTRY_MISSING",
+          competitiveMapCompilation.seedId);
+      }
+      const classicRestrictedVariant = competitiveMapCompilation.artLayer
+        .routeTreatments.some((entry) => (
+          entry.restrictionDisclosureRequired === true));
+      const artAsset = seedEntry.gameEra === "brood_war"
+        ? resolveOfficialBroodWarMapGalleryArtAssetV1(seedEntry.seedId, {
+          classicRestrictedVariant,
+        })
+        : resolveOfficialStarcraft2MapGalleryArtAssetV1(seedEntry.seedId);
+      competitiveMapMetadata = {
+        displayName: seedEntry.displayName,
+        gameEra: seedEntry.gameEra,
+        artAssetPath: artAsset.path,
+      };
+    }
+    // Ticket 24 / Slice 254-R8-11: opt-in semantic-map terrain route. When
+    // the caller pins a registered semantic binding, the room freeze
+    // certifies the SAME-version semantic map terrain (authored art-true
+    // geometry) instead of the generic premade balanced-terrain layout,
+    // whose quadrant/centre/fire-lane invariants are category-specific to
+    // rectangular premade arrangements. The default path is byte-identical
+    // when `semanticTerrain` is absent.
+    if (semanticTerrain) {
+      semanticRoomFreezeResult =
+        certifyAndFreezeOfficialCompetitiveMapSemanticRoomV1({
+          adapterCatalogue,
+          compilation: competitiveMapCompilation,
+          roomId,
+          semanticTerrain,
+          dataset,
+          participantIds: [...SIDE_KEYS],
+          deploymentGeometryBinding: geometryBinding,
+          deploymentGeometryDataBundle: geometryBundle,
+          supersededTwoLayerFreezeCode: mapConfiguration
+            .supersededTwoLayerFreezeCode,
+        });
+      competitiveMapRoomFreeze = semanticRoomFreezeResult.freeze;
+      // The semantic Rules geometry is authored against this exact art
+      // revision, which may be newer than the seed gallery preview.
+      competitiveMapMetadata.artAssetPath = semanticTerrain.binding.art.assetPath;
+    } else {
+      competitiveMapRoomFreeze =
+        certifyAndFreezeOfficialCompetitiveMapForRoomV1({
+          adapterCatalogue,
+          compilation: competitiveMapCompilation,
+          roomId,
+          deploymentGeometryBinding: geometryBinding,
+          deploymentGeometryDataBundle: geometryBundle,
+          balancedTerrainRulesDataBundle,
+        });
+    }
   }
   const terrainPlan = clone(competitiveMapRoomFreeze?.setupPlan
     || input.terrainPlan || createOfficialStandard2000BalancedTerrainPlanV1());
-  const terrainArtifacts = certifyOfficialBalancedTerrainSetupV1({
-    deploymentGeometryBinding: geometryBinding,
-    deploymentGeometryDataBundle: geometryBundle,
-    balancedTerrainRulesDataBundle,
-    setupPlan: terrainPlan,
-  });
-  verifyOfficialBalancedTerrainArtifactsV1({ ...terrainArtifacts,
-    deploymentGeometryBinding: geometryBinding,
-    balancedTerrainRulesDataBundle,
-  });
-  if (competitiveMapRoomFreeze) {
-    verifyOfficialCompetitiveMapRoomFreezeV1(competitiveMapRoomFreeze, {
+  const terrainArtifacts = semanticRoomFreezeResult?.terrainArtifacts
+    || certifyOfficialBalancedTerrainSetupV1({
+      deploymentGeometryBinding: geometryBinding,
+      deploymentGeometryDataBundle: geometryBundle,
+      balancedTerrainRulesDataBundle,
+      setupPlan: terrainPlan,
+    });
+  if (semanticRoomFreezeResult) {
+    verifyOfficialCompetitiveMapSemanticRoomFreezeV1(
+      semanticRoomFreezeResult.freeze, {
+        deploymentGeometryBinding: geometryBinding,
+        deploymentGeometryDataBundle: geometryBundle,
+      });
+  } else {
+    verifyOfficialBalancedTerrainArtifactsV1({ ...terrainArtifacts,
       deploymentGeometryBinding: geometryBinding,
       balancedTerrainRulesDataBundle,
     });
+    if (competitiveMapRoomFreeze) {
+      verifyOfficialCompetitiveMapRoomFreezeV1(competitiveMapRoomFreeze, {
+        deploymentGeometryBinding: geometryBinding,
+        balancedTerrainRulesDataBundle,
+      });
+    }
   }
   const battlefieldMapManifest = createOfficialBattlefieldMapManifestV1({
     mapSeedId: competitiveMapCompilation?.seedId,
     mapDisplayName: competitiveMapMetadata?.displayName,
     mapGameEra: competitiveMapMetadata?.gameEra,
+    mapSourceFamily: competitiveMapMetadata?.mapSourceFamily,
     mapArtAssetPath: competitiveMapMetadata?.artAssetPath,
+    mapArtOverlays: mapConfiguration?.semanticTerrain?.binding?.art?.overlays,
     engagementScale: competitiveMapCompilation?.engagementScale,
     visualPresetId: competitiveMapCompilation?.artLayer.visualPresetId
       || input.visualPresetId,
@@ -863,24 +952,8 @@ export function createOfficialStandardRoomInitialStateAuthorityV1(input = {}) {
       deploymentImageUrl: draft.selectedDeployment.profile.frontUrl,
       mapSourceType: "official_current_deployment_card",
       battlefieldMapManifest,
-      competitiveMapRoomFreezeSummary: competitiveMapRoomFreeze ? {
-        schemaVersion: "starcraft_tmg_competitive_map_room_freeze_summary_v1",
-        seedId: competitiveMapRoomFreeze.seedId,
-        roomFreezeHash: competitiveMapRoomFreeze.roomFreezeHash,
-        compilationHash: competitiveMapRoomFreeze.compilationHash,
-        missionSpatialReachabilityAuditHash:
-          competitiveMapRoomFreeze.missionSpatialReachabilityAuditHash,
-        everyEntrySegmentUsable:
-          competitiveMapRoomFreeze.everyEntrySegmentUsable,
-        opposingSidesConnectedForEveryCurrentBase:
-          competitiveMapRoomFreeze.opposingSidesConnectedForEveryCurrentBase,
-        everyMissionMarkerAndQuarterReachableByAtLeastOneCurrentBase:
-          competitiveMapRoomFreeze
-            .everyMissionMarkerAndQuarterReachableByAtLeastOneCurrentBase,
-        mutationAfterRoomCreationAllowed: false,
-        backgroundRulesAuthority: false,
-        trainingTruth: false,
-      } : null,
+      competitiveMapRoomFreezeSummary:
+        projectCompetitiveMapRoomFreezeSummaryV1(competitiveMapRoomFreeze),
       terrain: terrainBoardRows(terrainArtifacts, terrainPlan),
       specialTerrainAgreement: terrainArtifacts.specialTerrainAgreement,
       terrainElevationAgreement,
@@ -1051,6 +1124,20 @@ export function verifyOfficialStandardRoomInitialStateAuthorityV1(authority) {
   const auditedUnits = SIDE_KEYS.flatMap((sideKey) => audits?.[sideKey]?.units || []);
   const auditedUnitIds = auditedUnits.map((unit) => unit.unitInstanceId);
   const pieceIds = state?.pieces?.map((piece) => piece.id);
+  // Ticket 24 / Slice 254-R8-11: semantic-map rooms carry authored map
+  // terrain (hundreds of cells) instead of the generic nine-piece balanced
+  // layout; the fixed nine-piece expectations apply only to the default
+  // route. The branch is keyed on the freeze schema; the default route is
+  // byte-identical.
+  const semanticRoomFreeze = state?.officialCompetitiveMapRoomFreeze?.schema
+    === OFFICIAL_COMPETITIVE_MAP_SEMANTIC_ROOM_FREEZE_V1_SCHEMA;
+  const expectedTerrainPieceCount = semanticRoomFreeze
+    ? state?.board?.terrain?.length : 9;
+  const terrainCertificateOk = semanticRoomFreeze
+    ? state?.officialBalancedTerrainSetupCertificate?.semanticTerrainCertified
+      === true
+    : state?.officialBalancedTerrainSetupCertificate?.balancedTerrainCertified
+      === true;
   if (!object(authority)
     || authority.schema !== OFFICIAL_STANDARD_ROOM_FACTORY_SCHEMA
     || (!unspentLost && authority.version !== OFFICIAL_STANDARD_ROOM_FACTORY_VERSION)
@@ -1060,16 +1147,18 @@ export function verifyOfficialStandardRoomInitialStateAuthorityV1(authority) {
     || state?.engagementScale !== "Standard"
     || state?.board?.widthInches !== 54 || state?.board?.heightInches !== 36
     || (unspentLost
-      ? (evidence?.armySpendPolicy !== OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY
-        || !Array.isArray(pieceIds)
-        || !auditedUnitIds.length
-        || !auditedUnitIds.every((id) => typeof id === "string" && id.length > 0)
-        || !isDeepStrictEqual([...pieceIds].sort(), [...auditedUnitIds].sort()))
-      : state?.pieces?.length !== 15 || evidence?.armySpendPolicy !== undefined)
+      ? evidence?.armySpendPolicy !== OFFICIAL_STANDARD_ROOM_UNSPENT_LOST_POLICY
+      : evidence?.armySpendPolicy !== undefined)
+    // Exact 2000 minerals does not imply the historical fixture's 15 units.
+    // Both policies bind every actual piece to the complete Rules-audited lists.
+    || !Array.isArray(pieceIds) || !auditedUnitIds.length
+    || !auditedUnitIds.every((id) => typeof id === "string" && id.length > 0)
+    || new Set(auditedUnitIds).size !== auditedUnitIds.length
+    || !isDeepStrictEqual([...pieceIds].sort(), [...auditedUnitIds].sort())
     || state.pieces.some((piece) => (
       piece.isOnField !== false || piece.isInReserves !== true))
-    || state?.officialBalancedTerrainSetupCertificate?.balancedTerrainCertified !== true
-    || state?.board?.terrain?.length !== 9
+    || !terrainCertificateOk
+    || state?.board?.terrain?.length !== expectedTerrainPieceCount
     || SIDE_KEYS.some((sideKey) => {
       const budget = state?.armyResourceBudgetsBySide?.[sideKey];
       const spent = evidence?.mineralSpentBySide?.[sideKey];
@@ -1095,7 +1184,7 @@ export function verifyOfficialStandardRoomInitialStateAuthorityV1(authority) {
       !== state?.officialBalancedTerrainSetupCertificate?.certificateHash
     || evidence?.battlefieldMapManifestHash
       !== state?.board?.battlefieldMapManifest?.manifestHash
-    || evidence?.balancedTerrainPieceCount !== 9
+    || evidence?.balancedTerrainPieceCount !== expectedTerrainPieceCount
     || evidence?.currentProductAbilityExactCount !== 252
     || evidence?.currentProductAbilityPendingCount !== 0
     || evidence?.currentProductUnitRecordCount !== 26
@@ -1120,12 +1209,21 @@ export function verifyOfficialStandardRoomInitialStateAuthorityV1(authority) {
       state.board.battlefieldMapManifest,
       state.officialCompetitiveMapRoomFreeze.setupPlan,
     );
-    verifyOfficialCompetitiveMapRoomFreezeV1(
-      state.officialCompetitiveMapRoomFreeze,
-      { deploymentGeometryBinding: state.officialDeploymentGeometryBinding,
-        balancedTerrainRulesDataBundle:
-          state.officialBalancedTerrainRulesDataBundle },
-    );
+    if (semanticRoomFreeze) {
+      verifyOfficialCompetitiveMapSemanticRoomFreezeV1(
+        state.officialCompetitiveMapRoomFreeze,
+        { deploymentGeometryBinding: state.officialDeploymentGeometryBinding,
+          deploymentGeometryDataBundle:
+            state.officialDeploymentGeometryDataBundle },
+      );
+    } else {
+      verifyOfficialCompetitiveMapRoomFreezeV1(
+        state.officialCompetitiveMapRoomFreeze,
+        { deploymentGeometryBinding: state.officialDeploymentGeometryBinding,
+          balancedTerrainRulesDataBundle:
+            state.officialBalancedTerrainRulesDataBundle },
+      );
+    }
   }
   verifyOfficialCurrentProductActionRuntimeCompositionV1(
     state, evidence.currentProductActionRuntimeComposition,

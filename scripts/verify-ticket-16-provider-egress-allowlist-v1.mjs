@@ -208,6 +208,11 @@ function createHttpsFixture(plans = [{}]) {
         response.destroy = () => { response.destroyed = true; };
         response.resume = () => {};
         callback(response);
+        if (plan.errorAfterHeaders) {
+          queueMicrotask(() => request.emit("error",
+            new Error("injected connection loss after headers")));
+          return;
+        }
         if (plan.hangAfterHeaders) return;
         if (response.destroyed) return;
         queueMicrotask(() => {
@@ -277,6 +282,23 @@ if (process.argv.includes("--timeout-phase-only")) {
     });
   }
   console.log(JSON.stringify({ ok: true, focusedChecks: 2,
+    providerCalls: 0, roomMutations: 0 }));
+  process.exit(0);
+}
+
+if (process.argv.includes("--transport-failed-progress-only")) {
+  const fixture = await fixtureTransport({ plans: [{ errorAfterHeaders: true }] });
+  await assert.rejects(completeFixture(fixture), (error) => {
+    assert.equal(error.code, "PROVIDER_TRANSPORT_FAILED");
+    assert.equal(error.safeReceipt.requestMayHaveBeenSent, true);
+    assert.equal(error.safeReceipt.status, 200);
+    assert.equal(error.safeReceipt.transportProgress?.phase,
+      "reading_response_body");
+    assert.equal(typeof error.safeReceipt.transportProgress
+      ?.milestonesMs?.responseHeaders, "number");
+    return true;
+  });
+  console.log(JSON.stringify({ ok: true, focusedChecks: 1,
     providerCalls: 0, roomMutations: 0 }));
   process.exit(0);
 }

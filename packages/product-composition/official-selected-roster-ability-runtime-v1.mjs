@@ -24,6 +24,10 @@ import { getOfficialModelBaseGeometryProfileV1 } from
 import { isOfficialCurrentProductUnitOnCreepV1 as
   isOfficialSelectedRosterUnitOnCreepV1 } from
   "./official-current-product-state-facts-v1.mjs";
+import {
+  allocateOfficialSingletonSummonPieceIdV1,
+  OFFICIAL_SINGLETON_SUMMON_IDENTITY_POLICY_V1,
+} from "./official-singleton-summon-identity-v1.mjs";
 
 export { isOfficialCurrentProductUnitOnCreepV1 as
   isOfficialSelectedRosterUnitOnCreepV1 } from
@@ -303,6 +307,29 @@ function sourceFeature(record, feature, index) {
     sourceTextHash: hashStarcraftTmgContract(feature),
   };
 }
+// A definition describes an implementation in this module, not a currently
+// fielded instance. The full source catalogue must see the same implemented
+// abilities even when a particular roster has no Kerrigan/Marine/faction card.
+// Actual action instances still come only from compileUnitRoutes/CardRoutes.
+export function createOfficialSelectedRosterAbilityImplementationBindingsV1(dataset) {
+  const rows = new Map();
+  for (const [recordKeys, field] of [[ORIGINAL_RECORD_KEYS, 'upgrades'], [CARD_RECORD_KEYS, 'boosts']]) {
+    for (const recordKey of recordKeys) {
+      const record = getOfficialCurrentProductRecord(dataset, recordKey);
+      for (const [index, feature] of (record.payload[field] || []).entries()) {
+        const key = `${recordKey}:${feature.name}`;
+        const capability = ACTIVE_SPECS.has(key) ? 'authoritative_action'
+          : PASSIVE_SPECS.has(key) ? 'automatic_consumer' : null;
+        if (!capability) continue;
+        const { sourceFeatureHash } = sourceFeature(record, feature, index);
+        rows.set(sourceFeatureHash, { sourceFeatureHash,
+          adapterId: OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_ID,
+          adapterVersion: OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION, capability });
+      }
+    }
+  }
+  return freezeDeep([...rows.values()].sort((a, b) => a.sourceFeatureHash.localeCompare(b.sourceFeatureHash)));
+}
 function compileUnitRoutes(dataset, state) {
   const routes = [];
   const passives = [];
@@ -430,12 +457,32 @@ export function createOfficialSelectedRosterAbilitySourceBundleV1(input = {}) {
     rulesTruth: "official_selected_roster_ability_source_binding",
     trainingTruth: false,
   };
+  const implementations = createOfficialSelectedRosterAbilityImplementationBindingsV1(dataset);
+  const instanceHashes = new Set([...routes, ...passiveBindings].map(row => row.sourceFeatureHash));
+  // Preserve old full-roster bundles byte-for-byte. Only a roster omitting an
+  // implemented feature needs the separate source-level ownership catalogue.
+  if (implementations.some(row => !instanceHashes.has(row.sourceFeatureHash))) {
+    body.implementationBindings = implementations;
+  }
   const bundle = seal(body, "bundleHash");
   verifyOfficialSelectedRosterAbilitySourceBundleV1(bundle);
   return bundle;
 }
 
 export function verifyOfficialSelectedRosterAbilitySourceBundleV1(bundle) {
+  const implementations = bundle?.implementationBindings;
+  if (implementations !== undefined && (!Array.isArray(implementations)
+    || new Set(implementations.map(row => row.sourceFeatureHash)).size !== implementations.length
+    || implementations.some(row => !/^[a-f0-9]{64}$/u.test(row.sourceFeatureHash)
+      || row.adapterId !== OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_ID
+      || row.adapterVersion !== OFFICIAL_SELECTED_ROSTER_ABILITY_RUNTIME_VERSION
+      || !['authoritative_action', 'automatic_consumer'].includes(row.capability))
+    || [...(bundle.routes || []).map(row => [row, 'authoritative_action']),
+      ...(bundle.passiveBindings || []).map(row => [row, 'automatic_consumer'])]
+      .some(([instance, capability]) => !implementations.some(row =>
+        row.sourceFeatureHash === instance.sourceFeatureHash && row.capability === capability)))) {
+    fail('SELECTED_ABILITY_IMPLEMENTATION_REGISTRY_MISMATCH');
+  }
   if (!object(bundle)
     || bundle.schema !== "starcraft_tmg_official_selected_roster_ability_source_bundle_v1"
     || bundle.semanticVersion !== "1.0.0"
@@ -877,7 +924,12 @@ function applyStimpack(state, route, action, events) {
 export function projectOfficialOmegaWormPieceV1(state, sideKey, coordinate) {
   const template = state.officialSelectedRosterAbilitySourceBundle.omegaWormTemplate;
   const point = coordinate;
-  const pieceId = `${sideKey}-omega-worm`;
+  // Preserve frozen legacy transitions. The explicit v6 runtime owns the new
+  // identity policy, so replaying an old summon cannot silently change its ID.
+  const baseId = `${sideKey}-omega-worm`;
+  const pieceId = state.officialSingletonSummonIdentityPolicy
+    === OFFICIAL_SINGLETON_SUMMON_IDENTITY_POLICY_V1
+    ? allocateOfficialSingletonSummonPieceIdV1(state, baseId) : baseId;
   if (!object(point) || !Number.isFinite(Number(point.xMilliInches))
     || !Number.isFinite(Number(point.yMilliInches))) {
     fail("SELECTED_ABILITY_OMEGA_PLACEMENT_REQUIRED");

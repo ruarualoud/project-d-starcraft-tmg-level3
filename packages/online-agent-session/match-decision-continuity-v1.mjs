@@ -19,6 +19,8 @@ const QUERYABLE_EVENT_KINDS = Object.freeze(new Set([
   "opponent_response_observed",
   "prediction_calibration",
   "counter_response_used",
+  // A typed recovery observation, never an accepted game action/outcome.
+  "rules_repair_branch_opened",
   "initiative_observation",
 ]));
 
@@ -218,6 +220,38 @@ function compactOpponentResponse(entry) {
     .map((field) => [field, clone(entry[field])]));
 }
 
+function planStatementLineage(records, scope, activePlan) {
+  if (!activePlan?.payload?.planId
+    || !Array.isArray(activePlan.payload.strategicApproach)) return null;
+  const planId = activePlan.payload.planId;
+  const history = records.filter(entry => entry.scopeKey === scope.scopeKey
+    && ["turn_plan", "plan_revision"].includes(entry.kind)
+    && entry.payload?.planId === planId
+    && entry.sequence <= activePlan.sequence).sort((a, b) =>
+    b.sequence - a.sequence);
+  return {
+    schemaVersion: "starcraft_tmg_plan_statement_lineage_v1",
+    source: "same_match_plan_journal",
+    planId,
+    field: "plan.strategicApproach",
+    // The origin dates the narrator's words; it does not certify their truth.
+    statements: [...new Set(strings(activePlan.payload.strategicApproach))]
+      .map(text => {
+        let origin = null;
+        for (const entry of history) {
+          if (!strings(entry.payload?.strategicApproach).includes(text)
+            || !entry.authority) break;
+          origin = entry;
+        }
+        return origin ? { text, originRecordId: origin.recordId,
+          originRecordHash: origin.recordHash,
+          originAuthority: clone(origin.authority) } : null;
+      }).filter(Boolean),
+    rulesAuthority: false,
+    trainingTruth: false,
+  };
+}
+
 function workingMemoryProjection(records, scope, authority, target) {
   const activePlan = activePlanRecord(records);
   const reflection = latest(records, "plan_reflection");
@@ -255,6 +289,7 @@ function workingMemoryProjection(records, scope, authority, target) {
     overallPlan: compactRecord(activePlan, [
       "planId", "objective", "currentGoal", "status", "revisionReason",
     ]),
+    planStatementLineage: planStatementLineage(records, scope, activePlan),
     currentGoal,
     planAssessment: compactRecord(reflection, [
       "verdict", "health", "continuitySummary", "currentGoal",
@@ -269,8 +304,9 @@ function workingMemoryProjection(records, scope, authority, target) {
       recentOutcomes: outcomes.slice(-Math.min(target, 4)).map((entry) =>
         compactRecord(entry, [
           "candidateId", "intentId", "unitId", "outcome", "result",
-          "purposeAchieved", "receiptHash", "postStateRevision",
-        ])),
+          "purposeAchieved", "resultSummary", "observedSignals",
+          "planImpact", "receiptHash", "postStateRevision",
+        ], { observedSignals: 8 })),
       sourceOfRemainingAvailability:
         "current_rules_projection_or_query_required",
     },

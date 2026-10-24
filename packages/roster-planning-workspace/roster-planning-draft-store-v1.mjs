@@ -1,10 +1,11 @@
 // Ticket 27 / Slice 271 — file-backed draft store for the roster-planning
 // workspace. Persists one JSON document per planning session so completed
 // sessions, retained sanitized public deliberation replies and manual
-// override history survive server restarts (resumable drafts). The store
-// holds no credentials, no raw Provider payloads and no Room state; every
-// record carries trainingTruth:false. Writes are atomic (tmp + rename) and
-// file-per-session, mode 0o600.
+// override history survive server restarts (resumable drafts). Completed but
+// unparseable Provider output text is retained privately for diagnosis; full
+// Provider response envelopes, credentials and Room state are not stored.
+// Every record carries trainingTruth:false. Writes are atomic (tmp + rename)
+// and file-per-session, mode 0o600.
 
 import { mkdir, open, readFile, readdir, rename, rm, writeFile } from
   "node:fs/promises";
@@ -16,7 +17,7 @@ import { hashStarcraftTmgContract } from
 
 export const ROSTER_PLANNING_DRAFT_STORE_MODULE =
   "packages/roster-planning-workspace/roster-planning-draft-store-v1.mjs";
-export const ROSTER_PLANNING_DRAFT_STORE_VERSION = "1.0.0";
+export const ROSTER_PLANNING_DRAFT_STORE_VERSION = "1.0.1";
 export const ROSTER_PLANNING_SESSION_SCHEMA =
   "starcraft_tmg_roster_workspace_session_v1";
 
@@ -29,10 +30,6 @@ function fail(code, detail = "") {
 
 function object(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function clone(value) {
-  return value === undefined ? undefined : structuredClone(value);
 }
 
 export function createRosterPlanningDraftStoreV1(input = {}) {
@@ -53,25 +50,29 @@ export function createRosterPlanningDraftStoreV1(input = {}) {
       mode: 0o700 });
   }
 
-  async function save(session) {
+  async function save(session, options = {}) {
     if (!object(session) || session.schema !== ROSTER_PLANNING_SESSION_SCHEMA
       || !SESSION_ID_PATTERN.test(String(session.sessionId || ""))
       || session.trainingTruth !== false) {
       fail("ROSTER_WORKSPACE_DRAFT_RECORD_INVALID");
     }
-    await ensureReady();
     const target = sessionPath(session.sessionId);
     const temporary = path.join(directory, "drafts",
       `.${session.sessionId}.${randomBytes(6).toString("hex")}.tmp`);
+    // Capture the immutable bytes and matching hash before yielding. This is
+    // the ownership boundary; a second full-history deep clone adds no safety.
+    const payload = `${JSON.stringify(session, null, options.compact === true ? 0 : 2)}\n`;
+    const recordHash = options.includeRecordHash === false ? null
+      : hashStarcraftTmgContract(session);
+    await ensureReady();
     const handle = await open(temporary, "w", 0o600);
     try {
-      await handle.writeFile(`${JSON.stringify(session, null, 2)}\n`, "utf8");
+      await handle.writeFile(payload, "utf8");
     } finally {
       await handle.close();
     }
     await rename(temporary, target);
-    return { path: target,
-      recordHash: hashStarcraftTmgContract(clone(session)) };
+    return { path: target, recordHash };
   }
 
   async function load(sessionId) {
@@ -132,8 +133,10 @@ export function createRosterPlanningDraftStoreV1(input = {}) {
       module: ROSTER_PLANNING_DRAFT_STORE_MODULE,
       version: ROSTER_PLANNING_DRAFT_STORE_VERSION,
       filePerSessionAtomicWrite: true,
+      capturesCallTimeSnapshot: true,
       holdsNoCredentials: true,
       holdsNoRawProviderPayloads: true,
+      retainsUnparseableOutputTextPrivately: true,
       holdsNoRoomState: true,
       trainingTruth: false,
     }),

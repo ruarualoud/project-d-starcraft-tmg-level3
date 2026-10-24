@@ -22,14 +22,18 @@ function statusFor(error) {
   if (Number.isSafeInteger(error?.httpStatus)) return error.httpStatus;
   const code = String(error?.code || "");
   if (/NOT_FOUND/u.test(code)) return 404;
-  if (/UNAVAILABLE/u.test(code)) return 503;
-  if (/BUSY|RUNNING|ALREADY_PLANNED|NOT_PLANNED|NOT_RUNNING|MISSING/u
+  if (/UNAVAILABLE|STARTUP_FAILED|PROCESS_FAILED/u.test(code)) return 503;
+  if (/BUSY|RUNNING|ALREADY_PLANNED|NOT_PLANNED|NOT_RUNNING|MISSING|RECOVERY_REQUIRED/u
     .test(code)) return 409;
   return 400;
 }
 
 export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
   const service = input.service;
+  const iterativeJourney = input.iterativeJourney || null;
+  const decisionJourney = input.decisionJourney || null;
+  const launchRoom = input.launchRoom || null;
+  const launchPresetRoom = input.launchPresetRoom || null;
   if (typeof service?.descriptor !== "function"
     || typeof service?.startPlanning !== "function") {
     throw Object.assign(new Error("ROSTER_WORKSPACE_HTTP_SERVICE_INVALID"),
@@ -73,7 +77,75 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
       // (never a credential, never a Room handle).
       if (method === "GET" && segments.length === 1
         && segments[0] === "health") {
-        return ok({ descriptor: service.descriptor() });
+        return ok({ descriptor: { ...service.descriptor(),
+          iterativeJourney: iterativeJourney?.descriptor() || null,
+          decisionJourney: decisionJourney?.descriptor() || null,
+          roomLaunchAvailable: typeof launchRoom === "function" } });
+      }
+      if(segments[0]==='workflows'){
+        if(!decisionJourney)return rejected(503,'ROSTER_DECISION_JOURNEY_UNAVAILABLE');
+        if(segments.length===1){
+          if(method==='GET')return ok({workflows:await decisionJourney.list()});
+          if(method==='POST')return ok({workflow:await decisionJourney.create(body)},201);
+        }
+        const id=segments[1];
+        if(segments.length===2&&method==='GET')return ok({workflow:await decisionJourney.read(id)});
+        if(segments.length===3){
+          if(method==='POST'&&segments[2]==='accept')return ok(await decisionJourney.accept(id,body));
+          if(method==='POST'&&segments[2]==='run')return ok({workflow:await decisionJourney.start(id)},202);
+          if(method==='POST'&&segments[2]==='recover-provider')return ok(await decisionJourney.recoverProvider(id,body),202);
+          if(method==='POST'&&segments[2]==='recover-comparison')return ok(await decisionJourney.recoverComparison(id,body),202);
+          if(method==='POST'&&segments[2]==='reconsider-capabilities')return ok(await decisionJourney.reconsiderCapabilities(id,body),202);
+          if(method==='POST'&&segments[2]==='handoff-no-progress')return ok(await decisionJourney.handoffNoProgress(id,body),202);
+          if(method==='POST'&&segments[2]==='pause')return ok({workflow:await decisionJourney.pause(id)});
+          if(method==='GET'&&segments[2]==='trace')return ok({trace:await decisionJourney.trace(id)});
+          if(method==='GET'&&segments[2]==='conditional-experiences')
+            return ok({experiences:await decisionJourney.conditionalExperiences(id,query.q??'')});
+        }
+        if(segments.length===4&&method==='GET'){
+          if(segments[2]==='trace')return ok({trace:await decisionJourney.readTrace(id,segments[3])});
+          if(segments[2]==='evidence')return ok({evidence:await decisionJourney.readEvidence(id,Number(segments[3]))});
+        }
+        return rejected(404,'ROSTER_WORKSPACE_ROUTE_UNKNOWN');
+      }
+      if (segments[0] === "iterative") {
+        if (!iterativeJourney) {
+          return rejected(503, "ROSTER_WORKSPACE_ITERATIVE_UNAVAILABLE");
+        }
+        if (segments.length === 2 && segments[1] === "sessions") {
+          if (method === "GET") {
+            return ok({ journeys: await iterativeJourney.list() });
+          }
+          if (method === "POST") {
+            return ok({ journey: await iterativeJourney.create(
+              body.setup || body) }, 201);
+          }
+        }
+        if (segments.length === 3 && segments[1] === "sessions"
+          && method === "GET") {
+          return ok({ journey: await iterativeJourney.read(segments[2]) });
+        }
+        if (segments.length === 4 && segments[1] === "sessions"
+          && segments[3] === "experience" && method === "GET") {
+          return ok({ experience: await iterativeJourney.exportExperience(segments[2]) });
+        }
+        if (segments.length === 4 && segments[1] === "sessions"
+          && method === "POST") {
+          if (segments[3] === "launch-room") {
+            if (typeof launchRoom !== "function") {
+              return rejected(503, "ROSTER_WORKSPACE_ROOM_LAUNCH_UNAVAILABLE");
+            }
+            return ok({ match: await launchRoom(segments[2]) }, 201);
+          }
+          if (segments[3] === "run") {
+            return ok({ journey: await iterativeJourney.run(segments[2], body) },
+              202);
+          }
+          if (segments[3] === "pause") {
+            return ok({ journey: await iterativeJourney.pause(segments[2]) });
+          }
+        }
+        return rejected(404, "ROSTER_WORKSPACE_ROUTE_UNKNOWN");
       }
       if (method === "GET" && segments.length === 1
         && segments[0] === "catalogue") {
@@ -115,7 +187,20 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
       }
       if (sessionMatch && segments.length === 3) {
         const operation = segments[2];
+        if (method === "GET" && operation === "experience") {
+          return ok({ experience: service.readPlanningExperience(sessionMatch) });
+        }
         if (method !== "POST") return rejected(405, "METHOD_NOT_ALLOWED");
+        if (operation === 'launch-room') {
+          if (typeof launchPresetRoom !== 'function') return rejected(503, 'ROSTER_WORKSPACE_ROOM_LAUNCH_UNAVAILABLE');
+          return ok({ match: await launchPresetRoom(sessionMatch) }, 201);
+        }
+        if (operation === 'run') {
+          return ok({ session: await service.runPresetJourney(sessionMatch, body) }, 202);
+        }
+        if (operation === "teach-framework") {
+          return ok({ session: await service.teachPlanFramework(sessionMatch, body) }, 202);
+        }
         if (operation === "generate") {
           // Asynchronous: 202 returns the running projection immediately;
           // the client polls GET /sessions/:id for round progress.
@@ -127,6 +212,9 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
         if (operation === "cancel") {
           return ok({ session: await service.cancelPlanning(sessionMatch) });
         }
+        if (operation === "pause") {
+          return ok({ session: await service.pausePlanning(sessionMatch) });
+        }
         if (operation === "revise") {
           return ok({ session: await service.revisePlan(sessionMatch, body) },
             202);
@@ -135,14 +223,29 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
           return ok({ session: await service.reviewFinalPlan(sessionMatch,
             body) }, 202);
         }
+        if (operation === "repair-reviewed") {
+          return ok({ session: await service.repairReviewedPlan(sessionMatch,
+            body) }, 202);
+        }
+        if (operation === "reconcile-dispatch") {
+          return ok(await service.reconcileProviderDispatch(sessionMatch));
+        }
         if (operation === "override") {
           return ok({
             session: await service.applyManualOverride(sessionMatch, body),
           });
         }
+        if (operation === "budget-branches") {
+          return ok({ budgetBranches: service.readBudgetBranches(
+            sessionMatch, body) });
+        }
         if (operation === "lock-and-replan") {
           return ok({ session: await service.createLockedReplanSession(
             sessionMatch) }, 201);
+        }
+        if (operation === "replan-fixed") {
+          return ok({ session: await service.createLockedReplanSession(
+            sessionMatch, { strategicReplan: true, reasonText: body.reasonText }) }, 201);
         }
         if (operation === "export") {
           return ok({ export: service.exportSession(sessionMatch) });
@@ -162,7 +265,7 @@ export function createRosterPlanningWorkspaceHttpAdapterV1(input = {}) {
       module: ROSTER_PLANNING_WORKSPACE_HTTP_MODULE,
       apiPrefix: ROSTER_PLANNING_WORKSPACE_API_PREFIX,
       version: ROSTER_PLANNING_WORKSPACE_HTTP_VERSION,
-      exposesRoomMutationRoutes: false,
+      exposesRoomMutationRoutes: typeof launchRoom === "function",
       exposesCredentialRoutes: false,
       additiveMountOnly: true,
       descriptorHash: hashStarcraftTmgContract({

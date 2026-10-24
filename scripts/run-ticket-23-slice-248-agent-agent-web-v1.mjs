@@ -9,6 +9,8 @@ import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 
 import { chromium } from "playwright";
+import { captureOwnedLiveElementV1, captureOwnedLivePageV1 } from
+  "../packages/online-agent-session/owned-live-capture-v1.mjs";
 
 import { isStarcraftTmgTransientControlPlaneReadFailureV1,
   readStarcraftTmgDurableAgentActionBoundaryV1 } from
@@ -17,14 +19,20 @@ import { isStarcraftTmgHistoricalResumeFindingV1 } from
   "../packages/online-agent-session/decision-recovery-policy-v1.mjs";
 import { advanceCompletedDriveProgressV1 } from
   "../packages/online-agent-session/completed-drive-progress-v1.mjs";
+import { resolveTicket23AgentAgentInteractionModeV1 } from
+  "./support/ticket23-agent-agent-resume-interaction-mode-v1.mjs";
+import { resolveTicket23VersionedCostAncestryV1 } from
+  "./support/ticket23-agent-agent-cost-ancestry-v1.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SERVER = path.join(ROOT,
   "scripts/serve-ticket-23-slice-248-agent-agent-web-v1.mjs");
-const MAX_ACTIONS = 180;
-const MATCH_TIMEOUT_MS = 10 * 60 * 60_000;
+const MAX_ACTIONS = 512;
+const MATCH_TIMEOUT_MS = 36 * 60 * 60_000;
 const SEATS = Object.freeze(["player1", "player2"]);
 const BLOCKING_SEVERITIES = new Set(["Critical", "High"]);
+const COST_WINDOW_LEDGER = path.join(ROOT, "docs",
+  "ticket-23-slice-248-per-room-cost-window-v1-2026-09-28.json");
 
 function ensure(condition, code, details = {}) {
   if (!condition) throw Object.assign(new Error(code), { code, ...details });
@@ -37,6 +45,10 @@ function sleep(milliseconds) {
 function safeName(value) {
   return String(value || "action").replace(/[^a-z0-9_-]+/giu, "-")
     .replace(/^-+|-+$/gu, "").slice(0, 80) || "action";
+}
+
+function isRuntimeCostArgument(entry) {
+  return entry === "--no-cost-limit" || entry.startsWith("--per-room-budget-cny=");
 }
 
 function findingKey(finding = {}) {
@@ -143,8 +155,14 @@ async function writeJsonAtomic(filename, value, mode = 0o600) {
   await rename(temporary, filename);
 }
 
-async function startServer(resumeDirectory = null, fork = null) {
+async function startServer(resumeDirectory = null, fork = null,
+  providerInteractionMode = "native_tools",
+  allowFailedInteractionModeMigration = false, pregameArgs = []) {
   const child = spawn(process.execPath, [SERVER,
+    `--provider-interaction-mode=${providerInteractionMode}`,
+    ...pregameArgs,
+    ...(allowFailedInteractionModeMigration
+      ? ["--allow-failed-interaction-mode-migration"] : []),
     ...(resumeDirectory ? [
       `--resume-directory=${resumeDirectory}`,
       "--retry-provider-on-resume",
@@ -200,7 +218,9 @@ async function startServer(resumeDirectory = null, fork = null) {
           === "ticket23_slice248_standard_2000_aa_live_entry_v1") {
           finish(resolve)(parsed);
         } else if (parsed.schemaVersion
-          === "ticket23_slice248_fork_start_progress_v1") {
+          === "ticket23_slice248_fork_start_progress_v1"
+          || parsed.schemaVersion
+            === "ticket27_slice272_pregame_startup_progress_v1") {
           refreshTimeout();
           process.stdout.write(`${line}\n`);
         } else process.stdout.write(`${line}\n`);
@@ -285,10 +305,54 @@ function durableActionBoundary(runDirectory, previous) {
 }
 
 async function main() {
+  const budgetArgument = process.argv.find((entry) =>
+    entry.startsWith("--per-room-budget-cny="));
+  const noticeArgument = process.argv.find((entry) =>
+    entry.startsWith("--cost-notice-step-cny="));
+  const perRoomBudgetCnyMicros = process.argv.includes("--no-cost-limit") || !budgetArgument
+    ? null : Number(budgetArgument.slice("--per-room-budget-cny=".length)) * 1_000_000;
+  const noticeStepCnyMicros = Number(noticeArgument
+    ? noticeArgument.slice("--cost-notice-step-cny=".length) : 100) * 1_000_000;
+  ensure((perRoomBudgetCnyMicros === null || (Number.isSafeInteger(perRoomBudgetCnyMicros)
+    && perRoomBudgetCnyMicros > 0)) && Number.isSafeInteger(noticeStepCnyMicros)
+    && noticeStepCnyMicros > 0, "SLICE248_COST_POLICY_INVALID");
+  const interactionModeArgument = process.argv.find((entry) =>
+    entry.startsWith("--provider-interaction-mode="));
+  const allowFailedInteractionModeMigration = process.argv.includes(
+    "--allow-failed-interaction-mode-migration");
   const resumeArgument = process.argv.find((entry) =>
     entry.startsWith("--resume-directory="));
   const resumeDirectory = resumeArgument
     ? path.resolve(resumeArgument.slice("--resume-directory=".length)) : null;
+  const attachedEntryArgument = process.argv.find((entry) =>
+    entry.startsWith("--attach-entry-file="));
+  const attachedEntryFile = attachedEntryArgument
+    ? path.resolve(attachedEntryArgument.slice("--attach-entry-file=".length))
+    : null;
+  ensure(!attachedEntryFile || resumeDirectory,
+    "SLICE248_ATTACHED_HOST_REQUIRES_RESUME");
+  const reconcileOnly = process.argv.includes("--reconcile-only");
+  ensure(!reconcileOnly || (resumeDirectory && attachedEntryFile),
+    "SLICE248_RECONCILE_ONLY_REQUIRES_ATTACHED_ORIGINAL_ROOM");
+  const pregameArgs = process.argv.filter((entry) =>
+    isRuntimeCostArgument(entry)
+    || entry.startsWith("--pregame-agent-selected-iterative-session-id=")
+    || entry.startsWith("--pregame-agent-selected-teach-session-id=")
+    || entry.startsWith("--pregame-agent-selected-admission-manifest=")
+    || entry.startsWith("--pregame-roster-session-id=")
+    || entry.startsWith("--current-product-runtime-variant=")
+    || entry.startsWith("--pregame-map-configuration-file=")
+    || entry.startsWith("--pregame-map-configuration-json="));
+  const providerInteractionMode = resolveTicket23AgentAgentInteractionModeV1({
+    resumeDirectory,
+    requestedMode: interactionModeArgument
+      ? interactionModeArgument.slice("--provider-interaction-mode=".length)
+      : null,
+    allowFailedInteractionModeMigration,
+  });
+  ensure(!allowFailedInteractionModeMigration
+    || providerInteractionMode === "json_channels_v1",
+  "SLICE248_INTERACTION_MIGRATION_MODE_INVALID");
   const forkSourceArgument = process.argv.find((entry) =>
     entry.startsWith("--fork-source-directory="));
   const forkSourceDirectory = forkSourceArgument
@@ -300,6 +364,12 @@ async function main() {
     ? Number(forkRevisionArgument.split("=")[1]) : null;
   ensure(!(resumeDirectory && forkSourceDirectory),
     "SLICE265_FORK_AND_RESUME_MUTUALLY_EXCLUSIVE");
+  // A room budget applies to both new games and ordinary same-room recovery.
+  // Forwarding it to the Host must not classify a resume as pregame planning.
+  const hasPregameConfiguration = pregameArgs.some((entry) =>
+    !isRuntimeCostArgument(entry));
+  ensure(!hasPregameConfiguration || (!resumeDirectory && !forkSourceDirectory),
+    "SLICE272_PREGAME_MODE_CANNOT_RESUME_OR_FORK");
   ensure(!forkSourceDirectory || Number.isSafeInteger(forkThroughRevision)
     && forkThroughRevision > 0, "SLICE265_FORK_REVISION_INVALID");
   const checkpointArgument = process.argv.find((entry) =>
@@ -328,7 +398,10 @@ async function main() {
   const browserReads = [];
   const pendingBrowserReads = new Map();
   let screenshotCount = 0;
-  let nextCostNotificationCnyMicros = 100_000_000;
+  let nextCostNotificationCnyMicros = noticeStepCnyMicros;
+  let costWindowBaselineCnyMicros = 0;
+  let sourceCostAtVersionedForkCnyMicros = 0;
+  let costStreamRootRoomId = null;
   let server = null;
   let browser = null;
   let page = null;
@@ -367,8 +440,10 @@ async function main() {
     const allFindings = findings(result);
     const ignoredForExplicitResume = allFindings.filter((finding) =>
       isStarcraftTmgHistoricalResumeFindingV1(finding, {
-        allowExistingRetryableFinding: options.allowExistingRetryableFinding,
+        allowExistingRetryableFinding:
+          options.allowExistingRetryableFinding ?? entry?.resumed === true,
         startedAt,
+        providerProjection: result.providers?.[finding.seatKey],
       }));
     const ignoredKeys = new Set(ignoredForExplicitResume.map(findingKey));
     const blocking = allFindings.filter((finding) =>
@@ -380,18 +455,25 @@ async function main() {
       if (!mediumFindings.some((entryValue) => JSON.stringify(entryValue)
         === JSON.stringify(finding))) mediumFindings.push(finding);
     }
-    const cost = Number(result.usage?.estimatedCostCnyMicros || 0);
+    const branchCost = Number(result.usage?.estimatedCostCnyMicros || 0);
+    const cost = branchCost + sourceCostAtVersionedForkCnyMicros;
     while (cost >= nextCostNotificationCnyMicros) {
       process.stdout.write(`${JSON.stringify({
         event: "cost_notification",
         ticket: 23,
         slice: 248,
-        thresholdCny: nextCostNotificationCnyMicros / 1_000_000,
+        roomId: entry.roomId,
+        costStreamSourceRoomId: costStreamRootRoomId
+          || entry.versionedRulesFork?.sourceRoomId || entry.roomId,
+        thresholdCny: (nextCostNotificationCnyMicros
+          - costWindowBaselineCnyMicros) / 1_000_000,
         currentEstimatedCostCny: cost / 1_000_000,
+        incrementalEstimatedCostCny: Math.max(0,
+          cost - costWindowBaselineCnyMicros) / 1_000_000,
       })}\n`);
-      nextCostNotificationCnyMicros += 100_000_000;
+      nextCostNotificationCnyMicros += noticeStepCnyMicros;
     }
-    ensure(cost <= 160_000_000, "SLICE248_AA_BUDGET_EXCEEDED", {
+    ensure(perRoomBudgetCnyMicros === null || cost <= perRoomBudgetCnyMicros, "SLICE248_AA_BUDGET_EXCEEDED", {
       costCny: cost / 1_000_000,
     });
     return result;
@@ -432,6 +514,20 @@ async function main() {
       totalUnits: manifestValue?.usage?.totalUnits || 0,
       estimatedCostCny: Number(
         manifestValue?.usage?.estimatedCostCnyMicros || 0) / 1_000_000,
+      costStreamSourceRoomId: costStreamRootRoomId
+        || entry?.versionedRulesFork?.sourceRoomId || entry?.roomId || null,
+      sourceCostAtVersionedForkCny:
+        sourceCostAtVersionedForkCnyMicros / 1_000_000,
+      costStreamCurrentEstimatedCostCny: (
+        Number(manifestValue?.usage?.estimatedCostCnyMicros || 0)
+        + sourceCostAtVersionedForkCnyMicros) / 1_000_000,
+      costWindowBaselineCny: costWindowBaselineCnyMicros / 1_000_000,
+      incrementalEstimatedCostCny: Math.max(0,
+        Number(manifestValue?.usage?.estimatedCostCnyMicros || 0)
+          + sourceCostAtVersionedForkCnyMicros
+          - costWindowBaselineCnyMicros) / 1_000_000,
+      nextIncrementalNoticeCny: (nextCostNotificationCnyMicros
+        - costWindowBaselineCnyMicros) / 1_000_000,
       round: manifestValue?.state?.round ?? null,
       phase: manifestValue?.state?.phase ?? null,
       strategyEvidence: summarizeStrategyEvidence(actions),
@@ -510,39 +606,47 @@ async function main() {
     const filename = `${String(screenshotCount).padStart(4, "0")}-r${
       String(revision ?? "x").padStart(3, "0")}-${safeName(seatKey)}-${
       safeName(actionType)}-${safeName(phase)}.png`;
-    await page.screenshot({
-      path: path.join(outputDirectory, "screenshots", filename),
-      fullPage: true,
-    });
+    const started = performance.now();
+    let result;
+    try {
+      result = await captureOwnedLivePageV1({ page,
+        path: path.join(outputDirectory, "screenshots", filename) });
+    } finally {
+      observeTiming("capture_page", started, { revision, phase,
+        recoveryWarning: result?.warning || null });
+    }
     return `screenshots/${filename}`;
   }
 
   async function captureElement(locator, seatKey, actionType, revision,
     evidenceKind, phase = "applied") {
     await settleBattlefieldVisuals();
-    const target = locator.first();
-    await target.waitFor({ state: "visible", timeout: 30_000 });
-    await target.scrollIntoViewIfNeeded();
     screenshotCount += 1;
     const filename = `${String(screenshotCount).padStart(4, "0")}-r${
       String(revision ?? "x").padStart(3, "0")}-${safeName(seatKey)}-${
       safeName(actionType)}-${safeName(evidenceKind)}-${safeName(phase)}.png`;
-    await target.screenshot({
-      path: path.join(outputDirectory, "screenshots", filename),
-    });
-    return `screenshots/${filename}`;
+    const captured = await captureOwnedLiveElementV1({ page, locator,
+      path: path.join(outputDirectory, "screenshots", filename) });
+    return { screenshot: `screenshots/${filename}`,
+      captureMode: captured.captureMode, warning: captured.warning };
   }
 
   async function captureReviewViews(seatKey, actionType, revision,
     phase = "applied") {
+    const board = await captureElement(
+      page.locator('[aria-label^="战场；"], [aria-label^="Battlefield;"]'),
+      seatKey, actionType, revision, "complete-board", phase);
+    const control = await captureElement(
+      page.getByTestId("agent-agent-match-control"), seatKey, actionType,
+      revision, "agent-control", phase);
     return {
-      boardScreenshot: await captureElement(
-        page.locator('[aria-label^="战场；"], [aria-label^="Battlefield;"]'),
-        seatKey, actionType,
-        revision, "complete-board", phase),
-      controlScreenshot: await captureElement(
-        page.getByTestId("agent-agent-match-control"), seatKey, actionType,
-        revision, "agent-control", phase),
+      boardScreenshot: board.screenshot,
+      controlScreenshot: control.screenshot,
+      boardScreenshotCaptureMode: board.captureMode,
+      controlScreenshotCaptureMode: control.captureMode,
+      screenshotWarnings: [board.warning && { ...board.warning, view: "board" },
+        control.warning && { ...control.warning, view: "agent_control" }]
+        .filter(Boolean),
     };
   }
 
@@ -630,8 +734,12 @@ async function main() {
     ensure(boundary?.atomicBoundarySatisfied === true
       && boundary.disposition === "restart_control_plane_without_replay",
     "SLICE248_DURABLE_BOUNDARY_NOT_RECOVERABLE", { boundary });
+    ensure(!attachedEntryFile, "SLICE248_ATTACHED_HOST_RECOVERY_REQUIRED", {
+      boundary,
+    });
     await stopServer(server?.child);
-    server = await startServer(outputDirectory);
+    server = await startServer(outputDirectory, null,
+      providerInteractionMode, allowFailedInteractionModeMigration);
     entry = server.entry;
     await page.goto(entry.url, { waitUntil: "networkidle", timeout: 60_000 });
     await page.getByText(/已连接权威房间|Authoritative room connected/u)
@@ -651,10 +759,19 @@ async function main() {
 
   async function driveOne(previous, matchDeadline) {
     const previousCount = actionCount(previous);
+    const submissionStartedAt = Date.now();
     let result = null;
     let submissionTransportFailure = null;
     try {
       const button = page.getByTestId("agent-agent-drive-next");
+      if (!await button.isVisible()) {
+        // Product play now uses continuous auto-drive. The exact-one-action
+        // acceptance control is intentionally tucked into the detail panel;
+        // opening it is UI-only and must not submit another Room action.
+        await page.getByRole("button", { name:
+          /展开或收起 Agent 控制台详情|Toggle Agent control details/u })
+          .click({ timeout: 30_000 });
+      }
       await button.waitFor({ state: "visible", timeout: 60_000 });
       await button.click({ timeout: 30_000 });
       result = { ok: true, job: null, triggeredBy: "product_web_ui" };
@@ -697,6 +814,10 @@ async function main() {
         jobId = status.job.jobId;
       }
       if (!jobId) {
+        // The browser click starts an asynchronous POST. A status poll can
+        // overtake that POST before the server registers its durable job.
+        // Never click again on this observation; wait for the same job ID.
+        if (Date.now() - submissionStartedAt < 20_000) continue;
         throw Object.assign(new Error(
           "SLICE248_DRIVE_SUBMISSION_NOT_OBSERVED"), {
           code: "SLICE248_DRIVE_SUBMISSION_NOT_OBSERVED",
@@ -726,12 +847,80 @@ async function main() {
   }
 
   try {
-    server = await startServer(resumeDirectory, forkSourceDirectory ? {
-      sourceDirectory: forkSourceDirectory,
-      throughRevision: forkThroughRevision,
-    } : null);
+    if (attachedEntryFile) {
+      const attachedEntry = JSON.parse(await readFile(attachedEntryFile, "utf8"));
+      const origin = new URL(attachedEntry.origin);
+      ensure(attachedEntry.schemaVersion
+        === "ticket23_slice248_standard_2000_aa_live_entry_v1"
+        // Attach owns no server startup. A ready fresh host is as attachable
+        // as a resumed one; the live manifest below verifies its Room identity.
+        && typeof attachedEntry.resumed === "boolean"
+        && path.resolve(attachedEntry.dataDirectory) === resumeDirectory
+        && origin.protocol === "http:"
+        && ["127.0.0.1", "localhost"].includes(origin.hostname)
+        && new URL(attachedEntry.url).origin === origin.origin,
+      "SLICE248_ATTACHED_HOST_ENTRY_INVALID");
+      server = { child: null, entry: attachedEntry, stderr: () => "",
+        processState: { ownership: "external", exitObserved: false } };
+    } else {
+      server = await startServer(resumeDirectory, forkSourceDirectory ? {
+        sourceDirectory: forkSourceDirectory,
+        throughRevision: forkThroughRevision,
+      } : null, providerInteractionMode, allowFailedInteractionModeMigration,
+      pregameArgs);
+    }
     entry = server.entry;
     outputDirectory = path.resolve(entry.dataDirectory);
+    let costWindowLedger = null;
+    if (existsSync(COST_WINDOW_LEDGER)) {
+      try {
+        const parsed = JSON.parse(readFileSync(COST_WINDOW_LEDGER, "utf8"));
+        if (parsed.schemaVersion
+          !== "ticket23_slice248_per_room_cost_window_v1") {
+          throw new Error("SLICE248_COST_WINDOW_INVALID");
+        }
+        costWindowLedger = parsed;
+      } catch (error) {
+        process.stdout.write(`${JSON.stringify({
+          event: "cost_window_reporting_warning",
+          code: String(error?.message || "SLICE248_COST_WINDOW_UNREADABLE")
+            .startsWith("SLICE248_") ? error.message
+            : "SLICE248_COST_WINDOW_UNREADABLE",
+          roomId: entry.roomId,
+          matchExecutionBlocked: false,
+        })}\n`);
+      }
+    }
+    // Monetary ancestry is mandatory and independent of optional notice
+    // configuration. Never silently reset paid costs when a window is absent.
+    const ancestry = entry.versionedRulesFork
+      ? resolveTicket23VersionedCostAncestryV1({
+        targetDirectory: outputDirectory,
+        targetRoomId: entry.roomId,
+        sourceRoomId: entry.versionedRulesFork.sourceRoomId,
+        rooms: costWindowLedger?.rooms || {},
+      }) : null;
+    sourceCostAtVersionedForkCnyMicros = Math.round(
+      (ancestry?.inheritedCostCny || 0) * 1_000_000);
+    costStreamRootRoomId = ancestry?.rootRoomId || entry.roomId;
+    const roomWindow = ancestry?.roomWindow
+      || Object.values(costWindowLedger?.rooms || {}).find((room) =>
+        room?.roomId === entry.roomId);
+    if (roomWindow) {
+      const baseline = roomWindow.baselineEstimatedCostCny;
+      const nextNotice = noticeArgument
+        ? noticeStepCnyMicros / 1_000_000 : roomWindow.nextIncrementalNoticeCny;
+      if (Number.isFinite(baseline) && baseline >= 0
+        && Number.isFinite(nextNotice) && nextNotice > 0) {
+        costWindowBaselineCnyMicros = Math.round(baseline * 1_000_000);
+        nextCostNotificationCnyMicros = costWindowBaselineCnyMicros
+          + Math.round(nextNotice * 1_000_000);
+      } else process.stdout.write(`${JSON.stringify({
+        event: "cost_window_reporting_warning", code: "SLICE248_COST_WINDOW_INVALID",
+        roomId: entry.roomId, matchExecutionBlocked: false,
+        inheritedCostPreserved: true,
+      })}\n`);
+    }
     await mkdir(path.join(outputDirectory, "screenshots"), {
       recursive: true, mode: 0o700,
     });
@@ -804,8 +993,21 @@ async function main() {
     const context = await browser.newContext({
       viewport: { width: 1500, height: 1050 },
       locale: "zh-CN", reducedMotion: "reduce",
+      ...(reconcileOnly ? { serviceWorkers: "block" } : {}),
     });
     page = await context.newPage();
+    const blockedMutationRequests = [];
+    if (reconcileOnly) {
+      await page.route("**/*", (route) => {
+        const request = route.request();
+        if (!["GET", "HEAD", "OPTIONS"].includes(request.method())) {
+          blockedMutationRequests.push({ method: request.method(),
+            pathname: new URL(request.url()).pathname });
+          return route.abort("blockedbyclient");
+        }
+        return route.continue();
+      });
+    }
     page.on("request", (request) => {
       const url = new URL(request.url());
       if (url.origin !== entry.origin || !["fetch", "xhr"].includes(
@@ -841,17 +1043,29 @@ async function main() {
     let current = await manifest(60_000, {
       allowExistingRetryableFinding: entry.resumed === true,
     });
+    ensure(!attachedEntryFile || current.room?.roomId === entry.roomId,
+      "SLICE248_ATTACHED_HOST_ROOM_MISMATCH");
     ensure(current.coverage?.engagementScale === "Standard",
       "SLICE248_NOT_STANDARD_SCALE");
     ensure(current.coverage?.mineralSpentBySide?.player1 === 2000
       && current.coverage?.mineralSpentBySide?.player2 === 2000,
     "SLICE248_NOT_2000_POINT_ARMIES");
-    ensure(current.coverage?.selectedUnitCount === 15
-      && current.coverage?.terrainPieceCount === 9,
+    // Unit count belongs to the admitted rosters. The fixed pair has 15,
+    // while an Agent-selected exact-2000 roster can have a different count.
+    ensure(Number.isSafeInteger(current.coverage?.selectedUnitCount)
+      && current.coverage.selectedUnitCount >= 2
+      && Number(current.coverage?.terrainPieceCount) > 0
+      && current.coverage.terrainPieceCount
+        === current.map?.rulesTerrainPieceCount,
     "SLICE248_ROOM_CONTENT_DENOMINATOR_MISMATCH");
-    ensure(current.map?.mapSeedId === "sc1_lost_temple_v1"
+    ensure(current.map?.mapSeedId === current.coverage?.mapSeedId
       && current.map?.mapRoomFreezeHash
-      && current.map?.missionSpatialReachabilityAuditHash,
+      && current.map?.missionSpatialReachabilityAuditHash
+      && current.map.mapRoomFreezeHash
+        === current.map.roomFreezeSummary?.roomFreezeHash
+      && current.map.missionSpatialReachabilityAuditHash
+        === current.map.roomFreezeSummary?.missionSpatialReachabilityAuditHash
+      && current.map.roomFreezeSummary?.everyEntrySegmentUsable === true,
     "SLICE248_CERTIFIED_MAP_FREEZE_MISSING", { map: current.map });
     ensure(current.isolation?.independentBotStores === true
       && current.isolation?.independentMatchDecisionJournals === true
@@ -863,16 +1077,62 @@ async function main() {
     ensure(current.orchestrator?.experimentCell?.experimentId
       === "ticket23-standard-2000-agent-agent-live-v1"
       && current.orchestrator?.experimentCell?.scenario?.mapId
-        === "sc1_lost_temple_v1"
+        === current.map?.mapSeedId
       && Object.values(current.orchestrator?.experimentCell?.scenario
         ?.rosterIdsBySeat || {}).every((value) => /^[a-f0-9]{64}$/u.test(value)),
     "SLICE248_FORMAL_EXPERIMENT_METADATA_MISMATCH", {
       experimentCell: current.orchestrator?.experimentCell || null,
     });
+    ensure(!reconcileOnly || (!["running", "pausing"].includes(
+      current.autoDrive?.status) && !["queued", "running"].includes(
+      current.driveJob?.status)), "SLICE248_RECONCILE_REQUIRES_IDLE_HOST");
+    const recordedActionCountBeforeReconcile = actions.length;
     await capture("room", "connected", current.room?.stateRevision ?? 0,
       "initial");
-    const initialRecordedActionCount = actions.length;
     await recordUnseen(current);
+    if (reconcileOnly) {
+      const after = await manifest();
+      const authorityUnchanged = ["roomId", "stateRevision", "stateHash",
+        "journalHeadHash", "acceptedReceiptCount"].every((key) =>
+        after.room?.[key] === current.room?.[key]);
+      ensure(authorityUnchanged
+        && JSON.stringify(after.usage) === JSON.stringify(current.usage),
+      "SLICE248_RECONCILE_CHANGED_AUTHORITY_OR_USAGE");
+      ensure(actions.length === Number(after.room?.acceptedReceiptCount)
+        && new Set(actions.map((row) => row.receiptHash)).size === actions.length,
+      "SLICE248_RECONCILE_RECEIPT_DENOMINATOR_MISMATCH");
+      ensure(blockedMutationRequests.length === 0 && pageErrors.length === 0,
+        "SLICE248_RECONCILE_BROWSER_WRITE_OR_PAGE_ERROR", {
+          blockedMutationRequests, pageErrors,
+        });
+      const reconciliation = {
+        schema: "ticket23_slice248_web_evidence_reconciliation_v1",
+        ticket: 23, slice: 248, ok: true, roomId: entry.roomId,
+        reconciledAt: new Date().toISOString(),
+        stateRevision: after.room.stateRevision,
+        stateHash: after.room.stateHash,
+        journalHeadHash: after.room.journalHeadHash,
+        previouslyRecordedActionCount: recordedActionCountBeforeReconcile,
+        recordedActionCount: actions.length, screenshotCount,
+        reconciledReceiptHashes: actions.slice(recordedActionCountBeforeReconcile)
+          .map((row) => row.receiptHash),
+        authorityUnchanged, providerUsageUnchanged: true,
+        newAcceptedActions: 0, newProviderCalls: 0,
+        browserWriteRequests: 0, matchContinued: false,
+        terminal: after.state?.terminal === true || after.state?.gameOver === true,
+        eligibleForTraining: false, trainingTruth: false,
+      };
+      await writeJsonAtomic(path.join(outputDirectory, "reconciliation.json"),
+        reconciliation, 0o600);
+      await progress("paused", { manifest: after, roomId: entry.roomId,
+        reconciliation: "reconciliation.json", matchContinued: false });
+      process.stdout.write(`${JSON.stringify(reconciliation)}\n`);
+      return;
+    }
+    // A resumed run may have an authoritative action that predates this
+    // runner's local NDJSON mirror. Reconcile first; only later actions are
+    // "additional" for a checkpoint request.
+    const initialRecordedActionCount = actions.length;
     await progress("running", { manifest: current, roomId: entry.roomId });
     const checkpointTargetActionCount = checkpointAfterAdditionalActions === null
       ? null : initialRecordedActionCount + checkpointAfterAdditionalActions;
@@ -902,12 +1162,16 @@ async function main() {
       completedDriveProgress = advanceCompletedDriveProgressV1(completedDriveProgress, {
         stateRevision: Number(current.room?.stateRevision || 0),
         actionCount: actionCount(current),
+        driveJob: current.driveJob,
       });
       await recordUnseen(current, {
         pageScreenshot: preActionScreenshot,
         ...preActionReviewViews,
       });
       await progress("running", { manifest: current, roomId: entry.roomId });
+      if (completedDriveProgress.retryAfterMs > 0) {
+        await sleep(completedDriveProgress.retryAfterMs);
+      }
     }
     if ((checkpointTargetActionCount !== null
         && actions.length >= checkpointTargetActionCount)
@@ -1126,7 +1390,8 @@ async function main() {
           filename), timeout: 10_000 });
         failureScreenshot = filename;
       } catch {}
-      await writeJsonAtomic(path.join(outputDirectory, "failure.json"), {
+      await writeJsonAtomic(path.join(outputDirectory, reconcileOnly
+        ? "reconciliation-failure.json" : "failure.json"), {
         schema: "ticket23_slice248_agent_agent_web_failure_v1",
         ok: false, ticket: 23, slice: 248,
         code: String(error?.code || error?.name || "SLICE248_UNHANDLED_FAILURE"),
@@ -1152,8 +1417,12 @@ async function main() {
         pageErrors,
         failedAt: new Date().toISOString(),
       }, 0o600);
-      await progress("failed", { manifest: lastManifest,
-        failureCode: String(error?.code || error?.name), failureScreenshot });
+      await progress(reconcileOnly ? "paused" : "failed", { manifest: lastManifest,
+        ...(reconcileOnly
+          ? { reconciliationFailureCode: String(error?.code || error?.name),
+            matchContinued: false }
+          : { failureCode: String(error?.code || error?.name) }),
+        failureScreenshot });
     }
     throw error;
   } finally {
