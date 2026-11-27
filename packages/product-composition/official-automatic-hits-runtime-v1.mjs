@@ -151,6 +151,8 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
     const parent = pending(current);
     if (parent?.stage !== 'ready' || !isDeepStrictEqual(readyAction(current, parent), action)) fail('AUTOMATIC_HITS_ACTION_STALE');
     return { targets: parent.automaticHits.targetUnitIds.map(id => targetContext(current, parent, id)),
+      ...(sourceAuthority?.owns(parent)&&sourceAuthority.reactionContextFor
+        ?{reactionActivationContext:sourceAuthority.reactionContextFor(current,parent)}:{}),
       ...(reactionTiming(parent) ? { reactionTiming: reactionTiming(parent) } : {}),
       precision: 0, automaticHits: clone(parent.automaticHits), sourcePlanHash: parent.sourcePlanHash };
   }
@@ -285,6 +287,8 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
       const opened = openOfficialSelectedRosterDamageReceivedWindowV1(current, damageSource, {
         targetPieceId: row.targetUnitId, incomingDamage: row.resolution.totalDamage, enemyReactionAllowed: true,
         outsideActivation: reactionTiming(parent) === 'outside_activation',
+        ...(sourceAuthority?.owns(parent)&&sourceAuthority.reactionContextFor
+          ?{activationContext:sourceAuthority.reactionContextFor(current,parent)}:{}),
       });
       if (!opened) continue;
       const next = clone(opened.state);
@@ -320,7 +324,7 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
         hitRolls: resolved?.rolls ?? [], armourRolls: [], surgeRolls: [], evadeRolls: resolved?.evadeRolls ?? [],
         ...(resolved ? { phaseEndRoll: resolved } : {}), sourcePlanHash: parent.sourcePlanHash }, 'resolutionHash');
       return { targetUnitId, targetProfile, resolution,
-        casualtyDomain: createOfficialCurrentProductCasualtyDomainV1({ targetPiece: target, targetProfile,
+        casualtyDomain: createOfficialCurrentProductCasualtyDomainV1({ state:current,targetPiece: target, targetProfile,
           nonLethalStandardDamagePolicy: current.officialNonLethalStandardDamagePolicy, incomingDamage: totalDamage,
           visibleModelIds: liveModels(target).map(model => model.id), engagementGraph: graph,
           attackResolutionHash: resolution.resolutionHash, rulesRuntimeHash: current.officialMissionRuntimeDescriptor.runtimeHash }) };
@@ -349,7 +353,7 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
     });
     row.resolution = seal({ ...rolled, reactionDamagePool: damagePool,
       damageReactionResolutionHash: consumed.projection.resolutionHash }, 'resolutionHash');
-    row.casualtyDomain = createOfficialCurrentProductCasualtyDomainV1({ targetPiece: target, targetProfile: row.targetProfile,
+    row.casualtyDomain = createOfficialCurrentProductCasualtyDomainV1({ state:current,targetPiece: target, targetProfile: row.targetProfile,
       nonLethalStandardDamagePolicy: current.officialNonLethalStandardDamagePolicy,
       incomingDamage: rolled.totalDamage, damagePoolReduction: damagePool,
       visibleModelIds: liveModels(target).map(model => model.id), engagementGraph: deriveOfficialEngagementGraphV2(current),
@@ -431,7 +435,7 @@ export function createOfficialAutomaticHitsRuntimeV1({ sourceBundle, state, incl
         ...(evadeReaction ? { evadeReactionModifier: evadeReaction } : {}),
         damagePerDie: parent.automaticHits.damagePerHit, totalDamage }, 'resolutionHash');
       return { targetUnitId: target.id, targetProfile, resolution,
-        casualtyDomain: createOfficialCurrentProductCasualtyDomainV1({ targetPiece: target, targetProfile,
+        casualtyDomain: createOfficialCurrentProductCasualtyDomainV1({ state:currentInput,targetPiece: target, targetProfile,
           nonLethalStandardDamagePolicy: currentInput.officialNonLethalStandardDamagePolicy,
           incomingDamage: totalDamage, visibleModelIds: liveModels(target).map(model => model.id),
           engagementGraph: graph, attackResolutionHash: resolution.resolutionHash,

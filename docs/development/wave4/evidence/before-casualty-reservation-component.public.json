@@ -1,0 +1,42 @@
+{
+  "schema": "starcraft_tmg_wave4_before_casualty_reservation_component_v1",
+  "status": "passed_component_only",
+  "results": [
+    {
+      "phase": "assault",
+      "originalCasualties": 2,
+      "nestedCasualties": 1,
+      "remainingModels": 3,
+      "postDamageMarker": 2,
+      "originalChoicePreserved": true,
+      "nestedDamagePreserved": true,
+      "duplicateResumeRejected": true,
+      "sourceDefinitionsCompiled": 2,
+      "declaredReactionPaymentBM": 1,
+      "declaredReactionHits": 2
+    },
+    {
+      "phase": "combat",
+      "originalCasualties": 2,
+      "nestedCasualties": 1,
+      "remainingModels": 3,
+      "postDamageMarker": 2,
+      "originalChoicePreserved": true,
+      "nestedDamagePreserved": true,
+      "duplicateResumeRejected": true,
+      "sourceDefinitionsCompiled": 2,
+      "declaredReactionPaymentBM": 1,
+      "declaredReactionHits": 2
+    }
+  ],
+  "frozenNativeCasualtyDomainHashUnchanged": true,
+  "declaredDamageBatches": true,
+  "nativeActions": 0,
+  "detonationPaymentAndHitsWiring": false,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "requiredNewAtoms": 18,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

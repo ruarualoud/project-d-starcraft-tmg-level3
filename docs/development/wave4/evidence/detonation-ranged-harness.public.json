@@ -1,0 +1,56 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_ranged_harness_v1",
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    {
+      "route": "fact_probe_prompt",
+      "mode": "offline_contract_verification",
+      "invoked": false,
+      "modelCalls": 0
+    }
+  ],
+  "harnessToolsCalled": [
+    "actual_roster_factory",
+    "native_ranged_hit_and_defence",
+    "defender_casualty_selection",
+    "before_destruction_reservation",
+    "legalSpace",
+    "preview",
+    "explicit_human_confirmation",
+    "BM_reaction_payment",
+    "automatic_hits_pools",
+    "original_resolution_resume",
+    "idempotency_reapply",
+    "cold_replay",
+    "seat_recovery_exchange"
+  ],
+  "uiTraceEvidence": [
+    "docs/development/wave4/evidence/detonation-ranged-web.public.json",
+    "docs/development/wave4/evidence/detonation-marine-mobile.png"
+  ],
+  "agentDecisionEvidence": {
+    "status": "not_applicable",
+    "modelCalls": 0
+  },
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "exact_source_and_cost_required",
+    "policy_absent_preserves_old_native_contract",
+    "unadmitted_multi_target_parent_rejected",
+    "saved_dice_and_casualty_selection_reused",
+    "reserved_models_excluded_from_nested_allocation",
+    "partial_ranged_host_does_not_complete_new_atom_or_Wave4"
+  ],
+  "userVisibleChecks": [
+    "Detonation_paid_before_models_removed",
+    "original_attacker_can_die_and_original_attack_still_finishes",
+    "same_original_resolution_hash_after_HITS",
+    "explicit_human_confirmation_and_two_seat_recovery"
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

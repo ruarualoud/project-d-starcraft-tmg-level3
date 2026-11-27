@@ -1,0 +1,71 @@
+{
+  "schema": "starcraft_tmg_wave4_before_casualty_compat_v1",
+  "status": "passed_scoped",
+  "legacyResults": [
+    {
+      "id": "marine-infection",
+      "roomId": "wave4-infantry-marine-infection",
+      "originalSignedActions": 4,
+      "runtimeHash": "7115a32dda8d74f70dd0ee030cf35224e9f89a93825816d5a7159bae7de8f2a3",
+      "stateHash": "8523497c58ddca57ff6e549015a3fab80bc9f9e141b1744a6c0453413fe62fce",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "newActions": 0
+    },
+    {
+      "id": "medic-reduces-non-lethal",
+      "roomId": "wave4-munitions-medic-reduces-non-lethal",
+      "originalSignedActions": 6,
+      "runtimeHash": "7dabdba388bc52015d8fb0276a05c9555167cce47cc9824ee860b371484cd8a2",
+      "stateHash": "b5a2dd7ddf4230a5ba75fb19a4604cbcccfd69335ae36494e421d110000bab7d",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "newActions": 0
+    },
+    {
+      "id": "warden-round",
+      "roomId": "wave4-stukov-warden-round",
+      "originalSignedActions": 20,
+      "runtimeHash": "d56d4ca83537e6d0f6497da2274620a4afe27e1aa3bf3fea4d880c142c5a4809",
+      "stateHash": "d0f83e66375f038a27aa8505564420a696b854365f2fd0fc5f824c5cae26abfd",
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "newActions": 0
+    }
+  ],
+  "rangedHostAudits": [
+    {
+      "id": "marine-use",
+      "oneOriginalAttack": true,
+      "originalChoicePreserved": true,
+      "originalResolutionHash": "d1ca26d38b9d4513150da45583c1d4006863444fdfaffc92497bba2855dc2832",
+      "attackerSupplyLossEntries": 1,
+      "attackerDestroyed": true,
+      "newActions": 0
+    },
+    {
+      "id": "marine-decline",
+      "oneOriginalAttack": true,
+      "originalChoicePreserved": true,
+      "originalResolutionHash": "979fbc44239a2f0593b137af777008658cd154d536843da3876018d454e26264",
+      "attackerSupplyLossEntries": 0,
+      "attackerDestroyed": false,
+      "newActions": 0
+    },
+    {
+      "id": "trooper-use",
+      "oneOriginalAttack": true,
+      "originalChoicePreserved": true,
+      "originalResolutionHash": "893354de49724e3a37467fbee2c453984b13ff11b2bb7afb4176cff09d1c7a6f",
+      "attackerSupplyLossEntries": 0,
+      "attackerDestroyed": false,
+      "newActions": 0
+    }
+  ],
+  "nativeActionsAdded": 0,
+  "otherDetonationHostsPending": true,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

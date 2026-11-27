@@ -275,7 +275,7 @@
     }
   ],
   "next": [
-    "W4-02：实现两条 Detonation 的伤亡前反应、HITS 及原攻击恢复；继续 Stukov 其余能力和新卡。",
+    "W4-02：扩展Detonation至近战／HITS、双方嵌套及其他移除入口；继续Stukov其余能力和新卡。",
     "继续其余12个需实现合同及其他新增单位／势力；撤回Archon独占3个合同不计18。39来源隔离与估算几何保持。",
     "完成 W4-03 整版发布／Builder／大厅／媒体及 W4-04 的500／2000分 Web 双席。"
   ],
@@ -1958,7 +1958,7 @@
       "fullMatchAdmission": false
     }
   ],
-  "executionStatus": "infantry_15_definitions_and_repeated_activation_scoped_verified_full_Wave4_in_progress",
+  "executionStatus": "Detonation_ranged_host_native_and_Web_verified_other_hosts_in_progress",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -2490,5 +2490,84 @@
     "geometryAuthority": "conditional_engineering_images",
     "fullWave4Admission": false,
     "sourceHeldDefinitions": 39
-  }
+  },
+  "detonationWorkInProgress": {
+    "status": "ranged_host_verified_other_hosts_pending",
+    "sourceDefinitionsCompiled": 2,
+    "nativeCases": 3,
+    "nativeSignedActions": 16,
+    "webRooms": 2,
+    "webSignedActions": 8,
+    "legacyColdReplayCases": 3,
+    "legacyOriginalActions": 30,
+    "newGameAtomsImplemented": 0,
+    "cumulativeImplementedAtoms": 6,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/before-casualty-reservation-component.public.json",
+      "docs/development/wave4/evidence/detonation-ranged-host.public.json",
+      "docs/development/wave4/evidence/before-casualty-compat.public.json",
+      "docs/development/wave4/evidence/detonation-ranged-web.public.json",
+      "docs/development/wave4/evidence/detonation-ranged-harness.public.json"
+    ],
+    "workbenchRef": "docs/development/wave4/detonation-continuation-workbench.zh-CN.md",
+    "multiTargetParentAndNestedPending": true,
+    "otherDamageAndRemovalHostsPending": true,
+    "fullMatchAdmission": false
+  },
+  "partialRuntimeVerificationByDefinition": [
+    {
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "classification": "new_semantics",
+      "requiredAtomId": "rule-atom:wave4/before-casualty-batch-detonation@1",
+      "sourceCompiled": true,
+      "rangedHostVerified": true,
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false,
+      "webRangedSuccessorVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+          "exportName": "createOfficialBeforeCasualtyRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+          "exportName": "resumeOfficialSelectedRosterRangedBeforeCasualtyV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/before-casualty-reservation-component.public.json",
+        "docs/development/wave4/evidence/detonation-ranged-host.public.json",
+        "docs/development/wave4/evidence/before-casualty-compat.public.json",
+        "docs/development/wave4/evidence/detonation-ranged-web.public.json",
+        "docs/development/wave4/evidence/detonation-ranged-harness.public.json"
+      ]
+    },
+    {
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "classification": "new_semantics",
+      "requiredAtomId": "rule-atom:wave4/before-casualty-batch-detonation@1",
+      "sourceCompiled": true,
+      "rangedHostVerified": true,
+      "allConsumersVerified": false,
+      "fullAtomAdmission": false,
+      "webRangedSuccessorVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+          "exportName": "createOfficialBeforeCasualtyRuntimeV1"
+        },
+        {
+          "file": "packages/product-composition/official-selected-roster-ranged-action-runtime-v1.mjs",
+          "exportName": "resumeOfficialSelectedRosterRangedBeforeCasualtyV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/before-casualty-reservation-component.public.json",
+        "docs/development/wave4/evidence/detonation-ranged-host.public.json",
+        "docs/development/wave4/evidence/before-casualty-compat.public.json",
+        "docs/development/wave4/evidence/detonation-ranged-web.public.json",
+        "docs/development/wave4/evidence/detonation-ranged-harness.public.json"
+      ]
+    }
+  ]
 }

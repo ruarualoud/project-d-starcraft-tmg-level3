@@ -54,6 +54,7 @@ export const OFFICIAL_REACTION_FAMILY_WINDOW_SCHEMA =
 
 const SIDE_KEYS = new Set(["player1", "player2"]);
 const TRIGGER_KINDS = new Set([
+  'before_casualty_batch',
   "ability_cost_payment",
   "after_charge_roll",
   "after_place",
@@ -672,6 +673,7 @@ const LEGACY_REVIEWED_REACTION_COMPONENTS_V2 = Object.freeze({
 // identity and exact source text remain independent from the frozen Wave3 rows.
 const REVIEWED_REACTION_COMPONENTS_V2 = Object.freeze({
   ...LEGACY_REVIEWED_REACTION_COMPONENTS_V2,
+  ...OFFICIAL_DETONATION_REACTION_COMPONENTS_V1,
   ...Object.fromEntries(WAVE4_REACTION_REVISIONS.map(({ previousDefinitionId, definitionId, sourceText }) =>
     [definitionId, Object.freeze({ ...LEGACY_REVIEWED_REACTION_COMPONENTS_V2[previousDefinitionId], sourceText })])),
 });
@@ -858,6 +860,7 @@ const REACTION_RECIPIENT_ROLES = Object.freeze({
   overwatch_ranged_attack: "source_unit",
   refresh_after_friendly_supply_loss: "source_unit",
   infestation_transfer: "source_unit",
+  before_casualty_detonation: "source_unit",
 });
 function reactionRecipient(state, window, route, instance) {
   const role = REACTION_RECIPIENT_ROLES[route.effectKind];
@@ -895,6 +898,10 @@ function routeEligible(state, window, route, instance) {
   const { role: virusRecipientRole, recipient: virusRecipient } = reactionRecipient(state, window, route, instance);
   if (!allowsOfficialInfestationReactionV1(state, { sideKey: instance.sideKey, sourcePieceId: source?.id,
     recipientPieceId: virusRecipientRole === 'payment_reference' ? null : virusRecipient?.id, abilityName: route.abilityName })) return false;
+  if(route.effectKind==='before_casualty_detonation'){
+    if(source?.id!==target?.id)return false;
+    inspectOfficialDetonationFactsV1(state,source,route,window.context);return true;
+  }
   if (route.effectKind === 'infestation_transfer') {
     return resolveOfficialInfestationTransferTargetsV1(state, window.context, source).length > 0;
   }
@@ -1137,6 +1144,7 @@ function domainFor(state, window, route, instance, paymentCardInstanceIds,
         sameNamedReactionPerSourceUnitPerRound: !/\bREPEATABLE\b/iu.test(route.sourceText),
       } : {}),
       sourceRouteHash: route.routeHash,
+      ...(route.effectKind==='before_casualty_detonation'?{detonation:inspectOfficialDetonationFactsV1(state,instance.sourcePiece,route,window.context)}:{}),
       resourceCostsByChoice: { default: clone(resourceCost) } },
     executorId: OFFICIAL_REACTION_FAMILY_ADAPTER_ID,
     executorVersion: OFFICIAL_REACTION_FAMILY_ADAPTER_VERSION,
@@ -1570,6 +1578,9 @@ function reactionEffect(route, state, window, action) {
   } else if (route.effectKind === "reserve_entry_hits") {
     effect.automaticHits = route.automaticHits;
     effect.damagePerHit = route.damagePerHit;
+  } else if (route.effectKind === 'before_casualty_detonation') {
+    const facts=inspectOfficialDetonationFactsV1(state,source,route,window.context);
+    Object.assign(effect,{automaticHits:facts.hits,damagePerHit:facts.damagePerHit,detonationFacts:facts});
   } else if (route.effectKind === "evade_roll_modifier") {
     effect.evadeModifier = route.evadeModifier;
   } else if (route.effectKind === "followup_move_towards_attacker") {
@@ -1999,3 +2010,5 @@ export function createOfficialReactionFamilyAdapterV1(bundle, { afterApply } = {
       consumeOfficialReactionFamilyResolutionV1(state, request.triggerHash)),
   });
 }
+import {OFFICIAL_DETONATION_REACTION_COMPONENTS_V1} from '../source-data/official-detonation-source-v1.mjs';
+import {inspectOfficialDetonationFactsV1} from './official-detonation-facts-v1.mjs';

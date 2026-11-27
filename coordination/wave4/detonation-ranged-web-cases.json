@@ -1,0 +1,4 @@
+[
+ {"id":"marine-use","definitionId":"unit:infested_marine/detonation-any-phase@1","requiredPendingKey":"officialBeforeCasualtyContinuations","flow":"detonation-ranged"},
+ {"id":"trooper-use","definitionId":"unit:infested_trooper/detonation-any-phase@1","requiredPendingKey":"officialBeforeCasualtyContinuations","flow":"detonation-ranged"}
+]

@@ -1,5 +1,8 @@
 import {hasOfficialRepeatedActivationIdentityPolicyV1} from '../rule-atoms/official-repeated-activation-identity-v1.mjs';
 import {createOfficialPlaguedMunitionsRuntimeV1} from './official-plagued-munitions-runtime-v1.mjs';
+import {createOfficialBeforeCasualtyRuntimeV1} from './official-before-casualty-runtime-v1.mjs';
+import {hasOfficialBeforeCasualtyBatchPolicyV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {resumeOfficialSelectedRosterRangedBeforeCasualtyV1} from './official-selected-roster-ranged-action-runtime-v1.mjs';
 import {createOfficialStukovContextualSupplyRoutesV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
 import {openOfficialInfestationSpreadRestorationWindowV1} from './official-reaction-family-adapter-v1.mjs';
 import { createOfficialUniversalCarrierRuntimeV1 } from './official-universal-carrier-runtime-v1.mjs';
@@ -710,6 +713,11 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       || includeHits || includeArmourOrdinals
       || spatialState?.officialBattlefieldAssetFamilySourceBundle?.schema === 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2' });
   const characteristicRoutes = bundle?.routes || [];
+  const beforeCasualty=hasOfficialBeforeCasualtyBatchPolicyV1(spatialState)
+    ?createOfficialBeforeCasualtyRuntimeV1({reactionBundle}):null;
+  if(beforeCasualty&&(!includeRanged||!includeHits||!bundle))throw Error('BEFORE_CASUALTY_NATIVE_ATTACK_AND_HITS_REQUIRED');
+  if(reactionBundle?.routes.some(r=>r.effectKind==='before_casualty_detonation')&&!beforeCasualty)
+    throw Error('DETONATION_NATIVE_CONTINUATION_POLICY_REQUIRED');
   const plaguedMunitions=characteristicRoutes.some(r=>r.effectKind==='plagued_munitions')
     ? createOfficialPlaguedMunitionsRuntimeV1({sourceBundle:bundle,state:spatialState}) : null;
   if(plaguedMunitions&&(!includeRanged||!isDeepStrictEqual(bundle,spatialState.officialCharacteristicStatusFamilySourceBundle)))
@@ -1074,14 +1082,15 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   const stormCast = includePsionicStormCast ? createOfficialPsionicStormCastRuntimeV1({
     sourceRules: psionicStormSourceRules, phaseEnd: stormPhaseEnd }) : null;
   const overwatchSource = reactionBundle?.routes.some(route => route.activationEndOwner === 'current_source_v1');
-  const hitOwners = [photonEntry?.sourceAuthority, bileResolution?.sourceAuthority, sabotageDronePhaseEnd?.sourceAuthority,
+  const hitOwners = [beforeCasualty?.sourceAuthority,photonEntry?.sourceAuthority, bileResolution?.sourceAuthority, sabotageDronePhaseEnd?.sourceAuthority,
     seekerPhaseEnd?.sourceAuthority, stormPhaseEnd?.sourceAuthority].filter(Boolean);
   const evadeGrantOwners = hitOwners.filter(owner => owner.evadeGrant);
   const hitsAuthority = hitOwners.length > 1 ? {
     schema: 'starcraft_tmg_automatic_hits_source_authority_v1',
     sourceBundleHash: hash(hitOwners.map(owner => owner.sourceBundleHash)), reactionTiming: 'outside_activation',
     ...(hitOwners.some(owner => owner.resolvedDirectDamage) ? { resolvedDirectDamage: true } : {}),
-    ...(photonEntry ? {timingFor:parent=>hitOwners.find(owner=>owner.owns(parent))?.reactionTiming} : {}),
+    ...(photonEntry||beforeCasualty ? {timingFor:parent=>{const owner=hitOwners.find(owner=>owner.owns(parent));return owner?.timingFor?owner.timingFor(parent):owner?.reactionTiming;}} : {}),
+    ...(beforeCasualty?{reactionContextFor:(state,parent)=>hitOwners.find(owner=>owner.owns(parent))?.reactionContextFor?.(state,parent)}:{}),
     owns: parent => hitOwners.some(owner => owner.owns(parent)),
     validate: (current, parent) => hitOwners.find(owner => owner.owns(parent))?.validate(current, parent) === true,
     ...(evadeGrantOwners.length ? { evadeGrant: {
@@ -1111,7 +1120,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     includeEvadeEligibility: Boolean(farsight) || includeBeforeHitsEvadeReaction,
     includeBeforeEvadeReaction: includeBeforeHitsEvadeReaction,
     consumeDefenceBeforeFollowUp: includeAutomaticHitsDefenceContinuation,
-    independentlyOwnedReactionTriggers: [...(photonEntry ? ['reserve_entered_non_entry'] : []), ...(afterChargeRoll ? ['after_charge_roll'] : []), ...(spatialState?.officialReleaseDroneAssaultTiming
+    independentlyOwnedReactionTriggers: [...(beforeCasualty?['before_casualty_batch']:[]),...(photonEntry ? ['reserve_entered_non_entry'] : []), ...(afterChargeRoll ? ['after_charge_roll'] : []), ...(spatialState?.officialReleaseDroneAssaultTiming
       && reactionBundle?.routes.some(route => route.chargeDeclarationOwner === 'current_source_v1') ? ['charge_declared'] : []),
       ...((standRoute || rangedDeclaration && headShotSource || includeReleaseBileAssaultOrder && inheritedRangedHitDebuff && targetReactions) ? ['ranged_attack_declared'] : []),
       ...(overwatchSource && (spatialState.officialTurretActivationEndOwner === 'overwatch_v1'
@@ -1535,7 +1544,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     eligibility: khassarEligibility, state: spatialState, includeRun: includeKhassarRun || includeKhassarCharge || includeKhassarCombatExecution,
     enumerateNative, instantiateNative: instantiate, applyNative: apply,
   }) : null;
-  const version = plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -1782,6 +1791,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(infestationTransfer ? { infestationTransfer: infestationTransfer.descriptor } : {}),
     ...(universalCarrier ? { universalCarrier: universalCarrier.descriptor } : {}),
     ...(plaguedMunitions ? {plaguedMunitions:plaguedMunitions.descriptor} : {}),
+    ...(beforeCasualty?{beforeCasualty:beforeCasualty.descriptor,beforeCasualtyPolicyHash:hash(spatialState.officialBeforeCasualtyBatchPolicy)}:{}),
     ...(ancestralWisdom ? { ancestralWisdomPaymentRuntime: ancestralWisdom.descriptor } : {}),
     ...(psionicStormSourceRules ? { psionicStormSourceRules: psionicStormSourceRules.descriptor } : {}),
     ...(stormPhaseEnd ? { stormPhaseEnd: stormPhaseEnd.descriptor } : {}),
@@ -1881,6 +1891,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     return null;
   }
   function enumerate(state, options = {}) {
+    if(beforeCasualty?.pending(state)?.stage==='reaction')return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
     if(plaguedMunitions?.pending(state))return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
     if (universalCarrier?.pending(state)) return { ...meleeEnumeration(state,universalCarrier.enumerate(state,options),'universal_carrier'), releasePhaseControl:'blocked' };
     assertTargetedAbilityPolicy(state);
@@ -2950,9 +2961,31 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       : binding.owner.apply(state, action.sourceAction, options);
   }
   function apply(state,action,options) {
+    if(!beforeCasualty)return applyBase(state,action,options);
+    const pending=beforeCasualty.pending(state);
+    const result=pending?.stage==='reaction'?beforeCasualty.afterReaction(applySource(state,action,options)):applyBase(state,action,options);
+    return resumeBeforeCasualtyIfReady(beforeCasualty.bindRootAction(result,action),options);
+  }
+  function resumeBeforeCasualtyIfReady(result,options){
+    const frame=beforeCasualty.pending(result.state);
+    if(!frame||!['hits','resume'].includes(frame.stage)||result.state.pendingOfficialAutomaticHits||result.state.pendingOfficialHitsPoolChoice
+      ||result.state.pendingOfficialReactionWindow||universalCarrier?.pending(result.state)||infestationTransfer?.pending(result.state)
+      ||friendlySupplyLossReaction?.pending(result.state))return result;
+    const resumed=beforeCasualty.takeResume(result.state);
+    if(resumed.frame.hostKind!=='ranged')throw Error('BEFORE_CASUALTY_NATIVE_HOST_NOT_ADMITTED');
+    const raw=resumeOfficialSelectedRosterRangedBeforeCasualtyV1({...resumed,options});
+    const native=completeNativeOutcome(resumed.before,raw,resumed.frame.rootAction,options,
+      {attack:khassarAttackContinuation(resumed.before),chargeParent:khassarCharge?.pending(resumed.before)});
+    const completed=completeCompositionTail(resumed.before,native,resumed.frame.rootAction);
+    return{...result,state:completed.state,events:[...(result.events||[]),...completed.events]};
+  }
+  function applyBase(state,action,options){
     if(universalCarrier?.pending(state)||plaguedMunitions?.pending(state))return applySource(state,action,options);
     artanisDash?.assertAction(state,action);
     const applied=applyNative(state,action,options);
+    return completeCompositionTail(state,applied,action);
+  }
+  function completeCompositionTail(state,applied,action){
     const dash=artanisDash ? artanisDash.afterTransition(state,applied) : applied;
     const completed=photonEntry ? photonEntry.afterTransition(state,dash,action) : dash;
     const withMunitions=plaguedMunitions?plaguedMunitions.afterTransition(state,completed,action):completed;
@@ -2988,6 +3021,9 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     assertRoundEndReactionParent(state);
     displacementProducer?.assertEndpoint(state, action.sourceAction);
     const outcome = applySource(state, action, options);
+    return completeNativeOutcome(state,outcome,action,options,{attack,chargeParent});
+  }
+  function completeNativeOutcome(state,outcome,action,options,{attack=null,chargeParent=null}={}){
     const native = afterChargeRoll ? openOfficialChargeRollReactionV1(outcome, reactionAdapter) : outcome;
     const applied = ancestralWisdom ? ancestralWisdom.finishAuthorizedCast(state, native) : native;
     const lightning = psiLightning && action.sourceRuntimeKind === 'ability'
@@ -3421,6 +3457,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (friendlySupplyLossReaction?.pending(state)) throw Error('FRIENDLY_SUPPLY_LOSS_REACTION_CHOICE_REQUIRED');
     if (infestationTransfer?.pending(state)) throw Error('INFESTATION_TRANSFER_REACTION_CHOICE_REQUIRED');
     if (universalCarrier?.pending(state)) throw Error('UNIVERSAL_CARRIER_CHOICE_REQUIRED');
+    if (beforeCasualty?.pending(state)) throw Error('BEFORE_CASUALTY_CONTINUATION_REQUIRED');
     if (plaguedMunitions?.pending(state)) throw Error('PLAGUED_MUNITIONS_REACTION_CONTINUATION_REQUIRED');
     if (ancestralWisdom?.pending(state)) throw Error('ANCESTRAL_WISDOM_PAYMENT_CONTINUATION_REQUIRED');
     if (holoRoundEnd && ['round_end', 'cleanup_and_refresh'].includes(request.eventKind)

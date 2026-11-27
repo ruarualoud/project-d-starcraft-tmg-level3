@@ -1,0 +1,129 @@
+{
+  "schema": "starcraft_tmg_wave4_detonation_ranged_host_v1",
+  "status": "passed_scoped_ranged_host_only",
+  "runRef": "build/wave4-web/stukov-units/detonation-ranged-S9INmi",
+  "results": [
+    {
+      "id": "marine-use",
+      "use": true,
+      "roomId": "wave4-detonation-marine-use",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-ranged-S9INmi/marine-use",
+      "signedActions": 6,
+      "stateHash": "7f9ad13350a71ca9bf674cc78823072534481bb7e994ebfa6e3e04df80fe692a",
+      "interrupted": true,
+      "used": true,
+      "originalResolutionHash": "d1ca26d38b9d4513150da45583c1d4006863444fdfaffc92497bba2855dc2832",
+      "attackerDestroyed": true,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1"
+        },
+        {
+          "revision": 5,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "marine-decline",
+      "use": false,
+      "roomId": "wave4-detonation-marine-decline",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-ranged-S9INmi/marine-decline",
+      "signedActions": 4,
+      "stateHash": "b773a4d36f476197592317957b5f23da9e25496ba23666aa89d4480d794383c7",
+      "interrupted": true,
+      "used": false,
+      "originalResolutionHash": "979fbc44239a2f0593b137af777008658cd154d536843da3876018d454e26264",
+      "attackerDestroyed": false,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "trooper-use",
+      "unitKey": "infested_trooper",
+      "use": true,
+      "roomId": "wave4-detonation-trooper-use",
+      "directoryRef": "build/wave4-web/stukov-units/detonation-ranged-S9INmi/trooper-use",
+      "signedActions": 6,
+      "stateHash": "13bd226bf6d95b5175b4d9a34a04312b02f807d546de7cbca9d4ba45c3074f46",
+      "interrupted": true,
+      "used": true,
+      "originalResolutionHash": "893354de49724e3a37467fbee2c453984b13ff11b2bb7afb4176cff09d1c7a6f",
+      "attackerDestroyed": false,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1"
+        },
+        {
+          "revision": 5,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "otherDamageAndRemovalHostsPending": true,
+  "multiTargetAndNestedPending": true,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

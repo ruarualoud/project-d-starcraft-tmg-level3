@@ -1,0 +1,104 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/detonation-web-v1",
+  "results": [
+    {
+      "kind": "marine-use",
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-marine-use",
+      "sourceStateHash": "c030b6d0743a3af512ea319bc66b953c18c44f82666499f302ee2c556bfbcf63",
+      "sourcePrefixReceipts": 2,
+      "trace": [
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "0c553803611fcee49e9527b477d39359a46d8db03a3ccd5ed42924d0f38a099e"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "66bd14261d46333004b7ebf8401bf4f18f932febff183bcba7ebbc8a597efaff"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "f1758cbbead44e6306ab81ce4c97bb54e44775bfb0ecb5f6906f69bd32c5d6e5"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "d750839dbe6520514143082a558d20684efc340c784226ce2d43fce68d0c9bf2"
+        }
+      ],
+      "signedActions": 4,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "trooper-use",
+      "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+      "sourceRoomId": "wave4-detonation-trooper-use",
+      "sourceStateHash": "c17ce55ae0db2517f62617008f6c3e770d2d43bc7ec6ed5a629a97753c59e2e7",
+      "sourcePrefixReceipts": 2,
+      "trace": [
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "641f39610bf443ccced5eda9fe5c9b3e6bbcb5d69905f4fb8e61e51aac5da05f"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_trooper/detonation-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "4bed4f55c517b4c43a5974fa4ac3211e2f51c99781f887181587ab35f4a75f88"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 3,
+          "stateHash": "89d65fb33e6a6c3b81c980a9a2000e04ea0891e4cc42831adc5211720dd86f8c"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "df72f61ad2f6ce27adef1011c8a20dadfc10c6dec14ec3f85c649fd52bc092ac"
+        }
+      ],
+      "signedActions": 4,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 8,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

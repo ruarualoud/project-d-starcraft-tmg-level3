@@ -106,7 +106,7 @@ import { OFFICIAL_FEEDBACK_REACTION_TIMING_POLICY_V1 } from './official-feedback
 // produces reserves and source-bound instances. Deployment and match setup are
 // separate Native operations, owned by their respective product runtimes.
 export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, legacyDisclosurePolicy, blastTemplateGeometryAsset,
-  sourceDefinitionIds,includeRepeatedActivationIdentity=false,
+  sourceDefinitionIds,includeRepeatedActivationIdentity=false,includeBeforeCasualtyBatch=false,
   attackProfileRecordKeys,
   includeMelee = false, includeArmourOrdinals = false, meleeModifierDefinitionIds, battlefieldModifierDefinitionIds,
   reactionDefinitionIds, characteristicDefinitionIds, canonicalResourceTypes = false, meleeWeaponDefinitionIds,
@@ -219,6 +219,11 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
       snapshot: context.snapshot, recordKeys }),
     trainingTruth: false };
   if (sourcePhasePolicy) state.officialAbilitySourcePhasePolicy = sourcePhasePolicy;
+  if(includeBeforeCasualtyBatch){
+    if(!reactionDefinitionIds?.some(id=>OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1.sourceDefinitionIds.includes(id)))
+      throw Error('RELEASE_ROSTER_DETONATION_SOURCE_REQUIRED');
+    state.officialBeforeCasualtyBatchPolicy=structuredClone(OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1);
+  }
   if (otherGeneratedRecordKeys.length) {
     state.officialGeneratedUnitDataBundle = createOfficialGeneratedUnitDataBundleV2({ context, recordKeys: otherGeneratedRecordKeys });
   }
@@ -631,3 +636,4 @@ export function refreshOfficialReleaseRosterDerivedStateV2({ context, state }) {
   next.officialSelectedRosterAbilityRuntimeDescriptor = createOfficialSelectedRosterAbilityRuntimeV1(next).descriptor;
   return next;
 }
+import {OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';

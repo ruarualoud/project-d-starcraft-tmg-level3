@@ -10,6 +10,8 @@ import { hasOfficialPrintedIndirectFireEvadePolicyV1, projectOfficialRangedDecla
   from '../rule-atoms/official-ranged-declaration-keywords-v1.mjs';
 import { planOfficialArmourThresholdV1 } from "../rule-atoms/official-armour-threshold-policy-v1.mjs";
 import { recordOfficialArmourRollV1, hasOfficialArmourRollOrdinalPolicyV1, resolveOfficialArmourRollActivationIdV1 } from "../rule-atoms/official-armour-roll-ordinal-v1.mjs";
+import {projectOfficialAllocatedCasualtyModelIdsV1} from '../rule-atoms/official-before-casualty-batch-v1.mjs';
+import {stageOfficialBeforeCasualtyContinuationV1} from './official-before-casualty-runtime-v1.mjs';
 import { projectOfficialRangedTerrainForLosV1 as terrainAsOrdinaryForLos } from './official-ranged-terrain-projection-v1.mjs';
 import { usesWave3FaqClarifications } from '../rule-atoms/official-wave3-faq-clarifications-v1.mjs';
 import { hasOfficialIndomitableRangedPolicyV1, hasOfficialIndomitableTemplateBatchPolicyV1,
@@ -2912,7 +2914,7 @@ function armourReactionContext(state, action, context, options = {}, targetId = 
 function rangedCasualtyDomainForResolution(state, action, context, resolution) {
   const target = state.pieces.find((entry) => entry.id === action.targetId);
   return createOfficialCurrentProductCasualtyDomainV1({
-    targetPiece: target, targetProfile: context.targetProfile,
+    state,targetPiece: target, targetProfile: context.targetProfile,
     discardAtConcentratedFireCap: usesWave3FaqClarifications(state),
     incomingDamage: Number(resolution.stages.damage.totalDamage),
     nonLethalStandardDamagePolicy: state.officialNonLethalStandardDamagePolicy,
@@ -2927,6 +2929,8 @@ function rangedCasualtyDomainForResolution(state, action, context, resolution) {
 
 export function createOfficialCurrentProductCasualtyDomainV1(input) {
   const targetPiece = input.targetPiece;
+  const alreadyAllocatedModelIds=targetPiece.officialBeforeCasualtyReservations?.length
+    ? projectOfficialAllocatedCasualtyModelIdsV1(input.state,targetPiece):[];
   const hitPoints = Number(input.targetProfile.hitPoints);
   const shieldValue = Number(input.targetProfile.shield || 0);
   const priorDamageMarker = Number(targetPiece.damageMarker || 0);
@@ -2962,6 +2966,7 @@ export function createOfficialCurrentProductCasualtyDomainV1(input) {
     engagementGraph: input.engagementGraph,
     attackResolutionHash: input.attackResolutionHash,
     rulesRuntimeHash: input.rulesRuntimeHash,
+    ...(alreadyAllocatedModelIds.length?{alreadyAllocatedModelIds}:{}),
     ...(input.maximumCasualties !== undefined ? { maximumCasualties: input.maximumCasualties } : {}),
   });
   const casualtyCount = baseDomain.casualtyCount;
@@ -3396,18 +3401,18 @@ function settleVerifiedCasualtyChoice(stateInput, actionInput, pending, options)
 }
 
 export function openOfficialSelectedRosterDamageReceivedWindowV1(state, action, {
-  targetPieceId, incomingDamage, enemyReactionAllowed, outsideActivation = false,
+  targetPieceId, incomingDamage, enemyReactionAllowed, outsideActivation = false, activationContext,
 }) {
   if (Number(incomingDamage) <= 0 || !state.officialReactionFamilySourceBundle) return null;
   const bundle=state.officialReactionFamilySourceBundle;
   const adapter=createOfficialReactionFamilyAdapterV1(bundle);
-  const activationId=outsideActivation ? null : state.officialRepeatedActivationIdentityPolicy
+  const activationId=outsideActivation ? null : activationContext?.activationId || (state.officialRepeatedActivationIdentityPolicy
     ? resolveOfficialArmourRollActivationIdV1(state,action.pieceId) : state.selectedRosterActivationWindow
       ? `${Number(state.round)}:${state.phase}:${state.selectedRosterActivationWindow.sideKey}:${state.selectedRosterActivationWindow.pieceId}`
-      : `${Number(state.round)}:${state.phase}:${action.sideKey}:${action.pieceId}`;
+      : `${Number(state.round)}:${state.phase}:${action.sideKey}:${action.pieceId}`);
   const sourceActionHash=hashStarcraftTmgContract(action);
   const opened=openOfficialReactionFamilyWindowV1(bundle,state,{
-    triggerKind:'damage_received',activeSideKey:action.sideKey,phase:state.phase,
+    triggerKind:'damage_received',activeSideKey:activationContext?.activeSideKey||action.sideKey,phase:state.phase,
     activationId,sourceActionHash,resumeActionHash:sourceActionHash,
     context:{attackerPieceId:action.pieceId,actorPieceId:action.pieceId,
       targetPieceId,affectedPieceId:targetPieceId,validTargetUnitIds:[targetPieceId],
@@ -3714,7 +3719,7 @@ export function removeOfficialPointDefenseSourceV1(state, sourceId, protectedTar
     attackPoolDiceRemoved: removedDiceCount, trainingTruth: false };
 }
 
-function settleOfficialSelectedRosterRangedResolvedChanceV1(stateInput,actionInput,chance,options={}) {
+function settleOfficialSelectedRosterRangedResolvedChanceV1(stateInput,actionInput,chance,options={},resumedCasualty=null) {
   const selectionHash = String(options.casualtySelectionHash
     || (chance.casualtyDomain.legalSelections.length === 1
       ? chance.casualtyDomain.legalSelections[0].selectionHash : ""));
@@ -3725,8 +3730,11 @@ function settleOfficialSelectedRosterRangedResolvedChanceV1(stateInput,actionInp
       stateInput, actionInput, chance, options,
     );
   }
-  const casualty = resolveOfficialCurrentProductCasualtyDomainV1(
+  const casualty = resumedCasualty || resolveOfficialCurrentProductCasualtyDomainV1(
     chance.casualtyDomain, selectionHash, casualtyModelIds);
+  if(!resumedCasualty){const interrupted=stageOfficialBeforeCasualtyContinuationV1({state:stateInput,action:actionInput,hostKind:'ranged',
+    rows:[{targetPieceId:actionInput.targetId,targetProfile:chance.context.targetProfile,casualty,attackResolutionHash:chance.resolution.resolutionHash}],hostData:{chance}});
+    if(interrupted)return interrupted;}
   const state = clone(stateInput);
   const piece = state.pieces.find((entry) => entry.id === actionInput.pieceId);
   const target = state.pieces.find((entry) => entry.id === actionInput.targetId);
@@ -3840,6 +3848,14 @@ function settleOfficialSelectedRosterRangedResolvedChanceV1(stateInput,actionInp
     rulesTruth: "official_selected_roster_ranged_transition",
     trainingTruth: false,
   });
+}
+
+export function resumeOfficialSelectedRosterRangedBeforeCasualtyV1({state,frame,casualties,options={}}){
+  if(frame.hostKind!=='ranged'||casualties.length!==1||frame.originalAction?.targetId!==frame.rows[0]?.targetPieceId
+    ||frame.hostData?.chance?.resolution?.resolutionHash!==frame.rows[0].attackResolutionHash)
+    fail('SELECTED_RANGED_BEFORE_CASUALTY_RESUME_INVALID');
+  return settleOfficialSelectedRosterRangedResolvedChanceV1(state,frame.originalAction,frame.hostData.chance,
+    {...options,casualtyModelIds:frame.rows[0].casualty.casualtyModelIds},casualties[0]);
 }
 
 export function queryOfficialSelectedRosterRangedActionV1(input = {}) {

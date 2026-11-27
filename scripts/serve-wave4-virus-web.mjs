@@ -12,13 +12,13 @@ import { loadWave4StukovUnitInputs } from './compile-wave4-stukov-units.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=async file=>JSON.parse(await fs.readFile(file,'utf8'));
 const sourceResult=await read(path.resolve(process.argv[2]));
-assert.equal(sourceResult.status,'passed_scoped');
+assert.ok(sourceResult.status==='passed_scoped'||sourceResult.schema==='starcraft_tmg_wave4_detonation_ranged_host_v1'&&sourceResult.status==='passed_scoped_ranged_host_only');
 const directory=path.resolve(process.argv[3]);
 assert.ok(directory.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const webRoot=process.argv[4]?path.resolve(process.argv[4]):path.join(root,'apps/starcraft-tmg-expo/dist-product');
 if(process.argv[4])assert.ok(webRoot.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const inputs=['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
-  'starcraft_tmg_wave4_infested_infantry_base_wiring_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
+  'starcraft_tmg_wave4_infested_infantry_base_wiring_v1','starcraft_tmg_wave4_detonation_ranged_host_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
   :sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
 const rooms=new Map();
 const service={liveEnabled:false,scope:'Wave4 source-bound Native successors; scoped local Web acceptance',rooms:[]};
@@ -68,6 +68,7 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
     assert.equal(issued.ok,true);links[side]='/room/'+roomId+'#recovery='+encodeURIComponent(issued.recovery.recoveryToken);
   }
   service.rooms.push({...spec,kind:spec.id,roomId,links,sourcePrefixReceipts:prefixReceipts,
+    ...(proof.originalResolutionHash?{expectedOriginalResolutionHash:proof.originalResolutionHash}:{}),
     sourceRoomId:proof.roomId,sourceStateHash:prefix.stateHash,sourceBindingHash:prefix.matchBindingHash});
 }
 const reply=(response,status=200)=>({status,headers:{'content-type':'application/json'},response});

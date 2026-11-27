@@ -150,10 +150,10 @@ function casualtyTier(modelId, edges, targetPieceId) {
   return contacts.some((edge) => Number(edge.horizontalBaseGapMilliInches) === 0) ? 3 : 2;
 }
 
-function legalNextEngagedCasualties(graph, targetPieceId, remainingModelIds) {
+function legalNextEngagedCasualties(graph, targetPieceId, remainingModelIds, alreadyAllocatedModelIds = []) {
   const edges = targetEdges(graph, targetPieceId, remainingModelIds);
   const currentEnemyUnitIds = enemyUnitIds(edges, targetPieceId);
-  const rows = remainingModelIds.map((modelId) => {
+  const rows = remainingModelIds.filter(id=>!alreadyAllocatedModelIds.includes(id)).map((modelId) => {
     const afterIds = remainingModelIds.filter((id) => id !== modelId);
     const afterEnemyUnitIds = enemyUnitIds(
       targetEdges(graph, targetPieceId, afterIds),
@@ -190,6 +190,7 @@ function enumerateSequences(input) {
         input.engagementGraph,
         input.targetPieceId,
         remainingModelIds,
+        input.alreadyAllocatedModelIds || [],
       )
       : remainingModelIds.filter((modelId) => input.visibleModelIds.includes(modelId));
     for (const modelId of candidates) {
@@ -225,8 +226,9 @@ export function inspectOfficialMultiModelCasualtySelectionV1({
   }
   const graph = {modelEdges: contract.relevantModelEdges};
   let remaining = [...contract.candidateModelIds];
+  const alreadyAllocated=contract.alreadyAllocatedModelIds||[];
   const next = () => contract.orderedRemovalRequired
-    ? legalNextEngagedCasualties(graph, targetPieceId, remaining)
+    ? legalNextEngagedCasualties(graph, targetPieceId, [...remaining,...alreadyAllocated],alreadyAllocated)
     : [...remaining];
   const reject = (code, index, allowedValues) => freezeDeep({
     valid:false, code, invalidIndex:index, legalNextModelIds:allowedValues,
@@ -315,11 +317,16 @@ function createDomain(input = {}) {
   if (visibleModelIds.some((id) => !ledger.activeModelIds.includes(id))) {
     fail("MULTI_MODEL_CASUALTY_VISIBILITY_INVALID");
   }
+  const alreadyAllocatedModelIds=uniqueSortedStrings(input.alreadyAllocatedModelIds||[],
+    'MULTI_MODEL_CASUALTY_ALLOCATED_MODELS_INVALID');
+  if(alreadyAllocatedModelIds.some(id=>!ledger.activeModelIds.includes(id)))fail('MULTI_MODEL_CASUALTY_ALLOCATED_MODELS_INVALID');
+  const availableModelIds=ledger.activeModelIds.filter(id=>!alreadyAllocatedModelIds.includes(id));
+  const availableVisibleModelIds=visibleModelIds.filter(id=>!alreadyAllocatedModelIds.includes(id));
   const edges = targetEdges(graph, ledger.targetPieceId, ledger.activeModelIds);
   const targetEngaged = edges.length > 0;
   const targetCasualtyCap = targetEngaged
-    ? ledger.currentModels
-    : visibleModelIds.length;
+    ? availableModelIds.length
+    : availableVisibleModelIds.length;
   const maximumCasualties = input.maximumCasualties;
   if (maximumCasualties !== undefined && (!Number.isSafeInteger(maximumCasualties) || maximumCasualties < 0)) {
     fail('MULTI_MODEL_CASUALTY_MAXIMUM_INVALID');
@@ -334,11 +341,12 @@ function createDomain(input = {}) {
     && casualtyCount === targetCasualtyCap
     && targetCasualtyCap < ledger.currentModels;
   const maximumExhausted = maximumCasualties !== undefined && casualtyCount === maximumCasualties;
-  const discardRemainder = targetDestroyed || visibilityCapExhausted || maximumExhausted;
+  const allocatedCapExhausted=alreadyAllocatedModelIds.length>0&&casualtyCount===targetCasualtyCap;
+  const discardRemainder = targetDestroyed || visibilityCapExhausted || maximumExhausted || allocatedCapExhausted;
   const postDamageMarker = discardRemainder ? 0 : damageAfterCasualties;
   const discardedOverflowDamage = discardRemainder ? damageAfterCasualties : 0;
   const candidateCount = targetEngaged
-    ? ledger.activeModelIds.length : visibleModelIds.length;
+    ? availableModelIds.length : availableVisibleModelIds.length;
   const selectionCountUpperBound = permutationCountUpperBound(
     candidateCount,
     casualtyCount,
@@ -353,7 +361,8 @@ function createDomain(input = {}) {
       engagementGraph: graph,
       targetPieceId: ledger.targetPieceId,
       activeModelIds: ledger.activeModelIds,
-      visibleModelIds,
+      visibleModelIds:availableVisibleModelIds,
+      alreadyAllocatedModelIds,
     }) : [];
   const legalSelections = sequences.map((casualtyModelIds) => {
     const remainingModelIds = ledger.activeModelIds.filter((id) => (
@@ -383,7 +392,8 @@ function createDomain(input = {}) {
     selectionMode,
     casualtyCount,
     candidateModelIds: targetEngaged
-      ? [...ledger.activeModelIds] : [...visibleModelIds],
+      ? [...availableModelIds] : [...availableVisibleModelIds],
+    ...(alreadyAllocatedModelIds.length?{alreadyAllocatedModelIds:[...alreadyAllocatedModelIds]}:{}),
     orderedRemovalRequired: targetEngaged,
     relevantModelEdges: targetEngaged ? clone(edges) : [],
     exactLegalityCheckedOnInstantiation: true,
@@ -406,6 +416,7 @@ function createDomain(input = {}) {
     visibilityIgnored: targetEngaged,
     visibleModelIds,
     casualtyCap,
+    ...(alreadyAllocatedModelIds.length?{alreadyAllocatedModelIds:[...alreadyAllocatedModelIds],allocatedCapExhausted}:{}),
     ...(maximumCasualties !== undefined ? { maximumCasualties, maximumExhausted } : {}),
     uncappedCasualtyCount,
     casualtyCount,

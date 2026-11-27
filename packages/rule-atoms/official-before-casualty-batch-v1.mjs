@@ -1,0 +1,68 @@
+import {isDeepStrictEqual} from 'node:util';
+import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
+export const OFFICIAL_BEFORE_CASUALTY_BATCH_ATOM_V1='rule-atom:wave4/before-casualty-batch-detonation@1';
+export const OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1=Object.freeze({
+ schema:'starcraft_tmg_before_casualty_batch_policy_v1',version:'1.0.0',
+ ruleAtomId:OFFICIAL_BEFORE_CASUALTY_BATCH_ATOM_V1,
+ sourceDefinitionIds:Object.freeze(['unit:infested_marine/detonation-any-phase@1','unit:infested_trooper/detonation-any-phase@1']),
+ allocationBeforeDestruction:true,pendingModelsRemainOnBattlefield:true,alreadyAllocatedModelsCannotBeAllocatedAgain:true,
+ trainingTruth:false});
+const without=(x,k)=>Object.fromEntries(Object.entries(x).filter(([name])=>name!==k));
+const seal=(x,k)=>({...x,[k]:hash(x)});
+const digest=x=>/^[a-f0-9]{64}$/u.test(x||'');
+export function hasOfficialBeforeCasualtyBatchPolicyV1(state){
+ const policy=state?.officialBeforeCasualtyBatchPolicy;if(policy===undefined)return false;
+ if(!isDeepStrictEqual(policy,OFFICIAL_BEFORE_CASUALTY_BATCH_POLICY_V1))throw Error('BEFORE_CASUALTY_BATCH_POLICY_INVALID');return true;
+}
+function reservations(state,piece){
+ const rows=piece.officialBeforeCasualtyReservations||[];
+ if(!rows.length)return[];
+ if(!hasOfficialBeforeCasualtyBatchPolicyV1(state))throw Error('BEFORE_CASUALTY_RESERVATION_POLICY_REQUIRED');
+ const ids=new Set();
+ for(const row of rows){
+  if(row.schema!=='starcraft_tmg_before_casualty_reservation_v1'||row.reservationHash!==hash(without(row,'reservationHash'))||row.targetPieceId!==piece.id
+   ||row.round!==Number(state.round)||row.phase!==state.phase||!digest(row.sourceActionHash)
+   ||!digest(row.attackResolutionHash)||!digest(row.casualtyResolutionHash)||!row.modelIds?.length
+   ||row.policyHash!==hash(state.officialBeforeCasualtyBatchPolicy))throw Error('BEFORE_CASUALTY_RESERVATION_INVALID');
+  for(const id of row.modelIds){const model=piece.models.find(m=>m.id===id);
+   if(ids.has(id)||!model||model.isDestroyed||model.isOnField===false)throw Error('BEFORE_CASUALTY_RESERVED_MODEL_INVALID');ids.add(id);}
+ }
+ return rows;
+}
+export function projectOfficialAllocatedCasualtyModelIdsV1(state,piece){
+ return reservations(state,piece).flatMap(r=>r.modelIds).sort();
+}
+// Allocation is already settled. Keep its doomed models physically present for
+// the exact before-destruction trigger while reserving them from nested damage.
+// This does not pay or execute Detonation and cannot complete a Native action.
+export function reserveOfficialBeforeCasualtyBatchV1({state,piece,casualty,sourceActionHash,attackResolutionHash}){
+ if(!hasOfficialBeforeCasualtyBatchPolicyV1(state)||!digest(sourceActionHash)||!digest(attackResolutionHash)
+  ||!digest(casualty?.resolutionHash)||!Number.isSafeInteger(casualty.postDamageMarker)||casualty.postDamageMarker<0
+  ||!casualty.casualtyModelIds?.length||new Set(casualty.casualtyModelIds).size!==casualty.casualtyModelIds.length)
+  throw Error('BEFORE_CASUALTY_BATCH_INPUT_INVALID');
+ const previous=reservations(state,piece),reserved=new Set(previous.flatMap(r=>r.modelIds));
+ if(casualty.casualtyModelIds.some(id=>reserved.has(id)||!piece.models.some(m=>m.id===id&&!m.isDestroyed&&m.isOnField!==false)))
+  throw Error('BEFORE_CASUALTY_BATCH_MODEL_UNAVAILABLE');
+ const row=seal({schema:'starcraft_tmg_before_casualty_reservation_v1',round:Number(state.round),phase:state.phase,
+  targetPieceId:piece.id,sourceActionHash,attackResolutionHash,casualtyResolutionHash:casualty.resolutionHash,
+  modelIds:[...casualty.casualtyModelIds],priorDamageMarker:Number(piece.damageMarker||0),allocatedRemainder:casualty.postDamageMarker,
+  policyHash:hash(state.officialBeforeCasualtyBatchPolicy),trainingTruth:false},'reservationHash');
+ piece.officialBeforeCasualtyReservations=[...previous,row];piece.damageMarker=casualty.postDamageMarker;
+ return row;
+}
+// The host applies this rebased settlement through the existing damage owner.
+// Nested effects may have damaged other models, changed the marker, or opened a
+// second reservation; the original batch never overwrites those later facts.
+export function consumeOfficialBeforeCasualtyReservationV1({state,piece,reservationHash}){
+ const rows=reservations(state,piece),row=rows.find(r=>r.reservationHash===reservationHash);
+ if(!row)throw Error('BEFORE_CASUALTY_RESERVATION_NOT_PENDING');
+ const removed=new Set(row.modelIds),remaining=piece.models.filter(m=>!m.isDestroyed&&m.isOnField!==false&&!removed.has(m.id)).map(m=>m.id);
+ const body={schema:'starcraft_tmg_before_casualty_rebased_settlement_v1',reservationHash,
+  targetPieceId:piece.id,casualtyModelIds:[...row.modelIds],remainingModelIds:remaining,
+  targetDestroyed:remaining.length===0,postDamageMarker:remaining.length?Number(piece.damageMarker||0):0,
+  originalCasualtyResolutionHash:row.casualtyResolutionHash,originalAttackResolutionHash:row.attackResolutionHash,
+  originalCasualtyChoicePreserved:true,nestedDamagePreserved:true,trainingTruth:false};
+ const rest=rows.filter(r=>r.reservationHash!==reservationHash);
+ if(rest.length)piece.officialBeforeCasualtyReservations=rest;else delete piece.officialBeforeCasualtyReservations;
+ return seal(body,'resolutionHash');
+}

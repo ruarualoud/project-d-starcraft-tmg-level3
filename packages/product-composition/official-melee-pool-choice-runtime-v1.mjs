@@ -119,8 +119,8 @@ function createPoolChoiceRuntime({ delegate, automaticHits, reactionAdapter = nu
   function reactionInput(state, parent) {
     const source = parent.attackAction;
     const target = parent.targets[parent.targetIndex];
-    return { triggerKind: 'before_armour_roll', activeSideKey: parent.sideKey, phase: state.phase,
-      activationId: parent.reactionTiming === 'outside_activation' ? null : resolveOfficialArmourRollActivationIdV1(state, parent.pieceId),
+    return { triggerKind: 'before_armour_roll', activeSideKey: parent.reactionActivationContext?.activeSideKey||parent.sideKey, phase: state.phase,
+      activationId: parent.reactionTiming === 'outside_activation' ? null : parent.reactionActivationContext?.activationId||resolveOfficialArmourRollActivationIdV1(state, parent.pieceId),
       sourceActionHash: parent.attackActionHash, resumeActionHash: parent.attackActionHash,
       context: { attackerPieceId: parent.pieceId, targetPieceId: target.targetUnitId,
         enemyReactionAllowed: automaticHits || (source.meleePlan?.fightChancePlan || source.impactPlan).enemyReactionDeclarationAllowed !== false } };
@@ -284,6 +284,7 @@ function createPoolChoiceRuntime({ delegate, automaticHits, reactionAdapter = nu
         targets: clone(context.targets), targetIndex: 0, completed: [], precisionRemaining: context.precision,
         ...(includeBeforeEvadeReaction ? { beforeEvadeReaction: true } : {}),
         ...(context.reactionTiming ? { reactionTiming: context.reactionTiming } : {}),
+        ...(context.reactionActivationContext?{reactionActivationContext:clone(context.reactionActivationContext)}:{}),
         ...(stateInput.pendingOfficialAttackTargetReaction?.attackKind === 'melee'
           ? { targetReactionSourceActionHash: stateInput.pendingOfficialAttackTargetReaction.sourceActionHash } : {}) };
       const rolls = rollsFor(options.chanceReveals, applied.chance?.count || 0);

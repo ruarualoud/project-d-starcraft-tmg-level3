@@ -123,7 +123,8 @@ try {
       for(let step=0;step<12;step++) {
         const aggregate=await current(item);const state=aggregate.envelope.state;
         if(primaryUsed&&!state.pendingOfficialPlaguedMunitions&&!state.pendingOfficialUniversalCarrier&&!state.pendingOfficialReactionWindow&&!state.pendingOfficialAutoTurretOverwatch
-          &&!state.pendingOfficialInfestationTransfer&&!state.pendingCurrentProductRangedCasualtyChoice)break;
+          &&!state.pendingOfficialInfestationTransfer&&!state.pendingCurrentProductRangedCasualtyChoice&&!state.pendingOfficialAutomaticHits
+          &&!state.pendingOfficialHitsPoolChoice&&!state.officialBeforeCasualtyContinuations?.length)break;
         const owner=state.activeSideKey;assert.ok(pages[owner]);
         const menu=await legal(pages[owner]);
         if(!primaryUsed&&item.id==='infected-ordinary-move'){assert.ok(!menu.parameterDomains.some(row=>['unit:stalker/blink-movement-phase@1','card:nexus/strategic-recall-any@1'].includes(row.definitionId)));}
@@ -154,6 +155,10 @@ try {
         const recipient=final.envelope.state.pieces.find(piece=>piece.id==='recipient');
         assert.equal(recipient.statuses.some(status=>String(status.statusName||status).toLowerCase()==='infestation'),false);
         assert.equal(restorationUsed,true);
+      } else if(item.flow==='detonation-ranged'){
+        const state=final.envelope.state;assert.equal(Boolean(state.officialBeforeCasualtyContinuations?.length),false);
+        assert.equal(state.rangedActionHistory.length,1);assert.equal(state.rangedActionHistory[0].resolutionHash,item.expectedOriginalResolutionHash);
+        assert.ok(!state.pieces.some(p=>p.officialBeforeCasualtyReservations?.length));
       } else if(item.flow==='infantry-burrow'){
         const actor=final.envelope.state.pieces.find(p=>p.id==='actor');
         assert.equal(actor.isOnField,true);assert.equal(actor.currentModels,item.modelCount);
@@ -206,7 +211,7 @@ try {
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
   runRef:path.relative(root,directory),results,signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
   conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
-   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow'].includes(item.flow)),
+   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow','detonation-ranged'].includes(item.flow)),
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};
 await atomicWrite(path.join(directory,'web-result.public.json'),JSON.stringify(result,null,2)+'\n');
 await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(process.argv[3]||'virus-web.public.json')),JSON.stringify(result,null,2)+'\n');
