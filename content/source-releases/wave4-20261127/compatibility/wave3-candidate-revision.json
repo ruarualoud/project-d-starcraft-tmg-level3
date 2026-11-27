@@ -1,0 +1,3604 @@
+{
+  "schema": "starcraft_tmg_source_revision_manifest_v4",
+  "gameId": "starcraft-tmg",
+  "sourceId": "starcraft-tmg.official.command-center",
+  "captureId": "ticket-28-wave3-20261112-v1",
+  "capturedAt": "2026-11-12T04:14:57.016Z",
+  "sourceSnapshotHash": "4412c17faaebaff04b117d1ddc666d1cdd939eca420a22f861c7c944f1179c8c",
+  "normalizedDatasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+  "dataVersions": {
+    "cardsVersion": "84",
+    "rulesVersion": "50",
+    "unitsVersion": "83"
+  },
+  "rawCaptures": [
+    {
+      "sourceId": "army_units",
+      "sourceClass": "firestore",
+      "byteHash": "d3857e2115fceb3b220826422e806686f75058f77154f8d641c41cf8ebd3dfb8",
+      "byteLength": 469712,
+      "immutable": true
+    },
+    {
+      "sourceId": "command_center_army_builder",
+      "sourceClass": "text",
+      "byteHash": "5c3514eaa8c7d07a93f69a80516facd65abbcc02259aafbcc62cb28457e0c00d",
+      "byteLength": 61745,
+      "immutable": true
+    },
+    {
+      "sourceId": "command_center_deployment_maps",
+      "sourceClass": "text",
+      "byteHash": "232c2f8ee1a9df2fde3cb9ee7d4a9821901dbe8c362313434b0832054249e613",
+      "byteLength": 22642,
+      "immutable": true
+    },
+    {
+      "sourceId": "command_center_factions",
+      "sourceClass": "text",
+      "byteHash": "3b67bd5f04279ce77e0556a27be41340897156763ffd099a4c208cce9355946d",
+      "byteLength": 47461,
+      "immutable": true
+    },
+    {
+      "sourceId": "command_center_firebase_init",
+      "sourceClass": "text",
+      "byteHash": "2f6b2432228d22d5e6ec6e0c6e7794f98297dd29b941eb7239be02d0d8c7edc4",
+      "byteLength": 1064,
+      "immutable": true
+    },
+    {
+      "sourceId": "command_center_mission_cards",
+      "sourceClass": "text",
+      "byteHash": "a55dcb073c0e62b93b9a8e9c25a47208ef733d5a617f75c093f430e752c4a0ca",
+      "byteLength": 27568,
+      "immutable": true
+    },
+    {
+      "sourceId": "command_center_rules",
+      "sourceClass": "text",
+      "byteHash": "d52fb38e1c33c342e12c1da2e81c7e4c1241bc1b9dd39af17fc01e489842cc06",
+      "byteLength": 52489,
+      "immutable": true
+    },
+    {
+      "sourceId": "command_center_rules_checker",
+      "sourceClass": "text",
+      "byteHash": "aa9bc25abc285e53501c5b60b68d2eb0b86171acc9561efcc0ce34bb8534bee0",
+      "byteLength": 18946,
+      "immutable": true
+    },
+    {
+      "sourceId": "command_center_script",
+      "sourceClass": "text",
+      "byteHash": "5b35d5645991f9f2fd13a1d3a3a7668590129a98fc73f8efb95c994c70d8fbca",
+      "byteLength": 20788,
+      "immutable": true
+    },
+    {
+      "sourceId": "command_center_shell",
+      "sourceClass": "text",
+      "byteHash": "923f5f74f5c28f29391bf26d0d8365f0f84c5db561465d98c6378569eb457f1e",
+      "byteLength": 19626,
+      "immutable": true
+    },
+    {
+      "sourceId": "core_rulebook",
+      "sourceClass": "binary",
+      "byteHash": "27639c562e6db9777dd9ba984d0c9f9b581841ec30166848e021f893cd00ea54",
+      "byteLength": 15688406,
+      "immutable": true
+    },
+    {
+      "sourceId": "faction_cards",
+      "sourceClass": "firestore",
+      "byteHash": "bae3a35a04c52186ac0d4a18e0174642f08923c8721c897ad7ba928698e367b7",
+      "byteLength": 453003,
+      "immutable": true
+    },
+    {
+      "sourceId": "faq_v1_3",
+      "sourceClass": "binary",
+      "byteHash": "65cb2399c44e29b45d65faddbade7c72a46726e7b9c812e2c4af57c1704cc213",
+      "byteLength": 936781,
+      "immutable": true
+    },
+    {
+      "sourceId": "rules_sections",
+      "sourceClass": "firestore",
+      "byteHash": "ad0e41074828f2b483a27d0dbe792dd70fa0f8e825db4fdbeaaa5d2968c5872e",
+      "byteLength": 730087,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_protoss_high_templar_en",
+      "sourceClass": "binary",
+      "byteHash": "fd13955b19732d118e2029f9807dd60ee88791efc888637e2df8851e6a5d2b40",
+      "byteLength": 10425608,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_protoss_immortal_en",
+      "sourceClass": "binary",
+      "byteHash": "457857bb8907e4cd80c65ef09fcd548364e110365c2bd661c73846757a5c089f",
+      "byteLength": 11965871,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_protoss_p2p_w2_card_sheets_a4_en",
+      "sourceClass": "binary",
+      "byteHash": "09f6b940a7582719f1527574e22047529e3629d078e479e3baf06c552c99f7fe",
+      "byteLength": 1369925,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_protoss_p2p_w3_card_sheets_a4_en",
+      "sourceClass": "binary",
+      "byteHash": "c5ef1d1e2c953a8c5c376464dff46a51878d8e5ae0c3e8260684afbf1dd5f0aa",
+      "byteLength": 1300130,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_protoss_tassadar_en",
+      "sourceClass": "binary",
+      "byteHash": "4fd38c341f5873c23b5ae0f35719f426d303442715146afa6d3b58c097ac0686",
+      "byteLength": 8689882,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_protoss_zeratul_en",
+      "sourceClass": "binary",
+      "byteHash": "26099d68d235ad5d1625d9b3c362894df9b5f986355d085700f4434cc947e127",
+      "byteLength": 4906057,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_terran_nova_terra_en",
+      "sourceClass": "binary",
+      "byteHash": "ef4c4237b612c4dda165f0c143d9b5d1a33a85ac86dfdba8db244cc4366c4024",
+      "byteLength": 11263888,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_terran_p2p_w2_card_sheets_a4_en",
+      "sourceClass": "binary",
+      "byteHash": "63126ddbe922457f21a903ce186a6257aa5f20a932ba35f484f759b2ac62608e",
+      "byteLength": 741118,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_terran_p2p_w3_card_sheets_a4_en",
+      "sourceClass": "binary",
+      "byteHash": "9632f91cdf1b152aca4d7b27aaf54655fe48e10138c73338393b8a62ce1cd154",
+      "byteLength": 1412913,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_terran_raven_en",
+      "sourceClass": "binary",
+      "byteHash": "1444373de1db0180388a19accc6643532a72e8ccd0883b0179e09ce2a5653cfd",
+      "byteLength": 11302387,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_terran_siege_tank_en",
+      "sourceClass": "binary",
+      "byteHash": "c089ceb4d382ba82dd00eb8b9ad267c9dd3074d241740928c85c65825bc915b0",
+      "byteLength": 6217142,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_tmg_changelog_10_2026_en",
+      "sourceClass": "binary",
+      "byteHash": "0a208518363783c9ea7485dba156eeed5cd65a5c85f51a21f81e1a91492c61e0",
+      "byteLength": 1165400,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_tmg_cost_table_10_2026_en",
+      "sourceClass": "binary",
+      "byteHash": "5b1e3adf0c12128d5184b1926b25889a46833cbe1f7b2886d9857e1f15f7b350",
+      "byteLength": 3169269,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_zerg_defiler_en",
+      "sourceClass": "binary",
+      "byteHash": "6b407306300fdb56deaf37b1bd3552df4822716a5aa55ca19a746055abc339c0",
+      "byteLength": 8842782,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_zerg_p2p_w2_card_sheets_a4_en",
+      "sourceClass": "binary",
+      "byteHash": "b62e9bba04cb54df2a77c36378fc8113f10acf528ae2f8b1ad884a81c0f75045",
+      "byteLength": 598888,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_zerg_p2p_w3_card_sheets_a4_en",
+      "sourceClass": "binary",
+      "byteHash": "ebc05eeea6456538b57e3b417bb1defc87159bd560fed81e0342e6119e85d6eb",
+      "byteLength": 1079741,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_zerg_ravager_en",
+      "sourceClass": "binary",
+      "byteHash": "3f13cb8b9c61ccd9740d8f32e65e7c5f97174426a746bde00751e6404c030792",
+      "byteLength": 11397422,
+      "immutable": true
+    },
+    {
+      "sourceId": "starcraft_zerg_zagara_en",
+      "sourceClass": "binary",
+      "byteHash": "e166ddf1abde6edcd085fec871f748f1ba0e97923ebcda059b920396bc7de8d7",
+      "byteLength": 13146890,
+      "immutable": true
+    },
+    {
+      "sourceId": "system_metadata_versions",
+      "sourceClass": "firestore",
+      "byteHash": "8ac88c36188af1254d62b786d7ee87f3c2370a67c5ba347289b7adfc7df94b88",
+      "byteLength": 384,
+      "immutable": true
+    },
+    {
+      "sourceId": "tactical_cards",
+      "sourceClass": "firestore",
+      "byteHash": "ef1bcc2151971ebf4ad19432a87e2e93900cef41f4e4ed77e949e46651dcd768",
+      "byteLength": 123143,
+      "immutable": true
+    },
+    {
+      "sourceId": "zeratul_promo_manual",
+      "sourceClass": "binary",
+      "byteHash": "69c8ac6a2e71af23bd2c663cc24cf809982a3b9ad77bfc5281355216918ed06e",
+      "byteLength": 5491198,
+      "immutable": true
+    }
+  ],
+  "rawCaptureSetHash": "84bfb297b09deeeeca5843941b2ee6d5275307df111056576bd953a32fef531f",
+  "recordIndex": [
+    {
+      "recordKey": "army_units:adept",
+      "collectionId": "army_units",
+      "documentId": "adept",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "e17a52a8c4b31e989190b95e60bf793d6da7fcc7b77b8b9421fc4620ccf7b431",
+      "payloadHash": "587133eef84b6620f9e4c61b95e865655b89f12fad2b67b22fcfd03eb9fb8fc6",
+      "schemaHash": "316e515aa0227befb84604f22f15556d873aa733195a56fea24d8b017c7c5d7b"
+    },
+    {
+      "recordKey": "army_units:artanis",
+      "collectionId": "army_units",
+      "documentId": "artanis",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "40176eeecd7936a20d0a333666515a2972186d1f7a285fbd241fe039bb8450df",
+      "payloadHash": "75cad844983ae0ca7a7947ad24c7d46ba0ca04a6b4f7ff5d22db7d549eae2325",
+      "schemaHash": "316e515aa0227befb84604f22f15556d873aa733195a56fea24d8b017c7c5d7b"
+    },
+    {
+      "recordKey": "army_units:auto_turret",
+      "collectionId": "army_units",
+      "documentId": "auto_turret",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "92ca23dbf7ea8d5673bbbc0a15d153faaef123aecfa40779baeee6dd726c2d5a",
+      "payloadHash": "cf20dd26caecb180529786eb41092188ea247b93ae269361fff0c779e7e236b4",
+      "schemaHash": "285ceca8e26e7c0f0b741dd0489dd550e9171f61b7e50e06e5aa682bf7e2cd87"
+    },
+    {
+      "recordKey": "army_units:bile_launcher",
+      "collectionId": "army_units",
+      "documentId": "bile_launcher",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "b7d2cd52bb018700f8a1421731fb5ef52179118f9f48f164285351f6aad0bdc8",
+      "payloadHash": "0500ec3df44a14df74de7f35dce149bbdc076bcd243aefc438d09f75312ea8b2",
+      "schemaHash": "316e515aa0227befb84604f22f15556d873aa733195a56fea24d8b017c7c5d7b"
+    },
+    {
+      "recordKey": "army_units:corpser__roach_",
+      "collectionId": "army_units",
+      "documentId": "corpser__roach_",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "99187cec6bf55738ad6114fbdc4c2a5fa44ca76d020732300d1c6552e0c61ea9",
+      "payloadHash": "b1cdd9fa6911f48853e4c7dbec14046c11dfcb6634c5d0bf7e1dbb4031187e53",
+      "schemaHash": "6da14d8913e091f75d731f7e5ea9807e0e62c2f59f52c9008c50cfe9a4609077"
+    },
+    {
+      "recordKey": "army_units:defiler",
+      "collectionId": "army_units",
+      "documentId": "defiler",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "4a31693409c8d3d8a647ee91943277fc2bc84e7ff6e811f39b54ea83873ddb7c",
+      "payloadHash": "d61341180186819bdc920ee3670f5221bc74f5f2271dc88b0ae44ece8e163d31",
+      "schemaHash": "dd01c17d07c4f45bd9e8041a4679a77091a292288d8be124d5c96e21f391008b"
+    },
+    {
+      "recordKey": "army_units:goliath",
+      "collectionId": "army_units",
+      "documentId": "goliath",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "3284a8c430a3e5925df9dced1af47817b5500cf85e0ae1b293de437a8a27dad9",
+      "payloadHash": "5984c7f157dc34477032cd03da9f1a2afea261343c19eec3a3b789b072bda518",
+      "schemaHash": "6da14d8913e091f75d731f7e5ea9807e0e62c2f59f52c9008c50cfe9a4609077"
+    },
+    {
+      "recordKey": "army_units:high_templar",
+      "collectionId": "army_units",
+      "documentId": "high_templar",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "d71f1185838f3b1979767aeabd2b631b51f036e5714ceca2b6d7bd709ad56d29",
+      "payloadHash": "b8995f45f3188d72e89e7b83b704af56fe2f7b4a407903540d9ebe9de09289e5",
+      "schemaHash": "e5621d7c88a325f0cf2810bda42831ca80ea6d6f8b0afd26f0229173d0ff9826"
+    },
+    {
+      "recordKey": "army_units:holo_decoy",
+      "collectionId": "army_units",
+      "documentId": "holo_decoy",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "f7cacc3cfbf8060d3c3703266a4085f0355f541665fb16693807c4d8d460b12c",
+      "payloadHash": "519a89cd6da3b1aa30fb51759ffabd35e9c0a203fcc467f000ab4d82e93652cc",
+      "schemaHash": "285ceca8e26e7c0f0b741dd0489dd550e9171f61b7e50e06e5aa682bf7e2cd87"
+    },
+    {
+      "recordKey": "army_units:hydralisk",
+      "collectionId": "army_units",
+      "documentId": "hydralisk",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "9803bc91e7c8ca7c2e108e5f2e0b3134a6357904aa8070c5ffc6f59e35937680",
+      "payloadHash": "6da875d545cd93b75122b6b082ad1497ecfefcf47a65fcb5822636776c7cce26",
+      "schemaHash": "dd01c17d07c4f45bd9e8041a4679a77091a292288d8be124d5c96e21f391008b"
+    },
+    {
+      "recordKey": "army_units:immortal",
+      "collectionId": "army_units",
+      "documentId": "immortal",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "940a1e3e874b9c69d09823a2a833ff22bff6baac538df16aa60bff1adb1f1a92",
+      "payloadHash": "ece87fbd83a1a5f995963734dbde2c4d9cf6b799742f1cf48ef58a9b273ef5f5",
+      "schemaHash": "43133054ef3f3c0f324450e4816113bb14c6fb70fc651bbc3a789c52dd215ece"
+    },
+    {
+      "recordKey": "army_units:jim_raynor",
+      "collectionId": "army_units",
+      "documentId": "jim_raynor",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "7ebb93e74361e2a6d90a42aa46b812d67e122d3c83a85bf40ee765a99f55cdaf",
+      "payloadHash": "3f6e5817706c4ecb431036f778ca2ac8d9db46fcf6a023835cf099917762c065",
+      "schemaHash": "316e515aa0227befb84604f22f15556d873aa733195a56fea24d8b017c7c5d7b"
+    },
+    {
+      "recordKey": "army_units:kerrigan",
+      "collectionId": "army_units",
+      "documentId": "kerrigan",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "9555e809c6f8f6a764a6469ba8911fa76224f4fc4147e637a9146f8f9de7c7b0",
+      "payloadHash": "58903583a0e4b4a99603e4ea8d1455d8b76c62b464685e4762dc61647992fe69",
+      "schemaHash": "316e515aa0227befb84604f22f15556d873aa733195a56fea24d8b017c7c5d7b"
+    },
+    {
+      "recordKey": "army_units:kerrigan_swarm_raptor__zergling_",
+      "collectionId": "army_units",
+      "documentId": "kerrigan_swarm_raptor__zergling_",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "c72d5ba03f901c1e8a9b7154c7ba9d3477a76f3d23805b743a2cba4923deb11c",
+      "payloadHash": "5b2c2a97e443c3889d1c1b3243421ddfa4afe1affd8f23f3e20b6fa4a1aa62cf",
+      "schemaHash": "e5621d7c88a325f0cf2810bda42831ca80ea6d6f8b0afd26f0229173d0ff9826"
+    },
+    {
+      "recordKey": "army_units:marauder",
+      "collectionId": "army_units",
+      "documentId": "marauder",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "f08a3908ca02cc6ecf5f168280079b3442edd1f99189f2dc89fe534e73cba6ee",
+      "payloadHash": "ea1aa6b4e542adafb20637b1ac5727f92e43501d4109150e88e3531fe190c823",
+      "schemaHash": "316e515aa0227befb84604f22f15556d873aa733195a56fea24d8b017c7c5d7b"
+    },
+    {
+      "recordKey": "army_units:marine",
+      "collectionId": "army_units",
+      "documentId": "marine",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "ced0fdbd3b7c847e87980bcd1af6aa2ba4d8325cf39aca25131698bc06c331aa",
+      "payloadHash": "c615595f9b21f08bdd25b6f2b50a3d96d38177b98e5544572d086bee46a2c87b",
+      "schemaHash": "066c4ebc0ea314a425b0df9a9714ef2e8517a2f0b8a727e1d6d297f90f0bf9fb"
+    },
+    {
+      "recordKey": "army_units:medic",
+      "collectionId": "army_units",
+      "documentId": "medic",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "f695baada89edd02b6f7672438aff75817e54851356dfb76680744c1db809852",
+      "payloadHash": "c25d62a7add008b2ffef818e713a3ea21e6842d8a1a8bd2901f74808d9a5e977",
+      "schemaHash": "dd01c17d07c4f45bd9e8041a4679a77091a292288d8be124d5c96e21f391008b"
+    },
+    {
+      "recordKey": "army_units:nerazim_watchers__adept_",
+      "collectionId": "army_units",
+      "documentId": "nerazim_watchers__adept_",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "2c6e60f4902a61d9e511389c4116ea5458faafe6861a1bd08ab9d22ddda3a924",
+      "payloadHash": "beb547d7a25de1f96ecc92cc7ee78324b946ffce9b74492adab6160f619e8b2f",
+      "schemaHash": "1c8ae83bafad10f1564d05a327aa96c2c27116c730188eb354a926a0c2c39090"
+    },
+    {
+      "recordKey": "army_units:nova_assault_mode",
+      "collectionId": "army_units",
+      "documentId": "nova_assault_mode",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "853987b789d39084bce81c4fd188ec2eda5fa5eb0aca9b8f8f28342ae992aa8e",
+      "payloadHash": "bfd82337e27118315d26810ca9958f346326cb5ae1e8d9da2cf7f7a42ffefe86",
+      "schemaHash": "dd01c17d07c4f45bd9e8041a4679a77091a292288d8be124d5c96e21f391008b"
+    },
+    {
+      "recordKey": "army_units:nova_stealth_mode",
+      "collectionId": "army_units",
+      "documentId": "nova_stealth_mode",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "ed23c7ee0770d35e764085781ff374151014bd37bc3f309a5c3e40014cc2ceec",
+      "payloadHash": "a495361277530076371ba40c5e6af4bdb4faab7cbf8d3af1c792d80f87684e31",
+      "schemaHash": "066c4ebc0ea314a425b0df9a9714ef2e8517a2f0b8a727e1d6d297f90f0bf9fb"
+    },
+    {
+      "recordKey": "army_units:omega_worm",
+      "collectionId": "army_units",
+      "documentId": "omega_worm",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "349b6dc6e3fead1ec361f2bd687acf21880a1c4c03ef9afd7f8d89344def1d70",
+      "payloadHash": "0486fa81efbaeddee60a365bc051aa0a71957b3308c8e955bc689705bc50e812",
+      "schemaHash": "285ceca8e26e7c0f0b741dd0489dd550e9171f61b7e50e06e5aa682bf7e2cd87"
+    },
+    {
+      "recordKey": "army_units:point_defense_drone",
+      "collectionId": "army_units",
+      "documentId": "point_defense_drone",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "e8c9a2fb937375b2c33c508c79f5253c7c465179aca2b28b97febc36f8d6c2dc",
+      "payloadHash": "d248d4d7fa6999a9c5c8eb001871c4256c1ee70e42bfbfaf67065ea011081ddf",
+      "schemaHash": "3ee2bbda9efec02edd68dee013bb199d6ed04c531a931b79c3812be29867e008"
+    },
+    {
+      "recordKey": "army_units:praetor_guard__zealot_",
+      "collectionId": "army_units",
+      "documentId": "praetor_guard__zealot_",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "aaf0b7d625ba0b25fb70ebddf75673b84bb15bd7d7f8fab7012140f1fbd06797",
+      "payloadHash": "4f4723d03977f37824585144143533007e5f4bd47cc530e6b1dd314af70320ba",
+      "schemaHash": "316e515aa0227befb84604f22f15556d873aa733195a56fea24d8b017c7c5d7b"
+    },
+    {
+      "recordKey": "army_units:pylon",
+      "collectionId": "army_units",
+      "documentId": "pylon",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "ffc2e86f75c3e54731691c04e477c3841c44ade1e44955a592359eb5a3dfa687",
+      "payloadHash": "d9ecc9f442fc675c1c2ad6ebb6695e4f9982502e9b2b144f9f760735764d7630",
+      "schemaHash": "3ee2bbda9efec02edd68dee013bb199d6ed04c531a931b79c3812be29867e008"
+    },
+    {
+      "recordKey": "army_units:queen",
+      "collectionId": "army_units",
+      "documentId": "queen",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "67d4658587990405d2ad969e1fad6d77e67f4c1f6552a3ffa216f859b3e19b18",
+      "payloadHash": "918c6954cee7eee015e03b61b1b360ad2c5ced73a58186a5d027b70eff65a31f",
+      "schemaHash": "6da14d8913e091f75d731f7e5ea9807e0e62c2f59f52c9008c50cfe9a4609077"
+    },
+    {
+      "recordKey": "army_units:raptor__zergling_",
+      "collectionId": "army_units",
+      "documentId": "raptor__zergling_",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "4ff8fe3cef5800813b3b123eacf1c64830ae3604b5215b800ca8d210215efab6",
+      "payloadHash": "15fed892490beffb78c730059c149096676281902437580c792ba72f6fb6b99d",
+      "schemaHash": "066c4ebc0ea314a425b0df9a9714ef2e8517a2f0b8a727e1d6d297f90f0bf9fb"
+    },
+    {
+      "recordKey": "army_units:ravager",
+      "collectionId": "army_units",
+      "documentId": "ravager",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "d5b2f67a2b7767dfa3d3849ccf0b2d45e70da1eb26027fe1519b149b9f318f58",
+      "payloadHash": "2a063a63dd3efa6dc29e2649d6f72afceb85864e87120c6dd3e5d93e2483dbc8",
+      "schemaHash": "066c4ebc0ea314a425b0df9a9714ef2e8517a2f0b8a727e1d6d297f90f0bf9fb"
+    },
+    {
+      "recordKey": "army_units:raven",
+      "collectionId": "army_units",
+      "documentId": "raven",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "5482593ea8e36d7dc7757e41607c8f879b57746b0f0d699ec27ac6519df823bb",
+      "payloadHash": "91c229018f013bbba1bc97ea0137b7b166e9b1359706bf732884dfb0e0a64504",
+      "schemaHash": "dd01c17d07c4f45bd9e8041a4679a77091a292288d8be124d5c96e21f391008b"
+    },
+    {
+      "recordKey": "army_units:raynor_s_raider__marine_",
+      "collectionId": "army_units",
+      "documentId": "raynor_s_raider__marine_",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "f293e94be33773a11bb8a7ca535c1ae62e0780f646842fd02f4fef43b190486e",
+      "payloadHash": "efaf829f4c56914d171a071b27e6743f4a3abf94f00645b1b90abd5d37a289ec",
+      "schemaHash": "316e515aa0227befb84604f22f15556d873aa733195a56fea24d8b017c7c5d7b"
+    },
+    {
+      "recordKey": "army_units:roach",
+      "collectionId": "army_units",
+      "documentId": "roach",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "e899d2a7b5f1a65f2c356d5c38badcae1632fdc64b05f4761b3191e4b07a6d0c",
+      "payloadHash": "c0cdf85c665fe0ed5c0dc7786c3449f471c7666d28a4605cf8c332b7a3f82941",
+      "schemaHash": "066c4ebc0ea314a425b0df9a9714ef2e8517a2f0b8a727e1d6d297f90f0bf9fb"
+    },
+    {
+      "recordKey": "army_units:roachling",
+      "collectionId": "army_units",
+      "documentId": "roachling",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "dad7c2a3e2d41c9b3548051528766315de0b3317f9c6c6dfb7a3c88adfa1aac6",
+      "payloadHash": "798f976c444281d665eebf4e2223a13f089a91e874a5c327f7bebfef1499a02f",
+      "schemaHash": "26a19d1b0d0e67ae871ab286b5ab1379350eeb4b97112a5c33d70089f2105e26"
+    },
+    {
+      "recordKey": "army_units:sabotage_drone",
+      "collectionId": "army_units",
+      "documentId": "sabotage_drone",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "dc0f4088847feea1afefc1866f790d7dea5cddc47922b1b185176a07625ff3cc",
+      "payloadHash": "09a68fdc2079dbc63b0fd560c9f7a3e267b137a2d1910a42be4f11bb0ff2f1c7",
+      "schemaHash": "26a19d1b0d0e67ae871ab286b5ab1379350eeb4b97112a5c33d70089f2105e26"
+    },
+    {
+      "recordKey": "army_units:sentry",
+      "collectionId": "army_units",
+      "documentId": "sentry",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "53a8abb9f5d7ae92d0dc6c230dadf73bc21b17af955e69a80685c6374f000269",
+      "payloadHash": "924d1af5180ed4faf5fc3140fbc1b697cbe7f4ad44e6f7554f2bdf1c6c877435",
+      "schemaHash": "316e515aa0227befb84604f22f15556d873aa733195a56fea24d8b017c7c5d7b"
+    },
+    {
+      "recordKey": "army_units:siege_tank",
+      "collectionId": "army_units",
+      "documentId": "siege_tank",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "89a0d3d97984b63d7cb3e81b0c3ddd2339a4176645f00249517b71100ddd7766",
+      "payloadHash": "f6c3e7b486b14df3cb3192ca65a5575cef45e04cbdc7b7f782b3623eceb5a0fd",
+      "schemaHash": "e8ed6e27e33df8fa5d479d5e12b31aebbd8af613404867cef7726bc41e330211"
+    },
+    {
+      "recordKey": "army_units:spec_ops_marauder__marauder_",
+      "collectionId": "army_units",
+      "documentId": "spec_ops_marauder__marauder_",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "4b57a66e3b3cc5d040d2f963fef8cdc8393c1a87ea763c9f0611a4c089c6a9c8",
+      "payloadHash": "a63453720c3dbd535659ca24a23da3d2cc0cbd4defb1b8b261da8c253142d91c",
+      "schemaHash": "e5621d7c88a325f0cf2810bda42831ca80ea6d6f8b0afd26f0229173d0ff9826"
+    },
+    {
+      "recordKey": "army_units:stalker",
+      "collectionId": "army_units",
+      "documentId": "stalker",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "ff33aa26920de222908d1b46b3ae18477a5a8d573b03f27deed6fc4a52af18a9",
+      "payloadHash": "ced34a9dc9731b09e53395f80434bc52be8c1fef0847c68c373617a17b85ff72",
+      "schemaHash": "e5621d7c88a325f0cf2810bda42831ca80ea6d6f8b0afd26f0229173d0ff9826"
+    },
+    {
+      "recordKey": "army_units:swarmling__zergling_",
+      "collectionId": "army_units",
+      "documentId": "swarmling__zergling_",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "3d7278b9d22d313a4946f5bd92e6d5ab6a5f4cf35af7a1d001ab7bdd552b5a9a",
+      "payloadHash": "8fd68ef8cf1a8a7950eba4d90e5104dcab52befedb75566ad804f60b6efdcf79",
+      "schemaHash": "e5621d7c88a325f0cf2810bda42831ca80ea6d6f8b0afd26f0229173d0ff9826"
+    },
+    {
+      "recordKey": "army_units:tassadar",
+      "collectionId": "army_units",
+      "documentId": "tassadar",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "8aa312078caee932f092ffedefb01ab6e3a3deff011dbb62a84ffa5605d314eb",
+      "payloadHash": "d7f345bac75441cff80b8297376f75c2065ec56db224e622e147aba58842f5af",
+      "schemaHash": "dd01c17d07c4f45bd9e8041a4679a77091a292288d8be124d5c96e21f391008b"
+    },
+    {
+      "recordKey": "army_units:twilight_templar__high_templar_",
+      "collectionId": "army_units",
+      "documentId": "twilight_templar__high_templar_",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "5bc212dfb865fc3fba7f60e9f1e362c03b1d671c5bf11161504fd37f60c0994d",
+      "payloadHash": "46526238ce1d95888d4a3faec70cdeeba9f2f0bef356c37453ff2832a5416e47",
+      "schemaHash": "e5621d7c88a325f0cf2810bda42831ca80ea6d6f8b0afd26f0229173d0ff9826"
+    },
+    {
+      "recordKey": "army_units:vile__roach_",
+      "collectionId": "army_units",
+      "documentId": "vile__roach_",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "e462009845a7337fedb910f8cb9291127ba4d2e11bcf1c994f8909e8e4d78b04",
+      "payloadHash": "1ddc8bb2fcf2435c1814daf3bfb0d00ffea085867f517832ae03609795a9063a",
+      "schemaHash": "6da14d8913e091f75d731f7e5ea9807e0e62c2f59f52c9008c50cfe9a4609077"
+    },
+    {
+      "recordKey": "army_units:vileling__zergling_",
+      "collectionId": "army_units",
+      "documentId": "vileling__zergling_",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "df5ca8d83006366e75eba43c6eea018abedb89ff392d7f6d53c9e5eb100f2a9f",
+      "payloadHash": "e7e4bebf3a4493c2dd4e14b477488161968adbb230b242e9aa9bb7df28f38d96",
+      "schemaHash": "11914083ab49ac15e52734b1c4d5edc756b0bde36a72c584ce69bd26955790c1"
+    },
+    {
+      "recordKey": "army_units:zagara",
+      "collectionId": "army_units",
+      "documentId": "zagara",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "5c85d80cc8d36c0ae7be92dabf95983a29c72d8ffb52c29188e943f12b6d982d",
+      "payloadHash": "0bb4dddcaefd80887f7df581c74641c021e3d8d01969460bc1f34b7d8ef6b90c",
+      "schemaHash": "6da14d8913e091f75d731f7e5ea9807e0e62c2f59f52c9008c50cfe9a4609077"
+    },
+    {
+      "recordKey": "army_units:zealot",
+      "collectionId": "army_units",
+      "documentId": "zealot",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "58acd8a81f3de33e0990280c62b93302635dbb59b8c01316ce43b122c7761506",
+      "payloadHash": "ec1bbc4f0a124efaf251903cda2f7be405533ec58b951498904643f29d2de2a0",
+      "schemaHash": "316e515aa0227befb84604f22f15556d873aa733195a56fea24d8b017c7c5d7b"
+    },
+    {
+      "recordKey": "army_units:zeratul",
+      "collectionId": "army_units",
+      "documentId": "zeratul",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "d452a07b3c3db5db5857a51e0fd613933e6d3cf378734b6fcb9046c37a1d67c4",
+      "payloadHash": "686f4412486b64184d6d02c1085171a6408b50ce6fc3a669070f74438feb1884",
+      "schemaHash": "dd01c17d07c4f45bd9e8041a4679a77091a292288d8be124d5c96e21f391008b"
+    },
+    {
+      "recordKey": "army_units:zergling",
+      "collectionId": "army_units",
+      "documentId": "zergling",
+      "recordType": "unit",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "cb146bd5a44f3e0af8f0fd2cde2becb09f9fed920a661f6b9d8305b1c79edf73",
+      "payloadHash": "1f177d4116028dcf3a3bc3337fc4c4df5acb87093617832a26eb255f7e7a6c11",
+      "schemaHash": "316e515aa0227befb84604f22f15556d873aa733195a56fea24d8b017c7c5d7b"
+    },
+    {
+      "recordKey": "faction_cards:05luy0SQ1dQSGtQGo0eP",
+      "collectionId": "faction_cards",
+      "documentId": "05luy0SQ1dQSGtQGo0eP",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "86599b5c22a7ebdf98b65934912a5e550ec90114b35b350d5e363686ef3ffae7",
+      "payloadHash": "d17bf2f28d6ab19d08b2b5a2bf0df1d889f9d88940491306ec9f6e31012a9293",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:0FSh1FZHyg86TmZTRrDz",
+      "collectionId": "faction_cards",
+      "documentId": "0FSh1FZHyg86TmZTRrDz",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "65cfd7c7966b2031f0fbd8118574679f89b5563e85460c6e3179dda4264b2d90",
+      "payloadHash": "6e1a704e5e1fb311d1bafbecfec86b3af665e1d84d6a4627757abd1b47ee8f41",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:0iORlDl7itixl5phM21T",
+      "collectionId": "faction_cards",
+      "documentId": "0iORlDl7itixl5phM21T",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "b9bd6cabcb85a840ab41174cad5a313ebfc72152536e0f25ace38affbd21697c",
+      "payloadHash": "2bda02efab74ab02718732ee88df318fbed334b5985f0b797832c4597b84a925",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:0PEJlMHiObzUBmuawPYg",
+      "collectionId": "faction_cards",
+      "documentId": "0PEJlMHiObzUBmuawPYg",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "d81d4084ca8911995579e5d0146fffacae3e7fee681f922f7f88c15af0182fa3",
+      "payloadHash": "2d64571394a7cbc32bb086546136797b8f0f7696df4b8d20901853a3c7cb45f0",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:0qlVc95665xBE3rU86Z9",
+      "collectionId": "faction_cards",
+      "documentId": "0qlVc95665xBE3rU86Z9",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "5b591329c645215c116bf08e023ae3e409ef8bd39ed69fe0c0e0937b08810e4b",
+      "payloadHash": "0379a039b37880819d585ee69648d371e2a4de1463818d8513ec3146a8f66db5",
+      "schemaHash": "eebb0291fcdb23f0dd8ef8958f5cb227a24e25e4ea86ebe23fbb78f9f4da7e53"
+    },
+    {
+      "recordKey": "faction_cards:0VqTsMB4uBFfda4JG7j7",
+      "collectionId": "faction_cards",
+      "documentId": "0VqTsMB4uBFfda4JG7j7",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "17054c9fd077e3859e54f3f92773e21613e1a36ff44ed81ebeffe19e7d9f0e4c",
+      "payloadHash": "6c99950bb531a1990b9f2b5d23376c39eb45297561eacb83af4b933ce2210c23",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:0wCjrkwUdsGJFYqHTt1F",
+      "collectionId": "faction_cards",
+      "documentId": "0wCjrkwUdsGJFYqHTt1F",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "90f690312f89fb0e75a69b12f7d3e50898072bb4aede29a669a85b3855b296e6",
+      "payloadHash": "05812bc391cfc83fbebe0453dd9c3101d4283eec60d2bf37e78aeea3e2166563",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:1a9uG8jFtXLRpAFa5Th3",
+      "collectionId": "faction_cards",
+      "documentId": "1a9uG8jFtXLRpAFa5Th3",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "cd3a846ee45c4c953a957ef1bcb32dd215c09955e9ef23936901380c615bbda1",
+      "payloadHash": "1ba76d37d7a10ccabb8ff8c348f086b05b608f50d403eb1589f529e828616e39",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:2MUOT2E6MbFTmAuYNzW7",
+      "collectionId": "faction_cards",
+      "documentId": "2MUOT2E6MbFTmAuYNzW7",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "a76ed6529e2f6a0ca5c757d3677828ab6466d20b69ffa9774887d5d345890e9c",
+      "payloadHash": "11d1eb8ef82db4c2e286b16ab7ffc3773170eafa763209722f3bbbc7bf7f41de",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:2NdngLtIeZAprsWr25hM",
+      "collectionId": "faction_cards",
+      "documentId": "2NdngLtIeZAprsWr25hM",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "c6fd3d817a42fb58bdce7d23c3595061f159c3287febbe2221fcd884b6550aa0",
+      "payloadHash": "8ab7a56a4ae7026eef62ec46fc32d7ec62599f68c2b88cd4a2ad5408e5a4033a",
+      "schemaHash": "29329689a30bc7e67bd3d1771a632bca0e8addac556af107dd074a14e30f82b5"
+    },
+    {
+      "recordKey": "faction_cards:2ns5Vkcg6f8fe2ZaLAbn",
+      "collectionId": "faction_cards",
+      "documentId": "2ns5Vkcg6f8fe2ZaLAbn",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "f1ce5fb1d1178e6d2ffab5a2c5cb428a1fe6e702d54eff8c034da6d9a2d67f4f",
+      "payloadHash": "d49cf9a6bab3d6363ea6950aac5b258f002f74d660f97e891a01ef1465b72fb2",
+      "schemaHash": "ab09729170023975e98c130f724265f452d950bbe3b4b3d2a5be8d1f4d490d99"
+    },
+    {
+      "recordKey": "faction_cards:3TLSupHClPWA8DGwSkhm",
+      "collectionId": "faction_cards",
+      "documentId": "3TLSupHClPWA8DGwSkhm",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "fca6fb4f658ac57b508d9ed62f9f83f845a46a9929c34e545b6678adda8db602",
+      "payloadHash": "94c8ba092d6bc65138ca6df02da8e2c69e9637403ab14d1ce70bbc1c85a2fc38",
+      "schemaHash": "9552e3939cb65ea80ac72fdae7b803642a41e04ef1fad77404091645c1d0d46d"
+    },
+    {
+      "recordKey": "faction_cards:3u1R9kCNXDiuoCCPKiHX",
+      "collectionId": "faction_cards",
+      "documentId": "3u1R9kCNXDiuoCCPKiHX",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "6c37ed7c609577aff9696b45f63ebcc06bc6e4faeea81ca61cbe2843fd7efa68",
+      "payloadHash": "0bbcce0252c2b02749dedce2d0b95457d6cac397a79ccedf2a72f5c5298586fd",
+      "schemaHash": "7f5c5d61b8c9333c246d03038d5404170cea9d9cca62d053446cbd881b7a702c"
+    },
+    {
+      "recordKey": "faction_cards:47uKC6dtwiwhPzGsNg3t",
+      "collectionId": "faction_cards",
+      "documentId": "47uKC6dtwiwhPzGsNg3t",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "49b636508f6a36d8a724a6bd928f7a798bf9830fc9a6c0c77c256079300a1b4f",
+      "payloadHash": "5539a68baccca8c264d76a21660059f1d46b568b11e8ec233fcef473c69c1630",
+      "schemaHash": "acbaef3e50bc50ae21145db10a6048920433abaf6f403ca681991a5b588a054a"
+    },
+    {
+      "recordKey": "faction_cards:4E3ZkBeWcytftkeN9aOZ",
+      "collectionId": "faction_cards",
+      "documentId": "4E3ZkBeWcytftkeN9aOZ",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "77ddb703d7fd30e510b96b82b915a0c445ad261911b88151d968313d7578eef3",
+      "payloadHash": "ec5c28d6e043cd96f21bf41c1632f9483106840668087b3cb4e5e6527f3cd756",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:4piEr7UimG7bQLZsXOul",
+      "collectionId": "faction_cards",
+      "documentId": "4piEr7UimG7bQLZsXOul",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "3eecef9293d7d2063cbe76270d4eb941e66a2c9532bb7f4cbe5d4c4eefb4c027",
+      "payloadHash": "71be92475bcc1455cf025321ef66d2fc1343d2d3c91a75867c375a970ab8c609",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:4WBrNpW15oyoScDABv69",
+      "collectionId": "faction_cards",
+      "documentId": "4WBrNpW15oyoScDABv69",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "fad2ea0e5fa193feb54afa43edbfdf3711e57877d507d5910ad89d61b5668f37",
+      "payloadHash": "f2d74ae415f325a85c6be9f1dfafa1999a847836a1e03e4f42aa132d15a35ed4",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:5ew0u5PRwSEe3rcFWgD7",
+      "collectionId": "faction_cards",
+      "documentId": "5ew0u5PRwSEe3rcFWgD7",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "b302925ed75476875cfa9c6d2873db73736f1cd9b114bd0a349b18768e2ad923",
+      "payloadHash": "2990f3625954a8783e9c03b52e9b7b0bc1a46338e5e74c3e454869a09645c33f",
+      "schemaHash": "eebb0291fcdb23f0dd8ef8958f5cb227a24e25e4ea86ebe23fbb78f9f4da7e53"
+    },
+    {
+      "recordKey": "faction_cards:5IlUTGiACPSlB0R2D40K",
+      "collectionId": "faction_cards",
+      "documentId": "5IlUTGiACPSlB0R2D40K",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "0be7affabdc7a2db684d8d1b5f0e2e160f9aeb21366f52ed5c9310790c6000e8",
+      "payloadHash": "340cc4d183d08b61162020528f051720aaa7e578636ed81931ca197e7aa2c0d7",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:5j8GF98DtmSdPVtNjOH2",
+      "collectionId": "faction_cards",
+      "documentId": "5j8GF98DtmSdPVtNjOH2",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "95603d115d00c3a225c44c11b83c98b3284a8f17e53eb037c8c40e5c58944702",
+      "payloadHash": "3c73003df06328c1000bba9d61045ce38ab72bcc6ca53e91d6d835f4578deea1",
+      "schemaHash": "ad53fe35c7c9432d48925ae293278107420b7bdcab879fc57becafe45c15e669"
+    },
+    {
+      "recordKey": "faction_cards:5ukwAbvsJ3yldDfAdYqH",
+      "collectionId": "faction_cards",
+      "documentId": "5ukwAbvsJ3yldDfAdYqH",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "90eebce889ba00a4bce1d30dcbd0578ad6efad5a16e77a20d74a9d7628b7b6fb",
+      "payloadHash": "484b18569854039e1f5c2c8140b7092d4244e35e2b2b97710c16993f7aad4e13",
+      "schemaHash": "c1e930f5ea455d5a4a0b5c09b0a77392388cf08cfc6faf92fdba55d36c406bd9"
+    },
+    {
+      "recordKey": "faction_cards:5ZUunGFwSI1VncCGgjr1",
+      "collectionId": "faction_cards",
+      "documentId": "5ZUunGFwSI1VncCGgjr1",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "4ffeb1b98ea7d22312fc7abd80c2d5d06fefec0bee466102a6440ace63e1b310",
+      "payloadHash": "187dd1452277238a8175121d3e19995111e661ba22625879e2a1a93911521234",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:6d3lgXuAIl1IaF1CYII0",
+      "collectionId": "faction_cards",
+      "documentId": "6d3lgXuAIl1IaF1CYII0",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "6ae0194dad8e03d9de62ec3e5a7bf7f3946bdc93f113b1c918dd4bb55bf08d18",
+      "payloadHash": "2bd17035887d4055732da34fff0af0638bc27494cd58ed74c78b31dd127e18ed",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:6j82GmjyoPDrmI7N5DPd",
+      "collectionId": "faction_cards",
+      "documentId": "6j82GmjyoPDrmI7N5DPd",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "061936b3fd2340d45ff7dbadf000cca7b459dcd66454d31e7ad6071acf376d5e",
+      "payloadHash": "7f99c4bb982ab28bf53d92acbf1e0d878f8492d0c453d0dd0abe38b8164f7635",
+      "schemaHash": "66db176bc018503ccc3e6519f3d6cc914106edc755d8d58e5ff0c3a7ff5f901d"
+    },
+    {
+      "recordKey": "faction_cards:6qLaBzRcMOUv8Hvn4Rz9",
+      "collectionId": "faction_cards",
+      "documentId": "6qLaBzRcMOUv8Hvn4Rz9",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "bc51826f9ac00ac3570e5c1f6089bcd2cc92589d8978501164a4589434d5b181",
+      "payloadHash": "534e4ca24f4616ccc2e1ece4054995de37f8e2c4713beb142588671ad1a3aa4c",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:6qMfc9srcXP7y5JFoVZc",
+      "collectionId": "faction_cards",
+      "documentId": "6qMfc9srcXP7y5JFoVZc",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "b84f824583b24914f31edc7cbf18b18541aa41da2c9473886627a5bd978f5e6b",
+      "payloadHash": "fbbc8280cf2d8c534754d1e91902423e371371675cefd889bb9470654da60e54",
+      "schemaHash": "492e6545630b58f849ee6098461a27458bb77adfc90b58a6e4196a67c748ef50"
+    },
+    {
+      "recordKey": "faction_cards:6Wf4kzh917cXqCcWARR9",
+      "collectionId": "faction_cards",
+      "documentId": "6Wf4kzh917cXqCcWARR9",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "16be30c810101198239f212334a7c53ea41b017b6b826640576438f9cc3dfc1f",
+      "payloadHash": "82fe7996673790869cfd8e6f4651dce0d30a374adfbe0fba69c74aa9b9de78ac",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:6xhqpCVyH7Paerkhcfx8",
+      "collectionId": "faction_cards",
+      "documentId": "6xhqpCVyH7Paerkhcfx8",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "f7f01a7485fed75bed2e61ccb29ef645fa7e1d01cdc62cdcdca5e44279aff47b",
+      "payloadHash": "0989df96e30b201fe6d0c9c5bfe4dae84626a6f07f3c95e724aa774a91aebf42",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:6YAMREsZCnTqyUiJmgcp",
+      "collectionId": "faction_cards",
+      "documentId": "6YAMREsZCnTqyUiJmgcp",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "e6a4178fdb51a2eaba6eaca1da73b485378804e0ae1c68fa8c7b29fcddc7cb57",
+      "payloadHash": "587c1ebe76f777e289ee2dc9bc6d3aa53bd45016e2b255bdcc66ff33ed1a84b5",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:7D74nOBKC2VQvbWJ4IES",
+      "collectionId": "faction_cards",
+      "documentId": "7D74nOBKC2VQvbWJ4IES",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "f60ad196ad5aeb0df1300a2115011e19f164326f87cfe6c62e450b1a61d31b3f",
+      "payloadHash": "525e7abb1b40fc5cde691a662b121d52760c133d1be4133bcac0c6c711296c7f",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:7ImhaLAYxJRzLjHs6sNI",
+      "collectionId": "faction_cards",
+      "documentId": "7ImhaLAYxJRzLjHs6sNI",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "96871ff5bfb0e95948cd9f7f3b8ba1a08046ba4aea657a9d30428c2164a0217f",
+      "payloadHash": "402423a65513e515706aacb6992d01cfd60196fe84264518826126c4e2ed7437",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:8BUHAzvk0qsXlkHvcKK5",
+      "collectionId": "faction_cards",
+      "documentId": "8BUHAzvk0qsXlkHvcKK5",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "fc80dd73e56286dfebe75eff4d13eda2295aba24aad0eadbde6ce44d4f951399",
+      "payloadHash": "4096aa9a48efa7ac5dc69844aaa82ebf00326319f4076f54c92609e85aeb6dc7",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:8iNoFh1sV8DAN0rkq2EH",
+      "collectionId": "faction_cards",
+      "documentId": "8iNoFh1sV8DAN0rkq2EH",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "35c94da394fe46f5aa9ed85f10a9128313d2b39b34ccac990326e6542e7639fe",
+      "payloadHash": "8bfe17000125e5460584343c8431ec42af9c5880d3caab67232bcecfb5abfb6d",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:8mQwLbCDqh0pdR5QgkYx",
+      "collectionId": "faction_cards",
+      "documentId": "8mQwLbCDqh0pdR5QgkYx",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "46bbd13e32fa9758edc02891ff38f109de4fb42254aa0e9b00885df897c4553c",
+      "payloadHash": "560627464d782eea416e8469ff4458d1ce8ff62edc6cef2f6f37ee4841f18889",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:8SvZpXMsktNdnUVz2fvT",
+      "collectionId": "faction_cards",
+      "documentId": "8SvZpXMsktNdnUVz2fvT",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "6b4a84056648bd3bd9179a59fce26aa6179b228a49eec0e5c04b34c53d7c12cf",
+      "payloadHash": "bfd9b7402884109a5656d1e2af57d7c7fc56b112c73185c96d0a75ba42c2c2d4",
+      "schemaHash": "b10d4d63b33543e8b0fc7384f42be05219e430d017feab994cbe9378d50cb738"
+    },
+    {
+      "recordKey": "faction_cards:9l0L6THUgHEQcKZl2qjk",
+      "collectionId": "faction_cards",
+      "documentId": "9l0L6THUgHEQcKZl2qjk",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "d0f8be903c60747524a6a3cf7898a11b1f70c332e165db1d0edf0fac329ca15d",
+      "payloadHash": "c163461c11166fea3e844e5d868eb640c826b83d51d3d684c71f2f3e85995f0c",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:9pUxLFcqG0KItIO3K3WD",
+      "collectionId": "faction_cards",
+      "documentId": "9pUxLFcqG0KItIO3K3WD",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "102206e4c19d4a76427cb8bfb4a0e6e0bdcdf6ea4c42adc1174bc5cb7f6185e4",
+      "payloadHash": "9150da4617f76ab973e67de79a914953f66ef87f0cdf6e6b153fb90dbc55272b",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:A0OBA3ZmFOjf0ZzJy3kA",
+      "collectionId": "faction_cards",
+      "documentId": "A0OBA3ZmFOjf0ZzJy3kA",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "dd7ee2f43d61390957f9e22e3230e326750f576ef2bb38ffb2b5bf3a80a09bac",
+      "payloadHash": "86112bc29aa9824b9aed22169698824c19c8d2ab7c679600c1b94777fef07fc9",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:a7Ax3InF4uueg3gZ308P",
+      "collectionId": "faction_cards",
+      "documentId": "a7Ax3InF4uueg3gZ308P",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "966f170e845f315fe815fde48d0aa22e791361988f01b909c273d1586def8b41",
+      "payloadHash": "fbaf8df68b2c305ea9d59af7d7dc2b0ca0b11a1b513d4e6b739a5c99c15820e1",
+      "schemaHash": "29329689a30bc7e67bd3d1771a632bca0e8addac556af107dd074a14e30f82b5"
+    },
+    {
+      "recordKey": "faction_cards:a96kht3o9fC1FiG6L6WK",
+      "collectionId": "faction_cards",
+      "documentId": "a96kht3o9fC1FiG6L6WK",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "d452f84c7bd78032ad60bc97f883f70469205b045dbc1b611d7739cdd876cb72",
+      "payloadHash": "6ce8d02bb48f5ba9094249be209d14aa2df5be8ec2e0bca09fbdff2a9330351f",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:Aew79L42jPDabJGmbRS5",
+      "collectionId": "faction_cards",
+      "documentId": "Aew79L42jPDabJGmbRS5",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "b7819a036d52594b881c93dc5a30df19ddde8b3b8446c9598b5c1dbc7baf12a6",
+      "payloadHash": "5580948a88656a6548cfdb38718cce7365f8164233654c50007d60726106ffc8",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:AFTF2n0PLejcdmZjD8oY",
+      "collectionId": "faction_cards",
+      "documentId": "AFTF2n0PLejcdmZjD8oY",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "6cf6dfe2a5081826c36d7434c4337a5ce66393f36e3bc0376a6e22505647705a",
+      "payloadHash": "52a610ee8eda7bd77a3f5d5d5331bccd313a4f9a2904db3ee4695a89b3b0e7b9",
+      "schemaHash": "fde6aca43bac773b780c027702376c54db46eebe3a07826cbb33c05417e81a3a"
+    },
+    {
+      "recordKey": "faction_cards:AjcYNy7LRlCN4zuyX8uT",
+      "collectionId": "faction_cards",
+      "documentId": "AjcYNy7LRlCN4zuyX8uT",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "800fd8f6763fabe54e63f1c1c975c9823a2c2c29ff4402165fca7501e1ea6b86",
+      "payloadHash": "789f1e1173af2e812fb14eaf88b2f214cbec84c8361ddafe5d16df3edce34b18",
+      "schemaHash": "c1e930f5ea455d5a4a0b5c09b0a77392388cf08cfc6faf92fdba55d36c406bd9"
+    },
+    {
+      "recordKey": "faction_cards:aodYJb63ctnbdoUtbINH",
+      "collectionId": "faction_cards",
+      "documentId": "aodYJb63ctnbdoUtbINH",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "983dd83e91164f618191431b1e88254876f7d190f6f9b356c7d7a88cd3e5d894",
+      "payloadHash": "36a2432a47f28c43a4034a5c8f9ce340b81abcb86509a5b1a7fb5cf48a14628b",
+      "schemaHash": "74eb54cf6bce98317383df2f7424a522f873eba69ef26bca0be06ca4c20e2610"
+    },
+    {
+      "recordKey": "faction_cards:aRTxWxAKEeqIvycTHFYK",
+      "collectionId": "faction_cards",
+      "documentId": "aRTxWxAKEeqIvycTHFYK",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "474e911dc2d4f6840573868998b0611117a68e43fed4eec6e21174b82379934e",
+      "payloadHash": "3447defd0465ddd55ec39bc842f4fa128da4dc6c2aa2397cfdc56135cd7fb5bc",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:attGsxGrPVlmv74TstGN",
+      "collectionId": "faction_cards",
+      "documentId": "attGsxGrPVlmv74TstGN",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "cc0add25203b8fe8b77e83e7569f5df276c0213a35a13f9fc71b569ebffffdbc",
+      "payloadHash": "728cadc56fbcc250694e9c5fd6aad3e7c873f0248c90acf8405d1974c4fb8fcf",
+      "schemaHash": "fde6aca43bac773b780c027702376c54db46eebe3a07826cbb33c05417e81a3a"
+    },
+    {
+      "recordKey": "faction_cards:aZ7YJRTm2O1PcQVwk3gA",
+      "collectionId": "faction_cards",
+      "documentId": "aZ7YJRTm2O1PcQVwk3gA",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "77227d12d7a1501191b37ca9ff05167bcffbde744ae0bb81cacca97a7c4eedac",
+      "payloadHash": "042ee343d0effe9de62b6cbbf3202c600962cd365feca59f203bea548666205e",
+      "schemaHash": "77c283bbc60315943d59c11273d93af8b877dc18d4261af15fb4b2b243bd63d0"
+    },
+    {
+      "recordKey": "faction_cards:AZLLFOxH1byrcErqhZsc",
+      "collectionId": "faction_cards",
+      "documentId": "AZLLFOxH1byrcErqhZsc",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "fc583e33a654505eac832226fe5136db4f27d9a87cc59a513ad93be62dd06906",
+      "payloadHash": "23763c9a180429f2305563118d35759ecd0f636703fe5423536328025b11e16b",
+      "schemaHash": "8c36f31ab9875850dffab7b398d9425b93bc8eb0621c3487652c24ba97393253"
+    },
+    {
+      "recordKey": "faction_cards:B2ZpOD8vtAXsVRas4iF4",
+      "collectionId": "faction_cards",
+      "documentId": "B2ZpOD8vtAXsVRas4iF4",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "714080dce4fd001fba3fe37a6960222c149aee2626a5497af1756ad8a8e6bcc5",
+      "payloadHash": "f1e9e40b013ae11ed398e997378bb0be4ec74585aabfb42317c79885eecc50ce",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:b4VSfZwaTBEagxvqQn8V",
+      "collectionId": "faction_cards",
+      "documentId": "b4VSfZwaTBEagxvqQn8V",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "dc67dcdbd437cfc9c4bd196c3e6fc9145a86480a65c0e3600e6ea4351a084482",
+      "payloadHash": "97b06d4efd0520819051f165431cde7c2024f0b8609edfc37946a8b5ebf00c33",
+      "schemaHash": "fde6aca43bac773b780c027702376c54db46eebe3a07826cbb33c05417e81a3a"
+    },
+    {
+      "recordKey": "faction_cards:bd0SbzFkmhFiKpN6nfnr",
+      "collectionId": "faction_cards",
+      "documentId": "bd0SbzFkmhFiKpN6nfnr",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "8d73803cb8523cd3048be15eca189c271924fd1f3aac2283c3df322bd6f9f790",
+      "payloadHash": "210befe7b017e63a31bb53bdd9ce1d82560ff0df73a9d00b508e522a453957a7",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:Bj1POFdaHjIqVKNsf1pv",
+      "collectionId": "faction_cards",
+      "documentId": "Bj1POFdaHjIqVKNsf1pv",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "55ae1c664975aed12f7dc19b59a9d33773424e1c9980d0a6e4203ac2870e9201",
+      "payloadHash": "6844f9e9257627dabbf28ca1a4565f57c261d0356c8e5f7bfc4c18943b5b345e",
+      "schemaHash": "238a2c94451c2c766a31bcf0c07bc035d27e5a719f650c8cf919f8277d709a52"
+    },
+    {
+      "recordKey": "faction_cards:BM1fW5aRzwYA8aKrXd6L",
+      "collectionId": "faction_cards",
+      "documentId": "BM1fW5aRzwYA8aKrXd6L",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "eb2bc8ad97a55ecc56c346719c9d19bc82d5c82eee538cd92957b420f93bcf77",
+      "payloadHash": "6a3f0eb666fc85a320f4442796dbfc8c73b4abec5dc602f17c5e84e671123780",
+      "schemaHash": "29329689a30bc7e67bd3d1771a632bca0e8addac556af107dd074a14e30f82b5"
+    },
+    {
+      "recordKey": "faction_cards:Boo8O4n3GX3PcgerHbNF",
+      "collectionId": "faction_cards",
+      "documentId": "Boo8O4n3GX3PcgerHbNF",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "d04c3687c33ed31838defc9e5770ea52aa5590f77bca036e89d7108373cb80e7",
+      "payloadHash": "299c09e8a2f930211122088499e60d99827899fa93b3cbe1b2ede91a87e4e945",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:Br3YjXognFKGagquIvzd",
+      "collectionId": "faction_cards",
+      "documentId": "Br3YjXognFKGagquIvzd",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "5f209124a587889ec49ed62a7928807b7d032102620fa66d2baed06fb5a8f4cb",
+      "payloadHash": "2656d31a8853239d83f579b01166fe4339c47e37a0aecf05ebaf46756d2167fc",
+      "schemaHash": "b41cb2e5e51a5a133932cadb334ed04a6bd8d43d5f6a74828e8f4e643420bf69"
+    },
+    {
+      "recordKey": "faction_cards:BRp1aN4Ebvu3Wuc8afJj",
+      "collectionId": "faction_cards",
+      "documentId": "BRp1aN4Ebvu3Wuc8afJj",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "19a02f235ea5c8cc2784a258bee4ceaa33c23b1f68ca0bd12d9edb061879da91",
+      "payloadHash": "6d4fe0d55c81ff692b43a8d88c6efed6de33e695fe2bfb0d4e89adadff89d1a9",
+      "schemaHash": "29329689a30bc7e67bd3d1771a632bca0e8addac556af107dd074a14e30f82b5"
+    },
+    {
+      "recordKey": "faction_cards:BVnAxDLDmOyNhq7ZBm4s",
+      "collectionId": "faction_cards",
+      "documentId": "BVnAxDLDmOyNhq7ZBm4s",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "15febf0a561cd587370d201c65541ed3fa467a36e26e36340a3b17a50d3ea70f",
+      "payloadHash": "61802a3bc07db6c2aa97578169758b2950d625ce2bb342cf7a1f9369223ef0ae",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:bYCC916rpIx7yhiWk8gH",
+      "collectionId": "faction_cards",
+      "documentId": "bYCC916rpIx7yhiWk8gH",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "085da7db11101afc3babc9c73b97f060029e9471a617590f6ea3c235f96e4f81",
+      "payloadHash": "034f62cb9f32a580b075d565555b455783ed6db4db05f9c35149c3a8ef2e4048",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:C4k2l8Wjazp55hig7feS",
+      "collectionId": "faction_cards",
+      "documentId": "C4k2l8Wjazp55hig7feS",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "558e45e2272b9d8b984af4c03628aa3e152ec71db709340a5f5bbfa596087b3f",
+      "payloadHash": "a85d7d012c901f8fd14af3a08cc16ab40022a4079e0ffa90ab7486ec279904a6",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:C7f1JQfeOf8uV5YYjzXz",
+      "collectionId": "faction_cards",
+      "documentId": "C7f1JQfeOf8uV5YYjzXz",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "f4a0ceca55500e0f7fbc57173122a6f6a62f76b9d6ddaefda2a587d4ca9b94db",
+      "payloadHash": "4ce5da590bda1e463c4b82a3370b110b09ce432a524514111142f14ecf2c4962",
+      "schemaHash": "0be125c5f0d00c38154e6806ce8cc87e1013871541b8f7b10b4cc441c03b5b0c"
+    },
+    {
+      "recordKey": "faction_cards:cBdJtjUiUQXpDXsNRRoU",
+      "collectionId": "faction_cards",
+      "documentId": "cBdJtjUiUQXpDXsNRRoU",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "3150f7719a9d5cf93d41709f31aa69d8764229190620637db6456584b2416d7a",
+      "payloadHash": "bce960d18fb538a20d8be3e6c05de0ac1ee450348864bc6f4104bd99065acd06",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:cDLyF2vmYgUMYhgWzhx8",
+      "collectionId": "faction_cards",
+      "documentId": "cDLyF2vmYgUMYhgWzhx8",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "a9c4705e54db6c259c7b1c080133858c8e5764aff0e5c20c989ea04e663bc165",
+      "payloadHash": "a8b0e183a41aa1a3ae181f82b95881ee9821a3b043665e86914b1e83c632b01c",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:CNrMiUEqdL3h53u8ihCO",
+      "collectionId": "faction_cards",
+      "documentId": "CNrMiUEqdL3h53u8ihCO",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "7a92e7ff0553c523e573ea6049fc6ed0d72d97499dcc5e261e791e0f55abf6a6",
+      "payloadHash": "f0f5822757776d3e8d453ad2e2173de98a505fb182287cb4a42574b369116dba",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:CoivDMySicHmUPyMm6b6",
+      "collectionId": "faction_cards",
+      "documentId": "CoivDMySicHmUPyMm6b6",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "619818263f196683ba2541a892769da7d791047faa796d53722c7ee9e12b5900",
+      "payloadHash": "1817724577cb2c025e5139e218b4f73ba0c31bddb06d506c6e03b1bfbfd6f265",
+      "schemaHash": "34cf820be7ee6ed2e1a1d83abd8ddaf497a4233d3533845fcef1d03447464600"
+    },
+    {
+      "recordKey": "faction_cards:cW3aQQikqXLZlFEPLa4j",
+      "collectionId": "faction_cards",
+      "documentId": "cW3aQQikqXLZlFEPLa4j",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "8b9f749f1e66af844cd47dd3925aa9355e410bc4ddbc9c4b50fd069d678b21b6",
+      "payloadHash": "8cc952b8367a4cf4dec6f956eec7b6772684b1000bdc7df3676b48082e3cf9fb",
+      "schemaHash": "29329689a30bc7e67bd3d1771a632bca0e8addac556af107dd074a14e30f82b5"
+    },
+    {
+      "recordKey": "faction_cards:d3f0tKqnQrelpo6OKzSy",
+      "collectionId": "faction_cards",
+      "documentId": "d3f0tKqnQrelpo6OKzSy",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "7d79b5ad0af12d8f4b5de3e8a6f26a8c1440036216d41966059da76eff91abe0",
+      "payloadHash": "63cac152e3fdd7a44b90f2217b0641a2f4fea106cd0c7243ff50276fb16ce572",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:d7vlRQW8KwpGRuwZwXHz",
+      "collectionId": "faction_cards",
+      "documentId": "d7vlRQW8KwpGRuwZwXHz",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "eeac39b461f737ccd4e57872b57c5e50186dd601e9ef9e8cfaf348005e83bd89",
+      "payloadHash": "f6c05517a5e22b6b35752e1685be30b85180632138ac7b6dd43edaace5fe9c57",
+      "schemaHash": "fde6aca43bac773b780c027702376c54db46eebe3a07826cbb33c05417e81a3a"
+    },
+    {
+      "recordKey": "faction_cards:d8EZtxuGBwmTrBUdHPpA",
+      "collectionId": "faction_cards",
+      "documentId": "d8EZtxuGBwmTrBUdHPpA",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "9e6ab6f865e2626dc6629a2c06da8e2ea3505e1fc4763cd5cb35916e599050d6",
+      "payloadHash": "231ed59b5d710a160018e0aa42e48f8cd693a166003c13ffaf269a969fba64d7",
+      "schemaHash": "b10d4d63b33543e8b0fc7384f42be05219e430d017feab994cbe9378d50cb738"
+    },
+    {
+      "recordKey": "faction_cards:dab3UUUf55kEzLGpGCU5",
+      "collectionId": "faction_cards",
+      "documentId": "dab3UUUf55kEzLGpGCU5",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "9b013c7a0c9ecb12b37ce880c91f802e2cab8b7eee57c7366fb1c10440343d9a",
+      "payloadHash": "9b84920327f73b922ef21adcbde6c7c97ac335c7e959fa0435853b4fe1b6f799",
+      "schemaHash": "b262acd32c7ffa2b16c1effe63b41146659c2b7e93ad16064bf4c7fd6412fb33"
+    },
+    {
+      "recordKey": "faction_cards:dABQCVtWzkyMDh5kwmVy",
+      "collectionId": "faction_cards",
+      "documentId": "dABQCVtWzkyMDh5kwmVy",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "d4cab4461f77715e6eb5df28712b3b08b00962b0e8333dc53076e7e727a87800",
+      "payloadHash": "1ca6e19c6439064f49778535ec07b52b5a0cea565e5a890b42cfd47a0eaa3d44",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:dBNrdVIhBJbfqVJY44XY",
+      "collectionId": "faction_cards",
+      "documentId": "dBNrdVIhBJbfqVJY44XY",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "b5f866336f69b8275ab228d044c9b4f64f919f89d5be65006a0c686ecef1ed1c",
+      "payloadHash": "54dd561016719cbae94d4218fd55b7c5a91986b86f0b51331083e715bef0f3d8",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:ddcNpMd7zUlxvwk0WbwI",
+      "collectionId": "faction_cards",
+      "documentId": "ddcNpMd7zUlxvwk0WbwI",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "8632e3505ef867cb2b83b2893c570d55b71e22cf1bb6ab4960baf0ac4aa0e9d4",
+      "payloadHash": "5ee0ccd207e76a203af9402f44293a6b12375af5124c4854efdfa9813c5f97d9",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:DHM1p9Ghf6RugGkWFVLS",
+      "collectionId": "faction_cards",
+      "documentId": "DHM1p9Ghf6RugGkWFVLS",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "7c4ebcb38e6af1b96fd165dea628cdfb4d544ed4b1e14c46d9878e2a7c2c61c0",
+      "payloadHash": "79606372ce240ee1ccec8580fb77210d3a6b2ba5b8c10495fb1eb84c13e2796e",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:DJEyoUAeaTwoVCqPYjtd",
+      "collectionId": "faction_cards",
+      "documentId": "DJEyoUAeaTwoVCqPYjtd",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "7af648ea8b9f06ac446f8385ac0c52fca22827a7ed000705180e27b0f8357b30",
+      "payloadHash": "d8cbfa9e83880db525b17e96402ff69b0c24479601aec052a142ddf2cc1f0868",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:dvg3Z44m6YfT3W3xRDoy",
+      "collectionId": "faction_cards",
+      "documentId": "dvg3Z44m6YfT3W3xRDoy",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "33526cc93d2f160d2455b3f5ac47e0e8e61c6bbddc368167db12aafb87298e5c",
+      "payloadHash": "2da5267d1da6c3902a01318acea814e553b08ec98c80871541dfcbcea192de6d",
+      "schemaHash": "c8b8250c6730712cdf2aba0a3dcd64392e2872e25645a3f04c1e805252db471d"
+    },
+    {
+      "recordKey": "faction_cards:E2Sv30MQfeLbO6Yqgx0l",
+      "collectionId": "faction_cards",
+      "documentId": "E2Sv30MQfeLbO6Yqgx0l",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "ac2ed15cebbeb4d5439be2a89317a593b1eaa6c2ad8cb3458a1e3cf05c846bfc",
+      "payloadHash": "6694c4f25b7df5a3670b81a2ab3c6649444d06e0179d1b964cb98811cc672c41",
+      "schemaHash": "29329689a30bc7e67bd3d1771a632bca0e8addac556af107dd074a14e30f82b5"
+    },
+    {
+      "recordKey": "faction_cards:e52DRxH8I3zvgtyytD0I",
+      "collectionId": "faction_cards",
+      "documentId": "e52DRxH8I3zvgtyytD0I",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "5ce87af8f8bab9de5056e1325a7686840c26ab853ba430ef8f86536e637a8910",
+      "payloadHash": "203e947078b6e5f1f5678c0cf7801bebf3cfcc07274110672ffcd96e39260c7d",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:E9XVHsAx68c8ROPPX3vm",
+      "collectionId": "faction_cards",
+      "documentId": "E9XVHsAx68c8ROPPX3vm",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "261e2117639d3e7b6d845af71bbe877b114ac68fcebc1c16d923fbf1a048d44b",
+      "payloadHash": "205ee10890f278d2d8969b8734fdfabcdeeb22e1a14da7764660bac65d61cf4d",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:EHvn3XCxKZmO5RzNCPv9",
+      "collectionId": "faction_cards",
+      "documentId": "EHvn3XCxKZmO5RzNCPv9",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "c15f63a83590aa90e9d61ed88a99bf101d7cdd27ddbe62ff1e7903a39a9f086d",
+      "payloadHash": "3a40a363757c839aeddc82756ad17ec908bbc6ea7b11649103b01682d7d98c35",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:EKadVvYrsGOmsaQrSPqd",
+      "collectionId": "faction_cards",
+      "documentId": "EKadVvYrsGOmsaQrSPqd",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "08805a8e5d8216aea0c80651e00aae1d01da8f952c4d6d1bfaade03970f44be2",
+      "payloadHash": "87385381fd2a16a7716aa138100ffde5c6ed5785f53bc3774f89d36c42f651d5",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:EkrSuVAY8WCvZJvheq2J",
+      "collectionId": "faction_cards",
+      "documentId": "EkrSuVAY8WCvZJvheq2J",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "7ea66f4416052c1101f17190de0469627cdf2b6e49308a99841ce74da47ab2ea",
+      "payloadHash": "74d36be0929d6d01c196af8aab2ed938878ae5a19db5b66294182b82363e23fa",
+      "schemaHash": "7f5c5d61b8c9333c246d03038d5404170cea9d9cca62d053446cbd881b7a702c"
+    },
+    {
+      "recordKey": "faction_cards:EQwxry1QMnnC5uJIdgbC",
+      "collectionId": "faction_cards",
+      "documentId": "EQwxry1QMnnC5uJIdgbC",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "a80178724fdf7c2a5774a5420b713e81c1801625acb58ce46dd8b342881c2ff0",
+      "payloadHash": "c2c47d3e0374672570ad2cbe49183bd8bd448f293790db2950a8807378f80f88",
+      "schemaHash": "c1e930f5ea455d5a4a0b5c09b0a77392388cf08cfc6faf92fdba55d36c406bd9"
+    },
+    {
+      "recordKey": "faction_cards:EyCV5SmTPXTrpqS6iy3e",
+      "collectionId": "faction_cards",
+      "documentId": "EyCV5SmTPXTrpqS6iy3e",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "7982b1bb0e5b89a44cf56105b383e54a6e866a5be144f3a1428c158bb7d1a4b9",
+      "payloadHash": "987e83f5fac76bc1ed5d328cbf50e43acba23795ffdee4dc6550721f23e06ccc",
+      "schemaHash": "ec5b21eb9c4ea011a343e5f6be42c3f4adc3a5a9ac522653beb4e98e265969d7"
+    },
+    {
+      "recordKey": "faction_cards:eYmGlijw5UyfivO0UiuL",
+      "collectionId": "faction_cards",
+      "documentId": "eYmGlijw5UyfivO0UiuL",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "ae078695f8968fe705f2a8826ee07e42bb389b6728d735481917befb4841e3e7",
+      "payloadHash": "98c5317d08ed49ee5abcffa6873dc26d134925c765ec611dfdb8fae198a96e49",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:f1fL4RiJ2zPOF4BeDlgl",
+      "collectionId": "faction_cards",
+      "documentId": "f1fL4RiJ2zPOF4BeDlgl",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "be1d8b7cfd6cbedefd37894bd7d09ee6de4e6b185d470e8af31c3b986fbea313",
+      "payloadHash": "35f75afa3a5eeae1648444cb67748fa022efe6a7d613d99afa751135dd140cae",
+      "schemaHash": "ec5b21eb9c4ea011a343e5f6be42c3f4adc3a5a9ac522653beb4e98e265969d7"
+    },
+    {
+      "recordKey": "faction_cards:F9kLOSBXYagnpj9MOo06",
+      "collectionId": "faction_cards",
+      "documentId": "F9kLOSBXYagnpj9MOo06",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "71678e570208c1ed239c7175dcbf2b56da3cc5d598b2f5cb0a43003c331dc163",
+      "payloadHash": "6637630b5099b62fe88f1cbd384026042ed35b769154128e10416830452d8188",
+      "schemaHash": "74eb54cf6bce98317383df2f7424a522f873eba69ef26bca0be06ca4c20e2610"
+    },
+    {
+      "recordKey": "faction_cards:FkTv6wPGn68Q7dJhbBET",
+      "collectionId": "faction_cards",
+      "documentId": "FkTv6wPGn68Q7dJhbBET",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "6382c2c2ae2489d95269ef2d5edfeab46048297b93f5ccebfb52a7a82cfd9de3",
+      "payloadHash": "2d9d3cfc70e26289fff3c122ac1a0f5be6472635543f8630bc985f3c438ea563",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:FlbRccDOrpt7ePasE82r",
+      "collectionId": "faction_cards",
+      "documentId": "FlbRccDOrpt7ePasE82r",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "ec6db1b4af1f515da80eb795dd2f15a10379ea38a8692e8d76c0a7260ad102bc",
+      "payloadHash": "7806674599748fcabf076176d6a4ae79924c57eca5cc3d2316595a8045581f3a",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:fu9R1RN0MJx2szKWXrZa",
+      "collectionId": "faction_cards",
+      "documentId": "fu9R1RN0MJx2szKWXrZa",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "f4dc7cf1b4d8ba05aa5c9839b30a5f8bad79b522c28892cfe0ae687518bc95f9",
+      "payloadHash": "af76ba056724445956eead2a19a0bc27f41042cecfc69e7cf3e4fc3deef7a575",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:gaySqtueCJeruHah9QNm",
+      "collectionId": "faction_cards",
+      "documentId": "gaySqtueCJeruHah9QNm",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "842e14ff20591e9d9cb2d795f8396b006f45f412ffb07c54d22a4269a13dc44c",
+      "payloadHash": "597e0c956ab21e2d763b1685256e191572a579ac09b4cd395cc7695d3856cb96",
+      "schemaHash": "02b7192b4c28d5f0ba19ccea667947982a3273a29d9116241d35d7b3a010036b"
+    },
+    {
+      "recordKey": "faction_cards:gIYPYqjf2U7bZdwkgj5d",
+      "collectionId": "faction_cards",
+      "documentId": "gIYPYqjf2U7bZdwkgj5d",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "7beb098742dbba640c31e935d7606df967ce08a93b1d5c7fe835654d347201c1",
+      "payloadHash": "0d95afa63d0a81090c08296f75f0ec645b423b430f0bfa749d889e3a85480f51",
+      "schemaHash": "6a66df5c806c2929b61f1fd4cde5c77fe766484978dc80e650e2529aeb9eec12"
+    },
+    {
+      "recordKey": "faction_cards:gnTYQQXll8Zueby0a9q9",
+      "collectionId": "faction_cards",
+      "documentId": "gnTYQQXll8Zueby0a9q9",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "38c17ea0c076c98622188cefff00809eba28199b1c774a1605bc321a20e861a2",
+      "payloadHash": "a68bb1bc7f96e28b20c0c957df3a0053947fac627488ff3b2993813b7d6039c7",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:gpEkJOx2ECXaze7vNxGi",
+      "collectionId": "faction_cards",
+      "documentId": "gpEkJOx2ECXaze7vNxGi",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "02216f9049355012c9f7aa5df34ede2f8fa43b83b400efac749696d76becf62f",
+      "payloadHash": "1676220de0c5f02aaf09e2288854246abc39d5c7e5fc206d0dcba48495dd481f",
+      "schemaHash": "b10d4d63b33543e8b0fc7384f42be05219e430d017feab994cbe9378d50cb738"
+    },
+    {
+      "recordKey": "faction_cards:GRttE4RaHLHGD1QWDsmW",
+      "collectionId": "faction_cards",
+      "documentId": "GRttE4RaHLHGD1QWDsmW",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "47808e238a6cf77121735f4f6ed36350087ca058dda30d68cdb56194d3cc8a97",
+      "payloadHash": "cc0491fb914b0346ace060b0abf8eaf60490de4401f02a9a0bf13073f4b8f7af",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:GVMiw8rAQ6kL3rmPwNBX",
+      "collectionId": "faction_cards",
+      "documentId": "GVMiw8rAQ6kL3rmPwNBX",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "b809211db96d1583e26cdc7da394830474c96bc9ec2832c75ab81c3f6c9f234b",
+      "payloadHash": "b7e92e57dc6dd1ea56bad12ffadf330e76948ef39d17a1ff98ad6afea52f1928",
+      "schemaHash": "c1e930f5ea455d5a4a0b5c09b0a77392388cf08cfc6faf92fdba55d36c406bd9"
+    },
+    {
+      "recordKey": "faction_cards:gWudxJ1dMPAF8vP6UghB",
+      "collectionId": "faction_cards",
+      "documentId": "gWudxJ1dMPAF8vP6UghB",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "c8b0784fdabd4e234b109280f75c29969dd3d501c4b506388658b4eab4b095d8",
+      "payloadHash": "edf4d7448b74ebb1d4e5491a3c5e8527893117a9ac94ea39f616a8195b5df184",
+      "schemaHash": "ec5b21eb9c4ea011a343e5f6be42c3f4adc3a5a9ac522653beb4e98e265969d7"
+    },
+    {
+      "recordKey": "faction_cards:h8osP6nhpGlY4ozSNMi7",
+      "collectionId": "faction_cards",
+      "documentId": "h8osP6nhpGlY4ozSNMi7",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "68311457314e1b17fd634687e0bf0e4bb9cab46009988fa98afcb97bb91c8b76",
+      "payloadHash": "d870281f5e0b18e1ccecca6632e56f07947f4cc90f3be38d69d0a6118443f9e6",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:hCJWqafIQXGRRKiOMkWe",
+      "collectionId": "faction_cards",
+      "documentId": "hCJWqafIQXGRRKiOMkWe",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "65e1c5d46666b25ec45e185626c65010360205923aad7411948653b326472cd7",
+      "payloadHash": "b6f62bcbf427afb7036c8d8f798b5bb776ee2a85719e96af42dc2fc47b1b8520",
+      "schemaHash": "77c283bbc60315943d59c11273d93af8b877dc18d4261af15fb4b2b243bd63d0"
+    },
+    {
+      "recordKey": "faction_cards:HdGggAXvjmKubGQ8OY1o",
+      "collectionId": "faction_cards",
+      "documentId": "HdGggAXvjmKubGQ8OY1o",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "fb69fede0ae5678578e25f7b53e2196a70e174eb1a5ea2b2b9e7ba46e2977163",
+      "payloadHash": "bf92b72bcb7fa93095c678fd9a4a7788c07f7b57046c3e8b8e0717f706b46675",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:hfCAACJijgdwsft4bXB6",
+      "collectionId": "faction_cards",
+      "documentId": "hfCAACJijgdwsft4bXB6",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "a36df296438265c483a6b47fa7c8e7fa127fa2fc8e37e0fd06ec8487c1c2deb4",
+      "payloadHash": "bff96e565797357b811a34f487eeccd879b4555cf29a2ec3d12b387934d7d74a",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:HQGn98a5vF7CfjIkoK75",
+      "collectionId": "faction_cards",
+      "documentId": "HQGn98a5vF7CfjIkoK75",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "8473b7a18339c519cd955464cf2c95b4ad0c5a83165c4df6754add64ec0a9c4b",
+      "payloadHash": "8c643d6b6e23109f41b22e3cc86c39e6d99ce0d9cd2fac6c55c97c7876a6c2da",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:HWy8rLgHdwAjmAqstxZN",
+      "collectionId": "faction_cards",
+      "documentId": "HWy8rLgHdwAjmAqstxZN",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "da13b5a9365216934a35e0dff7f12fee07d353d1624f742c122dc0022d4384ac",
+      "payloadHash": "18a2db9f96c5326cb4318cb9086f52ee24b7edd7453d7a5409e53492ace44bad",
+      "schemaHash": "75d15c9eadaf851be1672c5fec819dc2d0cc49abdf1a177b28b173118257c538"
+    },
+    {
+      "recordKey": "faction_cards:hZXBIJ09P7ifWRo0aoxk",
+      "collectionId": "faction_cards",
+      "documentId": "hZXBIJ09P7ifWRo0aoxk",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "73c6ed840ad1d7e1e914a0fe88274d21efb81496f4ee9f12fec00ec8832e8804",
+      "payloadHash": "3c4e39692de935bc2b58cd8683d02b83d7de8d2eba1c21168bf1dbb88099b193",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:I7b2bEDlwOUQ3D8XiEOy",
+      "collectionId": "faction_cards",
+      "documentId": "I7b2bEDlwOUQ3D8XiEOy",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "f742987baa8534aafe4615b63d3b03db80a0aeee349d893c966ef79c717049c7",
+      "payloadHash": "b089656c8e198b8c178ec2a3ec83e0b59793845de90740afdc7f236bf53ac54d",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:Io84vVq8gmrUQ0qYgEZt",
+      "collectionId": "faction_cards",
+      "documentId": "Io84vVq8gmrUQ0qYgEZt",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "f4cf0e9c790529ddbc386d67853d3f5365bad9597a022f04ba4fe21332743c79",
+      "payloadHash": "2e48570ad9528ebe5b4335955b61cd45ec61324da0323a603fdc64c1cc671566",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:IVKCKP4qln4qqSkAvfhF",
+      "collectionId": "faction_cards",
+      "documentId": "IVKCKP4qln4qqSkAvfhF",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "f648afdda493e5d241c79240b64c6ed2625c5ff8553efd1d94a842fef4d8606b",
+      "payloadHash": "1c2fa49b96cf22b9b036679f07d8fa721ada232aa7dc2ef7fd7e602a48f307d8",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:J3jM09UovL4qqj2TKDNn",
+      "collectionId": "faction_cards",
+      "documentId": "J3jM09UovL4qqj2TKDNn",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "3cd97e778021a210504bb03ea68f22e3257d6e75d327c208779aa453566ce1d8",
+      "payloadHash": "8ff9b00f0a4dc8b7e1a4c0abe87de6e79a9c1763a5731349923fb2049e99ea57",
+      "schemaHash": "74eb54cf6bce98317383df2f7424a522f873eba69ef26bca0be06ca4c20e2610"
+    },
+    {
+      "recordKey": "faction_cards:jDrIKk8icRSloKis7ywT",
+      "collectionId": "faction_cards",
+      "documentId": "jDrIKk8icRSloKis7ywT",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "72aa19b813fdcf73fe052a5bb38292ee9f6843539e1a6a22f19a657c0917b1a3",
+      "payloadHash": "2f8876926ef246cf8c3ee7b52e3e3cde05a342651a8538f3e45654812ac94ffe",
+      "schemaHash": "492e6545630b58f849ee6098461a27458bb77adfc90b58a6e4196a67c748ef50"
+    },
+    {
+      "recordKey": "faction_cards:jIIQLRqNrCW7AZxrSO7i",
+      "collectionId": "faction_cards",
+      "documentId": "jIIQLRqNrCW7AZxrSO7i",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "0139749a34335f250b9a40f654ebd2b207e28ee879cf2615a26b0b7dc32e3a2e",
+      "payloadHash": "c4748c252fcbf14f6fd140dee52aae657bc94f296093699b4476e3e31c58b474",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:jvCtHb4AA3me6lhMMplX",
+      "collectionId": "faction_cards",
+      "documentId": "jvCtHb4AA3me6lhMMplX",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "7940251f801f7678bba1964e559bdf5f1169394cb29ae27cedeb072689d659fa",
+      "payloadHash": "ca69c034a360016380edce2ebb5dc1ff692905e3add0f017e16e3d460ab20f61",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:jvkHAaXJGa91Sbt751F1",
+      "collectionId": "faction_cards",
+      "documentId": "jvkHAaXJGa91Sbt751F1",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "06ee50b85342e4d23955d7c396bf68cbd950050804660ae4d62cc3ec5032eb57",
+      "payloadHash": "55e0c266cc2fa8a0adc2ef146050811eccdeace86f5317e46c1fa08ca00f9bdf",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:jWPGzTuwf1tEK9XEmDcu",
+      "collectionId": "faction_cards",
+      "documentId": "jWPGzTuwf1tEK9XEmDcu",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "d37db142339d51c83b691c71fa5451fc207efad8f84038e59d1241f11e35caf7",
+      "payloadHash": "8c96712aac92d169fa7d452ec4a81822783ee4f76716eca0b75b3a65f9b2805c",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:jzRWXnbyU4Cqbbgh9Kjc",
+      "collectionId": "faction_cards",
+      "documentId": "jzRWXnbyU4Cqbbgh9Kjc",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "387966d833380aae3fe4404d039b3cf107aead38bffcdca7cd5eef66071d20d6",
+      "payloadHash": "9d21adea1ea14b6b1a80c2ffd72e461c94b18e9d43f2135860264c60d8d1402e",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:JZvpfsXdxF2BwIntTWfO",
+      "collectionId": "faction_cards",
+      "documentId": "JZvpfsXdxF2BwIntTWfO",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "37277ee6d18c7a6143f4860700ac5fd0c12fd5986a51e48365bddf7f8af628b2",
+      "payloadHash": "f02b573951a4503a2d9540a4ae13074305e24ee13087a5ff0ac3675167a0f3c8",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:K3Pd3Be18XUDRq21TLx8",
+      "collectionId": "faction_cards",
+      "documentId": "K3Pd3Be18XUDRq21TLx8",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "a5e9b029d665fdc30e1387923bfbfdc3e2c4cc95c7b2a111cd7d6b96956e1a76",
+      "payloadHash": "fd3626ccf4c1fedfb99b82692d281d72d2c214137875c2da47515faf91d012aa",
+      "schemaHash": "df853a225c46fbb5901ba3b37a55f27cfdf577096cdb7c8c1763ee3c0f3869a9"
+    },
+    {
+      "recordKey": "faction_cards:K4n9KK6warsyl2vhyrOG",
+      "collectionId": "faction_cards",
+      "documentId": "K4n9KK6warsyl2vhyrOG",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "780269e0cfa286db113396710594d9e8fba346c9aeff706d24b1f3cdb1abaebf",
+      "payloadHash": "9140ad32707b0e1770e40d05b84f101c2a64e1bc2a8d8e149cbd8976d647a7cf",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:KkYZOvtbBCOner7rxxqF",
+      "collectionId": "faction_cards",
+      "documentId": "KkYZOvtbBCOner7rxxqF",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "a8c22bae4b7ea0240956705b1d8122a5651807152616fb4ea9648b235626773e",
+      "payloadHash": "9a46e8960f666f2b4a6a7875f91c1ac67d8272fce581c90e39c7da1693b2a61b",
+      "schemaHash": "df853a225c46fbb5901ba3b37a55f27cfdf577096cdb7c8c1763ee3c0f3869a9"
+    },
+    {
+      "recordKey": "faction_cards:KouSVkGlexfslTce7CNW",
+      "collectionId": "faction_cards",
+      "documentId": "KouSVkGlexfslTce7CNW",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "88e2440ec60ee06b4bb5a78070331c983b4b8fbc01362376a57e665b2e27cb19",
+      "payloadHash": "a225d003bb05e1a7c5fa4116705b23518b5988310b984a306abd1a25bce09062",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:Kqz626cBnNVxqdBJePDC",
+      "collectionId": "faction_cards",
+      "documentId": "Kqz626cBnNVxqdBJePDC",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "9b146829cdfd8bd7e049b7096ba8cdd4c6c7ff9d148deacc8fabe08d509f204b",
+      "payloadHash": "4894c9e1897cfab73728fac4958a45ce99b295cd2adb637d534634fffccc26e1",
+      "schemaHash": "29329689a30bc7e67bd3d1771a632bca0e8addac556af107dd074a14e30f82b5"
+    },
+    {
+      "recordKey": "faction_cards:lbBp8bWHrqvf52PNHqko",
+      "collectionId": "faction_cards",
+      "documentId": "lbBp8bWHrqvf52PNHqko",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "bf40c4a707e02f3f59852ec037636f36c1cae77e637985f475525deaeb7efa19",
+      "payloadHash": "029c8659111722c94dbaae0b8d2cf383f06fe530d4976c6b504b01eb5398e1c2",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:LDRA1vBhvQMf6X9bsn3i",
+      "collectionId": "faction_cards",
+      "documentId": "LDRA1vBhvQMf6X9bsn3i",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "a924e44ff27fec6208263d282a2db99c7c8386d9bec6a4a52bce6078803d3ea7",
+      "payloadHash": "6d00ac8303e9454d9826014d1a639dd591e26f728e2879417d1a78bd779f9f0e",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:LMLy2nnEbNEGP6r4YoE0",
+      "collectionId": "faction_cards",
+      "documentId": "LMLy2nnEbNEGP6r4YoE0",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "70e6b27703ac5c79ac76e6e6cb2234391e543c317542b6a7806656ccc80d427f",
+      "payloadHash": "09397d9b3a02f9d4124e0e5471394f40d65bddf89d02ccb9e3e55b30c4fccdfa",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:Lu01aw8u4MO8ZQkIE686",
+      "collectionId": "faction_cards",
+      "documentId": "Lu01aw8u4MO8ZQkIE686",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "b2b9189616de23d758a2628cf8d41db6a641a2976f5abb7e487e905fd5f0f443",
+      "payloadHash": "6342cf9bd5cf814050a86b537245c4b050ba8d4884988f1bb78916e61085720b",
+      "schemaHash": "ce687b277772408b7cb97a7892e1fc12176119425357ece7c0ec860cf02231ea"
+    },
+    {
+      "recordKey": "faction_cards:LVbIfXSGkEAVRPlPOqsH",
+      "collectionId": "faction_cards",
+      "documentId": "LVbIfXSGkEAVRPlPOqsH",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "44f5877f8a24a2ca143e452ec1f400803da357c7136107bb3f4d3f265e16c496",
+      "payloadHash": "5aba28d48f148808d139a0042d3e6415d79359cff2c84f8466a682746db6467c",
+      "schemaHash": "492e6545630b58f849ee6098461a27458bb77adfc90b58a6e4196a67c748ef50"
+    },
+    {
+      "recordKey": "faction_cards:Lypr3ykaXwNICace5bz9",
+      "collectionId": "faction_cards",
+      "documentId": "Lypr3ykaXwNICace5bz9",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "c2cb08c373ae156e0e65685cfdb4d2b6d413b86bedae20318743af5259bae588",
+      "payloadHash": "a912ce8ce66d0e34a6b6fe92231c1b6942fd032ee959e027c00229aed1447f47",
+      "schemaHash": "ce687b277772408b7cb97a7892e1fc12176119425357ece7c0ec860cf02231ea"
+    },
+    {
+      "recordKey": "faction_cards:m2Ra5mNs2NCeBpQSgIlu",
+      "collectionId": "faction_cards",
+      "documentId": "m2Ra5mNs2NCeBpQSgIlu",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "a210756e575d94c6a1b5c4af5644a7fc308b3af7458fb29757224345a9901a20",
+      "payloadHash": "6d4e736e4e4e6c5dc78edbce3bac2e62f815e4a71307aef6907f75be8fdfba74",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:m9azc4l6iPJRUJNP8xZp",
+      "collectionId": "faction_cards",
+      "documentId": "m9azc4l6iPJRUJNP8xZp",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "2ccb16ce092503d7c414c6a3c55f6ae3180f9793f42fbcb30291ea60294c5c61",
+      "payloadHash": "7327c30d3baa30f797cba79f598adfa4307c275c1f11995efdc850d996bcaa3e",
+      "schemaHash": "b10d4d63b33543e8b0fc7384f42be05219e430d017feab994cbe9378d50cb738"
+    },
+    {
+      "recordKey": "faction_cards:MCT4UyAWAav9TeVjkUdO",
+      "collectionId": "faction_cards",
+      "documentId": "MCT4UyAWAav9TeVjkUdO",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "19382afe694c4372254539ae8f3d54c4e9a3fd617605f251a643b89f8ab95133",
+      "payloadHash": "ea27d6f5b35b066f1b35c6d5759774809cb0c585c37113f44c1475316d75f3c4",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:mElUCF0z8nbmdNOyOVmD",
+      "collectionId": "faction_cards",
+      "documentId": "mElUCF0z8nbmdNOyOVmD",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "4c2a5079ae5fd6899d2a4c76bea5754119c9479cb7db217b6f23a35ae1a57876",
+      "payloadHash": "46edf6424537862e37947a21142dd6d8099c9082a4e5d04724ac56265300d357",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:mission_artefact_hunt",
+      "collectionId": "faction_cards",
+      "documentId": "mission_artefact_hunt",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "bc83e13692db41f2300f5237128b223f9a43bfe4a39b1bd1b402d08e234e2a0e",
+      "payloadHash": "c64ec3ab905c8b518a355b8b383e4341ff472e83c53e6a502a37af6de60089da",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_artefact_hunt__skirmish_",
+      "collectionId": "faction_cards",
+      "documentId": "mission_artefact_hunt__skirmish_",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "82fe7b383a84f4a4a32293c4f0bd7f5d2b8daae2c8c39ce59c5f62e0ccc5f782",
+      "payloadHash": "01159850c4983f63db1bfbf28cb10f29825bc3d6da007c93189f4eb1e59dbccd",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_divide_and_conquer",
+      "collectionId": "faction_cards",
+      "documentId": "mission_divide_and_conquer",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "ffec26b3364e117cb40021a46639dd27b3a3e452da39d7d53ef8fa0fd070c585",
+      "payloadHash": "ed0a77bb86d960373d64e7ae216698d4bf016a689c022b04102bd4e17a6767c0",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_divide_and_conquer__skirmish_",
+      "collectionId": "faction_cards",
+      "documentId": "mission_divide_and_conquer__skirmish_",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "c9379107fb5359449c00b7162f56d031b5e65c664c6ffeaba3ee60389088b3b8",
+      "payloadHash": "db92191661fd82603b474c5e0882485d118c3b2d1f6dcb1a347db6d7bb96d238",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_fire_in_the_sky",
+      "collectionId": "faction_cards",
+      "documentId": "mission_fire_in_the_sky",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "62928656b887e1deede2cbeff236e3f85e2c744716ebca08d349ebb918ce462e",
+      "payloadHash": "cc90e221dc0747ef0edad2610ce637e55b723e07676843eb828e2b0d0b0ad44c",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_fire_in_the_sky__skirmish_",
+      "collectionId": "faction_cards",
+      "documentId": "mission_fire_in_the_sky__skirmish_",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "08c838ca2eab9461f0cc87be3d50662d9d54fe814f0fbe6c09db16a94fe28071",
+      "payloadHash": "a5303891d53432c026c1f9bd7735c838955a1a735d73c38065a23e5ebc4c31c6",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_frontlines",
+      "collectionId": "faction_cards",
+      "documentId": "mission_frontlines",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "c92c42b049e24bde446543e796a283f9997fb994586c17567e1c384110153bc6",
+      "payloadHash": "ceff5e846f57cbdafdebc2eaca288339ee22cb9f8d64ea7ba71a586fe9d3b019",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_frontlines__skirmish_",
+      "collectionId": "faction_cards",
+      "documentId": "mission_frontlines__skirmish_",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "fa8aae71633d3c6c530079fe14a73c786a7ce413432d6c6f66b5ddd4423ecefd",
+      "payloadHash": "e47f75dbb8b0924ab5f1039efaa1fb3f058a4b9584e094c4df41e33fb5c40490",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_gather_the_resources",
+      "collectionId": "faction_cards",
+      "documentId": "mission_gather_the_resources",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "d76edb7e75e1fcd751a211988c1f9f44641cfafcaea41b757c31e06de08a2ddf",
+      "payloadHash": "c8c1d88335e19fca9a4e81ae7206169288b99a7f041239103e42de325808d002",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_gather_the_resources__skirmish_",
+      "collectionId": "faction_cards",
+      "documentId": "mission_gather_the_resources__skirmish_",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "ba9fca62222788d1ebe40db4ca553ede131e646d760bd9d1c8e83644b9607ec6",
+      "payloadHash": "602a63007ba45b47b42b164bfdcd770898f750be632e1c605e6fde9dccb104e7",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_hold_position",
+      "collectionId": "faction_cards",
+      "documentId": "mission_hold_position",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "9b4e83db32aecc1a782c140c96aa4170ee8adc4b62689e95845d41c9666ed7a9",
+      "payloadHash": "f3ea06dda42b9f216423e39ff6ed31007c5d864cd8f6574f381cfcad7e1a11b2",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_hold_position__skirmish_",
+      "collectionId": "faction_cards",
+      "documentId": "mission_hold_position__skirmish_",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "ae0cc3b245e6050ba4700e7e31869898cbf390d17ef023fbb47135daf56184b8",
+      "payloadHash": "0f02f753aec1a2c443220eff93cc50d26e974d84fa103e0dd338cf0c337a65fa",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_supply_drop",
+      "collectionId": "faction_cards",
+      "documentId": "mission_supply_drop",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "18a466fc606631c7f3c516d09aae380f07baefbcf4dcaa7ff763a52c6f30c0dc",
+      "payloadHash": "dbd756dbec811be6764c12c5af5e6ad3b94a923da35a28d16ae3d5c123b84501",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mission_supply_drop__skirmish_",
+      "collectionId": "faction_cards",
+      "documentId": "mission_supply_drop__skirmish_",
+      "recordType": "mission",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "c433a4e921e44c4a99da07411bd34569f87bce1e979fa0ef4aeeaff98d918f0b",
+      "payloadHash": "79bae4b5c7b81d238b72ac597b7c4fe3667daf3db83efaef1ded023eaa8c6192",
+      "schemaHash": "cab0a85bef686225306c7437c8438bb0919f0d10001c2b8526f9ee1348bbb58e"
+    },
+    {
+      "recordKey": "faction_cards:mnGZHG8eAFySixz3Bwi3",
+      "collectionId": "faction_cards",
+      "documentId": "mnGZHG8eAFySixz3Bwi3",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "b107876c9e132f47241678baf00d21d45a1d294a5a18935a4797f8408d72e046",
+      "payloadHash": "77ba09425f78a453b0f5ee9f1bcd1775f0d6fea984aa0ea02e3c0cce2baf9946",
+      "schemaHash": "df853a225c46fbb5901ba3b37a55f27cfdf577096cdb7c8c1763ee3c0f3869a9"
+    },
+    {
+      "recordKey": "faction_cards:mTNhUWgnx3At1dONPqw1",
+      "collectionId": "faction_cards",
+      "documentId": "mTNhUWgnx3At1dONPqw1",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "1d41e7083d4165c53e5f3e400fb77cead8205b142c7c8fca957d75889c890028",
+      "payloadHash": "bdd7bbea90cd23b2e773b439d5d847d40ff058fa117e2ee0b705203b2c59d1e8",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:MuO4ar90DwOdWcaPPIc5",
+      "collectionId": "faction_cards",
+      "documentId": "MuO4ar90DwOdWcaPPIc5",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "f278c8391015885821fe374b0ad3fcc2c6c26ee17b8e3ce50ea9a0479d9fe3ea",
+      "payloadHash": "0e7d842532953b43d0e7f840cd0ad00fde32936a007d71d6b7ec7ab8b5931875",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:Nwd5bN4pLjjol85hdyBU",
+      "collectionId": "faction_cards",
+      "documentId": "Nwd5bN4pLjjol85hdyBU",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "c87c9810552d446d97d19c49be76cccb7d97f4a9a53af849324c3a5e6ff8f365",
+      "payloadHash": "016cbe3d18b90ed79800a0d33ec712a1663555d4e9d05209d7682075a96fccec",
+      "schemaHash": "29329689a30bc7e67bd3d1771a632bca0e8addac556af107dd074a14e30f82b5"
+    },
+    {
+      "recordKey": "faction_cards:O5d3IwJIAv2yMRaAsSMe",
+      "collectionId": "faction_cards",
+      "documentId": "O5d3IwJIAv2yMRaAsSMe",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "a43907b8dce343d97622ff34322d124d36df82416eaff03cb2b6e8c51fd4fafb",
+      "payloadHash": "f42819a0e2bcd9cd4466abe41b31761d6366ff0952458dce9b256d509bf7ca15",
+      "schemaHash": "b10d4d63b33543e8b0fc7384f42be05219e430d017feab994cbe9378d50cb738"
+    },
+    {
+      "recordKey": "faction_cards:oD4Z502iEcC4IQ7hcPdT",
+      "collectionId": "faction_cards",
+      "documentId": "oD4Z502iEcC4IQ7hcPdT",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "4fff7bbd13f621146ffe71c8eb6ab525167b60f8f2b97a58f00ce79025fc1100",
+      "payloadHash": "998e73a3bd8a200f66ca6f53465ccaae43513101a26af1d535636c3a15fd3a30",
+      "schemaHash": "77c283bbc60315943d59c11273d93af8b877dc18d4261af15fb4b2b243bd63d0"
+    },
+    {
+      "recordKey": "faction_cards:OeBZUmRPnKPt4zDVyZZo",
+      "collectionId": "faction_cards",
+      "documentId": "OeBZUmRPnKPt4zDVyZZo",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "a4123adc3fc3989642783e45f7b6e7934f1e1257ee65a5c4e17b6a9771218f05",
+      "payloadHash": "f3287f8a052c8c1bd067eb45826620ca9d475fd0c0d2b2d4efdd7bc7f9e740c5",
+      "schemaHash": "df853a225c46fbb5901ba3b37a55f27cfdf577096cdb7c8c1763ee3c0f3869a9"
+    },
+    {
+      "recordKey": "faction_cards:og1bCf96pewCV58816uc",
+      "collectionId": "faction_cards",
+      "documentId": "og1bCf96pewCV58816uc",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "cb244721393bccad6afc766458b00117df02c8cf1e219b3377df8cf7df5fbc71",
+      "payloadHash": "208e1a6f095328bf33db3021b8cc16f362a4fe908867cee1faab2af50e3dea3c",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:OMfFN4hT0MoOXB7cQGox",
+      "collectionId": "faction_cards",
+      "documentId": "OMfFN4hT0MoOXB7cQGox",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "6961754dfa1d6ec8390eac3ab9e8d9e9276f73359491516cbcc7f6583cf6f9b4",
+      "payloadHash": "e8c7ccf7c272744c6a0afe04c767b43959e5973f13b792875647cd1cbdd7b546",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:oY5mTi4FApgs68svT9Oq",
+      "collectionId": "faction_cards",
+      "documentId": "oY5mTi4FApgs68svT9Oq",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "3a53a2e5c2137d0bcfc009ae49306c54e27d2a0761bac6ce77c1764f7c6b1e80",
+      "payloadHash": "d132c5749a4f011564fbf76346e2dd87124df65f29f4f97b2f5e794b42cc7d6c",
+      "schemaHash": "b10d4d63b33543e8b0fc7384f42be05219e430d017feab994cbe9378d50cb738"
+    },
+    {
+      "recordKey": "faction_cards:p0D018S6ZjYpFpOb4zES",
+      "collectionId": "faction_cards",
+      "documentId": "p0D018S6ZjYpFpOb4zES",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "86d5de30d10e865686e139e6df1339f84f815b0e2b4b717e66a119ce1f613bbb",
+      "payloadHash": "33497820f018dc8574dd6813377da14b44763ddb1c7f3787bb1ee6be3c721a97",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:PECCLu1vUVsvXQWfoZXa",
+      "collectionId": "faction_cards",
+      "documentId": "PECCLu1vUVsvXQWfoZXa",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "6ab52b8040fab98f9eeb16b59228abb1871ebf48b0afa8c796a7220ae41feac6",
+      "payloadHash": "3c3115552e6570580ff7b0ead3b1744455cfc34c12323c48f42f87f2354fcdc6",
+      "schemaHash": "b10d4d63b33543e8b0fc7384f42be05219e430d017feab994cbe9378d50cb738"
+    },
+    {
+      "recordKey": "faction_cards:pgKjMxEUTZCIwvSUxkoE",
+      "collectionId": "faction_cards",
+      "documentId": "pgKjMxEUTZCIwvSUxkoE",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "ac5e32c946645a9798bb591ee4c5b34904ee1ea974c7911fcacca96159d3340e",
+      "payloadHash": "9a404e89cfa0b1a4749060d82a963bcfbf19fdec69177f143d8ce8083dc04a36",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:PKnA4apL0pBiqxmadmrW",
+      "collectionId": "faction_cards",
+      "documentId": "PKnA4apL0pBiqxmadmrW",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "8872db308539111e9eeb8b445cf73d900421bb77013fb241c287dcb62cdd3ea3",
+      "payloadHash": "b64c315032e93b43095814695275eed8e1dad08891218737e77968ffa419617d",
+      "schemaHash": "df853a225c46fbb5901ba3b37a55f27cfdf577096cdb7c8c1763ee3c0f3869a9"
+    },
+    {
+      "recordKey": "faction_cards:pkpBX6CguxgsKZuURSjb",
+      "collectionId": "faction_cards",
+      "documentId": "pkpBX6CguxgsKZuURSjb",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "cc6ed81aed7c8e7a915525b65ac952e038880f07ab1306171eab272e1cb75a4b",
+      "payloadHash": "8d0640bc6b91c86161646d8d1e883b2398da832df5dd6fc92751669a24bd4891",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:PmQJvXRP9dB2QaZYO0Qn",
+      "collectionId": "faction_cards",
+      "documentId": "PmQJvXRP9dB2QaZYO0Qn",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "f719b4b7d567deb09557126aee52b691dac75caddfe66f21525339c9afa3a5bd",
+      "payloadHash": "18e457312a891cb3613234e3a936c0b257347b271c5669d8297f8b7afb749364",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:PZTRXb75wCDifjhC8KYX",
+      "collectionId": "faction_cards",
+      "documentId": "PZTRXb75wCDifjhC8KYX",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "120f2cede208a2409a9a93a44821c2cc3d583b5b96f04cfc58098c32cd01002c",
+      "payloadHash": "0596e26e11a0c30e9d56f2e26cd2a7dddaf1ef6aa3dc6c93933863d54f144106",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:Qb8rzmY4wohIw7jCrK14",
+      "collectionId": "faction_cards",
+      "documentId": "Qb8rzmY4wohIw7jCrK14",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "b01b7aedc4996d0aeddd6aed22585bc43f7f61d7b745411125365ee787d8a79f",
+      "payloadHash": "874a03ebcd42ff59bceeaa32eb51b2996cb93f1aa6ff973bff52d229efd59447",
+      "schemaHash": "77c283bbc60315943d59c11273d93af8b877dc18d4261af15fb4b2b243bd63d0"
+    },
+    {
+      "recordKey": "faction_cards:qbBhCOE79NqHUC1lz8eK",
+      "collectionId": "faction_cards",
+      "documentId": "qbBhCOE79NqHUC1lz8eK",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "1f9e3a5268e999de723b779475bab9a2bfeae63f317323c89c40e317e30a91b1",
+      "payloadHash": "2542b66bc911beab3f074fd6cc7a2ac52f38b47f648d96deeb3d404558f55799",
+      "schemaHash": "eb0607ff8f7102fbb2cdb52f1b3a72590fa70c11c3a7197003d847cb3cce7996"
+    },
+    {
+      "recordKey": "faction_cards:QfbjBCBOSwPKv3xt8IlT",
+      "collectionId": "faction_cards",
+      "documentId": "QfbjBCBOSwPKv3xt8IlT",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "a5edc585b0505aa3f2eac0c3a8f7f35e854a9ea3b39a9864c3b81ac50777519b",
+      "payloadHash": "e5fbdb3a9845e55cfb19cbba547c017b8fbfe64efafbf8458469e3009c7e0028",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:QlHchuHgVSVJIeA8a0Po",
+      "collectionId": "faction_cards",
+      "documentId": "QlHchuHgVSVJIeA8a0Po",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "be75ea2aa1c6ea7010a358f0eb7e1b34ddc161bccd9a254517aacc7671454375",
+      "payloadHash": "cfc1c46fdeae20ba1d9a93433bbd490397532f6a67887dc0589034cae0c0a964",
+      "schemaHash": "df853a225c46fbb5901ba3b37a55f27cfdf577096cdb7c8c1763ee3c0f3869a9"
+    },
+    {
+      "recordKey": "faction_cards:qQITJghYUXljhd82JNAY",
+      "collectionId": "faction_cards",
+      "documentId": "qQITJghYUXljhd82JNAY",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "cf9a6d1cf27bfd7ff64a2c73cae96f75c4719ab55f4c2c35dc23317989dad16d",
+      "payloadHash": "812c03264f9392f8b64581fc55bd187807e446c17e22672b28de2a31323ee015",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:qVM7oQ62PHKHKUY21qoR",
+      "collectionId": "faction_cards",
+      "documentId": "qVM7oQ62PHKHKUY21qoR",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "4d592a2199355641a3a22fcadc367859a31ba29056d6e3e179c8812c6d3c7c1c",
+      "payloadHash": "40c5a69c726912dd8e9f6b9b7f99a8f0b75b7aeef2ac1f88ddf104c54d8b90a7",
+      "schemaHash": "eebb0291fcdb23f0dd8ef8958f5cb227a24e25e4ea86ebe23fbb78f9f4da7e53"
+    },
+    {
+      "recordKey": "faction_cards:r1BYHgKlWYFdmJpAEdGL",
+      "collectionId": "faction_cards",
+      "documentId": "r1BYHgKlWYFdmJpAEdGL",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "ad0297e85f30fe0f45acb2f9139eadf657f22f7d0ac285556a4cdf72a5fff4e7",
+      "payloadHash": "2421d8d22a199491e616b99ecc8d9554802ad7f716bc30065ee7cd8454564dae",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:rHDOTrC7d6qtr2EvcBiE",
+      "collectionId": "faction_cards",
+      "documentId": "rHDOTrC7d6qtr2EvcBiE",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "0da23f0e6577b9cb2d7969b031ed8968d9229bbff1e61241222e61e4687515f7",
+      "payloadHash": "38a8d802efe4c79a53b4db36f2cb1f39983b24b6620d17d2bb138d0325acd9b1",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:RKpdmoEGzPj6cV5sacjX",
+      "collectionId": "faction_cards",
+      "documentId": "RKpdmoEGzPj6cV5sacjX",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "683696d6289c07e4fa158cbd0bdb69d1a9bf5787be65523f8cc4b7455ae3a06d",
+      "payloadHash": "461067d9f149950bd089d4f2d1df4dd8c2740c85c2193f1e2705f03c450be2a1",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:RxMok5Dje6c5a4qaZLD8",
+      "collectionId": "faction_cards",
+      "documentId": "RxMok5Dje6c5a4qaZLD8",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "4705a516b0d4f5e8b5bebcdd8c3cee38144891fda8a06e14bbb8bf932c5c8735",
+      "payloadHash": "a2bd1d60984c8840a819a5b2fecdfa96ea40784eaf138a461be1591d3ee4082a",
+      "schemaHash": "e57a0bcd781ee17793954f2c5b98042e876f96cce6fb75c3be4e11e9c464a1cf"
+    },
+    {
+      "recordKey": "faction_cards:Rys6QAs2p8iREASmHbWX",
+      "collectionId": "faction_cards",
+      "documentId": "Rys6QAs2p8iREASmHbWX",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "35d2f8988d8f18a6807654a97ff6dd9e97884ab2d08363ed16142ec8db95ec8f",
+      "payloadHash": "ea12a934fddda03bc16d9e380738cef5f39b6dc2872bfb9c3015d4d3b90db40f",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:s0y0vI5ZcjVuEUBt3Bet",
+      "collectionId": "faction_cards",
+      "documentId": "s0y0vI5ZcjVuEUBt3Bet",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "3c702bd7a5c897242303cf1640785d975c3d8f4dc5ee41df49b1432efb25fd16",
+      "payloadHash": "b5c566ed6da63c61a0851979b3bf2459084719e299051e82e3947c7a0bba67aa",
+      "schemaHash": "94630c9ed583de82376cce68d8e00f46ccb7fe3765b8df476cd18ffc7b388622"
+    },
+    {
+      "recordKey": "faction_cards:sgF6jELZu6EujiTuWiBf",
+      "collectionId": "faction_cards",
+      "documentId": "sgF6jELZu6EujiTuWiBf",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "7a1bcbae1016d49f31609e878450fdc78ad045ae0bd075ca6fcefaeacf973bc4",
+      "payloadHash": "42cd50ca9d51e04b50c39290aa8fafb234945c7f120685a938ef62dc995446ee",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:ShUKlRDZJzOUfk9uQvWk",
+      "collectionId": "faction_cards",
+      "documentId": "ShUKlRDZJzOUfk9uQvWk",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "d98eb6220753b5de8b6d93df067c5d5826b83475060568bc3db50c36cf87ce06",
+      "payloadHash": "fac12c88d0203d65a51e75b62f206ceb54ad48c9174d8a6d251e86ab92e9753e",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:sJaNDO81t3alUjSc5rju",
+      "collectionId": "faction_cards",
+      "documentId": "sJaNDO81t3alUjSc5rju",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "6a2d18c05b3b1a532567e48db0e7c03b163fcaf47b6eb3f33d696a9a6bde7c75",
+      "payloadHash": "a5eb80a4cdd2c5764a6f03a66e4f3ef7bdbe7163fc4321f479ab65c522bc856c",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:snHSktm3rb4XehGllIK0",
+      "collectionId": "faction_cards",
+      "documentId": "snHSktm3rb4XehGllIK0",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "4f544aa8c35e17a688f5557ad3c47fbe7cbb4972b11d184c2ae0fa3bdd64bc73",
+      "payloadHash": "1dfc472395fd565bfd418b7f1447f0a7662f7aaba06acdc0295f455e30f201d0",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:SWDFU9aWN1WuUVvYbxqn",
+      "collectionId": "faction_cards",
+      "documentId": "SWDFU9aWN1WuUVvYbxqn",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "30d2baaf8f5c5cd11a7518a507aa26b9a14108acdc86ddbb816813d58ffbf779",
+      "payloadHash": "90da515e33d6f2554228758c98421bcfca973fb64e7e6e30c7c3f0212f5af865",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:sZekQanaNIuOltSfqUL7",
+      "collectionId": "faction_cards",
+      "documentId": "sZekQanaNIuOltSfqUL7",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "089874bf95e8217c9de22fae327b39953679a67f3c29ad7746c1ed6d4f68cc60",
+      "payloadHash": "f69ffbf482741efd0bb3fa0940181fbfbeef1c215d882e66d183ecfb25f525b4",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:t1QqBM1IVTX5CD5EE6Y8",
+      "collectionId": "faction_cards",
+      "documentId": "t1QqBM1IVTX5CD5EE6Y8",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "e86790fc4347cce748769d343241f8863cacd971167f3ed68656f7e8f68d32f5",
+      "payloadHash": "e194add6738871fb9490b9a58a03c9a3de75c0b19e09b956b421e51a7e4a66dd",
+      "schemaHash": "e57a0bcd781ee17793954f2c5b98042e876f96cce6fb75c3be4e11e9c464a1cf"
+    },
+    {
+      "recordKey": "faction_cards:TbxoZ1AdV917m0HsmsdO",
+      "collectionId": "faction_cards",
+      "documentId": "TbxoZ1AdV917m0HsmsdO",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "e82e1924720924657f9997ed5e1182d6c9a4f93fbb2bec83f3507808ad599701",
+      "payloadHash": "884032fa497590fc19d16b7dfa7666a9bb215440757200eb824a10107f655239",
+      "schemaHash": "77c283bbc60315943d59c11273d93af8b877dc18d4261af15fb4b2b243bd63d0"
+    },
+    {
+      "recordKey": "faction_cards:tfaoh3ukjUDiT7J66HQY",
+      "collectionId": "faction_cards",
+      "documentId": "tfaoh3ukjUDiT7J66HQY",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "aee68b06ae093602f3d737114eb0576c6881f7e1b060d238da1197a9ccb4600e",
+      "payloadHash": "7b235e9055ac11f630acfbfd20507a9b65d6e146c7f3792f62a63606283ad707",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:tGmUwXsT0Kd08OxC6QNF",
+      "collectionId": "faction_cards",
+      "documentId": "tGmUwXsT0Kd08OxC6QNF",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "c0ff3e3797451f236f5d5e949bac782b6b997868e80798b70e020079034eade1",
+      "payloadHash": "5e5237511432a15e33cbe0d54b2d8ef2fc860c97ab1ab07761c39ab624f1c0f4",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:thjJWCiPvxKmkwVKOkr6",
+      "collectionId": "faction_cards",
+      "documentId": "thjJWCiPvxKmkwVKOkr6",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "abd6ff8ef3277eb7e2b7e6dedb706588b8fa8dbf373a3a79171f97dda97f2810",
+      "payloadHash": "55e6b3d7531b2668ed35cba15349722f112001e1024180f5302bf144946e48a8",
+      "schemaHash": "c1e930f5ea455d5a4a0b5c09b0a77392388cf08cfc6faf92fdba55d36c406bd9"
+    },
+    {
+      "recordKey": "faction_cards:Ti7mD1zzKNrBXtPtFooG",
+      "collectionId": "faction_cards",
+      "documentId": "Ti7mD1zzKNrBXtPtFooG",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "674a5de31d9049b03a7696706aea24f09abb0cb40348a1501136f2dc5d1bfb44",
+      "payloadHash": "0c8f32f1178ba1f7a8b37d21d6db5b34f01b404b625b870cf11ab1314792cf04",
+      "schemaHash": "7f5c5d61b8c9333c246d03038d5404170cea9d9cca62d053446cbd881b7a702c"
+    },
+    {
+      "recordKey": "faction_cards:TSDp3xInktJJ9USAuut2",
+      "collectionId": "faction_cards",
+      "documentId": "TSDp3xInktJJ9USAuut2",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "10b553b83cb82abeeeb69ac292dc8fe5245103aa7a741136a78d68794f75a6dc",
+      "payloadHash": "4e73fdd49fc8c5fe511c389a40468708b7269906c4222db11ebf9a83f46a5c8b",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:Tx1tHsap3r2TRoNXi8jb",
+      "collectionId": "faction_cards",
+      "documentId": "Tx1tHsap3r2TRoNXi8jb",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "c2538afac32b87527dde0251ad57893703b16225dba3d97be06bbf714c30d1c8",
+      "payloadHash": "8d97c6e88a9d7864105277df10935e1a20b89bdf0c9effc97dce3fbd8c970e44",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:UeQCeaimVkp763wviL3f",
+      "collectionId": "faction_cards",
+      "documentId": "UeQCeaimVkp763wviL3f",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "5963ab92950a2123ed3c050b795eecb8980be62e2f7c934079cc6caf720efb23",
+      "payloadHash": "e3c51738abe2ca172ce4e6ad769c08b9890d613c56cbd5120382232e2d016109",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:uovPDtCurZUjm8HjKJRD",
+      "collectionId": "faction_cards",
+      "documentId": "uovPDtCurZUjm8HjKJRD",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "fc3e98a6ecc9b2e6af7f6a39ef0e4173b75fbd7777eb1dfa2cd07d2719db013c",
+      "payloadHash": "75657b9aabb97cc467c4bd05ef30c9d24246967da48f7ecd776b2f791058c4e8",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:ux3oh9ltbQzECvRQanFh",
+      "collectionId": "faction_cards",
+      "documentId": "ux3oh9ltbQzECvRQanFh",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "cd4b320046f81c986aebd98c9acfad54ea6a9bc6cada9fbeea7b6eefa45b63eb",
+      "payloadHash": "51a3b87f23d4099ba6949c2a50d603731224cbd4d4aa2e175cf61a7ec1a63359",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:uYLS7ynyg3CYMBPTs4yt",
+      "collectionId": "faction_cards",
+      "documentId": "uYLS7ynyg3CYMBPTs4yt",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "6ef69a9f249f063921b105136590c36cebc337ad3e83b660a853e3c0df775786",
+      "payloadHash": "a8d890bda59d9b81f2bd641013d7a87d356f13112286595caffeb3f6a4a3485b",
+      "schemaHash": "7f5c5d61b8c9333c246d03038d5404170cea9d9cca62d053446cbd881b7a702c"
+    },
+    {
+      "recordKey": "faction_cards:uZHJV3JYn020gKKP5DCu",
+      "collectionId": "faction_cards",
+      "documentId": "uZHJV3JYn020gKKP5DCu",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "f4863b060c2d5b2742bbd7fadd227aeacbe01470dcabd39d626eae39f3568a7f",
+      "payloadHash": "e6d4da18a6c3a6cc27f6af484744bd0f4db47dc119b1213bd6cee333b4fd54d6",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:V1LJXAYiK2aRc95SZ1GJ",
+      "collectionId": "faction_cards",
+      "documentId": "V1LJXAYiK2aRc95SZ1GJ",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "aa938df434ad9ace377e962dc140009d98a0b111f31edc8e081163a52eec86b3",
+      "payloadHash": "07412b6aa36db426c99a600277f0e1eb99f9254436444456bef510cdeabbfaac",
+      "schemaHash": "acbaef3e50bc50ae21145db10a6048920433abaf6f403ca681991a5b588a054a"
+    },
+    {
+      "recordKey": "faction_cards:v5hcGbQi43ceb7fAx0WQ",
+      "collectionId": "faction_cards",
+      "documentId": "v5hcGbQi43ceb7fAx0WQ",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "c676aed0f474af65d50af726eab63fa51592ea7fb88d57475afc1059b0eed7fb",
+      "payloadHash": "39a0b293752679800b5e2416c56e9bfb6b964670203ba01c01c610e865bda208",
+      "schemaHash": "492e6545630b58f849ee6098461a27458bb77adfc90b58a6e4196a67c748ef50"
+    },
+    {
+      "recordKey": "faction_cards:v710psEpNi5HZjyDKQEC",
+      "collectionId": "faction_cards",
+      "documentId": "v710psEpNi5HZjyDKQEC",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "d7f2d1d1b8ec33763c467b6328860f0f5490456fc1ec4cf494b9af0e8100e0c0",
+      "payloadHash": "500a2399d197e81c457aa980c2658f63d7a9e982c261b3a78ea31f0de8bfa5c1",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:ViADHIJhUxikJY0lr6Ky",
+      "collectionId": "faction_cards",
+      "documentId": "ViADHIJhUxikJY0lr6Ky",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "c34558bb677195629f685178b5f5f15efcdb9f73e54af119a3ec9ecdf95b8784",
+      "payloadHash": "31f7932256d982a6117b64d37946cce789df54adfa70e4032a5aba068deaaf69",
+      "schemaHash": "7f5c5d61b8c9333c246d03038d5404170cea9d9cca62d053446cbd881b7a702c"
+    },
+    {
+      "recordKey": "faction_cards:vKeijkptymiRAN9RCozq",
+      "collectionId": "faction_cards",
+      "documentId": "vKeijkptymiRAN9RCozq",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "ef2b78003c9bada73c49184f8712ec5cd08f3851b2001c484bf9318385b12e87",
+      "payloadHash": "f2825053b721a4482d2423f6cc3bceed5a1d9d1948520897079cbe79c702f770",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:Vopi3c9EF6UmYgISjAA7",
+      "collectionId": "faction_cards",
+      "documentId": "Vopi3c9EF6UmYgISjAA7",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "3513e3003d24f75855db7b88bcecf84eddbb3446760d775843060d7cc6195a1f",
+      "payloadHash": "23b2ce96547e7e6fa43527c10c1dd748b076ff51d45349cc021bfec0de7a2eb6",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:Vs2MyNLCVCg4Sw9aZDBi",
+      "collectionId": "faction_cards",
+      "documentId": "Vs2MyNLCVCg4Sw9aZDBi",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "aeec10c3073b2033bf15f203deff6d3b7dbbecc83e10c42b2afee252d40955d1",
+      "payloadHash": "b9ad2268e665979432c3abedf2757f12b1d4f3bf42fc50c109d61fcadc20393d",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:wBKIWk28fo9MHVl5JFlI",
+      "collectionId": "faction_cards",
+      "documentId": "wBKIWk28fo9MHVl5JFlI",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "6168856655280c0b986e1313d1fb3c829f92bccf087f3864aed51f34738909f1",
+      "payloadHash": "50d7cd8e379bffd39a898b729b44abed3376df206d25f638f879f6191bc794e1",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:whwy8Pbx7iAOIqfkXzV5",
+      "collectionId": "faction_cards",
+      "documentId": "whwy8Pbx7iAOIqfkXzV5",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "2e65e5e63e13051301e445d20da9cf52061132dc4250cc8ace73de2e314397fa",
+      "payloadHash": "ff4dc627f5b2e6f414e1d51daaec8fba22bf83d391e5b9ce07ed5fbb126d0644",
+      "schemaHash": "b10d4d63b33543e8b0fc7384f42be05219e430d017feab994cbe9378d50cb738"
+    },
+    {
+      "recordKey": "faction_cards:wioZHoFrZBsrnk9LpoC8",
+      "collectionId": "faction_cards",
+      "documentId": "wioZHoFrZBsrnk9LpoC8",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "7c3a384eaca5c9a680950e4d6f2fd6745346efa0de08d5a0e86113d9af450584",
+      "payloadHash": "f676318c54cc8cb9782ff6c5923a7dd3208d1626469b8962cd06217374971a7c",
+      "schemaHash": "eebb0291fcdb23f0dd8ef8958f5cb227a24e25e4ea86ebe23fbb78f9f4da7e53"
+    },
+    {
+      "recordKey": "faction_cards:wjwUaOGHAoyHfU3F1z0p",
+      "collectionId": "faction_cards",
+      "documentId": "wjwUaOGHAoyHfU3F1z0p",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "31a05e766cbbbcda394dd53d1e3c35810859d08edac98debe876c801289b4ae0",
+      "payloadHash": "58f9dab37777ee95698859aae33f58222f71a97d48a21cf14bc87cae9fedeb49",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:wLP1nU4Gwq2fBfnemvTO",
+      "collectionId": "faction_cards",
+      "documentId": "wLP1nU4Gwq2fBfnemvTO",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "9a487d0aedb8c2e8784e3c2a977b8f38a295cf938ef1b9d773a046240d3c369f",
+      "payloadHash": "b6f5108a255f6c9d5e6996e4b109a92f746bc2cea3aabb98ab5c9ec13e05bc5c",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:wMODpUEJj6MmNlnLYjCP",
+      "collectionId": "faction_cards",
+      "documentId": "wMODpUEJj6MmNlnLYjCP",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "192626634ffeaf66bc9562e874e40c2e04598aca21071504470bf8a52eb2066a",
+      "payloadHash": "c176d6fe153b00641b79ececd916a3b1a67e5173d4604fb547d3b74f8d0023ca",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:WXxGvWbxz1h0LXD9pGvo",
+      "collectionId": "faction_cards",
+      "documentId": "WXxGvWbxz1h0LXD9pGvo",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "aafc63c78be385295f4f2b0981e577c1c3b3b86f154fed9a5342197a91d1fca5",
+      "payloadHash": "f6828bebf13c1ca802d79e3bed9678635281834d9510be808b7c146528a5626f",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:wyatOnpDtoB7dCpmNo9n",
+      "collectionId": "faction_cards",
+      "documentId": "wyatOnpDtoB7dCpmNo9n",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "44395ced3005dafa9892a7686f30aff9b321c4c4c8af2c9e6a5662606f9f43fd",
+      "payloadHash": "1dbfb8a9474e5b6411539e17db410095044cccbb6be8b97a5ffe5dfa8a99b1ba",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:x5A1EehtLD0bGcNKkVLn",
+      "collectionId": "faction_cards",
+      "documentId": "x5A1EehtLD0bGcNKkVLn",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "db8d0010de62ed7ad05085a6a976b70472b07a4222fc1a33c99bea3e35a5870e",
+      "payloadHash": "a89aa989a7769beea1e0259ffc994d4cc4b2f2a0ad2b94b12ec005ed342c858e",
+      "schemaHash": "98200913dc7b0a9d51ed9c055ec9b5c2021f55b45f425b36a3355b335150f6f6"
+    },
+    {
+      "recordKey": "faction_cards:Xdnx5iqxvHc4DD72aq73",
+      "collectionId": "faction_cards",
+      "documentId": "Xdnx5iqxvHc4DD72aq73",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "4afabcd2d89a784c1a4eb34ab514be602c75cfd44e2d9b06c8b103383e691dae",
+      "payloadHash": "4859e63fb7e1cffed7922cf6c6b5d1bf5e7061e6a51a5f45c43d86619216801f",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:XeWIFHqK8h3feYXoIrTb",
+      "collectionId": "faction_cards",
+      "documentId": "XeWIFHqK8h3feYXoIrTb",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "54263b3d85e2f59a1e181c0fac20c50cb4305a466b15e5e692224d1e9e0086d4",
+      "payloadHash": "668ab6397d29526f8f7004a23ec15fe5ae09f1687f0fffb2b2aedd5eb8d9a8ce",
+      "schemaHash": "492e6545630b58f849ee6098461a27458bb77adfc90b58a6e4196a67c748ef50"
+    },
+    {
+      "recordKey": "faction_cards:XLpEj8yMltdINglMZhlk",
+      "collectionId": "faction_cards",
+      "documentId": "XLpEj8yMltdINglMZhlk",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "526c23d52ad67557175b5c94a1a4cda7589b2bc577b1cf5a33d66bdb755abcd6",
+      "payloadHash": "fa4b8a2bb74d6e567478bd61cf8e07b081a78187b640b7952cc6478692b49647",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:Xm7IseMaSHypSylnxgfs",
+      "collectionId": "faction_cards",
+      "documentId": "Xm7IseMaSHypSylnxgfs",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "d07f56f16568a93f0a8aecdb2a81c19dd472b6e4562fcbc6476eb1a302a22266",
+      "payloadHash": "230922eae3fb0af3ee71a65e2cacee6bddb44aff1af660a015202193533ddb1e",
+      "schemaHash": "b18297bffd134ab22cde7e87146497f14e27ce99b8f2716db3eeb26dfc7b1557"
+    },
+    {
+      "recordKey": "faction_cards:xwjv2GIwOCk2KabgB1rl",
+      "collectionId": "faction_cards",
+      "documentId": "xwjv2GIwOCk2KabgB1rl",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "bb004d354ca34c84a364761d49ebd58a4447acbaa1567d823031583135a17612",
+      "payloadHash": "b283aba7470e97663ea54df0abb7c294b6d2da4d2230879a2a899190e7f6b3d7",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "faction_cards:xxcLAuwGbNzHzggnAGLW",
+      "collectionId": "faction_cards",
+      "documentId": "xxcLAuwGbNzHzggnAGLW",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "1d877f72391b147eadb711fe361562aa73dee7fed9452531f08e313be2c96b63",
+      "payloadHash": "49bfe8fc3d05370b501645a97c56c450bdc0228a259169e630a40358e1563efc",
+      "schemaHash": "29329689a30bc7e67bd3d1771a632bca0e8addac556af107dd074a14e30f82b5"
+    },
+    {
+      "recordKey": "faction_cards:XzHxuIR3VZs5F1ftmkzX",
+      "collectionId": "faction_cards",
+      "documentId": "XzHxuIR3VZs5F1ftmkzX",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "d86a02d3a37f0a06bead1e784cf15bcedac63cdc437270f0c7faf0335925901e",
+      "payloadHash": "ea1d8fb53207eaee7bae3fd43eac63dda5c73947028271100f1f85cfad2236ce",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:y7Puh5vcH6s5PMpLPI73",
+      "collectionId": "faction_cards",
+      "documentId": "y7Puh5vcH6s5PMpLPI73",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "b68fdd3139684df9af27e4b90774a330edcdf3efa7092c063d4c4f09b0145ee1",
+      "payloadHash": "b898b1fcfc4e675a06f96d076580fb89349beac7870a71e6662d5d7bd7ed9bb2",
+      "schemaHash": "df853a225c46fbb5901ba3b37a55f27cfdf577096cdb7c8c1763ee3c0f3869a9"
+    },
+    {
+      "recordKey": "faction_cards:YbNgR3ZB8OQ9B10N5iJ4",
+      "collectionId": "faction_cards",
+      "documentId": "YbNgR3ZB8OQ9B10N5iJ4",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "7759d9a4a73aaed3734fbded629963ff74d8fc418bff52f47f5b4fde73105df0",
+      "payloadHash": "c15c221e1c65ecb76e455606c572613492a2dc37652fddf7c565826bd46af391",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:yQ2mHJMUvEaupcdRVwjm",
+      "collectionId": "faction_cards",
+      "documentId": "yQ2mHJMUvEaupcdRVwjm",
+      "recordType": "deployment",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "1e619e8594b780009b185ef05a34d9c78693bb71078bc893d9e23b9cdcd665f6",
+      "payloadHash": "97aa776383ce644366ca02cd9970812183d4ce8ef8fe21d28dbafd01cd47586a",
+      "schemaHash": "29329689a30bc7e67bd3d1771a632bca0e8addac556af107dd074a14e30f82b5"
+    },
+    {
+      "recordKey": "faction_cards:ZAp9HNL6QTIyKkDhzcHT",
+      "collectionId": "faction_cards",
+      "documentId": "ZAp9HNL6QTIyKkDhzcHT",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "ec4a37fb3762f8dfba88f20ea0be3b3bbbcb00ee690f5bc4aa87da23027e6258",
+      "payloadHash": "9865eb0bb25520083de514776a1f691f79102111a7e19bdd575556a96835fdef",
+      "schemaHash": "0be125c5f0d00c38154e6806ce8cc87e1013871541b8f7b10b4cc441c03b5b0c"
+    },
+    {
+      "recordKey": "faction_cards:zdhtTfKJkPgMeA8Gonqv",
+      "collectionId": "faction_cards",
+      "documentId": "zdhtTfKJkPgMeA8Gonqv",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "bf3ce7baa8e98ddbd613bfba9eeee4d01dfee933106cde9a556a2b3696c61e41",
+      "payloadHash": "8335b6e8f4477f50004d2cba62b2f58b7772341be62412ccfb684ac6c020244a",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:zgWIZQYywDlhLjxr2K53",
+      "collectionId": "faction_cards",
+      "documentId": "zgWIZQYywDlhLjxr2K53",
+      "recordType": "community_deployment",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "ea7ed780713e4f340e6eb515d41bb5b80e52c1e9472953a6a0ce3b7d4a5a62d7",
+      "payloadHash": "ee2c0e218fc3ce1719429bfa98aa2b32ea181a16249997d872571c4d4e10ee3c",
+      "schemaHash": "834bcd1f816e1c794d9347559dcc63a182477ba26df74093b21be6eb70aefcad"
+    },
+    {
+      "recordKey": "faction_cards:ZHSOCC9ZOapOzKjnEpWu",
+      "collectionId": "faction_cards",
+      "documentId": "ZHSOCC9ZOapOzKjnEpWu",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "9013b573b8fb00a801e01f344adf6e593091e9319b5b4c3819779c4ed579e7c6",
+      "payloadHash": "dc5ac0e9fbbe3748cdebdcb3205db0b63794670306662bc5effe511d9f6c53b9",
+      "schemaHash": "36298de5da2df30bfde181047bb391ff0147586a88d34da61e19b94359eaafa5"
+    },
+    {
+      "recordKey": "faction_cards:ZiqGBJu6SEavTeJqoNef",
+      "collectionId": "faction_cards",
+      "documentId": "ZiqGBJu6SEavTeJqoNef",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "e7945dd4ca98056cfb271713c3ee64a872b6b511543ea4fe42ad54b6c7cb8807",
+      "payloadHash": "2925a20d407ec6ca5d5eb06717a986be4570c58ffae3bbe98a2eca1c937893f6",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:zNKnw09HWfxwnVBVCJrh",
+      "collectionId": "faction_cards",
+      "documentId": "zNKnw09HWfxwnVBVCJrh",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "794e304a71e4c5fdeb13416bc22dc7b9d73fd0841eb218531865f823fd74ad36",
+      "payloadHash": "6494020c26ab199a78410b88670395670d36100e2cbf49f26603f33c66b1699e",
+      "schemaHash": "55367281722deef4168838728b54fde4b0e82a292edc5bc9316044ff70f688c8"
+    },
+    {
+      "recordKey": "faction_cards:ZOZMlPdUsEPoMu6EvtG2",
+      "collectionId": "faction_cards",
+      "documentId": "ZOZMlPdUsEPoMu6EvtG2",
+      "recordType": "community_mission",
+      "authorityDisposition": "community_display_only",
+      "sourceRecordHash": "129d4f161e5f73843ebf6e9e2d6e8efef76641c2388842ea811905b9ff44b1ad",
+      "payloadHash": "dbbf9660bd6d782f6cee4c1dc725d1260ac9831e91eda08e308858542d7d5e1d",
+      "schemaHash": "3a52c251657baafa0099bdda1e0b273f717086e6f76ef8a1128cb9481a871691"
+    },
+    {
+      "recordKey": "rules_sections:6LXSDb76XGSE7bWxb0ts",
+      "collectionId": "rules_sections",
+      "documentId": "6LXSDb76XGSE7bWxb0ts",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "3da7561c2bd7a6c4ecba367e8d55715923c45489cf2bd2ae9c80e61e03c3595b",
+      "payloadHash": "7c3ba719b82f11efb2f7b9c80cf6ce5de9608cc5009f660ab298956a46759568",
+      "schemaHash": "6a112f149c7e8aa8be74d20bfb714afc5f2236b54e96fbf0afcea71bed84a193"
+    },
+    {
+      "recordKey": "rules_sections:cB7X7UfOMHh3Wxn79ASF",
+      "collectionId": "rules_sections",
+      "documentId": "cB7X7UfOMHh3Wxn79ASF",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "13e9d29032e246f947f59948389d437dead1f14911a890b688ee88a61e6f0688",
+      "payloadHash": "56c942f90b76d67836accf996e9506a8cb318c631512960ffb83d7635fda96a6",
+      "schemaHash": "6c5d98df5cb05c7d343f9b836b75bca4bbecbbe8d17ae9ed235630d96730308b"
+    },
+    {
+      "recordKey": "rules_sections:FuahgilWtc8nccVSp2Vv",
+      "collectionId": "rules_sections",
+      "documentId": "FuahgilWtc8nccVSp2Vv",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "985e79f70c48caf1b1085e620e92be23f5b4468ffe07fdc5f84cb01a28fa59b7",
+      "payloadHash": "4a6aa9e55e3b4197666b0f4fed633269dc42327af16f5b5a5422b7533d7d8973",
+      "schemaHash": "8c95d9b02d0ac4e05ed99fbcfe639b84ead8812c559ddb4fc463cb892a3a5e06"
+    },
+    {
+      "recordKey": "rules_sections:gMXfLyHJfnGYKw2rmoPS",
+      "collectionId": "rules_sections",
+      "documentId": "gMXfLyHJfnGYKw2rmoPS",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "572cb18a86731b32f12d81a26c777f99115a1da4bf57ef73b18215fadd18abc9",
+      "payloadHash": "faf1f3771196090c327ead1144f4015bf2d633b6d90ccc83dc62091c5a3e7b38",
+      "schemaHash": "cb31103c6b19034577771a253c980f7964f51c77c1dcd3eedd7b197e73225db2"
+    },
+    {
+      "recordKey": "rules_sections:H3Fn8YSvEvpJZpT57qw1",
+      "collectionId": "rules_sections",
+      "documentId": "H3Fn8YSvEvpJZpT57qw1",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "b2d1089659ae55440711a8c5315e70142c4777c4e1a94268abddb768ca8c1f13",
+      "payloadHash": "05da4c287b6e7fe8f9f3159269cf668ead93e74f10df49a666a1ee36c521f206",
+      "schemaHash": "018c3ff8b33be513b939112bef79894c83c2b3c48b6fcc10ef790cb4ee21330a"
+    },
+    {
+      "recordKey": "rules_sections:I03mzBYujgXw6xN2qXhH",
+      "collectionId": "rules_sections",
+      "documentId": "I03mzBYujgXw6xN2qXhH",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "107c12b423ca1960beb32e759ae12b5fed073ab2cc8647d24a7599a5ff150e22",
+      "payloadHash": "979cc0d396a9eea15ea533ec137e4097748bf2ec6c89810bb3bf5cae4ae39f4c",
+      "schemaHash": "e50855ed9056cb07362e5b0371af99b9a7e6bfced1f64bf99cbd9717d979e13d"
+    },
+    {
+      "recordKey": "rules_sections:iuUyObNTQ2M8xK4IUqzC",
+      "collectionId": "rules_sections",
+      "documentId": "iuUyObNTQ2M8xK4IUqzC",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "730f49b30de4cbe1c956a3da65b8c59d238b5715c8822b74063e535524d81fba",
+      "payloadHash": "1544376c9e3da46537ea0bb475fcfc16f1044e2e9bdc27c182df4e66f49d2276",
+      "schemaHash": "543a92d38e72ee358fc1bff7b225f9d96bcdbf11298bd82509769db9679cc4b9"
+    },
+    {
+      "recordKey": "rules_sections:Kvng3lPQiUcJoqJPUUT5",
+      "collectionId": "rules_sections",
+      "documentId": "Kvng3lPQiUcJoqJPUUT5",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "9ca15c103389c991498165e0488cb9e8fdcb7bcadad560ffb82de5fdbbd05ef8",
+      "payloadHash": "21d99d0d9ba448282518ed3483879bbeef81ea2cad96394654e6aa400eeda3ee",
+      "schemaHash": "479cc5ea36f457567c786dce86783c1b57fc6ade0fe4de67417ff98cf824340b"
+    },
+    {
+      "recordKey": "rules_sections:OszqexisUrSOKMW6TzA5",
+      "collectionId": "rules_sections",
+      "documentId": "OszqexisUrSOKMW6TzA5",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "68711c9e817e19cb867c50aaab02f380b1c22dc150d447542b30513d29538dac",
+      "payloadHash": "b353fcebf8fcf93a7b68f2094d6c9963be8ce7077ebd48fd82eccc746a2e9947",
+      "schemaHash": "da76c5b2e60a00a9d7d5aaea3f2705403a2b7842f7181dcfc358ac10db1ea1a0"
+    },
+    {
+      "recordKey": "rules_sections:QX7B9DFpviRo84fVCBIj",
+      "collectionId": "rules_sections",
+      "documentId": "QX7B9DFpviRo84fVCBIj",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "f7fce5a24ed1962598abb556f43a7cfffcfb541404c6bb705d119379b4094964",
+      "payloadHash": "615c599d401b8457266c56d1033a4259c0d1f353ba686becab05876a3af66acb",
+      "schemaHash": "9a5c10f425c264f6e257043cee7d0b51832ab4c2ecedd3ecb51633b96faa054c"
+    },
+    {
+      "recordKey": "rules_sections:Rj6sMyNODPQ8OHUc9Clp",
+      "collectionId": "rules_sections",
+      "documentId": "Rj6sMyNODPQ8OHUc9Clp",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "8c91884a93418869ca6878fdf0f3868278008728f1d28995f3f6e3bf8e85e282",
+      "payloadHash": "3197f311085315cabe06dcda95a0e2ab3a744d7c97571c9df02d27a27186dc2a",
+      "schemaHash": "a3876e65cd8bf756b954f12946d47bad25dd79b45b256a96b5ed02ea57409ad6"
+    },
+    {
+      "recordKey": "rules_sections:u3zNStKpd5XegMjmJfMS",
+      "collectionId": "rules_sections",
+      "documentId": "u3zNStKpd5XegMjmJfMS",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "026a4a9b0f3c0bae10a76ee28e48655cbf117cc01e304c57d7dfc2f5522f1175",
+      "payloadHash": "bd1eb44d676bac9a2a2643122f3af1fb90625c29e905aef56b9417f5733f86c5",
+      "schemaHash": "0cce64198b568b7b85ed2e395a7ab39b7600b9ce67af524fca3a2b0db75dcd45"
+    },
+    {
+      "recordKey": "rules_sections:Vf8n82nwpFgPFoTNpYOG",
+      "collectionId": "rules_sections",
+      "documentId": "Vf8n82nwpFgPFoTNpYOG",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "94e6f9e858897154aed1dd2e8bc22cb44f66214bb235c10bb17c624ff729c972",
+      "payloadHash": "e8bde9452514c2835701424ebada337d0b343d7a0f3088e83b354cfad88c3c40",
+      "schemaHash": "479cc5ea36f457567c786dce86783c1b57fc6ade0fe4de67417ff98cf824340b"
+    },
+    {
+      "recordKey": "rules_sections:wVaoY2tVVZ4NjMCOr7ZN",
+      "collectionId": "rules_sections",
+      "documentId": "wVaoY2tVVZ4NjMCOr7ZN",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "56e7b86d13be39a7aeba72314a11dd7030b190c5682fa02fbfaf75d6c95aa306",
+      "payloadHash": "5ef4dbdd9e7469419fb20468011ad9ebeee60a573de4fd025384daeb36129ed5",
+      "schemaHash": "6a112f149c7e8aa8be74d20bfb714afc5f2236b54e96fbf0afcea71bed84a193"
+    },
+    {
+      "recordKey": "rules_sections:xLLTUyQm53B1KXj59oLs",
+      "collectionId": "rules_sections",
+      "documentId": "xLLTUyQm53B1KXj59oLs",
+      "recordType": "rules_section",
+      "authorityDisposition": "official_rule_prose_review_required",
+      "sourceRecordHash": "357eed9e3532c589c5e309959a5edda349debe1a4042bb5257b87fa0b75bcc3c",
+      "payloadHash": "cd86ffb67aa66cbba21d07f0c7a9a578d487a2770bac50f1d1c7d6122dbdff26",
+      "schemaHash": "e319950213f117c08497e0050d528ffb6ee853ce7c51695668901916a3b4bfed"
+    },
+    {
+      "recordKey": "tactical_cards:academy",
+      "collectionId": "tactical_cards",
+      "documentId": "academy",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "98b4e40235557a77c8eec3b739fa6c46bed2c704ca52f61cfc808c662ffae002",
+      "payloadHash": "1089535549c2187f7b6f18429654d3fdd1c7215a18399c2d16175e1d3eaa294f",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:accelerating_creep",
+      "collectionId": "tactical_cards",
+      "documentId": "accelerating_creep",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "a19c5d941c8854b77df185bdf8af01aea44fa319f6a8e79a300fc8352ce61374",
+      "payloadHash": "4f32c0dc99b380013748f83d067022f5c31f0c8a96ee94d26d3148ad42cbff5a",
+      "schemaHash": "00b5e2e3a16553ab39ea30ee68204863eb3a08a6102bacaa2bff05da2cc9e2bd"
+    },
+    {
+      "recordKey": "tactical_cards:armory",
+      "collectionId": "tactical_cards",
+      "documentId": "armory",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "59336787cee2271d72670ee82ea4fe1f8f355a169ad1c9f132fd805db96dd48d",
+      "payloadHash": "b268e47a7f067acd1a8625ba6e73cb58245ac77f9862fd3965b574dc502d92c0",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:barracks",
+      "collectionId": "tactical_cards",
+      "documentId": "barracks",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "3f2e4dfaad537c5b6c9c77a5efb05717477f41863bfc60178beb4d52c3a9eba3",
+      "payloadHash": "1c7882c76bdc331ee2e52978af8944f7cd4a2f55005d2410be54a9293a7b68fe",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:barracks__proxy_",
+      "collectionId": "tactical_cards",
+      "documentId": "barracks__proxy_",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "0e22ffcc454815401a3163f46c10a3219b90b9f1c77bdae73547872d27bdf72d",
+      "payloadHash": "0cc48a1b138d86d294608ace4d42ebf5d74306aa6021346ce1a57f68843f0cdc",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:barracks__tech_lab_",
+      "collectionId": "tactical_cards",
+      "documentId": "barracks__tech_lab_",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "9a82c0aa2597d390635acb350d24eb6dd25690d9231bd3842b32a2e35cf23fd6",
+      "payloadHash": "e0824402cea5c6154a4f939e0dae7b0dced2404efaadc2ae22bed0ee72aa8e2a",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:cocoon",
+      "collectionId": "tactical_cards",
+      "documentId": "cocoon",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "e6214c33c80afbf7f44fbac9f7380fc01268fdc7869a006a5899eff47f8bb621",
+      "payloadHash": "2a9156b9b21e25d3d9809ab8f875d768b23030baf34d4cfc6b26e52149a0b4b8",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:daelaam",
+      "collectionId": "tactical_cards",
+      "documentId": "daelaam",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "7bfd006a291e59a1c01eedc06bc7b7f9027d929b0b6cc88711c7d5f262696309",
+      "payloadHash": "80a4ce87e6d41694649ca37b844ec4d557358d0258d8b507dd334b23a9aa521a",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:defiler_mound",
+      "collectionId": "tactical_cards",
+      "documentId": "defiler_mound",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "78090c0968236df19ab001aa2624ccb3a74588228546ff3b160070b08e1c2f0d",
+      "payloadHash": "a84817778fa3aa2977b6e7efcdf02e77ca1594993077b1d2769b5c138d4cb5c7",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:dropship",
+      "collectionId": "tactical_cards",
+      "documentId": "dropship",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "e98fdd83182b29c0bf81bcc6437f7a958daa4f458d2493c99d01448cf0c3bde3",
+      "payloadHash": "d92c6eaeda3b5c765d41c3c27abddf4b1d15850a9dad880dd9971cedb1ca3f1c",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:engineering_bay",
+      "collectionId": "tactical_cards",
+      "documentId": "engineering_bay",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "ef88e37bbbab3f742c0be3d88d9cee04660b4203df417e4316b78b2cd49473b2",
+      "payloadHash": "a341143fdd9c0a63dd912613e25755a4451f0c8e3dc636ce42c94d2747fa67ae",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:evolution_chamber",
+      "collectionId": "tactical_cards",
+      "documentId": "evolution_chamber",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "57b838d1a3fdd3af04da0069ea507235d4086d0c906b98715440d3caf1c57584",
+      "payloadHash": "7418325715bbfbf518eba0aa3de170e0af78a53c20748f58cfcced8f34434cea",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:factory",
+      "collectionId": "tactical_cards",
+      "documentId": "factory",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "88393618113d7ea39f2a8f015e9e1ed9667e611ce5b75b7c9cf1fcbd812abd7a",
+      "payloadHash": "8fe76c5fffebe1a6c473bb4f7f2a08e25ccb290be66744dcec7ff540b8aa9843",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:factory__tech_lab_",
+      "collectionId": "tactical_cards",
+      "documentId": "factory__tech_lab_",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "ab6ab439736114792b978ab449b0465843e66474176e72e2cb6d488cdb19354d",
+      "payloadHash": "ddcd348c1a6d494a010e18421e6fdfacf1dea2fbd326caf8ee75c551131e4baf",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:forge",
+      "collectionId": "tactical_cards",
+      "documentId": "forge",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "f5235b6d0dfdd8839bfeeff9c0e32f60b256cb52bb9264e539996139966eada1",
+      "payloadHash": "4dbca24a69a00b876d79f54c449c853f89819e8084c1220197323a8dadf5393d",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:gate_chronoboosted",
+      "collectionId": "tactical_cards",
+      "documentId": "gate_chronoboosted",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "2cd84c04ada70e0aa356c3f198577994ef5fb8e5931e9f32f02639d007e6c317",
+      "payloadHash": "3be98c8cc075db545cc87409848802cc0a53d1bc593975775bdfc2444178849d",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:gateway",
+      "collectionId": "tactical_cards",
+      "documentId": "gateway",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "6dc2054fd6c382323ff3148fc6c2e5283927ee91cf94a5ab70116156d522cac8",
+      "payloadHash": "d2ad86d9369ecc319459328004bd2404424ec3858c7430d04815a62c3f06cb1d",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:hatchery",
+      "collectionId": "tactical_cards",
+      "documentId": "hatchery",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "ead1ab9dbc38414e614940cf6583d2da1c3c395c33d62f82079c224000d7d235",
+      "payloadHash": "b14888a8a03e7b0e2262da5cacaadb7c441ff80ef41d74083da6481214ded382",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:hydralisk_den",
+      "collectionId": "tactical_cards",
+      "documentId": "hydralisk_den",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "8a311562971ab890602922b0a1096f61bf817f8c5abae2cc9a96d80c19fd9918",
+      "payloadHash": "46dae87f2603ebf7871cfd8c455ad8e58a44f4343dbb00895aa823cbbd5a25b5",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:kerrigan_s_swarm",
+      "collectionId": "tactical_cards",
+      "documentId": "kerrigan_s_swarm",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "5c7eece9743117f44c7f873f04f2a5e42b4dd830c680e3323e648a57242761d5",
+      "payloadHash": "a7b05ae1bc6cc5220363052b95719c347c7a49938ec226254036fc71ed6221af",
+      "schemaHash": "d31cd0508a0730d5013c148b65959a39a8787a858ce77d951ba2d3289ec4aa2d"
+    },
+    {
+      "recordKey": "tactical_cards:khalai",
+      "collectionId": "tactical_cards",
+      "documentId": "khalai",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "c1e08bd93ece775f23b7c0ca79d30a967202a4562e1f3dff2871d42ae4b2e282",
+      "payloadHash": "9fb01237dc99682ae9cc13aa6fb8bbd16e0d2e8bc94722d72785a30cbbce5328",
+      "schemaHash": "80837db00dfd3820b9c9c05b9b0bcd1d422cf20fa150a86ee713b0df93e34740"
+    },
+    {
+      "recordKey": "tactical_cards:lair",
+      "collectionId": "tactical_cards",
+      "documentId": "lair",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "83f21ff89bf9bb2feeb16756784b6d4616b80563d5db21d6737fe909673b946f",
+      "payloadHash": "e421fa4156e7b4c49b3ebe2002d1e758af5a987c6391033c56c0aaf6ab29acd4",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:malignant_creep",
+      "collectionId": "tactical_cards",
+      "documentId": "malignant_creep",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "2286aca2397cdeb64f4ab19fcb80d8a77b0d41e56cca283e4f109e539ad7d729",
+      "payloadHash": "277c0f8169d809a68624a25e08c9ea205cbde580afa99e0a78c254cdace5bb77",
+      "schemaHash": "d31cd0508a0730d5013c148b65959a39a8787a858ce77d951ba2d3289ec4aa2d"
+    },
+    {
+      "recordKey": "tactical_cards:nerazim",
+      "collectionId": "tactical_cards",
+      "documentId": "nerazim",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "81e83287fccffdac391b0bcec49eaa323f24f38c5780914ebf2e5a7258a321bd",
+      "payloadHash": "b7ad8798ed3ac939b066d175e086ecd90361b6eb0a7720b59c2298bc4dace7c5",
+      "schemaHash": "80837db00dfd3820b9c9c05b9b0bcd1d422cf20fa150a86ee713b0df93e34740"
+    },
+    {
+      "recordKey": "tactical_cards:nexus",
+      "collectionId": "tactical_cards",
+      "documentId": "nexus",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "bf960cd382cc8e5fc93d400c653ff4cb87dfcd88ff8ea4a9548c78b0630b2474",
+      "payloadHash": "f9e5969ded06540b0460bbc528ae7d8b6f0066ae2a6802093cf1077d5bcd1175",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:nova_covert_ops",
+      "collectionId": "tactical_cards",
+      "documentId": "nova_covert_ops",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "41b884d73df66d97c0fd172e458b66b309026ce21ce264262f36beb197966943",
+      "payloadHash": "17588539a90f7a6efdd69f88ada8e62b33b7df0851115352f94614ef5e68a019",
+      "schemaHash": "80837db00dfd3820b9c9c05b9b0bcd1d422cf20fa150a86ee713b0df93e34740"
+    },
+    {
+      "recordKey": "tactical_cards:observer",
+      "collectionId": "tactical_cards",
+      "documentId": "observer",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "64db011ce1ad0a198f5fa3e9809dc4af3edf08d8782027c2b4f23341c7fb5260",
+      "payloadHash": "110106f4043794f7126f5610bd15ebef2058e665f54d0927e278650b15fe55b4",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:orbital_command",
+      "collectionId": "tactical_cards",
+      "documentId": "orbital_command",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "9a42dc0b074b1c16b0d4f147cc60b9d6caeed4aea92f37c78d27382d77e9a541",
+      "payloadHash": "b668382dba01e306e62ada378fd3d3e4c77bcbd35899337b9ac23bb142e61132",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:overcharged_nexus",
+      "collectionId": "tactical_cards",
+      "documentId": "overcharged_nexus",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "36a5f6b73a011b69fc76194cca95b33ebf35849086fe1b1bf31e86c61772ce92",
+      "payloadHash": "b4d5140a40da488a95c7f832786395998197cff29fa7912e193463cbd84ed1f8",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:overlord",
+      "collectionId": "tactical_cards",
+      "documentId": "overlord",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "5022aafc34ebe87dc58a69f8bf1cfc8b0c94150e790add74679f5465d30e5a4b",
+      "payloadHash": "ee27ca35a2d6ec9a19a57995fb53800d7eb48140e44f2b75d40fc2c1a5a75547",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:overseer",
+      "collectionId": "tactical_cards",
+      "documentId": "overseer",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "3f8cf719fda74bc85cfd65411b16bbbe37e0bdfe1f13ec374c4c2d14e15ce287",
+      "payloadHash": "038d9e8b615938c7b69f5e61200c1ad1f1a2d359d85d8f3d4adb4793e719e4d5",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:power_field",
+      "collectionId": "tactical_cards",
+      "documentId": "power_field",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "37d142f5088ffe9a68cded1dc1ee551733285b92c9b684f510bd17afae12921f",
+      "payloadHash": "05523d4f9b4bb3bcb221e839edf4c4a51ede0577a11bc7a3ab4f65332865566a",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:raynor_s_raiders",
+      "collectionId": "tactical_cards",
+      "documentId": "raynor_s_raiders",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "33a1cee0493e644aca891dbb495e81e5c80da9a1a8d31a64bbdfaea647e65ec5",
+      "payloadHash": "1f11c3f7b48cd15d73235344f884179a4375c4999c9194de79200ca0416114c1",
+      "schemaHash": "80837db00dfd3820b9c9c05b9b0bcd1d422cf20fa150a86ee713b0df93e34740"
+    },
+    {
+      "recordKey": "tactical_cards:reactive_creep",
+      "collectionId": "tactical_cards",
+      "documentId": "reactive_creep",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "f3999b088af9fd97c28b0564f9d60697e587f891cbb057ae3275e959a063a2e9",
+      "payloadHash": "1518dc0ff84a6c6f849fbcdc2e128ed1a5c21195a416f89c5f31795a3223230a",
+      "schemaHash": "d31cd0508a0730d5013c148b65959a39a8787a858ce77d951ba2d3289ec4aa2d"
+    },
+    {
+      "recordKey": "tactical_cards:roach_warren",
+      "collectionId": "tactical_cards",
+      "documentId": "roach_warren",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "cb439561614481faed2cf60c36c055b1229befaa027a7e5031227c1068b71d44",
+      "payloadHash": "80ad9699d69c83742cd7d8c352e835a567c5f8b051fe0f3c552dc6583ea8d331",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:robotics_facility",
+      "collectionId": "tactical_cards",
+      "documentId": "robotics_facility",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "1420d55649453a0d4b021d1bf935f4950e5059125af9be1bfc930d6beb3b0a2d",
+      "payloadHash": "91ae9aed5e23fca2a1ddee0a2ba90f1030a361b9fb767d1e2aa0e74ff0341b98",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:spawning_pool",
+      "collectionId": "tactical_cards",
+      "documentId": "spawning_pool",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "4b4854a1a99d3ba5d52f675cb46c5e0aa87698972a56d3395742aac0aed3df95",
+      "payloadHash": "f5a29490ad1e35bc333c959de003917edf6fa3ba1bee032e0f97c1b23b7aeada",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:spawning_pool__six_pool_",
+      "collectionId": "tactical_cards",
+      "documentId": "spawning_pool__six_pool_",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "c4f10f4b467656b80392d073b25cc890ada2ce17c61042ccf3085239212589e3",
+      "payloadHash": "5f1517d5d66d20bef474a7e21592d1e025353f534e22f427315ab624b9fb4c38",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:supply_depot",
+      "collectionId": "tactical_cards",
+      "documentId": "supply_depot",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "d2ed6e18c46b07d5d265b385f99cd18423c3c85a39a79c9b1ba31d57a5869414",
+      "payloadHash": "08852bc2a60698b5c6d001df29ad9faf35ed2a2428ff3351f9bb84060fa1c578",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:templar_archives",
+      "collectionId": "tactical_cards",
+      "documentId": "templar_archives",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "5cc0d48f8d3710e1a40f3e73329445072e96a2440a7802d86e17cb5323399cf1",
+      "payloadHash": "941a18d2a6c4e984fbb254b159b782723585af287066336a64ee6f677f7d2586",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:templar_caste",
+      "collectionId": "tactical_cards",
+      "documentId": "templar_caste",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "c4b8f966e87f66ff49cd66b699dc840cc2816e2e1753a20eea8a107dcf98e43e",
+      "payloadHash": "5058969dbff3b8907e1cee52641f322fd7a0c46f3d92aa9838b2cc8461c41cfc",
+      "schemaHash": "80837db00dfd3820b9c9c05b9b0bcd1d422cf20fa150a86ee713b0df93e34740"
+    },
+    {
+      "recordKey": "tactical_cards:terran_armed_forces",
+      "collectionId": "tactical_cards",
+      "documentId": "terran_armed_forces",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "bcf75dd34f38870a01d29ade9de269ef313db059d2da0710c7e2c420c89ca82d",
+      "payloadHash": "f32d3d4f3ed606c69fc40a84b1cbb2b319a1650ba32054775350cc60925349dc",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:twilight_council",
+      "collectionId": "tactical_cards",
+      "documentId": "twilight_council",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "a51a73394b4fa79758798024152cb52ef82f94ddc08b913d37d51d83cd01b53e",
+      "payloadHash": "df1237516d5bfd3cb7f3a62f51027f3a7f7378a3141b4cb7898004ee7e6397e5",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:vanadium_plating",
+      "collectionId": "tactical_cards",
+      "documentId": "vanadium_plating",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "de8634dff5da461381c254d69a26fd1113b25ce79de437fb724f3bb708c25347",
+      "payloadHash": "0836f44ef5debf4269fb4a3762107c2442ca92d982d32862cd01db94edbb5b96",
+      "schemaHash": "41043565dbd38b73b19680ab649be424c44150c03927dd86d94b2bc5797a9dea"
+    },
+    {
+      "recordKey": "tactical_cards:void_seeker",
+      "collectionId": "tactical_cards",
+      "documentId": "void_seeker",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "4f596fe28ede81623b76ffe30d388eb8a4ee86bdf452881974711eb420dfcd91",
+      "payloadHash": "9d5bd229bdd3fae53a44aae4b7c57558df8abf739eeb9b34e0580e7aef5e5d5e",
+      "schemaHash": "80837db00dfd3820b9c9c05b9b0bcd1d422cf20fa150a86ee713b0df93e34740"
+    },
+    {
+      "recordKey": "tactical_cards:warp_gate",
+      "collectionId": "tactical_cards",
+      "documentId": "warp_gate",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "f32c90c213377b235ae1748e41079ae3ddf7acfae8f1cefc98da4dd3fb81b1a5",
+      "payloadHash": "8e84f6f3edc4df918a4793966eff05079e192909cbbaed66e6c6b174b20c165f",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:warp_prism",
+      "collectionId": "tactical_cards",
+      "documentId": "warp_prism",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "47a2c9b6dc8abe6c20ab9ba7b817590dfc435c9a57bc84d2b9e006819748eade",
+      "payloadHash": "b9d12b1ec56e34901c28a4c1f7a180e538313246c6966007dab34843331e5433",
+      "schemaHash": "760c9f9852bf65d61ffa3e7c2d283866a60967b7c086a795223833841f70bc1e"
+    },
+    {
+      "recordKey": "tactical_cards:zagara_s_swarm",
+      "collectionId": "tactical_cards",
+      "documentId": "zagara_s_swarm",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "759d697e00909d9cbd8cbf5486f735a6c3d2590122a0829e761de069cb938a8d",
+      "payloadHash": "ac3443b14052686d22dcc03e6a0654111c8347d563f3faa9f8c6f9b44d4e538b",
+      "schemaHash": "d31cd0508a0730d5013c148b65959a39a8787a858ce77d951ba2d3289ec4aa2d"
+    },
+    {
+      "recordKey": "tactical_cards:zerg_swarm",
+      "collectionId": "tactical_cards",
+      "documentId": "zerg_swarm",
+      "recordType": "tactical_card",
+      "authorityDisposition": "official_current_product_candidate",
+      "sourceRecordHash": "67911b6263c62aa1dd291f36fd41870529789998457b239996660804c0813595",
+      "payloadHash": "7ae25c43fa66e6451d7ff723ea2d99da3318b0af8c39fa1f335d83e441902d9a",
+      "schemaHash": "00b5e2e3a16553ab39ea30ee68204863eb3a08a6102bacaa2bff05da2cc9e2bd"
+    }
+  ],
+  "recordIndexHash": "bd494f0c997557c5bd09ec65a880dfc8a7e151f4f16b10603088ba6292718cf9",
+  "upstreamVerificationHash": "b67fe648e2f7204c5d5b215792ef5d7fe625ff70fb43c74f40716af0377ebf9b",
+  "verificationBoundary": "normalized_adapter_verified_before_manifest",
+  "sourceRefreshPolicy": "explicit_user_command_only",
+  "repositoryFallbackAllowed": false,
+  "silentReplacementAllowed": false,
+  "rulesEligible": false,
+  "productionRoomEligible": false,
+  "trainingTruth": false,
+  "revisionHash": "e001b54ee2789bb184b6770c2004153213ae92e378bbb758ff69174b3cb13573"
+}

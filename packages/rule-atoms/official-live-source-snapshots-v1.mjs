@@ -92,14 +92,17 @@ function snapshotBody(snapshot) {
 }
 
 export function createCommandCenterSnapshot(input = {}) {
-  const shellHtml = requiredText(input.shellHtml, "command_center_shell_required");
-  const productVersion = shellHtml.match(/BETA\s+v\d+(?:\.\d+)*/u)?.[0] || null;
-  if (productVersion !== "BETA v1.4") fail("command_center_product_version_mismatch", String(productVersion));
+  const dataOnly = input.captureScope === "firestore_data_only";
+  const shellHtml = dataOnly ? null : requiredText(input.shellHtml, "command_center_shell_required");
+  const productVersion = shellHtml?.match(/BETA\s+v\d+(?:\.\d+)*/u)?.[0] || null;
+  if (!dataOnly && productVersion !== "BETA v1.4") fail("command_center_product_version_mismatch", String(productVersion));
   const projectId = requiredText(input.projectId, "firebase_project_id_required");
   const databaseId = requiredText(input.databaseId, "firebase_database_id_required");
-  const firebaseInit = bytes(input.firebaseInitJs, "firebase_init_source_required").toString("utf8");
-  const configuredProjectId = firebaseInit.match(/projectId:\s*["']([^"']+)/u)?.[1];
-  if (configuredProjectId !== projectId) fail("firebase_project_id_mismatch");
+  if (!dataOnly) {
+    const firebaseInit = bytes(input.firebaseInitJs, "firebase_init_source_required").toString("utf8");
+    const configuredProjectId = firebaseInit.match(/projectId:\s*["']([^"']+)/u)?.[1];
+    if (configuredProjectId !== projectId) fail("firebase_project_id_mismatch");
+  }
 
   const assetIds = new Set();
   const staticAssets = (input.staticAssets || []).map((asset) => {
@@ -113,7 +116,7 @@ export function createCommandCenterSnapshot(input = {}) {
       byteLength: content.byteLength,
     };
   }).sort((left, right) => left.assetId.localeCompare(right.assetId));
-  if (staticAssets.length !== 8) fail("command_center_static_asset_denominator_mismatch");
+  if (staticAssets.length !== (dataOnly ? 0 : 8)) fail("command_center_static_asset_denominator_mismatch");
 
   if (!object(input.firestorePayloads)) fail("firestore_payloads_required");
   const collectionIds = Object.keys(input.firestorePayloads).sort();
@@ -125,6 +128,20 @@ export function createCommandCenterSnapshot(input = {}) {
     collectionId,
     input.firestorePayloads[collectionId],
   ));
+  if (dataOnly) {
+    const prefix = `projects/${projectId}/databases/${databaseId}/documents/`;
+    for (const collectionId of collectionIds) {
+      for (const document of input.firestorePayloads[collectionId].documents) {
+        if (!document.name?.startsWith(prefix + collectionId + "/")
+          || document.name.slice((prefix + collectionId + "/").length).includes("/")) {
+          fail("firestore_document_source_mismatch", collectionId);
+        }
+      }
+    }
+    if (input.versionsPayload?.name !== prefix + "system_metadata/versions") {
+      fail("command_center_versions_source_mismatch");
+    }
+  }
   const versionsFields = input.versionsPayload?.fields;
   if (!object(versionsFields)) fail("command_center_versions_payload_invalid");
   const dataVersions = Object.fromEntries([
@@ -155,7 +172,8 @@ export function createCommandCenterSnapshot(input = {}) {
     productVersion,
     firebaseProjectId: projectId,
     firestoreDatabaseId: databaseId,
-    shellHash: sha256(Buffer.from(shellHtml, "utf8")),
+    shellHash: dataOnly ? null : sha256(Buffer.from(shellHtml, "utf8")),
+    ...(dataOnly ? { captureScope: "firestore_data_only", shellCaptured: false } : {}),
     staticAssets,
     dataVersions,
     firestoreCollections: firestoreCollections.map((collection) => ({
@@ -184,6 +202,12 @@ export function createCommandCenterSnapshot(input = {}) {
     trainingTruth: false,
   };
   return deepFreeze({ ...body, snapshotHash: hashStarcraftTmgContract(body) });
+}
+
+// A data refresh need not recapture the web shell. Keep that absence explicit;
+// never attach an older shell/asset hash to a newly observed Firestore capture.
+export function createCommandCenterDataSnapshot(input = {}) {
+  return createCommandCenterSnapshot({ ...input, captureScope: "firestore_data_only" });
 }
 
 export function verifyCommandCenterSnapshot(snapshot) {

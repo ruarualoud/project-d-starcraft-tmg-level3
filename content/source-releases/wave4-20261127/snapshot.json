@@ -1,0 +1,2628 @@
+{
+  "schema": "starcraft_tmg_command_center_snapshot_v1",
+  "sourceId": "starcraft-tmg.official.command-center",
+  "authority": "official_product_data_candidate",
+  "sourceUrl": "https://sc.starcraft-tmg.com",
+  "capturedAt": "2026-11-27T10:11:21.192Z",
+  "productVersion": null,
+  "firebaseProjectId": "starcrafttmgbeta",
+  "firestoreDatabaseId": "starcrafttmgbeta",
+  "shellHash": null,
+  "captureScope": "firestore_data_only",
+  "shellCaptured": false,
+  "staticAssets": [],
+  "dataVersions": {
+    "cardsVersion": "88",
+    "rulesVersion": "50",
+    "unitsVersion": "98"
+  },
+  "firestoreCollections": [
+    {
+      "collectionId": "army_units",
+      "documentCount": 60,
+      "semanticContentHash": "8bfc4643f487eeca72d874216f5c628031ee6be32d2e41eaf8b2a6409c1399a0",
+      "rawResponseHash": "0d1f23e2cd4a941c0629f728c367c626ca4a385bb271733ed82ddc70337140ce",
+      "paginated": false,
+      "recordIndex": [
+        {
+          "documentId": "adept",
+          "fieldHash": "a5e6c7af9fadde90e07d3874f70ea042e59c10b3ee249f0a5c831ae7860d9364",
+          "recordHash": "e17a52a8c4b31e989190b95e60bf793d6da7fcc7b77b8b9421fc4620ccf7b431",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "alarak",
+          "fieldHash": "92b76ece69882134f27200645c39aeff0a66c1253b20a4434c340166f2603f28",
+          "recordHash": "f8a0b393dae1bc3541c14c75f51eeeb722025ed41c754f9366e670328ba2f5a4",
+          "createTime": "2026-11-24T10:19:32.989106Z",
+          "updateTime": "2026-11-24T10:19:32.989106Z"
+        },
+        {
+          "documentId": "archon",
+          "fieldHash": "fffc0c7c9b8ceabb5c08ff9eb4b87799341d41dc76e610dea6137ea14d6ef88a",
+          "recordHash": "9775aed3fc34c913f7051049c830737792994ce12a52b7db8892e518e05b3a85",
+          "createTime": "2026-11-27T08:58:29.039927Z",
+          "updateTime": "2026-11-27T08:58:29.039927Z"
+        },
+        {
+          "documentId": "artanis",
+          "fieldHash": "480ff4fb0ad42953f9cc7bba76e0b61080bef587ef3fd639c993a55d0d15eec3",
+          "recordHash": "40176eeecd7936a20d0a333666515a2972186d1f7a285fbd241fe039bb8450df",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "auto_turret",
+          "fieldHash": "36bc316dc7f2d5e2a2d2f4d306eb83c9c15e76bb6a9b397a97b9a3c144de290a",
+          "recordHash": "92ca23dbf7ea8d5673bbbc0a15d153faaef123aecfa40779baeee6dd726c2d5a",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "bile_launcher",
+          "fieldHash": "83854ab9ff230ded7c8317bba373b4ea015cabfb51abd8fc495b822b5d92335b",
+          "recordHash": "b7d2cd52bb018700f8a1421731fb5ef52179118f9f48f164285351f6aad0bdc8",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "corpser__roach_",
+          "fieldHash": "b82ee6390f8a8d7d900278bd3920ade90f3dfcec0d047dd14445d7ce35b0586c",
+          "recordHash": "99187cec6bf55738ad6114fbdc4c2a5fa44ca76d020732300d1c6552e0c61ea9",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "defiler",
+          "fieldHash": "9b2a65b191904bd480401d8675dc3cfe9692a6435a184316471a6389f4ca66d9",
+          "recordHash": "4a31693409c8d3d8a647ee91943277fc2bc84e7ff6e811f39b54ea83873ddb7c",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "firebat",
+          "fieldHash": "d0bb92a7cac154ff976ab2e2ea060600b9a7a9773dd513c6f61c009e1a51b089",
+          "recordHash": "0ae5e57a1407cd4a4a3b3933a114a4848fd58caa459bce57a99bbe496d4027a0",
+          "createTime": "2026-11-24T10:20:58.199319Z",
+          "updateTime": "2026-11-24T10:20:58.199319Z"
+        },
+        {
+          "documentId": "goliath",
+          "fieldHash": "c8491d8ff5d73420b589b1778a07bd198d5daf304f8ac578a6d45b8839fbb877",
+          "recordHash": "3284a8c430a3e5925df9dced1af47817b5500cf85e0ae1b293de437a8a27dad9",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "high_templar",
+          "fieldHash": "6a572119977db5a10340ae0a9b985f333183db3cef59d8bf1c7a4c7bf0148eee",
+          "recordHash": "d71f1185838f3b1979767aeabd2b631b51f036e5714ceca2b6d7bd709ad56d29",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-12T07:01:43.713290Z"
+        },
+        {
+          "documentId": "holo_decoy",
+          "fieldHash": "b46cb19a3730b18a4838c4165dc4a387060336d40836f5006e6f55eb252efaa3",
+          "recordHash": "f7cacc3cfbf8060d3c3703266a4085f0355f541665fb16693807c4d8d460b12c",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "hydralisk",
+          "fieldHash": "07206f846d48021943804e189ab6af3d243ef23892f45a182e24b82a105642c1",
+          "recordHash": "9803bc91e7c8ca7c2e108e5f2e0b3134a6357904aa8070c5ffc6f59e35937680",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "immortal",
+          "fieldHash": "973698dd2120c0cca04b07f0fee0565c16b5a86e765a7d885bb604ec6ca210fd",
+          "recordHash": "940a1e3e874b9c69d09823a2a833ff22bff6baac538df16aa60bff1adb1f1a92",
+          "createTime": "2026-09-21T12:40:20.647585Z",
+          "updateTime": "2026-09-21T12:40:20.647585Z"
+        },
+        {
+          "documentId": "infested_goliath",
+          "fieldHash": "9518208fa310e70913522f6a01e270ebca6261e055108e0226a776968e421658",
+          "recordHash": "5e43361c17465b2fc11ab1546bb61816f764a59d1123f1afc3442ecf7773822c",
+          "createTime": "2026-11-24T10:47:49.606600Z",
+          "updateTime": "2026-11-24T10:47:49.606600Z"
+        },
+        {
+          "documentId": "infested_marine",
+          "fieldHash": "a58a846ea12ecdbb0ad924854fca484e667d0c426d373a233d64277900bfa33d",
+          "recordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+          "createTime": "2026-11-24T10:20:23.156107Z",
+          "updateTime": "2026-11-24T11:10:43.557189Z"
+        },
+        {
+          "documentId": "infested_missile_turret",
+          "fieldHash": "bc080c03a0aa459c98e1d94032d0b1d72cc92e7cdfa045dde7c4bf74a163ae81",
+          "recordHash": "36d00672b6ebc8145dda4defedc6e78a68f5cd4e94193a9b0c6a7a672c70a0f8",
+          "createTime": "2026-11-24T10:20:23.156107Z",
+          "updateTime": "2026-11-24T10:20:23.156107Z"
+        },
+        {
+          "documentId": "infested_siege_tank",
+          "fieldHash": "105b2fba6b34dc2978a6477d71874b84922329aded227ed4c33a9334e6e6832a",
+          "recordHash": "52e4d6ce9f8b366dd4b7c1508f143d3277c41b63ed5ba3782e0296dfa21dd81a",
+          "createTime": "2026-11-24T10:46:56.182598Z",
+          "updateTime": "2026-11-24T10:46:56.182598Z"
+        },
+        {
+          "documentId": "infested_trooper",
+          "fieldHash": "533f133d0d11a2159b0a4dff64dbbf8638ded76114fa3410beda8354fd6c49f6",
+          "recordHash": "ace8c6852b08d71076a2933b5a5835d6805fc0830f60854f904d8a5ffe21631e",
+          "createTime": "2026-11-24T10:20:23.156107Z",
+          "updateTime": "2026-11-24T10:20:23.156107Z"
+        },
+        {
+          "documentId": "jim_raynor",
+          "fieldHash": "658d22982ed4e3bed9054708a27d989fe83434fb4294e711feb76a4158540906",
+          "recordHash": "7ebb93e74361e2a6d90a42aa46b812d67e122d3c83a85bf40ee765a99f55cdaf",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "kerrigan",
+          "fieldHash": "03e1403dfb7e876352f6b9ef26c7ce0445a60076e62c893036b18b7fab125dbe",
+          "recordHash": "9555e809c6f8f6a764a6469ba8911fa76224f4fc4147e637a9146f8f9de7c7b0",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-03-16T21:23:54.477693Z"
+        },
+        {
+          "documentId": "kerrigan_swarm_raptor__zergling_",
+          "fieldHash": "acde041b437797f2fe3a024049fdc0c82b61868912862130cb3903ebc1adf66b",
+          "recordHash": "c72d5ba03f901c1e8a9b7154c7ba9d3477a76f3d23805b743a2cba4923deb11c",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "marauder",
+          "fieldHash": "b52130b410c5a99cb09c4e03e6ed113d9c159cd745fa7c94e7f6d68740c50995",
+          "recordHash": "f08a3908ca02cc6ecf5f168280079b3442edd1f99189f2dc89fe534e73cba6ee",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "marine",
+          "fieldHash": "f57ebeb2f08e25fc1d7466e0ccbb5d46cf6446c9b470a2201a24c2a028302fdf",
+          "recordHash": "ced0fdbd3b7c847e87980bcd1af6aa2ba4d8325cf39aca25131698bc06c331aa",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "medic",
+          "fieldHash": "f1c0af22381b692ad9031c7666351ea481fb249656160dcfd9ecc7fea2b7ec9c",
+          "recordHash": "f695baada89edd02b6f7672438aff75817e54851356dfb76680744c1db809852",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "nerazim_watchers__adept_",
+          "fieldHash": "ed42677d6f044199852079753a0c14b99fb0ba2f4169bb5f37935b7a150e53f5",
+          "recordHash": "2c6e60f4902a61d9e511389c4116ea5458faafe6861a1bd08ab9d22ddda3a924",
+          "createTime": "2026-09-21T12:40:20.647585Z",
+          "updateTime": "2026-09-21T12:40:20.647585Z"
+        },
+        {
+          "documentId": "nova_assault_mode",
+          "fieldHash": "1ef3db0a4f4e35e38c56163a1b51e494ec67010b10d9471f34ea6d2e3b32668f",
+          "recordHash": "853987b789d39084bce81c4fd188ec2eda5fa5eb0aca9b8f8f28342ae992aa8e",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "nova_stealth_mode",
+          "fieldHash": "9460e4ae04c61d232b2ef52cf02715196e777dac54955e3e24ec89b403544389",
+          "recordHash": "ed23c7ee0770d35e764085781ff374151014bd37bc3f309a5c3e40014cc2ceec",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "omega_worm",
+          "fieldHash": "609c2fb24b652acd7de131718aba5a860c2cf3f6096fe84a1076a95259f83e31",
+          "recordHash": "349b6dc6e3fead1ec361f2bd687acf21880a1c4c03ef9afd7f8d89344def1d70",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-03-16T21:23:54.477693Z"
+        },
+        {
+          "documentId": "phasing_scarab",
+          "fieldHash": "12300efa6e4bfc32fe8bbc8afcd3094b81afdbbbb10c61cadb53cffcb51fe2ac",
+          "recordHash": "c946cf0f307a05b4b72eaba81f0c216fff8ae53a4a12ec80c4389f275db99c7d",
+          "createTime": "2026-11-24T10:19:32.989106Z",
+          "updateTime": "2026-11-24T10:19:32.989106Z"
+        },
+        {
+          "documentId": "point_defense_drone",
+          "fieldHash": "542825e962f5b0be151ad12ce71f280af7189c403a0fe27d15c6b3f3b357a582",
+          "recordHash": "e8c9a2fb937375b2c33c508c79f5253c7c465179aca2b28b97febc36f8d6c2dc",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-03-16T21:23:54.477693Z"
+        },
+        {
+          "documentId": "praetor_guard__zealot_",
+          "fieldHash": "7d822529cb5ef626114f9ed464fab234e7535e8301d56f52bdac060239e806cf",
+          "recordHash": "aaf0b7d625ba0b25fb70ebddf75673b84bb15bd7d7f8fab7012140f1fbd06797",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "pylon",
+          "fieldHash": "bc1e0a13e6b0f5bb177a5208e4290e4932b5b5ea7a49115104c55dcf66f15d9c",
+          "recordHash": "ffc2e86f75c3e54731691c04e477c3841c44ade1e44955a592359eb5a3dfa687",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-03-09T17:51:49.738778Z"
+        },
+        {
+          "documentId": "queen",
+          "fieldHash": "5bfa028266720b6b9be4f249c9db65fe3746cffa2568cc2b2856411311fd06ed",
+          "recordHash": "67d4658587990405d2ad969e1fad6d77e67f4c1f6552a3ffa216f859b3e19b18",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "raptor__zergling_",
+          "fieldHash": "df3334c13dd37103e1d858459660f32a9bde4db2dc3adac4a9292b567a8c1613",
+          "recordHash": "4ff8fe3cef5800813b3b123eacf1c64830ae3604b5215b800ca8d210215efab6",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "ravager",
+          "fieldHash": "a4d053d1dbb5e9af59616edfa584d070f99145f965d77f32b43745c557559469",
+          "recordHash": "d5b2f67a2b7767dfa3d3849ccf0b2d45e70da1eb26027fe1519b149b9f318f58",
+          "createTime": "2026-09-21T12:35:53.459199Z",
+          "updateTime": "2026-09-21T12:35:53.459199Z"
+        },
+        {
+          "documentId": "raven",
+          "fieldHash": "c07e93131a8472dd71ddd338c3569c20d1ad2c3ff3e6c9d5b7438247b101fe41",
+          "recordHash": "5482593ea8e36d7dc7757e41607c8f879b57746b0f0d699ec27ac6519df823bb",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "raynor_s_raider__marine_",
+          "fieldHash": "0c1a84ac55e893e1e2d95f03f298a9fd60e715331abea68a18d5d6ad3713b956",
+          "recordHash": "f293e94be33773a11bb8a7ca535c1ae62e0780f646842fd02f4fef43b190486e",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-03-16T21:23:54.477693Z"
+        },
+        {
+          "documentId": "reaver",
+          "fieldHash": "acec9f3a303197fd8e3c21da7ad65862897f050d502a3d4fb56e3aca27ecae9e",
+          "recordHash": "810a2738bbbd8aa2feb073d4022793d2436de7459c8a42e32b5746ff6fc3b513",
+          "createTime": "2026-11-24T10:19:32.989106Z",
+          "updateTime": "2026-11-24T10:19:32.989106Z"
+        },
+        {
+          "documentId": "roach",
+          "fieldHash": "13d4690e8ca5c43268d531cfad935cfc360c89b5134e3daa5b7d2019b4b90037",
+          "recordHash": "e899d2a7b5f1a65f2c356d5c38badcae1632fdc64b05f4761b3191e4b07a6d0c",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "roachling",
+          "fieldHash": "f49f85b5a02c91898b7b950cf21e150728ba9d2e70d7499690d58d8d2fa19cd5",
+          "recordHash": "dad7c2a3e2d41c9b3548051528766315de0b3317f9c6c6dfb7a3c88adfa1aac6",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-03-09T17:51:49.738778Z"
+        },
+        {
+          "documentId": "sabotage_drone",
+          "fieldHash": "17e2dd62cfa18afa918b7f4807a8336754e99cabca8b90345820a7cc7573e9f7",
+          "recordHash": "dc0f4088847feea1afefc1866f790d7dea5cddc47922b1b185176a07625ff3cc",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "scarab",
+          "fieldHash": "26e0822c4650673b7a8156608c4d79d545e39cc4a8c3fb6b972e61b8ea4def55",
+          "recordHash": "4617fbbec0b2610aa8cec785aa889b3dff16e5dff93af214c95994845161c9fc",
+          "createTime": "2026-11-24T10:19:32.989106Z",
+          "updateTime": "2026-11-24T10:19:32.989106Z"
+        },
+        {
+          "documentId": "sentry",
+          "fieldHash": "5ad07ace8f2c6e4577dc1b501c2f62fa063dc0b9d267c880b10173e96ba7aa8f",
+          "recordHash": "53a8abb9f5d7ae92d0dc6c230dadf73bc21b17af955e69a80685c6374f000269",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "siege_tank",
+          "fieldHash": "20d3b33f512ee53daa8022ba62d70a4e50f8b438923c40543fce66c6a2edc45f",
+          "recordHash": "89a0d3d97984b63d7cb3e81b0c3ddd2339a4176645f00249517b71100ddd7766",
+          "createTime": "2026-09-21T12:35:20.628939Z",
+          "updateTime": "2026-09-21T12:35:20.628939Z"
+        },
+        {
+          "documentId": "slayer__stalker_",
+          "fieldHash": "bad746a2bcbbdf13890d9d1e58355ab6e630a517ead77faf2fb2e9d5fcce95af",
+          "recordHash": "afbc9737b522dcd8135881f07e53cc75a51505518d63a34ecc121cf433dfdc0c",
+          "createTime": "2026-11-24T10:19:32.989106Z",
+          "updateTime": "2026-11-24T10:19:32.989106Z"
+        },
+        {
+          "documentId": "solarite_scarab",
+          "fieldHash": "95b7e1f1383e0436d52f5ea433ab3079cc23c8c31f2a085646a6db44174160fd",
+          "recordHash": "44cc4955bc754e07e96d542814052bd04158fe21fe88a9125b01d6673889f8ad",
+          "createTime": "2026-11-24T10:19:32.989106Z",
+          "updateTime": "2026-11-24T10:19:32.989106Z"
+        },
+        {
+          "documentId": "spec_ops_marauder__marauder_",
+          "fieldHash": "b53bb699111576996243936b3e19b64871e1c314194cb84c97053a40fd31c48c",
+          "recordHash": "4b57a66e3b3cc5d040d2f963fef8cdc8393c1a87ea763c9f0611a4c089c6a9c8",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "stalker",
+          "fieldHash": "1af7cf5186f78b5e3e9dfce3c4a999984c7d305c2aab0780e3ac3c4d705fbfdd",
+          "recordHash": "ff33aa26920de222908d1b46b3ae18477a5a8d573b03f27deed6fc4a52af18a9",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "stukov",
+          "fieldHash": "b90e160d7b19c6f8f64d1bd1eea0bcda138cb235bf056a76491d2d1e24167d8b",
+          "recordHash": "ef2404cf82fbeb0d5bab3ce3e790134850d5f1bdef2f1170d54a538922ddf819",
+          "createTime": "2026-11-24T10:20:23.156107Z",
+          "updateTime": "2026-11-24T10:20:23.156107Z"
+        },
+        {
+          "documentId": "swarmling__zergling_",
+          "fieldHash": "598d14109a18c880ba34f1e536f932aa139f3b452f8319351552588ee308d629",
+          "recordHash": "3d7278b9d22d313a4946f5bd92e6d5ab6a5f4cf35af7a1d001ab7bdd552b5a9a",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "tal_darim_pylon",
+          "fieldHash": "6dc7e659563c08fd51f8e9200d49876a550e1d92cde67612b0d3d3909533df05",
+          "recordHash": "b6efcaf311cb95622e4911f94db9d430d78eeaabdc7a83a07fbf5c9c1ee829cd",
+          "createTime": "2026-11-24T10:19:32.989106Z",
+          "updateTime": "2026-11-24T10:19:32.989106Z"
+        },
+        {
+          "documentId": "tassadar",
+          "fieldHash": "84b9da1d6205f006698d90511414f7e3796ba9562c736efbd69093aec4714b7f",
+          "recordHash": "8aa312078caee932f092ffedefb01ab6e3a3deff011dbb62a84ffa5605d314eb",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "twilight_templar__high_templar_",
+          "fieldHash": "89c75e6d42533b9cc976843acba9c2b99a9ce422e64fa210ae0eb91d499ad40c",
+          "recordHash": "5bc212dfb865fc3fba7f60e9f1e362c03b1d671c5bf11161504fd37f60c0994d",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "vile__roach_",
+          "fieldHash": "f08420a43db18a7124d4a541859a42fbb9daf818e9916cd22939273cbb685a89",
+          "recordHash": "e462009845a7337fedb910f8cb9291127ba4d2e11bcf1c994f8909e8e4d78b04",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "vileling__zergling_",
+          "fieldHash": "5820e5aac29f355c7a3e3ac2a6346c7aa179d3f28baa0030ca48a91cd3795790",
+          "recordHash": "df5ca8d83006366e75eba43c6eea018abedb89ff392d7f6d53c9e5eb100f2a9f",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "zagara",
+          "fieldHash": "507a5fee7bee1947302c696f93ca5d68f8d226bf5ff5c7c503f1dd71471e6a1b",
+          "recordHash": "5c85d80cc8d36c0ae7be92dabf95983a29c72d8ffb52c29188e943f12b6d982d",
+          "createTime": "2026-10-09T07:18:20.720397Z",
+          "updateTime": "2026-10-09T07:18:20.720397Z"
+        },
+        {
+          "documentId": "zealot",
+          "fieldHash": "4ee545903449e94ba72bd183f28678aa0ff875a494c766d9fae9ce6cd9467db9",
+          "recordHash": "58acd8a81f3de33e0990280c62b93302635dbb59b8c01316ce43b122c7761506",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        },
+        {
+          "documentId": "zeratul",
+          "fieldHash": "0b1e3515ec2f08450d6d2093552ac012029286910b75f5a5eed70f47a8695e16",
+          "recordHash": "d452a07b3c3db5db5857a51e0fd613933e6d3cf378734b6fcb9046c37a1d67c4",
+          "createTime": "2026-09-21T12:40:20.647585Z",
+          "updateTime": "2026-09-21T12:40:20.647585Z"
+        },
+        {
+          "documentId": "zergling",
+          "fieldHash": "ba69d67fca14834948b76b6c095d4f8b7d58f07cd76e656397d8df1a94acc9c1",
+          "recordHash": "cb146bd5a44f3e0af8f0fd2cde2becb09f9fed920a661f6b9d8305b1c79edf73",
+          "createTime": "2026-02-11T08:38:13.600411Z",
+          "updateTime": "2026-10-09T07:16:39.127717Z"
+        }
+      ]
+    },
+    {
+      "collectionId": "faction_cards",
+      "documentCount": 231,
+      "semanticContentHash": "e85ca371f661cdf86064118768320574b65b56db8794badb1d734b460fa2f081",
+      "rawResponseHash": "1e1764e819b5288b220b247c141b51d5a706e3c23ff9154178c4e0d1104d68a0",
+      "paginated": false,
+      "recordIndex": [
+        {
+          "documentId": "05luy0SQ1dQSGtQGo0eP",
+          "fieldHash": "1310755cfaa308ded853a7fce6547ec56bae2fb8af204560850fac63762b70c8",
+          "recordHash": "86599b5c22a7ebdf98b65934912a5e550ec90114b35b350d5e363686ef3ffae7",
+          "createTime": "2026-04-10T21:01:44.867408Z",
+          "updateTime": "2026-04-17T09:57:11.277856Z"
+        },
+        {
+          "documentId": "0FSh1FZHyg86TmZTRrDz",
+          "fieldHash": "026a4936d6ba9f4e8ac01ecd24d2e7ae0ed46b35d45aa04e821ec211f8aaf0b2",
+          "recordHash": "65cfd7c7966b2031f0fbd8118574679f89b5563e85460c6e3179dda4264b2d90",
+          "createTime": "2026-04-01T11:49:19.814830Z",
+          "updateTime": "2026-04-17T09:58:32.546645Z"
+        },
+        {
+          "documentId": "0iORlDl7itixl5phM21T",
+          "fieldHash": "a9cba84cc056aba733480a7dd173c616a9d73a98eb008994e381df95a64be47e",
+          "recordHash": "b9bd6cabcb85a840ab41174cad5a313ebfc72152536e0f25ace38affbd21697c",
+          "createTime": "2026-11-06T15:44:54.007897Z",
+          "updateTime": "2026-11-06T15:44:54.007897Z"
+        },
+        {
+          "documentId": "0PEJlMHiObzUBmuawPYg",
+          "fieldHash": "e3cd9fd0eb72b3e37c6c65718dadbc62275f10930d13a1200ea5ca98470a7888",
+          "recordHash": "d81d4084ca8911995579e5d0146fffacae3e7fee681f922f7f88c15af0182fa3",
+          "createTime": "2026-04-11T22:51:56.963453Z",
+          "updateTime": "2026-04-17T09:59:03.627847Z"
+        },
+        {
+          "documentId": "0qlVc95665xBE3rU86Z9",
+          "fieldHash": "f1d69dc1081d878d5cf5d429c6f4a60a5468146dc350ddf884f2fc6c8b95dd66",
+          "recordHash": "5b591329c645215c116bf08e023ae3e409ef8bd39ed69fe0c0e0937b08810e4b",
+          "createTime": "2026-03-13T16:31:58.499625Z",
+          "updateTime": "2026-03-15T05:22:17.434964Z"
+        },
+        {
+          "documentId": "0VqTsMB4uBFfda4JG7j7",
+          "fieldHash": "27fb2eef42665e9b601acd53f271f3b108e4d0cf5388ae6ec0560c1a1595d294",
+          "recordHash": "17054c9fd077e3859e54f3f92773e21613e1a36ff44ed81ebeffe19e7d9f0e4c",
+          "createTime": "2026-04-23T11:55:37.938551Z",
+          "updateTime": "2026-05-21T10:07:29.021786Z"
+        },
+        {
+          "documentId": "0wCjrkwUdsGJFYqHTt1F",
+          "fieldHash": "c62e02e58667a96a03b22cd399015a3b2a25bc98118f94bae83793ed6f778de8",
+          "recordHash": "90f690312f89fb0e75a69b12f7d3e50898072bb4aede29a669a85b3855b296e6",
+          "createTime": "2026-11-05T16:12:59.420165Z",
+          "updateTime": "2026-11-05T16:12:59.420165Z"
+        },
+        {
+          "documentId": "1a9uG8jFtXLRpAFa5Th3",
+          "fieldHash": "00e97c784bf8ec2e7d9fd01f6436501a131941ecc493b9682adea77585907e61",
+          "recordHash": "cd3a846ee45c4c953a957ef1bcb32dd215c09955e9ef23936901380c615bbda1",
+          "createTime": "2026-11-06T15:37:00.489208Z",
+          "updateTime": "2026-11-06T15:37:00.489208Z"
+        },
+        {
+          "documentId": "2MUOT2E6MbFTmAuYNzW7",
+          "fieldHash": "0edc5c055f12e42ae66ef79f9bc5a49c9c1932c70b25e19daa38c085803fa4af",
+          "recordHash": "90d23822e20562465df355baf4c86afec07b7f3c72bd48263db7cd269ca97f6b",
+          "createTime": "2026-04-20T22:36:48.750909Z",
+          "updateTime": "2026-11-23T01:36:02.773171Z"
+        },
+        {
+          "documentId": "2NdngLtIeZAprsWr25hM",
+          "fieldHash": "31fc79988c8bd7cceec6d351a6e5912c50f6ac57365375009b2f30c1a57a50c8",
+          "recordHash": "c6fd3d817a42fb58bdce7d23c3595061f159c3287febbe2221fcd884b6550aa0",
+          "createTime": "2026-02-06T13:47:11.345208Z",
+          "updateTime": "2026-02-06T13:47:11.345208Z"
+        },
+        {
+          "documentId": "2ns5Vkcg6f8fe2ZaLAbn",
+          "fieldHash": "7964a2b17c667e0d80ef0303edc77a54d85823165f5cbb906807478446c05a11",
+          "recordHash": "f1ce5fb1d1178e6d2ffab5a2c5cb428a1fe6e702d54eff8c034da6d9a2d67f4f",
+          "createTime": "2026-03-08T18:44:18.326045Z",
+          "updateTime": "2026-03-14T14:53:11.880828Z"
+        },
+        {
+          "documentId": "3TLSupHClPWA8DGwSkhm",
+          "fieldHash": "bb1fcfb6286b57f7be1c7d8fdb807209da0b2111ed22e8b78a62513043d5e529",
+          "recordHash": "cbfd482a083f7b6789bc1de1bcdd272d7a4254b3acc69c8555a46c7625790bca",
+          "createTime": "2026-03-09T08:51:32.594579Z",
+          "updateTime": "2026-11-25T18:08:43.507417Z"
+        },
+        {
+          "documentId": "3u1R9kCNXDiuoCCPKiHX",
+          "fieldHash": "33474eb5210ae80b19ea99cd7ffd8819d5f9e709f29125a5e55a5c43024b8b09",
+          "recordHash": "6c37ed7c609577aff9696b45f63ebcc06bc6e4faeea81ca61cbe2843fd7efa68",
+          "createTime": "2026-03-14T02:25:18.215808Z",
+          "updateTime": "2026-10-16T04:01:34.340113Z"
+        },
+        {
+          "documentId": "47uKC6dtwiwhPzGsNg3t",
+          "fieldHash": "db0c235029b88c6656b687a205ab76326153cb0f33dd2a36cb36c6cce01f4f64",
+          "recordHash": "49b636508f6a36d8a724a6bd928f7a798bf9830fc9a6c0c77c256079300a1b4f",
+          "createTime": "2026-03-12T14:57:07.031768Z",
+          "updateTime": "2026-08-24T06:38:24.892922Z"
+        },
+        {
+          "documentId": "4E3ZkBeWcytftkeN9aOZ",
+          "fieldHash": "6519c5a406f2f80d8a8d8ab30b750ef0f34931ae88c93afb384b3c5aee878bb0",
+          "recordHash": "77ddb703d7fd30e510b96b82b915a0c445ad261911b88151d968313d7578eef3",
+          "createTime": "2026-04-11T19:55:53.517930Z",
+          "updateTime": "2026-04-17T09:59:30.767883Z"
+        },
+        {
+          "documentId": "4piEr7UimG7bQLZsXOul",
+          "fieldHash": "c78766275b6e69efe0ebf462d664856516e2549acf5af4000370e6d557bc5e4d",
+          "recordHash": "3eecef9293d7d2063cbe76270d4eb941e66a2c9532bb7f4cbe5d4c4eefb4c027",
+          "createTime": "2026-04-11T02:34:02.956860Z",
+          "updateTime": "2026-06-04T03:35:10.889660Z"
+        },
+        {
+          "documentId": "4WBrNpW15oyoScDABv69",
+          "fieldHash": "c25aa2b7a2a62b2a2526a6ad6732e5d8fc94db46fc19abd50612d616b81b8c06",
+          "recordHash": "fad2ea0e5fa193feb54afa43edbfdf3711e57877d507d5910ad89d61b5668f37",
+          "createTime": "2026-04-11T02:44:05.985550Z",
+          "updateTime": "2026-06-19T22:40:38.927393Z"
+        },
+        {
+          "documentId": "5ew0u5PRwSEe3rcFWgD7",
+          "fieldHash": "468d59e3e22c4b8c2d25fe241ed3936745861f4bee084a7e443854eb5c27bf7d",
+          "recordHash": "b302925ed75476875cfa9c6d2873db73736f1cd9b114bd0a349b18768e2ad923",
+          "createTime": "2026-06-21T18:33:12.285175Z",
+          "updateTime": "2026-11-03T20:12:50.776831Z"
+        },
+        {
+          "documentId": "5IlUTGiACPSlB0R2D40K",
+          "fieldHash": "e626f222ad4deb2e0931f3356229ccd41769a853d211f3cbf800126210892bf3",
+          "recordHash": "0be7affabdc7a2db684d8d1b5f0e2e160f9aeb21366f52ed5c9310790c6000e8",
+          "createTime": "2026-04-10T00:30:53.039673Z",
+          "updateTime": "2026-04-17T10:00:27.804303Z"
+        },
+        {
+          "documentId": "5j8GF98DtmSdPVtNjOH2",
+          "fieldHash": "9327b25598bb7d69ceccda680d7b39ee96cc66e052120266c5792f953f3d10d3",
+          "recordHash": "fb5a84c4b6e3a4c9177e1dc9725d0c61b1d7507ae74db6a43a678dbae0eb1f7d",
+          "createTime": "2026-03-14T14:06:55.144863Z",
+          "updateTime": "2026-11-23T08:08:21.864009Z"
+        },
+        {
+          "documentId": "5ukwAbvsJ3yldDfAdYqH",
+          "fieldHash": "9e8d474230e49772c3d64b2e354082306ff27003e0873dc675111c2e9cebef26",
+          "recordHash": "90eebce889ba00a4bce1d30dcbd0578ad6efad5a16e77a20d74a9d7628b7b6fb",
+          "createTime": "2026-03-09T01:13:27.049165Z",
+          "updateTime": "2026-08-14T20:28:08.111083Z"
+        },
+        {
+          "documentId": "5ZUunGFwSI1VncCGgjr1",
+          "fieldHash": "b67d39ec79eb68dceae5f8475e4a3d64a9ed518445192288f3b02fa78bfa2717",
+          "recordHash": "4ffeb1b98ea7d22312fc7abd80c2d5d06fefec0bee466102a6440ace63e1b310",
+          "createTime": "2026-10-08T08:39:32.930928Z",
+          "updateTime": "2026-10-08T08:39:32.930928Z"
+        },
+        {
+          "documentId": "6d3lgXuAIl1IaF1CYII0",
+          "fieldHash": "175c1a0d97a709a64d1b1d9943d5d0fc2d6c9e1761f59e7e490b970b957bac48",
+          "recordHash": "6ae0194dad8e03d9de62ec3e5a7bf7f3946bdc93f113b1c918dd4bb55bf08d18",
+          "createTime": "2026-04-12T00:20:26.990367Z",
+          "updateTime": "2026-06-04T03:39:53.518968Z"
+        },
+        {
+          "documentId": "6j82GmjyoPDrmI7N5DPd",
+          "fieldHash": "f3a20f292f22ea3fa9ead26e86887738e0c6226ea559c069f7e8d61e42b16611",
+          "recordHash": "6a06f57f43d3ff47f21ef7edc243779aa2045113729604c522393f5eeed1f2ad",
+          "createTime": "2026-03-12T08:55:12.141830Z",
+          "updateTime": "2026-11-25T00:03:40.246078Z"
+        },
+        {
+          "documentId": "6qLaBzRcMOUv8Hvn4Rz9",
+          "fieldHash": "5d28bed88e46e31fbb83e2e37f823063902b86e195930de02e07921eb9c83a82",
+          "recordHash": "bc51826f9ac00ac3570e5c1f6089bcd2cc92589d8978501164a4589434d5b181",
+          "createTime": "2026-04-05T15:24:59.188535Z",
+          "updateTime": "2026-04-17T10:32:32.567140Z"
+        },
+        {
+          "documentId": "6qMfc9srcXP7y5JFoVZc",
+          "fieldHash": "854fbc21808f6840baa5fc54b5ba1c44f0737c0acaf1207cdc914c4712621eed",
+          "recordHash": "b84f824583b24914f31edc7cbf18b18541aa41da2c9473886627a5bd978f5e6b",
+          "createTime": "2026-03-16T10:13:48.560730Z",
+          "updateTime": "2026-04-10T00:11:18.398033Z"
+        },
+        {
+          "documentId": "6Wf4kzh917cXqCcWARR9",
+          "fieldHash": "0cc1e1e7b3c0b6d3bcfb9640d6d3085ed2f07acff606f8f98e42add4ce70546c",
+          "recordHash": "16be30c810101198239f212334a7c53ea41b017b6b826640576438f9cc3dfc1f",
+          "createTime": "2026-04-10T21:10:52.310363Z",
+          "updateTime": "2026-04-17T10:00:54.501918Z"
+        },
+        {
+          "documentId": "6xhqpCVyH7Paerkhcfx8",
+          "fieldHash": "81ff9d890f589e8ecb9e7b038dcc8e3b7238b282a1e75427c16cae67fdb63145",
+          "recordHash": "f7f01a7485fed75bed2e61ccb29ef645fa7e1d01cdc62cdcdca5e44279aff47b",
+          "createTime": "2026-04-10T19:34:48.165077Z",
+          "updateTime": "2026-04-17T10:01:56.883728Z"
+        },
+        {
+          "documentId": "6YAMREsZCnTqyUiJmgcp",
+          "fieldHash": "a37ebe4f64f5bc8ca41bae3cd3ae59425efae8afbde00c675c404c79a01897ac",
+          "recordHash": "e6a4178fdb51a2eaba6eaca1da73b485378804e0ae1c68fa8c7b29fcddc7cb57",
+          "createTime": "2026-10-27T14:24:36.636294Z",
+          "updateTime": "2026-10-27T14:24:36.636294Z"
+        },
+        {
+          "documentId": "7D74nOBKC2VQvbWJ4IES",
+          "fieldHash": "cbd6a7ea9f0e1c679bd5172c7c7646b268ab481cf4ec143850d2447d56e64fae",
+          "recordHash": "f60ad196ad5aeb0df1300a2115011e19f164326f87cfe6c62e450b1a61d31b3f",
+          "createTime": "2026-04-10T01:07:52.706826Z",
+          "updateTime": "2026-04-17T10:02:06.130206Z"
+        },
+        {
+          "documentId": "7ImhaLAYxJRzLjHs6sNI",
+          "fieldHash": "fa5af89af03783dbc5c6448c21f65c119e94dcaa72d2593cb1b8febe1ca562f7",
+          "recordHash": "96871ff5bfb0e95948cd9f7f3b8ba1a08046ba4aea657a9d30428c2164a0217f",
+          "createTime": "2026-04-11T02:54:34.876681Z",
+          "updateTime": "2026-08-25T14:45:42.122779Z"
+        },
+        {
+          "documentId": "8BUHAzvk0qsXlkHvcKK5",
+          "fieldHash": "3dae2d075a43d81aa3f291cee102453bfa6dc5a4a565098c618deade347cca68",
+          "recordHash": "fc80dd73e56286dfebe75eff4d13eda2295aba24aad0eadbde6ce44d4f951399",
+          "createTime": "2026-04-09T19:28:09.052475Z",
+          "updateTime": "2026-04-17T10:03:00.499991Z"
+        },
+        {
+          "documentId": "8iNoFh1sV8DAN0rkq2EH",
+          "fieldHash": "1ccbc1c153018bf9bcd253728153316fd3ee895c3c70799dc3e9ba8105c47f1e",
+          "recordHash": "35c94da394fe46f5aa9ed85f10a9128313d2b39b34ccac990326e6542e7639fe",
+          "createTime": "2026-04-09T19:17:02.806117Z",
+          "updateTime": "2026-04-17T10:03:15.764759Z"
+        },
+        {
+          "documentId": "8mQwLbCDqh0pdR5QgkYx",
+          "fieldHash": "b749c92f995571c154de3f422a20996b621e8f5a6edf8a0aaef768c92785d41f",
+          "recordHash": "46bbd13e32fa9758edc02891ff38f109de4fb42254aa0e9b00885df897c4553c",
+          "createTime": "2026-08-03T03:59:47.230252Z",
+          "updateTime": "2026-08-03T03:59:47.230252Z"
+        },
+        {
+          "documentId": "8SvZpXMsktNdnUVz2fvT",
+          "fieldHash": "8c722ead51124d74cc231e9733c58b9495100d5df545e5a025868bcd5364c327",
+          "recordHash": "6b4a84056648bd3bd9179a59fce26aa6179b228a49eec0e5c04b34c53d7c12cf",
+          "createTime": "2026-04-09T19:33:18.331980Z",
+          "updateTime": "2026-10-09T11:09:53.340446Z"
+        },
+        {
+          "documentId": "8TU2Zjtj7vHR8hecEHCJ",
+          "fieldHash": "82bd7a5cf388a2993b854b69dd733fe2a9c24b61760fb151df1dcfc9e2c7b3a3",
+          "recordHash": "e34a3a34130b7a2f65951c3d266bfaccfa66ed46a5850eb415c095d8fb511d6e",
+          "createTime": "2026-11-12T17:16:40.686712Z",
+          "updateTime": "2026-11-12T17:16:40.686712Z"
+        },
+        {
+          "documentId": "9l0L6THUgHEQcKZl2qjk",
+          "fieldHash": "66ab3ef638cf93a4fb2c0d00a9151d946ac5f216fd2e7b1d5498597e7c2f2fdf",
+          "recordHash": "d0f8be903c60747524a6a3cf7898a11b1f70c332e165db1d0edf0fac329ca15d",
+          "createTime": "2026-08-03T07:24:23.873275Z",
+          "updateTime": "2026-08-03T07:24:23.873275Z"
+        },
+        {
+          "documentId": "9pUxLFcqG0KItIO3K3WD",
+          "fieldHash": "a110b041f245f1fa76e2435a05c33ca3400e45cc3bb99956f285f869c94a67a2",
+          "recordHash": "102206e4c19d4a76427cb8bfb4a0e6e0bdcdf6ea4c42adc1174bc5cb7f6185e4",
+          "createTime": "2026-04-12T02:12:55.610163Z",
+          "updateTime": "2026-04-17T10:03:33.924321Z"
+        },
+        {
+          "documentId": "A0OBA3ZmFOjf0ZzJy3kA",
+          "fieldHash": "c9ba266b1cc31c2eb62c956d5efcffda88d6059e8cd28626f32f6417c9955120",
+          "recordHash": "dd7ee2f43d61390957f9e22e3230e326750f576ef2bb38ffb2b5bf3a80a09bac",
+          "createTime": "2026-04-11T15:34:05.417547Z",
+          "updateTime": "2026-04-17T10:03:55.325677Z"
+        },
+        {
+          "documentId": "a7Ax3InF4uueg3gZ308P",
+          "fieldHash": "4fb5f935e9953b23127aa5137fef1a2ec9150402e447218f4e31b96317bb162a",
+          "recordHash": "966f170e845f315fe815fde48d0aa22e791361988f01b909c273d1586def8b41",
+          "createTime": "2026-02-10T14:29:44.345929Z",
+          "updateTime": "2026-02-10T14:29:44.345929Z"
+        },
+        {
+          "documentId": "a96kht3o9fC1FiG6L6WK",
+          "fieldHash": "3d5727da5c32c891cdb7152eaa72d2c712b1e7e8b280123861ce3a1e0ccce36a",
+          "recordHash": "d452f84c7bd78032ad60bc97f883f70469205b045dbc1b611d7739cdd876cb72",
+          "createTime": "2026-05-23T08:05:53.007586Z",
+          "updateTime": "2026-05-26T06:24:31.169569Z"
+        },
+        {
+          "documentId": "Aew79L42jPDabJGmbRS5",
+          "fieldHash": "78c9edecd36c258e3bc17390a2415c349767e4b69965ea8231954a50ea5c033f",
+          "recordHash": "b7819a036d52594b881c93dc5a30df19ddde8b3b8446c9598b5c1dbc7baf12a6",
+          "createTime": "2026-04-11T17:57:56.279854Z",
+          "updateTime": "2026-04-17T10:04:47.974151Z"
+        },
+        {
+          "documentId": "AFTF2n0PLejcdmZjD8oY",
+          "fieldHash": "9d0d927cbe744a2e0fa63988e4dae8e2551add7a3d212fdd4af7ed05bc1efcb2",
+          "recordHash": "6cf6dfe2a5081826c36d7434c4337a5ce66393f36e3bc0376a6e22505647705a",
+          "createTime": "2026-03-12T04:02:04.043660Z",
+          "updateTime": "2026-10-23T11:11:29.434168Z"
+        },
+        {
+          "documentId": "AjcYNy7LRlCN4zuyX8uT",
+          "fieldHash": "aab7caaafb7b27b3c6aee463ae4d368cbbb0699abf73eec33c66aac9b734f2a6",
+          "recordHash": "800fd8f6763fabe54e63f1c1c975c9823a2c2c29ff4402165fca7501e1ea6b86",
+          "createTime": "2026-03-09T16:20:27.840674Z",
+          "updateTime": "2026-03-19T13:45:40.022501Z"
+        },
+        {
+          "documentId": "aodYJb63ctnbdoUtbINH",
+          "fieldHash": "7a94e92264666f4344fb33c11ab9b0a5cb6caafcf2f47a778d28fac35280bd19",
+          "recordHash": "983dd83e91164f618191431b1e88254876f7d190f6f9b356c7d7a88cd3e5d894",
+          "createTime": "2026-03-19T23:49:38.881353Z",
+          "updateTime": "2026-08-24T06:39:38.606784Z"
+        },
+        {
+          "documentId": "aRTxWxAKEeqIvycTHFYK",
+          "fieldHash": "6d99b7b1c69c7b3484f3c382d745208a8bef18f1c72a548163d3f1b67d361128",
+          "recordHash": "474e911dc2d4f6840573868998b0611117a68e43fed4eec6e21174b82379934e",
+          "createTime": "2026-05-26T20:19:54.621232Z",
+          "updateTime": "2026-05-27T06:44:45.785868Z"
+        },
+        {
+          "documentId": "attGsxGrPVlmv74TstGN",
+          "fieldHash": "788b4fa49b83df8df7ec96e6821170e4213b70843241cf7210ad5f9f1b5defa9",
+          "recordHash": "cc0add25203b8fe8b77e83e7569f5df276c0213a35a13f9fc71b569ebffffdbc",
+          "createTime": "2026-03-12T08:29:36.704360Z",
+          "updateTime": "2026-10-23T11:11:27.835735Z"
+        },
+        {
+          "documentId": "aZ7YJRTm2O1PcQVwk3gA",
+          "fieldHash": "87504469ffb45f920d1035af1d3952281fffb725d34dbad56ee2c0395c0dc7b1",
+          "recordHash": "77227d12d7a1501191b37ca9ff05167bcffbde744ae0bb81cacca97a7c4eedac",
+          "createTime": "2026-03-19T23:54:20.662241Z",
+          "updateTime": "2026-03-26T12:03:46.273418Z"
+        },
+        {
+          "documentId": "AZLLFOxH1byrcErqhZsc",
+          "fieldHash": "3e637087c6d8cf716803dbd6d439be4f33f5d0dda4326dea957485ad14262840",
+          "recordHash": "c6990570696bda42b24bb8d55f5ee049010181eb6e03e8586b2c7343f189826c",
+          "createTime": "2026-03-07T23:22:31.682314Z",
+          "updateTime": "2026-11-22T15:47:14.436849Z"
+        },
+        {
+          "documentId": "B2ZpOD8vtAXsVRas4iF4",
+          "fieldHash": "baa2d4dcd8e8afee53b2939901b728fc956ddf6c88451c1f808a9c1925443e17",
+          "recordHash": "714080dce4fd001fba3fe37a6960222c149aee2626a5497af1756ad8a8e6bcc5",
+          "createTime": "2026-04-10T21:16:47.479609Z",
+          "updateTime": "2026-04-17T10:04:56.934975Z"
+        },
+        {
+          "documentId": "b4VSfZwaTBEagxvqQn8V",
+          "fieldHash": "2e1f9d49feb267a8b815910f67ad52b07ad80fa381e4e19e1d9f8699151e27ee",
+          "recordHash": "dc67dcdbd437cfc9c4bd196c3e6fc9145a86480a65c0e3600e6ea4351a084482",
+          "createTime": "2026-03-10T06:44:23.811806Z",
+          "updateTime": "2026-11-06T21:38:38.449382Z"
+        },
+        {
+          "documentId": "bd0SbzFkmhFiKpN6nfnr",
+          "fieldHash": "f99f7eae5450d4d6524aee8b0b4219c2a0ea723d3d7a2a2523736f5e30d0447e",
+          "recordHash": "8d73803cb8523cd3048be15eca189c271924fd1f3aac2283c3df322bd6f9f790",
+          "createTime": "2026-10-29T19:03:23.278845Z",
+          "updateTime": "2026-10-29T19:03:23.278845Z"
+        },
+        {
+          "documentId": "Bj1POFdaHjIqVKNsf1pv",
+          "fieldHash": "ec9d6c11f8386e184771924bd7f55c109094fb1f16fe16c60a3c57840cccb580",
+          "recordHash": "55ae1c664975aed12f7dc19b59a9d33773424e1c9980d0a6e4203ac2870e9201",
+          "createTime": "2026-03-13T16:01:49.188184Z",
+          "updateTime": "2026-09-22T22:32:08.653585Z"
+        },
+        {
+          "documentId": "BM1fW5aRzwYA8aKrXd6L",
+          "fieldHash": "bee15271d0ef3b8788454d3bcfb809a861212fd6bc43edee07e9aabddcfcc979",
+          "recordHash": "eb2bc8ad97a55ecc56c346719c9d19bc82d5c82eee538cd92957b420f93bcf77",
+          "createTime": "2026-02-06T13:59:12.840472Z",
+          "updateTime": "2026-02-06T13:59:12.840472Z"
+        },
+        {
+          "documentId": "Boo8O4n3GX3PcgerHbNF",
+          "fieldHash": "d0bddf0d336fd625d2e06d194cfe336442919805ccbb9af5b586d8e6c7a217c9",
+          "recordHash": "d04c3687c33ed31838defc9e5770ea52aa5590f77bca036e89d7108373cb80e7",
+          "createTime": "2026-04-11T02:41:44.501272Z",
+          "updateTime": "2026-06-04T03:35:26.899330Z"
+        },
+        {
+          "documentId": "Br3YjXognFKGagquIvzd",
+          "fieldHash": "9433a99bc22fd70b446d6e8569a637246aec268aa39bd846b0cd0e666c3b2bd1",
+          "recordHash": "5f209124a587889ec49ed62a7928807b7d032102620fa66d2baed06fb5a8f4cb",
+          "createTime": "2026-03-13T11:23:14.310794Z",
+          "updateTime": "2026-11-12T21:35:33.350431Z"
+        },
+        {
+          "documentId": "BRp1aN4Ebvu3Wuc8afJj",
+          "fieldHash": "8d6bb78a2a842670b3e44febca595a1d3a4111dab5aa2b4d7b173f61bcd83aa9",
+          "recordHash": "19a02f235ea5c8cc2784a258bee4ceaa33c23b1f68ca0bd12d9edb061879da91",
+          "createTime": "2026-02-06T13:51:49.855524Z",
+          "updateTime": "2026-02-06T13:51:49.855524Z"
+        },
+        {
+          "documentId": "BVnAxDLDmOyNhq7ZBm4s",
+          "fieldHash": "205f211feee6a759145ed8be2d3f27a7ee9842801fe19a6324740c53ae749902",
+          "recordHash": "15febf0a561cd587370d201c65541ed3fa467a36e26e36340a3b17a50d3ea70f",
+          "createTime": "2026-04-10T19:57:07.391519Z",
+          "updateTime": "2026-04-17T10:05:13.999457Z"
+        },
+        {
+          "documentId": "bYCC916rpIx7yhiWk8gH",
+          "fieldHash": "49bf3e81abdc62eae355289a83e2e651d5f9db0fec13e71093a8e7228339bb59",
+          "recordHash": "085da7db11101afc3babc9c73b97f060029e9471a617590f6ea3c235f96e4f81",
+          "createTime": "2026-11-06T15:22:25.776173Z",
+          "updateTime": "2026-11-06T15:22:25.776173Z"
+        },
+        {
+          "documentId": "C4k2l8Wjazp55hig7feS",
+          "fieldHash": "53f1e56f1d0a58d2ef31597ddc2bf41f5f40421360bc4a5b723ff8f32efd859e",
+          "recordHash": "558e45e2272b9d8b984af4c03628aa3e152ec71db709340a5f5bbfa596087b3f",
+          "createTime": "2026-08-20T01:14:47.327301Z",
+          "updateTime": "2026-08-20T01:14:47.327301Z"
+        },
+        {
+          "documentId": "C7f1JQfeOf8uV5YYjzXz",
+          "fieldHash": "53c1a7443cbb11106f33cfc36afbf4793696bb4b70da8ab6c230d75340d98202",
+          "recordHash": "f4a0ceca55500e0f7fbc57173122a6f6a62f76b9d6ddaefda2a587d4ca9b94db",
+          "createTime": "2026-03-10T05:44:07.469859Z",
+          "updateTime": "2026-07-07T08:08:42.008795Z"
+        },
+        {
+          "documentId": "cBdJtjUiUQXpDXsNRRoU",
+          "fieldHash": "33810ca7facb25c98f5fa6ff67cf5fccd1689bb29d8bf7587eb21f9ac350e13e",
+          "recordHash": "3150f7719a9d5cf93d41709f31aa69d8764229190620637db6456584b2416d7a",
+          "createTime": "2026-04-09T19:11:00.628748Z",
+          "updateTime": "2026-07-19T18:52:42.087091Z"
+        },
+        {
+          "documentId": "cDLyF2vmYgUMYhgWzhx8",
+          "fieldHash": "f4a8ecbb696692b5799fd3324761faa4adea1b385d1b4cf0a02f5108bd3bc629",
+          "recordHash": "a9c4705e54db6c259c7b1c080133858c8e5764aff0e5c20c989ea04e663bc165",
+          "createTime": "2026-08-03T03:56:39.205688Z",
+          "updateTime": "2026-08-03T03:56:39.205688Z"
+        },
+        {
+          "documentId": "cMmOd23UYqHUbp1G7lm7",
+          "fieldHash": "2b58c30e946e469681cd4625a567ed8ab7e3ce54e07a444981493e53d81d057c",
+          "recordHash": "570c7d0cef56ff8f581920b6da1ad3869d47e64c72badf3b8ab351f149d1b207",
+          "createTime": "2026-11-22T20:48:41.390170Z",
+          "updateTime": "2026-11-22T20:48:41.390170Z"
+        },
+        {
+          "documentId": "CNrMiUEqdL3h53u8ihCO",
+          "fieldHash": "91b26f5aa268d840b426796430bc507db505a89b38400c85d862735afd915a79",
+          "recordHash": "7a92e7ff0553c523e573ea6049fc6ed0d72d97499dcc5e261e791e0f55abf6a6",
+          "createTime": "2026-04-11T02:41:16.476251Z",
+          "updateTime": "2026-06-04T03:35:29.032359Z"
+        },
+        {
+          "documentId": "CoivDMySicHmUPyMm6b6",
+          "fieldHash": "92f5824665a025dab3d196d247edf68d0c131f6f1897d3d35905c5a9af03eb5d",
+          "recordHash": "619818263f196683ba2541a892769da7d791047faa796d53722c7ee9e12b5900",
+          "createTime": "2026-03-19T13:26:34.071111Z",
+          "updateTime": "2026-08-23T00:12:09.679698Z"
+        },
+        {
+          "documentId": "cW3aQQikqXLZlFEPLa4j",
+          "fieldHash": "f7008c34a69e4878b907bbb86b7abbfc68cc7f9f413f73e11b8a472c3cc4c603",
+          "recordHash": "8b9f749f1e66af844cd47dd3925aa9355e410bc4ddbc9c4b50fd069d678b21b6",
+          "createTime": "2026-02-06T13:50:23.584431Z",
+          "updateTime": "2026-02-06T13:50:23.584431Z"
+        },
+        {
+          "documentId": "CwpVpTyISgB6Yfs00bHT",
+          "fieldHash": "1027850f982d965d0d1335a4473427efafe27a4c1a7ca4f978d99f6dd761cf3c",
+          "recordHash": "206a06f56a9b3828c5b9284d820f5ab400444a960d7145ddddfa7254f010613f",
+          "createTime": "2026-11-20T19:40:36.443133Z",
+          "updateTime": "2026-11-20T19:40:36.443133Z"
+        },
+        {
+          "documentId": "d3f0tKqnQrelpo6OKzSy",
+          "fieldHash": "4a78b03b71c21aefc387dd459998faa48a318ff353637a60e45fb0ed391c6b35",
+          "recordHash": "7d79b5ad0af12d8f4b5de3e8a6f26a8c1440036216d41966059da76eff91abe0",
+          "createTime": "2026-04-11T19:42:04.720483Z",
+          "updateTime": "2026-07-19T18:52:41.762865Z"
+        },
+        {
+          "documentId": "d7vlRQW8KwpGRuwZwXHz",
+          "fieldHash": "b85283f82dbe193e82cbfe5afe1057dad323afe0d2466a970f8cefd1d6d4d7bf",
+          "recordHash": "eeac39b461f737ccd4e57872b57c5e50186dd601e9ef9e8cfaf348005e83bd89",
+          "createTime": "2026-03-12T04:24:38.488487Z",
+          "updateTime": "2026-08-09T02:48:34.959382Z"
+        },
+        {
+          "documentId": "d8EZtxuGBwmTrBUdHPpA",
+          "fieldHash": "fc654bfd0594413734851fefb7eaf95a964300915e37db816d390e63bd081e95",
+          "recordHash": "9e6ab6f865e2626dc6629a2c06da8e2ea3505e1fc4763cd5cb35916e599050d6",
+          "createTime": "2026-03-13T15:24:17.419266Z",
+          "updateTime": "2026-06-01T12:40:10.828406Z"
+        },
+        {
+          "documentId": "dab3UUUf55kEzLGpGCU5",
+          "fieldHash": "e12f73adb18587b8377b59bb6b1f0764e89d25110f61192ee0ae7128ea758343",
+          "recordHash": "1569b8bb8ef93eb9b5d01bc6781f79cff951292106eb5f4374970187ff131de8",
+          "createTime": "2026-03-09T14:30:16.361097Z",
+          "updateTime": "2026-11-22T22:39:07.203228Z"
+        },
+        {
+          "documentId": "dABQCVtWzkyMDh5kwmVy",
+          "fieldHash": "a201a7473a13a8bfff7a5da8c78edee325261739dbd2b0a67e125c2a035ec86f",
+          "recordHash": "ad8be17ee4a054c5ea253a0d9b75d0c3f85cefcbc80dc3201fbb54bc6bceed27",
+          "createTime": "2026-04-10T19:53:20.768702Z",
+          "updateTime": "2026-11-23T01:33:05.996896Z"
+        },
+        {
+          "documentId": "dBNrdVIhBJbfqVJY44XY",
+          "fieldHash": "ebbb49fce8dfe382e750ba98acca5b7fc7064abf331de9ecdba26571066bd6c8",
+          "recordHash": "b5f866336f69b8275ab228d044c9b4f64f919f89d5be65006a0c686ecef1ed1c",
+          "createTime": "2026-04-11T20:01:28.063547Z",
+          "updateTime": "2026-08-14T20:27:51.156946Z"
+        },
+        {
+          "documentId": "ddcNpMd7zUlxvwk0WbwI",
+          "fieldHash": "b64c2cd4c827c593c22a9a94ba0330cbfa3de919dd302f429fd58d2131e544d3",
+          "recordHash": "8632e3505ef867cb2b83b2893c570d55b71e22cf1bb6ab4960baf0ac4aa0e9d4",
+          "createTime": "2026-04-11T20:29:32.655324Z",
+          "updateTime": "2026-06-19T22:36:21.952772Z"
+        },
+        {
+          "documentId": "DHM1p9Ghf6RugGkWFVLS",
+          "fieldHash": "6b01c46669b3755292802403eedf2b1972b77f27af59fa0134fec0d985ef2cd8",
+          "recordHash": "7c4ebcb38e6af1b96fd165dea628cdfb4d544ed4b1e14c46d9878e2a7c2c61c0",
+          "createTime": "2026-04-11T18:06:57.234787Z",
+          "updateTime": "2026-04-17T10:06:39.334815Z"
+        },
+        {
+          "documentId": "DJEyoUAeaTwoVCqPYjtd",
+          "fieldHash": "0d7f461df672f05717099e28349b6840b4e5fcc21708a5dead109aab451e5d89",
+          "recordHash": "7af648ea8b9f06ac446f8385ac0c52fca22827a7ed000705180e27b0f8357b30",
+          "createTime": "2026-04-12T23:28:34.643807Z",
+          "updateTime": "2026-06-04T03:39:27.934285Z"
+        },
+        {
+          "documentId": "dvg3Z44m6YfT3W3xRDoy",
+          "fieldHash": "d12af57f20ddb4cfea5824bd180c352634037339da077d656fb708bbcebf2564",
+          "recordHash": "4600f0c1552a8d0cfd716ce91888f850cf2f9a2c75bf51ec5c320f8c6775bb3f",
+          "createTime": "2026-03-13T21:49:01.586886Z",
+          "updateTime": "2026-11-17T18:58:15.429278Z"
+        },
+        {
+          "documentId": "E2Sv30MQfeLbO6Yqgx0l",
+          "fieldHash": "aa927118402cf503309b8c5ce17b54f78b9006070b8d627b53e56229ccd14df9",
+          "recordHash": "ac2ed15cebbeb4d5439be2a89317a593b1eaa6c2ad8cb3458a1e3cf05c846bfc",
+          "createTime": "2026-02-06T13:54:10.766476Z",
+          "updateTime": "2026-02-06T13:54:10.766476Z"
+        },
+        {
+          "documentId": "e52DRxH8I3zvgtyytD0I",
+          "fieldHash": "1ccba6a2cebd400cb7acbba781c48d631abbaebee00deeb736725b0228609122",
+          "recordHash": "5ce87af8f8bab9de5056e1325a7686840c26ab853ba430ef8f86536e637a8910",
+          "createTime": "2026-03-13T11:04:10.077285Z",
+          "updateTime": "2026-03-13T14:32:51.763075Z"
+        },
+        {
+          "documentId": "E9XVHsAx68c8ROPPX3vm",
+          "fieldHash": "3f7ff6acff6230a741fa3f294ca2ab25ded3be254150d6d557a775ba49e05049",
+          "recordHash": "261e2117639d3e7b6d845af71bbe877b114ac68fcebc1c16d923fbf1a048d44b",
+          "createTime": "2026-09-11T18:09:57.852142Z",
+          "updateTime": "2026-09-11T18:09:57.852142Z"
+        },
+        {
+          "documentId": "EHvn3XCxKZmO5RzNCPv9",
+          "fieldHash": "3af03c32e91ef0f58a36464172d92edc7345a6a13e15598709b59570636a931b",
+          "recordHash": "c15f63a83590aa90e9d61ed88a99bf101d7cdd27ddbe62ff1e7903a39a9f086d",
+          "createTime": "2026-04-01T09:29:29.956227Z",
+          "updateTime": "2026-04-17T10:07:30.859046Z"
+        },
+        {
+          "documentId": "EKadVvYrsGOmsaQrSPqd",
+          "fieldHash": "4b80755d1c03142e244282b0cb085313fb3150d816af868a8e7ccc95f562ffba",
+          "recordHash": "08805a8e5d8216aea0c80651e00aae1d01da8f952c4d6d1bfaade03970f44be2",
+          "createTime": "2026-04-09T19:22:06.599746Z",
+          "updateTime": "2026-04-17T10:07:40.598114Z"
+        },
+        {
+          "documentId": "EkrSuVAY8WCvZJvheq2J",
+          "fieldHash": "6e14c036fdea5e1158d79201b4e1b043029b9a57175091c91b027786107969e0",
+          "recordHash": "7ea66f4416052c1101f17190de0469627cdf2b6e49308a99841ce74da47ab2ea",
+          "createTime": "2026-03-13T10:48:20.116482Z",
+          "updateTime": "2026-09-22T22:32:16.220012Z"
+        },
+        {
+          "documentId": "EQwxry1QMnnC5uJIdgbC",
+          "fieldHash": "0cd1c0b6f21aef9f803e74c993eb740a035cd11dda4ea3b5ca69f6a326d560cc",
+          "recordHash": "a80178724fdf7c2a5774a5420b713e81c1801625acb58ce46dd8b342881c2ff0",
+          "createTime": "2026-03-08T12:05:11.219498Z",
+          "updateTime": "2026-08-08T23:48:44.446116Z"
+        },
+        {
+          "documentId": "EyCV5SmTPXTrpqS6iy3e",
+          "fieldHash": "b9856f24fdf89a44353bc947d8197d11f69c511cf501d33379b7c7988c6e0f54",
+          "recordHash": "7982b1bb0e5b89a44cf56105b383e54a6e866a5be144f3a1428c158bb7d1a4b9",
+          "createTime": "2026-10-09T13:12:24.430307Z",
+          "updateTime": "2026-10-09T13:12:24.430307Z"
+        },
+        {
+          "documentId": "eYmGlijw5UyfivO0UiuL",
+          "fieldHash": "443e27137464097e06e0895a2063831e4bd93309eb9a44645ec437d1bac242cc",
+          "recordHash": "ae078695f8968fe705f2a8826ee07e42bb389b6728d735481917befb4841e3e7",
+          "createTime": "2026-04-12T23:18:30.193811Z",
+          "updateTime": "2026-07-19T18:52:40.566152Z"
+        },
+        {
+          "documentId": "f1fL4RiJ2zPOF4BeDlgl",
+          "fieldHash": "ad6866d732e92b1ff435fa9aa266c342edf0bdc9446481684561bfd4e7109643",
+          "recordHash": "be1d8b7cfd6cbedefd37894bd7d09ee6de4e6b185d470e8af31c3b986fbea313",
+          "createTime": "2026-10-29T19:36:34.238652Z",
+          "updateTime": "2026-10-29T19:36:34.238652Z"
+        },
+        {
+          "documentId": "F9kLOSBXYagnpj9MOo06",
+          "fieldHash": "01b08fe1f41d0091e62790003c778630f8d94423f50663d97f9705d5b7204fb5",
+          "recordHash": "71678e570208c1ed239c7175dcbf2b56da3cc5d598b2f5cb0a43003c331dc163",
+          "createTime": "2026-03-20T15:25:43.702536Z",
+          "updateTime": "2026-04-18T21:50:47.336731Z"
+        },
+        {
+          "documentId": "FkTv6wPGn68Q7dJhbBET",
+          "fieldHash": "cc32f8ef64506654bf106ae270a1cc8e55a2af4444ae25de9cdca49b01cd6b56",
+          "recordHash": "6382c2c2ae2489d95269ef2d5edfeab46048297b93f5ccebfb52a7a82cfd9de3",
+          "createTime": "2026-04-05T16:04:47.471973Z",
+          "updateTime": "2026-04-17T10:09:11.545252Z"
+        },
+        {
+          "documentId": "FlbRccDOrpt7ePasE82r",
+          "fieldHash": "3f71b3fec08d724907285921c502541b3e837a1ccfa3565ed19ec3d626d8d878",
+          "recordHash": "ec6db1b4af1f515da80eb795dd2f15a10379ea38a8692e8d76c0a7260ad102bc",
+          "createTime": "2026-04-18T09:34:19.990589Z",
+          "updateTime": "2026-10-31T18:20:24.332381Z"
+        },
+        {
+          "documentId": "fu9R1RN0MJx2szKWXrZa",
+          "fieldHash": "0ef03f8fa387b4d1d6d468f5489a05821cb51cce50dcc518062a525031692c12",
+          "recordHash": "f4dc7cf1b4d8ba05aa5c9839b30a5f8bad79b522c28892cfe0ae687518bc95f9",
+          "createTime": "2026-04-11T14:55:59.252725Z",
+          "updateTime": "2026-08-14T20:27:49.698330Z"
+        },
+        {
+          "documentId": "gaySqtueCJeruHah9QNm",
+          "fieldHash": "d2f46ca0a4661fb8e4bf52936f5c483fe53c21c244386b83ffdf19d7f5a59aee",
+          "recordHash": "842e14ff20591e9d9cb2d795f8396b006f45f412ffb07c54d22a4269a13dc44c",
+          "createTime": "2026-03-13T10:56:09.287262Z",
+          "updateTime": "2026-11-26T10:19:57.001726Z"
+        },
+        {
+          "documentId": "gIYPYqjf2U7bZdwkgj5d",
+          "fieldHash": "cab2cc42920e4bddabc5a0f6106a0d7d1d19e31b096c466630098b4a05dd41a4",
+          "recordHash": "7beb098742dbba640c31e935d7606df967ce08a93b1d5c7fe835654d347201c1",
+          "createTime": "2026-03-13T10:40:23.731506Z",
+          "updateTime": "2026-10-29T21:24:01.120447Z"
+        },
+        {
+          "documentId": "gnTYQQXll8Zueby0a9q9",
+          "fieldHash": "70390a073108b706b6b23840149df8ea0375a61a8b9bfdcdfef68163988fb241",
+          "recordHash": "38c17ea0c076c98622188cefff00809eba28199b1c774a1605bc321a20e861a2",
+          "createTime": "2026-10-09T05:32:25.760658Z",
+          "updateTime": "2026-10-09T05:32:25.760658Z"
+        },
+        {
+          "documentId": "gpEkJOx2ECXaze7vNxGi",
+          "fieldHash": "4f82ed81b810c0f3048469d52a7f87a69b909ddd61013809b51bbe61a3802534",
+          "recordHash": "02216f9049355012c9f7aa5df34ede2f8fa43b83b400efac749696d76becf62f",
+          "createTime": "2026-03-16T10:59:54.396889Z",
+          "updateTime": "2026-06-01T12:40:09.164981Z"
+        },
+        {
+          "documentId": "GRttE4RaHLHGD1QWDsmW",
+          "fieldHash": "9ab543b4a7d6e70355f15372dff66f39a531f742804764927766ebcf6667777f",
+          "recordHash": "47808e238a6cf77121735f4f6ed36350087ca058dda30d68cdb56194d3cc8a97",
+          "createTime": "2026-04-11T19:51:57.134989Z",
+          "updateTime": "2026-04-17T10:09:25.019384Z"
+        },
+        {
+          "documentId": "GVMiw8rAQ6kL3rmPwNBX",
+          "fieldHash": "249c0218c3765bb4bf347502262fabdd0451e08b5b6dc329e373907b3749de41",
+          "recordHash": "b809211db96d1583e26cdc7da394830474c96bc9ec2832c75ab81c3f6c9f234b",
+          "createTime": "2026-03-12T06:50:52.611872Z",
+          "updateTime": "2026-10-11T02:24:37.118377Z"
+        },
+        {
+          "documentId": "gWudxJ1dMPAF8vP6UghB",
+          "fieldHash": "6b7693250d4603d78828a4b78adefbde882ae1ac3fc2b86fafae8e04f3dc6651",
+          "recordHash": "c8b0784fdabd4e234b109280f75c29969dd3d501c4b506388658b4eab4b095d8",
+          "createTime": "2026-10-09T13:10:23.781413Z",
+          "updateTime": "2026-10-09T13:10:23.781413Z"
+        },
+        {
+          "documentId": "h8osP6nhpGlY4ozSNMi7",
+          "fieldHash": "b77959f1be70e232ea23fc7a5e011fcd3ed2544698ee739a8781ef785e44a5d3",
+          "recordHash": "68311457314e1b17fd634687e0bf0e4bb9cab46009988fa98afcb97bb91c8b76",
+          "createTime": "2026-04-12T23:29:03.210971Z",
+          "updateTime": "2026-08-14T20:27:48.509552Z"
+        },
+        {
+          "documentId": "hCJWqafIQXGRRKiOMkWe",
+          "fieldHash": "87abdf0664e3188293fe0bd2945523e21e71c22ede794512837b4520fcf8f328",
+          "recordHash": "65e1c5d46666b25ec45e185626c65010360205923aad7411948653b326472cd7",
+          "createTime": "2026-03-17T21:26:58.860419Z",
+          "updateTime": "2026-03-26T12:03:51.261258Z"
+        },
+        {
+          "documentId": "HdGggAXvjmKubGQ8OY1o",
+          "fieldHash": "7cf818384eb46f54b5300c79b1976c5e463d930903aaecf42e5caf57aabe3841",
+          "recordHash": "fb69fede0ae5678578e25f7b53e2196a70e174eb1a5ea2b2b9e7ba46e2977163",
+          "createTime": "2026-04-11T19:14:15.237673Z",
+          "updateTime": "2026-04-17T10:10:34.600224Z"
+        },
+        {
+          "documentId": "hfCAACJijgdwsft4bXB6",
+          "fieldHash": "d56bd27ed48273b08be9a30af05f1cfa40462d5e62105cb995209b6da1d2df16",
+          "recordHash": "a36df296438265c483a6b47fa7c8e7fa127fa2fc8e37e0fd06ec8487c1c2deb4",
+          "createTime": "2026-04-20T23:58:29.984991Z",
+          "updateTime": "2026-05-23T04:49:58.153199Z"
+        },
+        {
+          "documentId": "HQGn98a5vF7CfjIkoK75",
+          "fieldHash": "f6cd76eaabb75c6f5890283efa395d83f01ddf387664a9d9bf7b06fef74956db",
+          "recordHash": "8473b7a18339c519cd955464cf2c95b4ad0c5a83165c4df6754add64ec0a9c4b",
+          "createTime": "2026-04-10T21:17:12.343060Z",
+          "updateTime": "2026-08-24T06:41:07.760834Z"
+        },
+        {
+          "documentId": "hUG1Nn0l8K1cGrtEDqW6",
+          "fieldHash": "1614da7ba86ddb6a82f8b4b4977037c2cb1b924e1fad1feea29ccc919d7388f7",
+          "recordHash": "e0a10c9d28a3e6ffcfe212dd66e222282868b6b57ad5db29fe76657a1e72f6bb",
+          "createTime": "2026-11-15T21:57:07.414005Z",
+          "updateTime": "2026-11-15T21:57:07.414005Z"
+        },
+        {
+          "documentId": "HWy8rLgHdwAjmAqstxZN",
+          "fieldHash": "5904ac930fa89d7b05429c0b4ebdcf44ec16b9db4fd58a80d1130743612457c9",
+          "recordHash": "da13b5a9365216934a35e0dff7f12fee07d353d1624f742c122dc0022d4384ac",
+          "createTime": "2026-03-09T03:27:53.039245Z",
+          "updateTime": "2026-10-30T19:29:07.000030Z"
+        },
+        {
+          "documentId": "hZXBIJ09P7ifWRo0aoxk",
+          "fieldHash": "04e1a6cb0a83d0be764bae00fcbc1588997b268a6e53cdfe0b40e778b4603563",
+          "recordHash": "73c6ed840ad1d7e1e914a0fe88274d21efb81496f4ee9f12fec00ec8832e8804",
+          "createTime": "2026-04-11T15:46:03.218681Z",
+          "updateTime": "2026-07-19T18:52:15.671730Z"
+        },
+        {
+          "documentId": "I7b2bEDlwOUQ3D8XiEOy",
+          "fieldHash": "555c760260b981d107333560a5320bb965cae0b694fb1f74fbd806b634cd518d",
+          "recordHash": "f742987baa8534aafe4615b63d3b03db80a0aeee349d893c966ef79c717049c7",
+          "createTime": "2026-06-06T20:19:54.557580Z",
+          "updateTime": "2026-07-17T07:46:01.660175Z"
+        },
+        {
+          "documentId": "Io84vVq8gmrUQ0qYgEZt",
+          "fieldHash": "9d3a094c84e865310f8dfa663a477393db387d2533a58b299fc997daf82c18ed",
+          "recordHash": "f4cf0e9c790529ddbc386d67853d3f5365bad9597a022f04ba4fe21332743c79",
+          "createTime": "2026-08-14T08:59:32.152142Z",
+          "updateTime": "2026-08-14T08:59:32.152142Z"
+        },
+        {
+          "documentId": "IVKCKP4qln4qqSkAvfhF",
+          "fieldHash": "1e808148cc4e91af2605e5ea49d343b71ac8208e5180305afbd7f593f7716601",
+          "recordHash": "f648afdda493e5d241c79240b64c6ed2625c5ff8553efd1d94a842fef4d8606b",
+          "createTime": "2026-04-11T02:55:33.798164Z",
+          "updateTime": "2026-04-17T10:10:59.705680Z"
+        },
+        {
+          "documentId": "J3jM09UovL4qqj2TKDNn",
+          "fieldHash": "8305612aa0c3e6d15e1e53c506c683e4be1940ac0d86232a7e616ad2f947b67d",
+          "recordHash": "130988f742e1c7c6404a581dd330828c89a815e6e85a7c0d5db3d396d346152a",
+          "createTime": "2026-04-03T20:35:33.013578Z",
+          "updateTime": "2026-11-22T22:39:25.961785Z"
+        },
+        {
+          "documentId": "jDrIKk8icRSloKis7ywT",
+          "fieldHash": "6c6c7d0acd19f3171cdf6c9d397840761d5c14a255a84f9f4dfd09798a1677ac",
+          "recordHash": "72aa19b813fdcf73fe052a5bb38292ee9f6843539e1a6a22f19a657c0917b1a3",
+          "createTime": "2026-03-16T10:59:32.028093Z",
+          "updateTime": "2026-05-08T01:48:43.008400Z"
+        },
+        {
+          "documentId": "jIIQLRqNrCW7AZxrSO7i",
+          "fieldHash": "19257f5520c2ba6810dbc478290c1fd6c07ae20b6313f1c1a9d771c7c79a2f28",
+          "recordHash": "0139749a34335f250b9a40f654ebd2b207e28ee879cf2615a26b0b7dc32e3a2e",
+          "createTime": "2026-06-27T23:07:45.914107Z",
+          "updateTime": "2026-07-19T18:52:14.472540Z"
+        },
+        {
+          "documentId": "jvCtHb4AA3me6lhMMplX",
+          "fieldHash": "eedbcc3e901f752da4e45e9447b2fc388ed465b2d1614285f04c94fbdc9ec6ae",
+          "recordHash": "7940251f801f7678bba1964e559bdf5f1169394cb29ae27cedeb072689d659fa",
+          "createTime": "2026-10-29T23:10:45.236986Z",
+          "updateTime": "2026-10-29T23:10:45.236986Z"
+        },
+        {
+          "documentId": "jvkHAaXJGa91Sbt751F1",
+          "fieldHash": "480c140700d6e3dbe342cbf89967b47b9659f4280fff8427f8571021a7e63194",
+          "recordHash": "06ee50b85342e4d23955d7c396bf68cbd950050804660ae4d62cc3ec5032eb57",
+          "createTime": "2026-08-30T03:27:33.574742Z",
+          "updateTime": "2026-08-30T03:27:33.574742Z"
+        },
+        {
+          "documentId": "jWPGzTuwf1tEK9XEmDcu",
+          "fieldHash": "df9a5229bbdeb62becc9846432f34a0de3692ac2e583e459f9150ffba5b4a0b1",
+          "recordHash": "d37db142339d51c83b691c71fa5451fc207efad8f84038e59d1241f11e35caf7",
+          "createTime": "2026-11-05T16:55:01.010430Z",
+          "updateTime": "2026-11-05T16:55:01.010430Z"
+        },
+        {
+          "documentId": "jzRWXnbyU4Cqbbgh9Kjc",
+          "fieldHash": "1d72d948952df99b84c8b6176a0683e1360bb103cc2a3b90e921815560cb25ed",
+          "recordHash": "387966d833380aae3fe4404d039b3cf107aead38bffcdca7cd5eef66071d20d6",
+          "createTime": "2026-04-11T20:30:07.178569Z",
+          "updateTime": "2026-08-14T20:27:47.227105Z"
+        },
+        {
+          "documentId": "JZvpfsXdxF2BwIntTWfO",
+          "fieldHash": "f48c96fa6d682072b055ff1ec4b6969d0308c2da437e83ccda4b7084042743a8",
+          "recordHash": "37277ee6d18c7a6143f4860700ac5fd0c12fd5986a51e48365bddf7f8af628b2",
+          "createTime": "2026-04-11T17:57:51.303836Z",
+          "updateTime": "2026-04-17T10:12:51.100368Z"
+        },
+        {
+          "documentId": "K3Pd3Be18XUDRq21TLx8",
+          "fieldHash": "138bc8f2f807b5e54b613ce5a9b313dee544455ab25bd6a6d1fc98415f69f898",
+          "recordHash": "4ff74c6d1d5b2fbe3c106136d0541a98a7cb147d03f67cd65f9f4ffd2560830e",
+          "createTime": "2026-03-16T22:37:44.723754Z",
+          "updateTime": "2026-11-13T03:59:25.979795Z"
+        },
+        {
+          "documentId": "K4n9KK6warsyl2vhyrOG",
+          "fieldHash": "f7b10e27bbf4235362c545d79f866918d643d50f253c94361d42c678f113c833",
+          "recordHash": "780269e0cfa286db113396710594d9e8fba346c9aeff706d24b1f3cdb1abaebf",
+          "createTime": "2026-04-10T00:28:07.648017Z",
+          "updateTime": "2026-04-17T10:13:07.567708Z"
+        },
+        {
+          "documentId": "KkYZOvtbBCOner7rxxqF",
+          "fieldHash": "859cddcadb4dcc512ebfac092462350f8526ff67d95746fba3d856bbdb306e9d",
+          "recordHash": "a8c22bae4b7ea0240956705b1d8122a5651807152616fb4ea9648b235626773e",
+          "createTime": "2026-03-17T21:19:37.208943Z",
+          "updateTime": "2026-03-30T02:38:03.868111Z"
+        },
+        {
+          "documentId": "KouSVkGlexfslTce7CNW",
+          "fieldHash": "aa9df891ac2d4b6a5d3cf8d7aa63bbc3f76c385f70546088601087ca09e675d9",
+          "recordHash": "88e2440ec60ee06b4bb5a78070331c983b4b8fbc01362376a57e665b2e27cb19",
+          "createTime": "2026-04-11T23:00:22.355901Z",
+          "updateTime": "2026-04-17T10:33:38.784269Z"
+        },
+        {
+          "documentId": "Kqz626cBnNVxqdBJePDC",
+          "fieldHash": "acfc8c53c04a16b4c9785ee6185e32360539a13e5166b3716b8e51b05dc8e8da",
+          "recordHash": "9b146829cdfd8bd7e049b7096ba8cdd4c6c7ff9d148deacc8fabe08d509f204b",
+          "createTime": "2026-02-06T13:57:15.499652Z",
+          "updateTime": "2026-02-06T13:57:15.499652Z"
+        },
+        {
+          "documentId": "lbBp8bWHrqvf52PNHqko",
+          "fieldHash": "f96de4590189d1cd0f2e680d49affbb2a17db3ac942ddd3db84ff091ce1af9db",
+          "recordHash": "bf40c4a707e02f3f59852ec037636f36c1cae77e637985f475525deaeb7efa19",
+          "createTime": "2026-08-20T01:11:54.378290Z",
+          "updateTime": "2026-08-20T01:11:54.378290Z"
+        },
+        {
+          "documentId": "LDRA1vBhvQMf6X9bsn3i",
+          "fieldHash": "b5a6e6bf1004d2f9f8c8b5485fb8ddbd1b117fb141863ea2349ac749f7591598",
+          "recordHash": "a924e44ff27fec6208263d282a2db99c7c8386d9bec6a4a52bce6078803d3ea7",
+          "createTime": "2026-07-25T05:54:17.361415Z",
+          "updateTime": "2026-08-25T14:40:32.614414Z"
+        },
+        {
+          "documentId": "LMLy2nnEbNEGP6r4YoE0",
+          "fieldHash": "b71f8e4ac37fa3704e7dcf24a7c81103c2e4e08cb845b7fab44ca0ceb3779f4f",
+          "recordHash": "70e6b27703ac5c79ac76e6e6cb2234391e543c317542b6a7806656ccc80d427f",
+          "createTime": "2026-09-12T07:29:49.794920Z",
+          "updateTime": "2026-09-12T07:29:49.794920Z"
+        },
+        {
+          "documentId": "Lu01aw8u4MO8ZQkIE686",
+          "fieldHash": "96f48994088805587e13958fcd6442d40033d7f797042d11a69b769fe32f0aad",
+          "recordHash": "b2b9189616de23d758a2628cf8d41db6a641a2976f5abb7e487e905fd5f0f443",
+          "createTime": "2026-03-15T05:20:27.511778Z",
+          "updateTime": "2026-03-16T22:17:16.593488Z"
+        },
+        {
+          "documentId": "LVbIfXSGkEAVRPlPOqsH",
+          "fieldHash": "ca2730726c3690f99c27ddde189b94b890fe521b4facf82eadb05d590a124aa4",
+          "recordHash": "44f5877f8a24a2ca143e452ec1f400803da357c7136107bb3f4d3f265e16c496",
+          "createTime": "2026-03-13T05:46:49.883361Z",
+          "updateTime": "2026-04-20T13:18:02.595276Z"
+        },
+        {
+          "documentId": "Lypr3ykaXwNICace5bz9",
+          "fieldHash": "134c74bbcc7200cb42eedd3916adeec0b59d1ba4347413b3520583dce3533628",
+          "recordHash": "c2cb08c373ae156e0e65685cfdb4d2b6d413b86bedae20318743af5259bae588",
+          "createTime": "2026-03-13T05:22:05.432329Z",
+          "updateTime": "2026-03-13T07:28:29.247394Z"
+        },
+        {
+          "documentId": "m2Ra5mNs2NCeBpQSgIlu",
+          "fieldHash": "29243cbf125f850c9cf40e1e8988488bf9299531068095990e599fe2cdaa4ce6",
+          "recordHash": "a210756e575d94c6a1b5c4af5644a7fc308b3af7458fb29757224345a9901a20",
+          "createTime": "2026-08-30T03:21:47.515804Z",
+          "updateTime": "2026-08-30T03:21:47.515804Z"
+        },
+        {
+          "documentId": "m9azc4l6iPJRUJNP8xZp",
+          "fieldHash": "a0abb2bfc152f1d01a49ab3f9f714c69ce4bee67016748bd1505337109d63cfb",
+          "recordHash": "2ccb16ce092503d7c414c6a3c55f6ae3180f9793f42fbcb30291ea60294c5c61",
+          "createTime": "2026-04-01T01:19:17.053362Z",
+          "updateTime": "2026-06-24T19:51:02.840676Z"
+        },
+        {
+          "documentId": "MCT4UyAWAav9TeVjkUdO",
+          "fieldHash": "5eeb9d0c3da89692dfdc3b22a05482eb0a14363146121d5c31c54c694d7a7dc5",
+          "recordHash": "19382afe694c4372254539ae8f3d54c4e9a3fd617605f251a643b89f8ab95133",
+          "createTime": "2026-04-12T23:17:59.928460Z",
+          "updateTime": "2026-04-17T10:13:28.975603Z"
+        },
+        {
+          "documentId": "mElUCF0z8nbmdNOyOVmD",
+          "fieldHash": "24e4ebe3d74e404babd02ec0255d44c559754b4b947e36c8139a844662c0812c",
+          "recordHash": "4c2a5079ae5fd6899d2a4c76bea5754119c9479cb7db217b6f23a35ae1a57876",
+          "createTime": "2026-04-01T01:38:42.434697Z",
+          "updateTime": "2026-07-30T08:03:08.149331Z"
+        },
+        {
+          "documentId": "mission_artefact_hunt",
+          "fieldHash": "0d049c353697905b07c38bc8e4e1865516ef3463564f16988f544cd87ccefe70",
+          "recordHash": "bc83e13692db41f2300f5237128b223f9a43bfe4a39b1bd1b402d08e234e2a0e",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_artefact_hunt__skirmish_",
+          "fieldHash": "6db29f9cecbc1bf44325657623ee06836d0511b92b702b6ab70f33f564578ba8",
+          "recordHash": "82fe7b383a84f4a4a32293c4f0bd7f5d2b8daae2c8c39ce59c5f62e0ccc5f782",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_divide_and_conquer",
+          "fieldHash": "172f20fe6a87969bf48d72655889de32708c7fafb69094c2c63ee4a979b6bb7a",
+          "recordHash": "ffec26b3364e117cb40021a46639dd27b3a3e452da39d7d53ef8fa0fd070c585",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_divide_and_conquer__skirmish_",
+          "fieldHash": "c7429ce6345707e709db50b7b1d3d217081660df7ac05fca62b6a729227a9842",
+          "recordHash": "c9379107fb5359449c00b7162f56d031b5e65c664c6ffeaba3ee60389088b3b8",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_fire_in_the_sky",
+          "fieldHash": "b4fe56d572706bd34a24f60e2ddfa3693c413b061dff10605b9ecb2a8276859a",
+          "recordHash": "62928656b887e1deede2cbeff236e3f85e2c744716ebca08d349ebb918ce462e",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_fire_in_the_sky__skirmish_",
+          "fieldHash": "682c3d61939b17d3a41cb3705732553e1e2dbe27463ece169076eff11d114a85",
+          "recordHash": "08c838ca2eab9461f0cc87be3d50662d9d54fe814f0fbe6c09db16a94fe28071",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_frontlines",
+          "fieldHash": "fe58a0ada65d2374ac22a1cb0d03e4c9c913dbaf9982e94269b38d9ad68ec1c6",
+          "recordHash": "c92c42b049e24bde446543e796a283f9997fb994586c17567e1c384110153bc6",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_frontlines__skirmish_",
+          "fieldHash": "ec6fa9dac11641af15f205f4bbe0c835ccbad674a774ef3c484e9e473ab2faa9",
+          "recordHash": "fa8aae71633d3c6c530079fe14a73c786a7ce413432d6c6f66b5ddd4423ecefd",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_gather_the_resources",
+          "fieldHash": "86e616826789c5828bf55f9a6c91e065515f15df4039b87428cc03b3b0b164d3",
+          "recordHash": "d76edb7e75e1fcd751a211988c1f9f44641cfafcaea41b757c31e06de08a2ddf",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_gather_the_resources__skirmish_",
+          "fieldHash": "37a39c1c6e246f1b036673e3bb25d7b76ff8ea9e8bf277875dcc727428579ad0",
+          "recordHash": "ba9fca62222788d1ebe40db4ca553ede131e646d760bd9d1c8e83644b9607ec6",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_hold_position",
+          "fieldHash": "3bed03de86d5af62f8f383a39bf869d600a8e15ce4f0decb3f3204d14b6c8080",
+          "recordHash": "9b4e83db32aecc1a782c140c96aa4170ee8adc4b62689e95845d41c9666ed7a9",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_hold_position__skirmish_",
+          "fieldHash": "34266065a52014e404bc72cf80c0c671f77411f59ed9158b38f69dd6e1ef164d",
+          "recordHash": "ae0cc3b245e6050ba4700e7e31869898cbf390d17ef023fbb47135daf56184b8",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_supply_drop",
+          "fieldHash": "e2840f39a691850a226baecf61af4b932179b43644cd55efe1096ad7b9c5d6fa",
+          "recordHash": "18a466fc606631c7f3c516d09aae380f07baefbcf4dcaa7ff763a52c6f30c0dc",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mission_supply_drop__skirmish_",
+          "fieldHash": "d934058e33cd1b2e2a835f0a718728faf9f10afa48b13e44e3362f6d46b69b3a",
+          "recordHash": "c433a4e921e44c4a99da07411bd34569f87bce1e979fa0ef4aeeaff98d918f0b",
+          "createTime": "2026-10-09T13:20:13.401276Z",
+          "updateTime": "2026-10-09T13:20:13.401276Z"
+        },
+        {
+          "documentId": "mnGZHG8eAFySixz3Bwi3",
+          "fieldHash": "0a79c463f309730783593c0e09c5429d0b5990de25a7403302e577394a63ac13",
+          "recordHash": "b107876c9e132f47241678baf00d21d45a1d294a5a18935a4797f8408d72e046",
+          "createTime": "2026-03-18T09:16:54.517218Z",
+          "updateTime": "2026-04-04T09:59:41.367240Z"
+        },
+        {
+          "documentId": "mTNhUWgnx3At1dONPqw1",
+          "fieldHash": "253096994ff8c5688e78624fce7adeb3291f6302aadaa47647cba53934d5f345",
+          "recordHash": "1d41e7083d4165c53e5f3e400fb77cead8205b142c7c8fca957d75889c890028",
+          "createTime": "2026-04-11T19:14:44.897943Z",
+          "updateTime": "2026-08-14T20:27:46.012513Z"
+        },
+        {
+          "documentId": "MuO4ar90DwOdWcaPPIc5",
+          "fieldHash": "b0a808b315b67305f2eaa6e7e3ec4d6b0b40c65ddf70a66122353eb780933429",
+          "recordHash": "f278c8391015885821fe374b0ad3fcc2c6c26ee17b8e3ce50ea9a0479d9fe3ea",
+          "createTime": "2026-04-11T02:54:04.297342Z",
+          "updateTime": "2026-08-25T14:44:57.192384Z"
+        },
+        {
+          "documentId": "Nwd5bN4pLjjol85hdyBU",
+          "fieldHash": "a99590f20f89bd7c354e1c63a992f42e58244cef48d32cf40f5cba56eb6106fa",
+          "recordHash": "c87c9810552d446d97d19c49be76cccb7d97f4a9a53af849324c3a5e6ff8f365",
+          "createTime": "2026-02-06T13:49:12.800665Z",
+          "updateTime": "2026-02-06T13:49:12.800665Z"
+        },
+        {
+          "documentId": "O5d3IwJIAv2yMRaAsSMe",
+          "fieldHash": "96822f6f9ee15b31cce144dad379e835678f4ba65c3aa743085e3f48eff420e0",
+          "recordHash": "a43907b8dce343d97622ff34322d124d36df82416eaff03cb2b6e8c51fd4fafb",
+          "createTime": "2026-07-25T06:29:38.885004Z",
+          "updateTime": "2026-07-27T22:59:29.017192Z"
+        },
+        {
+          "documentId": "oD4Z502iEcC4IQ7hcPdT",
+          "fieldHash": "fbeefbbb8e9699c2fe029544534ae04d104fc7d20141f1dccbdfbc2b25e5d2f2",
+          "recordHash": "4fff7bbd13f621146ffe71c8eb6ab525167b60f8f2b97a58f00ce79025fc1100",
+          "createTime": "2026-03-23T10:14:12.912750Z",
+          "updateTime": "2026-04-30T12:51:10.350135Z"
+        },
+        {
+          "documentId": "OeBZUmRPnKPt4zDVyZZo",
+          "fieldHash": "37786ce128d5706ec7ab0014d2fc68a93cd55aacff8b1f14f938117d0a28e229",
+          "recordHash": "df7379f488800c4eb7541801314193ad3cebbfb29376bf67a359fda16ad7d5e7",
+          "createTime": "2026-04-12T00:20:02.415297Z",
+          "updateTime": "2026-11-21T16:22:57.374426Z"
+        },
+        {
+          "documentId": "og1bCf96pewCV58816uc",
+          "fieldHash": "96d94ea8ee253fdfeb14d57d054cb4fd0de1e2d633fd3db847b62ef961306d38",
+          "recordHash": "cb244721393bccad6afc766458b00117df02c8cf1e219b3377df8cf7df5fbc71",
+          "createTime": "2026-06-26T22:56:42.370723Z",
+          "updateTime": "2026-07-15T09:51:25.209363Z"
+        },
+        {
+          "documentId": "OMfFN4hT0MoOXB7cQGox",
+          "fieldHash": "b6e4eba5c9af93b85e4fc4b6a7bbdf0473575a827fb5f710acc1e49be94a8a62",
+          "recordHash": "6961754dfa1d6ec8390eac3ab9e8d9e9276f73359491516cbcc7f6583cf6f9b4",
+          "createTime": "2026-03-18T17:51:02.673702Z",
+          "updateTime": "2026-08-25T14:40:50.174920Z"
+        },
+        {
+          "documentId": "oY5mTi4FApgs68svT9Oq",
+          "fieldHash": "e943adc6f578edbb9e29d685f59b094c762cba98ee136bb53d12b3467a25ac43",
+          "recordHash": "3a53a2e5c2137d0bcfc009ae49306c54e27d2a0761bac6ce77c1764f7c6b1e80",
+          "createTime": "2026-05-13T10:53:03.157367Z",
+          "updateTime": "2026-07-18T08:39:52.874684Z"
+        },
+        {
+          "documentId": "p0D018S6ZjYpFpOb4zES",
+          "fieldHash": "319546e4be25dd811e8f6e2ca859bd9001eaa2641fd253357badefaf471a6992",
+          "recordHash": "86d5de30d10e865686e139e6df1339f84f815b0e2b4b717e66a119ce1f613bbb",
+          "createTime": "2026-04-11T15:16:50.084542Z",
+          "updateTime": "2026-07-19T18:52:11.793045Z"
+        },
+        {
+          "documentId": "PECCLu1vUVsvXQWfoZXa",
+          "fieldHash": "28890ae05b3f1232c4edcc8813b891a06bf776a23b809bf3be1af9708df4e0df",
+          "recordHash": "6ab52b8040fab98f9eeb16b59228abb1871ebf48b0afa8c796a7220ae41feac6",
+          "createTime": "2026-06-05T03:01:37.132862Z",
+          "updateTime": "2026-10-21T03:14:16.155189Z"
+        },
+        {
+          "documentId": "pgKjMxEUTZCIwvSUxkoE",
+          "fieldHash": "b0e8874143fe540883406a3ad68e02b98277fbceec3055ed72e516f14c597abf",
+          "recordHash": "ac5e32c946645a9798bb591ee4c5b34904ee1ea974c7911fcacca96159d3340e",
+          "createTime": "2026-04-11T15:46:36.350381Z",
+          "updateTime": "2026-07-19T18:52:11.567093Z"
+        },
+        {
+          "documentId": "PIHyf3HamGgcPecA9xsZ",
+          "fieldHash": "22739f636baea435d474fa4bb42cecd8cb588797823934279e2d724a587d155c",
+          "recordHash": "6a4613f5c1fcf1c711f1ba7f617afab48a711978ca1a1dcca431c9159acafd61",
+          "createTime": "2026-11-22T20:27:42.398653Z",
+          "updateTime": "2026-11-22T20:27:42.398653Z"
+        },
+        {
+          "documentId": "PKnA4apL0pBiqxmadmrW",
+          "fieldHash": "08cf842ec4e76846d993aa283654b70059c46d82166e2148bf240304f391a78a",
+          "recordHash": "8872db308539111e9eeb8b445cf73d900421bb77013fb241c287dcb62cdd3ea3",
+          "createTime": "2026-04-03T23:08:33.132410Z",
+          "updateTime": "2026-07-27T22:56:32.484272Z"
+        },
+        {
+          "documentId": "pkpBX6CguxgsKZuURSjb",
+          "fieldHash": "dd25c5dabba50bfd7b370f86c7f165f121f284ae2b046f4f891c90c906d81bfe",
+          "recordHash": "cc6ed81aed7c8e7a915525b65ac952e038880f07ab1306171eab272e1cb75a4b",
+          "createTime": "2026-04-10T20:39:18.417289Z",
+          "updateTime": "2026-07-19T18:52:11.215614Z"
+        },
+        {
+          "documentId": "PmQJvXRP9dB2QaZYO0Qn",
+          "fieldHash": "73554bab1dd0f580ea8e4d82a68c77ce92a6be67aa7e4a76f35e02ba79ff080e",
+          "recordHash": "f719b4b7d567deb09557126aee52b691dac75caddfe66f21525339c9afa3a5bd",
+          "createTime": "2026-08-11T10:51:45.634917Z",
+          "updateTime": "2026-08-11T10:51:45.634917Z"
+        },
+        {
+          "documentId": "PZTRXb75wCDifjhC8KYX",
+          "fieldHash": "e3ddb9fe52520f4dd0d0a269ff6c56e0d0aa937a0ed2ee671ba6d952d2162abc",
+          "recordHash": "120f2cede208a2409a9a93a44821c2cc3d583b5b96f04cfc58098c32cd01002c",
+          "createTime": "2026-06-07T00:55:11.737545Z",
+          "updateTime": "2026-07-17T07:46:29.671973Z"
+        },
+        {
+          "documentId": "Qb8rzmY4wohIw7jCrK14",
+          "fieldHash": "288727d5133c1faa4431b22bf2658725d160f1cfc619be71a850c4f9fb0763b7",
+          "recordHash": "b01b7aedc4996d0aeddd6aed22585bc43f7f61d7b745411125365ee787d8a79f",
+          "createTime": "2026-03-17T21:37:45.442757Z",
+          "updateTime": "2026-03-26T12:03:42.198803Z"
+        },
+        {
+          "documentId": "qbBhCOE79NqHUC1lz8eK",
+          "fieldHash": "d3ade75d84e683001d3bab4015de72b09d936aabcff65f82c23cc4fe38381926",
+          "recordHash": "1f9e3a5268e999de723b779475bab9a2bfeae63f317323c89c40e317e30a91b1",
+          "createTime": "2026-03-12T07:43:23.922172Z",
+          "updateTime": "2026-09-19T19:29:56.405283Z"
+        },
+        {
+          "documentId": "QfbjBCBOSwPKv3xt8IlT",
+          "fieldHash": "f93fe5adb1dd1c7dec24fd0ac4820aacb44b7ede8db30c064a22b070d0ac4ebc",
+          "recordHash": "a5edc585b0505aa3f2eac0c3a8f7f35e854a9ea3b39a9864c3b81ac50777519b",
+          "createTime": "2026-08-01T09:18:05.813541Z",
+          "updateTime": "2026-08-01T09:18:05.813541Z"
+        },
+        {
+          "documentId": "QlHchuHgVSVJIeA8a0Po",
+          "fieldHash": "2b7b70edf63790dd476732e2167b72bfe6b517e558d5966ba5892577c15dc654",
+          "recordHash": "be75ea2aa1c6ea7010a358f0eb7e1b34ddc161bccd9a254517aacc7671454375",
+          "createTime": "2026-04-20T06:37:29.504779Z",
+          "updateTime": "2026-06-04T03:34:25.135689Z"
+        },
+        {
+          "documentId": "qQITJghYUXljhd82JNAY",
+          "fieldHash": "7d6dc6c56a2121f22e5190f1f5fa854b4b92cc155b28f9aeb471c51053aa4171",
+          "recordHash": "cf9a6d1cf27bfd7ff64a2c73cae96f75c4719ab55f4c2c35dc23317989dad16d",
+          "createTime": "2026-04-10T01:05:36.148683Z",
+          "updateTime": "2026-07-19T18:52:10.046825Z"
+        },
+        {
+          "documentId": "qVM7oQ62PHKHKUY21qoR",
+          "fieldHash": "1d81f51d989a53af16798bb1f400b1ee7f80642e9b41d479dd89e21d4ebdfe22",
+          "recordHash": "4d592a2199355641a3a22fcadc367859a31ba29056d6e3e179c8812c6d3c7c1c",
+          "createTime": "2026-04-03T03:33:55.041112Z",
+          "updateTime": "2026-10-09T11:09:29.298507Z"
+        },
+        {
+          "documentId": "r1BYHgKlWYFdmJpAEdGL",
+          "fieldHash": "f909d71918cd46b735f5bc6c1afbe07e72f1c8ec9a30a1c40e49bed583665421",
+          "recordHash": "ad0297e85f30fe0f45acb2f9139eadf657f22f7d0ac285556a4cdf72a5fff4e7",
+          "createTime": "2026-04-11T20:22:22.685757Z",
+          "updateTime": "2026-07-19T18:52:40.230363Z"
+        },
+        {
+          "documentId": "rHDOTrC7d6qtr2EvcBiE",
+          "fieldHash": "98b68f88669ba52d9a9f7f05711a1a9e45472b335133cf0dc582f03e5a123c04",
+          "recordHash": "0da23f0e6577b9cb2d7969b031ed8968d9229bbff1e61241222e61e4687515f7",
+          "createTime": "2026-08-31T20:50:46.908187Z",
+          "updateTime": "2026-08-31T20:50:46.908187Z"
+        },
+        {
+          "documentId": "RKpdmoEGzPj6cV5sacjX",
+          "fieldHash": "c63d8cd41f28031168aa5d6702841729870bffd0d54f5d3895524d97fdcd47e6",
+          "recordHash": "683696d6289c07e4fa158cbd0bdb69d1a9bf5787be65523f8cc4b7455ae3a06d",
+          "createTime": "2026-04-12T02:33:50.488507Z",
+          "updateTime": "2026-04-17T10:14:51.941758Z"
+        },
+        {
+          "documentId": "RxMok5Dje6c5a4qaZLD8",
+          "fieldHash": "c8f8a637db9d2e1113e944bee8498bc19f27b6f03f377bf7c272e1a28341d7cb",
+          "recordHash": "4705a516b0d4f5e8b5bebcdd8c3cee38144891fda8a06e14bbb8bf932c5c8735",
+          "createTime": "2026-03-13T17:07:07.009632Z",
+          "updateTime": "2026-09-22T22:32:12.257087Z"
+        },
+        {
+          "documentId": "Rys6QAs2p8iREASmHbWX",
+          "fieldHash": "f09a833aa828c8d85a2f4f28e16b7dbc284f6bc2f722ed9e4cffb0d372aefbe7",
+          "recordHash": "35d2f8988d8f18a6807654a97ff6dd9e97884ab2d08363ed16142ec8db95ec8f",
+          "createTime": "2026-04-10T00:41:25.966934Z",
+          "updateTime": "2026-04-17T10:34:24.778257Z"
+        },
+        {
+          "documentId": "s0y0vI5ZcjVuEUBt3Bet",
+          "fieldHash": "4f46349829905b951218dadaa01b9612317eb36f0cebc1268978090d840b1c28",
+          "recordHash": "3c702bd7a5c897242303cf1640785d975c3d8f4dc5ee41df49b1432efb25fd16",
+          "createTime": "2026-03-10T03:22:25.292512Z",
+          "updateTime": "2026-08-25T14:41:05.884358Z"
+        },
+        {
+          "documentId": "sgF6jELZu6EujiTuWiBf",
+          "fieldHash": "fd26a67753806cb0247e7f85954ec28b7a2201c2990d98b8d8390f29fbd406fc",
+          "recordHash": "7a1bcbae1016d49f31609e878450fdc78ad045ae0bd075ca6fcefaeacf973bc4",
+          "createTime": "2026-04-11T20:00:54.788714Z",
+          "updateTime": "2026-04-17T10:29:09.695926Z"
+        },
+        {
+          "documentId": "ShUKlRDZJzOUfk9uQvWk",
+          "fieldHash": "df636abda42b78a3abc3ec5d23530cad6fd58fbc337a2b363f6d10e56e8778c7",
+          "recordHash": "d98eb6220753b5de8b6d93df067c5d5826b83475060568bc3db50c36cf87ce06",
+          "createTime": "2026-04-09T23:46:00.884360Z",
+          "updateTime": "2026-07-19T18:52:44.818363Z"
+        },
+        {
+          "documentId": "sJaNDO81t3alUjSc5rju",
+          "fieldHash": "1c2ecea762c62826334b5b33cd01ec856f6e7453a3ce1177811076e051affd1b",
+          "recordHash": "6a2d18c05b3b1a532567e48db0e7c03b163fcaf47b6eb3f33d696a9a6bde7c75",
+          "createTime": "2026-07-25T17:32:11.592942Z",
+          "updateTime": "2026-08-25T14:43:22.307160Z"
+        },
+        {
+          "documentId": "snHSktm3rb4XehGllIK0",
+          "fieldHash": "1c21d0a7e4d1f80d5c5c7da12526c13354e49c431723b5e0bd3425192d6aaa12",
+          "recordHash": "4f544aa8c35e17a688f5557ad3c47fbe7cbb4972b11d184c2ae0fa3bdd64bc73",
+          "createTime": "2026-03-20T11:30:12.516468Z",
+          "updateTime": "2026-04-10T00:12:25.253103Z"
+        },
+        {
+          "documentId": "SWDFU9aWN1WuUVvYbxqn",
+          "fieldHash": "c1dd20e4fc27d18ca6311b80111f05cbae1553ffac85e11cda3e6f84810e442e",
+          "recordHash": "30d2baaf8f5c5cd11a7518a507aa26b9a14108acdc86ddbb816813d58ffbf779",
+          "createTime": "2026-04-12T02:12:17.257302Z",
+          "updateTime": "2026-04-17T10:15:00.175869Z"
+        },
+        {
+          "documentId": "sZekQanaNIuOltSfqUL7",
+          "fieldHash": "4859dc0882a17b275fdc7c46b8446c502437436f94f5e72886cb604ae4c1881e",
+          "recordHash": "089874bf95e8217c9de22fae327b39953679a67f3c29ad7746c1ed6d4f68cc60",
+          "createTime": "2026-03-13T10:40:51.942964Z",
+          "updateTime": "2026-03-13T14:33:20.524921Z"
+        },
+        {
+          "documentId": "t1QqBM1IVTX5CD5EE6Y8",
+          "fieldHash": "acc0849b5c8d12f502348cfd5041a2acc914ff8b39420e1c95c956dc91f19283",
+          "recordHash": "e86790fc4347cce748769d343241f8863cacd971167f3ed68656f7e8f68d32f5",
+          "createTime": "2026-04-03T01:15:59.474942Z",
+          "updateTime": "2026-10-19T19:46:34.512010Z"
+        },
+        {
+          "documentId": "TbxoZ1AdV917m0HsmsdO",
+          "fieldHash": "263bf192d3a315955df075af4c4697ae360ba3d84b5f28d192ca16216c1d7f56",
+          "recordHash": "e82e1924720924657f9997ed5e1182d6c9a4f93fbb2bec83f3507808ad599701",
+          "createTime": "2026-03-14T18:25:52.695941Z",
+          "updateTime": "2026-06-01T12:40:04.042586Z"
+        },
+        {
+          "documentId": "tfaoh3ukjUDiT7J66HQY",
+          "fieldHash": "40fd7f73d63963ba682f6ae200303119ad9efc9e2d645d3477c8192775a0c2ff",
+          "recordHash": "aee68b06ae093602f3d737114eb0576c6881f7e1b060d238da1197a9ccb4600e",
+          "createTime": "2026-11-06T15:29:12.857393Z",
+          "updateTime": "2026-11-06T15:29:12.857393Z"
+        },
+        {
+          "documentId": "tGmUwXsT0Kd08OxC6QNF",
+          "fieldHash": "661f4b17cd4d84a348e9d5a37069e989cf55886351d08ed9442c755c5836526b",
+          "recordHash": "c0ff3e3797451f236f5d5e949bac782b6b997868e80798b70e020079034eade1",
+          "createTime": "2026-04-10T21:10:14.117963Z",
+          "updateTime": "2026-04-17T10:29:35.559850Z"
+        },
+        {
+          "documentId": "thjJWCiPvxKmkwVKOkr6",
+          "fieldHash": "40fb2ba3d742370791660328d33c1d2185761593eb08ee2dc2aa4163dbe524e4",
+          "recordHash": "abd6ff8ef3277eb7e2b7e6dedb706588b8fa8dbf373a3a79171f97dda97f2810",
+          "createTime": "2026-03-09T01:13:39.584772Z",
+          "updateTime": "2026-04-10T00:10:27.256230Z"
+        },
+        {
+          "documentId": "Ti7mD1zzKNrBXtPtFooG",
+          "fieldHash": "27ce9dcbccfb7b181de49d0548aea27da7fcde452be5f820f7c8e5724195b2d5",
+          "recordHash": "674a5de31d9049b03a7696706aea24f09abb0cb40348a1501136f2dc5d1bfb44",
+          "createTime": "2026-03-13T15:41:37.954480Z",
+          "updateTime": "2026-10-09T11:09:04.309562Z"
+        },
+        {
+          "documentId": "TSDp3xInktJJ9USAuut2",
+          "fieldHash": "9e4f0a672ec2528ea2ece77b37a1852b46e9cd2a307eec61bfa1cea0aa605bef",
+          "recordHash": "10b553b83cb82abeeeb69ac292dc8fe5245103aa7a741136a78d68794f75a6dc",
+          "createTime": "2026-04-18T11:29:19.506100Z",
+          "updateTime": "2026-07-19T18:52:44.499332Z"
+        },
+        {
+          "documentId": "Tx1tHsap3r2TRoNXi8jb",
+          "fieldHash": "ee529cb42f10367c1ff8d28f15b3597f57948cc94cf71d6c3776a2788ab5bbac",
+          "recordHash": "c2538afac32b87527dde0251ad57893703b16225dba3d97be06bbf714c30d1c8",
+          "createTime": "2026-04-11T18:06:27.951783Z",
+          "updateTime": "2026-07-19T18:52:44.207687Z"
+        },
+        {
+          "documentId": "UeQCeaimVkp763wviL3f",
+          "fieldHash": "92024643da22cc5eda33aa0ea26126cd008a9c8d3b0a04329461fc801e7234cc",
+          "recordHash": "5963ab92950a2123ed3c050b795eecb8980be62e2f7c934079cc6caf720efb23",
+          "createTime": "2026-09-11T18:05:33.027653Z",
+          "updateTime": "2026-09-11T18:05:33.027653Z"
+        },
+        {
+          "documentId": "uovPDtCurZUjm8HjKJRD",
+          "fieldHash": "86d7e6114ac55054cd5edc7b54134608940295609aa18b5a7878a25eda6a80e2",
+          "recordHash": "fc3e98a6ecc9b2e6af7f6a39ef0e4173b75fbd7777eb1dfa2cd07d2719db013c",
+          "createTime": "2026-10-29T19:50:38.278223Z",
+          "updateTime": "2026-10-29T19:50:38.278223Z"
+        },
+        {
+          "documentId": "ux3oh9ltbQzECvRQanFh",
+          "fieldHash": "70cad503e64a7be74258685058e53fd01388185a10f56aac37f7f1bc7ae70434",
+          "recordHash": "cd4b320046f81c986aebd98c9acfad54ea6a9bc6cada9fbeea7b6eefa45b63eb",
+          "createTime": "2026-03-14T18:30:04.469141Z",
+          "updateTime": "2026-03-16T22:19:18.162050Z"
+        },
+        {
+          "documentId": "uYLS7ynyg3CYMBPTs4yt",
+          "fieldHash": "2dd35f3a1520f2cde06901be375a2afde0b907323de268ea0b4a8975ef9be0a9",
+          "recordHash": "6ef69a9f249f063921b105136590c36cebc337ad3e83b660a853e3c0df775786",
+          "createTime": "2026-03-14T14:15:53.878121Z",
+          "updateTime": "2026-08-08T23:30:00.581500Z"
+        },
+        {
+          "documentId": "uZHJV3JYn020gKKP5DCu",
+          "fieldHash": "7059ac171e27104e1901202c8c8163623a72bd61fe5f5fa8c7054578f9378718",
+          "recordHash": "f4863b060c2d5b2742bbd7fadd227aeacbe01470dcabd39d626eae39f3568a7f",
+          "createTime": "2026-04-12T02:33:10.748192Z",
+          "updateTime": "2026-06-19T22:35:45.162120Z"
+        },
+        {
+          "documentId": "V1LJXAYiK2aRc95SZ1GJ",
+          "fieldHash": "6d8e1c1c0fea37c03b039c9309ca9edc2633723b788faf1b3dd9fd61f5697169",
+          "recordHash": "aa938df434ad9ace377e962dc140009d98a0b111f31edc8e081163a52eec86b3",
+          "createTime": "2026-03-09T14:37:50.413353Z",
+          "updateTime": "2026-11-22T22:39:10.995553Z"
+        },
+        {
+          "documentId": "v5hcGbQi43ceb7fAx0WQ",
+          "fieldHash": "0b2e2ab709f4d7122872a425f59d045ab0a02b370f7c9e69c4af3f91d6f14a27",
+          "recordHash": "c676aed0f474af65d50af726eab63fa51592ea7fb88d57475afc1059b0eed7fb",
+          "createTime": "2026-03-12T08:10:36.050210Z",
+          "updateTime": "2026-03-30T02:38:12.619307Z"
+        },
+        {
+          "documentId": "v710psEpNi5HZjyDKQEC",
+          "fieldHash": "8ecb1c2afe4a6efda458d996b530a3f53fdfea9114d1b15ed53b19933a729dfa",
+          "recordHash": "d7f2d1d1b8ec33763c467b6328860f0f5490456fc1ec4cf494b9af0e8100e0c0",
+          "createTime": "2026-10-17T15:48:00.757738Z",
+          "updateTime": "2026-10-17T15:48:00.757738Z"
+        },
+        {
+          "documentId": "ViADHIJhUxikJY0lr6Ky",
+          "fieldHash": "0a1c23b1d4a4043c3dc919ae2838022d40c501bad43596c12d464a1835d982dc",
+          "recordHash": "c34558bb677195629f685178b5f5f15efcdb9f73e54af119a3ec9ecdf95b8784",
+          "createTime": "2026-03-13T15:29:06.303038Z",
+          "updateTime": "2026-10-09T11:09:07.660854Z"
+        },
+        {
+          "documentId": "vKeijkptymiRAN9RCozq",
+          "fieldHash": "9be87a56f687e334f1681a92fd121a8793f9dbe23b03b04bbd5f9b3ac0bf1864",
+          "recordHash": "ef2b78003c9bada73c49184f8712ec5cd08f3851b2001c484bf9318385b12e87",
+          "createTime": "2026-11-06T15:51:54.951368Z",
+          "updateTime": "2026-11-06T15:51:54.951368Z"
+        },
+        {
+          "documentId": "Vopi3c9EF6UmYgISjAA7",
+          "fieldHash": "cf9cd34cc7a4057cba705476401e4bce539d74b6dc7d2009fd777b6898349bf2",
+          "recordHash": "3513e3003d24f75855db7b88bcecf84eddbb3446760d775843060d7cc6195a1f",
+          "createTime": "2026-04-11T15:25:13.539253Z",
+          "updateTime": "2026-07-19T18:52:43.948234Z"
+        },
+        {
+          "documentId": "Vs2MyNLCVCg4Sw9aZDBi",
+          "fieldHash": "4a4b927f7b5885723d789c0565b4c1e01f58de3964a3a10974825daa99499e05",
+          "recordHash": "aeec10c3073b2033bf15f203deff6d3b7dbbecc83e10c42b2afee252d40955d1",
+          "createTime": "2026-04-11T15:34:29.214714Z",
+          "updateTime": "2026-08-14T20:27:57.365593Z"
+        },
+        {
+          "documentId": "wBKIWk28fo9MHVl5JFlI",
+          "fieldHash": "b178a1c93dba027da55b484537009c224d7ea1ffec7e6c5af5eeb9523d02da39",
+          "recordHash": "6168856655280c0b986e1313d1fb3c829f92bccf087f3864aed51f34738909f1",
+          "createTime": "2026-04-11T19:42:33.439235Z",
+          "updateTime": "2026-08-18T08:48:13.266827Z"
+        },
+        {
+          "documentId": "whwy8Pbx7iAOIqfkXzV5",
+          "fieldHash": "09f48f61e0bc8416ee817e640b5d05f805b5096f53d22f452ef61ff2d1c92589",
+          "recordHash": "2e65e5e63e13051301e445d20da9cf52061132dc4250cc8ace73de2e314397fa",
+          "createTime": "2026-04-11T13:02:59.776018Z",
+          "updateTime": "2026-04-23T18:00:00.318365Z"
+        },
+        {
+          "documentId": "wioZHoFrZBsrnk9LpoC8",
+          "fieldHash": "8b940f2f4328aaccc0e17ac4b5e82b87d1f1a0dfea9dc2b1cdfa0468f46e43b3",
+          "recordHash": "7c3a384eaca5c9a680950e4d6f2fd6745346efa0de08d5a0e86113d9af450584",
+          "createTime": "2026-03-15T05:05:41.311528Z",
+          "updateTime": "2026-06-01T12:40:04.697631Z"
+        },
+        {
+          "documentId": "wjwUaOGHAoyHfU3F1z0p",
+          "fieldHash": "76d39d82c76b5a24326fcdf3f7f6182315f505589c96a20af8fde9f822a798c8",
+          "recordHash": "31a05e766cbbbcda394dd53d1e3c35810859d08edac98debe876c801289b4ae0",
+          "createTime": "2026-10-27T14:35:26.120661Z",
+          "updateTime": "2026-10-27T14:35:26.120661Z"
+        },
+        {
+          "documentId": "wLP1nU4Gwq2fBfnemvTO",
+          "fieldHash": "b39cd8e62d76337f89dc0bf1da98c49db7fc458913c5ddd00eef6f6ce2828b18",
+          "recordHash": "9a487d0aedb8c2e8784e3c2a977b8f38a295cf938ef1b9d773a046240d3c369f",
+          "createTime": "2026-04-11T22:58:14.213727Z",
+          "updateTime": "2026-04-17T10:35:13.382754Z"
+        },
+        {
+          "documentId": "wMODpUEJj6MmNlnLYjCP",
+          "fieldHash": "ca3ba664675b5613c2366936aa80ae5fc4766b56b5676432e5db2efd232cb609",
+          "recordHash": "192626634ffeaf66bc9562e874e40c2e04598aca21071504470bf8a52eb2066a",
+          "createTime": "2026-03-23T10:13:29.580746Z",
+          "updateTime": "2026-06-04T03:33:59.041895Z"
+        },
+        {
+          "documentId": "WQHBbQY9aAXCg1rI1u3L",
+          "fieldHash": "652f6725857c300509aa703aef4807e8435422f2e793a12a2c3faea0d0960935",
+          "recordHash": "069b98dae4803fb720d7ebc7b3785666d212c4819aa4d91288b47cb05efaf1c1",
+          "createTime": "2026-11-17T19:24:31.408592Z",
+          "updateTime": "2026-11-17T19:24:31.408592Z"
+        },
+        {
+          "documentId": "WXxGvWbxz1h0LXD9pGvo",
+          "fieldHash": "57a1686aeff66b6f548a45731949b8112a273ba75611fc2578c8d1c0c1b96411",
+          "recordHash": "aafc63c78be385295f4f2b0981e577c1c3b3b86f154fed9a5342197a91d1fca5",
+          "createTime": "2026-10-08T15:31:13.830301Z",
+          "updateTime": "2026-10-08T15:31:13.830301Z"
+        },
+        {
+          "documentId": "wyatOnpDtoB7dCpmNo9n",
+          "fieldHash": "e2e2244f2aba8eeea6e11e5239222fa1968a1a314e70c6c0043554f43be7aa96",
+          "recordHash": "44395ced3005dafa9892a7686f30aff9b321c4c4c8af2c9e6a5662606f9f43fd",
+          "createTime": "2026-10-12T10:06:09.159959Z",
+          "updateTime": "2026-10-12T10:06:09.159959Z"
+        },
+        {
+          "documentId": "x5A1EehtLD0bGcNKkVLn",
+          "fieldHash": "33145dc16eb95d95d93378104986507b6ec34681a6b1a41b4dce1d7e0048eeda",
+          "recordHash": "db8d0010de62ed7ad05085a6a976b70472b07a4222fc1a33c99bea3e35a5870e",
+          "createTime": "2026-03-14T13:33:24.143307Z",
+          "updateTime": "2026-10-19T19:46:29.942082Z"
+        },
+        {
+          "documentId": "X6MxoDbWKSFfqYxF8ABF",
+          "fieldHash": "422679aefa0d50a1eec2a443da4b50caff1ea23f153c5c4c4ef298bc8ffbee8f",
+          "recordHash": "bcaccb8c4ac2b99a9cd13508a9ee2dea513c42a231d0c0168d98d98eb0bdd008",
+          "createTime": "2026-11-12T16:59:58.135502Z",
+          "updateTime": "2026-11-12T16:59:58.135502Z"
+        },
+        {
+          "documentId": "Xdnx5iqxvHc4DD72aq73",
+          "fieldHash": "98bccbfab3cf6137623c582473125c5bb549370e5f3d551081ab7fb6333dba1c",
+          "recordHash": "4afabcd2d89a784c1a4eb34ab514be602c75cfd44e2d9b06c8b103383e691dae",
+          "createTime": "2026-04-10T19:59:14.269763Z",
+          "updateTime": "2026-08-14T20:27:56.320227Z"
+        },
+        {
+          "documentId": "XeWIFHqK8h3feYXoIrTb",
+          "fieldHash": "9137efc38e0079903974e540b29aa270bf1a3dc9aee29d9cd3863ec36a0a8974",
+          "recordHash": "0dcd4ad1e5cc9523162690e97387c1beb3762228c06a8d4f37dbdae31b6938a0",
+          "createTime": "2026-03-14T02:37:13.495251Z",
+          "updateTime": "2026-11-15T02:43:34.177598Z"
+        },
+        {
+          "documentId": "XLpEj8yMltdINglMZhlk",
+          "fieldHash": "e99bf5af8d5b3569ef8040af5a25a3a08f34c2c9d6c1b37821e93cc4459fefe2",
+          "recordHash": "526c23d52ad67557175b5c94a1a4cda7589b2bc577b1cf5a33d66bdb755abcd6",
+          "createTime": "2026-10-12T22:48:32.026490Z",
+          "updateTime": "2026-10-12T22:48:32.026490Z"
+        },
+        {
+          "documentId": "Xm7IseMaSHypSylnxgfs",
+          "fieldHash": "9b4d0c44b2ca9364b1e82757860376a046e912212869291b94a276fd5e171180",
+          "recordHash": "d07f56f16568a93f0a8aecdb2a81c19dd472b6e4562fcbc6476eb1a302a22266",
+          "createTime": "2026-08-14T07:44:20.354871Z",
+          "updateTime": "2026-08-14T07:44:20.354871Z"
+        },
+        {
+          "documentId": "xwjv2GIwOCk2KabgB1rl",
+          "fieldHash": "874c2e0cdcde8da09b82f93e29699fcf40b157ab3a083c45024f65c45f7778b3",
+          "recordHash": "bb004d354ca34c84a364761d49ebd58a4447acbaa1567d823031583135a17612",
+          "createTime": "2026-04-23T11:40:04.814464Z",
+          "updateTime": "2026-05-21T10:11:20.069713Z"
+        },
+        {
+          "documentId": "xxcLAuwGbNzHzggnAGLW",
+          "fieldHash": "5d6fd207131a61c1458764f189d38513ff571b9b5f57e67a75c0a915a0c2bcf5",
+          "recordHash": "1d877f72391b147eadb711fe361562aa73dee7fed9452531f08e313be2c96b63",
+          "createTime": "2026-02-06T13:56:24.105813Z",
+          "updateTime": "2026-02-06T13:56:24.105813Z"
+        },
+        {
+          "documentId": "XzHxuIR3VZs5F1ftmkzX",
+          "fieldHash": "4402cf572c189636427f87f488723b4a1ee71b79642c9afe7426eda7a1fee1bc",
+          "recordHash": "d86a02d3a37f0a06bead1e784cf15bcedac63cdc437270f0c7faf0335925901e",
+          "createTime": "2026-07-25T07:59:34.485867Z",
+          "updateTime": "2026-08-25T14:40:13.129619Z"
+        },
+        {
+          "documentId": "y7Puh5vcH6s5PMpLPI73",
+          "fieldHash": "185d1640999b05ddd20677ca9b9a668cf3b370c5ccf3d203251fc17ae19660bf",
+          "recordHash": "b68fdd3139684df9af27e4b90774a330edcdf3efa7092c063d4c4f09b0145ee1",
+          "createTime": "2026-03-18T07:33:13.260537Z",
+          "updateTime": "2026-08-08T09:48:58.273687Z"
+        },
+        {
+          "documentId": "YbNgR3ZB8OQ9B10N5iJ4",
+          "fieldHash": "9d651654114ae9c994df71c1c3a09a6a0dcd24b0665ff0374fc1973c66562b7e",
+          "recordHash": "7759d9a4a73aaed3734fbded629963ff74d8fc418bff52f47f5b4fde73105df0",
+          "createTime": "2026-04-11T15:25:50.447301Z",
+          "updateTime": "2026-08-14T20:27:55.395011Z"
+        },
+        {
+          "documentId": "yQ2mHJMUvEaupcdRVwjm",
+          "fieldHash": "b1031051a5b55f346c7a86cb23e83e8d75c842b0ba55eb31eddf242173280833",
+          "recordHash": "1e619e8594b780009b185ef05a34d9c78693bb71078bc893d9e23b9cdcd665f6",
+          "createTime": "2026-02-06T13:58:33.780743Z",
+          "updateTime": "2026-02-06T13:58:33.780743Z"
+        },
+        {
+          "documentId": "ZAp9HNL6QTIyKkDhzcHT",
+          "fieldHash": "d21a0b3dcb8400bedcd8db54bc20676dcbaec92df595d5c84eaf352aa4f07f6c",
+          "recordHash": "ec4a37fb3762f8dfba88f20ea0be3b3bbbcb00ee690f5bc4aa87da23027e6258",
+          "createTime": "2026-03-13T13:00:22.918837Z",
+          "updateTime": "2026-07-19T18:52:42.903811Z"
+        },
+        {
+          "documentId": "zdhtTfKJkPgMeA8Gonqv",
+          "fieldHash": "dcbffda2dd6fb1bc46368921ecf359cc62b8b884b2c3e1e354904362773a6a04",
+          "recordHash": "bf3ce7baa8e98ddbd613bfba9eeee4d01dfee933106cde9a556a2b3696c61e41",
+          "createTime": "2026-04-11T22:51:18.029807Z",
+          "updateTime": "2026-04-18T11:15:12.883346Z"
+        },
+        {
+          "documentId": "zgWIZQYywDlhLjxr2K53",
+          "fieldHash": "e491461688495b57e3f6f042b44de2c323081ef5ca4a72b92b264b7017cbd79d",
+          "recordHash": "ea7ed780713e4f340e6eb515d41bb5b80e52c1e9472953a6a0ce3b7d4a5a62d7",
+          "createTime": "2026-09-29T12:43:05.350561Z",
+          "updateTime": "2026-09-29T12:43:05.350561Z"
+        },
+        {
+          "documentId": "ZHSOCC9ZOapOzKjnEpWu",
+          "fieldHash": "8a091b4a6a4578a8a52cdbe21d3ff37c834187cea59cb33be2d3958ef4e690a9",
+          "recordHash": "9013b573b8fb00a801e01f344adf6e593091e9319b5b4c3819779c4ed579e7c6",
+          "createTime": "2026-04-11T20:21:59.695564Z",
+          "updateTime": "2026-07-19T18:52:42.641375Z"
+        },
+        {
+          "documentId": "ZiqGBJu6SEavTeJqoNef",
+          "fieldHash": "6c2080cd30b89c64fd6c4854c9c0b18b0360bfc80c40c8c769fd315e4b67b17e",
+          "recordHash": "e7945dd4ca98056cfb271713c3ee64a872b6b511543ea4fe42ad54b6c7cb8807",
+          "createTime": "2026-04-10T00:06:42.872901Z",
+          "updateTime": "2026-08-14T20:27:53.604695Z"
+        },
+        {
+          "documentId": "zNKnw09HWfxwnVBVCJrh",
+          "fieldHash": "8ab83f6cb30a59bb3032143ffaac58da7aaf66d8d17e70e3e019ceb817ced7dc",
+          "recordHash": "794e304a71e4c5fdeb13416bc22dc7b9d73fd0841eb218531865f823fd74ad36",
+          "createTime": "2026-06-12T16:12:41.033993Z",
+          "updateTime": "2026-08-25T14:38:42.103555Z"
+        },
+        {
+          "documentId": "ZOZMlPdUsEPoMu6EvtG2",
+          "fieldHash": "a045b80f6def61f4840a6f2743eae9b0540b84c6e5324b8c54c22ce7b181755d",
+          "recordHash": "129d4f161e5f73843ebf6e9e2d6e8efef76641c2388842ea811905b9ff44b1ad",
+          "createTime": "2026-10-27T11:02:28.325325Z",
+          "updateTime": "2026-10-27T11:02:28.325325Z"
+        }
+      ]
+    },
+    {
+      "collectionId": "rules_sections",
+      "documentCount": 15,
+      "semanticContentHash": "a05d81a5ef813ea8732a544cae3fc7f575a6abe3eeee0b41e9e3b0381a103047",
+      "rawResponseHash": "ddeeb7d4a66f22de8021879bc7a2e1671ea26d37db01a5bd3c16b50fa9f187bb",
+      "paginated": false,
+      "recordIndex": [
+        {
+          "documentId": "6LXSDb76XGSE7bWxb0ts",
+          "fieldHash": "c8a448494fe490618def262736c5bd6c425fca2088c19b2f1432f4001863645b",
+          "recordHash": "3da7561c2bd7a6c4ecba367e8d55715923c45489cf2bd2ae9c80e61e03c3595b",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "cB7X7UfOMHh3Wxn79ASF",
+          "fieldHash": "3d4e36bd978a207f953f8b2fe6649c218f701b8eade9f03d2181d23edb385180",
+          "recordHash": "13e9d29032e246f947f59948389d437dead1f14911a890b688ee88a61e6f0688",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-18T06:32:45.324818Z"
+        },
+        {
+          "documentId": "FuahgilWtc8nccVSp2Vv",
+          "fieldHash": "706cebb00b08178d342bddb177c59a88f392085007daee5b52daefff034ce9e6",
+          "recordHash": "985e79f70c48caf1b1085e620e92be23f5b4468ffe07fdc5f84cb01a28fa59b7",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-18T06:58:44.262941Z"
+        },
+        {
+          "documentId": "gMXfLyHJfnGYKw2rmoPS",
+          "fieldHash": "4c0bae8b65ce6c55ecb10f260c42a588bf3d6b453109503acc0bdc1231a85dfa",
+          "recordHash": "572cb18a86731b32f12d81a26c777f99115a1da4bf57ef73b18215fadd18abc9",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "H3Fn8YSvEvpJZpT57qw1",
+          "fieldHash": "93309658e99c635df45a355a80eacb546e5a3d84e659ae10baed40dde7190574",
+          "recordHash": "b2d1089659ae55440711a8c5315e70142c4777c4e1a94268abddb768ca8c1f13",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "I03mzBYujgXw6xN2qXhH",
+          "fieldHash": "3a248b554f61456924f7d288015d878546d69604700762f361ececbb3748f5e3",
+          "recordHash": "107c12b423ca1960beb32e759ae12b5fed073ab2cc8647d24a7599a5ff150e22",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "iuUyObNTQ2M8xK4IUqzC",
+          "fieldHash": "5a955b0fcfe8f71676f74df17d3b8a6b54928062ff7a1a6740536e9fbff14c95",
+          "recordHash": "730f49b30de4cbe1c956a3da65b8c59d238b5715c8822b74063e535524d81fba",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "Kvng3lPQiUcJoqJPUUT5",
+          "fieldHash": "af676c8953a1c27e8fa9484040633b217433c27f91d31cecc6ff0001eb66fcfb",
+          "recordHash": "9ca15c103389c991498165e0488cb9e8fdcb7bcadad560ffb82de5fdbbd05ef8",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "OszqexisUrSOKMW6TzA5",
+          "fieldHash": "f79377cbf89729e633e08b8965459d7f27908338dceab2da1f9871b7e3f34ee5",
+          "recordHash": "68711c9e817e19cb867c50aaab02f380b1c22dc150d447542b30513d29538dac",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "QX7B9DFpviRo84fVCBIj",
+          "fieldHash": "19cb71573a25f0994b83a90e7e38dd2d360f42993f7f1f738c1d72ba9aca762b",
+          "recordHash": "f7fce5a24ed1962598abb556f43a7cfffcfb541404c6bb705d119379b4094964",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "Rj6sMyNODPQ8OHUc9Clp",
+          "fieldHash": "f3f804825908cf7da14fff25343a0638e3b0854c2072b1a32dee4311370e75bd",
+          "recordHash": "8c91884a93418869ca6878fdf0f3868278008728f1d28995f3f6e3bf8e85e282",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "u3zNStKpd5XegMjmJfMS",
+          "fieldHash": "443a006c5cbe3fe3c9b9f805a79166aa51c865a6ee7c278d1b9269b50654fefc",
+          "recordHash": "026a4a9b0f3c0bae10a76ee28e48655cbf117cc01e304c57d7dfc2f5522f1175",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "Vf8n82nwpFgPFoTNpYOG",
+          "fieldHash": "aa62fe81598ab8328854aea6843a2a07f85210e163cf102b9e7a143944e7d097",
+          "recordHash": "94e6f9e858897154aed1dd2e8bc22cb44f66214bb235c10bb17c624ff729c972",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "wVaoY2tVVZ4NjMCOr7ZN",
+          "fieldHash": "1076f6a0be3dd4604fa802f25c527deca43e4caf91b5a020e67fc4458742d6cb",
+          "recordHash": "56e7b86d13be39a7aeba72314a11dd7030b190c5682fa02fbfaf75d6c95aa306",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        },
+        {
+          "documentId": "xLLTUyQm53B1KXj59oLs",
+          "fieldHash": "ab9d2790233ad65c775fe8f2a9a38dd70d6ac63b6b6b3aa20e271feee72d160d",
+          "recordHash": "357eed9e3532c589c5e309959a5edda349debe1a4042bb5257b87fa0b75bcc3c",
+          "createTime": "2026-05-15T14:03:27.795297Z",
+          "updateTime": "2026-05-15T14:03:27.795297Z"
+        }
+      ]
+    },
+    {
+      "collectionId": "tactical_cards",
+      "documentCount": 59,
+      "semanticContentHash": "920ce49c5c0f87ad621702dad97a01a79ebadc476f6ff4543cc5f0f32f49dd2a",
+      "rawResponseHash": "908e5b943b01ffe1f4e8709c41b47ccc6cdac88867fbd30e47134dc512119d5f",
+      "paginated": false,
+      "recordIndex": [
+        {
+          "documentId": "academy",
+          "fieldHash": "88fe4d2402c54b53ebc3d4e0b0b5d7b4a9248fbd4796fc4f45f78e6c561577b9",
+          "recordHash": "1a4ef841bdc3954e136bc3b2184ef77ddb974e507228eb34b040bd6774937823",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "accelerating_creep",
+          "fieldHash": "368f8df2145e0717f1db460f1f58ca5b0415bfcd3eff69877cd619623a9220ca",
+          "recordHash": "122aebf79ddc352e79d003daa2eb4c244fadec052bbeca78d844b8afb54d185e",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "armory",
+          "fieldHash": "b5c32e565bcd69e1e8ed90f78958e4fcd9bd36ed9cba3b657a8275f6ef196d28",
+          "recordHash": "615988cf1fc7f9dd3c8f5dc6a82c8be612fb699c75231558c8ab2d194a445456",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "barracks",
+          "fieldHash": "79403cfdb15b5c9dd9bca5f2532862ff9359608042920138e88d96b3263e6489",
+          "recordHash": "9448d0e7cab1b31e596fbb0720e1a897123e4e413b057c5e11af942e468f65bf",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "barracks__proxy_",
+          "fieldHash": "3a74122a2addade9ff12ef3e0064065f0f2f51dbca733865ab30d77cf6c0ccbc",
+          "recordHash": "e487a7c69447d37093e00f59cc9f2f747bb26cf5540b8ae56d0c3775e0d34332",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "barracks__reactor_",
+          "fieldHash": "abd418e42397c0fd401abc7c1dd9d772e8002b25a39bfda9bf417e0c4ba4935b",
+          "recordHash": "1905b9679c3a6c8dc1031080930e0d442b48fe708d1fa29a018232d89b76290d",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "barracks__tech_lab_",
+          "fieldHash": "9821df4651bad4636ec436b4a9cf741ed49c0210dc3507f08baff5522191784c",
+          "recordHash": "3b66b4dc2e6a31e50c8248d9d45825ae8839304a055876b48c2c5dc8bfc07ca9",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "cocoon",
+          "fieldHash": "9becebdf454d20cbe428bfc28fe403c5863231d015ebbaee20f27592271e689b",
+          "recordHash": "55a6613a48ae9fb32b975406ecb1df7d130b53d09e297a118b38ab9920457ae2",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "daelaam",
+          "fieldHash": "bf361ffd9e6a32c8a84fa618abfb7fba59599b58ae3570c3e82538250b712cfd",
+          "recordHash": "12ef9928e83ab63ce29332b7130f3cd192dfda26d156f81bbcd13240496b0638",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "defiler_mound",
+          "fieldHash": "60fc91bdeac72e224a0db38bb1af32b8eec023af2bae21db155db3a91eae3644",
+          "recordHash": "a442ae8f5e0159617261ebb54219c1bb74e2bd5fe92433e441e637a2dbb587bb",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "dropship",
+          "fieldHash": "f5a9ad48fa90fb323f68f2ec924123736c0040c78f6f630e3ab3d0373739e3df",
+          "recordHash": "cd95110ed963b281531dd58fcae9f5cc27e38f09e038d5324049084c2ca4a9f8",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "engineering_bay",
+          "fieldHash": "b2b36f7aa1666abdfdc5c94bc3b5fe576ec176022f538080493764d79f76d839",
+          "recordHash": "bebc89c64e84081dbfe368a2820a06e3718b2d39d63c117d38b5ad78ef2913ac",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "evolution_chamber",
+          "fieldHash": "be78093cc43e98b58a73424e4b7e1b5885fd0ff944578e8d510c1748e5849339",
+          "recordHash": "16f65110f749eb7edd7c7d90285bda0f2626d683952437cf3e3e469a8a9ceecb",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "factory",
+          "fieldHash": "6456b7d5eb49953eb13fdeffaf30b8a01ddd1073c815fee083cc5c1d145574ad",
+          "recordHash": "d96b7c9fa5eecc2abddeb3c653061c06bd0850e858fdda74d2782f595fb9967f",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "factory__tech_lab_",
+          "fieldHash": "9f6f5139f3727988689e558c6dc8e2d54b51156fa1fa8cd2ac937f1a4ef7e538",
+          "recordHash": "d559470ef846eab9058cde81e961c82ba3ca554137d8ed494c81e5cd9e7177c5",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "forge",
+          "fieldHash": "f57b5a071b9b239b153b0bebcfe29f2f8b6574d3285e9e62f031944ed95715fe",
+          "recordHash": "6d4fd4237c355da03d71c3e91eb856b684b2dc061e58c7e02ebaae0e39c8e097",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "gate_chronoboosted",
+          "fieldHash": "70f1dfd3e025cb464d0c4017d84b8eb53c14cf79934c1bfd7601b7a039c55008",
+          "recordHash": "eb9133e36b4977692371e0d352ec3c633b9cad4bede86501713b628e145547a3",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "gateway",
+          "fieldHash": "351490e0f007fa8e65c11f2f5739057d6bdb80630e4f80b3d571294f19ad6005",
+          "recordHash": "a651cc76295283d202dfcebb71777176dfe00699e7f41f84ef66cabf1861d7a0",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "hatchery",
+          "fieldHash": "62cf498e44d35101003280dd913608e80026695aed53e1802c458f44918e377e",
+          "recordHash": "a41fd4dcb79e29e8a8be8213381244ae591eed2f31384e43f09c4cf224087bd4",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "healing_pathogen",
+          "fieldHash": "ce4dce273292de0816aa107b4516c8a8a310b967b4b2bbf578395b602fb44506",
+          "recordHash": "f6fbc69c96a6dfee8b6de3c89919c671098aff58978462dec428a7ea7edca14f",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "hive",
+          "fieldHash": "1765c18d6ef8427e39640d59d670a411973bbf5d7774565d12d47c6d6397162c",
+          "recordHash": "ae647db1ddbe630a46eaa34362bfe48f8de5bf35c422afbbc82613482be22a04",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "hungering_infestation",
+          "fieldHash": "6a580c098b87773e784a501171c6a5c321a32c87e18c127425383a280a145c64",
+          "recordHash": "ae4eb29ee7521c54e16e0c05c5dd208e7e4ac920669aa2636bd666d5bf99dce5",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "hydralisk_den",
+          "fieldHash": "df75c8293b5ee9ae3cfce22a3f64e99e90fc1e6edb1f05d5babd9ed81e85a5e9",
+          "recordHash": "586a4968b22d2fae4d45c457c491a3a9a191e95488041870970e5b5d4cc8ad68",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "infested_barracks",
+          "fieldHash": "b0ec11730a70c4f07ca77d9b9c833e2255311580b231a71f279375050b587adf",
+          "recordHash": "f3b94a50d493276aee793bbf16556325dbd39c1d3f619a9d1ae98a0d7b3204d1",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "infested_command_center",
+          "fieldHash": "0c34c004bac7bb1b1562a81816ccd983da62d1b0dbd8ee357471ef26a35a1e7c",
+          "recordHash": "bf1dda7bf4e459dcbed8218e2c5ad98f5a950f6d097e9a6a327b1e20ed3e0832",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "kerrigan_s_swarm",
+          "fieldHash": "12568584ca8cef08bd5d48a99311f46f0c4d5fc3ba974441cc5820cb3014e7ef",
+          "recordHash": "8173dd5664ca0dc6eee698c80b82504796e52fba222b370a10378ca45c16ffe5",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "khalai",
+          "fieldHash": "30daedb4336648461be8283b36c1940ac047f78a8824142917c6611980c14b95",
+          "recordHash": "d79138897c0f40f53596f1d2c7864279f2dd758ec1cc414c412ec87581bf48a9",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "lair",
+          "fieldHash": "95511f7438f5adb8d9a6eb28cb223fc16e3d7d0d8bdda01d47e84db7162d2045",
+          "recordHash": "84e9741117aacc372e48a731b9cf6bea6c474d97153cbe20895595063d2fad92",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "malignant_creep",
+          "fieldHash": "4ae87b7d3bccbcd3c0e4fb24a5e8ef7d3e2f7afd694a1604a3898148e66f11d3",
+          "recordHash": "5ff07fc63f217eca968764c2b4fc4c104c7f2026758bfde7bdb182504b6daee8",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "nerazim",
+          "fieldHash": "e47c2cc7309641b17c7d57b55497696cc141b092837c20bacd82ccab52c082bc",
+          "recordHash": "4e1d94c93e9eaddcb68d40c5d6e2c4e5590c972f8c655cdee2097703a83ef042",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "nexus",
+          "fieldHash": "9875845f5518fcfe1f3f6a97618d25f9c02831e7a1fcf6d84ff66aea80776137",
+          "recordHash": "ffa1e89a023a2180affca73fdc0bfc681662a7b1629e7d12ed37677f7e7b65a6",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "nova_covert_ops",
+          "fieldHash": "f310604d4658f669d816512a3411edd2c8db858d216c3434552f14a5f11c3893",
+          "recordHash": "e55d20c63405dee4de3c6dbb001ddd69dd9cd91599b559f3fcf9a03496d4a669",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "observer",
+          "fieldHash": "a1326f1357fcfa6beb60cdd06cdc21009920a82214e65f04612461a4a141bfae",
+          "recordHash": "83142708517ee643f1f7b20f62430f3236adfb2519302154ea3d78b6f86da6bf",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "orbital_command",
+          "fieldHash": "e4e30da9b66ccd1d511c01841a21744ea8cb247259dec9e0322d7d25ee491d0e",
+          "recordHash": "1ab9f90d801be95f7a537f714ce493c53ab69d0f9614630bc46478326ecd0d9f",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "overcharged_nexus",
+          "fieldHash": "67e5d59776d6560006c4114c8d60c172c338f6d10cd51799326d49bee16fc6a1",
+          "recordHash": "96e8076223506f6440a144e7b05753509857a72037b670fcdb2ad8a80e393a18",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "overlord",
+          "fieldHash": "0123318a6abc9a926272f7049b36d0290f5479abaa57b998bf762436f0613e80",
+          "recordHash": "56d9a5027d5b8fa4edd78d1dd77a3d31a75ef3bf73bbb39cf24e4b2e30eb3a26",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "overseer",
+          "fieldHash": "c761efc652fdb1cfec6a4fd301a12a4ad134f0e0b785b3f79a86fc2a645cc6bf",
+          "recordHash": "cc20274d2c6e592057d5fb79e943c45cb88f726a65c91ae775be78ac97f23953",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "power_field",
+          "fieldHash": "0752bc4a75b09ed0bb6bba75d7d714ced0daa594fb7563ed58215b95fdd364b7",
+          "recordHash": "4be30b5f122d6da7aeb5ade855910d5357aea17cc153bed4cb6efe9b414401b2",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "raynor_s_raiders",
+          "fieldHash": "1285d5644de0f3f22c3c06b982c937a8e53d6acfbeb04f571b5d422c3678a472",
+          "recordHash": "6e3ae082453cf9fcddfed707de0036fbb3c63d2a29a53dbf177cef3c76f2b010",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "reactive_creep",
+          "fieldHash": "d88fee49c0895f721a69b11202757f285579189555049ec217eb5cd75064bc8c",
+          "recordHash": "a129ccb20e8cc677c5625c255ddb32fdc306c1f1452ac902ae922ac5814fa12c",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "roach_warren",
+          "fieldHash": "06fecbb601c9d47285e6a129e88ed54a0ce8ebd5f106d7bba38824fc281e9038",
+          "recordHash": "a9d9b903142a56929f6f68bf8d71b282a067ed246cf669589737dce82ba0dccc",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "robotics_facility",
+          "fieldHash": "06755ecf3a16603ec2c30d7b0ff95be10754e059dc67af9ba32370a5619f7cba",
+          "recordHash": "5c92500ed1dbac78723ce48ef06c73ee52da6553c780f4e9c1c97f2ac9762657",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "robotics_support_bay",
+          "fieldHash": "f7582e866dac376570dd746fa774cd9615d41e036087b86c00425e752e1e54bb",
+          "recordHash": "4ff157ad25d3be9c4168e25413b1c50392cbf41cbce8018d1367ab035c36f885",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "spawning_pool",
+          "fieldHash": "27752add01bdf20edca7b189b4eca39a05221bfa28f7286f711b8511ba126be5",
+          "recordHash": "910ecea5e0cf68855ba76a84c394c7ddcf75bddaaa6ea98e861a091a42adb537",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "spawning_pool__six_pool_",
+          "fieldHash": "1ea29914f2b83fa60bb5d9c5a09785d14d2dbc172c8e4c1ba9f5b6b0cdccdd66",
+          "recordHash": "cf9f277c7eb3c864acd34d8b81d84f31dffb885ed4b59d3c88a53ea65006eb62",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "stukov_s_forces",
+          "fieldHash": "84a3bfa790752d0aafc102d79bfa741ff57243e75799f7ca4131316b7f254bfc",
+          "recordHash": "97daedf810e1d7a3d425639519e2ae06e5250e82158ddca4886a2e2004135cb2",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "supply_depot",
+          "fieldHash": "a855bd8253b11f06815422b955872a36543cce1770833812f623189d074b7955",
+          "recordHash": "244bdabc972a5397bff1f2280a514010dcc0e22a218a14da3726ac5ffb288629",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "tal_darim",
+          "fieldHash": "fff4ecc557560d06e7560460a7ccf0e7699471b6cc82410d73a9370ff47dce6c",
+          "recordHash": "95ff45afc40cdc0d66ac53482a01856d13405287667a4e5200ad6ed5fa057507",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "templar_archives",
+          "fieldHash": "21a1d92c011072553f1fe833f8bce477ab171bb3557de35af3e353d77d832706",
+          "recordHash": "da248afbebfc9e4b6480e6ae5da82f7676c20c9ef3028655fc71ff5ff04d472c",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "templar_caste",
+          "fieldHash": "53799b35a9eace0a056fd6bc48294deb57c4b12e0c48e4de0f25fe30ab02f4ea",
+          "recordHash": "65a406364a431de430247de5c8f0601106e2b56e50db77cafd0ad33a4ae8aa5f",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "terran_armed_forces",
+          "fieldHash": "6fcabfb9ca760e4d1e172c2a2df027286a15e9d65ffbacaa05b2c45c7e891762",
+          "recordHash": "27b33ba668a43a54f7fc4cd7ed4a30ac19a158564b2e25f382fa6c16a1412937",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "twilight_council",
+          "fieldHash": "5927946356d679d8cd55bc967f1989c1b3385f9799987b0e7ddb8c4fdda698d2",
+          "recordHash": "e4f2d0f5f90d4dc642d897be72bbd026d670f5f22c6e1c58e794cff51dd82706",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "vanadium_plating",
+          "fieldHash": "88303c35fd04afa6cb7b2921ef1bed5b87af1c5ef5296215a46fb1de281817fc",
+          "recordHash": "78de61fb005cfe61a041d9ea254acc464f5910b36d7f0708a0748bcec9117e3a",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "void_seeker",
+          "fieldHash": "8629dd5eb36e44834b5362230678764bad51eb7d5000aaf99337352666af0e06",
+          "recordHash": "d198df746bf2e7fff553b61865a4d50908a98cf3a9c5c9c145f079273259c272",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "warp_gate",
+          "fieldHash": "758dca507fcfe489b51ee1fc4ab1a7b7e1ef631cae04b7cafda5fe6f21a648c9",
+          "recordHash": "8a8d2a6d952dbbc7f86fffc3390ac9440ce26c80eb9bb0fdf0d2b9e5618d2de7",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "warp_prism",
+          "fieldHash": "e61849bfe510777595ee5a54ea3462ea6411855faa0dbb35b9062bd34feeae37",
+          "recordHash": "87b7bf58f47684e42e47e2773208d1af65a03c94d093dd32e5eebfed2b7d4577",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "weighted_pustule",
+          "fieldHash": "b3f37f0d287f9edd96a304861e84241111c7fb62b81495914c7cc4536c206cfd",
+          "recordHash": "5bc3c4222cf03571deff7c079f5054c7c6b7b6a44391826025095bc78be4b535",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "zagara_s_swarm",
+          "fieldHash": "49b79d5cd48a1de8f826c5b9ae98556e859ee13d56498acbee3b09ac2ff2e927",
+          "recordHash": "8b042cfccdb8b25f56af18f4624436fca704cc9c90b990a0228ce66c22b1a008",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        },
+        {
+          "documentId": "zerg_swarm",
+          "fieldHash": "b8feeeb0164a37fb0136b71ecd2e903510b96875ff70729e766863674d081497",
+          "recordHash": "64602040d7c6905cfbac54690de7c10d9253764dac9ef885770a2f60bfdd389c",
+          "createTime": "2026-11-24T10:29:15.286757Z",
+          "updateTime": "2026-11-24T10:29:15.286757Z"
+        }
+      ]
+    }
+  ],
+  "factionCardScopes": {
+    "official_mission_candidate": 14,
+    "official_deployment_candidate": 13,
+    "community_mission_display_only": 143,
+    "community_deployment_display_only": 61
+  },
+  "snapshotStatus": "captured_unreviewed",
+  "rulesEligible": false,
+  "blocks": [
+    "pdf_and_p2p_precedence_reconciliation_not_reviewed",
+    "record_level_official_scope_not_independently_reviewed",
+    "rules_sections_not_split_into_canonical_clauses",
+    "card_records_not_mapped_to_p2p_source_aliases"
+  ],
+  "trainingTruth": false,
+  "snapshotHash": "60ca66a0a1f3eca17f6cea3ac49f6aaa71e0e1b2b957407156c94630acf20c80"
+}

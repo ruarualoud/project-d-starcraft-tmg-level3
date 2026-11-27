@@ -1,0 +1,84 @@
+{
+  "schema": "starcraft_tmg_wave4_candidate_acceptance_v1",
+  "status": "passed",
+  "wave4": {
+    "releaseId": "wave4-u98-c88-r50-catalogue-v1",
+    "manifestHash": "63342e7ac823d0a234f00095b2c3491793e6c3860cfc85e16a8b2f480a346acf",
+    "versions": {
+      "cardsVersion": "88",
+      "rulesVersion": "50",
+      "unitsVersion": "98"
+    },
+    "snapshotHash": "60ca66a0a1f3eca17f6cea3ac49f6aaa71e0e1b2b957407156c94630acf20c80",
+    "datasetHash": "66a15120a2f995707e3b5271753c754b581050ec14665a2eb4245f2651e1ae25",
+    "sourceRevisionHash": "de719cdbd5b950b34689511278ab0cbc152f0a9ef19933dae98e82b1b41257ff",
+    "capturedFiles": 5,
+    "counts": {
+      "addedUnits": 15,
+      "addedTactics": 8,
+      "addedFactions": 2,
+      "changedCards": 13,
+      "unchangedOldUnits": 45,
+      "unchangedRulesSections": 15,
+      "timestampOnlyCards": 36,
+      "excludedNewCommunityCards": 7,
+      "voteOnlyCommunityChanges": 12
+    },
+    "reproducibleFromTrackedBytes": true,
+    "status": "candidate"
+  },
+  "wave3": {
+    "releaseId": "wave3-human-match-three-deployments-v1",
+    "manifestHash": "25e2a34afe6189842d4ab45254821038c21b90e56f99fb3043170773fda30745",
+    "datasetHash": "718057e86ac4f93a72c06b8e4d8f4d851ba33ee04c9dddea33e966eda9fe6685",
+    "sourceBindingColdRestored": true,
+    "exactHistoricalLookup": true,
+    "queryCachesSeparated": true,
+    "defaultRollbackVerified": true
+  },
+  "negativeChecks": [
+    "modified captured bytes rejected before normalization",
+    "unread Firestore page rejected",
+    "foreign project document rejected",
+    "original full-shell snapshot contract retained",
+    "all community records rejected by official product lookup",
+    "cross-release binding, immutable room rebinding, incomplete battle candidate and wrong revision rejected"
+  ],
+  "scales": [
+    {
+      "minerals": 500,
+      "setupId": "wave3-skirmish-v1",
+      "roomId": "product-40e5bb6d-a9a7-4eb9-9e02-d3551043ebff",
+      "wrongReleaseRejected": true,
+      "sameReleaseResubmissionAccepted": true,
+      "bothSeatsRequired": true,
+      "rosterContentsMatched": true,
+      "action": "resolve_mission_start_of_round",
+      "signedRevision": 1,
+      "stateHash": "0a41a778a7d2dd4b7574d121ca92884f75059d44e151173030935a3a865fef92",
+      "bindingHash": "f4b882c7438855a7b459b5b3d26611031cd90bf6f8fadd50be66794e3587fb68",
+      "replayHash": "0bfe3f72f77c4ecd9008346a4bfebf9d27001323355c8c690755456fd2229b16",
+      "coldStateReplayAndSeatsMatched": true
+    },
+    {
+      "minerals": 2000,
+      "setupId": "wave3-standard-v1",
+      "roomId": "product-93601e98-ab30-499e-9a26-42dd8dfb89c3",
+      "wrongReleaseRejected": true,
+      "sameReleaseResubmissionAccepted": true,
+      "bothSeatsRequired": true,
+      "rosterContentsMatched": true,
+      "action": "resolve_mission_start_of_round",
+      "signedRevision": 1,
+      "stateHash": "6d0c891ec1f87c1a8e8d7666da1407bdf99b0bcfd54cb1d0b7ec4115862aae43",
+      "bindingHash": "002ed2063bf30e648b4d15a6555dbb40b63b4c62510625a7b60e02ae9259851f",
+      "replayHash": "1710cb48b914c11040a6168c4622407a251f10beb05c6da9cb072aaf3610da5c",
+      "coldStateReplayAndSeatsMatched": true
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "productionPromoted": false,
+  "browserAcceptance": "pending_wave4_product_wiring",
+  "scope": "Wave4 frozen candidate and Wave3 compatibility; Wave4 capabilities/media/browser play remain pending"
+}

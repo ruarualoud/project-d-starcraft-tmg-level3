@@ -1,0 +1,37 @@
+{
+  "schema": "starcraft_tmg_release_manifest_v2",
+  "releaseId": "wave4-u98-c88-r50-catalogue-v1",
+  "status": "candidate",
+  "source": {
+    "snapshotRef": "content/source-releases/wave4-20261127/snapshot.json",
+    "datasetRef": "content/source-releases/wave4-20261127/dataset.json",
+    "sourceRevisionRef": "content/source-releases/wave4-20261127/source-revision.json",
+    "sourceRevisionHash": "de719cdbd5b950b34689511278ab0cbc152f0a9ef19933dae98e82b1b41257ff",
+    "snapshotHash": "60ca66a0a1f3eca17f6cea3ac49f6aaa71e0e1b2b957407156c94630acf20c80",
+    "datasetHash": "66a15120a2f995707e3b5271753c754b581050ec14665a2eb4245f2651e1ae25",
+    "versions": {
+      "cardsVersion": "88",
+      "rulesVersion": "50",
+      "unitsVersion": "98"
+    },
+    "policy": {
+      "collections": [
+        "army_units",
+        "tactical_cards",
+        "faction_cards",
+        "rules_sections",
+        "system_metadata_versions"
+      ],
+      "conflictAction": "preserve_builder_values_and_record_reference_discrepancy",
+      "explicitUserInstruction": "2026-11-27 独立推进 Wave4 Web 人人对战；使用冻结官方原件",
+      "freezePolicy": "reuse_existing_observed_payloads_no_background_refresh",
+      "pdfUse": "supplementary_reference_and_conflict_log",
+      "source": "official_command_center_army_builder_firestore",
+      "captureScope": "firestore_data_only",
+      "shellAndPdfRefresh": "not_observed_in_this_capture",
+      "communityRecords": "display_only_excluded_from_official_rules"
+    }
+  },
+  "components": {},
+  "manifestHash": "63342e7ac823d0a234f00095b2c3491793e6c3860cfc85e16a8b2f480a346acf"
+}

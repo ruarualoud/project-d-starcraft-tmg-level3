@@ -1,5 +1,7 @@
 # Wave4 人人对战与后续 AI 交接（2026-11-27）
 
+本分支首项已通过：[W4-01 候选与兼容验收](candidate-acceptance.zh-CN.md)。U98/C88/R50 候选已冻结；500／2000 分旧房的跨版拒绝、同席重交、签名动作与冷回放通过。下一项从 W4-02 能力差分继续，Wave4 Web 对战尚未准出。
+
 Wave3 人人候选为 2.99.12，Git 基线为 `codex/wave3-human-playtest@857b313`；本分支已继承双席军表修复 `85add09`。2000 分两席分别写入达拉姆和扎加拉的自建军表，房间逐项匹配双方单位、规模、升级及卡；两浏览器均以各自席位成功进入。[双席实测](../wave3/evidence/wave3-human-media/independent-rosters.public.json)。500 分另经正式服务验证客席先提交、房主后提交，两人进入同一房间。[500 分记录](../wave3/evidence/wave3-human-media/independent-rosters-500.public.json)。完整 Ticket28 仍为 9/16。下一阶段先交付 Wave4 的 Web 双人对战。原生 M25 等测试机，付费模型、历史对局和学习实验继续暂停。
 
 ## 从哪读起

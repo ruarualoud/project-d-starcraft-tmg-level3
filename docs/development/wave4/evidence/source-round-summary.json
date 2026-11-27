@@ -1,0 +1,38 @@
+{
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [],
+  "harnessToolsCalled": [
+    "source_capture_compile",
+    "resolve_release",
+    "bind_release",
+    "submit_own_roster",
+    "list_legal_actions",
+    "preview_action",
+    "confirm_action",
+    "apply_action",
+    "read_room",
+    "read_replay"
+  ],
+  "uiTraceEvidence": [],
+  "agentDecisionEvidence": null,
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "Wave4 stays candidate until capability and product gates pass",
+    "Any source mismatch rejects the candidate",
+    "Switching the default never rebinds existing rooms"
+  ],
+  "userVisibleChecks": [
+    "500 and 2000 point API lobbies reject Wave4-source armies and accept same-seat Wave3 resubmission",
+    "Both independently submitted rosters are required before room creation",
+    "Cold reopening retains both seats, state and replay"
+  ],
+  "evidence": [
+    "docs/development/wave4/evidence/candidate-compatibility.public.json"
+  ],
+  "modelCalls": 0,
+  "scope": "T28-W4-01 source and compatibility; browser, media and new ability runtime gates remain pending"
+}

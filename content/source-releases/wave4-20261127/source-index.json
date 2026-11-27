@@ -1,0 +1,80 @@
+{
+  "schema": "starcraft_tmg_wave4_frozen_input_v1",
+  "captureId": "wave4-u98-c88-r50-20261127",
+  "capturedAt": "2026-11-27T10:11:21.192Z",
+  "sourceUrl": "https://sc.starcraft-tmg.com",
+  "projectId": "starcrafttmgbeta",
+  "databaseId": "starcrafttmgbeta",
+  "dataVersions": {
+    "cardsVersion": "88",
+    "rulesVersion": "50",
+    "unitsVersion": "98"
+  },
+  "entries": [
+    {
+      "sourceId": "system_metadata_versions",
+      "sourceClass": "firestore",
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_metadata/versions",
+      "path": "content/source-releases/wave4-20261127/raw/system_metadata_versions.json",
+      "byteLength": 384,
+      "byteHash": "42b1c51fa8db57ccbce4aa5eca260624e07da4920854d5a714ccd2cfd0e7c800"
+    },
+    {
+      "sourceId": "army_units",
+      "sourceClass": "firestore",
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units?pageSize=1000",
+      "path": "content/source-releases/wave4-20261127/raw/army_units.json",
+      "byteLength": 642694,
+      "byteHash": "4a3311a7bbcba099731a2f8a26c6119d5c633480ffa2eb7b9981b233e27b56ee"
+    },
+    {
+      "sourceId": "tactical_cards",
+      "sourceClass": "firestore",
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards?pageSize=1000",
+      "path": "content/source-releases/wave4-20261127/raw/tactical_cards.json",
+      "byteLength": 150866,
+      "byteHash": "6341c335e0789e19e632bb07ecef82f0543ae618a9780f3a8b4033f44009090d"
+    },
+    {
+      "sourceId": "faction_cards",
+      "sourceClass": "firestore",
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/faction_cards?pageSize=1000",
+      "path": "content/source-releases/wave4-20261127/raw/faction_cards.json",
+      "byteLength": 466056,
+      "byteHash": "f5e1f16ad7c6ccb3eabf87a24eea82b5d50f6fcbd72b4f44ed33683112ae7747"
+    },
+    {
+      "sourceId": "rules_sections",
+      "sourceClass": "firestore",
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/rules_sections?pageSize=1000",
+      "path": "content/source-releases/wave4-20261127/raw/rules_sections.json",
+      "byteLength": 730087,
+      "byteHash": "f3637cd57b9bd097e883fa972c613c3fed5bd7e697d8eec53c9013b68bd1156d"
+    }
+  ],
+  "baseline": {
+    "manifestRef": "content/source-releases/wave3-20261126-human-match-v2.json",
+    "artifactAliases": {
+      "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/snapshot.json": "content/source-releases/wave4-20261127/compatibility/wave3-snapshot.json",
+      "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/dataset.json": "content/source-releases/wave4-20261127/compatibility/wave3-dataset.json",
+      "build/ticket-28-wave3-source-candidate-20261112-v1/compiled/candidate-revision.json": "content/source-releases/wave4-20261127/compatibility/wave3-candidate-revision.json"
+    }
+  },
+  "sourcePolicy": {
+    "collections": [
+      "army_units",
+      "tactical_cards",
+      "faction_cards",
+      "rules_sections",
+      "system_metadata_versions"
+    ],
+    "conflictAction": "preserve_builder_values_and_record_reference_discrepancy",
+    "explicitUserInstruction": "2026-11-27 独立推进 Wave4 Web 人人对战；使用冻结官方原件",
+    "freezePolicy": "reuse_existing_observed_payloads_no_background_refresh",
+    "pdfUse": "supplementary_reference_and_conflict_log",
+    "source": "official_command_center_army_builder_firestore",
+    "captureScope": "firestore_data_only",
+    "shellAndPdfRefresh": "not_observed_in_this_capture",
+    "communityRecords": "display_only_excluded_from_official_rules"
+  }
+}

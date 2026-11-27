@@ -1,0 +1,16 @@
+{
+  "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_metadata/versions",
+  "fields": {
+    "cardsVersion": {
+      "integerValue": "88"
+    },
+    "rulesVersion": {
+      "integerValue": "50"
+    },
+    "unitsVersion": {
+      "integerValue": "98"
+    }
+  },
+  "createTime": "2026-01-26T20:12:56.143029Z",
+  "updateTime": "2026-11-27T08:58:29.317564Z"
+}

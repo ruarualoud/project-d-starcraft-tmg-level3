@@ -1,0 +1,5232 @@
+{
+  "documents": [
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/academy",
+      "fields": {
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "2"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "cost": {
+          "integerValue": "40"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "name": {
+          "stringValue": "Academy"
+        },
+        "id": {
+          "stringValue": "academy"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Advanced Training"
+                    },
+                    "description": {
+                      "stringValue": "Advanced Training \u003cReaction\u003e \u003cAny Phase\u003e: Once per Round, when a Friendly Support Unit activates a Special Ability that costs CP, resolve that ability with its CP cost reduced by 1 (to a minimum of 0). Do not Exhaust this card."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "resource": {
+          "integerValue": "1"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/accelerating_creep",
+      "fields": {
+        "id": {
+          "stringValue": "accelerating_creep"
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "resource": {
+          "integerValue": "0"
+        },
+        "name": {
+          "stringValue": "Accelerating Creep"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Speed on Creep"
+                    },
+                    "description": {
+                      "stringValue": "Speed on Creep \u003cPassive\u003e \u003cAny Phase\u003e: If the active Friendly Zerg Unit is ON CREEP, increase its Speed characteristic by 1."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Living Glob of Tissue"
+                    },
+                    "description": {
+                      "stringValue": "Living Glob of Tissue \u003cPassive\u003e \u003cAny Phase\u003e: Creep Tumor tokens have STAY IN PLAY and DISPLACEMENT."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Creep Removal"
+                    },
+                    "description": {
+                      "stringValue": "Creep Removal \u003cPassive\u003e \u003cAny Phase\u003e: If an Enemy Unit ends a Move, Deploy, Run, Charge or Disengage action Within 1\" of a Friendly Creep Tumor token, remove that token from the battlefield."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/armory",
+      "fields": {
+        "name": {
+          "stringValue": "Armory"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Vehicle Weapons"
+                    },
+                    "description": {
+                      "stringValue": "Vehicle Weapons \u003cActive\u003e \u003cAssault Phase\u003e: The active Mechanical Unit’s first Ranged Weapon used gain CRITICAL HIT (1)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Vehicle Plating"
+                    },
+                    "description": {
+                      "stringValue": "Vehicle Plating \u003cReaction\u003e \u003cAny Phase\u003e: Immediately before a Friendly Mechanical Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "cost": {
+          "integerValue": "30"
+        },
+        "id": {
+          "stringValue": "armory"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/barracks",
+      "fields": {
+        "cost": {
+          "integerValue": "30"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "id": {
+          "stringValue": "barracks"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Go! Go! Go!"
+                    },
+                    "description": {
+                      "stringValue": "Go! Go! Go! \u003cActive\u003e \u003cMovement Phase\u003e: The active Biological Unit performs a 2\" Move action. This does not count towards its action limit."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "name": {
+          "stringValue": "Barracks"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "faction": {
+          "stringValue": "Terran"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/barracks__proxy_",
+      "fields": {
+        "isUnique": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "id": {
+          "stringValue": "barracks__proxy_"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "resource": {
+          "integerValue": "2"
+        },
+        "cost": {
+          "integerValue": "40"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "2"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Go! Go! Go!"
+                    },
+                    "description": {
+                      "stringValue": "Go! Go! Go! \u003cActive\u003e \u003cMovement Phase\u003e: The active Biological Unit performs a 2\" Move action. This does not count towards its action limit."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Armed and Ready"
+                    },
+                    "description": {
+                      "stringValue": "Armed and Ready \u003cActive\u003e \u003cMovement Phase\u003e: The active Biological Unit Deploys from any table edge that is not a player's Entry Edge. No model may be set up Within 10\" of any Enemy model. This ability cannot be used if another Friendly Biological Unit has already been Deployed this Round."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "name": {
+          "stringValue": "Barracks (Proxy)"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/barracks__reactor_",
+      "fields": {
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "id": {
+          "stringValue": "barracks__reactor_"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "3"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "cost": {
+          "integerValue": "35"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Go! Go! Go!"
+                    },
+                    "description": {
+                      "stringValue": "Go! Go! Go! \u003cActive\u003e \u003cMovement Phase\u003e: The active Biological Unit performs a 2\" Move action. This does not count towards its action limit."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Terran Charge"
+                    },
+                    "description": {
+                      "stringValue": "Terran Charge \u003cReaction\u003e \u003cAssault Phase\u003e: Immediately after a Friendly Biological Unit completes a successful Charge, resolve the IMPACT (1) 4+ effect."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Barracks (Reactor)"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "isUnique": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/barracks__tech_lab_",
+      "fields": {
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Go! Go! Go!"
+                    },
+                    "description": {
+                      "stringValue": "Go! Go! Go! \u003cActive\u003e \u003cMovement Phase\u003e: The active Biological Unit performs a 2\" Move action. This does not count towards its action limit."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Let's Have a Blast!"
+                    },
+                    "description": {
+                      "stringValue": "Let's Have a Blast! \u003cActive\u003e \u003cAssault Phase\u003e: The active Biological Unit’s first Ranged Weapon used gain ANTI-EVADE (1)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "id": {
+          "stringValue": "barracks__tech_lab_"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Barracks (Tech Lab)"
+        },
+        "resource": {
+          "integerValue": "2"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "cost": {
+          "integerValue": "40"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/cocoon",
+      "fields": {
+        "tags": {
+          "stringValue": ""
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "id": {
+          "stringValue": "cocoon"
+        },
+        "name": {
+          "stringValue": "Cocoon"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Spawn Larva"
+                    },
+                    "description": {
+                      "stringValue": "Spawn Larva \u003cActive\u003e \u003cMovement Phase\u003e: The active Friendly non-Unique Biological Unit with a Size Characteristic of 1 resolves the RESPAWN (2) effect."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Ravager Morph"
+                    },
+                    "description": {
+                      "stringValue": "Ravager Morph \u003cActive\u003e \u003cMovement Phase\u003e: Once per Game. The active Friendly Roach Unit performs MORPH (Ravager) 1."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "cost": {
+          "integerValue": "30"
+        },
+        "resource": {
+          "integerValue": "0"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isUnique": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/daelaam",
+      "fields": {
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "id": {
+          "stringValue": "daelaam"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "1"
+              },
+              "Core": {
+                "integerValue": "3"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "1"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Mass Recall"
+                    },
+                    "description": {
+                      "stringValue": "Mass Recall \u003cActive\u003e \u003cMovement Phase\u003e: Once per Game. Set a Faction Indicator anywhere on the battlefield. All Friendly Protoss Units Within 6\" of this Faction Indicator are removed from the battlefield and returned to Reserves."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Dae’Uhl"
+                    },
+                    "description": {
+                      "stringValue": "Dae’Uhl \u003cReaction\u003e \u003cAny Phase\u003e: When a Friendly Unit receives Damage, reduce the Total Damage by 2 (to a minimum of 1)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "name": {
+          "stringValue": "Daelaam"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/defiler_mound",
+      "fields": {
+        "tags": {
+          "stringValue": ""
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Poisonous Essence"
+                    },
+                    "description": {
+                      "stringValue": "Poisonous Essence \u003cActive\u003e \u003cMovement Phase\u003e: Set a Faction Indicator on the active Friendly Unit. At the end of the Assault Phase, all Biological Enemy Units Engaged with the marked Unit suffer NON-LETHAL DAMAGE (2)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Tunnel Network"
+                    },
+                    "description": {
+                      "stringValue": "Tunnel Network \u003cActive\u003e \u003cMovement Phase\u003e: The active, Unengaged Ground Unit is returned to Reserves instead of performing an action."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "name": {
+          "stringValue": "Defiler Mound"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "1"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "id": {
+          "stringValue": "defiler_mound"
+        },
+        "cost": {
+          "integerValue": "35"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/dropship",
+      "fields": {
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "id": {
+          "stringValue": "dropship"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Dropship"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Strap in!"
+                    },
+                    "description": {
+                      "stringValue": "Strap in! \u003cActive\u003e \u003cMovement Phase\u003e: The active, Unengaged Ground Unit is returned to Reserves instead of performing an action."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Ready For Dust-off"
+                    },
+                    "description": {
+                      "stringValue": "Ready For Dust-off \u003cActive\u003e \u003cMovement Phase\u003e: Set a Faction Indicator anywhere on the battlefield more than 10\" away from any Enemy model. At the End of the Round, the controlling player may Deploy one Ground Unit from Reserves in base-to-base contact with this Faction Indicator."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "cost": {
+          "integerValue": "35"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/engineering_bay",
+      "fields": {
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "cost": {
+          "integerValue": "25"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Infantry Weapons"
+                    },
+                    "description": {
+                      "stringValue": "Infantry Weapons \u003cActive\u003e \u003cAssault Phase\u003e: The active Biological Unit’s first Ranged Weapon used gains CRITICAL HIT (1)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Infantry Armor"
+                    },
+                    "description": {
+                      "stringValue": "Infantry Armor \u003cReaction\u003e \u003cAny Phase\u003e: Immediately before a Friendly Biological Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "name": {
+          "stringValue": "Engineering Bay"
+        },
+        "id": {
+          "stringValue": "engineering_bay"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/evolution_chamber",
+      "fields": {
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "name": {
+          "stringValue": "Evolution Chamber"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "id": {
+          "stringValue": "evolution_chamber"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Extended Claws"
+                    },
+                    "description": {
+                      "stringValue": "Extended Claws \u003cActive\u003e \u003cAssault Phase\u003e: The active Unit gains a +1 Modifier to all IMPACT Hit Rolls."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Carapace"
+                    },
+                    "description": {
+                      "stringValue": "Carapace \u003cReaction\u003e \u003cAny Phase\u003e: Use Immediately before a Friendly Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "cost": {
+          "integerValue": "25"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/factory",
+      "fields": {
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Field Repair"
+                    },
+                    "description": {
+                      "stringValue": "Field Repair \u003cActive\u003e \u003cMovement Phase\u003e: The active Mechanical Unit resolves the HEAL (2) effect."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "name": {
+          "stringValue": "Factory"
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "2"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "cost": {
+          "integerValue": "35"
+        },
+        "id": {
+          "stringValue": "factory"
+        },
+        "isUnique": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/factory__tech_lab_",
+      "fields": {
+        "tags": {
+          "stringValue": ""
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Field Repair"
+                    },
+                    "description": {
+                      "stringValue": "Field Repair \u003cActive\u003e \u003cMovement Phase\u003e: The active Mechanical Unit resolves the HEAL (2) effect."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Pound 'em Flat!"
+                    },
+                    "description": {
+                      "stringValue": "Pound 'em Flat! \u003cActive\u003e \u003cAssault Phase\u003e: If the active Mechanical Unit has the Stationary Status, its first Ranged Weapon used gains PRECISION (2)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "name": {
+          "stringValue": "Factory (Tech Lab)"
+        },
+        "id": {
+          "stringValue": "factory__tech_lab_"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Elite": {
+                "integerValue": "2"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "cost": {
+          "integerValue": "40"
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "isUnique": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/forge",
+      "fields": {
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "id": {
+          "stringValue": "forge"
+        },
+        "cost": {
+          "integerValue": "30"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Ground Weapons"
+                    },
+                    "description": {
+                      "stringValue": "Ground Weapons \u003cActive\u003e \u003cAssault Phase\u003e: The active Ground Unit’s first Ranged Weapon used gains CRITICAL HIT (1)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Ground Armor"
+                    },
+                    "description": {
+                      "stringValue": "Ground Armor \u003cReaction\u003e \u003cAny Phase\u003e: Use Immediately before a Friendly Ground Unit makes an Armour Roll. That Unit gains TOUGH (1) for this roll."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "name": {
+          "stringValue": "Forge"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/gate_chronoboosted",
+      "fields": {
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Core": {
+                "integerValue": "1"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "cost": {
+          "integerValue": "35"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Quick Strikes"
+                    },
+                    "description": {
+                      "stringValue": "Quick Strikes \u003cActive\u003e \u003cCombat Phase\u003e: The active Unit’s first Close Combat Weapon used gains PRECISION (2)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Zealous Charge"
+                    },
+                    "description": {
+                      "stringValue": "Zealous Charge \u003cActive\u003e \u003cMovement Phase\u003e: The active Unit gains BUFF Speed (2)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "id": {
+          "stringValue": "gate_chronoboosted"
+        },
+        "name": {
+          "stringValue": "Gate Chronoboosted"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/gateway",
+      "fields": {
+        "id": {
+          "stringValue": "gateway"
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Quick Strikes"
+                    },
+                    "description": {
+                      "stringValue": "Quick Strikes \u003cActive\u003e \u003cCombat Phase\u003e: The active Unit’s first Close Combat Weapon used gains PRECISION (2)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "cost": {
+          "integerValue": "25"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "name": {
+          "stringValue": "Gateway"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/hatchery",
+      "fields": {
+        "cost": {
+          "integerValue": "30"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "name": {
+          "stringValue": "Hatchery"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Lie in Wait"
+                    },
+                    "description": {
+                      "stringValue": "Lie in Wait \u003cActive\u003e \u003cMovement Phase\u003e: The active, Unengaged Ground Unit gains the Burrowed Status."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Creep Spread"
+                    },
+                    "description": {
+                      "stringValue": "Creep Spread \u003cActive\u003e \u003cMovement Phase\u003e: Set a Creep Tumor token on the battlefield Within 6\" (Line of Sight is not required) of either a Friendly Entry Edge or an existing Friendly Creep Tumor token."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "id": {
+          "stringValue": "hatchery"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/healing_pathogen",
+      "fields": {
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "resource": {
+          "integerValue": "0"
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "healing_pathogen"
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Stukov's Forces"
+              }
+            ]
+          }
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "tags": {
+          "stringValue": "Stukov's Forces"
+        },
+        "name": {
+          "stringValue": "Healing Pathogen"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Universal Carrier"
+                    },
+                    "description": {
+                      "stringValue": "Universal Carrier \u003cPassive\u003e \u003cAny Phase\u003e: While an Enemy Unit has the INFESTATION Status, immediately after its supply is reduced or it is destroyed, target any Friendly Biological Unit Within 12\". This Friendly Unit resolves the HEAL (2) effect."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Stukov's Creep"
+                    },
+                    "description": {
+                      "stringValue": "Stukov's Creep \u003cPassive\u003e \u003cAny Phase\u003e: If an Enemy Unit ends a Move, Deploy, Run, Charge or Disengage action Within 1\" of a Friendly Creep Tumor token, remove that token from the battlefield. Creep Tumor tokens have STAY IN PLAY and DISPLACEMENT."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/hive",
+      "fields": {
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "cost": {
+          "integerValue": "35"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "name": {
+          "stringValue": "Hive"
+        },
+        "id": {
+          "stringValue": "hive"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Brutal Instinct"
+                    },
+                    "description": {
+                      "stringValue": "Brutal Instinct \u003cReaction\u003e \u003cMovement Phase\u003e: Immediately after an Enemy Unit ends its Activation Within 12\" of a Friendly, Ground Unit. That Friendly Unit gains or loses the BURROWED Status."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Creep Spread"
+                    },
+                    "description": {
+                      "stringValue": "Creep Spread \u003cActive\u003e \u003cMovement Phase\u003e: Set a Creep Tumor token on the battlefield Within 6\" (Line of Sight is not required) of either a Friendly Entry Edge or an existing Friendly Creep Tumor token."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/hungering_infestation",
+      "fields": {
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "name": {
+          "stringValue": "Hungering Infestation"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Growing Infestation"
+                    },
+                    "description": {
+                      "stringValue": "Growing Infestation \u003cPassive\u003e \u003cAny Phase\u003e: While an Enemy Unit has the INFESTATION Status, it is not eligible to use or to be targeted by any Enemy Reaction Special Ability, except Restoration."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Stukov's Creep"
+                    },
+                    "description": {
+                      "stringValue": "Stukov's Creep \u003cPassive\u003e \u003cAny Phase\u003e: If an Enemy Unit ends a Move, Deploy, Run, Charge or Disengage action Within 1\" of a Friendly Creep Tumor token, remove that token from the battlefield. Creep Tumor tokens have STAY IN PLAY and DISPLACEMENT."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": "Stukov's Forces"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Stukov's Forces"
+              }
+            ]
+          }
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "resource": {
+          "integerValue": "0"
+        },
+        "cost": {
+          "integerValue": "10"
+        },
+        "id": {
+          "stringValue": "hungering_infestation"
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              }
+            }
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/hydralisk_den",
+      "fields": {
+        "name": {
+          "stringValue": "Hydralisk Den"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "cost": {
+          "integerValue": "30"
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Elite": {
+                "integerValue": "2"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "id": {
+          "stringValue": "hydralisk_den"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Missile Attacks"
+                    },
+                    "description": {
+                      "stringValue": "Missile Attacks \u003cActive\u003e \u003cAssault Phase\u003e: The active Unit’s first Ranged Weapon used gains PRECISION (1)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "resource": {
+          "integerValue": "1"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/infested_barracks",
+      "fields": {
+        "isUnique": {
+          "booleanValue": false
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "cost": {
+          "integerValue": "30"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "id": {
+          "stringValue": "infested_barracks"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "name": {
+          "stringValue": "Infested Barracks"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "For the Swarm!"
+                    },
+                    "description": {
+                      "stringValue": "For the Swarm! \u003cActive\u003e \u003cMovement Phase\u003e: The active Biological Ground Unit performs a 2\" Move action. This does not count towards its action limit."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/infested_command_center",
+      "fields": {
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "id": {
+          "stringValue": "infested_command_center"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "cost": {
+          "integerValue": "30"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Parasitic Bio-Toxins"
+                    },
+                    "description": {
+                      "stringValue": "Parasitic Bio-Toxins \u003cReaction\u003e \u003cMovement Phase\u003e: Immediately after a Friendly Infested Unit ends their action Within 8\" of an Enemy Unit. That Enemy Unit gains the INFESTATION Status, this effect is treated as a DEBUFF."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Scanner Sweep"
+                    },
+                    "description": {
+                      "stringValue": "Scanner Sweep \u003cActive\u003e \u003cMovement Phase\u003e: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose the HIDDEN Status."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Stukov's Forces"
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": "Stukov's Forces"
+        },
+        "name": {
+          "stringValue": "Infested Command Center"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/kerrigan_s_swarm",
+      "fields": {
+        "resource": {
+          "integerValue": "1"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Omega Network"
+                    },
+                    "description": {
+                      "stringValue": "Omega Network \u003cActive\u003e \u003cMovement Phase\u003e: If there is no Friendly Omega Worm on the battlefield, set a Friendly Omega Worm Unit anywhere on GROUND LEVEL of the battlefield, more than 10\" away from any Enemy model. This Round, the Omega Worm is not eligible to use its Special Abilities (excluding Structure)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Wild Mutation"
+                    },
+                    "description": {
+                      "stringValue": "Wild Mutation \u003cActive\u003e \u003cAny Phase\u003e: If the active unit is ON CREEP, the Unit gains BUFF Speed (1) and its first Weapon used gains PRECISION (1)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Zerg Creep"
+                    },
+                    "description": {
+                      "stringValue": "Zerg Creep \u003cPassive\u003e \u003cAny Phase\u003e: During Army Building, select exactly one Creep Card and add it to your Army List, paying its listed cost (if any)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "name": {
+          "stringValue": "Kerrigan's Swarm"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "tags": {
+          "stringValue": "Kerrigan's Swarm"
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "id": {
+          "stringValue": "kerrigan_s_swarm"
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "2"
+              },
+              "Core": {
+                "integerValue": "3"
+              }
+            }
+          }
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Kerrigan's Swarm"
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/khalai",
+      "fields": {
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "name": {
+          "stringValue": "Khalai"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "2"
+              },
+              "Core": {
+                "integerValue": "3"
+              },
+              "Hero": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "tags": {
+          "stringValue": "Khalai"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Pylon Warp-In"
+                    },
+                    "description": {
+                      "stringValue": "Pylon Warp-In \u003cActive\u003e \u003cMovement Phase\u003e: If there is no Friendly Pylon on the battlefield, set a Friendly Pylon Unit anywhere on the GROUND LEVEL of the battlefield more than 10\" away from any Enemy model. This Round, the Pylon is not eligible to use its Special Abilities (excluding Structure)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Bound by the Khala"
+                    },
+                    "description": {
+                      "stringValue": "Bound by the Khala \u003cActive\u003e \u003cMovement Phase\u003e: At the end of the active Unit’s Activation, select one other Friendly Unit eligible to Activate in the current Phase. Immediately Activate that Unit."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Khalai"
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "khalai"
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/lair",
+      "fields": {
+        "isUnique": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "name": {
+          "stringValue": "Lair"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "id": {
+          "stringValue": "lair"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Predation"
+                    },
+                    "description": {
+                      "stringValue": "Predation \u003cActive\u003e \u003cAny Phase\u003e: The active Unit’s Close Combat Weapons gain INSTANT."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Creep Spread"
+                    },
+                    "description": {
+                      "stringValue": "Creep Spread \u003cActive\u003e \u003cMovement Phase\u003e: Set a Creep Tumor token on the battlefield Within 6\" (Line of Sight is not required) of either a Friendly Entry Edge or an existing Friendly Creep Tumor token."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "cost": {
+          "integerValue": "35"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/malignant_creep",
+      "fields": {
+        "isUnique": {
+          "booleanValue": true
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "resource": {
+          "integerValue": "0"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Malevolent Matriarch"
+                    },
+                    "description": {
+                      "stringValue": "Malevolent Matriarch \u003cPassive\u003e \u003cAssault Phase\u003e: If the active Friendly Zerg Unit declares a Charge action while ON CREEP, it gains +1 Modifier to IMPACT Hit Rolls."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Living Glob of Tissue"
+                    },
+                    "description": {
+                      "stringValue": "Living Glob of Tissue \u003cPassive\u003e \u003cAny Phase\u003e: Creep Tumor tokens have STAY IN PLAY and DISPLACEMENT."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Creep Removal"
+                    },
+                    "description": {
+                      "stringValue": "Creep Removal \u003cPassive\u003e \u003cAny Phase\u003e: If an Enemy Unit ends a Move, Deploy, Run, Charge or Disengage action Within 1\" of a Friendly Creep Tumor token, remove that token from the battlefield."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "name": {
+          "stringValue": "Malignant Creep"
+        },
+        "tags": {
+          "stringValue": "Kerrigan's Swarm"
+        },
+        "id": {
+          "stringValue": "malignant_creep"
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Kerrigan's Swarm"
+              }
+            ]
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "cost": {
+          "integerValue": "10"
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/nerazim",
+      "fields": {
+        "name": {
+          "stringValue": "Nerazim"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Might Of The Nerazim"
+                    },
+                    "description": {
+                      "stringValue": "Might Of The Nerazim \u003cReaction\u003e \u003cAny Phase\u003e: If a Friendly Unit loses the HIDDEN Status, it gains Buff Speed (2) and its first Weapon used CRITICAL HIT (2)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Darkness Descends"
+                    },
+                    "description": {
+                      "stringValue": "Darkness Descends \u003cActive\u003e \u003cMovement Phase\u003e: The active Biological Unit gains the HIDDEN Status until the End of the Round."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": "Nerazim"
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "2"
+              },
+              "Hero": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "3"
+              },
+              "Support": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "id": {
+          "stringValue": "nerazim"
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Nerazim"
+              }
+            ]
+          }
+        },
+        "resource": {
+          "integerValue": "1"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/nexus",
+      "fields": {
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "id": {
+          "stringValue": "nexus"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "2"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "cost": {
+          "integerValue": "40"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Ancient Pride"
+                    },
+                    "description": {
+                      "stringValue": "Ancient Pride \u003cActive\u003e \u003cAny Phase\u003e: The active Unit’s first Weapon used gains INSTANT."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Strategic Recall"
+                    },
+                    "description": {
+                      "stringValue": "Strategic Recall \u003cActive\u003e \u003cMovement Phase\u003e: The active, Unengaged Ground Unit is returned to Reserves instead of performing an action."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Nexus"
+        },
+        "isUnique": {
+          "booleanValue": true
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/nova_covert_ops",
+      "fields": {
+        "tags": {
+          "stringValue": "Nova Covert Ops"
+        },
+        "id": {
+          "stringValue": "nova_covert_ops"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "name": {
+          "stringValue": "Nova Covert Ops"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Griffin Support"
+                    },
+                    "description": {
+                      "stringValue": "Griffin Support \u003cActive\u003e \u003cMovement Phase\u003e: Set a Friendly Sabotage Drone Unit Within 12\" of a Friendly Unit, more than 1\" away from any Enemy model. Remove this Unit at the End of the Round."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Mark for Death"
+                    },
+                    "description": {
+                      "stringValue": "Mark for Death \u003cActive\u003e \u003cMovement Phase\u003e: Target an Enemy Unit on the battlefield. When a Friendly Unit makes an Attack targeting that Unit, its first Melee or Ranged Weapon used gains CRITICAL HIT (1) and PRECISION (1)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Nova Covert Ops"
+              }
+            ]
+          }
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "3"
+              },
+              "Support": {
+                "integerValue": "1"
+              },
+              "Hero": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/observer",
+      "fields": {
+        "tags": {
+          "stringValue": ""
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "id": {
+          "stringValue": "observer"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "name": {
+          "stringValue": "Observer"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "cost": {
+          "integerValue": "25"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Surveillance"
+                    },
+                    "description": {
+                      "stringValue": "Surveillance \u003cActive\u003e \u003cMovement Phase\u003e: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Gravitic Boosters"
+                    },
+                    "description": {
+                      "stringValue": "Gravitic Boosters \u003cReaction\u003e \u003cAssault Phase\u003e: Use immediately after a Friendly Unit rolls a D6 for Charge Distance. Add 1 to the Charge Distance for this Unit."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/orbital_command",
+      "fields": {
+        "isUnique": {
+          "booleanValue": true
+        },
+        "cost": {
+          "integerValue": "25"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "name": {
+          "stringValue": "Orbital Command"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "id": {
+          "stringValue": "orbital_command"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "ComSat Station"
+                    },
+                    "description": {
+                      "stringValue": "ComSat Station \u003cActive\u003e \u003cMovement Phase\u003e: Select one table edge that is not a player’s Entry Edge. Until the End of the Round, Enemy Units cannot Deploy from that edge."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Scanner Sweep"
+                    },
+                    "description": {
+                      "stringValue": "Scanner Sweep \u003cActive\u003e \u003cMovement Phase\u003e: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/overcharged_nexus",
+      "fields": {
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "cost": {
+          "integerValue": "35"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Photon Overcharge"
+                    },
+                    "description": {
+                      "stringValue": "Photon Overcharge \u003cReaction\u003e \u003cAny Phase\u003e: Use when an Enemy Unit enters the battlefield from Reserves via a location other than its own Entry Edge. That Unit immediately suffers HITS 3 (1)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Strategic Recall"
+                    },
+                    "description": {
+                      "stringValue": "Strategic Recall \u003cActive\u003e \u003cMovement Phase\u003e: The active, Unengaged Ground Unit is returned to Reserves instead of performing an action."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "id": {
+          "stringValue": "overcharged_nexus"
+        },
+        "name": {
+          "stringValue": "Overcharged Nexus"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "factionTags": {
+          "arrayValue": {}
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/overlord",
+      "fields": {
+        "name": {
+          "stringValue": "Overlord"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "cost": {
+          "integerValue": "35"
+        },
+        "id": {
+          "stringValue": "overlord"
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Excrete Creep"
+                    },
+                    "description": {
+                      "stringValue": "Excrete Creep \u003cActive\u003e \u003cAssault Phase\u003e: Set a Creep Tumor token on the battlefield Within 6\" (Line of Sight is not required) of either a Friendly Entry Edge or an existing Friendly Creep Tumor token."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Ventral Sacs"
+                    },
+                    "description": {
+                      "stringValue": "Ventral Sacs \u003cActive\u003e \u003cMovement Phase\u003e: Set a Faction Indicator anywhere on the battlefield more than 10\" away from any Enemy model. At the End of the Round, the controlling player may Deploy one Ground Unit from Reserves in base-to-base contact with this Faction Indicator."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "resource": {
+          "integerValue": "1"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/overseer",
+      "fields": {
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "1"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "id": {
+          "stringValue": "overseer"
+        },
+        "cost": {
+          "integerValue": "25"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Pneumatized Carapace"
+                    },
+                    "description": {
+                      "stringValue": "Pneumatized Carapace \u003cReaction\u003e \u003cAssault Phase\u003e: Use Immediately after a Friendly Unit rolls a D6 for Charge Distance. Roll an additional D6 and use the higher result to calculate the total Charge Distance."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Oversight Mode"
+                    },
+                    "description": {
+                      "stringValue": "Oversight Mode \u003cActive\u003e \u003cMovement Phase\u003e: Set a Faction Indicator anywhere on the battlefield. While Enemy Units are Within 6\" of this Faction Indicator, they lose HIDDEN Status."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "name": {
+          "stringValue": "Overseer"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/power_field",
+      "fields": {
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Guardian Shell"
+                    },
+                    "description": {
+                      "stringValue": "Guardian Shell \u003cReaction\u003e \u003cAny Phase\u003e: Use Immediately before a Friendly Ground Unit makes an Armour Roll. That Unit gains DODGE (2) for this roll."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "name": {
+          "stringValue": "Power Field"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "cost": {
+          "integerValue": "40"
+        },
+        "id": {
+          "stringValue": "power_field"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "1"
+              }
+            }
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/raynor_s_raiders",
+      "fields": {
+        "resource": {
+          "integerValue": "1"
+        },
+        "id": {
+          "stringValue": "raynor_s_raiders"
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "1"
+              },
+              "Core": {
+                "integerValue": "3"
+              }
+            }
+          }
+        },
+        "tags": {
+          "stringValue": "Raynor's Raiders"
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Raynor's Raiders"
+              }
+            ]
+          }
+        },
+        "name": {
+          "stringValue": "Raynor's Raiders"
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Rapid Ingress"
+                    },
+                    "description": {
+                      "stringValue": "Rapid Ingress \u003cActive\u003e \u003cMovement Phase\u003e: Set a Friendly Point Defence Drone Unit anywhere on the battlefield, more than 1\" away from any Enemy model. Remove this Unit at the End of the Round."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Ready for Pickup?"
+                    },
+                    "description": {
+                      "stringValue": "Ready for Pickup? \u003cActive\u003e \u003cMovement Phase\u003e: Once per Game. The active Unit resolves the PLACE (12) effect. Models set by this effect cannot be set up Within the Engagement Range of any Enemy Unit. This resolves instead of performing a standard action."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/reactive_creep",
+      "fields": {
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Reactive Tissue"
+                    },
+                    "description": {
+                      "stringValue": "Reactive Tissue \u003cPassive\u003e \u003cAny Phase\u003e: While a Friendly Zerg Unit is ON CREEP, it gains DODGE (1) against any attacks targeting it."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Living Glob of Tissue"
+                    },
+                    "description": {
+                      "stringValue": "Living Glob of Tissue \u003cPassive\u003e \u003cAny Phase\u003e: Creep Tumor tokens have STAY IN PLAY and DISPLACEMENT."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Creep Removal"
+                    },
+                    "description": {
+                      "stringValue": "Creep Removal \u003cPassive\u003e \u003cAny Phase\u003e: If an Enemy Unit ends a Move, Deploy, Run, Charge or Disengage action Within 1\" of a Friendly Creep Tumor token, remove that token from the battlefield."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Zagara's Swarm"
+              }
+            ]
+          }
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "name": {
+          "stringValue": "Reactive Creep"
+        },
+        "resource": {
+          "integerValue": "0"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "tags": {
+          "stringValue": "Zagara's Swarm"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "cost": {
+          "integerValue": "10"
+        },
+        "id": {
+          "stringValue": "reactive_creep"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/roach_warren",
+      "fields": {
+        "id": {
+          "stringValue": "roach_warren"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Nasty Surprise"
+                    },
+                    "description": {
+                      "stringValue": "Nasty Surprise \u003cActive\u003e \u003cAssault Phase\u003e: The active Ground Unit loses the Burrowed Status."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "name": {
+          "stringValue": "Roach Warren"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "cost": {
+          "integerValue": "25"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/robotics_facility",
+      "fields": {
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Plasma Shields"
+                    },
+                    "description": {
+                      "stringValue": "Plasma Shields \u003cReaction\u003e \u003cAny Phase\u003e: Use Immediately before a Friendly Mechanical Ground Unit makes an Armour Roll. If this Unit has the Shielded Status, it gains TOUGH (1) and DODGE (1) for this roll."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "robotics_facility"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "name": {
+          "stringValue": "Robotics Facility"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "2"
+              },
+              "Core": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "cost": {
+          "integerValue": "35"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/robotics_support_bay",
+      "fields": {
+        "id": {
+          "stringValue": "robotics_support_bay"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "name": {
+          "stringValue": "Robotics Support Bay"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Master of Robotics"
+                    },
+                    "description": {
+                      "stringValue": "Master of Robotics \u003cActive\u003e \u003cMovement Phase\u003e: The active Mechanical Unit resolves the HEAL (2) effect."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "cost": {
+          "integerValue": "35"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/spawning_pool",
+      "fields": {
+        "tags": {
+          "stringValue": ""
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Feral Rage"
+                    },
+                    "description": {
+                      "stringValue": "Feral Rage \u003cActive\u003e \u003cCombat Phase\u003e: The active Unit’s first Close Combat Weapon used gains PRECISION (2)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "name": {
+          "stringValue": "Spawning Pool"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "1"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "id": {
+          "stringValue": "spawning_pool"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "cost": {
+          "integerValue": "25"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/spawning_pool__six_pool_",
+      "fields": {
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Feral Rage"
+                    },
+                    "description": {
+                      "stringValue": "Feral Rage \u003cActive\u003e \u003cCombat Phase\u003e: The active Unit’s first Close Combat Weapon used gains PRECISION (2)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Timing Push"
+                    },
+                    "description": {
+                      "stringValue": "Timing Push \u003cActive\u003e \u003cMovement Phase\u003e: The active Zergling Unit Deploys from any table edge that is not a Player’s Entry Edge. This action must end more than 10\" away from any Enemy model."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "spawning_pool__six_pool_"
+        },
+        "name": {
+          "stringValue": "Spawning Pool (Six Pool)"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "resource": {
+          "integerValue": "2"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "cost": {
+          "integerValue": "35"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/stukov_s_forces",
+      "fields": {
+        "cost": {
+          "integerValue": "0"
+        },
+        "id": {
+          "stringValue": "stukov_s_forces"
+        },
+        "tags": {
+          "stringValue": "Stukov's Forces"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "2"
+              },
+              "Core": {
+                "integerValue": "4"
+              }
+            }
+          }
+        },
+        "name": {
+          "stringValue": "Stukov's Forces"
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Stukov's Forces"
+              }
+            ]
+          }
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Ashes of the UED"
+                    },
+                    "description": {
+                      "stringValue": "Ashes of the UED \u003cPassive\u003e \u003cAny Phase\u003e: During Army Building, you may include Units with the Terran Faction Tag and both Ground and Mechanical Combat Tags in your army. Those Units gain the Infested Combat Tag. Treat any CP cost for those Units' Special Abilities as BM. These Units cannot gain the BURROWED Status."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Infestation"
+                    },
+                    "description": {
+                      "stringValue": "Infestation \u003cPassive\u003e \u003cAny Phase\u003e: During Army Building, select exactly one Virus Card and add it to your Army List, paying its listed cost (if any)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Hostile Incubation"
+                    },
+                    "description": {
+                      "stringValue": "Hostile Incubation \u003cActive\u003e \u003cMovement Phase\u003e: If there is no Friendly Infested Missile Turret on the battlefield, set a Friendly Infested Missile Turret Unit anywhere on the GROUND LEVEL of the battlefield more than 10\" away from any Enemy model. This Round, the Missile Turret is not eligible to use its Special Abilities (excluding Structure)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/supply_depot",
+      "fields": {
+        "id": {
+          "stringValue": "supply_depot"
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Hero": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "cost": {
+          "integerValue": "40"
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Additional Supply Depots"
+                    },
+                    "description": {
+                      "stringValue": "Additional Supply Depots \u003cActive\u003e \u003cMovement Phase\u003e: The active Unit’s Supply Value is improved by 1 for Controlling and Contesting Mission Markers and completing objectives."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "name": {
+          "stringValue": "Supply Depot"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/tal_darim",
+      "fields": {
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Core": {
+                "integerValue": "4"
+              }
+            }
+          }
+        },
+        "resource": {
+          "integerValue": "0"
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Proxy Pylon"
+                    },
+                    "description": {
+                      "stringValue": "Proxy Pylon \u003cActive\u003e \u003cMovement Phase\u003e: If there is no Friendly Tal'darim Pylon on the battlefield, set a Friendly Tal'darim Pylon Unit anywhere on the GROUND LEVEL of the battlefield more than 10\" away from any Enemy model. This Round, the Tal'darim Pylon is not eligible to use its Special Abilities (excluding Structure)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Chain of Ascension"
+                    },
+                    "description": {
+                      "stringValue": "Chain of Ascension \u003cPassive\u003e \u003cAny Phase\u003e: Calculate the total lost Supply of all Friendly Units. While this total is:"
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "4 or more"
+                    },
+                    "description": {
+                      "stringValue": "4 or more: All your Units' first used weapons gain PRECISION (1)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "6 or more"
+                    },
+                    "description": {
+                      "stringValue": "6 or more: All your Units' first used weapons gain CRITICAL HIT (1)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "tal_darim"
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "tags": {
+          "stringValue": "Tal'darim"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "name": {
+          "stringValue": "Tal'darim"
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Tal'darim"
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/templar_archives",
+      "fields": {
+        "cost": {
+          "integerValue": "40"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Ancestral Wisdom"
+                    },
+                    "description": {
+                      "stringValue": "Ancestral Wisdom \u003cReaction\u003e \u003cAny Phase\u003e: Once per Round, when a Friendly Support Unit activates a Special Ability that costs PE, resolve that ability with its PE cost reduced by 1 (to a minimum of 0). Do not Exhaust this card."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "2"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "name": {
+          "stringValue": "Templar Archives"
+        },
+        "id": {
+          "stringValue": "templar_archives"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "tags": {
+          "stringValue": ""
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/templar_caste",
+      "fields": {
+        "tags": {
+          "stringValue": "Templar Caste"
+        },
+        "name": {
+          "stringValue": "Templar Caste"
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "2"
+              },
+              "Hero": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "3"
+              }
+            }
+          }
+        },
+        "id": {
+          "stringValue": "templar_caste"
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Templar Caste"
+              }
+            ]
+          }
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Our Duty is Unending"
+                    },
+                    "description": {
+                      "stringValue": "Our Duty is Unending \u003cActive\u003e \u003cAny Phase\u003e: Once per Game. Select up to two of your Exhausted Tactical Cards. Return them to the Ready state."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Khassar de Templari"
+                    },
+                    "description": {
+                      "stringValue": "Khassar de Templari \u003cActive\u003e \u003cAny Phase\u003e: Instead of performing an action, select one other Friendly Biological Unit that has already been Activated this Phase. That Unit immediately performs one action available in the current Phase, then suffers NON-LETHAL DAMAGE (3)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/terran_armed_forces",
+      "fields": {
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "name": {
+          "stringValue": "Terran Armed Forces"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Tactical Retreat"
+                    },
+                    "description": {
+                      "stringValue": "Tactical Retreat \u003cActive\u003e \u003cMovement Phase\u003e: The active Unit ignores the Disengage penalty for the remainder of the Round."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Terran Tenacity"
+                    },
+                    "description": {
+                      "stringValue": "Terran Tenacity \u003cActive\u003e \u003cMovement Phase\u003e: Once per Game. Immediately claim the First Player Marker. No other player may claim the First Player Marker for the remainder of this Phase."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "terran_armed_forces"
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Core": {
+                "integerValue": "3"
+              }
+            }
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "faction": {
+          "stringValue": "Terran"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/twilight_council",
+      "fields": {
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Weapons of the Firstborn"
+                    },
+                    "description": {
+                      "stringValue": "Weapons of the Firstborn \u003cActive\u003e \u003cAssault Phase\u003e: The active Ground Unit’s first Ranged Weapon used gains BUFF Range (4)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Veil of Shadows"
+                    },
+                    "description": {
+                      "stringValue": "Veil of Shadows \u003cReaction\u003e \u003cAny Phase\u003e: Use Immediately after a Friendly Unit resolves a PLACE effect. That Unit immediately resolves the HEAL (2) effect."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "name": {
+          "stringValue": "Twilight Council"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "cost": {
+          "integerValue": "40"
+        },
+        "id": {
+          "stringValue": "twilight_council"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/vanadium_plating",
+      "fields": {
+        "name": {
+          "stringValue": "Vanadium Plating"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "faction": {
+          "stringValue": "Terran"
+        },
+        "cost": {
+          "integerValue": "25"
+        },
+        "isUnique": {
+          "booleanValue": false
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "id": {
+          "stringValue": "vanadium_plating"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Crystalline Alloy"
+                    },
+                    "description": {
+                      "stringValue": "Crystalline Alloy \u003cReaction\u003e \u003cAny Phase\u003e: Immediately before a Friendly Mechanical Unit makes an Armour Roll. That Unit gains DODGE (2) for this roll."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "resource": {
+          "integerValue": "1"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/void_seeker",
+      "fields": {
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "cost": {
+          "integerValue": "40"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "id": {
+          "stringValue": "void_seeker"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "1"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "name": {
+          "stringValue": "Void Seeker"
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Nerazim"
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": "Nerazim"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Personal Transport"
+                    },
+                    "description": {
+                      "stringValue": "Personal Transport \u003cActive\u003e \u003cMovement Phase\u003e: Instead of performing an action, the active, Unengaged Ground Unit is returned to Reserves. Then, it performs a Deploy action."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Anakh Su'n"
+                    },
+                    "description": {
+                      "stringValue": "Anakh Su'n \u003cActive\u003e \u003cMovement Phase\u003e: This Unit gains the HIDDEN Status until it performs another action."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/warp_gate",
+      "fields": {
+        "tags": {
+          "stringValue": ""
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "name": {
+          "stringValue": "Warp Gate"
+        },
+        "id": {
+          "stringValue": "warp_gate"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Quick Strikes"
+                    },
+                    "description": {
+                      "stringValue": "Quick Strikes \u003cActive\u003e \u003cCombat Phase\u003e: The active Unit’s first Close Combat Weapon used gains PRECISION (2)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Warp In"
+                    },
+                    "description": {
+                      "stringValue": "Warp In \u003cActive\u003e \u003cMovement Phase\u003e: The active Ground Unit Deploys from any table edge that is not a player’s Entry Edge. This deployment must end more than 10\" away from any Enemy model. The controlling player cannot use this ability if another Friendly Ground Unit has already Deployed this Round."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "cost": {
+          "integerValue": "40"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "2"
+              }
+            }
+          }
+        },
+        "factionTags": {
+          "arrayValue": {}
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/warp_prism",
+      "fields": {
+        "tags": {
+          "stringValue": ""
+        },
+        "id": {
+          "stringValue": "warp_prism"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "name": {
+          "stringValue": "Warp Prism"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "faction": {
+          "stringValue": "Protoss"
+        },
+        "cost": {
+          "integerValue": "35"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Phase"
+                    },
+                    "description": {
+                      "stringValue": "Phase \u003cActive\u003e \u003cMovement Phase\u003e: The active Unit resolves the PLACE (3) effect."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Warp Conduit"
+                    },
+                    "description": {
+                      "stringValue": "Warp Conduit \u003cActive\u003e \u003cMovement Phase\u003e: Set a Faction Indicator anywhere on the battlefield more than 10\" away from any Enemy model. At the End of the Round, the controlling player may Deploy one Ground Unit from Reserves in base-to-base contact with this Faction Indicator."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Support": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "2"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              }
+            }
+          }
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/weighted_pustule",
+      "fields": {
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Fetid Touch"
+                    },
+                    "description": {
+                      "stringValue": "Fetid Touch \u003cPassive\u003e \u003cAny Phase\u003e: While an Enemy Unit has the INFESTATION Status, it cannot resolve the PLACE and set effects and cannot be returned to Reserves."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Stukov's Creep"
+                    },
+                    "description": {
+                      "stringValue": "Stukov's Creep \u003cPassive\u003e \u003cAny Phase\u003e: If an Enemy Unit ends a Move, Deploy, Run, Charge or Disengage action Within 1\" of a Friendly Creep Tumor token, remove that token from the battlefield. Creep Tumor tokens have STAY IN PLAY and DISPLACEMENT."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Stukov's Forces"
+              }
+            ]
+          }
+        },
+        "name": {
+          "stringValue": "Weighted Pustule"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Core": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "0"
+              },
+              "Air": {
+                "integerValue": "0"
+              },
+              "Elite": {
+                "integerValue": "0"
+              },
+              "Hero": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "tags": {
+          "stringValue": "Stukov's Forces"
+        },
+        "isFactionCard": {
+          "booleanValue": false
+        },
+        "id": {
+          "stringValue": "weighted_pustule"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "cost": {
+          "integerValue": "5"
+        },
+        "resource": {
+          "integerValue": "0"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/zagara_s_swarm",
+      "fields": {
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Scourge Queen"
+                    },
+                    "description": {
+                      "stringValue": "Scourge Queen \u003cActive\u003e \u003cCombat Phase\u003e: If the active Unit contains more models than the combined number of models in all Engaged Enemy Units, its Close Combat Weapons gain INSTANT and PRECISION (4)."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Instinctive Reaction"
+                    },
+                    "description": {
+                      "stringValue": "Instinctive Reaction \u003cReaction\u003e \u003cAny Phase\u003e: Use when an Enemy Unit declares a Close Combat Attack against a Friendly Unit. That Friendly Unit becomes eligible to make an Evade Roll against that attack."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Zerg Creep"
+                    },
+                    "description": {
+                      "stringValue": "Zerg Creep \u003cPassive\u003e \u003cAny Phase\u003e: During Army Building, select exactly one Creep Card and add it to your  Army List, paying its listed cost (if any)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "tags": {
+          "stringValue": "Zagara's Swarm"
+        },
+        "id": {
+          "stringValue": "zagara_s_swarm"
+        },
+        "name": {
+          "stringValue": "Zagara's Swarm"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Air": {
+                "integerValue": "0"
+              },
+              "Support": {
+                "integerValue": "1"
+              },
+              "Core": {
+                "integerValue": "4"
+              },
+              "Hero": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "0"
+              }
+            }
+          }
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "factionTags": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Zagara's Swarm"
+              }
+            ]
+          }
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "cost": {
+          "integerValue": "0"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    },
+    {
+      "name": "projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards/zerg_swarm",
+      "fields": {
+        "id": {
+          "stringValue": "zerg_swarm"
+        },
+        "slots": {
+          "mapValue": {
+            "fields": {
+              "Hero": {
+                "integerValue": "0"
+              },
+              "Core": {
+                "integerValue": "3"
+              },
+              "Support": {
+                "integerValue": "1"
+              },
+              "Elite": {
+                "integerValue": "1"
+              },
+              "Air": {
+                "integerValue": "1"
+              }
+            }
+          }
+        },
+        "factionTags": {
+          "arrayValue": {}
+        },
+        "isFactionCard": {
+          "booleanValue": true
+        },
+        "cost": {
+          "integerValue": "0"
+        },
+        "timestamp": {
+          "timestampValue": "2026-11-24T10:29:15.222Z"
+        },
+        "isUnique": {
+          "booleanValue": true
+        },
+        "faction": {
+          "stringValue": "Zerg"
+        },
+        "boosts": {
+          "arrayValue": {
+            "values": [
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Rapid Burrowing"
+                    },
+                    "description": {
+                      "stringValue": "Rapid Burrowing \u003cActive\u003e \u003cMovement Phase\u003e: Select one Friendly, Unengaged Ground Zerg Unit on the battlefield. That Unit gains the Burrowed Status, even if it has already been Activated this Round."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Brood Instinct"
+                    },
+                    "description": {
+                      "stringValue": "Brood Instinct \u003cReaction\u003e \u003cAny Phase\u003e: Use Immediately before a Friendly Unit makes an Evade Roll. Apply a +1 Modifier to that roll."
+                    }
+                  }
+                }
+              },
+              {
+                "mapValue": {
+                  "fields": {
+                    "name": {
+                      "stringValue": "Zerg Creep"
+                    },
+                    "description": {
+                      "stringValue": "Zerg Creep \u003cPassive\u003e \u003cAny Phase\u003e: During Army Building, select exactly one Creep Card and add it to your Army List, paying its listed cost (if any)."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tags": {
+          "stringValue": ""
+        },
+        "resource": {
+          "integerValue": "1"
+        },
+        "name": {
+          "stringValue": "Zerg Swarm"
+        }
+      },
+      "createTime": "2026-11-24T10:29:15.286757Z",
+      "updateTime": "2026-11-24T10:29:15.286757Z"
+    }
+  ]
+}

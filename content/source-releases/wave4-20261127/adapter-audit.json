@@ -1,0 +1,30 @@
+{
+  "schema": "starcraft_tmg_official_command_center_dataset_audit_v1",
+  "datasetHash": "66a15120a2f995707e3b5271753c754b581050ec14665a2eb4245f2651e1ae25",
+  "sourceSnapshotHash": "60ca66a0a1f3eca17f6cea3ac49f6aaa71e0e1b2b957407156c94630acf20c80",
+  "dataVersions": {
+    "cardsVersion": "88",
+    "rulesVersion": "50",
+    "unitsVersion": "98"
+  },
+  "counts": {
+    "records": 365,
+    "byAuthorityDisposition": {
+      "community_display_only": 204,
+      "official_current_product_candidate": 146,
+      "official_rule_prose_review_required": 15
+    },
+    "officialProductByType": {
+      "deployment": 13,
+      "mission": 14,
+      "tactical_card": 59,
+      "unit": 60
+    },
+    "unclassified": 0
+  },
+  "productionRoomBindingEligible": false,
+  "repositoryFallbackAllowed": false,
+  "canAffectRules": false,
+  "trainingTruth": false,
+  "auditHash": "1f137f579f9bf710e3ec913f96dc21ad4e00a1375bd263ee3b25fe1caccb4071"
+}
