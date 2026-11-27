@@ -1,3 +1,4 @@
+import { allowsOfficialInfestationReactionV1 } from '../rule-atoms/official-infestation-restrictions-v1.mjs';
 import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { OFFICIAL_OCULAR_OVERWATCH_DEFINITION_ID } from '../rule-atoms/official-overwatch-attack-policy-v1.mjs';
 import { OFFICIAL_INFESTATION_TRANSFER_DEFINITION_ID, resolveOfficialInfestationTransferTargetsV1,
@@ -891,6 +892,9 @@ function routeEligible(state, window, route, instance) {
   const target = targetFor(window, state);
   const attacker = attackerFor(window, state);
   const source = instance.sourcePiece;
+  const { role: virusRecipientRole, recipient: virusRecipient } = reactionRecipient(state, window, route, instance);
+  if (!allowsOfficialInfestationReactionV1(state, { sideKey: instance.sideKey, sourcePieceId: source?.id,
+    recipientPieceId: virusRecipientRole === 'payment_reference' ? null : virusRecipient?.id, abilityName: route.abilityName })) return false;
   if (route.effectKind === 'infestation_transfer') {
     return resolveOfficialInfestationTransferTargetsV1(state, window.context, source).length > 0;
   }

@@ -24,15 +24,17 @@ export async function loadWave4TurretInputs(root) {
 }
 const turretId = 'army_units:infested_missile_turret';
 const unit = (id, key) => ({ unitInstanceId: id, recordKey: 'army_units:' + key, compositionKind: 'small', upgrades: [] });
-export function createWave4TurretScene(inputs, { kind = 'overwatch', round = 2, suppress = false, zeroSupply = false, includeMelee = false } = {}) {
+export function createWave4TurretScene(inputs, { kind = 'overwatch', round = 2, suppress = false, zeroSupply = false, includeMelee = false, virusCard = 'healing_pathogen', enemyCard = 'armory', extraReactionDefinitionIds = [] } = {}) {
   const infestation = kind === 'infestation';
-  const sourceDefinitionIds = [...inputs.scope.definitionIds,
+  const virusDefinitionId = ({hungering_infestation:'card:hungering_infestation/growing-infestation-any@1', weighted_pustule:'card:weighted_pustule/fetid-touch-any@1'})[virusCard];
+  const characteristicIds = ['unit:infested_missile_turret/detection-any-phase@1', ...(virusDefinitionId ? [virusDefinitionId] : [])];
+  const sourceDefinitionIds = [...inputs.scope.definitionIds, ...(virusDefinitionId ? [virusDefinitionId] : []), ...extraReactionDefinitionIds,
     ...(infestation ? ['unit:medic/restoration-any-phase@1'] : ['unit:raven/railguns-assault-phase@1'])];
   const own = { sideKey: 'player1', scaleId: 'Standard', mineralBudget: 2000,
-    factionRecordKey: 'tactical_cards:stukov_s_forces', tacticalCardRecordKeys: ['tactical_cards:healing_pathogen'],
+    factionRecordKey: 'tactical_cards:stukov_s_forces', tacticalCardRecordKeys: ['tactical_cards:' + virusCard],
     units: [unit('actor', zeroSupply ? 'goliath' : 'hydralisk')] };
   const opponent = { sideKey: 'player2', scaleId: 'Standard', mineralBudget: 2000,
-    factionRecordKey: 'tactical_cards:terran_armed_forces', tacticalCardRecordKeys: ['tactical_cards:armory'],
+    factionRecordKey: 'tactical_cards:terran_armed_forces', tacticalCardRecordKeys: ['tactical_cards:' + enemyCard],
     units: infestation ? [unit('fallen', 'marine'), unit('recipient', 'marine'), unit('restorer', 'medic')]
       : [unit('enemy', 'raven')] };
   const detection = 'unit:infested_missile_turret/detection-any-phase@1';
@@ -40,9 +42,9 @@ export function createWave4TurretScene(inputs, { kind = 'overwatch', round = 2, 
     candidatesBySide: { player1: own, player2: opponent }, sourceDefinitionIds,
     unitLifecycleDefinitionIds: inputs.lifecycle.definitionIds,
     structureDefinitionIds: ['unit:infested_missile_turret/structure-any-phase@1'],
-    characteristicDefinitionIds: [detection], battlefieldModifierDefinitionIds: ['unit:infested_missile_turret/source-of-creep-any-phase@1'],
+    characteristicDefinitionIds: characteristicIds, battlefieldModifierDefinitionIds: ['unit:infested_missile_turret/source-of-creep-any-phase@1'],
     reactionDefinitionIds: ['unit:infested_missile_turret/ocular-overwatch-assault-phase@1',
-      'unit:infested_missile_turret/infestation-any-phase@1', ...(infestation ? ['unit:medic/restoration-any-phase@1'] : [])],
+      'unit:infested_missile_turret/infestation-any-phase@1', ...extraReactionDefinitionIds, ...(infestation ? ['unit:medic/restoration-any-phase@1'] : [])],
     canonicalResourceTypes: true, includeAbilitySourcePhases: true, includeCharacteristicConsumers: true,
     includeHiddenRangedAndEvade: true, includeDetectionHiddenLoss: true, includeMelee });
   const state = { ...built.state, round, phase: 'assault', stage: 'activation_phases',
@@ -83,6 +85,7 @@ export function createWave4TurretScene(inputs, { kind = 'overwatch', round = 2, 
   state.pieces.push(turret);
   declareWave3EngineeringCoherencyV1(state, { planIdPrefix: 'wave4-turret-' + kind });
   return { state, sourceDefinitionIds,
+    ...(virusDefinitionId ? { characteristicRuntimeDefinitionIds: characteristicIds } : {}),
     runtimeOptions: { includeRanged: true, includePrecisionChoices: true, includeArmourChoices: true, includeMelee,
       weaponDefinitionIds: ['unit:infested_missile_turret/firefly-missiles-assault-phase@1'],
       includeReleasePhaseControl: true },

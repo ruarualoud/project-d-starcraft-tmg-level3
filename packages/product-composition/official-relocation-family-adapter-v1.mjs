@@ -1,3 +1,4 @@
+import { assertOfficialInfestationPlacementV1 } from '../rule-atoms/official-infestation-restrictions-v1.mjs';
 import { officialSpatialRuleErrorV1 } from '../rule-atoms/official-spatial-proposal-error-v1.mjs';
 import { quoteOfficialUnitAbilityModifiersV1, consumeOfficialUnitAbilityModifiersV1 } from './official-unit-ability-payment-modifiers-v1.mjs';
 import {projectOfficialDeploymentSupplyV1} from '../rule-atoms/official-deployment-supply-projection-v1.mjs';
@@ -725,6 +726,9 @@ function actionActors(state, route, instance) {
 }
 function routeAvailable(state, route, instance, actor) {
   cardReady(instance);
+  if (['direct_place', 'entry_edge_place', 'friendly_anchor_place'].includes(route.effectKind)) {
+    assertOfficialInfestationPlacementV1(state, actor.id, 'place');
+  }
   if (route.actionKind === "deploy_from_reserves"
     || route.actionKind === "special_deploy") {
     if (!deployTimingAvailable(state, route, instance.sideKey, actor)) return false;

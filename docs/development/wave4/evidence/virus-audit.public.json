@@ -1,0 +1,166 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_current_consumer_audit_v1",
+  "status": "passed",
+  "runRef": "build/wave4-web/virus-restrictions/audit-Z69ZOo",
+  "results": [
+    {
+      "id": "infected-ordinary-move",
+      "currentRuntimeColdReplay": true,
+      "queryReceiptHash": "89210bd4c06740d15b1d156359bb6371c4b946725d0ebec8ef24978834dd06a9",
+      "initialRestrictionFacts": {
+        "pieceId": "enemy",
+        "cannotGainBurrowed": false,
+        "cannotReturnToReserves": true,
+        "cannotResolvePlace": true,
+        "cannotResolveSet": true,
+        "impactImmune": false,
+        "sourceDefinitionIds": [
+          "card:weighted_pustule/fetid-touch-any@1"
+        ],
+        "sourceFeatureHashes": [
+          "872573773c9f602f790bc218a9c3b47aef5ecb535b85a4c4d5cdabf9578f2630"
+        ],
+        "trainingTruth": false
+      },
+      "attacks": [],
+      "reactions": []
+    },
+    {
+      "id": "clean-blink",
+      "currentRuntimeColdReplay": true,
+      "queryReceiptHash": "0353f21afe876ecce354261865d21f0b6612e08a96cec88508ba5f4a307ec3d2",
+      "initialRestrictionFacts": {
+        "pieceId": "enemy",
+        "cannotGainBurrowed": false,
+        "cannotReturnToReserves": false,
+        "impactImmune": false,
+        "sourceDefinitionIds": [],
+        "sourceFeatureHashes": [],
+        "trainingTruth": false
+      },
+      "attacks": [],
+      "reactions": []
+    },
+    {
+      "id": "clean-recall",
+      "currentRuntimeColdReplay": true,
+      "queryReceiptHash": "0353f21afe876ecce354261865d21f0b6612e08a96cec88508ba5f4a307ec3d2",
+      "initialRestrictionFacts": {
+        "pieceId": "enemy",
+        "cannotGainBurrowed": false,
+        "cannotReturnToReserves": false,
+        "impactImmune": false,
+        "sourceDefinitionIds": [],
+        "sourceFeatureHashes": [],
+        "trainingTruth": false
+      },
+      "attacks": [],
+      "reactions": []
+    },
+    {
+      "id": "growing-blocks-armour",
+      "currentRuntimeColdReplay": true,
+      "queryReceiptHash": "b4483b897d8bb08ec603995406f31e80f77eea2a6a667f9bfdf664ddb5abae94",
+      "initialRestrictionFacts": {
+        "pieceId": "fallen",
+        "cannotGainBurrowed": false,
+        "cannotReturnToReserves": false,
+        "enemyReactionRestrictedBySideKeys": [
+          "player1"
+        ],
+        "restorationException": true,
+        "impactImmune": false,
+        "sourceDefinitionIds": [
+          "card:hungering_infestation/growing-infestation-any@1"
+        ],
+        "sourceFeatureHashes": [
+          "8694dce29df005767e2473e36ddcc06aa1bc5a05d954f729c6f40af35550702a"
+        ],
+        "trainingTruth": false
+      },
+      "attacks": [
+        {
+          "pieceId": "actor"
+        }
+      ],
+      "reactions": []
+    },
+    {
+      "id": "growing-clean-control",
+      "currentRuntimeColdReplay": true,
+      "queryReceiptHash": "92221c05c21fa3850f4622a1f07619e0dd8e0c95156400648f6607ad66ed7bf5",
+      "initialRestrictionFacts": {
+        "pieceId": "fallen",
+        "cannotGainBurrowed": false,
+        "cannotReturnToReserves": false,
+        "impactImmune": false,
+        "sourceDefinitionIds": [],
+        "sourceFeatureHashes": [],
+        "trainingTruth": false
+      },
+      "attacks": [
+        {
+          "pieceId": "actor"
+        }
+      ],
+      "reactions": [
+        "card:engineering_bay/infantry-armor-any@2"
+      ]
+    },
+    {
+      "id": "growing-restoration-exception",
+      "currentRuntimeColdReplay": true,
+      "queryReceiptHash": "fa4ca0bf4d518546049b0f1386000ef9058623e10d62054c4f4d77355ee7a81c",
+      "initialRestrictionFacts": {
+        "pieceId": "fallen",
+        "cannotGainBurrowed": false,
+        "cannotReturnToReserves": false,
+        "enemyReactionRestrictedBySideKeys": [
+          "player1"
+        ],
+        "restorationException": true,
+        "impactImmune": false,
+        "sourceDefinitionIds": [
+          "card:hungering_infestation/growing-infestation-any@1"
+        ],
+        "sourceFeatureHashes": [
+          "8694dce29df005767e2473e36ddcc06aa1bc5a05d954f729c6f40af35550702a"
+        ],
+        "trainingTruth": false
+      },
+      "attacks": [
+        {
+          "pieceId": "actor"
+        }
+      ],
+      "reactions": [
+        "unit:infested_missile_turret/infestation-any-phase@1",
+        "unit:medic/restoration-any-phase@1"
+      ]
+    },
+    {
+      "id": "infected-mixed-mass-recall",
+      "currentRuntimeColdReplay": true,
+      "queryReceiptHash": "f5a07aa0c8564e76c9ea0184eda9781e6217823c033cf6d1bcc7d756c9f984e4",
+      "initialRestrictionFacts": {
+        "pieceId": "enemy",
+        "cannotGainBurrowed": false,
+        "cannotReturnToReserves": true,
+        "cannotResolvePlace": true,
+        "cannotResolveSet": true,
+        "impactImmune": false,
+        "sourceDefinitionIds": [
+          "card:weighted_pustule/fetid-touch-any@1"
+        ],
+        "sourceFeatureHashes": [
+          "872573773c9f602f790bc218a9c3b47aef5ecb535b85a4c4d5cdabf9578f2630"
+        ],
+        "trainingTruth": false
+      },
+      "attacks": [],
+      "reactions": []
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,262 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_restrictions_native_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/virus-restrictions/run-3LXxj1",
+  "results": [
+    {
+      "id": "infected-ordinary-move",
+      "infected": true,
+      "action": "move",
+      "roomId": "wave4-virus-infected-ordinary-move",
+      "directoryRef": "build/wave4-web/virus-restrictions/run-3LXxj1/infected-ordinary-move",
+      "sourceDefinitionIds": [
+        "card:weighted_pustule/fetid-touch-any@1",
+        "unit:stalker/blink-movement-phase@1",
+        "card:nexus/strategic-recall-any@1"
+      ],
+      "signedActions": 1,
+      "stateHash": "41a6a7e42ac6b11f9122ab0666bb942bedde27ea8b9a88a54cdb18d2bde3f43e",
+      "runtimeHash": "30b2180fb8b6ed79a09e8dfd782fd666fe731872dee97cf5d57e08a658424d55",
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "trace": [
+        {
+          "revision": 1,
+          "sideKey": "player2",
+          "actionType": "move",
+          "definitionId": null
+        }
+      ]
+    },
+    {
+      "id": "clean-blink",
+      "infected": false,
+      "action": "blink",
+      "roomId": "wave4-virus-clean-blink",
+      "directoryRef": "build/wave4-web/virus-restrictions/run-3LXxj1/clean-blink",
+      "sourceDefinitionIds": [
+        "card:weighted_pustule/fetid-touch-any@1",
+        "unit:stalker/blink-movement-phase@1",
+        "card:nexus/strategic-recall-any@1"
+      ],
+      "signedActions": 1,
+      "stateHash": "39d7d9c2a6f2daa478e73f365c38cd0d3957d2a0ad8e023de3cd88603bc5a3dc",
+      "runtimeHash": "30b2180fb8b6ed79a09e8dfd782fd666fe731872dee97cf5d57e08a658424d55",
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "trace": [
+        {
+          "revision": 1,
+          "sideKey": "player2",
+          "actionType": "resolve_relocation_ability",
+          "definitionId": "unit:stalker/blink-movement-phase@1"
+        }
+      ]
+    },
+    {
+      "id": "clean-recall",
+      "infected": false,
+      "action": "recall",
+      "roomId": "wave4-virus-clean-recall",
+      "directoryRef": "build/wave4-web/virus-restrictions/run-3LXxj1/clean-recall",
+      "sourceDefinitionIds": [
+        "card:weighted_pustule/fetid-touch-any@1",
+        "unit:stalker/blink-movement-phase@1",
+        "card:nexus/strategic-recall-any@1"
+      ],
+      "signedActions": 1,
+      "stateHash": "c90ad6d5a4c7cbcab092762bb9f28943299df1563e70a7586d42ce6f50596eba",
+      "runtimeHash": "30b2180fb8b6ed79a09e8dfd782fd666fe731872dee97cf5d57e08a658424d55",
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "trace": [
+        {
+          "revision": 1,
+          "sideKey": "player2",
+          "actionType": "resolve_unit_lifecycle_ability",
+          "definitionId": "card:nexus/strategic-recall-any@1"
+        }
+      ]
+    },
+    {
+      "id": "growing-blocks-armour",
+      "infected": true,
+      "roomId": "wave4-virus-growing-blocks-armour",
+      "directoryRef": "build/wave4-web/virus-restrictions/run-3LXxj1/growing-blocks-armour",
+      "sourceDefinitionIds": [
+        "card:stukov_s_forces/hostile-incubation-any@1",
+        "unit:infested_missile_turret/detection-any-phase@1",
+        "unit:infested_missile_turret/source-of-creep-any-phase@1",
+        "unit:infested_missile_turret/infestation-any-phase@1",
+        "unit:infested_missile_turret/structure-any-phase@1",
+        "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+        "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+        "card:hungering_infestation/growing-infestation-any@1",
+        "card:engineering_bay/infantry-armor-any@2",
+        "unit:medic/restoration-any-phase@1"
+      ],
+      "signedActions": 4,
+      "stateHash": "e17487b9a66289ddbb916013152f441727762e1d74bd32512612398e558910d6",
+      "runtimeHash": "aaa4d38b9f87ff489a923eaaa7293c652ebd15a0363055c13b6bdbd93f8da402",
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "trace": [
+        {
+          "revision": 1,
+          "sideKey": "player1",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "sideKey": "player2",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "sideKey": "player2",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "sideKey": "player1",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        }
+      ]
+    },
+    {
+      "id": "growing-clean-control",
+      "infected": false,
+      "roomId": "wave4-virus-growing-clean-control",
+      "directoryRef": "build/wave4-web/virus-restrictions/run-3LXxj1/growing-clean-control",
+      "sourceDefinitionIds": [
+        "card:stukov_s_forces/hostile-incubation-any@1",
+        "unit:infested_missile_turret/detection-any-phase@1",
+        "unit:infested_missile_turret/source-of-creep-any-phase@1",
+        "unit:infested_missile_turret/infestation-any-phase@1",
+        "unit:infested_missile_turret/structure-any-phase@1",
+        "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+        "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+        "card:hungering_infestation/growing-infestation-any@1",
+        "card:engineering_bay/infantry-armor-any@2",
+        "unit:medic/restoration-any-phase@1"
+      ],
+      "signedActions": 7,
+      "stateHash": "31cf986221e66a0f911864ac64cac309bf4b96fa04235bfdde8d42a102e45226",
+      "runtimeHash": "aaa4d38b9f87ff489a923eaaa7293c652ebd15a0363055c13b6bdbd93f8da402",
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "trace": [
+        {
+          "revision": 1,
+          "sideKey": "player1",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "sideKey": "player1",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "sideKey": "player2",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "card:engineering_bay/infantry-armor-any@2"
+        },
+        {
+          "revision": 4,
+          "sideKey": "player1",
+          "actionType": "resolve_ranged_attack_defence_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "sideKey": "player2",
+          "actionType": "choose_ranged_tough_armour",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "sideKey": "player1",
+          "actionType": "resolve_ranged_attack_evade_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 7,
+          "sideKey": "player2",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        }
+      ]
+    },
+    {
+      "id": "growing-restoration-exception",
+      "infected": true,
+      "restore": true,
+      "roomId": "wave4-virus-growing-restoration-exception",
+      "directoryRef": "build/wave4-web/virus-restrictions/run-3LXxj1/growing-restoration-exception",
+      "sourceDefinitionIds": [
+        "card:stukov_s_forces/hostile-incubation-any@1",
+        "unit:infested_missile_turret/detection-any-phase@1",
+        "unit:infested_missile_turret/source-of-creep-any-phase@1",
+        "unit:infested_missile_turret/infestation-any-phase@1",
+        "unit:infested_missile_turret/structure-any-phase@1",
+        "unit:infested_missile_turret/firefly-missiles-assault-phase@1",
+        "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+        "card:hungering_infestation/growing-infestation-any@1",
+        "card:engineering_bay/infantry-armor-any@2",
+        "unit:medic/restoration-any-phase@1"
+      ],
+      "signedActions": 5,
+      "stateHash": "e9783bdda991586c85b5447659128bb1fb0d182a0e35a79836d55a0200f5cb10",
+      "runtimeHash": "54b2c6483db7c041e32fdb92982d3f362c6808b191e570a1941f0d59ed1fa526",
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "trace": [
+        {
+          "revision": 1,
+          "sideKey": "player1",
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "sideKey": "player1",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_missile_turret/infestation-any-phase@1"
+        },
+        {
+          "revision": 3,
+          "sideKey": "player2",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "sideKey": "player1",
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "sideKey": "player2",
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/restoration-any-phase@1"
+        }
+      ]
+    }
+  ],
+  "newGameAtoms": 2,
+  "implementedCumulativeAtoms": 5,
+  "fullWave4Admission": false,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "sourceHeldDefinitions": 39,
+  "originalDefinitionCount": 556,
+  "conditionedInitialStatuses": true
+}

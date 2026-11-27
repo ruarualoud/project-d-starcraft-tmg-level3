@@ -1,3 +1,4 @@
+import { projectOfficialInfestationRestrictionsV1, assertOfficialInfestationPlacementV1 } from '../rule-atoms/official-infestation-restrictions-v1.mjs';
 import { isDeepStrictEqual } from 'node:util';
 import { usesWave3FaqClarifications } from '../rule-atoms/official-wave3-faq-clarifications-v1.mjs';
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
@@ -116,7 +117,7 @@ export function createOfficialPsionicTransferRoundEndRuntimeV1({ context, source
         executorId: runtimeId, executorVersion: runtimeVersion, sideKey: parent.ownerSideKey, phase: current.phase,
         pieceId: actor.id, definitionId: effect.definitionId,
         parameterSchema: { type: 'object', required: ['choice'],
-          choice: { enum: active(actor) ? ['place', 'skip'] : ['skip'] },
+          choice: { enum: active(actor) && !projectOfficialInfestationRestrictionsV1(current,actor.id).cannotResolveSet ? ['place', 'skip'] : ['skip'] },
           placementPlan: { type: 'complete_model_placement_plan', requiredWhen: { choice: 'place' },
             exactModelIds: actor.models.filter(model => model.isDestroyed !== true && model.isOnField !== false).map(model => model.id).sort(),
             coordinateUnit: 'milli-inch', leadingReference: source.routes ? 'source_owned_token' : 'source_owned_shade' } },
@@ -150,6 +151,7 @@ export function createOfficialPsionicTransferRoundEndRuntimeV1({ context, source
       : { choice: 'place', placementPlan: canonicalPlan(parameters.placementPlan) };
     let geometryHash = null;
     if (parameters.choice === 'place') {
+      assertOfficialInfestationPlacementV1(current,domain.pieceId,'set');
       const placement = prepareOfficialTokenLeadingUnitPlacementV1({ state: current, pieceId: domain.pieceId,
         tokenId: domain.constraints.tokenId, shadeEffectHash: shadeEffect(current,domain.constraints.effectHash), placementPlan: canonicalParameters.placementPlan });
       producer.assertEndpoint(current, { pieceId: domain.pieceId, spatialPlan: {

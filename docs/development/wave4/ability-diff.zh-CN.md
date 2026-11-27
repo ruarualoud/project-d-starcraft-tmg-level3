@@ -13,7 +13,7 @@
 | 已有原子新组合 | 34 | 已有合同的触发、目标、作用域或顺序新组合 |
 | 新增语义 | 41 | 至少依赖一个当前缺失的执行合同 |
 
-**新增原子需求为 18 个，当前已实现并通过组件验收 3 个。** 同一缺失执行合同跨多个来源 ID 只计一次；新武器名字、数值档案和既有合同的新组合不分别增加原子数。另有 3 个只属于 Archon 撤下记录的候选合同，单独保留，未计入这 18 个。该数值是本次冻结范围的工程分解，不是已实现能力数。
+**新增原子需求为 18 个，当前已实现并通过组件验收 5 个。** 同一缺失执行合同跨多个来源 ID 只计一次；新武器名字、数值档案和既有合同的新组合不分别增加原子数。另有 3 个只属于 Archon 撤下记录的候选合同，单独保留，未计入这 18 个。该数值是本次冻结范围的工程分解，不是已实现能力数。
 
 逐定义原件、源字段哈希、触发、选择权、结算、清除、消费者函数和未覆盖项见 [完整机器清单](../../../content/source-releases/wave4-20261127/abilities/ability-diff.json)；[身份登记表](../../../content/source-releases/wave4-20261127/abilities/feature-registry.json) 与 [来源别名目录](../../../content/source-releases/wave4-20261127/abilities/identity-catalogue.json) 可离线重建。
 
@@ -79,8 +79,8 @@
 | `rule-atom:wave4/triggered-melee-self-removal@1` | On enemy activation end or successful charge, resolve a mandatory melee attack against the qualifying enemy, including defence/casualty choices, then remove the source and restore the parent continuation. | 需求已拆分，尚未实现 |
 | `rule-atom:wave4/before-place-direction-and-target-buff@1` | Before each PLACE, optionally choose an enemy; constrain that placement directly towards it and bind the RoA bonus exclusively to attacks against that target. | 需求已拆分，尚未实现 |
 | `rule-atom:wave4/infestation-activation-exchange@1` | Consume the enemy INFESTATION after marking that enemy activated; optionally select a nearby non-Unique friendly Infested unit and remove its activation marker, preserving phase ownership. | 需求已拆分，尚未实现 |
-| `rule-atom:wave4/infestation-reaction-lock@1` | For an infected enemy, block its own enemy reactions and enemy reactions targeting it, while retaining the explicit Restoration exception and controller-relative allegiance. | 需求已拆分，尚未实现 |
-| `rule-atom:wave4/infestation-placement-reserve-lock@1` | For an infected enemy, reject PLACE, set effects and return-to-reserves across all movement/lifecycle entry points; ordinary legal movement remains available. | 需求已拆分，尚未实现 |
+| `rule-atom:wave4/infestation-reaction-lock@1` | For an infected enemy, block its own enemy reactions and enemy reactions targeting it, while retaining the explicit Restoration exception and controller-relative allegiance. | 原生／Web范围已验；完整组合准入待 |
+| `rule-atom:wave4/infestation-placement-reserve-lock@1` | For an infected enemy, reject PLACE, set effects and return-to-reserves across all movement/lifecycle entry points; ordinary legal movement remains available. | 原生／Web范围已验；完整组合准入待 |
 | `rule-atom:wave4/foreign-faction-army-eligibility@1` | Permit Terran Ground Mechanical purchases only under the Stukov faction while applying costs, slots, uniqueness and upgrade rules to the original source identity. | 组件接线通过，正式对局未准入 |
 | `rule-atom:wave4/faction-unit-runtime-conversion@1` | Bind the imported units to Infested tag addition, CP-to-BM payment conversion and BURROWED prohibition without changing unrelated units or rewriting the source records. | 组件接线通过，正式对局未准入 |
 | `rule-atom:wave4/spawn-round-ability-lock@1` | When the faction sets its structure, suppress its abilities except Structure for that round, then restore the correct abilities after cleanup; do not silently grant SUMMON semantics. | 80mm工程几何下SET、两轮原生回合及后继已验；正式几何待 |
@@ -225,7 +225,7 @@
 | `card:healing_pathogen/stukov-s-creep-any@1` | 已有原子新组合 | asset | 0 | 无源级阻断；接线待验 |
 | `card:hive/brutal-instinct-any@1` | 已有原子新组合 | reaction / characteristic | 0 | 无源级阻断；接线待验 |
 | `card:hive/creep-spread-any@1` | 已有原子 | asset | 0 | 无源级阻断；接线待验 |
-| `card:hungering_infestation/growing-infestation-any@1` | 新增语义 | reaction | 1 | 无源级阻断；接线待验 |
+| `card:hungering_infestation/growing-infestation-any@1` | 新增语义 | reaction | 1 | 原生／Web实际消费者已验；整版待 |
 | `card:hungering_infestation/stukov-s-creep-any@1` | 已有原子新组合 | asset | 0 | 无源级阻断；接线待验 |
 | `card:infested_barracks/for-the-swarm-any@1` | 已有原子新组合 | relocation | 0 | 无源级阻断；接线待验 |
 | `card:infested_command_center/parasitic-bio-toxins-any@1` | 已有原子新组合 | reaction / characteristic | 0 | 无源级阻断；接线待验 |
@@ -245,7 +245,7 @@
 | `card:tal_darim/6-or-more-any@1` | 新增语义 | supply / characteristic | 1 | 无源级阻断；接线待验 |
 | `card:twilight_council/veil-of-shadows-any@2` | 已有原子 | reaction / reactionRuntime | 0 | 无源级阻断；接线待验 |
 | `card:vanadium_plating/crystalline-alloy-any@2` | 已有原子 | reaction / reactionRuntime | 0 | 无源级阻断；接线待验 |
-| `card:weighted_pustule/fetid-touch-any@1` | 新增语义 | relocation / lifecycle | 1 | 无源级阻断；接线待验 |
+| `card:weighted_pustule/fetid-touch-any@1` | 新增语义 | relocation / lifecycle | 1 | 原生／Web实际消费者已验；整版待 |
 | `card:weighted_pustule/stukov-s-creep-any@1` | 已有原子新组合 | asset | 0 | 无源级阻断；接线待验 |
 | `card:zagara_s_swarm/zerg-creep-any@2` | 已有原子 | builder | 0 | 无源级阻断；接线待验 |
 | `card:zerg_swarm/brood-instinct-any@2` | 已有原子 | reaction / reactionRuntime | 0 | 无源级阻断；接线待验 |
@@ -264,4 +264,6 @@ node scripts/verify-wave4-wave3-cold-read.mjs build/wave4-web/host/run-qI3May
 
 组件验收和旧房冷读复用本树已备的 Wave3 冻结缓存与 W4-01 隔离房；这些命令不读 5483 玩家服务。旧房的状态、绑定、完整回放和元数据字节均匹配 W4-01 原证据，没有新增动作。
 
-11 条时点、三条 Creep 及 Stukov 跨种族建军／运行时转换已完成各自范围的消费者验收，见 [Stukov 记录](stukov-army-wiring.zh-CN.md)。18 个新合同当前实现 3；Hostile 设置与回合锁已在用户允许的截图估算几何下验过，见 [本批记录](hostile-incubation-wiring.zh-CN.md)。炮塔七条定义现已显式绑定，Firefly 解析、Infestation／Ocular 后继、两轮原生完整回合与三个 Web 后继通过；见[后继与回合记录](turret-combat-wiring.zh-CN.md)。本批新增原子 0，随后推进其余 15 个合同及新单位完整行为和几何。组件、正式房间与 Web 分别验收。付费模型、K3、AI 对局、复盘与生产发布继续暂停。
+11 条时点、三条 Creep 及 Stukov 跨种族建军／运行时转换已完成各自范围的消费者验收，见 [Stukov 记录](stukov-army-wiring.zh-CN.md)。18 个新合同当前实现 5；Hostile 设置与回合锁已在用户允许的截图估算几何下验过，见 [本批记录](hostile-incubation-wiring.zh-CN.md)。炮塔七条定义现已显式绑定，Firefly 解析、Infestation／Ocular 后继、两轮原生完整回合与三个 Web 后继通过；见[后继与回合记录](turret-combat-wiring.zh-CN.md)。本批新增原子 0，随后推进其余 13 个合同及新单位完整行为和几何。组件、正式房间与 Web 分别验收。付费模型、K3、AI 对局、复盘与生产发布继续暂停。
+
+两项 Virus 限制及新增原子见[当前批次记录](virus-restrictions-wiring.zh-CN.md)；长任务仅推进 Wave4 人人对战，见[执行清单](../../../coordination/wave4/implementation-plan.json)。

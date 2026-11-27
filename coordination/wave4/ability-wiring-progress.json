@@ -9,7 +9,7 @@
     "records": 38,
     "requiredNewAtoms": 18,
     "withdrawnOnlyCandidateAtoms": 3,
-    "implementedNewGameAtoms": 3
+    "implementedNewGameAtoms": 5
   },
   "sourceCompilation": {
     "exactReactionRevisions": 11,
@@ -275,9 +275,9 @@
     }
   ],
   "next": [
-    "W4-02：炮塔7/7焦点定义已绑定；继续Stukov／Infested Marine／Infested Trooper完整行为和几何，按依赖完成其余15个新增合同。",
-    "80mm继续仅工程估算；正式几何、完整军表组合（含两种Overwatch来源共存）及全回合Web仍待。39条来源阻断保持隔离。",
-    "能力准入后再推进W4-03完整发布选择、Builder／工厂／大厅及W4-04双浏览器新军表；Wave3与全部暂停项保持。"
+    "W4-02：补Universal Carrier的感染敌军损失→HEAL后继与三张Virus卡Stukov’s Creep，再接Stukov／Infested Marine／Infested Trooper。",
+    "按逐ID账补其余13个新增合同及其他新增单位／势力，保持39条来源隔离与估算几何边界。",
+    "按Wave3模式完成W4-03整版发布选择、Builder／大厅、玩家查询与媒体，然后验W4-04的500／2000分Web双席。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -311,7 +311,7 @@
     "newUnitAndFactionEndToEnd": false,
     "builderAndLobbyReleaseSelection": "scoped_stukov_hostile_and_turret_combat_verified_full_release_and_lobby_pending",
     "requiredNewGameAtoms": 18,
-    "implementedNewGameAtoms": 3,
+    "implementedNewGameAtoms": 5,
     "sourceHeldDefinitions": 39,
     "fullWave4MatchAdmission": false,
     "creepBuilderDefinitions": 3,
@@ -322,7 +322,8 @@
     ],
     "turretBoundDefinitions": 7,
     "turretNativeCompleteRounds": 2,
-    "turretWebSuccessorFlows": 3
+    "turretWebSuccessorFlows": 3,
+    "virusRestrictionDefinitions": 2
   },
   "runtimeVerificationByDefinition": [
     {
@@ -1208,9 +1209,121 @@
       "webVerified": true,
       "fullMatchAdmission": false,
       "nativeCombatSuccessorsVerified": true
+    },
+    {
+      "definitionId": "card:hungering_infestation/growing-infestation-any@1",
+      "classification": "new_semantics",
+      "newAtomIds": [
+        "rule-atom:wave4/infestation-reaction-lock@1"
+      ],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeQueryConsumerVerified": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "compileOfficialInfestationRestrictionSpecV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "projectOfficialInfestationRestrictionsV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        },
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "allowsOfficialInfestationReactionV1"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "createOfficialReactionFamilyAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/virus-restrictions.public.json",
+        "docs/development/wave4/evidence/virus-mass-recall.public.json",
+        "docs/development/wave4/evidence/virus-web.public.json",
+        "docs/development/wave4/evidence/virus-audit.public.json"
+      ],
+      "verificationScope": "Enemy relative to card owner; infected recipient armour reaction blocked, clean actual armour/TOUGH control, infected Medic Restoration exception; Native and signed-prefix Web successors. Other reaction families require their own combination admission.",
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "card:weighted_pustule/fetid-touch-any@1",
+      "classification": "new_semantics",
+      "newAtomIds": [
+        "rule-atom:wave4/infestation-placement-reserve-lock@1"
+      ],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeQueryConsumerVerified": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "compileOfficialInfestationRestrictionSpecV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "projectOfficialInfestationRestrictionsV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        },
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "assertOfficialInfestationPlacementV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-unit-restrictions-v1.mjs",
+          "exportName": "projectOfficialUnitRestrictionsV1"
+        },
+        {
+          "file": "packages/product-composition/official-relocation-family-adapter-v1.mjs",
+          "exportName": "createOfficialRelocationFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+          "exportName": "createOfficialUnitLifecycleFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+          "exportName": "prepareOfficialTokenLeadingUnitPlacementV1"
+        },
+        {
+          "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+          "exportName": "prepareOfficialUnitRelativeCoherencyPlacementV1"
+        },
+        {
+          "file": "packages/product-composition/official-psionic-transfer-round-end-v1.mjs",
+          "exportName": "createOfficialPsionicTransferRoundEndRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/virus-restrictions.public.json",
+        "docs/development/wave4/evidence/virus-mass-recall.public.json",
+        "docs/development/wave4/evidence/virus-web.public.json",
+        "docs/development/wave4/evidence/virus-audit.public.json"
+      ],
+      "verificationScope": "Blink/Strategic Recall locked, ordinary Move legal; clean Native/Web controls; mixed Mass Recall excludes infected unit. Set endpoints and round-end choice restriction wired; full native Adept/Ravager round-end combination remains pending.",
+      "fullMatchAdmission": false
     }
   ],
-  "executionStatus": "turret_seven_definitions_bound_native_round_and_Web_successors_verified_conditional_engineering_geometry",
+  "executionStatus": "virus_restrictions_native_and_Web_scoped_verified_full_Wave4_human_update_in_progress",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -1388,6 +1501,106 @@
       "nativeRoundTransitionVerified": true,
       "fullMatchAdmission": false,
       "webSuccessorLockConsumed": true
+    },
+    {
+      "atomId": "rule-atom:wave4/infestation-reaction-lock@1",
+      "status": "implemented_scoped_native_and_web_verified",
+      "definitionIds": [
+        "card:hungering_infestation/growing-infestation-any@1"
+      ],
+      "consumerRefs": [
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "compileOfficialInfestationRestrictionSpecV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "projectOfficialInfestationRestrictionsV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        },
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "allowsOfficialInfestationReactionV1"
+        },
+        {
+          "file": "packages/product-composition/official-reaction-family-adapter-v1.mjs",
+          "exportName": "createOfficialReactionFamilyAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/virus-restrictions.public.json",
+        "docs/development/wave4/evidence/virus-mass-recall.public.json",
+        "docs/development/wave4/evidence/virus-web.public.json",
+        "docs/development/wave4/evidence/virus-audit.public.json"
+      ],
+      "fullMatchAdmission": false
+    },
+    {
+      "atomId": "rule-atom:wave4/infestation-placement-reserve-lock@1",
+      "status": "implemented_scoped_native_and_web_verified",
+      "definitionIds": [
+        "card:weighted_pustule/fetid-touch-any@1"
+      ],
+      "consumerRefs": [
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "compileOfficialInfestationRestrictionSpecV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "projectOfficialInfestationRestrictionsV1"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "createOfficialCharacteristicStatusFamilySourceBundleV2"
+        },
+        {
+          "file": "packages/product-composition/official-characteristic-status-component-runtime-v2.mjs",
+          "exportName": "createOfficialCharacteristicStatusComponentRuntimeV2"
+        },
+        {
+          "file": "packages/rule-atoms/official-infestation-restrictions-v1.mjs",
+          "exportName": "assertOfficialInfestationPlacementV1"
+        },
+        {
+          "file": "packages/rule-atoms/official-unit-restrictions-v1.mjs",
+          "exportName": "projectOfficialUnitRestrictionsV1"
+        },
+        {
+          "file": "packages/product-composition/official-relocation-family-adapter-v1.mjs",
+          "exportName": "createOfficialRelocationFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+          "exportName": "createOfficialUnitLifecycleFamilyAdapterV1"
+        },
+        {
+          "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+          "exportName": "prepareOfficialTokenLeadingUnitPlacementV1"
+        },
+        {
+          "file": "packages/product-composition/official-unit-lifecycle-family-adapter-v1.mjs",
+          "exportName": "prepareOfficialUnitRelativeCoherencyPlacementV1"
+        },
+        {
+          "file": "packages/product-composition/official-psionic-transfer-round-end-v1.mjs",
+          "exportName": "createOfficialPsionicTransferRoundEndRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/virus-restrictions.public.json",
+        "docs/development/wave4/evidence/virus-mass-recall.public.json",
+        "docs/development/wave4/evidence/virus-web.public.json",
+        "docs/development/wave4/evidence/virus-audit.public.json"
+      ],
+      "fullMatchAdmission": false
     }
   ],
   "stukovArmyGate": {
@@ -1485,6 +1698,34 @@
       "docs/development/wave4/evidence/turret-web.public.json",
       "docs/development/wave4/evidence/firefly-attack.public.json",
       "docs/development/wave4/evidence/overwatch-compat.public.json"
+    ]
+  },
+  "virusRestrictionGate": {
+    "definitionIds": [
+      "card:hungering_infestation/growing-infestation-any@1",
+      "card:weighted_pustule/fetid-touch-any@1"
+    ],
+    "newGameAtoms": 2,
+    "implementedCumulativeAtoms": 5,
+    "nativeCases": 7,
+    "nativeSignedActions": 20,
+    "currentRuntimeColdReplayAudit": "docs/development/wave4/evidence/virus-audit.public.json",
+    "webRooms": 4,
+    "webSignedActions": 7,
+    "sourceHeldDefinitions": 39,
+    "fullWave4Admission": false,
+    "webScope": "three_initial_frozen_authorities_and_one_signed_native_infestation_prefix",
+    "remainingVirusDefinitions": [
+      "card:healing_pathogen/universal-carrier-any@1",
+      "card:healing_pathogen/stukov-s-creep-any@1",
+      "card:weighted_pustule/stukov-s-creep-any@1",
+      "card:hungering_infestation/stukov-s-creep-any@1"
+    ],
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/virus-restrictions.public.json",
+      "docs/development/wave4/evidence/virus-mass-recall.public.json",
+      "docs/development/wave4/evidence/virus-web.public.json",
+      "docs/development/wave4/evidence/virus-audit.public.json"
     ]
   }
 }

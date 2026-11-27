@@ -1,0 +1,40 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_restrictions_native_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/virus-restrictions/run-A4AN9N",
+  "results": [
+    {
+      "id": "infected-mixed-mass-recall",
+      "infected": true,
+      "massRecall": true,
+      "roomId": "wave4-virus-infected-mixed-mass-recall",
+      "directoryRef": "build/wave4-web/virus-restrictions/run-A4AN9N/infected-mixed-mass-recall",
+      "sourceDefinitionIds": [
+        "card:weighted_pustule/fetid-touch-any@1",
+        "unit:stalker/blink-movement-phase@1",
+        "card:nexus/strategic-recall-any@1",
+        "card:daelaam/mass-recall-any@1"
+      ],
+      "signedActions": 1,
+      "stateHash": "01e92f34d66ebe1a06f392fef80c3a85caa32daa4090da890eab9c1f5392c421",
+      "runtimeHash": "7849a7a3a19c76529e816f5e61537c68e88fbab8eaf45bf5b6108607eba2442c",
+      "idempotencyVerified": true,
+      "coldReplay": true,
+      "trace": [
+        {
+          "revision": 1,
+          "sideKey": "player2",
+          "actionType": "resolve_unit_lifecycle_ability",
+          "definitionId": "card:daelaam/mass-recall-any@1"
+        }
+      ]
+    }
+  ],
+  "newGameAtoms": 0,
+  "implementedCumulativeAtoms": 5,
+  "sourceHeldDefinitions": 39,
+  "originalDefinitionCount": 556,
+  "fullWave4Admission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

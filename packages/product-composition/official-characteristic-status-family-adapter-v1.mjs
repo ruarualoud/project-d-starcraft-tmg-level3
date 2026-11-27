@@ -1,3 +1,4 @@
+import { compileOfficialInfestationRestrictionSpecV1 } from '../rule-atoms/official-infestation-restrictions-v1.mjs';
 import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
 import { projectOfficialDeploymentSupplyV1 } from '../rule-atoms/official-deployment-supply-projection-v1.mjs';
 import { listOfficialExhaustedTacticalCardIdsV1 } from './official-ranged-card-refresh-runtime-v1.mjs';
@@ -312,6 +313,8 @@ function weaponKeyword(effectKind, weaponScope, keyword, value, extra = {}) {
 function compileRoute(definition, { explicitRelease = false } = {}) {
   const name = definition.definitionName;
   const text = definition.sourceText;
+  const restrictionSpec = compileOfficialInfestationRestrictionSpecV1(definition);
+  if (restrictionSpec) return seal(baseSpec(definition, restrictionSpec), 'routeHash');
   let spec = null;
   if (definition.definitionId === OFFICIAL_RAVEN_ANTI_ARMOUR_MISSILE_DEFINITION_ID
     && definition.recordKey === 'army_units:raven' && name === 'Anti-Armour Missile'

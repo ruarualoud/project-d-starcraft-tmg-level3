@@ -1,0 +1,64 @@
+{
+  "schema": "starcraft_tmg_wave4_human_update_plan_v1",
+  "goal": "Wave4 human-vs-human update using the Wave3 update workflow",
+  "branch": "codex/wave4-web-pvp",
+  "status": "in_progress",
+  "activeItem": "T28-W4-02",
+  "items": [
+    {
+      "id": "T28-W4-01",
+      "title": "来源、差分与候选版本",
+      "status": "passed",
+      "evidenceRefs": [
+        "docs/development/wave4/candidate-acceptance.zh-CN.md"
+      ]
+    },
+    {
+      "id": "T28-W4-02",
+      "title": "逐ID规则、单位与势力消费者",
+      "status": "in_progress",
+      "evidenceRefs": [
+        "coordination/wave4/ability-wiring-progress.json"
+      ],
+      "exit": "Every admitted changed definition has source binding, actual consumer and Native successor/recovery evidence; source holds remain explicit."
+    },
+    {
+      "id": "T28-W4-03",
+      "title": "完整发布、建军、房间与媒体",
+      "status": "partial",
+      "dependsOn": [
+        "T28-W4-02"
+      ],
+      "exit": "Same release selected by manual Builder/import/export, lobby/room factory, map/mission/player query; new IDs have reviewed media and clear unavailable-source labels."
+    },
+    {
+      "id": "T28-W4-04",
+      "title": "500/2000分 Web 双席人人对战",
+      "status": "pending",
+      "dependsOn": [
+        "T28-W4-02",
+        "T28-W4-03"
+      ],
+      "exit": "Two independent browsers create/import distinct rosters, join and start one actual match per scale, execute new mechanics across rounds, score affected branches, recover and replay."
+    }
+  ],
+  "deliveryPolicy": {
+    "partialComponentsDoNotCompleteGoal": true,
+    "preserveSourceHolds": 39,
+    "estimatedTurretBaseMillimetres": 80,
+    "estimatedTurretGeometryIsOfficial": false,
+    "models": false,
+    "K3": false,
+    "AIGames": false,
+    "postgameReview": false,
+    "productionPublish": false
+  },
+  "next": [
+    "Complete Virus effects",
+    "Stukov, Infested Marine and Infested Trooper",
+    "Other Wave4 units and factions",
+    "Complete release/Builder/lobby/media",
+    "Both Web scales"
+  ],
+  "updatedAt": "2026-11-27T18:12:59.850Z"
+}

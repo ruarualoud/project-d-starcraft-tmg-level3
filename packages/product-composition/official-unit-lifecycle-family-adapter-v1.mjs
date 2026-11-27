@@ -1,3 +1,4 @@
+import { assertOfficialInfestationPlacementV1 } from '../rule-atoms/official-infestation-restrictions-v1.mjs';
 import { OFFICIAL_HOSTILE_INCUBATION_DEFINITION_ID, createOfficialSpawnRoundAbilityLockPolicyV1,
   bindOfficialSpawnRoundAbilityLockV1, allowsOfficialSpawnRoundSpecialAbilityV1 }
   from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
@@ -1417,6 +1418,7 @@ function shadePlacementResolution(state, target, plan, assetId) {
   return prepareOfficialTokenLeadingUnitPlacementV1({ state, pieceId: target.id, tokenId: assetId, placementPlan: plan });
 }
 export function prepareOfficialTokenLeadingUnitPlacementV1({ state, pieceId, tokenId, placementPlan, shadeEffectHash }) {
+  assertOfficialInfestationPlacementV1(state,pieceId,'set');
   const target = state.pieces.find(piece => piece.id === pieceId);
   const token = state.board.tokens.find(row => String(row.tokenId || row.id) === tokenId);
   const source = state.officialPsionicTransferSourceBundle;
@@ -1436,6 +1438,7 @@ export function prepareOfficialTokenLeadingUnitPlacementV1({ state, pieceId, tok
   return placementResolution(state, target, placementPlan, { externalLeadingFootprint, shadeEffectHash });
 }
 export function prepareOfficialUnitRelativeCoherencyPlacementV1({ state, pieceId, anchorPieceId, placementPlan }) {
+  assertOfficialInfestationPlacementV1(state,pieceId,'set');
   const piece = state.pieces.find(row => row.id === pieceId);
   const anchor = state.pieces.find(row => row.id === anchorPieceId);
   if (!activePiece(piece) || !activePiece(anchor) || anchor.id === piece.id || piece.sideKey !== anchor.sideKey
@@ -2016,7 +2019,8 @@ function applyPrimary(state, route, action, events) {
     state.board.markers.push(marker);
     const returned = [];
     for (const piece of (state.pieces || []).filter((entry) => entry.sideKey === action.sideKey
-      && activePiece(entry) && combatProfile(state, entry.officialUnitRecordKey).faction === "Protoss")) {
+      && activePiece(entry) && combatProfile(state, entry.officialUnitRecordKey).faction === "Protoss"
+      && !projectOfficialUnitRestrictionsV1(state,entry.id).cannotReturnToReserves)) {
       const within = liveModels(piece).some((model) => {
         const radius = Math.max(Number(model.baseWidthInches),
           Number(model.baseDepthInches)) / 2;

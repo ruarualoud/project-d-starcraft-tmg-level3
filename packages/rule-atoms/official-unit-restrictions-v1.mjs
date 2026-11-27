@@ -1,3 +1,4 @@
+import { projectOfficialInfestationRestrictionsV1 } from './official-infestation-restrictions-v1.mjs';
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
 import { readOfficialFactionUnitConversionV1 } from './official-faction-unit-conversion-v1.mjs';
 
@@ -31,12 +32,18 @@ export function projectOfficialUnitRestrictionsV1(state, pieceId) {
     && Number(piece.structureRules?.specialAbilitiesDisabledThroughRound ?? Number.NEGATIVE_INFINITY) < Number(state.round);
   const applied = available ? routes : [];
   const conversion = readOfficialFactionUnitConversionV1(piece);
+  const virus = projectOfficialInfestationRestrictionsV1(state, pieceId);
+  const placementLocks = virus.sources.filter(row => row.effectKind === 'infestation_placement_reserve_lock');
+  const reactionLocks = virus.sources.filter(row => row.effectKind === 'infestation_reaction_lock');
+  const virusSources = [...placementLocks,...reactionLocks];
   return Object.freeze({
     pieceId, cannotGainBurrowed: Boolean(conversion) || applied.some(route => route.cannotGainBurrowed || route.effectKind === 'cannot_gain_burrowed'),
-    cannotReturnToReserves: applied.some(route => route.cannotReturnToReserves),
+    cannotReturnToReserves: applied.some(route => route.cannotReturnToReserves) || virus.cannotReturnToReserves,
+    ...(placementLocks.length ? { cannotResolvePlace: true, cannotResolveSet: true } : {}),
+    ...(reactionLocks.length ? { enemyReactionRestrictedBySideKeys: [...new Set(reactionLocks.map(row => row.sideKey))].sort(), restorationException: true } : {}),
     impactImmune: applied.some(route => route.impactImmune),
-    sourceDefinitionIds: Object.freeze([...applied.map(route => route.definitionId), ...(conversion ? [conversion.policy.definitionId] : [])].sort()),
-    sourceFeatureHashes: Object.freeze([...applied.map(route => route.sourceFeatureHash), ...(conversion ? [conversion.policy.sourceFeatureHash] : [])].sort()),
+    sourceDefinitionIds: Object.freeze([...applied.map(route => route.definitionId), ...virusSources.map(row => row.definitionId), ...(conversion ? [conversion.policy.definitionId] : [])].sort()),
+    sourceFeatureHashes: Object.freeze([...applied.map(route => route.sourceFeatureHash), ...virusSources.map(row => row.sourceFeatureHash), ...(conversion ? [conversion.policy.sourceFeatureHash] : [])].sort()),
     trainingTruth: false,
   });
 }

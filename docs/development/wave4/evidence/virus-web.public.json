@@ -1,0 +1,125 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/virus-restrictions/web-acceptance-v1",
+  "results": [
+    {
+      "kind": "infected-ordinary-move",
+      "sourceRoomId": "wave4-virus-infected-ordinary-move",
+      "sourceStateHash": "c7471e08b4761d0dee0ec09f758a9347ceec60fe077d158c60ebfce21b9141df",
+      "sourcePrefixReceipts": 0,
+      "trace": [
+        {
+          "actionType": "move",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "41a6a7e42ac6b11f9122ab0666bb942bedde27ea8b9a88a54cdb18d2bde3f43e"
+        }
+      ],
+      "signedActions": 1,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "clean-blink",
+      "sourceRoomId": "wave4-virus-clean-blink",
+      "sourceStateHash": "e0ad15a90cfd9a30b58b228afc07afd0f160f886a877f71ebe59be34cadeba86",
+      "sourcePrefixReceipts": 0,
+      "trace": [
+        {
+          "actionType": "resolve_relocation_ability",
+          "definitionId": "unit:stalker/blink-movement-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "39d7d9c2a6f2daa478e73f365c38cd0d3957d2a0ad8e023de3cd88603bc5a3dc"
+        }
+      ],
+      "signedActions": 1,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "clean-recall",
+      "sourceRoomId": "wave4-virus-clean-recall",
+      "sourceStateHash": "e0ad15a90cfd9a30b58b228afc07afd0f160f886a877f71ebe59be34cadeba86",
+      "sourcePrefixReceipts": 0,
+      "trace": [
+        {
+          "actionType": "resolve_unit_lifecycle_ability",
+          "definitionId": "card:nexus/strategic-recall-any@1",
+          "sideKey": "player2",
+          "stateRevision": 1,
+          "stateHash": "c90ad6d5a4c7cbcab092762bb9f28943299df1563e70a7586d42ce6f50596eba"
+        }
+      ],
+      "signedActions": 1,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "growing-restoration-exception",
+      "definitionId": "unit:infested_missile_turret/infestation-any-phase@1",
+      "sourceRoomId": "wave4-virus-growing-restoration-exception",
+      "sourceStateHash": "d14808e97ceab43e067160610dc7e3734532804c86aafbd50b49799f8106fff3",
+      "sourcePrefixReceipts": 1,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_missile_turret/infestation-any-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "18090719872e0f22d9e5622630e29bca2ed7050b84a2f78d71d2e21187a3bfc1"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "20db437cb6b8e9bca171ef64c9ef1dc7cb5f2aa4ffbbe1ef8f35cb149fbe10d3"
+        },
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 3,
+          "stateHash": "b5017cd2c9e055d741fe36800f054db9f56a4e92a2a591043af5770e2dd6d1bc"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/restoration-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 4,
+          "stateHash": "f03905e49081a9316e12c369389ee78a8aa6769600a8df25879edcf44fc37110"
+        }
+      ],
+      "signedActions": 4,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 7,
+  "conditionalTurretGeometryInRestorationCaseOnly": true,
+  "sourceHeldDefinitions": 39,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}
