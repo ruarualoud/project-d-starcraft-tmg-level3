@@ -4,9 +4,9 @@
 
 当前执行 T28-W4-02。
 Ticket 23 / Slice 249；整体 33/36；剩余 248、249、250。
-状态日期：2026-11-27T23:42:38.318Z。本页由 coordination/current-development.json 生成，不追加历史。
+状态日期：2026-11-27T23:58:28.302Z。本页由 coordination/current-development.json 生成，不追加历史。
 
-Wave4人人长任务进行中，完整原子6/18。本批Detonation Overwatch/多武器5原生分支46动作、Web2房6确认通过；旧/当前5房63动作冷读一致。18合同中16服务未隔离记录、2仅隔离Alarak，未改分母。继续双炮塔共存、其余父节点和13个已审核记录及整版产品验收。39来源与工程估算保持。
+Wave4人人长任务继续，完整原子6/18。本批Auto/Ocular同房2原生分支21动作、Web2房5确认、4房29原动作冷读通过，按实际来源绑定武器并遵守阶段外反应额度。继续Khassar等父节点、其余13个已审核记录及整版产品验收。39来源与估算保持。
 
 运行限制：本分支仅推进Wave4人人对战，按Wave3模式补齐数据、规则、建军、房间、媒体和Web双席；使用5484及build/wave4-web，按可验证成果提交推送。其他同步开发线不在本分支展开；付费模型、K3、AI对局、复盘与生产发布继续暂停。
 
@@ -23,12 +23,12 @@ Wave4人人长任务进行中，完整原子6/18。本批Detonation Overwatch/�
 | T27/S272 军表与 Plan／Teach，P0–P6 验收 3/7 | 部分完成 | 部分完成 | 部分完成 | 未测效果 |
 
 下一步：
-1. 补齐Auto/Ocular两种Overwatch同房，再接Khassar/Target/声明父节点、其他外部HITS和直接移除。
-2. 接其余13个已审核记录及整版发布/Builder/大厅/媒体、500/2000分Web；补伤亡方案可读摘要。
-3. 完成W4-03后验W4-04两种规模Web。
+1. 接Khassar委托攻击，再接Target/声明、其他外部HITS与直接移除；完整原子仍6/18。
+2. 其余13个已审核记录、整版发布/Builder/大厅/媒体与500/2000分Web继续。
 
 ## Navigation
 
+- 查看Auto/Ocular同房、阶段外反应额度及Web：[双Overwatch接线](docs/development/wave4/overwatch-coexistence-wiring.zh-CN.md)
 - 查看Detonation Overwatch、多武器与双席Web证据：[Detonation Overwatch接线](docs/development/wave4/detonation-overwatch-wiring.zh-CN.md)
 - 查看Detonation模板、Seeker激活外、双方全灭后回合与Web：[Detonation模板/激活外接线](docs/development/wave4/detonation-template-outside-wiring.zh-CN.md)
 - 查看Corrode攻击后、实际Armour、Medic/Lunge、清理及Web证据：[Corrode Armor接线](docs/development/wave4/corrode-armour-wiring.zh-CN.md)

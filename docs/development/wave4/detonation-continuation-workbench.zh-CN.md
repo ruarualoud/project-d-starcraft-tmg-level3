@@ -8,7 +8,7 @@
 
 政策1.3/Root3.233本批已验，见[Overwatch与多武器](detonation-overwatch-wiring.zh-CN.md)：5原生分支46动作、Web2房6确认及5房63动作冷读；两种步兵均执行激活外Auto射击，Marine另执行多武器攻击者阵亡/存活两分支。完整原子仍6/18。
 
-新核对：Firefly只Target Flying，不能直接射击Ground感染步兵，因此本批直接射击采用Target All的Auto-Turret；Khassar可作为敌方射击/近战的实际攻击所有者，仍需接。Queen Domineering Presence只有任务Supply效果，不是攻击委托。完整工厂还需组合Auto和Ocular：现Overwatch工厂只接受单一路由（代码证据，尚未实际双来源构造复现），不能在完成单一Auto消费者后声称两种来源同房已验。
+新核对：Firefly只Target Flying，不能直接射击Ground感染步兵，因此本批直接射击采用Target All的Auto-Turret；Khassar可作为敌方射击/近战的实际攻击所有者，仍需接。Queen Domineering Presence只有任务Supply效果，不是攻击委托。[Auto/Ocular同房](overwatch-coexistence-wiring.zh-CN.md)现已实际复现并修复：2原生分支21动作、Web2房5确认与4房29原动作冷读通过。双方各一类炮塔，进口Raven同方两类组合仍待。
 
 接下来按实际消费者推进：
 

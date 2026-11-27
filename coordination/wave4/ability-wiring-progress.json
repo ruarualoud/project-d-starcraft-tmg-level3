@@ -275,8 +275,8 @@
     }
   ],
   "next": [
-    "补齐Auto/Ocular两种Overwatch同房，再接Khassar/Target/声明父节点、其他外部HITS和直接移除。",
-    "接其余13个已审核记录及整版发布/Builder/大厅/媒体、500/2000分Web；补伤亡方案可读摘要。"
+    "接Khassar委托攻击，再接Target/声明、其他外部HITS与直接移除；完整原子仍6/18。",
+    "其余13个已审核记录、整版发布/Builder/大厅/媒体与500/2000分Web继续。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -2532,14 +2532,29 @@
     "formalStandardAndSkirmishAdmissionRejected": true,
     "fullMatchAdmission": false,
     "fullWave4Admission": false,
-    "combinedAutoAndOcularBundleAdmitted": false,
+    "combinedAutoAndOcularBundleAdmitted": true,
     "evidenceRefs": [
       "docs/development/wave4/evidence/turret-combat.public.json",
       "docs/development/wave4/evidence/turret-round.public.json",
       "docs/development/wave4/evidence/turret-web.public.json",
       "docs/development/wave4/evidence/firefly-attack.public.json",
-      "docs/development/wave4/evidence/overwatch-compat.public.json"
-    ]
+      "docs/development/wave4/evidence/overwatch-compat.public.json",
+      "docs/development/wave4/evidence/overwatch-coexistence.public.json",
+      "docs/development/wave4/evidence/overwatch-coexistence-cold.public.json",
+      "docs/development/wave4/evidence/overwatch-coexistence-web.public.json",
+      "docs/development/wave4/evidence/overwatch-coexistence-consumers.public.json",
+      "docs/development/wave4/evidence/overwatch-coexistence-harness.public.json"
+    ],
+    "combinedAdmissionScope": "engineering_opposing_side_turrets",
+    "sameSideImportedRavenCombinationVerified": false,
+    "overwatchCoexistence": {
+      "nativeCases": 2,
+      "nativeSignedActions": 21,
+      "webRooms": 2,
+      "webSignedActions": 5,
+      "coldReplayCases": 4,
+      "coldOriginalActions": 29
+    }
   },
   "virusRestrictionGate": {
     "definitionIds": [
@@ -2662,12 +2677,12 @@
     "sourceHeldDefinitions": 39
   },
   "detonationWorkInProgress": {
-    "status": "overwatch_and_weapon_sequence_verified_other_delegated_and_removal_hosts_pending",
+    "status": "overwatch_coexistence_verified_other_delegated_and_removal_hosts_pending",
     "sourceDefinitionsCompiled": 2,
-    "nativeCases": 20,
-    "nativeSignedActions": 216,
-    "webRooms": 9,
-    "webSignedActions": 38,
+    "nativeCases": 22,
+    "nativeSignedActions": 237,
+    "webRooms": 11,
+    "webSignedActions": 43,
     "legacyColdReplayCases": 3,
     "legacyOriginalActions": 30,
     "newGameAtomsImplemented": 0,
@@ -2702,7 +2717,12 @@
       "docs/development/wave4/evidence/detonation-overwatch-compat.public.json",
       "docs/development/wave4/evidence/atom-admission-scope.public.json",
       "docs/development/wave4/evidence/detonation-overwatch-consumers.public.json",
-      "docs/development/wave4/evidence/detonation-overwatch-harness.public.json"
+      "docs/development/wave4/evidence/detonation-overwatch-harness.public.json",
+      "docs/development/wave4/evidence/overwatch-coexistence.public.json",
+      "docs/development/wave4/evidence/overwatch-coexistence-cold.public.json",
+      "docs/development/wave4/evidence/overwatch-coexistence-web.public.json",
+      "docs/development/wave4/evidence/overwatch-coexistence-consumers.public.json",
+      "docs/development/wave4/evidence/overwatch-coexistence-harness.public.json"
     ],
     "workbenchRef": "docs/development/wave4/detonation-continuation-workbench.zh-CN.md",
     "multiTargetParentAndNestedPending": false,
@@ -2710,14 +2730,12 @@
     "fullMatchAdmission": false,
     "delegatedAndOutsideActivationHostsPending": true,
     "latestMilestone": {
-      "nativeCases": 5,
-      "nativeSignedActions": 46,
+      "nativeCases": 2,
+      "nativeSignedActions": 21,
       "webRooms": 2,
-      "webSignedActions": 6,
-      "coldReplayCases": 5,
-      "coldOriginalActions": 63,
-      "legacyOriginalActions": 41,
-      "currentOverwatchOriginalActions": 22,
+      "webSignedActions": 5,
+      "coldReplayCases": 4,
+      "coldOriginalActions": 29,
       "allConsumersVerified": false
     },
     "directAbilityDamageHostVerified": true,
@@ -2727,7 +2745,8 @@
     "otherOutsideActivationHostsPending": true,
     "delegatedAttackHostsPending": true,
     "overwatchHostVerified": true,
-    "multipleWeaponSequenceVerified": true
+    "multipleWeaponSequenceVerified": true,
+    "multipleOverwatchSourcesVerified": true
   },
   "partialRuntimeVerificationByDefinition": [
     {
@@ -2809,7 +2828,12 @@
         "docs/development/wave4/evidence/detonation-overwatch-compat.public.json",
         "docs/development/wave4/evidence/atom-admission-scope.public.json",
         "docs/development/wave4/evidence/detonation-overwatch-consumers.public.json",
-        "docs/development/wave4/evidence/detonation-overwatch-harness.public.json"
+        "docs/development/wave4/evidence/detonation-overwatch-harness.public.json",
+        "docs/development/wave4/evidence/overwatch-coexistence.public.json",
+        "docs/development/wave4/evidence/overwatch-coexistence-cold.public.json",
+        "docs/development/wave4/evidence/overwatch-coexistence-web.public.json",
+        "docs/development/wave4/evidence/overwatch-coexistence-consumers.public.json",
+        "docs/development/wave4/evidence/overwatch-coexistence-harness.public.json"
       ],
       "meleeHostVerified": true,
       "automaticHitsHostVerified": true,
@@ -2825,7 +2849,9 @@
       "overwatchNativeVerified": true,
       "outsideActivationNativeVerified": true,
       "webOverwatchVerified": true,
-      "multipleWeaponSequenceNativeVerified": true
+      "multipleWeaponSequenceNativeVerified": true,
+      "multipleOverwatchSourcesNativeVerified": true,
+      "outsidePhaseLimitWithOcularVerified": true
     },
     {
       "definitionId": "unit:infested_trooper/detonation-any-phase@1",

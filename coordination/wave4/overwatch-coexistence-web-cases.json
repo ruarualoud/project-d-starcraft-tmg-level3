@@ -1,0 +1,16 @@
+[
+  {
+    "id": "ocular-used-blocks-detonation",
+    "definitionId": "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+    "flow": "coexisting-ocular",
+    "minimumSourceRevision": 2
+  },
+  {
+    "id": "ocular-declined-allows-detonation",
+    "definitionId": "unit:infested_marine/detonation-any-phase@1",
+    "flow": "detonation-overwatch",
+    "minimumSourceRevision": 7,
+    "minimumContinuationDepth": 1,
+    "expectedResumeSideKey": "player1"
+  }
+]

@@ -1100,6 +1100,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   const stormCast = includePsionicStormCast ? createOfficialPsionicStormCastRuntimeV1({
     sourceRules: psionicStormSourceRules, phaseEnd: stormPhaseEnd }) : null;
   const overwatchSource = reactionBundle?.routes.some(route => route.activationEndOwner === 'current_source_v1');
+  const multipleOverwatchSources = reactionBundle?.routes.filter(route => route.activationEndOwner === 'current_source_v1').length > 1;
   const hitOwners = [beforeCasualty?.sourceAuthority,photonEntry?.sourceAuthority, bileResolution?.sourceAuthority, sabotageDronePhaseEnd?.sourceAuthority,
     seekerPhaseEnd?.sourceAuthority, stormPhaseEnd?.sourceAuthority].filter(Boolean);
   if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&hitOwners.some(owner=>owner!==beforeCasualty?.sourceAuthority&&owner!==seekerPhaseEnd?.sourceAuthority))
@@ -1143,7 +1144,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     independentlyOwnedReactionTriggers: [...(beforeCasualty?['before_casualty_batch']:[]),...(photonEntry ? ['reserve_entered_non_entry'] : []), ...(afterChargeRoll ? ['after_charge_roll'] : []), ...(spatialState?.officialReleaseDroneAssaultTiming
       && reactionBundle?.routes.some(route => route.chargeDeclarationOwner === 'current_source_v1') ? ['charge_declared'] : []),
       ...((standRoute || rangedDeclaration && headShotSource || includeReleaseBileAssaultOrder && inheritedRangedHitDebuff && targetReactions) ? ['ranged_attack_declared'] : []),
-      ...(overwatchSource && (hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState)||spatialState.officialTurretActivationEndOwner === 'overwatch_v1'
+      ...(overwatchSource && (multipleOverwatchSources||hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState)||spatialState.officialTurretActivationEndOwner === 'overwatch_v1'
         || seekerCast && spatialState.officialSeekerAssaultTiming) ? ['unit_activation_ended'] : []),
       ...(hiddenLossReactions ? ['hidden_lost'] : []),
       ...(postPlaceReactions ? ['after_place'] : []), ...(targetReactions ? ['attack_target_selected'] : []),
@@ -1567,7 +1568,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   }) : null;
   if(hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState)&&(targetReactions||rangedDeclaration||overwatch&&!hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState)||khassarAttacks.length||khassarCharge))
     throw Error('BEFORE_CASUALTY_DELEGATED_ATTACK_OWNER_NOT_ADMITTED');
-  const version = hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = overwatch?.descriptor.runtimeVersion === '1.2.0' ? '3.234.0' : hasOfficialOverwatchBeforeCasualtyPolicyV1(spatialState) ? '3.233.0' : hasOfficialTemplateBeforeCasualtyPolicyV1(spatialState) ? '3.232.0' : includeCorrodeRoundCleanup ? '3.231.0' : corrodeArmour ? '3.230.0' : infestationDamage ? '3.229.0' : hasOfficialExtendedBeforeCasualtyPolicyV1(spatialState) ? '3.228.0' : beforeCasualty ? '3.227.0' : plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'

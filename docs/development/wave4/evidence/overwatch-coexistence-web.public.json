@@ -1,0 +1,84 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/overwatch-coexistence-web-v1",
+  "results": [
+    {
+      "kind": "ocular-used-blocks-detonation",
+      "definitionId": "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+      "sourceRoomId": "wave4-overwatch-coexistence-ocular-used-blocks-detonation-0",
+      "sourceStateHash": "873774c9e3952ea00765f73a4e2142efcb53d8e204c0a34207572fc665621e6d",
+      "sourcePrefixReceipts": 2,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "c8c45219cae7550adef34a18cba8d5809c40a2d1109a3128fb4656a63cccd6fc",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "95e2d0b7f1a6d31a4715ec7aa340cf547028c6a74566e268260539e868f11a77"
+        }
+      ],
+      "signedActions": 2,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "ocular-declined-allows-detonation",
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "sourceRoomId": "wave4-overwatch-coexistence-ocular-declined-allows-detonation-0",
+      "sourceStateHash": "f44fd08e0627c28fd927160bd77a8ac6a3e8859e0e3b9b74a95192737e9871a4",
+      "sourcePrefixReceipts": 9,
+      "trace": [
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "37516b6e4b1ec9b90a40240c2714172ae0bfef5ef68b2bf4ca4efcd80eef495b"
+        },
+        {
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 2,
+          "stateHash": "9722b0b3783d4a7cfc90db495c6ed68723d0b76411ed11d6b99b0caaabc91f59"
+        },
+        {
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 3,
+          "stateHash": "6ba200c2993f25cec176a9e1044378cb3a8ef514364cb05ae8a9ceb2e6ee5b6f"
+        }
+      ],
+      "signedActions": 3,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 5,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "starcraft_tmg_wave4_overwatch_coexistence_harness_v1",
+  "status": "passed_scoped",
+  "reproducedFailure": "OVERWATCH_REACTION_CONSUMERS_REQUIRED",
+  "tools": [
+    "Native legalSpace/preview/apply/replay",
+    "actual Run and activation finish",
+    "source-bound Ocular/Gauss grants",
+    "outside-phase reaction allowance",
+    "signed-prefix Web preview/explicit confirmation",
+    "seat recovery and read-only cold replay"
+  ],
+  "nativeCases": 2,
+  "nativeSignedActions": 21,
+  "webRooms": 2,
+  "webSignedActions": 5,
+  "coldReplayCases": 4,
+  "coldOriginalActions": 29,
+  "sourceAuthority": "frozen official Wave4 records and engineering geometry",
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/overwatch-coexistence.public.json",
+    "docs/development/wave4/evidence/overwatch-coexistence-cold.public.json",
+    "docs/development/wave4/evidence/overwatch-coexistence-web.public.json"
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

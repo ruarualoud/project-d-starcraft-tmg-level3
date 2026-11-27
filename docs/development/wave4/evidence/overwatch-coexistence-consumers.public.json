@@ -1,0 +1,62 @@
+{
+  "schema": "starcraft_tmg_wave4_overwatch_coexistence_consumers_v1",
+  "status": "passed_scoped",
+  "rootRuntimeVersion": "3.234.0",
+  "overwatchRuntimeVersion": "1.2.0",
+  "definitions": [
+    {
+      "definitionId": "unit:auto_turret/overwatch-assault-phase@1",
+      "classification": "existing_atomic_reuse",
+      "actualConsumer": "Gauss at Ground infantry after Ocular used/declined",
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-auto-turret-overwatch-runtime-v1.mjs",
+          "exportName": "createOfficialAutoTurretOverwatchRuntimeV1"
+        }
+      ]
+    },
+    {
+      "definitionId": "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "actualConsumer": "Firefly at Flying Raven; shared outside-phase limit then Auto/Detonation",
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-auto-turret-overwatch-runtime-v1.mjs",
+          "exportName": "createOfficialAutoTurretOverwatchRuntimeV1"
+        }
+      ]
+    },
+    {
+      "definitionId": "unit:infested_marine/detonation-any-phase@1",
+      "classification": "new_semantics_partial",
+      "actualConsumer": "Auto shot after Ocular decline; blocked after Ocular use",
+      "fullAtomAdmission": false,
+      "allConsumersVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-before-casualty-runtime-v1.mjs",
+          "exportName": "stageOfficialBeforeCasualtyContinuationV1"
+        }
+      ]
+    }
+  ],
+  "nativeCases": 2,
+  "nativeSignedActions": 21,
+  "webRooms": 2,
+  "webSignedActions": 5,
+  "coldReplayCases": 4,
+  "coldOriginalActions": 29,
+  "legacyOriginalActions": 8,
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "evidenceRefs": [
+    "docs/development/wave4/evidence/overwatch-coexistence.public.json",
+    "docs/development/wave4/evidence/overwatch-coexistence-cold.public.json",
+    "docs/development/wave4/evidence/overwatch-coexistence-web.public.json"
+  ],
+  "scope": "Opposing-side Auto/Ocular in one engineering room; same-side imported Raven combination remains unverified",
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

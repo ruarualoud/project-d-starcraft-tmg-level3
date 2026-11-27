@@ -1,0 +1,105 @@
+{
+  "schema": "starcraft_tmg_wave4_overwatch_coexistence_cold_v1",
+  "status": "passed_read_only",
+  "results": [
+    {
+      "id": "auto-overwatch-control",
+      "roomId": "wave4-turret-auto-overwatch-control",
+      "originalSignedActions": 4,
+      "runtimeVersion": "3.93.0",
+      "grants": [
+        {
+          "sourcePieceId": "turret",
+          "sideKey": "player1",
+          "targetPieceId": "enemy",
+          "profileKey": "army_units:auto_turret::assault::Gauss Cannon",
+          "sourceDefinitionId": "unit:auto_turret/overwatch-assault-phase@1",
+          "triggerHash": "c833310150669e2670198056e5a81fddeb06509ef3b7940b7fc6953b3e3a6fa0",
+          "parentHash": "4d4e9adfb6205fab122106027d234d79c38ee21e96b292736579c2443e178131"
+        }
+      ],
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceProfilesVerified": true,
+      "stateHash": "50dd86bc2ff713402779a92cbbfd0daef9bce96181fe39083c18012c4bba7102",
+      "newActions": 0
+    },
+    {
+      "id": "ocular-use",
+      "roomId": "wave4-turret-ocular-use",
+      "originalSignedActions": 4,
+      "runtimeVersion": "3.188.0",
+      "grants": [
+        {
+          "sourcePieceId": "turret",
+          "sideKey": "player1",
+          "targetPieceId": "enemy",
+          "profileKey": "army_units:infested_missile_turret::assault::Firefly Missiles",
+          "sourceDefinitionId": "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+          "triggerHash": "ef5e9e9c8dd1e44d32a97beef0766647db4b8a9517371fc460c1fe04275f5a78",
+          "parentHash": "aa89359638681bfb0b26998c954457df54c8d72ad51dc3eda15d23a4f79fe02b"
+        }
+      ],
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceProfilesVerified": true,
+      "stateHash": "07fcd154e9d77d3dbb6718b8c77141df35382f6d3882d30269348e644b31d310",
+      "newActions": 0
+    },
+    {
+      "id": "ocular-used-blocks-detonation",
+      "roomId": "wave4-overwatch-coexistence-ocular-used-blocks-detonation-0",
+      "originalSignedActions": 9,
+      "runtimeVersion": "3.234.0",
+      "grants": [
+        {
+          "sourcePieceId": "ocular",
+          "sideKey": "player1",
+          "targetPieceId": "creator",
+          "profileKey": "army_units:infested_missile_turret::assault::Firefly Missiles",
+          "sourceDefinitionId": "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+          "triggerHash": "d2c55d85beaa382393d3de7995835a5268429b49c564486311d6fe435ec34911",
+          "parentHash": "ef86e41815bf3cccd8cce21e7561f98689edb317f645ec9b7f5a13c34cf0e15e"
+        },
+        {
+          "sourcePieceId": "turret",
+          "sideKey": "player2",
+          "targetPieceId": "defender",
+          "profileKey": "army_units:auto_turret::assault::Gauss Cannon",
+          "sourceDefinitionId": "unit:auto_turret/overwatch-assault-phase@1",
+          "triggerHash": "faf21af5e051fffbbd2d64a3ca84d137cf541b5cd600e152d7399f4438b2a0e7",
+          "parentHash": "0bbd73770aa0f1df2fff5c23fcd6bba493109562489a330ed5de60c2b4b42ab6"
+        }
+      ],
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceProfilesVerified": true,
+      "stateHash": "d72f5bade2901ea1dd6bd6cb1d0477a6653dbab6af93ddfe2646daf4c848aa0e",
+      "newActions": 0
+    },
+    {
+      "id": "ocular-declined-allows-detonation",
+      "roomId": "wave4-overwatch-coexistence-ocular-declined-allows-detonation-0",
+      "originalSignedActions": 12,
+      "runtimeVersion": "3.234.0",
+      "grants": [
+        {
+          "sourcePieceId": "turret",
+          "sideKey": "player2",
+          "targetPieceId": "defender",
+          "profileKey": "army_units:auto_turret::assault::Gauss Cannon",
+          "sourceDefinitionId": "unit:auto_turret/overwatch-assault-phase@1",
+          "triggerHash": "faf21af5e051fffbbd2d64a3ca84d137cf541b5cd600e152d7399f4438b2a0e7",
+          "parentHash": "3d81ce78e2fcdfd5e72a7b039115d3ebd98bfb2843f9cb333a9738a5b1005a20"
+        }
+      ],
+      "descriptorUnchanged": true,
+      "coldReplay": true,
+      "sourceProfilesVerified": true,
+      "stateHash": "981fda916593ee83951c2c4d87c551b3f9fbf2e7dc13e0dbab498f326da9f01a",
+      "newActions": 0
+    }
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

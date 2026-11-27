@@ -1,0 +1,296 @@
+{
+  "schema": "starcraft_tmg_wave4_overwatch_coexistence_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/overwatch-coexistence-1ul1nH",
+  "reproducedBeforeFix": "OVERWATCH_REACTION_CONSUMERS_REQUIRED",
+  "rootRuntimeVersion": "3.234.0",
+  "overwatchRuntimeVersion": "1.2.0",
+  "results": [
+    {
+      "id": "ocular-used-blocks-detonation",
+      "useOcular": true,
+      "attempt": 0,
+      "roomId": "wave4-overwatch-coexistence-ocular-used-blocks-detonation-0",
+      "directoryRef": "build/wave4-web/stukov-units/overwatch-coexistence-1ul1nH/ocular-used-blocks-detonation-0",
+      "signedActions": 9,
+      "stateHash": "d72f5bade2901ea1dd6bd6cb1d0477a6653dbab6af93ddfe2646daf4c848aa0e",
+      "coverageSatisfied": true,
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "run",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 2,
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 3,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_missile_turret/ocular-overwatch-assault-phase@1",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 4,
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 5,
+          "actionType": "run",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 6,
+          "actionType": "finish_activation",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 7,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:auto_turret/overwatch-assault-phase@1",
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 8,
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        },
+        {
+          "revision": 9,
+          "actionType": "ranged_attack",
+          "definitionId": null,
+          "restoredFromSignedJournal": true
+        }
+      ],
+      "grants": [],
+      "frames": [],
+      "bothSourcesBound": true,
+      "weaponProfilesSeparated": true,
+      "outsidePhaseReactionLimitVerified": true,
+      "sourceActivationFlagsRestored": true,
+      "originalCasualtiesPreserved": true,
+      "supplyExactlyOnce": true,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "ocular-declined-allows-detonation",
+      "useOcular": false,
+      "attempt": 0,
+      "roomId": "wave4-overwatch-coexistence-ocular-declined-allows-detonation-0",
+      "directoryRef": "build/wave4-web/stukov-units/overwatch-coexistence-1ul1nH/ocular-declined-allows-detonation-0",
+      "signedActions": 12,
+      "stateHash": "981fda916593ee83951c2c4d87c551b3f9fbf2e7dc13e0dbab498f326da9f01a",
+      "coverageSatisfied": true,
+      "trace": [
+        {
+          "revision": 1,
+          "actionType": "run",
+          "definitionId": null
+        },
+        {
+          "revision": 2,
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "run",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "actionType": "finish_activation",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:auto_turret/overwatch-assault-phase@1"
+        },
+        {
+          "revision": 7,
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 8,
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 9,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 10,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:infested_marine/detonation-any-phase@1"
+        },
+        {
+          "revision": 11,
+          "actionType": "roll_automatic_hits_armour_pool",
+          "definitionId": null
+        },
+        {
+          "revision": 12,
+          "actionType": "resolve_automatic_hits_evade_pool",
+          "definitionId": null
+        }
+      ],
+      "grants": [
+        {
+          "sourcePieceId": "turret",
+          "sideKey": "player2",
+          "targetPieceId": "defender",
+          "profileKey": "army_units:auto_turret::assault::Gauss Cannon",
+          "sourceDefinitionId": "unit:auto_turret/overwatch-assault-phase@1",
+          "triggerHash": "faf21af5e051fffbbd2d64a3ca84d137cf541b5cd600e152d7399f4438b2a0e7",
+          "parentHash": "3d81ce78e2fcdfd5e72a7b039115d3ebd98bfb2843f9cb333a9738a5b1005a20"
+        }
+      ],
+      "frames": [
+        {
+          "hostKind": "ranged",
+          "rows": [
+            {
+              "targetPieceId": "defender",
+              "targetProfile": {
+                "recordKey": "army_units:infested_marine",
+                "sourceRecordHash": "12e5f075acc27dd49959dbb084697a60fc50da8ae27f7f1574f518d09e803d20",
+                "payloadHash": "0a5124e81cdcdc61bcc4a52bd31bef1645b3b9b9d62cd4fbb64747a2aba1db87",
+                "unitId": "infested_marine",
+                "unitName": "Infested Marine",
+                "faction": "Zerg",
+                "combatTags": [
+                  "biological",
+                  "ground",
+                  "infested",
+                  "light"
+                ],
+                "armourThreshold": 4,
+                "evadeThreshold": 6,
+                "hitPoints": 2,
+                "shield": 0,
+                "squadProfile": [
+                  {
+                    "tier": 1,
+                    "minimumModels": 1,
+                    "maximumModels": 3,
+                    "supply": 1
+                  },
+                  {
+                    "tier": 2,
+                    "minimumModels": 4,
+                    "maximumModels": 6,
+                    "supply": 2
+                  },
+                  {
+                    "tier": 3,
+                    "minimumModels": null,
+                    "maximumModels": null,
+                    "supply": 0
+                  }
+                ],
+                "combatWeapons": [
+                  {
+                    "weaponName": "Strike",
+                    "linkedTo": "-",
+                    "costSmall": 0,
+                    "costLarge": 0,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 1,
+                    "hitThreshold": 4,
+                    "damage": 1,
+                    "surge": null,
+                    "behaviorText": "",
+                    "sourceTextHash": "70daa49c72839e258072250089247bf5b0c1b5af201432420c3f02f5844443e2"
+                  },
+                  {
+                    "weaponName": "Wild Mutation",
+                    "linkedTo": "Infested C-14 Rifle",
+                    "costSmall": 1,
+                    "costLarge": 1,
+                    "range": "engagement",
+                    "targetTags": [
+                      "ground"
+                    ],
+                    "rateOfAttack": 2,
+                    "hitThreshold": 3,
+                    "damage": 1,
+                    "surge": "Armoured (D3+1)",
+                    "behaviorText": "",
+                    "sourceTextHash": "5835866f890df4296e8971d909a65062bb9e55a5e03656a8d1a773331ee50fb7"
+                  }
+                ],
+                "weaponlessCombatProfileAllowed": false
+              },
+              "casualty": {
+                "schema": "starcraft_tmg_official_current_product_casualty_resolution_v1",
+                "domainHash": "c711fdcf1970a25dc1309c42d585ba35b5f06fe1c547ebb427bf862e4c6b929d",
+                "selectionHash": "",
+                "targetPieceId": "defender",
+                "casualtyModelIds": [
+                  "defender-model-1",
+                  "defender-model-2",
+                  "defender-model-3",
+                  "defender-model-4",
+                  "defender-model-5",
+                  "defender-model-6"
+                ],
+                "remainingModelIds": [],
+                "remainingEngagedEnemyUnitIds": [],
+                "postDamageMarker": 0,
+                "targetDestroyed": true,
+                "discardedOverflowDamage": 2,
+                "shieldedBefore": false,
+                "shieldedAfter": false,
+                "trainingTruth": false,
+                "resolutionHash": "cd4d21c37956e2b9b66c3dc4cd25e21b56f0c79af9a73d8b4cc5f708bcb5a951"
+              },
+              "attackResolutionHash": "e4ba0b86beaf20b5a2c9d4327dd6c13823fc6609c6ebe71dd6da7792abda454e",
+              "reservationHash": "1ccfd12b0d061de6cbf4e3b399626cdaa6f4581e84addb84874ba92703cdbd38"
+            }
+          ],
+          "activationContext": {
+            "activeSideKey": "player1",
+            "activationId": null
+          }
+        }
+      ],
+      "bothSourcesBound": true,
+      "weaponProfilesSeparated": true,
+      "outsidePhaseReactionLimitVerified": true,
+      "sourceActivationFlagsRestored": true,
+      "originalCasualtiesPreserved": true,
+      "supplyExactlyOnce": true,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "controls": [],
+  "newGameAtomsImplemented": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

@@ -962,7 +962,10 @@ function routeEligible(state, window, route, instance) {
   if (route.effectKind === 'overwatch_ranged_attack') {
     return Boolean(source && target && target.sideKey !== source.sideKey
       && target.id === window.context.endedUnitId
-      && (window.context.eligibleOverwatchSourceIds || []).includes(source.id));
+      && (window.context.eligibleOverwatchSourceIds || []).includes(source.id)
+      && (!window.context.overwatchWeaponProfilesBySource
+        || window.context.overwatchWeaponProfilesBySource[source.id]?.definitionId === route.definitionId
+          && window.context.overwatchWeaponProfilesBySource[source.id]?.profileKey === route.recordKey + '::assault::' + route.weaponName));
   }
   if (route.requiresAnotherFriendlyTarget && (!source || !target
     || source.id === target.id || source.sideKey !== target.sideKey)) return false;
