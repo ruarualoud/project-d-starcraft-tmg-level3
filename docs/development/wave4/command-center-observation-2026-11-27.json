@@ -1,0 +1,125 @@
+{
+  "date": "2026-11-27",
+  "authority": "官方 Command Center 公开写表器，同一批次前后版本一致",
+  "baseline": "U83/C84/R50",
+  "observed": {
+    "cardsVersion": 88,
+    "rulesVersion": 50,
+    "unitsVersion": 98
+  },
+  "sources": {
+    "system_metadata_versions": {
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/system_metadata/versions",
+      "bytes": 384,
+      "sha256": "42b1c51fa8db57ccbce4aa5eca260624e07da4920854d5a714ccd2cfd0e7c800"
+    },
+    "army_units": {
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/army_units?pageSize=1000",
+      "bytes": 642694,
+      "sha256": "4a3311a7bbcba099731a2f8a26c6119d5c633480ffa2eb7b9981b233e27b56ee"
+    },
+    "tactical_cards": {
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/tactical_cards?pageSize=1000",
+      "bytes": 150866,
+      "sha256": "6341c335e0789e19e632bb07ecef82f0543ae618a9780f3a8b4033f44009090d"
+    },
+    "faction_cards": {
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/faction_cards?pageSize=1000",
+      "bytes": 466056,
+      "sha256": "f5e1f16ad7c6ccb3eabf87a24eea82b5d50f6fcbd72b4f44ed33683112ae7747"
+    },
+    "rules_sections": {
+      "url": "https://firestore.googleapis.com/v1/projects/starcrafttmgbeta/databases/starcrafttmgbeta/documents/rules_sections?pageSize=1000",
+      "bytes": 730087,
+      "sha256": "f3637cd57b9bd097e883fa972c613c3fed5bd7e697d8eec53c9013b68bd1156d"
+    }
+  },
+  "unitIds": [
+    "alarak",
+    "archon",
+    "firebat",
+    "infested_goliath",
+    "infested_marine",
+    "infested_missile_turret",
+    "infested_siege_tank",
+    "infested_trooper",
+    "phasing_scarab",
+    "reaver",
+    "scarab",
+    "slayer__stalker_",
+    "solarite_scarab",
+    "stukov",
+    "tal_darim_pylon"
+  ],
+  "newTacticCardIds": [
+    "barracks__reactor_",
+    "healing_pathogen",
+    "hive",
+    "hungering_infestation",
+    "infested_barracks",
+    "infested_command_center",
+    "robotics_support_bay",
+    "weighted_pustule"
+  ],
+  "newFactionCardIds": [
+    "stukov_s_forces",
+    "tal_darim"
+  ],
+  "changedBoostDescriptionIds": [
+    "armory",
+    "engineering_bay",
+    "evolution_chamber",
+    "forge",
+    "kerrigan_s_swarm",
+    "observer",
+    "overseer",
+    "power_field",
+    "robotics_facility",
+    "twilight_council",
+    "vanadium_plating",
+    "zagara_s_swarm",
+    "zerg_swarm"
+  ],
+  "unchangedOldUnits": 45,
+  "unchangedRulesSections": 15,
+  "timestampOnlyTactics": 36,
+  "excludedPendingCommunityCards": [
+    {
+      "id": "8TU2Zjtj7vHR8hecEHCJ",
+      "name": "TORNADO",
+      "type": "community_deployment"
+    },
+    {
+      "id": "CwpVpTyISgB6Yfs00bHT",
+      "name": "Bloodbath",
+      "type": "community_mission"
+    },
+    {
+      "id": "PIHyf3HamGgcPecA9xsZ",
+      "name": "CHOISIR LA RIVE",
+      "type": "community_deployment"
+    },
+    {
+      "id": "WQHBbQY9aAXCg1rI1u3L",
+      "name": "RACING",
+      "type": "community_deployment"
+    },
+    {
+      "id": "X6MxoDbWKSFfqYxF8ABF",
+      "name": "2 Siege Tanks",
+      "type": "community_mission"
+    },
+    {
+      "id": "cMmOd23UYqHUbp1G7lm7",
+      "name": "RUNNING HORIZON",
+      "type": "community_deployment"
+    },
+    {
+      "id": "hUG1Nn0l8K1cGrtEDqW6",
+      "name": "RED AMBUSH BLUE",
+      "type": "community_deployment"
+    }
+  ],
+  "voteOnlyChanges": 12,
+  "rawObservation": "build/wave4-hvh-intake-20261127/observed-diff.json"
+}
