@@ -6,7 +6,7 @@ const LIVE_OUTPUT_BUDGET = resolveCompanionProviderOutputBudgetV1({allowedChanne
 export const LIVE_ADAPTER_ID = "secure-worker-live-byok-v1";
 export const LIVE_ADAPTER_NETWORK = "isolated_worker_https_egress";
 
-function liveProviderRequestFromCompanion(request) {
+export function liveProviderRequestFromCompanion(request, maxPromptBytes=1024*1024) {
   const promptNodes = request.messages.map((message, index) => ({
     nodeType: `companion_${message.role}`,
     authority: message.role === "system" ? "platform" : "participant",
@@ -31,7 +31,7 @@ function liveProviderRequestFromCompanion(request) {
     maxOutputUnits: LIVE_OUTPUT_BUDGET.maxOutputUnits,
   };
   const byteLength = Buffer.byteLength(JSON.stringify(body), "utf8");
-  ensure(byteLength <= 1024 * 1024,
+  ensure(byteLength <= maxPromptBytes,
     "LIVE_PROVIDER_REQUEST_TOO_LARGE", { byteLength });
   return Object.freeze(body);
 }
@@ -47,6 +47,7 @@ export function createLiveCompanionProviderAdapter(options = {}) {
     // continuity acceptance passes 4 (two companions x two user turns).
     // Every dispatch is separately locked via claimDispatch(dispatchIndex).
     maxDispatches = 1,
+    maxPromptBytes = 1024 * 1024,
   } = options;
   const observation = {
     dispatchAttempts: 0,
@@ -55,8 +56,10 @@ export function createLiveCompanionProviderAdapter(options = {}) {
     success: null,
     failure: null,
     completions: [],
+    promptBytes: null,
   };
   let calls = 0;
+  let claimedDispatches = 0;
   const usage = { promptTokens: 0, completionTokens: 0, reportedCostUnits: 0 };
 
   function rejection(reason, message) {
@@ -73,6 +76,7 @@ export function createLiveCompanionProviderAdapter(options = {}) {
     calls += 1;
     observation.success = null;
     observation.failure = null;
+    observation.promptBytes = null;
     const workerRef = getAttachedWorkerRef();
     if (!workerRef) {
       // Missing secure attachment: stop immediately, never dispatch.
@@ -81,14 +85,15 @@ export function createLiveCompanionProviderAdapter(options = {}) {
         "no secure Worker attachment is active; the run stops without dispatch");
     }
     observation.dispatchAttempts += 1;
-    if (observation.dispatchAttempts > maxDispatches) {
+    if (claimedDispatches >= maxDispatches) {
       observation.failure = { code: "LIVE_CALL_DENOMINATOR_EXCEEDED" };
       return rejection("LIVE_CALL_DENOMINATOR_EXCEEDED",
         `the ${maxDispatches}-call authorization was already consumed; no retry is ever attempted`);
     }
     let providerRequest;
     try {
-      providerRequest = liveProviderRequestFromCompanion(request);
+      providerRequest = liveProviderRequestFromCompanion(request, maxPromptBytes);
+      observation.promptBytes = Buffer.byteLength(JSON.stringify(providerRequest),'utf8');
       if (containsCredentialMaterial(providerRequest)) {
         observation.failure = { code: "LIVE_PROVIDER_REQUEST_SENSITIVE_MATERIAL" };
         return rejection("LIVE_PROVIDER_REQUEST_SENSITIVE_MATERIAL",
@@ -103,12 +108,17 @@ export function createLiveCompanionProviderAdapter(options = {}) {
     // immediately before the single physical egress attempt. The dispatch
     // index is passed so multi-call epochs lock each call separately.
     try {
-      await claimDispatch(observation.dispatchAttempts);
-    } catch {
+      await claimDispatch(claimedDispatches + 1);
+    } catch (error) {
+      if(error?.code==='PRODUCT_COMPANION_TRIAL_LIMIT_REACHED') {
+        observation.failure = { code: error.code };
+        return rejection(error.code, "the authorized trial requests have been consumed; no network request was made");
+      }
       observation.failure = { code: "LIVE_PROVIDER_ATTEMPT_ALREADY_CLAIMED" };
       return rejection("LIVE_PROVIDER_ATTEMPT_ALREADY_CLAIMED",
         "a previous run already claimed the one-call dispatch lock; rerun needs new user authorization");
     }
+    claimedDispatches += 1;
     let value;
     try {
       value = await workerPort.complete({ workerRef, providerRequest });
@@ -166,7 +176,7 @@ export function createLiveCompanionProviderAdapter(options = {}) {
     const pricing = priced?.pricing || null;
     const replyText = classification.text;
     const completion = {
-      dispatchIndex: observation.dispatchAttempts,
+      dispatchIndex: claimedDispatches,
       receipt: clone(receipt),
       pricing: clone(pricing),
       pricingAuthoritative: priced?.authoritative === true,

@@ -217,6 +217,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     connection,
     secureProvider,
     companionProduct,
+    productRoomKey,
     dispatch,
     dispatchProvider,
     refresh,
@@ -305,6 +306,18 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     && connection.visible
     && connection.online;
   const agentSessionActive = roleAgent?.lifecycleState === "active";
+  const productRoom = Boolean(connection.roomId?.startsWith('product-'));
+  const [roomProvider, setRoomProvider] = useState<any>(null);
+  useEffect(() => {
+    if (!productRoom || !active || chat.busy) return;
+    let mounted = true;
+    void productRoomKey.read().then(result => {
+      if (mounted) setRoomProvider(result.ok ? result.provider : null);
+    }).catch(() => {if (mounted) setRoomProvider(null);});
+    return () => {mounted = false;};
+  }, [productRoom, active, chat.busy, productRoomKey]);
+  const roomChatUnavailable = productRoom && (!roomProvider?.enabled
+    || !roomProvider?.configured || roomProvider?.remainingDispatches === 0);
   const agentBusy = roleAgent?.status === "sending" || submitting;
   const agentReadOnly = roleAgent?.readOnly !== false;
   const selectedProvider = secureProvider?.profiles.find(
@@ -345,7 +358,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
 
   const floatingSectionDefaults: Record<FloatingSectionKey, boolean> = {
     comms: true,
-    chat: false,
+    chat: productRoom,
     identity: false,
     catalogue: false,
     memory: false,
@@ -1918,6 +1931,18 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   }
 
   function renderChatProviderStatus() {
+    if (productRoom) return <View style={styles.chatStatusCard} testID="companion-chat-provider-status">
+      <Text style={styles.chatStatusTitle}>{zh ? '本房副官' : 'Room companion'} · {roomProvider?.model || '…'}</Text>
+      <Text style={styles.chatStatusMeta}>{!roomProvider
+        ? (zh ? '正在读取本席设置…' : 'Reading your seat settings…')
+        : !roomProvider.enabled ? (zh ? '服务尚未开启模型调用。' : 'Model requests are disabled.')
+        : !roomProvider.configured ? (zh ? '请在战桌顶部「本房 AI」输入你的 Key。' : 'Enter your key in Room AI above the battlefield.')
+        : roomProvider.remainingDispatches === 0 ? (zh ? '本轮试用次数已用完；历史仍保留。' : 'This trial is used up; history is preserved.')
+        : Number.isSafeInteger(roomProvider.remainingDispatches)
+          ? (zh ? `已连接 · 剩余 ${roomProvider.remainingDispatches} 次请求` : `Connected · ${roomProvider.remainingDispatches} requests left`)
+          : (zh ? '已连接' : 'Connected')}</Text>
+      <Text style={styles.chatStatusMeta}>{zh ? '普通聊天不带军表和棋盘；问到战局时才读取对应信息。仅在你发送或继续消息时调用，不会自动移动棋子。' : 'Ordinary chat omits the army and board; battle questions load only the requested information. Requests run only when you send or continue; no automatic piece movement.'}</Text>
+    </View>;
     const provider = chat.statusResult?.provider;
     const persistence = chat.statusResult?.persistence;
     const unavailable = !provider || provider.state !== "injected_port";
@@ -2844,10 +2869,16 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         {(chat.interrupted || replyPending) && (
           <View style={styles.chatInterruptCard} testID="companion-chat-interrupted">
             <Text style={styles.chatInterruptTitle}>
-              {zh ? "Provider 回合已中断" : "Provider turn interrupted"}
+              {roomProvider?.remainingDispatches === 0
+                ? (zh ? '本轮试用次数已用完' : 'This trial is used up')
+                : (zh ? '消息已保存，等待回复' : 'Message saved, awaiting reply')}
             </Text>
             <Text style={styles.chatInterruptText}>
-              {chat.interrupted?.reason || (zh ? "已保存消息，等待同伴回复" : "Saved message awaits a companion reply")}
+              {['PRODUCT_COMPANION_TRIAL_LIMIT_REACHED','LIVE_CALL_DENOMINATOR_EXCEEDED','LIVE_PROVIDER_ATTEMPT_ALREADY_CLAIMED'].includes(chat.interrupted?.reason || '')
+                ? (zh ? '之前的试用次数已用完。获得新额度后，点击继续即可回复这条消息。' : 'The previous trial was used up. With a new allowance, continue to reply to this saved message.')
+                : chat.interrupted?.reason==='LIVE_PROVIDER_REQUEST_TOO_LARGE'
+                  ? (zh ? '这次上下文超过聊天大小限制，尚未调用模型，也未消耗请求次数。' : 'This context exceeds the chat size limit. No model request or trial allowance was used.')
+                  : chat.interrupted?.reason || (zh ? '点击继续，让同伴回复上一条消息。' : 'Continue to reply to your last message.')}
               {chat.interrupted?.pendingParticipantId
                 ? ` · ${zh ? "待发言" : "pending"}: ${chatParticipantLabel(conversation, chat.interrupted.pendingParticipantId)}`
                 : ""}
@@ -2858,8 +2889,8 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
                 : "The accepted history is fully preserved and no reply was fabricated. Only an explicit Continue resumes this turn — there is never an automatic retry."}
             </Text>
             <ActionButton
-              disabled={chat.busy}
-              label={zh ? "显式继续该回合" : "Explicitly continue turn"}
+              disabled={chat.busy || roomChatUnavailable}
+              label={zh ? '继续回复上一条消息' : 'Continue replying to the last message'}
               onPress={() => void continueChatConversation()}
               testID="companion-chat-continue"
             />
@@ -2898,7 +2929,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         />
         <View style={styles.actionRow}>
           <ActionButton
-            disabled={!chat.draft.trim() || chat.busy || replyPending || conversation.status !== "active"}
+            disabled={!chat.draft.trim() || chat.busy || replyPending || conversation.status !== "active" || roomChatUnavailable}
             label={zh ? "发送" : "Send"}
             onPress={() => void sendChatMessage()}
             testID="companion-chat-send"
@@ -2955,7 +2986,9 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     return (
       <View style={styles.sectionBody} testID="companion-chat-section">
         <Text style={styles.sectionHint}>
-          {zh
+          {productRoom ? (zh
+            ? '和副官聊战局或角色故事。它只读取你当前席位可见的信息；发送一条消息才会请求回复。'
+            : 'Chat about the battle or character stories. Your companion sees only your seat’s visible information and replies when you send a message.') : zh
             ? "同伴群聊（Slice 266c 接通 · Slice 266d 补全 Tavern 对等合同）：服务端绑定的持久会话，按席位校验；人设/世界书/分层记忆/分支/作者注释/导入导出/审计/权限面全部走真实服务端合同。同伴永不持久化席位令牌、永不读取对手私有计划/记忆、永不请求或存储隐藏思维链、绝不伪造模型回复；无 Preview/Confirm/Apply 权限。"
             : "Companion group chat (connected in Slice 266c · Tavern-equivalent contracts completed in Slice 266d): a server-bound persisted conversation, verified per seat; persona, worldbook, layered memory, branches, author's note, import/export, audit and permission surfaces all run through real server contracts. Companions never persist seat tokens, never read opponent-private plans/memory, never request or store hidden chain-of-thought, and never fabricate a model reply; no Preview/Confirm/Apply authority."}
         </Text>
@@ -3086,7 +3119,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
   // columns) or the mobile full-screen sheet (single column) without any
   // DOM/testID change.
   const floatingMainSections = [
-    renderFloatingSection(
+    !productRoom && renderFloatingSection(
       "comms",
       zh ? "战场通讯" : "Field comms",
       <View style={styles.sectionBody}>
@@ -3104,7 +3137,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
     ),
     renderFloatingSection(
       "chat",
-      zh ? "同伴群聊（已接通）" : "Companion group chat (connected)",
+      productRoom ? (zh ? '和副官聊天' : 'Chat with your companion') : (zh ? '同伴群聊（已接通）' : 'Companion group chat (connected)'),
       renderChatSection(),
     ),
   ];
@@ -3126,7 +3159,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
       zh ? "关系与记忆" : "Relationship & memory",
       renderMemorySection(),
     ),
-    renderFloatingSection(
+    !productRoom && renderFloatingSection(
       "session",
       zh ? "会话控制" : "Session controls",
       <View style={styles.sectionBody} testID="companion-session-section">
@@ -3159,7 +3192,7 @@ export function TacticalAdjutantPanel({ onExpandedChange, variant = "inline" }: 
         {renderPermissionPosture()}
       </View>,
     ),
-    renderFloatingSection(
+    !productRoom && renderFloatingSection(
       "provider",
       zh ? "安全 Provider 设置（BYOK）" : "Secure Provider setup (BYOK)",
       <View style={styles.sectionBody}>{renderProviderCard()}</View>,

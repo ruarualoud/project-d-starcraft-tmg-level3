@@ -23,3 +23,5 @@ node scripts/serve-starcraft-product-v1.mjs --offline --wave3-match-candidate=2.
 副官只向 `api.openai.com/v1/chat/completions` 发请求，凭据按房间／席位仅存运行内存。用户在自己战桌顶部「本房 AI · OpenAI」密码框手动填入实际 key；不给其他席位复制凭据。每席此次配置最多三次请求，失败也消耗一次尝试，无自动重试；不读取机器 DeepSeek 凭据，也不把 OpenAI key 用于旧 DeepSeek 机器对手。请求日志只记录不含密钥的计数、模型和使用回执；三次上限不会因更换 key 或重启服务重置。新一轮额度须另行授权。
 
 离线验证：`node scripts/verify-wave3-openai-companion.mjs`。用户已完成本地安全输入，当前窗口服务端实际投影为 player1；三次真实请求均返回 HTTP 200，报告模型为 `gpt-5.4-mini-2026-03-17`。公开局面答复、口令连续性与私有信息／操作边界均有真实界面回复，棋盘仍为 r0。本轮三次额度已用完，未发送第四次；续试需新的明确授权。耗用和待优化的大上下文见[三次试用记录](openai-companion-trial-2026-11-27.zh-CN.md)。
+
+随后用户要求优化上下文并自己试聊，且明确普通闲聊只带角色和近期对话。当前已改为按问题读取战局，并在原启动参数中增加 `--companion-max-dispatches=6`：保留首轮已用三次，为用户自己新增三次。助手本轮真实模型调用 0，不自动继续先前因限额停下的消息。服务更新后原 Key 随运行内存清空，用户需在原密码框再输入一次。详见[按需上下文与玩家试聊](companion-context-on-demand-2026-11-27.zh-CN.md)。

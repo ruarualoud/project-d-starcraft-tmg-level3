@@ -11,13 +11,19 @@ import { priceStarcraftTmgDeepSeekV4FlashUsageV1 } from './provider-pricing-v1.m
 
 // Lazy attachment: opening the product makes no model call. A submitted
 // conversation turn uses the existing secure worker and companion adapter.
+export async function readProductCompanionDispatchUsageV1({dataDirectory,providerProfile,maxDispatches}) {
+  const prior=await readFile(path.join(dataDirectory,'dispatch.jsonl'),'utf8')
+    .catch(error=>{if(error.code==='ENOENT')return '';throw error;});
+  const usedDispatches=prior.split('\n').filter(Boolean).map(line=>JSON.parse(line))
+    .filter(row=>row.providerProfileHash===providerProfile.integrity.hash).length;
+  return {maxDispatches,usedDispatches,remainingDispatches:Math.max(0,maxDispatches-usedDispatches)};
+}
 export async function claimProductCompanionDispatchV1({dataDirectory,instance,index,providerProfile,maxDispatches}) {
   const file=path.join(dataDirectory,'dispatch.jsonl');
   if(Number.isFinite(maxDispatches)) {
-    const prior=await readFile(file,'utf8').catch(error=>{if(error.code==='ENOENT')return '';throw error;});
-    const used=prior.split('\n').filter(Boolean).map(line=>JSON.parse(line))
-      .filter(row=>row.providerProfileHash===providerProfile.integrity.hash).length;
-    if(used>=maxDispatches)throw Error('PRODUCT_COMPANION_TRIAL_LIMIT_REACHED');
+    const {remainingDispatches}=await readProductCompanionDispatchUsageV1({dataDirectory,providerProfile,maxDispatches});
+    if(remainingDispatches===0)throw Object.assign(Error('PRODUCT_COMPANION_TRIAL_LIMIT_REACHED'),
+      {code:'PRODUCT_COMPANION_TRIAL_LIMIT_REACHED'});
   }
   await appendFile(file,JSON.stringify({instance,index,at:new Date().toISOString(),model:providerProfile.model,
     providerProfileHash:providerProfile.integrity.hash})+'\n',{mode:0o600});
@@ -52,7 +58,8 @@ export function createProductCompanionLiveProviderV1({dataDirectory,
   }
   const adapter=createLiveCompanionProviderAdapter({workerPort:{
     complete:request=>workerPort.complete(request)},getAttachedWorkerRef:()=>workerRef,
-    maxDispatches,containsCredentialMaterial:containsStarcraftTmgOnlineCredentialMaterialV1,
+    maxDispatches,maxPromptBytes:providerProfile.provider==='openai-api-direct'?96*1024:1024*1024,
+    containsCredentialMaterial:containsStarcraftTmgOnlineCredentialMaterialV1,
     async claimDispatch(index){
       await claimProductCompanionDispatchV1({dataDirectory,instance,index,providerProfile,maxDispatches});
     },priceUsage(receipt){
@@ -67,6 +74,7 @@ export function createProductCompanionLiveProviderV1({dataDirectory,
     const result=await adapter.complete(request);
     await appendFile(path.join(dataDirectory,'usage.jsonl'),JSON.stringify({
       requestId:request.requestId,at:new Date().toISOString(),ok:result.ok,
+      promptBytes:adapter.observation.promptBytes,
       receipt:adapter.observation.success?.receipt||adapter.observation.failure?.receipt||null,
       reason:result.reason||null})+'\n',{mode:0o600});
     return result;

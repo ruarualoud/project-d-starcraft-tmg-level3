@@ -6,7 +6,7 @@ import {createWave3OpenAICompanionProfileV1,estimateWave3OpenAICompanionUsageV1}
 import {createStarcraftTmgProviderProfileRegistryV1} from '../packages/secure-provider-runtime/provider-profile-registry-v1.mjs';
 import {createStarcraftTmgProviderEgressTransportV1} from '../packages/secure-provider-runtime/provider-egress-transport-v1.mjs';
 import {createLiveCompanionProviderAdapter} from '../packages/secure-provider-runtime/companion-worker-adapter-v1.mjs';
-import {createProductCompanionLiveProviderV1,claimProductCompanionDispatchV1} from '../packages/secure-provider-runtime/companion-live-provider-v1.mjs';
+import {createProductCompanionLiveProviderV1,claimProductCompanionDispatchV1,readProductCompanionDispatchUsageV1} from '../packages/secure-provider-runtime/companion-live-provider-v1.mjs';
 import {createProductRoomCredentialsV1} from '../packages/secure-provider-runtime/product-room-credentials-v1.mjs';
 
 const profile=createWave3OpenAICompanionProfileV1();
@@ -70,9 +70,36 @@ for(const content of ['not-json',JSON.stringify({channels:{companion_reply:{text
 const store=createProductRoomCredentialsV1();
 await store.replace('player2','synthetic-seat-only-value');
 assert.equal(store.status('player1').configured,false);assert.equal(store.status('player2').configured,true);
-assert.equal(store.status('player2').persisted,false);await store.close();bytes.fill(0);
+assert.equal(store.status('player2').persisted,false);await store.close();
 const dataDirectory='build/playtest-web/openai-budget-regression/'+randomUUID();await mkdir(dataDirectory,{recursive:true});
 for(let index=1;index<=3;index++)await claimProductCompanionDispatchV1({dataDirectory,instance:'first',index,providerProfile:profile,maxDispatches:3});
 await assert.rejects(claimProductCompanionDispatchV1({dataDirectory,instance:'after-restart-or-key-change',index:1,providerProfile:profile,maxDispatches:3}),/TRIAL_LIMIT_REACHED/);
 assert.equal((await readFile(dataDirectory+'/dispatch.jsonl','utf8')).trim().split('\n').length,3);
-console.log(JSON.stringify({passed:true,realProviderCalls:0,checks:['OpenAI-only endpoint','no machine credential fallback','JSON reply contract','model-compatible output field','three attempts then stop across key changes and server restart','invalid JSON and credential echoes rejected without retry','usage estimate is not invoice','per-seat ephemeral credential']}));
+assert.deepEqual(await readProductCompanionDispatchUsageV1({dataDirectory,providerProfile:profile,maxDispatches:6}),
+  {maxDispatches:6,usedDispatches:3,remainingDispatches:3});
+for(let index=4;index<=6;index++)await claimProductCompanionDispatchV1({dataDirectory,instance:'explicit-new-trial',index,providerProfile:profile,maxDispatches:6});
+assert.deepEqual(await readProductCompanionDispatchUsageV1({dataDirectory,providerProfile:profile,maxDispatches:6}),
+  {maxDispatches:6,usedDispatches:6,remainingDispatches:0});
+await assert.rejects(claimProductCompanionDispatchV1({dataDirectory,instance:'restart-again',index:1,providerProfile:profile,maxDispatches:6}),/TRIAL_LIMIT_REACHED/);
+let blockedClaims=0,blockedEgress=0;
+const oversized=createLiveCompanionProviderAdapter({maxDispatches:1,maxPromptBytes:96*1024,
+  getAttachedWorkerRef:()=>({fixture:true}),containsCredentialMaterial:()=>false,
+  claimDispatch:async()=>{blockedClaims++;},workerPort:{complete:async()=>{blockedEgress++;}}});
+const tooLarge=await oversized.complete({requestId:'oversized-local-only',messages:[{role:'user',content:'x'.repeat(100*1024)}]});
+assert.equal(tooLarge.reason,'LIVE_PROVIDER_REQUEST_TOO_LARGE');assert.equal(blockedClaims,0);assert.equal(blockedEgress,0);
+const exhausted=createLiveCompanionProviderAdapter({maxDispatches:1,getAttachedWorkerRef:()=>({fixture:true}),
+  containsCredentialMaterial:()=>false,claimDispatch:()=>claimProductCompanionDispatchV1({dataDirectory,instance:'limit-ui',index:1,providerProfile:profile,maxDispatches:6}),
+  workerPort:{complete:async()=>{blockedEgress++;}}});
+assert.equal((await exhausted.complete({requestId:'used-up',messages:[{role:'user',content:'test'}]})).reason,'PRODUCT_COMPANION_TRIAL_LIMIT_REACHED');
+assert.equal(blockedEgress,0);
+replyContent=JSON.stringify({channels:{companion_reply:{text:'离线大小限制恢复验证'}}});
+const recoveryClaims=[];
+const recoverable=createLiveCompanionProviderAdapter({maxDispatches:1,maxPromptBytes:96*1024,
+  getAttachedWorkerRef:()=>({fixture:true}),containsCredentialMaterial:()=>false,
+  claimDispatch:async index=>{recoveryClaims.push(index);},priceUsage:estimateWave3OpenAICompanionUsageV1,
+  workerPort:{complete:({providerRequest})=>transport.complete({egressBinding:resolved.egressBinding,credentialBytes:bytes,providerRequest})}});
+assert.equal((await recoverable.complete({requestId:'too-large',messages:[{role:'user',content:'x'.repeat(100*1024)}]})).reason,'LIVE_PROVIDER_REQUEST_TOO_LARGE');
+assert.equal((await recoverable.complete({requestId:'smaller',messages:[{role:'user',content:'short message'}]})).ok,true);
+assert.deepEqual(recoveryClaims,[1],'local validation failure must not consume the in-memory allowance');
+bytes.fill(0);
+console.log(JSON.stringify({passed:true,realProviderCalls:0,checks:['OpenAI-only endpoint','no machine credential fallback','JSON reply contract','model-compatible output field','three attempts then stop across key changes and server restart','explicit new cumulative allowance preserves previous usage','oversized prompt rejected before quota claim or network','limit reason reaches UI without retry','invalid JSON and credential echoes rejected without retry','usage estimate is not invoice','per-seat ephemeral credential']}));

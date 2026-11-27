@@ -20,7 +20,7 @@ import { COMPANION_CATALOGUE_V1 } from '../../content/characters/companion-catal
 import { STARCRAFT_TMG_HOSTED_BOT_SEAT_API_PREFIX, STARCRAFT_TMG_HOSTED_BOT_SEAT_HTTP_VERSION } from '../../packages/client-domain/hosted-bot-seat-transport-v1.mjs';
 import { createOfficialCompetitiveMapConfiguratorV1 } from '../../packages/product-composition/official-competitive-map-configurator-v1.mjs';
 import { createProductRoomCredentialsV1 } from '../../packages/secure-provider-runtime/product-room-credentials-v1.mjs';
-import { createProductCompanionLiveProviderV1 } from '../../packages/secure-provider-runtime/companion-live-provider-v1.mjs';
+import { createProductCompanionLiveProviderV1, readProductCompanionDispatchUsageV1 } from '../../packages/secure-provider-runtime/companion-live-provider-v1.mjs';
 
 export const PRODUCT_PREFIX = '/starcraft-tmg-level3/product/v1';
 const clone = value => structuredClone(value);
@@ -161,11 +161,14 @@ export async function createStarcraftProductRoomHostV1(input) {
       const adapter=createStarcraftTmgLevel3HttpAdapter({roomRuntime:fixture.roomRuntime,assetRoot:root});
       const item={record,fixture,adapter,companion,persistence,roomStore,botStore,journal,
         withLearningService:(seat,factory,operation)=>userKeys.use(seat,'postgame-learning',factory,operation),
-        providerStatus:seat=>({...userKeys.status(seat),ownerSeat:seat,
+        providerStatus:async seat=>({...userKeys.status(seat),ownerSeat:seat,
           providerId:input.companionProfile?.provider||'deepseek-openai-compatible-direct',
           model:input.companionProfile?.model||'deepseek-flash',
           enabled:input.liveEnabled!==false||Boolean(input.companionProviderFactory||companionProvider),
           maxDispatches:input.companionMaxDispatches??null,
+          ...(input.companionProfile&&Number.isFinite(input.companionMaxDispatches)
+            ? await readProductCompanionDispatchUsageV1({dataDirectory:path.join(directory,'companion-provider',seat),
+              providerProfile:input.companionProfile,maxDispatches:input.companionMaxDispatches}):{}),
           usedFor:record.matchMode==='user_vs_agent'&&seat==='player1'?['companion','opponent']:['companion']}),
         async setUserKey(seat,apiKey){
           if(input.companionProfile?.provider==='openai-api-direct'&&apiKey!==null&&record.matchMode!=='human_vs_human')
@@ -446,7 +449,7 @@ export async function createStarcraftProductRoomHostV1(input) {
         ||(method==='POST'&&typeof body.apiKey!=='string'))
         return response({ok:false,reason:'PRODUCT_CREDENTIAL_FIELDS_INVALID'},400);
       try {
-        const provider=method==='GET'?item.providerStatus(viewer.seatKey):
+        const provider=method==='GET'?await item.providerStatus(viewer.seatKey):
           await item.setUserKey(viewer.seatKey,method==='DELETE'?null:body.apiKey);
         return response({ok:true,provider});
       } catch(error){

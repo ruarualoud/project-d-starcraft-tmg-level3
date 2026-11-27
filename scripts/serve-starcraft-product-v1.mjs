@@ -65,9 +65,14 @@ async function main(){
   if(companionProvider&&companionProvider!=='openai')throw Error('PRODUCT_COMPANION_PROVIDER_NOT_APPROVED');
   const companionProfile=companionProvider==='openai'
     ? createWave3OpenAICompanionProfileV1(arg('companion-model','gpt-5.4-mini')):null;
+  // An explicit cumulative ceiling grants a new trial without erasing the
+  // previous dispatches or changing the frozen model/profile identity.
+  const companionMaxDispatches=Number(arg('companion-max-dispatches','3'));
+  if(!Number.isSafeInteger(companionMaxDispatches)||companionMaxDispatches<1||companionMaxDispatches>100)
+    throw Error('PRODUCT_COMPANION_DISPATCH_LIMIT_INVALID');
   const handle=await createStarcraftProductServerV1({dataDirectory,learningDefinitions,
-    ...(companionProfile?{companionProfile,companionMaxDispatches:3,
-      companionProviderFactory:options=>createProductCompanionLiveProviderV1({...options,providerProfile:companionProfile,maxDispatches:3,
+    ...(companionProfile?{companionProfile,companionMaxDispatches,
+      companionProviderFactory:options=>createProductCompanionLiveProviderV1({...options,providerProfile:companionProfile,maxDispatches:companionMaxDispatches,
         usagePricer:estimateWave3OpenAICompanionUsageV1})}:{}),
     offlineWave3MatchVersion:wave3Candidate,
     webRoot:path.resolve(arg('web-root',path.join(ROOT,'apps/starcraft-tmg-expo/dist-product'))),
@@ -75,7 +80,7 @@ async function main(){
     port:Number(arg('port','4173')),liveEnabled:!offline});
   const entry={url:handle.origin+'/match',armyUrl:handle.armyUrl,pid:process.pid,
     dataDirectory,liveEnabled:!process.argv.includes('--offline'),
-    ...(companionProfile?{companionProvider:companionProfile.provider,companionModel:companionProfile.model,companionMaxDispatches:3}:{})};
+    ...(companionProfile?{companionProvider:companionProfile.provider,companionModel:companionProfile.model,companionMaxDispatches}:{})};
   await writeFile(path.join(dataDirectory,'service.json'),JSON.stringify(entry)+'\n',{mode:0o600});
   console.log(JSON.stringify(entry));
   for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>void handle.close().finally(()=>process.exit(0)));

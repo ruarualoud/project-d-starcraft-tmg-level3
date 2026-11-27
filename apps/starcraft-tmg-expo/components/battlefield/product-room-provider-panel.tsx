@@ -34,6 +34,9 @@ export function ProductRoomProviderPanel() {
       <Text style={styles.detail}>{status?.configured?(zh?'已设置你的 Key':'Your key is set'):(zh?'等待你的 Key':'Your key is needed')}</Text>
       {status?.configured&&button(zh?'更换':'Change',()=>setEditing(!editing))}
       {status?.configured&&button(zh?'移除':'Remove',()=>void operate(true))}</View>
+    {!!status?.model&&<Text style={styles.detail}>{status.model}{Number.isSafeInteger(status.remainingDispatches)
+      ?(zh?` · 剩余 ${status.remainingDispatches} 次（累计已用 ${status.usedDispatches}/${status.maxDispatches}）`:` · ${status.remainingDispatches} requests left (${status.usedDispatches}/${status.maxDispatches} used)`):''}</Text>}
+    {status?.remainingDispatches===0&&<Text style={styles.detail}>{zh?'本轮试用次数已用完，聊天历史仍保留。':'This trial is used up; your chat history is preserved.'}</Text>}
     {(editing||!status?.configured)&&<><Text style={styles.detail}>{status?.usedFor?.includes('opponent')
       ?(zh?'你的副官和机器对手使用这份 Key。':'Your adjutant and AI opponent use this key.')
       :(zh?'仅供你自己的副官使用，对方使用自己的 Key。':'Only your adjutant uses this key. Your opponent uses their own.')}

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { projectCompanionRoomContextV1 } from './companion-room-context-v1.mjs';
+import { projectCompanionRequestedContextV1, selectCompanionRoomContextSectionsV1 } from './companion-room-context-v1.mjs';
 
 import { hashStarcraftTmgContract } from "../authoritative-engine/transition-v1.mjs";
 import { createWorldbookEntry, importCompanionBackendContract } from
@@ -264,10 +264,19 @@ function contextMessage(contextAssembly, roomContext) {
 }
 
 function transcriptMessages(state, currentParticipantId) {
-  return state.acceptedTurns.map((turn) => ({
+  // Keep the newest complete turns; never mutate/truncate the durable history
+  // or invent a summary. The last player message is always preserved intact.
+  const tail=[]; let bytes=0;
+  for(const turn of [...state.acceptedTurns].reverse()) {
+    const length=Buffer.byteLength(turn.content,'utf8');
+    if(tail.length && (tail.length>=16 || bytes+length>16*1024))break;
+    tail.unshift(turn);bytes+=length;
+  }
+  const omitted=state.acceptedTurns.length-tail.length;
+  return [...(omitted?[{role:'system',content:`${omitted} earlier dialogue turns are omitted from this request but remain saved. Do not pretend to remember their contents; rely only on the supplied memory and recent messages.`}]:[]),...tail.map((turn) => ({
     role: turn.ownerParticipantId === currentParticipantId ? "assistant" : "user",
     content: `${turn.ownerParticipantId}: ${turn.content}`,
-  }));
+  }))];
 }
 
 function safeProviderReceipt(receipt) {
@@ -891,14 +900,18 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
     });
   }
 
-  async function readCompanionRoomContext(loaded) {
+  async function readCompanionRoomContext(loaded, question='') {
+    const sections=selectCompanionRoomContextSectionsV1(question);
+    // loadBound already authenticated this fresh room projection. Casual chat
+    // neither reads the expensive workbench nor sends any battlefield state.
+    if(!sections.length)return {roomContext:projectCompanionRequestedContextV1(loaded.room,null)};
     const input = {roomId: loaded.binding.roomId, seatToken: loaded.seatToken};
     const details = {conversationId: loaded.conversationId, acceptedHistoryPreserved: true};
     for (let attempt = 0; attempt < 2; attempt++) {
       const [room, workbench] = await Promise.all([roomRuntime.readRoom(input), roomRuntime.readBattleWorkbench(input)]);
       if (!room?.ok || !workbench?.ok) return {failure: rejection("COMPANION_ROOM_CONTEXT_UNAVAILABLE", details)};
       try {
-        return {roomContext: projectCompanionRoomContextV1(room.projection, workbench.snapshot)};
+        return {roomContext: projectCompanionRequestedContextV1(room.projection, workbench.snapshot,{sections,question})};
       } catch (error) {
         if (error.code === 'COMPANION_ROOM_CONTEXT_STALE' && attempt === 0) continue;
         if (!['COMPANION_ROOM_CONTEXT_STALE','OFFICIAL_RELEASE_QUERY_BINDING_MISMATCH'].includes(error.code)) throw error;
@@ -908,7 +921,7 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
   }
 
   async function drainCompanionReplies(loaded, scanText) {
-    const {roomContext, failure} = await readCompanionRoomContext(loaded);
+    const {roomContext, failure} = await readCompanionRoomContext(loaded,scanText);
     if (failure) return failure;
     const replies = [];
     while (true) {
@@ -1640,10 +1653,10 @@ export function createStarcraftTmgCompanionRoomSessionServiceV1(options = {}) {
         if (!participant || participant.kind !== "companion") {
           return rejection("COMPANION_TURN_OWNER_INVALID", { participantId: branch.ownerParticipantId });
         }
-        const {roomContext, failure} = await readCompanionRoomContext(loaded);
-        if (failure) return failure;
         const lastUserTurn = [...loaded.state.acceptedTurns].reverse()
           .find((turn) => turn.ownerParticipantId === loaded.binding.userParticipantId);
+        const {roomContext, failure} = await readCompanionRoomContext(loaded,lastUserTurn?.content || '');
+        if (failure) return failure;
         const completed = await providerReply(
           loaded,
           participant,
