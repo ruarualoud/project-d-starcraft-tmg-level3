@@ -1,0 +1,62 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/burrow-web-v1",
+  "results": [
+    {
+      "kind": "marine-burrow",
+      "definitionId": "unit:infested_marine/burrow-ambush-movement-phase@1",
+      "sourceRoomId": "wave4-infantry-marine-burrow",
+      "sourceStateHash": "9aa4a3e7d46aedd57d02a4da44e3ff3d2bdc8046385409dd13e0dc141824d221",
+      "sourcePrefixReceipts": 0,
+      "trace": [
+        {
+          "actionType": "resolve_relocation_ability",
+          "definitionId": "unit:infested_marine/burrow-ambush-movement-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "1a74ec2a8daacad77aabe33bea2b9e11839a69f731c857f978fa7c3fd0fdb7f1"
+        }
+      ],
+      "signedActions": 1,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    },
+    {
+      "kind": "trooper-burrow",
+      "definitionId": "unit:infested_trooper/burrow-ambush-movement-phase@1",
+      "sourceRoomId": "wave4-infantry-trooper-burrow",
+      "sourceStateHash": "7d03be11c27ee5470e5c14e4aa28d36e439f61fff3c28e2a042b5fcc61d38315",
+      "sourcePrefixReceipts": 0,
+      "trace": [
+        {
+          "actionType": "resolve_relocation_ability",
+          "definitionId": "unit:infested_trooper/burrow-ambush-movement-phase@1",
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "78f010851f54557c0b34e8e2c163a8147ea74a5d0eb304a27a7592b00b7ed8a7"
+        }
+      ],
+      "signedActions": 1,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 2,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

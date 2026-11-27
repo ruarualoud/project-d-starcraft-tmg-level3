@@ -46,6 +46,17 @@ async function operate(page,item,choice,parameterized) {
       await form.getByLabel('横向位置（英寸）',{exact:true}).fill('25');
       await form.getByLabel('纵向位置（英寸）',{exact:true}).fill('10');
     }
+    if(item.flow==='infantry-burrow'){
+      await form.getByText('领队模型',{exact:true}).locator('..').getByRole('button',{name:'actor-model-1',exact:true}).click();
+      await form.getByText('进场区段',{exact:true}).locator('..').getByRole('button',{name:'red-entry-1',exact:true}).click();
+      for(let index=0;index<item.modelCount;index++){
+        await form.getByRole('button',{name:'添加模型最终站位',exact:true}).click();
+        const x=form.getByLabel('横向位置（英寸）',{exact:true}).nth(index),row=x.locator('..').locator('..');
+        await row.getByText('模型',{exact:true}).locator('..').getByRole('button',{name:'actor-model-'+(index+1),exact:true}).click();
+        await x.fill(String(35+index%3*1.31));
+        await form.getByLabel('纵向位置（英寸）',{exact:true}).nth(index).fill(String(27+Math.floor(index/3)*1.31));
+      }
+    }
     if(await form.getByText('支付卡牌',{exact:true}).count()){
       const payments=form.getByText('支付卡牌',{exact:true}).locator('..');
       if(item.flow==='admiral-exchange')await payments.getByRole('button',{name:'player1-tactical-2',exact:true}).click();
@@ -55,6 +66,10 @@ async function operate(page,item,choice,parameterized) {
     if(item.flow==='admiral-exchange')await form.getByText('友方单位（可跳过）',{exact:true}).locator('..').getByRole('button',{name:'marine',exact:true}).click();
     if(['admiral-exchange','trooper-restoration','stukov-spread'].includes(item.flow)&&choice.actionType==='resolve_characteristic_status_ability')
       await form.getByText('目标单位',{exact:true}).locator('..').getByRole('button',{name:'enemy',exact:true}).click();
+    if(item.flow==='munitions-support'&&choice.definitionId==='unit:medic/life-support-any-phase@1'){
+      const target=form.getByText('目标单位',{exact:true});
+      if(await target.count())await target.locator('..').getByRole('button',{name:'enemy',exact:true}).click();
+    }
     if(item.flow==='creep-place'){
       await form.getByLabel('横向位置（英寸）',{exact:true}).fill(String(item.coordinate.xMilliInches/1000));
       await form.getByLabel('纵向位置（英寸）',{exact:true}).fill(String(item.coordinate.yMilliInches/1000));
@@ -107,7 +122,7 @@ try {
       let primaryUsed=false,shotUsed=false,restorationUsed=false;
       for(let step=0;step<12;step++) {
         const aggregate=await current(item);const state=aggregate.envelope.state;
-        if(primaryUsed&&!state.pendingOfficialUniversalCarrier&&!state.pendingOfficialReactionWindow&&!state.pendingOfficialAutoTurretOverwatch
+        if(primaryUsed&&!state.pendingOfficialPlaguedMunitions&&!state.pendingOfficialUniversalCarrier&&!state.pendingOfficialReactionWindow&&!state.pendingOfficialAutoTurretOverwatch
           &&!state.pendingOfficialInfestationTransfer&&!state.pendingCurrentProductRangedCasualtyChoice)break;
         const owner=state.activeSideKey;assert.ok(pages[owner]);
         const menu=await legal(pages[owner]);
@@ -139,6 +154,14 @@ try {
         const recipient=final.envelope.state.pieces.find(piece=>piece.id==='recipient');
         assert.equal(recipient.statuses.some(status=>String(status.statusName||status).toLowerCase()==='infestation'),false);
         assert.equal(restorationUsed,true);
+      } else if(item.flow==='infantry-burrow'){
+        const actor=final.envelope.state.pieces.find(p=>p.id==='actor');
+        assert.equal(actor.isOnField,true);assert.equal(actor.currentModels,item.modelCount);
+        assert.equal(actor.activatedPhases.movement,true);
+      } else if(item.flow==='munitions-support'){
+        const history=final.envelope.state.officialPlaguedMunitionsHistory;
+        assert.equal(history.length,1);assert.equal(history[0].incomingNonLethalDamage,1);
+        assert.ok(history[0].damagePool.appliedReduction>0);assert.equal(history[0].nonLethalResolution.casualtyModelIds.length,0);
       } else if(item.flow==='admiral-exchange'){
         const state=final.envelope.state,enemy=state.pieces.find(p=>p.id==='enemy');
         assert.equal(enemy.activatedPhases.movement,true);
@@ -183,7 +206,7 @@ try {
 const result={schema:'starcraft_tmg_wave4_virus_web_verification_v1',status:'passed_scoped',
   runRef:path.relative(root,directory),results,signedActions:results.reduce((sum,row)=>sum+row.signedActions,0),
   conditionalTurretGeometryInRestorationCaseOnly:service.rooms.some(item=>item.id==='growing-restoration-exception'||item.flow==='carrier-restoration'),sourceHeldDefinitions:39,
-   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread'].includes(item.flow)),
+   engineeringEstimatedUnitGeometry:service.rooms.some(item=>['admiral-exchange','trooper-restoration','stukov-spread','munitions-support','infantry-burrow'].includes(item.flow)),
   fullWave4LobbyBuilderAdmission:false,fullMatchAdmission:false,wave3PlayerRoomsTouched:false,modelCalls:0,trainingTruth:false};
 await atomicWrite(path.join(directory,'web-result.public.json'),JSON.stringify(result,null,2)+'\n');
 await atomicWrite(path.join(root,'docs/development/wave4/evidence/'+(process.argv[3]||'virus-web.public.json')),JSON.stringify(result,null,2)+'\n');

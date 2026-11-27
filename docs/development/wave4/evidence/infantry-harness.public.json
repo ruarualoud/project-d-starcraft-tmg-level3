@@ -1,0 +1,58 @@
+{
+  "schema": "starcraft_tmg_wave4_infantry_harness_v1",
+  "harnessLoopUsed": true,
+  "targetGames": [
+    "starcraft-tmg"
+  ],
+  "promptPackRoutes": [
+    {
+      "route": "fact_probe_prompt",
+      "mode": "offline_contract_verification",
+      "invoked": false,
+      "modelCalls": 0
+    }
+  ],
+  "harnessToolsCalled": [
+    "actual_roster_factory",
+    "legalSpace",
+    "preview",
+    "explicit_human_confirmation",
+    "apply",
+    "idempotency_reapply",
+    "ranged_and_melee_pool_choices",
+    "charge_impact",
+    "damage_received_reaction",
+    "non_lethal_damage",
+    "cold_replay",
+    "web_parameter_form",
+    "seat_recovery_exchange"
+  ],
+  "uiTraceEvidence": [
+    "docs/development/wave4/evidence/infantry-burrow-web.public.json",
+    "docs/development/wave4/evidence/infantry-munitions-web.public.json",
+    "docs/development/wave4/evidence/infantry-burrow-preview.png",
+    "docs/development/wave4/evidence/infantry-munitions-mobile.png"
+  ],
+  "agentDecisionEvidence": {
+    "status": "not_applicable",
+    "modelCalls": 0
+  },
+  "memoryTraceEvidence": [],
+  "trainingTraceCandidates": [],
+  "rollbackOrDemotionRules": [
+    "source_text_and_phase_must_match",
+    "only_roster_selected_upgrades_enter_actions",
+    "non_lethal_does_not_remove_casualties",
+    "pending_damage_reactions_block_other_actions",
+    "engineering_geometry_not_formal_authority",
+    "partial_infantry_does_not_complete_Wave4"
+  ],
+  "userVisibleChecks": [
+    "six_and_three_model_ambush_forms",
+    "Medic_can_reduce_additional_non_lethal_damage",
+    "explicit_confirmation_and_two_seat_recovery",
+    "separate_activation_id_for_actual_repeat_move"
+  ],
+  "modelCalls": 0,
+  "trainingTruth": false
+}

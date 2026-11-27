@@ -1741,7 +1741,7 @@ function openAppliedAbilityDebuffRestorationWindow(bundle,transition,applied,{re
   const { state, action } = transition;
   const sourceActionHash = hashStarcraftTmgContract(action);
   const input = { triggerKind: 'debuff_received', activeSideKey: action.sideKey, phase: state.phase,
-    activationId: `${Number(state.round)}:${state.phase}:${action.sideKey}:${action.pieceId}`, sourceActionHash,
+    activationId: resolveOfficialArmourRollActivationIdV1(state,action.pieceId), sourceActionHash,
     context: { actorPieceId: action.pieceId, targetPieceId: applied.targetPieceId, affectedPieceId: applied.targetPieceId,
       statusEffectHash: applied.statusEffectHash, ...(recordSource ? { sourceDefinitionId: action.definitionId } : {}) } };
   const { activeLegal, defenderLegal } = createOfficialReactionWindowOpportunityBatchV1({ state, bundle }).projectWindow(input);

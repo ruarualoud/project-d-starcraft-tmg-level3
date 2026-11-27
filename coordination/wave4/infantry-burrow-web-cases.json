@@ -1,0 +1,4 @@
+[
+ {"id":"marine-burrow","definitionId":"unit:infested_marine/burrow-ambush-movement-phase@1","initial":true,"flow":"infantry-burrow","modelCount":6},
+ {"id":"trooper-burrow","definitionId":"unit:infested_trooper/burrow-ambush-movement-phase@1","initial":true,"flow":"infantry-burrow","modelCount":3}
+]

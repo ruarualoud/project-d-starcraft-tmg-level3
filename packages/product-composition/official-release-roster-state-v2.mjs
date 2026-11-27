@@ -1,5 +1,6 @@
 import { OFFICIAL_ANCESTRAL_WISDOM_DEFINITION_ID } from './official-ancestral-wisdom-payment-v1.mjs';
 import {createOfficialStukovContextualSupplyRoutesV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
+import {OFFICIAL_REPEATED_ACTIVATION_IDENTITY_POLICY_V1} from '../rule-atoms/official-repeated-activation-identity-v1.mjs';
 import { OFFICIAL_OUR_MINDS_AS_ONE_DEFINITION_ID } from './official-our-minds-as-one-v1.mjs';
 import { OFFICIAL_KHALAS_GIFT_DEFINITION_ID } from './official-khalas-gift-v1.mjs';
 import { createOfficialCleanupContinuationPolicyV1 } from './official-cleanup-continuation-runtime-v1.mjs';
@@ -105,7 +106,7 @@ import { OFFICIAL_FEEDBACK_REACTION_TIMING_POLICY_V1 } from './official-feedback
 // produces reserves and source-bound instances. Deployment and match setup are
 // separate Native operations, owned by their respective product runtimes.
 export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, legacyDisclosurePolicy, blastTemplateGeometryAsset,
-  sourceDefinitionIds,
+  sourceDefinitionIds,includeRepeatedActivationIdentity=false,
   attackProfileRecordKeys,
   includeMelee = false, includeArmourOrdinals = false, meleeModifierDefinitionIds, battlefieldModifierDefinitionIds,
   reactionDefinitionIds, characteristicDefinitionIds, canonicalResourceTypes = false, meleeWeaponDefinitionIds,
@@ -132,7 +133,8 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
   includeKhassarMovement = false,
   includeNonLethalStandardDamage = includePlague || includeKhassarMovement || includePsionicStormAssaultDamage
     || characteristicDefinitionIds?.includes(OFFICIAL_POISONOUS_ESSENCE_DEFINITION_ID) === true
-    || characteristicDefinitionIds?.some(id => OFFICIAL_FEEDBACK_DEFINITION_IDS.includes(id)) === true,
+    || characteristicDefinitionIds?.some(id => OFFICIAL_FEEDBACK_DEFINITION_IDS.includes(id)
+      || /^unit:infested_(marine|trooper)\/plagued-munitions-assault-phase@1$/u.test(id)) === true,
   includeMeleeSidearm, includeZagaraCommander = false, includeTassadarCommander = false,
   includeZagaraPsionicLink = false, includeStructureTargeting = false,
   consumePaymentScope = 'numeric_attack_target_reaction' } = {}) {
@@ -283,6 +285,10 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
         || reactionDefinitionIds?.includes(OFFICIAL_ANCESTRAL_WISDOM_DEFINITION_ID) });
     const stukovSupplyRoutes=createOfficialStukovContextualSupplyRoutesV1(state.officialCharacteristicStatusFamilySourceBundle);
     if(stukovSupplyRoutes.length)state.officialContextualSupplyModifierRoutes=[...(state.officialContextualSupplyModifierRoutes||[]),...stukovSupplyRoutes];
+    if(includeRepeatedActivationIdentity){
+      if(!characteristicDefinitionIds.includes(OFFICIAL_REPEATED_ACTIVATION_IDENTITY_POLICY_V1.sourceDefinitionId))throw Error('REPEATED_ACTIVATION_ADMIRAL_SOURCE_REQUIRED');
+      state.officialRepeatedActivationIdentityPolicy=structuredClone(OFFICIAL_REPEATED_ACTIVATION_IDENTITY_POLICY_V1);
+    }
     if (characteristicDefinitionIds.includes(OFFICIAL_FORCE_WALL_DEFINITION_ID)) {
       state.officialBattlefieldAssetComponentProfile = getOfficialReleaseBattlefieldAssetComponentProfileV2(context);
       getOfficialForceWallFootprintV1(state);
@@ -470,6 +476,11 @@ export function createOfficialReleaseRosterStateV2({ context, candidatesBySide, 
       throw Error('RELEASE_ROSTER_STORM_NON_LETHAL_SOURCE_MISMATCH');
     }
     state.officialNonLethalDamagePolicy = structuredClone(OFFICIAL_NON_LETHAL_DAMAGE_POLICY_V1);
+  }
+  if (state.officialCharacteristicStatusFamilySourceBundle?.routes.some(r=>r.effectKind==='plagued_munitions')) {
+    if(context.manifest.source.references.core?.byteHash!==OFFICIAL_NON_LETHAL_DAMAGE_POLICY_V1.sourceCoreByteHash)
+      throw Error('RELEASE_ROSTER_MUNITIONS_NON_LETHAL_SOURCE_MISMATCH');
+    state.officialNonLethalDamagePolicy=structuredClone(OFFICIAL_NON_LETHAL_DAMAGE_POLICY_V1);
   }
   if (includeNonLethalStandardDamage) {
     if (!hasOfficialNonLethalDamagePolicyV1(state)) throw Error('RELEASE_ROSTER_NON_LETHAL_SOURCE_REQUIRED');

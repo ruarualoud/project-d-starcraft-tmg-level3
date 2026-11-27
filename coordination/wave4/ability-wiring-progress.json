@@ -35,7 +35,7 @@
   },
   "formalMatchGate": {
     "passedDefinitions": 0,
-    "webAcceptance": "old_card_timing_and_turret_successors_scoped_passed",
+    "webAcceptance": "old_timing_turret_virus_stukov_infantry_scoped_passed",
     "fullWave4Admission": false
   },
   "sourceHeldDefinitions": [
@@ -275,9 +275,9 @@
     }
   ],
   "next": [
-    "W4-02：补Stukov其余能力、感染步兵Precision／Plagued Munitions／Burrow Ambush／Detonation与武器后继。",
-    "继续其余12个需实现合同及其他新增单位／势力；3个撤回Archon独占合同另列，不计入18。39条来源隔离及估算几何边界保留。",
-    "完成W4-03整版发布、Builder／大厅、玩家查询与媒体，再验W4-04的500／2000分Web双席。"
+    "W4-02：实现两条 Detonation 的伤亡前反应、HITS 及原攻击恢复；继续 Stukov 其余能力和新卡。",
+    "继续其余12个需实现合同及其他新增单位／势力；撤回Archon独占3个合同不计18。39来源隔离与估算几何保持。",
+    "完成 W4-03 整版发布／Builder／大厅／媒体及 W4-04 的500／2000分 Web 双席。"
   ],
   "modelCalls": 0,
   "trainingTruth": false,
@@ -1598,10 +1598,12 @@
         "docs/development/wave4/evidence/stukov-infestation.public.json",
         "docs/development/wave4/evidence/stukov-marker-proof.public.json",
         "docs/development/wave4/evidence/stukov-geometry.public.json",
-        "docs/development/wave4/evidence/stukov-infestation-web.public.json"
+        "docs/development/wave4/evidence/stukov-infestation-web.public.json",
+        "docs/development/wave4/evidence/admiral-repeat-activation.public.json"
       ],
       "engineeringEstimatedUnitGeometry": true,
-      "fullMatchAdmission": false
+      "fullMatchAdmission": false,
+      "repeatActivationIdentityVerified": true
     },
     {
       "definitionId": "unit:infested_trooper/spread-infestation-any-phase@1",
@@ -1636,9 +1638,327 @@
       ],
       "engineeringEstimatedUnitGeometry": true,
       "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_marine/live-for-the-swarm-any-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "projectOfficialCharacteristicStatusFamilyModifiersV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infested-infantry-base.public.json",
+        "docs/development/wave4/evidence/infantry-weapons.public.json",
+        "docs/development/wave4/evidence/infantry-boundaries.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_marine/burrow-ambush-movement-phase@1",
+      "classification": "existing_atom",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-relocation-family-adapter-v1.mjs",
+          "exportName": "createOfficialRelocationFamilyAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infested-infantry-base.public.json",
+        "docs/development/wave4/evidence/infantry-boundaries.public.json",
+        "docs/development/wave4/evidence/infantry-burrow-web.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_marine/plagued-munitions-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-plagued-munitions-runtime-v1.mjs",
+          "exportName": "createOfficialPlaguedMunitionsRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/plagued-munitions.public.json",
+        "docs/development/wave4/evidence/infantry-boundaries.public.json",
+        "docs/development/wave4/evidence/infantry-munitions-web.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_marine/infested-c-14-rifle-assault-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-roster-weapon-component-adapter-v1.mjs",
+          "exportName": "createOfficialRosterWeaponComponentAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infantry-weapons.public.json",
+        "docs/development/wave4/evidence/infested-infantry-base.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_marine/infested-missile-launcher-acid-blast-assault-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-roster-weapon-component-adapter-v1.mjs",
+          "exportName": "createOfficialRosterWeaponComponentAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infantry-weapons.public.json",
+        "docs/development/wave4/evidence/infested-infantry-base.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_marine/infested-missile-launcher-scourgeshot-assault-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-roster-weapon-component-adapter-v1.mjs",
+          "exportName": "createOfficialRosterWeaponComponentAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infantry-weapons.public.json",
+        "docs/development/wave4/evidence/infested-infantry-base.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_marine/devastating-charge-assault-phase@1",
+      "classification": "existing_atom",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infantry-charge.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_marine/wild-mutation-combat-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-roster-weapon-component-adapter-v1.mjs",
+          "exportName": "createOfficialRosterWeaponComponentAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infantry-weapons.public.json",
+        "docs/development/wave4/evidence/infested-infantry-base.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_marine/strike-combat-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-roster-weapon-component-adapter-v1.mjs",
+          "exportName": "createOfficialRosterWeaponComponentAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infantry-weapons.public.json",
+        "docs/development/wave4/evidence/infested-infantry-base.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/live-for-the-swarm-any-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-characteristic-status-family-adapter-v1.mjs",
+          "exportName": "projectOfficialCharacteristicStatusFamilyModifiersV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infested-infantry-base.public.json",
+        "docs/development/wave4/evidence/infantry-weapons.public.json",
+        "docs/development/wave4/evidence/infantry-boundaries.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/burrow-ambush-movement-phase@1",
+      "classification": "existing_atom",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": true,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-relocation-family-adapter-v1.mjs",
+          "exportName": "createOfficialRelocationFamilyAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infested-infantry-base.public.json",
+        "docs/development/wave4/evidence/infantry-boundaries.public.json",
+        "docs/development/wave4/evidence/infantry-burrow-web.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/plagued-munitions-assault-phase@1",
+      "classification": "existing_atoms_new_combination",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-plagued-munitions-runtime-v1.mjs",
+          "exportName": "createOfficialPlaguedMunitionsRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/plagued-munitions.public.json",
+        "docs/development/wave4/evidence/infantry-boundaries.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/infested-c-14-rifle-assault-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-roster-weapon-component-adapter-v1.mjs",
+          "exportName": "createOfficialRosterWeaponComponentAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infantry-weapons.public.json",
+        "docs/development/wave4/evidence/infested-infantry-base.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/devastating-charge-assault-phase@1",
+      "classification": "existing_atom",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-selected-roster-melee-action-runtime-v1.mjs",
+          "exportName": "createOfficialSelectedRosterMeleeActionRuntimeV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infantry-charge.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
+    },
+    {
+      "definitionId": "unit:infested_trooper/bayonet-combat-phase@1",
+      "classification": "data_change",
+      "newAtomIds": [],
+      "sourceCompiled": true,
+      "executionBound": true,
+      "nativeSuccessorsVerified": true,
+      "webVerified": false,
+      "consumerRefs": [
+        {
+          "file": "packages/product-composition/official-roster-weapon-component-adapter-v1.mjs",
+          "exportName": "createOfficialRosterWeaponComponentAdapterV1"
+        }
+      ],
+      "evidenceRefs": [
+        "docs/development/wave4/evidence/infantry-weapons.public.json",
+        "docs/development/wave4/evidence/infested-infantry-base.public.json"
+      ],
+      "engineeringEstimatedUnitGeometry": true,
+      "fullMatchAdmission": false
     }
   ],
-  "executionStatus": "Stukov_infestation_native_round_and_Web_scoped_verified_full_Wave4_update_in_progress",
+  "executionStatus": "infantry_15_definitions_and_repeated_activation_scoped_verified_full_Wave4_in_progress",
   "creepBuilderGate": {
     "verifiedDefinitions": 3,
     "legalCreepChoices": 5,
@@ -2128,5 +2448,47 @@
     ],
     "sourceHeldDefinitions": 39,
     "fullWave4Admission": false
+  },
+  "infantryGate": {
+    "definitionIds": [
+      "unit:infested_marine/live-for-the-swarm-any-phase@1",
+      "unit:infested_marine/burrow-ambush-movement-phase@1",
+      "unit:infested_marine/plagued-munitions-assault-phase@1",
+      "unit:infested_marine/infested-c-14-rifle-assault-phase@1",
+      "unit:infested_marine/infested-missile-launcher-acid-blast-assault-phase@1",
+      "unit:infested_marine/infested-missile-launcher-scourgeshot-assault-phase@1",
+      "unit:infested_marine/devastating-charge-assault-phase@1",
+      "unit:infested_marine/wild-mutation-combat-phase@1",
+      "unit:infested_marine/strike-combat-phase@1",
+      "unit:infested_trooper/live-for-the-swarm-any-phase@1",
+      "unit:infested_trooper/burrow-ambush-movement-phase@1",
+      "unit:infested_trooper/plagued-munitions-assault-phase@1",
+      "unit:infested_trooper/infested-c-14-rifle-assault-phase@1",
+      "unit:infested_trooper/devastating-charge-assault-phase@1",
+      "unit:infested_trooper/bayonet-combat-phase@1"
+    ],
+    "newGameAtoms": 0,
+    "implementedCumulativeAtoms": 6,
+    "nativeCases": 16,
+    "nativeSignedActions": 62,
+    "webRooms": 3,
+    "webSignedActions": 4,
+    "queryBoundaryChecks": 24,
+    "evidenceRefs": [
+      "docs/development/wave4/evidence/admiral-repeat-activation.public.json",
+      "docs/development/wave4/evidence/infested-infantry-base.public.json",
+      "docs/development/wave4/evidence/infantry-weapons.public.json",
+      "docs/development/wave4/evidence/infantry-charge.public.json",
+      "docs/development/wave4/evidence/plagued-munitions.public.json",
+      "docs/development/wave4/evidence/infantry-boundaries.public.json",
+      "docs/development/wave4/evidence/infantry-munitions-web.public.json",
+      "docs/development/wave4/evidence/infantry-burrow-web.public.json",
+      "docs/development/wave4/evidence/infantry-consumers.public.json",
+      "docs/development/wave4/evidence/infantry-harness.public.json"
+    ],
+    "detonationPending": true,
+    "geometryAuthority": "conditional_engineering_images",
+    "fullWave4Admission": false,
+    "sourceHeldDefinitions": 39
   }
 }

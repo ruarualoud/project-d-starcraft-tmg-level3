@@ -216,7 +216,7 @@ export function openWave3EngineeringRoomV1({ directory, filename, rulesRuntime, 
 // Share the actual Room/Host handoff across numeric weapon proofs. Each caller
 // supplies its semantic choices and checks the weapon-specific rule results.
 export async function commitWave3RangedBatchV1({ directory, native, runtime, roomId, credentials,
-  attackerSideKey, attackerPieceId, targetPieceId, weaponName, operationKey, selectPoolParameters, attackMode }) {
+  attackerSideKey, attackerPieceId, targetPieceId, weaponName, operationKey, selectPoolParameters, selectCasualtyParameters, attackMode }) {
   async function checkpoint(name, value) {
     await atomicWrite(path.join(directory, name), JSON.stringify(value, null, 2) + '\n');
   }
@@ -265,13 +265,17 @@ export async function commitWave3RangedBatchV1({ directory, native, runtime, roo
       return { before, after, event, query, committed };
     }
     const domain = runtime.enumerate(state).parameterDomains.find(row =>
-      row.parameterSchema.required.includes('casualtySelectionHash'));
+      row.parameterSchema.required.includes('casualtySelectionHash')||row.parameterSchema.required.includes('casualtyModelIds'));
     assert.ok(domain, 'native casualty choice missing');
+    if(domain.parameterSchema.required.includes('casualtyModelIds'))
+      assert.equal(typeof selectCasualtyParameters,'function','caller must choose explicit casualty model IDs');
     await checkpoint(operationKey + '-casualty-checkpoint.json', { envelope: after.envelope });
     const selected = await native.commit({ roomId, credential: credentials[state.activeSideKey],
       operationKey: operationKey + '-casualty-' + after.stateRevision,
       select: row => row.domainId === domain.domainId,
-      parameters: row => ({ casualtySelectionHash: row.parameterSchema.casualtySelectionHash.enum[0] }) });
+      parameters: row => row.parameterSchema.required.includes('casualtySelectionHash')
+        ? ({ casualtySelectionHash: row.parameterSchema.casualtySelectionHash.enum[0] })
+        : selectCasualtyParameters(row, state) });
     assert.equal(selected.preview.core.chanceTicket, null);
   }
   assert.fail('finite casualty continuation did not settle');

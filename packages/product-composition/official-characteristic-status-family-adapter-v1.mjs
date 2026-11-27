@@ -1,5 +1,7 @@
 import { compileOfficialUniversalCarrierSpecV1 } from '../source-data/official-universal-carrier-source-v1.mjs';
 import {compileOfficialStukovInfestationSpecV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
+import {compileOfficialInfestedInfantrySpecV1} from '../source-data/official-infested-infantry-source-v1.mjs';
+import {inspectOfficialUnitCreepProximityV1} from './official-current-product-state-facts-v1.mjs';
 import {resolveOfficialInfestationActivationExchangeV1} from '../rule-atoms/official-infestation-activation-exchange-v1.mjs';
 import { compileOfficialInfestationRestrictionSpecV1 } from '../rule-atoms/official-infestation-restrictions-v1.mjs';
 import { allowsOfficialSpawnRoundSpecialAbilityV1 } from '../rule-atoms/official-spawn-round-ability-lock-v1.mjs';
@@ -317,7 +319,7 @@ function compileRoute(definition, { explicitRelease = false } = {}) {
   const name = definition.definitionName;
   const text = definition.sourceText;
   const restrictionSpec = compileOfficialInfestationRestrictionSpecV1(definition) || compileOfficialUniversalCarrierSpecV1(definition)
-    || compileOfficialStukovInfestationSpecV1(definition);
+    || compileOfficialStukovInfestationSpecV1(definition) || compileOfficialInfestedInfantrySpecV1(definition);
   if (restrictionSpec) return seal(baseSpec(definition, restrictionSpec), 'routeHash');
   let spec = null;
   if (definition.definitionId === OFFICIAL_RAVEN_ANTI_ARMOUR_MISSILE_DEFINITION_ID
@@ -924,6 +926,9 @@ function passiveRoutesForPiece(bundle, state, piece) {
     && (route.effectKind === "structure"
       || Number(piece?.structureRules?.specialAbilitiesDisabledThroughRound
         ?? Number.NEGATIVE_INFINITY) < Number(state.round)));
+}
+export function resolveOfficialPassiveCharacteristicRoutesForPieceV1(bundle,state,piece){
+  return passiveRoutesForPiece(bundle,state,piece);
 }
 
 export function resolveOfficialInfestedDropSourcesV1(state, sideKey) {
@@ -2466,9 +2471,16 @@ function conditionalWeaponFact(state, piece, route, context) {
   const target = state.pieces.find(row => row.id === context.targetPieceId);
   const fact = { definitionId: route.definitionId, conditionKind: condition.kind,
     targetPieceId: target?.id || null, rangeMilliInches: condition.rangeMilliInches };
-  if (state.phase !== route.phase || context.attackKind !== condition.attackKind
+  if ((route.phase!=='any'&&state.phase !== route.phase) || !(condition.attackKinds?condition.attackKinds.includes(context.attackKind):context.attackKind===condition.attackKind)
     || !activePiece(target) || target.sideKey === piece.sideKey) {
     return { ...fact, applies: false, reason: 'outside_eligible_attack_context' };
+  }
+  if(condition.kind==='infestation_or_creep_proximity'){
+    if(context.attackKind==='ranged'&&normalized(context.weaponName)!==condition.rangedWeaponName)
+      return{...fact,applies:false,reason:'weapon_not_eligible_for_live_for_the_swarm'};
+    const infected=hasStatus(target,'infestation');
+    const creep=inspectOfficialUnitCreepProximityV1(state,target,{rangeMilliInches:condition.rangeMilliInches});
+    return{...fact,applies:infected||creep.withinAnySource,targetInfested:infected,creepProximity:creep};
   }
   if (condition.kind === 'target_beyond') {
     const measured = unitWithin(state, piece, target, condition.rangeMilliInches);

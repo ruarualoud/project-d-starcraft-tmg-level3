@@ -1,5 +1,6 @@
 import {hashStarcraftTmgContract as hash} from '../authoritative-engine/referee-crypto-v1.mjs';
 import {OFFICIAL_ADMIRAL_ACTIVATION_EXCHANGE_ID,OFFICIAL_ADMIRAL_ACTIVATION_EXCHANGE_ATOM} from '../source-data/official-stukov-infestation-source-v1.mjs';
+import {hasOfficialRepeatedActivationIdentityPolicyV1,renewOfficialPhaseActivationIdentityV1} from './official-repeated-activation-identity-v1.mjs';
 const statusName=s=>String(s?.statusName||s?.name||s||'').trim().toLowerCase();
 export function resolveOfficialInfestationActivationExchangeV1({state,route,actor,enemy,friendly=null,eligibleFriendlyUnitIds}){
  if(route.definitionId!==OFFICIAL_ADMIRAL_ACTIVATION_EXCHANGE_ID||route.effectKind!=='infestation_activation_exchange'
@@ -18,5 +19,9 @@ export function resolveOfficialInfestationActivationExchangeV1({state,route,acto
   friendlyUnitId:friendly?.id||null,round:Number(state.round),phase:state.phase,enemyWasActivated,enemyActivatedAfter:true,
   friendlyWasActivated:friendly?friendlyWasActivated:null,friendlyActivatedAfter:friendly?false:null,
   removedInfestationStatusHashes:removedStatuses.map(s=>s.statusEffectHash||hash(s)),trainingTruth:false};
+ if(friendly&&friendlyWasActivated&&hasOfficialRepeatedActivationIdentityPolicyV1(state)){
+  const activationRenewal=renewOfficialPhaseActivationIdentityV1(state,friendly,hash(body));
+  const renewed={...body,activationRenewal};return{...renewed,resolutionHash:hash(renewed)};
+ }
  return{...body,resolutionHash:hash(body)};
 }

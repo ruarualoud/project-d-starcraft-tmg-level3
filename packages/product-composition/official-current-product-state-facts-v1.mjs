@@ -213,6 +213,22 @@ export function resolveOfficialCurrentProductPieceCapabilityV1(state, input = {}
   });
 }
 
+export function inspectOfficialUnitCreepProximityV1(state,piece,{rangeMilliInches=6000}={}){
+  if(!activePiece(piece)||!Number.isSafeInteger(rangeMilliInches)||rangeMilliInches<0)throw Error('CREEP_PROXIMITY_INPUT_INVALID');
+  const measure=source=>evaluateOfficialWithinWhollyWithinV1({state,dataBundle:state.officialModelBaseGeometryDataBundle,
+    source,targetUnitId:piece.id,rangeMilliInches});
+  const checks=creepTumorRows(state).map(token=>{const m=measure({kind:'token',id:token.tokenId});
+    return{sourceKind:'creep_tumor',sourceId:token.tokenId,within:m.unitWithin,measurementResultHash:m.resultHash};});
+  const routes=(state.officialBattlefieldAssetFamilySourceBundle?.routes||[]).filter(route=>route.effectKind==='source_of_creep'&&route.sourceKind==='unit_feature');
+  for(const route of routes)for(const source of state.pieces.filter(p=>activePiece(p)&&p.officialUnitRecordKey===route.recordKey
+    &&structureSpecialAbilitiesAvailable(state,p))){
+    const measurements=liveModels(source).map(model=>measure({kind:'model',unitId:source.id,modelId:model.id}));
+    checks.push({sourceKind:'source_of_creep',sourceId:source.id,sourceDefinitionId:route.definitionId,
+      sourceFeatureHash:route.sourceFeatureHash,within:measurements.some(m=>m.unitWithin),measurementResultHashes:measurements.map(m=>m.resultHash)});
+  }
+  return{targetUnitId:piece.id,rangeMilliInches,withinAnySource:checks.some(row=>row.within),checks,
+    targetRaceRestricted:false,sourceControllerRestricted:false,trainingTruth:false};
+}
 export function isOfficialCurrentProductUnitOnCreepV1(state, piece) {
   if (!activePiece(piece) || !zergGround(state, piece)) return false;
   const exact = state.officialCreepRangeMeasurement === OFFICIAL_CREEP_FOOTPRINT_MEASUREMENT_V1;

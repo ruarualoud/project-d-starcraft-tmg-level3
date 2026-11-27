@@ -1,0 +1,47 @@
+{
+  "schema": "starcraft_tmg_wave4_virus_web_verification_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/infantry-web-v1",
+  "results": [
+    {
+      "kind": "medic-reduces-non-lethal",
+      "definitionId": "unit:medic/life-support-any-phase@1",
+      "sourceRoomId": "wave4-munitions-medic-reduces-non-lethal",
+      "sourceStateHash": "2410fb83a957a0b361fc882beb5c5960d37009d93e0be2364edb49ba28c255b8",
+      "sourcePrefixReceipts": 4,
+      "trace": [
+        {
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null,
+          "sideKey": "player1",
+          "stateRevision": 1,
+          "stateHash": "bd9694e31893c4ff64329169da766593da2f5aefa08d700e757a450794926fb8"
+        },
+        {
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/life-support-any-phase@1",
+          "sideKey": "player2",
+          "stateRevision": 2,
+          "stateHash": "2933c960aaa7982cd2f6b62987e32acdf2682a6b4e1d87fe0272b06ecf4224ec"
+        }
+      ],
+      "signedActions": 2,
+      "twoSeatsVerified": true,
+      "explicitHumanConfirmation": true,
+      "previewReadOnly": true,
+      "replayMatchesCurrent": true,
+      "seatRecoveryReentryVerified": true,
+      "pageErrors": []
+    }
+  ],
+  "signedActions": 2,
+  "conditionalTurretGeometryInRestorationCaseOnly": false,
+  "sourceHeldDefinitions": 39,
+  "engineeringEstimatedUnitGeometry": true,
+  "fullWave4LobbyBuilderAdmission": false,
+  "fullMatchAdmission": false,
+  "wave3PlayerRoomsTouched": false,
+  "modelCalls": 0,
+  "trainingTruth": false,
+  "geometryAssessment": "Infested Marine 32mm engineering estimate from bound source authority; corrects omitted flow in the original report classifier."
+}

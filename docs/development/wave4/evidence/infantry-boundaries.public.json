@@ -1,0 +1,134 @@
+{
+  "schema": "starcraft_tmg_wave4_infantry_boundaries_v1",
+  "status": "passed_scoped",
+  "cases": [
+    {
+      "name": "terran_enemy_near_enemy_creep_source",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "source_removed",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "outside_six",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "source_controller_independent",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "flying_target_eligible",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "spawn_round_source_locked",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "unbought_marine_ambush_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "infested_marine_beyond_eighteen_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "infested_marine_outside_entry_segment_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "infested_marine_exact_ten_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "infested_marine_insufficient_supply_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "infested_trooper_beyond_eighteen_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "infested_trooper_outside_entry_segment_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "infested_trooper_exact_ten_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "infested_trooper_insufficient_supply_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "unit:infested_marine/live-for-the-swarm-any-phase@1_source_drift_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "unit:infested_marine/plagued-munitions-assault-phase@1_source_drift_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "unit:infested_trooper/live-for-the-swarm-any-phase@1_source_drift_rejected",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "marine-mutation_actual_precision_two",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "marine-strike_actual_precision_two",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "trooper-bayonet_actual_precision_two",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "marine-purchased_actual_full_marker_without_extra_casualty",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "trooper-free_actual_full_marker_without_extra_casualty",
+      "passed": true,
+      "mutationAuthority": false
+    },
+    {
+      "name": "medic-reduces-non-lethal_actual_full_marker_without_extra_casualty",
+      "passed": true,
+      "mutationAuthority": false
+    }
+  ],
+  "checks": 24,
+  "queryOnlyCounterfactuals": true,
+  "existingSignedEvidenceAudited": true,
+  "newGameAtoms": 0,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

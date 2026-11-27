@@ -1,0 +1,4 @@
+[
+  {"id":"medic-reduces-non-lethal","definitionId":"unit:medic/life-support-any-phase@1",
+   "requiredPendingKey":"pendingOfficialPlaguedMunitions","flow":"munitions-support"}
+]

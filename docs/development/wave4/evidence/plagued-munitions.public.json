@@ -1,0 +1,245 @@
+{
+  "schema": "starcraft_tmg_wave4_plagued_munitions_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/munitions-qBULi9",
+  "results": [
+    {
+      "id": "marine-purchased",
+      "roomId": "wave4-munitions-marine-purchased",
+      "runRef": "build/wave4-web/stukov-units/munitions-qBULi9/marine-purchased",
+      "signedActions": 2,
+      "stateHash": "9d89d230575fc1fe86477e8e53027157aed0d7fd4abd0be3554bed4c706fdaab",
+      "history": [
+        {
+          "type": "plagued_munitions_non_lethal_damage",
+          "sourceDefinitionId": "unit:infested_marine/plagued-munitions-assault-phase@1",
+          "sourceFeatureHash": "8f7759ca020b61f4988ea7d9ffd4d12ae9062aa677caf10bfcbe3eb1bdd8dd35",
+          "sourcePieceId": "actor",
+          "targetPieceId": "enemy",
+          "sourceAttackResolutionHash": "52e5fc2e8e0f27678243e320b78debadfcc7134a391a90444a40f89d63470ef0",
+          "priorDamageMarker": 1,
+          "incomingNonLethalDamage": 1,
+          "damagePool": {
+            "schema": "starcraft_tmg_official_total_damage_pool_reduction_v1",
+            "priorDamageMarker": 1,
+            "incomingDamage": 1,
+            "requestedReduction": 0,
+            "minimumDamage": 0,
+            "reductionSourceHash": null,
+            "totalDamageBeforeReduction": 2,
+            "appliedReduction": 0,
+            "totalDamageAfterReduction": 2,
+            "reductionAppliedBeforeCasualtyAllocation": true,
+            "trainingTruth": false,
+            "resolutionHash": "1a53ecc0ac38917b3ffd31e8f426e13e49023306550df3b1a587f16200152b56"
+          },
+          "nonLethalResolution": {
+            "schema": "starcraft_tmg_official_non_lethal_damage_resolution_v1",
+            "targetPieceId": "enemy",
+            "targetModelId": "enemy-model-3",
+            "abilityResolutionHash": "52e5fc2e8e0f27678243e320b78debadfcc7134a391a90444a40f89d63470ef0",
+            "priorDamageMarker": 1,
+            "nonLethalDamage": 1,
+            "postDamageMarker": 2,
+            "targetHitPoints": 2,
+            "totalDamageMayMeetOrExceedHitPoints": true,
+            "casualtyRemovalDeferredUntilLaterStandardDamage": true,
+            "targetDestroyed": false,
+            "casualtyModelIds": [],
+            "discardedOverflowDamage": 0,
+            "trainingTruth": false,
+            "nonLethalResolutionHash": "088c7e12b034408d16e6724b18d90fe97770339b1a31907fb4717693132acf70"
+          },
+          "passiveNotReaction": true,
+          "trainingTruth": false
+        }
+      ],
+      "usedSupport": false,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "ranged_attack",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "trooper-free",
+      "unitKey": "infested_trooper",
+      "roomId": "wave4-munitions-trooper-free",
+      "runRef": "build/wave4-web/stukov-units/munitions-qBULi9/trooper-free",
+      "signedActions": 2,
+      "stateHash": "88db21774d0db0e702cb62a2627a07d7d4aceee6064cc338f08f8e6d7f891cb3",
+      "history": [
+        {
+          "type": "plagued_munitions_non_lethal_damage",
+          "sourceDefinitionId": "unit:infested_trooper/plagued-munitions-assault-phase@1",
+          "sourceFeatureHash": "2f34915b352e5ad7315a8065d0ee1dfd3764a69d9ed831e9ec3b00587512fb84",
+          "sourcePieceId": "actor",
+          "targetPieceId": "enemy",
+          "sourceAttackResolutionHash": "b6aaf88bdd549f8dffe2d0cfb41ff3374c67efe36908096004f1508035581066",
+          "priorDamageMarker": 1,
+          "incomingNonLethalDamage": 1,
+          "damagePool": {
+            "schema": "starcraft_tmg_official_total_damage_pool_reduction_v1",
+            "priorDamageMarker": 1,
+            "incomingDamage": 1,
+            "requestedReduction": 0,
+            "minimumDamage": 0,
+            "reductionSourceHash": null,
+            "totalDamageBeforeReduction": 2,
+            "appliedReduction": 0,
+            "totalDamageAfterReduction": 2,
+            "reductionAppliedBeforeCasualtyAllocation": true,
+            "trainingTruth": false,
+            "resolutionHash": "1a53ecc0ac38917b3ffd31e8f426e13e49023306550df3b1a587f16200152b56"
+          },
+          "nonLethalResolution": {
+            "schema": "starcraft_tmg_official_non_lethal_damage_resolution_v1",
+            "targetPieceId": "enemy",
+            "targetModelId": "enemy-model-4",
+            "abilityResolutionHash": "b6aaf88bdd549f8dffe2d0cfb41ff3374c67efe36908096004f1508035581066",
+            "priorDamageMarker": 1,
+            "nonLethalDamage": 1,
+            "postDamageMarker": 2,
+            "targetHitPoints": 2,
+            "totalDamageMayMeetOrExceedHitPoints": true,
+            "casualtyRemovalDeferredUntilLaterStandardDamage": true,
+            "targetDestroyed": false,
+            "casualtyModelIds": [],
+            "discardedOverflowDamage": 0,
+            "trainingTruth": false,
+            "nonLethalResolutionHash": "c81c99b5289798c581317a371a0b554e3c4cd1e3e465fe100e843ef924f1fa45"
+          },
+          "passiveNotReaction": true,
+          "trainingTruth": false
+        }
+      ],
+      "usedSupport": false,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "ranged_attack",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "marine-unpurchased",
+      "purchaseMunitions": false,
+      "roomId": "wave4-munitions-marine-unpurchased",
+      "runRef": "build/wave4-web/stukov-units/munitions-qBULi9/marine-unpurchased",
+      "signedActions": 2,
+      "stateHash": "b70b26ba0a563cdf74874f6eb3265a445d213bde0adf9ce5e9a9eda130c43e2f",
+      "history": [],
+      "usedSupport": false,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "ranged_attack",
+          "definitionId": null
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "medic-reduces-non-lethal",
+      "medic": true,
+      "roomId": "wave4-munitions-medic-reduces-non-lethal",
+      "runRef": "build/wave4-web/stukov-units/munitions-qBULi9/medic-reduces-non-lethal",
+      "signedActions": 6,
+      "stateHash": "b5a2dd7ddf4230a5ba75fb19a4604cbcccfd69335ae36494e421d110000bab7d",
+      "history": [
+        {
+          "type": "plagued_munitions_non_lethal_damage",
+          "sourceDefinitionId": "unit:infested_marine/plagued-munitions-assault-phase@1",
+          "sourceFeatureHash": "8f7759ca020b61f4988ea7d9ffd4d12ae9062aa677caf10bfcbe3eb1bdd8dd35",
+          "sourcePieceId": "actor",
+          "targetPieceId": "enemy",
+          "sourceAttackResolutionHash": "2842501fabc3bbc86d5f462e1c0a60b95e239df9c3b98bb53f90852e02cb87d7",
+          "priorDamageMarker": 1,
+          "incomingNonLethalDamage": 1,
+          "damagePool": {
+            "schema": "starcraft_tmg_official_total_damage_pool_reduction_v1",
+            "priorDamageMarker": 1,
+            "incomingDamage": 1,
+            "requestedReduction": 3,
+            "minimumDamage": 0,
+            "reductionSourceHash": "e77748e3149ba00270fbed861af506842b3182f89f3bafd817df0631e4487f46",
+            "totalDamageBeforeReduction": 2,
+            "appliedReduction": 2,
+            "totalDamageAfterReduction": 0,
+            "reductionAppliedBeforeCasualtyAllocation": true,
+            "trainingTruth": false,
+            "resolutionHash": "dfe33082ff8c4b7c1f173e298ab7bf323991929d2399bf281144d943eeea35cb"
+          },
+          "nonLethalResolution": {
+            "schema": "starcraft_tmg_official_non_lethal_damage_resolution_v1",
+            "targetPieceId": "enemy",
+            "targetModelId": "enemy-model-3",
+            "abilityResolutionHash": "2842501fabc3bbc86d5f462e1c0a60b95e239df9c3b98bb53f90852e02cb87d7",
+            "priorDamageMarker": 1,
+            "nonLethalDamage": 1,
+            "postDamageMarker": 2,
+            "targetHitPoints": 2,
+            "totalDamageMayMeetOrExceedHitPoints": true,
+            "casualtyRemovalDeferredUntilLaterStandardDamage": true,
+            "targetDestroyed": false,
+            "casualtyModelIds": [],
+            "discardedOverflowDamage": 0,
+            "trainingTruth": false,
+            "nonLethalResolutionHash": "8419f083881179d9a8ba4d078f9a71592594d8f35815a80f7616c3de38c74878"
+          },
+          "passiveNotReaction": true,
+          "trainingTruth": false
+        }
+      ],
+      "usedSupport": true,
+      "trace": [
+        {
+          "revision": 2,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 3,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 4,
+          "actionType": "ranged_attack",
+          "definitionId": null
+        },
+        {
+          "revision": 5,
+          "actionType": "pass_reaction_family_window",
+          "definitionId": null
+        },
+        {
+          "revision": 6,
+          "actionType": "resolve_reaction_family_ability",
+          "definitionId": "unit:medic/life-support-any-phase@1"
+        }
+      ],
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "sourceDefinitionIds": [
+    "unit:infested_marine/plagued-munitions-assault-phase@1",
+    "unit:infested_trooper/plagued-munitions-assault-phase@1"
+  ],
+  "newGameAtoms": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "estimatedGeometryOnly": true,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

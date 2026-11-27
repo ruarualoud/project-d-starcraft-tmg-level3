@@ -17,7 +17,8 @@ const directory=path.resolve(process.argv[3]);
 assert.ok(directory.startsWith(path.join(root,'build/wave4-web')+path.sep));
 const webRoot=process.argv[4]?path.resolve(process.argv[4]):path.join(root,'apps/starcraft-tmg-expo/dist-product');
 if(process.argv[4])assert.ok(webRoot.startsWith(path.join(root,'build/wave4-web')+path.sep));
-const inputs=sourceResult.schema==='starcraft_tmg_wave4_stukov_infestation_native_v1'?await loadWave4StukovUnitInputs(root)
+const inputs=['starcraft_tmg_wave4_stukov_infestation_native_v1','starcraft_tmg_wave4_plagued_munitions_v1',
+  'starcraft_tmg_wave4_infested_infantry_base_wiring_v1'].includes(sourceResult.schema)?await loadWave4StukovUnitInputs(root)
   :sourceResult.schema==='starcraft_tmg_wave4_virus_creep_native_v1'?await loadWave4VirusEffectsInputs(root):await loadWave4TurretInputs(root);
 const rooms=new Map();
 const service={liveEnabled:false,scope:'Wave4 source-bound Native successors; scoped local Web acceptance',rooms:[]};
@@ -30,7 +31,7 @@ const specs=process.argv[5]?await read(path.resolve(process.argv[5])):[
 assert.ok(Array.isArray(specs)&&specs.length&&specs.every(spec=>typeof spec.id==='string'&&(spec.initial||typeof spec.definitionId==='string')));
 for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===spec.id||row.definitionId==='card:'+spec.id+'/stukov-s-creep-any@1');
   assert.ok(proof?.coldReplay);
-  const sourceDirectory=path.join(root,proof.directoryRef);
+  const sourceDirectory=path.join(root,proof.directoryRef||proof.runRef);
   assert.ok(sourceDirectory.startsWith(path.join(root,'build/wave4-web')+path.sep));
   const sourceAuthority=await read(path.join(sourceDirectory,'authority.json'));
   const scope=await read(path.join(sourceDirectory,'scope.json'));
@@ -45,7 +46,8 @@ for(const spec of specs) {  const proof=sourceResult.results.find(row=>row.id===
     for(let count=0;count<=journal.length;count++) {
       const replay=nativeSource.engine.replay({initialEnvelope:bundle.initialEnvelope,journal:journal.slice(0,count)});
       assert.equal(replay.ok,true);
-      if(spec.initial || source.runtime.enumerate(replay.envelope.state).parameterDomains.some(row=>row.definitionId===spec.definitionId)) {
+      if(spec.initial || (spec.requiredPendingKey?Boolean(replay.envelope.state[spec.requiredPendingKey]):
+        source.runtime.enumerate(replay.envelope.state).parameterDomains.some(row=>row.definitionId===spec.definitionId))) {
         prefix=replay.envelope;prefixReceipts=count;break;
       }
     }

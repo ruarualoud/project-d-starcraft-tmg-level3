@@ -1,3 +1,4 @@
+import {readOfficialRenewedActivationIdV1} from './official-repeated-activation-identity-v1.mjs';
 import { isDeepStrictEqual } from 'node:util';
 import { hashStarcraftTmgContract as hash } from '../authoritative-engine/referee-crypto-v1.mjs';
 
@@ -50,7 +51,9 @@ export function resolveOfficialArmourRollActivationIdV1(state, attackerPieceId) 
   if (activationId !== undefined && (typeof activationId !== 'string' || !activationId.trim())) {
     fail('ARMOUR_ROLL_ACTIVATION_ID_INVALID');
   }
-  return activationId || `${round}:${state.phase}:${window?.sideKey || actor.sideKey}:${window?.pieceId || actor.id}`;
+  const activeActor=window?.pieceId?state.pieces.find(piece=>piece.id===window.pieceId):actor;
+  return activationId || readOfficialRenewedActivationIdV1(state,activeActor)
+    || `${round}:${state.phase}:${window?.sideKey || actor.sideKey}:${window?.pieceId || actor.id}`;
 }
 
 export function inspectOfficialArmourRollOrdinalsV1(state, { targetPieceId, attackerPieceId }) {

@@ -9,7 +9,7 @@ import { findOfficialBombardTargetingBindingV1, resolveOfficialBombardTargetingC
 import { hasOfficialPrintedIndirectFireEvadePolicyV1, projectOfficialRangedDeclarationProfileV1 }
   from '../rule-atoms/official-ranged-declaration-keywords-v1.mjs';
 import { planOfficialArmourThresholdV1 } from "../rule-atoms/official-armour-threshold-policy-v1.mjs";
-import { recordOfficialArmourRollV1, hasOfficialArmourRollOrdinalPolicyV1 } from "../rule-atoms/official-armour-roll-ordinal-v1.mjs";
+import { recordOfficialArmourRollV1, hasOfficialArmourRollOrdinalPolicyV1, resolveOfficialArmourRollActivationIdV1 } from "../rule-atoms/official-armour-roll-ordinal-v1.mjs";
 import { projectOfficialRangedTerrainForLosV1 as terrainAsOrdinaryForLos } from './official-ranged-terrain-projection-v1.mjs';
 import { usesWave3FaqClarifications } from '../rule-atoms/official-wave3-faq-clarifications-v1.mjs';
 import { hasOfficialIndomitableRangedPolicyV1, hasOfficialIndomitableTemplateBatchPolicyV1,
@@ -3401,9 +3401,10 @@ export function openOfficialSelectedRosterDamageReceivedWindowV1(state, action, 
   if (Number(incomingDamage) <= 0 || !state.officialReactionFamilySourceBundle) return null;
   const bundle=state.officialReactionFamilySourceBundle;
   const adapter=createOfficialReactionFamilyAdapterV1(bundle);
-  const activationId=outsideActivation ? null : state.selectedRosterActivationWindow
-    ? `${Number(state.round)}:${state.phase}:${state.selectedRosterActivationWindow.sideKey}:${state.selectedRosterActivationWindow.pieceId}`
-    : `${Number(state.round)}:${state.phase}:${action.sideKey}:${action.pieceId}`;
+  const activationId=outsideActivation ? null : state.officialRepeatedActivationIdentityPolicy
+    ? resolveOfficialArmourRollActivationIdV1(state,action.pieceId) : state.selectedRosterActivationWindow
+      ? `${Number(state.round)}:${state.phase}:${state.selectedRosterActivationWindow.sideKey}:${state.selectedRosterActivationWindow.pieceId}`
+      : `${Number(state.round)}:${state.phase}:${action.sideKey}:${action.pieceId}`;
   const sourceActionHash=hashStarcraftTmgContract(action);
   const opened=openOfficialReactionFamilyWindowV1(bundle,state,{
     triggerKind:'damage_received',activeSideKey:action.sideKey,phase:state.phase,

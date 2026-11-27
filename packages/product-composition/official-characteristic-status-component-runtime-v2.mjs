@@ -1,3 +1,5 @@
+import {hasOfficialRepeatedActivationIdentityPolicyV1} from '../rule-atoms/official-repeated-activation-identity-v1.mjs';
+import {createOfficialPlaguedMunitionsRuntimeV1} from './official-plagued-munitions-runtime-v1.mjs';
 import {createOfficialStukovContextualSupplyRoutesV1} from '../source-data/official-stukov-infestation-source-v1.mjs';
 import {openOfficialInfestationSpreadRestorationWindowV1} from './official-reaction-family-adapter-v1.mjs';
 import { createOfficialUniversalCarrierRuntimeV1 } from './official-universal-carrier-runtime-v1.mjs';
@@ -708,6 +710,15 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       || includeHits || includeArmourOrdinals
       || spatialState?.officialBattlefieldAssetFamilySourceBundle?.schema === 'starcraft_tmg_official_battlefield_asset_family_source_bundle_v2' });
   const characteristicRoutes = bundle?.routes || [];
+  const plaguedMunitions=characteristicRoutes.some(r=>r.effectKind==='plagued_munitions')
+    ? createOfficialPlaguedMunitionsRuntimeV1({sourceBundle:bundle,state:spatialState}) : null;
+  if(plaguedMunitions&&(!includeRanged||!isDeepStrictEqual(bundle,spatialState.officialCharacteristicStatusFamilySourceBundle)))
+    throw Error('PLAGUED_MUNITIONS_SOURCE_AND_ATTACK_CONSUMER_REQUIRED');
+  if(spatialState.pendingOfficialPlaguedMunitions&&!plaguedMunitions)throw Error('PLAGUED_MUNITIONS_PARENT_SOURCE_REQUIRED');
+  const infantryPrecision=characteristicRoutes.some(r=>r.weaponCondition?.kind==='infestation_or_creep_proximity');
+  if(infantryPrecision&&!isDeepStrictEqual(bundle,spatialState.officialCharacteristicStatusFamilySourceBundle))throw Error('INFESTED_INFANTRY_SOURCE_BUNDLE_REQUIRED');
+  const repeatedActivationIdentity=hasOfficialRepeatedActivationIdentityPolicyV1(spatialState);
+  if(repeatedActivationIdentity&&!characteristicRoutes.some(r=>r.effectKind==='infestation_activation_exchange'))throw Error('REPEATED_ACTIVATION_ADMIRAL_CONSUMER_REQUIRED');
   const stukovInfestation=characteristicRoutes.some(r=>['infestation_spread','infestation_activation_exchange','infected_enemy_mission_supply_penalty'].includes(r.effectKind));
   if(stukovInfestation&&!isDeepStrictEqual(bundle,spatialState.officialCharacteristicStatusFamilySourceBundle))throw Error('STUKOV_INFESTATION_SOURCE_BUNDLE_MISMATCH');
   const stukovSupplyRoutes=createOfficialStukovContextualSupplyRoutesV1(bundle);
@@ -1524,7 +1535,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     eligibility: khassarEligibility, state: spatialState, includeRun: includeKhassarRun || includeKhassarCharge || includeKhassarCombatExecution,
     enumerateNative, instantiateNative: instantiate, applyNative: apply,
   }) : null;
-  const version = stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
+  const version = plaguedMunitions ? '3.226.0' : repeatedActivationIdentity ? '3.225.0' : infantryPrecision ? '3.224.0' : stukovInfestation ? '3.223.0' : universalCarrier ? '3.222.0' : includeReleaseMoundAssaultOrder ? '3.221.0' : includeBilePhysicalPlacement && bile ? '3.220.0' : psionicRoundEnd?.scheduledEffects ? '3.219.0' : includeReleaseBileAssaultOrder ? '3.218.0' : releaseZergTargets ? '3.217.0' : includePsionicStormAssaultSameName ? '3.216.0'
     : includePsionicStormTokenCleanup ? '3.215.0'
     : includePsionicStormNamedOverlapChoices ? '3.214.0'
     : stormCast ? '3.213.0'
@@ -1681,6 +1692,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(afterChargeRoll ? { afterChargeRollReaction: 'committed_higher_die_v1' } : {}),
     ...(stationaryFirstRanged && spatialState.officialSiegeModeDataBundle
       ? { siegeModeDependencyHash: spatialState.officialSiegeModeDataBundle.bundleHash } : {}),
+    ...(repeatedActivationIdentity?{repeatedActivationIdentityPolicyHash:hash(spatialState.officialRepeatedActivationIdentityPolicy)}:{}),
     fullMatchCoverage: false, productionRoomEligible: false, legacyCompatibilityUsed: false,
     ctx2skillPromotionEligible: false, currentProductAbilityExactCount: commanderDefinitions.length + (structureSource?.definitions.length || 0) + (holoRoundEndSource?.definitions.length || 0) + (decoySource ? 1 : 0) + (personalTransport ? 1 : 0) + (psionicSource?.definitions.length || 0) + (bile ? 1 : 0) + (bileUpgrades?.routes.length || 0) + (bundle?.routeCount || 0) + (relocationBundle?.routeCount || 0) + (unitLifecycleBundle?.routeCount || 0) + (weaponBundle?.routeCount || 0) + (meleeWeaponBundle?.routeCount || 0) + (meleeModifierBundle?.routeCount || 0) + (battlefieldModifierBundle?.routeCount || 0) + (reactionBundle?.routeCount || 0),
     currentProductAbilityPendingCount: catalogue.denominator.pendingFamilyAdapter,
@@ -1769,6 +1781,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(friendlySupplyLossReaction ? { friendlySupplyLossReaction: friendlySupplyLossReaction.descriptor } : {}),
     ...(infestationTransfer ? { infestationTransfer: infestationTransfer.descriptor } : {}),
     ...(universalCarrier ? { universalCarrier: universalCarrier.descriptor } : {}),
+    ...(plaguedMunitions ? {plaguedMunitions:plaguedMunitions.descriptor} : {}),
     ...(ancestralWisdom ? { ancestralWisdomPaymentRuntime: ancestralWisdom.descriptor } : {}),
     ...(psionicStormSourceRules ? { psionicStormSourceRules: psionicStormSourceRules.descriptor } : {}),
     ...(stormPhaseEnd ? { stormPhaseEnd: stormPhaseEnd.descriptor } : {}),
@@ -1868,6 +1881,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     return null;
   }
   function enumerate(state, options = {}) {
+    if(plaguedMunitions?.pending(state))return {...meleeEnumeration(state,reactionAdapter.legalSpace(state,options),'reaction'),releasePhaseControl:'blocked'};
     if (universalCarrier?.pending(state)) return { ...meleeEnumeration(state,universalCarrier.enumerate(state,options),'universal_carrier'), releasePhaseControl:'blocked' };
     assertTargetedAbilityPolicy(state);
     const parent = ancestralWisdom?.pending(state);
@@ -2531,6 +2545,14 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
   function applySource(state, action, options) {
     if (action.executorId !== runtimeId || action.executorVersion !== version
       || action.sourceActionHash !== hash(action.sourceAction)) throw Error('CHARACTERISTIC_COMPONENT_ACTION_INVALID');
+    if(plaguedMunitions?.pending(state)){
+      if(action.sourceRuntimeKind!=='reaction'||!reactionAdapter)throw Error('PLAGUED_MUNITIONS_REACTION_CONTINUATION_REQUIRED');
+      const result=router.dispatch({operation:'apply',adapterId:reactionAdapter.descriptor.adapterId,state,
+        request:{action:action.sourceAction,options}});
+      const next=structuredClone(result.state),window=next.pendingOfficialReactionWindow;
+      next.activeSideKey=window?window.prioritySideKeys[window.priorityIndex]:state.pendingOfficialReactionWindow.activeSideKey;
+      return plaguedMunitions.complete({...result,state:next});
+    }
     if (universalCarrier?.pending(state)) {
       if(action.sourceRuntimeKind!=='universal_carrier')throw Error('UNIVERSAL_CARRIER_CHOICE_REQUIRED');
       return universalCarrier.apply(state,action.sourceAction,options);
@@ -2928,12 +2950,13 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       : binding.owner.apply(state, action.sourceAction, options);
   }
   function apply(state,action,options) {
-    if(universalCarrier?.pending(state))return applySource(state,action,options);
+    if(universalCarrier?.pending(state)||plaguedMunitions?.pending(state))return applySource(state,action,options);
     artanisDash?.assertAction(state,action);
     const applied=applyNative(state,action,options);
     const dash=artanisDash ? artanisDash.afterTransition(state,applied) : applied;
     const completed=photonEntry ? photonEntry.afterTransition(state,dash,action) : dash;
-    return universalCarrier ? universalCarrier.afterTransition(state,completed,action) : completed;
+    const withMunitions=plaguedMunitions?plaguedMunitions.afterTransition(state,completed,action):completed;
+    return universalCarrier ? universalCarrier.afterTransition(state,withMunitions,action) : withMunitions;
   }
   function applyNative(state, action, options) {
     assertRangedContinuationOwner(state, action);
@@ -3398,6 +3421,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (friendlySupplyLossReaction?.pending(state)) throw Error('FRIENDLY_SUPPLY_LOSS_REACTION_CHOICE_REQUIRED');
     if (infestationTransfer?.pending(state)) throw Error('INFESTATION_TRANSFER_REACTION_CHOICE_REQUIRED');
     if (universalCarrier?.pending(state)) throw Error('UNIVERSAL_CARRIER_CHOICE_REQUIRED');
+    if (plaguedMunitions?.pending(state)) throw Error('PLAGUED_MUNITIONS_REACTION_CONTINUATION_REQUIRED');
     if (ancestralWisdom?.pending(state)) throw Error('ANCESTRAL_WISDOM_PAYMENT_CONTINUATION_REQUIRED');
     if (holoRoundEnd && ['round_end', 'cleanup_and_refresh'].includes(request.eventKind)
       && (holoRoundEnd.pending(state) || holoRoundEnd.canStart(state))) throw Error('HOLO_ROUND_END_CHOICES_REQUIRED');
@@ -3409,7 +3433,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     if (rangedDeclaration?.pending(state)) throw Error('RANGED_DECLARATION_ATTACK_CONTINUATION_REQUIRED');
     if (hiddenLossReactions?.pending(state)) throw Error('HIDDEN_LOSS_REACTION_CONTINUATION_REQUIRED');
     if (closeRanksReactions && displacement.pending(state)) throw Error('PSIONIC_DISPLACEMENT_CLOSE_RANKS_CONTINUATION_REQUIRED');
-    if (!stukovInfestation && !battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
+    if (!infantryPrecision && !stukovInfestation && !battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') && !guardianShield && !ourMindsAsOne && !khalasGift && !executorsWill && !forceWallTraversal && !feedback && !farsight && !scourgeQueen && !zagaraBroodmother && !poisonousEssence && !overwatch && !sabotageDronePhaseEnd && !holoRoundEnd && !unitLifecycleAdapter && !bileUpgrades && !psionicRoundEnd && !hiddenLossReactions && !targetedMeleeCritical && !markedTargetFirstWeapon && !vilelingFoundation && !defilerMeleeFoundation && !markerAreas && !coordinatedStrike && !stationaryFirstRanged && !plasmaArmourSource && !alloyArmourSource && !superStimpack && !commandoStimpack && !chargeDeclaration) throw Error('CHARACTERISTIC_UNIT_LIFECYCLE_CONSUMER_REQUIRED');
     if (psionicRoundEnd && request.eventKind === 'round_end'
       && (psionicRoundEnd.pending(state) || psionicRoundEnd.hasOutstanding(state))) throw Error('PSIONIC_TRANSFER_ROUND_END_CHOICES_REQUIRED');
     const prepared = psionicRoundEnd && request.eventKind === 'cleanup_and_refresh' ? psionicRoundEnd.cleanup(state) : state;
@@ -3424,7 +3448,9 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
       throw Error('CHARACTERISTIC_CLEANUP_HIDDEN_REACTION_CONTINUATION_UNSUPPORTED');
     }
     const next = request.eventKind === 'cleanup_and_refresh' ? activation.cleanup(observed.state) : observed.state;
-    return { ...observed, state: refreshOfficialReleaseRosterDerivedStateV2({ context, state: next }) };
+    const cleaned=repeatedActivationIdentity&&request.eventKind==='cleanup_and_refresh'?structuredClone(next):next;
+    if(cleaned!==next)for(const piece of cleaned.pieces)delete piece.officialActivationInstanceRenewal;
+    return { ...observed, state: refreshOfficialReleaseRosterDerivedStateV2({ context, state: cleaned }) };
   }
   return Object.freeze({ descriptor, bundle, catalogue, adapter, spatial, ranged, templateCoverage, templateAttack,
     ...(poisonousEssence ? { poisonousEssence } : {}),
@@ -3439,7 +3465,7 @@ export function createOfficialCharacteristicStatusComponentRuntimeV2({ context, 
     ...(chargeDeclaration ? { chargeDeclaration } : {}),
     ...(cardRefresh ? { cardRefresh } : {}),
     ...(unitLifecycleAdapter ? { unitLifecycleBundle, unitLifecycleAdapter } : {}),
-    ...(stukovInfestation || battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
+    ...(infantryPrecision || stukovInfestation || battlefieldModifierBundle?.routes.some(route=>route.effectKind==='stukov_creep') || releaseZergTargets && darkSwarmLifecycle || guardianShield || ourMindsAsOne || khalasGift || executorsWill || forceWallTraversal || feedback || farsight || scourgeQueen || zagaraBroodmother || poisonousEssence || overwatch || sabotageDronePhaseEnd || holoRoundEnd || unitLifecycleAdapter || bileUpgrades || psionicRoundEnd || hiddenLossReactions || targetedMeleeCritical || markedTargetFirstWeapon || vilelingFoundation || defilerMeleeFoundation || markerAreas || coordinatedStrike || stationaryFirstRanged || plasmaArmourSource || alloyArmourSource || superStimpack || commandoStimpack || chargeDeclaration ? { lifecycle } : {}),
     ...(relocationAdapter ? { relocationBundle, relocationAdapter, postPlaceReactions } : {}),
     ...(reactionAdapter ? { reactionBundle, reactionAdapter, router } : {}),
     ...(registeredStorm ? { router, registeredStorm } : {}),

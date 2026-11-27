@@ -1,0 +1,75 @@
+{
+  "schema": "starcraft_tmg_wave4_admiral_repeated_activation_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/repeat-activation-X6eXuu",
+  "roomId": "wave4-admiral-repeat-activation",
+  "signedActions": 10,
+  "stateHash": "efffc8b1f0ee2699c7f2219b6ec43ee7752928115f30b0a7266c5a076eb99bc8",
+  "activationIds": [
+    "1:movement:player1:marine",
+    "1:movement:player1:marine:renewed:b1e3695a3b6684a2ba29cc8b"
+  ],
+  "twoActualNativeMoves": true,
+  "reactionAndArmourIdentityConsumer": "resolveOfficialArmourRollActivationIdV1",
+  "trace": [
+    {
+      "revision": 1,
+      "actionType": "move",
+      "definitionId": null
+    },
+    {
+      "revision": 2,
+      "actionType": "finish_activation",
+      "definitionId": null
+    },
+    {
+      "revision": 3,
+      "actionType": "pass",
+      "definitionId": null
+    },
+    {
+      "revision": 4,
+      "actionType": "resolve_characteristic_status_ability",
+      "definitionId": "unit:stukov/spread-infestation-movement-phase@1"
+    },
+    {
+      "revision": 5,
+      "actionType": "pass_reaction_family_window",
+      "definitionId": null
+    },
+    {
+      "revision": 6,
+      "actionType": "pass_reaction_family_window",
+      "definitionId": null
+    },
+    {
+      "revision": 7,
+      "actionType": "resolve_characteristic_status_ability",
+      "definitionId": "unit:stukov/admiral-of-the-infested-movement-phase@1"
+    },
+    {
+      "revision": 8,
+      "actionType": "finish_activation",
+      "definitionId": null
+    },
+    {
+      "revision": 9,
+      "actionType": "move",
+      "definitionId": null
+    },
+    {
+      "revision": 10,
+      "actionType": "finish_activation",
+      "definitionId": null
+    }
+  ],
+  "coldReplay": true,
+  "idempotencyVerified": true,
+  "newGameAtoms": 0,
+  "implementedCumulativeAtoms": 6,
+  "engineeringEstimatedUnitGeometry": true,
+  "sourceHeldDefinitions": 39,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

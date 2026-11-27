@@ -432,7 +432,7 @@ const reviewedPlacements = Object.freeze({
     },
   ])),
   ...Object.fromEntries(['corpser__roach_', 'roach', 'vile__roach_', 'swarmling__zergling_',
-    'hydralisk', 'raptor__zergling_', 'zergling'].map(unit => [
+    'hydralisk', 'raptor__zergling_', 'zergling', 'infested_marine', 'infested_trooper'].map(unit => [
     `unit:${unit}/burrow-ambush-movement-phase@1`, {
       recordKey: `army_units:${unit}`, abilityName: "Burrow Ambush", phase: "movement",
       sourceText: `When this Unit is nominated to deploy from the Reserves, it may resolve the PLACE (18) effect from the controlling player's Entry Edge. No model may be set Within 10" of any Enemy model. This Unit's Activation ends.`,

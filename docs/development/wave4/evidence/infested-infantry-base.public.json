@@ -1,0 +1,88 @@
+{
+  "schema": "starcraft_tmg_wave4_infested_infantry_base_wiring_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/infantry-rF08mz",
+  "sourceDefinitionIds": [
+    "unit:infested_marine/live-for-the-swarm-any-phase@1",
+    "unit:infested_trooper/live-for-the-swarm-any-phase@1",
+    "unit:infested_marine/burrow-ambush-movement-phase@1",
+    "unit:infested_trooper/burrow-ambush-movement-phase@1",
+    "unit:infested_marine/devastating-charge-assault-phase@1",
+    "unit:infested_trooper/devastating-charge-assault-phase@1",
+    "unit:infested_marine/infested-c-14-rifle-assault-phase@1",
+    "unit:infested_marine/infested-missile-launcher-acid-blast-assault-phase@1",
+    "unit:infested_marine/infested-missile-launcher-scourgeshot-assault-phase@1",
+    "unit:infested_trooper/infested-c-14-rifle-assault-phase@1",
+    "unit:infested_marine/wild-mutation-combat-phase@1",
+    "unit:infested_marine/strike-combat-phase@1",
+    "unit:infested_trooper/bayonet-combat-phase@1"
+  ],
+  "sourceDefinitionCount": 13,
+  "results": [
+    {
+      "id": "marine-infection",
+      "infected": true,
+      "roomId": "wave4-infantry-marine-infection",
+      "runRef": "build/wave4-web/stukov-units/infantry-rF08mz/marine-infection",
+      "signedActions": 4,
+      "stateHash": "8523497c58ddca57ff6e549015a3fab80bc9f9e141b1744a6c0453413fe62fce",
+      "expectedPrecision": 2,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "marine-clean",
+      "roomId": "wave4-infantry-marine-clean",
+      "runRef": "build/wave4-web/stukov-units/infantry-rF08mz/marine-clean",
+      "signedActions": 2,
+      "stateHash": "241aa697b04735f6bb84dc51fc3f131b94b1ea8815464b710ecc3ec5fa57617a",
+      "expectedPrecision": 0,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "trooper-creep",
+      "unitKey": "infested_trooper",
+      "creepSource": true,
+      "roomId": "wave4-infantry-trooper-creep",
+      "runRef": "build/wave4-web/stukov-units/infantry-rF08mz/trooper-creep",
+      "signedActions": 4,
+      "stateHash": "f4fde49d0042cb0a7e8b251c72861fe5499f2fd297caa38e2c16cfb7239fc283",
+      "expectedPrecision": 2,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "marine-burrow",
+      "phase": "movement",
+      "reserve": true,
+      "roomId": "wave4-infantry-marine-burrow",
+      "runRef": "build/wave4-web/stukov-units/infantry-rF08mz/marine-burrow",
+      "signedActions": 1,
+      "stateHash": "1a74ec2a8daacad77aabe33bea2b9e11839a69f731c857f978fa7c3fd0fdb7f1",
+      "expectedPrecision": 0,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "id": "trooper-burrow",
+      "unitKey": "infested_trooper",
+      "phase": "movement",
+      "reserve": true,
+      "roomId": "wave4-infantry-trooper-burrow",
+      "runRef": "build/wave4-web/stukov-units/infantry-rF08mz/trooper-burrow",
+      "signedActions": 1,
+      "stateHash": "78f010851f54557c0b34e8e2c163a8147ea74a5d0eb304a27a7592b00b7ed8a7",
+      "expectedPrecision": 0,
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "newGameAtoms": 0,
+  "implementedCumulativeAtoms": 6,
+  "sourceHeldDefinitions": 39,
+  "estimatedGeometryOnly": true,
+  "fullMatchAdmission": false,
+  "modelCalls": 0,
+  "trainingTruth": false
+}

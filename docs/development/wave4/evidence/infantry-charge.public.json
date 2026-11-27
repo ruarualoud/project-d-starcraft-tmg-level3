@@ -1,0 +1,34 @@
+{
+  "schema": "starcraft_tmg_wave4_infantry_charge_v1",
+  "status": "passed_scoped",
+  "runRef": "build/wave4-web/stukov-units/charge-nEsZX3",
+  "results": [
+    {
+      "unitKey": "infested_marine",
+      "roomId": "wave4-charge-infested_marine",
+      "directoryRef": "build/wave4-web/stukov-units/charge-nEsZX3/infested_marine",
+      "impactDice": 12,
+      "signedActions": 6,
+      "stateHash": "40866811f31b6f8e474d871d5bb4447463a9aec1f23bb07160a008a9e5458ae3",
+      "coldReplay": true,
+      "idempotencyVerified": true
+    },
+    {
+      "unitKey": "infested_trooper",
+      "roomId": "wave4-charge-infested_trooper",
+      "directoryRef": "build/wave4-web/stukov-units/charge-nEsZX3/infested_trooper",
+      "impactDice": 6,
+      "signedActions": 6,
+      "stateHash": "5b4a8d7b75077cc9ebb32ca32f67dbd1641c47e96cc27556aa7acb7b7a662bb0",
+      "coldReplay": true,
+      "idempotencyVerified": true
+    }
+  ],
+  "newGameAtoms": 0,
+  "implementedCumulativeAtoms": 6,
+  "estimatedGeometryOnly": true,
+  "fullMatchAdmission": false,
+  "sourceHeldDefinitions": 39,
+  "modelCalls": 0,
+  "trainingTruth": false
+}
